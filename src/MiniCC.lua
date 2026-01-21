@@ -18,8 +18,8 @@ local dbDefaults = addon.Config.DbDefaults
 local db
 
 local testSpells = {
-	33786, -- Cyclone
-	118, -- Polymorph
+	--33786, -- Cyclone
+	--118, -- Polymorph
 	408, -- Kidney Shot
 }
 
@@ -52,6 +52,22 @@ local function GetRealPartyFrame(i)
 	end
 
 	return frame
+end
+
+local function AnchorHeader(header, anchor)
+	header:ClearAllPoints()
+
+	if db.SimpleMode.Enabled then
+		header:SetPoint("CENTER", anchor, "CENTER", db.SimpleMode.Offset.X, db.SimpleMode.Offset.Y)
+	else
+		header:SetPoint(
+			db.AdvancedMode.Point,
+			anchor,
+			db.AdvancedMode.RelativePoint,
+			db.AdvancedMode.Offset.X,
+			db.AdvancedMode.Offset.Y
+		)
+	end
 end
 
 local function OnHeaderEvent(header, event, arg1)
@@ -148,14 +164,7 @@ local function RefreshHeaderChildSizes(header)
 end
 
 local function UpdateHeader(header, anchorFrame, unit)
-	header:ClearAllPoints()
-	header:SetPoint(
-		db.Container.Point,
-		anchorFrame,
-		db.Container.RelativePoint,
-		db.Container.Offset.X,
-		db.Container.Offset.Y
-	)
+	AnchorHeader(header, anchorFrame)
 
 	local iconSize = tonumber(db.Icons.Size) or dbDefaults.Icons.Size
 
@@ -391,14 +400,7 @@ local function TestMode()
 		if anchor and anchor:IsVisible() then
 			anyRealShown = true
 
-			testHeader:ClearAllPoints()
-			testHeader:SetPoint(
-				db.Container.Point,
-				anchor,
-				db.Container.RelativePoint,
-				db.Container.Offset.X,
-				db.Container.Offset.Y
-			)
+			AnchorHeader(testHeader, anchor)
 
 			testHeader:Show()
 		end
@@ -415,14 +417,7 @@ local function TestMode()
 			local testHeader = testHeaders[i]
 			local partyFrame = testPartyFrames[i]
 
-			testHeader:ClearAllPoints()
-			testHeader:SetPoint(
-				db.Container.Point,
-				partyFrame,
-				db.Container.RelativePoint,
-				db.Container.Offset.X,
-				db.Container.Offset.Y
-			)
+			AnchorHeader(testHeader, partyFrame)
 
 			testHeader:Show()
 			partyFrame:Show()

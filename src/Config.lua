@@ -13,12 +13,35 @@ local anchorPoints = {
 	"BOTTOM",
 	"BOTTOMRIGHT",
 }
-
+local verticalSpacing = mini.VerticalSpacing
+local horizontalSpacing = mini.HorizontalSpacing
+local columns = 4
+local columnWidth = mini:ColumnWidth(columns, 0, 0)
 ---@type Db
 local db
 
 ---@class Db
 local dbDefaults = {
+	Version = 2,
+
+	SimpleMode = {
+		Enabled = true,
+		Offset = {
+			X = 2,
+			Y = 0,
+		},
+	},
+
+	AdvancedMode = {
+		Enabled = false,
+		Point = "TOPLEFT",
+		RelativePoint = "TOPRIGHT",
+		Offset = {
+			X = 2,
+			Y = 0,
+		},
+	},
+
 	Icons = {
 		Size = 72,
 		Padding = {
@@ -47,75 +70,72 @@ local M = {
 
 addon.Config = M
 
+local function GetAndUpgradeDb()
+	local firstInit = MiniMarkersDB == nil
+	local vars = mini:GetSavedVars(dbDefaults)
+
+	if not firstInit then
+		-- advanced mode was the default in the first version
+		vars.SimpleMode.Enabled = false
+		vars.AdvancedMode.Enabled = true
+		vars.Version = 2
+	end
+
+	return vars
+end
+
 local function ApplySettings()
 	if InCombatLockdown() then
-		addon:Notify("Can't apply settings during combat.")
+		mini:Notify("Can't apply settings during combat.")
 		return
 	end
 
 	addon:Refresh()
 end
 
-function M:Init()
-	db = mini:GetSavedVars(dbDefaults)
-	-- TODO: probs remove after finished development
-	mini:CleanTable(db, dbDefaults, true, false)
-
-	local verticalSpacing = mini.VerticalSpacing
-	local horizontalSpacing = mini.HorizontalSpacing
-	local columns = 4
-	local columnWidth = mini:ColumnWidth(columns, 0, 0)
-
-	local panel = CreateFrame("Frame")
-	panel.name = addonName
-
-	local category = mini:AddCategory(panel)
-
-	if not category then
-		return
-	end
-
-	local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-	title:SetPoint("TOPLEFT", 0, -16)
-	title:SetText(addonName)
-
-	local lines = mini:TextBlock({
+local function BuildSimpleMode(parent)
+	local panel = CreateFrame("Frame", nil, parent)
+	local containerX = mini:Slider({
 		Parent = panel,
-		Lines = {
-			"Highly experimental addon for Midnight that shows CC on your party frames.",
-			"Any feedback is more than welcome!",
-		},
-	})
-
-	lines:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
-
-	local positionDivider = mini:Divider({
-		Parent = panel,
-		Text = "Size & Position",
-	})
-
-	positionDivider:SetPoint("LEFT", panel, "LEFT")
-	positionDivider:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
-	positionDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
-
-	local iconSize = mini:Slider({
-		Parent = panel,
-		Min = 10,
-		Max = 200,
-		Width = (columnWidth * columns) - horizontalSpacing,
+		Min = -250,
+		Max = 250,
 		Step = 1,
-		LabelText = "Icon Size",
+		Width = columnWidth * 2 - horizontalSpacing,
+		LabelText = "Offset X",
 		GetValue = function()
-			return db.Icons.Size
+			return db.SimpleMode.Offset.X
 		end,
 		SetValue = function(v)
-			db.Icons.Size = mini:ClampInt(v, 10, 200, dbDefaults.Icons.Size)
+			db.SimpleMode.Offset.X = mini:ClampInt(v, -250, 250, dbDefaults.SimpleMode.Offset.X)
 			ApplySettings()
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", positionDivider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	containerX.Slider:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
+	local containerY = mini:Slider({
+		Parent = panel,
+		Min = -250,
+		Max = 250,
+		Step = 1,
+		Width = columnWidth * 2 - horizontalSpacing,
+		LabelText = "Offset Y",
+		GetValue = function()
+			return db.SimpleMode.Offset.Y
+		end,
+		SetValue = function(v)
+			db.SimpleMode.Offset.Y = mini:ClampInt(v, -250, 250, dbDefaults.SimpleMode.Offset.Y)
+			ApplySettings()
+		end,
+	})
+
+	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
+
+	return panel
+end
+
+local function BuildAdvancedMode(parent)
+	local panel = CreateFrame("Frame", nil, parent)
 	local containerX = mini:Slider({
 		Parent = panel,
 		Min = -20,
@@ -124,15 +144,15 @@ function M:Init()
 		Width = columnWidth * 2 - horizontalSpacing,
 		LabelText = "Offset X",
 		GetValue = function()
-			return db.Container.Offset.X
+			return db.AdvancedMode.Offset.X
 		end,
 		SetValue = function(v)
-			db.Container.Offset.X = mini:ClampInt(v, -50, 50, dbDefaults.Container.Offset.X)
+			db.AdvancedMode.Offset.X = mini:ClampInt(v, -50, 50, dbDefaults.Container.Offset.X)
 			ApplySettings()
 		end,
 	})
 
-	containerX.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	containerX.Slider:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
 	local containerY = mini:Slider({
 		Parent = panel,
@@ -142,10 +162,10 @@ function M:Init()
 		Width = columnWidth * 2 - horizontalSpacing,
 		LabelText = "Offset Y",
 		GetValue = function()
-			return db.Container.Offset.Y
+			return db.AdvancedMode.Offset.Y
 		end,
 		SetValue = function(v)
-			db.Container.Offset.Y = mini:ClampInt(v, -200, 200, dbDefaults.Container.Offset.Y)
+			db.AdvancedMode.Offset.Y = mini:ClampInt(v, -200, 200, dbDefaults.Container.Offset.Y)
 			ApplySettings()
 		end,
 	})
@@ -160,11 +180,11 @@ function M:Init()
 		Items = anchorPoints,
 		Width = columnWidth,
 		GetValue = function()
-			return db.Container.Point
+			return db.AdvancedMode.Point
 		end,
 		SetValue = function(value)
-			if db.Container.Point ~= value then
-				db.Container.Point = value
+			if db.AdvancedMode.Point ~= value then
+				db.AdvancedMode.Point = value
 				ApplySettings()
 			end
 		end,
@@ -183,11 +203,11 @@ function M:Init()
 		Items = anchorPoints,
 		Width = columnWidth,
 		GetValue = function()
-			return db.Container.RelativePoint
+			return db.AdvancedMode.RelativePoint
 		end,
 		SetValue = function(value)
-			if db.Container.RelativePoint ~= value then
-				db.Container.RelativePoint = value
+			if db.AdvancedMode.RelativePoint ~= value then
+				db.AdvancedMode.RelativePoint = value
 				ApplySettings()
 			end
 		end,
@@ -215,7 +235,7 @@ function M:Init()
 			return tostring(db.Anchor1)
 		end,
 		SetValue = function(v)
-			db.Anchor1 = v
+			db.Anchor1 = tostring(v)
 			ApplySettings()
 		end,
 	})
@@ -232,7 +252,7 @@ function M:Init()
 			return tostring(db.Anchor2)
 		end,
 		SetValue = function(v)
-			db.Anchor2 = v
+			db.Anchor2 = tostring(v)
 			ApplySettings()
 		end,
 	})
@@ -249,13 +269,109 @@ function M:Init()
 			return tostring(db.Anchor3)
 		end,
 		SetValue = function(v)
-			db.Anchor3 = v
+			db.Anchor3 = tostring(v)
 			ApplySettings()
 		end,
 	})
 
 	party3.Label:SetPoint("TOPLEFT", party2.EditBox, "BOTTOMLEFT", -4, -verticalSpacing)
 	party3.EditBox:SetPoint("TOPLEFT", party3.Label, "BOTTOMLEFT", 4, -8)
+
+	return panel
+end
+
+function M:Init()
+	db = GetAndUpgradeDb()
+	-- TODO: remove this after development complete
+	mini:CleanTable(db, dbDefaults, true, false)
+
+	local panel = CreateFrame("Frame")
+	panel.name = addonName
+
+	local category = mini:AddCategory(panel)
+
+	if not category then
+		return
+	end
+
+	local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+	local version = C_AddOns.GetAddOnMetadata(addonName, "Version")
+	title:SetPoint("TOPLEFT", 0, -verticalSpacing)
+	title:SetText(string.format("%s - %s", addonName, version))
+
+	local lines = mini:TextBlock({
+		Parent = panel,
+		Lines = {
+			"Highly experimental addon for Midnight that shows CC on your party frames.",
+			"Any feedback is more than welcome!",
+		},
+	})
+
+	lines:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
+
+	local simpleMode = BuildSimpleMode(panel)
+	local advancedMode = BuildAdvancedMode(panel)
+
+	local function SetMode()
+		if db.SimpleMode.Enabled then
+			simpleMode:Show()
+			advancedMode:Hide()
+		else
+			advancedMode:Show()
+			simpleMode:Hide()
+		end
+	end
+
+	local simpleChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Simple settings",
+		GetValue = function()
+			return db.SimpleMode.Enabled
+		end,
+		SetValue = function(value)
+			db.SimpleMode.Enabled = value
+			db.AdvancedMode.Enabled = not value
+
+			SetMode()
+		end,
+	})
+
+	simpleChk:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", -4, -verticalSpacing)
+
+	local positionDivider = mini:Divider({
+		Parent = panel,
+		Text = "Size & Position",
+	})
+
+	positionDivider:SetPoint("LEFT", panel, "LEFT")
+	positionDivider:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
+	positionDivider:SetPoint("TOP", simpleChk, "BOTTOM", 0, -8)
+
+	local iconSize = mini:Slider({
+		Parent = panel,
+		Min = 10,
+		Max = 200,
+		Width = (columnWidth * columns) - horizontalSpacing,
+		Step = 1,
+		LabelText = "Icon Size",
+		GetValue = function()
+			return db.Icons.Size
+		end,
+		SetValue = function(v)
+			db.Icons.Size = mini:ClampInt(v, 10, 200, dbDefaults.Icons.Size)
+			ApplySettings()
+		end,
+	})
+
+	iconSize.Slider:SetPoint("TOPLEFT", positionDivider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
+	simpleMode:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	simpleMode:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
+
+	advancedMode:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	advancedMode:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
+
+	SetMode()
 
 	StaticPopupDialogs["MINICC_CONFIRM"] = {
 		text = "%s",
@@ -292,6 +408,7 @@ function M:Init()
 
 				panel:MiniRefresh()
 				addon:Refresh()
+				SetMode()
 				mini:Notify("Settings reset to default.")
 			end,
 		})
@@ -309,14 +426,14 @@ function M:Init()
 		panel:MiniRefresh()
 	end)
 
-	mini:WireTabNavigation({
-		iconSize.EditBox,
-		containerX.EditBox,
-		containerY.EditBox,
-		party1.EditBox,
-		party2.EditBox,
-		party3.EditBox,
-	})
+	-- mini:WireTabNavigation({
+	-- 	iconSize.EditBox,
+	-- 	containerX.EditBox,
+	-- 	containerY.EditBox,
+	-- 	party1.EditBox,
+	-- 	party2.EditBox,
+	-- 	party3.EditBox,
+	-- })
 
 	SLASH_MINICC1 = "/minicc"
 	SLASH_MINICC2 = "/mcc"
