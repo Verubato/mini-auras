@@ -257,6 +257,25 @@ function M:Init()
 	party3.Label:SetPoint("TOPLEFT", party2.EditBox, "BOTTOMLEFT", -4, -verticalSpacing)
 	party3.EditBox:SetPoint("TOPLEFT", party3.Label, "BOTTOMLEFT", 4, -8)
 
+	StaticPopupDialogs["MINICC_CONFIRM"] = {
+		text = "%s",
+		button1 = YES,
+		button2 = NO,
+		OnAccept = function(_, data)
+			if data and data.OnYes then
+				data.OnYes()
+			end
+		end,
+		OnCancel = function(_, data)
+			if data and data.OnNo then
+				data.OnNo()
+			end
+		end,
+		timeout = 0,
+		whileDead = true,
+		hideOnEscape = true,
+	}
+
 	local resetBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	resetBtn:SetSize(120, 26)
 	resetBtn:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 0, 16)
@@ -267,16 +286,20 @@ function M:Init()
 			return
 		end
 
-		db = mini:ResetSavedVars(dbDefaults)
+		StaticPopup_Show("MINICC_CONFIRM", "Are you sure you wish to reset to factory settings?", nil, {
+			OnYes = function()
+				db = mini:ResetSavedVars(dbDefaults)
 
-		panel:MiniRefresh()
-		addon:Refresh()
-		mini:Notify("Settings reset to default.")
+				panel:MiniRefresh()
+				addon:Refresh()
+				mini:Notify("Settings reset to default.")
+			end,
+		})
 	end)
 
 	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	testBtn:SetSize(120, 26)
-	testBtn:SetPoint("LEFT", resetBtn, "RIGHT", 10, 0)
+	testBtn:SetPoint("LEFT", resetBtn, "RIGHT", horizontalSpacing, 0)
 	testBtn:SetText("Test")
 	testBtn:SetScript("OnClick", function()
 		addon:ToggleTest()
