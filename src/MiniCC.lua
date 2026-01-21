@@ -20,9 +20,6 @@ local db
 local testSpells = {
 	33786, -- Cyclone
 	118, -- Polymorph
-	51514, -- Hex
-	3355, -- Freezing Trap
-	853, -- Hammer of Justice
 	408, -- Kidney Shot
 }
 
@@ -295,7 +292,7 @@ local function EnsureTestPartyFrames()
 end
 
 local function UpdateTestHeader(frame)
-	local cols = 3
+	local cols = #testSpells
 	local rows = 1
 	local size = math.max(1, tonumber(db.Icons.Size) or 20)
 	local padX = tonumber(db.Icons.Padding.X) or 0
