@@ -2,7 +2,7 @@
 ## Title: MiniCC
 ## Notes: Shows CC on party frames.
 ## Author: Verz
-## Version: 0.0.1
+## Version: 1.0.0
 ## SavedVariables: MiniCCDB
 ## IconTexture: Interface\AddOns\MiniCC\Icon.blp
 ## X-Curse-Project-ID: 1439482
