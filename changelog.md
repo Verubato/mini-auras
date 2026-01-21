@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2
+
+Fixed the CC frame to show the longest CC applied.
+
 ## 1.0.1
 
 Potential fix for incorrect anchors in solo shuffle.
