@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.0
+
+Added simple configuration mode.
+
 ## 1.0.3
 
 - Changed test icons.
