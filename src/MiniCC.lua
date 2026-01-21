@@ -455,6 +455,10 @@ local function OnEvent(_, event)
 	if event == "PLAYER_ENTERING_WORLD" then
 		addon:Refresh()
 	end
+
+	if event == "GROUP_ROSTER_UPDATE" then
+		addon:Refresh()
+	end
 end
 
 local function OnAddonLoaded()
@@ -466,6 +470,7 @@ local function OnAddonLoaded()
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
+	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	eventsFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 	eventsFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
