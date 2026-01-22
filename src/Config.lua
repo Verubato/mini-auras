@@ -426,15 +426,6 @@ function M:Init()
 		panel:MiniRefresh()
 	end)
 
-	-- mini:WireTabNavigation({
-	-- 	iconSize.EditBox,
-	-- 	containerX.EditBox,
-	-- 	containerY.EditBox,
-	-- 	party1.EditBox,
-	-- 	party2.EditBox,
-	-- 	party3.EditBox,
-	-- })
-
 	SLASH_MINICC1 = "/minicc"
 	SLASH_MINICC2 = "/mcc"
 

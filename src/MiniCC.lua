@@ -167,8 +167,6 @@ local function UpdateHeader(header, anchorFrame, unit)
 
 	header:SetAttribute("unit", unit)
 	header:SetAttribute("filter", "HARMFUL|INCLUDE_NAME_PLATE_ONLY")
-	-- xoffset of each icon within the container is the width of the icon itself plus some padding
-	--header:SetAttribute("xOffset", iconSize + (tonumber(db.IconPaddingX) or dbDefaults.IconPaddingX))
 	-- have all icons overlap themselves, and then only the visible on is shown
 	-- genius right?
 	header:SetAttribute("xOffset", 0)
