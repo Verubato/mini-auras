@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.0
+
+- Removed the cooldown edge swipe as it doesn't look great with overlapping cc's.
+- Disabled mouse interactivity so it doesn't affect mouseover healing.
+
 ## 1.1.0
 
 Added simple configuration mode.
