@@ -18,9 +18,8 @@ local dbDefaults = addon.Config.DbDefaults
 local db
 
 local testSpells = {
-	--33786, -- Cyclone
-	--118, -- Polymorph
-	408, -- Kidney Shot
+	-- Kidney Shot
+	408,
 }
 
 local function GetSpellIcon(spellID)
@@ -93,11 +92,12 @@ local function OnHeaderEvent(header, event, arg1)
 			break
 		end
 
-		local icon = child.Icon or child.Texture
+		local icon = child.Icon
+		local cooldown = child.Cooldown
 
-		if not icon then
-			icon = child:CreateTexture(nil, "ARTWORK")
-			child.Texture = icon
+		if not icon or not cooldown then
+			-- invalid xml
+			break
 		end
 
 		icon:SetAllPoints(child)
@@ -105,32 +105,29 @@ local function OnHeaderEvent(header, event, arg1)
 		local data = C_UnitAuras.GetAuraDataByIndex(unit, child:GetID(), filter)
 
 		if data then
-			-- this will be a secret value in midnight, but it's still usable as a parameter
 			icon:SetTexture(data.icon)
 
 			local isCC = C_Spell.IsSpellCrowdControl(data.spellId)
 			icon:SetAlphaFromBoolean(isCC)
 
-			if child.Cooldown then
-				local start
-				local duration
-				local durationInfo = C_UnitAuras.GetAuraDuration(unit, data.auraInstanceID)
+			local start
+			local duration
+			local durationInfo = C_UnitAuras.GetAuraDuration(unit, data.auraInstanceID)
 
-				if durationInfo then
-					start = durationInfo:GetStartTime()
-					duration = durationInfo:GetTotalDuration()
-				end
-
-				if start and duration then
-					child.Cooldown:SetCooldown(start, duration)
-					child.Cooldown:Show()
-				else
-					child.Cooldown:Hide()
-					child.Cooldown:SetCooldown(0, 0)
-				end
-
-				child.Cooldown:SetAlphaFromBoolean(isCC)
+			if durationInfo then
+				start = durationInfo:GetStartTime()
+				duration = durationInfo:GetTotalDuration()
 			end
+
+			if start and duration then
+				cooldown:SetCooldown(start, duration)
+				cooldown:Show()
+			else
+				cooldown:Hide()
+				cooldown:SetCooldown(0, 0)
+			end
+
+			cooldown:SetAlphaFromBoolean(isCC)
 		else
 			icon:Hide()
 		end
@@ -209,13 +206,8 @@ local function CreateSecureHeader(partyFrame, unit, index)
 
 			self:SetWidth(iconSize)
 			self:SetHeight(iconSize)
-
-			if self.Cooldown then
-				self.Cooldown:SetDrawSwipe(true)
-				self.Cooldown:SetSwipeColor(0, 0, 0, 0.6)
-				self.Cooldown:SetDrawEdge(false)
-				self.Cooldown:SetHideCountdownNumbers(false)
-			end
+			-- disable mouse so you can still mouseover heal on unit frames
+			self:EnableMouse(false)
 		]]
 	)
 
