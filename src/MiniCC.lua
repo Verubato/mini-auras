@@ -82,13 +82,13 @@ local function AnchorHeader(header, anchor)
 end
 
 local function EnsureHeader(frame, unit)
-	local header = headers[frame]
-
 	unit = unit or frame.unit or frame:GetAttribute("unit")
 
 	if not unit then
 		return nil
 	end
+
+	local header = headers[frame]
 
 	if not header then
 		header = auras:CreateHeader(unit, db.Icons)
@@ -108,13 +108,13 @@ end
 
 local function EnsureCustomHeaders()
 	-- for any custom anchors the user may have configured
+	local index = 1
+	local anchor = GetOverrideAnchor(index)
 
-	for i = 1, 3 do
-		local anchor = GetOverrideAnchor(i)
-
-		if anchor then
-			EnsureHeader(anchor)
-		end
+	while anchor do
+		EnsureHeader(anchor)
+		index = index + 1
+		anchor = GetOverrideAnchor(index)
 	end
 end
 

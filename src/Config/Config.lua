@@ -22,7 +22,7 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 2,
+	Version = 3,
 
 	SimpleMode = {
 		Enabled = true,
@@ -75,6 +75,11 @@ local function GetAndUpgradeDb()
 		-- advanced mode was the default in the first version
 		vars.SimpleMode.Enabled = false
 		vars.Version = 2
+	end
+
+	if vars.Version == 2 then
+		mini:CleanTable(db, dbDefaults, true, true)
+		vars.Version = 3
 	end
 
 	return vars
@@ -278,8 +283,6 @@ end
 
 function M:Init()
 	db = GetAndUpgradeDb()
-	-- TODO: remove this after development complete
-	mini:CleanTable(db, dbDefaults, true, false)
 
 	local panel = CreateFrame("Frame")
 	panel.name = addonName
