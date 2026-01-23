@@ -33,7 +33,6 @@ local dbDefaults = {
 	},
 
 	AdvancedMode = {
-		Enabled = false,
 		Point = "TOPLEFT",
 		RelativePoint = "TOPRIGHT",
 		Offset = {
@@ -45,10 +44,6 @@ local dbDefaults = {
 	---@class IconOptions
 	Icons = {
 		Size = 72,
-		Padding = {
-			X = 2,
-			Y = 0,
-		},
 	},
 
 	Container = {
@@ -79,7 +74,6 @@ local function GetAndUpgradeDb()
 	if not firstInit then
 		-- advanced mode was the default in the first version
 		vars.SimpleMode.Enabled = false
-		vars.AdvancedMode.Enabled = true
 		vars.Version = 2
 	end
 
@@ -332,7 +326,6 @@ function M:Init()
 		end,
 		SetValue = function(value)
 			db.SimpleMode.Enabled = value
-			db.AdvancedMode.Enabled = not value
 
 			SetMode()
 		end,
