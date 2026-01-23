@@ -81,23 +81,25 @@ local function AnchorHeader(header, anchor)
 	end
 end
 
-local function EnsureHeader(frame, unit)
-	unit = unit or frame.unit or frame:GetAttribute("unit")
+local function EnsureHeader(anchor, unit)
+	unit = unit or anchor.unit or anchor:GetAttribute("unit")
 
 	if not unit then
 		return nil
 	end
 
-	local header = headers[frame]
+	local header = headers[anchor]
 
 	if not header then
 		header = auras:CreateHeader(unit, db.Icons)
-		headers[frame] = header
+		headers[anchor] = header
 	else
 		auras:UpdateHeader(header, unit, db.Icons)
 	end
 
-	if frame:IsVisible() then
+	AnchorHeader(header, anchor)
+
+	if anchor:IsVisible() then
 		header:Show()
 	else
 		header:Hide()
@@ -230,8 +232,12 @@ local function EnsureTestHeader(anchor)
 end
 
 local function RealMode()
-	for _, header in pairs(headers) do
-		header:Show()
+	for anchor, header in pairs(headers) do
+		if anchor:IsVisible() then
+			header:Show()
+		else
+			header:Hide()
+		end
 	end
 
 	for _, testHeader in pairs(testHeaders) do
@@ -292,9 +298,28 @@ end
 
 local function IsFriendlyCuf(frame)
 	local name = frame:GetName()
-	local unit = frame.unit or frame:GetAttribute("unit")
 
-	return name and string.find(name, "Compact") ~= nil and unit and UnitIsFriend("player", unit)
+	if not name then
+		return false
+	end
+
+	return string.find(name, "CompactParty") ~= nil or string.find(name, "CompactRaid") ~= nil
+end
+
+local function OnCufUpdateVisible(frame)
+	local header = headers[frame]
+
+	if not header then
+		return
+	end
+
+	scheduler:RunWhenCombatEnds(function()
+		if frame:IsVisible() then
+			header:Show()
+		else
+			header:Hide()
+		end
+	end)
 end
 
 local function OnCufLoad(frame)
@@ -384,6 +409,10 @@ end
 
 if CompactUnitFrame_OnLoad then
 	hooksecurefunc("CompactUnitFrame_OnLoad", OnCufLoad)
+end
+
+if CompactUnitFrame_UpdateVisible then
+	hooksecurefunc("CompactUnitFrame_UpdateVisible", OnCufUpdateVisible)
 end
 
 ---@class Addon
