@@ -25,6 +25,7 @@ local dbDefaults = {
 	Version = 3,
 
 	ArenaOnly = false,
+	ExcludePlayer = false,
 
 	SimpleMode = {
 		Enabled = true,
@@ -357,6 +358,21 @@ function M:Init()
 
 	arenaOnlyChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	arenaOnlyChk:SetPoint("TOP", simpleChk, "TOP", 0, 0)
+
+	local excludePlayerChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Exclude player",
+		GetValue = function()
+			return db.ExcludePlayer
+		end,
+		SetValue = function(value)
+			db.ExcludePlayer = value
+			addon:Refresh()
+		end,
+	})
+
+	excludePlayerChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	excludePlayerChk:SetPoint("TOP", simpleChk, "TOP", 0, 0)
 
 	local positionDivider = mini:Divider({
 		Parent = panel,

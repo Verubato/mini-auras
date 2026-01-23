@@ -87,6 +87,13 @@ local function AnchorHeader(header, anchor)
 end
 
 local function ShowHideHeader(header, anchor)
+	local unit = header:GetAttribute("unit")
+
+	if db.ExcludePlayer and unit and UnitIsUnit(unit, "player") then
+		header:Hide()
+		return
+	end
+
 	if db.ArenaOnly then
 		if IsArena() and anchor:IsVisible() then
 			header:Show()
