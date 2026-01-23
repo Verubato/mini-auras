@@ -2,6 +2,7 @@
 local addonName, addon = ...
 local maxAuras = 40
 local headerId = 1
+local LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
 
 ---@class AurasModule
 local M = {}
@@ -10,6 +11,7 @@ addon.Auras = M
 local function OnHeaderEvent(header, event, arg1)
 	local unit = header:GetAttribute("unit")
 	local filter = header:GetAttribute("filter")
+	local glow = header:GetAttribute("x-glow") or false
 
 	if not unit then
 		return
@@ -60,14 +62,38 @@ local function OnHeaderEvent(header, event, arg1)
 			if start and duration then
 				cooldown:SetCooldown(start, duration)
 				cooldown:Show()
+
+				if LCG then
+					if glow then
+						LCG.ProcGlow_Start(child, {
+							-- don't flash at the start
+							startAnim = false,
+						})
+
+						-- this is where LibCustomGlow stores it's frame
+						local procGlow = child._ProcGlow
+						procGlow:SetAlphaFromBoolean(isCC)
+					else
+						-- they may have turned off glow icons option since last time we reached here
+						LCG.ProcGlow_Stop(child)
+					end
+				end
 			else
 				cooldown:Hide()
 				cooldown:SetCooldown(0, 0)
+
+				if LCG then
+					LCG.ProcGlow_Stop(child)
+				end
 			end
 
 			cooldown:SetAlphaFromBoolean(isCC)
 		else
 			icon:Hide()
+
+			if LCG then
+				LCG.ProcGlow_Stop(child)
+			end
 		end
 	end
 end
@@ -108,6 +134,7 @@ local function UpdateHeader(header, unit, options)
 
 	header:SetAttribute("unit", unit)
 	header:SetAttribute("x-iconSize", iconSize)
+	header:SetAttribute("x-glow", options.Glow)
 
 	-- refresh any icon sizes that may have changed
 	RefreshHeaderChildSizes(header, options)

@@ -44,15 +44,7 @@ local dbDefaults = {
 	---@class IconOptions
 	Icons = {
 		Size = 72,
-	},
-
-	Container = {
-		Point = "TOPLEFT",
-		RelativePoint = "TOPRIGHT",
-		Offset = {
-			X = 2,
-			Y = 0,
-		},
+		Glow = true,
 	},
 
 	Anchor1 = "CompactPartyFrameMember1",
@@ -146,7 +138,7 @@ local function BuildAdvancedMode(parent)
 			return db.AdvancedMode.Offset.X
 		end,
 		SetValue = function(v)
-			db.AdvancedMode.Offset.X = mini:ClampInt(v, -50, 50, dbDefaults.Container.Offset.X)
+			db.AdvancedMode.Offset.X = mini:ClampInt(v, -50, 50, dbDefaults.AdvancedMode.Offset.X)
 			ApplySettings()
 		end,
 	})
@@ -164,7 +156,7 @@ local function BuildAdvancedMode(parent)
 			return db.AdvancedMode.Offset.Y
 		end,
 		SetValue = function(v)
-			db.AdvancedMode.Offset.Y = mini:ClampInt(v, -200, 200, dbDefaults.Container.Offset.Y)
+			db.AdvancedMode.Offset.Y = mini:ClampInt(v, -200, 200, dbDefaults.AdvancedMode.Offset.Y)
 			ApplySettings()
 		end,
 	})
@@ -333,6 +325,21 @@ function M:Init()
 	})
 
 	simpleChk:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", -4, -verticalSpacing)
+
+	local glowChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Glow icons",
+		GetValue = function()
+			return db.Icons.Glow
+		end,
+		SetValue = function(value)
+			db.Icons.Glow = value
+			addon:Refresh()
+		end,
+	})
+
+	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	glowChk:SetPoint("TOP", simpleChk, "TOP", 0, 0)
 
 	local positionDivider = mini:Divider({
 		Parent = panel,

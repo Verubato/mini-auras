@@ -238,6 +238,16 @@ local function RealMode()
 		else
 			header:Hide()
 		end
+
+		local unit = header:GetAttribute("unit") or anchor.unit or anchor:GetAttribute("unit")
+
+		-- refresh header options and anchors
+		if unit then
+			-- refreshing options
+			auras:UpdateHeader(header, unit, db.Icons)
+		end
+
+		AnchorHeader(header, anchor)
 	end
 
 	for _, testHeader in pairs(testHeaders) do
