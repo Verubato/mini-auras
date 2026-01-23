@@ -322,6 +322,10 @@ local function TestMode()
 end
 
 local function IsFriendlyCuf(frame)
+	if frame:IsForbidden() then
+		return false
+	end
+
 	local name = frame:GetName()
 
 	if not name then
