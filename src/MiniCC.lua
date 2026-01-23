@@ -21,6 +21,11 @@ local testSpells = {
 	408,
 }
 
+local function IsArena()
+	local inInstance, instanceType = IsInInstance()
+	return inInstance and instanceType == "arena"
+end
+
 local function GetDefaultAnchor(i)
 	local party = _G["CompactPartyFrameMember" .. i]
 
@@ -81,6 +86,24 @@ local function AnchorHeader(header, anchor)
 	end
 end
 
+local function ShowHideHeader(header, anchor)
+	if db.ArenaOnly then
+		if IsArena() and anchor:IsVisible() then
+			header:Show()
+		else
+			header:Hide()
+		end
+
+		return
+	end
+
+	if anchor:IsVisible() then
+		header:Show()
+	else
+		header:Hide()
+	end
+end
+
 local function EnsureHeader(anchor, unit)
 	unit = unit or anchor.unit or anchor:GetAttribute("unit")
 
@@ -98,12 +121,7 @@ local function EnsureHeader(anchor, unit)
 	end
 
 	AnchorHeader(header, anchor)
-
-	if anchor:IsVisible() then
-		header:Show()
-	else
-		header:Hide()
-	end
+	ShowHideHeader(header, anchor)
 
 	return header
 end
@@ -233,21 +251,18 @@ end
 
 local function RealMode()
 	for anchor, header in pairs(headers) do
-		if anchor:IsVisible() then
-			header:Show()
-		else
-			header:Hide()
-		end
-
 		local unit = header:GetAttribute("unit") or anchor.unit or anchor:GetAttribute("unit")
 
-		-- refresh header options and anchors
 		if unit then
-			-- refreshing options
+			-- refresh options
 			auras:UpdateHeader(header, unit, db.Icons)
 		end
 
+		-- refresh anchor
 		AnchorHeader(header, anchor)
+
+		-- refresh visibility
+		ShowHideHeader(header, anchor)
 	end
 
 	for _, testHeader in pairs(testHeaders) do
@@ -324,11 +339,7 @@ local function OnCufUpdateVisible(frame)
 	end
 
 	scheduler:RunWhenCombatEnds(function()
-		if frame:IsVisible() then
-			header:Show()
-		else
-			header:Hide()
-		end
+		ShowHideHeader(header, frame)
 	end)
 end
 

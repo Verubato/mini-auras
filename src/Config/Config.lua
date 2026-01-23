@@ -24,6 +24,8 @@ local db
 local dbDefaults = {
 	Version = 3,
 
+	ArenaOnly = false,
+
 	SimpleMode = {
 		Enabled = true,
 		Offset = {
@@ -340,6 +342,21 @@ function M:Init()
 
 	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	glowChk:SetPoint("TOP", simpleChk, "TOP", 0, 0)
+
+	local arenaOnlyChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Arena only",
+		GetValue = function()
+			return db.ArenaOnly
+		end,
+		SetValue = function(value)
+			db.ArenaOnly = value
+			addon:Refresh()
+		end,
+	})
+
+	arenaOnlyChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	arenaOnlyChk:SetPoint("TOP", simpleChk, "TOP", 0, 0)
 
 	local positionDivider = mini:Divider({
 		Parent = panel,
