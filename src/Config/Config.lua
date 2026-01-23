@@ -68,12 +68,10 @@ local M = {
 addon.Config = M
 
 local function GetAndUpgradeDb()
-	local firstInit = MiniMarkersDB == nil
 	local vars = mini:GetSavedVars(dbDefaults)
 
-	if not firstInit then
-		-- advanced mode was the default in the first version
-		vars.SimpleMode.Enabled = false
+	if not vars.Version or vars.Version == 1 then
+		vars.SimpleMode.Enabled = true
 		vars.Version = 2
 	end
 
