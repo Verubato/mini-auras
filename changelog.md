@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0
+
+- Added icon glow.
+- Added support for raid frames.
+- Added exclude player option.
+
 ## 1.2.0
 
 - Removed the cooldown edge swipe as it doesn't look great with overlapping cc's.
