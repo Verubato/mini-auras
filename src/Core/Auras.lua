@@ -107,15 +107,6 @@ local function UpdateHeader(header, unit, options)
 	local iconSize = tonumber(options.Size) or 32
 
 	header:SetAttribute("unit", unit)
-	header:SetAttribute("filter", "HARMFUL|INCLUDE_NAME_PLATE_ONLY")
-	-- have all icons overlap themselves, and then only the visible on is shown
-	-- genius right?
-	header:SetAttribute("xOffset", 0)
-	header:SetAttribute("yOffset", 0)
-	header:SetAttribute("wrapAfter", 40)
-	header:SetAttribute("maxWraps", 1)
-	header:SetAttribute("wrapXOffset", 0)
-	header:SetAttribute("wrapYOffset", 0)
 	header:SetAttribute("x-iconSize", iconSize)
 
 	-- refresh any icon sizes that may have changed
@@ -126,12 +117,20 @@ local function CreateSecureHeader()
 	local header = CreateFrame("Frame", addonName .. "SecureHeader" .. headerId, UIParent, "SecureAuraHeaderTemplate")
 
 	header:SetAttribute("template", "MiniCCAuraButtonTemplate")
-	header:SetAttribute("point", "TOPLEFT")
+	header:SetAttribute("filter", "HARMFUL|INCLUDE_NAME_PLATE_ONLY")
 	header:SetAttribute("sortMethod", "TIME")
 	header:SetAttribute("sortDirection", "-")
+	header:SetAttribute("point", "TOPLEFT")
 	header:SetAttribute("minWidth", 1)
 	header:SetAttribute("minHeight", 1)
-
+	-- have all icons overlap themselves, and then only the visible on is shown
+	-- genius right?
+	header:SetAttribute("xOffset", 0)
+	header:SetAttribute("yOffset", 0)
+	header:SetAttribute("wrapAfter", 40)
+	header:SetAttribute("maxWraps", 1)
+	header:SetAttribute("wrapXOffset", 0)
+	header:SetAttribute("wrapYOffset", 0)
 	header:SetAttribute(
 		"initialConfigFunction",
 		[[
