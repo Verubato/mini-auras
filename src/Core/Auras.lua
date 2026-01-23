@@ -104,7 +104,7 @@ end
 ---@param header table
 ---@param options IconOptions
 local function UpdateHeader(header, unit, options)
-	local iconSize = tonumber(options.Size) or 32
+	local iconSize = options and tonumber(options.Size) or 32
 
 	header:SetAttribute("unit", unit)
 	header:SetAttribute("x-iconSize", iconSize)
