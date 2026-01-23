@@ -1,5 +1,5 @@
+---@type string, Addon
 local addonName, addon = ...
----@type MiniFramework
 local mini = addon.Framework
 local dropdownWidth = 200
 local anchorPoints = {
@@ -42,6 +42,7 @@ local dbDefaults = {
 		},
 	},
 
+	---@class IconOptions
 	Icons = {
 		Size = 72,
 		Padding = {
@@ -64,6 +65,7 @@ local dbDefaults = {
 	Anchor3 = "CompactPartyFrameMember3",
 }
 
+---@class Config
 local M = {
 	DbDefaults = dbDefaults,
 }

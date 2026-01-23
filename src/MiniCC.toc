@@ -7,7 +7,9 @@
 ## IconTexture: Interface\AddOns\MiniCC\Icon.blp
 ## X-Curse-Project-ID: 1439482
 
-MiniFramework.lua
-Config.lua
+Core\MiniFramework.lua
+Core\Auras.lua
+Core\Scheduler.lua
+Config\Config.lua
 MiniCC.xml
 MiniCC.lua
