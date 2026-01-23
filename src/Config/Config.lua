@@ -294,7 +294,7 @@ function M:Init()
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"Highly experimental addon for Midnight that shows CC on your party frames.",
+			"Highly experimental addon for Midnight that shows CC on party/raid frames.",
 			"Any feedback is more than welcome!",
 		},
 	})
