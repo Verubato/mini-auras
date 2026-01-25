@@ -12,6 +12,7 @@ local testHeaders = {}
 local testPartyFrames = {}
 local testMode = false
 local maxTestFrames = 3
+local LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
 ---@type Db
 local db
 ---@type Db
@@ -306,6 +307,19 @@ local function UpdateTestHeader(frame)
 	-- Hide any extra buttons we previously created but no longer need
 	for i = maxIcons + 1, #frame.icons do
 		frame.icons[i]:Hide()
+	end
+
+	-- glow icons
+	if LCG then
+		for _, icon in ipairs(frame.icons) do
+			if db.Icons.Glow then
+				LCG.ProcGlow_Start(icon, {
+					startAnim = false,
+				})
+			else
+				LCG.ProcGlow_Stop(icon)
+			end
+		end
 	end
 
 	local width = (cols * size) + ((cols - 1) * padX)
