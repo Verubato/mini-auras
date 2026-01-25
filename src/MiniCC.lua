@@ -26,6 +26,18 @@ local function IsArena()
 	return inInstance and instanceType == "arena"
 end
 
+local function IsPet(unit)
+	if UnitIsUnit(unit, "pet") then
+		return true
+	end
+
+	if UnitIsOtherPlayersPet(unit) then
+		return true
+	end
+
+	return false
+end
+
 local function GetDefaultAnchor(i)
 	local party = _G["CompactPartyFrameMember" .. i]
 
@@ -90,6 +102,11 @@ local function ShowHideHeader(header, anchor)
 	local unit = header:GetAttribute("unit")
 
 	if db.ExcludePlayer and unit and UnitIsUnit(unit, "player") then
+		header:Hide()
+		return
+	end
+
+	if IsPet(unit) then
 		header:Hide()
 		return
 	end
@@ -354,18 +371,16 @@ local function OnCufUpdateVisible(frame)
 	end)
 end
 
-local function OnCufLoad(frame)
+local function OnCufSetUnit(frame, unit)
 	if not frame or not IsFriendlyCuf(frame) then
 		return
 	end
 
-	scheduler:RunWhenCombatEnds(function()
-		EnsureHeader(frame)
-	end)
-end
+	if not unit then
+		return
+	end
 
-local function OnCufSetUnit(frame, unit)
-	if not frame or not IsFriendlyCuf(frame) then
+	if IsPet(unit) then
 		return
 	end
 
@@ -437,10 +452,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 
 if CompactUnitFrame_SetUnit then
 	hooksecurefunc("CompactUnitFrame_SetUnit", OnCufSetUnit)
-end
-
-if CompactUnitFrame_OnLoad then
-	hooksecurefunc("CompactUnitFrame_OnLoad", OnCufLoad)
 end
 
 if CompactUnitFrame_UpdateVisible then

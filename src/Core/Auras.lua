@@ -113,9 +113,9 @@ local function RefreshHeaderChildSizes(header, options)
 
 		child:SetSize(iconSize, iconSize)
 
-		-- make sure any custom texture stays correct
-		if child.Texture then
-			child.Texture:SetAllPoints(child)
+		-- make sure the icon size stays correct
+		if child.Icon then
+			child.Icon:SetAllPoints(child)
 		end
 
 		-- keep cooldown filling the button
