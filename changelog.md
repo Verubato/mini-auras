@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.0
+
+- Added support for Danders Frames and Grid2.
+- Icons now glow in test mode.
+
 ## 1.4.0
 
 Fixed CC showing on pet frames.
