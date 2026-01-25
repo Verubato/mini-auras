@@ -2,7 +2,7 @@
 ## Title: MiniCC
 ## Notes: Shows CC on party/raid frames.
 ## Author: Verz
-## Version: 1.3.0
+## Version: 1.4.0
 ## SavedVariables: MiniCCDB
 ## IconTexture: Interface\AddOns\MiniCC\Icon.blp
 ## X-Curse-Project-ID: 1439482

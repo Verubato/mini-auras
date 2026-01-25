@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.0
+
+Fixed CC showing on pet frames.
+
 ## 1.3.0
 
 - Added icon glow.
