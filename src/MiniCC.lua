@@ -39,21 +39,43 @@ local function IsPet(unit)
 	return false
 end
 
-local function GetDandersFrame(i)
+local function GetDandersFrames(i)
 	if not DandersFrames or not DandersFrames.Api or not DandersFrames.Api.GetFrameForUnit then
 		return nil
 	end
 
-	local unit
-	local kind = IsInRaid() and "raid" or "party"
-
 	if i == 0 then
-		unit = "player"
-	else
-		unit = kind .. i
+		local raid = DandersFrames.Api.GetFrameForUnit("player", "raid")
+
+		if raid and raid:IsVisible() then
+			return raid
+		end
+
+		local party = DandersFrames.Api.GetFrameForUnit("player", "party")
+
+		if party and party:IsVisible() then
+			return party
+		end
+
+		return nil
 	end
 
-	return DandersFrames.Api.GetFrameForUnit(unit, kind)
+	if i > 0 and i <= (MAX_PARTY_MEMBERS or 4) then
+		-- sometimes party frames are shown in raids, e.g. in arena
+		local party = DandersFrames.Api.GetFrameForUnit("party" .. i, "party")
+
+		if party and party:IsVisible() then
+			return party
+		end
+	end
+
+	local raid = DandersFrames.Api.GetFrameForUnit("raid" .. i, "raid")
+
+	if raid and raid:IsVisible() then
+		return raid
+	end
+
+	return nil
 end
 
 local function GetGrid2Frame(i)
@@ -75,7 +97,7 @@ local function GetGrid2Frame(i)
 	if frames then
 		local frame = next(frames)
 
-		if frame then
+		if frame and frame:IsVisible() then
 			return frame
 		end
 	end
@@ -83,43 +105,57 @@ local function GetGrid2Frame(i)
 	return nil
 end
 
-local function GetAnchors(i)
-	local anchors = {}
-	local danders = GetDandersFrame(i)
+local function GetBlizzardFrame(i)
+	local raid = i > 0 and _G["CompactRaidFrame" .. i]
 
-	if danders and danders:IsVisible() then
-		anchors[#anchors + 1] = danders
-	end
-
-	local grid2 = GetGrid2Frame(i)
-
-	if grid2 and grid2:IsVisible() then
-		anchors[#anchors + 1] = grid2
+	if raid and raid:IsVisible() then
+		return raid
 	end
 
 	local party = i > 0 and _G["CompactPartyFrameMember" .. i]
 
 	if party and party:IsVisible() then
-		anchors[#anchors + 1] = party
+		return party
 	end
 
-	local raid = i > 0 and _G["CompactRaidFrame" .. i]
+	return nil
+end
 
-	if raid and raid:IsVisible() then
-		anchors[#anchors + 1] = raid
+local function GetAnchors(i)
+	local anchors = {}
+	local danders = GetDandersFrames(i)
+
+	if danders then
+		anchors[#anchors + 1] = danders
 	end
 
-	if i > 0 then
-		local anchor = db["Anchor" .. i]
+	local grid2 = GetGrid2Frame(i)
 
-		if anchor and anchor ~= "" then
-			local frame = _G[anchor]
+	if grid2 then
+		anchors[#anchors + 1] = grid2
+	end
 
-			if not frame then
-				mini:Notify("Bad anchor%d: '%s'.", i, anchor)
+	-- danders doesn't hide blizzard frames, but rather sets the alpha to 0 using a secret value
+	-- so just assume if danders or grid2 is enabled that they don't want blizzard anchors
+	if not danders and not grid2 then
+		local blizzard = GetBlizzardFrame(i)
+
+		if blizzard then
+			anchors[#anchors + 1] = blizzard
+		end
+
+		if i > 0 then
+			local anchor = db["Anchor" .. i]
+
+			if anchor and anchor ~= "" then
+				local frame = _G[anchor]
+
+				if not frame then
+					mini:Notify("Bad anchor%d: '%s'.", i, anchor)
+				end
+
+				anchors[#anchors + 1] = frame
 			end
-
-			anchors[#anchors + 1] = frame
 		end
 	end
 
@@ -198,7 +234,7 @@ local function EnsureHeader(anchor, unit)
 	return header
 end
 
-local function EnsureCustomHeaders()
+local function EnsureHeaderss()
 	-- for any custom anchors the user may have configured
 	-- 0 = player
 	-- 1 = party1
@@ -480,7 +516,7 @@ local function OnAddonLoaded()
 
 	db = mini:GetSavedVars()
 
-	EnsureCustomHeaders()
+	EnsureHeaderss()
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
@@ -497,7 +533,7 @@ function addon:Refresh()
 		return
 	end
 
-	EnsureCustomHeaders()
+	EnsureHeaderss()
 
 	if testMode then
 		TestMode()
