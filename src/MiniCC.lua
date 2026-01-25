@@ -38,48 +38,91 @@ local function IsPet(unit)
 	return false
 end
 
-local function GetDefaultAnchor(i)
-	local party = _G["CompactPartyFrameMember" .. i]
+local function GetDandersFrame(i)
+	if not DandersFrames or not DandersFrames.Api or not DandersFrames.Api.GetFrameForUnit then
+		return nil
+	end
+
+	local unit
+	local kind = IsInRaid() and "raid" or "party"
+
+	if i == 0 then
+		unit = "player"
+	else
+		unit = kind .. i
+	end
+
+	return DandersFrames.Api.GetFrameForUnit(unit, kind)
+end
+
+local function GetGrid2Frame(i)
+	if not Grid2 or not Grid2.GetUnitFrames then
+		return nil
+	end
+
+	local unit
+	local kind = IsInRaid() and "raid" or "party"
+
+	if i == 0 then
+		unit = "player"
+	else
+		unit = kind .. i
+	end
+
+	local frames = Grid2:GetUnitFrames(unit)
+
+	if frames then
+		local frame = next(frames)
+
+		if frame then
+			return frame
+		end
+	end
+
+	return nil
+end
+
+local function GetAnchors(i)
+	local anchors = {}
+	local danders = GetDandersFrame(i)
+
+	if danders and danders:IsVisible() then
+		anchors[#anchors + 1] = danders
+	end
+
+	local grid2 = GetGrid2Frame(i)
+
+	if grid2 and grid2:IsVisible() then
+		anchors[#anchors + 1] = grid2
+	end
+
+	local party = i > 0 and _G["CompactPartyFrameMember" .. i]
 
 	if party and party:IsVisible() then
-		return party
+		anchors[#anchors + 1] = party
 	end
 
-	local raid = _G["CompactRaidFrame" .. i]
+	local raid = i > 0 and _G["CompactRaidFrame" .. i]
 
 	if raid and raid:IsVisible() then
-		return raid
+		anchors[#anchors + 1] = raid
 	end
 
-	-- default to party, even when invisible
-	return party
-end
+	if i > 0 then
+		local anchor = db["Anchor" .. i]
 
-local function GetOverrideAnchor(i)
-	local anchor = db["Anchor" .. i]
+		if anchor and anchor ~= "" then
+			local frame = _G[anchor]
 
-	if not anchor then
-		return nil
+			if not frame then
+				mini:Notify("Bad anchor%d: '%s'.", i, anchor)
+			end
+
+			anchors[#anchors + 1] = frame
+		end
 	end
 
-	local frame = _G[anchor]
-
-	if not frame then
-		mini:Notify("Bad anchor '%s' for party%d.", anchor, i)
-		return nil
-	end
-
-	return frame
-end
-
-local function GetAnchor(i)
-	local anchor = GetOverrideAnchor(i)
-
-	if anchor and anchor:IsVisible() then
-		return anchor
-	end
-
-	return GetDefaultAnchor(i)
+	return anchors
 end
 
 local function AnchorHeader(header, anchor)
@@ -96,6 +139,10 @@ local function AnchorHeader(header, anchor)
 			db.AdvancedMode.Offset.Y
 		)
 	end
+
+	-- raise above the anchor
+	header:SetFrameLevel(anchor:GetFrameLevel() + 1)
+	header:SetFrameStrata("HIGH")
 end
 
 local function ShowHideHeader(header, anchor)
@@ -152,13 +199,17 @@ end
 
 local function EnsureCustomHeaders()
 	-- for any custom anchors the user may have configured
-	local index = 1
-	local anchor = GetOverrideAnchor(index)
+	-- 0 = player
+	-- 1 = party1
+	-- 40 = raid40
+	for i = 0, MAX_RAID_MEMBERS or 40 do
+		local anchors = GetAnchors(i)
 
-	while anchor do
-		EnsureHeader(anchor)
-		index = index + 1
-		anchor = GetOverrideAnchor(index)
+		if anchors then
+			for _, anchor in ipairs(anchors) do
+				EnsureHeader(anchor)
+			end
+		end
 	end
 end
 
@@ -198,7 +249,9 @@ local function EnsureTestPartyFrames()
 			frame = testPartyFrames[i]
 		end
 
-		local anchor = GetAnchor(i)
+		local anchors = GetAnchors(i)
+		local anchor = #anchors > 0 and anchors[1] or nil
+
 		frame:ClearAllPoints()
 
 		if anchor and anchor:GetWidth() > 0 and anchor:GetHeight() > 0 then
