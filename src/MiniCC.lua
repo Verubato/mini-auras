@@ -8,6 +8,7 @@ local config = addon.Config
 local eventsFrame
 ---@type { table: table }
 local headers = {}
+local testContainer
 ---@type { table: table }
 local testHeaders = {}
 local testPartyFrames = {}
@@ -40,30 +41,30 @@ local function IsPet(unit)
 	return false
 end
 
-local function GetAnchors(i)
+local function GetAnchors(i, visibleOnly)
 	local anchors = {}
 	local danders = frames:GetDandersFrames(i)
 
-	if danders then
+	if danders and (danders:IsVisible() or not visibleOnly) then
 		anchors[#anchors + 1] = danders
 	end
 
 	local grid2 = frames:GetGrid2Frame(i)
 
-	if grid2 then
+	if grid2 and (grid2:IsVisible() or not visibleOnly) then
 		anchors[#anchors + 1] = grid2
 	end
 
 	local elvui = frames:GetElvUIFrame(i)
 
-	if elvui then
+	if elvui and (elvui:IsVisible() or not visibleOnly) then
 		anchors[#anchors + 1] = elvui
 	end
 
 	-- it's possible blizzard are still shown alongside the other addons
 	local blizzard = frames:GetBlizzardFrame(i)
 
-	if blizzard then
+	if blizzard and (blizzard:IsVisible() or not visibleOnly) then
 		anchors[#anchors + 1] = blizzard
 	end
 
@@ -75,9 +76,9 @@ local function GetAnchors(i)
 
 			if not frame then
 				mini:Notify("Bad anchor%d: '%s'.", i, anchor)
+			elseif frame:IsVisible() or not visibleOnly then
+				anchors[#anchors + 1] = frame
 			end
-
-			anchors[#anchors + 1] = frame
 		end
 	end
 
@@ -175,7 +176,7 @@ local function EnsureHeaderss()
 	-- 1 = party1
 	-- 40 = raid40
 	for i = 0, MAX_RAID_MEMBERS or 40 do
-		local anchors = GetAnchors(i)
+		local anchors = GetAnchors(i, true)
 
 		if anchors then
 			for _, anchor in ipairs(anchors) do
@@ -186,7 +187,7 @@ local function EnsureHeaderss()
 end
 
 local function CreateTestFrame(i)
-	local frame = CreateFrame("Frame", addonName .. "TestFrame" .. i, UIParent, "BackdropTemplate")
+	local frame = CreateFrame("Frame", addonName .. "TestFrame" .. i, testContainer, "BackdropTemplate")
 
 	-- same as the max blizzard party frames size
 	frame:SetSize(144, 72)
@@ -213,6 +214,33 @@ local function CreateTestFrame(i)
 end
 
 local function EnsureTestPartyFrames()
+	if not testContainer then
+		testContainer = CreateFrame("Frame", addonName .. "TestContainer")
+		testContainer:SetClampedToScreen(true)
+		testContainer:EnableMouse(true)
+		testContainer:SetMovable(true)
+		testContainer:RegisterForDrag("LeftButton")
+		testContainer:SetScript("OnDragStart", function(self)
+			self:StartMoving()
+		end)
+		testContainer:SetScript("OnDragStop", function(self)
+			self:StopMovingOrSizing()
+		end)
+		testContainer:Show()
+
+		local xOffset = -450
+		local yOffset = 0
+
+		-- it's too complicated to try and anchor over the top of real frame positions
+		-- as with various addons the real frames will be hidden and moved to off screen positions
+		-- so just use a fixed position
+		testContainer:SetPoint("CENTER", UIParent, "CENTER", xOffset, yOffset)
+	end
+
+	local width = 144
+	local height = 72
+	local padding = 10
+
 	for i = 1, maxTestFrames do
 		local frame = testPartyFrames[i]
 
@@ -221,23 +249,12 @@ local function EnsureTestPartyFrames()
 			frame = testPartyFrames[i]
 		end
 
-		local anchors = GetAnchors(i)
-		local anchor = #anchors > 0 and anchors[1] or nil
-
 		frame:ClearAllPoints()
-
-		if anchor and anchor:GetWidth() > 0 and anchor:GetHeight() > 0 then
-			-- sit directly on top of Blizzard frames
-			frame:SetAllPoints(anchor)
-
-			-- try to keep it above the real frame
-			frame:SetFrameStrata(anchor:GetFrameStrata() or "DIALOG")
-			frame:SetFrameLevel((anchor:GetFrameLevel() or 0) + 10)
-		else
-			frame:SetSize(144, 72)
-			frame:SetPoint("CENTER", UIParent, "CENTER", 300, -i * frame:GetHeight())
-		end
+		frame:SetSize(width, height)
+		frame:SetPoint("TOP", testContainer, "TOP", 0, (i - 1) * -frame:GetHeight() - padding)
 	end
+
+	testContainer:SetSize(width + padding * 2, height * maxTestFrames + padding * 2)
 end
 
 local function UpdateTestHeader(frame)
@@ -373,7 +390,9 @@ local function TestMode()
 			AnchorHeader(testHeader, testPartyFrame)
 
 			testHeader:Show()
+			testHeader:SetAlpha(1)
 			testPartyFrame:Show()
+
 			anchor, testHeader = next(testHeaders, anchor)
 		end
 	end

@@ -14,12 +14,7 @@ function M:GetBlizzardFrame(i)
 	end
 
 	local party = i > 0 and _G["CompactPartyFrameMember" .. i]
-
-	if party and party:IsVisible() then
-		return party
-	end
-
-	return nil
+	return party
 end
 
 function M:GetDandersFrames(i)
@@ -35,30 +30,21 @@ function M:GetDandersFrames(i)
 		end
 
 		local party = DandersFrames.Api.GetFrameForUnit("player", "party")
-
-		if party and party:IsVisible() then
-			return party
-		end
-
-		return nil
+		return party
 	end
 
 	if i > 0 and i <= (MAX_PARTY_MEMBERS or 4) then
 		-- sometimes party frames are shown in raids, e.g. in arena
 		local party = DandersFrames.Api.GetFrameForUnit("party" .. i, "party")
 
-		if party and party:IsVisible() then
+		if party then
 			return party
 		end
 	end
 
 	local raid = DandersFrames.Api.GetFrameForUnit("raid" .. i, "raid")
 
-	if raid and raid:IsVisible() then
-		return raid
-	end
-
-	return nil
+	return raid
 end
 
 function M:GetGrid2Frame(i)
@@ -79,10 +65,7 @@ function M:GetGrid2Frame(i)
 
 	if frames then
 		local frame = next(frames)
-
-		if frame and frame:IsVisible() then
-			return frame
-		end
+		return frame
 	end
 
 	return nil
@@ -127,19 +110,11 @@ function M:GetElvUIFrame(i)
 
 					for _, child in ipairs(children) do
 						if child.unit == unit then
-							if child:IsVisible() then
-								return child
-							else
-								return nil
-							end
+							return child
 						end
 					end
 				elseif frame.unit == unit then
-					if frame:IsVisible() then
-						return frame
-					else
-						return nil
-					end
+					return frame
 				end
 			end
 		end
