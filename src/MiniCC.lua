@@ -104,28 +104,33 @@ local function AnchorHeader(header, anchor)
 	header:SetFrameStrata("HIGH")
 end
 
-local function ShowHideHeader(header, anchor)
+local function ShowHideHeader(header, anchor, isTest)
 	local unit = header:GetAttribute("unit")
 
-	if db.ExcludePlayer and unit and UnitIsUnit(unit, "player") then
-		header:Hide()
-		return
-	end
+	-- unit is an empty string for test headers
+	if not isTest and unit and unit ~= "" then
+		if db.ExcludePlayer and UnitIsUnit(unit, "player") then
+			header:Hide()
+			return
+		end
 
-	if IsPet(unit) then
-		header:Hide()
-		return
+		if IsPet(unit) then
+			header:Hide()
+			return
+		end
 	end
 
 	-- danders doesn't hide blizzard frames, but rather sets the alpha to 0 using a secret value
 	local alpha = anchor:GetAlpha()
-	if mini:IsSecret(alpha) or alpha == 0 then
-		header:Hide()
+	if mini:IsSecret(alpha) and anchor:IsVisible() then
+		header:SetAlpha(alpha)
+		header:Show()
 		return
 	end
 
-	if db.ArenaOnly then
+	if not isTest and db.ArenaOnly then
 		if IsArena() and anchor:IsVisible() then
+			header:SetAlpha(1)
 			header:Show()
 		else
 			header:Hide()
@@ -135,6 +140,7 @@ local function ShowHideHeader(header, anchor)
 	end
 
 	if anchor:IsVisible() then
+		header:SetAlpha(1)
 		header:Show()
 	else
 		header:Hide()
@@ -341,13 +347,9 @@ local function TestMode()
 	for anchor, _ in pairs(headers) do
 		local testHeader = EnsureTestHeader(anchor)
 
-		if anchor and anchor:IsVisible() then
-			anyRealShown = true
-
-			AnchorHeader(testHeader, anchor)
-
-			testHeader:Show()
-		end
+		AnchorHeader(testHeader, anchor)
+		ShowHideHeader(testHeader, anchor, true)
+		anyRealShown = anyRealShown or testHeader:IsVisible()
 	end
 
 	if anyRealShown then
