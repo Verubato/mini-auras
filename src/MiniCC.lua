@@ -105,6 +105,66 @@ local function GetGrid2Frame(i)
 	return nil
 end
 
+local function GetElvUIFrame(i)
+	if not ElvUI then
+		return
+	end
+
+	---@diagnostic disable-next-line: deprecated
+	local E = unpack(ElvUI)
+
+	if not E then
+		return nil
+	end
+
+	local UF = E:GetModule("UnitFrames")
+
+	if not UF then
+		return nil
+	end
+
+	local unit
+	if i == 0 then
+		unit = "player"
+	elseif IsInRaid() then
+		unit = "raid" .. i
+	else
+		unit = "party" .. i
+	end
+
+	for groupName in pairs(UF.headers) do
+		local group = UF[groupName]
+		if group and group.GetChildren then
+			local groupFrames = { group:GetChildren() }
+
+			for _, frame in ipairs(groupFrames) do
+				-- is this a unit frame or a subgroup?
+				if not frame.Health then
+					local children = { frame:GetChildren() }
+
+					for _, child in ipairs(children) do
+						if child.unit == unit then
+							if child:IsVisible() then
+								return child
+							else
+								return nil
+							end
+						end
+					end
+				elseif frame.unit == unit then
+					if frame:IsVisible() then
+						return frame
+					else
+						return nil
+					end
+				end
+			end
+		end
+	end
+
+	return nil
+end
+
 local function GetBlizzardFrame(i)
 	local raid = i > 0 and _G["CompactRaidFrame" .. i]
 
@@ -135,26 +195,30 @@ local function GetAnchors(i)
 		anchors[#anchors + 1] = grid2
 	end
 
-	-- so just assume if danders or grid2 is enabled that they don't want blizzard anchors
-	if not danders and not grid2 then
-		local blizzard = GetBlizzardFrame(i)
+	local elvui = GetElvUIFrame(i)
 
-		if blizzard then
-			anchors[#anchors + 1] = blizzard
-		end
+	if elvui then
+		anchors[#anchors + 1] = elvui
+	end
 
-		if i > 0 then
-			local anchor = db["Anchor" .. i]
+	-- it's possible blizzard is still shown alongside the other addons
+	local blizzard = GetBlizzardFrame(i)
 
-			if anchor and anchor ~= "" then
-				local frame = _G[anchor]
+	if blizzard then
+		anchors[#anchors + 1] = blizzard
+	end
 
-				if not frame then
-					mini:Notify("Bad anchor%d: '%s'.", i, anchor)
-				end
+	if i > 0 then
+		local anchor = db["Anchor" .. i]
 
-				anchors[#anchors + 1] = frame
+		if anchor and anchor ~= "" then
+			local frame = _G[anchor]
+
+			if not frame then
+				mini:Notify("Bad anchor%d: '%s'.", i, anchor)
 			end
+
+			anchors[#anchors + 1] = frame
 		end
 	end
 

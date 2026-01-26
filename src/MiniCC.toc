@@ -4,6 +4,7 @@
 ## Author: Verz
 ## Version: 1.5.0
 ## SavedVariables: MiniCCDB
+## OptionalDeps: ElvUI, Grid2, DandersFrames
 ## IconTexture: Interface\AddOns\MiniCC\Icon.blp
 ## X-Curse-Project-ID: 1439482
 
