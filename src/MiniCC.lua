@@ -121,22 +121,16 @@ local function ShowHideHeader(header, anchor, isTest)
 		end
 	end
 
+	if not isTest and db.ArenaOnly and not IsArena() then
+		header:Hide()
+		return
+	end
+
 	-- danders doesn't hide blizzard frames, but rather sets the alpha to 0 using a secret value
 	local alpha = anchor:GetAlpha()
 	if mini:IsSecret(alpha) and anchor:IsVisible() then
 		header:SetAlpha(alpha)
 		header:Show()
-		return
-	end
-
-	if not isTest and db.ArenaOnly then
-		if IsArena() and anchor:IsVisible() then
-			header:SetAlpha(1)
-			header:Show()
-		else
-			header:Hide()
-		end
-
 		return
 	end
 
@@ -165,7 +159,7 @@ local function EnsureHeader(anchor, unit)
 	end
 
 	AnchorHeader(header, anchor)
-	ShowHideHeader(header, anchor)
+	ShowHideHeader(header, anchor, false)
 
 	return header
 end
@@ -341,7 +335,7 @@ local function RealMode()
 		AnchorHeader(header, anchor)
 
 		-- refresh visibility
-		ShowHideHeader(header, anchor)
+		ShowHideHeader(header, anchor, false)
 	end
 
 	for _, testHeader in pairs(testHeaders) do
@@ -420,7 +414,7 @@ local function OnCufUpdateVisible(frame)
 	end
 
 	scheduler:RunWhenCombatEnds(function()
-		ShowHideHeader(header, frame)
+		ShowHideHeader(header, frame, false)
 	end)
 end
 
