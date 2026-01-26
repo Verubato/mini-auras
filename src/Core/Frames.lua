@@ -1,128 +1,183 @@
 ---@type string, Addon
 local _, addon = ...
-
+local mini = addon.Framework
+local maxParty = MAX_PARTY_MEMBERS or 4
+local maxRaid = MAX_RAID_MEMBERS or 40
+---@type Db
+local db
 ---@class Frames
 local M = {}
-
 addon.Frames = M
 
-function M:GetBlizzardFrame(i)
-	local raid = i > 0 and _G["CompactRaidFrame" .. i]
+---Retrieves a list of visible Blizzard frames.
+---@return table
+function M:BlizzardFrames()
+	local frames = {}
 
-	if raid and raid:IsVisible() then
-		return raid
+	-- + 1 for player/self
+	for i = 1, maxParty + 1 do
+		local frame = _G["CompactPartyFrameMember" .. i]
+
+		if frame and frame:IsVisible() then
+			frames[#frames + 1] = frame
+		end
 	end
 
-	local party = i > 0 and _G["CompactPartyFrameMember" .. i]
-	return party
+	for i = 1, maxRaid do
+		local frame = _G["CompactRaidFrame" .. i]
+
+		if frame and frame:IsVisible() then
+			frames[#frames + 1] = frame
+		end
+	end
+
+	return frames
 end
 
-function M:GetDandersFrames(i)
+---Retrieves a list of visible DandersFrames frames.
+---@return table
+function M:DandersFrames()
 	if not DandersFrames or not DandersFrames.Api or not DandersFrames.Api.GetFrameForUnit then
-		return nil
+		return {}
 	end
 
-	if i == 0 then
-		local raid = DandersFrames.Api.GetFrameForUnit("player", "raid")
+	local frames = {}
+	local playerParty = DandersFrames.Api.GetFrameForUnit("player", "party")
+	local playerRaid = DandersFrames.Api.GetFrameForUnit("player", "raid")
 
-		if raid and raid:IsVisible() then
-			return raid
+	if playerParty and playerParty:IsVisible() then
+		frames[#frames + 1] = playerParty
+	end
+
+	if playerRaid and playerRaid:IsVisible() then
+		frames[#frames + 1] = playerRaid
+	end
+
+	for i = 1, maxParty do
+		local frame = DandersFrames.Api.GetFrameForUnit("party" .. i, "party")
+
+		if frame and frame:IsVisible() then
+			frames[#frames + 1] = frame
 		end
-
-		local party = DandersFrames.Api.GetFrameForUnit("player", "party")
-		return party
 	end
 
-	if i > 0 and i <= (MAX_PARTY_MEMBERS or 4) then
-		-- sometimes party frames are shown in raids, e.g. in arena
-		local party = DandersFrames.Api.GetFrameForUnit("party" .. i, "party")
+	for i = 1, maxRaid do
+		local frame = DandersFrames.Api.GetFrameForUnit("raid" .. i, "raid")
 
-		if party then
-			return party
+		if frame and frame:IsVisible() then
+			frames[#frames + 1] = frame
 		end
 	end
 
-	return DandersFrames.Api.GetFrameForUnit("raid" .. i, "raid")
+	return frames
 end
 
-function M:GetGrid2Frame(i)
+---Retrieves a list of Grid2 frames.
+---@return table
+function M:Grid2Frames()
 	if not Grid2 or not Grid2.GetUnitFrames then
-		return nil
+		return {}
 	end
 
-	local unit
-	local kind = IsInRaid() and "raid" or "party"
+	local frames = {}
+	local playerFrames = Grid2:GetUnitFrames("player")
+	local playerFrame = playerFrames and next(playerFrames)
 
-	if i == 0 then
-		unit = "player"
-	else
-		unit = kind .. i
+	if playerFrame and playerFrame:IsVisible() then
+		frames[#frames + 1] = playerFrame
 	end
 
-	local frames = Grid2:GetUnitFrames(unit)
+	for i = 1, maxParty do
+		local partyFrames = Grid2:GetUnitFrames("party" .. i)
+		local frame = partyFrames and next(partyFrames)
 
-	if frames then
-		local frame = next(frames)
-		return frame
+		if frame and frame:IsVisible() then
+			frames[#frames + 1] = frame
+		end
 	end
 
-	return nil
+	for i = 1, maxRaid do
+		local raidFrames = Grid2:GetUnitFrames("party" .. i)
+		local frame = raidFrames and next(raidFrames)
+
+		if frame and frame:IsVisible() then
+			frames[#frames + 1] = frame
+		end
+	end
+
+	return frames
 end
 
-function M:GetElvUIFrame(i)
+---Retrieves a list of ElvUI frames.
+---@return table
+function M:ElvUIFrames()
 	if not ElvUI then
-		return
+		return {}
 	end
 
 	---@diagnostic disable-next-line: deprecated
 	local E = unpack(ElvUI)
 
 	if not E then
-		return nil
+		return {}
 	end
 
 	local UF = E:GetModule("UnitFrames")
 
 	if not UF then
-		return nil
+		return {}
 	end
 
-	local function FindUnit(unit)
-		for groupName in pairs(UF.headers) do
-			local group = UF[groupName]
-			if group and group.GetChildren then
-				local groupFrames = { group:GetChildren() }
+	local frames = {}
 
-				for _, frame in ipairs(groupFrames) do
-					-- is this a unit frame or a subgroup?
-					if not frame.Health then
-						local children = { frame:GetChildren() }
+	for groupName in pairs(UF.headers) do
+		local group = UF[groupName]
+		if group and group.GetChildren then
+			local groupFrames = { group:GetChildren() }
 
-						for _, child in ipairs(children) do
-							if child.unit == unit then
-								return child
-							end
+			for _, frame in ipairs(groupFrames) do
+				-- is this a unit frame or a subgroup?
+				if not frame.Health then
+					local children = { frame:GetChildren() }
+
+					for _, child in ipairs(children) do
+						if child.unit and child:IsVisible() then
+							frames[#frames + 1] = child
 						end
-					elseif frame.unit == unit then
-						return frame
 					end
+				elseif frame.unit and frame:IsVisible() then
+					frames[#frames + 1] = frame
 				end
 			end
 		end
 	end
 
-	if i == 0 then
-		return FindUnit("player")
-	end
+	return frames
+end
 
-	if i > 0 and i <= (MAX_PARTY_MEMBERS or 4) then
-		-- sometimes party frames are shown in raids, e.g. in arena
-		local party = FindUnit("party" .. i)
+---Retrieves a list of custom frames from our saved vars.
+---@return table
+function M:CustomFrames()
+	local frames = {}
+	local i = 1
+	local anchor = db["Anchor" .. i]
 
-		if party then
-			return party
+	while anchor and anchor ~= "" do
+		local frame = _G[anchor]
+
+		if not frame then
+			mini:Notify("Bad anchor%d: '%s'.", i, anchor)
+		elseif frame:IsVisible() then
+			frames[#frames + 1] = frame
 		end
+
+		i = i + 1
+		anchor = db["Anchor" .. i]
 	end
 
-	return FindUnit("raid" .. i)
+	return frames
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
 end

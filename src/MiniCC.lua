@@ -29,6 +29,12 @@ local function IsArena()
 	return inInstance and instanceType == "arena"
 end
 
+local function AppendArray(src, dst)
+	for i = 1, #src do
+		dst[#dst + 1] = src[i]
+	end
+end
+
 local function IsPet(unit)
 	if UnitIsUnit(unit, "pet") then
 		return true
@@ -41,46 +47,19 @@ local function IsPet(unit)
 	return false
 end
 
-local function GetAnchors(i, visibleOnly)
+local function GetAnchors()
 	local anchors = {}
-	local danders = frames:GetDandersFrames(i)
+	local blizzard = frames:BlizzardFrames()
+	local elvui = frames:ElvUIFrames()
+	local grid2 = frames:Grid2Frames()
+	local danders = frames:DandersFrames()
+	local custom = frames:CustomFrames()
 
-	if danders and (danders:IsVisible() or not visibleOnly) then
-		anchors[#anchors + 1] = danders
-	end
-
-	local grid2 = frames:GetGrid2Frame(i)
-
-	if grid2 and (grid2:IsVisible() or not visibleOnly) then
-		anchors[#anchors + 1] = grid2
-	end
-
-	local elvui = frames:GetElvUIFrame(i)
-
-	if elvui and (elvui:IsVisible() or not visibleOnly) then
-		anchors[#anchors + 1] = elvui
-	end
-
-	-- it's possible blizzard are still shown alongside the other addons
-	local blizzard = frames:GetBlizzardFrame(i)
-
-	if blizzard and (blizzard:IsVisible() or not visibleOnly) then
-		anchors[#anchors + 1] = blizzard
-	end
-
-	if i > 0 then
-		local anchor = db["Anchor" .. i]
-
-		if anchor and anchor ~= "" then
-			local frame = _G[anchor]
-
-			if not frame then
-				mini:Notify("Bad anchor%d: '%s'.", i, anchor)
-			elseif frame:IsVisible() or not visibleOnly then
-				anchors[#anchors + 1] = frame
-			end
-		end
-	end
+	AppendArray(blizzard, anchors)
+	AppendArray(elvui, anchors)
+	AppendArray(grid2, anchors)
+	AppendArray(danders, anchors)
+	AppendArray(custom, anchors)
 
 	return anchors
 end
@@ -165,18 +144,10 @@ local function EnsureHeader(anchor, unit)
 end
 
 local function EnsureHeaderss()
-	-- for any custom anchors the user may have configured
-	-- 0 = player
-	-- 1 = party1
-	-- 40 = raid40
-	for i = 0, MAX_RAID_MEMBERS or 40 do
-		local anchors = GetAnchors(i, true)
+	local anchors = GetAnchors()
 
-		if anchors then
-			for _, anchor in ipairs(anchors) do
-				EnsureHeader(anchor)
-			end
-		end
+	for _, anchor in ipairs(anchors) do
+		EnsureHeader(anchor)
 	end
 end
 
@@ -457,6 +428,7 @@ end
 local function OnAddonLoaded()
 	addon.Config:Init()
 	addon.Scheduler:Init()
+	addon.Frames:Init()
 
 	db = mini:GetSavedVars()
 
