@@ -42,9 +42,7 @@ function M:GetDandersFrames(i)
 		end
 	end
 
-	local raid = DandersFrames.Api.GetFrameForUnit("raid" .. i, "raid")
-
-	return raid
+	return DandersFrames.Api.GetFrameForUnit("raid" .. i, "raid")
 end
 
 function M:GetGrid2Frame(i)
@@ -89,36 +87,42 @@ function M:GetElvUIFrame(i)
 		return nil
 	end
 
-	local unit
-	if i == 0 then
-		unit = "player"
-	elseif IsInRaid() then
-		unit = "raid" .. i
-	else
-		unit = "party" .. i
-	end
+	local function FindUnit(unit)
+		for groupName in pairs(UF.headers) do
+			local group = UF[groupName]
+			if group and group.GetChildren then
+				local groupFrames = { group:GetChildren() }
 
-	for groupName in pairs(UF.headers) do
-		local group = UF[groupName]
-		if group and group.GetChildren then
-			local groupFrames = { group:GetChildren() }
+				for _, frame in ipairs(groupFrames) do
+					-- is this a unit frame or a subgroup?
+					if not frame.Health then
+						local children = { frame:GetChildren() }
 
-			for _, frame in ipairs(groupFrames) do
-				-- is this a unit frame or a subgroup?
-				if not frame.Health then
-					local children = { frame:GetChildren() }
-
-					for _, child in ipairs(children) do
-						if child.unit == unit then
-							return child
+						for _, child in ipairs(children) do
+							if child.unit == unit then
+								return child
+							end
 						end
+					elseif frame.unit == unit then
+						return frame
 					end
-				elseif frame.unit == unit then
-					return frame
 				end
 			end
 		end
 	end
 
-	return nil
+	if i == 0 then
+		return FindUnit("player")
+	end
+
+	if i > 0 and i <= (MAX_PARTY_MEMBERS or 4) then
+		-- sometimes party frames are shown in raids, e.g. in arena
+		local party = FindUnit("party" .. i)
+
+		if party then
+			return party
+		end
+	end
+
+	return FindUnit("raid" .. i)
 end
