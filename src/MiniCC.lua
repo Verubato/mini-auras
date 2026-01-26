@@ -135,7 +135,6 @@ local function GetAnchors(i)
 		anchors[#anchors + 1] = grid2
 	end
 
-	-- danders doesn't hide blizzard frames, but rather sets the alpha to 0 using a secret value
 	-- so just assume if danders or grid2 is enabled that they don't want blizzard anchors
 	if not danders and not grid2 then
 		local blizzard = GetBlizzardFrame(i)
@@ -191,6 +190,13 @@ local function ShowHideHeader(header, anchor)
 	end
 
 	if IsPet(unit) then
+		header:Hide()
+		return
+	end
+
+	-- danders doesn't hide blizzard frames, but rather sets the alpha to 0 using a secret value
+	local alpha = anchor:GetAlpha()
+	if mini:IsSecret(alpha) or alpha == 0 then
 		header:Hide()
 		return
 	end
