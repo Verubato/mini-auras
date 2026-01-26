@@ -109,13 +109,13 @@ local function ShowHideHeader(header, anchor, isTest)
 	local unit = header:GetAttribute("unit")
 
 	-- unit is an empty string for test headers
-	if not isTest and unit and unit ~= "" then
-		if db.ExcludePlayer and UnitIsUnit(unit, "player") then
+	if unit and unit ~= "" then
+		if IsPet(unit) then
 			header:Hide()
 			return
 		end
 
-		if IsPet(unit) then
+		if not isTest and db.ExcludePlayer and UnitIsUnit(unit, "player") then
 			header:Hide()
 			return
 		end
