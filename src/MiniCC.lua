@@ -1,6 +1,7 @@
 ---@type string, Addon
 local addonName, addon = ...
 local mini = addon.Framework
+local frames = addon.Frames
 local auras = addon.Auras
 local scheduler = addon.Scheduler
 local config = addon.Config
@@ -39,170 +40,28 @@ local function IsPet(unit)
 	return false
 end
 
-local function GetDandersFrames(i)
-	if not DandersFrames or not DandersFrames.Api or not DandersFrames.Api.GetFrameForUnit then
-		return nil
-	end
-
-	if i == 0 then
-		local raid = DandersFrames.Api.GetFrameForUnit("player", "raid")
-
-		if raid and raid:IsVisible() then
-			return raid
-		end
-
-		local party = DandersFrames.Api.GetFrameForUnit("player", "party")
-
-		if party and party:IsVisible() then
-			return party
-		end
-
-		return nil
-	end
-
-	if i > 0 and i <= (MAX_PARTY_MEMBERS or 4) then
-		-- sometimes party frames are shown in raids, e.g. in arena
-		local party = DandersFrames.Api.GetFrameForUnit("party" .. i, "party")
-
-		if party and party:IsVisible() then
-			return party
-		end
-	end
-
-	local raid = DandersFrames.Api.GetFrameForUnit("raid" .. i, "raid")
-
-	if raid and raid:IsVisible() then
-		return raid
-	end
-
-	return nil
-end
-
-local function GetGrid2Frame(i)
-	if not Grid2 or not Grid2.GetUnitFrames then
-		return nil
-	end
-
-	local unit
-	local kind = IsInRaid() and "raid" or "party"
-
-	if i == 0 then
-		unit = "player"
-	else
-		unit = kind .. i
-	end
-
-	local frames = Grid2:GetUnitFrames(unit)
-
-	if frames then
-		local frame = next(frames)
-
-		if frame and frame:IsVisible() then
-			return frame
-		end
-	end
-
-	return nil
-end
-
-local function GetElvUIFrame(i)
-	if not ElvUI then
-		return
-	end
-
-	---@diagnostic disable-next-line: deprecated
-	local E = unpack(ElvUI)
-
-	if not E then
-		return nil
-	end
-
-	local UF = E:GetModule("UnitFrames")
-
-	if not UF then
-		return nil
-	end
-
-	local unit
-	if i == 0 then
-		unit = "player"
-	elseif IsInRaid() then
-		unit = "raid" .. i
-	else
-		unit = "party" .. i
-	end
-
-	for groupName in pairs(UF.headers) do
-		local group = UF[groupName]
-		if group and group.GetChildren then
-			local groupFrames = { group:GetChildren() }
-
-			for _, frame in ipairs(groupFrames) do
-				-- is this a unit frame or a subgroup?
-				if not frame.Health then
-					local children = { frame:GetChildren() }
-
-					for _, child in ipairs(children) do
-						if child.unit == unit then
-							if child:IsVisible() then
-								return child
-							else
-								return nil
-							end
-						end
-					end
-				elseif frame.unit == unit then
-					if frame:IsVisible() then
-						return frame
-					else
-						return nil
-					end
-				end
-			end
-		end
-	end
-
-	return nil
-end
-
-local function GetBlizzardFrame(i)
-	local raid = i > 0 and _G["CompactRaidFrame" .. i]
-
-	if raid and raid:IsVisible() then
-		return raid
-	end
-
-	local party = i > 0 and _G["CompactPartyFrameMember" .. i]
-
-	if party and party:IsVisible() then
-		return party
-	end
-
-	return nil
-end
-
 local function GetAnchors(i)
 	local anchors = {}
-	local danders = GetDandersFrames(i)
+	local danders = frames:GetDandersFrames(i)
 
 	if danders then
 		anchors[#anchors + 1] = danders
 	end
 
-	local grid2 = GetGrid2Frame(i)
+	local grid2 = frames:GetGrid2Frame(i)
 
 	if grid2 then
 		anchors[#anchors + 1] = grid2
 	end
 
-	local elvui = GetElvUIFrame(i)
+	local elvui = frames:GetElvUIFrame(i)
 
 	if elvui then
 		anchors[#anchors + 1] = elvui
 	end
 
-	-- it's possible blizzard is still shown alongside the other addons
-	local blizzard = GetBlizzardFrame(i)
+	-- it's possible blizzard are still shown alongside the other addons
+	local blizzard = frames:GetBlizzardFrame(i)
 
 	if blizzard then
 		anchors[#anchors + 1] = blizzard
@@ -632,8 +491,9 @@ if CompactUnitFrame_UpdateVisible then
 end
 
 ---@class Addon
----@field Auras AurasModule
 ---@field Framework MiniFramework
+---@field Auras AurasModule
+---@field Frames Frames
 ---@field Scheduler Scheduler
 ---@field Config Config
 ---@field Refresh fun(self: table)
