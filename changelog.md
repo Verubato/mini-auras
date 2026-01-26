@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.1
+
+Fixed ElvUI CC anchors not working properly in arena.
+
 ## 1.6.0
 
 - Added ElvUI support.
