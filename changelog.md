@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.2
+
+Fixed arena only mode not always working.
+
 ## 1.6.1
 
 Fixed ElvUI CC anchors not working properly in arena.
