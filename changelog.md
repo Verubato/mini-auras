@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.0
+
+- Added ElvUI support.
+- Some invisible ghost frame fixes when running with DandersFrames.
+
 ## 1.5.0
 
 - Added support for Danders Frames and Grid2.
