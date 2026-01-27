@@ -66,7 +66,7 @@ local dbDefaults = {
 	},
 
 	Default = {
-		Enabled = false,
+		Enabled = true,
 		ExcludePlayer = false,
 
 		SimpleMode = {
@@ -102,7 +102,7 @@ config.DbDefaults = dbDefaults
 addon.Config = config
 
 local function GetAndUpgradeDb()
-	local vars = mini:GetSavedVars(dbDefaults)
+	local vars = mini:GetSavedVars()
 
 	if not vars.Version or vars.Version == 1 then
 		vars.SimpleMode.Enabled = true
@@ -110,6 +110,7 @@ local function GetAndUpgradeDb()
 	end
 
 	if vars.Version == 2 then
+		-- made some strucure changes
 		mini:CleanTable(db, dbDefaults, true, true)
 		vars.Version = 3
 	end
@@ -119,19 +120,31 @@ local function GetAndUpgradeDb()
 			SimpleMode = mini:CopyTable(vars.SimpleMode),
 			AdvancedMode = mini:CopyTable(vars.AdvancedMode),
 			Icons = mini:CopyTable(vars.Icons),
-			Enabled = vars.ArenaOnly,
+			Enabled = true,
 			ExcludePlayer = vars.ExcludePlayer,
 		}
 
-		vars.BattleGrounds.Enabled = not vars.ArenaOnly
-		vars.BattleGrounds.ExcludePlayer = not vars.ExcludePlayer
+		vars.BattleGrounds = {
+			SimpleMode = mini:CopyTable(vars.SimpleMode),
+			AdvancedMode = mini:CopyTable(vars.AdvancedMode),
+			Icons = mini:CopyTable(vars.Icons),
+			Enabled = not vars.ArenaOnly,
+			ExcludePlayer = vars.ExcludePlayer,
+		}
 
-		vars.Default.Enabled = not vars.ArenaOnly
-		vars.Default.ExcludePlayer = not vars.ExcludePlayer
+		vars.Default = {
+			SimpleMode = mini:CopyTable(vars.SimpleMode),
+			AdvancedMode = mini:CopyTable(vars.AdvancedMode),
+			Icons = mini:CopyTable(vars.Icons),
+			Enabled = not vars.ArenaOnly,
+			ExcludePlayer = vars.ExcludePlayer,
+		}
 
 		mini:CleanTable(db, dbDefaults, true, true)
 		vars.Version = 4
 	end
+
+	vars = mini:GetSavedVars(dbDefaults)
 
 	return vars
 end
