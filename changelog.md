@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1
+
+Init config fix for brand new installations.
+
 ## 2.0.0
 
 Added separate instance settings.
