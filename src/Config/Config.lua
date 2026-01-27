@@ -104,6 +104,10 @@ addon.Config = config
 local function GetAndUpgradeDb()
 	local vars = mini:GetSavedVars()
 
+	if vars == nil then
+		vars = mini:GetSavedVars(dbDefaults)
+	end
+
 	if not vars.Version or vars.Version == 1 then
 		vars.SimpleMode.Enabled = true
 		vars.Version = 2
