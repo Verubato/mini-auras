@@ -439,6 +439,14 @@ local function OnAddonLoaded()
 	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	eventsFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+
+	if CompactUnitFrame_SetUnit then
+		hooksecurefunc("CompactUnitFrame_SetUnit", OnCufSetUnit)
+	end
+
+	if CompactUnitFrame_UpdateVisible then
+		hooksecurefunc("CompactUnitFrame_UpdateVisible", OnCufUpdateVisible)
+	end
 end
 
 function addon:Refresh()
@@ -468,14 +476,6 @@ function addon:ToggleTest()
 end
 
 mini:WaitForAddonLoad(OnAddonLoaded)
-
-if CompactUnitFrame_SetUnit then
-	hooksecurefunc("CompactUnitFrame_SetUnit", OnCufSetUnit)
-end
-
-if CompactUnitFrame_UpdateVisible then
-	hooksecurefunc("CompactUnitFrame_UpdateVisible", OnCufUpdateVisible)
-end
 
 ---@class Addon
 ---@field Framework MiniFramework
