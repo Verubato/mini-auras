@@ -9,16 +9,17 @@ local db
 local M = {}
 addon.Frames = M
 
----Retrieves a list of visible Blizzard frames.
+---Retrieves a list of Blizzard frames.
+---@param visibleOnly boolean
 ---@return table
-function M:BlizzardFrames()
+function M:BlizzardFrames(visibleOnly)
 	local frames = {}
 
 	-- + 1 for player/self
 	for i = 1, maxParty + 1 do
 		local frame = _G["CompactPartyFrameMember" .. i]
 
-		if frame and frame:IsVisible() then
+		if frame and (frame:IsVisible() or not visibleOnly) then
 			frames[#frames + 1] = frame
 		end
 	end
@@ -26,7 +27,7 @@ function M:BlizzardFrames()
 	for i = 1, maxRaid do
 		local frame = _G["CompactRaidFrame" .. i]
 
-		if frame and frame:IsVisible() then
+		if frame and (frame:IsVisible() or not visibleOnly) then
 			frames[#frames + 1] = frame
 		end
 	end
@@ -34,9 +35,10 @@ function M:BlizzardFrames()
 	return frames
 end
 
----Retrieves a list of visible DandersFrames frames.
+---Retrieves a list of DandersFrames frames.
+---@param visibleOnly boolean
 ---@return table
-function M:DandersFrames()
+function M:DandersFrames(visibleOnly)
 	if not DandersFrames or not DandersFrames.Api or not DandersFrames.Api.GetFrameForUnit then
 		return {}
 	end
@@ -45,11 +47,11 @@ function M:DandersFrames()
 	local playerParty = DandersFrames.Api.GetFrameForUnit("player", "party")
 	local playerRaid = DandersFrames.Api.GetFrameForUnit("player", "raid")
 
-	if playerParty and playerParty:IsVisible() then
+	if playerParty and (playerParty:IsVisible() or not visibleOnly) then
 		frames[#frames + 1] = playerParty
 	end
 
-	if playerRaid and playerRaid:IsVisible() then
+	if playerRaid and (playerRaid:IsVisible() or not visibleOnly) then
 		frames[#frames + 1] = playerRaid
 	end
 
@@ -73,8 +75,9 @@ function M:DandersFrames()
 end
 
 ---Retrieves a list of Grid2 frames.
+---@param visibleOnly boolean
 ---@return table
-function M:Grid2Frames()
+function M:Grid2Frames(visibleOnly)
 	if not Grid2 or not Grid2.GetUnitFrames then
 		return {}
 	end
@@ -83,7 +86,7 @@ function M:Grid2Frames()
 	local playerFrames = Grid2:GetUnitFrames("player")
 	local playerFrame = playerFrames and next(playerFrames)
 
-	if playerFrame and playerFrame:IsVisible() then
+	if playerFrame and (playerFrame:IsVisible() or not visibleOnly) then
 		frames[#frames + 1] = playerFrame
 	end
 
@@ -91,7 +94,7 @@ function M:Grid2Frames()
 		local partyFrames = Grid2:GetUnitFrames("party" .. i)
 		local frame = partyFrames and next(partyFrames)
 
-		if frame and frame:IsVisible() then
+		if frame and (frame:IsVisible() or not visibleOnly) then
 			frames[#frames + 1] = frame
 		end
 	end
@@ -100,7 +103,7 @@ function M:Grid2Frames()
 		local raidFrames = Grid2:GetUnitFrames("party" .. i)
 		local frame = raidFrames and next(raidFrames)
 
-		if frame and frame:IsVisible() then
+		if frame and (frame:IsVisible() or not visibleOnly) then
 			frames[#frames + 1] = frame
 		end
 	end
@@ -109,8 +112,9 @@ function M:Grid2Frames()
 end
 
 ---Retrieves a list of ElvUI frames.
+---@param visibleOnly boolean
 ---@return table
-function M:ElvUIFrames()
+function M:ElvUIFrames(visibleOnly)
 	if not ElvUI then
 		return {}
 	end
@@ -141,11 +145,11 @@ function M:ElvUIFrames()
 					local children = { frame:GetChildren() }
 
 					for _, child in ipairs(children) do
-						if child.unit and child:IsVisible() then
+						if child.unit and (child:IsVisible() or not visibleOnly) then
 							frames[#frames + 1] = child
 						end
 					end
-				elseif frame.unit and frame:IsVisible() then
+				elseif frame.unit and (frame:IsVisible() or not visibleOnly) then
 					frames[#frames + 1] = frame
 				end
 			end
@@ -156,8 +160,9 @@ function M:ElvUIFrames()
 end
 
 ---Retrieves a list of custom frames from our saved vars.
+---@param visibleOnly boolean
 ---@return table
-function M:CustomFrames()
+function M:CustomFrames(visibleOnly)
 	local frames = {}
 	local i = 1
 	local anchor = db["Anchor" .. i]
@@ -167,7 +172,7 @@ function M:CustomFrames()
 
 		if not frame then
 			mini:Notify("Bad anchor%d: '%s'.", i, anchor)
-		elseif frame:IsVisible() then
+		elseif frame:IsVisible() or not visibleOnly then
 			frames[#frames + 1] = frame
 		end
 

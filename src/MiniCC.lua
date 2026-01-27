@@ -18,6 +18,8 @@ local testInstanceOptions
 local currentInstanceOptions
 local maxTestFrames = 3
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
+local IsAddOnLoaded = (C_AddOns and C_AddOns.IsAddOnLoaded) or IsAddOnLoaded
+local HasDanders = IsAddOnLoaded("DandersFrames")
 ---@type Db
 local db
 local testSpells = {
@@ -67,13 +69,14 @@ local function IsPet(unit)
 	return false
 end
 
-local function GetAnchors()
+local function GetAnchors(visibleOnly)
 	local anchors = {}
-	local blizzard = frames:BlizzardFrames()
-	local elvui = frames:ElvUIFrames()
-	local grid2 = frames:Grid2Frames()
-	local danders = frames:DandersFrames()
-	local custom = frames:CustomFrames()
+	local elvui = frames:ElvUIFrames(visibleOnly)
+	local grid2 = frames:Grid2Frames(visibleOnly)
+	local danders = frames:DandersFrames(visibleOnly)
+	-- get blizzard last, so test mode prioritises addon frames
+	local blizzard = frames:BlizzardFrames(visibleOnly)
+	local custom = frames:CustomFrames(visibleOnly)
 
 	AppendArray(blizzard, anchors)
 	AppendArray(elvui, anchors)
@@ -178,7 +181,7 @@ local function EnsureHeader(anchor, unit)
 end
 
 local function EnsureHeaders()
-	local anchors = GetAnchors()
+	local anchors = GetAnchors(true)
 
 	for _, anchor in ipairs(anchors) do
 		EnsureHeader(anchor)
@@ -186,7 +189,7 @@ local function EnsureHeaders()
 end
 
 local function CreateTestFrame(i)
-	local frame = CreateFrame("Frame", addonName .. "TestFrame" .. i, testContainer, "BackdropTemplate")
+	local frame = CreateFrame("Frame", addonName .. "TestFrame" .. i, UIParent, "BackdropTemplate")
 
 	-- same as the max blizzard party frames size
 	frame:SetSize(144, 72)
@@ -225,7 +228,6 @@ local function EnsureTestPartyFrames()
 		testContainer:SetScript("OnDragStop", function(self)
 			self:StopMovingOrSizing()
 		end)
-		testContainer:Show()
 
 		local xOffset = -450
 		local yOffset = 0
@@ -236,25 +238,10 @@ local function EnsureTestPartyFrames()
 		testContainer:SetPoint("CENTER", UIParent, "CENTER", xOffset, yOffset)
 	end
 
-	local width
-	local height
-	-- TODO: use other addon frames too
-	local target = CompactPartyFrameMember1
-
-	-- try match the existing blizzard frames
-	if target then
-		width, height = target:GetSize()
-
-		local scale = target:GetEffectiveScale()
-		width = width * scale
-		height = height * scale
-	end
-
-	if not width or not height or width == 0 or height == 0 then
-		width = 144
-		height = 72
-	end
-
+	local width = 144
+	local height = 72
+	local anchors = GetAnchors(false)
+	local anchoredToReal = false
 	local padding = 10
 
 	for i = 1, maxTestFrames do
@@ -267,10 +254,25 @@ local function EnsureTestPartyFrames()
 
 		frame:ClearAllPoints()
 		frame:SetSize(width, height)
-		frame:SetPoint("TOP", testContainer, "TOP", 0, (i - 1) * -frame:GetHeight() - padding)
+
+		local anchor = #anchors > maxTestFrames and anchors[i]
+
+		-- danders squashes the blizzard frames, so don't don't anchor
+		if anchor and anchor:GetWidth() > 0 and anchor:GetHeight() > 0 and not HasDanders then
+			frame:SetAllPoints(anchors[i])
+			anchoredToReal = true
+		else
+			frame:SetPoint("TOP", testContainer, "TOP", 0, (i - 1) * -frame:GetHeight() - padding)
+		end
 	end
 
-	testContainer:SetSize(width + padding * 2, height * maxTestFrames + padding * 2)
+	if anchoredToReal then
+		-- we've anchored to real frames, too much work to make it draggable
+		testContainer:Hide()
+	else
+		testContainer:SetSize(width + padding * 2, height * maxTestFrames + padding * 2)
+		testContainer:Show()
+	end
 end
 
 ---comment
@@ -375,6 +377,10 @@ local function RealMode()
 
 	for _, testPartyFrame in ipairs(testPartyFrames) do
 		testPartyFrame:Hide()
+	end
+
+	if testContainer then
+		testContainer:Hide()
 	end
 end
 
