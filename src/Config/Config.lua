@@ -274,7 +274,7 @@ function config:Init()
 				for i = 1, #tabController.Tabs do
 					local content = tabController:GetContent(tabController.Tabs[i].Key)
 
-					if content then
+					if content and content.MiniRefresh then
 						content:MiniRefresh()
 					end
 				end
