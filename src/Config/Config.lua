@@ -300,6 +300,7 @@ function config:Init()
 
 	SLASH_MINICC1 = "/minicc"
 	SLASH_MINICC2 = "/mcc"
+	SLASH_MINICC3 = "/cc"
 
 	SlashCmdList.MINICC = function(msg)
 		-- normalize input
