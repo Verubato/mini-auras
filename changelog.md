@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.0
+
+Added separate instance settings.
+
 ## 1.6.2
 
 Fixed arena only mode not always working.
