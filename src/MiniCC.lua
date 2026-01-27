@@ -236,8 +236,25 @@ local function EnsureTestPartyFrames()
 		testContainer:SetPoint("CENTER", UIParent, "CENTER", xOffset, yOffset)
 	end
 
-	local width = 144
-	local height = 72
+	local width
+	local height
+	-- TODO: use other addon frames too
+	local target = CompactPartyFrameMember1
+
+	-- try match the existing blizzard frames
+	if target then
+		width, height = target:GetSize()
+
+		local scale = target:GetEffectiveScale()
+		width = width * scale
+		height = height * scale
+	end
+
+	if not width or not height or width == 0 or height == 0 then
+		width = 144
+		height = 72
+	end
+
 	local padding = 10
 
 	for i = 1, maxTestFrames do
