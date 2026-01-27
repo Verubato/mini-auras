@@ -13,6 +13,8 @@ local testContainer
 local testHeaders = {}
 local testPartyFrames = {}
 local testMode = false
+---@type InstanceOptions?
+local testInstanceOptions
 local maxTestFrames = 3
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
 ---@type Db
@@ -64,18 +66,25 @@ local function GetAnchors()
 	return anchors
 end
 
-local function AnchorHeader(header, anchor)
+---@param header table
+---@param anchor table
+---@param options InstanceOptions
+local function AnchorHeader(header, anchor, options)
+	if not options then
+		return
+	end
+
 	header:ClearAllPoints()
 
-	if db.SimpleMode.Enabled then
-		header:SetPoint("CENTER", anchor, "CENTER", db.SimpleMode.Offset.X, db.SimpleMode.Offset.Y)
+	if options.SimpleMode.Enabled then
+		header:SetPoint("CENTER", anchor, "CENTER", options.SimpleMode.Offset.X, options.SimpleMode.Offset.Y)
 	else
 		header:SetPoint(
-			db.AdvancedMode.Point,
+			options.AdvancedMode.Point,
 			anchor,
-			db.AdvancedMode.RelativePoint,
-			db.AdvancedMode.Offset.X,
-			db.AdvancedMode.Offset.Y
+			options.AdvancedMode.RelativePoint,
+			options.AdvancedMode.Offset.X,
+			options.AdvancedMode.Offset.Y
 		)
 	end
 
@@ -222,10 +231,13 @@ local function EnsureTestPartyFrames()
 	testContainer:SetSize(width + padding * 2, height * maxTestFrames + padding * 2)
 end
 
-local function UpdateTestHeader(frame)
+---comment
+---@param frame table
+---@param options InstanceOptions
+local function UpdateTestHeader(frame, options)
 	local cols = #testSpells
 	local rows = 1
-	local size = tonumber(db.Icons.Size) or dbDefaults.Icons.Size
+	local size = tonumber(options.Icons.Size) or 32
 	local padX = 0
 	local padY = 0
 	local stepX = size + padX
@@ -265,7 +277,7 @@ local function UpdateTestHeader(frame)
 	-- glow icons
 	if LCG then
 		for _, icon in ipairs(frame.icons) do
-			if db.Icons.Glow then
+			if options.Icons.Glow then
 				LCG.ProcGlow_Start(icon, {
 					startAnim = false,
 				})
@@ -288,22 +300,41 @@ local function EnsureTestHeader(anchor)
 		testHeaders[anchor] = header
 	end
 
-	UpdateTestHeader(header)
+	if testInstanceOptions then
+		UpdateTestHeader(header, testInstanceOptions)
+	end
 
 	return header
 end
 
+local function GetInstanceOptions()
+	local inInstance, instanceType = IsInInstance()
+
+	if inInstance and instanceType == "pvp" then
+		return db.BattleGrounds
+	end
+
+	-- TODO: add a general/other instance settings
+	return db.Arena
+end
+
 local function RealMode()
+	local instanceOptions = GetInstanceOptions()
+
+	if not instanceOptions then
+		return
+	end
+
 	for anchor, header in pairs(headers) do
 		local unit = header:GetAttribute("unit") or anchor.unit or anchor:GetAttribute("unit")
 
 		if unit then
 			-- refresh options
-			auras:UpdateHeader(header, unit, db.Icons)
+			auras:UpdateHeader(header, unit, instanceOptions.Icons)
 		end
 
 		-- refresh anchor
-		AnchorHeader(header, anchor)
+		AnchorHeader(header, anchor, instanceOptions)
 
 		-- refresh visibility
 		ShowHideHeader(header, anchor, false)
@@ -319,6 +350,10 @@ local function RealMode()
 end
 
 local function TestMode()
+	if not testInstanceOptions then
+		return
+	end
+
 	-- hide the real headers
 	for _, header in pairs(headers) do
 		header:Hide()
@@ -329,7 +364,7 @@ local function TestMode()
 	for anchor, _ in pairs(headers) do
 		local testHeader = EnsureTestHeader(anchor)
 
-		AnchorHeader(testHeader, anchor)
+		AnchorHeader(testHeader, anchor, testInstanceOptions)
 		ShowHideHeader(testHeader, anchor, true)
 		anyRealShown = anyRealShown or testHeader:IsVisible()
 	end
@@ -352,7 +387,7 @@ local function TestMode()
 		if testHeader then
 			local testPartyFrame = testPartyFrames[i]
 
-			AnchorHeader(testHeader, testPartyFrame)
+			AnchorHeader(testHeader, testPartyFrame, testInstanceOptions)
 
 			testHeader:Show()
 			testHeader:SetAlpha(1)
@@ -466,8 +501,15 @@ function addon:Refresh()
 	end
 end
 
-function addon:ToggleTest()
-	testMode = not testMode
+---@param options InstanceOptions?
+function addon:TestMode(options)
+	if testMode and options ~= testInstanceOptions then
+		testInstanceOptions = options
+	else
+		testMode = not testMode
+		testInstanceOptions = options
+	end
+
 	addon:Refresh()
 
 	if InCombatLockdown() then
@@ -484,4 +526,4 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Scheduler Scheduler
 ---@field Config Config
 ---@field Refresh fun(self: table)
----@field ToggleTest fun(self: table)
+---@field TestMode fun(self: table, options: InstanceOptions)

@@ -7,32 +7,59 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 3,
+	Version = 4,
 
 	ArenaOnly = false,
 	ExcludePlayer = false,
 
-	SimpleMode = {
-		Enabled = true,
-		Offset = {
-			X = 2,
-			Y = 0,
+	---@class InstanceOptions
+	Arena = {
+		SimpleMode = {
+			Enabled = true,
+			Offset = {
+				X = 2,
+				Y = 0,
+			},
+		},
+
+		AdvancedMode = {
+			Point = "TOPLEFT",
+			RelativePoint = "TOPRIGHT",
+			Offset = {
+				X = 2,
+				Y = 0,
+			},
+		},
+
+		---@class IconOptions
+		Icons = {
+			Size = 72,
+			Glow = true,
 		},
 	},
 
-	AdvancedMode = {
-		Point = "TOPLEFT",
-		RelativePoint = "TOPRIGHT",
-		Offset = {
-			X = 2,
-			Y = 0,
+	BattleGrounds = {
+		SimpleMode = {
+			Enabled = true,
+			Offset = {
+				X = 2,
+				Y = 0,
+			},
 		},
-	},
 
-	---@class IconOptions
-	Icons = {
-		Size = 72,
-		Glow = true,
+		AdvancedMode = {
+			Point = "TOPLEFT",
+			RelativePoint = "TOPRIGHT",
+			Offset = {
+				X = 2,
+				Y = 0,
+			},
+		},
+
+		Icons = {
+			Size = 72,
+			Glow = true,
+		},
 	},
 
 	Anchor1 = "CompactPartyFrameMember1",
@@ -56,6 +83,19 @@ local function GetAndUpgradeDb()
 		mini:CleanTable(db, dbDefaults, true, true)
 		vars.Version = 3
 	end
+
+	if vars.Version == 3 then
+		vars.Arena = {
+			SimpleMode = mini:CopyTable(vars.SimpleMode),
+			AdvancedMode = mini:CopyTable(vars.AdvancedMode),
+			Icons = mini:CopyTable(vars.Icons),
+		}
+
+		mini:CleanTable(db, dbDefaults, true, true)
+		vars.Version = 4
+	end
+
+	mini:CleanTable(db, dbDefaults, true, true)
 
 	return vars
 end
@@ -115,7 +155,14 @@ function config:Init()
 				Key = "Arena",
 				Title = "Arena",
 				Build = function(content)
-					config.Arena:Build(content)
+					config.Instance:Build(content, db.Arena)
+				end,
+			},
+			{
+				Key = "battelgrounds",
+				Title = "BGs",
+				Build = function(content)
+					config.Instance:Build(content, db.BattleGrounds)
 				end,
 			},
 			{
@@ -183,7 +230,7 @@ function config:Init()
 		msg = msg and msg:lower():match("^%s*(.-)%s*$") or ""
 
 		if msg == "test" then
-			addon:ToggleTest()
+			addon:TestMode(db.Arena)
 			return
 		end
 
@@ -196,5 +243,5 @@ end
 ---@field Apply fun(self: table)
 ---@field DbDefaults Db
 ---@field General GeneralConfig
----@field Arena ArenaConfig
+---@field Instance InstanceConfig
 ---@field Anchors AnchorsConfig

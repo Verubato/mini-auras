@@ -16,7 +16,7 @@ Core\Auras.lua
 Core\Scheduler.lua
 Config\Config.lua
 Config\General.lua
-Config\Arena.lua
+Config\Instance.lua
 Config\Anchors.lua
 MiniCC.xml
 MiniCC.lua

@@ -18,15 +18,15 @@ local horizontalSpacing = mini.HorizontalSpacing
 local columns = 4
 local columnWidth = mini:ColumnWidth(columns, 0, 0)
 local config = addon.Config
----@type Db
-local db
 
----@class ArenaConfig
+---@class InstanceConfig
 local M = {}
 
-config.Arena = M
+config.Instance = M
 
-local function BuildSimpleMode(parent)
+---@param parent table
+---@param options InstanceOptions
+local function BuildSimpleMode(parent, options)
 	local panel = CreateFrame("Frame", nil, parent)
 	local containerX = mini:Slider({
 		Parent = panel,
@@ -36,10 +36,10 @@ local function BuildSimpleMode(parent)
 		Width = columnWidth * 2 - horizontalSpacing,
 		LabelText = "Offset X",
 		GetValue = function()
-			return db.SimpleMode.Offset.X
+			return options.SimpleMode.Offset.X
 		end,
 		SetValue = function(v)
-			db.SimpleMode.Offset.X = mini:ClampInt(v, -250, 250, dbDefaults.SimpleMode.Offset.X)
+			options.SimpleMode.Offset.X = mini:ClampInt(v, -250, 250, 0)
 			config:Apply()
 		end,
 	})
@@ -54,10 +54,10 @@ local function BuildSimpleMode(parent)
 		Width = columnWidth * 2 - horizontalSpacing,
 		LabelText = "Offset Y",
 		GetValue = function()
-			return db.SimpleMode.Offset.Y
+			return options.SimpleMode.Offset.Y
 		end,
 		SetValue = function(v)
-			db.SimpleMode.Offset.Y = mini:ClampInt(v, -250, 250, dbDefaults.SimpleMode.Offset.Y)
+			options.SimpleMode.Offset.Y = mini:ClampInt(v, -250, 250, 0)
 			config:Apply()
 		end,
 	})
@@ -67,7 +67,9 @@ local function BuildSimpleMode(parent)
 	return panel
 end
 
-local function BuildAdvancedMode(parent)
+---@param parent table
+---@param options InstanceOptions
+local function BuildAdvancedMode(parent, options)
 	local panel = CreateFrame("Frame", nil, parent)
 	local containerX = mini:Slider({
 		Parent = panel,
@@ -77,10 +79,10 @@ local function BuildAdvancedMode(parent)
 		Width = columnWidth * 2 - horizontalSpacing,
 		LabelText = "Offset X",
 		GetValue = function()
-			return db.AdvancedMode.Offset.X
+			return options.AdvancedMode.Offset.X
 		end,
 		SetValue = function(v)
-			db.AdvancedMode.Offset.X = mini:ClampInt(v, -50, 50, dbDefaults.AdvancedMode.Offset.X)
+			options.AdvancedMode.Offset.X = mini:ClampInt(v, -50, 50, 0)
 			config:Apply()
 		end,
 	})
@@ -95,10 +97,10 @@ local function BuildAdvancedMode(parent)
 		Width = columnWidth * 2 - horizontalSpacing,
 		LabelText = "Offset Y",
 		GetValue = function()
-			return db.AdvancedMode.Offset.Y
+			return options.AdvancedMode.Offset.Y
 		end,
 		SetValue = function(v)
-			db.AdvancedMode.Offset.Y = mini:ClampInt(v, -200, 200, dbDefaults.AdvancedMode.Offset.Y)
+			options.AdvancedMode.Offset.Y = mini:ClampInt(v, -200, 200, 0)
 			config:Apply()
 		end,
 	})
@@ -113,11 +115,11 @@ local function BuildAdvancedMode(parent)
 		Items = anchorPoints,
 		Width = columnWidth,
 		GetValue = function()
-			return db.AdvancedMode.Point
+			return options.AdvancedMode.Point
 		end,
 		SetValue = function(value)
-			if db.AdvancedMode.Point ~= value then
-				db.AdvancedMode.Point = value
+			if options.AdvancedMode.Point ~= value then
+				options.AdvancedMode.Point = value
 				config:Apply()
 			end
 		end,
@@ -136,11 +138,11 @@ local function BuildAdvancedMode(parent)
 		Items = anchorPoints,
 		Width = columnWidth,
 		GetValue = function()
-			return db.AdvancedMode.RelativePoint
+			return options.AdvancedMode.RelativePoint
 		end,
 		SetValue = function(value)
-			if db.AdvancedMode.RelativePoint ~= value then
-				db.AdvancedMode.RelativePoint = value
+			if options.AdvancedMode.RelativePoint ~= value then
+				options.AdvancedMode.RelativePoint = value
 				config:Apply()
 			end
 		end,
@@ -152,14 +154,14 @@ local function BuildAdvancedMode(parent)
 	return panel
 end
 
-function M:Build(panel)
-	db = mini:GetSavedVars()
-
-	local simpleMode = BuildSimpleMode(panel)
-	local advancedMode = BuildAdvancedMode(panel)
+---@param panel table
+---@param options InstanceOptions
+function M:Build(panel, options)
+	local simpleMode = BuildSimpleMode(panel, options)
+	local advancedMode = BuildAdvancedMode(panel, options)
 
 	local function SetMode()
-		if db.SimpleMode.Enabled then
+		if options.SimpleMode.Enabled then
 			simpleMode:Show()
 			advancedMode:Hide()
 		else
@@ -172,16 +174,17 @@ function M:Build(panel)
 		Parent = panel,
 		LabelText = "Simple settings",
 		GetValue = function()
-			return db.SimpleMode.Enabled
+			return options.SimpleMode.Enabled
 		end,
 		SetValue = function(value)
-			db.SimpleMode.Enabled = value
+			options.SimpleMode.Enabled = value
 
 			SetMode()
+			config:Apply()
 		end,
 	})
 
-	simpleChk:SetPoint("TOPLEFT", panel, "TOPLEFT", -4, 0)
+	simpleChk:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
 	local iconSize = mini:Slider({
 		Parent = panel,
@@ -191,15 +194,15 @@ function M:Build(panel)
 		Step = 1,
 		LabelText = "Icon Size",
 		GetValue = function()
-			return db.Icons.Size
+			return options.Icons.Size
 		end,
 		SetValue = function(v)
-			db.Icons.Size = mini:ClampInt(v, 10, 200, dbDefaults.Icons.Size)
+			options.Icons.Size = mini:ClampInt(v, 10, 200, optionsDefaults.Icons.Size)
 			config:Apply()
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", simpleChk, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", simpleChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	simpleMode:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 	simpleMode:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
@@ -220,10 +223,10 @@ function M:Build(panel)
 
 	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	testBtn:SetSize(120, 26)
-	testBtn:SetPoint("LEFT", resetBtn, "RIGHT", horizontalSpacing, 0)
+	testBtn:SetPoint("BOTTOMLEFT", advancedMode, "BOTTOMLEFT", 0, 0)
 	testBtn:SetText("Test")
 	testBtn:SetScript("OnClick", function()
-		addon:ToggleTest()
+		addon:TestMode(options)
 	end)
 
 	panel:HookScript("OnShow", function()
