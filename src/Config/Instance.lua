@@ -170,6 +170,51 @@ function M:Build(panel, options)
 		end
 	end
 
+	local enabledChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Enabled",
+		GetValue = function()
+			return options.Enabled
+		end,
+		SetValue = function(value)
+			options.Enabled = value
+
+			config:Apply()
+		end,
+	})
+
+	enabledChk:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+
+	local excludePlayerChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Exclude player",
+		GetValue = function()
+			return options.ExcludePlayer
+		end,
+		SetValue = function(value)
+			options.ExcludePlayer = value
+			addon:Refresh()
+		end,
+	})
+
+	excludePlayerChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	excludePlayerChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+
+	local glowChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Glow icons",
+		GetValue = function()
+			return options.Icons.Glow
+		end,
+		SetValue = function(value)
+			options.Icons.Glow = value
+			config:Apply()
+		end,
+	})
+
+	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	glowChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+
 	local simpleChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Simple settings",
@@ -184,7 +229,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	simpleChk:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	simpleChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local iconSize = mini:Slider({
 		Parent = panel,
@@ -197,7 +242,7 @@ function M:Build(panel, options)
 			return options.Icons.Size
 		end,
 		SetValue = function(v)
-			options.Icons.Size = mini:ClampInt(v, 10, 200, optionsDefaults.Icons.Size)
+			options.Icons.Size = mini:ClampInt(v, 10, 200, 32)
 			config:Apply()
 		end,
 	})
@@ -223,7 +268,7 @@ function M:Build(panel, options)
 
 	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	testBtn:SetSize(120, 26)
-	testBtn:SetPoint("BOTTOMLEFT", advancedMode, "BOTTOMLEFT", 0, 0)
+	testBtn:SetPoint("TOPLEFT", advancedMode, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 	testBtn:SetText("Test")
 	testBtn:SetScript("OnClick", function()
 		addon:TestMode(options)

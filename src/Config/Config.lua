@@ -9,11 +9,11 @@ local db
 local dbDefaults = {
 	Version = 4,
 
-	ArenaOnly = false,
-	ExcludePlayer = false,
-
 	---@class InstanceOptions
 	Arena = {
+		Enabled = true,
+		ExcludePlayer = false,
+
 		SimpleMode = {
 			Enabled = true,
 			Offset = {
@@ -39,6 +39,36 @@ local dbDefaults = {
 	},
 
 	BattleGrounds = {
+		Enabled = true,
+		ExcludePlayer = false,
+
+		SimpleMode = {
+			Enabled = true,
+			Offset = {
+				X = 2,
+				Y = 0,
+			},
+		},
+
+		AdvancedMode = {
+			Point = "TOPLEFT",
+			RelativePoint = "TOPRIGHT",
+			Offset = {
+				X = 2,
+				Y = 0,
+			},
+		},
+
+		Icons = {
+			Size = 72,
+			Glow = true,
+		},
+	},
+
+	Default = {
+		Enabled = false,
+		ExcludePlayer = false,
+
 		SimpleMode = {
 			Enabled = true,
 			Offset = {
@@ -89,13 +119,19 @@ local function GetAndUpgradeDb()
 			SimpleMode = mini:CopyTable(vars.SimpleMode),
 			AdvancedMode = mini:CopyTable(vars.AdvancedMode),
 			Icons = mini:CopyTable(vars.Icons),
+			Enabled = vars.ArenaOnly,
+			ExcludePlayer = vars.ExcludePlayer,
 		}
+
+		vars.BattleGrounds.Enabled = not vars.ArenaOnly
+		vars.BattleGrounds.ExcludePlayer = not vars.ExcludePlayer
+
+		vars.Default.Enabled = not vars.ArenaOnly
+		vars.Default.ExcludePlayer = not vars.ExcludePlayer
 
 		mini:CleanTable(db, dbDefaults, true, true)
 		vars.Version = 4
 	end
-
-	mini:CleanTable(db, dbDefaults, true, true)
 
 	return vars
 end
@@ -140,39 +176,67 @@ function config:Init()
 	tabsPanel:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 0, -verticalSpacing)
 	tabsPanel:SetPoint("BOTTOM", panel, "BOTTOM", 0, verticalSpacing * 2)
 
+	local keys = {
+		General = "General",
+		Arena = "Arena",
+		BattleGrounds = "BattleGrounds",
+		Default = "Default",
+		Anchors = "Anchors",
+	}
+
 	local tabController = mini:CreateTabs({
 		Parent = tabsPanel,
 		InitialKey = "general",
+		ContentInsets = {
+			Top = verticalSpacing,
+		},
 		Tabs = {
 			{
-				Key = "General",
+				Key = keys.General,
 				Title = "General",
 				Build = function(content)
 					config.General:Build(content)
 				end,
 			},
 			{
-				Key = "Arena",
+				Key = keys.Arena,
 				Title = "Arena",
 				Build = function(content)
 					config.Instance:Build(content, db.Arena)
 				end,
 			},
 			{
-				Key = "battelgrounds",
+				Key = keys.BattleGrounds,
 				Title = "BGs",
 				Build = function(content)
 					config.Instance:Build(content, db.BattleGrounds)
 				end,
 			},
 			{
-				Key = "Anchors",
+				Key = keys.Default,
+				Title = "World",
+				Build = function(content)
+					config.Instance:Build(content, db.Default)
+				end,
+			},
+			{
+				Key = keys.Anchors,
 				Title = "Custom Anchors",
 				Build = function(content)
 					config.Anchors:Build(content)
 				end,
 			},
 		},
+		OnTabChanged = function(key, _)
+			-- swap the test options when the user changes tabs in case we're in test mode already
+			if key == keys.Arena then
+				addon:TestOptions(db.Arena)
+			elseif key == keys.BattleGrounds then
+				addon:TestOptions(db.BattleGrounds)
+			elseif key == keys.Default then
+				addon:TestOptions(db.Default)
+			end
+		end,
 	})
 
 	StaticPopupDialogs["MINICC_CONFIRM"] = {

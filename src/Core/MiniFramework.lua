@@ -819,10 +819,10 @@ function M:CreateTabs(options)
 	local stripHeight = options.StripHeight or 28
 
 	local insets = options.ContentInsets or {}
-	local insetL = insets.left or 0
-	local insetR = insets.right or 0
-	local insetT = insets.top or 10
-	local insetB = insets.bottom or 10
+	local insetL = insets.Left or 0
+	local insetR = insets.Right or 0
+	local insetT = insets.Top or 10
+	local insetB = insets.Bottom or 10
 
 	local strip = CreateFrame("Frame", nil, parent, "BackdropTemplate")
 	strip:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
@@ -1280,3 +1280,9 @@ loader:SetScript("OnEvent", OnAddonLoaded)
 ---@field GetContent fun(self: table, keyOrIndex: string|number): table?
 ---@field GetTabButton fun(self: table, keyOrIndex: string|number): table?
 ---@field Tabs Tab[]
+
+---@class Insets
+---@field Top number?
+---@field Left number?
+---@field Right number?
+---@field Bottom number?

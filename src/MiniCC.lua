@@ -4,7 +4,6 @@ local mini = addon.Framework
 local frames = addon.Frames
 local auras = addon.Auras
 local scheduler = addon.Scheduler
-local config = addon.Config
 local eventsFrame
 ---@type { table: table }
 local headers = {}
@@ -15,12 +14,12 @@ local testPartyFrames = {}
 local testMode = false
 ---@type InstanceOptions?
 local testInstanceOptions
+---@type InstanceOptions
+local currentInstanceOptions
 local maxTestFrames = 3
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
 ---@type Db
 local db
----@type Db
-local dbDefaults = config.DbDefaults
 local testSpells = {
 	-- Kidney Shot
 	408,
@@ -29,6 +28,25 @@ local testSpells = {
 local function IsArena()
 	local inInstance, instanceType = IsInInstance()
 	return inInstance and instanceType == "arena"
+end
+
+local function IsBg()
+	local inInstance, instanceType = IsInInstance()
+	return inInstance and instanceType == "pvp"
+end
+
+local function GetInstanceOptions()
+	if IsArena() then
+		return db.Arena
+	elseif IsBg() then
+		return db.BattleGrounds
+	end
+
+	return db.Default
+end
+
+local function SetCurrentInstance()
+	currentInstanceOptions = GetInstanceOptions()
 end
 
 local function AppendArray(src, dst)
@@ -93,8 +111,13 @@ local function AnchorHeader(header, anchor, options)
 	header:SetFrameStrata("HIGH")
 end
 
-local function ShowHideHeader(header, anchor, isTest)
-	local unit = header:GetAttribute("unit")
+---@param header table
+---@param anchor table
+---@param isTest boolean
+---@param options InstanceOptions
+local function ShowHideHeader(header, anchor, isTest, options)
+	-- header might be a test header, in which case it doesn't have a unit
+	local unit = header:GetAttribute("unit") or anchor.unit or anchor:GetAttribute("unit")
 
 	-- unit is an empty string for test headers
 	if unit and unit ~= "" then
@@ -103,13 +126,13 @@ local function ShowHideHeader(header, anchor, isTest)
 			return
 		end
 
-		if not isTest and db.ExcludePlayer and UnitIsUnit(unit, "player") then
+		if not isTest and options.ExcludePlayer and UnitIsUnit(unit, "player") then
 			header:Hide()
 			return
 		end
 	end
 
-	if not isTest and db.ArenaOnly and not IsArena() then
+	if not isTest and not options.Enabled then
 		header:Hide()
 		return
 	end
@@ -130,6 +153,8 @@ local function ShowHideHeader(header, anchor, isTest)
 	end
 end
 
+---@param anchor table
+---@param unit string|nil
 local function EnsureHeader(anchor, unit)
 	unit = unit or anchor.unit or anchor:GetAttribute("unit")
 
@@ -140,19 +165,19 @@ local function EnsureHeader(anchor, unit)
 	local header = headers[anchor]
 
 	if not header then
-		header = auras:CreateHeader(unit, db.Icons)
+		header = auras:CreateHeader(unit, currentInstanceOptions.Icons)
 		headers[anchor] = header
 	else
-		auras:UpdateHeader(header, unit, db.Icons)
+		auras:UpdateHeader(header, unit, currentInstanceOptions.Icons)
 	end
 
-	AnchorHeader(header, anchor)
-	ShowHideHeader(header, anchor, false)
+	AnchorHeader(header, anchor, currentInstanceOptions)
+	ShowHideHeader(header, anchor, false, currentInstanceOptions)
 
 	return header
 end
 
-local function EnsureHeaderss()
+local function EnsureHeaders()
 	local anchors = GetAnchors()
 
 	for _, anchor in ipairs(anchors) do
@@ -307,21 +332,8 @@ local function EnsureTestHeader(anchor)
 	return header
 end
 
-local function GetInstanceOptions()
-	local inInstance, instanceType = IsInInstance()
-
-	if inInstance and instanceType == "pvp" then
-		return db.BattleGrounds
-	end
-
-	-- TODO: add a general/other instance settings
-	return db.Arena
-end
-
 local function RealMode()
-	local instanceOptions = GetInstanceOptions()
-
-	if not instanceOptions then
+	if not currentInstanceOptions then
 		return
 	end
 
@@ -330,14 +342,14 @@ local function RealMode()
 
 		if unit then
 			-- refresh options
-			auras:UpdateHeader(header, unit, instanceOptions.Icons)
+			auras:UpdateHeader(header, unit, currentInstanceOptions.Icons)
 		end
 
 		-- refresh anchor
-		AnchorHeader(header, anchor, instanceOptions)
+		AnchorHeader(header, anchor, currentInstanceOptions)
 
 		-- refresh visibility
-		ShowHideHeader(header, anchor, false)
+		ShowHideHeader(header, anchor, false, currentInstanceOptions)
 	end
 
 	for _, testHeader in pairs(testHeaders) do
@@ -365,7 +377,7 @@ local function TestMode()
 		local testHeader = EnsureTestHeader(anchor)
 
 		AnchorHeader(testHeader, anchor, testInstanceOptions)
-		ShowHideHeader(testHeader, anchor, true)
+		ShowHideHeader(testHeader, anchor, true, testInstanceOptions)
 		anyRealShown = anyRealShown or testHeader:IsVisible()
 	end
 
@@ -420,7 +432,7 @@ local function OnCufUpdateVisible(frame)
 	end
 
 	scheduler:RunWhenCombatEnds(function()
-		ShowHideHeader(header, frame, false)
+		ShowHideHeader(header, frame, false, currentInstanceOptions)
 	end)
 end
 
@@ -467,7 +479,8 @@ local function OnAddonLoaded()
 
 	db = mini:GetSavedVars()
 
-	EnsureHeaderss()
+	SetCurrentInstance()
+	EnsureHeaders()
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
@@ -492,7 +505,8 @@ function addon:Refresh()
 		return
 	end
 
-	EnsureHeaderss()
+	SetCurrentInstance()
+	EnsureHeaders()
 
 	if testMode then
 		TestMode()
@@ -517,6 +531,12 @@ function addon:TestMode(options)
 	end
 end
 
+---@param options InstanceOptions?
+function addon:TestOptions(options)
+	testInstanceOptions = options
+	addon:Refresh()
+end
+
 mini:WaitForAddonLoad(OnAddonLoaded)
 
 ---@class Addon
@@ -527,3 +547,4 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Config Config
 ---@field Refresh fun(self: table)
 ---@field TestMode fun(self: table, options: InstanceOptions)
+---@field TestOptions fun(self: table, options: InstanceOptions)
