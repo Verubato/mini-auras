@@ -165,8 +165,7 @@ function config:Init()
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"Highly experimental addon for Midnight that shows CC on party/raid frames.",
-			"Any feedback is more than welcome!",
+			"Shows CC on your party/raid frames.",
 		},
 	})
 
