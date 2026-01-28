@@ -12,6 +12,7 @@ Libs\LibStub\LibStub.lua
 Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.xml
 Core\MiniFramework.lua
 Core\Capabilities.lua
+Core\Units.lua
 Core\Frames.lua
 Core\Auras.lua
 Core\Scheduler.lua
@@ -19,5 +20,6 @@ Config\Config.lua
 Config\General.lua
 Config\Instance.lua
 Config\Anchors.lua
+Config\Healer.lua
 MiniCC.xml
 MiniCC.lua

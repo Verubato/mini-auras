@@ -1,7 +1,6 @@
 ---@type string, Addon
 local addonName, addon = ...
 local capabilities = addon.Capabilities
-local supportsCCFiltering = capabilities:SupportsCrowdControlFiltering()
 local maxAuras = 40
 local headerId = 1
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
@@ -9,6 +8,18 @@ local LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
 ---@class AurasModule
 local M = {}
 addon.Auras = M
+
+local function NotifyCallbacks(header)
+	local callbacks = header.Callbacks
+
+	if not callbacks or #callbacks == 0 then
+		return
+	end
+
+	for _, callback in ipairs(callbacks) do
+		callback()
+	end
+end
 
 local function OnHeaderEvent(header, event, arg1)
 	local unit = header:GetAttribute("unit")
@@ -27,6 +38,8 @@ local function OnHeaderEvent(header, event, arg1)
 	if arg1 ~= unit then
 		return
 	end
+
+	local ccApplied = false
 
 	for i = 1, maxAuras do
 		local child = header:GetAttribute("child" .. i)
@@ -54,8 +67,11 @@ local function OnHeaderEvent(header, event, arg1)
 
 			local isCC = C_Spell.IsSpellCrowdControl(data.spellId)
 
-			if not supportsCCFiltering then
+			if capabilities:SupportsCrowdControlFiltering() then
+				ccApplied = true
+			else
 				icon:SetAlphaFromBoolean(isCC)
+				ccApplied = isCC
 			end
 
 			local start
@@ -70,6 +86,10 @@ local function OnHeaderEvent(header, event, arg1)
 			if start and duration then
 				cooldown:SetCooldown(start, duration)
 				cooldown:Show()
+
+				if supportsCCFiltering then
+					ccApplied = true
+				end
 
 				if LCG then
 					if glow then
@@ -89,13 +109,14 @@ local function OnHeaderEvent(header, event, arg1)
 			else
 				cooldown:Hide()
 				cooldown:SetCooldown(0, 0)
+				ccApplied = false
 
 				if LCG then
 					LCG.ProcGlow_Stop(child)
 				end
 			end
 
-			if not supportsCCFiltering then
+			if not capabilities:SupportsCrowdControlFiltering() then
 				cooldown:SetAlphaFromBoolean(isCC)
 			end
 		else
@@ -106,6 +127,9 @@ local function OnHeaderEvent(header, event, arg1)
 			end
 		end
 	end
+
+	header.IsCcApplied = ccApplied
+	NotifyCallbacks(header)
 end
 
 ---@param header table
@@ -147,18 +171,24 @@ local function UpdateHeader(header, unit, options)
 	header:SetAttribute("x-glow", options.Glow)
 	header:SetAttribute("x-reverse-cooldown", options.ReverseCooldown)
 
+	if capabilities:SupportsCrowdControlFiltering() then
+		header:SetAttribute("xOffset", iconSize + 1)
+	else
+		-- have all icons overlap themselves, and then only the visible on is shown
+		-- genius right?
+		header:SetAttribute("xOffset", 0)
+	end
+
 	-- refresh any icon sizes that may have changed
 	RefreshHeaderChildSizes(header, options)
 end
 
----@param options IconOptions
-local function CreateSecureHeader(options)
-	local iconSize = options and tonumber(options.Size) or 32
+local function CreateSecureHeader()
 	local header = CreateFrame("Frame", addonName .. "SecureHeader" .. headerId, UIParent, "SecureAuraHeaderTemplate")
 
 	header:SetAttribute("template", "MiniCCAuraButtonTemplate")
 
-	if supportsCCFiltering then
+	if capabilities:SupportsCrowdControlFiltering() then
 		header:SetAttribute("filter", "CROWD_CONTROL")
 	else
 		header:SetAttribute("filter", "HARMFUL|INCLUDE_NAME_PLATE_ONLY")
@@ -169,14 +199,6 @@ local function CreateSecureHeader(options)
 	header:SetAttribute("point", "TOPLEFT")
 	header:SetAttribute("minWidth", 1)
 	header:SetAttribute("minHeight", 1)
-
-	if supportsCCFiltering then
-		header:SetAttribute("xOffset", iconSize + 1)
-	else
-		-- have all icons overlap themselves, and then only the visible on is shown
-		-- genius right?
-		header:SetAttribute("xOffset", 0)
-	end
 
 	header:SetAttribute("yOffset", 0)
 	header:SetAttribute("wrapAfter", 40)
@@ -205,14 +227,25 @@ end
 
 ---@param unit string
 ---@param options IconOptions
----@return table
+---@return Header
 function M:CreateHeader(unit, options)
 	if not unit then
 		error("unit must not be nil")
 	end
 
-	local header = CreateSecureHeader(options)
+	local header = CreateSecureHeader()
 	UpdateHeader(header, unit, options)
+
+	header.Callbacks = {}
+	header.IsCcApplied = false
+
+	function header.RegisterCallback(headerSelf, callback)
+		if not callback then
+			return
+		end
+
+		headerSelf.Callbacks[#headerSelf.Callbacks + 1] = callback
+	end
 
 	return header
 end
@@ -223,3 +256,20 @@ end
 function M:UpdateHeader(header, unit, options)
 	UpdateHeader(header, unit, options)
 end
+
+function M:ClearHeader(header)
+	header:SetAttribute("unit", nil)
+	header:UnregisterEvent("UNIT_AURA")
+	header.Callbacks = {}
+end
+
+---@class Header : Frame
+---@field IsCcApplied boolean
+---@field RegisterCallback fun(self: Header, callback: fun(ccApplied: boolean))
+
+---@class Frame
+---@field SetPoint fun(self: Frame, point: string, relativeTo: any, relativePoint: string, xOffset: number?, yOffset: number?)
+---@field GetAttribute fun(self: Header, attribute: string): any
+---@field IsVisible fun(self: Frame): boolean
+---@field Show fun(self: Frame)
+---@field Hide fun(self: Frame)

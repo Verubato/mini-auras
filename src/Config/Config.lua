@@ -1,5 +1,6 @@
 ---@type string, Addon
 local addonName, addon = ...
+local capabilities = addon.Capabilities
 local mini = addon.Framework
 local verticalSpacing = mini.VerticalSpacing
 ---@type Db
@@ -58,6 +59,25 @@ local dbDefaults = {
 				X = 2,
 				Y = 0,
 			},
+		},
+
+		Icons = {
+			Size = 72,
+			Glow = true,
+			ReverseSwipe = false,
+		},
+	},
+
+	---@class HealerOptions
+	Healer = {
+		Enabled = false,
+
+		Point = "CENTER",
+		RelativePoint = "TOP",
+		RelativeTo = "UIParent",
+		Offset = {
+			X = 0,
+			Y = -200,
 		},
 
 		Icons = {
@@ -182,7 +202,50 @@ function config:Init()
 		General = "General",
 		Default = "Default",
 		Raids = "Raids",
+		Healer = "Healer",
 		Anchors = "Anchors",
+	}
+
+	local tabs = {
+		{
+			Key = keys.General,
+			Title = "General",
+			Build = function(content)
+				config.General:Build(content)
+			end,
+		},
+		{
+			Key = keys.Default,
+			Title = "Arena/Default",
+			Build = function(content)
+				config.Instance:Build(content, db.Default)
+			end,
+		},
+		{
+			Key = keys.Raids,
+			Title = "BGs/Raids",
+			Build = function(content)
+				config.Instance:Build(content, db.Raid)
+			end,
+		},
+	}
+
+	if capabilities:SupportsCrowdControlFiltering() then
+		tabs[#tabs + 1] = {
+			Key = keys.Healer,
+			Title = "Healer",
+			Build = function(content)
+				config.Healer:Build(content, db.Healer)
+			end,
+		}
+	end
+
+	tabs[#tabs + 1] = {
+		Key = keys.Anchors,
+		Title = "Custom Anchors",
+		Build = function(content)
+			config.Anchors:Build(content)
+		end,
 	}
 
 	local tabController = mini:CreateTabs({
@@ -191,36 +254,7 @@ function config:Init()
 		ContentInsets = {
 			Top = verticalSpacing,
 		},
-		Tabs = {
-			{
-				Key = keys.General,
-				Title = "General",
-				Build = function(content)
-					config.General:Build(content)
-				end,
-			},
-			{
-				Key = keys.Default,
-				Title = "Arena/Default",
-				Build = function(content)
-					config.Instance:Build(content, db.Default)
-				end,
-			},
-			{
-				Key = keys.Raids,
-				Title = "BGs/Raids",
-				Build = function(content)
-					config.Instance:Build(content, db.Raid)
-				end,
-			},
-			{
-				Key = keys.Anchors,
-				Title = "Custom Anchors",
-				Build = function(content)
-					config.Anchors:Build(content)
-				end,
-			},
-		},
+		Tabs = tabs,
 		OnTabChanged = function(key, _)
 			-- swap the test options when the user changes tabs in case we're in test mode already
 			if key == keys.Arena then
@@ -289,7 +323,7 @@ function config:Init()
 		msg = msg and msg:lower():match("^%s*(.-)%s*$") or ""
 
 		if msg == "test" then
-			addon:TestMode(db.Arena)
+			addon:ToggleTest(db.Default)
 			return
 		end
 
@@ -304,3 +338,4 @@ end
 ---@field General GeneralConfig
 ---@field Instance InstanceConfig
 ---@field Anchors AnchorsConfig
+---@field Healer HealerConfig

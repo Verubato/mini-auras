@@ -1,0 +1,103 @@
+---@type string, Addon
+local _, addon = ...
+local mini = addon.Framework
+local verticalSpacing = mini.VerticalSpacing
+local horizontalSpacing = mini.HorizontalSpacing
+local columns = 4
+local columnWidth = mini:ColumnWidth(columns, 0, 0)
+local config = addon.Config
+
+---@class HealerConfig
+local M = {}
+
+config.Healer = M
+
+---@param panel table
+---@param options HealerOptions
+function M:Build(panel, options)
+	local lines = mini:TextBlock({
+		Parent = panel,
+		Lines = {
+			"A separate region for when you're healer is CC'd.",
+			"This is still work in progress and may not be fully functional."
+		}
+	})
+
+	lines:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+
+	local enabledChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Enabled",
+		GetValue = function()
+			return options.Enabled
+		end,
+		SetValue = function(value)
+			options.Enabled = value
+
+			config:Apply()
+		end,
+	})
+
+	enabledChk:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local glowChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Glow icons",
+		GetValue = function()
+			return options.Icons.Glow
+		end,
+		SetValue = function(value)
+			options.Icons.Glow = value
+			config:Apply()
+		end,
+	})
+
+	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	glowChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+
+	local reverseChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Reverse swipe",
+		GetValue = function()
+			return options.Icons.ReverseCooldown
+		end,
+		SetValue = function(value)
+			options.Icons.ReverseCooldown = value
+			config:Apply()
+		end,
+	})
+
+	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+
+	local iconSize = mini:Slider({
+		Parent = panel,
+		Min = 10,
+		Max = 200,
+		Width = (columnWidth * columns) - horizontalSpacing,
+		Step = 1,
+		LabelText = "Icon Size",
+		GetValue = function()
+			return options.Icons.Size
+		end,
+		SetValue = function(v)
+			options.Icons.Size = mini:ClampInt(v, 10, 200, 32)
+			config:Apply()
+		end,
+	})
+
+	iconSize.Slider:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+
+	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+	testBtn:SetSize(120, 26)
+	testBtn:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	testBtn:SetText("Test")
+	testBtn:SetScript("OnClick", function()
+		local db = mini:GetSavedVars()
+		addon:ToggleTest(db.Default)
+	end)
+
+	panel:HookScript("OnShow", function()
+		panel:MiniRefresh()
+	end)
+end

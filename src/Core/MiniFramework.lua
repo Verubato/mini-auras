@@ -888,21 +888,21 @@ function M:CreateTabs(options)
 
 	local controller = {}
 
-	function controller:GetSelected()
+	function controller.GetSelected(_)
 		return selectedKey
 	end
 
-	function controller:GetContent(keyOrIndex)
+	function controller.GetContent(_, keyOrIndex)
 		local i = GetIndex(keyOrIndex)
 		return i and tabs[i] and tabs[i].Content
 	end
 
-	function controller:GetTabButton(keyOrIndex)
+	function controller.GetTabButton(_, keyOrIndex)
 		local i = GetIndex(keyOrIndex)
 		return i and tabs[i] and tabs[i].Button
 	end
 
-	function controller:Select(keyOrIndex)
+	function controller.Select(_, keyOrIndex)
 		local i = GetIndex(keyOrIndex)
 		if not i or not tabs[i] then
 			return

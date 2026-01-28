@@ -6,9 +6,12 @@ local M = {}
 
 addon.Capabilities = M
 
+local manualSwitch = true
+local supportsCrowdControlFiltering
+
 function M:SupportsCrowdControlFiltering()
-    return false
-	-- local _, _, _, build = GetBuildInfo()
-	--
-	-- return build >= 120001
+	return supportsCrowdControlFiltering and manualSwitch
 end
+
+local _, _, _, build = GetBuildInfo()
+supportsCrowdControlFiltering = build >= 120001

@@ -286,7 +286,7 @@ function M:Build(panel, options)
 	testBtn:SetPoint("TOPLEFT", advancedMode, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 	testBtn:SetText("Test")
 	testBtn:SetScript("OnClick", function()
-		addon:TestMode(options)
+		addon:ToggleTest(options)
 	end)
 
 	panel:HookScript("OnShow", function()

@@ -4,29 +4,47 @@ local mini = addon.Framework
 local frames = addon.Frames
 local auras = addon.Auras
 local scheduler = addon.Scheduler
+local units = addon.Units
 local capabilities = addon.Capabilities
 local eventsFrame
----@type { table: table }
+
+---@type { table: Header }
 local headers = {}
-local testContainer
+
+local healerAnchor
+local testHealerHeader
+---@type { string: Header }
+local healerHeaders = {}
+
+local maxTestFrames = 3
+local testFramesContainer
 ---@type { table: table }
 local testHeaders = {}
 local testPartyFrames = {}
 local testMode = false
+-- Kidney Shot
+local singleTestSpell = 408
+local multipleTestSpells = {
+	singleTestSpell,
+	-- Fear
+	5782,
+	-- Polymorph
+	118,
+}
+local testSpells = capabilities:SupportsCrowdControlFiltering() and multipleTestSpells or { singleTestSpell }
+
 ---@type InstanceOptions?
 local testInstanceOptions
 ---@type InstanceOptions
 local currentInstanceOptions
-local maxTestFrames = 3
+
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
+
 local IsAddOnLoaded = (C_AddOns and C_AddOns.IsAddOnLoaded) or IsAddOnLoaded
 local HasDanders = IsAddOnLoaded("DandersFrames")
+
 ---@type Db
 local db
-local testSpells = {
-	-- Kidney Shot
-	408,
-}
 
 local function GetInstanceOptions()
 	local inInstance, instanceType = IsInInstance()
@@ -59,6 +77,61 @@ local function IsPet(unit)
 	end
 
 	return false
+end
+
+local function RefreshHealerAnchor()
+	local options = db.Healer
+
+	if not healerAnchor then
+		healerAnchor = CreateFrame("Frame", addonName .. "HealerContainer")
+		healerAnchor:EnableMouse(true)
+		healerAnchor:SetMovable(true)
+		healerAnchor:RegisterForDrag("LeftButton")
+		healerAnchor:SetScript("OnDragStart", function(self)
+			self:StartMoving()
+		end)
+		healerAnchor:SetScript("OnDragStop", function(self)
+			self:StopMovingOrSizing()
+
+			local point, relativeTo, relativePoint, x, y = self:GetPoint()
+			db.Healer.Point = point
+			db.Healer.RelativePoint = relativePoint
+			db.Healer.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
+			db.Healer.Offset.X = x
+			db.Healer.Offset.Y = y
+		end)
+
+		healerAnchor:SetPoint(
+			options.Point,
+			_G[options.RelativeTo] or UIParent,
+			options.RelativePoint,
+			options.Offset.X,
+			options.Offset.Y
+		)
+
+		testHealerHeader = CreateFrame("Frame", addonName .. "TestHealerHeader", healerAnchor)
+
+		local text = healerAnchor:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+		text:SetPoint("TOP", healerAnchor, "TOP", 0, 6)
+		text:SetText("Healer in CC!")
+		text:SetTextColor(1, 0.1, 0.1)
+		text:SetShadowColor(0, 0, 0, 1)
+		text:SetShadowOffset(1, -1)
+
+		healerAnchor.HealerWarning = text
+
+		UpdateTestHeader(testHealerHeader, db.Healer.Icons)
+
+		-- disable mouse so we can drag the healer
+		testHealerHeader:EnableMouse(false)
+		testHealerHeader:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
+	end
+
+	local stringWidth = healerAnchor.HealerWarning:GetStringWidth()
+	local stringHeight = healerAnchor.HealerWarning:GetStringHeight()
+	local iconSize = db.Healer.Icons.Size
+
+	healerAnchor:SetSize(math.max(iconSize, stringWidth), iconSize + stringHeight)
 end
 
 local function GetAnchors(visibleOnly)
@@ -111,6 +184,11 @@ end
 ---@param isTest boolean
 ---@param options InstanceOptions
 local function ShowHideHeader(header, anchor, isTest, options)
+	if not isTest and not options.Enabled then
+		header:Hide()
+		return
+	end
+
 	-- header might be a test header, in which case it doesn't have a unit
 	local unit = header:GetAttribute("unit") or anchor.unit or anchor:GetAttribute("unit")
 
@@ -125,11 +203,6 @@ local function ShowHideHeader(header, anchor, isTest, options)
 			header:Hide()
 			return
 		end
-	end
-
-	if not isTest and not options.Enabled then
-		header:Hide()
-		return
 	end
 
 	-- danders doesn't hide blizzard frames, but rather sets the alpha to 0 using a secret value
@@ -208,26 +281,23 @@ local function CreateTestFrame(i)
 end
 
 local function EnsureTestPartyFrames()
-	if not testContainer then
-		testContainer = CreateFrame("Frame", addonName .. "TestContainer")
-		testContainer:SetClampedToScreen(true)
-		testContainer:EnableMouse(true)
-		testContainer:SetMovable(true)
-		testContainer:RegisterForDrag("LeftButton")
-		testContainer:SetScript("OnDragStart", function(self)
+	if not testFramesContainer then
+		testFramesContainer = CreateFrame("Frame", addonName .. "TestContainer")
+		testFramesContainer:SetClampedToScreen(true)
+		testFramesContainer:EnableMouse(true)
+		testFramesContainer:SetMovable(true)
+		testFramesContainer:RegisterForDrag("LeftButton")
+		testFramesContainer:SetScript("OnDragStart", function(self)
 			self:StartMoving()
 		end)
-		testContainer:SetScript("OnDragStop", function(self)
+		testFramesContainer:SetScript("OnDragStop", function(self)
 			self:StopMovingOrSizing()
 		end)
 
 		local xOffset = -450
 		local yOffset = 0
 
-		-- it's too complicated to try and anchor over the top of real frame positions
-		-- as with various addons the real frames will be hidden and moved to off screen positions
-		-- so just use a fixed position
-		testContainer:SetPoint("CENTER", UIParent, "CENTER", xOffset, yOffset)
+		testFramesContainer:SetPoint("CENTER", UIParent, "CENTER", xOffset, yOffset)
 	end
 
 	local width = 144
@@ -254,48 +324,49 @@ local function EnsureTestPartyFrames()
 			frame:SetAllPoints(anchors[i])
 			anchoredToReal = true
 		else
-			frame:SetPoint("TOP", testContainer, "TOP", 0, (i - 1) * -frame:GetHeight() - padding)
+			frame:SetPoint("TOP", testFramesContainer, "TOP", 0, (i - 1) * -frame:GetHeight() - padding)
 		end
 	end
 
 	if anchoredToReal then
-		-- we've anchored to real frames, too much work to make it draggable
-		testContainer:Hide()
+		testFramesContainer:Hide()
 	else
-		testContainer:SetSize(width + padding * 2, height * maxTestFrames + padding * 2)
-		testContainer:Show()
+		testFramesContainer:SetSize(width + padding * 2, height * maxTestFrames + padding * 2)
+		testFramesContainer:Show()
 	end
 end
 
----comment
 ---@param frame table
----@param options InstanceOptions
-local function UpdateTestHeader(frame, options)
+---@param options IconOptions
+function UpdateTestHeader(frame, options)
 	local cols = #testSpells
 	local rows = 1
-	local size = tonumber(options.Icons.Size) or 32
+	local size = tonumber(options.Size) or 32
 	local padX = 0
 	local padY = 0
 	local stepX = size + padX
 	local stepY = -(size + padY)
 	local maxIcons = math.min(#testSpells, cols * rows)
 
-	frame.icons = frame.icons or {}
+	frame.Icons = frame.Icons or {}
 
 	for i = 1, maxIcons do
-		local btn = frame.icons[i]
+		local btn = frame.Icons[i]
 
 		if not btn then
-			btn = CreateFrame("Frame", nil, frame)
-			btn.icon = btn:CreateTexture(nil, "ARTWORK")
-			btn.icon:SetAllPoints()
+			btn = CreateFrame("Button", nil, frame, "MiniCCAuraButtonTemplate")
 
-			frame.icons[i] = btn
+			frame.Icons[i] = btn
 		end
 
 		btn:SetSize(size, size)
+		btn.Icon:SetAllPoints(btn)
+
+		btn:EnableMouse(false)
+		btn.Icon:EnableMouse(false)
+
 		local texture = C_Spell.GetSpellTexture(testSpells[i])
-		btn.icon:SetTexture(texture)
+		btn.Icon:SetTexture(texture)
 
 		local col = (i - 1) % cols
 		local row = math.floor((i - 1) / cols)
@@ -306,14 +377,14 @@ local function UpdateTestHeader(frame, options)
 	end
 
 	-- Hide any extra buttons we previously created but no longer need
-	for i = maxIcons + 1, #frame.icons do
-		frame.icons[i]:Hide()
+	for i = maxIcons + 1, #frame.Icons do
+		frame.Icons[i]:Hide()
 	end
 
 	-- glow icons
 	if LCG then
-		for _, icon in ipairs(frame.icons) do
-			if options.Icons.Glow then
+		for _, icon in ipairs(frame.Icons) do
+			if options.Glow then
 				LCG.ProcGlow_Start(icon, {
 					startAnim = false,
 				})
@@ -337,10 +408,70 @@ local function EnsureTestHeader(anchor)
 	end
 
 	if testInstanceOptions then
-		UpdateTestHeader(header, testInstanceOptions)
+		UpdateTestHeader(header, testInstanceOptions.Icons)
 	end
 
 	return header
+end
+
+local function OnHealerCcChanged()
+	if testMode then
+		return
+	end
+
+	local isCcd = false
+
+	for _, header in pairs(healerHeaders) do
+		if mini:IsSecret(header.IsCcApplied) then
+			isCcd = header.IsCcApplied
+			break
+		else
+			isCcd = isCcd or header.IsCcApplied
+
+			if isCcd then
+				break
+			end
+		end
+	end
+
+	healerAnchor:SetAlphaFromBoolean(isCcd)
+end
+
+local function UpdateHealerHeaders()
+	local options = db.Healer
+
+	-- clear off any existing headers that are no longer healers
+	-- TODO: pool these headers instead of hard clearing them and letting them linger
+	for unit, header in pairs(healerHeaders) do
+		if not units:IsHealer(unit) or not options.Enabled then
+			auras:ClearHeader(header)
+			headers[unit] = nil
+		end
+	end
+
+	-- if units:IsHealer("player") then
+	-- 	return
+	-- end
+
+	if not options.Enabled then
+		return
+	end
+
+	local healers = units:FindHealers()
+
+	for _, healer in ipairs(healers) do
+		local header = healerHeaders[healer]
+		if header then
+			auras:UpdateHeader(header, healer, options.Icons)
+		else
+			header = auras:CreateHeader(healer, options.Icons)
+			header:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
+			header:RegisterCallback(OnHealerCcChanged)
+			header:Show()
+
+			healerHeaders[healer] = header
+		end
+	end
 end
 
 local function RealMode()
@@ -371,8 +502,22 @@ local function RealMode()
 		testPartyFrame:Hide()
 	end
 
-	if testContainer then
-		testContainer:Hide()
+	if testFramesContainer then
+		testFramesContainer:Hide()
+	end
+
+	if healerAnchor then
+		healerAnchor:EnableMouse(false)
+		healerAnchor:SetMovable(false)
+		healerAnchor:SetAlpha(0)
+	end
+
+	if testHealerHeader then
+		testHealerHeader:Hide()
+	end
+
+	if capabilities:SupportsCrowdControlFiltering() then
+		UpdateHealerHeaders()
 	end
 end
 
@@ -402,27 +547,34 @@ local function TestMode()
 			local testPartyFrame = testPartyFrames[i]
 			testPartyFrame:Hide()
 		end
+	else
+		-- no real frames, show our test frames
+		EnsureTestPartyFrames()
 
-		return
-	end
+		local anchor, testHeader = next(testHeaders)
+		for i = 1, #testPartyFrames do
+			if testHeader then
+				local testPartyFrame = testPartyFrames[i]
 
-	-- no real frames, show our test frames
-	EnsureTestPartyFrames()
+				AnchorHeader(testHeader, testPartyFrame, testInstanceOptions)
 
-	local anchor, testHeader = next(testHeaders)
-	for i = 1, #testPartyFrames do
-		if testHeader then
-			local testPartyFrame = testPartyFrames[i]
+				testHeader:Show()
+				testHeader:SetAlpha(1)
+				testPartyFrame:Show()
 
-			AnchorHeader(testHeader, testPartyFrame, testInstanceOptions)
-
-			testHeader:Show()
-			testHeader:SetAlpha(1)
-			testPartyFrame:Show()
-
-			anchor, testHeader = next(testHeaders, anchor)
+				anchor, testHeader = next(testHeaders, anchor)
+			end
 		end
 	end
+
+	-- healer anchor
+	UpdateTestHeader(testHealerHeader, db.Healer.Icons)
+
+	healerAnchor:EnableMouse(true)
+	healerAnchor:SetMovable(true)
+	healerAnchor:SetAlpha(1)
+
+	testHealerHeader:Show()
 end
 
 local function IsFriendlyCuf(frame)
@@ -475,7 +627,7 @@ end
 
 local function OnEvent(_, event)
 	if event == "PLAYER_REGEN_DISABLED" then
-		if testMode then
+		if testMode or testHealerMode then
 			-- disable test mode as we enter combat
 			testMode = false
 			addon:Refresh()
@@ -515,22 +667,13 @@ local function OnAddonLoaded()
 		hooksecurefunc("CompactUnitFrame_UpdateVisible", OnCufUpdateVisible)
 	end
 
-	if capabilities:SupportsCrowdControlFiltering() then
-		testSpells = {
-			-- Kidney Shot
-			408,
-			-- Fear
-			5782,
-			-- Polymorph
-			118,
-		}
-	end
-
 	local fs = FrameSortApi and FrameSortApi.v3
 
 	if fs and fs.Sorting and fs.Sorting.RegisterPostSortCallback then
 		fs.Sorting:RegisterPostSortCallback(OnFrameSortSorted)
 	end
+
+	RefreshHealerAnchor()
 end
 
 function addon:Refresh()
@@ -543,6 +686,7 @@ function addon:Refresh()
 
 	SetCurrentInstance()
 	EnsureHeaders()
+	RefreshHealerAnchor()
 
 	if testMode then
 		TestMode()
@@ -552,13 +696,9 @@ function addon:Refresh()
 end
 
 ---@param options InstanceOptions?
-function addon:TestMode(options)
-	if testMode and options ~= testInstanceOptions then
-		testInstanceOptions = options
-	else
-		testMode = not testMode
-		testInstanceOptions = options
-	end
+function addon:ToggleTest(options)
+	testMode = not testMode
+	testInstanceOptions = options
 
 	addon:Refresh()
 
@@ -581,7 +721,9 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Capabilities Capabilities
 ---@field Frames Frames
 ---@field Scheduler Scheduler
+---@field Units UnitUtil
 ---@field Config Config
 ---@field Refresh fun(self: table)
----@field TestMode fun(self: table, options: InstanceOptions)
+---@field ToggleTest fun(self: table, options: InstanceOptions)
 ---@field TestOptions fun(self: table, options: InstanceOptions)
+---@field TestHealer fun(self: table)
