@@ -28,21 +28,12 @@ local testSpells = {
 	408,
 }
 
-local function IsArena()
-	local inInstance, instanceType = IsInInstance()
-	return inInstance and instanceType == "arena"
-end
-
-local function IsBg()
-	local inInstance, instanceType = IsInInstance()
-	return inInstance and instanceType == "pvp"
-end
-
 local function GetInstanceOptions()
-	if IsArena() then
-		return db.Arena
-	elseif IsBg() then
-		return db.BattleGrounds
+	local inInstance, instanceType = IsInInstance()
+	local isBgOrRaid = inInstance and (instanceType == "pvp" or instanceType == "raid")
+
+	if isBgOrRaid then
+		return db.Raid
 	end
 
 	return db.Default

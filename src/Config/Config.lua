@@ -7,10 +7,10 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 4,
+	Version = 5,
 
 	---@class InstanceOptions
-	Arena = {
+	Default = {
 		Enabled = true,
 		ExcludePlayer = false,
 
@@ -38,34 +38,7 @@ local dbDefaults = {
 		},
 	},
 
-	BattleGrounds = {
-		Enabled = true,
-		ExcludePlayer = false,
-
-		SimpleMode = {
-			Enabled = true,
-			Offset = {
-				X = 2,
-				Y = 0,
-			},
-		},
-
-		AdvancedMode = {
-			Point = "TOPLEFT",
-			RelativePoint = "TOPRIGHT",
-			Offset = {
-				X = 2,
-				Y = 0,
-			},
-		},
-
-		Icons = {
-			Size = 72,
-			Glow = true,
-		},
-	},
-
-	Default = {
+	Raid = {
 		Enabled = true,
 		ExcludePlayer = false,
 
@@ -149,6 +122,16 @@ local function GetAndUpgradeDb()
 		vars.Version = 4
 	end
 
+	if vars.Version == 4 then
+		vars.Raid = vars.BattleGrounds
+		vars.BattleGrounds = nil
+
+		vars.Default = vars.Arena
+		vars.Arena = nil
+		mini:CleanTable(db, dbDefaults, true, true)
+		vars.Version = 5
+	end
+
 	vars = mini:GetSavedVars(dbDefaults)
 
 	return vars
@@ -195,9 +178,8 @@ function config:Init()
 
 	local keys = {
 		General = "General",
-		Arena = "Arena",
-		BattleGrounds = "BattleGrounds",
 		Default = "Default",
+		Raids = "Raids",
 		Anchors = "Anchors",
 	}
 
@@ -216,24 +198,17 @@ function config:Init()
 				end,
 			},
 			{
-				Key = keys.Arena,
-				Title = "Arena",
-				Build = function(content)
-					config.Instance:Build(content, db.Arena)
-				end,
-			},
-			{
-				Key = keys.BattleGrounds,
-				Title = "BGs",
-				Build = function(content)
-					config.Instance:Build(content, db.BattleGrounds)
-				end,
-			},
-			{
 				Key = keys.Default,
-				Title = "World",
+				Title = "Arena/Default",
 				Build = function(content)
 					config.Instance:Build(content, db.Default)
+				end,
+			},
+			{
+				Key = keys.Raids,
+				Title = "BGs/Raids",
+				Build = function(content)
+					config.Instance:Build(content, db.Raid)
 				end,
 			},
 			{
