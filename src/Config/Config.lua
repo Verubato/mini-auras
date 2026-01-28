@@ -35,6 +35,7 @@ local dbDefaults = {
 		Icons = {
 			Size = 72,
 			Glow = true,
+			ReverseCooldown = false,
 		},
 	},
 
@@ -62,6 +63,7 @@ local dbDefaults = {
 		Icons = {
 			Size = 72,
 			Glow = true,
+			ReverseSwipe = false,
 		},
 	},
 

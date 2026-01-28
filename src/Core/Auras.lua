@@ -14,6 +14,7 @@ local function OnHeaderEvent(header, event, arg1)
 	local unit = header:GetAttribute("unit")
 	local filter = header:GetAttribute("filter")
 	local glow = header:GetAttribute("x-glow") or false
+	local reverseSwipe = header:GetAttribute("x-reverse-cooldown") or false
 
 	if not unit then
 		return
@@ -43,6 +44,8 @@ local function OnHeaderEvent(header, event, arg1)
 		end
 
 		icon:SetAllPoints(child)
+
+		cooldown:SetReverse(reverseSwipe)
 
 		local data = C_UnitAuras.GetAuraDataByIndex(unit, child:GetID(), filter)
 
@@ -142,6 +145,7 @@ local function UpdateHeader(header, unit, options)
 	header:SetAttribute("unit", unit)
 	header:SetAttribute("x-iconSize", iconSize)
 	header:SetAttribute("x-glow", options.Glow)
+	header:SetAttribute("x-reverse-cooldown", options.ReverseCooldown)
 
 	-- refresh any icon sizes that may have changed
 	RefreshHeaderChildSizes(header, options)

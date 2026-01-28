@@ -215,6 +215,21 @@ function M:Build(panel, options)
 	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	glowChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
+	local reverseChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Reverse swipe",
+		GetValue = function()
+			return options.Icons.ReverseCooldown
+		end,
+		SetValue = function(value)
+			options.Icons.ReverseCooldown = value
+			config:Apply()
+		end,
+	})
+
+	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	reverseChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+
 	local simpleChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Simple settings",
