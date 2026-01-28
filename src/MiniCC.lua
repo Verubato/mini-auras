@@ -4,6 +4,7 @@ local mini = addon.Framework
 local frames = addon.Frames
 local auras = addon.Auras
 local scheduler = addon.Scheduler
+local capabilities = addon.Capabilities
 local eventsFrame
 ---@type { table: table }
 local headers = {}
@@ -518,6 +519,17 @@ local function OnAddonLoaded()
 	if CompactUnitFrame_UpdateVisible then
 		hooksecurefunc("CompactUnitFrame_UpdateVisible", OnCufUpdateVisible)
 	end
+
+	if capabilities:SupportsCrowdControlFiltering() then
+		testSpells = {
+			-- Kidney Shot
+			408,
+			-- Fear
+			5782,
+			-- Polymorph
+			118,
+		}
+	end
 end
 
 function addon:Refresh()
@@ -565,6 +577,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@class Addon
 ---@field Framework MiniFramework
 ---@field Auras AurasModule
+---@field Capabilities Capabilities
 ---@field Frames Frames
 ---@field Scheduler Scheduler
 ---@field Config Config

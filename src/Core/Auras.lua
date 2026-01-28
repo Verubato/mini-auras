@@ -1,5 +1,7 @@
 ---@type string, Addon
 local addonName, addon = ...
+local capabilities = addon.Capabilities
+local supportsCCFiltering = capabilities:SupportsCrowdControlFiltering()
 local maxAuras = 40
 local headerId = 1
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
@@ -48,7 +50,10 @@ local function OnHeaderEvent(header, event, arg1)
 			icon:SetTexture(data.icon)
 
 			local isCC = C_Spell.IsSpellCrowdControl(data.spellId)
-			icon:SetAlphaFromBoolean(isCC)
+
+			if not supportsCCFiltering then
+				icon:SetAlphaFromBoolean(isCC)
+			end
 
 			local start
 			local duration
@@ -87,7 +92,9 @@ local function OnHeaderEvent(header, event, arg1)
 				end
 			end
 
-			cooldown:SetAlphaFromBoolean(isCC)
+			if not supportsCCFiltering then
+				cooldown:SetAlphaFromBoolean(isCC)
+			end
 		else
 			icon:Hide()
 
@@ -140,19 +147,33 @@ local function UpdateHeader(header, unit, options)
 	RefreshHeaderChildSizes(header, options)
 end
 
-local function CreateSecureHeader()
+---@param options IconOptions
+local function CreateSecureHeader(options)
+	local iconSize = options and tonumber(options.Size) or 32
 	local header = CreateFrame("Frame", addonName .. "SecureHeader" .. headerId, UIParent, "SecureAuraHeaderTemplate")
 
 	header:SetAttribute("template", "MiniCCAuraButtonTemplate")
-	header:SetAttribute("filter", "HARMFUL|INCLUDE_NAME_PLATE_ONLY")
+
+	if supportsCCFiltering then
+		header:SetAttribute("filter", "CROWD_CONTROL")
+	else
+		header:SetAttribute("filter", "HARMFUL|INCLUDE_NAME_PLATE_ONLY")
+	end
+
 	header:SetAttribute("sortMethod", "TIME")
 	header:SetAttribute("sortDirection", "-")
 	header:SetAttribute("point", "TOPLEFT")
 	header:SetAttribute("minWidth", 1)
 	header:SetAttribute("minHeight", 1)
-	-- have all icons overlap themselves, and then only the visible on is shown
-	-- genius right?
-	header:SetAttribute("xOffset", 0)
+
+	if supportsCCFiltering then
+		header:SetAttribute("xOffset", iconSize + 1)
+	else
+		-- have all icons overlap themselves, and then only the visible on is shown
+		-- genius right?
+		header:SetAttribute("xOffset", 0)
+	end
+
 	header:SetAttribute("yOffset", 0)
 	header:SetAttribute("wrapAfter", 40)
 	header:SetAttribute("maxWraps", 1)
@@ -186,7 +207,7 @@ function M:CreateHeader(unit, options)
 		error("unit must not be nil")
 	end
 
-	local header = CreateSecureHeader()
+	local header = CreateSecureHeader(options)
 	UpdateHeader(header, unit, options)
 
 	return header
