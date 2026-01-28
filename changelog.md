@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.2
+
+Another init config fix for brand new installations.
+
 ## 2.0.1
 
 Init config fix for brand new installations.
