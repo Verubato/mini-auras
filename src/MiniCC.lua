@@ -469,6 +469,10 @@ local function OnCufSetUnit(frame, unit)
 	end)
 end
 
+local function OnFrameSortSorted()
+	addon:Refresh()
+end
+
 local function OnEvent(_, event)
 	if event == "PLAYER_REGEN_DISABLED" then
 		if testMode then
@@ -520,6 +524,12 @@ local function OnAddonLoaded()
 			-- Polymorph
 			118,
 		}
+	end
+
+	local fs = FrameSortApi and FrameSortApi.v3
+
+	if fs and fs.Sorting and fs.Sorting.RegisterPostSortCallback then
+		fs.Sorting:RegisterPostSortCallback(OnFrameSortSorted)
 	end
 end
 
