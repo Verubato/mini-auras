@@ -9,6 +9,8 @@ local db
 local dbDefaults = {
 	Version = 6,
 
+	NotifiedChanges = true,
+
 	---@class InstanceOptions
 	Default = {
 		Enabled = true,
@@ -164,6 +166,7 @@ local function GetAndUpgradeDb()
 			vars.Anchor3 = ""
 		end
 
+		vars.NotifiedChanges = false
 		vars.Version = 6
 	end
 

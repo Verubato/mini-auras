@@ -96,9 +96,20 @@ local function GetOrCreateDialog()
 	})
 	dialog:SetBackdropColor(0, 0, 0, 0.9)
 
+	dialog.Title = dialog:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+	dialog.Title:SetPoint("TOP", dialog, "TOP", 0, -8)
+	dialog.Title:SetText("Notification")
+	dialog.Title:SetTextColor(1, 0.82, 0)
+
+	dialog.TitleDivider = dialog:CreateTexture(nil, "ARTWORK")
+	dialog.TitleDivider:SetHeight(1)
+	dialog.TitleDivider:SetPoint("TOPLEFT", dialog, "TOPLEFT", 8, -28)
+	dialog.TitleDivider:SetPoint("TOPRIGHT", dialog, "TOPRIGHT", -8, -28)
+	dialog.TitleDivider:SetColorTexture(1, 1, 1, 0.15)
+
 	dialog.Text = dialog:CreateFontString(nil, "ARTWORK", "GameFontHighlightLarge")
-	dialog.Text:SetPoint("TOPLEFT", 12, -12)
-	dialog.Text:SetPoint("TOPRIGHT", -12, -12)
+	dialog.Text:SetPoint("TOPLEFT", 12, -40)
+	dialog.Text:SetPoint("TOPRIGHT", -12, -40)
 	dialog.Text:SetJustifyH("LEFT")
 	dialog.Text:SetJustifyV("TOP")
 
@@ -1015,6 +1026,7 @@ function M:ShowDialog(options)
 	end
 
 	dlg.Text:SetText(options.Text)
+	dlg.Title:SetText(options.Title or "Notification")
 
 	dlg:ClearAllPoints()
 	dlg:SetPoint("CENTER", UIParent, "CENTER")
@@ -1239,6 +1251,7 @@ loader:SetScript("OnEvent", OnAddonLoaded)
 ---@field VerticalSpacing number?
 
 ---@class DialogOptions
+---@field Title string
 ---@field Text string
 ---@field Width number?
 ---@field Height number?

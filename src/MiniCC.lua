@@ -6,6 +6,7 @@ local headerManager = addon.HeaderManager
 local testModeManager = addon.TestModeManager
 local healerOverlay = addon.HealerOverlay
 local eventsFrame
+local db
 
 local function IsFriendlyCuf(frame)
 	if frame:IsForbidden() then
@@ -47,6 +48,19 @@ local function OnCufSetUnit(frame, unit)
 	end)
 end
 
+local function NotifyChanges()
+	if db.NotifiedChanges then
+		return
+	end
+
+	db.NotifiedChanges = true
+
+	mini:ShowDialog({
+		Title = "MiniCC - What's New?",
+		Text = "'Healer in CC' feature is now available!'",
+	})
+end
+
 local function OnFrameSortSorted()
 	addon:Refresh()
 end
@@ -59,7 +73,12 @@ local function OnEvent(_, event)
 		end
 	end
 
-	if event == "PLAYER_ENTERING_WORLD" or event == "GROUP_ROSTER_UPDATE" then
+	if event == "PLAYER_ENTERING_WORLD" then
+		NotifyChanges()
+		addon:Refresh()
+	end
+
+	if event == "GROUP_ROSTER_UPDATE" then
 		addon:Refresh()
 	end
 end
@@ -76,6 +95,8 @@ local function OnAddonLoaded()
 	headerManager:RefreshInstanceOptions()
 	headerManager:EnsureHeaders()
 	healerOverlay:Refresh()
+
+	db = mini:GetSavedVars()
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
