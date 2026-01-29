@@ -72,6 +72,8 @@ end
 function M:Init()
 	db = mini:GetSavedVars()
 
+	local options = db.Healer
+
 	healerAnchor = CreateFrame("Frame", addonName .. "HealerContainer")
 	healerAnchor:EnableMouse(true)
 	healerAnchor:SetMovable(true)
@@ -92,10 +94,12 @@ function M:Init()
 
 	local text = healerAnchor:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 	text:SetPoint("TOP", healerAnchor, "TOP", 0, 6)
+	text:SetFont(options.Font.File, options.Font.Size, options.Font.Flags)
 	text:SetText("Healer in CC!")
 	text:SetTextColor(1, 0.1, 0.1)
 	text:SetShadowColor(0, 0, 0, 1)
 	text:SetShadowOffset(1, -1)
+	text:Show()
 
 	healerAnchor.HealerWarning = text
 end
@@ -116,9 +120,11 @@ function M:Refresh()
 		options.Offset.Y
 	)
 
+	healerAnchor.HealerWarning:SetFont(options.Font.File, options.Font.Size, options.Font.Flags)
+
+	local iconSize = db.Healer.Icons.Size
 	local stringWidth = healerAnchor.HealerWarning:GetStringWidth()
 	local stringHeight = healerAnchor.HealerWarning:GetStringHeight()
-	local iconSize = db.Healer.Icons.Size
 
 	healerAnchor:SetSize(math.max(iconSize, stringWidth), iconSize + stringHeight)
 

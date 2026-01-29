@@ -92,6 +92,12 @@ local dbDefaults = {
 			BattleGrounds = false,
 			World = true,
 		},
+
+		Font = {
+			File = "Fonts\\FRIZQT__.TTF",
+			Size = 32,
+			Flags = "OUTLINE",
+		},
 	},
 
 	Anchor1 = "",

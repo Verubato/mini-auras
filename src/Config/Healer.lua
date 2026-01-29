@@ -131,9 +131,27 @@ function M:Build(panel, options)
 
 	iconSize.Slider:SetPoint("TOPLEFT", arenaChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
+	local fontSize = mini:Slider({
+		Parent = panel,
+		Min = 10,
+		Max = 100,
+		Width = (columnWidth * columns) - horizontalSpacing,
+		Step = 1,
+		LabelText = "Text Size",
+		GetValue = function()
+			return options.Font.Size
+		end,
+		SetValue = function(v)
+			options.Font.Size = mini:ClampInt(v, 10, 100, 32)
+			config:Apply()
+		end,
+	})
+
+	fontSize.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
 	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	testBtn:SetSize(120, 26)
-	testBtn:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	testBtn:SetPoint("TOPLEFT", fontSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 	testBtn:SetText("Test")
 	testBtn:SetScript("OnClick", function()
 		local db = mini:GetSavedVars()

@@ -117,6 +117,9 @@ end
 local function ShowHealerOverlay()
 	testHealerHeader:Show()
 	healerOverlay:Show()
+
+	-- update the size
+	M:UpdateTestHeader(testHealerHeader, db.Healer.Icons)
 end
 
 function M:Init()
