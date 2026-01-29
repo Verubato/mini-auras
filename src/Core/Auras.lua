@@ -259,10 +259,10 @@ function M:UpdateHeader(header, unit, options)
 end
 
 function M:ClearHeader(header)
-	-- scheduler:RunWhenCombatEnds(function()
-	-- 	header:SetAttribute("unit", nil)
-	-- 	header.Callbacks = {}
-	-- end)
+	scheduler:RunWhenCombatEnds(function()
+		header:SetAttribute("unit", nil)
+		header.Callbacks = {}
+	end)
 end
 
 ---@class Header : Frame

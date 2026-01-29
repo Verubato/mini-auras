@@ -20,7 +20,6 @@ local maxTestFrames = 3
 ---@type number[]
 local testSpells = {}
 local hasDanders = false
-local testNameplateHeaders = {}
 local testHealerHeader
 
 ---@class TestModeManager
@@ -52,12 +51,6 @@ local function CreateTestFrame(i)
 	return frame
 end
 
-local function HideNameplates()
-	for _, header in pairs(testNameplateHeaders) do
-		header:Hide()
-	end
-end
-
 local function HideTestFrames()
 	for _, testHeader in pairs(testHeaders) do
 		testHeader:Hide()
@@ -75,21 +68,6 @@ end
 local function HideHealerOverlay()
 	testHealerHeader:Hide()
 	healerOverlay:Hide()
-end
-
-local function ShowNameplates()
-	for _, nameplate in ipairs(C_NamePlate.GetNamePlates(false) or {}) do
-		local testHeader = testNameplateHeaders[nameplate]
-
-		if not testHeader then
-			testHeader = CreateFrame("Frame", nil, nameplate)
-			testNameplateHeaders[nameplate] = testHeader
-		end
-
-		M:UpdateTestHeader(testHeader, db.Nameplates.Icons)
-		headerManager:AnchorHeader(testHeader, nameplate, db.Nameplates.Anchor)
-		testHeader:Show()
-	end
 end
 
 local function ShowTestFrames()
@@ -304,17 +282,10 @@ end
 
 function M:Hide()
 	HideTestFrames()
-	HideNameplates()
 	HideHealerOverlay()
 end
 
 function M:Show()
-	if db.Nameplates.Enabled then
-		ShowNameplates()
-	else
-		HideNameplates()
-	end
-
 	if instanceOptions and instanceOptions.Enabled then
 		ShowTestFrames()
 	else

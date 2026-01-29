@@ -63,7 +63,7 @@ end
 
 ---@param header table
 ---@param anchor table
----@param options InstanceOptions|Point
+---@param options InstanceOptions
 function M:AnchorHeader(header, anchor, options)
 	if not options then
 		return
@@ -71,20 +71,16 @@ function M:AnchorHeader(header, anchor, options)
 
 	header:ClearAllPoints()
 
-	if options.SimpleMode then
-		if options.SimpleMode.Enabled then
-			header:SetPoint("CENTER", anchor, "CENTER", options.SimpleMode.Offset.X, options.SimpleMode.Offset.Y)
-		else
-			header:SetPoint(
-				options.AdvancedMode.Point,
-				anchor,
-				options.AdvancedMode.RelativePoint,
-				options.AdvancedMode.Offset.X,
-				options.AdvancedMode.Offset.Y
-			)
-		end
-	elseif options.Point then
-		header:SetPoint(options.Point, anchor, options.RelativePoint, options.Offset.X, options.Offset.Y)
+	if options.SimpleMode.Enabled then
+		header:SetPoint("CENTER", anchor, "CENTER", options.SimpleMode.Offset.X, options.SimpleMode.Offset.Y)
+	else
+		header:SetPoint(
+			options.AdvancedMode.Point,
+			anchor,
+			options.AdvancedMode.RelativePoint,
+			options.AdvancedMode.Offset.X,
+			options.AdvancedMode.Offset.Y
+		)
 	end
 
 	header:SetFrameLevel(anchor:GetFrameLevel() + 1)
@@ -172,8 +168,6 @@ function M:ReleaseHeader(unit)
 		if unit == targetUnit then
 			auras:ClearHeader(header)
 			headers[anchor] = nil
-
-			print("Cleared header", unit)
 		end
 	end
 end

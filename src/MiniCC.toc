@@ -18,13 +18,11 @@ Core\Frames.lua
 Core\Auras.lua
 Core\HeaderManager.lua
 Core\HealerOverlay.lua
-Core\Nameplates.lua
 Core\TestMode.lua
 Config\Config.lua
 Config\General.lua
 Config\Instance.lua
 Config\Anchors.lua
 Config\Healer.lua
-Config\Nameplates.lua
 MiniCC.xml
 MiniCC.lua

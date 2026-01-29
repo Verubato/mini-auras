@@ -93,7 +93,6 @@ local function OnAddonLoaded()
 	addon.Config:Init()
 	addon.Scheduler:Init()
 	addon.Frames:Init()
-	addon.NameplateManager:Init()
 
 	headerManager:Init()
 	healerOverlay:Init()
@@ -184,7 +183,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field TestModeManager TestModeManager
 ---@field HeaderManager HeaderManager
 ---@field HealerOverlay HealerOverlay
----@field NameplateManager NameplateManager
 ---@field Refresh fun(self: table)
 ---@field ToggleTest fun(self: table, options: InstanceOptions)
 ---@field TestOptions fun(self: table, options: InstanceOptions)

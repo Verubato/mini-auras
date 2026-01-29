@@ -94,27 +94,6 @@ local dbDefaults = {
 		},
 	},
 
-	---@class NameplateOptions : HeaderOptions
-	Nameplates = {
-		Enabled = false,
-
-		---@class Point
-		Anchor = {
-			Point = "LEFT",
-			RelativePoint = "RIGHT",
-			Offset = {
-				X = 5,
-				Y = 0,
-			},
-		},
-
-		Icons = {
-			Size = 72,
-			Glow = true,
-			ReverseSwipe = false,
-		},
-	},
-
 	Anchor1 = "",
 	Anchor2 = "",
 	Anchor3 = "",
@@ -246,7 +225,6 @@ function config:Init()
 		Default = "Default",
 		Raids = "Raids",
 		Healer = "Healer",
-		Nameplates = "Nameplates",
 		Anchors = "Anchors",
 	}
 
@@ -277,13 +255,6 @@ function config:Init()
 			Title = "Healer",
 			Build = function(content)
 				config.Healer:Build(content, db.Healer)
-			end,
-		},
-		{
-			Key = keys.Nameplates,
-			Title = "Nameplates",
-			Build = function(content)
-				config.Nameplates:Build(content, db.Nameplates)
 			end,
 		},
 		{
@@ -386,7 +357,6 @@ end
 ---@field Instance InstanceConfig
 ---@field Anchors AnchorsConfig
 ---@field Healer HealerConfig
----@field Nameplates NameplatesConfig
 
 ---@class HeaderOptions
 ---@field Enabled boolean
