@@ -6,7 +6,7 @@ local M = {}
 
 addon.Capabilities = M
 
-local manualSwitch = true
+local manualSwitch = false
 local supportsCrowdControlFiltering
 
 function M:SupportsCrowdControlFiltering()
