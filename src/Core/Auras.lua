@@ -189,7 +189,7 @@ local function CreateSecureHeader()
 	header:SetAttribute("template", "MiniCCAuraButtonTemplate")
 
 	if capabilities:SupportsCrowdControlFiltering() then
-		header:SetAttribute("filter", "CROWD_CONTROL")
+		header:SetAttribute("filter", "HARMFUL|CROWD_CONTROL")
 	else
 		header:SetAttribute("filter", "HARMFUL|INCLUDE_NAME_PLATE_ONLY")
 	end
