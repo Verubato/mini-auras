@@ -128,8 +128,13 @@ local function OnHeaderEvent(header, event, arg1)
 		end
 	end
 
-	header.IsCcApplied = ccApplied
-	NotifyCallbacks(header)
+	if not capabilities:SupportsCrowdControlFiltering() then
+		header.IsCcApplied = ccApplied
+		NotifyCallbacks(header)
+	elseif header.IsCcApplied ~= ccApplied then
+		header.IsCcApplied = ccApplied
+		NotifyCallbacks(header)
+	end
 end
 
 ---@param header table

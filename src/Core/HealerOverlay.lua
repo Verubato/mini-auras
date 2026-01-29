@@ -5,6 +5,7 @@ local auras = addon.Auras
 local units = addon.Units
 local capabilities = addon.Capabilities
 local paused = false
+local soundFile = "Interface\\AddOns\\" .. addonName .. "\\Media\\Sonar.ogg"
 ---@type Db
 local db
 ---@type table
@@ -14,7 +15,6 @@ local healerHeaders = {}
 
 ---@class HealerOverlay
 local M = {}
-
 addon.HealerOverlay = M
 
 local function OnHealerCcChanged()
@@ -38,6 +38,10 @@ local function OnHealerCcChanged()
 		end
 
 		healerAnchor:SetAlpha(isCcd and 1 or 0)
+
+		if db.Healer.Sound.Enabled and isCcd then
+			M:PlaySound()
+		end
 	else
 		-- collapse the set of secret booleans into a 1 or 0
 		local ev = C_CurveUtil.EvaluateColorValueFromBoolean
@@ -80,6 +84,10 @@ local function RefreshHeaders()
 			healerHeaders[healer] = header
 		end
 	end
+end
+
+function M:PlaySound()
+	PlaySoundFile(soundFile, db.Healer.Sound.Channel or "Master")
 end
 
 function M:Init()

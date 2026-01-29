@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local capabilities = addon.Capabilities
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local columns = 4
@@ -19,7 +20,7 @@ function M:Build(panel, options)
 		Parent = panel,
 		Lines = {
 			"A separate region for when you're healer is CC'd.",
-		}
+		},
 	})
 
 	lines:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
@@ -68,6 +69,23 @@ function M:Build(panel, options)
 
 	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+
+	if capabilities:SupportsCrowdControlFiltering() then
+		local soundChk = mini:Checkbox({
+			Parent = panel,
+			LabelText = "Sound",
+			GetValue = function()
+				return options.Sound.Enabled
+			end,
+			SetValue = function(value)
+				options.Sound.Enabled = value
+				config:Apply()
+			end,
+		})
+
+		soundChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+		soundChk:SetPoint("TOP", reverseChk, "TOP", 0, 0)
+	end
 
 	local arenaChk = mini:Checkbox({
 		Parent = panel,

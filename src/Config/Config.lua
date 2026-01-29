@@ -72,6 +72,10 @@ local dbDefaults = {
 	---@class HealerOptions
 	Healer = {
 		Enabled = false,
+		Sound = {
+			Enabled = true,
+			Channel = "Master",
+		},
 
 		Point = "CENTER",
 		RelativePoint = "TOP",

@@ -21,6 +21,7 @@ local maxTestFrames = 3
 local testSpells = {}
 local hasDanders = false
 local testHealerHeader
+local previousSoundEnabled
 
 ---@class TestModeManager
 local M = {}
@@ -71,6 +72,8 @@ local function HideHealerOverlay()
 
 	-- resume tracking cc events
 	healerOverlay:Resume()
+
+	previousSoundEnabled = nil
 end
 
 local function ShowTestFrames()
@@ -126,6 +129,18 @@ local function ShowHealerOverlay()
 
 	-- update the size
 	M:UpdateTestHeader(testHealerHeader, db.Healer.Icons)
+
+	-- keep track of whether we have already played the test sound so we don't spam it
+	if
+		capabilities:SupportsCrowdControlFiltering()
+		and (not previousSoundEnabled or previousSoundEnabled ~= db.Healer.Sound.Enabled)
+	then
+		if db.Healer.Sound.Enabled then
+			healerOverlay:PlaySound()
+		end
+
+		previousSoundEnabled = db.Healer.Sound.Enabled
+	end
 end
 
 function M:Init()
