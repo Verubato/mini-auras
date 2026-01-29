@@ -40,7 +40,8 @@ local function OnHeaderEvent(header, event, arg1)
 		return
 	end
 
-	local ccApplied = false
+	---@type boolean|boolean[]
+	local ccApplied
 
 	for i = 1, maxAuras do
 		local child = header:GetAttribute("child" .. i)
@@ -68,11 +69,10 @@ local function OnHeaderEvent(header, event, arg1)
 
 			local isCC = C_Spell.IsSpellCrowdControl(data.spellId)
 
-			if capabilities:SupportsCrowdControlFiltering() then
-				ccApplied = true
-			else
+			if not capabilities:SupportsCrowdControlFiltering() then
 				icon:SetAlphaFromBoolean(isCC)
-				ccApplied = isCC
+				ccApplied = ccApplied or {}
+				ccApplied[#ccApplied + 1] = isCC
 			end
 
 			local start
@@ -88,7 +88,7 @@ local function OnHeaderEvent(header, event, arg1)
 				cooldown:SetCooldown(start, duration)
 				cooldown:Show()
 
-				if supportsCCFiltering then
+				if capabilities:SupportsCrowdControlFiltering() then
 					ccApplied = true
 				end
 
@@ -110,7 +110,6 @@ local function OnHeaderEvent(header, event, arg1)
 			else
 				cooldown:Hide()
 				cooldown:SetCooldown(0, 0)
-				ccApplied = false
 
 				if LCG then
 					LCG.ProcGlow_Stop(child)
@@ -266,7 +265,7 @@ function M:ClearHeader(header)
 end
 
 ---@class Header : Frame
----@field IsCcApplied boolean
+---@field IsCcApplied boolean|boolean[]
 ---@field RegisterCallback fun(self: Header, callback: fun(ccApplied: boolean))
 
 ---@class Frame

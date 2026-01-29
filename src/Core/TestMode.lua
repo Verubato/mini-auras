@@ -68,6 +68,9 @@ end
 local function HideHealerOverlay()
 	testHealerHeader:Hide()
 	healerOverlay:Hide()
+
+	-- resume tracking cc events
+	healerOverlay:Resume()
 end
 
 local function ShowTestFrames()
@@ -117,6 +120,9 @@ end
 local function ShowHealerOverlay()
 	testHealerHeader:Show()
 	healerOverlay:Show()
+
+	-- pause the healer manager from tracking cc events
+	healerOverlay:Pause()
 
 	-- update the size
 	M:UpdateTestHeader(testHealerHeader, db.Healer.Icons)

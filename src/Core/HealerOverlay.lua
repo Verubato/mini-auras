@@ -4,7 +4,7 @@ local mini = addon.Framework
 local auras = addon.Auras
 local units = addon.Units
 local capabilities = addon.Capabilities
-local testMode = addon.TestModeManager
+local paused = false
 ---@type Db
 local db
 ---@type table
@@ -18,7 +18,7 @@ local M = {}
 addon.HealerOverlay = M
 
 local function OnHealerCcChanged()
-	if testMode:IsEnabled() then
+	if paused then
 		return
 	end
 
@@ -26,26 +26,39 @@ local function OnHealerCcChanged()
 		return
 	end
 
-	if capabilities:SupportsCrowdControlFiltering() then
+	if capabilities:SupportsCrowdControlFiltering() and type(header.IsCcApplied) == "boolean" then
 		local isCcd = false
+
 		for _, header in pairs(healerHeaders) do
 			isCcd = isCcd or header.IsCcApplied
+
 			if isCcd then
 				break
 			end
 		end
+
 		healerAnchor:SetAlpha(isCcd and 1 or 0)
 	else
+		-- collapse the set of secret booleans into a 1 or 0
 		local ev = C_CurveUtil.EvaluateColorValueFromBoolean
 		local result = 0
+
 		for _, header in pairs(healerHeaders) do
-			result = ev(header.IsCcApplied, 1, result)
+			-- just to be safe
+			if type(header.IsCcApplied) == "table" then
+				for _, isCCApplied in ipairs(header.IsCcApplied) do
+					result = ev(isCCApplied, 1, result)
+				end
+			end
 		end
+
 		healerAnchor:SetAlpha(result)
 	end
 end
 
 local function RefreshHeaders()
+	local options = db.Healer
+
 	for unit, header in pairs(healerHeaders) do
 		if not units:IsHealer(unit) or not options.Enabled then
 			auras:ClearHeader(header)
@@ -128,9 +141,9 @@ function M:Refresh()
 
 	healerAnchor:SetSize(math.max(iconSize, stringWidth), iconSize + stringHeight)
 
-	if units:IsHealer("player") then
-		return
-	end
+	-- if units:IsHealer("player") then
+	-- 	return
+	-- end
 
 	if not options.Enabled then
 		return
@@ -171,4 +184,12 @@ function M:Hide()
 	healerAnchor:EnableMouse(false)
 	healerAnchor:SetMovable(false)
 	healerAnchor:SetAlpha(0)
+end
+
+function M:Pause()
+	paused = true
+end
+
+function M:Resume()
+	paused = false
 end
