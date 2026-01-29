@@ -16,6 +16,15 @@ config.Anchors = M
 function M:Build(panel)
 	db = mini:GetSavedVars()
 
+	local description = mini:TextBlock({
+		Parent = panel,
+		Lines = {
+			"You can /fstack to find the name of your addon's frames, then enter them here.",
+		},
+	})
+
+	description:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+
 	local anchorWidth = columnWidth * 3
 	local anchor1 = mini:EditBox({
 		Parent = panel,
@@ -30,7 +39,7 @@ function M:Build(panel)
 		end,
 	})
 
-	anchor1.Label:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	anchor1.Label:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -verticalSpacing)
 	anchor1.EditBox:SetPoint("TOPLEFT", anchor1.Label, "BOTTOMLEFT", 4, -8)
 
 	local anchor2 = mini:EditBox({

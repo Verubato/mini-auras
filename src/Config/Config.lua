@@ -1,6 +1,5 @@
 ---@type string, Addon
 local addonName, addon = ...
-local capabilities = addon.Capabilities
 local mini = addon.Framework
 local verticalSpacing = mini.VerticalSpacing
 ---@type Db
@@ -8,7 +7,7 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 5,
+	Version = 6,
 
 	---@class InstanceOptions
 	Default = {
@@ -87,9 +86,9 @@ local dbDefaults = {
 		},
 	},
 
-	Anchor1 = "CompactPartyFrameMember1",
-	Anchor2 = "CompactPartyFrameMember2",
-	Anchor3 = "CompactPartyFrameMember3",
+	Anchor1 = "",
+	Anchor2 = "",
+	Anchor3 = "",
 }
 
 local config = {}
@@ -152,6 +151,20 @@ local function GetAndUpgradeDb()
 		vars.Arena = nil
 		mini:CleanTable(db, dbDefaults, true, true)
 		vars.Version = 5
+	end
+
+	if vars.Version == 5 then
+		if vars.Anchor1 == "CompactPartyFrameMember1" then
+			vars.Anchor1 = ""
+		end
+		if vars.Anchor2 == "CompactPartyFrameMember2" then
+			vars.Anchor2 = ""
+		end
+		if vars.Anchor3 == "CompactPartyFrameMember3" then
+			vars.Anchor3 = ""
+		end
+
+		vars.Version = 6
 	end
 
 	vars = mini:GetSavedVars(dbDefaults)
