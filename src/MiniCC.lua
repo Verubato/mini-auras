@@ -456,9 +456,9 @@ local function UpdateHealerHeaders()
 		end
 	end
 
-	-- if units:IsHealer("player") then
-	-- 	return
-	-- end
+	if units:IsHealer("player") then
+		return
+	end
 
 	if not options.Enabled then
 		return
