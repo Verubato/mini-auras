@@ -84,13 +84,7 @@ function M:AnchorHeader(header, anchor, options)
 			)
 		end
 	elseif options.Point then
-		header:SetPoint(
-			options.Point,
-			anchor,
-			options.RelativePoint,
-			options.Offset.X,
-			options.Offset.Y
-		)
+		header:SetPoint(options.Point, anchor, options.RelativePoint, options.Offset.X, options.Offset.Y)
 	end
 
 	header:SetFrameLevel(anchor:GetFrameLevel() + 1)
@@ -100,9 +94,14 @@ end
 ---@param header table
 ---@param anchor table
 ---@param isTest boolean
----@param options InstanceOptions
+---@param options HeaderOptions
 function M:ShowHideHeader(header, anchor, isTest, options)
 	if not isTest and not options.Enabled then
+		header:Hide()
+		return
+	end
+
+	if anchor:IsForbidden() then
 		header:Hide()
 		return
 	end
@@ -173,6 +172,8 @@ function M:ReleaseHeader(unit)
 		if unit == targetUnit then
 			auras:ClearHeader(header)
 			headers[anchor] = nil
+
+			print("Cleared header", unit)
 		end
 	end
 end

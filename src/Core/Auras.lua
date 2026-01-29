@@ -1,5 +1,6 @@
 ---@type string, Addon
 local addonName, addon = ...
+local scheduler = addon.Scheduler
 local capabilities = addon.Capabilities
 local maxAuras = 40
 local headerId = 1
@@ -258,9 +259,10 @@ function M:UpdateHeader(header, unit, options)
 end
 
 function M:ClearHeader(header)
-	header:SetAttribute("unit", nil)
-	header:UnregisterEvent("UNIT_AURA")
-	header.Callbacks = {}
+	-- scheduler:RunWhenCombatEnds(function()
+	-- 	header:SetAttribute("unit", nil)
+	-- 	header.Callbacks = {}
+	-- end)
 end
 
 ---@class Header : Frame

@@ -11,7 +11,7 @@ local dbDefaults = {
 
 	NotifiedChanges = true,
 
-	---@class InstanceOptions
+	---@class InstanceOptions : HeaderOptions
 	Default = {
 		Enabled = true,
 		ExcludePlayer = false,
@@ -94,7 +94,7 @@ local dbDefaults = {
 		},
 	},
 
-	---@class NameplateOptions
+	---@class NameplateOptions : HeaderOptions
 	Nameplates = {
 		Enabled = false,
 
@@ -387,3 +387,7 @@ end
 ---@field Anchors AnchorsConfig
 ---@field Healer HealerConfig
 ---@field Nameplates NameplatesConfig
+
+---@class HeaderOptions
+---@field Enabled boolean
+---@field ExcludePlayer boolean

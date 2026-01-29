@@ -5,7 +5,6 @@ local scheduler = addon.Scheduler
 local headerManager = addon.HeaderManager
 local testModeManager = addon.TestModeManager
 local healerOverlay = addon.HealerOverlay
-local nameplates = addon.NameplateManager
 local eventsFrame
 local db
 

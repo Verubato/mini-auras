@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local manager = addon.HeaderManager
+local scheduler = addon.Scheduler
 ---@type Db
 local db
 local eventsFrame
@@ -18,22 +19,22 @@ local function EnsureHeader(unit, nameplate)
 	end
 
 	manager:AnchorHeader(header, nameplate, db.Nameplates.Anchor)
-
-	local instanceOptions = manager:GetCurrentInstanceOptions()
-
-	if not instanceOptions then
-		return
-	end
-
-	manager:ShowHideHeader(header, nameplate, false, instanceOptions)
+	manager:ShowHideHeader(header, nameplate, false, db.Nameplates)
+	header:SetParent(UIParent)
 end
 
 local function OnEvent(_, event, unit)
 	if event == "NAME_PLATE_UNIT_ADDED" then
+		if not db.Nameplates.Enabled then
+			return
+		end
+
 		local nameplate = unit and C_NamePlate.GetNamePlateForUnit(unit)
 
 		if nameplate then
-			EnsureHeader(unit, nameplate)
+			scheduler:RunWhenCombatEnds(function()
+				EnsureHeader(unit, nameplate)
+			end, unit)
 		end
 	elseif event == "NAME_PLATE_UNIT_REMOVED" then
 		if unit then
@@ -52,6 +53,10 @@ function M:Init()
 end
 
 function M:Refresh()
+	if not db.Nameplates.Enabled then
+		return
+	end
+
 	for _, nameplate in ipairs(C_NamePlate.GetNamePlates(false) or {}) do
 		if nameplate and nameplate.UnitFrame and nameplate.UnitFrame.unit then
 			EnsureHeader(nameplate.UnitFrame.unit, nameplate)
