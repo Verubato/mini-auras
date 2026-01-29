@@ -3,7 +3,7 @@
 ## 2.3.0
 
 - Multiple CC support for beta.
-- Sound effect forhealer overlay in beta.
+- Sound effect for healer overlay in beta.
 
 ## 2.2.3
 
