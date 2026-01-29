@@ -49,6 +49,18 @@ function M:FriendlyUnits()
 	return results
 end
 
+function M:IsPet(unit)
+	if UnitIsUnit(unit, "pet") then
+		return true
+	end
+
+	if UnitIsOtherPlayersPet(unit) then
+		return true
+	end
+
+	return false
+end
+
 function M:IsHealer(unit)
 	local role = UnitGroupRolesAssigned(unit)
 

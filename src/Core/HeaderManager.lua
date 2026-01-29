@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local frames = addon.Frames
 local auras = addon.Auras
+local units = addon.Units
 ---@type Db
 local db
 ---@type InstanceOptions|nil
@@ -13,18 +14,6 @@ local headers = {}
 ---@class HeaderManager
 local M = {}
 addon.HeaderManager = M
-
-local function IsPet(unit)
-	if UnitIsUnit(unit, "pet") then
-		return true
-	end
-
-	if UnitIsOtherPlayersPet(unit) then
-		return true
-	end
-
-	return false
-end
 
 local function AppendArray(src, dst)
 	for i = 1, #src do
@@ -46,6 +35,7 @@ function M:GetHeaders()
 	return headers
 end
 
+---@return InstanceOptions|nil
 function M:GetCurrentInstanceOptions()
 	return currentInstanceOptions
 end
@@ -71,6 +61,9 @@ function M:GetAnchors(visibleOnly)
 	return anchors
 end
 
+---@param header table
+---@param anchor table
+---@param options InstanceOptions|Point
 function M:AnchorHeader(header, anchor, options)
 	if not options then
 		return
@@ -78,15 +71,25 @@ function M:AnchorHeader(header, anchor, options)
 
 	header:ClearAllPoints()
 
-	if options.SimpleMode.Enabled then
-		header:SetPoint("CENTER", anchor, "CENTER", options.SimpleMode.Offset.X, options.SimpleMode.Offset.Y)
-	else
+	if options.SimpleMode then
+		if options.SimpleMode.Enabled then
+			header:SetPoint("CENTER", anchor, "CENTER", options.SimpleMode.Offset.X, options.SimpleMode.Offset.Y)
+		else
+			header:SetPoint(
+				options.AdvancedMode.Point,
+				anchor,
+				options.AdvancedMode.RelativePoint,
+				options.AdvancedMode.Offset.X,
+				options.AdvancedMode.Offset.Y
+			)
+		end
+	elseif options.Point then
 		header:SetPoint(
-			options.AdvancedMode.Point,
+			options.Point,
 			anchor,
-			options.AdvancedMode.RelativePoint,
-			options.AdvancedMode.Offset.X,
-			options.AdvancedMode.Offset.Y
+			options.RelativePoint,
+			options.Offset.X,
+			options.Offset.Y
 		)
 	end
 
@@ -94,6 +97,10 @@ function M:AnchorHeader(header, anchor, options)
 	header:SetFrameStrata("HIGH")
 end
 
+---@param header table
+---@param anchor table
+---@param isTest boolean
+---@param options InstanceOptions
 function M:ShowHideHeader(header, anchor, isTest, options)
 	if not isTest and not options.Enabled then
 		header:Hide()
@@ -103,7 +110,7 @@ function M:ShowHideHeader(header, anchor, isTest, options)
 	local unit = header:GetAttribute("unit") or anchor.unit or anchor:GetAttribute("unit")
 
 	if unit and unit ~= "" then
-		if IsPet(unit) then
+		if units:IsPet(unit) then
 			header:Hide()
 			return
 		end
@@ -129,6 +136,8 @@ function M:ShowHideHeader(header, anchor, isTest, options)
 	end
 end
 
+---@param anchor table
+---@param unit string?
 function M:EnsureHeader(anchor, unit)
 	unit = unit or anchor.unit or anchor:GetAttribute("unit")
 	if not unit then
@@ -154,6 +163,18 @@ function M:EnsureHeader(anchor, unit)
 	self:ShowHideHeader(header, anchor, false, options)
 
 	return header
+end
+
+function M:ReleaseHeader(unit)
+	-- TODO: use a lookup table
+	for anchor, header in pairs(headers) do
+		local targetUnit = header:GetAttribute("unit")
+
+		if unit == targetUnit then
+			auras:ClearHeader(header)
+			headers[anchor] = nil
+		end
+	end
 end
 
 function M:EnsureHeaders()

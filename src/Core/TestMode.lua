@@ -1,8 +1,11 @@
 ---@type string, Addon
 local addonName, addon = ...
+local mini = addon.Framework
 local capabilities = addon.Capabilities
 local headerManager = addon.HeaderManager
 local LCG
+---@type Db
+local db
 local enabled = false
 ---@type InstanceOptions|nil
 local instanceOptions = nil
@@ -16,6 +19,7 @@ local maxTestFrames = 3
 ---@type number[]
 local testSpells = {}
 local hasDanders = false
+local testNameplateHeaders = {}
 
 ---@class TestModeManager
 local M = {}
@@ -46,6 +50,47 @@ local function CreateTestFrame(i)
 	return frame
 end
 
+local function TestNameplates(show)
+	if not show or not db.Nameplates.Enabled then
+		for _, header in pairs(testNameplateHeaders) do
+			header:Hide()
+		end
+
+		return
+	end
+
+	if not db.Nameplates.Enabled then
+		return
+	end
+
+	for _, nameplate in ipairs(C_NamePlate.GetNamePlates(false) or {}) do
+		local testHeader = testNameplateHeaders[nameplate]
+
+		if not testHeader then
+			testHeader = CreateFrame("Frame", nil, nameplate)
+			testNameplateHeaders[nameplate] = testHeader
+		end
+
+		M:UpdateTestHeader(testHeader, db.Nameplates.Icons)
+		headerManager:AnchorHeader(testHeader, nameplate, db.Nameplates.Anchor)
+		testHeader:Show()
+	end
+end
+
+local function HideTestFrames()
+	for _, testHeader in pairs(testHeaders) do
+		testHeader:Hide()
+	end
+
+	for _, testPartyFrame in ipairs(testPartyFrames) do
+		testPartyFrame:Hide()
+	end
+
+	if testFramesContainer then
+		testFramesContainer:Hide()
+	end
+end
+
 function M:Init()
 	LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
 
@@ -55,6 +100,8 @@ function M:Init()
 	local singleTestSpell = 408
 	local multipleTestSpells = { singleTestSpell, 5782, 118 }
 	testSpells = capabilities:SupportsCrowdControlFiltering() and multipleTestSpells or { singleTestSpell }
+
+	db = mini:GetSavedVars()
 end
 
 function M:IsEnabled()
@@ -74,18 +121,6 @@ end
 ---@param options InstanceOptions?
 function M:SetOptions(options)
 	instanceOptions = options
-end
-
-function M:GetTestHeaders()
-	return testHeaders
-end
-
-function M:GetTestPartyFrames()
-	return testPartyFrames
-end
-
-function M:GetTestFramesContainer()
-	return testFramesContainer
 end
 
 function M:EnsureTestPartyFrames()
@@ -209,21 +244,19 @@ function M:EnsureTestHeader(anchor)
 end
 
 function M:HideArtifacts()
-	for _, testHeader in pairs(testHeaders) do
-		testHeader:Hide()
-	end
-
-	for _, testPartyFrame in ipairs(testPartyFrames) do
-		testPartyFrame:Hide()
-	end
-
-	if testFramesContainer then
-		testFramesContainer:Hide()
-	end
+	HideTestFrames()
+	TestNameplates(false)
 end
 
 function M:Show()
 	if not instanceOptions then
+		return
+	end
+
+	TestNameplates(true)
+
+	if not instanceOptions.Enabled then
+		HideTestFrames()
 		return
 	end
 

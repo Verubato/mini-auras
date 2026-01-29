@@ -19,10 +19,12 @@ Core\Scheduler.lua
 Core\HeaderManager.lua
 Core\TestMode.lua
 Core\HealerOverlay.lua
+Core\Nameplates.lua
 Config\Config.lua
 Config\General.lua
 Config\Instance.lua
 Config\Anchors.lua
 Config\Healer.lua
+Config\Nameplates.lua
 MiniCC.xml
 MiniCC.lua

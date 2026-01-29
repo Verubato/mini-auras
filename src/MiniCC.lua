@@ -5,6 +5,7 @@ local scheduler = addon.Scheduler
 local headerManager = addon.HeaderManager
 local testModeManager = addon.TestModeManager
 local healerOverlay = addon.HealerOverlay
+local nameplates = addon.NameplateManager
 local eventsFrame
 local db
 
@@ -30,7 +31,13 @@ local function OnCufUpdateVisible(frame)
 	end
 
 	scheduler:RunWhenCombatEnds(function()
-		headerManager:ShowHideHeader(header, frame, false, headerManager:GetCurrentInstanceOptions())
+		local instanceOptions = headerManager:GetCurrentInstanceOptions()
+
+		if not instanceOptions then
+			return
+		end
+
+		headerManager:ShowHideHeader(header, frame, false, instanceOptions)
 	end)
 end
 
@@ -179,6 +186,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field TestModeManager TestModeManager
 ---@field HeaderManager HeaderManager
 ---@field HealerOverlay HealerOverlay
+---@field NameplateManager NameplateManager
 ---@field Refresh fun(self: table)
 ---@field ToggleTest fun(self: table, options: InstanceOptions)
 ---@field TestOptions fun(self: table, options: InstanceOptions)

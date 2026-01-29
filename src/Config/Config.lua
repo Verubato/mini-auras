@@ -91,7 +91,28 @@ local dbDefaults = {
 			Arena = true,
 			BattleGrounds = false,
 			World = true,
-		}
+		},
+	},
+
+	---@class NameplateOptions
+	Nameplates = {
+		Enabled = false,
+
+		---@class Point
+		Anchor = {
+			Point = "LEFT",
+			RelativePoint = "RIGHT",
+			Offset = {
+				X = 5,
+				Y = 0,
+			},
+		},
+
+		Icons = {
+			Size = 72,
+			Glow = true,
+			ReverseSwipe = false,
+		},
 	},
 
 	Anchor1 = "",
@@ -225,6 +246,7 @@ function config:Init()
 		Default = "Default",
 		Raids = "Raids",
 		Healer = "Healer",
+		Nameplates = "Nameplates",
 		Anchors = "Anchors",
 	}
 
@@ -258,6 +280,13 @@ function config:Init()
 			end,
 		},
 		{
+			Key = keys.Nameplates,
+			Title = "Nameplates",
+			Build = function(content)
+				config.Nameplates:Build(content, db.Nameplates)
+			end,
+		},
+		{
 			Key = keys.Anchors,
 			Title = "Custom Anchors",
 			Build = function(content)
@@ -277,8 +306,8 @@ function config:Init()
 			-- swap the test options when the user changes tabs in case we're in test mode already
 			if key == keys.Arena then
 				addon:TestOptions(db.Arena)
-			elseif key == keys.BattleGrounds then
-				addon:TestOptions(db.BattleGrounds)
+			elseif key == keys.Raids then
+				addon:TestOptions(db.Raid)
 			elseif key == keys.Default then
 				addon:TestOptions(db.Default)
 			end
@@ -357,3 +386,4 @@ end
 ---@field Instance InstanceConfig
 ---@field Anchors AnchorsConfig
 ---@field Healer HealerConfig
+---@field Nameplates NameplatesConfig
