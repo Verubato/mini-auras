@@ -141,9 +141,9 @@ function M:Refresh()
 
 	healerAnchor:SetSize(math.max(iconSize, stringWidth), iconSize + stringHeight)
 
-	-- if units:IsHealer("player") then
-	-- 	return
-	-- end
+	if units:IsHealer("player") then
+		return
+	end
 
 	if not options.Enabled then
 		return
