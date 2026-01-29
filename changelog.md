@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0
+
+- Added new "Healer in CC" feature.
+- Reverse cooldown sweep option.
+- Consolidated world settings into arena.
+
 ## 2.0.2
 
 Another init config fix for brand new installations.
