@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.3
+
+Fixed healer overlay showing for healers.
+
 ## 2.2.2
 
 Healer overlay bug fixes.
