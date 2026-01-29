@@ -96,8 +96,8 @@ local function OnAddonLoaded()
 	addon.Frames:Init()
 
 	headerManager:Init()
-	testModeManager:Init()
 	healerOverlay:Init()
+	testModeManager:Init()
 
 	headerManager:RefreshInstanceOptions()
 	headerManager:EnsureHeaders()
@@ -141,11 +141,12 @@ function addon:Refresh()
 
 	if testModeManager:IsEnabled() then
 		testModeManager:Show()
-		healerOverlay:TestMode()
+		healerOverlay:Show()
 	else
 		testModeManager:HideArtifacts()
+		healerOverlay:Hide()
+		healerOverlay:Update()
 		headerManager:Refresh()
-		healerOverlay:RealMode()
 	end
 end
 

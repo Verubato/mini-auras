@@ -7,10 +7,8 @@ local capabilities = addon.Capabilities
 local testMode = addon.TestModeManager
 ---@type Db
 local db
----@type table|nil
-local healerAnchor = nil
----@type table|nil
-local testHealerHeader = nil
+---@type table
+local healerAnchor
 ---@type table<string, table>
 local healerHeaders = {}
 
@@ -49,6 +47,33 @@ end
 
 function M:Init()
 	db = mini:GetSavedVars()
+
+	healerAnchor = CreateFrame("Frame", addonName .. "HealerContainer")
+	healerAnchor:EnableMouse(true)
+	healerAnchor:SetMovable(true)
+	healerAnchor:RegisterForDrag("LeftButton")
+	healerAnchor:SetScript("OnDragStart", function(anchorSelf)
+		anchorSelf:StartMoving()
+	end)
+	healerAnchor:SetScript("OnDragStop", function(anchorSelf)
+		anchorSelf:StopMovingOrSizing()
+
+		local point, relativeTo, relativePoint, x, y = anchorSelf:GetPoint()
+		db.Healer.Point = point
+		db.Healer.RelativePoint = relativePoint
+		db.Healer.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
+		db.Healer.Offset.X = x
+		db.Healer.Offset.Y = y
+	end)
+
+	local text = healerAnchor:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+	text:SetPoint("TOP", healerAnchor, "TOP", 0, 6)
+	text:SetText("Healer in CC!")
+	text:SetTextColor(1, 0.1, 0.1)
+	text:SetShadowColor(0, 0, 0, 1)
+	text:SetShadowOffset(1, -1)
+
+	healerAnchor.HealerWarning = text
 end
 
 function M:GetAnchor()
@@ -57,42 +82,6 @@ end
 
 function M:Refresh()
 	local options = db.Healer
-
-	if not healerAnchor then
-		healerAnchor = CreateFrame("Frame", addonName .. "HealerContainer")
-		healerAnchor:EnableMouse(true)
-		healerAnchor:SetMovable(true)
-		healerAnchor:RegisterForDrag("LeftButton")
-		healerAnchor:SetScript("OnDragStart", function(anchorSelf)
-			anchorSelf:StartMoving()
-		end)
-		healerAnchor:SetScript("OnDragStop", function(anchorSelf)
-			anchorSelf:StopMovingOrSizing()
-
-			local point, relativeTo, relativePoint, x, y = anchorSelf:GetPoint()
-			db.Healer.Point = point
-			db.Healer.RelativePoint = relativePoint
-			db.Healer.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
-			db.Healer.Offset.X = x
-			db.Healer.Offset.Y = y
-		end)
-
-		testHealerHeader = CreateFrame("Frame", addonName .. "TestHealerHeader", healerAnchor)
-
-		local text = healerAnchor:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
-		text:SetPoint("TOP", healerAnchor, "TOP", 0, 6)
-		text:SetText("Healer in CC!")
-		text:SetTextColor(1, 0.1, 0.1)
-		text:SetShadowColor(0, 0, 0, 1)
-		text:SetShadowOffset(1, -1)
-
-		healerAnchor.HealerWarning = text
-
-		testMode:UpdateTestHeader(testHealerHeader, db.Healer.Icons)
-
-		testHealerHeader:EnableMouse(false)
-		testHealerHeader:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
-	end
 
 	healerAnchor:ClearAllPoints()
 	healerAnchor:SetPoint(
@@ -158,30 +147,22 @@ function M:Update()
 	end
 end
 
-function M:RealMode()
-	if healerAnchor then
-		healerAnchor:EnableMouse(false)
-		healerAnchor:SetMovable(false)
-		healerAnchor:SetAlpha(0)
-	end
-
-	if testHealerHeader then
-		testHealerHeader:Hide()
-	end
-
-	self:Update()
-end
-
-function M:TestMode()
-	if not healerAnchor or not testHealerHeader then
+function M:Show()
+	if not healerAnchor then
 		return
 	end
-
-	testMode:UpdateTestHeader(testHealerHeader, db.Healer.Icons)
 
 	healerAnchor:EnableMouse(true)
 	healerAnchor:SetMovable(true)
 	healerAnchor:SetAlpha(1)
+end
 
-	testHealerHeader:Show()
+function M:Hide()
+	if not healerAnchor then
+		return
+	end
+
+	healerAnchor:EnableMouse(false)
+	healerAnchor:SetMovable(false)
+	healerAnchor:SetAlpha(0)
 end

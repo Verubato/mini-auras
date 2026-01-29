@@ -3,6 +3,7 @@ local addonName, addon = ...
 local mini = addon.Framework
 local capabilities = addon.Capabilities
 local headerManager = addon.HeaderManager
+local healerOverlay = addon.HealerOverlay
 local LCG
 ---@type Db
 local db
@@ -20,6 +21,7 @@ local maxTestFrames = 3
 local testSpells = {}
 local hasDanders = false
 local testNameplateHeaders = {}
+local testHealerHeader
 
 ---@class TestModeManager
 local M = {}
@@ -50,30 +52,9 @@ local function CreateTestFrame(i)
 	return frame
 end
 
-local function TestNameplates(show)
-	if not show or not db.Nameplates.Enabled then
-		for _, header in pairs(testNameplateHeaders) do
-			header:Hide()
-		end
-
-		return
-	end
-
-	if not db.Nameplates.Enabled then
-		return
-	end
-
-	for _, nameplate in ipairs(C_NamePlate.GetNamePlates(false) or {}) do
-		local testHeader = testNameplateHeaders[nameplate]
-
-		if not testHeader then
-			testHeader = CreateFrame("Frame", nil, nameplate)
-			testNameplateHeaders[nameplate] = testHeader
-		end
-
-		M:UpdateTestHeader(testHeader, db.Nameplates.Icons)
-		headerManager:AnchorHeader(testHeader, nameplate, db.Nameplates.Anchor)
-		testHeader:Show()
+local function HideNameplates()
+	for _, header in pairs(testNameplateHeaders) do
+		header:Hide()
 	end
 end
 
@@ -91,7 +72,76 @@ local function HideTestFrames()
 	end
 end
 
+local function HideHealerOverlay()
+	testHealerHeader:Hide()
+end
+
+local function ShowNameplates()
+	for _, nameplate in ipairs(C_NamePlate.GetNamePlates(false) or {}) do
+		local testHeader = testNameplateHeaders[nameplate]
+
+		if not testHeader then
+			testHeader = CreateFrame("Frame", nil, nameplate)
+			testNameplateHeaders[nameplate] = testHeader
+		end
+
+		M:UpdateTestHeader(testHeader, db.Nameplates.Icons)
+		headerManager:AnchorHeader(testHeader, nameplate, db.Nameplates.Anchor)
+		testHeader:Show()
+	end
+end
+
+local function ShowTestFrames()
+	if not instanceOptions then
+		return
+	end
+
+	-- hide real headers
+	headerManager:HideHeaders()
+
+	local headers = headerManager:GetHeaders()
+
+	-- try to show on real frames first
+	local anyRealShown = false
+	for anchor, _ in pairs(headers) do
+		local testHeader = M:EnsureTestHeader(anchor)
+
+		headerManager:AnchorHeader(testHeader, anchor, instanceOptions)
+		headerManager:ShowHideHeader(testHeader, anchor, true, instanceOptions)
+		anyRealShown = anyRealShown or testHeader:IsVisible()
+	end
+
+	if anyRealShown then
+		for i = 1, #testPartyFrames do
+			testPartyFrames[i]:Hide()
+		end
+	else
+		M:EnsureTestPartyFrames()
+
+		local anchor, testHeader = next(testHeaders)
+		for i = 1, #testPartyFrames do
+			if testHeader then
+				local testPartyFrame = testPartyFrames[i]
+
+				headerManager:AnchorHeader(testHeader, testPartyFrame, instanceOptions)
+
+				testHeader:Show()
+				testHeader:SetAlpha(1)
+				testPartyFrame:Show()
+
+				anchor, testHeader = next(testHeaders, anchor)
+			end
+		end
+	end
+end
+
+local function ShowHealerOverlay()
+	testHealerHeader:Show()
+end
+
 function M:Init()
+	db = mini:GetSavedVars()
+
 	LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
 
 	local IsAddOnLoaded = (C_AddOns and C_AddOns.IsAddOnLoaded) or IsAddOnLoaded
@@ -101,7 +151,14 @@ function M:Init()
 	local multipleTestSpells = { singleTestSpell, 5782, 118 }
 	testSpells = capabilities:SupportsCrowdControlFiltering() and multipleTestSpells or { singleTestSpell }
 
-	db = mini:GetSavedVars()
+	-- healer overlay
+	testHealerHeader = CreateFrame("Frame", addonName .. "TestHealerHeader", healerAnchor)
+	testHealerHeader:EnableMouse(false)
+
+	local healerAnchor = healerOverlay:GetAnchor()
+	testHealerHeader:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
+
+	M:UpdateTestHeader(testHealerHeader, db.Healer.Icons)
 end
 
 function M:IsEnabled()
@@ -237,7 +294,7 @@ function M:EnsureTestHeader(anchor)
 	end
 
 	if instanceOptions then
-		self:UpdateTestHeader(header, instanceOptions.Icons)
+		M:UpdateTestHeader(header, instanceOptions.Icons)
 	end
 
 	return header
@@ -245,56 +302,26 @@ end
 
 function M:HideArtifacts()
 	HideTestFrames()
-	TestNameplates(false)
+	HideNameplates()
+	HideHealerOverlay()
 end
 
 function M:Show()
-	if not instanceOptions then
-		return
-	end
-
-	TestNameplates(true)
-
-	if not instanceOptions.Enabled then
-		HideTestFrames()
-		return
-	end
-
-	-- hide real headers
-	headerManager:HideHeaders()
-
-	local headers = headerManager:GetHeaders()
-
-	-- try to show on real frames first
-	local anyRealShown = false
-	for anchor, _ in pairs(headers) do
-		local testHeader = self:EnsureTestHeader(anchor)
-
-		headerManager:AnchorHeader(testHeader, anchor, instanceOptions)
-		headerManager:ShowHideHeader(testHeader, anchor, true, instanceOptions)
-		anyRealShown = anyRealShown or testHeader:IsVisible()
-	end
-
-	if anyRealShown then
-		for i = 1, #testPartyFrames do
-			testPartyFrames[i]:Hide()
-		end
+	if db.Nameplates.Enabled then
+		ShowNameplates()
 	else
-		self:EnsureTestPartyFrames()
+		HideNameplates()
+	end
 
-		local anchor, testHeader = next(testHeaders)
-		for i = 1, #testPartyFrames do
-			if testHeader then
-				local testPartyFrame = testPartyFrames[i]
+	if instanceOptions and instanceOptions.Enabled then
+		ShowTestFrames()
+	else
+		HideTestFrames()
+	end
 
-				headerManager:AnchorHeader(testHeader, testPartyFrame, instanceOptions)
-
-				testHeader:Show()
-				testHeader:SetAlpha(1)
-				testPartyFrame:Show()
-
-				anchor, testHeader = next(testHeaders, anchor)
-			end
-		end
+	if db.Healer.Enabled then
+		ShowHealerOverlay()
+	else
+		HideHealerOverlay()
 	end
 end
