@@ -94,6 +94,7 @@ local function OnAddonLoaded()
 	addon.Config:Init()
 	addon.Scheduler:Init()
 	addon.Frames:Init()
+	addon.NameplateManager:Init()
 
 	headerManager:Init()
 	healerOverlay:Init()

@@ -28,7 +28,7 @@ local function EnsureHeader(unit, nameplate)
 	manager:ShowHideHeader(header, nameplate, false, instanceOptions)
 end
 
-local function OnEvent(event, unit)
+local function OnEvent(_, event, unit)
 	if event == "NAME_PLATE_UNIT_ADDED" then
 		local nameplate = unit and C_NamePlate.GetNamePlateForUnit(unit)
 
