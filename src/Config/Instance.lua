@@ -291,5 +291,6 @@ function M:Build(panel, options)
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()
+		addon:TestOptions(options)
 	end)
 end
