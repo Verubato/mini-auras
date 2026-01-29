@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.2
+
+Healer overlay bug fixes.
+
 ## 2.2.1
 
 - Fixed healer mode icon not resizing in test mode.
