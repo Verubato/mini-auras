@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.0
+
+Added healer overlay filter options.
+
 ## 2.1.0
 
 - Added new "Healer in CC" feature.
