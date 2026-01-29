@@ -29,6 +29,10 @@ local function AddControlForRefresh(panel, control)
 				c:MiniRefresh()
 			end
 		end
+
+		if panel.OnMiniRefresh then
+			panel:OnMiniRefresh()
+		end
 	end
 end
 

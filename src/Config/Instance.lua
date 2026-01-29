@@ -270,12 +270,7 @@ function M:Build(panel, options)
 	advancedMode:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 	advancedMode:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
 
-	local baseRefresh = panel.MiniRefresh
-	panel.MiniRefresh = function(panelSelf)
-		if baseRefresh then
-			baseRefresh(panelSelf)
-		end
-
+	panel.OnMiniRefresh = function()
 		SetMode()
 	end
 
