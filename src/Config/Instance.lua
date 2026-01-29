@@ -187,7 +187,7 @@ function M:Build(panel, options)
 
 	local excludePlayerChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Exclude player",
+		LabelText = "Exclude self",
 		GetValue = function()
 			return options.ExcludePlayer
 		end,
