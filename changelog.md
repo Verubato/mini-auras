@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.1
+
+- Fixed healer mode icon not resizing in test mode.
+- Added healer in cc text size slider.
+
 ## 2.2.0
 
 Added healer overlay filter options.
