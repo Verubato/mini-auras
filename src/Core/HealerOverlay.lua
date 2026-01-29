@@ -77,14 +77,6 @@ function M:Refresh()
 			db.Healer.Offset.Y = y
 		end)
 
-		healerAnchor:SetPoint(
-			options.Point,
-			_G[options.RelativeTo] or UIParent,
-			options.RelativePoint,
-			options.Offset.X,
-			options.Offset.Y
-		)
-
 		testHealerHeader = CreateFrame("Frame", addonName .. "TestHealerHeader", healerAnchor)
 
 		local text = healerAnchor:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
@@ -101,6 +93,15 @@ function M:Refresh()
 		testHealerHeader:EnableMouse(false)
 		testHealerHeader:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
 	end
+
+	healerAnchor:ClearAllPoints()
+	healerAnchor:SetPoint(
+		options.Point,
+		_G[options.RelativeTo] or UIParent,
+		options.RelativePoint,
+		options.Offset.X,
+		options.Offset.Y
+	)
 
 	local stringWidth = healerAnchor.HealerWarning:GetStringWidth()
 	local stringHeight = healerAnchor.HealerWarning:GetStringHeight()
