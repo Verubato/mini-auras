@@ -228,24 +228,20 @@ function config:Init()
 				config.Instance:Build(content, db.Raid)
 			end,
 		},
-	}
-
-	if capabilities:SupportsCrowdControlFiltering() then
-		tabs[#tabs + 1] = {
+		{
 			Key = keys.Healer,
 			Title = "Healer",
 			Build = function(content)
 				config.Healer:Build(content, db.Healer)
 			end,
-		}
-	end
-
-	tabs[#tabs + 1] = {
-		Key = keys.Anchors,
-		Title = "Custom Anchors",
-		Build = function(content)
-			config.Anchors:Build(content)
-		end,
+		},
+		{
+			Key = keys.Anchors,
+			Title = "Custom Anchors",
+			Build = function(content)
+				config.Anchors:Build(content)
+			end,
+		},
 	}
 
 	local tabController = mini:CreateTabs({

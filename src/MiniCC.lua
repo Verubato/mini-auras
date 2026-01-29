@@ -419,22 +419,29 @@ local function OnHealerCcChanged()
 		return
 	end
 
-	local isCcd = false
-
-	for _, header in pairs(healerHeaders) do
-		if mini:IsSecret(header.IsCcApplied) then
-			isCcd = header.IsCcApplied
-			break
-		else
+	if capabilities:SupportsCrowdControlFiltering() then
+		-- in this mode the values of IsCcApplied aren't secret
+		local isCcd = false
+		for _, header in pairs(healerHeaders) do
 			isCcd = isCcd or header.IsCcApplied
 
 			if isCcd then
 				break
 			end
 		end
-	end
 
-	healerAnchor:SetAlphaFromBoolean(isCcd)
+		healerAnchor:SetAlpha(isCcd and 1 or 0)
+	else
+		-- we can use EvaluateColorValueFromBoolean to collapse a set of secret booleans into a single number of 1 or 0
+		local ev = C_CurveUtil.EvaluateColorValueFromBoolean
+		local result = 0
+
+		for _, header in pairs(healerHeaders) do
+			result = ev(header.IsCcApplied, 1, result)
+		end
+
+		healerAnchor:SetAlpha(result)
+	end
 end
 
 local function UpdateHealerHeaders()
@@ -516,9 +523,7 @@ local function RealMode()
 		testHealerHeader:Hide()
 	end
 
-	if capabilities:SupportsCrowdControlFiltering() then
-		UpdateHealerHeaders()
-	end
+	UpdateHealerHeaders()
 end
 
 local function TestMode()
