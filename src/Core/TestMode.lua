@@ -74,6 +74,7 @@ end
 
 local function HideHealerOverlay()
 	testHealerHeader:Hide()
+	healerOverlay:Hide()
 end
 
 local function ShowNameplates()
@@ -137,6 +138,7 @@ end
 
 local function ShowHealerOverlay()
 	testHealerHeader:Show()
+	healerOverlay:Show()
 end
 
 function M:Init()
@@ -300,7 +302,7 @@ function M:EnsureTestHeader(anchor)
 	return header
 end
 
-function M:HideArtifacts()
+function M:Hide()
 	HideTestFrames()
 	HideNameplates()
 	HideHealerOverlay()

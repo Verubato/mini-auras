@@ -138,15 +138,12 @@ function addon:Refresh()
 	headerManager:RefreshInstanceOptions()
 	headerManager:EnsureHeaders()
 	healerOverlay:Refresh()
+	headerManager:Refresh()
 
 	if testModeManager:IsEnabled() then
 		testModeManager:Show()
-		healerOverlay:Show()
 	else
-		testModeManager:HideArtifacts()
-		healerOverlay:Hide()
-		healerOverlay:Update()
-		headerManager:Refresh()
+		testModeManager:Hide()
 	end
 end
 

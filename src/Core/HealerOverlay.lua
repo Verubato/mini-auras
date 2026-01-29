@@ -45,6 +45,30 @@ local function OnHealerCcChanged()
 	end
 end
 
+local function RefreshHeaders()
+	for unit, header in pairs(healerHeaders) do
+		if not units:IsHealer(unit) or not options.Enabled then
+			auras:ClearHeader(header)
+			healerHeaders[unit] = nil
+		end
+	end
+
+	local healers = units:FindHealers()
+
+	for _, healer in ipairs(healers) do
+		local header = healerHeaders[healer]
+		if header then
+			auras:UpdateHeader(header, healer, options.Icons)
+		else
+			header = auras:CreateHeader(healer, options.Icons)
+			header:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
+			header:RegisterCallback(OnHealerCcChanged)
+			header:Show()
+			healerHeaders[healer] = header
+		end
+	end
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 
@@ -97,17 +121,6 @@ function M:Refresh()
 	local iconSize = db.Healer.Icons.Size
 
 	healerAnchor:SetSize(math.max(iconSize, stringWidth), iconSize + stringHeight)
-end
-
-function M:Update()
-	local options = db.Healer
-
-	for unit, header in pairs(healerHeaders) do
-		if not units:IsHealer(unit) or not options.Enabled then
-			auras:ClearHeader(header)
-			healerHeaders[unit] = nil
-		end
-	end
 
 	if units:IsHealer("player") then
 		return
@@ -131,20 +144,7 @@ function M:Update()
 		return
 	end
 
-	local healers = units:FindHealers()
-
-	for _, healer in ipairs(healers) do
-		local header = healerHeaders[healer]
-		if header then
-			auras:UpdateHeader(header, healer, options.Icons)
-		else
-			header = auras:CreateHeader(healer, options.Icons)
-			header:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
-			header:RegisterCallback(OnHealerCcChanged)
-			header:Show()
-			healerHeaders[healer] = header
-		end
-	end
+	RefreshHeaders()
 end
 
 function M:Show()
