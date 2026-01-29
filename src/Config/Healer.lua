@@ -19,7 +19,6 @@ function M:Build(panel, options)
 		Parent = panel,
 		Lines = {
 			"A separate region for when you're healer is CC'd.",
-			"This is still work in progress and may not be fully functional."
 		}
 	})
 
