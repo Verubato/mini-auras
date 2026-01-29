@@ -128,6 +128,20 @@ function M:Update()
 		return
 	end
 
+	local inInstance, instanceType = IsInInstance()
+
+	if instanceType == "arena" and not options.Filters.Arena then
+		return
+	end
+
+	if instanceType == "pvp" and not options.Filters.BattleGrounds then
+		return
+	end
+
+	if not inInstance and not options.Filters.World then
+		return
+	end
+
 	local healers = units:FindHealers()
 
 	for _, healer in ipairs(healers) do

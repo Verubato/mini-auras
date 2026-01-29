@@ -69,6 +69,50 @@ function M:Build(panel, options)
 	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
+	local arenaChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Arena",
+		GetValue = function()
+			return options.Filters.Arena
+		end,
+		SetValue = function(value)
+			options.Filters.Arena = value
+			config:Apply()
+		end,
+	})
+
+	arenaChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local battlegroudsChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "BattleGrounds",
+		GetValue = function()
+			return options.Filters.BattleGrounds
+		end,
+		SetValue = function(value)
+			options.Filters.BattleGrounds = value
+			config:Apply()
+		end,
+	})
+
+	battlegroudsChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	battlegroudsChk:SetPoint("TOP", arenaChk, "TOP", 0, 0)
+
+	local worldChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "World",
+		GetValue = function()
+			return options.Filters.World
+		end,
+		SetValue = function(value)
+			options.Filters.World = value
+			config:Apply()
+		end,
+	})
+
+	worldChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	worldChk:SetPoint("TOP", arenaChk, "TOP", 0, 0)
+
 	local iconSize = mini:Slider({
 		Parent = panel,
 		Min = 10,
@@ -85,7 +129,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", arenaChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	testBtn:SetSize(120, 26)

@@ -86,6 +86,12 @@ local dbDefaults = {
 			Glow = true,
 			ReverseSwipe = false,
 		},
+
+		Filters = {
+			Arena = true,
+			BattleGrounds = false,
+			World = true,
+		}
 	},
 
 	Anchor1 = "",
