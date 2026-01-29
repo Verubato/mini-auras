@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.3.0
+
+- Multiple CC support for beta.
+- Sound effect forhealer overlay in beta.
+
 ## 2.2.3
 
 Fixed healer overlay showing for healers.
