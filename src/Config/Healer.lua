@@ -103,7 +103,7 @@ function M:Build(panel, options)
 
 	local battlegroudsChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "BattleGrounds",
+		LabelText = "BGs",
 		GetValue = function()
 			return options.Filters.BattleGrounds
 		end,
