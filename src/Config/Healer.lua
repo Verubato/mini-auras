@@ -138,6 +138,21 @@ function M:Build(panel, options)
 	worldChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	worldChk:SetPoint("TOP", arenaChk, "TOP", 0, 0)
 
+	local dispelColoursChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Dispel colours",
+		Tooltip = "Change the colour of the glow based on the type of debuff.",
+		GetValue = function()
+			return options.Icons.ColorByDispelType
+		end,
+		SetValue = function(value)
+			options.Icons.ColorByDispelType = value
+			config:Apply()
+		end,
+	})
+
+	dispelColoursChk:SetPoint("TOPLEFT", arenaChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local iconSize = mini:Slider({
 		Parent = panel,
 		Min = 10,
@@ -154,7 +169,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Container:SetPoint("TOPLEFT", arenaChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Container:SetPoint("TOPLEFT", dispelColoursChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local fontSize = mini:Slider({
 		Parent = panel,
