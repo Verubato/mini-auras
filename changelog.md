@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.0
+
+- Player/target/focus CC portait icons (beta only).
+- Colour glow by dispel type.
+
 ## 2.3.0
 
 - Multiple CC support for beta.
