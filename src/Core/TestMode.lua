@@ -18,7 +18,7 @@ local testPartyFrames = {}
 ---@type table|nil
 local testFramesContainer = nil
 local maxTestFrames = 3
----@type number[]
+---@type TestSpell[]
 local testSpells = {}
 local hasDanders = false
 local testHealerHeader
@@ -154,7 +154,7 @@ end
 
 local function ShowPortraitIcons()
 	local overlays = portraitManager:GetOverlays()
-	local tex = C_Spell.GetSpellTexture(testSpells[1])
+	local tex = C_Spell.GetSpellTexture(testSpells[1].SpellId)
 
 	for _, overlay in pairs(overlays) do
 		overlay.Icon:SetTexture(tex)
@@ -170,9 +170,12 @@ function M:Init()
 	local IsAddOnLoaded = (C_AddOns and C_AddOns.IsAddOnLoaded) or IsAddOnLoaded
 	hasDanders = IsAddOnLoaded("DandersFrames")
 
-	local singleTestSpell = 408
-	local multipleTestSpells = { singleTestSpell, 5782, 118 }
-	testSpells = capabilities:SupportsCrowdControlFiltering() and multipleTestSpells or { singleTestSpell }
+	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
+	local poly = { SpellId = 118, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
+	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
+	local multipleTestSpells = { kidneyShot, poly, fear }
+
+	testSpells = capabilities:SupportsCrowdControlFiltering() and multipleTestSpells or { kidneyShot }
 
 	-- healer overlay
 	testHealerHeader = CreateFrame("Frame", addonName .. "TestHealerHeader", healerAnchor)
@@ -279,7 +282,7 @@ function M:UpdateTestHeader(frame, options)
 		btn:EnableMouse(false)
 		btn.Icon:EnableMouse(false)
 
-		local texture = C_Spell.GetSpellTexture(testSpells[i])
+		local texture = C_Spell.GetSpellTexture(testSpells[i].SpellId)
 		btn.Icon:SetTexture(texture)
 
 		local col = (i - 1) % cols
@@ -350,3 +353,7 @@ function M:Show()
 		end
 	end
 end
+
+---@class TestSpell
+---@field SpellId number
+---@field DispelColour number

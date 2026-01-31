@@ -4,6 +4,16 @@ local capabilities = addon.Capabilities
 local maxAuras = 40
 local headerId = 1
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
+local dispelColours = {
+	-- https://wago.tools/db2/SpellDispelType
+	[0] = DEBUFF_TYPE_NONE_COLOR,
+	[1] = DEBUFF_TYPE_MAGIC_COLOR,
+	[2] = DEBUFF_TYPE_CURSE_COLOR,
+	[3] = DEBUFF_TYPE_DISEASE_COLOR,
+	[4] = DEBUFF_TYPE_POISON_COLOR,
+	[11] = DEBUFF_TYPE_BLEED_COLOR,
+}
+local dispelColorCurve
 
 ---@class CcHeader
 local M = {}
@@ -21,11 +31,21 @@ local function NotifyCallbacks(header)
 	end
 end
 
+local function InitColourCurve()
+	dispelColorCurve = C_CurveUtil.CreateColorCurve()
+	dispelColorCurve:SetType(Enum.LuaCurveType.Step)
+
+	for type, colour in pairs(dispelColours) do
+		dispelColorCurve:AddPoint(type, colour)
+	end
+end
+
 local function OnHeaderEvent(header, event, arg1)
 	local unit = header:GetAttribute("unit")
 	local filter = header:GetAttribute("filter")
 	local glow = header:GetAttribute("x-glow") or false
 	local reverseSwipe = header:GetAttribute("x-reverse-cooldown") or false
+	local colourByDispelType = header:GetAttribute("x-color-by-dispel-type") or false
 
 	if not unit then
 		return
@@ -97,9 +117,16 @@ local function OnHeaderEvent(header, event, arg1)
 
 				if LCG then
 					if glow then
+						local color
+						if colourByDispelType then
+							color = C_UnitAuras.GetAuraDispelTypeColor(unit, data.auraInstanceID, dispelColorCurve)
+							procGlow:SetVertexColor(color)
+						end
+
 						LCG.ProcGlow_Start(child, {
 							-- don't flash at the start
 							startAnim = false,
+							color = color,
 						})
 
 						-- this is where LibCustomGlow stores it's frame
@@ -182,6 +209,7 @@ local function UpdateHeader(header, unit, options)
 	header:SetAttribute("x-iconSize", iconSize)
 	header:SetAttribute("x-glow", options.Glow)
 	header:SetAttribute("x-reverse-cooldown", options.ReverseCooldown)
+	header:SetAttribute("x-color-by-dispel-type", options.ColorByDispelType)
 
 	if capabilities:SupportsCrowdControlFiltering() then
 		header:SetAttribute("xOffset", iconSize + 1)
@@ -257,6 +285,8 @@ end
 function M:Update(header, unit, options)
 	UpdateHeader(header, unit, options)
 end
+
+InitColourCurve()
 
 ---@class CcHeader : Frame
 ---@field RegisterEvent fun(self: CcHeader, event: string)
