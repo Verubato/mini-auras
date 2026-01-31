@@ -12,7 +12,10 @@ local db
 ---@type table
 local healerAnchor
 ---@type table<string, HealerWatchEntry>
-local entries = {}
+local activePool = {}
+---@type table<string, HealerWatchEntry>
+local discardPool = {}
+
 local lastCcdAlpha
 
 ---@class HealerWatchEntry
@@ -35,7 +38,7 @@ local function OnHealerCcChanged()
 	---@type Watcher[]
 	local list = {}
 
-	for _, watcher in pairs(entries) do
+	for _, watcher in pairs(activePool) do
 		list[#list + 1] = watcher.Watcher
 	end
 
@@ -57,34 +60,75 @@ local function OnHealerCcChanged()
 	lastCcdAlpha = isCcdAlpha
 end
 
-local function RefreshHeaders()
-	local options = db.Healer
+local function DisableAll()
+	local toDiscard = {}
+	for unit in pairs(activePool) do
+		toDiscard[#toDiscard + 1] = unit
+	end
 
-	for unit, item in pairs(entries) do
-		if not units:IsHealer(unit) or not options.Enabled then
+	for _, unit in ipairs(toDiscard) do
+		local item = activePool[unit]
+		if item then
 			item.Header:Hide()
 			item.Watcher:Pause()
+			discardPool[unit] = item
+			activePool[unit] = nil
 		end
+	end
+
+	if healerAnchor then
+		healerAnchor:SetAlpha(0)
+	end
+
+	lastCcdAlpha = nil
+end
+
+local function RefreshHeaders()
+	local options = db.Healer
+	local toDiscard = {}
+
+	for unit, _ in pairs(activePool) do
+		if not units:IsHealer(unit) then
+			toDiscard[#toDiscard + 1] = unit
+		end
+	end
+
+	for _, unit in ipairs(toDiscard) do
+		local item = activePool[unit]
+		item.Header:Hide()
+		item.Watcher:Pause()
+		discardPool[unit] = item
+		activePool[unit] = nil
 	end
 
 	local healers = units:FindHealers()
 
 	for _, healer in ipairs(healers) do
-		local item = entries[healer]
-		if item then
-			auras:Update(item.Header, healer, options.Icons)
+		local item = activePool[healer]
 
-			if item.Watcher:IsPaused() then
+		if not item then
+			-- see if we have a discarded entry to re-use
+			item = discardPool[healer]
+
+			if item then
 				item.Watcher:Resume()
 				item.Header:Show()
+
+				-- move to the active pool
+				activePool[healer] = item
+				discardPool[healer] = nil
 			end
+		end
+
+		if item then
+			auras:Update(item.Header, healer, options.Icons)
 		else
 			item = { Header = auras:New(healer, options.Icons), Watcher = unitWatcher:New(healer) }
 			item.Header:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
 			item.Header:Show()
 
 			item.Watcher:RegisterCallback(OnHealerCcChanged)
-			entries[healer] = item
+			activePool[healer] = item
 		end
 	end
 end
@@ -153,24 +197,29 @@ function M:Refresh()
 	healerAnchor:SetSize(math.max(iconSize, stringWidth), iconSize + stringHeight)
 
 	if units:IsHealer("player") then
+		DisableAll()
 		return
 	end
 
 	if not options.Enabled then
+		DisableAll()
 		return
 	end
 
 	local inInstance, instanceType = IsInInstance()
 
 	if instanceType == "arena" and not options.Filters.Arena then
+		DisableAll()
 		return
 	end
 
 	if instanceType == "pvp" and not options.Filters.BattleGrounds then
+		DisableAll()
 		return
 	end
 
 	if not inInstance and not options.Filters.World then
+		DisableAll()
 		return
 	end
 
