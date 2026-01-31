@@ -62,10 +62,20 @@ local function NotifyChanges()
 
 	db.NotifiedChanges = true
 
-	mini:ShowDialog({
-		Title = "MiniCC - What's New?",
-		Text = "'Healer in CC' feature is now available!'",
-	})
+	if db.Version == 6 then
+		mini:ShowDialog({
+			Title = "MiniCC - What's New?",
+			Text = table.concat(db.WhatsNew, "\n"),
+		})
+	elseif db.Version == 7 then
+		mini:ShowDialog({
+			Title = "MiniCC - What's New?",
+			Text = table.concat({
+				"- CC icons in player/target/focus portraits (beta only).",
+				"- New option to colour the glow based on the dispel type.",
+			}, "\n"),
+		})
+	end
 end
 
 local function OnFrameSortSorted()
