@@ -39,7 +39,7 @@ local function OnHealerCcChanged()
 	end
 
 	local isCcdAlpha = ccManager:IsCcAppliedAlpha(list)
-	healerAnchor:SetAlpha(result)
+	healerAnchor:SetAlpha(isCcdAlpha)
 
 	if db.Healer.Sound.Enabled and not mini:IsSecret(isCcdAlpha) and isCcdAlpha == 1 then
 		M:PlaySound()
