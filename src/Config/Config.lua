@@ -33,7 +33,6 @@ local dbDefaults = {
 			},
 		},
 
-		---@class IconOptions
 		Icons = {
 			Size = 72,
 			Glow = true,
@@ -102,6 +101,10 @@ local dbDefaults = {
 			Size = 32,
 			Flags = "OUTLINE",
 		},
+	},
+
+	Portrait = {
+		Enabled = true,
 	},
 
 	Anchor1 = "",
@@ -371,3 +374,8 @@ end
 ---@class HeaderOptions
 ---@field Enabled boolean
 ---@field ExcludePlayer boolean
+
+---@class IconOptions
+---@field Size number?
+---@field Glow boolean?
+---@field ReverseCooldown boolean?

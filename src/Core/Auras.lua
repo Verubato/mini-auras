@@ -18,7 +18,7 @@ local function NotifyCallbacks(header)
 	end
 
 	for _, callback in ipairs(callbacks) do
-		callback()
+		callback(header)
 	end
 end
 
@@ -32,16 +32,16 @@ local function OnHeaderEvent(header, event, arg1)
 		return
 	end
 
-	if event ~= "UNIT_AURA" then
-		return
-	end
-
-	if arg1 ~= unit then
+	if event == "UNIT_AURA" and arg1 ~= unit then
 		return
 	end
 
 	---@type boolean|boolean[]
 	local ccApplied
+	local ccSpellId
+	local ccSpellIcon
+	local ccStart
+	local ccTotalDuration
 
 	for i = 1, maxAuras do
 		local child = header:GetAttribute("child" .. i)
@@ -88,8 +88,12 @@ local function OnHeaderEvent(header, event, arg1)
 				cooldown:SetCooldown(start, duration)
 				cooldown:Show()
 
-				if capabilities:SupportsCrowdControlFiltering() then
+				if capabilities:SupportsCrowdControlFiltering() and not ccApplied then
 					ccApplied = true
+					ccSpellId = data.spellId
+					ccSpellIcon = data.icon
+					ccStart = start
+					ccTotalDuration = duration
 				end
 
 				if LCG then
@@ -133,6 +137,10 @@ local function OnHeaderEvent(header, event, arg1)
 		NotifyCallbacks(header)
 	elseif header.IsCcApplied ~= ccApplied then
 		header.IsCcApplied = ccApplied
+		header.CcSpellId = ccSpellId
+		header.CcSpellIcon = ccSpellIcon
+		header.CcTotalDuration = ccTotalDuration
+		header.CcStartTime = ccStart
 		NotifyCallbacks(header)
 	end
 end
@@ -271,10 +279,16 @@ end
 
 ---@class Header : Frame
 ---@field IsCcApplied boolean|boolean[]
----@field RegisterCallback fun(self: Header, callback: fun(ccApplied: boolean))
+---@field CcSpellId number?
+---@field CcSpellIcon string?
+---@field CcTotalDuration number?
+---@field CcStartTime number?
+---@field RegisterCallback fun(self: Header, callback: fun(self: Header))
+---@field RegisterEvent fun(self: Header, event: string)
 
 ---@class Frame
 ---@field SetPoint fun(self: Frame, point: string, relativeTo: any, relativePoint: string, xOffset: number?, yOffset: number?)
+---@field SetAllPoints fun(self: Frame, target: table)
 ---@field GetAttribute fun(self: Header, attribute: string): any
 ---@field IsVisible fun(self: Frame): boolean
 ---@field Show fun(self: Frame)

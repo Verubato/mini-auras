@@ -183,6 +183,35 @@ function M:CustomFrames(visibleOnly)
 	return frames
 end
 
+---Anchors a frame to a texture region (which can't be anchored to with SetAllPoints()).
+function M:AnchorFrameToRegionGeometry(frame, region)
+	frame:ClearAllPoints()
+
+	local parent = region:GetParent()
+	local num = region:GetNumPoints()
+
+	if num == 0 then
+		frame:SetSize(region:GetSize())
+		frame:SetPoint("CENTER", parent, "CENTER", 0, 0)
+		return
+	end
+
+	for i = 1, num do
+		local point, relativeTo, relativePoint, xOfs, yOfs = region:GetPoint(i)
+
+		if relativeTo and relativeTo.GetObjectType then
+			while relativeTo and relativeTo.GetObjectType and relativeTo:GetObjectType() ~= "Frame" do
+				relativeTo = relativeTo:GetParent()
+			end
+		end
+
+		relativeTo = relativeTo or parent
+		frame:SetPoint(point, relativeTo, relativePoint, xOfs or 0, yOfs or 0)
+	end
+
+	frame:SetSize(region:GetSize())
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 end

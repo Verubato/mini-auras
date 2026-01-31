@@ -4,6 +4,7 @@ local mini = addon.Framework
 local capabilities = addon.Capabilities
 local headerManager = addon.HeaderManager
 local healerOverlay = addon.HealerOverlay
+local portraitManager = addon.PortraitManager
 local LCG
 ---@type Db
 local db
@@ -140,6 +141,24 @@ local function ShowHealerOverlay()
 		end
 
 		previousSoundEnabled = db.Healer.Sound.Enabled
+	end
+end
+
+local function HidePortraitIcons()
+	local overlays = portraitManager:GetOverlays()
+
+	for _, overlay in pairs(overlays) do
+		overlay:Hide()
+	end
+end
+
+local function ShowPortraitIcons()
+	local overlays = portraitManager:GetOverlays()
+	local tex = C_Spell.GetSpellTexture(testSpells[1])
+
+	for _, overlay in pairs(overlays) do
+		overlay.Icon:SetTexture(tex)
+		overlay:Show()
 	end
 end
 
@@ -307,6 +326,7 @@ end
 function M:Hide()
 	HideTestFrames()
 	HideHealerOverlay()
+	HidePortraitIcons()
 end
 
 function M:Show()
@@ -320,5 +340,13 @@ function M:Show()
 		ShowHealerOverlay()
 	else
 		HideHealerOverlay()
+	end
+
+	if capabilities:SupportsCrowdControlFiltering() then
+		if db.Portrait.Enabled then
+			ShowPortraitIcons()
+		else
+			HidePortraitIcons()
+		end
 	end
 end

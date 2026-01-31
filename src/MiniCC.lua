@@ -5,6 +5,7 @@ local scheduler = addon.Scheduler
 local headerManager = addon.HeaderManager
 local testModeManager = addon.TestModeManager
 local healerOverlay = addon.HealerOverlay
+local portraitManager = addon.PortraitManager
 local eventsFrame
 local db
 
@@ -97,6 +98,7 @@ local function OnAddonLoaded()
 	headerManager:Init()
 	healerOverlay:Init()
 	testModeManager:Init()
+	portraitManager:Init()
 
 	headerManager:RefreshInstanceOptions()
 	headerManager:EnsureHeaders()
@@ -183,6 +185,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field TestModeManager TestModeManager
 ---@field HeaderManager HeaderManager
 ---@field CcManager CcManager
+---@field PortraitManager PortraitManager
 ---@field HealerOverlay HealerOverlay
 ---@field Refresh fun(self: table)
 ---@field ToggleTest fun(self: table, options: InstanceOptions)

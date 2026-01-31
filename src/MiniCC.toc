@@ -19,6 +19,7 @@ Core\Auras.lua
 Core\CcManager.lua
 Core\HeaderManager.lua
 Core\HealerOverlay.lua
+Core\PortraitManager.lua
 Core\TestMode.lua
 Config\Config.lua
 Config\General.lua
