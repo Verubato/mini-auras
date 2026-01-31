@@ -291,9 +291,7 @@ function config:Init()
 		Tabs = tabs,
 		OnTabChanged = function(key, _)
 			-- swap the test options when the user changes tabs in case we're in test mode already
-			if key == keys.Arena then
-				addon:TestOptions(db.Arena)
-			elseif key == keys.Raids then
+			if key == keys.Raids then
 				addon:TestOptions(db.Raid)
 			elseif key == keys.Default then
 				addon:TestOptions(db.Default)
@@ -322,7 +320,7 @@ function config:Init()
 
 	local resetBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	resetBtn:SetSize(120, 26)
-	resetBtn:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 0, 16)
+	resetBtn:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 0, verticalSpacing)
 	resetBtn:SetText("Reset")
 	resetBtn:SetScript("OnClick", function()
 		if InCombatLockdown() then
@@ -346,6 +344,21 @@ function config:Init()
 				mini:Notify("Settings reset to default.")
 			end,
 		})
+	end)
+
+	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+	testBtn:SetSize(120, 26)
+	testBtn:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, verticalSpacing)
+	testBtn:SetText("Test")
+	testBtn:SetScript("OnClick", function()
+		local options = db.Default
+		local selectedTab = tabController:GetSelected()
+
+		if selectedTab == keys.Raids then
+			options = db.Raid
+		end
+
+		addon:ToggleTest(options)
 	end)
 
 	SLASH_MINICC1 = "/minicc"
