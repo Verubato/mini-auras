@@ -37,6 +37,7 @@ local dbDefaults = {
 			Size = 72,
 			Glow = true,
 			ReverseCooldown = false,
+			ColorByDispelType = false,
 		},
 	},
 
@@ -65,6 +66,7 @@ local dbDefaults = {
 			Size = 72,
 			Glow = true,
 			ReverseSwipe = false,
+			ColorByDispelType = false,
 		},
 	},
 
@@ -88,6 +90,7 @@ local dbDefaults = {
 			Size = 72,
 			Glow = true,
 			ReverseSwipe = false,
+			ColorByDispelType = false,
 		},
 
 		Filters = {
@@ -379,3 +382,4 @@ end
 ---@field Size number?
 ---@field Glow boolean?
 ---@field ReverseCooldown boolean?
+---@field ColorByDispelType boolean?

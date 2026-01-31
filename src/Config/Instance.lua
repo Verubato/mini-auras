@@ -44,7 +44,7 @@ local function BuildSimpleMode(parent, options)
 		end,
 	})
 
-	containerX.Slider:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	containerX.Container:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
 	local containerY = mini:Slider({
 		Parent = panel,
@@ -62,7 +62,9 @@ local function BuildSimpleMode(parent, options)
 		end,
 	})
 
-	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
+	containerY.Container:SetPoint("LEFT", containerX.Container, "RIGHT", horizontalSpacing, 0)
+
+	panel:SetHeight(containerX.Container:GetHeight())
 
 	return panel
 end
@@ -87,7 +89,7 @@ local function BuildAdvancedMode(parent, options)
 		end,
 	})
 
-	containerX.Slider:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	containerX.Container:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
 	local containerY = mini:Slider({
 		Parent = panel,
@@ -105,7 +107,7 @@ local function BuildAdvancedMode(parent, options)
 		end,
 	})
 
-	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
+	containerY.Container:SetPoint("LEFT", containerX.Container, "RIGHT", horizontalSpacing, 0)
 
 	local pointDdlLbl = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	pointDdlLbl:SetText("Anchor Point")
@@ -151,6 +153,8 @@ local function BuildAdvancedMode(parent, options)
 	relativeToDdl:SetWidth(dropdownWidth)
 	relativeToDdl:SetPoint("LEFT", pointDdl, "RIGHT", horizontalSpacing, 0)
 	relativeToLbl:SetPoint("BOTTOMLEFT", relativeToDdl, "TOPLEFT", 0, 8)
+
+	panel:SetHeight(containerX.Container:GetHeight() + verticalSpacing + relativeToDdl:GetHeight())
 	return panel
 end
 
@@ -230,9 +234,25 @@ function M:Build(panel, options)
 	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
 	reverseChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
+	local dispelColoursChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Dispel colours",
+		GetValue = function()
+			return options.Icons.ColorByDispelType
+		end,
+		SetValue = function(value)
+			options.Icons.ColorByDispelType = value
+
+			SetMode()
+			config:Apply()
+		end,
+	})
+
+	dispelColoursChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local simpleChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Simple settings",
+		LabelText = "Simple offsets",
 		GetValue = function()
 			return options.SimpleMode.Enabled
 		end,
@@ -244,7 +264,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	simpleChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	simpleChk:SetPoint("TOPLEFT", dispelColoursChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local iconSize = mini:Slider({
 		Parent = panel,
@@ -262,13 +282,13 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", simpleChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Container:SetPoint("TOPLEFT", simpleChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
-	simpleMode:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
-	simpleMode:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
+	simpleMode:SetPoint("TOPLEFT", iconSize.Container, "BOTTOMLEFT", 0, -verticalSpacing)
+	simpleMode:SetPoint("TOPRIGHT", iconSize.Container, "BOTTOMRIGHT", 0, -verticalSpacing)
 
-	advancedMode:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
-	advancedMode:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
+	advancedMode:SetPoint("TOPLEFT", iconSize.Container, "BOTTOMLEFT", 0, -verticalSpacing)
+	advancedMode:SetPoint("TOPRIGHT", iconSize.Container, "BOTTOMRIGHT", 0, -verticalSpacing)
 
 	panel.OnMiniRefresh = function()
 		SetMode()

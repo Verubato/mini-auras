@@ -635,11 +635,17 @@ function M:Slider(options)
 		error("Slider - invalid options.")
 	end
 
-	local slider = CreateFrame("Slider", addonName .. "Slider" .. sliderId, options.Parent, "OptionsSliderTemplate")
-	sliderId = sliderId + 1
+	local container = CreateFrame("Frame", nil, options.Parent)
+	container:SetSize(options.Width or 400, 54)
 
-	local label = slider:CreateFontString(nil, "ARTWORK", "GameFontWhite")
-	label:SetPoint("BOTTOMLEFT", slider, "TOPLEFT", 0, 8)
+	local slider = CreateFrame("Slider", addonName .. "Slider" .. sliderId, container, "OptionsSliderTemplate")
+	sliderId = sliderId + 1
+	slider:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 18)
+	slider:SetHeight(20)
+	slider:SetWidth(options.Width or 400)
+
+	local label = container:CreateFontString(nil, "ARTWORK", "GameFontWhite")
+	label:SetPoint("BOTTOMLEFT", slider, "TOPLEFT", 0, 6)
 	label:SetText(options.LabelText)
 
 	slider:SetOrientation("HORIZONTAL")
@@ -647,25 +653,21 @@ function M:Slider(options)
 	slider:SetValue(options.GetValue())
 	slider:SetValueStep(options.Step)
 	slider:SetObeyStepOnDrag(true)
-	slider:SetHeight(20)
-	slider:SetWidth(options.Width or 400)
 
 	local low = _G[slider:GetName() .. "Low"]
 	local high = _G[slider:GetName() .. "High"]
-
 	if low and high then
 		low:SetText(options.Min)
 		high:SetText(options.Max)
 	end
 
-	local box = CreateFrame("EditBox", nil, options.Parent, "InputBoxTemplate")
+	local box = CreateFrame("EditBox", nil, container, "InputBoxTemplate")
 	ConfigureNumbericBox(box, options.Min < 0)
-
-	box:SetPoint("CENTER", slider, "CENTER", 0, 30)
+	box:SetPoint("BOTTOM", slider, "TOP", 0, 2) -- keep it within the container visually
 	box:SetFontObject("GameFontWhite")
 	box:SetSize(50, 20)
 	box:SetAutoFocus(false)
-	box:SetMaxLetters(math.log(options.Max, 10) + 1)
+	box:SetMaxLetters(math.floor(math.log(options.Max, 10) + 1))
 	box:SetText(tostring(options.GetValue()))
 	box:SetJustifyH("CENTER")
 	box:SetCursorPosition(0)
@@ -674,9 +676,7 @@ function M:Slider(options)
 		if userInput ~= nil and not userInput then
 			return
 		end
-
 		box:SetText(tostring(sliderValue))
-
 		options.SetValue(sliderValue)
 	end)
 
@@ -684,14 +684,10 @@ function M:Slider(options)
 		if not userInput then
 			return
 		end
-
 		local value = tonumber(box:GetText())
-
-		-- don't clamp values here, because they might still be typing out a number
 		if not value then
 			return
 		end
-
 		slider:SetValue(value)
 		options.SetValue(value)
 	end)
@@ -710,7 +706,7 @@ function M:Slider(options)
 	AddControlForRefresh(options.Parent, slider)
 	AddControlForRefresh(options.Parent, box)
 
-	return { Slider = slider, EditBox = box, Label = label }
+	return { Container = container, Slider = slider, EditBox = box, Label = label }
 end
 
 ---Creates a generic list of items
@@ -1235,6 +1231,7 @@ loader:SetScript("OnEvent", OnAddonLoaded)
 ---@field SetValue fun(value: number)
 
 ---@class SliderReturn
+---@field Container table
 ---@field Label table
 ---@field EditBox table
 ---@field Slider table
