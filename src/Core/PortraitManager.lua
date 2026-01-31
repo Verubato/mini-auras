@@ -85,7 +85,7 @@ local function OnCcAppliedChanged(watcher, unitFrame, portrait)
 	local overlay = EnsureOverlay(unitFrame, portrait)
 	local ccState = watcher:GetCcState()
 
-	if db.Portrait.Enabled and ccState then
+	if db.Portrait.Enabled and ccState and ccState.IsCcApplied then
 		if ccState.CcSpellIcon then
 			overlay.Icon:SetTexture(ccState.CcSpellIcon)
 		else

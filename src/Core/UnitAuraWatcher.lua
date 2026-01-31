@@ -62,6 +62,11 @@ local function OnEvent(watcher)
 	---@type WatcherState
 	local state = watcher.State
 
+	if auraInstanceId == state.LastAuraInstanceId then
+		-- prevent callback spam
+		return
+	end
+
 	if capabilities:SupportsCrowdControlFiltering() then
 		state.LastAuraInstanceId = auraInstanceId
 		state.IsCcApplied = ccApplied
@@ -69,11 +74,11 @@ local function OnEvent(watcher)
 		state.CcSpellIcon = ccSpellIcon
 		state.CcTotalDuration = ccTotalDuration
 		state.CcStartTime = ccStartTime
-		NotifyCallbacks(watcher)
 	else
 		state.IsCcApplied = ccApplied
-		NotifyCallbacks(watcher)
 	end
+
+	NotifyCallbacks(watcher)
 end
 
 ---@param unit string
