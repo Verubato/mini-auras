@@ -117,12 +117,6 @@ local function OnHeaderEvent(header, event, arg1)
 
 				if LCG then
 					if glow then
-						local color
-						if colourByDispelType then
-							color = C_UnitAuras.GetAuraDispelTypeColor(unit, data.auraInstanceID, dispelColorCurve)
-							procGlow:SetVertexColor(color)
-						end
-
 						LCG.ProcGlow_Start(child, {
 							-- don't flash at the start
 							startAnim = false,
@@ -132,6 +126,12 @@ local function OnHeaderEvent(header, event, arg1)
 						-- this is where LibCustomGlow stores it's frame
 						local procGlow = child._ProcGlow
 						procGlow:SetAlphaFromBoolean(isCC)
+
+						local color
+						if colourByDispelType then
+							color = C_UnitAuras.GetAuraDispelTypeColor(unit, data.auraInstanceID, dispelColorCurve)
+							procGlow:SetVertexColor(color)
+						end
 					else
 						-- they may have turned off glow icons option since last time we reached here
 						LCG.ProcGlow_Stop(child)
