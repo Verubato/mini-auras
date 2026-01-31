@@ -4,6 +4,7 @@ local mini = addon.Framework
 local auras = addon.Auras
 local units = addon.Units
 local capabilities = addon.Capabilities
+local ccManager = addon.CcManager
 local paused = false
 local soundFile = "Interface\\AddOns\\" .. addonName .. "\\Media\\Sonar.ogg"
 ---@type Db
@@ -26,37 +27,11 @@ local function OnHealerCcChanged()
 		return
 	end
 
-	if capabilities:SupportsCrowdControlFiltering() and type(header.IsCcApplied) == "boolean" then
-		local isCcd = false
+	local isCcdAlpha = ccManager:IsCcAppliedAlpha(healerHeaders)
+	healerAnchor:SetAlpha(result)
 
-		for _, header in pairs(healerHeaders) do
-			isCcd = isCcd or header.IsCcApplied
-
-			if isCcd then
-				break
-			end
-		end
-
-		healerAnchor:SetAlpha(isCcd and 1 or 0)
-
-		if db.Healer.Sound.Enabled and isCcd then
-			M:PlaySound()
-		end
-	else
-		-- collapse the set of secret booleans into a 1 or 0
-		local ev = C_CurveUtil.EvaluateColorValueFromBoolean
-		local result = 0
-
-		for _, header in pairs(healerHeaders) do
-			-- just to be safe
-			if type(header.IsCcApplied) == "table" then
-				for _, isCCApplied in ipairs(header.IsCcApplied) do
-					result = ev(isCCApplied, 1, result)
-				end
-			end
-		end
-
-		healerAnchor:SetAlpha(result)
+	if db.Healer.Sound.Enabled and not mini:IsSecret(isCcdAlpha) and isCcdAlpha == 1 then
+		M:PlaySound()
 	end
 end
 

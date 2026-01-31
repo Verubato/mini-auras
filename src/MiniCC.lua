@@ -182,6 +182,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Config Config
 ---@field TestModeManager TestModeManager
 ---@field HeaderManager HeaderManager
+---@field CcManager CcManager
 ---@field HealerOverlay HealerOverlay
 ---@field Refresh fun(self: table)
 ---@field ToggleTest fun(self: table, options: InstanceOptions)
