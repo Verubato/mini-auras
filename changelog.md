@@ -2,7 +2,7 @@
 
 ## 2.4.0
 
-- Player/target/focus CC portait icons (beta only).
+- Player/target/focus CC portrait icons (beta only).
 - Colour glow by dispel type.
 
 ## 2.3.0
