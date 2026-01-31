@@ -171,9 +171,9 @@ function M:Init()
 	hasDanders = IsAddOnLoaded("DandersFrames")
 
 	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
-	local poly = { SpellId = 118, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
 	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
-	local multipleTestSpells = { kidneyShot, poly, fear }
+	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
+	local multipleTestSpells = { kidneyShot, fear, hex }
 
 	testSpells = capabilities:SupportsCrowdControlFiltering() and multipleTestSpells or { kidneyShot }
 
@@ -282,7 +282,9 @@ function M:UpdateTestHeader(frame, options)
 		btn:EnableMouse(false)
 		btn.Icon:EnableMouse(false)
 
-		local texture = C_Spell.GetSpellTexture(testSpells[i].SpellId)
+		local spell = testSpells[i]
+		local texture = C_Spell.GetSpellTexture(spell.SpellId)
+
 		btn.Icon:SetTexture(texture)
 
 		local col = (i - 1) % cols
@@ -291,19 +293,18 @@ function M:UpdateTestHeader(frame, options)
 		btn:ClearAllPoints()
 		btn:SetPoint("TOPLEFT", frame, "TOPLEFT", col * stepX, row * stepY)
 		btn:Show()
-	end
 
-	for i = maxIcons + 1, #frame.Icons do
-		frame.Icons[i]:Hide()
-	end
-
-	if LCG then
-		for _, icon in ipairs(frame.Icons) do
-			if options.Glow then
-				LCG.ProcGlow_Start(icon, { startAnim = false })
-			else
-				LCG.ProcGlow_Stop(icon)
-			end
+		if options.Glow then
+			local color = options.ColorByDispelType
+				and {
+					spell.DispelColor.r,
+					spell.DispelColor.g,
+					spell.DispelColor.b,
+					spell.DispelColor.a,
+				}
+			LCG.ProcGlow_Start(btn, { startAnim = false, color = color })
+		else
+			LCG.ProcGlow_Stop(btn)
 		end
 	end
 
@@ -356,4 +357,4 @@ end
 
 ---@class TestSpell
 ---@field SpellId number
----@field DispelColour number
+---@field DispelColor table
