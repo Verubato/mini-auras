@@ -85,6 +85,10 @@ function M:AnchorHeader(header, anchor, options)
 
 	header:SetFrameLevel(anchor:GetFrameLevel() + 1)
 	header:SetFrameStrata("HIGH")
+
+	-- weird blizzard bug happening atm where units in range are still getting faded
+	-- so ignore the unit frame's alpha
+	header:SetIgnoreParentAlpha(true)
 end
 
 ---@param header table
