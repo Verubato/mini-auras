@@ -4,7 +4,7 @@ local mini = addon.Framework
 local scheduler = addon.Scheduler
 local headerManager = addon.HeaderManager
 local testModeManager = addon.TestModeManager
-local healerOverlay = addon.HealerOverlay
+local healerManager = addon.HealerCcManager
 local portraitManager = addon.PortraitManager
 local eventsFrame
 local db
@@ -96,13 +96,13 @@ local function OnAddonLoaded()
 	addon.Frames:Init()
 
 	headerManager:Init()
-	healerOverlay:Init()
+	healerManager:Init()
 	testModeManager:Init()
 	portraitManager:Init()
 
 	headerManager:RefreshInstanceOptions()
 	headerManager:EnsureHeaders()
-	healerOverlay:Refresh()
+	healerManager:Refresh()
 
 	db = mini:GetSavedVars()
 
@@ -125,7 +125,7 @@ local function OnAddonLoaded()
 		fs.Sorting:RegisterPostSortCallback(OnFrameSortSorted)
 	end
 
-	healerOverlay:Refresh()
+	healerManager:Refresh()
 end
 
 function addon:Refresh()
@@ -138,7 +138,7 @@ function addon:Refresh()
 
 	headerManager:RefreshInstanceOptions()
 	headerManager:EnsureHeaders()
-	healerOverlay:Refresh()
+	healerManager:Refresh()
 	headerManager:Refresh()
 
 	if testModeManager:IsEnabled() then
@@ -176,17 +176,18 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 
 ---@class Addon
 ---@field Framework MiniFramework
----@field Auras AurasModule
 ---@field Capabilities Capabilities
----@field Frames Frames
----@field Scheduler Scheduler
----@field Units UnitUtil
 ---@field Config Config
+---@field Frames FramesUtil
+---@field Scheduler SchedulerUtil
+---@field Units UnitUtil
+---@field CcHeader CcHeader
+---@field UnitAuraWatcher UnitAuraWatcher
 ---@field TestModeManager TestModeManager
 ---@field HeaderManager HeaderManager
 ---@field CcManager CcManager
 ---@field PortraitManager PortraitManager
----@field HealerOverlay HealerOverlay
+---@field HealerCcManager HealerCcManager
 ---@field Refresh fun(self: table)
 ---@field ToggleTest fun(self: table, options: InstanceOptions)
 ---@field TestOptions fun(self: table, options: InstanceOptions)

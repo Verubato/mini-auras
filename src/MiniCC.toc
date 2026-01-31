@@ -15,10 +15,11 @@ Core\Capabilities.lua
 Core\Scheduler.lua
 Core\Units.lua
 Core\Frames.lua
-Core\Auras.lua
+Core\UnitAuraWatcher.lua
+Core\CcHeader.lua
 Core\CcManager.lua
 Core\HeaderManager.lua
-Core\HealerOverlay.lua
+Core\HealerCcmanager.lua
 Core\PortraitManager.lua
 Core\TestMode.lua
 Config\Config.lua

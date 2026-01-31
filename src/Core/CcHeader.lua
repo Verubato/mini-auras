@@ -1,14 +1,13 @@
 ---@type string, Addon
 local addonName, addon = ...
-local scheduler = addon.Scheduler
 local capabilities = addon.Capabilities
 local maxAuras = 40
 local headerId = 1
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
 
----@class AurasModule
+---@class CcHeader
 local M = {}
-addon.Auras = M
+addon.CcHeader = M
 
 local function NotifyCallbacks(header)
 	local callbacks = header.Callbacks
@@ -240,8 +239,8 @@ end
 
 ---@param unit string
 ---@param options IconOptions
----@return Header
-function M:CreateHeader(unit, options)
+---@return CcHeader
+function M:New(unit, options)
 	if not unit then
 		error("unit must not be nil")
 	end
@@ -249,47 +248,23 @@ function M:CreateHeader(unit, options)
 	local header = CreateSecureHeader()
 	UpdateHeader(header, unit, options)
 
-	header.Callbacks = {}
-	header.IsCcApplied = false
-
-	function header.RegisterCallback(headerSelf, callback)
-		if not callback then
-			return
-		end
-
-		headerSelf.Callbacks[#headerSelf.Callbacks + 1] = callback
-	end
-
 	return header
 end
 
 ---@param unit string
 ---@param header table
 ---@param options IconOptions
-function M:UpdateHeader(header, unit, options)
+function M:Update(header, unit, options)
 	UpdateHeader(header, unit, options)
 end
 
-function M:ClearHeader(header)
-	scheduler:RunWhenCombatEnds(function()
-		header:SetAttribute("unit", nil)
-		header.Callbacks = {}
-	end)
-end
-
----@class Header : Frame
----@field IsCcApplied boolean|boolean[]
----@field CcSpellId number?
----@field CcSpellIcon string?
----@field CcTotalDuration number?
----@field CcStartTime number?
----@field RegisterCallback fun(self: Header, callback: fun(self: Header))
----@field RegisterEvent fun(self: Header, event: string)
+---@class CcHeader : Frame
+---@field RegisterEvent fun(self: CcHeader, event: string)
 
 ---@class Frame
 ---@field SetPoint fun(self: Frame, point: string, relativeTo: any, relativePoint: string, xOffset: number?, yOffset: number?)
 ---@field SetAllPoints fun(self: Frame, target: table)
----@field GetAttribute fun(self: Header, attribute: string): any
+---@field GetAttribute fun(self: CcHeader, attribute: string): any
 ---@field IsVisible fun(self: Frame): boolean
 ---@field Show fun(self: Frame)
 ---@field Hide fun(self: Frame)

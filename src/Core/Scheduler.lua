@@ -1,7 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local eventsFrame
----@class Scheduler
+---@class SchedulerUtil
 local M = {}
 addon.Scheduler = M
 

@@ -2,7 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local frames = addon.Frames
-local auras = addon.Auras
+local auras = addon.CcHeader
 local units = addon.Units
 ---@type Db
 local db
@@ -148,10 +148,10 @@ function M:EnsureHeader(anchor, unit)
 	local header = headers[anchor]
 
 	if not header then
-		header = auras:CreateHeader(unit, options.Icons)
+		header = auras:New(unit, options.Icons)
 		headers[anchor] = header
 	else
-		auras:UpdateHeader(header, unit, options.Icons)
+		auras:Update(header, unit, options.Icons)
 	end
 
 	self:AnchorHeader(header, anchor, options)
@@ -191,7 +191,7 @@ function M:Refresh()
 		local unit = header:GetAttribute("unit") or anchor.unit or anchor:GetAttribute("unit")
 
 		if unit then
-			auras:UpdateHeader(header, unit, options.Icons)
+			auras:Update(header, unit, options.Icons)
 		end
 
 		self:AnchorHeader(header, anchor, options)

@@ -3,7 +3,7 @@ local addonName, addon = ...
 local mini = addon.Framework
 local capabilities = addon.Capabilities
 local headerManager = addon.HeaderManager
-local healerOverlay = addon.HealerOverlay
+local healerCcManager = addon.HealerCcManager
 local portraitManager = addon.PortraitManager
 local LCG
 ---@type Db
@@ -69,10 +69,10 @@ end
 
 local function HideHealerOverlay()
 	testHealerHeader:Hide()
-	healerOverlay:Hide()
+	healerCcManager:Hide()
 
 	-- resume tracking cc events
-	healerOverlay:Resume()
+	healerCcManager:Resume()
 
 	previousSoundEnabled = nil
 end
@@ -123,10 +123,10 @@ end
 
 local function ShowHealerOverlay()
 	testHealerHeader:Show()
-	healerOverlay:Show()
+	healerCcManager:Show()
 
 	-- pause the healer manager from tracking cc events
-	healerOverlay:Pause()
+	healerCcManager:Pause()
 
 	-- update the size
 	M:UpdateTestHeader(testHealerHeader, db.Healer.Icons)
@@ -137,7 +137,7 @@ local function ShowHealerOverlay()
 		and (not previousSoundEnabled or previousSoundEnabled ~= db.Healer.Sound.Enabled)
 	then
 		if db.Healer.Sound.Enabled then
-			healerOverlay:PlaySound()
+			healerCcManager:PlaySound()
 		end
 
 		previousSoundEnabled = db.Healer.Sound.Enabled
@@ -178,7 +178,7 @@ function M:Init()
 	testHealerHeader = CreateFrame("Frame", addonName .. "TestHealerHeader", healerAnchor)
 	testHealerHeader:EnableMouse(false)
 
-	local healerAnchor = healerOverlay:GetAnchor()
+	local healerAnchor = healerCcManager:GetAnchor()
 	testHealerHeader:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
 
 	M:UpdateTestHeader(testHealerHeader, db.Healer.Icons)

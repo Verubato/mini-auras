@@ -2,7 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local frames = addon.Frames
-local auras = addon.Auras
+local unitWatcher = addon.UnitAuraWatcher
 local capabilities = addon.Capabilities
 local overlays = {}
 
@@ -68,7 +68,7 @@ local function EnsureOverlay(unitFrame, portrait)
 	cd:SetDrawEdge(false)
 	cd:SetDrawBling(false)
 	cd:SetHideCountdownNumbers(false)
-    -- keep within the portrait icon
+	-- keep within the portrait icon
 	cd:SetSwipeTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
 
 	overlay.Icon = tex
@@ -78,29 +78,18 @@ local function EnsureOverlay(unitFrame, portrait)
 	return overlay
 end
 
----@param header Header
+---@param watcher Watcher
 ---@param unitFrame table
 ---@param portrait table
-local function OnCcAppliedChanged(header, unitFrame, portrait)
+local function OnCcAppliedChanged(watcher, unitFrame, portrait)
 	local overlay = EnsureOverlay(unitFrame, portrait)
+	local ccState = watcher:GetCcState()
 
-	print(
-		"Detected cc change",
-		header:GetAttribute("unit"),
-		header.IsCcApplied,
-		"Icon",
-		header.CcSpellIcon,
-		"Start",
-		header.CcStartTime,
-		"Duration",
-		header.CcTotalDuration
-	)
+	if db.Portrait.Enabled and ccState.IsCcApplied and ccState.CcSpellIcon then
+		overlay.Icon:SetTexture(ccState.CcSpellIcon)
 
-	if db.Portrait.Enabled and header.IsCcApplied and header.CcSpellIcon then
-		overlay.Icon:SetTexture(header.CcSpellIcon)
-
-		if header.CcStartTime and header.CcTotalDuration then
-			overlay.Cooldown:SetCooldown(header.CcStartTime, header.CcTotalDuration)
+		if ccState.CcStartTime and ccState.CcTotalDuration then
+			overlay.Cooldown:SetCooldown(ccState.CcStartTime, ccState.CcTotalDuration)
 			overlay.Cooldown:Show()
 		else
 			overlay.Cooldown:Hide()
@@ -148,26 +137,24 @@ function M:GetOverlays()
 	return overlays
 end
 
-local function Attach(unit)
+---@param unit string
+---@param events string[]?
+local function Attach(unit, events)
 	local unitFrame, portrait = GetBlizzardFrame(unit)
 
 	if not unitFrame or not portrait then
 		return nil
 	end
 
-	unitFrame.MiniCCPortraitOverlay = EnsureOverlay(unitFrame, portrait)
+	local overlay = EnsureOverlay(unitFrame, portrait)
+	local watcher = unitWatcher:New(unit, nil, events)
 
-	local header = auras:CreateHeader(unit, {
-		Size = portrait:GetWidth(),
-		MaxIcons = 1,
-	})
-
-	header:RegisterCallback(function()
-		OnCcAppliedChanged(header, unitFrame, portrait)
+	watcher:RegisterCallback(function()
+		OnCcAppliedChanged(watcher, unitFrame, portrait)
 	end)
 
-	header:Show()
-	return header
+	overlay.Watcher = watcher
+	return overlay
 end
 
 function M:Init()
@@ -178,18 +165,8 @@ function M:Init()
 	db = mini:GetSavedVars()
 
 	Attach("player")
-
-	local targetHeader = Attach("target")
-
-	if targetHeader then
-		targetHeader:RegisterEvent("PLAYER_TARGET_CHANGED")
-	end
-
-	local focusHeader = Attach("focus")
-
-	if focusHeader then
-		focusHeader:RegisterEvent("PLAYER_FOCUS_CHANGED")
-	end
+	Attach("target", { "PLAYER_TARGET_CHANGED" })
+	Attach("focus", { "PLAYER_FOCUS_CHANGED" })
 end
 
 ---@class PortraitOverlay

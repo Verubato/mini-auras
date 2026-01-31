@@ -1,9 +1,9 @@
 ---@type string, Addon
 local addonName, addon = ...
 local mini = addon.Framework
-local auras = addon.Auras
+local auras = addon.CcHeader
+local unitWatcher = addon.UnitAuraWatcher
 local units = addon.Units
-local capabilities = addon.Capabilities
 local ccManager = addon.CcManager
 local paused = false
 local soundFile = "Interface\\AddOns\\" .. addonName .. "\\Media\\Sonar.ogg"
@@ -11,12 +11,16 @@ local soundFile = "Interface\\AddOns\\" .. addonName .. "\\Media\\Sonar.ogg"
 local db
 ---@type table
 local healerAnchor
----@type table<string, table>
-local healerHeaders = {}
+---@type table<string, HealerWatchEntry>
+local entries = {}
 
----@class HealerOverlay
+---@class HealerWatchEntry
+---@field Watcher Watcher
+---@field Header CcHeader
+
+---@class HealerCcManager
 local M = {}
-addon.HealerOverlay = M
+addon.HealerCcManager = M
 
 local function OnHealerCcChanged()
 	if paused then
@@ -27,7 +31,14 @@ local function OnHealerCcChanged()
 		return
 	end
 
-	local isCcdAlpha = ccManager:IsCcAppliedAlpha(healerHeaders)
+	---@type Watcher[]
+	local list = {}
+
+	for _, watcher in pairs(entries) do
+		list[#list + 1] = watcher.Watcher
+	end
+
+	local isCcdAlpha = ccManager:IsCcAppliedAlpha(list)
 	healerAnchor:SetAlpha(result)
 
 	if db.Healer.Sound.Enabled and not mini:IsSecret(isCcdAlpha) and isCcdAlpha == 1 then
@@ -38,25 +49,31 @@ end
 local function RefreshHeaders()
 	local options = db.Healer
 
-	for unit, header in pairs(healerHeaders) do
+	for unit, item in pairs(entries) do
 		if not units:IsHealer(unit) or not options.Enabled then
-			auras:ClearHeader(header)
-			healerHeaders[unit] = nil
+			item.Header:Hide()
+			item.Watcher:Pause()
 		end
 	end
 
 	local healers = units:FindHealers()
 
 	for _, healer in ipairs(healers) do
-		local header = healerHeaders[healer]
-		if header then
-			auras:UpdateHeader(header, healer, options.Icons)
+		local item = entries[healer]
+		if item then
+			auras:Update(item.Header, healer, options.Icons)
+
+			if item.Watcher:IsPaused() then
+				item.Watcher:Resume()
+				item.Header:Show()
+			end
 		else
-			header = auras:CreateHeader(healer, options.Icons)
-			header:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
-			header:RegisterCallback(OnHealerCcChanged)
-			header:Show()
-			healerHeaders[healer] = header
+			item = { Header = auras:New(healer, options.Icons), Watcher = unitWatcher:New(healer) }
+			item.Header:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
+			item.Header:Show()
+
+			item.Watcher:RegisterCallback(OnHealerCcChanged)
+			entries[healer] = item
 		end
 	end
 end
