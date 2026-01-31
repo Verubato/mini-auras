@@ -127,9 +127,9 @@ local function OnHeaderEvent(header, event, arg1)
 						local procGlow = child._ProcGlow
 						procGlow:SetAlphaFromBoolean(isCC)
 
-						local color
-						if colourByDispelType then
-							color = C_UnitAuras.GetAuraDispelTypeColor(unit, data.auraInstanceID, dispelColorCurve)
+						local color = colourByDispelType
+							and C_UnitAuras.GetAuraDispelTypeColor(unit, data.auraInstanceID, dispelColorCurve)
+						if color then
 							procGlow:SetVertexColor(color)
 						end
 					else

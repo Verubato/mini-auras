@@ -85,8 +85,12 @@ local function OnCcAppliedChanged(watcher, unitFrame, portrait)
 	local overlay = EnsureOverlay(unitFrame, portrait)
 	local ccState = watcher:GetCcState()
 
-	if db.Portrait.Enabled and ccState.IsCcApplied and ccState.CcSpellIcon then
-		overlay.Icon:SetTexture(ccState.CcSpellIcon)
+	if db.Portrait.Enabled and ccState then
+		if ccState.CcSpellIcon then
+			overlay.Icon:SetTexture(ccState.CcSpellIcon)
+		else
+			overlay:Hide()
+		end
 
 		if ccState.CcStartTime and ccState.CcTotalDuration then
 			overlay.Cooldown:SetCooldown(ccState.CcStartTime, ccState.CcTotalDuration)

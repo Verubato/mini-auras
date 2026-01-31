@@ -13,6 +13,7 @@ local db
 local healerAnchor
 ---@type table<string, HealerWatchEntry>
 local entries = {}
+local lastCcdAlpha
 
 ---@class HealerWatchEntry
 ---@field Watcher Watcher
@@ -41,9 +42,19 @@ local function OnHealerCcChanged()
 	local isCcdAlpha = ccManager:IsCcAppliedAlpha(list)
 	healerAnchor:SetAlpha(isCcdAlpha)
 
-	if db.Healer.Sound.Enabled and not mini:IsSecret(isCcdAlpha) and isCcdAlpha == 1 then
+	if not db.Healer.Sound.Enabled then
+		return
+	end
+
+	if mini:IsSecret(isCcdAlpha) then
+		return
+	end
+
+	if isCcdAlpha == 1 and lastCcdAlpha ~= isCcdAlpha then
 		M:PlaySound()
 	end
+
+	lastCcdAlpha = isCcdAlpha
 end
 
 local function RefreshHeaders()

@@ -43,15 +43,15 @@ local function OnEvent(watcher)
 			local start = durationInfo and durationInfo:GetStartTime()
 			local duration = durationInfo and durationInfo:GetTotalDuration()
 
-			auraInstanceId = data.auraInstanceID
-
 			if capabilities:SupportsCrowdControlFiltering() then
 				ccApplied = true
+				auraInstanceId = data.auraInstanceID
 				ccSpellId = data.spellId
 				ccSpellIcon = data.icon
 				ccStartTime = start
 				ccTotalDuration = duration
-				break
+				-- don't break here
+				-- keep iterating as we might find another more recent CC
 			else
 				ccApplied = ccApplied or {}
 				ccApplied[#ccApplied + 1] = isCC
@@ -62,7 +62,7 @@ local function OnEvent(watcher)
 	---@type WatcherState
 	local state = watcher.State
 
-	if capabilities:SupportsCrowdControlFiltering() and state.LastAuraInstanceId ~= auraInstanceId then
+	if capabilities:SupportsCrowdControlFiltering() then
 		state.LastAuraInstanceId = auraInstanceId
 		state.IsCcApplied = ccApplied
 		state.CcSpellId = ccSpellId
@@ -152,6 +152,7 @@ end
 ---@field Paused boolean
 ---@field Callbacks fun()[]
 ---@field LastAuraInstanceId number?
+---@field CcAuras AuraInfo[]
 
 ---@class AuraInfo
 ---@field IsCcApplied? boolean|boolean[]
