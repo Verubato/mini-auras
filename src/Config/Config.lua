@@ -34,10 +34,10 @@ local dbDefaults = {
 		},
 
 		Icons = {
-			Size = 72,
+			Size = 50,
 			Glow = true,
 			ReverseCooldown = false,
-			ColorByDispelType = false,
+			ColorByDispelType = true,
 		},
 	},
 
@@ -63,10 +63,10 @@ local dbDefaults = {
 		},
 
 		Icons = {
-			Size = 72,
+			Size = 50,
 			Glow = true,
 			ReverseSwipe = false,
-			ColorByDispelType = false,
+			ColorByDispelType = true,
 		},
 	},
 
@@ -90,7 +90,7 @@ local dbDefaults = {
 			Size = 72,
 			Glow = true,
 			ReverseSwipe = false,
-			ColorByDispelType = false,
+			ColorByDispelType = true,
 		},
 
 		Filters = {
