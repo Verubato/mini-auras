@@ -35,6 +35,7 @@ function M:Build(panel)
 		local portraitsChk = mini:Checkbox({
 			Parent = panel,
 			LabelText = "Portrait icons",
+			Tooltip = "Shows CC on the player/target/focus portraits.",
 			GetValue = function()
 				return db.Portrait.Enabled
 			end,

@@ -28,6 +28,7 @@ function M:Build(panel, options)
 	local enabledChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Enabled",
+		Tooltip = "Whether to enable or disable this module.",
 		GetValue = function()
 			return options.Enabled
 		end,
@@ -43,6 +44,7 @@ function M:Build(panel, options)
 	local glowChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Glow icons",
+		Tooltip = "Show a glow around the CC icons.",
 		GetValue = function()
 			return options.Icons.Glow
 		end,
@@ -58,6 +60,7 @@ function M:Build(panel, options)
 	local reverseChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Reverse swipe",
+		Tooltip = "Reverses the direction of the cooldown swipe animation.",
 		GetValue = function()
 			return options.Icons.ReverseCooldown
 		end,
@@ -74,6 +77,7 @@ function M:Build(panel, options)
 		local soundChk = mini:Checkbox({
 			Parent = panel,
 			LabelText = "Sound",
+			Tooltip = "Play a sound when the healer is CC'd.",
 			GetValue = function()
 				return options.Sound.Enabled
 			end,
@@ -90,6 +94,7 @@ function M:Build(panel, options)
 	local arenaChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Arena",
+		Tooltip = "Enable in arenas.",
 		GetValue = function()
 			return options.Filters.Arena
 		end,
@@ -104,6 +109,7 @@ function M:Build(panel, options)
 	local battlegroudsChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "BGs",
+		Tooltip = "Enable in battlegrounds.",
 		GetValue = function()
 			return options.Filters.BattleGrounds
 		end,
@@ -119,6 +125,7 @@ function M:Build(panel, options)
 	local worldChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "World",
+		Tooltip = "Enable in the general overworld.",
 		GetValue = function()
 			return options.Filters.World
 		end,
@@ -165,7 +172,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	fontSize.Container:SetPoint("TOPLEFT", iconSize.Container, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	fontSize.Container:SetPoint("TOPLEFT", iconSize.Container, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()

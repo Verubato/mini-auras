@@ -177,6 +177,7 @@ function M:Build(panel, options)
 	local enabledChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Enabled",
+		Tooltip = "Whether to enable or disable this module.",
 		GetValue = function()
 			return options.Enabled
 		end,
@@ -192,6 +193,7 @@ function M:Build(panel, options)
 	local excludePlayerChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Exclude self",
+		Tooltip = "Exclude yourself from showing CC icons.",
 		GetValue = function()
 			return options.ExcludePlayer
 		end,
@@ -207,6 +209,7 @@ function M:Build(panel, options)
 	local glowChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Glow icons",
+		Tooltip = "Show a glow around the CC icons.",
 		GetValue = function()
 			return options.Icons.Glow
 		end,
@@ -222,6 +225,7 @@ function M:Build(panel, options)
 	local reverseChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Reverse swipe",
+		Tooltip = "Reverses the direction of the cooldown swipe animation.",
 		GetValue = function()
 			return options.Icons.ReverseCooldown
 		end,
@@ -237,6 +241,7 @@ function M:Build(panel, options)
 	local dispelColoursChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Dispel colours",
+		Tooltip = "Change the colour of the glow based on the type of debuff.",
 		GetValue = function()
 			return options.Icons.ColorByDispelType
 		end,
@@ -253,6 +258,7 @@ function M:Build(panel, options)
 	local simpleChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Simple offsets",
+		Tooltip = "Anchor to the center of the frame by default.",
 		GetValue = function()
 			return options.SimpleMode.Enabled
 		end,
