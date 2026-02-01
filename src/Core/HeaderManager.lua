@@ -88,6 +88,7 @@ function M:AnchorHeader(header, anchor, options)
 
 	-- weird blizzard bug happening atm where units in range are still getting faded
 	-- so ignore the unit frame's alpha
+	-- TODO: this didn't fix it, why?
 	header:SetIgnoreParentAlpha(true)
 end
 
