@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.4.1
+
+Potential fix for icons becoming forever faded after their unit frame anchor was out of range/visibility.
+
 ## 2.4.0
 
 - Player/target/focus CC portrait icons (beta only).
