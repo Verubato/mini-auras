@@ -7,7 +7,7 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 7,
+	Version = 8,
 
 	NotifiedChanges = true,
 
@@ -195,6 +195,11 @@ local function GetAndUpgradeDb()
 	if vars.Version == 6 then
 		vars.NotifiedChanges = false
 		vars.Version = 7
+	end
+
+	if vars.Version == 7 then
+		vars.NotifiedChanges = false
+		vars.Version = 8
 	end
 
 	vars = mini:GetSavedVars(dbDefaults)

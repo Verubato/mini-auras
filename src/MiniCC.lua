@@ -75,6 +75,14 @@ local function NotifyChanges()
 				"- New option to colour the glow based on the dispel type.",
 			}, "\n"),
 		})
+	elseif db.Version == 8 then
+		mini:ShowDialog({
+			Title = "MiniCC - What's New?",
+			Text = table.concat({
+				"- Portrait icons now supported in prepatch (was beta only).",
+				"- Included important spells (defensives/offensives) in portrait icons, not just CC.",
+			}, "\n"),
+		})
 	end
 end
 
