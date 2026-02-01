@@ -39,7 +39,11 @@ local function OnHealerCcChanged()
 	local ccAuraData = {}
 
 	for _, watcher in pairs(activePool) do
-		ccAuraData[#ccAuraData + 1] = watcher.Watcher:GetCcState()
+		local ccState = watcher.Watcher:GetCcState()
+
+		for _, entry in ipairs(ccState) do
+			ccAuraData[#ccAuraData + 1] = entry
+		end
 	end
 
 	local isCcdAlpha = ccManager:IsCcAppliedAlpha(ccAuraData)

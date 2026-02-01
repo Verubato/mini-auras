@@ -10,18 +10,13 @@ addon.CcManager = M
 ---@param list AuraInfo[]
 ---@return number 0 or 1
 local function CcAlphaModern(list)
-	local result = 0
-
 	for _, info in ipairs(list) do
-		if type(info.IsCC) == "boolean" then
-			if info.IsCC then
-				result = 1
-				break
-			end
+		if info.IsCC then
+			return 1
 		end
 	end
 
-	return result
+	return 0
 end
 
 ---@param list AuraInfo[]
