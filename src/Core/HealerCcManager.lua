@@ -35,14 +35,14 @@ local function OnHealerCcChanged()
 		return
 	end
 
-	---@type Watcher[]
-	local list = {}
+	---@type AuraInfo[]
+	local ccAuraData = {}
 
 	for _, watcher in pairs(activePool) do
-		list[#list + 1] = watcher.Watcher
+		ccAuraData[#ccAuraData + 1] = watcher.Watcher:GetCcState()
 	end
 
-	local isCcdAlpha = ccManager:IsCcAppliedAlpha(list)
+	local isCcdAlpha = ccManager:IsCcAppliedAlpha(ccAuraData)
 	healerAnchor:SetAlpha(isCcdAlpha)
 
 	if not db.Healer.Sound.Enabled then

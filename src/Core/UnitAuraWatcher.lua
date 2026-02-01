@@ -2,6 +2,7 @@
 local _, addon = ...
 local capabilities = addon.Capabilities
 local maxAuras = 40
+local ccFilter = capabilities:HasNewFilters() and "HARMFUL|CROWD_CONTROL" or "HARMFUL|INCLUDE_NAME_PLATE_ONLY"
 
 ---@class UnitAuraWatcher
 local M = {}
@@ -21,90 +22,116 @@ end
 
 local function OnEvent(watcher)
 	local unit = watcher.State.Unit
-	local filter = watcher.State.Filter
 
-	if not unit or not filter then
+	if not unit then
 		return
 	end
 
-	local auraInstanceId
-	local ccApplied
-	local ccSpellId
-	local ccSpellIcon
-	local ccStartTime
-	local ccTotalDuration
+	local ccAuraInstanceId
+	local importantAuraInstanceId
+	---@type AuraInfo[]
+	local ccSpellData = {}
+	---@type AuraInfo[]
+	local importantSpellData = {}
+	---@type AuraInfo[]
+	local defensivesSpellData = {}
 
 	for i = 1, maxAuras do
-		local data = C_UnitAuras.GetAuraDataByIndex(unit, i, filter)
+		local ccData = C_UnitAuras.GetAuraDataByIndex(unit, i, ccFilter)
 
-		if data then
-			local isCC = C_Spell.IsSpellCrowdControl(data.spellId)
-			local durationInfo = C_UnitAuras.GetAuraDuration(unit, data.auraInstanceID)
+		if ccData then
+			local durationInfo = C_UnitAuras.GetAuraDuration(unit, ccData.auraInstanceID)
 			local start = durationInfo and durationInfo:GetStartTime()
 			local duration = durationInfo and durationInfo:GetTotalDuration()
+			ccAuraInstanceId = ccData.auraInstanceID
 
-			if capabilities:SupportsCrowdControlFiltering() then
-				ccApplied = true
-				auraInstanceId = data.auraInstanceID
-				ccSpellId = data.spellId
-				ccSpellIcon = data.icon
-				ccStartTime = start
-				ccTotalDuration = duration
-				-- don't break here
-				-- keep iterating as we might find another more recent CC
+			if capabilities:HasNewFilters() then
+				ccSpellData[#ccSpellData + 1] = {
+					IsCC = true,
+					SpellId = ccData.spellId,
+					SpellIcon = ccData.icon,
+					StartTime = start,
+					TotalDuration = duration,
+				}
 			else
-				ccApplied = ccApplied or {}
-				ccApplied[#ccApplied + 1] = isCC
+				local isCC = C_Spell.IsSpellCrowdControl(ccData.spellId)
+				ccSpellData[#ccSpellData + 1] = {
+					IsCC = isCC,
+					SpellId = ccData.spellId,
+					SpellIcon = ccData.icon,
+					StartTime = start,
+					TotalDuration = duration,
+				}
 			end
+		end
+
+		if capabilities:HasNewFilters() then
+			-- C_Spell.IsExternalDefensive doesn't allow secrets, so we can't do anything in 12.0.0
+			local defensivesData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|BIG_DEFENSIVE")
+
+			if defensivesData then
+				local durationInfo = C_UnitAuras.GetAuraDuration(unit, defensivesData.auraInstanceID)
+				local start = durationInfo and durationInfo:GetStartTime()
+				local duration = durationInfo and durationInfo:GetTotalDuration()
+				ccAuraInstanceId = defensivesData.auraInstanceID
+
+				defensivesSpellData[#defensivesSpellData + 1] = {
+					IsDefensive = true,
+					SpellId = defensivesData.spellId,
+					SpellIcon = defensivesData.icon,
+					StartTime = start,
+					TotalDuration = duration,
+				}
+			end
+		end
+
+		local importantData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
+			or C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL")
+		if importantData then
+			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantData.auraInstanceID)
+			local start = durationInfo and durationInfo:GetStartTime()
+			local duration = durationInfo and durationInfo:GetTotalDuration()
+			local isImportant = C_Spell.IsSpellImportant(importantData.spellId)
+
+			importantSpellData[#importantSpellData + 1] = {
+				IsImportant = isImportant,
+				SpellId = importantData.spellId,
+				SpellIcon = importantData.icon,
+				StartTime = start,
+				TotalDuration = duration,
+			}
 		end
 	end
 
 	---@type WatcherState
 	local state = watcher.State
 
-	if auraInstanceId == state.LastAuraInstanceId then
-		-- prevent callback spam
-		return
-	end
-
-	if capabilities:SupportsCrowdControlFiltering() then
-		state.LastAuraInstanceId = auraInstanceId
-		state.IsCcApplied = ccApplied
-		state.CcSpellId = ccSpellId
-		state.CcSpellIcon = ccSpellIcon
-		state.CcTotalDuration = ccTotalDuration
-		state.CcStartTime = ccStartTime
-	else
-		state.IsCcApplied = ccApplied
-	end
+	state.CcAuraState = ccSpellData
+	state.ImportantAuraState = importantSpellData
+	state.DefensiveState = defensivesSpellData
+	state.LastImportantAuraInstanceId = importantAuraInstanceId
+	state.LastCcAuraInstanceId = ccAuraInstanceId
 
 	NotifyCallbacks(watcher)
 end
 
 ---@param unit string
----@param filter string?
 ---@param events string[]?
 ---@return Watcher
-function M:New(unit, filter, events)
+function M:New(unit, events)
 	if not unit then
 		error("unit must not be nil")
-	end
-
-	if not filter then
-		if capabilities:SupportsCrowdControlFiltering() then
-			filter = "HARMFUL|CROWD_CONTROL"
-		else
-			filter = "HARMFUL|INCLUDE_NAME_PLATE_ONLY"
-		end
 	end
 
 	local watcher = {
 		---@class WatcherState
 		State = {
 			Unit = unit,
-			Filter = filter,
 			Paused = false,
 			Callbacks = {},
+			CcAuraState = {},
+			ImportantAuraState = {},
+			DefensiveState = {},
 		},
 		RegisterCallback = function(watcherSelf, callback)
 			if not callback then
@@ -124,7 +151,13 @@ function M:New(unit, filter, events)
 			return watcherSelf.State.Paused
 		end,
 		GetCcState = function(watcherSelf)
-			return watcherSelf.State
+			return watcherSelf.State.CcAuraState
+		end,
+		GetImportantState = function(watcherSelf)
+			return watcherSelf.State.ImportantAuraState
+		end,
+		GetDefensiveState = function(watcherSelf)
+			return watcherSelf.State.DefensiveState
 		end,
 	}
 
@@ -145,23 +178,29 @@ function M:New(unit, filter, events)
 end
 
 ---@class Watcher
----@field GetCcState fun(self: Watcher): AuraInfo
+---@field GetCcState fun(self: Watcher): AuraInfo[]
+---@field GetImportantState fun(self: Watcher): AuraInfo[]
+---@field GetDefensiveState fun(self: Watcher): AuraInfo[]
 ---@field RegisterCallback fun(self: Watcher, callback: fun(self: Watcher))
 ---@field IsPaused fun(self: Watcher)
 ---@field Pause fun(self: Watcher)
 ---@field Resume fun(self: Watcher)
 
----@class WatcherState : AuraInfo
+---@class WatcherState
 ---@field Unit string
 ---@field Filter string
 ---@field Paused boolean
 ---@field Callbacks fun()[]
----@field LastAuraInstanceId number?
+---@field LastCcAuraInstanceId number?
+---@field LastImportantAuraInstanceId number?
 ---@field CcAuras AuraInfo[]
+---@field ImportantAuras AuraInfo[]
 
 ---@class AuraInfo
----@field IsCcApplied? boolean|boolean[]
----@field CcSpellId number?
----@field CcSpellIcon string?
----@field CcTotalDuration number?
----@field CcStartTime number?
+---@field IsImportant? boolean
+---@field IsCC? boolean
+---@field IsDefensive? boolean
+---@field SpellId number?
+---@field SpellIcon string?
+---@field TotalDuration number?
+---@field StartTime number?

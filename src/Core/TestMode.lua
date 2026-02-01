@@ -133,7 +133,7 @@ local function ShowHealerOverlay()
 
 	-- keep track of whether we have already played the test sound so we don't spam it
 	if
-		capabilities:SupportsCrowdControlFiltering()
+		capabilities:HasNewFilters()
 		and (not previousSoundEnabled or previousSoundEnabled ~= db.Healer.Sound.Enabled)
 	then
 		if db.Healer.Sound.Enabled then
@@ -148,7 +148,7 @@ local function HidePortraitIcons()
 	local overlays = portraitManager:GetOverlays()
 
 	for _, overlay in pairs(overlays) do
-		overlay:Hide()
+		overlay:SetAlpha(0)
 	end
 end
 
@@ -158,7 +158,7 @@ local function ShowPortraitIcons()
 
 	for _, overlay in pairs(overlays) do
 		overlay.Icon:SetTexture(tex)
-		overlay:Show()
+		overlay:SetAlpha(1)
 	end
 end
 
@@ -175,7 +175,7 @@ function M:Init()
 	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
 	local multipleTestSpells = { kidneyShot, fear, hex }
 
-	testSpells = capabilities:SupportsCrowdControlFiltering() and multipleTestSpells or { kidneyShot }
+	testSpells = capabilities:HasNewFilters() and multipleTestSpells or { kidneyShot }
 
 	-- healer overlay
 	testHealerHeader = CreateFrame("Frame", addonName .. "TestHealerHeader", healerAnchor)
@@ -346,12 +346,10 @@ function M:Show()
 		HideHealerOverlay()
 	end
 
-	if capabilities:SupportsCrowdControlFiltering() then
-		if db.Portrait.Enabled then
-			ShowPortraitIcons()
-		else
-			HidePortraitIcons()
-		end
+	if db.Portrait.Enabled then
+		ShowPortraitIcons()
+	else
+		HidePortraitIcons()
 	end
 end
 

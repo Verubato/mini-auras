@@ -94,7 +94,7 @@ local function OnHeaderEvent(header, event, arg1)
 
 			local isCC = C_Spell.IsSpellCrowdControl(data.spellId)
 
-			if not capabilities:SupportsCrowdControlFiltering() then
+			if not capabilities:HasNewFilters() then
 				icon:SetAlphaFromBoolean(isCC)
 				ccApplied = ccApplied or {}
 				ccApplied[#ccApplied + 1] = isCC
@@ -113,7 +113,7 @@ local function OnHeaderEvent(header, event, arg1)
 				cooldown:SetCooldown(start, duration)
 				cooldown:Show()
 
-				if capabilities:SupportsCrowdControlFiltering() and not ccApplied then
+				if capabilities:HasNewFilters() and not ccApplied then
 					ccApplied = true
 					ccSpellId = data.spellId
 					ccSpellIcon = data.icon
@@ -150,7 +150,7 @@ local function OnHeaderEvent(header, event, arg1)
 				end
 			end
 
-			if not capabilities:SupportsCrowdControlFiltering() then
+			if not capabilities:HasNewFilters() then
 				cooldown:SetAlphaFromBoolean(isCC)
 			end
 		else
@@ -162,7 +162,7 @@ local function OnHeaderEvent(header, event, arg1)
 		end
 	end
 
-	if not capabilities:SupportsCrowdControlFiltering() then
+	if not capabilities:HasNewFilters() then
 		header.IsCcApplied = ccApplied
 		NotifyCallbacks(header)
 	elseif header.IsCcApplied ~= ccApplied then
@@ -215,7 +215,7 @@ local function UpdateHeader(header, unit, options)
 	header:SetAttribute("x-reverse-cooldown", options.ReverseCooldown)
 	header:SetAttribute("x-color-by-dispel-type", options.ColorByDispelType)
 
-	if capabilities:SupportsCrowdControlFiltering() then
+	if capabilities:HasNewFilters() then
 		header:SetAttribute("xOffset", iconSize + 1)
 	else
 		-- have all icons overlap themselves, and then only the visible on is shown
@@ -232,7 +232,7 @@ local function CreateSecureHeader()
 
 	header:SetAttribute("template", "MiniCCAuraButtonTemplate")
 
-	if capabilities:SupportsCrowdControlFiltering() then
+	if capabilities:HasNewFilters() then
 		header:SetAttribute("filter", "HARMFUL|CROWD_CONTROL")
 	else
 		header:SetAttribute("filter", "HARMFUL|INCLUDE_NAME_PLATE_ONLY")

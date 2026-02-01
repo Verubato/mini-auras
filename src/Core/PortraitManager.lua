@@ -1,13 +1,8 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Framework
 local frames = addon.Frames
 local unitWatcher = addon.UnitAuraWatcher
-local capabilities = addon.Capabilities
 local overlays = {}
-
----@type Db
-local db
 
 ---@class PortraitManager
 local M = {}
@@ -36,20 +31,28 @@ local function GetPortraitMask(unitFrame)
 	return nil
 end
 
-local function EnsureOverlay(unitFrame, portrait)
-	local overlay = overlays[portrait]
+local function EnsureOverlay(unitFrame, portrait, index)
+	local portraitOverlays = overlays[portrait]
+
+	if not portraitOverlays then
+		portraitOverlays = {}
+		overlays[portrait] = portraitOverlays
+	end
+
+	local overlay = portraitOverlays[index]
 
 	if overlay then
 		return overlay
 	end
 
 	overlay = CreateFrame("Frame", nil, unitFrame)
-	overlay:Hide()
+	overlay:SetAlpha(0)
+	overlay:Show()
 
 	frames:AnchorFrameToRegionGeometry(overlay, portrait)
 
 	overlay:SetFrameStrata(unitFrame:GetFrameStrata())
-	overlay:SetFrameLevel((unitFrame:GetFrameLevel() or 0) + 1)
+	overlay:SetFrameLevel((unitFrame:GetFrameLevel() or 0) + 5)
 
 	local tex = overlay:CreateTexture(nil, "OVERLAY")
 	tex:SetAllPoints()
@@ -73,36 +76,85 @@ local function EnsureOverlay(unitFrame, portrait)
 
 	overlay.Icon = tex
 	overlay.Cooldown = cd
-	overlays[portrait] = overlay
+
+	portraitOverlays[index] = overlay
 
 	return overlay
+end
+
+local function HideFrom(portrait, index)
+	local portraits = overlays[portrait]
+
+	if portraits then
+		for i = index, #portraits do
+			portraits[i]:SetAlpha(0)
+		end
+	end
 end
 
 ---@param watcher Watcher
 ---@param unitFrame table
 ---@param portrait table
-local function OnCcAppliedChanged(watcher, unitFrame, portrait)
-	local overlay = EnsureOverlay(unitFrame, portrait)
-	local ccState = watcher:GetCcState()
+local function OnAuraInfo(watcher, unitFrame, portrait)
+	local portraitIndex = 1
+	local ccAuras = watcher:GetCcState()
+	local importantAuras = watcher:GetImportantState()
+	local defensiveAuras = watcher:GetDefensiveState()
 
-	if db.Portrait.Enabled and ccState and ccState.IsCcApplied then
-		if ccState.CcSpellIcon then
-			overlay.Icon:SetTexture(ccState.CcSpellIcon)
+	for _, aura in ipairs(ccAuras) do
+		local overlay = EnsureOverlay(unitFrame, portrait, portraitIndex)
+		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
+			overlay.Icon:SetTexture(aura.SpellIcon)
+			overlay.Cooldown:SetCooldown(aura.StartTime, aura.TotalDuration)
+
+			if not issecretvalue(aura.IsCC) then
+				-- we're in 12.0.1
+				if aura.IsCC then
+					overlay:SetAlpha(1)
+					HideFrom(portrait, portraitIndex + 1)
+					return
+				end
+			else
+				overlay:SetAlphaFromBoolean(aura.IsCC)
+			end
 		else
-			overlay:Hide()
+			overlay:SetAlpha(0)
 		end
 
-		if ccState.CcStartTime and ccState.CcTotalDuration then
-			overlay.Cooldown:SetCooldown(ccState.CcStartTime, ccState.CcTotalDuration)
-			overlay.Cooldown:Show()
-		else
-			overlay.Cooldown:Hide()
-		end
-
-		overlay:Show()
-	else
-		overlay:Hide()
+		portraitIndex = portraitIndex + 1
 	end
+
+	for _, aura in ipairs(defensiveAuras) do
+		local overlay = EnsureOverlay(unitFrame, portrait, portraitIndex)
+		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
+			overlay.Icon:SetTexture(aura.SpellIcon)
+			overlay.Cooldown:SetCooldown(aura.StartTime, aura.TotalDuration)
+
+			-- we only get defensives in 12.0.1 which we got from a filter
+			overlay:SetAlpha(1)
+			HideFrom(portrait, portraitIndex + 1)
+			return
+		else
+			overlay:SetAlpha(0)
+		end
+
+		portraitIndex = portraitIndex + 1
+	end
+
+	for _, aura in ipairs(importantAuras) do
+		local overlay = EnsureOverlay(unitFrame, portrait, portraitIndex)
+		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
+			overlay.Icon:SetTexture(aura.SpellIcon)
+			overlay.Cooldown:SetCooldown(aura.StartTime, aura.TotalDuration)
+			overlay:SetAlphaFromBoolean(aura.IsImportant)
+		else
+			overlay:SetAlpha(0)
+		end
+
+		portraitIndex = portraitIndex + 1
+	end
+
+	HideFrom(portrait, portraitIndex)
 end
 
 ---@return table? unitFrame
@@ -124,21 +176,16 @@ local function GetBlizzardFrame(unit)
 	return nil
 end
 
----@return PortraitOverlay? overlay
----@param unit string
-function M:GetPortrait(unit)
-	local unitFrame, portrait = GetBlizzardFrame(unit)
-
-	if not unitFrame or not portrait then
-		return nil
-	end
-
-	return EnsureOverlay(unitFrame, portrait)
-end
-
 ---@return PortraitOverlay[]
 function M:GetOverlays()
-	return overlays
+	local result = {}
+	for _, portraitOverlays in pairs(overlays) do
+		for _, overlay in ipairs(portraitOverlays) do
+			result[#result + 1] = overlay
+		end
+	end
+
+	return result
 end
 
 ---@param unit string
@@ -150,11 +197,11 @@ local function Attach(unit, events)
 		return nil
 	end
 
-	local overlay = EnsureOverlay(unitFrame, portrait)
-	local watcher = unitWatcher:New(unit, nil, events)
+	local overlay = EnsureOverlay(unitFrame, portrait, 1)
+	local watcher = unitWatcher:New(unit, events)
 
 	watcher:RegisterCallback(function()
-		OnCcAppliedChanged(watcher, unitFrame, portrait)
+		OnAuraInfo(watcher, unitFrame, portrait)
 	end)
 
 	overlay.Watcher = watcher
@@ -162,18 +209,11 @@ local function Attach(unit, events)
 end
 
 function M:Init()
-	if not capabilities:SupportsCrowdControlFiltering() then
-		return
-	end
-
-	db = mini:GetSavedVars()
-
 	Attach("player")
 	Attach("target", { "PLAYER_TARGET_CHANGED" })
 	Attach("focus", { "PLAYER_FOCUS_CHANGED" })
 end
 
 ---@class PortraitOverlay
----@field Show fun(self: PortraitOverlay)
----@field Hide fun(self: PortraitOverlay)
+---@field SetAlpha fun(self: PortraitOverlay, alpha: number)
 ---@field Icon table

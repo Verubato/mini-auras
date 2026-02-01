@@ -73,7 +73,7 @@ function M:Build(panel, options)
 	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
-	if capabilities:SupportsCrowdControlFiltering() then
+	if capabilities:HasNewFilters() then
 		local soundChk = mini:Checkbox({
 			Parent = panel,
 			LabelText = "Sound",
