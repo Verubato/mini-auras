@@ -165,18 +165,6 @@ function M:EnsureHeader(anchor, unit)
 	return header
 end
 
-function M:ReleaseHeader(unit)
-	-- TODO: use a lookup table
-	for anchor, header in pairs(headers) do
-		local targetUnit = header:GetAttribute("unit")
-
-		if unit == targetUnit then
-			auras:ClearHeader(header)
-			headers[anchor] = nil
-		end
-	end
-end
-
 function M:EnsureHeaders()
 	local anchors = self:GetAnchors(true)
 
