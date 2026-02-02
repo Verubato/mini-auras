@@ -3,7 +3,6 @@ local _, addon = ...
 local mini = addon.Framework
 local frames = addon.FramesManager
 local auras = addon.CcHeader
-local units = addon.Utils.Units
 ---@type Db
 local db
 ---@type InstanceOptions|nil

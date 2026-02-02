@@ -27,8 +27,6 @@ local function OnEvent(watcher)
 		return
 	end
 
-	local ccAuraInstanceId
-	local importantAuraInstanceId
 	---@type AuraInfo[]
 	local ccSpellData = {}
 	---@type AuraInfo[]
@@ -43,7 +41,6 @@ local function OnEvent(watcher)
 			local durationInfo = C_UnitAuras.GetAuraDuration(unit, ccData.auraInstanceID)
 			local start = durationInfo and durationInfo:GetStartTime()
 			local duration = durationInfo and durationInfo:GetTotalDuration()
-			ccAuraInstanceId = ccData.auraInstanceID
 
 			if capabilities:HasNewFilters() then
 				ccSpellData[#ccSpellData + 1] = {
@@ -73,7 +70,6 @@ local function OnEvent(watcher)
 				local durationInfo = C_UnitAuras.GetAuraDuration(unit, defensivesData.auraInstanceID)
 				local start = durationInfo and durationInfo:GetStartTime()
 				local duration = durationInfo and durationInfo:GetTotalDuration()
-				ccAuraInstanceId = defensivesData.auraInstanceID
 
 				defensivesSpellData[#defensivesSpellData + 1] = {
 					IsDefensive = true,
@@ -127,8 +123,6 @@ local function OnEvent(watcher)
 	state.CcAuraState = ccSpellData
 	state.ImportantAuraState = importantSpellData
 	state.DefensiveState = defensivesSpellData
-	state.LastImportantAuraInstanceId = importantAuraInstanceId
-	state.LastCcAuraInstanceId = ccAuraInstanceId
 
 	NotifyCallbacks(watcher)
 end
@@ -209,8 +203,6 @@ end
 ---@field Filter string
 ---@field Paused boolean
 ---@field Callbacks fun()[]
----@field LastCcAuraInstanceId number?
----@field LastImportantAuraInstanceId number?
 ---@field CcAuras AuraInfo[]
 ---@field ImportantAuras AuraInfo[]
 
