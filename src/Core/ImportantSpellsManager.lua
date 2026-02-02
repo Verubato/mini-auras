@@ -264,9 +264,9 @@ function M:Init()
 	anchor.Frame:Show()
 
 	watchers = {
-		unitWatcher:New("arena1"),
-		unitWatcher:New("arena2"),
-		unitWatcher:New("arena3"),
+		unitWatcher:New("arena1", { "ARENA_OPPONENT_UPDATE" }),
+		unitWatcher:New("arena2", { "ARENA_OPPONENT_UPDATE" }),
+		unitWatcher:New("arena3", { "ARENA_OPPONENT_UPDATE" }),
 	}
 
 	anchor:SetCount(#watchers)
