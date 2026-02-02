@@ -127,6 +127,7 @@ local dbDefaults = {
 
 	Portrait = {
 		Enabled = true,
+		ReverseCooldown = false,
 	},
 
 	Anchor1 = "",

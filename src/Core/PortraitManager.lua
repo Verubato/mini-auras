@@ -1,9 +1,12 @@
 ---@type string, Addon
 local _, addon = ...
+local mini = addon.Framework
 local frames = addon.FramesManager
 local array = addon.Utils.Array
 local unitWatcher = addon.UnitAuraWatcher
 local overlays = {}
+---@type Db
+local db
 
 ---@class PortraitManager
 local M = {}
@@ -43,6 +46,8 @@ local function EnsureOverlay(unitFrame, portrait, index)
 	local overlay = portraitOverlays[index]
 
 	if overlay then
+		-- in case the option changed
+		overlay.Cooldown:SetReverse(db.Portrait.ReverseCooldown)
 		return overlay
 	end
 
@@ -74,6 +79,7 @@ local function EnsureOverlay(unitFrame, portrait, index)
 	cd:SetHideCountdownNumbers(false)
 	-- keep within the portrait icon
 	cd:SetSwipeTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
+	cd:SetReverse(db.Portrait.ReverseCooldown)
 
 	overlay.Icon = tex
 	overlay.Cooldown = cd
@@ -215,6 +221,8 @@ local function Attach(unit, events)
 end
 
 function M:Init()
+	db = mini:GetSavedVars()
+
 	Attach("player")
 	Attach("target", { "PLAYER_TARGET_CHANGED" })
 	Attach("focus", { "PLAYER_FOCUS_CHANGED" })

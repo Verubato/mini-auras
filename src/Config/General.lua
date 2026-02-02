@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local verticalSpacing = mini.VerticalSpacing
+local horizontalSpacing = mini.HorizontalSpacing
 ---@type Db
 local db
 ---@class GeneralConfig
@@ -10,6 +11,8 @@ local M = {}
 addon.Config.General = M
 
 function M:Build(panel)
+	local columns = 4
+	local columnStep = mini:ColumnWidth(columns, 0, 0)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
@@ -30,6 +33,15 @@ function M:Build(panel)
 
 	db = mini:GetSavedVars()
 
+	local divider = mini:Divider({
+		Parent = panel,
+		Text = "Portrait Icons",
+	})
+
+	divider:SetPoint("LEFT", panel, "LEFT")
+	divider:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
+	divider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
+
 	local portraitsChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Portrait icons",
@@ -43,5 +55,21 @@ function M:Build(panel)
 		end,
 	})
 
-	portraitsChk:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 0, -verticalSpacing)
+	portraitsChk:SetPoint("TOPLEFT", divider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local reverseSweepChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Reverse sweep",
+		Tooltip = "Reverses the direction of the cooldown sweep.",
+		GetValue = function()
+			return db.Portrait.ReverseCooldown
+		end,
+		SetValue = function(value)
+			db.Portrait.ReverseCooldown = value
+			addon.Config:Apply()
+		end,
+	})
+
+	reverseSweepChk:SetPoint("LEFT", panel, "LEFT", columnStep, -verticalSpacing)
+	reverseSweepChk:SetPoint("TOP", portraitsChk, "TOP", 0, 0)
 end
