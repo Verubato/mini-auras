@@ -228,8 +228,7 @@ local function OnAuraDataChanged()
 			)
 		end
 
-		-- TODO: is this causing icons to flicker?
-		--anchor:FinalizeSlot(i, used)
+		anchor:FinalizeSlot(i, used)
 	end
 end
 
