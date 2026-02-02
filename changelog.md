@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.5.0
+
+- Added portrait support to prepatch.
+- Included other important spells to portrait.
+
 ## 2.4.2
 
 Another potential fix for icons becoming forever faded.
