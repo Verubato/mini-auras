@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.5.1
+
+Latest important spell now overrides portrait icon.
+
 ## 2.5.0
 
 - Added portrait support to prepatch.
