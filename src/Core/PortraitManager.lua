@@ -4,6 +4,7 @@ local mini = addon.Framework
 local frames = addon.FramesManager
 local array = addon.Utils.Array
 local unitWatcher = addon.UnitAuraWatcher
+local paused = false
 local overlays = {}
 ---@type Db
 local db
@@ -103,6 +104,10 @@ end
 ---@param unitFrame table
 ---@param portrait table
 local function OnAuraInfo(watcher, unitFrame, portrait)
+	if paused then
+		return
+	end
+
 	local portraitIndex = 1
 	local ccAuras = watcher:GetCcState()
 	local importantAuras = watcher:GetImportantState()
@@ -218,6 +223,14 @@ local function Attach(unit, events)
 
 	overlay.Watcher = watcher
 	return overlay
+end
+
+function M:Pause()
+	paused = true
+end
+
+function M:Resume()
+	paused = false
 end
 
 function M:Init()

@@ -215,16 +215,29 @@ local function HidePortraitIcons()
 	for _, overlay in pairs(overlays) do
 		overlay:SetAlpha(0)
 	end
+
+	portraitManager:Resume()
 end
 
 local function ShowPortraitIcons()
 	local overlays = portraitManager:GetOverlays()
 	local tex = C_Spell.GetSpellTexture(testSpells[1].SpellId)
 
-	for _, overlay in pairs(overlays) do
+	local first = overlays[1]
+	if not first then
+		return
+	end
+
+	first.Icon:SetTexture(tex)
+	first:SetAlpha(1)
+
+	for i = 2, #overlays do
+		local overlay = overlays[i]
 		overlay.Icon:SetTexture(tex)
 		overlay:SetAlpha(1)
 	end
+
+	portraitManager:Pause()
 end
 
 function M:Init()
