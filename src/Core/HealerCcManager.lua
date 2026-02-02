@@ -4,7 +4,7 @@ local mini = addon.Framework
 local auras = addon.CcHeader
 local unitWatcher = addon.UnitAuraWatcher
 local units = addon.Utils.Units
-local ccManager = addon.CcManager
+local ccUtil = addon.Utils.CcUtil
 local paused = false
 local soundFile = "Interface\\AddOns\\" .. addonName .. "\\Media\\Sonar.ogg"
 ---@type Db
@@ -46,7 +46,7 @@ local function OnHealerCcChanged()
 		end
 	end
 
-	local isCcdAlpha = ccManager:IsCcAppliedAlpha(ccAuraData)
+	local isCcdAlpha = ccUtil:IsCcAppliedAlpha(ccAuraData)
 	healerAnchor:SetAlpha(isCcdAlpha)
 
 	if not db.Healer.Sound.Enabled then

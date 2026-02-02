@@ -69,12 +69,6 @@ local function OnHeaderEvent(header, event, arg1)
 			break
 		end
 
-		-- undo any out of range fading from blizzard
-		-- don't think this should be required because the header itself has ignore parent alpha
-		-- and blizzard should be re-adjusting the alpha back once they are in range anyway
-		-- but worth a shot
-		child:SetAlpha(1)
-
 		local icon = child.Icon
 		local cooldown = child.Cooldown
 
@@ -84,6 +78,7 @@ local function OnHeaderEvent(header, event, arg1)
 		end
 
 		icon:SetAllPoints(child)
+		icon:SetIgnoreParentAlpha(true)
 
 		cooldown:SetReverse(reverseSwipe)
 

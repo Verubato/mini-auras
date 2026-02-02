@@ -2,10 +2,10 @@
 local _, addon = ...
 local capabilities = addon.Capabilities
 
----@class CcManager
+---@class CcUtil
 local M = {}
 
-addon.CcManager = M
+addon.Utils.CcUtil = M
 
 ---@param list AuraInfo[]
 ---@return number 0 or 1

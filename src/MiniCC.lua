@@ -6,23 +6,16 @@ local headerManager = addon.HeaderManager
 local testModeManager = addon.TestModeManager
 local healerManager = addon.HealerCcManager
 local portraitManager = addon.PortraitManager
+local importantSpellsManager = addon.ImportantSpellsManager
+local frames = addon.FramesManager
 local eventsFrame
 local db
 
-local function IsFriendlyCuf(frame)
-	if frame:IsForbidden() then
-		return false
-	end
-
-	local name = frame:GetName()
-	if not name then
-		return false
-	end
-
-	return string.find(name, "CompactParty") ~= nil or string.find(name, "CompactRaid") ~= nil
-end
-
 local function OnCufUpdateVisible(frame)
+	if not frame or not frames:IsFriendlyCuf(frame) then
+		return
+	end
+
 	local headers = headerManager:GetHeaders()
 	local header = headers[frame]
 
@@ -37,12 +30,12 @@ local function OnCufUpdateVisible(frame)
 			return
 		end
 
-		headerManager:ShowHideHeader(header, frame, false, instanceOptions)
+		frames:ShowHideFrame(header, frame, false, instanceOptions)
 	end)
 end
 
 local function OnCufSetUnit(frame, unit)
-	if not frame or not IsFriendlyCuf(frame) then
+	if not frame or not frames:IsFriendlyCuf(frame) then
 		return
 	end
 
@@ -112,6 +105,7 @@ local function OnAddonLoaded()
 	addon.Config:Init()
 	addon.Utils.Scheduler:Init()
 	addon.FramesManager:Init()
+	addon.ImportantSpellsManager:Init()
 
 	headerManager:Init()
 	healerManager:Init()
@@ -158,6 +152,7 @@ function addon:Refresh()
 	headerManager:EnsureHeaders()
 	healerManager:Refresh()
 	headerManager:Refresh()
+	importantSpellsManager:Refresh()
 
 	if testModeManager:IsEnabled() then
 		testModeManager:Show()
@@ -202,15 +197,16 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field UnitAuraWatcher UnitAuraWatcher
 ---@field TestModeManager TestModeManager
 ---@field HeaderManager HeaderManager
----@field CcManager CcManager
 ---@field PortraitManager PortraitManager
 ---@field HealerCcManager HealerCcManager
+---@field ImportantSpellsManager ImportantSpellsManager
 ---@field Refresh fun(self: table)
 ---@field ToggleTest fun(self: table, options: InstanceOptions)
 ---@field TestOptions fun(self: table, options: InstanceOptions)
 ---@field TestHealer fun(self: table)
 
 ---@class Utils
+---@field CcUtil CcUtil
 ---@field Scheduler SchedulerUtil
 ---@field Units UnitUtil
 ---@field Array ArrayUtil

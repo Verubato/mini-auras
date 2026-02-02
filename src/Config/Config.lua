@@ -65,7 +65,7 @@ local dbDefaults = {
 		Icons = {
 			Size = 50,
 			Glow = true,
-			ReverseSwipe = false,
+			ReverseCooldown = false,
 			ColorByDispelType = true,
 		},
 	},
@@ -89,7 +89,7 @@ local dbDefaults = {
 		Icons = {
 			Size = 72,
 			Glow = true,
-			ReverseSwipe = false,
+			ReverseCooldown = false,
 			ColorByDispelType = true,
 		},
 
@@ -103,6 +103,25 @@ local dbDefaults = {
 			File = "Fonts\\FRIZQT__.TTF",
 			Size = 32,
 			Flags = "OUTLINE",
+		},
+	},
+
+	---@class AlertOptions
+	Alerts = {
+		Enabled = true,
+		Point = "CENTER",
+		RelativePoint = "TOP",
+		RelativeTo = "UIParent",
+
+		Offset = {
+			X = 0,
+			Y = -100,
+		},
+
+		Icons = {
+			Size = 72,
+			Glow = true,
+			ReverseCooldown = false,
 		},
 	},
 
@@ -250,6 +269,7 @@ function config:Init()
 		General = "General",
 		Default = "Default",
 		Raids = "Raids",
+		Alerts = "Alerts",
 		Healer = "Healer",
 		Anchors = "Anchors",
 	}
@@ -274,6 +294,13 @@ function config:Init()
 			Title = "BGs/Raids",
 			Build = function(content)
 				config.Instance:Build(content, db.Raid)
+			end,
+		},
+		{
+			Key = keys.Alerts,
+			Title = "Alerts",
+			Build = function(content)
+				config.Alerts:Build(content, db.Alerts)
 			end,
 		},
 		{
@@ -396,6 +423,7 @@ end
 ---@field Instance InstanceConfig
 ---@field Anchors AnchorsConfig
 ---@field Healer HealerConfig
+---@field Alerts AlertsConfig
 
 ---@class HeaderOptions
 ---@field Enabled boolean

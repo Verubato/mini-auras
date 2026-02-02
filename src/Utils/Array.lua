@@ -15,3 +15,9 @@ function M:Reverse(array)
 	end
 	return array
 end
+
+function M:Append(src, dst)
+	for i = 1, #src do
+		dst[#dst + 1] = src[i]
+	end
+end

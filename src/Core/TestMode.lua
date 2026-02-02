@@ -5,6 +5,8 @@ local capabilities = addon.Capabilities
 local headerManager = addon.HeaderManager
 local healerCcManager = addon.HealerCcManager
 local portraitManager = addon.PortraitManager
+local alertsManager = addon.ImportantSpellsManager
+local frames = addon.FramesManager
 local LCG
 ---@type Db
 local db
@@ -77,6 +79,60 @@ local function HideHealerOverlay()
 	previousSoundEnabled = nil
 end
 
+local function HideAlertsTestMode()
+	if not alertsManager then
+		return
+	end
+
+	alertsManager:ClearAll()
+	alertsManager:Resume()
+	alertsManager:RefreshData()
+end
+
+local function ShowAlertsTestMode()
+	if not alertsManager then
+		return
+	end
+
+	local alertAnchor = alertsManager:GetAnchor()
+	if not alertAnchor then
+		return
+	end
+
+	alertsManager:Pause()
+	alertsManager:Show()
+
+	local testAlertSpellIds = {
+		190319, -- Combustion
+		121471, -- Shadow Blades
+		107574, -- Avatar
+	}
+
+	local count = math.min(#testAlertSpellIds, alertAnchor.Count or #testAlertSpellIds)
+	alertAnchor:SetCount(count)
+
+	local now = GetTime()
+	for i = 1, count do
+		local spellId = testAlertSpellIds[i]
+		local tex = C_Spell.GetSpellTexture(spellId)
+		local duration = 12 + (i - 1) * 3
+		local startTime = now - (i - 1) * 1.25
+
+		alertAnchor:SetLayer(
+			i,
+			1,
+			tex,
+			startTime,
+			duration,
+			true,
+			db.Alerts.Icons.Glow,
+			db.Alerts.Icons.ReverseCooldown
+		)
+
+		alertAnchor:FinalizeSlot(i, 1)
+	end
+end
+
 local function ShowTestFrames()
 	if not instanceOptions then
 		return
@@ -93,7 +149,7 @@ local function ShowTestFrames()
 		local testHeader = M:EnsureTestHeader(anchor)
 
 		headerManager:AnchorHeader(testHeader, anchor, instanceOptions)
-		headerManager:ShowHideHeader(testHeader, anchor, true, instanceOptions)
+		frames:ShowHideFrame(testHeader, anchor, true, instanceOptions)
 		anyRealShown = anyRealShown or testHeader:IsVisible()
 	end
 
@@ -133,8 +189,7 @@ local function ShowHealerOverlay()
 
 	-- keep track of whether we have already played the test sound so we don't spam it
 	if
-		capabilities:HasNewFilters()
-		and (not previousSoundEnabled or previousSoundEnabled ~= db.Healer.Sound.Enabled)
+		capabilities:HasNewFilters() and (not previousSoundEnabled or previousSoundEnabled ~= db.Healer.Sound.Enabled)
 	then
 		if db.Healer.Sound.Enabled then
 			healerCcManager:PlaySound()
@@ -178,10 +233,9 @@ function M:Init()
 	testSpells = capabilities:HasNewFilters() and multipleTestSpells or { kidneyShot }
 
 	-- healer overlay
+	local healerAnchor = healerCcManager:GetAnchor()
 	testHealerHeader = CreateFrame("Frame", addonName .. "TestHealerHeader", healerAnchor)
 	testHealerHeader:EnableMouse(false)
-
-	local healerAnchor = healerCcManager:GetAnchor()
 	testHealerHeader:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
 
 	M:UpdateTestHeader(testHealerHeader, db.Healer.Icons)
@@ -224,7 +278,7 @@ function M:EnsureTestPartyFrames()
 	end
 
 	local width, height = 144, 72
-	local anchors = headerManager:GetAnchors(false)
+	local anchors = frames:GetAll(false)
 	local anchoredToReal = false
 	local padding = 10
 
@@ -331,6 +385,7 @@ function M:Hide()
 	HideTestFrames()
 	HideHealerOverlay()
 	HidePortraitIcons()
+	HideAlertsTestMode()
 end
 
 function M:Show()
@@ -350,6 +405,12 @@ function M:Show()
 		ShowPortraitIcons()
 	else
 		HidePortraitIcons()
+	end
+
+	if db.Alerts.Enabled then
+		ShowAlertsTestMode()
+	else
+		HideAlertsTestMode()
 	end
 end
 

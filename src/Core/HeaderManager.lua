@@ -15,12 +15,6 @@ local headers = {}
 local M = {}
 addon.HeaderManager = M
 
-local function AppendArray(src, dst)
-	for i = 1, #src do
-		dst[#dst + 1] = src[i]
-	end
-end
-
 local function GetInstanceOptions()
 	local inInstance, instanceType = IsInInstance()
 	local isBgOrRaid = inInstance and (instanceType == "pvp" or instanceType == "raid")
@@ -42,23 +36,6 @@ end
 
 function M:RefreshInstanceOptions()
 	currentInstanceOptions = GetInstanceOptions()
-end
-
-function M:GetAnchors(visibleOnly)
-	local anchors = {}
-	local elvui = frames:ElvUIFrames(visibleOnly)
-	local grid2 = frames:Grid2Frames(visibleOnly)
-	local danders = frames:DandersFrames(visibleOnly)
-	local blizzard = frames:BlizzardFrames(visibleOnly)
-	local custom = frames:CustomFrames(visibleOnly)
-
-	AppendArray(blizzard, anchors)
-	AppendArray(elvui, anchors)
-	AppendArray(grid2, anchors)
-	AppendArray(danders, anchors)
-	AppendArray(custom, anchors)
-
-	return anchors
 end
 
 ---@param header table
@@ -91,50 +68,6 @@ function M:AnchorHeader(header, anchor, options)
 	header:SetFrameStrata("HIGH")
 end
 
----@param header table
----@param anchor table
----@param isTest boolean
----@param options HeaderOptions
-function M:ShowHideHeader(header, anchor, isTest, options)
-	if not isTest and not options.Enabled then
-		header:Hide()
-		return
-	end
-
-	if anchor:IsForbidden() then
-		header:Hide()
-		return
-	end
-
-	local unit = header:GetAttribute("unit") or anchor.unit or anchor:GetAttribute("unit")
-
-	if unit and unit ~= "" then
-		if units:IsPet(unit) then
-			header:Hide()
-			return
-		end
-
-		if not isTest and options.ExcludePlayer and UnitIsUnit(unit, "player") then
-			header:Hide()
-			return
-		end
-	end
-
-	local alpha = anchor:GetAlpha()
-	if mini:IsSecret(alpha) and anchor:IsVisible() then
-		header:SetAlpha(alpha)
-		header:Show()
-		return
-	end
-
-	if anchor:IsVisible() then
-		header:SetAlpha(1)
-		header:Show()
-	else
-		header:Hide()
-	end
-end
-
 ---@param anchor table
 ---@param unit string?
 function M:EnsureHeader(anchor, unit)
@@ -159,13 +92,13 @@ function M:EnsureHeader(anchor, unit)
 	end
 
 	self:AnchorHeader(header, anchor, options)
-	self:ShowHideHeader(header, anchor, false, options)
+	frames:ShowHideFrame(header, anchor, false, options)
 
 	return header
 end
 
 function M:EnsureHeaders()
-	local anchors = self:GetAnchors(true)
+	local anchors = frames:GetAll(true)
 
 	for _, anchor in ipairs(anchors) do
 		self:EnsureHeader(anchor)
@@ -187,7 +120,7 @@ function M:Refresh()
 		end
 
 		self:AnchorHeader(header, anchor, options)
-		self:ShowHideHeader(header, anchor, false, options)
+		frames:ShowHideFrame(header, anchor, false, options)
 	end
 end
 

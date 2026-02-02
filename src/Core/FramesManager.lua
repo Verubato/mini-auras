@@ -1,6 +1,8 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local array = addon.Utils.Array
+local units  = addon.Utils.Units
 local maxParty = MAX_PARTY_MEMBERS or 4
 local maxRaid = MAX_RAID_MEMBERS or 40
 ---@type Db
@@ -211,6 +213,81 @@ function M:AnchorFrameToRegionGeometry(frame, region)
 
 	frame:SetSize(region:GetSize())
 end
+
+function M:GetAll(visibleOnly)
+	local anchors = {}
+	local elvui = M:ElvUIFrames(visibleOnly)
+	local grid2 = M:Grid2Frames(visibleOnly)
+	local danders = M:DandersFrames(visibleOnly)
+	local blizzard = M:BlizzardFrames(visibleOnly)
+	local custom = M:CustomFrames(visibleOnly)
+
+	array:Append(blizzard, anchors)
+	array:Append(elvui, anchors)
+	array:Append(grid2, anchors)
+	array:Append(danders, anchors)
+	array:Append(custom, anchors)
+
+	return anchors
+end
+
+function M:IsFriendlyCuf(frame)
+	if frame:IsForbidden() then
+		return false
+	end
+
+	local name = frame:GetName()
+	if not name then
+		return false
+	end
+
+	return string.find(name, "CompactParty") ~= nil or string.find(name, "CompactRaid") ~= nil
+end
+
+---@param header table
+---@param anchor table
+---@param isTest boolean
+---@param options HeaderOptions
+function M:ShowHideFrame(header, anchor, isTest, options)
+	if not isTest and not options.Enabled then
+		header:Hide()
+		return
+	end
+
+	if anchor:IsForbidden() then
+		header:Hide()
+		return
+	end
+
+	local unit = header:GetAttribute("unit") or anchor.unit or anchor:GetAttribute("unit")
+
+	if unit and unit ~= "" then
+		if units:IsPet(unit) then
+			header:Hide()
+			return
+		end
+
+		if not isTest and options.ExcludePlayer and UnitIsUnit(unit, "player") then
+			header:Hide()
+			return
+		end
+	end
+
+	local alpha = anchor:GetAlpha()
+	if mini:IsSecret(alpha) and anchor:IsVisible() then
+		header:SetAlpha(alpha)
+		header:Show()
+		return
+	end
+
+	if anchor:IsVisible() then
+		header:SetAlpha(1)
+		header:Show()
+	else
+		header:Hide()
+	end
+end
+
 
 function M:Init()
 	db = mini:GetSavedVars()
