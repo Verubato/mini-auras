@@ -3,7 +3,7 @@ local _, addon = ...
 local eventsFrame
 ---@class SchedulerUtil
 local M = {}
-addon.Scheduler = M
+addon.Utils.Scheduler = M
 
 local combatEndCallbacks = {}
 local combatEndKeyedCallbacks = {}

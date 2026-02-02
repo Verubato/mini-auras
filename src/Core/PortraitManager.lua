@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local frames = addon.Frames
+local frames = addon.FramesManager
 local unitWatcher = addon.UnitAuraWatcher
 local overlays = {}
 

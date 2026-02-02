@@ -1,9 +1,9 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
-local frames = addon.Frames
+local frames = addon.FramesManager
 local auras = addon.CcHeader
-local units = addon.Units
+local units = addon.Utils.Units
 ---@type Db
 local db
 ---@type InstanceOptions|nil

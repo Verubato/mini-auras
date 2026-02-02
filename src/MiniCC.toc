@@ -10,14 +10,15 @@
 
 Libs\LibStub\LibStub.lua
 Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.xml
+Namespace.lua
+Utils\Scheduler.lua
+Utils\Units.lua
 Core\MiniFramework.lua
 Core\Capabilities.lua
-Core\Scheduler.lua
-Core\Units.lua
-Core\Frames.lua
 Core\UnitAuraWatcher.lua
 Core\CcHeader.lua
 Core\CcManager.lua
+Core\FramesManager.lua
 Core\HeaderManager.lua
 Core\HealerCcmanager.lua
 Core\PortraitManager.lua

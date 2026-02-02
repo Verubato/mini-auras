@@ -1,7 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
-local scheduler = addon.Scheduler
+local scheduler = addon.Utils.Scheduler
 local headerManager = addon.HeaderManager
 local testModeManager = addon.TestModeManager
 local healerManager = addon.HealerCcManager
@@ -110,8 +110,8 @@ end
 
 local function OnAddonLoaded()
 	addon.Config:Init()
-	addon.Scheduler:Init()
-	addon.Frames:Init()
+	addon.Utils.Scheduler:Init()
+	addon.FramesManager:Init()
 
 	headerManager:Init()
 	healerManager:Init()
@@ -196,10 +196,9 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Framework MiniFramework
 ---@field Capabilities Capabilities
 ---@field Config Config
----@field Frames FramesUtil
----@field Scheduler SchedulerUtil
----@field Units UnitUtil
+---@field Utils Utils
 ---@field CcHeader CcHeader
+---@field FramesManager FramesManager
 ---@field UnitAuraWatcher UnitAuraWatcher
 ---@field TestModeManager TestModeManager
 ---@field HeaderManager HeaderManager
@@ -210,3 +209,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field ToggleTest fun(self: table, options: InstanceOptions)
 ---@field TestOptions fun(self: table, options: InstanceOptions)
 ---@field TestHealer fun(self: table)
+
+---@class Utils
+---@field Scheduler SchedulerUtil
+---@field Units UnitUtil
