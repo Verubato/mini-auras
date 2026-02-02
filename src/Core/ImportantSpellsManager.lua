@@ -138,7 +138,7 @@ local function CreateIconSlotContainer(count, size, spacing)
 		local layer = EnsureLayer(slot, layerIndex)
 		slot.Used = math.max(slot.Used or 0, layerIndex)
 
-		if texture and startTime and duration and duration > 0 then
+		if texture and startTime and duration then
 			layer.Icon:SetTexture(texture)
 			layer.Cooldown:SetReverse(reverseCooldown)
 			layer.Cooldown:SetCooldown(startTime, duration)
