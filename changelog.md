@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.0
+
+Added important spells bar for showing enemy cooldowns.
+
 ## 2.5.1
 
 Latest important spell now overrides portrait icon.
