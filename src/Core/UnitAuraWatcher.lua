@@ -85,18 +85,33 @@ local function OnEvent(watcher)
 			end
 		end
 
-		local importantData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
-			or C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL")
-		if importantData then
-			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantData.auraInstanceID)
+		local importantHelpfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL")
+		if importantHelpfulData then
+			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHelpfulData.auraInstanceID)
 			local start = durationInfo and durationInfo:GetStartTime()
 			local duration = durationInfo and durationInfo:GetTotalDuration()
-			local isImportant = C_Spell.IsSpellImportant(importantData.spellId)
+			local isImportant = C_Spell.IsSpellImportant(importantHelpfulData.spellId)
 
 			importantSpellData[#importantSpellData + 1] = {
 				IsImportant = isImportant,
-				SpellId = importantData.spellId,
-				SpellIcon = importantData.icon,
+				SpellId = importantHelpfulData.spellId,
+				SpellIcon = importantHelpfulData.icon,
+				StartTime = start,
+				TotalDuration = duration,
+			}
+		end
+
+		local importantHarmfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
+		if importantHarmfulData then
+			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
+			local start = durationInfo and durationInfo:GetStartTime()
+			local duration = durationInfo and durationInfo:GetTotalDuration()
+			local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)
+
+			importantSpellData[#importantSpellData + 1] = {
+				IsImportant = isImportant,
+				SpellId = importantHarmfulData.spellId,
+				SpellIcon = importantHarmfulData.icon,
 				StartTime = start,
 				TotalDuration = duration,
 			}
