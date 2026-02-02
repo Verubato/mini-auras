@@ -82,9 +82,6 @@ local function CreateIconSlotContainer(count, size, spacing)
 		cd:SetHideCountdownNumbers(false)
 		cd:SetSwipeColor(0, 0, 0, 0.8)
 
-		-- start hidden
-		layerFrame:SetAlpha(0)
-
 		return {
 			Frame = layerFrame,
 			Icon = icon,
@@ -168,7 +165,6 @@ local function CreateIconSlotContainer(count, size, spacing)
 			return
 		end
 
-		layer.Frame:SetAlpha(0)
 		layer.Icon:SetTexture(nil)
 		layer.Cooldown:Clear()
 
