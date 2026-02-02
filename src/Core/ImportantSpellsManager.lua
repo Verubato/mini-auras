@@ -155,8 +155,6 @@ local function CreateIconSlotContainer(count, size, spacing)
 					LCG.ProcGlow_Stop(layer.Frame)
 				end
 			end
-		else
-			container:ClearLayer(slotIndex, layerIndex)
 		end
 	end
 
@@ -251,8 +249,8 @@ function M:Init()
 	anchor.Frame:SetPoint(options.Point, initialRelativeTo, options.RelativePoint, options.Offset.X, options.Offset.Y)
 	anchor.Frame:SetFrameStrata("HIGH")
 	anchor.Frame:SetFrameLevel((initialRelativeTo:GetFrameLevel() or 0) + 5)
-	anchor.Frame:EnableMouse(true)
-	anchor.Frame:SetMovable(true)
+	anchor.Frame:EnableMouse(false)
+	anchor.Frame:SetMovable(false)
 	anchor.Frame:RegisterForDrag("LeftButton")
 	anchor.Frame:SetScript("OnDragStart", function(anchorSelf)
 		anchorSelf:StartMoving()
@@ -299,26 +297,6 @@ function M:Refresh()
 	)
 
 	anchor:SetIconSize(db.Alerts.Icons.Size)
-end
-
-function M:Show()
-	if not anchor then
-		return
-	end
-
-	anchor.Frame:EnableMouse(true)
-	anchor.Frame:SetMovable(true)
-	anchor.Frame:SetAlpha(1)
-end
-
-function M:Hide()
-	if not anchor then
-		return
-	end
-
-	anchor.Frame:EnableMouse(false)
-	anchor.Frame:SetMovable(false)
-	anchor.Frame:SetAlpha(0)
 end
 
 function M:Pause()

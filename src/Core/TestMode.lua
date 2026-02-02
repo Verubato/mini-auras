@@ -87,6 +87,14 @@ local function HideAlertsTestMode()
 	alertsManager:ClearAll()
 	alertsManager:Resume()
 	alertsManager:RefreshData()
+
+	local alertAnchor = alertsManager:GetAnchor()
+	if not alertAnchor then
+		return
+	end
+
+	alertAnchor.Frame:EnableMouse(false)
+	alertAnchor.Frame:SetMovable(false)
 end
 
 local function ShowAlertsTestMode()
@@ -100,7 +108,9 @@ local function ShowAlertsTestMode()
 	end
 
 	alertsManager:Pause()
-	alertsManager:Show()
+
+	alertAnchor.Frame:EnableMouse(true)
+	alertAnchor.Frame:SetMovable(true)
 
 	local testAlertSpellIds = {
 		190319, -- Combustion
