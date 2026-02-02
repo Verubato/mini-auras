@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.1
+
+Potential fix for flicking icons.
+
 ## 2.6.0
 
 Added important spells bar for showing enemy cooldowns.
