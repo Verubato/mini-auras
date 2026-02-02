@@ -76,6 +76,11 @@ local function NotifyChanges()
 				"- Included important spells (defensives/offensives) in portrait icons, not just CC.",
 			}, "\n"),
 		})
+	elseif db.Version == 9 then
+		mini:ShowDialog({
+			Title = "MiniCC - What's New?",
+			Text = "- New spell alerts bar that shows enemy cooldowns.",
+		})
 	end
 end
 
