@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local frames = addon.FramesManager
+local array = addon.Utils.Array
 local unitWatcher = addon.UnitAuraWatcher
 local overlays = {}
 
@@ -100,6 +101,11 @@ local function OnAuraInfo(watcher, unitFrame, portrait)
 	local ccAuras = watcher:GetCcState()
 	local importantAuras = watcher:GetImportantState()
 	local defensiveAuras = watcher:GetDefensiveState()
+
+	-- reverse their order so we show latest spells
+	array:Reverse(ccAuras)
+	array:Reverse(importantAuras)
+	array:Reverse(defensiveAuras)
 
 	for _, aura in ipairs(ccAuras) do
 		local overlay = EnsureOverlay(unitFrame, portrait, portraitIndex)

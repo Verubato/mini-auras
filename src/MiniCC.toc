@@ -13,6 +13,7 @@ Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.xml
 Namespace.lua
 Utils\Scheduler.lua
 Utils\Units.lua
+Utils\Array.lua
 Core\MiniFramework.lua
 Core\Capabilities.lua
 Core\UnitAuraWatcher.lua

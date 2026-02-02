@@ -213,3 +213,4 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@class Utils
 ---@field Scheduler SchedulerUtil
 ---@field Units UnitUtil
+---@field Array ArrayUtil
