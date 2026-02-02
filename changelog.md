@@ -1,8 +1,12 @@
 # Changelog
 
+## 2.6.2
+
+Potential fix for stuck icons.
+
 ## 2.6.1
 
-Potential fix for flicking icons.
+Potential fix for flickering icons.
 
 ## 2.6.0
 
