@@ -113,6 +113,7 @@ local function OnAuraDataChanged(unitToken)
 	end
 
 	if slotIndex > container.Count then
+		print("too many icons")
 		return
 	end
 
@@ -136,7 +137,9 @@ local function OnAuraDataChanged(unitToken)
 		)
 	end
 
-	container:FinalizeSlot(slotIndex, #spellData)
+	if #spellData > 0 then
+		container:FinalizeSlot(slotIndex, #spellData)
+	end
 end
 
 local function OnNamePlateAdded(unitToken)
