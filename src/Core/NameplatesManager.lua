@@ -38,6 +38,18 @@ local function GetAnchorPoint()
 	return anchorPoint, relativeToPoint
 end
 
+local function EnabledForUnit(unitToken)
+	if not db.Nameplates.FriendlyEnabled and UnitIsFriend("player", unitToken) then
+		return false
+	end
+
+	if not db.Nameplates.EnemyEnabled and (UnitIsEnemy("player", unitToken) or not UnitIsFriend("player", unitToken)) then
+		return false
+	end
+
+	return true
+end
+
 local function GetNameplateForUnit(unitToken)
 	local nameplate = C_NamePlate.GetNamePlateForUnit(unitToken)
 	return nameplate
@@ -69,7 +81,7 @@ local function CreateContainerForNameplate(nameplate)
 end
 
 local function OnAuraDataChanged(unitToken)
-	if paused or not db.Nameplates.Enabled then
+	if paused or not EnabledForUnit(unitToken) then
 		return
 	end
 
@@ -148,6 +160,10 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
+	if not EnabledForUnit(unitToken) then
+		return
+	end
+
 	local nameplate = GetNameplateForUnit(unitToken)
 	if not nameplate then
 		return
@@ -197,6 +213,10 @@ local function OnNamePlateUpdate(unitToken)
 	-- Nameplate might have been recreated, update our reference
 	local data = nameplateAnchors[unitToken]
 	if not data then
+		return
+	end
+
+	if not EnabledForUnit(unitToken) then
 		return
 	end
 
@@ -262,7 +282,7 @@ function M:GetAllContainers()
 end
 
 function M:Refresh()
-	if not db.Nameplates.Enabled then
+	if not db.Nameplates.FriendlyEnabled and not db.Nameplates.EnemyEnabled then
 		M:ClearAll()
 		return
 	elseif wasDisabled then
@@ -303,11 +323,5 @@ function M:ClearAll()
 		if data.container then
 			data.container:ResetAllSlots()
 		end
-	end
-end
-
-function M:RefreshData()
-	for unitToken, _ in pairs(nameplateAnchors) do
-		OnAuraDataChanged(unitToken)
 	end
 end

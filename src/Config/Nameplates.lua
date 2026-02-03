@@ -91,21 +91,35 @@ end
 function M:Build(panel, options)
 	local anchorPanel = BuildAnchorSettings(panel, options)
 
-	local enabledChk = mini:Checkbox({
+	local friendlyEnabled = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Enabled",
-		Tooltip = "Whether to enable or disable this module.",
+		LabelText = "Friendly Enabled",
+		Tooltip = "Whether to enable or disable this module for friendly nameplates.",
 		GetValue = function()
-			return options.Enabled
+			return options.FriendlyEnabled
 		end,
 		SetValue = function(value)
-			options.Enabled = value
-
+			options.FriendlyEnabled = value
 			config:Apply()
 		end,
 	})
 
-	enabledChk:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	friendlyEnabled:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+
+	local enemyEnabled = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Enemy Enabled",
+		Tooltip = "Whether to enable or disable this module for friendly nameplates.",
+		GetValue = function()
+			return options.EnemyEnabled
+		end,
+		SetValue = function(value)
+			options.EnemyEnabled = value
+			config:Apply()
+		end,
+	})
+
+	enemyEnabled:SetPoint("TOPLEFT", panel, "TOPLEFT", columnWidth, 0)
 
 	local glowChk = mini:Checkbox({
 		Parent = panel,
@@ -120,8 +134,8 @@ function M:Build(panel, options)
 		end,
 	})
 
-	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	glowChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	glowChk:SetPoint("TOP", enemyEnabled, "TOP", 0, 0)
 
 	local reverseChk = mini:Checkbox({
 		Parent = panel,
@@ -136,8 +150,8 @@ function M:Build(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	reverseChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	reverseChk:SetPoint("TOP", enemyEnabled, "TOP", 0, 0)
 
 	local iconSize = mini:Slider({
 		Parent = panel,
@@ -155,7 +169,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", friendlyEnabled, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)

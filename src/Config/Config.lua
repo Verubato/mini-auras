@@ -7,7 +7,7 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 10,
+	Version = 11,
 	WhatsNew = {},
 
 	NotifiedChanges = true,
@@ -131,7 +131,8 @@ local dbDefaults = {
 
 	---@class NameplateOptions
 	Nameplates = {
-		Enabled = true,
+		FriendlyEnabled = true,
+		EnemyEnabled = true,
 
 		Grow = "RIGHT",
 		Offset = {
@@ -257,6 +258,12 @@ local function GetAndUpgradeDb()
 		table.insert(vars.WhatsNew, " - New feature to show enemy cooldowns on nameplates.")
 		vars.NotifiedChanges = false
 		vars.Version = 10
+	end
+
+	if vars.Version == 10 then
+		vars.Nameplates.FriendlyEnabled = vars.Nameplates.Enabled
+		vars.Nameplates.EnemyEnabled = vars.Nameplates.Enabled
+		vars.Version = 11
 	end
 
 	vars = mini:GetSavedVars(dbDefaults)
