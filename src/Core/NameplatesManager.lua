@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local unitWatcher = addon.UnitAuraWatcher
 local iconSlotContainer = addon.IconSlotContainer
+local capabilities = addon.Capabilities
 local paused = false
 local wasDisabled = false
 ---@type Db
@@ -43,7 +44,9 @@ local function EnabledForUnit(unitToken)
 		return false
 	end
 
-	if not db.Nameplates.EnemyEnabled and (UnitIsEnemy("player", unitToken) or not UnitIsFriend("player", unitToken)) then
+	if
+		not db.Nameplates.EnemyEnabled and (UnitIsEnemy("player", unitToken) or not UnitIsFriend("player", unitToken))
+	then
 		return false
 	end
 
@@ -104,6 +107,7 @@ local function OnAuraDataChanged(unitToken)
 	end
 
 	local slotIndex = 1
+	local ccLayerIndex = 1
 	local ccData = watcher:GetCcState()
 	for _, spellInfo in ipairs(ccData) do
 		if slotIndex > container.Count then
@@ -113,7 +117,7 @@ local function OnAuraDataChanged(unitToken)
 		container:SetSlotUsed(slotIndex)
 		container:SetLayer(
 			slotIndex,
-			1,
+			ccLayerIndex,
 			spellInfo.SpellIcon,
 			spellInfo.StartTime,
 			spellInfo.TotalDuration,
@@ -121,8 +125,20 @@ local function OnAuraDataChanged(unitToken)
 			db.Nameplates.Icons.Glow,
 			db.Nameplates.Icons.ReverseCooldown
 		)
-		container:FinalizeSlot(slotIndex, 1)
 
+		if capabilities:HasNewFilters() then
+			-- we're on 12.0.1 and can show multiple cc's
+			slotIndex = slotIndex + 1
+			container:FinalizeSlot(slotIndex, 1)
+		else
+			-- can only show 1 cc
+			ccLayerIndex = ccLayerIndex + 1
+		end
+	end
+
+	if not capabilities:HasNewFilters() then
+		container:FinalizeSlot(slotIndex, ccLayerIndex)
+		-- advanced a slot if on 12.0.0
 		slotIndex = slotIndex + 1
 	end
 
