@@ -20,6 +20,11 @@ local function OnAuraDataChanged()
 		return
 	end
 
+	-- TODO: add enable/disable function
+	if not db.Alerts.Enabled then
+		return
+	end
+
 	for i, watcher in ipairs(watchers) do
 		local spellData = watcher:GetImportantState()
 
