@@ -2,7 +2,7 @@
 ## Title: MiniCC
 ## Notes: Shows CC on party/raid frames.
 ## Author: Verz
-## Version: 2.9.1
+## Version: 2.9.2
 ## SavedVariables: MiniCCDB
 ## OptionalDeps: ElvUI, Grid2, DandersFrames, FrameSort
 ## IconTexture: Interface\AddOns\MiniCC\Icon.blp
