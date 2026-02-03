@@ -486,7 +486,7 @@ function M:Show()
 		HideAlertsTestMode()
 	end
 
-	if db.Nameplates.Enabled then
+	if db.Nameplates.FriendlyEnabled or db.Nameplates.EnemyEnabled then
 		ShowNameplateTestMode()
 	else
 		HideNameplateTestMode()

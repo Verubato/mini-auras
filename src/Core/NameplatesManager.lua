@@ -288,12 +288,17 @@ function M:GetContainerForUnit(unitToken)
 end
 
 function M:GetAllContainers()
+	-- ensure containers exist
+	-- might be test mode calling is
+	RefreshNameplates()
+
 	local containers = {}
 	for _, data in pairs(nameplateAnchors) do
 		if data.container then
 			containers[#containers + 1] = data.container
 		end
 	end
+
 	return containers
 end
 
