@@ -34,6 +34,8 @@ local function BuildAnchorSettings(parent, options)
 			return options.SimpleMode.Grow
 		end,
 		SetValue = function(value)
+			options.SimpleMode.Enabled = true
+
 			if options.SimpleMode.Grow ~= value then
 				options.SimpleMode.Grow = value
 				config:Apply()
@@ -56,6 +58,7 @@ local function BuildAnchorSettings(parent, options)
 			return options.SimpleMode.Offset.X
 		end,
 		SetValue = function(v)
+			options.SimpleMode.Enabled = true
 			options.SimpleMode.Offset.X = mini:ClampInt(v, -250, 250, 0)
 			config:Apply()
 		end,
@@ -74,6 +77,7 @@ local function BuildAnchorSettings(parent, options)
 			return options.SimpleMode.Offset.Y
 		end,
 		SetValue = function(v)
+			options.SimpleMode.Enabled = true
 			options.SimpleMode.Offset.Y = mini:ClampInt(v, -250, 250, 0)
 			config:Apply()
 		end,
