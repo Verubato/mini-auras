@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.8.0
+
+Added nameplate cooldowns feature.
+
 ## 2.7.0
 
 - Added grow option.
