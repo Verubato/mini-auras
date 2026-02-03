@@ -4,6 +4,7 @@ local mini = addon.Framework
 local unitWatcher = addon.UnitAuraWatcher
 local iconSlotContainer = addon.IconSlotContainer
 local paused = false
+local wasDisabled = false
 ---@type Db
 local db
 ---@type table<string, NameplateData>
@@ -207,6 +208,15 @@ local function OnNamePlateUpdate(unitToken)
 	end
 end
 
+local function RefreshNameplates()
+	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
+		local unitToken = nameplate.namePlateUnitToken
+		if unitToken then
+			OnNamePlateAdded(unitToken)
+		end
+	end
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 
@@ -230,12 +240,9 @@ function M:Init()
 
 	if db.Nameplates.Enabled then
 		-- Initialize existing nameplates
-		for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
-			local unitToken = nameplate.namePlateUnitToken
-			if unitToken then
-				OnNamePlateAdded(unitToken)
-			end
-		end
+		RefreshNameplates()
+	else
+		wasDisabled = true
 	end
 end
 
@@ -258,6 +265,9 @@ function M:Refresh()
 	if not db.Nameplates.Enabled then
 		M:ClearAll()
 		return
+	elseif wasDisabled then
+		RefreshNameplates()
+		wasDisabled = false
 	end
 
 	local options = db.Nameplates
