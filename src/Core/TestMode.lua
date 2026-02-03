@@ -179,6 +179,7 @@ local function ShowTestFrames()
 	local anyRealShown = false
 	for anchor, _ in pairs(headers) do
 		local testHeader = M:EnsureTestHeader(anchor)
+		M:UpdateTestHeader(testHeader, instanceOptions.Icons)
 
 		headerManager:AnchorHeader(testHeader, anchor, instanceOptions)
 		frames:ShowHideFrame(testHeader, anchor, true, instanceOptions)
@@ -196,6 +197,7 @@ local function ShowTestFrames()
 		for i = 1, #testPartyFrames do
 			if testHeader then
 				local testPartyFrame = testPartyFrames[i]
+				M:UpdateTestHeader(testHeader, instanceOptions.Icons)
 
 				headerManager:AnchorHeader(testHeader, testPartyFrame, instanceOptions)
 
@@ -421,6 +423,8 @@ function M:UpdateTestHeader(frame, options)
 		btn:Show()
 
 		if options.Glow then
+			LCG.ProcGlow_Stop(btn)
+
 			local color = options.ColorByDispelType
 				and {
 					spell.DispelColor.r,
