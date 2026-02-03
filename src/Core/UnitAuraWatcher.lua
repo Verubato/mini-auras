@@ -99,7 +99,8 @@ local function OnEvent(watcher)
 			}
 		end
 
-		local importantHarmfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
+		-- avoid doubling up with cc data, as both CC and HARMFUL return the same thing
+		local importantHarmfulData = not ccData and C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
 		if importantHarmfulData then
 			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
 			local start = durationInfo and durationInfo:GetStartTime()
