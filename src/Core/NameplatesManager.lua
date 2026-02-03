@@ -52,6 +52,7 @@ local function CreateContainerForNameplate(nameplate)
 
 	local container = iconSlotContainer:New(nameplate, maxCount, size, 2)
 	container.Frame:SetIgnoreParentScale(true)
+	container.Frame:SetIgnoreParentAlpha(true)
 
 	local anchorPoint, relativeToPoint = GetAnchorPoint()
 	local offsetX = db.Nameplates.Offset.X or 0
@@ -156,8 +157,6 @@ local function OnNamePlateAdded(unitToken)
 	if not container then
 		return
 	end
-
-	container.Frame:SetIgnoreParentAlpha(true)
 
 	nameplateAnchors[unitToken] = {
 		nameplate = nameplate,
