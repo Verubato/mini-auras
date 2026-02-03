@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.7.0
+
+- Added grow option.
+- Fixed portraits not honouring the disabled option.
+
 ## 2.6.2
 
 Potential fix for stuck icons.
