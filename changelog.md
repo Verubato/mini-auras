@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.8.1
+
+Alpha/transparency fix on nameplates.
+
 ## 2.8.0
 
 Added nameplate cooldowns feature.
