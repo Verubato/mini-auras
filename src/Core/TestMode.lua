@@ -368,7 +368,14 @@ function M:EnsureTestPartyFrames()
 
 		local anchor = #anchors > maxTestFrames and anchors[i]
 
-		if anchor and anchor:GetWidth() > 0 and anchor:GetHeight() > 0 and not hasDanders then
+		if
+			anchor
+			and anchor:GetWidth() > 0
+			and anchor:GetHeight() > 0
+			and anchor:GetTop() ~= nil
+			and anchor:GetLeft() ~= nil
+			and not hasDanders
+		then
 			frame:SetAllPoints(anchors[i])
 			anchoredToReal = true
 		else
