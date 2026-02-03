@@ -16,12 +16,14 @@ local dbDefaults = {
 		Enabled = true,
 		ExcludePlayer = false,
 
+		-- TODO: after a few patches once people have moved over, remove simple/advanced mode into just one single mode
 		SimpleMode = {
 			Enabled = true,
 			Offset = {
 				X = 2,
 				Y = 0,
 			},
+			Grow = "CENTER"
 		},
 
 		AdvancedMode = {
@@ -51,6 +53,7 @@ local dbDefaults = {
 				X = 2,
 				Y = 0,
 			},
+			Grow = "CENTER"
 		},
 
 		AdvancedMode = {
@@ -261,7 +264,7 @@ function config:Init()
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"Shows CC on your party/raid frames.",
+			"Shows CC and other important spell alerts for pvp.",
 		},
 	})
 

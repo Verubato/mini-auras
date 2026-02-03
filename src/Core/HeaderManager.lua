@@ -50,14 +50,24 @@ function M:AnchorHeader(header, anchor, options)
 		return
 	end
 
-	-- weird blizzard bug happening atm where units in range are still getting faded
-	-- so ignore the unit frame's alpha
+	header:ClearAllPoints()
 	header:SetIgnoreParentAlpha(true)
 	header:SetAlpha(1)
-	header:ClearAllPoints()
+	header:SetFrameLevel(anchor:GetFrameLevel() + 1)
+	header:SetFrameStrata("HIGH")
 
 	if options.SimpleMode.Enabled then
-		header:SetPoint("CENTER", anchor, "CENTER", options.SimpleMode.Offset.X, options.SimpleMode.Offset.Y)
+		local anchorPoint = "CENTER"
+		local relativeToPoint = "CENTER"
+
+		if options.SimpleMode.Grow == "LEFT" then
+			anchorPoint = "RIGHT"
+			relativeToPoint = "LEFT"
+		elseif options.SimpleMode.Grow == "RIGHT" then
+			anchorPoint = "LEFT"
+			relativeToPoint = "RIGHT"
+		end
+		header:SetPoint(anchorPoint, anchor, relativeToPoint, options.SimpleMode.Offset.X, options.SimpleMode.Offset.Y)
 	else
 		header:SetPoint(
 			options.AdvancedMode.Point,
@@ -67,9 +77,6 @@ function M:AnchorHeader(header, anchor, options)
 			options.AdvancedMode.Offset.Y
 		)
 	end
-
-	header:SetFrameLevel(anchor:GetFrameLevel() + 1)
-	header:SetFrameStrata("HIGH")
 end
 
 ---@param anchor table

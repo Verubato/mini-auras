@@ -2,16 +2,10 @@
 local _, addon = ...
 local mini = addon.Framework
 local dropdownWidth = 200
-local anchorPoints = {
-	"TOPLEFT",
-	"TOP",
-	"TOPRIGHT",
+local growOptions = {
 	"LEFT",
-	"CENTER",
 	"RIGHT",
-	"BOTTOMLEFT",
-	"BOTTOM",
-	"BOTTOMRIGHT",
+	"CENTER",
 }
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
@@ -26,8 +20,31 @@ config.Instance = M
 
 ---@param parent table
 ---@param options InstanceOptions
-local function BuildSimpleMode(parent, options)
+local function BuildAnchorSettings(parent, options)
 	local panel = CreateFrame("Frame", nil, parent)
+
+	local growDdlLbl = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	growDdlLbl:SetText("Grow")
+
+	local growDdl, modernDdl = mini:Dropdown({
+		Parent = panel,
+		Items = growOptions,
+		Width = columnWidth * 2 - horizontalSpacing,
+		GetValue = function()
+			return options.SimpleMode.Grow
+		end,
+		SetValue = function(value)
+			if options.SimpleMode.Grow ~= value then
+				options.SimpleMode.Grow = value
+				config:Apply()
+			end
+		end,
+	})
+
+	growDdl:SetWidth(dropdownWidth)
+	growDdlLbl:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	growDdl:SetPoint("TOPLEFT", growDdlLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
+
 	local containerX = mini:Slider({
 		Parent = panel,
 		Min = -250,
@@ -44,7 +61,7 @@ local function BuildSimpleMode(parent, options)
 		end,
 	})
 
-	containerX.Container:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	containerX.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	local containerY = mini:Slider({
 		Parent = panel,
@@ -62,117 +79,17 @@ local function BuildSimpleMode(parent, options)
 		end,
 	})
 
-	containerY.Container:SetPoint("LEFT", containerX.Container, "RIGHT", horizontalSpacing, 0)
+	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
 
-	panel:SetHeight(containerX.Container:GetHeight())
+	panel:SetHeight(containerX.Slider:GetHeight() + growDdl:GetHeight() + growDdlLbl:GetHeight() + verticalSpacing * 3)
 
-	return panel
-end
-
----@param parent table
----@param options InstanceOptions
-local function BuildAdvancedMode(parent, options)
-	local panel = CreateFrame("Frame", nil, parent)
-	local containerX = mini:Slider({
-		Parent = panel,
-		Min = -20,
-		Max = 50,
-		Step = 1,
-		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = "Offset X",
-		GetValue = function()
-			return options.AdvancedMode.Offset.X
-		end,
-		SetValue = function(v)
-			options.AdvancedMode.Offset.X = mini:ClampInt(v, -50, 50, 0)
-			config:Apply()
-		end,
-	})
-
-	containerX.Container:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
-
-	local containerY = mini:Slider({
-		Parent = panel,
-		Min = -20,
-		Max = 50,
-		Step = 1,
-		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = "Offset Y",
-		GetValue = function()
-			return options.AdvancedMode.Offset.Y
-		end,
-		SetValue = function(v)
-			options.AdvancedMode.Offset.Y = mini:ClampInt(v, -200, 200, 0)
-			config:Apply()
-		end,
-	})
-
-	containerY.Container:SetPoint("LEFT", containerX.Container, "RIGHT", horizontalSpacing, 0)
-
-	local pointDdlLbl = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-	pointDdlLbl:SetText("Anchor Point")
-
-	local pointDdl, modernDdl = mini:Dropdown({
-		Parent = panel,
-		Items = anchorPoints,
-		Width = columnWidth,
-		GetValue = function()
-			return options.AdvancedMode.Point
-		end,
-		SetValue = function(value)
-			if options.AdvancedMode.Point ~= value then
-				options.AdvancedMode.Point = value
-				config:Apply()
-			end
-		end,
-	})
-
-	pointDdl:SetWidth(dropdownWidth)
-	pointDdlLbl:SetPoint("TOPLEFT", containerX.Slider, "BOTTOMLEFT", -4, -verticalSpacing)
-	-- no idea why by default it's off by 16 points
-	pointDdl:SetPoint("TOPLEFT", pointDdlLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
-
-	local relativeToLbl = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-	relativeToLbl:SetText("Relative to")
-
-	local relativeToDdl = mini:Dropdown({
-		Parent = panel,
-		Items = anchorPoints,
-		Width = columnWidth,
-		GetValue = function()
-			return options.AdvancedMode.RelativePoint
-		end,
-		SetValue = function(value)
-			if options.AdvancedMode.RelativePoint ~= value then
-				options.AdvancedMode.RelativePoint = value
-				config:Apply()
-			end
-		end,
-	})
-
-	relativeToDdl:SetWidth(dropdownWidth)
-	relativeToDdl:SetPoint("LEFT", pointDdl, "RIGHT", horizontalSpacing, 0)
-	relativeToLbl:SetPoint("BOTTOMLEFT", relativeToDdl, "TOPLEFT", 0, 8)
-
-	panel:SetHeight(containerX.Container:GetHeight() + verticalSpacing + relativeToDdl:GetHeight())
 	return panel
 end
 
 ---@param panel table
 ---@param options InstanceOptions
 function M:Build(panel, options)
-	local simpleMode = BuildSimpleMode(panel, options)
-	local advancedMode = BuildAdvancedMode(panel, options)
-
-	local function SetMode()
-		if options.SimpleMode.Enabled then
-			simpleMode:Show()
-			advancedMode:Hide()
-		else
-			advancedMode:Show()
-			simpleMode:Hide()
-		end
-	end
+	local anchorPanel = BuildAnchorSettings(panel, options)
 
 	local enabledChk = mini:Checkbox({
 		Parent = panel,
@@ -247,30 +164,11 @@ function M:Build(panel, options)
 		end,
 		SetValue = function(value)
 			options.Icons.ColorByDispelType = value
-
-			SetMode()
 			config:Apply()
 		end,
 	})
 
 	dispelColoursChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local simpleChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = "Simple offsets",
-		Tooltip = "Anchor to the center of the frame by default.",
-		GetValue = function()
-			return options.SimpleMode.Enabled
-		end,
-		SetValue = function(value)
-			options.SimpleMode.Enabled = value
-
-			SetMode()
-			config:Apply()
-		end,
-	})
-
-	simpleChk:SetPoint("TOPLEFT", dispelColoursChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local iconSize = mini:Slider({
 		Parent = panel,
@@ -288,22 +186,17 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Container:SetPoint("TOPLEFT", simpleChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", dispelColoursChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
-	simpleMode:SetPoint("TOPLEFT", iconSize.Container, "BOTTOMLEFT", 0, -verticalSpacing)
-	simpleMode:SetPoint("TOPRIGHT", iconSize.Container, "BOTTOMRIGHT", 0, -verticalSpacing)
-
-	advancedMode:SetPoint("TOPLEFT", iconSize.Container, "BOTTOMLEFT", 0, -verticalSpacing)
-	advancedMode:SetPoint("TOPRIGHT", iconSize.Container, "BOTTOMRIGHT", 0, -verticalSpacing)
-
-	panel.OnMiniRefresh = function()
-		SetMode()
-	end
-
-	SetMode()
+	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()
 		addon:TestOptions(options)
 	end)
+
+	panel.OnMiniRefresh = function()
+		anchorPanel:MiniRefresh()
+	end
 end

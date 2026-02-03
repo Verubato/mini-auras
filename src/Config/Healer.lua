@@ -169,7 +169,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Container:SetPoint("TOPLEFT", dispelColoursChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", dispelColoursChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local fontSize = mini:Slider({
 		Parent = panel,
@@ -187,7 +187,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	fontSize.Container:SetPoint("TOPLEFT", iconSize.Container, "BOTTOMLEFT", 0, -verticalSpacing)
+	fontSize.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()
