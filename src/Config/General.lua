@@ -13,34 +13,17 @@ addon.Config.General = M
 function M:Build(panel)
 	local columns = 4
 	local columnStep = mini:ColumnWidth(columns, 0, 0)
-	local lines = mini:TextBlock({
-		Parent = panel,
-		Lines = {
-			"Supported addons:",
-			"  - ElvUI, DandersFrames, Grid2.",
-			"",
-			"Things that work on beta (12.0.1) that don't work on retail (12.0.0):",
-			"  - Showing multiple/overlapping CC's.",
-			"  - Healer in CC sound effect.",
-			"  - More spells are shown on portraits.",
-			"  - Hex and roots.",
-			"",
-			"Any feedback is more than welcome!",
-		},
-	})
-
-	lines:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
 	db = mini:GetSavedVars()
 
-	local divider = mini:Divider({
+	local portraitDivider = mini:Divider({
 		Parent = panel,
 		Text = "Portrait Icons",
 	})
 
-	divider:SetPoint("LEFT", panel, "LEFT")
-	divider:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
-	divider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
+	portraitDivider:SetPoint("LEFT", panel, "LEFT")
+	portraitDivider:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
+	portraitDivider:SetPoint("TOP", panel, "TOP", 0, 0)
 
 	local portraitsChk = mini:Checkbox({
 		Parent = panel,
@@ -55,7 +38,7 @@ function M:Build(panel)
 		end,
 	})
 
-	portraitsChk:SetPoint("TOPLEFT", divider, "BOTTOMLEFT", 0, -verticalSpacing)
+	portraitsChk:SetPoint("TOPLEFT", portraitDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local reverseSweepChk = mini:Checkbox({
 		Parent = panel,
@@ -72,4 +55,31 @@ function M:Build(panel)
 
 	reverseSweepChk:SetPoint("LEFT", panel, "LEFT", columnStep, -verticalSpacing)
 	reverseSweepChk:SetPoint("TOP", portraitsChk, "TOP", 0, 0)
+
+	local divider = mini:Divider({
+		Parent = panel,
+		Text = "Info",
+	})
+
+	divider:SetPoint("LEFT", panel, "LEFT")
+	divider:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
+	divider:SetPoint("TOP", reverseSweepChk, "BOTTOM", 0, -verticalSpacing)
+
+	local lines = mini:TextBlock({
+		Parent = panel,
+		Lines = {
+			"Supported addons:",
+			"  - ElvUI, DandersFrames, Grid2.",
+			"",
+			"Things that work on beta (12.0.1) that don't work on retail (12.0.0):",
+			"  - Showing multiple/overlapping CC's.",
+			"  - Healer in CC sound effect.",
+			"  - More spells are shown on portraits.",
+			"  - Hex and roots.",
+			"",
+			"Any feedback is more than welcome!",
+		},
+	})
+
+	lines:SetPoint("TOPLEFT", divider, "BOTTOMLEFT", 0, -verticalSpacing)
 end
