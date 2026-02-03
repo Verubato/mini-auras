@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.9.0
+
+Split nameplate enabled into friendly and enemy enabled options.
+
 ## 2.8.2
 
 Fixed disabling nameplates feature that wasn't working.
