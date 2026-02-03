@@ -7,7 +7,8 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 9,
+	Version = 10,
+	WhatsNew = {},
 
 	NotifiedChanges = true,
 
@@ -246,7 +247,16 @@ local function GetAndUpgradeDb()
 
 	if vars.Version == 8 then
 		vars.NotifiedChanges = false
+		vars.WhatsNew = vars.WhatsNew or {}
+		table.insert(vars.WhatsNew, " - New spell alerts bar that shows enemy cooldowns.")
 		vars.Version = 9
+	end
+
+	if vars.Version == 9 then
+		vars.WhatsNew = vars.WhatsNew or {}
+		table.insert(vars.WhatsNew, " - New feature to show enemy cooldowns on nameplates.")
+		vars.NotifiedChanges = false
+		vars.Version = 10
 	end
 
 	vars = mini:GetSavedVars(dbDefaults)

@@ -54,16 +54,17 @@ local function NotifyChanges()
 		return
 	end
 
+	local title = "MiniCC - What's New?"
 	db.NotifiedChanges = true
 
 	if db.Version == 6 then
 		mini:ShowDialog({
-			Title = "MiniCC - What's New?",
+			Title = title,
 			Text = table.concat(db.WhatsNew, "\n"),
 		})
 	elseif db.Version == 7 then
 		mini:ShowDialog({
-			Title = "MiniCC - What's New?",
+			Title = title,
 			Text = table.concat({
 				"- CC icons in player/target/focus portraits (beta only).",
 				"- New option to colour the glow based on the dispel type.",
@@ -71,7 +72,7 @@ local function NotifyChanges()
 		})
 	elseif db.Version == 8 then
 		mini:ShowDialog({
-			Title = "MiniCC - What's New?",
+			Title = title,
 			Text = table.concat({
 				"- Portrait icons now supported in prepatch (was beta only).",
 				"- Included important spells (defensives/offensives) in portrait icons, not just CC.",
@@ -79,10 +80,23 @@ local function NotifyChanges()
 		})
 	elseif db.Version == 9 then
 		mini:ShowDialog({
-			Title = "MiniCC - What's New?",
+			Title = title,
 			Text = "- New spell alerts bar that shows enemy cooldowns.",
 		})
+	elseif db.Version == 10 then
+		local whatsNew = db.WhatsNew
+
+		if not whatsNew then
+			return
+		end
+
+		mini:ShowDialog({
+			Title = title,
+			Text = table.concat(whatsNew, "\n"),
+		})
 	end
+
+	db.WhatsNew = {}
 end
 
 local function OnFrameSortSorted()
