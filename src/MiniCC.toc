@@ -25,6 +25,7 @@ Core\HeaderManager.lua
 Core\HealerCcmanager.lua
 Core\PortraitManager.lua
 Core\ImportantSpellsManager.lua
+Core\NameplatesManager.lua
 Core\TestMode.lua
 Config\Config.lua
 Config\General.lua
@@ -32,5 +33,6 @@ Config\Instance.lua
 Config\Anchors.lua
 Config\Healer.lua
 Config\Alerts.lua
+Config\Nameplates.lua
 MiniCC.xml
 MiniCC.lua

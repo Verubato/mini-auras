@@ -6,6 +6,7 @@ local headerManager = addon.HeaderManager
 local healerCcManager = addon.HealerCcManager
 local portraitManager = addon.PortraitManager
 local alertsManager = addon.ImportantSpellsManager
+local nameplateManager = addon.NameplatesManager
 local frames = addon.FramesManager
 local LCG
 ---@type Db
@@ -22,6 +23,14 @@ local testFramesContainer = nil
 local maxTestFrames = 3
 ---@type TestSpell[]
 local testSpells = {}
+local testNameplateSpellIds = {
+	-- kidney shot
+	408,
+	-- precog
+	377360,
+	-- warlock wall
+	104773,
+}
 local hasDanders = false
 local testHealerHeader
 local previousSoundEnabled
@@ -79,11 +88,17 @@ local function HideHealerOverlay()
 	previousSoundEnabled = nil
 end
 
-local function HideAlertsTestMode()
-	if not alertsManager then
-		return
+local function HidePortraitIcons()
+	local overlays = portraitManager:GetOverlays()
+
+	for _, overlay in pairs(overlays) do
+		overlay:SetAlpha(0)
 	end
 
+	portraitManager:Refresh()
+end
+
+local function HideAlertsTestMode()
 	alertsManager:ClearAll()
 	alertsManager:Resume()
 	alertsManager:RefreshData()
@@ -97,11 +112,12 @@ local function HideAlertsTestMode()
 	alertAnchor.Frame:SetMovable(false)
 end
 
-local function ShowAlertsTestMode()
-	if not alertsManager then
-		return
-	end
+local function HideNameplateTestMode()
+	nameplateManager:ClearAll()
+	nameplateManager:Resume()
+end
 
+local function ShowAlertsTestMode()
 	local alertAnchor = alertsManager:GetAnchor()
 	if not alertAnchor then
 		return
@@ -215,16 +231,6 @@ local function ShowHealerOverlay()
 	end
 end
 
-local function HidePortraitIcons()
-	local overlays = portraitManager:GetOverlays()
-
-	for _, overlay in pairs(overlays) do
-		overlay:SetAlpha(0)
-	end
-
-	portraitManager:Refresh()
-end
-
 local function ShowPortraitIcons()
 	local overlays = portraitManager:GetOverlays()
 	local tex = C_Spell.GetSpellTexture(testSpells[1].SpellId)
@@ -244,6 +250,43 @@ local function ShowPortraitIcons()
 	end
 
 	portraitManager:Pause()
+end
+
+local function ShowNameplateTestMode()
+	nameplateManager:Pause()
+
+	local containers = nameplateManager:GetAllContainers()
+
+	for _, container in ipairs(containers) do
+		local count = math.min(#testNameplateSpellIds, container.Count)
+		local now = GetTime()
+
+		for i = 1, count do
+			container:SetSlotUsed(i)
+
+			local spellId = testNameplateSpellIds[i]
+			local tex = C_Spell.GetSpellTexture(spellId)
+			local duration = 15 + (i - 1) * 3
+			local startTime = now - (i - 1) * 0.5
+
+			container:SetLayer(
+				i,
+				1,
+				tex,
+				startTime,
+				duration,
+				true,
+				db.Nameplates.Icons.Glow,
+				db.Nameplates.Icons.ReverseCooldown
+			)
+			container:FinalizeSlot(i, 1)
+		end
+
+		-- Mark remaining slots as unused
+		for i = count + 1, container.Count do
+			container:SetSlotUnused(i)
+		end
+	end
 end
 
 function M:Init()
@@ -415,6 +458,7 @@ function M:Hide()
 	HideHealerOverlay()
 	HidePortraitIcons()
 	HideAlertsTestMode()
+	HideNameplateTestMode()
 end
 
 function M:Show()
@@ -440,6 +484,12 @@ function M:Show()
 		ShowAlertsTestMode()
 	else
 		HideAlertsTestMode()
+	end
+
+	if db.Nameplates.Enabled then
+		ShowNameplateTestMode()
+	else
+		HideNameplateTestMode()
 	end
 end
 

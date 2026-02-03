@@ -7,6 +7,7 @@ local testModeManager = addon.TestModeManager
 local healerManager = addon.HealerCcManager
 local portraitManager = addon.PortraitManager
 local importantSpellsManager = addon.ImportantSpellsManager
+local nameplatesManager = addon.NameplatesManager
 local frames = addon.FramesManager
 local eventsFrame
 local db
@@ -116,6 +117,7 @@ local function OnAddonLoaded()
 	healerManager:Init()
 	testModeManager:Init()
 	portraitManager:Init()
+	nameplatesManager:Init()
 
 	db = mini:GetSavedVars()
 
@@ -151,6 +153,7 @@ function addon:Refresh()
 	healerManager:Refresh()
 	importantSpellsManager:Refresh()
 	portraitManager:Refresh()
+	nameplatesManager:Refresh()
 
 	if testModeManager:IsEnabled() then
 		testModeManager:Show()
@@ -197,6 +200,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field HeaderManager HeaderManager
 ---@field PortraitManager PortraitManager
 ---@field HealerCcManager HealerCcManager
+---@field NameplatesManager NameplatesManager
 ---@field IconSlotContainer IconSlotContainer
 ---@field ImportantSpellsManager ImportantSpellsManager
 ---@field Refresh fun(self: table)

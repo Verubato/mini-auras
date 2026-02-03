@@ -23,7 +23,7 @@ local dbDefaults = {
 				X = 2,
 				Y = 0,
 			},
-			Grow = "RIGHT"
+			Grow = "RIGHT",
 		},
 
 		AdvancedMode = {
@@ -53,7 +53,7 @@ local dbDefaults = {
 				X = 2,
 				Y = 0,
 			},
-			Grow = "CENTER"
+			Grow = "CENTER",
 		},
 
 		AdvancedMode = {
@@ -125,6 +125,25 @@ local dbDefaults = {
 			Size = 72,
 			Glow = true,
 			ReverseCooldown = false,
+		},
+	},
+
+	---@class NameplateOptions
+	Nameplates = {
+		Enabled = true,
+
+		Grow = "RIGHT",
+		Offset = {
+			X = 2,
+			Y = 0,
+		},
+
+		Icons = {
+			Size = 50,
+			Glow = true,
+			ReverseCooldown = false,
+			ColorByDispelType = true,
+			MaxIcons = 5,
 		},
 	},
 
@@ -280,7 +299,7 @@ function config:Init()
 		Raids = "Raids",
 		Alerts = "Alerts",
 		Healer = "Healer",
-		Anchors = "Anchors",
+		Nameplates = "Nameplates",
 	}
 
 	local tabs = {
@@ -320,10 +339,10 @@ function config:Init()
 			end,
 		},
 		{
-			Key = keys.Anchors,
-			Title = "Custom Anchors",
+			Key = keys.Nameplates,
+			Title = "Nameplates",
 			Build = function(content)
-				config.Anchors:Build(content)
+				config.Nameplates:Build(content, db.Nameplates)
 			end,
 		},
 	}
@@ -433,6 +452,7 @@ end
 ---@field Anchors AnchorsConfig
 ---@field Healer HealerConfig
 ---@field Alerts AlertsConfig
+---@field Nameplates NameplatesConfig
 
 ---@class HeaderOptions
 ---@field Enabled boolean
