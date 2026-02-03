@@ -233,12 +233,22 @@ function M:Resume()
 	paused = false
 end
 
+function M:Refresh()
+	if not db.Portrait.Enabled then
+		M:Pause()
+	else
+		M:Resume()
+	end
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 
 	Attach("player")
 	Attach("target", { "PLAYER_TARGET_CHANGED" })
 	Attach("focus", { "PLAYER_FOCUS_CHANGED" })
+
+	M:Refresh()
 end
 
 ---@class PortraitOverlay

@@ -150,6 +150,7 @@ function addon:Refresh()
 	headerManager:Refresh()
 	healerManager:Refresh()
 	importantSpellsManager:Refresh()
+	portraitManager:Refresh()
 
 	if testModeManager:IsEnabled() then
 		testModeManager:Show()

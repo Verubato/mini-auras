@@ -216,7 +216,7 @@ local function HidePortraitIcons()
 		overlay:SetAlpha(0)
 	end
 
-	portraitManager:Resume()
+	portraitManager:Refresh()
 end
 
 local function ShowPortraitIcons()
