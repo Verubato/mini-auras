@@ -32,9 +32,13 @@ function M:New(parent, count, size, spacing)
 	return instance
 end
 
-local function CreateLayer(parentFrame)
+local function CreateLayer(parentFrame, level)
 	local layerFrame = CreateFrame("Frame", nil, parentFrame)
 	layerFrame:SetAllPoints()
+
+	if level then
+		layerFrame:SetFrameLevel(level)
+	end
 
 	local icon = layerFrame:CreateTexture(nil, "OVERLAY")
 	icon:SetAllPoints()
@@ -54,16 +58,28 @@ local function CreateLayer(parentFrame)
 end
 
 local function EnsureLayer(slot, layerIndex)
+	local slotLevel = slot.Frame:GetFrameLevel() or 0
+	local baseLevel = slotLevel + 1
+
+	-- Create any missing layers
 	for l = #slot.Layers + 1, layerIndex do
-		slot.Layers[l] = CreateLayer(slot.Frame)
+		slot.Layers[l] = CreateLayer(slot.Frame, baseLevel + (l - 1))
 	end
+
+	-- re-apply levels to existing layers (covers cases where slot level changes)
+	for l = 1, #slot.Layers do
+		local layer = slot.Layers[l]
+		if layer and layer.Frame then
+			layer.Frame:SetFrameLevel(baseLevel + (l - 1))
+		end
+	end
+
 	return slot.Layers[layerIndex]
 end
 
 function M:Layout()
 	local usedSlots = {}
 
-	-- Only consider active slots (1..Count)
 	for i = 1, self.Count do
 		local slot = self.Slots[i]
 		if slot and slot.IsUsed then
@@ -93,7 +109,7 @@ function M:Layout()
 		end
 	end
 
-	-- Always hide inactive pooled slots (> Count)
+	-- Always hide inactive pooled slots
 	for i = self.Count + 1, #self.Slots do
 		local slot = self.Slots[i]
 		if slot then
@@ -104,7 +120,7 @@ function M:Layout()
 end
 
 ---Sets the icon size for all slots
----@param newSize number new size in pixels
+---@param newSize number
 function M:SetIconSize(newSize)
 	---@diagnostic disable-next-line: cast-local-type
 	newSize = tonumber(newSize)
