@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.9.4
+
+- Fixed portrait icon overlapping border.
+- Fixed alerts not disbling when unchecking enabled box.
+- Various test mode fixes.
+
 ## 2.9.3
 
 Fixed nameplate mode not showing in test mode.
