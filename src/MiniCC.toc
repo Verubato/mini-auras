@@ -17,6 +17,7 @@ Utils\Units.lua
 Utils\Array.lua
 Utils\CcUtil.lua
 Core\MiniFramework.lua
+Core\IconSlotContainer.lua
 Core\UnitAuraWatcher.lua
 Core\CcHeader.lua
 Core\FramesManager.lua

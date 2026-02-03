@@ -197,6 +197,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field HeaderManager HeaderManager
 ---@field PortraitManager PortraitManager
 ---@field HealerCcManager HealerCcManager
+---@field IconSlotContainer IconSlotContainer
 ---@field ImportantSpellsManager ImportantSpellsManager
 ---@field Refresh fun(self: table)
 ---@field ToggleTest fun(self: table, options: InstanceOptions)

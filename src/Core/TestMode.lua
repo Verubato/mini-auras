@@ -123,6 +123,8 @@ local function ShowAlertsTestMode()
 
 	local now = GetTime()
 	for i = 1, count do
+		alertAnchor:SetSlotUsed(i)
+
 		local spellId = testAlertSpellIds[i]
 		local tex = C_Spell.GetSpellTexture(spellId)
 		local duration = 12 + (i - 1) * 3
@@ -140,6 +142,10 @@ local function ShowAlertsTestMode()
 		)
 
 		alertAnchor:FinalizeSlot(i, 1)
+	end
+
+	for i = count + 1, alertAnchor.Count do
+		alertAnchor:SetSlotUnused(i)
 	end
 end
 
