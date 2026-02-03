@@ -39,7 +39,7 @@ local dbDefaults = {
 		Icons = {
 			Size = 50,
 			Glow = true,
-			ReverseCooldown = false,
+			ReverseCooldown = true,
 			ColorByDispelType = true,
 		},
 	},
@@ -69,7 +69,7 @@ local dbDefaults = {
 		Icons = {
 			Size = 50,
 			Glow = true,
-			ReverseCooldown = false,
+			ReverseCooldown = true,
 			ColorByDispelType = true,
 		},
 	},
@@ -93,7 +93,7 @@ local dbDefaults = {
 		Icons = {
 			Size = 72,
 			Glow = true,
-			ReverseCooldown = false,
+			ReverseCooldown = true,
 			ColorByDispelType = true,
 		},
 
@@ -125,7 +125,7 @@ local dbDefaults = {
 		Icons = {
 			Size = 72,
 			Glow = true,
-			ReverseCooldown = false,
+			ReverseCooldown = true,
 		},
 	},
 
@@ -143,7 +143,7 @@ local dbDefaults = {
 		Icons = {
 			Size = 50,
 			Glow = true,
-			ReverseCooldown = false,
+			ReverseCooldown = true,
 			ColorByDispelType = true,
 			MaxIcons = 5,
 		},
@@ -151,7 +151,7 @@ local dbDefaults = {
 
 	Portrait = {
 		Enabled = true,
-		ReverseCooldown = false,
+		ReverseCooldown = true,
 	},
 
 	Anchor1 = "",
