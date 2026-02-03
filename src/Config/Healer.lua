@@ -187,7 +187,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	fontSize.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing)
+	fontSize.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()
