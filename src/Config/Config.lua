@@ -23,7 +23,7 @@ local dbDefaults = {
 				X = 2,
 				Y = 0,
 			},
-			Grow = "CENTER"
+			Grow = "RIGHT"
 		},
 
 		AdvancedMode = {
