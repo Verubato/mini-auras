@@ -68,7 +68,7 @@ local function CreateContainerForNameplate(nameplate)
 end
 
 local function OnAuraDataChanged(unitToken)
-	if paused then
+	if paused or not db.Nameplates.Enabled then
 		return
 	end
 
@@ -228,11 +228,13 @@ function M:Init()
 		end
 	end)
 
-	-- Initialize existing nameplates
-	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
-		local unitToken = nameplate.namePlateUnitToken
-		if unitToken then
-			OnNamePlateAdded(unitToken)
+	if db.Nameplates.Enabled then
+		-- Initialize existing nameplates
+		for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
+			local unitToken = nameplate.namePlateUnitToken
+			if unitToken then
+				OnNamePlateAdded(unitToken)
+			end
 		end
 	end
 end
@@ -253,6 +255,11 @@ function M:GetAllContainers()
 end
 
 function M:Refresh()
+	if not db.Nameplates.Enabled then
+		M:ClearAll()
+		return
+	end
+
 	local options = db.Nameplates
 	local anchorPoint, relativeToPoint = GetAnchorPoint()
 
