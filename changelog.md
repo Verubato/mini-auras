@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.8.2
+
+Fixed disabling nameplates feature that wasn't working.
+
 ## 2.8.1
 
 Alpha/transparency fix on nameplates.
