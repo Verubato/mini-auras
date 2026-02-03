@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.9.3
+
+Fixed nameplate mode not showing in test mode.
+
 ## 2.9.2
 
 Nameplate fixes for retail/prepatch.
