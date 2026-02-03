@@ -56,16 +56,17 @@ local function EnsureOverlay(unitFrame, portrait, index)
 	overlay:SetAlpha(0)
 	overlay:Show()
 
-	frames:AnchorFrameToRegionGeometry(overlay, portrait)
+	-- inset from the border
+	overlay:SetPoint("TOPLEFT", portrait, "TOPLEFT", 2, -2)
+	overlay:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", -2, 2)
 
-	overlay:SetFrameStrata(unitFrame:GetFrameStrata())
-	overlay:SetFrameLevel((unitFrame:GetFrameLevel() or 0) + 5)
+	overlay:SetFrameLevel((unitFrame:GetFrameLevel() or 0) + 2)
 
-	local tex = overlay:CreateTexture(nil, "OVERLAY")
+	local tex = overlay:CreateTexture(nil, "BACKGROUND")
 	tex:SetAllPoints()
 
 	-- crop the icon like blizzard does
-	tex:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+	tex:SetTexCoord(0.1, 0.9, 0.1, 0.9)
 
 	local mask = GetPortraitMask(unitFrame)
 	if mask then
@@ -74,7 +75,7 @@ local function EnsureOverlay(unitFrame, portrait, index)
 
 	local cd = CreateFrame("Cooldown", nil, overlay, "CooldownFrameTemplate")
 	cd:SetAllPoints(overlay)
-	cd:SetFrameLevel((overlay:GetFrameLevel() or 0) + 1)
+	cd:SetFrameLevel((overlay:GetFrameLevel() or 0))
 	cd:SetDrawEdge(false)
 	cd:SetDrawBling(false)
 	cd:SetHideCountdownNumbers(false)
