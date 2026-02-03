@@ -152,9 +152,12 @@ local function OnNamePlateAdded(unitToken)
 	end
 
 	local container = CreateContainerForNameplate(nameplate)
+
 	if not container then
 		return
 	end
+
+	container.Frame:SetIgnoreParentAlpha(true)
 
 	nameplateAnchors[unitToken] = {
 		nameplate = nameplate,
