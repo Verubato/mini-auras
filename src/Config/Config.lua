@@ -261,8 +261,10 @@ local function GetAndUpgradeDb()
 	end
 
 	if vars.Version == 10 then
-		vars.Nameplates.FriendlyEnabled = vars.Nameplates.Enabled
-		vars.Nameplates.EnemyEnabled = vars.Nameplates.Enabled
+		if vars.Nameplates then
+			vars.Nameplates.FriendlyEnabled = vars.Nameplates.Enabled
+			vars.Nameplates.EnemyEnabled = vars.Nameplates.Enabled
+		end
 		vars.Version = 11
 	end
 
