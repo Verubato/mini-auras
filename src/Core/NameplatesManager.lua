@@ -109,6 +109,8 @@ local function OnAuraDataChanged(unitToken)
 		)
 		container:FinalizeSlot(slotIndex, 1)
 
+		print("Filling slot", slotIndex, "with", C_Spell.GetSpellName(spellInfo.SpellId))
+
 		slotIndex = slotIndex + 1
 	end
 
@@ -134,6 +136,15 @@ local function OnAuraDataChanged(unitToken)
 			spellInfo.IsImportant,
 			db.Nameplates.Icons.Glow,
 			db.Nameplates.Icons.ReverseCooldown
+		)
+
+		print(
+			"Filling slot",
+			slotIndex,
+			"with",
+			C_Spell.GetSpellName(spellInfo.SpellId),
+			"IsShown",
+			spellInfo.IsImportant
 		)
 	end
 
