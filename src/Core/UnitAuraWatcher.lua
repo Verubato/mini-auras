@@ -62,7 +62,7 @@ local function OnEvent(watcher)
 			end
 		end
 
-		if capabilities:HasNewFilters() and not ccData then
+		if capabilities:HasNewFilters() then
 			-- C_Spell.IsExternalDefensive doesn't allow secrets, so we can't do anything in 12.0.0
 			local defensivesData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|BIG_DEFENSIVE")
 
@@ -81,39 +81,38 @@ local function OnEvent(watcher)
 			end
 		end
 
-		if not ccData then
-			-- TODO: does HELPFUL|HARMFUL work?
-			local importantHelpfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL")
-			if importantHelpfulData then
-				local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHelpfulData.auraInstanceID)
-				local start = durationInfo and durationInfo:GetStartTime()
-				local duration = durationInfo and durationInfo:GetTotalDuration()
-				local isImportant = C_Spell.IsSpellImportant(importantHelpfulData.spellId)
+		-- TODO: does HELPFUL|HARMFUL work?
+		-- not entirely sure why, but if the given index has cc data it still could contain important spell data
+		local importantHelpfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL")
+		if importantHelpfulData then
+			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHelpfulData.auraInstanceID)
+			local start = durationInfo and durationInfo:GetStartTime()
+			local duration = durationInfo and durationInfo:GetTotalDuration()
+			local isImportant = C_Spell.IsSpellImportant(importantHelpfulData.spellId)
 
-				importantSpellData[#importantSpellData + 1] = {
-					IsImportant = isImportant,
-					SpellId = importantHelpfulData.spellId,
-					SpellIcon = importantHelpfulData.icon,
-					StartTime = start,
-					TotalDuration = duration,
-				}
-			end
+			importantSpellData[#importantSpellData + 1] = {
+				IsImportant = isImportant,
+				SpellId = importantHelpfulData.spellId,
+				SpellIcon = importantHelpfulData.icon,
+				StartTime = start,
+				TotalDuration = duration,
+			}
+		end
 
-			local importantHarmfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
-			if importantHarmfulData then
-				local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
-				local start = durationInfo and durationInfo:GetStartTime()
-				local duration = durationInfo and durationInfo:GetTotalDuration()
-				local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)
+		local importantHarmfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
+		if importantHarmfulData then
+			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
+			local start = durationInfo and durationInfo:GetStartTime()
+			local duration = durationInfo and durationInfo:GetTotalDuration()
+			local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)
 
-				importantSpellData[#importantSpellData + 1] = {
-					IsImportant = isImportant,
-					SpellId = importantHarmfulData.spellId,
-					SpellIcon = importantHarmfulData.icon,
-					StartTime = start,
-					TotalDuration = duration,
-				}
-			end
+			importantSpellData[#importantSpellData + 1] = {
+				IsImportant = isImportant,
+				SpellId = importantHarmfulData.spellId,
+				SpellIcon = importantHarmfulData.icon,
+				StartTime = start,
+				TotalDuration = duration,
+			}
 		end
 	end
 
