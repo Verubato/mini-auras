@@ -42,8 +42,8 @@ function M:Build(panel)
 
 	local reverseSweepChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Reverse sweep",
-		Tooltip = "Reverses the direction of the cooldown sweep.",
+		LabelText = "Reverse swipe",
+		Tooltip = "Reverses the direction of the cooldown swipe.",
 		GetValue = function()
 			return db.Portrait.ReverseCooldown
 		end,
