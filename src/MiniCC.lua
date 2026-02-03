@@ -117,10 +117,6 @@ local function OnAddonLoaded()
 	testModeManager:Init()
 	portraitManager:Init()
 
-	headerManager:RefreshInstanceOptions()
-	headerManager:EnsureHeaders()
-	healerManager:Refresh()
-
 	db = mini:GetSavedVars()
 
 	eventsFrame = CreateFrame("Frame")
@@ -141,8 +137,6 @@ local function OnAddonLoaded()
 	if fs and fs.Sorting and fs.Sorting.RegisterPostSortCallback then
 		fs.Sorting:RegisterPostSortCallback(OnFrameSortSorted)
 	end
-
-	healerManager:Refresh()
 end
 
 function addon:Refresh()
@@ -153,10 +147,8 @@ function addon:Refresh()
 		return
 	end
 
-	headerManager:RefreshInstanceOptions()
-	headerManager:EnsureHeaders()
-	healerManager:Refresh()
 	headerManager:Refresh()
+	healerManager:Refresh()
 	importantSpellsManager:Refresh()
 
 	if testModeManager:IsEnabled() then

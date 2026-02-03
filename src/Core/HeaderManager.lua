@@ -22,6 +22,9 @@ end
 
 function M:Init()
 	db = mini:GetSavedVars()
+
+	M:RefreshInstanceOptions()
+	M:EnsureHeaders()
 end
 
 function M:GetHeaders()
@@ -35,6 +38,8 @@ end
 
 function M:RefreshInstanceOptions()
 	currentInstanceOptions = GetInstanceOptions()
+
+	return currentInstanceOptions
 end
 
 ---@param header table
@@ -105,11 +110,13 @@ function M:EnsureHeaders()
 end
 
 function M:Refresh()
-	local options = currentInstanceOptions
+	local options = M:RefreshInstanceOptions()
 
 	if not options then
 		return
 	end
+
+	M:EnsureHeaders()
 
 	for anchor, header in pairs(headers) do
 		local unit = header:GetAttribute("unit") or anchor.unit or anchor:GetAttribute("unit")

@@ -174,6 +174,8 @@ function M:Init()
 	text:Show()
 
 	healerAnchor.HealerWarning = text
+
+	M:Refresh()
 end
 
 function M:GetAnchor()
