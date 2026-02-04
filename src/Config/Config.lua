@@ -207,6 +207,24 @@ local dbDefaults = {
 		ReverseCooldown = true,
 	},
 
+	---@class KickTimerOptions
+	KickTimer = {
+		Enabled = true,
+		Point = "CENTER",
+		RelativeTo = "UIParent",
+		RelativePoint = "CENTER",
+		Offset = {
+			X = 0,
+			Y = -300,
+		},
+
+		Icons = {
+			Size = 50,
+			Glow = false,
+			ReverseCooldown = true,
+		},
+	},
+
 	Anchor1 = "",
 	Anchor2 = "",
 	Anchor3 = "",
@@ -514,6 +532,11 @@ function config:Init()
 
 		mini:OpenSettings(category, panel)
 	end
+
+	local kickTimerPanel = config.KickTimer:Build()
+	kickTimerPanel.name = "Kick Timer"
+
+	mini:AddSubCategory(category, kickTimerPanel)
 end
 
 ---@class Config
@@ -526,6 +549,7 @@ end
 ---@field Healer HealerConfig
 ---@field Alerts AlertsConfig
 ---@field Nameplates NameplatesConfig
+---@field KickTimer KickTimerConfig
 ---@field TabController TabReturn
 
 ---@class HeaderOptions

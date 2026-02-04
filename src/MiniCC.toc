@@ -26,6 +26,7 @@ Core\HealerCcmanager.lua
 Core\PortraitManager.lua
 Core\ImportantSpellsManager.lua
 Core\NameplatesManager.lua
+Core\KickTimerManager.lua
 Core\TestMode.lua
 Config\Config.lua
 Config\General.lua
@@ -34,5 +35,6 @@ Config\Anchors.lua
 Config\Healer.lua
 Config\Alerts.lua
 Config\Nameplates.lua
+Config\KickTimer.lua
 MiniCC.xml
 MiniCC.lua

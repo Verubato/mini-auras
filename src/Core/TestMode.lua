@@ -8,6 +8,7 @@ local healerCcManager = addon.HealerCcManager
 local portraitManager = addon.PortraitManager
 local alertsManager = addon.ImportantSpellsManager
 local nameplateManager = addon.NameplatesManager
+local kickTimerManager = addon.KickTimerManager
 local frames = addon.FramesManager
 local LCG
 ---@type Db
@@ -118,6 +119,22 @@ end
 local function HideNameplateTestMode()
 	nameplateManager:ClearAll()
 	nameplateManager:Resume()
+end
+
+local function HideKickTimer()
+	local container = kickTimerManager:GetContainer()
+	kickTimerManager:ClearIcons()
+	container:Hide()
+end
+
+local function ShowKickTimer()
+	local container = kickTimerManager:GetContainer()
+	container:Show()
+
+	kickTimerManager:ClearIcons()
+	kickTimerManager:Kicked()
+	kickTimerManager:Kicked()
+	kickTimerManager:Kicked()
 end
 
 local function ShowAlertsTestMode()
@@ -506,6 +523,7 @@ function M:Hide()
 	HidePortraitIcons()
 	HideAlertsTestMode()
 	HideNameplateTestMode()
+	HideKickTimer()
 end
 
 function M:Show()
@@ -542,6 +560,12 @@ function M:Show()
 		ShowNameplateTestMode()
 	else
 		HideNameplateTestMode()
+	end
+
+	if db.KickTimer.Enabled then
+		ShowKickTimer()
+	else
+		HideKickTimer()
 	end
 end
 
