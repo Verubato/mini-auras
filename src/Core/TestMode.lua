@@ -483,8 +483,6 @@ function M:UpdateTestHeader(frame, options)
 		btn:Show()
 
 		if options.Glow then
-			LCG.ProcGlow_Stop(btn)
-
 			local color = options.ColorByDispelType
 				and {
 					spell.DispelColor.r,
