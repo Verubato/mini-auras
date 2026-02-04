@@ -11,25 +11,86 @@ config.KickTimer = M
 
 function M:Build()
 	local db = mini:GetSavedVars()
+    local columns = 3
+    local columnWidth = mini:ColumnWidth(columns, 0, 0)
+    local horizontalSpacing = mini.HorizontalSpacing
+
 	local panel = CreateFrame("Frame")
 	local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", 0, -verticalSpacing)
 	title:SetText("Kick timer")
 
-	local enabled = mini:Checkbox({
+    local text = mini:TextLine({
+        Parent = panel,
+        Text = "Enable if you are:"
+    })
+
+	text:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local healerEnabled = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Enabled",
-		Tooltip = "Whether to enable or disable this module.",
+		LabelText = "Healer",
+		Tooltip = "Whether to enable or disable this module if you are a healer.",
 		GetValue = function()
-			return db.KickTimer.Enabled
+			return db.KickTimer.HealerEnabled
 		end,
 		SetValue = function(value)
-			db.KickTimer.Enabled = value
+			db.KickTimer.HealerEnabled = value
 			config:Apply()
 		end,
 	})
 
-	enabled:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -verticalSpacing)
+	healerEnabled:SetPoint("TOPLEFT", text, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local casterEnabled = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Caster",
+		Tooltip = "Whether to enable or disable this module if you are a caster.",
+		GetValue = function()
+			return db.KickTimer.CasterEnabled
+		end,
+		SetValue = function(value)
+			db.KickTimer.CasterEnabled = value
+			config:Apply()
+		end,
+	})
+
+    casterEnabled:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+    casterEnabled:SetPoint("TOP", healerEnabled, "TOP", 0, o)
+
+	local allEnabled = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Any",
+		Tooltip = "Whether to enable or disable this module regardless of what spec you are.",
+		GetValue = function()
+			return db.KickTimer.AllEnabled
+		end,
+		SetValue = function(value)
+			db.KickTimer.AllEnabled = value
+			config:Apply()
+		end,
+	})
+
+    allEnabled:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+    allEnabled:SetPoint("TOP", healerEnabled, "TOP", 0, 0)
+
+	local iconSizeSlider = mini:Slider({
+		Parent = panel,
+		LabelText = "Icon Size",
+		GetValue = function()
+			return db.KickTimer.Icons.Size
+		end,
+		SetValue = function(value)
+			db.KickTimer.Icons.Size = mini:ClampInt(value, 20, 120, 50)
+			config:Apply()
+		end,
+        Width = columns * columnWidth - horizontalSpacing,
+		Min = 20,
+		Max = 120,
+		Step = 1,
+	})
+
+	iconSizeSlider.Slider:SetPoint("TOPLEFT", healerEnabled, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	local lines = mini:TextBlock({
 		Parent = panel,
@@ -49,24 +110,7 @@ function M:Build()
 		},
 	})
 
-	lines:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local iconSizeSlider = mini:Slider({
-		Parent = panel,
-		LabelText = "Icon Size",
-		GetValue = function()
-			return db.KickTimer.Icons.Size
-		end,
-		SetValue = function(value)
-			db.KickTimer.Icons.Size = mini:ClampInt(value, 20, 120, 50)
-			config:Apply()
-		end,
-		Min = 20,
-		Max = 120,
-		Step = 1,
-	})
-
-	iconSizeSlider.Slider:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	lines:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	return panel
 end

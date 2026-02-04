@@ -562,7 +562,7 @@ function M:Show()
 		HideNameplateTestMode()
 	end
 
-	if db.KickTimer.Enabled then
+	if kickTimerManager:IsEnabledForPlayer(db.KickTimer) then
 		ShowKickTimer()
 	else
 		HideKickTimer()

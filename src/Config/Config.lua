@@ -209,7 +209,9 @@ local dbDefaults = {
 
 	---@class KickTimerOptions
 	KickTimer = {
-		Enabled = true,
+		CasterEnabled = true,
+		HealerEnabled = true,
+		AllEnabled = false,
 		Point = "CENTER",
 		RelativeTo = "UIParent",
 		RelativePoint = "CENTER",
