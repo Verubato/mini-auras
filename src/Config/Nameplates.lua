@@ -31,7 +31,7 @@ local function BuildSpellTypeSettings(parent, anchor, options)
 			container:Show()
 		else
 			container:Hide()
-			-- kinda dodgy, but yeah it works
+			-- kinda dodgy, but it works
 			container:SetHeight(1)
 		end
 	end
@@ -169,27 +169,6 @@ end
 ---@param parent table
 ---@param options NameplateOptions
 function M:Build(parent, options)
-	local friendlyCCDivider = mini:Divider({
-		Parent = parent,
-		Text = "Friendly - CC",
-	})
-
-	friendlyCCDivider:SetPoint("LEFT", parent, "LEFT", 0, 0)
-	friendlyCCDivider:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
-	friendlyCCDivider:SetPoint("TOP", parent, "TOP", 0, 0)
-
-	local friendlyCCPanel = BuildSpellTypeSettings(parent, friendlyCCDivider, options.Friendly.CC)
-
-	local friendlyImportantDivider = mini:Divider({
-		Parent = parent,
-		Text = "Friendly - Important Spells",
-	})
-	friendlyImportantDivider:SetPoint("LEFT", parent, "LEFT", 0, 0)
-	friendlyImportantDivider:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
-	friendlyImportantDivider:SetPoint("TOP", friendlyCCPanel, "BOTTOM", 0, -verticalSpacing)
-
-	local friendlyImportantPanel = BuildSpellTypeSettings(parent, friendlyImportantDivider, options.Friendly.Important)
-
 	local enemyCCDivider = mini:Divider({
 		Parent = parent,
 		Text = "Enemy - CC",
@@ -197,7 +176,7 @@ function M:Build(parent, options)
 
 	enemyCCDivider:SetPoint("LEFT", parent, "LEFT", 0, 0)
 	enemyCCDivider:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
-	enemyCCDivider:SetPoint("TOP", friendlyImportantPanel, "BOTTOM", 0, -verticalSpacing)
+	enemyCCDivider:SetPoint("TOP", parent, "TOP", 0, 0)
 
 	local enemyCCPanel = BuildSpellTypeSettings(parent, enemyCCDivider, options.Enemy.CC)
 
@@ -209,5 +188,26 @@ function M:Build(parent, options)
 	enemyImportantDivider:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
 	enemyImportantDivider:SetPoint("TOP", enemyCCPanel, "BOTTOM", 0, -verticalSpacing)
 
-	BuildSpellTypeSettings(parent, enemyImportantDivider, options.Enemy.Important)
+	local enemyImportantPanel = BuildSpellTypeSettings(parent, enemyImportantDivider, options.Enemy.Important)
+
+	local friendlyCCDivider = mini:Divider({
+		Parent = parent,
+		Text = "Friendly - CC",
+	})
+
+	friendlyCCDivider:SetPoint("LEFT", parent, "LEFT", 0, 0)
+	friendlyCCDivider:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
+	friendlyCCDivider:SetPoint("TOP", enemyImportantPanel, "BOTTOM", 0, -verticalSpacing)
+
+	local friendlyCCPanel = BuildSpellTypeSettings(parent, friendlyCCDivider, options.Friendly.CC)
+
+	local friendlyImportantDivider = mini:Divider({
+		Parent = parent,
+		Text = "Friendly - Important Spells",
+	})
+	friendlyImportantDivider:SetPoint("LEFT", parent, "LEFT", 0, 0)
+	friendlyImportantDivider:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
+	friendlyImportantDivider:SetPoint("TOP", friendlyCCPanel, "BOTTOM", 0, -verticalSpacing)
+
+	BuildSpellTypeSettings(parent, friendlyImportantDivider, options.Friendly.Important)
 end

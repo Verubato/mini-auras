@@ -134,7 +134,7 @@ local dbDefaults = {
 		Friendly = {
 			---@class NameplateSpellTypeOptions
 			CC = {
-				Enabled = true,
+				Enabled = false,
 				Grow = "RIGHT",
 				Offset = {
 					X = 2,
@@ -150,7 +150,7 @@ local dbDefaults = {
 				},
 			},
 			Important = {
-				Enabled = true,
+				Enabled = false,
 				Grow = "LEFT",
 				Offset = {
 					X = 2,
