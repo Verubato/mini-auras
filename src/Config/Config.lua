@@ -332,6 +332,10 @@ local function GetAndUpgradeDb()
 		vars.Nameplates.Enemy.CC.Enabled = vars.Nameplates.EnemyEnabled
 		vars.Nameplates.Enemy.Important.Enabled = vars.Nameplates.EnemyEnabled
 
+		table.insert(vars.WhatsNew, " - Separated CC and important spell positions on nameplates.")
+		table.insert(vars.WhatsNew, " - Separated friendly/enemy nameplate offsets.")
+		vars.NotifiedChanges = false
+
 		-- clean up old values
 		mini:CleanTable(db, dbDefaults, true, true)
 		vars.Version = 12
