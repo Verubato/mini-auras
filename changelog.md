@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.10.0b-2
+
+- Secret variable fix.
+
 ## 2.10.0b-1
 
 - Separated CC and important spell positions on nameplates.
