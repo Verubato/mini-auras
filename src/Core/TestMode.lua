@@ -1,6 +1,7 @@
 ---@type string, Addon
 local addonName, addon = ...
 local mini = addon.Framework
+local units = addon.Utils.Units
 local capabilities = addon.Capabilities
 local headerManager = addon.HeaderManager
 local healerCcManager = addon.HealerCcManager
@@ -23,11 +24,13 @@ local testFramesContainer = nil
 local maxTestFrames = 3
 ---@type TestSpell[]
 local testSpells = {}
-local testNameplateSpellIds = {
+local testCcNameplateSpellIds = {
 	-- kidney shot
 	408,
-	-- precog
-	377360,
+	-- fear
+	5782,
+}
+local testImportantNameplateSpellIds = {
 	-- warlock wall
 	104773,
 }
@@ -260,33 +263,66 @@ local function ShowNameplateTestMode()
 	local containers = nameplateManager:GetAllContainers()
 
 	for _, container in ipairs(containers) do
-		local count = math.min(#testNameplateSpellIds, container.Count)
 		local now = GetTime()
+		local ccOptions = units:IsFriend(container.UnitToken) and db.Nameplates.Friendly.CC or db.Nameplates.Enemy.CC
+		local importantOptions = units:IsFriend(container.UnitToken) and db.Nameplates.Friendly.Important
+			or db.Nameplates.Enemy.Important
+		local ccContainer = container.CcContainer
+		local importantContainer = container.ImportantContainer
 
-		for i = 1, count do
-			container:SetSlotUsed(i)
+		if ccContainer and ccOptions then
+			for i = 1, #testCcNameplateSpellIds do
+				ccContainer:SetSlotUsed(i)
 
-			local spellId = testNameplateSpellIds[i]
-			local tex = C_Spell.GetSpellTexture(spellId)
-			local duration = 15 + (i - 1) * 3
-			local startTime = now - (i - 1) * 0.5
+				local spellId = testCcNameplateSpellIds[i]
+				local tex = C_Spell.GetSpellTexture(spellId)
+				local duration = 15 + (i - 1) * 3
+				local startTime = now - (i - 1) * 0.5
 
-			container:SetLayer(
-				i,
-				1,
-				tex,
-				startTime,
-				duration,
-				true,
-				db.Nameplates.Icons.Glow,
-				db.Nameplates.Icons.ReverseCooldown
-			)
-			container:FinalizeSlot(i, 1)
+				ccContainer:SetLayer(
+					i,
+					1,
+					tex,
+					startTime,
+					duration,
+					true,
+					ccOptions.Icons.Glow,
+					ccOptions.Icons.ReverseCooldown
+				)
+				ccContainer:FinalizeSlot(i, 1)
+			end
+
+			-- Mark remaining slots as unused
+			for i = #testCcNameplateSpellIds + 1, ccContainer.Count do
+				ccContainer:SetSlotUnused(i)
+			end
 		end
 
-		-- Mark remaining slots as unused
-		for i = count + 1, container.Count do
-			container:SetSlotUnused(i)
+		if importantContainer and importantOptions then
+			for i = 1, #testImportantNameplateSpellIds do
+				importantContainer:SetSlotUsed(i)
+
+				local spellId = testImportantNameplateSpellIds[i]
+				local tex = C_Spell.GetSpellTexture(spellId)
+				local duration = 15 + (i - 1) * 3
+				local startTime = now - (i - 1) * 0.5
+				importantContainer:SetLayer(
+					i,
+					1,
+					tex,
+					startTime,
+					duration,
+					true,
+					importantOptions.Icons.Glow,
+					importantOptions.Icons.ReverseCooldown
+				)
+				importantContainer:FinalizeSlot(i, 1)
+			end
+
+			-- Mark remaining slots as unused
+			for i = #testImportantNameplateSpellIds + 1, importantContainer.Count do
+				importantContainer:SetSlotUnused(i)
+			end
 		end
 	end
 end
@@ -497,7 +533,12 @@ function M:Show()
 		HideAlertsTestMode()
 	end
 
-	if db.Nameplates.FriendlyEnabled or db.Nameplates.EnemyEnabled then
+	local anyNameplateEnabled = db.Nameplates.Friendly.CC.Enabled
+		or db.Nameplates.Friendly.Important.Enabled
+		or db.Nameplates.Enemy.CC.Enabled
+		or db.Nameplates.Enemy.Important.Enabled
+
+	if anyNameplateEnabled then
 		ShowNameplateTestMode()
 	else
 		HideNameplateTestMode()

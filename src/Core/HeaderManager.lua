@@ -68,7 +68,7 @@ function M:AnchorHeader(header, anchor, options)
 			relativeToPoint = "RIGHT"
 		end
 		header:SetPoint(anchorPoint, anchor, relativeToPoint, options.SimpleMode.Offset.X, options.SimpleMode.Offset.Y)
-	else
+	elseif options.AdvancedMode then
 		header:SetPoint(
 			options.AdvancedMode.Point,
 			anchor,

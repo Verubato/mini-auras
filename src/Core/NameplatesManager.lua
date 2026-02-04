@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local units = addon.Utils.Units
 local unitWatcher = addon.UnitAuraWatcher
 local iconSlotContainer = addon.IconSlotContainer
 local capabilities = addon.Capabilities
@@ -14,43 +15,103 @@ local nameplateAnchors = {}
 local watchers = {}
 
 ---@class NameplateData
----@field nameplate table
----@field container IconSlotContainer
----@field unitToken string
+---@field Nameplate table
+---@field CcContainer IconSlotContainer
+---@field ImportantContainer IconSlotContainer
+---@field UnitToken string
 
 ---@class NameplatesManager
 local M = {}
 addon.NameplatesManager = M
 
----@return string anchorPoint
----@return string relativeToPoint
-local function GetAnchorPoint()
+local function GetCcOptions(unitToken)
+	if units:IsFriend(unitToken) then
+		return db.Nameplates.Friendly.CC
+	end
+
+	if units:IsEnemy(unitToken) or not units:IsFriend(unitToken) then
+		return db.Nameplates.Enemy.CC
+	end
+
+	return nil
+end
+
+local function GetImportantOptions(unitToken)
+	if units:IsFriend(unitToken) then
+		return db.Nameplates.Friendly.Important
+	end
+
+	if units:IsEnemy(unitToken) or not units:IsFriend(unitToken) then
+		return db.Nameplates.Enemy.Important
+	end
+
+	return nil
+end
+
+---@return string? anchorPoint
+---@return string? relativeToPoint
+local function GetCcAnchorPoint(unitToken)
 	local anchorPoint = "CENTER"
 	local relativeToPoint = "CENTER"
 
-	if db.Nameplates.Grow == "LEFT" then
-		anchorPoint = "RIGHT"
-		relativeToPoint = "LEFT"
-	elseif db.Nameplates.Grow == "RIGHT" then
-		anchorPoint = "LEFT"
-		relativeToPoint = "RIGHT"
+	if units:IsFriend(unitToken) then
+		if db.Nameplates.Friendly.CC.Grow == "LEFT" then
+			anchorPoint = "RIGHT"
+			relativeToPoint = "LEFT"
+		elseif db.Nameplates.Friendly.CC.Grow == "RIGHT" then
+			anchorPoint = "LEFT"
+			relativeToPoint = "RIGHT"
+		end
+
+		return anchorPoint, relativeToPoint
 	end
 
-	return anchorPoint, relativeToPoint
+	if units:IsEnemy(unitToken) or not units:IsFriend(unitToken) then
+		if db.Nameplates.Enemy.CC.Grow == "LEFT" then
+			anchorPoint = "RIGHT"
+			relativeToPoint = "LEFT"
+		elseif db.Nameplates.Enemy.CC.Grow == "RIGHT" then
+			anchorPoint = "LEFT"
+			relativeToPoint = "RIGHT"
+		end
+
+		return anchorPoint, relativeToPoint
+	end
+
+	return nil, nil
 end
 
-local function EnabledForUnit(unitToken)
-	if not db.Nameplates.FriendlyEnabled and UnitIsFriend("player", unitToken) then
-		return false
+---@return string? anchorPoint
+---@return string? relativeToPoint
+local function GetImportantAnchorPoint(unitToken)
+	local anchorPoint = "CENTER"
+	local relativeToPoint = "CENTER"
+
+	if units:IsFriend(unitToken) then
+		if db.Nameplates.Friendly.Important.Grow == "LEFT" then
+			anchorPoint = "RIGHT"
+			relativeToPoint = "LEFT"
+		elseif db.Nameplates.Friendly.Important.Grow == "RIGHT" then
+			anchorPoint = "LEFT"
+			relativeToPoint = "RIGHT"
+		end
+
+		return anchorPoint, relativeToPoint
 	end
 
-	if
-		not db.Nameplates.EnemyEnabled and (UnitIsEnemy("player", unitToken) or not UnitIsFriend("player", unitToken))
-	then
-		return false
+	if units:IsEnemy(unitToken) or not units:IsFriend(unitToken) then
+		if db.Nameplates.Enemy.Important.Grow == "LEFT" then
+			anchorPoint = "RIGHT"
+			relativeToPoint = "LEFT"
+		elseif db.Nameplates.Enemy.Important.Grow == "RIGHT" then
+			anchorPoint = "LEFT"
+			relativeToPoint = "RIGHT"
+		end
+
+		return anchorPoint, relativeToPoint
 	end
 
-	return true
+	return nil, nil
 end
 
 local function GetNameplateForUnit(unitToken)
@@ -58,57 +119,72 @@ local function GetNameplateForUnit(unitToken)
 	return nameplate
 end
 
-local function CreateContainerForNameplate(nameplate)
-	if not nameplate then
-		return nil
+local function CreateContainersForNameplate(nameplate, unitToken)
+	local ccContainer, importantContainer
+
+	do
+		local options = GetCcOptions(unitToken)
+		local anchorPoint, relativeToPoint = GetCcAnchorPoint(unitToken)
+		if options and anchorPoint and relativeToPoint and options.Enabled then
+			local size = options.Icons.Size or 20
+			local maxCount = options.Icons.MaxCount or 5
+			local offsetX = options.Offset.X or 0
+			local offsetY = options.Offset.Y or 5
+
+			ccContainer = iconSlotContainer:New(nameplate, maxCount, size, 2)
+			ccContainer.Frame:SetIgnoreParentScale(true)
+			ccContainer.Frame:SetIgnoreParentAlpha(true)
+			ccContainer.Frame:SetPoint(anchorPoint, nameplate, relativeToPoint, offsetX, offsetY)
+			ccContainer.Frame:SetFrameStrata("HIGH")
+			ccContainer.Frame:SetFrameLevel(nameplate:GetFrameLevel() + 10)
+			ccContainer.Frame:EnableMouse(false)
+			ccContainer.Frame:Show()
+		end
 	end
 
-	local size = db.Nameplates.Icons.Size or 20
-	local maxCount = db.Nameplates.Icons.MaxCount or 5
+	do
+		local options = GetImportantOptions(unitToken)
+		local anchorPoint, relativeToPoint = GetImportantAnchorPoint(unitToken)
+		if options and anchorPoint and relativeToPoint and options.Enabled then
+			local size = options.Icons.Size or 20
+			local maxCount = options.Icons.MaxCount or 5
+			local offsetX = options.Offset.X or 0
+			local offsetY = options.Offset.Y or 5
 
-	local container = iconSlotContainer:New(nameplate, maxCount, size, 2)
-	container.Frame:SetIgnoreParentScale(true)
-	container.Frame:SetIgnoreParentAlpha(true)
+			importantContainer = iconSlotContainer:New(nameplate, maxCount, size, 2)
+			importantContainer.Frame:SetIgnoreParentScale(true)
+			importantContainer.Frame:SetIgnoreParentAlpha(true)
+			importantContainer.Frame:SetPoint(anchorPoint, nameplate, relativeToPoint, offsetX, offsetY)
+			importantContainer.Frame:SetFrameStrata("HIGH")
+			importantContainer.Frame:SetFrameLevel(nameplate:GetFrameLevel() + 10)
+			importantContainer.Frame:EnableMouse(false)
+			importantContainer.Frame:Show()
+		end
+	end
 
-	local anchorPoint, relativeToPoint = GetAnchorPoint()
-	local offsetX = db.Nameplates.Offset.X or 0
-	local offsetY = db.Nameplates.Offset.Y or 5
-
-	container.Frame:SetPoint(anchorPoint, nameplate, relativeToPoint, offsetX, offsetY)
-	container.Frame:SetFrameStrata("HIGH")
-	container.Frame:SetFrameLevel(nameplate:GetFrameLevel() + 10)
-	container.Frame:EnableMouse(false)
-	container.Frame:Show()
-
-	return container
+	return ccContainer, importantContainer
 end
 
-local function OnAuraDataChanged(unitToken)
-	if paused or not EnabledForUnit(unitToken) then
-		return
-	end
+---@param data NameplateData
+---@param watcher Watcher
+---@param unitToken string
+local function ApplyCcToNameplate(data, watcher, unitToken)
+	local container = data.CcContainer
+	local options = GetCcOptions(unitToken)
 
-	local data = nameplateAnchors[unitToken]
-	if not data or not data.container then
-		return
-	end
-
-	local watcher = watchers[unitToken]
-	if not watcher then
-		return
-	end
-
-	local container = data.container
-
-	-- Clear all slots first
 	for i = 1, container.Count do
 		container:ClearSlot(i)
 		container:SetSlotUnused(i)
 	end
 
+	if not container or not options then
+		return
+	end
+
 	local slotIndex = 1
 	local ccLayerIndex = 1
 	local ccData = watcher:GetCcState()
+
 	for _, spellInfo in ipairs(ccData) do
 		if slotIndex > container.Count then
 			break
@@ -122,8 +198,8 @@ local function OnAuraDataChanged(unitToken)
 			spellInfo.StartTime,
 			spellInfo.TotalDuration,
 			spellInfo.IsCC,
-			db.Nameplates.Icons.Glow,
-			db.Nameplates.Icons.ReverseCooldown
+			options.Icons.Glow,
+			options.Icons.ReverseCooldown
 		)
 
 		if capabilities:HasNewFilters() then
@@ -135,48 +211,68 @@ local function OnAuraDataChanged(unitToken)
 			ccLayerIndex = ccLayerIndex + 1
 		end
 	end
+end
 
-	if not capabilities:HasNewFilters() then
-		container:FinalizeSlot(slotIndex, ccLayerIndex)
-		-- advanced a slot if on 12.0.0
-		slotIndex = slotIndex + 1
+---@param data NameplateData
+---@param watcher Watcher
+---@param unitToken string
+local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
+	-- note important spells already cover defensives, so don't double up
+	local container = data.ImportantContainer
+	local options = GetImportantOptions(unitToken)
+
+	for i = 1, container.Count do
+		container:ClearSlot(i)
+		container:SetSlotUnused(i)
 	end
 
-	if slotIndex > container.Count then
+	if not container or not options then
 		return
 	end
 
-	-- note important spells already cover defensives, so don't double up
 	local spellData = watcher:GetImportantState()
 
 	if #spellData > 0 then
-		container:SetSlotUsed(slotIndex)
+		container:SetSlotUsed(1)
 	end
 
 	for layerIndex, spellInfo in ipairs(spellData) do
 		container:SetLayer(
-			slotIndex,
+			1,
 			layerIndex,
 			spellInfo.SpellIcon,
 			spellInfo.StartTime,
 			spellInfo.TotalDuration,
 			spellInfo.IsImportant,
-			db.Nameplates.Icons.Glow,
-			db.Nameplates.Icons.ReverseCooldown
+			options.Icons.Glow,
+			options.Icons.ReverseCooldown
 		)
 	end
 
-	if #spellData > 0 then
-		container:FinalizeSlot(slotIndex, #spellData)
+	container:FinalizeSlot(1, #spellData)
+end
+
+local function OnAuraDataChanged(unitToken)
+	if paused or not unitToken then
+		return
 	end
+
+	local data = nameplateAnchors[unitToken]
+	if not data then
+		return
+	end
+
+	local watcher = watchers[unitToken]
+	if not watcher then
+		return
+	end
+
+	ApplyCcToNameplate(data, watcher, unitToken)
+	ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 end
 
 local function OnNamePlateAdded(unitToken)
 	if nameplateAnchors[unitToken] then
-		return
-	end
-
-	if not EnabledForUnit(unitToken) then
 		return
 	end
 
@@ -185,16 +281,17 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
-	local container = CreateContainerForNameplate(nameplate)
+	local ccContainer, importantContainer = CreateContainersForNameplate(nameplate, unitToken)
 
-	if not container then
+	if not container and not importantContainer then
 		return
 	end
 
 	nameplateAnchors[unitToken] = {
-		nameplate = nameplate,
-		container = container,
-		unitToken = unitToken,
+		Nameplate = nameplate,
+		CcContainer = ccContainer,
+		ImportantContainer = importantContainer,
+		UnitToken = unitToken,
 	}
 
 	-- Create watcher if it doesn't exist
@@ -215,11 +312,16 @@ local function OnNamePlateRemoved(unitToken)
 		return
 	end
 
-	-- Clean up container
-	if data.container then
-		data.container:ResetAllSlots()
-		data.container.Frame:Hide()
-		data.container.Frame:SetParent(nil)
+	if data.CcContainer then
+		data.CcContainer:ResetAllSlots()
+		data.CcContainer.Frame:Hide()
+		data.CcContainer.Frame:SetParent(nil)
+	end
+
+	if data.ImportantContainer then
+		data.ImportantContainer:ResetAllSlots()
+		data.ImportantContainer.Frame:Hide()
+		data.ImportantContainer.Frame:SetParent(nil)
 	end
 
 	nameplateAnchors[unitToken] = nil
@@ -232,12 +334,8 @@ local function OnNamePlateUpdate(unitToken)
 		return
 	end
 
-	if not EnabledForUnit(unitToken) then
-		return
-	end
-
 	local newNameplate = GetNameplateForUnit(unitToken)
-	if newNameplate and newNameplate ~= data.nameplate then
+	if newNameplate and newNameplate ~= data.Nameplate then
 		-- Nameplate changed, recreate container
 		OnNamePlateRemoved(unitToken)
 		OnNamePlateAdded(unitToken)
@@ -282,28 +380,28 @@ function M:Init()
 	end
 end
 
-function M:GetContainerForUnit(unitToken)
-	local data = nameplateAnchors[unitToken]
-	return data and data.container
-end
-
+---@return NameplateData
 function M:GetAllContainers()
 	-- ensure containers exist
 	-- might be test mode calling is
 	RefreshNameplates()
 
 	local containers = {}
-	for _, data in pairs(nameplateAnchors) do
-		if data.container then
-			containers[#containers + 1] = data.container
-		end
+
+	for _, anchor in pairs(nameplateAnchors) do
+		containers[#containers + 1] = anchor
 	end
 
 	return containers
 end
 
 function M:Refresh()
-	if not db.Nameplates.FriendlyEnabled and not db.Nameplates.EnemyEnabled then
+	local anyEnabled = db.Nameplates.Friendly.CC.Enabled
+		or db.Nameplates.Friendly.Important.Enabled
+		or db.Nameplates.Enemy.CC.Enabled
+		or db.Nameplates.Enemy.Important.Enabled
+
+	if not anyEnabled then
 		M:ClearAll()
 		return
 	elseif wasDisabled then
@@ -311,17 +409,45 @@ function M:Refresh()
 		wasDisabled = false
 	end
 
-	local options = db.Nameplates
-	local anchorPoint, relativeToPoint = GetAnchorPoint()
-
 	for _, data in pairs(nameplateAnchors) do
-		if data.container and data.nameplate then
-			local container = data.container
+		if data.Nameplate and data.UnitToken then
+			local ccAnchorPoint, ccRelativeToPoint = GetCcAnchorPoint(data.UnitToken)
+			local ccOptions = GetCcOptions(data.UnitToken)
+			local ccContainer = data.CcContainer
 
-			container.Frame:ClearAllPoints()
-			container.Frame:SetPoint(anchorPoint, data.nameplate, relativeToPoint, options.Offset.X, options.Offset.Y)
+			if ccContainer and ccAnchorPoint and ccRelativeToPoint and ccOptions then
+				ccContainer.Frame:ClearAllPoints()
 
-			container:SetIconSize(options.Icons.Size)
+				if ccOptions.Enabled then
+					ccContainer.Frame:SetPoint(
+						ccAnchorPoint,
+						data.Nameplate,
+						ccRelativeToPoint,
+						ccOptions.Offset.X,
+						ccOptions.Offset.Y
+					)
+					ccContainer:SetIconSize(ccOptions.Icons.Size)
+				end
+			end
+
+			local importantAnchorPoint, importantRelativeToPoint = GetImportantAnchorPoint(data.UnitToken)
+			local importantOptions = GetImportantOptions(data.UnitToken)
+			local importantContainer = data.ImportantContainer
+
+			if importantContainer and importantAnchorPoint and importantRelativeToPoint and importantOptions then
+				importantContainer.Frame:ClearAllPoints()
+
+				if importantOptions.Enabled then
+					importantContainer.Frame:SetPoint(
+						importantAnchorPoint,
+						data.Nameplate,
+						importantRelativeToPoint,
+						importantOptions.Offset.X,
+						importantOptions.Offset.Y
+					)
+					importantContainer:SetIconSize(importantOptions.Icons.Size)
+				end
+			end
 		end
 	end
 end
@@ -341,8 +467,11 @@ end
 
 function M:ClearAll()
 	for _, data in pairs(nameplateAnchors) do
-		if data.container then
-			data.container:ResetAllSlots()
+		if data.CcContainer then
+			data.CcContainer:ResetAllSlots()
+		end
+		if data.ImportantContainer then
+			data.ImportantContainer:ResetAllSlots()
 		end
 	end
 end

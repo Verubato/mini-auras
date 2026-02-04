@@ -79,3 +79,11 @@ function M:FindHealers()
 
 	return healers
 end
+
+function M:IsFriend(unitToken)
+	return UnitIsFriend("player", unitToken)
+end
+
+function M:IsEnemy(unitToken)
+	return UnitIsEnemy("player", unitToken)
+end

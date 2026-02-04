@@ -19,15 +19,97 @@ local M = {}
 config.Nameplates = M
 
 ---@param parent table
----@param options NameplateOptions
-local function BuildAnchorSettings(parent, options)
-	local panel = CreateFrame("Frame", nil, parent)
+---@param options NameplateSpellTypeOptions
+---@return table bottom left anchor
+local function BuildSpellTypeSettings(parent, anchor, options)
+	local container = CreateFrame("Frame", nil, parent)
 
-	local growDdlLbl = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local function SetEnabled()
+		container:SetHeight(250)
+
+		if options.Enabled then
+			container:Show()
+		else
+			container:Hide()
+			-- kinda dodgy, but yeah it works
+			container:SetHeight(1)
+		end
+	end
+
+	local enabled = mini:Checkbox({
+		Parent = parent,
+		LabelText = "Enabled",
+		Tooltip = "Whether to enable or disable this type.",
+		GetValue = function()
+			return options.Enabled
+		end,
+		SetValue = function(value)
+			options.Enabled = value
+			SetEnabled()
+			config:Apply()
+		end,
+	})
+
+	enabled:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	container:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -verticalSpacing)
+	container:SetPoint("RIGHT", parent, "RIGHT", 0, 0)
+
+	SetEnabled()
+
+	local glowChk = mini:Checkbox({
+		Parent = container,
+		LabelText = "Glow icons",
+		Tooltip = "Show a glow around the icons.",
+		GetValue = function()
+			return options.Icons.Glow
+		end,
+		SetValue = function(value)
+			options.Icons.Glow = value
+			config:Apply()
+		end,
+	})
+
+	glowChk:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0)
+
+	local reverseChk = mini:Checkbox({
+		Parent = container,
+		LabelText = "Reverse swipe",
+		Tooltip = "Reverses the direction of the cooldown swipe animation.",
+		GetValue = function()
+			return options.Icons.ReverseCooldown
+		end,
+		SetValue = function(value)
+			options.Icons.ReverseCooldown = value
+			config:Apply()
+		end,
+	})
+
+	reverseChk:SetPoint("LEFT", glowChk, "LEFT", columnWidth, 0)
+
+	local iconSize = mini:Slider({
+		Parent = container,
+		Min = 10,
+		Max = 200,
+		Width = (columnWidth * columns) - horizontalSpacing,
+		Step = 1,
+		LabelText = "Icon Size",
+		GetValue = function()
+			return options.Icons.Size
+		end,
+		SetValue = function(v)
+			options.Icons.Size = mini:ClampInt(v, 10, 200, 32)
+			config:Apply()
+		end,
+	})
+
+	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+
+	local growDdlLbl = container:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	growDdlLbl:SetText("Grow")
 
 	local growDdl, modernDdl = mini:Dropdown({
-		Parent = panel,
+		Parent = container,
 		Items = growOptions,
 		Width = columnWidth * 2 - horizontalSpacing,
 		GetValue = function()
@@ -42,11 +124,11 @@ local function BuildAnchorSettings(parent, options)
 	})
 
 	growDdl:SetWidth(dropdownWidth)
-	growDdlLbl:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	growDdlLbl:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing)
 	growDdl:SetPoint("TOPLEFT", growDdlLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
 
 	local containerX = mini:Slider({
-		Parent = panel,
+		Parent = container,
 		Min = -250,
 		Max = 250,
 		Step = 1,
@@ -64,7 +146,7 @@ local function BuildAnchorSettings(parent, options)
 	containerX.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	local containerY = mini:Slider({
-		Parent = panel,
+		Parent = container,
 		Min = -250,
 		Max = 250,
 		Step = 1,
@@ -81,100 +163,51 @@ local function BuildAnchorSettings(parent, options)
 
 	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
 
-	panel:SetHeight(containerX.Slider:GetHeight() + growDdl:GetHeight() + growDdlLbl:GetHeight() + verticalSpacing * 3)
-
-	return panel
+	return container
 end
 
----@param panel table
+---@param parent table
 ---@param options NameplateOptions
-function M:Build(panel, options)
-	local anchorPanel = BuildAnchorSettings(panel, options)
-
-	local friendlyEnabled = mini:Checkbox({
-		Parent = panel,
-		LabelText = "Friendly Enabled",
-		Tooltip = "Whether to enable or disable this module for friendly nameplates.",
-		GetValue = function()
-			return options.FriendlyEnabled
-		end,
-		SetValue = function(value)
-			options.FriendlyEnabled = value
-			config:Apply()
-		end,
+function M:Build(parent, options)
+	local friendlyCCDivider = mini:Divider({
+		Parent = parent,
+		Text = "Friendly - CC",
 	})
 
-	friendlyEnabled:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	friendlyCCDivider:SetPoint("LEFT", parent, "LEFT", 0, 0)
+	friendlyCCDivider:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
+	friendlyCCDivider:SetPoint("TOP", parent, "TOP", 0, 0)
 
-	local enemyEnabled = mini:Checkbox({
-		Parent = panel,
-		LabelText = "Enemy Enabled",
-		Tooltip = "Whether to enable or disable this module for friendly nameplates.",
-		GetValue = function()
-			return options.EnemyEnabled
-		end,
-		SetValue = function(value)
-			options.EnemyEnabled = value
-			config:Apply()
-		end,
+	local friendlyCCPanel = BuildSpellTypeSettings(parent, friendlyCCDivider, options.Friendly.CC)
+
+	local friendlyImportantDivider = mini:Divider({
+		Parent = parent,
+		Text = "Friendly - Important Spells",
+	})
+	friendlyImportantDivider:SetPoint("LEFT", parent, "LEFT", 0, 0)
+	friendlyImportantDivider:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
+	friendlyImportantDivider:SetPoint("TOP", friendlyCCPanel, "BOTTOM", 0, -verticalSpacing)
+
+	local friendlyImportantPanel = BuildSpellTypeSettings(parent, friendlyImportantDivider, options.Friendly.Important)
+
+	local enemyCCDivider = mini:Divider({
+		Parent = parent,
+		Text = "Enemy - CC",
 	})
 
-	enemyEnabled:SetPoint("TOPLEFT", panel, "TOPLEFT", columnWidth, 0)
+	enemyCCDivider:SetPoint("LEFT", parent, "LEFT", 0, 0)
+	enemyCCDivider:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
+	enemyCCDivider:SetPoint("TOP", friendlyImportantPanel, "BOTTOM", 0, -verticalSpacing)
 
-	local glowChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = "Glow icons",
-		Tooltip = "Show a glow around the CC icons.",
-		GetValue = function()
-			return options.Icons.Glow
-		end,
-		SetValue = function(value)
-			options.Icons.Glow = value
-			config:Apply()
-		end,
+	local enemyCCPanel = BuildSpellTypeSettings(parent, enemyCCDivider, options.Enemy.CC)
+
+	local enemyImportantDivider = mini:Divider({
+		Parent = parent,
+		Text = "Enemy - Important Spells",
 	})
+	enemyImportantDivider:SetPoint("LEFT", parent, "LEFT", 0, 0)
+	enemyImportantDivider:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
+	enemyImportantDivider:SetPoint("TOP", enemyCCPanel, "BOTTOM", 0, -verticalSpacing)
 
-	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	glowChk:SetPoint("TOP", enemyEnabled, "TOP", 0, 0)
-
-	local reverseChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = "Reverse swipe",
-		Tooltip = "Reverses the direction of the cooldown swipe animation.",
-		GetValue = function()
-			return options.Icons.ReverseCooldown
-		end,
-		SetValue = function(value)
-			options.Icons.ReverseCooldown = value
-			config:Apply()
-		end,
-	})
-
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	reverseChk:SetPoint("TOP", enemyEnabled, "TOP", 0, 0)
-
-	local iconSize = mini:Slider({
-		Parent = panel,
-		Min = 10,
-		Max = 200,
-		Width = (columnWidth * columns) - horizontalSpacing,
-		Step = 1,
-		LabelText = "Icon Size",
-		GetValue = function()
-			return options.Icons.Size
-		end,
-		SetValue = function(v)
-			options.Icons.Size = mini:ClampInt(v, 10, 200, 32)
-			config:Apply()
-		end,
-	})
-
-	iconSize.Slider:SetPoint("TOPLEFT", friendlyEnabled, "BOTTOMLEFT", 4, -verticalSpacing * 3)
-
-	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
-
-	panel.OnMiniRefresh = function()
-		anchorPanel:MiniRefresh()
-	end
+	BuildSpellTypeSettings(parent, enemyImportantDivider, options.Enemy.Important)
 end

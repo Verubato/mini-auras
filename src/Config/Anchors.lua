@@ -75,6 +75,4 @@ function M:Build(panel)
 
 	anchor3.Label:SetPoint("TOPLEFT", anchor2.EditBox, "BOTTOMLEFT", -4, -verticalSpacing)
 	anchor3.EditBox:SetPoint("TOPLEFT", anchor3.Label, "BOTTOMLEFT", 4, -8)
-
-	return panel
 end

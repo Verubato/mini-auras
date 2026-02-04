@@ -7,7 +7,7 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 11,
+	Version = 12,
 	WhatsNew = {},
 
 	NotifiedChanges = true,
@@ -131,21 +131,74 @@ local dbDefaults = {
 
 	---@class NameplateOptions
 	Nameplates = {
-		FriendlyEnabled = true,
-		EnemyEnabled = true,
+		Friendly = {
+			---@class NameplateSpellTypeOptions
+			CC = {
+				Enabled = true,
+				Grow = "RIGHT",
+				Offset = {
+					X = 2,
+					Y = 0,
+				},
 
-		Grow = "RIGHT",
-		Offset = {
-			X = 2,
-			Y = 0,
+				Icons = {
+					Size = 50,
+					Glow = true,
+					ReverseCooldown = true,
+					ColorByDispelType = true,
+					MaxIcons = 5,
+				},
+			},
+			Important = {
+				Enabled = true,
+				Grow = "LEFT",
+				Offset = {
+					X = 2,
+					Y = 0,
+				},
+
+				Icons = {
+					Size = 50,
+					Glow = true,
+					ReverseCooldown = true,
+					ColorByDispelType = true,
+					MaxIcons = 5,
+				},
+			},
 		},
+		Enemy = {
+			CC = {
+				Enabled = true,
+				Grow = "RIGHT",
+				Offset = {
+					X = 2,
+					Y = 0,
+				},
 
-		Icons = {
-			Size = 50,
-			Glow = true,
-			ReverseCooldown = true,
-			ColorByDispelType = true,
-			MaxIcons = 5,
+				Icons = {
+					Size = 50,
+					Glow = true,
+					ReverseCooldown = true,
+					ColorByDispelType = true,
+					MaxIcons = 5,
+				},
+			},
+			Important = {
+				Enabled = true,
+				Grow = "LEFT",
+				Offset = {
+					X = 2,
+					Y = 0,
+				},
+
+				Icons = {
+					Size = 50,
+					Glow = true,
+					ReverseCooldown = true,
+					ColorByDispelType = true,
+					MaxIcons = 5,
+				},
+			},
 		},
 	},
 
@@ -261,11 +314,27 @@ local function GetAndUpgradeDb()
 	end
 
 	if vars.Version == 10 then
+		-- they may not have the nameplates table yet if upgrading from say v8
 		if vars.Nameplates then
 			vars.Nameplates.FriendlyEnabled = vars.Nameplates.Enabled
 			vars.Nameplates.EnemyEnabled = vars.Nameplates.Enabled
 		end
 		vars.Version = 11
+	end
+
+	if vars.Version == 11 then
+		-- get the new nameplate config
+		vars = mini:GetSavedVars(dbDefaults)
+
+		vars.Nameplates.Friendly.CC.Enabled = vars.Nameplates.FriendlyEnabled
+		vars.Nameplates.Friendly.Important.Enabled = vars.Nameplates.FriendlyEnabled
+
+		vars.Nameplates.Enemy.CC.Enabled = vars.Nameplates.EnemyEnabled
+		vars.Nameplates.Enemy.Important.Enabled = vars.Nameplates.EnemyEnabled
+
+		-- clean up old values
+		mini:CleanTable(db, dbDefaults, true, true)
+		vars.Version = 12
 	end
 
 	vars = mini:GetSavedVars(dbDefaults)
@@ -285,14 +354,36 @@ end
 function config:Init()
 	db = GetAndUpgradeDb()
 
-	local panel = CreateFrame("Frame")
-	panel.name = addonName
+	local scroll = CreateFrame("ScrollFrame", nil, nil, "UIPanelScrollFrameTemplate")
+	scroll.name = addonName
 
-	local category = mini:AddCategory(panel)
+	local category = mini:AddCategory(scroll)
 
 	if not category then
 		return
 	end
+
+	local panel = CreateFrame("Frame", nil, scroll)
+	local width, height = mini:SettingsSize()
+
+	panel:SetWidth(width)
+	panel:SetHeight(height)
+
+	scroll:SetScrollChild(panel)
+
+	scroll:EnableMouseWheel(true)
+	scroll:SetScript("OnMouseWheel", function(scrollSelf, delta)
+		local step = 20
+
+		local current = scrollSelf:GetVerticalScroll()
+		local max = scrollSelf:GetVerticalScrollRange()
+
+		if delta > 0 then
+			scrollSelf:SetVerticalScroll(math.max(current - step, 0))
+		else
+			scrollSelf:SetVerticalScroll(math.min(current + step, max))
+		end
+	end)
 
 	local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 	local version = C_AddOns.GetAddOnMetadata(addonName, "Version")
@@ -383,6 +474,8 @@ function config:Init()
 		end,
 	})
 
+	config.TabController = tabController
+
 	StaticPopupDialogs["MINICC_CONFIRM"] = {
 		text = "%s",
 		button1 = YES,
@@ -401,49 +494,6 @@ function config:Init()
 		whileDead = true,
 		hideOnEscape = true,
 	}
-
-	local resetBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-	resetBtn:SetSize(120, 26)
-	resetBtn:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 0, verticalSpacing)
-	resetBtn:SetText("Reset")
-	resetBtn:SetScript("OnClick", function()
-		if InCombatLockdown() then
-			mini:NotifyCombatLockdown()
-			return
-		end
-
-		StaticPopup_Show("MINICC_CONFIRM", "Are you sure you wish to reset to factory settings?", nil, {
-			OnYes = function()
-				db = mini:ResetSavedVars(dbDefaults)
-
-				for i = 1, #tabController.Tabs do
-					local content = tabController:GetContent(tabController.Tabs[i].Key)
-
-					if content and content.MiniRefresh then
-						content:MiniRefresh()
-					end
-				end
-
-				addon:Refresh()
-				mini:Notify("Settings reset to default.")
-			end,
-		})
-	end)
-
-	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-	testBtn:SetSize(120, 26)
-	testBtn:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, verticalSpacing)
-	testBtn:SetText("Test")
-	testBtn:SetScript("OnClick", function()
-		local options = db.Default
-		local selectedTab = tabController:GetSelected()
-
-		if selectedTab == keys.Raids then
-			options = db.Raid
-		end
-
-		addon:ToggleTest(options)
-	end)
 
 	SLASH_MINICC1 = "/minicc"
 	SLASH_MINICC2 = "/mcc"
@@ -472,6 +522,7 @@ end
 ---@field Healer HealerConfig
 ---@field Alerts AlertsConfig
 ---@field Nameplates NameplatesConfig
+---@field TabController TabReturn
 
 ---@class HeaderOptions
 ---@field Enabled boolean

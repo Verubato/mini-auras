@@ -82,4 +82,42 @@ function M:Build(panel)
 	})
 
 	lines:SetPoint("TOPLEFT", divider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local resetBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+	resetBtn:SetSize(120, 26)
+	resetBtn:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 0, verticalSpacing)
+	resetBtn:SetText("Reset")
+	resetBtn:SetScript("OnClick", function()
+		if InCombatLockdown() then
+			mini:NotifyCombatLockdown()
+			return
+		end
+
+		StaticPopup_Show("MINICC_CONFIRM", "Are you sure you wish to reset to factory settings?", nil, {
+			OnYes = function()
+				db = mini:ResetSavedVars(addon.Config.DbDefaults)
+
+				local tabController = addon.Config.TabController
+				for i = 1, #tabController.Tabs do
+					local content = tabController:GetContent(tabController.Tabs[i].Key)
+
+					if content and content.MiniRefresh then
+						content:MiniRefresh()
+					end
+				end
+
+				addon:Refresh()
+				mini:Notify("Settings reset to default.")
+			end,
+		})
+	end)
+
+	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+	testBtn:SetSize(120, 26)
+	testBtn:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, verticalSpacing)
+	testBtn:SetText("Test")
+	testBtn:SetScript("OnClick", function()
+		local options = db.Default
+		addon:ToggleTest(options)
+	end)
 end
