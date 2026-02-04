@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.10.0b-3
+
+- Test mode fix with LCG.
+- Moved the test button so it's easier to access across the tabs.
+- Added role options for enabling/disabling the kick timer.
+
 ## 2.10.0b-2
 
 - Secret variable fix.
