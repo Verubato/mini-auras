@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.10.0b-1
+
+- Separated CC and important spell positions on nameplates.
+- Separated friendly/enemy nameplate offsets.
+- Performance improvements.
+
 ## 2.9.4
 
 - Fixed portrait icon overlapping border.
