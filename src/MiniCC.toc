@@ -1,6 +1,6 @@
 ## Interface: 120001, 120000
 ## Title: MiniCC
-## Notes: Shows CC on party/raid frames.
+## Notes: Shows CC and important spells on frames/nameplates/alerts in PvP.
 ## Author: Verz
 ## Version: 2.10.0b-2
 ## SavedVariables: MiniCCDB
