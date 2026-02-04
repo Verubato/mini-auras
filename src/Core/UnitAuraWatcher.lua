@@ -18,32 +18,6 @@ local function NotifyCallbacks(watcher)
 	end
 end
 
----Builds a stable signature for the current aura list for a filter.
-local function BuildSigForFilter(unit, filter)
-	local parts = {}
-	local n = 0
-
-	for i = 1, maxAuras do
-		local aura = C_UnitAuras.GetAuraDataByIndex(unit, i, filter)
-		if not aura then
-			-- No aura at this index; continue scanning because aura indices can be sparse-ish
-			-- in practice they usually compact
-		else
-			n = n + 1
-			-- include applications if you want stack changes to matter:
-			-- parts[n] = tostring(a.auraInstanceID) .. ":" .. tostring(a.applications or 0)
-			parts[n] = tostring(aura.auraInstanceID)
-		end
-	end
-
-	-- Avoid table.concat allocating a huge string when empty
-	if n == 0 then
-		return ""
-	end
-
-	return table.concat(parts, ",", 1, n)
-end
-
 ---Quick check using updateInfo to avoid scanning every time.
 ---Return true if updateInfo suggests there might be relevant changes.
 local function MightAffectOurFilters(updateInfo)
@@ -188,26 +162,6 @@ local function OnEvent(watcher, event, unit, updateInfo)
 		return
 	end
 
-	-- Build signatures (cheap) and compare
-	local sigCC = BuildSigForFilter(u, ccFilter)
-	local sigDef = ""
-	if capabilities:HasNewFilters() then
-		sigDef = BuildSigForFilter(u, "HELPFUL|BIG_DEFENSIVE")
-	end
-	local sigImportantHelpful = BuildSigForFilter(u, "HELPFUL")
-	local sigImportantHarmful = BuildSigForFilter(u, "HARMFUL")
-	local sigImportant = sigImportantHelpful .. "|" .. sigImportantHarmful
-	local signature = sigCC .. "#" .. sigDef .. "#" .. sigImportant
-
-	if state.LastSignature == signature then
-		-- No meaningful aura-instance changes
-		-- don't rebuild, don't spam callbacks
-		return
-	end
-
-	state.LastSignature = signature
-
-	-- Expensive work only when signature changes
 	RebuildStates(watcher)
 	NotifyCallbacks(watcher)
 end
@@ -229,7 +183,6 @@ function M:New(unit, events)
 			CcAuraState = {},
 			ImportantAuraState = {},
 			DefensiveState = {},
-			LastSignature = nil,
 		},
 		RegisterCallback = function(watcherSelf, callback)
 			if not callback then
