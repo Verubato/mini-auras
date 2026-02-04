@@ -128,38 +128,34 @@ local function RebuildStates(watcher)
 		local importantHelpfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL")
 		if importantHelpfulData then
 			local isImportant = C_Spell.IsSpellImportant(importantHelpfulData.spellId)
-			if isImportant then
-				local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHelpfulData.auraInstanceID)
-				local start = durationInfo and durationInfo:GetStartTime()
-				local duration = durationInfo and durationInfo:GetTotalDuration()
+			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHelpfulData.auraInstanceID)
+			local start = durationInfo and durationInfo:GetStartTime()
+			local duration = durationInfo and durationInfo:GetTotalDuration()
 
-				importantSpellData[#importantSpellData + 1] = {
-					IsImportant = true,
-					SpellId = importantHelpfulData.spellId,
-					SpellIcon = importantHelpfulData.icon,
-					StartTime = start,
-					TotalDuration = duration,
-				}
-			end
+			importantSpellData[#importantSpellData + 1] = {
+				IsImportant = isImportant,
+				SpellId = importantHelpfulData.spellId,
+				SpellIcon = importantHelpfulData.icon,
+				StartTime = start,
+				TotalDuration = duration,
+			}
 		end
 
 		-- avoid doubling up with cc data
 		local importantHarmfulData = not ccData and C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
 		if importantHarmfulData then
 			local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)
-			if isImportant then
-				local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
-				local start = durationInfo and durationInfo:GetStartTime()
-				local duration = durationInfo and durationInfo:GetTotalDuration()
+			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
+			local start = durationInfo and durationInfo:GetStartTime()
+			local duration = durationInfo and durationInfo:GetTotalDuration()
 
-				importantSpellData[#importantSpellData + 1] = {
-					IsImportant = true,
-					SpellId = importantHarmfulData.spellId,
-					SpellIcon = importantHarmfulData.icon,
-					StartTime = start,
-					TotalDuration = duration,
-				}
-			end
+			importantSpellData[#importantSpellData + 1] = {
+				IsImportant = isImportant,
+				SpellId = importantHarmfulData.spellId,
+				SpellIcon = importantHarmfulData.icon,
+				StartTime = start,
+				TotalDuration = duration,
+			}
 		end
 	end
 
