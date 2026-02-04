@@ -111,13 +111,4 @@ function M:Build(panel)
 			end,
 		})
 	end)
-
-	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-	testBtn:SetSize(120, 26)
-	testBtn:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, verticalSpacing)
-	testBtn:SetText("Test")
-	testBtn:SetScript("OnClick", function()
-		local options = db.Default
-		addon:ToggleTest(options)
-	end)
 end

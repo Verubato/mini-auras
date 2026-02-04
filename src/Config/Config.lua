@@ -2,6 +2,7 @@
 local addonName, addon = ...
 local mini = addon.Framework
 local verticalSpacing = mini.VerticalSpacing
+local horizontalSpacing = mini.HorizontalSpacing
 ---@type Db
 local db
 
@@ -497,6 +498,22 @@ function config:Init()
 			end
 		end,
 	})
+
+	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+	testBtn:SetSize(120, 26)
+	testBtn:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
+	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
+	testBtn:SetText("Test")
+	testBtn:SetScript("OnClick", function()
+		local options = db.Default
+
+		local selectedTab = tabController:GetSelected()
+		if selectedTab == keys.Raids then
+			options = db.Raid
+		end
+
+		addon:ToggleTest(options)
+	end)
 
 	config.TabController = tabController
 
