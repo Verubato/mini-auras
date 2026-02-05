@@ -8,7 +8,7 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 13,
+	Version = 14,
 	WhatsNew = {},
 
 	NotifiedChanges = true,
@@ -366,6 +366,12 @@ local function GetAndUpgradeDb()
 		table.insert(vars.WhatsNew, " - Various bug fixes and performance improvements.")
 		vars.NotifiedChanges = false
 		vars.Version = 13
+	end
+
+	if vars.Version == 13 then
+		table.insert(vars.WhatsNew, " - Added pet portrait CC icon.")
+		vars.NotifiedChanges = false
+		vars.Version = 14
 	end
 
 	vars = mini:GetSavedVars(dbDefaults)
