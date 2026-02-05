@@ -6,9 +6,7 @@ local unitWatcher = addon.UnitAuraWatcher
 local iconSlotContainer = addon.IconSlotContainer
 local paused = false
 local containers = {}
----@diagnostic disable-next-line: unused-local
-local portraitMasks = {}
----@diagnostic disable-next-line: unused-local
+---@type { string: Watcher }
 local watchers = {}
 ---@type Db
 local db
@@ -74,9 +72,7 @@ local function CreateContainer(unitFrame, portrait)
 	local size = math.min(width, height)
 	container:SetIconSize(size)
 
-	-- Store mask in local table
 	local mask = GetPortraitMask(unitFrame)
-	portraitMasks[container] = mask
 
 	-- Hook SetLayer to apply mask when layers are created
 	local originalSetLayer = container.SetLayer
@@ -247,10 +243,18 @@ end
 
 function M:Pause()
 	paused = true
+
+	for _, watcher in pairs(watchers) do
+		watcher:Pause()
+	end
 end
 
 function M:Resume()
 	paused = false
+
+	for _, watcher in pairs(watchers) do
+		watcher:Resume()
+	end
 end
 
 function M:Refresh()
