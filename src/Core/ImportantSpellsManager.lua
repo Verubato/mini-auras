@@ -25,48 +25,21 @@ local function OnAuraDataChanged()
 		return
 	end
 
-	local slot = 1
-	local slotsNeeded = 0
+	for i, watcher in ipairs(watchers) do
+		local spellData = watcher:GetImportantState()
 
-	for _, watcher in ipairs(watchers) do
-		local defensivesData = watcher:GetDefensiveState()
-		local importantData = watcher:GetImportantState()
-		local needed = #defensivesData + (#importantData > 0 and 1 or 0)
+		-- Clear the slot first
+		anchor:ClearSlot(i)
 
-		slotsNeeded = slotsNeeded + needed
-
-		if #defensivesData > 0 then
-			for _, data in ipairs(defensivesData) do
-				anchor:ClearSlot(slot)
-				anchor:SetSlotUsed(slot)
-
-				anchor:SetLayer(
-					slot,
-					1,
-					data.SpellIcon,
-					data.StartTime,
-					data.TotalDuration,
-					data.IsDefensive,
-					db.Alerts.Icons.Glow,
-					db.Alerts.Icons.ReverseCooldown
-				)
-
-				anchor:FinalizeSlot(slot, 1)
-				slot = slot + 1
-			end
-		else
-			anchor:ClearSlot(slot)
-			anchor:SetSlotUnused(slot)
-		end
-
-		if #importantData > 0 then
-			anchor:SetSlotUsed(slot)
+		if #spellData > 0 then
+			-- Mark slot as used and add layers
+			anchor:SetSlotUsed(i)
 
 			local used = 0
-			for _, data in ipairs(importantData) do
+			for _, data in ipairs(spellData) do
 				used = used + 1
 				anchor:SetLayer(
-					slot,
+					i,
 					used,
 					data.SpellIcon,
 					data.StartTime,
@@ -77,20 +50,9 @@ local function OnAuraDataChanged()
 				)
 			end
 
-			anchor:FinalizeSlot(slot, used)
+			anchor:FinalizeSlot(i, used)
 		else
 			-- No spell data, mark slot as unused
-			anchor:ClearSlot(slot)
-			anchor:SetSlotUnused(slot)
-		end
-	end
-
-	if slotsNeeded == 0 then
-		anchor:ResetAllSlots()
-	else
-		-- clear any slots above what we used
-		for i = slotsNeeded + 1, anchor.Count do
-			anchor:ClearSlot(i)
 			anchor:SetSlotUnused(i)
 		end
 	end

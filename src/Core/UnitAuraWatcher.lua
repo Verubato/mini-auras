@@ -53,7 +53,6 @@ local function RebuildStates(watcher)
 	local importantSpellData = {}
 	---@type AuraInfo[]
 	local defensivesSpellData = {}
-	local seen = {}
 
 	for i = 1, maxAuras do
 		local ccData = C_UnitAuras.GetAuraDataByIndex(unit, i, ccFilter)
@@ -83,8 +82,6 @@ local function RebuildStates(watcher)
 					}
 				end
 			end
-
-			seen[ccData.auraInstanceID] = true
 		end
 
 		if capabilities:HasNewFilters() then
@@ -103,13 +100,11 @@ local function RebuildStates(watcher)
 						TotalDuration = duration,
 					}
 				end
-
-				seen[defensivesData.auraInstanceID] = true
 			end
 		end
 
 		local importantHelpfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL")
-		if importantHelpfulData and not seen[importantHelpfulData.auraInstanceID] then
+		if importantHelpfulData then
 			local isImportant = C_Spell.IsSpellImportant(importantHelpfulData.spellId)
 			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHelpfulData.auraInstanceID)
 			local start = durationInfo and durationInfo:GetStartTime()
@@ -124,13 +119,11 @@ local function RebuildStates(watcher)
 					TotalDuration = duration,
 				}
 			end
-
-			seen[importantHelpfulData.auraInstanceID] = true
 		end
 
 		-- avoid doubling up with cc data, as both CC and HARMFUL return the same thing sometimes
 		local importantHarmfulData = not ccData and C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
-		if importantHarmfulData and not seen[importantHarmfulData.auraInstanceID] then
+		if importantHarmfulData then
 			local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)
 			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
 			local start = durationInfo and durationInfo:GetStartTime()
@@ -145,8 +138,6 @@ local function RebuildStates(watcher)
 					TotalDuration = duration,
 				}
 			end
-
-			seen[importantHarmfulData.auraInstanceID] = true
 		end
 	end
 
