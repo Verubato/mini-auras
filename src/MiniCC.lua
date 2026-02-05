@@ -118,7 +118,9 @@ local function OnEvent(_, event)
 	end
 
 	if event == "GROUP_ROSTER_UPDATE" then
-		addon:Refresh()
+		-- no need to refresh the entire addon
+		headerManager:Refresh()
+		healerManager:Refresh()
 	end
 end
 

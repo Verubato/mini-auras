@@ -6,7 +6,6 @@ local unitWatcher = addon.UnitAuraWatcher
 local iconSlotContainer = addon.IconSlotContainer
 local capabilities = addon.Capabilities
 local paused = false
-local wasDisabled = false
 ---@type Db
 local db
 ---@type table<string, NameplateData>
@@ -314,6 +313,33 @@ local function OnAuraDataChanged(unitToken)
 	ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 end
 
+local function OnNamePlateRemoved(unitToken)
+	local data = nameplateAnchors[unitToken]
+	if not data then
+		return
+	end
+
+	-- Completely dispose of containers
+	if data.CcContainer then
+		data.CcContainer:ResetAllSlots()
+		data.CcContainer.Frame:Hide()
+	end
+
+	if data.ImportantContainer then
+		data.ImportantContainer:ResetAllSlots()
+		data.ImportantContainer.Frame:Hide()
+	end
+
+	-- Dispose of watcher
+	if watchers[unitToken] then
+		watchers[unitToken]:Dispose()
+		watchers[unitToken] = nil
+	end
+
+	-- Remove all data for this unit token
+	nameplateAnchors[unitToken] = nil
+end
+
 local function OnNamePlateAdded(unitToken)
 	local nameplate = GetNameplateForUnit(unitToken)
 	if not nameplate then
@@ -349,33 +375,6 @@ local function OnNamePlateAdded(unitToken)
 
 	-- Initial update
 	OnAuraDataChanged(unitToken)
-end
-
-local function OnNamePlateRemoved(unitToken)
-	local data = nameplateAnchors[unitToken]
-	if not data then
-		return
-	end
-
-	-- Completely dispose of containers
-	if data.CcContainer then
-		data.CcContainer:ResetAllSlots()
-		data.CcContainer.Frame:Hide()
-	end
-
-	if data.ImportantContainer then
-		data.ImportantContainer:ResetAllSlots()
-		data.ImportantContainer.Frame:Hide()
-	end
-
-	-- Dispose of watcher
-	if watchers[unitToken] then
-		watchers[unitToken]:Dispose()
-		watchers[unitToken] = nil
-	end
-
-	-- Remove all data for this unit token
-	nameplateAnchors[unitToken] = nil
 end
 
 local function OnNamePlateUpdate(unitToken)
@@ -420,6 +419,13 @@ local function RefreshNameplates()
 	end
 end
 
+local function AnyEnabled()
+	return db.Nameplates.Friendly.CC.Enabled
+		or db.Nameplates.Friendly.Important.Enabled
+		or db.Nameplates.Enemy.CC.Enabled
+		or db.Nameplates.Enemy.Important.Enabled
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 
@@ -441,16 +447,9 @@ function M:Init()
 		end
 	end)
 
-	local anyEnabled = db.Nameplates.Friendly.CC.Enabled
-		or db.Nameplates.Friendly.Important.Enabled
-		or db.Nameplates.Enemy.CC.Enabled
-		or db.Nameplates.Enemy.Important.Enabled
-
-	if anyEnabled then
+	if AnyEnabled() then
 		-- Initialize existing nameplates
 		RefreshNameplates()
-	else
-		wasDisabled = true
 	end
 end
 
@@ -470,18 +469,12 @@ function M:GetAllContainers()
 end
 
 function M:Refresh()
-	local anyEnabled = db.Nameplates.Friendly.CC.Enabled
-		or db.Nameplates.Friendly.Important.Enabled
-		or db.Nameplates.Enemy.CC.Enabled
-		or db.Nameplates.Enemy.Important.Enabled
-
-	if not anyEnabled then
+	if not AnyEnabled() then
 		M:ClearAll()
 		return
-	elseif wasDisabled then
-		RefreshNameplates()
-		wasDisabled = false
 	end
+
+	RefreshNameplates()
 
 	for _, data in pairs(nameplateAnchors) do
 		if data.Nameplate and data.UnitToken then
