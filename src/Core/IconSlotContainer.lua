@@ -62,15 +62,16 @@ local function EnsureLayer(slot, layerIndex)
 	local baseLevel = slotLevel + 1
 
 	-- Create any missing layers
+	-- Use +2 per layer to ensure cooldown text doesn't overlap next icon
 	for l = #slot.Layers + 1, layerIndex do
-		slot.Layers[l] = CreateLayer(slot.Frame, baseLevel + (l - 1))
+		slot.Layers[l] = CreateLayer(slot.Frame, baseLevel + ((l - 1) * 2))
 	end
 
 	-- re-apply levels to existing layers (covers cases where slot level changes)
 	for l = 1, #slot.Layers do
 		local layer = slot.Layers[l]
 		if layer and layer.Frame then
-			layer.Frame:SetFrameLevel(baseLevel + (l - 1))
+			layer.Frame:SetFrameLevel(baseLevel + ((l - 1) * 2))
 		end
 	end
 
