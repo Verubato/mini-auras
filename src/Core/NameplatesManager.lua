@@ -427,7 +427,12 @@ function M:Init()
 		end
 	end)
 
-	if db.Nameplates.Enabled then
+	local anyEnabled = db.Nameplates.Friendly.CC.Enabled
+		or db.Nameplates.Friendly.Important.Enabled
+		or db.Nameplates.Enemy.CC.Enabled
+		or db.Nameplates.Enemy.Important.Enabled
+
+	if anyEnabled then
 		-- Initialize existing nameplates
 		RefreshNameplates()
 	else
