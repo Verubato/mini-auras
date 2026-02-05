@@ -411,7 +411,8 @@ end
 local function RefreshNameplates()
 	local count = 0
 	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
-		local unitToken = nameplate.namePlateUnitToken
+		local unitToken = nameplate.unitToken
+
 		if unitToken then
 			OnNamePlateAdded(unitToken)
 			count = count + 1
