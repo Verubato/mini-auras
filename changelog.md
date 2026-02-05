@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.10.0b-4
+
+- Fixed kick timer not showing.
+- Fixed cooldown icons overlapping.
+- Added big defensives to nameplates and alerts.
+
 ## 2.10.0b-3
 
 - Test mode fix with LCG.
