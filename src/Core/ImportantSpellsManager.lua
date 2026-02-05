@@ -20,26 +20,45 @@ local function OnAuraDataChanged()
 		return
 	end
 
-	-- TODO: add enable/disable function
 	if not db.Alerts.Enabled then
 		return
 	end
 
-	for i, watcher in ipairs(watchers) do
-		local spellData = watcher:GetImportantState()
+	local slot = 1
+
+	for _, watcher in ipairs(watchers) do
+		local defensivesData = watcher:GetDefensiveState()
+		local importantData = watcher:GetImportantState()
 
 		-- Clear the slot first
-		anchor:ClearSlot(i)
+		anchor:ClearSlot(slot)
 
-		if #spellData > 0 then
-			-- Mark slot as used and add layers
-			anchor:SetSlotUsed(i)
+		for _, data in ipairs(defensivesData) do
+			anchor:SetSlotUsed(slot)
+
+			anchor:SetLayer(
+				slot,
+				1,
+				data.SpellIcon,
+				data.StartTime,
+				data.TotalDuration,
+				data.IsDefensive,
+				db.Alerts.Icons.Glow,
+				db.Alerts.Icons.ReverseCooldown
+			)
+
+			anchor:FinalizeSlot(slot, 1)
+			slot = slot + 1
+		end
+
+		if #importantData > 0 then
+			anchor:SetSlotUsed(slot)
 
 			local used = 0
-			for _, data in ipairs(spellData) do
+			for _, data in ipairs(importantData) do
 				used = used + 1
 				anchor:SetLayer(
-					i,
+					slot,
 					used,
 					data.SpellIcon,
 					data.StartTime,
@@ -50,10 +69,10 @@ local function OnAuraDataChanged()
 				)
 			end
 
-			anchor:FinalizeSlot(i, used)
+			anchor:FinalizeSlot(slot, used)
 		else
 			-- No spell data, mark slot as unused
-			anchor:SetSlotUnused(i)
+			anchor:SetSlotUnused(slot)
 		end
 	end
 end
@@ -124,10 +143,18 @@ end
 
 function M:Pause()
 	paused = true
+
+	for _, watcher in ipairs(watchers) do
+		watcher:Pause()
+	end
 end
 
 function M:Resume()
 	paused = false
+
+	for _, watcher in ipairs(watchers) do
+		watcher:Resume()
+	end
 end
 
 function M:ClearAll()

@@ -85,12 +85,7 @@ local function GetNameplateForUnit(unitToken)
 	return nameplate
 end
 
-local function CreateOrUpdateContainersForNameplate(
-	nameplate,
-	unitToken,
-	existingCcContainer,
-	existingImportantContainer
-)
+local function EnsureContainersForNameplate(nameplate, unitToken, existingCcContainer, existingImportantContainer)
 	local ccContainer = existingCcContainer
 	local importantContainer = existingImportantContainer
 
@@ -268,36 +263,52 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 		return
 	end
 
-	local spellData = watcher:GetImportantState()
-	local spellCount = #spellData
+	local slot = 1
+	local defensivesData = watcher:GetDefensiveState()
+	local importantData = watcher:GetImportantState()
 
-	-- Only clear slot 1 since we only use it
-	container:ClearSlot(1)
+	container:ClearSlot(slot)
 
-	if spellCount == 0 then
-		container:SetSlotUnused(1)
-		return
-	end
+	for _, spellData in ipairs(defensivesData) do
+		container:SetSlotUsed(slot)
 
-	container:SetSlotUsed(1)
-
-	local iconsGlow = options.Icons.Glow
-	local iconsReverse = options.Icons.ReverseCooldown
-
-	for layerIndex, spellInfo in ipairs(spellData) do
 		container:SetLayer(
+			slot,
 			1,
-			layerIndex,
-			spellInfo.SpellIcon,
-			spellInfo.StartTime,
-			spellInfo.TotalDuration,
-			spellInfo.IsImportant,
-			iconsGlow,
-			iconsReverse
+			spellData.SpellIcon,
+			spellData.StartTime,
+			spellData.TotalDuration,
+			spellData.IsDefensive,
+			options.Icons.Glow,
+			options.Icons.ReverseCooldown
 		)
+
+		container:FinalizeSlot(slot, 1)
+		slot = slot + 1
 	end
 
-	container:FinalizeSlot(1, spellCount)
+	if #importantData > 0 then
+		container:SetSlotUsed(slot)
+
+		local used = 0
+		for _, spellData in ipairs(importantData) do
+			used = used + 1
+			container:SetLayer(
+				slot,
+				used,
+				spellData.SpellIcon,
+				spellData.StartTime,
+				spellData.TotalDuration,
+				spellData.IsImportant,
+				options.Icons.Glow,
+				options.Icons.ReverseCooldown
+			)
+		end
+
+		container:FinalizeSlot(slot, used)
+	else
+		container:SetSlotUnused(slot)
+	end
 end
 
 local function OnAuraDataChanged(unitToken)
@@ -345,7 +356,7 @@ local function OnNamePlateAdded(unitToken)
 
 	-- Create or update containers (reusing existing ones if available)
 	local ccContainer, importantContainer =
-		CreateOrUpdateContainersForNameplate(nameplate, unitToken, existingCcContainer, existingImportantContainer)
+		EnsureContainersForNameplate(nameplate, unitToken, existingCcContainer, existingImportantContainer)
 
 	if not ccContainer and not importantContainer then
 		return
