@@ -30,7 +30,7 @@ local function GetPortraitMask(unitFrame)
 		return unitFrame.TargetFrameContainer.PortraitMask
 	end
 
-	-- target of target
+	-- target of target and pet frame
 	if unitFrame.PortraitMask then
 		return unitFrame.PortraitMask
 	end
@@ -65,7 +65,7 @@ local function CreateContainer(unitFrame, portrait)
 	container.Frame:SetPoint("TOPLEFT", portrait, "TOPLEFT", 2, -2)
 	container.Frame:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", -2, 2)
 	-- the icon slot container starts at +2
-	container.Frame:SetFrameLevel((unitFrame:GetFrameLevel() or 0) - 1)
+	container.Frame:SetFrameLevel(math.max(0, (unitFrame:GetFrameLevel() or 0) - 1))
 
 	-- Set initial size to match portrait
 	local width = portrait:GetWidth() - 4
@@ -206,7 +206,12 @@ local function GetBlizzardFrame(unit)
 		if FocusFrame and FocusFrame.portrait then
 			return FocusFrame, FocusFrame.portrait
 		end
+	elseif unit == "pet" then
+		if PetFrame and PetFrame.portrait then
+			return PetFrame, PetFrame.portrait
+		end
 	end
+
 	return nil
 end
 
@@ -272,6 +277,7 @@ function M:Init()
 	Attach("player")
 	Attach("target", { "PLAYER_TARGET_CHANGED" })
 	Attach("focus", { "PLAYER_FOCUS_CHANGED" })
+	Attach("pet")
 
 	M:Refresh()
 end
