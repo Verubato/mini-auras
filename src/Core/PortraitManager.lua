@@ -1,11 +1,15 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
-local frames = addon.FramesManager
 local array = addon.Utils.Array
 local unitWatcher = addon.UnitAuraWatcher
+local iconSlotContainer = addon.IconSlotContainer
 local paused = false
-local overlays = {}
+local containers = {}
+---@diagnostic disable-next-line: unused-local
+local portraitMasks = {}
+---@diagnostic disable-next-line: unused-local
+local watchers = {}
 ---@type Db
 local db
 
@@ -36,143 +40,158 @@ local function GetPortraitMask(unitFrame)
 	return nil
 end
 
-local function EnsureOverlay(unitFrame, portrait, index)
-	local portraitOverlays = overlays[portrait]
-
-	if not portraitOverlays then
-		portraitOverlays = {}
-		overlays[portrait] = portraitOverlays
+local function ApplyMaskToLayer(layer, mask)
+	if not layer then
+		return
 	end
 
-	local overlay = portraitOverlays[index]
-
-	if overlay then
-		-- in case the option changed
-		overlay.Cooldown:SetReverse(db.Portrait.ReverseCooldown)
-		return overlay
+	if layer.Icon then
+		if mask then
+			AddMask(layer.Icon, mask)
+		end
+		-- Crop the icon like Blizzard does
+		layer.Icon:SetTexCoord(0.1, 0.9, 0.1, 0.9)
 	end
 
-	overlay = CreateFrame("Frame", nil, unitFrame)
-	overlay:SetAlpha(0)
-	overlay:Show()
-
-	-- inset from the border
-	overlay:SetPoint("TOPLEFT", portrait, "TOPLEFT", 2, -2)
-	overlay:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", -2, 2)
-
-	overlay:SetFrameLevel((unitFrame:GetFrameLevel() or 0) + 2)
-
-	local tex = overlay:CreateTexture(nil, "BACKGROUND")
-	tex:SetAllPoints()
-
-	-- crop the icon like blizzard does
-	tex:SetTexCoord(0.1, 0.9, 0.1, 0.9)
-
-	local mask = GetPortraitMask(unitFrame)
-	if mask then
-		AddMask(tex, mask)
+	if layer.Cooldown then
+		-- Keep cooldown within the portrait icon
+		layer.Cooldown:SetSwipeTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
 	end
-
-	local cd = CreateFrame("Cooldown", nil, overlay, "CooldownFrameTemplate")
-	cd:SetAllPoints(overlay)
-	cd:SetFrameLevel((overlay:GetFrameLevel() or 0))
-	cd:SetDrawEdge(false)
-	cd:SetDrawBling(false)
-	cd:SetHideCountdownNumbers(false)
-	-- keep within the portrait icon
-	cd:SetSwipeTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
-	cd:SetReverse(db.Portrait.ReverseCooldown)
-
-	overlay.Icon = tex
-	overlay.Cooldown = cd
-
-	portraitOverlays[index] = overlay
-
-	return overlay
 end
 
-local function HideFrom(portrait, index)
-	local portraits = overlays[portrait]
+local function CreateContainer(unitFrame, portrait)
+	-- Only 1 slot, multiple layers
+	local container = iconSlotContainer:New(unitFrame, 1, 0, 0)
 
-	if portraits then
-		for i = index, #portraits do
-			portraits[i]:SetAlpha(0)
+	-- Position the container over the portrait with inset
+	container.Frame:SetPoint("TOPLEFT", portrait, "TOPLEFT", 2, -2)
+	container.Frame:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", -2, 2)
+	container.Frame:SetFrameLevel((unitFrame:GetFrameLevel() or 0) + 2)
+
+	-- Set initial size to match portrait
+	local width = portrait:GetWidth() - 4
+	local height = portrait:GetHeight() - 4
+	local size = math.min(width, height)
+	container:SetIconSize(size)
+
+	-- Store mask in local table
+	local mask = GetPortraitMask(unitFrame)
+	portraitMasks[container] = mask
+
+	-- Hook SetLayer to apply mask when layers are created
+	local originalSetLayer = container.SetLayer
+	container.SetLayer = function(
+		self,
+		slotIndex,
+		layerIndex,
+		texture,
+		startTime,
+		duration,
+		alphaBoolean,
+		glow,
+		reverseCooldown
+	)
+		-- Call original SetLayer first
+		originalSetLayer(self, slotIndex, layerIndex, texture, startTime, duration, alphaBoolean, glow, reverseCooldown)
+
+		-- Apply mask to the layer that was just created/updated
+		local slot = self.Slots[slotIndex]
+		if slot and slot.Layers[layerIndex] then
+			ApplyMaskToLayer(slot.Layers[layerIndex], mask)
 		end
 	end
+
+	return container
 end
 
 ---@param watcher Watcher
----@param unitFrame table
----@param portrait table
-local function OnAuraInfo(watcher, unitFrame, portrait)
+---@param container IconSlotContainer
+local function OnAuraInfo(watcher, container)
 	if paused then
 		return
 	end
 
-	local portraitIndex = 1
+	container:ResetAllSlots()
+
 	local ccAuras = watcher:GetCcState()
 	local importantAuras = watcher:GetImportantState()
 	local defensiveAuras = watcher:GetDefensiveState()
 
-	-- reverse their order so we show latest spells
+	-- Reverse their order so we show latest spells
 	array:Reverse(ccAuras)
 	array:Reverse(importantAuras)
 	array:Reverse(defensiveAuras)
 
+	local slotIndex = 1
+	local layerIndex = 1
+
+	-- Process CC auras
 	for _, aura in ipairs(ccAuras) do
-		local overlay = EnsureOverlay(unitFrame, portrait, portraitIndex)
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
-			overlay.Icon:SetTexture(aura.SpellIcon)
-			overlay.Cooldown:SetCooldown(aura.StartTime, aura.TotalDuration)
+			container:SetSlotUsed(slotIndex)
+			container:SetLayer(
+				slotIndex,
+				layerIndex,
+				aura.SpellIcon,
+				aura.StartTime,
+				aura.TotalDuration,
+				aura.IsCC, -- alphaBoolean
+				false, -- glow
+				db.Portrait.ReverseCooldown
+			)
 
 			if not issecretvalue(aura.IsCC) then
 				-- we're in 12.0.1
 				if aura.IsCC then
-					overlay:SetAlpha(1)
-					HideFrom(portrait, portraitIndex + 1)
+					container:FinalizeSlot(slotIndex, layerIndex)
 					return
 				end
-			else
-				overlay:SetAlphaFromBoolean(aura.IsCC)
 			end
-		else
-			overlay:SetAlpha(0)
-		end
 
-		portraitIndex = portraitIndex + 1
+			layerIndex = layerIndex + 1
+		end
 	end
 
+	-- Process defensive auras
 	for _, aura in ipairs(defensiveAuras) do
-		local overlay = EnsureOverlay(unitFrame, portrait, portraitIndex)
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
-			overlay.Icon:SetTexture(aura.SpellIcon)
-			overlay.Cooldown:SetCooldown(aura.StartTime, aura.TotalDuration)
+			container:SetSlotUsed(slotIndex)
+			container:SetLayer(
+				slotIndex,
+				layerIndex,
+				aura.SpellIcon,
+				aura.StartTime,
+				aura.TotalDuration,
+				true, -- alphaBoolean (we only get defensives in 12.0.1)
+				false, -- glow
+				db.Portrait.ReverseCooldown
+			)
 
-			-- we only get defensives in 12.0.1 which we got from a filter
-			overlay:SetAlpha(1)
-			HideFrom(portrait, portraitIndex + 1)
+			container:FinalizeSlot(slotIndex, layerIndex)
 			return
-		else
-			overlay:SetAlpha(0)
 		end
-
-		portraitIndex = portraitIndex + 1
 	end
 
+	-- Process important auras
 	for _, aura in ipairs(importantAuras) do
-		local overlay = EnsureOverlay(unitFrame, portrait, portraitIndex)
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
-			overlay.Icon:SetTexture(aura.SpellIcon)
-			overlay.Cooldown:SetCooldown(aura.StartTime, aura.TotalDuration)
-			overlay:SetAlphaFromBoolean(aura.IsImportant)
-		else
-			overlay:SetAlpha(0)
-		end
+			container:SetSlotUsed(slotIndex)
+			container:SetLayer(
+				slotIndex,
+				layerIndex,
+				aura.SpellIcon,
+				aura.StartTime,
+				aura.TotalDuration,
+				aura.IsImportant, -- alphaBoolean
+				false, -- glow
+				db.Portrait.ReverseCooldown
+			)
 
-		portraitIndex = portraitIndex + 1
+			layerIndex = layerIndex + 1
+		end
 	end
 
-	HideFrom(portrait, portraitIndex)
+	container:FinalizeSlot(slotIndex, layerIndex - 1)
 end
 
 ---@return table? unitFrame
@@ -194,15 +213,12 @@ local function GetBlizzardFrame(unit)
 	return nil
 end
 
----@return PortraitOverlay[]
-function M:GetOverlays()
+---@return IconSlotContainer[]
+function M:GetContainers()
 	local result = {}
-	for _, portraitOverlays in pairs(overlays) do
-		for _, overlay in ipairs(portraitOverlays) do
-			result[#result + 1] = overlay
-		end
+	for _, container in pairs(containers) do
+		result[#result + 1] = container
 	end
-
 	return result
 end
 
@@ -215,15 +231,18 @@ local function Attach(unit, events)
 		return nil
 	end
 
-	local overlay = EnsureOverlay(unitFrame, portrait, 1)
+	local container = CreateContainer(unitFrame, portrait)
 	local watcher = unitWatcher:New(unit, events)
 
 	watcher:RegisterCallback(function()
-		OnAuraInfo(watcher, unitFrame, portrait)
+		OnAuraInfo(watcher, container)
 	end)
 
-	overlay.Watcher = watcher
-	return overlay
+	containers[unit] = container
+	---@diagnostic disable-next-line: unused-local
+	watchers[unit] = watcher
+
+	return container
 end
 
 function M:Pause()
@@ -251,7 +270,3 @@ function M:Init()
 
 	M:Refresh()
 end
-
----@class PortraitOverlay
----@field SetAlpha fun(self: PortraitOverlay, alpha: number)
----@field Icon table

@@ -93,10 +93,10 @@ local function HideHealerOverlay()
 end
 
 local function HidePortraitIcons()
-	local overlays = portraitManager:GetOverlays()
+	local containers = portraitManager:GetContainers()
 
-	for _, overlay in pairs(overlays) do
-		overlay:SetAlpha(0)
+	for _, container in ipairs(containers) do
+		container:ResetAllSlots()
 	end
 
 	portraitManager:Refresh()
@@ -260,24 +260,26 @@ local function ShowHealerOverlay()
 end
 
 local function ShowPortraitIcons()
-	local overlays = portraitManager:GetOverlays()
+	local containers = portraitManager:GetContainers()
 	local tex = C_Spell.GetSpellTexture(testSpells[1].SpellId)
-
-	local first = overlays[1]
-	if not first then
-		return
-	end
-
-	first.Icon:SetTexture(tex)
-	first:SetAlpha(1)
-
-	for i = 2, #overlays do
-		local overlay = overlays[i]
-		overlay.Icon:SetTexture(tex)
-		overlay:SetAlpha(1)
-	end
+	local now = GetTime()
 
 	portraitManager:Pause()
+
+	for _, container in ipairs(containers) do
+		container:SetSlotUsed(1)
+		container:SetLayer(
+			1,
+			1,
+			tex,
+			now,
+			15, -- 15 second duration for test
+			true, -- alphaBoolean
+			false, -- glow
+			db.Portrait.ReverseCooldown
+		)
+		container:FinalizeSlot(1, 1)
+	end
 end
 
 local function ShowNameplateTestMode()
