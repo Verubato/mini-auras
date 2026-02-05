@@ -53,9 +53,9 @@ local function RebuildStates(watcher)
 	local importantSpellData = {}
 	---@type AuraInfo[]
 	local defensivesSpellData = {}
+	local seen = {}
 
 	for i = 1, maxAuras do
-		local seen = {}
 		local ccData = C_UnitAuras.GetAuraDataByIndex(unit, i, ccFilter)
 
 		if ccData then
@@ -122,7 +122,6 @@ local function RebuildStates(watcher)
 			seen[importantHelpfulData.auraInstanceID] = true
 		end
 
-		-- avoid doubling up with cc data
 		local importantHarmfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
 		if importantHarmfulData and not seen[importantHarmfulData.auraInstanceID] then
 			local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)

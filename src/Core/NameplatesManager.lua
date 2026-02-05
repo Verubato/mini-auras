@@ -266,28 +266,34 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 	local slot = 1
 	local defensivesData = watcher:GetDefensiveState()
 	local importantData = watcher:GetImportantState()
+	local slotsNeeded = #defensivesData + (#importantData > 0 and 1 or 0)
 
-	container:ClearSlot(slot)
+	if #defensivesData > 0 then
+		for _, spellData in ipairs(defensivesData) do
+			container:ClearSlot(slot)
+			container:SetSlotUsed(slot)
 
-	for _, spellData in ipairs(defensivesData) do
-		container:SetSlotUsed(slot)
+			container:SetLayer(
+				slot,
+				1,
+				spellData.SpellIcon,
+				spellData.StartTime,
+				spellData.TotalDuration,
+				spellData.IsDefensive,
+				options.Icons.Glow,
+				options.Icons.ReverseCooldown
+			)
 
-		container:SetLayer(
-			slot,
-			1,
-			spellData.SpellIcon,
-			spellData.StartTime,
-			spellData.TotalDuration,
-			spellData.IsDefensive,
-			options.Icons.Glow,
-			options.Icons.ReverseCooldown
-		)
-
-		container:FinalizeSlot(slot, 1)
-		slot = slot + 1
+			container:FinalizeSlot(slot, 1)
+			slot = slot + 1
+		end
+	else
+		container:ClearSlot(slot)
+		container:SetSlotUnused(slot)
 	end
 
 	if #importantData > 0 then
+		container:ClearSlot(slot)
 		container:SetSlotUsed(slot)
 
 		local used = 0
@@ -307,7 +313,20 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 
 		container:FinalizeSlot(slot, used)
 	else
+		container:ClearSlot(slot)
 		container:SetSlotUnused(slot)
+
+		slot = slot - 1
+	end
+
+	if slotsNeeded == 0 then
+		container:ResetAllSlots()
+	else
+		-- clear any slots above what we used
+		for i = slotsNeeded + 1, container.Count do
+			container:ClearSlot(i)
+			container:SetSlotUnused(i)
+		end
 	end
 end
 
