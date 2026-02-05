@@ -8,7 +8,7 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 12,
+	Version = 13,
 	WhatsNew = {},
 
 	NotifiedChanges = true,
@@ -360,6 +360,12 @@ local function GetAndUpgradeDb()
 		-- clean up old values
 		mini:CleanTable(db, dbDefaults, true, true)
 		vars.Version = 12
+	end
+
+	if vars.Version == 12 then
+		table.insert(vars.WhatsNew, " - New poor man's kick timer (don't get too excited, it's really basic).")
+		vars.NotifiedChanges = false
+		vars.Version = 13
 	end
 
 	vars = mini:GetSavedVars(dbDefaults)

@@ -84,7 +84,7 @@ local function NotifyChanges()
 			Title = title,
 			Text = "- New spell alerts bar that shows enemy cooldowns.",
 		})
-	elseif db.Version == 10 or db.Version == 11 or db.Version == 12 then
+	elseif db.Version >= 10 then
 		local whatsNew = db.WhatsNew
 
 		if not whatsNew then
