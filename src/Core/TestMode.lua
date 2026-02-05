@@ -117,7 +117,6 @@ local function HideAlertsTestMode()
 end
 
 local function HideNameplateTestMode()
-	nameplateManager:ClearAll()
 	nameplateManager:Resume()
 end
 

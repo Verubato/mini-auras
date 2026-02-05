@@ -395,6 +395,22 @@ local function OnNamePlateUpdate(unitToken)
 	end
 end
 
+local function ClearNameplate(unitToken)
+	local data = nameplateAnchors[unitToken]
+	if not data then
+		return
+	end
+
+	-- Completely dispose of containers
+	if data.CcContainer then
+		data.CcContainer:ResetAllSlots()
+	end
+
+	if data.ImportantContainer then
+		data.ImportantContainer:ResetAllSlots()
+	end
+end
+
 local function RefreshNameplates()
 	local count = 0
 	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
@@ -528,6 +544,6 @@ end
 function M:ClearAll()
 	-- Clean up all existing nameplates
 	for unitToken, _ in pairs(nameplateAnchors) do
-		OnNamePlateRemoved(unitToken)
+		ClearNameplate(unitToken)
 	end
 end
