@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.11.0
+
+Added pet portrait CC icon.
+
 ## 2.10.0
 
 - Separated CC and important spell positions on nameplates.
