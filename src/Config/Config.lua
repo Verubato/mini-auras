@@ -154,7 +154,7 @@ local dbDefaults = {
 				Enabled = false,
 				Grow = "LEFT",
 				Offset = {
-					X = 2,
+					X = -2,
 					Y = 0,
 				},
 
@@ -188,7 +188,7 @@ local dbDefaults = {
 				Enabled = true,
 				Grow = "LEFT",
 				Offset = {
-					X = 2,
+					X = -2,
 					Y = 0,
 				},
 
