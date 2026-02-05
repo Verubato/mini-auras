@@ -122,7 +122,8 @@ local function RebuildStates(watcher)
 			seen[importantHelpfulData.auraInstanceID] = true
 		end
 
-		local importantHarmfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
+		-- avoid doubling up with cc data, as both CC and HARMFUL return the same thing sometimes
+		local importantHarmfulData = not ccData and C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
 		if importantHarmfulData and not seen[importantHarmfulData.auraInstanceID] then
 			local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)
 			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
