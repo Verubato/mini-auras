@@ -187,7 +187,7 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 	end
 
 	local options = GetCcOptions(unitToken)
-	if not options then
+	if not options or not options.Enabled then
 		return
 	end
 
@@ -204,6 +204,7 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 
 	-- Clear remaining slots if they were used before
 	for i = slotsNeeded + 1, container.Count do
+		container:ClearSlot(i)
 		container:SetSlotUnused(i)
 	end
 
@@ -259,7 +260,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 	end
 
 	local options = GetImportantOptions(unitToken)
-	if not options then
+	if not options or not options.Enabled then
 		return
 	end
 
@@ -267,6 +268,33 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 	local defensivesData = watcher:GetDefensiveState()
 	local importantData = watcher:GetImportantState()
 	local slotsNeeded = #defensivesData + (#importantData > 0 and 1 or 0)
+
+	if #importantData > 0 then
+		container:ClearSlot(slot)
+		container:SetSlotUsed(slot)
+
+		local used = 0
+		for _, spellData in ipairs(importantData) do
+			used = used + 1
+			container:SetLayer(
+				slot,
+				used,
+				spellData.SpellIcon,
+				spellData.StartTime,
+				spellData.TotalDuration,
+				spellData.IsImportant,
+				options.Icons.Glow,
+				options.Icons.ReverseCooldown
+			)
+		end
+
+		container:FinalizeSlot(slot, used)
+
+		slot = slot + 1
+	else
+		container:ClearSlot(slot)
+		container:SetSlotUnused(slot)
+	end
 
 	if #defensivesData > 0 then
 		for _, spellData in ipairs(defensivesData) do
@@ -290,33 +318,6 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 	else
 		container:ClearSlot(slot)
 		container:SetSlotUnused(slot)
-	end
-
-	if #importantData > 0 then
-		container:ClearSlot(slot)
-		container:SetSlotUsed(slot)
-
-		local used = 0
-		for _, spellData in ipairs(importantData) do
-			used = used + 1
-			container:SetLayer(
-				slot,
-				used,
-				spellData.SpellIcon,
-				spellData.StartTime,
-				spellData.TotalDuration,
-				spellData.IsImportant,
-				options.Icons.Glow,
-				options.Icons.ReverseCooldown
-			)
-		end
-
-		container:FinalizeSlot(slot, used)
-	else
-		container:ClearSlot(slot)
-		container:SetSlotUnused(slot)
-
-		slot = slot - 1
 	end
 
 	if slotsNeeded == 0 then
