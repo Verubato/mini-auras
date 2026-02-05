@@ -78,8 +78,6 @@ end
 local function CreateContainersForNameplate(nameplate, unitToken)
 	local ccContainer = nil
 	local importantContainer = nil
-
-	-- Get all config at once to avoid multiple lookups
 	local config = units:IsFriend(unitToken) and db.Nameplates.Friendly or db.Nameplates.Enemy
 
 	-- Create CC container
