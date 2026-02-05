@@ -326,7 +326,6 @@ local function Enable(options)
 	kickBar.Anchor:Show()
 
 	enabled = true
-	print("Kick timer is enabled")
 end
 
 ---@param options KickTimerOptions
@@ -371,8 +370,6 @@ function M:Kicked()
 	local duration = minKickCooldown
 	local frame = GetOrCreateIcon()
 	local key = math.random()
-
-	print("Kicked")
 
 	frame.Active = true
 	frame.Key = key
@@ -436,7 +433,6 @@ function M:Refresh()
 	local options = db.KickTimer
 
 	if not M:IsEnabledForPlayer(options) then
-		print("no enabled for player")
 		Disable()
 		return
 	end
