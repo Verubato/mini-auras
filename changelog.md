@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.10.0b-8
+
+Attempt at fixing the spell alerts showing garbage spells.
+
 ## 2.10.0b-7
 
 Various bug fixes for nameplates and spell alerts.
