@@ -148,18 +148,26 @@ local function RebuildStates(watcher)
 	state.DefensiveState = defensivesSpellData
 end
 
-local function OnEvent(watcher, event, unit, updateInfo)
+local function OnEvent(watcher, event, ...)
 	local state = watcher.State
 	if state.Paused then
 		return
 	end
 
 	if event == "UNIT_AURA" then
+		local unit, updateInfo = ...
 		if unit and unit ~= state.Unit then
 			return
 		end
 
 		if not MightAffectOurFilters(updateInfo) then
+			return
+		end
+	end
+
+	if event == "ARENA_OPPONENT_UPDATE" then
+		local unit = ...
+		if unit ~= state.Unit then
 			return
 		end
 	end
