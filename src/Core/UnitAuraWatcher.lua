@@ -201,12 +201,15 @@ function M:New(unit, events)
 			ImportantAuraState = {},
 			DefensiveState = {},
 		},
+		Frame = nil,
+
 		RegisterCallback = function(watcherSelf, callback)
 			if not callback then
 				return
 			end
 			watcherSelf.State.Callbacks[#watcherSelf.State.Callbacks + 1] = callback
 		end,
+
 		Pause = function(watcherSelf)
 			watcherSelf.State.Paused = true
 		end,
@@ -216,6 +219,34 @@ function M:New(unit, events)
 		IsPaused = function(watcherSelf)
 			return watcherSelf.State.Paused
 		end,
+
+		ClearState = function(watcherSelf, notify)
+			local state = watcherSelf.State
+			state.CcAuraState = {}
+			state.ImportantAuraState = {}
+			state.DefensiveState = {}
+			if notify then
+				NotifyCallbacks(watcherSelf)
+			end
+		end,
+
+		ForceFullUpdate = function(watcherSelf)
+			-- force a rebuild immediately (important when tokens are reused)
+			OnEvent(watcherSelf, "UNIT_AURA", watcherSelf.State.Unit, { isFullUpdate = true })
+		end,
+
+		Dispose = function(watcherSelf)
+			local f = watcherSelf.Frame
+			if f then
+				f:UnregisterAllEvents()
+				f:SetScript("OnEvent", nil)
+				watcherSelf.Frame = nil
+			end
+			-- ensure we don't keep closures alive
+			watcherSelf.State.Callbacks = {}
+			watcherSelf:ClearState(false)
+		end,
+
 		GetCcState = function(watcherSelf)
 			return watcherSelf.State.CcAuraState
 		end,
@@ -228,6 +259,8 @@ function M:New(unit, events)
 	}
 
 	local frame = CreateFrame("Frame")
+	watcher.Frame = frame
+
 	frame:RegisterUnitEvent("UNIT_AURA", unit)
 
 	if events then
@@ -241,18 +274,23 @@ function M:New(unit, events)
 	end)
 
 	-- Prime once we get initial state
-	OnEvent(watcher, "UNIT_AURA", unit, { isFullUpdate = true })
+	watcher:ForceFullUpdate()
 
 	return watcher
 end
+
 ---@class Watcher
+---@field Frame Frame?
 ---@field GetCcState fun(self: Watcher): AuraInfo[]
 ---@field GetImportantState fun(self: Watcher): AuraInfo[]
 ---@field GetDefensiveState fun(self: Watcher): AuraInfo[]
 ---@field RegisterCallback fun(self: Watcher, callback: fun(self: Watcher))
----@field IsPaused fun(self: Watcher)
+---@field IsPaused fun(self: Watcher): boolean
 ---@field Pause fun(self: Watcher)
 ---@field Resume fun(self: Watcher)
+---@field ClearState fun(self: Watcher, notify: boolean?)
+---@field ForceFullUpdate fun(self: Watcher)
+---@field Dispose fun(self: Watcher)
 
 ---@class WatcherState
 ---@field Unit string

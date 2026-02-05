@@ -4,6 +4,7 @@ local mini = addon.Framework
 local unitWatcher = addon.UnitAuraWatcher
 local iconSlotContainer = addon.IconSlotContainer
 local paused = false
+local eventsFrame
 ---@type Db
 local db
 ---@type IconSlotContainer
@@ -95,6 +96,17 @@ local function OnAuraDataChanged()
 	end
 end
 
+local function OnMatchStateChanged()
+	local matchState = C_PvP.GetActiveMatchState()
+	if matchState ~= Enum.PvPMatchState.StartUp then
+		return
+	end
+
+	for _, watcher in ipairs(watchers) do
+		watcher:ClearState(true)
+	end
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 
@@ -127,10 +139,15 @@ function M:Init()
 	end)
 	anchor.Frame:Show()
 
+	local events = {
+		-- seen/unseen
+		"ARENA_OPPONENT_UPDATE",
+	}
+
 	watchers = {
-		unitWatcher:New("arena1", { "ARENA_OPPONENT_UPDATE" }),
-		unitWatcher:New("arena2", { "ARENA_OPPONENT_UPDATE" }),
-		unitWatcher:New("arena3", { "ARENA_OPPONENT_UPDATE" }),
+		unitWatcher:New("arena1", events),
+		unitWatcher:New("arena2", events),
+		unitWatcher:New("arena3", events),
 	}
 
 	anchor:SetCount(#watchers)
@@ -138,6 +155,10 @@ function M:Init()
 	for _, watcher in ipairs(watchers) do
 		watcher:RegisterCallback(OnAuraDataChanged)
 	end
+
+	eventsFrame = CreateFrame("Frame")
+	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
+	eventsFrame:SetScript("OnEvent", OnMatchStateChanged)
 end
 
 function M:GetAnchor()
