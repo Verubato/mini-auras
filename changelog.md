@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.10.0b-7
+
+Various bug fixes for nameplates and spell alerts.
+
 ## 2.10.0b-6
 
 Fixed sometimes showing friendly CC on enemies in spell alerts.
