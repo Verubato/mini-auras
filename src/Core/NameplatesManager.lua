@@ -356,6 +356,11 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
+	-- ignore pets
+	if not UnitIsPlayer(unitToken) then
+		return
+	end
+
 	-- Check if we already have data for this unit token
 	local existingData = nameplateAnchors[unitToken]
 
