@@ -171,25 +171,35 @@ local function ApplyKickBarIconOptions()
 end
 
 local function LayoutKickBar()
-	local x = 4
-	local anyActive = false
-
+	-- Count active icons
+	local activeCount = 0
 	for _, iconFrame in ipairs(kickBar.Icons) do
 		if iconFrame.Active then
-			iconFrame:ClearAllPoints()
-			iconFrame:SetPoint("LEFT", kickBar.Anchor, "LEFT", x, 0)
-			x = x + kickBar.Size + kickBar.Spacing
-			anyActive = true
+			activeCount = activeCount + 1
 		end
 	end
 
-	kickBar.Anchor:SetWidth(math.max(200, x))
-
-	if anyActive then
-		kickBar.Anchor:Show()
-	else
+	if activeCount == 0 then
 		kickBar.Anchor:Hide()
+		return
 	end
+
+	-- Calculate total width and starting offset for centering
+	local totalWidth = (activeCount * kickBar.Size) + ((activeCount - 1) * kickBar.Spacing)
+	local startX = -totalWidth / 2
+
+	-- Position active icons centered
+	local x = startX
+	for _, iconFrame in ipairs(kickBar.Icons) do
+		if iconFrame.Active then
+			iconFrame:ClearAllPoints()
+			iconFrame:SetPoint("LEFT", kickBar.Anchor, "CENTER", x, 0)
+			x = x + kickBar.Size + kickBar.Spacing
+		end
+	end
+
+	kickBar.Anchor:SetWidth(math.max(200, totalWidth + 8))
+	kickBar.Anchor:Show()
 end
 
 local function CreateKickIcon(texture, reverseCooldown)
@@ -318,8 +328,6 @@ local function Enable(options)
 	arenaEventsFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
 	arenaEventsFrame:SetScript("OnEvent", OnArenaPrep)
 
-	ApplyKickBarIconOptions()
-
 	local relativeTo = _G[options.RelativeTo] or UIParent
 	kickBar.Anchor:ClearAllPoints()
 	kickBar.Anchor:SetPoint(options.Point, relativeTo, options.RelativePoint, options.Offset.X, options.Offset.Y)
@@ -436,6 +444,12 @@ function M:Refresh()
 		Disable()
 		return
 	end
+
+	-- Apply icon options even if already enabled (for config changes)
+	ApplyKickBarIconOptions()
+
+	-- Update layout to reflect new sizes
+	LayoutKickBar()
 
 	Enable(options)
 end
