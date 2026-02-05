@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.10.0
+
+- Separated CC and important spell positions on nameplates.
+- Added kick timer feature.
+- Various bug fixes and performance improvements.
+
 ## 2.10.0b-10
 
 Minor nameplate bug fixes.
