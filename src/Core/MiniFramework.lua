@@ -1005,7 +1005,6 @@ function M:CreateTabs(options)
 	return controller
 end
 
----@param options DialogOptions
 function M:ShowDialog(options)
 	if not options then
 		error("ShowDialog - options must not be nil.")
@@ -1017,17 +1016,20 @@ function M:ShowDialog(options)
 
 	local dlg = GetOrCreateDialog()
 
-	if options.Width then
-		dlg:SetWidth(options.Width)
-	end
+	-- Width must be known first
+	local width = options.Width or 360
+	dlg:SetWidth(width)
 
-	if options.Height then
-		dlg:SetHeight(options.Height)
-	end
-
-	dlg.Text:SetText(options.Text)
 	dlg.Title:SetText(options.Title or "Notification")
+	dlg.Text:SetWidth(width - 40)
+	dlg.Text:SetText(options.Text)
+	dlg.Text:SetWordWrap(true)
 
+	local textHeight = dlg.Text:GetStringHeight()
+	local paddingTop = 70
+	local paddingBottom = 40
+
+	dlg:SetHeight(textHeight + paddingTop + paddingBottom)
 	dlg:ClearAllPoints()
 	dlg:SetPoint("CENTER", UIParent, "CENTER")
 	dlg:Show()

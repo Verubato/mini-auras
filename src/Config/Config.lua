@@ -354,7 +354,6 @@ local function GetAndUpgradeDb()
 		vars.Nameplates.Enemy.Important.Enabled = vars.Nameplates.EnemyEnabled
 
 		table.insert(vars.WhatsNew, " - Separated CC and important spell positions on nameplates.")
-		table.insert(vars.WhatsNew, " - Separated friendly/enemy nameplate offsets.")
 		vars.NotifiedChanges = false
 
 		-- clean up old values
@@ -364,6 +363,7 @@ local function GetAndUpgradeDb()
 
 	if vars.Version == 12 then
 		table.insert(vars.WhatsNew, " - New poor man's kick timer (don't get too excited, it's really basic).")
+		table.insert(vars.WhatsNew, " - Various bug fixes and performance improvements.")
 		vars.NotifiedChanges = false
 		vars.Version = 13
 	end
