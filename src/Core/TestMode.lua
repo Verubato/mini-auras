@@ -70,6 +70,11 @@ end
 
 local function HideTestFrames()
 	for _, testHeader in pairs(testHeaders) do
+		if testHeader.Icons then
+			for _, btn in ipairs(testHeader.Icons) do
+				LCG.ProcGlow_Stop(btn)
+			end
+		end
 		testHeader:Hide()
 	end
 
