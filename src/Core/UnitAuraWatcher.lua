@@ -63,23 +63,25 @@ local function RebuildStates(watcher)
 			local start = durationInfo and durationInfo:GetStartTime()
 			local duration = durationInfo and durationInfo:GetTotalDuration()
 
-			if capabilities:HasNewFilters() then
-				ccSpellData[#ccSpellData + 1] = {
-					IsCC = true,
-					SpellId = ccData.spellId,
-					SpellIcon = ccData.icon,
-					StartTime = start,
-					TotalDuration = duration,
-				}
-			else
-				local isCC = C_Spell.IsSpellCrowdControl(ccData.spellId)
-				ccSpellData[#ccSpellData + 1] = {
-					IsCC = isCC,
-					SpellId = ccData.spellId,
-					SpellIcon = ccData.icon,
-					StartTime = start,
-					TotalDuration = duration,
-				}
+			if start and duration then
+				if capabilities:HasNewFilters() then
+					ccSpellData[#ccSpellData + 1] = {
+						IsCC = true,
+						SpellId = ccData.spellId,
+						SpellIcon = ccData.icon,
+						StartTime = start,
+						TotalDuration = duration,
+					}
+				else
+					local isCC = C_Spell.IsSpellCrowdControl(ccData.spellId)
+					ccSpellData[#ccSpellData + 1] = {
+						IsCC = isCC,
+						SpellId = ccData.spellId,
+						SpellIcon = ccData.icon,
+						StartTime = start,
+						TotalDuration = duration,
+					}
+				end
 			end
 
 			seen[ccData.auraInstanceID] = true
@@ -92,13 +94,15 @@ local function RebuildStates(watcher)
 				local start = durationInfo and durationInfo:GetStartTime()
 				local duration = durationInfo and durationInfo:GetTotalDuration()
 
-				defensivesSpellData[#defensivesSpellData + 1] = {
-					IsDefensive = true,
-					SpellId = defensivesData.spellId,
-					SpellIcon = defensivesData.icon,
-					StartTime = start,
-					TotalDuration = duration,
-				}
+				if start and duration then
+					defensivesSpellData[#defensivesSpellData + 1] = {
+						IsDefensive = true,
+						SpellId = defensivesData.spellId,
+						SpellIcon = defensivesData.icon,
+						StartTime = start,
+						TotalDuration = duration,
+					}
+				end
 
 				seen[defensivesData.auraInstanceID] = true
 			end
@@ -111,13 +115,15 @@ local function RebuildStates(watcher)
 			local start = durationInfo and durationInfo:GetStartTime()
 			local duration = durationInfo and durationInfo:GetTotalDuration()
 
-			importantSpellData[#importantSpellData + 1] = {
-				IsImportant = isImportant,
-				SpellId = importantHelpfulData.spellId,
-				SpellIcon = importantHelpfulData.icon,
-				StartTime = start,
-				TotalDuration = duration,
-			}
+			if start and duration then
+				importantSpellData[#importantSpellData + 1] = {
+					IsImportant = isImportant,
+					SpellId = importantHelpfulData.spellId,
+					SpellIcon = importantHelpfulData.icon,
+					StartTime = start,
+					TotalDuration = duration,
+				}
+			end
 
 			seen[importantHelpfulData.auraInstanceID] = true
 		end
@@ -130,13 +136,15 @@ local function RebuildStates(watcher)
 			local start = durationInfo and durationInfo:GetStartTime()
 			local duration = durationInfo and durationInfo:GetTotalDuration()
 
-			importantSpellData[#importantSpellData + 1] = {
-				IsImportant = isImportant,
-				SpellId = importantHarmfulData.spellId,
-				SpellIcon = importantHarmfulData.icon,
-				StartTime = start,
-				TotalDuration = duration,
-			}
+			if start and duration then
+				importantSpellData[#importantSpellData + 1] = {
+					IsImportant = isImportant,
+					SpellId = importantHarmfulData.spellId,
+					SpellIcon = importantHarmfulData.icon,
+					StartTime = start,
+					TotalDuration = duration,
+				}
+			end
 
 			seen[importantHarmfulData.auraInstanceID] = true
 		end
