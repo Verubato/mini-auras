@@ -125,11 +125,17 @@ local function HideKickTimer()
 	local container = kickTimerManager:GetContainer()
 	kickTimerManager:ClearIcons()
 	container:Hide()
+
+	container:SetMovable(false)
+	container:EnableMouse(false)
 end
 
 local function ShowKickTimer()
 	local container = kickTimerManager:GetContainer()
 	container:Show()
+
+	container:SetMovable(true)
+	container:EnableMouse(true)
 
 	kickTimerManager:ClearIcons()
 	kickTimerManager:Kicked()

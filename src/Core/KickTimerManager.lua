@@ -129,8 +129,8 @@ local function EnsureKickBar()
 	frame:SetSize(200, kickBar.Size)
 	frame:SetFrameStrata("HIGH")
 	frame:SetClampedToScreen(true)
-	frame:SetMovable(true)
-	frame:EnableMouse(true)
+	frame:SetMovable(false)
+	frame:EnableMouse(false)
 	frame:SetDontSavePosition(true)
 	frame:SetIgnoreParentScale(true)
 	frame:RegisterForDrag("LeftButton")
@@ -172,16 +172,24 @@ end
 
 local function LayoutKickBar()
 	local x = 4
+	local anyActive = false
 
 	for _, iconFrame in ipairs(kickBar.Icons) do
 		if iconFrame.Active then
 			iconFrame:ClearAllPoints()
 			iconFrame:SetPoint("LEFT", kickBar.Anchor, "LEFT", x, 0)
 			x = x + kickBar.Size + kickBar.Spacing
+			anyActive = true
 		end
 	end
 
 	kickBar.Anchor:SetWidth(math.max(200, x))
+
+	if anyActive then
+		kickBar.Anchor:Show()
+	else
+		kickBar.Anchor:Hide()
+	end
 end
 
 local function CreateKickIcon(texture, reverseCooldown)
@@ -241,7 +249,7 @@ local function OnUnitEvent(unit, _, event, ...)
 end
 
 local function UpdateMinKickCooldownFromArenaSpecs()
-	local minCd = 12
+	local minCd = 15
 	local found = false
 
 	for i = 1, 5 do
@@ -258,7 +266,7 @@ local function UpdateMinKickCooldownFromArenaSpecs()
 		end
 	end
 
-	minKickCooldown = found and minCd or 12
+	minKickCooldown = found and minCd or 15
 end
 
 local function OnArenaPrep()
@@ -318,6 +326,7 @@ local function Enable(options)
 	kickBar.Anchor:Show()
 
 	enabled = true
+	print("Kick timer is enabled")
 end
 
 ---@param options KickTimerOptions
@@ -362,6 +371,8 @@ function M:Kicked()
 	local duration = minKickCooldown
 	local frame = GetOrCreateIcon()
 	local key = math.random()
+
+	print("Kicked")
 
 	frame.Active = true
 	frame.Key = key
@@ -425,6 +436,7 @@ function M:Refresh()
 	local options = db.KickTimer
 
 	if not M:IsEnabledForPlayer(options) then
+		print("no enabled for player")
 		Disable()
 		return
 	end
