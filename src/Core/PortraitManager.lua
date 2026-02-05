@@ -64,7 +64,8 @@ local function CreateContainer(unitFrame, portrait)
 	-- Position the container over the portrait with inset
 	container.Frame:SetPoint("TOPLEFT", portrait, "TOPLEFT", 2, -2)
 	container.Frame:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", -2, 2)
-	container.Frame:SetFrameLevel((unitFrame:GetFrameLevel() or 0) + 2)
+	-- the icon slot container starts at +2
+	container.Frame:SetFrameLevel((unitFrame:GetFrameLevel() or 0) - 1)
 
 	-- Set initial size to match portrait
 	local width = portrait:GetWidth() - 4
