@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.10.0b-5
+
+Minor performance improvement.
+
 ## 2.10.0b-4
 
 - Fixed kick timer not showing.
