@@ -88,10 +88,10 @@ local specInfoBySpecId = {
 	-- Monk — Spear Hand Strike
 	[268] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(116705) }, -- Brewmaster
 	[269] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(116705) }, -- Windwalker
-	[270] = { KickCd = 15, IsCaster = false, IsHealer = true, KickIcon = KI(116705) }, -- Mistweaver
+	[270] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = KI(116705) }, -- Mistweaver
 
 	-- Paladin — Rebuke
-	[65] = { KickCd = 15, IsCaster = false, IsHealer = true, KickIcon = KI(96231) }, -- Holy
+	[65] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = KI(96231) }, -- Holy
 	[66] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(96231) }, -- Protection
 	[70] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(96231) }, -- Retribution
 
@@ -99,7 +99,7 @@ local specInfoBySpecId = {
 	[102] = { KickCd = 60, IsCaster = true, IsHealer = false, KickIcon = KI(78675) }, -- Balance (Solar Beam)
 	[103] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(106839) }, -- Feral (Skull Bash)
 	[104] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(106839) }, -- Guardian (Skull Bash)
-	[105] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = nil }, -- Restoration (no baseline interrupt)
+	[105] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = nil }, -- Restoration
 
 	-- Hunter — Counter Shot
 	[253] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(147362) }, -- Beast Mastery
