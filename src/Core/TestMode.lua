@@ -110,7 +110,6 @@ end
 local function HideAlertsTestMode()
 	alertsManager:ClearAll()
 	alertsManager:Resume()
-	alertsManager:RefreshData()
 
 	local alertAnchor = alertsManager:GetAnchor()
 	if not alertAnchor then

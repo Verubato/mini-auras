@@ -35,6 +35,10 @@ local function OnAuraDataChanged()
 
 		slotsNeeded = slotsNeeded + needed
 
+		if slot > anchor.Count then
+			break
+		end
+
 		if #defensivesData > 0 then
 			for _, data in ipairs(defensivesData) do
 				anchor:ClearSlot(slot)
@@ -54,8 +58,6 @@ local function OnAuraDataChanged()
 				anchor:FinalizeSlot(slot, 1)
 				slot = slot + 1
 			end
-		else
-			anchor:SetSlotUnused(slot)
 		end
 
 		if #importantData > 0 then
@@ -77,9 +79,7 @@ local function OnAuraDataChanged()
 			end
 
 			anchor:FinalizeSlot(slot, used)
-		else
-			-- No spell data, mark slot as unused
-			anchor:SetSlotUnused(slot)
+			slot = slot + 1
 		end
 	end
 
@@ -190,6 +190,7 @@ function M:Resume()
 
 	for _, watcher in ipairs(watchers) do
 		watcher:Resume()
+		watcher:ForceFullUpdate()
 	end
 end
 
@@ -199,8 +200,4 @@ function M:ClearAll()
 	end
 
 	anchor:ResetAllSlots()
-end
-
-function M:RefreshData()
-	OnAuraDataChanged()
 end
