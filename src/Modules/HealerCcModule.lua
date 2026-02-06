@@ -89,6 +89,7 @@ local function DisableAll()
 end
 
 local function RefreshHeaders()
+	-- TODO: probably use icon container instead of cc header to allow us in combat refreshing
 	local options = db.Healer
 	local toDiscard = {}
 
@@ -140,9 +141,7 @@ end
 
 local function OnEvent(_, event)
 	if event == "GROUP_ROSTER_UPDATE" then
-		scheduler:RunWhenCombatEnds(function()
-			M:Refresh()
-		end)
+		M:Refresh()
 	end
 end
 
@@ -175,6 +174,13 @@ function M:Hide()
 end
 
 function M:Refresh()
+	if InCombatLockdown() then
+		scheduler:RunWhenCombatEnds(function()
+			M:Refresh()
+		end, "HealerCcModuleRefresh")
+		return
+	end
+
 	local options = db.Healer
 
 	healerAnchor:ClearAllPoints()

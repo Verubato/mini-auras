@@ -63,9 +63,7 @@ end
 
 local function OnEvent(_, event)
 	if event == "GROUP_ROSTER_UPDATE" then
-		scheduler:RunWhenCombatEnds(function()
-			M:Refresh()
-		end)
+		M:Refresh()
 	end
 end
 
@@ -165,6 +163,13 @@ function M:HideHeaders()
 end
 
 function M:Refresh()
+	if InCombatLockdown() then
+		scheduler:RunWhenCombatEnds(function()
+			M:Refresh()
+		end, "CcModuleRefresh")
+		return
+	end
+
 	local options = M:RefreshInstanceOptions()
 
 	if not options then
