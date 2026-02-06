@@ -154,7 +154,7 @@ function M:EnsureHeaders()
 	local anchors = frames:GetAll(true)
 
 	for _, anchor in ipairs(anchors) do
-		self:EnsureHeader(anchor)
+		M:EnsureHeader(anchor)
 	end
 end
 
@@ -180,7 +180,7 @@ function M:Refresh()
 			auras:Update(header, unit, options.Icons)
 		end
 
-		self:AnchorHeader(header, anchor, options)
+		M:AnchorHeader(header, anchor, options)
 		frames:ShowHideFrame(header, anchor, false, options)
 	end
 end

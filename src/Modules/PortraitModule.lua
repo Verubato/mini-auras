@@ -247,28 +247,30 @@ local function Attach(unit, events)
 	return container
 end
 
+local function EnableDisable()
+	local options = db.Portrait
+
+	if options.Enabled then
+		for _, watcher in ipairs(watchers) do
+			watcher:Enable()
+		end
+	else
+		for _, watcher in ipairs(watchers) do
+			watcher:Disable()
+		end
+	end
+end
+
 function M:Pause()
 	paused = true
-
-	for _, watcher in pairs(watchers) do
-		watcher:Pause()
-	end
 end
 
 function M:Resume()
 	paused = false
-
-	for _, watcher in pairs(watchers) do
-		watcher:Resume()
-	end
 end
 
 function M:Refresh()
-	if not db.Portrait.Enabled then
-		M:Pause()
-	else
-		M:Resume()
-	end
+	EnableDisable()
 end
 
 function M:Init()

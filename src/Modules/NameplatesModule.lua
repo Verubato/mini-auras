@@ -473,8 +473,6 @@ function M:Refresh()
 		return
 	end
 
-	RefreshNameplates()
-
 	for _, data in pairs(nameplateAnchors) do
 		if data.Nameplate and data.UnitToken then
 			local ccAnchorPoint, ccRelativeToPoint = GetCcAnchorPoint(data.UnitToken)
@@ -526,8 +524,8 @@ function M:Resume()
 	paused = false
 
 	-- Refresh all nameplates
-	for unitToken, _ in pairs(nameplateAnchors) do
-		OnAuraDataChanged(unitToken)
+	for _, watcher in pairs(watchers) do
+		watcher:ForceFullUpdate()
 	end
 end
 

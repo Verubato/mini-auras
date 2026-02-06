@@ -158,10 +158,6 @@ end
 
 local function OnEvent(watcher, event, ...)
 	local state = watcher.State
-	if state.Paused then
-		return
-	end
-
 	if event == "UNIT_AURA" then
 		local unit, updateInfo = ...
 		if unit and unit ~= state.Unit then
@@ -207,7 +203,8 @@ function M:New(unit, events, excludeDefensivesFromImportant)
 		---@class WatcherState
 		State = {
 			Unit = unit,
-			Paused = false,
+			Events = events,
+			Enabled = false,
 			Callbacks = {},
 			CcAuraState = {},
 			ImportantAuraState = {},
@@ -223,14 +220,40 @@ function M:New(unit, events, excludeDefensivesFromImportant)
 			watcherSelf.State.Callbacks[#watcherSelf.State.Callbacks + 1] = callback
 		end,
 
-		Pause = function(watcherSelf)
-			watcherSelf.State.Paused = true
+		IsEnabled = function(watcherSelf)
+			return watcherSelf.State.Enabled
 		end,
-		Resume = function(watcherSelf)
-			watcherSelf.State.Paused = false
+		Enable = function(watcherSelf)
+			if watcherSelf.State.Enabled then
+				return
+			end
+
+			local frame = watcherSelf.Frame
+			frame:SetScript("OnEvent", function(_, event, ...)
+				OnEvent(watcherSelf, event, ...)
+			end)
+			frame:RegisterUnitEvent("UNIT_AURA", watcherSelf.State.Unit)
+
+			if watcherSelf.Events then
+				for _, event in ipairs(watcherSelf.Events) do
+					frame:RegisterEvent(event)
+				end
+			end
 		end,
-		IsPaused = function(watcherSelf)
-			return watcherSelf.State.Paused
+
+		Disable = function(watcherSelf)
+			if not watcherSelf.State.Enabled then
+				return
+			end
+
+			watcherSelf.Frame:UnregisterEvent("UNIT_AURA")
+			watcherSelf.Frame:SetScript("OnEvent", nil)
+
+			if watcherSelf.Events then
+				for _, event in ipairs(watcherSelf.Events) do
+					frame:UnregisterEvent(event)
+				end
+			end
 		end,
 
 		ClearState = function(watcherSelf, notify)
@@ -271,22 +294,9 @@ function M:New(unit, events, excludeDefensivesFromImportant)
 		end,
 	}
 
-	local frame = CreateFrame("Frame")
-	watcher.Frame = frame
-
-	frame:RegisterUnitEvent("UNIT_AURA", unit)
-
-	if events then
-		for _, event in ipairs(events) do
-			frame:RegisterEvent(event)
-		end
-	end
-
-	frame:SetScript("OnEvent", function(_, event, ...)
-		OnEvent(watcher, event, ...)
-	end)
-
-	-- Prime once we get initial state
+	watcher.Frame = CreateFrame("Frame")
+	watcher:Enable()
+	-- Prime once to get initial state
 	watcher:ForceFullUpdate()
 
 	return watcher
@@ -298,17 +308,17 @@ end
 ---@field GetImportantState fun(self: Watcher): AuraInfo[]
 ---@field GetDefensiveState fun(self: Watcher): AuraInfo[]
 ---@field RegisterCallback fun(self: Watcher, callback: fun(self: Watcher))
----@field IsPaused fun(self: Watcher): boolean
----@field Pause fun(self: Watcher)
----@field Resume fun(self: Watcher)
+---@field IsEnabled fun(self: Watcher): boolean
+---@field Enable fun(self: Watcher)
+---@field Disable fun(self: Watcher)
 ---@field ClearState fun(self: Watcher, notify: boolean?)
 ---@field ForceFullUpdate fun(self: Watcher)
 ---@field Dispose fun(self: Watcher)
 
 ---@class WatcherState
 ---@field Unit string
+---@field EventsFrame table
 ---@field Filter string
----@field Paused boolean
 ---@field Callbacks fun()[]
 ---@field CcAuras AuraInfo[]
 ---@field ImportantAuras AuraInfo[]

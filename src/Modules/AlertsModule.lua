@@ -104,6 +104,20 @@ local function OnMatchStateChanged()
 	end
 end
 
+local function EnableDisable()
+	local options = db.Alerts
+
+	if options.Enabled then
+		for _, watcher in ipairs(watchers) do
+			watcher:Enable()
+		end
+	else
+		for _, watcher in ipairs(watchers) do
+			watcher:Disable()
+		end
+	end
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 
@@ -156,6 +170,8 @@ function M:Init()
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
 	eventsFrame:SetScript("OnEvent", OnMatchStateChanged)
+
+	EnableDisable()
 end
 
 function M:GetAnchor()
@@ -175,23 +191,16 @@ function M:Refresh()
 	)
 
 	anchor:SetIconSize(db.Alerts.Icons.Size)
+
+	EnableDisable()
 end
 
 function M:Pause()
 	paused = true
-
-	for _, watcher in ipairs(watchers) do
-		watcher:Pause()
-	end
 end
 
 function M:Resume()
 	paused = false
-
-	for _, watcher in ipairs(watchers) do
-		watcher:Resume()
-		watcher:ForceFullUpdate()
-	end
 end
 
 function M:ClearAll()

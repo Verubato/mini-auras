@@ -75,7 +75,7 @@ local function DisableAll()
 		local item = activePool[unit]
 		if item then
 			item.Header:Hide()
-			item.Watcher:Pause()
+			item.Watcher:Disable()
 			discardPool[unit] = item
 			activePool[unit] = nil
 		end
@@ -101,7 +101,7 @@ local function RefreshHeaders()
 	for _, unit in ipairs(toDiscard) do
 		local item = activePool[unit]
 		item.Header:Hide()
-		item.Watcher:Pause()
+		item.Watcher:Disable()
 		discardPool[unit] = item
 		activePool[unit] = nil
 	end
@@ -116,7 +116,7 @@ local function RefreshHeaders()
 			item = discardPool[healer]
 
 			if item then
-				item.Watcher:Resume()
+				item.Watcher:Enable()
 				item.Header:Show()
 
 				-- move to the active pool
