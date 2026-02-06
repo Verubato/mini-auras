@@ -55,7 +55,6 @@ local function OnAuraDataChanged()
 				slot = slot + 1
 			end
 		else
-			anchor:ClearSlot(slot)
 			anchor:SetSlotUnused(slot)
 		end
 
@@ -80,7 +79,6 @@ local function OnAuraDataChanged()
 			anchor:FinalizeSlot(slot, used)
 		else
 			-- No spell data, mark slot as unused
-			anchor:ClearSlot(slot)
 			anchor:SetSlotUnused(slot)
 		end
 	end
@@ -90,7 +88,6 @@ local function OnAuraDataChanged()
 	else
 		-- clear any slots above what we used
 		for i = slotsNeeded + 1, anchor.Count do
-			anchor:ClearSlot(i)
 			anchor:SetSlotUnused(i)
 		end
 	end

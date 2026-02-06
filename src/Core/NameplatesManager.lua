@@ -161,13 +161,11 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 	-- Clear only slots we'll potentially use
 	local slotsNeeded = hasNewFilters and math.min(ccDataCount, container.Count) or 1
 	for i = 1, slotsNeeded do
-		container:ClearSlot(i)
 		container:SetSlotUnused(i)
 	end
 
 	-- Clear remaining slots if they were used before
 	for i = slotsNeeded + 1, container.Count do
-		container:ClearSlot(i)
 		container:SetSlotUnused(i)
 	end
 
