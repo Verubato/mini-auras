@@ -494,6 +494,12 @@ function M:UpdateTestHeader(frame, options)
 		btn:Show()
 
 		if options.Glow then
+			-- sometimes calling stop fails with some very weird LCG release error
+			-- but we need to clear any existing glow and re-apply to fix an issue with icons not always glowing
+			pcall(function()
+				LCG.ProcGlow_Stop(btn)
+			end)
+
 			local color = options.ColorByDispelType
 				and {
 					spell.DispelColor.r,
@@ -503,7 +509,9 @@ function M:UpdateTestHeader(frame, options)
 				}
 			LCG.ProcGlow_Start(btn, { startAnim = false, color = color })
 		else
-			LCG.ProcGlow_Stop(btn)
+			pcall(function()
+				LCG.ProcGlow_Stop(btn)
+			end)
 		end
 	end
 
