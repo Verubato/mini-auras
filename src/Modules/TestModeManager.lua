@@ -141,9 +141,12 @@ local function ShowKickTimer()
 	container:EnableMouse(true)
 
 	kickTimerModule:ClearIcons()
-	kickTimerModule:Kicked()
-	kickTimerModule:Kicked()
-	kickTimerModule:Kicked()
+	-- mage
+	kickTimerModule:KickedBySpec(62)
+	-- hunter
+	kickTimerModule:KickedBySpec(254)
+	-- rogue
+	kickTimerModule:KickedBySpec(259)
 end
 
 local function ShowAlertsTestMode()

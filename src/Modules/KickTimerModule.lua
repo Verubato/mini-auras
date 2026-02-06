@@ -403,6 +403,25 @@ local function Enable(options)
 	enabled = true
 end
 
+local function CreateKickEntry(duration, icon)
+	local frame = GetOrCreateIcon()
+	frame.Icon:SetTexture(icon)
+	frame.Active = true
+	frame.Key = key
+	frame:Show()
+	frame.Cooldown:SetCooldown(GetTime(), duration)
+
+	LayoutKickBar()
+
+	C_Timer.After(duration, function()
+		if frame and frame.Active and frame.Key == key then
+			frame.Active = false
+			frame:Hide()
+			LayoutKickBar()
+		end
+	end)
+end
+
 ---@param options KickTimerOptions
 function M:IsEnabledForPlayer(options)
 	if not options then
@@ -439,6 +458,24 @@ function M:IsEnabledForPlayer(options)
 	return false
 end
 
+---@param specId number?
+function M:KickedBySpec(specId)
+	if not specId then
+		return
+	end
+
+	local specInfo = specInfoBySpecId[specId]
+
+	if not specInfo or not specInfo.KickCd or not specInfo.KickIcon then
+		return
+	end
+
+	local duration = specInfo.KickCd
+	local tex = specInfo.KickIcon
+
+	CreateKickEntry(duration, tex)
+end
+
 ---@param kickedBy string?
 function M:Kicked(kickedBy)
 	local duration = minKickCooldown
@@ -446,30 +483,13 @@ function M:Kicked(kickedBy)
 		duration = kickDurationsByUnit[kickedBy]
 	end
 
-	local frame = GetOrCreateIcon()
-	local key = math.random()
 	local tex = kickIcon
 
 	if kickedBy and kickIconsByUnit[kickedBy] then
 		tex = kickIconsByUnit[kickedBy]
 	end
 
-	frame.Icon:SetTexture(tex)
-
-	frame.Active = true
-	frame.Key = key
-	frame:Show()
-	frame.Cooldown:SetCooldown(GetTime(), duration)
-
-	LayoutKickBar()
-
-	C_Timer.After(duration, function()
-		if frame and frame.Active and frame.Key == key then
-			frame.Active = false
-			frame:Hide()
-			LayoutKickBar()
-		end
-	end)
+	CreateKickEntry(duration, tex)
 end
 
 function M:ClearIcons()
