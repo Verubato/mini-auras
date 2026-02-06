@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Framework
+local mini = addon.Core.Framework
 local dropdownWidth = 200
 local growOptions = {
 	"LEFT",

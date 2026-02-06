@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Framework
+local mini = addon.Core.Framework
 local verticalSpacing = mini.VerticalSpacing
 local columns = 4
 local columnWidth = mini:ColumnWidth(columns, 0, 0)

@@ -1,6 +1,6 @@
 ---@type string, Addon
 local addonName, addon = ...
-local mini = addon.Framework
+local mini = addon.Core.Framework
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 ---@type Db

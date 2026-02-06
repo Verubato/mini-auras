@@ -1,54 +1,20 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Framework
+local mini = addon.Core.Framework
 local scheduler = addon.Utils.Scheduler
-local headerManager = addon.HeaderManager
-local testModeManager = addon.TestModeManager
-local healerManager = addon.HealerCcManager
-local portraitManager = addon.PortraitManager
-local importantSpellsManager = addon.ImportantSpellsManager
-local nameplatesManager = addon.NameplatesManager
-local kickTimerManager = addon.KickTimerManager
-local frames = addon.FramesManager
+local frames = addon.Core.Frames
+local config = addon.Config
+local testModeManager = addon.Modules.TestModeManager
+local modules = {
+	addon.Modules.CcModule,
+	addon.Modules.HealerCcModule,
+	addon.Modules.PortraitModule,
+	addon.Modules.AlertsModule,
+	addon.Modules.NameplatesModule,
+	addon.Modules.KickTimerModule,
+}
 local eventsFrame
 local db
-
-local function OnCufUpdateVisible(frame)
-	if not frame or not frames:IsFriendlyCuf(frame) then
-		return
-	end
-
-	local headers = headerManager:GetHeaders()
-	local header = headers[frame]
-
-	if not header then
-		return
-	end
-
-	scheduler:RunWhenCombatEnds(function()
-		local instanceOptions = headerManager:GetCurrentInstanceOptions()
-
-		if not instanceOptions then
-			return
-		end
-
-		frames:ShowHideFrame(header, frame, false, instanceOptions)
-	end)
-end
-
-local function OnCufSetUnit(frame, unit)
-	if not frame or not frames:IsFriendlyCuf(frame) then
-		return
-	end
-
-	if not unit then
-		return
-	end
-
-	scheduler:RunWhenCombatEnds(function()
-		headerManager:EnsureHeader(frame, unit)
-	end)
-end
 
 local function NotifyChanges()
 	if db.NotifiedChanges then
@@ -100,10 +66,6 @@ local function NotifyChanges()
 	db.WhatsNew = {}
 end
 
-local function OnFrameSortSorted()
-	addon:Refresh()
-end
-
 local function OnEvent(_, event)
 	if event == "PLAYER_REGEN_DISABLED" then
 		if testModeManager:IsEnabled() then
@@ -116,49 +78,24 @@ local function OnEvent(_, event)
 		NotifyChanges()
 		addon:Refresh()
 	end
-
-	if event == "GROUP_ROSTER_UPDATE" then
-		-- no need to refresh the entire addon
-		scheduler:RunWhenCombatEnds(function()
-			headerManager:Refresh()
-			healerManager:Refresh()
-		end)
-	end
 end
 
 local function OnAddonLoaded()
-	addon.Config:Init()
-	addon.Utils.Scheduler:Init()
-	addon.FramesManager:Init()
-	addon.ImportantSpellsManager:Init()
-
-	headerManager:Init()
-	healerManager:Init()
+	config:Init()
+	scheduler:Init()
+	frames:Init()
 	testModeManager:Init()
-	portraitManager:Init()
-	nameplatesManager:Init()
-	kickTimerManager:Init()
 
-	db = mini:GetSavedVars()
+	for _, module in ipairs(modules) do
+		module:Init()
+	end
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
-	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	eventsFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
-	if CompactUnitFrame_SetUnit then
-		hooksecurefunc("CompactUnitFrame_SetUnit", OnCufSetUnit)
-	end
-
-	if CompactUnitFrame_UpdateVisible then
-		hooksecurefunc("CompactUnitFrame_UpdateVisible", OnCufUpdateVisible)
-	end
-
-	local fs = FrameSortApi and FrameSortApi.v3
-	if fs and fs.Sorting and fs.Sorting.RegisterPostSortCallback then
-		fs.Sorting:RegisterPostSortCallback(OnFrameSortSorted)
-	end
+	db = mini:GetSavedVars()
 end
 
 function addon:Refresh()
@@ -169,12 +106,9 @@ function addon:Refresh()
 		return
 	end
 
-	headerManager:Refresh()
-	healerManager:Refresh()
-	importantSpellsManager:Refresh()
-	portraitManager:Refresh()
-	nameplatesManager:Refresh()
-	kickTimerManager:Refresh()
+	for _, module in ipairs(modules) do
+		module:Refresh()
+	end
 
 	if testModeManager:IsEnabled() then
 		testModeManager:Show()
@@ -210,28 +144,39 @@ end
 mini:WaitForAddonLoad(OnAddonLoaded)
 
 ---@class Addon
----@field Framework MiniFramework
 ---@field Capabilities Capabilities
----@field Config Config
 ---@field Utils Utils
----@field CcHeader CcHeader
----@field FramesManager FramesManager
----@field UnitAuraWatcher UnitAuraWatcher
----@field TestModeManager TestModeManager
----@field HeaderManager HeaderManager
----@field PortraitManager PortraitManager
----@field HealerCcManager HealerCcManager
----@field NameplatesManager NameplatesManager
----@field IconSlotContainer IconSlotContainer
----@field KickTimerManager KickTimerManager
----@field ImportantSpellsManager ImportantSpellsManager
+---@field Core Core
+---@field Config Config
+---@field Modules Modules
 ---@field Refresh fun(self: table)
 ---@field ToggleTest fun(self: table, options: InstanceOptions)
 ---@field TestOptions fun(self: table, options: InstanceOptions)
----@field TestHealer fun(self: table)
 
 ---@class Utils
 ---@field CcUtil CcUtil
 ---@field Scheduler SchedulerUtil
 ---@field Units UnitUtil
 ---@field Array ArrayUtil
+
+---@class Core
+---@field Framework MiniFramework
+---@field Frames Frames
+---@field UnitAuraWatcher UnitAuraWatcher
+---@field IconSlotContainer IconSlotContainer
+---@field CcHeader CcHeader
+
+---@class Modules
+---@field PortraitModule PortraitModule
+---@field HealerCcModule HealerCcModule
+---@field NameplatesModule NameplatesModule
+---@field KickTimerModule KickTimerModule
+---@field AlertsModule AlertsModule
+---@field CcModule CcModule
+---@field TestModeManager TestModeManager
+
+---@class IModule
+---@field Init fun(self: IModule)
+---@field Refresh fun(self: IModule)
+---@field Pause fun(self: IModule)
+---@field Resume fun(self: IModule)

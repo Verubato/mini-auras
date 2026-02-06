@@ -1,15 +1,15 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Framework
+local mini = addon.Core.Framework
 local array = addon.Utils.Array
 local units = addon.Utils.Units
 local maxParty = MAX_PARTY_MEMBERS or 4
 local maxRaid = MAX_RAID_MEMBERS or 40
 ---@type Db
 local db
----@class FramesManager
+---@class Frames
 local M = {}
-addon.FramesManager = M
+addon.Core.Frames = M
 
 ---Retrieves a list of Blizzard frames.
 ---@param visibleOnly boolean

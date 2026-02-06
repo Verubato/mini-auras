@@ -1,9 +1,9 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Framework
+local mini = addon.Core.Framework
 local array = addon.Utils.Array
-local unitWatcher = addon.UnitAuraWatcher
-local iconSlotContainer = addon.IconSlotContainer
+local unitWatcher = addon.Core.UnitAuraWatcher
+local iconSlotContainer = addon.Core.IconSlotContainer
 local paused = false
 local containers = {}
 ---@type { string: Watcher }
@@ -11,9 +11,9 @@ local watchers = {}
 ---@type Db
 local db
 
----@class PortraitManager
+---@class PortraitModule : IModule
 local M = {}
-addon.PortraitManager = M
+addon.Modules.PortraitModule = M
 
 local function AddMask(tex, mask)
 	tex:AddMaskTexture(mask)

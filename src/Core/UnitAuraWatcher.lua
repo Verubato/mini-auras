@@ -6,7 +6,7 @@ local ccFilter = capabilities:HasNewFilters() and "HARMFUL|CROWD_CONTROL" or "HA
 
 ---@class UnitAuraWatcher
 local M = {}
-addon.UnitAuraWatcher = M
+addon.Core.UnitAuraWatcher = M
 
 local function NotifyCallbacks(watcher)
 	local callbacks = watcher.State.Callbacks

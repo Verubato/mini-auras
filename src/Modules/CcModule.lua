@@ -1,18 +1,19 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Framework
-local frames = addon.FramesManager
-local auras = addon.CcHeader
----@type Db
+local mini = addon.Core.Framework
+local scheduler = addon.Utils.Scheduler
+local frames = addon.Core.Frames
+local eventsFrame
 local db
+local auras = addon.Core.CcHeader
 ---@type InstanceOptions|nil
 local currentInstanceOptions
 ---@type table<table, table>
 local headers = {}
-
----@class HeaderManager
+---@class CcModule : IModule
 local M = {}
-addon.HeaderManager = M
+
+addon.Modules.CcModule = M
 
 local function GetInstanceOptions()
 	local inInstance, instanceType = IsInInstance()
@@ -20,11 +21,52 @@ local function GetInstanceOptions()
 	return isBgOrRaid and db.Raid or db.Default
 end
 
-function M:Init()
-	db = mini:GetSavedVars()
+local function OnCufUpdateVisible(frame)
+	if not frame or not frames:IsFriendlyCuf(frame) then
+		return
+	end
 
-	M:RefreshInstanceOptions()
-	M:EnsureHeaders()
+	local header = headers[frame]
+
+	if not header then
+		return
+	end
+
+	scheduler:RunWhenCombatEnds(function()
+		local instanceOptions = M:GetCurrentInstanceOptions()
+
+		if not instanceOptions then
+			return
+		end
+
+		frames:ShowHideFrame(header, frame, false, instanceOptions)
+	end)
+end
+
+local function OnCufSetUnit(frame, unit)
+	if not frame or not frames:IsFriendlyCuf(frame) then
+		return
+	end
+
+	if not unit then
+		return
+	end
+
+	scheduler:RunWhenCombatEnds(function()
+		M:EnsureHeader(frame, unit)
+	end)
+end
+
+local function OnFrameSortSorted()
+	M:Refresh()
+end
+
+local function OnEvent(_, event)
+	if event == "GROUP_ROSTER_UPDATE" then
+		scheduler:RunWhenCombatEnds(function()
+			M:Refresh()
+		end)
+	end
 end
 
 function M:GetHeaders()
@@ -116,6 +158,12 @@ function M:EnsureHeaders()
 	end
 end
 
+function M:HideHeaders()
+	for _, header in pairs(headers) do
+		header:Hide()
+	end
+end
+
 function M:Refresh()
 	local options = M:RefreshInstanceOptions()
 
@@ -137,8 +185,32 @@ function M:Refresh()
 	end
 end
 
-function M:HideHeaders()
-	for _, header in pairs(headers) do
-		header:Hide()
+function M:Pause()
+	-- this module doesn't support pausing
+end
+
+function M:Resume() end
+
+function M:Init()
+	db = mini:GetSavedVars()
+
+	eventsFrame = CreateFrame("Frame")
+	eventsFrame:SetScript("OnEvent", OnEvent)
+	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+
+	if CompactUnitFrame_SetUnit then
+		hooksecurefunc("CompactUnitFrame_SetUnit", OnCufSetUnit)
 	end
+
+	if CompactUnitFrame_UpdateVisible then
+		hooksecurefunc("CompactUnitFrame_UpdateVisible", OnCufUpdateVisible)
+	end
+
+	local fs = FrameSortApi and FrameSortApi.v3
+	if fs and fs.Sorting and fs.Sorting.RegisterPostSortCallback then
+		fs.Sorting:RegisterPostSortCallback(OnFrameSortSorted)
+	end
+
+	M:RefreshInstanceOptions()
+	M:EnsureHeaders()
 end

@@ -1,9 +1,9 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Framework
+local mini = addon.Core.Framework
 local units = addon.Utils.Units
-local unitWatcher = addon.UnitAuraWatcher
-local iconSlotContainer = addon.IconSlotContainer
+local unitWatcher = addon.Core.UnitAuraWatcher
+local iconSlotContainer = addon.Core.IconSlotContainer
 local capabilities = addon.Capabilities
 local paused = false
 ---@type Db
@@ -19,9 +19,9 @@ local watchers = {}
 ---@field ImportantContainer IconSlotContainer?
 ---@field UnitToken string
 
----@class NameplatesManager
+---@class NameplatesModule : IModule
 local M = {}
-addon.NameplatesManager = M
+addon.Modules.NameplatesModule = M
 
 local function GetCcOptions(unitToken)
 	local config = units:IsFriend(unitToken) and db.Nameplates.Friendly or db.Nameplates.Enemy

@@ -17,7 +17,7 @@ local dispelColorCurve
 
 ---@class CcHeader
 local M = {}
-addon.CcHeader = M
+addon.Core.CcHeader = M
 
 local function NotifyCallbacks(header)
 	local callbacks = header.Callbacks

@@ -1,8 +1,9 @@
 ---@type string, Addon
 local addonName, addon = ...
-local mini = addon.Framework
-local auras = addon.CcHeader
-local unitWatcher = addon.UnitAuraWatcher
+local mini = addon.Core.Framework
+local auras = addon.Core.CcHeader
+local scheduler = addon.Utils.Scheduler
+local unitWatcher = addon.Core.UnitAuraWatcher
 local units = addon.Utils.Units
 local ccUtil = addon.Utils.CcUtil
 local paused = false
@@ -15,16 +16,16 @@ local healerAnchor
 local activePool = {}
 ---@type table<string, HealerWatchEntry>
 local discardPool = {}
-
 local lastCcdAlpha
+local eventsFrame
 
 ---@class HealerWatchEntry
 ---@field Watcher Watcher
 ---@field Header CcHeader
 
----@class HealerCcManager
+---@class HealerCcModule : IModule
 local M = {}
-addon.HealerCcManager = M
+addon.Modules.HealerCcModule = M
 
 local function OnHealerCcChanged()
 	if paused then
@@ -137,50 +138,40 @@ local function RefreshHeaders()
 	end
 end
 
+local function OnEvent(_, event)
+	if event == "GROUP_ROSTER_UPDATE" then
+		scheduler:RunWhenCombatEnds(function()
+			M:Refresh()
+		end)
+	end
+end
+
 function M:PlaySound()
 	PlaySoundFile(soundFile, db.Healer.Sound.Channel or "Master")
 end
 
-function M:Init()
-	db = mini:GetSavedVars()
-
-	local options = db.Healer
-
-	healerAnchor = CreateFrame("Frame", addonName .. "HealerContainer")
-	healerAnchor:EnableMouse(true)
-	healerAnchor:SetMovable(true)
-	healerAnchor:RegisterForDrag("LeftButton")
-	healerAnchor:SetIgnoreParentScale(true)
-	healerAnchor:SetScript("OnDragStart", function(anchorSelf)
-		anchorSelf:StartMoving()
-	end)
-	healerAnchor:SetScript("OnDragStop", function(anchorSelf)
-		anchorSelf:StopMovingOrSizing()
-
-		local point, relativeTo, relativePoint, x, y = anchorSelf:GetPoint()
-		db.Healer.Point = point
-		db.Healer.RelativePoint = relativePoint
-		db.Healer.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
-		db.Healer.Offset.X = x
-		db.Healer.Offset.Y = y
-	end)
-
-	local text = healerAnchor:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
-	text:SetPoint("TOP", healerAnchor, "TOP", 0, 6)
-	text:SetFont(options.Font.File, options.Font.Size, options.Font.Flags)
-	text:SetText("Healer in CC!")
-	text:SetTextColor(1, 0.1, 0.1)
-	text:SetShadowColor(0, 0, 0, 1)
-	text:SetShadowOffset(1, -1)
-	text:Show()
-
-	healerAnchor.HealerWarning = text
-
-	M:Refresh()
-end
-
 function M:GetAnchor()
 	return healerAnchor
+end
+
+function M:Show()
+	if not healerAnchor then
+		return
+	end
+
+	healerAnchor:EnableMouse(true)
+	healerAnchor:SetMovable(true)
+	healerAnchor:SetAlpha(1)
+end
+
+function M:Hide()
+	if not healerAnchor then
+		return
+	end
+
+	healerAnchor:EnableMouse(false)
+	healerAnchor:SetMovable(false)
+	healerAnchor:SetAlpha(0)
 end
 
 function M:Refresh()
@@ -233,30 +224,52 @@ function M:Refresh()
 	RefreshHeaders()
 end
 
-function M:Show()
-	if not healerAnchor then
-		return
-	end
-
-	healerAnchor:EnableMouse(true)
-	healerAnchor:SetMovable(true)
-	healerAnchor:SetAlpha(1)
-end
-
-function M:Hide()
-	if not healerAnchor then
-		return
-	end
-
-	healerAnchor:EnableMouse(false)
-	healerAnchor:SetMovable(false)
-	healerAnchor:SetAlpha(0)
-end
-
 function M:Pause()
 	paused = true
 end
 
 function M:Resume()
 	paused = false
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
+
+	local options = db.Healer
+
+	healerAnchor = CreateFrame("Frame", addonName .. "HealerContainer")
+	healerAnchor:EnableMouse(true)
+	healerAnchor:SetMovable(true)
+	healerAnchor:RegisterForDrag("LeftButton")
+	healerAnchor:SetIgnoreParentScale(true)
+	healerAnchor:SetScript("OnDragStart", function(anchorSelf)
+		anchorSelf:StartMoving()
+	end)
+	healerAnchor:SetScript("OnDragStop", function(anchorSelf)
+		anchorSelf:StopMovingOrSizing()
+
+		local point, relativeTo, relativePoint, x, y = anchorSelf:GetPoint()
+		db.Healer.Point = point
+		db.Healer.RelativePoint = relativePoint
+		db.Healer.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
+		db.Healer.Offset.X = x
+		db.Healer.Offset.Y = y
+	end)
+
+	local text = healerAnchor:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+	text:SetPoint("TOP", healerAnchor, "TOP", 0, 6)
+	text:SetFont(options.Font.File, options.Font.Size, options.Font.Flags)
+	text:SetText("Healer in CC!")
+	text:SetTextColor(1, 0.1, 0.1)
+	text:SetShadowColor(0, 0, 0, 1)
+	text:SetShadowOffset(1, -1)
+	text:Show()
+
+	healerAnchor.HealerWarning = text
+
+	eventsFrame = CreateFrame("Frame")
+	eventsFrame:SetScript("OnEvent", OnEvent)
+	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+
+	M:Refresh()
 end

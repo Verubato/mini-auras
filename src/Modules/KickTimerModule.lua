@@ -1,6 +1,6 @@
 ---@type string, Addon
 local addonName, addon = ...
-local mini = addon.Framework
+local mini = addon.Core.Framework
 local enabled = false
 ---@type Db
 local db
@@ -132,9 +132,9 @@ local specInfoBySpecId = {
 	[258] = { KickCd = 45, IsCaster = true, IsHealer = false, KickIcon = KI(15487) }, -- Shadow (Silence)
 }
 
----@class KickTimerManager
+---@class KickTimerModule : IModule
 local M = {}
-addon.KickTimerManager = M
+addon.Modules.KickTimerModule = M
 
 local function GetPlayerSpecId()
 	local specIndex = GetSpecialization()
@@ -230,7 +230,6 @@ local function LayoutKickBar()
 	kickBar.Anchor:Show()
 end
 
--- NOTE: icon texture is set per kick now (not baked at creation)
 local function CreateKickIcon(reverseCooldown)
 	local frame = CreateFrame("Frame", nil, kickBar.Anchor)
 	frame:SetSize(kickBar.Size, kickBar.Size)
@@ -325,7 +324,6 @@ end
 local function OnArenaPrep()
 	UpdateMinKickCooldownFromArenaSpecs()
 
-	-- rebuild per-unit duration + icon cache
 	wipe(kickDurationsByUnit)
 	wipe(kickIconsByUnit)
 
@@ -416,12 +414,10 @@ function M:IsEnabledForPlayer(options)
 		return false
 	end
 
-	-- AllEnabled ignores player role/spec
 	if options.AllEnabled then
 		return true
 	end
 
-	-- spec-based match
 	local specId = GetPlayerSpecId()
 	if not specId then
 		return false
@@ -452,13 +448,12 @@ function M:Kicked(kickedBy)
 
 	local frame = GetOrCreateIcon()
 	local key = math.random()
-
-	-- Use the kick/interrupt icon of the unit that kicked you (arena1/2/3),
-	-- otherwise fallback to rogue Kick icon.
 	local tex = kickIcon
+
 	if kickedBy and kickIconsByUnit[kickedBy] then
 		tex = kickIconsByUnit[kickedBy]
 	end
+
 	frame.Icon:SetTexture(tex)
 
 	frame.Active = true

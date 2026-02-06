@@ -12,7 +12,7 @@ local M = {
 	HorizontalSpacing = 20,
 	TextMaxWidth = 600,
 }
-addon.Framework = M
+addon.Core.Framework = M
 
 local function AddControlForRefresh(panel, control)
 	-- store controls for refresh behaviour

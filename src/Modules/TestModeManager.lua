@@ -1,15 +1,15 @@
 ---@type string, Addon
 local addonName, addon = ...
-local mini = addon.Framework
+local mini = addon.Core.Framework
 local units = addon.Utils.Units
 local capabilities = addon.Capabilities
-local headerManager = addon.HeaderManager
-local healerCcManager = addon.HealerCcManager
-local portraitManager = addon.PortraitManager
-local alertsManager = addon.ImportantSpellsManager
-local nameplateManager = addon.NameplatesManager
-local kickTimerManager = addon.KickTimerManager
-local frames = addon.FramesManager
+local ccModule = addon.Modules.CcModule
+local healerCcModule = addon.Modules.HealerCcModule
+local portraitModule = addon.Modules.PortraitModule
+local alertsModule = addon.Modules.AlertsModule
+local nameplateModule = addon.Modules.NameplatesModule
+local kickTimerModule = addon.Modules.KickTimerModule
+local frames = addon.Core.Frames
 local LCG
 ---@type Db
 local db
@@ -41,7 +41,7 @@ local previousSoundEnabled
 
 ---@class TestModeManager
 local M = {}
-addon.TestModeManager = M
+addon.Modules.TestModeManager = M
 
 local function CreateTestFrame(i)
 	local frame = CreateFrame("Frame", addonName .. "TestFrame" .. i, UIParent, "BackdropTemplate")
@@ -89,29 +89,29 @@ end
 
 local function HideHealerOverlay()
 	testHealerHeader:Hide()
-	healerCcManager:Hide()
+	healerCcModule:Hide()
 
 	-- resume tracking cc events
-	healerCcManager:Resume()
+	healerCcModule:Resume()
 
 	previousSoundEnabled = nil
 end
 
 local function HidePortraitIcons()
-	local containers = portraitManager:GetContainers()
+	local containers = portraitModule:GetContainers()
 
 	for _, container in ipairs(containers) do
 		container:ResetAllSlots()
 	end
 
-	portraitManager:Refresh()
+	portraitModule:Refresh()
 end
 
 local function HideAlertsTestMode()
-	alertsManager:ClearAll()
-	alertsManager:Resume()
+	alertsModule:ClearAll()
+	alertsModule:Resume()
 
-	local alertAnchor = alertsManager:GetAnchor()
+	local alertAnchor = alertsModule:GetAnchor()
 	if not alertAnchor then
 		return
 	end
@@ -121,12 +121,12 @@ local function HideAlertsTestMode()
 end
 
 local function HideNameplateTestMode()
-	nameplateManager:Resume()
+	nameplateModule:Resume()
 end
 
 local function HideKickTimer()
-	local container = kickTimerManager:GetContainer()
-	kickTimerManager:ClearIcons()
+	local container = kickTimerModule:GetContainer()
+	kickTimerModule:ClearIcons()
 	container:Hide()
 
 	container:SetMovable(false)
@@ -134,25 +134,25 @@ local function HideKickTimer()
 end
 
 local function ShowKickTimer()
-	local container = kickTimerManager:GetContainer()
+	local container = kickTimerModule:GetContainer()
 	container:Show()
 
 	container:SetMovable(true)
 	container:EnableMouse(true)
 
-	kickTimerManager:ClearIcons()
-	kickTimerManager:Kicked()
-	kickTimerManager:Kicked()
-	kickTimerManager:Kicked()
+	kickTimerModule:ClearIcons()
+	kickTimerModule:Kicked()
+	kickTimerModule:Kicked()
+	kickTimerModule:Kicked()
 end
 
 local function ShowAlertsTestMode()
-	local alertAnchor = alertsManager:GetAnchor()
+	local alertAnchor = alertsModule:GetAnchor()
 	if not alertAnchor then
 		return
 	end
 
-	alertsManager:Pause()
+	alertsModule:Pause()
 
 	alertAnchor.Frame:EnableMouse(true)
 	alertAnchor.Frame:SetMovable(true)
@@ -200,9 +200,9 @@ local function ShowTestFrames()
 	end
 
 	-- hide real headers
-	headerManager:HideHeaders()
+	ccModule:HideHeaders()
 
-	local headers = headerManager:GetHeaders()
+	local headers = ccModule:GetHeaders()
 
 	-- try to show on real frames first
 	local anyRealShown = false
@@ -210,7 +210,7 @@ local function ShowTestFrames()
 		local testHeader = M:EnsureTestHeader(anchor)
 		M:UpdateTestHeader(testHeader, instanceOptions.Icons)
 
-		headerManager:AnchorHeader(testHeader, anchor, instanceOptions)
+		ccModule:AnchorHeader(testHeader, anchor, instanceOptions)
 		frames:ShowHideFrame(testHeader, anchor, true, instanceOptions)
 		anyRealShown = anyRealShown or testHeader:IsVisible()
 	end
@@ -228,7 +228,7 @@ local function ShowTestFrames()
 				local testPartyFrame = testPartyFrames[i]
 				M:UpdateTestHeader(testHeader, instanceOptions.Icons)
 
-				headerManager:AnchorHeader(testHeader, testPartyFrame, instanceOptions)
+				ccModule:AnchorHeader(testHeader, testPartyFrame, instanceOptions)
 
 				testHeader:Show()
 				testHeader:SetAlpha(1)
@@ -242,10 +242,10 @@ end
 
 local function ShowHealerOverlay()
 	testHealerHeader:Show()
-	healerCcManager:Show()
+	healerCcModule:Show()
 
 	-- pause the healer manager from tracking cc events
-	healerCcManager:Pause()
+	healerCcModule:Pause()
 
 	-- update the size
 	M:UpdateTestHeader(testHealerHeader, db.Healer.Icons)
@@ -255,7 +255,7 @@ local function ShowHealerOverlay()
 		capabilities:HasNewFilters() and (not previousSoundEnabled or previousSoundEnabled ~= db.Healer.Sound.Enabled)
 	then
 		if db.Healer.Sound.Enabled then
-			healerCcManager:PlaySound()
+			healerCcModule:PlaySound()
 		end
 
 		previousSoundEnabled = db.Healer.Sound.Enabled
@@ -263,11 +263,11 @@ local function ShowHealerOverlay()
 end
 
 local function ShowPortraitIcons()
-	local containers = portraitManager:GetContainers()
+	local containers = portraitModule:GetContainers()
 	local tex = C_Spell.GetSpellTexture(testSpells[1].SpellId)
 	local now = GetTime()
 
-	portraitManager:Pause()
+	portraitModule:Pause()
 
 	for _, container in ipairs(containers) do
 		container:SetSlotUsed(1)
@@ -286,9 +286,9 @@ local function ShowPortraitIcons()
 end
 
 local function ShowNameplateTestMode()
-	nameplateManager:Pause()
+	nameplateModule:Pause()
 
-	local containers = nameplateManager:GetAllContainers()
+	local containers = nameplateModule:GetAllContainers()
 
 	for _, container in ipairs(containers) do
 		local now = GetTime()
@@ -371,7 +371,7 @@ function M:Init()
 	testSpells = capabilities:HasNewFilters() and multipleTestSpells or { kidneyShot }
 
 	-- healer overlay
-	local healerAnchor = healerCcManager:GetAnchor()
+	local healerAnchor = healerCcModule:GetAnchor()
 	testHealerHeader = CreateFrame("Frame", addonName .. "TestHealerHeader", healerAnchor)
 	testHealerHeader:EnableMouse(false)
 	testHealerHeader:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
@@ -571,7 +571,7 @@ function M:Show()
 		HideNameplateTestMode()
 	end
 
-	if kickTimerManager:IsEnabledForPlayer(db.KickTimer) then
+	if kickTimerModule:IsEnabledForPlayer(db.KickTimer) then
 		ShowKickTimer()
 	else
 		HideKickTimer()

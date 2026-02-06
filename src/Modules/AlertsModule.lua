@@ -1,8 +1,8 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Framework
-local unitWatcher = addon.UnitAuraWatcher
-local iconSlotContainer = addon.IconSlotContainer
+local mini = addon.Core.Framework
+local unitWatcher = addon.Core.UnitAuraWatcher
+local iconSlotContainer = addon.Core.IconSlotContainer
 local paused = false
 local eventsFrame
 ---@type Db
@@ -12,9 +12,9 @@ local anchor
 ---@type Watcher[]
 local watchers
 
----@class ImportantSpellsManager
+---@class AlertsModule : IModule
 local M = {}
-addon.ImportantSpellsManager = M
+addon.Modules.AlertsModule = M
 
 local function OnAuraDataChanged()
 	if paused then

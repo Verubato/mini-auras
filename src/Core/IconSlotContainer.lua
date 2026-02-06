@@ -6,7 +6,7 @@ local LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
 local M = {}
 M.__index = M
 
-addon.IconSlotContainer = M
+addon.Core.IconSlotContainer = M
 
 ---Creates a new IconSlotContainer instance
 ---@param parent table frame to attach to

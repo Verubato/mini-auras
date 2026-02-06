@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Framework
+local mini = addon.Core.Framework
 local capabilities = addon.Capabilities
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
