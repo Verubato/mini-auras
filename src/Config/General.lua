@@ -69,7 +69,7 @@ function M:Build(panel)
 		Parent = panel,
 		Lines = {
 			"Supported addons:",
-			"  - ElvUI, DandersFrames, Grid2.",
+			"  - ElvUI, DandersFrames, Grid2, Shadowed Unit Frames, Plexus.",
 			"",
 			"Things that work on beta (12.0.1) that don't work on retail (12.0.0):",
 			"  - Showing multiple/overlapping CC's.",
