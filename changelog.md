@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.11.1
+
+Small performance improvement.
+
 ## 2.11.0
 
 Added pet portrait CC icon.
