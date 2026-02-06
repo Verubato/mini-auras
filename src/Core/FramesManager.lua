@@ -2,7 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local array = addon.Utils.Array
-local units  = addon.Utils.Units
+local units = addon.Utils.Units
 local maxParty = MAX_PARTY_MEMBERS or 4
 local maxRaid = MAX_RAID_MEMBERS or 40
 ---@type Db
@@ -161,6 +161,62 @@ function M:ElvUIFrames(visibleOnly)
 	return frames
 end
 
+---Retrieves a list of Shadowed Unit Frames (SUF) frames.
+---@param visibleOnly boolean
+---@return table
+function M:ShadowedUFFrames(visibleOnly)
+	if not SUFUnitplayer and not SUFHeaderpartyUnitButton1 and not SUFHeaderraidUnitButton1 then
+		return {}
+	end
+
+	local frames = {}
+
+	local function Add(frame)
+		if not frame then
+			return
+		end
+		if frame.IsForbidden and frame:IsForbidden() then
+			return
+		end
+		if (not visibleOnly) or frame:IsVisible() then
+			frames[#frames + 1] = frame
+		end
+	end
+
+	-- “Normal” SUF unit frames (SUFUnit<unit>) :contentReference[oaicite:1]{index=1}
+	local unitNames = {
+		"player",
+		"pet",
+		"pettarget",
+		"target",
+		"targettarget",
+		"targettargettarget",
+		"focus",
+		"focustarget",
+	}
+
+	for _, unitName in ipairs(unitNames) do
+		Add(_G["SUFUnit" .. unitName])
+	end
+
+	-- Party / Raid header buttons (SUFHeaderpartyUnitButton# / SUFHeaderraidUnitButton#) :contentReference[oaicite:2]{index=2}
+	for i = 1, maxParty do
+		Add(_G["SUFHeaderpartyUnitButton" .. i])
+
+		-- Some layouts/forks also expose party as SUFUnitparty#
+		Add(_G["SUFUnitparty" .. i])
+	end
+
+	for i = 1, maxRaid do
+		Add(_G["SUFHeaderraidUnitButton" .. i])
+
+		-- Some layouts/forks also expose raid as SUFUnitraid#
+		Add(_G["SUFUnitraid" .. i])
+	end
+
+	return frames
+end
+
 ---Retrieves a list of custom frames from our saved vars.
 ---@param visibleOnly boolean
 ---@return table
@@ -220,12 +276,14 @@ function M:GetAll(visibleOnly)
 	local grid2 = M:Grid2Frames(visibleOnly)
 	local danders = M:DandersFrames(visibleOnly)
 	local blizzard = M:BlizzardFrames(visibleOnly)
+	local suf = M:ShadowedUFFrames(visibleOnly)
 	local custom = M:CustomFrames(visibleOnly)
 
 	array:Append(blizzard, anchors)
 	array:Append(elvui, anchors)
 	array:Append(grid2, anchors)
 	array:Append(danders, anchors)
+	array:Append(suf, anchors)
 	array:Append(custom, anchors)
 
 	return anchors
@@ -287,7 +345,6 @@ function M:ShowHideFrame(header, anchor, isTest, options)
 		header:Hide()
 	end
 end
-
 
 function M:Init()
 	db = mini:GetSavedVars()
