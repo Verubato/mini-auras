@@ -47,7 +47,7 @@ local lastEnemyCastState = {
 
 -- mininum delta between enemy cast success and us getting interrupted
 -- unsure if it's affected by lag or not, needs testing
-local lastEnemyKickTimeDuration = 0.1
+local lastEnemyKickTimeDuration = 0.5
 
 -- per arena unit computed at arena prep
 local kickDurationsByUnit = {} ---@type table<string, number?>
@@ -282,9 +282,10 @@ local function OnFriendlyUnitEvent(unit, _, event, ...)
 		end
 
 		local now = GetTime()
+		local timeSinceLastAction = now - lastEnemyCastState.Time
 		local u = nil
 
-		if lastEnemyCastState.Time and (now - lastEnemyCastState.Time) < lastEnemyKickTimeDuration then
+		if lastEnemyCastState.Time and timeSinceLastAction < lastEnemyKickTimeDuration then
 			u = lastEnemyCastState.Unit
 		end
 
@@ -328,11 +329,13 @@ local function OnArenaPrep()
 	wipe(kickDurationsByUnit)
 	wipe(kickIconsByUnit)
 
-	for i = 1, 3 do
+	local numSpecs = GetNumArenaOpponentSpecs()
+
+	for i = 1, numSpecs do
 		local unit = "arena" .. i
 		local specId = GetArenaOpponentSpec(i)
-
 		local info = specInfoBySpecId[specId]
+
 		kickDurationsByUnit[unit] = info and info.KickCd or nil
 		kickIconsByUnit[unit] = (info and info.KickIcon) or nil
 	end
@@ -351,9 +354,12 @@ local function Disable()
 		kickedByUnits[unit] = nil
 	end
 
-	if matchEventsFrame then
-		matchEventsFrame:UnregisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
-		matchEventsFrame:SetScript("OnEvent", nil)
+	for _, unit in ipairs(enemyUnitsToWatch) do
+		local frame = enemyUnitsEventsFrames[unit]
+		if frame then
+			frame:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+			frame:SetScript("OnEvent", nil)
+		end
 	end
 
 	if kickBar.Anchor then
@@ -390,10 +396,6 @@ local function Enable(options)
 			end)
 		end
 	end
-
-	matchEventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-	matchEventsFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
-	matchEventsFrame:SetScript("OnEvent", OnArenaPrep)
 
 	local relativeTo = _G[options.RelativeTo] or UIParent
 	kickBar.Anchor:ClearAllPoints()
@@ -505,7 +507,11 @@ function M:Init()
 		enemyUnitsEventsFrames[unit] = CreateFrame("Frame")
 	end
 
+	-- always populate even if disabled, as they might re-enable during arena
 	matchEventsFrame = CreateFrame("Frame")
+	matchEventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	matchEventsFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+	matchEventsFrame:SetScript("OnEvent", OnArenaPrep)
 
 	playerSpecEventsFrame = CreateFrame("Frame")
 	playerSpecEventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
