@@ -5,11 +5,11 @@ local enabled = false
 ---@type Db
 local db
 
--- rogue kick icon
+-- fallback icon (rogue Kick)
 local kickIcon = C_Spell.GetSpellTexture(1766)
 
 ---@type { string: boolean }
-local kickedByUnit = {}
+local kickedByUnits = {}
 
 ---@type KickBar
 local kickBar = {
@@ -18,90 +18,118 @@ local kickBar = {
 	Spacing = 1,
 }
 
-local unitsToWatch = {
+local friendlyUnitsToWatch = {
 	"player",
 	"party1",
 	"party2",
 }
 
+local enemyUnitsToWatch = {
+	"arena1",
+	"arena2",
+	"arena3",
+}
+
 ---@type { string: table }
-local unitEventsFrames = {}
-local arenaEventsFrame
+local partyUnitsEventsFrames = {}
+---@type { string: table }
+local enemyUnitsEventsFrames = {}
+local matchEventsFrame
 local playerSpecEventsFrame
+
 local minKickCooldown = 15
+
+---@type EnemyLastCastState
+local lastEnemyCastState = {
+	Time = nil,
+	Unit = nil,
+}
+
+-- mininum delta between enemy cast success and us getting interrupted
+-- unsure if it's affected by lag or not, needs testing
+local lastEnemyKickTimeDuration = 0.1
+
+-- per arena unit computed at arena prep
+local kickDurationsByUnit = {} ---@type table<string, number?>
+local kickIconsByUnit = {} ---@type table<string, any?>
+
+local function KI(spellId)
+	return spellId and C_Spell.GetSpellTexture(spellId) or nil
+end
 
 ---@class SpecKickInfo
 ---@field KickCd number?
 ---@field IsCaster boolean
 ---@field IsHealer boolean
+---@field KickIcon any? -- texture path/id for the kick/interrupt ability
 
 ---@type table<number, SpecKickInfo>
 local specInfoBySpecId = {
-	-- Rogue
-	[259] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Assassination
-	[260] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Outlaw
-	[261] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Subtlety
+	-- Rogue — Kick
+	[259] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(1766) }, -- Assassination
+	[260] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(1766) }, -- Outlaw
+	[261] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(1766) }, -- Subtlety
 
-	-- Warrior
-	[71] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Arms
-	[72] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Fury
-	[73] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Protection
+	-- Warrior — Pummel
+	[71] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(6552) }, -- Arms
+	[72] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(6552) }, -- Fury
+	[73] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(6552) }, -- Protection
 
-	-- Death Knight
-	[250] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Blood
-	[251] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Frost
-	[252] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Unholy
+	-- Death Knight — Mind Freeze
+	[250] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(47528) }, -- Blood
+	[251] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(47528) }, -- Frost
+	[252] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(47528) }, -- Unholy
 
-	-- Demon Hunter
-	[577] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Havoc
-	[581] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Vengeance
-	[1480] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Devourer
+	-- Demon Hunter — Disrupt
+	[577] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(183752) }, -- Havoc
+	[581] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(183752) }, -- Vengeance
+	[1480] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(183752) }, -- Devourer
 
-	-- Monk
-	[268] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Brewmaster
-	[269] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Windwalker
-	[270] = { KickCd = 15, IsCaster = false, IsHealer = true }, -- Mistweaver
+	-- Monk — Spear Hand Strike
+	[268] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(116705) }, -- Brewmaster
+	[269] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(116705) }, -- Windwalker
+	[270] = { KickCd = 15, IsCaster = false, IsHealer = true, KickIcon = KI(116705) }, -- Mistweaver
 
-	-- Paladin
-	[65] = { KickCd = 15, IsCaster = false, IsHealer = true }, -- Holy
-	[66] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Protection
-	[70] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Retribution
+	-- Paladin — Rebuke
+	[65] = { KickCd = 15, IsCaster = false, IsHealer = true, KickIcon = KI(96231) }, -- Holy
+	[66] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(96231) }, -- Protection
+	[70] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(96231) }, -- Retribution
 
 	-- Druid
-	[102] = { KickCd = 60, IsCaster = true, IsHealer = false }, -- Balance
-	[103] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Feral
-	[104] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Guardian
-	[105] = { KickCd = nil, IsCaster = false, IsHealer = true }, -- Restoration
+	[102] = { KickCd = 60, IsCaster = true, IsHealer = false, KickIcon = KI(78675) }, -- Balance (Solar Beam)
+	[103] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(106839) }, -- Feral (Skull Bash)
+	[104] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(106839) }, -- Guardian (Skull Bash)
+	[105] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = nil }, -- Restoration (no baseline interrupt)
 
-	-- Hunter
-	[253] = { KickCd = 24, IsCaster = true, IsHealer = false }, -- Beast Mastery
-	[254] = { KickCd = 24, IsCaster = true, IsHealer = false }, -- Marksmanship
-	[255] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Survival
+	-- Hunter — Counter Shot
+	[253] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(147362) }, -- Beast Mastery
+	[254] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(147362) }, -- Marksmanship
+	[255] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(147362) }, -- Survival
 
-	-- Mage
-	[62] = { KickCd = 24, IsCaster = true, IsHealer = false }, -- Arcane
-	[63] = { KickCd = 24, IsCaster = true, IsHealer = false }, -- Fire
-	[64] = { KickCd = 24, IsCaster = true, IsHealer = false }, -- Frost
+	-- Mage — Counterspell
+	[62] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(2139) }, -- Arcane
+	[63] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(2139) }, -- Fire
+	[64] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(2139) }, -- Frost
 
-	-- Warlock
-	[265] = { KickCd = 24, IsCaster = true, IsHealer = false }, -- Affliction
-	[266] = { KickCd = 24, IsCaster = true, IsHealer = false }, -- Demonology
-	[267] = { KickCd = 24, IsCaster = true, IsHealer = false }, -- Destruction
+	-- Warlock — Spell Lock (Felhunter)
+	[265] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(19647) }, -- Affliction
+	[266] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(19647) }, -- Demonology
+	[267] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(19647) }, -- Destruction
 
-	-- Shaman
-	[262] = { KickCd = 12, IsCaster = true, IsHealer = false }, -- Elemental
-	[263] = { KickCd = 12, IsCaster = false, IsHealer = false }, -- Enhancement
-	[264] = { KickCd = 30, IsCaster = false, IsHealer = true }, -- Restoration
+	-- Shaman — Wind Shear
+	[262] = { KickCd = 12, IsCaster = true, IsHealer = false, KickIcon = KI(57994) }, -- Elemental
+	[263] = { KickCd = 12, IsCaster = false, IsHealer = false, KickIcon = KI(57994) }, -- Enhancement
+	[264] = { KickCd = 30, IsCaster = false, IsHealer = true, KickIcon = KI(57994) }, -- Restoration
 
-	-- Evoker
-	[1467] = { KickCd = 40, IsCaster = true, IsHealer = false }, -- Devastation
-	[1468] = { KickCd = 40, IsCaster = false, IsHealer = true }, -- Preservation
-	[1473] = { KickCd = 40, IsCaster = true, IsHealer = false }, -- Augmentation
+	-- Evoker — Quell
+	[1467] = { KickCd = 40, IsCaster = true, IsHealer = false, KickIcon = KI(351338) }, -- Devastation
+	[1468] = { KickCd = 40, IsCaster = false, IsHealer = true, KickIcon = KI(351338) }, -- Preservation
+	[1473] = { KickCd = 40, IsCaster = true, IsHealer = false, KickIcon = KI(351338) }, -- Augmentation
 
 	-- Priest
-	[256] = { KickCd = nil, IsCaster = false, IsHealer = true }, -- Discipline
-	[257] = { KickCd = nil, IsCaster = false, IsHealer = true }, -- Holy
-	[258] = { KickCd = 45, IsCaster = true, IsHealer = false }, -- Shadow
+	[256] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = nil }, -- Discipline
+	[257] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = nil }, -- Holy
+	[258] = { KickCd = 45, IsCaster = true, IsHealer = false, KickIcon = KI(15487) }, -- Shadow (Silence)
 }
 
 ---@class KickTimerManager
@@ -202,13 +230,13 @@ local function LayoutKickBar()
 	kickBar.Anchor:Show()
 end
 
-local function CreateKickIcon(texture, reverseCooldown)
+-- NOTE: icon texture is set per kick now (not baked at creation)
+local function CreateKickIcon(reverseCooldown)
 	local frame = CreateFrame("Frame", nil, kickBar.Anchor)
 	frame:SetSize(kickBar.Size, kickBar.Size)
 
 	local icon = frame:CreateTexture(nil, "ARTWORK")
 	icon:SetAllPoints()
-	icon:SetTexture(texture)
 
 	local cd = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate")
 	cd:SetAllPoints()
@@ -235,16 +263,16 @@ local function GetOrCreateIcon()
 	end
 
 	local iconOptions = db.KickTimer.Icons
-	local frame = CreateKickIcon(kickIcon, iconOptions.ReverseCooldown)
+	local frame = CreateKickIcon(iconOptions.ReverseCooldown)
 	table.insert(kickBar.Icons, frame)
 	return frame
 end
 
-local function OnUnitEvent(unit, _, event, ...)
+local function OnFriendlyUnitEvent(unit, _, event, ...)
 	if event == "UNIT_SPELLCAST_START" then
-		kickedByUnit[unit] = false
+		kickedByUnits[unit] = false
 	elseif event == "UNIT_SPELLCAST_INTERRUPTED" then
-		if kickedByUnit[unit] then
+		if kickedByUnits[unit] then
 			return
 		end
 
@@ -253,8 +281,22 @@ local function OnUnitEvent(unit, _, event, ...)
 			return
 		end
 
-		kickedByUnit[unit] = true
-		M:Kicked()
+		local now = GetTime()
+		local u = nil
+
+		if lastEnemyCastState.Time and (now - lastEnemyCastState.Time) < lastEnemyKickTimeDuration then
+			u = lastEnemyCastState.Unit
+		end
+
+		kickedByUnits[unit] = true
+		M:Kicked(u)
+	end
+end
+
+local function OnEnemyUnitEvent(unit, _, event)
+	if event == "UNIT_SPELLCAST_SUCCEEDED" then
+		lastEnemyCastState.Unit = unit
+		lastEnemyCastState.Time = GetTime()
 	end
 end
 
@@ -281,23 +323,37 @@ end
 
 local function OnArenaPrep()
 	UpdateMinKickCooldownFromArenaSpecs()
+
+	-- rebuild per-unit duration + icon cache
+	wipe(kickDurationsByUnit)
+	wipe(kickIconsByUnit)
+
+	for i = 1, 3 do
+		local unit = "arena" .. i
+		local specId = GetArenaOpponentSpec(i)
+
+		local info = specInfoBySpecId[specId]
+		kickDurationsByUnit[unit] = info and info.KickCd or nil
+		kickIconsByUnit[unit] = (info and info.KickIcon) or nil
+	end
+
 	M:ClearIcons()
 end
 
 local function Disable()
-	for _, unit in ipairs(unitsToWatch) do
-		local frame = unitEventsFrames[unit]
+	for _, unit in ipairs(friendlyUnitsToWatch) do
+		local frame = partyUnitsEventsFrames[unit]
 		if frame then
 			frame:UnregisterEvent("UNIT_SPELLCAST_START")
 			frame:UnregisterEvent("UNIT_SPELLCAST_INTERRUPTED")
 			frame:SetScript("OnEvent", nil)
 		end
-		kickedByUnit[unit] = nil
+		kickedByUnits[unit] = nil
 	end
 
-	if arenaEventsFrame then
-		arenaEventsFrame:UnregisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
-		arenaEventsFrame:SetScript("OnEvent", nil)
+	if matchEventsFrame then
+		matchEventsFrame:UnregisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+		matchEventsFrame:SetScript("OnEvent", nil)
 	end
 
 	if kickBar.Anchor then
@@ -314,19 +370,30 @@ local function Enable(options)
 		return
 	end
 
-	for _, unit in ipairs(unitsToWatch) do
-		local frame = unitEventsFrames[unit]
+	for _, unit in ipairs(friendlyUnitsToWatch) do
+		local frame = partyUnitsEventsFrames[unit]
 		if frame then
 			frame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
 			frame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", unit)
 			frame:SetScript("OnEvent", function(...)
-				OnUnitEvent(unit, ...)
+				OnFriendlyUnitEvent(unit, ...)
 			end)
 		end
 	end
 
-	arenaEventsFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
-	arenaEventsFrame:SetScript("OnEvent", OnArenaPrep)
+	for _, unit in ipairs(enemyUnitsToWatch) do
+		local frame = enemyUnitsEventsFrames[unit]
+		if frame then
+			frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", unit)
+			frame:SetScript("OnEvent", function(...)
+				OnEnemyUnitEvent(unit, ...)
+			end)
+		end
+	end
+
+	matchEventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	matchEventsFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+	matchEventsFrame:SetScript("OnEvent", OnArenaPrep)
 
 	local relativeTo = _G[options.RelativeTo] or UIParent
 	kickBar.Anchor:ClearAllPoints()
@@ -374,10 +441,23 @@ function M:IsEnabledForPlayer(options)
 	return false
 end
 
-function M:Kicked()
+---@param kickedBy string?
+function M:Kicked(kickedBy)
 	local duration = minKickCooldown
+	if kickedBy and kickDurationsByUnit[kickedBy] then
+		duration = kickDurationsByUnit[kickedBy]
+	end
+
 	local frame = GetOrCreateIcon()
 	local key = math.random()
+
+	-- Use the kick/interrupt icon of the unit that kicked you (arena1/2/3),
+	-- otherwise fallback to rogue Kick icon.
+	local tex = kickIcon
+	if kickedBy and kickIconsByUnit[kickedBy] then
+		tex = kickIconsByUnit[kickedBy]
+	end
+	frame.Icon:SetTexture(tex)
 
 	frame.Active = true
 	frame.Key = key
@@ -417,11 +497,15 @@ function M:Init()
 
 	EnsureKickBar()
 
-	for _, unit in ipairs(unitsToWatch) do
-		unitEventsFrames[unit] = CreateFrame("Frame")
+	for _, unit in ipairs(friendlyUnitsToWatch) do
+		partyUnitsEventsFrames[unit] = CreateFrame("Frame")
 	end
 
-	arenaEventsFrame = CreateFrame("Frame")
+	for _, unit in ipairs(enemyUnitsToWatch) do
+		enemyUnitsEventsFrames[unit] = CreateFrame("Frame")
+	end
+
+	matchEventsFrame = CreateFrame("Frame")
 
 	playerSpecEventsFrame = CreateFrame("Frame")
 	playerSpecEventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
@@ -459,3 +543,7 @@ end
 ---@field Icons table
 ---@field Size number
 ---@field Spacing number
+
+---@class EnemyLastCastState
+---@field Time number?
+---@field Unit string?
