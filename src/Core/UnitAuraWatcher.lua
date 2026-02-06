@@ -47,13 +47,14 @@ local function RebuildStates(watcher)
 		return
 	end
 
+	local excludeDefensivesFromImportant = watcher.State.ExcludeDefensivesFromImportant
 	---@type AuraInfo[]
 	local ccSpellData = {}
 	---@type AuraInfo[]
 	local importantSpellData = {}
 	---@type AuraInfo[]
 	local defensivesSpellData = {}
-	local seen = {}
+	local excludeDefensives = {}
 
 	for i = 1, maxAuras do
 		local ccData = C_UnitAuras.GetAuraDataByIndex(unit, i, ccFilter)
@@ -82,7 +83,6 @@ local function RebuildStates(watcher)
 						TotalDuration = duration,
 					}
 				end
-				seen[ccData.auraInstanceID] = true
 			end
 		end
 
@@ -102,13 +102,15 @@ local function RebuildStates(watcher)
 						TotalDuration = duration,
 					}
 
-					seen[defensivesData.auraInstanceID] = true
+					if excludeDefensivesFromImportant then
+						excludeDefensives[defensivesData.auraInstanceID] = true
+					end
 				end
 			end
 		end
 
-		local importantHelpfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL")
-		if importantHelpfulData and not seen[importantHelpfulData.auraInstanceID] then
+		local importantHelpfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|INCLUDE_NAME_PLATE_ONLY")
+		if importantHelpfulData and not excludeDefensives[importantHelpfulData.auraInstanceID] then
 			local isImportant = C_Spell.IsSpellImportant(importantHelpfulData.spellId)
 			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHelpfulData.auraInstanceID)
 			local start = durationInfo and durationInfo:GetStartTime()
@@ -122,13 +124,13 @@ local function RebuildStates(watcher)
 					StartTime = start,
 					TotalDuration = duration,
 				}
-				seen[importantHelpfulData.auraInstanceID] = true
 			end
 		end
 
 		-- avoid doubling up with cc data, as both CC and HARMFUL return the same thing sometimes
-		local importantHarmfulData = not ccData and C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
-		if importantHarmfulData and not seen[importantHarmfulData.auraInstanceID] then
+		local importantHarmfulData = not ccData
+			and C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL|INCLUDE_NAME_PLATE_ONLY")
+		if importantHarmfulData and not excludeDefensives[importantHarmfulData.auraInstanceID] then
 			local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)
 			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
 			local start = durationInfo and durationInfo:GetStartTime()
@@ -142,7 +144,6 @@ local function RebuildStates(watcher)
 					StartTime = start,
 					TotalDuration = duration,
 				}
-				seen[importantHarmfulData.auraInstanceID] = true
 			end
 		end
 	end
@@ -190,10 +191,15 @@ end
 
 ---@param unit string
 ---@param events string[]?
+---@param excludeDefensivesFromImportant boolean? true by default
 ---@return Watcher
-function M:New(unit, events)
+function M:New(unit, events, excludeDefensivesFromImportant)
 	if not unit then
 		error("unit must not be nil")
+	end
+
+	if excludeDefensivesFromImportant == nil then
+		excludeDefensivesFromImportant = true
 	end
 
 	local watcher = {
@@ -205,6 +211,7 @@ function M:New(unit, events)
 			CcAuraState = {},
 			ImportantAuraState = {},
 			DefensiveState = {},
+			ExcludeDefensivesFromImportant = excludeDefensivesFromImportant,
 		},
 		Frame = nil,
 
@@ -304,6 +311,7 @@ end
 ---@field Callbacks fun()[]
 ---@field CcAuras AuraInfo[]
 ---@field ImportantAuras AuraInfo[]
+---@field ExcludeDefensivesFromImportant boolean
 
 ---@class AuraInfo
 ---@field IsImportant? boolean

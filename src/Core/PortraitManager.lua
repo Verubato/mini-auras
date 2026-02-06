@@ -234,7 +234,7 @@ local function Attach(unit, events)
 	end
 
 	local container = CreateContainer(unitFrame, portrait)
-	local watcher = unitWatcher:New(unit, events)
+	local watcher = unitWatcher:New(unit, events, true)
 
 	watcher:RegisterCallback(function()
 		OnAuraInfo(watcher, container)
