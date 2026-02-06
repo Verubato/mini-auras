@@ -114,6 +114,7 @@ local dbDefaults = {
 	---@class AlertOptions
 	Alerts = {
 		Enabled = true,
+		BigDefensivesEnabled = true,
 		Point = "CENTER",
 		RelativePoint = "TOP",
 		RelativeTo = "UIParent",

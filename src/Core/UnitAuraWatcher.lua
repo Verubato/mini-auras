@@ -87,7 +87,8 @@ local function RebuildStates(watcher)
 		end
 
 		if capabilities:HasNewFilters() then
-			local defensivesData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|BIG_DEFENSIVE")
+			local defensivesData =
+				C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|BIG_DEFENSIVE|INCLUDE_NAME_PLATE_ONLY")
 			if defensivesData then
 				local durationInfo = C_UnitAuras.GetAuraDuration(unit, defensivesData.auraInstanceID)
 				local start = durationInfo and durationInfo:GetStartTime()
