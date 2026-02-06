@@ -114,5 +114,16 @@ function M:Build()
 
 	lines:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
+	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+	testBtn:SetSize(120, 26)
+	testBtn:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
+	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
+	testBtn:SetText("Test")
+	testBtn:SetScript("OnClick", function()
+		local options = db.Default
+
+		addon:ToggleTest(options)
+	end)
+
 	return panel
 end
