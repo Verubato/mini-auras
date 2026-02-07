@@ -85,7 +85,7 @@ local function CreateIcon(unit)
 	frame.CD:SetDrawSwipe(true)
 	frame.CD:SetDrawEdge(false)
 	frame.CD:SetDrawBling(false)
-	frame.CD:SetReverse(options.Icons.ReverseCooldown)
+	frame.CD:SetReverse(false)
 
 	frame.Text = frame:CreateFontString(nil, "OVERLAY", options.Font.File)
 	frame.Text:SetPoint("CENTER", frame, "CENTER", 0, 0)
@@ -106,7 +106,6 @@ local function ApplyOptionsToIcon(frame)
 	local _, fontSize, flags = frame.Text:GetFont()
 
 	frame:SetSize(size, size)
-	frame.CD:SetReverse(options.Icons.ReverseCooldown and true or false)
 	frame.Text:SetFont(options.Font.File, fontSize or 12, flags)
 end
 
