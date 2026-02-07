@@ -232,40 +232,55 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 		return
 	end
 
-	local slot = 1
+	local slot = 0
 	local defensivesData = watcher:GetDefensiveState()
 	local importantData = watcher:GetImportantState()
-	local slotsNeeded = #defensivesData + (#importantData > 0 and 1 or 0)
 
 	if #importantData > 0 then
-		container:ClearSlot(slot)
-		container:SetSlotUsed(slot)
+		if capabilities:HasNewFilters() then
+			for _, spellData in ipairs(importantData) do
+				slot = slot + 1
+				container:ClearSlot(slot)
+				anchor:SetSlotUsed(slot)
+				anchor:SetLayer(
+					slot,
+					1,
+					spellData.SpellIcon,
+					spellData.StartTime,
+					spellData.TotalDuration,
+					spellData.IsImportant,
+					db.Alerts.Icons.Glow,
+					db.Alerts.Icons.ReverseCooldown
+				)
+				anchor:FinalizeSlot(slot, 1)
+			end
+		else
+			slot = slot + 1
+			container:ClearSlot(slot)
+			container:SetSlotUsed(slot)
 
-		local used = 0
-		for _, spellData in ipairs(importantData) do
-			used = used + 1
-			container:SetLayer(
-				slot,
-				used,
-				spellData.SpellIcon,
-				spellData.StartTime,
-				spellData.TotalDuration,
-				spellData.IsImportant,
-				options.Icons.Glow,
-				options.Icons.ReverseCooldown
-			)
+			local used = 0
+			for _, spellData in ipairs(importantData) do
+				used = used + 1
+				container:SetLayer(
+					slot,
+					used,
+					spellData.SpellIcon,
+					spellData.StartTime,
+					spellData.TotalDuration,
+					spellData.IsImportant,
+					options.Icons.Glow,
+					options.Icons.ReverseCooldown
+				)
+			end
+
+			container:FinalizeSlot(slot, used)
 		end
-
-		container:FinalizeSlot(slot, used)
-
-		slot = slot + 1
-	else
-		container:ClearSlot(slot)
-		container:SetSlotUnused(slot)
 	end
 
 	if #defensivesData > 0 then
 		for _, spellData in ipairs(defensivesData) do
+			slot = slot + 1
 			container:ClearSlot(slot)
 			container:SetSlotUsed(slot)
 
@@ -281,19 +296,19 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 			)
 
 			container:FinalizeSlot(slot, 1)
-			slot = slot + 1
 		end
-	else
-		container:ClearSlot(slot)
-		container:SetSlotUnused(slot)
 	end
 
-	if slotsNeeded == 0 then
+	-- advance forward 1 slot for clearing
+	if #importantData > 0 or #defensivesData > 0 then
+		slot = slot + 1
+	end
+
+	if slot == 0 then
 		container:ResetAllSlots()
 	else
 		-- clear any slots above what we used
-		for i = slotsNeeded + 1, container.Count do
-			container:ClearSlot(i)
+		for i = slot, container.Count do
 			container:SetSlotUnused(i)
 		end
 	end

@@ -1,5 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
+local capabilities = addon.Capabilities
 local mini = addon.Core.Framework
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
@@ -8,7 +9,7 @@ local eventsFrame
 ---@type Db
 local db
 ---@type IconSlotContainer
-local anchor
+local container
 ---@type Watcher[]
 local watchers
 
@@ -25,48 +26,70 @@ local function OnAuraDataChanged()
 		return
 	end
 
-	local slot = 1
-	local slotsNeeded = 0
+	local slot = 0
 
 	for _, watcher in ipairs(watchers) do
 		local importantData = watcher:GetImportantState()
-		local needed = (#importantData > 0 and 1 or 0)
 
-		slotsNeeded = slotsNeeded + needed
-
-		if slot > anchor.Count then
+		if slot > container.Count then
 			break
 		end
 
 		if #importantData > 0 then
-			anchor:SetSlotUsed(slot)
+			if capabilities:HasNewFilters() then
+				for _, data in ipairs(importantData) do
+					slot = slot + 1
+					container:ClearSlot(slot)
+					container:SetSlotUsed(slot)
+					container:SetLayer(
+						slot,
+						1,
+						data.SpellIcon,
+						data.StartTime,
+						data.TotalDuration,
+						data.IsImportant,
+						db.Alerts.Icons.Glow,
+						db.Alerts.Icons.ReverseCooldown
+					)
 
-			local used = 0
-			for _, data in ipairs(importantData) do
-				used = used + 1
-				anchor:SetLayer(
-					slot,
-					used,
-					data.SpellIcon,
-					data.StartTime,
-					data.TotalDuration,
-					data.IsImportant,
-					db.Alerts.Icons.Glow,
-					db.Alerts.Icons.ReverseCooldown
-				)
+					container:FinalizeSlot(slot, 1)
+				end
+			else
+				slot = slot + 1
+				container:ClearSlot(slot)
+				container:SetSlotUsed(slot)
+
+				local used = 0
+				for _, data in ipairs(importantData) do
+					used = used + 1
+					container:SetLayer(
+						slot,
+						used,
+						data.SpellIcon,
+						data.StartTime,
+						data.TotalDuration,
+						data.IsImportant,
+						db.Alerts.Icons.Glow,
+						db.Alerts.Icons.ReverseCooldown
+					)
+				end
+
+				container:FinalizeSlot(slot, used)
 			end
-
-			anchor:FinalizeSlot(slot, used)
-			slot = slot + 1
 		end
 	end
 
-	if slotsNeeded == 0 then
-		anchor:ResetAllSlots()
+	-- advance forward by 1 for clearing
+	if slot > 0 then
+		slot = slot + 1
+	end
+
+	if slot == 0 then
+		container:ResetAllSlots()
 	else
 		-- clear any slots above what we used
-		for i = slotsNeeded + 1, anchor.Count do
-			anchor:SetSlotUnused(i)
+		for i = slot, container.Count do
+			container:SetSlotUnused(i)
 		end
 	end
 end
@@ -103,20 +126,26 @@ function M:Init()
 	local count = 3
 	local size = options.Icons.Size
 
-	anchor = iconSlotContainer:New(UIParent, count, size, 2)
-	anchor.Frame:SetIgnoreParentScale(true)
+	container = iconSlotContainer:New(UIParent, count, size, 2)
+	container.Frame:SetIgnoreParentScale(true)
 
 	local initialRelativeTo = _G[options.RelativeTo] or UIParent
-	anchor.Frame:SetPoint(options.Point, initialRelativeTo, options.RelativePoint, options.Offset.X, options.Offset.Y)
-	anchor.Frame:SetFrameStrata("HIGH")
-	anchor.Frame:SetFrameLevel((initialRelativeTo:GetFrameLevel() or 0) + 5)
-	anchor.Frame:EnableMouse(false)
-	anchor.Frame:SetMovable(false)
-	anchor.Frame:RegisterForDrag("LeftButton")
-	anchor.Frame:SetScript("OnDragStart", function(anchorSelf)
+	container.Frame:SetPoint(
+		options.Point,
+		initialRelativeTo,
+		options.RelativePoint,
+		options.Offset.X,
+		options.Offset.Y
+	)
+	container.Frame:SetFrameStrata("HIGH")
+	container.Frame:SetFrameLevel((initialRelativeTo:GetFrameLevel() or 0) + 5)
+	container.Frame:EnableMouse(false)
+	container.Frame:SetMovable(false)
+	container.Frame:RegisterForDrag("LeftButton")
+	container.Frame:SetScript("OnDragStart", function(anchorSelf)
 		anchorSelf:StartMoving()
 	end)
-	anchor.Frame:SetScript("OnDragStop", function(anchorSelf)
+	container.Frame:SetScript("OnDragStop", function(anchorSelf)
 		anchorSelf:StopMovingOrSizing()
 
 		local point, relativeTo, relativePoint, x, y = anchorSelf:GetPoint()
@@ -126,7 +155,7 @@ function M:Init()
 		options.Offset.X = x
 		options.Offset.Y = y
 	end)
-	anchor.Frame:Show()
+	container.Frame:Show()
 
 	local events = {
 		-- seen/unseen
@@ -139,7 +168,7 @@ function M:Init()
 		unitWatcher:New("arena3", events, false),
 	}
 
-	anchor:SetCount(#watchers)
+	container:SetCount(#watchers)
 
 	for _, watcher in ipairs(watchers) do
 		watcher:RegisterCallback(OnAuraDataChanged)
@@ -153,14 +182,14 @@ function M:Init()
 end
 
 function M:GetAnchor()
-	return anchor
+	return container
 end
 
 function M:Refresh()
 	local options = db.Alerts
 
-	anchor.Frame:ClearAllPoints()
-	anchor.Frame:SetPoint(
+	container.Frame:ClearAllPoints()
+	container.Frame:SetPoint(
 		options.Point,
 		_G[options.RelativeTo] or UIParent,
 		options.RelativePoint,
@@ -168,7 +197,7 @@ function M:Refresh()
 		options.Offset.Y
 	)
 
-	anchor:SetIconSize(db.Alerts.Icons.Size)
+	container:SetIconSize(db.Alerts.Icons.Size)
 
 	EnableDisable()
 end
@@ -182,9 +211,9 @@ function M:Resume()
 end
 
 function M:ClearAll()
-	if not anchor then
+	if not container then
 		return
 	end
 
-	anchor:ResetAllSlots()
+	container:ResetAllSlots()
 end

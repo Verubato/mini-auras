@@ -3,6 +3,8 @@ local _, addon = ...
 local capabilities = addon.Capabilities
 local maxAuras = 40
 local ccFilter = capabilities:HasNewFilters() and "HARMFUL|CROWD_CONTROL" or "HARMFUL|INCLUDE_NAME_PLATE_ONLY"
+local importantHelpfulFilter = capabilities:HasNewFilters() and "HELPFUL|IMPORTANT" or "HELPFUL|INCLUDE_NAME_PLATE_ONLY"
+local importantHarmfulFilter = capabilities:HasNewFilters() and "HARMFUL|IMPORTANT" or "HARMFUL|INCLUDE_NAME_PLATE_ONLY"
 
 ---@class UnitAuraWatcher
 local M = {}
@@ -110,7 +112,7 @@ local function RebuildStates(watcher)
 			end
 		end
 
-		local importantHelpfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|INCLUDE_NAME_PLATE_ONLY")
+		local importantHelpfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, importantHelpfulFilter)
 		if importantHelpfulData and not excludeDefensives[importantHelpfulData.auraInstanceID] then
 			local isImportant = C_Spell.IsSpellImportant(importantHelpfulData.spellId)
 			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHelpfulData.auraInstanceID)
@@ -119,7 +121,7 @@ local function RebuildStates(watcher)
 
 			if start and duration then
 				importantSpellData[#importantSpellData + 1] = {
-					IsImportant = isImportant,
+					IsImportant = capabilities:HasNewFilters() or isImportant,
 					SpellId = importantHelpfulData.spellId,
 					SpellIcon = importantHelpfulData.icon,
 					StartTime = start,
@@ -129,8 +131,7 @@ local function RebuildStates(watcher)
 		end
 
 		-- avoid doubling up with cc data, as both CC and HARMFUL return the same thing sometimes
-		local importantHarmfulData = not ccData
-			and C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL|INCLUDE_NAME_PLATE_ONLY")
+		local importantHarmfulData = not ccData and C_UnitAuras.GetAuraDataByIndex(unit, i, importantHarmfulFilter)
 		if importantHarmfulData and not excludeDefensives[importantHarmfulData.auraInstanceID] then
 			local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)
 			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
@@ -139,7 +140,7 @@ local function RebuildStates(watcher)
 
 			if start and duration then
 				importantSpellData[#importantSpellData + 1] = {
-					IsImportant = isImportant,
+					IsImportant = capabilities:HasNewFilters() or isImportant,
 					SpellId = importantHarmfulData.spellId,
 					SpellIcon = importantHarmfulData.icon,
 					StartTime = start,
