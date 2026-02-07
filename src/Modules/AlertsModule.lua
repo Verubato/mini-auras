@@ -5,6 +5,7 @@ local mini = addon.Core.Framework
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
 local paused = false
+local inPrepRoom = false
 local eventsFrame
 ---@type Db
 local db
@@ -23,6 +24,12 @@ local function OnAuraDataChanged()
 	end
 
 	if not db.Alerts.Enabled then
+		return
+	end
+
+	if inPrepRoom then
+		-- don't know why it picks up garbage in the starting room
+		container:ResetAllSlots()
 		return
 	end
 
@@ -96,7 +103,10 @@ end
 
 local function OnMatchStateChanged()
 	local matchState = C_PvP.GetActiveMatchState()
-	if matchState ~= Enum.PvPMatchState.StartUp then
+
+	inPrepRoom = matchState == Enum.PvPMatchState.StartUp
+
+	if not inPrepRoom then
 		return
 	end
 
