@@ -83,6 +83,8 @@ local function CreateIcon(unit)
 	frame.CD = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate")
 	frame.CD:SetAllPoints()
 	frame.CD:SetDrawSwipe(true)
+	frame.CD:SetDrawEdge(false)
+	frame.CD:SetDrawBling(false)
 	frame.CD:SetReverse(options.Icons.ReverseCooldown)
 
 	frame.Text = frame:CreateFontString(nil, "OVERLAY", options.Font.File)
