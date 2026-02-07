@@ -223,8 +223,8 @@ function M:New(unit, events)
 			end)
 			frame:RegisterUnitEvent("UNIT_AURA", watcherSelf.State.Unit)
 
-			if watcherSelf.Events then
-				for _, event in ipairs(watcherSelf.Events) do
+			if watcherSelf.State.Events then
+				for _, event in ipairs(watcherSelf.State.Events) do
 					frame:RegisterEvent(event)
 				end
 			end
