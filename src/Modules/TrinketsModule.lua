@@ -350,7 +350,10 @@ local function OnEvent(_, event, ...)
 	end
 
 	if event == "GROUP_ROSTER_UPDATE" then
-		M:Refresh()
+		-- for some  reason it doesn't work right away
+		C_Timer.After(1, function()
+			M:Refresh()
+		end)
 		return
 	end
 
