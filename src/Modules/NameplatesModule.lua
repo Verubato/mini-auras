@@ -241,8 +241,8 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 			for _, spellData in ipairs(importantData) do
 				slot = slot + 1
 				container:ClearSlot(slot)
-				anchor:SetSlotUsed(slot)
-				anchor:SetLayer(
+				container:SetSlotUsed(slot)
+				container:SetLayer(
 					slot,
 					1,
 					spellData.SpellIcon,
@@ -252,7 +252,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 					db.Alerts.Icons.Glow,
 					db.Alerts.Icons.ReverseCooldown
 				)
-				anchor:FinalizeSlot(slot, 1)
+				container:FinalizeSlot(slot, 1)
 			end
 		else
 			slot = slot + 1
