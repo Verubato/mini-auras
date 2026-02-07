@@ -2,7 +2,6 @@
 ---@type string, Addon
 local addonName, addon = ...
 local mini = addon.Core.Framework
-local units = addon.Utils.Units
 local capabilities = addon.Capabilities
 local ccModule = addon.Modules.CcModule
 local healerCcModule = addon.Modules.HealerCcModule

@@ -12,7 +12,7 @@ local modules = {
 	addon.Modules.AlertsModule,
 	addon.Modules.NameplatesModule,
 	addon.Modules.KickTimerModule,
-	addon.Modules.TrinketsModule
+	addon.Modules.TrinketsModule,
 }
 local eventsFrame
 local db
@@ -85,11 +85,12 @@ local function OnAddonLoaded()
 	config:Init()
 	scheduler:Init()
 	frames:Init()
-	testModeManager:Init()
 
 	for _, module in ipairs(modules) do
 		module:Init()
 	end
+
+	testModeManager:Init()
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
