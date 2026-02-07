@@ -49,12 +49,14 @@ local function RebuildStates(watcher)
 		return
 	end
 
+	local excludeDefensivesFromImportant = watcher.State.ExcludeDefensivesFromImportant
 	---@type AuraInfo[]
 	local ccSpellData = {}
 	---@type AuraInfo[]
 	local importantSpellData = {}
 	---@type AuraInfo[]
 	local defensivesSpellData = {}
+	local seenDefensives = {}
 
 	for i = 1, maxAuras do
 		local ccData = C_UnitAuras.GetAuraDataByIndex(unit, i, ccFilter)
@@ -103,11 +105,15 @@ local function RebuildStates(watcher)
 						TotalDuration = duration,
 					}
 				end
+
+				if excludeDefensivesFromImportant then
+					seenDefensives[defensivesData.auraInstanceID] = true
+				end
 			end
 		end
 
 		local importantHelpfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, importantHelpfulFilter)
-		if importantHelpfulData then
+		if importantHelpfulData and not seenDefensives[importantHelpfulData.auraInstanceID] then
 			local isImportant = C_Spell.IsSpellImportant(importantHelpfulData.spellId)
 			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHelpfulData.auraInstanceID)
 			local start = durationInfo and durationInfo:GetStartTime()
@@ -126,7 +132,7 @@ local function RebuildStates(watcher)
 
 		-- avoid doubling up with cc data, as both CC and HARMFUL return the same thing sometimes
 		local importantHarmfulData = not ccData and C_UnitAuras.GetAuraDataByIndex(unit, i, importantHarmfulFilter)
-		if importantHarmfulData then
+		if importantHarmfulData and not seenDefensives[importantHarmfulData.auraInstanceID] then
 			local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)
 			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
 			local start = durationInfo and durationInfo:GetStartTime()
@@ -184,7 +190,7 @@ end
 ---@param unit string
 ---@param events string[]?
 ---@return Watcher
-function M:New(unit, events)
+function M:New(unit, events, excludeDefensivesFromImportant)
 	if not unit then
 		error("unit must not be nil")
 	end
@@ -199,6 +205,7 @@ function M:New(unit, events)
 			CcAuraState = {},
 			ImportantAuraState = {},
 			DefensiveState = {},
+			ExcludeDefensivesFromImportant = excludeDefensivesFromImportant,
 		},
 		Frame = nil,
 
