@@ -229,6 +229,29 @@ local dbDefaults = {
 		},
 	},
 
+	---@class TrinketsOptions
+	Trinkets = {
+		Enabled = true,
+
+		Point = "RIGHT",
+		RelativePoint = "LEFT",
+		Offset = {
+			X = -2,
+			Y = 0,
+		},
+
+		Icons = {
+			Size = 50,
+			Glow = false,
+			ReverseCooldown = true,
+			ShowText = true,
+		},
+
+		Font = {
+			File = "GameFontHighlightSmall",
+		},
+	},
+
 	Anchor1 = "",
 	Anchor2 = "",
 	Anchor3 = "",
@@ -569,12 +592,18 @@ function config:Init()
 	kickTimerPanel.name = "Kick Timer"
 
 	mini:AddSubCategory(category, kickTimerPanel)
+
+	local trinketsPanel = config.Trinkets:Build()
+	trinketsPanel.name = "Trinkets"
+
+	mini:AddSubCategory(category, trinketsPanel)
 end
 
 ---@class Config
 ---@field Init fun(self: table)
 ---@field Apply fun(self: table)
 ---@field DbDefaults Db
+---@field TabController TabReturn
 ---@field General GeneralConfig
 ---@field Instance InstanceConfig
 ---@field Anchors AnchorsConfig
@@ -582,7 +611,7 @@ end
 ---@field Alerts AlertsConfig
 ---@field Nameplates NameplatesConfig
 ---@field KickTimer KickTimerConfig
----@field TabController TabReturn
+---@field Trinkets TrinketsConfig
 
 ---@class HeaderOptions
 ---@field Enabled boolean

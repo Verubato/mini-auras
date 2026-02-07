@@ -1,15 +1,82 @@
 ---@type string, Addon
-local _, addon = ...
+local addonName, addon = ...
 local mini = addon.Core.Framework
 local array = addon.Utils.Array
 local units = addon.Utils.Units
 local maxParty = MAX_PARTY_MEMBERS or 4
 local maxRaid = MAX_RAID_MEMBERS or 40
+local maxTestFrames = 3
+local testPartyFrames = {}
+local testFramesContainer = nil
 ---@type Db
 local db
+local initialised = false
 ---@class Frames
 local M = {}
 addon.Core.Frames = M
+
+local function CreateTestFrame(i)
+	local frame = CreateFrame("Frame", addonName .. "TestFrame" .. i, UIParent, "BackdropTemplate")
+	frame:SetSize(144, 72)
+
+	local _, class = UnitClass("player")
+	local colour = RAID_CLASS_COLORS[class] or NORMAL_FONT_COLOR
+
+	frame:SetBackdrop({
+		bgFile = "Interface\\Buttons\\WHITE8X8",
+		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+		edgeSize = 12,
+		insets = { left = 2, right = 2, top = 2, bottom = 2 },
+	})
+
+	frame:SetBackdropColor(colour.r, colour.g, colour.b, 0.9)
+	frame:SetBackdropBorderColor(0, 0, 0, 1)
+
+	frame.Text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	frame.Text:SetPoint("CENTER")
+	frame.Text:SetText(("party%d"):format(i))
+	frame.Text:SetTextColor(1, 1, 1)
+
+	-- some modules expect this, e.g. trinket module
+	frame.unit = "party" .. i
+
+	print(frame.unit)
+
+	return frame
+end
+
+local function CreateTestFrames()
+	testFramesContainer = CreateFrame("Frame", addonName .. "TestContainer")
+	testFramesContainer:SetClampedToScreen(true)
+	testFramesContainer:EnableMouse(true)
+	testFramesContainer:SetMovable(true)
+	testFramesContainer:RegisterForDrag("LeftButton")
+	testFramesContainer:SetScript("OnDragStart", function(containerSelf)
+		containerSelf:StartMoving()
+	end)
+	testFramesContainer:SetScript("OnDragStop", function(containerSelf)
+		containerSelf:StopMovingOrSizing()
+	end)
+	testFramesContainer:SetPoint("CENTER", UIParent, "CENTER", -450, 0)
+	testFramesContainer:Hide()
+
+	local width, height = 144, 72
+	local padding = 10
+
+	for i = 1, maxTestFrames do
+		local frame = testPartyFrames[i]
+		if not frame then
+			frame = CreateTestFrame(i)
+			testPartyFrames[i] = frame
+		end
+
+		frame:ClearAllPoints()
+		frame:SetSize(width, height)
+		frame:SetPoint("TOP", testFramesContainer, "TOP", 0, (i - 1) * -frame:GetHeight() - padding)
+	end
+
+	testFramesContainer:SetSize(width + padding * 2, height * maxTestFrames + padding * 2)
+end
 
 ---Retrieves a list of Blizzard frames.
 ---@param visibleOnly boolean
@@ -294,6 +361,14 @@ function M:CustomFrames(visibleOnly)
 	return frames
 end
 
+function M:GetTestFrameContainer()
+	return testFramesContainer
+end
+
+function M:GetTestFrames()
+	return testPartyFrames
+end
+
 ---Anchors a frame to a texture region (which can't be anchored to with SetAllPoints()).
 function M:AnchorFrameToRegionGeometry(frame, region)
 	frame:ClearAllPoints()
@@ -323,7 +398,7 @@ function M:AnchorFrameToRegionGeometry(frame, region)
 	frame:SetSize(region:GetSize())
 end
 
-function M:GetAll(visibleOnly)
+function M:GetAll(visibleOnly, includeTestFrames)
 	local anchors = {}
 	local elvui = M:ElvUIFrames(visibleOnly)
 	local grid2 = M:Grid2Frames(visibleOnly)
@@ -340,6 +415,11 @@ function M:GetAll(visibleOnly)
 	array:Append(suf, anchors)
 	array:Append(plexus, anchors)
 	array:Append(custom, anchors)
+
+	if includeTestFrames then
+		local testFrames = M:GetTestFrames()
+		array:Append(testFrames, anchors)
+	end
 
 	return anchors
 end
@@ -402,5 +482,12 @@ function M:ShowHideFrame(header, anchor, isTest, options)
 end
 
 function M:Init()
+	if initialised then
+		return
+	end
+
 	db = mini:GetSavedVars()
+	CreateTestFrames()
+
+	initialised = true
 end

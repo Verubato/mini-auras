@@ -1,3 +1,4 @@
+-- TODO: refactor such that each module is responsible for it's own test mode
 ---@type string, Addon
 local addonName, addon = ...
 local mini = addon.Core.Framework
@@ -9,6 +10,7 @@ local portraitModule = addon.Modules.PortraitModule
 local alertsModule = addon.Modules.AlertsModule
 local nameplateModule = addon.Modules.NameplatesModule
 local kickTimerModule = addon.Modules.KickTimerModule
+local trinketsModule = addon.Modules.TrinketsModule
 local frames = addon.Core.Frames
 local LCG
 ---@type Db
@@ -18,11 +20,6 @@ local enabled = false
 local instanceOptions = nil
 ---@type table<table, table>
 local testHeaders = {}
----@type table<number, table>
-local testPartyFrames = {}
----@type table|nil
-local testFramesContainer = nil
-local maxTestFrames = 3
 ---@type TestSpell[]
 local testSpells = {}
 local testCcNameplateSpellIds = {
@@ -43,31 +40,6 @@ local previousSoundEnabled
 local M = {}
 addon.Modules.TestModeManager = M
 
-local function CreateTestFrame(i)
-	local frame = CreateFrame("Frame", addonName .. "TestFrame" .. i, UIParent, "BackdropTemplate")
-	frame:SetSize(144, 72)
-
-	local _, class = UnitClass("player")
-	local colour = RAID_CLASS_COLORS[class] or NORMAL_FONT_COLOR
-
-	frame:SetBackdrop({
-		bgFile = "Interface\\Buttons\\WHITE8X8",
-		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-		edgeSize = 12,
-		insets = { left = 2, right = 2, top = 2, bottom = 2 },
-	})
-
-	frame:SetBackdropColor(colour.r, colour.g, colour.b, 0.9)
-	frame:SetBackdropBorderColor(0, 0, 0, 1)
-
-	frame.Text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	frame.Text:SetPoint("CENTER")
-	frame.Text:SetText(("party%d"):format(i))
-	frame.Text:SetTextColor(1, 1, 1)
-
-	return frame
-end
-
 local function HideTestFrames()
 	for _, testHeader in pairs(testHeaders) do
 		if testHeader.Icons then
@@ -78,10 +50,12 @@ local function HideTestFrames()
 		testHeader:Hide()
 	end
 
+	local testPartyFrames = frames:GetTestFrames()
 	for _, testPartyFrame in ipairs(testPartyFrames) do
 		testPartyFrame:Hide()
 	end
 
+	local testFramesContainer = frames:GetTestFrameContainer()
 	if testFramesContainer then
 		testFramesContainer:Hide()
 	end
@@ -197,6 +171,47 @@ local function ShowAlertsTestMode()
 	end
 end
 
+local function AnchorTestFrames()
+	local width, height = 144, 72
+	local anchors = frames:GetAll(false)
+	local anchoredToReal = false
+	local padding = 10
+	local testFrames = frames:GetTestFrames()
+	local testFramesContainer = frames:GetTestFrameContainer()
+
+	if not testFramesContainer or not testFrames then
+		return
+	end
+
+	for i, frame in ipairs(testFrames) do
+		frame:ClearAllPoints()
+		frame:SetSize(width, height)
+
+		local anchor = #anchors > #testFrames and anchors[i]
+
+		if
+			anchor
+			and anchor:GetWidth() > 0
+			and anchor:GetHeight() > 0
+			and anchor:GetTop() ~= nil
+			and anchor:GetLeft() ~= nil
+			and not hasDanders
+		then
+			frame:SetAllPoints(anchors[i])
+			anchoredToReal = true
+		else
+			frame:SetPoint("TOP", testFramesContainer, "TOP", 0, (i - 1) * -frame:GetHeight() - padding)
+		end
+	end
+
+	if anchoredToReal then
+		testFramesContainer:Hide()
+	else
+		testFramesContainer:SetSize(width + padding * 2, height * #testFrames + padding * 2)
+		testFramesContainer:Show()
+	end
+end
+
 local function ShowTestFrames()
 	if not instanceOptions then
 		return
@@ -205,6 +220,7 @@ local function ShowTestFrames()
 	-- hide real headers
 	ccModule:HideHeaders()
 
+	local testPartyFrames = frames:GetTestFrames()
 	local headers = ccModule:GetHeaders()
 
 	-- try to show on real frames first
@@ -223,7 +239,7 @@ local function ShowTestFrames()
 			testPartyFrames[i]:Hide()
 		end
 	else
-		M:EnsureTestPartyFrames()
+		AnchorTestFrames()
 
 		local anchor, testHeader = next(testHeaders)
 		for i = 1, #testPartyFrames do
@@ -401,63 +417,6 @@ function M:SetOptions(options)
 	instanceOptions = options
 end
 
-function M:EnsureTestPartyFrames()
-	if not testFramesContainer then
-		local c = CreateFrame("Frame", addonName .. "TestContainer")
-		c:SetClampedToScreen(true)
-		c:EnableMouse(true)
-		c:SetMovable(true)
-		c:RegisterForDrag("LeftButton")
-		c:SetScript("OnDragStart", function(containerSelf)
-			containerSelf:StartMoving()
-		end)
-		c:SetScript("OnDragStop", function(containerSelf)
-			containerSelf:StopMovingOrSizing()
-		end)
-		c:SetPoint("CENTER", UIParent, "CENTER", -450, 0)
-		testFramesContainer = c
-	end
-
-	local width, height = 144, 72
-	local anchors = frames:GetAll(false)
-	local anchoredToReal = false
-	local padding = 10
-
-	for i = 1, maxTestFrames do
-		local frame = testPartyFrames[i]
-		if not frame then
-			frame = CreateTestFrame(i)
-			testPartyFrames[i] = frame
-		end
-
-		frame:ClearAllPoints()
-		frame:SetSize(width, height)
-
-		local anchor = #anchors > maxTestFrames and anchors[i]
-
-		if
-			anchor
-			and anchor:GetWidth() > 0
-			and anchor:GetHeight() > 0
-			and anchor:GetTop() ~= nil
-			and anchor:GetLeft() ~= nil
-			and not hasDanders
-		then
-			frame:SetAllPoints(anchors[i])
-			anchoredToReal = true
-		else
-			frame:SetPoint("TOP", testFramesContainer, "TOP", 0, (i - 1) * -frame:GetHeight() - padding)
-		end
-	end
-
-	if anchoredToReal then
-		testFramesContainer:Hide()
-	else
-		testFramesContainer:SetSize(width + padding * 2, height * maxTestFrames + padding * 2)
-		testFramesContainer:Show()
-	end
-end
-
 ---@param frame table
 ---@param options IconOptions
 function M:UpdateTestHeader(frame, options)
@@ -544,6 +503,7 @@ function M:Hide()
 	HideAlertsTestMode()
 	HideNameplateTestMode()
 	HideKickTimer()
+	trinketsModule:StopTesting()
 end
 
 function M:Show()
@@ -586,6 +546,12 @@ function M:Show()
 		ShowKickTimer()
 	else
 		HideKickTimer()
+	end
+
+	if db.Trinkets and db.Trinkets.Enabled then
+		trinketsModule:StartTesting()
+	else
+		trinketsModule:StopTesting()
 	end
 end
 

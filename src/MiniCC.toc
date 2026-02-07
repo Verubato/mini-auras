@@ -31,6 +31,7 @@ Modules\PortraitModule.lua
 Modules\AlertsModule.lua
 Modules\NameplatesModule.lua
 Modules\KickTimerModule.lua
+Modules\TrinketsModule.lua
 Modules\TestModeManager.lua
 
 Config\Config.lua
@@ -41,6 +42,7 @@ Config\Healer.lua
 Config\Alerts.lua
 Config\Nameplates.lua
 Config\KickTimer.lua
+Config\Trinkets.lua
 
 MiniCC.xml
 MiniCC.lua

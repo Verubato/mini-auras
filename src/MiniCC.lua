@@ -12,6 +12,7 @@ local modules = {
 	addon.Modules.AlertsModule,
 	addon.Modules.NameplatesModule,
 	addon.Modules.KickTimerModule,
+	addon.Modules.TrinketsModule
 }
 local eventsFrame
 local db
@@ -167,13 +168,14 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field CcHeader CcHeader
 
 ---@class Modules
+---@field TestModeManager TestModeManager
 ---@field PortraitModule PortraitModule
 ---@field HealerCcModule HealerCcModule
 ---@field NameplatesModule NameplatesModule
 ---@field KickTimerModule KickTimerModule
 ---@field AlertsModule AlertsModule
 ---@field CcModule CcModule
----@field TestModeManager TestModeManager
+---@field TrinketsModule TrinketsModule
 
 ---@class IModule
 ---@field Init fun(self: IModule)
