@@ -209,6 +209,10 @@ function M:New(unit, events, excludeDefensivesFromImportant)
 		},
 		Frame = nil,
 
+		GetUnit = function(watcherSelf)
+			return watcherSelf.State.Unit
+		end,
+
 		RegisterCallback = function(watcherSelf, callback)
 			if not callback then
 				return
@@ -305,6 +309,7 @@ end
 ---@field GetDefensiveState fun(self: Watcher): AuraInfo[]
 ---@field RegisterCallback fun(self: Watcher, callback: fun(self: Watcher))
 ---@field IsEnabled fun(self: Watcher): boolean
+---@field GetUnit fun(self: Watcher): string
 ---@field Enable fun(self: Watcher)
 ---@field Disable fun(self: Watcher)
 ---@field ClearState fun(self: Watcher, notify: boolean?)

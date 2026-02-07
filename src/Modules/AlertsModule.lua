@@ -36,52 +36,57 @@ local function OnAuraDataChanged()
 	local slot = 0
 
 	for _, watcher in ipairs(watchers) do
-		local importantData = watcher:GetImportantState()
+		local unit = watcher:GetUnit()
 
-		if slot > container.Count then
-			break
-		end
+		-- when rogues go stealth, we can't get their aura data anymore
+		if unit and UnitExists(unit) then
+			local importantData = watcher:GetImportantState()
 
-		if #importantData > 0 then
-			if capabilities:HasNewFilters() then
-				for _, data in ipairs(importantData) do
+			if slot > container.Count then
+				break
+			end
+
+			if #importantData > 0 then
+				if capabilities:HasNewFilters() then
+					for _, data in ipairs(importantData) do
+						slot = slot + 1
+						container:ClearSlot(slot)
+						container:SetSlotUsed(slot)
+						container:SetLayer(
+							slot,
+							1,
+							data.SpellIcon,
+							data.StartTime,
+							data.TotalDuration,
+							data.IsImportant,
+							db.Alerts.Icons.Glow,
+							db.Alerts.Icons.ReverseCooldown
+						)
+
+						container:FinalizeSlot(slot, 1)
+					end
+				else
 					slot = slot + 1
 					container:ClearSlot(slot)
 					container:SetSlotUsed(slot)
-					container:SetLayer(
-						slot,
-						1,
-						data.SpellIcon,
-						data.StartTime,
-						data.TotalDuration,
-						data.IsImportant,
-						db.Alerts.Icons.Glow,
-						db.Alerts.Icons.ReverseCooldown
-					)
 
-					container:FinalizeSlot(slot, 1)
+					local used = 0
+					for _, data in ipairs(importantData) do
+						used = used + 1
+						container:SetLayer(
+							slot,
+							used,
+							data.SpellIcon,
+							data.StartTime,
+							data.TotalDuration,
+							data.IsImportant,
+							db.Alerts.Icons.Glow,
+							db.Alerts.Icons.ReverseCooldown
+						)
+					end
+
+					container:FinalizeSlot(slot, used)
 				end
-			else
-				slot = slot + 1
-				container:ClearSlot(slot)
-				container:SetSlotUsed(slot)
-
-				local used = 0
-				for _, data in ipairs(importantData) do
-					used = used + 1
-					container:SetLayer(
-						slot,
-						used,
-						data.SpellIcon,
-						data.StartTime,
-						data.TotalDuration,
-						data.IsImportant,
-						db.Alerts.Icons.Glow,
-						db.Alerts.Icons.ReverseCooldown
-					)
-				end
-
-				container:FinalizeSlot(slot, used)
 			end
 		end
 	end
@@ -124,11 +129,51 @@ local function EnableDisable()
 		for _, watcher in ipairs(watchers) do
 			watcher:Enable()
 		end
+
+		OnAuraDataChanged()
 	else
 		for _, watcher in ipairs(watchers) do
 			watcher:Disable()
 		end
 	end
+end
+
+function M:GetAnchor()
+	return container
+end
+
+function M:ClearAll()
+	if not container then
+		return
+	end
+
+	container:ResetAllSlots()
+end
+
+function M:Refresh()
+	local options = db.Alerts
+
+	container.Frame:ClearAllPoints()
+	container.Frame:SetPoint(
+		options.Point,
+		_G[options.RelativeTo] or UIParent,
+		options.RelativePoint,
+		options.Offset.X,
+		options.Offset.Y
+	)
+
+	container:SetIconSize(db.Alerts.Icons.Size)
+
+	EnableDisable()
+end
+
+function M:Pause()
+	paused = true
+end
+
+function M:Resume()
+	paused = false
+	OnAuraDataChanged()
 end
 
 function M:Init()
@@ -191,41 +236,4 @@ function M:Init()
 	eventsFrame:SetScript("OnEvent", OnMatchStateChanged)
 
 	EnableDisable()
-end
-
-function M:GetAnchor()
-	return container
-end
-
-function M:Refresh()
-	local options = db.Alerts
-
-	container.Frame:ClearAllPoints()
-	container.Frame:SetPoint(
-		options.Point,
-		_G[options.RelativeTo] or UIParent,
-		options.RelativePoint,
-		options.Offset.X,
-		options.Offset.Y
-	)
-
-	container:SetIconSize(db.Alerts.Icons.Size)
-
-	EnableDisable()
-end
-
-function M:Pause()
-	paused = true
-end
-
-function M:Resume()
-	paused = false
-end
-
-function M:ClearAll()
-	if not container then
-		return
-	end
-
-	container:ResetAllSlots()
 end
