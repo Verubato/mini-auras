@@ -49,14 +49,12 @@ local function RebuildStates(watcher)
 		return
 	end
 
-	local excludeDefensivesFromImportant = watcher.State.ExcludeDefensivesFromImportant
 	---@type AuraInfo[]
 	local ccSpellData = {}
 	---@type AuraInfo[]
 	local importantSpellData = {}
 	---@type AuraInfo[]
 	local defensivesSpellData = {}
-	local excludeDefensives = {}
 
 	for i = 1, maxAuras do
 		local ccData = C_UnitAuras.GetAuraDataByIndex(unit, i, ccFilter)
@@ -104,16 +102,12 @@ local function RebuildStates(watcher)
 						StartTime = start,
 						TotalDuration = duration,
 					}
-
-					if excludeDefensivesFromImportant then
-						excludeDefensives[defensivesData.auraInstanceID] = true
-					end
 				end
 			end
 		end
 
 		local importantHelpfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, importantHelpfulFilter)
-		if importantHelpfulData and not excludeDefensives[importantHelpfulData.auraInstanceID] then
+		if importantHelpfulData then
 			local isImportant = C_Spell.IsSpellImportant(importantHelpfulData.spellId)
 			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHelpfulData.auraInstanceID)
 			local start = durationInfo and durationInfo:GetStartTime()
@@ -132,7 +126,7 @@ local function RebuildStates(watcher)
 
 		-- avoid doubling up with cc data, as both CC and HARMFUL return the same thing sometimes
 		local importantHarmfulData = not ccData and C_UnitAuras.GetAuraDataByIndex(unit, i, importantHarmfulFilter)
-		if importantHarmfulData and not excludeDefensives[importantHarmfulData.auraInstanceID] then
+		if importantHarmfulData then
 			local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)
 			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
 			local start = durationInfo and durationInfo:GetStartTime()
@@ -189,15 +183,10 @@ end
 
 ---@param unit string
 ---@param events string[]?
----@param excludeDefensivesFromImportant boolean? true by default
 ---@return Watcher
-function M:New(unit, events, excludeDefensivesFromImportant)
+function M:New(unit, events)
 	if not unit then
 		error("unit must not be nil")
-	end
-
-	if excludeDefensivesFromImportant == nil then
-		excludeDefensivesFromImportant = true
 	end
 
 	local watcher = {
@@ -210,7 +199,6 @@ function M:New(unit, events, excludeDefensivesFromImportant)
 			CcAuraState = {},
 			ImportantAuraState = {},
 			DefensiveState = {},
-			ExcludeDefensivesFromImportant = excludeDefensivesFromImportant,
 		},
 		Frame = nil,
 
@@ -323,7 +311,6 @@ end
 ---@field Callbacks fun()[]
 ---@field CcAuras AuraInfo[]
 ---@field ImportantAuras AuraInfo[]
----@field ExcludeDefensivesFromImportant boolean
 
 ---@class AuraInfo
 ---@field IsImportant? boolean

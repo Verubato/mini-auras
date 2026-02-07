@@ -72,21 +72,6 @@ function M:Build(panel, options)
 	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
-	local includeDefensivesChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = "Include Big Defensives",
-		Tooltip = "Whether to show 'big defensive' cooldowns or not.",
-		GetValue = function()
-			return options.BigDefensivesEnabled
-		end,
-		SetValue = function(value)
-			options.BigDefensivesEnabled = value
-			config:Apply()
-		end,
-	})
-
-	includeDefensivesChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
-
 	local iconSize = mini:Slider({
 		Parent = panel,
 		Min = 10,
@@ -103,7 +88,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", includeDefensivesChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()

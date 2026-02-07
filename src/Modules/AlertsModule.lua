@@ -163,9 +163,9 @@ function M:Init()
 	}
 
 	watchers = {
-		unitWatcher:New("arena1", events, false),
-		unitWatcher:New("arena2", events, false),
-		unitWatcher:New("arena3", events, false),
+		unitWatcher:New("arena1", events),
+		unitWatcher:New("arena2", events),
+		unitWatcher:New("arena3", events),
 	}
 
 	container:SetCount(#watchers)
