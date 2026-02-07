@@ -406,9 +406,6 @@ local function GetAndUpgradeDb()
 		vars.Version = 15
 	end
 
-	-- temp delete me
-	vars.Trinkets.Icons.ReverseCooldown = false
-
 	vars = mini:GetSavedVars(dbDefaults)
 
 	return vars
