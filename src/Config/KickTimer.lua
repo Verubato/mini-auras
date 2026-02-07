@@ -107,6 +107,7 @@ function M:Build()
 			"",
 			"Limitations:",
 			" - Doesn't work if the enemy misses kick (still investigating potential workaround/solution).",
+			" - Currently only works inside arena (doesn't work in duels/world, will add this later).",
 			"",
 			"Still working on improving this, so stay tuned for updates.",
 		},

@@ -94,6 +94,7 @@ function M:Build()
 		Lines = {
 			"Limitations:",
 			" - Doesn't work if your team mates trinket in the starting room.",
+			" - Doesn't work in the open world.",
 		},
 	})
 
