@@ -113,6 +113,8 @@ local function OnMatchStateChanged()
 	for _, watcher in ipairs(watchers) do
 		watcher:ClearState(true)
 	end
+
+	container:ResetAllSlots()
 end
 
 local function EnableDisable()
