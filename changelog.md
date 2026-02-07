@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.12.0
+
+- Improved kick tracker.
+- Added trinket tracker.
+- Various bug fixes and performance improvements.
+- Added Shadowed Unit Frames and Plexus support.
+
 ## 2.11.1
 
 Small performance improvement.

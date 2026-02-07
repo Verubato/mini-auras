@@ -2,7 +2,7 @@
 ## Title: MiniCC
 ## Notes: Shows CC and important spells on frames/nameplates/alerts in PvP.
 ## Author: Verz
-## Version: 2.11.1
+## Version: 2.12.0
 ## SavedVariables: MiniCCDB
 ## OptionalDeps: ElvUI, Grid2, DandersFrames, FrameSort
 ## IconTexture: Interface\AddOns\MiniCC\Icon.blp
