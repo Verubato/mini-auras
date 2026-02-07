@@ -31,6 +31,8 @@ local testCcNameplateSpellIds = {
 local testImportantNameplateSpellIds = {
 	-- warlock wall
 	104773,
+	-- precog
+	377362,
 }
 local hasDanders = false
 local testHealerHeader
