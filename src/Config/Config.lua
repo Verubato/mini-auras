@@ -8,7 +8,7 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 14,
+	Version = 15,
 	WhatsNew = {},
 
 	NotifiedChanges = true,
@@ -243,7 +243,7 @@ local dbDefaults = {
 		Icons = {
 			Size = 50,
 			Glow = false,
-			ReverseCooldown = true,
+			ReverseCooldown = false,
 			ShowText = true,
 		},
 
@@ -397,6 +397,18 @@ local function GetAndUpgradeDb()
 		vars.NotifiedChanges = false
 		vars.Version = 14
 	end
+
+	if vars.Version == 14 then
+		table.insert(vars.WhatsNew, " - Improved kick detection logic (can now detect who kicked you).")
+		table.insert(vars.WhatsNew, " - Added party trinkets tracker.")
+		table.insert(vars.WhatsNew, " - Added Shadowed Unit Frames and Plexus frames support.")
+		table.insert(vars.WhatsNew, " - Improved addon performance.")
+		vars.NotifiedChanges = false
+		vars.Version = 15
+	end
+
+	-- temp delete me
+	vars.Trinkets.Icons.ReverseCooldown = false
 
 	vars = mini:GetSavedVars(dbDefaults)
 
