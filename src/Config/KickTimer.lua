@@ -92,27 +92,27 @@ function M:Build()
 
 	iconSizeSlider.Slider:SetPoint("TOPLEFT", healerEnabled, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
+	local important = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+	important:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	important:SetText("Important Notes")
+
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"It's not great, it's not even good, but it's better than nothing.",
-			"Only works if you or your team mates actually get interrupted.",
+			"It's not great, it's arguably not even good, but it's better than nothing.",
+			"How does it work? It guesses who kicked you by correlating enemy action events against interrupt events.",
+			"For example you are facing 3 enemies who are all pressing buttons.",
+			"You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you.",
+			"As you can tell it's not guaranteed to be accurate, but so far from our testing it's pretty damn good with ancedotally a 95%+ success rate.",
 			"",
 			"Limitations:",
-			" - Doesn't know the real cooldown of the enemy's kick.",
-			" - Doesn't work if the enemy misses kick.",
+			" - Doesn't work if the enemy misses kick (still investigating potential workaround/solution).",
 			"",
-			"It guesses the kick cooldown based on the enemy specs during arena prep.",
-			"For example if you are facing mage/lock/druid, then it knows the kick cooldown is 24 seconds.",
-			"But if you are facing RMP, then it has to use the rogue kick cooldown of 15 seconds.",
-			"It doesn't know whether the rogue or mage kicked you, so if no kicks are on cooldown then it has to assume the worst case scenario and choose the rogue's cooldown.",
-			"If both kicks get used, then it could know that one cooldown is 15 seconds and the other one is 24 seconds but I haven't coded in this logic yet.",
-			"",
-			"Honestly I don't even know if it's worth having this in the addon, let me know your thoughts.",
+			"Still working on improving this, so stay tuned for updates.",
 		},
 	})
 
-	lines:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	lines:SetPoint("TOPLEFT", important, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	testBtn:SetSize(120, 26)

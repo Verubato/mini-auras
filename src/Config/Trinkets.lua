@@ -89,6 +89,16 @@ function M:Build()
 
 	offsetYSlider.Slider:SetPoint("LEFT", offsetXSlider.Slider, "RIGHT", horizontalSpacing, 0)
 
+	local lines = mini:TextBlock({
+		Parent = panel,
+		Lines = {
+			"Limitations:",
+			" - Doesn't work if your team mates trinket in the starting room.",
+		},
+	})
+
+	lines:SetPoint("TOPLEFT", offsetXSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+
 	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	testBtn:SetSize(120, 26)
 	testBtn:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
