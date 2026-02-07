@@ -120,7 +120,7 @@ local function OnHeaderEvent(header, event, arg1)
 					if glow then
 						local color = colourByDispelType
 							and C_UnitAuras.GetAuraDispelTypeColor(unit, data.auraInstanceID, dispelColorCurve)
-						local rgba = color and { color.r, color.g, color.b, color.a }
+						local rgba = color and { color.r, color.g, color.b, color.a } or nil
 
 						LCG.ProcGlow_Start(child, {
 							-- don't flash at the start

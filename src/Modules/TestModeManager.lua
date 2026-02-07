@@ -463,12 +463,13 @@ function M:UpdateTestHeader(frame, options)
 			end)
 
 			local color = options.ColorByDispelType
-				and {
-					spell.DispelColor.r,
-					spell.DispelColor.g,
-					spell.DispelColor.b,
-					spell.DispelColor.a,
-				}
+					and {
+						spell.DispelColor.r,
+						spell.DispelColor.g,
+						spell.DispelColor.b,
+						spell.DispelColor.a,
+					}
+				or nil
 			LCG.ProcGlow_Start(btn, { startAnim = false, color = color })
 		else
 			pcall(function()
