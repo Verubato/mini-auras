@@ -249,8 +249,8 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 					spellData.StartTime,
 					spellData.TotalDuration,
 					spellData.IsImportant,
-					db.Alerts.Icons.Glow,
-					db.Alerts.Icons.ReverseCooldown
+					options.Icons.Glow,
+					options.Icons.ReverseCooldown
 				)
 				container:FinalizeSlot(slot, 1)
 			end
