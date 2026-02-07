@@ -40,8 +40,6 @@ local function CreateTestFrame(i)
 	-- some modules expect this, e.g. trinket module
 	frame.unit = "party" .. i
 
-	print(frame.unit)
-
 	return frame
 end
 
