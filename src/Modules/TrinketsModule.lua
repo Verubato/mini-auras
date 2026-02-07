@@ -79,6 +79,7 @@ local function CreateIcon(unit)
 
 	frame.Icon = frame:CreateTexture(nil, "ARTWORK")
 	frame.Icon:SetAllPoints()
+	frame.Icon:SetTexture(defaultTrinketIcon or "Interface\\Icons\\INV_Misc_QuestionMark")
 
 	frame.CD = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate")
 	frame.CD:SetAllPoints()
@@ -291,17 +292,20 @@ end
 local function RefreshAll()
 	for _, watcher in pairs(watchers) do
 		local unit = watcher.Unit
-		if watcher.Icon and unit and UnitExists(unit) then
+		local icon = watcher.Icon
+
+		if icon and unit and UnitExists(unit) then
 			local spellId, start, duration = C_PvP.GetArenaCrowdControlInfo(unit)
 
-			if not spellId or not start or not duration then
-				-- don't overwrite existing data if they've already trinketed
-				return
+			if spellId and start and duration then
+				SetIconState(icon, spellId, start, duration)
+			else
+				if not icon.SpellId then
+					SetIconState(icon, nil, nil, nil)
+				end
 			end
-
-			SetIconState(watcher.Icon, spellId, start, duration)
-		elseif watcher.Icon then
-			SetIconState(watcher.Icon, nil, nil, nil)
+		elseif icon then
+			SetIconState(icon, nil, nil, nil)
 		end
 	end
 end
