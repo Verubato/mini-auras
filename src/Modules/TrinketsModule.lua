@@ -380,6 +380,11 @@ function M:StartTesting()
 
 	-- Stagger durations so you can see different states
 	local stateByUnit = {
+		player = {
+			spellId = defaultSpellId,
+			start = now,
+			duration = 90 * 1000,
+		},
 		party1 = {
 			spellId = defaultSpellId,
 			start = now,
@@ -388,12 +393,12 @@ function M:StartTesting()
 		party2 = {
 			spellId = defaultSpellId,
 			start = now,
-			duration = 90 * 1000,
+			duration = 60 * 1000,
 		},
 		party3 = {
 			spellId = defaultSpellId,
 			start = now,
-			duration = 60 * 1000,
+			duration = 45 * 1000,
 		},
 	}
 
