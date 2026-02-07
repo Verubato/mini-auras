@@ -81,6 +81,7 @@ local function HidePortraitIcons()
 	end
 
 	portraitModule:Refresh()
+	portraitModule:Resume()
 end
 
 local function HideAlertsTestMode()
