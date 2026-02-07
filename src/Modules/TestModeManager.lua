@@ -313,9 +313,9 @@ local function ShowNameplateTestMode()
 
 	for _, container in ipairs(containers) do
 		local now = GetTime()
-		local ccOptions = units:IsFriend(container.UnitToken) and db.Nameplates.Friendly.CC or db.Nameplates.Enemy.CC
-		local importantOptions = units:IsFriend(container.UnitToken) and db.Nameplates.Friendly.Important
-			or db.Nameplates.Enemy.Important
+		local options = nameplateModule:GetUnitOptions(container.UnitToken)
+		local ccOptions = options.CC
+		local importantOptions = options.Important
 		local ccContainer = container.CcContainer
 		local importantContainer = container.ImportantContainer
 

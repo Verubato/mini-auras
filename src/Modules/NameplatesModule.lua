@@ -23,23 +23,10 @@ local watchers = {}
 local M = {}
 addon.Modules.NameplatesModule = M
 
-local function GetUnitOptions(unitToken)
-	if units:IsEnemy(unitToken) then
-		-- friendly units can also be enemies in a duel
-		return db.Nameplates.Enemy
-	end
-
-	if units:IsFriend(unitToken) then
-		return db.Nameplates.Friendly
-	end
-
-	return db.Nameplates.Enemy
-end
-
 ---@return string anchorPoint
 ---@return string relativeToPoint
 local function GetCcAnchorPoint(unitToken)
-	local config = GetUnitOptions(unitToken)
+	local config = M:GetUnitOptions(unitToken)
 	local grow = config.CC.Grow
 
 	local anchorPoint, relativeToPoint
@@ -57,7 +44,7 @@ end
 ---@return string anchorPoint
 ---@return string relativeToPoint
 local function GetImportantAnchorPoint(unitToken)
-	local config = GetUnitOptions(unitToken)
+	local config = M:GetUnitOptions(unitToken)
 	local grow = config.Important.Grow
 
 	local anchorPoint, relativeToPoint
@@ -80,7 +67,7 @@ end
 local function CreateContainersForNameplate(nameplate, unitToken)
 	local ccContainer = nil
 	local importantContainer = nil
-	local config = GetUnitOptions(unitToken)
+	local config = M:GetUnitOptions(unitToken)
 
 	-- Create CC container
 	local ccOptions = config.CC
@@ -152,7 +139,7 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 		return
 	end
 
-	local unitOptions = GetUnitOptions(unitToken)
+	local unitOptions = M:GetUnitOptions(unitToken)
 	local options = unitOptions and unitOptions.CC
 
 	if not options or not options.Enabled then
@@ -225,7 +212,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 		return
 	end
 
-	local unitOptions = GetUnitOptions(unitToken)
+	local unitOptions = M:GetUnitOptions(unitToken)
 	local options = unitOptions and unitOptions.Important
 
 	if not options or not options.Enabled then
@@ -447,6 +434,19 @@ local function AnyEnabled()
 		or db.Nameplates.Enemy.Important.Enabled
 end
 
+function M:GetUnitOptions(unitToken)
+	if units:IsEnemy(unitToken) then
+		-- friendly units can also be enemies in a duel
+		return db.Nameplates.Enemy
+	end
+
+	if units:IsFriend(unitToken) then
+		return db.Nameplates.Friendly
+	end
+
+	return db.Nameplates.Enemy
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 
@@ -498,7 +498,7 @@ function M:Refresh()
 	for _, data in pairs(nameplateAnchors) do
 		if data.Nameplate and data.UnitToken then
 			local ccAnchorPoint, ccRelativeToPoint = GetCcAnchorPoint(data.UnitToken)
-			local unitOptions = GetUnitOptions(data.UnitToken)
+			local unitOptions = M:GetUnitOptions(data.UnitToken)
 			local ccOptions = unitOptions and unitOptions.CC
 			local ccContainer = data.CcContainer
 
