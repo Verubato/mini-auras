@@ -29,35 +29,13 @@ local function OnAuraDataChanged()
 	local slotsNeeded = 0
 
 	for _, watcher in ipairs(watchers) do
-		local defensivesData = db.Alerts.BigDefensivesEnabled and watcher:GetDefensiveState() or {}
 		local importantData = watcher:GetImportantState()
-		local needed = #defensivesData + (#importantData > 0 and 1 or 0)
+		local needed = (#importantData > 0 and 1 or 0)
 
 		slotsNeeded = slotsNeeded + needed
 
 		if slot > anchor.Count then
 			break
-		end
-
-		if #defensivesData > 0 then
-			for _, data in ipairs(defensivesData) do
-				anchor:ClearSlot(slot)
-				anchor:SetSlotUsed(slot)
-
-				anchor:SetLayer(
-					slot,
-					1,
-					data.SpellIcon,
-					data.StartTime,
-					data.TotalDuration,
-					data.IsDefensive,
-					db.Alerts.Icons.Glow,
-					db.Alerts.Icons.ReverseCooldown
-				)
-
-				anchor:FinalizeSlot(slot, 1)
-				slot = slot + 1
-			end
 		end
 
 		if #importantData > 0 then
@@ -156,9 +134,9 @@ function M:Init()
 	}
 
 	watchers = {
-		unitWatcher:New("arena1", events, true),
-		unitWatcher:New("arena2", events, true),
-		unitWatcher:New("arena3", events, true),
+		unitWatcher:New("arena1", events, false),
+		unitWatcher:New("arena2", events, false),
+		unitWatcher:New("arena3", events, false),
 	}
 
 	anchor:SetCount(#watchers)
