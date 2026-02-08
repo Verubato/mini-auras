@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.12.1
+
+Fixed portraits not disabling.
+
 ## 2.12.0
 
 - Improved kick tracker.
