@@ -19,7 +19,7 @@ function M:Build(panel, options)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"A separate region for when you're healer is CC'd.",
+			"A separate region for when your healer is CC'd.",
 		},
 	})
 
