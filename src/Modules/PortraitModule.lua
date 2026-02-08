@@ -251,12 +251,13 @@ local function EnableDisable()
 	local options = db.Portrait
 
 	if options.Enabled then
-		for _, watcher in ipairs(watchers) do
+		for _, watcher in pairs(watchers) do
 			watcher:Enable()
 		end
 	else
-		for _, watcher in ipairs(watchers) do
+		for _, watcher in pairs(watchers) do
 			watcher:Disable()
+			watcher:ClearState(true)
 		end
 	end
 end

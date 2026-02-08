@@ -239,6 +239,8 @@ function M:New(unit, events, excludeDefensivesFromImportant)
 					frame:RegisterEvent(event)
 				end
 			end
+
+			watcherSelf.State.Enabled = true
 		end,
 
 		Disable = function(watcherSelf)
@@ -246,14 +248,9 @@ function M:New(unit, events, excludeDefensivesFromImportant)
 				return
 			end
 
-			watcherSelf.Frame:UnregisterEvent("UNIT_AURA")
+			watcherSelf.Frame:UnregisterAllEvents()
 			watcherSelf.Frame:SetScript("OnEvent", nil)
-
-			if watcherSelf.Events then
-				for _, event in ipairs(watcherSelf.Events) do
-					frame:UnregisterEvent(event)
-				end
-			end
+			watcherSelf.State.Enabled = false
 		end,
 
 		ClearState = function(watcherSelf, notify)
