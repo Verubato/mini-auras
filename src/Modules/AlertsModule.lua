@@ -36,15 +36,16 @@ local function OnAuraDataChanged()
 	local slot = 0
 
 	for _, watcher in ipairs(watchers) do
+		if slot > container.Count then
+			break
+		end
+
 		local unit = watcher:GetUnit()
 
-		-- when rogues go stealth, we can't get their aura data anymore
+		-- when units go stealth, we can't get their aura data anymore
 		if unit and UnitExists(unit) then
+			local defensivesData = watcher:GetDefensiveState()
 			local importantData = watcher:GetImportantState()
-
-			if slot > container.Count then
-				break
-			end
 
 			if #importantData > 0 then
 				if capabilities:HasNewFilters() then
@@ -62,7 +63,6 @@ local function OnAuraDataChanged()
 							db.Alerts.Icons.Glow,
 							db.Alerts.Icons.ReverseCooldown
 						)
-
 						container:FinalizeSlot(slot, 1)
 					end
 				else
@@ -86,6 +86,26 @@ local function OnAuraDataChanged()
 					end
 
 					container:FinalizeSlot(slot, used)
+				end
+			end
+
+			if #defensivesData > 0 then
+				-- we only get defensive data with new filters
+				for _, data in ipairs(defensivesData) do
+					slot = slot + 1
+					container:ClearSlot(slot)
+					container:SetSlotUsed(slot)
+					container:SetLayer(
+						slot,
+						1,
+						data.SpellIcon,
+						data.StartTime,
+						data.TotalDuration,
+						data.IsImportant,
+						db.Alerts.Icons.Glow,
+						db.Alerts.Icons.ReverseCooldown
+					)
+					container:FinalizeSlot(slot, 1)
 				end
 			end
 		end

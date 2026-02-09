@@ -72,6 +72,22 @@ function M:Build(panel, options)
 	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
+	local includeDefensivesChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Include Defensives",
+		Tooltip = "Includes 'big defensives' (e.g. ice block, cloak of shadows) in the alerts.",
+		GetValue = function()
+			return options.IncludeBigDefensives
+		end,
+		SetValue = function(value)
+			options.IncludeBigDefensives = value
+			config:Apply()
+		end,
+	})
+
+	includeDefensivesChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	includeDefensivesChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+
 	local iconSize = mini:Slider({
 		Parent = panel,
 		Min = 10,
