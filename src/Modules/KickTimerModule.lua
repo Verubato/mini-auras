@@ -155,7 +155,7 @@ local function GetPlayerSpecId()
 	return nil
 end
 
-local function EnsureKickBar()
+local function CreateKickBar()
 	local options = db.KickTimer
 	local relativeTo = _G[options.RelativeTo] or UIParent
 	local frame = CreateFrame("Frame", addonName .. "KickBar", UIParent, "BackdropTemplate")
@@ -235,6 +235,20 @@ local function LayoutKickBar()
 
 	kickBar.Anchor:SetWidth(math.max(200, totalWidth + 8))
 	kickBar.Anchor:Show()
+end
+
+local function PositionKickBar()
+	local frame = kickBar.Anchor
+
+	if not frame then
+		return
+	end
+
+	local options = db.KickTimer
+	local relativeTo = _G[options.RelativeTo] or UIParent
+
+	frame:ClearAllPoints()
+	frame:SetPoint(options.Point, relativeTo, options.RelativePoint, options.Offset.X, options.Offset.Y)
 end
 
 local function CreateKickIcon(reverseCooldown)
@@ -557,7 +571,7 @@ function M:Init()
 
 	kickBar.Size = db.KickTimer.Icons.Size
 
-	EnsureKickBar()
+	CreateKickBar()
 
 	for _, unit in ipairs(friendlyUnitsToWatch) do
 		partyUnitsEventsFrames[unit] = CreateFrame("Frame")
@@ -598,6 +612,8 @@ function M:Refresh()
 
 	-- Update layout to reflect new sizes
 	LayoutKickBar()
+
+	PositionKickBar()
 end
 
 ---@class KickBar
