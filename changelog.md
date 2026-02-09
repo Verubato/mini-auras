@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.13.1
+
+Increased number of shown spell alerts from 3 to 8.
+
 ## 2.13.0
 
 Added other addons information panel.
