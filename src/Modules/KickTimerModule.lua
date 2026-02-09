@@ -461,6 +461,7 @@ local function OnEnteringWorld()
 end
 
 local function CreateKickEntry(duration, icon)
+	local key = math.random()
 	local frame = GetOrCreateIcon()
 	frame.Icon:SetTexture(icon)
 	frame.Active = true
