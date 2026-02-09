@@ -217,7 +217,7 @@ local dbDefaults = {
 		RelativePoint = "CENTER",
 		Offset = {
 			X = 0,
-			Y = -300,
+			Y = -200,
 		},
 
 		Icons = {

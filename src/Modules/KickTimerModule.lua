@@ -35,6 +35,7 @@ local partyUnitsEventsFrames = {}
 ---@type { string: table }
 local enemyUnitsEventsFrames = {}
 local matchEventsFrame
+local worldEventsFrame
 local playerSpecEventsFrame
 
 local minKickCooldown = 15
@@ -135,6 +136,12 @@ local specInfoBySpecId = {
 ---@class KickTimerModule : IModule
 local M = {}
 addon.Modules.KickTimerModule = M
+
+local function IsArena()
+	local inInstance, instanceType = IsInInstance()
+
+	return inInstance and instanceType == "arena"
+end
 
 local function GetPlayerSpecId()
 	local specIndex = GetSpecialization()
@@ -302,11 +309,13 @@ local function OnEnemyUnitEvent(unit, _, event)
 	end
 end
 
-local function UpdateMinKickCooldownFromArenaSpecs()
+local function UpdateMinKickCooldown()
 	local minCd = 15
 	local found = false
 
-	for i = 1, 5 do
+	local specs = GetNumArenaOpponentSpecs()
+
+	for i = 1, specs do
 		local specId = GetArenaOpponentSpec(i)
 		if specId and specId > 0 then
 			local info = specInfoBySpecId[specId]
@@ -323,9 +332,7 @@ local function UpdateMinKickCooldownFromArenaSpecs()
 	minKickCooldown = found and minCd or 15
 end
 
-local function OnArenaPrep()
-	UpdateMinKickCooldownFromArenaSpecs()
-
+local function UpdateKickDurations()
 	wipe(kickDurationsByUnit)
 	wipe(kickIconsByUnit)
 
@@ -339,6 +346,11 @@ local function OnArenaPrep()
 		kickDurationsByUnit[unit] = info and info.KickCd or nil
 		kickIconsByUnit[unit] = (info and info.KickIcon) or nil
 	end
+end
+
+local function OnArenaPrep()
+	UpdateMinKickCooldown()
+	UpdateKickDurations()
 
 	M:ClearIcons()
 end
@@ -407,6 +419,31 @@ local function Enable(options)
 	kickBar.Anchor:Show()
 
 	enabled = true
+end
+
+local function EnableDisable()
+	local options = db.KickTimer
+
+	if not M:IsEnabledForPlayer(options) then
+		Disable()
+		return
+	end
+
+	if not IsArena() then
+		Disable()
+		return
+	end
+
+	Enable()
+end
+
+local function OnEnteringWorld()
+	EnableDisable()
+
+	-- always prep event if disabled, as they might re-enable before gates open
+	if IsArena() then
+		OnArenaPrep()
+	end
 end
 
 local function CreateKickEntry(duration, icon)
@@ -485,14 +522,16 @@ end
 ---@param kickedBy string?
 function M:Kicked(kickedBy)
 	local duration = minKickCooldown
-	if kickedBy and kickDurationsByUnit[kickedBy] then
-		duration = kickDurationsByUnit[kickedBy]
-	end
-
 	local tex = kickIcon
 
-	if kickedBy and kickIconsByUnit[kickedBy] then
-		tex = kickIconsByUnit[kickedBy]
+	if kickedBy then
+		if kickDurationsByUnit[kickedBy] then
+			duration = kickDurationsByUnit[kickedBy]
+		end
+
+		if kickIconsByUnit[kickedBy] then
+			tex = kickIconsByUnit[kickedBy]
+		end
 	end
 
 	CreateKickEntry(duration, tex)
@@ -530,9 +569,12 @@ function M:Init()
 
 	-- always populate even if disabled, as they might re-enable during arena
 	matchEventsFrame = CreateFrame("Frame")
-	matchEventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	matchEventsFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
 	matchEventsFrame:SetScript("OnEvent", OnArenaPrep)
+
+	worldEventsFrame = CreateFrame("Frame")
+	worldEventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	worldEventsFrame:SetScript("OnEvent", OnEnteringWorld)
 
 	playerSpecEventsFrame = CreateFrame("Frame")
 	playerSpecEventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
@@ -549,20 +591,13 @@ function M:Init()
 end
 
 function M:Refresh()
-	local options = db.KickTimer
-
-	if not M:IsEnabledForPlayer(options) then
-		Disable()
-		return
-	end
+	EnableDisable()
 
 	-- Apply icon options even if already enabled (for config changes)
 	ApplyKickBarIconOptions()
 
 	-- Update layout to reflect new sizes
 	LayoutKickBar()
-
-	Enable(options)
 end
 
 ---@class KickBar
