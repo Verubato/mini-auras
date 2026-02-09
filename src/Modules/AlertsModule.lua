@@ -162,7 +162,7 @@ function M:Refresh()
 		options.Offset.Y
 	)
 
-	container:SetIconSize(db.Alerts.Icons.Size)
+	container:SetIconSize(options.Icons.Size)
 
 	EnableDisable()
 end

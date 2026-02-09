@@ -49,7 +49,6 @@ local function RebuildStates(watcher)
 		return
 	end
 
-	local excludeDefensivesFromImportant = watcher.State.ExcludeDefensivesFromImportant
 	---@type AuraInfo[]
 	local ccSpellData = {}
 	---@type AuraInfo[]
@@ -57,6 +56,31 @@ local function RebuildStates(watcher)
 	---@type AuraInfo[]
 	local defensivesSpellData = {}
 	local seenDefensives = {}
+
+	-- process big defensives first so we can exclude duplicates from important
+	for i = 1, maxAuras do
+		if capabilities:HasNewFilters() then
+			local defensivesData =
+				C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|BIG_DEFENSIVE|INCLUDE_NAME_PLATE_ONLY")
+			if defensivesData then
+				local durationInfo = C_UnitAuras.GetAuraDuration(unit, defensivesData.auraInstanceID)
+				local start = durationInfo and durationInfo:GetStartTime()
+				local duration = durationInfo and durationInfo:GetTotalDuration()
+
+				if start and duration then
+					defensivesSpellData[#defensivesSpellData + 1] = {
+						IsDefensive = true,
+						SpellId = defensivesData.spellId,
+						SpellIcon = defensivesData.icon,
+						StartTime = start,
+						TotalDuration = duration,
+					}
+				end
+
+				seenDefensives[defensivesData.auraInstanceID] = true
+			end
+		end
+	end
 
 	for i = 1, maxAuras do
 		local ccData = C_UnitAuras.GetAuraDataByIndex(unit, i, ccFilter)
@@ -84,30 +108,6 @@ local function RebuildStates(watcher)
 						StartTime = start,
 						TotalDuration = duration,
 					}
-				end
-			end
-		end
-
-		if capabilities:HasNewFilters() then
-			local defensivesData =
-				C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|BIG_DEFENSIVE|INCLUDE_NAME_PLATE_ONLY")
-			if defensivesData then
-				local durationInfo = C_UnitAuras.GetAuraDuration(unit, defensivesData.auraInstanceID)
-				local start = durationInfo and durationInfo:GetStartTime()
-				local duration = durationInfo and durationInfo:GetTotalDuration()
-
-				if start and duration then
-					defensivesSpellData[#defensivesSpellData + 1] = {
-						IsDefensive = true,
-						SpellId = defensivesData.spellId,
-						SpellIcon = defensivesData.icon,
-						StartTime = start,
-						TotalDuration = duration,
-					}
-				end
-
-				if excludeDefensivesFromImportant then
-					seenDefensives[defensivesData.auraInstanceID] = true
 				end
 			end
 		end
@@ -190,7 +190,7 @@ end
 ---@param unit string
 ---@param events string[]?
 ---@return Watcher
-function M:New(unit, events, excludeDefensivesFromImportant)
+function M:New(unit, events)
 	if not unit then
 		error("unit must not be nil")
 	end
@@ -205,7 +205,6 @@ function M:New(unit, events, excludeDefensivesFromImportant)
 			CcAuraState = {},
 			ImportantAuraState = {},
 			DefensiveState = {},
-			ExcludeDefensivesFromImportant = excludeDefensivesFromImportant,
 		},
 		Frame = nil,
 
