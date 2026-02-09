@@ -281,11 +281,13 @@ local function OnFriendlyUnitEvent(unit, _, event, ...)
 		end
 
 		local now = GetTime()
-		local timeSinceLastAction = now - lastEnemyCastState.Time
 		local u = nil
 
-		if lastEnemyCastState.Time and timeSinceLastAction < lastEnemyKickTimeDuration then
-			u = lastEnemyCastState.Unit
+		if lastEnemyCastState.Unit and lastEnemyCastState.Time then
+			local timeSinceLastAction = now - lastEnemyCastState.Time
+			if lastEnemyCastState.Time and timeSinceLastAction < lastEnemyKickTimeDuration then
+				u = lastEnemyCastState.Unit
+			end
 		end
 
 		kickedByUnits[unit] = true
@@ -342,6 +344,10 @@ local function OnArenaPrep()
 end
 
 local function Disable()
+	if not enabled then
+		return
+	end
+
 	for _, unit in ipairs(friendlyUnitsToWatch) do
 		local frame = partyUnitsEventsFrames[unit]
 		if frame then
