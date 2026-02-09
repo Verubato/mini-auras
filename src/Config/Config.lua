@@ -604,6 +604,11 @@ function config:Init()
 	trinketsPanel.name = "Trinkets"
 
 	mini:AddSubCategory(category, trinketsPanel)
+
+	local otherAddonsPanel = config.OtherAddons:Build()
+	otherAddonsPanel.name = "Other Addons"
+
+	mini:AddSubCategory(category, otherAddonsPanel)
 end
 
 ---@class Config
@@ -619,6 +624,7 @@ end
 ---@field Nameplates NameplatesConfig
 ---@field KickTimer KickTimerConfig
 ---@field Trinkets TrinketsConfig
+---@field OtherAddons OtherAddonsConfig
 
 ---@class HeaderOptions
 ---@field Enabled boolean

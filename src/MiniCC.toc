@@ -43,6 +43,7 @@ Config\Alerts.lua
 Config\Nameplates.lua
 Config\KickTimer.lua
 Config\Trinkets.lua
+Config\OtherAddons.lua
 
 MiniCC.xml
 MiniCC.lua
