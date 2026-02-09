@@ -401,7 +401,7 @@ local function Disable()
 	enabled = false
 end
 
-local function Enable(options)
+local function Enable()
 	if enabled then
 		return
 	end
@@ -427,6 +427,7 @@ local function Enable(options)
 		end
 	end
 
+	local options = db.KickTimer
 	local relativeTo = _G[options.RelativeTo] or UIParent
 	kickBar.Anchor:ClearAllPoints()
 	kickBar.Anchor:SetPoint(options.Point, relativeTo, options.RelativePoint, options.Offset.X, options.Offset.Y)
