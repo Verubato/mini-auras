@@ -180,7 +180,7 @@ function M:Init()
 	db = mini:GetSavedVars()
 
 	local options = db.Alerts
-	local count = 3
+	local count = 8
 	local size = options.Icons.Size
 
 	container = iconSlotContainer:New(UIParent, count, size, 2)
