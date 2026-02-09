@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local capabilities = addon.Capabilities
+
 local maxAuras = 40
 local ccFilter = capabilities:HasNewFilters() and "HARMFUL|CROWD_CONTROL" or "HARMFUL|INCLUDE_NAME_PLATE_ONLY"
 local importantHelpfulFilter = capabilities:HasNewFilters() and "HELPFUL|IMPORTANT" or "HELPFUL|INCLUDE_NAME_PLATE_ONLY"
@@ -10,24 +11,26 @@ local importantHarmfulFilter = capabilities:HasNewFilters() and "HARMFUL|IMPORTA
 local M = {}
 addon.Core.UnitAuraWatcher = M
 
+---@param watcher Watcher
 local function NotifyCallbacks(watcher)
 	local callbacks = watcher.State.Callbacks
+
 	if not callbacks or #callbacks == 0 then
 		return
 	end
+
 	for _, callback in ipairs(callbacks) do
 		callback(watcher)
 	end
 end
 
 ---Quick check using updateInfo to avoid scanning every time.
----Return true if updateInfo suggests there might be relevant changes.
+---@return boolean
 local function MightAffectOurFilters(updateInfo)
 	if not updateInfo then
 		return true
 	end
 
-	-- If anything was removed/added/updated we probably care.
 	if updateInfo.isFullUpdate then
 		return true
 	end
@@ -43,8 +46,115 @@ local function MightAffectOurFilters(updateInfo)
 	return false
 end
 
-local function RebuildStates(watcher)
-	local unit = watcher.State.Unit
+local function WatcherFrameOnEvent(frame, event, ...)
+	local watcher = frame.Watcher
+	if not watcher then
+		return
+	end
+	watcher:OnEvent(event, ...)
+end
+
+local Watcher = {}
+Watcher.__index = Watcher
+
+function Watcher:GetUnit()
+	return self.State.Unit
+end
+
+---@param callback fun(self: Watcher)
+function Watcher:RegisterCallback(callback)
+	if not callback then
+		return
+	end
+	self.State.Callbacks[#self.State.Callbacks + 1] = callback
+end
+
+function Watcher:IsEnabled()
+	return self.State.Enabled
+end
+
+function Watcher:Enable()
+	if self.State.Enabled then
+		return
+	end
+
+	local frame = self.Frame
+	if not frame then
+		return
+	end
+
+	frame:RegisterUnitEvent("UNIT_AURA", self.State.Unit)
+
+	if self.State.Events then
+		for _, event in ipairs(self.State.Events) do
+			frame:RegisterEvent(event)
+		end
+	end
+
+	self.State.Enabled = true
+end
+
+function Watcher:Disable()
+	if not self.State.Enabled then
+		return
+	end
+
+	local frame = self.Frame
+	if frame then
+		frame:UnregisterAllEvents()
+	end
+
+	self.State.Enabled = false
+end
+
+---@param notify boolean?
+function Watcher:ClearState(notify)
+	local state = self.State
+	state.CcAuraState = {}
+	state.ImportantAuraState = {}
+	state.DefensiveState = {}
+
+	if notify then
+		NotifyCallbacks(self)
+	end
+end
+
+function Watcher:ForceFullUpdate()
+	-- force a rebuild immediately
+	self:OnEvent("UNIT_AURA", self.State.Unit, { isFullUpdate = true })
+end
+
+function Watcher:Dispose()
+	local frame = self.Frame
+	if frame then
+		frame:UnregisterAllEvents()
+		frame:SetScript("OnEvent", nil)
+		frame.Watcher = nil
+	end
+	self.Frame = nil
+
+	-- ensure we don't keep references alive
+	self.State.Callbacks = {}
+	self:ClearState(false)
+end
+
+---@return AuraInfo[]
+function Watcher:GetCcState()
+	return self.State.CcAuraState
+end
+
+---@return AuraInfo[]
+function Watcher:GetImportantState()
+	return self.State.ImportantAuraState
+end
+
+---@return AuraInfo[]
+function Watcher:GetDefensiveState()
+	return self.State.DefensiveState
+end
+
+function Watcher:RebuildStates()
+	local unit = self.State.Unit
 	if not unit then
 		return
 	end
@@ -58,10 +168,11 @@ local function RebuildStates(watcher)
 	local seenDefensives = {}
 
 	-- process big defensives first so we can exclude duplicates from important
-	for i = 1, maxAuras do
-		if capabilities:HasNewFilters() then
+	if capabilities:HasNewFilters() then
+		for i = 1, maxAuras do
 			local defensivesData =
 				C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|BIG_DEFENSIVE|INCLUDE_NAME_PLATE_ONLY")
+
 			if defensivesData then
 				local durationInfo = C_UnitAuras.GetAuraDuration(unit, defensivesData.auraInstanceID)
 				local start = durationInfo and durationInfo:GetStartTime()
@@ -150,41 +261,36 @@ local function RebuildStates(watcher)
 		end
 	end
 
-	---@type WatcherState
-	local state = watcher.State
+	local state = self.State
 	state.CcAuraState = ccSpellData
 	state.ImportantAuraState = importantSpellData
 	state.DefensiveState = defensivesSpellData
 end
 
-local function OnEvent(watcher, event, ...)
-	local state = watcher.State
+function Watcher:OnEvent(event, ...)
+	local state = self.State
+
 	if event == "UNIT_AURA" then
 		local unit, updateInfo = ...
 		if unit and unit ~= state.Unit then
 			return
 		end
-
 		if not MightAffectOurFilters(updateInfo) then
 			return
 		end
-	end
-
-	if event == "ARENA_OPPONENT_UPDATE" then
+	elseif event == "ARENA_OPPONENT_UPDATE" then
 		local unit = ...
 		if unit ~= state.Unit then
 			return
 		end
 	end
 
-	local u = state.Unit
-
-	if not u then
+	if not state.Unit then
 		return
 	end
 
-	RebuildStates(watcher)
-	NotifyCallbacks(watcher)
+	self:RebuildStates()
+	NotifyCallbacks(self)
 end
 
 ---@param unit string
@@ -195,8 +301,9 @@ function M:New(unit, events)
 		error("unit must not be nil")
 	end
 
-	local watcher = {
-		---@class WatcherState
+	---@type Watcher
+	local watcher = setmetatable({
+		Frame = nil,
 		State = {
 			Unit = unit,
 			Events = events,
@@ -206,119 +313,20 @@ function M:New(unit, events)
 			ImportantAuraState = {},
 			DefensiveState = {},
 		},
-		Frame = nil,
+	}, Watcher)
 
-		GetUnit = function(watcherSelf)
-			return watcherSelf.State.Unit
-		end,
+	local frame = CreateFrame("Frame")
+	frame.Watcher = watcher
+	frame:SetScript("OnEvent", WatcherFrameOnEvent)
 
-		RegisterCallback = function(watcherSelf, callback)
-			if not callback then
-				return
-			end
-			watcherSelf.State.Callbacks[#watcherSelf.State.Callbacks + 1] = callback
-		end,
-
-		IsEnabled = function(watcherSelf)
-			return watcherSelf.State.Enabled
-		end,
-		Enable = function(watcherSelf)
-			if watcherSelf.State.Enabled then
-				return
-			end
-
-			local frame = watcherSelf.Frame
-			frame:SetScript("OnEvent", function(_, event, ...)
-				OnEvent(watcherSelf, event, ...)
-			end)
-			frame:RegisterUnitEvent("UNIT_AURA", watcherSelf.State.Unit)
-
-			if watcherSelf.State.Events then
-				for _, event in ipairs(watcherSelf.State.Events) do
-					frame:RegisterEvent(event)
-				end
-			end
-
-			watcherSelf.State.Enabled = true
-		end,
-
-		Disable = function(watcherSelf)
-			if not watcherSelf.State.Enabled then
-				return
-			end
-
-			watcherSelf.Frame:UnregisterAllEvents()
-			watcherSelf.Frame:SetScript("OnEvent", nil)
-			watcherSelf.State.Enabled = false
-		end,
-
-		ClearState = function(watcherSelf, notify)
-			local state = watcherSelf.State
-			state.CcAuraState = {}
-			state.ImportantAuraState = {}
-			state.DefensiveState = {}
-			if notify then
-				NotifyCallbacks(watcherSelf)
-			end
-		end,
-
-		ForceFullUpdate = function(watcherSelf)
-			-- force a rebuild immediately (important when tokens are reused)
-			OnEvent(watcherSelf, "UNIT_AURA", watcherSelf.State.Unit, { isFullUpdate = true })
-		end,
-
-		Dispose = function(watcherSelf)
-			local f = watcherSelf.Frame
-			if f then
-				f:UnregisterAllEvents()
-				f:SetScript("OnEvent", nil)
-				watcherSelf.Frame = nil
-			end
-			-- ensure we don't keep closures alive
-			watcherSelf.State.Callbacks = {}
-			watcherSelf:ClearState(false)
-		end,
-
-		GetCcState = function(watcherSelf)
-			return watcherSelf.State.CcAuraState
-		end,
-		GetImportantState = function(watcherSelf)
-			return watcherSelf.State.ImportantAuraState
-		end,
-		GetDefensiveState = function(watcherSelf)
-			return watcherSelf.State.DefensiveState
-		end,
-	}
-
-	watcher.Frame = CreateFrame("Frame")
+	watcher.Frame = frame
 	watcher:Enable()
+
 	-- Prime once to get initial state
 	watcher:ForceFullUpdate()
 
 	return watcher
 end
-
----@class Watcher
----@field Frame Frame?
----@field GetCcState fun(self: Watcher): AuraInfo[]
----@field GetImportantState fun(self: Watcher): AuraInfo[]
----@field GetDefensiveState fun(self: Watcher): AuraInfo[]
----@field RegisterCallback fun(self: Watcher, callback: fun(self: Watcher))
----@field IsEnabled fun(self: Watcher): boolean
----@field GetUnit fun(self: Watcher): string
----@field Enable fun(self: Watcher)
----@field Disable fun(self: Watcher)
----@field ClearState fun(self: Watcher, notify: boolean?)
----@field ForceFullUpdate fun(self: Watcher)
----@field Dispose fun(self: Watcher)
-
----@class WatcherState
----@field Unit string
----@field EventsFrame table
----@field Filter string
----@field Callbacks fun()[]
----@field CcAuras AuraInfo[]
----@field ImportantAuras AuraInfo[]
 
 ---@class AuraInfo
 ---@field IsImportant? boolean
@@ -328,3 +336,27 @@ end
 ---@field SpellIcon string?
 ---@field TotalDuration number?
 ---@field StartTime number?
+
+---@class WatcherState
+---@field Unit string
+---@field Events string[]?
+---@field Enabled boolean
+---@field Callbacks (fun(self: Watcher))[]
+---@field CcAuraState AuraInfo[]
+---@field ImportantAuraState AuraInfo[]
+---@field DefensiveState AuraInfo[]
+
+---@class Watcher
+---@field Frame Frame?
+---@field State WatcherState
+---@field GetCcState fun(self: Watcher): AuraInfo[]
+---@field GetImportantState fun(self: Watcher): AuraInfo[]
+---@field GetDefensiveState fun(self: Watcher): AuraInfo[]
+---@field RegisterCallback fun(self: Watcher, callback: fun(self: Watcher))
+---@field GetUnit fun(self: Watcher): string
+---@field IsEnabled fun(self: Watcher): boolean
+---@field Enable fun(self: Watcher)
+---@field Disable fun(self: Watcher)
+---@field ClearState fun(self: Watcher, notify: boolean?)
+---@field ForceFullUpdate fun(self: Watcher)
+---@field Dispose fun(self: Watcher)
