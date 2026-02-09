@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.12.2
+
+Various kick timer fixes.
+
 ## 2.12.1
 
 Fixed portraits not disabling.
