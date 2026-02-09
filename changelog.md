@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.13.0
+
+Added other addons information panel.
+
 ## 2.12.2
 
 Various kick timer fixes.
