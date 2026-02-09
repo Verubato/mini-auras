@@ -40,7 +40,7 @@ function M:Build()
 			},
 			{
 				Prefix = "",
-				Text = "MiniOverShields",
+				Text = "MiniOvershields",
 				Suffix = " - shows overshields on frames and nameplates.",
 			},
 			{
