@@ -38,6 +38,10 @@ local testSpells = {}
 local M = {}
 addon.Modules.HealerCcModule = M
 
+local function PlaySound()
+	PlaySoundFile(soundFile, db.Healer.Sound.Channel or "Master")
+end
+
 local function UpdateAnchorSize()
 	if not healerAnchor then
 		return
@@ -117,7 +121,7 @@ local function OnAuraStateUpdated()
 
 	if db.Healer.Sound.Enabled and not mini:IsSecret(isCcdAlpha) then
 		if isCcdAlpha == 1 and lastCcdAlpha ~= isCcdAlpha then
-			M:PlaySound()
+			PlaySound()
 		end
 	end
 
@@ -207,12 +211,13 @@ local function OnEvent(_, event)
 	end
 end
 
-function M:PlaySound()
-	PlaySoundFile(soundFile, db.Healer.Sound.Channel or "Master")
+local function Pause()
+	paused = true
 end
 
-function M:GetAnchor()
-	return healerAnchor
+local function Resume()
+	paused = false
+	OnAuraStateUpdated()
 end
 
 function M:Show()
@@ -233,6 +238,47 @@ function M:Hide()
 	healerAnchor:EnableMouse(false)
 	healerAnchor:SetMovable(false)
 	healerAnchor:SetAlpha(0)
+end
+
+function M:StartTesting()
+	M:Show()
+	Pause()
+
+	if not iconsContainer then
+		return
+	end
+
+	local options = db.Healer
+	local size = tonumber(options.Icons.Size) or 32
+	local now = GetTime()
+
+	iconsContainer:ResetAllSlots()
+	iconsContainer:SetIconSize(size)
+
+	for i, spell in ipairs(testSpells) do
+		local texture = C_Spell.GetSpellTexture(spell.SpellId)
+		local duration = 15 + (i - 1) * 3
+		local startTime = now - (i - 1) * 0.5
+
+		iconsContainer:SetSlotUsed(i)
+		iconsContainer:SetLayer(i, 1, {
+			Texture = texture,
+			StartTime = startTime,
+			Duration = duration,
+			AlphaBoolean = true,
+			ReverseCooldown = options.Icons.ReverseCooldown,
+			Glow = options.Icons.Glow,
+			Color = options.Icons.ColorByDispelType and spell.DispelColor,
+		})
+		iconsContainer:FinalizeSlot(i, 1)
+	end
+
+	UpdateAnchorSize()
+end
+
+function M:StopTesting()
+	M:Hide()
+	Resume()
 end
 
 function M:Refresh()
@@ -283,56 +329,6 @@ function M:Refresh()
 	end
 
 	RefreshHealers()
-end
-
-local function Pause()
-	paused = true
-end
-
-local function Resume()
-	paused = false
-	OnAuraStateUpdated()
-end
-
-function M:StartTesting()
-	M:Show()
-	Pause()
-
-	if not iconsContainer then
-		return
-	end
-
-	local options = db.Healer
-	local size = tonumber(options.Icons.Size) or 32
-	local now = GetTime()
-
-	iconsContainer:ResetAllSlots()
-	iconsContainer:SetIconSize(size)
-
-	for i, spell in ipairs(testSpells) do
-		local texture = C_Spell.GetSpellTexture(spell.SpellId)
-		local duration = 15 + (i - 1) * 3
-		local startTime = now - (i - 1) * 0.5
-
-		iconsContainer:SetSlotUsed(i)
-		iconsContainer:SetLayer(i, 1, {
-			Texture = texture,
-			StartTime = startTime,
-			Duration = duration,
-			AlphaBoolean = true,
-			ReverseCooldown = options.Icons.ReverseCooldown,
-			Glow = options.Icons.Glow,
-			Color = options.Icons.ColorByDispelType and spell.DispelColor,
-		})
-		iconsContainer:FinalizeSlot(i, 1)
-	end
-
-	UpdateAnchorSize()
-end
-
-function M:StopTesting()
-	M:Hide()
-	Resume()
 end
 
 function M:Init()

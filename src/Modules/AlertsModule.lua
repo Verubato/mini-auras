@@ -152,6 +152,15 @@ local function EnableDisable()
 	end
 end
 
+local function Pause()
+	paused = true
+end
+
+local function Resume()
+	paused = false
+	OnAuraDataChanged()
+end
+
 function M:GetAnchor()
 	return container
 end
@@ -179,15 +188,6 @@ function M:Refresh()
 	container:SetIconSize(options.Icons.Size)
 
 	EnableDisable()
-end
-
-local function Pause()
-	paused = true
-end
-
-local function Resume()
-	paused = false
-	OnAuraDataChanged()
 end
 
 function M:StartTesting()
