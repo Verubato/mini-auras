@@ -39,6 +39,7 @@ local function CreateTestFrame(i)
 
 	-- some modules expect this, e.g. trinket module
 	frame.unit = "party" .. i
+	frame:Hide()
 
 	return frame
 end

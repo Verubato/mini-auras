@@ -12,32 +12,17 @@ local kickTimerModule = addon.Modules.KickTimerModule
 local trinketsModule = addon.Modules.TrinketsModule
 ---@type Db
 local db
-local enabled = false
+local active = false
 
 ---@class TestModeManager
 local M = {}
 addon.Modules.TestModeManager = M
 
-function M:IsEnabled()
-	return enabled
+function M:IsActive()
+	return active
 end
 
----@param options InstanceOptions?
-function M:Enable(options)
-	enabled = true
-	instanceOptions:SetTestInstanceOptions(options)
-end
-
-function M:Disable()
-	enabled = false
-end
-
----@param options InstanceOptions?
-function M:SetOptions(options)
-	instanceOptions:SetTestInstanceOptions(options)
-end
-
-function M:Hide()
+function M:StopTesting()
 	-- Hide test party frames
 	local testPartyFrames = frames:GetTestFrames()
 	if testPartyFrames then
@@ -59,9 +44,22 @@ function M:Hide()
 	nameplateModule:StopTesting()
 	kickTimerModule:StopTesting()
 	trinketsModule:StopTesting()
+
+	active = false
 end
 
-function M:Show()
+---@param options InstanceOptions?
+function M:StartOrResumeTesting(options)
+	-- TODO: ideally we only want to tell modules to start testing once
+	-- then they handle state changes in refresh
+	-- refactor this
+	active = true
+
+	if not options then
+		options = instanceOptions:GetTestInstanceOptions()
+	else
+		instanceOptions:SetTestInstanceOptions(options)
+	end
 	-- Show test party frames if no real frames are visible
 	local realFrames = frames:GetAll(true, false) -- Get only real frames
 	local hasVisibleRealFrames = false
@@ -89,8 +87,7 @@ function M:Show()
 	end
 
 	-- CC Module
-	local testOptions = instanceOptions:GetTestInstanceOptions()
-	if testOptions and testOptions.Enabled then
+	if options and options.Enabled then
 		ccModule:StartTesting()
 	else
 		ccModule:StopTesting()

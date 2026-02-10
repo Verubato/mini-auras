@@ -5,6 +5,7 @@ local units = addon.Utils.Units
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
 local capabilities = addon.Capabilities
+local testModeActive = false
 local paused = false
 ---@type Db
 local db
@@ -29,10 +30,22 @@ local testImportantNameplateSpellIds = {
 ---@field CombinedContainer IconSlotContainer?
 ---@field UnitToken string
 
+local previousFriendlyEnabled = {
+	CC = false,
+	Important = false,
+	Combined = false,
+}
+local previousEnemyEnabled = {
+	CC = false,
+	Important = false,
+	Combined = false,
+}
+
 ---@class NameplatesModule : IModule
 local M = {}
 addon.Modules.NameplatesModule = M
 
+---@return string point
 ---@return string relativeToPoint
 local function GetCombinedAnchorPoint(unitToken)
 	local config = M:GetUnitOptions(unitToken)
@@ -622,7 +635,7 @@ local function ClearNameplate(unitToken)
 	end
 end
 
-local function RefreshNameplates()
+local function RebuildContainers()
 	local count = 0
 	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
 		local unitToken = nameplate.unitToken
@@ -641,6 +654,25 @@ local function AnyEnabled()
 		or db.Nameplates.Enemy.CC.Enabled
 		or db.Nameplates.Enemy.Important.Enabled
 		or db.Nameplates.Enemy.Combined.Enabled
+end
+
+local function CacheEnabledModes()
+	previousEnemyEnabled.CC = db.Nameplates.Enemy.CC.Enabled
+	previousEnemyEnabled.Important = db.Nameplates.Enemy.Important.Enabled
+	previousEnemyEnabled.Combined = db.Nameplates.Enemy.Combined.Enabled
+
+	previousFriendlyEnabled.CC = db.Nameplates.Friendly.CC.Enabled
+	previousFriendlyEnabled.Important = db.Nameplates.Friendly.Important.Enabled
+	previousFriendlyEnabled.Combined = db.Nameplates.Friendly.Combined.Enabled
+end
+
+local function HasModesChanged()
+	return previousEnemyEnabled.CC ~= db.Nameplates.Enemy.CC.Enabled
+		or previousEnemyEnabled.Important ~= db.Nameplates.Enemy.Important.Enabled
+		or previousEnemyEnabled.Combined ~= db.Nameplates.Enemy.Combined.Enabled
+		or previousFriendlyEnabled.CC ~= db.Nameplates.Friendly.CC.Enabled
+		or previousFriendlyEnabled.Important ~= db.Nameplates.Friendly.Important.Enabled
+		or previousFriendlyEnabled.Combined ~= db.Nameplates.Friendly.Combined.Enabled
 end
 
 function M:GetUnitOptions(unitToken)
@@ -679,15 +711,17 @@ function M:Init()
 
 	if AnyEnabled() then
 		-- Initialize existing nameplates
-		RefreshNameplates()
+		RebuildContainers()
 	end
+
+	CacheEnabledModes()
 end
 
 ---@return NameplateData
 function M:GetAllContainers()
 	-- ensure containers exist
 	-- might be test mode calling is
-	RefreshNameplates()
+	RebuildContainers()
 
 	local containers = {}
 
@@ -703,6 +737,18 @@ function M:Refresh()
 		M:ClearAll()
 		return
 	end
+
+	-- if the user has enabled/disabled a mode, rebuild the containers
+	if HasModesChanged() then
+		RebuildContainers()
+
+		if testModeActive then
+			-- update test icons
+			M:StartTesting()
+		end
+	end
+
+	CacheEnabledModes()
 
 	for _, data in pairs(nameplateAnchors) do
 		if data.Nameplate and data.UnitToken then
@@ -784,7 +830,18 @@ local function Resume()
 end
 
 function M:StartTesting()
+	if testModeActive then
+		-- this module is smart enough to resume testing without needing to be told
+		return
+	end
+
 	Pause()
+
+	testModeActive = true
+
+	if not AnyEnabled() then
+		return
+	end
 
 	local containers = M:GetAllContainers()
 
@@ -899,6 +956,7 @@ end
 
 function M:StopTesting()
 	Resume()
+	testModeActive = false
 end
 
 function M:ClearAll()

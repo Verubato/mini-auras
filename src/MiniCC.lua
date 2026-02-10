@@ -70,8 +70,8 @@ end
 
 local function OnEvent(_, event)
 	if event == "PLAYER_REGEN_DISABLED" then
-		if testModeManager:IsEnabled() then
-			testModeManager:Disable()
+		if testModeManager:IsActive() then
+			testModeManager:StopTesting()
 			addon:Refresh()
 		end
 	end
@@ -114,19 +114,18 @@ function addon:Refresh()
 		module:Refresh()
 	end
 
-	if testModeManager:IsEnabled() then
-		testModeManager:Show()
-	else
-		testModeManager:Hide()
+	if testModeManager:IsActive() then
+		-- refresh test options
+		testModeManager:StartOrResumeTesting()
 	end
 end
 
 ---@param options InstanceOptions?
 function addon:ToggleTest(options)
-	if testModeManager:IsEnabled() then
-		testModeManager:Disable()
+	if testModeManager:IsActive() then
+		testModeManager:StopTesting()
 	else
-		testModeManager:Enable(options)
+		testModeManager:StartOrResumeTesting(options)
 	end
 
 	addon:Refresh()
@@ -138,9 +137,9 @@ end
 
 ---@param options InstanceOptions?
 function addon:TestOptions(options)
-	testModeManager:SetOptions(options)
+	testModeManager:StartOrResumeTesting(options)
 
-	if testModeManager:IsEnabled() then
+	if testModeManager:IsActive() then
 		addon:Refresh()
 	end
 end

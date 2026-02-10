@@ -202,14 +202,6 @@ local function OnEvent(_, event)
 	end
 end
 
-function M:GetContainers()
-	local containers = {}
-	for anchor, entry in pairs(watchers) do
-		containers[anchor] = entry.Container
-	end
-	return containers
-end
-
 ---@param header IconSlotContainer
 ---@param anchor table
 ---@param options InstanceOptions
@@ -293,8 +285,6 @@ function M:StartTesting()
 	-- Get test options
 	local options = instanceOptions:GetTestInstanceOptions()
 	if not options or not options.Enabled then
-		testModeActive = false
-		Resume()
 		return
 	end
 
@@ -315,6 +305,7 @@ function M:StartTesting()
 			local startTime = now - (i - 1) * 0.5
 
 			container:SetSlotUsed(i)
+
 			container:SetLayer(i, 1, {
 				Texture = texture,
 				StartTime = startTime,
