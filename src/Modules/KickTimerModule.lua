@@ -237,6 +237,17 @@ local function LayoutKickBar()
 	kickBar.Anchor:Show()
 end
 
+local function ClearIcons()
+	for _, frame in ipairs(kickBar.Icons) do
+		frame.Active = false
+		frame:Hide()
+	end
+
+	if kickBar.Anchor then
+		LayoutKickBar()
+	end
+end
+
 local function PositionKickBar()
 	local frame = kickBar.Anchor
 
@@ -288,6 +299,62 @@ local function GetOrCreateIcon()
 	return frame
 end
 
+local function CreateKickEntry(duration, icon)
+	local key = math.random()
+	local frame = GetOrCreateIcon()
+	frame.Icon:SetTexture(icon)
+	frame.Active = true
+	frame.Key = key
+	frame:Show()
+	frame.Cooldown:SetCooldown(GetTime(), duration)
+
+	LayoutKickBar()
+
+	C_Timer.After(duration, function()
+		if frame and frame.Active and frame.Key == key then
+			frame.Active = false
+			frame:Hide()
+			LayoutKickBar()
+		end
+	end)
+end
+
+---@param specId number?
+local function KickedBySpec(specId)
+	if not specId then
+		return
+	end
+
+	local specInfo = specInfoBySpecId[specId]
+
+	if not specInfo or not specInfo.KickCd or not specInfo.KickIcon then
+		return
+	end
+
+	local duration = specInfo.KickCd
+	local tex = specInfo.KickIcon
+
+	CreateKickEntry(duration, tex)
+end
+
+---@param kickedBy string?
+local function Kicked(kickedBy)
+	local duration = minKickCooldown
+	local tex = kickIcon
+
+	if kickedBy then
+		if kickDurationsByUnit[kickedBy] then
+			duration = kickDurationsByUnit[kickedBy]
+		end
+
+		if kickIconsByUnit[kickedBy] then
+			tex = kickIconsByUnit[kickedBy]
+		end
+	end
+
+	CreateKickEntry(duration, tex)
+end
+
 local function OnFriendlyUnitEvent(unit, _, event, ...)
 	if event == "UNIT_SPELLCAST_START" then
 		kickedByUnits[unit] = false
@@ -312,7 +379,7 @@ local function OnFriendlyUnitEvent(unit, _, event, ...)
 		end
 
 		kickedByUnits[unit] = true
-		M:Kicked(u)
+		Kicked(u)
 	end
 end
 
@@ -365,8 +432,7 @@ end
 local function OnArenaPrep()
 	UpdateMinKickCooldown()
 	UpdateKickDurations()
-
-	M:ClearIcons()
+	ClearIcons()
 end
 
 local function Disable()
@@ -396,7 +462,7 @@ local function Disable()
 		kickBar.Anchor:Hide()
 	end
 
-	M:ClearIcons()
+	ClearIcons()
 
 	enabled = false
 end
@@ -461,44 +527,6 @@ local function OnEnteringWorld()
 	end
 end
 
-local function CreateKickEntry(duration, icon)
-	local key = math.random()
-	local frame = GetOrCreateIcon()
-	frame.Icon:SetTexture(icon)
-	frame.Active = true
-	frame.Key = key
-	frame:Show()
-	frame.Cooldown:SetCooldown(GetTime(), duration)
-
-	LayoutKickBar()
-
-	C_Timer.After(duration, function()
-		if frame and frame.Active and frame.Key == key then
-			frame.Active = false
-			frame:Hide()
-			LayoutKickBar()
-		end
-	end)
-end
-
----@param specId number?
-local function KickedBySpec(specId)
-	if not specId then
-		return
-	end
-
-	local specInfo = specInfoBySpecId[specId]
-
-	if not specInfo or not specInfo.KickCd or not specInfo.KickIcon then
-		return
-	end
-
-	local duration = specInfo.KickCd
-	local tex = specInfo.KickIcon
-
-	CreateKickEntry(duration, tex)
-end
-
 ---@param options KickTimerOptions
 function M:IsEnabledForPlayer(options)
 	if not options then
@@ -535,35 +563,6 @@ function M:IsEnabledForPlayer(options)
 	return false
 end
 
----@param kickedBy string?
-function M:Kicked(kickedBy)
-	local duration = minKickCooldown
-	local tex = kickIcon
-
-	if kickedBy then
-		if kickDurationsByUnit[kickedBy] then
-			duration = kickDurationsByUnit[kickedBy]
-		end
-
-		if kickIconsByUnit[kickedBy] then
-			tex = kickIconsByUnit[kickedBy]
-		end
-	end
-
-	CreateKickEntry(duration, tex)
-end
-
-function M:ClearIcons()
-	for _, frame in ipairs(kickBar.Icons) do
-		frame.Active = false
-		frame:Hide()
-	end
-
-	if kickBar.Anchor then
-		LayoutKickBar()
-	end
-end
-
 function M:StartTesting()
 	local container = kickBar.Anchor
 	if not container then
@@ -574,7 +573,7 @@ function M:StartTesting()
 	container:SetMovable(true)
 	container:EnableMouse(true)
 
-	M:ClearIcons()
+	ClearIcons()
 	-- Show test kicks: mage, hunter, rogue
 	KickedBySpec(62) -- mage
 	KickedBySpec(254) -- hunter
@@ -587,7 +586,7 @@ function M:StopTesting()
 		return
 	end
 
-	M:ClearIcons()
+	ClearIcons()
 	container:Hide()
 	container:SetMovable(false)
 	container:EnableMouse(false)
