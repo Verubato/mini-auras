@@ -145,7 +145,6 @@ local function DisableAll()
 
 	if iconsContainer then
 		iconsContainer:ResetAllSlots()
-		iconsContainer:SetCount(0)
 	end
 
 	if healerAnchor then
@@ -311,7 +310,6 @@ function M:StartTesting()
 
 	iconsContainer:ResetAllSlots()
 	iconsContainer:SetIconSize(size)
-	iconsContainer:SetCount(#testSpells)
 
 	for i, spell in ipairs(testSpells) do
 		local texture = C_Spell.GetSpellTexture(spell.SpellId)
