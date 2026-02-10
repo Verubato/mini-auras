@@ -36,6 +36,13 @@ local function CreateLayer(parentFrame, level)
 	local layerFrame = CreateFrame("Frame", nil, parentFrame)
 	layerFrame:SetAllPoints()
 
+	-- Explicitly set size to match parent frame size
+	-- This ensures LibCustomGlow has correct dimensions immediately
+	local w, h = parentFrame:GetSize()
+	if w and h and w > 0 and h > 0 then
+		layerFrame:SetSize(w, h)
+	end
+
 	if level then
 		layerFrame:SetFrameLevel(level)
 	end
