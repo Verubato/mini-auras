@@ -319,10 +319,9 @@ function M:StartTesting()
 			container:FinalizeSlot(i, 1)
 		end
 
-		-- Show the container
+		-- Anchor and show/hide based on anchor visibility
 		M:AnchorContainer(container, anchor, options)
-		container.Frame:Show()
-		container.Frame:SetAlpha(1)
+		frames:ShowHideFrame(container.Frame, anchor, true, options)
 	end
 end
 
