@@ -576,12 +576,12 @@ function M:StartTesting()
 				local startTime = now - (i - 1) * 0.5
 
 				ccContainer:SetLayer(i, 1, {
-					texture = tex,
-					startTime = startTime,
-					duration = duration,
-					alphaBoolean = true,
-					glow = ccOptions.Icons.Glow,
-					reverseCooldown = ccOptions.Icons.ReverseCooldown,
+					Texture = tex,
+					StartTime = startTime,
+					Duration = duration,
+					AlphaBoolean = true,
+					Glow = ccOptions.Icons.Glow,
+					ReverseCooldown = ccOptions.Icons.ReverseCooldown,
 				})
 				ccContainer:FinalizeSlot(i, 1)
 			end
@@ -601,12 +601,12 @@ function M:StartTesting()
 				local duration = 15 + (i - 1) * 3
 				local startTime = now - (i - 1) * 0.5
 				importantContainer:SetLayer(i, 1, {
-					texture = tex,
-					startTime = startTime,
-					duration = duration,
-					alphaBoolean = true,
-					glow = importantOptions.Icons.Glow,
-					reverseCooldown = importantOptions.Icons.ReverseCooldown,
+					Texture = tex,
+					StartTime = startTime,
+					Duration = duration,
+					AlphaBoolean = true,
+					Glow = importantOptions.Icons.Glow,
+					ReverseCooldown = importantOptions.Icons.ReverseCooldown,
 				})
 				importantContainer:FinalizeSlot(i, 1)
 			end
