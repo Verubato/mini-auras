@@ -113,7 +113,7 @@ local function EnsureWatcher(anchor, unit)
 	local entry = watchers[anchor]
 
 	if not entry then
-		local count = options.Icons.Count or 3
+		local count = options.Icons.Count or 5
 		local size = tonumber(options.Icons.Size) or 32
 		local spacing = 2
 		local container = IconSlotContainer:New(UIParent, count, size, spacing)
@@ -143,7 +143,6 @@ local function EnsureWatcher(anchor, unit)
 
 		local iconSize = tonumber(options.Icons.Size) or 32
 		entry.Container:SetIconSize(iconSize)
-		entry.Container:SetCount(options.Icons.Count or 3)
 	end
 
 	UpdateWatcherAuras(entry)
@@ -309,7 +308,6 @@ function M:StartTesting()
 
 		container:ResetAllSlots()
 		container:SetIconSize(tonumber(options.Icons.Size) or 32)
-		container:SetCount(#testSpells)
 
 		for i, spell in ipairs(testSpells) do
 			local texture = C_Spell.GetSpellTexture(spell.SpellId)

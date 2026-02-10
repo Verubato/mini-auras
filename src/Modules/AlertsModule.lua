@@ -207,9 +207,8 @@ function M:StartTesting()
 	}
 
 	local count = math.min(#testAlertSpellIds, container.Count or #testAlertSpellIds)
-	container:SetCount(count)
-
 	local now = GetTime()
+
 	for i = 1, count do
 		container:SetSlotUsed(i)
 
@@ -295,8 +294,6 @@ function M:Init()
 		unitWatcher:New("arena2", events),
 		unitWatcher:New("arena3", events),
 	}
-
-	container:SetCount(#watchers)
 
 	for _, watcher in ipairs(watchers) do
 		watcher:RegisterCallback(OnAuraDataChanged)
