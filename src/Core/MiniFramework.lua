@@ -581,7 +581,7 @@ function M:Dropdown(options)
 		return dd, true
 	end
 
-	local libDD = LibStub and LibStub:GetLibrary("LibUIDropDownMenu-4.0", false)
+	local libDD = LibStub and LibStub:GetLibrary("LibUIDropDownMenu-4.0", true)
 
 	if libDD then
 		-- needs a name to not bug out

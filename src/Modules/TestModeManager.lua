@@ -1,6 +1,6 @@
 -- TODO: refactor such that each module is responsible for it's own test mode
 ---@type string, Addon
-local addonName, addon = ...
+local _, addon = ...
 local mini = addon.Core.Framework
 local capabilities = addon.Capabilities
 local ccModule = addon.Modules.CcModule
@@ -11,13 +11,13 @@ local nameplateModule = addon.Modules.NameplatesModule
 local kickTimerModule = addon.Modules.KickTimerModule
 local trinketsModule = addon.Modules.TrinketsModule
 local frames = addon.Core.Frames
-local LCG
+local IconSlotContainer = addon.Core.IconSlotContainer
 ---@type Db
 local db
 local enabled = false
 ---@type InstanceOptions|nil
 local instanceOptions = nil
----@type table<table, table>
+---@type table<table, IconSlotContainer>
 local testHeaders = {}
 ---@type TestSpell[]
 local testSpells = {}
@@ -43,12 +43,7 @@ addon.Modules.TestModeManager = M
 
 local function HideTestFrames()
 	for _, testHeader in pairs(testHeaders) do
-		if testHeader.Icons then
-			for _, btn in ipairs(testHeader.Icons) do
-				LCG.ProcGlow_Stop(btn)
-			end
-		end
-		testHeader:Hide()
+		testHeader.Frame:Hide()
 	end
 
 	local testPartyFrames = frames:GetTestFrames()
@@ -60,10 +55,12 @@ local function HideTestFrames()
 	if testFramesContainer then
 		testFramesContainer:Hide()
 	end
+
+	ccModule:Resume()
 end
 
 local function HideHealerOverlay()
-	testHealerHeader:Hide()
+	testHealerHeader.Frame:Hide()
 	healerCcModule:Hide()
 
 	-- resume tracking cc events
@@ -214,26 +211,66 @@ local function AnchorTestFrames()
 	end
 end
 
+---@param container IconSlotContainer
+---@param options IconOptions
+local function UpdateTestContainer(container, options)
+	local size = tonumber(options.Size) or 32
+	local now = GetTime()
+
+	container:ResetAllSlots()
+	container:SetIconSize(size)
+	container:SetCount(#testSpells)
+
+	for i, spell in ipairs(testSpells) do
+		local texture = C_Spell.GetSpellTexture(spell.SpellId)
+		local duration = 15 + (i - 1) * 3
+		local startTime = now - (i - 1) * 0.5
+
+		container:SetSlotUsed(i)
+		container:SetLayer(i, 1, texture, startTime, duration, true, options.Glow, options.ReverseCooldown)
+		container:FinalizeSlot(i, 1)
+	end
+end
+
+local function EnsureTestHeader(anchor)
+	local header = testHeaders[anchor]
+	if not header then
+		local count = instanceOptions and instanceOptions.Icons.Count or 3
+		local size = instanceOptions and tonumber(instanceOptions.Icons.Size) or 20
+		local spacing = 2
+		header = IconSlotContainer:New(UIParent, count, size, spacing)
+		testHeaders[anchor] = header
+	end
+
+	if instanceOptions then
+		UpdateTestContainer(header, instanceOptions.Icons)
+	end
+
+	return header
+end
+
 local function ShowTestFrames()
 	if not instanceOptions then
 		return
 	end
 
-	-- hide real headers
-	ccModule:HideHeaders()
+	-- hide real containers
+	ccModule:Pause()
+	ccModule:Hide()
 
+	-- TODO: refactor this, use real containers and just populate test icons
 	local testPartyFrames = frames:GetTestFrames()
-	local headers = ccModule:GetHeaders()
+	local containers = ccModule:GetContainers()
 
 	-- try to show on real frames first
 	local anyRealShown = false
-	for anchor, _ in pairs(headers) do
-		local testHeader = M:EnsureTestHeader(anchor)
-		M:UpdateTestHeader(testHeader, instanceOptions.Icons)
+	for anchor, _ in pairs(containers) do
+		local testHeader = EnsureTestHeader(anchor)
+		UpdateTestContainer(testHeader, instanceOptions.Icons)
 
-		ccModule:AnchorHeader(testHeader, anchor, instanceOptions)
-		frames:ShowHideFrame(testHeader, anchor, true, instanceOptions)
-		anyRealShown = anyRealShown or testHeader:IsVisible()
+		ccModule:AnchorContainer(testHeader, anchor, instanceOptions)
+		frames:ShowHideFrame(testHeader.Frame, anchor, true, instanceOptions)
+		anyRealShown = anyRealShown or testHeader.Frame:IsVisible()
 	end
 
 	if anyRealShown then
@@ -247,12 +284,12 @@ local function ShowTestFrames()
 		for i = 1, #testPartyFrames do
 			if testHeader then
 				local testPartyFrame = testPartyFrames[i]
-				M:UpdateTestHeader(testHeader, instanceOptions.Icons)
+				UpdateTestContainer(testHeader, instanceOptions.Icons)
 
-				ccModule:AnchorHeader(testHeader, testPartyFrame, instanceOptions)
+				ccModule:AnchorContainer(testHeader, testPartyFrame, instanceOptions)
 
-				testHeader:Show()
-				testHeader:SetAlpha(1)
+				testHeader.Frame:Show()
+				testHeader.Frame:SetAlpha(1)
 				testPartyFrame:Show()
 
 				anchor, testHeader = next(testHeaders, anchor)
@@ -262,14 +299,14 @@ local function ShowTestFrames()
 end
 
 local function ShowHealerOverlay()
-	testHealerHeader:Show()
+	testHealerHeader.Frame:Show()
 	healerCcModule:Show()
 
 	-- pause the healer manager from tracking cc events
 	healerCcModule:Pause()
 
 	-- update the size
-	M:UpdateTestHeader(testHealerHeader, db.Healer.Icons)
+	UpdateTestContainer(testHealerHeader, db.Healer.Icons)
 
 	-- keep track of whether we have already played the test sound so we don't spam it
 	if
@@ -376,30 +413,6 @@ local function ShowNameplateTestMode()
 	end
 end
 
-function M:Init()
-	db = mini:GetSavedVars()
-
-	LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
-
-	local IsAddOnLoaded = (C_AddOns and C_AddOns.IsAddOnLoaded) or IsAddOnLoaded
-	hasDanders = IsAddOnLoaded("DandersFrames")
-
-	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
-	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
-	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
-	local multipleTestSpells = { kidneyShot, fear, hex }
-
-	testSpells = capabilities:HasNewFilters() and multipleTestSpells or { kidneyShot }
-
-	-- healer overlay
-	local healerAnchor = healerCcModule:GetAnchor()
-	testHealerHeader = CreateFrame("Frame", addonName .. "TestHealerHeader", healerAnchor)
-	testHealerHeader:EnableMouse(false)
-	testHealerHeader:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
-
-	M:UpdateTestHeader(testHealerHeader, db.Healer.Icons)
-end
-
 function M:IsEnabled()
 	return enabled
 end
@@ -417,86 +430,6 @@ end
 ---@param options InstanceOptions?
 function M:SetOptions(options)
 	instanceOptions = options
-end
-
----@param frame table
----@param options IconOptions
-function M:UpdateTestHeader(frame, options)
-	local cols = #testSpells
-	local rows = 1
-	local size = tonumber(options.Size) or 32
-	local padX, padY = 0, 0
-	local stepX = size + padX
-	local stepY = -(size + padY)
-	local maxIcons = math.min(#testSpells, cols * rows)
-
-	frame.Icons = frame.Icons or {}
-
-	for i = 1, maxIcons do
-		local btn = frame.Icons[i]
-		if not btn then
-			btn = CreateFrame("Button", nil, frame, "MiniCCAuraButtonTemplate")
-			frame.Icons[i] = btn
-		end
-
-		btn:SetSize(size, size)
-		btn.Icon:SetAllPoints(btn)
-
-		btn:EnableMouse(false)
-		btn.Icon:EnableMouse(false)
-
-		local spell = testSpells[i]
-		local texture = C_Spell.GetSpellTexture(spell.SpellId)
-
-		btn.Icon:SetTexture(texture)
-
-		local col = (i - 1) % cols
-		local row = math.floor((i - 1) / cols)
-
-		btn:ClearAllPoints()
-		btn:SetPoint("TOPLEFT", frame, "TOPLEFT", col * stepX, row * stepY)
-		btn:Show()
-
-		if options.Glow then
-			-- sometimes calling stop fails with some very weird LCG release error
-			-- but we need to clear any existing glow and re-apply to fix an issue with icons not always glowing
-			pcall(function()
-				LCG.ProcGlow_Stop(btn)
-			end)
-
-			local color = options.ColorByDispelType
-					and {
-						spell.DispelColor.r,
-						spell.DispelColor.g,
-						spell.DispelColor.b,
-						spell.DispelColor.a,
-					}
-				or nil
-			LCG.ProcGlow_Start(btn, { startAnim = false, color = color })
-		else
-			pcall(function()
-				LCG.ProcGlow_Stop(btn)
-			end)
-		end
-	end
-
-	local width = (cols * size) + ((cols - 1) * padX)
-	local height = (rows * size) + ((rows - 1) * padY)
-	frame:SetSize(width, height)
-end
-
-function M:EnsureTestHeader(anchor)
-	local header = testHeaders[anchor]
-	if not header then
-		header = CreateFrame("Frame", nil, UIParent)
-		testHeaders[anchor] = header
-	end
-
-	if instanceOptions then
-		M:UpdateTestHeader(header, instanceOptions.Icons)
-	end
-
-	return header
 end
 
 function M:Hide()
@@ -556,6 +489,30 @@ function M:Show()
 	else
 		trinketsModule:StopTesting()
 	end
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
+
+	local IsAddOnLoaded = (C_AddOns and C_AddOns.IsAddOnLoaded) or IsAddOnLoaded
+	hasDanders = IsAddOnLoaded("DandersFrames")
+
+	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
+	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
+	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
+	local multipleTestSpells = { kidneyShot, fear, hex }
+
+	testSpells = capabilities:HasNewFilters() and multipleTestSpells or { kidneyShot }
+
+	-- healer overlay - create IconSlotContainer for test mode
+	local healerAnchor = healerCcModule:GetAnchor()
+	local count = #testSpells
+	local size = tonumber(db.Healer.Icons.Size) or 32
+	local spacing = 2
+	testHealerHeader = IconSlotContainer:New(healerAnchor, count, size, spacing)
+	testHealerHeader.Frame:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
+
+	UpdateTestContainer(testHealerHeader, db.Healer.Icons)
 end
 
 ---@class TestSpell

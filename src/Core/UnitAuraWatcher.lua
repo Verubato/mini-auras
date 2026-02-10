@@ -155,9 +155,15 @@ end
 
 function Watcher:RebuildStates()
 	local unit = self.State.Unit
+
 	if not unit then
 		return
 	end
+
+	local interestedIn = self.State.InterestedIn
+	local interestedInDefensives = not interestedIn or (interestedIn and interestedIn.Defensives)
+	local interestedInCC = not interestedIn or (interestedIn and interestedIn.CC)
+	local interestedInImportant = not interestedIn or (interestedIn and interestedIn.Important)
 
 	---@type AuraInfo[]
 	local ccSpellData = {}
@@ -168,7 +174,7 @@ function Watcher:RebuildStates()
 	local seenDefensives = {}
 
 	-- process big defensives first so we can exclude duplicates from important
-	if capabilities:HasNewFilters() then
+	if interestedInDefensives and capabilities:HasNewFilters() then
 		for i = 1, maxAuras do
 			local defensivesData =
 				C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|BIG_DEFENSIVE|INCLUDE_NAME_PLATE_ONLY")
@@ -193,70 +199,75 @@ function Watcher:RebuildStates()
 		end
 	end
 
-	for i = 1, maxAuras do
-		local ccData = C_UnitAuras.GetAuraDataByIndex(unit, i, ccFilter)
+	if interestedInCC or interestedInImportant then
+		for i = 1, maxAuras do
+			local ccData = interestedInCC and C_UnitAuras.GetAuraDataByIndex(unit, i, ccFilter)
 
-		if ccData then
-			local durationInfo = C_UnitAuras.GetAuraDuration(unit, ccData.auraInstanceID)
-			local start = durationInfo and durationInfo:GetStartTime()
-			local duration = durationInfo and durationInfo:GetTotalDuration()
+			if ccData then
+				local durationInfo = C_UnitAuras.GetAuraDuration(unit, ccData.auraInstanceID)
+				local start = durationInfo and durationInfo:GetStartTime()
+				local duration = durationInfo and durationInfo:GetTotalDuration()
 
-			if start and duration then
-				if capabilities:HasNewFilters() then
-					ccSpellData[#ccSpellData + 1] = {
-						IsCC = true,
-						SpellId = ccData.spellId,
-						SpellIcon = ccData.icon,
-						StartTime = start,
-						TotalDuration = duration,
-					}
-				else
-					local isCC = C_Spell.IsSpellCrowdControl(ccData.spellId)
-					ccSpellData[#ccSpellData + 1] = {
-						IsCC = isCC,
-						SpellId = ccData.spellId,
-						SpellIcon = ccData.icon,
+				if start and duration then
+					if capabilities:HasNewFilters() then
+						ccSpellData[#ccSpellData + 1] = {
+							IsCC = true,
+							SpellId = ccData.spellId,
+							SpellIcon = ccData.icon,
+							StartTime = start,
+							TotalDuration = duration,
+						}
+					else
+						local isCC = C_Spell.IsSpellCrowdControl(ccData.spellId)
+						ccSpellData[#ccSpellData + 1] = {
+							IsCC = isCC,
+							SpellId = ccData.spellId,
+							SpellIcon = ccData.icon,
+							StartTime = start,
+							TotalDuration = duration,
+						}
+					end
+				end
+			end
+
+			local importantHelpfulData = interestedInImportant
+				and C_UnitAuras.GetAuraDataByIndex(unit, i, importantHelpfulFilter)
+			if importantHelpfulData and not seenDefensives[importantHelpfulData.auraInstanceID] then
+				local isImportant = C_Spell.IsSpellImportant(importantHelpfulData.spellId)
+				local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHelpfulData.auraInstanceID)
+				local start = durationInfo and durationInfo:GetStartTime()
+				local duration = durationInfo and durationInfo:GetTotalDuration()
+
+				if start and duration then
+					importantSpellData[#importantSpellData + 1] = {
+						IsImportant = capabilities:HasNewFilters() or isImportant,
+						SpellId = importantHelpfulData.spellId,
+						SpellIcon = importantHelpfulData.icon,
 						StartTime = start,
 						TotalDuration = duration,
 					}
 				end
 			end
-		end
 
-		local importantHelpfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, importantHelpfulFilter)
-		if importantHelpfulData and not seenDefensives[importantHelpfulData.auraInstanceID] then
-			local isImportant = C_Spell.IsSpellImportant(importantHelpfulData.spellId)
-			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHelpfulData.auraInstanceID)
-			local start = durationInfo and durationInfo:GetStartTime()
-			local duration = durationInfo and durationInfo:GetTotalDuration()
+			-- avoid doubling up with cc data, as both CC and HARMFUL return the same thing sometimes
+			local importantHarmfulData = interestedInImportant
+				and not ccData
+				and C_UnitAuras.GetAuraDataByIndex(unit, i, importantHarmfulFilter)
+			if importantHarmfulData and not seenDefensives[importantHarmfulData.auraInstanceID] then
+				local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)
+				local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
+				local start = durationInfo and durationInfo:GetStartTime()
+				local duration = durationInfo and durationInfo:GetTotalDuration()
 
-			if start and duration then
-				importantSpellData[#importantSpellData + 1] = {
-					IsImportant = capabilities:HasNewFilters() or isImportant,
-					SpellId = importantHelpfulData.spellId,
-					SpellIcon = importantHelpfulData.icon,
-					StartTime = start,
-					TotalDuration = duration,
-				}
-			end
-		end
-
-		-- avoid doubling up with cc data, as both CC and HARMFUL return the same thing sometimes
-		local importantHarmfulData = not ccData and C_UnitAuras.GetAuraDataByIndex(unit, i, importantHarmfulFilter)
-		if importantHarmfulData and not seenDefensives[importantHarmfulData.auraInstanceID] then
-			local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)
-			local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
-			local start = durationInfo and durationInfo:GetStartTime()
-			local duration = durationInfo and durationInfo:GetTotalDuration()
-
-			if start and duration then
-				importantSpellData[#importantSpellData + 1] = {
-					IsImportant = capabilities:HasNewFilters() or isImportant,
-					SpellId = importantHarmfulData.spellId,
-					SpellIcon = importantHarmfulData.icon,
-					StartTime = start,
-					TotalDuration = duration,
-				}
+				if start and duration then
+					importantSpellData[#importantSpellData + 1] = {
+						IsImportant = capabilities:HasNewFilters() or isImportant,
+						SpellId = importantHarmfulData.spellId,
+						SpellIcon = importantHarmfulData.icon,
+						StartTime = start,
+						TotalDuration = duration,
+					}
+				end
 			end
 		end
 	end
@@ -295,8 +306,9 @@ end
 
 ---@param unit string
 ---@param events string[]?
+---@param interestedIn AuraTypeFilter?
 ---@return Watcher
-function M:New(unit, events)
+function M:New(unit, events, interestedIn)
 	if not unit then
 		error("unit must not be nil")
 	end
@@ -312,6 +324,7 @@ function M:New(unit, events)
 			CcAuraState = {},
 			ImportantAuraState = {},
 			DefensiveState = {},
+			InterestedIn = interestedIn,
 		},
 	}, Watcher)
 
@@ -327,6 +340,11 @@ function M:New(unit, events)
 
 	return watcher
 end
+
+---@class AuraTypeFilter
+---@field CC boolean?
+---@field Important boolean?
+---@field Defensive boolean?
 
 ---@class AuraInfo
 ---@field IsImportant? boolean
@@ -345,6 +363,7 @@ end
 ---@field CcAuraState AuraInfo[]
 ---@field ImportantAuraState AuraInfo[]
 ---@field DefensiveState AuraInfo[]
+---@field InterestedIn AuraTypeFilter
 
 ---@class Watcher
 ---@field Frame Frame?

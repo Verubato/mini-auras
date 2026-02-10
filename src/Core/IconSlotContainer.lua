@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local LCG = LibStub and LibStub("LibCustomGlow-1.0", false)
+local LCG = LibStub and LibStub("LibCustomGlow-1.0", true)
 
 ---@class IconSlotContainer
 local M = {}

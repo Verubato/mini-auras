@@ -23,7 +23,6 @@ Core\MiniFramework.lua
 Core\IconSlotContainer.lua
 Core\UnitAuraWatcher.lua
 Core\Frames.lua
-Core\CcHeader.lua
 
 Modules\CcModule.lua
 Modules\HealerCcModule.lua

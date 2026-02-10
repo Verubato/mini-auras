@@ -1,68 +1,127 @@
 ---@type string, Addon
 local addonName, addon = ...
+local capabilities = addon.Capabilities
+local array = addon.Utils.Array
 local mini = addon.Core.Framework
-local auras = addon.Core.CcHeader
-local scheduler = addon.Utils.Scheduler
+local iconSlotContainer = addon.Core.IconSlotContainer
 local unitWatcher = addon.Core.UnitAuraWatcher
 local units = addon.Utils.Units
 local ccUtil = addon.Utils.CcUtil
 local paused = false
 local soundFile = "Interface\\AddOns\\" .. addonName .. "\\Media\\Sonar.ogg"
+
 ---@type Db
 local db
+
 ---@type table
 local healerAnchor
+
+---@type IconSlotContainer
+local iconsContainer
+
 ---@type table<string, HealerWatchEntry>
 local activePool = {}
 ---@type table<string, HealerWatchEntry>
 local discardPool = {}
+
 local lastCcdAlpha
 local eventsFrame
 
 ---@class HealerWatchEntry
+---@field Unit string
 ---@field Watcher Watcher
----@field Header CcHeader
 
 ---@class HealerCcModule : IModule
 local M = {}
 addon.Modules.HealerCcModule = M
 
-local function OnHealerCcChanged()
-	if paused then
-		return
-	end
-
+local function UpdateAnchorSize()
 	if not healerAnchor then
 		return
 	end
 
+	local options = db.Healer
+	local iconSize = tonumber(options.Icons.Size) or 32
+	local text = healerAnchor.HealerWarning
+	local stringWidth = text and text:GetStringWidth() or 0
+	local stringHeight = text and text:GetStringHeight() or 0
+	local containerWidth = (iconsContainer and iconsContainer.Frame and iconsContainer.Frame:GetWidth()) or iconSize
+	local width = math.max(iconSize, stringWidth, containerWidth)
+	local height = iconSize + stringHeight
+
+	healerAnchor:SetSize(width, height)
+end
+
+local function OnAuraStateUpdated()
+	if paused then
+		return
+	end
+
+	if not healerAnchor or not iconsContainer then
+		return
+	end
+
+	local options = db.Healer
+
+	iconsContainer:ResetAllSlots()
+
 	---@type AuraInfo[]
-	local ccAuraData = {}
+	local allCcAuraData = {}
+	local slot = 0
 
 	for _, watcher in pairs(activePool) do
 		local ccState = watcher.Watcher:GetCcState()
+		array:Append(ccState, allCcAuraData)
 
-		for _, entry in ipairs(ccState) do
-			ccAuraData[#ccAuraData + 1] = entry
+		if capabilities:HasNewFilters() then
+			for _, aura in ipairs(ccState) do
+				slot = slot + 1
+				iconsContainer:SetSlotUsed(slot)
+				iconsContainer:SetLayer(
+					slot,
+					1,
+					aura.SpellIcon,
+					aura.StartTime,
+					aura.TotalDuration,
+					aura.IsCC,
+					options.Icons.Glow,
+					options.Icons.ReverseCooldown
+				)
+				iconsContainer:FinalizeSlot(slot, 1)
+			end
+		elseif #ccState > 0 then
+			slot = slot + 1
+			local used = 0
+			for _, aura in ipairs(ccState) do
+				used = used + 1
+				iconsContainer:SetSlotUsed(slot)
+				iconsContainer:SetLayer(
+					slot,
+					used,
+					aura.SpellIcon,
+					aura.StartTime,
+					aura.TotalDuration,
+					aura.IsCC,
+					options.Icons.Glow,
+					options.Icons.ReverseCooldown
+				)
+			end
+			iconsContainer:FinalizeSlot(slot, used)
 		end
 	end
 
-	local isCcdAlpha = ccUtil:IsCcAppliedAlpha(ccAuraData)
+	local isCcdAlpha = ccUtil:IsCcAppliedAlpha(allCcAuraData)
 	healerAnchor:SetAlpha(isCcdAlpha)
 
-	if not db.Healer.Sound.Enabled then
-		return
-	end
-
-	if mini:IsSecret(isCcdAlpha) then
-		return
-	end
-
-	if isCcdAlpha == 1 and lastCcdAlpha ~= isCcdAlpha then
-		M:PlaySound()
+	if db.Healer.Sound.Enabled and not mini:IsSecret(isCcdAlpha) then
+		if isCcdAlpha == 1 and lastCcdAlpha ~= isCcdAlpha then
+			M:PlaySound()
+		end
 	end
 
 	lastCcdAlpha = isCcdAlpha
+
+	UpdateAnchorSize()
 end
 
 local function DisableAll()
@@ -74,11 +133,15 @@ local function DisableAll()
 	for _, unit in ipairs(toDiscard) do
 		local item = activePool[unit]
 		if item then
-			item.Header:Hide()
 			item.Watcher:Disable()
 			discardPool[unit] = item
 			activePool[unit] = nil
 		end
+	end
+
+	if iconsContainer then
+		iconsContainer:ResetAllSlots()
+		iconsContainer:SetCount(0)
 	end
 
 	if healerAnchor then
@@ -88,12 +151,10 @@ local function DisableAll()
 	lastCcdAlpha = nil
 end
 
-local function RefreshHeaders()
-	-- TODO: probably use icon container instead of cc header to allow us in combat refreshing
-	local options = db.Healer
+local function RefreshHealers()
+	-- Remove anyone who is no longer a healer.
 	local toDiscard = {}
-
-	for unit, _ in pairs(activePool) do
+	for unit in pairs(activePool) do
 		if not units:IsHealer(unit) then
 			toDiscard[#toDiscard + 1] = unit
 		end
@@ -101,10 +162,11 @@ local function RefreshHeaders()
 
 	for _, unit in ipairs(toDiscard) do
 		local item = activePool[unit]
-		item.Header:Hide()
-		item.Watcher:Disable()
-		discardPool[unit] = item
-		activePool[unit] = nil
+		if item then
+			item.Watcher:Disable()
+			discardPool[unit] = item
+			activePool[unit] = nil
+		end
 	end
 
 	local healers = units:FindHealers()
@@ -113,30 +175,29 @@ local function RefreshHeaders()
 		local item = activePool[healer]
 
 		if not item then
-			-- see if we have a discarded entry to re-use
 			item = discardPool[healer]
 
 			if item then
 				item.Watcher:Enable()
-				item.Header:Show()
-
-				-- move to the active pool
 				activePool[healer] = item
 				discardPool[healer] = nil
 			end
 		end
 
-		if item then
-			auras:Update(item.Header, healer, options.Icons)
-		else
-			item = { Header = auras:New(healer, options.Icons), Watcher = unitWatcher:New(healer) }
-			item.Header:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
-			item.Header:Show()
+		if not item then
+			item = {
+				Unit = healer,
+				Watcher = unitWatcher:New(healer, nil, {
+					CC = true,
+				}),
+			}
 
-			item.Watcher:RegisterCallback(OnHealerCcChanged)
+			item.Watcher:RegisterCallback(OnAuraStateUpdated)
 			activePool[healer] = item
 		end
 	end
+
+	OnAuraStateUpdated()
 end
 
 local function OnEvent(_, event)
@@ -174,10 +235,7 @@ function M:Hide()
 end
 
 function M:Refresh()
-	if InCombatLockdown() then
-		scheduler:RunWhenCombatEnds(function()
-			M:Refresh()
-		end, "HealerCcModuleRefresh")
+	if not healerAnchor then
 		return
 	end
 
@@ -194,11 +252,7 @@ function M:Refresh()
 
 	healerAnchor.HealerWarning:SetFont(options.Font.File, options.Font.Size, options.Font.Flags)
 
-	local iconSize = db.Healer.Icons.Size
-	local stringWidth = healerAnchor.HealerWarning:GetStringWidth()
-	local stringHeight = healerAnchor.HealerWarning:GetStringHeight()
-
-	healerAnchor:SetSize(math.max(iconSize, stringWidth), iconSize + stringHeight)
+	iconsContainer:SetIconSize(tonumber(options.Icons.Size) or 32)
 
 	if units:IsHealer("player") then
 		DisableAll()
@@ -227,7 +281,7 @@ function M:Refresh()
 		return
 	end
 
-	RefreshHeaders()
+	RefreshHealers()
 end
 
 function M:Pause()
@@ -236,6 +290,7 @@ end
 
 function M:Resume()
 	paused = false
+	OnAuraStateUpdated()
 end
 
 function M:Init()
@@ -272,6 +327,11 @@ function M:Init()
 	text:Show()
 
 	healerAnchor.HealerWarning = text
+
+	-- Icons sit at the bottom of the anchor, text sits at the top.
+	iconsContainer = iconSlotContainer:New(healerAnchor, 5, tonumber(options.Icons.Size) or 32, 2)
+	iconsContainer.Frame:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
+	iconsContainer.Frame:Show()
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
