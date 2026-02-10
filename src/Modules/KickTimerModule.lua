@@ -568,6 +568,35 @@ function M:GetContainer()
 	return kickBar.Anchor
 end
 
+function M:StartTesting()
+	local container = M:GetContainer()
+	if not container then
+		return
+	end
+
+	container:Show()
+	container:SetMovable(true)
+	container:EnableMouse(true)
+
+	M:ClearIcons()
+	-- Show test kicks: mage, hunter, rogue
+	M:KickedBySpec(62) -- mage
+	M:KickedBySpec(254) -- hunter
+	M:KickedBySpec(259) -- rogue
+end
+
+function M:StopTesting()
+	local container = M:GetContainer()
+	if not container then
+		return
+	end
+
+	M:ClearIcons()
+	container:Hide()
+	container:SetMovable(false)
+	container:EnableMouse(false)
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 

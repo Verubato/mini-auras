@@ -1,5 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
+local capabilities = addon.Capabilities
 local mini = addon.Core.Framework
 local array = addon.Utils.Array
 local unitWatcher = addon.Core.UnitAuraWatcher
@@ -10,6 +11,8 @@ local containers = {}
 local watchers = {}
 ---@type Db
 local db
+---@type TestSpell[]
+local testSpells = {}
 
 ---@class PortraitModule : IModule
 local M = {}
@@ -262,12 +265,48 @@ local function EnableDisable()
 	end
 end
 
-function M:Pause()
+local function Pause()
 	paused = true
 end
 
-function M:Resume()
+local function Resume()
 	paused = false
+end
+
+function M:StartTesting()
+	Pause()
+
+	local containers = M:GetContainers()
+	if not testSpells or #testSpells == 0 then
+		return
+	end
+
+	local tex = C_Spell.GetSpellTexture(testSpells[1].SpellId)
+	local now = GetTime()
+
+	for _, container in ipairs(containers) do
+		container:SetSlotUsed(1)
+		container:SetLayer(
+			1,
+			1,
+			tex,
+			now,
+			15, -- 15 second duration for test
+			true, -- alphaBoolean
+			false, -- glow
+			db.Portrait.ReverseCooldown
+		)
+		container:FinalizeSlot(1, 1)
+	end
+end
+
+function M:StopTesting()
+	local containers = M:GetContainers()
+	for _, container in ipairs(containers) do
+		container:ResetAllSlots()
+	end
+	M:Refresh()
+	Resume()
 end
 
 function M:Refresh()
@@ -277,6 +316,10 @@ end
 function M:Init()
 	db = mini:GetSavedVars()
 
+	-- Initialize test spells
+	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
+	testSpells = { kidneyShot }
+
 	Attach("player")
 	Attach("target", { "PLAYER_TARGET_CHANGED" })
 	Attach("focus", { "PLAYER_FOCUS_CHANGED" })
@@ -284,3 +327,4 @@ function M:Init()
 
 	M:Refresh()
 end
+

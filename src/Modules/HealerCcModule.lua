@@ -27,6 +27,9 @@ local discardPool = {}
 local lastCcdAlpha
 local eventsFrame
 
+---@type TestSpell[]
+local testSpells = {}
+
 ---@class HealerWatchEntry
 ---@field Unit string
 ---@field Watcher Watcher
@@ -284,17 +287,58 @@ function M:Refresh()
 	RefreshHealers()
 end
 
-function M:Pause()
+local function Pause()
 	paused = true
 end
 
-function M:Resume()
+local function Resume()
 	paused = false
 	OnAuraStateUpdated()
 end
 
+function M:StartTesting()
+	M:Show()
+	Pause()
+
+	if not iconsContainer then
+		return
+	end
+
+	local options = db.Healer
+	local size = tonumber(options.Icons.Size) or 32
+	local now = GetTime()
+
+	iconsContainer:ResetAllSlots()
+	iconsContainer:SetIconSize(size)
+	iconsContainer:SetCount(#testSpells)
+
+	for i, spell in ipairs(testSpells) do
+		local texture = C_Spell.GetSpellTexture(spell.SpellId)
+		local duration = 15 + (i - 1) * 3
+		local startTime = now - (i - 1) * 0.5
+
+		iconsContainer:SetSlotUsed(i)
+		iconsContainer:SetLayer(i, 1, texture, startTime, duration, true, options.Icons.Glow, options.Icons.ReverseCooldown)
+		iconsContainer:FinalizeSlot(i, 1)
+	end
+
+	UpdateAnchorSize()
+end
+
+function M:StopTesting()
+	M:Hide()
+	Resume()
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
+
+	-- Initialize test spells
+	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
+	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
+	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
+	local multipleTestSpells = { kidneyShot, fear, hex }
+	testSpells = capabilities:HasNewFilters() and multipleTestSpells or { kidneyShot }
 
 	local options = db.Healer
 

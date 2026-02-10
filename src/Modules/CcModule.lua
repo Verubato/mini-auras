@@ -1,18 +1,18 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Core.Framework
-local scheduler = addon.Utils.Scheduler
+local instanceOptions = addon.Core.InstanceOptions
 local frames = addon.Core.Frames
 local IconSlotContainer = addon.Core.IconSlotContainer
 local UnitAuraWatcher = addon.Core.UnitAuraWatcher
 local capabilities = addon.Capabilities
 local eventsFrame
 local paused = false
-local db
----@type InstanceOptions|nil
-local currentInstanceOptions
+local testModeActive = false
 ---@type table<table, CcWatchEntry>
 local watchers = {}
+---@type TestSpell[]
+local testSpells = {}
+
 ---@class CcModule : IModule
 local M = {}
 
@@ -22,12 +22,6 @@ addon.Modules.CcModule = M
 ---@field Container IconSlotContainer
 ---@field Watcher Watcher
 ---@field Anchor table
-
-local function GetInstanceOptions()
-	local inInstance, instanceType = IsInInstance()
-	local isBgOrRaid = inInstance and (instanceType == "pvp" or instanceType == "raid")
-	return isBgOrRaid and db.Raid or db.Default
-end
 
 ---@param entry CcWatchEntry
 local function UpdateWatcherAuras(entry)
@@ -39,8 +33,8 @@ local function UpdateWatcherAuras(entry)
 		return
 	end
 
-	local options = currentInstanceOptions
-	if not options then
+	local options = instanceOptions:GetInstanceOptions()
+	if not options or not options.Enabled then
 		return
 	end
 
@@ -111,7 +105,8 @@ local function EnsureWatcher(anchor, unit)
 		return nil
 	end
 
-	local options = currentInstanceOptions
+	local options = testModeActive and instanceOptions:GetTestInstanceOptions()
+		or instanceOptions:GetInstanceOptions()
 
 	if not options then
 		return
@@ -142,13 +137,13 @@ local function EnsureWatcher(anchor, unit)
 
 	UpdateWatcherAuras(entry)
 	M:AnchorContainer(entry.Container, anchor, options)
-	frames:ShowHideFrame(entry.Container.Frame, anchor, false, options)
+	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, options)
 
 	return entry
 end
 
 local function EnsureWatchers()
-	local anchors = frames:GetAll(true)
+	local anchors = frames:GetAll(true, testModeActive)
 
 	for _, anchor in ipairs(anchors) do
 		EnsureWatcher(anchor)
@@ -166,15 +161,13 @@ local function OnCufUpdateVisible(frame)
 		return
 	end
 
-	scheduler:RunWhenCombatEnds(function()
-		local instanceOptions = M:GetCurrentInstanceOptions()
+	local options = instanceOptions:GetInstanceOptions()
 
-		if not instanceOptions then
-			return
-		end
+	if not options then
+		return
+	end
 
-		frames:ShowHideFrame(entry.Container.Frame, frame, false, instanceOptions)
-	end)
+	frames:ShowHideFrame(entry.Container.Frame, frame, false, options)
 end
 
 local function OnCufSetUnit(frame, unit)
@@ -205,17 +198,6 @@ function M:GetContainers()
 		containers[anchor] = entry.Container
 	end
 	return containers
-end
-
----@return InstanceOptions|nil
-function M:GetCurrentInstanceOptions()
-	return currentInstanceOptions
-end
-
-function M:RefreshInstanceOptions()
-	currentInstanceOptions = GetInstanceOptions()
-
-	return currentInstanceOptions
 end
 
 ---@param header IconSlotContainer
@@ -256,6 +238,14 @@ function M:AnchorContainer(header, anchor, options)
 	end
 end
 
+local function Pause()
+	paused = true
+end
+
+local function Resume()
+	paused = false
+end
+
 function M:Hide()
 	for _, entry in pairs(watchers) do
 		entry.Container.Frame:Hide()
@@ -263,41 +253,102 @@ function M:Hide()
 end
 
 function M:Refresh()
-	local options = M:RefreshInstanceOptions()
+	local options = testModeActive and instanceOptions:GetTestInstanceOptions() or instanceOptions:GetInstanceOptions()
 
 	if not options then
 		return
 	end
 
-	-- avoid doing work in test mode
-	if not paused then
-		EnsureWatchers()
-	end
+	EnsureWatchers()
 
 	for anchor, entry in pairs(watchers) do
 		local container = entry.Container
 		local iconSize = tonumber(options.Icons.Size) or 32
 		container:SetIconSize(iconSize)
 
-		if not paused then
+		if not testModeActive then
 			UpdateWatcherAuras(entry)
-
-			M:AnchorContainer(container, anchor, options)
-			frames:ShowHideFrame(container.Frame, anchor, false, options)
 		end
+
+		M:AnchorContainer(container, anchor, options)
+		frames:ShowHideFrame(container.Frame, anchor, testModeActive, options)
 	end
 end
 
-function M:Pause()
-	paused = true
+function M:StartTesting()
+	-- Pause real watcher updates
+	Pause()
+	testModeActive = true
+
+	-- Get test options
+	local options = instanceOptions:GetTestInstanceOptions()
+	if not options or not options.Enabled then
+		testModeActive = false
+		Resume()
+		return
+	end
+
+	-- Create containers for all frames (including test frames)
+	EnsureWatchers()
+
+	-- Populate all containers with test data
+	for anchor, entry in pairs(watchers) do
+		local container = entry.Container
+		local now = GetTime()
+
+		container:ResetAllSlots()
+		container:SetIconSize(tonumber(options.Icons.Size) or 32)
+		container:SetCount(#testSpells)
+
+		for i, spell in ipairs(testSpells) do
+			local texture = C_Spell.GetSpellTexture(spell.SpellId)
+			local duration = 15 + (i - 1) * 3
+			local startTime = now - (i - 1) * 0.5
+
+			container:SetSlotUsed(i)
+			container:SetLayer(
+				i,
+				1,
+				texture,
+				startTime,
+				duration,
+				true,
+				options.Icons.Glow,
+				options.Icons.ReverseCooldown
+			)
+			container:FinalizeSlot(i, 1)
+		end
+
+		-- Show the container
+		M:AnchorContainer(container, anchor, options)
+		container.Frame:Show()
+		container.Frame:SetAlpha(1)
+	end
 end
 
-function M:Resume()
-	paused = false
+function M:StopTesting()
+	-- Clear all test data
+	for _, entry in pairs(watchers) do
+		entry.Container:ResetAllSlots()
+		entry.Container.Frame:Hide()
+	end
+
+	testModeActive = false
+
+	-- Resume real watcher updates
+	Resume()
+
+	-- Refresh to show real data
+	M:Refresh()
 end
 
 function M:Init()
-	db = mini:GetSavedVars()
+	-- Initialize test spells
+	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
+	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
+	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
+	local multipleTestSpells = { kidneyShot, fear, hex }
+	testSpells = capabilities:HasNewFilters() and multipleTestSpells or { kidneyShot }
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
@@ -316,6 +367,5 @@ function M:Init()
 		fs.Sorting:RegisterPostSortCallback(OnFrameSortSorted)
 	end
 
-	M:RefreshInstanceOptions()
 	EnsureWatchers()
 end

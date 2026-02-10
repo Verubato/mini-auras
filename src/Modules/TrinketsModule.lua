@@ -373,9 +373,18 @@ local function OnEvent(_, event, ...)
 	end
 end
 
+local function Pause()
+	paused = true
+end
+
+local function Resume()
+	paused = false
+	M:Refresh()
+end
+
 function M:StartTesting()
 	testModeActive = true
-	self:Pause()
+	Pause()
 
 	RebuildAnchors()
 	UpdateVisibility()
@@ -419,7 +428,7 @@ function M:StopTesting()
 	testModeActive = false
 
 	ClearAll()
-	M:Resume()
+	Resume()
 end
 
 function M:Enable()
@@ -449,15 +458,6 @@ function M:Disable()
 	for anchorFrame in pairs(watchers) do
 		DestroyWatcher(anchorFrame)
 	end
-end
-
-function M:Pause()
-	paused = true
-end
-
-function M:Resume()
-	paused = false
-	self:Refresh()
 end
 
 function M:Refresh()

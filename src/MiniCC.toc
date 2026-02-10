@@ -20,6 +20,7 @@ Utils\Array.lua
 Utils\CcUtil.lua
 
 Core\MiniFramework.lua
+Core\InstanceOptions.lua
 Core\IconSlotContainer.lua
 Core\UnitAuraWatcher.lua
 Core\Frames.lua

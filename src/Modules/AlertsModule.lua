@@ -187,13 +187,72 @@ function M:Refresh()
 	EnableDisable()
 end
 
-function M:Pause()
+local function Pause()
 	paused = true
 end
 
-function M:Resume()
+local function Resume()
 	paused = false
 	OnAuraDataChanged()
+end
+
+function M:StartTesting()
+	Pause()
+
+	if not container then
+		return
+	end
+
+	container.Frame:EnableMouse(true)
+	container.Frame:SetMovable(true)
+
+	local testAlertSpellIds = {
+		190319, -- Combustion
+		121471, -- Shadow Blades
+		107574, -- Avatar
+	}
+
+	local count = math.min(#testAlertSpellIds, container.Count or #testAlertSpellIds)
+	container:SetCount(count)
+
+	local now = GetTime()
+	for i = 1, count do
+		container:SetSlotUsed(i)
+
+		local spellId = testAlertSpellIds[i]
+		local tex = C_Spell.GetSpellTexture(spellId)
+		local duration = 12 + (i - 1) * 3
+		local startTime = now - (i - 1) * 1.25
+
+		container:SetLayer(
+			i,
+			1,
+			tex,
+			startTime,
+			duration,
+			true,
+			db.Alerts.Icons.Glow,
+			db.Alerts.Icons.ReverseCooldown
+		)
+
+		container:FinalizeSlot(i, 1)
+	end
+
+	for i = count + 1, container.Count do
+		container:SetSlotUnused(i)
+	end
+end
+
+function M:StopTesting()
+	M:ClearAll()
+	Resume()
+
+	if not container then
+		return
+	end
+
+	container.Frame:EnableMouse(false)
+	container.Frame:SetMovable(false)
 end
 
 function M:Init()

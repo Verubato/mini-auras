@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local instanceOptions = addon.Core.InstanceOptions
 local scheduler = addon.Utils.Scheduler
 local frames = addon.Core.Frames
 local config = addon.Config
@@ -85,6 +86,7 @@ local function OnAddonLoaded()
 	config:Init()
 	scheduler:Init()
 	frames:Init()
+	instanceOptions:Init()
 
 	for _, module in ipairs(modules) do
 		module:Init()
@@ -166,7 +168,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Frames Frames
 ---@field UnitAuraWatcher UnitAuraWatcher
 ---@field IconSlotContainer IconSlotContainer
----@field CcHeader CcHeader
+---@field InstanceOptions InstanceOptions
 
 ---@class Modules
 ---@field TestModeManager TestModeManager

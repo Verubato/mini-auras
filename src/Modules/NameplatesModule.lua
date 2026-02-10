@@ -13,6 +13,15 @@ local nameplateAnchors = {}
 ---@type table<string, Watcher>
 local watchers = {}
 
+local testCcNameplateSpellIds = {
+	408, -- kidney shot
+	5782, -- fear
+}
+local testImportantNameplateSpellIds = {
+	104773, -- warlock wall
+	377362, -- precog
+}
+
 ---@class NameplateData
 ---@field Nameplate table
 ---@field CcContainer IconSlotContainer?
@@ -539,17 +548,91 @@ function M:Refresh()
 	end
 end
 
-function M:Pause()
+local function Pause()
 	paused = true
 end
 
-function M:Resume()
+local function Resume()
 	paused = false
 
 	-- Refresh all nameplates
 	for _, watcher in pairs(watchers) do
 		watcher:ForceFullUpdate()
 	end
+end
+
+function M:StartTesting()
+	Pause()
+
+	local containers = M:GetAllContainers()
+
+	for _, container in ipairs(containers) do
+		local now = GetTime()
+		local options = M:GetUnitOptions(container.UnitToken)
+		local ccOptions = options.CC
+		local importantOptions = options.Important
+		local ccContainer = container.CcContainer
+		local importantContainer = container.ImportantContainer
+
+		if ccContainer and ccOptions and testCcNameplateSpellIds then
+			for i = 1, #testCcNameplateSpellIds do
+				ccContainer:SetSlotUsed(i)
+
+				local spellId = testCcNameplateSpellIds[i]
+				local tex = C_Spell.GetSpellTexture(spellId)
+				local duration = 15 + (i - 1) * 3
+				local startTime = now - (i - 1) * 0.5
+
+				ccContainer:SetLayer(
+					i,
+					1,
+					tex,
+					startTime,
+					duration,
+					true,
+					ccOptions.Icons.Glow,
+					ccOptions.Icons.ReverseCooldown
+				)
+				ccContainer:FinalizeSlot(i, 1)
+			end
+
+			-- Mark remaining slots as unused
+			for i = #testCcNameplateSpellIds + 1, ccContainer.Count do
+				ccContainer:SetSlotUnused(i)
+			end
+		end
+
+		if importantContainer and importantOptions and testImportantNameplateSpellIds then
+			for i = 1, #testImportantNameplateSpellIds do
+				importantContainer:SetSlotUsed(i)
+
+				local spellId = testImportantNameplateSpellIds[i]
+				local tex = C_Spell.GetSpellTexture(spellId)
+				local duration = 15 + (i - 1) * 3
+				local startTime = now - (i - 1) * 0.5
+				importantContainer:SetLayer(
+					i,
+					1,
+					tex,
+					startTime,
+					duration,
+					true,
+					importantOptions.Icons.Glow,
+					importantOptions.Icons.ReverseCooldown
+				)
+				importantContainer:FinalizeSlot(i, 1)
+			end
+
+			-- Mark remaining slots as unused
+			for i = #testImportantNameplateSpellIds + 1, importantContainer.Count do
+				importantContainer:SetSlotUnused(i)
+			end
+		end
+	end
+end
+
+function M:StopTesting()
+	Resume()
 end
 
 function M:ClearAll()
