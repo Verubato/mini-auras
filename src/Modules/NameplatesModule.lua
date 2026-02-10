@@ -185,16 +185,14 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 		end
 
 		container:SetSlotUsed(slotIndex)
-		container:SetLayer(
-			slotIndex,
-			ccLayerIndex,
-			spellInfo.SpellIcon,
-			spellInfo.StartTime,
-			spellInfo.TotalDuration,
-			spellInfo.IsCC,
-			iconsGlow,
-			iconsReverse
-		)
+		container:SetLayer(slotIndex, ccLayerIndex, {
+			Texture = spellInfo.SpellIcon,
+			StartTime = spellInfo.StartTime,
+			Duration = spellInfo.TotalDuration,
+			AlphaBoolean = spellInfo.IsCC,
+			Glow = iconsGlow,
+			ReverseCooldown = iconsReverse,
+		})
 
 		if hasNewFilters then
 			-- we're on 12.0.1 and can show multiple cc's
@@ -238,16 +236,14 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 				slot = slot + 1
 				container:ClearSlot(slot)
 				container:SetSlotUsed(slot)
-				container:SetLayer(
-					slot,
-					1,
-					spellData.SpellIcon,
-					spellData.StartTime,
-					spellData.TotalDuration,
-					spellData.IsImportant,
-					options.Icons.Glow,
-					options.Icons.ReverseCooldown
-				)
+				container:SetLayer(slot, 1, {
+					Texture = spellData.SpellIcon,
+					StartTime = spellData.StartTime,
+					Duration = spellData.TotalDuration,
+					AlphaBoolean = spellData.IsImportant,
+					Glow = options.Icons.Glow,
+					ReverseCooldown = options.Icons.ReverseCooldown,
+				})
 				container:FinalizeSlot(slot, 1)
 			end
 		else
@@ -258,16 +254,14 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 			local used = 0
 			for _, spellData in ipairs(importantData) do
 				used = used + 1
-				container:SetLayer(
-					slot,
-					used,
-					spellData.SpellIcon,
-					spellData.StartTime,
-					spellData.TotalDuration,
-					spellData.IsImportant,
-					options.Icons.Glow,
-					options.Icons.ReverseCooldown
-				)
+				container:SetLayer(slot, used, {
+					Texture = spellData.SpellIcon,
+					StartTime = spellData.StartTime,
+					Duration = spellData.TotalDuration,
+					AlphaBoolean = spellData.IsImportant,
+					Glow = options.Icons.Glow,
+					ReverseCooldown = options.Icons.ReverseCooldown,
+				})
 			end
 
 			container:FinalizeSlot(slot, used)
@@ -280,16 +274,14 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 			container:ClearSlot(slot)
 			container:SetSlotUsed(slot)
 
-			container:SetLayer(
-				slot,
-				1,
-				spellData.SpellIcon,
-				spellData.StartTime,
-				spellData.TotalDuration,
-				spellData.IsDefensive,
-				options.Icons.Glow,
-				options.Icons.ReverseCooldown
-			)
+			container:SetLayer(slot, 1, {
+				Texture = spellData.SpellIcon,
+				StartTime = spellData.StartTime,
+				Duration = spellData.TotalDuration,
+				AlphaBoolean = spellData.IsDefensive,
+				Glow = options.Icons.Glow,
+				ReverseCooldown = options.Icons.ReverseCooldown,
+			})
 
 			container:FinalizeSlot(slot, 1)
 		end
@@ -583,16 +575,14 @@ function M:StartTesting()
 				local duration = 15 + (i - 1) * 3
 				local startTime = now - (i - 1) * 0.5
 
-				ccContainer:SetLayer(
-					i,
-					1,
-					tex,
-					startTime,
-					duration,
-					true,
-					ccOptions.Icons.Glow,
-					ccOptions.Icons.ReverseCooldown
-				)
+				ccContainer:SetLayer(i, 1, {
+					texture = tex,
+					startTime = startTime,
+					duration = duration,
+					alphaBoolean = true,
+					glow = ccOptions.Icons.Glow,
+					reverseCooldown = ccOptions.Icons.ReverseCooldown,
+				})
 				ccContainer:FinalizeSlot(i, 1)
 			end
 
@@ -610,16 +600,14 @@ function M:StartTesting()
 				local tex = C_Spell.GetSpellTexture(spellId)
 				local duration = 15 + (i - 1) * 3
 				local startTime = now - (i - 1) * 0.5
-				importantContainer:SetLayer(
-					i,
-					1,
-					tex,
-					startTime,
-					duration,
-					true,
-					importantOptions.Icons.Glow,
-					importantOptions.Icons.ReverseCooldown
-				)
+				importantContainer:SetLayer(i, 1, {
+					texture = tex,
+					startTime = startTime,
+					duration = duration,
+					alphaBoolean = true,
+					glow = importantOptions.Icons.Glow,
+					reverseCooldown = importantOptions.Icons.ReverseCooldown,
+				})
 				importantContainer:FinalizeSlot(i, 1)
 			end
 

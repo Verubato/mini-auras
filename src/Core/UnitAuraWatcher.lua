@@ -7,6 +7,31 @@ local ccFilter = capabilities:HasNewFilters() and "HARMFUL|CROWD_CONTROL" or "HA
 local importantHelpfulFilter = capabilities:HasNewFilters() and "HELPFUL|IMPORTANT" or "HELPFUL|INCLUDE_NAME_PLATE_ONLY"
 local importantHarmfulFilter = capabilities:HasNewFilters() and "HARMFUL|IMPORTANT" or "HARMFUL|INCLUDE_NAME_PLATE_ONLY"
 
+-- Dispel type color mapping
+local dispelColours = {
+	-- https://wago.tools/db2/SpellDispelType
+	[0] = DEBUFF_TYPE_NONE_COLOR,
+	[1] = DEBUFF_TYPE_MAGIC_COLOR,
+	[2] = DEBUFF_TYPE_CURSE_COLOR,
+	[3] = DEBUFF_TYPE_DISEASE_COLOR,
+	[4] = DEBUFF_TYPE_POISON_COLOR,
+	[11] = DEBUFF_TYPE_BLEED_COLOR,
+}
+local dispelColorCurve
+
+local function InitColourCurve()
+	if dispelColorCurve then
+		return
+	end
+
+	dispelColorCurve = C_CurveUtil.CreateColorCurve()
+	dispelColorCurve:SetType(Enum.LuaCurveType.Step)
+
+	for type, colour in pairs(dispelColours) do
+		dispelColorCurve:AddPoint(type, colour)
+	end
+end
+
 ---@class UnitAuraWatcher
 local M = {}
 addon.Core.UnitAuraWatcher = M
@@ -185,12 +210,17 @@ function Watcher:RebuildStates()
 				local duration = durationInfo and durationInfo:GetTotalDuration()
 
 				if start and duration then
+					local dispelColor =
+						C_UnitAuras.GetAuraDispelTypeColor(unit, defensivesData.auraInstanceID, dispelColorCurve)
+
 					defensivesSpellData[#defensivesSpellData + 1] = {
 						IsDefensive = true,
 						SpellId = defensivesData.spellId,
 						SpellIcon = defensivesData.icon,
 						StartTime = start,
 						TotalDuration = duration,
+						DispelColor = dispelColor,
+						auraInstanceID = defensivesData.auraInstanceID,
 					}
 				end
 
@@ -209,6 +239,9 @@ function Watcher:RebuildStates()
 				local duration = durationInfo and durationInfo:GetTotalDuration()
 
 				if start and duration then
+					local dispelColor =
+						C_UnitAuras.GetAuraDispelTypeColor(unit, ccData.auraInstanceID, dispelColorCurve)
+
 					if capabilities:HasNewFilters() then
 						ccSpellData[#ccSpellData + 1] = {
 							IsCC = true,
@@ -216,6 +249,8 @@ function Watcher:RebuildStates()
 							SpellIcon = ccData.icon,
 							StartTime = start,
 							TotalDuration = duration,
+							DispelColor = dispelColor,
+							auraInstanceID = ccData.auraInstanceID,
 						}
 					else
 						local isCC = C_Spell.IsSpellCrowdControl(ccData.spellId)
@@ -225,6 +260,8 @@ function Watcher:RebuildStates()
 							SpellIcon = ccData.icon,
 							StartTime = start,
 							TotalDuration = duration,
+							DispelColor = dispelColor,
+							auraInstanceID = ccData.auraInstanceID,
 						}
 					end
 				end
@@ -239,12 +276,17 @@ function Watcher:RebuildStates()
 				local duration = durationInfo and durationInfo:GetTotalDuration()
 
 				if start and duration then
+					local dispelColor =
+						C_UnitAuras.GetAuraDispelTypeColor(unit, importantHelpfulData.auraInstanceID, dispelColorCurve)
+
 					importantSpellData[#importantSpellData + 1] = {
 						IsImportant = capabilities:HasNewFilters() or isImportant,
 						SpellId = importantHelpfulData.spellId,
 						SpellIcon = importantHelpfulData.icon,
 						StartTime = start,
 						TotalDuration = duration,
+						DispelColor = dispelColor,
+						auraInstanceID = importantHelpfulData.auraInstanceID,
 					}
 				end
 			end
@@ -260,12 +302,17 @@ function Watcher:RebuildStates()
 				local duration = durationInfo and durationInfo:GetTotalDuration()
 
 				if start and duration then
+					local dispelColor =
+						C_UnitAuras.GetAuraDispelTypeColor(unit, importantHarmfulData.auraInstanceID, dispelColorCurve)
+
 					importantSpellData[#importantSpellData + 1] = {
 						IsImportant = capabilities:HasNewFilters() or isImportant,
 						SpellId = importantHarmfulData.spellId,
 						SpellIcon = importantHarmfulData.icon,
 						StartTime = start,
 						TotalDuration = duration,
+						DispelColor = dispelColor,
+						auraInstanceID = importantHarmfulData.auraInstanceID,
 					}
 				end
 			end
@@ -341,6 +388,8 @@ function M:New(unit, events, interestedIn)
 	return watcher
 end
 
+InitColourCurve()
+
 ---@class AuraTypeFilter
 ---@field CC boolean?
 ---@field Important boolean?
@@ -354,6 +403,7 @@ end
 ---@field SpellIcon string?
 ---@field TotalDuration number?
 ---@field StartTime number?
+---@field DispelColor table?
 
 ---@class WatcherState
 ---@field Unit string
@@ -366,7 +416,7 @@ end
 ---@field InterestedIn AuraTypeFilter
 
 ---@class Watcher
----@field Frame Frame?
+---@field Frame table?
 ---@field State WatcherState
 ---@field GetCcState fun(self: Watcher): AuraInfo[]
 ---@field GetImportantState fun(self: Watcher): AuraInfo[]

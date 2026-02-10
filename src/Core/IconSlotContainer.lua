@@ -190,13 +190,16 @@ end
 ---Sets a layer on a specific slot
 ---@param slotIndex number Slot index (1-based)
 ---@param layerIndex number Layer index (1-based, higher = on top)
----@param texture string Texture path/ID
----@param startTime number Cooldown start time (GetTime())
----@param duration number Cooldown duration in seconds
----@param alphaBoolean boolean to control alpha (true = 1.0, false = dimmed)
----@param glow boolean Whether to show glow effect (requires LibCustomGlow)
----@param reverseCooldown boolean Whether to reverse the cooldown animation
-function M:SetLayer(slotIndex, layerIndex, texture, startTime, duration, alphaBoolean, glow, reverseCooldown)
+---@param options IconLayerOptions Options for the layer
+---@class IconLayerOptions
+---@field Texture string Texture path/ID
+---@field StartTime number? Cooldown start time (GetTime())
+---@field Duration number? Cooldown duration in seconds
+---@field AlphaBoolean boolean? Control alpha (true = 1.0, false = dimmed)
+---@field Glow boolean? Whether to show glow effect (requires LibCustomGlow)
+---@field ReverseCooldown boolean? Whether to reverse the cooldown animation
+---@field Color table? RGBA color table {r, g, b, a} for glow effect
+function M:SetLayer(slotIndex, layerIndex, options)
 	if slotIndex < 1 or slotIndex > self.Count then
 		return
 	end
@@ -212,18 +215,25 @@ function M:SetLayer(slotIndex, layerIndex, texture, startTime, duration, alphaBo
 	local layer = EnsureLayer(slot, layerIndex)
 	slot.LayerCount = math.max(slot.LayerCount or 0, layerIndex)
 
-	if texture and startTime and duration then
-		layer.Icon:SetTexture(texture)
-		layer.Cooldown:SetReverse(reverseCooldown)
-		layer.Cooldown:SetCooldown(startTime, duration)
-		layer.Frame:SetAlphaFromBoolean(alphaBoolean)
+	if options.Texture and options.StartTime and options.Duration then
+		layer.Icon:SetTexture(options.Texture)
+		layer.Cooldown:SetReverse(options.ReverseCooldown)
+		layer.Cooldown:SetCooldown(options.StartTime, options.Duration)
+		layer.Frame:SetAlphaFromBoolean(options.AlphaBoolean)
 
 		if LCG then
-			if glow then
-				LCG.ProcGlow_Start(layer.Frame, { startAnim = false })
+			if options.Glow then
+				local glowOptions = { startAnim = false }
+
+				-- Apply color if provided
+				if options.Color then
+					glowOptions.color = { options.Color.r, options.Color.g, options.Color.b, options.Color.a }
+				end
+
+				LCG.ProcGlow_Start(layer.Frame, glowOptions)
 				local procGlow = layer.Frame._ProcGlow
 				if procGlow then
-					procGlow:SetAlphaFromBoolean(alphaBoolean)
+					procGlow:SetAlphaFromBoolean(options.AlphaBoolean)
 				end
 			else
 				LCG.ProcGlow_Stop(layer.Frame)
@@ -391,7 +401,7 @@ end
 ---@field Spacing number
 ---@field SetCount fun(self: IconSlotContainer, count: number)
 ---@field SetIconSize fun(self: IconSlotContainer, size: number)
----@field SetLayer fun(self: IconSlotContainer, slotIndex: number, layerIndex: number, texture: string, startTime: number?, duration: number?, alphaBoolean: boolean, glow: boolean, reverseCooldown: boolean)
+---@field SetLayer fun(self: IconSlotContainer, slotIndex: number, layerIndex: number, options: IconLayerOptions)
 ---@field ClearLayer fun(self: IconSlotContainer, slotIndex: number, layerIndex: number)
 ---@field ClearSlot fun(self: IconSlotContainer, slotIndex: number)
 ---@field FinalizeSlot fun(self: IconSlotContainer, slotIndex: number, usedCount: number)

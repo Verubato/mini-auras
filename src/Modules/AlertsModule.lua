@@ -53,16 +53,14 @@ local function OnAuraDataChanged()
 						slot = slot + 1
 						container:ClearSlot(slot)
 						container:SetSlotUsed(slot)
-						container:SetLayer(
-							slot,
-							1,
-							data.SpellIcon,
-							data.StartTime,
-							data.TotalDuration,
-							data.IsImportant,
-							db.Alerts.Icons.Glow,
-							db.Alerts.Icons.ReverseCooldown
-						)
+						container:SetLayer(slot, 1, {
+							Texture = data.SpellIcon,
+							StartTime = data.StartTime,
+							Duration = data.TotalDuration,
+							AlphaBoolean = data.IsImportant,
+							Glow = db.Alerts.Icons.Glow,
+							ReverseCooldown = db.Alerts.Icons.ReverseCooldown,
+						})
 						container:FinalizeSlot(slot, 1)
 					end
 				else
@@ -73,16 +71,14 @@ local function OnAuraDataChanged()
 					local used = 0
 					for _, data in ipairs(importantData) do
 						used = used + 1
-						container:SetLayer(
-							slot,
-							used,
-							data.SpellIcon,
-							data.StartTime,
-							data.TotalDuration,
-							data.IsImportant,
-							db.Alerts.Icons.Glow,
-							db.Alerts.Icons.ReverseCooldown
-						)
+						container:SetLayer(slot, used, {
+							Texture = data.SpellIcon,
+							StartTime = data.StartTime,
+							Duration = data.TotalDuration,
+							AlphaBoolean = data.IsImportant,
+							Glow = db.Alerts.Icons.Glow,
+							ReverseCooldown = db.Alerts.Icons.ReverseCooldown,
+						})
 					end
 
 					container:FinalizeSlot(slot, used)
@@ -95,16 +91,14 @@ local function OnAuraDataChanged()
 					slot = slot + 1
 					container:ClearSlot(slot)
 					container:SetSlotUsed(slot)
-					container:SetLayer(
-						slot,
-						1,
-						data.SpellIcon,
-						data.StartTime,
-						data.TotalDuration,
-						data.IsDefensive,
-						db.Alerts.Icons.Glow,
-						db.Alerts.Icons.ReverseCooldown
-					)
+					container:SetLayer(slot, 1, {
+						Texture = data.SpellIcon,
+						StartTime = data.StartTime,
+						Duration = data.TotalDuration,
+						AlphaBoolean = data.IsDefensive,
+						Glow = db.Alerts.Icons.Glow,
+						ReverseCooldown = db.Alerts.Icons.ReverseCooldown,
+					})
 					container:FinalizeSlot(slot, 1)
 				end
 			end
@@ -224,16 +218,14 @@ function M:StartTesting()
 		local duration = 12 + (i - 1) * 3
 		local startTime = now - (i - 1) * 1.25
 
-		container:SetLayer(
-			i,
-			1,
-			tex,
-			startTime,
-			duration,
-			true,
-			db.Alerts.Icons.Glow,
-			db.Alerts.Icons.ReverseCooldown
-		)
+		container:SetLayer(i, 1, {
+			Texture = tex,
+			StartTime = startTime,
+			Duration = duration,
+			AlphaBoolean = true,
+			Glow = db.Alerts.Icons.Glow,
+			ReverseCooldown = db.Alerts.Icons.ReverseCooldown,
+		})
 
 		container:FinalizeSlot(i, 1)
 	end

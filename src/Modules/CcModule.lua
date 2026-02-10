@@ -53,16 +53,15 @@ local function UpdateWatcherAuras(entry)
 				break
 			end
 
-			container:SetLayer(
-				slotIndex,
-				1,
-				aura.SpellIcon,
-				aura.StartTime,
-				aura.TotalDuration,
-				aura.IsCC,
-				options.Icons.Glow,
-				options.Icons.ReverseCooldown
-			)
+			container:SetLayer(slotIndex, 1, {
+				Texture = aura.SpellIcon,
+				StartTime = aura.StartTime,
+				Duration = aura.TotalDuration,
+				AlphaBoolean = aura.IsCC,
+				ReverseCooldown = options.Icons.ReverseCooldown,
+				Glow = options.Icons.Glow,
+				Color = options.Icons.ColorByDispelType and aura.DispelColor or nil,
+			})
 			container:FinalizeSlot(slotIndex, 1)
 			container:SetSlotUsed(slotIndex)
 			slotIndex = slotIndex + 1
@@ -71,16 +70,15 @@ local function UpdateWatcherAuras(entry)
 		-- Stack all auras in one slot
 		local layerIndex = 1
 		for _, aura in ipairs(ccState) do
-			container:SetLayer(
-				slotIndex,
-				layerIndex,
-				aura.SpellIcon,
-				aura.StartTime,
-				aura.TotalDuration,
-				aura.IsCC,
-				options.Icons.Glow,
-				options.Icons.ReverseCooldown
-			)
+			container:SetLayer(slotIndex, layerIndex, {
+				Texture = aura.SpellIcon,
+				StartTime = aura.StartTime,
+				Duration = aura.TotalDuration,
+				AlphaBoolean = aura.IsCC,
+				ReverseCooldown = options.Icons.ReverseCooldown,
+				Glow = options.Icons.Glow,
+				Color = options.Icons.ColorByDispelType and aura.DispelColor or nil,
+			})
 			layerIndex = layerIndex + 1
 		end
 		container:FinalizeSlot(slotIndex, layerIndex - 1)
@@ -319,16 +317,15 @@ function M:StartTesting()
 			local startTime = now - (i - 1) * 0.5
 
 			container:SetSlotUsed(i)
-			container:SetLayer(
-				i,
-				1,
-				texture,
-				startTime,
-				duration,
-				true,
-				options.Icons.Glow,
-				options.Icons.ReverseCooldown
-			)
+			container:SetLayer(i, 1, {
+				Texture = texture,
+				StartTime = startTime,
+				Duration = duration,
+				AlphaBoolean = true,
+				ReverseCooldown = options.Icons.ReverseCooldown,
+				Glow = options.Icons.Glow,
+				Color = options.Icons.ColorByDispelType and spell.DispelColor,
+			})
 			container:FinalizeSlot(i, 1)
 		end
 

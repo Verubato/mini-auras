@@ -80,16 +80,15 @@ local function OnAuraStateUpdated()
 			for _, aura in ipairs(ccState) do
 				slot = slot + 1
 				iconsContainer:SetSlotUsed(slot)
-				iconsContainer:SetLayer(
-					slot,
-					1,
-					aura.SpellIcon,
-					aura.StartTime,
-					aura.TotalDuration,
-					aura.IsCC,
-					options.Icons.Glow,
-					options.Icons.ReverseCooldown
-				)
+				iconsContainer:SetLayer(slot, 1, {
+					Texture = aura.SpellIcon,
+					StartTime = aura.StartTime,
+					Duration = aura.TotalDuration,
+					AlphaBoolean = aura.IsCC,
+					ReverseCooldown = options.Icons.ReverseCooldown,
+					Glow = options.Icons.Glow,
+					Color = options.Icons.ColorByDispelType and aura.DispelColor,
+				})
 				iconsContainer:FinalizeSlot(slot, 1)
 			end
 		elseif #ccState > 0 then
@@ -99,16 +98,15 @@ local function OnAuraStateUpdated()
 			local used = 0
 			for _, aura in ipairs(ccState) do
 				used = used + 1
-				iconsContainer:SetLayer(
-					slot,
-					used,
-					aura.SpellIcon,
-					aura.StartTime,
-					aura.TotalDuration,
-					aura.IsCC,
-					options.Icons.Glow,
-					options.Icons.ReverseCooldown
-				)
+				iconsContainer:SetLayer(slot, used, {
+					Texture = aura.SpellIcon,
+					StartTime = aura.StartTime,
+					Duration = aura.TotalDuration,
+					AlphaBoolean = aura.IsCC,
+					ReverseCooldown = options.Icons.ReverseCooldown,
+					Glow = options.Icons.Glow,
+					Color = options.Icons.ColorByDispelType and aura.DispelColor,
+				})
 			end
 			iconsContainer:FinalizeSlot(slot, used)
 		end
@@ -317,16 +315,15 @@ function M:StartTesting()
 		local startTime = now - (i - 1) * 0.5
 
 		iconsContainer:SetSlotUsed(i)
-		iconsContainer:SetLayer(
-			i,
-			1,
-			texture,
-			startTime,
-			duration,
-			true,
-			options.Icons.Glow,
-			options.Icons.ReverseCooldown
-		)
+		iconsContainer:SetLayer(i, 1, {
+			Texture = texture,
+			StartTime = startTime,
+			Duration = duration,
+			AlphaBoolean = true,
+			ReverseCooldown = options.Icons.ReverseCooldown,
+			Glow = options.Icons.Glow,
+			Color = options.Icons.ColorByDispelType and spell.DispelColor,
+		})
 		iconsContainer:FinalizeSlot(i, 1)
 	end
 

@@ -129,16 +129,14 @@ local function OnAuraInfo(watcher, container)
 	for _, aura in ipairs(ccAuras) do
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
 			container:SetSlotUsed(slotIndex)
-			container:SetLayer(
-				slotIndex,
-				layerIndex,
-				aura.SpellIcon,
-				aura.StartTime,
-				aura.TotalDuration,
-				aura.IsCC, -- alphaBoolean
-				false, -- glow
-				db.Portrait.ReverseCooldown
-			)
+			container:SetLayer(slotIndex, layerIndex, {
+				Texture = aura.SpellIcon,
+				StartTime = aura.StartTime,
+				Duration = aura.TotalDuration,
+				AlphaBoolean = aura.IsCC,
+				Glow = false,
+				ReverseCooldown = db.Portrait.ReverseCooldown,
+			})
 
 			if not issecretvalue(aura.IsCC) then
 				-- we're in 12.0.1
@@ -156,16 +154,14 @@ local function OnAuraInfo(watcher, container)
 	for _, aura in ipairs(defensiveAuras) do
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
 			container:SetSlotUsed(slotIndex)
-			container:SetLayer(
-				slotIndex,
-				layerIndex,
-				aura.SpellIcon,
-				aura.StartTime,
-				aura.TotalDuration,
-				true, -- alphaBoolean (we only get defensives in 12.0.1)
-				false, -- glow
-				db.Portrait.ReverseCooldown
-			)
+			container:SetLayer(slotIndex, layerIndex, {
+				Texture = aura.SpellIcon,
+				StartTime = aura.StartTime,
+				Duration = aura.TotalDuration,
+				AlphaBoolean = true, -- we only get defensives in 12.0.1
+				Glow = false,
+				ReverseCooldown = db.Portrait.ReverseCooldown,
+			})
 
 			container:FinalizeSlot(slotIndex, layerIndex)
 			return
@@ -176,16 +172,14 @@ local function OnAuraInfo(watcher, container)
 	for _, aura in ipairs(importantAuras) do
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
 			container:SetSlotUsed(slotIndex)
-			container:SetLayer(
-				slotIndex,
-				layerIndex,
-				aura.SpellIcon,
-				aura.StartTime,
-				aura.TotalDuration,
-				aura.IsImportant, -- alphaBoolean
-				false, -- glow
-				db.Portrait.ReverseCooldown
-			)
+			container:SetLayer(slotIndex, layerIndex, {
+				Texture = aura.SpellIcon,
+				StartTime = aura.StartTime,
+				Duration = aura.TotalDuration,
+				AlphaBoolean = aura.IsImportant,
+				Glow = false,
+				ReverseCooldown = db.Portrait.ReverseCooldown,
+			})
 
 			layerIndex = layerIndex + 1
 		end
@@ -286,16 +280,14 @@ function M:StartTesting()
 
 	for _, container in ipairs(containers) do
 		container:SetSlotUsed(1)
-		container:SetLayer(
-			1,
-			1,
-			tex,
-			now,
-			15, -- 15 second duration for test
-			true, -- alphaBoolean
-			false, -- glow
-			db.Portrait.ReverseCooldown
-		)
+		container:SetLayer(1, 1, {
+			Texture = tex,
+			StartTime = now,
+			Duration = 15, -- 15 second duration for test
+			AlphaBoolean = true,
+			Glow = false,
+			ReverseCooldown = db.Portrait.ReverseCooldown,
+		})
 		container:FinalizeSlot(1, 1)
 	end
 end
