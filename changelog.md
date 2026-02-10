@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.14.1
+
+Fixed nameplates in test mode.
+
 ## 2.14.0
 
 - Now showing defensives in the alerts.
