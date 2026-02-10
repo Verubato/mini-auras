@@ -167,6 +167,22 @@ local dbDefaults = {
 					MaxIcons = 5,
 				},
 			},
+			Combined = {
+				Enabled = false,
+				Grow = "RIGHT",
+				Offset = {
+					X = 2,
+					Y = 0,
+				},
+
+				Icons = {
+					Size = 50,
+					Glow = true,
+					ReverseCooldown = true,
+					ColorByDispelType = true,
+					MaxIcons = 10,
+				},
+			},
 		},
 		Enemy = {
 			CC = {
@@ -196,6 +212,22 @@ local dbDefaults = {
 				Icons = {
 					Size = 50,
 					Glow = true,
+					ColorByDispelType = true,
+					MaxIcons = 5,
+				},
+			},
+			Combined = {
+				Enabled = false,
+				Grow = "RIGHT",
+				Offset = {
+					X = 2,
+					Y = 0,
+				},
+
+				Icons = {
+					Size = 50,
+					Glow = true,
+					ReverseCooldown = true,
 					ColorByDispelType = true,
 					MaxIcons = 5,
 				},

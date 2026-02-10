@@ -19,25 +19,48 @@ local M = {}
 config.Nameplates = M
 
 ---@param parent table
+---@param dividerText string Text for the divider
 ---@param options NameplateSpellTypeOptions
----@return table bottom left anchor
-local function BuildSpellTypeSettings(parent, anchor, options)
-	local container = CreateFrame("Frame", nil, parent)
+---@param unitOptions table The parent unit options (Enemy or Friendly)
+---@param isCombined boolean Whether this is the Combined section
+---@param onVisibilityUpdate function? Callback to update visibility when mode changes
+---@return table wrapper frame containing divider and settings
+local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions, isCombined, onVisibilityUpdate)
+	-- Create a wrapper frame that contains the divider and all settings
+	local wrapper = CreateFrame("Frame", nil, parent)
+	wrapper:SetPoint("LEFT", parent, "LEFT", 0, 0)
+	wrapper:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
 
-	local function SetEnabled()
-		container:SetHeight(250)
+	-- Create divider as child of wrapper
+	local divider = mini:Divider({
+		Parent = wrapper,
+		Text = dividerText,
+	})
 
+	divider:SetPoint("LEFT", wrapper, "LEFT", 0, 0)
+	divider:SetPoint("RIGHT", wrapper, "RIGHT", 0, 0)
+	divider:SetPoint("TOP", wrapper, "TOP", 0, 0)
+
+	local container = CreateFrame("Frame", nil, wrapper)
+
+	local function UpdateVisibility()
+		-- Only show the settings container if this section is enabled
+		-- Always show the checkbox and divider
 		if options.Enabled then
+			container:SetHeight(250)
 			container:Show()
 		else
 			container:Hide()
-			-- kinda dodgy, but it works
 			container:SetHeight(1)
 		end
+
+		-- Update wrapper height to include divider height + checkbox + container
+		-- Divider ~20, checkbox ~20 + spacing
+		wrapper:SetHeight(20 + 20 + verticalSpacing * 2 + container:GetHeight())
 	end
 
 	local enabled = mini:Checkbox({
-		Parent = parent,
+		Parent = wrapper,
 		LabelText = "Enabled",
 		Tooltip = "Whether to enable or disable this type.",
 		GetValue = function()
@@ -45,17 +68,45 @@ local function BuildSpellTypeSettings(parent, anchor, options)
 		end,
 		SetValue = function(value)
 			options.Enabled = value
-			SetEnabled()
+
+			-- If enabling Combined, disable CC and Important
+			if isCombined and value then
+				unitOptions.CC.Enabled = false
+				unitOptions.Important.Enabled = false
+			-- If enabling CC or Important, disable Combined
+			elseif not isCombined and value then
+				unitOptions.Combined.Enabled = false
+			end
+
+			UpdateVisibility()
+
+			-- Update panel visibility when mode changes
+			if onVisibilityUpdate then
+				onVisibilityUpdate()
+			end
+
+			-- Refresh the parent to update all checkboxes
+			if parent.MiniRefresh then
+				parent:MiniRefresh()
+			end
+
 			config:Apply()
 		end,
 	})
 
-	enabled:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -verticalSpacing)
+	enabled:SetPoint("TOPLEFT", divider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	container:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -verticalSpacing)
-	container:SetPoint("RIGHT", parent, "RIGHT", 0, 0)
+	container:SetPoint("RIGHT", wrapper, "RIGHT", 0, 0)
 
-	SetEnabled()
+	UpdateVisibility()
+
+	wrapper.UpdateVisibility = UpdateVisibility
+
+	-- Store Refresh function on wrapper to refresh the checkbox state
+	wrapper.OnMiniRefresh = function()
+		UpdateVisibility()
+	end
 
 	local glowChk = mini:Checkbox({
 		Parent = container,
@@ -163,51 +214,105 @@ local function BuildSpellTypeSettings(parent, anchor, options)
 
 	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
 
-	return container
+	return wrapper
 end
 
 ---@param parent table
 ---@param options NameplateOptions
 function M:Build(parent, options)
-	local enemyCCDivider = mini:Divider({
-		Parent = parent,
-		Text = "Enemy - CC",
-	})
+	-- Store panel references for visibility toggling
+	local enemyPanels = {}
+	local friendlyPanels = {}
 
-	enemyCCDivider:SetPoint("LEFT", parent, "LEFT", 0, 0)
-	enemyCCDivider:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
-	enemyCCDivider:SetPoint("TOP", parent, "TOP", 0, 0)
+	-- Function to update panel visibility based on mode
+	-- This refreshes all panels to show/hide their settings containers
+	local function UpdateEnemyPanelVisibility()
+		enemyPanels.Combined.UpdateVisibility()
+		enemyPanels.CC.UpdateVisibility()
+		enemyPanels.Important.UpdateVisibility()
+	end
 
-	local enemyCCPanel = BuildSpellTypeSettings(parent, enemyCCDivider, options.Enemy.CC)
+	local function UpdateFriendlyPanelVisibility()
+		friendlyPanels.Combined.UpdateVisibility()
+		friendlyPanels.CC.UpdateVisibility()
+		friendlyPanels.Important.UpdateVisibility()
+	end
 
-	local enemyImportantDivider = mini:Divider({
-		Parent = parent,
-		Text = "Enemy - Important Spells",
-	})
-	enemyImportantDivider:SetPoint("LEFT", parent, "LEFT", 0, 0)
-	enemyImportantDivider:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
-	enemyImportantDivider:SetPoint("TOP", enemyCCPanel, "BOTTOM", 0, -verticalSpacing)
+	-- Enemy sections
+	enemyPanels.Combined = BuildSpellTypeSettings(
+		parent,
+		"Enemy - Combined",
+		options.Enemy.Combined,
+		options.Enemy,
+		true,
+		UpdateEnemyPanelVisibility
+	)
+	enemyPanels.Combined:SetPoint("TOP", parent, "TOP", 0, 0)
 
-	local enemyImportantPanel = BuildSpellTypeSettings(parent, enemyImportantDivider, options.Enemy.Important)
+	enemyPanels.CC =
+		BuildSpellTypeSettings(parent, "Enemy - CC", options.Enemy.CC, options.Enemy, false, UpdateEnemyPanelVisibility)
+	enemyPanels.CC:SetPoint("TOP", enemyPanels.Combined, "BOTTOM", 0, -verticalSpacing)
 
-	local friendlyCCDivider = mini:Divider({
-		Parent = parent,
-		Text = "Friendly - CC",
-	})
+	enemyPanels.Important = BuildSpellTypeSettings(
+		parent,
+		"Enemy - Important Spells",
+		options.Enemy.Important,
+		options.Enemy,
+		false,
+		UpdateEnemyPanelVisibility
+	)
+	enemyPanels.Important:SetPoint("TOP", enemyPanels.CC, "BOTTOM", 0, -verticalSpacing)
 
-	friendlyCCDivider:SetPoint("LEFT", parent, "LEFT", 0, 0)
-	friendlyCCDivider:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
-	friendlyCCDivider:SetPoint("TOP", enemyImportantPanel, "BOTTOM", 0, -verticalSpacing)
+	-- Friendly sections
+	friendlyPanels.Combined = BuildSpellTypeSettings(
+		parent,
+		"Friendly - Combined",
+		options.Friendly.Combined,
+		options.Friendly,
+		true,
+		UpdateFriendlyPanelVisibility
+	)
+	friendlyPanels.Combined:SetPoint("TOP", enemyPanels.Important, "BOTTOM", 0, -verticalSpacing * 2)
 
-	local friendlyCCPanel = BuildSpellTypeSettings(parent, friendlyCCDivider, options.Friendly.CC)
+	friendlyPanels.CC = BuildSpellTypeSettings(
+		parent,
+		"Friendly - CC",
+		options.Friendly.CC,
+		options.Friendly,
+		false,
+		UpdateFriendlyPanelVisibility
+	)
+	friendlyPanels.CC:SetPoint("TOP", friendlyPanels.Combined, "BOTTOM", 0, -verticalSpacing)
 
-	local friendlyImportantDivider = mini:Divider({
-		Parent = parent,
-		Text = "Friendly - Important Spells",
-	})
-	friendlyImportantDivider:SetPoint("LEFT", parent, "LEFT", 0, 0)
-	friendlyImportantDivider:SetPoint("RIGHT", parent, "RIGHT", -horizontalSpacing, 0)
-	friendlyImportantDivider:SetPoint("TOP", friendlyCCPanel, "BOTTOM", 0, -verticalSpacing)
+	friendlyPanels.Important = BuildSpellTypeSettings(
+		parent,
+		"Friendly - Important Spells",
+		options.Friendly.Important,
+		options.Friendly,
+		false,
+		UpdateFriendlyPanelVisibility
+	)
+	friendlyPanels.Important:SetPoint("TOP", friendlyPanels.CC, "BOTTOM", 0, -verticalSpacing)
 
-	BuildSpellTypeSettings(parent, friendlyImportantDivider, options.Friendly.Important)
+	-- Add Refresh method to parent that refreshes all child panels
+	parent.MiniRefresh = function()
+		if enemyPanels.Combined and enemyPanels.Combined.MiniRefresh then
+			enemyPanels.Combined:MiniRefresh()
+		end
+		if enemyPanels.CC and enemyPanels.CC.MiniRefresh then
+			enemyPanels.CC:MiniRefresh()
+		end
+		if enemyPanels.Important and enemyPanels.Important.MiniRefresh then
+			enemyPanels.Important:MiniRefresh()
+		end
+		if friendlyPanels.Combined and friendlyPanels.Combined.MiniRefresh then
+			friendlyPanels.Combined:MiniRefresh()
+		end
+		if friendlyPanels.CC and friendlyPanels.CC:MiniRefresh() then
+			friendlyPanels.CC:MiniRefresh()
+		end
+		if friendlyPanels.Important and friendlyPanels.Important.MiniRefresh then
+			friendlyPanels.Important:MiniRefresh()
+		end
+	end
 end

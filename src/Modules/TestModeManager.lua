@@ -120,8 +120,10 @@ function M:Show()
 	-- Nameplates Module
 	local anyNameplateEnabled = db.Nameplates.Friendly.CC.Enabled
 		or db.Nameplates.Friendly.Important.Enabled
+		or db.Nameplates.Friendly.Combined.Enabled
 		or db.Nameplates.Enemy.CC.Enabled
 		or db.Nameplates.Enemy.Important.Enabled
+		or db.Nameplates.Enemy.Combined.Enabled
 
 	if anyNameplateEnabled then
 		nameplateModule:StartTesting()
