@@ -564,12 +564,8 @@ function M:ClearIcons()
 	end
 end
 
-function M:GetContainer()
-	return kickBar.Anchor
-end
-
 function M:StartTesting()
-	local container = M:GetContainer()
+	local container = kickBar.Anchor
 	if not container then
 		return
 	end
@@ -586,7 +582,7 @@ function M:StartTesting()
 end
 
 function M:StopTesting()
-	local container = M:GetContainer()
+	local container = kickBar.Anchor
 	if not container then
 		return
 	end
