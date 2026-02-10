@@ -94,10 +94,11 @@ local function OnAuraStateUpdated()
 			end
 		elseif #ccState > 0 then
 			slot = slot + 1
+			iconsContainer:SetSlotUsed(slot)
+
 			local used = 0
 			for _, aura in ipairs(ccState) do
 				used = used + 1
-				iconsContainer:SetSlotUsed(slot)
 				iconsContainer:SetLayer(
 					slot,
 					used,
@@ -318,7 +319,16 @@ function M:StartTesting()
 		local startTime = now - (i - 1) * 0.5
 
 		iconsContainer:SetSlotUsed(i)
-		iconsContainer:SetLayer(i, 1, texture, startTime, duration, true, options.Icons.Glow, options.Icons.ReverseCooldown)
+		iconsContainer:SetLayer(
+			i,
+			1,
+			texture,
+			startTime,
+			duration,
+			true,
+			options.Icons.Glow,
+			options.Icons.ReverseCooldown
+		)
 		iconsContainer:FinalizeSlot(i, 1)
 	end
 
