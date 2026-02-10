@@ -106,8 +106,7 @@ local function EnsureWatcher(anchor, unit)
 		return nil
 	end
 
-	local options = testModeActive and instanceOptions:GetTestInstanceOptions()
-		or instanceOptions:GetInstanceOptions()
+	local options = testModeActive and instanceOptions:GetTestInstanceOptions() or instanceOptions:GetInstanceOptions()
 
 	if not options then
 		return

@@ -585,7 +585,7 @@ function M:Dropdown(options)
 
 	if libDD then
 		-- needs a name to not bug out
-		local dd = libDD:Create_UIDropDownMenu("MiniArenaDebuffsDropdown" .. dropDownId, options.Parent)
+		local dd = libDD:Create_UIDropDownMenu(addonName .. "Dropdown" .. dropDownId, options.Parent)
 		dropDownId = dropDownId + 1
 
 		libDD:UIDropDownMenu_Initialize(dd, function()
