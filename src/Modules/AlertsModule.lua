@@ -101,7 +101,7 @@ local function OnAuraDataChanged()
 						data.SpellIcon,
 						data.StartTime,
 						data.TotalDuration,
-						data.IsImportant,
+						data.IsDefensive,
 						db.Alerts.Icons.Glow,
 						db.Alerts.Icons.ReverseCooldown
 					)
