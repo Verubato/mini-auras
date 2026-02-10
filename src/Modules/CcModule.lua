@@ -22,6 +22,7 @@ addon.Modules.CcModule = M
 ---@field Container IconSlotContainer
 ---@field Watcher Watcher
 ---@field Anchor table
+---@field Unit string
 
 ---@param entry CcWatchEntry
 local function UpdateWatcherAuras(entry)
@@ -127,9 +128,22 @@ local function EnsureWatcher(anchor, unit)
 			Container = container,
 			Watcher = watcher,
 			Anchor = anchor,
+			Unit = unit,
 		}
 		watchers[anchor] = entry
 	else
+		-- Check if unit has changed
+		if entry.Unit ~= unit then
+			-- Unit changed, recreate the watcher
+			entry.Watcher:Dispose()
+			entry.Watcher = UnitAuraWatcher:New(unit, nil, { CC = true })
+			entry.Watcher:RegisterCallback(OnAuraStateUpdated)
+			entry.Unit = unit
+
+			-- Clear the container since it's a different unit now
+			entry.Container:ResetAllSlots()
+		end
+
 		local iconSize = tonumber(options.Icons.Size) or 32
 		entry.Container:SetIconSize(iconSize)
 		entry.Container:SetCount(options.Icons.Count or 3)
