@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.14.0
+
+- Now showing defensives in the alerts.
+- Internal code refactoring to make things easier to support going forward.
+
 ## 2.13.1
 
 Increased number of shown spell alerts from 3 to 8.
