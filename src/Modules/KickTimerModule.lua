@@ -481,6 +481,24 @@ local function CreateKickEntry(duration, icon)
 	end)
 end
 
+---@param specId number?
+local function KickedBySpec(specId)
+	if not specId then
+		return
+	end
+
+	local specInfo = specInfoBySpecId[specId]
+
+	if not specInfo or not specInfo.KickCd or not specInfo.KickIcon then
+		return
+	end
+
+	local duration = specInfo.KickCd
+	local tex = specInfo.KickIcon
+
+	CreateKickEntry(duration, tex)
+end
+
 ---@param options KickTimerOptions
 function M:IsEnabledForPlayer(options)
 	if not options then
@@ -515,24 +533,6 @@ function M:IsEnabledForPlayer(options)
 	end
 
 	return false
-end
-
----@param specId number?
-function M:KickedBySpec(specId)
-	if not specId then
-		return
-	end
-
-	local specInfo = specInfoBySpecId[specId]
-
-	if not specInfo or not specInfo.KickCd or not specInfo.KickIcon then
-		return
-	end
-
-	local duration = specInfo.KickCd
-	local tex = specInfo.KickIcon
-
-	CreateKickEntry(duration, tex)
 end
 
 ---@param kickedBy string?
@@ -580,9 +580,9 @@ function M:StartTesting()
 
 	M:ClearIcons()
 	-- Show test kicks: mage, hunter, rogue
-	M:KickedBySpec(62) -- mage
-	M:KickedBySpec(254) -- hunter
-	M:KickedBySpec(259) -- rogue
+	KickedBySpec(62) -- mage
+	KickedBySpec(254) -- hunter
+	KickedBySpec(259) -- rogue
 end
 
 function M:StopTesting()
