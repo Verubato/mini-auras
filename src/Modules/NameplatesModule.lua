@@ -19,8 +19,13 @@ local testCcNameplateSpellIds = {
 	408, -- kidney shot
 	5782, -- fear
 }
-local testImportantNameplateSpellIds = {
+local testDefensiveNameplateSpellIds = {
 	104773, -- warlock wall
+	48707, -- anti-magic shell
+}
+local testImportantNameplateSpellIds = {
+	190319, -- combustion
+	121471, -- Shadow Blades
 	377362, -- precog
 }
 
@@ -99,7 +104,7 @@ local function CreateContainersForNameplate(nameplate, unitToken)
 
 		if combinedOptions and combinedOptions.Enabled then
 			local size = combinedOptions.Icons.Size or 50
-			local maxCount = combinedOptions.Icons.MaxCount or 10
+			local maxIcons = combinedOptions.Icons.MaxIcons or 8
 			local offsetX = combinedOptions.Offset.X or 0
 			local offsetY = combinedOptions.Offset.Y or 0
 			local grow = combinedOptions.Grow or "RIGHT"
@@ -113,7 +118,7 @@ local function CreateContainersForNameplate(nameplate, unitToken)
 				anchorPoint, relativeToPoint = "CENTER", "CENTER"
 			end
 
-			combinedContainer = iconSlotContainer:New(nameplate, maxCount, size, 2)
+			combinedContainer = iconSlotContainer:New(nameplate, maxIcons, size, 2)
 			local frame = combinedContainer.Frame
 			frame:SetIgnoreParentScale(true)
 			frame:SetIgnoreParentAlpha(true)
@@ -128,7 +133,7 @@ local function CreateContainersForNameplate(nameplate, unitToken)
 		local ccOptions = config.CC
 		if ccOptions and ccOptions.Enabled then
 			local size = ccOptions.Icons.Size or 20
-			local maxCount = ccOptions.Icons.MaxCount or 5
+			local maxIcons = ccOptions.Icons.MaxIcons or 5
 			local offsetX = ccOptions.Offset.X or 0
 			local offsetY = ccOptions.Offset.Y or 5
 			local grow = ccOptions.Grow
@@ -142,7 +147,7 @@ local function CreateContainersForNameplate(nameplate, unitToken)
 				anchorPoint, relativeToPoint = "CENTER", "CENTER"
 			end
 
-			ccContainer = iconSlotContainer:New(nameplate, maxCount, size, 2)
+			ccContainer = iconSlotContainer:New(nameplate, maxIcons, size, 2)
 			local frame = ccContainer.Frame
 			frame:SetIgnoreParentScale(true)
 			frame:SetIgnoreParentAlpha(true)
@@ -157,7 +162,7 @@ local function CreateContainersForNameplate(nameplate, unitToken)
 		local importantOptions = config.Important
 		if importantOptions and importantOptions.Enabled then
 			local size = importantOptions.Icons.Size or 20
-			local maxCount = importantOptions.Icons.MaxCount or 5
+			local maxIcons = importantOptions.Icons.MaxIcons or 5
 			local offsetX = importantOptions.Offset.X or 0
 			local offsetY = importantOptions.Offset.Y or 5
 			local grow = importantOptions.Grow
@@ -171,7 +176,7 @@ local function CreateContainersForNameplate(nameplate, unitToken)
 				anchorPoint, relativeToPoint = "CENTER", "CENTER"
 			end
 
-			importantContainer = iconSlotContainer:New(nameplate, maxCount, size, 2)
+			importantContainer = iconSlotContainer:New(nameplate, maxIcons, size, 2)
 			local frame = importantContainer.Frame
 			frame:SetIgnoreParentScale(true)
 			frame:SetIgnoreParentAlpha(true)
@@ -186,6 +191,107 @@ local function CreateContainersForNameplate(nameplate, unitToken)
 	return ccContainer, importantContainer, combinedContainer
 end
 
+---Calculate slot distribution across CC, Defensive, and Important categories
+---@param containerCount number Total number of available slots
+---@param ccCount number Number of CC spells
+---@param defensiveCount number Number of Defensive spells
+---@param importantCount number Number of Important spells
+---@return number ccSlots Number of slots allocated to CC
+---@return number defensiveSlots Number of slots allocated to Defensive
+---@return number importantSlots Number of slots allocated to Important
+local function CalculateSlotDistribution(containerCount, ccCount, defensiveCount, importantCount)
+	local ccSlots, defensiveSlots, importantSlots = 0, 0, 0
+
+	-- Calculate how many active categories we have
+	local activeCategories = 0
+	if ccCount > 0 then
+		activeCategories = activeCategories + 1
+	end
+	if defensiveCount > 0 then
+		activeCategories = activeCategories + 1
+	end
+	if importantCount > 0 then
+		activeCategories = activeCategories + 1
+	end
+
+	if activeCategories > 0 and containerCount >= activeCategories then
+		-- Guarantee each active category gets at least 1 slot
+		if ccCount > 0 then
+			ccSlots = 1
+		end
+		if defensiveCount > 0 then
+			defensiveSlots = 1
+		end
+		if importantCount > 0 then
+			importantSlots = 1
+		end
+
+		-- Distribute remaining slots by priority: CC -> Defensive -> Important
+		local remainingSlots = containerCount - activeCategories
+
+		while remainingSlots > 0 do
+			local allocatedThisRound = false
+
+			if ccCount > ccSlots and remainingSlots > 0 then
+				ccSlots = ccSlots + 1
+				remainingSlots = remainingSlots - 1
+				allocatedThisRound = true
+			end
+			if defensiveCount > defensiveSlots and remainingSlots > 0 then
+				defensiveSlots = defensiveSlots + 1
+				remainingSlots = remainingSlots - 1
+				allocatedThisRound = true
+			end
+			if importantCount > importantSlots and remainingSlots > 0 then
+				importantSlots = importantSlots + 1
+				remainingSlots = remainingSlots - 1
+				allocatedThisRound = true
+			end
+
+			-- If we couldn't allocate any more slots this round, break
+			if not allocatedThisRound then
+				break
+			end
+		end
+	elseif activeCategories > 0 then
+		-- Not enough slots for all categories, distribute fairly by priority
+		-- Round-robin distribution: CC -> Defensive -> Important
+		local remainingSlots = containerCount
+
+		while remainingSlots > 0 do
+			local allocatedThisRound = false
+
+			-- CC gets first slot in each round
+			if ccCount > ccSlots and remainingSlots > 0 then
+				ccSlots = ccSlots + 1
+				remainingSlots = remainingSlots - 1
+				allocatedThisRound = true
+			end
+
+			-- Defensive gets second slot in each round
+			if defensiveCount > defensiveSlots and remainingSlots > 0 then
+				defensiveSlots = defensiveSlots + 1
+				remainingSlots = remainingSlots - 1
+				allocatedThisRound = true
+			end
+
+			-- Important gets third slot in each round
+			if importantCount > importantSlots and remainingSlots > 0 then
+				importantSlots = importantSlots + 1
+				remainingSlots = remainingSlots - 1
+				allocatedThisRound = true
+			end
+
+			-- If we couldn't allocate any slots this round, break
+			if not allocatedThisRound then
+				break
+			end
+		end
+	end
+
+	return ccSlots, defensiveSlots, importantSlots
+end
+
 ---@param data NameplateData
 ---@param watcher Watcher
 ---@param unitToken string
@@ -198,6 +304,8 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 	local unitOptions = M:GetUnitOptions(unitToken)
 	local combinedOptions = unitOptions and unitOptions.Combined
 
+	container:ResetAllSlots()
+
 	if not combinedOptions or not combinedOptions.Enabled then
 		return
 	end
@@ -208,23 +316,28 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 	local hasNewFilters = capabilities:HasNewFilters()
 	local iconsGlow = combinedOptions.Icons.Glow
 	local iconsReverse = combinedOptions.Icons.ReverseCooldown
+
+	-- Calculate slot distribution
+	local ccSlots, defensiveSlots, importantSlots =
+		CalculateSlotDistribution(container.Count, #ccData, #defensivesData, #importantData)
+
 	local slot = 0
 
-	-- Add CC spells first
-	if #ccData > 0 then
+	-- Add CC spells (highest priority)
+	if ccSlots > 0 then
 		if hasNewFilters then
-			for _, spellInfo in ipairs(ccData) do
-				slot = slot + 1
-				if slot > container.Count then
+			-- Each CC gets its own slot
+			for i = 1, math.min(ccSlots, #ccData) do
+				if slot >= container.Count then
 					break
 				end
-				container:ClearSlot(slot)
+				slot = slot + 1
 				container:SetSlotUsed(slot)
 				container:SetLayer(slot, 1, {
-					Texture = spellInfo.SpellIcon,
-					StartTime = spellInfo.StartTime,
-					Duration = spellInfo.TotalDuration,
-					AlphaBoolean = spellInfo.IsCC,
+					Texture = ccData[i].SpellIcon,
+					StartTime = ccData[i].StartTime,
+					Duration = ccData[i].TotalDuration,
+					AlphaBoolean = ccData[i].IsCC,
 					Glow = iconsGlow,
 					ReverseCooldown = iconsReverse,
 				})
@@ -232,84 +345,40 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 			end
 		else
 			-- Old filters: stack all CC on one slot
-			slot = slot + 1
-			container:ClearSlot(slot)
-			container:SetSlotUsed(slot)
-			local layerIndex = 1
-			for _, spellInfo in ipairs(ccData) do
-				container:SetLayer(slot, layerIndex, {
-					Texture = spellInfo.SpellIcon,
-					StartTime = spellInfo.StartTime,
-					Duration = spellInfo.TotalDuration,
-					AlphaBoolean = spellInfo.IsCC,
-					Glow = iconsGlow,
-					ReverseCooldown = iconsReverse,
-				})
-				layerIndex = layerIndex + 1
-			end
-			container:FinalizeSlot(slot, layerIndex - 1)
-		end
-	end
-
-	-- Add Important spells
-	if #importantData > 0 then
-		if hasNewFilters then
-			for _, spellData in ipairs(importantData) do
+			if #ccData > 0 then
 				slot = slot + 1
-				if slot > container.Count then
-					break
-				end
-				container:ClearSlot(slot)
 				container:SetSlotUsed(slot)
-				container:SetLayer(slot, 1, {
-					Texture = spellData.SpellIcon,
-					StartTime = spellData.StartTime,
-					Duration = spellData.TotalDuration,
-					AlphaBoolean = spellData.IsImportant,
-					Glow = iconsGlow,
-					ReverseCooldown = iconsReverse,
-				})
-				container:FinalizeSlot(slot, 1)
-			end
-		else
-			slot = slot + 1
-			if slot <= container.Count then
-				container:ClearSlot(slot)
-				container:SetSlotUsed(slot)
-
-				local used = 0
-				for _, spellData in ipairs(importantData) do
-					used = used + 1
-					container:SetLayer(slot, used, {
-						Texture = spellData.SpellIcon,
-						StartTime = spellData.StartTime,
-						Duration = spellData.TotalDuration,
-						AlphaBoolean = spellData.IsImportant,
+				local layerIndex = 1
+				for _, spellInfo in ipairs(ccData) do
+					container:SetLayer(slot, layerIndex, {
+						Texture = spellInfo.SpellIcon,
+						StartTime = spellInfo.StartTime,
+						Duration = spellInfo.TotalDuration,
+						AlphaBoolean = spellInfo.IsCC,
 						Glow = iconsGlow,
 						ReverseCooldown = iconsReverse,
 					})
+					layerIndex = layerIndex + 1
 				end
-
-				container:FinalizeSlot(slot, used)
+				container:FinalizeSlot(slot, layerIndex - 1)
 			end
 		end
 	end
 
-	-- Add Defensive spells
-	if #defensivesData > 0 then
-		for _, spellData in ipairs(defensivesData) do
-			slot = slot + 1
-			if slot > container.Count then
+	-- Add Defensive spells (second priority)
+	if defensiveSlots > 0 then
+		for i = 1, math.min(defensiveSlots, #defensivesData) do
+			if slot >= container.Count then
 				break
 			end
-			container:ClearSlot(slot)
+			slot = slot + 1
 			container:SetSlotUsed(slot)
 
 			container:SetLayer(slot, 1, {
-				Texture = spellData.SpellIcon,
-				StartTime = spellData.StartTime,
-				Duration = spellData.TotalDuration,
-				AlphaBoolean = spellData.IsDefensive,
+				Texture = defensivesData[i].SpellIcon,
+				StartTime = defensivesData[i].StartTime,
+				Duration = defensivesData[i].TotalDuration,
+				AlphaBoolean = defensivesData[i].IsDefensive,
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 			})
@@ -318,9 +387,48 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 		end
 	end
 
-	-- Clear any remaining slots
-	for i = slot + 1, container.Count do
-		container:SetSlotUnused(i)
+	-- Add Important spells (third priority)
+	if importantSlots > 0 then
+		if hasNewFilters then
+			-- Each Important spell gets its own slot
+			for i = 1, math.min(importantSlots, #importantData) do
+				if slot >= container.Count then
+					break
+				end
+				slot = slot + 1
+				container:SetSlotUsed(slot)
+				container:SetLayer(slot, 1, {
+					Texture = importantData[i].SpellIcon,
+					StartTime = importantData[i].StartTime,
+					Duration = importantData[i].TotalDuration,
+					AlphaBoolean = importantData[i].IsImportant,
+					Glow = iconsGlow,
+					ReverseCooldown = iconsReverse,
+				})
+				container:FinalizeSlot(slot, 1)
+			end
+		else
+			-- Old filters: stack all Important on one slot
+			if #importantData > 0 then
+				slot = slot + 1
+				container:SetSlotUsed(slot)
+
+				local layerIndex = 1
+				for _, spellData in ipairs(importantData) do
+					container:SetLayer(slot, layerIndex, {
+						Texture = spellData.SpellIcon,
+						StartTime = spellData.StartTime,
+						Duration = spellData.TotalDuration,
+						AlphaBoolean = spellData.IsImportant,
+						Glow = iconsGlow,
+						ReverseCooldown = iconsReverse,
+					})
+					layerIndex = layerIndex + 1
+				end
+
+				container:FinalizeSlot(slot, layerIndex - 1)
+			end
+		end
 	end
 end
 
@@ -336,6 +444,8 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 	local unitOptions = M:GetUnitOptions(unitToken)
 	local options = unitOptions and unitOptions.CC
 
+	container:ResetAllSlots()
+
 	if not options or not options.Enabled then
 		return
 	end
@@ -343,17 +453,6 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 	local ccData = watcher:GetCcState()
 	local ccDataCount = #ccData
 	local hasNewFilters = capabilities:HasNewFilters()
-
-	-- Clear only slots we'll potentially use
-	local slotsNeeded = hasNewFilters and math.min(ccDataCount, container.Count) or 1
-	for i = 1, slotsNeeded do
-		container:SetSlotUnused(i)
-	end
-
-	-- Clear remaining slots if they were used before
-	for i = slotsNeeded + 1, container.Count do
-		container:SetSlotUnused(i)
-	end
 
 	if ccDataCount == 0 then
 		return
@@ -404,6 +503,8 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 		return
 	end
 
+	container:ResetAllSlots()
+
 	local unitOptions = M:GetUnitOptions(unitToken)
 	local options = unitOptions and unitOptions.Important
 
@@ -422,7 +523,6 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 		if hasNewFilters then
 			for _, spellData in ipairs(importantData) do
 				slot = slot + 1
-				container:ClearSlot(slot)
 				container:SetSlotUsed(slot)
 				container:SetLayer(slot, 1, {
 					Texture = spellData.SpellIcon,
@@ -436,7 +536,6 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 			end
 		else
 			slot = slot + 1
-			container:ClearSlot(slot)
 			container:SetSlotUsed(slot)
 
 			local used = 0
@@ -459,7 +558,6 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 	if #defensivesData > 0 then
 		for _, spellData in ipairs(defensivesData) do
 			slot = slot + 1
-			container:ClearSlot(slot)
 			container:SetSlotUsed(slot)
 
 			container:SetLayer(slot, 1, {
@@ -472,20 +570,6 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 			})
 
 			container:FinalizeSlot(slot, 1)
-		end
-	end
-
-	-- advance forward 1 slot for clearing
-	if #importantData > 0 or #defensivesData > 0 then
-		slot = slot + 1
-	end
-
-	if slot == 0 then
-		container:ResetAllSlots()
-	else
-		-- clear any slots above what we used
-		for i = slot, container.Count do
-			container:SetSlotUnused(i)
 		end
 	end
 end
@@ -660,6 +744,152 @@ local function HaveModesChanged()
 		or previousFriendlyEnabled.Combined ~= db.Nameplates.Friendly.Combined.Enabled
 end
 
+local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
+	if not combinedContainer or not combinedOptions then
+		return
+	end
+
+	combinedContainer:ResetAllSlots()
+
+	-- Calculate slot distribution
+	local ccSlots, defensiveSlots, importantSlots = CalculateSlotDistribution(
+		combinedContainer.Count,
+		#testCcNameplateSpellIds,
+		#testDefensiveNameplateSpellIds,
+		#testImportantNameplateSpellIds
+	)
+
+	local slot = 0
+
+	-- Add CC spells first (highest priority)
+	for i = 1, ccSlots do
+		if slot >= combinedContainer.Count then
+			break
+		end
+		slot = slot + 1
+		combinedContainer:SetSlotUsed(slot)
+
+		local spellId = testCcNameplateSpellIds[i]
+		local tex = spellCache:GetSpellTexture(spellId)
+		if tex then
+			local duration = 15 + (i - 1) * 3
+			local startTime = now - (i - 1) * 0.5
+			combinedContainer:SetLayer(slot, 1, {
+				Texture = tex,
+				StartTime = startTime,
+				Duration = duration,
+				AlphaBoolean = true,
+				Glow = combinedOptions.Icons.Glow,
+				ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
+			})
+			combinedContainer:FinalizeSlot(slot, 1)
+		end
+	end
+
+	-- Add Defensive spells (second priority)
+	for i = 1, defensiveSlots do
+		if slot >= combinedContainer.Count then
+			break
+		end
+		slot = slot + 1
+		combinedContainer:SetSlotUsed(slot)
+
+		local spellId = testDefensiveNameplateSpellIds[i]
+		local tex = spellCache:GetSpellTexture(spellId)
+		if tex then
+			local duration = 15 + (i - 1) * 3
+			local startTime = now - (i - 1) * 0.5
+			combinedContainer:SetLayer(slot, 1, {
+				Texture = tex,
+				StartTime = startTime,
+				Duration = duration,
+				AlphaBoolean = true,
+				Glow = combinedOptions.Icons.Glow,
+				ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
+			})
+			combinedContainer:FinalizeSlot(slot, 1)
+		end
+	end
+
+	-- Add Important spells (third priority)
+	for i = 1, importantSlots do
+		if slot >= combinedContainer.Count then
+			break
+		end
+		slot = slot + 1
+		combinedContainer:SetSlotUsed(slot)
+
+		local spellId = testImportantNameplateSpellIds[i]
+		local tex = spellCache:GetSpellTexture(spellId)
+		if tex then
+			local duration = 15 + (i - 1) * 3
+			local startTime = now - (i - 1) * 0.5
+			combinedContainer:SetLayer(slot, 1, {
+				Texture = tex,
+				StartTime = startTime,
+				Duration = duration,
+				AlphaBoolean = true,
+				Glow = combinedOptions.Icons.Glow,
+				ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
+			})
+			combinedContainer:FinalizeSlot(slot, 1)
+		end
+	end
+end
+
+local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContainer, importantOptions, now)
+	if ccContainer and ccOptions then
+		ccContainer:ResetAllSlots()
+
+		for i = 1, #testCcNameplateSpellIds do
+			ccContainer:SetSlotUsed(i)
+
+			local spellId = testCcNameplateSpellIds[i]
+			local tex = spellCache:GetSpellTexture(spellId)
+
+			if tex then
+				local duration = 15 + (i - 1) * 3
+				local startTime = now - (i - 1) * 0.5
+
+				ccContainer:SetLayer(i, 1, {
+					Texture = tex,
+					StartTime = startTime,
+					Duration = duration,
+					AlphaBoolean = true,
+					Glow = ccOptions.Icons.Glow,
+					ReverseCooldown = ccOptions.Icons.ReverseCooldown,
+				})
+				ccContainer:FinalizeSlot(i, 1)
+			end
+		end
+	end
+
+	if importantContainer and importantOptions then
+		importantContainer:ResetAllSlots()
+
+		for i = 1, #testImportantNameplateSpellIds do
+			importantContainer:SetSlotUsed(i)
+
+			local spellId = testImportantNameplateSpellIds[i]
+			local tex = spellCache:GetSpellTexture(spellId)
+
+			if tex then
+				local duration = 15 + (i - 1) * 3
+				local startTime = now - (i - 1) * 0.5
+				importantContainer:SetLayer(i, 1, {
+					Texture = tex,
+					StartTime = startTime,
+					Duration = duration,
+					AlphaBoolean = true,
+					Glow = importantOptions.Icons.Glow,
+					ReverseCooldown = importantOptions.Icons.ReverseCooldown,
+				})
+				importantContainer:FinalizeSlot(i, 1)
+			end
+		end
+	end
+end
+
 local function ShowTestIcons()
 	for _, container in pairs(nameplateAnchors) do
 		local now = GetTime()
@@ -672,111 +902,11 @@ local function ShowTestIcons()
 		local combinedContainer = container.CombinedContainer
 
 		if options.Combined.Enabled then
-			if not combinedContainer then
-				return
-			end
-			-- Test combined container with both CC and Important spells
-			local slot = 0
-
-			combinedContainer:ResetAllSlots()
-
-			-- Add test CC spells
-			for i = 1, #testCcNameplateSpellIds do
-				slot = slot + 1
-				combinedContainer:SetSlotUsed(slot)
-
-				local spellId = testCcNameplateSpellIds[i]
-				local tex = spellCache:GetSpellTexture(spellId)
-
-				if tex then
-					local duration = 15 + (i - 1) * 3
-					local startTime = now - (i - 1) * 0.5
-
-					combinedContainer:SetLayer(slot, 1, {
-						Texture = tex,
-						StartTime = startTime,
-						Duration = duration,
-						AlphaBoolean = true,
-						Glow = combinedOptions.Icons.Glow,
-						ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
-					})
-					combinedContainer:FinalizeSlot(slot, 1)
-				end
-			end
-
-			-- Add test Important spells
-			for i = 1, #testImportantNameplateSpellIds do
-				slot = slot + 1
-				combinedContainer:SetSlotUsed(slot)
-
-				local spellId = testImportantNameplateSpellIds[i]
-				local tex = spellCache:GetSpellTexture(spellId)
-				if tex then
-					local duration = 15 + (i - 1) * 3
-					local startTime = now - (i - 1) * 0.5
-					combinedContainer:SetLayer(slot, 1, {
-						Texture = tex,
-						StartTime = startTime,
-						Duration = duration,
-						AlphaBoolean = true,
-						Glow = combinedOptions.Icons.Glow,
-						ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
-					})
-					combinedContainer:FinalizeSlot(slot, 1)
-				end
+			if combinedContainer and combinedOptions then
+				ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			end
 		else
-			-- Separate mode testing
-			if ccContainer and ccOptions then
-				ccContainer:ResetAllSlots()
-
-				for i = 1, #testCcNameplateSpellIds do
-					ccContainer:SetSlotUsed(i)
-
-					local spellId = testCcNameplateSpellIds[i]
-					local tex = spellCache:GetSpellTexture(spellId)
-
-					if tex then
-						local duration = 15 + (i - 1) * 3
-						local startTime = now - (i - 1) * 0.5
-
-						ccContainer:SetLayer(i, 1, {
-							Texture = tex,
-							StartTime = startTime,
-							Duration = duration,
-							AlphaBoolean = true,
-							Glow = ccOptions.Icons.Glow,
-							ReverseCooldown = ccOptions.Icons.ReverseCooldown,
-						})
-						ccContainer:FinalizeSlot(i, 1)
-					end
-				end
-			end
-
-			if importantContainer and importantOptions then
-				importantContainer:ResetAllSlots()
-
-				for i = 1, #testImportantNameplateSpellIds do
-					importantContainer:SetSlotUsed(i)
-
-					local spellId = testImportantNameplateSpellIds[i]
-					local tex = spellCache:GetSpellTexture(spellId)
-
-					if tex then
-						local duration = 15 + (i - 1) * 3
-						local startTime = now - (i - 1) * 0.5
-						importantContainer:SetLayer(i, 1, {
-							Texture = tex,
-							StartTime = startTime,
-							Duration = duration,
-							AlphaBoolean = true,
-							Glow = importantOptions.Icons.Glow,
-							ReverseCooldown = importantOptions.Icons.ReverseCooldown,
-						})
-						importantContainer:FinalizeSlot(i, 1)
-					end
-				end
-			end
+			ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContainer, importantOptions, now)
 		end
 	end
 end
@@ -802,6 +932,7 @@ local function RefreshAnchorsAndSizes()
 							combinedOptions.Offset.Y
 						)
 						combinedContainer:SetIconSize(combinedOptions.Icons.Size)
+						combinedContainer:SetCount(combinedOptions.Icons.MaxIcons)
 					end
 				end
 			else

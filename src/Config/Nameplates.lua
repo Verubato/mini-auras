@@ -47,7 +47,12 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 		-- Only show the settings container if this section is enabled
 		-- Always show the checkbox and divider
 		if options.Enabled then
-			container:SetHeight(250)
+			-- TODO: calculate these heights from children controls
+			if isCombined then
+				container:SetHeight(320)
+			else
+				container:SetHeight(250)
+			end
 			container:Show()
 		else
 			container:Hide()
@@ -149,8 +154,12 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 			return options.Icons.Size
 		end,
 		SetValue = function(v)
-			options.Icons.Size = mini:ClampInt(v, 10, 200, 32)
-			config:Apply()
+			local new = mini:ClampInt(v, 10, 200, 32)
+
+			if new ~= options.Icons.Size then
+				options.Icons.Size = new
+				config:Apply()
+			end
 		end,
 	})
 
@@ -189,8 +198,12 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 			return options.Offset.X
 		end,
 		SetValue = function(v)
-			options.Offset.X = mini:ClampInt(v, -250, 250, 0)
-			config:Apply()
+			local new = mini:ClampInt(v, -250, 250, 0)
+
+			if new ~= options.Offset.X then
+				options.Offset.X = new
+				config:Apply()
+			end
 		end,
 	})
 
@@ -207,12 +220,40 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 			return options.Offset.Y
 		end,
 		SetValue = function(v)
-			options.Offset.Y = mini:ClampInt(v, -250, 250, 0)
-			config:Apply()
+			local new = mini:ClampInt(v, -250, 250, 0)
+
+			if new ~= options.Offset.Y then
+				options.Offset.Y = new
+				config:Apply()
+			end
 		end,
 	})
 
 	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
+
+	if isCombined then
+		local maxIcons = mini:Slider({
+			Parent = container,
+			Min = 1,
+			Max = 8,
+			Step = 1,
+			Width = columnWidth * 2 - horizontalSpacing,
+			LabelText = "Max Icons",
+			GetValue = function()
+				return options.Icons.MaxIcons
+			end,
+			SetValue = function(v)
+				local new = mini:ClampInt(v, 1, 8, 6)
+
+				if new ~= options.Icons.MaxIcons then
+					options.Icons.MaxIcons = new
+					config:Apply()
+				end
+			end,
+		})
+
+		maxIcons.Slider:SetPoint("TOPLEFT", containerX.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	end
 
 	return wrapper
 end

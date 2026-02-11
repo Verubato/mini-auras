@@ -158,19 +158,22 @@ local function RefreshTestAlerts()
 
 		local spellId = testAlertSpellIds[i]
 		local tex = spellCache:GetSpellTexture(spellId)
-		local duration = 12 + (i - 1) * 3
-		local startTime = now - (i - 1) * 1.25
 
-		container:SetLayer(i, 1, {
-			Texture = tex,
-			StartTime = startTime,
-			Duration = duration,
-			AlphaBoolean = true,
-			Glow = db.Alerts.Icons.Glow,
-			ReverseCooldown = db.Alerts.Icons.ReverseCooldown,
-		})
+		if tex then
+			local duration = 12 + (i - 1) * 3
+			local startTime = now - (i - 1) * 1.25
 
-		container:FinalizeSlot(i, 1)
+			container:SetLayer(i, 1, {
+				Texture = tex,
+				StartTime = startTime,
+				Duration = duration,
+				AlphaBoolean = true,
+				Glow = db.Alerts.Icons.Glow,
+				ReverseCooldown = db.Alerts.Icons.ReverseCooldown,
+			})
+
+			container:FinalizeSlot(i, 1)
+		end
 	end
 end
 

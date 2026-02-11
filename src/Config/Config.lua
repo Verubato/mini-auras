@@ -133,6 +133,7 @@ local dbDefaults = {
 
 	---@class NameplateOptions
 	Nameplates = {
+		---@class NameplateFactionOptions
 		Friendly = {
 			---@class NameplateSpellTypeOptions
 			CC = {
@@ -151,6 +152,7 @@ local dbDefaults = {
 					MaxIcons = 5,
 				},
 			},
+			---@type NameplateSpellTypeOptions
 			Important = {
 				Enabled = false,
 				Grow = "LEFT",
@@ -167,6 +169,7 @@ local dbDefaults = {
 					MaxIcons = 5,
 				},
 			},
+			---@type NameplateSpellTypeOptions
 			Combined = {
 				Enabled = false,
 				Grow = "RIGHT",
@@ -180,7 +183,7 @@ local dbDefaults = {
 					Glow = true,
 					ReverseCooldown = true,
 					ColorByDispelType = true,
-					MaxIcons = 10,
+					MaxIcons = 5,
 				},
 			},
 		},
