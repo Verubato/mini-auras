@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Core.Framework
 local frames = addon.Core.Frames
+local spellCache = addon.Utils.SpellCache
 local eventFrame
 local enabled = false
 local paused = false
@@ -42,7 +43,7 @@ local function GetSpellTexture(spellId)
 		return nil
 	end
 
-	return C_Spell.GetSpellTexture(spellId)
+	return spellCache:GetSpellTexture(spellId)
 end
 
 local function FormatSeconds(seconds)

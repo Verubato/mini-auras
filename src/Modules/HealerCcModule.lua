@@ -7,6 +7,7 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local unitWatcher = addon.Core.UnitAuraWatcher
 local units = addon.Utils.Units
 local ccUtil = addon.Utils.CcUtil
+local spellCache = addon.Utils.SpellCache
 local paused = false
 local testModeActive = false
 local previousTestSoundEnabled = false
@@ -72,6 +73,12 @@ local function OnAuraStateUpdated()
 
 	local options = db.Healer
 
+	-- Cache config options for performance
+	local hasNewFilters = capabilities:HasNewFilters()
+	local iconsReverse = options.Icons.ReverseCooldown
+	local iconsGlow = options.Icons.Glow
+	local colorByDispelType = options.Icons.ColorByDispelType
+
 	iconsContainer:ResetAllSlots()
 
 	---@type AuraInfo[]
@@ -82,7 +89,7 @@ local function OnAuraStateUpdated()
 		local ccState = watcher.Watcher:GetCcState()
 		array:Append(ccState, allCcAuraData)
 
-		if capabilities:HasNewFilters() then
+		if hasNewFilters then
 			for _, aura in ipairs(ccState) do
 				slot = slot + 1
 				iconsContainer:SetSlotUsed(slot)
@@ -91,9 +98,9 @@ local function OnAuraStateUpdated()
 					StartTime = aura.StartTime,
 					Duration = aura.TotalDuration,
 					AlphaBoolean = aura.IsCC,
-					ReverseCooldown = options.Icons.ReverseCooldown,
-					Glow = options.Icons.Glow,
-					Color = options.Icons.ColorByDispelType and aura.DispelColor,
+					ReverseCooldown = iconsReverse,
+					Glow = iconsGlow,
+					Color = colorByDispelType and aura.DispelColor,
 				})
 				iconsContainer:FinalizeSlot(slot, 1)
 			end
@@ -109,9 +116,9 @@ local function OnAuraStateUpdated()
 					StartTime = aura.StartTime,
 					Duration = aura.TotalDuration,
 					AlphaBoolean = aura.IsCC,
-					ReverseCooldown = options.Icons.ReverseCooldown,
-					Glow = options.Icons.Glow,
-					Color = options.Icons.ColorByDispelType and aura.DispelColor,
+					ReverseCooldown = iconsReverse,
+					Glow = iconsGlow,
+					Color = colorByDispelType and aura.DispelColor,
 				})
 			end
 			iconsContainer:FinalizeSlot(slot, used)
@@ -221,21 +228,24 @@ local function RefreshTestFrame()
 	iconsContainer:SetIconSize(size)
 
 	for i, spell in ipairs(testSpells) do
-		local texture = C_Spell.GetSpellTexture(spell.SpellId)
-		local duration = 15 + (i - 1) * 3
-		local startTime = now - (i - 1) * 0.5
+		local texture = spellCache:GetSpellTexture(spell.SpellId)
 
-		iconsContainer:SetSlotUsed(i)
-		iconsContainer:SetLayer(i, 1, {
-			Texture = texture,
-			StartTime = startTime,
-			Duration = duration,
-			AlphaBoolean = true,
-			ReverseCooldown = options.Icons.ReverseCooldown,
-			Glow = options.Icons.Glow,
-			Color = options.Icons.ColorByDispelType and spell.DispelColor,
-		})
-		iconsContainer:FinalizeSlot(i, 1)
+		if texture then
+			local duration = 15 + (i - 1) * 3
+			local startTime = now - (i - 1) * 0.5
+
+			iconsContainer:SetSlotUsed(i)
+			iconsContainer:SetLayer(i, 1, {
+				Texture = texture,
+				StartTime = startTime,
+				Duration = duration,
+				AlphaBoolean = true,
+				ReverseCooldown = options.Icons.ReverseCooldown,
+				Glow = options.Icons.Glow,
+				Color = options.Icons.ColorByDispelType and spell.DispelColor,
+			})
+			iconsContainer:FinalizeSlot(i, 1)
+		end
 	end
 
 	UpdateAnchorSize()

@@ -5,6 +5,7 @@ local units = addon.Utils.Units
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
 local capabilities = addon.Capabilities
+local spellCache = addon.Utils.SpellCache
 local testModeActive = false
 local paused = false
 ---@type Db
@@ -47,9 +48,9 @@ addon.Modules.NameplatesModule = M
 
 ---@return string point
 ---@return string relativeToPoint
-local function GetCombinedAnchorPoint(unitToken)
+local function GetAnchorPoint(unitToken, containerType)
 	local config = M:GetUnitOptions(unitToken)
-	local grow = config.Combined.Grow
+	local grow = config[containerType].Grow
 
 	local anchorPoint, relativeToPoint
 	if grow == "LEFT" then
@@ -61,42 +62,24 @@ local function GetCombinedAnchorPoint(unitToken)
 	end
 
 	return anchorPoint, relativeToPoint
+end
+
+---@return string point
+---@return string relativeToPoint
+local function GetCombinedAnchorPoint(unitToken)
+	return GetAnchorPoint(unitToken, "Combined")
 end
 
 ---@return string anchorPoint
 ---@return string relativeToPoint
 local function GetCcAnchorPoint(unitToken)
-	local config = M:GetUnitOptions(unitToken)
-	local grow = config.CC.Grow
-
-	local anchorPoint, relativeToPoint
-	if grow == "LEFT" then
-		anchorPoint, relativeToPoint = "RIGHT", "LEFT"
-	elseif grow == "RIGHT" then
-		anchorPoint, relativeToPoint = "LEFT", "RIGHT"
-	else
-		anchorPoint, relativeToPoint = "CENTER", "CENTER"
-	end
-
-	return anchorPoint, relativeToPoint
+	return GetAnchorPoint(unitToken, "CC")
 end
 
 ---@return string anchorPoint
 ---@return string relativeToPoint
 local function GetImportantAnchorPoint(unitToken)
-	local config = M:GetUnitOptions(unitToken)
-	local grow = config.Important.Grow
-
-	local anchorPoint, relativeToPoint
-	if grow == "LEFT" then
-		anchorPoint, relativeToPoint = "RIGHT", "LEFT"
-	elseif grow == "RIGHT" then
-		anchorPoint, relativeToPoint = "LEFT", "RIGHT"
-	else
-		anchorPoint, relativeToPoint = "CENTER", "CENTER"
-	end
-
-	return anchorPoint, relativeToPoint
+	return GetAnchorPoint(unitToken, "Important")
 end
 
 local function GetNameplateForUnit(unitToken)
@@ -223,10 +206,9 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 	local defensivesData = watcher:GetDefensiveState()
 	local importantData = watcher:GetImportantState()
 	local hasNewFilters = capabilities:HasNewFilters()
-
-	local slot = 0
 	local iconsGlow = combinedOptions.Icons.Glow
 	local iconsReverse = combinedOptions.Icons.ReverseCooldown
+	local slot = 0
 
 	-- Add CC spells first
 	if #ccData > 0 then
@@ -429,12 +411,15 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 		return
 	end
 
+	local hasNewFilters = capabilities:HasNewFilters()
+	local iconsGlow = options.Icons.Glow
+	local iconsReverse = options.Icons.ReverseCooldown
 	local slot = 0
 	local defensivesData = watcher:GetDefensiveState()
 	local importantData = watcher:GetImportantState()
 
 	if #importantData > 0 then
-		if capabilities:HasNewFilters() then
+		if hasNewFilters then
 			for _, spellData in ipairs(importantData) do
 				slot = slot + 1
 				container:ClearSlot(slot)
@@ -444,8 +429,8 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 					StartTime = spellData.StartTime,
 					Duration = spellData.TotalDuration,
 					AlphaBoolean = spellData.IsImportant,
-					Glow = options.Icons.Glow,
-					ReverseCooldown = options.Icons.ReverseCooldown,
+					Glow = iconsGlow,
+					ReverseCooldown = iconsReverse,
 				})
 				container:FinalizeSlot(slot, 1)
 			end
@@ -462,8 +447,8 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 					StartTime = spellData.StartTime,
 					Duration = spellData.TotalDuration,
 					AlphaBoolean = spellData.IsImportant,
-					Glow = options.Icons.Glow,
-					ReverseCooldown = options.Icons.ReverseCooldown,
+					Glow = iconsGlow,
+					ReverseCooldown = iconsReverse,
 				})
 			end
 
@@ -482,8 +467,8 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 				StartTime = spellData.StartTime,
 				Duration = spellData.TotalDuration,
 				AlphaBoolean = spellData.IsDefensive,
-				Glow = options.Icons.Glow,
-				ReverseCooldown = options.Icons.ReverseCooldown,
+				Glow = iconsGlow,
+				ReverseCooldown = iconsReverse,
 			})
 
 			container:FinalizeSlot(slot, 1)
@@ -701,19 +686,22 @@ local function ShowTestIcons()
 				combinedContainer:SetSlotUsed(slot)
 
 				local spellId = testCcNameplateSpellIds[i]
-				local tex = C_Spell.GetSpellTexture(spellId)
-				local duration = 15 + (i - 1) * 3
-				local startTime = now - (i - 1) * 0.5
+				local tex = spellCache:GetSpellTexture(spellId)
 
-				combinedContainer:SetLayer(slot, 1, {
-					Texture = tex,
-					StartTime = startTime,
-					Duration = duration,
-					AlphaBoolean = true,
-					Glow = combinedOptions.Icons.Glow,
-					ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
-				})
-				combinedContainer:FinalizeSlot(slot, 1)
+				if tex then
+					local duration = 15 + (i - 1) * 3
+					local startTime = now - (i - 1) * 0.5
+
+					combinedContainer:SetLayer(slot, 1, {
+						Texture = tex,
+						StartTime = startTime,
+						Duration = duration,
+						AlphaBoolean = true,
+						Glow = combinedOptions.Icons.Glow,
+						ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
+					})
+					combinedContainer:FinalizeSlot(slot, 1)
+				end
 			end
 
 			-- Add test Important spells
@@ -722,18 +710,20 @@ local function ShowTestIcons()
 				combinedContainer:SetSlotUsed(slot)
 
 				local spellId = testImportantNameplateSpellIds[i]
-				local tex = C_Spell.GetSpellTexture(spellId)
-				local duration = 15 + (i - 1) * 3
-				local startTime = now - (i - 1) * 0.5
-				combinedContainer:SetLayer(slot, 1, {
-					Texture = tex,
-					StartTime = startTime,
-					Duration = duration,
-					AlphaBoolean = true,
-					Glow = combinedOptions.Icons.Glow,
-					ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
-				})
-				combinedContainer:FinalizeSlot(slot, 1)
+				local tex = spellCache:GetSpellTexture(spellId)
+				if tex then
+					local duration = 15 + (i - 1) * 3
+					local startTime = now - (i - 1) * 0.5
+					combinedContainer:SetLayer(slot, 1, {
+						Texture = tex,
+						StartTime = startTime,
+						Duration = duration,
+						AlphaBoolean = true,
+						Glow = combinedOptions.Icons.Glow,
+						ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
+					})
+					combinedContainer:FinalizeSlot(slot, 1)
+				end
 			end
 		else
 			-- Separate mode testing
@@ -744,19 +734,22 @@ local function ShowTestIcons()
 					ccContainer:SetSlotUsed(i)
 
 					local spellId = testCcNameplateSpellIds[i]
-					local tex = C_Spell.GetSpellTexture(spellId)
-					local duration = 15 + (i - 1) * 3
-					local startTime = now - (i - 1) * 0.5
+					local tex = spellCache:GetSpellTexture(spellId)
 
-					ccContainer:SetLayer(i, 1, {
-						Texture = tex,
-						StartTime = startTime,
-						Duration = duration,
-						AlphaBoolean = true,
-						Glow = ccOptions.Icons.Glow,
-						ReverseCooldown = ccOptions.Icons.ReverseCooldown,
-					})
-					ccContainer:FinalizeSlot(i, 1)
+					if tex then
+						local duration = 15 + (i - 1) * 3
+						local startTime = now - (i - 1) * 0.5
+
+						ccContainer:SetLayer(i, 1, {
+							Texture = tex,
+							StartTime = startTime,
+							Duration = duration,
+							AlphaBoolean = true,
+							Glow = ccOptions.Icons.Glow,
+							ReverseCooldown = ccOptions.Icons.ReverseCooldown,
+						})
+						ccContainer:FinalizeSlot(i, 1)
+					end
 				end
 			end
 
@@ -767,18 +760,21 @@ local function ShowTestIcons()
 					importantContainer:SetSlotUsed(i)
 
 					local spellId = testImportantNameplateSpellIds[i]
-					local tex = C_Spell.GetSpellTexture(spellId)
-					local duration = 15 + (i - 1) * 3
-					local startTime = now - (i - 1) * 0.5
-					importantContainer:SetLayer(i, 1, {
-						Texture = tex,
-						StartTime = startTime,
-						Duration = duration,
-						AlphaBoolean = true,
-						Glow = importantOptions.Icons.Glow,
-						ReverseCooldown = importantOptions.Icons.ReverseCooldown,
-					})
-					importantContainer:FinalizeSlot(i, 1)
+					local tex = spellCache:GetSpellTexture(spellId)
+
+					if tex then
+						local duration = 15 + (i - 1) * 3
+						local startTime = now - (i - 1) * 0.5
+						importantContainer:SetLayer(i, 1, {
+							Texture = tex,
+							StartTime = startTime,
+							Duration = duration,
+							AlphaBoolean = true,
+							Glow = importantOptions.Icons.Glow,
+							ReverseCooldown = importantOptions.Icons.ReverseCooldown,
+						})
+						importantContainer:FinalizeSlot(i, 1)
+					end
 				end
 			end
 		end

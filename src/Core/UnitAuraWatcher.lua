@@ -185,6 +185,7 @@ function Watcher:RebuildStates()
 		return
 	end
 
+	local hasNewFilters = capabilities:HasNewFilters()
 	local interestedIn = self.State.InterestedIn
 	local interestedInDefensives = not interestedIn or (interestedIn and interestedIn.Defensives)
 	local interestedInCC = not interestedIn or (interestedIn and interestedIn.CC)
@@ -199,7 +200,7 @@ function Watcher:RebuildStates()
 	local seenDefensives = {}
 
 	-- process big defensives first so we can exclude duplicates from important
-	if interestedInDefensives and capabilities:HasNewFilters() then
+	if interestedInDefensives and hasNewFilters then
 		for i = 1, maxAuras do
 			local defensivesData =
 				C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|BIG_DEFENSIVE|INCLUDE_NAME_PLATE_ONLY")
@@ -248,7 +249,7 @@ function Watcher:RebuildStates()
 					local dispelColor =
 						C_UnitAuras.GetAuraDispelTypeColor(unit, ccData.auraInstanceID, dispelColorCurve)
 
-					if capabilities:HasNewFilters() then
+					if hasNewFilters then
 						ccSpellData[#ccSpellData + 1] = {
 							IsCC = true,
 							SpellId = ccData.spellId,
@@ -286,7 +287,7 @@ function Watcher:RebuildStates()
 						C_UnitAuras.GetAuraDispelTypeColor(unit, importantHelpfulData.auraInstanceID, dispelColorCurve)
 
 					importantSpellData[#importantSpellData + 1] = {
-						IsImportant = capabilities:HasNewFilters() or isImportant,
+						IsImportant = hasNewFilters or isImportant,
 						SpellId = importantHelpfulData.spellId,
 						SpellIcon = importantHelpfulData.icon,
 						StartTime = start,
@@ -312,7 +313,7 @@ function Watcher:RebuildStates()
 						C_UnitAuras.GetAuraDispelTypeColor(unit, importantHarmfulData.auraInstanceID, dispelColorCurve)
 
 					importantSpellData[#importantSpellData + 1] = {
-						IsImportant = capabilities:HasNewFilters() or isImportant,
+						IsImportant = hasNewFilters or isImportant,
 						SpellId = importantHarmfulData.spellId,
 						SpellIcon = importantHarmfulData.icon,
 						StartTime = start,

@@ -18,6 +18,7 @@ Utils\Scheduler.lua
 Utils\Units.lua
 Utils\Array.lua
 Utils\CcUtil.lua
+Utils\SpellCache.lua
 
 Core\MiniFramework.lua
 Core\InstanceOptions.lua

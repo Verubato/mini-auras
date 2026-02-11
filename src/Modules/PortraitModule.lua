@@ -4,6 +4,7 @@ local mini = addon.Core.Framework
 local array = addon.Utils.Array
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
+local spellCache = addon.Utils.SpellCache
 local testModeActive = false
 local paused = false
 local containers = {}
@@ -235,7 +236,7 @@ local function Attach(unit, events)
 end
 
 local function RefreshTestIcons()
-	local tex = C_Spell.GetSpellTexture(testSpells[1].SpellId)
+	local tex = spellCache:GetSpellTexture(testSpells[1].SpellId)
 	local now = GetTime()
 
 	for _, container in pairs(containers) do

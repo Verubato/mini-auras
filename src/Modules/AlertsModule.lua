@@ -4,6 +4,7 @@ local capabilities = addon.Capabilities
 local mini = addon.Core.Framework
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
+local spellCache = addon.Utils.SpellCache
 local testModeActive = false
 local paused = false
 local inPrepRoom = false
@@ -34,6 +35,9 @@ local function OnAuraDataChanged()
 		return
 	end
 
+	local hasNewFilters = capabilities:HasNewFilters()
+	local iconsGlow = db.Alerts.Icons.Glow
+	local iconsReverse = db.Alerts.Icons.ReverseCooldown
 	local slot = 0
 
 	for _, watcher in ipairs(watchers) do
@@ -49,7 +53,7 @@ local function OnAuraDataChanged()
 			local importantData = watcher:GetImportantState()
 
 			if #importantData > 0 then
-				if capabilities:HasNewFilters() then
+				if hasNewFilters then
 					for _, data in ipairs(importantData) do
 						slot = slot + 1
 						container:ClearSlot(slot)
@@ -59,8 +63,8 @@ local function OnAuraDataChanged()
 							StartTime = data.StartTime,
 							Duration = data.TotalDuration,
 							AlphaBoolean = data.IsImportant,
-							Glow = db.Alerts.Icons.Glow,
-							ReverseCooldown = db.Alerts.Icons.ReverseCooldown,
+							Glow = iconsGlow,
+							ReverseCooldown = iconsReverse,
 						})
 						container:FinalizeSlot(slot, 1)
 					end
@@ -77,8 +81,8 @@ local function OnAuraDataChanged()
 							StartTime = data.StartTime,
 							Duration = data.TotalDuration,
 							AlphaBoolean = data.IsImportant,
-							Glow = db.Alerts.Icons.Glow,
-							ReverseCooldown = db.Alerts.Icons.ReverseCooldown,
+							Glow = iconsGlow,
+							ReverseCooldown = iconsReverse,
 						})
 					end
 
@@ -97,8 +101,8 @@ local function OnAuraDataChanged()
 						StartTime = data.StartTime,
 						Duration = data.TotalDuration,
 						AlphaBoolean = data.IsDefensive,
-						Glow = db.Alerts.Icons.Glow,
-						ReverseCooldown = db.Alerts.Icons.ReverseCooldown,
+						Glow = iconsGlow,
+						ReverseCooldown = iconsReverse,
 					})
 					container:FinalizeSlot(slot, 1)
 				end
@@ -153,7 +157,7 @@ local function RefreshTestAlerts()
 		container:SetSlotUsed(i)
 
 		local spellId = testAlertSpellIds[i]
-		local tex = C_Spell.GetSpellTexture(spellId)
+		local tex = spellCache:GetSpellTexture(spellId)
 		local duration = 12 + (i - 1) * 3
 		local startTime = now - (i - 1) * 1.25
 

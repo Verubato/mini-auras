@@ -156,6 +156,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Scheduler SchedulerUtil
 ---@field Units UnitUtil
 ---@field Array ArrayUtil
+---@field SpellCache SpellCache
 
 ---@class Core
 ---@field Framework MiniFramework

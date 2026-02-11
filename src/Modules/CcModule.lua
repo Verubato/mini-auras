@@ -5,6 +5,7 @@ local frames = addon.Core.Frames
 local IconSlotContainer = addon.Core.IconSlotContainer
 local UnitAuraWatcher = addon.Core.UnitAuraWatcher
 local capabilities = addon.Capabilities
+local spellCache = addon.Utils.SpellCache
 local eventsFrame
 local paused = false
 local testModeActive = false
@@ -39,14 +40,18 @@ local function UpdateWatcherAuras(entry)
 		return
 	end
 
+	-- Cache config options for performance
+	local hasNewFilters = capabilities:HasNewFilters()
+	local iconsReverse = options.Icons.ReverseCooldown
+	local iconsGlow = options.Icons.Glow
+	local colorByDispelType = options.Icons.ColorByDispelType
 	local container = entry.Container
 	local ccState = entry.Watcher:GetCcState()
+	local slotIndex = 1
 
 	container:ResetAllSlots()
 
-	local slotIndex = 1
-
-	if capabilities:HasNewFilters() then
+	if hasNewFilters then
 		-- Each aura gets its own slot
 		for _, aura in ipairs(ccState) do
 			if slotIndex > container.Count then
@@ -58,9 +63,9 @@ local function UpdateWatcherAuras(entry)
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
 				AlphaBoolean = aura.IsCC,
-				ReverseCooldown = options.Icons.ReverseCooldown,
-				Glow = options.Icons.Glow,
-				Color = options.Icons.ColorByDispelType and aura.DispelColor or nil,
+				ReverseCooldown = iconsReverse,
+				Glow = iconsGlow,
+				Color = colorByDispelType and aura.DispelColor or nil,
 			})
 			container:FinalizeSlot(slotIndex, 1)
 			container:SetSlotUsed(slotIndex)
@@ -75,9 +80,9 @@ local function UpdateWatcherAuras(entry)
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
 				AlphaBoolean = aura.IsCC,
-				ReverseCooldown = options.Icons.ReverseCooldown,
-				Glow = options.Icons.Glow,
-				Color = options.Icons.ColorByDispelType and aura.DispelColor or nil,
+				ReverseCooldown = iconsReverse,
+				Glow = iconsGlow,
+				Color = colorByDispelType and aura.DispelColor or nil,
 			})
 			layerIndex = layerIndex + 1
 		end
@@ -256,22 +261,25 @@ local function RefreshTestIcons()
 		container:SetIconSize(tonumber(options.Icons.Size) or 32)
 
 		for i, spell in ipairs(testSpells) do
-			local texture = C_Spell.GetSpellTexture(spell.SpellId)
-			local duration = 15 + (i - 1) * 3
-			local startTime = now - (i - 1) * 0.5
+			local texture = spellCache:GetSpellTexture(spell.SpellId)
 
-			container:SetSlotUsed(i)
+			if texture then
+				local duration = 15 + (i - 1) * 3
+				local startTime = now - (i - 1) * 0.5
 
-			container:SetLayer(i, 1, {
-				Texture = texture,
-				StartTime = startTime,
-				Duration = duration,
-				AlphaBoolean = true,
-				ReverseCooldown = options.Icons.ReverseCooldown,
-				Glow = options.Icons.Glow,
-				Color = options.Icons.ColorByDispelType and spell.DispelColor,
-			})
-			container:FinalizeSlot(i, 1)
+				container:SetSlotUsed(i)
+
+				container:SetLayer(i, 1, {
+					Texture = texture,
+					StartTime = startTime,
+					Duration = duration,
+					AlphaBoolean = true,
+					ReverseCooldown = options.Icons.ReverseCooldown,
+					Glow = options.Icons.Glow,
+					Color = options.Icons.ColorByDispelType and spell.DispelColor,
+				})
+				container:FinalizeSlot(i, 1)
+			end
 		end
 
 		-- Anchor and show/hide based on anchor visibility
