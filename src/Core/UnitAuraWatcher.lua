@@ -225,6 +225,12 @@ function Watcher:RebuildStates()
 				end
 
 				seenDefensives[defensivesData.auraInstanceID] = true
+			else
+				local anyMore = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|INCLUDE_NAME_PLATE_ONLY")
+
+				if not anyMore then
+					break
+				end
 			end
 		end
 	end
@@ -314,6 +320,17 @@ function Watcher:RebuildStates()
 						DispelColor = dispelColor,
 						auraInstanceID = importantHarmfulData.auraInstanceID,
 					}
+				end
+			end
+
+			local anyMoreHelpful = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL")
+
+			if not anyMoreHelpful then
+				local anyMoreHarmful = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
+
+				if not anyMoreHarmful then
+					-- no more auras to process
+					break
 				end
 			end
 		end
