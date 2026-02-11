@@ -375,8 +375,9 @@ function M:Init()
 	local options = db.Healer
 
 	healerAnchor = CreateFrame("Frame", addonName .. "HealerContainer")
-	healerAnchor:EnableMouse(true)
-	healerAnchor:SetMovable(true)
+	healerAnchor:EnableMouse(false)
+	healerAnchor:SetMovable(false)
+	healerAnchor:SetAlpha(0)
 	healerAnchor:RegisterForDrag("LeftButton")
 	healerAnchor:SetIgnoreParentScale(true)
 	healerAnchor:SetScript("OnDragStart", function(anchorSelf)
