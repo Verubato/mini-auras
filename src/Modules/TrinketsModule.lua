@@ -373,22 +373,7 @@ local function OnEvent(_, event, ...)
 	end
 end
 
-local function Pause()
-	paused = true
-end
-
-local function Resume()
-	paused = false
-	M:Refresh()
-end
-
-function M:StartTesting()
-	testModeActive = true
-	Pause()
-
-	RebuildAnchors()
-	UpdateVisibility()
-
+local function RefreshTestTrinkets()
 	local now = GetTime() * 1000
 
 	-- Stagger durations so you can see different states
@@ -424,9 +409,23 @@ function M:StartTesting()
 	end
 end
 
+local function Pause()
+	paused = true
+end
+
+local function Resume()
+	paused = false
+	M:Refresh()
+end
+
+function M:StartTesting()
+	testModeActive = true
+	Pause()
+	M:Refresh()
+end
+
 function M:StopTesting()
 	testModeActive = false
-
 	ClearAll()
 	Resume()
 end
@@ -467,17 +466,30 @@ function M:Refresh()
 		M:Disable()
 	end
 
-	if enabled then
-		RebuildAnchors()
-		UpdateVisibility()
-		RequestAll()
-		RefreshAll()
+	if not options.Enabled then
+		ClearAll()
 
 		for _, watcher in pairs(watchers) do
 			if watcher.Icon then
-				ApplyOptionsToIcon(watcher.Icon)
+				watcher.Icon:Hide()
 			end
 		end
+		return
+	end
+
+	RebuildAnchors()
+	UpdateVisibility()
+	RequestAll()
+	RefreshAll()
+
+	for _, watcher in pairs(watchers) do
+		if watcher.Icon then
+			ApplyOptionsToIcon(watcher.Icon)
+		end
+	end
+
+	if testModeActive then
+		RefreshTestTrinkets()
 	end
 end
 

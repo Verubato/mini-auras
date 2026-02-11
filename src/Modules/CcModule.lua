@@ -240,56 +240,12 @@ function M:AnchorContainer(header, anchor, options)
 	end
 end
 
-local function Pause()
-	paused = true
-end
-
-local function Resume()
-	paused = false
-end
-
-function M:Hide()
-	for _, entry in pairs(watchers) do
-		entry.Container.Frame:Hide()
-	end
-end
-
-function M:Refresh()
-	local options = testModeActive and instanceOptions:GetTestInstanceOptions() or instanceOptions:GetInstanceOptions()
+local function RefreshTestIcons()
+	local options = instanceOptions:GetTestInstanceOptions()
 
 	if not options then
 		return
 	end
-
-	EnsureWatchers()
-
-	for anchor, entry in pairs(watchers) do
-		local container = entry.Container
-		local iconSize = tonumber(options.Icons.Size) or 32
-		container:SetIconSize(iconSize)
-
-		if not testModeActive then
-			UpdateWatcherAuras(entry)
-		end
-
-		M:AnchorContainer(container, anchor, options)
-		frames:ShowHideFrame(container.Frame, anchor, testModeActive, options)
-	end
-end
-
-function M:StartTesting()
-	-- Pause real watcher updates
-	Pause()
-	testModeActive = true
-
-	-- Get test options
-	local options = instanceOptions:GetTestInstanceOptions()
-	if not options or not options.Enabled then
-		return
-	end
-
-	-- Create containers for all frames (including test frames)
-	EnsureWatchers()
 
 	-- Populate all containers with test data
 	for anchor, entry in pairs(watchers) do
@@ -322,6 +278,61 @@ function M:StartTesting()
 		M:AnchorContainer(container, anchor, options)
 		frames:ShowHideFrame(container.Frame, anchor, true, options)
 	end
+end
+
+local function Pause()
+	paused = true
+end
+
+local function Resume()
+	paused = false
+end
+
+function M:Hide()
+	for _, entry in pairs(watchers) do
+		entry.Container.Frame:Hide()
+	end
+end
+
+function M:Refresh()
+	local options = testModeActive and instanceOptions:GetTestInstanceOptions() or instanceOptions:GetInstanceOptions()
+
+	if not options then
+		return
+	end
+
+	-- If disabled, hide everything and return
+	if not options.Enabled then
+		M:Hide()
+		return
+	end
+
+	EnsureWatchers()
+
+	for anchor, entry in pairs(watchers) do
+		local container = entry.Container
+		local iconSize = tonumber(options.Icons.Size) or 32
+		container:SetIconSize(iconSize)
+
+		if not testModeActive then
+			UpdateWatcherAuras(entry)
+		end
+
+		M:AnchorContainer(container, anchor, options)
+		frames:ShowHideFrame(container.Frame, anchor, testModeActive, options)
+	end
+
+	if testModeActive then
+		RefreshTestIcons()
+	end
+end
+
+function M:StartTesting()
+	-- Pause real watcher updates
+	Pause()
+	testModeActive = true
+
+	M:Refresh()
 end
 
 function M:StopTesting()

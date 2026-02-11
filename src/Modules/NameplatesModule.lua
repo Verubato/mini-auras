@@ -666,7 +666,7 @@ local function CacheEnabledModes()
 	previousFriendlyEnabled.Combined = db.Nameplates.Friendly.Combined.Enabled
 end
 
-local function HasModesChanged()
+local function HaveModesChanged()
 	return previousEnemyEnabled.CC ~= db.Nameplates.Enemy.CC.Enabled
 		or previousEnemyEnabled.Important ~= db.Nameplates.Enemy.Important.Enabled
 		or previousEnemyEnabled.Combined ~= db.Nameplates.Enemy.Combined.Enabled
@@ -675,177 +675,8 @@ local function HasModesChanged()
 		or previousFriendlyEnabled.Combined ~= db.Nameplates.Friendly.Combined.Enabled
 end
 
-function M:GetUnitOptions(unitToken)
-	if units:IsEnemy(unitToken) then
-		-- friendly units can also be enemies in a duel
-		return db.Nameplates.Enemy
-	end
-
-	if units:IsFriend(unitToken) then
-		return db.Nameplates.Friendly
-	end
-
-	return db.Nameplates.Enemy
-end
-
-function M:Init()
-	db = mini:GetSavedVars()
-
-	local eventFrame = CreateFrame("Frame")
-	eventFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-	eventFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
-	eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-	eventFrame:SetScript("OnEvent", function(_, event, unitToken)
-		if event == "NAME_PLATE_UNIT_ADDED" then
-			OnNamePlateAdded(unitToken)
-		elseif event == "NAME_PLATE_UNIT_REMOVED" then
-			OnNamePlateRemoved(unitToken)
-		elseif event == "PLAYER_TARGET_CHANGED" then
-			-- Update target nameplate
-			if UnitExists("target") then
-				local targetToken = "target"
-				OnNamePlateUpdate(targetToken)
-			end
-		end
-	end)
-
-	if AnyEnabled() then
-		-- Initialize existing nameplates
-		RebuildContainers()
-	end
-
-	CacheEnabledModes()
-end
-
----@return NameplateData
-function M:GetAllContainers()
-	-- ensure containers exist
-	-- might be test mode calling is
-	RebuildContainers()
-
-	local containers = {}
-
-	for _, anchor in pairs(nameplateAnchors) do
-		containers[#containers + 1] = anchor
-	end
-
-	return containers
-end
-
-function M:Refresh()
-	if not AnyEnabled() then
-		M:ClearAll()
-		return
-	end
-
-	-- if the user has enabled/disabled a mode, rebuild the containers
-	if HasModesChanged() then
-		RebuildContainers()
-
-		if testModeActive then
-			-- update test icons
-			M:StartTesting()
-		end
-	end
-
-	CacheEnabledModes()
-
-	for _, data in pairs(nameplateAnchors) do
-		if data.Nameplate and data.UnitToken then
-			local unitOptions = M:GetUnitOptions(data.UnitToken)
-
-			if unitOptions.Combined.Enabled then
-				-- Handle combined container
-				local combinedContainer = data.CombinedContainer
-				if combinedContainer then
-					local combinedOptions = unitOptions.Combined
-					if combinedOptions then
-						local combinedAnchorPoint, combinedRelativeToPoint = GetCombinedAnchorPoint(data.UnitToken)
-						combinedContainer.Frame:ClearAllPoints()
-						combinedContainer.Frame:SetPoint(
-							combinedAnchorPoint,
-							data.Nameplate,
-							combinedRelativeToPoint,
-							combinedOptions.Offset.X,
-							combinedOptions.Offset.Y
-						)
-						combinedContainer:SetIconSize(combinedOptions.Icons.Size)
-					end
-				end
-			else
-				-- Handle separate containers
-				local ccAnchorPoint, ccRelativeToPoint = GetCcAnchorPoint(data.UnitToken)
-				local ccOptions = unitOptions and unitOptions.CC
-				local ccContainer = data.CcContainer
-
-				if ccContainer and ccAnchorPoint and ccRelativeToPoint and ccOptions then
-					ccContainer.Frame:ClearAllPoints()
-
-					if ccOptions.Enabled then
-						ccContainer.Frame:SetPoint(
-							ccAnchorPoint,
-							data.Nameplate,
-							ccRelativeToPoint,
-							ccOptions.Offset.X,
-							ccOptions.Offset.Y
-						)
-						ccContainer:SetIconSize(ccOptions.Icons.Size)
-					end
-				end
-
-				local importantAnchorPoint, importantRelativeToPoint = GetImportantAnchorPoint(data.UnitToken)
-				local importantOptions = unitOptions and unitOptions.Important
-				local importantContainer = data.ImportantContainer
-
-				if importantContainer and importantAnchorPoint and importantRelativeToPoint and importantOptions then
-					importantContainer.Frame:ClearAllPoints()
-
-					if importantOptions.Enabled then
-						importantContainer.Frame:SetPoint(
-							importantAnchorPoint,
-							data.Nameplate,
-							importantRelativeToPoint,
-							importantOptions.Offset.X,
-							importantOptions.Offset.Y
-						)
-						importantContainer:SetIconSize(importantOptions.Icons.Size)
-					end
-				end
-			end
-		end
-	end
-end
-
-local function Pause()
-	paused = true
-end
-
-local function Resume()
-	paused = false
-
-	-- Refresh all nameplates
-	for _, watcher in pairs(watchers) do
-		watcher:ForceFullUpdate()
-	end
-end
-
-function M:StartTesting()
-	if testModeActive then
-		-- this module is smart enough to resume testing without needing to be told
-		return
-	end
-
-	Pause()
-
-	testModeActive = true
-
-	if not AnyEnabled() then
-		return
-	end
-
-	local containers = M:GetAllContainers()
-
-	for _, container in ipairs(containers) do
+local function ShowTestIcons()
+	for _, container in pairs(nameplateAnchors) do
 		local now = GetTime()
 		local options = M:GetUnitOptions(container.UnitToken)
 		local ccOptions = options.CC
@@ -954,9 +785,168 @@ function M:StartTesting()
 	end
 end
 
+local function RefreshAnchorsAndSizes()
+	for _, data in pairs(nameplateAnchors) do
+		if data.Nameplate and data.UnitToken then
+			local unitOptions = M:GetUnitOptions(data.UnitToken)
+
+			if unitOptions.Combined.Enabled then
+				-- Handle combined container
+				local combinedContainer = data.CombinedContainer
+				if combinedContainer then
+					local combinedOptions = unitOptions.Combined
+					if combinedOptions then
+						local combinedAnchorPoint, combinedRelativeToPoint = GetCombinedAnchorPoint(data.UnitToken)
+						combinedContainer.Frame:ClearAllPoints()
+						combinedContainer.Frame:SetPoint(
+							combinedAnchorPoint,
+							data.Nameplate,
+							combinedRelativeToPoint,
+							combinedOptions.Offset.X,
+							combinedOptions.Offset.Y
+						)
+						combinedContainer:SetIconSize(combinedOptions.Icons.Size)
+					end
+				end
+			else
+				-- Handle separate containers
+				local ccAnchorPoint, ccRelativeToPoint = GetCcAnchorPoint(data.UnitToken)
+				local ccOptions = unitOptions and unitOptions.CC
+				local ccContainer = data.CcContainer
+
+				if ccContainer and ccAnchorPoint and ccRelativeToPoint and ccOptions then
+					ccContainer.Frame:ClearAllPoints()
+
+					if ccOptions.Enabled then
+						ccContainer.Frame:SetPoint(
+							ccAnchorPoint,
+							data.Nameplate,
+							ccRelativeToPoint,
+							ccOptions.Offset.X,
+							ccOptions.Offset.Y
+						)
+						ccContainer:SetIconSize(ccOptions.Icons.Size)
+					end
+				end
+
+				local importantAnchorPoint, importantRelativeToPoint = GetImportantAnchorPoint(data.UnitToken)
+				local importantOptions = unitOptions and unitOptions.Important
+				local importantContainer = data.ImportantContainer
+
+				if importantContainer and importantAnchorPoint and importantRelativeToPoint and importantOptions then
+					importantContainer.Frame:ClearAllPoints()
+
+					if importantOptions.Enabled then
+						importantContainer.Frame:SetPoint(
+							importantAnchorPoint,
+							data.Nameplate,
+							importantRelativeToPoint,
+							importantOptions.Offset.X,
+							importantOptions.Offset.Y
+						)
+						importantContainer:SetIconSize(importantOptions.Icons.Size)
+					end
+				end
+			end
+		end
+	end
+end
+
+local function Pause()
+	paused = true
+end
+
+local function Resume()
+	paused = false
+end
+
+function M:GetUnitOptions(unitToken)
+	if units:IsEnemy(unitToken) then
+		-- friendly units can also be enemies in a duel
+		return db.Nameplates.Enemy
+	end
+
+	if units:IsFriend(unitToken) then
+		return db.Nameplates.Friendly
+	end
+
+	return db.Nameplates.Enemy
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
+
+	local eventFrame = CreateFrame("Frame")
+	eventFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+	eventFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+	eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+	eventFrame:SetScript("OnEvent", function(_, event, unitToken)
+		if event == "NAME_PLATE_UNIT_ADDED" then
+			OnNamePlateAdded(unitToken)
+		elseif event == "NAME_PLATE_UNIT_REMOVED" then
+			OnNamePlateRemoved(unitToken)
+		elseif event == "PLAYER_TARGET_CHANGED" then
+			-- Update target nameplate
+			if UnitExists("target") then
+				local targetToken = "target"
+				OnNamePlateUpdate(targetToken)
+			end
+		end
+	end)
+
+	if AnyEnabled() then
+		-- Initialize existing nameplates
+		RebuildContainers()
+	end
+
+	CacheEnabledModes()
+end
+
+function M:Refresh()
+	if not AnyEnabled() then
+		M:ClearAll()
+		CacheEnabledModes()
+		return
+	end
+
+	-- if the user has enabled/disabled a mode, rebuild the containers
+	if HaveModesChanged() then
+		RebuildContainers()
+	end
+
+	CacheEnabledModes()
+	RefreshAnchorsAndSizes()
+
+	if testModeActive then
+		-- update test icons
+		ShowTestIcons()
+	end
+end
+
+function M:StartTesting()
+	Pause()
+	testModeActive = true
+
+	-- Check if any nameplate mode is enabled
+	if not AnyEnabled() then
+		M:ClearAll()
+		return
+	end
+
+	ShowTestIcons()
+end
+
 function M:StopTesting()
-	Resume()
 	testModeActive = false
+	-- clear icons
+	M:ClearAll()
+
+	Resume()
+
+	-- Refresh all nameplates
+	for _, watcher in pairs(watchers) do
+		watcher:ForceFullUpdate()
+	end
 end
 
 function M:ClearAll()

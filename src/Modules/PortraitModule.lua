@@ -1,10 +1,10 @@
 ---@type string, Addon
 local _, addon = ...
-local capabilities = addon.Capabilities
 local mini = addon.Core.Framework
 local array = addon.Utils.Array
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
+local testModeActive = false
 local paused = false
 local containers = {}
 ---@type { string: Watcher }
@@ -80,19 +80,9 @@ local function CreateContainer(unitFrame, portrait)
 
 	-- Hook SetLayer to apply mask when layers are created
 	local originalSetLayer = container.SetLayer
-	container.SetLayer = function(
-		self,
-		slotIndex,
-		layerIndex,
-		texture,
-		startTime,
-		duration,
-		alphaBoolean,
-		glow,
-		reverseCooldown
-	)
+	container.SetLayer = function(self, slotIndex, layerIndex, options)
 		-- Call original SetLayer first
-		originalSetLayer(self, slotIndex, layerIndex, texture, startTime, duration, alphaBoolean, glow, reverseCooldown)
+		originalSetLayer(self, slotIndex, layerIndex, options)
 
 		-- Apply mask to the layer that was just created/updated
 		local slot = self.Slots[slotIndex]
@@ -244,6 +234,30 @@ local function Attach(unit, events)
 	return container
 end
 
+local function RefreshTestIcons()
+	local tex = C_Spell.GetSpellTexture(testSpells[1].SpellId)
+	local now = GetTime()
+
+	for _, container in pairs(containers) do
+		container:SetSlotUsed(1)
+		container:SetLayer(1, 1, {
+			Texture = tex,
+			StartTime = now,
+			Duration = 15, -- 15 second duration for test
+			AlphaBoolean = true,
+			Glow = false,
+			ReverseCooldown = db.Portrait.ReverseCooldown,
+		})
+		container:FinalizeSlot(1, 1)
+	end
+end
+
+local function ClearAll()
+	for _, container in pairs(containers) do
+		container:ResetAllSlots()
+	end
+end
+
 local function EnableDisable()
 	local options = db.Portrait
 
@@ -268,41 +282,30 @@ local function Resume()
 end
 
 function M:StartTesting()
+	testModeActive = true
 	Pause()
-
-	local containers = M:GetContainers()
-	if not testSpells or #testSpells == 0 then
-		return
-	end
-
-	local tex = C_Spell.GetSpellTexture(testSpells[1].SpellId)
-	local now = GetTime()
-
-	for _, container in ipairs(containers) do
-		container:SetSlotUsed(1)
-		container:SetLayer(1, 1, {
-			Texture = tex,
-			StartTime = now,
-			Duration = 15, -- 15 second duration for test
-			AlphaBoolean = true,
-			Glow = false,
-			ReverseCooldown = db.Portrait.ReverseCooldown,
-		})
-		container:FinalizeSlot(1, 1)
-	end
+	M:Refresh()
 end
 
 function M:StopTesting()
-	local containers = M:GetContainers()
-	for _, container in ipairs(containers) do
-		container:ResetAllSlots()
-	end
-	M:Refresh()
+	testModeActive = false
 	Resume()
+	ClearAll()
 end
 
 function M:Refresh()
 	EnableDisable()
+
+	local options = db.Portrait
+
+	if not options.Enabled then
+		ClearAll()
+		return
+	end
+
+	if testModeActive then
+		RefreshTestIcons()
+	end
 end
 
 function M:Init()
@@ -319,4 +322,3 @@ function M:Init()
 
 	M:Refresh()
 end
-

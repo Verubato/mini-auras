@@ -1,6 +1,8 @@
 ---@type string, Addon
 local addonName, addon = ...
 local mini = addon.Core.Framework
+local paused = false
+local testModeActive = false
 local enabled = false
 ---@type Db
 local db
@@ -356,6 +358,10 @@ local function Kicked(kickedBy)
 end
 
 local function OnFriendlyUnitEvent(unit, _, event, ...)
+	if paused then
+		return
+	end
+
 	if event == "UNIT_SPELLCAST_START" then
 		kickedByUnits[unit] = false
 	elseif event == "UNIT_SPELLCAST_INTERRUPTED" then
@@ -527,6 +533,14 @@ local function OnEnteringWorld()
 	end
 end
 
+local function ShowTestIcons()
+	ClearIcons()
+	-- Show test kicks: mage, hunter, rogue
+	KickedBySpec(62) -- mage
+	KickedBySpec(254) -- hunter
+	KickedBySpec(259) -- rogue
+end
+
 ---@param options KickTimerOptions
 function M:IsEnabledForPlayer(options)
 	if not options then
@@ -563,33 +577,73 @@ function M:IsEnabledForPlayer(options)
 	return false
 end
 
+local function Pause()
+	paused = true
+end
+
+local function Resume()
+	paused = false
+end
+
 function M:StartTesting()
+	testModeActive = true
+	Pause()
+	M:Refresh()
+
 	local container = kickBar.Anchor
+
 	if not container then
 		return
 	end
 
-	container:Show()
 	container:SetMovable(true)
 	container:EnableMouse(true)
-
-	ClearIcons()
-	-- Show test kicks: mage, hunter, rogue
-	KickedBySpec(62) -- mage
-	KickedBySpec(254) -- hunter
-	KickedBySpec(259) -- rogue
+	container:Show()
 end
 
 function M:StopTesting()
+	testModeActive = false
+	Resume()
+	ClearIcons()
+	M:Refresh()
+
 	local container = kickBar.Anchor
+
 	if not container then
 		return
 	end
 
-	ClearIcons()
-	container:Hide()
 	container:SetMovable(false)
 	container:EnableMouse(false)
+	container:Hide()
+end
+
+function M:Refresh()
+	EnableDisable()
+
+	-- Apply icon options even if already enabled (for config changes)
+	ApplyKickBarIconOptions()
+
+	-- Update layout to reflect new sizes
+	LayoutKickBar()
+
+	PositionKickBar()
+
+	local container = kickBar.Anchor
+
+	if not container then
+		return
+	end
+
+	if not M:IsEnabledForPlayer(db.KickTimer) then
+		ClearIcons()
+		container:Hide()
+		return
+	end
+
+	if testModeActive then
+		ShowTestIcons()
+	end
 end
 
 function M:Init()
@@ -628,18 +682,6 @@ function M:Init()
 	end)
 
 	M:Refresh()
-end
-
-function M:Refresh()
-	EnableDisable()
-
-	-- Apply icon options even if already enabled (for config changes)
-	ApplyKickBarIconOptions()
-
-	-- Update layout to reflect new sizes
-	LayoutKickBar()
-
-	PositionKickBar()
 end
 
 ---@class KickBar

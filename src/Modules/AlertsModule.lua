@@ -4,6 +4,7 @@ local capabilities = addon.Capabilities
 local mini = addon.Core.Framework
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
+local testModeActive = false
 local paused = false
 local inPrepRoom = false
 local eventsFrame
@@ -136,69 +137,8 @@ local function OnMatchStateChanged()
 	container:ResetAllSlots()
 end
 
-local function EnableDisable()
-	local options = db.Alerts
-
-	if options.Enabled then
-		for _, watcher in ipairs(watchers) do
-			watcher:Enable()
-		end
-
-		OnAuraDataChanged()
-	else
-		for _, watcher in ipairs(watchers) do
-			watcher:Disable()
-		end
-	end
-end
-
-local function Pause()
-	paused = true
-end
-
-local function Resume()
-	paused = false
-	OnAuraDataChanged()
-end
-
-function M:GetAnchor()
-	return container
-end
-
-function M:ClearAll()
-	if not container then
-		return
-	end
-
+local function RefreshTestAlerts()
 	container:ResetAllSlots()
-end
-
-function M:Refresh()
-	local options = db.Alerts
-
-	container.Frame:ClearAllPoints()
-	container.Frame:SetPoint(
-		options.Point,
-		_G[options.RelativeTo] or UIParent,
-		options.RelativePoint,
-		options.Offset.X,
-		options.Offset.Y
-	)
-
-	container:SetIconSize(options.Icons.Size)
-
-	EnableDisable()
-end
-
-function M:StartTesting()
-	Pause()
-
-	if not container then
-		return
-	end
-
-	container.Frame:EnableMouse(true)
-	container.Frame:SetMovable(true)
 
 	local testAlertSpellIds = {
 		190319, -- Combustion
@@ -228,14 +168,84 @@ function M:StartTesting()
 
 		container:FinalizeSlot(i, 1)
 	end
+end
 
-	for i = count + 1, container.Count do
-		container:SetSlotUnused(i)
+local function EnableDisable()
+	local options = db.Alerts
+
+	if options.Enabled then
+		for _, watcher in ipairs(watchers) do
+			watcher:Enable()
+		end
+
+		OnAuraDataChanged()
+	else
+		for _, watcher in ipairs(watchers) do
+			watcher:Disable()
+		end
 	end
 end
 
+local function Pause()
+	paused = true
+end
+
+local function Resume()
+	paused = false
+	OnAuraDataChanged()
+end
+
+local function ClearAll()
+	if not container then
+		return
+	end
+
+	container:ResetAllSlots()
+end
+
+function M:Refresh()
+	local options = db.Alerts
+
+	EnableDisable()
+
+	-- If disabled, clear and return
+	if not options.Enabled then
+		ClearAll()
+		return
+	end
+
+	container.Frame:ClearAllPoints()
+	container.Frame:SetPoint(
+		options.Point,
+		_G[options.RelativeTo] or UIParent,
+		options.RelativePoint,
+		options.Offset.X,
+		options.Offset.Y
+	)
+
+	container:SetIconSize(options.Icons.Size)
+
+	if testModeActive then
+		RefreshTestAlerts()
+	end
+end
+
+function M:StartTesting()
+	testModeActive = true
+	Pause()
+	M:Refresh()
+
+	if not container then
+		return
+	end
+
+	container.Frame:EnableMouse(true)
+	container.Frame:SetMovable(true)
+end
+
 function M:StopTesting()
-	M:ClearAll()
+	testModeActive = false
+	ClearAll()
 	Resume()
 
 	if not container then

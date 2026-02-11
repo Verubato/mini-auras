@@ -113,11 +113,6 @@ function addon:Refresh()
 	for _, module in ipairs(modules) do
 		module:Refresh()
 	end
-
-	if testModeManager:IsActive() then
-		-- refresh test options
-		testModeManager:StartOrResumeTesting()
-	end
 end
 
 ---@param options InstanceOptions?
@@ -125,7 +120,7 @@ function addon:ToggleTest(options)
 	if testModeManager:IsActive() then
 		testModeManager:StopTesting()
 	else
-		testModeManager:StartOrResumeTesting(options)
+		testModeManager:StartTesting(options)
 	end
 
 	addon:Refresh()
@@ -137,7 +132,7 @@ end
 
 ---@param options InstanceOptions?
 function addon:TestOptions(options)
-	testModeManager:StartOrResumeTesting(options)
+	instanceOptions:SetTestInstanceOptions(options)
 
 	if testModeManager:IsActive() then
 		addon:Refresh()
@@ -180,7 +175,5 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field TrinketsModule TrinketsModule
 
 ---@class IModule
----@field Init fun(self: IModule)
----@field Refresh fun(self: IModule)
----@field Pause fun(self: IModule)
----@field Resume fun(self: IModule)
+---@field Init fun(self: IModule) Initialises the module to be ready for use.
+---@field Refresh fun(self: IModule) Refreshes the module to be in sync with config settings and world state. Must perform the least amount of work possible as this gets called a lot.

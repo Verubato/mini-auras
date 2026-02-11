@@ -8,6 +8,8 @@ local unitWatcher = addon.Core.UnitAuraWatcher
 local units = addon.Utils.Units
 local ccUtil = addon.Utils.CcUtil
 local paused = false
+local testModeActive = false
+local previousTestSoundEnabled = false
 local soundFile = "Interface\\AddOns\\" .. addonName .. "\\Media\\Sonar.ogg"
 
 ---@type Db
@@ -205,50 +207,13 @@ local function RefreshHealers()
 	OnAuraStateUpdated()
 end
 
-local function OnEvent(_, event)
-	if event == "GROUP_ROSTER_UPDATE" then
-		M:Refresh()
-	end
-end
-
-local function Pause()
-	paused = true
-end
-
-local function Resume()
-	paused = false
-	OnAuraStateUpdated()
-end
-
-function M:Show()
-	if not healerAnchor then
-		return
-	end
-
-	healerAnchor:EnableMouse(true)
-	healerAnchor:SetMovable(true)
-	healerAnchor:SetAlpha(1)
-end
-
-function M:Hide()
-	if not healerAnchor then
-		return
-	end
-
-	healerAnchor:EnableMouse(false)
-	healerAnchor:SetMovable(false)
-	healerAnchor:SetAlpha(0)
-end
-
-function M:StartTesting()
-	M:Show()
-	Pause()
-
-	if not iconsContainer then
-		return
-	end
-
+local function RefreshTestFrame()
 	local options = db.Healer
+
+	if not iconsContainer or not options then
+		return
+	end
+
 	local size = tonumber(options.Icons.Size) or 32
 	local now = GetTime()
 
@@ -276,9 +241,46 @@ function M:StartTesting()
 	UpdateAnchorSize()
 end
 
+local function OnEvent(_, event)
+	if event == "GROUP_ROSTER_UPDATE" then
+		M:Refresh()
+	end
+end
+
+local function Pause()
+	paused = true
+end
+
+local function Resume()
+	paused = false
+	OnAuraStateUpdated()
+end
+
+function M:StartTesting()
+	testModeActive = true
+	Pause()
+	M:Refresh()
+
+	if not healerAnchor then
+		return
+	end
+
+	healerAnchor:EnableMouse(true)
+	healerAnchor:SetMovable(true)
+	healerAnchor:SetAlpha(1)
+end
+
 function M:StopTesting()
-	M:Hide()
+	testModeActive = false
 	Resume()
+
+	if not healerAnchor then
+		return
+	end
+
+	healerAnchor:EnableMouse(false)
+	healerAnchor:SetMovable(false)
+	healerAnchor:SetAlpha(0)
 end
 
 function M:Refresh()
@@ -300,6 +302,23 @@ function M:Refresh()
 	healerAnchor.HealerWarning:SetFont(options.Font.File, options.Font.Size, options.Font.Flags)
 
 	iconsContainer:SetIconSize(tonumber(options.Icons.Size) or 32)
+
+	if testModeActive then
+		if not options.Enabled then
+			healerAnchor:SetAlpha(0)
+			return
+		end
+
+		healerAnchor:SetAlpha(1)
+		RefreshTestFrame()
+
+		if previousTestSoundEnabled ~= options.Sound.Enabled and options.Sound.Enabled then
+			PlaySound()
+		end
+
+		previousTestSoundEnabled = options.Sound.Enabled
+		return
+	end
 
 	if units:IsHealer("player") then
 		DisableAll()
@@ -333,6 +352,8 @@ end
 
 function M:Init()
 	db = mini:GetSavedVars()
+
+	previousTestSoundEnabled = db.Healer.Sound.Enabled
 
 	-- Initialize test spells
 	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
