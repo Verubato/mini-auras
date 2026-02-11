@@ -71,12 +71,6 @@ function M:Build(panel)
 			"Supported addons:",
 			"  - ElvUI, DandersFrames, Grid2, Shadowed Unit Frames, Plexus.",
 			"",
-			"Things that work on beta (12.0.1) that don't work on retail (12.0.0):",
-			"  - Showing multiple/overlapping CC's.",
-			"  - Healer in CC sound effect.",
-			"  - More spells are shown on portraits.",
-			"  - Hex and roots.",
-			"",
 			"Any feedback is more than welcome!",
 		},
 	})
