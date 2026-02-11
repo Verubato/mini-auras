@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.15.1
+
+Removed 12.0.0 blurb.
+
 ## 2.15.0
 
 Added combined nameplate mode.
