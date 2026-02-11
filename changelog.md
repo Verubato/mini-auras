@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.15.0
+
+Added combined nameplate mode.
+
 ## 2.14.1
 
 Fixed nameplates in test mode.
