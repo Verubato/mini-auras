@@ -75,6 +75,24 @@ local dbDefaults = {
 		},
 	},
 
+	---@class AllyIndicatorOptions : HeaderOptions
+	AllyIndicator = {
+		Enabled = true,
+		ExcludePlayer = false,
+
+		Offset = {
+			X = 0,
+			Y = 0,
+		},
+		Grow = "CENTER",
+
+		Icons = {
+			Size = 40,
+			Glow = true,
+			ReverseCooldown = true,
+		},
+	},
+
 	---@class HealerOptions
 	Healer = {
 		Enabled = false,
@@ -514,6 +532,7 @@ function config:Init()
 		Alerts = "Alerts",
 		Healer = "Healer",
 		Nameplates = "Nameplates",
+		CDs = "CDs",
 	}
 
 	local tabs = {
@@ -557,6 +576,13 @@ function config:Init()
 			Title = "Nameplates",
 			Build = function(content)
 				config.Nameplates:Build(content, db.Nameplates)
+			end,
+		},
+		{
+			Key = keys.CDs,
+			Title = "CDs",
+			Build = function(content)
+				config.AllyIndicator:Build(content, db.AllyIndicator)
 			end,
 		},
 	}
@@ -661,6 +687,7 @@ end
 ---@field KickTimer KickTimerConfig
 ---@field Trinkets TrinketsConfig
 ---@field OtherAddons OtherAddonsConfig
+---@field AllyIndicator AllyIndicatorConfig
 
 ---@class HeaderOptions
 ---@field Enabled boolean

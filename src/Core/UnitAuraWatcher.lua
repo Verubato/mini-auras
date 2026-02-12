@@ -214,15 +214,19 @@ function Watcher:RebuildStates()
 					local dispelColor =
 						C_UnitAuras.GetAuraDispelTypeColor(unit, defensivesData.auraInstanceID, dispelColorCurve)
 
-					defensivesSpellData[#defensivesSpellData + 1] = {
-						IsDefensive = true,
-						SpellId = defensivesData.spellId,
-						SpellIcon = defensivesData.icon,
-						StartTime = start,
-						TotalDuration = duration,
-						DispelColor = dispelColor,
-						auraInstanceID = defensivesData.auraInstanceID,
-					}
+					local isDefensive = C_UnitAuras.AuraIsBigDefensive(defensivesData.spellId)
+
+					if issecretvalue(isDefensive) or isDefensive then
+						defensivesSpellData[#defensivesSpellData + 1] = {
+							IsDefensive = isDefensive,
+							SpellId = defensivesData.spellId,
+							SpellIcon = defensivesData.icon,
+							StartTime = start,
+							TotalDuration = duration,
+							DispelColor = dispelColor,
+							auraInstanceID = defensivesData.auraInstanceID,
+						}
+					end
 				end
 
 				seenDefensives[defensivesData.auraInstanceID] = true

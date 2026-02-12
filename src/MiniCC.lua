@@ -14,6 +14,7 @@ local modules = {
 	addon.Modules.NameplatesModule,
 	addon.Modules.KickTimerModule,
 	addon.Modules.TrinketsModule,
+	addon.Modules.AllyIndicatorModule,
 }
 local eventsFrame
 local db
@@ -130,7 +131,7 @@ function addon:ToggleTest(options)
 	end
 end
 
----@param options InstanceOptions?
+---@param options InstanceOptions
 function addon:TestOptions(options)
 	instanceOptions:SetTestInstanceOptions(options)
 
@@ -174,6 +175,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field AlertsModule AlertsModule
 ---@field CcModule CcModule
 ---@field TrinketsModule TrinketsModule
+---@field AllyIndicatorModule AllyIndicatorModule
 
 ---@class IModule
 ---@field Init fun(self: IModule) Initialises the module to be ready for use.

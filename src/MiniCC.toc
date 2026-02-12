@@ -33,6 +33,7 @@ Modules\AlertsModule.lua
 Modules\NameplatesModule.lua
 Modules\KickTimerModule.lua
 Modules\TrinketsModule.lua
+Modules\AllyIndicatorModule.lua
 Modules\TestModeManager.lua
 
 Config\Config.lua
@@ -44,6 +45,7 @@ Config\Alerts.lua
 Config\Nameplates.lua
 Config\KickTimer.lua
 Config\Trinkets.lua
+Config\AllyIndicator.lua
 Config\OtherAddons.lua
 
 MiniCC.xml

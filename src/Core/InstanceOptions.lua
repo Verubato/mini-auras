@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Core.Framework
 local testInstanceOptions
+local testRaidCooldownsOptions
 ---@type Db
 local db
 
@@ -17,13 +18,13 @@ function M:GetInstanceOptions()
 end
 
 function M:GetTestInstanceOptions()
-    return testInstanceOptions
+	return testInstanceOptions
 end
 
 function M:SetTestInstanceOptions(options)
-    testInstanceOptions = options
+	testInstanceOptions = options
 end
 
 function M:Init()
-    db = mini:GetSavedVars()
+	db = mini:GetSavedVars()
 end
