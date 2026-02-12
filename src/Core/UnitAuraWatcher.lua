@@ -275,9 +275,10 @@ function Watcher:RebuildStates()
 
 	if interestedInCC or interestedInImportant then
 		for i = 1, maxAuras do
-			local ccData = interestedInCC and C_UnitAuras.GetAuraDataByIndex(unit, i, ccFilter)
+			-- get cc data regardless of if interested, as we need it to exclude from important
+			local ccData = C_UnitAuras.GetAuraDataByIndex(unit, i, ccFilter)
 
-			if ccData then
+			if interestedInCC and ccData then
 				local durationInfo = C_UnitAuras.GetAuraDuration(unit, ccData.auraInstanceID)
 				local start = durationInfo and durationInfo:GetStartTime()
 				local duration = durationInfo and durationInfo:GetTotalDuration()
