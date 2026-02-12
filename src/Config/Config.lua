@@ -463,7 +463,7 @@ local function GetAndUpgradeDb()
 	end
 
 	if vars.Version == 15 then
-		table.insert(vars.WhatsNew, " - New ally CDs frame that shows defensives and offensive cooldowns.")
+		table.insert(vars.WhatsNew, " - New ally CDs frame that shows active defensives and offensive cooldowns.")
 		vars.NotifiedChanges = false
 		vars.Version = 16
 	end
