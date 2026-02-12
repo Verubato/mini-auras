@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.16.0
+
+Added ally important spells module.
+
 ## 2.15.2
 
 Invisible clickable frame fix.
