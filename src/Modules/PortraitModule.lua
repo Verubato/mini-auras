@@ -23,23 +23,16 @@ local function AddMask(tex, mask)
 	tex:AddMaskTexture(mask)
 end
 
-local function GetPortraitMask(unitFrame)
-	-- player
-	if unitFrame.PlayerFrameContainer and unitFrame.PlayerFrameContainer.PlayerPortraitMask then
-		return unitFrame.PlayerFrameContainer.PlayerPortraitMask
+local function CreatePortraitMask(portrait)
+	local parent = portrait:GetParent()
+	if not parent then
+		return nil
 	end
 
-	-- target/focus
-	if unitFrame.TargetFrameContainer and unitFrame.TargetFrameContainer.PortraitMask then
-		return unitFrame.TargetFrameContainer.PortraitMask
-	end
-
-	-- target of target and pet frame
-	if unitFrame.PortraitMask then
-		return unitFrame.PortraitMask
-	end
-
-	return nil
+	local mask = parent:CreateMaskTexture()
+	mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+	mask:SetAllPoints(portrait)
+	return mask
 end
 
 local function ApplyMaskToLayer(layer, mask)
@@ -77,7 +70,8 @@ local function CreateContainer(unitFrame, portrait)
 	local size = math.min(width, height)
 	container:SetIconSize(size)
 
-	local mask = GetPortraitMask(unitFrame)
+	-- creating a mask instead of using the blizzard inbuilt one is better for supporting addons that remove/move it
+	local mask = CreatePortraitMask(portrait)
 
 	-- Hook SetLayer to apply mask when layers are created
 	local originalSetLayer = container.SetLayer
