@@ -93,10 +93,10 @@ local specInfoBySpecId = {
 	-- Monk — Spear Hand Strike
 	[268] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(116705) }, -- Brewmaster
 	[269] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(116705) }, -- Windwalker
-	[270] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = KI(116705) }, -- Mistweaver
+	[270] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = nil }, -- Mistweaver
 
 	-- Paladin — Rebuke
-	[65] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = KI(96231) }, -- Holy
+	[65] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = nil }, -- Holy
 	[66] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(96231) }, -- Protection
 	[70] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(96231) }, -- Retribution
 
@@ -127,9 +127,9 @@ local specInfoBySpecId = {
 	[264] = { KickCd = 30, IsCaster = false, IsHealer = true, KickIcon = KI(57994) }, -- Restoration
 
 	-- Evoker — Quell
-	[1467] = { KickCd = 40, IsCaster = true, IsHealer = false, KickIcon = KI(351338) }, -- Devastation
-	[1468] = { KickCd = 40, IsCaster = false, IsHealer = true, KickIcon = KI(351338) }, -- Preservation
-	[1473] = { KickCd = 40, IsCaster = true, IsHealer = false, KickIcon = KI(351338) }, -- Augmentation
+	[1467] = { KickCd = 20, IsCaster = true, IsHealer = false, KickIcon = KI(351338) }, -- Devastation
+	[1468] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = KI(351338) }, -- Preservation
+	[1473] = { KickCd = nil, IsCaster = true, IsHealer = false, KickIcon = nil }, -- Augmentation
 
 	-- Priest
 	[256] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = nil }, -- Discipline
