@@ -91,6 +91,13 @@ end
 function M:Build(panel, options)
 	local anchorPanel = BuildAnchorSettings(panel, options)
 
+	local intro = mini:TextLine({
+		Parent = panel,
+		Text = "Don't forget to disable the Blizzard external defensives option when using this."
+	})
+
+	intro:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+
 	local enabledChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Enabled",
@@ -105,7 +112,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	enabledChk:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	enabledChk:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local excludePlayerChk = mini:Checkbox({
 		Parent = panel,
