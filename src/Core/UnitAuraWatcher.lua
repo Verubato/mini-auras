@@ -202,35 +202,64 @@ function Watcher:RebuildStates()
 	-- process big defensives first so we can exclude duplicates from important
 	if interestedInDefensives and hasNewFilters then
 		for i = 1, maxAuras do
-			local defensivesData =
+			local bigDefensivesData =
 				C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|BIG_DEFENSIVE|INCLUDE_NAME_PLATE_ONLY")
+			local externalDefensivesData =
+				C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|EXTERNAL_DEFENSIVE|INCLUDE_NAME_PLATE_ONLY")
 
-			if defensivesData then
-				local durationInfo = C_UnitAuras.GetAuraDuration(unit, defensivesData.auraInstanceID)
+			if bigDefensivesData then
+				local durationInfo = C_UnitAuras.GetAuraDuration(unit, bigDefensivesData.auraInstanceID)
 				local start = durationInfo and durationInfo:GetStartTime()
 				local duration = durationInfo and durationInfo:GetTotalDuration()
 
 				if start and duration then
 					local dispelColor =
-						C_UnitAuras.GetAuraDispelTypeColor(unit, defensivesData.auraInstanceID, dispelColorCurve)
+						C_UnitAuras.GetAuraDispelTypeColor(unit, bigDefensivesData.auraInstanceID, dispelColorCurve)
 
-					local isDefensive = C_UnitAuras.AuraIsBigDefensive(defensivesData.spellId)
+					local isDefensive = C_UnitAuras.AuraIsBigDefensive(bigDefensivesData.spellId)
 
 					if issecretvalue(isDefensive) or isDefensive then
 						defensivesSpellData[#defensivesSpellData + 1] = {
 							IsDefensive = isDefensive,
-							SpellId = defensivesData.spellId,
-							SpellIcon = defensivesData.icon,
+							SpellId = bigDefensivesData.spellId,
+							SpellIcon = bigDefensivesData.icon,
 							StartTime = start,
 							TotalDuration = duration,
 							DispelColor = dispelColor,
-							auraInstanceID = defensivesData.auraInstanceID,
+							auraInstanceID = bigDefensivesData.auraInstanceID,
 						}
 					end
 				end
 
-				seenDefensives[defensivesData.auraInstanceID] = true
-			else
+				seenDefensives[bigDefensivesData.auraInstanceID] = true
+			end
+
+			if externalDefensivesData and (not bigDefensivesData or bigDefensivesData.auraInstanceID ~= externalDefensivesData.auraInstanceID) then
+				local durationInfo = C_UnitAuras.GetAuraDuration(unit, externalDefensivesData.auraInstanceID)
+				local start = durationInfo and durationInfo:GetStartTime()
+				local duration = durationInfo and durationInfo:GetTotalDuration()
+
+				if start and duration then
+					local dispelColor =
+						C_UnitAuras.GetAuraDispelTypeColor(unit, externalDefensivesData.auraInstanceID, dispelColorCurve)
+
+					if issecretvalue(isDefensive) or isDefensive then
+						defensivesSpellData[#defensivesSpellData + 1] = {
+							IsDefensive = true,
+							SpellId = externalDefensivesData.spellId,
+							SpellIcon = externalDefensivesData.icon,
+							StartTime = start,
+							TotalDuration = duration,
+							DispelColor = dispelColor,
+							auraInstanceID = externalDefensivesData.auraInstanceID,
+						}
+					end
+				end
+
+				seenDefensives[externalDefensivesData.auraInstanceID] = true
+			end
+
+			if not bigDefensivesData and not externalDefensivesData then
 				local anyMore = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|INCLUDE_NAME_PLATE_ONLY")
 
 				if not anyMore then
