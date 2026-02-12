@@ -46,6 +46,10 @@ local previousEnemyEnabled = {
 	Important = false,
 	Combined = false,
 }
+local previousPetEnabled = {
+	Friendly = false,
+	Enemy = false,
+}
 
 ---@class NameplatesModule : IModule
 local M = {}
@@ -643,6 +647,12 @@ local function OnNamePlateAdded(unitToken)
 		OnNamePlateRemoved(unitToken)
 	end
 
+	-- Check if we should ignore pets
+	local unitOptions = M:GetUnitOptions(unitToken)
+	if unitOptions.IgnorePets and units:IsPet(unitToken) then
+		return
+	end
+
 	-- Create fresh containers
 	local ccContainer, importantContainer, combinedContainer = CreateContainersForNameplate(nameplate, unitToken)
 
@@ -733,6 +743,9 @@ local function CacheEnabledModes()
 	previousFriendlyEnabled.CC = db.Nameplates.Friendly.CC.Enabled
 	previousFriendlyEnabled.Important = db.Nameplates.Friendly.Important.Enabled
 	previousFriendlyEnabled.Combined = db.Nameplates.Friendly.Combined.Enabled
+
+	previousPetEnabled.Friendly = db.Nameplates.Friendly.IgnorePets
+	previousPetEnabled.Enemy = db.Nameplates.Enemy.IgnorePets
 end
 
 local function HaveModesChanged()
@@ -742,6 +755,8 @@ local function HaveModesChanged()
 		or previousFriendlyEnabled.CC ~= db.Nameplates.Friendly.CC.Enabled
 		or previousFriendlyEnabled.Important ~= db.Nameplates.Friendly.Important.Enabled
 		or previousFriendlyEnabled.Combined ~= db.Nameplates.Friendly.Combined.Enabled
+		or previousPetEnabled.Friendly ~= db.Nameplates.Friendly.IgnorePets
+		or previousPetEnabled.Enemy ~= db.Nameplates.Enemy.IgnorePets
 end
 
 local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)

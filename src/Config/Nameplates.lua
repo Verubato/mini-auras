@@ -279,6 +279,35 @@ function M:Build(parent, options)
 		friendlyPanels.Important.UpdateVisibility()
 	end
 
+	-- Enemy Ignore Pets checkbox
+	local enemyIgnorePetsChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = "Ignore Enemy Pets",
+		Tooltip = "Do not show auras on enemy pet nameplates.",
+		GetValue = function()
+			return options.Enemy.IgnorePets
+		end,
+		SetValue = function(value)
+			options.Enemy.IgnorePets = value
+			config:Apply()
+		end,
+	})
+	enemyIgnorePetsChk:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+
+	local friendlyIgnorePetsChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = "Ignore Friendly Pets",
+		Tooltip = "Do not show auras on friendly pet nameplates.",
+		GetValue = function()
+			return options.Friendly.IgnorePets
+		end,
+		SetValue = function(value)
+			options.Friendly.IgnorePets = value
+			config:Apply()
+		end,
+	})
+	friendlyIgnorePetsChk:SetPoint("TOPLEFT", parent, "TOPLEFT", columnWidth, 0)
+
 	-- Enemy sections
 	enemyPanels.Combined = BuildSpellTypeSettings(
 		parent,
@@ -288,7 +317,7 @@ function M:Build(parent, options)
 		true,
 		UpdateEnemyPanelVisibility
 	)
-	enemyPanels.Combined:SetPoint("TOP", parent, "TOP", 0, 0)
+	enemyPanels.Combined:SetPoint("TOP", enemyIgnorePetsChk, "BOTTOM", 0, -verticalSpacing)
 
 	enemyPanels.CC =
 		BuildSpellTypeSettings(parent, "Enemy - CC", options.Enemy.CC, options.Enemy, false, UpdateEnemyPanelVisibility)
@@ -336,7 +365,7 @@ function M:Build(parent, options)
 	friendlyPanels.Important:SetPoint("TOP", friendlyPanels.CC, "BOTTOM", 0, -verticalSpacing)
 
 	-- Add Refresh method to parent that refreshes all child panels
-	parent.MiniRefresh = function()
+	parent.OnMiniRefresh = function()
 		if enemyPanels.Combined and enemyPanels.Combined.MiniRefresh then
 			enemyPanels.Combined:MiniRefresh()
 		end

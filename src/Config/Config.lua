@@ -154,6 +154,7 @@ local dbDefaults = {
 	Nameplates = {
 		---@class NameplateFactionOptions
 		Friendly = {
+			IgnorePets = true,
 			---@class NameplateSpellTypeOptions
 			CC = {
 				Enabled = false,
@@ -207,6 +208,7 @@ local dbDefaults = {
 			},
 		},
 		Enemy = {
+			IgnorePets = true,
 			CC = {
 				Enabled = true,
 				Grow = "RIGHT",
