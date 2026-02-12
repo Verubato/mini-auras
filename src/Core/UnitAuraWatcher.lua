@@ -234,26 +234,30 @@ function Watcher:RebuildStates()
 				seenDefensives[bigDefensivesData.auraInstanceID] = true
 			end
 
-			if externalDefensivesData and (not bigDefensivesData or bigDefensivesData.auraInstanceID ~= externalDefensivesData.auraInstanceID) then
+			if
+				externalDefensivesData
+				and (not bigDefensivesData or bigDefensivesData.auraInstanceID ~= externalDefensivesData.auraInstanceID)
+			then
 				local durationInfo = C_UnitAuras.GetAuraDuration(unit, externalDefensivesData.auraInstanceID)
 				local start = durationInfo and durationInfo:GetStartTime()
 				local duration = durationInfo and durationInfo:GetTotalDuration()
 
 				if start and duration then
-					local dispelColor =
-						C_UnitAuras.GetAuraDispelTypeColor(unit, externalDefensivesData.auraInstanceID, dispelColorCurve)
+					local dispelColor = C_UnitAuras.GetAuraDispelTypeColor(
+						unit,
+						externalDefensivesData.auraInstanceID,
+						dispelColorCurve
+					)
 
-					if issecretvalue(isDefensive) or isDefensive then
-						defensivesSpellData[#defensivesSpellData + 1] = {
-							IsDefensive = true,
-							SpellId = externalDefensivesData.spellId,
-							SpellIcon = externalDefensivesData.icon,
-							StartTime = start,
-							TotalDuration = duration,
-							DispelColor = dispelColor,
-							auraInstanceID = externalDefensivesData.auraInstanceID,
-						}
-					end
+					defensivesSpellData[#defensivesSpellData + 1] = {
+						IsDefensive = true,
+						SpellId = externalDefensivesData.spellId,
+						SpellIcon = externalDefensivesData.icon,
+						StartTime = start,
+						TotalDuration = duration,
+						DispelColor = dispelColor,
+						auraInstanceID = externalDefensivesData.auraInstanceID,
+					}
 				end
 
 				seenDefensives[externalDefensivesData.auraInstanceID] = true
