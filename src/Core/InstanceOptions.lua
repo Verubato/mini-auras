@@ -2,7 +2,6 @@
 local _, addon = ...
 local mini = addon.Core.Framework
 local testInstanceOptions
-local testRaidCooldownsOptions
 ---@type Db
 local db
 

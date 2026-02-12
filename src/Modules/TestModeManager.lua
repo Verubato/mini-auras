@@ -55,11 +55,8 @@ function M:StartTesting(options)
 
 	active = true
 
-	if not options then
-		options = instanceOptions:GetTestInstanceOptions()
-	else
-		instanceOptions:SetTestInstanceOptions(options)
-	end
+	instanceOptions:SetTestInstanceOptions(options)
+
 	-- Show test party frames if no real frames are visible
 	local realFrames = frames:GetAll(true, false) -- Get only real frames
 	local hasVisibleRealFrames = false

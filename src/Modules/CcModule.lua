@@ -88,7 +88,6 @@ local function UpdateWatcherAuras(entry)
 		end
 		container:FinalizeSlot(slotIndex, layerIndex - 1)
 		container:SetSlotUsed(slotIndex)
-		slotIndex = slotIndex + 1
 	end
 end
 
