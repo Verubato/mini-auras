@@ -660,7 +660,7 @@ local function OnNamePlateAdded(unitToken)
 	}
 
 	-- Create new watcher
-	watchers[unitToken] = unitWatcher:New(unitToken, nil)
+	watchers[unitToken] = unitWatcher:New(unitToken)
 	watchers[unitToken]:RegisterCallback(function()
 		OnAuraDataChanged(unitToken)
 	end)
