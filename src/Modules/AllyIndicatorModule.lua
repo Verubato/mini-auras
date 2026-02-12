@@ -5,7 +5,6 @@ local frames = addon.Core.Frames
 local iconSlotContainer = addon.Core.IconSlotContainer
 local UnitAuraWatcher = addon.Core.UnitAuraWatcher
 local spellCache = addon.Utils.SpellCache
-local array = addon.Utils.Array
 local eventsFrame
 local paused = false
 local testModeActive = false

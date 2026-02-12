@@ -8,7 +8,7 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 15,
+	Version = 16,
 	WhatsNew = {},
 
 	NotifiedChanges = true,
@@ -457,6 +457,12 @@ local function GetAndUpgradeDb()
 		table.insert(vars.WhatsNew, " - Improved addon performance.")
 		vars.NotifiedChanges = false
 		vars.Version = 15
+	end
+
+	if vars.Version == 15 then
+		table.insert(vars.WhatsNew, " - New ally CDs frame that shows defensives and offensive cooldowns.")
+		vars.NotifiedChanges = false
+		vars.Version = 16
 	end
 
 	vars = mini:GetSavedVars(dbDefaults)
