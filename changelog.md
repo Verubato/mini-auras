@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.17.1
+
+Fixed devastation kick cooldown (was 40 seconds, now 20 seconds).
+
 ## 2.17.0
 
 - Font size now scales with the icon.
