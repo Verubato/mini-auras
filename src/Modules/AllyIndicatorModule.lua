@@ -5,6 +5,7 @@ local frames = addon.Core.Frames
 local iconSlotContainer = addon.Core.IconSlotContainer
 local UnitAuraWatcher = addon.Core.UnitAuraWatcher
 local spellCache = addon.Utils.SpellCache
+local array = addon.Utils.Array
 local eventsFrame
 local paused = false
 local testModeActive = false
@@ -59,17 +60,14 @@ local function UpdateWatcherAuras(entry)
 	container:ResetAllSlots()
 
 	-- Priority: Defensive -> Important
-	-- Show only 1 icon at a time
 	local auraToShow = nil
 	local isDefensive = false
 
 	if #defensiveState > 0 then
-		-- Show first defensive
-		auraToShow = defensiveState[1]
+		auraToShow = defensiveState[#defensiveState]
 		isDefensive = true
 	elseif #importantState > 0 then
-		-- Show first important
-		auraToShow = importantState[1]
+		auraToShow = importantState[#importantState]
 		isDefensive = false
 	end
 
