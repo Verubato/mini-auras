@@ -61,14 +61,18 @@ local function UpdateWatcherAuras(entry)
 
 	-- Priority: Defensive -> Important
 	local auraToShow = nil
-	local isDefensive = false
+	local alpha = nil
 
 	if #defensiveState > 0 then
 		auraToShow = defensiveState[#defensiveState]
-		isDefensive = true
+		if auraToShow then
+			alpha = auraToShow.IsDefensive
+		end
 	elseif #importantState > 0 then
 		auraToShow = importantState[#importantState]
-		isDefensive = false
+		if auraToShow then
+			alpha = auraToShow.IsImportant
+		end
 	end
 
 	if auraToShow then
@@ -77,7 +81,7 @@ local function UpdateWatcherAuras(entry)
 			Texture = auraToShow.SpellIcon,
 			StartTime = auraToShow.StartTime,
 			Duration = auraToShow.TotalDuration,
-			AlphaBoolean = isDefensive and auraToShow.IsDefensive or auraToShow.IsImportant,
+			AlphaBoolean = alpha,
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
 		})
