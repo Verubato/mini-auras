@@ -467,7 +467,11 @@ function M:ShowHideFrame(header, anchor, isTest, options)
 
 	local alpha = anchor:GetAlpha()
 	if mini:IsSecret(alpha) and anchor:IsVisible() then
-		header:SetAlpha(alpha)
+		if not isTest then
+			header:SetAlpha(alpha)
+		else
+			header:SetAlpha(1)
+		end
 		header:Show()
 		return
 	end

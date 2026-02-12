@@ -99,6 +99,11 @@ function M:Layout()
 	local totalWidth = (usedCount * self.Size) + ((usedCount - 1) * self.Spacing)
 	self.Frame:SetSize((usedCount > 0) and totalWidth or self.Size, self.Size)
 
+	-- Ensure container alpha is 1 when showing icons
+	if usedCount > 0 then
+		self.Frame:SetAlpha(1)
+	end
+
 	-- Position used slots contiguously
 	for displayIndex, slotIndex in ipairs(usedSlots) do
 		local slot = self.Slots[slotIndex]
