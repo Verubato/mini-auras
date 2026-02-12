@@ -8,7 +8,7 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 16,
+	Version = 17,
 	WhatsNew = {},
 
 	NotifiedChanges = true,
@@ -146,6 +146,7 @@ local dbDefaults = {
 			Size = 72,
 			Glow = true,
 			ReverseCooldown = true,
+			ColorByClass = true,
 		},
 	},
 
@@ -463,6 +464,12 @@ local function GetAndUpgradeDb()
 		table.insert(vars.WhatsNew, " - New ally CDs frame that shows defensives and offensive cooldowns.")
 		vars.NotifiedChanges = false
 		vars.Version = 16
+	end
+
+	if vars.Version == 16 then
+		table.insert(vars.WhatsNew, " - Added option to color alert glows by enemy class color (enabled by default).")
+		vars.NotifiedChanges = false
+		vars.Version = 17
 	end
 
 	vars = mini:GetSavedVars(dbDefaults)

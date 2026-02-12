@@ -56,6 +56,22 @@ function M:Build(panel, options)
 	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	glowChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
+	local colorByClassChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Color by class",
+		Tooltip = "Color the glow by the enemy's class color.",
+		GetValue = function()
+			return options.Icons.ColorByClass
+		end,
+		SetValue = function(value)
+			options.Icons.ColorByClass = value
+			config:Apply()
+		end,
+	})
+
+	colorByClassChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	colorByClassChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+
 	local reverseChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Reverse swipe",
@@ -69,8 +85,8 @@ function M:Build(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	reverseChk:SetPoint("TOP", colorByClassChk, "TOP", 0, 0)
 
 	local includeDefensivesChk = mini:Checkbox({
 		Parent = panel,
@@ -85,8 +101,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	includeDefensivesChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	includeDefensivesChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+	includeDefensivesChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local iconSize = mini:Slider({
 		Parent = panel,
@@ -104,7 +119,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", includeDefensivesChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()

@@ -38,6 +38,7 @@ local function OnAuraDataChanged()
 	local hasNewFilters = capabilities:HasNewFilters()
 	local iconsGlow = db.Alerts.Icons.Glow
 	local iconsReverse = db.Alerts.Icons.ReverseCooldown
+	local colorByClass = db.Alerts.Icons.ColorByClass
 	local slot = 0
 
 	for _, watcher in ipairs(watchers) do
@@ -49,6 +50,19 @@ local function OnAuraDataChanged()
 
 		-- when units go stealth, we can't get their aura data anymore
 		if unit and UnitExists(unit) then
+			local glowColor = nil
+
+			-- Get class color if the option is enabled
+			if colorByClass and iconsGlow then
+				local _, class = UnitClass(unit)
+				if class then
+					local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
+					if classColor then
+						glowColor = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1 }
+					end
+				end
+			end
+
 			local defensivesData = watcher:GetDefensiveState()
 			local importantData = watcher:GetImportantState()
 
@@ -65,6 +79,7 @@ local function OnAuraDataChanged()
 							AlphaBoolean = data.IsImportant,
 							Glow = iconsGlow,
 							ReverseCooldown = iconsReverse,
+							Color = glowColor,
 						})
 						container:FinalizeSlot(slot, 1)
 					end
@@ -83,6 +98,7 @@ local function OnAuraDataChanged()
 							AlphaBoolean = data.IsImportant,
 							Glow = iconsGlow,
 							ReverseCooldown = iconsReverse,
+							Color = glowColor,
 						})
 					end
 
@@ -103,6 +119,7 @@ local function OnAuraDataChanged()
 						AlphaBoolean = data.IsDefensive,
 						Glow = iconsGlow,
 						ReverseCooldown = iconsReverse,
+						Color = glowColor,
 					})
 					container:FinalizeSlot(slot, 1)
 				end
@@ -150,8 +167,17 @@ local function RefreshTestAlerts()
 		107574, -- Avatar
 	}
 
+	-- Test class colors for demo purposes
+	local testClassColors = {
+		"MAGE",
+		"ROGUE",
+		"WARRIOR",
+	}
+
 	local count = math.min(#testAlertSpellIds, container.Count or #testAlertSpellIds)
 	local now = GetTime()
+	local colorByClass = db.Alerts.Icons.ColorByClass
+	local iconsGlow = db.Alerts.Icons.Glow
 
 	for i = 1, count do
 		container:SetSlotUsed(i)
@@ -163,13 +189,22 @@ local function RefreshTestAlerts()
 			local duration = 12 + (i - 1) * 3
 			local startTime = now - (i - 1) * 1.25
 
+			local glowColor = nil
+			if colorByClass and iconsGlow and testClassColors[i] then
+				local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[testClassColors[i]]
+				if classColor then
+					glowColor = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1 }
+				end
+			end
+
 			container:SetLayer(i, 1, {
 				Texture = tex,
 				StartTime = startTime,
 				Duration = duration,
 				AlphaBoolean = true,
-				Glow = db.Alerts.Icons.Glow,
+				Glow = iconsGlow,
 				ReverseCooldown = db.Alerts.Icons.ReverseCooldown,
+				Color = glowColor,
 			})
 
 			container:FinalizeSlot(i, 1)
