@@ -170,6 +170,9 @@ local function EnsureWatcher(anchor, unit)
 
 			-- Clear the container since it's a different unit now
 			entry.Container:ResetAllSlots()
+
+			-- Force immediate aura scan for the new unit
+			entry.Watcher:ForceFullUpdate()
 		end
 
 		local iconSize = tonumber(options.Icons.Size) or 32
