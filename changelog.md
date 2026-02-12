@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.17.0
+
+- Font size now scales with the icon.
+- Ignore pets nameplate option.
+- Colour alerts by class option.
+
 ## 2.16.0
 
 Added ally important spells module.
