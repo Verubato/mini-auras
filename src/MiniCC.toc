@@ -19,6 +19,7 @@ Utils\Units.lua
 Utils\Array.lua
 Utils\CcUtil.lua
 Utils\SpellCache.lua
+Utils\FontUtil.lua
 
 Core\MiniFramework.lua
 Core\InstanceOptions.lua

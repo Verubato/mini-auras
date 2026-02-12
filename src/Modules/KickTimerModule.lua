@@ -2,6 +2,7 @@
 local addonName, addon = ...
 local mini = addon.Core.Framework
 local spellCache = addon.Utils.SpellCache
+local fontUtil = addon.Utils.FontUtil
 local paused = false
 local testModeActive = false
 local enabled = false
@@ -204,6 +205,8 @@ local function ApplyKickBarIconOptions()
 		end
 		if frame.Cooldown then
 			frame.Cooldown:SetReverse(iconOptions.ReverseCooldown)
+			-- Update cooldown font size when icon size changes
+			fontUtil:UpdateCooldownFontSize(frame.Cooldown, kickBar.Size)
 		end
 	end
 end
@@ -277,6 +280,9 @@ local function CreateKickIcon(reverseCooldown)
 	cd:SetReverse(reverseCooldown)
 	cd:SetDrawEdge(false)
 	cd:SetDrawBling(false)
+
+	-- Set initial cooldown font size
+	fontUtil:UpdateCooldownFontSize(cd, kickBar.Size)
 
 	frame.Icon = icon
 	frame.Cooldown = cd

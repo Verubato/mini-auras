@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Core.Framework
 local frames = addon.Core.Frames
 local spellCache = addon.Utils.SpellCache
+local fontUtil = addon.Utils.FontUtil
 local eventFrame
 local enabled = false
 local paused = false
@@ -89,6 +90,9 @@ local function CreateIcon(unit)
 	frame.CD:SetDrawBling(false)
 	frame.CD:SetReverse(false)
 
+	-- Set initial cooldown font size
+	fontUtil:UpdateCooldownFontSize(frame.CD, options.Icons.Size)
+
 	frame.Text = frame:CreateFontString(nil, "OVERLAY", options.Font.File)
 	frame.Text:SetPoint("CENTER", frame, "CENTER", 0, 0)
 	frame.Text:SetText("")
@@ -109,6 +113,11 @@ local function ApplyOptionsToIcon(frame)
 
 	frame:SetSize(size, size)
 	frame.Text:SetFont(options.Font.File, fontSize or 12, flags)
+
+	-- Update cooldown font size when icon size changes
+	if frame.CD then
+		fontUtil:UpdateCooldownFontSize(frame.CD, size)
+	end
 end
 
 local function StopTicker(icon)

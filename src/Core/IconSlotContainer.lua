@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", true)
+local fontUtil = addon.Utils.FontUtil
 
 ---@class IconSlotContainer
 local M = {}
@@ -32,7 +33,7 @@ function M:New(parent, count, size, spacing)
 	return instance
 end
 
-local function CreateLayer(parentFrame, level)
+local function CreateLayer(parentFrame, level, iconSize)
 	local layerFrame = CreateFrame("Frame", nil, parentFrame)
 	layerFrame:SetAllPoints()
 
@@ -57,6 +58,12 @@ local function CreateLayer(parentFrame, level)
 	cd:SetHideCountdownNumbers(false)
 	cd:SetSwipeColor(0, 0, 0, 0.8)
 
+	-- Set initial font size based on icon size
+	if iconSize then
+		cd.DesiredIconSize = iconSize
+		fontUtil:UpdateCooldownFontSize(cd, iconSize)
+	end
+
 	return {
 		Frame = layerFrame,
 		Icon = icon,
@@ -64,14 +71,14 @@ local function CreateLayer(parentFrame, level)
 	}
 end
 
-local function EnsureLayer(slot, layerIndex)
+local function EnsureLayer(slot, layerIndex, iconSize)
 	local slotLevel = slot.Frame:GetFrameLevel() or 0
 	local baseLevel = slotLevel + 1
 
 	-- Create any missing layers
 	-- Use +2 per layer to ensure cooldown text doesn't overlap next icon
 	for l = #slot.Layers + 1, layerIndex do
-		slot.Layers[l] = CreateLayer(slot.Frame, baseLevel + ((l - 1) * 2))
+		slot.Layers[l] = CreateLayer(slot.Frame, baseLevel + ((l - 1) * 2), iconSize)
 	end
 
 	-- re-apply levels to existing layers (covers cases where slot level changes)
@@ -146,11 +153,19 @@ function M:SetIconSize(newSize)
 
 	self.Size = newSize
 
-	-- Resize active slots
+	-- Resize active slots and update cooldown font sizes
 	for i = 1, self.Count do
 		local slot = self.Slots[i]
 		if slot and slot.Frame then
 			slot.Frame:SetSize(self.Size, self.Size)
+
+			-- Update cooldown font sizes for all layers
+			for _, layer in ipairs(slot.Layers) do
+				if layer and layer.Cooldown then
+					layer.Cooldown.DesiredIconSize = self.Size
+					fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size)
+				end
+			end
 		end
 	end
 
@@ -217,7 +232,7 @@ function M:SetLayer(slotIndex, layerIndex, options)
 		return
 	end
 
-	local layer = EnsureLayer(slot, layerIndex)
+	local layer = EnsureLayer(slot, layerIndex, self.Size)
 	slot.LayerCount = math.max(slot.LayerCount or 0, layerIndex)
 
 	if options.Texture and options.StartTime and options.Duration then
