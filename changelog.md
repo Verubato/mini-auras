@@ -2,7 +2,7 @@
 
 ## 2.17.2
 
-Explanation fix, sorry am sleepy.
+What's new explanation fix, sorry am sleepy.
 
 ## 2.17.1
 
