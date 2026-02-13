@@ -101,7 +101,7 @@ function M:Build(panel, options)
 	local enabledChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Enabled",
-		Tooltip = "Show defensive and important cooldowns on raid frames.\n\nPriority: Defensive -> Important\nShows only 1 icon at a time.",
+		Tooltip = "Shows active defensive and important cooldowns on raid frames.\n\nPriority: Defensive -> Important\nShows only 1 icon at a time.",
 		GetValue = function()
 			return options.Enabled
 		end,
