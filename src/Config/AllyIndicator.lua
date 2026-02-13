@@ -93,7 +93,7 @@ function M:Build(panel, options)
 
 	local intro = mini:TextLine({
 		Parent = panel,
-		Text = "Don't forget to disable the Blizzard external defensives option when using this."
+		Text = "Don't forget to disable the Blizzard 'center big defensives' option when using this."
 	})
 
 	intro:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
