@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.17.3
+
+Fixed wrong option in description.
+
 ## 2.17.2
 
 What's new explanation fix, sorry am sleepy.
