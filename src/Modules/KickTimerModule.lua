@@ -3,8 +3,6 @@ local addonName, addon = ...
 local mini = addon.Core.Framework
 local spellCache = addon.Utils.SpellCache
 local iconSlotContainer = addon.Core.IconSlotContainer
-local moduleUtil = addon.Utils.ModuleUtil
-local moduleName = addon.Utils.ModuleName
 local paused = false
 local testModeActive = false
 local enabled = false
@@ -499,7 +497,9 @@ local function Enable()
 end
 
 local function EnableDisable()
-	if not M:IsEnabledForPlayer(db.Modules.KickTimerModule) or not moduleUtil:IsModuleEnabled(moduleName.KickTimer) then
+	-- don't do a moduleUtil check here, as we cover that inside IsEnabledForPlayer
+	-- and we'd end up with a falsey response as the kick timer has different enabled values
+	if not M:IsEnabledForPlayer(db.Modules.KickTimerModule) then
 		Disable()
 		return
 	end
@@ -546,7 +546,8 @@ function M:IsEnabledForPlayer(options)
 
 	local specId = GetPlayerSpecId()
 	if not specId then
-		return false
+		-- no data, just assume enabled in this case
+		return true
 	end
 
 	local info = specInfoBySpecId[specId]
