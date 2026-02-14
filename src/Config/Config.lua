@@ -16,9 +16,9 @@ local dbDefaults = {
 		CcModule = {
 			Enabled = {
 				Always = true,
-				Arena = false,
+				Arena = true,
 				Raids = false,
-				Dungeons = false,
+				Dungeons = true,
 			},
 
 			---@class CcInstanceOptions
@@ -59,9 +59,9 @@ local dbDefaults = {
 		HealerCcModule = {
 			Enabled = {
 				Always = true,
-				Arena = false,
+				Arena = true,
 				Raids = false,
-				Dungeons = false,
+				Dungeons = true,
 			},
 
 			Sound = {
@@ -125,7 +125,7 @@ local dbDefaults = {
 		NameplatesModule = {
 			Enabled = {
 				Always = true,
-				Arena = false,
+				Arena = true,
 				Raids = false,
 				Dungeons = false,
 			},
@@ -284,9 +284,9 @@ local dbDefaults = {
 		FriendlyIndicatorModule = {
 			Enabled = {
 				Always = true,
-				Arena = false,
-				Raids = false,
-				Dungeons = false,
+				Arena = true,
+				Raids = true,
+				Dungeons = true,
 			},
 
 			ExcludePlayer = false,
