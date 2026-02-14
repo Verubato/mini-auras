@@ -2,7 +2,7 @@
 local addonName, addon = ...
 local mini = addon.Core.Framework
 local spellCache = addon.Utils.SpellCache
-local fontUtil = addon.Utils.FontUtil
+local iconSlotContainer = addon.Core.IconSlotContainer
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local paused = false
@@ -19,9 +19,10 @@ local kickedByUnits = {}
 
 ---@type KickBar
 local kickBar = {
-	Icons = {},
-	Size = 50,
-	Spacing = 1,
+	Container = nil, ---@type IconSlotContainer?
+	Anchor = nil, ---@type table?
+	ActiveSlots = {}, ---@type table<number, {Key: number, Timer: table}>
+	MaxSlots = 10,
 }
 
 local friendlyUnitsToWatch = {
@@ -163,20 +164,24 @@ end
 
 local function CreateKickBar()
 	local options = db.Modules.KickTimerModule
-	local relativeTo = _G[options.RelativeTo] or UIParent
-	local frame = CreateFrame("Frame", addonName .. "KickBar", UIParent, "BackdropTemplate")
+	local iconOptions = options.Icons
+	local size = tonumber(iconOptions.Size) or 50
+	local spacing = 2
 
-	frame:SetPoint(options.Point, relativeTo, options.RelativePoint, options.Offset.X, options.Offset.Y)
-	frame:SetSize(200, kickBar.Size)
-	frame:SetFrameStrata("HIGH")
-	frame:SetClampedToScreen(true)
-	frame:SetMovable(false)
-	frame:EnableMouse(false)
-	frame:SetDontSavePosition(true)
-	frame:SetIgnoreParentScale(true)
-	frame:RegisterForDrag("LeftButton")
-	frame:SetScript("OnDragStart", frame.StartMoving)
-	frame:SetScript("OnDragStop", function(frameSelf)
+	local container = iconSlotContainer:New(UIParent, kickBar.MaxSlots, size, spacing)
+	container.Frame:SetFrameStrata("HIGH")
+	container.Frame:SetClampedToScreen(true)
+	container.Frame:SetIgnoreParentScale(true)
+
+	-- Create wrapper frame for positioning and dragging
+	local anchor = CreateFrame("Frame", addonName .. "KickBar", UIParent)
+	anchor:SetSize(200, size)
+	anchor:SetMovable(false)
+	anchor:EnableMouse(false)
+	anchor:SetDontSavePosition(true)
+	anchor:RegisterForDrag("LeftButton")
+	anchor:SetScript("OnDragStart", anchor.StartMoving)
+	anchor:SetScript("OnDragStop", function(frameSelf)
 		frameSelf:StopMovingOrSizing()
 
 		local point, movedRelativeTo, relativePoint, x, y = frameSelf:GetPoint()
@@ -187,73 +192,59 @@ local function CreateKickBar()
 		options.Offset.Y = y
 	end)
 
-	kickBar.Anchor = frame
+	local relativeTo = _G[options.RelativeTo] or UIParent
+	anchor:SetPoint(options.Point, relativeTo, options.RelativePoint, options.Offset.X, options.Offset.Y)
+
+	-- Attach container to anchor
+	container.Frame:SetParent(anchor)
+	container.Frame:SetPoint("CENTER", anchor, "CENTER", 0, 0)
+
+	kickBar.Container = container
+	kickBar.Anchor = anchor
 end
 
 local function ApplyKickBarIconOptions()
 	local options = db.Modules.KickTimerModule
 	local iconOptions = options.Icons
+	local size = tonumber(iconOptions.Size) or 50
 
-	kickBar.Size = iconOptions.Size or 50
-
-	if kickBar.Anchor then
-		kickBar.Anchor:SetHeight(kickBar.Size)
+	if kickBar.Container then
+		kickBar.Container:SetIconSize(size)
 	end
 
-	for _, frame in ipairs(kickBar.Icons) do
-		frame:SetSize(kickBar.Size, kickBar.Size)
-		if frame.Icon then
-			frame.Icon:SetAllPoints()
-		end
-		if frame.Cooldown then
-			frame.Cooldown:SetReverse(iconOptions.ReverseCooldown)
-			-- Update cooldown font size when icon size changes
-			fontUtil:UpdateCooldownFontSize(frame.Cooldown, kickBar.Size)
-		end
+	if kickBar.Anchor then
+		kickBar.Anchor:SetHeight(size)
 	end
 end
 
-local function LayoutKickBar()
-	-- Count active icons
-	local activeCount = 0
-	for _, iconFrame in ipairs(kickBar.Icons) do
-		if iconFrame.Active then
-			activeCount = activeCount + 1
-		end
-	end
-
-	if activeCount == 0 then
-		kickBar.Anchor:Hide()
+local function UpdateKickBarVisibility()
+	if not kickBar.Container or not kickBar.Anchor then
 		return
 	end
 
-	-- Calculate total width and starting offset for centering
-	local totalWidth = (activeCount * kickBar.Size) + ((activeCount - 1) * kickBar.Spacing)
-	local startX = -totalWidth / 2
-
-	-- Position active icons centered
-	local x = startX
-	for _, iconFrame in ipairs(kickBar.Icons) do
-		if iconFrame.Active then
-			iconFrame:ClearAllPoints()
-			iconFrame:SetPoint("LEFT", kickBar.Anchor, "CENTER", x, 0)
-			x = x + kickBar.Size + kickBar.Spacing
-		end
+	local usedCount = kickBar.Container:GetUsedSlotCount()
+	if usedCount == 0 then
+		kickBar.Anchor:Hide()
+	else
+		kickBar.Anchor:Show()
 	end
-
-	kickBar.Anchor:SetWidth(math.max(200, totalWidth + 8))
-	kickBar.Anchor:Show()
 end
 
 local function ClearIcons()
-	for _, frame in ipairs(kickBar.Icons) do
-		frame.Active = false
-		frame:Hide()
+	-- Cancel all active timers
+	for _, slotData in pairs(kickBar.ActiveSlots) do
+		if slotData.Timer then
+			slotData.Timer:Cancel()
+		end
 	end
 
-	if kickBar.Anchor then
-		LayoutKickBar()
+	wipe(kickBar.ActiveSlots)
+
+	if kickBar.Container then
+		kickBar.Container:ResetAllSlots()
 	end
+
+	UpdateKickBarVisibility()
 end
 
 local function PositionKickBar()
@@ -270,64 +261,54 @@ local function PositionKickBar()
 	frame:SetPoint(options.Point, relativeTo, options.RelativePoint, options.Offset.X, options.Offset.Y)
 end
 
-local function CreateKickIcon(reverseCooldown)
-	local frame = CreateFrame("Frame", nil, kickBar.Anchor)
-	frame:SetSize(kickBar.Size, kickBar.Size)
-
-	local icon = frame:CreateTexture(nil, "ARTWORK")
-	icon:SetAllPoints()
-
-	local cd = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate")
-	cd:SetAllPoints()
-	cd:SetReverse(reverseCooldown)
-	cd:SetDrawEdge(false)
-	cd:SetDrawBling(false)
-
-	-- Set initial cooldown font size
-	fontUtil:UpdateCooldownFontSize(cd, kickBar.Size)
-
-	frame.Icon = icon
-	frame.Cooldown = cd
-	frame.Active = false
-	frame:Hide()
-
-	return frame
-end
-
-local function GetOrCreateIcon()
-	for _, frame in ipairs(kickBar.Icons) do
-		if not frame.Active then
-			local iconOptions = db.Modules.KickTimerModule.Icons
-			frame:SetSize(kickBar.Size, kickBar.Size)
-			frame.Cooldown:SetReverse(iconOptions.ReverseCooldown)
-			return frame
+local function GetNextAvailableSlot()
+	for i = 1, kickBar.MaxSlots do
+		if not kickBar.ActiveSlots[i] then
+			return i
 		end
 	end
-
-	local iconOptions = db.Modules.KickTimerModule.Icons
-	local frame = CreateKickIcon(iconOptions.ReverseCooldown)
-	table.insert(kickBar.Icons, frame)
-	return frame
+	return nil
 end
 
 local function CreateKickEntry(duration, icon)
+	if not kickBar.Container then
+		return
+	end
+
+	local slotIndex = GetNextAvailableSlot()
+	if not slotIndex then
+		return
+	end
+
 	local key = math.random()
-	local frame = GetOrCreateIcon()
-	frame.Icon:SetTexture(icon)
-	frame.Active = true
-	frame.Key = key
-	frame:Show()
-	frame.Cooldown:SetCooldown(GetTime(), duration)
+	local iconOptions = db.Modules.KickTimerModule.Icons
 
-	LayoutKickBar()
+	kickBar.Container:SetLayer(slotIndex, 1, {
+		Texture = icon,
+		StartTime = GetTime(),
+		Duration = duration,
+		AlphaBoolean = true,
+		ReverseCooldown = iconOptions.ReverseCooldown or false,
+		Glow = iconOptions.Glow or false,
+	})
+	kickBar.Container:FinalizeSlot(slotIndex, 1)
+	kickBar.Container:SetSlotUsed(slotIndex)
 
-	C_Timer.After(duration, function()
-		if frame and frame.Active and frame.Key == key then
-			frame.Active = false
-			frame:Hide()
-			LayoutKickBar()
+	local timer = C_Timer.NewTimer(duration, function()
+		local slotData = kickBar.ActiveSlots[slotIndex]
+		if slotData and slotData.Key == key then
+			kickBar.Container:SetSlotUnused(slotIndex)
+			kickBar.ActiveSlots[slotIndex] = nil
+			UpdateKickBarVisibility()
 		end
 	end)
+
+	kickBar.ActiveSlots[slotIndex] = {
+		Key = key,
+		Timer = timer,
+	}
+
+	UpdateKickBarVisibility()
 end
 
 ---@param specId number?
@@ -473,11 +454,11 @@ local function Disable()
 		end
 	end
 
+	ClearIcons()
+
 	if kickBar.Anchor then
 		kickBar.Anchor:Hide()
 	end
-
-	ClearIcons()
 
 	enabled = false
 end
@@ -631,9 +612,6 @@ function M:Refresh()
 	-- Apply icon options even if already enabled (for config changes)
 	ApplyKickBarIconOptions()
 
-	-- Update layout to reflect new sizes
-	LayoutKickBar()
-
 	PositionKickBar()
 
 	local container = kickBar.Anchor
@@ -655,8 +633,6 @@ end
 
 function M:Init()
 	db = mini:GetSavedVars()
-
-	kickBar.Size = db.Modules.KickTimerModule.Icons.Size
 
 	CreateKickBar()
 
@@ -692,10 +668,10 @@ function M:Init()
 end
 
 ---@class KickBar
+---@field Container IconSlotContainer?
 ---@field Anchor table?
----@field Icons table
----@field Size number
----@field Spacing number
+---@field ActiveSlots table<number, {Key: number, Timer: table}>
+---@field MaxSlots number
 
 ---@class EnemyLastCastState
 ---@field Time number?
