@@ -14,8 +14,10 @@ local M = {}
 config.Healer = M
 
 ---@param panel table
----@param options HealerOptions
+---@param options HealerCcModuleOptions
 function M:Build(panel, options)
+	local db = mini:GetSavedVars()
+
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
@@ -25,69 +27,84 @@ function M:Build(panel, options)
 
 	lines:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
-	local enabledChk = mini:Checkbox({
+	local enabledDivider = mini:Divider({
 		Parent = panel,
-		LabelText = "Enabled",
-		Tooltip = "Whether to enable or disable this module.",
+		Text = "Enable in:",
+	})
+	enabledDivider:SetPoint("LEFT", panel, "LEFT")
+	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
+	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
+
+	local enabledEverywhere = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Everywhere",
+		Tooltip = "Enable this module everywhere",
 		GetValue = function()
-			return options.Enabled
+			return db.Modules.HealerCcModule.Enabled.Always
 		end,
 		SetValue = function(value)
-			options.Enabled = value
-
+			db.Modules.HealerCcModule.Enabled.Always = value
 			config:Apply()
 		end,
 	})
 
-	enabledChk:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 0, -verticalSpacing)
+	enabledEverywhere:SetPoint("TOPLEFT", enabledDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	local arenaChk = mini:Checkbox({
+	local enabledArena = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Arena",
-		Tooltip = "Enable in arenas.",
+		Tooltip = "Enable this module in arena",
 		GetValue = function()
-			return options.Filters.Arena
+			return db.Modules.HealerCcModule.Enabled.Arena
 		end,
 		SetValue = function(value)
-			options.Filters.Arena = value
+			db.Modules.HealerCcModule.Enabled.Arena = value
 			config:Apply()
 		end,
 	})
 
-	arenaChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	arenaChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	enabledArena:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
-	local battlegroudsChk = mini:Checkbox({
+	local enabledRaids = mini:Checkbox({
 		Parent = panel,
-		LabelText = "BGs",
-		Tooltip = "Enable in battlegrounds.",
+		LabelText = "BGS & Raids",
+		Tooltip = "Enable this module in BGs and raids.",
 		GetValue = function()
-			return options.Filters.BattleGrounds
+			return db.Modules.HealerCcModule.Enabled.Raids
 		end,
 		SetValue = function(value)
-			options.Filters.BattleGrounds = value
+			db.Modules.HealerCcModule.Enabled.Raids = value
 			config:Apply()
 		end,
 	})
 
-	battlegroudsChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	battlegroudsChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	enabledRaids:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	enabledRaids:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
-	local worldChk = mini:Checkbox({
+	local enabledDungeons = mini:Checkbox({
 		Parent = panel,
-		LabelText = "World",
-		Tooltip = "Enable in the general overworld.",
+		LabelText = "Dungeons",
+		Tooltip = "Enable this module in dungeons and M+.",
 		GetValue = function()
-			return options.Filters.World
+			return db.Modules.HealerCcModule.Enabled.Dungeons
 		end,
 		SetValue = function(value)
-			options.Filters.World = value
+			db.Modules.HealerCcModule.Enabled.Dungeons = value
 			config:Apply()
 		end,
 	})
 
-	worldChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	worldChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	enabledDungeons:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	enabledDungeons:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
+	local settingsDivider = mini:Divider({
+		Parent = panel,
+		Text = "Settings",
+	})
+	settingsDivider:SetPoint("LEFT", panel, "LEFT")
+	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
+	settingsDivider:SetPoint("TOP", enabledEverywhere, "BOTTOM", 0, -verticalSpacing)
 
 	local glowChk = mini:Checkbox({
 		Parent = panel,
@@ -102,7 +119,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	glowChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	glowChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local reverseChk = mini:Checkbox({
 		Parent = panel,
@@ -117,7 +134,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	if capabilities:HasNewFilters() then
@@ -134,7 +151,7 @@ function M:Build(panel, options)
 			end,
 		})
 
-		soundChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+		soundChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 		soundChk:SetPoint("TOP", reverseChk, "TOP", 0, 0)
 	end
 
@@ -151,7 +168,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	dispelColoursChk:SetPoint("TOPLEFT", arenaChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	dispelColoursChk:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local iconSize = mini:Slider({
 		Parent = panel,
@@ -169,7 +186,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", dispelColoursChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local fontSize = mini:Slider({
 		Parent = panel,

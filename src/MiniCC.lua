@@ -14,7 +14,7 @@ local modules = {
 	addon.Modules.NameplatesModule,
 	addon.Modules.KickTimerModule,
 	addon.Modules.TrinketsModule,
-	addon.Modules.AllyIndicatorModule,
+	addon.Modules.FriendlyIndicatorModule,
 }
 local eventsFrame
 local db
@@ -88,6 +88,7 @@ local function OnAddonLoaded()
 	scheduler:Init()
 	frames:Init()
 	instanceOptions:Init()
+	addon.Utils.ModuleUtil:Init()
 
 	for _, module in ipairs(modules) do
 		module:Init()
@@ -116,7 +117,7 @@ function addon:Refresh()
 	end
 end
 
----@param options InstanceOptions?
+---@param options CcInstanceOptions?
 function addon:ToggleTest(options)
 	if testModeManager:IsActive() then
 		testModeManager:StopTesting()
@@ -131,7 +132,7 @@ function addon:ToggleTest(options)
 	end
 end
 
----@param options InstanceOptions
+---@param options CcInstanceOptions
 function addon:TestWithOptions(options)
 	if not testModeManager:IsActive() then
 		testModeManager:StartTesting(options)
@@ -151,8 +152,8 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Config Config
 ---@field Modules Modules
 ---@field Refresh fun(self: table)
----@field ToggleTest fun(self: table, options: InstanceOptions)
----@field TestWithOptions fun(self: table, options: InstanceOptions)
+---@field ToggleTest fun(self: table, options: CcInstanceOptions)
+---@field TestWithOptions fun(self: table, options: CcInstanceOptions)
 
 ---@class Utils
 ---@field CcUtil CcUtil
@@ -160,13 +161,16 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Units UnitUtil
 ---@field Array ArrayUtil
 ---@field SpellCache SpellCache
+---@field FontUtil FontUtil
+---@field ModuleUtil ModuleUtil
+---@field ModuleName ModuleName
 
 ---@class Core
 ---@field Framework MiniFramework
 ---@field Frames Frames
 ---@field UnitAuraWatcher UnitAuraWatcher
 ---@field IconSlotContainer IconSlotContainer
----@field InstanceOptions InstanceOptions
+---@field InstanceOptions CcInstanceOptions
 
 ---@class Modules
 ---@field TestModeManager TestModeManager
@@ -177,7 +181,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field AlertsModule AlertsModule
 ---@field CcModule CcModule
 ---@field TrinketsModule TrinketsModule
----@field AllyIndicatorModule AllyIndicatorModule
+---@field FriendlyIndicatorModule FriendlyIndicatorModule
 
 ---@class IModule
 ---@field Init fun(self: IModule) Initialises the module to be ready for use.

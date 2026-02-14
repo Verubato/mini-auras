@@ -3,10 +3,12 @@ local _, addon = ...
 local instanceOptions = addon.Core.InstanceOptions
 local frames = addon.Core.Frames
 local units = addon.Utils.Units
-local IconSlotContainer = addon.Core.IconSlotContainer
-local UnitAuraWatcher = addon.Core.UnitAuraWatcher
+local iconSlotContainer = addon.Core.IconSlotContainer
+local unitAuraWatcher = addon.Core.UnitAuraWatcher
 local capabilities = addon.Capabilities
 local spellCache = addon.Utils.SpellCache
+local moduleUtil = addon.Utils.ModuleUtil
+local moduleName = addon.Utils.ModuleName
 local eventsFrame
 local paused = false
 local testModeActive = false
@@ -37,7 +39,7 @@ local function UpdateWatcherAuras(entry)
 	end
 
 	local options = instanceOptions:GetInstanceOptions()
-	if not options or not options.Enabled then
+	if not options or not moduleUtil:IsModuleEnabled(moduleName.CC) then
 		return
 	end
 
@@ -121,8 +123,8 @@ local function EnsureWatcher(anchor, unit)
 		local count = options.Icons.Count or 5
 		local size = tonumber(options.Icons.Size) or 32
 		local spacing = 2
-		local container = IconSlotContainer:New(UIParent, count, size, spacing)
-		local watcher = UnitAuraWatcher:New(unit, nil, { CC = true })
+		local container = iconSlotContainer:New(UIParent, count, size, spacing)
+		local watcher = unitAuraWatcher:New(unit, nil, { CC = true })
 
 		watcher:RegisterCallback(OnAuraStateUpdated)
 
@@ -138,7 +140,7 @@ local function EnsureWatcher(anchor, unit)
 		if entry.Unit ~= unit then
 			-- Unit changed, recreate the watcher
 			entry.Watcher:Dispose()
-			entry.Watcher = UnitAuraWatcher:New(unit, nil, { CC = true })
+			entry.Watcher = unitAuraWatcher:New(unit, nil, { CC = true })
 			entry.Watcher:RegisterCallback(OnAuraStateUpdated)
 			entry.Unit = unit
 
@@ -155,7 +157,7 @@ local function EnsureWatcher(anchor, unit)
 
 	UpdateWatcherAuras(entry)
 	M:AnchorContainer(entry.Container, anchor, options)
-	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, options)
+	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, options.ExcludePlayer)
 
 	return entry
 end
@@ -185,7 +187,7 @@ local function OnCufUpdateVisible(frame)
 		return
 	end
 
-	frames:ShowHideFrame(entry.Container.Frame, frame, false, options)
+	frames:ShowHideFrame(entry.Container.Frame, frame, false, options.ExcludePlayer)
 end
 
 local function OnCufSetUnit(frame, unit)
@@ -218,7 +220,7 @@ end
 
 ---@param header IconSlotContainer
 ---@param anchor table
----@param options InstanceOptions
+---@param options CcInstanceOptions
 function M:AnchorContainer(header, anchor, options)
 	if not options then
 		return
@@ -293,7 +295,7 @@ local function RefreshTestIcons()
 
 		-- Anchor and show/hide based on anchor visibility
 		M:AnchorContainer(container, anchor, options)
-		frames:ShowHideFrame(container.Frame, anchor, true, options)
+		frames:ShowHideFrame(container.Frame, anchor, true, options.ExcludePlayer)
 	end
 end
 
@@ -318,8 +320,10 @@ function M:Refresh()
 		return
 	end
 
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CC)
+
 	-- If disabled, hide everything and return
-	if not options.Enabled then
+	if not moduleEnabled then
 		M:Hide()
 		return
 	end
@@ -336,7 +340,7 @@ function M:Refresh()
 		end
 
 		M:AnchorContainer(container, anchor, options)
-		frames:ShowHideFrame(container.Frame, anchor, testModeActive, options)
+		frames:ShowHideFrame(container.Frame, anchor, testModeActive, options.ExcludePlayer)
 	end
 
 	if testModeActive then

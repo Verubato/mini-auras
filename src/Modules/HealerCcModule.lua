@@ -8,6 +8,8 @@ local unitWatcher = addon.Core.UnitAuraWatcher
 local units = addon.Utils.Units
 local ccUtil = addon.Utils.CcUtil
 local spellCache = addon.Utils.SpellCache
+local moduleUtil = addon.Utils.ModuleUtil
+local ModuleName = addon.Utils.ModuleName
 local paused = false
 local testModeActive = false
 local previousTestSoundEnabled = false
@@ -42,7 +44,7 @@ local M = {}
 addon.Modules.HealerCcModule = M
 
 local function PlaySound()
-	PlaySoundFile(soundFile, db.Healer.Sound.Channel or "Master")
+	PlaySoundFile(soundFile, db.Modules.HealerCcModule.Sound.Channel or "Master")
 end
 
 local function UpdateAnchorSize()
@@ -50,7 +52,7 @@ local function UpdateAnchorSize()
 		return
 	end
 
-	local options = db.Healer
+	local options = db.Modules.HealerCcModule
 	local iconSize = tonumber(options.Icons.Size) or 32
 	local text = healerAnchor.HealerWarning
 	local stringWidth = text and text:GetStringWidth() or 0
@@ -67,11 +69,11 @@ local function OnAuraStateUpdated()
 		return
 	end
 
-	if not healerAnchor or not iconsContainer then
+	if not healerAnchor or not iconsContainer or not moduleUtil:IsModuleEnabled(ModuleName.HealerCC) then
 		return
 	end
 
-	local options = db.Healer
+	local options = db.Modules.HealerCcModule
 
 	-- Cache config options for performance
 	local hasNewFilters = capabilities:HasNewFilters()
@@ -128,7 +130,7 @@ local function OnAuraStateUpdated()
 	local isCcdAlpha = ccUtil:IsCcAppliedAlpha(allCcAuraData)
 	healerAnchor:SetAlpha(isCcdAlpha)
 
-	if db.Healer.Sound.Enabled and not mini:IsSecret(isCcdAlpha) then
+	if db.Modules.HealerCcModule.Sound.Enabled and not mini:IsSecret(isCcdAlpha) then
 		if isCcdAlpha == 1 and lastCcdAlpha ~= isCcdAlpha then
 			PlaySound()
 		end
@@ -215,7 +217,7 @@ local function RefreshHealers()
 end
 
 local function RefreshTestFrame()
-	local options = db.Healer
+	local options = db.Modules.HealerCcModule
 
 	if not iconsContainer or not options then
 		return
@@ -298,7 +300,8 @@ function M:Refresh()
 		return
 	end
 
-	local options = db.Healer
+	local options = db.Modules.HealerCcModule
+	local moduleEnabled = moduleUtil:IsModuleEnabled(ModuleName.HealerCC)
 
 	healerAnchor:ClearAllPoints()
 	healerAnchor:SetPoint(
@@ -314,7 +317,7 @@ function M:Refresh()
 	iconsContainer:SetIconSize(tonumber(options.Icons.Size) or 32)
 
 	if testModeActive then
-		if not options.Enabled then
+		if not moduleEnabled then
 			healerAnchor:SetAlpha(0)
 			return
 		end
@@ -335,24 +338,7 @@ function M:Refresh()
 		return
 	end
 
-	if not options.Enabled then
-		DisableAll()
-		return
-	end
-
-	local inInstance, instanceType = IsInInstance()
-
-	if instanceType == "arena" and not options.Filters.Arena then
-		DisableAll()
-		return
-	end
-
-	if instanceType == "pvp" and not options.Filters.BattleGrounds then
-		DisableAll()
-		return
-	end
-
-	if not inInstance and not options.Filters.World then
+	if not moduleEnabled then
 		DisableAll()
 		return
 	end
@@ -363,7 +349,7 @@ end
 function M:Init()
 	db = mini:GetSavedVars()
 
-	previousTestSoundEnabled = db.Healer.Sound.Enabled
+	previousTestSoundEnabled = db.Modules.HealerCcModule.Sound.Enabled
 
 	-- Initialize test spells
 	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
@@ -372,7 +358,7 @@ function M:Init()
 	local multipleTestSpells = { kidneyShot, fear, hex }
 	testSpells = capabilities:HasNewFilters() and multipleTestSpells or { kidneyShot }
 
-	local options = db.Healer
+	local options = db.Modules.HealerCcModule
 
 	healerAnchor = CreateFrame("Frame", addonName .. "HealerContainer")
 	healerAnchor:EnableMouse(false)
@@ -387,11 +373,11 @@ function M:Init()
 		anchorSelf:StopMovingOrSizing()
 
 		local point, relativeTo, relativePoint, x, y = anchorSelf:GetPoint()
-		db.Healer.Point = point
-		db.Healer.RelativePoint = relativePoint
-		db.Healer.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
-		db.Healer.Offset.X = x
-		db.Healer.Offset.Y = y
+		db.Modules.HealerCcModule.Point = point
+		db.Modules.HealerCcModule.RelativePoint = relativePoint
+		db.Modules.HealerCcModule.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
+		db.Modules.HealerCcModule.Offset.X = x
+		db.Modules.HealerCcModule.Offset.Y = y
 	end)
 
 	local text = healerAnchor:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")

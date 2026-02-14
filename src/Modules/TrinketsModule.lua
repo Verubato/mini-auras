@@ -4,6 +4,8 @@ local mini = addon.Core.Framework
 local frames = addon.Core.Frames
 local spellCache = addon.Utils.SpellCache
 local fontUtil = addon.Utils.FontUtil
+local moduleUtil = addon.Utils.ModuleUtil
+local moduleName = addon.Utils.ModuleName
 local eventFrame
 local enabled = false
 local paused = false
@@ -14,7 +16,7 @@ local defaultTrinketIcon
 local watchers = {}
 ---@type Db
 local db
----@type TrinketsOptions
+---@type TrinketsModuleOptions
 local options
 
 ---@class TrinketsModule : IModule
@@ -321,7 +323,8 @@ local function RefreshAll()
 end
 
 local function UpdateVisibility()
-	local show = options.Enabled and (IsInArena() or testModeActive)
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Trinkets)
+	local show = moduleEnabled and (IsInArena() or testModeActive)
 
 	for _, watcher in pairs(watchers) do
 		if watcher.Icon then
@@ -470,13 +473,15 @@ function M:Disable()
 end
 
 function M:Refresh()
-	if options.Enabled and not enabled then
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Trinkets)
+
+	if moduleEnabled and not enabled then
 		M:Enable()
-	elseif not options.Enabled and enabled then
+	elseif not moduleEnabled and enabled then
 		M:Disable()
 	end
 
-	if not options.Enabled then
+	if not moduleEnabled then
 		ClearAll()
 
 		for _, watcher in pairs(watchers) do
@@ -489,8 +494,11 @@ function M:Refresh()
 
 	RebuildAnchors()
 	UpdateVisibility()
-	RequestAll()
-	RefreshAll()
+
+	if moduleEnabled and IsInArena() then
+		RequestAll()
+		RefreshAll()
+	end
 
 	for _, watcher in pairs(watchers) do
 		if watcher.Icon then
@@ -505,7 +513,7 @@ end
 
 function M:Init()
 	db = mini:GetSavedVars()
-	options = db.Trinkets
+	options = db.Modules.TrinketsModule
 
 	defaultTrinketIcon = GetSpellTexture(defaultSpellId)
 

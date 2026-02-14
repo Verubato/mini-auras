@@ -25,10 +25,10 @@ function M:Build()
 		LabelText = "Enabled",
 		Tooltip = "Whether to enable or disable this module.",
 		GetValue = function()
-			return db.Trinkets.Enabled
+			return db.Modules.TrinketsModule.Enabled.Always
 		end,
 		SetValue = function(value)
-			db.Trinkets.Enabled = value
+			db.Modules.TrinketsModule.Enabled.Always = value
 			config:Apply()
 		end,
 	})
@@ -39,10 +39,10 @@ function M:Build()
 		Parent = panel,
 		LabelText = "Icon Size",
 		GetValue = function()
-			return db.Trinkets.Icons.Size
+			return db.Modules.TrinketsModule.Icons.Size
 		end,
 		SetValue = function(value)
-			db.Trinkets.Icons.Size = mini:ClampInt(value, 20, 120, 50)
+			db.Modules.TrinketsModule.Icons.Size = mini:ClampInt(value, 20, 120, 50)
 			config:Apply()
 		end,
 		Width = columns * columnWidth - horizontalSpacing,
@@ -57,10 +57,10 @@ function M:Build()
 		Parent = panel,
 		LabelText = "Offset X",
 		GetValue = function()
-			return db.Trinkets.Offset.X
+			return db.Modules.TrinketsModule.Offset.X
 		end,
 		SetValue = function(value)
-			db.Trinkets.Offset.X = mini:ClampInt(value, -200, 200, 0)
+			db.Modules.TrinketsModule.Offset.X = mini:ClampInt(value, -200, 200, 0)
 			config:Apply()
 		end,
 		Width = (columns / 2) * columnWidth - horizontalSpacing,
@@ -75,10 +75,10 @@ function M:Build()
 		Parent = panel,
 		LabelText = "Offset Y",
 		GetValue = function()
-			return db.Trinkets.Offset.Y
+			return db.Modules.TrinketsModule.Offset.Y
 		end,
 		SetValue = function(value)
-			db.Trinkets.Offset.Y = mini:ClampInt(value, -200, 200, 0)
+			db.Modules.TrinketsModule.Offset.Y = mini:ClampInt(value, -200, 200, 0)
 			config:Apply()
 		end,
 		Width = (columns / 2) * columnWidth - horizontalSpacing,
@@ -106,7 +106,7 @@ function M:Build()
 	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
 	testBtn:SetText("Test")
 	testBtn:SetScript("OnClick", function()
-		local options = db.Default
+		local options = db.Modules.CcModule.Default
 
 		addon:ToggleTest(options)
 	end)

@@ -9,7 +9,7 @@ local alertsModule = addon.Modules.AlertsModule
 local nameplateModule = addon.Modules.NameplatesModule
 local kickTimerModule = addon.Modules.KickTimerModule
 local trinketsModule = addon.Modules.TrinketsModule
-local allyIndicatorModule = addon.Modules.AllyIndicatorModule
+local friendlyIndicatorModule = addon.Modules.FriendlyIndicatorModule
 local active = false
 
 ---@class TestModeManager
@@ -42,12 +42,12 @@ function M:StopTesting()
 	nameplateModule:StopTesting()
 	kickTimerModule:StopTesting()
 	trinketsModule:StopTesting()
-	allyIndicatorModule:StopTesting()
+	friendlyIndicatorModule:StopTesting()
 
 	active = false
 end
 
----@param options InstanceOptions?
+---@param options CcInstanceOptions?
 function M:StartTesting(options)
 	if active then
 		return
@@ -90,7 +90,7 @@ function M:StartTesting(options)
 	nameplateModule:StartTesting()
 	kickTimerModule:StartTesting()
 	trinketsModule:StartTesting()
-	allyIndicatorModule:StartTesting()
+	friendlyIndicatorModule:StartTesting()
 end
 
 function M:Init() end

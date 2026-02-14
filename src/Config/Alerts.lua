@@ -13,8 +13,10 @@ local M = {}
 config.Alerts = M
 
 ---@param panel table
----@param options AlertOptions
+---@param options AlertsModuleOptions
 function M:Build(panel, options)
+	local db = mini:GetSavedVars()
+
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
@@ -27,13 +29,12 @@ function M:Build(panel, options)
 	local enabledChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Enabled",
-		Tooltip = "Whether to enable or disable this module.",
+		Tooltip = "Enable this module everywhere.",
 		GetValue = function()
-			return options.Enabled
+			return db.Modules.AlertsModule.Enabled.Always
 		end,
 		SetValue = function(value)
-			options.Enabled = value
-
+			db.Modules.AlertsModule.Enabled.Always = value
 			config:Apply()
 		end,
 	})
@@ -43,8 +44,9 @@ function M:Build(panel, options)
 	local includeDefensivesChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Include Defensives",
-		Tooltip = "Includes 'big defensives' (e.g. ice block, cloak of shadows) in the alerts.",
+		Tooltip = "Includes defensives in the alerts.",
 		GetValue = function()
+			-- TODO: refactor this to just "IncludeDefensives" as it also includes externals
 			return options.IncludeBigDefensives
 		end,
 		SetValue = function(value)
@@ -53,8 +55,8 @@ function M:Build(panel, options)
 		end,
 	})
 
-	includeDefensivesChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	includeDefensivesChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	includeDefensivesChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 
 	local glowChk = mini:Checkbox({
 		Parent = panel,

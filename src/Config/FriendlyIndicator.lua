@@ -13,13 +13,13 @@ local columns = 4
 local columnWidth = mini:ColumnWidth(columns, 0, 0)
 local config = addon.Config
 
----@class AllyIndicatorConfig
+---@class FriendlyIndicatorConfig
 local M = {}
 
-config.AllyIndicator = M
+config.FriendlyIndicator = M
 
 ---@param parent table
----@param options AllyIndicatorOptions
+---@param options FriendlyIndicatorModuleOptions
 local function BuildAnchorSettings(parent, options)
 	local panel = CreateFrame("Frame", nil, parent)
 
@@ -87,32 +87,106 @@ local function BuildAnchorSettings(parent, options)
 end
 
 ---@param panel table
----@param options AllyIndicatorOptions
+---@param options FriendlyIndicatorModuleOptions
 function M:Build(panel, options)
-	local anchorPanel = BuildAnchorSettings(panel, options)
+	local db = mini:GetSavedVars()
 
-	local intro = mini:TextLine({
+	local lines = mini:TextBlock({
 		Parent = panel,
-		Text = "Don't forget to disable the Blizzard 'center big defensives' option when using this."
+		Lines = {
+			"Shows active friendly cooldowns party/raid frames.",
+		},
 	})
 
-	intro:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	lines:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
-	local enabledChk = mini:Checkbox({
+	local enabledDivider = mini:Divider({
 		Parent = panel,
-		LabelText = "Enabled",
-		Tooltip = "Shows active defensive and important cooldowns on raid frames.\n\nPriority: Defensive -> Important\nShows only 1 icon at a time.",
+		Text = "Enable in:",
+	})
+	enabledDivider:SetPoint("LEFT", panel, "LEFT")
+	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
+	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
+
+	local enabledEverywhere = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Everywhere",
+		Tooltip = "Enable this module everywhere.",
 		GetValue = function()
-			return options.Enabled
+			return db.Modules.FriendlyIndicatorModule.Enabled.Always
 		end,
 		SetValue = function(value)
-			options.Enabled = value
-
+			db.Modules.FriendlyIndicatorModule.Enabled.Always = value
 			config:Apply()
 		end,
 	})
 
-	enabledChk:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -verticalSpacing)
+	enabledEverywhere:SetPoint("TOPLEFT", enabledDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local enabledArena = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Arena",
+		Tooltip = "Enable this module in arena.",
+		GetValue = function()
+			return db.Modules.FriendlyIndicatorModule.Enabled.Arena
+		end,
+		SetValue = function(value)
+			db.Modules.FriendlyIndicatorModule.Enabled.Arena = value
+			config:Apply()
+		end,
+	})
+
+	enabledArena:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
+	local enabledRaids = mini:Checkbox({
+		Parent = panel,
+		LabelText = "BGS & Raids",
+		Tooltip = "Enable this module in BGs and raids.",
+		GetValue = function()
+			return db.Modules.FriendlyIndicatorModule.Enabled.Raids
+		end,
+		SetValue = function(value)
+			db.Modules.FriendlyIndicatorModule.Enabled.Raids = value
+			config:Apply()
+		end,
+	})
+
+	enabledRaids:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	enabledRaids:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
+	local enabledDungeons = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Dungeons",
+		Tooltip = "Enable this module in dungeons and M+.",
+		GetValue = function()
+			return db.Modules.FriendlyIndicatorModule.Enabled.Dungeons
+		end,
+		SetValue = function(value)
+			db.Modules.FriendlyIndicatorModule.Enabled.Dungeons = value
+			config:Apply()
+		end,
+	})
+
+	enabledDungeons:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	enabledDungeons:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
+	local settingsDivider = mini:Divider({
+		Parent = panel,
+		Text = "Settings",
+	})
+	settingsDivider:SetPoint("LEFT", panel, "LEFT")
+	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
+	settingsDivider:SetPoint("TOP", enabledDungeons, "BOTTOM", 0, -verticalSpacing)
+
+	local anchorPanel = BuildAnchorSettings(panel, options)
+
+	local intro = mini:TextLine({
+		Parent = panel,
+		Text = "Don't forget to disable the Blizzard 'center big defensives' option when using this.",
+	})
+
+	intro:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	local excludePlayerChk = mini:Checkbox({
 		Parent = panel,
@@ -127,8 +201,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	excludePlayerChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	excludePlayerChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	excludePlayerChk:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local glowChk = mini:Checkbox({
 		Parent = panel,
@@ -143,8 +216,8 @@ function M:Build(panel, options)
 		end,
 	})
 
-	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	glowChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	glowChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
 
 	local reverseChk = mini:Checkbox({
 		Parent = panel,
@@ -159,8 +232,8 @@ function M:Build(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	reverseChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	reverseChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
 
 	local iconSize = mini:Slider({
 		Parent = panel,
@@ -178,7 +251,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)

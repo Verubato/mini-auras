@@ -5,21 +5,23 @@ local testInstanceOptions
 ---@type Db
 local db
 
----@class InstanceOptions
+---@class CcInstanceOptions
 local M = {}
 
 addon.Core.InstanceOptions = M
 
+---@return CcInstanceOptions?
 function M:GetInstanceOptions()
-	local inInstance, instanceType = IsInInstance()
-	local isBgOrRaid = inInstance and (instanceType == "pvp" or instanceType == "raid")
-	return isBgOrRaid and db.Raid or db.Default
+	local members = GetNumGroupMembers()
+	return members > 5 and db.Modules.CcModule.Raid or db.Modules.CcModule.Default
 end
 
+---@return CcInstanceOptions?
 function M:GetTestInstanceOptions()
 	return testInstanceOptions
 end
 
+---@param options CcInstanceOptions?
 function M:SetTestInstanceOptions(options)
 	testInstanceOptions = options
 end

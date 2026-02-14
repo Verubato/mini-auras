@@ -8,308 +8,329 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 17,
+	Version = 25,
 	WhatsNew = {},
-
 	NotifiedChanges = true,
-
-	---@class InstanceOptions : HeaderOptions
-	Default = {
-		Enabled = true,
-		ExcludePlayer = false,
-
-		-- TODO: after a few patches once people have moved over, remove simple/advanced mode into just one single mode
-		SimpleMode = {
-			Enabled = true,
-			Offset = {
-				X = 2,
-				Y = 0,
+	Modules = {
+		---@class CcModuleOptions
+		CcModule = {
+			Enabled = {
+				Always = true,
+				Arena = false,
+				Raids = false,
+				Dungeons = false,
 			},
-			Grow = "RIGHT",
-		},
 
-		AdvancedMode = {
-			Point = "TOPLEFT",
-			RelativePoint = "TOPRIGHT",
-			Offset = {
-				X = 2,
-				Y = 0,
+			---@class CcInstanceOptions
+			Default = {
+				ExcludePlayer = false,
+
+				-- TODO: after a few patches once people have moved over, remove simple/advanced mode into just one single mode
+				SimpleMode = {
+					Enabled = true,
+					Offset = {
+						X = 2,
+						Y = 0,
+					},
+					Grow = "RIGHT",
+				},
+
+				AdvancedMode = {
+					Point = "TOPLEFT",
+					RelativePoint = "TOPRIGHT",
+					Offset = {
+						X = 2,
+						Y = 0,
+					},
+				},
+
+				Icons = {
+					Size = 50,
+					Glow = true,
+					ReverseCooldown = true,
+					ColorByDispelType = true,
+				},
+			},
+
+			---@type CcInstanceOptions
+			Raid = {
+				ExcludePlayer = false,
+
+				SimpleMode = {
+					Enabled = true,
+					Offset = {
+						X = 2,
+						Y = 0,
+					},
+					Grow = "CENTER",
+				},
+
+				AdvancedMode = {
+					Point = "TOPLEFT",
+					RelativePoint = "TOPRIGHT",
+					Offset = {
+						X = 2,
+						Y = 0,
+					},
+				},
+
+				Icons = {
+					Size = 50,
+					Glow = true,
+					ReverseCooldown = true,
+					ColorByDispelType = true,
+				},
 			},
 		},
+		---@class HealerCcModuleOptions
+		HealerCcModule = {
+			Enabled = {
+				Always = true,
+				Arena = false,
+				Raids = false,
+				Dungeons = false,
+			},
 
-		Icons = {
-			Size = 50,
-			Glow = true,
+			Sound = {
+				Enabled = true,
+				Channel = "Master",
+			},
+
+			Point = "CENTER",
+			RelativePoint = "TOP",
+			RelativeTo = "UIParent",
+			Offset = {
+				X = 0,
+				Y = -200,
+			},
+
+			Icons = {
+				Size = 72,
+				Glow = true,
+				ReverseCooldown = true,
+				ColorByDispelType = true,
+			},
+
+			Font = {
+				File = "Fonts\\FRIZQT__.TTF",
+				Size = 32,
+				Flags = "OUTLINE",
+			},
+		},
+		---@class PortraitModuleOptions
+		PortraitModule = {
+			Enabled = {
+				Always = true,
+			},
+
 			ReverseCooldown = true,
-			ColorByDispelType = true,
 		},
-	},
+		---@class AlertsModuleOptions
+		AlertsModule = {
+			Enabled = {
+				Always = true,
+			},
 
-	Raid = {
-		Enabled = true,
-		ExcludePlayer = false,
+			IncludeBigDefensives = true,
+			Point = "CENTER",
+			RelativePoint = "TOP",
+			RelativeTo = "UIParent",
 
-		SimpleMode = {
-			Enabled = true,
 			Offset = {
-				X = 2,
+				X = 0,
+				Y = -100,
+			},
+
+			Icons = {
+				Size = 72,
+				Glow = true,
+				ReverseCooldown = true,
+				ColorByClass = true,
+			},
+		},
+		---@class NameplateModuleOptions
+		NameplatesModule = {
+			Enabled = {
+				Always = true,
+				Arena = false,
+				Raids = false,
+				Dungeons = false,
+			},
+
+			---@class NameplateFactionOptions
+			Friendly = {
+				IgnorePets = true,
+				---@class NameplateSpellTypeOptions
+				CC = {
+					Enabled = false,
+					Grow = "RIGHT",
+					Offset = {
+						X = 2,
+						Y = 0,
+					},
+
+					Icons = {
+						Size = 50,
+						Glow = true,
+						ReverseCooldown = true,
+						ColorByDispelType = true,
+						MaxIcons = 5,
+					},
+				},
+				Important = {
+					Enabled = false,
+					Grow = "LEFT",
+					Offset = {
+						X = -2,
+						Y = 0,
+					},
+
+					Icons = {
+						Size = 50,
+						Glow = true,
+						ReverseCooldown = true,
+						ColorByDispelType = true,
+						MaxIcons = 5,
+					},
+				},
+				Combined = {
+					Enabled = false,
+					Grow = "RIGHT",
+					Offset = {
+						X = 2,
+						Y = 0,
+					},
+
+					Icons = {
+						Size = 50,
+						Glow = true,
+						ReverseCooldown = true,
+						ColorByDispelType = true,
+						MaxIcons = 5,
+					},
+				},
+			},
+			Enemy = {
+				IgnorePets = true,
+				CC = {
+					Enabled = true,
+					Grow = "RIGHT",
+					Offset = {
+						X = 2,
+						Y = 0,
+					},
+
+					Icons = {
+						Size = 50,
+						Glow = true,
+						ReverseCooldown = true,
+						ColorByDispelType = true,
+						MaxIcons = 5,
+					},
+				},
+				Important = {
+					Enabled = true,
+					Grow = "LEFT",
+					Offset = {
+						X = -2,
+						Y = 0,
+					},
+
+					Icons = {
+						Size = 50,
+						Glow = true,
+						ColorByDispelType = true,
+						MaxIcons = 5,
+					},
+				},
+				Combined = {
+					Enabled = false,
+					Grow = "RIGHT",
+					Offset = {
+						X = 2,
+						Y = 0,
+					},
+
+					Icons = {
+						Size = 50,
+						Glow = true,
+						ReverseCooldown = true,
+						ColorByDispelType = true,
+						MaxIcons = 5,
+					},
+				},
+			},
+		},
+		---@class KickTimerModuleOptions
+		KickTimerModule = {
+			Enabled = {
+				Always = false,
+				Caster = true,
+				Healer = true,
+			},
+
+			Point = "CENTER",
+			RelativeTo = "UIParent",
+			RelativePoint = "CENTER",
+			Offset = {
+				X = 0,
+				Y = -200,
+			},
+
+			Icons = {
+				Size = 50,
+				Glow = false,
+				ReverseCooldown = true,
+			},
+		},
+		---@class TrinketsModuleOptions
+		TrinketsModule = {
+			Enabled = {
+				Always = true,
+			},
+
+			Point = "RIGHT",
+			RelativePoint = "LEFT",
+			Offset = {
+				X = -2,
+				Y = 0,
+			},
+
+			Icons = {
+				Size = 50,
+				Glow = false,
+				ReverseCooldown = false,
+				ShowText = true,
+			},
+
+			Font = {
+				File = "GameFontHighlightSmall",
+			},
+		},
+		---@class FriendlyIndicatorModuleOptions
+		FriendlyIndicatorModule = {
+			Enabled = {
+				Always = true,
+				Arena = false,
+				Raids = false,
+				Dungeons = false,
+			},
+
+			ExcludePlayer = false,
+
+			Offset = {
+				X = 0,
 				Y = 0,
 			},
 			Grow = "CENTER",
-		},
 
-		AdvancedMode = {
-			Point = "TOPLEFT",
-			RelativePoint = "TOPRIGHT",
-			Offset = {
-				X = 2,
-				Y = 0,
-			},
-		},
-
-		Icons = {
-			Size = 50,
-			Glow = true,
-			ReverseCooldown = true,
-			ColorByDispelType = true,
-		},
-	},
-
-	---@class AllyIndicatorOptions : HeaderOptions
-	AllyIndicator = {
-		Enabled = true,
-		ExcludePlayer = false,
-
-		Offset = {
-			X = 0,
-			Y = 0,
-		},
-		Grow = "CENTER",
-
-		Icons = {
-			Size = 40,
-			Glow = true,
-			ReverseCooldown = true,
-		},
-	},
-
-	---@class HealerOptions
-	Healer = {
-		Enabled = false,
-		Sound = {
-			Enabled = true,
-			Channel = "Master",
-		},
-
-		Point = "CENTER",
-		RelativePoint = "TOP",
-		RelativeTo = "UIParent",
-		Offset = {
-			X = 0,
-			Y = -200,
-		},
-
-		Icons = {
-			Size = 72,
-			Glow = true,
-			ReverseCooldown = true,
-			ColorByDispelType = true,
-		},
-
-		Filters = {
-			Arena = true,
-			BattleGrounds = false,
-			World = true,
-		},
-
-		Font = {
-			File = "Fonts\\FRIZQT__.TTF",
-			Size = 32,
-			Flags = "OUTLINE",
-		},
-	},
-
-	---@class AlertOptions
-	Alerts = {
-		Enabled = true,
-		IncludeBigDefensives = true,
-		Point = "CENTER",
-		RelativePoint = "TOP",
-		RelativeTo = "UIParent",
-
-		Offset = {
-			X = 0,
-			Y = -100,
-		},
-
-		Icons = {
-			Size = 72,
-			Glow = true,
-			ReverseCooldown = true,
-			ColorByClass = true,
-		},
-	},
-
-	---@class NameplateOptions
-	Nameplates = {
-		---@class NameplateFactionOptions
-		Friendly = {
-			IgnorePets = true,
-			---@class NameplateSpellTypeOptions
-			CC = {
-				Enabled = false,
-				Grow = "RIGHT",
-				Offset = {
-					X = 2,
-					Y = 0,
-				},
-
-				Icons = {
-					Size = 50,
-					Glow = true,
-					ReverseCooldown = true,
-					ColorByDispelType = true,
-					MaxIcons = 5,
-				},
-			},
-			---@type NameplateSpellTypeOptions
-			Important = {
-				Enabled = false,
-				Grow = "LEFT",
-				Offset = {
-					X = -2,
-					Y = 0,
-				},
-
-				Icons = {
-					Size = 50,
-					Glow = true,
-					ReverseCooldown = true,
-					ColorByDispelType = true,
-					MaxIcons = 5,
-				},
-			},
-			---@type NameplateSpellTypeOptions
-			Combined = {
-				Enabled = false,
-				Grow = "RIGHT",
-				Offset = {
-					X = 2,
-					Y = 0,
-				},
-
-				Icons = {
-					Size = 50,
-					Glow = true,
-					ReverseCooldown = true,
-					ColorByDispelType = true,
-					MaxIcons = 5,
-				},
-			},
-		},
-		Enemy = {
-			IgnorePets = true,
-			CC = {
-				Enabled = true,
-				Grow = "RIGHT",
-				Offset = {
-					X = 2,
-					Y = 0,
-				},
-
-				Icons = {
-					Size = 50,
-					Glow = true,
-					ReverseCooldown = true,
-					ColorByDispelType = true,
-					MaxIcons = 5,
-				},
-			},
-			Important = {
-				Enabled = true,
-				Grow = "LEFT",
-				Offset = {
-					X = -2,
-					Y = 0,
-				},
-
-				Icons = {
-					Size = 50,
-					Glow = true,
-					ColorByDispelType = true,
-					MaxIcons = 5,
-				},
-			},
-			Combined = {
-				Enabled = false,
-				Grow = "RIGHT",
-				Offset = {
-					X = 2,
-					Y = 0,
-				},
-
-				Icons = {
-					Size = 50,
-					Glow = true,
-					ReverseCooldown = true,
-					ColorByDispelType = true,
-					MaxIcons = 5,
-				},
+			Icons = {
+				Size = 40,
+				Glow = true,
+				ReverseCooldown = true,
 			},
 		},
 	},
-
-	Portrait = {
-		Enabled = true,
-		ReverseCooldown = true,
-	},
-
-	---@class KickTimerOptions
-	KickTimer = {
-		CasterEnabled = true,
-		HealerEnabled = true,
-		AllEnabled = false,
-		Point = "CENTER",
-		RelativeTo = "UIParent",
-		RelativePoint = "CENTER",
-		Offset = {
-			X = 0,
-			Y = -200,
-		},
-
-		Icons = {
-			Size = 50,
-			Glow = false,
-			ReverseCooldown = true,
-		},
-	},
-
-	---@class TrinketsOptions
-	Trinkets = {
-		Enabled = true,
-
-		Point = "RIGHT",
-		RelativePoint = "LEFT",
-		Offset = {
-			X = -2,
-			Y = 0,
-		},
-
-		Icons = {
-			Size = 50,
-			Glow = false,
-			ReverseCooldown = false,
-			ShowText = true,
-		},
-
-		Font = {
-			File = "GameFontHighlightSmall",
-		},
-	},
-
-	Anchor1 = "",
-	Anchor2 = "",
-	Anchor3 = "",
 }
 
 local config = {}
@@ -474,6 +495,158 @@ local function GetAndUpgradeDb()
 		vars.Version = 17
 	end
 
+	-- commence massive refactor
+	if vars.Version == 17 then
+		-- Move Default and Raid configs into Modules.CcModule
+		if vars.Default then
+			vars.Modules = vars.Modules or {}
+			vars.Modules.CcModule = vars.Modules.CcModule or {}
+			vars.Modules.CcModule.Default = mini:CopyTable(vars.Default)
+			vars.Modules.CcModule.Default.Enabled = {
+				Always = vars.Default.Enabled,
+				Arena = false,
+				Raids = false,
+				Dungeons = false,
+			}
+			vars.Default = nil
+		end
+
+		if vars.Raid then
+			vars.Modules = vars.Modules or {}
+			vars.Modules.CcModule = vars.Modules.CcModule or {}
+			vars.Modules.CcModule.Raid = mini:CopyTable(vars.Raid)
+			vars.Modules.CcModule.Raid.Enabled = {
+				Always = vars.Raid.Enabled,
+				Arena = false,
+				Raids = false,
+				Dungeons = false,
+			}
+			vars.Raid = nil
+		end
+
+		-- Move AllyIndicator config into Modules.AllyIndicatorModule
+		if vars.AllyIndicator then
+			vars.Modules = vars.Modules or {}
+			vars.Modules.FriendlyIndicatorModule = vars.Modules.FriendlyIndicatorModule or {}
+
+			-- Merge AllyIndicator properties directly into AllyIndicatorModule
+			for key, value in pairs(vars.AllyIndicator) do
+				vars.Modules.FriendlyIndicatorModule[key] = mini:CopyValueOrTable(value)
+			end
+
+			vars.Modules.FriendlyIndicatorModule.Enabled = {
+				Always = vars.AllyIndicator.Enabled,
+				Arena = false,
+				Raids = false,
+				Dungeons = false,
+			}
+			vars.AllyIndicator = nil
+		end
+
+		-- Move Healer config into Modules.HealerCcModule
+		if vars.Healer then
+			vars.Modules = vars.Modules or {}
+			vars.Modules.HealerCcModule = vars.Modules.HealerCcModule or {}
+
+			-- Merge Healer properties directly into HealerCcModule
+			for key, value in pairs(vars.Healer) do
+				vars.Modules.HealerCcModule[key] = mini:CopyValueOrTable(value)
+			end
+
+			vars.Modules.HealerCcModule.Enabled = {
+				Always = vars.Healer.Enabled,
+				Arena = vars.Healer.Filters.Arena,
+				BattleGrounds = vars.Healer.BattleGrounds,
+				Dungeons = vars.Healer.Enabled,
+			}
+
+			vars.Healer = nil
+		end
+
+		-- Move Alerts config into Modules.AlertsModule
+		if vars.Alerts then
+			vars.Modules = vars.Modules or {}
+			vars.Modules.AlertsModule = vars.Modules.AlertsModule or {}
+
+			-- Merge Alerts properties directly into AlertsModule
+			for key, value in pairs(vars.Alerts) do
+				vars.Modules.AlertsModule[key] = mini:CopyValueOrTable(value)
+			end
+
+			vars.Modules.AlertsModule.Enabled = {
+				Always = vars.Alerts.Enabled,
+			}
+			vars.Alerts = nil
+		end
+
+		-- Move Portrait config into Modules.PortraitModule
+		if vars.Portrait then
+			vars.Modules = vars.Modules or {}
+			vars.Modules.PortraitModule = vars.Modules.PortraitModule or {}
+
+			-- Merge Portrait properties directly into PortraitModule
+			for key, value in pairs(vars.Portrait) do
+				vars.Modules.PortraitModule[key] = mini:CopyValueOrTable(value)
+			end
+
+			vars.Modules.PortraitModule.Enabled = {
+				Always = vars.Portrait.Enabled,
+			}
+			vars.Portrait = nil
+		end
+
+		-- Move Nameplates config into Modules.NameplatesModule
+		if vars.Nameplates then
+			vars.Modules = vars.Modules or {}
+			vars.Modules.NameplatesModule = vars.Modules.NameplatesModule or {}
+
+			-- Merge Nameplates properties directly into NameplatesModule
+			for key, value in pairs(vars.Nameplates) do
+				vars.Modules.NameplatesModule[key] = mini:CopyValueOrTable(value)
+			end
+
+			vars.Modules.NameplatesModule.Enabled = {
+				Always = true,
+			}
+			vars.Nameplates = nil
+		end
+
+		-- Move KickTimer config into Modules.KickTimerModule
+		if vars.KickTimer then
+			vars.Modules = vars.Modules or {}
+			vars.Modules.KickTimerModule = vars.Modules.KickTimerModule or {}
+
+			-- Merge KickTimer properties directly into KickTimerModule
+			for key, value in pairs(vars.KickTimer) do
+				vars.Modules.KickTimerModule[key] = mini:CopyValueOrTable(value)
+			end
+
+			vars.Modules.KickTimerModule.Enabled = {
+				Always = vars.KickTimer.AllEnabled,
+				Caster = vars.KickTimer.CasterEnabled,
+				Healer = vars.KickTimer.HealerEnabled,
+			}
+			vars.KickTimer = nil
+		end
+
+		-- Move Trinkets config into Modules.TrinketsModule
+		if vars.Trinkets then
+			vars.Modules = vars.Modules or {}
+			vars.Modules.TrinketsModule = vars.Modules.TrinketsModule or {}
+
+			-- Merge Trinkets properties directly into TrinketsModule
+			for key, value in pairs(vars.Trinkets) do
+				vars.Modules.TrinketsModule[key] = mini:CopyValueOrTable(value)
+			end
+
+			vars.Modules.TrinketsModule.Enabled = { Always = vars.Trinkets.Enabled }
+			vars.Trinkets = nil
+		end
+
+		mini:CleanTable(db, dbDefaults, true, true)
+		vars.Version = 18
+	end
+
 	vars = mini:GetSavedVars(dbDefaults)
 
 	return vars
@@ -547,7 +720,7 @@ function config:Init()
 		Alerts = "Alerts",
 		Healer = "Healer",
 		Nameplates = "Nameplates",
-		Other = "Other",
+		Portraits = "Portraits",
 	}
 
 	local tabs = {
@@ -562,42 +735,42 @@ function config:Init()
 			Key = keys.CC,
 			Title = "CC",
 			Build = function(content)
-				config.CcConfig:Build(content, db.Default, db.Raid)
+				config.CcConfig:Build(content, db.Modules.CcModule.Default, db.Modules.CcModule.Raid)
 			end,
 		},
 		{
 			Key = keys.CDs,
 			Title = "CDs",
 			Build = function(content)
-				config.AllyIndicator:Build(content, db.AllyIndicator)
+				config.FriendlyIndicator:Build(content, db.Modules.FriendlyIndicatorModule)
 			end,
 		},
 		{
 			Key = keys.Alerts,
 			Title = "Alerts",
 			Build = function(content)
-				config.Alerts:Build(content, db.Alerts)
+				config.Alerts:Build(content, db.Modules.AlertsModule)
 			end,
 		},
 		{
 			Key = keys.Healer,
 			Title = "Healer",
 			Build = function(content)
-				config.Healer:Build(content, db.Healer)
+				config.Healer:Build(content, db.Modules.HealerCcModule)
 			end,
 		},
 		{
 			Key = keys.Nameplates,
 			Title = "Nameplates",
 			Build = function(content)
-				config.Nameplates:Build(content, db.Nameplates)
+				config.Nameplates:Build(content, db.Modules.NameplatesModule)
 			end,
 		},
 		{
-			Key = keys.Other,
-			Title = "Other",
+			Key = keys.Portraits,
+			Title = "Portraits",
 			Build = function(content)
-				config.Other:Build(content)
+				config.Portraits:Build(content)
 			end,
 		},
 	}
@@ -617,7 +790,7 @@ function config:Init()
 	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
 	testBtn:SetText("Test")
 	testBtn:SetScript("OnClick", function()
-		local options = db.Default
+		local options = db.Modules.CcModule.Default
 		addon:ToggleTest(options)
 	end)
 
@@ -651,7 +824,7 @@ function config:Init()
 		msg = msg and msg:lower():match("^%s*(.-)%s*$") or ""
 
 		if msg == "test" then
-			addon:ToggleTest(db.Default)
+			addon:ToggleTest(db.Modules.CcModule.Default)
 			return
 		end
 
@@ -680,7 +853,7 @@ end
 ---@field DbDefaults Db
 ---@field TabController TabReturn
 ---@field General GeneralConfig
----@field Other OtherConfig
+---@field Portraits PortraitsConfig
 ---@field CcConfig CcConfig
 ---@field Anchors AnchorsConfig
 ---@field Healer HealerConfig
@@ -689,10 +862,9 @@ end
 ---@field KickTimer KickTimerConfig
 ---@field Trinkets TrinketsConfig
 ---@field OtherAddons OtherAddonsConfig
----@field AllyIndicator AllyIndicatorConfig
+---@field FriendlyIndicator FriendlyIndicatorConfig
 
 ---@class HeaderOptions
----@field Enabled boolean
 ---@field ExcludePlayer boolean
 
 ---@class IconOptions

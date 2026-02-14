@@ -6,10 +6,12 @@ local units = addon.Utils.Units
 local iconSlotContainer = addon.Core.IconSlotContainer
 local UnitAuraWatcher = addon.Core.UnitAuraWatcher
 local spellCache = addon.Utils.SpellCache
+local moduleUtil = addon.Utils.ModuleUtil
+local moduleName = addon.Utils.ModuleName
 local eventsFrame
 local paused = false
 local testModeActive = false
----@type table<table, AllyIndicatorWatchEntry>
+---@type table<table, FriendlyIndicatorWatchEntry>
 local watchers = {}
 ---@type TestSpell[]
 local testDefensiveSpells = {}
@@ -18,18 +20,18 @@ local testImportantSpells = {}
 ---@type Db
 local db
 
----@class AllyIndicatorModule : IModule
+---@class FriendlyIndicatorModule : IModule
 local M = {}
 
-addon.Modules.AllyIndicatorModule = M
+addon.Modules.FriendlyIndicatorModule = M
 
----@class AllyIndicatorWatchEntry
+---@class FriendlyIndicatorWatchEntry
 ---@field Container IconSlotContainer
 ---@field Watcher Watcher
 ---@field Anchor table
 ---@field Unit string
 
----@param entry AllyIndicatorWatchEntry
+---@param entry FriendlyIndicatorWatchEntry
 local function UpdateWatcherAuras(entry)
 	if not entry or not entry.Watcher or not entry.Container then
 		return
@@ -43,8 +45,8 @@ local function UpdateWatcherAuras(entry)
 		return
 	end
 
-	local options = db.AllyIndicator
-	if not options or not options.Enabled then
+	local options = db.Modules.FriendlyIndicatorModule
+	if not options or not moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator) then
 		return
 	end
 
@@ -91,7 +93,7 @@ end
 
 ---@param header IconSlotContainer
 ---@param anchor table
----@param options AllyIndicatorOptions
+---@param options FriendlyIndicatorModuleOptions
 local function AnchorContainer(header, anchor, options)
 	if not options then
 		return
@@ -136,7 +138,7 @@ local function EnsureWatcher(anchor, unit)
 		return nil
 	end
 
-	local options = db.AllyIndicator
+	local options = db.Modules.FriendlyIndicatorModule
 
 	if not options then
 		return
@@ -183,7 +185,7 @@ local function EnsureWatcher(anchor, unit)
 
 	UpdateWatcherAuras(entry)
 	AnchorContainer(entry.Container, anchor, options)
-	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, options)
+	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, options.ExcludePlayer)
 
 	return entry
 end
@@ -207,13 +209,13 @@ local function OnCufUpdateVisible(frame)
 		return
 	end
 
-	local options = db.AllyIndicator
+	local options = db.Modules.FriendlyIndicatorModule
 
 	if not options then
 		return
 	end
 
-	frames:ShowHideFrame(entry.Container.Frame, frame, false, options)
+	frames:ShowHideFrame(entry.Container.Frame, frame, false, options.ExcludePlayer)
 end
 
 local function OnCufSetUnit(frame, unit)
@@ -243,7 +245,7 @@ local function OnEvent(_, event)
 end
 
 local function RefreshTestIcons()
-	local options = db.AllyIndicator
+	local options = db.Modules.FriendlyIndicatorModule
 
 	if not options then
 		return
@@ -288,7 +290,7 @@ local function RefreshTestIcons()
 		end
 
 		AnchorContainer(container, entry.Anchor, options)
-		frames:ShowHideFrame(container.Frame, entry.Anchor, true, options)
+		frames:ShowHideFrame(container.Frame, entry.Anchor, true, options.ExcludePlayer)
 	end
 end
 
@@ -307,14 +309,16 @@ local function Hide()
 end
 
 function M:Refresh()
-	local options = db.AllyIndicator
+	local options = db.Modules.FriendlyIndicatorModule
 
 	if not options then
 		return
 	end
 
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator)
+
 	-- If disabled, hide everything and return
-	if not options.Enabled then
+	if not moduleEnabled then
 		Hide()
 		return
 	end
@@ -331,7 +335,7 @@ function M:Refresh()
 		end
 
 		AnchorContainer(container, anchor, options)
-		frames:ShowHideFrame(container.Frame, anchor, testModeActive, options)
+		frames:ShowHideFrame(container.Frame, anchor, testModeActive, options.ExcludePlayer)
 	end
 
 	if testModeActive then
@@ -391,8 +395,8 @@ function M:Init()
 	EnsureWatchers()
 end
 
----@class AllyIndicatorModule
----@field Init fun(self: AllyIndicatorModule)
----@field Refresh fun(self: AllyIndicatorModule)
----@field StartTesting fun(self: AllyIndicatorModule)
----@field StopTesting fun(self: AllyIndicatorModule)
+---@class FriendlyIndicatorModule
+---@field Init fun(self: FriendlyIndicatorModule)
+---@field Refresh fun(self: FriendlyIndicatorModule)
+---@field StartTesting fun(self: FriendlyIndicatorModule)
+---@field StopTesting fun(self: FriendlyIndicatorModule)

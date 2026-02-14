@@ -19,7 +19,7 @@ local M = {}
 config.CcConfig = M
 
 ---@param parent table
----@param options InstanceOptions
+---@param options CcInstanceOptions
 local function BuildAnchorSettings(parent, options)
 	local panel = CreateFrame("Frame", nil, parent)
 
@@ -91,26 +91,10 @@ local function BuildAnchorSettings(parent, options)
 end
 
 ---@param panel table
----@param options InstanceOptions
+---@param options CcInstanceOptions
 local function BuildInstance(panel, options)
 	local parent = CreateFrame("Frame", nil, panel)
 	local anchorPanel = BuildAnchorSettings(parent, options)
-
-	local enabledChk = mini:Checkbox({
-		Parent = parent,
-		LabelText = "Enabled",
-		Tooltip = "Whether to enable or disable this module.",
-		GetValue = function()
-			return options.Enabled
-		end,
-		SetValue = function(value)
-			options.Enabled = value
-
-			config:Apply()
-		end,
-	})
-
-	enabledChk:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
 
 	local excludePlayerChk = mini:Checkbox({
 		Parent = parent,
@@ -125,8 +109,7 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	excludePlayerChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
-	excludePlayerChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	excludePlayerChk:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
 
 	local glowChk = mini:Checkbox({
 		Parent = parent,
@@ -141,7 +124,7 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	glowChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	glowChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local dispelColoursChk = mini:Checkbox({
 		Parent = parent,
@@ -208,17 +191,99 @@ local function BuildInstance(panel, options)
 end
 
 ---@param panel table
----@param default InstanceOptions
----@param raid InstanceOptions
+---@param default CcInstanceOptions
+---@param raid CcInstanceOptions
 function M:Build(panel, default, raid)
+	local db = mini:GetSavedVars()
+
+	local lines = mini:TextBlock({
+		Parent = panel,
+		Lines = {
+			"Shows CC icons on party/raid frames.",
+		},
+	})
+
+	lines:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+
+	local enabledDivider = mini:Divider({
+		Parent = panel,
+		Text = "Enable in:",
+	})
+	enabledDivider:SetPoint("LEFT", panel, "LEFT")
+	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
+	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
+
+	local enabledEverywhere = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Everywhere",
+		Tooltip = "Enable this module everywhere.",
+		GetValue = function()
+			return db.Modules.CcModule.Enabled.Always
+		end,
+		SetValue = function(value)
+			db.Modules.CcModule.Enabled.Always = value
+			config:Apply()
+		end,
+	})
+
+	enabledEverywhere:SetPoint("TOPLEFT", enabledDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local enabledArena = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Arena",
+		Tooltip = "Enable this module in arena.",
+		GetValue = function()
+			return db.Modules.CcModule.Enabled.Arena
+		end,
+		SetValue = function(value)
+			db.Modules.CcModule.Enabled.Arena = value
+			config:Apply()
+		end,
+	})
+
+	enabledArena:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
+	local enabledRaids = mini:Checkbox({
+		Parent = panel,
+		LabelText = "BGS & Raids",
+		Tooltip = "Enable this module in BGs and raids.",
+		GetValue = function()
+			return db.Modules.CcModule.Enabled.Raids
+		end,
+		SetValue = function(value)
+			db.Modules.CcModule.Enabled.Raids = value
+			config:Apply()
+		end,
+	})
+
+	enabledRaids:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	enabledRaids:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
+	local enabledDungeons = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Dungeons",
+		Tooltip = "Enable this module in dungeons and M+.",
+		GetValue = function()
+			return db.Modules.CcModule.Enabled.Dungeons
+		end,
+		SetValue = function(value)
+			db.Modules.CcModule.Enabled.Dungeons = value
+			config:Apply()
+		end,
+	})
+
+	enabledDungeons:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	enabledDungeons:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
 	local defaultDivider = mini:Divider({
 		Parent = panel,
-		Text = "Arena & World",
+		Text = "Less than 5 members (arena/dungeons)",
 	})
 
 	defaultDivider:SetPoint("LEFT", panel, "LEFT")
 	defaultDivider:SetPoint("RIGHT", panel, "RIGHT")
-	defaultDivider:SetPoint("TOP", panel, "TOP")
+	defaultDivider:SetPoint("TOP", enabledEverywhere, "BOTTOM", 0, -verticalSpacing * 2)
 
 	local defaultPanel = BuildInstance(panel, default)
 
@@ -229,7 +294,7 @@ function M:Build(panel, default, raid)
 
 	local raidDivider = mini:Divider({
 		Parent = panel,
-		Text = "BGs & Raids",
+		Text = "Greater than 5 members (raids/bgs)",
 	})
 
 	raidDivider:SetPoint("LEFT", panel, "LEFT")
@@ -242,11 +307,7 @@ function M:Build(panel, default, raid)
 	raidPanel:SetPoint("TOPRIGHT", raidDivider, "TOPRIGHT")
 	raidPanel:SetHeight(370)
 
-	panel:HookScript("OnShow", function()
-		panel:MiniRefresh()
-	end)
-
-	panel.OnMiniRefresh = function()
+	panel.MiniRefresh = function()
 		defaultPanel:MiniRefresh()
 		raidPanel:MiniRefresh()
 	end

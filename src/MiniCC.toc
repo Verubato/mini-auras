@@ -20,6 +20,7 @@ Utils\Array.lua
 Utils\CcUtil.lua
 Utils\SpellCache.lua
 Utils\FontUtil.lua
+Utils\ModuleUtil.lua
 
 Core\MiniFramework.lua
 Core\InstanceOptions.lua
@@ -34,12 +35,12 @@ Modules\AlertsModule.lua
 Modules\NameplatesModule.lua
 Modules\KickTimerModule.lua
 Modules\TrinketsModule.lua
-Modules\AllyIndicatorModule.lua
+Modules\FriendlyIndicatorModule.lua
 Modules\TestModeManager.lua
 
 Config\Config.lua
 Config\General.lua
-Config\Other.lua
+Config\Portraits.lua
 Config\CcConfig.lua
 Config\Anchors.lua
 Config\Healer.lua
@@ -47,7 +48,7 @@ Config\Alerts.lua
 Config\Nameplates.lua
 Config\KickTimer.lua
 Config\Trinkets.lua
-Config\AllyIndicator.lua
+Config\FriendlyIndicator.lua
 Config\OtherAddons.lua
 
 MiniCC.xml

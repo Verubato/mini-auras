@@ -5,8 +5,11 @@ local array = addon.Utils.Array
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
 local spellCache = addon.Utils.SpellCache
+local moduleUtil = addon.Utils.ModuleUtil
+local ModuleName = addon.Utils.ModuleName
 local testModeActive = false
 local paused = false
+local enabled = false
 local containers = {}
 ---@type { string: Watcher }
 local watchers = {}
@@ -120,7 +123,7 @@ local function OnAuraInfo(watcher, container)
 				Duration = aura.TotalDuration,
 				AlphaBoolean = aura.IsCC,
 				Glow = false,
-				ReverseCooldown = db.Portrait.ReverseCooldown,
+				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 			})
 
 			if not issecretvalue(aura.IsCC) then
@@ -145,7 +148,7 @@ local function OnAuraInfo(watcher, container)
 				Duration = aura.TotalDuration,
 				AlphaBoolean = true, -- we only get defensives in 12.0.1
 				Glow = false,
-				ReverseCooldown = db.Portrait.ReverseCooldown,
+				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 			})
 
 			container:FinalizeSlot(slotIndex, layerIndex)
@@ -163,7 +166,7 @@ local function OnAuraInfo(watcher, container)
 				Duration = aura.TotalDuration,
 				AlphaBoolean = aura.IsImportant,
 				Glow = false,
-				ReverseCooldown = db.Portrait.ReverseCooldown,
+				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 			})
 
 			layerIndex = layerIndex + 1
@@ -241,7 +244,7 @@ local function RefreshTestIcons()
 			Duration = 15, -- 15 second duration for test
 			AlphaBoolean = true,
 			Glow = false,
-			ReverseCooldown = db.Portrait.ReverseCooldown,
+			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 		})
 		container:FinalizeSlot(1, 1)
 	end
@@ -254,17 +257,19 @@ local function ClearAll()
 end
 
 local function EnableDisable()
-	local options = db.Portrait
-
-	if options.Enabled then
+	if moduleUtil:IsModuleEnabled(ModuleName.Portrait) then
 		for _, watcher in pairs(watchers) do
 			watcher:Enable()
 		end
+
+		enabled = true
 	else
 		for _, watcher in pairs(watchers) do
 			watcher:Disable()
 			watcher:ClearState(true)
 		end
+
+		enabled = false
 	end
 end
 
@@ -291,9 +296,7 @@ end
 function M:Refresh()
 	EnableDisable()
 
-	local options = db.Portrait
-
-	if not options.Enabled then
+	if not enabled then
 		ClearAll()
 		return
 	end

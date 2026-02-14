@@ -436,31 +436,26 @@ function M:IsFriendlyCuf(frame)
 	return string.find(name, "CompactParty") ~= nil or string.find(name, "CompactRaid") ~= nil
 end
 
----@param header table
+---@param frame table
 ---@param anchor table
 ---@param isTest boolean
----@param options HeaderOptions
-function M:ShowHideFrame(header, anchor, isTest, options)
-	if not isTest and not options.Enabled then
-		header:Hide()
-		return
-	end
-
+---@param excludePlayer boolean
+function M:ShowHideFrame(frame, anchor, isTest, excludePlayer)
 	if anchor:IsForbidden() then
-		header:Hide()
+		frame:Hide()
 		return
 	end
 
-	local unit = header:GetAttribute("unit") or anchor.unit or anchor:GetAttribute("unit")
+	local unit = frame:GetAttribute("unit") or anchor.unit or anchor:GetAttribute("unit")
 
 	if unit and unit ~= "" then
 		if units:IsPet(unit) then
-			header:Hide()
+			frame:Hide()
 			return
 		end
 
-		if not isTest and options.ExcludePlayer and UnitIsUnit(unit, "player") then
-			header:Hide()
+		if not isTest and excludePlayer and UnitIsUnit(unit, "player") then
+			frame:Hide()
 			return
 		end
 	end
@@ -468,19 +463,19 @@ function M:ShowHideFrame(header, anchor, isTest, options)
 	local alpha = anchor:GetAlpha()
 	if mini:IsSecret(alpha) and anchor:IsVisible() then
 		if not isTest then
-			header:SetAlpha(alpha)
+			frame:SetAlpha(alpha)
 		else
-			header:SetAlpha(1)
+			frame:SetAlpha(1)
 		end
-		header:Show()
+		frame:Show()
 		return
 	end
 
 	if anchor:IsVisible() then
-		header:SetAlpha(1)
-		header:Show()
+		frame:SetAlpha(1)
+		frame:Show()
 	else
-		header:Hide()
+		frame:Hide()
 	end
 end
 

@@ -101,7 +101,7 @@ function M:Build()
 	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
 	testBtn:SetText("Test")
 	testBtn:SetScript("OnClick", function()
-		local options = db.Default
+		local options = db.Modules.CcModule.Default
 
 		addon:ToggleTest(options)
 	end)

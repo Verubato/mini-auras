@@ -32,10 +32,10 @@ function M:Build()
 		LabelText = "Healer",
 		Tooltip = "Whether to enable or disable this module if you are a healer.",
 		GetValue = function()
-			return db.KickTimer.HealerEnabled
+			return db.Modules.KickTimerModule.Enabled.Healer
 		end,
 		SetValue = function(value)
-			db.KickTimer.HealerEnabled = value
+			db.Modules.KickTimerModule.Enabled.Healer = value
 			config:Apply()
 		end,
 	})
@@ -47,26 +47,26 @@ function M:Build()
 		LabelText = "Caster",
 		Tooltip = "Whether to enable or disable this module if you are a caster.",
 		GetValue = function()
-			return db.KickTimer.CasterEnabled
+			return db.Modules.KickTimerModule.Enabled.Caster
 		end,
 		SetValue = function(value)
-			db.KickTimer.CasterEnabled = value
+			db.Modules.KickTimerModule.Enabled.Caster = value
 			config:Apply()
 		end,
 	})
 
 	casterEnabled:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	casterEnabled:SetPoint("TOP", healerEnabled, "TOP", 0, o)
+	casterEnabled:SetPoint("TOP", healerEnabled, "TOP", 0, 0)
 
 	local allEnabled = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Any",
 		Tooltip = "Whether to enable or disable this module regardless of what spec you are.",
 		GetValue = function()
-			return db.KickTimer.AllEnabled
+			return db.Modules.KickTimerModule.Enabled.Always
 		end,
 		SetValue = function(value)
-			db.KickTimer.AllEnabled = value
+			db.Modules.KickTimerModule.Enabled.Always = value
 			config:Apply()
 		end,
 	})
@@ -78,10 +78,10 @@ function M:Build()
 		Parent = panel,
 		LabelText = "Icon Size",
 		GetValue = function()
-			return db.KickTimer.Icons.Size
+			return db.Modules.KickTimerModule.Icons.Size
 		end,
 		SetValue = function(value)
-			db.KickTimer.Icons.Size = mini:ClampInt(value, 20, 120, 50)
+			db.Modules.KickTimerModule.Icons.Size = mini:ClampInt(value, 20, 120, 50)
 			config:Apply()
 		end,
 		Width = columns * columnWidth - horizontalSpacing,
@@ -121,7 +121,7 @@ function M:Build()
 	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
 	testBtn:SetText("Test")
 	testBtn:SetScript("OnClick", function()
-		local options = db.Default
+		local options = db.Modules.CcModule.Default
 
 		addon:ToggleTest(options)
 	end)

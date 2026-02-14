@@ -5,6 +5,8 @@ local mini = addon.Core.Framework
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
 local spellCache = addon.Utils.SpellCache
+local moduleUtil = addon.Utils.ModuleUtil
+local moduleName = addon.Utils.ModuleName
 local testModeActive = false
 local paused = false
 local inPrepRoom = false
@@ -25,7 +27,7 @@ local function OnAuraDataChanged()
 		return
 	end
 
-	if not db.Alerts.Enabled then
+	if not moduleUtil:IsModuleEnabled(moduleName.Alerts) then
 		return
 	end
 
@@ -36,9 +38,9 @@ local function OnAuraDataChanged()
 	end
 
 	local hasNewFilters = capabilities:HasNewFilters()
-	local iconsGlow = db.Alerts.Icons.Glow
-	local iconsReverse = db.Alerts.Icons.ReverseCooldown
-	local colorByClass = db.Alerts.Icons.ColorByClass
+	local iconsGlow = db.Modules.AlertsModule.Icons.Glow
+	local iconsReverse = db.Modules.AlertsModule.Icons.ReverseCooldown
+	local colorByClass = db.Modules.AlertsModule.Icons.ColorByClass
 	local slot = 0
 
 	for _, watcher in ipairs(watchers) do
@@ -176,8 +178,8 @@ local function RefreshTestAlerts()
 
 	local count = math.min(#testAlertSpellIds, container.Count or #testAlertSpellIds)
 	local now = GetTime()
-	local colorByClass = db.Alerts.Icons.ColorByClass
-	local iconsGlow = db.Alerts.Icons.Glow
+	local colorByClass = db.Modules.AlertsModule.Icons.ColorByClass
+	local iconsGlow = db.Modules.AlertsModule.Icons.Glow
 
 	for i = 1, count do
 		container:SetSlotUsed(i)
@@ -203,7 +205,7 @@ local function RefreshTestAlerts()
 				Duration = duration,
 				AlphaBoolean = true,
 				Glow = iconsGlow,
-				ReverseCooldown = db.Alerts.Icons.ReverseCooldown,
+				ReverseCooldown = db.Modules.AlertsModule.Icons.ReverseCooldown,
 				Color = glowColor,
 			})
 
@@ -213,9 +215,9 @@ local function RefreshTestAlerts()
 end
 
 local function EnableDisable()
-	local options = db.Alerts
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
 
-	if options.Enabled then
+	if moduleEnabled then
 		for _, watcher in ipairs(watchers) do
 			watcher:Enable()
 		end
@@ -246,12 +248,14 @@ local function ClearAll()
 end
 
 function M:Refresh()
-	local options = db.Alerts
+	local options = db.Modules.AlertsModule
 
 	EnableDisable()
 
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
+
 	-- If disabled, clear and return
-	if not options.Enabled then
+	if not moduleEnabled then
 		ClearAll()
 		return
 	end
@@ -301,7 +305,7 @@ end
 function M:Init()
 	db = mini:GetSavedVars()
 
-	local options = db.Alerts
+	local options = db.Modules.AlertsModule
 	local count = 8
 	local size = options.Icons.Size
 

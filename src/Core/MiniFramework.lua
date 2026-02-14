@@ -159,6 +159,14 @@ function M:CopyTable(src, dst)
 	return dst
 end
 
+function M:CopyValueOrTable(src)
+	if type(src) ~= "table" then
+		return src
+	end
+
+	return M:CopyTable(src)
+end
+
 function M:ClampInt(v, minV, maxV, fallback)
 	v = tonumber(v)
 
@@ -703,7 +711,11 @@ function M:Checkbox(options)
 	if options.Tooltip then
 		checkbox:SetScript("OnEnter", function(chkSelf)
 			GameTooltip:SetOwner(chkSelf, "ANCHOR_RIGHT")
-			GameTooltip:SetText(options.LabelText, 1, 0.82, 0)
+			local tooltipTitle = options.LabelText
+			if not tooltipTitle or tooltipTitle:match("^%s*$") then
+				tooltipTitle = "Information"
+			end
+			GameTooltip:SetText(tooltipTitle, 1, 0.82, 0)
 			GameTooltip:AddLine(options.Tooltip, 1, 1, 1, true)
 			GameTooltip:Show()
 		end)

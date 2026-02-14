@@ -6,6 +6,8 @@ local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
 local capabilities = addon.Capabilities
 local spellCache = addon.Utils.SpellCache
+local moduleUtil = addon.Utils.ModuleUtil
+local moduleName = addon.Utils.ModuleName
 local testModeActive = false
 local paused = false
 ---@type Db
@@ -727,36 +729,36 @@ local function RebuildContainers()
 end
 
 local function AnyEnabled()
-	return db.Nameplates.Friendly.CC.Enabled
-		or db.Nameplates.Friendly.Important.Enabled
-		or db.Nameplates.Friendly.Combined.Enabled
-		or db.Nameplates.Enemy.CC.Enabled
-		or db.Nameplates.Enemy.Important.Enabled
-		or db.Nameplates.Enemy.Combined.Enabled
+	return db.Modules.NameplatesModule.Friendly.CC.Enabled
+		or db.Modules.NameplatesModule.Friendly.Important.Enabled
+		or db.Modules.NameplatesModule.Friendly.Combined.Enabled
+		or db.Modules.NameplatesModule.Enemy.CC.Enabled
+		or db.Modules.NameplatesModule.Enemy.Important.Enabled
+		or db.Modules.NameplatesModule.Enemy.Combined.Enabled
 end
 
 local function CacheEnabledModes()
-	previousEnemyEnabled.CC = db.Nameplates.Enemy.CC.Enabled
-	previousEnemyEnabled.Important = db.Nameplates.Enemy.Important.Enabled
-	previousEnemyEnabled.Combined = db.Nameplates.Enemy.Combined.Enabled
+	previousEnemyEnabled.CC = db.Modules.NameplatesModule.Enemy.CC.Enabled
+	previousEnemyEnabled.Important = db.Modules.NameplatesModule.Enemy.Important.Enabled
+	previousEnemyEnabled.Combined = db.Modules.NameplatesModule.Enemy.Combined.Enabled
 
-	previousFriendlyEnabled.CC = db.Nameplates.Friendly.CC.Enabled
-	previousFriendlyEnabled.Important = db.Nameplates.Friendly.Important.Enabled
-	previousFriendlyEnabled.Combined = db.Nameplates.Friendly.Combined.Enabled
+	previousFriendlyEnabled.CC = db.Modules.NameplatesModule.Friendly.CC.Enabled
+	previousFriendlyEnabled.Important = db.Modules.NameplatesModule.Friendly.Important.Enabled
+	previousFriendlyEnabled.Combined = db.Modules.NameplatesModule.Friendly.Combined.Enabled
 
-	previousPetEnabled.Friendly = db.Nameplates.Friendly.IgnorePets
-	previousPetEnabled.Enemy = db.Nameplates.Enemy.IgnorePets
+	previousPetEnabled.Friendly = db.Modules.NameplatesModule.Friendly.IgnorePets
+	previousPetEnabled.Enemy = db.Modules.NameplatesModule.Enemy.IgnorePets
 end
 
 local function HaveModesChanged()
-	return previousEnemyEnabled.CC ~= db.Nameplates.Enemy.CC.Enabled
-		or previousEnemyEnabled.Important ~= db.Nameplates.Enemy.Important.Enabled
-		or previousEnemyEnabled.Combined ~= db.Nameplates.Enemy.Combined.Enabled
-		or previousFriendlyEnabled.CC ~= db.Nameplates.Friendly.CC.Enabled
-		or previousFriendlyEnabled.Important ~= db.Nameplates.Friendly.Important.Enabled
-		or previousFriendlyEnabled.Combined ~= db.Nameplates.Friendly.Combined.Enabled
-		or previousPetEnabled.Friendly ~= db.Nameplates.Friendly.IgnorePets
-		or previousPetEnabled.Enemy ~= db.Nameplates.Enemy.IgnorePets
+	return previousEnemyEnabled.CC ~= db.Modules.NameplatesModule.Enemy.CC.Enabled
+		or previousEnemyEnabled.Important ~= db.Modules.NameplatesModule.Enemy.Important.Enabled
+		or previousEnemyEnabled.Combined ~= db.Modules.NameplatesModule.Enemy.Combined.Enabled
+		or previousFriendlyEnabled.CC ~= db.Modules.NameplatesModule.Friendly.CC.Enabled
+		or previousFriendlyEnabled.Important ~= db.Modules.NameplatesModule.Friendly.Important.Enabled
+		or previousFriendlyEnabled.Combined ~= db.Modules.NameplatesModule.Friendly.Combined.Enabled
+		or previousPetEnabled.Friendly ~= db.Modules.NameplatesModule.Friendly.IgnorePets
+		or previousPetEnabled.Enemy ~= db.Modules.NameplatesModule.Enemy.IgnorePets
 end
 
 local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
@@ -1005,14 +1007,14 @@ end
 function M:GetUnitOptions(unitToken)
 	if units:IsEnemy(unitToken) then
 		-- friendly units can also be enemies in a duel
-		return db.Nameplates.Enemy
+		return db.Modules.NameplatesModule.Enemy
 	end
 
 	if units:IsFriend(unitToken) then
-		return db.Nameplates.Friendly
+		return db.Modules.NameplatesModule.Friendly
 	end
 
-	return db.Nameplates.Enemy
+	return db.Modules.NameplatesModule.Enemy
 end
 
 function M:Init()
@@ -1036,7 +1038,8 @@ function M:Init()
 		end
 	end)
 
-	if AnyEnabled() then
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
+	if moduleEnabled and AnyEnabled() then
 		-- Initialize existing nameplates
 		RebuildContainers()
 	end
@@ -1045,7 +1048,9 @@ function M:Init()
 end
 
 function M:Refresh()
-	if not AnyEnabled() then
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
+
+	if not moduleEnabled or not AnyEnabled() then
 		M:ClearAll()
 		CacheEnabledModes()
 		return

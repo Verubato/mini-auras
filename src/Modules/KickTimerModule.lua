@@ -3,6 +3,8 @@ local addonName, addon = ...
 local mini = addon.Core.Framework
 local spellCache = addon.Utils.SpellCache
 local fontUtil = addon.Utils.FontUtil
+local moduleUtil = addon.Utils.ModuleUtil
+local moduleName = addon.Utils.ModuleName
 local paused = false
 local testModeActive = false
 local enabled = false
@@ -160,7 +162,7 @@ local function GetPlayerSpecId()
 end
 
 local function CreateKickBar()
-	local options = db.KickTimer
+	local options = db.Modules.KickTimerModule
 	local relativeTo = _G[options.RelativeTo] or UIParent
 	local frame = CreateFrame("Frame", addonName .. "KickBar", UIParent, "BackdropTemplate")
 
@@ -189,7 +191,7 @@ local function CreateKickBar()
 end
 
 local function ApplyKickBarIconOptions()
-	local options = db.KickTimer
+	local options = db.Modules.KickTimerModule
 	local iconOptions = options.Icons
 
 	kickBar.Size = iconOptions.Size or 50
@@ -261,7 +263,7 @@ local function PositionKickBar()
 		return
 	end
 
-	local options = db.KickTimer
+	local options = db.Modules.KickTimerModule
 	local relativeTo = _G[options.RelativeTo] or UIParent
 
 	frame:ClearAllPoints()
@@ -295,14 +297,14 @@ end
 local function GetOrCreateIcon()
 	for _, frame in ipairs(kickBar.Icons) do
 		if not frame.Active then
-			local iconOptions = db.KickTimer.Icons
+			local iconOptions = db.Modules.KickTimerModule.Icons
 			frame:SetSize(kickBar.Size, kickBar.Size)
 			frame.Cooldown:SetReverse(iconOptions.ReverseCooldown)
 			return frame
 		end
 	end
 
-	local iconOptions = db.KickTimer.Icons
+	local iconOptions = db.Modules.KickTimerModule.Icons
 	local frame = CreateKickIcon(iconOptions.ReverseCooldown)
 	table.insert(kickBar.Icons, frame)
 	return frame
@@ -506,7 +508,7 @@ local function Enable()
 		end
 	end
 
-	local options = db.KickTimer
+	local options = db.Modules.KickTimerModule
 	local relativeTo = _G[options.RelativeTo] or UIParent
 	kickBar.Anchor:ClearAllPoints()
 	kickBar.Anchor:SetPoint(options.Point, relativeTo, options.RelativePoint, options.Offset.X, options.Offset.Y)
@@ -516,9 +518,7 @@ local function Enable()
 end
 
 local function EnableDisable()
-	local options = db.KickTimer
-
-	if not M:IsEnabledForPlayer(options) then
+	if not M:IsEnabledForPlayer(db.Modules.KickTimerModule) or not moduleUtil:IsModuleEnabled(moduleName.KickTimer) then
 		Disable()
 		return
 	end
@@ -548,18 +548,18 @@ local function ShowTestIcons()
 	KickedBySpec(259) -- rogue
 end
 
----@param options KickTimerOptions
+---@param options KickTimerModuleOptions
 function M:IsEnabledForPlayer(options)
-	if not options then
+	if not options or not options.Enabled then
 		return false
 	end
 
 	-- nothing toggled on
-	if not (options.AllEnabled or options.CasterEnabled or options.HealerEnabled) then
+	if not (options.Enabled.Always or options.Enabled.Caster or options.Enabled.Healer) then
 		return false
 	end
 
-	if options.AllEnabled then
+	if options.Enabled.Always then
 		return true
 	end
 
@@ -573,11 +573,11 @@ function M:IsEnabledForPlayer(options)
 		return false
 	end
 
-	if options.HealerEnabled and info.IsHealer then
+	if options.Enabled.Healer and info.IsHealer then
 		return true
 	end
 
-	if options.CasterEnabled and info.IsCaster then
+	if options.Enabled.Caster and info.IsCaster then
 		return true
 	end
 
@@ -642,7 +642,7 @@ function M:Refresh()
 		return
 	end
 
-	if not M:IsEnabledForPlayer(db.KickTimer) then
+	if not M:IsEnabledForPlayer(db.Modules.KickTimerModule) then
 		ClearIcons()
 		container:Hide()
 		return
@@ -656,7 +656,7 @@ end
 function M:Init()
 	db = mini:GetSavedVars()
 
-	kickBar.Size = db.KickTimer.Icons.Size
+	kickBar.Size = db.Modules.KickTimerModule.Icons.Size
 
 	CreateKickBar()
 

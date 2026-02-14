@@ -111,6 +111,7 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 	-- Store Refresh function on wrapper to refresh the checkbox state
 	wrapper.OnMiniRefresh = function()
 		UpdateVisibility()
+		container:MiniRefresh()
 	end
 
 	local glowChk = mini:Checkbox({
@@ -259,8 +260,90 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 end
 
 ---@param parent table
----@param options NameplateOptions
+---@param options NameplateModuleOptions
 function M:Build(parent, options)
+	local db = mini:GetSavedVars()
+
+	local lines = mini:TextBlock({
+		Parent = parent,
+		Lines = {
+			"Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater).",
+		},
+	})
+
+	lines:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+
+	local enabledDivider = mini:Divider({
+		Parent = parent,
+		Text = "Enable in:",
+	})
+	enabledDivider:SetPoint("LEFT", parent, "LEFT")
+	enabledDivider:SetPoint("RIGHT", parent, "RIGHT")
+	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
+
+	local enabledEverywhere = mini:Checkbox({
+		Parent = parent,
+		LabelText = "Everywhere",
+		Tooltip = "Enable this module everywhere.",
+		GetValue = function()
+			return db.Modules.NameplatesModule.Enabled.Always
+		end,
+		SetValue = function(value)
+			db.Modules.NameplatesModule.Enabled.Always = value
+			config:Apply()
+		end,
+	})
+
+	enabledEverywhere:SetPoint("TOPLEFT", enabledDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local enabledArena = mini:Checkbox({
+		Parent = parent,
+		LabelText = "Arena",
+		Tooltip = "Enable this module in arena.",
+		GetValue = function()
+			return db.Modules.NameplatesModule.Enabled.Arena
+		end,
+		SetValue = function(value)
+			db.Modules.NameplatesModule.Enabled.Arena = value
+			config:Apply()
+		end,
+	})
+
+	enabledArena:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
+	local enabledRaids = mini:Checkbox({
+		Parent = parent,
+		LabelText = "BGS & Raids",
+		Tooltip = "Enable this module in BGs and raids.",
+		GetValue = function()
+			return db.Modules.NameplatesModule.Enabled.Raids
+		end,
+		SetValue = function(value)
+			db.Modules.NameplatesModule.Enabled.Raids = value
+			config:Apply()
+		end,
+	})
+
+	enabledRaids:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	enabledRaids:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
+	local enabledDungeons = mini:Checkbox({
+		Parent = parent,
+		LabelText = "Dungeons",
+		Tooltip = "Enable this module in Dungeons and M+",
+		GetValue = function()
+			return db.Modules.NameplatesModule.Enabled.Dungeons
+		end,
+		SetValue = function(value)
+			db.Modules.NameplatesModule.Enabled.Dungeons = value
+			config:Apply()
+		end,
+	})
+
+	enabledDungeons:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	enabledDungeons:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
 	-- Store panel references for visibility toggling
 	local enemyPanels = {}
 	local friendlyPanels = {}
@@ -292,7 +375,7 @@ function M:Build(parent, options)
 			config:Apply()
 		end,
 	})
-	enemyIgnorePetsChk:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+	enemyIgnorePetsChk:SetPoint("TOPLEFT", enabledEverywhere, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	local friendlyIgnorePetsChk = mini:Checkbox({
 		Parent = parent,
@@ -306,7 +389,8 @@ function M:Build(parent, options)
 			config:Apply()
 		end,
 	})
-	friendlyIgnorePetsChk:SetPoint("TOPLEFT", parent, "TOPLEFT", columnWidth, 0)
+	friendlyIgnorePetsChk:SetPoint("TOP", enemyIgnorePetsChk, "TOP", 0, 0)
+	friendlyIgnorePetsChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
 
 	-- Enemy sections
 	enemyPanels.Combined = BuildSpellTypeSettings(
