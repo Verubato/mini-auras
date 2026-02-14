@@ -105,6 +105,9 @@ local function CreateIcon(unit)
 	frame.Duration = nil
 	frame.Ticker = nil
 
+	frame:SetIgnoreParentScale(true)
+	frame:SetIgnoreParentAlpha(true)
+
 	frame:Hide()
 	return frame
 end

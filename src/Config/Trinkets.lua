@@ -58,12 +58,12 @@ function M:Build()
 			return db.Modules.TrinketsModule.Icons.Size
 		end,
 		SetValue = function(value)
-			db.Modules.TrinketsModule.Icons.Size = mini:ClampInt(value, 20, 120, 50)
+			db.Modules.TrinketsModule.Icons.Size = mini:ClampInt(value, 10, 100, 40)
 			config:Apply()
 		end,
 		Width = columns * columnWidth - horizontalSpacing,
-		Min = 20,
-		Max = 120,
+		Min = 10,
+		Max = 100,
 		Step = 1,
 	})
 
