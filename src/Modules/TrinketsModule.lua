@@ -327,9 +327,9 @@ local function UpdateVisibility()
 	local show = moduleEnabled and (IsInArena() or testModeActive)
 
 	for _, watcher in pairs(watchers) do
-		if watcher.Icon then
-			if show and watcher.Anchor and watcher.Anchor.IsVisible and watcher.Anchor:IsVisible() then
-				watcher.Icon:Show()
+		if watcher.Icon and watcher.Anchor then
+			if show then
+				frames:ShowHideFrame(watcher.Icon, watcher.Anchor, testModeActive, options.ExcludePlayer)
 			else
 				watcher.Icon:Hide()
 			end

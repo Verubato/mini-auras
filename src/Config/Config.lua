@@ -262,6 +262,8 @@ local dbDefaults = {
 				Always = true,
 			},
 
+			ExcludePlayer = false,
+
 			Point = "RIGHT",
 			RelativePoint = "LEFT",
 			Offset = {

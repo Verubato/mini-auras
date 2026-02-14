@@ -35,6 +35,22 @@ function M:Build()
 
 	enabled:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -verticalSpacing)
 
+	local excludePlayerChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Exclude self",
+		Tooltip = "Exclude yourself from showing trinket icons.",
+		GetValue = function()
+			return db.Modules.TrinketsModule.ExcludePlayer
+		end,
+		SetValue = function(value)
+			db.Modules.TrinketsModule.ExcludePlayer = value
+			config:Apply()
+		end,
+	})
+
+	excludePlayerChk:SetPoint("TOP", enabled, "TOP", 0, 0)
+	excludePlayerChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,
 		LabelText = "Icon Size",

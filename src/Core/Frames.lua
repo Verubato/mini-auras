@@ -454,7 +454,7 @@ function M:ShowHideFrame(frame, anchor, isTest, excludePlayer)
 			return
 		end
 
-		if not isTest and excludePlayer and UnitIsUnit(unit, "player") then
+		if excludePlayer and UnitIsUnit(unit, "player") then
 			frame:Hide()
 			return
 		end
