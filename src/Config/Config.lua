@@ -475,11 +475,11 @@ local function GetAndUpgradeDb()
 			vars.Modules = vars.Modules or {}
 			vars.Modules.CcModule = vars.Modules.CcModule or {}
 			vars.Modules.CcModule.Default = mini:CopyTable(vars.Default)
-			vars.Modules.CcModule.Default.Enabled = {
+			vars.Modules.CcModule.Enabled = {
 				Always = vars.Default.Enabled,
-				Arena = false,
-				Raids = false,
-				Dungeons = false,
+				Arena = vars.Default.Enabled,
+				Raids = vars.Raid and vars.Raid.Enabled,
+				Dungeons = vars.Raid and vars.Raid.Enabled,
 			}
 			vars.Default = nil
 		end
@@ -488,12 +488,6 @@ local function GetAndUpgradeDb()
 			vars.Modules = vars.Modules or {}
 			vars.Modules.CcModule = vars.Modules.CcModule or {}
 			vars.Modules.CcModule.Raid = mini:CopyTable(vars.Raid)
-			vars.Modules.CcModule.Raid.Enabled = {
-				Always = vars.Raid.Enabled,
-				Arena = false,
-				Raids = false,
-				Dungeons = false,
-			}
 			vars.Raid = nil
 		end
 
