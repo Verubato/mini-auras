@@ -1261,7 +1261,7 @@ end
 ---Removes any erronous values from the options table.
 ---@param target table the target table to clean
 ---@param template table what the table should look like
----@param cleanValues any whether or not to clean non-table values, e.g. numbers and strings
+---@param cleanValues any whether or not to clean values (both table and non-table)
 ---@param recurse any whether to recursively clean the table
 function M:CleanTable(target, template, cleanValues, recurse)
 	-- remove values that aren't ours
@@ -1272,18 +1272,15 @@ function M:CleanTable(target, template, cleanValues, recurse)
 	for key, value in pairs(target) do
 		local templateValue = template[key]
 
-		-- only clean non-table values if told to do so
+		-- Remove unknown keys or keys with wrong types when cleanValues is true
 		if cleanValues and templateValue == nil then
 			target[key] = nil
-		end
-
-		if recurse then
-			if type(value) == "table" and type(templateValue) == "table" then
-				M:CleanTable(value, templateValue, cleanValues, recurse)
-			elseif type(value) == "table" and type(templateValue) ~= "table" then
-				-- type mismatch: reset this key to default
-				target[key] = templateValue
-			end
+		elseif cleanValues and type(value) == "table" and type(templateValue) ~= "table" then
+			-- type mismatch: reset this key to default
+			target[key] = templateValue
+		elseif recurse and type(value) == "table" and type(templateValue) == "table" then
+			-- Recursively clean nested tables
+			M:CleanTable(value, templateValue, cleanValues, recurse)
 		end
 	end
 end
