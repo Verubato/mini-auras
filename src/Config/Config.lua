@@ -325,7 +325,7 @@ local function GetAndUpgradeDb()
 
 	if vars.Version == 2 then
 		-- made some strucure changes
-		mini:CleanTable(db, dbDefaults, true, true)
+		mini:CleanTable(vars, dbDefaults, true, true)
 		vars.Version = 3
 	end
 
@@ -354,7 +354,7 @@ local function GetAndUpgradeDb()
 			ExcludePlayer = vars.ExcludePlayer,
 		}
 
-		mini:CleanTable(db, dbDefaults, true, true)
+		mini:CleanTable(vars, dbDefaults, true, true)
 		vars.Version = 4
 	end
 
@@ -364,7 +364,7 @@ local function GetAndUpgradeDb()
 
 		vars.Default = vars.Arena
 		vars.Arena = nil
-		mini:CleanTable(db, dbDefaults, true, true)
+		mini:CleanTable(vars, dbDefaults, true, true)
 		vars.Version = 5
 	end
 
@@ -610,7 +610,7 @@ local function GetAndUpgradeDb()
 			vars.Trinkets = nil
 		end
 
-		mini:CleanTable(db, dbDefaults, true, true)
+		mini:CleanTable(vars, dbDefaults, true, true)
 		vars.Version = 18
 	end
 
@@ -626,7 +626,7 @@ local function GetAndUpgradeDb()
 		vars.Modules.CcModule.Default.AdvancedMode = nil
 		vars.Modules.CcModule.Raid.AdvancedMode = nil
 
-		mini:CleanTable(db, dbDefaults, true, true)
+		mini:CleanTable(vars, dbDefaults, true, true)
 		vars.Version = 19
 	end
 
