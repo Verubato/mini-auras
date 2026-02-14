@@ -424,11 +424,14 @@ local function GetAndUpgradeDb()
 		-- get the new nameplate config
 		vars = mini:GetSavedVars(dbDefaults)
 
-		vars.Nameplates.Friendly.CC.Enabled = vars.Nameplates.FriendlyEnabled
-		vars.Nameplates.Friendly.Important.Enabled = vars.Nameplates.FriendlyEnabled
+		-- db defaults may have changed since then
+		if vars.Nameplates and vars.Nameplates.Friendly and vars.Nameplates.Enemy then
+			vars.Nameplates.Friendly.CC.Enabled = vars.Nameplates.FriendlyEnabled
+			vars.Nameplates.Friendly.Important.Enabled = vars.Nameplates.FriendlyEnabled
 
-		vars.Nameplates.Enemy.CC.Enabled = vars.Nameplates.EnemyEnabled
-		vars.Nameplates.Enemy.Important.Enabled = vars.Nameplates.EnemyEnabled
+			vars.Nameplates.Enemy.CC.Enabled = vars.Nameplates.EnemyEnabled
+			vars.Nameplates.Enemy.Important.Enabled = vars.Nameplates.EnemyEnabled
+		end
 
 		table.insert(vars.WhatsNew, " - Separated CC and important spell positions on nameplates.")
 		vars.NotifiedChanges = false
