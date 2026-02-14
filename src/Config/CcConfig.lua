@@ -185,6 +185,10 @@ local function BuildInstance(panel, options, addTestButton)
 		end)
 	end
 
+	parent.OnMiniRefresh = function()
+		anchorPanel:MiniRefresh()
+	end
+
 	return parent
 end
 
@@ -305,7 +309,8 @@ function M:Build(panel, default, raid)
 	raidPanel:SetPoint("TOPRIGHT", raidDivider, "TOPRIGHT")
 	raidPanel:SetHeight(370)
 
-	panel.MiniRefresh = function()
+	panel.OnMiniRefresh = function()
+		print("OnMiniRefresh")
 		defaultPanel:MiniRefresh()
 		raidPanel:MiniRefresh()
 	end

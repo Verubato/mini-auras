@@ -678,7 +678,7 @@ function config:Init()
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"Shows CC and other important spell alerts for pvp.",
+			"Shows CC and other important spell alerts.",
 		},
 	})
 
