@@ -40,6 +40,22 @@ function M:Build(panel, options)
 
 	enabledChk:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 0, -verticalSpacing)
 
+	local includeDefensivesChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Include Defensives",
+		Tooltip = "Includes 'big defensives' (e.g. ice block, cloak of shadows) in the alerts.",
+		GetValue = function()
+			return options.IncludeBigDefensives
+		end,
+		SetValue = function(value)
+			options.IncludeBigDefensives = value
+			config:Apply()
+		end,
+	})
+
+	includeDefensivesChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	includeDefensivesChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+
 	local glowChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Glow icons",
@@ -53,8 +69,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	glowChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	glowChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local colorByClassChk = mini:Checkbox({
 		Parent = panel,
@@ -69,7 +84,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	colorByClassChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	colorByClassChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	colorByClassChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local reverseChk = mini:Checkbox({
@@ -85,23 +100,8 @@ function M:Build(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", colorByClassChk, "TOP", 0, 0)
-
-	local includeDefensivesChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = "Include Defensives",
-		Tooltip = "Includes 'big defensives' (e.g. ice block, cloak of shadows) in the alerts.",
-		GetValue = function()
-			return options.IncludeBigDefensives
-		end,
-		SetValue = function(value)
-			options.IncludeBigDefensives = value
-			config:Apply()
-		end,
-	})
-
-	includeDefensivesChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local iconSize = mini:Slider({
 		Parent = panel,
@@ -119,7 +119,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", includeDefensivesChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()
