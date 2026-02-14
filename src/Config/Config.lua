@@ -212,6 +212,7 @@ local dbDefaults = {
 					Icons = {
 						Size = 50,
 						Glow = true,
+						ReverseCooldown = true,
 						ColorByDispelType = true,
 						MaxIcons = 5,
 					},
