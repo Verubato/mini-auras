@@ -8,7 +8,7 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 25,
+	Version = 19,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	Modules = {
@@ -24,25 +24,11 @@ local dbDefaults = {
 			---@class CcInstanceOptions
 			Default = {
 				ExcludePlayer = false,
-
-				-- TODO: after a few patches once people have moved over, remove simple/advanced mode into just one single mode
-				SimpleMode = {
-					Enabled = true,
-					Offset = {
-						X = 2,
-						Y = 0,
-					},
-					Grow = "RIGHT",
+				Offset = {
+					X = 2,
+					Y = 0,
 				},
-
-				AdvancedMode = {
-					Point = "TOPLEFT",
-					RelativePoint = "TOPRIGHT",
-					Offset = {
-						X = 2,
-						Y = 0,
-					},
-				},
+				Grow = "RIGHT",
 
 				Icons = {
 					Size = 50,
@@ -55,24 +41,11 @@ local dbDefaults = {
 			---@type CcInstanceOptions
 			Raid = {
 				ExcludePlayer = false,
-
-				SimpleMode = {
-					Enabled = true,
-					Offset = {
-						X = 2,
-						Y = 0,
-					},
-					Grow = "CENTER",
+				Offset = {
+					X = 2,
+					Y = 0,
 				},
-
-				AdvancedMode = {
-					Point = "TOPLEFT",
-					RelativePoint = "TOPRIGHT",
-					Offset = {
-						X = 2,
-						Y = 0,
-					},
-				},
+				Grow = "CENTER",
 
 				Icons = {
 					Size = 50,
@@ -645,6 +618,22 @@ local function GetAndUpgradeDb()
 
 		mini:CleanTable(db, dbDefaults, true, true)
 		vars.Version = 18
+	end
+
+	if vars.Version == 18 then
+		vars.Modules.CcModule.Default.Grow = vars.Modules.CcModule.Default.SimpleMode.Grow
+		vars.Modules.CcModule.Default.Offset = mini:CopyTable(vars.Modules.CcModule.Default.SimpleMode.Offset)
+
+		vars.Modules.CcModule.Raid.Grow = vars.Modules.CcModule.Raid.SimpleMode.Grow
+		vars.Modules.CcModule.Raid.Offset = mini:CopyTable(vars.Modules.CcModule.Raid.SimpleMode.Offset)
+
+		vars.Modules.CcModule.Default.SimpleMode = nil
+		vars.Modules.CcModule.Raid.SimpleMode = nil
+		vars.Modules.CcModule.Default.AdvancedMode = nil
+		vars.Modules.CcModule.Raid.AdvancedMode = nil
+
+		mini:CleanTable(db, dbDefaults, true, true)
+		vars.Version = 19
 	end
 
 	vars = mini:GetSavedVars(dbDefaults)

@@ -233,27 +233,17 @@ function M:AnchorContainer(header, anchor, options)
 	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
 	frame:SetFrameStrata("HIGH")
 
-	if options.SimpleMode.Enabled then
-		local anchorPoint = "CENTER"
-		local relativeToPoint = "CENTER"
+	local anchorPoint = "CENTER"
+	local relativeToPoint = "CENTER"
 
-		if options.SimpleMode.Grow == "LEFT" then
-			anchorPoint = "RIGHT"
-			relativeToPoint = "LEFT"
-		elseif options.SimpleMode.Grow == "RIGHT" then
-			anchorPoint = "LEFT"
-			relativeToPoint = "RIGHT"
-		end
-		frame:SetPoint(anchorPoint, anchor, relativeToPoint, options.SimpleMode.Offset.X, options.SimpleMode.Offset.Y)
-	elseif options.AdvancedMode then
-		frame:SetPoint(
-			options.AdvancedMode.Point,
-			anchor,
-			options.AdvancedMode.RelativePoint,
-			options.AdvancedMode.Offset.X,
-			options.AdvancedMode.Offset.Y
-		)
+	if options.Grow == "LEFT" then
+		anchorPoint = "RIGHT"
+		relativeToPoint = "LEFT"
+	elseif options.Grow == "RIGHT" then
+		anchorPoint = "LEFT"
+		relativeToPoint = "RIGHT"
 	end
+	frame:SetPoint(anchorPoint, anchor, relativeToPoint, options.Offset.X, options.Offset.Y)
 end
 
 local function RefreshTestIcons()

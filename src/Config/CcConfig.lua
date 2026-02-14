@@ -31,13 +31,11 @@ local function BuildAnchorSettings(parent, options)
 		Items = growOptions,
 		Width = columnWidth * 2 - horizontalSpacing,
 		GetValue = function()
-			return options.SimpleMode.Grow
+			return options.Grow
 		end,
 		SetValue = function(value)
-			options.SimpleMode.Enabled = true
-
-			if options.SimpleMode.Grow ~= value then
-				options.SimpleMode.Grow = value
+			if options.Grow ~= value then
+				options.Grow = value
 				config:Apply()
 			end
 		end,
@@ -55,11 +53,10 @@ local function BuildAnchorSettings(parent, options)
 		Width = columnWidth * 2 - horizontalSpacing,
 		LabelText = "Offset X",
 		GetValue = function()
-			return options.SimpleMode.Offset.X
+			return options.Offset.X
 		end,
 		SetValue = function(v)
-			options.SimpleMode.Enabled = true
-			options.SimpleMode.Offset.X = mini:ClampInt(v, -250, 250, 0)
+			options.Offset.X = mini:ClampInt(v, -250, 250, 0)
 			config:Apply()
 		end,
 	})
@@ -74,11 +71,10 @@ local function BuildAnchorSettings(parent, options)
 		Width = columnWidth * 2 - horizontalSpacing,
 		LabelText = "Offset Y",
 		GetValue = function()
-			return options.SimpleMode.Offset.Y
+			return options.Offset.Y
 		end,
 		SetValue = function(v)
-			options.SimpleMode.Enabled = true
-			options.SimpleMode.Offset.Y = mini:ClampInt(v, -250, 250, 0)
+			options.Offset.Y = mini:ClampInt(v, -250, 250, 0)
 			config:Apply()
 		end,
 	})
