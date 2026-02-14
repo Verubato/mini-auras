@@ -168,12 +168,10 @@ local function DisableAll()
 end
 
 local function RefreshHealers()
-	-- Remove anyone who is no longer a healer.
+	-- Remove all active healers from the pool to avoid duplicates
 	local toDiscard = {}
 	for unit in pairs(activePool) do
-		if not units:IsHealer(unit) then
-			toDiscard[#toDiscard + 1] = unit
-		end
+		toDiscard[#toDiscard + 1] = unit
 	end
 
 	for _, unit in ipairs(toDiscard) do
@@ -187,20 +185,15 @@ local function RefreshHealers()
 
 	local healers = units:FindHealers()
 
+	-- Re-add healers from the new set
 	for _, healer in ipairs(healers) do
-		local item = activePool[healer]
+		local item = discardPool[healer]
 
-		if not item then
-			item = discardPool[healer]
-
-			if item then
-				item.Watcher:Enable()
-				activePool[healer] = item
-				discardPool[healer] = nil
-			end
-		end
-
-		if not item then
+		if item then
+			item.Watcher:Enable()
+			activePool[healer] = item
+			discardPool[healer] = nil
+		else
 			item = {
 				Unit = healer,
 				Watcher = unitWatcher:New(healer, nil, {
