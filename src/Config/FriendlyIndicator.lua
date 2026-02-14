@@ -253,8 +253,26 @@ function M:Build(panel, options)
 
 	iconSize.Slider:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
-	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
+	local maxIcons = mini:Slider({
+		Parent = panel,
+		Min = 1,
+		Max = 5,
+		Width = (columnWidth * columns) - horizontalSpacing,
+		Step = 1,
+		LabelText = "Max Icons",
+		GetValue = function()
+			return options.Icons.MaxIcons
+		end,
+		SetValue = function(v)
+			options.Icons.MaxIcons = mini:ClampInt(v, 1, 5, 1)
+			config:Apply()
+		end,
+	})
+
+	maxIcons.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
+	anchorPanel:SetPoint("TOPLEFT", maxIcons.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	anchorPanel:SetPoint("TOPRIGHT", maxIcons.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
 
 	panel.OnMiniRefresh = function()
 		anchorPanel:MiniRefresh()

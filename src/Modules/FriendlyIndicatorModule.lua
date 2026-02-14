@@ -53,6 +53,7 @@ local function UpdateWatcherAuras(entry)
 	-- Cache config options for performance
 	local iconsReverse = options.Icons.ReverseCooldown
 	local iconsGlow = options.Icons.Glow
+	local maxIcons = options.Icons.MaxIcons or 1
 	local container = entry.Container
 
 	-- Get both defensive and important states
@@ -61,33 +62,34 @@ local function UpdateWatcherAuras(entry)
 
 	container:ResetAllSlots()
 
-	-- Priority: Defensive -> Important
-	local auraToShow = nil
-	local alpha = nil
-
-	if #defensiveState > 0 then
-		auraToShow = defensiveState[#defensiveState]
-		if auraToShow then
-			alpha = auraToShow.IsDefensive
-		end
-	elseif #importantState > 0 then
-		auraToShow = importantState[#importantState]
-		if auraToShow then
-			alpha = auraToShow.IsImportant
-		end
+	-- Combine all auras (defensive first, then important)
+	local allAuras = {}
+	for _, aura in ipairs(defensiveState) do
+		table.insert(allAuras, { aura = aura, alpha = aura.IsDefensive })
+	end
+	for _, aura in ipairs(importantState) do
+		table.insert(allAuras, { aura = aura, alpha = aura.IsImportant })
 	end
 
-	if auraToShow then
-		container:SetSlotUsed(1)
-		container:SetLayer(1, 1, {
-			Texture = auraToShow.SpellIcon,
-			StartTime = auraToShow.StartTime,
-			Duration = auraToShow.TotalDuration,
-			AlphaBoolean = alpha,
+	-- Display up to MaxIcons auras
+	local slotIndex = 1
+	for _, auraData in ipairs(allAuras) do
+		if slotIndex > maxIcons or slotIndex > container.Count then
+			break
+		end
+
+		local aura = auraData.aura
+		container:SetSlotUsed(slotIndex)
+		container:SetLayer(slotIndex, 1, {
+			Texture = aura.SpellIcon,
+			StartTime = aura.StartTime,
+			Duration = aura.TotalDuration,
+			AlphaBoolean = auraData.alpha,
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
 		})
-		container:FinalizeSlot(1, 1)
+		container:FinalizeSlot(slotIndex, 1)
+		slotIndex = slotIndex + 1
 	end
 end
 
@@ -147,9 +149,10 @@ local function EnsureWatcher(anchor, unit)
 	local entry = watchers[anchor]
 
 	if not entry then
+		local maxIcons = options.Icons.MaxIcons or 1
 		local size = tonumber(options.Icons.Size) or 32
 		local spacing = 2
-		local container = iconSlotContainer:New(UIParent, 1, size, spacing)
+		local container = iconSlotContainer:New(UIParent, maxIcons, size, spacing)
 		container.Frame:SetIgnoreParentScale(true)
 		container.Frame:SetIgnoreParentAlpha(true)
 		local watcher = UnitAuraWatcher:New(unit, nil, { Defensives = true, Important = true })
@@ -179,8 +182,18 @@ local function EnsureWatcher(anchor, unit)
 			entry.Watcher:ForceFullUpdate()
 		end
 
-		local iconSize = tonumber(options.Icons.Size) or 32
-		entry.Container:SetIconSize(iconSize)
+		-- Check if MaxIcons has changed
+		local maxIcons = options.Icons.MaxIcons or 1
+		if entry.Container.Count ~= maxIcons then
+			-- MaxIcons changed, recreate the container
+			entry.Container.Frame:Hide()
+			entry.Container = iconSlotContainer:New(UIParent, maxIcons, tonumber(options.Icons.Size) or 32, 2)
+			entry.Container.Frame:SetIgnoreParentScale(true)
+			entry.Container.Frame:SetIgnoreParentAlpha(true)
+		else
+			local iconSize = tonumber(options.Icons.Size) or 32
+			entry.Container:SetIconSize(iconSize)
+		end
 	end
 
 	UpdateWatcherAuras(entry)
@@ -262,30 +275,34 @@ local function RefreshTestIcons()
 	for index, entry in ipairs(orderedEntries) do
 		local container = entry.Container
 		local now = GetTime()
+		local maxIcons = options.Icons.MaxIcons or 1
 
 		container:ResetAllSlots()
 		container:SetIconSize(tonumber(options.Icons.Size) or 50)
 
-		local spell = index % 2 == 0 and testImportantSpells[1] or testDefensiveSpells[1]
+		-- Fill up to MaxIcons test icons, alternating between defensive and important
+		for slotIndex = 1, math.min(maxIcons, container.Count) do
+			local spell = slotIndex % 2 == 0 and testImportantSpells[1] or testDefensiveSpells[1]
 
-		if spell then
-			local texture = spellCache:GetSpellTexture(spell.SpellId)
+			if spell then
+				local texture = spellCache:GetSpellTexture(spell.SpellId)
 
-			if texture then
-				local duration = 15
-				local startTime = now
+				if texture then
+					local duration = 15
+					local startTime = now
 
-				container:SetSlotUsed(1)
+					container:SetSlotUsed(slotIndex)
 
-				container:SetLayer(1, 1, {
-					Texture = texture,
-					StartTime = startTime,
-					Duration = duration,
-					AlphaBoolean = true,
-					ReverseCooldown = options.Icons.ReverseCooldown,
-					Glow = options.Icons.Glow,
-				})
-				container:FinalizeSlot(1, 1)
+					container:SetLayer(slotIndex, 1, {
+						Texture = texture,
+						StartTime = startTime,
+						Duration = duration,
+						AlphaBoolean = true,
+						ReverseCooldown = options.Icons.ReverseCooldown,
+						Glow = options.Icons.Glow,
+					})
+					container:FinalizeSlot(slotIndex, 1)
+				end
 			end
 		end
 

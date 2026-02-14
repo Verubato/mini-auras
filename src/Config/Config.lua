@@ -301,6 +301,7 @@ local dbDefaults = {
 				Size = 40,
 				Glow = true,
 				ReverseCooldown = true,
+				MaxIcons = 1,
 			},
 		},
 	},
