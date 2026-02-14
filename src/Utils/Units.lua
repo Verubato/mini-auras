@@ -87,3 +87,10 @@ end
 function M:IsEnemy(unitToken)
 	return UnitIsEnemy("player", unitToken)
 end
+
+---Returns true if the unit token contains "target" (e.g. "raid1target", "boss1target"), otherwise false
+---@param unitToken string
+---@return boolean
+function M:IsCompoundUnit(unitToken)
+	return string.find(unitToken, "target") ~= nil
+end

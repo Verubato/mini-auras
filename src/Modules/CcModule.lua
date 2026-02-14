@@ -2,6 +2,7 @@
 local _, addon = ...
 local instanceOptions = addon.Core.InstanceOptions
 local frames = addon.Core.Frames
+local units = addon.Utils.Units
 local IconSlotContainer = addon.Core.IconSlotContainer
 local UnitAuraWatcher = addon.Core.UnitAuraWatcher
 local capabilities = addon.Capabilities
@@ -193,6 +194,12 @@ local function OnCufSetUnit(frame, unit)
 	end
 
 	if not unit then
+		return
+	end
+
+	if units:IsCompoundUnit(unit) then
+		-- in PvE ignore main tank and assist frames
+		-- you can't scan them for auras
 		return
 	end
 

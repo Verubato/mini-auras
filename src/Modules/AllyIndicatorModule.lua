@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Core.Framework
 local frames = addon.Core.Frames
+local units = addon.Utils.Units
 local iconSlotContainer = addon.Core.IconSlotContainer
 local UnitAuraWatcher = addon.Core.UnitAuraWatcher
 local spellCache = addon.Utils.SpellCache
@@ -221,6 +222,10 @@ local function OnCufSetUnit(frame, unit)
 	end
 
 	if not unit then
+		return
+	end
+
+	if units:IsCompoundUnit(unit) then
 		return
 	end
 
