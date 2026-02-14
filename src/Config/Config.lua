@@ -481,6 +481,8 @@ local function GetAndUpgradeDb()
 				Raids = vars.Raid and vars.Raid.Enabled,
 				Dungeons = vars.Raid and vars.Raid.Enabled,
 			}
+			vars.Modules.CcModule.Default.Grow = vars.Default.SimpleMode.Grow
+			vars.Modules.CcModule.Default.Offset = mini:CopyTable(vars.Default.SimpleMode.Offset)
 			vars.Default = nil
 		end
 
@@ -488,6 +490,8 @@ local function GetAndUpgradeDb()
 			vars.Modules = vars.Modules or {}
 			vars.Modules.CcModule = vars.Modules.CcModule or {}
 			vars.Modules.CcModule.Raid = mini:CopyTable(vars.Raid)
+			vars.Modules.CcModule.Raid.Grow = vars.Raid.SimpleMode.Grow
+			vars.Modules.CcModule.Raid.Offset = mini:CopyTable(vars.Raid.SimpleMode.Offset)
 			vars.Raid = nil
 		end
 
@@ -612,22 +616,6 @@ local function GetAndUpgradeDb()
 
 		mini:CleanTable(vars, dbDefaults, true, true)
 		vars.Version = 18
-	end
-
-	if vars.Version == 18 then
-		vars.Modules.CcModule.Default.Grow = vars.Modules.CcModule.Default.SimpleMode.Grow
-		vars.Modules.CcModule.Default.Offset = mini:CopyTable(vars.Modules.CcModule.Default.SimpleMode.Offset)
-
-		vars.Modules.CcModule.Raid.Grow = vars.Modules.CcModule.Raid.SimpleMode.Grow
-		vars.Modules.CcModule.Raid.Offset = mini:CopyTable(vars.Modules.CcModule.Raid.SimpleMode.Offset)
-
-		vars.Modules.CcModule.Default.SimpleMode = nil
-		vars.Modules.CcModule.Raid.SimpleMode = nil
-		vars.Modules.CcModule.Default.AdvancedMode = nil
-		vars.Modules.CcModule.Raid.AdvancedMode = nil
-
-		mini:CleanTable(vars, dbDefaults, true, true)
-		vars.Version = 19
 	end
 
 	vars = mini:GetSavedVars(dbDefaults)
