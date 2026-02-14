@@ -88,7 +88,7 @@ end
 
 ---@param panel table
 ---@param options CcInstanceOptions
-local function BuildInstance(panel, options)
+local function BuildInstance(panel, options, addTestButton)
 	local parent = CreateFrame("Frame", nil, panel)
 	local anchorPanel = BuildAnchorSettings(parent, options)
 
@@ -175,13 +175,15 @@ local function BuildInstance(panel, options)
 	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
 
-	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-	testBtn:SetSize(120, 26)
-	testBtn:SetPoint("TOPLEFT", anchorPanel, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-	testBtn:SetText("Test")
-	testBtn:SetScript("OnClick", function()
-		addon:TestWithOptions(options)
-	end)
+	if addTestButton then
+		local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+		testBtn:SetSize(120, 26)
+		testBtn:SetPoint("TOPLEFT", anchorPanel, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+		testBtn:SetText("Test")
+		testBtn:SetScript("OnClick", function()
+			addon:TestWithOptions(options)
+		end)
+	end
 
 	return parent
 end
@@ -281,7 +283,7 @@ function M:Build(panel, default, raid)
 	defaultDivider:SetPoint("RIGHT", panel, "RIGHT")
 	defaultDivider:SetPoint("TOP", enabledEverywhere, "BOTTOM", 0, -verticalSpacing * 2)
 
-	local defaultPanel = BuildInstance(panel, default)
+	local defaultPanel = BuildInstance(panel, default, false)
 
 	defaultPanel:SetPoint("TOPLEFT", defaultDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 	defaultPanel:SetPoint("TOPRIGHT", defaultDivider, "BOTTOMRIGHT", 0, -verticalSpacing)
@@ -297,7 +299,7 @@ function M:Build(panel, default, raid)
 	raidDivider:SetPoint("RIGHT", panel, "RIGHT")
 	raidDivider:SetPoint("TOP", defaultPanel, "BOTTOM")
 
-	local raidPanel = BuildInstance(panel, raid)
+	local raidPanel = BuildInstance(panel, raid, true)
 
 	raidPanel:SetPoint("TOPLEFT", raidDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 	raidPanel:SetPoint("TOPRIGHT", raidDivider, "TOPRIGHT")
