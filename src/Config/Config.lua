@@ -542,8 +542,7 @@ function config:Init()
 
 	local keys = {
 		General = "General",
-		Default = "Default",
-		Raids = "Raids",
+		CC = "CC",
 		Alerts = "Alerts",
 		Healer = "Healer",
 		Nameplates = "Nameplates",
@@ -559,17 +558,10 @@ function config:Init()
 			end,
 		},
 		{
-			Key = keys.Default,
-			Title = "Arena/Default",
+			Key = keys.CC,
+			Title = "CC",
 			Build = function(content)
-				config.Instance:Build(content, db.Default)
-			end,
-		},
-		{
-			Key = keys.Raids,
-			Title = "BGs/Raids",
-			Build = function(content)
-				config.Instance:Build(content, db.Raid)
+				config.CcConfig:Build(content, db.Default, db.Raid)
 			end,
 		},
 		{
@@ -609,14 +601,6 @@ function config:Init()
 			Top = verticalSpacing,
 		},
 		Tabs = tabs,
-		OnTabChanged = function(key, _)
-			-- swap the test options when the user changes tabs in case we're in test mode already
-			if key == keys.Raids then
-				addon:TestOptions(db.Raid)
-			elseif key == keys.Default then
-				addon:TestOptions(db.Default)
-			end
-		end,
 	})
 
 	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
@@ -626,12 +610,6 @@ function config:Init()
 	testBtn:SetText("Test")
 	testBtn:SetScript("OnClick", function()
 		local options = db.Default
-
-		local selectedTab = tabController:GetSelected()
-		if selectedTab == keys.Raids then
-			options = db.Raid
-		end
-
 		addon:ToggleTest(options)
 	end)
 
@@ -694,7 +672,7 @@ end
 ---@field DbDefaults Db
 ---@field TabController TabReturn
 ---@field General GeneralConfig
----@field Instance InstanceConfig
+---@field CcConfig CcConfig
 ---@field Anchors AnchorsConfig
 ---@field Healer HealerConfig
 ---@field Alerts AlertsConfig

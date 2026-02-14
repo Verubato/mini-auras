@@ -39,7 +39,7 @@ Modules\TestModeManager.lua
 
 Config\Config.lua
 Config\General.lua
-Config\Instance.lua
+Config\CcConfig.lua
 Config\Anchors.lua
 Config\Healer.lua
 Config\Alerts.lua

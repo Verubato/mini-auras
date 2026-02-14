@@ -132,12 +132,14 @@ function addon:ToggleTest(options)
 end
 
 ---@param options InstanceOptions
-function addon:TestOptions(options)
-	instanceOptions:SetTestInstanceOptions(options)
-
-	if testModeManager:IsActive() then
-		addon:Refresh()
+function addon:TestWithOptions(options)
+	if not testModeManager:IsActive() then
+		testModeManager:StartTesting(options)
+		return
 	end
+
+	instanceOptions:SetTestInstanceOptions(options)
+	addon:Refresh()
 end
 
 mini:WaitForAddonLoad(OnAddonLoaded)
@@ -150,7 +152,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Modules Modules
 ---@field Refresh fun(self: table)
 ---@field ToggleTest fun(self: table, options: InstanceOptions)
----@field TestOptions fun(self: table, options: InstanceOptions)
+---@field TestWithOptions fun(self: table, options: InstanceOptions)
 
 ---@class Utils
 ---@field CcUtil CcUtil

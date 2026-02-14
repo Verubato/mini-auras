@@ -13,10 +13,10 @@ local columns = 4
 local columnWidth = mini:ColumnWidth(columns, 0, 0)
 local config = addon.Config
 
----@class InstanceConfig
+---@class CcConfig
 local M = {}
 
-config.Instance = M
+config.CcConfig = M
 
 ---@param parent table
 ---@param options InstanceOptions
@@ -92,11 +92,12 @@ end
 
 ---@param panel table
 ---@param options InstanceOptions
-function M:Build(panel, options)
-	local anchorPanel = BuildAnchorSettings(panel, options)
+local function BuildInstance(panel, options)
+	local parent = CreateFrame("Frame", nil, panel)
+	local anchorPanel = BuildAnchorSettings(parent, options)
 
 	local enabledChk = mini:Checkbox({
-		Parent = panel,
+		Parent = parent,
 		LabelText = "Enabled",
 		Tooltip = "Whether to enable or disable this module.",
 		GetValue = function()
@@ -109,10 +110,10 @@ function M:Build(panel, options)
 		end,
 	})
 
-	enabledChk:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	enabledChk:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
 
 	local excludePlayerChk = mini:Checkbox({
-		Parent = panel,
+		Parent = parent,
 		LabelText = "Exclude self",
 		Tooltip = "Exclude yourself from showing CC icons.",
 		GetValue = function()
@@ -124,11 +125,11 @@ function M:Build(panel, options)
 		end,
 	})
 
-	excludePlayerChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	excludePlayerChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
 	excludePlayerChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
 	local glowChk = mini:Checkbox({
-		Parent = panel,
+		Parent = parent,
 		LabelText = "Glow icons",
 		Tooltip = "Show a glow around the CC icons.",
 		GetValue = function()
@@ -143,7 +144,7 @@ function M:Build(panel, options)
 	glowChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local dispelColoursChk = mini:Checkbox({
-		Parent = panel,
+		Parent = parent,
 		LabelText = "Dispel colours",
 		Tooltip = "Change the colour of the glow based on the type of debuff.",
 		GetValue = function()
@@ -155,11 +156,11 @@ function M:Build(panel, options)
 		end,
 	})
 
-	dispelColoursChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
 	dispelColoursChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local reverseChk = mini:Checkbox({
-		Parent = panel,
+		Parent = parent,
 		LabelText = "Reverse swipe",
 		Tooltip = "Reverses the direction of the cooldown swipe animation.",
 		GetValue = function()
@@ -171,11 +172,11 @@ function M:Build(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	reverseChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local iconSize = mini:Slider({
-		Parent = panel,
+		Parent = parent,
 		Min = 10,
 		Max = 200,
 		Width = (columnWidth * columns) - horizontalSpacing,
@@ -195,12 +196,58 @@ function M:Build(panel, options)
 	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
 
+	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+	testBtn:SetSize(120, 26)
+	testBtn:SetPoint("TOPLEFT", anchorPanel, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	testBtn:SetText("Test")
+	testBtn:SetScript("OnClick", function()
+		addon:TestWithOptions(options)
+	end)
+
+	return parent
+end
+
+---@param panel table
+---@param default InstanceOptions
+---@param raid InstanceOptions
+function M:Build(panel, default, raid)
+	local defaultDivider = mini:Divider({
+		Parent = panel,
+		Text = "Arena & World",
+	})
+
+	defaultDivider:SetPoint("LEFT", panel, "LEFT")
+	defaultDivider:SetPoint("RIGHT", panel, "RIGHT")
+	defaultDivider:SetPoint("TOP", panel, "TOP")
+
+	local defaultPanel = BuildInstance(panel, default)
+
+	defaultPanel:SetPoint("TOPLEFT", defaultDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+	defaultPanel:SetPoint("TOPRIGHT", defaultDivider, "BOTTOMRIGHT", 0, -verticalSpacing)
+	-- TODO: calculate real child height
+	defaultPanel:SetHeight(370)
+
+	local raidDivider = mini:Divider({
+		Parent = panel,
+		Text = "BGs & Raids",
+	})
+
+	raidDivider:SetPoint("LEFT", panel, "LEFT")
+	raidDivider:SetPoint("RIGHT", panel, "RIGHT")
+	raidDivider:SetPoint("TOP", defaultPanel, "BOTTOM")
+
+	local raidPanel = BuildInstance(panel, raid)
+
+	raidPanel:SetPoint("TOPLEFT", raidDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+	raidPanel:SetPoint("TOPRIGHT", raidDivider, "TOPRIGHT")
+	raidPanel:SetHeight(370)
+
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()
-		addon:TestOptions(options)
 	end)
 
 	panel.OnMiniRefresh = function()
-		anchorPanel:MiniRefresh()
+		defaultPanel:MiniRefresh()
+		raidPanel:MiniRefresh()
 	end
 end
