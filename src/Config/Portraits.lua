@@ -26,7 +26,7 @@ function M:Build(panel)
 
 	local enabled = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Everywhere",
+		LabelText = "Enabled",
 		Tooltip = "Enable this module everywhere.",
 		GetValue = function()
 			return db.Modules.PortraitModule.Enabled.Always
