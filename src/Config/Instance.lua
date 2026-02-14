@@ -140,24 +140,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	glowChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
-
-	local reverseChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = "Reverse swipe",
-		Tooltip = "Reverses the direction of the cooldown swipe animation.",
-		GetValue = function()
-			return options.Icons.ReverseCooldown
-		end,
-		SetValue = function(value)
-			options.Icons.ReverseCooldown = value
-			config:Apply()
-		end,
-	})
-
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	reverseChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	glowChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local dispelColoursChk = mini:Checkbox({
 		Parent = panel,
@@ -172,7 +155,24 @@ function M:Build(panel, options)
 		end,
 	})
 
-	dispelColoursChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	dispelColoursChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	dispelColoursChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+
+	local reverseChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Reverse swipe",
+		Tooltip = "Reverses the direction of the cooldown swipe animation.",
+		GetValue = function()
+			return options.Icons.ReverseCooldown
+		end,
+		SetValue = function(value)
+			options.Icons.ReverseCooldown = value
+			config:Apply()
+		end,
+	})
+
+	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local iconSize = mini:Slider({
 		Parent = panel,
@@ -190,7 +190,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", dispelColoursChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
