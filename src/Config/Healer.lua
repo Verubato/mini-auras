@@ -41,6 +41,54 @@ function M:Build(panel, options)
 
 	enabledChk:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 0, -verticalSpacing)
 
+	local arenaChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Arena",
+		Tooltip = "Enable in arenas.",
+		GetValue = function()
+			return options.Filters.Arena
+		end,
+		SetValue = function(value)
+			options.Filters.Arena = value
+			config:Apply()
+		end,
+	})
+
+	arenaChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	arenaChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+
+	local battlegroudsChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "BGs",
+		Tooltip = "Enable in battlegrounds.",
+		GetValue = function()
+			return options.Filters.BattleGrounds
+		end,
+		SetValue = function(value)
+			options.Filters.BattleGrounds = value
+			config:Apply()
+		end,
+	})
+
+	battlegroudsChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	battlegroudsChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+
+	local worldChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "World",
+		Tooltip = "Enable in the general overworld.",
+		GetValue = function()
+			return options.Filters.World
+		end,
+		SetValue = function(value)
+			options.Filters.World = value
+			config:Apply()
+		end,
+	})
+
+	worldChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	worldChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+
 	local glowChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Glow icons",
@@ -54,8 +102,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	glowChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	glowChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local reverseChk = mini:Checkbox({
 		Parent = panel,
@@ -91,53 +138,6 @@ function M:Build(panel, options)
 		soundChk:SetPoint("TOP", reverseChk, "TOP", 0, 0)
 	end
 
-	local arenaChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = "Arena",
-		Tooltip = "Enable in arenas.",
-		GetValue = function()
-			return options.Filters.Arena
-		end,
-		SetValue = function(value)
-			options.Filters.Arena = value
-			config:Apply()
-		end,
-	})
-
-	arenaChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local battlegroudsChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = "BGs",
-		Tooltip = "Enable in battlegrounds.",
-		GetValue = function()
-			return options.Filters.BattleGrounds
-		end,
-		SetValue = function(value)
-			options.Filters.BattleGrounds = value
-			config:Apply()
-		end,
-	})
-
-	battlegroudsChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	battlegroudsChk:SetPoint("TOP", arenaChk, "TOP", 0, 0)
-
-	local worldChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = "World",
-		Tooltip = "Enable in the general overworld.",
-		GetValue = function()
-			return options.Filters.World
-		end,
-		SetValue = function(value)
-			options.Filters.World = value
-			config:Apply()
-		end,
-	})
-
-	worldChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	worldChk:SetPoint("TOP", arenaChk, "TOP", 0, 0)
-
 	local dispelColoursChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Dispel colours",
@@ -169,7 +169,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", dispelColoursChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local fontSize = mini:Slider({
 		Parent = panel,
