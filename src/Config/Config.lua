@@ -543,10 +543,11 @@ function config:Init()
 	local keys = {
 		General = "General",
 		CC = "CC",
+		CDs = "CDs",
 		Alerts = "Alerts",
 		Healer = "Healer",
 		Nameplates = "Nameplates",
-		CDs = "CDs",
+		Other = "Other",
 	}
 
 	local tabs = {
@@ -562,6 +563,13 @@ function config:Init()
 			Title = "CC",
 			Build = function(content)
 				config.CcConfig:Build(content, db.Default, db.Raid)
+			end,
+		},
+		{
+			Key = keys.CDs,
+			Title = "CDs",
+			Build = function(content)
+				config.AllyIndicator:Build(content, db.AllyIndicator)
 			end,
 		},
 		{
@@ -586,10 +594,10 @@ function config:Init()
 			end,
 		},
 		{
-			Key = keys.CDs,
-			Title = "CDs",
+			Key = keys.Other,
+			Title = "Other",
 			Build = function(content)
-				config.AllyIndicator:Build(content, db.AllyIndicator)
+				config.Other:Build(content)
 			end,
 		},
 	}
@@ -672,6 +680,7 @@ end
 ---@field DbDefaults Db
 ---@field TabController TabReturn
 ---@field General GeneralConfig
+---@field Other OtherConfig
 ---@field CcConfig CcConfig
 ---@field Anchors AnchorsConfig
 ---@field Healer HealerConfig
