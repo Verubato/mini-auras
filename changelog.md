@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.18.1
+
+Fix for upgrading from an old version.
+
 ## 2.18.0
 
 - Added max icons slider for Friendly CDs module.
