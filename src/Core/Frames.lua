@@ -169,7 +169,7 @@ function M:Grid2Frames(visibleOnly)
 	end
 
 	for i = 1, maxRaid do
-		local raidFrames = Grid2:GetUnitFrames("party" .. i)
+		local raidFrames = Grid2:GetUnitFrames("raid" .. i)
 		local frame = raidFrames and next(raidFrames)
 
 		if frame and (frame:IsVisible() or not visibleOnly) then
