@@ -40,10 +40,10 @@ function M:Build(panel, options)
 		LabelText = "Everywhere",
 		Tooltip = "Enable this module everywhere",
 		GetValue = function()
-			return db.Modules.HealerCcModule.Enabled.Always
+			return db.Modules.HealerCCModule.Enabled.Always
 		end,
 		SetValue = function(value)
-			db.Modules.HealerCcModule.Enabled.Always = value
+			db.Modules.HealerCCModule.Enabled.Always = value
 			config:Apply()
 		end,
 	})
@@ -55,10 +55,10 @@ function M:Build(panel, options)
 		LabelText = "Arena",
 		Tooltip = "Enable this module in arena",
 		GetValue = function()
-			return db.Modules.HealerCcModule.Enabled.Arena
+			return db.Modules.HealerCCModule.Enabled.Arena
 		end,
 		SetValue = function(value)
-			db.Modules.HealerCcModule.Enabled.Arena = value
+			db.Modules.HealerCCModule.Enabled.Arena = value
 			config:Apply()
 		end,
 	})
@@ -71,10 +71,10 @@ function M:Build(panel, options)
 		LabelText = "BGS & Raids",
 		Tooltip = "Enable this module in BGs and raids.",
 		GetValue = function()
-			return db.Modules.HealerCcModule.Enabled.Raids
+			return db.Modules.HealerCCModule.Enabled.Raids
 		end,
 		SetValue = function(value)
-			db.Modules.HealerCcModule.Enabled.Raids = value
+			db.Modules.HealerCCModule.Enabled.Raids = value
 			config:Apply()
 		end,
 	})
@@ -87,10 +87,10 @@ function M:Build(panel, options)
 		LabelText = "Dungeons",
 		Tooltip = "Enable this module in dungeons and M+.",
 		GetValue = function()
-			return db.Modules.HealerCcModule.Enabled.Dungeons
+			return db.Modules.HealerCCModule.Enabled.Dungeons
 		end,
 		SetValue = function(value)
-			db.Modules.HealerCcModule.Enabled.Dungeons = value
+			db.Modules.HealerCCModule.Enabled.Dungeons = value
 			config:Apply()
 		end,
 	})

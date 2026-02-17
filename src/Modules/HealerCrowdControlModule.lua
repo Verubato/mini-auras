@@ -44,7 +44,7 @@ local M = {}
 addon.Modules.HealerCrowdControlModule = M
 
 local function PlaySound()
-	PlaySoundFile(soundFile, db.Modules.HealerCcModule.Sound.Channel or "Master")
+	PlaySoundFile(soundFile, db.Modules.HealerCCModule.Sound.Channel or "Master")
 end
 
 local function UpdateAnchorSize()
@@ -52,7 +52,7 @@ local function UpdateAnchorSize()
 		return
 	end
 
-	local options = db.Modules.HealerCcModule
+	local options = db.Modules.HealerCCModule
 	local iconSize = tonumber(options.Icons.Size) or 32
 	local text = healerAnchor.HealerWarning
 	local stringWidth = text and text:GetStringWidth() or 0
@@ -73,7 +73,7 @@ local function OnAuraStateUpdated()
 		return
 	end
 
-	local options = db.Modules.HealerCcModule
+	local options = db.Modules.HealerCCModule
 
 	-- Cache config options for performance
 	local hasNewFilters = capabilities:HasNewFilters()
@@ -132,7 +132,7 @@ local function OnAuraStateUpdated()
 	local isCcdAlpha = ccUtil:IsCcAppliedAlpha(allCcAuraData)
 	healerAnchor:SetAlpha(isCcdAlpha)
 
-	if db.Modules.HealerCcModule.Sound.Enabled and not mini:IsSecret(isCcdAlpha) then
+	if db.Modules.HealerCCModule.Sound.Enabled and not mini:IsSecret(isCcdAlpha) then
 		if isCcdAlpha == 1 and lastCcdAlpha ~= isCcdAlpha then
 			PlaySound()
 		end
@@ -212,7 +212,7 @@ local function RefreshHealers()
 end
 
 local function RefreshTestFrame()
-	local options = db.Modules.HealerCcModule
+	local options = db.Modules.HealerCCModule
 
 	if not iconsContainer or not options then
 		return
@@ -296,7 +296,7 @@ function M:Refresh()
 		return
 	end
 
-	local options = db.Modules.HealerCcModule
+	local options = db.Modules.HealerCCModule
 	local moduleEnabled = moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl)
 
 	healerAnchor:ClearAllPoints()
@@ -345,7 +345,7 @@ end
 function M:Init()
 	db = mini:GetSavedVars()
 
-	previousTestSoundEnabled = db.Modules.HealerCcModule.Sound.Enabled
+	previousTestSoundEnabled = db.Modules.HealerCCModule.Sound.Enabled
 
 	-- Initialize test spells
 	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
@@ -354,7 +354,7 @@ function M:Init()
 	local multipleTestSpells = { kidneyShot, fear, hex }
 	testSpells = capabilities:HasNewFilters() and multipleTestSpells or { kidneyShot }
 
-	local options = db.Modules.HealerCcModule
+	local options = db.Modules.HealerCCModule
 
 	healerAnchor = CreateFrame("Frame", addonName .. "HealerContainer")
 	healerAnchor:EnableMouse(false)
@@ -370,11 +370,11 @@ function M:Init()
 		anchorSelf:StopMovingOrSizing()
 
 		local point, relativeTo, relativePoint, x, y = anchorSelf:GetPoint()
-		db.Modules.HealerCcModule.Point = point
-		db.Modules.HealerCcModule.RelativePoint = relativePoint
-		db.Modules.HealerCcModule.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
-		db.Modules.HealerCcModule.Offset.X = x
-		db.Modules.HealerCcModule.Offset.Y = y
+		db.Modules.HealerCCModule.Point = point
+		db.Modules.HealerCCModule.RelativePoint = relativePoint
+		db.Modules.HealerCCModule.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
+		db.Modules.HealerCCModule.Offset.X = x
+		db.Modules.HealerCCModule.Offset.Y = y
 	end)
 
 	local text = healerAnchor:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")

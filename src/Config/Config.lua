@@ -8,14 +8,14 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 19,
+	Version = 20,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
 	FontScale = 1.0,
 	Modules = {
 		---@class CrowdControlModuleOptions
-		CcModule = {
+		CCModule = {
 			Enabled = {
 				Always = true,
 				Arena = true,
@@ -58,7 +58,7 @@ local dbDefaults = {
 			},
 		},
 		---@class HealerCrowdControlModuleOptions
-		HealerCcModule = {
+		HealerCCModule = {
 			Enabled = {
 				Always = true,
 				Arena = true,
@@ -479,28 +479,28 @@ local function GetAndUpgradeDb()
 
 	-- commence massive refactor
 	if vars.Version == 17 then
-		-- Move Default and Raid configs into Modules.CcModule
+		-- Move Default and Raid configs into Modules.CCModule
 		if vars.Default then
 			vars.Modules = vars.Modules or {}
-			vars.Modules.CcModule = vars.Modules.CcModule or {}
-			vars.Modules.CcModule.Default = mini:CopyTable(vars.Default)
-			vars.Modules.CcModule.Enabled = {
+			vars.Modules.CCModule = vars.Modules.CCModule or {}
+			vars.Modules.CCModule.Default = mini:CopyTable(vars.Default)
+			vars.Modules.CCModule.Enabled = {
 				Always = vars.Default.Enabled,
 				Arena = vars.Default.Enabled,
 				Raids = vars.Raid and vars.Raid.Enabled,
 				Dungeons = vars.Raid and vars.Raid.Enabled,
 			}
-			vars.Modules.CcModule.Default.Grow = vars.Default.SimpleMode.Grow
-			vars.Modules.CcModule.Default.Offset = mini:CopyTable(vars.Default.SimpleMode.Offset)
+			vars.Modules.CCModule.Default.Grow = vars.Default.SimpleMode.Grow
+			vars.Modules.CCModule.Default.Offset = mini:CopyTable(vars.Default.SimpleMode.Offset)
 			vars.Default = nil
 		end
 
 		if vars.Raid then
 			vars.Modules = vars.Modules or {}
-			vars.Modules.CcModule = vars.Modules.CcModule or {}
-			vars.Modules.CcModule.Raid = mini:CopyTable(vars.Raid)
-			vars.Modules.CcModule.Raid.Grow = vars.Raid.SimpleMode.Grow
-			vars.Modules.CcModule.Raid.Offset = mini:CopyTable(vars.Raid.SimpleMode.Offset)
+			vars.Modules.CCModule = vars.Modules.CCModule or {}
+			vars.Modules.CCModule.Raid = mini:CopyTable(vars.Raid)
+			vars.Modules.CCModule.Raid.Grow = vars.Raid.SimpleMode.Grow
+			vars.Modules.CCModule.Raid.Offset = mini:CopyTable(vars.Raid.SimpleMode.Offset)
 			vars.Raid = nil
 		end
 
@@ -523,17 +523,17 @@ local function GetAndUpgradeDb()
 			vars.AllyIndicator = nil
 		end
 
-		-- Move Healer config into Modules.HealerCcModule
+		-- Move Healer config into Modules.HealerCCModule
 		if vars.Healer then
 			vars.Modules = vars.Modules or {}
-			vars.Modules.HealerCcModule = vars.Modules.HealerCcModule or {}
+			vars.Modules.HealerCCModule = vars.Modules.HealerCCModule or {}
 
-			-- Merge Healer properties directly into HealerCcModule
+			-- Merge Healer properties directly into HealerCCModule
 			for key, value in pairs(vars.Healer) do
-				vars.Modules.HealerCcModule[key] = mini:CopyValueOrTable(value)
+				vars.Modules.HealerCCModule[key] = mini:CopyValueOrTable(value)
 			end
 
-			vars.Modules.HealerCcModule.Enabled = {
+			vars.Modules.HealerCCModule.Enabled = {
 				Always = vars.Healer.Enabled,
 				Arena = vars.Healer.Filters.Arena,
 				BattleGrounds = vars.Healer.BattleGrounds,
@@ -624,10 +624,30 @@ local function GetAndUpgradeDb()
 		end
 
 		mini:CleanTable(vars, dbDefaults, true, true)
-		vars.Version = 18
-	end
+			vars.Version = 18
+		end
 
-	vars = mini:GetSavedVars(dbDefaults)
+		if vars.Version == 18 then
+			-- Rename CcModule to CCModule
+			if vars.Modules and vars.Modules.CcModule then
+				vars.Modules.CCModule = vars.Modules.CcModule
+				vars.Modules.CcModule = nil
+			end
+
+			-- Rename HealerCcModule to HealerCCModule
+			if vars.Modules and vars.Modules.HealerCcModule then
+				vars.Modules.HealerCCModule = vars.Modules.HealerCcModule
+				vars.Modules.HealerCcModule = nil
+			end
+
+			vars.Version = 19
+		end
+
+		if vars.Version == 19 then
+			vars.Version = 20
+		end
+
+		vars = mini:GetSavedVars(dbDefaults)
 
 	return vars
 end
@@ -715,7 +735,7 @@ function config:Init()
 			Key = keys.CC,
 			Title = "CC",
 			Build = function(content)
-				config.CrowdControl:Build(content, db.Modules.CcModule.Default, db.Modules.CcModule.Raid)
+				config.CrowdControl:Build(content, db.Modules.CCModule.Default, db.Modules.CCModule.Raid)
 			end,
 		},
 		{
@@ -736,7 +756,7 @@ function config:Init()
 			Key = keys.Healer,
 			Title = "Healer",
 			Build = function(content)
-				config.Healer:Build(content, db.Modules.HealerCcModule)
+				config.Healer:Build(content, db.Modules.HealerCCModule)
 			end,
 		},
 		{
@@ -770,7 +790,7 @@ function config:Init()
 	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
 	testBtn:SetText("Test")
 	testBtn:SetScript("OnClick", function()
-		local options = db.Modules.CcModule.Default
+		local options = db.Modules.CCModule.Default
 		addon:ToggleTest(options)
 	end)
 
@@ -804,7 +824,7 @@ function config:Init()
 		msg = msg and msg:lower():match("^%s*(.-)%s*$") or ""
 
 		if msg == "test" then
-			addon:ToggleTest(db.Modules.CcModule.Default)
+			addon:ToggleTest(db.Modules.CCModule.Default)
 			return
 		end
 

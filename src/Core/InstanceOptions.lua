@@ -13,7 +13,7 @@ addon.Core.InstanceOptions = M
 ---@return CrowdControlInstanceOptions?
 function M:GetInstanceOptions()
 	local members = GetNumGroupMembers()
-	return members > 5 and db.Modules.CcModule.Raid or db.Modules.CcModule.Default
+	return members > 5 and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
 end
 
 ---@return CrowdControlInstanceOptions?

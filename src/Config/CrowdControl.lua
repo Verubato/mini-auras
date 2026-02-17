@@ -220,10 +220,10 @@ function M:Build(panel, default, raid)
 		LabelText = "Everywhere",
 		Tooltip = "Enable this module everywhere.",
 		GetValue = function()
-			return db.Modules.CcModule.Enabled.Always
+			return db.Modules.CCModule.Enabled.Always
 		end,
 		SetValue = function(value)
-			db.Modules.CcModule.Enabled.Always = value
+			db.Modules.CCModule.Enabled.Always = value
 			config:Apply()
 		end,
 	})
@@ -235,10 +235,10 @@ function M:Build(panel, default, raid)
 		LabelText = "Arena",
 		Tooltip = "Enable this module in arena.",
 		GetValue = function()
-			return db.Modules.CcModule.Enabled.Arena
+			return db.Modules.CCModule.Enabled.Arena
 		end,
 		SetValue = function(value)
-			db.Modules.CcModule.Enabled.Arena = value
+			db.Modules.CCModule.Enabled.Arena = value
 			config:Apply()
 		end,
 	})
@@ -251,10 +251,10 @@ function M:Build(panel, default, raid)
 		LabelText = "BGS & Raids",
 		Tooltip = "Enable this module in BGs and raids.",
 		GetValue = function()
-			return db.Modules.CcModule.Enabled.Raids
+			return db.Modules.CCModule.Enabled.Raids
 		end,
 		SetValue = function(value)
-			db.Modules.CcModule.Enabled.Raids = value
+			db.Modules.CCModule.Enabled.Raids = value
 			config:Apply()
 		end,
 	})
@@ -267,10 +267,10 @@ function M:Build(panel, default, raid)
 		LabelText = "Dungeons",
 		Tooltip = "Enable this module in dungeons and M+.",
 		GetValue = function()
-			return db.Modules.CcModule.Enabled.Dungeons
+			return db.Modules.CCModule.Enabled.Dungeons
 		end,
 		SetValue = function(value)
-			db.Modules.CcModule.Enabled.Dungeons = value
+			db.Modules.CCModule.Enabled.Dungeons = value
 			config:Apply()
 		end,
 	})
