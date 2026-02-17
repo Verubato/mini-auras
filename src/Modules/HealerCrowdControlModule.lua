@@ -101,23 +101,22 @@ local function OnAuraStateUpdated()
 		end
 	end
 
-	local show = false
+	UpdateAnchorSize()
+
+	local show = #allCcAuraData > 0
 	local soundEnabled = db.Modules.HealerCCModule.Sound.Enabled
 
-	for _, info in ipairs(allCcAuraData) do
-		if info.IsCC then
-			show = true
-			break
+	if show then
+		if healerAnchor:IsVisible() then
+			return
 		end
-	end
 
-	if show and not healerAnchor:IsVisible() then
 		healerAnchor:Show()
 
 		if soundEnabled then
 			PlaySound()
 		end
-	elseif healerAnchor:IsVisible() then
+	else
 		healerAnchor:Hide()
 	end
 end
