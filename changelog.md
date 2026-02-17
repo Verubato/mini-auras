@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.19.0
+
+- Added glow icon type dropdown.
+- Added font scale slider.
+- Removed 12.0.0 prepatch code.
+- Grid2 and DandersFrames fixes.
+- Fixed Nameplates not properly disabling when unchecking 'Always'.
+
 ## 2.18.1
 
 Fix for upgrading from an old version.
