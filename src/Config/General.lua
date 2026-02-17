@@ -56,15 +56,19 @@ function M:Build(panel)
 	local fontScaleSlider = mini:Slider({
 		Parent = panel,
 		LabelText = "Font Scale",
-		Min = 0.25,
+		Min = 0.5,
 		Max = 1.5,
 		Step = 0.05,
 		GetValue = function()
 			return db.FontScale or 1.0
 		end,
 		SetValue = function(value)
-			db.FontScale = value
-			addon:Refresh()
+			local newValue = mini:ClampFloat(value, 0.5, 1.5, 1.0)
+
+			if db.FontScale ~= newValue then
+				db.FontScale = newValue
+				addon:Refresh()
+			end
 		end,
 		Width = columnWidth,
 	})

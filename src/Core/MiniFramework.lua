@@ -187,6 +187,24 @@ function M:ClampInt(v, minV, maxV, fallback)
 	return v
 end
 
+function M:ClampFloat(v, minV, maxV, fallback)
+	v = tonumber(v)
+
+	if not v then
+		return fallback
+	end
+
+	if v < minV then
+		return minV
+	end
+
+	if v > maxV then
+		return maxV
+	end
+
+	return v
+end
+
 function M:IsSecret(value)
 	if not issecretvalue then
 		return false
