@@ -51,7 +51,7 @@ local previousPetEnabled = {
 	Friendly = false,
 	Enemy = false,
 }
-
+local previousModuleEnabled = {}
 ---@class NameplatesModule : IModule
 local M = {}
 addon.Modules.NameplatesModule = M
@@ -680,17 +680,25 @@ local function CacheEnabledModes()
 
 	previousPetEnabled.Friendly = db.Modules.NameplatesModule.Friendly.IgnorePets
 	previousPetEnabled.Enemy = db.Modules.NameplatesModule.Enemy.IgnorePets
+
+	previousModuleEnabled = mini:CopyTable(db.Modules.NameplatesModule.Enabled)
 end
 
 local function HaveModesChanged()
-	return previousEnemyEnabled.CC ~= db.Modules.NameplatesModule.Enemy.CC.Enabled
-		or previousEnemyEnabled.Important ~= db.Modules.NameplatesModule.Enemy.Important.Enabled
-		or previousEnemyEnabled.Combined ~= db.Modules.NameplatesModule.Enemy.Combined.Enabled
-		or previousFriendlyEnabled.CC ~= db.Modules.NameplatesModule.Friendly.CC.Enabled
-		or previousFriendlyEnabled.Important ~= db.Modules.NameplatesModule.Friendly.Important.Enabled
-		or previousFriendlyEnabled.Combined ~= db.Modules.NameplatesModule.Friendly.Combined.Enabled
-		or previousPetEnabled.Friendly ~= db.Modules.NameplatesModule.Friendly.IgnorePets
-		or previousPetEnabled.Enemy ~= db.Modules.NameplatesModule.Enemy.IgnorePets
+	local options = db.Modules.NameplatesModule
+
+	return previousEnemyEnabled.CC ~= options.Enemy.CC.Enabled
+		or previousEnemyEnabled.Important ~= options.Enemy.Important.Enabled
+		or previousEnemyEnabled.Combined ~= options.Enemy.Combined.Enabled
+		or previousFriendlyEnabled.CC ~= options.Friendly.CC.Enabled
+		or previousFriendlyEnabled.Important ~= options.Friendly.Important.Enabled
+		or previousFriendlyEnabled.Combined ~= options.Friendly.Combined.Enabled
+		or previousPetEnabled.Friendly ~= options.Friendly.IgnorePets
+		or previousPetEnabled.Enemy ~= options.Enemy.IgnorePets
+		or previousModuleEnabled.Always ~= options.Enabled.Always
+		or previousModuleEnabled.Arena ~= options.Enabled.Arena
+		or previousModuleEnabled.Dungeons ~= options.Enabled.Dungeons
+		or previousModuleEnabled.Raid ~= options.Enabled.Raid
 end
 
 local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
