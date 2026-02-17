@@ -104,41 +104,16 @@ function M:BlizzardFrames(visibleOnly)
 	return frames
 end
 
----Retrieves a list of DandersFrames frames.
----@param visibleOnly boolean
+---Retrieves a list of visible DandersFrames frames.
 ---@return table
-function M:DandersFrames(visibleOnly)
-	if not DandersFrames or not DandersFrames.Api or not DandersFrames.Api.GetFrameForUnit then
-		return {}
+function M:DandersFrames()
+	local frames
+
+	if DandersFrames_GetAllFrames then
+		frames = DandersFrames_GetAllFrames()
 	end
 
-	local frames = {}
-	local playerParty = DandersFrames.Api.GetFrameForUnit("player", "party")
-	local playerRaid = DandersFrames.Api.GetFrameForUnit("player", "raid")
-
-	if playerParty and (playerParty:IsVisible() or not visibleOnly) then
-		frames[#frames + 1] = playerParty
-	end
-
-	if playerRaid and (playerRaid:IsVisible() or not visibleOnly) then
-		frames[#frames + 1] = playerRaid
-	end
-
-	for i = 1, maxParty do
-		local frame = DandersFrames.Api.GetFrameForUnit("party" .. i, "party")
-
-		if frame and frame:IsVisible() then
-			frames[#frames + 1] = frame
-		end
-	end
-
-	for i = 1, maxRaid do
-		local frame = DandersFrames.Api.GetFrameForUnit("raid" .. i, "raid")
-
-		if frame and frame:IsVisible() then
-			frames[#frames + 1] = frame
-		end
-	end
+	frames = frames or {}
 
 	return frames
 end
@@ -163,7 +138,11 @@ function M:Grid2Frames(visibleOnly)
 		local partyFrames = Grid2:GetUnitFrames("party" .. i)
 		local frame = partyFrames and next(partyFrames)
 
-		if frame and (frame:IsVisible() or not visibleOnly) then
+		if not frame then
+			break
+		end
+
+		if frame:IsVisible() or not visibleOnly then
 			frames[#frames + 1] = frame
 		end
 	end
@@ -402,7 +381,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	local anchors = {}
 	local elvui = M:ElvUIFrames(visibleOnly)
 	local grid2 = M:Grid2Frames(visibleOnly)
-	local danders = M:DandersFrames(visibleOnly)
+	local danders = M:DandersFrames()
 	local blizzard = not wowEx:IsDandersEnabled() and M:BlizzardFrames(visibleOnly) or {}
 	local suf = M:ShadowedUFFrames(visibleOnly)
 	local plexus = M:PlexusFrames(visibleOnly)
