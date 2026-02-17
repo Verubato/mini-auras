@@ -8,6 +8,7 @@ local UnitAuraWatcher = addon.Core.UnitAuraWatcher
 local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
+local wowEx = addon.Utils.WoWEx
 local eventsFrame
 local paused = false
 local testModeActive = false
@@ -198,7 +199,7 @@ local function EnsureWatcher(anchor, unit)
 
 	UpdateWatcherAuras(entry)
 	AnchorContainer(entry.Container, anchor, options)
-	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, options.ExcludePlayer)
+	frames:ShowHideFrame(entry.Container.Frame, anchor, options.ExcludePlayer)
 
 	return entry
 end
@@ -228,7 +229,7 @@ local function OnCufUpdateVisible(frame)
 		return
 	end
 
-	frames:ShowHideFrame(entry.Container.Frame, frame, false, options.ExcludePlayer)
+	frames:ShowHideFrame(entry.Container.Frame, frame, options.ExcludePlayer)
 end
 
 local function OnCufSetUnit(frame, unit)
@@ -272,7 +273,7 @@ local function RefreshTestIcons()
 		end
 	end
 
-	for index, entry in ipairs(orderedEntries) do
+	for _, entry in ipairs(orderedEntries) do
 		local container = entry.Container
 		local now = GetTime()
 		local maxIcons = options.Icons.MaxIcons or 1
@@ -307,7 +308,7 @@ local function RefreshTestIcons()
 		end
 
 		AnchorContainer(container, entry.Anchor, options)
-		frames:ShowHideFrame(container.Frame, entry.Anchor, true, options.ExcludePlayer)
+		frames:ShowHideFrame(container.Frame, entry.Anchor, options.ExcludePlayer)
 	end
 end
 
@@ -352,7 +353,7 @@ function M:Refresh()
 		end
 
 		AnchorContainer(container, anchor, options)
-		frames:ShowHideFrame(container.Frame, anchor, testModeActive, options.ExcludePlayer)
+		frames:ShowHideFrame(container.Frame, anchor, options.ExcludePlayer)
 	end
 
 	if testModeActive then
@@ -396,12 +397,14 @@ function M:Init()
 	eventsFrame:SetScript("OnEvent", OnEvent)
 	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
-	if CompactUnitFrame_SetUnit then
-		hooksecurefunc("CompactUnitFrame_SetUnit", OnCufSetUnit)
-	end
+	if not wowEx:IsDandersEnabled() then
+		if CompactUnitFrame_SetUnit then
+			hooksecurefunc("CompactUnitFrame_SetUnit", OnCufSetUnit)
+		end
 
-	if CompactUnitFrame_UpdateVisible then
-		hooksecurefunc("CompactUnitFrame_UpdateVisible", OnCufUpdateVisible)
+		if CompactUnitFrame_UpdateVisible then
+			hooksecurefunc("CompactUnitFrame_UpdateVisible", OnCufUpdateVisible)
+		end
 	end
 
 	local fs = FrameSortApi and FrameSortApi.v3

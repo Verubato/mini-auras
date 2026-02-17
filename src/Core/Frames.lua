@@ -3,6 +3,7 @@ local addonName, addon = ...
 local mini = addon.Core.Framework
 local array = addon.Utils.Array
 local units = addon.Utils.Units
+local wowEx = addon.Utils.WoWEx
 local maxParty = MAX_PARTY_MEMBERS or 4
 local maxRaid = MAX_RAID_MEMBERS or 40
 local maxTestFrames = 3
@@ -402,7 +403,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	local elvui = M:ElvUIFrames(visibleOnly)
 	local grid2 = M:Grid2Frames(visibleOnly)
 	local danders = M:DandersFrames(visibleOnly)
-	local blizzard = M:BlizzardFrames(visibleOnly)
+	local blizzard = not wowEx:IsDandersEnabled() and M:BlizzardFrames(visibleOnly) or {}
 	local suf = M:ShadowedUFFrames(visibleOnly)
 	local plexus = M:PlexusFrames(visibleOnly)
 	local custom = M:CustomFrames(visibleOnly)
@@ -438,9 +439,8 @@ end
 
 ---@param frame table
 ---@param anchor table
----@param isTest boolean
 ---@param excludePlayer boolean
-function M:ShowHideFrame(frame, anchor, isTest, excludePlayer)
+function M:ShowHideFrame(frame, anchor, excludePlayer)
 	if anchor:IsForbidden() then
 		frame:Hide()
 		return
@@ -461,12 +461,8 @@ function M:ShowHideFrame(frame, anchor, isTest, excludePlayer)
 	end
 
 	local alpha = anchor:GetAlpha()
-	if mini:IsSecret(alpha) and anchor:IsVisible() then
-		if not isTest then
-			frame:SetAlpha(alpha)
-		else
-			frame:SetAlpha(1)
-		end
+	if mini:IsSecret(alpha) then
+		frame:SetAlpha(alpha)
 		frame:Show()
 		return
 	end

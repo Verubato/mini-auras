@@ -21,6 +21,7 @@ Utils\CcUtil.lua
 Utils\SpellCache.lua
 Utils\FontUtil.lua
 Utils\ModuleUtil.lua
+Utils\WoWEx.lua
 
 Core\MiniFramework.lua
 Core\InstanceOptions.lua

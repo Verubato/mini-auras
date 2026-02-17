@@ -164,6 +164,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field FontUtil FontUtil
 ---@field ModuleUtil ModuleUtil
 ---@field ModuleName ModuleName
+---@field WoWEx WoWEx
 
 ---@class Core
 ---@field Framework MiniFramework
