@@ -8,6 +8,10 @@ local M = {}
 addon.Config.General = M
 
 function M:Build(panel)
+	local db = mini:GetSavedVars()
+
+	local columns = 2
+	local columnWidth = mini:ColumnWidth(columns, 0, 0)
 	local description = mini:TextBlock({
 		Parent = panel,
 		Lines = {
@@ -21,18 +25,37 @@ function M:Build(panel)
 	local discordBox = mini:EditBox({
 		Parent = panel,
 		LabelText = "Discord",
-		GetValue = function ()
+		GetValue = function()
 			return "https://discord.gg/UruPTPHHxK"
 		end,
-		SetValue = function (_) end,
-		Width = 400,
+		SetValue = function(_) end,
+		Width = columnWidth,
 	})
 
 	discordBox.EditBox:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 4, -verticalSpacing)
 
+	local glowTypeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	glowTypeLabel:SetText("Glow Type")
+	glowTypeLabel:SetPoint("TOPLEFT", discordBox.EditBox, "BOTTOMLEFT", -4, -verticalSpacing * 2)
+
+	local glowTypeDropdown = mini:Dropdown({
+		Parent = panel,
+		Items = { "Pixel Glow", "Autocast Shine", "Action Button Glow", "Proc Glow" },
+		GetValue = function()
+			return db.GlowType or "Proc Glow"
+		end,
+		SetValue = function(value)
+			db.GlowType = value
+			addon:Refresh()
+		end,
+	})
+
+	glowTypeDropdown:SetPoint("TOPLEFT", glowTypeLabel, "BOTTOMLEFT", 0, -4)
+	glowTypeDropdown:SetWidth(columnWidth)
+
 	local resetBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	resetBtn:SetSize(120, 26)
-	resetBtn:SetPoint("TOPLEFT", discordBox.EditBox, "BOTTOMLEFT", -4, -verticalSpacing * 2)
+	resetBtn:SetPoint("TOPLEFT", glowTypeDropdown, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 	resetBtn:SetText("Reset")
 	resetBtn:SetScript("OnClick", function()
 		if InCombatLockdown() then

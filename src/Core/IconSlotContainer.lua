@@ -250,13 +250,59 @@ function M:SetLayer(slotIndex, layerIndex, options)
 					glowOptions.color = { options.Color.r, options.Color.g, options.Color.b, options.Color.a }
 				end
 
-				LCG.ProcGlow_Start(layer.Frame, glowOptions)
-				local procGlow = layer.Frame._ProcGlow
-				if procGlow then
-					procGlow:SetAlphaFromBoolean(options.AlphaBoolean)
+				-- Get the selected glow type from the database
+				local mini = addon.Core.Framework
+				local db = mini and mini.GetSavedVars and mini:GetSavedVars()
+				local glowType = (db and db.GlowType) or "Proc Glow"
+
+				-- Apply the appropriate glow type
+				if glowType == "Pixel Glow" and LCG.PixelGlow_Start then
+					LCG.PixelGlow_Start(layer.Frame, glowOptions.color)
+				elseif glowType == "Autocast Shine" and LCG.AutoCastGlow_Start then
+					LCG.AutoCastGlow_Start(layer.Frame, glowOptions.color)
+				elseif glowType == "Action Button Glow" and LCG.ButtonGlow_Start then
+					LCG.ButtonGlow_Start(layer.Frame, glowOptions.color)
+				else
+					-- Default to Proc Glow
+					LCG.ProcGlow_Start(layer.Frame, glowOptions)
+				end
+
+				-- Set alpha for the active glow type
+				if glowType == "Proc Glow" then
+					local procGlow = layer.Frame._ProcGlow
+					if procGlow then
+						procGlow:SetAlphaFromBoolean(options.AlphaBoolean)
+					end
+				elseif glowType == "Pixel Glow" then
+					local pixelGlow = layer.Frame._PixelGlow
+					if pixelGlow then
+						pixelGlow:SetAlphaFromBoolean(options.AlphaBoolean)
+					end
+				elseif glowType == "Autocast Shine" then
+					local autoCastGlow = layer.Frame._AutoCastGlow
+					if autoCastGlow then
+						autoCastGlow:SetAlphaFromBoolean(options.AlphaBoolean)
+					end
+				elseif glowType == "Action Button Glow" then
+					local buttonGlow = layer.Frame._ButtonGlow
+					if buttonGlow then
+						buttonGlow:SetAlphaFromBoolean(options.AlphaBoolean)
+					end
 				end
 			else
-				LCG.ProcGlow_Stop(layer.Frame)
+				-- Stop all glow types
+				if LCG.ProcGlow_Stop then
+					LCG.ProcGlow_Stop(layer.Frame)
+				end
+				if LCG.PixelGlow_Stop then
+					LCG.PixelGlow_Stop(layer.Frame)
+				end
+				if LCG.AutoCastGlow_Stop then
+					LCG.AutoCastGlow_Stop(layer.Frame)
+				end
+				if LCG.ButtonGlow_Stop then
+					LCG.ButtonGlow_Stop(layer.Frame)
+				end
 			end
 		end
 	end
@@ -283,7 +329,19 @@ function M:ClearLayer(slotIndex, layerIndex)
 	layer.Cooldown:Clear()
 
 	if LCG then
-		LCG.ProcGlow_Stop(layer.Frame)
+		-- Stop all glow types
+		if LCG.ProcGlow_Stop then
+			LCG.ProcGlow_Stop(layer.Frame)
+		end
+		if LCG.PixelGlow_Stop then
+			LCG.PixelGlow_Stop(layer.Frame)
+		end
+		if LCG.AutoCastGlow_Stop then
+			LCG.AutoCastGlow_Stop(layer.Frame)
+		end
+		if LCG.ButtonGlow_Stop then
+			LCG.ButtonGlow_Stop(layer.Frame)
+		end
 	end
 end
 

@@ -11,6 +11,7 @@ local dbDefaults = {
 	Version = 19,
 	WhatsNew = {},
 	NotifiedChanges = true,
+	GlowType = "Proc Glow",
 	Modules = {
 		---@class CrowdControlModuleOptions
 		CcModule = {
