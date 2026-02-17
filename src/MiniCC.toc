@@ -52,5 +52,4 @@ Config\Trinkets.lua
 Config\FriendlyIndicator.lua
 Config\OtherAddons.lua
 
-MiniCC.xml
 MiniCC.lua
