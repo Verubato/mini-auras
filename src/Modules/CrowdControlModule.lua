@@ -70,6 +70,7 @@ local function UpdateWatcherAuras(entry)
 				ReverseCooldown = iconsReverse,
 				Glow = iconsGlow,
 				Color = colorByDispelType and aura.DispelColor or nil,
+				FontScale = addon.Core.Framework:GetSavedVars().FontScale,
 			})
 			container:FinalizeSlot(slotIndex, 1)
 			container:SetSlotUsed(slotIndex)
@@ -87,6 +88,7 @@ local function UpdateWatcherAuras(entry)
 				ReverseCooldown = iconsReverse,
 				Glow = iconsGlow,
 				Color = colorByDispelType and aura.DispelColor or nil,
+				FontScale = addon.Core.Framework:GetSavedVars().FontScale,
 			})
 			layerIndex = layerIndex + 1
 		end
@@ -279,6 +281,7 @@ local function RefreshTestIcons()
 					ReverseCooldown = options.Icons.ReverseCooldown,
 					Glow = options.Icons.Glow,
 					Color = options.Icons.ColorByDispelType and spell.DispelColor,
+					FontScale = addon.Core.Framework:GetSavedVars().FontScale,
 				})
 				container:FinalizeSlot(i, 1)
 			end

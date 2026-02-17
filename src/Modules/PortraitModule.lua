@@ -142,6 +142,7 @@ local function OnAuraInfo(watcher, container)
 				AlphaBoolean = aura.IsCC,
 				Glow = false,
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
+				FontScale = db.FontScale,
 			})
 
 			if not issecretvalue(aura.IsCC) then
@@ -167,6 +168,7 @@ local function OnAuraInfo(watcher, container)
 				AlphaBoolean = true, -- we only get defensives in 12.0.1
 				Glow = false,
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
+				FontScale = db.FontScale,
 			})
 
 			container:FinalizeSlot(slotIndex, layerIndex)
@@ -185,6 +187,7 @@ local function OnAuraInfo(watcher, container)
 				AlphaBoolean = aura.IsImportant,
 				Glow = false,
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
+				FontScale = db.FontScale,
 			})
 
 			layerIndex = layerIndex + 1
@@ -263,6 +266,7 @@ local function RefreshTestIcons()
 			AlphaBoolean = true,
 			Glow = false,
 			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
+			FontScale = db.FontScale,
 		})
 		container:FinalizeSlot(1, 1)
 	end

@@ -103,6 +103,7 @@ local function OnAuraStateUpdated()
 					ReverseCooldown = iconsReverse,
 					Glow = iconsGlow,
 					Color = colorByDispelType and aura.DispelColor,
+					FontScale = db.FontScale,
 				})
 				iconsContainer:FinalizeSlot(slot, 1)
 			end
@@ -121,6 +122,7 @@ local function OnAuraStateUpdated()
 					ReverseCooldown = iconsReverse,
 					Glow = iconsGlow,
 					Color = colorByDispelType and aura.DispelColor,
+					FontScale = db.FontScale,
 				})
 			end
 			iconsContainer:FinalizeSlot(slot, used)
@@ -238,6 +240,7 @@ local function RefreshTestFrame()
 				ReverseCooldown = options.Icons.ReverseCooldown,
 				Glow = options.Icons.Glow,
 				Color = options.Icons.ColorByDispelType and spell.DispelColor,
+				FontScale = db.FontScale,
 			})
 			iconsContainer:FinalizeSlot(i, 1)
 		end

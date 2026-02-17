@@ -346,6 +346,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 					AlphaBoolean = ccData[i].IsCC,
 					Glow = iconsGlow,
 					ReverseCooldown = iconsReverse,
+					FontScale = db.FontScale,
 				})
 				container:FinalizeSlot(slot, 1)
 			end
@@ -363,6 +364,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 						AlphaBoolean = spellInfo.IsCC,
 						Glow = iconsGlow,
 						ReverseCooldown = iconsReverse,
+						FontScale = db.FontScale,
 					})
 					layerIndex = layerIndex + 1
 				end
@@ -387,6 +389,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 				AlphaBoolean = defensivesData[i].IsDefensive,
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
+				FontScale = db.FontScale,
 			})
 
 			container:FinalizeSlot(slot, 1)
@@ -410,6 +413,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 					AlphaBoolean = importantData[i].IsImportant,
 					Glow = iconsGlow,
 					ReverseCooldown = iconsReverse,
+					FontScale = db.FontScale,
 				})
 				container:FinalizeSlot(slot, 1)
 			end
@@ -428,6 +432,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 						AlphaBoolean = spellData.IsImportant,
 						Glow = iconsGlow,
 						ReverseCooldown = iconsReverse,
+						FontScale = db.FontScale,
 					})
 					layerIndex = layerIndex + 1
 				end
@@ -482,6 +487,7 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 			AlphaBoolean = spellInfo.IsCC,
 			Glow = iconsGlow,
 			ReverseCooldown = iconsReverse,
+			FontScale = db.FontScale,
 		})
 
 		if hasNewFilters then
@@ -537,6 +543,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 					AlphaBoolean = spellData.IsImportant,
 					Glow = iconsGlow,
 					ReverseCooldown = iconsReverse,
+					FontScale = db.FontScale,
 				})
 				container:FinalizeSlot(slot, 1)
 			end
@@ -554,6 +561,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 					AlphaBoolean = spellData.IsImportant,
 					Glow = iconsGlow,
 					ReverseCooldown = iconsReverse,
+					FontScale = db.FontScale,
 				})
 			end
 
@@ -573,6 +581,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 				AlphaBoolean = spellData.IsDefensive,
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
+				FontScale = db.FontScale,
 			})
 
 			container:FinalizeSlot(slot, 1)
@@ -803,6 +812,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 				AlphaBoolean = true,
 				Glow = combinedOptions.Icons.Glow,
 				ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
+				FontScale = db.FontScale,
 			})
 			combinedContainer:FinalizeSlot(slot, 1)
 		end
@@ -828,6 +838,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 				AlphaBoolean = true,
 				Glow = combinedOptions.Icons.Glow,
 				ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
+				FontScale = db.FontScale,
 			})
 			combinedContainer:FinalizeSlot(slot, 1)
 		end
@@ -853,6 +864,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 				AlphaBoolean = true,
 				Glow = combinedOptions.Icons.Glow,
 				ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
+				FontScale = db.FontScale,
 			})
 			combinedContainer:FinalizeSlot(slot, 1)
 		end
@@ -880,6 +892,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 					AlphaBoolean = true,
 					Glow = ccOptions.Icons.Glow,
 					ReverseCooldown = ccOptions.Icons.ReverseCooldown,
+					FontScale = db.FontScale,
 				})
 				ccContainer:FinalizeSlot(i, 1)
 			end
@@ -905,6 +918,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 					AlphaBoolean = true,
 					Glow = importantOptions.Icons.Glow,
 					ReverseCooldown = importantOptions.Icons.ReverseCooldown,
+					FontScale = db.FontScale,
 				})
 				importantContainer:FinalizeSlot(i, 1)
 			end

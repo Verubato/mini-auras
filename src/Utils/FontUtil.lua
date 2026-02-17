@@ -9,13 +9,16 @@ addon.Utils.FontUtil = M
 --- @param cd table The cooldown frame
 --- @param iconSize number The size of the icon
 --- @param coefficient? number Optional coefficient (default: 0.4)
-function M:UpdateCooldownFontSize(cd, iconSize, coefficient)
+--- @param fontScale? number Optional font scale multiplier (default: 1.0)
+function M:UpdateCooldownFontSize(cd, iconSize, coefficient, fontScale)
 	if not cd or not iconSize then
 		return
 	end
 
 	coefficient = coefficient or 0.4
-	local fontSize = math.max(8, math.floor(iconSize * coefficient + 0.5))
+	fontScale = fontScale or 1.0
+
+	local fontSize = math.floor(iconSize * coefficient * fontScale)
 
 	-- Get the FontString region from the cooldown frame
 	local numRegions = cd:GetNumRegions()

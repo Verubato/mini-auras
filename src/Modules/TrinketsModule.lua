@@ -86,6 +86,7 @@ local function SetIconState(container, spellId, start, duration)
 			AlphaBoolean = true,
 			ReverseCooldown = false,
 			Glow = false,
+			FontScale = db.FontScale,
 		})
 		container:FinalizeSlot(1, 1)
 		container:SetSlotUsed(1)
@@ -100,6 +101,7 @@ local function SetIconState(container, spellId, start, duration)
 		AlphaBoolean = true,
 		ReverseCooldown = false,
 		Glow = false,
+		FontScale = db.FontScale,
 	})
 	container:FinalizeSlot(1, 1)
 	container:SetSlotUsed(1)

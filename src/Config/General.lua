@@ -53,9 +53,27 @@ function M:Build(panel)
 	glowTypeDropdown:SetPoint("TOPLEFT", glowTypeLabel, "BOTTOMLEFT", 0, -4)
 	glowTypeDropdown:SetWidth(columnWidth)
 
+	local fontScaleSlider = mini:Slider({
+		Parent = panel,
+		LabelText = "Font Scale",
+		Min = 0.25,
+		Max = 1.5,
+		Step = 0.05,
+		GetValue = function()
+			return db.FontScale or 1.0
+		end,
+		SetValue = function(value)
+			db.FontScale = value
+			addon:Refresh()
+		end,
+		Width = columnWidth,
+	})
+
+	fontScaleSlider.Slider:SetPoint("TOPLEFT", glowTypeDropdown, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
 	local resetBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	resetBtn:SetSize(120, 26)
-	resetBtn:SetPoint("TOPLEFT", glowTypeDropdown, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	resetBtn:SetPoint("TOPLEFT", fontScaleSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 	resetBtn:SetText("Reset")
 	resetBtn:SetScript("OnClick", function()
 		if InCombatLockdown() then

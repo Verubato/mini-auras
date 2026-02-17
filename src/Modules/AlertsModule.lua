@@ -82,6 +82,7 @@ local function OnAuraDataChanged()
 							Glow = iconsGlow,
 							ReverseCooldown = iconsReverse,
 							Color = glowColor,
+							FontScale = db.FontScale,
 						})
 						container:FinalizeSlot(slot, 1)
 					end
@@ -101,6 +102,7 @@ local function OnAuraDataChanged()
 							Glow = iconsGlow,
 							ReverseCooldown = iconsReverse,
 							Color = glowColor,
+							FontScale = db.FontScale,
 						})
 					end
 
@@ -122,6 +124,7 @@ local function OnAuraDataChanged()
 						Glow = iconsGlow,
 						ReverseCooldown = iconsReverse,
 						Color = glowColor,
+						FontScale = db.FontScale,
 					})
 					container:FinalizeSlot(slot, 1)
 				end
@@ -207,6 +210,7 @@ local function RefreshTestAlerts()
 				Glow = iconsGlow,
 				ReverseCooldown = db.Modules.AlertsModule.Icons.ReverseCooldown,
 				Color = glowColor,
+				FontScale = db.FontScale,
 			})
 
 			container:FinalizeSlot(i, 1)

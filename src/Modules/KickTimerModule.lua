@@ -289,6 +289,7 @@ local function CreateKickEntry(duration, icon)
 		AlphaBoolean = true,
 		ReverseCooldown = iconOptions.ReverseCooldown or false,
 		Glow = iconOptions.Glow or false,
+		FontScale = db.FontScale,
 	})
 	kickBar.Container:FinalizeSlot(slotIndex, 1)
 	kickBar.Container:SetSlotUsed(slotIndex)

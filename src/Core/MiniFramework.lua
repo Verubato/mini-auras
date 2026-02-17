@@ -776,14 +776,46 @@ function M:Slider(options)
 		high:SetText(options.Max)
 	end
 
+	local hasFloat = math.floor(options.Step) ~= options.Step
 	local box = CreateFrame("EditBox", nil, options.Parent, "InputBoxTemplate")
-	ConfigureNumbericBox(box, options.Min < 0)
+
+	if not hasFloat then
+		ConfigureNumbericBox(box, options.Min < 0)
+	end
+
+	local function GetDecimalPlaces(step)
+		local s = tostring(step)
+		local dot = s:find("%.")
+		if not dot then
+			return 0
+		end
+		return #s - dot
+	end
+
+	local function GetMaxLetters(min, max, step)
+		local decimals = GetDecimalPlaces(step)
+
+		local maxAbs = math.max(math.abs(min), math.abs(max))
+		local intDigits = #tostring(math.floor(maxAbs))
+
+		local letters = intDigits
+
+		if decimals > 0 then
+			letters = letters + 1 + decimals -- dot + decimals
+		end
+
+		if min < 0 then
+			letters = letters + 1 -- minus sign
+		end
+
+		return letters
+	end
 
 	box:SetPoint("CENTER", slider, "CENTER", 0, 30)
 	box:SetFontObject("GameFontWhite")
 	box:SetSize(50, 20)
 	box:SetAutoFocus(false)
-	box:SetMaxLetters(math.log(options.Max, 10) + 1)
+	box:SetMaxLetters(GetMaxLetters(options.Min, options.Max, options.Step))
 	box:SetText(tostring(options.GetValue()))
 	box:SetJustifyH("CENTER")
 	box:SetCursorPosition(0)

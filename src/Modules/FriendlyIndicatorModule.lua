@@ -88,6 +88,7 @@ local function UpdateWatcherAuras(entry)
 			AlphaBoolean = auraData.alpha,
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
+			FontScale = db.FontScale,
 		})
 		container:FinalizeSlot(slotIndex, 1)
 		slotIndex = slotIndex + 1
@@ -301,6 +302,7 @@ local function RefreshTestIcons()
 						AlphaBoolean = true,
 						ReverseCooldown = options.Icons.ReverseCooldown,
 						Glow = options.Icons.Glow,
+						FontScale = db.FontScale,
 					})
 					container:FinalizeSlot(slotIndex, 1)
 				end

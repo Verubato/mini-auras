@@ -61,7 +61,9 @@ local function CreateLayer(parentFrame, level, iconSize)
 	-- Set initial font size based on icon size
 	if iconSize then
 		cd.DesiredIconSize = iconSize
-		fontUtil:UpdateCooldownFontSize(cd, iconSize)
+		-- FontScale will be set when SetLayer is called
+		cd.FontScale = 1.0
+		fontUtil:UpdateCooldownFontSize(cd, iconSize, nil, cd.FontScale)
 	end
 
 	return {
@@ -163,7 +165,8 @@ function M:SetIconSize(newSize)
 			for _, layer in ipairs(slot.Layers) do
 				if layer and layer.Cooldown then
 					layer.Cooldown.DesiredIconSize = self.Size
-					fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size)
+					local fontScale = layer.Cooldown.FontScale or 1.0
+					fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, fontScale)
 				end
 			end
 		end
@@ -219,6 +222,7 @@ end
 ---@field Glow boolean? Whether to show glow effect (requires LibCustomGlow)
 ---@field ReverseCooldown boolean? Whether to reverse the cooldown animation
 ---@field Color table? RGBA color table {r, g, b, a} for glow effect
+---@field FontScale number? Font scale multiplier for cooldown text (default: 1.0)
 function M:SetLayer(slotIndex, layerIndex, options)
 	if slotIndex < 1 or slotIndex > self.Count then
 		return
@@ -240,6 +244,12 @@ function M:SetLayer(slotIndex, layerIndex, options)
 		layer.Cooldown:SetReverse(options.ReverseCooldown)
 		layer.Cooldown:SetCooldown(options.StartTime, options.Duration)
 		layer.Frame:SetAlphaFromBoolean(options.AlphaBoolean)
+
+		-- Update font scale if provided
+		if options.FontScale then
+			layer.Cooldown.FontScale = options.FontScale
+			fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, options.FontScale)
+		end
 
 		if LCG then
 			if options.Glow then
