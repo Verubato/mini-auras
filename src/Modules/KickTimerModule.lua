@@ -170,6 +170,7 @@ local function CreateKickBar()
 	container.Frame:SetFrameStrata("HIGH")
 	container.Frame:SetClampedToScreen(true)
 	container.Frame:SetIgnoreParentScale(true)
+	container.Frame:SetClampedToScreen(true)
 
 	-- Create wrapper frame for positioning and dragging
 	local anchor = CreateFrame("Frame", addonName .. "KickBar", UIParent)
