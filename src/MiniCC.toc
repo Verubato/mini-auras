@@ -12,12 +12,10 @@ Libs\LibStub\LibStub.lua
 Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.xml
 
 Namespace.lua
-Capabilities.lua
 
 Utils\Scheduler.lua
 Utils\Units.lua
 Utils\Array.lua
-Utils\CrowdControlUtil.lua
 Utils\SpellCache.lua
 Utils\FontUtil.lua
 Utils\ModuleUtil.lua

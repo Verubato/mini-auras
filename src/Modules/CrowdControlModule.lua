@@ -5,7 +5,6 @@ local frames = addon.Core.Frames
 local units = addon.Utils.Units
 local iconSlotContainer = addon.Core.IconSlotContainer
 local unitAuraWatcher = addon.Core.UnitAuraWatcher
-local capabilities = addon.Capabilities
 local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
@@ -44,8 +43,6 @@ local function UpdateWatcherAuras(entry)
 		return
 	end
 
-	-- Cache config options for performance
-	local hasNewFilters = capabilities:HasNewFilters()
 	local iconsReverse = options.Icons.ReverseCooldown
 	local iconsGlow = options.Icons.Glow
 	local colorByDispelType = options.Icons.ColorByDispelType
@@ -55,45 +52,25 @@ local function UpdateWatcherAuras(entry)
 
 	container:ResetAllSlots()
 
-	if hasNewFilters then
-		-- Each aura gets its own slot
-		for _, aura in ipairs(ccState) do
-			if slotIndex > container.Count then
-				break
-			end
+	-- Each aura gets its own slot
+	for _, aura in ipairs(ccState) do
+		if slotIndex > container.Count then
+			break
+		end
 
-			container:SetLayer(slotIndex, 1, {
-				Texture = aura.SpellIcon,
-				StartTime = aura.StartTime,
-				Duration = aura.TotalDuration,
-				AlphaBoolean = aura.IsCC,
-				ReverseCooldown = iconsReverse,
-				Glow = iconsGlow,
-				Color = colorByDispelType and aura.DispelColor or nil,
-				FontScale = addon.Core.Framework:GetSavedVars().FontScale,
-			})
-			container:FinalizeSlot(slotIndex, 1)
-			container:SetSlotUsed(slotIndex)
-			slotIndex = slotIndex + 1
-		end
-	elseif #ccState > 0 then
-		-- Stack all auras in one slot
-		local layerIndex = 1
-		for _, aura in ipairs(ccState) do
-			container:SetLayer(slotIndex, layerIndex, {
-				Texture = aura.SpellIcon,
-				StartTime = aura.StartTime,
-				Duration = aura.TotalDuration,
-				AlphaBoolean = aura.IsCC,
-				ReverseCooldown = iconsReverse,
-				Glow = iconsGlow,
-				Color = colorByDispelType and aura.DispelColor or nil,
-				FontScale = addon.Core.Framework:GetSavedVars().FontScale,
-			})
-			layerIndex = layerIndex + 1
-		end
-		container:FinalizeSlot(slotIndex, layerIndex - 1)
+		container:SetLayer(slotIndex, 1, {
+			Texture = aura.SpellIcon,
+			StartTime = aura.StartTime,
+			Duration = aura.TotalDuration,
+			AlphaBoolean = aura.IsCC,
+			ReverseCooldown = iconsReverse,
+			Glow = iconsGlow,
+			Color = colorByDispelType and aura.DispelColor or nil,
+			FontScale = addon.Core.Framework:GetSavedVars().FontScale,
+		})
+		container:FinalizeSlot(slotIndex, 1)
 		container:SetSlotUsed(slotIndex)
+		slotIndex = slotIndex + 1
 	end
 end
 
@@ -371,8 +348,7 @@ function M:Init()
 	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
 	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
 	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
-	local multipleTestSpells = { kidneyShot, fear, hex }
-	testSpells = capabilities:HasNewFilters() and multipleTestSpells or { kidneyShot }
+	testSpells = { kidneyShot, fear, hex }
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)

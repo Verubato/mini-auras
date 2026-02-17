@@ -137,23 +137,21 @@ function M:Build(panel, options)
 	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
-	if capabilities:HasNewFilters() then
-		local soundChk = mini:Checkbox({
-			Parent = panel,
-			LabelText = "Sound",
-			Tooltip = "Play a sound when the healer is CC'd.",
-			GetValue = function()
-				return options.Sound.Enabled
-			end,
-			SetValue = function(value)
-				options.Sound.Enabled = value
-				config:Apply()
-			end,
-		})
+	local soundChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = "Sound",
+		Tooltip = "Play a sound when the healer is CC'd.",
+		GetValue = function()
+			return options.Sound.Enabled
+		end,
+		SetValue = function(value)
+			options.Sound.Enabled = value
+			config:Apply()
+		end,
+	})
 
-		soundChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-		soundChk:SetPoint("TOP", reverseChk, "TOP", 0, 0)
-	end
+	soundChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	soundChk:SetPoint("TOP", reverseChk, "TOP", 0, 0)
 
 	local dispelColoursChk = mini:Checkbox({
 		Parent = panel,

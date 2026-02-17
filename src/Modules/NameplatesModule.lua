@@ -4,7 +4,6 @@ local mini = addon.Core.Framework
 local units = addon.Utils.Units
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
-local capabilities = addon.Capabilities
 local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
@@ -319,7 +318,6 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 	local ccData = watcher:GetCcState()
 	local defensivesData = watcher:GetDefensiveState()
 	local importantData = watcher:GetImportantState()
-	local hasNewFilters = capabilities:HasNewFilters()
 	local iconsGlow = combinedOptions.Icons.Glow
 	local iconsReverse = combinedOptions.Icons.ReverseCooldown
 
@@ -331,45 +329,23 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 
 	-- Add CC spells (highest priority)
 	if ccSlots > 0 then
-		if hasNewFilters then
-			-- Each CC gets its own slot
-			for i = 1, math.min(ccSlots, #ccData) do
-				if slot >= container.Count then
-					break
-				end
-				slot = slot + 1
-				container:SetSlotUsed(slot)
-				container:SetLayer(slot, 1, {
-					Texture = ccData[i].SpellIcon,
-					StartTime = ccData[i].StartTime,
-					Duration = ccData[i].TotalDuration,
-					AlphaBoolean = ccData[i].IsCC,
-					Glow = iconsGlow,
-					ReverseCooldown = iconsReverse,
-					FontScale = db.FontScale,
-				})
-				container:FinalizeSlot(slot, 1)
+		-- Each CC gets its own slot
+		for i = 1, math.min(ccSlots, #ccData) do
+			if slot >= container.Count then
+				break
 			end
-		else
-			-- Old filters: stack all CC on one slot
-			if #ccData > 0 then
-				slot = slot + 1
-				container:SetSlotUsed(slot)
-				local layerIndex = 1
-				for _, spellInfo in ipairs(ccData) do
-					container:SetLayer(slot, layerIndex, {
-						Texture = spellInfo.SpellIcon,
-						StartTime = spellInfo.StartTime,
-						Duration = spellInfo.TotalDuration,
-						AlphaBoolean = spellInfo.IsCC,
-						Glow = iconsGlow,
-						ReverseCooldown = iconsReverse,
-						FontScale = db.FontScale,
-					})
-					layerIndex = layerIndex + 1
-				end
-				container:FinalizeSlot(slot, layerIndex - 1)
-			end
+			slot = slot + 1
+			container:SetSlotUsed(slot)
+			container:SetLayer(slot, 1, {
+				Texture = ccData[i].SpellIcon,
+				StartTime = ccData[i].StartTime,
+				Duration = ccData[i].TotalDuration,
+				AlphaBoolean = ccData[i].IsCC,
+				Glow = iconsGlow,
+				ReverseCooldown = iconsReverse,
+				FontScale = db.FontScale,
+			})
+			container:FinalizeSlot(slot, 1)
 		end
 	end
 
@@ -398,47 +374,23 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 
 	-- Add Important spells (third priority)
 	if importantSlots > 0 then
-		if hasNewFilters then
-			-- Each Important spell gets its own slot
-			for i = 1, math.min(importantSlots, #importantData) do
-				if slot >= container.Count then
-					break
-				end
-				slot = slot + 1
-				container:SetSlotUsed(slot)
-				container:SetLayer(slot, 1, {
-					Texture = importantData[i].SpellIcon,
-					StartTime = importantData[i].StartTime,
-					Duration = importantData[i].TotalDuration,
-					AlphaBoolean = importantData[i].IsImportant,
-					Glow = iconsGlow,
-					ReverseCooldown = iconsReverse,
-					FontScale = db.FontScale,
-				})
-				container:FinalizeSlot(slot, 1)
+		-- Each Important spell gets its own slot
+		for i = 1, math.min(importantSlots, #importantData) do
+			if slot >= container.Count then
+				break
 			end
-		else
-			-- Old filters: stack all Important on one slot
-			if #importantData > 0 then
-				slot = slot + 1
-				container:SetSlotUsed(slot)
-
-				local layerIndex = 1
-				for _, spellData in ipairs(importantData) do
-					container:SetLayer(slot, layerIndex, {
-						Texture = spellData.SpellIcon,
-						StartTime = spellData.StartTime,
-						Duration = spellData.TotalDuration,
-						AlphaBoolean = spellData.IsImportant,
-						Glow = iconsGlow,
-						ReverseCooldown = iconsReverse,
-						FontScale = db.FontScale,
-					})
-					layerIndex = layerIndex + 1
-				end
-
-				container:FinalizeSlot(slot, layerIndex - 1)
-			end
+			slot = slot + 1
+			container:SetSlotUsed(slot)
+			container:SetLayer(slot, 1, {
+				Texture = importantData[i].SpellIcon,
+				StartTime = importantData[i].StartTime,
+				Duration = importantData[i].TotalDuration,
+				AlphaBoolean = importantData[i].IsImportant,
+				Glow = iconsGlow,
+				ReverseCooldown = iconsReverse,
+				FontScale = db.FontScale,
+			})
+			container:FinalizeSlot(slot, 1)
 		end
 	end
 end
@@ -463,7 +415,6 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 
 	local ccData = watcher:GetCcState()
 	local ccDataCount = #ccData
-	local hasNewFilters = capabilities:HasNewFilters()
 
 	if ccDataCount == 0 then
 		return
@@ -490,19 +441,8 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 			FontScale = db.FontScale,
 		})
 
-		if hasNewFilters then
-			-- we're on 12.0.1 and can show multiple cc's
-			container:FinalizeSlot(slotIndex, 1)
-			slotIndex = slotIndex + 1
-		else
-			-- can only show 1 cc
-			ccLayerIndex = ccLayerIndex + 1
-		end
-	end
-
-	-- Finalize the single slot if not using new filters
-	if not hasNewFilters and ccLayerIndex > 1 then
-		container:FinalizeSlot(1, ccLayerIndex - 1)
+		container:FinalizeSlot(slotIndex, 1)
+		slotIndex = slotIndex + 1
 	end
 end
 
@@ -524,7 +464,6 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 		return
 	end
 
-	local hasNewFilters = capabilities:HasNewFilters()
 	local iconsGlow = options.Icons.Glow
 	local iconsReverse = options.Icons.ReverseCooldown
 	local slot = 0
@@ -532,40 +471,19 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 	local importantData = watcher:GetImportantState()
 
 	if #importantData > 0 then
-		if hasNewFilters then
-			for _, spellData in ipairs(importantData) do
-				slot = slot + 1
-				container:SetSlotUsed(slot)
-				container:SetLayer(slot, 1, {
-					Texture = spellData.SpellIcon,
-					StartTime = spellData.StartTime,
-					Duration = spellData.TotalDuration,
-					AlphaBoolean = spellData.IsImportant,
-					Glow = iconsGlow,
-					ReverseCooldown = iconsReverse,
-					FontScale = db.FontScale,
-				})
-				container:FinalizeSlot(slot, 1)
-			end
-		else
+		for _, spellData in ipairs(importantData) do
 			slot = slot + 1
 			container:SetSlotUsed(slot)
-
-			local used = 0
-			for _, spellData in ipairs(importantData) do
-				used = used + 1
-				container:SetLayer(slot, used, {
-					Texture = spellData.SpellIcon,
-					StartTime = spellData.StartTime,
-					Duration = spellData.TotalDuration,
-					AlphaBoolean = spellData.IsImportant,
-					Glow = iconsGlow,
-					ReverseCooldown = iconsReverse,
-					FontScale = db.FontScale,
-				})
-			end
-
-			container:FinalizeSlot(slot, used)
+			container:SetLayer(slot, 1, {
+				Texture = spellData.SpellIcon,
+				StartTime = spellData.StartTime,
+				Duration = spellData.TotalDuration,
+				AlphaBoolean = spellData.IsImportant,
+				Glow = iconsGlow,
+				ReverseCooldown = iconsReverse,
+				FontScale = db.FontScale,
+			})
+			container:FinalizeSlot(slot, 1)
 		end
 	end
 

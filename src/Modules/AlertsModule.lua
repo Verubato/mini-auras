@@ -1,6 +1,5 @@
 ---@type string, Addon
 local _, addon = ...
-local capabilities = addon.Capabilities
 local mini = addon.Core.Framework
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
@@ -37,7 +36,6 @@ local function OnAuraDataChanged()
 		return
 	end
 
-	local hasNewFilters = capabilities:HasNewFilters()
 	local iconsGlow = db.Modules.AlertsModule.Icons.Glow
 	local iconsReverse = db.Modules.AlertsModule.Icons.ReverseCooldown
 	local colorByClass = db.Modules.AlertsModule.Icons.ColorByClass
@@ -69,44 +67,21 @@ local function OnAuraDataChanged()
 			local importantData = watcher:GetImportantState()
 
 			if #importantData > 0 then
-				if hasNewFilters then
-					for _, data in ipairs(importantData) do
-						slot = slot + 1
-						container:ClearSlot(slot)
-						container:SetSlotUsed(slot)
-						container:SetLayer(slot, 1, {
-							Texture = data.SpellIcon,
-							StartTime = data.StartTime,
-							Duration = data.TotalDuration,
-							AlphaBoolean = data.IsImportant,
-							Glow = iconsGlow,
-							ReverseCooldown = iconsReverse,
-							Color = glowColor,
-							FontScale = db.FontScale,
-						})
-						container:FinalizeSlot(slot, 1)
-					end
-				else
+				for _, data in ipairs(importantData) do
 					slot = slot + 1
 					container:ClearSlot(slot)
 					container:SetSlotUsed(slot)
-
-					local used = 0
-					for _, data in ipairs(importantData) do
-						used = used + 1
-						container:SetLayer(slot, used, {
-							Texture = data.SpellIcon,
-							StartTime = data.StartTime,
-							Duration = data.TotalDuration,
-							AlphaBoolean = data.IsImportant,
-							Glow = iconsGlow,
-							ReverseCooldown = iconsReverse,
-							Color = glowColor,
-							FontScale = db.FontScale,
-						})
-					end
-
-					container:FinalizeSlot(slot, used)
+					container:SetLayer(slot, 1, {
+						Texture = data.SpellIcon,
+						StartTime = data.StartTime,
+						Duration = data.TotalDuration,
+						AlphaBoolean = data.IsImportant,
+						Glow = iconsGlow,
+						ReverseCooldown = iconsReverse,
+						Color = glowColor,
+						FontScale = db.FontScale,
+					})
+					container:FinalizeSlot(slot, 1)
 				end
 			end
 

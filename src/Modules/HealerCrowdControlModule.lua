@@ -1,12 +1,10 @@
 ---@type string, Addon
 local addonName, addon = ...
-local capabilities = addon.Capabilities
 local array = addon.Utils.Array
 local mini = addon.Core.Framework
 local iconSlotContainer = addon.Core.IconSlotContainer
 local unitWatcher = addon.Core.UnitAuraWatcher
 local units = addon.Utils.Units
-local ccUtil = addon.Utils.CcUtil
 local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
@@ -28,8 +26,6 @@ local iconsContainer
 local activePool = {}
 ---@type table<string, HealerWatchEntry>
 local discardPool = {}
-
-local lastCcdAlpha
 local eventsFrame
 
 ---@type TestSpell[]
@@ -74,9 +70,6 @@ local function OnAuraStateUpdated()
 	end
 
 	local options = db.Modules.HealerCCModule
-
-	-- Cache config options for performance
-	local hasNewFilters = capabilities:HasNewFilters()
 	local iconsReverse = options.Icons.ReverseCooldown
 	local iconsGlow = options.Icons.Glow
 	local colorByDispelType = options.Icons.ColorByDispelType
@@ -91,56 +84,42 @@ local function OnAuraStateUpdated()
 		local ccState = watcher.Watcher:GetCcState()
 		array:Append(ccState, allCcAuraData)
 
-		if hasNewFilters then
-			for _, aura in ipairs(ccState) do
-				slot = slot + 1
-				iconsContainer:SetSlotUsed(slot)
-				iconsContainer:SetLayer(slot, 1, {
-					Texture = aura.SpellIcon,
-					StartTime = aura.StartTime,
-					Duration = aura.TotalDuration,
-					AlphaBoolean = aura.IsCC,
-					ReverseCooldown = iconsReverse,
-					Glow = iconsGlow,
-					Color = colorByDispelType and aura.DispelColor,
-					FontScale = db.FontScale,
-				})
-				iconsContainer:FinalizeSlot(slot, 1)
-			end
-		elseif #ccState > 0 then
+		for _, aura in ipairs(ccState) do
 			slot = slot + 1
 			iconsContainer:SetSlotUsed(slot)
-
-			local used = 0
-			for _, aura in ipairs(ccState) do
-				used = used + 1
-				iconsContainer:SetLayer(slot, used, {
-					Texture = aura.SpellIcon,
-					StartTime = aura.StartTime,
-					Duration = aura.TotalDuration,
-					AlphaBoolean = aura.IsCC,
-					ReverseCooldown = iconsReverse,
-					Glow = iconsGlow,
-					Color = colorByDispelType and aura.DispelColor,
-					FontScale = db.FontScale,
-				})
-			end
-			iconsContainer:FinalizeSlot(slot, used)
+			iconsContainer:SetLayer(slot, 1, {
+				Texture = aura.SpellIcon,
+				StartTime = aura.StartTime,
+				Duration = aura.TotalDuration,
+				AlphaBoolean = aura.IsCC,
+				ReverseCooldown = iconsReverse,
+				Glow = iconsGlow,
+				Color = colorByDispelType and aura.DispelColor,
+				FontScale = db.FontScale,
+			})
+			iconsContainer:FinalizeSlot(slot, 1)
 		end
 	end
 
-	local isCcdAlpha = ccUtil:IsCcAppliedAlpha(allCcAuraData)
-	healerAnchor:SetAlpha(isCcdAlpha)
+	local show = false
+	local soundEnabled = db.Modules.HealerCCModule.Sound.Enabled
 
-	if db.Modules.HealerCCModule.Sound.Enabled and not mini:IsSecret(isCcdAlpha) then
-		if isCcdAlpha == 1 and lastCcdAlpha ~= isCcdAlpha then
+	for _, info in ipairs(allCcAuraData) do
+		if info.IsCC then
+			show = true
+			break
+		end
+	end
+
+	if show and not healerAnchor:IsVisible() then
+		healerAnchor:Show()
+
+		if soundEnabled then
 			PlaySound()
 		end
+	elseif healerAnchor:IsVisible() then
+		healerAnchor:Hide()
 	end
-
-	lastCcdAlpha = isCcdAlpha
-
-	UpdateAnchorSize()
 end
 
 local function DisableAll()
@@ -163,10 +142,8 @@ local function DisableAll()
 	end
 
 	if healerAnchor then
-		healerAnchor:SetAlpha(0)
+		healerAnchor:Hide()
 	end
-
-	lastCcdAlpha = nil
 end
 
 local function RefreshHealers()
@@ -275,7 +252,7 @@ function M:StartTesting()
 
 	healerAnchor:EnableMouse(true)
 	healerAnchor:SetMovable(true)
-	healerAnchor:SetAlpha(1)
+	healerAnchor:Show()
 end
 
 function M:StopTesting()
@@ -288,7 +265,7 @@ function M:StopTesting()
 
 	healerAnchor:EnableMouse(false)
 	healerAnchor:SetMovable(false)
-	healerAnchor:SetAlpha(0)
+	healerAnchor:Hide()
 end
 
 function M:Refresh()
@@ -314,11 +291,11 @@ function M:Refresh()
 
 	if testModeActive then
 		if not moduleEnabled then
-			healerAnchor:SetAlpha(0)
+			healerAnchor:Hide()
 			return
 		end
 
-		healerAnchor:SetAlpha(1)
+		healerAnchor:Show()
 		RefreshTestFrame()
 
 		if previousTestSoundEnabled ~= options.Sound.Enabled and options.Sound.Enabled then
@@ -351,16 +328,15 @@ function M:Init()
 	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
 	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
 	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
-	local multipleTestSpells = { kidneyShot, fear, hex }
-	testSpells = capabilities:HasNewFilters() and multipleTestSpells or { kidneyShot }
+	testSpells = { kidneyShot, fear, hex }
 
 	local options = db.Modules.HealerCCModule
 
 	healerAnchor = CreateFrame("Frame", addonName .. "HealerContainer")
+	healerAnchor:Hide()
 	healerAnchor:EnableMouse(false)
 	healerAnchor:SetMovable(false)
 	healerAnchor:SetClampedToScreen(true)
-	healerAnchor:SetAlpha(0)
 	healerAnchor:RegisterForDrag("LeftButton")
 	healerAnchor:SetIgnoreParentScale(true)
 	healerAnchor:SetScript("OnDragStart", function(anchorSelf)
