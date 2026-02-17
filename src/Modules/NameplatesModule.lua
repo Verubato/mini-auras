@@ -649,6 +649,11 @@ local function OnNamePlateAdded(unitToken)
 		OnNamePlateRemoved(unitToken)
 	end
 
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
+	if not moduleEnabled then
+		return
+	end
+
 	-- Check if we should ignore pets
 	local unitOptions = M:GetUnitOptions(unitToken)
 	if unitOptions.IgnorePets and units:IsPet(unitToken) then
