@@ -8,6 +8,7 @@ addon.Capabilities = M
 
 local hasNewFilters
 
+-- TODO: remove this now that we only support 12.0.1
 function M:HasNewFilters()
 	return hasNewFilters
 end
