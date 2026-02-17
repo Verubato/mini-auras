@@ -13,13 +13,13 @@ local columns = 4
 local columnWidth = mini:ColumnWidth(columns, 0, 0)
 local config = addon.Config
 
----@class CcConfig
+---@class CrowdControlConfig
 local M = {}
 
-config.CcConfig = M
+config.CrowdControl = M
 
 ---@param parent table
----@param options CcInstanceOptions
+---@param options CrowdControlInstanceOptions
 local function BuildAnchorSettings(parent, options)
 	local panel = CreateFrame("Frame", nil, parent)
 
@@ -87,7 +87,7 @@ local function BuildAnchorSettings(parent, options)
 end
 
 ---@param panel table
----@param options CcInstanceOptions
+---@param options CrowdControlInstanceOptions
 local function BuildInstance(panel, options, addTestButton)
 	local parent = CreateFrame("Frame", nil, panel)
 	local anchorPanel = BuildAnchorSettings(parent, options)
@@ -193,8 +193,8 @@ local function BuildInstance(panel, options, addTestButton)
 end
 
 ---@param panel table
----@param default CcInstanceOptions
----@param raid CcInstanceOptions
+---@param default CrowdControlInstanceOptions
+---@param raid CrowdControlInstanceOptions
 function M:Build(panel, default, raid)
 	local db = mini:GetSavedVars()
 

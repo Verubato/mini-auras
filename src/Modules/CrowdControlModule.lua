@@ -13,23 +13,23 @@ local wowEx = addon.Utils.WoWEx
 local eventsFrame
 local paused = false
 local testModeActive = false
----@type table<table, CcWatchEntry>
+---@type table<table, CrowdControlWatchEntry>
 local watchers = {}
 ---@type TestSpell[]
 local testSpells = {}
 
----@class CcModule : IModule
+---@class CrowdControlModule : IModule
 local M = {}
 
-addon.Modules.CcModule = M
+addon.Modules.CrowdControlModule = M
 
----@class CcWatchEntry
+---@class CrowdControlWatchEntry
 ---@field Container IconSlotContainer
 ---@field Watcher Watcher
 ---@field Anchor table
 ---@field Unit string
 
----@param entry CcWatchEntry
+---@param entry CrowdControlWatchEntry
 local function UpdateWatcherAuras(entry)
 	if not entry or not entry.Watcher or not entry.Container then
 		return
@@ -40,7 +40,7 @@ local function UpdateWatcherAuras(entry)
 	end
 
 	local options = instanceOptions:GetInstanceOptions()
-	if not options or not moduleUtil:IsModuleEnabled(moduleName.CC) then
+	if not options or not moduleUtil:IsModuleEnabled(moduleName.CrowdControl) then
 		return
 	end
 
@@ -221,7 +221,7 @@ end
 
 ---@param header IconSlotContainer
 ---@param anchor table
----@param options CcInstanceOptions
+---@param options CrowdControlInstanceOptions
 function M:AnchorContainer(header, anchor, options)
 	if not options then
 		return
@@ -311,7 +311,7 @@ function M:Refresh()
 		return
 	end
 
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CC)
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
 
 	-- If disabled, hide everything and return
 	if not moduleEnabled then

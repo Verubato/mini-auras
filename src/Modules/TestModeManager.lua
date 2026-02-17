@@ -2,8 +2,8 @@
 local _, addon = ...
 local frames = addon.Core.Frames
 local instanceOptions = addon.Core.InstanceOptions
-local ccModule = addon.Modules.CcModule
-local healerCcModule = addon.Modules.HealerCcModule
+local ccModule = addon.Modules.CrowdControlModule
+local healerCcModule = addon.Modules.HealerCrowdControlModule
 local portraitModule = addon.Modules.PortraitModule
 local alertsModule = addon.Modules.AlertsModule
 local nameplateModule = addon.Modules.NameplatesModule
@@ -47,7 +47,7 @@ function M:StopTesting()
 	active = false
 end
 
----@param options CcInstanceOptions?
+---@param options CrowdControlInstanceOptions?
 function M:StartTesting(options)
 	if active then
 		return

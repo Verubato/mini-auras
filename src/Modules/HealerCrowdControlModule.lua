@@ -39,9 +39,9 @@ local testSpells = {}
 ---@field Unit string
 ---@field Watcher Watcher
 
----@class HealerCcModule : IModule
+---@class HealerCrowdControlModule : IModule
 local M = {}
-addon.Modules.HealerCcModule = M
+addon.Modules.HealerCrowdControlModule = M
 
 local function PlaySound()
 	PlaySoundFile(soundFile, db.Modules.HealerCcModule.Sound.Channel or "Master")
@@ -69,7 +69,7 @@ local function OnAuraStateUpdated()
 		return
 	end
 
-	if not healerAnchor or not iconsContainer or not moduleUtil:IsModuleEnabled(ModuleName.HealerCC) then
+	if not healerAnchor or not iconsContainer or not moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl) then
 		return
 	end
 
@@ -294,7 +294,7 @@ function M:Refresh()
 	end
 
 	local options = db.Modules.HealerCcModule
-	local moduleEnabled = moduleUtil:IsModuleEnabled(ModuleName.HealerCC)
+	local moduleEnabled = moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl)
 
 	healerAnchor:ClearAllPoints()
 	healerAnchor:SetPoint(

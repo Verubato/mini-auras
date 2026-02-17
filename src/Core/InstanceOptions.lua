@@ -5,23 +5,23 @@ local testInstanceOptions
 ---@type Db
 local db
 
----@class CcInstanceOptions
+---@class CrowdControlInstanceOptions
 local M = {}
 
 addon.Core.InstanceOptions = M
 
----@return CcInstanceOptions?
+---@return CrowdControlInstanceOptions?
 function M:GetInstanceOptions()
 	local members = GetNumGroupMembers()
 	return members > 5 and db.Modules.CcModule.Raid or db.Modules.CcModule.Default
 end
 
----@return CcInstanceOptions?
+---@return CrowdControlInstanceOptions?
 function M:GetTestInstanceOptions()
 	return testInstanceOptions
 end
 
----@param options CcInstanceOptions?
+---@param options CrowdControlInstanceOptions?
 function M:SetTestInstanceOptions(options)
 	testInstanceOptions = options
 end

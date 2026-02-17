@@ -2,7 +2,7 @@
 local _, addon = ...
 local capabilities = addon.Capabilities
 
----@class CcUtil
+---@class CrowdControlUtil
 local M = {}
 
 addon.Utils.CcUtil = M

@@ -12,7 +12,7 @@ local dbDefaults = {
 	WhatsNew = {},
 	NotifiedChanges = true,
 	Modules = {
-		---@class CcModuleOptions
+		---@class CrowdControlModuleOptions
 		CcModule = {
 			Enabled = {
 				Always = true,
@@ -21,7 +21,7 @@ local dbDefaults = {
 				Dungeons = true,
 			},
 
-			---@class CcInstanceOptions
+			---@class CrowdControlInstanceOptions
 			Default = {
 				ExcludePlayer = false,
 				Offset = {
@@ -38,7 +38,7 @@ local dbDefaults = {
 				},
 			},
 
-			---@type CcInstanceOptions
+			---@type CrowdControlInstanceOptions
 			Raid = {
 				ExcludePlayer = false,
 				Offset = {
@@ -55,7 +55,7 @@ local dbDefaults = {
 				},
 			},
 		},
-		---@class HealerCcModuleOptions
+		---@class HealerCrowdControlModuleOptions
 		HealerCcModule = {
 			Enabled = {
 				Always = true,
@@ -713,7 +713,7 @@ function config:Init()
 			Key = keys.CC,
 			Title = "CC",
 			Build = function(content)
-				config.CcConfig:Build(content, db.Modules.CcModule.Default, db.Modules.CcModule.Raid)
+				config.CrowdControl:Build(content, db.Modules.CcModule.Default, db.Modules.CcModule.Raid)
 			end,
 		},
 		{
@@ -832,9 +832,9 @@ end
 ---@field TabController TabReturn
 ---@field General GeneralConfig
 ---@field Portraits PortraitsConfig
----@field CcConfig CcConfig
+---@field CrowdControl CrowdControlConfig
 ---@field Anchors AnchorsConfig
----@field Healer HealerConfig
+---@field Healer HealerCrowdControlConfig
 ---@field Alerts AlertsConfig
 ---@field Nameplates NameplatesConfig
 ---@field KickTimer KickTimerConfig

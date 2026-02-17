@@ -8,13 +8,13 @@ local columns = 4
 local columnWidth = mini:ColumnWidth(columns, 0, 0)
 local config = addon.Config
 
----@class HealerConfig
+---@class HealerCrowdControlConfig
 local M = {}
 
 config.Healer = M
 
 ---@param panel table
----@param options HealerCcModuleOptions
+---@param options HealerCrowdControlModuleOptions
 function M:Build(panel, options)
 	local db = mini:GetSavedVars()
 

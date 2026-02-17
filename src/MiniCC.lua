@@ -7,8 +7,8 @@ local frames = addon.Core.Frames
 local config = addon.Config
 local testModeManager = addon.Modules.TestModeManager
 local modules = {
-	addon.Modules.CcModule,
-	addon.Modules.HealerCcModule,
+	addon.Modules.CrowdControlModule,
+	addon.Modules.HealerCrowdControlModule,
 	addon.Modules.PortraitModule,
 	addon.Modules.AlertsModule,
 	addon.Modules.NameplatesModule,
@@ -117,7 +117,7 @@ function addon:Refresh()
 	end
 end
 
----@param options CcInstanceOptions?
+---@param options CrowdControlInstanceOptions?
 function addon:ToggleTest(options)
 	if testModeManager:IsActive() then
 		testModeManager:StopTesting()
@@ -132,7 +132,7 @@ function addon:ToggleTest(options)
 	end
 end
 
----@param options CcInstanceOptions
+---@param options CrowdControlInstanceOptions
 function addon:TestWithOptions(options)
 	if not testModeManager:IsActive() then
 		testModeManager:StartTesting(options)
@@ -152,11 +152,11 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Config Config
 ---@field Modules Modules
 ---@field Refresh fun(self: table)
----@field ToggleTest fun(self: table, options: CcInstanceOptions)
----@field TestWithOptions fun(self: table, options: CcInstanceOptions)
+---@field ToggleTest fun(self: table, options: CrowdControlInstanceOptions)
+---@field TestWithOptions fun(self: table, options: CrowdControlInstanceOptions)
 
 ---@class Utils
----@field CcUtil CcUtil
+---@field CcUtil CrowdControlUtil
 ---@field Scheduler SchedulerUtil
 ---@field Units UnitUtil
 ---@field Array ArrayUtil
@@ -171,16 +171,16 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Frames Frames
 ---@field UnitAuraWatcher UnitAuraWatcher
 ---@field IconSlotContainer IconSlotContainer
----@field InstanceOptions CcInstanceOptions
+---@field InstanceOptions CrowdControlInstanceOptions
 
 ---@class Modules
 ---@field TestModeManager TestModeManager
 ---@field PortraitModule PortraitModule
----@field HealerCcModule HealerCcModule
+---@field HealerCrowdControlModule HealerCrowdControlModule
 ---@field NameplatesModule NameplatesModule
 ---@field KickTimerModule KickTimerModule
 ---@field AlertsModule AlertsModule
----@field CcModule CcModule
+---@field CrowdControlModule CrowdControlModule
 ---@field TrinketsModule TrinketsModule
 ---@field FriendlyIndicatorModule FriendlyIndicatorModule
 

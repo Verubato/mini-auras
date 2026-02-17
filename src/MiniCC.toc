@@ -17,7 +17,7 @@ Capabilities.lua
 Utils\Scheduler.lua
 Utils\Units.lua
 Utils\Array.lua
-Utils\CcUtil.lua
+Utils\CrowdControlUtil.lua
 Utils\SpellCache.lua
 Utils\FontUtil.lua
 Utils\ModuleUtil.lua
@@ -29,8 +29,8 @@ Core\IconSlotContainer.lua
 Core\UnitAuraWatcher.lua
 Core\Frames.lua
 
-Modules\CcModule.lua
-Modules\HealerCcModule.lua
+Modules\CrowdControlModule.lua
+Modules\HealerCrowdControlModule.lua
 Modules\PortraitModule.lua
 Modules\AlertsModule.lua
 Modules\NameplatesModule.lua
@@ -42,7 +42,7 @@ Modules\TestModeManager.lua
 Config\Config.lua
 Config\General.lua
 Config\Portraits.lua
-Config\CcConfig.lua
+Config\CrowdControl.lua
 Config\Anchors.lua
 Config\Healer.lua
 Config\Alerts.lua
