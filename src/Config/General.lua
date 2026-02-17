@@ -69,7 +69,7 @@ function M:Build(panel)
 		Width = columnWidth,
 	})
 
-	fontScaleSlider.Slider:SetPoint("TOPLEFT", glowTypeDropdown, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	fontScaleSlider.Slider:SetPoint("TOPLEFT", glowTypeDropdown, "BOTTOMLEFT", 2, -verticalSpacing * 3)
 
 	local resetBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	resetBtn:SetSize(120, 26)
