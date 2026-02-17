@@ -200,7 +200,7 @@ local function EnsureWatcher(anchor, unit)
 
 	UpdateWatcherAuras(entry)
 	AnchorContainer(entry.Container, anchor, options)
-	frames:ShowHideFrame(entry.Container.Frame, anchor, options.ExcludePlayer)
+	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, options.ExcludePlayer)
 
 	return entry
 end
@@ -230,7 +230,7 @@ local function OnCufUpdateVisible(frame)
 		return
 	end
 
-	frames:ShowHideFrame(entry.Container.Frame, frame, options.ExcludePlayer)
+	frames:ShowHideFrame(entry.Container.Frame, frame, false, options.ExcludePlayer)
 end
 
 local function OnCufSetUnit(frame, unit)
@@ -310,7 +310,7 @@ local function RefreshTestIcons()
 		end
 
 		AnchorContainer(container, entry.Anchor, options)
-		frames:ShowHideFrame(container.Frame, entry.Anchor, options.ExcludePlayer)
+		frames:ShowHideFrame(container.Frame, entry.Anchor, true, options.ExcludePlayer)
 	end
 end
 
@@ -355,7 +355,7 @@ function M:Refresh()
 		end
 
 		AnchorContainer(container, anchor, options)
-		frames:ShowHideFrame(container.Frame, anchor, options.ExcludePlayer)
+		frames:ShowHideFrame(container.Frame, anchor, testModeActive, options.ExcludePlayer)
 	end
 
 	if testModeActive then

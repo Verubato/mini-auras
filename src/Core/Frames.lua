@@ -439,8 +439,9 @@ end
 
 ---@param frame table
 ---@param anchor table
+---@param isTest boolean
 ---@param excludePlayer boolean
-function M:ShowHideFrame(frame, anchor, excludePlayer)
+function M:ShowHideFrame(frame, anchor, isTest, excludePlayer)
 	if anchor:IsForbidden() then
 		frame:Hide()
 		return
@@ -461,8 +462,14 @@ function M:ShowHideFrame(frame, anchor, excludePlayer)
 	end
 
 	local alpha = anchor:GetAlpha()
-	if mini:IsSecret(alpha) then
-		frame:SetAlpha(alpha)
+	if mini:IsSecret(alpha) and anchor:IsVisible() then
+		if not isTest then
+			-- in real mode set the alpha to the secret value
+			frame:SetAlpha(alpha)
+		else
+			-- in test mode assume it's visible
+			frame:SetAlpha(1)
+		end
 		frame:Show()
 		return
 	end
