@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.19.2
+
+- Removed 'action button glow' that doesn't support secrets.
+- Fixed combined nameplate with 1 max icon to show latest CC applied.
+- Fixed polymorph showing in alerts.
+
 ## 2.19.1
 
 Logic bug fix for showing important harmful spells.
