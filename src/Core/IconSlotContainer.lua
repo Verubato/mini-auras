@@ -270,8 +270,6 @@ function M:SetLayer(slotIndex, layerIndex, options)
 					LCG.PixelGlow_Start(layer.Frame, glowOptions.color)
 				elseif glowType == "Autocast Shine" and LCG.AutoCastGlow_Start then
 					LCG.AutoCastGlow_Start(layer.Frame, glowOptions.color)
-				elseif glowType == "Action Button Glow" and LCG.ButtonGlow_Start then
-					LCG.ButtonGlow_Start(layer.Frame, glowOptions.color)
 				else
 					-- Default to Proc Glow
 					LCG.ProcGlow_Start(layer.Frame, glowOptions)
@@ -293,11 +291,6 @@ function M:SetLayer(slotIndex, layerIndex, options)
 					if autoCastGlow then
 						autoCastGlow:SetAlphaFromBoolean(options.AlphaBoolean)
 					end
-				elseif glowType == "Action Button Glow" then
-					local buttonGlow = layer.Frame._ButtonGlow
-					if buttonGlow then
-						buttonGlow:SetAlphaFromBoolean(options.AlphaBoolean)
-					end
 				end
 			else
 				-- Stop all glow types
@@ -309,9 +302,6 @@ function M:SetLayer(slotIndex, layerIndex, options)
 				end
 				if LCG.AutoCastGlow_Stop then
 					LCG.AutoCastGlow_Stop(layer.Frame)
-				end
-				if LCG.ButtonGlow_Stop then
-					LCG.ButtonGlow_Stop(layer.Frame)
 				end
 			end
 		end

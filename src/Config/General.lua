@@ -40,7 +40,7 @@ function M:Build(panel)
 
 	local glowTypeDropdown = mini:Dropdown({
 		Parent = panel,
-		Items = { "Pixel Glow", "Autocast Shine", "Action Button Glow", "Proc Glow" },
+		Items = { "Pixel Glow", "Autocast Shine", "Proc Glow" },
 		GetValue = function()
 			return db.GlowType or "Proc Glow"
 		end,

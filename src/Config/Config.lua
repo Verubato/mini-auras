@@ -8,7 +8,7 @@ local db
 
 ---@class Db
 local dbDefaults = {
-	Version = 20,
+	Version = 21,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -624,30 +624,40 @@ local function GetAndUpgradeDb()
 		end
 
 		mini:CleanTable(vars, dbDefaults, true, true)
-			vars.Version = 18
+		vars.Version = 18
+	end
+
+	if vars.Version == 18 then
+		-- Rename CcModule to CCModule
+		if vars.Modules and vars.Modules.CcModule then
+			vars.Modules.CCModule = vars.Modules.CcModule
+			vars.Modules.CcModule = nil
 		end
 
-		if vars.Version == 18 then
-			-- Rename CcModule to CCModule
-			if vars.Modules and vars.Modules.CcModule then
-				vars.Modules.CCModule = vars.Modules.CcModule
-				vars.Modules.CcModule = nil
-			end
-
-			-- Rename HealerCcModule to HealerCCModule
-			if vars.Modules and vars.Modules.HealerCcModule then
-				vars.Modules.HealerCCModule = vars.Modules.HealerCcModule
-				vars.Modules.HealerCcModule = nil
-			end
-
-			vars.Version = 19
+		-- Rename HealerCcModule to HealerCCModule
+		if vars.Modules and vars.Modules.HealerCcModule then
+			vars.Modules.HealerCCModule = vars.Modules.HealerCcModule
+			vars.Modules.HealerCcModule = nil
 		end
 
-		if vars.Version == 19 then
-			vars.Version = 20
+		vars.Version = 19
+	end
+
+	if vars.Version == 19 then
+		-- accident, update db migration to the same value as db defaults
+		vars.Version = 20
+	end
+
+	if vars.Version == 20 then
+		-- removed this glow type as it doesn't support secrets
+		if vars.GlowType == "Action Button Glow" then
+			vars.GlowType = "Proc Glow"
 		end
 
-		vars = mini:GetSavedVars(dbDefaults)
+		vars.Version = 21
+	end
+
+	vars = mini:GetSavedVars(dbDefaults)
 
 	return vars
 end
