@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.19.1
+
+Logic bug fix for showing important harmful spells.
+
 ## 2.19.0
 
 - Added glow icon type dropdown.
