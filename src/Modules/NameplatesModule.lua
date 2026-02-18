@@ -7,6 +7,7 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
+local array = addon.Utils.Array
 local testModeActive = false
 local paused = false
 ---@type Db
@@ -320,6 +321,11 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 	local importantData = watcher:GetImportantState()
 	local iconsGlow = combinedOptions.Icons.Glow
 	local iconsReverse = combinedOptions.Icons.ReverseCooldown
+
+	-- reverse the data to show the most recent first
+	array:Reverse(ccData)
+	array:Reverse(defensivesData)
+	array:Reverse(importantData)
 
 	-- Calculate slot distribution
 	local ccSlots, defensiveSlots, importantSlots =
