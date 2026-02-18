@@ -197,7 +197,7 @@ function Watcher:RebuildStates()
 	if interestedInDefensives then
 		for i = 1, maxAuras do
 			local bigDefensivesData =
-				C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|BIG_DEFENSIVE|INCLUDE_NAME_PLATE_ONLY")
+				C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|BIG_DEFENSIVE")
 
 			if not bigDefensivesData then
 				break
@@ -232,7 +232,7 @@ function Watcher:RebuildStates()
 
 		for i = 1, maxAuras do
 			local externalDefensivesData =
-				C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|EXTERNAL_DEFENSIVE|INCLUDE_NAME_PLATE_ONLY")
+				C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|EXTERNAL_DEFENSIVE")
 
 			if not externalDefensivesData then
 				break
@@ -328,36 +328,6 @@ function Watcher:RebuildStates()
 			end
 
 			seen[importantHelpfulData.auraInstanceID] = value
-		end
-
-		for i = 1, maxAuras do
-			local importantHarmfulData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL|IMPORTANT")
-
-			if not importantHarmfulData then
-				break
-			end
-
-			if not seen[importantHarmfulData.auraInstanceID] then
-				local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)
-				local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
-				local start = durationInfo and durationInfo:GetStartTime()
-				local duration = durationInfo and durationInfo:GetTotalDuration()
-
-				if start and duration then
-					local dispelColor =
-						C_UnitAuras.GetAuraDispelTypeColor(unit, importantHarmfulData.auraInstanceID, dispelColorCurve)
-
-					importantSpellData[#importantSpellData + 1] = {
-						IsImportant = isImportant,
-						SpellId = importantHarmfulData.spellId,
-						SpellIcon = importantHarmfulData.icon,
-						StartTime = start,
-						TotalDuration = duration,
-						DispelColor = dispelColor,
-						auraInstanceID = importantHarmfulData.auraInstanceID,
-					}
-				end
-			end
 		end
 	end
 
