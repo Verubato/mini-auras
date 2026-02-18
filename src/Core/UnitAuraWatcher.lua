@@ -337,7 +337,7 @@ function Watcher:RebuildStates()
 				break
 			end
 
-			if seen[importantHarmfulData.auraInstanceID] then
+			if not seen[importantHarmfulData.auraInstanceID] then
 				local isImportant = C_Spell.IsSpellImportant(importantHarmfulData.spellId)
 				local durationInfo = C_UnitAuras.GetAuraDuration(unit, importantHarmfulData.auraInstanceID)
 				local start = durationInfo and durationInfo:GetStartTime()
