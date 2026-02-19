@@ -7,7 +7,6 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
-local array = addon.Utils.Array
 local testModeActive = false
 local paused = false
 ---@type Db
@@ -322,11 +321,6 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 	local iconsGlow = combinedOptions.Icons.Glow
 	local iconsReverse = combinedOptions.Icons.ReverseCooldown
 
-	-- reverse the data to show the most recent first
-	array:Reverse(ccData)
-	array:Reverse(defensivesData)
-	array:Reverse(importantData)
-
 	-- Calculate slot distribution
 	local ccSlots, defensiveSlots, importantSlots =
 		CalculateSlotDistribution(container.Count, #ccData, #defensivesData, #importantData)
@@ -335,18 +329,19 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 
 	-- Add CC spells (highest priority)
 	if ccSlots > 0 then
-		-- Each CC gets its own slot
+		-- Each CC gets its own slot, iterate in reverse to show the most recent first
 		for i = 1, math.min(ccSlots, #ccData) do
 			if slot >= container.Count then
 				break
 			end
 			slot = slot + 1
+			local reverseIndex = #ccData - i + 1
 			container:SetSlotUsed(slot)
 			container:SetLayer(slot, 1, {
-				Texture = ccData[i].SpellIcon,
-				StartTime = ccData[i].StartTime,
-				Duration = ccData[i].TotalDuration,
-				AlphaBoolean = ccData[i].IsCC,
+				Texture = ccData[reverseIndex].SpellIcon,
+				StartTime = ccData[reverseIndex].StartTime,
+				Duration = ccData[reverseIndex].TotalDuration,
+				AlphaBoolean = ccData[reverseIndex].IsCC,
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
@@ -357,18 +352,20 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 
 	-- Add Defensive spells (second priority)
 	if defensiveSlots > 0 then
+		-- Iterate in reverse to show the most recent first
 		for i = 1, math.min(defensiveSlots, #defensivesData) do
 			if slot >= container.Count then
 				break
 			end
 			slot = slot + 1
+			local reverseIndex = #defensivesData - i + 1
 			container:SetSlotUsed(slot)
 
 			container:SetLayer(slot, 1, {
-				Texture = defensivesData[i].SpellIcon,
-				StartTime = defensivesData[i].StartTime,
-				Duration = defensivesData[i].TotalDuration,
-				AlphaBoolean = defensivesData[i].IsDefensive,
+				Texture = defensivesData[reverseIndex].SpellIcon,
+				StartTime = defensivesData[reverseIndex].StartTime,
+				Duration = defensivesData[reverseIndex].TotalDuration,
+				AlphaBoolean = defensivesData[reverseIndex].IsDefensive,
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
@@ -380,18 +377,19 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 
 	-- Add Important spells (third priority)
 	if importantSlots > 0 then
-		-- Each Important spell gets its own slot
+		-- Each Important spell gets its own slot, iterate in reverse to show the most recent first
 		for i = 1, math.min(importantSlots, #importantData) do
 			if slot >= container.Count then
 				break
 			end
 			slot = slot + 1
+			local reverseIndex = #importantData - i + 1
 			container:SetSlotUsed(slot)
 			container:SetLayer(slot, 1, {
-				Texture = importantData[i].SpellIcon,
-				StartTime = importantData[i].StartTime,
-				Duration = importantData[i].TotalDuration,
-				AlphaBoolean = importantData[i].IsImportant,
+				Texture = importantData[reverseIndex].SpellIcon,
+				StartTime = importantData[reverseIndex].StartTime,
+				Duration = importantData[reverseIndex].TotalDuration,
+				AlphaBoolean = importantData[reverseIndex].IsImportant,
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,

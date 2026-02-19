@@ -1,7 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
-local array = addon.Utils.Array
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
 local spellCache = addon.Utils.SpellCache
@@ -123,16 +122,12 @@ local function OnAuraInfo(watcher, container)
 	local importantAuras = watcher:GetImportantState()
 	local defensiveAuras = watcher:GetDefensiveState()
 
-	-- Reverse their order so we show latest spells
-	array:Reverse(ccAuras)
-	array:Reverse(importantAuras)
-	array:Reverse(defensiveAuras)
-
 	local slotIndex = 1
 	local layerIndex = 1
 
-	-- Process CC auras
-	for _, aura in ipairs(ccAuras) do
+	-- Process CC auras, iterate in reverse to show latest spells
+	for i = #ccAuras, 1, -1 do
+		local aura = ccAuras[i]
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
 			container:SetSlotUsed(slotIndex)
 			container:SetLayer(slotIndex, layerIndex, {
@@ -157,8 +152,9 @@ local function OnAuraInfo(watcher, container)
 		end
 	end
 
-	-- Process defensive auras
-	for _, aura in ipairs(defensiveAuras) do
+	-- Process defensive auras, iterate in reverse to show latest spells
+	for i = #defensiveAuras, 1, -1 do
+		local aura = defensiveAuras[i]
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
 			container:SetSlotUsed(slotIndex)
 			container:SetLayer(slotIndex, layerIndex, {
@@ -176,8 +172,9 @@ local function OnAuraInfo(watcher, container)
 		end
 	end
 
-	-- Process important auras
-	for _, aura in ipairs(importantAuras) do
+	-- Process important auras, iterate in reverse to show latest spells
+	for i = #importantAuras, 1, -1 do
+		local aura = importantAuras[i]
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
 			container:SetSlotUsed(slotIndex)
 			container:SetLayer(slotIndex, layerIndex, {
