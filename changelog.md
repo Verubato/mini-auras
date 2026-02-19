@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.19.3
+
+Glow icons performance fix in test mode.
+
 ## 2.19.2
 
 - Removed 'action button glow' that doesn't support secrets.
