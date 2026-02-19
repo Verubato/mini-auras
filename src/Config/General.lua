@@ -53,6 +53,16 @@ function M:Build(panel)
 	glowTypeDropdown:SetPoint("TOPLEFT", glowTypeLabel, "BOTTOMLEFT", 0, -4)
 	glowTypeDropdown:SetWidth(columnWidth)
 
+	local glowNote = mini:TextBlock({
+		Parent = panel,
+		Lines = {
+			"The Proc Glow uses the least CPU.",
+			"The others seem to use a non-trivial amount of CPU.",
+		},
+	})
+
+	glowNote:SetPoint("TOPLEFT", glowTypeDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local fontScaleSlider = mini:Slider({
 		Parent = panel,
 		LabelText = "Font Scale",
@@ -73,7 +83,7 @@ function M:Build(panel)
 		Width = columnWidth,
 	})
 
-	fontScaleSlider.Slider:SetPoint("TOPLEFT", glowTypeDropdown, "BOTTOMLEFT", 2, -verticalSpacing * 3)
+	fontScaleSlider.Slider:SetPoint("TOPLEFT", glowNote, "BOTTOMLEFT", 2, -verticalSpacing * 3)
 
 	local resetBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	resetBtn:SetSize(120, 26)
