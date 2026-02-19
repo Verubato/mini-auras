@@ -197,7 +197,6 @@ local function RefreshTestFrame()
 	local size = tonumber(options.Icons.Size) or 32
 	local now = GetTime()
 
-	iconsContainer:ResetAllSlots()
 	iconsContainer:SetIconSize(size)
 
 	for i, spell in ipairs(testSpells) do
@@ -219,6 +218,13 @@ local function RefreshTestFrame()
 				FontScale = db.FontScale,
 			})
 			iconsContainer:FinalizeSlot(i, 1)
+		end
+	end
+
+	-- Clear any unused slots beyond the test spell count
+	for i = #testSpells + 1, iconsContainer.Count do
+		if iconsContainer:IsSlotUsed(i) then
+			iconsContainer:SetSlotUnused(i)
 		end
 	end
 

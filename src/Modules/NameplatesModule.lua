@@ -710,8 +710,6 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 		return
 	end
 
-	combinedContainer:ResetAllSlots()
-
 	-- Calculate slot distribution
 	local ccSlots, defensiveSlots, importantSlots = CalculateSlotDistribution(
 		combinedContainer.Count,
@@ -799,12 +797,17 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			combinedContainer:FinalizeSlot(slot, 1)
 		end
 	end
+
+	-- Clear any unused slots beyond what we just set
+	for i = slot + 1, combinedContainer.Count do
+		if combinedContainer:IsSlotUsed(i) then
+			combinedContainer:SetSlotUnused(i)
+		end
+	end
 end
 
 local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContainer, importantOptions, now)
 	if ccContainer and ccOptions then
-		ccContainer:ResetAllSlots()
-
 		for i = 1, #testCcNameplateSpellIds do
 			ccContainer:SetSlotUsed(i)
 
@@ -827,10 +830,16 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 				ccContainer:FinalizeSlot(i, 1)
 			end
 		end
+
+		-- Clear any unused slots beyond test CC spells
+		for i = #testCcNameplateSpellIds + 1, ccContainer.Count do
+			if ccContainer:IsSlotUsed(i) then
+				ccContainer:SetSlotUnused(i)
+			end
+		end
 	end
 
 	if importantContainer and importantOptions then
-		importantContainer:ResetAllSlots()
 
 		for i = 1, #testImportantNameplateSpellIds do
 			importantContainer:SetSlotUsed(i)
@@ -851,6 +860,13 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 					FontScale = db.FontScale,
 				})
 				importantContainer:FinalizeSlot(i, 1)
+			end
+		end
+
+		-- Clear any unused slots beyond test important spells
+		for i = #testImportantNameplateSpellIds + 1, importantContainer.Count do
+			if importantContainer:IsSlotUsed(i) then
+				importantContainer:SetSlotUnused(i)
 			end
 		end
 	end

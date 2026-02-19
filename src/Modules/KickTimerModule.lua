@@ -524,11 +524,28 @@ local function OnEnteringWorld()
 end
 
 local function ShowTestIcons()
-	ClearIcons()
+	-- Cancel all active timers but don't reset slots yet
+	for _, slotData in pairs(kickBar.ActiveSlots) do
+		if slotData.Timer then
+			slotData.Timer:Cancel()
+		end
+	end
+	wipe(kickBar.ActiveSlots)
+
 	-- Show test kicks: mage, hunter, rogue
 	KickedBySpec(62) -- mage
 	KickedBySpec(254) -- hunter
 	KickedBySpec(259) -- rogue
+
+	-- Clear any unused slots beyond the test icons
+	local testIconCount = 3
+	if kickBar.Container then
+		for i = testIconCount + 1, kickBar.Container.Count do
+			if kickBar.Container:IsSlotUsed(i) then
+				kickBar.Container:SetSlotUnused(i)
+			end
+		end
+	end
 end
 
 ---@param options KickTimerModuleOptions

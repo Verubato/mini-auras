@@ -241,7 +241,6 @@ local function RefreshTestIcons()
 		local container = entry.Container
 		local now = GetTime()
 
-		container:ResetAllSlots()
 		container:SetIconSize(tonumber(options.Icons.Size) or 32)
 
 		for i, spell in ipairs(testSpells) do
@@ -264,6 +263,13 @@ local function RefreshTestIcons()
 					FontScale = addon.Core.Framework:GetSavedVars().FontScale,
 				})
 				container:FinalizeSlot(i, 1)
+			end
+		end
+
+		-- Clear any unused slots beyond the test spell count
+		for i = #testSpells + 1, container.Count do
+			if container:IsSlotUsed(i) then
+				container:SetSlotUnused(i)
 			end
 		end
 

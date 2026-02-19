@@ -139,8 +139,6 @@ local function OnMatchStateChanged()
 end
 
 local function RefreshTestAlerts()
-	container:ResetAllSlots()
-
 	local testAlertSpellIds = {
 		190319, -- Combustion
 		121471, -- Shadow Blades
@@ -189,6 +187,13 @@ local function RefreshTestAlerts()
 			})
 
 			container:FinalizeSlot(i, 1)
+		end
+	end
+
+	-- Clear any unused slots beyond test alert count
+	for i = count + 1, container.Count do
+		if container:IsSlotUsed(i) then
+			container:SetSlotUnused(i)
 		end
 	end
 end

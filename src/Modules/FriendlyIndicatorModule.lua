@@ -281,7 +281,6 @@ local function RefreshTestIcons()
 		local now = GetTime()
 		local maxIcons = options.Icons.MaxIcons or 1
 
-		container:ResetAllSlots()
 		container:SetIconSize(tonumber(options.Icons.Size) or 50)
 
 		-- Fill up to MaxIcons test icons, alternating between defensive and important
@@ -308,6 +307,13 @@ local function RefreshTestIcons()
 					})
 					container:FinalizeSlot(slotIndex, 1)
 				end
+			end
+		end
+
+		-- Clear any unused slots beyond maxIcons
+		for i = maxIcons + 1, container.Count do
+			if container:IsSlotUsed(i) then
+				container:SetSlotUnused(i)
 			end
 		end
 
