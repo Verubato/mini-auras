@@ -330,22 +330,22 @@ local function RefreshTestTrinkets()
 		player = {
 			spellId = defaultSpellId,
 			start = now,
-			duration = 90 * 1000,
+			duration = 90,
 		},
 		party1 = {
 			spellId = defaultSpellId,
 			start = now,
-			duration = 120 * 1000,
+			duration = 120,
 		},
 		party2 = {
 			spellId = defaultSpellId,
 			start = now,
-			duration = 60 * 1000,
+			duration = 60,
 		},
 		party3 = {
 			spellId = defaultSpellId,
 			start = now,
-			duration = 45 * 1000,
+			duration = 45,
 		},
 	}
 
