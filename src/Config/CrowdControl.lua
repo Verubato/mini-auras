@@ -310,7 +310,6 @@ function M:Build(panel, default, raid)
 	raidPanel:SetHeight(370)
 
 	panel.OnMiniRefresh = function()
-		print("OnMiniRefresh")
 		defaultPanel:MiniRefresh()
 		raidPanel:MiniRefresh()
 	end

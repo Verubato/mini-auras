@@ -6,6 +6,7 @@ local spellCache = addon.Utils.SpellCache
 local iconSlotContainer = addon.Core.IconSlotContainer
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
+local unitsUtil = addon.Utils.Units
 local eventFrame
 local enabled = false
 local paused = false
@@ -71,8 +72,6 @@ local function SetIconState(container, spellId, start, duration)
 	if not container then
 		return
 	end
-
-	start, duration = NormalizeCooldownValues(start, duration)
 
 	local tex = GetSpellTexture(spellId) or defaultTrinketIcon or "Interface\\Icons\\INV_Misc_QuestionMark"
 
@@ -199,13 +198,33 @@ local function RequestAll()
 	end
 end
 
+local function GetTrinketData(unit)
+	local spellId, start, duration = C_PvP.GetArenaCrowdControlInfo(unit)
+
+	if not start or not duration then
+		return spellId, start, duration
+	end
+
+	if issecretvalue(start) or issecretvalue(duration) then
+		start = GetTime()
+		-- ffs, they give us duration in milliseconds as a secret value which we can't convert to seconds
+		-- so we'll just have to hard code these values
+		duration = unitsUtil:IsHealer(unit) and 90 or 120
+	else
+		-- TODO: does this even happen anymore or are they always secret?
+		start, duration = NormalizeCooldownValues(start, duration)
+	end
+
+	return spellId, start, duration
+end
+
 -- Refresh only one unit (using unitTarget from ARENA_COOLDOWNS_UPDATE)
 local function RefreshUnit(unit)
 	if not unit or unit == "" or not UnitExists(unit) then
 		return
 	end
 
-	local spellId, start, duration = C_PvP.GetArenaCrowdControlInfo(unit)
+	local spellId, start, duration = GetTrinketData(unit)
 
 	if not spellId or not start or not duration then
 		-- don't overwrite existing data if they've already trinketed
@@ -215,6 +234,7 @@ local function RefreshUnit(unit)
 	for _, watcher in pairs(watchers) do
 		if watcher.Container and watcher.Unit == unit then
 			SetIconState(watcher.Container, spellId, start, duration)
+			break
 		end
 	end
 end
@@ -225,7 +245,7 @@ local function RefreshAll()
 		local container = watcher.Container
 
 		if container and unit and UnitExists(unit) then
-			local spellId, start, duration = C_PvP.GetArenaCrowdControlInfo(unit)
+			local spellId, start, duration = GetTrinketData(unit)
 			-- Always update icon state, even if no cooldown
 			SetIconState(container, spellId, start, duration)
 		elseif container then
@@ -264,12 +284,15 @@ local function OnEvent(_, event, ...)
 		local matchState = C_PvP.GetActiveMatchState()
 		if matchState == Enum.PvPMatchState.StartUp then
 			ClearAll()
+			return
 		end
 
-		-- in case they trinketed before the gates opened
-		-- TODO: does this work?
-		RequestAll()
-		RefreshAll()
+		if matchState == Enum.PvPMatchState.Engaged then
+			-- in case they trinketed before the gates opened
+			RequestAll()
+			RefreshAll()
+			return
+		end
 
 		return
 	end

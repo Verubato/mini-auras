@@ -15,11 +15,19 @@ function M:GetSpellTexture(spellId)
 		return nil
 	end
 
-	if not spellTextureCache[spellId] then
-		spellTextureCache[spellId] = C_Spell.GetSpellTexture(spellId)
+	if issecretvalue(spellId) then
+		-- can't cache secrets
+		return C_Spell.GetSpellTexture(spellId)
 	end
 
-	return spellTextureCache[spellId]
+	local cached = spellTextureCache[spellId]
+
+	if not cached then
+		cached = C_Spell.GetSpellTexture(spellId)
+		spellTextureCache[spellId] = cached
+	end
+
+	return cached
 end
 
 ---Clears the spell texture cache (useful for reloads or updates)
