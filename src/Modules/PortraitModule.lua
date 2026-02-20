@@ -271,27 +271,27 @@ local function RefreshTestIcons()
 	end
 end
 
-local function ClearAll()
+local function DisableWatchers()
+	for _, watcher in pairs(watchers) do
+		watcher:Disable()
+		watcher:ClearState(true)
+	end
+
 	for _, container in pairs(containers) do
 		container:ResetAllSlots()
 	end
+
+	enabled = false
+	paused = true
 end
 
-local function EnableDisable()
-	if moduleUtil:IsModuleEnabled(ModuleName.Portrait) then
-		for _, watcher in pairs(watchers) do
-			watcher:Enable()
-		end
-
-		enabled = true
-	else
-		for _, watcher in pairs(watchers) do
-			watcher:Disable()
-			watcher:ClearState(true)
-		end
-
-		enabled = false
+local function EnableWatchers()
+	paused = false
+	for _, watcher in pairs(watchers) do
+		watcher:Enable()
 	end
+
+	enabled = true
 end
 
 local function Pause()
@@ -311,16 +311,23 @@ end
 function M:StopTesting()
 	testModeActive = false
 	Resume()
-	ClearAll()
+
+	for _, container in pairs(containers) do
+		container:ResetAllSlots()
+	end
 end
 
 function M:Refresh()
-	EnableDisable()
+	local moduleEnabled = moduleUtil:IsModuleEnabled(ModuleName.Portrait)
 
-	if not enabled then
-		ClearAll()
+	-- If disabled, disable watchers and clear
+	if not moduleEnabled then
+		DisableWatchers()
 		return
 	end
+
+	-- Module is enabled, ensure watchers are enabled
+	EnableWatchers()
 
 	if testModeActive then
 		RefreshTestIcons()

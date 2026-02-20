@@ -316,9 +316,32 @@ local function EnableWatchers()
 	for _, entry in pairs(watchers) do
 		if entry.Watcher then
 			entry.Watcher:Enable()
-			entry.Watcher:ForceFullUpdate()
 		end
 	end
+end
+
+function M:StartTesting()
+	-- Pause real watcher updates
+	Pause()
+	testModeActive = true
+
+	M:Refresh()
+end
+
+function M:StopTesting()
+	-- Clear all test data
+	for _, entry in pairs(watchers) do
+		entry.Container:ResetAllSlots()
+		entry.Container.Frame:Hide()
+	end
+
+	testModeActive = false
+
+	-- Resume real watcher updates
+	Resume()
+
+	-- Refresh to show real data
+	M:Refresh()
 end
 
 function M:Refresh()
@@ -358,32 +381,7 @@ function M:Refresh()
 	end
 end
 
-function M:StartTesting()
-	-- Pause real watcher updates
-	Pause()
-	testModeActive = true
-
-	M:Refresh()
-end
-
-function M:StopTesting()
-	-- Clear all test data
-	for _, entry in pairs(watchers) do
-		entry.Container:ResetAllSlots()
-		entry.Container.Frame:Hide()
-	end
-
-	testModeActive = false
-
-	-- Resume real watcher updates
-	Resume()
-
-	-- Refresh to show real data
-	M:Refresh()
-end
-
 function M:Init()
-	-- Initialize test spells
 	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
 	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
 	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }

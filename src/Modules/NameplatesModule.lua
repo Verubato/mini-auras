@@ -679,6 +679,28 @@ local function ClearNameplate(unitToken)
 	end
 end
 
+local function DisableWatchers()
+	for _, watcher in pairs(watchers) do
+		if watcher then
+			watcher:Disable()
+		end
+	end
+
+	for unitToken, _ in pairs(nameplateAnchors) do
+		ClearNameplate(unitToken)
+	end
+	paused = true
+end
+
+local function EnableWatchers()
+	paused = false
+	for _, watcher in pairs(watchers) do
+		if watcher then
+			watcher:Enable()
+		end
+	end
+end
+
 local function RebuildContainers()
 	local count = 0
 	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
@@ -867,7 +889,6 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 	end
 
 	if importantContainer and importantOptions then
-
 		for i = 1, #testImportantNameplateSpellIds do
 			importantContainer:SetSlotUsed(i)
 
@@ -988,6 +1009,13 @@ local function RefreshAnchorsAndSizes()
 	end
 end
 
+local function ClearAll()
+	-- Clean up all existing nameplates
+	for unitToken, _ in pairs(nameplateAnchors) do
+		ClearNameplate(unitToken)
+	end
+end
+
 local function Pause()
 	paused = true
 end
@@ -1007,6 +1035,57 @@ function M:GetUnitOptions(unitToken)
 	end
 
 	return db.Modules.NameplatesModule.Enemy
+end
+
+function M:StartTesting()
+	Pause()
+	testModeActive = true
+
+	-- Check if any nameplate mode is enabled
+	if not AnyEnabled() then
+		ClearAll()
+		return
+	end
+
+	ShowTestIcons()
+end
+
+function M:StopTesting()
+	testModeActive = false
+	ClearAll()
+
+	Resume()
+
+	-- Refresh all nameplates
+	for _, watcher in pairs(watchers) do
+		watcher:ForceFullUpdate()
+	end
+end
+
+function M:Refresh()
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
+
+	if not moduleEnabled or not AnyEnabled() then
+		DisableWatchers()
+		CacheEnabledModes()
+		return
+	end
+
+	-- Module is enabled, ensure watchers are enabled
+	EnableWatchers()
+
+	-- if the user has enabled/disabled a mode, rebuild the containers
+	if HaveModesChanged() then
+		RebuildContainers()
+	end
+
+	CacheEnabledModes()
+	RefreshAnchorsAndSizes()
+
+	if testModeActive then
+		-- update test icons
+		ShowTestIcons()
+	end
 end
 
 function M:Init()
@@ -1037,60 +1116,4 @@ function M:Init()
 	end
 
 	CacheEnabledModes()
-end
-
-function M:Refresh()
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
-
-	if not moduleEnabled or not AnyEnabled() then
-		M:ClearAll()
-		CacheEnabledModes()
-		return
-	end
-
-	-- if the user has enabled/disabled a mode, rebuild the containers
-	if HaveModesChanged() then
-		RebuildContainers()
-	end
-
-	CacheEnabledModes()
-	RefreshAnchorsAndSizes()
-
-	if testModeActive then
-		-- update test icons
-		ShowTestIcons()
-	end
-end
-
-function M:StartTesting()
-	Pause()
-	testModeActive = true
-
-	-- Check if any nameplate mode is enabled
-	if not AnyEnabled() then
-		M:ClearAll()
-		return
-	end
-
-	ShowTestIcons()
-end
-
-function M:StopTesting()
-	testModeActive = false
-	-- clear icons
-	M:ClearAll()
-
-	Resume()
-
-	-- Refresh all nameplates
-	for _, watcher in pairs(watchers) do
-		watcher:ForceFullUpdate()
-	end
-end
-
-function M:ClearAll()
-	-- Clean up all existing nameplates
-	for unitToken, _ in pairs(nameplateAnchors) do
-		ClearNameplate(unitToken)
-	end
 end

@@ -198,19 +198,21 @@ local function RefreshTestAlerts()
 	end
 end
 
-local function EnableDisable()
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
+local function DisableWatchers()
+	for _, watcher in ipairs(watchers) do
+		watcher:Disable()
+	end
 
-	if moduleEnabled then
-		for _, watcher in ipairs(watchers) do
-			watcher:Enable()
-		end
+	if container then
+		container:ResetAllSlots()
+	end
+	paused = true
+end
 
-		OnAuraDataChanged()
-	else
-		for _, watcher in ipairs(watchers) do
-			watcher:Disable()
-		end
+local function EnableWatchers()
+	paused = false
+	for _, watcher in ipairs(watchers) do
+		watcher:Enable()
 	end
 end
 
@@ -221,43 +223,6 @@ end
 local function Resume()
 	paused = false
 	OnAuraDataChanged()
-end
-
-local function ClearAll()
-	if not container then
-		return
-	end
-
-	container:ResetAllSlots()
-end
-
-function M:Refresh()
-	local options = db.Modules.AlertsModule
-
-	EnableDisable()
-
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
-
-	-- If disabled, clear and return
-	if not moduleEnabled then
-		ClearAll()
-		return
-	end
-
-	container.Frame:ClearAllPoints()
-	container.Frame:SetPoint(
-		options.Point,
-		_G[options.RelativeTo] or UIParent,
-		options.RelativePoint,
-		options.Offset.X,
-		options.Offset.Y
-	)
-
-	container:SetIconSize(options.Icons.Size)
-
-	if testModeActive then
-		RefreshTestAlerts()
-	end
 end
 
 function M:StartTesting()
@@ -275,15 +240,45 @@ end
 
 function M:StopTesting()
 	testModeActive = false
-	ClearAll()
-	Resume()
 
 	if not container then
 		return
 	end
 
+	container:ResetAllSlots()
+	Resume()
+
 	container.Frame:EnableMouse(false)
 	container.Frame:SetMovable(false)
+end
+
+function M:Refresh()
+	local options = db.Modules.AlertsModule
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
+
+	-- If disabled, disable watchers and clear
+	if not moduleEnabled then
+		DisableWatchers()
+		return
+	end
+
+	-- Module is enabled, ensure watchers are enabled
+	EnableWatchers()
+
+	container.Frame:ClearAllPoints()
+	container.Frame:SetPoint(
+		options.Point,
+		_G[options.RelativeTo] or UIParent,
+		options.RelativePoint,
+		options.Offset.X,
+		options.Offset.Y
+	)
+
+	container:SetIconSize(options.Icons.Size)
+
+	if testModeActive then
+		RefreshTestAlerts()
+	end
 end
 
 function M:Init()
@@ -344,5 +339,10 @@ function M:Init()
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
 	eventsFrame:SetScript("OnEvent", OnMatchStateChanged)
 
-	EnableDisable()
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
+	if moduleEnabled then
+		EnableWatchers()
+	else
+		DisableWatchers()
+	end
 end

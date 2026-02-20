@@ -126,7 +126,7 @@ local function OnAuraStateUpdated()
 	end
 end
 
-local function DisableAll()
+local function DisableWatchers()
 	local toDiscard = {}
 	for unit in pairs(activePool) do
 		toDiscard[#toDiscard + 1] = unit
@@ -147,6 +147,16 @@ local function DisableAll()
 
 	if healerAnchor then
 		healerAnchor:Hide()
+	end
+	paused = true
+end
+
+local function EnableWatchers()
+	paused = false
+	for _, item in pairs(activePool) do
+		if item.Watcher then
+			item.Watcher:Enable()
+		end
 	end
 end
 
@@ -253,6 +263,42 @@ local function Resume()
 	OnAuraStateUpdated()
 end
 
+local function EnableDisable()
+	local options = db.Modules.HealerCCModule
+	local moduleEnabled = moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl)
+
+	if testModeActive then
+		if not moduleEnabled then
+			healerAnchor:Hide()
+			return
+		end
+
+		healerAnchor:Show()
+		RefreshTestFrame()
+
+		if previousTestSoundEnabled ~= options.Sound.Enabled and options.Sound.Enabled then
+			PlaySound()
+		end
+
+		previousTestSoundEnabled = options.Sound.Enabled
+		return
+	end
+
+	if units:IsHealer("player") then
+		DisableWatchers()
+		return
+	end
+
+	if not moduleEnabled then
+		DisableWatchers()
+		return
+	end
+
+	-- Module is enabled, ensure watchers are enabled
+	EnableWatchers()
+	RefreshHealers()
+end
+
 function M:StartTesting()
 	testModeActive = true
 	Pause()
@@ -286,8 +332,8 @@ function M:Refresh()
 	end
 
 	local options = db.Modules.HealerCCModule
-	local moduleEnabled = moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl)
 
+	-- update anchor positions and sizes
 	healerAnchor:ClearAllPoints()
 	healerAnchor:SetPoint(
 		options.Point,
@@ -298,37 +344,9 @@ function M:Refresh()
 	)
 
 	healerAnchor.HealerWarning:SetFont(options.Font.File, options.Font.Size, options.Font.Flags)
-
 	iconsContainer:SetIconSize(tonumber(options.Icons.Size) or 32)
 
-	if testModeActive then
-		if not moduleEnabled then
-			healerAnchor:Hide()
-			return
-		end
-
-		healerAnchor:Show()
-		RefreshTestFrame()
-
-		if previousTestSoundEnabled ~= options.Sound.Enabled and options.Sound.Enabled then
-			PlaySound()
-		end
-
-		previousTestSoundEnabled = options.Sound.Enabled
-		return
-	end
-
-	if units:IsHealer("player") then
-		DisableAll()
-		return
-	end
-
-	if not moduleEnabled then
-		DisableAll()
-		return
-	end
-
-	RefreshHealers()
+	EnableDisable()
 end
 
 function M:Init()
@@ -385,5 +403,5 @@ function M:Init()
 	eventsFrame:SetScript("OnEvent", OnEvent)
 	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
-	M:Refresh()
+	EnableDisable()
 end

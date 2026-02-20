@@ -356,7 +356,6 @@ local function EnableWatchers()
 	for _, entry in pairs(watchers) do
 		if entry.Watcher then
 			entry.Watcher:Enable()
-			entry.Watcher:ForceFullUpdate()
 		end
 	end
 end

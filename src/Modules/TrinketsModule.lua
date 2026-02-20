@@ -385,6 +385,7 @@ function M:Enable()
 	end
 
 	enabled = true
+	paused = false
 
 	eventFrame = CreateFrame("Frame")
 	eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -396,6 +397,7 @@ end
 
 function M:Disable()
 	enabled = false
+	paused = true
 
 	if eventFrame then
 		eventFrame:UnregisterAllEvents()
@@ -405,6 +407,14 @@ function M:Disable()
 
 	for anchorFrame in pairs(watchers) do
 		DestroyWatcher(anchorFrame)
+	end
+
+	ClearAll()
+
+	for _, watcher in pairs(watchers) do
+		if watcher.Container then
+			watcher.Container.Frame:Hide()
+		end
 	end
 end
 
@@ -418,13 +428,6 @@ function M:Refresh()
 	end
 
 	if not moduleEnabled then
-		ClearAll()
-
-		for _, watcher in pairs(watchers) do
-			if watcher.Container then
-				watcher.Container.Frame:Hide()
-			end
-		end
 		return
 	end
 
