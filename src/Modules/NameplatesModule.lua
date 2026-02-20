@@ -1062,6 +1062,7 @@ local function RefreshAnchorsAndSizes()
 							ccOptions.Offset.Y
 						)
 						ccContainer:SetIconSize(ccOptions.Icons.Size)
+						ccContainer:SetCount(ccOptions.Icons.MaxIcons)
 					end
 				end
 
@@ -1081,6 +1082,7 @@ local function RefreshAnchorsAndSizes()
 							importantOptions.Offset.Y
 						)
 						importantContainer:SetIconSize(importantOptions.Icons.Size)
+						importantContainer:SetCount(importantOptions.Icons.MaxIcons)
 					end
 				end
 			end

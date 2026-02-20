@@ -45,14 +45,8 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 
 	local function UpdateVisibility()
 		-- Only show the settings container if this section is enabled
-		-- Always show the checkbox and divider
 		if options.Enabled then
-			-- TODO: calculate these heights from children controls
-			if sectionType == "Combined" then
-				container:SetHeight(320)
-			else
-				container:SetHeight(250)
-			end
+			container:SetHeight(320)
 			container:Show()
 		else
 			container:Hide()
@@ -259,29 +253,31 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 
 	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
 
-	if sectionType == "Combined" then
-		local maxIcons = mini:Slider({
-			Parent = container,
-			Min = 1,
-			Max = 8,
-			Step = 1,
-			Width = columnWidth * 2 - horizontalSpacing,
-			LabelText = "Max Icons",
-			GetValue = function()
-				return options.Icons.MaxIcons
-			end,
-			SetValue = function(v)
-				local new = mini:ClampInt(v, 1, 8, 6)
+	-- Add Max Icons slider for all section types
+	local maxIconsMax = sectionType == "Combined" and 8 or 5
+	local maxIconsDefault = sectionType == "Combined" and 6 or 5
 
-				if new ~= options.Icons.MaxIcons then
-					options.Icons.MaxIcons = new
-					config:Apply()
-				end
-			end,
-		})
+	local maxIcons = mini:Slider({
+		Parent = container,
+		Min = 1,
+		Max = maxIconsMax,
+		Step = 1,
+		Width = columnWidth * 2 - horizontalSpacing,
+		LabelText = "Max Icons",
+		GetValue = function()
+			return options.Icons.MaxIcons
+		end,
+		SetValue = function(v)
+			local new = mini:ClampInt(v, 1, maxIconsMax, maxIconsDefault)
 
-		maxIcons.Slider:SetPoint("TOPLEFT", containerX.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
-	end
+			if new ~= options.Icons.MaxIcons then
+				options.Icons.MaxIcons = new
+				config:Apply()
+			end
+		end,
+	})
+
+	maxIcons.Slider:SetPoint("TOPLEFT", containerX.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	return wrapper
 end
