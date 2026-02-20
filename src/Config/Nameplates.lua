@@ -46,7 +46,7 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 	local function UpdateVisibility()
 		-- Only show the settings container if this section is enabled
 		if options.Enabled then
-			container:SetHeight(320)
+			container:SetHeight(280)
 			container:Show()
 		else
 			container:Hide()
@@ -169,7 +169,7 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 		Parent = container,
 		Min = 10,
 		Max = 200,
-		Width = (columnWidth * columns) - horizontalSpacing,
+		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
 		LabelText = "Icon Size",
 		GetValue = function()
@@ -186,6 +186,32 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 	})
 
 	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+
+	-- Add Max Icons slider for all section types
+	local maxIconsMax = sectionType == "Combined" and 8 or 5
+	local maxIconsDefault = sectionType == "Combined" and 6 or 5
+
+	local maxIcons = mini:Slider({
+		Parent = container,
+		Min = 1,
+		Max = maxIconsMax,
+		Step = 1,
+		Width = columnWidth * 2 - horizontalSpacing,
+		LabelText = "Max Icons",
+		GetValue = function()
+			return options.Icons.MaxIcons
+		end,
+		SetValue = function(v)
+			local new = mini:ClampInt(v, 1, maxIconsMax, maxIconsDefault)
+
+			if new ~= options.Icons.MaxIcons then
+				options.Icons.MaxIcons = new
+				config:Apply()
+			end
+		end,
+	})
+
+	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
 
 	local growDdlLbl = container:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	growDdlLbl:SetText("Grow")
@@ -252,32 +278,6 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 	})
 
 	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
-
-	-- Add Max Icons slider for all section types
-	local maxIconsMax = sectionType == "Combined" and 8 or 5
-	local maxIconsDefault = sectionType == "Combined" and 6 or 5
-
-	local maxIcons = mini:Slider({
-		Parent = container,
-		Min = 1,
-		Max = maxIconsMax,
-		Step = 1,
-		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = "Max Icons",
-		GetValue = function()
-			return options.Icons.MaxIcons
-		end,
-		SetValue = function(v)
-			local new = mini:ClampInt(v, 1, maxIconsMax, maxIconsDefault)
-
-			if new ~= options.Icons.MaxIcons then
-				options.Icons.MaxIcons = new
-				config:Apply()
-			end
-		end,
-	})
-
-	maxIcons.Slider:SetPoint("TOPLEFT", containerX.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	return wrapper
 end
