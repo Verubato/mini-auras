@@ -136,6 +136,7 @@ local function OnAuraInfo(watcher, container)
 				Glow = false,
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
+				Color = aura.DispelColor,
 			})
 
 			if not issecretvalue(aura.IsCC) then
@@ -163,6 +164,7 @@ local function OnAuraInfo(watcher, container)
 				Glow = false,
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
+				Color = aura.DispelColor,
 			})
 
 			container:FinalizeSlot(slotIndex, layerIndex)
@@ -183,6 +185,7 @@ local function OnAuraInfo(watcher, container)
 				Glow = false,
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
+				Color = aura.DispelColor,
 			})
 
 			layerIndex = layerIndex + 1

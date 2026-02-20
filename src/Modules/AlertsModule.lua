@@ -50,15 +50,15 @@ local function OnAuraDataChanged()
 
 		-- when units go stealth, we can't get their aura data anymore
 		if unit and UnitExists(unit) then
-			local glowColor = nil
+			local color = nil
 
 			-- Get class color if the option is enabled
-			if colorByClass and iconsGlow then
+			if colorByClass then
 				local _, class = UnitClass(unit)
 				if class then
 					local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
 					if classColor then
-						glowColor = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1 }
+						color = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1 }
 					end
 				end
 			end
@@ -77,7 +77,7 @@ local function OnAuraDataChanged()
 						AlphaBoolean = data.IsImportant,
 						Glow = iconsGlow,
 						ReverseCooldown = iconsReverse,
-						Color = glowColor,
+						Color = color,
 						FontScale = db.FontScale,
 					})
 					container:FinalizeSlot(slot, 1)
@@ -96,7 +96,7 @@ local function OnAuraDataChanged()
 						AlphaBoolean = data.IsDefensive,
 						Glow = iconsGlow,
 						ReverseCooldown = iconsReverse,
-						Color = glowColor,
+						Color = color,
 						FontScale = db.FontScale,
 					})
 					container:FinalizeSlot(slot, 1)
@@ -168,7 +168,7 @@ local function RefreshTestAlerts()
 			local startTime = now - (i - 1) * 1.25
 
 			local glowColor = nil
-			if colorByClass and iconsGlow and testClassColors[i] then
+			if colorByClass and testClassColors[i] then
 				local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[testClassColors[i]]
 				if classColor then
 					glowColor = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1 }

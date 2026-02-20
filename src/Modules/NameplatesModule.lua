@@ -343,6 +343,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
+				Color = ccData[reverseIndex].DispelColor,
 			})
 			container:FinalizeSlot(slot, 1)
 		end
@@ -367,6 +368,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
+				Color = defensivesData[reverseIndex].DispelColor,
 			})
 
 			container:FinalizeSlot(slot, 1)
@@ -391,6 +393,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
+				Color = importantData[reverseIndex].DispelColor,
 			})
 			container:FinalizeSlot(slot, 1)
 		end
@@ -452,6 +455,7 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 			Glow = iconsGlow,
 			ReverseCooldown = iconsReverse,
 			FontScale = db.FontScale,
+			Color = spellInfo.DispelColor,
 		})
 
 		container:FinalizeSlot(slotIndex, 1)
@@ -500,6 +504,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
+				Color = spellData.DispelColor,
 			})
 			container:FinalizeSlot(slot, 1)
 		end
@@ -518,6 +523,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
+				Color = spellData.DispelColor,
 			})
 
 			container:FinalizeSlot(slot, 1)

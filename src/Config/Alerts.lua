@@ -76,7 +76,7 @@ function M:Build(panel, options)
 	local colorByClassChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Color by class",
-		Tooltip = "Color the glow by the enemy's class color.",
+		Tooltip = "Color the glow/border by the enemy's class color.",
 		GetValue = function()
 			return options.Icons.ColorByClass
 		end,

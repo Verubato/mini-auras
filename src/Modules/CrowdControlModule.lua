@@ -63,7 +63,7 @@ local function UpdateWatcherAuras(entry)
 			AlphaBoolean = aura.IsCC,
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
-			Color = colorByDispelType and aura.DispelColor or nil,
+			Color = colorByDispelType and aura.DispelColor,
 			FontScale = addon.Core.Framework:GetSavedVars().FontScale,
 		})
 		container:FinalizeSlot(slotIndex, 1)

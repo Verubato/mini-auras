@@ -60,7 +60,7 @@ local function CreateLayer(parentFrame, level, iconSize)
 		layerFrame:SetFrameLevel(level)
 	end
 
-	local icon = layerFrame:CreateTexture(nil, "OVERLAY")
+	local icon = layerFrame:CreateTexture(nil, "ARTWORK")
 	icon:SetAllPoints()
 
 	local cd = CreateFrame("Cooldown", nil, layerFrame, "CooldownFrameTemplate")
@@ -69,6 +69,14 @@ local function CreateLayer(parentFrame, level, iconSize)
 	cd:SetDrawBling(false)
 	cd:SetHideCountdownNumbers(false)
 	cd:SetSwipeColor(0, 0, 0, 0.8)
+
+	local border = layerFrame:CreateTexture(nil, "OVERLAY")
+	-- make the border 1px larger than the icon
+	border:SetPoint("TOPLEFT", layerFrame, "TOPLEFT", -1, 1)
+	border:SetPoint("BOTTOMRIGHT", layerFrame, "BOTTOMRIGHT", 1, -1)
+	-- refer to https://github.com/Gethe/wow-ui-source/blob/aa3d9bc8633244ba017bf2058bf5e84900397ab5/Interface/AddOns/Blizzard_UnitFrame/Shared/CompactUnitFrame.xml#L31
+	border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
+	border:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
 
 	-- Set initial font size based on icon size
 	if iconSize then
@@ -80,6 +88,7 @@ local function CreateLayer(parentFrame, level, iconSize)
 
 	return {
 		Frame = layerFrame,
+		Border = border,
 		Icon = icon,
 		Cooldown = cd,
 	}
@@ -244,7 +253,7 @@ end
 ---@field AlphaBoolean boolean? Control alpha (true = 1.0, false = dimmed)
 ---@field Glow boolean? Whether to show glow effect (requires LibCustomGlow)
 ---@field ReverseCooldown boolean? Whether to reverse the cooldown animation
----@field Color table? RGBA color table {r, g, b, a} for glow effect
+---@field Color table? RGBA color table {r, g, b, a} for glow and border color
 ---@field FontScale number? Font scale multiplier for cooldown text (default: 1.0)
 function M:SetLayer(slotIndex, layerIndex, options)
 	if slotIndex < 1 or slotIndex > self.Count then
@@ -267,6 +276,19 @@ function M:SetLayer(slotIndex, layerIndex, options)
 		layer.Cooldown:SetReverse(options.ReverseCooldown)
 		layer.Cooldown:SetCooldown(options.StartTime, options.Duration)
 		layer.Frame:SetAlphaFromBoolean(options.AlphaBoolean)
+
+		-- Set border color if provided
+		if options.Color and layer.Border then
+			layer.Border:SetVertexColor(
+				options.Color.r or 1,
+				options.Color.g or 1,
+				options.Color.b or 1,
+				options.Color.a or 1
+			)
+			layer.Border:Show()
+		elseif layer.Border then
+			layer.Border:Hide()
+		end
 
 		-- Update font scale if provided
 		if options.FontScale then

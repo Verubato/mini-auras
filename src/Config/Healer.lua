@@ -156,7 +156,7 @@ function M:Build(panel, options)
 	local dispelColoursChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = "Dispel colours",
-		Tooltip = "Change the colour of the glow based on the type of debuff.",
+		Tooltip = "Change the colour of the glow/border based on the type of debuff.",
 		GetValue = function()
 			return options.Icons.ColorByDispelType
 		end,
