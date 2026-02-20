@@ -20,16 +20,23 @@ function M:UpdateCooldownFontSize(cd, iconSize, coefficient, fontScale)
 
 	local fontSize = math.floor(iconSize * coefficient * fontScale)
 
-	-- Get the FontString region from the cooldown frame
-	local numRegions = cd:GetNumRegions()
-	for i = 1, numRegions do
-		local region = select(i, cd:GetRegions())
-		if region and region.GetObjectType and region:GetObjectType() == "FontString" then
-			local font, _, flags = region:GetFont()
-			if font then
-				region:SetFont(font, fontSize, flags)
+	-- Scan once, cache result on the cooldown frame
+	if not cd.MiniCCFontString then
+		local numRegions = cd:GetNumRegions()
+		for i = 1, numRegions do
+			local region = select(i, cd:GetRegions())
+			if region and region:GetObjectType() == "FontString" then
+				cd.MiniCCFontString = region
+				break
 			end
-			break
+		end
+	end
+
+	local region = cd.MiniCCFontString
+	if region then
+		local font, _, flags = region:GetFont()
+		if font then
+			region:SetFont(font, fontSize, flags)
 		end
 	end
 end
