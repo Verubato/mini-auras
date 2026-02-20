@@ -96,6 +96,12 @@ local function EnsureWatcher(anchor, unit)
 		return nil
 	end
 
+	if units:IsCompoundUnit(unit) then
+		-- in PvE ignore main tank and assist frames
+		-- you can't scan them for auras
+		return nil
+	end
+
 	local options = testModeActive and instanceOptions:GetTestInstanceOptions() or instanceOptions:GetInstanceOptions()
 
 	if not options then
@@ -181,12 +187,6 @@ local function OnCufSetUnit(frame, unit)
 	end
 
 	if not unit then
-		return
-	end
-
-	if units:IsCompoundUnit(unit) then
-		-- in PvE ignore main tank and assist frames
-		-- you can't scan them for auras
 		return
 	end
 

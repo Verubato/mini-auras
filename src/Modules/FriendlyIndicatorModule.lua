@@ -147,6 +147,10 @@ local function EnsureWatcher(anchor, unit)
 		return nil
 	end
 
+	if units:IsCompoundUnit(unit) then
+		return nil
+	end
+
 	local options = db.Modules.FriendlyIndicatorModule
 
 	if not options then
@@ -244,10 +248,6 @@ local function OnCufSetUnit(frame, unit)
 	end
 
 	if not unit then
-		return
-	end
-
-	if units:IsCompoundUnit(unit) then
 		return
 	end
 
