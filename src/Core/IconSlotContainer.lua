@@ -193,12 +193,17 @@ function M:SetIconSize(newSize)
 		if slot and slot.Frame then
 			slot.Frame:SetSize(self.Size, self.Size)
 
-			-- Update cooldown font sizes for all layers
+			-- Update cooldown font sizes and layer frame sizes
 			for _, layer in ipairs(slot.Layers) do
 				if layer and layer.Cooldown then
 					layer.Cooldown.DesiredIconSize = self.Size
 					local fontScale = layer.Cooldown.FontScale or 1.0
 					fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, fontScale)
+				end
+
+				-- Update layer frame size to match new slot size
+				if layer and layer.Frame then
+					layer.Frame:SetSize(self.Size, self.Size)
 				end
 			end
 		end
@@ -409,6 +414,17 @@ function M:SetLayer(slotIndex, layerIndex, options)
 					if autoCastGlow then
 						autoCastGlow:SetAlphaFromBoolean(options.AlphaBoolean)
 					end
+				end
+
+				-- Handle glow resizing for ProcGlow/ButtonGlow
+				-- PixelGlow and AutoCastGlow auto-resize in their OnUpdate handlers
+				if glowType == "Proc Glow" and layer.Frame._ProcGlow and LCG.ProcGlow_Start then
+					-- ProcGlow_Start efficiently handles resize when glow already exists
+					local glowOptions = { startAnim = false }
+					if options.Color then
+						glowOptions.color = { options.Color.r, options.Color.g, options.Color.b, options.Color.a }
+					end
+					LCG.ProcGlow_Start(layer.Frame, glowOptions)
 				end
 			else
 				-- Stop all glow types only if any exist
