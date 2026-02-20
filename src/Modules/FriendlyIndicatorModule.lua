@@ -87,7 +87,6 @@ local function UpdateWatcherAuras(entry)
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
 			FontScale = db.FontScale,
-			Color = aura.DispelColor,
 		})
 		container:FinalizeSlot(slotIndex, 1)
 		slotIndex = slotIndex + 1
