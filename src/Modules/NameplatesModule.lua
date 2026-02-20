@@ -309,8 +309,6 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 	local unitOptions = M:GetUnitOptions(unitToken)
 	local combinedOptions = unitOptions and unitOptions.Combined
 
-	container:ResetAllSlots()
-
 	if not combinedOptions or not combinedOptions.Enabled then
 		return
 	end
@@ -397,6 +395,13 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 			container:FinalizeSlot(slot, 1)
 		end
 	end
+
+	-- Clear any unused slots beyond the used count
+	for i = slot + 1, container.Count do
+		if container:IsSlotUsed(i) then
+			container:SetSlotUnused(i)
+		end
+	end
 end
 
 ---@param data NameplateData
@@ -411,8 +416,6 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 	local unitOptions = M:GetUnitOptions(unitToken)
 	local options = unitOptions and unitOptions.CC
 
-	container:ResetAllSlots()
-
 	if not options or not options.Enabled then
 		return
 	end
@@ -421,6 +424,12 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 	local ccDataCount = #ccData
 
 	if ccDataCount == 0 then
+		-- Clear all used slots when no CC data
+		for i = 1, container.Count do
+			if container:IsSlotUsed(i) then
+				container:SetSlotUnused(i)
+			end
+		end
 		return
 	end
 
@@ -448,6 +457,13 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 		container:FinalizeSlot(slotIndex, 1)
 		slotIndex = slotIndex + 1
 	end
+
+	-- Clear any unused slots beyond the CC count
+	for i = slotIndex, container.Count do
+		if container:IsSlotUsed(i) then
+			container:SetSlotUnused(i)
+		end
+	end
 end
 
 ---@param data NameplateData
@@ -458,8 +474,6 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 	if not container then
 		return
 	end
-
-	container:ResetAllSlots()
 
 	local unitOptions = M:GetUnitOptions(unitToken)
 	local options = unitOptions and unitOptions.Important
@@ -507,6 +521,13 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 			})
 
 			container:FinalizeSlot(slot, 1)
+		end
+	end
+
+	-- Clear any unused slots beyond the used count
+	for i = slot + 1, container.Count do
+		if container:IsSlotUsed(i) then
+			container:SetSlotUnused(i)
 		end
 	end
 end

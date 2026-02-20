@@ -50,8 +50,6 @@ local function UpdateWatcherAuras(entry)
 	local ccState = entry.Watcher:GetCcState()
 	local slotIndex = 1
 
-	container:ResetAllSlots()
-
 	-- Each aura gets its own slot
 	for _, aura in ipairs(ccState) do
 		if slotIndex > container.Count then
@@ -71,6 +69,13 @@ local function UpdateWatcherAuras(entry)
 		container:FinalizeSlot(slotIndex, 1)
 		container:SetSlotUsed(slotIndex)
 		slotIndex = slotIndex + 1
+	end
+
+	-- Clear any unused slots beyond the aura count
+	for i = slotIndex, container.Count do
+		if container:IsSlotUsed(i) then
+			container:SetSlotUnused(i)
+		end
 	end
 end
 

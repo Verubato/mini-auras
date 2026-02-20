@@ -61,8 +61,6 @@ local function UpdateWatcherAuras(entry)
 	local defensiveState = entry.Watcher:GetDefensiveState()
 	local importantState = entry.Watcher:GetImportantState()
 
-	container:ResetAllSlots()
-
 	-- Combine all auras (defensive first, then important)
 	local allAuras = {}
 	for _, aura in ipairs(defensiveState) do
@@ -92,6 +90,13 @@ local function UpdateWatcherAuras(entry)
 		})
 		container:FinalizeSlot(slotIndex, 1)
 		slotIndex = slotIndex + 1
+	end
+
+	-- Clear any unused slots beyond the aura count
+	for i = slotIndex, container.Count do
+		if container:IsSlotUsed(i) then
+			container:SetSlotUnused(i)
+		end
 	end
 end
 

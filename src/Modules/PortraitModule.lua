@@ -116,8 +116,6 @@ local function OnAuraInfo(watcher, container)
 		return
 	end
 
-	container:ResetAllSlots()
-
 	local ccAuras = watcher:GetCcState()
 	local importantAuras = watcher:GetImportantState()
 	local defensiveAuras = watcher:GetDefensiveState()
@@ -191,7 +189,14 @@ local function OnAuraInfo(watcher, container)
 		end
 	end
 
-	container:FinalizeSlot(slotIndex, layerIndex - 1)
+	if layerIndex > 1 then
+		container:FinalizeSlot(slotIndex, layerIndex - 1)
+	else
+		-- No auras to display, clear the slot if it was used
+		if container:IsSlotUsed(slotIndex) then
+			container:SetSlotUnused(slotIndex)
+		end
+	end
 end
 
 ---@return table? unitFrame

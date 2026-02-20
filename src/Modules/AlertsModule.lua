@@ -69,7 +69,6 @@ local function OnAuraDataChanged()
 			if #importantData > 0 then
 				for _, data in ipairs(importantData) do
 					slot = slot + 1
-					container:ClearSlot(slot)
 					container:SetSlotUsed(slot)
 					container:SetLayer(slot, 1, {
 						Texture = data.SpellIcon,
@@ -89,7 +88,6 @@ local function OnAuraDataChanged()
 				-- we only get defensive data with new filters
 				for _, data in ipairs(defensivesData) do
 					slot = slot + 1
-					container:ClearSlot(slot)
 					container:SetSlotUsed(slot)
 					container:SetLayer(slot, 1, {
 						Texture = data.SpellIcon,
@@ -117,7 +115,9 @@ local function OnAuraDataChanged()
 	else
 		-- clear any slots above what we used
 		for i = slot, container.Count do
-			container:SetSlotUnused(i)
+			if container:IsSlotUsed(i) then
+				container:SetSlotUnused(i)
+			end
 		end
 	end
 end

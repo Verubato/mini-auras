@@ -74,8 +74,6 @@ local function OnAuraStateUpdated()
 	local iconsGlow = options.Icons.Glow
 	local colorByDispelType = options.Icons.ColorByDispelType
 
-	iconsContainer:ResetAllSlots()
-
 	---@type AuraInfo[]
 	local allCcAuraData = {}
 	local slot = 0
@@ -98,6 +96,13 @@ local function OnAuraStateUpdated()
 				FontScale = db.FontScale,
 			})
 			iconsContainer:FinalizeSlot(slot, 1)
+		end
+	end
+
+	-- Clear any unused slots beyond the aura count
+	for i = slot + 1, iconsContainer.Count do
+		if iconsContainer:IsSlotUsed(i) then
+			iconsContainer:SetSlotUnused(i)
 		end
 	end
 
