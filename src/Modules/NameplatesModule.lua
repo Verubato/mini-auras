@@ -583,197 +583,6 @@ local function OnAuraDataChanged(unitToken)
 	end
 end
 
-local function OnNamePlateRemoved(unitToken)
-	local data = nameplateAnchors[unitToken]
-	if not data then
-		return
-	end
-
-	-- Completely dispose of containers
-	if data.CcContainer then
-		data.CcContainer:ResetAllSlots()
-		data.CcContainer.Frame:Hide()
-	end
-
-	if data.ImportantContainer then
-		data.ImportantContainer:ResetAllSlots()
-		data.ImportantContainer.Frame:Hide()
-	end
-
-	if data.CombinedContainer then
-		data.CombinedContainer:ResetAllSlots()
-		data.CombinedContainer.Frame:Hide()
-	end
-
-	-- Dispose of watcher
-	if watchers[unitToken] then
-		watchers[unitToken]:Dispose()
-		watchers[unitToken] = nil
-	end
-
-	-- Remove all data for this unit token
-	nameplateAnchors[unitToken] = nil
-end
-
-local function OnNamePlateAdded(unitToken)
-	local nameplate = GetNameplateForUnit(unitToken)
-	if not nameplate then
-		return
-	end
-
-	-- Clean up any existing data for this unit token first
-	-- (unit tokens can be reused for different units)
-	if nameplateAnchors[unitToken] then
-		OnNamePlateRemoved(unitToken)
-	end
-
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
-	if not moduleEnabled then
-		return
-	end
-
-	-- Check if we should ignore pets
-	local unitOptions = M:GetUnitOptions(unitToken)
-	if unitOptions.IgnorePets and units:IsPet(unitToken) then
-		return
-	end
-
-	-- Create fresh containers
-	local ccContainer, importantContainer, combinedContainer = CreateContainersForNameplate(nameplate, unitToken)
-
-	if not ccContainer and not importantContainer and not combinedContainer then
-		return
-	end
-
-	-- Create new nameplate data
-	nameplateAnchors[unitToken] = {
-		Nameplate = nameplate,
-		CcContainer = ccContainer,
-		ImportantContainer = importantContainer,
-		CombinedContainer = combinedContainer,
-		UnitToken = unitToken,
-	}
-
-	-- Create new watcher
-	watchers[unitToken] = unitWatcher:New(unitToken)
-	watchers[unitToken]:RegisterCallback(function()
-		OnAuraDataChanged(unitToken)
-	end)
-
-	-- Initial update
-	OnAuraDataChanged(unitToken)
-end
-
-local function OnNamePlateUpdate(unitToken)
-	-- Nameplate might have been recreated, update our reference
-	local data = nameplateAnchors[unitToken]
-	if not data then
-		return
-	end
-
-	local newNameplate = GetNameplateForUnit(unitToken)
-	if newNameplate and newNameplate ~= data.Nameplate then
-		-- Nameplate changed, fully recreate
-		OnNamePlateRemoved(unitToken)
-		OnNamePlateAdded(unitToken)
-	end
-end
-
-local function ClearNameplate(unitToken)
-	local data = nameplateAnchors[unitToken]
-	if not data then
-		return
-	end
-
-	-- Completely dispose of containers
-	if data.CcContainer then
-		data.CcContainer:ResetAllSlots()
-	end
-
-	if data.ImportantContainer then
-		data.ImportantContainer:ResetAllSlots()
-	end
-
-	if data.CombinedContainer then
-		data.CombinedContainer:ResetAllSlots()
-	end
-end
-
-local function DisableWatchers()
-	for _, watcher in pairs(watchers) do
-		if watcher then
-			watcher:Disable()
-		end
-	end
-
-	for unitToken, _ in pairs(nameplateAnchors) do
-		ClearNameplate(unitToken)
-	end
-	paused = true
-end
-
-local function EnableWatchers()
-	paused = false
-	for _, watcher in pairs(watchers) do
-		if watcher then
-			watcher:Enable()
-		end
-	end
-end
-
-local function RebuildContainers()
-	local count = 0
-	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
-		local unitToken = nameplate.unitToken
-
-		if unitToken then
-			OnNamePlateAdded(unitToken)
-			count = count + 1
-		end
-	end
-end
-
-local function AnyEnabled()
-	return db.Modules.NameplatesModule.Friendly.CC.Enabled
-		or db.Modules.NameplatesModule.Friendly.Important.Enabled
-		or db.Modules.NameplatesModule.Friendly.Combined.Enabled
-		or db.Modules.NameplatesModule.Enemy.CC.Enabled
-		or db.Modules.NameplatesModule.Enemy.Important.Enabled
-		or db.Modules.NameplatesModule.Enemy.Combined.Enabled
-end
-
-local function CacheEnabledModes()
-	previousEnemyEnabled.CC = db.Modules.NameplatesModule.Enemy.CC.Enabled
-	previousEnemyEnabled.Important = db.Modules.NameplatesModule.Enemy.Important.Enabled
-	previousEnemyEnabled.Combined = db.Modules.NameplatesModule.Enemy.Combined.Enabled
-
-	previousFriendlyEnabled.CC = db.Modules.NameplatesModule.Friendly.CC.Enabled
-	previousFriendlyEnabled.Important = db.Modules.NameplatesModule.Friendly.Important.Enabled
-	previousFriendlyEnabled.Combined = db.Modules.NameplatesModule.Friendly.Combined.Enabled
-
-	previousPetEnabled.Friendly = db.Modules.NameplatesModule.Friendly.IgnorePets
-	previousPetEnabled.Enemy = db.Modules.NameplatesModule.Enemy.IgnorePets
-
-	previousModuleEnabled = mini:CopyTable(db.Modules.NameplatesModule.Enabled)
-end
-
-local function HaveModesChanged()
-	local options = db.Modules.NameplatesModule
-
-	return previousEnemyEnabled.CC ~= options.Enemy.CC.Enabled
-		or previousEnemyEnabled.Important ~= options.Enemy.Important.Enabled
-		or previousEnemyEnabled.Combined ~= options.Enemy.Combined.Enabled
-		or previousFriendlyEnabled.CC ~= options.Friendly.CC.Enabled
-		or previousFriendlyEnabled.Important ~= options.Friendly.Important.Enabled
-		or previousFriendlyEnabled.Combined ~= options.Friendly.Combined.Enabled
-		or previousPetEnabled.Friendly ~= options.Friendly.IgnorePets
-		or previousPetEnabled.Enemy ~= options.Enemy.IgnorePets
-		or previousModuleEnabled.Always ~= options.Enabled.Always
-		or previousModuleEnabled.Arena ~= options.Enabled.Arena
-		or previousModuleEnabled.Dungeons ~= options.Enabled.Dungeons
-		or previousModuleEnabled.Raid ~= options.Enabled.Raid
-end
-
 local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 	if not combinedContainer or not combinedOptions then
 		return
@@ -991,6 +800,223 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 			end
 		end
 	end
+end
+
+local function OnNamePlateRemoved(unitToken)
+	local data = nameplateAnchors[unitToken]
+	if not data then
+		return
+	end
+
+	-- Completely dispose of containers
+	if data.CcContainer then
+		data.CcContainer:ResetAllSlots()
+		data.CcContainer.Frame:Hide()
+	end
+
+	if data.ImportantContainer then
+		data.ImportantContainer:ResetAllSlots()
+		data.ImportantContainer.Frame:Hide()
+	end
+
+	if data.CombinedContainer then
+		data.CombinedContainer:ResetAllSlots()
+		data.CombinedContainer.Frame:Hide()
+	end
+
+	-- Dispose of watcher
+	if watchers[unitToken] then
+		watchers[unitToken]:Dispose()
+		watchers[unitToken] = nil
+	end
+
+	-- Remove all data for this unit token
+	nameplateAnchors[unitToken] = nil
+end
+
+local function OnNamePlateAdded(unitToken)
+	local nameplate = GetNameplateForUnit(unitToken)
+	if not nameplate then
+		return
+	end
+
+	-- Clean up any existing data for this unit token first
+	-- (unit tokens can be reused for different units)
+	if nameplateAnchors[unitToken] then
+		OnNamePlateRemoved(unitToken)
+	end
+
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
+	if not moduleEnabled then
+		return
+	end
+
+	-- Check if we should ignore pets
+	local unitOptions = M:GetUnitOptions(unitToken)
+	if unitOptions.IgnorePets and units:IsPet(unitToken) then
+		return
+	end
+
+	-- Create fresh containers
+	local ccContainer, importantContainer, combinedContainer = CreateContainersForNameplate(nameplate, unitToken)
+
+	if not ccContainer and not importantContainer and not combinedContainer then
+		return
+	end
+
+	-- Create new nameplate data
+	nameplateAnchors[unitToken] = {
+		Nameplate = nameplate,
+		CcContainer = ccContainer,
+		ImportantContainer = importantContainer,
+		CombinedContainer = combinedContainer,
+		UnitToken = unitToken,
+	}
+
+	-- Create new watcher
+	watchers[unitToken] = unitWatcher:New(unitToken)
+	watchers[unitToken]:RegisterCallback(function()
+		OnAuraDataChanged(unitToken)
+	end)
+
+	-- Initial update
+	if testModeActive then
+		-- In test mode, show test icons for this specific nameplate
+		local now = GetTime()
+		local options = M:GetUnitOptions(unitToken)
+
+		if unitOptions.Combined.Enabled then
+			if combinedContainer then
+				ShowCombinedTestIcons(combinedContainer, unitOptions.Combined, now)
+			end
+		else
+			ShowSeparateModeTestIcons(ccContainer, unitOptions.CC, importantContainer, unitOptions.Important, now)
+		end
+	else
+		OnAuraDataChanged(unitToken)
+	end
+end
+
+local function OnNamePlateUpdate(unitToken)
+	-- Nameplate might have been recreated, update our reference
+	local data = nameplateAnchors[unitToken]
+	if not data then
+		return
+	end
+
+	local newNameplate = GetNameplateForUnit(unitToken)
+	if newNameplate and newNameplate ~= data.Nameplate then
+		-- Nameplate changed, fully recreate
+		OnNamePlateRemoved(unitToken)
+		OnNamePlateAdded(unitToken)
+	elseif testModeActive then
+		-- In test mode, refresh test icons for this nameplate
+		local now = GetTime()
+		local options = M:GetUnitOptions(unitToken)
+
+		if options.Combined.Enabled then
+			if data.CombinedContainer then
+				ShowCombinedTestIcons(data.CombinedContainer, options.Combined, now)
+			end
+		else
+			ShowSeparateModeTestIcons(data.CcContainer, options.CC, data.ImportantContainer, options.Important, now)
+		end
+	end
+end
+
+local function ClearNameplate(unitToken)
+	local data = nameplateAnchors[unitToken]
+	if not data then
+		return
+	end
+
+	-- Completely dispose of containers
+	if data.CcContainer then
+		data.CcContainer:ResetAllSlots()
+	end
+
+	if data.ImportantContainer then
+		data.ImportantContainer:ResetAllSlots()
+	end
+
+	if data.CombinedContainer then
+		data.CombinedContainer:ResetAllSlots()
+	end
+end
+
+local function DisableWatchers()
+	for _, watcher in pairs(watchers) do
+		if watcher then
+			watcher:Disable()
+		end
+	end
+
+	for unitToken, _ in pairs(nameplateAnchors) do
+		ClearNameplate(unitToken)
+	end
+	paused = true
+end
+
+local function EnableWatchers()
+	paused = false
+	for _, watcher in pairs(watchers) do
+		if watcher then
+			watcher:Enable()
+		end
+	end
+end
+
+local function RebuildContainers()
+	local count = 0
+	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
+		local unitToken = nameplate.unitToken
+
+		if unitToken then
+			OnNamePlateAdded(unitToken)
+			count = count + 1
+		end
+	end
+end
+
+local function AnyEnabled()
+	return db.Modules.NameplatesModule.Friendly.CC.Enabled
+		or db.Modules.NameplatesModule.Friendly.Important.Enabled
+		or db.Modules.NameplatesModule.Friendly.Combined.Enabled
+		or db.Modules.NameplatesModule.Enemy.CC.Enabled
+		or db.Modules.NameplatesModule.Enemy.Important.Enabled
+		or db.Modules.NameplatesModule.Enemy.Combined.Enabled
+end
+
+local function CacheEnabledModes()
+	previousEnemyEnabled.CC = db.Modules.NameplatesModule.Enemy.CC.Enabled
+	previousEnemyEnabled.Important = db.Modules.NameplatesModule.Enemy.Important.Enabled
+	previousEnemyEnabled.Combined = db.Modules.NameplatesModule.Enemy.Combined.Enabled
+
+	previousFriendlyEnabled.CC = db.Modules.NameplatesModule.Friendly.CC.Enabled
+	previousFriendlyEnabled.Important = db.Modules.NameplatesModule.Friendly.Important.Enabled
+	previousFriendlyEnabled.Combined = db.Modules.NameplatesModule.Friendly.Combined.Enabled
+
+	previousPetEnabled.Friendly = db.Modules.NameplatesModule.Friendly.IgnorePets
+	previousPetEnabled.Enemy = db.Modules.NameplatesModule.Enemy.IgnorePets
+
+	previousModuleEnabled = mini:CopyTable(db.Modules.NameplatesModule.Enabled)
+end
+
+local function HaveModesChanged()
+	local options = db.Modules.NameplatesModule
+
+	return previousEnemyEnabled.CC ~= options.Enemy.CC.Enabled
+		or previousEnemyEnabled.Important ~= options.Enemy.Important.Enabled
+		or previousEnemyEnabled.Combined ~= options.Enemy.Combined.Enabled
+		or previousFriendlyEnabled.CC ~= options.Friendly.CC.Enabled
+		or previousFriendlyEnabled.Important ~= options.Friendly.Important.Enabled
+		or previousFriendlyEnabled.Combined ~= options.Friendly.Combined.Enabled
+		or previousPetEnabled.Friendly ~= options.Friendly.IgnorePets
+		or previousPetEnabled.Enemy ~= options.Enemy.IgnorePets
+		or previousModuleEnabled.Always ~= options.Enabled.Always
+		or previousModuleEnabled.Arena ~= options.Enabled.Arena
+		or previousModuleEnabled.Dungeons ~= options.Enabled.Dungeons
+		or previousModuleEnabled.Raid ~= options.Enabled.Raid
 end
 
 local function ShowTestIcons()
