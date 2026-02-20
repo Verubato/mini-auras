@@ -37,8 +37,8 @@ local testCcDispelColors = {
 }
 
 -- Category colors
-local DEFENSIVE_COLOR = { r = 0.0, g = 0.8, b = 0.0 } -- Green
-local IMPORTANT_COLOR = { r = 1.0, g = 0.2, b = 0.2 } -- Red
+local defensiveColor = { r = 0.0, g = 0.8, b = 0.0 } -- Green
+local importantColor = { r = 1.0, g = 0.2, b = 0.2 } -- Red
 
 ---@class NameplateData
 ---@field Nameplate table
@@ -379,7 +379,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
-				Color = colorByCategory and DEFENSIVE_COLOR or nil,
+				Color = colorByCategory and defensiveColor or nil,
 			})
 
 			container:FinalizeSlot(slot, 1)
@@ -404,7 +404,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
-				Color = colorByCategory and IMPORTANT_COLOR or nil,
+				Color = colorByCategory and importantColor or nil,
 			})
 			container:FinalizeSlot(slot, 1)
 		end
@@ -442,35 +442,29 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 		return
 	end
 
-	local slotIndex = 1
-	local ccLayerIndex = 1
 	local iconsGlow = options.Icons.Glow
 	local iconsReverse = options.Icons.ReverseCooldown
 	local colorByCategory = options.Icons.ColorByCategory
 
-	for _, spellInfo in ipairs(ccData) do
-		if slotIndex > container.Count then
-			break
-		end
-
-		container:SetSlotUsed(slotIndex)
-		container:SetLayer(slotIndex, ccLayerIndex, {
-			Texture = spellInfo.SpellIcon,
-			StartTime = spellInfo.StartTime,
-			Duration = spellInfo.TotalDuration,
-			AlphaBoolean = spellInfo.IsCC,
+	-- Iterate in reverse to show the most recent first
+	for i = 1, math.min(ccDataCount, container.Count) do
+		local reverseIndex = ccDataCount - i + 1
+		container:SetSlotUsed(i)
+		container:SetLayer(i, 1, {
+			Texture = ccData[reverseIndex].SpellIcon,
+			StartTime = ccData[reverseIndex].StartTime,
+			Duration = ccData[reverseIndex].TotalDuration,
+			AlphaBoolean = ccData[reverseIndex].IsCC,
 			Glow = iconsGlow,
 			ReverseCooldown = iconsReverse,
 			FontScale = db.FontScale,
-			Color = colorByCategory and spellInfo.DispelColor or nil,
+			Color = colorByCategory and ccData[reverseIndex].DispelColor or nil,
 		})
-
-		container:FinalizeSlot(slotIndex, 1)
-		slotIndex = slotIndex + 1
+		container:FinalizeSlot(i, 1)
 	end
 
 	-- Clear any unused slots beyond the CC count
-	for i = slotIndex, container.Count do
+	for i = math.min(ccDataCount, container.Count) + 1, container.Count do
 		if container:IsSlotUsed(i) then
 			container:SetSlotUnused(i)
 		end
@@ -524,7 +518,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
-				Color = colorByCategory and IMPORTANT_COLOR or nil,
+				Color = colorByCategory and importantColor or nil,
 			})
 			container:FinalizeSlot(slot, 1)
 		end
@@ -549,7 +543,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
-				Color = colorByCategory and DEFENSIVE_COLOR or nil,
+				Color = colorByCategory and defensiveColor or nil,
 			})
 
 			container:FinalizeSlot(slot, 1)
@@ -843,7 +837,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 				Glow = combinedOptions.Icons.Glow,
 				ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
 				FontScale = db.FontScale,
-				Color = combinedOptions.Icons.ColorByCategory and DEFENSIVE_COLOR or nil,
+				Color = combinedOptions.Icons.ColorByCategory and defensiveColor or nil,
 			})
 			combinedContainer:FinalizeSlot(slot, 1)
 		end
@@ -870,7 +864,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 				Glow = combinedOptions.Icons.Glow,
 				ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
 				FontScale = db.FontScale,
-				Color = combinedOptions.Icons.ColorByCategory and IMPORTANT_COLOR or nil,
+				Color = combinedOptions.Icons.ColorByCategory and importantColor or nil,
 			})
 			combinedContainer:FinalizeSlot(slot, 1)
 		end
@@ -953,7 +947,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 						Glow = importantOptions.Icons.Glow,
 						ReverseCooldown = importantOptions.Icons.ReverseCooldown,
 						FontScale = db.FontScale,
-						Color = importantOptions.Icons.ColorByCategory and IMPORTANT_COLOR or nil,
+						Color = importantOptions.Icons.ColorByCategory and importantColor or nil,
 					})
 					importantContainer:FinalizeSlot(slot, 1)
 				end
@@ -983,7 +977,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 						Glow = importantOptions.Icons.Glow,
 						ReverseCooldown = importantOptions.Icons.ReverseCooldown,
 						FontScale = db.FontScale,
-						Color = importantOptions.Icons.ColorByCategory and DEFENSIVE_COLOR or nil,
+						Color = importantOptions.Icons.ColorByCategory and defensiveColor or nil,
 					})
 					importantContainer:FinalizeSlot(slot, 1)
 				end
