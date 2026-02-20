@@ -133,10 +133,8 @@ local function OnAuraInfo(watcher, container)
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
 				AlphaBoolean = aura.IsCC,
-				Glow = false,
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
-				Color = aura.DispelColor,
 			})
 
 			if not issecretvalue(aura.IsCC) then
@@ -160,11 +158,9 @@ local function OnAuraInfo(watcher, container)
 				Texture = aura.SpellIcon,
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
-				AlphaBoolean = true, -- we only get defensives in 12.0.1
-				Glow = false,
+				AlphaBoolean = aura.IsDefensive,
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
-				Color = aura.DispelColor,
 			})
 
 			container:FinalizeSlot(slotIndex, layerIndex)
@@ -182,10 +178,8 @@ local function OnAuraInfo(watcher, container)
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
 				AlphaBoolean = aura.IsImportant,
-				Glow = false,
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
-				Color = aura.DispelColor,
 			})
 
 			layerIndex = layerIndex + 1
