@@ -462,7 +462,7 @@ function M:Build(parent, options)
 		if friendlyPanels.Combined and friendlyPanels.Combined.MiniRefresh then
 			friendlyPanels.Combined:MiniRefresh()
 		end
-		if friendlyPanels.CC and friendlyPanels.CC:MiniRefresh() then
+		if friendlyPanels.CC and friendlyPanels.CC.MiniRefresh then
 			friendlyPanels.CC:MiniRefresh()
 		end
 		if friendlyPanels.Important and friendlyPanels.Important.MiniRefresh then
