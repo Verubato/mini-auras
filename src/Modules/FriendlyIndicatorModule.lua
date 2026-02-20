@@ -335,9 +335,29 @@ local function Resume()
 	paused = false
 end
 
-local function Hide()
+local function DisableWatchers()
 	for _, entry in pairs(watchers) do
-		entry.Container.Frame:Hide()
+		if entry.Watcher then
+			entry.Watcher:Disable()
+		end
+
+		if entry.Container then
+			entry.Container:ResetAllSlots()
+			entry.Container.Frame:Hide()
+		end
+	end
+
+	paused = true
+end
+
+local function EnableWatchers()
+	paused = false
+
+	for _, entry in pairs(watchers) do
+		if entry.Watcher then
+			entry.Watcher:Enable()
+			entry.Watcher:ForceFullUpdate()
+		end
 	end
 end
 
@@ -350,12 +370,14 @@ function M:Refresh()
 
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator)
 
-	-- If disabled, hide everything and return
+	-- If disabled, disable watchers and hide everything
 	if not moduleEnabled then
-		Hide()
+		DisableWatchers()
 		return
 	end
 
+	-- Module is enabled, ensure watchers are enabled
+	EnableWatchers()
 	EnsureWatchers()
 
 	for anchor, entry in pairs(watchers) do
@@ -427,7 +449,11 @@ function M:Init()
 		fs.Sorting:RegisterPostSortCallback(OnFrameSortSorted)
 	end
 
-	EnsureWatchers()
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator)
+
+	if moduleEnabled then
+		EnsureWatchers()
+	end
 end
 
 ---@class FriendlyIndicatorModule
