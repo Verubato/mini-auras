@@ -399,9 +399,6 @@ function M:ClearLayer(slotIndex, layerIndex)
 		if layer.Frame._AutoCastGlow and LCG.AutoCastGlow_Stop then
 			LCG.AutoCastGlow_Stop(layer.Frame)
 		end
-		if LCG.ButtonGlow_Stop then
-			LCG.ButtonGlow_Stop(layer.Frame)
-		end
 	end
 end
 
