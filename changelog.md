@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.19.4
+
+- Fixed trinkets since the new Blizzard API change.
+- Some glow performance fixes.
+
 ## 2.19.3
 
 Glow icons performance fix in test mode.
