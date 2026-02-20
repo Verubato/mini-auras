@@ -2,12 +2,24 @@
 local _, addon = ...
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", true)
 local fontUtil = addon.Utils.FontUtil
+local cachedDb = nil
 
 ---@class IconSlotContainer
 local M = {}
 M.__index = M
 
 addon.Core.IconSlotContainer = M
+
+local function GetDb()
+	if not cachedDb then
+		local mini = addon.Core.Framework
+		if mini and mini.GetSavedVars then
+			cachedDb = mini:GetSavedVars()
+		end
+	end
+
+	return cachedDb
+end
 
 ---Creates a new IconSlotContainer instance
 ---@param parent table frame to attach to
@@ -103,6 +115,17 @@ function M:Layout()
 			usedSlots[#usedSlots + 1] = i
 		end
 	end
+
+	-- Build a cheap signature from the current size and used slot indices.
+	-- If it matches the last run, the visual result would be identical so we
+	-- can skip all the SetPoint/SetSize/Show/Hide calls.  This keeps Layout()
+	-- synchronous (no timer deferral) while avoiding redundant frame work
+	-- when it is called multiple times in a row with the same slot state.
+	local sig = self.Size .. ":" .. table.concat(usedSlots, ",")
+	if self.LayoutSignature == sig then
+		return
+	end
+	self.LayoutSignature = sig
 
 	local usedCount = #usedSlots
 	local totalWidth = (usedCount * self.Size) + ((usedCount - 1) * self.Spacing)
@@ -252,9 +275,7 @@ function M:SetLayer(slotIndex, layerIndex, options)
 		end
 
 		if LCG then
-			-- Get the selected glow type from the database
-			local mini = addon.Core.Framework
-			local db = mini and mini.GetSavedVars and mini:GetSavedVars()
+			local db = GetDb()
 			local glowType = (db and db.GlowType) or "Proc Glow"
 
 			if options.Glow then
