@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.20.0
+
+- Added max icons sliders to CC and Important nameplate sections.
+- Nameplate colour by spell category and dispel type options.
+- Fixed trinket cooldowns in test mode.
+- Added dispel colour for non-glow borders.
+- Fixed friendly CDs not disabling in raids.
+- Fixed upgrading from very old versions causing errors.
+
 ## 2.19.4
 
 - Fixed trinkets since the new Blizzard API change.
