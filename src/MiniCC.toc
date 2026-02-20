@@ -37,6 +37,7 @@ Modules\TrinketsModule.lua
 Modules\FriendlyIndicatorModule.lua
 Modules\TestModeManager.lua
 
+Config\Migrator.lua
 Config\Config.lua
 Config\General.lua
 Config\Portraits.lua

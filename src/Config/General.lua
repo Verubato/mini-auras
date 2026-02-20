@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local dbMigrator = addon.Config.Migrator
 local verticalSpacing = mini.VerticalSpacing
 ---@class GeneralConfig
 local M = {}
@@ -97,7 +98,7 @@ function M:Build(panel)
 
 		StaticPopup_Show("MINICC_CONFIRM", "Are you sure you wish to reset to factory settings?", nil, {
 			OnYes = function()
-				mini:ResetSavedVars(addon.Config.DbDefaults)
+				dbMigrator:ResetToFactory()
 
 				local tabController = addon.Config.TabController
 				for i = 1, #tabController.Tabs do

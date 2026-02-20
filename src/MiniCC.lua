@@ -60,10 +60,12 @@ local function NotifyChanges()
 			return
 		end
 
-		mini:ShowDialog({
-			Title = title,
-			Text = table.concat(whatsNew, "\n"),
-		})
+		if next(whatsNew) then
+			mini:ShowDialog({
+				Title = title,
+				Text = table.concat(whatsNew, "\n"),
+			})
+		end
 	end
 
 	db.WhatsNew = {}
@@ -146,7 +148,6 @@ end
 mini:WaitForAddonLoad(OnAddonLoaded)
 
 ---@class Addon
----@field Capabilities Capabilities
 ---@field Utils Utils
 ---@field Core Core
 ---@field Config Config
@@ -156,7 +157,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field TestWithOptions fun(self: table, options: CrowdControlInstanceOptions)
 
 ---@class Utils
----@field CcUtil CrowdControlUtil
 ---@field Scheduler SchedulerUtil
 ---@field Units UnitUtil
 ---@field Array ArrayUtil
