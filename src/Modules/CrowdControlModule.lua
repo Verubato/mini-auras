@@ -1,5 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
+local mini = addon.Core.Framework
 local instanceOptions = addon.Core.InstanceOptions
 local frames = addon.Core.Frames
 local units = addon.Utils.Units
@@ -12,6 +13,8 @@ local wowEx = addon.Utils.WoWEx
 local eventsFrame
 local paused = false
 local testModeActive = false
+---@type Db
+local db
 ---@type table<table, CrowdControlWatchEntry>
 local watchers = {}
 ---@type TestSpell[]
@@ -64,7 +67,7 @@ local function UpdateWatcherAuras(entry)
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
 			Color = colorByDispelType and aura.DispelColor,
-			FontScale = addon.Core.Framework:GetSavedVars().FontScale,
+			FontScale = db.FontScale,
 		})
 		container:FinalizeSlot(slotIndex, 1)
 		container:SetSlotUsed(slotIndex)
@@ -265,7 +268,7 @@ local function RefreshTestIcons()
 					ReverseCooldown = options.Icons.ReverseCooldown,
 					Glow = options.Icons.Glow,
 					Color = options.Icons.ColorByDispelType and spell.DispelColor,
-					FontScale = addon.Core.Framework:GetSavedVars().FontScale,
+					FontScale = db.FontScale,
 				})
 				container:FinalizeSlot(i, 1)
 			end
@@ -382,6 +385,8 @@ function M:Refresh()
 end
 
 function M:Init()
+	db = mini:GetSavedVars()
+
 	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
 	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
 	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
