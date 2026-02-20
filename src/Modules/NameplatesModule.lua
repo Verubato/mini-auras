@@ -22,13 +22,23 @@ local testCcNameplateSpellIds = {
 }
 local testDefensiveNameplateSpellIds = {
 	104773, -- warlock wall
-	48707, -- anti-magic shell
+	1022, -- bop
 }
 local testImportantNameplateSpellIds = {
 	190319, -- combustion
 	121471, -- Shadow Blades
 	377362, -- precog
 }
+
+-- Test spell dispel colors for CC spells
+local testCcDispelColors = {
+	[408] = DEBUFF_TYPE_NONE_COLOR, -- kidney shot
+	[5782] = DEBUFF_TYPE_MAGIC_COLOR, -- fear
+}
+
+-- Category colors
+local DEFENSIVE_COLOR = { r = 0.0, g = 0.8, b = 0.0 } -- Green
+local IMPORTANT_COLOR = { r = 1.0, g = 0.2, b = 0.2 } -- Red
 
 ---@class NameplateData
 ---@field Nameplate table
@@ -318,6 +328,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 	local importantData = watcher:GetImportantState()
 	local iconsGlow = combinedOptions.Icons.Glow
 	local iconsReverse = combinedOptions.Icons.ReverseCooldown
+	local colorByCategory = combinedOptions.Icons.ColorByCategory
 
 	-- Calculate slot distribution
 	local ccSlots, defensiveSlots, importantSlots =
@@ -343,7 +354,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
-				Color = ccData[reverseIndex].DispelColor,
+				Color = colorByCategory and ccData[reverseIndex].DispelColor or nil,
 			})
 			container:FinalizeSlot(slot, 1)
 		end
@@ -368,7 +379,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
-				Color = defensivesData[reverseIndex].DispelColor,
+				Color = colorByCategory and DEFENSIVE_COLOR or nil,
 			})
 
 			container:FinalizeSlot(slot, 1)
@@ -393,7 +404,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitToken)
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
-				Color = importantData[reverseIndex].DispelColor,
+				Color = colorByCategory and IMPORTANT_COLOR or nil,
 			})
 			container:FinalizeSlot(slot, 1)
 		end
@@ -427,12 +438,7 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 	local ccDataCount = #ccData
 
 	if ccDataCount == 0 then
-		-- Clear all used slots when no CC data
-		for i = 1, container.Count do
-			if container:IsSlotUsed(i) then
-				container:SetSlotUnused(i)
-			end
-		end
+		container:ResetAllSlots()
 		return
 	end
 
@@ -440,6 +446,7 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 	local ccLayerIndex = 1
 	local iconsGlow = options.Icons.Glow
 	local iconsReverse = options.Icons.ReverseCooldown
+	local colorByCategory = options.Icons.ColorByCategory
 
 	for _, spellInfo in ipairs(ccData) do
 		if slotIndex > container.Count then
@@ -455,7 +462,7 @@ local function ApplyCcToNameplate(data, watcher, unitToken)
 			Glow = iconsGlow,
 			ReverseCooldown = iconsReverse,
 			FontScale = db.FontScale,
-			Color = spellInfo.DispelColor,
+			Color = colorByCategory and spellInfo.DispelColor or nil,
 		})
 
 		container:FinalizeSlot(slotIndex, 1)
@@ -488,42 +495,61 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitToken)
 
 	local iconsGlow = options.Icons.Glow
 	local iconsReverse = options.Icons.ReverseCooldown
-	local slot = 0
+	local colorByCategory = options.Icons.ColorByCategory
 	local defensivesData = watcher:GetDefensiveState()
 	local importantData = watcher:GetImportantState()
 
-	if #importantData > 0 then
-		for _, spellData in ipairs(importantData) do
+	-- Calculate slot distribution (Important has higher priority than Defensive)
+	-- We pass Important as first parameter (CC slot), Defensive as second parameter
+	local importantSlots, defensiveSlots, _ =
+		CalculateSlotDistribution(container.Count, #importantData, #defensivesData, 0)
+
+	local slot = 0
+
+	-- Add Important spells (highest priority)
+	if importantSlots > 0 then
+		-- Iterate in reverse to show the most recent first
+		for i = 1, math.min(importantSlots, #importantData) do
+			if slot >= container.Count then
+				break
+			end
 			slot = slot + 1
+			local reverseIndex = #importantData - i + 1
 			container:SetSlotUsed(slot)
 			container:SetLayer(slot, 1, {
-				Texture = spellData.SpellIcon,
-				StartTime = spellData.StartTime,
-				Duration = spellData.TotalDuration,
-				AlphaBoolean = spellData.IsImportant,
+				Texture = importantData[reverseIndex].SpellIcon,
+				StartTime = importantData[reverseIndex].StartTime,
+				Duration = importantData[reverseIndex].TotalDuration,
+				AlphaBoolean = importantData[reverseIndex].IsImportant,
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
-				Color = spellData.DispelColor,
+				Color = colorByCategory and IMPORTANT_COLOR or nil,
 			})
 			container:FinalizeSlot(slot, 1)
 		end
 	end
 
-	if #defensivesData > 0 then
-		for _, spellData in ipairs(defensivesData) do
+	-- Add Defensive spells (second priority)
+	if defensiveSlots > 0 then
+		-- Iterate in reverse to show the most recent first
+		for i = 1, math.min(defensiveSlots, #defensivesData) do
+			if slot >= container.Count then
+				break
+			end
 			slot = slot + 1
+			local reverseIndex = #defensivesData - i + 1
 			container:SetSlotUsed(slot)
 
 			container:SetLayer(slot, 1, {
-				Texture = spellData.SpellIcon,
-				StartTime = spellData.StartTime,
-				Duration = spellData.TotalDuration,
-				AlphaBoolean = spellData.IsDefensive,
+				Texture = defensivesData[reverseIndex].SpellIcon,
+				StartTime = defensivesData[reverseIndex].StartTime,
+				Duration = defensivesData[reverseIndex].TotalDuration,
+				AlphaBoolean = defensivesData[reverseIndex].IsDefensive,
 				Glow = iconsGlow,
 				ReverseCooldown = iconsReverse,
 				FontScale = db.FontScale,
-				Color = spellData.DispelColor,
+				Color = colorByCategory and DEFENSIVE_COLOR or nil,
 			})
 
 			container:FinalizeSlot(slot, 1)
@@ -790,6 +816,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 				Glow = combinedOptions.Icons.Glow,
 				ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
 				FontScale = db.FontScale,
+				Color = combinedOptions.Icons.ColorByCategory and testCcDispelColors[spellId] or nil,
 			})
 			combinedContainer:FinalizeSlot(slot, 1)
 		end
@@ -816,6 +843,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 				Glow = combinedOptions.Icons.Glow,
 				ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
 				FontScale = db.FontScale,
+				Color = combinedOptions.Icons.ColorByCategory and DEFENSIVE_COLOR or nil,
 			})
 			combinedContainer:FinalizeSlot(slot, 1)
 		end
@@ -842,6 +870,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 				Glow = combinedOptions.Icons.Glow,
 				ReverseCooldown = combinedOptions.Icons.ReverseCooldown,
 				FontScale = db.FontScale,
+				Color = combinedOptions.Icons.ColorByCategory and IMPORTANT_COLOR or nil,
 			})
 			combinedContainer:FinalizeSlot(slot, 1)
 		end
@@ -857,7 +886,8 @@ end
 
 local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContainer, importantOptions, now)
 	if ccContainer and ccOptions then
-		for i = 1, #testCcNameplateSpellIds do
+		-- Show CC test spells (limited to container count)
+		for i = 1, math.min(#testCcNameplateSpellIds, ccContainer.Count) do
 			ccContainer:SetSlotUsed(i)
 
 			local spellId = testCcNameplateSpellIds[i]
@@ -875,13 +905,14 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 					Glow = ccOptions.Icons.Glow,
 					ReverseCooldown = ccOptions.Icons.ReverseCooldown,
 					FontScale = db.FontScale,
+					Color = ccOptions.Icons.ColorByCategory and testCcDispelColors[spellId] or nil,
 				})
 				ccContainer:FinalizeSlot(i, 1)
 			end
 		end
 
 		-- Clear any unused slots beyond test CC spells
-		for i = #testCcNameplateSpellIds + 1, ccContainer.Count do
+		for i = math.min(#testCcNameplateSpellIds, ccContainer.Count) + 1, ccContainer.Count do
 			if ccContainer:IsSlotUsed(i) then
 				ccContainer:SetSlotUnused(i)
 			end
@@ -889,30 +920,78 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 	end
 
 	if importantContainer and importantOptions then
-		for i = 1, #testImportantNameplateSpellIds do
-			importantContainer:SetSlotUsed(i)
+		-- Calculate slot distribution (Important has higher priority than Defensive)
+		local importantSlots, defensiveSlots, _ = CalculateSlotDistribution(
+			importantContainer.Count,
+			#testImportantNameplateSpellIds,
+			#testDefensiveNameplateSpellIds,
+			0
+		)
 
-			local spellId = testImportantNameplateSpellIds[i]
-			local tex = spellCache:GetSpellTexture(spellId)
+		local slot = 0
 
-			if tex then
-				local duration = 15 + (i - 1) * 3
-				local startTime = now - (i - 1) * 0.5
-				importantContainer:SetLayer(i, 1, {
-					Texture = tex,
-					StartTime = startTime,
-					Duration = duration,
-					AlphaBoolean = true,
-					Glow = importantOptions.Icons.Glow,
-					ReverseCooldown = importantOptions.Icons.ReverseCooldown,
-					FontScale = db.FontScale,
-				})
-				importantContainer:FinalizeSlot(i, 1)
+		-- Add Important test spells (highest priority)
+		if importantSlots > 0 then
+			for i = 1, math.min(importantSlots, #testImportantNameplateSpellIds) do
+				if slot >= importantContainer.Count then
+					break
+				end
+				slot = slot + 1
+				importantContainer:SetSlotUsed(slot)
+
+				local spellId = testImportantNameplateSpellIds[i]
+				local tex = spellCache:GetSpellTexture(spellId)
+
+				if tex then
+					local duration = 15 + (i - 1) * 3
+					local startTime = now - (i - 1) * 0.5
+					importantContainer:SetLayer(slot, 1, {
+						Texture = tex,
+						StartTime = startTime,
+						Duration = duration,
+						AlphaBoolean = true,
+						Glow = importantOptions.Icons.Glow,
+						ReverseCooldown = importantOptions.Icons.ReverseCooldown,
+						FontScale = db.FontScale,
+						Color = importantOptions.Icons.ColorByCategory and IMPORTANT_COLOR or nil,
+					})
+					importantContainer:FinalizeSlot(slot, 1)
+				end
 			end
 		end
 
-		-- Clear any unused slots beyond test important spells
-		for i = #testImportantNameplateSpellIds + 1, importantContainer.Count do
+		-- Add Defensive test spells (second priority)
+		if defensiveSlots > 0 then
+			for i = 1, math.min(defensiveSlots, #testDefensiveNameplateSpellIds) do
+				if slot >= importantContainer.Count then
+					break
+				end
+				slot = slot + 1
+				importantContainer:SetSlotUsed(slot)
+
+				local spellId = testDefensiveNameplateSpellIds[i]
+				local tex = spellCache:GetSpellTexture(spellId)
+
+				if tex then
+					local duration = 15 + (i - 1) * 3
+					local startTime = now - (i - 1) * 0.5
+					importantContainer:SetLayer(slot, 1, {
+						Texture = tex,
+						StartTime = startTime,
+						Duration = duration,
+						AlphaBoolean = true,
+						Glow = importantOptions.Icons.Glow,
+						ReverseCooldown = importantOptions.Icons.ReverseCooldown,
+						FontScale = db.FontScale,
+						Color = importantOptions.Icons.ColorByCategory and DEFENSIVE_COLOR or nil,
+					})
+					importantContainer:FinalizeSlot(slot, 1)
+				end
+			end
+		end
+
+		-- Clear any unused slots beyond what we just set
+		for i = slot + 1, importantContainer.Count do
 			if importantContainer:IsSlotUsed(i) then
 				importantContainer:SetSlotUnused(i)
 			end

@@ -22,10 +22,10 @@ config.Nameplates = M
 ---@param dividerText string Text for the divider
 ---@param options NameplateSpellTypeOptions
 ---@param unitOptions table The parent unit options (Enemy or Friendly)
----@param isCombined boolean Whether this is the Combined section
+---@param sectionType string Type of section: "CC", "Important", or "Combined"
 ---@param onVisibilityUpdate function? Callback to update visibility when mode changes
 ---@return table wrapper frame containing divider and settings
-local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions, isCombined, onVisibilityUpdate)
+local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions, sectionType, onVisibilityUpdate)
 	-- Create a wrapper frame that contains the divider and all settings
 	local wrapper = CreateFrame("Frame", nil, parent)
 	wrapper:SetPoint("LEFT", parent, "LEFT", 0, 0)
@@ -48,7 +48,7 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 		-- Always show the checkbox and divider
 		if options.Enabled then
 			-- TODO: calculate these heights from children controls
-			if isCombined then
+			if sectionType == "Combined" then
 				container:SetHeight(320)
 			else
 				container:SetHeight(250)
@@ -75,11 +75,11 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 			options.Enabled = value
 
 			-- If enabling Combined, disable CC and Important
-			if isCombined and value then
+			if sectionType == "Combined" and value then
 				unitOptions.CC.Enabled = false
 				unitOptions.Important.Enabled = false
 			-- If enabling CC or Important, disable Combined
-			elseif not isCombined and value then
+			elseif sectionType ~= "Combined" and value then
 				unitOptions.Combined.Enabled = false
 			end
 
@@ -129,6 +129,32 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 
 	glowChk:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0)
 
+	-- Build tooltip based on section type
+	local colorTooltip
+	if sectionType == "Combined" then
+		colorTooltip = "Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), Defensive spells are green, and Important spells are red."
+	elseif sectionType == "CC" then
+		colorTooltip = "Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."
+	else
+		colorTooltip = "Change the colour of the glow/border. Defensive spells are green and Important spells are red."
+	end
+
+	local dispelColoursChk = mini:Checkbox({
+		Parent = container,
+		LabelText = "Spell colours",
+		Tooltip = colorTooltip,
+		GetValue = function()
+			return options.Icons.ColorByCategory
+		end,
+		SetValue = function(value)
+			options.Icons.ColorByCategory = value
+			config:Apply()
+		end,
+	})
+
+	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	dispelColoursChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+
 	local reverseChk = mini:Checkbox({
 		Parent = container,
 		LabelText = "Reverse swipe",
@@ -142,7 +168,8 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", glowChk, "LEFT", columnWidth, 0)
+	reverseChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local iconSize = mini:Slider({
 		Parent = container,
@@ -232,7 +259,7 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 
 	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
 
-	if isCombined then
+	if sectionType == "Combined" then
 		local maxIcons = mini:Slider({
 			Parent = container,
 			Min = 1,
@@ -398,13 +425,13 @@ function M:Build(parent, options)
 		"Enemy - Combined",
 		options.Enemy.Combined,
 		options.Enemy,
-		true,
+		"Combined",
 		UpdateEnemyPanelVisibility
 	)
 	enemyPanels.Combined:SetPoint("TOP", enemyIgnorePetsChk, "BOTTOM", 0, -verticalSpacing)
 
 	enemyPanels.CC =
-		BuildSpellTypeSettings(parent, "Enemy - CC", options.Enemy.CC, options.Enemy, false, UpdateEnemyPanelVisibility)
+		BuildSpellTypeSettings(parent, "Enemy - CC", options.Enemy.CC, options.Enemy, "CC", UpdateEnemyPanelVisibility)
 	enemyPanels.CC:SetPoint("TOP", enemyPanels.Combined, "BOTTOM", 0, -verticalSpacing)
 
 	enemyPanels.Important = BuildSpellTypeSettings(
@@ -412,7 +439,7 @@ function M:Build(parent, options)
 		"Enemy - Important Spells",
 		options.Enemy.Important,
 		options.Enemy,
-		false,
+		"Important",
 		UpdateEnemyPanelVisibility
 	)
 	enemyPanels.Important:SetPoint("TOP", enemyPanels.CC, "BOTTOM", 0, -verticalSpacing)
@@ -423,7 +450,7 @@ function M:Build(parent, options)
 		"Friendly - Combined",
 		options.Friendly.Combined,
 		options.Friendly,
-		true,
+		"Combined",
 		UpdateFriendlyPanelVisibility
 	)
 	friendlyPanels.Combined:SetPoint("TOP", enemyPanels.Important, "BOTTOM", 0, -verticalSpacing * 2)
@@ -433,7 +460,7 @@ function M:Build(parent, options)
 		"Friendly - CC",
 		options.Friendly.CC,
 		options.Friendly,
-		false,
+		"CC",
 		UpdateFriendlyPanelVisibility
 	)
 	friendlyPanels.CC:SetPoint("TOP", friendlyPanels.Combined, "BOTTOM", 0, -verticalSpacing)
@@ -443,7 +470,7 @@ function M:Build(parent, options)
 		"Friendly - Important Spells",
 		options.Friendly.Important,
 		options.Friendly,
-		false,
+		"Important",
 		UpdateFriendlyPanelVisibility
 	)
 	friendlyPanels.Important:SetPoint("TOP", friendlyPanels.CC, "BOTTOM", 0, -verticalSpacing)
