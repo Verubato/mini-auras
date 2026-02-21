@@ -1,8 +1,7 @@
 ---@type string, Addon
-local _, addon = ...
+local addonName, addon = ...
 local mini = addon.Core.Framework
 local L = addon.L
-local capabilities = addon.Capabilities
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local columns = 4
@@ -154,22 +153,6 @@ function M:Build(panel, options)
 	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
-	local soundChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Sound"],
-		Tooltip = L["Play a sound when the healer is CC'd."],
-		GetValue = function()
-			return options.Sound.Enabled
-		end,
-		SetValue = function(value)
-			options.Sound.Enabled = value
-			config:Apply()
-		end,
-	})
-
-	soundChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	soundChk:SetPoint("TOP", reverseChk, "TOP", 0, 0)
-
 	local dispelColoursChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Dispel colours"],
@@ -184,6 +167,50 @@ function M:Build(panel, options)
 	})
 
 	dispelColoursChk:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local soundChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Sound"],
+		Tooltip = L["Play a sound when the healer is CC'd."],
+		GetValue = function()
+			return options.Sound.Enabled
+		end,
+		SetValue = function(value)
+			options.Sound.Enabled = value
+			if value then
+				-- Play the sound when enabled
+				local soundFileName = options.Sound.File or "Sonar.ogg"
+				local soundFile = config.MediaLocation .. soundFileName
+				PlaySoundFile(soundFile, options.Sound.Channel or "Master")
+			end
+			config:Apply()
+		end,
+	})
+
+	soundChk:SetPoint("TOPLEFT", dispelColoursChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local soundFileDropdown = mini:Dropdown({
+		Parent = panel,
+		Items = config.SoundFiles,
+		Width = 200,
+		GetValue = function()
+			return options.Sound.File or "Sonar.ogg"
+		end,
+		SetValue = function(value)
+			options.Sound.File = value
+			-- Play the selected sound
+			local soundFile = config.MediaLocation .. value
+			PlaySoundFile(soundFile, options.Sound.Channel or "Master")
+			config:Apply()
+		end,
+		GetText = function(value)
+			return value:gsub("%.ogg$", "")
+		end,
+	})
+
+	soundFileDropdown:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	soundFileDropdown:SetPoint("TOP", soundChk, "TOP", 0, -4)
+	soundFileDropdown:SetWidth(200)
 
 	local iconSize = mini:Slider({
 		Parent = panel,
@@ -204,7 +231,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", dispelColoursChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", soundChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local fontSize = mini:Slider({
 		Parent = panel,

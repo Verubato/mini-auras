@@ -130,7 +130,13 @@ L:SetDefaultStrings({
 	["Enable this module in Dungeons and M+"] = "Enable this module in Dungeons and M+",
 	["Settings"] = "Settings",
 	["Sound"] = "Sound",
+	["Sound File"] = "Sound File",
+	["Sound Alerts"] = "Sound Alerts",
+	["Important Spells"] = "Important Spells",
+	["Defensive Spells"] = "Defensive Spells",
 	["Play a sound when the healer is CC'd."] = "Play a sound when the healer is CC'd.",
+	["Play a sound when an important spell is pressed."] = "Play a sound when an important spell is pressed.",
+	["Play a sound when a defensive spell is pressed."] = "Play a sound when a defensive spell is pressed.",
 
 	-- Portraits
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Shows CC, defensives, and other important spells on the player/target/focus portraits.",

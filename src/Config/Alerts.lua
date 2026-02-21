@@ -1,5 +1,5 @@
 ---@type string, Addon
-local _, addon = ...
+local addonName, addon = ...
 local mini = addon.Core.Framework
 local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
@@ -106,6 +106,101 @@ function M:Build(panel, options)
 	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", colorByClassChk, "TOP", 0, 0)
 
+	local soundDivider = mini:Divider({
+		Parent = panel,
+		Text = L["Sound Alerts"],
+	})
+	soundDivider:SetPoint("LEFT", panel, "LEFT")
+	soundDivider:SetPoint("RIGHT", panel, "RIGHT")
+	soundDivider:SetPoint("TOP", glowChk, "BOTTOM", 0, -verticalSpacing)
+
+	-- Important Spells Sound
+	local soundImportantChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Important Spells"],
+		Tooltip = L["Play a sound when an important spell is pressed."],
+		GetValue = function()
+			return options.Sound.Important.Enabled
+		end,
+		SetValue = function(value)
+			options.Sound.Important.Enabled = value
+			if value then
+				local soundFileName = options.Sound.Important.File or "Sonar.ogg"
+				local soundFile = config.MediaLocation .. soundFileName
+				PlaySoundFile(soundFile, options.Sound.Important.Channel or "Master")
+			end
+			config:Apply()
+		end,
+	})
+
+	soundImportantChk:SetPoint("TOPLEFT", soundDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local soundImportantDropdown = mini:Dropdown({
+		Parent = panel,
+		Items = config.SoundFiles,
+		Width = 200,
+		GetValue = function()
+			return options.Sound.Important.File
+		end,
+		SetValue = function(value)
+			options.Sound.Important.File = value
+			local soundFile = config.MediaLocation .. value
+			PlaySoundFile(soundFile, options.Sound.Important.Channel or "Master")
+			config:Apply()
+		end,
+		GetText = function(value)
+			return value:gsub("%.ogg$", "")
+		end,
+	})
+
+	soundImportantDropdown:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	soundImportantDropdown:SetPoint("TOP", soundImportantChk, "TOP", 0, -4)
+	soundImportantDropdown:SetWidth(200)
+
+	-- Defensive Spells Sound
+	local soundDefensiveChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Defensive Spells"],
+		Tooltip = L["Play a sound when a defensive spell is pressed."],
+		GetValue = function()
+			return options.Sound.Defensive.Enabled
+		end,
+		SetValue = function(value)
+			options.Sound.Defensive.Enabled = value
+			if value then
+				-- Play the sound when enabled
+				local soundFileName = options.Sound.Defensive.File or "AlertToastWarm.ogg"
+				local soundFile = config.MediaLocation .. soundFileName
+				PlaySoundFile(soundFile, options.Sound.Defensive.Channel or "Master")
+			end
+			config:Apply()
+		end,
+	})
+
+	soundDefensiveChk:SetPoint("TOPLEFT", soundImportantChk, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+
+	local soundDefensiveDropdown = mini:Dropdown({
+		Parent = panel,
+		Items = config.SoundFiles,
+		GetValue = function()
+			return options.Sound.Defensive.File
+		end,
+		SetValue = function(value)
+			options.Sound.Defensive.File = value
+			-- Play the selected sound
+			local soundFile = config.MediaLocation .. value
+			PlaySoundFile(soundFile, options.Sound.Defensive.Channel or "Master")
+			config:Apply()
+		end,
+		GetText = function(value)
+			return value:gsub("%.ogg$", "")
+		end,
+	})
+
+	soundDefensiveDropdown:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	soundDefensiveDropdown:SetPoint("TOP", soundDefensiveChk, "TOP", 0, -4)
+	soundDefensiveDropdown:SetWidth(200)
+
 	local iconSize = mini:Slider({
 		Parent = panel,
 		Min = 10,
@@ -125,7 +220,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", soundDefensiveChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()

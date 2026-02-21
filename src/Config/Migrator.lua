@@ -67,6 +67,7 @@ local dbDefaults = {
 			Sound = {
 				Enabled = true,
 				Channel = "Master",
+				File = "Sonar.ogg",
 			},
 
 			Point = "CENTER",
@@ -114,6 +115,19 @@ local dbDefaults = {
 			Offset = {
 				X = 0,
 				Y = -100,
+			},
+
+			Sound = {
+				Important = {
+					Enabled = true,
+					Channel = "Master",
+					File = "Notification18.ogg",
+				},
+				Defensive = {
+					Enabled = true,
+					Channel = "Master",
+					File = "Notification38.ogg",
+				},
 			},
 
 			Icons = {

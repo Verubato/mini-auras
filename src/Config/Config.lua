@@ -9,6 +9,22 @@ local horizontalSpacing = mini.HorizontalSpacing
 local db
 local M = addon.Config
 
+M.MediaLocation = "Interface\\AddOns\\" .. addonName .. "\\Media\\"
+
+M.SoundFiles = {
+	"AirHorn.ogg",
+	"AlertToastWarm.ogg",
+	"BubblePop.ogg",
+	"CinematicHit.ogg",
+	"Error.ogg",
+	"Notification18.ogg",
+	"Notification38.ogg",
+	"Sonar.ogg",
+	"SuddenShock.ogg",
+	"WatchOut.ogg",
+	"WhooshSwing.ogg",
+}
+
 function M:Apply()
 	if InCombatLockdown() then
 		mini:Notify(L["Can't apply settings during combat."])
@@ -207,6 +223,8 @@ end
 ---@class Config
 ---@field Init fun(self: table)
 ---@field Apply fun(self: table)
+---@field SoundFiles string[]
+---@field MediaLocation string
 ---@field Migrator DbMigrator
 ---@field TabController TabReturn
 ---@field General GeneralConfig

@@ -12,7 +12,7 @@ local ModuleName = addon.Utils.ModuleName
 local paused = false
 local testModeActive = false
 local previousTestSoundEnabled = false
-local soundFile = "Interface\\AddOns\\" .. addonName .. "\\Media\\Sonar.ogg"
+local soundFile
 
 ---@type Db
 local db
@@ -41,6 +41,8 @@ local M = {}
 addon.Modules.HealerCrowdControlModule = M
 
 local function PlaySound()
+	local soundFileName = db.Modules.HealerCCModule.Sound.File or "Sonar.ogg"
+	soundFile = addon.Config.MediaLocation .. soundFileName
 	PlaySoundFile(soundFile, db.Modules.HealerCCModule.Sound.Channel or "Master")
 end
 

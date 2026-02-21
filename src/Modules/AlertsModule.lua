@@ -1,5 +1,5 @@
 ---@type string, Addon
-local _, addon = ...
+local addonName, addon = ...
 local mini = addon.Core.Framework
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
@@ -10,6 +10,7 @@ local testModeActive = false
 local paused = false
 local inPrepRoom = false
 local eventsFrame
+local soundFile
 ---@type Db
 local db
 ---@type IconSlotContainer
@@ -20,6 +21,28 @@ local watchers
 ---@class AlertsModule : IModule
 local M = {}
 addon.Modules.AlertsModule = M
+
+local function PlaySound(spellType)
+	local soundConfig
+	if spellType == "important" then
+		soundConfig = db.Modules.AlertsModule.Sound.Important
+	elseif spellType == "defensive" then
+		soundConfig = db.Modules.AlertsModule.Sound.Defensive
+	else
+		return
+	end
+
+	if not soundConfig.Enabled then
+		return
+	end
+
+	local soundFileName = soundConfig.File or "Sonar.ogg"
+	soundFile = addon.Config.MediaLocation .. soundFileName
+	PlaySoundFile(soundFile, soundConfig.Channel or "Master")
+end
+
+local hadImportantAlerts = false
+local hadDefensiveAlerts = false
 
 local function OnAuraDataChanged()
 	if paused then
@@ -40,6 +63,8 @@ local function OnAuraDataChanged()
 	local iconsReverse = db.Modules.AlertsModule.Icons.ReverseCooldown
 	local colorByClass = db.Modules.AlertsModule.Icons.ColorByClass
 	local slot = 0
+	local hasImportantAlerts = false
+	local hasDefensiveAlerts = false
 
 	for _, watcher in ipairs(watchers) do
 		if slot > container.Count then
@@ -67,6 +92,7 @@ local function OnAuraDataChanged()
 			local importantData = watcher:GetImportantState()
 
 			if #importantData > 0 then
+				hasImportantAlerts = true
 				for _, data in ipairs(importantData) do
 					slot = slot + 1
 					container:SetSlotUsed(slot)
@@ -85,6 +111,7 @@ local function OnAuraDataChanged()
 			end
 
 			if #defensivesData > 0 then
+				hasDefensiveAlerts = true
 				-- we only get defensive data with new filters
 				for _, data in ipairs(defensivesData) do
 					slot = slot + 1
@@ -104,6 +131,18 @@ local function OnAuraDataChanged()
 			end
 		end
 	end
+
+	-- Play sound only when transitioning from no alerts to having alerts for each type
+	if hasImportantAlerts and not hadImportantAlerts then
+		PlaySound("important")
+	end
+
+	if hasDefensiveAlerts and not hadDefensiveAlerts then
+		PlaySound("defensive")
+	end
+
+	hadImportantAlerts = hasImportantAlerts
+	hadDefensiveAlerts = hasDefensiveAlerts
 
 	-- advance forward by 1 for clearing
 	if slot > 0 then
@@ -136,6 +175,8 @@ local function OnMatchStateChanged()
 	end
 
 	container:ResetAllSlots()
+	hadImportantAlerts = false
+	hadDefensiveAlerts = false
 end
 
 local function RefreshTestAlerts()
@@ -206,6 +247,8 @@ local function DisableWatchers()
 	if container then
 		container:ResetAllSlots()
 	end
+	hadImportantAlerts = false
+	hadDefensiveAlerts = false
 	paused = true
 end
 
