@@ -12,6 +12,7 @@ local M = addon.Config
 M.MediaLocation = "Interface\\AddOns\\" .. addonName .. "\\Media\\"
 
 M.SoundFiles = {
+	"AirHorn.ogg",
 	"AlertToastWarm.ogg",
 	"BubblePop.ogg",
 	"CinematicHit.ogg",
@@ -22,7 +23,6 @@ M.SoundFiles = {
 	"SuddenShock.ogg",
 	"WatchOut.ogg",
 	"WhooshSwing.ogg",
-	"AirHorn.ogg",
 }
 
 function M:Apply()
