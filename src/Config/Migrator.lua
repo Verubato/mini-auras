@@ -119,14 +119,14 @@ local dbDefaults = {
 
 			Sound = {
 				Important = {
-					Enabled = true,
+					Enabled = false,
 					Channel = "Master",
-					File = "Notification18.ogg",
+					File = "AirHorn.ogg",
 				},
 				Defensive = {
-					Enabled = true,
+					Enabled = false,
 					Channel = "Master",
-					File = "Notification38.ogg",
+					File = "AlertToastWarm.ogg",
 				},
 			},
 
@@ -1542,6 +1542,19 @@ function M:UpgradeToVersion23(vars)
 	if vars.Version ~= 22 then
 		return false
 	end
+
+	vars.Modules.AlertsModule.Sound = {
+		Important = {
+			Enabled = false,
+			Channel = "Master",
+			File = "AirHorn.ogg",
+		},
+		Defensive = {
+			Enabled = false,
+			Channel = "Master",
+			File = "AlertToastWarm.ogg",
+		},
+	}
 
 	vars.Modules.AlertsModule.TTS = {
 		Volume = 100,
