@@ -22,6 +22,7 @@ M.SoundFiles = {
 	"SuddenShock.ogg",
 	"WatchOut.ogg",
 	"WhooshSwing.ogg",
+	"AirHorn.ogg",
 }
 
 function M:Apply()
