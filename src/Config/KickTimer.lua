@@ -103,7 +103,6 @@ function M:Build()
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			L["It's not great, it's arguably not even good, but it's better than nothing."],
 			L["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."],
 			L["For example you are facing 3 enemies who are all pressing buttons."],
 			L["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."],

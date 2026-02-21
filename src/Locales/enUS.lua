@@ -78,7 +78,6 @@ L:SetDefaultStrings({
 	["Whether to enable or disable this module regardless of what spec you are."] = "Whether to enable or disable this module regardless of what spec you are.",
 	["Icon Size"] = "Icon Size",
 	["Important Notes"] = "Important Notes",
-	["It's not great, it's arguably not even good, but it's better than nothing."] = "It's not great, it's arguably not even good, but it's better than nothing.",
 	["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."] = "How does it work? It guesses who kicked you by correlating enemy action events against interrupt events.",
 	["For example you are facing 3 enemies who are all pressing buttons."] = "For example you are facing 3 enemies who are all pressing buttons.",
 	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you.",

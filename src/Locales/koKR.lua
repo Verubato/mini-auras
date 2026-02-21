@@ -65,7 +65,6 @@ L:SetStrings({
 	["Whether to enable or disable this module regardless of what spec you are."] = "전문화에 관계없이 이 모듈을 활성화 또는 비활성화합니다.",
 	["Icon Size"] = "아이콘 크기",
 	["Important Notes"] = "중요 사항",
-	["It's not great, it's arguably not even good, but it's better than nothing."] = "훌륭하지는 않고, 좋다고 하기도 어렵지만, 없는 것보다는 낫습니다.",
 	["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."] = "어떻게 작동하나요? 적의 행동 이벤트와 차단 이벤트를 연관시켜 누가 차단했는지 추측합니다.",
 	["For example you are facing 3 enemies who are all pressing buttons."] = "예를 들어 모두 버튼을 누르고 있는 3명의 적과 마주하고 있습니다.",
 	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "방금 차단당했고 마지막으로 주문을 성공적으로 사용한 적이 적 A였다면, 적 A가 차단했다고 추론합니다.",

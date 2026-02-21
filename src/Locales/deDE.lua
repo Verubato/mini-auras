@@ -79,7 +79,6 @@ L:SetStrings({
 	["Whether to enable or disable this module regardless of what spec you are."] = "Ob dieses Modul unabhängig von deiner Spezialisierung aktiviert oder deaktiviert werden soll.",
 	["Icon Size"] = "Symbolgröße",
 	["Important Notes"] = "Wichtige Hinweise",
-	["It's not great, it's arguably not even good, but it's better than nothing."] = "Es ist nicht großartig, möglicherweise nicht einmal gut, aber besser als nichts.",
 	["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."] = "Wie funktioniert es? Es errät, wer dich unterbrochen hat, indem es Gegneraktionsereignisse mit Unterbrechungsereignissen korreliert.",
 	["For example you are facing 3 enemies who are all pressing buttons."] = "Zum Beispiel stehst du 3 Gegnern gegenüber, die alle Tasten drücken.",
 	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "Du wurdest gerade unterbrochen und der letzte Gegner, der erfolgreich einen Zauber gewirkt hat, war Gegner A, daher schließen wir, dass es Gegner A war, der dich unterbrochen hat.",

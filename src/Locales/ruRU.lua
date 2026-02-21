@@ -65,7 +65,6 @@ L:SetStrings({
 	["Whether to enable or disable this module regardless of what spec you are."] = "Включить или отключить этот модуль независимо от вашей специализации.",
 	["Icon Size"] = "Размер иконки",
 	["Important Notes"] = "Важные заметки",
-	["It's not great, it's arguably not even good, but it's better than nothing."] = "Это не идеально, можно сказать даже не хорошо, но лучше, чем ничего.",
 	["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."] = "Как это работает? Система угадывает, кто вас прервал, сопоставляя действия врагов с событиями прерывания.",
 	["For example you are facing 3 enemies who are all pressing buttons."] = "Например, вы сражаетесь с 3 противниками, которые все нажимают кнопки.",
 	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "Вас только что прервали, и последний враг, успешно применивший заклинание, был противник A, поэтому мы делаем вывод, что именно противник A прервал вас.",

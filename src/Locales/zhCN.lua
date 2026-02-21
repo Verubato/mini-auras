@@ -65,7 +65,6 @@ L:SetStrings({
 	["Whether to enable or disable this module regardless of what spec you are."] = "无论您是什么专精，是否启用或禁用此模块。",
 	["Icon Size"] = "图标大小",
 	["Important Notes"] = "重要说明",
-	["It's not great, it's arguably not even good, but it's better than nothing."] = "它不是很好，甚至可能也不算好，但总比没有强。",
 	["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."] = "它如何工作？它通过关联敌人行动事件和打断事件来猜测是谁打断了你。",
 	["For example you are facing 3 enemies who are all pressing buttons."] = "例如，你面对的3个敌人都在按按钮。",
 	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "你刚刚被打断，最后一个成功释放法术的敌人是敌人A，因此我们推断是敌人A打断了你。",
