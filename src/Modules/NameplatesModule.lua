@@ -78,6 +78,7 @@ local previousModuleEnabled = { Always = false, Arena = false, Dungeons = false,
 -- which significantly reduces garbage collection pressure.
 local layerScratch = {}
 
+---@class NameplatesModule
 local M = {}
 addon.Modules.NameplatesModule = M
 
