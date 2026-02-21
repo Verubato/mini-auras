@@ -60,11 +60,15 @@ local function NotifyChanges()
 			return
 		end
 
-		if next(whatsNew) then
+		local text = table.concat(whatsNew, "\n")
+
+		if text and text ~= "" then
 			mini:ShowDialog({
 				Title = title,
-				Text = table.concat(whatsNew, "\n"),
+				Text = text
 			})
+		else
+			print("next returned nil")
 		end
 	end
 

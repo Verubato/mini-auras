@@ -6,7 +6,7 @@ local mini = addon.Core.Framework
 local db
 ---@class Db
 local dbDefaults = {
-	Version = 22,
+	Version = 23,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -127,6 +127,16 @@ local dbDefaults = {
 					Enabled = true,
 					Channel = "Master",
 					File = "Notification38.ogg",
+				},
+			},
+
+			TTS = {
+				Volume = 100,
+				Important = {
+					Enabled = false,
+				},
+				Defensive = {
+					Enabled = false,
 				},
 			},
 
@@ -1528,6 +1538,33 @@ function M:UpgradeToVersion22(vars)
 	return true
 end
 
+function M:UpgradeToVersion23(vars)
+	if vars.Version ~= 22 then
+		return false
+	end
+
+	vars.Modules.AlertsModule.TTS = {
+		Volume = 100,
+		Important = {
+			Enabled = false,
+		},
+		Defensive = {
+			Enabled = false,
+		},
+	}
+
+	-- might as well clean up any garbage while we're here
+	-- do this before we add stuff to what's new otherwise it'll get cleared
+	mini:CleanTable(vars, dbDefaults, true, true)
+
+	table.insert(vars.WhatsNew, " - Added text to speech functionality in the alerts module (i.e. GladiatorlosSA).")
+
+	print(next(vars.WhatsNew))
+	vars.NotifiedChanges = false
+	vars.Version = 23
+	return true
+end
+
 ---@return Db
 function M:GetAndUpgradeDb()
 	local vars = mini:GetSavedVars()
@@ -1569,9 +1606,6 @@ function M:GetAndUpgradeDb()
 
 	-- grab any new keys
 	vars = mini:GetSavedVars(dbDefaults)
-
-	-- clean any garbage
-	mini:CleanTable(vars, dbDefaults, true, true)
 
 	return vars
 end

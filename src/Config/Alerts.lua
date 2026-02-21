@@ -106,13 +106,34 @@ function M:Build(panel, options)
 	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", colorByClassChk, "TOP", 0, 0)
 
+	local iconSize = mini:Slider({
+		Parent = panel,
+		Min = 10,
+		Max = 200,
+		Width = (columnWidth * columns) - horizontalSpacing,
+		Step = 1,
+		LabelText = L["Icon Size"],
+		GetValue = function()
+			return options.Icons.Size
+		end,
+		SetValue = function(v)
+			local newValue = mini:ClampInt(v, 10, 200, 32)
+			if options.Icons.Size ~= newValue then
+				options.Icons.Size = newValue
+				config:Apply()
+			end
+		end,
+	})
+
+	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+
 	local soundDivider = mini:Divider({
 		Parent = panel,
 		Text = L["Sound Alerts"],
 	})
 	soundDivider:SetPoint("LEFT", panel, "LEFT")
 	soundDivider:SetPoint("RIGHT", panel, "RIGHT")
-	soundDivider:SetPoint("TOP", glowChk, "BOTTOM", 0, -verticalSpacing)
+	soundDivider:SetPoint("TOP", iconSize.Slider, "BOTTOM", 0, -verticalSpacing * 2)
 
 	-- Important Spells Sound
 	local soundImportantChk = mini:Checkbox({
@@ -201,26 +222,102 @@ function M:Build(panel, options)
 	soundDefensiveDropdown:SetPoint("TOP", soundDefensiveChk, "TOP", 0, -4)
 	soundDefensiveDropdown:SetWidth(200)
 
-	local iconSize = mini:Slider({
+	local ttsDivider = mini:Divider({
 		Parent = panel,
-		Min = 10,
-		Max = 200,
-		Width = (columnWidth * columns) - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Icon Size"],
+		Text = L["TTS"],
+	})
+	ttsDivider:SetPoint("LEFT", panel, "LEFT")
+	ttsDivider:SetPoint("RIGHT", panel, "RIGHT")
+	ttsDivider:SetPoint("TOP", soundDefensiveChk, "BOTTOM", 0, -verticalSpacing * 2)
+
+	local ttsIntro = mini:TextLine({
+		Parent = panel,
+		Text = L["Announce spell names using text-to-speech when they are cast."]
+	})
+
+	ttsIntro:SetPoint("TOPLEFT", ttsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local announceImportantSpellsChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Important"],
+		Tooltip = L["Announce important spell names using text-to-speech when they are cast."],
 		GetValue = function()
-			return options.Icons.Size
+			return options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
+		end,
+		SetValue = function(value)
+			if not options.TTS then
+				options.TTS = { Volume = 100 }
+			end
+			if not options.TTS.Important then
+				options.TTS.Important = { Enabled = false }
+			end
+			options.TTS.Important.Enabled = value
+
+			if value then
+				local voiceId = C_TTSSettings.GetVoiceOptionID(0)
+				local volume = options.TTS.Volume or 100
+
+				C_VoiceChat.SpeakText(voiceId, L["Important"], 0, volume)
+			end
+			config:Apply()
+		end,
+	})
+
+	announceImportantSpellsChk:SetPoint("TOPLEFT", ttsIntro, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local announceDefensiveSpellsChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Defensive"],
+		Tooltip = L["Announce defensive spell names using text-to-speech when they are cast."],
+		GetValue = function()
+			return options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
+		end,
+		SetValue = function(value)
+			if not options.TTS then
+				options.TTS = { Volume = 100 }
+			end
+			if not options.TTS.Defensive then
+				options.TTS.Defensive = { Enabled = false }
+			end
+			options.TTS.Defensive.Enabled = value
+
+			if value then
+				local voiceId = C_TTSSettings.GetVoiceOptionID(0)
+				local volume = options.TTS.Volume or 100
+
+				C_VoiceChat.SpeakText(voiceId, L["Defensive"], 0, volume)
+			end
+
+			config:Apply()
+		end,
+	})
+
+	announceDefensiveSpellsChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	announceDefensiveSpellsChk:SetPoint("TOP", announceImportantSpellsChk, "TOP", 0, 0)
+
+	local volumeSlider = mini:Slider({
+		Parent = panel,
+		Min = 0,
+		Max = 100,
+		Width = (columnWidth * 2) - horizontalSpacing,
+		Step = 1,
+		LabelText = L["TTS Volume"],
+		GetValue = function()
+			return options.TTS and options.TTS.Volume or 100
 		end,
 		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 10, 200, 32)
-			if options.Icons.Size ~= newValue then
-				options.Icons.Size = newValue
+			local newValue = mini:ClampInt(v, 0, 100, 100)
+			if not options.TTS then
+				options.TTS = { Volume = 100 }
+			end
+			if options.TTS.Volume ~= newValue then
+				options.TTS.Volume = newValue
 				config:Apply()
 			end
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", soundDefensiveChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	volumeSlider.Slider:SetPoint("TOPLEFT", announceImportantSpellsChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()

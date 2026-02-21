@@ -225,11 +225,12 @@ function Watcher:RebuildStates()
 				defensivesSpellData[#defensivesSpellData + 1] = {
 					IsDefensive = isDefensive,
 					SpellId = auraData.spellId,
+					SpellName = auraData.name,
 					SpellIcon = auraData.icon,
 					StartTime = start,
 					TotalDuration = duration,
 					DispelColor = dispelColor,
-					auraInstanceID = auraData.auraInstanceID,
+					AuraInstanceID = auraData.auraInstanceID,
 				}
 			end
 
@@ -241,11 +242,12 @@ function Watcher:RebuildStates()
 				defensivesSpellData[#defensivesSpellData + 1] = {
 					IsDefensive = true,
 					SpellId = auraData.spellId,
+					SpellName = auraData.name,
 					SpellIcon = auraData.icon,
 					StartTime = start,
 					TotalDuration = duration,
 					DispelColor = dispelColor,
-					auraInstanceID = auraData.auraInstanceID,
+					AuraInstanceID = auraData.auraInstanceID,
 				}
 
 				seen[auraData.auraInstanceID] = true
@@ -260,11 +262,12 @@ function Watcher:RebuildStates()
 			ccSpellData[#ccSpellData + 1] = {
 				IsCC = true,
 				SpellId = auraData.spellId,
+				SpellName = auraData.name,
 				SpellIcon = auraData.icon,
 				StartTime = start,
 				TotalDuration = duration,
 				DispelColor = dispelColor,
-				auraInstanceID = auraData.auraInstanceID,
+				AuraInstanceID = auraData.auraInstanceID,
 			}
 		end)
 	end
@@ -277,11 +280,12 @@ function Watcher:RebuildStates()
 				importantSpellData[#importantSpellData + 1] = {
 					IsImportant = isImportant,
 					SpellId = auraData.spellId,
+					SpellName = auraData.name,
 					SpellIcon = auraData.icon,
 					StartTime = start,
 					TotalDuration = duration,
 					DispelColor = dispelColor,
-					auraInstanceID = auraData.auraInstanceID,
+					AuraInstanceID = auraData.auraInstanceID,
 				}
 
 				seen[auraData.auraInstanceID] = true
@@ -371,9 +375,11 @@ InitColourCurve()
 ---@field IsDefensive? boolean
 ---@field SpellId number?
 ---@field SpellIcon string?
+---@field SpellName string?
 ---@field TotalDuration number?
 ---@field StartTime number?
 ---@field DispelColor table?
+---@field AuraInstanceID number?
 
 ---@class WatcherState
 ---@field Unit string

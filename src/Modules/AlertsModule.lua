@@ -13,6 +13,16 @@ local eventsFrame
 local soundFile
 ---@type Db
 local db
+
+---@type table<number, boolean>
+local previousImportantAuras = {}
+---@type table<number, boolean>
+local previousDefensiveAuras = {}
+
+local cachedVoiceID
+local cachedTTSVolume
+local cachedTTSImportantEnabled
+local cachedTTSDefensiveEnabled
 ---@type IconSlotContainer
 local container
 ---@type Watcher[]
@@ -41,6 +51,31 @@ local function PlaySound(spellType)
 	PlaySoundFile(soundFile, soundConfig.Channel or "Master")
 end
 
+local function AnnounceTTS(spellName, spellType)
+	if not db.Modules.AlertsModule.TTS then
+		return
+	end
+
+	if not spellName then
+		return
+	end
+
+	local enabled = false
+	if spellType == "important" and cachedTTSImportantEnabled then
+		enabled = true
+	elseif spellType == "defensive" and cachedTTSDefensiveEnabled then
+		enabled = true
+	end
+
+	if not enabled then
+		return
+	end
+
+	pcall(function()
+		C_VoiceChat.SpeakText(cachedVoiceID, spellName, 0, cachedTTSVolume)
+	end)
+end
+
 local hadImportantAlerts = false
 local hadDefensiveAlerts = false
 
@@ -65,6 +100,8 @@ local function OnAuraDataChanged()
 	local slot = 0
 	local hasImportantAlerts = false
 	local hasDefensiveAlerts = false
+	local currentImportantAuras = {}
+	local currentDefensiveAuras = {}
 
 	for _, watcher in ipairs(watchers) do
 		if slot > container.Count then
@@ -107,6 +144,14 @@ local function OnAuraDataChanged()
 						FontScale = db.FontScale,
 					})
 					container:FinalizeSlot(slot, 1)
+
+					-- Track and announce new important auras
+					if data.AuraInstanceID then
+						if not previousImportantAuras[data.AuraInstanceID] then
+							AnnounceTTS(data.SpellName, "important")
+						end
+						currentImportantAuras[data.AuraInstanceID] = true
+					end
 				end
 			end
 
@@ -127,6 +172,14 @@ local function OnAuraDataChanged()
 						FontScale = db.FontScale,
 					})
 					container:FinalizeSlot(slot, 1)
+
+					-- Track and announce new defensive auras
+					if data.AuraInstanceID then
+						if not previousDefensiveAuras[data.AuraInstanceID] then
+							AnnounceTTS(data.SpellName, "defensive")
+						end
+						currentDefensiveAuras[data.AuraInstanceID] = true
+					end
 				end
 			end
 		end
@@ -143,6 +196,10 @@ local function OnAuraDataChanged()
 
 	hadImportantAlerts = hasImportantAlerts
 	hadDefensiveAlerts = hasDefensiveAlerts
+
+	-- Update previous aura tracking
+	previousImportantAuras = currentImportantAuras
+	previousDefensiveAuras = currentDefensiveAuras
 
 	-- advance forward by 1 for clearing
 	if slot > 0 then
@@ -254,6 +311,8 @@ local function DisableWatchers()
 	end
 	hadImportantAlerts = false
 	hadDefensiveAlerts = false
+	previousImportantAuras = {}
+	previousDefensiveAuras = {}
 	paused = true
 end
 
@@ -304,6 +363,12 @@ function M:Refresh()
 	local options = db.Modules.AlertsModule
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
 
+	-- Update cached TTS values
+	cachedVoiceID = C_TTSSettings.GetVoiceOptionID(0)
+	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
+	cachedTTSImportantEnabled = options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
+	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
+
 	-- If disabled, disable watchers and clear
 	if not moduleEnabled then
 		DisableWatchers()
@@ -341,6 +406,12 @@ function M:Init()
 	local options = db.Modules.AlertsModule
 	local count = 8
 	local size = options.Icons.Size
+
+	-- Initialize cached TTS values
+	cachedVoiceID = C_TTSSettings.GetVoiceOptionID(0)
+	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
+	cachedTTSImportantEnabled = options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
+	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
 
 	container = iconSlotContainer:New(UIParent, count, size, 2)
 	container.Frame:SetIgnoreParentScale(true)

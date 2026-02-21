@@ -132,11 +132,16 @@ L:SetDefaultStrings({
 	["Sound"] = "Sound",
 	["Sound File"] = "Sound File",
 	["Sound Alerts"] = "Sound Alerts",
+	["TTS"] = "TTS",
+	["TTS Volume"] = "TTS Volume",
 	["Important Spells"] = "Important Spells",
 	["Defensive Spells"] = "Defensive Spells",
 	["Play a sound when the healer is CC'd."] = "Play a sound when the healer is CC'd.",
 	["Play a sound when an important spell is pressed."] = "Play a sound when an important spell is pressed.",
 	["Play a sound when a defensive spell is pressed."] = "Play a sound when a defensive spell is pressed.",
+	["Announce spell names using text-to-speech when they are cast."] = "Announce spell names using text-to-speech when they are cast.",
+	["Announce important spell names using text-to-speech when they are cast."] = "Announce important spell names using text-to-speech when they are cast.",
+	["Announce defensive spell names using text-to-speech when they are cast."] = "Announce defensive spell names using text-to-speech when they are cast.",
 
 	-- Portraits
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Shows CC, defensives, and other important spells on the player/target/focus portraits.",
