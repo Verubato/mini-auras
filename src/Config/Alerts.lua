@@ -224,6 +224,7 @@ function M:Build(panel, options)
 
 	local ttsDivider = mini:Divider({
 		Parent = panel,
+		-- TODO: rename this to text-to-speech
 		Text = L["TTS"],
 	})
 	ttsDivider:SetPoint("LEFT", panel, "LEFT")

@@ -132,7 +132,7 @@ L:SetDefaultStrings({
 	["Sound"] = "Sound",
 	["Sound File"] = "Sound File",
 	["Sound Alerts"] = "Sound Alerts",
-	["TTS"] = "TTS",
+	["TTS"] = "Text-to-speech",
 	["TTS Volume"] = "TTS Volume",
 	["Important Spells"] = "Important Spells",
 	["Defensive Spells"] = "Defensive Spells",
