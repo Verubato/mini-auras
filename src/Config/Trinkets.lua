@@ -58,8 +58,11 @@ function M:Build()
 			return db.Modules.TrinketsModule.Icons.Size
 		end,
 		SetValue = function(value)
-			db.Modules.TrinketsModule.Icons.Size = mini:ClampInt(value, 10, 100, 40)
-			config:Apply()
+			local newValue = mini:ClampInt(value, 10, 100, 40)
+			if db.Modules.TrinketsModule.Icons.Size ~= newValue then
+				db.Modules.TrinketsModule.Icons.Size = newValue
+				config:Apply()
+			end
 		end,
 		Width = columns * columnWidth - horizontalSpacing,
 		Min = 10,
@@ -76,8 +79,11 @@ function M:Build()
 			return db.Modules.TrinketsModule.Offset.X
 		end,
 		SetValue = function(value)
-			db.Modules.TrinketsModule.Offset.X = mini:ClampInt(value, -200, 200, 0)
-			config:Apply()
+			local newValue = mini:ClampInt(value, -200, 200, 0)
+			if db.Modules.TrinketsModule.Offset.X ~= newValue then
+				db.Modules.TrinketsModule.Offset.X = newValue
+				config:Apply()
+			end
 		end,
 		Width = (columns / 2) * columnWidth - horizontalSpacing,
 		Min = -200,
@@ -94,8 +100,11 @@ function M:Build()
 			return db.Modules.TrinketsModule.Offset.Y
 		end,
 		SetValue = function(value)
-			db.Modules.TrinketsModule.Offset.Y = mini:ClampInt(value, -200, 200, 0)
-			config:Apply()
+			local newValue = mini:ClampInt(value, -200, 200, 0)
+			if db.Modules.TrinketsModule.Offset.Y ~= newValue then
+				db.Modules.TrinketsModule.Offset.Y = newValue
+				config:Apply()
+			end
 		end,
 		Width = (columns / 2) * columnWidth - horizontalSpacing,
 		Min = -200,

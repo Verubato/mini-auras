@@ -116,8 +116,11 @@ function M:Build(panel, options)
 			return options.Icons.Size
 		end,
 		SetValue = function(v)
-			options.Icons.Size = mini:ClampInt(v, 10, 200, 32)
-			config:Apply()
+			local newValue = mini:ClampInt(v, 10, 200, 32)
+			if options.Icons.Size ~= newValue then
+				options.Icons.Size = newValue
+				config:Apply()
+			end
 		end,
 	})
 

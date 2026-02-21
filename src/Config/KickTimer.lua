@@ -81,8 +81,11 @@ function M:Build()
 			return db.Modules.KickTimerModule.Icons.Size
 		end,
 		SetValue = function(value)
-			db.Modules.KickTimerModule.Icons.Size = mini:ClampInt(value, 20, 120, 50)
-			config:Apply()
+			local newValue = mini:ClampInt(value, 20, 120, 50)
+			if db.Modules.KickTimerModule.Icons.Size ~= newValue then
+				db.Modules.KickTimerModule.Icons.Size = newValue
+				config:Apply()
+			end
 		end,
 		Width = columns * columnWidth - horizontalSpacing,
 		Min = 20,

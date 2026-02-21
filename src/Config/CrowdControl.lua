@@ -56,8 +56,11 @@ local function BuildAnchorSettings(parent, options)
 			return options.Offset.X
 		end,
 		SetValue = function(v)
-			options.Offset.X = mini:ClampInt(v, -250, 250, 0)
-			config:Apply()
+			local newValue = mini:ClampInt(v, -250, 250, 0)
+			if options.Offset.X ~= newValue then
+				options.Offset.X = newValue
+				config:Apply()
+			end
 		end,
 	})
 
@@ -74,8 +77,11 @@ local function BuildAnchorSettings(parent, options)
 			return options.Offset.Y
 		end,
 		SetValue = function(v)
-			options.Offset.Y = mini:ClampInt(v, -250, 250, 0)
-			config:Apply()
+			local newValue = mini:ClampInt(v, -250, 250, 0)
+			if options.Offset.Y ~= newValue then
+				options.Offset.Y = newValue
+				config:Apply()
+			end
 		end,
 	})
 
@@ -165,8 +171,11 @@ local function BuildInstance(panel, options, addTestButton)
 			return options.Icons.Size
 		end,
 		SetValue = function(v)
-			options.Icons.Size = mini:ClampInt(v, 10, 200, 32)
-			config:Apply()
+			local newValue = mini:ClampInt(v, 10, 200, 32)
+			if options.Icons.Size ~= newValue then
+				options.Icons.Size = newValue
+				config:Apply()
+			end
 		end,
 	})
 
@@ -175,7 +184,7 @@ local function BuildInstance(panel, options, addTestButton)
 	local maxIcons = mini:Slider({
 		Parent = parent,
 		Min = 1,
-		Max = 5,
+		Max = 10,
 		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
 		LabelText = "Max Icons",
@@ -183,8 +192,11 @@ local function BuildInstance(panel, options, addTestButton)
 			return options.Icons.Count or 5
 		end,
 		SetValue = function(v)
-			options.Icons.Count = mini:ClampInt(v, 1, 5, 3)
-			config:Apply()
+			local newValue = mini:ClampInt(v, 1, 10, 5)
+			if options.Icons.Count ~= newValue then
+				options.Icons.Count = newValue
+				config:Apply()
+			end
 		end,
 	})
 
