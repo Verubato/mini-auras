@@ -129,8 +129,6 @@ local function EnsureWatcher(anchorFrame, unit)
 	local watcher = watchers[anchorFrame]
 	if watcher then
 		watcher.Unit = unit
-		local size = tonumber(options.Icons.Size) or 32
-		watcher.Container:SetIconSize(size)
 		return watcher
 	end
 
@@ -323,7 +321,7 @@ local function OnEvent(_, event, ...)
 end
 
 local function RefreshTestTrinkets()
-	local now = GetTime() * 1000
+	local now = GetTime()
 
 	-- Stagger durations so you can see different states
 	local stateByUnit = {
@@ -371,6 +369,7 @@ function M:StartTesting()
 	testModeActive = true
 	Pause()
 	M:Refresh()
+	RefreshTestTrinkets()
 end
 
 function M:StopTesting()
@@ -434,11 +433,6 @@ function M:Refresh()
 	RebuildAnchors()
 	UpdateVisibility()
 
-	if moduleEnabled and IsInArena() then
-		RequestAll()
-		RefreshAll()
-	end
-
 	for _, watcher in pairs(watchers) do
 		if watcher.Container then
 			local size = tonumber(options.Icons.Size) or 32
@@ -446,8 +440,9 @@ function M:Refresh()
 		end
 	end
 
-	if testModeActive then
-		RefreshTestTrinkets()
+	if moduleEnabled and IsInArena() then
+		RequestAll()
+		RefreshAll()
 	end
 end
 
