@@ -147,6 +147,11 @@ local function EnsureWatcher(anchor, unit)
 
 		local iconSize = tonumber(options.Icons.Size) or 32
 		entry.Container:SetIconSize(iconSize)
+
+		local iconCount = options.Icons.Count or 5
+		if entry.Container.Count ~= iconCount then
+			entry.Container:SetCount(iconCount)
+		end
 	end
 
 	UpdateWatcherAuras(entry)
@@ -370,6 +375,11 @@ function M:Refresh()
 		local container = entry.Container
 		local iconSize = tonumber(options.Icons.Size) or 32
 		container:SetIconSize(iconSize)
+
+		local iconCount = options.Icons.Count or 5
+		if entry.Container.Count ~= iconCount then
+			entry.Container:SetCount(iconCount)
+		end
 
 		if not testModeActive then
 			UpdateWatcherAuras(entry)

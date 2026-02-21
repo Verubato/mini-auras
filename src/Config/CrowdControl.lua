@@ -158,7 +158,7 @@ local function BuildInstance(panel, options, addTestButton)
 		Parent = parent,
 		Min = 10,
 		Max = 200,
-		Width = (columnWidth * columns) - horizontalSpacing,
+		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
 		LabelText = "Icon Size",
 		GetValue = function()
@@ -171,6 +171,24 @@ local function BuildInstance(panel, options, addTestButton)
 	})
 
 	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+
+	local maxIcons = mini:Slider({
+		Parent = parent,
+		Min = 1,
+		Max = 5,
+		Width = columnWidth * 2 - horizontalSpacing,
+		Step = 1,
+		LabelText = "Max Icons",
+		GetValue = function()
+			return options.Icons.Count or 5
+		end,
+		SetValue = function(v)
+			options.Icons.Count = mini:ClampInt(v, 1, 5, 3)
+			config:Apply()
+		end,
+	})
+
+	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
 
 	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
