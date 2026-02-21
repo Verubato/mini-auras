@@ -116,6 +116,141 @@ local function EnsureLayer(slot, layerIndex, iconSize)
 	return slot.Layers[layerIndex]
 end
 
+---Updates glow effects on a layer frame
+---@param layerFrame table The layer frame to update glow on
+---@param options IconLayerOptions Options containing glow settings
+local function UpdateLayerGlow(layerFrame, options)
+	if not LCG then
+		return
+	end
+
+	local db = GetDb()
+	local glowType = (db and db.GlowType) or "Proc Glow"
+
+	if options.Glow then
+		-- Check which glow types currently exist
+		local hasProcGlow = layerFrame._ProcGlow ~= nil
+		local hasPixelGlow = layerFrame._PixelGlow ~= nil
+		local hasAutoCastGlow = layerFrame._AutoCastGlow ~= nil
+
+		-- Check if color has changed
+		local colorChanged = false
+		local newColorKey = nil
+
+		if options.Color then
+			newColorKey = string.format(
+				"%.2f_%.2f_%.2f_%.2f",
+				options.Color.r or 1,
+				options.Color.g or 1,
+				options.Color.b or 1,
+				options.Color.a or 1
+			)
+		end
+
+		if not newColorKey or not issecretvalue(newColorKey) then
+			if layerFrame._GlowColorKey ~= newColorKey then
+				colorChanged = true
+				layerFrame._GlowColorKey = newColorKey
+			end
+		elseif newColorKey and issecretvalue(newColorKey) then
+			colorChanged = true
+		end
+
+		-- Determine if we need to start a new glow
+		local needsGlow = false
+		if glowType == "Proc Glow" and (not hasProcGlow or colorChanged) then
+			needsGlow = true
+			if hasPixelGlow and LCG.PixelGlow_Stop then
+				LCG.PixelGlow_Stop(layerFrame)
+			end
+			if hasAutoCastGlow and LCG.AutoCastGlow_Stop then
+				LCG.AutoCastGlow_Stop(layerFrame)
+			end
+			if hasProcGlow and colorChanged and LCG.ProcGlow_Stop then
+				LCG.ProcGlow_Stop(layerFrame)
+			end
+		elseif glowType == "Pixel Glow" and (not hasPixelGlow or colorChanged) then
+			needsGlow = true
+			if hasProcGlow and LCG.ProcGlow_Stop then
+				LCG.ProcGlow_Stop(layerFrame)
+			end
+			if hasAutoCastGlow and LCG.AutoCastGlow_Stop then
+				LCG.AutoCastGlow_Stop(layerFrame)
+			end
+			if hasPixelGlow and colorChanged and LCG.PixelGlow_Stop then
+				LCG.PixelGlow_Stop(layerFrame)
+			end
+		elseif glowType == "Autocast Shine" and (not hasAutoCastGlow or colorChanged) then
+			needsGlow = true
+			if hasProcGlow and LCG.ProcGlow_Stop then
+				LCG.ProcGlow_Stop(layerFrame)
+			end
+			if hasPixelGlow and LCG.PixelGlow_Stop then
+				LCG.PixelGlow_Stop(layerFrame)
+			end
+			if hasAutoCastGlow and colorChanged and LCG.AutoCastGlow_Stop then
+				LCG.AutoCastGlow_Stop(layerFrame)
+			end
+		end
+
+		-- Only start glow if needed
+		if needsGlow then
+			local glowOptions = { startAnim = false }
+
+			if options.Color then
+				glowOptions.color = { options.Color.r, options.Color.g, options.Color.b, options.Color.a }
+			end
+
+			if glowType == "Pixel Glow" and LCG.PixelGlow_Start then
+				LCG.PixelGlow_Start(layerFrame, glowOptions.color)
+			elseif glowType == "Autocast Shine" and LCG.AutoCastGlow_Start then
+				LCG.AutoCastGlow_Start(layerFrame, glowOptions.color)
+			else
+				LCG.ProcGlow_Start(layerFrame, glowOptions)
+			end
+		end
+
+		-- Always update alpha for the active glow type
+		if glowType == "Proc Glow" then
+			local procGlow = layerFrame._ProcGlow
+			if procGlow then
+				procGlow:SetAlphaFromBoolean(options.AlphaBoolean)
+			end
+		elseif glowType == "Pixel Glow" then
+			local pixelGlow = layerFrame._PixelGlow
+			if pixelGlow then
+				pixelGlow:SetAlphaFromBoolean(options.AlphaBoolean)
+			end
+		elseif glowType == "Autocast Shine" then
+			local autoCastGlow = layerFrame._AutoCastGlow
+			if autoCastGlow then
+				autoCastGlow:SetAlphaFromBoolean(options.AlphaBoolean)
+			end
+		end
+
+		-- Handle glow resizing for ProcGlow/ButtonGlow
+		if glowType == "Proc Glow" and layerFrame._ProcGlow and LCG.ProcGlow_Start then
+			local glowOptions = { startAnim = false }
+			if options.Color then
+				glowOptions.color = { options.Color.r, options.Color.g, options.Color.b, options.Color.a }
+			end
+			LCG.ProcGlow_Start(layerFrame, glowOptions)
+		end
+	else
+		-- Stop all glow types only if any exist
+		if layerFrame._ProcGlow and LCG.ProcGlow_Stop then
+			LCG.ProcGlow_Stop(layerFrame)
+		end
+		if layerFrame._PixelGlow and LCG.PixelGlow_Stop then
+			LCG.PixelGlow_Stop(layerFrame)
+		end
+		if layerFrame._AutoCastGlow and LCG.AutoCastGlow_Stop then
+			LCG.AutoCastGlow_Stop(layerFrame)
+		end
+		layerFrame._GlowColorKey = nil
+	end
+end
+
 function M:Layout()
 	local usedSlots = {}
 
@@ -302,149 +437,7 @@ function M:SetLayer(slotIndex, layerIndex, options)
 			fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, options.FontScale)
 		end
 
-		if LCG then
-			local db = GetDb()
-			local glowType = (db and db.GlowType) or "Proc Glow"
-
-			if options.Glow then
-				-- Check which glow types currently exist
-				local hasProcGlow = layer.Frame._ProcGlow ~= nil
-				local hasPixelGlow = layer.Frame._PixelGlow ~= nil
-				local hasAutoCastGlow = layer.Frame._AutoCastGlow ~= nil
-
-				-- Check if color has changed
-				local colorChanged = false
-				local newColorKey = nil
-
-				if options.Color then
-					-- in test mode color isn't secret, and we want to restart the glows if colour changed
-					-- string.format is safe to use for secrets
-					-- and options.Color may not be secret, but options.Color.r/g/b/a can be
-					newColorKey = string.format(
-						"%.2f_%.2f_%.2f_%.2f",
-						options.Color.r or 1,
-						options.Color.g or 1,
-						options.Color.b or 1,
-						options.Color.a or 1
-					)
-				end
-
-				if not newColorKey or not issecretvalue(newColorKey) then
-					if layer.Frame._GlowColorKey ~= newColorKey then
-						colorChanged = true
-						layer.Frame._GlowColorKey = newColorKey
-					end
-				elseif newColorKey and issecretvalue(newColorKey) then
-					-- if it's secret, we must assume it changed
-					colorChanged = true
-				end
-
-				-- Determine if we need to start a new glow
-				local needsGlow = false
-				if glowType == "Proc Glow" and (not hasProcGlow or colorChanged) then
-					needsGlow = true
-					-- Stop other glow types
-					if hasPixelGlow and LCG.PixelGlow_Stop then
-						LCG.PixelGlow_Stop(layer.Frame)
-					end
-					if hasAutoCastGlow and LCG.AutoCastGlow_Stop then
-						LCG.AutoCastGlow_Stop(layer.Frame)
-					end
-					-- Stop existing glow if color changed
-					if hasProcGlow and colorChanged and LCG.ProcGlow_Stop then
-						LCG.ProcGlow_Stop(layer.Frame)
-					end
-				elseif glowType == "Pixel Glow" and (not hasPixelGlow or colorChanged) then
-					needsGlow = true
-					-- Stop other glow types
-					if hasProcGlow and LCG.ProcGlow_Stop then
-						LCG.ProcGlow_Stop(layer.Frame)
-					end
-					if hasAutoCastGlow and LCG.AutoCastGlow_Stop then
-						LCG.AutoCastGlow_Stop(layer.Frame)
-					end
-					-- Stop existing glow if color changed
-					if hasPixelGlow and colorChanged and LCG.PixelGlow_Stop then
-						LCG.PixelGlow_Stop(layer.Frame)
-					end
-				elseif glowType == "Autocast Shine" and (not hasAutoCastGlow or colorChanged) then
-					needsGlow = true
-					-- Stop other glow types
-					if hasProcGlow and LCG.ProcGlow_Stop then
-						LCG.ProcGlow_Stop(layer.Frame)
-					end
-					if hasPixelGlow and LCG.PixelGlow_Stop then
-						LCG.PixelGlow_Stop(layer.Frame)
-					end
-					-- Stop existing glow if color changed
-					if hasAutoCastGlow and colorChanged and LCG.AutoCastGlow_Stop then
-						LCG.AutoCastGlow_Stop(layer.Frame)
-					end
-				end
-
-				-- Only start glow if needed
-				if needsGlow then
-					local glowOptions = { startAnim = false }
-
-					-- Apply color if provided
-					if options.Color then
-						glowOptions.color = { options.Color.r, options.Color.g, options.Color.b, options.Color.a }
-					end
-
-					-- Start the appropriate glow type
-					if glowType == "Pixel Glow" and LCG.PixelGlow_Start then
-						LCG.PixelGlow_Start(layer.Frame, glowOptions.color)
-					elseif glowType == "Autocast Shine" and LCG.AutoCastGlow_Start then
-						LCG.AutoCastGlow_Start(layer.Frame, glowOptions.color)
-					else
-						-- Default to Proc Glow
-						LCG.ProcGlow_Start(layer.Frame, glowOptions)
-					end
-				end
-
-				-- Always update alpha for the active glow type
-				if glowType == "Proc Glow" then
-					local procGlow = layer.Frame._ProcGlow
-					if procGlow then
-						procGlow:SetAlphaFromBoolean(options.AlphaBoolean)
-					end
-				elseif glowType == "Pixel Glow" then
-					local pixelGlow = layer.Frame._PixelGlow
-					if pixelGlow then
-						pixelGlow:SetAlphaFromBoolean(options.AlphaBoolean)
-					end
-				elseif glowType == "Autocast Shine" then
-					local autoCastGlow = layer.Frame._AutoCastGlow
-					if autoCastGlow then
-						autoCastGlow:SetAlphaFromBoolean(options.AlphaBoolean)
-					end
-				end
-
-				-- Handle glow resizing for ProcGlow/ButtonGlow
-				-- PixelGlow and AutoCastGlow auto-resize in their OnUpdate handlers
-				if glowType == "Proc Glow" and layer.Frame._ProcGlow and LCG.ProcGlow_Start then
-					-- ProcGlow_Start efficiently handles resize when glow already exists
-					local glowOptions = { startAnim = false }
-					if options.Color then
-						glowOptions.color = { options.Color.r, options.Color.g, options.Color.b, options.Color.a }
-					end
-					LCG.ProcGlow_Start(layer.Frame, glowOptions)
-				end
-			else
-				-- Stop all glow types only if any exist
-				if layer.Frame._ProcGlow and LCG.ProcGlow_Stop then
-					LCG.ProcGlow_Stop(layer.Frame)
-				end
-				if layer.Frame._PixelGlow and LCG.PixelGlow_Stop then
-					LCG.PixelGlow_Stop(layer.Frame)
-				end
-				if layer.Frame._AutoCastGlow and LCG.AutoCastGlow_Stop then
-					LCG.AutoCastGlow_Stop(layer.Frame)
-				end
-				-- Clear color key when glow is disabled
-				layer.Frame._GlowColorKey = nil
-			end
-		end
+		UpdateLayerGlow(layer.Frame, options)
 	end
 end
 
