@@ -42,7 +42,7 @@ setmetatable(L, {
 			return strings[key] or defaultStrings[key] or key
 		end
 		return rawget(t, key)
-	end
+	end,
 })
 
 -- Return current locale

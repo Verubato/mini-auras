@@ -2,7 +2,9 @@
 local _, addon = ...
 local L = addon.L
 
-if GetLocale() ~= "frFR" then return end
+if GetLocale() ~= "frFR" then
+	return
+end
 
 L:SetStrings({
 	-- General
@@ -23,18 +25,18 @@ L:SetStrings({
 	["Kick timer_Short"] = "Interrup.",
 	["Party Trinkets_Short"] = "Bijoux",
 	["Other Mini Addons_Short"] = "Autres",
-	
+
 	-- Notifications
 	["Can't apply settings during combat."] = "Impossible d'appliquer les paramètres en combat.",
 	["Can't do that during combat."] = "Impossible de faire ça en combat.",
 	["Settings reset to default."] = "Paramètres réinitialisés par défaut.",
 	["Notification"] = "Notification",
-	
+
 	-- Descriptions
 	["Shows CC and other important spell alerts."] = "Affiche les alertes de contrôle et autres sorts importants.",
 	["Addon is under ongoing development."] = "L'addon est en développement continu.",
 	["Feel free to report any bugs/ideas on our discord."] = "N'hésitez pas à signaler des bugs/idées sur notre discord.",
-	
+
 	-- Settings
 	["Discord"] = "Discord",
 	["Glow Type"] = "Type de lueur",
@@ -42,7 +44,7 @@ L:SetStrings({
 	["The others seem to use a non-trivial amount of CPU."] = "Les autres semblent utiliser une quantité non négligeable de CPU.",
 	["Font Scale"] = "Échelle de police",
 	["Are you sure you wish to reset to factory settings?"] = "Êtes-vous sûr de vouloir réinitialiser aux paramètres d'usine?",
-	
+
 	-- CC Settings
 	["Grow"] = "Croître",
 	["Offset X"] = "Décalage X",
@@ -56,17 +58,17 @@ L:SetStrings({
 	["Reverse swipe"] = "Balayage inversé",
 	["Reverses the direction of the cooldown swipe animation."] = "Inverse la direction de l'animation de balayage du temps de recharge.",
 	["Enable this module everywhere."] = "Activer ce module partout.",
-	
+
 	-- Alerts Settings
 	["A separate region for showing important enemy spells."] = "Une région séparée pour afficher les sorts ennemis importants.",
 	["Include Defensives"] = "Inclure les défensifs",
 	["Includes defensives in the alerts."] = "Inclut les sorts défensifs dans les alertes.",
 	["Color by class"] = "Couleur par classe",
 	["Color the glow/border by the enemy's class color."] = "Colore la lueur/bordure selon la couleur de classe de l'ennemi.",
-	
+
 	-- Nameplates Settings
 	["Whether to enable or disable this type."] = "Activer ou désactiver ce type.",
-	
+
 	-- Kick Timer
 	["Kick timer"] = "Minuteur d'interruption",
 	["Enable if you are:"] = "Activer si vous êtes:",
@@ -86,14 +88,14 @@ L:SetStrings({
 	[" - Doesn't work if the enemy misses kick (still investigating potential workaround/solution)."] = " - Ne fonctionne pas si l'ennemi rate son interruption (nous cherchons encore des solutions).",
 	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - Ne fonctionne actuellement qu'en arène (ne fonctionne pas en duels/monde, sera ajouté plus tard).",
 	["Still working on improving this, so stay tuned for updates."] = "Nous travaillons toujours à l'améliorer, restez à l'écoute pour les mises à jour.",
-	
+
 	-- Trinkets
 	["Party Trinkets"] = "Bijoux du groupe",
 	["Whether to enable or disable this module."] = "Activer ou désactiver ce module.",
 	["Exclude yourself from showing trinket icons."] = "Excluez-vous de l'affichage des icônes de bijoux.",
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Ne fonctionne pas si vos coéquipiers utilisent leurs bijoux dans la salle de départ.",
 	[" - Doesn't work in the open world."] = " - Ne fonctionne pas en monde ouvert.",
-	
+
 	-- Other Addons
 	["Other Mini Addons"] = "Autres Mini Addons",
 	["Other mini addons to enhance your PvP experience:"] = "Autres mini addons pour améliorer votre expérience PvP:",

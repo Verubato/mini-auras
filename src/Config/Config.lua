@@ -212,7 +212,6 @@ end
 ---@field General GeneralConfig
 ---@field Portraits PortraitsConfig
 ---@field CrowdControl CrowdControlConfig
----@field Anchors AnchorsConfig
 ---@field Healer HealerCrowdControlConfig
 ---@field Alerts AlertsConfig
 ---@field Nameplates NameplatesConfig

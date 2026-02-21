@@ -24,12 +24,7 @@ L:SetStrings({
 	["Party Trinkets_Short"] = "飾品",
 	["Other Mini Addons_Short"] = "其他",
 
-	-- Short names for tabs
-	["Nameplates_Short"] = "名條",
-	["Portraits_Short"] = "頭像",
-	["Kick timer_Short"] = "打斷",
-	["Party Trinkets_Short"] = "飾品",
-	["Other Mini Addons_Short"] = "其他",
+	-- Notifications
 	["Can't apply settings during combat."] = "戰鬥中無法套用設定。",
 	["Can't do that during combat."] = "戰鬥中無法執行該操作。",
 	["Settings reset to default."] = "設定已重置為預設值。",
@@ -72,7 +67,7 @@ L:SetStrings({
 	["Important Notes"] = "重要說明",
 	["It's not great, it's arguably not even good, but it's better than nothing."] = "它不是很好，甚至可能也不算好，但總比沒有強。",
 	["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."] = "它如何工作？它透過關聯敵人行動事件和打斷事件來猜測是誰打斷了你。",
-	["For example you are facing 3 enemies who are all pressing buttons."] = "例如，你面對的3\u500b敵人都在按按鈕。",
+	["For example you are facing 3 enemies who are all pressing buttons."] = "例如，你面對的3個敵人都在按按鈕。",
 	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "你剛剛被打斷，最後一個成功釋放法術的敵人是敵人A，因此我們推斷是敵人A打斷了你。",
 	["As you can tell it's not guaranteed to be accurate, but so far from our testing it's pretty damn good with ancedotally a 95%+ success rate."] = "如你所見，它不能保證準確，但到目前為止我們的測試顯示它非常好，軾事性成功率95%+。",
 	["Limitations:"] = "限制：",
@@ -104,8 +99,6 @@ L:SetStrings({
 	[" - changes you tab key to enemy players in PvP, and enemy units in PvE."] = " - 將Tab鍵更改為PvP中的敵方玩家和PvE中的敵方單位。",
 	["MiniCombatNotifier"] = "MiniCombatNotifier",
 	[" - notifies you when entering/leaving combat."] = " - 在進入/離開戰鬥時通知你。",
-	["Max Icons"] = "最大圖示數",
-	["Other mini addons to enhance your PvP experience:"] = "增強您PvP體驗的其他mini插件：",
 	["Max Icons"] = "最大圖示",
 	["Shows CC icons on party/raid frames."] = "在隊伍/團隊框架上顯示控制圖示。",
 	["Enable in:"] = "啟用於：",

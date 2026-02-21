@@ -2,7 +2,9 @@
 local _, addon = ...
 local L = addon.L
 
-if GetLocale() ~= "itIT" then return end
+if GetLocale() ~= "itIT" then
+	return
+end
 
 L:SetStrings({
 	-- General

@@ -148,6 +148,7 @@ end
 mini:WaitForAddonLoad(OnAddonLoaded)
 
 ---@class Addon
+---@field L Localization
 ---@field Utils Utils
 ---@field Core Core
 ---@field Config Config

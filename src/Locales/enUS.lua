@@ -19,21 +19,21 @@ L:SetDefaultStrings({
 	-- Short names for tabs (to prevent overflow)
 	["Nameplates_Short"] = "Nameplates",
 	["Portraits_Short"] = "Portraits",
-	["Kick timer_Short"] = "Interrupts",
+	["Kick timer_Short"] = "Kick Timer",
 	["Party Trinkets_Short"] = "Trinkets",
 	["Other Mini Addons_Short"] = "Other Addons",
-	
+
 	-- Notifications
 	["Can't apply settings during combat."] = "Can't apply settings during combat.",
 	["Can't do that during combat."] = "Can't do that during combat.",
 	["Settings reset to default."] = "Settings reset to default.",
 	["Notification"] = "Notification",
-	
+
 	-- Descriptions
 	["Shows CC and other important spell alerts."] = "Shows CC and other important spell alerts.",
 	["Addon is under ongoing development."] = "Addon is under ongoing development.",
 	["Feel free to report any bugs/ideas on our discord."] = "Feel free to report any bugs/ideas on our discord.",
-	
+
 	-- Settings
 	["Discord"] = "Discord",
 	["Glow Type"] = "Glow Type",
@@ -44,31 +44,30 @@ L:SetDefaultStrings({
 	["The others seem to use a non-trivial amount of CPU."] = "The others seem to use a non-trivial amount of CPU.",
 	["Font Scale"] = "Font Scale",
 	["Are you sure you wish to reset to factory settings?"] = "Are you sure you wish to reset to factory settings?",
-	
+
 	-- CC Settings
 	["Grow"] = "Grow",
 	["Offset X"] = "Offset X",
 	["Offset Y"] = "Offset Y",
 	["Exclude self"] = "Exclude self",
 	["Exclude yourself from showing CC icons."] = "Exclude yourself from showing CC icons.",
-	["Glow icons"] = "Glow icons",
 	["Show a glow around the CC icons."] = "Show a glow around the CC icons.",
 	["Dispel colours"] = "Dispel colours",
 	["Change the colour of the glow/border based on the type of debuff."] = "Change the colour of the glow/border based on the type of debuff.",
 	["Reverse swipe"] = "Reverse swipe",
 	["Reverses the direction of the cooldown swipe animation."] = "Reverses the direction of the cooldown swipe animation.",
 	["Enable this module everywhere."] = "Enable this module everywhere.",
-	
+
 	-- Alerts Settings
 	["A separate region for showing important enemy spells."] = "A separate region for showing important enemy spells.",
 	["Include Defensives"] = "Include Defensives",
 	["Includes defensives in the alerts."] = "Includes defensives in the alerts.",
 	["Color by class"] = "Color by class",
 	["Color the glow/border by the enemy's class color."] = "Color the glow/border by the enemy's class color.",
-	
+
 	-- Nameplates Settings
 	["Whether to enable or disable this type."] = "Whether to enable or disable this type.",
-	
+
 	-- Kick Timer
 	["Kick timer"] = "Kick timer",
 	["Enable if you are:"] = "Enable if you are:",
@@ -88,14 +87,14 @@ L:SetDefaultStrings({
 	[" - Doesn't work if the enemy misses kick (still investigating potential workaround/solution)."] = " - Doesn't work if the enemy misses kick (still investigating potential workaround/solution).",
 	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - Currently only works inside arena (doesn't work in duels/world, will add this later).",
 	["Still working on improving this, so stay tuned for updates."] = "Still working on improving this, so stay tuned for updates.",
-	
+
 	-- Trinkets
 	["Party Trinkets"] = "Party Trinkets",
 	["Whether to enable or disable this module."] = "Whether to enable or disable this module.",
 	["Exclude yourself from showing trinket icons."] = "Exclude yourself from showing trinket icons.",
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Doesn't work if your team mates trinket in the starting room.",
 	[" - Doesn't work in the open world."] = " - Doesn't work in the open world.",
-	
+
 	-- Other Addons
 	["Other Mini Addons"] = "Other Mini Addons",
 	["Other mini addons to enhance your PvP experience:"] = "Other mini addons to enhance your PvP experience:",
