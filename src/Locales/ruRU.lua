@@ -78,6 +78,7 @@ L:SetStrings({
 	["Exclude yourself from showing trinket icons."] = "Исключить себя из отображения иконок аксессуаров.",
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Не работает, если ваши союзники используют аксессуар в стартовой комнате.",
 	[" - Doesn't work in the open world."] = " - Не работает в открытом мире.",
+	[" - Racials like stoneform count as a trinket use."] = " - Расовые способности вроде «Каменной формы» считаются использованием аксессуара.",
 	["Other Mini Addons"] = "Другие Mini аддоны",
 	["Other mini addons to enhance your PvP experience:"] = "Другие mini аддоны для улучшения вашего PvP опыта:",
 	["MiniMarkers"] = "MiniMarkers",

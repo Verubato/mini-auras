@@ -78,6 +78,7 @@ L:SetStrings({
 	["Exclude yourself from showing trinket icons."] = "将自己从显示饰品图标中排除。",
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - 如果队友在起始房间使用饰品则无效。",
 	[" - Doesn't work in the open world."] = " - 在开放世界中无效。",
+	[" - Racials like stoneform count as a trinket use."] = " - 像石像形态这样的种族技能也会被算作一次饰品使用。",
 	["Other Mini Addons"] = "其他Mini插件",
 	["Other mini addons to enhance your PvP experience:"] = "增强您PvP体验的其他mini插件：",
 	["MiniMarkers"] = "MiniMarkers",

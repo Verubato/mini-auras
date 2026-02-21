@@ -2,7 +2,9 @@
 local _, addon = ...
 local L = addon.L
 
-if GetLocale() ~= "zhTW" then return end
+if GetLocale() ~= "zhTW" then
+	return
+end
 
 L:SetStrings({
 	-- General
@@ -78,6 +80,7 @@ L:SetStrings({
 	["Exclude yourself from showing trinket icons."] = "將自己從顯示飾品圖示中排除。",
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - 如果隊友在起始房間使用飾品則無效。",
 	[" - Doesn't work in the open world."] = " - 在開放世界中無效。",
+	[" - Racials like stoneform count as a trinket use."] = " - 像石像形態這類種族技能也會被算作一次飾品使用。",
 	["Other Mini Addons"] = "其他Mini插件",
 	["Other mini addons to enhance your PvP experience:"] = "增強您PvP體驗的其他mini插件：",
 	["MiniMarkers"] = "MiniMarkers",

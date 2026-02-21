@@ -93,6 +93,7 @@ L:SetDefaultStrings({
 	["Exclude yourself from showing trinket icons."] = "Exclude yourself from showing trinket icons.",
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Doesn't work if your team mates trinket in the starting room.",
 	[" - Doesn't work in the open world."] = " - Doesn't work in the open world.",
+	[" - Racials like stoneform count as a trinket use."] = " - Racials like stoneform count as a trinket use.",
 
 	-- Other Addons
 	["Other Mini Addons"] = "Other Mini Addons",

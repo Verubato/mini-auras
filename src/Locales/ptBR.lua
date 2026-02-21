@@ -78,6 +78,7 @@ L:SetStrings({
 	["Exclude yourself from showing trinket icons."] = "Exclua-se de mostrar ícones de berloques.",
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Não funciona se seus companheiros de equipe usarem berloque na sala inicial.",
 	[" - Doesn't work in the open world."] = " - Não funciona no mundo aberto.",
+	[" - Racials like stoneform count as a trinket use."] = " - Raciais como Forma de Pedra contam como uso de berloque.",
 	["Other Mini Addons"] = "Outros Mini Addons",
 	["Other mini addons to enhance your PvP experience:"] = "Outros mini addons para melhorar sua experiência PvP:",
 	["MiniMarkers"] = "MiniMarkers",

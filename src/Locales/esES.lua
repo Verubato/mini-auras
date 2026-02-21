@@ -94,6 +94,7 @@ L:SetStrings({
 	["Exclude yourself from showing trinket icons."] = "Exclúyete de mostrar iconos de abalorios.",
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - No funciona si tus compañeros de equipo usan abalorios en la sala de inicio.",
 	[" - Doesn't work in the open world."] = " - No funciona en el mundo abierto.",
+	[" - Racials like stoneform count as a trinket use."] = " - Los raciales como Forma de piedra cuentan como uso de abalorio.",
 
 	-- Other Addons
 	["Other Mini Addons"] = "Otros Mini Addons",

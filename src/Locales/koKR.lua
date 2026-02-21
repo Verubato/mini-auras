@@ -78,6 +78,7 @@ L:SetStrings({
 	["Exclude yourself from showing trinket icons."] = "장신구 아이콘 표시에서 자신을 제외합니다.",
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - 팀원이 시작 방에서 장신구를 사용하면 작동하지 않습니다.",
 	[" - Doesn't work in the open world."] = " - 오픈 월드에서는 작동하지 않습니다.",
+	[" - Racials like stoneform count as a trinket use."] = " - 석화 같은 종족 기술도 장신구 사용으로 취급됩니다.",
 	["Other Mini Addons"] = "기타 Mini 애드온",
 	["Other mini addons to enhance your PvP experience:"] = "PvP 경험을 향상시키는 다른 mini 애드온:",
 	["MiniMarkers"] = "MiniMarkers",
