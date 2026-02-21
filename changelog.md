@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.21.0
+
+- Added alerts sound effects.
+- Added text-to-speech for alerts (i.e. GladiatorloSA).
+- Added locale translations.
+- Portrait draw layer fixes.
+- Added max icons slider to CC module.
+- Various performance fixes.
+
 ## 2.20.0
 
 - Added max icons sliders to CC and Important nameplate sections.
