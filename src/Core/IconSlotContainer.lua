@@ -334,6 +334,9 @@ function M:SetLayer(slotIndex, layerIndex, options)
 						colorChanged = true
 						layer.Frame._GlowColorKey = newColorKey
 					end
+				elseif newColorKey and issecretvalue(newColorKey) then
+					-- if it's secret, we must assume it changed
+					colorChanged = true
 				end
 
 				-- Determine if we need to start a new glow
