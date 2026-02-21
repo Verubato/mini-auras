@@ -102,11 +102,6 @@ local function GetImportantAnchorPoint(unitToken)
 	return GetAnchorPoint(unitToken, "Important")
 end
 
-local function GetNameplateForUnit(unitToken)
-	local nameplate = C_NamePlate.GetNamePlateForUnit(unitToken)
-	return nameplate
-end
-
 local function CreateContainersForNameplate(nameplate, unitToken)
 	local ccContainer = nil
 	local importantContainer = nil
@@ -835,7 +830,7 @@ local function OnNamePlateRemoved(unitToken)
 end
 
 local function OnNamePlateAdded(unitToken)
-	local nameplate = GetNameplateForUnit(unitToken)
+	local nameplate = C_NamePlate.GetNamePlateForUnit(unitToken)
 	if not nameplate then
 		return
 	end
@@ -904,7 +899,7 @@ local function OnNamePlateUpdate(unitToken)
 		return
 	end
 
-	local newNameplate = GetNameplateForUnit(unitToken)
+	local newNameplate = C_NamePlate.GetNamePlateForUnit(unitToken)
 	if newNameplate and newNameplate ~= data.Nameplate then
 		-- Nameplate changed, fully recreate
 		OnNamePlateRemoved(unitToken)
