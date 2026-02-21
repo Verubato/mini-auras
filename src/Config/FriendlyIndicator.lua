@@ -239,7 +239,7 @@ function M:Build(panel, options)
 		Parent = panel,
 		Min = 10,
 		Max = 200,
-		Width = (columnWidth * columns) - horizontalSpacing,
+		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
 		LabelText = "Icon Size",
 		GetValue = function()
@@ -257,7 +257,7 @@ function M:Build(panel, options)
 		Parent = panel,
 		Min = 1,
 		Max = 5,
-		Width = (columnWidth * columns) - horizontalSpacing,
+		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
 		LabelText = "Max Icons",
 		GetValue = function()
@@ -269,10 +269,10 @@ function M:Build(panel, options)
 		end,
 	})
 
-	maxIcons.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
 
-	anchorPanel:SetPoint("TOPLEFT", maxIcons.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-	anchorPanel:SetPoint("TOPRIGHT", maxIcons.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
+	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
 
 	panel.OnMiniRefresh = function()
 		anchorPanel:MiniRefresh()
