@@ -110,7 +110,10 @@ function M:DandersFrames()
 	local frames
 
 	if DandersFrames_GetAllFrames then
-		frames = DandersFrames_GetAllFrames()
+		local dandersSuccess, result = pcall(DandersFrames_GetAllFrames)
+		if dandersSuccess then
+			frames = result
+		end
 	end
 
 	frames = frames or {}
@@ -127,16 +130,16 @@ function M:Grid2Frames(visibleOnly)
 	end
 
 	local frames = {}
-	local playerFrames = Grid2:GetUnitFrames("player")
-	local playerFrame = playerFrames and next(playerFrames)
+	local playerSuccess, playerFrames = pcall(Grid2.GetUnitFrames, Grid2, "player")
+	local playerFrame = playerSuccess and playerFrames and next(playerFrames)
 
 	if playerFrame and (playerFrame:IsVisible() or not visibleOnly) then
 		frames[#frames + 1] = playerFrame
 	end
 
 	for i = 1, maxParty do
-		local partyFrames = Grid2:GetUnitFrames("party" .. i)
-		local frame = partyFrames and next(partyFrames)
+		local partySuccess, partyFrames = pcall(Grid2.GetUnitFrames, Grid2, "party" .. i)
+		local frame = partySuccess and partyFrames and next(partyFrames)
 
 		if not frame then
 			break
@@ -148,8 +151,8 @@ function M:Grid2Frames(visibleOnly)
 	end
 
 	for i = 1, maxRaid do
-		local raidFrames = Grid2:GetUnitFrames("raid" .. i)
-		local frame = raidFrames and next(raidFrames)
+		local raidSuccess, raidFrames = pcall(Grid2.GetUnitFrames, Grid2, "raid" .. i)
+		local frame = raidSuccess and raidFrames and next(raidFrames)
 
 		if frame and (frame:IsVisible() or not visibleOnly) then
 			frames[#frames + 1] = frame
@@ -168,15 +171,15 @@ function M:ElvUIFrames(visibleOnly)
 	end
 
 	---@diagnostic disable-next-line: deprecated
-	local E = unpack(ElvUI)
+	local elvuiSuccess, E = pcall(unpack, ElvUI)
 
-	if not E then
+	if not elvuiSuccess or not E then
 		return {}
 	end
 
-	local UF = E:GetModule("UnitFrames")
+	local ufSuccess, UF = pcall(E.GetModule, E, "UnitFrames")
 
-	if not UF then
+	if not ufSuccess or not UF then
 		return {}
 	end
 
@@ -346,35 +349,6 @@ end
 
 function M:GetTestFrames()
 	return testPartyFrames
-end
-
----Anchors a frame to a texture region (which can't be anchored to with SetAllPoints()).
-function M:AnchorFrameToRegionGeometry(frame, region)
-	frame:ClearAllPoints()
-
-	local parent = region:GetParent()
-	local num = region:GetNumPoints()
-
-	if num == 0 then
-		frame:SetSize(region:GetSize())
-		frame:SetPoint("CENTER", parent, "CENTER", 0, 0)
-		return
-	end
-
-	for i = 1, num do
-		local point, relativeTo, relativePoint, xOfs, yOfs = region:GetPoint(i)
-
-		if relativeTo and relativeTo.GetObjectType then
-			while relativeTo and relativeTo.GetObjectType and relativeTo:GetObjectType() ~= "Frame" do
-				relativeTo = relativeTo:GetParent()
-			end
-		end
-
-		relativeTo = relativeTo or parent
-		frame:SetPoint(point, relativeTo, relativePoint, xOfs or 0, yOfs or 0)
-	end
-
-	frame:SetSize(region:GetSize())
 end
 
 function M:GetAll(visibleOnly, includeTestFrames)
