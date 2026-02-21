@@ -161,6 +161,11 @@ local function OnAuraDataChanged()
 	end
 end
 
+local function IsInArena()
+	local _, instanceType = IsInInstance()
+	return instanceType == "arena"
+end
+
 local function OnMatchStateChanged()
 	local matchState = C_PvP.GetActiveMatchState()
 
@@ -305,6 +310,12 @@ function M:Refresh()
 		return
 	end
 
+	-- Only enable in arena (unless in test mode)
+	if not testModeActive and not IsInArena() then
+		DisableWatchers()
+		return
+	end
+
 	-- Module is enabled, ensure watchers are enabled
 	EnableWatchers()
 
@@ -383,7 +394,7 @@ function M:Init()
 	eventsFrame:SetScript("OnEvent", OnMatchStateChanged)
 
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
-	if moduleEnabled then
+	if moduleEnabled and IsInArena() then
 		EnableWatchers()
 	else
 		DisableWatchers()
