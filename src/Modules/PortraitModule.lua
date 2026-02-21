@@ -8,7 +8,6 @@ local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
 local testModeActive = false
 local paused = false
-local enabled = false
 local containers = {}
 ---@type { string: Watcher }
 local watchers = {}
@@ -284,7 +283,6 @@ local function DisableWatchers()
 		container:ResetAllSlots()
 	end
 
-	enabled = false
 	paused = true
 end
 
@@ -293,8 +291,6 @@ local function EnableWatchers()
 	for _, watcher in pairs(watchers) do
 		watcher:Enable()
 	end
-
-	enabled = true
 end
 
 local function Pause()

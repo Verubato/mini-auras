@@ -2,8 +2,6 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
----@type Db
-local db
 ---@class Db
 local dbDefaults = {
 	Version = 23,
@@ -941,7 +939,7 @@ function M:UpgradeToVersion12(vars)
 	vars.NotifiedChanges = false
 
 	-- clean up old values
-	mini:CleanTable(db, v12Defaults, true, true)
+	mini:CleanTable(vars, v12Defaults, true, true)
 	vars.Version = 12
 
 	return true

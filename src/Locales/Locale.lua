@@ -1,5 +1,5 @@
 ---@type string, Addon
-local addonName, addon = ...
+local _, addon = ...
 
 ---@class Localization
 local L = {}
