@@ -290,7 +290,16 @@ local function RefreshTestIcons()
 
 		-- Fill up to MaxIcons test icons, alternating between defensive and important
 		for slotIndex = 1, math.min(maxIcons, container.Count) do
-			local spell = slotIndex % 2 == 0 and testImportantSpells[1] or testDefensiveSpells[1]
+			local spell
+			if slotIndex % 2 == 0 then
+				-- Even slots: cycle through important spells
+				local importantIndex = ((slotIndex / 2 - 1) % #testImportantSpells) + 1
+				spell = testImportantSpells[importantIndex]
+			else
+				-- Odd slots: cycle through defensive spells
+				local defensiveIndex = (((slotIndex + 1) / 2 - 1) % #testDefensiveSpells) + 1
+				spell = testDefensiveSpells[defensiveIndex]
+			end
 
 			if spell then
 				local texture = spellCache:GetSpellTexture(spell.SpellId)
@@ -425,9 +434,11 @@ function M:Init()
 	db = mini:GetSavedVars()
 
 	local painSupp = { SpellId = 33206 }
+	local blessingOfProtection = { SpellId = 1022 }
 	local combustion = { SpellId = 190319 }
-	testDefensiveSpells = { painSupp }
-	testImportantSpells = { combustion }
+	local shadowBlades = { SpellId = 121471 }
+	testDefensiveSpells = { painSupp, blessingOfProtection }
+	testImportantSpells = { combustion, shadowBlades }
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
