@@ -1557,9 +1557,9 @@ function M:UpgradeToVersion23(vars)
 	-- do this before we add stuff to what's new otherwise it'll get cleared
 	mini:CleanTable(vars, dbDefaults, true, true)
 
+	table.insert(vars.WhatsNew, " - Added important and defensive alert sound effects.")
 	table.insert(vars.WhatsNew, " - Added text to speech functionality in the alerts module (i.e. GladiatorlosSA).")
 
-	print(next(vars.WhatsNew))
 	vars.NotifiedChanges = false
 	vars.Version = 23
 	return true

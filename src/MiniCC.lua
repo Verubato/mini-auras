@@ -67,8 +67,6 @@ local function NotifyChanges()
 				Title = title,
 				Text = text
 			})
-		else
-			print("next returned nil")
 		end
 	end
 
