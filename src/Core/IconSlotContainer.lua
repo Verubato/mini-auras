@@ -60,7 +60,8 @@ local function CreateLayer(parentFrame, level, iconSize)
 		layerFrame:SetFrameLevel(level)
 	end
 
-	local icon = layerFrame:CreateTexture(nil, "ARTWORK")
+	-- place our icons on the 1st draw layer of background
+	local icon = layerFrame:CreateTexture(nil, "BACKGROUND", nil, 1)
 	icon:SetAllPoints()
 
 	local cd = CreateFrame("Cooldown", nil, layerFrame, "CooldownFrameTemplate")

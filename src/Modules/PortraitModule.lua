@@ -249,6 +249,9 @@ local function Attach(unit, events)
 	---@diagnostic disable-next-line: unused-local
 	watchers[unit] = watcher
 
+	-- lower the draw layer by 1 so our icons show ahead
+	portrait:SetDrawLayer("BACKGROUND", 0)
+
 	return container
 end
 
