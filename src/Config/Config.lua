@@ -12,7 +12,6 @@ local M = addon.Config
 M.MediaLocation = "Interface\\AddOns\\" .. addonName .. "\\Media\\"
 
 M.SoundFiles = {
-	"AirHorn.ogg",
 	"AlertToastWarm.ogg",
 	"BubblePop.ogg",
 	"CinematicHit.ogg",
