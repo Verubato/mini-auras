@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local columns = 4
@@ -20,7 +21,7 @@ function M:Build(panel, options)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"A separate region for showing important enemy spells.",
+			L["A separate region for showing important enemy spells."],
 		},
 	})
 
@@ -28,8 +29,8 @@ function M:Build(panel, options)
 
 	local enabledChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Enabled",
-		Tooltip = "Enable this module everywhere.",
+		LabelText = L["Enabled"],
+		Tooltip = L["Enable this module everywhere."],
 		GetValue = function()
 			return db.Modules.AlertsModule.Enabled.Always
 		end,
@@ -43,8 +44,8 @@ function M:Build(panel, options)
 
 	local includeDefensivesChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Include Defensives",
-		Tooltip = "Includes defensives in the alerts.",
+		LabelText = L["Include Defensives"],
+		Tooltip = L["Includes defensives in the alerts."],
 		GetValue = function()
 			-- TODO: refactor this to just "IncludeDefensives" as it also includes externals
 			return options.IncludeBigDefensives
@@ -60,8 +61,8 @@ function M:Build(panel, options)
 
 	local glowChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Glow icons",
-		Tooltip = "Show a glow around the CC icons.",
+		LabelText = L["Glow icons"],
+		Tooltip = L["Show a glow around the CC icons."],
 		GetValue = function()
 			return options.Icons.Glow
 		end,
@@ -75,8 +76,8 @@ function M:Build(panel, options)
 
 	local colorByClassChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Color by class",
-		Tooltip = "Color the glow/border by the enemy's class color.",
+		LabelText = L["Color by class"],
+		Tooltip = L["Color the glow/border by the enemy's class color."],
 		GetValue = function()
 			return options.Icons.ColorByClass
 		end,
@@ -91,8 +92,8 @@ function M:Build(panel, options)
 
 	local reverseChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Reverse swipe",
-		Tooltip = "Reverses the direction of the cooldown swipe animation.",
+		LabelText = L["Reverse swipe"],
+		Tooltip = L["Reverses the direction of the cooldown swipe animation."],
 		GetValue = function()
 			return options.Icons.ReverseCooldown
 		end,
@@ -111,7 +112,7 @@ function M:Build(panel, options)
 		Max = 200,
 		Width = (columnWidth * columns) - horizontalSpacing,
 		Step = 1,
-		LabelText = "Icon Size",
+		LabelText = L["Icon Size"],
 		GetValue = function()
 			return options.Icons.Size
 		end,

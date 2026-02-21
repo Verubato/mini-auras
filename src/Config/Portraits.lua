@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 ---@type Db
 local db
@@ -18,7 +19,7 @@ function M:Build(panel)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"Shows CC, defensives, and other important spells on the player/target/focus portraits.",
+			L["Shows CC, defensives, and other important spells on the player/target/focus portraits."],
 		},
 	})
 
@@ -26,8 +27,8 @@ function M:Build(panel)
 
 	local enabled = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Enabled",
-		Tooltip = "Enable this module everywhere.",
+		LabelText = L["Enabled"],
+		Tooltip = L["Enable this module everywhere."],
 		GetValue = function()
 			return db.Modules.PortraitModule.Enabled.Always
 		end,
@@ -41,8 +42,8 @@ function M:Build(panel)
 
 	local reverseSweepChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Reverse swipe",
-		Tooltip = "Reverses the direction of the cooldown swipe.",
+		LabelText = L["Reverse swipe"],
+		Tooltip = L["Reverses the direction of the cooldown swipe."],
 		GetValue = function()
 			return db.Modules.PortraitModule.ReverseCooldown
 		end,

@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local L = addon.L
 local dropdownWidth = 200
 local growOptions = {
 	"LEFT",
@@ -60,8 +61,8 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 
 	local enabled = mini:Checkbox({
 		Parent = wrapper,
-		LabelText = "Enabled",
-		Tooltip = "Whether to enable or disable this type.",
+		LabelText = L["Enabled"],
+		Tooltip = L["Whether to enable or disable this type."],
 		GetValue = function()
 			return options.Enabled
 		end,
@@ -110,8 +111,8 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 
 	local glowChk = mini:Checkbox({
 		Parent = container,
-		LabelText = "Glow icons",
-		Tooltip = "Show a glow around the icons.",
+		LabelText = L["Glow icons"],
+		Tooltip = L["Show a glow around the icons."],
 		GetValue = function()
 			return options.Icons.Glow
 		end,
@@ -126,16 +127,16 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 	-- Build tooltip based on section type
 	local colorTooltip
 	if sectionType == "Combined" then
-		colorTooltip = "Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), Defensive spells are green, and Important spells are red."
+		colorTooltip = L["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), Defensive spells are green, and Important spells are red."]
 	elseif sectionType == "CC" then
-		colorTooltip = "Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."
+		colorTooltip = L["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."]
 	else
-		colorTooltip = "Change the colour of the glow/border. Defensive spells are green and Important spells are red."
+		colorTooltip = L["Change the colour of the glow/border. Defensive spells are green and Important spells are red."]
 	end
 
 	local dispelColoursChk = mini:Checkbox({
 		Parent = container,
-		LabelText = "Spell colours",
+		LabelText = L["Spell colours"],
 		Tooltip = colorTooltip,
 		GetValue = function()
 			return options.Icons.ColorByCategory
@@ -151,8 +152,8 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 
 	local reverseChk = mini:Checkbox({
 		Parent = container,
-		LabelText = "Reverse swipe",
-		Tooltip = "Reverses the direction of the cooldown swipe animation.",
+		LabelText = L["Reverse swipe"],
+		Tooltip = L["Reverses the direction of the cooldown swipe animation."],
 		GetValue = function()
 			return options.Icons.ReverseCooldown
 		end,
@@ -171,7 +172,7 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 		Max = 200,
 		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
-		LabelText = "Icon Size",
+		LabelText = L["Icon Size"],
 		GetValue = function()
 			return options.Icons.Size
 		end,
@@ -197,7 +198,7 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 		Max = maxIconsMax,
 		Step = 1,
 		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = "Max Icons",
+		LabelText = L["Max Icons"],
 		GetValue = function()
 			return options.Icons.MaxIcons
 		end,
@@ -214,7 +215,7 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
 
 	local growDdlLbl = container:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-	growDdlLbl:SetText("Grow")
+	growDdlLbl:SetText(L["Grow"])
 
 	local growDdl, modernDdl = mini:Dropdown({
 		Parent = container,
@@ -241,7 +242,7 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 		Max = 250,
 		Step = 1,
 		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = "Offset X",
+		LabelText = L["Offset X"],
 		GetValue = function()
 			return options.Offset.X
 		end,
@@ -263,7 +264,7 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 		Max = 250,
 		Step = 1,
 		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = "Offset Y",
+		LabelText = L["Offset Y"],
 		GetValue = function()
 			return options.Offset.Y
 		end,
@@ -290,7 +291,7 @@ function M:Build(parent, options)
 	local lines = mini:TextBlock({
 		Parent = parent,
 		Lines = {
-			"Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater).",
+			L["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."],
 		},
 	})
 
@@ -298,7 +299,7 @@ function M:Build(parent, options)
 
 	local enabledDivider = mini:Divider({
 		Parent = parent,
-		Text = "Enable in:",
+		Text = L["Enable in:"],
 	})
 	enabledDivider:SetPoint("LEFT", parent, "LEFT")
 	enabledDivider:SetPoint("RIGHT", parent, "RIGHT")
@@ -306,8 +307,8 @@ function M:Build(parent, options)
 
 	local enabledEverywhere = mini:Checkbox({
 		Parent = parent,
-		LabelText = "Everywhere",
-		Tooltip = "Enable this module everywhere.",
+		LabelText = L["Everywhere"],
+		Tooltip = L["Enable this module everywhere."],
 		GetValue = function()
 			return db.Modules.NameplatesModule.Enabled.Always
 		end,
@@ -321,8 +322,8 @@ function M:Build(parent, options)
 
 	local enabledArena = mini:Checkbox({
 		Parent = parent,
-		LabelText = "Arena",
-		Tooltip = "Enable this module in arena.",
+		LabelText = L["Arena"],
+		Tooltip = L["Enable this module in arena."],
 		GetValue = function()
 			return db.Modules.NameplatesModule.Enabled.Arena
 		end,
@@ -337,8 +338,8 @@ function M:Build(parent, options)
 
 	local enabledRaids = mini:Checkbox({
 		Parent = parent,
-		LabelText = "BGS & Raids",
-		Tooltip = "Enable this module in BGs and raids.",
+		LabelText = L["BGS & Raids"],
+		Tooltip = L["Enable this module in BGs and raids."],
 		GetValue = function()
 			return db.Modules.NameplatesModule.Enabled.Raids
 		end,
@@ -353,8 +354,8 @@ function M:Build(parent, options)
 
 	local enabledDungeons = mini:Checkbox({
 		Parent = parent,
-		LabelText = "Dungeons",
-		Tooltip = "Enable this module in Dungeons and M+",
+		LabelText = L["Dungeons"],
+		Tooltip = L["Enable this module in Dungeons and M+"],
 		GetValue = function()
 			return db.Modules.NameplatesModule.Enabled.Dungeons
 		end,
@@ -388,8 +389,8 @@ function M:Build(parent, options)
 	-- Enemy Ignore Pets checkbox
 	local enemyIgnorePetsChk = mini:Checkbox({
 		Parent = parent,
-		LabelText = "Ignore Enemy Pets",
-		Tooltip = "Do not show auras on enemy pet nameplates.",
+		LabelText = L["Ignore Enemy Pets"],
+		Tooltip = L["Do not show auras on enemy pet nameplates."],
 		GetValue = function()
 			return options.Enemy.IgnorePets
 		end,
@@ -402,8 +403,8 @@ function M:Build(parent, options)
 
 	local friendlyIgnorePetsChk = mini:Checkbox({
 		Parent = parent,
-		LabelText = "Ignore Friendly Pets",
-		Tooltip = "Do not show auras on friendly pet nameplates.",
+		LabelText = L["Ignore Friendly Pets"],
+		Tooltip = L["Do not show auras on friendly pet nameplates."],
 		GetValue = function()
 			return options.Friendly.IgnorePets
 		end,
@@ -418,7 +419,7 @@ function M:Build(parent, options)
 	-- Enemy sections
 	enemyPanels.Combined = BuildSpellTypeSettings(
 		parent,
-		"Enemy - Combined",
+		L["Enemy - Combined"],
 		options.Enemy.Combined,
 		options.Enemy,
 		"Combined",
@@ -427,12 +428,12 @@ function M:Build(parent, options)
 	enemyPanels.Combined:SetPoint("TOP", enemyIgnorePetsChk, "BOTTOM", 0, -verticalSpacing)
 
 	enemyPanels.CC =
-		BuildSpellTypeSettings(parent, "Enemy - CC", options.Enemy.CC, options.Enemy, "CC", UpdateEnemyPanelVisibility)
+		BuildSpellTypeSettings(parent, L["Enemy - CC"], options.Enemy.CC, options.Enemy, "CC", UpdateEnemyPanelVisibility)
 	enemyPanels.CC:SetPoint("TOP", enemyPanels.Combined, "BOTTOM", 0, -verticalSpacing)
 
 	enemyPanels.Important = BuildSpellTypeSettings(
 		parent,
-		"Enemy - Important Spells",
+		L["Enemy - Important Spells"],
 		options.Enemy.Important,
 		options.Enemy,
 		"Important",
@@ -443,7 +444,7 @@ function M:Build(parent, options)
 	-- Friendly sections
 	friendlyPanels.Combined = BuildSpellTypeSettings(
 		parent,
-		"Friendly - Combined",
+		L["Friendly - Combined"],
 		options.Friendly.Combined,
 		options.Friendly,
 		"Combined",
@@ -453,7 +454,7 @@ function M:Build(parent, options)
 
 	friendlyPanels.CC = BuildSpellTypeSettings(
 		parent,
-		"Friendly - CC",
+		L["Friendly - CC"],
 		options.Friendly.CC,
 		options.Friendly,
 		"CC",
@@ -463,7 +464,7 @@ function M:Build(parent, options)
 
 	friendlyPanels.Important = BuildSpellTypeSettings(
 		parent,
-		"Friendly - Important Spells",
+		L["Friendly - Important Spells"],
 		options.Friendly.Important,
 		options.Friendly,
 		"Important",

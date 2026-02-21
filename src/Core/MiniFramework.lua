@@ -1,4 +1,5 @@
 local addonName, addon = ...
+local L = addon.L
 local loader = CreateFrame("Frame")
 local loaded = false
 local onLoadCallbacks = {}
@@ -98,7 +99,7 @@ local function GetOrCreateDialog()
 
 	dialog.Title = dialog:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 	dialog.Title:SetPoint("TOP", dialog, "TOP", 0, -8)
-	dialog.Title:SetText("Notification")
+	dialog.Title:SetText(L["Notification"])
 	dialog.Title:SetTextColor(1, 0.82, 0)
 
 	dialog.TitleDivider = dialog:CreateTexture(nil, "ARTWORK")
@@ -140,7 +141,7 @@ function M:Notify(msg, ...)
 end
 
 function M:NotifyCombatLockdown()
-	M:Notify("Can't do that during combat.")
+	M:Notify(L["Can't do that during combat."])
 end
 
 function M:CopyTable(src, dst)
@@ -1188,7 +1189,7 @@ function M:ShowDialog(options)
 	local width = options.Width or 360
 	dlg:SetWidth(width)
 
-	dlg.Title:SetText(options.Title or "Notification")
+	dlg.Title:SetText(options.Title or L["Notification"])
 	dlg.Text:SetWidth(width - 40)
 	dlg.Text:SetText(options.Text)
 	dlg.Text:SetWordWrap(true)

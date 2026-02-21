@@ -1,0 +1,158 @@
+---@type string, Addon
+local _, addon = ...
+local L = addon.L
+
+if GetLocale() ~= "esMX" then return end
+
+-- Mexican Spanish uses the same translations as Spain Spanish
+L:SetStrings({
+	-- General
+	["General"] = "General",
+	["CC"] = "Control",
+	["CDs"] = "CDs",
+	["Alerts"] = "Alertas",
+	["Healer"] = "Sanador",
+	["Nameplates"] = "Placas de nombre",
+	["Portraits"] = "Retratos",
+	["Test"] = "Probar",
+	["Reset"] = "Restablecer",
+	["Enabled"] = "Habilitado",
+
+	-- Short names for tabs
+	["Nameplates_Short"] = "Placas",
+	["Portraits_Short"] = "Retrato",
+	["Kick timer_Short"] = "Interrup.",
+	["Party Trinkets_Short"] = "Abalorios",
+	["Other Mini Addons_Short"] = "Otros",
+	
+	-- Notifications
+	["Can't apply settings during combat."] = "No se pueden aplicar ajustes durante el combate.",
+	["Can't do that during combat."] = "No se puede hacer eso durante el combate.",
+	["Settings reset to default."] = "Ajustes restablecidos a los valores predeterminados.",
+	["Notification"] = "Notificación",
+	
+	-- Descriptions
+	["Shows CC and other important spell alerts."] = "Muestra alertas de control y otros hechizos importantes.",
+	["Addon is under ongoing development."] = "El addon está en desarrollo continuo.",
+	["Feel free to report any bugs/ideas on our discord."] = "No dudes en reportar errores/ideas en nuestro discord.",
+	
+	-- Settings
+	["Discord"] = "Discord",
+	["Glow Type"] = "Tipo de brillo",
+	["The Proc Glow uses the least CPU."] = "El brillo proc usa menos CPU.",
+	["The others seem to use a non-trivial amount of CPU."] = "Los otros parecen usar una cantidad considerable de CPU.",
+	["Font Scale"] = "Escala de fuente",
+	["Are you sure you wish to reset to factory settings?"] = "¿Estás seguro de que deseas restablecer a la configuración de fábrica?",
+	
+	-- CC Settings
+	["Grow"] = "Crecer",
+	["Offset X"] = "Desplazamiento X",
+	["Offset Y"] = "Desplazamiento Y",
+	["Exclude self"] = "Excluirse a sí mismo",
+	["Exclude yourself from showing CC icons."] = "Exclúyete de mostrar iconos de control.",
+	["Glow icons"] = "Iconos brillantes",
+	["Show a glow around the CC icons."] = "Muestra un brillo alrededor de los iconos de control.",
+	["Dispel colours"] = "Colores de disipación",
+	["Change the colour of the glow/border based on the type of debuff."] = "Cambia el color del brillo/borde según el tipo de penalización.",
+	["Reverse swipe"] = "Barrido inverso",
+	["Reverses the direction of the cooldown swipe animation."] = "Invierte la dirección de la animación de barrido del tiempo de reutilización.",
+	["Enable this module everywhere."] = "Habilitar este módulo en todas partes.",
+	
+	-- Alerts Settings
+	["A separate region for showing important enemy spells."] = "Una región separada para mostrar hechizos enemigos importantes.",
+	["Include Defensives"] = "Incluir defensivos",
+	["Includes defensives in the alerts."] = "Incluye habilidades defensivas en las alertas.",
+	["Color by class"] = "Color por clase",
+	["Color the glow/border by the enemy's class color."] = "Colorea el brillo/borde con el color de clase del enemigo.",
+	
+	-- Nameplates Settings
+	["Whether to enable or disable this type."] = "Si habilitar o deshabilitar este tipo.",
+	
+	-- Kick Timer
+	["Kick timer"] = "Temporizador de interrupción",
+	["Enable if you are:"] = "Habilitar si eres:",
+	["Caster"] = "Lanzador de hechizos",
+	["Whether to enable or disable this module if you are a healer."] = "Si habilitar o deshabilitar este módulo si eres un sanador.",
+	["Whether to enable or disable this module if you are a caster."] = "Si habilitar o deshabilitar este módulo si eres un lanzador de hechizos.",
+	["Any"] = "Cualquiera",
+	["Whether to enable or disable this module regardless of what spec you are."] = "Si habilitar o deshabilitar este módulo sin importar tu especialización.",
+	["Icon Size"] = "Tamaño de icono",
+	["Important Notes"] = "Notas importantes",
+	["It's not great, it's arguably not even good, but it's better than nothing."] = "No es genial, posiblemente ni siquiera bueno, pero es mejor que nada.",
+	["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."] = "¿Cómo funciona? Adivina quién te interrumpió correlacionando eventos de acción enemiga con eventos de interrupción.",
+	["For example you are facing 3 enemies who are all pressing buttons."] = "Por ejemplo, enfrentas 3 enemigos que están presionando botones.",
+	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "Acabas de ser interrumpido y el último enemigo que lanzó un hechizo exitosamente fue el enemigo A, por lo tanto deducimos que fue el enemigo A quien te interrumpió.",
+	["As you can tell it's not guaranteed to be accurate, but so far from our testing it's pretty damn good with ancedotally a 95%+ success rate."] = "Como puedes ver, no está garantizado que sea preciso, pero hasta ahora en nuestras pruebas es bastante bueno con una tasa de éxito anecdótica del 95%+.",
+	["Limitations:"] = "Limitaciones:",
+	[" - Doesn't work if the enemy misses kick (still investigating potential workaround/solution)."] = " - No funciona si el enemigo falla la interrupción (aún investigando posibles soluciones).",
+	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - Actualmente solo funciona dentro de la arena (no funciona en duelos/mundo, se agregará más tarde).",
+	["Still working on improving this, so stay tuned for updates."] = "Aún trabajando en mejorarlo, así que mantente atento a las actualizaciones.",
+	
+	-- Trinkets
+	["Party Trinkets"] = "Abalorios del grupo",
+	["Whether to enable or disable this module."] = "Si habilitar o deshabilitar este módulo.",
+	["Exclude yourself from showing trinket icons."] = "Exclúyete de mostrar iconos de abalorios.",
+	[" - Doesn't work if your team mates trinket in the starting room."] = " - No funciona si tus compañeros de equipo usan abalorios en la sala de inicio.",
+	[" - Doesn't work in the open world."] = " - No funciona en el mundo abierto.",
+	
+	-- Other Addons
+	["Other Mini Addons"] = "Otros Mini Addons",
+	["Other mini addons to enhance your PvP experience:"] = "Otros mini addons para mejorar tu experiencia PvP:",
+	["MiniMarkers"] = "MiniMarkers",
+	[" - shows markers above your team mates."] = " - muestra marcadores sobre tus compañeros de equipo.",
+	["MiniOvershields"] = "MiniOvershields",
+	[" - shows overshields on frames and nameplates."] = " - muestra sobreescudos en marcos y placas de nombre.",
+	["MiniPressRelease"] = "MiniPressRelease",
+	[" - basically doubles your APM."] = " - básicamente duplica tu APM.",
+	["MiniArenaDebuffs"] = "MiniArenaDebuffs",
+	[" - shows your debuffs on enemy arena frames."] = " - muestra tus penalizaciones en marcos de arena enemigos.",
+	["MiniKillingBlow"] = "MiniKillingBlow",
+	[" - plays sound effects when getting killing blows."] = " - reproduce efectos de sonido al dar golpes mortales.",
+	["MiniMeter"] = "MiniMeter",
+	[" - shows fps and ping on a draggable UI element."] = " - muestra fps y ping en un elemento de interfaz arrastrable.",
+	["MiniQueueTimer"] = "MiniQueueTimer",
+	[" - shows a draggable timer on your UI when in queue."] = " - muestra un temporizador arrastrable en tu interfaz cuando estás en cola.",
+	["MiniTabTarget"] = "MiniTabTarget",
+	[" - changes you tab key to enemy players in PvP, and enemy units in PvE."] = " - cambia tu tecla tab a jugadores enemigos en PvP y unidades enemigas en PvE.",
+	["MiniCombatNotifier"] = "MiniCombatNotifier",
+	[" - notifies you when entering/leaving combat."] = " - te notifica al entrar/salir del combate.",
+	["Max Icons"] = "Máx. iconos",
+	["Shows CC icons on party/raid frames."] = "Muestra iconos de control en marcos de grupo/banda.",
+	["Enable in:"] = "Habilitar en:",
+	["Everywhere"] = "En todas partes",
+	["Arena"] = "Arena",
+	["BGS & Raids"] = "CdB y bandas",
+	["Enable this module in BGs and raids."] = "Habilitar este módulo en campos de batalla y bandas.",
+	["Dungeons"] = "Mazmorras",
+	["Enable this module in dungeons and M+."] = "Habilitar este módulo en mazmorras y M+.",
+	["Enable this module in Dungeons and M+"] = "Habilitar este módulo en mazmorras y M+",
+	["Settings"] = "Configuración",
+	["Sound"] = "Sonido",
+	["Play a sound when the healer is CC'd."] = "Reproducir un sonido cuando el sanador esté bajo control.",
+	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Muestra control, defensivos y otros hechizos importantes en los retratos de jugador/objetivo/foco.",
+	["Reverses the direction of the cooldown swipe."] = "Invierte la dirección del barrido del tiempo de reutilización.",
+	["A separate region for when your healer is CC'd."] = "Una región separada para cuando tu sanador esté bajo control.",
+	["Shows active friendly cooldowns party/raid frames."] = "Muestra tiempos de reutilización aliados activos en marcos de grupo/banda.",
+	["Enable this module in arena."] = "Habilitar este módulo en arena.",
+	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Muestra control y hechizos importantes en placas de nombre (funciona con addons de placas de nombre como BBP, Platynator y Plater).",
+	["Show a glow around the icons."] = "Muestra un brillo alrededor de los iconos.",
+	["Spell colours"] = "Colores de hechizos",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), Defensive spells are green, and Important spells are red."] = "Cambia el color del brillo/borde. Los hechizos de control usan colores de tipo de disipación (ej. azul para magia), los hechizos defensivos son verdes y los hechizos importantes son rojos.",
+	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Cambia el color del brillo/borde según el tipo de disipación (ej. azul para magia, rojo para físico).",
+	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "Cambia el color del brillo/borde. Los hechizos defensivos son verdes y los hechizos importantes son rojos.",
+	["Ignore Enemy Pets"] = "Ignorar pets enemigos",
+	["Do not show auras on enemy pet nameplates."] = "No mostrar auras en placas de nombre de mascotas enemigas.",
+	["Ignore Friendly Pets"] = "Ignorar pets aliados",
+	["Do not show auras on friendly pet nameplates."] = "No mostrar auras en placas de nombre de mascotas aliadas.",
+	["Enemy - CC"] = "Enemigos - Control",
+	["Enemy - Combined"] = "Enemigos - Combinado",
+	["Enemy - Important Spells"] = "Enemigos - Hechizos importantes",
+	["Friendly - Combined"] = "Aliados - Combinado",
+	["Friendly - CC"] = "Aliados - Control",
+	["Friendly - Important Spells"] = "Aliados - Hechizos importantes",
+	["Healer in CC!"] = "¡Sanador bajo control!",
+	["Less than 5 members (arena/dungeons)"] = "Menos de 5 miembros (arena/mazmorras)",
+	["Greater than 5 members (raids/bgs)"] = "Más de 5 miembros (bandas/CdB)",
+	["Text Size"] = "Tamaño de texto",
+	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "No olvides desactivar la opción de Blizzard 'centrar grandes defensivos' al usar esto.",
+})

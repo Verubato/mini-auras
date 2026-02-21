@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local L = addon.L
 local capabilities = addon.Capabilities
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
@@ -21,7 +22,7 @@ function M:Build(panel, options)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"A separate region for when your healer is CC'd.",
+			L["A separate region for when your healer is CC'd."],
 		},
 	})
 
@@ -29,7 +30,7 @@ function M:Build(panel, options)
 
 	local enabledDivider = mini:Divider({
 		Parent = panel,
-		Text = "Enable in:",
+		Text = L["Enable in:"],
 	})
 	enabledDivider:SetPoint("LEFT", panel, "LEFT")
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
@@ -37,8 +38,8 @@ function M:Build(panel, options)
 
 	local enabledEverywhere = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Everywhere",
-		Tooltip = "Enable this module everywhere",
+		LabelText = L["Everywhere"],
+		Tooltip = L["Enable this module everywhere."],
 		GetValue = function()
 			return db.Modules.HealerCCModule.Enabled.Always
 		end,
@@ -52,8 +53,8 @@ function M:Build(panel, options)
 
 	local enabledArena = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Arena",
-		Tooltip = "Enable this module in arena",
+		LabelText = L["Arena"],
+		Tooltip = L["Enable this module in arena."],
 		GetValue = function()
 			return db.Modules.HealerCCModule.Enabled.Arena
 		end,
@@ -68,8 +69,8 @@ function M:Build(panel, options)
 
 	local enabledRaids = mini:Checkbox({
 		Parent = panel,
-		LabelText = "BGS & Raids",
-		Tooltip = "Enable this module in BGs and raids.",
+		LabelText = L["BGS & Raids"],
+		Tooltip = L["Enable this module in BGs and raids."],
 		GetValue = function()
 			return db.Modules.HealerCCModule.Enabled.Raids
 		end,
@@ -84,8 +85,8 @@ function M:Build(panel, options)
 
 	local enabledDungeons = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Dungeons",
-		Tooltip = "Enable this module in dungeons and M+.",
+		LabelText = L["Dungeons"],
+		Tooltip = L["Enable this module in dungeons and M+."],
 		GetValue = function()
 			return db.Modules.HealerCCModule.Enabled.Dungeons
 		end,
@@ -100,7 +101,7 @@ function M:Build(panel, options)
 
 	local settingsDivider = mini:Divider({
 		Parent = panel,
-		Text = "Settings",
+		Text = L["Settings"],
 	})
 	settingsDivider:SetPoint("LEFT", panel, "LEFT")
 	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
@@ -108,8 +109,8 @@ function M:Build(panel, options)
 
 	local glowChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Glow icons",
-		Tooltip = "Show a glow around the CC icons.",
+		LabelText = L["Glow icons"],
+		Tooltip = L["Show a glow around the CC icons."],
 		GetValue = function()
 			return options.Icons.Glow
 		end,
@@ -123,8 +124,8 @@ function M:Build(panel, options)
 
 	local reverseChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Reverse swipe",
-		Tooltip = "Reverses the direction of the cooldown swipe animation.",
+		LabelText = L["Reverse swipe"],
+		Tooltip = L["Reverses the direction of the cooldown swipe animation."],
 		GetValue = function()
 			return options.Icons.ReverseCooldown
 		end,
@@ -139,8 +140,8 @@ function M:Build(panel, options)
 
 	local soundChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Sound",
-		Tooltip = "Play a sound when the healer is CC'd.",
+		LabelText = L["Sound"],
+		Tooltip = L["Play a sound when the healer is CC'd."],
 		GetValue = function()
 			return options.Sound.Enabled
 		end,
@@ -155,8 +156,8 @@ function M:Build(panel, options)
 
 	local dispelColoursChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Dispel colours",
-		Tooltip = "Change the colour of the glow/border based on the type of debuff.",
+		LabelText = L["Dispel colours"],
+		Tooltip = L["Change the colour of the glow/border based on the type of debuff."],
 		GetValue = function()
 			return options.Icons.ColorByDispelType
 		end,
@@ -174,7 +175,7 @@ function M:Build(panel, options)
 		Max = 200,
 		Width = (columnWidth * columns) - horizontalSpacing,
 		Step = 1,
-		LabelText = "Icon Size",
+		LabelText = L["Icon Size"],
 		GetValue = function()
 			return options.Icons.Size
 		end,
@@ -195,7 +196,7 @@ function M:Build(panel, options)
 		Max = 100,
 		Width = (columnWidth * columns) - horizontalSpacing,
 		Step = 1,
-		LabelText = "Text Size",
+		LabelText = L["Text Size"],
 		GetValue = function()
 			return options.Font.Size
 		end,

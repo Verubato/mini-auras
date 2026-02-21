@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local L = addon.L
 local dropdownWidth = 200
 local growOptions = {
 	"LEFT",
@@ -24,7 +25,7 @@ local function BuildAnchorSettings(parent, options)
 	local panel = CreateFrame("Frame", nil, parent)
 
 	local growDdlLbl = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-	growDdlLbl:SetText("Grow")
+	growDdlLbl:SetText(L["Grow"])
 
 	local growDdl, modernDdl = mini:Dropdown({
 		Parent = panel,
@@ -51,7 +52,7 @@ local function BuildAnchorSettings(parent, options)
 		Max = 250,
 		Step = 1,
 		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = "Offset X",
+		LabelText = L["Offset X"],
 		GetValue = function()
 			return options.Offset.X
 		end,
@@ -72,7 +73,7 @@ local function BuildAnchorSettings(parent, options)
 		Max = 250,
 		Step = 1,
 		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = "Offset Y",
+		LabelText = L["Offset Y"],
 		GetValue = function()
 			return options.Offset.Y
 		end,
@@ -100,7 +101,7 @@ function M:Build(panel, options)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"Shows active friendly cooldowns party/raid frames.",
+			L["Shows active friendly cooldowns party/raid frames."],
 		},
 	})
 
@@ -108,7 +109,7 @@ function M:Build(panel, options)
 
 	local enabledDivider = mini:Divider({
 		Parent = panel,
-		Text = "Enable in:",
+		Text = L["Enable in:"],
 	})
 	enabledDivider:SetPoint("LEFT", panel, "LEFT")
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
@@ -116,8 +117,8 @@ function M:Build(panel, options)
 
 	local enabledEverywhere = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Everywhere",
-		Tooltip = "Enable this module everywhere.",
+		LabelText = L["Everywhere"],
+		Tooltip = L["Enable this module everywhere."],
 		GetValue = function()
 			return db.Modules.FriendlyIndicatorModule.Enabled.Always
 		end,
@@ -131,8 +132,8 @@ function M:Build(panel, options)
 
 	local enabledArena = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Arena",
-		Tooltip = "Enable this module in arena.",
+		LabelText = L["Arena"],
+		Tooltip = L["Enable this module in arena."],
 		GetValue = function()
 			return db.Modules.FriendlyIndicatorModule.Enabled.Arena
 		end,
@@ -147,8 +148,8 @@ function M:Build(panel, options)
 
 	local enabledRaids = mini:Checkbox({
 		Parent = panel,
-		LabelText = "BGS & Raids",
-		Tooltip = "Enable this module in BGs and raids.",
+		LabelText = L["BGS & Raids"],
+		Tooltip = L["Enable this module in BGs and raids."],
 		GetValue = function()
 			return db.Modules.FriendlyIndicatorModule.Enabled.Raids
 		end,
@@ -163,8 +164,8 @@ function M:Build(panel, options)
 
 	local enabledDungeons = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Dungeons",
-		Tooltip = "Enable this module in dungeons and M+.",
+		LabelText = L["Dungeons"],
+		Tooltip = L["Enable this module in dungeons and M+."],
 		GetValue = function()
 			return db.Modules.FriendlyIndicatorModule.Enabled.Dungeons
 		end,
@@ -179,7 +180,7 @@ function M:Build(panel, options)
 
 	local settingsDivider = mini:Divider({
 		Parent = panel,
-		Text = "Settings",
+		Text = L["Settings"],
 	})
 	settingsDivider:SetPoint("LEFT", panel, "LEFT")
 	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
@@ -189,15 +190,15 @@ function M:Build(panel, options)
 
 	local intro = mini:TextLine({
 		Parent = panel,
-		Text = "Don't forget to disable the Blizzard 'center big defensives' option when using this.",
+		Text = L["Don't forget to disable the Blizzard 'center big defensives' option when using this."],
 	})
 
 	intro:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	local excludePlayerChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Exclude self",
-		Tooltip = "Exclude yourself from showing cooldown icons.",
+		LabelText = L["Exclude self"],
+		Tooltip = L["Exclude yourself from showing trinket icons."],
 		GetValue = function()
 			return options.ExcludePlayer
 		end,
@@ -211,8 +212,8 @@ function M:Build(panel, options)
 
 	local glowChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Glow icons",
-		Tooltip = "Show a glow around the cooldown icons.",
+		LabelText = L["Glow icons"],
+		Tooltip = L["Show a glow around the icons."],
 		GetValue = function()
 			return options.Icons.Glow
 		end,
@@ -227,8 +228,8 @@ function M:Build(panel, options)
 
 	local reverseChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Reverse swipe",
-		Tooltip = "Reverses the direction of the cooldown swipe animation.",
+		LabelText = L["Reverse swipe"],
+		Tooltip = L["Reverses the direction of the cooldown swipe animation."],
 		GetValue = function()
 			return options.Icons.ReverseCooldown
 		end,
@@ -247,7 +248,7 @@ function M:Build(panel, options)
 		Max = 200,
 		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
-		LabelText = "Icon Size",
+		LabelText = L["Icon Size"],
 		GetValue = function()
 			return options.Icons.Size
 		end,
@@ -268,7 +269,7 @@ function M:Build(panel, options)
 		Max = 5,
 		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
-		LabelText = "Max Icons",
+		LabelText = L["Max Icons"],
 		GetValue = function()
 			return options.Icons.MaxIcons
 		end,

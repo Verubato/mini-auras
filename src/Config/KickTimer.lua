@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local config = addon.Config
 
@@ -18,19 +19,19 @@ function M:Build()
 	local panel = CreateFrame("Frame")
 	local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", 0, -verticalSpacing)
-	title:SetText("Kick timer")
+	title:SetText(L["Kick timer"])
 
 	local text = mini:TextLine({
 		Parent = panel,
-		Text = "Enable if you are:",
+		Text = L["Enable if you are:"],
 	})
 
 	text:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local healerEnabled = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Healer",
-		Tooltip = "Whether to enable or disable this module if you are a healer.",
+		LabelText = L["Healer"],
+		Tooltip = L["Whether to enable or disable this module if you are a healer."],
 		GetValue = function()
 			return db.Modules.KickTimerModule.Enabled.Healer
 		end,
@@ -44,8 +45,8 @@ function M:Build()
 
 	local casterEnabled = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Caster",
-		Tooltip = "Whether to enable or disable this module if you are a caster.",
+		LabelText = L["Caster"],
+		Tooltip = L["Whether to enable or disable this module if you are a caster."],
 		GetValue = function()
 			return db.Modules.KickTimerModule.Enabled.Caster
 		end,
@@ -60,8 +61,8 @@ function M:Build()
 
 	local allEnabled = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Any",
-		Tooltip = "Whether to enable or disable this module regardless of what spec you are.",
+		LabelText = L["Any"],
+		Tooltip = L["Whether to enable or disable this module regardless of what spec you are."],
 		GetValue = function()
 			return db.Modules.KickTimerModule.Enabled.Always
 		end,
@@ -76,7 +77,7 @@ function M:Build()
 
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,
-		LabelText = "Icon Size",
+		LabelText = L["Icon Size"],
 		GetValue = function()
 			return db.Modules.KickTimerModule.Icons.Size
 		end,
@@ -97,22 +98,22 @@ function M:Build()
 
 	local important = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 	important:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-	important:SetText("Important Notes")
+	important:SetText(L["Important Notes"])
 
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"It's not great, it's arguably not even good, but it's better than nothing.",
-			"How does it work? It guesses who kicked you by correlating enemy action events against interrupt events.",
-			"For example you are facing 3 enemies who are all pressing buttons.",
-			"You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you.",
-			"As you can tell it's not guaranteed to be accurate, but so far from our testing it's pretty damn good with ancedotally a 95%+ success rate.",
+			L["It's not great, it's arguably not even good, but it's better than nothing."],
+			L["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."],
+			L["For example you are facing 3 enemies who are all pressing buttons."],
+			L["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."],
+			L["As you can tell it's not guaranteed to be accurate, but so far from our testing it's pretty damn good with ancedotally a 95%+ success rate."],
 			"",
-			"Limitations:",
-			" - Doesn't work if the enemy misses kick (still investigating potential workaround/solution).",
-			" - Currently only works inside arena (doesn't work in duels/world, will add this later).",
+			L["Limitations:"],
+			L[" - Doesn't work if the enemy misses kick (still investigating potential workaround/solution)."],
+			L[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."],
 			"",
-			"Still working on improving this, so stay tuned for updates.",
+			L["Still working on improving this, so stay tuned for updates."],
 		},
 	})
 
@@ -122,7 +123,7 @@ function M:Build()
 	testBtn:SetSize(120, 26)
 	testBtn:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
 	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
-	testBtn:SetText("Test")
+	testBtn:SetText(L["Test"])
 	testBtn:SetScript("OnClick", function()
 		local options = db.Modules.CCModule.Default
 

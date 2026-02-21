@@ -2,6 +2,7 @@
 local addonName, addon = ...
 local array = addon.Utils.Array
 local mini = addon.Core.Framework
+local L = addon.L
 local iconSlotContainer = addon.Core.IconSlotContainer
 local unitWatcher = addon.Core.UnitAuraWatcher
 local units = addon.Utils.Units
@@ -343,7 +344,8 @@ function M:Refresh()
 		options.Offset.Y
 	)
 
-	healerAnchor.HealerWarning:SetFont(options.Font.File, options.Font.Size, options.Font.Flags)
+	local currentFont, _, _ = healerAnchor.HealerWarning:GetFont()
+	healerAnchor.HealerWarning:SetFont(currentFont, options.Font.Size, options.Font.Flags)
 	iconsContainer:SetIconSize(tonumber(options.Icons.Size) or 32)
 
 	EnableDisable()
@@ -385,8 +387,10 @@ function M:Init()
 
 	local text = healerAnchor:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 	text:SetPoint("TOP", healerAnchor, "TOP", 0, 6)
-	text:SetFont(options.Font.File, options.Font.Size, options.Font.Flags)
-	text:SetText("Healer in CC!")
+	-- Use the system default font to support all languages (e.g., Chinese)
+	local defaultFont, _, _ = text:GetFont()
+	text:SetFont(defaultFont, options.Font.Size, options.Font.Flags)
+	text:SetText(L["Healer in CC!"])
 	text:SetTextColor(1, 0.1, 0.1)
 	text:SetShadowColor(0, 0, 0, 1)
 	text:SetShadowOffset(1, -1)

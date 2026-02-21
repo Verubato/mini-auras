@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local L = addon.L
 local dbMigrator = addon.Config.Migrator
 local verticalSpacing = mini.VerticalSpacing
 ---@class GeneralConfig
@@ -16,8 +17,8 @@ function M:Build(panel)
 	local description = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"Addon is under ongoing development.",
-			"Feel free to report any bugs/ideas on our discord.",
+			L["Addon is under ongoing development."],
+			L["Feel free to report any bugs/ideas on our discord."],
 		},
 	})
 
@@ -25,7 +26,7 @@ function M:Build(panel)
 
 	local discordBox = mini:EditBox({
 		Parent = panel,
-		LabelText = "Discord",
+		LabelText = L["Discord"],
 		GetValue = function()
 			return "https://discord.gg/UruPTPHHxK"
 		end,
@@ -36,14 +37,14 @@ function M:Build(panel)
 	discordBox.EditBox:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 4, -verticalSpacing)
 
 	local glowTypeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-	glowTypeLabel:SetText("Glow Type")
+	glowTypeLabel:SetText(L["Glow Type"])
 	glowTypeLabel:SetPoint("TOPLEFT", discordBox.EditBox, "BOTTOMLEFT", -4, -verticalSpacing * 2)
 
 	local glowTypeDropdown = mini:Dropdown({
 		Parent = panel,
-		Items = { "Pixel Glow", "Autocast Shine", "Proc Glow" },
+		Items = { L["Pixel Glow"], L["Autocast Shine"], L["Proc Glow"] },
 		GetValue = function()
-			return db.GlowType or "Proc Glow"
+			return db.GlowType or L["Proc Glow"]
 		end,
 		SetValue = function(value)
 			db.GlowType = value
@@ -57,8 +58,8 @@ function M:Build(panel)
 	local glowNote = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"The Proc Glow uses the least CPU.",
-			"The others seem to use a non-trivial amount of CPU.",
+			L["The Proc Glow uses the least CPU."],
+			L["The others seem to use a non-trivial amount of CPU."],
 		},
 	})
 
@@ -66,7 +67,7 @@ function M:Build(panel)
 
 	local fontScaleSlider = mini:Slider({
 		Parent = panel,
-		LabelText = "Font Scale",
+		LabelText = L["Font Scale"],
 		Min = 0.5,
 		Max = 1.5,
 		Step = 0.05,
@@ -89,14 +90,14 @@ function M:Build(panel)
 	local resetBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	resetBtn:SetSize(120, 26)
 	resetBtn:SetPoint("TOPLEFT", fontScaleSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-	resetBtn:SetText("Reset")
+	resetBtn:SetText(L["Reset"])
 	resetBtn:SetScript("OnClick", function()
 		if InCombatLockdown() then
 			mini:NotifyCombatLockdown()
 			return
 		end
 
-		StaticPopup_Show("MINICC_CONFIRM", "Are you sure you wish to reset to factory settings?", nil, {
+		StaticPopup_Show("MINICC_CONFIRM", L["Are you sure you wish to reset to factory settings?"], nil, {
 			OnYes = function()
 				dbMigrator:ResetToFactory()
 
@@ -110,7 +111,7 @@ function M:Build(panel)
 				end
 
 				addon:Refresh()
-				mini:Notify("Settings reset to default.")
+				mini:Notify(L["Settings reset to default."])
 			end,
 		})
 	end)

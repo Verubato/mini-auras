@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local config = addon.Config
@@ -18,12 +19,12 @@ function M:Build()
 	local panel = CreateFrame("Frame")
 	local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", 0, -verticalSpacing)
-	title:SetText("Party Trinkets")
+	title:SetText(L["Party Trinkets"])
 
 	local enabled = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Enabled",
-		Tooltip = "Whether to enable or disable this module.",
+		LabelText = L["Enabled"],
+		Tooltip = L["Whether to enable or disable this module."],
 		GetValue = function()
 			return db.Modules.TrinketsModule.Enabled.Always
 		end,
@@ -37,8 +38,8 @@ function M:Build()
 
 	local excludePlayerChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Exclude self",
-		Tooltip = "Exclude yourself from showing trinket icons.",
+		LabelText = L["Exclude self"],
+		Tooltip = L["Exclude yourself from showing trinket icons."],
 		GetValue = function()
 			return db.Modules.TrinketsModule.ExcludePlayer
 		end,
@@ -53,7 +54,7 @@ function M:Build()
 
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,
-		LabelText = "Icon Size",
+		LabelText = L["Icon Size"],
 		GetValue = function()
 			return db.Modules.TrinketsModule.Icons.Size
 		end,
@@ -74,7 +75,7 @@ function M:Build()
 
 	local offsetXSlider = mini:Slider({
 		Parent = panel,
-		LabelText = "Offset X",
+		LabelText = L["Offset X"],
 		GetValue = function()
 			return db.Modules.TrinketsModule.Offset.X
 		end,
@@ -95,7 +96,7 @@ function M:Build()
 
 	local offsetYSlider = mini:Slider({
 		Parent = panel,
-		LabelText = "Offset Y",
+		LabelText = L["Offset Y"],
 		GetValue = function()
 			return db.Modules.TrinketsModule.Offset.Y
 		end,
@@ -117,9 +118,9 @@ function M:Build()
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"Limitations:",
-			" - Doesn't work if your team mates trinket in the starting room.",
-			" - Doesn't work in the open world.",
+			L["Limitations:"],
+			L[" - Doesn't work if your team mates trinket in the starting room."],
+			L[" - Doesn't work in the open world."],
 		},
 	})
 
@@ -129,7 +130,7 @@ function M:Build()
 	testBtn:SetSize(120, 26)
 	testBtn:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
 	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
-	testBtn:SetText("Test")
+	testBtn:SetText(L["Test"])
 	testBtn:SetScript("OnClick", function()
 		local options = db.Modules.CCModule.Default
 

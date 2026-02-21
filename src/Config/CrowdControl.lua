@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local L = addon.L
 local dropdownWidth = 200
 local growOptions = {
 	"LEFT",
@@ -24,7 +25,7 @@ local function BuildAnchorSettings(parent, options)
 	local panel = CreateFrame("Frame", nil, parent)
 
 	local growDdlLbl = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-	growDdlLbl:SetText("Grow")
+	growDdlLbl:SetText(L["Grow"])
 
 	local growDdl, modernDdl = mini:Dropdown({
 		Parent = panel,
@@ -51,7 +52,7 @@ local function BuildAnchorSettings(parent, options)
 		Max = 250,
 		Step = 1,
 		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = "Offset X",
+		LabelText = L["Offset X"],
 		GetValue = function()
 			return options.Offset.X
 		end,
@@ -72,7 +73,7 @@ local function BuildAnchorSettings(parent, options)
 		Max = 250,
 		Step = 1,
 		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = "Offset Y",
+		LabelText = L["Offset Y"],
 		GetValue = function()
 			return options.Offset.Y
 		end,
@@ -100,8 +101,8 @@ local function BuildInstance(panel, options, addTestButton)
 
 	local excludePlayerChk = mini:Checkbox({
 		Parent = parent,
-		LabelText = "Exclude self",
-		Tooltip = "Exclude yourself from showing CC icons.",
+		LabelText = L["Exclude self"],
+		Tooltip = L["Exclude yourself from showing CC icons."],
 		GetValue = function()
 			return options.ExcludePlayer
 		end,
@@ -115,8 +116,8 @@ local function BuildInstance(panel, options, addTestButton)
 
 	local glowChk = mini:Checkbox({
 		Parent = parent,
-		LabelText = "Glow icons",
-		Tooltip = "Show a glow around the CC icons.",
+		LabelText = L["Glow icons"],
+		Tooltip = L["Show a glow around the CC icons."],
 		GetValue = function()
 			return options.Icons.Glow
 		end,
@@ -130,8 +131,8 @@ local function BuildInstance(panel, options, addTestButton)
 
 	local dispelColoursChk = mini:Checkbox({
 		Parent = parent,
-		LabelText = "Dispel colours",
-		Tooltip = "Change the colour of the glow/border based on the type of debuff.",
+		LabelText = L["Dispel colours"],
+		Tooltip = L["Change the colour of the glow/border based on the type of debuff."],
 		GetValue = function()
 			return options.Icons.ColorByDispelType
 		end,
@@ -146,8 +147,8 @@ local function BuildInstance(panel, options, addTestButton)
 
 	local reverseChk = mini:Checkbox({
 		Parent = parent,
-		LabelText = "Reverse swipe",
-		Tooltip = "Reverses the direction of the cooldown swipe animation.",
+		LabelText = L["Reverse swipe"],
+		Tooltip = L["Reverses the direction of the cooldown swipe animation."],
 		GetValue = function()
 			return options.Icons.ReverseCooldown
 		end,
@@ -166,7 +167,7 @@ local function BuildInstance(panel, options, addTestButton)
 		Max = 200,
 		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
-		LabelText = "Icon Size",
+		LabelText = L["Icon Size"],
 		GetValue = function()
 			return options.Icons.Size
 		end,
@@ -187,7 +188,7 @@ local function BuildInstance(panel, options, addTestButton)
 		Max = 10,
 		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
-		LabelText = "Max Icons",
+		LabelText = L["Max Icons"],
 		GetValue = function()
 			return options.Icons.Count or 5
 		end,
@@ -209,7 +210,7 @@ local function BuildInstance(panel, options, addTestButton)
 		local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 		testBtn:SetSize(120, 26)
 		testBtn:SetPoint("TOPLEFT", anchorPanel, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-		testBtn:SetText("Test")
+		testBtn:SetText(L["Test"])
 		testBtn:SetScript("OnClick", function()
 			addon:TestWithOptions(options)
 		end)
@@ -231,7 +232,7 @@ function M:Build(panel, default, raid)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"Shows CC icons on party/raid frames.",
+			L["Shows CC icons on party/raid frames."],
 		},
 	})
 
@@ -239,7 +240,7 @@ function M:Build(panel, default, raid)
 
 	local enabledDivider = mini:Divider({
 		Parent = panel,
-		Text = "Enable in:",
+		Text = L["Enable in:"],
 	})
 	enabledDivider:SetPoint("LEFT", panel, "LEFT")
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
@@ -247,8 +248,8 @@ function M:Build(panel, default, raid)
 
 	local enabledEverywhere = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Everywhere",
-		Tooltip = "Enable this module everywhere.",
+		LabelText = L["Everywhere"],
+		Tooltip = L["Enable this module everywhere."],
 		GetValue = function()
 			return db.Modules.CCModule.Enabled.Always
 		end,
@@ -262,8 +263,8 @@ function M:Build(panel, default, raid)
 
 	local enabledArena = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Arena",
-		Tooltip = "Enable this module in arena.",
+		LabelText = L["Arena"],
+		Tooltip = L["Enable this module in arena."],
 		GetValue = function()
 			return db.Modules.CCModule.Enabled.Arena
 		end,
@@ -278,8 +279,8 @@ function M:Build(panel, default, raid)
 
 	local enabledRaids = mini:Checkbox({
 		Parent = panel,
-		LabelText = "BGS & Raids",
-		Tooltip = "Enable this module in BGs and raids.",
+		LabelText = L["BGS & Raids"],
+		Tooltip = L["Enable this module in BGs and raids."],
 		GetValue = function()
 			return db.Modules.CCModule.Enabled.Raids
 		end,
@@ -294,8 +295,8 @@ function M:Build(panel, default, raid)
 
 	local enabledDungeons = mini:Checkbox({
 		Parent = panel,
-		LabelText = "Dungeons",
-		Tooltip = "Enable this module in dungeons and M+.",
+		LabelText = L["Dungeons"],
+		Tooltip = L["Enable this module in dungeons and M+."],
 		GetValue = function()
 			return db.Modules.CCModule.Enabled.Dungeons
 		end,
@@ -310,7 +311,7 @@ function M:Build(panel, default, raid)
 
 	local defaultDivider = mini:Divider({
 		Parent = panel,
-		Text = "Less than 5 members (arena/dungeons)",
+		Text = L["Less than 5 members (arena/dungeons)"],
 	})
 
 	defaultDivider:SetPoint("LEFT", panel, "LEFT")
@@ -326,7 +327,7 @@ function M:Build(panel, default, raid)
 
 	local raidDivider = mini:Divider({
 		Parent = panel,
-		Text = "Greater than 5 members (raids/bgs)",
+		Text = L["Greater than 5 members (raids/bgs)"],
 	})
 
 	raidDivider:SetPoint("LEFT", panel, "LEFT")

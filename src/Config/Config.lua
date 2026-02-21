@@ -2,6 +2,7 @@
 local addonName, addon = ...
 local dbMigrator = addon.Config.Migrator
 local mini = addon.Core.Framework
+local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 ---@type Db
@@ -10,7 +11,7 @@ local M = addon.Config
 
 function M:Apply()
 	if InCombatLockdown() then
-		mini:Notify("Can't apply settings during combat.")
+		mini:Notify(L["Can't apply settings during combat."])
 		return
 	end
 
@@ -59,7 +60,7 @@ function M:Init()
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			"Shows CC and other important spell alerts.",
+			L["Shows CC and other important spell alerts."],
 		},
 	})
 
@@ -82,49 +83,49 @@ function M:Init()
 	local tabs = {
 		{
 			Key = keys.General,
-			Title = "General",
+			Title = L["General"],
 			Build = function(content)
 				M.General:Build(content)
 			end,
 		},
 		{
 			Key = keys.CC,
-			Title = "CC",
+			Title = L["CC"],
 			Build = function(content)
 				M.CrowdControl:Build(content, db.Modules.CCModule.Default, db.Modules.CCModule.Raid)
 			end,
 		},
 		{
 			Key = keys.CDs,
-			Title = "CDs",
+			Title = L["CDs"],
 			Build = function(content)
 				M.FriendlyIndicator:Build(content, db.Modules.FriendlyIndicatorModule)
 			end,
 		},
 		{
 			Key = keys.Alerts,
-			Title = "Alerts",
+			Title = L["Alerts"],
 			Build = function(content)
 				M.Alerts:Build(content, db.Modules.AlertsModule)
 			end,
 		},
 		{
 			Key = keys.Healer,
-			Title = "Healer",
+			Title = L["Healer"],
 			Build = function(content)
 				M.Healer:Build(content, db.Modules.HealerCCModule)
 			end,
 		},
 		{
 			Key = keys.Nameplates,
-			Title = "Nameplates",
+			Title = L["Nameplates_Short"] or L["Nameplates"],
 			Build = function(content)
 				M.Nameplates:Build(content, db.Modules.NameplatesModule)
 			end,
 		},
 		{
 			Key = keys.Portraits,
-			Title = "Portraits",
+			Title = L["Portraits_Short"] or L["Portraits"],
 			Build = function(content)
 				M.Portraits:Build(content)
 			end,
@@ -144,7 +145,7 @@ function M:Init()
 	testBtn:SetSize(120, 26)
 	testBtn:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
 	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
-	testBtn:SetText("Test")
+	testBtn:SetText(L["Test"])
 	testBtn:SetScript("OnClick", function()
 		local options = db.Modules.CCModule.Default
 		addon:ToggleTest(options)
@@ -188,17 +189,17 @@ function M:Init()
 	end
 
 	local kickTimerPanel = M.KickTimer:Build()
-	kickTimerPanel.name = "Kick Timer"
+	kickTimerPanel.name = L["Kick timer_Short"] or L["Kick timer"]
 
 	mini:AddSubCategory(category, kickTimerPanel)
 
 	local trinketsPanel = M.Trinkets:Build()
-	trinketsPanel.name = "Trinkets"
+	trinketsPanel.name = L["Party Trinkets_Short"] or L["Party Trinkets"]
 
 	mini:AddSubCategory(category, trinketsPanel)
 
 	local otherAddonsPanel = M.OtherAddons:Build()
-	otherAddonsPanel.name = "Other Addons"
+	otherAddonsPanel.name = L["Other Mini Addons_Short"] or L["Other Mini Addons"]
 
 	mini:AddSubCategory(category, otherAddonsPanel)
 end
