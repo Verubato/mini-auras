@@ -133,6 +133,8 @@ L:SetStrings({
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Affiche le contrôle, les défensifs et autres sorts importants sur les portraits joueur/cible/focus.",
 	["Reverses the direction of the cooldown swipe."] = "Inverse la direction du balayage de temps de recharge.",
 	["A separate region for when your healer is CC'd."] = "Une région séparée pour quand votre soigneur est sous contrôle.",
+	["Show warning text"] = "Texte d'avertissement",
+	["Show the 'Healer in CC!' text above the icons."] = "Afficher 'Soigneur sous contrôle !' sur les icônes.",
 	["Shows active friendly cooldowns party/raid frames."] = "Affiche les temps de recharge alliés actifs sur les cadres de groupe/raid.",
 	["Enable this module in arena."] = "Activer ce module en arène.",
 	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Affiche le contrôle et les sorts importants sur les barres de nom (fonctionne avec les addons de barres de nom comme BBP, Platynator et Plater).",

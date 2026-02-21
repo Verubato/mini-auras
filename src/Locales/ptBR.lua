@@ -115,6 +115,8 @@ L:SetStrings({
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Mostra controle, defensivos e outros feitiços importantes nos retratos do jogador/alvo/foco.",
 	["Reverses the direction of the cooldown swipe."] = "Inverte a direção do deslize da recarga.",
 	["A separate region for when your healer is CC'd."] = "Uma região separada para quando seu curandeiro estiver sob controle.",
+	["Show warning text"] = "Texto de aviso",
+	["Show the 'Healer in CC!' text above the icons."] = "Mostrar 'Curandeiro sob controle!' sobre ícones.",
 	["Shows active friendly cooldowns party/raid frames."] = "Mostra recargas aliadas ativas em quadros de grupo/raide.",
 	["Enable this module in arena."] = "Ativar este módulo na arena.",
 	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Mostra controle e feitiços importantes em placas de nome (funciona com addons de placas de nome como BBP, Platynator e Plater).",

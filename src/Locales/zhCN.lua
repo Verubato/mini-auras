@@ -115,6 +115,8 @@ L:SetStrings({
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "在玩家/目标/焦点头像上显示控制、防御技能和其他重要法术。",
 	["Reverses the direction of the cooldown swipe."] = "反转冷却时间滑动动画的方向。",
 	["A separate region for when your healer is CC'd."] = "当您的治疗者被控制时的单独区域。",
+	["Show warning text"] = "警告文字",
+	["Show the 'Healer in CC!' text above the icons."] = "在图标上方显示"治疗者被控!"",
 	["Shows active friendly cooldowns party/raid frames."] = "在队伍/团队框架上显示活跃的友方冷却时间。",
 	["Enable this module in arena."] = "在竞技场中启用此模块。",
 	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "在姓名板上显示控制和重要法术（与姓名板插件一起工作，例如BBP、Platynator和Plater）。",

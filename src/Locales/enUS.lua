@@ -138,6 +138,8 @@ L:SetDefaultStrings({
 
 	-- Healer
 	["A separate region for when your healer is CC'd."] = "A separate region for when your healer is CC'd.",
+	["Show warning text"] = "Warning text",
+	["Show the 'Healer in CC!' text above the icons."] = "Show 'Healer in CC!' text above icons.",
 
 	-- Friendly Indicator
 	["Shows active friendly cooldowns party/raid frames."] = "Shows active friendly cooldowns party/raid frames.",

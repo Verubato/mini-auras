@@ -133,6 +133,8 @@ L:SetStrings({
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Zeigt Massenkontrolle, Defensive und andere wichtige Zauber auf Spieler-/Ziel-/Fokus-Porträts.",
 	["Reverses the direction of the cooldown swipe."] = "Kehrt die Richtung des Abklingzeit-Wischens um.",
 	["A separate region for when your healer is CC'd."] = "Ein separater Bereich für wenn dein Heiler unter Kontrolle ist.",
+	["Show warning text"] = "Warntext",
+	["Show the 'Healer in CC!' text above the icons."] = "Zeige 'Heiler unter Kontrolle!' Text über Symbolen.",
 	["Shows active friendly cooldowns party/raid frames."] = "Zeigt aktive verbündete Abklingzeiten auf Gruppen-/Schlachtzugs-Rahmen.",
 	["Enable this module in arena."] = "Aktiviere dieses Modul in der Arena.",
 	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Zeigt Massenkontrolle und wichtige Zauber auf Namensplaketten (funktioniert mit Namensplaketten-Addons wie BBP, Platynator und Plater).",

@@ -115,6 +115,8 @@ L:SetStrings({
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "플레이어/대상/주시 대상 초상화에 군중 제어, 방어 기술 및 기타 중요한 주문을 표시합니다.",
 	["Reverses the direction of the cooldown swipe."] = "재사용 대기시간 스와이프 방향을 반대로 합니다.",
 	["A separate region for when your healer is CC'd."] = "치유사가 군중 제어당할 때를 위한 별도 영역입니다.",
+	["Show warning text"] = "경고 텍스트",
+	["Show the 'Healer in CC!' text above the icons."] = "아이콘 위에 '치유사가 군중 제어당함!' 표시",
 	["Shows active friendly cooldowns party/raid frames."] = "파티/공격대 프레임에 아군의 활성 재사용 대기시간을 표시합니다.",
 	["Enable this module in arena."] = "투기장에서 이 모듈을 활성화합니다.",
 	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "이름표에 군중 제어와 중요한 주문을 표시합니다 (BBP, Platynator, Plater 등의 이름표 애드온과 함께 작동합니다).",

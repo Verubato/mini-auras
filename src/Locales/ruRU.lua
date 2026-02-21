@@ -115,6 +115,8 @@ L:SetStrings({
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Показывает контроль, защитные способности и другие важные заклинания на портретах игрока/цели/фокуса.",
 	["Reverses the direction of the cooldown swipe."] = "Изменяет направление смахивания перезарядки.",
 	["A separate region for when your healer is CC'd."] = "Отдельная область для когда ваш целитель под контролем.",
+	["Show warning text"] = "Текст предупреждения",
+	["Show the 'Healer in CC!' text above the icons."] = "Показать 'Целитель под контролем!' над иконками.",
 	["Shows active friendly cooldowns party/raid frames."] = "Показывает активные союзные перезарядки на рамках группы/рейда.",
 	["Enable this module in arena."] = "Включить этот модуль на арене.",
 	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Показывает контроль и важные заклинания на полосках здоровья (работает с аддонами полосок здоровья, например BBP, Platynator и Plater).",

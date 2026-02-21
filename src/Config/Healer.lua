@@ -122,6 +122,22 @@ function M:Build(panel, options)
 
 	glowChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
+	local showTextChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show warning text"],
+		Tooltip = L["Show the 'Healer in CC!' text above the icons."],
+		GetValue = function()
+			return options.ShowWarningText ~= false
+		end,
+		SetValue = function(value)
+			options.ShowWarningText = value
+			config:Apply()
+		end,
+	})
+
+	showTextChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	showTextChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+
 	local reverseChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Reverse swipe"],
@@ -135,7 +151,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local soundChk = mini:Checkbox({
@@ -151,7 +167,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	soundChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	soundChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
 	soundChk:SetPoint("TOP", reverseChk, "TOP", 0, 0)
 
 	local dispelColoursChk = mini:Checkbox({

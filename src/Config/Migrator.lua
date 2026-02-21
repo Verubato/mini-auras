@@ -6,7 +6,7 @@ local mini = addon.Core.Framework
 local db
 ---@class Db
 local dbDefaults = {
-	Version = 21,
+	Version = 22,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -89,6 +89,8 @@ local dbDefaults = {
 				Size = 32,
 				Flags = "OUTLINE",
 			},
+
+			ShowWarningText = true,
 		},
 		---@class PortraitModuleOptions
 		PortraitModule = {
@@ -1495,6 +1497,20 @@ function M:UpgradeToVersion21(vars)
 	end
 
 	vars.Version = 21
+	return true
+end
+
+function M:UpgradeToVersion22(vars)
+	if vars.Version ~= 21 then
+		return false
+	end
+
+	-- Add ShowWarningText option to HealerCCModule (default on)
+	if vars.Modules and vars.Modules.HealerCCModule then
+		vars.Modules.HealerCCModule.ShowWarningText = true
+	end
+
+	vars.Version = 22
 	return true
 end
 

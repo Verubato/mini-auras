@@ -134,6 +134,8 @@ L:SetStrings({
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Muestra control, defensivos y otros hechizos importantes en los retratos de jugador/objetivo/foco.",
 	["Reverses the direction of the cooldown swipe."] = "Invierte la dirección del barrido del tiempo de reutilización.",
 	["A separate region for when your healer is CC'd."] = "Una región separada para cuando tu sanador esté bajo control.",
+	["Show warning text"] = "Texto de aviso",
+	["Show the 'Healer in CC!' text above the icons."] = "Mostrar '¡Sanador bajo control!' sobre iconos.",
 	["Shows active friendly cooldowns party/raid frames."] = "Muestra tiempos de reutilización aliados activos en marcos de grupo/banda.",
 	["Enable this module in arena."] = "Habilitar este módulo en arena.",
 	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Muestra control y hechizos importantes en placas de nombre (funciona con addons de placas de nombre como BBP, Platynator y Plater).",
