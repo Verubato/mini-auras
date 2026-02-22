@@ -72,7 +72,7 @@ local function AnnounceTTS(spellName, spellType)
 	end
 
 	pcall(function()
-		C_VoiceChat.SpeakText(cachedVoiceID, spellName, 0, cachedTTSVolume)
+		C_VoiceChat.SpeakText(cachedVoiceID, spellName, 1, cachedTTSVolume, true)
 	end)
 end
 
@@ -364,7 +364,7 @@ function M:Refresh()
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
 
 	-- Update cached TTS values
-	cachedVoiceID = C_TTSSettings.GetVoiceOptionID(0)
+	cachedVoiceID = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
 	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
 	cachedTTSImportantEnabled = options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
 	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
@@ -408,7 +408,7 @@ function M:Init()
 	local size = options.Icons.Size
 
 	-- Initialize cached TTS values
-	cachedVoiceID = C_TTSSettings.GetVoiceOptionID(0)
+	cachedVoiceID = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
 	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
 	cachedTTSImportantEnabled = options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
 	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false

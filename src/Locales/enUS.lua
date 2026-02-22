@@ -183,6 +183,11 @@ L:SetDefaultStrings({
 
 	-- Portraits
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Don't forget to disable the Blizzard 'center big defensives' option when using this.",
+
+	["Voice"] = "Voice",
+	["You must choose a voice in your language for this to work."] = "You must choose a voice in your language for this to work.",
+	["Important"] = "Important",
+	["Defensive"] = "Defensive",
 })
 
 -- Also set as current locale strings for enUS/enGB

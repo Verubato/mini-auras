@@ -156,4 +156,8 @@ L:SetStrings({
 	["Greater than 5 members (raids/bgs)"] = "多於5名成員（團隊/戰場）",
 	["Text Size"] = "文字大小",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "使用此功能時不要忘記停用暴雪的「置中顯示大型防禦技能」選項。",
+	["Voice"] = "語音",
+	["You must choose a voice in your language for this to work."] = "必須選擇與你的語言相符的語音才能使其運作。",
+	["Important"] = "重要",
+	["Defensive"] = "防禦",
 })

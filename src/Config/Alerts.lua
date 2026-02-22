@@ -231,12 +231,74 @@ function M:Build(panel, options)
 	ttsDivider:SetPoint("RIGHT", panel, "RIGHT")
 	ttsDivider:SetPoint("TOP", soundDefensiveChk, "BOTTOM", 0, -verticalSpacing * 2)
 
-	local ttsIntro = mini:TextLine({
+	local ttsIntro = mini:TextBlock({
 		Parent = panel,
-		Text = L["Announce spell names using text-to-speech when they are cast."]
+		Lines = {
+			L["Announce spell names using text-to-speech when they are cast."],
+			L["You must choose a voice in your language for this to work."],
+		},
 	})
 
 	ttsIntro:SetPoint("TOPLEFT", ttsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local function EnsureTtsOptions()
+		if not options.TTS then
+			options.TTS = { Volume = 100 }
+		end
+	end
+
+	-- Build voice list from C_VoiceChat.GetTtsVoices()
+	local voiceItems = {}
+	local voiceNameById = {}
+	do
+		local voices = C_VoiceChat and C_VoiceChat.GetTtsVoices and C_VoiceChat.GetTtsVoices() or nil
+		if voices then
+			for _, v in ipairs(voices) do
+				if v and v.voiceID ~= nil then
+					voiceItems[#voiceItems + 1] = v.voiceID
+					voiceNameById[v.voiceID] = v.name or tostring(v.voiceID)
+				end
+			end
+			table.sort(voiceItems, function(a, b)
+				return (voiceNameById[a] or tostring(a)) < (voiceNameById[b] or tostring(b))
+			end)
+		end
+	end
+
+	if #voiceItems == 0 then
+		-- Fallback to the current default voice option if the list isn't available.
+		local fallback = C_TTSSettings.GetVoiceOptionID(0)
+		voiceItems = { fallback }
+		voiceNameById[fallback] = tostring(fallback)
+	end
+
+	local voiceLabel = mini:TextLine({
+		Parent = panel,
+		Text = L["Voice"],
+	})
+	voiceLabel:SetPoint("TOPLEFT", ttsIntro, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local voiceDropdown = mini:Dropdown({
+		Parent = panel,
+		Items = voiceItems,
+		Width = 240,
+		GetValue = function()
+			EnsureTtsOptions()
+			return options.TTS.VoiceID or C_TTSSettings.GetVoiceOptionID(0)
+		end,
+		SetValue = function(value)
+			EnsureTtsOptions()
+			options.TTS.VoiceID = value
+			C_VoiceChat.SpeakText(value, L["Voice"], 1, options.TTS.Volume or 100, true)
+			config:Apply()
+		end,
+		GetText = function(value)
+			return voiceNameById[value] or tostring(value)
+		end,
+	})
+	voiceDropdown:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	voiceDropdown:SetPoint("TOP", voiceLabel, "TOP", 0, 8)
+	voiceDropdown:SetWidth(200)
 
 	local announceImportantSpellsChk = mini:Checkbox({
 		Parent = panel,
@@ -255,16 +317,16 @@ function M:Build(panel, options)
 			options.TTS.Important.Enabled = value
 
 			if value then
-				local voiceId = C_TTSSettings.GetVoiceOptionID(0)
+				local voiceId = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
 				local volume = options.TTS.Volume or 100
 
-				C_VoiceChat.SpeakText(voiceId, L["Important"], 0, volume)
+				C_VoiceChat.SpeakText(voiceId, L["Important"], 1, volume, true)
 			end
 			config:Apply()
 		end,
 	})
 
-	announceImportantSpellsChk:SetPoint("TOPLEFT", ttsIntro, "BOTTOMLEFT", 0, -verticalSpacing)
+	announceImportantSpellsChk:SetPoint("TOPLEFT", voiceLabel, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local announceDefensiveSpellsChk = mini:Checkbox({
 		Parent = panel,
@@ -283,10 +345,10 @@ function M:Build(panel, options)
 			options.TTS.Defensive.Enabled = value
 
 			if value then
-				local voiceId = C_TTSSettings.GetVoiceOptionID(0)
+				local voiceId = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
 				local volume = options.TTS.Volume or 100
 
-				C_VoiceChat.SpeakText(voiceId, L["Defensive"], 0, volume)
+				C_VoiceChat.SpeakText(voiceId, L["Defensive"], 1, volume, true)
 			end
 
 			config:Apply()

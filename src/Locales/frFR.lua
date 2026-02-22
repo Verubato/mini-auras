@@ -169,4 +169,8 @@ L:SetStrings({
 	["Greater than 5 members (raids/bgs)"] = "Plus de 5 membres (raids/CdB)",
 	["Text Size"] = "Taille du texte",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "N'oubliez pas de désactiver l'option Blizzard 'centrer les grandes défensives' lors de l'utilisation de ceci.",
+	["Voice"] = "Voix",
+	["You must choose a voice in your language for this to work."] = "Vous devez choisir une voix dans votre langue pour que cela fonctionne.",
+	["Important"] = "Important",
+	["Defensive"] = "Défensif",
 })
