@@ -126,6 +126,8 @@ L:SetStrings({
 	["Settings reset to default."] = "설정이 기본값으로 재설정되었습니다.",
 	["Show a glow around the CC icons."] = "군중 제어 아이콘 주위에 발광을 표시합니다.",
 	["Show a glow around the icons."] = "아이콘 주위에 발광을 표시합니다.",
+	["Show alert icons in the alerts region."] = "알림 영역에 경고 아이콘을 표시합니다.",
+	["Show icons"] = "아이콘 표시",
 	["Show the 'Healer in CC!' text above the icons."] = "아이콘 위에 '치유사가 군중 제어당함!' 표시",
 	["Show warning text"] = "경고 텍스트",
 	["Shows active friendly cooldowns party/raid frames."] = "파티/공격대 프레임에 아군의 활성 재사용 대기시간을 표시합니다.",

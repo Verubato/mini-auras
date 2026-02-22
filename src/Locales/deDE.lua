@@ -126,6 +126,8 @@ L:SetStrings({
 	["Settings reset to default."] = "Einstellungen auf Standard zurückgesetzt.",
 	["Show a glow around the CC icons."] = "Zeige ein Leuchten um die Massenkontroll-Symbole.",
 	["Show a glow around the icons."] = "Zeige ein Leuchten um die Symbole.",
+	["Show alert icons in the alerts region."] = "Warnsymbole im Warnbereich anzeigen.",
+	["Show icons"] = "Symbole anzeigen",
 	["Show the 'Healer in CC!' text above the icons."] = "Zeige 'Heiler unter Kontrolle!' Text über Symbolen.",
 	["Show warning text"] = "Warntext",
 	["Shows active friendly cooldowns party/raid frames."] = "Zeigt aktive verbündete Abklingzeiten auf Gruppen-/Schlachtzugs-Rahmen.",

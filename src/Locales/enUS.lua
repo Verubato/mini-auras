@@ -126,6 +126,8 @@ L:SetDefaultStrings({
 	["Settings reset to default."] = "Settings reset to default.",
 	["Show a glow around the CC icons."] = "Show a glow around the CC icons.",
 	["Show a glow around the icons."] = "Show a glow around the icons.",
+	["Show alert icons in the alerts region."] = "Show alert icons in the alerts region.",
+	["Show icons"] = "Show icons",
 	["Show the 'Healer in CC!' text above the icons."] = "Show 'Healer in CC!' text above icons.",
 	["Show warning text"] = "Warning text",
 	["Shows active friendly cooldowns party/raid frames."] = "Shows active friendly cooldowns party/raid frames.",

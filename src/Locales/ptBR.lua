@@ -126,6 +126,8 @@ L:SetStrings({
 	["Settings reset to default."] = "Configurações redefinidas para o padrão.",
 	["Show a glow around the CC icons."] = "Mostra um brilho ao redor dos ícones de controle.",
 	["Show a glow around the icons."] = "Mostra um brilho ao redor dos ícones.",
+	["Show alert icons in the alerts region."] = "Mostrar ícones de alerta na região de alertas.",
+	["Show icons"] = "Mostrar ícones",
 	["Show the 'Healer in CC!' text above the icons."] = "Mostrar 'Curandeiro sob controle!' sobre ícones.",
 	["Show warning text"] = "Texto de aviso",
 	["Shows active friendly cooldowns party/raid frames."] = "Mostra recargas aliadas ativas em quadros de grupo/raide.",

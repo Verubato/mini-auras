@@ -42,6 +42,22 @@ function M:Build(panel, options)
 
 	enabledChk:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 0, -verticalSpacing)
 
+	local iconsEnabledChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show icons"],
+		Tooltip = L["Show alert icons in the alerts region."],
+		GetValue = function()
+			return options.Icons.Enabled
+		end,
+		SetValue = function(value)
+			options.Icons.Enabled = value
+			config:Apply()
+		end,
+	})
+
+	iconsEnabledChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+	iconsEnabledChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+
 	local includeDefensivesChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Include Defensives"],
@@ -57,7 +73,7 @@ function M:Build(panel, options)
 	})
 
 	includeDefensivesChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
-	includeDefensivesChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	includeDefensivesChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 
 	local glowChk = mini:Checkbox({
 		Parent = panel,

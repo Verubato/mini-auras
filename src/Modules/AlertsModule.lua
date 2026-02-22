@@ -94,6 +94,7 @@ local function OnAuraDataChanged()
 		return
 	end
 
+	local iconsEnabled = db.Modules.AlertsModule.Icons.Enabled
 	local iconsGlow = db.Modules.AlertsModule.Icons.Glow
 	local iconsReverse = db.Modules.AlertsModule.Icons.ReverseCooldown
 	local colorByClass = db.Modules.AlertsModule.Icons.ColorByClass
@@ -131,19 +132,26 @@ local function OnAuraDataChanged()
 			if #importantData > 0 then
 				hasImportantAlerts = true
 				for _, data in ipairs(importantData) do
-					slot = slot + 1
-					container:SetSlotUsed(slot)
-					container:SetLayer(slot, 1, {
-						Texture = data.SpellIcon,
-						StartTime = data.StartTime,
-						Duration = data.TotalDuration,
-						AlphaBoolean = data.IsImportant,
-						Glow = iconsGlow,
-						ReverseCooldown = iconsReverse,
-						Color = color,
-						FontScale = db.FontScale,
-					})
-					container:FinalizeSlot(slot, 1)
+					if iconsEnabled then
+						-- prevent overflowing the container
+						if slot >= container.Count then
+							break
+						end
+
+						slot = slot + 1
+						container:SetSlotUsed(slot)
+						container:SetLayer(slot, 1, {
+							Texture = data.SpellIcon,
+							StartTime = data.StartTime,
+							Duration = data.TotalDuration,
+							AlphaBoolean = data.IsImportant,
+							Glow = iconsGlow,
+							ReverseCooldown = iconsReverse,
+							Color = color,
+							FontScale = db.FontScale,
+						})
+						container:FinalizeSlot(slot, 1)
+					end
 
 					-- Track and announce new important auras
 					if data.AuraInstanceID then
@@ -159,19 +167,26 @@ local function OnAuraDataChanged()
 				hasDefensiveAlerts = true
 				-- we only get defensive data with new filters
 				for _, data in ipairs(defensivesData) do
-					slot = slot + 1
-					container:SetSlotUsed(slot)
-					container:SetLayer(slot, 1, {
-						Texture = data.SpellIcon,
-						StartTime = data.StartTime,
-						Duration = data.TotalDuration,
-						AlphaBoolean = data.IsDefensive,
-						Glow = iconsGlow,
-						ReverseCooldown = iconsReverse,
-						Color = color,
-						FontScale = db.FontScale,
-					})
-					container:FinalizeSlot(slot, 1)
+					if iconsEnabled then
+						-- prevent overflowing the container
+						if slot >= container.Count then
+							break
+						end
+
+						slot = slot + 1
+						container:SetSlotUsed(slot)
+						container:SetLayer(slot, 1, {
+							Texture = data.SpellIcon,
+							StartTime = data.StartTime,
+							Duration = data.TotalDuration,
+							AlphaBoolean = data.IsDefensive,
+							Glow = iconsGlow,
+							ReverseCooldown = iconsReverse,
+							Color = color,
+							FontScale = db.FontScale,
+						})
+						container:FinalizeSlot(slot, 1)
+					end
 
 					-- Track and announce new defensive auras
 					if data.AuraInstanceID then
@@ -200,6 +215,12 @@ local function OnAuraDataChanged()
 	-- Update previous aura tracking
 	previousImportantAuras = currentImportantAuras
 	previousDefensiveAuras = currentDefensiveAuras
+
+	-- If icons are disabled, keep sounds/TTS logic but don't show anything.
+	if not iconsEnabled then
+		container:ResetAllSlots()
+		return
+	end
 
 	-- advance forward by 1 for clearing
 	if slot > 0 then
@@ -242,6 +263,11 @@ local function OnMatchStateChanged()
 end
 
 local function RefreshTestAlerts()
+	if not db.Modules.AlertsModule.Icons.Enabled then
+		container:ResetAllSlots()
+		return
+	end
+
 	local testAlertSpellIds = {
 		190319, -- Combustion
 		121471, -- Shadow Blades

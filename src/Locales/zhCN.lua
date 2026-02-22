@@ -126,6 +126,8 @@ L:SetStrings({
 	["Settings reset to default."] = "设置已重置为默认值。",
 	["Show a glow around the CC icons."] = "在控制图标周围显示发光。",
 	["Show a glow around the icons."] = "在图标周围显示发光。",
+	["Show alert icons in the alerts region."] = "在警报区域显示警报图标。",
+	["Show icons"] = "显示图标",
 	["Show the 'Healer in CC!' text above the icons."] = "在图标上方显示'治疗者被控!'",
 	["Show warning text"] = "警告文字",
 	["Shows active friendly cooldowns party/raid frames."] = "在队伍/团队框架上显示活跃的友方冷却时间。",

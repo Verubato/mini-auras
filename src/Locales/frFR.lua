@@ -126,6 +126,8 @@ L:SetStrings({
 	["Settings reset to default."] = "Paramètres réinitialisés par défaut.",
 	["Show a glow around the CC icons."] = "Affiche une lueur autour des icônes de contrôle.",
 	["Show a glow around the icons."] = "Affiche une lueur autour des icônes.",
+	["Show alert icons in the alerts region."] = "Afficher les icônes d’alerte dans la zone d’alertes.",
+	["Show icons"] = "Afficher les icônes",
 	["Show the 'Healer in CC!' text above the icons."] = "Afficher 'Soigneur sous contrôle !' sur les icônes.",
 	["Show warning text"] = "Texte d'avertissement",
 	["Shows active friendly cooldowns party/raid frames."] = "Affiche les temps de recharge alliés actifs sur les cadres de groupe/raid.",

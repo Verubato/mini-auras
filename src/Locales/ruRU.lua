@@ -126,6 +126,8 @@ L:SetStrings({
 	["Settings reset to default."] = "Настройки сброшены по умолчанию.",
 	["Show a glow around the CC icons."] = "Показывать свечение вокруг иконок контроля.",
 	["Show a glow around the icons."] = "Показывать свечение вокруг иконок.",
+	["Show alert icons in the alerts region."] = "Показывать значки оповещений в области оповещений.",
+	["Show icons"] = "Показывать значки",
 	["Show the 'Healer in CC!' text above the icons."] = "Показать 'Целитель под контролем!' над иконками.",
 	["Show warning text"] = "Текст предупреждения",
 	["Shows active friendly cooldowns party/raid frames."] = "Показывает активные союзные перезарядки на рамках группы/рейда.",
