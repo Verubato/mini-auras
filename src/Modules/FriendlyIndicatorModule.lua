@@ -160,7 +160,7 @@ local function EnsureWatcher(anchor, unit)
 	local entry = watchers[anchor]
 
 	if not entry then
-		local maxIcons = options.Icons.MaxIcons or 1
+		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 		local size = tonumber(options.Icons.Size) or 32
 		local spacing = 2
 		local container = iconSlotContainer:New(UIParent, maxIcons, size, spacing)
@@ -191,19 +191,6 @@ local function EnsureWatcher(anchor, unit)
 
 			-- Force immediate aura scan for the new unit
 			entry.Watcher:ForceFullUpdate()
-		end
-
-		-- Check if MaxIcons has changed
-		local maxIcons = options.Icons.MaxIcons or 1
-		if entry.Container.Count ~= maxIcons then
-			-- MaxIcons changed, recreate the container
-			entry.Container.Frame:Hide()
-			entry.Container = iconSlotContainer:New(UIParent, maxIcons, tonumber(options.Icons.Size) or 32, 2)
-			entry.Container.Frame:SetIgnoreParentScale(true)
-			entry.Container.Frame:SetIgnoreParentAlpha(true)
-		else
-			local iconSize = tonumber(options.Icons.Size) or 32
-			entry.Container:SetIconSize(iconSize)
 		end
 	end
 
@@ -391,7 +378,9 @@ function M:Refresh()
 	for anchor, entry in pairs(watchers) do
 		local container = entry.Container
 		local iconSize = tonumber(options.Icons.Size) or 32
+		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 		container:SetIconSize(iconSize)
+		container:SetCount(maxIcons)
 
 		if not testModeActive then
 			UpdateWatcherAuras(entry)
