@@ -372,7 +372,7 @@ function M:SetCount(newCount)
 
 	-- Grow pool if needed
 	for i = #self.Slots + 1, newCount do
-		local slotFrame = CreateFrame("Button", nil, self.Frame)
+		local slotFrame = CreateFrame(self.MasqueGroup and "Button" or "Frame", nil, self.Frame)
 		slotFrame:SetSize(self.Size, self.Size)
 
 		self.Slots[i] = {
