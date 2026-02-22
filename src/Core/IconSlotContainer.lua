@@ -374,6 +374,7 @@ function M:SetCount(newCount)
 	for i = #self.Slots + 1, newCount do
 		local slotFrame = CreateFrame(self.MasqueGroup and "Button" or "Frame", nil, self.Frame)
 		slotFrame:SetSize(self.Size, self.Size)
+		slotFrame:EnableMouse(false)
 
 		self.Slots[i] = {
 			Frame = slotFrame,
