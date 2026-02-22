@@ -138,5 +138,7 @@ function M:Build()
 		addon:ToggleTest(options)
 	end)
 
+	M.Panel = panel
+
 	return panel
 end
