@@ -401,7 +401,7 @@ function M:Init()
 	healerAnchor.HealerWarning = text
 
 	-- Icons sit at the bottom of the anchor, text sits at the top.
-	iconsContainer = iconSlotContainer:New(healerAnchor, 5, tonumber(options.Icons.Size) or 32, db.IconSpacing or 2)
+	iconsContainer = iconSlotContainer:New(healerAnchor, 5, tonumber(options.Icons.Size) or 32, db.IconSpacing or 2, "Healer CC")
 	iconsContainer.Frame:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
 	iconsContainer.Frame:Show()
 

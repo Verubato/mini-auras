@@ -166,7 +166,7 @@ local function CreateKickBar()
 	local size = tonumber(iconOptions.Size) or 50
 	local spacing = db.IconSpacing or 2
 
-	local container = iconSlotContainer:New(UIParent, kickBar.MaxSlots, size, spacing)
+	local container = iconSlotContainer:New(UIParent, kickBar.MaxSlots, size, spacing, "Kick Timer")
 	container.Frame:SetFrameStrata("HIGH")
 	container.Frame:SetClampedToScreen(true)
 	container.Frame:SetIgnoreParentScale(true)

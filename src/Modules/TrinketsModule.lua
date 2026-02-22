@@ -129,7 +129,7 @@ local function EnsureWatcher(anchorFrame, unit)
 	end
 
 	local size = tonumber(options.Icons.Size) or 32
-	local container = iconSlotContainer:New(UIParent, 1, size, db.IconSpacing or 2)
+	local container = iconSlotContainer:New(UIParent, 1, size, db.IconSpacing or 2, "Trinkets")
 	container.Frame:SetIgnoreParentScale(true)
 	container.Frame:SetIgnoreParentAlpha(true)
 

@@ -146,7 +146,7 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 
 		local combinedContainer = nameplate[nameplateCombinedKey]
 		if not combinedContainer then
-			combinedContainer = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2)
+			combinedContainer = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2, "Nameplates")
 			nameplate[nameplateCombinedKey] = combinedContainer
 		else
 			combinedContainer:SetIconSize(size)
@@ -177,7 +177,7 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 
 		ccContainer = nameplate[nameplateCcKey]
 		if not ccContainer then
-			ccContainer = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2)
+			ccContainer = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2, "Nameplates")
 			nameplate[nameplateCcKey] = ccContainer
 		else
 			ccContainer:SetIconSize(size)
@@ -200,7 +200,7 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 
 		importantContainer = nameplate[nameplateImportantKey]
 		if not importantContainer then
-			importantContainer = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2)
+			importantContainer = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2, "Nameplates")
 			nameplate[nameplateImportantKey] = importantContainer
 		else
 			importantContainer:SetIconSize(size)

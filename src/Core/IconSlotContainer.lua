@@ -1,6 +1,9 @@
 ---@type string, Addon
 local _, addon = ...
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", true)
+local Masque = LibStub and LibStub("Masque", true)
+-- Debounce table keyed by group object: one deferred ReSkin per group per frame
+local masqueReskinPending = {}
 local fontUtil = addon.Utils.FontUtil
 local cachedDb = nil
 -- Reused across Layout() calls to avoid a table allocation on the hot path
@@ -23,7 +26,18 @@ local function GetDb()
 	return cachedDb
 end
 
-local function EnsureContainer(slot, iconSize)
+local function ScheduleMasqueReSkin(group)
+	if not group or masqueReskinPending[group] then
+		return
+	end
+	masqueReskinPending[group] = true
+	C_Timer.After(0, function()
+		masqueReskinPending[group] = nil
+		group:ReSkin()
+	end)
+end
+
+local function EnsureContainer(slot, iconSize, group)
 	if not slot.Container then
 		-- place our icons on the 1st draw layer of background
 		local icon = slot.Frame:CreateTexture(nil, "BACKGROUND", nil, 1)
@@ -52,6 +66,13 @@ local function EnsureContainer(slot, iconSize)
 		end
 
 		slot.Container = { Border = border, Icon = icon, Cooldown = cd }
+
+		if group then
+			group:AddButton(slot.Frame, {
+				Icon = icon,
+				Cooldown = cd,
+			})
+		end
 	end
 
 	return slot.Container
@@ -197,8 +218,9 @@ end
 ---@param count number of slots to create (default: 3)
 ---@param size number of each icon slot (default: 20)
 ---@param spacing number between slots (default: 2)
+---@param groupName string? Masque sub-group name (e.g. "CC", "Trinkets"). Omit to skip Masque.
 ---@return IconSlotContainer
-function M:New(parent, count, size, spacing)
+function M:New(parent, count, size, spacing, groupName)
 	local instance = setmetatable({}, M)
 
 	count = count or 3
@@ -210,6 +232,7 @@ function M:New(parent, count, size, spacing)
 	instance.Count = 0
 	instance.Size = size
 	instance.Spacing = spacing
+	instance.MasqueGroup = Masque and groupName and Masque:Group("MiniCC", groupName) or nil
 
 	instance:SetCount(count)
 
@@ -322,6 +345,9 @@ function M:SetIconSize(newSize)
 		end
 	end
 
+	-- Re-apply the Masque skin at the new size, debounced per group.
+	ScheduleMasqueReSkin(self.MasqueGroup)
+
 	self:Layout()
 end
 
@@ -346,7 +372,7 @@ function M:SetCount(newCount)
 
 	-- Grow pool if needed
 	for i = #self.Slots + 1, newCount do
-		local slotFrame = CreateFrame("Frame", nil, self.Frame)
+		local slotFrame = CreateFrame("Button", nil, self.Frame)
 		slotFrame:SetSize(self.Size, self.Size)
 
 		self.Slots[i] = {
@@ -386,7 +412,7 @@ function M:SetSlot(slotIndex, options)
 		self:Layout()
 	end
 
-	local layer = EnsureContainer(slot, self.Size)
+	local layer = EnsureContainer(slot, self.Size, self.MasqueGroup)
 
 	if options.Texture and options.StartTime and options.Duration then
 		layer.Icon:SetTexture(options.Texture)

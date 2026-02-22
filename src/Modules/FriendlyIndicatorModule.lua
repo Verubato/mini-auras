@@ -163,7 +163,7 @@ local function EnsureWatcher(anchor, unit)
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 		local size = tonumber(options.Icons.Size) or 32
 		local spacing = db.IconSpacing or 2
-		local container = iconSlotContainer:New(UIParent, maxIcons, size, spacing)
+		local container = iconSlotContainer:New(UIParent, maxIcons, size, spacing, "Friendly Indicators")
 		container.Frame:SetIgnoreParentScale(true)
 		container.Frame:SetIgnoreParentAlpha(true)
 		local watcher = UnitAuraWatcher:New(unit, nil, { Defensives = true, Important = true })
