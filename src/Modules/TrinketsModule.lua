@@ -78,7 +78,7 @@ local function SetIconState(container, spellId, start, duration)
 	-- Always show the icon, even when not on cooldown
 	if not spellId or not start or not duration then
 		-- Show icon without cooldown
-		container:SetLayer(1, 1, {
+		container:SetSlot(1, {
 			Texture = tex,
 			StartTime = 0,
 			Duration = 0,
@@ -87,13 +87,11 @@ local function SetIconState(container, spellId, start, duration)
 			Glow = false,
 			FontScale = db.FontScale,
 		})
-		container:FinalizeSlot(1, 1)
-		container:SetSlotUsed(1)
 		return
 	end
 
 	-- Show icon with cooldown
-	container:SetLayer(1, 1, {
+	container:SetSlot(1, {
 		Texture = tex,
 		StartTime = start,
 		Duration = duration,
@@ -102,8 +100,6 @@ local function SetIconState(container, spellId, start, duration)
 		Glow = false,
 		FontScale = db.FontScale,
 	})
-	container:FinalizeSlot(1, 1)
-	container:SetSlotUsed(1)
 end
 
 local function UpdateUnit(unit, spellId, start, duration)

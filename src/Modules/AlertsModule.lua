@@ -139,8 +139,7 @@ local function OnAuraDataChanged()
 						end
 
 						slot = slot + 1
-						container:SetSlotUsed(slot)
-						container:SetLayer(slot, 1, {
+						container:SetSlot(slot, {
 							Texture = data.SpellIcon,
 							StartTime = data.StartTime,
 							Duration = data.TotalDuration,
@@ -150,7 +149,6 @@ local function OnAuraDataChanged()
 							Color = color,
 							FontScale = db.FontScale,
 						})
-						container:FinalizeSlot(slot, 1)
 					end
 
 					-- Track and announce new important auras
@@ -174,8 +172,7 @@ local function OnAuraDataChanged()
 						end
 
 						slot = slot + 1
-						container:SetSlotUsed(slot)
-						container:SetLayer(slot, 1, {
+						container:SetSlot(slot, {
 							Texture = data.SpellIcon,
 							StartTime = data.StartTime,
 							Duration = data.TotalDuration,
@@ -185,7 +182,6 @@ local function OnAuraDataChanged()
 							Color = color,
 							FontScale = db.FontScale,
 						})
-						container:FinalizeSlot(slot, 1)
 					end
 
 					-- Track and announce new defensive auras
@@ -232,9 +228,7 @@ local function OnAuraDataChanged()
 	else
 		-- clear any slots above what we used
 		for i = slot, container.Count do
-			if container:IsSlotUsed(i) then
-				container:SetSlotUnused(i)
-			end
+			container:SetSlotUnused(i)
 		end
 	end
 end
@@ -287,7 +281,6 @@ local function RefreshTestAlerts()
 	local iconsGlow = db.Modules.AlertsModule.Icons.Glow
 
 	for i = 1, count do
-		container:SetSlotUsed(i)
 
 		local spellId = testAlertSpellIds[i]
 		local tex = spellCache:GetSpellTexture(spellId)
@@ -304,7 +297,7 @@ local function RefreshTestAlerts()
 				end
 			end
 
-			container:SetLayer(i, 1, {
+			container:SetSlot(i, {
 				Texture = tex,
 				StartTime = startTime,
 				Duration = duration,
@@ -315,15 +308,12 @@ local function RefreshTestAlerts()
 				FontScale = db.FontScale,
 			})
 
-			container:FinalizeSlot(i, 1)
 		end
 	end
 
 	-- Clear any unused slots beyond test alert count
 	for i = count + 1, container.Count do
-		if container:IsSlotUsed(i) then
-			container:SetSlotUnused(i)
-		end
+		container:SetSlotUnused(i)
 	end
 end
 

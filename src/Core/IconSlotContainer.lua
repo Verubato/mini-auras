@@ -3,6 +3,8 @@ local _, addon = ...
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", true)
 local fontUtil = addon.Utils.FontUtil
 local cachedDb = nil
+-- Reused across Layout() calls to avoid a table allocation on the hot path
+local layoutScratch = {}
 
 ---@class IconSlotContainer
 local M = {}
@@ -21,110 +23,44 @@ local function GetDb()
 	return cachedDb
 end
 
----Creates a new IconSlotContainer instance
----@param parent table frame to attach to
----@param count number of slots to create (default: 3)
----@param size number of each icon slot (default: 20)
----@param spacing number between slots (default: 2)
----@return IconSlotContainer
-function M:New(parent, count, size, spacing)
-	local instance = setmetatable({}, M)
+local function EnsureContainer(slot, iconSize)
+	if not slot.Container then
+		-- place our icons on the 1st draw layer of background
+		local icon = slot.Frame:CreateTexture(nil, "BACKGROUND", nil, 1)
+		icon:SetAllPoints()
 
-	count = count or 3
-	size = size or 20
-	spacing = spacing or 2
+		local cd = CreateFrame("Cooldown", nil, slot.Frame, "CooldownFrameTemplate")
+		cd:SetAllPoints()
+		cd:SetDrawEdge(false)
+		cd:SetDrawBling(false)
+		cd:SetHideCountdownNumbers(false)
+		cd:SetSwipeColor(0, 0, 0, 0.8)
 
-	instance.Frame = CreateFrame("Frame", nil, parent)
-	instance.Slots = {}
-	instance.Count = 0
-	instance.Size = size
-	instance.Spacing = spacing
+		local border = slot.Frame:CreateTexture(nil, "OVERLAY")
+		-- make the border 1px larger than the icon
+		border:SetPoint("TOPLEFT", slot.Frame, "TOPLEFT", -1, 1)
+		border:SetPoint("BOTTOMRIGHT", slot.Frame, "BOTTOMRIGHT", 1, -1)
+		-- refer to https://github.com/Gethe/wow-ui-source/blob/aa3d9bc8633244ba017bf2058bf5e84900397ab5/Interface/AddOns/Blizzard_UnitFrame/Shared/CompactUnitFrame.xml#L31
+		border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
+		border:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
 
-	instance:SetCount(count)
-
-	return instance
-end
-
-local function CreateLayer(parentFrame, level, iconSize)
-	local layerFrame = CreateFrame("Frame", nil, parentFrame)
-	layerFrame:SetAllPoints()
-
-	-- Explicitly set size to match parent frame size
-	-- This ensures LibCustomGlow has correct dimensions immediately
-	local w, h = parentFrame:GetSize()
-	if w and h and w > 0 and h > 0 then
-		layerFrame:SetSize(w, h)
-	end
-
-	if level then
-		layerFrame:SetFrameLevel(level)
-	end
-
-	-- place our icons on the 1st draw layer of background
-	local icon = layerFrame:CreateTexture(nil, "BACKGROUND", nil, 1)
-	icon:SetAllPoints()
-
-	local cd = CreateFrame("Cooldown", nil, layerFrame, "CooldownFrameTemplate")
-	cd:SetAllPoints()
-	cd:SetDrawEdge(false)
-	cd:SetDrawBling(false)
-	cd:SetHideCountdownNumbers(false)
-	cd:SetSwipeColor(0, 0, 0, 0.8)
-
-	local border = layerFrame:CreateTexture(nil, "OVERLAY")
-	-- make the border 1px larger than the icon
-	border:SetPoint("TOPLEFT", layerFrame, "TOPLEFT", -1, 1)
-	border:SetPoint("BOTTOMRIGHT", layerFrame, "BOTTOMRIGHT", 1, -1)
-	-- refer to https://github.com/Gethe/wow-ui-source/blob/aa3d9bc8633244ba017bf2058bf5e84900397ab5/Interface/AddOns/Blizzard_UnitFrame/Shared/CompactUnitFrame.xml#L31
-	border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
-	border:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
-
-	-- Set initial font size based on icon size
-	if iconSize then
-		cd.DesiredIconSize = iconSize
-		-- FontScale will be set when SetLayer is called
-		cd.FontScale = 1.0
-		fontUtil:UpdateCooldownFontSize(cd, iconSize, nil, cd.FontScale)
-	end
-
-	return {
-		Frame = layerFrame,
-		Border = border,
-		Icon = icon,
-		Cooldown = cd,
-	}
-end
-
-local function EnsureLayer(slot, layerIndex, iconSize)
-	local slotLevel = slot.Frame:GetFrameLevel() or 0
-	local baseLevel = slotLevel + 1
-
-	-- Create any missing layers
-	-- Use +2 per layer to ensure cooldown text doesn't overlap next icon
-	for l = #slot.Layers + 1, layerIndex do
-		slot.Layers[l] = CreateLayer(slot.Frame, baseLevel + ((l - 1) * 2), iconSize)
-	end
-
-	-- re-apply levels to existing layers (covers cases where slot level changes)
-	if slot.LastBaseLevel ~= baseLevel then
-		slot.LastBaseLevel = baseLevel
-
-		for l = 1, #slot.Layers do
-			local layer = slot.Layers[l]
-			if layer and layer.Frame and layer.Frame ~= slot.Frame then
-				-- Don't set frame level on the slot button itself (Masque first layer)
-				layer.Frame:SetFrameLevel(baseLevel + ((l - 1) * 2))
-			end
+		if iconSize then
+			cd.DesiredIconSize = iconSize
+			-- FontScale will be set when SetSlot is called
+			cd.FontScale = 1.0
+			fontUtil:UpdateCooldownFontSize(cd, iconSize, nil, cd.FontScale)
 		end
+
+		slot.Container = { Border = border, Icon = icon, Cooldown = cd }
 	end
 
-	return slot.Layers[layerIndex]
+	return slot.Container
 end
 
 ---Updates glow effects on a layer frame
 ---@param layerFrame table The layer frame to update glow on
 ---@param options IconLayerOptions Options containing glow settings
-local function UpdateLayerGlow(layerFrame, options)
+local function UpdateGlow(layerFrame, options)
 	if not LCG then
 		return
 	end
@@ -256,28 +192,55 @@ local function UpdateLayerGlow(layerFrame, options)
 	end
 end
 
-function M:Layout()
-	local usedSlots = {}
+---Creates a new IconSlotContainer instance
+---@param parent table frame to attach to
+---@param count number of slots to create (default: 3)
+---@param size number of each icon slot (default: 20)
+---@param spacing number between slots (default: 2)
+---@return IconSlotContainer
+function M:New(parent, count, size, spacing)
+	local instance = setmetatable({}, M)
 
+	count = count or 3
+	size = size or 20
+	spacing = spacing or 2
+
+	instance.Frame = CreateFrame("Frame", nil, parent)
+	instance.Slots = {}
+	instance.Count = 0
+	instance.Size = size
+	instance.Spacing = spacing
+
+	instance:SetCount(count)
+
+	return instance
+end
+
+function M:Layout()
+	-- Populate scratch table with used slot indices
+	local n = 0
 	for i = 1, self.Count do
-		local slot = self.Slots[i]
-		if slot and slot.IsUsed then
-			usedSlots[#usedSlots + 1] = i
+		if self.Slots[i] and self.Slots[i].IsUsed then
+			n = n + 1
+			layoutScratch[n] = i
 		end
 	end
 
 	-- Build a cheap signature from the current size and used slot indices.
 	-- If it matches the last run, the visual result would be identical so we
-	-- can skip all the SetPoint/SetSize/Show/Hide calls.  This keeps Layout()
-	-- synchronous (no timer deferral) while avoiding redundant frame work
-	-- when it is called multiple times in a row with the same slot state.
-	local sig = self.Size .. ":" .. table.concat(usedSlots, ",")
+	-- can skip all the SetPoint/SetSize/Show/Hide calls.
+	local sig = self.Size .. ":" .. table.concat(layoutScratch, ",", 1, n)
 	if self.LayoutSignature == sig then
 		return
 	end
 	self.LayoutSignature = sig
 
-	local usedCount = #usedSlots
+	-- Trim stale entries left over from a previous call with more slots
+	for i = n + 1, #layoutScratch do
+		layoutScratch[i] = nil
+	end
+
+	local usedCount = n
 	local totalWidth = (usedCount * self.Size) + ((usedCount - 1) * self.Spacing)
 	self.Frame:SetSize((usedCount > 0) and totalWidth or self.Size, self.Size)
 
@@ -287,8 +250,8 @@ function M:Layout()
 	end
 
 	-- Position used slots contiguously
-	for displayIndex, slotIndex in ipairs(usedSlots) do
-		local slot = self.Slots[slotIndex]
+	for displayIndex = 1, usedCount do
+		local slot = self.Slots[layoutScratch[displayIndex]]
 		local x = (displayIndex - 1) * (self.Size + self.Spacing) - (totalWidth / 2) + (self.Size / 2)
 		slot.Frame:ClearAllPoints()
 		slot.Frame:SetPoint("CENTER", self.Frame, "CENTER", x, 0)
@@ -334,18 +297,11 @@ function M:SetIconSize(newSize)
 		if slot and slot.Frame then
 			slot.Frame:SetSize(self.Size, self.Size)
 
-			-- Update cooldown font sizes and layer frame sizes
-			for _, layer in ipairs(slot.Layers) do
-				if layer and layer.Cooldown then
-					layer.Cooldown.DesiredIconSize = self.Size
-					local fontScale = layer.Cooldown.FontScale or 1.0
-					fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, fontScale)
-				end
-
-				-- Update layer frame size to match new slot size
-				if layer and layer.Frame then
-					layer.Frame:SetSize(self.Size, self.Size)
-				end
+			local layer = slot.Container
+			if layer and layer.Cooldown then
+				layer.Cooldown.DesiredIconSize = self.Size
+				local fontScale = layer.Cooldown.FontScale or 1.0
+				fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, fontScale)
 			end
 		end
 	end
@@ -379,8 +335,7 @@ function M:SetCount(newCount)
 
 		self.Slots[i] = {
 			Frame = slotFrame,
-			Layers = {},
-			LayerCount = 0,
+			Container = nil,
 			IsUsed = false,
 		}
 	end
@@ -388,9 +343,8 @@ function M:SetCount(newCount)
 	self:Layout()
 end
 
----Sets a layer on a specific slot
+---Sets the layer on a specific slot
 ---@param slotIndex number Slot index (1-based)
----@param layerIndex number Layer index (1-based, higher = on top)
 ---@param options IconLayerOptions Options for the layer
 ---@class IconLayerOptions
 ---@field Texture string Texture path/ID
@@ -401,11 +355,8 @@ end
 ---@field ReverseCooldown boolean? Whether to reverse the cooldown animation
 ---@field Color table? RGBA color table {r, g, b, a} for glow and border color
 ---@field FontScale number? Font scale multiplier for cooldown text (default: 1.0)
-function M:SetLayer(slotIndex, layerIndex, options)
+function M:SetSlot(slotIndex, options)
 	if slotIndex < 1 or slotIndex > self.Count then
-		return
-	end
-	if layerIndex < 1 then
 		return
 	end
 
@@ -414,14 +365,18 @@ function M:SetLayer(slotIndex, layerIndex, options)
 		return
 	end
 
-	local layer = EnsureLayer(slot, layerIndex, self.Size)
-	slot.LayerCount = math.max(slot.LayerCount or 0, layerIndex)
+	if not slot.IsUsed then
+		slot.IsUsed = true
+		self:Layout()
+	end
+
+	local layer = EnsureContainer(slot, self.Size)
 
 	if options.Texture and options.StartTime and options.Duration then
 		layer.Icon:SetTexture(options.Texture)
 		layer.Cooldown:SetReverse(options.ReverseCooldown)
 		layer.Cooldown:SetCooldown(options.StartTime, options.Duration)
-		layer.Frame:SetAlphaFromBoolean(options.AlphaBoolean)
+		slot.Frame:SetAlphaFromBoolean(options.AlphaBoolean)
 
 		-- Set border color if provided
 		if options.Color and layer.Border then
@@ -442,45 +397,11 @@ function M:SetLayer(slotIndex, layerIndex, options)
 			fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, options.FontScale)
 		end
 
-		UpdateLayerGlow(layer.Frame, options)
+		UpdateGlow(slot.Frame, options)
 	end
 end
 
--- Clears a specific layer on a slot
----@param slotIndex number Slot index
----@param layerIndex number Layer index
-function M:ClearLayer(slotIndex, layerIndex)
-	if slotIndex < 1 or slotIndex > #self.Slots then
-		return
-	end
-
-	local slot = self.Slots[slotIndex]
-	if not slot then
-		return
-	end
-	local layer = slot.Layers[layerIndex]
-	if not layer then
-		return
-	end
-
-	layer.Icon:SetTexture(nil)
-	layer.Cooldown:Clear()
-
-	if LCG then
-		-- Stop only the glow types that exist
-		if layer.Frame._ProcGlow and LCG.ProcGlow_Stop then
-			LCG.ProcGlow_Stop(layer.Frame)
-		end
-		if layer.Frame._PixelGlow and LCG.PixelGlow_Stop then
-			LCG.PixelGlow_Stop(layer.Frame)
-		end
-		if layer.Frame._AutoCastGlow and LCG.AutoCastGlow_Stop then
-			LCG.AutoCastGlow_Stop(layer.Frame)
-		end
-	end
-end
-
--- Clears all layers on a slot
+-- Clears the layer on a slot
 ---@param slotIndex number Slot index
 function M:ClearSlot(slotIndex)
 	if slotIndex < 1 or slotIndex > #self.Slots then
@@ -492,50 +413,24 @@ function M:ClearSlot(slotIndex)
 		return
 	end
 
-	for l = 1, #slot.Layers do
-		self:ClearLayer(slotIndex, l)
-	end
-
-	slot.LayerCount = 0
-end
-
--- Finalizes a slot by clearing unused layers
----@param slotIndex number Slot index
----@param usedCount number Number of layers actually used
-function M:FinalizeSlot(slotIndex, usedCount)
-	if slotIndex < 1 or slotIndex > #self.Slots then
+	local layer = slot.Container
+	if not layer then
 		return
 	end
 
-	local slot = self.Slots[slotIndex]
-	if not slot then
-		return
-	end
+	layer.Icon:SetTexture(nil)
+	layer.Cooldown:Clear()
 
-	usedCount = usedCount or 0
-
-	for l = usedCount + 1, #slot.Layers do
-		self:ClearLayer(slotIndex, l)
-	end
-
-	slot.LayerCount = usedCount
-end
-
----Marks a slot as used and triggers layout update
----@param slotIndex number Slot index
-function M:SetSlotUsed(slotIndex)
-	if slotIndex < 1 or slotIndex > self.Count then
-		return
-	end
-
-	local slot = self.Slots[slotIndex]
-	if not slot then
-		return
-	end
-
-	if not slot.IsUsed then
-		slot.IsUsed = true
-		self:Layout()
+	if LCG then
+		if slot.Frame._ProcGlow and LCG.ProcGlow_Stop then
+			LCG.ProcGlow_Stop(slot.Frame)
+		end
+		if slot.Frame._PixelGlow and LCG.PixelGlow_Stop then
+			LCG.PixelGlow_Stop(slot.Frame)
+		end
+		if slot.Frame._AutoCastGlow and LCG.AutoCastGlow_Stop then
+			LCG.AutoCastGlow_Stop(slot.Frame)
+		end
 	end
 end
 
@@ -559,20 +454,6 @@ function M:SetSlotUnused(slotIndex)
 	end
 end
 
----Checks if a slot is currently used
----@param slotIndex number Slot index
----@return boolean indicating if slot is used
-function M:IsSlotUsed(slotIndex)
-	if slotIndex < 1 or slotIndex > self.Count then
-		return false
-	end
-	local slot = self.Slots[slotIndex]
-	if not slot then
-		return false
-	end
-	return slot.IsUsed or false
-end
-
 ---Gets the number of currently used slots
 ---@return number Count of used slots
 function M:GetUsedSlotCount()
@@ -587,23 +468,28 @@ end
 
 ---Resets all slots to unused (active range only)
 function M:ResetAllSlots()
+	local needsLayout = false
 	for i = 1, self.Count do
 		local slot = self.Slots[i]
 		if slot and slot.IsUsed then
-			self:SetSlotUnused(i)
+			slot.IsUsed = false
+			self:ClearSlot(i)
+			needsLayout = true
 		end
+	end
+	if needsLayout then
+		self:Layout()
 	end
 end
 
 ---@class IconLayer
----@field Frame table
 ---@field Icon table
 ---@field Cooldown table
+---@field Border table
 
 ---@class IconSlot
 ---@field Frame table
----@field Layers IconLayer[]
----@field LayerCount number
+---@field Container IconLayer?
 ---@field IsUsed boolean
 
 ---@class IconSlotContainer
@@ -614,12 +500,8 @@ end
 ---@field Spacing number
 ---@field SetCount fun(self: IconSlotContainer, count: number)
 ---@field SetIconSize fun(self: IconSlotContainer, size: number)
----@field SetLayer fun(self: IconSlotContainer, slotIndex: number, layerIndex: number, options: IconLayerOptions)
----@field ClearLayer fun(self: IconSlotContainer, slotIndex: number, layerIndex: number)
+---@field SetSlot fun(self: IconSlotContainer, slotIndex: number, options: IconLayerOptions)
 ---@field ClearSlot fun(self: IconSlotContainer, slotIndex: number)
----@field FinalizeSlot fun(self: IconSlotContainer, slotIndex: number, usedCount: number)
----@field SetSlotUsed fun(self: IconSlotContainer, slotIndex: number)
 ---@field SetSlotUnused fun(self: IconSlotContainer, slotIndex: number)
----@field IsSlotUsed fun(self: IconSlotContainer, slotIndex: number): boolean
 ---@field GetUsedSlotCount fun(self: IconSlotContainer): number
 ---@field ResetAllSlots fun(self: IconSlotContainer)

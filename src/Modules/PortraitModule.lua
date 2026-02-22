@@ -92,16 +92,14 @@ local function CreateContainer(unitFrame, portrait)
 
 	local mask = GetPortraitMask(unitFrame) or CreatePortraitMask(portrait)
 
-	-- Hook SetLayer to apply mask when layers are created
-	local originalSetLayer = container.SetLayer
-	container.SetLayer = function(self, slotIndex, layerIndex, options)
-		-- Call original SetLayer first
-		originalSetLayer(self, slotIndex, layerIndex, options)
+	-- Hook SetSlot to apply mask when the layer is created
+	local originalSetSlot = container.SetSlot
+	container.SetSlot = function(self, slotIndex, options)
+		originalSetSlot(self, slotIndex, options)
 
-		-- Apply mask to the layer that was just created/updated
 		local slot = self.Slots[slotIndex]
-		if slot and slot.Layers[layerIndex] then
-			ApplyMaskToLayer(slot.Layers[layerIndex], mask)
+		if slot and slot.Container then
+			ApplyMaskToLayer(slot.Container, mask)
 		end
 	end
 
@@ -124,8 +122,7 @@ local function OnAuraInfo(watcher, container)
 	for i = #ccAuras, 1, -1 do
 		local aura = ccAuras[i]
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
-			container:SetSlotUsed(slotIndex)
-			container:SetLayer(slotIndex, 1, {
+			container:SetSlot(slotIndex, {
 				Texture = aura.SpellIcon,
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
@@ -133,7 +130,6 @@ local function OnAuraInfo(watcher, container)
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
 			})
-			container:FinalizeSlot(slotIndex, 1)
 			return
 		end
 	end
@@ -142,8 +138,7 @@ local function OnAuraInfo(watcher, container)
 	for i = #defensiveAuras, 1, -1 do
 		local aura = defensiveAuras[i]
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
-			container:SetSlotUsed(slotIndex)
-			container:SetLayer(slotIndex, 1, {
+			container:SetSlot(slotIndex, {
 				Texture = aura.SpellIcon,
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
@@ -151,7 +146,6 @@ local function OnAuraInfo(watcher, container)
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
 			})
-			container:FinalizeSlot(slotIndex, 1)
 			return
 		end
 	end
@@ -160,8 +154,7 @@ local function OnAuraInfo(watcher, container)
 	for i = #importantAuras, 1, -1 do
 		local aura = importantAuras[i]
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
-			container:SetSlotUsed(slotIndex)
-			container:SetLayer(slotIndex, 1, {
+			container:SetSlot(slotIndex, {
 				Texture = aura.SpellIcon,
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
@@ -169,15 +162,12 @@ local function OnAuraInfo(watcher, container)
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
 			})
-			container:FinalizeSlot(slotIndex, 1)
 			return
 		end
 	end
 
 	-- No auras to display, clear the slot if it was used
-	if container:IsSlotUsed(slotIndex) then
-		container:SetSlotUnused(slotIndex)
-	end
+	container:SetSlotUnused(slotIndex)
 end
 
 ---@return table? unitFrame
@@ -244,8 +234,7 @@ local function RefreshTestIcons()
 	local now = GetTime()
 
 	for _, container in pairs(containers) do
-		container:SetSlotUsed(1)
-		container:SetLayer(1, 1, {
+		container:SetSlot(1, {
 			Texture = tex,
 			StartTime = now,
 			Duration = 15, -- 15 second duration for test
@@ -254,7 +243,6 @@ local function RefreshTestIcons()
 			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 			FontScale = db.FontScale,
 		})
-		container:FinalizeSlot(1, 1)
 	end
 end
 

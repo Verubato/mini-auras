@@ -88,8 +88,7 @@ local function OnAuraStateUpdated()
 
 		for _, aura in ipairs(ccState) do
 			slot = slot + 1
-			iconsContainer:SetSlotUsed(slot)
-			iconsContainer:SetLayer(slot, 1, {
+			iconsContainer:SetSlot(slot, {
 				Texture = aura.SpellIcon,
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
@@ -99,15 +98,12 @@ local function OnAuraStateUpdated()
 				Color = colorByDispelType and aura.DispelColor,
 				FontScale = db.FontScale,
 			})
-			iconsContainer:FinalizeSlot(slot, 1)
 		end
 	end
 
 	-- Clear any unused slots beyond the aura count
 	for i = slot + 1, iconsContainer.Count do
-		if iconsContainer:IsSlotUsed(i) then
-			iconsContainer:SetSlotUnused(i)
-		end
+		iconsContainer:SetSlotUnused(i)
 	end
 
 	UpdateAnchorSize()
@@ -225,8 +221,7 @@ local function RefreshTestFrame()
 			local duration = 15 + (i - 1) * 3
 			local startTime = now - (i - 1) * 0.5
 
-			iconsContainer:SetSlotUsed(i)
-			iconsContainer:SetLayer(i, 1, {
+			iconsContainer:SetSlot(i, {
 				Texture = texture,
 				StartTime = startTime,
 				Duration = duration,
@@ -236,15 +231,12 @@ local function RefreshTestFrame()
 				Color = options.Icons.ColorByDispelType and spell.DispelColor,
 				FontScale = db.FontScale,
 			})
-			iconsContainer:FinalizeSlot(i, 1)
 		end
 	end
 
 	-- Clear any unused slots beyond the test spell count
 	for i = #testSpells + 1, iconsContainer.Count do
-		if iconsContainer:IsSlotUsed(i) then
-			iconsContainer:SetSlotUnused(i)
-		end
+		iconsContainer:SetSlotUnused(i)
 	end
 
 	UpdateAnchorSize()

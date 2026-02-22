@@ -78,8 +78,7 @@ local function UpdateWatcherAuras(entry)
 		end
 
 		local aura = auraData.aura
-		container:SetSlotUsed(slotIndex)
-		container:SetLayer(slotIndex, 1, {
+		container:SetSlot(slotIndex, {
 			Texture = aura.SpellIcon,
 			StartTime = aura.StartTime,
 			Duration = aura.TotalDuration,
@@ -88,15 +87,12 @@ local function UpdateWatcherAuras(entry)
 			Glow = iconsGlow,
 			FontScale = db.FontScale,
 		})
-		container:FinalizeSlot(slotIndex, 1)
 		slotIndex = slotIndex + 1
 	end
 
 	-- Clear any unused slots beyond the aura count
 	for i = slotIndex, container.Count do
-		if container:IsSlotUsed(i) then
-			container:SetSlotUnused(i)
-		end
+		container:SetSlotUnused(i)
 	end
 end
 
@@ -295,9 +291,8 @@ local function RefreshTestIcons()
 					local duration = 15
 					local startTime = now
 
-					container:SetSlotUsed(slotIndex)
 
-					container:SetLayer(slotIndex, 1, {
+					container:SetSlot(slotIndex, {
 						Texture = texture,
 						StartTime = startTime,
 						Duration = duration,
@@ -306,16 +301,13 @@ local function RefreshTestIcons()
 						Glow = options.Icons.Glow,
 						FontScale = db.FontScale,
 					})
-					container:FinalizeSlot(slotIndex, 1)
 				end
 			end
 		end
 
 		-- Clear any unused slots beyond maxIcons
 		for i = maxIcons + 1, container.Count do
-			if container:IsSlotUsed(i) then
-				container:SetSlotUnused(i)
-			end
+			container:SetSlotUnused(i)
 		end
 
 		AnchorContainer(container, entry.Anchor, options)

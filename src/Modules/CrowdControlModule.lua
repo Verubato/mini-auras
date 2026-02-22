@@ -59,7 +59,7 @@ local function UpdateWatcherAuras(entry)
 			break
 		end
 
-		container:SetLayer(slotIndex, 1, {
+		container:SetSlot(slotIndex, {
 			Texture = aura.SpellIcon,
 			StartTime = aura.StartTime,
 			Duration = aura.TotalDuration,
@@ -69,16 +69,12 @@ local function UpdateWatcherAuras(entry)
 			Color = colorByDispelType and aura.DispelColor,
 			FontScale = db.FontScale,
 		})
-		container:FinalizeSlot(slotIndex, 1)
-		container:SetSlotUsed(slotIndex)
 		slotIndex = slotIndex + 1
 	end
 
 	-- Clear any unused slots beyond the aura count
 	for i = slotIndex, container.Count do
-		if container:IsSlotUsed(i) then
-			container:SetSlotUnused(i)
-		end
+		container:SetSlotUnused(i)
 	end
 end
 
@@ -263,9 +259,8 @@ local function RefreshTestIcons()
 				local duration = 15 + (i - 1) * 3
 				local startTime = now - (i - 1) * 0.5
 
-				container:SetSlotUsed(i)
 
-				container:SetLayer(i, 1, {
+				container:SetSlot(i, {
 					Texture = texture,
 					StartTime = startTime,
 					Duration = duration,
@@ -275,15 +270,12 @@ local function RefreshTestIcons()
 					Color = options.Icons.ColorByDispelType and spell.DispelColor,
 					FontScale = db.FontScale,
 				})
-				container:FinalizeSlot(i, 1)
 			end
 		end
 
 		-- Clear any unused slots beyond the test spell count
 		for i = #testSpells + 1, container.Count do
-			if container:IsSlotUsed(i) then
-				container:SetSlotUnused(i)
-			end
+			container:SetSlotUnused(i)
 		end
 
 		-- Anchor and show/hide based on anchor visibility

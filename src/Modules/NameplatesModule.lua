@@ -73,7 +73,7 @@ local previousPetEnabled = {
 }
 local previousModuleEnabled = { Always = false, Arena = false, Dungeons = false, Raid = false }
 
--- Reusable scratch table for SetLayer calls.
+-- Reusable scratch table for SetSlot calls.
 -- This avoids creating a new table on every aura update for every nameplate slot,
 -- which significantly reduces garbage collection pressure.
 local layerScratch = {}
@@ -356,7 +356,6 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			end
 			slot = slot + 1
 			local reverseIndex = #ccData - i + 1
-			container:SetSlotUsed(slot)
 			local entry = ccData[reverseIndex]
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
@@ -366,8 +365,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and entry.DispelColor or nil
-			container:SetLayer(slot, 1, layerScratch)
-			container:FinalizeSlot(slot, 1)
+			container:SetSlot(slot, layerScratch)
 		end
 	end
 
@@ -380,7 +378,6 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			end
 			slot = slot + 1
 			local reverseIndex = #defensivesData - i + 1
-			container:SetSlotUsed(slot)
 			local entry = defensivesData[reverseIndex]
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
@@ -390,8 +387,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and defensiveColor or nil
-			container:SetLayer(slot, 1, layerScratch)
-			container:FinalizeSlot(slot, 1)
+			container:SetSlot(slot, layerScratch)
 		end
 	end
 
@@ -404,7 +400,6 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			end
 			slot = slot + 1
 			local reverseIndex = #importantData - i + 1
-			container:SetSlotUsed(slot)
 			local entry = importantData[reverseIndex]
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
@@ -414,16 +409,13 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and importantColor or nil
-			container:SetLayer(slot, 1, layerScratch)
-			container:FinalizeSlot(slot, 1)
+			container:SetSlot(slot, layerScratch)
 		end
 	end
 
 	-- Clear any unused slots beyond the used count
 	for i = slot + 1, container.Count do
-		if container:IsSlotUsed(i) then
-			container:SetSlotUnused(i)
-		end
+		container:SetSlotUnused(i)
 	end
 end
 
@@ -458,7 +450,6 @@ local function ApplyCcToNameplate(data, watcher, unitOptions)
 	-- Iterate in reverse to show the most recent first
 	for i = 1, limit do
 		local reverseIndex = ccDataCount - i + 1
-		container:SetSlotUsed(i)
 		local entry = ccData[reverseIndex]
 		layerScratch.Texture = entry.SpellIcon
 		layerScratch.StartTime = entry.StartTime
@@ -468,15 +459,12 @@ local function ApplyCcToNameplate(data, watcher, unitOptions)
 		layerScratch.ReverseCooldown = iconsReverse
 		layerScratch.FontScale = fontScale
 		layerScratch.Color = colorByCategory and entry.DispelColor or nil
-		container:SetLayer(i, 1, layerScratch)
-		container:FinalizeSlot(i, 1)
+		container:SetSlot(i, layerScratch)
 	end
 
 	-- Clear any unused slots beyond the CC count
 	for i = limit + 1, container.Count do
-		if container:IsSlotUsed(i) then
-			container:SetSlotUnused(i)
-		end
+		container:SetSlotUnused(i)
 	end
 end
 
@@ -517,7 +505,6 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitOptions)
 			end
 			slot = slot + 1
 			local reverseIndex = #importantData - i + 1
-			container:SetSlotUsed(slot)
 			local entry = importantData[reverseIndex]
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
@@ -527,8 +514,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitOptions)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and importantColor or nil
-			container:SetLayer(slot, 1, layerScratch)
-			container:FinalizeSlot(slot, 1)
+			container:SetSlot(slot, layerScratch)
 		end
 	end
 
@@ -541,7 +527,6 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitOptions)
 			end
 			slot = slot + 1
 			local reverseIndex = #defensivesData - i + 1
-			container:SetSlotUsed(slot)
 			local entry = defensivesData[reverseIndex]
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
@@ -551,16 +536,13 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitOptions)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and defensiveColor or nil
-			container:SetLayer(slot, 1, layerScratch)
-			container:FinalizeSlot(slot, 1)
+			container:SetSlot(slot, layerScratch)
 		end
 	end
 
 	-- Clear any unused slots beyond the used count
 	for i = slot + 1, container.Count do
-		if container:IsSlotUsed(i) then
-			container:SetSlotUnused(i)
-		end
+		container:SetSlotUnused(i)
 	end
 end
 
@@ -611,7 +593,6 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			break
 		end
 		slot = slot + 1
-		combinedContainer:SetSlotUsed(slot)
 
 		local spellId = testCcNameplateSpellIds[i]
 		local tex = spellCache:GetSpellTexture(spellId)
@@ -624,8 +605,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and testCcDispelColors[spellId] or nil
-			combinedContainer:SetLayer(slot, 1, layerScratch)
-			combinedContainer:FinalizeSlot(slot, 1)
+			combinedContainer:SetSlot(slot, layerScratch)
 		end
 	end
 
@@ -635,7 +615,6 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			break
 		end
 		slot = slot + 1
-		combinedContainer:SetSlotUsed(slot)
 
 		local spellId = testDefensiveNameplateSpellIds[i]
 		local tex = spellCache:GetSpellTexture(spellId)
@@ -648,8 +627,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and defensiveColor or nil
-			combinedContainer:SetLayer(slot, 1, layerScratch)
-			combinedContainer:FinalizeSlot(slot, 1)
+			combinedContainer:SetSlot(slot, layerScratch)
 		end
 	end
 
@@ -659,7 +637,6 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			break
 		end
 		slot = slot + 1
-		combinedContainer:SetSlotUsed(slot)
 
 		local spellId = testImportantNameplateSpellIds[i]
 		local tex = spellCache:GetSpellTexture(spellId)
@@ -672,16 +649,13 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and importantColor or nil
-			combinedContainer:SetLayer(slot, 1, layerScratch)
-			combinedContainer:FinalizeSlot(slot, 1)
+			combinedContainer:SetSlot(slot, layerScratch)
 		end
 	end
 
 	-- Clear any unused slots beyond what we just set
 	for i = slot + 1, combinedContainer.Count do
-		if combinedContainer:IsSlotUsed(i) then
-			combinedContainer:SetSlotUnused(i)
-		end
+		combinedContainer:SetSlotUnused(i)
 	end
 end
 
@@ -695,7 +669,6 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 
 		-- Show CC test spells (limited to container count)
 		for i = 1, limit do
-			ccContainer:SetSlotUsed(i)
 
 			local spellId = testCcNameplateSpellIds[i]
 			local tex = spellCache:GetSpellTexture(spellId)
@@ -709,16 +682,13 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 				layerScratch.ReverseCooldown = iconsReverse
 				layerScratch.FontScale = fontScale
 				layerScratch.Color = colorByCategory and testCcDispelColors[spellId] or nil
-				ccContainer:SetLayer(i, 1, layerScratch)
-				ccContainer:FinalizeSlot(i, 1)
+				ccContainer:SetSlot(i, layerScratch)
 			end
 		end
 
 		-- Clear any unused slots beyond test CC spells
 		for i = limit + 1, ccContainer.Count do
-			if ccContainer:IsSlotUsed(i) then
-				ccContainer:SetSlotUnused(i)
-			end
+			ccContainer:SetSlotUnused(i)
 		end
 	end
 
@@ -741,7 +711,6 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 					break
 				end
 				slot = slot + 1
-				importantContainer:SetSlotUsed(slot)
 
 				local spellId = testImportantNameplateSpellIds[i]
 				local tex = spellCache:GetSpellTexture(spellId)
@@ -755,8 +724,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 					layerScratch.ReverseCooldown = iconsReverse
 					layerScratch.FontScale = fontScale
 					layerScratch.Color = colorByCategory and importantColor or nil
-					importantContainer:SetLayer(slot, 1, layerScratch)
-					importantContainer:FinalizeSlot(slot, 1)
+					importantContainer:SetSlot(slot, layerScratch)
 				end
 			end
 		end
@@ -768,7 +736,6 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 					break
 				end
 				slot = slot + 1
-				importantContainer:SetSlotUsed(slot)
 
 				local spellId = testDefensiveNameplateSpellIds[i]
 				local tex = spellCache:GetSpellTexture(spellId)
@@ -782,17 +749,14 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 					layerScratch.ReverseCooldown = iconsReverse
 					layerScratch.FontScale = fontScale
 					layerScratch.Color = colorByCategory and defensiveColor or nil
-					importantContainer:SetLayer(slot, 1, layerScratch)
-					importantContainer:FinalizeSlot(slot, 1)
+					importantContainer:SetSlot(slot, layerScratch)
 				end
 			end
 		end
 
 		-- Clear any unused slots beyond what we just set
 		for i = slot + 1, importantContainer.Count do
-			if importantContainer:IsSlotUsed(i) then
-				importantContainer:SetSlotUnused(i)
-			end
+			importantContainer:SetSlotUnused(i)
 		end
 	end
 end

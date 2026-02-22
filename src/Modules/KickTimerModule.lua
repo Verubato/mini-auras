@@ -282,7 +282,7 @@ local function CreateKickEntry(duration, icon)
 	local key = math.random()
 	local iconOptions = db.Modules.KickTimerModule.Icons
 
-	kickBar.Container:SetLayer(slotIndex, 1, {
+	kickBar.Container:SetSlot(slotIndex, {
 		Texture = icon,
 		StartTime = GetTime(),
 		Duration = duration,
@@ -291,8 +291,6 @@ local function CreateKickEntry(duration, icon)
 		Glow = iconOptions.Glow or false,
 		FontScale = db.FontScale,
 	})
-	kickBar.Container:FinalizeSlot(slotIndex, 1)
-	kickBar.Container:SetSlotUsed(slotIndex)
 
 	local timer = C_Timer.NewTimer(duration, function()
 		local slotData = kickBar.ActiveSlots[slotIndex]
@@ -541,9 +539,7 @@ local function ShowTestIcons()
 	local testIconCount = 3
 	if kickBar.Container then
 		for i = testIconCount + 1, kickBar.Container.Count do
-			if kickBar.Container:IsSlotUsed(i) then
-				kickBar.Container:SetSlotUnused(i)
-			end
+			kickBar.Container:SetSlotUnused(i)
 		end
 	end
 end
