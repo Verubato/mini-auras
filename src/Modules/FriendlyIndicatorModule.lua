@@ -162,7 +162,7 @@ local function EnsureWatcher(anchor, unit)
 	if not entry then
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 		local size = tonumber(options.Icons.Size) or 32
-		local spacing = 2
+		local spacing = db.IconSpacing or 2
 		local container = iconSlotContainer:New(UIParent, maxIcons, size, spacing)
 		container.Frame:SetIgnoreParentScale(true)
 		container.Frame:SetIgnoreParentAlpha(true)
@@ -394,6 +394,7 @@ function M:Refresh()
 		local iconSize = tonumber(options.Icons.Size) or 32
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 		container:SetIconSize(iconSize)
+		container:SetSpacing(db.IconSpacing or 2)
 		container:SetCount(maxIcons)
 
 		if not testModeActive then

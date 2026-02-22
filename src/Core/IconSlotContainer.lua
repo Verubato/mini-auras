@@ -277,6 +277,22 @@ function M:Layout()
 	end
 end
 
+---Sets the spacing between slots
+---@param newSpacing number
+function M:SetSpacing(newSpacing)
+	newSpacing = tonumber(newSpacing)
+	if not newSpacing or newSpacing < 0 then
+		return
+	end
+	if self.Spacing == newSpacing then
+		return
+	end
+
+	self.Spacing = newSpacing
+	self.LayoutSignature = nil
+	self:Layout()
+end
+
 ---Sets the icon size for all slots
 ---@param newSize number
 function M:SetIconSize(newSize)
@@ -499,6 +515,7 @@ end
 ---@field Size number
 ---@field Spacing number
 ---@field SetCount fun(self: IconSlotContainer, count: number)
+---@field SetSpacing fun(self: IconSlotContainer, spacing: number)
 ---@field SetIconSize fun(self: IconSlotContainer, size: number)
 ---@field SetSlot fun(self: IconSlotContainer, slotIndex: number, options: IconLayerOptions)
 ---@field ClearSlot fun(self: IconSlotContainer, slotIndex: number)

@@ -342,6 +342,7 @@ function M:Refresh()
 	local currentFont, _, _ = healerAnchor.HealerWarning:GetFont()
 	healerAnchor.HealerWarning:SetFont(currentFont, options.Font.Size, options.Font.Flags)
 	iconsContainer:SetIconSize(tonumber(options.Icons.Size) or 32)
+	iconsContainer:SetSpacing(db.IconSpacing or 2)
 
 	if options.ShowWarningText ~= false then
 		healerAnchor.HealerWarning:Show()
@@ -400,7 +401,7 @@ function M:Init()
 	healerAnchor.HealerWarning = text
 
 	-- Icons sit at the bottom of the anchor, text sits at the top.
-	iconsContainer = iconSlotContainer:New(healerAnchor, 5, tonumber(options.Icons.Size) or 32, 2)
+	iconsContainer = iconSlotContainer:New(healerAnchor, 5, tonumber(options.Icons.Size) or 32, db.IconSpacing or 2)
 	iconsContainer.Frame:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
 	iconsContainer.Frame:Show()
 

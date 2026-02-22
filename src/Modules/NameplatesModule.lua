@@ -146,7 +146,7 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 
 		local combinedContainer = nameplate[nameplateCombinedKey]
 		if not combinedContainer then
-			combinedContainer = iconSlotContainer:New(nameplate, maxIcons, size, 2)
+			combinedContainer = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2)
 			nameplate[nameplateCombinedKey] = combinedContainer
 		else
 			combinedContainer:SetIconSize(size)
@@ -177,7 +177,7 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 
 		ccContainer = nameplate[nameplateCcKey]
 		if not ccContainer then
-			ccContainer = iconSlotContainer:New(nameplate, maxIcons, size, 2)
+			ccContainer = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2)
 			nameplate[nameplateCcKey] = ccContainer
 		else
 			ccContainer:SetIconSize(size)
@@ -200,7 +200,7 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 
 		importantContainer = nameplate[nameplateImportantKey]
 		if not importantContainer then
-			importantContainer = iconSlotContainer:New(nameplate, maxIcons, size, 2)
+			importantContainer = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2)
 			nameplate[nameplateImportantKey] = importantContainer
 		else
 			importantContainer:SetIconSize(size)
@@ -1012,6 +1012,7 @@ local function RefreshAnchorsAndSizes()
 							combinedOptions.Offset.Y
 						)
 						combinedContainer:SetIconSize(combinedOptions.Icons.Size)
+						combinedContainer:SetSpacing(db.IconSpacing or 2)
 						combinedContainer:SetCount(combinedOptions.Icons.MaxIcons)
 						combinedContainer.Frame:SetFrameLevel(data.Nameplate:GetFrameLevel() + 10)
 					end
@@ -1034,6 +1035,7 @@ local function RefreshAnchorsAndSizes()
 							ccOptions.Offset.Y
 						)
 						ccContainer:SetIconSize(ccOptions.Icons.Size)
+						ccContainer:SetSpacing(db.IconSpacing or 2)
 						ccContainer:SetCount(ccOptions.Icons.MaxIcons)
 						ccContainer.Frame:SetFrameLevel(data.Nameplate:GetFrameLevel() + 10)
 					end
@@ -1055,6 +1057,7 @@ local function RefreshAnchorsAndSizes()
 							importantOptions.Offset.Y
 						)
 						importantContainer:SetIconSize(importantOptions.Icons.Size)
+						importantContainer:SetSpacing(db.IconSpacing or 2)
 						importantContainer:SetCount(importantOptions.Icons.MaxIcons)
 						importantContainer.Frame:SetFrameLevel(data.Nameplate:GetFrameLevel() + 10)
 					end

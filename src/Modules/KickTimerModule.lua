@@ -164,7 +164,7 @@ local function CreateKickBar()
 	local options = db.Modules.KickTimerModule
 	local iconOptions = options.Icons
 	local size = tonumber(iconOptions.Size) or 50
-	local spacing = 2
+	local spacing = db.IconSpacing or 2
 
 	local container = iconSlotContainer:New(UIParent, kickBar.MaxSlots, size, spacing)
 	container.Frame:SetFrameStrata("HIGH")
@@ -209,6 +209,7 @@ local function ApplyKickBarIconOptions()
 
 	if kickBar.Container then
 		kickBar.Container:SetIconSize(size)
+		kickBar.Container:SetSpacing(db.IconSpacing or 2)
 	end
 
 	if kickBar.Anchor then

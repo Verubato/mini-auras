@@ -410,6 +410,7 @@ function M:Refresh()
 	)
 
 	container:SetIconSize(options.Icons.Size)
+	container:SetSpacing(db.IconSpacing or 2)
 
 	if testModeActive then
 		RefreshTestAlerts()
@@ -429,7 +430,7 @@ function M:Init()
 	cachedTTSImportantEnabled = options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
 	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
 
-	container = iconSlotContainer:New(UIParent, count, size, 2)
+	container = iconSlotContainer:New(UIParent, count, size, db.IconSpacing or 2)
 	container.Frame:SetIgnoreParentScale(true)
 
 	local initialRelativeTo = _G[options.RelativeTo] or UIParent

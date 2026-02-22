@@ -4,6 +4,7 @@ local mini = addon.Core.Framework
 local L = addon.L
 local dbMigrator = addon.Config.Migrator
 local verticalSpacing = mini.VerticalSpacing
+local horizontalSpacing = mini.HorizontalSpacing
 ---@class GeneralConfig
 local M = {}
 
@@ -82,10 +83,33 @@ function M:Build(panel)
 				addon:Refresh()
 			end
 		end,
-		Width = columnWidth,
+		Width = columnWidth - horizontalSpacing,
 	})
 
 	fontScaleSlider.Slider:SetPoint("TOPLEFT", glowNote, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+
+	local iconSpacingSlider = mini:Slider({
+		Parent = panel,
+		LabelText = L["Icon Padding"],
+		Min = 0,
+		Max = 20,
+		Step = 1,
+		GetValue = function()
+			return db.IconSpacing or 2
+		end,
+		SetValue = function(value)
+			local newValue = mini:ClampInt(value, 0, 20, 2)
+
+			if db.IconSpacing ~= newValue then
+				db.IconSpacing = newValue
+				addon:Refresh()
+			end
+		end,
+		Width = columnWidth - horizontalSpacing,
+	})
+
+	iconSpacingSlider.Slider:SetPoint("LEFT", fontScaleSlider.Slider, "RIGHT", horizontalSpacing, 0)
+	iconSpacingSlider.Slider:SetPoint("TOP", fontScaleSlider.Slider, "TOP", 0, 0)
 
 	local resetBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	resetBtn:SetSize(120, 26)

@@ -112,7 +112,7 @@ local function EnsureWatcher(anchor, unit)
 	if not entry then
 		local count = options.Icons.Count or 5
 		local size = tonumber(options.Icons.Size) or 32
-		local spacing = 2
+		local spacing = db.IconSpacing or 2
 		local container = iconSlotContainer:New(UIParent, count, size, spacing)
 		local watcher = unitAuraWatcher:New(unit, nil, { CC = true })
 
@@ -367,6 +367,7 @@ function M:Refresh()
 		local container = entry.Container
 		local iconSize = tonumber(options.Icons.Size) or 32
 		container:SetIconSize(iconSize)
+		container:SetSpacing(db.IconSpacing or 2)
 
 		local iconCount = options.Icons.Count or 5
 		if entry.Container.Count ~= iconCount then
