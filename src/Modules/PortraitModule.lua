@@ -118,16 +118,14 @@ local function OnAuraInfo(watcher, container)
 	local ccAuras = watcher:GetCcState()
 	local importantAuras = watcher:GetImportantState()
 	local defensiveAuras = watcher:GetDefensiveState()
-
 	local slotIndex = 1
-	local layerIndex = 1
 
-	-- Process CC auras, iterate in reverse to show latest spells
+	-- Show the latest CC aura
 	for i = #ccAuras, 1, -1 do
 		local aura = ccAuras[i]
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
 			container:SetSlotUsed(slotIndex)
-			container:SetLayer(slotIndex, layerIndex, {
+			container:SetLayer(slotIndex, 1, {
 				Texture = aura.SpellIcon,
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
@@ -135,25 +133,17 @@ local function OnAuraInfo(watcher, container)
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
 			})
-
-			if not issecretvalue(aura.IsCC) then
-				-- we're in 12.0.1
-				if aura.IsCC then
-					container:FinalizeSlot(slotIndex, layerIndex)
-					return
-				end
-			end
-
-			layerIndex = layerIndex + 1
+			container:FinalizeSlot(slotIndex, 1)
+			return
 		end
 	end
 
-	-- Process defensive auras, iterate in reverse to show latest spells
+	-- Show the latest defensive aura
 	for i = #defensiveAuras, 1, -1 do
 		local aura = defensiveAuras[i]
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
 			container:SetSlotUsed(slotIndex)
-			container:SetLayer(slotIndex, layerIndex, {
+			container:SetLayer(slotIndex, 1, {
 				Texture = aura.SpellIcon,
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
@@ -161,18 +151,17 @@ local function OnAuraInfo(watcher, container)
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
 			})
-
-			container:FinalizeSlot(slotIndex, layerIndex)
+			container:FinalizeSlot(slotIndex, 1)
 			return
 		end
 	end
 
-	-- Process important auras, iterate in reverse to show latest spells
+	-- Show the latest important aura
 	for i = #importantAuras, 1, -1 do
 		local aura = importantAuras[i]
 		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
 			container:SetSlotUsed(slotIndex)
-			container:SetLayer(slotIndex, layerIndex, {
+			container:SetLayer(slotIndex, 1, {
 				Texture = aura.SpellIcon,
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
@@ -180,18 +169,14 @@ local function OnAuraInfo(watcher, container)
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
 			})
-
-			layerIndex = layerIndex + 1
+			container:FinalizeSlot(slotIndex, 1)
+			return
 		end
 	end
 
-	if layerIndex > 1 then
-		container:FinalizeSlot(slotIndex, layerIndex - 1)
-	else
-		-- No auras to display, clear the slot if it was used
-		if container:IsSlotUsed(slotIndex) then
-			container:SetSlotUnused(slotIndex)
-		end
+	-- No auras to display, clear the slot if it was used
+	if container:IsSlotUsed(slotIndex) then
+		container:SetSlotUnused(slotIndex)
 	end
 end
 
