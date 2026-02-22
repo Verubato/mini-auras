@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.22.0
+
+- Added voice dropdown selection.
+- Added option to enable/disable alert icons (so you can just have audio alerts on).
+- Added icon padding option.
+- Added show important and defensive checkboxes for friendly CDs.
+- Added Masque integration.
+
 ## 2.21.0
 
 - Added alerts sound effects.
