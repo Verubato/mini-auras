@@ -273,8 +273,6 @@ local function RefreshTestIcons()
 		local now = GetTime()
 		local maxIcons = options.Icons.MaxIcons or 1
 
-		container:SetIconSize(tonumber(options.Icons.Size) or 50)
-
 		-- Build test pool from enabled types, alternating defensive/important when both are on
 		local testPool = {}
 		local showDefensives = options.ShowDefensives ~= false

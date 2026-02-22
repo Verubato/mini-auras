@@ -140,14 +140,6 @@ local function EnsureWatcher(anchor, unit)
 			-- Force immediate aura scan for the new unit
 			entry.Watcher:ForceFullUpdate()
 		end
-
-		local iconSize = tonumber(options.Icons.Size) or 32
-		entry.Container:SetIconSize(iconSize)
-
-		local iconCount = options.Icons.Count or 5
-		if entry.Container.Count ~= iconCount then
-			entry.Container:SetCount(iconCount)
-		end
 	end
 
 	UpdateWatcherAuras(entry)
@@ -250,15 +242,12 @@ local function RefreshTestIcons()
 		local container = entry.Container
 		local now = GetTime()
 
-		container:SetIconSize(tonumber(options.Icons.Size) or 32)
-
 		for i, spell in ipairs(testSpells) do
 			local texture = spellCache:GetSpellTexture(spell.SpellId)
 
 			if texture then
 				local duration = 15 + (i - 1) * 3
 				local startTime = now - (i - 1) * 0.5
-
 
 				container:SetSlot(i, {
 					Texture = texture,
@@ -366,13 +355,11 @@ function M:Refresh()
 	for anchor, entry in pairs(watchers) do
 		local container = entry.Container
 		local iconSize = tonumber(options.Icons.Size) or 32
-		container:SetIconSize(iconSize)
-		container:SetSpacing(db.IconSpacing or 2)
-
 		local iconCount = options.Icons.Count or 5
-		if entry.Container.Count ~= iconCount then
-			entry.Container:SetCount(iconCount)
-		end
+
+		container:SetIconSize(iconSize)
+		container:SetCount(iconCount)
+		container:SetSpacing(db.IconSpacing or 2)
 
 		if not testModeActive then
 			UpdateWatcherAuras(entry)
