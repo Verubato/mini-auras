@@ -106,10 +106,15 @@ local function EnsureLayer(slot, layerIndex, iconSize)
 	end
 
 	-- re-apply levels to existing layers (covers cases where slot level changes)
-	for l = 1, #slot.Layers do
-		local layer = slot.Layers[l]
-		if layer and layer.Frame then
-			layer.Frame:SetFrameLevel(baseLevel + ((l - 1) * 2))
+	if slot.LastBaseLevel ~= baseLevel then
+		slot.LastBaseLevel = baseLevel
+
+		for l = 1, #slot.Layers do
+			local layer = slot.Layers[l]
+			if layer and layer.Frame and layer.Frame ~= slot.Frame then
+				-- Don't set frame level on the slot button itself (Masque first layer)
+				layer.Frame:SetFrameLevel(baseLevel + ((l - 1) * 2))
+			end
 		end
 	end
 
