@@ -318,6 +318,8 @@ local dbDefaults = {
 			},
 
 			ExcludePlayer = false,
+			ShowDefensives = true,
+			ShowImportant = true,
 
 			Offset = {
 				X = 0,

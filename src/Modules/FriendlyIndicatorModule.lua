@@ -61,13 +61,17 @@ local function UpdateWatcherAuras(entry)
 	local defensiveState = entry.Watcher:GetDefensiveState()
 	local importantState = entry.Watcher:GetImportantState()
 
-	-- Combine all auras (defensive first, then important)
+	-- Combine all auras (defensive first, then important), filtered by options
 	local allAuras = {}
-	for _, aura in ipairs(defensiveState) do
-		table.insert(allAuras, { aura = aura, alpha = aura.IsDefensive })
+	if options.ShowDefensives ~= false then
+		for _, aura in ipairs(defensiveState) do
+			table.insert(allAuras, { aura = aura, alpha = aura.IsDefensive })
+		end
 	end
-	for _, aura in ipairs(importantState) do
-		table.insert(allAuras, { aura = aura, alpha = aura.IsImportant })
+	if options.ShowImportant ~= false then
+		for _, aura in ipairs(importantState) do
+			table.insert(allAuras, { aura = aura, alpha = aura.IsImportant })
+		end
 	end
 
 	-- Display up to MaxIcons auras
@@ -271,43 +275,61 @@ local function RefreshTestIcons()
 
 		container:SetIconSize(tonumber(options.Icons.Size) or 50)
 
-		-- Fill up to MaxIcons test icons, alternating between defensive and important
-		for slotIndex = 1, math.min(maxIcons, container.Count) do
-			local spell
-			if slotIndex % 2 == 0 then
-				-- Even slots: cycle through important spells
-				local importantIndex = ((slotIndex / 2 - 1) % #testImportantSpells) + 1
-				spell = testImportantSpells[importantIndex]
-			else
-				-- Odd slots: cycle through defensive spells
-				local defensiveIndex = (((slotIndex + 1) / 2 - 1) % #testDefensiveSpells) + 1
-				spell = testDefensiveSpells[defensiveIndex]
+		-- Build test pool from enabled types, alternating defensive/important when both are on
+		local testPool = {}
+		local showDefensives = options.ShowDefensives ~= false
+		local showImportant = options.ShowImportant ~= false
+		if showDefensives and showImportant then
+			local defLen = #testDefensiveSpells
+			local impLen = #testImportantSpells
+			for i = 1, math.max(defLen, impLen) do
+				table.insert(testPool, testDefensiveSpells[((i - 1) % defLen) + 1])
+				table.insert(testPool, testImportantSpells[((i - 1) % impLen) + 1])
 			end
-
-			if spell then
-				local texture = spellCache:GetSpellTexture(spell.SpellId)
-
-				if texture then
-					local duration = 15
-					local startTime = now
-
-
-					container:SetSlot(slotIndex, {
-						Texture = texture,
-						StartTime = startTime,
-						Duration = duration,
-						AlphaBoolean = true,
-						ReverseCooldown = options.Icons.ReverseCooldown,
-						Glow = options.Icons.Glow,
-						FontScale = db.FontScale,
-					})
-				end
+		elseif showDefensives then
+			for _, spell in ipairs(testDefensiveSpells) do
+				table.insert(testPool, spell)
+			end
+		elseif showImportant then
+			for _, spell in ipairs(testImportantSpells) do
+				table.insert(testPool, spell)
 			end
 		end
 
-		-- Clear any unused slots beyond maxIcons
-		for i = maxIcons + 1, container.Count do
-			container:SetSlotUnused(i)
+		if #testPool == 0 then
+			-- Both types disabled, clear all slots
+			for i = 1, container.Count do
+				container:SetSlotUnused(i)
+			end
+		else
+			-- Fill up to MaxIcons test icons, cycling through the enabled pool
+			for slotIndex = 1, math.min(maxIcons, container.Count) do
+				local spell = testPool[((slotIndex - 1) % #testPool) + 1]
+
+				if spell then
+					local texture = spellCache:GetSpellTexture(spell.SpellId)
+
+					if texture then
+						local duration = 15
+						local startTime = now
+
+						container:SetSlot(slotIndex, {
+							Texture = texture,
+							StartTime = startTime,
+							Duration = duration,
+							AlphaBoolean = true,
+							ReverseCooldown = options.Icons.ReverseCooldown,
+							Glow = options.Icons.Glow,
+							FontScale = db.FontScale,
+						})
+					end
+				end
+			end
+
+			-- Clear any unused slots beyond maxIcons
+			for i = maxIcons + 1, container.Count do
+				container:SetSlotUnused(i)
+			end
 		end
 
 		AnchorContainer(container, entry.Anchor, options)

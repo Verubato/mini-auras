@@ -242,6 +242,37 @@ function M:Build(panel, options)
 	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
 
+	local showDefensivesChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show Defensives"],
+		Tooltip = L["Show defensive spell icons."],
+		GetValue = function()
+			return options.ShowDefensives
+		end,
+		SetValue = function(value)
+			options.ShowDefensives = value
+			config:Apply()
+		end,
+	})
+
+	showDefensivesChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local showImportantChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show Important"],
+		Tooltip = L["Show important spell icons."],
+		GetValue = function()
+			return options.ShowImportant
+		end,
+		SetValue = function(value)
+			options.ShowImportant = value
+			config:Apply()
+		end,
+	})
+
+	showImportantChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	showImportantChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
+
 	local iconSize = mini:Slider({
 		Parent = panel,
 		Min = 10,
@@ -261,7 +292,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", showDefensivesChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local maxIcons = mini:Slider({
 		Parent = panel,
