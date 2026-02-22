@@ -87,6 +87,34 @@ local function OnAuraStateUpdated(watcher)
 	end
 end
 
+---@param header IconSlotContainer
+---@param anchor table
+---@param options CrowdControlInstanceOptions
+local function AnchorContainer(header, anchor, options)
+	if not options then
+		return
+	end
+
+	local frame = header.Frame
+	frame:ClearAllPoints()
+	frame:SetIgnoreParentAlpha(true)
+	frame:SetAlpha(1)
+	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
+	frame:SetFrameStrata("HIGH")
+
+	local anchorPoint = "CENTER"
+	local relativeToPoint = "CENTER"
+
+	if options.Grow == "LEFT" then
+		anchorPoint = "RIGHT"
+		relativeToPoint = "LEFT"
+	elseif options.Grow == "RIGHT" then
+		anchorPoint = "LEFT"
+		relativeToPoint = "RIGHT"
+	end
+	frame:SetPoint(anchorPoint, anchor, relativeToPoint, options.Offset.X, options.Offset.Y)
+end
+
 ---@param anchor table
 ---@param unit string?
 local function EnsureWatcher(anchor, unit)
@@ -143,7 +171,7 @@ local function EnsureWatcher(anchor, unit)
 	end
 
 	UpdateWatcherAuras(entry)
-	M:AnchorContainer(entry.Container, anchor, options)
+	AnchorContainer(entry.Container, anchor, options)
 	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, options.ExcludePlayer)
 
 	return entry
@@ -202,34 +230,6 @@ local function OnEvent(_, event)
 	end
 end
 
----@param header IconSlotContainer
----@param anchor table
----@param options CrowdControlInstanceOptions
-function M:AnchorContainer(header, anchor, options)
-	if not options then
-		return
-	end
-
-	local frame = header.Frame
-	frame:ClearAllPoints()
-	frame:SetIgnoreParentAlpha(true)
-	frame:SetAlpha(1)
-	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
-	frame:SetFrameStrata("HIGH")
-
-	local anchorPoint = "CENTER"
-	local relativeToPoint = "CENTER"
-
-	if options.Grow == "LEFT" then
-		anchorPoint = "RIGHT"
-		relativeToPoint = "LEFT"
-	elseif options.Grow == "RIGHT" then
-		anchorPoint = "LEFT"
-		relativeToPoint = "RIGHT"
-	end
-	frame:SetPoint(anchorPoint, anchor, relativeToPoint, options.Offset.X, options.Offset.Y)
-end
-
 local function RefreshTestIcons()
 	local options = instanceOptions:GetTestInstanceOptions()
 
@@ -268,7 +268,7 @@ local function RefreshTestIcons()
 		end
 
 		-- Anchor and show/hide based on anchor visibility
-		M:AnchorContainer(container, anchor, options)
+		AnchorContainer(container, anchor, options)
 		frames:ShowHideFrame(container.Frame, anchor, true, options.ExcludePlayer)
 	end
 end
@@ -365,7 +365,7 @@ function M:Refresh()
 			UpdateWatcherAuras(entry)
 		end
 
-		M:AnchorContainer(container, anchor, options)
+		AnchorContainer(container, anchor, options)
 		frames:ShowHideFrame(container.Frame, anchor, testModeActive, options.ExcludePlayer)
 	end
 
