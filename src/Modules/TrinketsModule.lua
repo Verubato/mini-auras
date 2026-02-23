@@ -119,6 +119,7 @@ end
 local function AnchorContainerToFrame(container, anchorFrame)
 	container.Frame:ClearAllPoints()
 	container.Frame:SetPoint(options.Point, anchorFrame, options.RelativePoint, options.Offset.X, options.Offset.Y)
+	container.Frame:SetAlpha(1)
 end
 
 local function EnsureWatcher(anchorFrame, unit)
