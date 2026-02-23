@@ -303,6 +303,7 @@ end
 ---Sets the spacing between slots
 ---@param newSpacing number
 function M:SetSpacing(newSpacing)
+	---@diagnostic disable-next-line: cast-local-type
 	newSpacing = tonumber(newSpacing)
 	if not newSpacing or newSpacing < 0 then
 		return
@@ -537,6 +538,7 @@ end
 
 ---@class IconSlotContainer
 ---@field Frame table
+---@field MasqueGroup table?
 ---@field Slots IconSlot[]
 ---@field Count number
 ---@field Size number
