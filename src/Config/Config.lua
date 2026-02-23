@@ -214,6 +214,11 @@ function M:Init()
 
 	mini:AddSubCategory(category, trinketsPanel)
 
+	local precogGuesserPanel = M.PrecogGuesser:Build()
+	precogGuesserPanel.name = L["Precognition"]
+
+	mini:AddSubCategory(category, precogGuesserPanel)
+
 	local otherAddonsPanel = M.OtherAddons:Build()
 	otherAddonsPanel.name = L["Other Mini Addons_Short"] or L["Other Mini Addons"]
 
@@ -235,5 +240,6 @@ end
 ---@field Nameplates NameplatesConfig
 ---@field KickTimer KickTimerConfig
 ---@field Trinkets TrinketsConfig
+---@field PrecogGuesser PrecogGuesserConfig
 ---@field OtherAddons OtherAddonsConfig
 ---@field FriendlyIndicator FriendlyIndicatorConfig

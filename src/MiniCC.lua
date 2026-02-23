@@ -15,6 +15,7 @@ local modules = {
 	addon.Modules.KickTimerModule,
 	addon.Modules.TrinketsModule,
 	addon.Modules.FriendlyIndicatorModule,
+	addon.Modules.PrecogGuesserModule,
 }
 local eventsFrame
 local db
@@ -186,6 +187,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field CrowdControlModule CrowdControlModule
 ---@field TrinketsModule TrinketsModule
 ---@field FriendlyIndicatorModule FriendlyIndicatorModule
+---@field PrecogGuesserModule PrecogGuesserModule
 
 ---@class IModule
 ---@field Init fun(self: IModule) Initialises the module to be ready for use.

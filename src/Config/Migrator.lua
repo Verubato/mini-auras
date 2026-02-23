@@ -4,7 +4,7 @@ local _, addon = ...
 local mini = addon.Core.Framework
 ---@class Db
 local dbDefaults = {
-	Version = 23,
+	Version = 24,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -274,7 +274,7 @@ local dbDefaults = {
 			RelativePoint = "CENTER",
 			Offset = {
 				X = 0,
-				Y = -200,
+				Y = -300,
 			},
 
 			Icons = {
@@ -333,6 +333,26 @@ local dbDefaults = {
 				Glow = true,
 				ReverseCooldown = true,
 				MaxIcons = 1,
+			},
+		},
+		---@class PrecogGuesserModuleOptions
+		PrecogGuesserModule = {
+			Enabled = {
+				Always = true,
+			},
+
+			Point = "CENTER",
+			RelativeTo = "UIParent",
+			RelativePoint = "CENTER",
+			Offset = {
+				X = 0,
+				Y = 70,
+			},
+
+			Icons = {
+				Size = 70,
+				Glow = true,
+				ReverseCooldown = true,
 			},
 		},
 	},
@@ -1577,6 +1597,38 @@ function M:UpgradeToVersion23(vars)
 
 	vars.NotifiedChanges = false
 	vars.Version = 23
+	return true
+end
+
+function M:UpgradeToVersion24(vars)
+	if vars.Version ~= 23 then
+		return false
+	end
+
+	vars.Modules.PrecogGuesserModule = {
+		Enabled = {
+			Always = true,
+		},
+
+		Point = "CENTER",
+		RelativeTo = "UIParent",
+		RelativePoint = "CENTER",
+		Offset = {
+			X = 0,
+			Y = 70,
+		},
+
+		Icons = {
+			Size = 70,
+			Glow = true,
+			ReverseCooldown = true,
+		},
+	}
+
+	table.insert(vars.WhatsNew, " - Added precognition guesser module that shows when you get precog.")
+
+	vars.NotifiedChanges = false
+	vars.Version = 24
 	return true
 end
 

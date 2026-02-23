@@ -154,4 +154,9 @@ L:SetStrings({
 	["Whether to enable or disable this type."] = "이 유형을 활성화 또는 비활성화합니다.",
 	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "방금 차단당했고 마지막으로 주문을 성공적으로 사용한 적이 적 A였다면, 적 A가 차단했다고 추론합니다.",
 	["You must choose a voice in your language for this to work."] = "이 기능이 작동하려면 해당 언어의 음성을 선택해야 합니다.",
+	["It works by taking any 4 second 'important' self buff and showing that icon."] = "4초짜리 '중요한' 자신 버프를 감지하여 해당 아이콘을 표시하는 방식으로 작동합니다.",
+	["Precognition"] = "예지력",
+	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "혹시 다른 4초짜리 중요한 자신 버프가 있다면 그 아이콘도 표시될 수 있으니 양해 부탁드립니다.",
+	["Note that you can't simply filter by spell id these days."] = "요즘은 주문 ID로 단순히 필터링할 수 없다는 점에 유의하세요.",
+	["This isn't precision perfect but it should be close enough."] = "완벽하게 정확하지는 않지만 충분히 근접합니다.",
 })

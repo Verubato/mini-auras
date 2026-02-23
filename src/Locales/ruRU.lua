@@ -154,4 +154,9 @@ L:SetStrings({
 	["Whether to enable or disable this type."] = "Включить или отключить этот тип.",
 	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "Вас только что прервали, и последний враг, успешно применивший заклинание, был противник A, поэтому мы делаем вывод, что именно противник A прервал вас.",
 	["You must choose a voice in your language for this to work."] = "Вы должны выбрать голос на вашем языке, чтобы это работало.",
+	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Работает, отслеживая любой 4-секундный «важный» бафф на себя и отображая его иконку.",
+	["Precognition"] = "Предвидение",
+	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Если у вас есть другой 4-секундный важный бафф на себя, то его иконка также будет отображаться, приносим извинения.",
+	["Note that you can't simply filter by spell id these days."] = "Обратите внимание, что в наши дни нельзя просто фильтровать по ID заклинания.",
+	["This isn't precision perfect but it should be close enough."] = "Это не идеально точно, но должно быть достаточно близко.",
 })

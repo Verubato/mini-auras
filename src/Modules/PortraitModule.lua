@@ -125,7 +125,7 @@ local function OnAuraInfo(watcher, container)
 				Texture = aura.SpellIcon,
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
-				AlphaBoolean = aura.IsCC,
+				Alpha = aura.IsCC,
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
 			})
@@ -141,7 +141,7 @@ local function OnAuraInfo(watcher, container)
 				Texture = aura.SpellIcon,
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
-				AlphaBoolean = aura.IsDefensive,
+				Alpha = aura.IsDefensive,
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
 			})
@@ -157,7 +157,7 @@ local function OnAuraInfo(watcher, container)
 				Texture = aura.SpellIcon,
 				StartTime = aura.StartTime,
 				Duration = aura.TotalDuration,
-				AlphaBoolean = aura.IsImportant,
+				Alpha = aura.IsImportant,
 				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 				FontScale = db.FontScale,
 			})
@@ -237,7 +237,7 @@ local function RefreshTestIcons()
 			Texture = tex,
 			StartTime = now,
 			Duration = 15, -- 15 second duration for test
-			AlphaBoolean = true,
+			Alpha = true,
 			Glow = false,
 			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 			FontScale = db.FontScale,

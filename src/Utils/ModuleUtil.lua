@@ -13,6 +13,7 @@ local ModuleName = {
 	KickTimer = "KickTimerModule",
 	Trinkets = "TrinketsModule",
 	FriendlyIndicator = "FriendlyIndicatorModule",
+	PrecogGuesser = "PrecogGuesserModule",
 }
 
 ---@class ModuleUtil

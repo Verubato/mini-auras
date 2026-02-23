@@ -37,45 +37,120 @@ local function ScheduleMasqueReSkin(group)
 	end)
 end
 
+local function CreateLayer(parentFrame, level, iconSize)
+	local f = CreateFrame("Frame", nil, parentFrame)
+	f:SetAllPoints()
+
+	if level then
+		f:SetFrameLevel(level)
+	end
+
+	-- place our icons on the 1st draw layer of background
+	local icon = f:CreateTexture(nil, "BACKGROUND", nil, 1)
+	icon:SetAllPoints()
+
+	local cd = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")
+	cd:SetAllPoints()
+	cd:SetDrawEdge(false)
+	cd:SetDrawBling(false)
+	cd:SetHideCountdownNumbers(false)
+	cd:SetSwipeColor(0, 0, 0, 0.8)
+
+	-- make the border 1px larger than the icon
+	-- refer to https://github.com/Gethe/wow-ui-source/blob/aa3d9bc8633244ba017bf2058bf5e84900397ab5/Interface/AddOns/Blizzard_UnitFrame/Shared/CompactUnitFrame.xml#L31
+	local border = f:CreateTexture(nil, "OVERLAY")
+	border:SetPoint("TOPLEFT", f, "TOPLEFT", -1, 1)
+	border:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 1, -1)
+	border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
+	border:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
+	border:Hide()
+
+	if iconSize then
+		cd.DesiredIconSize = iconSize
+		-- FontScale will be set when SetSlot is called
+		cd.FontScale = 1.0
+		fontUtil:UpdateCooldownFontSize(cd, iconSize, nil, cd.FontScale)
+	end
+
+	return { Frame = f, Border = border, Icon = icon, Cooldown = cd }
+end
+
 local function EnsureContainer(slot, iconSize, group)
-	if not slot.Container then
-		-- place our icons on the 1st draw layer of background
-		local icon = slot.Frame:CreateTexture(nil, "BACKGROUND", nil, 1)
-		icon:SetAllPoints()
+	if slot.Container then
+		return slot.Container
+	end
 
-		local cd = CreateFrame("Cooldown", nil, slot.Frame, "CooldownFrameTemplate")
-		cd:SetAllPoints()
-		cd:SetDrawEdge(false)
-		cd:SetDrawBling(false)
-		cd:SetHideCountdownNumbers(false)
-		cd:SetSwipeColor(0, 0, 0, 0.8)
+	-- Wrap in its own frame so its alpha doesn't propagate to extra layers,
+	-- which are siblings (also children of slot.Frame) rather than descendants.
+	local slotLevel = slot.Frame:GetFrameLevel() or 0
+	slot.Container = CreateLayer(slot.Frame, slotLevel + 1, iconSize)
 
-		local border = slot.Frame:CreateTexture(nil, "OVERLAY")
-		-- make the border 1px larger than the icon
-		border:SetPoint("TOPLEFT", slot.Frame, "TOPLEFT", -1, 1)
-		border:SetPoint("BOTTOMRIGHT", slot.Frame, "BOTTOMRIGHT", 1, -1)
-		-- refer to https://github.com/Gethe/wow-ui-source/blob/aa3d9bc8633244ba017bf2058bf5e84900397ab5/Interface/AddOns/Blizzard_UnitFrame/Shared/CompactUnitFrame.xml#L31
-		border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
-		border:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
-
-		if iconSize then
-			cd.DesiredIconSize = iconSize
-			-- FontScale will be set when SetSlot is called
-			cd.FontScale = 1.0
-			fontUtil:UpdateCooldownFontSize(cd, iconSize, nil, cd.FontScale)
-		end
-
-		slot.Container = { Border = border, Icon = icon, Cooldown = cd }
-
-		if group then
-			group:AddButton(slot.Frame, {
-				Icon = icon,
-				Cooldown = cd,
-			})
-		end
+	if group then
+		group:AddButton(slot.Container.Frame, {
+			Icon = slot.Container.Icon,
+			Cooldown = slot.Container.Cooldown,
+		})
 	end
 
 	return slot.Container
+end
+
+-- layerIndex is the public layer number (2, 3, …); extra layer 1 lives at slot.ExtraLayers[1], etc.
+local function EnsureExtraLayer(slot, layerIndex, iconSize)
+	local extraIdx = layerIndex - 1
+	if not slot.ExtraLayers then
+		slot.ExtraLayers = {}
+	end
+
+	local slotLevel = slot.Frame:GetFrameLevel() or 0
+	-- Base layer (slot.Container) occupies slotLevel+1.
+	-- Extra layer l (1-based) sits at slotLevel + 1 + l*2 so each layer clears
+	-- the cooldown text draw layer of the one below it.
+	local baseLevel = slotLevel + 1
+
+	for l = #slot.ExtraLayers + 1, extraIdx do
+		slot.ExtraLayers[l] = CreateLayer(slot.Frame, baseLevel + l * 2, iconSize)
+	end
+
+	-- Re-apply levels if the slot frame level has changed since last time.
+	if slot.LastExtraBaseLevel ~= baseLevel then
+		slot.LastExtraBaseLevel = baseLevel
+		for l = 1, #slot.ExtraLayers do
+			local el = slot.ExtraLayers[l]
+			if el and el.Frame then
+				el.Frame:SetFrameLevel(baseLevel + l * 2)
+			end
+		end
+	end
+
+	return slot.ExtraLayers[extraIdx]
+end
+
+local function ApplyAlpha(target, alpha)
+	if type(alpha) == "number" then
+		target:SetAlpha(alpha)
+	else
+		target:SetAlphaFromBoolean(alpha)
+	end
+end
+
+local function ClearLayerData(layer, glowFrame)
+	if not layer then
+		return
+	end
+	layer.Icon:SetTexture(nil)
+	layer.Cooldown:Clear()
+	if LCG then
+		if glowFrame._ProcGlow and LCG.ProcGlow_Stop then
+			LCG.ProcGlow_Stop(glowFrame)
+		end
+		if glowFrame._PixelGlow and LCG.PixelGlow_Stop then
+			LCG.PixelGlow_Stop(glowFrame)
+		end
+		if glowFrame._AutoCastGlow and LCG.AutoCastGlow_Stop then
+			LCG.AutoCastGlow_Stop(glowFrame)
+		end
+	end
 end
 
 ---Updates glow effects on a layer frame
@@ -173,24 +248,26 @@ local function UpdateGlow(layerFrame, options)
 		end
 
 		-- Always update alpha for the active glow type
+		local alpha = options.Alpha
 		if glowType == "Proc Glow" then
 			local procGlow = layerFrame._ProcGlow
 			if procGlow then
-				procGlow:SetAlphaFromBoolean(options.AlphaBoolean)
+				ApplyAlpha(procGlow, alpha)
 			end
 		elseif glowType == "Pixel Glow" then
 			local pixelGlow = layerFrame._PixelGlow
 			if pixelGlow then
-				pixelGlow:SetAlphaFromBoolean(options.AlphaBoolean)
+				ApplyAlpha(pixelGlow, alpha)
 			end
 		elseif glowType == "Autocast Shine" then
 			local autoCastGlow = layerFrame._AutoCastGlow
 			if autoCastGlow then
-				autoCastGlow:SetAlphaFromBoolean(options.AlphaBoolean)
+				ApplyAlpha(autoCastGlow, alpha)
 			end
 		end
 
-		-- Handle glow resizing for ProcGlow/ButtonGlow
+		-- calling ProcGlow_Start on an existing glow will reset its size to match the current icon size
+		-- the other glow types already handle resizing properly on their own, so we only need to do this for Proc Glow
 		if glowType == "Proc Glow" and layerFrame._ProcGlow and LCG.ProcGlow_Start then
 			local glowOptions = { startAnim = false }
 			if options.Color then
@@ -343,6 +420,21 @@ function M:SetIconSize(newSize)
 				local fontScale = layer.Cooldown.FontScale or 1.0
 				fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, fontScale)
 			end
+
+			if slot.ExtraLayers then
+				for _, el in ipairs(slot.ExtraLayers) do
+					if el then
+						if el.Frame then
+							el.Frame:SetSize(self.Size, self.Size)
+						end
+						if el.Cooldown then
+							el.Cooldown.DesiredIconSize = self.Size
+							local fontScale = el.Cooldown.FontScale or 1.0
+							fontUtil:UpdateCooldownFontSize(el.Cooldown, self.Size, nil, fontScale)
+						end
+					end
+				end
+			end
 		end
 	end
 
@@ -380,6 +472,7 @@ function M:SetCount(newCount)
 		self.Slots[i] = {
 			Frame = slotFrame,
 			Container = nil,
+			ExtraLayers = {},
 			IsUsed = false,
 		}
 	end
@@ -387,24 +480,30 @@ function M:SetCount(newCount)
 	self:Layout()
 end
 
----Sets the layer on a specific slot
+---Sets an icon on a specific slot, optionally on a stacked layer above it.
 ---@param slotIndex number Slot index (1-based)
 ---@param options IconLayerOptions Options for the layer
 ---@class IconLayerOptions
 ---@field Texture string Texture path/ID
 ---@field StartTime number? Cooldown start time (GetTime())
 ---@field Duration number? Cooldown duration in seconds
----@field AlphaBoolean boolean? Control alpha (true = 1.0, false = dimmed)
+---@field Alpha number|boolean? Control alpha: number sets it directly, boolean uses SetAlphaFromBoolean
 ---@field Glow boolean? Whether to show glow effect (requires LibCustomGlow)
 ---@field ReverseCooldown boolean? Whether to reverse the cooldown animation
 ---@field Color table? RGBA color table {r, g, b, a} for glow and border color
 ---@field FontScale number? Font scale multiplier for cooldown text (default: 1.0)
+---@field Layer number? Which layer to render on (1 = base, 2+ = stacked above; default: 1)
 function M:SetSlot(slotIndex, options)
 	if slotIndex < 1 or slotIndex > self.Count then
 		return
 	end
 
+	if not options.Texture or not options.StartTime or not options.Duration then
+		return
+	end
+
 	local slot = self.Slots[slotIndex]
+	
 	if not slot then
 		return
 	end
@@ -414,38 +513,42 @@ function M:SetSlot(slotIndex, options)
 		self:Layout()
 	end
 
-	local layer = EnsureContainer(slot, self.Size, self.MasqueGroup)
-
-	if options.Texture and options.StartTime and options.Duration then
-		layer.Icon:SetTexture(options.Texture)
-		layer.Cooldown:SetReverse(options.ReverseCooldown)
-		layer.Cooldown:SetCooldown(options.StartTime, options.Duration)
-		slot.Frame:SetAlphaFromBoolean(options.AlphaBoolean)
-
-		-- Set border color if provided
-		if options.Color and layer.Border then
-			layer.Border:SetVertexColor(
-				options.Color.r or 1,
-				options.Color.g or 1,
-				options.Color.b or 1,
-				options.Color.a or 1
-			)
-			layer.Border:Show()
-		elseif layer.Border then
-			layer.Border:Hide()
-		end
-
-		-- Update font scale if provided
-		if options.FontScale then
-			layer.Cooldown.FontScale = options.FontScale
-			fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, options.FontScale)
-		end
-
-		UpdateGlow(slot.Frame, options)
+	local layerIndex = options.Layer or 1
+	local layer
+	
+	if layerIndex <= 1 then
+		layer = EnsureContainer(slot, self.Size, self.MasqueGroup)
+	else
+		layer = EnsureExtraLayer(slot, layerIndex, self.Size)
 	end
+
+	layer.Icon:SetTexture(options.Texture)
+	layer.Cooldown:SetReverse(options.ReverseCooldown)
+	layer.Cooldown:SetCooldown(options.StartTime, options.Duration)
+
+	ApplyAlpha(layer.Frame, options.Alpha)
+
+	if options.Color and layer.Border then
+		layer.Border:SetVertexColor(
+			options.Color.r or 1,
+			options.Color.g or 1,
+			options.Color.b or 1,
+			options.Color.a or 1
+		)
+		layer.Border:Show()
+	elseif layer.Border then
+		layer.Border:Hide()
+	end
+
+	if options.FontScale then
+		layer.Cooldown.FontScale = options.FontScale
+		fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, options.FontScale)
+	end
+
+	UpdateGlow(layer.Frame, options)
 end
 
--- Clears the layer on a slot
+-- Clears all layers on a slot
 ---@param slotIndex number Slot index
 function M:ClearSlot(slotIndex)
 	if slotIndex < 1 or slotIndex > #self.Slots then
@@ -453,27 +556,17 @@ function M:ClearSlot(slotIndex)
 	end
 
 	local slot = self.Slots[slotIndex]
-	if not slot then
+	if not slot or not slot.Container then
 		return
 	end
 
-	local layer = slot.Container
-	if not layer then
-		return
-	end
+	ClearLayerData(slot.Container, slot.Container.Frame)
 
-	layer.Icon:SetTexture(nil)
-	layer.Cooldown:Clear()
-
-	if LCG then
-		if slot.Frame._ProcGlow and LCG.ProcGlow_Stop then
-			LCG.ProcGlow_Stop(slot.Frame)
-		end
-		if slot.Frame._PixelGlow and LCG.PixelGlow_Stop then
-			LCG.PixelGlow_Stop(slot.Frame)
-		end
-		if slot.Frame._AutoCastGlow and LCG.AutoCastGlow_Stop then
-			LCG.AutoCastGlow_Stop(slot.Frame)
+	if slot.ExtraLayers then
+		for _, el in ipairs(slot.ExtraLayers) do
+			if el then
+				ClearLayerData(el, el.Frame)
+			end
 		end
 	end
 end
@@ -534,6 +627,7 @@ end
 ---@class IconSlot
 ---@field Frame table
 ---@field Container IconLayer?
+---@field ExtraLayers IconLayer[]
 ---@field IsUsed boolean
 
 ---@class IconSlotContainer

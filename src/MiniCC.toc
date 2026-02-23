@@ -48,6 +48,7 @@ Modules\NameplatesModule.lua
 Modules\KickTimerModule.lua
 Modules\TrinketsModule.lua
 Modules\FriendlyIndicatorModule.lua
+Modules\PrecogGuesserModule.lua
 Modules\TestModeManager.lua
 
 Config\Migrator.lua
@@ -60,6 +61,7 @@ Config\Alerts.lua
 Config\Nameplates.lua
 Config\KickTimer.lua
 Config\Trinkets.lua
+Config\PrecogGuesser.lua
 Config\FriendlyIndicator.lua
 Config\OtherAddons.lua
 

@@ -144,6 +144,11 @@ function M:Build(panel)
 					kickTimerPanel:MiniRefresh()
 				end
 
+				local precogPanel = addon.Config.PrecogGuesser.Panel
+				if precogPanel and precogPanel.MiniRefresh then
+					precogPanel:MiniRefresh()
+				end
+
 				addon:Refresh()
 				mini:Notify(L["Settings reset to default."])
 			end,

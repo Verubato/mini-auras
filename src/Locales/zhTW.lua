@@ -157,4 +157,9 @@ L:SetStrings({
 	["Whether to enable or disable this type."] = "是否啟用或停用此類型。",
 	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "你剛剛被打斷，最後一個成功釋放法術的敵人是敵人A，因此我們推斷是敵人A打斷了你。",
 	["You must choose a voice in your language for this to work."] = "必須選擇與你的語言相符的語音才能使其運作。",
+	["It works by taking any 4 second 'important' self buff and showing that icon."] = "其運作原理是偵測任何4秒的「重要」自身增益效果並顯示該圖示。",
+	["Precognition"] = "預知",
+	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "如果你恰好有其他4秒的重要自身增益效果，該圖示也會顯示，敬請見諒。",
+	["Note that you can't simply filter by spell id these days."] = "請注意，現在無法簡單地通過法術ID進行過濾。",
+	["This isn't precision perfect but it should be close enough."] = "這並非完全精確，但應該足夠接近。",
 })

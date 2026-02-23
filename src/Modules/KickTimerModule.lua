@@ -287,7 +287,7 @@ local function CreateKickEntry(duration, icon)
 		Texture = icon,
 		StartTime = GetTime(),
 		Duration = duration,
-		AlphaBoolean = true,
+		Alpha = true,
 		ReverseCooldown = iconOptions.ReverseCooldown or false,
 		Glow = iconOptions.Glow or false,
 		FontScale = db.FontScale,

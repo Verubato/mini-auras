@@ -10,6 +10,7 @@ local nameplateModule = addon.Modules.NameplatesModule
 local kickTimerModule = addon.Modules.KickTimerModule
 local trinketsModule = addon.Modules.TrinketsModule
 local friendlyIndicatorModule = addon.Modules.FriendlyIndicatorModule
+local precogGuesserModule = addon.Modules.PrecogGuesserModule
 local active = false
 
 ---@class TestModeManager
@@ -43,6 +44,7 @@ function M:StopTesting()
 	kickTimerModule:StopTesting()
 	trinketsModule:StopTesting()
 	friendlyIndicatorModule:StopTesting()
+	precogGuesserModule:StopTesting()
 
 	active = false
 end
@@ -91,6 +93,7 @@ function M:StartTesting(options)
 	kickTimerModule:StartTesting()
 	trinketsModule:StartTesting()
 	friendlyIndicatorModule:StartTesting()
+	precogGuesserModule:StartTesting()
 end
 
 function M:Init() end

@@ -154,4 +154,9 @@ L:SetStrings({
 	["Whether to enable or disable this type."] = "Se ativar ou desativar este tipo.",
 	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "Você acabou de ser interrompido e o último inimigo que lançou um feitiço com sucesso foi o inimigo A, portanto deduzimos que foi o inimigo A quem interrompeu você.",
 	["You must choose a voice in your language for this to work."] = "Você deve escolher uma voz no seu idioma para que isso funcione.",
+	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Funciona detectando qualquer buff pessoal «importante» de 4 segundos e exibindo esse ícone.",
+	["Precognition"] = "Precognição",
+	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Se por acaso você tiver outro buff pessoal importante de 4 segundos, ele também exibiria esse ícone, desculpe.",
+	["Note that you can't simply filter by spell id these days."] = "Note que hoje em dia você não pode simplesmente filtrar por ID de feitiço.",
+	["This isn't precision perfect but it should be close enough."] = "Não é perfeitamente preciso, mas deve ser suficientemente próximo.",
 })

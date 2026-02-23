@@ -360,7 +360,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
 			layerScratch.Duration = entry.TotalDuration
-			layerScratch.AlphaBoolean = entry.IsCC
+			layerScratch.Alpha = entry.IsCC
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
@@ -382,7 +382,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
 			layerScratch.Duration = entry.TotalDuration
-			layerScratch.AlphaBoolean = entry.IsDefensive
+			layerScratch.Alpha = entry.IsDefensive
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
@@ -404,7 +404,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
 			layerScratch.Duration = entry.TotalDuration
-			layerScratch.AlphaBoolean = entry.IsImportant
+			layerScratch.Alpha = entry.IsImportant
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
@@ -454,7 +454,7 @@ local function ApplyCcToNameplate(data, watcher, unitOptions)
 		layerScratch.Texture = entry.SpellIcon
 		layerScratch.StartTime = entry.StartTime
 		layerScratch.Duration = entry.TotalDuration
-		layerScratch.AlphaBoolean = entry.IsCC
+		layerScratch.Alpha = entry.IsCC
 		layerScratch.Glow = iconsGlow
 		layerScratch.ReverseCooldown = iconsReverse
 		layerScratch.FontScale = fontScale
@@ -509,7 +509,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitOptions)
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
 			layerScratch.Duration = entry.TotalDuration
-			layerScratch.AlphaBoolean = entry.IsImportant
+			layerScratch.Alpha = entry.IsImportant
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
@@ -531,7 +531,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitOptions)
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
 			layerScratch.Duration = entry.TotalDuration
-			layerScratch.AlphaBoolean = entry.IsDefensive
+			layerScratch.Alpha = entry.IsDefensive
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
@@ -600,7 +600,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			layerScratch.Texture = tex
 			layerScratch.StartTime = now - (i - 1) * 0.5
 			layerScratch.Duration = 15 + (i - 1) * 3
-			layerScratch.AlphaBoolean = true
+			layerScratch.Alpha = true
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
@@ -622,7 +622,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			layerScratch.Texture = tex
 			layerScratch.StartTime = now - (i - 1) * 0.5
 			layerScratch.Duration = 15 + (i - 1) * 3
-			layerScratch.AlphaBoolean = true
+			layerScratch.Alpha = true
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
@@ -644,7 +644,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			layerScratch.Texture = tex
 			layerScratch.StartTime = now - (i - 1) * 0.5
 			layerScratch.Duration = 15 + (i - 1) * 3
-			layerScratch.AlphaBoolean = true
+			layerScratch.Alpha = true
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
@@ -677,7 +677,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 				layerScratch.Texture = tex
 				layerScratch.StartTime = now - (i - 1) * 0.5
 				layerScratch.Duration = 15 + (i - 1) * 3
-				layerScratch.AlphaBoolean = true
+				layerScratch.Alpha = true
 				layerScratch.Glow = iconsGlow
 				layerScratch.ReverseCooldown = iconsReverse
 				layerScratch.FontScale = fontScale
@@ -719,7 +719,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 					layerScratch.Texture = tex
 					layerScratch.StartTime = now - (i - 1) * 0.5
 					layerScratch.Duration = 15 + (i - 1) * 3
-					layerScratch.AlphaBoolean = true
+					layerScratch.Alpha = true
 					layerScratch.Glow = iconsGlow
 					layerScratch.ReverseCooldown = iconsReverse
 					layerScratch.FontScale = fontScale
@@ -744,7 +744,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 					layerScratch.Texture = tex
 					layerScratch.StartTime = now - (i - 1) * 0.5
 					layerScratch.Duration = 15 + (i - 1) * 3
-					layerScratch.AlphaBoolean = true
+					layerScratch.Alpha = true
 					layerScratch.Glow = iconsGlow
 					layerScratch.ReverseCooldown = iconsReverse
 					layerScratch.FontScale = fontScale
