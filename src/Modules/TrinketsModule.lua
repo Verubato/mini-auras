@@ -207,24 +207,22 @@ local function CacheCooldown(unit, spellId, start, duration)
 	trinketCooldowns[unit] = { SpellId = spellId, Start = start, Duration = duration }
 end
 
----@return number? spellId, number? start, number? duration, boolean wasSecret
+---@return number? spellId, number? start, number? duration
 local function GetTrinketData(unit)
 	local spellId, start, duration = C_PvP.GetArenaCrowdControlInfo(unit)
 
 	if not start or not duration then
-		return spellId, start, duration, false
+		return spellId, start, duration
 	end
 
 	if issecretvalue(start) or issecretvalue(duration) then
-		start = GetTime()
-		-- ffs, they give us duration in milliseconds as a secret value which we can't convert to seconds
-		-- so we'll just have to hard code these values
-		duration = unitsUtil:IsHealer(unit) and 90 or 120
-		return spellId, start, duration, true
+		-- Secret values can't be used for math; substitute sentinel values so callers
+		-- know a cooldown is active without ever using the secret data directly.
+		return spellId, GetTime(), unitsUtil:IsHealer(unit) and 90 or 120
 	end
 
 	start, duration = NormalizeCooldownValues(start, duration)
-	return spellId, start, duration, false
+	return spellId, start, duration
 end
 
 -- Refresh only one unit (using unitTarget from ARENA_COOLDOWNS_UPDATE)
@@ -234,24 +232,26 @@ local function RefreshUnit(unit)
 	end
 
 	if IsOnCooldown(unit) then
-		-- for some reason blizzard sometimes fire this event multiple times during arena
-		-- and because the data is secret and unusable we just have to ignore it
+		-- Blizzard sometimes fires this event multiple times, don't know why
+		-- this causes a problem where trinkets keep spam resetting their cooldown
+		-- so block updates until our local timer expires
 		return
 	end
 
-	local spellId, start, duration, wasSecret = GetTrinketData(unit)
+	local spellId, start, duration = GetTrinketData(unit)
 
 	if not spellId or not start or not duration then
 		return
 	end
 
-	if not wasSecret then
-		CacheCooldown(unit, spellId, start, duration)
-	end
+	-- always cache using non-secret values
+	local localStart = GetTime()
+	local localDuration = unitsUtil:IsHealer(unit) and 90 or 120
+	CacheCooldown(unit, spellId, localStart, localDuration)
 
 	for _, watcher in pairs(watchers) do
 		if watcher.Container and watcher.Unit == unit then
-			SetIconState(watcher.Container, spellId, start, duration)
+			SetIconState(watcher.Container, spellId, localStart, localDuration)
 			break
 		end
 	end
@@ -268,12 +268,16 @@ local function RefreshAll()
 				local cd = trinketCooldowns[unit]
 				SetIconState(container, cd.SpellId, cd.Start, cd.Duration)
 			else
-				local spellId, start, duration, wasSecret = GetTrinketData(unit)
-				if spellId and start and duration and not wasSecret then
-					CacheCooldown(unit, spellId, start, duration)
+				local spellId, start, duration = GetTrinketData(unit)
+				if spellId and start and duration then
+					local localStart = GetTime()
+					local localDuration = unitsUtil:IsHealer(unit) and 90 or 120
+					CacheCooldown(unit, spellId, localStart, localDuration)
+					SetIconState(container, spellId, localStart, localDuration)
+				else
+					-- No active cooldown; show icon without timer
+					SetIconState(container, spellId, start, duration)
 				end
-				-- Always update icon state, even if no cooldown
-				SetIconState(container, spellId, start, duration)
 			end
 		elseif container then
 			-- Show default icon when unit doesn't exist
