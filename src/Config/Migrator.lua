@@ -35,6 +35,7 @@ local dbDefaults = {
 					Glow = true,
 					ReverseCooldown = true,
 					ColorByDispelType = true,
+					Count = 3,
 				},
 			},
 
@@ -52,9 +53,35 @@ local dbDefaults = {
 					Glow = true,
 					ReverseCooldown = true,
 					ColorByDispelType = true,
+					Count = 3,
 				},
 			},
 		},
+
+		---@class PetCrowdControlModuleOptions
+		PetCCModule = {
+			Enabled = {
+				Always = false,
+				Arena = false,
+				Raids = false,
+				Dungeons = false,
+			},
+
+			Grow = "CENTER",
+			Offset = {
+				X = 0,
+				Y = 0,
+			},
+
+			Icons = {
+				Size = 30,
+				Count = 3,
+				Glow = true,
+				ReverseCooldown = true,
+				ColorByDispelType = true,
+			},
+		},
+
 		---@class HealerCrowdControlModuleOptions
 		HealerCCModule = {
 			Enabled = {
@@ -1623,6 +1650,29 @@ function M:UpgradeToVersion24(vars)
 			Size = 70,
 			Glow = true,
 			ReverseCooldown = true,
+		},
+	}
+
+	vars.Modules.PetCCModule = {
+		Enabled = {
+			Always = false,
+			Arena = false,
+			Raids = false,
+			Dungeons = false,
+		},
+
+		Grow = "CENTER",
+		Offset = {
+			X = 0,
+			Y = 0,
+		},
+
+		Icons = {
+			Size = 30,
+			Count = 3,
+			Glow = true,
+			ReverseCooldown = true,
+			ColorByDispelType = true,
 		},
 	}
 

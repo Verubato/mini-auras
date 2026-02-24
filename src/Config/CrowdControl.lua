@@ -20,7 +20,7 @@ local M = {}
 config.CrowdControl = M
 
 ---@param parent table
----@param options CrowdControlInstanceOptions
+---@param options CrowdControlInstanceOptions|PetCrowdControlModuleOptions
 local function BuildAnchorSettings(parent, options)
 	local panel = CreateFrame("Frame", nil, parent)
 
@@ -224,6 +224,174 @@ local function BuildInstance(panel, options, addTestButton)
 end
 
 ---@param panel table
+---@param options PetCrowdControlModuleOptions
+local function BuildPetInstance(panel, options)
+	local parent = CreateFrame("Frame", nil, panel)
+	local anchorPanel = BuildAnchorSettings(parent, options)
+
+	local petEnabledEverywhere = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Everywhere"],
+		Tooltip = L["Enable pet frame CC everywhere."],
+		GetValue = function()
+			return options.Enabled.Always
+		end,
+		SetValue = function(value)
+			options.Enabled.Always = value
+			config:Apply()
+		end,
+	})
+
+	petEnabledEverywhere:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+
+	local petEnabledArena = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Arena"],
+		Tooltip = L["Enable pet frame CC in arena."],
+		GetValue = function()
+			return options.Enabled.Arena
+		end,
+		SetValue = function(value)
+			options.Enabled.Arena = value
+			config:Apply()
+		end,
+	})
+
+	petEnabledArena:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	petEnabledArena:SetPoint("TOP", petEnabledEverywhere, "TOP", 0, 0)
+
+	local petEnabledRaids = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["BGS & Raids"],
+		Tooltip = L["Enable pet frame CC in BGs and raids."],
+		GetValue = function()
+			return options.Enabled.Raids
+		end,
+		SetValue = function(value)
+			options.Enabled.Raids = value
+			config:Apply()
+		end,
+	})
+
+	petEnabledRaids:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	petEnabledRaids:SetPoint("TOP", petEnabledEverywhere, "TOP", 0, 0)
+
+	local petEnabledDungeons = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Dungeons"],
+		Tooltip = L["Enable pet frame CC in dungeons and M+."],
+		GetValue = function()
+			return options.Enabled.Dungeons
+		end,
+		SetValue = function(value)
+			options.Enabled.Dungeons = value
+			config:Apply()
+		end,
+	})
+
+	petEnabledDungeons:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	petEnabledDungeons:SetPoint("TOP", petEnabledEverywhere, "TOP", 0, 0)
+
+	local glowChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Glow icons"],
+		Tooltip = L["Show a glow around the CC icons."],
+		GetValue = function()
+			return options.Icons.Glow
+		end,
+		SetValue = function(value)
+			options.Icons.Glow = value
+			config:Apply()
+		end,
+	})
+
+	glowChk:SetPoint("TOPLEFT", petEnabledEverywhere, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local dispelColoursChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Dispel colours"],
+		Tooltip = L["Change the colour of the glow/border based on the type of debuff."],
+		GetValue = function()
+			return options.Icons.ColorByDispelType
+		end,
+		SetValue = function(value)
+			options.Icons.ColorByDispelType = value
+			config:Apply()
+		end,
+	})
+
+	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	dispelColoursChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+
+	local reverseChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Reverse swipe"],
+		Tooltip = L["Reverses the direction of the cooldown swipe animation."],
+		GetValue = function()
+			return options.Icons.ReverseCooldown
+		end,
+		SetValue = function(value)
+			options.Icons.ReverseCooldown = value
+			config:Apply()
+		end,
+	})
+
+	reverseChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+
+	local iconSize = mini:Slider({
+		Parent = parent,
+		Min = 10,
+		Max = 200,
+		Width = columnWidth * 2 - horizontalSpacing,
+		Step = 1,
+		LabelText = L["Icon Size"],
+		GetValue = function()
+			return options.Icons.Size
+		end,
+		SetValue = function(v)
+			local newValue = mini:ClampInt(v, 10, 200, 24)
+			if options.Icons.Size ~= newValue then
+				options.Icons.Size = newValue
+				config:Apply()
+			end
+		end,
+	})
+
+	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+
+	local maxIcons = mini:Slider({
+		Parent = parent,
+		Min = 1,
+		Max = 5,
+		Width = columnWidth * 2 - horizontalSpacing,
+		Step = 1,
+		LabelText = L["Max Icons"],
+		GetValue = function()
+			return options.Icons.Count or 3
+		end,
+		SetValue = function(v)
+			local newValue = mini:ClampInt(v, 1, 5, 3)
+			if options.Icons.Count ~= newValue then
+				options.Icons.Count = newValue
+				config:Apply()
+			end
+		end,
+	})
+
+	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
+
+	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
+
+	parent.OnMiniRefresh = function()
+		anchorPanel:MiniRefresh()
+	end
+
+	return parent
+end
+
+---@param panel table
 ---@param default CrowdControlInstanceOptions
 ---@param raid CrowdControlInstanceOptions
 function M:Build(panel, default, raid)
@@ -340,8 +508,24 @@ function M:Build(panel, default, raid)
 	raidPanel:SetPoint("TOPRIGHT", raidDivider, "TOPRIGHT")
 	raidPanel:SetHeight(370)
 
+	local petDivider = mini:Divider({
+		Parent = panel,
+		Text = L["Pet frames"],
+	})
+
+	petDivider:SetPoint("LEFT", panel, "LEFT")
+	petDivider:SetPoint("RIGHT", panel, "RIGHT")
+	petDivider:SetPoint("TOP", raidPanel, "BOTTOM", 0, -verticalSpacing * 2)
+
+	local petPanel = BuildPetInstance(panel, db.Modules.PetCCModule)
+
+	petPanel:SetPoint("TOPLEFT", petDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+	petPanel:SetPoint("TOPRIGHT", petDivider, "TOPRIGHT")
+	petPanel:SetHeight(370)
+
 	panel.OnMiniRefresh = function()
 		defaultPanel:MiniRefresh()
 		raidPanel:MiniRefresh()
+		petPanel:MiniRefresh()
 	end
 end

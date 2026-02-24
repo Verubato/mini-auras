@@ -100,4 +100,4 @@ function M:Init() end
 
 ---@class TestSpell
 ---@field SpellId number
----@field DispelColor table
+---@field DispelColor table?

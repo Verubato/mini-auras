@@ -6,6 +6,7 @@ local db
 ---@class ModuleName
 local ModuleName = {
 	CrowdControl = "CCModule",
+	PetCC = "PetCCModule",
 	HealerCrowdControl = "HealerCCModule",
 	Portrait = "PortraitModule",
 	Alerts = "AlertsModule",

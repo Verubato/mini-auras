@@ -41,19 +41,29 @@ local function UpdateWatcherAuras(entry)
 		return
 	end
 
-	local options = instanceOptions:GetInstanceOptions()
-	if not options or not moduleUtil:IsModuleEnabled(moduleName.CrowdControl) then
+	local isPet = units:IsPet(entry.Unit)
+	local options
+
+	if isPet then
+		if not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+			return
+		end
+		options = db.Modules.PetCCModule
+	else
+		if not moduleUtil:IsModuleEnabled(moduleName.CrowdControl) then
+			return
+		end
+		options = instanceOptions:GetInstanceOptions()
+	end
+
+	if not options then
 		return
 	end
 
-	local iconsReverse = options.Icons.ReverseCooldown
-	local iconsGlow = options.Icons.Glow
-	local colorByDispelType = options.Icons.ColorByDispelType
 	local container = entry.Container
 	local ccState = entry.Watcher:GetCcState()
 	local slotIndex = 1
 
-	-- Each aura gets its own slot
 	for _, aura in ipairs(ccState) do
 		if slotIndex > container.Count then
 			break
@@ -64,15 +74,14 @@ local function UpdateWatcherAuras(entry)
 			StartTime = aura.StartTime,
 			Duration = aura.TotalDuration,
 			Alpha = aura.IsCC,
-			ReverseCooldown = iconsReverse,
-			Glow = iconsGlow,
-			Color = colorByDispelType and aura.DispelColor,
+			ReverseCooldown = options.Icons.ReverseCooldown,
+			Glow = options.Icons.Glow,
+			Color = options.Icons.ColorByDispelType and aura.DispelColor,
 			FontScale = db.FontScale,
 		})
 		slotIndex = slotIndex + 1
 	end
 
-	-- Clear any unused slots beyond the aura count
 	for i = slotIndex, container.Count do
 		container:SetSlotUnused(i)
 	end
@@ -89,7 +98,7 @@ end
 
 ---@param header IconSlotContainer
 ---@param anchor table
----@param options CrowdControlInstanceOptions
+---@param options CrowdControlInstanceOptions|PetCrowdControlModuleOptions
 local function AnchorContainer(header, anchor, options)
 	if not options then
 		return
@@ -129,7 +138,22 @@ local function EnsureWatcher(anchor, unit)
 		return nil
 	end
 
-	local options = testModeActive and instanceOptions:GetTestInstanceOptions() or instanceOptions:GetInstanceOptions()
+	local isPet = units:IsPet(unit)
+
+	if isPet and not testModeActive and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+		local existing = watchers[anchor]
+		if existing then
+			existing.Watcher:Disable()
+			existing.Container:ResetAllSlots()
+			existing.Container.Frame:Hide()
+		end
+		return nil
+	end
+
+	local memberOptions = testModeActive and instanceOptions:GetTestInstanceOptions()
+		or instanceOptions:GetInstanceOptions()
+	local petOptions = db.Modules.PetCCModule
+	local options = isPet and petOptions or memberOptions
 
 	if not options then
 		return
@@ -139,7 +163,7 @@ local function EnsureWatcher(anchor, unit)
 
 	if not entry then
 		local count = options.Icons.Count or 5
-		local size = tonumber(options.Icons.Size) or 32
+		local size = tonumber(options.Icons.Size) or (isPet and 24 or 32)
 		local spacing = db.IconSpacing or 2
 		local container = iconSlotContainer:New(UIParent, count, size, spacing, "CC")
 		local watcher = unitAuraWatcher:New(unit, nil, { CC = true })
@@ -172,7 +196,8 @@ local function EnsureWatcher(anchor, unit)
 
 	UpdateWatcherAuras(entry)
 	AnchorContainer(entry.Container, anchor, options)
-	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, options.ExcludePlayer)
+
+	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, isPet and false or options.ExcludePlayer)
 
 	return entry
 end
@@ -182,6 +207,16 @@ local function EnsureWatchers()
 
 	for _, anchor in ipairs(anchors) do
 		EnsureWatcher(anchor)
+	end
+
+	-- Pet frames never appear in GetAll — discover them directly.
+	if testModeActive or moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+		for i = 1, 6 do
+			local frame = _G["CompactPartyFramePet" .. i]
+			if frame and (frame:IsVisible() or testModeActive) then
+				EnsureWatcher(frame)
+			end
+		end
 	end
 end
 
@@ -196,7 +231,15 @@ local function OnCufUpdateVisible(frame)
 		return
 	end
 
-	local options = instanceOptions:GetInstanceOptions()
+	local isPet = units:IsPet(entry.Unit)
+
+	-- If this is a pet frame and pet CC is disabled, keep it hidden
+	if isPet and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+		entry.Container.Frame:Hide()
+		return
+	end
+
+	local options = isPet and db.Modules.PetCCModule or instanceOptions:GetInstanceOptions()
 
 	if not options then
 		return
@@ -237,39 +280,65 @@ local function RefreshTestIcons()
 		return
 	end
 
-	-- Populate all containers with test data
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
+	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
+	local petOptions = db.Modules.PetCCModule
+
 	for anchor, entry in pairs(watchers) do
-		local container = entry.Container
-		local now = GetTime()
+		local isPet = units:IsPet(entry.Unit)
+		local entryEnabled
+		if isPet then
+			entryEnabled = petEnabled
+		else
+			entryEnabled = moduleEnabled
+		end
 
-		for i, spell in ipairs(testSpells) do
-			local texture = spellCache:GetSpellTexture(spell.SpellId)
+		if not entryEnabled then
+			-- This frame type is disabled — hide and clear it
+			entry.Container:ResetAllSlots()
+			entry.Container.Frame:Hide()
+		else
+			local entryOptions = isPet
+					and (petOptions or {
+						Icons = { ReverseCooldown = false, Glow = false, ColorByDispelType = true },
+						Offset = { X = 0, Y = 0 },
+						Grow = "CENTER",
+					})
+				or options
+			local container = entry.Container
+			local now = GetTime()
 
-			if texture then
-				local duration = 15 + (i - 1) * 3
-				local startTime = now - (i - 1) * 0.5
+			for i, spell in ipairs(testSpells) do
+				if i > container.Count then
+					break
+				end
 
-				container:SetSlot(i, {
-					Texture = texture,
-					StartTime = startTime,
-					Duration = duration,
-					Alpha = true,
-					ReverseCooldown = options.Icons.ReverseCooldown,
-					Glow = options.Icons.Glow,
-					Color = options.Icons.ColorByDispelType and spell.DispelColor,
-					FontScale = db.FontScale,
-				})
+				local texture = spellCache:GetSpellTexture(spell.SpellId)
+
+				if texture then
+					local duration = 15 + (i - 1) * 3
+					local startTime = now - (i - 1) * 0.5
+
+					container:SetSlot(i, {
+						Texture = texture,
+						StartTime = startTime,
+						Duration = duration,
+						Alpha = true,
+						ReverseCooldown = entryOptions.Icons.ReverseCooldown,
+						Glow = entryOptions.Icons.Glow,
+						Color = entryOptions.Icons.ColorByDispelType and spell.DispelColor,
+						FontScale = db.FontScale,
+					})
+				end
 			end
-		end
 
-		-- Clear any unused slots beyond the test spell count
-		for i = #testSpells + 1, container.Count do
-			container:SetSlotUnused(i)
-		end
+			for i = #testSpells + 1, container.Count do
+				container:SetSlotUnused(i)
+			end
 
-		-- Anchor and show/hide based on anchor visibility
-		AnchorContainer(container, anchor, options)
-		frames:ShowHideFrame(container.Frame, anchor, true, options.ExcludePlayer)
+			AnchorContainer(container, anchor, entryOptions)
+			frames:ShowHideFrame(container.Frame, anchor, true, isPet and false or entryOptions.ExcludePlayer)
+		end
 	end
 end
 
@@ -310,26 +379,19 @@ local function EnableWatchers()
 end
 
 function M:StartTesting()
-	-- Pause real watcher updates
 	Pause()
 	testModeActive = true
-
 	M:Refresh()
 end
 
 function M:StopTesting()
-	-- Clear all test data
 	for _, entry in pairs(watchers) do
 		entry.Container:ResetAllSlots()
 		entry.Container.Frame:Hide()
 	end
 
 	testModeActive = false
-
-	-- Resume real watcher updates
 	Resume()
-
-	-- Refresh to show real data
 	M:Refresh()
 end
 
@@ -341,32 +403,56 @@ function M:Refresh()
 	end
 
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
+	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
 
-	-- If disabled, disable watchers and hide everything
-	if not moduleEnabled then
+	-- If both are off, disable everything and bail early
+	if not moduleEnabled and not petEnabled then
 		DisableWatchers()
 		return
 	end
 
-	-- Module is enabled, ensure watchers are enabled
 	EnableWatchers()
 	EnsureWatchers()
 
+	local petOptions = db.Modules.PetCCModule
+
 	for anchor, entry in pairs(watchers) do
-		local container = entry.Container
-		local iconSize = tonumber(options.Icons.Size) or 32
-		local iconCount = options.Icons.Count or 5
+		local isPet = units:IsPet(entry.Unit)
+		local entryOptions = isPet and petOptions or options
+		local entryEnabled
 
-		container:SetIconSize(iconSize)
-		container:SetCount(iconCount)
-		container:SetSpacing(db.IconSpacing or 2)
-
-		if not testModeActive then
-			UpdateWatcherAuras(entry)
+		if isPet then
+			-- In test mode always treat pet as enabled so icons show
+			entryEnabled = testModeActive or petEnabled
+		else
+			entryEnabled = moduleEnabled
 		end
 
-		AnchorContainer(container, anchor, options)
-		frames:ShowHideFrame(container.Frame, anchor, testModeActive, options.ExcludePlayer)
+		if not entryEnabled or not entryOptions then
+			-- This entry's feature is toggled off — hide and disable it
+			entry.Watcher:Disable()
+			entry.Container:ResetAllSlots()
+			entry.Container.Frame:Hide()
+		else
+			local iconSize = tonumber(entryOptions.Icons.Size) or (isPet and 24 or 32)
+			local iconCount = entryOptions.Icons.Count or 5
+
+			entry.Container:SetIconSize(iconSize)
+			entry.Container:SetCount(iconCount)
+			entry.Container:SetSpacing(db.IconSpacing or 2)
+
+			if not testModeActive then
+				UpdateWatcherAuras(entry)
+			end
+
+			AnchorContainer(entry.Container, anchor, entryOptions)
+			frames:ShowHideFrame(
+				entry.Container.Frame,
+				anchor,
+				testModeActive,
+				isPet and false or entryOptions.ExcludePlayer
+			)
+		end
 	end
 
 	if testModeActive then

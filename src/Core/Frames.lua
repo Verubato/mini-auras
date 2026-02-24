@@ -78,7 +78,7 @@ local function CreateTestFrames()
 	testFramesContainer:SetSize(width + padding * 2, height * maxTestFrames + padding * 2)
 end
 
----Retrieves a list of Blizzard frames.
+---Retrieves a list of Blizzard compact party/raid member frames.
 ---@param visibleOnly boolean
 ---@return table
 function M:BlizzardFrames(visibleOnly)
@@ -232,7 +232,6 @@ function M:ShadowedUFFrames(visibleOnly)
 		end
 	end
 
-	-- “Normal” SUF unit frames (SUFUnit<unit>) :contentReference[oaicite:1]{index=1}
 	local unitNames = {
 		"player",
 		"pet",
@@ -403,11 +402,6 @@ function M:ShowHideFrame(frame, anchor, isTest, excludePlayer)
 	local unit = frame:GetAttribute("unit") or anchor.unit or anchor:GetAttribute("unit")
 
 	if unit and unit ~= "" then
-		if units:IsPet(unit) then
-			frame:Hide()
-			return
-		end
-
 		if excludePlayer and UnitIsUnit(unit, "player") then
 			frame:Hide()
 			return
