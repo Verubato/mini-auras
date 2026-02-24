@@ -7,6 +7,7 @@ if GetLocale() ~= "ruRU" then
 end
 
 L:SetStrings({
+	[" - Added precognition guesser module that shows when you get precog."] = " - Добавляет модуль угадывания предвидения, который показывает, когда вы получаете предвидение.",
 	[" - basically doubles your APM."] = " - практически удваивает ваш APM.",
 	[" - changes you tab key to enemy players in PvP, and enemy units in PvE."] = " - изменяет клавишу Tab на вражеских игроков в PvP и вражеские юниты в PvE.",
 	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - В настоящее время работает только на арене (не работает в дуэлях/мире, добавим позже).",
@@ -102,6 +103,7 @@ L:SetStrings({
 	["Limitations:"] = "Ограничения:",
 	["Max Icons"] = "Макс. иконок",
 	["MiniArenaDebuffs"] = "MiniArenaDebuffs",
+	["MiniCC - What's New?"] = "MiniCC - Что нового?",
 	["MiniCombatNotifier"] = "MiniCombatNotifier",
 	["MiniKillingBlow"] = "MiniKillingBlow",
 	["MiniMarkers"] = "MiniMarkers",

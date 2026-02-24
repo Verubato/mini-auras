@@ -7,6 +7,7 @@ if GetLocale() ~= "deDE" then
 end
 
 L:SetStrings({
+	[" - Added precognition guesser module that shows when you get precog."] = " - Fügt ein Vorausahnungs-Ratemodul hinzu, das anzeigt, wenn du Vorausahnung erhältst.",
 	[" - basically doubles your APM."] = " - verdoppelt im Grunde deine APM.",
 	[" - changes you tab key to enemy players in PvP, and enemy units in PvE."] = " - ändert deine Tab-Taste auf feindliche Spieler im PvP und feindliche Einheiten im PvE.",
 	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - Funktioniert derzeit nur in der Arena (funktioniert nicht in Duellen/Welt, wird später hinzugefügt).",
@@ -103,6 +104,7 @@ L:SetStrings({
 	["Limitations:"] = "Einschränkungen:",
 	["Max Icons"] = "Max. Symbole",
 	["MiniArenaDebuffs"] = "MiniArenaDebuffs",
+	["MiniCC - What's New?"] = "MiniCC - Was gibt es Neues?",
 	["MiniCombatNotifier"] = "MiniCombatNotifier",
 	["MiniKillingBlow"] = "MiniKillingBlow",
 	["MiniMarkers"] = "MiniMarkers",

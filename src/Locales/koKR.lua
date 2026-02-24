@@ -7,6 +7,7 @@ if GetLocale() ~= "koKR" then
 end
 
 L:SetStrings({
+	[" - Added precognition guesser module that shows when you get precog."] = " - 예지 추측 모듈을 추가했습니다. 예지 효과를 받을 때 표시됩니다.",
 	[" - basically doubles your APM."] = " - 기본적으로 APM을 두 배로 만듭니다.",
 	[" - changes you tab key to enemy players in PvP, and enemy units in PvE."] = " - PvP에서는 적 플레이어로, PvE에서는 적 유닛으로 탭 키를 변경합니다.",
 	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - 현재 경기장에서만 작동합니다(결투/세계에서는 작동하지 않으며, 나중에 추가할 예정).",
@@ -102,6 +103,7 @@ L:SetStrings({
 	["Limitations:"] = "제한 사항:",
 	["Max Icons"] = "최대 아이콘",
 	["MiniArenaDebuffs"] = "MiniArenaDebuffs",
+	["MiniCC - What's New?"] = "MiniCC - 새로운 소식?",
 	["MiniCombatNotifier"] = "MiniCombatNotifier",
 	["MiniKillingBlow"] = "MiniKillingBlow",
 	["MiniMarkers"] = "MiniMarkers",

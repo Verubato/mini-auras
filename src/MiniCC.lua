@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local L = addon.L
 local instanceOptions = addon.Core.InstanceOptions
 local scheduler = addon.Utils.Scheduler
 local frames = addon.Core.Frames
@@ -25,7 +26,7 @@ local function NotifyChanges()
 		return
 	end
 
-	local title = "MiniCC - What's New?"
+	local title = L["MiniCC - What's New?"]
 	db.NotifiedChanges = true
 
 	if db.Version == 6 then

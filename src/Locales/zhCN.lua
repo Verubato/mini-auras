@@ -7,6 +7,7 @@ if GetLocale() ~= "zhCN" then
 end
 
 L:SetStrings({
+	[" - Added precognition guesser module that shows when you get precog."] = " - 新增了预知猜测模块，当你获得预知效果时显示。",
 	[" - basically doubles your APM."] = " - 基本上使APM加倍。",
 	[" - changes you tab key to enemy players in PvP, and enemy units in PvE."] = " - 将Tab键更改为PvP中的敌方玩家和PvE中的敌方单位。",
 	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - 目前仅在竞技场内工作（在决斗/世界中无效，将来会添加）。",
@@ -102,6 +103,7 @@ L:SetStrings({
 	["Limitations:"] = "限制：",
 	["Max Icons"] = "最大图标",
 	["MiniArenaDebuffs"] = "MiniArenaDebuffs",
+	["MiniCC - What's New?"] = "MiniCC - 新内容？",
 	["MiniCombatNotifier"] = "MiniCombatNotifier",
 	["MiniKillingBlow"] = "MiniKillingBlow",
 	["MiniMarkers"] = "MiniMarkers",

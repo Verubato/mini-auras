@@ -8,6 +8,7 @@ end
 
 -- Mexican Spanish uses the same translations as Spain Spanish
 L:SetStrings({
+	[" - Added precognition guesser module that shows when you get precog."] = " - Añade un módulo de predicción de precognición que muestra cuándo obtienes precog.",
 	[" - basically doubles your APM."] = " - básicamente duplica tu APM.",
 	[" - changes you tab key to enemy players in PvP, and enemy units in PvE."] = " - cambia tu tecla tab a jugadores enemigos en PvP y unidades enemigas en PvE.",
 	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - Actualmente solo funciona dentro de la arena (no funciona en duelos/mundo, se agregará más tarde).",
@@ -103,6 +104,7 @@ L:SetStrings({
 	["Limitations:"] = "Limitaciones:",
 	["Max Icons"] = "Máx. iconos",
 	["MiniArenaDebuffs"] = "MiniArenaDebuffs",
+	["MiniCC - What's New?"] = "MiniCC - ¿Qué hay de nuevo?",
 	["MiniCombatNotifier"] = "MiniCombatNotifier",
 	["MiniKillingBlow"] = "MiniKillingBlow",
 	["MiniMarkers"] = "MiniMarkers",

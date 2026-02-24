@@ -4,6 +4,7 @@ local L = addon.L
 
 -- Set English as the default
 L:SetDefaultStrings({
+	[" - Added precognition guesser module that shows when you get precog."] = " - Added precognition guesser module that shows when you get precog.",
 	[" - basically doubles your APM."] = " - basically doubles your APM.",
 	[" - changes you tab key to enemy players in PvP, and enemy units in PvE."] = " - changes you tab key to enemy players in PvP, and enemy units in PvE.",
 	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - Currently only works inside arena (doesn't work in duels/world, will add this later).",
@@ -101,6 +102,7 @@ L:SetDefaultStrings({
 	["Limitations:"] = "Limitations:",
 	["Max Icons"] = "Max Icons",
 	["MiniArenaDebuffs"] = "MiniArenaDebuffs",
+	["MiniCC - What's New?"] = "MiniCC - What's New?",
 	["MiniCombatNotifier"] = "MiniCombatNotifier",
 	["MiniKillingBlow"] = "MiniKillingBlow",
 	["MiniMarkers"] = "MiniMarkers",

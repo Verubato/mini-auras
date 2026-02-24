@@ -2,6 +2,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local L = addon.L
 ---@class Db
 local dbDefaults = {
 	Version = 24,
@@ -1625,7 +1626,7 @@ function M:UpgradeToVersion24(vars)
 		},
 	}
 
-	table.insert(vars.WhatsNew, " - Added precognition guesser module that shows when you get precog.")
+	table.insert(vars.WhatsNew, L[" - Added precognition guesser module that shows when you get precog."])
 
 	vars.NotifiedChanges = false
 	vars.Version = 24
