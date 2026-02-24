@@ -170,17 +170,12 @@ local function CreateKickBar()
 	container.Frame:SetFrameStrata("HIGH")
 	container.Frame:SetClampedToScreen(true)
 	container.Frame:SetIgnoreParentScale(true)
-	container.Frame:SetClampedToScreen(true)
-
-	-- Create wrapper frame for positioning and dragging
-	local anchor = CreateFrame("Frame", addonName .. "KickBar", UIParent)
-	anchor:SetSize(200, size)
-	anchor:SetMovable(false)
-	anchor:EnableMouse(false)
-	anchor:SetDontSavePosition(true)
-	anchor:RegisterForDrag("LeftButton")
-	anchor:SetScript("OnDragStart", anchor.StartMoving)
-	anchor:SetScript("OnDragStop", function(frameSelf)
+	container.Frame:SetMovable(false)
+	container.Frame:EnableMouse(false)
+	container.Frame:SetDontSavePosition(true)
+	container.Frame:RegisterForDrag("LeftButton")
+	container.Frame:SetScript("OnDragStart", container.Frame.StartMoving)
+	container.Frame:SetScript("OnDragStop", function(frameSelf)
 		frameSelf:StopMovingOrSizing()
 
 		local point, movedRelativeTo, relativePoint, x, y = frameSelf:GetPoint()
@@ -192,14 +187,10 @@ local function CreateKickBar()
 	end)
 
 	local relativeTo = _G[options.RelativeTo] or UIParent
-	anchor:SetPoint(options.Point, relativeTo, options.RelativePoint, options.Offset.X, options.Offset.Y)
-
-	-- Attach container to anchor
-	container.Frame:SetParent(anchor)
-	container.Frame:SetPoint("CENTER", anchor, "CENTER", 0, 0)
+	container.Frame:SetPoint(options.Point, relativeTo, options.RelativePoint, options.Offset.X, options.Offset.Y)
 
 	kickBar.Container = container
-	kickBar.Anchor = anchor
+	kickBar.Anchor = container.Frame
 end
 
 local function ApplyKickBarIconOptions()
@@ -212,9 +203,6 @@ local function ApplyKickBarIconOptions()
 		kickBar.Container:SetSpacing(db.IconSpacing or 2)
 	end
 
-	if kickBar.Anchor then
-		kickBar.Anchor:SetHeight(size)
-	end
 end
 
 local function UpdateKickBarVisibility()
