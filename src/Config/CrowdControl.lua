@@ -185,7 +185,7 @@ local function BuildInstance(panel, options, addTestButton)
 	local maxIcons = mini:Slider({
 		Parent = parent,
 		Min = 1,
-		Max = 10,
+		Max = 5,
 		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
 		LabelText = L["Max Icons"],
@@ -193,7 +193,7 @@ local function BuildInstance(panel, options, addTestButton)
 			return options.Icons.Count or 5
 		end,
 		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 1, 10, 5)
+			local newValue = mini:ClampInt(v, 1, 5, 3)
 			if options.Icons.Count ~= newValue then
 				options.Icons.Count = newValue
 				config:Apply()
