@@ -151,6 +151,10 @@ local function EnsureWatcher(anchor, unit)
 		return nil
 	end
 
+	if units:IsPet(unit) then
+		return nil
+	end
+
 	local options = db.Modules.FriendlyIndicatorModule
 
 	if not options then
