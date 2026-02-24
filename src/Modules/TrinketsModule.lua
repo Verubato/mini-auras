@@ -289,7 +289,17 @@ local function UpdateVisibility()
 	for _, watcher in pairs(watchers) do
 		if watcher.Container and watcher.Anchor then
 			if show then
-				frames:ShowHideFrame(watcher.Container.Frame, watcher.Anchor, testModeActive, options.ExcludePlayer)
+				local anchor = watcher.Anchor
+				local unit = anchor.unit or (anchor.GetAttribute and anchor:GetAttribute("unit"))
+				local shouldExclude = options.ExcludePlayer and unit and UnitIsUnit(unit, "player")
+				if shouldExclude then
+					watcher.Container.Frame:Hide()
+				elseif anchor:IsVisible() then
+					watcher.Container.Frame:SetAlpha(1)
+					watcher.Container.Frame:Show()
+				else
+					watcher.Container.Frame:Hide()
+				end
 			else
 				watcher.Container.Frame:Hide()
 			end
