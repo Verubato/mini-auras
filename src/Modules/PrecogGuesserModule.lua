@@ -111,8 +111,6 @@ local function ScanAndDisplay()
 				FontScale = db.FontScale,
 				Layer = i,
 			})
-
-			print("Aura:", auraData.name, "Alpha:", alpha, "Duration", duration)
 		end
 	end
 
