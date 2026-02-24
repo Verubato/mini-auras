@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.23.1
+
+- Fix for party trinkets spam resetting.
+
 ## 2.23.0
 
 - Added CC icons on party/raid pet frames (disabled by default).
