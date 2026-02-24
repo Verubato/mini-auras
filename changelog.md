@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.23.0
+
+- Added CC icons on party/raid pet frames (disabled by default).
+- Added precognition guesser module that shows when you get precog.
+- Added profile import/export feature.
+
 ## 2.22.0
 
 - Added voice dropdown selection.
