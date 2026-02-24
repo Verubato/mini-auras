@@ -94,7 +94,11 @@ local function ScanAndDisplay()
 			auraAlphas[auraData.auraInstanceID] = durationInfo and durationInfo:EvaluateRemainingDuration(precogCurve)
 		end
 
-		local alpha = auraAlphas[auraData.auraInstanceID] or 0
+		local alpha = auraAlphas[auraData.auraInstanceID]
+
+		if not alpha then
+			alpha = 0
+		end
 
 		if start and duration then
 			container:SetSlot(1, {
@@ -107,6 +111,8 @@ local function ScanAndDisplay()
 				FontScale = db.FontScale,
 				Layer = i,
 			})
+
+			print("Aura:", auraData.name, "Alpha:", alpha, "Duration", duration)
 		end
 	end
 
@@ -295,8 +301,10 @@ function M:Init()
 	precogCurve:SetType(Enum.LuaCurveType.Step)
 	precogCurve:AddPoint(0, 0)
 	-- precog is 4 seconds
+	-- account for some lag, not sure if this is needed though
+	precogCurve:AddPoint(3.7, 1)
 	precogCurve:AddPoint(4, 1)
-	precogCurve:AddPoint(5, 0)
+	precogCurve:AddPoint(4.1, 0)
 
 	M:Refresh()
 end
