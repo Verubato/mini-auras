@@ -15,6 +15,10 @@ local defaultSpellId = 336126
 local defaultTrinketIcon
 ---@type { [table]: TrinketWatcher }
 local watchers = {}
+-- Cache of known-active trinket cooldowns, keyed by unit string.
+-- Only populated from non-secret data so math on Start/Duration is safe.
+---@type table<string, { SpellId: number, Start: number, Duration: number }>
+local trinketCooldowns = {}
 ---@type Db
 local db
 ---@type TrinketsModuleOptions
@@ -111,6 +115,7 @@ local function UpdateUnit(unit, spellId, start, duration)
 end
 
 local function ClearAll()
+	trinketCooldowns = {}
 	for _, w in pairs(watchers) do
 		SetIconState(w.Container, nil, nil, nil)
 	end
@@ -193,11 +198,21 @@ local function RequestAll()
 	end
 end
 
+local function IsOnCooldown(unit)
+	local cd = trinketCooldowns[unit]
+	return cd ~= nil and GetTime() < cd.Start + cd.Duration
+end
+
+local function CacheCooldown(unit, spellId, start, duration)
+	trinketCooldowns[unit] = { SpellId = spellId, Start = start, Duration = duration }
+end
+
+---@return number? spellId, number? start, number? duration, boolean wasSecret
 local function GetTrinketData(unit)
 	local spellId, start, duration = C_PvP.GetArenaCrowdControlInfo(unit)
 
 	if not start or not duration then
-		return spellId, start, duration
+		return spellId, start, duration, false
 	end
 
 	if issecretvalue(start) or issecretvalue(duration) then
@@ -205,12 +220,11 @@ local function GetTrinketData(unit)
 		-- ffs, they give us duration in milliseconds as a secret value which we can't convert to seconds
 		-- so we'll just have to hard code these values
 		duration = unitsUtil:IsHealer(unit) and 90 or 120
-	else
-		-- TODO: does this even happen anymore or are they always secret?
-		start, duration = NormalizeCooldownValues(start, duration)
+		return spellId, start, duration, true
 	end
 
-	return spellId, start, duration
+	start, duration = NormalizeCooldownValues(start, duration)
+	return spellId, start, duration, false
 end
 
 -- Refresh only one unit (using unitTarget from ARENA_COOLDOWNS_UPDATE)
@@ -219,11 +233,20 @@ local function RefreshUnit(unit)
 		return
 	end
 
-	local spellId, start, duration = GetTrinketData(unit)
+	if IsOnCooldown(unit) then
+		-- for some reason blizzard sometimes fire this event multiple times during arena
+		-- and because the data is secret and unusable we just have to ignore it
+		return
+	end
+
+	local spellId, start, duration, wasSecret = GetTrinketData(unit)
 
 	if not spellId or not start or not duration then
-		-- don't overwrite existing data if they've already trinketed
 		return
+	end
+
+	if not wasSecret then
+		CacheCooldown(unit, spellId, start, duration)
 	end
 
 	for _, watcher in pairs(watchers) do
@@ -240,9 +263,18 @@ local function RefreshAll()
 		local container = watcher.Container
 
 		if container and unit and UnitExists(unit) then
-			local spellId, start, duration = GetTrinketData(unit)
-			-- Always update icon state, even if no cooldown
-			SetIconState(container, spellId, start, duration)
+			if IsOnCooldown(unit) then
+				-- Use cached data to avoid resetting the start time with a new GetTime() estimate
+				local cd = trinketCooldowns[unit]
+				SetIconState(container, cd.SpellId, cd.Start, cd.Duration)
+			else
+				local spellId, start, duration, wasSecret = GetTrinketData(unit)
+				if spellId and start and duration and not wasSecret then
+					CacheCooldown(unit, spellId, start, duration)
+				end
+				-- Always update icon state, even if no cooldown
+				SetIconState(container, spellId, start, duration)
+			end
 		elseif container then
 			-- Show default icon when unit doesn't exist
 			SetIconState(container, nil, nil, nil)
