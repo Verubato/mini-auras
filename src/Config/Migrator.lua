@@ -1676,7 +1676,9 @@ function M:UpgradeToVersion24(vars)
 		},
 	}
 
+	table.insert(vars.WhatsNew, L[" - Added CC icons on pet party/raid frames (disabled by default)."])
 	table.insert(vars.WhatsNew, L[" - Added precognition guesser module that shows when you get precog."])
+	table.insert(vars.WhatsNew, L[" - Added profile import/export feature."])
 
 	vars.NotifiedChanges = false
 	vars.Version = 24

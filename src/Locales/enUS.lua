@@ -4,7 +4,9 @@ local L = addon.L
 
 -- Set English as the default
 L:SetDefaultStrings({
+	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Added CC icons on pet party/raid frames (disabled by default).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - Added precognition guesser module that shows when you get precog.",
+	[" - Added profile import/export feature."] = " - Added profile import/export feature.",
 	[" - basically doubles your APM."] = " - basically doubles your APM.",
 	[" - changes you tab key to enemy players in PvP, and enemy units in PvE."] = " - changes you tab key to enemy players in PvP, and enemy units in PvE.",
 	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - Currently only works inside arena (doesn't work in duels/world, will add this later).",

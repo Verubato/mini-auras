@@ -7,7 +7,9 @@ if GetLocale() ~= "itIT" then
 end
 
 L:SetStrings({
+	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Aggiunte icone CC sui frame di gruppo/incursione degli animali da compagnia (disabilitato per impostazione predefinita).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - Aggiunge un modulo di indovinello precognizione che mostra quando si ottiene precog.",
+	[" - Added profile import/export feature."] = " - Aggiunta la funzione di importazione/esportazione del profilo.",
 	[" - basically doubles your APM."] = " - praticamente raddoppia il tuo APM.",
 	[" - changes you tab key to enemy players in PvP, and enemy units in PvE."] = " - cambia il tuo tasto tab su giocatori nemici in PvP e unità nemiche in PvE.",
 	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - Attualmente funziona solo nell'arena (non funziona nei duelli/mondo, lo aggiungeremo dopo).",

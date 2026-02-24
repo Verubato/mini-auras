@@ -7,7 +7,9 @@ if GetLocale() ~= "koKR" then
 end
 
 L:SetStrings({
+	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - 파티/공격대 소환수 프레임에 CC 아이콘이 추가되었습니다 (기본적으로 비활성화).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - 예지 추측 모듈을 추가했습니다. 예지 효과를 받을 때 표시됩니다.",
+	[" - Added profile import/export feature."] = " - 프로필 가져오기/내보내기 기능이 추가되었습니다.",
 	[" - basically doubles your APM."] = " - 기본적으로 APM을 두 배로 만듭니다.",
 	[" - changes you tab key to enemy players in PvP, and enemy units in PvE."] = " - PvP에서는 적 플레이어로, PvE에서는 적 유닛으로 탭 키를 변경합니다.",
 	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - 현재 경기장에서만 작동합니다(결투/세계에서는 작동하지 않으며, 나중에 추가할 예정).",

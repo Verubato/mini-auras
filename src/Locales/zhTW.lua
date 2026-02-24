@@ -7,7 +7,9 @@ if GetLocale() ~= "zhTW" then
 end
 
 L:SetStrings({
+	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - 為隊伍/團隊的寵物框架新增了CC圖示（預設停用）。",
 	[" - Added precognition guesser module that shows when you get precog."] = " - 新增了預知猜測模組，當你獲得預知效果時顯示。",
+	[" - Added profile import/export feature."] = " - 新增了設定檔匯入/匯出功能。",
 	[" - basically doubles your APM."] = " - 基本上使APM加倍。",
 	[" - changes you tab key to enemy players in PvP, and enemy units in PvE."] = " - 將Tab鍵更改為PvP中的敵方玩家和PvE中的敵方單位。",
 	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - 目前僅在競技場內工作（在決鬥/世界中無效，將來會添加）。",
