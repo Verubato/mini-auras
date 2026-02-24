@@ -50,6 +50,10 @@ function M:FriendlyUnits()
 end
 
 function M:IsPet(unit)
+	if string.find(unit, "pet", 1, true) then
+		return true
+	end
+
 	if UnitIsUnit(unit, "pet") then
 		return true
 	end
