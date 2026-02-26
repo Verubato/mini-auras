@@ -87,15 +87,6 @@ local function UpdateWatcherAuras(entry)
 	end
 end
 
-local function OnAuraStateUpdated(watcher)
-	for _, entry in pairs(watchers) do
-		if entry.Watcher == watcher then
-			UpdateWatcherAuras(entry)
-			break
-		end
-	end
-end
-
 ---@param header IconSlotContainer
 ---@param anchor table
 ---@param options CrowdControlInstanceOptions|PetCrowdControlModuleOptions
@@ -168,8 +159,6 @@ local function EnsureWatcher(anchor, unit)
 		local container = iconSlotContainer:New(UIParent, count, size, spacing, "CC")
 		local watcher = unitAuraWatcher:New(unit, nil, { CC = true })
 
-		watcher:RegisterCallback(OnAuraStateUpdated)
-
 		entry = {
 			Container = container,
 			Watcher = watcher,
@@ -177,13 +166,19 @@ local function EnsureWatcher(anchor, unit)
 			Unit = unit,
 		}
 		watchers[anchor] = entry
+
+		watcher:RegisterCallback(function()
+			UpdateWatcherAuras(entry)
+		end)
 	else
 		-- Check if unit has changed
 		if entry.Unit ~= unit then
 			-- Unit changed, recreate the watcher
 			entry.Watcher:Dispose()
 			entry.Watcher = unitAuraWatcher:New(unit, nil, { CC = true })
-			entry.Watcher:RegisterCallback(OnAuraStateUpdated)
+			entry.Watcher:RegisterCallback(function()
+				UpdateWatcherAuras(entry)
+			end)
 			entry.Unit = unit
 
 			-- Clear the container since it's a different unit now
