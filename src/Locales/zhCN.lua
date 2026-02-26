@@ -159,6 +159,7 @@ L:SetStrings({
 	["The others seem to use a non-trivial amount of CPU."] = "其他的似乎使用了大量的CPU。",
 	["The Proc Glow uses the least CPU."] = "触发发光使用最少的CPU。",
 	["TTS"] = "TTS",
+	["TTS Speech Rate"] = "TTS语速",
 	["TTS Volume"] = "TTS音量",
 	["Voice"] = "语音",
 	["Whether to enable or disable this module if you are a caster."] = "如果您是施法者，是否启用或禁用此模块。",

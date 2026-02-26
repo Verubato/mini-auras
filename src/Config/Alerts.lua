@@ -259,7 +259,10 @@ function M:Build(panel, options)
 
 	local function EnsureTtsOptions()
 		if not options.TTS then
-			options.TTS = { Volume = 100 }
+			options.TTS = { Volume = 100, SpeechRate = 0 }
+		end
+		if options.TTS.SpeechRate == nil then
+			options.TTS.SpeechRate = 0
 		end
 	end
 
@@ -305,7 +308,8 @@ function M:Build(panel, options)
 		SetValue = function(value)
 			EnsureTtsOptions()
 			options.TTS.VoiceID = value
-			C_VoiceChat.SpeakText(value, L["Voice"], 1, options.TTS.Volume or 100, true)
+			local speechRate = options.TTS.SpeechRate or 0
+			C_VoiceChat.SpeakText(value, L["Voice"], speechRate, options.TTS.Volume or 100, true)
 			config:Apply()
 		end,
 		GetText = function(value)
@@ -324,9 +328,7 @@ function M:Build(panel, options)
 			return options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
 		end,
 		SetValue = function(value)
-			if not options.TTS then
-				options.TTS = { Volume = 100 }
-			end
+			EnsureTtsOptions()
 			if not options.TTS.Important then
 				options.TTS.Important = { Enabled = false }
 			end
@@ -335,8 +337,9 @@ function M:Build(panel, options)
 			if value then
 				local voiceId = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
 				local volume = options.TTS.Volume or 100
+				local speechRate = options.TTS.SpeechRate or 0
 
-				C_VoiceChat.SpeakText(voiceId, L["Important"], 1, volume, true)
+				C_VoiceChat.SpeakText(voiceId, L["Important"], speechRate, volume, true)
 			end
 			config:Apply()
 		end,
@@ -352,9 +355,7 @@ function M:Build(panel, options)
 			return options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
 		end,
 		SetValue = function(value)
-			if not options.TTS then
-				options.TTS = { Volume = 100 }
-			end
+			EnsureTtsOptions()
 			if not options.TTS.Defensive then
 				options.TTS.Defensive = { Enabled = false }
 			end
@@ -363,8 +364,9 @@ function M:Build(panel, options)
 			if value then
 				local voiceId = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
 				local volume = options.TTS.Volume or 100
+				local speechRate = options.TTS.SpeechRate or 0
 
-				C_VoiceChat.SpeakText(voiceId, L["Defensive"], 1, volume, true)
+				C_VoiceChat.SpeakText(voiceId, L["Defensive"], speechRate, volume, true)
 			end
 
 			config:Apply()
@@ -386,9 +388,7 @@ function M:Build(panel, options)
 		end,
 		SetValue = function(v)
 			local newValue = mini:ClampInt(v, 0, 100, 100)
-			if not options.TTS then
-				options.TTS = { Volume = 100 }
-			end
+			EnsureTtsOptions()
 			if options.TTS.Volume ~= newValue then
 				options.TTS.Volume = newValue
 				config:Apply()
@@ -397,6 +397,36 @@ function M:Build(panel, options)
 	})
 
 	volumeSlider.Slider:SetPoint("TOPLEFT", announceImportantSpellsChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+
+	local speechRateSlider = mini:Slider({
+		Parent = panel,
+		Min = -10,
+		Max = 10,
+		Width = (columnWidth * 2) - horizontalSpacing,
+		Step = 1,
+		LabelText = L["TTS Speech Rate"] or "TTS Speech Rate",
+		GetValue = function()
+			EnsureTtsOptions()
+			return options.TTS.SpeechRate or 0
+		end,
+		SetValue = function(v)
+			local newValue = mini:ClampInt(v, -10, 10, 0)
+			EnsureTtsOptions()
+			if options.TTS.SpeechRate ~= newValue then
+				options.TTS.SpeechRate = newValue
+				-- Play preview with sample text
+				local voiceId = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
+				local volume = options.TTS.Volume or 100
+				local previewText = L["Important"]
+				pcall(function()
+					C_VoiceChat.SpeakText(voiceId, previewText, newValue, volume, true)
+				end)
+				config:Apply()
+			end
+		end,
+	})
+
+	speechRateSlider.Slider:SetPoint("TOPLEFT", volumeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()
