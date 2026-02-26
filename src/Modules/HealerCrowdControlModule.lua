@@ -78,6 +78,8 @@ local function OnAuraStateUpdated()
 	local iconsGlow = options.Icons.Glow
 	local colorByDispelType = options.Icons.ColorByDispelType
 
+	UpdateAnchorSize()
+
 	---@type AuraInfo[]
 	local allCcAuraData = {}
 	local slot = 0
@@ -105,8 +107,6 @@ local function OnAuraStateUpdated()
 	for i = slot + 1, iconsContainer.Count do
 		iconsContainer:SetSlotUnused(i)
 	end
-
-	UpdateAnchorSize()
 
 	local show = #allCcAuraData > 0
 	local soundEnabled = db.Modules.HealerCCModule.Sound.Enabled
@@ -399,6 +399,9 @@ function M:Init()
 	text:Show()
 
 	healerAnchor.HealerWarning = text
+
+	-- give the anchor an initial size so masque borders don't go crazy
+	UpdateAnchorSize()
 
 	-- Icons sit at the bottom of the anchor, text sits at the top.
 	iconsContainer = iconSlotContainer:New(healerAnchor, 5, tonumber(options.Icons.Size) or 32, db.IconSpacing or 2, "Healer CC")
