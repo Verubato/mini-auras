@@ -669,7 +669,6 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 
 		-- Show CC test spells (limited to container count)
 		for i = 1, limit do
-
 			local spellId = testCcNameplateSpellIds[i]
 			local tex = spellCache:GetSpellTexture(spellId)
 
@@ -832,33 +831,6 @@ local function OnNamePlateAdded(unitToken)
 			end
 		else
 			ShowSeparateModeTestIcons(ccContainer, unitOptions.CC, importantContainer, unitOptions.Important, now)
-		end
-	end
-end
-
-local function OnNamePlateUpdate(unitToken)
-	-- Nameplate might have been recreated, update our reference
-	local data = nameplateAnchors[unitToken]
-	if not data then
-		return
-	end
-
-	local newNameplate = C_NamePlate.GetNamePlateForUnit(unitToken)
-	if newNameplate and newNameplate ~= data.Nameplate then
-		-- Nameplate changed, fully recreate
-		OnNamePlateRemoved(unitToken)
-		OnNamePlateAdded(unitToken)
-	elseif testModeActive then
-		-- In test mode, refresh test icons for this nameplate
-		local now = GetTime()
-		local options = M:GetUnitOptions(unitToken)
-
-		if options.Combined.Enabled then
-			if data.CombinedContainer then
-				ShowCombinedTestIcons(data.CombinedContainer, options.Combined, now)
-			end
-		else
-			ShowSeparateModeTestIcons(data.CcContainer, options.CC, data.ImportantContainer, options.Important, now)
 		end
 	end
 end
@@ -1158,13 +1130,10 @@ function M:Init()
 	eventFrame:SetScript("OnEvent", function(_, event, unitToken)
 		if event == "NAME_PLATE_UNIT_ADDED" then
 			OnNamePlateAdded(unitToken)
+			-- refresh their aura information
+			OnAuraDataChanged(unitToken)
 		elseif event == "NAME_PLATE_UNIT_REMOVED" then
 			OnNamePlateRemoved(unitToken)
-		elseif event == "PLAYER_TARGET_CHANGED" then
-			-- Update target nameplate
-			if UnitExists("target") then
-				OnNamePlateUpdate("target")
-			end
 		end
 	end)
 
