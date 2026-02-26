@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.23.2
+
+Various test mode bug fixes.
+
 ## 2.23.1
 
 - Fix for party trinkets spam resetting.
