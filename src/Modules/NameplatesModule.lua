@@ -1131,6 +1131,8 @@ function M:Init()
 		if event == "NAME_PLATE_UNIT_ADDED" then
 			OnNamePlateAdded(unitToken)
 			-- refresh their aura information
+			-- important to do it here an not inside of OnNamePlateAdded because that is also called by Refresh
+			-- which would cause a significant performance impact
 			OnAuraDataChanged(unitToken)
 		elseif event == "NAME_PLATE_UNIT_REMOVED" then
 			OnNamePlateRemoved(unitToken)
