@@ -364,9 +364,15 @@ local function DisableWatchers()
 end
 
 local function EnableWatchers()
+	local ccEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
+	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
+
 	for _, entry in pairs(watchers) do
 		if entry.Watcher then
-			entry.Watcher:Enable()
+			local isPet = units:IsPet(entry.Unit)
+			if (isPet and petEnabled) or (not isPet and ccEnabled) then
+				entry.Watcher:Enable()
+			end
 		end
 	end
 end
