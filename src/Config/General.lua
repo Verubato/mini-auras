@@ -41,7 +41,11 @@ local function ImportProfile(str)
 	mini:ResetSavedVars(importedTable)
 
 	-- Run migrations to bring the profile up to the current version
-	dbMigrator:GetAndUpgradeDb()
+	local db = dbMigrator:GetAndUpgradeDb()
+
+	-- Suppress the what's new popup
+	db.WhatsNew = {}
+	db.NotifiedChanges = true
 
 	return true
 end
