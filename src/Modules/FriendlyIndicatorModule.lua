@@ -358,13 +358,9 @@ local function DisableWatchers()
 			entry.Container.Frame:Hide()
 		end
 	end
-
-	paused = true
 end
 
 local function EnableWatchers()
-	paused = false
-
 	for _, entry in pairs(watchers) do
 		if entry.Watcher then
 			entry.Watcher:Enable()
