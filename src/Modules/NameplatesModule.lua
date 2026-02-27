@@ -864,11 +864,9 @@ local function DisableWatchers()
 	for unitToken, _ in pairs(nameplateAnchors) do
 		ClearNameplate(unitToken)
 	end
-	paused = true
 end
 
 local function EnableWatchers()
-	paused = false
 	for _, watcher in pairs(watchers) do
 		if watcher then
 			watcher:Enable()
