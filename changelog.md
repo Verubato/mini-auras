@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.23.3
+
+Fixed an issue where casting polymorph on a non-target frame (i.e. focus or mouseover) wouldn't show the CC icon.
+
 ## 2.23.2
 
 Various test mode bug fixes.
