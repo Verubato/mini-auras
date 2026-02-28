@@ -477,15 +477,15 @@ local function RefreshTestAlerts()
 end
 
 local function OnNamePlateAdded(unitToken)
-	-- Only track enemy nameplates
-	if not units:IsEnemy(unitToken) then
-		return
-	end
-
 	-- Clean up any existing watcher for this unit token
 	if nameplateWatchers[unitToken] then
 		nameplateWatchers[unitToken]:Dispose()
 		nameplateWatchers[unitToken] = nil
+	end
+
+	-- Only track enemy nameplates
+	if not units:IsEnemy(unitToken) then
+		return
 	end
 
 	-- Always create watcher with all types
