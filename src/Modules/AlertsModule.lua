@@ -20,6 +20,10 @@ local previousImportantAuras = {}
 ---@type table<number, boolean>
 local previousDefensiveAuras = {}
 
+local hadImportantAlerts = false
+local hadDefensiveAlerts = false
+local pendingAuraUpdate = false
+
 local cachedVoiceID
 local cachedTTSVolume
 local cachedTTSSpeechRate
@@ -84,10 +88,6 @@ local function AnnounceTTS(spellName, spellType)
 		C_VoiceChat.SpeakText(cachedVoiceID, spellName, speechRate, cachedTTSVolume, true)
 	end)
 end
-
-local hadImportantAlerts = false
-local hadDefensiveAlerts = false
-local pendingAuraUpdate = false
 
 local function ProcessWatcherData(
 	watcher,
