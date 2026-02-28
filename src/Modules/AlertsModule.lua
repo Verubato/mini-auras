@@ -87,6 +87,7 @@ end
 
 local hadImportantAlerts = false
 local hadDefensiveAlerts = false
+local pendingAuraUpdate = false
 
 local function ProcessWatcherData(
 	watcher,
@@ -371,6 +372,17 @@ local function OnAuraDataChanged()
 	end
 end
 
+local function ScheduleAuraDataUpdate()
+	if pendingAuraUpdate then
+		return
+	end
+	pendingAuraUpdate = true
+	C_Timer.After(0, function()
+		pendingAuraUpdate = false
+		OnAuraDataChanged()
+	end)
+end
+
 local function OnMatchStateChanged()
 	local matchState = C_PvP.GetActiveMatchState()
 
@@ -492,14 +504,14 @@ local function OnNamePlateAdded(unitToken)
 	nameplateWatchers[unitToken] = watcher
 
 	-- Initial update
-	OnAuraDataChanged()
+	ScheduleAuraDataUpdate()
 end
 
 local function OnNamePlateRemoved(unitToken)
 	if nameplateWatchers[unitToken] then
 		nameplateWatchers[unitToken]:Dispose()
 		nameplateWatchers[unitToken] = nil
-		OnAuraDataChanged()
+		ScheduleAuraDataUpdate()
 	end
 end
 
@@ -661,7 +673,7 @@ local function EnableDisable()
 		DisableTargetFocusWatchers()
 	end
 
-	OnAuraDataChanged()
+	ScheduleAuraDataUpdate()
 end
 
 local function Pause()
@@ -670,7 +682,7 @@ end
 
 local function Resume()
 	paused = false
-	OnAuraDataChanged()
+	ScheduleAuraDataUpdate()
 end
 
 function M:StartTesting()
