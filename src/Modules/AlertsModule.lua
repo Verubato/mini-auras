@@ -557,20 +557,10 @@ local function RebuildNameplateWatchers()
 	end
 end
 
-local function RebuildArenaWatchers()
+local function InitArenaWatchers()
 	if not db or not db.Modules or not db.Modules.AlertsModule then
 		return
 	end
-
-	-- Clear existing arena watchers
-	if arenaWatchers then
-		for _, watcher in ipairs(arenaWatchers) do
-			if watcher and watcher.Dispose then
-				watcher:Dispose()
-			end
-		end
-	end
-	arenaWatchers = {}
 
 	-- Always create watchers with all types
 	local watcherFilter = {
@@ -636,9 +626,8 @@ local function EnableDisable()
 
 	local inInstance, instanceType = IsInInstance()
 
-	-- Enable arena watchers (for JJC) - only if in arena
 	if instanceType == "arena" then
-		RebuildArenaWatchers()
+		-- Enable arena watchers only if in arena
 		for _, watcher in ipairs(arenaWatchers) do
 			watcher:Enable()
 		end
@@ -805,8 +794,7 @@ function M:Init()
 	end)
 	container.Frame:Show()
 
-	-- Initialize arena watchers (will be rebuilt based on environment when needed)
-	arenaWatchers = {}
+	InitArenaWatchers()
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
