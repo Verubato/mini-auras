@@ -160,16 +160,31 @@ end
 
 ---@return AuraInfo[]
 function Watcher:GetCcState()
+	local unit = self.State.Unit
+	if not unit or not UnitExists(unit) or UnitIsDeadOrGhost(unit) then
+		return {}
+	end
+	
 	return self.State.CcAuraState
 end
 
 ---@return AuraInfo[]
 function Watcher:GetImportantState()
+	local unit = self.State.Unit
+	if not unit or not UnitExists(unit) or UnitIsDeadOrGhost(unit) then
+		return {}
+	end
+
 	return self.State.ImportantAuraState
 end
 
 ---@return AuraInfo[]
 function Watcher:GetDefensiveState()
+	local unit = self.State.Unit
+	if not unit or not UnitExists(unit) or UnitIsDeadOrGhost(unit) then
+		return {}
+	end
+
 	return self.State.DefensiveState
 end
 
