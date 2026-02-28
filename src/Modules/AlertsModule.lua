@@ -220,8 +220,8 @@ local function OnAuraDataChanged()
 		for _, watcher in ipairs(arenaWatchers) do
 			slot = ProcessWatcherData(
 				watcher,
-				slot < container.Count and iconsEnabled,
-				iconsEnabled,
+				slot,
+				(slot < container.Count) and iconsEnabled,
 				iconsGlow,
 				iconsReverse,
 				colorByClass,
@@ -242,7 +242,7 @@ local function OnAuraDataChanged()
 					slot = ProcessWatcherData(
 						watcher,
 						slot,
-						slot < container.Count and iconsEnabled,
+						(slot < container.Count) and iconsEnabled,
 						iconsGlow,
 						iconsReverse,
 						colorByClass,
@@ -257,7 +257,7 @@ local function OnAuraDataChanged()
 				slot = ProcessWatcherData(
 					watcher,
 					slot,
-					slot < container.Count and iconsEnabled,
+					(slot < container.Count) and iconsEnabled,
 					iconsGlow,
 					iconsReverse,
 					colorByClass,
