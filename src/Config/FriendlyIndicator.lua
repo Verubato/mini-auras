@@ -276,7 +276,7 @@ function M:Build(panel, options)
 	local iconSize = mini:Slider({
 		Parent = panel,
 		Min = 10,
-		Max = 200,
+		Max = 100,
 		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
 		LabelText = L["Icon Size"],
@@ -284,7 +284,7 @@ function M:Build(panel, options)
 			return options.Icons.Size
 		end,
 		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 10, 200, 32)
+			local newValue = mini:ClampInt(v, 10, 100, 32)
 			if options.Icons.Size ~= newValue then
 				options.Icons.Size = newValue
 				config:Apply()

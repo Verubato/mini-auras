@@ -169,7 +169,7 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 	local iconSize = mini:Slider({
 		Parent = container,
 		Min = 10,
-		Max = 200,
+		Max = 100,
 		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
 		LabelText = L["Icon Size"],
@@ -177,7 +177,7 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 			return options.Icons.Size
 		end,
 		SetValue = function(v)
-			local new = mini:ClampInt(v, 10, 200, 32)
+			local new = mini:ClampInt(v, 10, 100, 32)
 
 			if new ~= options.Icons.Size then
 				options.Icons.Size = new

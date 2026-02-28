@@ -43,6 +43,9 @@ local function ImportProfile(str)
 	-- Run migrations to bring the profile up to the current version
 	local db = dbMigrator:GetAndUpgradeDb()
 
+	-- Run deferred migrations immediately — UIParent:GetScale() is correct at this point
+	dbMigrator:RunDeferredMigrations(db)
+
 	-- Suppress the what's new popup
 	db.WhatsNew = {}
 	db.NotifiedChanges = true

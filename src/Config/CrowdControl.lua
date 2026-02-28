@@ -164,7 +164,7 @@ local function BuildInstance(panel, options, addTestButton)
 	local iconSize = mini:Slider({
 		Parent = parent,
 		Min = 10,
-		Max = 200,
+		Max = 100,
 		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
 		LabelText = L["Icon Size"],
@@ -172,7 +172,7 @@ local function BuildInstance(panel, options, addTestButton)
 			return options.Icons.Size
 		end,
 		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 10, 200, 32)
+			local newValue = mini:ClampInt(v, 10, 100, 32)
 			if options.Icons.Size ~= newValue then
 				options.Icons.Size = newValue
 				config:Apply()
@@ -342,7 +342,7 @@ local function BuildPetInstance(panel, options)
 	local iconSize = mini:Slider({
 		Parent = parent,
 		Min = 10,
-		Max = 200,
+		Max = 100,
 		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
 		LabelText = L["Icon Size"],
@@ -350,7 +350,7 @@ local function BuildPetInstance(panel, options)
 			return options.Icons.Size
 		end,
 		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 10, 200, 24)
+			local newValue = mini:ClampInt(v, 10, 100, 24)
 			if options.Icons.Size ~= newValue then
 				options.Icons.Size = newValue
 				config:Apply()

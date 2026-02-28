@@ -5,7 +5,7 @@ local mini = addon.Core.Framework
 local L = addon.L
 ---@class Db
 local dbDefaults = {
-	Version = 25,
+	Version = 26,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -31,7 +31,7 @@ local dbDefaults = {
 				Grow = "RIGHT",
 
 				Icons = {
-					Size = 50,
+					Size = 32,
 					Glow = true,
 					ReverseCooldown = true,
 					ColorByDispelType = true,
@@ -49,7 +49,7 @@ local dbDefaults = {
 				Grow = "CENTER",
 
 				Icons = {
-					Size = 50,
+					Size = 20,
 					Glow = true,
 					ReverseCooldown = true,
 					ColorByDispelType = true,
@@ -74,7 +74,7 @@ local dbDefaults = {
 			},
 
 			Icons = {
-				Size = 30,
+				Size = 20,
 				Count = 3,
 				Glow = true,
 				ReverseCooldown = true,
@@ -106,7 +106,7 @@ local dbDefaults = {
 			},
 
 			Icons = {
-				Size = 72,
+				Size = 70,
 				Glow = true,
 				ReverseCooldown = true,
 				ColorByDispelType = true,
@@ -1717,6 +1717,48 @@ function M:UpgradeToVersion25(vars)
 
 	vars.Version = 25
 	return true
+end
+
+function M:UpgradeToVersion26(vars)
+	if vars.Version ~= 25 then
+		return false
+	end
+
+	-- CC module now uses SetIgnoreParentScale(true), so saved icon sizes need to be
+	-- scaled up by UIParent:GetScale(). That value isn't reliable at load time (returns 1),
+	-- so set a flag and apply it later via RunDeferredMigrations on PLAYER_LOGIN.
+	vars.PendingScaleMigration26 = true
+
+	vars.Version = 26
+	return true
+end
+
+---@return boolean true if any deferred migrations were applied
+function M:RunDeferredMigrations(vars)
+	local applied = false
+
+	if vars.PendingScaleMigration26 then
+		local scale = UIParent:GetScale()
+		if vars.Modules then
+			local ccModule = vars.Modules.CCModule
+			if ccModule then
+				if ccModule.Default and ccModule.Default.Icons and ccModule.Default.Icons.Size then
+					ccModule.Default.Icons.Size = math.floor(ccModule.Default.Icons.Size * scale + 0.5)
+				end
+				if ccModule.Raid and ccModule.Raid.Icons and ccModule.Raid.Icons.Size then
+					ccModule.Raid.Icons.Size = math.floor(ccModule.Raid.Icons.Size * scale + 0.5)
+				end
+			end
+			local petCCModule = vars.Modules.PetCCModule
+			if petCCModule and petCCModule.Icons and petCCModule.Icons.Size then
+				petCCModule.Icons.Size = math.floor(petCCModule.Icons.Size * scale + 0.5)
+			end
+		end
+		vars.PendingScaleMigration26 = nil
+		applied = true
+	end
+
+	return applied
 end
 
 ---@return Db
