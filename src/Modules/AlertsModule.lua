@@ -218,12 +218,9 @@ local function OnAuraDataChanged()
 	-- Process arena watchers (for JJC) - only if in arena
 	if instanceType == "arena" then
 		for _, watcher in ipairs(arenaWatchers) do
-			if slot >= container.Count then
-				break
-			end
 			slot = ProcessWatcherData(
 				watcher,
-				slot,
+				slot < container.Count and iconsEnabled,
 				iconsEnabled,
 				iconsGlow,
 				iconsReverse,
@@ -236,72 +233,16 @@ local function OnAuraDataChanged()
 
 	-- Process watchers for World/BG
 	if instanceType == "pvp" or not inInstance then
-		-- In battlegrounds, check if we should only track target/focus
-		if instanceType == "pvp" then
-			-- Process target watcher if exists
-			if targetWatcher and targetWatcher:IsEnabled() and UnitExists("target") and units:IsEnemy("target") then
-				if slot >= container.Count then
-					-- Skip if full, but continue to check for TTS
-					ProcessWatcherData(
-						targetWatcher,
-						slot,
-						false,
-						iconsGlow,
-						iconsReverse,
-						colorByClass,
-						currentImportantAuras,
-						currentDefensiveAuras
-					)
-				else
-					slot = ProcessWatcherData(
-						targetWatcher,
-						slot,
-						iconsEnabled,
-						iconsGlow,
-						iconsReverse,
-						colorByClass,
-						currentImportantAuras,
-						currentDefensiveAuras
-					)
-				end
-			end
-			-- Process focus watcher if exists
-			if focusWatcher and focusWatcher:IsEnabled() and UnitExists("focus") and units:IsEnemy("focus") then
-				if slot >= container.Count then
-					-- Skip if full, but continue to check for TTS
-					ProcessWatcherData(
-						focusWatcher,
-						slot,
-						false,
-						iconsGlow,
-						iconsReverse,
-						colorByClass,
-						currentImportantAuras,
-						currentDefensiveAuras
-					)
-				else
-					slot = ProcessWatcherData(
-						focusWatcher,
-						slot,
-						iconsEnabled,
-						iconsGlow,
-						iconsReverse,
-						colorByClass,
-						currentImportantAuras,
-						currentDefensiveAuras
-					)
-				end
-			end
-			-- Process all nameplate watchers (if not using target/focus mode)
-			if targetWatcher and not targetWatcher:IsEnabled() then
-				for unitToken, watcher in pairs(nameplateWatchers) do
-					if slot >= container.Count then
-						break
-					end
+		local targetFocusOnly = instanceType == "pvp" and db.Modules.AlertsModule.TargetFocusOnly ~= false
+		if targetFocusOnly then
+			-- Process target/focus watchers
+			for _, pair in ipairs({ { targetWatcher, "target" }, { focusWatcher, "focus" } }) do
+				local watcher, unit = pair[1], pair[2]
+				if watcher and UnitExists(unit) and units:IsEnemy(unit) then
 					slot = ProcessWatcherData(
 						watcher,
 						slot,
-						iconsEnabled,
+						slot < container.Count and iconsEnabled,
 						iconsGlow,
 						iconsReverse,
 						colorByClass,
@@ -311,15 +252,12 @@ local function OnAuraDataChanged()
 				end
 			end
 		else
-			-- World: process all nameplate watchers
+			-- Process all nameplate watchers
 			for unitToken, watcher in pairs(nameplateWatchers) do
-				if slot >= container.Count then
-					break
-				end
 				slot = ProcessWatcherData(
 					watcher,
 					slot,
-					iconsEnabled,
+					slot < container.Count and iconsEnabled,
 					iconsGlow,
 					iconsReverse,
 					colorByClass,
@@ -651,16 +589,13 @@ local function EnableDisable()
 
 	-- Enable watchers (for World/BG)
 	if instanceType == "pvp" or not inInstance then
-		if instanceType == "pvp" then
-			-- In battlegrounds, use target/focus mode
+		local targetFocusOnly = options.TargetFocusOnly ~= false
+		if targetFocusOnly then
 			EnableTargetFocusWatchers()
-			-- Also use nameplate watchers as fallback
-			RebuildNameplateWatchers()
+			ClearNamePlateWatchers()
 		else
-			-- World: use nameplate watchers
-			RebuildNameplateWatchers()
-			-- disable target/focus mode
 			DisableTargetFocusWatchers()
+			RebuildNameplateWatchers()
 		end
 	else
 		-- Disable all watchers if not in world/bg/arena

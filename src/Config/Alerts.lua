@@ -484,6 +484,29 @@ function M:Build(panel, options)
 
 	speechRateSlider.Slider:SetPoint("TOPLEFT", volumeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
+	local miscDivider = mini:Divider({
+		Parent = panel,
+		Text = L["Miscellaneous"],
+	})
+	miscDivider:SetPoint("LEFT", panel, "LEFT")
+	miscDivider:SetPoint("RIGHT", panel, "RIGHT")
+	miscDivider:SetPoint("TOP", speechRateSlider.Slider, "BOTTOM", 0, -verticalSpacing * 2)
+
+	local targetFocusOnlyChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Target/Focus Only"],
+		Tooltip = L["Only show alerts for your target and focus in battlegrounds and the open world."],
+		GetValue = function()
+			return options.TargetFocusOnly ~= false
+		end,
+		SetValue = function(value)
+			options.TargetFocusOnly = value
+			config:Apply()
+		end,
+	})
+
+	targetFocusOnlyChk:SetPoint("TOPLEFT", miscDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()
 	end)

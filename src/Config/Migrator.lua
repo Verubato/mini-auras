@@ -138,6 +138,7 @@ local dbDefaults = {
 			},
 
 			IncludeBigDefensives = true,
+			TargetFocusOnly = false,
 			Point = "CENTER",
 			RelativePoint = "TOP",
 			RelativeTo = "UIParent",
