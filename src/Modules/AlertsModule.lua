@@ -397,9 +397,7 @@ local function OnMatchStateChanged()
 	end
 
 	for unitToken, watcher in pairs(nameplateWatchers) do
-		if watcher then
-			watcher:ClearState(true)
-		end
+		watcher:ClearState(true)
 	end
 
 	if targetWatcher then
