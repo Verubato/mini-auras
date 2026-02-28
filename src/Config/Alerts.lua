@@ -414,13 +414,6 @@ function M:Build(panel, options)
 			EnsureTtsOptions()
 			if options.TTS.SpeechRate ~= newValue then
 				options.TTS.SpeechRate = newValue
-				-- Play preview with sample text
-				local voiceId = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
-				local volume = options.TTS.Volume or 100
-				local previewText = L["Important"]
-				pcall(function()
-					C_VoiceChat.SpeakText(voiceId, previewText, newValue, volume, true)
-				end)
 				config:Apply()
 			end
 		end,
