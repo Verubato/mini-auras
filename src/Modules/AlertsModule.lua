@@ -543,12 +543,26 @@ local function EnableTargetFocusWatchers()
 end
 
 local function RebuildNameplateWatchers()
-	ClearNamePlateWatchers()
-
-	-- Rebuild watchers for all current nameplates
+	-- Build a set of currently active enemy unit tokens
+	local activeTokens = {}
 	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
 		local unitToken = nameplate.unitToken
 		if unitToken and units:IsEnemy(unitToken) then
+			activeTokens[unitToken] = true
+		end
+	end
+
+	-- Remove watchers for tokens that are no longer active
+	for unitToken, watcher in pairs(nameplateWatchers) do
+		if not activeTokens[unitToken] then
+			watcher:Dispose()
+			nameplateWatchers[unitToken] = nil
+		end
+	end
+
+	-- Add watchers for tokens we don't already track
+	for unitToken in pairs(activeTokens) do
+		if not nameplateWatchers[unitToken] then
 			OnNamePlateAdded(unitToken)
 		end
 	end
