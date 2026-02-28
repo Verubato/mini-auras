@@ -125,12 +125,7 @@ local function ProcessWatcherData(
 	-- Process important spells
 	if #importantData > 0 then
 		for _, data in ipairs(importantData) do
-			if iconsEnabled then
-				-- prevent overflowing the container
-				if slot >= container.Count then
-					break
-				end
-
+			if iconsEnabled and slot < container.Count then
 				slot = slot + 1
 				container:SetSlot(slot, {
 					Texture = data.SpellIcon,
@@ -157,12 +152,7 @@ local function ProcessWatcherData(
 	-- Process defensive spells
 	if #defensivesData > 0 then
 		for _, data in ipairs(defensivesData) do
-			if iconsEnabled then
-				-- prevent overflowing the container
-				if slot >= container.Count then
-					break
-				end
-
+			if iconsEnabled and slot < container.Count then
 				slot = slot + 1
 				container:SetSlot(slot, {
 					Texture = data.SpellIcon,
