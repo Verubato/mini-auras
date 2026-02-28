@@ -110,8 +110,6 @@ local function AnchorContainer(header, anchor, options)
 
 	local frame = header.Frame
 	frame:ClearAllPoints()
-	frame:SetIgnoreParentAlpha(true)
-	frame:SetIgnoreParentScale(true)
 	frame:SetAlpha(1)
 	frame:SetFrameLevel(anchor:GetFrameLevel() + 5)
 	frame:SetFrameStrata("HIGH")
@@ -168,8 +166,6 @@ local function EnsureWatcher(anchor, unit)
 		local size = tonumber(options.Icons.Size) or 32
 		local spacing = db.IconSpacing or 2
 		local container = iconSlotContainer:New(UIParent, maxIcons, size, spacing, "Friendly Indicators")
-		container.Frame:SetIgnoreParentScale(true)
-		container.Frame:SetIgnoreParentAlpha(true)
 		local watcher = UnitAuraWatcher:New(unit, nil, { Defensives = true, Important = true })
 
 		watcher:RegisterCallback(OnAuraStateUpdated)

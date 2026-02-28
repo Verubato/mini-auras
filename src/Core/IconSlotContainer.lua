@@ -305,6 +305,8 @@ function M:New(parent, count, size, spacing, groupName)
 	spacing = spacing or 2
 
 	instance.Frame = CreateFrame("Frame", nil, parent)
+	instance.Frame:SetIgnoreParentScale(true)
+	instance.Frame:SetIgnoreParentAlpha(true)
 	instance.Slots = {}
 	instance.Count = 0
 	instance.Size = size

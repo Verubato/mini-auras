@@ -677,7 +677,6 @@ function M:Init()
 	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
 
 	container = iconSlotContainer:New(UIParent, count, size, db.IconSpacing or 2, "Alerts")
-	container.Frame:SetIgnoreParentScale(true)
 
 	local initialRelativeTo = _G[options.RelativeTo] or UIParent
 	container.Frame:SetPoint(

@@ -120,8 +120,6 @@ end
 ---@param offsetY number
 local function SetupContainerFrame(container, nameplate, anchorPoint, relativeToPoint, offsetX, offsetY)
 	local frame = container.Frame
-	frame:SetIgnoreParentScale(true)
-	frame:SetIgnoreParentAlpha(true)
 	frame:ClearAllPoints()
 	frame:SetPoint(anchorPoint, nameplate, relativeToPoint, offsetX, offsetY)
 	frame:SetFrameStrata("HIGH")
