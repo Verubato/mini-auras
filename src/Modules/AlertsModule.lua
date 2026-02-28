@@ -88,7 +88,16 @@ end
 local hadImportantAlerts = false
 local hadDefensiveAlerts = false
 
-local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
+local function ProcessWatcherData(
+	watcher,
+	slot,
+	iconsEnabled,
+	iconsGlow,
+	iconsReverse,
+	colorByClass,
+	currentImportantAuras,
+	currentDefensiveAuras
+)
 	local unit = watcher:GetUnit()
 
 	-- when units go stealth, we can't get their aura data anymore
@@ -212,7 +221,16 @@ local function OnAuraDataChanged()
 			if slot >= container.Count then
 				break
 			end
-			slot = ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
+			slot = ProcessWatcherData(
+				watcher,
+				slot,
+				iconsEnabled,
+				iconsGlow,
+				iconsReverse,
+				colorByClass,
+				currentImportantAuras,
+				currentDefensiveAuras
+			)
 		end
 	end
 
@@ -224,18 +242,54 @@ local function OnAuraDataChanged()
 			if targetWatcher and UnitExists("target") and units:IsEnemy("target") then
 				if slot >= container.Count then
 					-- Skip if full, but continue to check for TTS
-					ProcessWatcherData(targetWatcher, slot, false, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
+					ProcessWatcherData(
+						targetWatcher,
+						slot,
+						false,
+						iconsGlow,
+						iconsReverse,
+						colorByClass,
+						currentImportantAuras,
+						currentDefensiveAuras
+					)
 				else
-					slot = ProcessWatcherData(targetWatcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
+					slot = ProcessWatcherData(
+						targetWatcher,
+						slot,
+						iconsEnabled,
+						iconsGlow,
+						iconsReverse,
+						colorByClass,
+						currentImportantAuras,
+						currentDefensiveAuras
+					)
 				end
 			end
 			-- Process focus watcher if exists
 			if focusWatcher and UnitExists("focus") and units:IsEnemy("focus") then
 				if slot >= container.Count then
 					-- Skip if full, but continue to check for TTS
-					ProcessWatcherData(focusWatcher, slot, false, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
+					ProcessWatcherData(
+						focusWatcher,
+						slot,
+						false,
+						iconsGlow,
+						iconsReverse,
+						colorByClass,
+						currentImportantAuras,
+						currentDefensiveAuras
+					)
 				else
-					slot = ProcessWatcherData(focusWatcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
+					slot = ProcessWatcherData(
+						focusWatcher,
+						slot,
+						iconsEnabled,
+						iconsGlow,
+						iconsReverse,
+						colorByClass,
+						currentImportantAuras,
+						currentDefensiveAuras
+					)
 				end
 			end
 			-- Process all nameplate watchers (if not using target/focus mode)
@@ -244,7 +298,16 @@ local function OnAuraDataChanged()
 					if slot >= container.Count then
 						break
 					end
-					slot = ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
+					slot = ProcessWatcherData(
+						watcher,
+						slot,
+						iconsEnabled,
+						iconsGlow,
+						iconsReverse,
+						colorByClass,
+						currentImportantAuras,
+						currentDefensiveAuras
+					)
 				end
 			end
 		else
@@ -253,7 +316,16 @@ local function OnAuraDataChanged()
 				if slot >= container.Count then
 					break
 				end
-				slot = ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
+				slot = ProcessWatcherData(
+					watcher,
+					slot,
+					iconsEnabled,
+					iconsGlow,
+					iconsReverse,
+					colorByClass,
+					currentImportantAuras,
+					currentDefensiveAuras
+				)
 			end
 		end
 	end
@@ -363,7 +435,6 @@ local function RefreshTestAlerts()
 	local iconsGlow = db.Modules.AlertsModule.Icons.Glow
 
 	for i = 1, count do
-
 		local spellId = testAlertSpellIds[i]
 		local tex = spellCache:GetSpellTexture(spellId)
 
@@ -389,7 +460,6 @@ local function RefreshTestAlerts()
 				Color = glowColor,
 				FontScale = db.FontScale,
 			})
-
 		end
 	end
 
@@ -460,13 +530,13 @@ local function RebuildTargetFocusWatchers()
 		Important = true,
 	}
 
-	if UnitExists("target") and units:IsEnemy("target") then
-		targetWatcher = unitWatcher:New("target", nil, watcherFilter)
+	if not targetWatcher then
+		targetWatcher = unitWatcher:New("target", { "PLAYER_TARGET_CHANGED" }, watcherFilter)
 		targetWatcher:RegisterCallback(OnAuraDataChanged)
 	end
 
-	if UnitExists("focus") and units:IsEnemy("focus") then
-		focusWatcher = unitWatcher:New("focus", nil, watcherFilter)
+	if not focusWatcher then
+		focusWatcher = unitWatcher:New("focus", { "PLAYER_FOCUS_CHANGED" }, watcherFilter)
 		focusWatcher:RegisterCallback(OnAuraDataChanged)
 	end
 end
@@ -743,8 +813,6 @@ function M:Init()
 	eventsFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
 	eventsFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
 	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-	eventsFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-	eventsFrame:RegisterEvent("PLAYER_FOCUS_CHANGED")
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
 		if not db or not db.Modules or not db.Modules.AlertsModule then
 			return
@@ -763,14 +831,6 @@ function M:Init()
 			end
 		elseif event == "NAME_PLATE_UNIT_REMOVED" then
 			OnNamePlateRemoved(unitToken)
-		elseif event == "PLAYER_TARGET_CHANGED" or event == "PLAYER_FOCUS_CHANGED" then
-			-- Rebuild target/focus watchers when target or focus changes
-			local inInstance, instanceType = IsInInstance()
-			local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
-			if instanceType == "pvp" and moduleEnabled then
-				RebuildTargetFocusWatchers()
-				OnAuraDataChanged()
-			end
 		elseif event == "ZONE_CHANGED_NEW_AREA" then
 			EnableDisable()
 		end
