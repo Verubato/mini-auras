@@ -123,7 +123,7 @@ L:SetStrings({
 	["CDs"] = "冷却时间",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "根据减益类型更改发光/边框的颜色。",
 	["Defensive"] = "防御",
-	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "使用此功能时不要忘记禁用暴雪的"居中显示大型防御技能"选项。",
+	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "使用此功能时不要忘记禁用暴雪的'居中显示大型防御技能'选项。",
 	["Exclude yourself from showing trinket icons."] = "将自己从显示饰品图标中排除。",
 	["Show Defensives"] = "显示防御技能",
 	["Show defensive spell icons."] = "显示防御法术图标。",
