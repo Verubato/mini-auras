@@ -5,7 +5,7 @@ local mini = addon.Core.Framework
 local L = addon.L
 ---@class Db
 local dbDefaults = {
-	Version = 24,
+	Version = 25,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -17,8 +17,8 @@ local dbDefaults = {
 			Enabled = {
 				Always = true,
 				Arena = true,
-				Raids = false,
-				Dungeons = true,
+				BattleGrounds = false,
+				PvE = true,
 			},
 
 			---@class CrowdControlInstanceOptions
@@ -63,8 +63,8 @@ local dbDefaults = {
 			Enabled = {
 				Always = false,
 				Arena = false,
-				Raids = false,
-				Dungeons = false,
+				BattleGrounds = false,
+				PvE = false,
 			},
 
 			Grow = "CENTER",
@@ -87,8 +87,8 @@ local dbDefaults = {
 			Enabled = {
 				Always = true,
 				Arena = true,
-				Raids = false,
-				Dungeons = true,
+				BattleGrounds = false,
+				PvE = true,
 			},
 
 			Sound = {
@@ -132,6 +132,9 @@ local dbDefaults = {
 		AlertsModule = {
 			Enabled = {
 				Always = true,
+				Arena = true,
+				BattleGrounds = false,
+				PvE = false,
 			},
 
 			IncludeBigDefensives = true,
@@ -180,8 +183,8 @@ local dbDefaults = {
 			Enabled = {
 				Always = true,
 				Arena = true,
-				Raids = false,
-				Dungeons = false,
+				BattleGrounds = false,
+				PvE = false,
 			},
 
 			---@class NameplateFactionOptions
@@ -342,8 +345,8 @@ local dbDefaults = {
 			Enabled = {
 				Always = true,
 				Arena = true,
-				Raids = true,
-				Dungeons = true,
+				BattleGrounds = true,
+				PvE = true,
 			},
 
 			ExcludePlayer = false,
@@ -1124,7 +1127,7 @@ function M:UpgradeToVersion18(vars)
 		vars.Modules.HealerCCModule.Enabled = {
 			Always = vars.Healer.Enabled,
 			Arena = vars.Healer.Filters.Arena,
-			BattleGrounds = vars.Healer.BattleGrounds,
+			Raids = vars.Healer.BattleGrounds,
 			Dungeons = vars.Healer.Enabled,
 		}
 
@@ -1682,6 +1685,36 @@ function M:UpgradeToVersion24(vars)
 
 	vars.NotifiedChanges = false
 	vars.Version = 24
+	return true
+end
+
+function M:UpgradeToVersion25(vars)
+	if vars.Version ~= 24 then
+		return false
+	end
+
+	-- Rename Raids→BattleGrounds and Dungeons→PvE in all module Enabled tables
+	if vars.Modules then
+		local modules = {
+			"CCModule", "PetCCModule", "HealerCCModule",
+			"AlertsModule", "NameplatesModule", "FriendlyIndicatorModule",
+		}
+		for _, moduleName in ipairs(modules) do
+			local m = vars.Modules[moduleName]
+			if m and m.Enabled then
+				if m.Enabled.Raids ~= nil then
+					m.Enabled.BattleGrounds = m.Enabled.Raids
+					m.Enabled.Raids = nil
+				end
+				if m.Enabled.Dungeons ~= nil then
+					m.Enabled.PvE = m.Enabled.Dungeons
+					m.Enabled.Dungeons = nil
+				end
+			end
+		end
+	end
+
+	vars.Version = 25
 	return true
 end
 

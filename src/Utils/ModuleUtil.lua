@@ -55,14 +55,9 @@ function M:IsModuleEnabled(moduleName)
 	if instanceType == "arena" then
 		return settings.Arena
 	elseif instanceType == "pvp" then
-		-- Battlegrounds/Raids
-		return settings.Raids
-	elseif instanceType == "party" then
-		-- Dungeons
-		return settings.Dungeons
-	elseif instanceType == "raid" then
-		-- Raid instances
-		return settings.Raids
+		return settings.BattleGrounds
+	elseif instanceType == "party" or instanceType == "raid" then
+		return settings.PvE
 	end
 
 	return settings.Always

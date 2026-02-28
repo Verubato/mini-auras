@@ -27,9 +27,17 @@ function M:Build(panel, options)
 
 	lines:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
-	local enabledChk = mini:Checkbox({
+	local enabledDivider = mini:Divider({
 		Parent = panel,
-		LabelText = L["Enabled"],
+		Text = L["Enable in:"],
+	})
+	enabledDivider:SetPoint("LEFT", panel, "LEFT")
+	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
+	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
+
+	local enabledEverywhere = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Everywhere"],
 		Tooltip = L["Enable this module everywhere."],
 		GetValue = function()
 			return db.Modules.AlertsModule.Enabled.Always
@@ -40,7 +48,63 @@ function M:Build(panel, options)
 		end,
 	})
 
-	enabledChk:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 0, -verticalSpacing)
+	enabledEverywhere:SetPoint("TOPLEFT", enabledDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local enabledArena = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Arena"],
+		Tooltip = L["Enable this module in arena."],
+		GetValue = function()
+			return db.Modules.AlertsModule.Enabled.Arena
+		end,
+		SetValue = function(value)
+			db.Modules.AlertsModule.Enabled.Arena = value
+			config:Apply()
+		end,
+	})
+
+	enabledArena:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
+	local enabledBattleGrounds = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Battlegrounds"],
+		Tooltip = L["Enable this module in battlegrounds."],
+		GetValue = function()
+			return db.Modules.AlertsModule.Enabled.BattleGrounds
+		end,
+		SetValue = function(value)
+			db.Modules.AlertsModule.Enabled.BattleGrounds = value
+			config:Apply()
+		end,
+	})
+
+	enabledBattleGrounds:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	enabledBattleGrounds:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
+	local enabledPvE = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["PvE"],
+		Tooltip = L["Enable this module in PvE."],
+		GetValue = function()
+			return db.Modules.AlertsModule.Enabled.PvE
+		end,
+		SetValue = function(value)
+			db.Modules.AlertsModule.Enabled.PvE = value
+			config:Apply()
+		end,
+	})
+
+	enabledPvE:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	enabledPvE:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
+	local settingsDivider = mini:Divider({
+		Parent = panel,
+		Text = L["Settings:"],
+	})
+	settingsDivider:SetPoint("LEFT", panel, "LEFT")
+	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
+	settingsDivider:SetPoint("TOP", enabledEverywhere, "BOTTOM", 0, -verticalSpacing)
 
 	local iconsEnabledChk = mini:Checkbox({
 		Parent = panel,
@@ -55,8 +119,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconsEnabledChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
-	iconsEnabledChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	iconsEnabledChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local includeDefensivesChk = mini:Checkbox({
 		Parent = panel,
@@ -72,8 +135,8 @@ function M:Build(panel, options)
 		end,
 	})
 
-	includeDefensivesChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
-	includeDefensivesChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	includeDefensivesChk:SetPoint("TOP", iconsEnabledChk, "TOP", 0, 0)
+	includeDefensivesChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 
 	local glowChk = mini:Checkbox({
 		Parent = panel,
@@ -88,7 +151,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	glowChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	glowChk:SetPoint("TOPLEFT", iconsEnabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local colorByClassChk = mini:Checkbox({
 		Parent = panel,

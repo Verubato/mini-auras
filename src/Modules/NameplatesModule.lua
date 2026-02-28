@@ -71,7 +71,7 @@ local previousPetEnabled = {
 	Friendly = false,
 	Enemy = false,
 }
-local previousModuleEnabled = { Always = false, Arena = false, Dungeons = false, Raid = false }
+local previousModuleEnabled = { Always = false, Arena = false, BattleGrounds = false, PvE = false }
 
 -- Reusable scratch table for SetSlot calls.
 -- This avoids creating a new table on every aura update for every nameplate slot,
@@ -917,8 +917,8 @@ local function CacheEnabledModes()
 
 	previousModuleEnabled.Always = enabled.Always
 	previousModuleEnabled.Arena = enabled.Arena
-	previousModuleEnabled.Dungeons = enabled.Dungeons
-	previousModuleEnabled.Raid = enabled.Raid
+	previousModuleEnabled.BattleGrounds = enabled.BattleGrounds
+	previousModuleEnabled.PvE = enabled.PvE
 end
 
 local function HaveModesChanged()
@@ -936,8 +936,8 @@ local function HaveModesChanged()
 		or previousPetEnabled.Enemy ~= enemy.IgnorePets
 		or previousModuleEnabled.Always ~= enabled.Always
 		or previousModuleEnabled.Arena ~= enabled.Arena
-		or previousModuleEnabled.Dungeons ~= enabled.Dungeons
-		or previousModuleEnabled.Raid ~= enabled.Raid
+		or previousModuleEnabled.BattleGrounds ~= enabled.BattleGrounds
+		or previousModuleEnabled.PvE ~= enabled.PvE
 end
 
 local function ShowTestIcons()

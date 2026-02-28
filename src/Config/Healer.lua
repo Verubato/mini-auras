@@ -66,37 +66,37 @@ function M:Build(panel, options)
 	enabledArena:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
-	local enabledRaids = mini:Checkbox({
+	local enabledBattleGrounds = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["BGS & Raids"],
-		Tooltip = L["Enable this module in BGs and raids."],
+		LabelText = L["Battlegrounds"],
+		Tooltip = L["Enable this module in battlegrounds."],
 		GetValue = function()
-			return db.Modules.HealerCCModule.Enabled.Raids
+			return db.Modules.HealerCCModule.Enabled.BattleGrounds
 		end,
 		SetValue = function(value)
-			db.Modules.HealerCCModule.Enabled.Raids = value
+			db.Modules.HealerCCModule.Enabled.BattleGrounds = value
 			config:Apply()
 		end,
 	})
 
-	enabledRaids:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	enabledRaids:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+	enabledBattleGrounds:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	enabledBattleGrounds:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
-	local enabledDungeons = mini:Checkbox({
+	local enabledPvE = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["Dungeons"],
-		Tooltip = L["Enable this module in dungeons and M+."],
+		LabelText = L["PvE"],
+		Tooltip = L["Enable this module in PvE."],
 		GetValue = function()
-			return db.Modules.HealerCCModule.Enabled.Dungeons
+			return db.Modules.HealerCCModule.Enabled.PvE
 		end,
 		SetValue = function(value)
-			db.Modules.HealerCCModule.Enabled.Dungeons = value
+			db.Modules.HealerCCModule.Enabled.PvE = value
 			config:Apply()
 		end,
 	})
 
-	enabledDungeons:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	enabledDungeons:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+	enabledPvE:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	enabledPvE:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
 	local settingsDivider = mini:Divider({
 		Parent = panel,

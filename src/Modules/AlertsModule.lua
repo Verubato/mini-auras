@@ -213,7 +213,6 @@ local function OnAuraDataChanged()
 	local hasDefensiveAlerts = false
 	local currentImportantAuras = {}
 	local currentDefensiveAuras = {}
-
 	local inInstance, instanceType = IsInInstance()
 
 	-- Process arena watchers (for JJC) - only if in arena

@@ -336,37 +336,37 @@ function M:Build(parent, options)
 	enabledArena:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
 	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
-	local enabledRaids = mini:Checkbox({
+	local enabledBattleGrounds = mini:Checkbox({
 		Parent = parent,
-		LabelText = L["BGS & Raids"],
-		Tooltip = L["Enable this module in BGs and raids."],
+		LabelText = L["Battlegrounds"],
+		Tooltip = L["Enable this module in battlegrounds."],
 		GetValue = function()
-			return db.Modules.NameplatesModule.Enabled.Raids
+			return db.Modules.NameplatesModule.Enabled.BattleGrounds
 		end,
 		SetValue = function(value)
-			db.Modules.NameplatesModule.Enabled.Raids = value
+			db.Modules.NameplatesModule.Enabled.BattleGrounds = value
 			config:Apply()
 		end,
 	})
 
-	enabledRaids:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
-	enabledRaids:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+	enabledBattleGrounds:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	enabledBattleGrounds:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
-	local enabledDungeons = mini:Checkbox({
+	local enabledPvE = mini:Checkbox({
 		Parent = parent,
-		LabelText = L["Dungeons"],
-		Tooltip = L["Enable this module in Dungeons and M+"],
+		LabelText = L["PvE"],
+		Tooltip = L["Enable this module in PvE."],
 		GetValue = function()
-			return db.Modules.NameplatesModule.Enabled.Dungeons
+			return db.Modules.NameplatesModule.Enabled.PvE
 		end,
 		SetValue = function(value)
-			db.Modules.NameplatesModule.Enabled.Dungeons = value
+			db.Modules.NameplatesModule.Enabled.PvE = value
 			config:Apply()
 		end,
 	})
 
-	enabledDungeons:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
-	enabledDungeons:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+	enabledPvE:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	enabledPvE:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
 	-- Store panel references for visibility toggling
 	local enemyPanels = {}

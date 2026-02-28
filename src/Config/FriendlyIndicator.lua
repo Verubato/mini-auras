@@ -146,37 +146,37 @@ function M:Build(panel, options)
 	enabledArena:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
-	local enabledRaids = mini:Checkbox({
+	local enabledBattleGrounds = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["BGS & Raids"],
-		Tooltip = L["Enable this module in BGs and raids."],
+		LabelText = L["Battlegrounds"],
+		Tooltip = L["Enable this module in battlegrounds."],
 		GetValue = function()
-			return db.Modules.FriendlyIndicatorModule.Enabled.Raids
+			return db.Modules.FriendlyIndicatorModule.Enabled.BattleGrounds
 		end,
 		SetValue = function(value)
-			db.Modules.FriendlyIndicatorModule.Enabled.Raids = value
+			db.Modules.FriendlyIndicatorModule.Enabled.BattleGrounds = value
 			config:Apply()
 		end,
 	})
 
-	enabledRaids:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	enabledRaids:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+	enabledBattleGrounds:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	enabledBattleGrounds:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
-	local enabledDungeons = mini:Checkbox({
+	local enabledPvE = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["Dungeons"],
-		Tooltip = L["Enable this module in dungeons and M+."],
+		LabelText = L["PvE"],
+		Tooltip = L["Enable this module in PvE."],
 		GetValue = function()
-			return db.Modules.FriendlyIndicatorModule.Enabled.Dungeons
+			return db.Modules.FriendlyIndicatorModule.Enabled.PvE
 		end,
 		SetValue = function(value)
-			db.Modules.FriendlyIndicatorModule.Enabled.Dungeons = value
+			db.Modules.FriendlyIndicatorModule.Enabled.PvE = value
 			config:Apply()
 		end,
 	})
 
-	enabledDungeons:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	enabledDungeons:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+	enabledPvE:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	enabledPvE:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
 	local settingsDivider = mini:Divider({
 		Parent = panel,
@@ -184,7 +184,7 @@ function M:Build(panel, options)
 	})
 	settingsDivider:SetPoint("LEFT", panel, "LEFT")
 	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
-	settingsDivider:SetPoint("TOP", enabledDungeons, "BOTTOM", 0, -verticalSpacing)
+	settingsDivider:SetPoint("TOP", enabledPvE, "BOTTOM", 0, -verticalSpacing)
 
 	local anchorPanel = BuildAnchorSettings(panel, options)
 
