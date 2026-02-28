@@ -280,14 +280,14 @@ local function CreateKickEntry(duration, icon)
 		FontScale = db.FontScale,
 	})
 
-	local timer = C_Timer.NewTimer(duration, function()
+	local timer = not testModeActive and C_Timer.NewTimer(duration, function()
 		local slotData = kickBar.ActiveSlots[slotIndex]
 		if slotData and slotData.Key == key then
 			kickBar.Container:SetSlotUnused(slotIndex)
 			kickBar.ActiveSlots[slotIndex] = nil
 			UpdateKickBarVisibility()
 		end
-	end)
+	end) or nil
 
 	kickBar.ActiveSlots[slotIndex] = {
 		Key = key,
