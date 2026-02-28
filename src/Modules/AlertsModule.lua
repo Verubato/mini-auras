@@ -477,10 +477,6 @@ local function RefreshTestAlerts()
 end
 
 local function OnNamePlateAdded(unitToken)
-	if not db or not db.Modules or not db.Modules.AlertsModule then
-		return
-	end
-
 	-- Only track enemy nameplates
 	if not units:IsEnemy(unitToken) then
 		return
@@ -569,10 +565,6 @@ local function RebuildNameplateWatchers()
 end
 
 local function InitTargetFocusWatchers()
-	if not db or not db.Modules or not db.Modules.AlertsModule then
-		return
-	end
-
 	-- Create watchers for target and focus
 	local watcherFilter = {
 		CC = true,
@@ -642,10 +634,6 @@ local function DisableWatchers()
 end
 
 local function EnableDisable()
-	if not db or not db.Modules or not db.Modules.AlertsModule then
-		return
-	end
-
 	local options = db.Modules.AlertsModule
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
 
@@ -811,10 +799,6 @@ function M:Init()
 	eventsFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
 	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
-		if not db or not db.Modules or not db.Modules.AlertsModule then
-			return
-		end
-
 		if event == "PVP_MATCH_STATE_CHANGED" then
 			OnMatchStateChanged()
 		elseif event == "NAME_PLATE_UNIT_ADDED" then
