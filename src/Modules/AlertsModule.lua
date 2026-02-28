@@ -239,7 +239,7 @@ local function OnAuraDataChanged()
 		-- In battlegrounds, check if we should only track target/focus
 		if instanceType == "pvp" then
 			-- Process target watcher if exists
-			if targetWatcher and UnitExists("target") and units:IsEnemy("target") then
+			if targetWatcher and targetWatcher:IsEnabled() and UnitExists("target") and units:IsEnemy("target") then
 				if slot >= container.Count then
 					-- Skip if full, but continue to check for TTS
 					ProcessWatcherData(
@@ -266,7 +266,7 @@ local function OnAuraDataChanged()
 				end
 			end
 			-- Process focus watcher if exists
-			if focusWatcher and UnitExists("focus") and units:IsEnemy("focus") then
+			if focusWatcher and focusWatcher:IsEnabled() and UnitExists("focus") and units:IsEnemy("focus") then
 				if slot >= container.Count then
 					-- Skip if full, but continue to check for TTS
 					ProcessWatcherData(
@@ -293,7 +293,7 @@ local function OnAuraDataChanged()
 				end
 			end
 			-- Process all nameplate watchers (if not using target/focus mode)
-			if not targetWatcher then
+			if targetWatcher and not targetWatcher:IsEnabled() then
 				for unitToken, watcher in pairs(nameplateWatchers) do
 					if slot >= container.Count then
 						break
@@ -371,11 +371,6 @@ local function OnAuraDataChanged()
 	end
 end
 
-local function IsInArena()
-	local _, instanceType = IsInInstance()
-	return instanceType == "arena"
-end
-
 local function OnMatchStateChanged()
 	local matchState = C_PvP.GetActiveMatchState()
 
@@ -390,16 +385,16 @@ local function OnMatchStateChanged()
 	end
 
 	for unitToken, watcher in pairs(nameplateWatchers) do
-		if watcher and watcher.ClearState then
+		if watcher then
 			watcher:ClearState(true)
 		end
 	end
 
-	if targetWatcher and targetWatcher.ClearState then
+	if targetWatcher then
 		targetWatcher:ClearState(true)
 	end
 
-	if focusWatcher and focusWatcher.ClearState then
+	if focusWatcher then
 		focusWatcher:ClearState(true)
 	end
 
@@ -508,19 +503,48 @@ local function OnNamePlateRemoved(unitToken)
 	end
 end
 
-local function RebuildTargetFocusWatchers()
-	if not db or not db.Modules or not db.Modules.AlertsModule then
-		return
+local function ClearNamePlateWatchers()
+	for unitToken, watcher in pairs(nameplateWatchers) do
+		watcher:Dispose()
+		nameplateWatchers[unitToken] = nil
+	end
+end
+
+local function DisableTargetFocusWatchers()
+	if targetWatcher then
+		targetWatcher:Disable()
 	end
 
-	-- Clear existing target/focus watchers
-	if targetWatcher then
-		targetWatcher:Dispose()
-		targetWatcher = nil
-	end
 	if focusWatcher then
-		focusWatcher:Dispose()
-		focusWatcher = nil
+		focusWatcher:Disable()
+	end
+end
+
+local function EnableTargetFocusWatchers()
+	if targetWatcher then
+		targetWatcher:Enable()
+	end
+
+	if focusWatcher then
+		focusWatcher:Enable()
+	end
+end
+
+local function RebuildNameplateWatchers()
+	ClearNamePlateWatchers()
+
+	-- Rebuild watchers for all current nameplates
+	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
+		local unitToken = nameplate.unitToken
+		if unitToken and units:IsEnemy(unitToken) then
+			OnNamePlateAdded(unitToken)
+		end
+	end
+end
+
+local function InitTargetFocusWatchers()
+	if not db or not db.Modules or not db.Modules.AlertsModule then
+		return
 	end
 
 	-- Create watchers for target and focus
@@ -530,31 +554,11 @@ local function RebuildTargetFocusWatchers()
 		Important = true,
 	}
 
-	if not targetWatcher then
-		targetWatcher = unitWatcher:New("target", { "PLAYER_TARGET_CHANGED" }, watcherFilter)
-		targetWatcher:RegisterCallback(OnAuraDataChanged)
-	end
+	targetWatcher = unitWatcher:New("target", { "PLAYER_TARGET_CHANGED" }, watcherFilter)
+	targetWatcher:RegisterCallback(OnAuraDataChanged)
 
-	if not focusWatcher then
-		focusWatcher = unitWatcher:New("focus", { "PLAYER_FOCUS_CHANGED" }, watcherFilter)
-		focusWatcher:RegisterCallback(OnAuraDataChanged)
-	end
-end
-
-local function RebuildNameplateWatchers()
-	-- Clear existing nameplate watchers
-	for unitToken, watcher in pairs(nameplateWatchers) do
-		watcher:Dispose()
-		nameplateWatchers[unitToken] = nil
-	end
-
-	-- Rebuild watchers for all current nameplates
-	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
-		local unitToken = nameplate.unitToken
-		if unitToken and units:IsEnemy(unitToken) then
-			OnNamePlateAdded(unitToken)
-		end
-	end
+	focusWatcher = unitWatcher:New("focus", { "PLAYER_FOCUS_CHANGED" }, watcherFilter)
+	focusWatcher:RegisterCallback(OnAuraDataChanged)
 end
 
 local function InitArenaWatchers()
@@ -642,41 +646,19 @@ local function EnableDisable()
 	if instanceType == "pvp" or not inInstance then
 		if instanceType == "pvp" then
 			-- In battlegrounds, use target/focus mode
-			RebuildTargetFocusWatchers()
+			EnableTargetFocusWatchers()
 			-- Also use nameplate watchers as fallback
 			RebuildNameplateWatchers()
 		else
 			-- World: use nameplate watchers
 			RebuildNameplateWatchers()
-			-- Disable target/focus watchers
-			if targetWatcher then
-				targetWatcher:Disable()
-				targetWatcher:Dispose()
-				targetWatcher = nil
-			end
-			if focusWatcher then
-				focusWatcher:Disable()
-				focusWatcher:Dispose()
-				focusWatcher = nil
-			end
+			-- disable target/focus mode
+			DisableTargetFocusWatchers()
 		end
 	else
 		-- Disable all watchers if not in world/bg/arena
-		for unitToken, watcher in pairs(nameplateWatchers) do
-			watcher:Disable()
-			watcher:Dispose()
-			nameplateWatchers[unitToken] = nil
-		end
-		if targetWatcher then
-			targetWatcher:Disable()
-			targetWatcher:Dispose()
-			targetWatcher = nil
-		end
-		if focusWatcher then
-			focusWatcher:Disable()
-			focusWatcher:Dispose()
-			focusWatcher = nil
-		end
+		ClearNamePlateWatchers()
+		DisableTargetFocusWatchers()
 	end
 
 	OnAuraDataChanged()
@@ -795,6 +777,7 @@ function M:Init()
 	container.Frame:Show()
 
 	InitArenaWatchers()
+	InitTargetFocusWatchers()
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
@@ -808,7 +791,6 @@ function M:Init()
 
 		if event == "PVP_MATCH_STATE_CHANGED" then
 			OnMatchStateChanged()
-			EnableDisable()
 		elseif event == "NAME_PLATE_UNIT_ADDED" then
 			local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
 			if moduleEnabled then
