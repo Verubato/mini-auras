@@ -6,6 +6,7 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
+local units = addon.Utils.Units
 local testModeActive = false
 local paused = false
 local inPrepRoom = false
@@ -21,12 +22,19 @@ local previousDefensiveAuras = {}
 
 local cachedVoiceID
 local cachedTTSVolume
+local cachedTTSSpeechRate
 local cachedTTSImportantEnabled
 local cachedTTSDefensiveEnabled
 ---@type IconSlotContainer
 local container
 ---@type Watcher[]
 local watchers
+---@type table<string, Watcher>
+local nameplateWatchers = {}
+---@type Watcher?
+local targetWatcher
+---@type Watcher?
+local focusWatcher
 
 ---@class AlertsModule : IModule
 local M = {}
@@ -72,12 +80,104 @@ local function AnnounceTTS(spellName, spellType)
 	end
 
 	pcall(function()
-		C_VoiceChat.SpeakText(cachedVoiceID, spellName, 1, cachedTTSVolume, true)
+		local speechRate = cachedTTSSpeechRate or 0
+		C_VoiceChat.SpeakText(cachedVoiceID, spellName, speechRate, cachedTTSVolume, true)
 	end)
 end
 
 local hadImportantAlerts = false
 local hadDefensiveAlerts = false
+
+local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
+	local unit = watcher:GetUnit()
+
+	-- when units go stealth, we can't get their aura data anymore
+	if not unit or not UnitExists(unit) then
+		return slot
+	end
+
+	local color = nil
+
+	-- Get class color if the option is enabled
+	if colorByClass then
+		local _, class = UnitClass(unit)
+		if class then
+			local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
+			if classColor then
+				color = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1 }
+			end
+		end
+	end
+
+	local defensivesData = watcher:GetDefensiveState()
+	local importantData = watcher:GetImportantState()
+
+	-- Process important spells
+	if #importantData > 0 then
+		for _, data in ipairs(importantData) do
+			if iconsEnabled then
+				-- prevent overflowing the container
+				if slot >= container.Count then
+					break
+				end
+
+				slot = slot + 1
+				container:SetSlot(slot, {
+					Texture = data.SpellIcon,
+					StartTime = data.StartTime,
+					Duration = data.TotalDuration,
+					Alpha = data.IsImportant,
+					Glow = iconsGlow,
+					ReverseCooldown = iconsReverse,
+					Color = color,
+					FontScale = db.FontScale,
+				})
+			end
+
+			-- Track and announce new important auras
+			if data.AuraInstanceID then
+				currentImportantAuras[data.AuraInstanceID] = true
+				if not previousImportantAuras[data.AuraInstanceID] then
+					AnnounceTTS(data.SpellName, "important")
+				end
+			end
+		end
+	end
+
+	-- Process defensive spells
+	if #defensivesData > 0 then
+		for _, data in ipairs(defensivesData) do
+			if iconsEnabled then
+				-- prevent overflowing the container
+				if slot >= container.Count then
+					break
+				end
+
+				slot = slot + 1
+				container:SetSlot(slot, {
+					Texture = data.SpellIcon,
+					StartTime = data.StartTime,
+					Duration = data.TotalDuration,
+					Alpha = data.IsDefensive,
+					Glow = iconsGlow,
+					ReverseCooldown = iconsReverse,
+					Color = color,
+					FontScale = db.FontScale,
+				})
+			end
+
+			-- Track and announce new defensive auras
+			if data.AuraInstanceID then
+				currentDefensiveAuras[data.AuraInstanceID] = true
+				if not previousDefensiveAuras[data.AuraInstanceID] then
+					AnnounceTTS(data.SpellName, "defensive")
+				end
+			end
+		end
+	end
+
+	return slot
+end
 
 local function OnAuraDataChanged()
 	if paused then
@@ -104,97 +204,63 @@ local function OnAuraDataChanged()
 	local currentImportantAuras = {}
 	local currentDefensiveAuras = {}
 
-	for _, watcher in ipairs(watchers) do
-		if slot > container.Count then
-			break
+	local inInstance, instanceType = IsInInstance()
+
+	-- Process arena watchers (for JJC) - only if in arena
+	if instanceType == "arena" then
+		for _, watcher in ipairs(watchers) do
+			if slot >= container.Count then
+				break
+			end
+			slot = ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
 		end
+	end
 
-		local unit = watcher:GetUnit()
-
-		-- when units go stealth, we can't get their aura data anymore
-		if unit and UnitExists(unit) then
-			local color = nil
-
-			-- Get class color if the option is enabled
-			if colorByClass then
-				local _, class = UnitClass(unit)
-				if class then
-					local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
-					if classColor then
-						color = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1 }
-					end
+	-- Process watchers for World/BG
+	if instanceType == "pvp" or not inInstance then
+		-- In battlegrounds, check if we should only track target/focus
+		if instanceType == "pvp" then
+			-- Process target watcher if exists
+			if targetWatcher and UnitExists("target") and units:IsEnemy("target") then
+				if slot >= container.Count then
+					-- Skip if full, but continue to check for TTS
+					ProcessWatcherData(targetWatcher, slot, false, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
+				else
+					slot = ProcessWatcherData(targetWatcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
 				end
 			end
-
-			local defensivesData = watcher:GetDefensiveState()
-			local importantData = watcher:GetImportantState()
-
-			if #importantData > 0 then
-				hasImportantAlerts = true
-				for _, data in ipairs(importantData) do
-					if iconsEnabled then
-						-- prevent overflowing the container
-						if slot >= container.Count then
-							break
-						end
-
-						slot = slot + 1
-						container:SetSlot(slot, {
-							Texture = data.SpellIcon,
-							StartTime = data.StartTime,
-							Duration = data.TotalDuration,
-							Alpha = data.IsImportant,
-							Glow = iconsGlow,
-							ReverseCooldown = iconsReverse,
-							Color = color,
-							FontScale = db.FontScale,
-						})
-					end
-
-					-- Track and announce new important auras
-					if data.AuraInstanceID then
-						if not previousImportantAuras[data.AuraInstanceID] then
-							AnnounceTTS(data.SpellName, "important")
-						end
-						currentImportantAuras[data.AuraInstanceID] = true
-					end
+			-- Process focus watcher if exists
+			if focusWatcher and UnitExists("focus") and units:IsEnemy("focus") then
+				if slot >= container.Count then
+					-- Skip if full, but continue to check for TTS
+					ProcessWatcherData(focusWatcher, slot, false, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
+				else
+					slot = ProcessWatcherData(focusWatcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
 				end
 			end
-
-			if #defensivesData > 0 then
-				hasDefensiveAlerts = true
-				-- we only get defensive data with new filters
-				for _, data in ipairs(defensivesData) do
-					if iconsEnabled then
-						-- prevent overflowing the container
-						if slot >= container.Count then
-							break
-						end
-
-						slot = slot + 1
-						container:SetSlot(slot, {
-							Texture = data.SpellIcon,
-							StartTime = data.StartTime,
-							Duration = data.TotalDuration,
-							Alpha = data.IsDefensive,
-							Glow = iconsGlow,
-							ReverseCooldown = iconsReverse,
-							Color = color,
-							FontScale = db.FontScale,
-						})
+			-- Process all nameplate watchers (if not using target/focus mode)
+			if not targetWatcher then
+				for unitToken, watcher in pairs(nameplateWatchers) do
+					if slot >= container.Count then
+						break
 					end
-
-					-- Track and announce new defensive auras
-					if data.AuraInstanceID then
-						if not previousDefensiveAuras[data.AuraInstanceID] then
-							AnnounceTTS(data.SpellName, "defensive")
-						end
-						currentDefensiveAuras[data.AuraInstanceID] = true
-					end
+					slot = ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
 				end
+			end
+		else
+			-- World: process all nameplate watchers
+			for unitToken, watcher in pairs(nameplateWatchers) do
+				if slot >= container.Count then
+					break
+				end
+				slot = ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, currentImportantAuras, currentDefensiveAuras)
 			end
 		end
 	end
+
+	-- Check if we have alerts for sound playback
+	hasImportantAlerts = next(currentImportantAuras) ~= nil
+	hasDefensiveAlerts = next(currentDefensiveAuras) ~= nil
 
 	-- Play sound only when transitioning from no alerts to having alerts for each type
 	if hasImportantAlerts and not hadImportantAlerts then
@@ -208,7 +274,7 @@ local function OnAuraDataChanged()
 	hadImportantAlerts = hasImportantAlerts
 	hadDefensiveAlerts = hasDefensiveAlerts
 
-	-- Update previous aura tracking
+	-- Update previous aura tracking for next cycle
 	previousImportantAuras = currentImportantAuras
 	previousDefensiveAuras = currentDefensiveAuras
 
@@ -251,9 +317,25 @@ local function OnMatchStateChanged()
 		watcher:ClearState(true)
 	end
 
+	for unitToken, watcher in pairs(nameplateWatchers) do
+		if watcher and watcher.ClearState then
+			watcher:ClearState(true)
+		end
+	end
+
+	if targetWatcher and targetWatcher.ClearState then
+		targetWatcher:ClearState(true)
+	end
+
+	if focusWatcher and focusWatcher.ClearState then
+		focusWatcher:ClearState(true)
+	end
+
 	container:ResetAllSlots()
 	hadImportantAlerts = false
 	hadDefensiveAlerts = false
+	previousImportantAuras = {}
+	previousDefensiveAuras = {}
 end
 
 local function RefreshTestAlerts()
@@ -317,9 +399,146 @@ local function RefreshTestAlerts()
 	end
 end
 
+local function OnNamePlateAdded(unitToken)
+	if not db or not db.Modules or not db.Modules.AlertsModule then
+		return
+	end
+
+	-- Only track enemy nameplates
+	if not units:IsEnemy(unitToken) then
+		return
+	end
+
+	-- Clean up any existing watcher for this unit token
+	if nameplateWatchers[unitToken] then
+		nameplateWatchers[unitToken]:Dispose()
+		nameplateWatchers[unitToken] = nil
+	end
+
+	-- Always create watcher with all types
+	local watcherFilter = {
+		CC = true,
+		Defensive = true,
+		Important = true,
+	}
+
+	local watcher = unitWatcher:New(unitToken, nil, watcherFilter)
+	watcher:RegisterCallback(OnAuraDataChanged)
+	nameplateWatchers[unitToken] = watcher
+
+	-- Initial update
+	OnAuraDataChanged()
+end
+
+local function OnNamePlateRemoved(unitToken)
+	if nameplateWatchers[unitToken] then
+		nameplateWatchers[unitToken]:Dispose()
+		nameplateWatchers[unitToken] = nil
+		OnAuraDataChanged()
+	end
+end
+
+local function RebuildTargetFocusWatchers()
+	if not db or not db.Modules or not db.Modules.AlertsModule then
+		return
+	end
+
+	-- Clear existing target/focus watchers
+	if targetWatcher then
+		targetWatcher:Dispose()
+		targetWatcher = nil
+	end
+	if focusWatcher then
+		focusWatcher:Dispose()
+		focusWatcher = nil
+	end
+
+	-- Create watchers for target and focus
+	local watcherFilter = {
+		CC = true,
+		Defensive = true,
+		Important = true,
+	}
+
+	if UnitExists("target") and units:IsEnemy("target") then
+		targetWatcher = unitWatcher:New("target", nil, watcherFilter)
+		targetWatcher:RegisterCallback(OnAuraDataChanged)
+	end
+
+	if UnitExists("focus") and units:IsEnemy("focus") then
+		focusWatcher = unitWatcher:New("focus", nil, watcherFilter)
+		focusWatcher:RegisterCallback(OnAuraDataChanged)
+	end
+end
+
+local function RebuildNameplateWatchers()
+	-- Clear existing nameplate watchers
+	for unitToken, watcher in pairs(nameplateWatchers) do
+		watcher:Dispose()
+		nameplateWatchers[unitToken] = nil
+	end
+
+	-- Rebuild watchers for all current nameplates
+	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
+		local unitToken = nameplate.unitToken
+		if unitToken and units:IsEnemy(unitToken) then
+			OnNamePlateAdded(unitToken)
+		end
+	end
+end
+
+local function RebuildArenaWatchers()
+	if not db or not db.Modules or not db.Modules.AlertsModule then
+		return
+	end
+
+	-- Clear existing arena watchers
+	if watchers then
+		for _, watcher in ipairs(watchers) do
+			if watcher and watcher.Dispose then
+				watcher:Dispose()
+			end
+		end
+	end
+	watchers = {}
+
+	-- Always create watchers with all types
+	local watcherFilter = {
+		CC = true,
+		Defensive = true,
+		Important = true,
+	}
+
+	local events = {
+		"ARENA_OPPONENT_UPDATE",
+	}
+
+	watchers = {
+		unitWatcher:New("arena1", events, watcherFilter),
+		unitWatcher:New("arena2", events, watcherFilter),
+		unitWatcher:New("arena3", events, watcherFilter),
+	}
+
+	for _, watcher in ipairs(watchers) do
+		watcher:RegisterCallback(OnAuraDataChanged)
+	end
+end
+
 local function DisableWatchers()
 	for _, watcher in ipairs(watchers) do
 		watcher:Disable()
+	end
+
+	for unitToken, watcher in pairs(nameplateWatchers) do
+		watcher:Disable()
+	end
+
+	if targetWatcher then
+		targetWatcher:Disable()
+	end
+
+	if focusWatcher then
+		focusWatcher:Disable()
 	end
 
 	if container then
@@ -337,6 +556,90 @@ local function EnableWatchers()
 	for _, watcher in ipairs(watchers) do
 		watcher:Enable()
 	end
+
+	for unitToken, watcher in pairs(nameplateWatchers) do
+		watcher:Enable()
+	end
+
+	if targetWatcher then
+		targetWatcher:Enable()
+	end
+
+	if focusWatcher then
+		focusWatcher:Enable()
+	end
+end
+
+local function EnableDisable()
+	if not db or not db.Modules or not db.Modules.AlertsModule then
+		return
+	end
+
+	local options = db.Modules.AlertsModule
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
+
+	if not moduleEnabled then
+		DisableWatchers()
+		return
+	end
+
+	local inInstance, instanceType = IsInInstance()
+
+	-- Enable arena watchers (for JJC) - only if in arena
+	if instanceType == "arena" then
+		RebuildArenaWatchers()
+		for _, watcher in ipairs(watchers) do
+			watcher:Enable()
+		end
+	else
+		-- Disable arena watchers if not in arena
+		for _, watcher in ipairs(watchers) do
+			watcher:Disable()
+		end
+	end
+
+	-- Enable watchers (for World/BG)
+	if instanceType == "pvp" or not inInstance then
+		if instanceType == "pvp" then
+			-- In battlegrounds, use target/focus mode
+			RebuildTargetFocusWatchers()
+			-- Also use nameplate watchers as fallback
+			RebuildNameplateWatchers()
+		else
+			-- World: use nameplate watchers
+			RebuildNameplateWatchers()
+			-- Disable target/focus watchers
+			if targetWatcher then
+				targetWatcher:Disable()
+				targetWatcher:Dispose()
+				targetWatcher = nil
+			end
+			if focusWatcher then
+				focusWatcher:Disable()
+				focusWatcher:Dispose()
+				focusWatcher = nil
+			end
+		end
+	else
+		-- Disable all watchers if not in world/bg/arena
+		for unitToken, watcher in pairs(nameplateWatchers) do
+			watcher:Disable()
+			watcher:Dispose()
+			nameplateWatchers[unitToken] = nil
+		end
+		if targetWatcher then
+			targetWatcher:Disable()
+			targetWatcher:Dispose()
+			targetWatcher = nil
+		end
+		if focusWatcher then
+			focusWatcher:Disable()
+			focusWatcher:Dispose()
+			focusWatcher = nil
+		end
+	end
+
+	OnAuraDataChanged()
 end
 
 local function Pause()
@@ -382,23 +685,11 @@ function M:Refresh()
 	-- Update cached TTS values
 	cachedVoiceID = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
 	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
+	cachedTTSSpeechRate = options.TTS and options.TTS.SpeechRate or 0
 	cachedTTSImportantEnabled = options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
 	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
 
-	-- If disabled, disable watchers and clear
-	if not moduleEnabled then
-		DisableWatchers()
-		return
-	end
-
-	-- Only enable in arena (unless in test mode)
-	if not testModeActive and not IsInArena() then
-		DisableWatchers()
-		return
-	end
-
-	-- Module is enabled, ensure watchers are enabled
-	EnableWatchers()
+	EnableDisable()
 
 	container.Frame:ClearAllPoints()
 	container.Frame:SetPoint(
@@ -427,6 +718,7 @@ function M:Init()
 	-- Initialize cached TTS values
 	cachedVoiceID = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
 	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
+	cachedTTSSpeechRate = options.TTS and options.TTS.SpeechRate or 0
 	cachedTTSImportantEnabled = options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
 	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
 
@@ -462,29 +754,47 @@ function M:Init()
 	end)
 	container.Frame:Show()
 
-	local events = {
-		-- seen/unseen
-		"ARENA_OPPONENT_UPDATE",
-	}
-
-	watchers = {
-		unitWatcher:New("arena1", events),
-		unitWatcher:New("arena2", events),
-		unitWatcher:New("arena3", events),
-	}
-
-	for _, watcher in ipairs(watchers) do
-		watcher:RegisterCallback(OnAuraDataChanged)
-	end
+	-- Initialize arena watchers (will be rebuilt based on environment when needed)
+	watchers = {}
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
-	eventsFrame:SetScript("OnEvent", OnMatchStateChanged)
+	eventsFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+	eventsFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	eventsFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+	eventsFrame:RegisterEvent("PLAYER_FOCUS_CHANGED")
+	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
+		if not db or not db.Modules or not db.Modules.AlertsModule then
+			return
+		end
 
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
-	if moduleEnabled and IsInArena() then
-		EnableWatchers()
-	else
-		DisableWatchers()
-	end
+		if event == "PVP_MATCH_STATE_CHANGED" then
+			OnMatchStateChanged()
+			EnableDisable()
+		elseif event == "NAME_PLATE_UNIT_ADDED" then
+			local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
+			if moduleEnabled then
+				local inInstance, instanceType = IsInInstance()
+				if instanceType == "pvp" or not inInstance then
+					OnNamePlateAdded(unitToken)
+				end
+			end
+		elseif event == "NAME_PLATE_UNIT_REMOVED" then
+			OnNamePlateRemoved(unitToken)
+		elseif event == "PLAYER_TARGET_CHANGED" or event == "PLAYER_FOCUS_CHANGED" then
+			-- Rebuild target/focus watchers when target or focus changes
+			local inInstance, instanceType = IsInInstance()
+			local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
+			if instanceType == "pvp" and moduleEnabled then
+				RebuildTargetFocusWatchers()
+				OnAuraDataChanged()
+			end
+		elseif event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
+			EnableDisable()
+		end
+	end)
+
+	EnableDisable()
 end

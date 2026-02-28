@@ -164,6 +164,7 @@ L:SetDefaultStrings({
 	["The Proc Glow uses the least CPU."] = "The Proc Glow uses the least CPU.",
 	["This isn't precision perfect but it should be close enough."] = "This isn't precision perfect but it should be close enough.",
 	["TTS"] = "Text-to-speech",
+	["TTS Speech Rate"] = "TTS Speech Rate",
 	["TTS Volume"] = "TTS Volume",
 	["Voice"] = "Voice",
 	["Whether to enable or disable this module if you are a caster."] = "Whether to enable or disable this module if you are a caster.",
