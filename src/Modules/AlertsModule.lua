@@ -578,10 +578,6 @@ local function InitTargetFocusWatchers()
 end
 
 local function InitArenaWatchers()
-	if not db or not db.Modules or not db.Modules.AlertsModule then
-		return
-	end
-
 	-- Always create watchers with all types
 	local watcherFilter = {
 		CC = true,
