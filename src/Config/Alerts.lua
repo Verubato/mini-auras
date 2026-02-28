@@ -400,8 +400,8 @@ function M:Build(panel, options)
 
 	local speechRateSlider = mini:Slider({
 		Parent = panel,
-		Min = -10,
-		Max = 10,
+		Min = -5,
+		Max = 5,
 		Width = (columnWidth * 2) - horizontalSpacing,
 		Step = 1,
 		LabelText = L["TTS Speech Rate"] or "TTS Speech Rate",
@@ -410,7 +410,7 @@ function M:Build(panel, options)
 			return options.TTS.SpeechRate or 0
 		end,
 		SetValue = function(v)
-			local newValue = mini:ClampInt(v, -10, 10, 0)
+			local newValue = mini:ClampInt(v, -5, 5, 0)
 			EnsureTtsOptions()
 			if options.TTS.SpeechRate ~= newValue then
 				options.TTS.SpeechRate = newValue
