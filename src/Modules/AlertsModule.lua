@@ -743,7 +743,6 @@ function M:Init()
 	eventsFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
 	eventsFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
 	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	eventsFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 	eventsFrame:RegisterEvent("PLAYER_FOCUS_CHANGED")
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
@@ -772,7 +771,7 @@ function M:Init()
 				RebuildTargetFocusWatchers()
 				OnAuraDataChanged()
 			end
-		elseif event == "ZONE_CHANGED_NEW_AREA" or event == "PLAYER_ENTERING_WORLD" then
+		elseif event == "ZONE_CHANGED_NEW_AREA" then
 			EnableDisable()
 		end
 	end)

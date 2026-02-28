@@ -67,7 +67,7 @@ local function NotifyChanges()
 		if text and text ~= "" then
 			mini:ShowDialog({
 				Title = title,
-				Text = text
+				Text = text,
 			})
 		end
 	end
@@ -81,9 +81,7 @@ local function OnEvent(_, event)
 			testModeManager:StopTesting()
 			addon:Refresh()
 		end
-	end
-
-	if event == "PLAYER_ENTERING_WORLD" then
+	elseif event == "PLAYER_ENTERING_WORLD" then
 		NotifyChanges()
 		addon:Refresh()
 	end
