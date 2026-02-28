@@ -551,25 +551,6 @@ local function DisableWatchers()
 	paused = true
 end
 
-local function EnableWatchers()
-	paused = false
-	for _, watcher in ipairs(watchers) do
-		watcher:Enable()
-	end
-
-	for unitToken, watcher in pairs(nameplateWatchers) do
-		watcher:Enable()
-	end
-
-	if targetWatcher then
-		targetWatcher:Enable()
-	end
-
-	if focusWatcher then
-		focusWatcher:Enable()
-	end
-end
-
 local function EnableDisable()
 	if not db or not db.Modules or not db.Modules.AlertsModule then
 		return
