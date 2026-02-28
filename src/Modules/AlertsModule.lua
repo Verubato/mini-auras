@@ -28,7 +28,7 @@ local cachedTTSDefensiveEnabled
 ---@type IconSlotContainer
 local container
 ---@type Watcher[]
-local watchers
+local arenaWatchers
 ---@type table<string, Watcher>
 local nameplateWatchers = {}
 ---@type Watcher?
@@ -217,7 +217,7 @@ local function OnAuraDataChanged()
 
 	-- Process arena watchers (for JJC) - only if in arena
 	if instanceType == "arena" then
-		for _, watcher in ipairs(watchers) do
+		for _, watcher in ipairs(arenaWatchers) do
 			if slot >= container.Count then
 				break
 			end
@@ -385,7 +385,7 @@ local function OnMatchStateChanged()
 		return
 	end
 
-	for _, watcher in ipairs(watchers) do
+	for _, watcher in ipairs(arenaWatchers) do
 		watcher:ClearState(true)
 	end
 
@@ -563,14 +563,14 @@ local function RebuildArenaWatchers()
 	end
 
 	-- Clear existing arena watchers
-	if watchers then
-		for _, watcher in ipairs(watchers) do
+	if arenaWatchers then
+		for _, watcher in ipairs(arenaWatchers) do
 			if watcher and watcher.Dispose then
 				watcher:Dispose()
 			end
 		end
 	end
-	watchers = {}
+	arenaWatchers = {}
 
 	-- Always create watchers with all types
 	local watcherFilter = {
@@ -583,19 +583,19 @@ local function RebuildArenaWatchers()
 		"ARENA_OPPONENT_UPDATE",
 	}
 
-	watchers = {
+	arenaWatchers = {
 		unitWatcher:New("arena1", events, watcherFilter),
 		unitWatcher:New("arena2", events, watcherFilter),
 		unitWatcher:New("arena3", events, watcherFilter),
 	}
 
-	for _, watcher in ipairs(watchers) do
+	for _, watcher in ipairs(arenaWatchers) do
 		watcher:RegisterCallback(OnAuraDataChanged)
 	end
 end
 
 local function DisableWatchers()
-	for _, watcher in ipairs(watchers) do
+	for _, watcher in ipairs(arenaWatchers) do
 		watcher:Disable()
 	end
 
@@ -639,12 +639,12 @@ local function EnableDisable()
 	-- Enable arena watchers (for JJC) - only if in arena
 	if instanceType == "arena" then
 		RebuildArenaWatchers()
-		for _, watcher in ipairs(watchers) do
+		for _, watcher in ipairs(arenaWatchers) do
 			watcher:Enable()
 		end
 	else
 		-- Disable arena watchers if not in arena
-		for _, watcher in ipairs(watchers) do
+		for _, watcher in ipairs(arenaWatchers) do
 			watcher:Disable()
 		end
 	end
@@ -806,7 +806,7 @@ function M:Init()
 	container.Frame:Show()
 
 	-- Initialize arena watchers (will be rebuilt based on environment when needed)
-	watchers = {}
+	arenaWatchers = {}
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
