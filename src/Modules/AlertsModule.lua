@@ -19,6 +19,15 @@ local db
 local previousImportantAuras = {}
 ---@type table<number, boolean>
 local previousDefensiveAuras = {}
+-- Reused each OnAuraDataChanged call to avoid per-frame allocation
+---@type table<number, boolean>
+local currentImportantAuras = {}
+---@type table<number, boolean>
+local currentDefensiveAuras = {}
+-- Scratch table reused for every SetSlot call in ProcessWatcherData
+local slotOptionsScratch = {}
+-- Scratch table reused for every class-color lookup in ProcessWatcherData
+local colorScratch = { r = 0, g = 0, b = 0, a = 1 }
 
 local hadImportantAlerts = false
 local hadDefensiveAlerts = false
@@ -89,20 +98,18 @@ local function AnnounceTTS(spellName, spellType)
 	end)
 end
 
-local function ProcessWatcherData(
-	watcher,
-	slot,
-	iconsEnabled,
-	iconsGlow,
-	iconsReverse,
-	colorByClass,
-	currentImportantAuras,
-	currentDefensiveAuras
-)
+local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass)
 	local unit = watcher:GetUnit()
 
 	-- when units go stealth, we can't get their aura data anymore
 	if not unit or not UnitExists(unit) then
+		return slot
+	end
+
+	local defensivesData = watcher:GetDefensiveState()
+	local importantData = watcher:GetImportantState()
+
+	if #importantData == 0 and #defensivesData == 0 then
 		return slot
 	end
 
@@ -114,64 +121,61 @@ local function ProcessWatcherData(
 		if class then
 			local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
 			if classColor then
-				color = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1 }
+				colorScratch.r = classColor.r
+				colorScratch.g = classColor.g
+				colorScratch.b = classColor.b
+				colorScratch.a = 1
+				color = colorScratch
 			end
 		end
 	end
 
-	local defensivesData = watcher:GetDefensiveState()
-	local importantData = watcher:GetImportantState()
+	local fontScale = db.FontScale
 
 	-- Process important spells
-	if #importantData > 0 then
-		for _, data in ipairs(importantData) do
-			if iconsEnabled and slot < container.Count then
-				slot = slot + 1
-				container:SetSlot(slot, {
-					Texture = data.SpellIcon,
-					StartTime = data.StartTime,
-					Duration = data.TotalDuration,
-					Alpha = data.IsImportant,
-					Glow = iconsGlow,
-					ReverseCooldown = iconsReverse,
-					Color = color,
-					FontScale = db.FontScale,
-				})
-			end
+	for _, data in ipairs(importantData) do
+		if iconsEnabled and slot < container.Count then
+			slot = slot + 1
+			slotOptionsScratch.Texture = data.SpellIcon
+			slotOptionsScratch.StartTime = data.StartTime
+			slotOptionsScratch.Duration = data.TotalDuration
+			slotOptionsScratch.Alpha = data.IsImportant
+			slotOptionsScratch.Glow = iconsGlow
+			slotOptionsScratch.ReverseCooldown = iconsReverse
+			slotOptionsScratch.Color = color
+			slotOptionsScratch.FontScale = fontScale
+			container:SetSlot(slot, slotOptionsScratch)
+		end
 
-			-- Track and announce new important auras
-			if data.AuraInstanceID then
-				currentImportantAuras[data.AuraInstanceID] = true
-				if not previousImportantAuras[data.AuraInstanceID] then
-					AnnounceTTS(data.SpellName, "important")
-				end
+		-- Track and announce new important auras
+		if data.AuraInstanceID then
+			currentImportantAuras[data.AuraInstanceID] = true
+			if not previousImportantAuras[data.AuraInstanceID] then
+				AnnounceTTS(data.SpellName, "important")
 			end
 		end
 	end
 
 	-- Process defensive spells
-	if #defensivesData > 0 then
-		for _, data in ipairs(defensivesData) do
-			if iconsEnabled and slot < container.Count then
-				slot = slot + 1
-				container:SetSlot(slot, {
-					Texture = data.SpellIcon,
-					StartTime = data.StartTime,
-					Duration = data.TotalDuration,
-					Alpha = data.IsDefensive,
-					Glow = iconsGlow,
-					ReverseCooldown = iconsReverse,
-					Color = color,
-					FontScale = db.FontScale,
-				})
-			end
+	for _, data in ipairs(defensivesData) do
+		if iconsEnabled and slot < container.Count then
+			slot = slot + 1
+			slotOptionsScratch.Texture = data.SpellIcon
+			slotOptionsScratch.StartTime = data.StartTime
+			slotOptionsScratch.Duration = data.TotalDuration
+			slotOptionsScratch.Alpha = data.IsDefensive
+			slotOptionsScratch.Glow = iconsGlow
+			slotOptionsScratch.ReverseCooldown = iconsReverse
+			slotOptionsScratch.Color = color
+			slotOptionsScratch.FontScale = fontScale
+			container:SetSlot(slot, slotOptionsScratch)
+		end
 
-			-- Track and announce new defensive auras
-			if data.AuraInstanceID then
-				currentDefensiveAuras[data.AuraInstanceID] = true
-				if not previousDefensiveAuras[data.AuraInstanceID] then
-					AnnounceTTS(data.SpellName, "defensive")
-				end
+		-- Track and announce new defensive auras
+		if data.AuraInstanceID then
+			currentDefensiveAuras[data.AuraInstanceID] = true
+			if not previousDefensiveAuras[data.AuraInstanceID] then
+				AnnounceTTS(data.SpellName, "defensive")
 			end
 		end
 	end
@@ -201,9 +205,10 @@ local function OnAuraDataChanged()
 	local slot = 0
 	local hasImportantAlerts
 	local hasDefensiveAlerts
-	local currentImportantAuras = {}
-	local currentDefensiveAuras = {}
 	local inInstance, instanceType = IsInInstance()
+
+	wipe(currentImportantAuras)
+	wipe(currentDefensiveAuras)
 
 	-- Process arena watchers (for JJC) - only if in arena
 	if instanceType == "arena" then
@@ -214,9 +219,7 @@ local function OnAuraDataChanged()
 				(slot < container.Count) and iconsEnabled,
 				iconsGlow,
 				iconsReverse,
-				colorByClass,
-				currentImportantAuras,
-				currentDefensiveAuras
+				colorByClass
 			)
 		end
 	end
@@ -235,9 +238,7 @@ local function OnAuraDataChanged()
 						(slot < container.Count) and iconsEnabled,
 						iconsGlow,
 						iconsReverse,
-						colorByClass,
-						currentImportantAuras,
-						currentDefensiveAuras
+						colorByClass
 					)
 				end
 			end
@@ -250,9 +251,7 @@ local function OnAuraDataChanged()
 					(slot < container.Count) and iconsEnabled,
 					iconsGlow,
 					iconsReverse,
-					colorByClass,
-					currentImportantAuras,
-					currentDefensiveAuras
+					colorByClass
 				)
 			end
 		end
@@ -274,9 +273,10 @@ local function OnAuraDataChanged()
 	hadImportantAlerts = hasImportantAlerts
 	hadDefensiveAlerts = hasDefensiveAlerts
 
-	-- Update previous aura tracking for next cycle
-	previousImportantAuras = currentImportantAuras
-	previousDefensiveAuras = currentDefensiveAuras
+	-- Swap buffers: previous gets this frame's data and current gets the old previous table
+	-- (which will be wiped at the top of the next call)
+	previousImportantAuras, currentImportantAuras = currentImportantAuras, previousImportantAuras
+	previousDefensiveAuras, currentDefensiveAuras = currentDefensiveAuras, previousDefensiveAuras
 
 	-- If icons are disabled, keep sounds/TTS logic but don't show anything.
 	if not iconsEnabled then
@@ -421,7 +421,7 @@ local function OnNamePlateAdded(unitToken)
 	}
 
 	local watcher = unitWatcher:New(unitToken, nil, watcherFilter)
-	watcher:RegisterCallback(OnAuraDataChanged)
+	watcher:RegisterCallback(ScheduleAuraDataUpdate)
 	nameplateWatchers[unitToken] = watcher
 
 	-- Initial update
@@ -498,10 +498,10 @@ local function InitTargetFocusWatchers()
 	}
 
 	targetWatcher = unitWatcher:New("target", { "PLAYER_TARGET_CHANGED" }, watcherFilter)
-	targetWatcher:RegisterCallback(OnAuraDataChanged)
+	targetWatcher:RegisterCallback(ScheduleAuraDataUpdate)
 
 	focusWatcher = unitWatcher:New("focus", { "PLAYER_FOCUS_CHANGED" }, watcherFilter)
-	focusWatcher:RegisterCallback(OnAuraDataChanged)
+	focusWatcher:RegisterCallback(ScheduleAuraDataUpdate)
 end
 
 local function InitArenaWatchers()
@@ -523,7 +523,7 @@ local function InitArenaWatchers()
 	}
 
 	for _, watcher in ipairs(arenaWatchers) do
-		watcher:RegisterCallback(OnAuraDataChanged)
+		watcher:RegisterCallback(ScheduleAuraDataUpdate)
 	end
 end
 
