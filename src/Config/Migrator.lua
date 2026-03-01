@@ -132,7 +132,7 @@ local dbDefaults = {
 		AlertsModule = {
 			Enabled = {
 				Always = true,
-				Arena = true,
+				Arena = false,
 				BattleGrounds = false,
 				PvE = false,
 			},
