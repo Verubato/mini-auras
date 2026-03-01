@@ -2,7 +2,6 @@
 local addonName, addon = ...
 local mini = addon.Core.Framework
 local array = addon.Utils.Array
-local units = addon.Utils.Units
 local wowEx = addon.Utils.WoWEx
 local maxParty = MAX_PARTY_MEMBERS or 4
 local maxRaid = MAX_RAID_MEMBERS or 40

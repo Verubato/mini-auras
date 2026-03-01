@@ -505,7 +505,7 @@ function M:SetSlot(slotIndex, options)
 	end
 
 	local slot = self.Slots[slotIndex]
-	
+
 	if not slot then
 		return
 	end
@@ -517,7 +517,7 @@ function M:SetSlot(slotIndex, options)
 
 	local layerIndex = options.Layer or 1
 	local layer
-	
+
 	if layerIndex <= 1 then
 		layer = EnsureContainer(slot, self.Size, self.MasqueGroup)
 	else

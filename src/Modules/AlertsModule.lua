@@ -199,8 +199,8 @@ local function OnAuraDataChanged()
 	local iconsReverse = db.Modules.AlertsModule.Icons.ReverseCooldown
 	local colorByClass = db.Modules.AlertsModule.Icons.ColorByClass
 	local slot = 0
-	local hasImportantAlerts = false
-	local hasDefensiveAlerts = false
+	local hasImportantAlerts
+	local hasDefensiveAlerts
 	local currentImportantAuras = {}
 	local currentDefensiveAuras = {}
 	local inInstance, instanceType = IsInInstance()
@@ -243,7 +243,7 @@ local function OnAuraDataChanged()
 			end
 		else
 			-- Process all nameplate watchers
-			for unitToken, watcher in pairs(nameplateWatchers) do
+			for _, watcher in pairs(nameplateWatchers) do
 				slot = ProcessWatcherData(
 					watcher,
 					slot,
@@ -323,7 +323,7 @@ local function OnMatchStateChanged()
 		watcher:ClearState(true)
 	end
 
-	for unitToken, watcher in pairs(nameplateWatchers) do
+	for _, watcher in pairs(nameplateWatchers) do
 		watcher:ClearState(true)
 	end
 
@@ -532,7 +532,7 @@ local function DisableWatchers()
 		watcher:Disable()
 	end
 
-	for unitToken, watcher in pairs(nameplateWatchers) do
+	for _, watcher in pairs(nameplateWatchers) do
 		watcher:Disable()
 	end
 
@@ -634,7 +634,6 @@ end
 
 function M:Refresh()
 	local options = db.Modules.AlertsModule
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
 
 	-- Update cached TTS values
 	cachedVoiceID = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)

@@ -1,5 +1,5 @@
 ---@type string, Addon
-local addonName, addon = ...
+local _, addon = ...
 local mini = addon.Core.Framework
 local spellCache = addon.Utils.SpellCache
 local iconSlotContainer = addon.Core.IconSlotContainer
