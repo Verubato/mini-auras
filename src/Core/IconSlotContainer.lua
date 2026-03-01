@@ -377,6 +377,9 @@ function M:Layout()
 			slot.Frame:Hide()
 		end
 	end
+
+	-- testing to see if this helps with the weird issue with randomly large Masque borders and icons
+	ScheduleMasqueReSkin(self.MasqueGroup)
 end
 
 ---Sets the spacing between slots
