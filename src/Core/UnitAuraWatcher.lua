@@ -164,7 +164,7 @@ function Watcher:GetCcState()
 	if not unit or not UnitExists(unit) or UnitIsDeadOrGhost(unit) then
 		return {}
 	end
-	
+
 	return self.State.CcAuraState
 end
 
@@ -272,28 +272,12 @@ function Watcher:RebuildStates()
 
 	if interestedInCC then
 		IterateAuras(unit, "HARMFUL|CROWD_CONTROL", function(auraData, start, duration, dispelColor)
-			seen[auraData.auraInstanceID] = true
+			-- protect against garbage data
+			local isCC = C_Spell.IsSpellCrowdControl(auraData.spellId)
 
-			ccSpellData[#ccSpellData + 1] = {
-				IsCC = true,
-				SpellId = auraData.spellId,
-				SpellName = auraData.name,
-				SpellIcon = auraData.icon,
-				StartTime = start,
-				TotalDuration = duration,
-				DispelColor = dispelColor,
-				AuraInstanceID = auraData.auraInstanceID,
-			}
-		end)
-	end
-
-	if interestedInImportant then
-		IterateAuras(unit, "HELPFUL|IMPORTANT", function(auraData, start, duration, dispelColor)
-			if not seen[auraData.auraInstanceID] then
-				local isImportant = C_Spell.IsSpellImportant(auraData.spellId)
-
-				importantSpellData[#importantSpellData + 1] = {
-					IsImportant = isImportant,
+			if issecretvalue(isCC) or isCC then
+				ccSpellData[#ccSpellData + 1] = {
+					IsCC = isCC,
 					SpellId = auraData.spellId,
 					SpellName = auraData.name,
 					SpellIcon = auraData.icon,
@@ -302,6 +286,30 @@ function Watcher:RebuildStates()
 					DispelColor = dispelColor,
 					AuraInstanceID = auraData.auraInstanceID,
 				}
+			end
+
+			seen[auraData.auraInstanceID] = true
+		end)
+	end
+
+	if interestedInImportant then
+		IterateAuras(unit, "HELPFUL|IMPORTANT", function(auraData, start, duration, dispelColor)
+			if not seen[auraData.auraInstanceID] then
+				-- protect against garbage data
+				local isImportant = C_Spell.IsSpellImportant(auraData.spellId)
+
+				if issecretvalue(isImportant) or isImportant then
+					importantSpellData[#importantSpellData + 1] = {
+						IsImportant = isImportant,
+						SpellId = auraData.spellId,
+						SpellName = auraData.name,
+						SpellIcon = auraData.icon,
+						StartTime = start,
+						TotalDuration = duration,
+						DispelColor = dispelColor,
+						AuraInstanceID = auraData.auraInstanceID,
+					}
+				end
 
 				seen[auraData.auraInstanceID] = true
 			end
