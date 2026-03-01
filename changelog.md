@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.24.0
+
+- Alerts module now works in BGs and the world.
+- Potential fix for Masque integration issue with weird big icons and borders.
+
 ## 2.23.3
 
 Fixed an issue where casting polymorph on a non-target frame (i.e. focus or mouseover) wouldn't show the CC icon.
