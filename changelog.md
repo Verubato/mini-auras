@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.24.1
+
+Fixed swipe animation being too large on portraits.
+
 ## 2.24.0
 
 - Alerts module now works in BGs and the world.
