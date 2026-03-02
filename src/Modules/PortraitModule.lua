@@ -83,6 +83,12 @@ local function CreateContainer(unitFrame, portrait)
 	container.Frame:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", -2, 2)
 	container.Frame:SetFrameLevel(math.max(0, (unitFrame:GetFrameLevel() or 0) - 1))
 
+	-- inherit scale from portrait so icons scale with it
+	container.Frame:SetIgnoreParentScale(false)
+
+	-- in case something hides the portrait by setting alpha to 0
+	container.Frame:SetIgnoreParentAlpha(false)
+
 	-- Set initial size to match portrait
 	local width = portrait:GetWidth() - 4
 	local height = portrait:GetHeight() - 4
