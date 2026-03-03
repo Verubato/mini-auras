@@ -183,8 +183,8 @@ local function EnsureWatcher(anchor, unit)
 			-- Clear the container since it's a different unit now
 			entry.Container:ResetAllSlots()
 
-			-- Force immediate aura scan for the new unit
-			entry.Watcher:ForceFullUpdate()
+			-- Force immediate refresh for the new unit
+			UpdateWatcherAuras(entry)
 		end
 	end
 
