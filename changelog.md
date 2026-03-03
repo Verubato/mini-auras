@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.24.2
+
+- Fixed "Include Defensives" option not working in the Alerts module.
+- Target/focus mode now works in the world (not just BGs).
+
 ## 2.24.1
 
 Fixed swipe animation being too large on portraits.
