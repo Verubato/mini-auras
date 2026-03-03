@@ -75,8 +75,8 @@ local function ApplyMaskToLayer(layer, mask)
 end
 
 local function CreateContainer(unitFrame, portrait)
-	-- Only 1 slot, multiple layers
-	local container = iconSlotContainer:New(unitFrame, 1, 0, 0)
+	-- Only 1 slot, multiple layers; no border for portrait icons
+	local container = iconSlotContainer:New(unitFrame, 1, 0, 0, nil, true)
 
 	-- Position the container over the portrait with inset
 	container.Frame:SetPoint("TOPLEFT", portrait, "TOPLEFT", 2, -2)
@@ -94,19 +94,6 @@ local function CreateContainer(unitFrame, portrait)
 	local height = portrait:GetHeight() - 4
 	local size = math.min(width, height)
 	container:SetIconSize(size)
-
-	local mask = GetPortraitMask(unitFrame) or CreatePortraitMask(portrait)
-
-	-- Hook SetSlot to apply mask when the layer is created
-	local originalSetSlot = container.SetSlot
-	container.SetSlot = function(self, slotIndex, options)
-		originalSetSlot(self, slotIndex, options)
-
-		local slot = self.Slots[slotIndex]
-		if slot and slot.Container then
-			ApplyMaskToLayer(slot.Container, mask)
-		end
-	end
 
 	return container
 end
@@ -199,6 +186,26 @@ local function GetBlizzardFrame(unit)
 	return nil
 end
 
+---@return table? unitFrame
+---@return table? portrait
+local function GetElvUIFrame(unit)
+	if unit == "player" then
+		if ElvUF_Player and ElvUF_Player.Portrait then
+			return ElvUF_Player, ElvUF_Player.Portrait
+		end
+	elseif unit == "target" then
+		if ElvUF_Target and ElvUF_Target.Portrait then
+			return ElvUF_Target, ElvUF_Target.Portrait
+		end
+	elseif unit == "focus" then
+		if ElvUF_Focus and ElvUF_Focus.Portrait then
+			return ElvUF_Focus, ElvUF_Focus.Portrait
+		end
+	end
+
+	return nil
+end
+
 ---@return IconSlotContainer[]
 function M:GetContainers()
 	local result = {}
@@ -214,24 +221,66 @@ local function Attach(unit, events)
 	local unitFrame, portrait = GetBlizzardFrame(unit)
 
 	if not unitFrame or not portrait then
-		return nil
+		return
 	end
 
-	local container = CreateContainer(unitFrame, portrait)
 	local watcher = unitWatcher:New(unit, events)
+	watchers[unit] = watcher
+
+	local container = CreateContainer(unitFrame, portrait)
+	local mask = GetPortraitMask(unitFrame) or CreatePortraitMask(portrait)
+
+	if mask then
+		local originalSetSlot = container.SetSlot
+		container.SetSlot = function(self, slotIndex, options)
+			originalSetSlot(self, slotIndex, options)
+			local slot = self.Slots[slotIndex]
+			if slot and slot.Container then
+				ApplyMaskToLayer(slot.Container, mask)
+			end
+		end
+	end
 
 	watcher:RegisterCallback(function()
 		OnAuraInfo(watcher, container)
 	end)
-
-	containers[unit] = container
-	---@diagnostic disable-next-line: unused-local
-	watchers[unit] = watcher
-
-	-- lower the draw layer by 1 so our icons show ahead
 	portrait:SetDrawLayer("BACKGROUND", 0)
+	containers[#containers + 1] = container
+end
 
-	return container
+---@param unit string
+local function AttachElvUIFrame(unit)
+	local elvuiFrame, elvuiPortrait = GetElvUIFrame(unit)
+
+	if not elvuiFrame then
+		return
+	end
+
+	local watcher = watchers[unit]
+
+	if not watcher then
+		return
+	end
+
+	local container = CreateContainer(elvuiFrame, elvuiPortrait)
+	container.Frame:SetFrameLevel((elvuiPortrait:GetFrameLevel() or 0))
+
+	local originalSetSlot = container.SetSlot
+	container.SetSlot = function(self, slotIndex, options)
+		originalSetSlot(self, slotIndex, options)
+		local slot = self.Slots[slotIndex]
+		if slot and slot.Container and slot.Container.Icon and slot.Container.Cooldown then
+			slot.Container.Icon:SetAllPoints(elvuiPortrait)
+			-- get rid of the border
+			slot.Container.Icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+			slot.Container.Cooldown:SetAllPoints(elvuiPortrait)
+		end
+	end
+
+	watcher:RegisterCallback(function()
+		OnAuraInfo(watcher, container)
+	end)
+	containers[#containers + 1] = container
 end
 
 local function RefreshTestIcons()
@@ -322,6 +371,16 @@ function M:Init()
 	Attach("target", { "PLAYER_TARGET_CHANGED" })
 	Attach("focus", { "PLAYER_FOCUS_CHANGED" })
 	Attach("pet")
+
+	-- defer attaching to ElvUI frames until they are created
+	local eventsFrame = CreateFrame("Frame")
+	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	eventsFrame:SetScript("OnEvent", function()
+		eventsFrame:UnregisterEvent("PLAYER_ENTERING_WORLD")
+		AttachElvUIFrame("player")
+		AttachElvUIFrame("target")
+		AttachElvUIFrame("focus")
+	end)
 
 	M:Refresh()
 end

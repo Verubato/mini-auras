@@ -37,7 +37,7 @@ local function ScheduleMasqueReSkin(group)
 	end)
 end
 
-local function CreateLayer(parentFrame, level, iconSize)
+local function CreateLayer(parentFrame, level, iconSize, noBorder)
 	local f = CreateFrame("Frame", nil, parentFrame)
 	f:SetAllPoints()
 
@@ -56,14 +56,17 @@ local function CreateLayer(parentFrame, level, iconSize)
 	cd:SetHideCountdownNumbers(false)
 	cd:SetSwipeColor(0, 0, 0, 0.8)
 
-	-- make the border 1px larger than the icon
-	-- refer to https://github.com/Gethe/wow-ui-source/blob/aa3d9bc8633244ba017bf2058bf5e84900397ab5/Interface/AddOns/Blizzard_UnitFrame/Shared/CompactUnitFrame.xml#L31
-	local border = f:CreateTexture(nil, "OVERLAY")
-	border:SetPoint("TOPLEFT", f, "TOPLEFT", -1, 1)
-	border:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 1, -1)
-	border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
-	border:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
-	border:Hide()
+	local border
+	if not noBorder then
+		-- make the border 1px larger than the icon
+		-- refer to https://github.com/Gethe/wow-ui-source/blob/aa3d9bc8633244ba017bf2058bf5e84900397ab5/Interface/AddOns/Blizzard_UnitFrame/Shared/CompactUnitFrame.xml#L31
+		border = f:CreateTexture(nil, "OVERLAY")
+		border:SetPoint("TOPLEFT", f, "TOPLEFT", -1, 1)
+		border:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", 1, -1)
+		border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
+		border:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
+		border:Hide()
+	end
 
 	if iconSize then
 		cd.DesiredIconSize = iconSize
@@ -75,7 +78,7 @@ local function CreateLayer(parentFrame, level, iconSize)
 	return { Frame = f, Border = border, Icon = icon, Cooldown = cd }
 end
 
-local function EnsureContainer(slot, iconSize, group)
+local function EnsureContainer(slot, iconSize, group, noBorder)
 	if slot.Container then
 		return slot.Container
 	end
@@ -83,7 +86,7 @@ local function EnsureContainer(slot, iconSize, group)
 	-- Wrap in its own frame so its alpha doesn't propagate to extra layers,
 	-- which are siblings (also children of slot.Frame) rather than descendants.
 	local slotLevel = slot.Frame:GetFrameLevel() or 0
-	slot.Container = CreateLayer(slot.Frame, slotLevel + 1, iconSize)
+	slot.Container = CreateLayer(slot.Frame, slotLevel + 1, iconSize, noBorder)
 
 	if group then
 		group:AddButton(slot.Container.Frame, {
@@ -296,8 +299,9 @@ end
 ---@param size number of each icon slot (default: 20)
 ---@param spacing number between slots (default: 2)
 ---@param groupName string? Masque sub-group name (e.g. "CC", "Trinkets"). Omit to skip Masque.
+---@param noBorder boolean? When true, skips creating the border texture on each layer.
 ---@return IconSlotContainer
-function M:New(parent, count, size, spacing, groupName)
+function M:New(parent, count, size, spacing, groupName, noBorder)
 	local instance = setmetatable({}, M)
 
 	count = count or 3
@@ -311,6 +315,7 @@ function M:New(parent, count, size, spacing, groupName)
 	instance.Count = 0
 	instance.Size = size
 	instance.Spacing = spacing
+	instance.NoBorder = noBorder or false
 	instance.MasqueGroup = Masque and groupName and Masque:Group("MiniCC", groupName) or nil
 
 	instance:SetCount(count)
@@ -522,7 +527,7 @@ function M:SetSlot(slotIndex, options)
 	local layer
 
 	if layerIndex <= 1 then
-		layer = EnsureContainer(slot, self.Size, self.MasqueGroup)
+		layer = EnsureContainer(slot, self.Size, self.MasqueGroup, self.NoBorder)
 	else
 		layer = EnsureExtraLayer(slot, layerIndex, self.Size)
 	end
@@ -642,6 +647,7 @@ end
 ---@field Count number
 ---@field Size number
 ---@field Spacing number
+---@field NoBorder boolean
 ---@field SetCount fun(self: IconSlotContainer, count: number)
 ---@field SetSpacing fun(self: IconSlotContainer, spacing: number)
 ---@field SetIconSize fun(self: IconSlotContainer, size: number)
