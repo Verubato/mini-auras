@@ -660,7 +660,7 @@ function M:Refresh()
 	container:SetIconSize(options.Icons.Size)
 	container:SetSpacing(db.IconSpacing or 2)
 
-	if testModeActive then
+	if testModeActive and moduleUtil:IsModuleEnabled(moduleName.Alerts) then
 		RefreshTestAlerts()
 	end
 end
