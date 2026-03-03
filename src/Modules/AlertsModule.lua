@@ -554,7 +554,6 @@ local function DisableWatchers()
 	hadDefensiveAlerts = false
 	previousImportantAuras = {}
 	previousDefensiveAuras = {}
-	paused = true
 end
 
 local function EnableDisable()
