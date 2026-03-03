@@ -211,7 +211,7 @@ local function OnAuraDataChanged()
 	wipe(currentImportantAuras)
 	wipe(currentDefensiveAuras)
 
-	-- Process arena watchers (for JJC) - only if in arena
+	-- Process arena watchers
 	if instanceType == "arena" then
 		for _, watcher in ipairs(arenaWatchers) do
 			slot = ProcessWatcherData(
@@ -246,7 +246,7 @@ local function OnAuraDataChanged()
 				end
 			end
 		else
-			-- Process all nameplate watchers
+			-- Process nameplate watchers
 			for _, watcher in pairs(nameplateWatchers) do
 				slot = ProcessWatcherData(
 					watcher,
@@ -417,7 +417,6 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
-	-- Always create watcher with all types
 	local watcherFilter = {
 		CC = true,
 		Defensive = true,
@@ -592,7 +591,7 @@ local function EnableDisable()
 			RebuildNameplateWatchers()
 		end
 	else
-		-- Disable all watchers if not in world/bg/arena
+		-- Disable nameplate and target/focus watchers if not in world/bg
 		ClearNamePlateWatchers()
 		DisableTargetFocusWatchers()
 	end
@@ -639,7 +638,6 @@ end
 function M:Refresh()
 	local options = db.Modules.AlertsModule
 
-	-- Update cached TTS values
 	cachedVoiceID = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
 	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
 	cachedTTSSpeechRate = options.TTS and options.TTS.SpeechRate or 0
@@ -672,7 +670,6 @@ function M:Init()
 	local count = 8
 	local size = options.Icons.Size
 
-	-- Initialize cached TTS values
 	cachedVoiceID = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
 	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
 	cachedTTSSpeechRate = options.TTS and options.TTS.SpeechRate or 0
