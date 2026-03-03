@@ -98,7 +98,7 @@ local function AnnounceTTS(spellName, spellType)
 	end)
 end
 
-local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass)
+local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, includeBigDefensives)
 	local unit = watcher:GetUnit()
 
 	-- when units go stealth, we can't get their aura data anymore
@@ -158,7 +158,7 @@ local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsR
 
 	-- Process defensive spells
 	for _, data in ipairs(defensivesData) do
-		if iconsEnabled and slot < container.Count then
+		if includeBigDefensives and iconsEnabled and slot < container.Count then
 			slot = slot + 1
 			slotOptionsScratch.Texture = data.SpellIcon
 			slotOptionsScratch.StartTime = data.StartTime
@@ -202,6 +202,7 @@ local function OnAuraDataChanged()
 	local iconsGlow = db.Modules.AlertsModule.Icons.Glow
 	local iconsReverse = db.Modules.AlertsModule.Icons.ReverseCooldown
 	local colorByClass = db.Modules.AlertsModule.Icons.ColorByClass
+	local includeBigDefensives = db.Modules.AlertsModule.IncludeBigDefensives
 	local slot = 0
 	local hasImportantAlerts
 	local hasDefensiveAlerts
@@ -219,7 +220,8 @@ local function OnAuraDataChanged()
 				(slot < container.Count) and iconsEnabled,
 				iconsGlow,
 				iconsReverse,
-				colorByClass
+				colorByClass,
+				includeBigDefensives
 			)
 		end
 	end
@@ -238,7 +240,8 @@ local function OnAuraDataChanged()
 						(slot < container.Count) and iconsEnabled,
 						iconsGlow,
 						iconsReverse,
-						colorByClass
+						colorByClass,
+						includeBigDefensives
 					)
 				end
 			end
@@ -251,7 +254,8 @@ local function OnAuraDataChanged()
 					(slot < container.Count) and iconsEnabled,
 					iconsGlow,
 					iconsReverse,
-					colorByClass
+					colorByClass,
+					includeBigDefensives
 				)
 			end
 		end
