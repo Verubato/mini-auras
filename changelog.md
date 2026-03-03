@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.25.0
+
+- Added ElvUI portrait support.
+- Fixed icons showing above the map.
+- Fixed alerts sometimes not enabling properly.
+
 ## 2.24.2
 
 - Fixed "Include Defensives" option not working in the Alerts module.
