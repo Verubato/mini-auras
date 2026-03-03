@@ -99,7 +99,6 @@ local function AnchorContainer(header, anchor, options)
 	frame:ClearAllPoints()
 	frame:SetAlpha(1)
 	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
-	frame:SetFrameStrata("HIGH")
 
 	local anchorPoint = "CENTER"
 	local relativeToPoint = "CENTER"

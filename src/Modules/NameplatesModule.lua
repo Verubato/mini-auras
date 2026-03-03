@@ -122,7 +122,6 @@ local function SetupContainerFrame(container, nameplate, anchorPoint, relativeTo
 	local frame = container.Frame
 	frame:ClearAllPoints()
 	frame:SetPoint(anchorPoint, nameplate, relativeToPoint, offsetX, offsetY)
-	frame:SetFrameStrata("HIGH")
 	frame:SetFrameLevel(nameplate:GetFrameLevel() + 10)
 	frame:EnableMouse(false)
 	frame:Show()

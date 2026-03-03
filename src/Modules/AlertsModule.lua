@@ -689,7 +689,6 @@ function M:Init()
 		options.Offset.X,
 		options.Offset.Y
 	)
-	container.Frame:SetFrameStrata("HIGH")
 	container.Frame:SetFrameLevel((initialRelativeTo:GetFrameLevel() or 0) + 5)
 	container.Frame:EnableMouse(false)
 	container.Frame:SetMovable(false)
