@@ -231,13 +231,13 @@ local function BuildPetInstance(panel, options)
 
 	local petEnabledEverywhere = mini:Checkbox({
 		Parent = parent,
-		LabelText = L["Everywhere"],
-		Tooltip = L["Enable pet frame CC everywhere."],
+		LabelText = L["World"],
+		Tooltip = L["Enable pet frame CC in the open world."],
 		GetValue = function()
-			return options.Enabled.Always
+			return options.Enabled.World
 		end,
 		SetValue = function(value)
-			options.Enabled.Always = value
+			options.Enabled.World = value
 			config:Apply()
 		end,
 	})
@@ -416,13 +416,13 @@ function M:Build(panel, default, raid)
 
 	local enabledEverywhere = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["Everywhere"],
-		Tooltip = L["Enable this module everywhere."],
+		LabelText = L["World"],
+		Tooltip = L["Enable this module in the open world."],
 		GetValue = function()
-			return db.Modules.CCModule.Enabled.Always
+			return db.Modules.CCModule.Enabled.World
 		end,
 		SetValue = function(value)
-			db.Modules.CCModule.Enabled.Always = value
+			db.Modules.CCModule.Enabled.World = value
 			config:Apply()
 		end,
 	})

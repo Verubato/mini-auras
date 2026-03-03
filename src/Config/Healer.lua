@@ -37,13 +37,13 @@ function M:Build(panel, options)
 
 	local enabledEverywhere = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["Everywhere"],
-		Tooltip = L["Enable this module everywhere."],
+		LabelText = L["World"],
+		Tooltip = L["Enable this module in the open world."],
 		GetValue = function()
-			return db.Modules.HealerCCModule.Enabled.Always
+			return db.Modules.HealerCCModule.Enabled.World
 		end,
 		SetValue = function(value)
-			db.Modules.HealerCCModule.Enabled.Always = value
+			db.Modules.HealerCCModule.Enabled.World = value
 			config:Apply()
 		end,
 	})

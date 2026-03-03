@@ -5,7 +5,7 @@ local mini = addon.Core.Framework
 local L = addon.L
 ---@class Db
 local dbDefaults = {
-	Version = 26,
+	Version = 27,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -15,9 +15,9 @@ local dbDefaults = {
 		---@class CrowdControlModuleOptions
 		CCModule = {
 			Enabled = {
-				Always = true,
+				World = true,
 				Arena = true,
-				BattleGrounds = false,
+				BattleGrounds = true,
 				PvE = true,
 			},
 
@@ -61,7 +61,7 @@ local dbDefaults = {
 		---@class PetCrowdControlModuleOptions
 		PetCCModule = {
 			Enabled = {
-				Always = false,
+				World = false,
 				Arena = false,
 				BattleGrounds = false,
 				PvE = false,
@@ -85,7 +85,7 @@ local dbDefaults = {
 		---@class HealerCrowdControlModuleOptions
 		HealerCCModule = {
 			Enabled = {
-				Always = true,
+				World = true,
 				Arena = true,
 				BattleGrounds = false,
 				PvE = true,
@@ -131,8 +131,8 @@ local dbDefaults = {
 		---@class AlertsModuleOptions
 		AlertsModule = {
 			Enabled = {
-				Always = true,
-				Arena = false,
+				World = true,
+				Arena = true,
 				BattleGrounds = false,
 				PvE = false,
 			},
@@ -182,10 +182,10 @@ local dbDefaults = {
 		---@class NameplateModuleOptions
 		NameplatesModule = {
 			Enabled = {
-				Always = true,
+				World = true,
 				Arena = true,
-				BattleGrounds = false,
-				PvE = false,
+				BattleGrounds = true,
+				PvE = true,
 			},
 
 			---@class NameplateFactionOptions
@@ -344,7 +344,7 @@ local dbDefaults = {
 		---@class FriendlyIndicatorModuleOptions
 		FriendlyIndicatorModule = {
 			Enabled = {
-				Always = true,
+				World = true,
 				Arena = true,
 				BattleGrounds = true,
 				PvE = true,
@@ -1730,6 +1730,38 @@ function M:UpgradeToVersion26(vars)
 	vars.PendingScaleMigration26 = true
 
 	vars.Version = 26
+	return true
+end
+
+function M:UpgradeToVersion27(vars)
+	if vars.Version ~= 26 then
+		return false
+	end
+
+	-- Rename Always→World in location-based modules.
+	-- If Always was true, it acted as an override for all contexts, so enable all of them.
+	if vars.Modules then
+		local modules = {
+			"CCModule", "PetCCModule", "HealerCCModule",
+			"AlertsModule", "NameplatesModule", "FriendlyIndicatorModule",
+		}
+		for _, moduleName in ipairs(modules) do
+			local m = vars.Modules[moduleName]
+			if m and m.Enabled and m.Enabled.Always ~= nil then
+				if m.Enabled.Always == true then
+					m.Enabled.World = true
+					m.Enabled.Arena = true
+					m.Enabled.BattleGrounds = true
+					m.Enabled.PvE = true
+				else
+					m.Enabled.World = false
+				end
+				m.Enabled.Always = nil
+			end
+		end
+	end
+
+	vars.Version = 27
 	return true
 end
 

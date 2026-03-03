@@ -37,13 +37,13 @@ function M:Build(panel, options)
 
 	local enabledEverywhere = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["Everywhere"],
-		Tooltip = L["Enable this module everywhere."],
+		LabelText = L["World"],
+		Tooltip = L["Enable this module in the open world."],
 		GetValue = function()
-			return db.Modules.AlertsModule.Enabled.Always
+			return db.Modules.AlertsModule.Enabled.World
 		end,
 		SetValue = function(value)
-			db.Modules.AlertsModule.Enabled.Always = value
+			db.Modules.AlertsModule.Enabled.World = value
 			config:Apply()
 		end,
 	})

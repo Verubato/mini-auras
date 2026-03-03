@@ -39,16 +39,15 @@ function M:IsModuleEnabled(moduleName)
 		return true
 	end
 
-	-- Check if Always is enabled first
 	if settings.Always then
+		-- this module is set to always enabled, so we can skip the instance check
 		return true
 	end
 
-	-- Determine current context
 	local inInstance, instanceType = IsInInstance()
 
 	if not inInstance then
-		return settings.Always
+		return settings.World or false
 	end
 
 	-- Check specific instance types
@@ -56,9 +55,8 @@ function M:IsModuleEnabled(moduleName)
 		return settings.Arena
 	elseif instanceType == "pvp" then
 		return settings.BattleGrounds
-	elseif instanceType == "party" or instanceType == "raid" then
-		return settings.PvE
 	end
 
-	return settings.Always
+	-- default to PvE for all other types of content (dungeons, raids, scenarios)
+	return settings.PvE
 end

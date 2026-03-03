@@ -307,13 +307,13 @@ function M:Build(parent, options)
 
 	local enabledEverywhere = mini:Checkbox({
 		Parent = parent,
-		LabelText = L["Everywhere"],
-		Tooltip = L["Enable this module everywhere."],
+		LabelText = L["World"],
+		Tooltip = L["Enable this module in the open world."],
 		GetValue = function()
-			return db.Modules.NameplatesModule.Enabled.Always
+			return db.Modules.NameplatesModule.Enabled.World
 		end,
 		SetValue = function(value)
-			db.Modules.NameplatesModule.Enabled.Always = value
+			db.Modules.NameplatesModule.Enabled.World = value
 			config:Apply()
 		end,
 	})
