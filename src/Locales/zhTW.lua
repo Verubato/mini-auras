@@ -137,7 +137,7 @@ L:SetStrings({
 	["Show Important"] = "顯示重要技能",
 	["Show important spell icons."] = "顯示重要法術圖示。",
 	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "在隊伍/團隊框架上將CC、防禦技能和重要光環顯示為一組圖示。",
-	["Useful for BGs so you can disable the CC module and just use this one."] = "在戰場中很有用，可以停用CC模組，只使用這個。",
+	["Tip: Disable the CC module for BGs and enable CC within this module."] = "提示：在戰場中停用CC模組，並在此模組中啟用CC。",
 
 
 	-- Healer tab

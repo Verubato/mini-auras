@@ -134,7 +134,7 @@ L:SetStrings({
 	["Show Important"] = "Mostrar importantes",
 	["Show important spell icons."] = "Mostrar ícones de feitiços importantes.",
 	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Mostra CC, defensivos e auras importantes como um conjunto de ícones em quadros de grupo/raide.",
-	["Useful for BGs so you can disable the CC module and just use this one."] = "Útil para campos de batalha para que você possa desativar o módulo CC e usar apenas este.",
+	["Tip: Disable the CC module for BGs and enable CC within this module."] = "Dica: Desative o módulo CC para Campos de Batalha e ative CC dentro deste módulo.",
 
 
 	-- Healer tab

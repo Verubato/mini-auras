@@ -134,7 +134,7 @@ L:SetStrings({
 	["Show Important"] = "Показать важные",
 	["Show important spell icons."] = "Показывать иконки важных заклинаний.",
 	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Показывает CC, защитные способности и важные ауры одним набором иконок на рамках группы/рейда.",
-	["Useful for BGs so you can disable the CC module and just use this one."] = "Полезно для полей сражений: можно отключить модуль контроля и использовать только этот.",
+	["Tip: Disable the CC module for BGs and enable CC within this module."] = "Совет: отключите модуль контроля для полей боя и включите контроль в этом модуле.",
 
 
 	-- Healer tab

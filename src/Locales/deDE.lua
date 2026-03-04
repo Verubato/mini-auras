@@ -134,7 +134,7 @@ L:SetStrings({
 	["Show Important"] = "Wichtiges anzeigen",
 	["Show important spell icons."] = "Symbole für wichtige Zauber anzeigen.",
 	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Zeigt CC, Defensives und wichtige Auren als einen Satz Symbole auf Gruppen-/Schlachtzugs-Rahmen.",
-	["Useful for BGs so you can disable the CC module and just use this one."] = "Nützlich für Schlachtfelder: Du kannst das CC-Modul deaktivieren und nur dieses verwenden.",
+	["Tip: Disable the CC module for BGs and enable CC within this module."] = "Tipp: Deaktiviere das CC-Modul für Schlachtfelder und aktiviere CC in diesem Modul.",
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "Ein separater Bereich für wenn dein Heiler unter Kontrolle ist.",

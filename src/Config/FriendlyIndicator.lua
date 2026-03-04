@@ -282,7 +282,7 @@ function M:Build(panel, default, raid)
 		Parent = panel,
 		Lines = {
 			L["Shows CC, defensives, and important auras as one set of icons on party/raid frames."],
-			L["Useful for BGs so you can disable the CC module and just use this one."],
+				L["Tip: Disable the CC module for BGs and enable CC within this module."],
 		},
 	})
 

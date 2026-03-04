@@ -136,7 +136,7 @@ L:SetDefaultStrings({
 	["Show Important"] = "Show Important",
 	["Show important spell icons."] = "Show important spell icons.",
 	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Shows CC, defensives, and important auras as one set of icons on party/raid frames.",
-	["Useful for BGs so you can disable the CC module and just use this one."] = "Useful for BGs so you can disable the CC module and just use this one.",
+	["Tip: Disable the CC module for BGs and enable CC within this module."] = "Tip: Disable the CC module for BGs and enable CC within this module.",
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "A separate region for when your healer is CC'd.",

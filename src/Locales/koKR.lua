@@ -134,7 +134,7 @@ L:SetStrings({
 	["Show Important"] = "중요 기술 표시",
 	["Show important spell icons."] = "중요 주문 아이콘을 표시합니다.",
 	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "파티/공격대 프레임에 CC, 방어기 및 중요 오라를 하나의 아이콘 세트로 표시합니다.",
-	["Useful for BGs so you can disable the CC module and just use this one."] = "전장에서 유용하며, CC 모듈을 비활성화하고 이것만 사용할 수 있습니다.",
+	["Tip: Disable the CC module for BGs and enable CC within this module."] = "팁: 전장에서 CC 모듈을 비활성화하고 이 모듈 내에서 CC를 활성화하십시오.",
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "치유사가 군중 제어당할 때를 위한 별도 영역입니다.",
