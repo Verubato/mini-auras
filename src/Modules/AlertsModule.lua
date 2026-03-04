@@ -356,10 +356,7 @@ local function RefreshTestAlerts()
 		190319, -- Combustion
 		121471, -- Shadow Blades
 		107574, -- Avatar
-		288613, -- Trueshot
-		6940,   -- Blessing of Sacrifice
 		47788,  -- Guardian Spirit
-		104773, -- Unending Resolve
 		45438,  -- Ice Block
 	}
 
@@ -368,10 +365,7 @@ local function RefreshTestAlerts()
 		"MAGE",
 		"ROGUE",
 		"WARRIOR",
-		"HUNTER",
-		"PALADIN",
 		"PRIEST",
-		"WARLOCK",
 		"MAGE",
 	}
 
