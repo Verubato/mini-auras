@@ -399,26 +399,21 @@ function M:Refresh()
 end
 
 function M:StartTesting()
-	-- Pause real watcher updates
-	Pause()
 	testModeActive = true
+	Pause()
 
 	M:Refresh()
 end
 
 function M:StopTesting()
-	-- Clear all test data
+	testModeActive = false
+
 	for _, entry in pairs(watchers) do
 		entry.Container:ResetAllSlots()
 		entry.Container.Frame:Hide()
 	end
 
-	testModeActive = false
-
-	-- Resume real watcher updates
 	Resume()
-
-	-- Refresh to show real data
 	M:Refresh()
 end
 

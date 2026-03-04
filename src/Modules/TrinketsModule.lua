@@ -403,7 +403,6 @@ end
 
 local function Resume()
 	paused = false
-	M:Refresh()
 end
 
 function M:StartTesting()
@@ -416,6 +415,7 @@ function M:StopTesting()
 	testModeActive = false
 	ClearAll()
 	Resume()
+	M:Refresh()
 end
 
 function M:Enable()

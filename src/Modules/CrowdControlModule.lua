@@ -382,12 +382,13 @@ function M:StartTesting()
 end
 
 function M:StopTesting()
+	testModeActive = false
+
 	for _, entry in pairs(watchers) do
 		entry.Container:ResetAllSlots()
 		entry.Container.Frame:Hide()
 	end
 
-	testModeActive = false
 	Resume()
 	M:Refresh()
 end

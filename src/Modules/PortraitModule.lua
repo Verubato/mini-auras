@@ -346,6 +346,8 @@ function M:StopTesting()
 	for _, container in pairs(containers) do
 		container:ResetAllSlots()
 	end
+
+	M:Refresh()
 end
 
 function M:Refresh()

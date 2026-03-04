@@ -1063,16 +1063,10 @@ function M:GetUnitOptions(unitToken)
 end
 
 function M:StartTesting()
-	Pause()
 	testModeActive = true
+	Pause()
 
-	-- Check if any nameplate mode is enabled
-	if not AnyEnabled() then
-		ClearAll()
-		return
-	end
-
-	ShowTestIcons()
+	M:Refresh()
 end
 
 function M:StopTesting()
