@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.26.0
+
+- Fixed error happening with ElvUI when portraits are disabled.
+- Changed "Everywhere" to "World" for the Enabled options across all modules.
+- Added max icons slider to the alerts module.
+- Some default icon size changes.
+
 ## 2.25.0
 
 - Added ElvUI portrait support.
