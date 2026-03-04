@@ -43,6 +43,7 @@ L:SetStrings({
 	["Settings"] = "설정",
 	["Show a glow around the icons."] = "아이콘 주위에 발광을 표시합니다.",
 	["Test"] = "테스트",
+	["Test these settings"] = "이 설정 테스트",
 	["Whether to enable or disable this module if you are a caster."] = "시전자인 경우 이 모듈을 활성화 또는 비활성화합니다.",
 	["Whether to enable or disable this module if you are a healer."] = "치유사인 경우 이 모듈을 활성화 또는 비활성화합니다.",
 	["Whether to enable or disable this module regardless of what spec you are."] = "전문화에 관계없이 이 모듈을 활성화 또는 비활성화합니다.",

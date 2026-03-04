@@ -20,7 +20,7 @@ local M = {}
 config.FriendlyIndicator = M
 
 ---@param parent table
----@param options FriendlyIndicatorModuleOptions
+---@param options FriendlyIndicatorInstanceOptions
 local function BuildAnchorSettings(parent, options)
 	local panel = CreateFrame("Frame", nil, parent)
 
@@ -94,8 +94,188 @@ local function BuildAnchorSettings(parent, options)
 end
 
 ---@param panel table
----@param options FriendlyIndicatorModuleOptions
-function M:Build(panel, options)
+---@param options FriendlyIndicatorInstanceOptions
+---@param addTestButton boolean?
+local function BuildInstance(panel, options, addTestButton)
+	local parent = CreateFrame("Frame", nil, panel)
+	local anchorPanel = BuildAnchorSettings(parent, options)
+
+	local excludePlayerChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Exclude self"],
+		Tooltip = L["Exclude yourself from showing trinket icons."],
+		GetValue = function()
+			return options.ExcludePlayer
+		end,
+		SetValue = function(value)
+			options.ExcludePlayer = value
+			addon:Refresh()
+		end,
+	})
+
+	excludePlayerChk:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+
+	local glowChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Glow icons"],
+		Tooltip = L["Show a glow around the icons."],
+		GetValue = function()
+			return options.Icons.Glow
+		end,
+		SetValue = function(value)
+			options.Icons.Glow = value
+			config:Apply()
+		end,
+	})
+
+	glowChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	glowChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
+
+	local dispelColoursChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Dispel colours"],
+		Tooltip = L["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."],
+		GetValue = function()
+			return options.Icons.ColorByDispelType
+		end,
+		SetValue = function(value)
+			options.Icons.ColorByDispelType = value
+			config:Apply()
+		end,
+	})
+
+	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	dispelColoursChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
+
+	local reverseChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Reverse swipe"],
+		Tooltip = L["Reverses the direction of the cooldown swipe animation."],
+		GetValue = function()
+			return options.Icons.ReverseCooldown
+		end,
+		SetValue = function(value)
+			options.Icons.ReverseCooldown = value
+			config:Apply()
+		end,
+	})
+
+	reverseChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	reverseChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
+
+	local showDefensivesChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Show Defensives"],
+		Tooltip = L["Show defensive spell icons."],
+		GetValue = function()
+			return options.ShowDefensives
+		end,
+		SetValue = function(value)
+			options.ShowDefensives = value
+			config:Apply()
+		end,
+	})
+
+	showDefensivesChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local showImportantChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Show Important"],
+		Tooltip = L["Show important spell icons."],
+		GetValue = function()
+			return options.ShowImportant
+		end,
+		SetValue = function(value)
+			options.ShowImportant = value
+			config:Apply()
+		end,
+	})
+
+	showImportantChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	showImportantChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
+
+	local showCCChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Show CC"],
+		Tooltip = L["Show CC icons."],
+		GetValue = function()
+			return options.ShowCC
+		end,
+		SetValue = function(value)
+			options.ShowCC = value
+			config:Apply()
+		end,
+	})
+
+	showCCChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	showCCChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
+
+	local iconSize = mini:Slider({
+		Parent = parent,
+		Min = 10,
+		Max = 100,
+		Width = columnWidth * 2 - horizontalSpacing,
+		Step = 1,
+		LabelText = L["Icon Size"],
+		GetValue = function()
+			return options.Icons.Size
+		end,
+		SetValue = function(v)
+			local newValue = mini:ClampInt(v, 10, 100, 32)
+			if options.Icons.Size ~= newValue then
+				options.Icons.Size = newValue
+				config:Apply()
+			end
+		end,
+	})
+
+	iconSize.Slider:SetPoint("TOPLEFT", showDefensivesChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+
+	local maxIcons = mini:Slider({
+		Parent = parent,
+		Min = 1,
+		Max = 5,
+		Width = columnWidth * 2 - horizontalSpacing,
+		Step = 1,
+		LabelText = L["Max Icons"],
+		GetValue = function()
+			return options.Icons.MaxIcons
+		end,
+		SetValue = function(v)
+			local newValue = mini:ClampInt(v, 1, 5, 1)
+			if options.Icons.MaxIcons ~= newValue then
+				options.Icons.MaxIcons = newValue
+				config:Apply()
+			end
+		end,
+	})
+
+	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
+
+	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
+
+	if addTestButton then
+		local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+		testBtn:SetSize(160, 26)
+		testBtn:SetPoint("TOPLEFT", anchorPanel, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+		testBtn:SetText(L["Test these settings"])
+		testBtn:SetScript("OnClick", function()
+			addon:TestWithOptions(true)
+		end)
+	end
+
+	parent.OnMiniRefresh = function()
+		anchorPanel:MiniRefresh()
+	end
+
+	return parent
+end
+
+---@param panel table
+---@param default FriendlyIndicatorInstanceOptions
+---@param raid FriendlyIndicatorInstanceOptions
+function M:Build(panel, default, raid)
 	local db = mini:GetSavedVars()
 
 	local lines = mini:TextBlock({
@@ -179,179 +359,45 @@ function M:Build(panel, options)
 	enabledPvE:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
 	enabledPvE:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
-	local settingsDivider = mini:Divider({
-		Parent = panel,
-		Text = L["Settings"],
-	})
-	settingsDivider:SetPoint("LEFT", panel, "LEFT")
-	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
-	settingsDivider:SetPoint("TOP", enabledPvE, "BOTTOM", 0, -verticalSpacing)
-
-	local anchorPanel = BuildAnchorSettings(panel, options)
-
 	local intro = mini:TextLine({
 		Parent = panel,
 		Text = L["Don't forget to disable the Blizzard 'center big defensives' option when using this."],
 	})
 
-	intro:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	intro:SetPoint("TOPLEFT", enabledEverywhere, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
-	local excludePlayerChk = mini:Checkbox({
+	local defaultDivider = mini:Divider({
 		Parent = panel,
-		LabelText = L["Exclude self"],
-		Tooltip = L["Exclude yourself from showing trinket icons."],
-		GetValue = function()
-			return options.ExcludePlayer
-		end,
-		SetValue = function(value)
-			options.ExcludePlayer = value
-			addon:Refresh()
-		end,
+		Text = L["Less than 5 members (arena/dungeons)"],
 	})
 
-	excludePlayerChk:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -verticalSpacing)
+	defaultDivider:SetPoint("LEFT", panel, "LEFT")
+	defaultDivider:SetPoint("RIGHT", panel, "RIGHT")
+	defaultDivider:SetPoint("TOP", intro, "BOTTOM", 0, -verticalSpacing)
 
-	local glowChk = mini:Checkbox({
+	local defaultPanel = BuildInstance(panel, default)
+
+	defaultPanel:SetPoint("TOPLEFT", defaultDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+	defaultPanel:SetPoint("TOPRIGHT", defaultDivider, "BOTTOMRIGHT", 0, -verticalSpacing)
+	defaultPanel:SetHeight(370)
+
+	local raidDivider = mini:Divider({
 		Parent = panel,
-		LabelText = L["Glow icons"],
-		Tooltip = L["Show a glow around the icons."],
-		GetValue = function()
-			return options.Icons.Glow
-		end,
-		SetValue = function(value)
-			options.Icons.Glow = value
-			config:Apply()
-		end,
+		Text = L["Greater than 5 members (raids/bgs)"],
 	})
 
-	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	glowChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
+	raidDivider:SetPoint("LEFT", panel, "LEFT")
+	raidDivider:SetPoint("RIGHT", panel, "RIGHT")
+	raidDivider:SetPoint("TOP", defaultPanel, "BOTTOM")
 
-	local reverseChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Reverse swipe"],
-		Tooltip = L["Reverses the direction of the cooldown swipe animation."],
-		GetValue = function()
-			return options.Icons.ReverseCooldown
-		end,
-		SetValue = function(value)
-			options.Icons.ReverseCooldown = value
-			config:Apply()
-		end,
-	})
+	local raidPanel = BuildInstance(panel, raid, true)
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	reverseChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
-
-	local showDefensivesChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Show Defensives"],
-		Tooltip = L["Show defensive spell icons."],
-		GetValue = function()
-			return options.ShowDefensives
-		end,
-		SetValue = function(value)
-			options.ShowDefensives = value
-			config:Apply()
-		end,
-	})
-
-	showDefensivesChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local showImportantChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Show Important"],
-		Tooltip = L["Show important spell icons."],
-		GetValue = function()
-			return options.ShowImportant
-		end,
-		SetValue = function(value)
-			options.ShowImportant = value
-			config:Apply()
-		end,
-	})
-
-	showImportantChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	showImportantChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
-
-	local showCCChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Show CC"],
-		Tooltip = L["Show CC icons."],
-		GetValue = function()
-			return options.ShowCC
-		end,
-		SetValue = function(value)
-			options.ShowCC = value
-			config:Apply()
-		end,
-	})
-
-	showCCChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	showCCChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
-
-	local dispelColoursChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Dispel colours"],
-		Tooltip = L["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."],
-		GetValue = function()
-			return options.Icons.ColorByDispelType
-		end,
-		SetValue = function(value)
-			options.Icons.ColorByDispelType = value
-			config:Apply()
-		end,
-	})
-
-	dispelColoursChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	dispelColoursChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
-
-	local iconSize = mini:Slider({
-		Parent = panel,
-		Min = 10,
-		Max = 100,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Icon Size"],
-		GetValue = function()
-			return options.Icons.Size
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 10, 100, 32)
-			if options.Icons.Size ~= newValue then
-				options.Icons.Size = newValue
-				config:Apply()
-			end
-		end,
-	})
-
-	iconSize.Slider:SetPoint("TOPLEFT", showDefensivesChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
-
-	local maxIcons = mini:Slider({
-		Parent = panel,
-		Min = 1,
-		Max = 5,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Max Icons"],
-		GetValue = function()
-			return options.Icons.MaxIcons
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 1, 5, 1)
-			if options.Icons.MaxIcons ~= newValue then
-				options.Icons.MaxIcons = newValue
-				config:Apply()
-			end
-		end,
-	})
-
-	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
-
-	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
+	raidPanel:SetPoint("TOPLEFT", raidDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+	raidPanel:SetPoint("TOPRIGHT", raidDivider, "TOPRIGHT")
+	raidPanel:SetHeight(370)
 
 	panel.OnMiniRefresh = function()
-		anchorPanel:MiniRefresh()
+		defaultPanel:MiniRefresh()
+		raidPanel:MiniRefresh()
 	end
 end

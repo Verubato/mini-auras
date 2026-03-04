@@ -22,6 +22,8 @@ function M:IsActive()
 end
 
 function M:StopTesting()
+	instanceOptions:SetTestIsRaid(nil)
+
 	-- Hide test party frames
 	local testPartyFrames = frames:GetTestFrames()
 	if testPartyFrames then
@@ -49,15 +51,15 @@ function M:StopTesting()
 	active = false
 end
 
----@param options CrowdControlInstanceOptions?
-function M:StartTesting(options)
+---@param isRaid boolean?
+function M:StartTesting(isRaid)
 	if active then
 		return
 	end
 
 	active = true
 
-	instanceOptions:SetTestInstanceOptions(options)
+	instanceOptions:SetTestIsRaid(isRaid)
 
 	-- Show test party frames if no real frames are visible
 	local realFrames = frames:GetAll(true, false) -- Get only real frames

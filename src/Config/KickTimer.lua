@@ -124,9 +124,7 @@ function M:Build()
 	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
 	testBtn:SetText(L["Test"])
 	testBtn:SetScript("OnClick", function()
-		local options = db.Modules.CCModule.Default
-
-		addon:ToggleTest(options)
+		addon:ToggleTest(nil)
 	end)
 
 	M.Panel = panel

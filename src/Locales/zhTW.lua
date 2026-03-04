@@ -43,6 +43,7 @@ L:SetStrings({
 	["Settings"] = "設定",
 	["Show a glow around the icons."] = "在圖示周圍顯示發光。",
 	["Test"] = "測試",
+	["Test these settings"] = "測試這些設定",
 	["Whether to enable or disable this module if you are a caster."] = "如果您是施法者，是否啟用或停用此模組。",
 	["Whether to enable or disable this module if you are a healer."] = "如果您是治療者，是否啟用或停用此模組。",
 	["Whether to enable or disable this module regardless of what spec you are."] = "無論您是什麼專精，是否啟用或停用此模組。",
@@ -137,6 +138,7 @@ L:SetStrings({
 	["Show important spell icons."] = "顯示重要法術圖示。",
 	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "在隊伍/團隊框架上將CC、防禦技能和重要光環顯示為一組圖示。",
 	["Useful for BGs so you can disable the CC module and just use this one."] = "在戰場中很有用，可以停用CC模組，只使用這個。",
+
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "當您的治療者被控制時的單獨區域。",

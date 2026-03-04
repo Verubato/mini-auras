@@ -1,29 +1,28 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
-local testInstanceOptions
+local testIsRaid = nil
 ---@type Db
 local db
 
----@class CrowdControlInstanceOptions
+---@class InstanceOptions
 local M = {}
 
 addon.Core.InstanceOptions = M
 
----@return CrowdControlInstanceOptions?
-function M:GetInstanceOptions()
-	local members = GetNumGroupMembers()
-	return members > 5 and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
+---Returns true if the current context is a raid/large group (>5 members).
+---During test mode, returns the overridden value if one was set.
+---@return boolean
+function M:IsRaid()
+	if testIsRaid ~= nil then
+		return testIsRaid
+	end
+	return GetNumGroupMembers() > 5
 end
 
----@return CrowdControlInstanceOptions?
-function M:GetTestInstanceOptions()
-	return testInstanceOptions
-end
-
----@param options CrowdControlInstanceOptions?
-function M:SetTestInstanceOptions(options)
-	testInstanceOptions = options
+---@param isRaid boolean?
+function M:SetTestIsRaid(isRaid)
+	testIsRaid = isRaid
 end
 
 function M:Init()

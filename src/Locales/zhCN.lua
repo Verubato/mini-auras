@@ -43,6 +43,7 @@ L:SetStrings({
 	["Settings"] = "设置",
 	["Show a glow around the icons."] = "在图标周围显示发光。",
 	["Test"] = "测试",
+	["Test these settings"] = "测试这些设置",
 	["Whether to enable or disable this module if you are a caster."] = "如果您是施法者，是否启用或禁用此模块。",
 	["Whether to enable or disable this module if you are a healer."] = "如果您是治疗者，是否启用或禁用此模块。",
 	["Whether to enable or disable this module regardless of what spec you are."] = "无论您是什么专精，是否启用或禁用此模块。",
@@ -134,6 +135,7 @@ L:SetStrings({
 	["Show important spell icons."] = "显示重要法术图标。",
 	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "在队伍/团队框架上将CC、防御技能和重要光环显示为一组图标。",
 	["Useful for BGs so you can disable the CC module and just use this one."] = "在战场中很有用，可以禁用CC模块，只使用这个。",
+
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "当您的治疗者被控制时的单独区域。",

@@ -43,6 +43,7 @@ L:SetStrings({
 	["Settings"] = "Einstellungen",
 	["Show a glow around the icons."] = "Zeige ein Leuchten um die Symbole.",
 	["Test"] = "Testen",
+	["Test these settings"] = "Diese Einstellungen testen",
 	["Whether to enable or disable this module if you are a caster."] = "Ob dieses Modul aktiviert oder deaktiviert werden soll, wenn du ein Zauberwirker bist.",
 	["Whether to enable or disable this module if you are a healer."] = "Ob dieses Modul aktiviert oder deaktiviert werden soll, wenn du ein Heiler bist.",
 	["Whether to enable or disable this module regardless of what spec you are."] = "Ob dieses Modul unabhängig von deiner Spezialisierung aktiviert oder deaktiviert werden soll.",

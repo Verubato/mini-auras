@@ -133,12 +133,12 @@ function addon:Refresh()
 	end
 end
 
----@param options CrowdControlInstanceOptions?
-function addon:ToggleTest(options)
+---@param isRaid boolean?
+function addon:ToggleTest(isRaid)
 	if testModeManager:IsActive() then
 		testModeManager:StopTesting()
 	else
-		testModeManager:StartTesting(options)
+		testModeManager:StartTesting(isRaid)
 	end
 
 	addon:Refresh()
@@ -148,14 +148,14 @@ function addon:ToggleTest(options)
 	end
 end
 
----@param options CrowdControlInstanceOptions
-function addon:TestWithOptions(options)
+---@param isRaid boolean?
+function addon:TestWithOptions(isRaid)
 	if not testModeManager:IsActive() then
-		testModeManager:StartTesting(options)
+		testModeManager:StartTesting(isRaid)
 		return
 	end
 
-	instanceOptions:SetTestInstanceOptions(options)
+	instanceOptions:SetTestIsRaid(isRaid)
 	addon:Refresh()
 end
 
@@ -168,8 +168,8 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Config Config
 ---@field Modules Modules
 ---@field Refresh fun(self: table)
----@field ToggleTest fun(self: table, options: CrowdControlInstanceOptions)
----@field TestWithOptions fun(self: table, options: CrowdControlInstanceOptions)
+---@field ToggleTest fun(self: table, isRaid: boolean?)
+---@field TestWithOptions fun(self: table, isRaid: boolean?)
 
 ---@class Utils
 ---@field Scheduler SchedulerUtil
@@ -186,7 +186,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Frames Frames
 ---@field UnitAuraWatcher UnitAuraWatcher
 ---@field IconSlotContainer IconSlotContainer
----@field InstanceOptions CrowdControlInstanceOptions
+---@field InstanceOptions InstanceOptions
 
 ---@class Modules
 ---@field TestModeManager TestModeManager

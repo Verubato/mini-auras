@@ -208,11 +208,11 @@ local function BuildInstance(panel, options, addTestButton)
 
 	if addTestButton then
 		local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-		testBtn:SetSize(120, 26)
+		testBtn:SetSize(160, 26)
 		testBtn:SetPoint("TOPLEFT", anchorPanel, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-		testBtn:SetText(L["Test"])
+		testBtn:SetText(L["Test these settings"])
 		testBtn:SetScript("OnClick", function()
-			addon:TestWithOptions(options)
+			addon:TestWithOptions(true)
 		end)
 	end
 

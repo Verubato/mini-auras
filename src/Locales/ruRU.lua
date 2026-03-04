@@ -43,6 +43,7 @@ L:SetStrings({
 	["Settings"] = "Настройки",
 	["Show a glow around the icons."] = "Показывать свечение вокруг иконок.",
 	["Test"] = "Тест",
+	["Test these settings"] = "Проверить эти настройки",
 	["Whether to enable or disable this module if you are a caster."] = "Включить или отключить этот модуль, если вы заклинатель.",
 	["Whether to enable or disable this module if you are a healer."] = "Включить или отключить этот модуль, если вы целитель.",
 	["Whether to enable or disable this module regardless of what spec you are."] = "Включить или отключить этот модуль независимо от вашей специализации.",
@@ -134,6 +135,7 @@ L:SetStrings({
 	["Show important spell icons."] = "Показывать иконки важных заклинаний.",
 	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Показывает CC, защитные способности и важные ауры одним набором иконок на рамках группы/рейда.",
 	["Useful for BGs so you can disable the CC module and just use this one."] = "Полезно для полей сражений: можно отключить модуль контроля и использовать только этот.",
+
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "Отдельная область для когда ваш целитель под контролем.",

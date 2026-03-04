@@ -5,7 +5,7 @@ local mini = addon.Core.Framework
 local L = addon.L
 ---@class Db
 local dbDefaults = {
-	Version = 29,
+	Version = 30,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -351,23 +351,26 @@ local dbDefaults = {
 				PvE = true,
 			},
 
-			ExcludePlayer = false,
-			ShowDefensives = true,
-			ShowImportant = true,
-			ShowCC = false,
-
-			Offset = {
-				X = 0,
-				Y = 0,
+			---@class FriendlyIndicatorInstanceOptions
+			Default = {
+				ExcludePlayer = false,
+				ShowDefensives = true,
+				ShowImportant = true,
+				ShowCC = false,
+				Offset = { X = 0, Y = 0 },
+				Grow = "CENTER",
+				Icons = { Size = 30, Glow = true, ReverseCooldown = true, MaxIcons = 1, ColorByDispelType = false },
 			},
-			Grow = "CENTER",
 
-			Icons = {
-				Size = 30,
-				Glow = true,
-				ReverseCooldown = true,
-				MaxIcons = 1,
-				ColorByDispelType = false,
+			---@type FriendlyIndicatorInstanceOptions
+			Raid = {
+				ExcludePlayer = false,
+				ShowDefensives = true,
+				ShowImportant = true,
+				ShowCC = true,
+				Offset = { X = 0, Y = 0 },
+				Grow = "CENTER",
+				Icons = { Size = 25, Glow = true, ReverseCooldown = true, MaxIcons = 1, ColorByDispelType = false },
 			},
 		},
 		---@class PrecogGuesserModuleOptions
@@ -1797,6 +1800,40 @@ function M:UpgradeToVersion29(vars)
 	end
 
 	vars.Version = 29
+	return true
+end
+
+function M:UpgradeToVersion30(vars)
+	if vars.Version ~= 29 then
+		return false
+	end
+
+	if vars.Modules and vars.Modules.FriendlyIndicatorModule then
+		local fi = vars.Modules.FriendlyIndicatorModule
+		local instanceSettings = {
+			ExcludePlayer = fi.ExcludePlayer,
+			ShowDefensives = fi.ShowDefensives,
+			ShowImportant = fi.ShowImportant,
+			ShowCC = fi.ShowCC,
+			Offset = fi.Offset and mini:CopyTable(fi.Offset) or { X = 0, Y = 0 },
+			Grow = fi.Grow,
+			Icons = fi.Icons and mini:CopyTable(fi.Icons) or nil,
+		}
+		fi.Default = instanceSettings
+		fi.Raid = mini:CopyTable(instanceSettings)
+		fi.Raid.ShowCC = true
+
+		-- nil old values that are no longer used
+		fi.ExcludePlayer = nil
+		fi.ShowDefensives = nil
+		fi.ShowImportant = nil
+		fi.ShowCC = nil
+		fi.Offset = nil
+		fi.Grow = nil
+		fi.Icons = nil
+	end
+
+	vars.Version = 30
 	return true
 end
 

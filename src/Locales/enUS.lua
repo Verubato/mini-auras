@@ -40,6 +40,7 @@ L:SetDefaultStrings({
 	["Settings"] = "Settings",
 	["Show a glow around the icons."] = "Show a glow around the icons.",
 	["Test"] = "Test",
+	["Test these settings"] = "Test these settings",
 	["Whether to enable or disable this module if you are a caster."] = "Whether to enable or disable this module if you are a caster.",
 	["Whether to enable or disable this module if you are a healer."] = "Whether to enable or disable this module if you are a healer.",
 	["Whether to enable or disable this module regardless of what spec you are."] = "Whether to enable or disable this module regardless of what spec you are.",

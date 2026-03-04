@@ -43,6 +43,7 @@ L:SetStrings({
 	["Settings"] = "Configurações",
 	["Show a glow around the icons."] = "Mostra um brilho ao redor dos ícones.",
 	["Test"] = "Testar",
+	["Test these settings"] = "Testar essas configurações",
 	["Whether to enable or disable this module if you are a caster."] = "Se ativar ou desativar este módulo se você for um conjurador.",
 	["Whether to enable or disable this module if you are a healer."] = "Se ativar ou desativar este módulo se você for um curandeiro.",
 	["Whether to enable or disable this module regardless of what spec you are."] = "Se ativar ou desativar este módulo independentemente da sua especialização.",
@@ -134,6 +135,7 @@ L:SetStrings({
 	["Show important spell icons."] = "Mostrar ícones de feitiços importantes.",
 	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Mostra CC, defensivos e auras importantes como um conjunto de ícones em quadros de grupo/raide.",
 	["Useful for BGs so you can disable the CC module and just use this one."] = "Útil para campos de batalha para que você possa desativar o módulo CC e usar apenas este.",
+
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "Uma região separada para quando seu curandeiro estiver sob controle.",

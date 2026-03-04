@@ -121,7 +121,7 @@ function M:Init()
 			Key = keys.Indicator,
 			Title = L["Indicator"],
 			Build = function(content)
-				M.FriendlyIndicator:Build(content, db.Modules.FriendlyIndicatorModule)
+				M.FriendlyIndicator:Build(content, db.Modules.FriendlyIndicatorModule.Default, db.Modules.FriendlyIndicatorModule.Raid)
 			end,
 		},
 		{
@@ -169,8 +169,7 @@ function M:Init()
 	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
 	testBtn:SetText(L["Test"])
 	testBtn:SetScript("OnClick", function()
-		local options = db.Modules.CCModule.Default
-		addon:ToggleTest(options)
+		addon:ToggleTest(nil)
 	end)
 
 	M.TabController = tabController
@@ -203,7 +202,7 @@ function M:Init()
 		msg = msg and msg:lower():match("^%s*(.-)%s*$") or ""
 
 		if msg == "test" then
-			addon:ToggleTest(db.Modules.CCModule.Default)
+			addon:ToggleTest(nil)
 			return
 		end
 

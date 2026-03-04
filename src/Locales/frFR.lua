@@ -43,7 +43,8 @@ L:SetStrings({
 	["Settings"] = "Paramètres",
 	["Show a glow around the icons."] = "Affiche une lueur autour des icônes.",
 	["Test"] = "Tester",
-	["Whether to enable or disable this module if you are a caster."] = "Activer ou désactiver ce module si vous êtes un lanceur de sorts.",
+	["Test these settings"] = "Tester ces paramètres",
+	["Whether to enable or disable this module if you êtes un lanceur de sorts."] = "Activer ou désactiver ce module si vous êtes un lanceur de sorts.",
 	["Whether to enable or disable this module if you are a healer."] = "Activer ou désactiver ce module si vous êtes un soigneur.",
 	["Whether to enable or disable this module regardless of what spec you are."] = "Activer ou désactiver ce module quelle que soit votre spécialisation.",
 	["Whether to enable or disable this module."] = "Activer ou désactiver ce module.",
@@ -134,6 +135,7 @@ L:SetStrings({
 	["Show important spell icons."] = "Afficher les icônes de sorts importants.",
 	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Affiche les CC, défensifs et aures importants sous forme d'un ensemble d'icônes sur les cadres de groupe/raid.",
 	["Useful for BGs so you can disable the CC module and just use this one."] = "Utile pour les champs de bataille : vous pouvez désactiver le module CC et n'utiliser que celui-ci.",
+
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "Une région séparée pour quand votre soigneur est sous contrôle.",

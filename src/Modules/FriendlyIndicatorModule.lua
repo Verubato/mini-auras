@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local instanceOptions = addon.Core.InstanceOptions
 local frames = addon.Core.Frames
 local units = addon.Utils.Units
 local iconSlotContainer = addon.Core.IconSlotContainer
@@ -23,6 +24,14 @@ local testImportantSpells = {}
 local testCcSpells = {}
 ---@type Db
 local db
+
+local function GetOptions()
+	local m = db.Modules.FriendlyIndicatorModule
+	if not m then
+		return nil
+	end
+	return instanceOptions:IsRaid() and m.Raid or m.Default
+end
 
 ---@class FriendlyIndicatorModule : IModule
 local M = {}
@@ -54,7 +63,7 @@ local function UpdateWatcherAuras(entry)
 		return
 	end
 
-	local options = db.Modules.FriendlyIndicatorModule
+	local options = GetOptions()
 	if not options or not moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator) then
 		return
 	end
@@ -183,7 +192,7 @@ local function EnsureWatcher(anchor, unit)
 		return nil
 	end
 
-	local options = db.Modules.FriendlyIndicatorModule
+	local options = GetOptions()
 
 	if not options then
 		return
@@ -254,7 +263,7 @@ local function OnCufUpdateVisible(frame)
 		return
 	end
 
-	local options = db.Modules.FriendlyIndicatorModule
+	local options = GetOptions()
 
 	if not options then
 		return
@@ -288,7 +297,7 @@ local function OnEvent(_, event)
 end
 
 local function RefreshTestIcons()
-	local options = db.Modules.FriendlyIndicatorModule
+	local options = GetOptions()
 
 	if not options then
 		return
@@ -419,7 +428,7 @@ local function EnableWatchers()
 end
 
 function M:Refresh()
-	local options = db.Modules.FriendlyIndicatorModule
+	local options = GetOptions()
 
 	if not options then
 		return
