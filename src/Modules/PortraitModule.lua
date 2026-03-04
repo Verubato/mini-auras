@@ -252,7 +252,7 @@ end
 local function AttachElvUIFrame(unit)
 	local elvuiFrame, elvuiPortrait = GetElvUIFrame(unit)
 
-	if not elvuiFrame then
+	if not elvuiFrame or not elvuiPortrait then
 		return
 	end
 
