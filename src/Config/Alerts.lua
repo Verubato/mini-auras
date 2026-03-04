@@ -189,7 +189,7 @@ function M:Build(panel, options)
 		Parent = panel,
 		Min = 10,
 		Max = 200,
-		Width = (columnWidth * columns) - horizontalSpacing,
+		Width = columnWidth * 2 - horizontalSpacing,
 		Step = 1,
 		LabelText = L["Icon Size"],
 		GetValue = function()
@@ -205,6 +205,27 @@ function M:Build(panel, options)
 	})
 
 	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+
+	local maxIcons = mini:Slider({
+		Parent = panel,
+		Min = 1,
+		Max = 10,
+		Width = columnWidth * 2 - horizontalSpacing,
+		Step = 1,
+		LabelText = L["Max Icons"],
+		GetValue = function()
+			return options.Icons.MaxIcons
+		end,
+		SetValue = function(v)
+			local newValue = mini:ClampInt(v, 1, 10, 8)
+			if options.Icons.MaxIcons ~= newValue then
+				options.Icons.MaxIcons = newValue
+				config:Apply()
+			end
+		end,
+	})
+
+	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
 
 	local soundDivider = mini:Divider({
 		Parent = panel,

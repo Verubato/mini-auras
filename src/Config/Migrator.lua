@@ -5,7 +5,7 @@ local mini = addon.Core.Framework
 local L = addon.L
 ---@class Db
 local dbDefaults = {
-	Version = 27,
+	Version = 28,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -177,6 +177,7 @@ local dbDefaults = {
 				Glow = true,
 				ReverseCooldown = true,
 				ColorByClass = true,
+				MaxIcons = 8,
 			},
 		},
 		---@class NameplateModuleOptions
@@ -1762,6 +1763,20 @@ function M:UpgradeToVersion27(vars)
 	end
 
 	vars.Version = 27
+	return true
+end
+
+function M:UpgradeToVersion28(vars)
+	if vars.Version ~= 27 then
+		return false
+	end
+
+	-- Add MaxIcons to AlertsModule.Icons
+	if vars.Modules and vars.Modules.AlertsModule and vars.Modules.AlertsModule.Icons then
+		vars.Modules.AlertsModule.Icons.MaxIcons = 8
+	end
+
+	vars.Version = 28
 	return true
 end
 

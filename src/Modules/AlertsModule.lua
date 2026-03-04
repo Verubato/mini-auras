@@ -356,6 +356,11 @@ local function RefreshTestAlerts()
 		190319, -- Combustion
 		121471, -- Shadow Blades
 		107574, -- Avatar
+		288613, -- Trueshot
+		6940,   -- Blessing of Sacrifice
+		47788,  -- Guardian Spirit
+		104773, -- Unending Resolve
+		45438,  -- Ice Block
 	}
 
 	-- Test class colors for demo purposes
@@ -363,6 +368,11 @@ local function RefreshTestAlerts()
 		"MAGE",
 		"ROGUE",
 		"WARRIOR",
+		"HUNTER",
+		"PALADIN",
+		"PRIEST",
+		"WARLOCK",
+		"MAGE",
 	}
 
 	local count = math.min(#testAlertSpellIds, container.Count or #testAlertSpellIds)
@@ -656,6 +666,7 @@ function M:Refresh()
 
 	container:SetIconSize(options.Icons.Size)
 	container:SetSpacing(db.IconSpacing or 2)
+	container:SetCount(options.Icons.MaxIcons or 8)
 
 	if testModeActive and moduleUtil:IsModuleEnabled(moduleName.Alerts) then
 		RefreshTestAlerts()
@@ -666,7 +677,7 @@ function M:Init()
 	db = mini:GetSavedVars()
 
 	local options = db.Modules.AlertsModule
-	local count = 8
+	local count = options.Icons.MaxIcons or 8
 	local size = options.Icons.Size
 
 	cachedVoiceID = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
