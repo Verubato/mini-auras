@@ -129,6 +129,8 @@ L:SetStrings({
 	["Defensive"] = "방어",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "이것을 사용할 때 Blizzard의 '큰 방어 기술 중앙 표시' 옵션을 비활성화하는 것을 잊지 마세요.",
 	["Exclude yourself from showing trinket icons."] = "장신구 아이콘 표시에서 자신을 제외합니다.",
+	["Show CC"] = "CC 표시",
+	["Show CC icons."] = "CC 아이콘을 표시합니다.",
 	["Show Defensives"] = "방어기술 표시",
 	["Show defensive spell icons."] = "방어 주문 아이콘을 표시합니다.",
 	["Show Important"] = "중요 기술 표시",

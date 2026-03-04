@@ -129,6 +129,8 @@ L:SetStrings({
 	["Defensive"] = "Difensivo",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Non dimenticare di disabilitare l'opzione Blizzard 'centra grandi difese' quando usi questo.",
 	["Exclude yourself from showing trinket icons."] = "Escluditi dalla visualizzazione delle icone dei monili.",
+	["Show CC"] = "Mostra CC",
+	["Show CC icons."] = "Mostra le icone CC.",
 	["Show Defensives"] = "Mostra difensivi",
 	["Show defensive spell icons."] = "Mostra le icone degli incantesimi difensivi.",
 	["Show Important"] = "Mostra importanti",
@@ -183,7 +185,7 @@ L:SetStrings({
 	[" - Doesn't work in the open world."] = " - Non funziona nel mondo aperto.",
 	[" - Racials like stoneform count as a trinket use."] = " - I razziali come Forma di Pietra contano come utilizzo di un monile.",
 	["Party Trinkets"] = "Monili del gruppo",
-	["Party Trinkets_Short"] = "Gingilli",
+	["Party Trinkets_Short"] = "Monile",
 
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Funziona rilevando qualsiasi buff personale «importante» di 4 secondi e mostrando quell'icona.",

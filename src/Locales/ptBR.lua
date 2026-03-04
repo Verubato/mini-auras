@@ -129,6 +129,8 @@ L:SetStrings({
 	["Defensive"] = "Defensivo",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Não esqueça de desativar a opção do Blizzard 'centralizar grandes defensivos' ao usar isto.",
 	["Exclude yourself from showing trinket icons."] = "Exclua-se de mostrar ícones de berloques.",
+	["Show CC"] = "Mostrar CC",
+	["Show CC icons."] = "Mostrar ícones de controle.",
 	["Show Defensives"] = "Mostrar defensivos",
 	["Show defensive spell icons."] = "Mostrar ícones de feitiços defensivos.",
 	["Show Important"] = "Mostrar importantes",
@@ -184,7 +186,7 @@ L:SetStrings({
 	[" - Doesn't work in the open world."] = " - Não funciona no mundo aberto.",
 	[" - Racials like stoneform count as a trinket use."] = " - Raciais como Forma de Pedra contam como uso de berloque.",
 	["Party Trinkets"] = "Berloques do grupo",
-	["Party Trinkets_Short"] = "Adorços",
+	["Party Trinkets_Short"] = "Berloques",
 
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Funciona detectando qualquer buff pessoal «importante» de 4 segundos e exibindo esse ícone.",

@@ -132,6 +132,8 @@ L:SetStrings({
 	["Defensive"] = "防禦",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "使用此功能時不要忘記停用暴雪的「置中顯示大型防禦技能」選項。",
 	["Exclude yourself from showing trinket icons."] = "將自己從顯示飾品圖示中排除。",
+	["Show CC"] = "顯示CC",
+	["Show CC icons."] = "顯示控制圖示。",
 	["Show Defensives"] = "顯示防禦技能",
 	["Show defensive spell icons."] = "顯示防禦法術圖示。",
 	["Show Important"] = "顯示重要技能",
@@ -150,7 +152,7 @@ L:SetStrings({
 	-- Kick Timer tab
 	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - 目前僅在競技場內工作（在決鬥/世界中無效，將來會添加）。",
 	[" - Doesn't work if the enemy misses kick (still investigating potential workaround/solution)."] = " - 如果敵人打斷未命中則無效（仍在研究潛在的解決方案）。",
-	["As you can tell it's not guaranteed to be accurate, but so far from our testing it's pretty damn good with ancedotally a 95%+ success rate."] = "如你所見，它不能保證準確，但到目前為止我們的測試顯示它非常好，軾事性成功率95%+。",
+	["As you can tell it's not guaranteed to be accurate, but so far from our testing it's pretty damn good with ancedotally a 95%+ success rate."] = "如你所見，它不能保證準確，但到目前為止我們的測試顯示它非常好，軼事性成功率95%+。",
 	["For example you are facing 3 enemies who are all pressing buttons."] = "例如，你面對的3個敵人都在按按鈕。",
 	["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."] = "它如何工作？它透過關聯敵人行動事件和打斷事件來猜測是誰打斷了你。",
 	["Kick timer"] = "斷法計時器",

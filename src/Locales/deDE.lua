@@ -129,6 +129,8 @@ L:SetStrings({
 	["Defensive"] = "Defensiv",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Vergiss nicht, die Blizzard-Option 'Große Defensivfähigkeiten zentrieren' zu deaktivieren, wenn du dies verwendest.",
 	["Exclude yourself from showing trinket icons."] = "Schließe dich selbst vom Anzeigen von Schmuckstück-Symbolen aus.",
+	["Show CC"] = "CC anzeigen",
+	["Show CC icons."] = "CC-Symbole anzeigen.",
 	["Show Defensives"] = "Defensive anzeigen",
 	["Show defensive spell icons."] = "Symbole für defensive Zauber anzeigen.",
 	["Show Important"] = "Wichtiges anzeigen",

@@ -129,6 +129,8 @@ L:SetStrings({
 	["Defensive"] = "Защитное",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Не забудьте отключить опцию Blizzard 'центрировать большие защитные способности' при использовании этого.",
 	["Exclude yourself from showing trinket icons."] = "Исключить себя из отображения иконок аксессуаров.",
+	["Show CC"] = "Показать контроль",
+	["Show CC icons."] = "Показывать иконки контроля.",
 	["Show Defensives"] = "Показать защитные",
 	["Show defensive spell icons."] = "Показывать иконки защитных заклинаний.",
 	["Show Important"] = "Показать важные",
