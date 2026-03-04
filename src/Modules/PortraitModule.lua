@@ -93,6 +93,11 @@ local function CreateContainer(unitFrame, portrait)
 	local width = portrait:GetWidth() - 4
 	local height = portrait:GetHeight() - 4
 	local size = math.min(width, height)
+
+	if size <= 0 then
+		size = 32
+	end
+
 	container:SetIconSize(size)
 
 	return container
