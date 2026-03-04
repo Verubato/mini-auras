@@ -630,6 +630,7 @@ function M:ResetAllSlots()
 end
 
 ---@class IconLayer
+---@field Frame table
 ---@field Icon table
 ---@field Cooldown table
 ---@field Border table
