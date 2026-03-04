@@ -1835,6 +1835,11 @@ function M:GetAndUpgradeDb()
 	-- grab any new keys
 	vars = mini:GetSavedVars(dbDefaults)
 
+	if vars.Version == dbDefaults.Version then
+		-- if we are running the latest version, clean up any garbage that may have been left over from old versions
+		mini:CleanTable(vars, dbDefaults, true, true)
+	end
+
 	return vars
 end
 
