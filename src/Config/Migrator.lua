@@ -106,7 +106,7 @@ local dbDefaults = {
 			},
 
 			Icons = {
-				Size = 70,
+				Size = 50,
 				Glow = true,
 				ReverseCooldown = true,
 				ColorByDispelType = true,
@@ -173,7 +173,7 @@ local dbDefaults = {
 
 			Icons = {
 				Enabled = true,
-				Size = 70,
+				Size = 50,
 				Glow = true,
 				ReverseCooldown = true,
 				ColorByClass = true,
@@ -202,7 +202,7 @@ local dbDefaults = {
 					},
 
 					Icons = {
-						Size = 50,
+						Size = 35,
 						Glow = true,
 						ReverseCooldown = true,
 						ColorByCategory = true,
@@ -218,7 +218,7 @@ local dbDefaults = {
 					},
 
 					Icons = {
-						Size = 50,
+						Size = 35,
 						Glow = true,
 						ReverseCooldown = true,
 						ColorByCategory = true,
@@ -234,7 +234,7 @@ local dbDefaults = {
 					},
 
 					Icons = {
-						Size = 50,
+						Size = 35,
 						Glow = true,
 						ReverseCooldown = true,
 						ColorByCategory = true,
@@ -253,7 +253,7 @@ local dbDefaults = {
 					},
 
 					Icons = {
-						Size = 50,
+						Size = 35,
 						Glow = true,
 						ReverseCooldown = true,
 						ColorByCategory = true,
@@ -269,7 +269,7 @@ local dbDefaults = {
 					},
 
 					Icons = {
-						Size = 50,
+						Size = 35,
 						Glow = true,
 						ReverseCooldown = true,
 						ColorByCategory = true,
@@ -285,7 +285,7 @@ local dbDefaults = {
 					},
 
 					Icons = {
-						Size = 50,
+						Size = 35,
 						Glow = true,
 						ReverseCooldown = true,
 						ColorByCategory = true,
@@ -307,7 +307,7 @@ local dbDefaults = {
 			RelativePoint = "CENTER",
 			Offset = {
 				X = 0,
-				Y = -300,
+				Y = -200,
 			},
 
 			Icons = {
@@ -332,7 +332,7 @@ local dbDefaults = {
 			},
 
 			Icons = {
-				Size = 50,
+				Size = 40,
 				Glow = false,
 				ReverseCooldown = false,
 				ShowText = true,
@@ -362,7 +362,7 @@ local dbDefaults = {
 			Grow = "CENTER",
 
 			Icons = {
-				Size = 40,
+				Size = 30,
 				Glow = true,
 				ReverseCooldown = true,
 				MaxIcons = 1,
