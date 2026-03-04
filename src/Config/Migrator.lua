@@ -173,7 +173,7 @@ local dbDefaults = {
 
 			Icons = {
 				Enabled = true,
-				Size = 72,
+				Size = 70,
 				Glow = true,
 				ReverseCooldown = true,
 				ColorByClass = true,
