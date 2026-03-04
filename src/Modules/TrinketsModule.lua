@@ -410,7 +410,6 @@ function M:StartTesting()
 	testModeActive = true
 	Pause()
 	M:Refresh()
-	RefreshTestTrinkets()
 end
 
 function M:StopTesting()
@@ -485,6 +484,8 @@ function M:Refresh()
 	if moduleEnabled and IsInArena() then
 		RequestAll()
 		RefreshAll()
+	elseif moduleEnabled and testModeActive then
+		RefreshTestTrinkets()
 	end
 end
 
