@@ -7,6 +7,7 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
+local slotDistribution = addon.Utils.SlotDistribution
 local mathMin = math.min
 local GetTime = GetTime
 local C_NamePlate = C_NamePlate
@@ -215,107 +216,6 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 	return ccContainer, importantContainer, nil
 end
 
----Calculate slot distribution across CC, Defensive, and Important categories
----@param containerCount number Total number of available slots
----@param ccCount number Number of CC spells
----@param defensiveCount number Number of Defensive spells
----@param importantCount number Number of Important spells
----@return number ccSlots Number of slots allocated to CC
----@return number defensiveSlots Number of slots allocated to Defensive
----@return number importantSlots Number of slots allocated to Important
-local function CalculateSlotDistribution(containerCount, ccCount, defensiveCount, importantCount)
-	local ccSlots, defensiveSlots, importantSlots = 0, 0, 0
-
-	-- Calculate how many active categories we have
-	local activeCategories = 0
-	if ccCount > 0 then
-		activeCategories = activeCategories + 1
-	end
-	if defensiveCount > 0 then
-		activeCategories = activeCategories + 1
-	end
-	if importantCount > 0 then
-		activeCategories = activeCategories + 1
-	end
-
-	if activeCategories > 0 and containerCount >= activeCategories then
-		-- Guarantee each active category gets at least 1 slot
-		if ccCount > 0 then
-			ccSlots = 1
-		end
-		if defensiveCount > 0 then
-			defensiveSlots = 1
-		end
-		if importantCount > 0 then
-			importantSlots = 1
-		end
-
-		-- Distribute remaining slots by priority: CC -> Defensive -> Important
-		local remainingSlots = containerCount - activeCategories
-
-		while remainingSlots > 0 do
-			local allocatedThisRound = false
-
-			if ccCount > ccSlots and remainingSlots > 0 then
-				ccSlots = ccSlots + 1
-				remainingSlots = remainingSlots - 1
-				allocatedThisRound = true
-			end
-			if defensiveCount > defensiveSlots and remainingSlots > 0 then
-				defensiveSlots = defensiveSlots + 1
-				remainingSlots = remainingSlots - 1
-				allocatedThisRound = true
-			end
-			if importantCount > importantSlots and remainingSlots > 0 then
-				importantSlots = importantSlots + 1
-				remainingSlots = remainingSlots - 1
-				allocatedThisRound = true
-			end
-
-			-- If we couldn't allocate any more slots this round, break
-			if not allocatedThisRound then
-				break
-			end
-		end
-	elseif activeCategories > 0 then
-		-- Not enough slots for all categories, distribute fairly by priority
-		-- Round-robin distribution: CC -> Defensive -> Important
-		local remainingSlots = containerCount
-
-		while remainingSlots > 0 do
-			local allocatedThisRound = false
-
-			-- CC gets first slot in each round
-			if ccCount > ccSlots and remainingSlots > 0 then
-				ccSlots = ccSlots + 1
-				remainingSlots = remainingSlots - 1
-				allocatedThisRound = true
-			end
-
-			-- Defensive gets second slot in each round
-			if defensiveCount > defensiveSlots and remainingSlots > 0 then
-				defensiveSlots = defensiveSlots + 1
-				remainingSlots = remainingSlots - 1
-				allocatedThisRound = true
-			end
-
-			-- Important gets third slot in each round
-			if importantCount > importantSlots and remainingSlots > 0 then
-				importantSlots = importantSlots + 1
-				remainingSlots = remainingSlots - 1
-				allocatedThisRound = true
-			end
-
-			-- If we couldn't allocate any slots this round, break
-			if not allocatedThisRound then
-				break
-			end
-		end
-	end
-
-	return ccSlots, defensiveSlots, importantSlots
-end
-
 ---@param data NameplateData
 ---@param watcher Watcher
 ---@param unitOptions table Pre-fetched unit options
@@ -340,7 +240,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 
 	-- Calculate slot distribution
 	local ccSlots, defensiveSlots, importantSlots =
-		CalculateSlotDistribution(container.Count, #ccData, #defensivesData, #importantData)
+		slotDistribution.Calculate(container.Count, #ccData, #defensivesData, #importantData)
 
 	local slot = 0
 
@@ -489,7 +389,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitOptions)
 	-- Calculate slot distribution (Important has higher priority than Defensive)
 	-- We pass Important as first parameter (CC slot), Defensive as second parameter
 	local importantSlots, defensiveSlots, _ =
-		CalculateSlotDistribution(container.Count, #importantData, #defensivesData, 0)
+		slotDistribution.Calculate(container.Count, #importantData, #defensivesData, 0)
 
 	local slot = 0
 
@@ -576,7 +476,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 
 	-- Calculate slot distribution
 	local ccSlots, defensiveSlots, importantSlots =
-		CalculateSlotDistribution(combinedContainer.Count, testCcCount, testDefensiveCount, testImportantCount)
+		slotDistribution.Calculate(combinedContainer.Count, testCcCount, testDefensiveCount, testImportantCount)
 
 	local iconsGlow = combinedOptions.Icons.Glow
 	local iconsReverse = combinedOptions.Icons.ReverseCooldown
@@ -696,7 +596,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 
 		-- Calculate slot distribution (Important has higher priority than Defensive)
 		local importantSlots, defensiveSlots, _ =
-			CalculateSlotDistribution(importantContainer.Count, testImportantCount, testDefensiveCount, 0)
+			slotDistribution.Calculate(importantContainer.Count, testImportantCount, testDefensiveCount, 0)
 
 		local slot = 0
 

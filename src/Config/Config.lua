@@ -95,7 +95,7 @@ function M:Init()
 	local keys = {
 		General = "General",
 		CC = "CC",
-		CDs = "CDs",
+		Indicator = "Indicator",
 		Alerts = "Alerts",
 		Healer = "Healer",
 		Nameplates = "Nameplates",
@@ -118,8 +118,8 @@ function M:Init()
 			end,
 		},
 		{
-			Key = keys.CDs,
-			Title = L["CDs"],
+			Key = keys.Indicator,
+			Title = L["Indicator"],
 			Build = function(content)
 				M.FriendlyIndicator:Build(content, db.Modules.FriendlyIndicatorModule)
 			end,

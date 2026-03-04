@@ -106,7 +106,7 @@ L:SetStrings({
 
 	-- CC tab
 	["CC"] = "Контроль",
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Изменить цвет свечения/границы в зависимости от типа рассеивания (напр. синий для магии, красный для физического).",
+	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "Изменить цвет свечения/границы в зависимости от типа рассеивания (напр. синий для магии, красный для физического). Применяется только к иконкам контроля.",
 	["Color by class"] = "Цвет по классу",
 	["Color the glow/border by the enemy's class color."] = "Окрашивать свечение/границу цветом класса противника.",
 	["Dispel colours"] = "Цвета рассеивания",
@@ -122,8 +122,8 @@ L:SetStrings({
 	["Show a glow around the CC icons."] = "Показывать свечение вокруг иконок контроля.",
 	["Shows CC icons on party/raid frames."] = "Показывает иконки контроля на рамках группы/рейда.",
 
-	-- CDs tab
-	["CDs"] = "Восстановление",
+	-- Indicator tab
+	["Indicator"] = "Индикатор",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "Изменить цвет свечения/границы. Защитные заклинания - зеленые, важные заклинания - красные.",
 	["Defensive"] = "Защитное",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Не забудьте отключить опцию Blizzard 'центрировать большие защитные способности' при использовании этого.",
@@ -132,7 +132,8 @@ L:SetStrings({
 	["Show defensive spell icons."] = "Показывать иконки защитных заклинаний.",
 	["Show Important"] = "Показать важные",
 	["Show important spell icons."] = "Показывать иконки важных заклинаний.",
-	["Shows active friendly cooldowns party/raid frames."] = "Показывает активные союзные перезарядки на рамках группы/рейда.",
+	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Показывает CC, защитные способности и важные ауры одним набором иконок на рамках группы/рейда.",
+	["Useful for BGs so you can disable the CC module and just use this one."] = "Полезно для полей сражений: можно отключить модуль контроля и использовать только этот.",
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "Отдельная область для когда ваш целитель под контролем.",

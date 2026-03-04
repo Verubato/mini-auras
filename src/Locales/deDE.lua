@@ -106,7 +106,7 @@ L:SetStrings({
 
 	-- CC tab
 	["CC"] = "Massenkontrolle",
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Ändere die Farbe des Leuchtens/Rahmens basierend auf dem Banntyp (z.B. blau für Magie, rot für physisch).",
+	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "Ändere die Farbe des Leuchtens/Rahmens basierend auf dem Banntyp (z.B. blau für Magie, rot für physisch). Dies gilt nur für Betäubungs-Icons.",
 	["Color by class"] = "Nach Klasse färben",
 	["Color the glow/border by the enemy's class color."] = "Färbe das Leuchten/Rahmen mit der Klassenfarbe des Gegners.",
 	["Dispel colours"] = "Bannfarben",
@@ -122,8 +122,8 @@ L:SetStrings({
 	["Show a glow around the CC icons."] = "Zeige ein Leuchten um die Massenkontroll-Symbole.",
 	["Shows CC icons on party/raid frames."] = "Zeigt Massenkontroll-Symbole auf Gruppen-/Schlachtzugs-Rahmen.",
 
-	-- CDs tab
-	["CDs"] = "Abklingzeiten",
+	-- Indicator tab
+	["Indicator"] = "Indikator",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "Ändere die Farbe des Leuchtens/Rahmens. Defensive Zauber sind grün und wichtige Zauber sind rot.",
 	["Defensive"] = "Defensiv",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Vergiss nicht, die Blizzard-Option 'Große Defensivfähigkeiten zentrieren' zu deaktivieren, wenn du dies verwendest.",
@@ -132,7 +132,8 @@ L:SetStrings({
 	["Show defensive spell icons."] = "Symbole für defensive Zauber anzeigen.",
 	["Show Important"] = "Wichtiges anzeigen",
 	["Show important spell icons."] = "Symbole für wichtige Zauber anzeigen.",
-	["Shows active friendly cooldowns party/raid frames."] = "Zeigt aktive verbündete Abklingzeiten auf Gruppen-/Schlachtzugs-Rahmen.",
+	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Zeigt CC, Defensives und wichtige Auren als einen Satz Symbole auf Gruppen-/Schlachtzugs-Rahmen.",
+	["Useful for BGs so you can disable the CC module and just use this one."] = "Nützlich für Schlachtfelder: Du kannst das CC-Modul deaktivieren und nur dieses verwenden.",
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "Ein separater Bereich für wenn dein Heiler unter Kontrolle ist.",

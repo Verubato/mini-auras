@@ -106,7 +106,7 @@ L:SetDefaultStrings({
 
 	-- CC tab
 	["CC"] = "CC",
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical).",
+	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons.",
 	["Color by class"] = "Color by class",
 	["Color the glow/border by the enemy's class color."] = "Color the glow/border by the enemy's class color.",
 	["Dispel colours"] = "Dispel colours",
@@ -122,17 +122,20 @@ L:SetDefaultStrings({
 	["Show a glow around the CC icons."] = "Show a glow around the CC icons.",
 	["Shows CC icons on party/raid frames."] = "Shows CC icons on party/raid frames.",
 
-	-- CDs tab
-	["CDs"] = "CDs",
+	-- Indicator tab
+	["Indicator"] = "Indicator",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "Change the colour of the glow/border. Defensive spells are green and Important spells are red.",
 	["Defensive"] = "Defensive",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Don't forget to disable the Blizzard 'center big defensives' option when using this.",
 	["Exclude yourself from showing trinket icons."] = "Exclude yourself from showing trinket icons.",
+	["Show CC"] = "Show CC",
+	["Show CC icons."] = "Show CC icons.",
 	["Show Defensives"] = "Show Defensives",
 	["Show defensive spell icons."] = "Show defensive spell icons.",
 	["Show Important"] = "Show Important",
 	["Show important spell icons."] = "Show important spell icons.",
-	["Shows active friendly cooldowns party/raid frames."] = "Shows active friendly cooldowns party/raid frames.",
+	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Shows CC, defensives, and important auras as one set of icons on party/raid frames.",
+	["Useful for BGs so you can disable the CC module and just use this one."] = "Useful for BGs so you can disable the CC module and just use this one.",
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "A separate region for when your healer is CC'd.",

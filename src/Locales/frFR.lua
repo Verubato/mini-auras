@@ -106,7 +106,7 @@ L:SetStrings({
 
 	-- CC tab
 	["CC"] = "Contrôle",
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Change la couleur de la lueur/bordure selon le type de dissipation (par ex. bleu pour magie, rouge pour physique).",
+	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "Change la couleur de la lueur/bordure selon le type de dissipation (par ex. bleu pour magie, rouge pour physique). Ceci s'applique uniquement aux icônes de contrôle.",
 	["Color by class"] = "Couleur par classe",
 	["Color the glow/border by the enemy's class color."] = "Colore la lueur/bordure selon la couleur de classe de l'ennemi.",
 	["Dispel colours"] = "Couleurs de dissipation",
@@ -122,8 +122,8 @@ L:SetStrings({
 	["Show a glow around the CC icons."] = "Affiche une lueur autour des icônes de contrôle.",
 	["Shows CC icons on party/raid frames."] = "Affiche les icônes de contrôle sur les cadres de groupe/raid.",
 
-	-- CDs tab
-	["CDs"] = "Temps de recharge",
+	-- Indicator tab
+	["Indicator"] = "Indicateur",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "Change la couleur de la lueur/bordure. Les sorts défensifs sont verts et les sorts importants sont rouges.",
 	["Defensive"] = "Défensif",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "N'oubliez pas de désactiver l'option Blizzard 'centrer les grandes défensives' lors de l'utilisation de ceci.",
@@ -132,7 +132,8 @@ L:SetStrings({
 	["Show defensive spell icons."] = "Afficher les icônes de sorts défensifs.",
 	["Show Important"] = "Afficher les importants",
 	["Show important spell icons."] = "Afficher les icônes de sorts importants.",
-	["Shows active friendly cooldowns party/raid frames."] = "Affiche les temps de recharge alliés actifs sur les cadres de groupe/raid.",
+	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Affiche les CC, défensifs et aures importants sous forme d'un ensemble d'icônes sur les cadres de groupe/raid.",
+	["Useful for BGs so you can disable the CC module and just use this one."] = "Utile pour les champs de bataille : vous pouvez désactiver le module CC et n'utiliser que celui-ci.",
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "Une région séparée pour quand votre soigneur est sous contrôle.",

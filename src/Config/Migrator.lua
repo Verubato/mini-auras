@@ -5,7 +5,7 @@ local mini = addon.Core.Framework
 local L = addon.L
 ---@class Db
 local dbDefaults = {
-	Version = 28,
+	Version = 29,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -17,8 +17,8 @@ local dbDefaults = {
 			Enabled = {
 				World = true,
 				Arena = true,
-				BattleGrounds = true,
-				PvE = true,
+				BattleGrounds = false,
+				PvE = false,
 			},
 
 			---@class CrowdControlInstanceOptions
@@ -354,6 +354,7 @@ local dbDefaults = {
 			ExcludePlayer = false,
 			ShowDefensives = true,
 			ShowImportant = true,
+			ShowCC = false,
 
 			Offset = {
 				X = 0,
@@ -366,6 +367,7 @@ local dbDefaults = {
 				Glow = true,
 				ReverseCooldown = true,
 				MaxIcons = 1,
+				ColorByDispelType = false,
 			},
 		},
 		---@class PrecogGuesserModuleOptions
@@ -1777,6 +1779,24 @@ function M:UpgradeToVersion28(vars)
 	end
 
 	vars.Version = 28
+	return true
+end
+
+function M:UpgradeToVersion29(vars)
+	if vars.Version ~= 28 then
+		return false
+	end
+
+	-- Add ShowCC and ColorByDispelType to FriendlyIndicatorModule
+	if vars.Modules and vars.Modules.FriendlyIndicatorModule then
+		local fi = vars.Modules.FriendlyIndicatorModule
+		fi.ShowCC = false
+		if fi.Icons then
+			fi.Icons.ColorByDispelType = false
+		end
+	end
+
+	vars.Version = 29
 	return true
 end
 

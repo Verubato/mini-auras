@@ -107,7 +107,7 @@ L:SetStrings({
 
 	-- CC tab
 	["CC"] = "Control",
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Cambia el color del brillo/borde según el tipo de disipación (ej. azul para magia, rojo para físico).",
+	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "Cambia el color del brillo/borde según el tipo de disipación (ej. azul para magia, rojo para físico). Esto solo se aplica a los iconos de CC.",
 	["Color by class"] = "Color por clase",
 	["Color the glow/border by the enemy's class color."] = "Colorea el brillo/borde con el color de clase del enemigo.",
 	["Dispel colours"] = "Colores de disipación",
@@ -123,8 +123,8 @@ L:SetStrings({
 	["Show a glow around the CC icons."] = "Muestra un brillo alrededor de los iconos de control.",
 	["Shows CC icons on party/raid frames."] = "Muestra iconos de control en marcos de grupo/banda.",
 
-	-- CDs tab
-	["CDs"] = "CDs",
+	-- Indicator tab
+	["Indicator"] = "Indicador",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "Cambia el color del brillo/borde. Los hechizos defensivos son verdes y los hechizos importantes son rojos.",
 	["Defensive"] = "Defensivo",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "No olvides desactivar la opción de Blizzard 'centrar grandes defensivos' al usar esto.",
@@ -133,7 +133,8 @@ L:SetStrings({
 	["Show defensive spell icons."] = "Mostrar iconos de hechizos defensivos.",
 	["Show Important"] = "Mostrar importantes",
 	["Show important spell icons."] = "Mostrar iconos de hechizos importantes.",
-	["Shows active friendly cooldowns party/raid frames."] = "Muestra tiempos de reutilización aliados activos en marcos de grupo/banda.",
+	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Muestra CC, defensivos y auras importantes como un conjunto de iconos en los marcos de grupo/banda.",
+	["Useful for BGs so you can disable the CC module and just use this one."] = "Útil para campos de batalla: puedes desactivar el módulo CC y usar solo este.",
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "Una región separada para cuando tu sanador esté bajo control.",

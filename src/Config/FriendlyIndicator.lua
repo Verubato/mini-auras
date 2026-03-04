@@ -101,7 +101,8 @@ function M:Build(panel, options)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			L["Shows active friendly cooldowns party/raid frames."],
+			L["Shows CC, defensives, and important auras as one set of icons on party/raid frames."],
+			L["Useful for BGs so you can disable the CC module and just use this one."],
 		},
 	})
 
@@ -239,7 +240,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
 	reverseChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
 
 	local showDefensivesChk = mini:Checkbox({
@@ -272,6 +273,38 @@ function M:Build(panel, options)
 
 	showImportantChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	showImportantChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
+
+	local showCCChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show CC"],
+		Tooltip = L["Show CC icons."],
+		GetValue = function()
+			return options.ShowCC
+		end,
+		SetValue = function(value)
+			options.ShowCC = value
+			config:Apply()
+		end,
+	})
+
+	showCCChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	showCCChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
+
+	local dispelColoursChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Dispel colours"],
+		Tooltip = L["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."],
+		GetValue = function()
+			return options.Icons.ColorByDispelType
+		end,
+		SetValue = function(value)
+			options.Icons.ColorByDispelType = value
+			config:Apply()
+		end,
+	})
+
+	dispelColoursChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	dispelColoursChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
 
 	local iconSize = mini:Slider({
 		Parent = panel,

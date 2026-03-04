@@ -106,7 +106,7 @@ L:SetStrings({
 
 	-- CC tab
 	["CC"] = "군중 제어",
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "해제 유형에 따라 발광/테두리 색상을 변경합니다 (예: 마법은 파란색, 물리는 빨간색).",
+	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "해제 유형에 따라 발광/테두리 색상을 변경합니다 (예: 마법은 파란색, 물리는 빨간색). CC 아이콘에만 적용됩니다.",
 	["Color by class"] = "직업별 색상",
 	["Color the glow/border by the enemy's class color."] = "적의 직업 색상으로 발광/테두리를 색칠합니다.",
 	["Dispel colours"] = "해제 색상",
@@ -122,8 +122,8 @@ L:SetStrings({
 	["Show a glow around the CC icons."] = "군중 제어 아이콘 주위에 발광을 표시합니다.",
 	["Shows CC icons on party/raid frames."] = "파티/공격대 프레임에 군중 제어 아이콘을 표시합니다.",
 
-	-- CDs tab
-	["CDs"] = "재사용 대기시간",
+	-- Indicator tab
+	["Indicator"] = "표시기",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "발광/테두리 색상을 변경합니다. 방어 주문은 녹색이고 중요한 주문은 빨간색입니다.",
 	["Defensive"] = "방어",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "이것을 사용할 때 Blizzard의 '큰 방어 기술 중앙 표시' 옵션을 비활성화하는 것을 잊지 마세요.",
@@ -132,7 +132,8 @@ L:SetStrings({
 	["Show defensive spell icons."] = "방어 주문 아이콘을 표시합니다.",
 	["Show Important"] = "중요 기술 표시",
 	["Show important spell icons."] = "중요 주문 아이콘을 표시합니다.",
-	["Shows active friendly cooldowns party/raid frames."] = "파티/공격대 프레임에 아군의 활성 재사용 대기시간을 표시합니다.",
+	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "파티/공격대 프레임에 CC, 방어기 및 중요 오라를 하나의 아이콘 세트로 표시합니다.",
+	["Useful for BGs so you can disable the CC module and just use this one."] = "전장에서 유용하며, CC 모듈을 비활성화하고 이것만 사용할 수 있습니다.",
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "치유사가 군중 제어당할 때를 위한 별도 영역입니다.",

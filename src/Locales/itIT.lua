@@ -106,7 +106,7 @@ L:SetStrings({
 
 	-- CC tab
 	["CC"] = "Controllo",
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Cambia il colore del bagliore/bordo in base al tipo di dissipazione (ad es. blu per magia, rosso per fisico).",
+	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "Cambia il colore del bagliore/bordo in base al tipo di dissipazione (ad es. blu per magia, rosso per fisico). Si applica solo alle icone CC.",
 	["Color by class"] = "Colora per classe",
 	["Color the glow/border by the enemy's class color."] = "Colora il bagliore/bordo con il colore della classe nemica.",
 	["Dispel colours"] = "Colori dissipazione",
@@ -122,8 +122,8 @@ L:SetStrings({
 	["Show a glow around the CC icons."] = "Mostra un bagliore attorno alle icone di controllo.",
 	["Shows CC icons on party/raid frames."] = "Mostra icone di controllo sui riquadri del gruppo/incursione.",
 
-	-- CDs tab
-	["CDs"] = "Ricariche",
+	-- Indicator tab
+	["Indicator"] = "Indicatore",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "Cambia il colore del bagliore/bordo. Gli incantesimi difensivi sono verdi e gli incantesimi importanti sono rossi.",
 	["Defensive"] = "Difensivo",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Non dimenticare di disabilitare l'opzione Blizzard 'centra grandi difese' quando usi questo.",
@@ -132,7 +132,8 @@ L:SetStrings({
 	["Show defensive spell icons."] = "Mostra le icone degli incantesimi difensivi.",
 	["Show Important"] = "Mostra importanti",
 	["Show important spell icons."] = "Mostra le icone degli incantesimi importanti.",
-	["Shows active friendly cooldowns party/raid frames."] = "Mostra le ricariche alleate attive sui riquadri del gruppo/incursione.",
+	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Mostra CC, difensivi e aure importanti come un insieme di icone sui riquadri del gruppo/incursione.",
+	["Useful for BGs so you can disable the CC module and just use this one."] = "Utile per i campi di battaglia: puoi disabilitare il modulo CC e usare solo questo.",
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "Una regione separata per quando il tuo guaritore è sotto controllo.",

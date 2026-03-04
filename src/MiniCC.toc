@@ -32,6 +32,7 @@ Utils\Array.lua
 Utils\SpellCache.lua
 Utils\FontUtil.lua
 Utils\ModuleUtil.lua
+Utils\SlotDistribution.lua
 Utils\WoWEx.lua
 
 Core\MiniFramework.lua

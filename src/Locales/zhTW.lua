@@ -109,7 +109,7 @@ L:SetStrings({
 
 	-- CC tab
 	["CC"] = "控制",
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "根據驅散類型更改發光/邊框的顏色（例如，魔法為藍色，物理為紅色）。",
+	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "根據驅散類型更改發光/邊框的顏色（例如，魔法為藍色，物理為紅色）。僅適用於CC圖示。",
 	["Color by class"] = "按職業著色",
 	["Color the glow/border by the enemy's class color."] = "用敵人的職業顏色為發光/邊框著色。",
 	["Dispel colours"] = "驅散顏色",
@@ -125,8 +125,8 @@ L:SetStrings({
 	["Show a glow around the CC icons."] = "在控制圖示周圍顯示發光。",
 	["Shows CC icons on party/raid frames."] = "在隊伍/團隊框架上顯示控制圖示。",
 
-	-- CDs tab
-	["CDs"] = "冷卻時間",
+	-- Indicator tab
+	["Indicator"] = "指示器",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "更改發光/邊框的顏色。防禦法術為綠色，重要法術為紅色。",
 	["Defensive"] = "防禦",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "使用此功能時不要忘記停用暴雪的「置中顯示大型防禦技能」選項。",
@@ -135,7 +135,8 @@ L:SetStrings({
 	["Show defensive spell icons."] = "顯示防禦法術圖示。",
 	["Show Important"] = "顯示重要技能",
 	["Show important spell icons."] = "顯示重要法術圖示。",
-	["Shows active friendly cooldowns party/raid frames."] = "在隊伍/團隊框架上顯示活躍的友方冷卻時間。",
+	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "在隊伍/團隊框架上將CC、防禦技能和重要光環顯示為一組圖示。",
+	["Useful for BGs so you can disable the CC module and just use this one."] = "在戰場中很有用，可以停用CC模組，只使用這個。",
 
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "當您的治療者被控制時的單獨區域。",
