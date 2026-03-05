@@ -484,7 +484,7 @@ function M:Build(panel, default, raid)
 
 	defaultDivider:SetPoint("LEFT", panel, "LEFT")
 	defaultDivider:SetPoint("RIGHT", panel, "RIGHT")
-	defaultDivider:SetPoint("TOP", enabledEverywhere, "BOTTOM", 0, -verticalSpacing * 2)
+	defaultDivider:SetPoint("TOP", enabledEverywhere, "BOTTOM", 0, -verticalSpacing)
 
 	local subPanelHeight = 320
 	local defaultPanel = BuildInstance(panel, default, false)
