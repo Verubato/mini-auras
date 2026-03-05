@@ -163,6 +163,8 @@ local dbDefaults = {
 
 			TTS = {
 				Volume = 100,
+				VoiceID = 0,
+				SpeechRate = 0,
 				Important = {
 					Enabled = false,
 				},
