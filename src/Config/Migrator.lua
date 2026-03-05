@@ -359,7 +359,13 @@ local dbDefaults = {
 				ShowCC = false,
 				Offset = { X = 0, Y = 0 },
 				Grow = "CENTER",
-				Icons = { Size = 30, Glow = true, ReverseCooldown = true, MaxIcons = 1, ColorByDispelType = false },
+				Icons = {
+					Size = 30,
+					Glow = true,
+					ReverseCooldown = true,
+					MaxIcons = 1,
+					ColorByDispelType = true,
+				},
 			},
 
 			---@type FriendlyIndicatorInstanceOptions
@@ -370,7 +376,13 @@ local dbDefaults = {
 				ShowCC = true,
 				Offset = { X = 0, Y = 0 },
 				Grow = "CENTER",
-				Icons = { Size = 25, Glow = true, ReverseCooldown = true, MaxIcons = 1, ColorByDispelType = false },
+				Icons = {
+					Size = 25,
+					Glow = true,
+					ReverseCooldown = true,
+					MaxIcons = 1,
+					ColorByDispelType = true,
+				},
 			},
 		},
 		---@class PrecogGuesserModuleOptions
@@ -1701,8 +1713,12 @@ function M:UpgradeToVersion25(vars)
 	-- Rename Raids→BattleGrounds and Dungeons→PvE in all module Enabled tables
 	if vars.Modules then
 		local modules = {
-			"CCModule", "PetCCModule", "HealerCCModule",
-			"AlertsModule", "NameplatesModule", "FriendlyIndicatorModule",
+			"CCModule",
+			"PetCCModule",
+			"HealerCCModule",
+			"AlertsModule",
+			"NameplatesModule",
+			"FriendlyIndicatorModule",
 		}
 		for _, moduleName in ipairs(modules) do
 			local m = vars.Modules[moduleName]
@@ -1746,8 +1762,12 @@ function M:UpgradeToVersion27(vars)
 	-- If Always was true, it acted as an override for all contexts, so enable all of them.
 	if vars.Modules then
 		local modules = {
-			"CCModule", "PetCCModule", "HealerCCModule",
-			"AlertsModule", "NameplatesModule", "FriendlyIndicatorModule",
+			"CCModule",
+			"PetCCModule",
+			"HealerCCModule",
+			"AlertsModule",
+			"NameplatesModule",
+			"FriendlyIndicatorModule",
 		}
 		for _, moduleName in ipairs(modules) do
 			local m = vars.Modules[moduleName]
@@ -1793,7 +1813,7 @@ function M:UpgradeToVersion29(vars)
 		local fi = vars.Modules.FriendlyIndicatorModule
 		fi.ShowCC = false
 		if fi.Icons then
-			fi.Icons.ColorByDispelType = false
+			fi.Icons.ColorByDispelType = true
 		end
 	end
 
