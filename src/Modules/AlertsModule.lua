@@ -98,7 +98,15 @@ local function AnnounceTTS(spellName, spellType)
 	end)
 end
 
-local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, includeBigDefensives)
+local function ProcessWatcherData(
+	watcher,
+	slot,
+	iconsEnabled,
+	iconsGlow,
+	iconsReverse,
+	colorByClass,
+	includeBigDefensives
+)
 	local unit = watcher:GetUnit()
 
 	-- when units go stealth, we can't get their aura data anymore
@@ -352,22 +360,24 @@ local function RefreshTestAlerts()
 		return
 	end
 
-	local testAlertSpellIds = {
-		190319, -- Combustion
-		121471, -- Shadow Blades
-		107574, -- Avatar
-		47788,  -- Guardian Spirit
-		45438,  -- Ice Block
+	local includeBigDefensives = db.Modules.AlertsModule.IncludeBigDefensives
+
+	local testAlertSpells = {
+		{ spellId = 190319, class = "MAGE" }, -- Combustion
+		{ spellId = 121471, class = "ROGUE" }, -- Shadow Blades
+		{ spellId = 107574, class = "WARRIOR" }, -- Avatar
+		{ spellId = 47788, class = "PRIEST", defensive = true }, -- Guardian Spirit
+		{ spellId = 45438, class = "MAGE", defensive = true }, -- Ice Block
 	}
 
-	-- Test class colors for demo purposes
-	local testClassColors = {
-		"MAGE",
-		"ROGUE",
-		"WARRIOR",
-		"PRIEST",
-		"MAGE",
-	}
+	local testAlertSpellIds = {}
+	local testClassColors = {}
+	for _, entry in ipairs(testAlertSpells) do
+		if not entry.defensive or includeBigDefensives then
+			testAlertSpellIds[#testAlertSpellIds + 1] = entry.spellId
+			testClassColors[#testClassColors + 1] = entry.class
+		end
+	end
 
 	local count = math.min(#testAlertSpellIds, container.Count or #testAlertSpellIds)
 	local now = GetTime()
