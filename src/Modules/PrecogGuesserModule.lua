@@ -9,6 +9,7 @@ local testModeActive = false
 local paused = false
 local enabled = false
 local maxAuras = 40
+local classHasPrecog
 ---@type table<number, any>
 local auraAlphas = {}
 ---@type Db
@@ -152,22 +153,20 @@ local function Resume()
 	paused = false
 end
 
-function M:Enable()
+local function Enable()
 	if eventFrame then
 		return
 	end
 
 	enabled = true
-	paused = false
 
 	eventFrame = CreateFrame("Frame")
 	eventFrame:SetScript("OnEvent", OnEvent)
 	eventFrame:RegisterUnitEvent("UNIT_AURA", "player")
 end
 
-function M:Disable()
+local function Disable()
 	enabled = false
-	paused = true
 
 	if eventFrame then
 		eventFrame:UnregisterAllEvents()
@@ -226,12 +225,12 @@ function M:Refresh()
 		return
 	end
 
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.PrecogGuesser)
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.PrecogGuesser) and classHasPrecog
 
 	if moduleEnabled and not enabled then
-		M:Enable()
+		Enable()
 	elseif not moduleEnabled and enabled then
-		M:Disable()
+		Disable()
 	end
 
 	if not moduleEnabled then
@@ -264,6 +263,14 @@ end
 
 function M:Init()
 	db = mini:GetSavedVars()
+
+	classHasPrecog = not ({
+		WARRIOR = true,
+		DEATHKNIGHT = true,
+		ROGUE = true,
+		DEMONHUNTER = true,
+		HUNTER = true,
+	})[UnitClassBase("player")]
 
 	testSpell = { SpellId = 377360 }
 
@@ -309,8 +316,6 @@ end
 
 ---@class PrecogGuesserModule
 ---@field Init fun(self: PrecogGuesserModule)
----@field Enable fun(self: PrecogGuesserModule)
----@field Disable fun(self: PrecogGuesserModule)
 ---@field Refresh fun(self: PrecogGuesserModule)
 ---@field StartTesting fun(self: PrecogGuesserModule)
 ---@field StopTesting fun(self: PrecogGuesserModule)
