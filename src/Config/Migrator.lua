@@ -523,8 +523,6 @@ function M:UpgradeToVersion4(vars)
 		return false
 	end
 
-	print("Simple", vars.SimpleMode, "Advanced", vars.AdvancedMode, "Icons", vars.Icons)
-
 	vars.Arena = {
 		SimpleMode = mini:CopyTable(vars.SimpleMode),
 		AdvancedMode = mini:CopyTable(vars.AdvancedMode),
@@ -1867,12 +1865,13 @@ end
 
 ---@return Db
 function M:GetAndUpgradeDb()
-	local vars = mini:GetSavedVars()
+	local isFirstTimeSetup = MiniCCDB == nil
 
-	if vars == nil then
-		-- fresh install
+	if isFirstTimeSetup then
 		return mini:GetSavedVars(dbDefaults)
 	end
+
+	local vars = mini:GetSavedVars()
 
 	if vars.Version and vars.Version > dbDefaults.Version then
 		-- they are running some version ahead of us, let's reset to factory
