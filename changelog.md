@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.27.0
+
+- Converted "CDs" module to "Indicator" and added "Show CC" option.
+- Fixed icons showing underneath Plexus frames.
+- Some minor config UI tweaks.
+- Fixed warrior avatar proc showing in the precog region.
+
 ## 2.26.0
 
 - Fixed error happening with ElvUI when portraits are disabled.
