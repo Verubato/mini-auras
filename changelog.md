@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.28.0
+
+Added option to scale icons with nameplates.
+
 ## 2.27.0
 
 - Converted "CDs" module to "Indicator" and added "Show CC" option.
