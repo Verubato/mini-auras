@@ -102,6 +102,9 @@ local function AnchorContainer(header, anchor, options)
 	local frame = header.Frame
 	frame:ClearAllPoints()
 	frame:SetAlpha(1)
+	-- plexus frames sit at a MEDIUM frame strata, so we need to be above it
+	-- that's the only reason we need this strata code, Blizzard and all other addons don't require this
+	frame:SetFrameStrata(frames:GetNextStrata(anchor:GetFrameStrata()))
 	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
 
 	local anchorPoint = "CENTER"

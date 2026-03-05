@@ -375,6 +375,17 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	return anchors
 end
 
+local strataOrder = { "BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG", "TOOLTIP" }
+local strataIndex = {}
+for i, v in ipairs(strataOrder) do strataIndex[v] = i end
+
+---Returns the frame strata one level above the given strata, clamped at TOOLTIP.
+---@param strata string
+---@return string
+function M:GetNextStrata(strata)
+	return strataOrder[math.min((strataIndex[strata] or 1) + 1, #strataOrder)]
+end
+
 function M:IsFriendlyCuf(frame)
 	if frame:IsForbidden() then
 		return false
