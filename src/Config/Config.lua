@@ -62,8 +62,7 @@ function M:Init()
 
 	scroll:EnableMouseWheel(true)
 	scroll:SetScript("OnMouseWheel", function(scrollSelf, delta)
-		local step = 20
-
+		local step = 25
 		local current = scrollSelf:GetVerticalScroll()
 		local max = scrollSelf:GetVerticalScrollRange()
 
