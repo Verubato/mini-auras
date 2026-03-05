@@ -495,7 +495,7 @@ function M:Divider(options)
 	end
 
 	local container = CreateFrame("Frame", nil, options.Parent)
-	container:SetHeight(20)
+	container:SetHeight(26)
 
 	local leftLine = container:CreateTexture(nil, "ARTWORK")
 	leftLine:SetColorTexture(1, 1, 1, 0.15)
@@ -505,7 +505,7 @@ function M:Divider(options)
 	rightLine:SetColorTexture(1, 1, 1, 0.15)
 	rightLine:SetHeight(1)
 
-	local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	label:SetText(options.Text or "")
 	label:SetPoint("CENTER", container, "CENTER")
 

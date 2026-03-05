@@ -18,7 +18,7 @@ L:SetStrings({
 	["Caster"] = "Lanceur de sorts",
 	["Healer"] = "Soigneur",
 	["Enable if you are:"] = "Activer si vous êtes:",
-	["Enable in:"] = "Activer dans:",
+	["Enable in"] = "Activer dans",
 	["Enabled"] = "Activé",
 	["Enable this module everywhere."] = "Activer ce module partout.",
 	["Enable this module in the open world."] = "Activer ce module en monde ouvert.",
@@ -75,7 +75,6 @@ L:SetStrings({
 	["Import Profile"] = "Importer le profil",
 	["Miscellaneous"] = "Divers",
 	["Reset"] = "Réinitialiser",
-	["Settings:"] = "Paramètres :",
 	["The others seem to use a non-trivial amount of CPU."] = "Les autres semblent utiliser une quantité non négligeable de CPU.",
 	["The Proc Glow uses the least CPU."] = "La lueur proc utilise le moins de CPU.",
 

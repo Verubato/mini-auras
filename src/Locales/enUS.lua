@@ -15,7 +15,7 @@ L:SetDefaultStrings({
 	["Caster"] = "Caster",
 	["Healer"] = "Healer",
 	["Enable if you are:"] = "Enable if you are:",
-	["Enable in:"] = "Enable in:",
+	["Enable in"] = "Enable in",
 	["Enabled"] = "Enabled",
 	["Enable this module everywhere."] = "Enable this module everywhere.",
 	["Enable this module in the open world."] = "Enable this module in the open world.",
@@ -75,7 +75,6 @@ L:SetDefaultStrings({
 	["Pixel Glow"] = "Pixel Glow",
 	["Proc Glow"] = "Proc Glow",
 	["Reset"] = "Reset",
-	["Settings:"] = "Settings:",
 	["The others seem to use a non-trivial amount of CPU."] = "The others seem to use a non-trivial amount of CPU.",
 	["The Proc Glow uses the least CPU."] = "The Proc Glow uses the least CPU.",
 

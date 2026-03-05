@@ -299,7 +299,7 @@ function M:Build(parent, options)
 
 	local enabledDivider = mini:Divider({
 		Parent = parent,
-		Text = L["Enable in:"],
+		Text = L["Enable in"],
 	})
 	enabledDivider:SetPoint("LEFT", parent, "LEFT")
 	enabledDivider:SetPoint("RIGHT", parent, "RIGHT")

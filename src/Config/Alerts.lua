@@ -29,7 +29,7 @@ function M:Build(panel, options)
 
 	local enabledDivider = mini:Divider({
 		Parent = panel,
-		Text = L["Enable in:"],
+		Text = L["Enable in"],
 	})
 	enabledDivider:SetPoint("LEFT", panel, "LEFT")
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
@@ -100,7 +100,7 @@ function M:Build(panel, options)
 
 	local settingsDivider = mini:Divider({
 		Parent = panel,
-		Text = L["Settings:"],
+		Text = L["Settings"],
 	})
 	settingsDivider:SetPoint("LEFT", panel, "LEFT")
 	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")

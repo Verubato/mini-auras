@@ -18,7 +18,7 @@ L:SetStrings({
 	["Caster"] = "Заклинатель",
 	["Healer"] = "Целитель",
 	["Enable if you are:"] = "Включить, если вы:",
-	["Enable in:"] = "Включить в:",
+	["Enable in"] = "Включить в",
 	["Enabled"] = "Включено",
 	["Enable this module everywhere."] = "Включить этот модуль везде.",
 	["Enable this module in the open world."] = "Включить этот модуль в открытом мире.",
@@ -75,7 +75,6 @@ L:SetStrings({
 	["Import Profile"] = "Импорт профиля",
 	["Miscellaneous"] = "Прочее",
 	["Reset"] = "Сброс",
-	["Settings:"] = "Настройки:",
 	["The others seem to use a non-trivial amount of CPU."] = "Остальные используют значительное количество ЦП.",
 	["The Proc Glow uses the least CPU."] = "Proc свечение использует меньше всего ЦП.",
 

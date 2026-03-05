@@ -18,7 +18,7 @@ L:SetStrings({
 	["Caster"] = "施法者",
 	["Healer"] = "治疗者",
 	["Enable if you are:"] = "如果您是以下角色则启用：",
-	["Enable in:"] = "启用于：",
+	["Enable in"] = "启用于",
 	["Enabled"] = "已启用",
 	["Enable this module everywhere."] = "在任何地方启用此模块。",
 	["Enable this module in the open world."] = "在开放世界中启用此模块。",
@@ -75,7 +75,6 @@ L:SetStrings({
 	["Import Profile"] = "导入配置",
 	["Miscellaneous"] = "杂项",
 	["Reset"] = "重置",
-	["Settings:"] = "设置：",
 	["The others seem to use a non-trivial amount of CPU."] = "其他的似乎使用了大量的CPU。",
 	["The Proc Glow uses the least CPU."] = "触发发光使用最少的CPU。",
 

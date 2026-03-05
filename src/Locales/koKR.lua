@@ -18,7 +18,7 @@ L:SetStrings({
 	["Caster"] = "시전자",
 	["Healer"] = "치유사",
 	["Enable if you are:"] = "다음인 경우 활성화:",
-	["Enable in:"] = "활성화 위치:",
+	["Enable in"] = "활성화 위치",
 	["Enabled"] = "활성화",
 	["Enable this module everywhere."] = "이 모듈을 어디서나 활성화합니다.",
 	["Enable this module in the open world."] = "야외에서 이 모듈을 활성화합니다.",
@@ -75,7 +75,6 @@ L:SetStrings({
 	["Import Profile"] = "프로필 가져오기",
 	["Miscellaneous"] = "기타",
 	["Reset"] = "재설정",
-	["Settings:"] = "설정:",
 	["The others seem to use a non-trivial amount of CPU."] = "다른 것들은 상당한 CPU를 사용하는 것 같습니다.",
 	["The Proc Glow uses the least CPU."] = "프록 발광은 CPU를 가장 적게 사용합니다.",
 

@@ -18,7 +18,7 @@ L:SetStrings({
 	["Caster"] = "Lanzador de hechizos",
 	["Healer"] = "Sanador",
 	["Enable if you are:"] = "Habilitar si eres:",
-	["Enable in:"] = "Habilitar en:",
+	["Enable in"] = "Habilitar en",
 	["Enabled"] = "Habilitado",
 	["Enable this module everywhere."] = "Habilitar este módulo en todas partes.",
 	["Enable this module in the open world."] = "Habilitar este módulo en el mundo abierto.",
@@ -75,7 +75,6 @@ L:SetStrings({
 	["Import Profile"] = "Importar perfil",
 	["Miscellaneous"] = "Varios",
 	["Reset"] = "Restablecer",
-	["Settings:"] = "Configuración:",
 	["The others seem to use a non-trivial amount of CPU."] = "Los otros parecen usar una cantidad considerable de CPU.",
 	["The Proc Glow uses the least CPU."] = "El brillo proc usa menos CPU.",
 

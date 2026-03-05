@@ -18,7 +18,7 @@ L:SetStrings({
 	["Caster"] = "Zauberwirker",
 	["Healer"] = "Heiler",
 	["Enable if you are:"] = "Aktivieren, wenn du bist:",
-	["Enable in:"] = "Aktivieren in:",
+	["Enable in"] = "Aktivieren in",
 	["Enabled"] = "Aktiviert",
 	["Enable this module everywhere."] = "Aktiviere dieses Modul überall.",
 	["Enable this module in the open world."] = "Aktiviere dieses Modul in der offenen Welt.",
@@ -75,7 +75,6 @@ L:SetStrings({
 	["Import Profile"] = "Profil importieren",
 	["Miscellaneous"] = "Sonstiges",
 	["Reset"] = "Zurücksetzen",
-	["Settings:"] = "Einstellungen:",
 	["The others seem to use a non-trivial amount of CPU."] = "Die anderen scheinen eine beträchtliche Menge CPU zu verwenden.",
 	["The Proc Glow uses the least CPU."] = "Das Proc-Leuchten verwendet am wenigsten CPU.",
 

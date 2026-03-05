@@ -408,7 +408,7 @@ function M:Build(panel, default, raid)
 
 	local enabledDivider = mini:Divider({
 		Parent = panel,
-		Text = L["Enable in:"],
+		Text = L["Enable in"],
 	})
 	enabledDivider:SetPoint("LEFT", panel, "LEFT")
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
