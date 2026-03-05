@@ -375,11 +375,12 @@ function M:Build(panel, default, raid)
 	defaultDivider:SetPoint("RIGHT", panel, "RIGHT")
 	defaultDivider:SetPoint("TOP", intro, "BOTTOM", 0, -verticalSpacing)
 
+	local subPanelHeight = 320
 	local defaultPanel = BuildInstance(panel, default)
 
 	defaultPanel:SetPoint("TOPLEFT", defaultDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 	defaultPanel:SetPoint("TOPRIGHT", defaultDivider, "BOTTOMRIGHT", 0, -verticalSpacing)
-	defaultPanel:SetHeight(370)
+	defaultPanel:SetHeight(subPanelHeight)
 
 	local raidDivider = mini:Divider({
 		Parent = panel,
@@ -394,7 +395,7 @@ function M:Build(panel, default, raid)
 
 	raidPanel:SetPoint("TOPLEFT", raidDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 	raidPanel:SetPoint("TOPRIGHT", raidDivider, "TOPRIGHT")
-	raidPanel:SetHeight(370)
+	raidPanel:SetHeight(subPanelHeight)
 
 	panel.OnMiniRefresh = function()
 		defaultPanel:MiniRefresh()

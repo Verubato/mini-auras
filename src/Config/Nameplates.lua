@@ -47,7 +47,7 @@ local function BuildSpellTypeSettings(parent, dividerText, options, unitOptions,
 	local function UpdateVisibility()
 		-- Only show the settings container if this section is enabled
 		if options.Enabled then
-			container:SetHeight(280)
+			container:SetHeight(260)
 			container:Show()
 		else
 			container:Hide()

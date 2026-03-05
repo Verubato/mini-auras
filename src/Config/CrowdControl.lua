@@ -486,12 +486,13 @@ function M:Build(panel, default, raid)
 	defaultDivider:SetPoint("RIGHT", panel, "RIGHT")
 	defaultDivider:SetPoint("TOP", enabledEverywhere, "BOTTOM", 0, -verticalSpacing * 2)
 
+	local subPanelHeight = 320
 	local defaultPanel = BuildInstance(panel, default, false)
 
 	defaultPanel:SetPoint("TOPLEFT", defaultDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 	defaultPanel:SetPoint("TOPRIGHT", defaultDivider, "BOTTOMRIGHT", 0, -verticalSpacing)
 	-- TODO: calculate real child height
-	defaultPanel:SetHeight(370)
+	defaultPanel:SetHeight(subPanelHeight)
 
 	local raidDivider = mini:Divider({
 		Parent = panel,
@@ -506,7 +507,7 @@ function M:Build(panel, default, raid)
 
 	raidPanel:SetPoint("TOPLEFT", raidDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 	raidPanel:SetPoint("TOPRIGHT", raidDivider, "TOPRIGHT")
-	raidPanel:SetHeight(370)
+	raidPanel:SetHeight(subPanelHeight)
 
 	local petDivider = mini:Divider({
 		Parent = panel,
@@ -521,7 +522,7 @@ function M:Build(panel, default, raid)
 
 	petPanel:SetPoint("TOPLEFT", petDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 	petPanel:SetPoint("TOPRIGHT", petDivider, "TOPRIGHT")
-	petPanel:SetHeight(370)
+	petPanel:SetHeight(subPanelHeight)
 
 	panel.OnMiniRefresh = function()
 		defaultPanel:MiniRefresh()
