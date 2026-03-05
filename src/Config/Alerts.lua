@@ -503,7 +503,8 @@ function M:Build(panel, options)
 		end,
 	})
 
-	speechRateSlider.Slider:SetPoint("TOPLEFT", volumeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	speechRateSlider.Slider:SetPoint("LEFT", volumeSlider.Slider, "RIGHT", horizontalSpacing, 0)
+	speechRateSlider.Slider:SetPoint("TOP", volumeSlider.Slider, "TOP", 0, 0)
 
 	local miscDivider = mini:Divider({
 		Parent = panel,
@@ -511,7 +512,7 @@ function M:Build(panel, options)
 	})
 	miscDivider:SetPoint("LEFT", panel, "LEFT")
 	miscDivider:SetPoint("RIGHT", panel, "RIGHT")
-	miscDivider:SetPoint("TOP", speechRateSlider.Slider, "BOTTOM", 0, -verticalSpacing * 2)
+	miscDivider:SetPoint("TOP", volumeSlider.Slider, "BOTTOM", 0, -verticalSpacing * 2)
 
 	local targetFocusOnlyChk = mini:Checkbox({
 		Parent = panel,
