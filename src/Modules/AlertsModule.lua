@@ -228,7 +228,7 @@ local function OnAuraDataChanged()
 
 	-- Process watchers for World/BG
 	if instanceType == "pvp" or not inInstance then
-		local targetFocusOnly = db.Modules.AlertsModule.TargetFocusOnly ~= false
+		local targetFocusOnly = db.Modules.AlertsModule.TargetFocusOnly
 		if targetFocusOnly then
 			-- Process target/focus watchers
 			for _, pair in ipairs({ { targetWatcher, "target" }, { focusWatcher, "focus" } }) do
@@ -585,7 +585,7 @@ local function EnableDisable()
 
 	-- Enable watchers (for World/BG)
 	if instanceType == "pvp" or not inInstance then
-		local targetFocusOnly = options.TargetFocusOnly ~= false
+		local targetFocusOnly = options.TargetFocusOnly
 		if targetFocusOnly then
 			EnableTargetFocusWatchers()
 			ClearNamePlateWatchers()

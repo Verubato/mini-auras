@@ -518,7 +518,7 @@ function M:Build(panel, options)
 		LabelText = L["Target/Focus Only"],
 		Tooltip = L["Only show alerts for your target and focus in battlegrounds and the open world."],
 		GetValue = function()
-			return options.TargetFocusOnly ~= false
+			return options.TargetFocusOnly
 		end,
 		SetValue = function(value)
 			options.TargetFocusOnly = value

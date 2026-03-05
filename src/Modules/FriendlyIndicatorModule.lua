@@ -81,9 +81,9 @@ local function UpdateWatcherAuras(entry)
 	local importantState = entry.Watcher:GetImportantState()
 
 	-- Count auras per enabled category
-	local ccCount = options.ShowCC ~= false and #ccState or 0
-	local defensiveCount = options.ShowDefensives ~= false and #defensiveState or 0
-	local importantCount = options.ShowImportant ~= false and #importantState or 0
+	local ccCount = options.ShowCC and #ccState or 0
+	local defensiveCount = options.ShowDefensives and #defensiveState or 0
+	local importantCount = options.ShowImportant and #importantState or 0
 
 	-- Distribute slots: CC first, then Defensive, then Important
 	local ccSlots, defensiveSlots, importantSlots =
@@ -311,9 +311,9 @@ local function RefreshTestIcons()
 		end
 	end
 
-	local ccCount = options.ShowCC ~= false and #testCcSpells or 0
-	local defensiveCount = options.ShowDefensives ~= false and #testDefensiveSpells or 0
-	local importantCount = options.ShowImportant ~= false and #testImportantSpells or 0
+	local ccCount = options.ShowCC and #testCcSpells or 0
+	local defensiveCount = options.ShowDefensives and #testDefensiveSpells or 0
+	local importantCount = options.ShowImportant and #testImportantSpells or 0
 
 	for _, entry in ipairs(orderedEntries) do
 		local container = entry.Container

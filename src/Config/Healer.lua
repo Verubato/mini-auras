@@ -126,7 +126,7 @@ function M:Build(panel, options)
 		LabelText = L["Show warning text"],
 		Tooltip = L["Show the 'Healer in CC!' text above the icons."],
 		GetValue = function()
-			return options.ShowWarningText ~= false
+			return options.ShowWarningText
 		end,
 		SetValue = function(value)
 			options.ShowWarningText = value

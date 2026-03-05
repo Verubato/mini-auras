@@ -55,7 +55,7 @@ local function UpdateAnchorSize()
 	local iconSize = tonumber(options.Icons.Size) or 32
 	local text = healerAnchor.HealerWarning
 	local stringWidth = text and text:GetStringWidth() or 0
-	local showText = options.ShowWarningText ~= false
+	local showText = options.ShowWarningText
 	local stringHeight = (showText and text and text:GetStringHeight()) or 0
 	local containerWidth = (iconsContainer and iconsContainer.Frame and iconsContainer.Frame:GetWidth()) or iconSize
 	local width = math.max(iconSize, stringWidth, containerWidth)
@@ -344,7 +344,7 @@ function M:Refresh()
 	iconsContainer:SetIconSize(tonumber(options.Icons.Size) or 32)
 	iconsContainer:SetSpacing(db.IconSpacing or 2)
 
-	if options.ShowWarningText ~= false then
+	if options.ShowWarningText then
 		healerAnchor.HealerWarning:Show()
 	else
 		healerAnchor.HealerWarning:Hide()
