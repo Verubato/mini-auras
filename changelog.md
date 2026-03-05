@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.28.1
+
+Fixed TTS voice and speech rate options being lost on reload.
+
 ## 2.28.0
 
 Added option to scale icons with nameplates.
