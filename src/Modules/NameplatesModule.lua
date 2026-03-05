@@ -125,6 +125,7 @@ local function SetupContainerFrame(container, nameplate, anchorPoint, relativeTo
 	frame:SetPoint(anchorPoint, nameplate, relativeToPoint, offsetX, offsetY)
 	frame:SetFrameLevel(nameplate:GetFrameLevel() + 10)
 	frame:EnableMouse(false)
+	frame:SetIgnoreParentScale(not nmModule.ScaleWithNameplate)
 	frame:Show()
 end
 
@@ -859,6 +860,7 @@ local function ShowTestIcons()
 end
 
 local function RefreshAnchorsAndSizes()
+	local ignoreParentScale = not nmModule.ScaleWithNameplate
 	for _, data in pairs(nameplateAnchors) do
 		if data.Nameplate and data.UnitToken then
 			local unitOptions = M:GetUnitOptions(data.UnitToken)
@@ -882,6 +884,7 @@ local function RefreshAnchorsAndSizes()
 						combinedContainer:SetSpacing(db.IconSpacing or 2)
 						combinedContainer:SetCount(combinedOptions.Icons.MaxIcons)
 						combinedContainer.Frame:SetFrameLevel(data.Nameplate:GetFrameLevel() + 10)
+						combinedContainer.Frame:SetIgnoreParentScale(ignoreParentScale)
 					end
 				end
 			else
@@ -906,6 +909,7 @@ local function RefreshAnchorsAndSizes()
 						ccContainer:SetCount(ccOptions.Icons.MaxIcons)
 						ccContainer.Frame:SetFrameLevel(data.Nameplate:GetFrameLevel() + 10)
 					end
+					ccContainer.Frame:SetIgnoreParentScale(ignoreParentScale)
 				end
 
 				local importantOptions = unitOptions.Important
@@ -928,6 +932,7 @@ local function RefreshAnchorsAndSizes()
 						importantContainer:SetCount(importantOptions.Icons.MaxIcons)
 						importantContainer.Frame:SetFrameLevel(data.Nameplate:GetFrameLevel() + 10)
 					end
+					importantContainer.Frame:SetIgnoreParentScale(ignoreParentScale)
 				end
 			end
 		end

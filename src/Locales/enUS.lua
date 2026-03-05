@@ -170,6 +170,8 @@ L:SetDefaultStrings({
 	["Ignore Friendly Pets"] = "Ignore Friendly Pets",
 	["Nameplates"] = "Nameplates",
 	["Nameplates_Short"] = "Nameplates",
+	["Scale with Nameplate"] = "Scale with Nameplate",
+	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings).",
 	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater).",
 	["Spell colours"] = "Spell colours",
 

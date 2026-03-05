@@ -171,6 +171,8 @@ L:SetStrings({
 	["Ignore Friendly Pets"] = "Игнорировать союзных питомцев",
 	["Nameplates"] = "Полоски здоровья",
 	["Nameplates_Short"] = "Полоски",
+	["Scale with Nameplate"] = "Scale with Nameplate",
+	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings).",
 	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Показывает контроль и важные заклинания на полосках здоровья (работает с аддонами полосок здоровья, например BBP, Platynator и Plater).",
 	["Spell colours"] = "Цвета заклинаний",
 

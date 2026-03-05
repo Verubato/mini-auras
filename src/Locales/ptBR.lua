@@ -171,6 +171,8 @@ L:SetStrings({
 	["Ignore Friendly Pets"] = "Ignorar mascotes aliadas",
 	["Nameplates"] = "Placas de nome",
 	["Nameplates_Short"] = "Placas",
+	["Scale with Nameplate"] = "Scale with Nameplate",
+	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings).",
 	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Mostra controle e feitiços importantes em placas de nome (funciona com addons de placas de nome como BBP, Platynator e Plater).",
 	["Spell colours"] = "Cores de feitiços",
 

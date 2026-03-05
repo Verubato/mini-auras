@@ -170,6 +170,8 @@ L:SetStrings({
 	["Ignore Friendly Pets"] = "Ignora famigli alleati",
 	["Nameplates"] = "Barre dei nomi",
 	["Nameplates_Short"] = "Barre",
+	["Scale with Nameplate"] = "Scale with Nameplate",
+	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings).",
 	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Mostra controllo e incantesimi importanti sulle barre dei nomi (funziona con addon di barre dei nomi come BBP, Platynator e Plater).",
 	["Spell colours"] = "Colori incantesimi",
 

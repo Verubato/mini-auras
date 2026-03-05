@@ -170,6 +170,8 @@ L:SetStrings({
 	["Ignore Friendly Pets"] = "아군 소환수 무시",
 	["Nameplates"] = "이름표",
 	["Nameplates_Short"] = "이름표",
+	["Scale with Nameplate"] = "Scale with Nameplate",
+	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings).",
 	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "이름표에 군중 제어와 중요한 주문을 표시합니다 (BBP, Platynator, Plater 등의 이름표 애드온과 함께 작동합니다).",
 	["Spell colours"] = "주문 색상",
 

@@ -5,7 +5,7 @@ local mini = addon.Core.Framework
 local L = addon.L
 ---@class Db
 local dbDefaults = {
-	Version = 30,
+	Version = 31,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -188,6 +188,7 @@ local dbDefaults = {
 				BattleGrounds = true,
 				PvE = true,
 			},
+			ScaleWithNameplate = true,
 
 			---@class NameplateFactionOptions
 			Friendly = {
@@ -197,7 +198,7 @@ local dbDefaults = {
 					Enabled = false,
 					Grow = "RIGHT",
 					Offset = {
-						X = 2,
+						X = 0,
 						Y = 0,
 					},
 
@@ -213,7 +214,7 @@ local dbDefaults = {
 					Enabled = false,
 					Grow = "LEFT",
 					Offset = {
-						X = -2,
+						X = 0,
 						Y = 0,
 					},
 
@@ -229,7 +230,7 @@ local dbDefaults = {
 					Enabled = false,
 					Grow = "RIGHT",
 					Offset = {
-						X = 2,
+						X = 0,
 						Y = 0,
 					},
 
@@ -248,7 +249,7 @@ local dbDefaults = {
 					Enabled = true,
 					Grow = "RIGHT",
 					Offset = {
-						X = 2,
+						X = 0,
 						Y = 0,
 					},
 
@@ -264,7 +265,7 @@ local dbDefaults = {
 					Enabled = true,
 					Grow = "LEFT",
 					Offset = {
-						X = -2,
+						X = 0,
 						Y = 0,
 					},
 
@@ -280,7 +281,7 @@ local dbDefaults = {
 					Enabled = false,
 					Grow = "RIGHT",
 					Offset = {
-						X = 2,
+						X = 0,
 						Y = 0,
 					},
 
@@ -1852,6 +1853,21 @@ function M:UpgradeToVersion30(vars)
 	end
 
 	vars.Version = 30
+	return true
+end
+
+function M:UpgradeToVersion31(vars)
+	if vars.Version ~= 30 then
+		return false
+	end
+
+	-- Add ScaleWithNameplate to NameplatesModule. Existing installs default to false
+	-- to preserve their current behaviour (icons were previously not scaling with the nameplate).
+	if vars.Modules and vars.Modules.NameplatesModule then
+		vars.Modules.NameplatesModule.ScaleWithNameplate = false
+	end
+
+	vars.Version = 31
 	return true
 end
 

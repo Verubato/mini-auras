@@ -174,6 +174,8 @@ L:SetStrings({
 	["Ignore Friendly Pets"] = "忽略友方寵物",
 	["Nameplates"] = "名條",
 	["Nameplates_Short"] = "名條",
+	["Scale with Nameplate"] = "Scale with Nameplate",
+	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings).",
 	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "在名條上顯示控制和重要法術（與名條插件一起工作，例如BBP、Platynator和Plater）。",
 	["Spell colours"] = "法術顏色",
 

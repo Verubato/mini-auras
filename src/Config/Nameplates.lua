@@ -386,6 +386,14 @@ function M:Build(parent, options)
 		friendlyPanels.Important.UpdateVisibility()
 	end
 
+	local settingsDivider = mini:Divider({
+		Parent = parent,
+		Text = L["Settings"],
+	})
+	settingsDivider:SetPoint("LEFT", parent, "LEFT")
+	settingsDivider:SetPoint("RIGHT", parent, "RIGHT")
+	settingsDivider:SetPoint("TOP", enabledEverywhere, "BOTTOM", 0, -verticalSpacing)
+
 	-- Enemy Ignore Pets checkbox
 	local enemyIgnorePetsChk = mini:Checkbox({
 		Parent = parent,
@@ -399,7 +407,7 @@ function M:Build(parent, options)
 			config:Apply()
 		end,
 	})
-	enemyIgnorePetsChk:SetPoint("TOPLEFT", enabledEverywhere, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	enemyIgnorePetsChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local friendlyIgnorePetsChk = mini:Checkbox({
 		Parent = parent,
@@ -415,6 +423,21 @@ function M:Build(parent, options)
 	})
 	friendlyIgnorePetsChk:SetPoint("TOP", enemyIgnorePetsChk, "TOP", 0, 0)
 	friendlyIgnorePetsChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+
+	local scaleWithNameplateChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Scale with Nameplate"],
+		Tooltip = L["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."],
+		GetValue = function()
+			return options.ScaleWithNameplate
+		end,
+		SetValue = function(value)
+			options.ScaleWithNameplate = value
+			config:Apply()
+		end,
+	})
+	scaleWithNameplateChk:SetPoint("TOP", enemyIgnorePetsChk, "TOP", 0, 0)
+	scaleWithNameplateChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
 
 	-- Enemy sections
 	enemyPanels.Combined = BuildSpellTypeSettings(
