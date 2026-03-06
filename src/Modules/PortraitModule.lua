@@ -268,7 +268,10 @@ local function AttachElvUIFrame(unit)
 	end
 
 	local container = CreateContainer(elvuiFrame, elvuiPortrait)
-	container.Frame:SetFrameLevel((elvuiPortrait:GetFrameLevel() or 0))
+	-- 3d models are a frame, where as 2d portraits are textures which don't have a frame level
+	-- so for 2d textures we get the frame level from the parent frame, for 3d portraits we get it directly from the portrait frame
+	local portraitLevel = elvuiPortrait.GetFrameLevel and elvuiPortrait:GetFrameLevel() or elvuiFrame:GetFrameLevel() or 0
+	container.Frame:SetFrameLevel(portraitLevel)
 
 	local originalSetSlot = container.SetSlot
 	container.SetSlot = function(self, slotIndex, options)
