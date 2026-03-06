@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.28.3
+
+- Fixed alerts not picking up defensives.
+- Credit to DK-姜世离 for discovering this one.
+
 ## 2.28.2
 
 Fixed ElvUI portrait frame level error with 2d portraits.
