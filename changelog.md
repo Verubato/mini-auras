@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.28.2
+
+Fixed ElvUI portrait frame level error with 2d portraits.
+
 ## 2.28.1
 
 Fixed TTS voice and speech rate options being lost on reload.
