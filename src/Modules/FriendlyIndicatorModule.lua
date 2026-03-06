@@ -151,7 +151,7 @@ end
 
 ---@param header IconSlotContainer
 ---@param anchor table
----@param options FriendlyIndicatorModuleOptions
+---@param options FriendlyIndicatorInstanceOptions
 local function AnchorContainer(header, anchor, options)
 	if not options then
 		return

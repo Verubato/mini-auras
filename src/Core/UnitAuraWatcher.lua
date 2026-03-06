@@ -217,6 +217,7 @@ function Watcher:RebuildStates()
 		return
 	end
 
+	---@type AuraTypeFilter?
 	local interestedIn = self.State.InterestedIn
 	local interestedInDefensives = not interestedIn or (interestedIn and interestedIn.Defensives)
 	local interestedInCC = not interestedIn or (interestedIn and interestedIn.CC)
@@ -390,7 +391,7 @@ InitColourCurve()
 ---@class AuraTypeFilter
 ---@field CC boolean?
 ---@field Important boolean?
----@field Defensive boolean?
+---@field Defensives boolean?
 
 ---@class AuraInfo
 ---@field IsImportant? boolean

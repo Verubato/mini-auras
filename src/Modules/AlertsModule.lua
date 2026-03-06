@@ -98,15 +98,7 @@ local function AnnounceTTS(spellName, spellType)
 	end)
 end
 
-local function ProcessWatcherData(
-	watcher,
-	slot,
-	iconsEnabled,
-	iconsGlow,
-	iconsReverse,
-	colorByClass,
-	includeDefensives
-)
+local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, includeDefensives)
 	local unit = watcher:GetUnit()
 
 	-- when units go stealth, we can't get their aura data anymore
@@ -431,9 +423,10 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
+	---@type AuraTypeFilter
 	local watcherFilter = {
 		CC = true,
-		Defensive = true,
+		Defensives = true,
 		Important = true,
 	}
 
@@ -507,10 +500,10 @@ local function RebuildNameplateWatchers()
 end
 
 local function InitTargetFocusWatchers()
-	-- Create watchers for target and focus
+	---@type AuraTypeFilter
 	local watcherFilter = {
 		CC = true,
-		Defensive = true,
+		Defensives = true,
 		Important = true,
 	}
 
@@ -525,7 +518,7 @@ local function InitArenaWatchers()
 	-- Always create watchers with all types
 	local watcherFilter = {
 		CC = true,
-		Defensive = true,
+		Defensives = true,
 		Important = true,
 	}
 
