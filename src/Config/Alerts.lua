@@ -126,11 +126,10 @@ function M:Build(panel, options)
 		LabelText = L["Include Defensives"],
 		Tooltip = L["Includes defensives in the alerts."],
 		GetValue = function()
-			-- TODO: refactor this to just "IncludeDefensives" as it also includes externals
-			return options.IncludeBigDefensives
+			return options.IncludeDefensives
 		end,
 		SetValue = function(value)
-			options.IncludeBigDefensives = value
+			options.IncludeDefensives = value
 			config:Apply()
 		end,
 	})

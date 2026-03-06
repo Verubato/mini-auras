@@ -105,7 +105,7 @@ local function ProcessWatcherData(
 	iconsGlow,
 	iconsReverse,
 	colorByClass,
-	includeBigDefensives
+	includeDefensives
 )
 	local unit = watcher:GetUnit()
 
@@ -166,7 +166,7 @@ local function ProcessWatcherData(
 
 	-- Process defensive spells
 	for _, data in ipairs(defensivesData) do
-		if includeBigDefensives and iconsEnabled and slot < container.Count then
+		if includeDefensives and iconsEnabled and slot < container.Count then
 			slot = slot + 1
 			slotOptionsScratch.Texture = data.SpellIcon
 			slotOptionsScratch.StartTime = data.StartTime
@@ -210,7 +210,7 @@ local function OnAuraDataChanged()
 	local iconsGlow = db.Modules.AlertsModule.Icons.Glow
 	local iconsReverse = db.Modules.AlertsModule.Icons.ReverseCooldown
 	local colorByClass = db.Modules.AlertsModule.Icons.ColorByClass
-	local includeBigDefensives = db.Modules.AlertsModule.IncludeBigDefensives
+	local includeDefensives = db.Modules.AlertsModule.IncludeDefensives
 	local slot = 0
 	local hasImportantAlerts
 	local hasDefensiveAlerts
@@ -229,7 +229,7 @@ local function OnAuraDataChanged()
 				iconsGlow,
 				iconsReverse,
 				colorByClass,
-				includeBigDefensives
+				includeDefensives
 			)
 		end
 	end
@@ -249,7 +249,7 @@ local function OnAuraDataChanged()
 						iconsGlow,
 						iconsReverse,
 						colorByClass,
-						includeBigDefensives
+						includeDefensives
 					)
 				end
 			end
@@ -263,7 +263,7 @@ local function OnAuraDataChanged()
 					iconsGlow,
 					iconsReverse,
 					colorByClass,
-					includeBigDefensives
+					includeDefensives
 				)
 			end
 		end
@@ -360,7 +360,7 @@ local function RefreshTestAlerts()
 		return
 	end
 
-	local includeBigDefensives = db.Modules.AlertsModule.IncludeBigDefensives
+	local includeDefensives = db.Modules.AlertsModule.IncludeDefensives
 
 	local testAlertSpells = {
 		{ spellId = 190319, class = "MAGE" }, -- Combustion
@@ -373,7 +373,7 @@ local function RefreshTestAlerts()
 	local testAlertSpellIds = {}
 	local testClassColors = {}
 	for _, entry in ipairs(testAlertSpells) do
-		if not entry.defensive or includeBigDefensives then
+		if not entry.defensive or includeDefensives then
 			testAlertSpellIds[#testAlertSpellIds + 1] = entry.spellId
 			testClassColors[#testClassColors + 1] = entry.class
 		end

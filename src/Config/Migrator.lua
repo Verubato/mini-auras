@@ -5,7 +5,7 @@ local mini = addon.Core.Framework
 local L = addon.L
 ---@class Db
 local dbDefaults = {
-	Version = 31,
+	Version = 32,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -137,7 +137,7 @@ local dbDefaults = {
 				PvE = false,
 			},
 
-			IncludeBigDefensives = true,
+			IncludeDefensives = true,
 			TargetFocusOnly = false,
 			Point = "CENTER",
 			RelativePoint = "TOP",
@@ -1350,7 +1350,7 @@ function M:UpgradeToVersion18(vars)
 					Always = true,
 				},
 
-				IncludeBigDefensives = true,
+				IncludeDefensives = true,
 				Point = "CENTER",
 				RelativePoint = "TOP",
 				RelativeTo = "UIParent",
@@ -1870,6 +1870,24 @@ function M:UpgradeToVersion31(vars)
 	end
 
 	vars.Version = 31
+	return true
+end
+
+function M:UpgradeToVersion32(vars)
+	if vars.Version ~= 31 then
+		return false
+	end
+
+	-- Rename IncludeBigDefensives to IncludeDefensives in AlertsModule
+	if vars.Modules and vars.Modules.AlertsModule then
+		local am = vars.Modules.AlertsModule
+		if am.IncludeBigDefensives ~= nil then
+			am.IncludeDefensives = am.IncludeBigDefensives
+			am.IncludeBigDefensives = nil
+		end
+	end
+
+	vars.Version = 32
 	return true
 end
 
