@@ -18,7 +18,7 @@ local dbDefaults = {
 				World = true,
 				Arena = true,
 				BattleGrounds = false,
-				PvE = false,
+				PvE = true,
 			},
 
 			---@class CrowdControlInstanceOptions
