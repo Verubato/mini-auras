@@ -1,6 +1,5 @@
 ---@type string, Addon
 local _, addon = ...
-local maxAuras = 40
 
 -- Dispel type color mapping
 local dispelColours = {
@@ -192,13 +191,9 @@ end
 ---@param filter string
 ---@param callback fun(auraData: table, start: number, duration: number, dispelColor: table)
 local function IterateAuras(unit, filter, callback)
-	for i = 1, maxAuras do
-		local auraData = C_UnitAuras.GetAuraDataByIndex(unit, i, filter)
-
-		if not auraData then
-			break
-		end
-
+	local auras = C_UnitAuras.GetUnitAuras(unit, filter)
+	
+	for _, auraData in ipairs(auras) do
 		local durationInfo = C_UnitAuras.GetAuraDuration(unit, auraData.auraInstanceID)
 		local start = durationInfo and durationInfo:GetStartTime()
 		local duration = durationInfo and durationInfo:GetTotalDuration()
