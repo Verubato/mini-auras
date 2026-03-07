@@ -1,5 +1,5 @@
 ---@type string, Addon
-local _, addon = ...
+local addonName, addon = ...
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", true)
 local Masque = LibStub and LibStub("Masque", true)
 -- Debounce table keyed by group object: one deferred ReSkin per group per frame
@@ -137,6 +137,47 @@ local function ApplyAlpha(target, alpha)
 	end
 end
 
+local function EnsureFlipbookGlow(parent)
+	if parent._FlipbookGlow then return parent._FlipbookGlow end
+	
+	local cg = CreateFrame("Frame", nil, parent)
+	cg:SetFrameLevel(parent:GetFrameLevel() + 5)
+	
+	cg.Texture = cg:CreateTexture(nil, "OVERLAY")
+	cg.Texture:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhite.tga")
+	cg.Texture:SetAllPoints()
+	cg.Texture:SetBlendMode("ADD")
+	
+	cg.Anim = cg:CreateAnimationGroup()
+	cg.Anim:SetLooping("REPEAT")
+	local flip = cg.Anim:CreateAnimation("FlipBook")
+	flip:SetChildKey("Texture")
+	flip:SetFlipBookRows(6)
+	flip:SetFlipBookColumns(5)
+	flip:SetFlipBookFrames(30)
+	flip:SetDuration(1.0)
+	cg.Anim:Play()
+	
+	-- Hook the parent's size. When Nameplates or Alerts change scale, the padding stays proportional!
+	parent:HookScript("OnSizeChanged", function(self, width)
+		if self._FlipbookGlow then
+			local padding = width / 3 
+			self._FlipbookGlow:SetPoint("TOPLEFT", self, "TOPLEFT", -padding, padding)
+			self._FlipbookGlow:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", padding, -padding)
+		end
+	end)
+	
+	-- Set initial sizing
+	local width = parent:GetWidth()
+	local initPadding = (width and width > 0) and (width / 3) or 9
+	cg:SetPoint("TOPLEFT", parent, "TOPLEFT", -initPadding, initPadding)
+	cg:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", initPadding, -initPadding)
+
+	cg:Hide()
+	parent._FlipbookGlow = cg
+	return cg
+end
+
 local function ClearLayerData(layer, glowFrame)
 	if not layer then
 		return
@@ -154,16 +195,15 @@ local function ClearLayerData(layer, glowFrame)
 			LCG.AutoCastGlow_Stop(glowFrame)
 		end
 	end
+	if glowFrame._FlipbookGlow then
+		glowFrame._FlipbookGlow:Hide()
+	end
 end
 
 ---Updates glow effects on a layer frame
 ---@param layerFrame table The layer frame to update glow on
 ---@param options IconLayerOptions Options containing glow settings
 local function UpdateGlow(layerFrame, options)
-	if not LCG then
-		return
-	end
-
 	local db = GetDb()
 	local glowType = (db and db.GlowType) or "Proc Glow"
 
@@ -172,6 +212,7 @@ local function UpdateGlow(layerFrame, options)
 		local hasProcGlow = layerFrame._ProcGlow ~= nil
 		local hasPixelGlow = layerFrame._PixelGlow ~= nil
 		local hasAutoCastGlow = layerFrame._AutoCastGlow ~= nil
+		local hasCustomGlow = layerFrame._FlipbookGlow ~= nil
 
 		-- Check if color has changed
 		local colorChanged = false
@@ -200,37 +241,27 @@ local function UpdateGlow(layerFrame, options)
 		local needsGlow = false
 		if glowType == "Proc Glow" and (not hasProcGlow or colorChanged) then
 			needsGlow = true
-			if hasPixelGlow and LCG.PixelGlow_Stop then
-				LCG.PixelGlow_Stop(layerFrame)
-			end
-			if hasAutoCastGlow and LCG.AutoCastGlow_Stop then
-				LCG.AutoCastGlow_Stop(layerFrame)
-			end
-			if hasProcGlow and colorChanged and LCG.ProcGlow_Stop then
-				LCG.ProcGlow_Stop(layerFrame)
-			end
+			if hasPixelGlow and LCG.PixelGlow_Stop then LCG.PixelGlow_Stop(layerFrame) end
+			if hasAutoCastGlow and LCG.AutoCastGlow_Stop then LCG.AutoCastGlow_Stop(layerFrame) end
+			if hasProcGlow and colorChanged and LCG.ProcGlow_Stop then LCG.ProcGlow_Stop(layerFrame) end
+			if hasCustomGlow then layerFrame._FlipbookGlow:Hide() end
 		elseif glowType == "Pixel Glow" and (not hasPixelGlow or colorChanged) then
 			needsGlow = true
-			if hasProcGlow and LCG.ProcGlow_Stop then
-				LCG.ProcGlow_Stop(layerFrame)
-			end
-			if hasAutoCastGlow and LCG.AutoCastGlow_Stop then
-				LCG.AutoCastGlow_Stop(layerFrame)
-			end
-			if hasPixelGlow and colorChanged and LCG.PixelGlow_Stop then
-				LCG.PixelGlow_Stop(layerFrame)
-			end
+			if hasProcGlow and LCG.ProcGlow_Stop then LCG.ProcGlow_Stop(layerFrame) end
+			if hasAutoCastGlow and LCG.AutoCastGlow_Stop then LCG.AutoCastGlow_Stop(layerFrame) end
+			if hasPixelGlow and colorChanged and LCG.PixelGlow_Stop then LCG.PixelGlow_Stop(layerFrame) end
+			if hasCustomGlow then layerFrame._FlipbookGlow:Hide() end
 		elseif glowType == "Autocast Shine" and (not hasAutoCastGlow or colorChanged) then
 			needsGlow = true
-			if hasProcGlow and LCG.ProcGlow_Stop then
-				LCG.ProcGlow_Stop(layerFrame)
-			end
-			if hasPixelGlow and LCG.PixelGlow_Stop then
-				LCG.PixelGlow_Stop(layerFrame)
-			end
-			if hasAutoCastGlow and colorChanged and LCG.AutoCastGlow_Stop then
-				LCG.AutoCastGlow_Stop(layerFrame)
-			end
+			if hasProcGlow and LCG.ProcGlow_Stop then LCG.ProcGlow_Stop(layerFrame) end
+			if hasPixelGlow and LCG.PixelGlow_Stop then LCG.PixelGlow_Stop(layerFrame) end
+			if hasAutoCastGlow and colorChanged and LCG.AutoCastGlow_Stop then LCG.AutoCastGlow_Stop(layerFrame) end
+			if hasCustomGlow then layerFrame._FlipbookGlow:Hide() end
+		elseif glowType == "Rotation Assist" and (not hasCustomGlow or colorChanged or not layerFrame._FlipbookGlow:IsShown()) then
+			needsGlow = true
+			if hasProcGlow and LCG.ProcGlow_Stop then LCG.ProcGlow_Stop(layerFrame) end
+			if hasPixelGlow and LCG.PixelGlow_Stop then LCG.PixelGlow_Stop(layerFrame) end
+			if hasAutoCastGlow and LCG.AutoCastGlow_Stop then LCG.AutoCastGlow_Stop(layerFrame) end
 		end
 
 		-- Only start glow if needed
@@ -241,12 +272,22 @@ local function UpdateGlow(layerFrame, options)
 				glowOptions.color = { options.Color.r, options.Color.g, options.Color.b, options.Color.a }
 			end
 
-			if glowType == "Pixel Glow" and LCG.PixelGlow_Start then
+			if glowType == "Pixel Glow" and LCG and LCG.PixelGlow_Start then
 				LCG.PixelGlow_Start(layerFrame, glowOptions.color)
-			elseif glowType == "Autocast Shine" and LCG.AutoCastGlow_Start then
+			elseif glowType == "Autocast Shine" and LCG and LCG.AutoCastGlow_Start then
 				LCG.AutoCastGlow_Start(layerFrame, glowOptions.color)
+			elseif glowType == "Rotation Assist" then
+				local cg = EnsureFlipbookGlow(layerFrame)
+				if options.Color then
+					cg.Texture:SetVertexColor(options.Color.r or 1, options.Color.g or 1, options.Color.b or 1, options.Color.a or 1)
+				else
+					cg.Texture:SetVertexColor(1, 1, 1, 1)
+				end
+				cg:Show()
 			else
-				LCG.ProcGlow_Start(layerFrame, glowOptions)
+				if LCG and LCG.ProcGlow_Start then
+					LCG.ProcGlow_Start(layerFrame, glowOptions)
+				end
 			end
 		end
 
@@ -267,11 +308,14 @@ local function UpdateGlow(layerFrame, options)
 			if autoCastGlow then
 				ApplyAlpha(autoCastGlow, alpha)
 			end
+		elseif glowType == "Rotation Assist" then
+			if layerFrame._FlipbookGlow then
+				ApplyAlpha(layerFrame._FlipbookGlow, alpha)
+			end
 		end
 
 		-- calling ProcGlow_Start on an existing glow will reset its size to match the current icon size
-		-- the other glow types already handle resizing properly on their own, so we only need to do this for Proc Glow
-		if glowType == "Proc Glow" and layerFrame._ProcGlow and LCG.ProcGlow_Start then
+		if glowType == "Proc Glow" and layerFrame._ProcGlow and LCG and LCG.ProcGlow_Start then
 			local glowOptions = { startAnim = false }
 			if options.Color then
 				glowOptions.color = { options.Color.r, options.Color.g, options.Color.b, options.Color.a }
@@ -280,14 +324,17 @@ local function UpdateGlow(layerFrame, options)
 		end
 	else
 		-- Stop all glow types only if any exist
-		if layerFrame._ProcGlow and LCG.ProcGlow_Stop then
+		if layerFrame._ProcGlow and LCG and LCG.ProcGlow_Stop then
 			LCG.ProcGlow_Stop(layerFrame)
 		end
-		if layerFrame._PixelGlow and LCG.PixelGlow_Stop then
+		if layerFrame._PixelGlow and LCG and LCG.PixelGlow_Stop then
 			LCG.PixelGlow_Stop(layerFrame)
 		end
-		if layerFrame._AutoCastGlow and LCG.AutoCastGlow_Stop then
+		if layerFrame._AutoCastGlow and LCG and LCG.AutoCastGlow_Stop then
 			LCG.AutoCastGlow_Stop(layerFrame)
+		end
+		if layerFrame._FlipbookGlow then
+			layerFrame._FlipbookGlow:Hide()
 		end
 		layerFrame._GlowColorKey = nil
 	end
