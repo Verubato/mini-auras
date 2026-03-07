@@ -166,7 +166,8 @@ function M:Build(panel, options)
 		end,
 	})
 
-	dispelColoursChk:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	dispelColoursChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	dispelColoursChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local soundChk = mini:Checkbox({
 		Parent = panel,
@@ -187,7 +188,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	soundChk:SetPoint("TOPLEFT", dispelColoursChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	soundChk:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local soundFileDropdown = mini:Dropdown({
 		Parent = panel,
@@ -212,11 +213,13 @@ function M:Build(panel, options)
 	soundFileDropdown:SetPoint("TOP", soundChk, "TOP", 0, -4)
 	soundFileDropdown:SetWidth(200)
 
+	local sliderWidth = (columnWidth * 2) - horizontalSpacing
+
 	local iconSize = mini:Slider({
 		Parent = panel,
 		Min = 10,
 		Max = 100,
-		Width = (columnWidth * columns) - horizontalSpacing,
+		Width = sliderWidth,
 		Step = 1,
 		LabelText = L["Icon Size"],
 		GetValue = function()
@@ -237,7 +240,7 @@ function M:Build(panel, options)
 		Parent = panel,
 		Min = 10,
 		Max = 100,
-		Width = (columnWidth * columns) - horizontalSpacing,
+		Width = sliderWidth,
 		Step = 1,
 		LabelText = L["Text Size"],
 		GetValue = function()
@@ -252,7 +255,8 @@ function M:Build(panel, options)
 		end,
 	})
 
-	fontSize.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	fontSize.Slider:SetPoint("LEFT", panel, "LEFT", columnWidth * 2 + 4, 0)
+	fontSize.Slider:SetPoint("TOP", iconSize.Slider, "TOP", 0, 0)
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()
