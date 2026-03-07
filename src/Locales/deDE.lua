@@ -184,7 +184,6 @@ L:SetStrings({
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Funktioniert nicht, wenn deine Teamkollegen Schmuckstücke im Startraum verwenden.",
 	[" - Doesn't work in the open world."] = " - Funktioniert nicht in der offenen Welt.",
-	[" - Racials like stoneform count as a trinket use."] = " - Volksfähigkeiten wie Steinform zählen als Schmuckstück-Benutzung.",
 	["Party Trinkets"] = "Gruppen-Schmuckstücke",
 	["Party Trinkets_Short"] = "Schmuck",
 

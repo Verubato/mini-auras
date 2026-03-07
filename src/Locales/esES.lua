@@ -184,7 +184,6 @@ L:SetStrings({
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - No funciona si tus compañeros de equipo usan abalorios en la sala de inicio.",
 	[" - Doesn't work in the open world."] = " - No funciona en el mundo abierto.",
-	[" - Racials like stoneform count as a trinket use."] = " - Los raciales como Forma de piedra cuentan como uso de abalorio.",
 	["Party Trinkets"] = "Abalorios del grupo",
 	["Party Trinkets_Short"] = "Abalorios",
 

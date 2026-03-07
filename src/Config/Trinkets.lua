@@ -121,7 +121,6 @@ function M:Build()
 			L["Limitations:"],
 			L[" - Doesn't work if your team mates trinket in the starting room."],
 			L[" - Doesn't work in the open world."],
-			L[" - Racials like stoneform count as a trinket use."],
 		},
 	})
 

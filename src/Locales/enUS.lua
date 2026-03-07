@@ -184,7 +184,6 @@ L:SetDefaultStrings({
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Doesn't work if your team mates trinket in the starting room.",
 	[" - Doesn't work in the open world."] = " - Doesn't work in the open world.",
-	[" - Racials like stoneform count as a trinket use."] = " - Racials like stoneform count as a trinket use.",
 	["Party Trinkets"] = "Party Trinkets",
 	["Party Trinkets_Short"] = "Trinkets",
 

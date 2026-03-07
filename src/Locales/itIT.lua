@@ -184,7 +184,6 @@ L:SetStrings({
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Non funziona se i tuoi compagni di squadra usano il monile nella stanza di partenza.",
 	[" - Doesn't work in the open world."] = " - Non funziona nel mondo aperto.",
-	[" - Racials like stoneform count as a trinket use."] = " - I razziali come Forma di Pietra contano come utilizzo di un monile.",
 	["Party Trinkets"] = "Monili del gruppo",
 	["Party Trinkets_Short"] = "Monile",
 

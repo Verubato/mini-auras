@@ -185,7 +185,6 @@ L:SetStrings({
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Не работает, если ваши союзники используют аксессуар в стартовой комнате.",
 	[" - Doesn't work in the open world."] = " - Не работает в открытом мире.",
-	[" - Racials like stoneform count as a trinket use."] = " - Расовые способности вроде «Каменной формы» считаются использованием аксессуара.",
 	["Party Trinkets"] = "Аксессуары группы",
 	["Party Trinkets_Short"] = "Амулеты",
 

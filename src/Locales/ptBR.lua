@@ -185,7 +185,6 @@ L:SetStrings({
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Não funciona se seus companheiros de equipe usarem berloque na sala inicial.",
 	[" - Doesn't work in the open world."] = " - Não funciona no mundo aberto.",
-	[" - Racials like stoneform count as a trinket use."] = " - Raciais como Forma de Pedra contam como uso de berloque.",
 	["Party Trinkets"] = "Berloques do grupo",
 	["Party Trinkets_Short"] = "Berloques",
 

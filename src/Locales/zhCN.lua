@@ -185,7 +185,6 @@ L:SetStrings({
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - 如果队友在起始房间使用饰品则无效。",
 	[" - Doesn't work in the open world."] = " - 在开放世界中无效。",
-	[" - Racials like stoneform count as a trinket use."] = " - 像石像形态这样的种族技能也会被算作一次饰品使用。",
 	["Party Trinkets"] = "队伍饰品",
 	["Party Trinkets_Short"] = "饰品",
 

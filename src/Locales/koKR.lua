@@ -184,7 +184,6 @@ L:SetStrings({
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - 팀원이 시작 방에서 장신구를 사용하면 작동하지 않습니다.",
 	[" - Doesn't work in the open world."] = " - 오픈 월드에서는 작동하지 않습니다.",
-	[" - Racials like stoneform count as a trinket use."] = " - 석화 같은 종족 기술도 장신구 사용으로 취급됩니다.",
 	["Party Trinkets"] = "파티 장신구",
 	["Party Trinkets_Short"] = "장신구",
 

@@ -18,7 +18,6 @@ local watchers = {}
 -- Cache of known-active trinket cooldowns, keyed by unit string.
 -- Only populated from non-secret data so math on Start/Duration is safe.
 ---@type table<string, { SpellId: number, Start: number, Duration: number }>
-local trinketCooldowns = {}
 ---@type Db
 local db
 ---@type TrinketsModuleOptions
@@ -64,23 +63,15 @@ local function IsTrackedUnit(unit)
 	return false
 end
 
-local function NormalizeCooldownValues(start, duration)
-	if not start or not duration then
-		return start, duration
-	end
-
-	return start / 1000, duration / 1000
-end
-
-local function SetIconState(container, spellId, start, duration)
+local function SetIconState(container, start, duration)
 	if not container then
 		return
 	end
 
-	local tex = GetSpellTexture(spellId) or defaultTrinketIcon or "Interface\\Icons\\INV_Misc_QuestionMark"
+	local tex = defaultTrinketIcon or "Interface\\Icons\\INV_Misc_QuestionMark"
 
 	-- Always show the icon, even when not on cooldown
-	if not spellId or not start or not duration then
+	if not start or not duration then
 		-- Show icon without cooldown
 		container:SetSlot(1, {
 			Texture = tex,
@@ -106,18 +97,17 @@ local function SetIconState(container, spellId, start, duration)
 	})
 end
 
-local function UpdateUnit(unit, spellId, start, duration)
+local function UpdateUnit(unit, start, duration)
 	for _, w in pairs(watchers) do
 		if w.Unit == unit then
-			SetIconState(w.Container, spellId, start, duration)
+			SetIconState(w.Container, start, duration)
 		end
 	end
 end
 
 local function ClearAll()
-	trinketCooldowns = {}
 	for _, w in pairs(watchers) do
-		SetIconState(w.Container, nil, nil, nil)
+		SetIconState(w.Container, nil, nil)
 	end
 end
 
@@ -184,72 +174,22 @@ local function RebuildAnchors()
 	end
 end
 
-local function RequestAll()
-	if not IsInArena() then
-		return
-	end
-
-	for _, unit in ipairs(units) do
-		if UnitExists(unit) then
-			C_PvP.RequestCrowdControlSpell(unit)
-		end
-	end
-end
-
-local function IsOnCooldown(unit)
-	local cd = trinketCooldowns[unit]
-	return cd ~= nil and GetTime() < cd.Start + cd.Duration
-end
-
-local function CacheCooldown(unit, spellId, start, duration)
-	trinketCooldowns[unit] = { SpellId = spellId, Start = start, Duration = duration }
-end
-
----@return number? spellId, number? start, number? duration
-local function GetTrinketData(unit)
-	local spellId, start, duration = C_PvP.GetArenaCrowdControlInfo(unit)
-
-	if not start or not duration then
-		return spellId, start, duration
-	end
-
-	if issecretvalue(start) or issecretvalue(duration) then
-		-- Secret values can't be used for math; substitute sentinel values so callers
-		-- know a cooldown is active without ever using the secret data directly.
-		return spellId, GetTime(), unitsUtil:IsHealer(unit) and 90 or 120
-	end
-
-	start, duration = NormalizeCooldownValues(start, duration)
-	return spellId, start, duration
-end
-
--- Refresh only one unit (using unitTarget from ARENA_COOLDOWNS_UPDATE)
 local function RefreshUnit(unit)
 	if not unit or unit == "" or not UnitExists(unit) then
 		return
 	end
 
-	if IsOnCooldown(unit) then
-		-- Blizzard sometimes fires this event multiple times, don't know why
-		-- this causes a problem where trinkets keep spam resetting their cooldown
-		-- so block updates until our local timer expires
+	local durationData = C_PvP.GetArenaCrowdControlDuration(unit)
+
+	if not durationData then
 		return
 	end
 
-	local spellId, start, duration = GetTrinketData(unit)
-
-	if not spellId or not start or not duration then
-		return
-	end
-
-	-- always cache using non-secret values
-	local localStart = GetTime()
-	local localDuration = unitsUtil:IsHealer(unit) and 90 or 120
-	CacheCooldown(unit, spellId, localStart, localDuration)
+	local start, duration = durationData:GetStartTime(), durationData:GetTotalDuration()
 
 	for _, watcher in pairs(watchers) do
 		if watcher.Container and watcher.Unit == unit then
-			SetIconState(watcher.Container, spellId, localStart, localDuration)
+			SetIconState(watcher.Container, start, duration)
 			break
 		end
 	end
@@ -261,25 +201,15 @@ local function RefreshAll()
 		local container = watcher.Container
 
 		if container and unit and UnitExists(unit) then
-			if IsOnCooldown(unit) then
-				-- Use cached data to avoid resetting the start time with a new GetTime() estimate
-				local cd = trinketCooldowns[unit]
-				SetIconState(container, cd.SpellId, cd.Start, cd.Duration)
-			else
-				local spellId, start, duration = GetTrinketData(unit)
-				if spellId and start and duration then
-					local localStart = GetTime()
-					local localDuration = unitsUtil:IsHealer(unit) and 90 or 120
-					CacheCooldown(unit, spellId, localStart, localDuration)
-					SetIconState(container, spellId, localStart, localDuration)
-				else
-					-- No active cooldown; show icon without timer
-					SetIconState(container, spellId, start, duration)
-				end
+			local durationData = C_PvP.GetArenaCrowdControlDuration(unit)
+			local start, duration
+			if durationData then
+				start, duration = durationData:GetStartTime(), durationData:GetTotalDuration()
 			end
+			SetIconState(container, start, duration)
 		elseif container then
 			-- Show default icon when unit doesn't exist
-			SetIconState(container, nil, nil, nil)
+			SetIconState(container, nil, nil)
 		end
 	end
 end
@@ -328,7 +258,6 @@ local function OnEvent(_, event, ...)
 
 		if matchState == Enum.PvPMatchState.Engaged then
 			-- in case they trinketed before the gates opened
-			RequestAll()
 			RefreshAll()
 			return
 		end
@@ -343,7 +272,7 @@ local function OnEvent(_, event, ...)
 
 	if event == "GROUP_ROSTER_UPDATE" then
 		-- for some  reason it doesn't work right away
-		C_Timer.After(1, function()
+		C_Timer.After(0, function()
 			M:Refresh()
 		end)
 		return
@@ -367,22 +296,18 @@ local function RefreshTestTrinkets()
 	-- Stagger durations so you can see different states
 	local stateByUnit = {
 		player = {
-			spellId = defaultSpellId,
 			start = now,
 			duration = 90,
 		},
 		party1 = {
-			spellId = defaultSpellId,
 			start = now,
 			duration = 120,
 		},
 		party2 = {
-			spellId = defaultSpellId,
 			start = now,
 			duration = 60,
 		},
 		party3 = {
-			spellId = defaultSpellId,
 			start = now,
 			duration = 45,
 		},
@@ -390,9 +315,9 @@ local function RefreshTestTrinkets()
 
 	for unit, state in pairs(stateByUnit or {}) do
 		if state then
-			UpdateUnit(unit, state.spellId, state.start, state.duration)
+			UpdateUnit(unit, state.start, state.duration)
 		else
-			UpdateUnit(unit, nil, nil, nil)
+			UpdateUnit(unit, nil, nil)
 		end
 	end
 end
@@ -482,7 +407,6 @@ function M:Refresh()
 	end
 
 	if moduleEnabled and IsInArena() then
-		RequestAll()
 		RefreshAll()
 	elseif moduleEnabled and testModeActive then
 		RefreshTestTrinkets()
