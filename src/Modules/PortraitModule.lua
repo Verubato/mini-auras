@@ -193,6 +193,26 @@ end
 
 ---@return table? unitFrame
 ---@return table? portrait
+local function GetTPerlFrame(unit)
+	if unit == "player" then
+		if TPerl_PlayerportraitFrame then
+			return TPerl_PlayerportraitFrame, TPerl_PlayerportraitFrame
+		end
+	elseif unit == "target" then
+		if TPerl_TargetportraitFrame then
+			return TPerl_TargetportraitFrame, TPerl_TargetportraitFrame
+		end
+	elseif unit == "focus" then
+		if TPerl_FocusportraitFrame then
+			return TPerl_FocusportraitFrame, TPerl_FocusportraitFrame
+		end
+	end
+
+	return nil
+end
+
+---@return table? unitFrame
+---@return table? portrait
 local function GetElvUIFrame(unit)
 	if unit == "player" then
 		if ElvUF_Player and ElvUF_Player.Portrait then
@@ -284,6 +304,30 @@ local function AttachElvUIFrame(unit)
 			slot.Container.Cooldown:SetAllPoints(elvuiPortrait)
 		end
 	end
+
+	watcher:RegisterCallback(function()
+		OnAuraInfo(watcher, container)
+	end)
+	containers[#containers + 1] = container
+end
+
+---@param unit string
+local function AttachTPerlFrame(unit)
+	local tperlFrame, tperlPortrait = GetTPerlFrame(unit)
+
+	if not tperlFrame or not tperlPortrait then
+		return
+	end
+
+	local watcher = watchers[unit]
+
+	if not watcher then
+		return
+	end
+
+	local container = CreateContainer(tperlFrame, tperlPortrait)
+	local portraitLevel = tperlPortrait.GetFrameLevel and tperlPortrait:GetFrameLevel() or tperlFrame:GetFrameLevel() or 0
+	container.Frame:SetFrameLevel(portraitLevel)
 
 	watcher:RegisterCallback(function()
 		OnAuraInfo(watcher, container)
@@ -390,6 +434,9 @@ function M:Init()
 		AttachElvUIFrame("player")
 		AttachElvUIFrame("target")
 		AttachElvUIFrame("focus")
+		AttachTPerlFrame("player")
+		AttachTPerlFrame("target")
+		AttachTPerlFrame("focus")
 	end)
 
 	M:Refresh()
