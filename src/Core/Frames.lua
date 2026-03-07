@@ -418,20 +418,9 @@ function M:ShowHideFrame(frame, anchor, isTest, excludePlayer)
 		end
 	end
 
-	local alpha = anchor:GetAlpha()
-	if mini:IsSecret(alpha) and anchor:IsVisible() then
-		if not isTest then
-			-- in real mode set the alpha to the secret value
-			frame:SetAlpha(alpha)
-		else
-			-- in test mode assume it's visible
-			frame:SetAlpha(1)
-		end
-		frame:Show()
-		return
-	end
-
 	if anchor:IsVisible() then
+		-- technically it can be visible but have an alpha of 0, or even worse a secret alpha of 0
+		-- but we're going to assume frame addons are sane and properly hide frames instead of doing that
 		frame:SetAlpha(1)
 		frame:Show()
 	else
