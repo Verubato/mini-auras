@@ -9,6 +9,7 @@ local units = addon.Utils.Units
 local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
+local rc = LibStub("LibRangeCheck-3.0")
 local paused = false
 local testModeActive = false
 local previousTestSoundEnabled = false
@@ -39,6 +40,16 @@ local testSpells = {}
 ---@class HealerCrowdControlModule : IModule
 local M = {}
 addon.Modules.HealerCrowdControlModule = M
+
+local function IsInBattleground()
+	local inInstance, instanceType = IsInInstance()
+	return inInstance and instanceType == "pvp"
+end
+
+local function IsInRange(unit)
+	local _, maxRange = rc:GetRange(unit)
+	return maxRange ~= nil and maxRange <= 40
+end
 
 local function PlaySound()
 	local soundFileName = db.Modules.HealerCCModule.Sound.File or "Sonar.ogg"
@@ -83,23 +94,26 @@ local function OnAuraStateUpdated()
 	---@type AuraInfo[]
 	local allCcAuraData = {}
 	local slot = 0
+	local checkRange = IsInBattleground()
 
 	for _, watcher in pairs(activePool) do
-		local ccState = watcher.Watcher:GetCcState()
-		array:Append(ccState, allCcAuraData)
+		if not checkRange or IsInRange(watcher.Unit) then
+			local ccState = watcher.Watcher:GetCcState()
+			array:Append(ccState, allCcAuraData)
 
-		for _, aura in ipairs(ccState) do
-			slot = slot + 1
-			iconsContainer:SetSlot(slot, {
-				Texture = aura.SpellIcon,
-				StartTime = aura.StartTime,
-				Duration = aura.TotalDuration,
-				Alpha = aura.IsCC,
-				ReverseCooldown = iconsReverse,
-				Glow = iconsGlow,
-				Color = colorByDispelType and aura.DispelColor,
-				FontScale = db.FontScale,
-			})
+			for _, aura in ipairs(ccState) do
+				slot = slot + 1
+				iconsContainer:SetSlot(slot, {
+					Texture = aura.SpellIcon,
+					StartTime = aura.StartTime,
+					Duration = aura.TotalDuration,
+					Alpha = aura.IsCC,
+					ReverseCooldown = iconsReverse,
+					Glow = iconsGlow,
+					Color = colorByDispelType and aura.DispelColor,
+					FontScale = db.FontScale,
+				})
+			end
 		end
 	end
 

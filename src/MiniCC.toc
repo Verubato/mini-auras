@@ -10,6 +10,7 @@
 
 Libs\LibStub\LibStub.lua
 Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.xml
+Libs\LibRangeCheck-3.0\LibRangeCheck-3.0.lua
 
 Namespace.lua
 
