@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.29.0
+
+- Improved trinket cooldown tracking. Credit to Mvq for notifying me of the new API.
+- Added new glow type.
+- Added TPerl portrait support.
+- Healer in CC for BGs now only checks for healers within 40 yards.
+
 ## 2.28.3
 
 - Fixed alerts not picking up defensives.
