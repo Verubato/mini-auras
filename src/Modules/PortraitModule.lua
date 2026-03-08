@@ -253,6 +253,11 @@ local function Attach(unit, events)
 	watchers[unit] = watcher
 
 	local container = CreateContainer(unitFrame, portrait)
+	
+	if unit == "pet" then
+    	container.Frame:SetFrameLevel(math.max(0, (PetFrame:GetFrameLevel() or 0) - 2))
+	end
+
 	local mask = GetPortraitMask(unitFrame) or CreatePortraitMask(portrait)
 
 	if mask then
