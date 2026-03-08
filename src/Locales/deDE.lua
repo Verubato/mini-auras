@@ -105,6 +105,8 @@ L:SetStrings({
 	["TTS Volume"] = "TTS-Lautstärke",
 	["Voice"] = "Stimme",
 	["You must choose a voice in your language for this to work."] = "Du musst eine Stimme in deiner Sprache auswählen, damit dies funktioniert.",
+	["These voices come from your installed system language packs and you can add more through your Windows settings."] = "Diese Stimmen stammen aus deinen installierten Systemsprachpaketen und du kannst weitere über die Windows-Einstellungen hinzufügen.",
+	["Note that some voices don't perform well, for example Microsoft Hazel is bad and Microsoft Zira is good."] = "Beachte, dass einige Stimmen nicht gut funktionieren, z. B. ist Microsoft Hazel schlecht und Microsoft Zira gut.",
 
 	-- CC tab
 	["CC"] = "Massenkontrolle",

@@ -337,6 +337,8 @@ function M:Build(panel, options)
 		Lines = {
 			L["Announce spell names using text-to-speech when they are cast."],
 			L["You must choose a voice in your language for this to work."],
+			L["These voices come from your installed system language packs and you can add more through your Windows settings."],
+			L["Note that some voices don't perform well, for example Microsoft Hazel is bad and Microsoft Zira is good."],
 		},
 	})
 

@@ -105,6 +105,8 @@ L:SetStrings({
 	["TTS Volume"] = "TTS音量",
 	["Voice"] = "语音",
 	["You must choose a voice in your language for this to work."] = "必须选择与你的语言匹配的语音才能使其生效。",
+	["These voices come from your installed system language packs and you can add more through your Windows settings."] = "这些语音来自已安装的系统语言包，你可以通过 Windows 设置添加更多语音。",
+	["Note that some voices don't perform well, for example Microsoft Hazel is bad and Microsoft Zira is good."] = "请注意，某些语音效果不佳，例如 Microsoft Hazel 较差，而 Microsoft Zira 较好。",
 
 	-- CC tab
 	["CC"] = "控制",

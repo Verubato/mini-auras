@@ -105,6 +105,8 @@ L:SetStrings({
 	["TTS Volume"] = "TTS 볼륨",
 	["Voice"] = "음성",
 	["You must choose a voice in your language for this to work."] = "이 기능이 작동하려면 해당 언어의 음성을 선택해야 합니다.",
+	["These voices come from your installed system language packs and you can add more through your Windows settings."] = "이 음성들은 설치된 시스템 언어 팩에서 제공되며 Windows 설정을 통해 추가할 수 있습니다.",
+	["Note that some voices don't perform well, for example Microsoft Hazel is bad and Microsoft Zira is good."] = "일부 음성은 성능이 좋지 않을 수 있습니다. 예를 들어 Microsoft Hazel은 좋지 않고 Microsoft Zira는 좋습니다.",
 
 	-- CC tab
 	["CC"] = "군중 제어",
