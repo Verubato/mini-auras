@@ -253,9 +253,9 @@ local function Attach(unit, events)
 	watchers[unit] = watcher
 
 	local container = CreateContainer(unitFrame, portrait)
-	
+
 	if unit == "pet" then
-    	container.Frame:SetFrameLevel(math.max(0, (PetFrame:GetFrameLevel() or 0) - 2))
+		container.Frame:SetFrameLevel(math.max(0, (PetFrame:GetFrameLevel() or 0) - 2))
 	end
 
 	local mask = GetPortraitMask(unitFrame) or CreatePortraitMask(portrait)
@@ -295,7 +295,9 @@ local function AttachElvUIFrame(unit)
 	local container = CreateContainer(elvuiFrame, elvuiPortrait)
 	-- 3d models are a frame, where as 2d portraits are textures which don't have a frame level
 	-- so for 2d textures we get the frame level from the parent frame, for 3d portraits we get it directly from the portrait frame
-	local portraitLevel = elvuiPortrait.GetFrameLevel and elvuiPortrait:GetFrameLevel() or elvuiFrame:GetFrameLevel() or 0
+	local portraitLevel = elvuiPortrait.GetFrameLevel and elvuiPortrait:GetFrameLevel()
+		or elvuiFrame:GetFrameLevel()
+		or 0
 	container.Frame:SetFrameLevel(portraitLevel)
 
 	local originalSetSlot = container.SetSlot
@@ -331,7 +333,9 @@ local function AttachTPerlFrame(unit)
 	end
 
 	local container = CreateContainer(tperlFrame, tperlPortrait)
-	local portraitLevel = tperlPortrait.GetFrameLevel and tperlPortrait:GetFrameLevel() or tperlFrame:GetFrameLevel() or 0
+	local portraitLevel = tperlPortrait.GetFrameLevel and tperlPortrait:GetFrameLevel()
+		or tperlFrame:GetFrameLevel()
+		or 0
 	container.Frame:SetFrameLevel(portraitLevel)
 
 	watcher:RegisterCallback(function()

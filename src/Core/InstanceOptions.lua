@@ -1,9 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Core.Framework
 local testIsRaid = nil
----@type Db
-local db
 
 ---@class InstanceOptions
 local M = {}
@@ -23,8 +20,4 @@ end
 ---@param isRaid boolean?
 function M:SetTestIsRaid(isRaid)
 	testIsRaid = isRaid
-end
-
-function M:Init()
-	db = mini:GetSavedVars()
 end

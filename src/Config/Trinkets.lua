@@ -119,6 +119,6 @@ function M:Build(panel)
 	})
 
 	lines:SetPoint("TOPLEFT", offsetXSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-	
+
 	M.Panel = panel
 end

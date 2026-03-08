@@ -1218,7 +1218,9 @@ function M:CreateTabs(options)
 			local function UpdateScrollBar()
 				local frameH = scrollFrame:GetHeight()
 				local childH = scrollChild:GetHeight()
-				if frameH == 0 then return end
+				if frameH == 0 then
+					return
+				end
 				local maxScroll = math.max(0, childH - frameH)
 				if maxScroll > 0.5 then
 					scrollBar:Show()
@@ -1248,14 +1250,18 @@ function M:CreateTabs(options)
 			-- GetTop/GetBottom require the frame to be on screen, so defer to OnShow.
 			-- UpdateScrollBar must be defined before this closure.
 			if not options.ScrollContentHeight then
-				scrollContainer:SetScript("OnShow", function(self)
-					self:SetScript("OnShow", nil)
+				scrollContainer:SetScript("OnShow", function(scrollSelf)
+					scrollSelf:SetScript("OnShow", nil)
 					local top = scrollChild:GetTop()
-					if not top then return end
+					if not top then
+						return
+					end
 					local minBottom = top
-					for _, child in ipairs({scrollChild:GetChildren()}) do
+					for _, child in ipairs({ scrollChild:GetChildren() }) do
 						local b = child:GetBottom()
-						if b and b < minBottom then minBottom = b end
+						if b and b < minBottom then
+							minBottom = b
+						end
 					end
 					local needed = math.ceil(top - minBottom) + 20
 					scrollChild:SetHeight(math.max(needed, scrollFrame:GetHeight()))
@@ -1274,7 +1280,8 @@ function M:CreateTabs(options)
 
 		container:Hide()
 
-		local tab = { Key = def.Key, Title = def.Title or def.Key, Button = btn, Content = content, Container = container }
+		local tab =
+			{ Key = def.Key, Title = def.Title or def.Key, Button = btn, Content = content, Container = container }
 		tabs[i] = tab
 		keyToIndex[def.Key] = i
 
@@ -1307,15 +1314,21 @@ function M:CreateTabs(options)
 
 	if options.TabFitToParent then
 		local function DistributeTabs(w)
-			if w == 0 or #tabs == 0 then return end
+			if w == 0 or #tabs == 0 then
+				return
+			end
 			local btnW = math.floor((w - tabSpacing * (#tabs - 1)) / #tabs)
 			for _, tab in ipairs(tabs) do
 				tab.Button:SetWidth(btnW)
 			end
 		end
-		strip:SetScript("OnSizeChanged", function(s, w) DistributeTabs(w) end)
+		strip:SetScript("OnSizeChanged", function(s, w)
+			DistributeTabs(w)
+		end)
 		local w = strip:GetWidth()
-		if w and w > 0 then DistributeTabs(w) end
+		if w and w > 0 then
+			DistributeTabs(w)
+		end
 	end
 
 	return controller
@@ -1492,18 +1505,6 @@ function M:ColumnWidth(columns, padding, spacingColumns)
 	return width
 end
 
-local function ApplyGradient(tex, orientation, r1, g1, b1, a1, r2, g2, b2, a2)
-	-- A white base texture is required before applying gradient vertex colours.
-	tex:SetColorTexture(1, 1, 1, 1)
-	if CreateColor then
-		tex:SetGradient(orientation, CreateColor(r1, g1, b1, a1), CreateColor(r2, g2, b2, a2))
-	elseif tex.SetGradientAlpha then
-		tex:SetGradientAlpha(orientation, r1, g1, b1, a1, r2, g2, b2, a2)
-	else
-		tex:SetColorTexture((r1 + r2) / 2, (g1 + g2) / 2, (b1 + b2) / 2, (a1 + a2) / 2)
-	end
-end
-
 ---Creates a floating, draggable standalone config window.
 ---@param options table { Name, Title, Subtitle, Width, Height, OnClose }
 ---@return table window
@@ -1520,8 +1521,12 @@ function M:CreateStandaloneWindow(options)
 	window:EnableMouse(true)
 	window:SetToplevel(true)
 	window:RegisterForDrag("LeftButton")
-	window:SetScript("OnDragStart", function(self) self:StartMoving() end)
-	window:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+	window:SetScript("OnDragStart", function(windowSelf)
+		windowSelf:StartMoving()
+	end)
+	window:SetScript("OnDragStop", function(windowSelf)
+		windowSelf:StopMovingOrSizing()
+	end)
 	window:Hide()
 
 	-- Border only — fill is provided by gradient textures below
@@ -1542,8 +1547,12 @@ function M:CreateStandaloneWindow(options)
 	titleBar:SetBackdropBorderColor(0, 0, 0, 0)
 	titleBar:EnableMouse(true)
 	titleBar:RegisterForDrag("LeftButton")
-	titleBar:SetScript("OnDragStart", function() window:StartMoving() end)
-	titleBar:SetScript("OnDragStop", function() window:StopMovingOrSizing() end)
+	titleBar:SetScript("OnDragStart", function()
+		window:StartMoving()
+	end)
+	titleBar:SetScript("OnDragStop", function()
+		window:StopMovingOrSizing()
+	end)
 
 	-- Accent line beneath title bar
 	local accentLine = window:CreateTexture(nil, "ARTWORK")
@@ -1583,11 +1592,17 @@ function M:CreateStandaloneWindow(options)
 	closeLabel:SetText("×")
 	closeLabel:SetTextColor(0.5, 0.5, 0.5, 1)
 
-	closeBtn:SetScript("OnEnter", function() closeLabel:SetTextColor(1, 0.3, 0.3, 1) end)
-	closeBtn:SetScript("OnLeave", function() closeLabel:SetTextColor(0.5, 0.5, 0.5, 1) end)
+	closeBtn:SetScript("OnEnter", function()
+		closeLabel:SetTextColor(1, 0.3, 0.3, 1)
+	end)
+	closeBtn:SetScript("OnLeave", function()
+		closeLabel:SetTextColor(0.5, 0.5, 0.5, 1)
+	end)
 	closeBtn:SetScript("OnClick", function()
 		window:Hide()
-		if options.OnClose then options.OnClose() end
+		if options.OnClose then
+			options.OnClose()
+		end
 	end)
 
 	-- Content area (inset from window edges for breathing room)
@@ -1600,13 +1615,15 @@ function M:CreateStandaloneWindow(options)
 	-- closed when Blizzard's settings panel closes)
 	window:SetPropagateKeyboardInput(true)
 	window:EnableKeyboard(true)
-	window:SetScript("OnKeyDown", function(self, key)
-		if key == "ESCAPE" and self:IsShown() then
-			self:Hide()
-			if options.OnClose then options.OnClose() end
-			self:SetPropagateKeyboardInput(false)
+	window:SetScript("OnKeyDown", function(windowSelf, key)
+		if key == "ESCAPE" and windowSelf:IsShown() then
+			windowSelf:Hide()
+			if options.OnClose then
+				options.OnClose()
+			end
+			windowSelf:SetPropagateKeyboardInput(false)
 		else
-			self:SetPropagateKeyboardInput(true)
+			windowSelf:SetPropagateKeyboardInput(true)
 		end
 	end)
 
@@ -1615,11 +1632,11 @@ function M:CreateStandaloneWindow(options)
 	window.Content = content
 	window.CloseButton = closeBtn
 
-	function window:Toggle()
-		if self:IsShown() then
-			self:Hide()
+	function window.Toggle(windowSelf)
+		if windowSelf:IsShown() then
+			windowSelf:Hide()
 		else
-			self:Show()
+			windowSelf:Show()
 		end
 	end
 

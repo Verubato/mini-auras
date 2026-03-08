@@ -4,7 +4,6 @@ local dbMigrator = addon.Config.Migrator
 local mini = addon.Core.Framework
 local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
-local horizontalSpacing = mini.HorizontalSpacing
 ---@type Db
 local db
 local M = addon.Config

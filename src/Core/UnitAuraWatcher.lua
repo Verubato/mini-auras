@@ -192,7 +192,7 @@ end
 ---@param callback fun(auraData: table, start: number, duration: number, dispelColor: table)
 local function IterateAuras(unit, filter, callback)
 	local auras = C_UnitAuras.GetUnitAuras(unit, filter)
-	
+
 	for _, auraData in ipairs(auras) do
 		local durationInfo = C_UnitAuras.GetAuraDuration(unit, auraData.auraInstanceID)
 		local start = durationInfo and durationInfo:GetStartTime()

@@ -6,7 +6,6 @@ local spellCache = addon.Utils.SpellCache
 local iconSlotContainer = addon.Core.IconSlotContainer
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
-local unitsUtil = addon.Utils.Units
 local eventFrame
 local enabled = false
 local paused = false

@@ -11,8 +11,6 @@ local M = {}
 config.OtherAddons = M
 
 function M:Build(panel)
-	local db = mini:GetSavedVars()
-	local horizontalSpacing = mini.HorizontalSpacing
 	local subtitle = mini:TextLine({
 		Parent = panel,
 		Text = L["Other mini addons to enhance your PvP experience:"],
@@ -89,5 +87,4 @@ function M:Build(panel)
 	})
 
 	url.EditBox:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 4, -verticalSpacing)
-
 end
