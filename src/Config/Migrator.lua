@@ -5,7 +5,7 @@ local mini = addon.Core.Framework
 local L = addon.L
 ---@class Db
 local dbDefaults = {
-	Version = 32,
+	Version = 33,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -1888,6 +1888,29 @@ function M:UpgradeToVersion32(vars)
 	end
 
 	vars.Version = 32
+	return true
+end
+
+function M:UpgradeToVersion33(vars)
+	if vars.Version ~= 32 then
+		return false
+	end
+
+	-- If the CC module is enabled in battlegrounds AND the friendly indicator is also
+	-- showing CC icons for groups greater than 5 members, disable the latter to avoid
+	-- both modules displaying CC icons simultaneously in battlegrounds.
+	-- this is to fix a migration where the CC module used to be enabled "always"
+	-- and Show CC is defaulted to true for the indicator module in bgs, which would result in both modules showing CC icons in bgs after the migration
+	local mods = vars.Modules
+	if mods and mods.CCModule and mods.FriendlyIndicatorModule then
+		local ccEnabledBGs = mods.CCModule.Enabled and mods.CCModule.Enabled.BattleGrounds
+		local fiRaidShowCC = mods.FriendlyIndicatorModule.Raid and mods.FriendlyIndicatorModule.Raid.ShowCC
+		if ccEnabledBGs and fiRaidShowCC then
+			mods.FriendlyIndicatorModule.Raid.ShowCC = false
+		end
+	end
+
+	vars.Version = 33
 	return true
 end
 
