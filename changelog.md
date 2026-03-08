@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.30.0
+
+- New user interface.
+- Pet portrait border fix.
+
 ## 2.29.0
 
 - Improved trinket cooldown tracking. Credit to Mvq for notifying me of the new API.
