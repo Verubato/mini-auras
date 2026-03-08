@@ -41,6 +41,8 @@ L:SetStrings({
 	["Reverse swipe"] = "Scorrimento inverso",
 	["Reverses the direction of the cooldown swipe animation."] = "Inverte la direzione dell'animazione di scorrimento della ricarica.",
 	["Settings"] = "Impostazioni",
+	["Open Settings"] = "Apri impostazioni",
+	["Use /minicc, /mcc, or /cc to open the MiniCC config window."] = "Usa /minicc, /mcc o /cc per aprire la finestra di configurazione di MiniCC.",
 	["Show a glow around the icons."] = "Mostra un bagliore attorno alle icone.",
 	["Test"] = "Test",
 	["Test these settings"] = "Testa queste impostazioni",
@@ -183,7 +185,7 @@ L:SetStrings({
 
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Non funziona se i tuoi compagni di squadra usano il monile nella stanza di partenza.",
-	[" - Doesn't work in the open world."] = " - Non funziona nel mondo aperto.",
+	[" - Only works inside arena."] = " - Funziona solo nell'arena.",
 	["Party Trinkets"] = "Monili del gruppo",
 	["Party Trinkets_Short"] = "Monile",
 

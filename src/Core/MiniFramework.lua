@@ -499,21 +499,22 @@ function M:Divider(options)
 
 	local leftLine = container:CreateTexture(nil, "ARTWORK")
 	leftLine:SetColorTexture(1, 1, 1, 0.15)
-	leftLine:SetHeight(1)
+	PixelUtil.SetHeight(leftLine, 1)
 
 	local rightLine = container:CreateTexture(nil, "ARTWORK")
 	rightLine:SetColorTexture(1, 1, 1, 0.15)
-	rightLine:SetHeight(1)
+	PixelUtil.SetHeight(rightLine, 1)
 
 	local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	label:SetText(options.Text or "")
+	label:SetTextColor(1, 1, 1, 1)
 	label:SetPoint("CENTER", container, "CENTER")
 
-	leftLine:SetPoint("LEFT", 0, 0)
-	leftLine:SetPoint("RIGHT", label, "LEFT", -8, 0)
+	PixelUtil.SetPoint(leftLine, "LEFT", container, "LEFT", 0, 0)
+	PixelUtil.SetPoint(leftLine, "RIGHT", label, "LEFT", -8, 0)
 
-	rightLine:SetPoint("LEFT", label, "RIGHT", 8, 0)
-	rightLine:SetPoint("RIGHT", 0, 0)
+	PixelUtil.SetPoint(rightLine, "LEFT", label, "RIGHT", 8, 0)
+	PixelUtil.SetPoint(rightLine, "RIGHT", container, "RIGHT", 0, 0)
 
 	return container
 end
@@ -775,7 +776,7 @@ function M:Slider(options)
 	local slider = CreateFrame("Slider", addonName .. "Slider" .. sliderId, options.Parent, "OptionsSliderTemplate")
 	sliderId = sliderId + 1
 
-	local label = slider:CreateFontString(nil, "ARTWORK", "GameFontWhite")
+	local label = slider:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	label:SetPoint("BOTTOMLEFT", slider, "TOPLEFT", 0, 8)
 	label:SetText(options.LabelText)
 
@@ -1044,10 +1045,22 @@ function M:CreateTabs(options)
 
 	local normalR, normalG, normalB = GameFontNormal:GetTextColor()
 
+	-- Single continuous underline split into left/right segments around the selected tab.
+	local lineLeft = strip:CreateTexture(nil, "OVERLAY")
+	lineLeft:SetHeight(1)
+	lineLeft:SetColorTexture(0.35, 0.35, 0.35, 0.8)
+
+	local lineRight = strip:CreateTexture(nil, "OVERLAY")
+	lineRight:SetHeight(1)
+	lineRight:SetColorTexture(0.35, 0.35, 0.35, 0.8)
+
+	-- Assigned after the tab loop; used to limit the line to the last tab's right edge.
+	local lastBtn
+
 	local function SetSelected(btn, isSelected)
 		if isSelected then
-			btn:SetBackdropColor(0.14, 0.14, 0.14, 0.92)
-			btn:SetBackdropBorderColor(0.9, 0.75, 0.2, 0.9)
+			btn:SetBackdropColor(0, 0, 0, 0)
+			btn:SetBackdropBorderColor(0.55, 0.55, 0.55, 1)
 
 			btn.Text:SetTextColor(1, 1, 1, 1)
 
@@ -1056,17 +1069,32 @@ function M:CreateTabs(options)
 			btn.BottomRightCorner:Hide()
 
 			btn.Highlight:SetAlpha(0)
+
+			-- Reanchor line segments to leave a gap at this button.
+			-- Both segments end at lastBtn's right edge, not the full strip width.
+			lineLeft:ClearAllPoints()
+			lineLeft:SetPoint("TOPLEFT", strip, "BOTTOMLEFT", 0, 2)
+			lineLeft:SetPoint("BOTTOMRIGHT", btn, "BOTTOMLEFT", 0, 0)
+
+			lineRight:ClearAllPoints()
+			if lastBtn and btn ~= lastBtn then
+				lineRight:SetPoint("TOPLEFT", btn, "BOTTOMRIGHT", 0, 1)
+				lineRight:SetPoint("BOTTOMRIGHT", lastBtn, "BOTTOMRIGHT", 0, 0)
+				lineRight:Show()
+			else
+				lineRight:Hide()
+			end
 		else
-			btn:SetBackdropColor(0.08, 0.08, 0.08, 0.65)
-			btn:SetBackdropBorderColor(0, 0, 0, 0.55)
+			btn:SetBackdropColor(0, 0, 0, 0)
+			btn:SetBackdropBorderColor(0.35, 0.35, 0.35, 0.8)
 
 			btn.Text:SetTextColor(normalR, normalG, normalB, 1)
 
-			btn.BottomEdge:Show()
-			btn.BottomLeftCorner:Show()
-			btn.BottomRightCorner:Show()
+			btn.BottomEdge:Hide()
+			btn.BottomLeftCorner:Hide()
+			btn.BottomRightCorner:Hide()
 
-			btn.Highlight:SetAlpha(0.08)
+			btn.Highlight:SetAlpha(0.06)
 		end
 	end
 
@@ -1096,8 +1124,12 @@ function M:CreateTabs(options)
 
 		for j = 1, #tabs do
 			local isSel = (j == i)
-			tabs[j].Content:SetShown(isSel)
+			tabs[j].Container:SetShown(isSel)
 			SetSelected(tabs[j].Button, isSel)
+		end
+
+		if tabs[i].Container.SetVerticalScroll then
+			tabs[i].Container:SetVerticalScroll(0)
 		end
 
 		if options.OnTabChanged then
@@ -1138,11 +1170,111 @@ function M:CreateTabs(options)
 
 		prev = btn
 
-		local content = CreateFrame("Frame", nil, body)
-		content:SetAllPoints(body)
-		content:Hide()
+		local container, content
 
-		local tab = { Key = def.Key, Title = def.Title or def.Key, Button = btn, Content = content }
+		if options.ScrollBody then
+			-- Wrapper so scrollFrame + scrollBar hide together when the tab is deselected
+			local scrollContainer = CreateFrame("Frame", nil, body)
+			scrollContainer:SetAllPoints(body)
+
+			local scrollFrame = CreateFrame("ScrollFrame", nil, scrollContainer)
+			scrollFrame:SetPoint("TOPLEFT", scrollContainer, "TOPLEFT", 0, 0)
+			scrollFrame:SetPoint("BOTTOMRIGHT", scrollContainer, "BOTTOMRIGHT", -14, 0)
+			scrollFrame:EnableMouseWheel(true)
+			scrollFrame:SetScript("OnMouseWheel", function(sf, delta)
+				local step = 40
+				local cur = sf:GetVerticalScroll()
+				local maxScroll = sf:GetVerticalScrollRange()
+				sf:SetVerticalScroll(delta > 0 and math.max(cur - step, 0) or math.min(cur + step, maxScroll))
+			end)
+
+			-- Scroll child must have an explicit size (no anchor points).
+			-- SetScrollChild takes ownership of the child's position, so anchors conflict.
+			local scrollChild = CreateFrame("Frame", nil, scrollFrame)
+			local childWidth = options.ScrollContentWidth or 800
+			scrollChild:SetSize(childWidth, options.ScrollContentHeight or 100)
+			scrollFrame:SetScrollChild(scrollChild)
+
+			-- Scrollbar, visible only when content overflows
+			local scrollBar = CreateFrame("Slider", nil, scrollContainer, "BackdropTemplate")
+			scrollBar:SetWidth(10)
+			scrollBar:SetPoint("TOPRIGHT", scrollContainer, "TOPRIGHT", 0, -2)
+			scrollBar:SetPoint("BOTTOMRIGHT", scrollContainer, "BOTTOMRIGHT", 0, 2)
+			scrollBar:SetMinMaxValues(0, 1)
+			scrollBar:SetValue(0)
+			scrollBar:SetObeyStepOnDrag(true)
+			scrollBar:SetBackdrop({
+				bgFile = "Interface\\Buttons\\WHITE8X8",
+				edgeFile = "Interface\\Buttons\\WHITE8X8",
+				edgeSize = 1,
+			})
+			scrollBar:SetBackdropColor(0.10, 0.10, 0.10, 0.6)
+			scrollBar:SetBackdropBorderColor(0.25, 0.25, 0.25, 0.8)
+
+			local thumb = scrollBar:CreateTexture(nil, "OVERLAY")
+			thumb:SetColorTexture(0.55, 0.55, 0.55, 0.85)
+			scrollBar:SetThumbTexture(thumb)
+
+			local function UpdateScrollBar()
+				local frameH = scrollFrame:GetHeight()
+				local childH = scrollChild:GetHeight()
+				if frameH == 0 then return end
+				local maxScroll = math.max(0, childH - frameH)
+				if maxScroll > 0.5 then
+					scrollBar:Show()
+					scrollBar:SetMinMaxValues(0, maxScroll)
+					scrollBar:SetValue(math.min(scrollFrame:GetVerticalScroll(), maxScroll))
+					thumb:SetHeight(math.max(20, scrollBar:GetHeight() * (frameH / childH)))
+				else
+					scrollBar:Hide()
+				end
+			end
+
+			scrollBar:SetScript("OnValueChanged", function(_, val)
+				scrollFrame:SetVerticalScroll(val)
+			end)
+
+			scrollFrame:SetScript("OnScrollRangeChanged", function()
+				UpdateScrollBar()
+			end)
+
+			scrollFrame:HookScript("OnMouseWheel", function()
+				scrollBar:SetValue(scrollFrame:GetVerticalScroll())
+			end)
+
+			scrollBar:Hide()
+
+			-- Auto-size scroll child to actual content height on first show.
+			-- GetTop/GetBottom require the frame to be on screen, so defer to OnShow.
+			-- UpdateScrollBar must be defined before this closure.
+			if not options.ScrollContentHeight then
+				scrollContainer:SetScript("OnShow", function(self)
+					self:SetScript("OnShow", nil)
+					local top = scrollChild:GetTop()
+					if not top then return end
+					local minBottom = top
+					for _, child in ipairs({scrollChild:GetChildren()}) do
+						local b = child:GetBottom()
+						if b and b < minBottom then minBottom = b end
+					end
+					local needed = math.ceil(top - minBottom) + 20
+					scrollChild:SetHeight(math.max(needed, scrollFrame:GetHeight()))
+					UpdateScrollBar()
+				end)
+			end
+
+			container = scrollContainer
+			content = scrollChild
+		else
+			local contentFrame = CreateFrame("Frame", nil, body)
+			contentFrame:SetAllPoints(body)
+			container = contentFrame
+			content = contentFrame
+		end
+
+		container:Hide()
+
+		local tab = { Key = def.Key, Title = def.Title or def.Key, Button = btn, Content = content, Container = container }
 		tabs[i] = tab
 		keyToIndex[def.Key] = i
 
@@ -1155,6 +1287,8 @@ function M:CreateTabs(options)
 		end
 	end
 
+	lastBtn = tabs[#tabs] and tabs[#tabs].Button
+
 	local initialIndex = 1
 	if options.InitialKey and keyToIndex[options.InitialKey] then
 		initialIndex = keyToIndex[options.InitialKey]
@@ -1162,13 +1296,26 @@ function M:CreateTabs(options)
 
 	for i = 1, #tabs do
 		local isSel = (i == initialIndex)
-		tabs[i].Content:SetShown(isSel)
+		tabs[i].Container:SetShown(isSel)
 		SetSelected(tabs[i].Button, isSel)
 	end
 	selectedKey = tabs[initialIndex].Key
 
 	if options.OnTabChanged then
 		options.OnTabChanged(selectedKey, initialIndex)
+	end
+
+	if options.TabFitToParent then
+		local function DistributeTabs(w)
+			if w == 0 or #tabs == 0 then return end
+			local btnW = math.floor((w - tabSpacing * (#tabs - 1)) / #tabs)
+			for _, tab in ipairs(tabs) do
+				tab.Button:SetWidth(btnW)
+			end
+		end
+		strip:SetScript("OnSizeChanged", function(s, w) DistributeTabs(w) end)
+		local w = strip:GetWidth()
+		if w and w > 0 then DistributeTabs(w) end
 	end
 
 	return controller
@@ -1337,12 +1484,146 @@ function M:CleanTable(target, template, cleanValues, recurse)
 end
 
 function M:ColumnWidth(columns, padding, spacingColumns)
-	local settingsWidth, _ = M:SettingsSize()
+	local settingsWidth = M.ContentWidth or (select(1, M:SettingsSize()))
 	-- add padding to the left and right
 	local usableWidth = settingsWidth - (padding * 2)
 	local width = math.floor(usableWidth / (columns + spacingColumns))
 
 	return width
+end
+
+local function ApplyGradient(tex, orientation, r1, g1, b1, a1, r2, g2, b2, a2)
+	-- A white base texture is required before applying gradient vertex colours.
+	tex:SetColorTexture(1, 1, 1, 1)
+	if CreateColor then
+		tex:SetGradient(orientation, CreateColor(r1, g1, b1, a1), CreateColor(r2, g2, b2, a2))
+	elseif tex.SetGradientAlpha then
+		tex:SetGradientAlpha(orientation, r1, g1, b1, a1, r2, g2, b2, a2)
+	else
+		tex:SetColorTexture((r1 + r2) / 2, (g1 + g2) / 2, (b1 + b2) / 2, (a1 + a2) / 2)
+	end
+end
+
+---Creates a floating, draggable standalone config window.
+---@param options table { Name, Title, Subtitle, Width, Height, OnClose }
+---@return table window
+function M:CreateStandaloneWindow(options)
+	local width = options.Width or 860
+	local height = options.Height or 680
+	local frameName = options.Name or (addonName .. "ConfigFrame")
+
+	local window = CreateFrame("Frame", frameName, UIParent, "BackdropTemplate")
+	window:SetSize(width, height)
+	window:SetPoint("CENTER", UIParent, "CENTER")
+	window:SetFrameStrata("HIGH")
+	window:SetMovable(true)
+	window:EnableMouse(true)
+	window:SetToplevel(true)
+	window:RegisterForDrag("LeftButton")
+	window:SetScript("OnDragStart", function(self) self:StartMoving() end)
+	window:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+	window:Hide()
+
+	-- Border only — fill is provided by gradient textures below
+	window:SetBackdrop({
+		bgFile = "Interface\\Buttons\\WHITE8X8",
+		edgeFile = "Interface\\Buttons\\WHITE8X8",
+		edgeSize = 1,
+	})
+	window:SetBackdropColor(0, 0, 0, 0.75)
+	window:SetBackdropBorderColor(0.20, 0.20, 0.24, 1)
+
+	-- Title bar (transparent bg; gradient above provides the fill)
+	local titleBar = CreateFrame("Frame", nil, window, "BackdropTemplate")
+	titleBar:SetPoint("TOPLEFT", window, "TOPLEFT", 1, -1)
+	titleBar:SetPoint("TOPRIGHT", window, "TOPRIGHT", -1, -1)
+	titleBar:SetHeight(40)
+	titleBar:SetBackdropColor(0, 0, 0, 0)
+	titleBar:SetBackdropBorderColor(0, 0, 0, 0)
+	titleBar:EnableMouse(true)
+	titleBar:RegisterForDrag("LeftButton")
+	titleBar:SetScript("OnDragStart", function() window:StartMoving() end)
+	titleBar:SetScript("OnDragStop", function() window:StopMovingOrSizing() end)
+
+	-- Accent line beneath title bar
+	local accentLine = window:CreateTexture(nil, "ARTWORK")
+	accentLine:SetHeight(1)
+	accentLine:SetPoint("TOPLEFT", titleBar, "BOTTOMLEFT", 0, 0)
+	accentLine:SetPoint("TOPRIGHT", titleBar, "BOTTOMRIGHT", 0, 0)
+	accentLine:SetColorTexture(1, 1, 1, 0.15)
+
+	-- Title text (warm white)
+	local titleText = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	titleText:SetPoint("LEFT", titleBar, "LEFT", 12, 0)
+	titleText:SetText(options.Title or "")
+	titleText:SetTextColor(0.9, 0.2, 0.2, 1)
+
+	-- Optional subtitle / version beside title
+	if options.Subtitle then
+		local subtitleText = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+		subtitleText:SetPoint("LEFT", titleText, "RIGHT", 8, -1)
+		subtitleText:SetText(options.Subtitle)
+		subtitleText:SetTextColor(0.80, 0.80, 0.80, 1)
+		window.SubtitleText = subtitleText
+	end
+
+	-- Close (×) button
+	local closeBtn = CreateFrame("Button", nil, titleBar)
+	closeBtn:SetSize(28, 28)
+	closeBtn:SetPoint("RIGHT", titleBar, "RIGHT", -6, 0)
+
+	local closeHighlight = closeBtn:CreateTexture(nil, "HIGHLIGHT")
+	closeHighlight:SetAllPoints(closeBtn)
+	closeHighlight:SetColorTexture(1, 1, 1, 0.07)
+
+	local closeLabel = closeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	closeLabel:SetAllPoints(closeBtn)
+	closeLabel:SetJustifyH("CENTER")
+	closeLabel:SetJustifyV("MIDDLE")
+	closeLabel:SetText("×")
+	closeLabel:SetTextColor(0.5, 0.5, 0.5, 1)
+
+	closeBtn:SetScript("OnEnter", function() closeLabel:SetTextColor(1, 0.3, 0.3, 1) end)
+	closeBtn:SetScript("OnLeave", function() closeLabel:SetTextColor(0.5, 0.5, 0.5, 1) end)
+	closeBtn:SetScript("OnClick", function()
+		window:Hide()
+		if options.OnClose then options.OnClose() end
+	end)
+
+	-- Content area (inset from window edges for breathing room)
+	local pad = options.ContentPadding or 12
+	local content = CreateFrame("Frame", nil, window)
+	content:SetPoint("TOPLEFT", accentLine, "BOTTOMLEFT", pad, -(pad + 1))
+	content:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -(pad + 1), pad + 1)
+
+	-- ESC key closes this window (via OnKeyDown, not UISpecialFrames — avoids being
+	-- closed when Blizzard's settings panel closes)
+	window:SetPropagateKeyboardInput(true)
+	window:EnableKeyboard(true)
+	window:SetScript("OnKeyDown", function(self, key)
+		if key == "ESCAPE" and self:IsShown() then
+			self:Hide()
+			if options.OnClose then options.OnClose() end
+			self:SetPropagateKeyboardInput(false)
+		else
+			self:SetPropagateKeyboardInput(true)
+		end
+	end)
+
+	window.TitleBar = titleBar
+	window.TitleText = titleText
+	window.Content = content
+	window.CloseButton = closeBtn
+
+	function window:Toggle()
+		if self:IsShown() then
+			self:Hide()
+		else
+			self:Show()
+		end
+	end
+
+	return window
 end
 
 local function OnAddonLoaded(_, _, name)
@@ -1459,6 +1740,10 @@ loader:SetScript("OnEvent", OnAddonLoaded)
 ---@field StripHeight? number
 ---@field ContentInsets? table
 ---@field OnTabChanged? fun(key:string, index:number)
+---@field ScrollBody? boolean  Wrap each tab content in a scroll frame
+---@field ScrollContentHeight? number  Height of the scroll child (default 1400)
+---@field ScrollContentWidth? number   Explicit width of the scroll child (default 800)
+---@field TabFitToParent? boolean  Distribute tab buttons evenly across the strip width
 
 ---@class TabReturn
 ---@field Select fun(keyOrIndex: string|number)

@@ -11,7 +11,7 @@ local growOptions = {
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local columns = 4
-local columnWidth = mini:ColumnWidth(columns, 0, 0)
+local columnWidth
 local config = addon.Config
 
 ---@class NameplatesConfig
@@ -286,6 +286,7 @@ end
 ---@param parent table
 ---@param options NameplateModuleOptions
 function M:Build(parent, options)
+	columnWidth = mini:ColumnWidth(columns, 0, 0)
 	local db = mini:GetSavedVars()
 
 	local lines = mini:TextBlock({

@@ -5,7 +5,7 @@ local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local columns = 4
-local columnWidth = mini:ColumnWidth(columns, 0, 0)
+local columnWidth
 local config = addon.Config
 
 ---@class AlertsConfig
@@ -16,6 +16,7 @@ config.Alerts = M
 ---@param panel table
 ---@param options AlertsModuleOptions
 function M:Build(panel, options)
+	columnWidth = mini:ColumnWidth(columns, 0, 0)
 	local db = mini:GetSavedVars()
 
 	local lines = mini:TextBlock({
@@ -297,7 +298,8 @@ function M:Build(panel, options)
 		end,
 	})
 
-	soundDefensiveChk:SetPoint("TOPLEFT", soundImportantChk, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	soundDefensiveChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	soundDefensiveChk:SetPoint("TOP", soundImportantChk, "TOP", 0, 0)
 
 	local soundDefensiveDropdown = mini:Dropdown({
 		Parent = panel,
@@ -317,7 +319,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	soundDefensiveDropdown:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	soundDefensiveDropdown:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
 	soundDefensiveDropdown:SetPoint("TOP", soundDefensiveChk, "TOP", 0, -4)
 	soundDefensiveDropdown:SetWidth(200)
 
@@ -328,7 +330,7 @@ function M:Build(panel, options)
 	})
 	ttsDivider:SetPoint("LEFT", panel, "LEFT")
 	ttsDivider:SetPoint("RIGHT", panel, "RIGHT")
-	ttsDivider:SetPoint("TOP", soundDefensiveChk, "BOTTOM", 0, -verticalSpacing * 2)
+	ttsDivider:SetPoint("TOP", soundImportantChk, "BOTTOM", 0, -verticalSpacing * 2)
 
 	local ttsIntro = mini:TextBlock({
 		Parent = panel,
@@ -374,16 +376,10 @@ function M:Build(panel, options)
 		voiceNameById[fallback] = tostring(fallback)
 	end
 
-	local voiceLabel = mini:TextLine({
-		Parent = panel,
-		Text = L["Voice"],
-	})
-	voiceLabel:SetPoint("TOPLEFT", ttsIntro, "BOTTOMLEFT", 0, -verticalSpacing)
-
 	local voiceDropdown = mini:Dropdown({
 		Parent = panel,
 		Items = voiceItems,
-		Width = 240,
+		Width = 400,
 		GetValue = function()
 			EnsureTtsOptions()
 			return options.TTS.VoiceID or C_TTSSettings.GetVoiceOptionID(0)
@@ -399,9 +395,8 @@ function M:Build(panel, options)
 			return voiceNameById[value] or tostring(value)
 		end,
 	})
-	voiceDropdown:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	voiceDropdown:SetPoint("TOP", voiceLabel, "TOP", 0, 8)
-	voiceDropdown:SetWidth(200)
+	voiceDropdown:SetPoint("TOPLEFT", ttsIntro, "BOTTOMLEFT", 0, -verticalSpacing)
+	voiceDropdown:SetWidth(400)
 
 	local announceImportantSpellsChk = mini:Checkbox({
 		Parent = panel,
@@ -428,7 +423,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	announceImportantSpellsChk:SetPoint("TOPLEFT", voiceLabel, "BOTTOMLEFT", 0, -verticalSpacing)
+	announceImportantSpellsChk:SetPoint("TOPLEFT", voiceDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local announceDefensiveSpellsChk = mini:Checkbox({
 		Parent = panel,

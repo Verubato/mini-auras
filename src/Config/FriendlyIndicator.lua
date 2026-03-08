@@ -11,7 +11,7 @@ local growOptions = {
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local columns = 4
-local columnWidth = mini:ColumnWidth(columns, 0, 0)
+local columnWidth
 local config = addon.Config
 
 ---@class FriendlyIndicatorConfig
@@ -276,13 +276,15 @@ end
 ---@param default FriendlyIndicatorInstanceOptions
 ---@param raid FriendlyIndicatorInstanceOptions
 function M:Build(panel, default, raid)
+	columnWidth = mini:ColumnWidth(columns, 0, 0)
 	local db = mini:GetSavedVars()
 
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
 			L["Shows CC, defensives, and important auras as one set of icons on party/raid frames."],
-				L["Tip: Disable the CC module for BGs and enable CC within this module."],
+			L["Tip: Disable the CC module for BGs and enable CC within this module."],
+			L["Don't forget to disable the Blizzard 'center big defensives' option when using this."],
 		},
 	})
 
@@ -359,13 +361,6 @@ function M:Build(panel, default, raid)
 	enabledPvE:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
 	enabledPvE:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
-	local intro = mini:TextLine({
-		Parent = panel,
-		Text = L["Don't forget to disable the Blizzard 'center big defensives' option when using this."],
-	})
-
-	intro:SetPoint("TOPLEFT", enabledEverywhere, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-
 	local defaultDivider = mini:Divider({
 		Parent = panel,
 		Text = L["Less than 5 members (arena/dungeons)"],
@@ -373,7 +368,7 @@ function M:Build(panel, default, raid)
 
 	defaultDivider:SetPoint("LEFT", panel, "LEFT")
 	defaultDivider:SetPoint("RIGHT", panel, "RIGHT")
-	defaultDivider:SetPoint("TOP", intro, "BOTTOM", 0, -verticalSpacing)
+	defaultDivider:SetPoint("TOP", enabledEverywhere, "BOTTOM", 0, -verticalSpacing)
 
 	local subPanelHeight = 320
 	local defaultPanel = BuildInstance(panel, default)

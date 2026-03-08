@@ -41,6 +41,8 @@ L:SetStrings({
 	["Reverse swipe"] = "反向滑動",
 	["Reverses the direction of the cooldown swipe animation."] = "反轉冷卻時間滑動動畫的方向。",
 	["Settings"] = "設定",
+	["Open Settings"] = "開啟設定",
+	["Use /minicc, /mcc, or /cc to open the MiniCC config window."] = "使用 /minicc、/mcc 或 /cc 開啟 MiniCC 設定視窗。",
 	["Show a glow around the icons."] = "在圖示周圍顯示發光。",
 	["Test"] = "測試",
 	["Test these settings"] = "測試這些設定",
@@ -187,7 +189,7 @@ L:SetStrings({
 
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - 如果隊友在起始房間使用飾品則無效。",
-	[" - Doesn't work in the open world."] = " - 在開放世界中無效。",
+	[" - Only works inside arena."] = " - 僅在競技場內有效。",
 	["Party Trinkets"] = "隊伍飾品",
 	["Party Trinkets_Short"] = "飾品",
 

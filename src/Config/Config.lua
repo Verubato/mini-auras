@@ -43,133 +43,150 @@ end
 function M:Init()
 	db = dbMigrator:GetAndUpgradeDb()
 
-	local scroll = CreateFrame("ScrollFrame", nil, nil, "UIPanelScrollFrameTemplate")
-	scroll.name = addonName
+	-- Register a minimal WoW settings entry so sub-categories can attach to it,
+	-- and the addon appears in Interface > AddOns for discoverability.
+	local redirectPanel = CreateFrame("Frame")
+	redirectPanel.name = addonName
 
-	local category = mini:AddCategory(scroll)
+	local category = mini:AddCategory(redirectPanel)
 
-	if not category then
-		return
+	if category then
+		local redirectMsg = redirectPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+		redirectMsg:SetPoint("TOPLEFT", 16, -16)
+		redirectMsg:SetText(L["Use /minicc, /mcc, or /cc to open the MiniCC config window."])
+
+		local redirectBtn = CreateFrame("Button", nil, redirectPanel, "UIPanelButtonTemplate")
+		redirectBtn:SetSize(200, 26)
+		redirectBtn:SetPoint("TOPLEFT", redirectMsg, "BOTTOMLEFT", 0, -12)
+		redirectBtn:SetText(L["Open Settings"])
+		redirectBtn:SetScript("OnClick", function()
+			M.Window:Show()
+		end)
 	end
 
-	local panel = CreateFrame("Frame", nil, scroll)
-	local width, height = mini:SettingsSize()
-
-	panel:SetWidth(width)
-	panel:SetHeight(height)
-
-	scroll:SetScrollChild(panel)
-
-	scroll:EnableMouseWheel(true)
-	scroll:SetScript("OnMouseWheel", function(scrollSelf, delta)
-		local step = 25
-		local current = scrollSelf:GetVerticalScroll()
-		local max = scrollSelf:GetVerticalScrollRange()
-
-		if delta > 0 then
-			scrollSelf:SetVerticalScroll(math.max(current - step, 0))
-		else
-			scrollSelf:SetVerticalScroll(math.min(current + step, max))
-		end
-	end)
-
-	local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+	-- Standalone config window
 	local version = C_AddOns.GetAddOnMetadata(addonName, "Version")
-	title:SetPoint("TOPLEFT", 0, -verticalSpacing)
-	title:SetText(string.format("%s - %s", addonName, version))
 
-	local lines = mini:TextBlock({
-		Parent = panel,
-		Lines = {
-			L["Shows CC and other important spell alerts."],
-		},
+	local window = mini:CreateStandaloneWindow({
+		Name = addonName .. "ConfigFrame",
+		Title = addonName,
+		Subtitle = version,
+		Width = 1080,
+		Height = 680,
 	})
 
-	lines:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
+	M.Window = window
 
-	local tabsPanel = CreateFrame("Frame", nil, panel)
-	tabsPanel:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 0, -verticalSpacing)
-	tabsPanel:SetPoint("BOTTOM", panel, "BOTTOM", 0, verticalSpacing * 2)
+	-- Test button in the title bar
+	local testBtn = CreateFrame("Button", nil, window.TitleBar, "UIPanelButtonTemplate")
+	testBtn:SetSize(80, 22)
+	testBtn:SetPoint("RIGHT", window.CloseButton, "LEFT", -8, 0)
+	testBtn:SetText(L["Test"])
+	testBtn:SetScript("OnClick", function()
+		addon:ToggleTest(nil)
+	end)
 
-	local keys = {
-		General = "General",
-		CC = "CC",
-		Indicator = "Indicator",
-		Alerts = "Alerts",
-		Healer = "Healer",
-		Nameplates = "Nameplates",
-		Portraits = "Portraits",
-	}
+	-- Tabs fill the content area of the window
+	local tabsPanel = window.Content
 
 	local tabs = {
 		{
-			Key = keys.General,
+			Key = "General",
 			Title = L["General"],
 			Build = function(content)
 				M.General:Build(content)
 			end,
 		},
 		{
-			Key = keys.CC,
+			Key = "CC",
 			Title = L["CC"],
 			Build = function(content)
 				M.CrowdControl:Build(content, db.Modules.CCModule.Default, db.Modules.CCModule.Raid)
 			end,
 		},
 		{
-			Key = keys.Indicator,
+			Key = "Indicator",
 			Title = L["Indicator"],
 			Build = function(content)
 				M.FriendlyIndicator:Build(content, db.Modules.FriendlyIndicatorModule.Default, db.Modules.FriendlyIndicatorModule.Raid)
 			end,
 		},
 		{
-			Key = keys.Alerts,
+			Key = "Alerts",
 			Title = L["Alerts"],
 			Build = function(content)
 				M.Alerts:Build(content, db.Modules.AlertsModule)
 			end,
 		},
 		{
-			Key = keys.Healer,
+			Key = "Healer",
 			Title = L["Healer"],
 			Build = function(content)
 				M.Healer:Build(content, db.Modules.HealerCCModule)
 			end,
 		},
 		{
-			Key = keys.Nameplates,
+			Key = "Nameplates",
 			Title = L["Nameplates_Short"] or L["Nameplates"],
 			Build = function(content)
 				M.Nameplates:Build(content, db.Modules.NameplatesModule)
 			end,
 		},
 		{
-			Key = keys.Portraits,
+			Key = "Portraits",
 			Title = L["Portraits_Short"] or L["Portraits"],
 			Build = function(content)
 				M.Portraits:Build(content)
 			end,
 		},
+		{
+			Key = "KickTimer",
+			Title = L["Kick timer_Short"] or L["Kick timer"],
+			Build = function(content)
+				M.KickTimer:Build(content)
+			end,
+		},
+		{
+			Key = "Trinkets",
+			Title = L["Party Trinkets_Short"] or L["Party Trinkets"],
+			Build = function(content)
+				M.Trinkets:Build(content)
+			end,
+		},
+		{
+			Key = "Precog",
+			Title = L["Precognition"],
+			Build = function(content)
+				M.PrecogGuesser:Build(content)
+			end,
+		},
+		{
+			Key = "OtherAddons",
+			Title = L["Other Mini Addons_Short"] or L["Other Mini Addons"],
+			Build = function(content)
+				M.OtherAddons:Build(content)
+			end,
+		},
 	}
+
+	local windowWidth = 1050
+	local contentPadding = 12
+	local windowInset = 2 + contentPadding * 2 + 8 -- border, padding, and small right margin
+	local contentWidth = windowWidth - windowInset
+	mini.ContentWidth = contentWidth
+	mini.TextMaxWidth = contentWidth - windowInset
 
 	local tabController = mini:CreateTabs({
 		Parent = tabsPanel,
-		InitialKey = "general",
+		InitialKey = "General",
+		ScrollBody = true,
+		ScrollContentWidth = contentWidth,
 		ContentInsets = {
 			Top = verticalSpacing,
 		},
+		TabFitToParent = true,
 		Tabs = tabs,
 	})
-
-	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-	testBtn:SetSize(120, 26)
-	testBtn:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
-	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
-	testBtn:SetText(L["Test"])
-	testBtn:SetScript("OnClick", function()
-		addon:ToggleTest(nil)
-	end)
 
 	M.TabController = tabController
 
@@ -197,7 +214,6 @@ function M:Init()
 	SLASH_MINICC3 = "/cc"
 
 	SlashCmdList.MINICC = function(msg)
-		-- normalize input
 		msg = msg and msg:lower():match("^%s*(.-)%s*$") or ""
 
 		if msg == "test" then
@@ -205,28 +221,9 @@ function M:Init()
 			return
 		end
 
-		mini:OpenSettings(category, panel)
+		window:Toggle()
 	end
 
-	local kickTimerPanel = M.KickTimer:Build()
-	kickTimerPanel.name = L["Kick timer_Short"] or L["Kick timer"]
-
-	mini:AddSubCategory(category, kickTimerPanel)
-
-	local trinketsPanel = M.Trinkets:Build()
-	trinketsPanel.name = L["Party Trinkets_Short"] or L["Party Trinkets"]
-
-	mini:AddSubCategory(category, trinketsPanel)
-
-	local precogGuesserPanel = M.PrecogGuesser:Build()
-	precogGuesserPanel.name = L["Precognition"]
-
-	mini:AddSubCategory(category, precogGuesserPanel)
-
-	local otherAddonsPanel = M.OtherAddons:Build()
-	otherAddonsPanel.name = L["Other Mini Addons_Short"] or L["Other Mini Addons"]
-
-	mini:AddSubCategory(category, otherAddonsPanel)
 end
 
 ---@class Config

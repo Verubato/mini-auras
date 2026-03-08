@@ -11,16 +11,10 @@ local M = {}
 
 config.Trinkets = M
 
-function M:Build()
+function M:Build(panel)
 	local db = mini:GetSavedVars()
 	local columns = 3
 	local columnWidth = mini:ColumnWidth(columns, 0, 0)
-
-	local panel = CreateFrame("Frame")
-	local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-	title:SetPoint("TOPLEFT", 0, -verticalSpacing)
-	title:SetText(L["Party Trinkets"])
-
 	local enabled = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Enabled"],
@@ -34,7 +28,7 @@ function M:Build()
 		end,
 	})
 
-	enabled:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -verticalSpacing)
+	enabled:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
 	local excludePlayerChk = mini:Checkbox({
 		Parent = panel,
@@ -120,22 +114,11 @@ function M:Build()
 		Lines = {
 			L["Limitations:"],
 			L[" - Doesn't work if your team mates trinket in the starting room."],
-			L[" - Doesn't work in the open world."],
+			L[" - Only works inside arena."],
 		},
 	})
 
 	lines:SetPoint("TOPLEFT", offsetXSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-
-	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-	testBtn:SetSize(120, 26)
-	testBtn:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
-	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
-	testBtn:SetText(L["Test"])
-	testBtn:SetScript("OnClick", function()
-		addon:ToggleTest(nil)
-	end)
-
+	
 	M.Panel = panel
-
-	return panel
 end

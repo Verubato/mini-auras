@@ -10,21 +10,15 @@ local M = {}
 
 config.OtherAddons = M
 
-function M:Build()
+function M:Build(panel)
 	local db = mini:GetSavedVars()
 	local horizontalSpacing = mini.HorizontalSpacing
-
-	local panel = CreateFrame("Frame")
-	local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-	title:SetPoint("TOPLEFT", 0, -verticalSpacing)
-	title:SetText(L["Other Mini Addons"])
-
 	local subtitle = mini:TextLine({
 		Parent = panel,
 		Text = L["Other mini addons to enhance your PvP experience:"],
 	})
 
-	subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
+	subtitle:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
 	local lines = mini:TextBlockSegmented({
 		Parent = panel,
@@ -96,14 +90,4 @@ function M:Build()
 
 	url.EditBox:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 4, -verticalSpacing)
 
-	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-	testBtn:SetSize(120, 26)
-	testBtn:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
-	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
-	testBtn:SetText(L["Test"])
-	testBtn:SetScript("OnClick", function()
-		addon:ToggleTest(nil)
-	end)
-
-	return panel
 end

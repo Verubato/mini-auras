@@ -38,6 +38,8 @@ L:SetDefaultStrings({
 	["Reverse swipe"] = "Reverse swipe",
 	["Reverses the direction of the cooldown swipe animation."] = "Reverses the direction of the cooldown swipe animation.",
 	["Settings"] = "Settings",
+	["Open Settings"] = "Open Settings",
+	["Use /minicc, /mcc, or /cc to open the MiniCC config window."] = "Use /minicc, /mcc, or /cc to open the MiniCC config window.",
 	["Show a glow around the icons."] = "Show a glow around the icons.",
 	["Test"] = "Test",
 	["Test these settings"] = "Test these settings",
@@ -183,7 +185,7 @@ L:SetDefaultStrings({
 
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Doesn't work if your team mates trinket in the starting room.",
-	[" - Doesn't work in the open world."] = " - Doesn't work in the open world.",
+	[" - Only works inside arena."] = " - Only works inside arena.",
 	["Party Trinkets"] = "Party Trinkets",
 	["Party Trinkets_Short"] = "Trinkets",
 

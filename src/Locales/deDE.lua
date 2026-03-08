@@ -41,6 +41,8 @@ L:SetStrings({
 	["Reverse swipe"] = "Umgekehrtes Wischen",
 	["Reverses the direction of the cooldown swipe animation."] = "Kehrt die Richtung der Abklingzeit-Wischanimation um.",
 	["Settings"] = "Einstellungen",
+	["Open Settings"] = "Einstellungen öffnen",
+	["Use /minicc, /mcc, or /cc to open the MiniCC config window."] = "Verwende /minicc, /mcc oder /cc, um das MiniCC-Einstellungsfenster zu öffnen.",
 	["Show a glow around the icons."] = "Zeige ein Leuchten um die Symbole.",
 	["Test"] = "Testen",
 	["Test these settings"] = "Diese Einstellungen testen",
@@ -183,7 +185,7 @@ L:SetStrings({
 
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Funktioniert nicht, wenn deine Teamkollegen Schmuckstücke im Startraum verwenden.",
-	[" - Doesn't work in the open world."] = " - Funktioniert nicht in der offenen Welt.",
+	[" - Only works inside arena."] = " - Funktioniert nur in der Arena.",
 	["Party Trinkets"] = "Gruppen-Schmuckstücke",
 	["Party Trinkets_Short"] = "Schmuck",
 

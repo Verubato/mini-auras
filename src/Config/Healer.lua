@@ -5,7 +5,7 @@ local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local columns = 4
-local columnWidth = mini:ColumnWidth(columns, 0, 0)
+local columnWidth
 local config = addon.Config
 
 ---@class HealerCrowdControlConfig
@@ -16,6 +16,7 @@ config.Healer = M
 ---@param panel table
 ---@param options HealerCrowdControlModuleOptions
 function M:Build(panel, options)
+	columnWidth = mini:ColumnWidth(columns, 0, 0)
 	local db = mini:GetSavedVars()
 
 	local lines = mini:TextBlock({

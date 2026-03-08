@@ -10,23 +10,17 @@ local M = {}
 
 config.KickTimer = M
 
-function M:Build()
+function M:Build(panel)
 	local db = mini:GetSavedVars()
 	local columns = 3
 	local columnWidth = mini:ColumnWidth(columns, 0, 0)
 	local horizontalSpacing = mini.HorizontalSpacing
-
-	local panel = CreateFrame("Frame")
-	local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-	title:SetPoint("TOPLEFT", 0, -verticalSpacing)
-	title:SetText(L["Kick timer"])
-
 	local text = mini:TextLine({
 		Parent = panel,
 		Text = L["Enable if you are:"],
 	})
 
-	text:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -verticalSpacing)
+	text:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
 	local healerEnabled = mini:Checkbox({
 		Parent = panel,
@@ -118,16 +112,5 @@ function M:Build()
 
 	lines:SetPoint("TOPLEFT", important, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-	testBtn:SetSize(120, 26)
-	testBtn:SetPoint("RIGHT", panel, "RIGHT", -horizontalSpacing, 0)
-	testBtn:SetPoint("TOP", title, "TOP", 0, 0)
-	testBtn:SetText(L["Test"])
-	testBtn:SetScript("OnClick", function()
-		addon:ToggleTest(nil)
-	end)
-
 	M.Panel = panel
-
-	return panel
 end

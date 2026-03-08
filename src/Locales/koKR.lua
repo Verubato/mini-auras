@@ -41,6 +41,8 @@ L:SetStrings({
 	["Reverse swipe"] = "역방향 스와이프",
 	["Reverses the direction of the cooldown swipe animation."] = "재사용 대기시간 스와이프 애니메이션의 방향을 반대로 합니다.",
 	["Settings"] = "설정",
+	["Open Settings"] = "설정 열기",
+	["Use /minicc, /mcc, or /cc to open the MiniCC config window."] = "/minicc, /mcc 또는 /cc를 사용하여 MiniCC 설정 창을 엽니다.",
 	["Show a glow around the icons."] = "아이콘 주위에 발광을 표시합니다.",
 	["Test"] = "테스트",
 	["Test these settings"] = "이 설정 테스트",
@@ -183,7 +185,7 @@ L:SetStrings({
 
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - 팀원이 시작 방에서 장신구를 사용하면 작동하지 않습니다.",
-	[" - Doesn't work in the open world."] = " - 오픈 월드에서는 작동하지 않습니다.",
+	[" - Only works inside arena."] = " - 투기장 내부에서만 작동합니다.",
 	["Party Trinkets"] = "파티 장신구",
 	["Party Trinkets_Short"] = "장신구",
 

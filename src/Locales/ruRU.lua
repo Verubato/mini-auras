@@ -41,6 +41,8 @@ L:SetStrings({
 	["Reverse swipe"] = "Обратное смахивание",
 	["Reverses the direction of the cooldown swipe animation."] = "Изменяет направление анимации смахивания перезарядки.",
 	["Settings"] = "Настройки",
+	["Open Settings"] = "Открыть настройки",
+	["Use /minicc, /mcc, or /cc to open the MiniCC config window."] = "Используйте /minicc, /mcc или /cc, чтобы открыть окно настроек MiniCC.",
 	["Show a glow around the icons."] = "Показывать свечение вокруг иконок.",
 	["Test"] = "Тест",
 	["Test these settings"] = "Проверить эти настройки",
@@ -184,7 +186,7 @@ L:SetStrings({
 
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Не работает, если ваши союзники используют аксессуар в стартовой комнате.",
-	[" - Doesn't work in the open world."] = " - Не работает в открытом мире.",
+	[" - Only works inside arena."] = " - Работает только внутри арены.",
 	["Party Trinkets"] = "Аксессуары группы",
 	["Party Trinkets_Short"] = "Амулеты",
 

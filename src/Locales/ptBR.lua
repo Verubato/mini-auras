@@ -41,6 +41,8 @@ L:SetStrings({
 	["Reverse swipe"] = "Deslize reverso",
 	["Reverses the direction of the cooldown swipe animation."] = "Inverte a direção da animação de deslize da recarga.",
 	["Settings"] = "Configurações",
+	["Open Settings"] = "Abrir configurações",
+	["Use /minicc, /mcc, or /cc to open the MiniCC config window."] = "Use /minicc, /mcc ou /cc para abrir a janela de configuração do MiniCC.",
 	["Show a glow around the icons."] = "Mostra um brilho ao redor dos ícones.",
 	["Test"] = "Testar",
 	["Test these settings"] = "Testar essas configurações",
@@ -184,7 +186,7 @@ L:SetStrings({
 
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Não funciona se seus companheiros de equipe usarem berloque na sala inicial.",
-	[" - Doesn't work in the open world."] = " - Não funciona no mundo aberto.",
+	[" - Only works inside arena."] = " - Só funciona dentro da arena.",
 	["Party Trinkets"] = "Berloques do grupo",
 	["Party Trinkets_Short"] = "Berloques",
 

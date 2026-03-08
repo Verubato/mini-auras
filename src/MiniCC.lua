@@ -142,10 +142,6 @@ function addon:ToggleTest(isRaid)
 	end
 
 	addon:Refresh()
-
-	if InCombatLockdown() then
-		mini:Notify("Can't test during combat, we'll test once combat drops.")
-	end
 end
 
 ---@param isRaid boolean?

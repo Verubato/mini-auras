@@ -41,6 +41,8 @@ L:SetStrings({
 	["Reverse swipe"] = "Balayage inversé",
 	["Reverses the direction of the cooldown swipe animation."] = "Inverse la direction de l'animation de balayage du temps de recharge.",
 	["Settings"] = "Paramètres",
+	["Open Settings"] = "Ouvrir les paramètres",
+	["Use /minicc, /mcc, or /cc to open the MiniCC config window."] = "Utilisez /minicc, /mcc ou /cc pour ouvrir la fenêtre de configuration MiniCC.",
 	["Show a glow around the icons."] = "Affiche une lueur autour des icônes.",
 	["Test"] = "Tester",
 	["Test these settings"] = "Tester ces paramètres",
@@ -184,7 +186,7 @@ L:SetStrings({
 
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Ne fonctionne pas si vos coéquipiers utilisent leurs bijoux dans la salle de départ.",
-	[" - Doesn't work in the open world."] = " - Ne fonctionne pas en monde ouvert.",
+	[" - Only works inside arena."] = " - Fonctionne uniquement en arène.",
 	["Party Trinkets"] = "Bijoux du groupe",
 	["Party Trinkets_Short"] = "Bijoux",
 
