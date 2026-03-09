@@ -127,7 +127,7 @@ L:SetStrings({
 	["Shows CC icons on party/raid frames."] = "Muestra iconos de control en marcos de grupo/banda.",
 
 	-- Indicator tab
-	["Indicator"] = "Indicador",
+	["Auras"] = "Auras",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "Cambia el color del brillo/borde. Los hechizos defensivos son verdes y los hechizos importantes son rojos.",
 	["Defensive"] = "Defensivo",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "No olvides desactivar la opción de Blizzard 'centrar grandes defensivos' al usar esto.",

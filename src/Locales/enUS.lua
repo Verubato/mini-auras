@@ -127,7 +127,7 @@ L:SetDefaultStrings({
 	["Shows CC icons on party/raid frames."] = "Shows CC icons on party/raid frames.",
 
 	-- Indicator tab
-	["Indicator"] = "Indicator",
+	["Auras"] = "Auras",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "Change the colour of the glow/border. Defensive spells are green and Important spells are red.",
 	["Defensive"] = "Defensive",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Don't forget to disable the Blizzard 'center big defensives' option when using this.",

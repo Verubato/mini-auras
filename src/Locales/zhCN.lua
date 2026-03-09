@@ -127,7 +127,7 @@ L:SetStrings({
 	["Shows CC icons on party/raid frames."] = "在队伍/团队框架上显示控制图标。",
 
 	-- Indicator tab
-	["Indicator"] = "指示器",
+	["Auras"] = "光环",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "更改发光/边框的颜色。防御法术为绿色，重要法术为红色。",
 	["Defensive"] = "防御",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "使用此功能时不要忘记禁用暴雪的'居中显示大型防御技能'选项。",

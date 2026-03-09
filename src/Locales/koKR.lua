@@ -127,7 +127,7 @@ L:SetStrings({
 	["Shows CC icons on party/raid frames."] = "파티/공격대 프레임에 군중 제어 아이콘을 표시합니다.",
 
 	-- Indicator tab
-	["Indicator"] = "표시기",
+	["Auras"] = "오라",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "발광/테두리 색상을 변경합니다. 방어 주문은 녹색이고 중요한 주문은 빨간색입니다.",
 	["Defensive"] = "방어",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "이것을 사용할 때 Blizzard의 '큰 방어 기술 중앙 표시' 옵션을 비활성화하는 것을 잊지 마세요.",

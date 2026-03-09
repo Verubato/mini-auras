@@ -127,7 +127,7 @@ L:SetStrings({
 	["Shows CC icons on party/raid frames."] = "Показывает иконки контроля на рамках группы/рейда.",
 
 	-- Indicator tab
-	["Indicator"] = "Индикатор",
+	["Auras"] = "Ауры",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "Изменить цвет свечения/границы. Защитные заклинания - зеленые, важные заклинания - красные.",
 	["Defensive"] = "Защитное",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Не забудьте отключить опцию Blizzard 'центрировать большие защитные способности' при использовании этого.",

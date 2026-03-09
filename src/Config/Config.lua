@@ -105,7 +105,7 @@ function M:Init()
 		},
 		{
 			Key = "Indicator",
-			Title = L["Indicator"],
+			Title = L["Auras"],
 			Build = function(content)
 				M.FriendlyIndicator:Build(content, db.Modules.FriendlyIndicatorModule.Default, db.Modules.FriendlyIndicatorModule.Raid)
 			end,

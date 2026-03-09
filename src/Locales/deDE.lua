@@ -127,7 +127,7 @@ L:SetStrings({
 	["Shows CC icons on party/raid frames."] = "Zeigt Massenkontroll-Symbole auf Gruppen-/Schlachtzugs-Rahmen.",
 
 	-- Indicator tab
-	["Indicator"] = "Indikator",
+	["Auras"] = "Auras",
 	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "Ändere die Farbe des Leuchtens/Rahmens. Defensive Zauber sind grün und wichtige Zauber sind rot.",
 	["Defensive"] = "Defensiv",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Vergiss nicht, die Blizzard-Option 'Große Defensivfähigkeiten zentrieren' zu deaktivieren, wenn du dies verwendest.",
