@@ -8,6 +8,11 @@ local fontUtil = addon.Utils.FontUtil
 local cachedDb = nil
 -- Reused across Layout() calls to avoid a table allocation on the hot path
 local layoutScratch = {}
+local frameIdCounter = 0
+local function NextFrameName(frameType)
+	frameIdCounter = frameIdCounter + 1
+	return "MiniCC_" .. frameType .. "_" .. frameIdCounter
+end
 
 ---@class IconSlotContainer
 local M = {}
@@ -38,7 +43,7 @@ local function ScheduleMasqueReSkin(group)
 end
 
 local function CreateLayer(parentFrame, level, iconSize, noBorder)
-	local f = CreateFrame("Frame", nil, parentFrame)
+	local f = CreateFrame("Frame", NextFrameName("Layer"), parentFrame)
 	f:SetAllPoints()
 
 	if level then
@@ -49,7 +54,7 @@ local function CreateLayer(parentFrame, level, iconSize, noBorder)
 	local icon = f:CreateTexture(nil, "BACKGROUND", nil, 1)
 	icon:SetAllPoints()
 
-	local cd = CreateFrame("Cooldown", nil, f, "CooldownFrameTemplate")
+	local cd = CreateFrame("Cooldown", NextFrameName("Cooldown"), f, "CooldownFrameTemplate")
 	cd:SetAllPoints()
 	cd:SetDrawEdge(false)
 	cd:SetDrawBling(false)
@@ -142,7 +147,7 @@ local function EnsureFlipbookGlow(parent)
 		return parent._FlipbookGlow
 	end
 
-	local cg = CreateFrame("Frame", nil, parent)
+	local cg = CreateFrame("Frame", NextFrameName("FlipbookGlow"), parent)
 	cg:SetFrameLevel(parent:GetFrameLevel() + 5)
 
 	cg.Texture = cg:CreateTexture(nil, "OVERLAY")
@@ -395,7 +400,7 @@ function M:New(parent, count, size, spacing, groupName, noBorder)
 	size = size or 20
 	spacing = spacing or 2
 
-	instance.Frame = CreateFrame("Frame", nil, parent)
+	instance.Frame = CreateFrame("Frame", NextFrameName("Container"), parent)
 	instance.Frame:SetIgnoreParentScale(true)
 	instance.Frame:SetIgnoreParentAlpha(true)
 	instance.Slots = {}
@@ -562,7 +567,7 @@ function M:SetCount(newCount)
 
 	-- Grow pool if needed
 	for i = #self.Slots + 1, newCount do
-		local slotFrame = CreateFrame(self.MasqueGroup and "Button" or "Frame", nil, self.Frame)
+		local slotFrame = CreateFrame(self.MasqueGroup and "Button" or "Frame", NextFrameName("Slot"), self.Frame)
 		slotFrame:SetSize(self.Size, self.Size)
 		slotFrame:EnableMouse(false)
 
