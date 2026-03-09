@@ -1831,6 +1831,7 @@ function M:UpgradeToVersion30(vars)
 
 	if vars.Modules and vars.Modules.FriendlyIndicatorModule then
 		local fi = vars.Modules.FriendlyIndicatorModule
+
 		local instanceSettings = {
 			ExcludePlayer = fi.ExcludePlayer,
 			ShowDefensives = fi.ShowDefensives,
@@ -1840,11 +1841,30 @@ function M:UpgradeToVersion30(vars)
 			Grow = fi.Grow,
 			Icons = fi.Icons and mini:CopyTable(fi.Icons) or nil,
 		}
-		fi.Default = instanceSettings
-		fi.Raid = mini:CopyTable(instanceSettings)
+
+		-- Write into the existing table shells so upvalue references captured by
+		-- Config UI closures during Build() remain valid after a profile import.
+		local function MergeInPlace(target, src)
+			for key, value in pairs(src) do
+				if type(value) == "table" then
+					target[key] = target[key] or {}
+					for subKey, subValue in pairs(value) do
+						target[key][subKey] = subValue
+					end
+				else
+					target[key] = value
+				end
+			end
+		end
+
+		fi.Default = fi.Default or {}
+		MergeInPlace(fi.Default, instanceSettings)
+
+		fi.Raid = fi.Raid or {}
+		MergeInPlace(fi.Raid, instanceSettings)
 		fi.Raid.ShowCC = true
 
-		-- nil old values that are no longer used
+		-- nil old flat values that are no longer used
 		fi.ExcludePlayer = nil
 		fi.ShowDefensives = nil
 		fi.ShowImportant = nil
@@ -1857,6 +1877,7 @@ function M:UpgradeToVersion30(vars)
 	vars.Version = 30
 	return true
 end
+
 
 function M:UpgradeToVersion31(vars)
 	if vars.Version ~= 30 then
