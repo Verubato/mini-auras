@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.31.0
+
+Added names to icon frames for MiniCE to use.
+
 ## 2.30.1
 
 - Renamed Indicator module to Auras.
