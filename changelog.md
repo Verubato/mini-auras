@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.30.1
+
+- Renamed Indicator module to Auras.
+- Profile import fix for older profile strings.
+
 ## 2.30.0
 
 - New user interface.
