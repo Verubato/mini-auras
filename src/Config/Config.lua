@@ -76,6 +76,12 @@ function M:Init()
 
 	M.Window = window
 
+	-- reset the window position for people who accidentally drag it off screen
+	window:SetScript("OnShow", function(self)
+		self:ClearAllPoints()
+		self:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+	end)
+
 	-- Test button in the title bar
 	local testBtn = CreateFrame("Button", nil, window.TitleBar, "UIPanelButtonTemplate")
 	testBtn:SetSize(80, 22)
