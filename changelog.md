@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.32.1
+
+Fixed unordered results sometimes coming back from Blizzard's API causing the latest CC/Defensive/Important icon not overriding the current one.
+
 ## 2.32.0
 
 - Added Cell support.
