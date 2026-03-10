@@ -312,6 +312,13 @@ function Watcher:RebuildStates()
 		end)
 	end
 
+	-- for some reason it's possible for auras to come back non-deterministically from the API, so sort by instance ID to ensure a consistent order
+	-- I've only ever seen this happen on Chinese clients
+	local byInstanceId = function(a, b) return a.AuraInstanceID < b.AuraInstanceID end
+	table.sort(ccSpellData, byInstanceId)
+	table.sort(importantSpellData, byInstanceId)
+	table.sort(defensivesSpellData, byInstanceId)
+
 	local state = self.State
 	state.CcAuraState = ccSpellData
 	state.ImportantAuraState = importantSpellData
