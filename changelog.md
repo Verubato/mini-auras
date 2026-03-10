@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.32.0
+
+- Added Cell support.
+- Reset the config screen to the middle each time it opens.
+- Fixed portrait test icon being overridden by hots/auras.
+
 ## 2.31.0
 
 Added names to icon frames for MiniCE to use.
