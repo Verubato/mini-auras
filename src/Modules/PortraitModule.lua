@@ -370,12 +370,9 @@ local function DisableWatchers()
 	for _, container in pairs(containers) do
 		container:ResetAllSlots()
 	end
-
-	paused = true
 end
 
 local function EnableWatchers()
-	paused = false
 	for _, watcher in pairs(watchers) do
 		watcher:Enable()
 	end
