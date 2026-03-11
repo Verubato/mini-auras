@@ -43,23 +43,58 @@ local function NotifyCallbacks(watcher)
 	end
 end
 
----Quick check using updateInfo to avoid scanning every time.
+---Quick check using updateInfo to avoid a full RebuildStates when nothing we care about changed.
+---@param watcher Watcher
+---@param updateInfo table?
 ---@return boolean
-local function MightAffectOurFilters(updateInfo)
-	if not updateInfo then
+local function InterestedIn(watcher, updateInfo)
+	if not updateInfo or updateInfo.isFullUpdate then
 		return true
 	end
 
-	if updateInfo.isFullUpdate then
-		return true
+	local state = watcher.State
+	local unit = state.Unit
+	local activeFilters = state.ActiveFilters
+
+	if updateInfo.addedAuras then
+		for _, aura in ipairs(updateInfo.addedAuras) do
+			local id = aura.auraInstanceID
+			if id then
+				for _, filter in ipairs(activeFilters) do
+					if not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, id, filter) then
+						return true
+					end
+				end
+			end
+		end
 	end
 
-	if
-		(updateInfo.addedAuras and #updateInfo.addedAuras > 0)
-		or (updateInfo.updatedAuras and #updateInfo.updatedAuras > 0)
-		or (updateInfo.removedAuraInstanceIDs and #updateInfo.removedAuraInstanceIDs > 0)
-	then
-		return true
+	if updateInfo.updatedAuras then
+		for _, aura in ipairs(updateInfo.updatedAuras) do
+			local id = aura.auraInstanceID
+			if id then
+				for _, filter in ipairs(activeFilters) do
+					if not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, id, filter) then
+						return true
+					end
+				end
+			end
+		end
+	end
+
+	-- Removed auras are already gone, so the filter API can't be used.
+	-- Instead check whether any removed ID matches one we were tracking.
+	if updateInfo.removedAuraInstanceIDs and #updateInfo.removedAuraInstanceIDs > 0 then
+		local states = { state.CcAuraState, state.DefensiveState, state.ImportantAuraState }
+		for _, id in ipairs(updateInfo.removedAuraInstanceIDs) do
+			for _, auraState in ipairs(states) do
+				for _, aura in ipairs(auraState) do
+					if aura.AuraInstanceID == id then
+						return true
+					end
+				end
+			end
+		end
 	end
 
 	return false
@@ -212,6 +247,17 @@ function Watcher:RebuildStates()
 		return
 	end
 
+	if not UnitExists(unit) or UnitIsDeadOrGhost(unit) then
+		local state = self.State
+		local hasState = next(state.CcAuraState) ~= nil
+			or next(state.ImportantAuraState) ~= nil
+			or next(state.DefensiveState) ~= nil
+		if hasState then
+			self:ClearState(true)
+		end
+		return
+	end
+
 	---@type AuraTypeFilter?
 	local interestedIn = self.State.InterestedIn
 	local interestedInDefensives = not interestedIn or (interestedIn and interestedIn.Defensives)
@@ -333,7 +379,7 @@ function Watcher:OnEvent(event, ...)
 		if unit and unit ~= state.Unit then
 			return
 		end
-		if not MightAffectOurFilters(updateInfo) then
+		if not InterestedIn(self, updateInfo) then
 			return
 		end
 	elseif event == "ARENA_OPPONENT_UPDATE" then
@@ -360,6 +406,21 @@ function M:New(unit, events, interestedIn)
 		error("unit must not be nil")
 	end
 
+	-- Pre-compute which filters this watcher will query, so InterestedIn
+	-- doesn't have to rebuild this list on every UNIT_AURA event.
+	local all = not interestedIn
+	local activeFilters = {}
+	if all or interestedIn.Defensives then
+		activeFilters[#activeFilters + 1] = "HELPFUL|BIG_DEFENSIVE"
+		activeFilters[#activeFilters + 1] = "HELPFUL|EXTERNAL_DEFENSIVE"
+	end
+	if all or interestedIn.CC then
+		activeFilters[#activeFilters + 1] = "HARMFUL|CROWD_CONTROL"
+	end
+	if all or interestedIn.Important then
+		activeFilters[#activeFilters + 1] = "HELPFUL|IMPORTANT"
+	end
+
 	---@type Watcher
 	local watcher = setmetatable({
 		Frame = nil,
@@ -372,6 +433,7 @@ function M:New(unit, events, interestedIn)
 			ImportantAuraState = {},
 			DefensiveState = {},
 			InterestedIn = interestedIn,
+			ActiveFilters = activeFilters,
 		},
 	}, Watcher)
 
@@ -416,6 +478,7 @@ InitColourCurve()
 ---@field ImportantAuraState AuraInfo[]
 ---@field DefensiveState AuraInfo[]
 ---@field InterestedIn AuraTypeFilter
+---@field ActiveFilters string[]
 
 ---@class Watcher
 ---@field Frame table?
