@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.33.0
+
+Added TPerl party frames support.
+
 ## 2.32.2
 
 Performance improvement.
