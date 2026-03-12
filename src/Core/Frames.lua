@@ -354,6 +354,31 @@ function M:CellFrames(visibleOnly)
 	return frames
 end
 
+---Retrieves a list of TPerl party unit frames.
+---@param visibleOnly boolean
+---@return table
+function M:TPerlFrames(visibleOnly)
+	if not TPerl_Party_SecureHeader then
+		return {}
+	end
+
+	local frames = {}
+
+	for _, child in ipairs({ TPerl_Party_SecureHeader:GetChildren() }) do
+		local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
+
+		if unit and unit ~= "" then
+			if child.IsForbidden and child:IsForbidden() then
+				-- skip
+			elseif child:IsVisible() or not visibleOnly then
+				frames[#frames + 1] = child
+			end
+		end
+	end
+
+	return frames
+end
+
 ---Retrieves a list of custom frames from our saved vars.
 ---@param visibleOnly boolean
 ---@return table
@@ -395,6 +420,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	local suf = M:ShadowedUFFrames(visibleOnly)
 	local plexus = M:PlexusFrames(visibleOnly)
 	local cell = M:CellFrames(visibleOnly)
+	local tperl = M:TPerlFrames(visibleOnly)
 	local custom = M:CustomFrames(visibleOnly)
 
 	array:Append(blizzard, anchors)
@@ -404,6 +430,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	array:Append(suf, anchors)
 	array:Append(plexus, anchors)
 	array:Append(cell, anchors)
+	array:Append(tperl, anchors)
 	array:Append(custom, anchors)
 
 	if includeTestFrames then
