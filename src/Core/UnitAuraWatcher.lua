@@ -335,7 +335,9 @@ function Watcher:RebuildStates()
 	end
 
 	if interestedInImportant then
-		IterateAuras(unit, "HELPFUL|IMPORTANT", function(auraData, start, duration, dispelColor)
+		local importantFilter = (interestedIn and interestedIn.ImportantFilter) or "HELPFUL|IMPORTANT"
+
+		IterateAuras(unit, importantFilter, function(auraData, start, duration, dispelColor)
 			if not seen[auraData.auraInstanceID] then
 				-- protect against garbage data
 				local isImportant = C_Spell.IsSpellImportant(auraData.spellId)
@@ -418,7 +420,7 @@ function M:New(unit, events, interestedIn)
 		activeFilters[#activeFilters + 1] = "HARMFUL|CROWD_CONTROL"
 	end
 	if all or interestedIn.Important then
-		activeFilters[#activeFilters + 1] = "HELPFUL|IMPORTANT"
+		activeFilters[#activeFilters + 1] = (interestedIn and interestedIn.ImportantFilter) or "HELPFUL|IMPORTANT"
 	end
 
 	---@type Watcher
@@ -456,6 +458,7 @@ InitColourCurve()
 ---@field CC boolean?
 ---@field Important boolean?
 ---@field Defensives boolean?
+---@field ImportantFilter string?  -- overrides the default "HELPFUL|IMPORTANT" filter string
 
 ---@class AuraInfo
 ---@field IsImportant? boolean

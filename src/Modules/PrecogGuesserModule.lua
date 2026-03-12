@@ -1,27 +1,27 @@
 ---@type string, Addon
 local addonName, addon = ...
 local mini = addon.Core.Framework
+local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
 local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local testModeActive = false
 local paused = false
-local enabled = false
-local maxAuras = 40
 local classHasPrecog
 ---@type table<number, any>
 local auraAlphas = {}
+local precogCurve
 ---@type Db
 local db
 ---@type table
 local anchor
 ---@type IconSlotContainer
 local container
-local eventFrame
+---@type Watcher
+local watcher
 ---@type TestSpell
 local testSpell
-local precogCurve
 
 ---@class PrecogGuesserModule : IModule
 local M = {}
@@ -42,26 +42,9 @@ local function ScanAndDisplay()
 		return
 	end
 
-	local options = db.Modules.PrecogGuesserModule
-	if not options then
-		return
-	end
+	local importantState = watcher:GetImportantState()
 
-	local iconsReverse = options.Icons.ReverseCooldown
-	local iconsGlow = options.Icons.Glow
-	local activeAuras = {}
-
-	for i = 1, maxAuras do
-		local auraData = C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL|IMPORTANT|PLAYER")
-
-		if not auraData then
-			break
-		end
-
-		activeAuras[#activeAuras + 1] = auraData
-	end
-
-	if #activeAuras == 0 then
+	if #importantState == 0 then
 		container:ResetAllSlots()
 		anchor:Hide()
 		auraAlphas = {}
@@ -70,43 +53,39 @@ local function ScanAndDisplay()
 
 	-- Clean up cached alphas for auras that are no longer active
 	local activeIds = {}
-
-	for _, auraData in ipairs(activeAuras) do
-		activeIds[auraData.auraInstanceID] = true
+	for _, entry in ipairs(importantState) do
+		activeIds[entry.AuraInstanceID] = true
 	end
-
 	for id in pairs(auraAlphas) do
 		if not activeIds[id] then
 			auraAlphas[id] = nil
 		end
 	end
 
+	local options = db.Modules.PrecogGuesserModule
+	if not options then
+		return
+	end
+
+	local iconsReverse = options.Icons.ReverseCooldown
+	local iconsGlow = options.Icons.Glow
+
 	container:ResetAllSlots()
 
-	for i, auraData in ipairs(activeAuras) do
-		local durationInfo = C_UnitAuras.GetAuraDuration("player", auraData.auraInstanceID)
-		local start = durationInfo and durationInfo:GetStartTime()
-		local duration = durationInfo and durationInfo:GetTotalDuration()
+	for i, entry in ipairs(importantState) do
+		if entry.SpellIcon and entry.StartTime and entry.TotalDuration then
+			-- Evaluate alpha only once when the aura is first detected,
+			-- because we need the total duration at the time of application.
+			if auraAlphas[entry.AuraInstanceID] == nil then
+				local durationInfo = C_UnitAuras.GetAuraDuration("player", entry.AuraInstanceID)
+				auraAlphas[entry.AuraInstanceID] = durationInfo and durationInfo:EvaluateRemainingDuration(precogCurve)
+			end
 
-		-- Evaluate alpha only once when the aura is first detected
-		-- because we actually need the total duration, not the remaining duration
-		-- it's just there isn't a way to pipe the total duration through a curve
-		if not auraAlphas[auraData.auraInstanceID] then
-			auraAlphas[auraData.auraInstanceID] = durationInfo and durationInfo:EvaluateRemainingDuration(precogCurve)
-		end
-
-		local alpha = auraAlphas[auraData.auraInstanceID]
-
-		if not alpha then
-			alpha = 0
-		end
-
-		if start and duration then
 			container:SetSlot(1, {
-				Texture = auraData.icon,
-				StartTime = start,
-				Duration = duration,
-				Alpha = alpha,
+				Texture = entry.SpellIcon,
+				StartTime = entry.StartTime,
+				Duration = entry.TotalDuration,
+				Alpha = auraAlphas[entry.AuraInstanceID] or 0,
 				ReverseCooldown = iconsReverse,
 				Glow = iconsGlow,
 				FontScale = db.FontScale,
@@ -139,50 +118,12 @@ local function RefreshTestIcons()
 	end
 end
 
-local function OnEvent(_, event, unit)
-	if event == "UNIT_AURA" and unit == "player" then
-		ScanAndDisplay()
-	end
-end
-
 local function Pause()
 	paused = true
 end
 
 local function Resume()
 	paused = false
-end
-
-local function Enable()
-	if eventFrame then
-		return
-	end
-
-	enabled = true
-
-	eventFrame = CreateFrame("Frame")
-	eventFrame:SetScript("OnEvent", OnEvent)
-	eventFrame:RegisterUnitEvent("UNIT_AURA", "player")
-end
-
-local function Disable()
-	enabled = false
-
-	if eventFrame then
-		eventFrame:UnregisterAllEvents()
-		eventFrame:SetScript("OnEvent", nil)
-		eventFrame = nil
-	end
-
-	auraAlphas = {}
-
-	if container then
-		container:ResetAllSlots()
-	end
-
-	if anchor then
-		anchor:Hide()
-	end
 end
 
 function M:StartTesting()
@@ -201,7 +142,6 @@ end
 function M:StopTesting()
 	testModeActive = false
 	Resume()
-
 	auraAlphas = {}
 
 	if container then
@@ -227,10 +167,11 @@ function M:Refresh()
 
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.PrecogGuesser) and classHasPrecog
 
-	if moduleEnabled and not enabled then
-		Enable()
-	elseif not moduleEnabled and enabled then
-		Disable()
+	if moduleEnabled and not watcher:IsEnabled() then
+		watcher:Enable()
+	elseif not moduleEnabled and watcher:IsEnabled() then
+		watcher:Disable()
+		watcher:ClearState(true)
 	end
 
 	if not moduleEnabled then
@@ -310,6 +251,15 @@ function M:Init()
 	precogCurve:AddPoint(3.7, 1)
 	precogCurve:AddPoint(4, 1)
 	precogCurve:AddPoint(4.1, 0)
+
+	watcher = unitWatcher:New("player", nil, {
+		Important = true,
+		ImportantFilter = "HELPFUL|IMPORTANT|PLAYER",
+	})
+
+	watcher:RegisterCallback(function()
+		ScanAndDisplay()
+	end)
 
 	M:Refresh()
 end
