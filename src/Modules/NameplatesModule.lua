@@ -247,14 +247,12 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 
 	-- Add CC spells (highest priority)
 	if ccSlots > 0 then
-		-- Each CC gets its own slot, iterate in reverse to show the most recent first
 		for i = 1, mathMin(ccSlots, #ccData) do
 			if slot >= container.Count then
 				break
 			end
 			slot = slot + 1
-			local reverseIndex = #ccData - i + 1
-			local entry = ccData[reverseIndex]
+			local entry = ccData[i]
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
 			layerScratch.Duration = entry.TotalDuration
@@ -269,14 +267,12 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 
 	-- Add Defensive spells (second priority)
 	if defensiveSlots > 0 then
-		-- Iterate in reverse to show the most recent first
 		for i = 1, mathMin(defensiveSlots, #defensivesData) do
 			if slot >= container.Count then
 				break
 			end
 			slot = slot + 1
-			local reverseIndex = #defensivesData - i + 1
-			local entry = defensivesData[reverseIndex]
+			local entry = defensivesData[i]
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
 			layerScratch.Duration = entry.TotalDuration
@@ -291,14 +287,12 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 
 	-- Add Important spells (third priority)
 	if importantSlots > 0 then
-		-- Each Important spell gets its own slot, iterate in reverse to show the most recent first
 		for i = 1, mathMin(importantSlots, #importantData) do
 			if slot >= container.Count then
 				break
 			end
 			slot = slot + 1
-			local reverseIndex = #importantData - i + 1
-			local entry = importantData[reverseIndex]
+			local entry = importantData[i]
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
 			layerScratch.Duration = entry.TotalDuration
@@ -345,10 +339,8 @@ local function ApplyCcToNameplate(data, watcher, unitOptions)
 	local fontScale = db.FontScale
 	local limit = mathMin(ccDataCount, container.Count)
 
-	-- Iterate in reverse to show the most recent first
 	for i = 1, limit do
-		local reverseIndex = ccDataCount - i + 1
-		local entry = ccData[reverseIndex]
+		local entry = ccData[i]
 		layerScratch.Texture = entry.SpellIcon
 		layerScratch.StartTime = entry.StartTime
 		layerScratch.Duration = entry.TotalDuration
@@ -396,14 +388,12 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitOptions)
 
 	-- Add Important spells (highest priority)
 	if importantSlots > 0 then
-		-- Iterate in reverse to show the most recent first
 		for i = 1, mathMin(importantSlots, #importantData) do
 			if slot >= container.Count then
 				break
 			end
 			slot = slot + 1
-			local reverseIndex = #importantData - i + 1
-			local entry = importantData[reverseIndex]
+			local entry = importantData[i]
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
 			layerScratch.Duration = entry.TotalDuration
@@ -418,14 +408,12 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitOptions)
 
 	-- Add Defensive spells (second priority)
 	if defensiveSlots > 0 then
-		-- Iterate in reverse to show the most recent first
 		for i = 1, mathMin(defensiveSlots, #defensivesData) do
 			if slot >= container.Count then
 				break
 			end
 			slot = slot + 1
-			local reverseIndex = #defensivesData - i + 1
-			local entry = defensivesData[reverseIndex]
+			local entry = defensivesData[i]
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.StartTime = entry.StartTime
 			layerScratch.Duration = entry.TotalDuration
@@ -713,7 +701,7 @@ local function OnNamePlateAdded(unitToken)
 	}
 
 	-- Create new watcher
-	watchers[unitToken] = unitWatcher:New(unitToken)
+	watchers[unitToken] = unitWatcher:New(unitToken, nil, nil, nil, Enum.UnitAuraSortDirection.Reverse)
 	watchers[unitToken]:RegisterCallback(function()
 		OnAuraDataChanged(unitToken)
 	end)

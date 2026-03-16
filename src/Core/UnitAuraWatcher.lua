@@ -224,9 +224,11 @@ end
 
 ---@param unit string
 ---@param filter string
+---@param sortRule number?
+---@param sortDirection number?
 ---@param callback fun(auraData: table, start: number, duration: number, dispelColor: table)
-local function IterateAuras(unit, filter, callback)
-	local auras = C_UnitAuras.GetUnitAuras(unit, filter)
+local function IterateAuras(unit, filter, sortRule, sortDirection, callback)
+	local auras = C_UnitAuras.GetUnitAuras(unit, filter, nil, sortRule, sortDirection)
 
 	for _, auraData in ipairs(auras) do
 		local durationInfo = C_UnitAuras.GetAuraDuration(unit, auraData.auraInstanceID)
@@ -272,9 +274,12 @@ function Watcher:RebuildStates()
 	local defensivesSpellData = {}
 	local seen = {}
 
+	local sortRule = self.State.SortRule
+	local sortDirection = self.State.SortDirection
+
 	-- process big defensives first so we can exclude duplicates from important
 	if interestedInDefensives then
-		IterateAuras(unit, "HELPFUL|BIG_DEFENSIVE", function(auraData, start, duration, dispelColor)
+		IterateAuras(unit, "HELPFUL|BIG_DEFENSIVE", sortRule, sortDirection, function(auraData, start, duration, dispelColor)
 			-- units out of range produce garbage data, so double check
 			local isDefensive = C_UnitAuras.AuraIsBigDefensive(auraData.spellId)
 
@@ -294,7 +299,7 @@ function Watcher:RebuildStates()
 			seen[auraData.auraInstanceID] = true
 		end)
 
-		IterateAuras(unit, "HELPFUL|EXTERNAL_DEFENSIVE", function(auraData, start, duration, dispelColor)
+		IterateAuras(unit, "HELPFUL|EXTERNAL_DEFENSIVE", sortRule, sortDirection, function(auraData, start, duration, dispelColor)
 			if not seen[auraData.auraInstanceID] then
 				defensivesSpellData[#defensivesSpellData + 1] = {
 					IsDefensive = true,
@@ -313,7 +318,7 @@ function Watcher:RebuildStates()
 	end
 
 	if interestedInCC then
-		IterateAuras(unit, "HARMFUL|CROWD_CONTROL", function(auraData, start, duration, dispelColor)
+		IterateAuras(unit, "HARMFUL|CROWD_CONTROL", sortRule, sortDirection, function(auraData, start, duration, dispelColor)
 			-- protect against garbage data
 			local isCC = C_Spell.IsSpellCrowdControl(auraData.spellId)
 
@@ -337,7 +342,7 @@ function Watcher:RebuildStates()
 	if interestedInImportant then
 		local importantFilter = (interestedIn and interestedIn.ImportantFilter) or "HELPFUL|IMPORTANT"
 
-		IterateAuras(unit, importantFilter, function(auraData, start, duration, dispelColor)
+		IterateAuras(unit, importantFilter, sortRule, sortDirection, function(auraData, start, duration, dispelColor)
 			if not seen[auraData.auraInstanceID] then
 				-- protect against garbage data
 				local isImportant = C_Spell.IsSpellImportant(auraData.spellId)
@@ -360,12 +365,17 @@ function Watcher:RebuildStates()
 		end)
 	end
 
-	-- for some reason it's possible for auras to come back non-deterministically from the API, so sort by instance ID to ensure a consistent order
-	-- I've only ever seen this happen on Chinese clients
-	local byInstanceId = function(a, b) return a.AuraInstanceID < b.AuraInstanceID end
-	table.sort(ccSpellData, byInstanceId)
-	table.sort(importantSpellData, byInstanceId)
-	table.sort(defensivesSpellData, byInstanceId)
+	-- When unsorted, the API may return auras in a non-deterministic order (observed on Chinese clients).
+	-- Sort by AuraInstanceID to ensure a consistent order, respecting the requested direction.
+	if sortRule == Enum.UnitAuraSortRule.Unsorted then
+		local reversed = sortDirection == Enum.UnitAuraSortDirection.Reverse
+		local byInstanceId = reversed
+			and function(a, b) return a.AuraInstanceID > b.AuraInstanceID end
+			or  function(a, b) return a.AuraInstanceID < b.AuraInstanceID end
+		table.sort(ccSpellData, byInstanceId)
+		table.sort(importantSpellData, byInstanceId)
+		table.sort(defensivesSpellData, byInstanceId)
+	end
 
 	local state = self.State
 	state.CcAuraState = ccSpellData
@@ -402,8 +412,10 @@ end
 ---@param unit string
 ---@param events string[]?
 ---@param interestedIn AuraTypeFilter?
+---@param sortRule number? -- Enum.UnitAuraSortRule value, defaults to Enum.UnitAuraSortRule.Unsorted
+---@param sortDirection number? -- Enum.UnitAuraSortDirection value, defaults to Enum.UnitAuraSortDirection.Normal
 ---@return Watcher
-function M:New(unit, events, interestedIn)
+function M:New(unit, events, interestedIn, sortRule, sortDirection)
 	if not unit then
 		error("unit must not be nil")
 	end
@@ -436,6 +448,8 @@ function M:New(unit, events, interestedIn)
 			DefensiveState = {},
 			InterestedIn = interestedIn,
 			ActiveFilters = activeFilters,
+			SortRule = sortRule or Enum.UnitAuraSortRule.Unsorted,
+			SortDirection = sortDirection or Enum.UnitAuraSortDirection.Normal,
 		},
 	}, Watcher)
 
@@ -482,6 +496,8 @@ InitColourCurve()
 ---@field DefensiveState AuraInfo[]
 ---@field InterestedIn AuraTypeFilter
 ---@field ActiveFilters string[]
+---@field SortRule number
+---@field SortDirection number
 
 ---@class Watcher
 ---@field Frame table?

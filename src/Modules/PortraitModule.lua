@@ -116,8 +116,7 @@ local function OnAuraInfo(watcher, container)
 	local slotIndex = 1
 
 	-- Show the latest CC aura
-	for i = #ccAuras, 1, -1 do
-		local aura = ccAuras[i]
+	for _, aura in ipairs(ccAuras) do
 		container:SetSlot(slotIndex, {
 			Texture = aura.SpellIcon,
 			StartTime = aura.StartTime,
@@ -130,8 +129,7 @@ local function OnAuraInfo(watcher, container)
 	end
 
 	-- Show the latest defensive aura
-	for i = #defensiveAuras, 1, -1 do
-		local aura = defensiveAuras[i]
+	for _, aura in ipairs(defensiveAuras) do
 		container:SetSlot(slotIndex, {
 			Texture = aura.SpellIcon,
 			StartTime = aura.StartTime,
@@ -144,8 +142,7 @@ local function OnAuraInfo(watcher, container)
 	end
 
 	-- Show the latest important aura
-	for i = #importantAuras, 1, -1 do
-		local aura = importantAuras[i]
+	for _, aura in ipairs(importantAuras) do
 		container:SetSlot(slotIndex, {
 			Texture = aura.SpellIcon,
 			StartTime = aura.StartTime,
@@ -243,7 +240,7 @@ local function Attach(unit, events)
 		return
 	end
 
-	local watcher = unitWatcher:New(unit, events)
+	local watcher = unitWatcher:New(unit, events, nil, nil, Enum.UnitAuraSortDirection.Reverse)
 	watchers[unit] = watcher
 
 	local container = CreateContainer(unitFrame, portrait)
