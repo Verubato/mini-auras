@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.34.0
+
+- Vertical tabs instead of horizontal to make the config UI smaller.
+- Fixed weird drag snapping issue.
+- Added option to use the default CC order from Blizzard.
+- Added option (default enabled) to disable the Blizzard CC from nameplates to avoid duplicate icons.
+
 ## 2.33.0
 
 Added TPerl party frames support.
