@@ -220,6 +220,7 @@ L:SetStrings({
 	["Other Mini Addons"] = "기타 Mini 애드온",
 	["Other mini addons to enhance your PvP experience:"] = "PvP 경험을 향상시키는 다른 mini 애드온:",
 	["Other Mini Addons_Short"] = "기타",
+	["Miscellaneous_Short"] = "기타 설정",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - 파티/공격대 소환수 프레임에 CC 아이콘이 추가되었습니다 (기본적으로 비활성화).",

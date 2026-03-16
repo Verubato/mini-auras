@@ -220,6 +220,7 @@ L:SetStrings({
 	["Other Mini Addons"] = "Andere Mini-Addons",
 	["Other mini addons to enhance your PvP experience:"] = "Andere Mini-Addons zur Verbesserung deiner PvP-Erfahrung:",
 	["Other Mini Addons_Short"] = "Andere",
+	["Miscellaneous_Short"] = "Sonstiges",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - CC-Symbole auf Begleiter-Gruppen-/Schlachtzugsrahmen hinzugefügt (standardmäßig deaktiviert).",

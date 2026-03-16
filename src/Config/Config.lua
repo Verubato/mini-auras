@@ -181,6 +181,13 @@ function M:Init()
 				M.OtherAddons:Build(content)
 			end,
 		},
+		{
+			Key = "Miscellaneous",
+			Title = L["Miscellaneous_Short"] or L["Miscellaneous"],
+			Build = function(content)
+				M.Miscellaneous:Build(content)
+			end,
+		},
 	}
 
 	local contentPadding = 12
@@ -262,3 +269,4 @@ end
 ---@field PrecogGuesser PrecogGuesserConfig
 ---@field OtherAddons OtherAddonsConfig
 ---@field FriendlyIndicator FriendlyIndicatorConfig
+---@field Miscellaneous MiscellaneousConfig

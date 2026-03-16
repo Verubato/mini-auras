@@ -66,5 +66,6 @@ Config\Trinkets.lua
 Config\PrecogGuesser.lua
 Config\FriendlyIndicator.lua
 Config\OtherAddons.lua
+Config\Miscellaneous.lua
 
 MiniCC.lua

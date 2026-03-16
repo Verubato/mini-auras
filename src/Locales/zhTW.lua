@@ -224,6 +224,7 @@ L:SetStrings({
 	["Other Mini Addons"] = "其他Mini插件",
 	["Other mini addons to enhance your PvP experience:"] = "增強您PvP體驗的其他mini插件：",
 	["Other Mini Addons_Short"] = "其他",
+	["Miscellaneous_Short"] = "雜項",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - 為隊伍/團隊的寵物框架新增了CC圖示（預設停用）。",
