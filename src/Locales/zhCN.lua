@@ -77,6 +77,7 @@ L:SetStrings({
 	["Import Profile"] = "导入配置",
 	["Miscellaneous"] = "杂项",
 	["Reset"] = "重置",
+	["Mini addon, massive awareness."] = "Mini addon, massive awareness.",
 	["CC Native Order"] = "CC Native Order",
 	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions).",
 	["The others seem to use a non-trivial amount of CPU."] = "其他的似乎使用了大量的CPU。",

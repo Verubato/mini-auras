@@ -77,6 +77,7 @@ L:SetStrings({
 	["Import Profile"] = "프로필 가져오기",
 	["Miscellaneous"] = "기타",
 	["Reset"] = "재설정",
+	["Mini addon, massive awareness."] = "Mini addon, massive awareness.",
 	["CC Native Order"] = "CC Native Order",
 	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions).",
 	["The others seem to use a non-trivial amount of CPU."] = "다른 것들은 상당한 CPU를 사용하는 것 같습니다.",
