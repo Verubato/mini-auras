@@ -102,4 +102,19 @@ function M:Build(panel)
 	})
 
 	configureBlizzardNameplatesChk:SetPoint("TOPLEFT", fontScaleSlider.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 2)
+
+	local ccNativeOrderChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["CC Native Order"],
+		Tooltip = L["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."],
+		GetValue = function()
+			return db.CCNativeOrder or false
+		end,
+		SetValue = function(value)
+			db.CCNativeOrder = value
+			addon:Refresh()
+		end,
+	})
+
+	ccNativeOrderChk:SetPoint("TOPLEFT", configureBlizzardNameplatesChk, "BOTTOMLEFT", 0, -verticalSpacing)
 end

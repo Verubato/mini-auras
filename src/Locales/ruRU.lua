@@ -77,6 +77,8 @@ L:SetStrings({
 	["Import Profile"] = "Импорт профиля",
 	["Miscellaneous"] = "Прочее",
 	["Reset"] = "Сброс",
+	["CC Native Order"] = "CC Native Order",
+	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions).",
 	["The others seem to use a non-trivial amount of CPU."] = "Остальные используют значительное количество ЦП.",
 	["The Proc Glow uses the least CPU."] = "Proc свечение использует меньше всего ЦП.",
 

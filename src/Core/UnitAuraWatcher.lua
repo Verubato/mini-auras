@@ -178,6 +178,17 @@ function Watcher:ForceFullUpdate()
 	self:OnEvent("UNIT_AURA", self.State.Unit, { isFullUpdate = true })
 end
 
+---@param sortRule number
+---@param sortDirection number
+function Watcher:SetSort(sortRule, sortDirection)
+	if self.State.SortRule == sortRule and self.State.SortDirection == sortDirection then
+		return
+	end
+	self.State.SortRule = sortRule
+	self.State.SortDirection = sortDirection
+	self:ForceFullUpdate()
+end
+
 function Watcher:Dispose()
 	local frame = self.Frame
 	if frame then
@@ -512,4 +523,5 @@ InitColourCurve()
 ---@field Disable fun(self: Watcher)
 ---@field ClearState fun(self: Watcher, notify: boolean?)
 ---@field ForceFullUpdate fun(self: Watcher)
+---@field SetSort fun(self: Watcher, sortRule: number, sortDirection: number)
 ---@field Dispose fun(self: Watcher)

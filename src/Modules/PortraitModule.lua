@@ -394,6 +394,13 @@ function M:StopTesting()
 	M:Refresh()
 end
 
+local function GetCCSortOptions()
+	if db.CCNativeOrder then
+		return Enum.UnitAuraSortRule.Default, Enum.UnitAuraSortDirection.Normal
+	end
+	return Enum.UnitAuraSortRule.Unsorted, Enum.UnitAuraSortDirection.Reverse
+end
+
 function M:Refresh()
 	local moduleEnabled = moduleUtil:IsModuleEnabled(ModuleName.Portrait)
 
@@ -405,6 +412,11 @@ function M:Refresh()
 
 	-- Module is enabled, ensure watchers are enabled
 	EnableWatchers()
+
+	local sortRule, sortDirection = GetCCSortOptions()
+	for _, watcher in pairs(watchers) do
+		watcher:SetSort(sortRule, sortDirection)
+	end
 
 	if testModeActive then
 		RefreshTestIcons()

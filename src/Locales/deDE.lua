@@ -77,6 +77,8 @@ L:SetStrings({
 	["Import Profile"] = "Profil importieren",
 	["Miscellaneous"] = "Sonstiges",
 	["Reset"] = "Zurücksetzen",
+	["CC Native Order"] = "CC Native Order",
+	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions).",
 	["The others seem to use a non-trivial amount of CPU."] = "Die anderen scheinen eine beträchtliche Menge CPU zu verwenden.",
 	["The Proc Glow uses the least CPU."] = "Das Proc-Leuchten verwendet am wenigsten CPU.",
 

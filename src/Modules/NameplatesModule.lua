@@ -87,6 +87,13 @@ local nameplateCcKey = addonName .. "_CcContainer"
 local nameplateImportantKey = addonName .. "_ImportantContainer"
 local nameplateCombinedKey = addonName .. "_CombinedContainer"
 
+local function GetCCSortOptions()
+	if db.CCNativeOrder then
+		return Enum.UnitAuraSortRule.Default, Enum.UnitAuraSortDirection.Normal
+	end
+	return Enum.UnitAuraSortRule.Unsorted, Enum.UnitAuraSortDirection.Reverse
+end
+
 local function GrowToAnchor(grow)
 	if grow == "LEFT" then
 		return "RIGHT", "LEFT"
@@ -701,7 +708,8 @@ local function OnNamePlateAdded(unitToken)
 	}
 
 	-- Create new watcher
-	watchers[unitToken] = unitWatcher:New(unitToken, nil, nil, nil, Enum.UnitAuraSortDirection.Reverse)
+	local sortRule, sortDirection = GetCCSortOptions()
+	watchers[unitToken] = unitWatcher:New(unitToken, nil, nil, sortRule, sortDirection)
 	watchers[unitToken]:RegisterCallback(function()
 		OnAuraDataChanged(unitToken)
 	end)
@@ -1019,6 +1027,11 @@ function M:Refresh()
 
 	CacheEnabledModes()
 	RefreshAnchorsAndSizes()
+
+	local sortRule, sortDirection = GetCCSortOptions()
+	for _, watcher in pairs(watchers) do
+		watcher:SetSort(sortRule, sortDirection)
+	end
 
 	if testModeActive then
 		-- update test icons
