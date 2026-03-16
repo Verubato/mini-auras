@@ -65,13 +65,15 @@ function M:Init()
 
 	-- Standalone config window
 	local version = C_AddOns.GetAddOnMetadata(addonName, "Version")
+	local windowWidth = 1000
+	local windowHeight = 600
 
 	local window = mini:CreateStandaloneWindow({
 		Name = addonName .. "ConfigFrame",
 		Title = addonName,
 		Subtitle = version,
-		Width = 1080,
-		Height = 680,
+		Width = windowWidth,
+		Height = windowHeight,
 	})
 
 	M.Window = window
@@ -174,10 +176,11 @@ function M:Init()
 		},
 	}
 
-	local windowWidth = 1050
 	local contentPadding = 12
 	local windowInset = 2 + contentPadding * 2 + 8 -- border, padding, and small right margin
-	local contentWidth = windowWidth - windowInset
+	local tabStripWidth = 130
+	local tabHorizontalPadding = 12
+	local contentWidth = windowWidth - windowInset - tabStripWidth - tabHorizontalPadding
 	mini.ContentWidth = contentWidth
 	mini.TextMaxWidth = contentWidth - windowInset
 
@@ -190,6 +193,9 @@ function M:Init()
 			Top = verticalSpacing,
 		},
 		TabFitToParent = true,
+		Vertical = true,
+		StripWidth = tabStripWidth,
+		HorizontalPadding = tabHorizontalPadding,
 		Tabs = tabs,
 	})
 

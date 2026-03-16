@@ -88,7 +88,7 @@ function M:Build(panel)
 		Step = 1,
 	})
 
-	iconSizeSlider.Slider:SetPoint("TOPLEFT", healerEnabled, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	iconSizeSlider.Slider:SetPoint("TOPLEFT", healerEnabled, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local important = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 	important:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)

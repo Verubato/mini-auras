@@ -1002,6 +1002,9 @@ function M:CreateTabs(options)
 	local tabMinWidth = options.TabMinWidth or 80
 	local tabSpacing = options.TabSpacing or 6
 	local stripHeight = options.StripHeight or 28
+	local vertical = options.Vertical
+	local stripWidth = options.StripWidth or 130
+	local horizontalPadding = options.HorizontalPadding or 0
 
 	local insets = options.ContentInsets or {}
 	local insetL = insets.Left or 0
@@ -1010,13 +1013,24 @@ function M:CreateTabs(options)
 	local insetB = insets.Bottom or 10
 
 	local strip = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-	strip:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-	strip:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
-	strip:SetHeight(stripHeight)
+	if vertical then
+		strip:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+		strip:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
+		strip:SetWidth(stripWidth)
+	else
+		strip:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+		strip:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
+		strip:SetHeight(stripHeight)
+	end
 
 	local body = CreateFrame("Frame", nil, parent)
-	body:SetPoint("TOPLEFT", strip, "BOTTOMLEFT", insetL, -insetT)
-	body:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -insetR, insetB)
+	if vertical then
+		body:SetPoint("TOPLEFT", strip, "TOPRIGHT", horizontalPadding + insetL, -insetT)
+		body:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -insetR, insetB)
+	else
+		body:SetPoint("TOPLEFT", strip, "BOTTOMLEFT", insetL, -insetT)
+		body:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -insetR, insetB)
+	end
 
 	---@type {Key:string, Title:string, Button:table, Content:table}[]
 	local tabs = {}
@@ -1045,7 +1059,7 @@ function M:CreateTabs(options)
 
 	local normalR, normalG, normalB = GameFontNormal:GetTextColor()
 
-	-- Single continuous underline split into left/right segments around the selected tab.
+	-- Horizontal mode: single continuous underline split around the selected tab.
 	local lineLeft = strip:CreateTexture(nil, "OVERLAY")
 	lineLeft:SetHeight(1)
 	lineLeft:SetColorTexture(0.35, 0.35, 0.35, 0.8)
@@ -1054,47 +1068,59 @@ function M:CreateTabs(options)
 	lineRight:SetHeight(1)
 	lineRight:SetColorTexture(0.35, 0.35, 0.35, 0.8)
 
-	-- Assigned after the tab loop; used to limit the line to the last tab's right edge.
+	-- Vertical mode: static right-edge separator line.
+	if vertical then
+		local vLine = strip:CreateTexture(nil, "OVERLAY")
+		vLine:SetWidth(1)
+		vLine:SetColorTexture(0.35, 0.35, 0.35, 0.8)
+		vLine:SetPoint("TOPRIGHT", strip, "TOPRIGHT", 0, 0)
+		vLine:SetPoint("BOTTOMRIGHT", strip, "BOTTOMRIGHT", 0, 0)
+	end
+
+	-- Assigned after the tab loop; used in horizontal mode to limit the line to the last tab.
 	local lastBtn
 
 	local function SetSelected(btn, isSelected)
 		if isSelected then
-			btn:SetBackdropColor(0, 0, 0, 0)
-			btn:SetBackdropBorderColor(0.55, 0.55, 0.55, 1)
-
 			btn.Text:SetTextColor(1, 1, 1, 1)
-
-			btn.BottomEdge:Hide()
-			btn.BottomLeftCorner:Hide()
-			btn.BottomRightCorner:Hide()
-
 			btn.Highlight:SetAlpha(0)
 
-			-- Reanchor line segments to leave a gap at this button.
-			-- Both segments end at lastBtn's right edge, not the full strip width.
-			lineLeft:ClearAllPoints()
-			lineLeft:SetPoint("TOPLEFT", strip, "BOTTOMLEFT", 0, 2)
-			lineLeft:SetPoint("BOTTOMRIGHT", btn, "BOTTOMLEFT", 0, 0)
-
-			lineRight:ClearAllPoints()
-			if lastBtn and btn ~= lastBtn then
-				lineRight:SetPoint("TOPLEFT", btn, "BOTTOMRIGHT", 0, 1)
-				lineRight:SetPoint("BOTTOMRIGHT", lastBtn, "BOTTOMRIGHT", 0, 0)
-				lineRight:Show()
+			if vertical then
+				btn:SetBackdropColor(0.12, 0.12, 0.12, 0.9)
+				btn:SetBackdropBorderColor(0.45, 0.45, 0.45, 0.8)
+				if btn.Indicator then btn.Indicator:Show() end
 			else
-				lineRight:Hide()
+				btn:SetBackdropColor(0, 0, 0, 0)
+				btn:SetBackdropBorderColor(0.55, 0.55, 0.55, 1)
+				btn.BottomEdge:Hide()
+				btn.BottomLeftCorner:Hide()
+				btn.BottomRightCorner:Hide()
+				-- Reanchor line segments to leave a gap at this button.
+				lineLeft:ClearAllPoints()
+				lineLeft:SetPoint("TOPLEFT", strip, "BOTTOMLEFT", 0, 2)
+				lineLeft:SetPoint("BOTTOMRIGHT", btn, "BOTTOMLEFT", 0, 0)
+				lineRight:ClearAllPoints()
+				if lastBtn and btn ~= lastBtn then
+					lineRight:SetPoint("TOPLEFT", btn, "BOTTOMRIGHT", 0, 1)
+					lineRight:SetPoint("BOTTOMRIGHT", lastBtn, "BOTTOMRIGHT", 0, 0)
+					lineRight:Show()
+				else
+					lineRight:Hide()
+				end
 			end
 		else
 			btn:SetBackdropColor(0, 0, 0, 0)
 			btn:SetBackdropBorderColor(0.35, 0.35, 0.35, 0.8)
-
 			btn.Text:SetTextColor(normalR, normalG, normalB, 1)
-
-			btn.BottomEdge:Hide()
-			btn.BottomLeftCorner:Hide()
-			btn.BottomRightCorner:Hide()
-
 			btn.Highlight:SetAlpha(0.06)
+
+			if vertical then
+				if btn.Indicator then btn.Indicator:Hide() end
+			else
+				btn.BottomEdge:Hide()
+				btn.BottomLeftCorner:Hide()
+				btn.BottomRightCorner:Hide()
+			end
 		end
 	end
 
@@ -1160,12 +1186,30 @@ function M:CreateTabs(options)
 		btn.Highlight:SetAllPoints(btn)
 		btn.Highlight:SetColorTexture(1, 1, 1, 1)
 
-		SizeToText(btn)
+		if vertical then
+			-- Left-edge accent bar for selected state
+			btn.Indicator = btn:CreateTexture(nil, "OVERLAY")
+			btn.Indicator:SetWidth(3)
+			btn.Indicator:SetPoint("TOPLEFT", btn, "TOPLEFT", 0, 0)
+			btn.Indicator:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", 0, 0)
+			btn.Indicator:SetColorTexture(0.4, 0.7, 1.0, 1.0)
+			btn.Indicator:Hide()
 
-		if not prev then
-			btn:SetPoint("BOTTOMLEFT", strip, "BOTTOMLEFT", 0, 1)
+			if not prev then
+				btn:SetPoint("TOPLEFT", strip, "TOPLEFT", 0, 0)
+				btn:SetPoint("TOPRIGHT", strip, "TOPRIGHT", 0, 0)
+			else
+				btn:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, -tabSpacing)
+				btn:SetPoint("TOPRIGHT", prev, "BOTTOMRIGHT", 0, -tabSpacing)
+			end
 		else
-			btn:SetPoint("LEFT", prev, "RIGHT", tabSpacing, 0)
+			SizeToText(btn)
+
+			if not prev then
+				btn:SetPoint("BOTTOMLEFT", strip, "BOTTOMLEFT", 0, 1)
+			else
+				btn:SetPoint("LEFT", prev, "RIGHT", tabSpacing, 0)
+			end
 		end
 
 		prev = btn
@@ -1313,21 +1357,40 @@ function M:CreateTabs(options)
 	end
 
 	if options.TabFitToParent then
-		local function DistributeTabs(w)
-			if w == 0 or #tabs == 0 then
-				return
+		if vertical then
+			local function DistributeTabs(h)
+				if h == 0 or #tabs == 0 then
+					return
+				end
+				local btnH = math.floor((h - tabSpacing * (#tabs - 1)) / #tabs)
+				for _, tab in ipairs(tabs) do
+					tab.Button:SetHeight(math.max(16, btnH))
+				end
 			end
-			local btnW = math.floor((w - tabSpacing * (#tabs - 1)) / #tabs)
-			for _, tab in ipairs(tabs) do
-				tab.Button:SetWidth(btnW)
+			strip:SetScript("OnSizeChanged", function(_, _, h)
+				DistributeTabs(h)
+			end)
+			local h = strip:GetHeight()
+			if h and h > 0 then
+				DistributeTabs(h)
 			end
-		end
-		strip:SetScript("OnSizeChanged", function(s, w)
-			DistributeTabs(w)
-		end)
-		local w = strip:GetWidth()
-		if w and w > 0 then
-			DistributeTabs(w)
+		else
+			local function DistributeTabs(w)
+				if w == 0 or #tabs == 0 then
+					return
+				end
+				local btnW = math.floor((w - tabSpacing * (#tabs - 1)) / #tabs)
+				for _, tab in ipairs(tabs) do
+					tab.Button:SetWidth(btnW)
+				end
+			end
+			strip:SetScript("OnSizeChanged", function(s, w)
+				DistributeTabs(w)
+			end)
+			local w = strip:GetWidth()
+			if w and w > 0 then
+				DistributeTabs(w)
+			end
 		end
 	end
 

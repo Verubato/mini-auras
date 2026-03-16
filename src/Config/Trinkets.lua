@@ -65,7 +65,7 @@ function M:Build(panel)
 		Step = 1,
 	})
 
-	iconSizeSlider.Slider:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	iconSizeSlider.Slider:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local offsetXSlider = mini:Slider({
 		Parent = panel,
