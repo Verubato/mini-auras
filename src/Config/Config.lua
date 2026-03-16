@@ -78,10 +78,17 @@ function M:Init()
 
 	M.Window = window
 
-	-- reset the window position for people who accidentally drag it off screen
-	window:SetScript("OnShow", function(self)
-		self:ClearAllPoints()
-		self:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+	-- Center the window when it becomes visible from a hidden state.
+	local windowPreviouslyHidden = true
+	window:HookScript("OnHide", function()
+		windowPreviouslyHidden = true
+	end)
+	window:HookScript("OnShow", function(self)
+		if windowPreviouslyHidden then
+			windowPreviouslyHidden = false
+			self:ClearAllPoints()
+			self:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+		end
 	end)
 
 	-- Test button in the title bar
