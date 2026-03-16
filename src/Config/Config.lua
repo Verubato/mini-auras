@@ -247,6 +247,13 @@ function M:Init()
 		window:Toggle()
 	end
 
+	-- add a /rl alias if the user doesn't have one defined already
+	if not SLASH_RL1 then
+		SLASH_RL1 = "/rl"
+		SlashCmdList["RL"] = function()
+			C_UI.Reload()
+		end
+	end
 end
 
 ---@class Config
