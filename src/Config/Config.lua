@@ -203,9 +203,7 @@ function M:Init()
 		InitialKey = "General",
 		ScrollBody = true,
 		ScrollContentWidth = contentWidth,
-		ContentInsets = {
-			Top = verticalSpacing,
-		},
+		ContentInsets = { Top = 4 },
 		TabFitToParent = true,
 		Vertical = true,
 		StripWidth = tabStripWidth,

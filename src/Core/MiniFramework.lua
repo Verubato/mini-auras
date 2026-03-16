@@ -1009,7 +1009,7 @@ function M:CreateTabs(options)
 	local insets = options.ContentInsets or {}
 	local insetL = insets.Left or 0
 	local insetR = insets.Right or 0
-	local insetT = insets.Top or 10
+	local insetT = insets.Top or 0
 	local insetB = insets.Bottom or 10
 
 	local strip = CreateFrame("Frame", nil, parent, "BackdropTemplate")
