@@ -84,4 +84,22 @@ function M:Build(panel)
 
 	iconSpacingSlider.Slider:SetPoint("LEFT", fontScaleSlider.Slider, "RIGHT", horizontalSpacing, 0)
 	iconSpacingSlider.Slider:SetPoint("TOP", fontScaleSlider.Slider, "TOP", 0, 0)
+
+	local configureBlizzardNameplatesChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Configure Blizzard Nameplates"],
+		Tooltip = L["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."],
+		GetValue = function()
+			if db.ConfigureBlizzardNameplates == nil then
+				return true
+			end
+			return db.ConfigureBlizzardNameplates
+		end,
+		SetValue = function(value)
+			db.ConfigureBlizzardNameplates = value
+			addon:Refresh()
+		end,
+	})
+
+	configureBlizzardNameplatesChk:SetPoint("TOPLEFT", fontScaleSlider.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 2)
 end

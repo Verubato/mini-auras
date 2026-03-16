@@ -986,6 +986,30 @@ function M:StopTesting()
 	end
 end
 
+local function ApplyBlizzardNameplateSettings()
+	local configureEnabled = db.ConfigureBlizzardNameplates
+	if configureEnabled == nil then
+		configureEnabled = true
+	end
+
+	local anyEnemyEnabled = nmModule.Enemy.CC.Enabled
+		or nmModule.Enemy.Important.Enabled
+		or nmModule.Enemy.Combined.Enabled
+
+	local anyFriendlyEnabled = nmModule.Friendly.CC.Enabled
+		or nmModule.Friendly.Important.Enabled
+		or nmModule.Friendly.Combined.Enabled
+
+	if configureEnabled and anyEnemyEnabled then
+		C_CVar.SetCVarBitfield("nameplateEnemyPlayerAuraDisplay", Enum.NamePlateEnemyPlayerAuraDisplay.LossOfControl, false)
+		C_CVar.SetCVarBitfield("nameplateEnemyNpcAuraDisplay", Enum.NamePlateEnemyNpcAuraDisplay.CrowdControl, false)
+	end
+
+	if configureEnabled and anyFriendlyEnabled then
+		C_CVar.SetCVarBitfield("nameplateFriendlyPlayerAuraDisplay", Enum.NamePlateFriendlyPlayerAuraDisplay.LossOfControl, false)
+	end
+end
+
 function M:Refresh()
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
 
@@ -994,6 +1018,8 @@ function M:Refresh()
 		CacheEnabledModes()
 		return
 	end
+
+	ApplyBlizzardNameplateSettings()
 
 	-- Module is enabled, ensure watchers are enabled
 	EnableWatchers()
