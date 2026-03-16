@@ -212,6 +212,8 @@ L:SetStrings({
 	[" - shows markers above your team mates."] = " - muestra marcadores sobre tus compañeros de equipo.",
 	[" - shows overshields on frames and nameplates."] = " - muestra sobreescudos en marcos y placas de nombre.",
 	[" - shows your debuffs on enemy arena frames."] = " - muestra tus penalizaciones en marcos de arena enemigos.",
+	[" - customize the cooldown timers."] = " - customize the cooldown timers.",
+	[" - powerful icon skinning tool."] = " - powerful icon skinning tool.",
 	["MiniArenaDebuffs"] = "MiniArenaDebuffs",
 	["MiniCombatNotifier"] = "MiniCombatNotifier",
 	["MiniKillingBlow"] = "MiniKillingBlow",

@@ -87,4 +87,34 @@ function M:Build(panel)
 	})
 
 	url.EditBox:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 4, -verticalSpacing)
+
+	local styleSubtitle = mini:TextLine({
+		Parent = panel,
+		Text = L["Other addons to style MiniCC icons:"],
+	})
+
+	styleSubtitle:SetPoint("TOPLEFT", url.EditBox, "BOTTOMLEFT", -4, -verticalSpacing)
+
+	local stylingLines = mini:TextBlockSegmented({
+		Parent = panel,
+
+		PrefixFont = "GameFontWhite",
+		TextFont = "GameFontNormal",
+		SuffixFont = "GameFontWhite",
+
+		Lines = {
+			{
+				Prefix = "",
+				Text = L["MiniCE"],
+				Suffix = L[" - customize the cooldown timers."],
+			},
+			{
+				Prefix = "",
+				Text = L["Masque"],
+				Suffix = L[" - powerful icon skinning tool."],
+			},
+		},
+	})
+
+	stylingLines:SetPoint("TOPLEFT", styleSubtitle, "BOTTOMLEFT", 0, -verticalSpacing)
 end

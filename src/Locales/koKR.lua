@@ -211,6 +211,8 @@ L:SetStrings({
 	[" - shows markers above your team mates."] = " - 팀원 위에 표식을 표시합니다.",
 	[" - shows overshields on frames and nameplates."] = " - 프레임과 이름표에 초과 보호막을 표시합니다.",
 	[" - shows your debuffs on enemy arena frames."] = " - 적 경기장 프레임에 당신의 디버프를 표시합니다.",
+	[" - customize the cooldown timers."] = " - customize the cooldown timers.",
+	[" - powerful icon skinning tool."] = " - powerful icon skinning tool.",
 	["MiniArenaDebuffs"] = "MiniArenaDebuffs",
 	["MiniCombatNotifier"] = "MiniCombatNotifier",
 	["MiniKillingBlow"] = "MiniKillingBlow",
