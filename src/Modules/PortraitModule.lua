@@ -118,49 +118,43 @@ local function OnAuraInfo(watcher, container)
 	-- Show the latest CC aura
 	for i = #ccAuras, 1, -1 do
 		local aura = ccAuras[i]
-		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
-			container:SetSlot(slotIndex, {
-				Texture = aura.SpellIcon,
-				StartTime = aura.StartTime,
-				Duration = aura.TotalDuration,
-				Alpha = aura.IsCC,
-				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
-				FontScale = db.FontScale,
-			})
-			return
-		end
+		container:SetSlot(slotIndex, {
+			Texture = aura.SpellIcon,
+			StartTime = aura.StartTime,
+			Duration = aura.TotalDuration,
+			Alpha = aura.IsCC,
+			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
+			FontScale = db.FontScale,
+		})
+		return
 	end
 
 	-- Show the latest defensive aura
 	for i = #defensiveAuras, 1, -1 do
 		local aura = defensiveAuras[i]
-		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
-			container:SetSlot(slotIndex, {
-				Texture = aura.SpellIcon,
-				StartTime = aura.StartTime,
-				Duration = aura.TotalDuration,
-				Alpha = aura.IsDefensive,
-				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
-				FontScale = db.FontScale,
-			})
-			return
-		end
+		container:SetSlot(slotIndex, {
+			Texture = aura.SpellIcon,
+			StartTime = aura.StartTime,
+			Duration = aura.TotalDuration,
+			Alpha = aura.IsDefensive,
+			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
+			FontScale = db.FontScale,
+		})
+		return
 	end
 
 	-- Show the latest important aura
 	for i = #importantAuras, 1, -1 do
 		local aura = importantAuras[i]
-		if aura.SpellIcon and aura.StartTime and aura.TotalDuration then
-			container:SetSlot(slotIndex, {
-				Texture = aura.SpellIcon,
-				StartTime = aura.StartTime,
-				Duration = aura.TotalDuration,
-				Alpha = aura.IsImportant,
-				ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
-				FontScale = db.FontScale,
-			})
-			return
-		end
+		container:SetSlot(slotIndex, {
+			Texture = aura.SpellIcon,
+			StartTime = aura.StartTime,
+			Duration = aura.TotalDuration,
+			Alpha = aura.IsImportant,
+			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
+			FontScale = db.FontScale,
+		})
+		return
 	end
 
 	-- No auras to display, clear the slot if it was used
