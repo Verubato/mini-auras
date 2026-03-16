@@ -226,6 +226,7 @@ L:SetDefaultStrings({
 	["Other mini addons to enhance your PvP experience:"] = "Other mini addons to enhance your PvP experience:",
 	["Other Mini Addons_Short"] = "Other Addons",
 	["Miscellaneous_Short"] = "Misc",
+	["Configure Blizzard Nameplates"] = "Configure Blizzard Nameplates",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Added CC icons on pet party/raid frames (disabled by default).",

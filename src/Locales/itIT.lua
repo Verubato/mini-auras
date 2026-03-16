@@ -226,6 +226,7 @@ L:SetStrings({
 	["Other mini addons to enhance your PvP experience:"] = "Altri mini addon per migliorare la tua esperienza PvP:",
 	["Other Mini Addons_Short"] = "Altri",
 	["Miscellaneous_Short"] = "Varie",
+	["Configure Blizzard Nameplates"] = "Configura i segnaposto di Blizzard",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Aggiunte icone CC sui frame di gruppo/incursione degli animali da compagnia (disabilitato per impostazione predefinita).",

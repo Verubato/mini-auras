@@ -227,6 +227,7 @@ L:SetStrings({
 	["Other mini addons to enhance your PvP experience:"] = "增强您PvP体验的其他mini插件：",
 	["Other Mini Addons_Short"] = "其他",
 	["Miscellaneous_Short"] = "杂项",
+	["Configure Blizzard Nameplates"] = "配置暴雪姓名板",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - 为队伍/团队的宠物框架新增了CC图标（默认禁用）。",
