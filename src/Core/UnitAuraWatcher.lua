@@ -57,10 +57,10 @@ local function InterestedIn(watcher, updateInfo)
 	local activeFilters = state.ActiveFilters
 
 	if updateInfo.addedAuras then
-		for _, aura in ipairs(updateInfo.addedAuras) do
+		for _, aura in pairs(updateInfo.addedAuras) do
 			local id = aura.auraInstanceID
 			if id then
-				for _, filter in ipairs(activeFilters) do
+				for _, filter in pairs(activeFilters) do
 					if not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, id, filter) then
 						return true
 					end
@@ -70,10 +70,10 @@ local function InterestedIn(watcher, updateInfo)
 	end
 
 	if updateInfo.updatedAuras then
-		for _, aura in ipairs(updateInfo.updatedAuras) do
+		for _, aura in pairs(updateInfo.updatedAuras) do
 			local id = aura.auraInstanceID
 			if id then
-				for _, filter in ipairs(activeFilters) do
+				for _, filter in pairs(activeFilters) do
 					if not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, id, filter) then
 						return true
 					end
@@ -84,9 +84,9 @@ local function InterestedIn(watcher, updateInfo)
 
 	-- Removed auras are already gone, so the filter API can't be used.
 	-- Instead check whether any removed ID matches one we were tracking.
-	if updateInfo.removedAuraInstanceIDs and #updateInfo.removedAuraInstanceIDs > 0 then
+	if updateInfo.removedAuraInstanceIDs and next(updateInfo.removedAuraInstanceIDs) ~= nil then
 		local states = { state.CcAuraState, state.DefensiveState, state.ImportantAuraState }
-		for _, id in ipairs(updateInfo.removedAuraInstanceIDs) do
+		for _, id in pairs(updateInfo.removedAuraInstanceIDs) do
 			for _, auraState in ipairs(states) do
 				for _, aura in ipairs(auraState) do
 					if aura.AuraInstanceID == id then
