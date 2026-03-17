@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.34.1
+
+- Possible fix for icons lingering.
+- Added disable swipe animation option.
+
 ## 2.34.0
 
 - Vertical tabs instead of horizontal to make the config UI smaller.
