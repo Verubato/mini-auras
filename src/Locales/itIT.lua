@@ -38,6 +38,8 @@ L:SetStrings({
 	["Notification"] = "Notifica",
 	["Offset X"] = "Offset X",
 	["Offset Y"] = "Offset Y",
+	["Disable Swipe Animation"] = "Disabilita animazione di scorrimento",
+	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Disabilita l'animazione di scorrimento (grafico a torta) della ricarica su tutte le icone. Il testo del timer del conto alla rovescia verrà comunque visualizzato.",
 	["Reverse swipe"] = "Scorrimento inverso",
 	["Reverses the direction of the cooldown swipe animation."] = "Inverte la direzione dell'animazione di scorrimento della ricarica.",
 	["Settings"] = "Impostazioni",

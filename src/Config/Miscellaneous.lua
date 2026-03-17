@@ -117,4 +117,19 @@ function M:Build(panel)
 	})
 
 	ccNativeOrderChk:SetPoint("TOPLEFT", configureBlizzardNameplatesChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local disableSwipeChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Disable Swipe Animation"],
+		Tooltip = L["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."],
+		GetValue = function()
+			return db.DisableSwipe or false
+		end,
+		SetValue = function(value)
+			db.DisableSwipe = value
+			addon:Refresh()
+		end,
+	})
+
+	disableSwipeChk:SetPoint("TOPLEFT", ccNativeOrderChk, "BOTTOMLEFT", 0, -verticalSpacing)
 end

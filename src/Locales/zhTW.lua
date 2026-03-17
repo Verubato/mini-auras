@@ -38,6 +38,8 @@ L:SetStrings({
 	["Notification"] = "通知",
 	["Offset X"] = "X偏移",
 	["Offset Y"] = "Y偏移",
+	["Disable Swipe Animation"] = "停用滑動動畫",
+	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "停用所有圖示上的冷卻時間滑動（圓餅圖）動畫。倒數計時文字仍將顯示。",
 	["Reverse swipe"] = "反向滑動",
 	["Reverses the direction of the cooldown swipe animation."] = "反轉冷卻時間滑動動畫的方向。",
 	["Settings"] = "設定",

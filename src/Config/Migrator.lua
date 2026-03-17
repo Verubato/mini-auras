@@ -13,6 +13,7 @@ local dbDefaults = {
 	IconSpacing = 2,
 	ConfigureBlizzardNameplates = true,
 	CCNativeOrder = false,
+	DisableSwipe = false,
 	Modules = {
 		---@class CrowdControlModuleOptions
 		CCModule = {

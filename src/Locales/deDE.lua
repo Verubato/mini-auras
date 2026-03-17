@@ -38,6 +38,8 @@ L:SetStrings({
 	["Notification"] = "Benachrichtigung",
 	["Offset X"] = "Versatz X",
 	["Offset Y"] = "Versatz Y",
+	["Disable Swipe Animation"] = "Wischanimation deaktivieren",
+	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Deaktiviert die Wischanimation (Tortendiagramm) der Abklingzeit auf allen Symbolen. Der Countdown-Text wird weiterhin angezeigt.",
 	["Reverse swipe"] = "Umgekehrtes Wischen",
 	["Reverses the direction of the cooldown swipe animation."] = "Kehrt die Richtung der Abklingzeit-Wischanimation um.",
 	["Settings"] = "Einstellungen",

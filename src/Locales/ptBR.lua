@@ -38,6 +38,8 @@ L:SetStrings({
 	["Notification"] = "Notificação",
 	["Offset X"] = "Deslocamento X",
 	["Offset Y"] = "Deslocamento Y",
+	["Disable Swipe Animation"] = "Desativar animação de deslize",
+	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Desativa a animação de deslize (gráfico de pizza) da recarga em todos os ícones. O texto do temporizador de contagem regressiva ainda será exibido.",
 	["Reverse swipe"] = "Deslize reverso",
 	["Reverses the direction of the cooldown swipe animation."] = "Inverte a direção da animação de deslize da recarga.",
 	["Settings"] = "Configurações",

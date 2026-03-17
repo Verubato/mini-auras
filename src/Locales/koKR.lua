@@ -38,6 +38,8 @@ L:SetStrings({
 	["Notification"] = "알림",
 	["Offset X"] = "X 오프셋",
 	["Offset Y"] = "Y 오프셋",
+	["Disable Swipe Animation"] = "스와이프 애니메이션 비활성화",
+	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "모든 아이콘의 재사용 대기시간 스와이프(원형 차트) 애니메이션을 비활성화합니다. 카운트다운 타이머 텍스트는 계속 표시됩니다.",
 	["Reverse swipe"] = "역방향 스와이프",
 	["Reverses the direction of the cooldown swipe animation."] = "재사용 대기시간 스와이프 애니메이션의 방향을 반대로 합니다.",
 	["Settings"] = "설정",

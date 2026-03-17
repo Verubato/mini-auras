@@ -624,9 +624,11 @@ function M:SetSlot(slotIndex, options)
 		layer = EnsureExtraLayer(slot, layerIndex, self.Size)
 	end
 
+	local db = GetDb()
 	layer.Icon:SetTexture(options.Texture)
 	layer.Cooldown:SetReverse(options.ReverseCooldown)
 	layer.Cooldown:SetCooldown(options.StartTime, options.Duration)
+	layer.Cooldown:SetDrawSwipe(not (db and db.DisableSwipe))
 
 	ApplyAlpha(layer.Frame, options.Alpha)
 

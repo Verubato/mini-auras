@@ -38,6 +38,8 @@ L:SetStrings({
 	["Notification"] = "Notification",
 	["Offset X"] = "Décalage X",
 	["Offset Y"] = "Décalage Y",
+	["Disable Swipe Animation"] = "Désactiver l'animation de balayage",
+	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Désactive l'animation de balayage (camembert) du temps de recharge sur toutes les icônes. Le texte du compte à rebours sera toujours affiché.",
 	["Reverse swipe"] = "Balayage inversé",
 	["Reverses the direction of the cooldown swipe animation."] = "Inverse la direction de l'animation de balayage du temps de recharge.",
 	["Settings"] = "Paramètres",

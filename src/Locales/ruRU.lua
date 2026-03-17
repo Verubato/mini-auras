@@ -38,6 +38,8 @@ L:SetStrings({
 	["Notification"] = "Уведомление",
 	["Offset X"] = "Смещение X",
 	["Offset Y"] = "Смещение Y",
+	["Disable Swipe Animation"] = "Отключить анимацию смахивания",
+	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Отключает анимацию смахивания перезарядки (круговая диаграмма) на всех иконках. Текст обратного отсчёта по-прежнему будет отображаться.",
 	["Reverse swipe"] = "Обратное смахивание",
 	["Reverses the direction of the cooldown swipe animation."] = "Изменяет направление анимации смахивания перезарядки.",
 	["Settings"] = "Настройки",
