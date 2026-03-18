@@ -2,6 +2,7 @@
 local addonName, addon = ...
 local array = addon.Utils.Array
 local mini = addon.Core.Framework
+local wowEx = addon.Utils.WoWEx
 local L = addon.L
 local iconSlotContainer = addon.Core.IconSlotContainer
 local unitWatcher = addon.Core.UnitAuraWatcher
@@ -105,8 +106,7 @@ local function OnAuraStateUpdated()
 				slot = slot + 1
 				iconsContainer:SetSlot(slot, {
 					Texture = aura.SpellIcon,
-					StartTime = aura.StartTime,
-					Duration = aura.TotalDuration,
+					DurationObject = aura.DurationObject,
 					Alpha = aura.IsCC,
 					ReverseCooldown = iconsReverse,
 					Glow = iconsGlow,
@@ -237,8 +237,7 @@ local function RefreshTestFrame()
 
 			iconsContainer:SetSlot(i, {
 				Texture = texture,
-				StartTime = startTime,
-				Duration = duration,
+				DurationObject = wowEx:CreateDuration(startTime, duration),
 				Alpha = true,
 				ReverseCooldown = options.Icons.ReverseCooldown,
 				Glow = options.Icons.Glow,

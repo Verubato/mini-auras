@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
 local spellCache = addon.Utils.SpellCache
@@ -137,8 +138,7 @@ local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsR
 		if iconsEnabled and slot < container.Count then
 			slot = slot + 1
 			slotOptionsScratch.Texture = data.SpellIcon
-			slotOptionsScratch.StartTime = data.StartTime
-			slotOptionsScratch.Duration = data.TotalDuration
+			slotOptionsScratch.DurationObject = data.DurationObject
 			slotOptionsScratch.Alpha = data.IsImportant
 			slotOptionsScratch.Glow = iconsGlow
 			slotOptionsScratch.ReverseCooldown = iconsReverse
@@ -161,8 +161,7 @@ local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsR
 		if includeDefensives and iconsEnabled and slot < container.Count then
 			slot = slot + 1
 			slotOptionsScratch.Texture = data.SpellIcon
-			slotOptionsScratch.StartTime = data.StartTime
-			slotOptionsScratch.Duration = data.TotalDuration
+			slotOptionsScratch.DurationObject = data.DurationObject
 			slotOptionsScratch.Alpha = data.IsDefensive
 			slotOptionsScratch.Glow = iconsGlow
 			slotOptionsScratch.ReverseCooldown = iconsReverse
@@ -394,8 +393,7 @@ local function RefreshTestAlerts()
 
 			container:SetSlot(i, {
 				Texture = tex,
-				StartTime = startTime,
-				Duration = duration,
+				DurationObject = wowEx:CreateDuration(startTime, duration),
 				Alpha = true,
 				Glow = iconsGlow,
 				ReverseCooldown = db.Modules.AlertsModule.Icons.ReverseCooldown,

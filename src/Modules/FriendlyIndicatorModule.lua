@@ -98,8 +98,7 @@ local function UpdateWatcherAuras(entry)
 		local aura = ccState[i]
 		container:SetSlot(slotIndex, {
 			Texture = aura.SpellIcon,
-			StartTime = aura.StartTime,
-			Duration = aura.TotalDuration,
+			DurationObject = aura.DurationObject,
 			Alpha = aura.IsCC,
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
@@ -116,8 +115,7 @@ local function UpdateWatcherAuras(entry)
 		local aura = defensiveState[i]
 		container:SetSlot(slotIndex, {
 			Texture = aura.SpellIcon,
-			StartTime = aura.StartTime,
-			Duration = aura.TotalDuration,
+			DurationObject = aura.DurationObject,
 			Alpha = aura.IsDefensive,
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
@@ -133,8 +131,7 @@ local function UpdateWatcherAuras(entry)
 		local aura = importantState[i]
 		container:SetSlot(slotIndex, {
 			Texture = aura.SpellIcon,
-			StartTime = aura.StartTime,
-			Duration = aura.TotalDuration,
+			DurationObject = aura.DurationObject,
 			Alpha = aura.IsImportant,
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
@@ -338,8 +335,7 @@ local function RefreshTestIcons()
 			if texture then
 				container:SetSlot(slotIndex, {
 					Texture = texture,
-					StartTime = now,
-					Duration = 15,
+					DurationObject = wowEx:CreateDuration(now, 15),
 					Alpha = true,
 					ReverseCooldown = iconsReverse,
 					Glow = iconsGlow,
@@ -359,8 +355,7 @@ local function RefreshTestIcons()
 			if texture then
 				container:SetSlot(slotIndex, {
 					Texture = texture,
-					StartTime = now,
-					Duration = 15,
+					DurationObject = wowEx:CreateDuration(now, 15),
 					Alpha = true,
 					ReverseCooldown = iconsReverse,
 					Glow = iconsGlow,
@@ -379,8 +374,7 @@ local function RefreshTestIcons()
 			if texture then
 				container:SetSlot(slotIndex, {
 					Texture = texture,
-					StartTime = now,
-					Duration = 15,
+					DurationObject = wowEx:CreateDuration(now, 15),
 					Alpha = true,
 					ReverseCooldown = iconsReverse,
 					Glow = iconsGlow,

@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local wowEx = addon.Utils.WoWEx
 local frames = addon.Core.Frames
 local spellCache = addon.Utils.SpellCache
 local iconSlotContainer = addon.Core.IconSlotContainer
@@ -62,33 +63,16 @@ local function IsTrackedUnit(unit)
 	return false
 end
 
-local function SetIconState(container, start, duration)
+local function SetIconState(container, durationData)
 	if not container then
 		return
 	end
 
 	local tex = defaultTrinketIcon or "Interface\\Icons\\INV_Misc_QuestionMark"
 
-	-- Always show the icon, even when not on cooldown
-	if not start or not duration then
-		-- Show icon without cooldown
-		container:SetSlot(1, {
-			Texture = tex,
-			StartTime = 0,
-			Duration = 0,
-			Alpha = true,
-			ReverseCooldown = false,
-			Glow = false,
-			FontScale = db.FontScale,
-		})
-		return
-	end
-
-	-- Show icon with cooldown
 	container:SetSlot(1, {
 		Texture = tex,
-		StartTime = start,
-		Duration = duration,
+		DurationObject = durationData or wowEx:CreateDuration(0, 0),
 		Alpha = true,
 		ReverseCooldown = false,
 		Glow = false,
@@ -96,17 +80,17 @@ local function SetIconState(container, start, duration)
 	})
 end
 
-local function UpdateUnit(unit, start, duration)
+local function UpdateUnit(unit, durationData)
 	for _, w in pairs(watchers) do
 		if w.Unit == unit then
-			SetIconState(w.Container, start, duration)
+			SetIconState(w.Container, durationData)
 		end
 	end
 end
 
 local function ClearAll()
 	for _, w in pairs(watchers) do
-		SetIconState(w.Container, nil, nil)
+		SetIconState(w.Container, nil)
 	end
 end
 
@@ -184,11 +168,9 @@ local function RefreshUnit(unit)
 		return
 	end
 
-	local start, duration = durationData:GetStartTime(), durationData:GetTotalDuration()
-
 	for _, watcher in pairs(watchers) do
 		if watcher.Container and watcher.Unit == unit then
-			SetIconState(watcher.Container, start, duration)
+			SetIconState(watcher.Container, durationData)
 			break
 		end
 	end
@@ -201,14 +183,10 @@ local function RefreshAll()
 
 		if container and unit and UnitExists(unit) then
 			local durationData = C_PvP.GetArenaCrowdControlDuration(unit)
-			local start, duration
-			if durationData then
-				start, duration = durationData:GetStartTime(), durationData:GetTotalDuration()
-			end
-			SetIconState(container, start, duration)
+			SetIconState(container, durationData)
 		elseif container then
 			-- Show default icon when unit doesn't exist
-			SetIconState(container, nil, nil)
+			SetIconState(container, nil)
 		end
 	end
 end
@@ -314,9 +292,9 @@ local function RefreshTestTrinkets()
 
 	for unit, state in pairs(stateByUnit or {}) do
 		if state then
-			UpdateUnit(unit, state.start, state.duration)
+			UpdateUnit(unit, wowEx:CreateDuration(state.start, state.duration))
 		else
-			UpdateUnit(unit, nil, nil)
+			UpdateUnit(unit, nil)
 		end
 	end
 end

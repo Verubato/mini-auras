@@ -1,6 +1,7 @@
 ---@type string, Addon
 local addonName, addon = ...
 local mini = addon.Core.Framework
+local wowEx = addon.Utils.WoWEx
 local units = addon.Utils.Units
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
@@ -261,8 +262,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			slot = slot + 1
 			local entry = ccData[i]
 			layerScratch.Texture = entry.SpellIcon
-			layerScratch.StartTime = entry.StartTime
-			layerScratch.Duration = entry.TotalDuration
+			layerScratch.DurationObject = entry.DurationObject
 			layerScratch.Alpha = entry.IsCC
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
@@ -281,8 +281,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			slot = slot + 1
 			local entry = defensivesData[i]
 			layerScratch.Texture = entry.SpellIcon
-			layerScratch.StartTime = entry.StartTime
-			layerScratch.Duration = entry.TotalDuration
+			layerScratch.DurationObject = entry.DurationObject
 			layerScratch.Alpha = entry.IsDefensive
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
@@ -301,8 +300,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			slot = slot + 1
 			local entry = importantData[i]
 			layerScratch.Texture = entry.SpellIcon
-			layerScratch.StartTime = entry.StartTime
-			layerScratch.Duration = entry.TotalDuration
+			layerScratch.DurationObject = entry.DurationObject
 			layerScratch.Alpha = entry.IsImportant
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
@@ -349,8 +347,7 @@ local function ApplyCcToNameplate(data, watcher, unitOptions)
 	for i = 1, limit do
 		local entry = ccData[i]
 		layerScratch.Texture = entry.SpellIcon
-		layerScratch.StartTime = entry.StartTime
-		layerScratch.Duration = entry.TotalDuration
+		layerScratch.DurationObject = entry.DurationObject
 		layerScratch.Alpha = entry.IsCC
 		layerScratch.Glow = iconsGlow
 		layerScratch.ReverseCooldown = iconsReverse
@@ -402,8 +399,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitOptions)
 			slot = slot + 1
 			local entry = importantData[i]
 			layerScratch.Texture = entry.SpellIcon
-			layerScratch.StartTime = entry.StartTime
-			layerScratch.Duration = entry.TotalDuration
+			layerScratch.DurationObject = entry.DurationObject
 			layerScratch.Alpha = entry.IsImportant
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
@@ -422,8 +418,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitOptions)
 			slot = slot + 1
 			local entry = defensivesData[i]
 			layerScratch.Texture = entry.SpellIcon
-			layerScratch.StartTime = entry.StartTime
-			layerScratch.Duration = entry.TotalDuration
+			layerScratch.DurationObject = entry.DurationObject
 			layerScratch.Alpha = entry.IsDefensive
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
@@ -491,8 +486,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 		local tex = spellCache:GetSpellTexture(spellId)
 		if tex then
 			layerScratch.Texture = tex
-			layerScratch.StartTime = now - (i - 1) * 0.5
-			layerScratch.Duration = 15 + (i - 1) * 3
+			layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
 			layerScratch.Alpha = true
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
@@ -513,8 +507,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 		local tex = spellCache:GetSpellTexture(spellId)
 		if tex then
 			layerScratch.Texture = tex
-			layerScratch.StartTime = now - (i - 1) * 0.5
-			layerScratch.Duration = 15 + (i - 1) * 3
+			layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
 			layerScratch.Alpha = true
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
@@ -535,8 +528,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 		local tex = spellCache:GetSpellTexture(spellId)
 		if tex then
 			layerScratch.Texture = tex
-			layerScratch.StartTime = now - (i - 1) * 0.5
-			layerScratch.Duration = 15 + (i - 1) * 3
+			layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
 			layerScratch.Alpha = true
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
@@ -567,8 +559,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 
 			if tex then
 				layerScratch.Texture = tex
-				layerScratch.StartTime = now - (i - 1) * 0.5
-				layerScratch.Duration = 15 + (i - 1) * 3
+				layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
 				layerScratch.Alpha = true
 				layerScratch.Glow = iconsGlow
 				layerScratch.ReverseCooldown = iconsReverse
@@ -609,8 +600,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 
 				if tex then
 					layerScratch.Texture = tex
-					layerScratch.StartTime = now - (i - 1) * 0.5
-					layerScratch.Duration = 15 + (i - 1) * 3
+					layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
 					layerScratch.Alpha = true
 					layerScratch.Glow = iconsGlow
 					layerScratch.ReverseCooldown = iconsReverse
@@ -634,8 +624,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 
 				if tex then
 					layerScratch.Texture = tex
-					layerScratch.StartTime = now - (i - 1) * 0.5
-					layerScratch.Duration = 15 + (i - 1) * 3
+					layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
 					layerScratch.Alpha = true
 					layerScratch.Glow = iconsGlow
 					layerScratch.ReverseCooldown = iconsReverse

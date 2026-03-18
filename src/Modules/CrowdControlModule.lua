@@ -75,8 +75,7 @@ local function UpdateWatcherAuras(entry)
 
 		container:SetSlot(slotIndex, {
 			Texture = aura.SpellIcon,
-			StartTime = aura.StartTime,
-			Duration = aura.TotalDuration,
+			DurationObject = aura.DurationObject,
 			Alpha = aura.IsCC,
 			ReverseCooldown = options.Icons.ReverseCooldown,
 			Glow = options.Icons.Glow,
@@ -320,8 +319,7 @@ local function RefreshTestIcons()
 
 					container:SetSlot(i, {
 						Texture = texture,
-						StartTime = startTime,
-						Duration = duration,
+						DurationObject = wowEx:CreateDuration(startTime, duration),
 						Alpha = true,
 						ReverseCooldown = entryOptions.Icons.ReverseCooldown,
 						Glow = entryOptions.Icons.Glow,

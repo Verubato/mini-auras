@@ -1,6 +1,7 @@
 ---@type string, Addon
 local addonName, addon = ...
 local mini = addon.Core.Framework
+local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
 local spellCache = addon.Utils.SpellCache
@@ -73,7 +74,7 @@ local function ScanAndDisplay()
 	container:ResetAllSlots()
 
 	for i, entry in ipairs(importantState) do
-		if entry.SpellIcon and entry.StartTime and entry.TotalDuration then
+		if entry.SpellIcon and entry.DurationObject then
 			-- Evaluate alpha only once when the aura is first detected,
 			-- because we need the total duration at the time of application.
 			if auraAlphas[entry.AuraInstanceID] == nil then
@@ -83,8 +84,7 @@ local function ScanAndDisplay()
 
 			container:SetSlot(1, {
 				Texture = entry.SpellIcon,
-				StartTime = entry.StartTime,
-				Duration = entry.TotalDuration,
+				DurationObject = entry.DurationObject,
 				Alpha = auraAlphas[entry.AuraInstanceID] or 0,
 				ReverseCooldown = iconsReverse,
 				Glow = iconsGlow,
@@ -108,8 +108,7 @@ local function RefreshTestIcons()
 	if texture then
 		container:SetSlot(1, {
 			Texture = texture,
-			StartTime = GetTime(),
-			Duration = 15,
+			DurationObject = wowEx:CreateDuration(GetTime(), 15),
 			Alpha = true,
 			ReverseCooldown = options.Icons.ReverseCooldown,
 			Glow = options.Icons.Glow,

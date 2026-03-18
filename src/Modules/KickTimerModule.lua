@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local wowEx = addon.Utils.WoWEx
 local spellCache = addon.Utils.SpellCache
 local iconSlotContainer = addon.Core.IconSlotContainer
 local paused = false
@@ -271,8 +272,7 @@ local function CreateKickEntry(duration, icon)
 
 	kickBar.Container:SetSlot(slotIndex, {
 		Texture = icon,
-		StartTime = GetTime(),
-		Duration = duration,
+		DurationObject = wowEx:CreateDuration(GetTime(), duration),
 		Alpha = true,
 		ReverseCooldown = iconOptions.ReverseCooldown or false,
 		Glow = iconOptions.Glow or false,

@@ -587,8 +587,7 @@ end
 ---@param options IconLayerOptions Options for the layer
 ---@class IconLayerOptions
 ---@field Texture string Texture path/ID
----@field StartTime number? Cooldown start time (GetTime())
----@field Duration number? Cooldown duration in seconds
+---@field DurationObject table? DurationObject from C_DurationUtil.CreateDuration or C_UnitAuras.GetAuraDuration
 ---@field Alpha number|boolean? Control alpha: number sets it directly, boolean uses SetAlphaFromBoolean
 ---@field Glow boolean? Whether to show glow effect (requires LibCustomGlow)
 ---@field ReverseCooldown boolean? Whether to reverse the cooldown animation
@@ -600,7 +599,7 @@ function M:SetSlot(slotIndex, options)
 		return
 	end
 
-	if not options.Texture or not options.StartTime or not options.Duration then
+	if not options.Texture or not options.DurationObject then
 		return
 	end
 
@@ -627,7 +626,7 @@ function M:SetSlot(slotIndex, options)
 	local db = GetDb()
 	layer.Icon:SetTexture(options.Texture)
 	layer.Cooldown:SetReverse(options.ReverseCooldown)
-	layer.Cooldown:SetCooldown(options.StartTime, options.Duration)
+	layer.Cooldown:SetCooldownFromDurationObject(options.DurationObject)
 	layer.Cooldown:SetDrawSwipe(not (db and db.DisableSwipe))
 
 	ApplyAlpha(layer.Frame, options.Alpha)
