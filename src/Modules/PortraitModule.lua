@@ -83,6 +83,11 @@ local function CreateContainer(unitFrame, portrait)
 	container.Frame:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", -2, 2)
 	container.Frame:SetFrameLevel(math.max(0, (unitFrame:GetFrameLevel() or 0) - 1))
 
+	-- match the frame strata of the portrait parent
+	-- some addons like ClassicFrames adjust this from LOW to MEDIUM
+	-- so we want to follow it to ensure the icons are visible
+	container.Frame:SetFrameStrata(portrait:GetParent():GetFrameStrata())
+
 	-- inherit scale from portrait so icons scale with it
 	container.Frame:SetIgnoreParentScale(false)
 
