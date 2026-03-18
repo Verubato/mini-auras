@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.35.0
+
+- Some future proofing.
+- ClassicFrames portrait compatibility fix.
+
 ## 2.34.1
 
 - Possible fix for icons lingering.
