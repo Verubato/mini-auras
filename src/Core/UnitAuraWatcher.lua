@@ -69,9 +69,8 @@ local function InterestedIn(watcher, updateInfo)
 		end
 	end
 
-	if updateInfo.updatedAuras then
-		for _, aura in pairs(updateInfo.updatedAuras) do
-			local id = aura.auraInstanceID
+	if updateInfo.updatedAuraInstanceIDs then
+		for _, id in pairs(updateInfo.updatedAuraInstanceIDs) do
 			if id then
 				for _, filter in pairs(activeFilters) do
 					if not C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, id, filter) then
