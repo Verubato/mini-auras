@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.36.0
+
+Fixed auras that increase in duration (e.g. combustion, avatar) not being tracked properly.
+
 ## 2.35.0
 
 - Some future proofing.
