@@ -120,7 +120,7 @@ local specInfoBySpecId = {
 
 	-- Warlock — Spell Lock (Felhunter)
 	[265] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(19647) }, -- Affliction
-	[266] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(19647) }, -- Demonology
+	[266] = { KickCd = 30, IsCaster = true, IsHealer = false, KickIcon = KI(89766) }, -- Demonology
 	[267] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(19647) }, -- Destruction
 
 	-- Shaman — Wind Shear
