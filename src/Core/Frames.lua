@@ -379,6 +379,51 @@ function M:TPerlFrames(visibleOnly)
 	return frames
 end
 
+---Retrieves a list of Enhanced QoL party unit frames.
+---@param visibleOnly boolean
+---@return table
+function M:EnhancedQoLFrames(visibleOnly)
+	local hasAny = EQOLUFPartyHeader
+	for i = 1, 8 do
+		if _G["EQOLUFRaidGroupHeader" .. i] then
+			hasAny = true
+			break
+		end
+	end
+
+	if not hasAny then
+		return {}
+	end
+
+	local frames = {}
+	local headers = { EQOLUFPartyHeader }
+
+	for i = 1, 8 do
+		local header = _G["EQOLUFRaidGroupHeader" .. i]
+		if header then
+			headers[#headers + 1] = header
+		end
+	end
+
+	for _, header in ipairs(headers) do
+		if header then
+			for _, child in ipairs({ header:GetChildren() }) do
+				local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
+
+				if unit and unit ~= "" then
+					if child.IsForbidden and child:IsForbidden() then
+						-- skip
+					elseif child:IsVisible() or not visibleOnly then
+						frames[#frames + 1] = child
+					end
+				end
+			end
+		end
+	end
+
+	return frames
+end
+
 ---Retrieves a list of custom frames from our saved vars.
 ---@param visibleOnly boolean
 ---@return table
@@ -421,6 +466,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	local plexus = M:PlexusFrames(visibleOnly)
 	local cell = M:CellFrames(visibleOnly)
 	local tperl = M:TPerlFrames(visibleOnly)
+	local eqol = M:EnhancedQoLFrames(visibleOnly)
 	local custom = M:CustomFrames(visibleOnly)
 
 	array:Append(blizzard, anchors)
@@ -431,6 +477,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	array:Append(plexus, anchors)
 	array:Append(cell, anchors)
 	array:Append(tperl, anchors)
+	array:Append(eqol, anchors)
 	array:Append(custom, anchors)
 
 	if includeTestFrames then
