@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.37.0
+
+Added EQoL support.
+
 ## 2.36.0
 
 Fixed auras that increase in duration (e.g. combustion, avatar) not being tracked properly.
