@@ -2,15 +2,17 @@
 local _, addon = ...
 local frames = addon.Core.Frames
 local instanceOptions = addon.Core.InstanceOptions
-local ccModule = addon.Modules.CrowdControlModule
-local healerCcModule = addon.Modules.HealerCrowdControlModule
-local portraitModule = addon.Modules.PortraitModule
-local alertsModule = addon.Modules.AlertsModule
-local nameplateModule = addon.Modules.NameplatesModule
-local kickTimerModule = addon.Modules.KickTimerModule
-local trinketsModule = addon.Modules.TrinketsModule
-local friendlyIndicatorModule = addon.Modules.FriendlyIndicatorModule
-local precogGuesserModule = addon.Modules.PrecogGuesserModule
+local testModules = {
+	addon.Modules.CrowdControlModule,
+	addon.Modules.HealerCrowdControlModule,
+	addon.Modules.PortraitModule,
+	addon.Modules.AlertsModule,
+	addon.Modules.NameplatesModule,
+	addon.Modules.KickTimerModule,
+	addon.Modules.FriendlyIndicatorModule,
+	addon.Modules.PrecogGuesserModule,
+	addon.Modules.FriendlyCooldownTrackerModule,
+}
 local active = false
 
 ---@class TestModeManager
@@ -38,15 +40,9 @@ function M:StopTesting()
 	end
 
 	-- Stop all module test modes
-	ccModule:StopTesting()
-	healerCcModule:StopTesting()
-	portraitModule:StopTesting()
-	alertsModule:StopTesting()
-	nameplateModule:StopTesting()
-	kickTimerModule:StopTesting()
-	trinketsModule:StopTesting()
-	friendlyIndicatorModule:StopTesting()
-	precogGuesserModule:StopTesting()
+	for _, module in ipairs(testModules) do
+		module:StopTesting()
+	end
 
 	active = false
 end
@@ -87,15 +83,9 @@ function M:StartTesting(isRaid)
 		end
 	end
 
-	ccModule:StartTesting()
-	healerCcModule:StartTesting()
-	portraitModule:StartTesting()
-	alertsModule:StartTesting()
-	nameplateModule:StartTesting()
-	kickTimerModule:StartTesting()
-	trinketsModule:StartTesting()
-	friendlyIndicatorModule:StartTesting()
-	precogGuesserModule:StartTesting()
+	for _, module in ipairs(testModules) do
+		module:StartTesting()
+	end
 end
 
 function M:Init() end

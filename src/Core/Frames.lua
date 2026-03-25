@@ -500,6 +500,9 @@ function M:GetNextStrata(strata)
 end
 
 function M:IsFriendlyCuf(frame)
+	if not frame or issecretvalue(frame) then
+		return false
+	end
 	if frame:IsForbidden() then
 		return false
 	end

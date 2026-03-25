@@ -196,6 +196,23 @@ L:SetDefaultStrings({
 	["Party Trinkets"] = "Party Trinkets",
 	["Party Trinkets_Short"] = "Trinkets",
 
+	-- Friendly Cooldown Tracker tab
+	["Friendly Cooldowns"] = "Friendly Cooldowns",
+	["Friendly Cooldowns_Short"] = "Friendly CDs",
+	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires.",
+	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!",
+	["Shows friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Shows friendly defensive cooldowns on party/raid frames after a defensive expires.",
+	["The cooldown duration shown may be approximate when multiple spells share the same buff duration."] = "The cooldown duration shown may be approximate when multiple spells share the same buff duration.",
+	["Anchor"] = "Anchor",
+	["Reverse order"] = "Reverse order",
+	["Reverses the order icons are displayed in."] = "Reverses the order icons are displayed in.",
+	["Excludes yourself from being tracked."] = "Excludes yourself from being tracked.",
+	["Show tooltips"] = "Show tooltips",
+	["Shows a spell tooltip when hovering over an icon."] = "Shows a spell tooltip when hovering over an icon.",
+	["Show offensive cooldowns"] = "Show offensive cooldowns",
+	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Shows offensive cooldowns such as Combustion, Avatar and Dragonrage.",
+	["Rows"] = "Rows",
+
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "It works by taking any 4 second 'important' self buff and showing that icon.",
 	["Note that you can't simply filter by spell id these days."] = "Note that you can't simply filter by spell id these days.",
@@ -234,6 +251,7 @@ L:SetDefaultStrings({
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Added CC icons on pet party/raid frames (disabled by default).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - Added precognition guesser module that shows when you get precog.",
 	[" - Added profile import/export feature."] = " - Added profile import/export feature.",
+	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!",
 	["MiniCC - What's New?"] = "MiniCC - What's New?",
 })
 

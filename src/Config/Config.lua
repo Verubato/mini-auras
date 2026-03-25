@@ -126,6 +126,14 @@ function M:Init()
 			end,
 		},
 		{
+			Key = "FriendlyCooldowns",
+			Title = L["Friendly Cooldowns_Short"] or L["Friendly Cooldowns"],
+			Build = function(content)
+				local m = db.Modules.FriendlyCooldownTrackerModule
+			M.FriendlyCooldownTracker:Build(content, m.Default, m.Raid)
+			end,
+		},
+		{
 			Key = "Alerts",
 			Title = L["Alerts"],
 			Build = function(content)
@@ -158,13 +166,6 @@ function M:Init()
 			Title = L["Kick timer_Short"] or L["Kick timer"],
 			Build = function(content)
 				M.KickTimer:Build(content)
-			end,
-		},
-		{
-			Key = "Trinkets",
-			Title = L["Party Trinkets_Short"] or L["Party Trinkets"],
-			Build = function(content)
-				M.Trinkets:Build(content)
 			end,
 		},
 		{
@@ -270,8 +271,8 @@ end
 ---@field Alerts AlertsConfig
 ---@field Nameplates NameplatesConfig
 ---@field KickTimer KickTimerConfig
----@field Trinkets TrinketsConfig
 ---@field PrecogGuesser PrecogGuesserConfig
 ---@field OtherAddons OtherAddonsConfig
 ---@field FriendlyIndicator FriendlyIndicatorConfig
+---@field FriendlyCooldownTracker FriendlyCooldownTrackerConfig
 ---@field Miscellaneous MiscellaneousConfig

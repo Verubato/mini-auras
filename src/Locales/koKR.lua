@@ -196,6 +196,20 @@ L:SetStrings({
 	["Party Trinkets"] = "파티 장신구",
 	["Party Trinkets_Short"] = "장신구",
 
+	-- Friendly Cooldown Tracker tab
+	["Friendly Cooldowns"] = "아군 재사용 대기시간",
+	["Friendly Cooldowns_Short"] = "아군 쿨타임",
+	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "방어기가 만료된 후 파티/공격대 프레임에 PvP 장신구와 아군 방어기 재사용 대기시간을 표시합니다.",
+	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "이 모듈은 초기 베타 단계이므로 일부 버그 및 부정확한 사항이 있을 수 있습니다. 발견하시면 Discord에서 알려주세요!",
+	["Reverse order"] = "순서 반전",
+	["Reverses the order icons are displayed in."] = "아이콘이 표시되는 순서를 반전합니다.",
+	["Excludes yourself from being tracked."] = "자신을 추적에서 제외합니다.",
+	["Show tooltips"] = "툴팁 표시",
+	["Shows a spell tooltip when hovering over an icon."] = "아이콘 위에 마우스를 올리면 주문 툴팁을 표시합니다.",
+	["Show offensive cooldowns"] = "공격 쿨다운 표시",
+	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "발화, 화신, 용의 분노 등 공격 쿨다운을 표시합니다.",
+	["Rows"] = "줄 수",
+
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "4초짜리 '중요한' 자신 버프를 감지하여 해당 아이콘을 표시하는 방식으로 작동합니다.",
 	["Note that you can't simply filter by spell id these days."] = "요즘은 주문 ID로 단순히 필터링할 수 없다는 점에 유의하세요.",
@@ -234,5 +248,6 @@ L:SetStrings({
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - 파티/공격대 소환수 프레임에 CC 아이콘이 추가되었습니다 (기본적으로 비활성화).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - 예지 추측 모듈을 추가했습니다. 예지 효과를 받을 때 표시됩니다.",
 	[" - Added profile import/export feature."] = " - 프로필 가져오기/내보내기 기능이 추가되었습니다.",
+	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - 아군 쿨다운 추측 모듈이 추가되었습니다. 이제 팀원들의 쿨다운을 어느 정도 추적할 수 있습니다!",
 	["MiniCC - What's New?"] = "MiniCC - 새로운 소식?",
 })

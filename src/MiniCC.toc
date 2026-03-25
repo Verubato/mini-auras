@@ -11,6 +11,7 @@
 Libs\LibStub\LibStub.lua
 Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.xml
 Libs\LibRangeCheck-3.0\LibRangeCheck-3.0.lua
+Libs\LibSpecialization\LibSpecialization.lua
 
 Namespace.lua
 
@@ -35,12 +36,16 @@ Utils\FontUtil.lua
 Utils\ModuleUtil.lua
 Utils\SlotDistribution.lua
 Utils\WoWEx.lua
+Utils\PvPTalentSync.lua
 
 Core\MiniFramework.lua
 Core\InstanceOptions.lua
 Core\IconSlotContainer.lua
 Core\UnitAuraWatcher.lua
+Core\Inspector.lua
 Core\Frames.lua
+Core\FriendlyCooldownTalents.lua
+Core\TrinketsTracker.lua
 
 Modules\CrowdControlModule.lua
 Modules\HealerCrowdControlModule.lua
@@ -48,9 +53,9 @@ Modules\PortraitModule.lua
 Modules\AlertsModule.lua
 Modules\NameplatesModule.lua
 Modules\KickTimerModule.lua
-Modules\TrinketsModule.lua
 Modules\FriendlyIndicatorModule.lua
 Modules\PrecogGuesserModule.lua
+Modules\FriendlyCooldownTrackerModule.lua
 Modules\TestModeManager.lua
 
 Config\Migrator.lua
@@ -62,9 +67,9 @@ Config\Healer.lua
 Config\Alerts.lua
 Config\Nameplates.lua
 Config\KickTimer.lua
-Config\Trinkets.lua
 Config\PrecogGuesser.lua
 Config\FriendlyIndicator.lua
+Config\FriendlyCooldownTracker.lua
 Config\OtherAddons.lua
 Config\Miscellaneous.lua
 

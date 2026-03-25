@@ -197,6 +197,20 @@ L:SetStrings({
 	["Party Trinkets"] = "队伍饰品",
 	["Party Trinkets_Short"] = "饰品",
 
+	-- Friendly Cooldown Tracker tab
+	["Friendly Cooldowns"] = "友方冷却追踪",
+	["Friendly Cooldowns_Short"] = "友方冷却",
+	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "防御技能到期后，在小队/团队框架上显示PvP饰品和友方防御技能的冷却时间。",
+	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "此模块处于早期测试阶段，可能存在一些错误和不准确之处。如发现问题，请在Discord上向我们报告！",
+	["Reverse order"] = "反向排序",
+	["Reverses the order icons are displayed in."] = "反转图标的显示顺序。",
+	["Excludes yourself from being tracked."] = "将自己排除在追踪之外。",
+	["Show tooltips"] = "显示提示",
+	["Shows a spell tooltip when hovering over an icon."] = "鼠标悬停在图标上时显示法术提示。",
+	["Show offensive cooldowns"] = "显示进攻性冷却",
+	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "显示进攻性冷却，如燃烧、化身和龙怒。",
+	["Rows"] = "行数",
+
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "其工作原理是检测任何4秒的'重要'自身增益效果并显示该图标。",
 	["Note that you can't simply filter by spell id these days."] = "请注意，现在无法简单地通过法术ID进行过滤。",
@@ -235,5 +249,6 @@ L:SetStrings({
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - 为队伍/团队的宠物框架新增了CC图标（默认禁用）。",
 	[" - Added precognition guesser module that shows when you get precog."] = " - 新增了预知猜测模块，当你获得预知效果时显示。",
 	[" - Added profile import/export feature."] = " - 新增了配置导入/导出功能。",
+	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - 新增了友方冷却时间猜测模块。现在你可以大致追踪队友的冷却时间！",
 	["MiniCC - What's New?"] = "MiniCC - 新内容？",
 })

@@ -197,6 +197,20 @@ L:SetStrings({
 	["Party Trinkets"] = "Bijoux du groupe",
 	["Party Trinkets_Short"] = "Bijoux",
 
+	-- Friendly Cooldown Tracker tab
+	["Friendly Cooldowns"] = "Temps de recharge alliés",
+	["Friendly Cooldowns_Short"] = "TR alliés",
+	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Affiche les temps de recharge du bijou PvP et des défensifs alliés sur les cadres de groupe/raid après expiration d'un sort défensif.",
+	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "Ce module est en bêta précoce, attendez-vous donc à quelques bugs et imprécisions. Si vous en trouvez, signalez-les nous sur Discord !",
+	["Reverse order"] = "Ordre inversé",
+	["Reverses the order icons are displayed in."] = "Inverse l'ordre d'affichage des icônes.",
+	["Excludes yourself from being tracked."] = "Vous exclut du suivi.",
+	["Show tooltips"] = "Afficher les infobulles",
+	["Shows a spell tooltip when hovering over an icon."] = "Affiche une infobulle de sort au survol d'une icône.",
+	["Show offensive cooldowns"] = "Afficher les temps de recharge offensifs",
+	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Affiche les temps de recharge offensifs tels que Combustion, Avatar et Rage du dragon.",
+	["Rows"] = "Rangées",
+
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Cela fonctionne en détectant tout buff personnel « important » de 4 secondes et en affichant cette icône.",
 	["Note that you can't simply filter by spell id these days."] = "Notez qu'il n'est plus possible de filtrer simplement par identifiant de sort de nos jours.",
@@ -235,5 +249,6 @@ L:SetStrings({
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Ajout d'icônes CC sur les cadres de groupe/raid des familiers (désactivé par défaut).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - Ajoute un module de devinette de précognition qui s'affiche quand vous obtenez la précognition.",
 	[" - Added profile import/export feature."] = " - Ajout d'une fonctionnalité d'importation/exportation de profil.",
+	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Ajout d'un module de devinette des temps de recharge alliés. Vous pouvez désormais suivre approximativement les temps de recharge de vos coéquipiers !",
 	["MiniCC - What's New?"] = "MiniCC - Quoi de neuf ?",
 })

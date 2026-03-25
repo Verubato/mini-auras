@@ -197,6 +197,20 @@ L:SetStrings({
 	["Party Trinkets"] = "Аксессуары группы",
 	["Party Trinkets_Short"] = "Амулеты",
 
+	-- Friendly Cooldown Tracker tab
+	["Friendly Cooldowns"] = "Перезарядки союзников",
+	["Friendly Cooldowns_Short"] = "Перезар. союзн.",
+	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Показывает перезарядки PvP-украшения и защитных умений союзников на фреймах группы/рейда после окончания защиты.",
+	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "Модуль находится в ранней бете, поэтому возможны ошибки и неточности. Если вы их обнаружите, сообщите нам в Discord!",
+	["Reverse order"] = "Обратный порядок",
+	["Reverses the order icons are displayed in."] = "Меняет порядок отображения значков на обратный.",
+	["Excludes yourself from being tracked."] = "Исключает вас из отслеживания.",
+	["Show tooltips"] = "Показывать подсказки",
+	["Shows a spell tooltip when hovering over an icon."] = "Показывает подсказку заклинания при наведении на значок.",
+	["Show offensive cooldowns"] = "Показывать наступательные откаты",
+	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Показывает наступательные откаты, такие как Горение, Аватар и Ярость дракона.",
+	["Rows"] = "Ряды",
+
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Работает, отслеживая любой 4-секундный «важный» бафф на себя и отображая его иконку.",
 	["Note that you can't simply filter by spell id these days."] = "Обратите внимание, что в наши дни нельзя просто фильтровать по ID заклинания.",
@@ -235,5 +249,6 @@ L:SetStrings({
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Добавлены иконки контроля на рамки групп/рейдов питомцев (отключено по умолчанию).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - Добавляет модуль угадывания предвидения, который показывает, когда вы получаете предвидение.",
 	[" - Added profile import/export feature."] = " - Добавлена функция импорта/экспорта профиля.",
+	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Добавлен модуль угадывания откатов союзников. Теперь вы можете примерно отслеживать откаты ваших товарищей по команде!",
 	["MiniCC - What's New?"] = "MiniCC - Что нового?",
 })

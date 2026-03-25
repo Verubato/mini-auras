@@ -251,12 +251,7 @@ function M:Build(panel)
 					end
 				end
 
-				local trinketsPanel = addon.Config.Trinkets.Panel
-				if trinketsPanel and trinketsPanel.MiniRefresh then
-					trinketsPanel:MiniRefresh()
-				end
-
-				local kickTimerPanel = addon.Config.KickTimer.Panel
+					local kickTimerPanel = addon.Config.KickTimer.Panel
 				if kickTimerPanel and kickTimerPanel.MiniRefresh then
 					kickTimerPanel:MiniRefresh()
 				end

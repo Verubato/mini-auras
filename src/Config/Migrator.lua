@@ -4,8 +4,11 @@ local _, addon = ...
 local mini = addon.Core.Framework
 local L = addon.L
 ---@class Db
+---@field SpecCache table<string, {SpecId: number?, LastSeen: number?, LastAttempt: number?}>
+---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
+---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 33,
+	Version = 34,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -322,6 +325,8 @@ local dbDefaults = {
 				ReverseCooldown = true,
 			},
 		},
+		-- keeping this just in case we need to revert back for some reason
+		-- might remove it in a future release
 		---@class TrinketsModuleOptions
 		TrinketsModule = {
 			Enabled = {
@@ -391,6 +396,49 @@ local dbDefaults = {
 				},
 			},
 		},
+		---@class FriendlyCooldownTrackerModuleOptions
+		FriendlyCooldownTrackerModule = {
+			Enabled = {
+				World = true,
+				Arena = true,
+				BattleGrounds = false,
+				PvE = true,
+			},
+
+			---@class FriendlyCooldownTrackerAnchorOptions
+			---@field ShowOffensiveCooldowns boolean?
+			Default = {
+				Grow = "LEFT",
+				Offset = { X = -2, Y = 0 },
+				ReverseOrder = true,
+				ExcludeSelf = false,
+				ShowTooltips = true,
+				ShowOffensiveCooldowns = true,
+				Icons = {
+					Size = 40,
+					ReverseCooldown = true,
+					MaxIcons = 10,
+					Rows = 1,
+				},
+			},
+
+			---@type FriendlyCooldownTrackerAnchorOptions
+			Raid = {
+				Grow = "CENTER",
+				Offset = { X = -2, Y = 0 },
+				ReverseOrder = true,
+				ExcludeSelf = false,
+				ShowTooltips = true,
+				ShowOffensiveCooldowns = true,
+				Icons = {
+					Size = 20,
+					ReverseCooldown = true,
+					MaxIcons = 5,
+					Rows = 1,
+				},
+			},
+		},
+
 		---@class PrecogGuesserModuleOptions
 		PrecogGuesserModule = {
 			Enabled = {
@@ -1881,7 +1929,6 @@ function M:UpgradeToVersion30(vars)
 	return true
 end
 
-
 function M:UpgradeToVersion31(vars)
 	if vars.Version ~= 30 then
 		return false
@@ -1938,6 +1985,19 @@ function M:UpgradeToVersion33(vars)
 	return true
 end
 
+function M:UpgradeToVersion34(vars)
+	if vars.Version ~= 33 then
+		return false
+	end
+
+	table.insert(vars.WhatsNew, L[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"])
+
+	vars.NotifiedChanges = false
+	vars.Version = 34
+	return true
+end
+
+
 ---@return boolean true if any deferred migrations were applied
 function M:RunDeferredMigrations(vars)
 	local applied = false
@@ -1964,6 +2024,23 @@ function M:RunDeferredMigrations(vars)
 	end
 
 	return applied
+end
+
+-- Opaque per-player caches that CleanTable must not recurse into.
+local opaqueCacheKeys = { "SpecCache", "TalentCache", "PvPTalentCache", "WhatsNew", "NotifiedChanges" }
+
+local function SaveOpaqueCaches(vars)
+	local saved = {}
+	for _, key in ipairs(opaqueCacheKeys) do
+		saved[key] = mini:CopyValueOrTable(vars[key])
+	end
+	return saved
+end
+
+local function RestoreOpaqueCaches(vars, saved)
+	for _, key in ipairs(opaqueCacheKeys) do
+		vars[key] = saved[key]
+	end
 end
 
 ---@return Db
@@ -2011,7 +2088,9 @@ function M:GetAndUpgradeDb()
 
 	if vars.Version == dbDefaults.Version then
 		-- if we are running the latest version, clean up any garbage that may have been left over from old versions
+		local caches = SaveOpaqueCaches(vars)
 		mini:CleanTable(vars, dbDefaults, true, true)
+		RestoreOpaqueCaches(vars, caches)
 	end
 
 	return vars
@@ -2027,7 +2106,9 @@ function M:SoftReset()
 	local vars = mini:GetSavedVars(dbDefaults)
 
 	-- clean up any garbage
+	local caches = SaveOpaqueCaches(vars)
 	mini:CleanTable(vars, dbDefaults, true, true)
+	RestoreOpaqueCaches(vars, caches)
 
 	return vars
 end

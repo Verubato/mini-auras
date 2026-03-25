@@ -197,6 +197,20 @@ L:SetStrings({
 	["Party Trinkets"] = "Abalorios del grupo",
 	["Party Trinkets_Short"] = "Abalorios",
 
+	-- Friendly Cooldown Tracker tab
+	["Friendly Cooldowns"] = "Enfriamientos aliados",
+	["Friendly Cooldowns_Short"] = "Enfr. aliados",
+	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Muestra los enfriamientos del abalorio de PvP y de las defensivas aliadas en los marcos de grupo/banda tras expirar una defensiva.",
+	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "Este módulo está en beta temprana, así que espera algunos errores e imprecisiones. Si encuentras alguno, ¡repórtanoslo en Discord!",
+	["Reverse order"] = "Orden inverso",
+	["Reverses the order icons are displayed in."] = "Invierte el orden en que se muestran los iconos.",
+	["Excludes yourself from being tracked."] = "Te excluye del seguimiento.",
+	["Show tooltips"] = "Mostrar información",
+	["Shows a spell tooltip when hovering over an icon."] = "Muestra la información de un hechizo al pasar el cursor sobre un icono.",
+	["Show offensive cooldowns"] = "Mostrar tiempos de reutilización ofensivos",
+	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Muestra tiempos de reutilización ofensivos como Combustión, Avatar y Furia del dragón.",
+	["Rows"] = "Filas",
+
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Funciona detectando cualquier buff propio «importante» de 4 segundos y mostrando ese icono.",
 	["Note that you can't simply filter by spell id these days."] = "Ten en cuenta que hoy en día no puedes simplemente filtrar por ID de hechizo.",
@@ -235,5 +249,6 @@ L:SetStrings({
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Añadidos iconos de CC en los marcos de grupo/banda de mascotas (desactivado por defecto).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - Añade un módulo de predicción de precognición que muestra cuándo obtienes precog.",
 	[" - Added profile import/export feature."] = " - Añadida la función de importar/exportar perfil.",
+	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Añadido el módulo de estimación de tiempos de reutilización aliados. ¡Ahora puedes seguir aproximadamente los tiempos de reutilización de tus compañeros de equipo!",
 	["MiniCC - What's New?"] = "MiniCC - ¿Qué hay de nuevo?",
 })

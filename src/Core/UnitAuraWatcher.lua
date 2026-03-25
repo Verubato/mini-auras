@@ -464,7 +464,8 @@ function M:New(unit, events, interestedIn, sortRule, sortDirection)
 	watcher.Frame = frame
 	watcher:Enable()
 
-	-- Prime once to get initial state
+	-- Prime once so state is immediately available to callers that read it
+	-- synchronously or via a deferred callback after registering.
 	watcher:ForceFullUpdate()
 
 	return watcher

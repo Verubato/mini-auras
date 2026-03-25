@@ -15,9 +15,11 @@ local modules = {
 	addon.Modules.AlertsModule,
 	addon.Modules.NameplatesModule,
 	addon.Modules.KickTimerModule,
-	addon.Modules.TrinketsModule,
 	addon.Modules.FriendlyIndicatorModule,
 	addon.Modules.PrecogGuesserModule,
+	addon.Core.FriendlyCooldownTalents,
+	addon.Core.TrinketsTracker,
+	addon.Modules.FriendlyCooldownTrackerModule,
 }
 local eventsFrame
 local db
@@ -175,13 +177,17 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field ModuleUtil ModuleUtil
 ---@field ModuleName ModuleName
 ---@field WoWEx WoWEx
+---@field PvPTalentSync PvPTalentSync
 
 ---@class Core
 ---@field Framework MiniFramework
 ---@field Frames Frames
 ---@field UnitAuraWatcher UnitAuraWatcher
+---@field Inspector Inspector
 ---@field IconSlotContainer IconSlotContainer
 ---@field InstanceOptions InstanceOptions
+---@field FriendlyCooldownTalents FriendlyCooldownTalents
+---@field TrinketsTracker TrinketsTracker
 
 ---@class Modules
 ---@field TestModeManager TestModeManager
@@ -191,9 +197,9 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field KickTimerModule KickTimerModule
 ---@field AlertsModule AlertsModule
 ---@field CrowdControlModule CrowdControlModule
----@field TrinketsModule TrinketsModule
 ---@field FriendlyIndicatorModule FriendlyIndicatorModule
 ---@field PrecogGuesserModule PrecogGuesserModule
+---@field FriendlyCooldownTrackerModule FriendlyCooldownTrackerModule
 
 ---@class IModule
 ---@field Init fun(self: IModule) Initialises the module to be ready for use.

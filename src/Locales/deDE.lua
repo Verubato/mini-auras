@@ -196,6 +196,20 @@ L:SetStrings({
 	["Party Trinkets"] = "Gruppen-Schmuckstücke",
 	["Party Trinkets_Short"] = "Schmuck",
 
+	-- Friendly Cooldown Tracker tab
+	["Friendly Cooldowns"] = "Verbündete Abklingzeiten",
+	["Friendly Cooldowns_Short"] = "Verbünd. AZ",
+	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Zeigt PvP-Schmuckstück- und verbündete Defensiv-Abklingzeiten auf Gruppen-/Schlachtzugsrahmen an, nachdem ein Defensivzauber endet.",
+	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "Dieses Modul befindet sich in der frühen Beta, daher sind einige Fehler und Ungenauigkeiten zu erwarten. Falls du welche findest, melde sie uns bitte auf Discord!",
+	["Reverse order"] = "Reihenfolge umkehren",
+	["Reverses the order icons are displayed in."] = "Kehrt die Reihenfolge um, in der Symbole angezeigt werden.",
+	["Excludes yourself from being tracked."] = "Schließt dich selbst vom Tracking aus.",
+	["Show tooltips"] = "Tooltips anzeigen",
+	["Shows a spell tooltip when hovering over an icon."] = "Zeigt einen Zauber-Tooltip beim Überfahren eines Symbols.",
+	["Show offensive cooldowns"] = "Offensive Abklingzeiten anzeigen",
+	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Zeigt offensive Abklingzeiten wie Verbrennung, Avatar und Drachenzorn an.",
+	["Rows"] = "Reihen",
+
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Es funktioniert, indem es jeden 4-sekündigen 'wichtigen' Selbst-Buff erkennt und dieses Symbol anzeigt.",
 	["Note that you can't simply filter by spell id these days."] = "Beachte, dass man heutzutage nicht einfach nach Zauber-ID filtern kann.",
@@ -234,5 +248,6 @@ L:SetStrings({
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - CC-Symbole auf Begleiter-Gruppen-/Schlachtzugsrahmen hinzugefügt (standardmäßig deaktiviert).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - Fügt ein Vorausahnungs-Ratemodul hinzu, das anzeigt, wenn du Vorausahnung erhältst.",
 	[" - Added profile import/export feature."] = " - Profil-Import-/Exportfunktion hinzugefügt.",
+	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Freundliches Abklingzeit-Schätzmodul hinzugefügt. Du kannst jetzt die Abklingzeiten deiner Teammitglieder einigermaßen verfolgen!",
 	["MiniCC - What's New?"] = "MiniCC - Was gibt es Neues?",
 })

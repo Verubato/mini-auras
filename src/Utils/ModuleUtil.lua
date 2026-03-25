@@ -15,6 +15,7 @@ local ModuleName = {
 	Trinkets = "TrinketsModule",
 	FriendlyIndicator = "FriendlyIndicatorModule",
 	PrecogGuesser = "PrecogGuesserModule",
+	FriendlyCooldownTracker = "FriendlyCooldownTrackerModule",
 }
 
 ---@class ModuleUtil
