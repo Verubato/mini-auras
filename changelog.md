@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.0
+
+Added friendly cooldown guessing module.
+
 ## 2.37.0
 
 Added EQoL support.
