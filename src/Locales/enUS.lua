@@ -102,6 +102,7 @@ L:SetDefaultStrings({
 	["Play a sound when a defensive spell is pressed."] = "Play a sound when a defensive spell is pressed.",
 	["Play a sound when an important spell is pressed."] = "Play a sound when an important spell is pressed.",
 	["Show alert icons in the alerts region."] = "Show alert icons in the alerts region.",
+	["Show CC icons when healer is CC'd."] = "Show CC icons when healer is CC'd.",
 	["Show icons"] = "Show icons",
 	["Shows CC and other important spell alerts."] = "Shows CC and other important spell alerts.",
 	["Sound"] = "Sound",

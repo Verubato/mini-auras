@@ -102,6 +102,7 @@ L:SetStrings({
 	["Play a sound when a defensive spell is pressed."] = "Spiele einen Sound ab, wenn ein defensiver Zauber gewirkt wird.",
 	["Play a sound when an important spell is pressed."] = "Spiele einen Sound ab, wenn ein wichtiger Zauber gewirkt wird.",
 	["Show alert icons in the alerts region."] = "Warnsymbole im Warnbereich anzeigen.",
+	["Show CC icons when healer is CC'd."] = "Show CC icons when healer is CC'd.",
 	["Show icons"] = "Symbole anzeigen",
 	["Shows CC and other important spell alerts."] = "Zeigt Massenkontrolle und andere wichtige Zauberalarme an.",
 	["Sound"] = "Sound",

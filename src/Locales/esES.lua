@@ -102,6 +102,7 @@ L:SetStrings({
 	["Play a sound when a defensive spell is pressed."] = "Reproducir un sonido cuando se lance un hechizo defensivo.",
 	["Play a sound when an important spell is pressed."] = "Reproducir un sonido cuando se lance un hechizo importante.",
 	["Show alert icons in the alerts region."] = "Mostrar iconos de alerta en la región de alertas.",
+	["Show CC icons when healer is CC'd."] = "Show CC icons when healer is CC'd.",
 	["Show icons"] = "Mostrar iconos",
 	["Shows CC and other important spell alerts."] = "Muestra alertas de control y otros hechizos importantes.",
 	["Sound"] = "Sonido",

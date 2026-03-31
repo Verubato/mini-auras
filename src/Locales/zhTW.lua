@@ -105,6 +105,7 @@ L:SetStrings({
 	["Play a sound when a defensive spell is pressed."] = "使用防禦法術時播放聲音。",
 	["Play a sound when an important spell is pressed."] = "使用重要法術時播放聲音。",
 	["Show alert icons in the alerts region."] = "在警報區域顯示警報圖示.",
+	["Show CC icons when healer is CC'd."] = "Show CC icons when healer is CC'd.",
 	["Show icons"] = "顯示圖示",
 	["Shows CC and other important spell alerts."] = "顯示控制和其他重要法術警報。",
 	["Sound"] = "聲音",

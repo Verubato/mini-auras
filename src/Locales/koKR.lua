@@ -102,6 +102,7 @@ L:SetStrings({
 	["Play a sound when a defensive spell is pressed."] = "방어 주문이 사용될 때 소리 재생.",
 	["Play a sound when an important spell is pressed."] = "중요한 주문이 사용될 때 소리 재생.",
 	["Show alert icons in the alerts region."] = "알림 영역에 경고 아이콘을 표시합니다.",
+	["Show CC icons when healer is CC'd."] = "Show CC icons when healer is CC'd.",
 	["Show icons"] = "아이콘 표시",
 	["Shows CC and other important spell alerts."] = "군중 제어 및 기타 중요한 주문 알림을 표시합니다.",
 	["Sound"] = "소리",

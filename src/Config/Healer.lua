@@ -125,6 +125,21 @@ function M:Build(panel, options)
 	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
 	settingsDivider:SetPoint("TOP", enabledEverywhere, "BOTTOM", 0, -verticalSpacing)
 
+	local showIconsChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show icons"],
+		Tooltip = L["Show CC icons when healer is CC'd."],
+		GetValue = function()
+			return options.Icons.Enabled
+		end,
+		SetValue = function(value)
+			options.Icons.Enabled = value
+			config:Apply()
+		end,
+	})
+
+	showIconsChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local glowChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Glow icons"],
@@ -138,7 +153,8 @@ function M:Build(panel, options)
 		end,
 	})
 
-	glowChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	glowChk:SetPoint("TOP", showIconsChk, "TOP", 0, 0)
 
 	local showTextChk = mini:Checkbox({
 		Parent = panel,
@@ -153,7 +169,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	showTextChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	showTextChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	showTextChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local reverseChk = mini:Checkbox({
@@ -169,7 +185,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local dispelColoursChk = mini:Checkbox({
@@ -185,8 +201,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	dispelColoursChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	dispelColoursChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+	dispelColoursChk:SetPoint("TOPLEFT", showIconsChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local soundChk = mini:Checkbox({
 		Parent = panel,
@@ -207,7 +222,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	soundChk:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	soundChk:SetPoint("TOPLEFT", dispelColoursChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local soundFileDropdown = mini:Dropdown({
 		Parent = panel,

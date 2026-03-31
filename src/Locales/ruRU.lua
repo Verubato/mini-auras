@@ -102,6 +102,7 @@ L:SetStrings({
 	["Play a sound when a defensive spell is pressed."] = "Воспроизводить звук при использовании защитного заклинания.",
 	["Play a sound when an important spell is pressed."] = "Воспроизводить звук при использовании важного заклинания.",
 	["Show alert icons in the alerts region."] = "Показывать значки оповещений в области оповещений.",
+	["Show CC icons when healer is CC'd."] = "Show CC icons when healer is CC'd.",
 	["Show icons"] = "Показывать значки",
 	["Shows CC and other important spell alerts."] = "Показывает оповещения о контроле и других важных заклинаниях.",
 	["Sound"] = "Звук",
