@@ -409,6 +409,7 @@ function M:New(parent, count, size, spacing, groupName, noBorder)
 	instance.Spacing = spacing
 	instance.NumRows = nil
 	instance.RowAlignment = nil
+	instance.InvertLayout = false
 	instance.NoBorder = noBorder or false
 	instance.MasqueGroup = Masque and groupName and Masque:Group("MiniCC", groupName) or nil
 
@@ -431,7 +432,7 @@ function M:Layout()
 	-- If it matches the last run, the visual result would be identical so we
 	-- can skip all the SetPoint/SetSize/Show/Hide calls.
 	local numRows = (self.NumRows and self.NumRows > 1) and self.NumRows or nil
-	local sig = self.Size .. ":" .. (numRows or 1) .. ":" .. (self.RowAlignment or "C") .. ":" .. (self.OverflowRowAlignment or "C") .. ":" .. table.concat(layoutScratch, ",", 1, n)
+	local sig = self.Size .. ":" .. (numRows or 1) .. ":" .. (self.RowAlignment or "C") .. ":" .. (self.OverflowRowAlignment or "C") .. ":" .. (self.InvertLayout and "1" or "0") .. ":" .. table.concat(layoutScratch, ",", 1, n)
 	if self.LayoutSignature == sig then
 		return
 	end
@@ -461,19 +462,28 @@ function M:Layout()
 		for displayIndex = 1, usedCount do
 			local slot = self.Slots[layoutScratch[displayIndex]]
 			local rowIndex = math.floor((displayIndex - 1) / iconsPerRow) -- 0-based
-			local colIndex = (displayIndex - 1) % iconsPerRow -- 0-based
+			-- When InvertLayout is set, reverse the column order so slot 1 lands at the
+			-- rightmost position of every row instead of the leftmost.
+			local rawCol = (displayIndex - 1) % iconsPerRow -- 0-based
+			local colIndex = self.InvertLayout and (iconsPerRow - 1 - rawCol) or rawCol
 			local rowIcons = (rowIndex == actualRows - 1) and (usedCount - (actualRows - 1) * iconsPerRow) or iconsPerRow
-			local alignment = rowIndex == 0 and row1Alignment or overflowAlignment
 
 			local x
-			if alignment == "LEFT" then
+			if self.InvertLayout then
+				-- Inverted: use simple LEFT formula; column reversal already handles right-to-left
+				-- fill, so partial rows are naturally right-aligned without an extra shift.
 				x = colIndex * (self.Size + self.Spacing) - (rowWidth / 2) + (self.Size / 2)
-			elseif alignment == "RIGHT" then
-				local shift = (iconsPerRow - rowIcons) * (self.Size + self.Spacing)
-				x = colIndex * (self.Size + self.Spacing) - (rowWidth / 2) + (self.Size / 2) + shift
-			else -- CENTER
-				local thisRowWidth = rowIcons * self.Size + (rowIcons - 1) * self.Spacing
-				x = colIndex * (self.Size + self.Spacing) - (thisRowWidth / 2) + (self.Size / 2)
+			else
+				local alignment = rowIndex == 0 and row1Alignment or overflowAlignment
+				if alignment == "LEFT" then
+					x = colIndex * (self.Size + self.Spacing) - (rowWidth / 2) + (self.Size / 2)
+				elseif alignment == "RIGHT" then
+					local shift = (iconsPerRow - rowIcons) * (self.Size + self.Spacing)
+					x = colIndex * (self.Size + self.Spacing) - (rowWidth / 2) + (self.Size / 2) + shift
+				else -- CENTER
+					local thisRowWidth = rowIcons * self.Size + (rowIcons - 1) * self.Spacing
+					x = colIndex * (self.Size + self.Spacing) - (thisRowWidth / 2) + (self.Size / 2)
+				end
 			end
 			local y = (totalHeight / 2) - (self.Size / 2) - rowIndex * (self.Size + self.Spacing)
 
@@ -490,7 +500,9 @@ function M:Layout()
 
 		for displayIndex = 1, usedCount do
 			local slot = self.Slots[layoutScratch[displayIndex]]
-			local x = (displayIndex - 1) * (self.Size + self.Spacing) - (totalWidth / 2) + (self.Size / 2)
+			-- When InvertLayout is set, mirror the position so slot 1 is rightmost.
+			local effIndex = self.InvertLayout and (usedCount - displayIndex + 1) or displayIndex
+			local x = (effIndex - 1) * (self.Size + self.Spacing) - (totalWidth / 2) + (self.Size / 2)
 			slot.Frame:ClearAllPoints()
 			slot.Frame:SetPoint("CENTER", self.Frame, "CENTER", x, 0)
 			slot.Frame:SetSize(self.Size, self.Size)
@@ -541,7 +553,8 @@ end
 ---hug the edge the container grows from.
 ---@param numRows number? 1 or nil means single row (no multi-row layout)
 ---@param alignment string? "LEFT", "RIGHT", or "CENTER" (default)
-function M:SetRows(numRows, alignment)
+---@param invertLayout boolean? When true, slot 1 is placed at the rightmost position and the layout fills right-to-left. Use this instead of reversing the slots array so multi-row behaves consistently.
+function M:SetRows(numRows, alignment, invertLayout)
 	numRows = (numRows and numRows > 1) and math.floor(numRows) or nil
 	alignment = alignment or "CENTER"
 	local overflowAlignment
@@ -552,12 +565,14 @@ function M:SetRows(numRows, alignment)
 	else
 		overflowAlignment = alignment
 	end
-	if self.NumRows == numRows and self.RowAlignment == alignment and self.OverflowRowAlignment == overflowAlignment then
+	invertLayout = invertLayout and true or false
+	if self.NumRows == numRows and self.RowAlignment == alignment and self.OverflowRowAlignment == overflowAlignment and self.InvertLayout == invertLayout then
 		return
 	end
 	self.NumRows = numRows
 	self.RowAlignment = alignment
 	self.OverflowRowAlignment = overflowAlignment
+	self.InvertLayout = invertLayout
 	self.LayoutSignature = nil
 	self:Layout()
 end
@@ -833,10 +848,11 @@ end
 ---@field NumRows number?
 ---@field RowAlignment string?
 ---@field OverflowRowAlignment string?
+---@field InvertLayout boolean
 ---@field NoBorder boolean
 ---@field SetCount fun(self: IconSlotContainer, count: number)
 ---@field SetSpacing fun(self: IconSlotContainer, spacing: number)
----@field SetRows fun(self: IconSlotContainer, iconsPerRow: number?, alignment: string?)
+---@field SetRows fun(self: IconSlotContainer, iconsPerRow: number?, alignment: string?, invertLayout: boolean?)
 ---@field SetIconSize fun(self: IconSlotContainer, size: number)
 ---@field SetSlot fun(self: IconSlotContainer, slotIndex: number, options: IconLayerOptions)
 ---@field ClearSlot fun(self: IconSlotContainer, slotIndex: number)

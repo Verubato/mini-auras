@@ -806,12 +806,6 @@ local function UpdateDisplay(entry)
 	local iconOptions = anchorOptions.Icons
 
 	local function FlushSlots(slots)
-		if anchorOptions.ReverseOrder then
-			local n = #slots
-			for i = 1, math.floor(n / 2) do
-				slots[i], slots[n - i + 1] = slots[n - i + 1], slots[i]
-			end
-		end
 		for i, slotData in ipairs(slots) do
 			if i > container.Count then
 				break
@@ -829,7 +823,7 @@ local function UpdateDisplay(entry)
 	local showOffensive = anchorOptions.ShowOffensiveCooldowns ~= false
 	local slots = {}
 
-	-- Trinket: always first in arena (before ReverseOrder is applied).
+	-- Trinket: always slot 1 in arena so it lands at the priority position determined by InvertLayout.
 	if IsInArena() then
 		local durationData = trinketsTracker:GetUnitDuration(entry.Unit)
 		slots[#slots + 1] = {
@@ -1152,22 +1146,32 @@ local function AnchorContainer(entry)
 	frame:SetFrameStrata(frames:GetNextStrata(anchor:GetFrameStrata()))
 	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
 
-	local anchorPoint = "CENTER"
-	local relativeToPoint = "CENTER"
 	local rowsEnabled = options.Icons.Rows and options.Icons.Rows > 1
 
-	if options.Grow == "LEFT" then
-		anchorPoint = rowsEnabled and "TOPRIGHT" or "RIGHT"
-		relativeToPoint = rowsEnabled and "TOPLEFT" or "LEFT"
-	elseif options.Grow == "RIGHT" then
-		anchorPoint = rowsEnabled and "TOPLEFT" or "LEFT"
-		relativeToPoint = rowsEnabled and "TOPRIGHT" or "RIGHT"
-	elseif rowsEnabled then
-		anchorPoint = "TOP"
-		relativeToPoint = "TOP"
-	end
+	if rowsEnabled then
+		-- For multi-row, anchor the container's top edge so that the first row appears at
+		-- the same position as the single-row icon (vertically centred on the party frame).
+		-- Adding half an icon height to the Y offset achieves this because the top of the
+		-- container sits half an icon above the first row's centre.
+		local size = tonumber(options.Icons.Size) or 32
+		local yOffset = options.Offset.Y + size / 2
 
-	frame:SetPoint(anchorPoint, anchor, relativeToPoint, options.Offset.X, options.Offset.Y)
+		if options.Grow == "LEFT" then
+			frame:SetPoint("TOPRIGHT", anchor, "LEFT", options.Offset.X, yOffset)
+		elseif options.Grow == "RIGHT" then
+			frame:SetPoint("TOPLEFT", anchor, "RIGHT", options.Offset.X, yOffset)
+		else
+			frame:SetPoint("TOP", anchor, "CENTER", options.Offset.X, yOffset)
+		end
+	else
+		if options.Grow == "LEFT" then
+			frame:SetPoint("RIGHT", anchor, "LEFT", options.Offset.X, options.Offset.Y)
+		elseif options.Grow == "RIGHT" then
+			frame:SetPoint("LEFT", anchor, "RIGHT", options.Offset.X, options.Offset.Y)
+		else
+			frame:SetPoint("CENTER", anchor, "CENTER", options.Offset.X, options.Offset.Y)
+		end
+	end
 end
 
 ---Creates or updates the watch entry for a given anchor frame.
@@ -1353,7 +1357,7 @@ function M:Refresh()
 			entry.Container:SetIconSize(size)
 			entry.Container:SetCount(maxIcons)
 			entry.Container:SetSpacing(db.IconSpacing or 2)
-			entry.Container:SetRows(rows, anchorOptions.Grow)
+			entry.Container:SetRows(rows, anchorOptions.Grow, anchorOptions.ReverseOrder)
 			AnchorContainer(entry)
 			ShowHideEntryContainer(entry.Container.Frame, anchor)
 			UpdateDisplay(entry)
