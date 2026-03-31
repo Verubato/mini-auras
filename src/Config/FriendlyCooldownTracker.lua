@@ -14,6 +14,7 @@ local growOptions = {
 
 local columns = 4
 local columnWidth
+local enabledColumnWidth
 
 ---@class FriendlyCooldownTrackerConfig
 local M = {}
@@ -243,6 +244,7 @@ function M:Build(panel, default, raid)
 	local db = mini:GetSavedVars()
 	local options = db.Modules.FriendlyCooldownTrackerModule
 	columnWidth = mini:ColumnWidth(columns, 0, 0)
+	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
 
 	local description = mini:TextBlock({
 		Parent = panel,
@@ -290,7 +292,7 @@ function M:Build(panel, default, raid)
 		end,
 	})
 
-	enabledArena:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	enabledArena:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth, 0)
 	enabledArena:SetPoint("TOP", enabledWorld, "TOP", 0, 0)
 
 	local enabledBattleGrounds = mini:Checkbox({
@@ -306,24 +308,40 @@ function M:Build(panel, default, raid)
 		end,
 	})
 
-	enabledBattleGrounds:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	enabledBattleGrounds:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 2, 0)
 	enabledBattleGrounds:SetPoint("TOP", enabledWorld, "TOP", 0, 0)
 
-	local enabledPvE = mini:Checkbox({
+	local enabledDungeons = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["PvE"],
-		Tooltip = L["Enable this module in PvE."],
+		LabelText = L["Dungeons"],
+		Tooltip = L["Enable this module in dungeons."],
 		GetValue = function()
-			return options.Enabled.PvE
+			return options.Enabled.Dungeons
 		end,
 		SetValue = function(value)
-			options.Enabled.PvE = value
+			options.Enabled.Dungeons = value
 			config:Apply()
 		end,
 	})
 
-	enabledPvE:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	enabledPvE:SetPoint("TOP", enabledWorld, "TOP", 0, 0)
+	enabledDungeons:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 3, 0)
+	enabledDungeons:SetPoint("TOP", enabledWorld, "TOP", 0, 0)
+
+	local enabledRaid = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Raid"],
+		Tooltip = L["Enable this module in raids."],
+		GetValue = function()
+			return options.Enabled.Raid
+		end,
+		SetValue = function(value)
+			options.Enabled.Raid = value
+			config:Apply()
+		end,
+	})
+
+	enabledRaid:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 4, 0)
+	enabledRaid:SetPoint("TOP", enabledWorld, "TOP", 0, 0)
 
 	local defaultDivider = mini:Divider({
 		Parent = panel,

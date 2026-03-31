@@ -1,8 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
-
-
 local wowEx = addon.Utils.WoWEx
 local iconSlotContainer = addon.Core.IconSlotContainer
 local frames = addon.Core.Frames
@@ -1358,10 +1356,7 @@ function M:Refresh()
 			entry.Container:SetRows(rows, anchorOptions.Grow)
 			AnchorContainer(entry)
 			ShowHideEntryContainer(entry.Container.Frame, anchor)
-
-			if testModeActive then
-				UpdateDisplay(entry)
-			end
+			UpdateDisplay(entry)
 		end
 	end
 end

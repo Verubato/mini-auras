@@ -12,6 +12,7 @@ local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local columns = 4
 local columnWidth
+local enabledColumnWidth
 local config = addon.Config
 
 ---@class CrowdControlConfig
@@ -258,7 +259,7 @@ local function BuildPetInstance(panel, options)
 		end,
 	})
 
-	petEnabledArena:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	petEnabledArena:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
 	petEnabledArena:SetPoint("TOP", petEnabledEverywhere, "TOP", 0, 0)
 
 	local petEnabledBattleGrounds = mini:Checkbox({
@@ -274,24 +275,40 @@ local function BuildPetInstance(panel, options)
 		end,
 	})
 
-	petEnabledBattleGrounds:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	petEnabledBattleGrounds:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
 	petEnabledBattleGrounds:SetPoint("TOP", petEnabledEverywhere, "TOP", 0, 0)
 
-	local petEnabledPvE = mini:Checkbox({
+	local petEnabledDungeons = mini:Checkbox({
 		Parent = parent,
-		LabelText = L["PvE"],
-		Tooltip = L["Enable pet frame CC in PvE."],
+		LabelText = L["Dungeons"],
+		Tooltip = L["Enable pet frame CC in dungeons."],
 		GetValue = function()
-			return options.Enabled.PvE
+			return options.Enabled.Dungeons
 		end,
 		SetValue = function(value)
-			options.Enabled.PvE = value
+			options.Enabled.Dungeons = value
 			config:Apply()
 		end,
 	})
 
-	petEnabledPvE:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
-	petEnabledPvE:SetPoint("TOP", petEnabledEverywhere, "TOP", 0, 0)
+	petEnabledDungeons:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
+	petEnabledDungeons:SetPoint("TOP", petEnabledEverywhere, "TOP", 0, 0)
+
+	local petEnabledRaid = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Raid"],
+		Tooltip = L["Enable pet frame CC in raids."],
+		GetValue = function()
+			return options.Enabled.Raid
+		end,
+		SetValue = function(value)
+			options.Enabled.Raid = value
+			config:Apply()
+		end,
+	})
+
+	petEnabledRaid:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
+	petEnabledRaid:SetPoint("TOP", petEnabledEverywhere, "TOP", 0, 0)
 
 	local glowChk = mini:Checkbox({
 		Parent = parent,
@@ -397,6 +414,7 @@ end
 ---@param raid CrowdControlInstanceOptions
 function M:Build(panel, default, raid)
 	columnWidth = mini:ColumnWidth(columns, 0, 0)
+	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
 	local db = mini:GetSavedVars()
 
 	local lines = mini:TextBlock({
@@ -444,7 +462,7 @@ function M:Build(panel, default, raid)
 		end,
 	})
 
-	enabledArena:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	enabledArena:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth, 0)
 	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
 	local enabledBattleGrounds = mini:Checkbox({
@@ -460,24 +478,40 @@ function M:Build(panel, default, raid)
 		end,
 	})
 
-	enabledBattleGrounds:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	enabledBattleGrounds:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 2, 0)
 	enabledBattleGrounds:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
-	local enabledPvE = mini:Checkbox({
+	local enabledDungeons = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["PvE"],
-		Tooltip = L["Enable this module in PvE."],
+		LabelText = L["Dungeons"],
+		Tooltip = L["Enable this module in dungeons."],
 		GetValue = function()
-			return db.Modules.CCModule.Enabled.PvE
+			return db.Modules.CCModule.Enabled.Dungeons
 		end,
 		SetValue = function(value)
-			db.Modules.CCModule.Enabled.PvE = value
+			db.Modules.CCModule.Enabled.Dungeons = value
 			config:Apply()
 		end,
 	})
 
-	enabledPvE:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	enabledPvE:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+	enabledDungeons:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 3, 0)
+	enabledDungeons:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
+	local enabledRaid = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Raid"],
+		Tooltip = L["Enable this module in raids."],
+		GetValue = function()
+			return db.Modules.CCModule.Enabled.Raid
+		end,
+		SetValue = function(value)
+			db.Modules.CCModule.Enabled.Raid = value
+			config:Apply()
+		end,
+	})
+
+	enabledRaid:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 4, 0)
+	enabledRaid:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
 	local defaultDivider = mini:Divider({
 		Parent = panel,

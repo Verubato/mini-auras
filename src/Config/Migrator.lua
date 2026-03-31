@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 34,
+	Version = 35,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -24,7 +24,8 @@ local dbDefaults = {
 				World = true,
 				Arena = true,
 				BattleGrounds = false,
-				PvE = true,
+				Dungeons = true,
+				Raid = false,
 			},
 
 			---@class CrowdControlInstanceOptions
@@ -70,7 +71,8 @@ local dbDefaults = {
 				World = false,
 				Arena = false,
 				BattleGrounds = false,
-				PvE = false,
+				Dungeons = false,
+				Raid = false,
 			},
 
 			Grow = "CENTER",
@@ -94,7 +96,8 @@ local dbDefaults = {
 				World = true,
 				Arena = true,
 				BattleGrounds = false,
-				PvE = true,
+				Dungeons = true,
+				Raid = false,
 			},
 
 			Sound = {
@@ -140,7 +143,8 @@ local dbDefaults = {
 				World = true,
 				Arena = true,
 				BattleGrounds = false,
-				PvE = false,
+				Dungeons = false,
+				Raid = false,
 			},
 
 			IncludeDefensives = true,
@@ -194,7 +198,8 @@ local dbDefaults = {
 				World = true,
 				Arena = true,
 				BattleGrounds = true,
-				PvE = true,
+				Dungeons = true,
+				Raid = true,
 			},
 			ScaleWithNameplate = true,
 
@@ -359,7 +364,8 @@ local dbDefaults = {
 				World = true,
 				Arena = true,
 				BattleGrounds = true,
-				PvE = true,
+				Dungeons = true,
+				Raid = false,
 			},
 
 			---@class FriendlyIndicatorInstanceOptions
@@ -402,7 +408,8 @@ local dbDefaults = {
 				World = true,
 				Arena = true,
 				BattleGrounds = false,
-				PvE = true,
+				Dungeons = true,
+				Raid = false,
 			},
 
 			---@class FriendlyCooldownTrackerAnchorOptions
@@ -1985,6 +1992,32 @@ function M:UpgradeToVersion33(vars)
 	return true
 end
 
+function M:UpgradeToVersion35(vars)
+	if vars.Version ~= 34 then
+		return false
+	end
+
+	-- Split PvE into Dungeons + Raid for all modules
+	local moduleNames = {
+		"CCModule", "PetCCModule", "HealerCCModule",
+		"AlertsModule", "NameplatesModule", "FriendlyIndicatorModule",
+		"FriendlyCooldownTrackerModule",
+	}
+	if vars.Modules then
+		for _, moduleName in ipairs(moduleNames) do
+			local m = vars.Modules[moduleName]
+			if m and m.Enabled and m.Enabled.PvE ~= nil then
+				m.Enabled.Dungeons = m.Enabled.PvE
+				m.Enabled.Raid = m.Enabled.PvE
+				m.Enabled.PvE = nil
+			end
+		end
+	end
+
+	vars.Version = 35
+	return true
+end
+
 function M:UpgradeToVersion34(vars)
 	if vars.Version ~= 33 then
 		return false
@@ -1996,7 +2029,6 @@ function M:UpgradeToVersion34(vars)
 	vars.Version = 34
 	return true
 end
-
 
 ---@return boolean true if any deferred migrations were applied
 function M:RunDeferredMigrations(vars)

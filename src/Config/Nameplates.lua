@@ -12,6 +12,7 @@ local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local columns = 4
 local columnWidth
+local enabledColumnWidth
 local config = addon.Config
 
 ---@class NameplatesConfig
@@ -287,6 +288,7 @@ end
 ---@param options NameplateModuleOptions
 function M:Build(parent, options)
 	columnWidth = mini:ColumnWidth(columns, 0, 0)
+	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
 	local db = mini:GetSavedVars()
 
 	local lines = mini:TextBlock({
@@ -334,7 +336,7 @@ function M:Build(parent, options)
 		end,
 	})
 
-	enabledArena:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	enabledArena:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
 	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
 	local enabledBattleGrounds = mini:Checkbox({
@@ -350,24 +352,40 @@ function M:Build(parent, options)
 		end,
 	})
 
-	enabledBattleGrounds:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	enabledBattleGrounds:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
 	enabledBattleGrounds:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
-	local enabledPvE = mini:Checkbox({
+	local enabledDungeons = mini:Checkbox({
 		Parent = parent,
-		LabelText = L["PvE"],
-		Tooltip = L["Enable this module in PvE."],
+		LabelText = L["Dungeons"],
+		Tooltip = L["Enable this module in dungeons."],
 		GetValue = function()
-			return db.Modules.NameplatesModule.Enabled.PvE
+			return db.Modules.NameplatesModule.Enabled.Dungeons
 		end,
 		SetValue = function(value)
-			db.Modules.NameplatesModule.Enabled.PvE = value
+			db.Modules.NameplatesModule.Enabled.Dungeons = value
 			config:Apply()
 		end,
 	})
 
-	enabledPvE:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
-	enabledPvE:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+	enabledDungeons:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
+	enabledDungeons:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+
+	local enabledRaid = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Raid"],
+		Tooltip = L["Enable this module in raids."],
+		GetValue = function()
+			return db.Modules.NameplatesModule.Enabled.Raid
+		end,
+		SetValue = function(value)
+			db.Modules.NameplatesModule.Enabled.Raid = value
+			config:Apply()
+		end,
+	})
+
+	enabledRaid:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
+	enabledRaid:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
 	-- Store panel references for visibility toggling
 	local enemyPanels = {}

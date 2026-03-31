@@ -58,6 +58,9 @@ function M:IsModuleEnabled(moduleName)
 		return settings.BattleGrounds
 	end
 
-	-- default to PvE for all other types of content (dungeons, raids, scenarios)
-	return settings.PvE
+	if IsInRaid() then
+		return settings.Raid
+	end
+	
+	return settings.Dungeons
 end
