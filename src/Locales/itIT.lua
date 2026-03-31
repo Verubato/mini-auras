@@ -206,8 +206,6 @@ L:SetStrings({
 	["Friendly Cooldowns_Short"] = "Rec. alleati",
 	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Mostra i recuperi del gingillo PvP e delle difensive alleate nei frame del gruppo/raid dopo la scadenza di una difensiva.",
 	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "Questo modulo è in beta anticipata, quindi aspettati qualche bug e imprecisione. Se ne trovi, segnalaceli su Discord!",
-	["Reverse order"] = "Ordine inverso",
-	["Reverses the order icons are displayed in."] = "Inverte l'ordine di visualizzazione delle icone.",
 	["Excludes yourself from being tracked."] = "Ti esclude dal monitoraggio.",
 	["Show tooltips"] = "Mostra suggerimenti",
 	["Shows a spell tooltip when hovering over an icon."] = "Mostra un suggerimento sull'incantesimo passando il cursore su un'icona.",

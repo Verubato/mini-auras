@@ -207,8 +207,6 @@ L:SetStrings({
 	["Friendly Cooldowns_Short"] = "友方冷却",
 	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "防御技能到期后，在小队/团队框架上显示PvP饰品和友方防御技能的冷却时间。",
 	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "此模块处于早期测试阶段，可能存在一些错误和不准确之处。如发现问题，请在Discord上向我们报告！",
-	["Reverse order"] = "反向排序",
-	["Reverses the order icons are displayed in."] = "反转图标的显示顺序。",
 	["Excludes yourself from being tracked."] = "将自己排除在追踪之外。",
 	["Show tooltips"] = "显示提示",
 	["Shows a spell tooltip when hovering over an icon."] = "鼠标悬停在图标上时显示法术提示。",

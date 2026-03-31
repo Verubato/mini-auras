@@ -418,7 +418,6 @@ local dbDefaults = {
 			Default = {
 				Grow = "LEFT",
 				Offset = { X = -2, Y = 0 },
-				ReverseOrder = true,
 				ExcludeSelf = false,
 				ShowTooltips = true,
 				ShowTrinket = true,
@@ -436,7 +435,6 @@ local dbDefaults = {
 			Raid = {
 				Grow = "CENTER",
 				Offset = { X = -2, Y = 0 },
-				ReverseOrder = true,
 				ExcludeSelf = false,
 				ShowTooltips = true,
 				ShowTrinket = true,

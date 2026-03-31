@@ -26,21 +26,6 @@ config.FriendlyCooldownTracker = M
 local function BuildInstance(parent, anchorOptions)
 	local panel = CreateFrame("Frame", nil, parent)
 
-	local reverseOrderChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Reverse order"],
-		Tooltip = L["Reverses the order icons are displayed in."],
-		GetValue = function()
-			return anchorOptions.ReverseOrder
-		end,
-		SetValue = function(value)
-			anchorOptions.ReverseOrder = value
-			config:Apply()
-		end,
-	})
-
-	reverseOrderChk:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
-
 	local excludeSelfChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Exclude self"],
@@ -54,8 +39,7 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	excludeSelfChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	excludeSelfChk:SetPoint("TOP", reverseOrderChk, "TOP", 0, 0)
+	excludeSelfChk:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
 	local showTooltipsChk = mini:Checkbox({
 		Parent = panel,
@@ -70,8 +54,8 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	showTooltipsChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	showTooltipsChk:SetPoint("TOP", reverseOrderChk, "TOP", 0, 0)
+	showTooltipsChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	showTooltipsChk:SetPoint("TOP", excludeSelfChk, "TOP", 0, 0)
 
 	local reverseChk = mini:Checkbox({
 		Parent = panel,
@@ -86,8 +70,8 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	reverseChk:SetPoint("TOP", reverseOrderChk, "TOP", 0, 0)
+	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	reverseChk:SetPoint("TOP", excludeSelfChk, "TOP", 0, 0)
 
 	local showDefensiveChk = mini:Checkbox({
 		Parent = panel,
@@ -102,7 +86,7 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	showDefensiveChk:SetPoint("TOPLEFT", reverseOrderChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	showDefensiveChk:SetPoint("TOPLEFT", excludeSelfChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local showOffensiveChk = mini:Checkbox({
 		Parent = panel,

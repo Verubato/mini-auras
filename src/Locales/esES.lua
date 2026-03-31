@@ -206,8 +206,6 @@ L:SetStrings({
 	["Friendly Cooldowns_Short"] = "Enfr. aliados",
 	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Muestra los enfriamientos del abalorio de PvP y de las defensivas aliadas en los marcos de grupo/banda tras expirar una defensiva.",
 	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "Este módulo está en beta temprana, así que espera algunos errores e imprecisiones. Si encuentras alguno, ¡repórtanoslo en Discord!",
-	["Reverse order"] = "Orden inverso",
-	["Reverses the order icons are displayed in."] = "Invierte el orden en que se muestran los iconos.",
 	["Excludes yourself from being tracked."] = "Te excluye del seguimiento.",
 	["Show tooltips"] = "Mostrar información",
 	["Shows a spell tooltip when hovering over an icon."] = "Muestra la información de un hechizo al pasar el cursor sobre un icono.",

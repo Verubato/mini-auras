@@ -207,8 +207,6 @@ L:SetStrings({
 	["Friendly Cooldowns_Short"] = "Rec. aliadas",
 	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Exibe as recargas do berloque de PvP e defensivas aliadas nos frames do grupo/raid após uma defensiva expirar.",
 	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "Este módulo está em beta inicial, então espere alguns bugs e imprecisões. Se encontrar algum, reporte-nos no Discord!",
-	["Reverse order"] = "Ordem inversa",
-	["Reverses the order icons are displayed in."] = "Inverte a ordem em que os ícones são exibidos.",
 	["Excludes yourself from being tracked."] = "Exclui você do rastreamento.",
 	["Show tooltips"] = "Mostrar dicas",
 	["Shows a spell tooltip when hovering over an icon."] = "Exibe a dica de feitiço ao passar o mouse sobre um ícone.",

@@ -206,8 +206,6 @@ L:SetStrings({
 	["Friendly Cooldowns_Short"] = "아군 쿨타임",
 	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "방어기가 만료된 후 파티/공격대 프레임에 PvP 장신구와 아군 방어기 재사용 대기시간을 표시합니다.",
 	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "이 모듈은 초기 베타 단계이므로 일부 버그 및 부정확한 사항이 있을 수 있습니다. 발견하시면 Discord에서 알려주세요!",
-	["Reverse order"] = "순서 반전",
-	["Reverses the order icons are displayed in."] = "아이콘이 표시되는 순서를 반전합니다.",
 	["Excludes yourself from being tracked."] = "자신을 추적에서 제외합니다.",
 	["Show tooltips"] = "툴팁 표시",
 	["Shows a spell tooltip when hovering over an icon."] = "아이콘 위에 마우스를 올리면 주문 툴팁을 표시합니다.",

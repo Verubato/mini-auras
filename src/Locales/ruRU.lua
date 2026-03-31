@@ -207,8 +207,6 @@ L:SetStrings({
 	["Friendly Cooldowns_Short"] = "Перезар. союзн.",
 	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Показывает перезарядки PvP-украшения и защитных умений союзников на фреймах группы/рейда после окончания защиты.",
 	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "Модуль находится в ранней бете, поэтому возможны ошибки и неточности. Если вы их обнаружите, сообщите нам в Discord!",
-	["Reverse order"] = "Обратный порядок",
-	["Reverses the order icons are displayed in."] = "Меняет порядок отображения значков на обратный.",
 	["Excludes yourself from being tracked."] = "Исключает вас из отслеживания.",
 	["Show tooltips"] = "Показывать подсказки",
 	["Shows a spell tooltip when hovering over an icon."] = "Показывает подсказку заклинания при наведении на значок.",

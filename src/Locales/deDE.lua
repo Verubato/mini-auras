@@ -206,8 +206,6 @@ L:SetStrings({
 	["Friendly Cooldowns_Short"] = "Verbünd. AZ",
 	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Zeigt PvP-Schmuckstück- und verbündete Defensiv-Abklingzeiten auf Gruppen-/Schlachtzugsrahmen an, nachdem ein Defensivzauber endet.",
 	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "Dieses Modul befindet sich in der frühen Beta, daher sind einige Fehler und Ungenauigkeiten zu erwarten. Falls du welche findest, melde sie uns bitte auf Discord!",
-	["Reverse order"] = "Reihenfolge umkehren",
-	["Reverses the order icons are displayed in."] = "Kehrt die Reihenfolge um, in der Symbole angezeigt werden.",
 	["Excludes yourself from being tracked."] = "Schließt dich selbst vom Tracking aus.",
 	["Show tooltips"] = "Tooltips anzeigen",
 	["Shows a spell tooltip when hovering over an icon."] = "Zeigt einen Zauber-Tooltip beim Überfahren eines Symbols.",

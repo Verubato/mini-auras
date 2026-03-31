@@ -209,8 +209,6 @@ L:SetDefaultStrings({
 	["Shows friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Shows friendly defensive cooldowns on party/raid frames after a defensive expires.",
 	["The cooldown duration shown may be approximate when multiple spells share the same buff duration."] = "The cooldown duration shown may be approximate when multiple spells share the same buff duration.",
 	["Anchor"] = "Anchor",
-	["Reverse order"] = "Reverse order",
-	["Reverses the order icons are displayed in."] = "Reverses the order icons are displayed in.",
 	["Excludes yourself from being tracked."] = "Excludes yourself from being tracked.",
 	["Show tooltips"] = "Show tooltips",
 	["Shows a spell tooltip when hovering over an icon."] = "Shows a spell tooltip when hovering over an icon.",

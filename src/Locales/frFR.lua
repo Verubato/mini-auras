@@ -207,8 +207,6 @@ L:SetStrings({
 	["Friendly Cooldowns_Short"] = "TR alliés",
 	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Affiche les temps de recharge du bijou PvP et des défensifs alliés sur les cadres de groupe/raid après expiration d'un sort défensif.",
 	["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"] = "Ce module est en bêta précoce, attendez-vous donc à quelques bugs et imprécisions. Si vous en trouvez, signalez-les nous sur Discord !",
-	["Reverse order"] = "Ordre inversé",
-	["Reverses the order icons are displayed in."] = "Inverse l'ordre d'affichage des icônes.",
 	["Excludes yourself from being tracked."] = "Vous exclut du suivi.",
 	["Show tooltips"] = "Afficher les infobulles",
 	["Shows a spell tooltip when hovering over an icon."] = "Affiche une infobulle de sort au survol d'une icône.",
