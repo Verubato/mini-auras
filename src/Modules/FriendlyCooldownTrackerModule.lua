@@ -186,6 +186,7 @@ local rules = {
 				Important = true,
 				ExternalDefensive = false,
 				BigDefensive = false,
+				MinDuration = true,
 				RequiresEvidence = "Cast",
 				SpellId = 31884,
 				ExcludeIfTalent = 389539,
@@ -196,6 +197,7 @@ local rules = {
 				Important = true,
 				ExternalDefensive = false,
 				BigDefensive = false,
+				MinDuration = true,
 				RequiresEvidence = "Cast",
 				SpellId = 389539,
 				RequiresTalent = 389539,
@@ -362,7 +364,7 @@ local rules = {
 		[105] = { { BuffDuration = 12, Cooldown = 90, ExternalDefensive = true, BigDefensive = false, Important = false, RequiresEvidence = "Cast", SpellId = 102342 } }, -- Restoration Druid: Ironbark
 		[268] = { -- Brewmaster Monk
 			{ BuffDuration = 25, Cooldown = 120, Important = true, BigDefensive = false, ExternalDefensive = false, RequiresEvidence = "Cast", SpellId = 132578 }, -- Invoke Niuzao, the Black Ox
-			{ BuffDuration = 15, Cooldown = 360, BigDefensive = true, Important = true, ExternalDefensive = false, RequiresEvidence = "Cast", SpellId = 115203 }, -- Fortifying Brew
+			{ BuffDuration = 15, Cooldown = 360, BigDefensive = true, Important = false, ExternalDefensive = false, RequiresEvidence = "Cast", SpellId = 115203 }, -- Fortifying Brew
 		},
 		[270] = { { BuffDuration = 12, Cooldown = 120, ExternalDefensive = true, BigDefensive = false, Important = false, CanCancelEarly = true, RequiresEvidence = "Cast", SpellId = 116849 } }, -- Mistweaver Monk: Life Cocoon
 		[577] = { -- Havoc Demon Hunter
