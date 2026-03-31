@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.1.0
+
+- PvP trinket now shows on the top right when growing from the left, and top left when growing from the right.
+- Added options for the Friendly CDs module to show/hide defensive spells and trinket.
+- Split the enable in PvE option into Dungeons and Raid to allow for more customization.
+- Fixed Fortifying Brew not tracking for Brewmaster Monk.
+- Fixed Avenging Wrath and Senitel not tracking for Prot Paladin.
+- Fixed Ice Block and Ice Cold not working properly for Mages.
+- Fixed issue where the 'Exclude Self' option was not working and caused players to see other team members talents on themselves in arena.
+- Added support for default Blizzard party frames.
+- Added option to hide healer in CC icons.
+
 ## 3.0.0
 
 Added friendly cooldown guessing module.
