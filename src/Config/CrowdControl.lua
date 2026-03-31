@@ -338,7 +338,7 @@ local function BuildPetInstance(panel, options)
 		end,
 	})
 
-	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
 	dispelColoursChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local reverseChk = mini:Checkbox({
@@ -354,7 +354,7 @@ local function BuildPetInstance(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local iconSize = mini:Slider({
