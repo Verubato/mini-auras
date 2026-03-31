@@ -212,7 +212,9 @@ L:SetStrings({
 	["Excludes yourself from being tracked."] = "Vous exclut du suivi.",
 	["Show tooltips"] = "Afficher les infobulles",
 	["Shows a spell tooltip when hovering over an icon."] = "Affiche une infobulle de sort au survol d'une icône.",
-	["Show offensive cooldowns"] = "Afficher les temps de recharge offensifs",
+	["Defensive cooldowns"] = "Defensive cooldowns",
+	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Shows defensive cooldowns such as Blessing of Protection and Ironbark.",
+	["Offensive cooldowns"] = "Afficher les temps de recharge offensifs",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Affiche les temps de recharge offensifs tels que Combustion, Avatar et Rage du dragon.",
 	["Rows"] = "Rangées",
 

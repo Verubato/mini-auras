@@ -215,7 +215,9 @@ L:SetStrings({
 	["Excludes yourself from being tracked."] = "將自己排除在追蹤之外。",
 	["Show tooltips"] = "顯示提示",
 	["Shows a spell tooltip when hovering over an icon."] = "滑鼠懸停在圖示上時顯示法術提示。",
-	["Show offensive cooldowns"] = "顯示攻擊性冷卻",
+	["Defensive cooldowns"] = "Defensive cooldowns",
+	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Shows defensive cooldowns such as Blessing of Protection and Ironbark.",
+	["Offensive cooldowns"] = "顯示攻擊性冷卻",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "顯示攻擊性冷卻，如燃燒、化身和龍怒。",
 	["Rows"] = "行數",
 

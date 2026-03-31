@@ -212,7 +212,9 @@ L:SetStrings({
 	["Excludes yourself from being tracked."] = "Исключает вас из отслеживания.",
 	["Show tooltips"] = "Показывать подсказки",
 	["Shows a spell tooltip when hovering over an icon."] = "Показывает подсказку заклинания при наведении на значок.",
-	["Show offensive cooldowns"] = "Показывать наступательные откаты",
+	["Defensive cooldowns"] = "Defensive cooldowns",
+	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Shows defensive cooldowns such as Blessing of Protection and Ironbark.",
+	["Offensive cooldowns"] = "Показывать наступательные откаты",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Показывает наступательные откаты, такие как Горение, Аватар и Ярость дракона.",
 	["Rows"] = "Ряды",
 

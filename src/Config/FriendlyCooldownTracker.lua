@@ -89,9 +89,24 @@ local function BuildInstance(parent, anchorOptions)
 	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
 	reverseChk:SetPoint("TOP", reverseOrderChk, "TOP", 0, 0)
 
+	local showDefensiveChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Defensive cooldowns"],
+		Tooltip = L["Shows defensive cooldowns such as Blessing of Protection and Ironbark."],
+		GetValue = function()
+			return anchorOptions.ShowDefensiveCooldowns ~= false
+		end,
+		SetValue = function(value)
+			anchorOptions.ShowDefensiveCooldowns = value
+			config:Apply()
+		end,
+	})
+
+	showDefensiveChk:SetPoint("TOPLEFT", reverseOrderChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local showOffensiveChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["Show offensive cooldowns"],
+		LabelText = L["Offensive cooldowns"],
 		Tooltip = L["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."],
 		GetValue = function()
 			return anchorOptions.ShowOffensiveCooldowns ~= false
@@ -102,7 +117,8 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	showOffensiveChk:SetPoint("TOPLEFT", reverseOrderChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	showOffensiveChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	showOffensiveChk:SetPoint("TOP", showDefensiveChk, "TOP", 0, 0)
 
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,
@@ -123,7 +139,7 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	iconSizeSlider.Slider:SetPoint("TOPLEFT", showOffensiveChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSizeSlider.Slider:SetPoint("TOPLEFT", showDefensiveChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local maxIconsSlider = mini:Slider({
 		Parent = panel,

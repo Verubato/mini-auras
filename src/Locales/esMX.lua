@@ -212,7 +212,9 @@ L:SetStrings({
 	["Excludes yourself from being tracked."] = "Te excluye del seguimiento.",
 	["Show tooltips"] = "Mostrar información",
 	["Shows a spell tooltip when hovering over an icon."] = "Muestra la información de un hechizo al pasar el cursor sobre un icono.",
-	["Show offensive cooldowns"] = "Mostrar tiempos de reutilización ofensivos",
+	["Defensive cooldowns"] = "Defensive cooldowns",
+	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Shows defensive cooldowns such as Blessing of Protection and Ironbark.",
+	["Offensive cooldowns"] = "Mostrar tiempos de reutilización ofensivos",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Muestra tiempos de reutilización ofensivos como Combustión, Avatar y Furia del dragón.",
 	["Rows"] = "Filas",
 

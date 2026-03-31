@@ -707,7 +707,7 @@ end
 
 ---@param entry FcdWatchEntry
 ---Builds the slot list shown in test mode.
-local function BuildTestSlots(showTooltips, iconOptions)
+local function BuildTestSlots(showOffensive, showDefensive, showTooltips, iconOptions)
 	local now = GetTime()
 	local slots = {
 		{
@@ -720,35 +720,38 @@ local function BuildTestSlots(showTooltips, iconOptions)
 		},
 	}
 	local testSpells = {
-		{ SpellId = 642, StartOffset = 60, Cooldown = 300 }, -- Divine Shield
-		{ SpellId = 33206, StartOffset = 30, Cooldown = 180 }, -- Pain Suppression
-		{ SpellId = 45438, StartOffset = 120, Cooldown = 240 }, -- Ice Block
+		{ SpellId = 642,    StartOffset = 60,  Cooldown = 300, IsOffensive = false }, -- Divine Shield
+		{ SpellId = 33206,  StartOffset = 30,  Cooldown = 180, IsOffensive = false }, -- Pain Suppression
+		{ SpellId = 45438,  StartOffset = 120, Cooldown = 240, IsOffensive = false }, -- Ice Block
+		{ SpellId = 190319, StartOffset = 10,  Cooldown = 120, IsOffensive = true  }, -- Combustion
 	}
 	for _, t in ipairs(testSpells) do
-		local texture = spellCache:GetSpellTexture(t.SpellId)
-		if texture then
-			slots[#slots + 1] = {
-				Texture = texture,
-				SpellId = showTooltips and t.SpellId or nil,
-				DurationObject = wowEx:CreateDuration(now - t.StartOffset, t.Cooldown),
-				Alpha = 1,
-				ReverseCooldown = iconOptions.ReverseCooldown,
-				FontScale = db.FontScale,
-			}
+		if (not t.IsOffensive or showOffensive) and (t.IsOffensive or showDefensive) then
+			local texture = spellCache:GetSpellTexture(t.SpellId)
+			if texture then
+				slots[#slots + 1] = {
+					Texture = texture,
+					SpellId = showTooltips and t.SpellId or nil,
+					DurationObject = wowEx:CreateDuration(now - t.StartOffset, t.Cooldown),
+					Alpha = 1,
+					ReverseCooldown = iconOptions.ReverseCooldown,
+					FontScale = db.FontScale,
+				}
+			end
 		end
 	end
 	return slots
 end
 
 ---Appends always-visible static ability slots, with a cooldown swipe when active.
-local function AppendStaticSlots(slots, entry, now, showOffensive, showTooltips, iconOptions)
+local function AppendStaticSlots(slots, entry, now, showOffensive, showDefensive, showTooltips, iconOptions)
 	local staticAbilities = GetStaticAbilities(entry.Unit)
 	local hasActiveCd = false
 	for _, ability in ipairs(staticAbilities) do
 		if entry.ActiveCooldowns[ability.SpellId] then hasActiveCd = true end
 	end
 	for _, ability in ipairs(staticAbilities) do
-		if not ability.IsOffensive or showOffensive then
+		if (not ability.IsOffensive or showOffensive) and (ability.IsOffensive or showDefensive) then
 			local texture = spellCache:GetSpellTexture(ability.SpellId)
 			local cd = entry.ActiveCooldowns[ability.SpellId]
 			if texture then
@@ -770,12 +773,12 @@ local function AppendStaticSlots(slots, entry, now, showOffensive, showTooltips,
 end
 
 ---Appends string-keyed (non-static) active-cooldown slots, pruning expired entries.
-local function AppendDynamicSlots(slots, entry, now, showOffensive, showTooltips, iconOptions)
+local function AppendDynamicSlots(slots, entry, now, showOffensive, showDefensive, showTooltips, iconOptions)
 	for cdKey, cd in pairs(entry.ActiveCooldowns) do
 		if type(cdKey) == "string" then
 			if now >= cd.StartTime + cd.Cooldown then
 				entry.ActiveCooldowns[cdKey] = nil
-			elseif not cd.IsOffensive or showOffensive then
+			elseif (not cd.IsOffensive or showOffensive) and (cd.IsOffensive or showDefensive) then
 				local texture = spellCache:GetSpellTexture(cd.SpellId)
 				if texture then
 					slots[#slots + 1] = {
@@ -814,13 +817,15 @@ local function UpdateDisplay(entry)
 		end
 	end
 
+	local showOffensive = anchorOptions.ShowOffensiveCooldowns ~= false
+	local showDefensive = anchorOptions.ShowDefensiveCooldowns ~= false
+
 	if testModeActive then
-		FlushSlots(BuildTestSlots(showTooltips, iconOptions))
+		FlushSlots(BuildTestSlots(showOffensive, showDefensive, showTooltips, iconOptions))
 		return
 	end
 
 	local now = GetTime()
-	local showOffensive = anchorOptions.ShowOffensiveCooldowns ~= false
 	local slots = {}
 
 	-- Trinket: always slot 1 in arena so it lands at the priority position determined by InvertLayout.
@@ -836,8 +841,8 @@ local function UpdateDisplay(entry)
 		}
 	end
 
-	AppendStaticSlots(slots, entry, now, showOffensive, showTooltips, iconOptions)
-	AppendDynamicSlots(slots, entry, now, showOffensive, showTooltips, iconOptions)
+	AppendStaticSlots(slots, entry, now, showOffensive, showDefensive, showTooltips, iconOptions)
+	AppendDynamicSlots(slots, entry, now, showOffensive, showDefensive, showTooltips, iconOptions)
 
 	FlushSlots(slots)
 end

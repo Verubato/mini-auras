@@ -212,7 +212,9 @@ L:SetStrings({
 	["Excludes yourself from being tracked."] = "Exclui você do rastreamento.",
 	["Show tooltips"] = "Mostrar dicas",
 	["Shows a spell tooltip when hovering over an icon."] = "Exibe a dica de feitiço ao passar o mouse sobre um ícone.",
-	["Show offensive cooldowns"] = "Mostrar recarga ofensiva",
+	["Defensive cooldowns"] = "Defensive cooldowns",
+	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Shows defensive cooldowns such as Blessing of Protection and Ironbark.",
+	["Offensive cooldowns"] = "Mostrar recarga ofensiva",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Mostra recargas ofensivas como Combustão, Avatar e Fúria do Dragão.",
 	["Rows"] = "Linhas",
 

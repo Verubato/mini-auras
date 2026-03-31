@@ -214,7 +214,9 @@ L:SetDefaultStrings({
 	["Excludes yourself from being tracked."] = "Excludes yourself from being tracked.",
 	["Show tooltips"] = "Show tooltips",
 	["Shows a spell tooltip when hovering over an icon."] = "Shows a spell tooltip when hovering over an icon.",
-	["Show offensive cooldowns"] = "Show offensive cooldowns",
+	["Defensive cooldowns"] = "Defensive cooldowns",
+	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Shows defensive cooldowns such as Blessing of Protection and Ironbark.",
+	["Offensive cooldowns"] = "Offensive cooldowns",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Shows offensive cooldowns such as Combustion, Avatar and Dragonrage.",
 	["Rows"] = "Rows",
 
