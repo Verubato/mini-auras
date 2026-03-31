@@ -228,7 +228,8 @@ local ClassDefaultTalentRanks = {
 		[1258485] = 1, -- Improved Aspect of the Turtle: Turtle -30s (nearly universal)
 	},
 	MAGE = {
-		[1265517] = 1, -- Permafrost Bauble: Ice Block -30s (nearly universal)
+		[382424] = 2, -- Winter's Protection: Ice Block/Ice Cold -60s at rank 2 (nearly universal)
+		[1265517] = 1, -- Permafrost Bauble: Ice Block/Ice Cold -30s (nearly universal)
 	},
 	MONK = {
 		[388813] = 1, -- Expeditious Fortification: Fortifying Brew CDR (nearly universal)

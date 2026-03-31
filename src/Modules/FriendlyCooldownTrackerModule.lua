@@ -436,7 +436,8 @@ local rules = {
 		},
 		WARRIOR = {},
 		MAGE = {
-			{ BuffDuration = 10, Cooldown = 240, BigDefensive = true, ExternalDefensive = false, Important = true, CanCancelEarly = true, SpellId = 45438, RequiresEvidence = { "Cast", "Debuff", "UnitFlags" } }, -- Ice Block
+			{ BuffDuration = 10, Cooldown = 240, BigDefensive = true, ExternalDefensive = false, Important = true, CanCancelEarly = true, SpellId = 45438, RequiresEvidence = { "Cast", "Debuff", "UnitFlags" }, ExcludeIfTalent = 414659 }, -- Ice Block
+			{ BuffDuration = 6, Cooldown = 240, BigDefensive = true, ExternalDefensive = false, Important = true, SpellId = 414659, RequiresEvidence = "Cast", RequiresTalent = 414659 }, -- Ice Cold (replaces Ice Block)
 			{ BuffDuration = 10, Cooldown = 50, BigDefensive = true, ExternalDefensive = false, Important = true, CanCancelEarly = true, SpellId = 342246, RequiresEvidence = "Cast" }, -- Alter Time
 		},
 		HUNTER = {
