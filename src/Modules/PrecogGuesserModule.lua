@@ -174,6 +174,7 @@ function M:Refresh()
 	end
 
 	if not moduleEnabled then
+		anchor:Hide()
 		return
 	end
 
