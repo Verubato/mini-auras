@@ -211,6 +211,8 @@ L:SetStrings({
 	["Excludes yourself from being tracked."] = "자신을 추적에서 제외합니다.",
 	["Show tooltips"] = "툴팁 표시",
 	["Shows a spell tooltip when hovering over an icon."] = "아이콘 위에 마우스를 올리면 주문 툴팁을 표시합니다.",
+	["Trinket"] = "Trinket",
+	["Shows the trinket cooldown icon."] = "Shows the trinket cooldown icon.",
 	["Defensive cooldowns"] = "Defensive cooldowns",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Shows defensive cooldowns such as Blessing of Protection and Ironbark.",
 	["Offensive cooldowns"] = "공격 쿨다운 표시",

@@ -707,18 +707,19 @@ end
 
 ---@param entry FcdWatchEntry
 ---Builds the slot list shown in test mode.
-local function BuildTestSlots(showOffensive, showDefensive, showTooltips, iconOptions)
+local function BuildTestSlots(showOffensive, showDefensive, showTrinket, showTooltips, iconOptions)
 	local now = GetTime()
-	local slots = {
-		{
+	local slots = {}
+	if showTrinket then
+		slots[#slots + 1] = {
 			Texture = trinketsTracker:GetDefaultIcon(),
 			DurationObject = wowEx:CreateDuration(now - 45, 120),
 			Alpha = 1,
 			ReverseCooldown = false,
 			Glow = false,
 			FontScale = db.FontScale,
-		},
-	}
+		}
+	end
 	local testSpells = {
 		{ SpellId = 642,    StartOffset = 60,  Cooldown = 300, IsOffensive = false }, -- Divine Shield
 		{ SpellId = 33206,  StartOffset = 30,  Cooldown = 180, IsOffensive = false }, -- Pain Suppression
@@ -819,9 +820,10 @@ local function UpdateDisplay(entry)
 
 	local showOffensive = anchorOptions.ShowOffensiveCooldowns ~= false
 	local showDefensive = anchorOptions.ShowDefensiveCooldowns ~= false
+	local showTrinket = anchorOptions.ShowTrinket ~= false
 
 	if testModeActive then
-		FlushSlots(BuildTestSlots(showOffensive, showDefensive, showTooltips, iconOptions))
+		FlushSlots(BuildTestSlots(showOffensive, showDefensive, showTrinket, showTooltips, iconOptions))
 		return
 	end
 
@@ -829,7 +831,7 @@ local function UpdateDisplay(entry)
 	local slots = {}
 
 	-- Trinket: always slot 1 in arena so it lands at the priority position determined by InvertLayout.
-	if IsInArena() then
+	if showTrinket and IsInArena() then
 		local durationData = trinketsTracker:GetUnitDuration(entry.Unit)
 		slots[#slots + 1] = {
 			Texture = trinketsTracker:GetDefaultIcon(),
@@ -1080,6 +1082,16 @@ local function OnWatcherChanged(entry, watcher)
 	if testModeActive then return end
 	if not entry.Container.Frame:IsVisible() then return end
 	if UnitCanAttack("player", entry.Unit) then return end
+
+	-- Skip expensive rule-matching when no cooldown category is visible.
+	local anchorOptions = GetAnchorOptions()
+	if anchorOptions
+		and anchorOptions.ShowOffensiveCooldowns == false
+		and anchorOptions.ShowDefensiveCooldowns == false
+	then
+		UpdateDisplay(entry)
+		return
+	end
 
 	local now = GetTime()
 	local trackedAuras = entry.TrackedAuras

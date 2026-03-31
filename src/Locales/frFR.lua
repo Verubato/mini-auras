@@ -212,6 +212,8 @@ L:SetStrings({
 	["Excludes yourself from being tracked."] = "Vous exclut du suivi.",
 	["Show tooltips"] = "Afficher les infobulles",
 	["Shows a spell tooltip when hovering over an icon."] = "Affiche une infobulle de sort au survol d'une icône.",
+	["Trinket"] = "Trinket",
+	["Shows the trinket cooldown icon."] = "Shows the trinket cooldown icon.",
 	["Defensive cooldowns"] = "Defensive cooldowns",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Shows defensive cooldowns such as Blessing of Protection and Ironbark.",
 	["Offensive cooldowns"] = "Afficher les temps de recharge offensifs",

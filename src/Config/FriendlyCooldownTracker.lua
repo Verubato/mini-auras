@@ -120,6 +120,22 @@ local function BuildInstance(parent, anchorOptions)
 	showOffensiveChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	showOffensiveChk:SetPoint("TOP", showDefensiveChk, "TOP", 0, 0)
 
+	local showTrinketChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Trinket"],
+		Tooltip = L["Shows the trinket cooldown icon."],
+		GetValue = function()
+			return anchorOptions.ShowTrinket ~= false
+		end,
+		SetValue = function(value)
+			anchorOptions.ShowTrinket = value
+			config:Apply()
+		end,
+	})
+
+	showTrinketChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	showTrinketChk:SetPoint("TOP", showDefensiveChk, "TOP", 0, 0)
+
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,
 		LabelText = L["Icon Size"],

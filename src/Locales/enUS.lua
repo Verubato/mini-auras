@@ -214,6 +214,8 @@ L:SetDefaultStrings({
 	["Excludes yourself from being tracked."] = "Excludes yourself from being tracked.",
 	["Show tooltips"] = "Show tooltips",
 	["Shows a spell tooltip when hovering over an icon."] = "Shows a spell tooltip when hovering over an icon.",
+	["Trinket"] = "Trinket",
+	["Shows the trinket cooldown icon."] = "Shows the trinket cooldown icon.",
 	["Defensive cooldowns"] = "Defensive cooldowns",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Shows defensive cooldowns such as Blessing of Protection and Ironbark.",
 	["Offensive cooldowns"] = "Offensive cooldowns",

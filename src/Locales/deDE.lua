@@ -211,6 +211,8 @@ L:SetStrings({
 	["Excludes yourself from being tracked."] = "Schließt dich selbst vom Tracking aus.",
 	["Show tooltips"] = "Tooltips anzeigen",
 	["Shows a spell tooltip when hovering over an icon."] = "Zeigt einen Zauber-Tooltip beim Überfahren eines Symbols.",
+	["Trinket"] = "Trinket",
+	["Shows the trinket cooldown icon."] = "Shows the trinket cooldown icon.",
 	["Defensive cooldowns"] = "Defensive cooldowns",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Shows defensive cooldowns such as Blessing of Protection and Ironbark.",
 	["Offensive cooldowns"] = "Offensive Abklingzeiten anzeigen",
