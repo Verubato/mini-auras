@@ -103,6 +103,27 @@ function M:BlizzardFrames(visibleOnly)
 	return frames
 end
 
+---Retrieves a list of Blizzard standard (non-compact) party frames.
+---@param visibleOnly boolean
+---@return table
+function M:BlizzardPartyFrames(visibleOnly)
+	if not PartyFrame then
+		return {}
+	end
+
+	local frames = {}
+
+	for i = 1, maxParty + 1 do
+		local frame = PartyFrame["MemberFrame" .. i]
+
+		if frame and (frame:IsVisible() or not visibleOnly) then
+			frames[#frames + 1] = frame
+		end
+	end
+
+	return frames
+end
+
 ---Retrieves a list of visible DandersFrames frames.
 ---@return table
 function M:DandersFrames()
@@ -462,6 +483,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	local grid2 = M:Grid2Frames(visibleOnly)
 	local danders = M:DandersFrames()
 	local blizzard = not wowEx:IsDandersEnabled() and M:BlizzardFrames(visibleOnly) or {}
+	local blizzardParty = not wowEx:IsDandersEnabled() and M:BlizzardPartyFrames(visibleOnly) or {}
 	local suf = M:ShadowedUFFrames(visibleOnly)
 	local plexus = M:PlexusFrames(visibleOnly)
 	local cell = M:CellFrames(visibleOnly)
@@ -470,6 +492,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	local custom = M:CustomFrames(visibleOnly)
 
 	array:Append(blizzard, anchors)
+	array:Append(blizzardParty, anchors)
 	array:Append(elvui, anchors)
 	array:Append(grid2, anchors)
 	array:Append(danders, anchors)
@@ -512,7 +535,16 @@ function M:IsFriendlyCuf(frame)
 		return false
 	end
 
-	return string.find(name, "CompactParty") ~= nil or string.find(name, "CompactRaid") ~= nil
+	if string.find(name, "CompactParty") ~= nil or string.find(name, "CompactRaid") ~= nil then
+		return true
+	end
+
+	-- Standard (non-compact) Blizzard party frames: PartyFrameMemberFrame#
+	if PartyFrame and frame:GetParent() == PartyFrame then
+		return true
+	end
+
+	return false
 end
 
 ---@param frame table
