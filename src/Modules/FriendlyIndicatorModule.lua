@@ -74,6 +74,7 @@ local function UpdateWatcherAuras(entry)
 	local maxIcons = options.Icons.MaxIcons or 1
 	local container = entry.Container
 	local colorByDispelType = options.Icons.ColorByDispelType
+	local showTooltips = options.ShowTooltips ~= false
 
 	-- Get aura states
 	local ccState = entry.Watcher:GetCcState()
@@ -104,6 +105,7 @@ local function UpdateWatcherAuras(entry)
 			Glow = iconsGlow,
 			Color = colorByDispelType and aura.DispelColor,
 			FontScale = db.FontScale,
+			SpellId = showTooltips and aura.SpellId or nil,
 		})
 		slotIndex = slotIndex + 1
 	end
@@ -120,6 +122,7 @@ local function UpdateWatcherAuras(entry)
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
 			FontScale = db.FontScale,
+			SpellId = showTooltips and aura.SpellId or nil,
 		})
 		slotIndex = slotIndex + 1
 	end
@@ -136,6 +139,7 @@ local function UpdateWatcherAuras(entry)
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
 			FontScale = db.FontScale,
+			SpellId = showTooltips and aura.SpellId or nil,
 		})
 		slotIndex = slotIndex + 1
 	end
@@ -320,6 +324,7 @@ local function RefreshTestIcons()
 		local iconsReverse = options.Icons.ReverseCooldown
 		local iconsGlow = options.Icons.Glow
 		local colorByDispelType = options.Icons.ColorByDispelType
+		local showTooltips = options.ShowTooltips ~= false
 
 		local ccSlots, defensiveSlots, importantSlots =
 			slotDistribution.Calculate(maxIcons, ccCount, defensiveCount, importantCount)
@@ -341,6 +346,7 @@ local function RefreshTestIcons()
 					Glow = iconsGlow,
 					Color = colorByDispelType and spell.DispelColor,
 					FontScale = db.FontScale,
+					SpellId = showTooltips and spell.SpellId or nil,
 				})
 				slotIndex = slotIndex + 1
 			end
@@ -360,6 +366,7 @@ local function RefreshTestIcons()
 					ReverseCooldown = iconsReverse,
 					Glow = iconsGlow,
 					FontScale = db.FontScale,
+					SpellId = showTooltips and spell.SpellId or nil,
 				})
 				slotIndex = slotIndex + 1
 			end
@@ -379,6 +386,7 @@ local function RefreshTestIcons()
 					ReverseCooldown = iconsReverse,
 					Glow = iconsGlow,
 					FontScale = db.FontScale,
+					SpellId = showTooltips and spell.SpellId or nil,
 				})
 				slotIndex = slotIndex + 1
 			end

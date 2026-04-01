@@ -99,7 +99,7 @@ local function AnnounceTTS(spellName, spellType)
 	end)
 end
 
-local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, includeDefensives)
+local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, includeDefensives, showTooltips)
 	local unit = watcher:GetUnit()
 
 	-- when units go stealth, we can't get their aura data anymore
@@ -144,6 +144,7 @@ local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsR
 			slotOptionsScratch.ReverseCooldown = iconsReverse
 			slotOptionsScratch.Color = color
 			slotOptionsScratch.FontScale = fontScale
+			slotOptionsScratch.SpellId = showTooltips and data.SpellId or nil
 			container:SetSlot(slot, slotOptionsScratch)
 		end
 
@@ -167,6 +168,7 @@ local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsR
 			slotOptionsScratch.ReverseCooldown = iconsReverse
 			slotOptionsScratch.Color = color
 			slotOptionsScratch.FontScale = fontScale
+			slotOptionsScratch.SpellId = showTooltips and data.SpellId or nil
 			container:SetSlot(slot, slotOptionsScratch)
 		end
 
@@ -202,6 +204,7 @@ local function OnAuraDataChanged()
 	local iconsReverse = db.Modules.AlertsModule.Icons.ReverseCooldown
 	local colorByClass = db.Modules.AlertsModule.Icons.ColorByClass
 	local includeDefensives = db.Modules.AlertsModule.IncludeDefensives
+	local showTooltips = db.Modules.AlertsModule.ShowTooltips ~= false
 	local slot = 0
 	local hasImportantAlerts
 	local hasDefensiveAlerts
@@ -220,7 +223,8 @@ local function OnAuraDataChanged()
 				iconsGlow,
 				iconsReverse,
 				colorByClass,
-				includeDefensives
+				includeDefensives,
+				showTooltips
 			)
 		end
 	end
@@ -374,6 +378,7 @@ local function RefreshTestAlerts()
 	local now = GetTime()
 	local colorByClass = db.Modules.AlertsModule.Icons.ColorByClass
 	local iconsGlow = db.Modules.AlertsModule.Icons.Glow
+	local showTooltips = db.Modules.AlertsModule.ShowTooltips ~= false
 
 	for i = 1, count do
 		local spellId = testAlertSpellIds[i]
@@ -399,6 +404,7 @@ local function RefreshTestAlerts()
 				ReverseCooldown = db.Modules.AlertsModule.Icons.ReverseCooldown,
 				Color = glowColor,
 				FontScale = db.FontScale,
+				SpellId = showTooltips and spellId or nil,
 			})
 		end
 	end

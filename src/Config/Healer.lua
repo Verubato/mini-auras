@@ -203,6 +203,22 @@ function M:Build(panel, options)
 
 	dispelColoursChk:SetPoint("TOPLEFT", showIconsChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
+	local showTooltipsChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show tooltips"],
+		Tooltip = L["Shows a spell tooltip when hovering over an icon."],
+		GetValue = function()
+			return options.ShowTooltips ~= false
+		end,
+		SetValue = function(value)
+			options.ShowTooltips = value
+			config:Apply()
+		end,
+	})
+
+	showTooltipsChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	showTooltipsChk:SetPoint("TOP", dispelColoursChk, "TOP", 0, 0)
+
 	local soundChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Sound"],

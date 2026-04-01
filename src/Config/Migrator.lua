@@ -44,6 +44,8 @@ local dbDefaults = {
 					ColorByDispelType = true,
 					Count = 3,
 				},
+
+				ShowTooltips = false,
 			},
 
 			---@type CrowdControlInstanceOptions
@@ -62,6 +64,8 @@ local dbDefaults = {
 					ColorByDispelType = true,
 					Count = 3,
 				},
+
+				ShowTooltips = false,
 			},
 		},
 
@@ -88,6 +92,8 @@ local dbDefaults = {
 				ReverseCooldown = true,
 				ColorByDispelType = true,
 			},
+
+			ShowTooltips = false,
 		},
 
 		---@class HealerCrowdControlModuleOptions
@@ -129,6 +135,7 @@ local dbDefaults = {
 			},
 
 			ShowWarningText = true,
+			ShowTooltips = false,
 		},
 		---@class PortraitModuleOptions
 		PortraitModule = {
@@ -192,6 +199,8 @@ local dbDefaults = {
 				ColorByClass = true,
 				MaxIcons = 8,
 			},
+
+			ShowTooltips = false,
 		},
 		---@class NameplateModuleOptions
 		NameplatesModule = {
@@ -384,6 +393,7 @@ local dbDefaults = {
 					MaxIcons = 1,
 					ColorByDispelType = true,
 				},
+				ShowTooltips = false,
 			},
 
 			---@type FriendlyIndicatorInstanceOptions
@@ -401,6 +411,7 @@ local dbDefaults = {
 					MaxIcons = 1,
 					ColorByDispelType = true,
 				},
+				ShowTooltips = false,
 			},
 		},
 		---@class FriendlyCooldownTrackerModuleOptions

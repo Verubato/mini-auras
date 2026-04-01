@@ -67,6 +67,7 @@ local function UpdateWatcherAuras(entry)
 	local container = entry.Container
 	local ccState = entry.Watcher:GetCcState()
 	local slotIndex = 1
+	local showTooltips = options.ShowTooltips ~= false
 
 	for _, aura in ipairs(ccState) do
 		if slotIndex > container.Count then
@@ -81,6 +82,7 @@ local function UpdateWatcherAuras(entry)
 			Glow = options.Icons.Glow,
 			Color = options.Icons.ColorByDispelType and aura.DispelColor,
 			FontScale = db.FontScale,
+			SpellId = showTooltips and aura.SpellId or nil,
 		})
 		slotIndex = slotIndex + 1
 	end
@@ -317,6 +319,7 @@ local function RefreshTestIcons()
 					local duration = 15 + (i - 1) * 3
 					local startTime = now - (i - 1) * 0.5
 
+					local showTooltips = entryOptions.ShowTooltips ~= false
 					container:SetSlot(i, {
 						Texture = texture,
 						DurationObject = wowEx:CreateDuration(startTime, duration),
@@ -325,6 +328,7 @@ local function RefreshTestIcons()
 						Glow = entryOptions.Icons.Glow,
 						Color = entryOptions.Icons.ColorByDispelType and spell.DispelColor,
 						FontScale = db.FontScale,
+						SpellId = showTooltips and spell.SpellId or nil,
 					})
 				end
 			end

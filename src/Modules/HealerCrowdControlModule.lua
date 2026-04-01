@@ -90,6 +90,7 @@ local function OnAuraStateUpdated()
 	local iconsReverse = options.Icons.ReverseCooldown
 	local iconsGlow = options.Icons.Glow
 	local colorByDispelType = options.Icons.ColorByDispelType
+	local showTooltips = options.ShowTooltips ~= false
 
 	UpdateAnchorSize()
 
@@ -114,6 +115,7 @@ local function OnAuraStateUpdated()
 						Glow = iconsGlow,
 						Color = colorByDispelType and aura.DispelColor,
 						FontScale = db.FontScale,
+						SpellId = showTooltips and aura.SpellId or nil,
 					})
 				end
 			end
@@ -249,6 +251,7 @@ local function RefreshTestFrame()
 					Glow = options.Icons.Glow,
 					Color = options.Icons.ColorByDispelType and spell.DispelColor,
 					FontScale = db.FontScale,
+					SpellId = options.ShowTooltips ~= false and spell.SpellId or nil,
 				})
 			end
 		end

@@ -203,6 +203,22 @@ function M:Build(panel, options)
 	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", colorByClassChk, "TOP", 0, 0)
 
+	local showTooltipsChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show tooltips"],
+		Tooltip = L["Shows a spell tooltip when hovering over an icon."],
+		GetValue = function()
+			return options.ShowTooltips ~= false
+		end,
+		SetValue = function(value)
+			options.ShowTooltips = value
+			config:Apply()
+		end,
+	})
+
+	showTooltipsChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	showTooltipsChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+
 	local iconSize = mini:Slider({
 		Parent = panel,
 		Min = 10,

@@ -211,6 +211,22 @@ local function BuildInstance(panel, options, addTestButton)
 	showCCChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
 	showCCChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
 
+	local showTooltipsChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Show tooltips"],
+		Tooltip = L["Shows a spell tooltip when hovering over an icon."],
+		GetValue = function()
+			return options.ShowTooltips ~= false
+		end,
+		SetValue = function(value)
+			options.ShowTooltips = value
+			config:Apply()
+		end,
+	})
+
+	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	showTooltipsChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
+
 	local iconSize = mini:Slider({
 		Parent = parent,
 		Min = 10,

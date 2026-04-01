@@ -406,7 +406,8 @@ local function AttachUUFFrame(unit)
 end
 
 local function RefreshTestIcons()
-	local tex = spellCache:GetSpellTexture(testSpells[1].SpellId)
+	local spellId = testSpells[1].SpellId
+	local tex = spellCache:GetSpellTexture(spellId)
 	local now = GetTime()
 
 	for _, container in pairs(containers) do

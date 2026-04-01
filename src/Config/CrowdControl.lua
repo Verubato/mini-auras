@@ -163,6 +163,21 @@ local function BuildInstance(panel, options, addTestButton)
 	reverseChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
 	reverseChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
 
+	local showTooltipsChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Show tooltips"],
+		Tooltip = L["Shows a spell tooltip when hovering over an icon."],
+		GetValue = function()
+			return options.ShowTooltips ~= false
+		end,
+		SetValue = function(value)
+			options.ShowTooltips = value
+			config:Apply()
+		end,
+	})
+
+	showTooltipsChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local iconSize = mini:Slider({
 		Parent = parent,
 		Min = 10,
@@ -182,7 +197,7 @@ local function BuildInstance(panel, options, addTestButton)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", showTooltipsChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local maxIcons = mini:Slider({
 		Parent = parent,
@@ -356,6 +371,22 @@ local function BuildPetInstance(panel, options)
 
 	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+
+	local showTooltipsChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Show tooltips"],
+		Tooltip = L["Shows a spell tooltip when hovering over an icon."],
+		GetValue = function()
+			return options.ShowTooltips ~= false
+		end,
+		SetValue = function(value)
+			options.ShowTooltips = value
+			config:Apply()
+		end,
+	})
+
+	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
+	showTooltipsChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local iconSize = mini:Slider({
 		Parent = parent,
