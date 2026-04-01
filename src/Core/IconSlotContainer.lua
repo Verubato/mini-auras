@@ -411,6 +411,7 @@ function M:New(parent, count, size, spacing, groupName, noBorder)
 	instance.RowAlignment = nil
 	instance.InvertLayout = false
 	instance.NoBorder = noBorder or false
+	instance.MiniCCModule = groupName or nil
 	instance.MasqueGroup = Masque and groupName and Masque:Group("MiniCC", groupName) or nil
 
 	instance:SetCount(count)
