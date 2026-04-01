@@ -1215,6 +1215,14 @@ local function EnsureEntry(anchor, unit)
 	end
 
 	if anchorOptions.ExcludeSelf and UnitIsUnit(unit, "player") then
+		local existing = watchEntries[anchor]
+		if existing then
+			existing.Watcher:Dispose()
+			existing.CastEventFrame:UnregisterAllEvents()
+			existing.Container:ResetAllSlots()
+			existing.Container.Frame:Hide()
+			watchEntries[anchor] = nil
+		end
 		return nil
 	end
 
