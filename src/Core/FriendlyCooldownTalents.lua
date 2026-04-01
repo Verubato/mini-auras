@@ -215,6 +215,8 @@ local SpecDurationModifiers = {
 	},
 	-- Survival Hunter: Takedown +2s
 	[255] = { [1253830] = { { { SpellId = 1250646, Amount = 2 } } } },
+	-- Fury Warrior: Invigorating Fury: Enraged Regeneration +3s
+	[72] = { [383468] = { { { SpellId = 184364, Amount = 3 } } } },
 }
 
 -- Assumed talent ranks used when no real talent data is available for a unit.
@@ -242,6 +244,7 @@ local ClassDefaultTalentRanks = {
 	},
 	WARRIOR = {
 		[107574] = 1, -- Avatar: nearly universal across all specs
+		[184364] = 1, -- Enraged Regeneration: nearly universal for Fury
 	},
 }
 
@@ -286,6 +289,9 @@ local SpecDefaultTalentRanks = {
 	[70] = {
 		[458359] = 1, -- Radiant Glory (Retribution Paladin): nearly universal
 		[384820] = 1, -- Sacrifice of the Just (Retribution Paladin): BoSac -60s, nearly universal
+	},
+	[72] = {
+		[383468] = 1, -- Invigorating Fury (Fury Warrior): Enraged Regeneration +3s, nearly universal
 	},
 }
 

@@ -332,8 +332,8 @@ local rules = {
 			{ BuffDuration = 20, Cooldown = 90, Important = true, ExternalDefensive = false, BigDefensive = false, RequiresEvidence = "Cast", SpellId = 107574, MinDuration = true, RequiresTalent = 107574 }, -- Avatar
 		},
 		[72] = { -- Fury Warrior
-			{ BuffDuration = 8, Cooldown = 120, BigDefensive = true, ExternalDefensive = false, Important = true, RequiresEvidence = "Cast", SpellId = 184364 }, -- Enraged Regeneration
-			{ BuffDuration = 11, Cooldown = 120, BigDefensive = true, ExternalDefensive = false, Important = true, RequiresEvidence = "Cast", SpellId = 184364 }, -- Enraged Regeneration + duration talent
+			{ BuffDuration = 8, Cooldown = 108, BigDefensive = true, ExternalDefensive = false, Important = true, RequiresEvidence = "Cast", SpellId = 184364, RequiresTalent = 184364 }, -- Enraged Regeneration
+			{ BuffDuration = 11, Cooldown = 108, BigDefensive = true, ExternalDefensive = false, Important = true, RequiresEvidence = "Cast", SpellId = 184364, RequiresTalent = 184364 }, -- Enraged Regeneration + duration talent
 			{ BuffDuration = 20, Cooldown = 90, Important = true, ExternalDefensive = false, BigDefensive = false, RequiresEvidence = "Cast", SpellId = 107574, MinDuration = true, RequiresTalent = 107574 }, -- Avatar
 		},
 		[73] = { -- Protection Warrior
