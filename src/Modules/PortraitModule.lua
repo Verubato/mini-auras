@@ -187,6 +187,30 @@ end
 
 ---@return table? unitFrame
 ---@return table? portrait
+local function GetUUFFrame(unit)
+	if unit == "player" then
+		if UUF_Player and UUF_Player.Portrait then
+			return UUF_Player, UUF_Player.Portrait
+		end
+	elseif unit == "target" then
+		if UUF_Target and UUF_Target.Portrait then
+			return UUF_Target, UUF_Target.Portrait
+		end
+	elseif unit == "focus" then
+		if UUF_Focus and UUF_Focus.Portrait then
+			return UUF_Focus, UUF_Focus.Portrait
+		end
+	elseif unit == "pet" then
+		if UUF_Pet and UUF_Pet.Portrait then
+			return UUF_Pet, UUF_Pet.Portrait
+		end
+	end
+
+	return nil
+end
+
+---@return table? unitFrame
+---@return table? portrait
 local function GetTPerlFrame(unit)
 	if unit == "player" then
 		if TPerl_PlayerportraitFrame then
@@ -338,6 +362,49 @@ local function AttachTPerlFrame(unit)
 	containers[#containers + 1] = container
 end
 
+---@param unit string
+local function AttachUUFFrame(unit)
+	local uufFrame, uufPortrait = GetUUFFrame(unit)
+
+	if not uufFrame or not uufPortrait then
+		return
+	end
+
+	local watcher = watchers[unit]
+
+	if not watcher then
+		return
+	end
+
+	-- Parent to HighLevelContainer (portrait's parent) so frame levels are consistent.
+	-- UUF renders portraits inside HighLevelContainer at level 999, so parenting to
+	-- uufFrame directly would leave the container far below in the level hierarchy.
+	local highLevelContainer = uufPortrait:GetParent()
+	local container = CreateContainer(highLevelContainer, uufPortrait)
+	local portraitLevel = uufPortrait.GetFrameLevel and uufPortrait:GetFrameLevel()
+		or highLevelContainer:GetFrameLevel()
+		or 0
+	container.Frame:SetFrameLevel(portraitLevel + 1)
+
+	local originalSetSlot = container.SetSlot
+	container.SetSlot = function(self, slotIndex, options)
+		originalSetSlot(self, slotIndex, options)
+		local slot = self.Slots[slotIndex]
+		if slot and slot.Container and slot.Container.Icon and slot.Container.Cooldown then
+			slot.Frame:SetAllPoints(uufPortrait)
+			slot.Container.Frame:SetAllPoints(uufPortrait)
+			slot.Container.Icon:SetAllPoints(uufPortrait)
+			slot.Container.Icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+			slot.Container.Cooldown:SetAllPoints(uufPortrait)
+		end
+	end
+
+	watcher:RegisterCallback(function()
+		OnAuraInfo(watcher, container)
+	end)
+	containers[#containers + 1] = container
+end
+
 local function RefreshTestIcons()
 	local tex = spellCache:GetSpellTexture(testSpells[1].SpellId)
 	local now = GetTime()
@@ -448,6 +515,10 @@ function M:Init()
 		AttachTPerlFrame("player")
 		AttachTPerlFrame("target")
 		AttachTPerlFrame("focus")
+		AttachUUFFrame("player")
+		AttachUUFFrame("target")
+		AttachUUFFrame("focus")
+		AttachUUFFrame("pet")
 	end)
 
 	M:Refresh()
