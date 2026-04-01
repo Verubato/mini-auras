@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.2.0
+
+- Fixed import profile causing an error.
+- Fixed issue where the 'Exclude Self' option was not working and caused players to see other team members talents on themselves in arena.
+- Fixed Friendly CD icons showing above other frames.
+- Added Unhalted Unit Frames support for portraits.
+- Added Threat Plates support.
+- Enraged Regeneration fixes.
+- Added more tooltips support.
+- Shadow Blades tracking fix for rogues with 4-set.
+
 ## 3.1.0
 
 - PvP trinket now shows on the top right when growing from the left, and top left when growing from the right.
