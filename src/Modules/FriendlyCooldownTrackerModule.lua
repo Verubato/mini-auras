@@ -1163,7 +1163,7 @@ local function AnchorContainer(entry)
 
 	frame:ClearAllPoints()
 	frame:SetAlpha(1)
-	frame:SetFrameStrata(frames:GetNextStrata(anchor:GetFrameStrata()))
+	frame:SetFrameStrata(anchor:GetFrameStrata())
 	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
 
 	local rowsEnabled = options.Icons.Rows and options.Icons.Rows > 1
