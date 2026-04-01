@@ -4,7 +4,7 @@
 ## Author: Verz
 ## Version: 3.1.0
 ## SavedVariables: MiniCCDB
-## OptionalDeps: ElvUI, Grid2, DandersFrames, FrameSort, Masque, TPerl
+## OptionalDeps: ElvUI, Grid2, DandersFrames, FrameSort, Masque, TPerl, TidyPlates_ThreatPlates
 ## IconTexture: Interface\AddOns\MiniCC\Icon.blp
 ## X-Curse-Project-ID: 1439482
 

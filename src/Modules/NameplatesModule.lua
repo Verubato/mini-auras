@@ -127,11 +127,29 @@ end
 ---@param relativeToPoint string
 ---@param offsetX number
 ---@param offsetY number
+---Returns the effective anchor frame for a nameplate.
+---For ThreatPlates, anchors to TPFrame (or its GetAnchor result) so that
+---icons scale and move with TP's target-highlight scaling, not the raw base frame.
+local function GetNameplateAnchorFrame(nameplate)
+	if nameplate.TPFrame then
+		if nameplate.TPFrame.GetAnchor then
+			local anchor = nameplate.TPFrame:GetAnchor()
+			-- GetAnchor may return a FontString or other non-Frame object that lacks GetFrameLevel
+			if anchor and anchor.GetFrameLevel then
+				return anchor
+			end
+		end
+		return nameplate.TPFrame
+	end
+	return nameplate
+end
+
 local function SetupContainerFrame(container, nameplate, anchorPoint, relativeToPoint, offsetX, offsetY)
+	local anchorFrame = GetNameplateAnchorFrame(nameplate)
 	local frame = container.Frame
 	frame:ClearAllPoints()
-	frame:SetPoint(anchorPoint, nameplate, relativeToPoint, offsetX, offsetY)
-	frame:SetFrameLevel(nameplate:GetFrameLevel() + 10)
+	frame:SetPoint(anchorPoint, anchorFrame, relativeToPoint, offsetX, offsetY)
+	frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
 	frame:EnableMouse(false)
 	frame:SetIgnoreParentScale(not nmModule.ScaleWithNameplate)
 	frame:Show()
@@ -849,6 +867,7 @@ local function RefreshAnchorsAndSizes()
 	for _, data in pairs(nameplateAnchors) do
 		if data.Nameplate and data.UnitToken then
 			local unitOptions = M:GetUnitOptions(data.UnitToken)
+			local anchorFrame = GetNameplateAnchorFrame(data.Nameplate)
 
 			if unitOptions.Combined.Enabled then
 				-- Handle combined container
@@ -860,7 +879,7 @@ local function RefreshAnchorsAndSizes()
 						combinedContainer.Frame:ClearAllPoints()
 						combinedContainer.Frame:SetPoint(
 							combinedAnchorPoint,
-							data.Nameplate,
+							anchorFrame,
 							combinedRelativeToPoint,
 							combinedOptions.Offset.X,
 							combinedOptions.Offset.Y
@@ -868,7 +887,7 @@ local function RefreshAnchorsAndSizes()
 						combinedContainer:SetIconSize(combinedOptions.Icons.Size)
 						combinedContainer:SetSpacing(db.IconSpacing or 2)
 						combinedContainer:SetCount(combinedOptions.Icons.MaxIcons)
-						combinedContainer.Frame:SetFrameLevel(data.Nameplate:GetFrameLevel() + 10)
+						combinedContainer.Frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
 						combinedContainer.Frame:SetIgnoreParentScale(ignoreParentScale)
 					end
 				end
@@ -884,7 +903,7 @@ local function RefreshAnchorsAndSizes()
 						local ccAnchorPoint, ccRelativeToPoint = GrowToAnchor(ccOptions.Grow)
 						ccContainer.Frame:SetPoint(
 							ccAnchorPoint,
-							data.Nameplate,
+							anchorFrame,
 							ccRelativeToPoint,
 							ccOptions.Offset.X,
 							ccOptions.Offset.Y
@@ -892,7 +911,7 @@ local function RefreshAnchorsAndSizes()
 						ccContainer:SetIconSize(ccOptions.Icons.Size)
 						ccContainer:SetSpacing(db.IconSpacing or 2)
 						ccContainer:SetCount(ccOptions.Icons.MaxIcons)
-						ccContainer.Frame:SetFrameLevel(data.Nameplate:GetFrameLevel() + 10)
+						ccContainer.Frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
 					end
 					ccContainer.Frame:SetIgnoreParentScale(ignoreParentScale)
 				end
@@ -907,7 +926,7 @@ local function RefreshAnchorsAndSizes()
 						local importantAnchorPoint, importantRelativeToPoint = GrowToAnchor(importantOptions.Grow)
 						importantContainer.Frame:SetPoint(
 							importantAnchorPoint,
-							data.Nameplate,
+							anchorFrame,
 							importantRelativeToPoint,
 							importantOptions.Offset.X,
 							importantOptions.Offset.Y
@@ -915,7 +934,7 @@ local function RefreshAnchorsAndSizes()
 						importantContainer:SetIconSize(importantOptions.Icons.Size)
 						importantContainer:SetSpacing(db.IconSpacing or 2)
 						importantContainer:SetCount(importantOptions.Icons.MaxIcons)
-						importantContainer.Frame:SetFrameLevel(data.Nameplate:GetFrameLevel() + 10)
+						importantContainer.Frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
 					end
 					importantContainer.Frame:SetIgnoreParentScale(ignoreParentScale)
 				end
