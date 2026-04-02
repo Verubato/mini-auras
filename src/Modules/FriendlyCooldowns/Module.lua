@@ -91,7 +91,7 @@ local function EnsureEntry(anchor, unit)
 		local size = tonumber(anchorOptions.Icons.Size) or 32
 		local maxIcons = tonumber(anchorOptions.Icons.MaxIcons) or 3
 		-- noBorder = true: cooldown icons don't need debuff-style borders
-		local container = iconSlotContainer:New(UIParent, maxIcons, size, db.IconSpacing or 2, "Friendly CDs", true, "Friendly CDs")
+		local container = iconSlotContainer:New(UIParent, maxIcons, size, (anchorOptions.IconSpacing or db.IconSpacing or 2), "Friendly CDs", true, "Friendly CDs")
 
 		entry = {
 			Anchor = anchor,
@@ -179,7 +179,7 @@ function M:Refresh()
 			local rows = math.max(1, tonumber(anchorOptions.Icons.Rows) or 1)
 			entry.Container:SetIconSize(size)
 			entry.Container:SetCount(maxIcons)
-			entry.Container:SetSpacing(db.IconSpacing or 2)
+			entry.Container:SetSpacing(anchorOptions.IconSpacing or db.IconSpacing or 2)
 			local isDown = anchorOptions.Grow == "DOWN"
 			entry.Container:SetRows(isDown and nil or rows, isDown and "CENTER" or anchorOptions.Grow, not isDown and anchorOptions.Grow ~= "RIGHT")
 			display:AnchorContainer(entry)

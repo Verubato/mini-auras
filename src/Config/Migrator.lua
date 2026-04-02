@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 35,
+	Version = 36,
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -427,15 +427,14 @@ local dbDefaults = {
 			DisabledSpells = {},
 
 			---@class FriendlyCooldownTrackerAnchorOptions
-			---@field ShowOffensiveCooldowns boolean?
+			---@field IconSpacing number
 			Default = {
 				Grow = "LEFT",
 				Offset = { X = -2, Y = 0 },
 				ExcludeSelf = false,
 				ShowTooltips = true,
 				ShowTrinket = true,
-				ShowOffensiveCooldowns = true,
-				ShowDefensiveCooldowns = true,
+				IconSpacing = 2,
 				Icons = {
 					Size = 40,
 					ReverseCooldown = true,
@@ -451,8 +450,7 @@ local dbDefaults = {
 				ExcludeSelf = false,
 				ShowTooltips = true,
 				ShowTrinket = true,
-				ShowOffensiveCooldowns = true,
-				ShowDefensiveCooldowns = true,
+				IconSpacing = 2,
 				Icons = {
 					Size = 20,
 					ReverseCooldown = true,
@@ -2008,6 +2006,18 @@ function M:UpgradeToVersion33(vars)
 	return true
 end
 
+function M:UpgradeToVersion34(vars)
+	if vars.Version ~= 33 then
+		return false
+	end
+
+	table.insert(vars.WhatsNew, L[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"])
+
+	vars.NotifiedChanges = false
+	vars.Version = 34
+	return true
+end
+
 function M:UpgradeToVersion35(vars)
 	if vars.Version ~= 34 then
 		return false
@@ -2034,15 +2044,23 @@ function M:UpgradeToVersion35(vars)
 	return true
 end
 
-function M:UpgradeToVersion34(vars)
-	if vars.Version ~= 33 then
+function M:UpgradeToVersion36(vars)
+	if vars.Version ~= 35 then
 		return false
 	end
 
-	table.insert(vars.WhatsNew, L[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"])
+	local fcdModule = vars.Modules and vars.Modules.FriendlyCooldownTrackerModule
+	if fcdModule then
+		local spacing = vars.IconSpacing or 2
+		if fcdModule.Default then
+			fcdModule.Default.IconSpacing = spacing
+		end
+		if fcdModule.Raid then
+			fcdModule.Raid.IconSpacing = spacing
+		end
+	end
 
-	vars.NotifiedChanges = false
-	vars.Version = 34
+	vars.Version = 36
 	return true
 end
 

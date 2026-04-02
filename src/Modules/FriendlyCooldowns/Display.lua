@@ -98,7 +98,7 @@ local function GetStaticAbilities(unit)
 end
 
 ---Builds the slot list shown in test mode.
-local function BuildTestSlots(showOffensive, showDefensive, showTrinket, showTooltips, iconOptions)
+local function BuildTestSlots(showTrinket, showTooltips, iconOptions)
 	local now = GetTime()
 	local slots = {}
 	if showTrinket then
@@ -112,61 +112,57 @@ local function BuildTestSlots(showOffensive, showDefensive, showTrinket, showToo
 		}
 	end
 	local testSpells = {
-		{ SpellId = 642, StartOffset = 60, Cooldown = 300, IsOffensive = false }, -- Divine Shield
-		{ SpellId = 33206, StartOffset = 30, Cooldown = 180, IsOffensive = false }, -- Pain Suppression
-		{ SpellId = 45438, StartOffset = 120, Cooldown = 240, IsOffensive = false }, -- Ice Block
-		{ SpellId = 190319, StartOffset = 10, Cooldown = 120, IsOffensive = true }, -- Combustion
+		{ SpellId = 642,    StartOffset = 60,  Cooldown = 300 }, -- Divine Shield
+		{ SpellId = 33206,  StartOffset = 30,  Cooldown = 180 }, -- Pain Suppression
+		{ SpellId = 45438,  StartOffset = 120, Cooldown = 240 }, -- Ice Block
+		{ SpellId = 190319, StartOffset = 10,  Cooldown = 120 }, -- Combustion
 	}
 	for _, t in ipairs(testSpells) do
-		if (not t.IsOffensive or showOffensive) and (t.IsOffensive or showDefensive) then
-			local texture = C_Spell.GetSpellTexture(t.SpellId)
-			if texture then
-				slots[#slots + 1] = {
-					Texture = texture,
-					SpellId = showTooltips and t.SpellId or nil,
-					DurationObject = wowEx:CreateDuration(now - t.StartOffset, t.Cooldown),
-					Alpha = 1,
-					ReverseCooldown = iconOptions.ReverseCooldown,
-					FontScale = db.FontScale,
-				}
-			end
+		local texture = C_Spell.GetSpellTexture(t.SpellId)
+		if texture then
+			slots[#slots + 1] = {
+				Texture = texture,
+				SpellId = showTooltips and t.SpellId or nil,
+				DurationObject = wowEx:CreateDuration(now - t.StartOffset, t.Cooldown),
+				Alpha = 1,
+				ReverseCooldown = iconOptions.ReverseCooldown,
+				FontScale = db.FontScale,
+			}
 		end
 	end
 	return slots
 end
 
 ---Appends always-visible static ability slots, with a cooldown swipe when active.
-local function AppendStaticSlots(slots, entry, now, showOffensive, showDefensive, showTooltips, iconOptions)
+local function AppendStaticSlots(slots, entry, now, showTooltips, iconOptions)
 	local staticAbilities = GetStaticAbilities(entry.Unit)
 	for _, ability in ipairs(staticAbilities) do
-		if (not ability.IsOffensive or showOffensive) and (ability.IsOffensive or showDefensive) then
-			local texture = C_Spell.GetSpellTexture(ability.SpellId)
-			local cd = entry.ActiveCooldowns[ability.SpellId]
-			if texture then
-				local durationObject = nil
-				if cd and now < cd.StartTime + cd.Cooldown then
-					durationObject = wowEx:CreateDuration(cd.StartTime, cd.Cooldown)
-				end
-				slots[#slots + 1] = {
-					Texture = texture,
-					SpellId = showTooltips and ability.SpellId or nil,
-					DurationObject = durationObject,
-					Alpha = 1,
-					ReverseCooldown = iconOptions.ReverseCooldown,
-					FontScale = db.FontScale,
-				}
+		local texture = C_Spell.GetSpellTexture(ability.SpellId)
+		local cd = entry.ActiveCooldowns[ability.SpellId]
+		if texture then
+			local durationObject = nil
+			if cd and now < cd.StartTime + cd.Cooldown then
+				durationObject = wowEx:CreateDuration(cd.StartTime, cd.Cooldown)
 			end
+			slots[#slots + 1] = {
+				Texture = texture,
+				SpellId = showTooltips and ability.SpellId or nil,
+				DurationObject = durationObject,
+				Alpha = 1,
+				ReverseCooldown = iconOptions.ReverseCooldown,
+				FontScale = db.FontScale,
+			}
 		end
 	end
 end
 
 ---Appends string-keyed (non-static) active-cooldown slots, pruning expired entries.
-local function AppendDynamicSlots(slots, entry, now, showOffensive, showDefensive, showTooltips, iconOptions)
+local function AppendDynamicSlots(slots, entry, now, showTooltips, iconOptions)
 	for cdKey, cd in pairs(entry.ActiveCooldowns) do
 		if type(cdKey) == "string" then
 			if now >= cd.StartTime + cd.Cooldown then
 				entry.ActiveCooldowns[cdKey] = nil
-			elseif (not cd.IsOffensive or showOffensive) and (cd.IsOffensive or showDefensive) then
+			else
 				local texture = C_Spell.GetSpellTexture(cd.SpellId)
 				if texture then
 					slots[#slots + 1] = {
@@ -201,12 +197,10 @@ local function UpdateDisplay(entry)
 
 	local showTooltips = anchorOptions.ShowTooltips
 	local iconOptions = anchorOptions.Icons
-	local showOffensive = anchorOptions.ShowOffensiveCooldowns ~= false
-	local showDefensive = anchorOptions.ShowDefensiveCooldowns ~= false
 	local showTrinket = anchorOptions.ShowTrinket ~= false
 
 	if testModeActive then
-		local testSlots = BuildTestSlots(showOffensive, showDefensive, showTrinket, showTooltips, iconOptions)
+		local testSlots = BuildTestSlots(showTrinket, showTooltips, iconOptions)
 		for i, slotData in ipairs(testSlots) do
 			if i > container.Count then
 				break
@@ -237,8 +231,8 @@ local function UpdateDisplay(entry)
 		}
 	end
 
-	AppendStaticSlots(slots, entry, now, showOffensive, showDefensive, showTooltips, iconOptions)
-	AppendDynamicSlots(slots, entry, now, showOffensive, showDefensive, showTooltips, iconOptions)
+	AppendStaticSlots(slots, entry, now, showTooltips, iconOptions)
+	AppendDynamicSlots(slots, entry, now, showTooltips, iconOptions)
 
 	for i, slotData in ipairs(slots) do
 		if i > container.Count then
@@ -262,7 +256,7 @@ local function AnchorContainer(entry)
 	frame:ClearAllPoints()
 	frame:SetAlpha(1)
 	frame:SetFrameStrata(anchor:GetFrameStrata())
-	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
+	frame:SetFrameLevel(anchor:GetFrameLevel() + 10)
 
 	local rowsEnabled = options.Icons.Rows and options.Icons.Rows > 1
 

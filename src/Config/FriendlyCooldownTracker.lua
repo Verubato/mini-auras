@@ -79,37 +79,6 @@ local function BuildInstance(parent, anchorOptions)
 	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", excludeSelfChk, "TOP", 0, 0)
 
-	local showDefensiveChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Defensive cooldowns"],
-		Tooltip = L["Shows defensive cooldowns such as Blessing of Protection and Ironbark."],
-		GetValue = function()
-			return anchorOptions.ShowDefensiveCooldowns ~= false
-		end,
-		SetValue = function(value)
-			anchorOptions.ShowDefensiveCooldowns = value
-			config:Apply()
-		end,
-	})
-
-	showDefensiveChk:SetPoint("TOPLEFT", excludeSelfChk, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local showOffensiveChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Offensive cooldowns"],
-		Tooltip = L["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."],
-		GetValue = function()
-			return anchorOptions.ShowOffensiveCooldowns ~= false
-		end,
-		SetValue = function(value)
-			anchorOptions.ShowOffensiveCooldowns = value
-			config:Apply()
-		end,
-	})
-
-	showOffensiveChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	showOffensiveChk:SetPoint("TOP", showDefensiveChk, "TOP", 0, 0)
-
 	local showTrinketChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Trinket"],
@@ -123,8 +92,8 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	showTrinketChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	showTrinketChk:SetPoint("TOP", showDefensiveChk, "TOP", 0, 0)
+	showTrinketChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	showTrinketChk:SetPoint("TOP", excludeSelfChk, "TOP", 0, 0)
 
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,
@@ -145,7 +114,7 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	iconSizeSlider.Slider:SetPoint("TOPLEFT", showDefensiveChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSizeSlider.Slider:SetPoint("TOPLEFT", excludeSelfChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local maxIconsSlider = mini:Slider({
 		Parent = panel,
@@ -189,6 +158,28 @@ local function BuildInstance(parent, anchorOptions)
 	})
 
 	rowsSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
+	local iconSpacingSlider = mini:Slider({
+		Parent    = panel,
+		LabelText = L["Icon Spacing"],
+		Min       = 0,
+		Max       = 20,
+		Step      = 1,
+		Width     = columnWidth * 2 - horizontalSpacing,
+		GetValue  = function()
+			return anchorOptions.IconSpacing or 2
+		end,
+		SetValue  = function(v)
+			local newValue = mini:ClampInt(v, 0, 20, 2)
+			if anchorOptions.IconSpacing ~= newValue then
+				anchorOptions.IconSpacing = newValue
+				config:Apply()
+			end
+		end,
+	})
+
+	iconSpacingSlider.Slider:SetPoint("LEFT", rowsSlider.Slider, "RIGHT", horizontalSpacing, 0)
+	iconSpacingSlider.Slider:SetPoint("TOP", rowsSlider.Slider, "TOP", 0, 0)
 
 	local growLbl = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	growLbl:SetText(L["Grow"])
@@ -550,7 +541,7 @@ function M:Build(panel, default, raid)
 	local defaultDivider = mini:Divider({ Parent = settingsFrame, Text = L["Less than 5 members (arena/dungeons)"] })
 	defaultDivider:SetPoint("LEFT",  settingsFrame, "LEFT")
 	defaultDivider:SetPoint("RIGHT", settingsFrame, "RIGHT")
-	defaultDivider:SetPoint("TOP",   enabledWorld,  "BOTTOM", 0, -verticalSpacing)
+	defaultDivider:SetPoint("TOP",   enabledWorld, "BOTTOM", 0, -verticalSpacing)
 
 	local defaultPanel = BuildInstance(settingsFrame, default)
 	defaultPanel:SetPoint("TOPLEFT",  defaultDivider, "BOTTOMLEFT",  0, -verticalSpacing)
