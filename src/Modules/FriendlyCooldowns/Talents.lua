@@ -234,6 +234,8 @@ local SpecDurationModifiers = {
 	[255] = { [1253830] = { { { SpellId = 1250646, Amount = 2 } } } },
 	-- Fury Warrior: Invigorating Fury: Enraged Regeneration +3s
 	[72] = { [383468] = { { { SpellId = 184364, Amount = 3 } } } },
+	-- Vengeance Demon Hunter: Vengeful Beast: Metamorphosis +5s
+	[581] = { [1265818] = { { { SpellId = 187827, Amount = 5 } } } },
 	-- Enhancement Shaman: Thorim's Invocation: Doomwinds +2s
 	[263] = { [384444] = { { { SpellId = 384352, Amount = 2 } } } },
 	-- Elemental Shaman: Preeminence: Ascendance +3s

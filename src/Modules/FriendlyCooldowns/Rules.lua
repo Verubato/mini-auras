@@ -568,6 +568,24 @@ local rules = {
 				RequiresEvidence = "Cast",
 				SpellId = 204021,
 			}, -- Fiery Brand
+			{
+				BuffDuration = 15,
+				Cooldown = 120,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 187827,
+			}, -- Metamorphosis
+			{
+				BuffDuration = 20,
+				Cooldown = 120,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 187827,
+			}, -- Metamorphosis +5s (Vengeful Beast)
 		},
 		[254] = {
 			{
