@@ -2,7 +2,6 @@
 local _, addon = ...
 local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
-local spellCache = addon.Utils.SpellCache
 local iconSlotContainer = addon.Core.IconSlotContainer
 local paused = false
 local testModeActive = false
@@ -11,7 +10,7 @@ local enabled = false
 local db
 
 -- fallback icon (rogue Kick)
-local kickIcon = spellCache:GetSpellTexture(1766)
+local kickIcon = C_Spell.GetSpellTexture(1766)
 
 ---@type { string: boolean }
 local kickedByUnits = {}
@@ -61,7 +60,7 @@ local kickDurationsByUnit = {} ---@type table<string, number?>
 local kickIconsByUnit = {} ---@type table<string, any?>
 
 local function KI(spellId)
-	return spellId and spellCache:GetSpellTexture(spellId) or nil
+	return spellId and C_Spell.GetSpellTexture(spellId) or nil
 end
 
 ---@class SpecKickInfo

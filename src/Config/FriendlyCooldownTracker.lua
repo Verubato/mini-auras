@@ -5,7 +5,6 @@ local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local config = addon.Config
-local spellCache = addon.Utils.SpellCache
 
 -- Loaded before this file in TOC order (via Config.lua which runs after all Modules).
 local rules = addon.Modules.FriendlyCooldowns.Rules
@@ -342,7 +341,7 @@ local function BuildSpellsList(parent, disabledSpells)
 			-- One row per spell
 			for _, spellId in ipairs(spells) do
 				local spellName = C_Spell.GetSpellName(spellId) or ("Spell #" .. spellId)
-				local texture   = spellCache:GetSpellTexture(spellId)
+				local texture   = C_Spell.GetSpellTexture(spellId)
 
 				local chk = mini:Checkbox({
 					Parent    = parent,

@@ -4,7 +4,6 @@ local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
-local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
 local testModeActive = false
@@ -407,7 +406,7 @@ end
 
 local function RefreshTestIcons()
 	local spellId = testSpells[1].SpellId
-	local tex = spellCache:GetSpellTexture(spellId)
+	local tex = C_Spell.GetSpellTexture(spellId)
 	local now = GetTime()
 
 	for _, container in pairs(containers) do

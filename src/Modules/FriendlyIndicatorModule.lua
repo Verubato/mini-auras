@@ -6,7 +6,6 @@ local frames = addon.Core.Frames
 local units = addon.Utils.Units
 local iconSlotContainer = addon.Core.IconSlotContainer
 local UnitAuraWatcher = addon.Core.UnitAuraWatcher
-local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local slotDistribution = addon.Utils.SlotDistribution
@@ -336,7 +335,7 @@ local function RefreshTestIcons()
 				break
 			end
 			local spell = testCcSpells[i]
-			local texture = spellCache:GetSpellTexture(spell.SpellId)
+			local texture = C_Spell.GetSpellTexture(spell.SpellId)
 			if texture then
 				container:SetSlot(slotIndex, {
 					Texture = texture,
@@ -357,7 +356,7 @@ local function RefreshTestIcons()
 				break
 			end
 			local spell = testDefensiveSpells[i]
-			local texture = spellCache:GetSpellTexture(spell.SpellId)
+			local texture = C_Spell.GetSpellTexture(spell.SpellId)
 			if texture then
 				container:SetSlot(slotIndex, {
 					Texture = texture,
@@ -377,7 +376,7 @@ local function RefreshTestIcons()
 				break
 			end
 			local spell = testImportantSpells[i]
-			local texture = spellCache:GetSpellTexture(spell.SpellId)
+			local texture = C_Spell.GetSpellTexture(spell.SpellId)
 			if texture then
 				container:SetSlot(slotIndex, {
 					Texture = texture,

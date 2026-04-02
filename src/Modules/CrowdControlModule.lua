@@ -6,7 +6,6 @@ local frames = addon.Core.Frames
 local units = addon.Utils.Units
 local iconSlotContainer = addon.Core.IconSlotContainer
 local unitAuraWatcher = addon.Core.UnitAuraWatcher
-local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local wowEx = addon.Utils.WoWEx
@@ -313,7 +312,7 @@ local function RefreshTestIcons()
 					break
 				end
 
-				local texture = spellCache:GetSpellTexture(spell.SpellId)
+				local texture = C_Spell.GetSpellTexture(spell.SpellId)
 
 				if texture then
 					local duration = 15 + (i - 1) * 3

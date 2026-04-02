@@ -4,7 +4,6 @@ local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
-local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local units = addon.Utils.Units
@@ -382,7 +381,7 @@ local function RefreshTestAlerts()
 
 	for i = 1, count do
 		local spellId = testAlertSpellIds[i]
-		local tex = spellCache:GetSpellTexture(spellId)
+		local tex = C_Spell.GetSpellTexture(spellId)
 
 		if tex then
 			local duration = 12 + (i - 1) * 3

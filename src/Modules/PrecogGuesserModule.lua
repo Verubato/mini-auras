@@ -4,7 +4,6 @@ local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
-local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local testModeActive = false
@@ -103,7 +102,7 @@ local function RefreshTestIcons()
 		return
 	end
 
-	local texture = spellCache:GetSpellTexture(testSpell.SpellId)
+	local texture = C_Spell.GetSpellTexture(testSpell.SpellId)
 
 	if texture then
 		container:SetSlot(1, {

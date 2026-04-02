@@ -2,7 +2,6 @@
 local _, addon = ...
 local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
-local spellCache = addon.Utils.SpellCache
 local trinketsTracker = addon.Core.TrinketsTracker
 local instanceOptions = addon.Core.InstanceOptions
 
@@ -120,7 +119,7 @@ local function BuildTestSlots(showOffensive, showDefensive, showTrinket, showToo
 	}
 	for _, t in ipairs(testSpells) do
 		if (not t.IsOffensive or showOffensive) and (t.IsOffensive or showDefensive) then
-			local texture = spellCache:GetSpellTexture(t.SpellId)
+			local texture = C_Spell.GetSpellTexture(t.SpellId)
 			if texture then
 				slots[#slots + 1] = {
 					Texture = texture,
@@ -141,7 +140,7 @@ local function AppendStaticSlots(slots, entry, now, showOffensive, showDefensive
 	local staticAbilities = GetStaticAbilities(entry.Unit)
 	for _, ability in ipairs(staticAbilities) do
 		if (not ability.IsOffensive or showOffensive) and (ability.IsOffensive or showDefensive) then
-			local texture = spellCache:GetSpellTexture(ability.SpellId)
+			local texture = C_Spell.GetSpellTexture(ability.SpellId)
 			local cd = entry.ActiveCooldowns[ability.SpellId]
 			if texture then
 				local durationObject = nil
@@ -168,7 +167,7 @@ local function AppendDynamicSlots(slots, entry, now, showOffensive, showDefensiv
 			if now >= cd.StartTime + cd.Cooldown then
 				entry.ActiveCooldowns[cdKey] = nil
 			elseif (not cd.IsOffensive or showOffensive) and (cd.IsOffensive or showDefensive) then
-				local texture = spellCache:GetSpellTexture(cd.SpellId)
+				local texture = C_Spell.GetSpellTexture(cd.SpellId)
 				if texture then
 					slots[#slots + 1] = {
 						Texture = texture,

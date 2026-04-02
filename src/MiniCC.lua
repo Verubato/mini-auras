@@ -172,7 +172,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Scheduler SchedulerUtil
 ---@field Units UnitUtil
 ---@field Array ArrayUtil
----@field SpellCache SpellCache
 ---@field FontUtil FontUtil
 ---@field ModuleUtil ModuleUtil
 ---@field ModuleName ModuleName

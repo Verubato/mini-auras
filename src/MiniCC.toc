@@ -31,7 +31,6 @@ Locales\zhTW.lua
 Utils\Scheduler.lua
 Utils\Units.lua
 Utils\Array.lua
-Utils\SpellCache.lua
 Utils\FontUtil.lua
 Utils\ModuleUtil.lua
 Utils\SlotDistribution.lua

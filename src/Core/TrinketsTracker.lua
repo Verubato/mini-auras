@@ -1,6 +1,5 @@
 ---@type string, Addon
 local _, addon = ...
-local spellCache = addon.Utils.SpellCache
 
 ---@class TrinketsTracker : IModule
 local M = {}
@@ -38,7 +37,7 @@ end
 function M:Refresh() end
 
 function M:Init()
-	defaultIcon = spellCache:GetSpellTexture(defaultSpellId)
+	defaultIcon = C_Spell.GetSpellTexture(defaultSpellId)
 
 	local frame = CreateFrame("Frame")
 	frame:SetScript("OnEvent", function(_, event, ...)

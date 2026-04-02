@@ -5,7 +5,6 @@ local wowEx = addon.Utils.WoWEx
 local units = addon.Utils.Units
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
-local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local slotDistribution = addon.Utils.SlotDistribution
@@ -501,7 +500,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 		slot = slot + 1
 
 		local spellId = testCcNameplateSpellIds[i]
-		local tex = spellCache:GetSpellTexture(spellId)
+		local tex = C_Spell.GetSpellTexture(spellId)
 		if tex then
 			layerScratch.Texture = tex
 			layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
@@ -522,7 +521,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 		slot = slot + 1
 
 		local spellId = testDefensiveNameplateSpellIds[i]
-		local tex = spellCache:GetSpellTexture(spellId)
+		local tex = C_Spell.GetSpellTexture(spellId)
 		if tex then
 			layerScratch.Texture = tex
 			layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
@@ -543,7 +542,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 		slot = slot + 1
 
 		local spellId = testImportantNameplateSpellIds[i]
-		local tex = spellCache:GetSpellTexture(spellId)
+		local tex = C_Spell.GetSpellTexture(spellId)
 		if tex then
 			layerScratch.Texture = tex
 			layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
@@ -573,7 +572,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 		-- Show CC test spells (limited to container count)
 		for i = 1, limit do
 			local spellId = testCcNameplateSpellIds[i]
-			local tex = spellCache:GetSpellTexture(spellId)
+			local tex = C_Spell.GetSpellTexture(spellId)
 
 			if tex then
 				layerScratch.Texture = tex
@@ -614,7 +613,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 				slot = slot + 1
 
 				local spellId = testImportantNameplateSpellIds[i]
-				local tex = spellCache:GetSpellTexture(spellId)
+				local tex = C_Spell.GetSpellTexture(spellId)
 
 				if tex then
 					layerScratch.Texture = tex
@@ -638,7 +637,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 				slot = slot + 1
 
 				local spellId = testDefensiveNameplateSpellIds[i]
-				local tex = spellCache:GetSpellTexture(spellId)
+				local tex = C_Spell.GetSpellTexture(spellId)
 
 				if tex then
 					layerScratch.Texture = tex

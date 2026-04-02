@@ -7,7 +7,6 @@ local L = addon.L
 local iconSlotContainer = addon.Core.IconSlotContainer
 local unitWatcher = addon.Core.UnitAuraWatcher
 local units = addon.Utils.Units
-local spellCache = addon.Utils.SpellCache
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
 local rc = LibStub("LibRangeCheck-3.0")
@@ -237,7 +236,7 @@ local function RefreshTestFrame()
 		iconsContainer:ResetAllSlots()
 	else
 		for i, spell in ipairs(testSpells) do
-			local texture = spellCache:GetSpellTexture(spell.SpellId)
+			local texture = C_Spell.GetSpellTexture(spell.SpellId)
 
 			if texture then
 				local duration = 15 + (i - 1) * 3
