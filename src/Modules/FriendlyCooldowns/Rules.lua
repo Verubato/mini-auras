@@ -673,6 +673,29 @@ local rules = {
 				SpellId = 363916,
 			},
 		}, -- Augmentation Evoker: Obsidian Scales
+		[263] = { -- Enhancement Shaman
+			{
+				BuffDuration = 10,
+				Cooldown = 60,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 384352,
+				RequiresTalent = 384352,
+				ExcludeIfTalent = { 114051, 378270 },
+			}, -- Doomwinds (hidden if Ascendance or Deeply Rooted Elements talented)
+			{
+				BuffDuration = 15,
+				Cooldown = 120,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 114051,
+				RequiresTalent = 114051,
+			}, -- Ascendance
+		},
 	},
 	ByClass = {
 		PALADIN = {
@@ -951,6 +974,8 @@ local offensiveSpellIds = {
 	[106951] = true, -- Berserk (Feral, same choice node as Incarnation)
 	[102558] = true, -- Incarnation: Guardian of Ursoc (Guardian)
 	[1250646] = true, -- Takedown
+	[384352] = true, -- Doomwinds
+	[114051] = true, -- Ascendance (Enhancement)
 }
 
 rules.OffensiveSpellIds = offensiveSpellIds

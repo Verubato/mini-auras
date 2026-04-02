@@ -301,6 +301,9 @@ local SpecDefaultTalentRanks = {
 	[72] = {
 		[383468] = 1, -- Invigorating Fury (Fury Warrior): Enraged Regeneration +3s, nearly universal
 	},
+	[263] = {
+		[384352] = 1, -- Doomwinds (Enhancement Shaman): nearly universal
+	},
 }
 
 -- specId -> { [talentNodeId_choiceIndex] = { spellId, maxRank, type, subTreeID } }
