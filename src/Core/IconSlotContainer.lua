@@ -660,6 +660,9 @@ end
 ---@param newCount number of slots to maintain
 function M:SetCount(newCount)
 	newCount = math.max(0, newCount or 0)
+	if newCount == self.Count then
+		return
+	end
 
 	-- If shrinking, disable anything beyond newCount (pooled slots)
 	if newCount < self.Count then

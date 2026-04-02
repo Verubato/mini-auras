@@ -193,19 +193,18 @@ local function UpdateDisplay(entry)
 	end
 
 	local container = entry.Container
-	container:ResetAllSlots()
-
 	local showTooltips = anchorOptions.ShowTooltips
 	local iconOptions = anchorOptions.Icons
 	local showTrinket = anchorOptions.ShowTrinket ~= false
 
 	if testModeActive then
 		local testSlots = BuildTestSlots(showTrinket, showTooltips, iconOptions)
-		for i, slotData in ipairs(testSlots) do
-			if i > container.Count then
-				break
-			end
-			container:SetSlot(i, slotData)
+		local usedCount = math.min(#testSlots, container.Count)
+		for i = 1, usedCount do
+			container:SetSlot(i, testSlots[i])
+		end
+		for i = usedCount + 1, container.Count do
+			container:SetSlotUnused(i)
 		end
 		return
 	end
@@ -234,11 +233,12 @@ local function UpdateDisplay(entry)
 	AppendStaticSlots(slots, entry, now, showTooltips, iconOptions)
 	AppendDynamicSlots(slots, entry, now, showTooltips, iconOptions)
 
-	for i, slotData in ipairs(slots) do
-		if i > container.Count then
-			break
-		end
-		container:SetSlot(i, slotData)
+	local usedCount = math.min(#slots, container.Count)
+	for i = 1, usedCount do
+		container:SetSlot(i, slots[i])
+	end
+	for i = usedCount + 1, container.Count do
+		container:SetSlotUnused(i)
 	end
 end
 
