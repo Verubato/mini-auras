@@ -3,7 +3,6 @@ local addonName, addon = ...
 local dbMigrator = addon.Config.Migrator
 local mini = addon.Core.Framework
 local L = addon.L
-local verticalSpacing = mini.VerticalSpacing
 ---@type Db
 local db
 local M = addon.Config
@@ -83,11 +82,11 @@ function M:Init()
 	window:HookScript("OnHide", function()
 		windowPreviouslyHidden = true
 	end)
-	window:HookScript("OnShow", function(self)
+	window:HookScript("OnShow", function(w)
 		if windowPreviouslyHidden then
 			windowPreviouslyHidden = false
-			self:ClearAllPoints()
-			self:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+			w:ClearAllPoints()
+			w:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 		end
 	end)
 

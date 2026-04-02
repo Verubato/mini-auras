@@ -19,13 +19,8 @@ local CTimerNewTimer = C_Timer.NewTimer
 local next, securecallfunction, tonumber = next, securecallfunction, tonumber
 local Ambiguate = Ambiguate
 
-do
-	local result = C_ChatInfo.RegisterAddonMessagePrefix(prefix)
-	-- 0=success, 1=duplicate, 2=invalid, 3=toomany
-	if type(result) == "number" and result > 1 then
-		-- Failed to register; PvP talent sync silently disabled.
-	end
-end
+-- 0=success, 1=duplicate, 2=invalid, 3=toomany; silently disabled on failure.
+C_ChatInfo.RegisterAddonMessagePrefix(prefix)
 
 local function GetLocalPvPTalentIds()
 	if not (C_SpecializationInfo and C_SpecializationInfo.GetAllSelectedPvpTalentIDs) then

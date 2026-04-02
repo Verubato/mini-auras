@@ -61,6 +61,6 @@ function M:IsModuleEnabled(moduleName)
 	if IsInRaid() then
 		return settings.Raid
 	end
-	
+
 	return settings.Dungeons
 end

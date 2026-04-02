@@ -185,8 +185,6 @@ local function ShowProfileIOWindow()
 end
 
 function M:Build(panel)
-	local db = mini:GetSavedVars()
-
 	local columns = 2
 	local columnWidth = mini:ColumnWidth(columns, 0, 0)
 	local contentWidth = mini.ContentWidth

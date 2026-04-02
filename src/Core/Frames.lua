@@ -362,9 +362,7 @@ function M:CellFrames(visibleOnly)
 				local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
 
 				if unit and unit ~= "" then
-					if child.IsForbidden and child:IsForbidden() then
-						-- skip
-					elseif child:IsVisible() or not visibleOnly then
+					if (not child.IsForbidden or not child:IsForbidden()) and (child:IsVisible() or not visibleOnly) then
 						frames[#frames + 1] = child
 					end
 				end
@@ -389,9 +387,7 @@ function M:TPerlFrames(visibleOnly)
 		local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
 
 		if unit and unit ~= "" then
-			if child.IsForbidden and child:IsForbidden() then
-				-- skip
-			elseif child:IsVisible() or not visibleOnly then
+			if (not child.IsForbidden or not child:IsForbidden()) and (child:IsVisible() or not visibleOnly) then
 				frames[#frames + 1] = child
 			end
 		end
@@ -432,9 +428,7 @@ function M:EnhancedQoLFrames(visibleOnly)
 				local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
 
 				if unit and unit ~= "" then
-					if child.IsForbidden and child:IsForbidden() then
-						-- skip
-					elseif child:IsVisible() or not visibleOnly then
+					if (not child.IsForbidden or not child:IsForbidden()) and (child:IsVisible() or not visibleOnly) then
 						frames[#frames + 1] = child
 					end
 				end

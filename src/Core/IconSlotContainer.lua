@@ -702,9 +702,9 @@ function M:SetSlot(slotIndex, options)
 		if not slot.MouseEnabled then
 			slot.MouseEnabled = true
 			slot.Frame:EnableMouse(true)
-			slot.Frame:SetScript("OnEnter", function(self)
+			slot.Frame:SetScript("OnEnter", function(f)
 				if slot.SpellId then
-					GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+					GameTooltip:SetOwner(f, "ANCHOR_RIGHT")
 					GameTooltip:SetSpellByID(slot.SpellId)
 					GameTooltip:Show()
 				end

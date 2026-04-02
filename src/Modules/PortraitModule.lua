@@ -121,11 +121,11 @@ local function OnAuraInfo(watcher, container)
 	local slotIndex = 1
 
 	-- Show the latest CC aura
-	for _, aura in ipairs(ccAuras) do
+	if ccAuras[1] then
 		container:SetSlot(slotIndex, {
-			Texture = aura.SpellIcon,
-			DurationObject = aura.DurationObject,
-			Alpha = aura.IsCC,
+			Texture = ccAuras[1].SpellIcon,
+			DurationObject = ccAuras[1].DurationObject,
+			Alpha = ccAuras[1].IsCC,
 			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 			FontScale = db.FontScale,
 		})
@@ -133,11 +133,11 @@ local function OnAuraInfo(watcher, container)
 	end
 
 	-- Show the latest defensive aura
-	for _, aura in ipairs(defensiveAuras) do
+	if defensiveAuras[1] then
 		container:SetSlot(slotIndex, {
-			Texture = aura.SpellIcon,
-			DurationObject = aura.DurationObject,
-			Alpha = aura.IsDefensive,
+			Texture = defensiveAuras[1].SpellIcon,
+			DurationObject = defensiveAuras[1].DurationObject,
+			Alpha = defensiveAuras[1].IsDefensive,
 			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 			FontScale = db.FontScale,
 		})
@@ -145,11 +145,11 @@ local function OnAuraInfo(watcher, container)
 	end
 
 	-- Show the latest important aura
-	for _, aura in ipairs(importantAuras) do
+	if importantAuras[1] then
 		container:SetSlot(slotIndex, {
-			Texture = aura.SpellIcon,
-			DurationObject = aura.DurationObject,
-			Alpha = aura.IsImportant,
+			Texture = importantAuras[1].SpellIcon,
+			DurationObject = importantAuras[1].DurationObject,
+			Alpha = importantAuras[1].IsImportant,
 			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 			FontScale = db.FontScale,
 		})
