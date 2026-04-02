@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.3.0
+
+- Added Spells selection screens so you can select which spells are tracked.
+- Added Doomwinds, Ascendance, Netherward, and Metamorphosis (Vengeance).
+- Added grow down direction option.
+- Added separate icon padding option for the friendly cooldown tracking module.
+- Fixed 'IsPet' secret bug in raids.
+- Various performance improvements.
+
 ## 3.2.1
 
 Fixed critical Friendly CDs bug where the 'Exclude Self' option was preventing externals being tracked properly.
