@@ -219,8 +219,8 @@ local function MatchRule(unit, auraTypes, measuredDuration, context)
 end
 
 ---Evaluates all candidate units and returns the best-matching rule and caster unit.
----candidateUnits is supplied by the caller (Module's watcher wrapper) so Brain has
----no direct dependency on Module's watchEntries table.
+---candidateUnits is supplied by Observer from its internal watched-entry map so Brain
+---has no direct dependency on Module.
 ---Primary tiebreaker: most recent cast evidence wins (distinguishes caster from recipient).
 ---Secondary tiebreaker: for EXTERNAL_DEFENSIVE, a non-target is preferred when neither has cast evidence.
 ---@param candidateUnits string[]  list of unit strings from all active watch entries
