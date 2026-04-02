@@ -810,6 +810,11 @@ local function UpdateDisplay(entry)
 		return
 	end
 
+	-- ExcludeSelf: container is intentionally hidden; don't populate it.
+	if anchorOptions.ExcludeSelf and UnitIsUnit(entry.Unit, "player") then
+		return
+	end
+
 	local container = entry.Container
 	container:ResetAllSlots()
 
@@ -1087,7 +1092,13 @@ end
 ---@param watcher Watcher
 local function OnWatcherChanged(entry, watcher)
 	if testModeActive then return end
-	if not entry.Container.Frame:IsVisible() then return end
+	-- ExcludeSelf hides the player's container but we must still track auras on the player
+	-- so that externals cast by other players (e.g. Iron Bark) are detected and attributed.
+	local anchorOptionsForCheck = GetAnchorOptions()
+	local isExcludedSelf = anchorOptionsForCheck
+		and anchorOptionsForCheck.ExcludeSelf
+		and UnitIsUnit(entry.Unit, "player")
+	if not isExcludedSelf and not entry.Container.Frame:IsVisible() then return end
 	if UnitCanAttack("player", entry.Unit) then return end
 
 	-- Skip expensive rule-matching when no cooldown category is visible.
@@ -1218,18 +1229,8 @@ local function EnsureEntry(anchor, unit)
 		return nil
 	end
 
-	if anchorOptions.ExcludeSelf and UnitIsUnit(unit, "player") then
-		local existing = watchEntries[anchor]
-		if existing then
-			existing.Watcher:Dispose()
-			existing.CastEventFrame:UnregisterAllEvents()
-			existing.Container:ResetAllSlots()
-			existing.Container.Frame:Hide()
-			watchEntries[anchor] = nil
-		end
-		return nil
-	end
-
+	-- ExcludeSelf: keep the watcher running so cast evidence and aura detection still work
+	-- for externals cast by the player onto others. The container is hidden in M:Refresh.
 	local entry = watchEntries[anchor]
 
 	if not entry then
@@ -1328,7 +1329,14 @@ local function EnsureEntry(anchor, unit)
 	end
 
 	AnchorContainer(entry)
-	ShowHideEntryContainer(entry.Container.Frame, anchor)
+
+	local anchorOptionsForShow = GetAnchorOptions()
+	if anchorOptionsForShow and anchorOptionsForShow.ExcludeSelf and UnitIsUnit(unit, "player") then
+		entry.Container:ResetAllSlots()
+		entry.Container.Frame:Hide()
+	else
+		ShowHideEntryContainer(entry.Container.Frame, anchor)
+	end
 
 	return entry
 end
@@ -1378,8 +1386,8 @@ function M:Refresh()
 
 	for anchor, entry in pairs(watchEntries) do
 		if anchorOptions.ExcludeSelf and UnitIsUnit(entry.Unit, "player") then
-			entry.Watcher:Disable()
-			entry.CastEventFrame:UnregisterAllEvents()
+			-- Hide the container but leave the watcher active: aura detection and cast evidence
+			-- must still run so external defensives cast by the player are tracked correctly.
 			entry.Container:ResetAllSlots()
 			entry.Container.Frame:Hide()
 		else
