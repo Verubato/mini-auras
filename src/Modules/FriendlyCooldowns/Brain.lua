@@ -38,6 +38,10 @@ local lastFeignDeathTime = {}
 local lastFeignDeathState = {}
 -- Module-level scratch table reused by FindBestCandidate to avoid per-call allocation.
 local candidateEvidenceScratch = {}
+-- unit -> boolean: whether the unit's class can feign death (Hunter only).
+-- Populated lazily in RecordUnitFlagsChange so UnitIsFeignDeath is never called for units
+-- that cannot feign, avoiding a pointless API call on every UNIT_FLAGS event in a raid.
+local unitCanFeign = {}
 -- Callback fired when a buff ends and a matching rule is found.
 -- Signature: fn(ruleUnit, cdKey, cdData, detectedFromEntry)
 -- cdData fields: StartTime, Cooldown, Remaining, SpellId, IsOffensive
@@ -496,7 +500,16 @@ end
 
 local function RecordUnitFlagsChange(unit)
 	local now = GetTime()
-	local isFeign = UnitIsFeignDeath(unit)
+	-- Populate canFeign lazily: only Hunters can feign death, so skip UnitIsFeignDeath for
+	-- every other class. UNIT_FLAGS fires frequently in raids for mundane combat-state changes
+	-- and calling UnitIsFeignDeath for 19 non-Hunter players on each event is wasted work.
+	local canFeign = unitCanFeign[unit]
+	if canFeign == nil then
+		local _, classToken = UnitClass(unit)
+		canFeign = classToken == "HUNTER"
+		unitCanFeign[unit] = canFeign
+	end
+	local isFeign = canFeign and UnitIsFeignDeath(unit) or false
 	if isFeign and not lastFeignDeathState[unit] then
 		lastFeignDeathTime[unit] = now
 	end
