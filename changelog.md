@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.1
+
+Fixed critical Friendly CDs bug where the 'Exclude Self' option was preventing externals being tracked properly.
+
 ## 3.2.0
 
 - Fixed import profile causing an error.
