@@ -516,6 +516,30 @@ function M:GetNextStrata(strata)
 	return strataOrder[math.min((strataIndex[strata] or 1) + 1, #strataOrder)]
 end
 
+---Returns true if the frame is a Blizzard compact or standard party frame (not a raid frame).
+---Used to decide whether to bump strata so FCD icons render above party frame elements.
+---@param frame table
+---@return boolean
+function M:IsBlizzardPartyFrame(frame)
+	if not frame or issecretvalue(frame) then
+		return false
+	end
+	if frame:IsForbidden() then
+		return false
+	end
+
+	local name = frame:GetName()
+	if name and string.find(name, "CompactPartyFrame") ~= nil then
+		return true
+	end
+
+	if PartyFrame and frame:GetParent() == PartyFrame then
+		return true
+	end
+
+	return false
+end
+
 function M:IsFriendlyCuf(frame)
 	if not frame or issecretvalue(frame) then
 		return false

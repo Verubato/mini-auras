@@ -4,6 +4,7 @@ local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
 local trinketsTracker = addon.Core.TrinketsTracker
 local instanceOptions = addon.Core.InstanceOptions
+local frames = addon.Core.Frames
 
 -- Loaded before this file in TOC order.
 local fcdTalents = addon.Modules.FriendlyCooldowns.Talents
@@ -255,7 +256,10 @@ local function AnchorContainer(entry)
 
 	frame:ClearAllPoints()
 	frame:SetAlpha(1)
-	frame:SetFrameStrata(anchor:GetFrameStrata())
+	local strata = frames:IsBlizzardPartyFrame(anchor)
+		and frames:GetNextStrata(anchor:GetFrameStrata())
+		or anchor:GetFrameStrata()
+	frame:SetFrameStrata(strata)
 	frame:SetFrameLevel(anchor:GetFrameLevel() + 10)
 
 	local rowsEnabled = options.Icons.Rows and options.Icons.Rows > 1
