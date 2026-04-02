@@ -36,7 +36,6 @@ Utils\FontUtil.lua
 Utils\ModuleUtil.lua
 Utils\SlotDistribution.lua
 Utils\WoWEx.lua
-Utils\PvPTalentSync.lua
 
 Core\MiniFramework.lua
 Core\InstanceOptions.lua
@@ -44,7 +43,6 @@ Core\IconSlotContainer.lua
 Core\UnitAuraWatcher.lua
 Core\Inspector.lua
 Core\Frames.lua
-Core\FriendlyCooldownTalents.lua
 Core\TrinketsTracker.lua
 
 Modules\CrowdControlModule.lua
@@ -55,7 +53,13 @@ Modules\NameplatesModule.lua
 Modules\KickTimerModule.lua
 Modules\FriendlyIndicatorModule.lua
 Modules\PrecogGuesserModule.lua
-Modules\FriendlyCooldownTrackerModule.lua
+Modules\FriendlyCooldowns\PvPTalentSync.lua
+Modules\FriendlyCooldowns\Talents.lua
+Modules\FriendlyCooldowns\Rules.lua
+Modules\FriendlyCooldowns\Observer.lua
+Modules\FriendlyCooldowns\Brain.lua
+Modules\FriendlyCooldowns\Display.lua
+Modules\FriendlyCooldowns\Module.lua
 Modules\TestModeManager.lua
 
 Config\Migrator.lua

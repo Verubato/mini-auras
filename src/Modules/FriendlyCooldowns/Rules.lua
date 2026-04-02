@@ -1,0 +1,958 @@
+---@type string, Addon
+local _, addon = ...
+
+addon.Modules.FriendlyCooldowns = addon.Modules.FriendlyCooldowns or {}
+
+-- Rules keyed first by spec ID (more precise), then by class token (fallback).
+-- Each rule carries flags for which aura type(s) it can match:
+--   BigDefensive = true      matches BIG_DEFENSIVE auras from GetDefensiveState()
+--   ExternalDefensive = true matches EXTERNAL_DEFENSIVE auras from GetDefensiveState()
+--   Important = true         matches IMPORTANT auras from GetImportantState()
+-- A rule may carry multiple flags when a spell is tagged as both (e.g. Paladin Divine Protection).
+--
+-- Paladin:     Holy=65,    Prot=66,      Ret=70
+-- Warrior:     Arms=71,    Fury=72,      Prot=73
+-- Mage:        Arcane=62,  Fire=63,      Frost=64
+-- Hunter:      BM=253,     MM=254,       Survival=255
+-- Priest:      Disc=256,   Holy=257,     Shadow=258
+-- Rogue:       Assassination=259, Outlaw=260, Subtlety=261
+-- Death Knight: Blood=250, Frost=251,    Unholy=252
+-- Shaman:      Elem=262,   Enh=263,      Resto=264
+-- Warlock:     Affliction=265, Demonology=266, Destruction=267
+-- Monk:        Brew=268,   WW=269,       MW=270
+-- Demon Hunter: Havoc=577, Vengeance=581, Devourer=1480
+-- Druid:       Balance=102,Feral=103,    Guardian=104, Resto=105
+-- Evoker:      Devas=1467, Preserv=1468, Aug=1473
+
+-- SpellId maps a rule to the canonical spell ID used for talent CDR lookups.
+
+---@class FriendlyCooldownRules
+local rules = {
+	BySpec = {
+		[65] = { -- Holy Paladin
+			{
+				BuffDuration = 12,
+				Cooldown = 120,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 31884,
+				MinDuration = true,
+				ExcludeIfTalent = 216331,
+			}, -- Avenging Wrath (hidden if Avenging Crusader talented)
+			{
+				BuffDuration = 10,
+				Cooldown = 60,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 216331,
+				MinDuration = true,
+				RequiresTalent = 216331,
+			}, -- Avenging Crusader
+			{
+				BuffDuration = 8,
+				Cooldown = 300,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				CanCancelEarly = true,
+				SpellId = 642,
+			}, -- Divine Shield
+			{
+				BuffDuration = 8,
+				Cooldown = 60,
+				BigDefensive = true,
+				Important = true,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 498,
+			}, -- Divine Protection
+			{
+				BuffDuration = 10,
+				Cooldown = 300,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 204018,
+				RequiresTalent = 5692,
+			}, -- Blessing of Spellwarding (replaces BoP)
+			{
+				BuffDuration = 10,
+				Cooldown = 300,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 1022,
+				ExcludeIfTalent = 5692,
+			}, -- Blessing of Protection
+			{
+				BuffDuration = 12,
+				Cooldown = 120,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				RequiresEvidence = "Cast",
+				SpellId = 6940,
+			}, -- Blessing of Sacrifice
+		},
+		[66] = { -- Protection Paladin
+			{
+				BuffDuration = 25,
+				Cooldown = 120,
+				Important = true,
+				ExternalDefensive = false,
+				BigDefensive = false,
+				MinDuration = true,
+				RequiresEvidence = "Cast",
+				SpellId = 31884,
+				ExcludeIfTalent = 389539,
+			}, -- Avenging Wrath (hidden if Sentinel talented)
+			{
+				BuffDuration = 20,
+				Cooldown = 120,
+				Important = true,
+				ExternalDefensive = false,
+				BigDefensive = false,
+				MinDuration = true,
+				RequiresEvidence = "Cast",
+				SpellId = 389539,
+				RequiresTalent = 389539,
+				ExcludeIfTalent = 31884,
+			}, -- Sentinel (hidden if Avenging Wrath talented)
+			{
+				BuffDuration = 8,
+				Cooldown = 300,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				CanCancelEarly = true,
+				SpellId = 642,
+			}, -- Divine Shield
+			{
+				BuffDuration = 8,
+				Cooldown = 90,
+				BigDefensive = true,
+				Important = true,
+				ExternalDefensive = false,
+				SpellId = 31850,
+				RequiresEvidence = "Cast",
+			}, -- Ardent Defender
+			{
+				BuffDuration = 8,
+				Cooldown = 180,
+				BigDefensive = true,
+				Important = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 86659,
+			}, -- Guardian of Ancient Kings
+			{
+				BuffDuration = 10,
+				Cooldown = 300,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 204018,
+				RequiresTalent = 5692,
+			}, -- Blessing of Spellwarding (replaces BoP)
+			{
+				BuffDuration = 10,
+				Cooldown = 300,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 1022,
+				ExcludeIfTalent = 5692,
+			}, -- Blessing of Protection
+			{
+				BuffDuration = 12,
+				Cooldown = 120,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				RequiresEvidence = "Cast",
+				SpellId = 6940,
+			}, -- Blessing of Sacrifice
+		},
+		[70] = { -- Retribution Paladin
+			{
+				BuffDuration = 24,
+				Cooldown = 60,
+				Important = true,
+				ExternalDefensive = false,
+				BigDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 31884,
+				ExcludeIfTalent = 458359,
+			}, -- Avenging Wrath (hidden if Radiant Glory talented)
+			{
+				BuffDuration = 8,
+				Cooldown = 300,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				CanCancelEarly = true,
+				SpellId = 642,
+			}, -- Divine Shield
+			{
+				BuffDuration = 8,
+				Cooldown = 90,
+				Important = true,
+				ExternalDefensive = false,
+				BigDefensive = false,
+				RequiresEvidence = { "Cast", "Shield" },
+				SpellId = 403876,
+			}, -- Divine Protection (90s base for Ret)
+			{
+				BuffDuration = 10,
+				Cooldown = 300,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 204018,
+				RequiresTalent = 5692,
+			}, -- Blessing of Spellwarding (replaces BoP)
+			{
+				BuffDuration = 10,
+				Cooldown = 300,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 1022,
+				ExcludeIfTalent = 5692,
+			}, -- Blessing of Protection
+			{
+				BuffDuration = 12,
+				Cooldown = 120,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				RequiresEvidence = "Cast",
+				SpellId = 6940,
+			}, -- Blessing of Sacrifice
+		},
+		[62] = {
+			{
+				BuffDuration = 15,
+				Cooldown = 90,
+				Important = true,
+				ExternalDefensive = false,
+				BigDefensive = false,
+				RequiresEvidence = "Cast",
+				MinDuration = true,
+				SpellId = 365350,
+			},
+		}, -- Arcane Mage: Arcane Surge
+		[63] = {
+			{
+				BuffDuration = 10,
+				Cooldown = 120,
+				Important = true,
+				ExternalDefensive = false,
+				BigDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 190319,
+				MinDuration = true,
+			},
+		}, -- Fire Mage: Combustion
+		[71] = { -- Arms Warrior
+			{
+				BuffDuration = 8,
+				Cooldown = 120,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				SpellId = 118038,
+			}, -- Die by the Sword
+			{
+				BuffDuration = 20,
+				Cooldown = 90,
+				Important = true,
+				ExternalDefensive = false,
+				BigDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 107574,
+				MinDuration = true,
+				RequiresTalent = 107574,
+			}, -- Avatar
+		},
+		[72] = { -- Fury Warrior
+			{
+				BuffDuration = 8,
+				Cooldown = 108,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				SpellId = 184364,
+				RequiresTalent = 184364,
+			}, -- Enraged Regeneration
+			{
+				BuffDuration = 11,
+				Cooldown = 108,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				SpellId = 184364,
+				RequiresTalent = 184364,
+			}, -- Enraged Regeneration + duration talent
+			{
+				BuffDuration = 20,
+				Cooldown = 90,
+				Important = true,
+				ExternalDefensive = false,
+				BigDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 107574,
+				MinDuration = true,
+				RequiresTalent = 107574,
+			}, -- Avatar
+		},
+		[73] = { -- Protection Warrior
+			{
+				BuffDuration = 8,
+				Cooldown = 180,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				SpellId = 871,
+			}, -- Shield Wall
+			{
+				BuffDuration = 20,
+				Cooldown = 90,
+				Important = true,
+				ExternalDefensive = false,
+				BigDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 107574,
+				MinDuration = true,
+				RequiresTalent = 107574,
+			}, -- Avatar
+		},
+		[251] = {
+			{
+				BuffDuration = 12,
+				Cooldown = 45,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				MinDuration = true,
+				SpellId = 51271,
+			},
+		}, -- Frost Death Knight: Pillar of Frost
+		[250] = { -- Blood Death Knight
+			{
+				BuffDuration = 10,
+				Cooldown = 90,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				SpellId = 55233,
+			}, -- Vampiric Blood
+			{
+				BuffDuration = 12,
+				Cooldown = 90,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				SpellId = 55233,
+			}, -- Vampiric Blood + Goreringers Anguish rank 1 (+2s)
+			{
+				BuffDuration = 14,
+				Cooldown = 90,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				SpellId = 55233,
+			}, -- Vampiric Blood + Goreringers Anguish rank 2 (+4s)
+		},
+		[256] = {
+			{
+				BuffDuration = 8,
+				Cooldown = 180,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				RequiresEvidence = "Cast",
+				SpellId = 33206,
+			},
+		}, -- Discipline Priest: Pain Suppression
+		[257] = { -- Holy Priest
+			{
+				BuffDuration = 10,
+				Cooldown = 180,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 47788,
+			}, -- Guardian Spirit
+			{
+				BuffDuration = 5,
+				Cooldown = 180,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 64843,
+			}, -- Divine Hymn
+		},
+		[258] = { -- Shadow Priest
+			{
+				BuffDuration = 6,
+				Cooldown = 120,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 47585,
+			}, -- Dispersion
+			{
+				BuffDuration = 20,
+				Cooldown = 120,
+				Important = true,
+				ExternalDefensive = false,
+				BigDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 228260,
+			}, -- Voidform
+		},
+		[102] = {
+			{
+				BuffDuration = 20,
+				Cooldown = 180,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				MinDuration = true,
+				SpellId = 102560,
+			},
+		}, -- Balance Druid: Incarnation: Chosen of Elune
+		[103] = {
+			{
+				BuffDuration = 15,
+				Cooldown = 180,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				MinDuration = true,
+				SpellId = 106951,
+				RequiresTalent = 106951,
+				ExcludeIfTalent = 102543,
+			}, -- Feral Druid: Berserk (hidden if Incarnation talented)
+			{
+				BuffDuration = 20,
+				Cooldown = 180,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 102543,
+				RequiresTalent = 102543,
+			}, -- Feral Druid: Incarnation: Avatar of Ashamane (shown when 102543 talented; Berserk self-excludes via ExcludeIfTalent=102543)
+		},
+		[104] = {
+			{
+				BuffDuration = 30,
+				Cooldown = 180,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 102558,
+			},
+		}, -- Guardian Druid: Incarnation: Guardian of Ursoc
+		[105] = {
+			{
+				BuffDuration = 12,
+				Cooldown = 90,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				RequiresEvidence = "Cast",
+				SpellId = 102342,
+			},
+		}, -- Restoration Druid: Ironbark
+		[268] = { -- Brewmaster Monk
+			{
+				BuffDuration = 25,
+				Cooldown = 120,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 132578,
+			}, -- Invoke Niuzao, the Black Ox
+			{
+				BuffDuration = 15,
+				Cooldown = 360,
+				BigDefensive = true,
+				Important = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 115203,
+			}, -- Fortifying Brew
+		},
+		[270] = {
+			{
+				BuffDuration = 12,
+				Cooldown = 120,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 116849,
+			},
+		}, -- Mistweaver Monk: Life Cocoon
+		[577] = { -- Havoc Demon Hunter
+			{
+				BuffDuration = 10,
+				Cooldown = 60,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				SpellId = 198589,
+			}, -- Blur
+		},
+		[1480] = { -- Devourer Demon Hunter
+			{
+				BuffDuration = 10,
+				Cooldown = 60,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = false,
+				RequiresEvidence = "Cast",
+				SpellId = 198589,
+			}, -- Blur
+		},
+		[581] = { -- Vengeance Demon Hunter
+			{
+				BuffDuration = 12,
+				Cooldown = 60,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = false,
+				MinDuration = true,
+				RequiresEvidence = "Cast",
+				SpellId = 204021,
+			}, -- Fiery Brand
+		},
+		[254] = {
+			{
+				BuffDuration = 15,
+				Cooldown = 120,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 288613,
+			}, -- Marksmanship Hunter: Trueshot
+			{
+				BuffDuration = 17,
+				Cooldown = 120,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 288613,
+			}, -- Marksmanship Hunter: Trueshot +2s
+		},
+		[255] = { -- Survival Hunter
+			{
+				BuffDuration = 8,
+				Cooldown = 90,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 1250646,
+			}, -- Takedown
+			{
+				BuffDuration = 10,
+				Cooldown = 90,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 1250646,
+			}, -- Takedown +2s
+		},
+		[261] = {
+			{
+				BuffDuration = 16,
+				Cooldown = 90,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 121471,
+			}, -- Subtlety Rogue: Shadow Blades
+			{
+				BuffDuration = 18,
+				Cooldown = 90,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 121471,
+			}, -- Shadow Blades +2s (set bonus)
+			{
+				BuffDuration = 20,
+				Cooldown = 90,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 121471,
+			}, -- Shadow Blades +4s (set bonus)
+		},
+		[1467] = {
+			{
+				BuffDuration = 18,
+				Cooldown = 120,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				MinDuration = true,
+				SpellId = 375087,
+			},
+		}, -- Devastation Evoker: Dragonrage
+		[1468] = {
+			{
+				BuffDuration = 8,
+				Cooldown = 60,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				RequiresEvidence = "Cast",
+				SpellId = 357170,
+			},
+		}, -- Preservation Evoker: Time Dilation
+		[1473] = {
+			{
+				BuffDuration = 13.4,
+				Cooldown = 90,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				MinDuration = true,
+				SpellId = 363916,
+			},
+		}, -- Augmentation Evoker: Obsidian Scales
+	},
+	ByClass = {
+		PALADIN = {
+			{
+				BuffDuration = 8,
+				Cooldown = 300,
+				BigDefensive = true,
+				Important = true,
+				ExternalDefensive = false,
+				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				CanCancelEarly = true,
+				SpellId = 642,
+			}, -- Divine Shield
+			{
+				BuffDuration = 8,
+				Cooldown = 25,
+				Important = true,
+				ExternalDefensive = false,
+				BigDefensive = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 1044,
+			}, -- Blessing of Freedom
+			{
+				BuffDuration = 10,
+				Cooldown = 45,
+				ExternalDefensive = true,
+				Important = false,
+				BigDefensive = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 204018,
+				RequiresTalent = 5692,
+			}, -- Blessing of Spellwarding (replaces BoP)
+			{
+				BuffDuration = 10,
+				Cooldown = 300,
+				ExternalDefensive = true,
+				Important = false,
+				BigDefensive = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 1022,
+				ExcludeIfTalent = 5692,
+			}, -- Blessing of Protection
+		},
+		WARRIOR = {},
+		MAGE = {
+			{
+				BuffDuration = 10,
+				Cooldown = 240,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				CanCancelEarly = true,
+				SpellId = 45438,
+				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				ExcludeIfTalent = 414659,
+			}, -- Ice Block
+			{
+				BuffDuration = 6,
+				Cooldown = 240,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				SpellId = 414659,
+				RequiresEvidence = "Cast",
+				RequiresTalent = 414659,
+			}, -- Ice Cold (replaces Ice Block)
+			{
+				BuffDuration = 10,
+				Cooldown = 50,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				CanCancelEarly = true,
+				SpellId = 342246,
+				RequiresEvidence = "Cast",
+			}, -- Alter Time
+		},
+		HUNTER = {
+			{
+				BuffDuration = 8,
+				Cooldown = 180,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				CanCancelEarly = true,
+				SpellId = 186265,
+				RequiresEvidence = { "Cast", "UnitFlags" },
+			}, -- Aspect of the Turtle
+			{
+				BuffDuration = 6,
+				Cooldown = 90,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				MinDuration = true,
+				SpellId = 264735,
+				RequiresEvidence = "Cast",
+			}, -- Survival of the Fittest
+			{
+				BuffDuration = 8,
+				Cooldown = 90,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				MinDuration = true,
+				SpellId = 264735,
+				RequiresEvidence = "Cast",
+			}, -- Survival of the Fittest + Survival of the Fittest talent (+2s)
+		},
+		DRUID = {
+			{
+				BuffDuration = 8,
+				Cooldown = 60,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				SpellId = 22812,
+			}, -- Barkskin
+			{
+				BuffDuration = 12,
+				Cooldown = 60,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				SpellId = 22812,
+			}, -- Barkskin + Improved Barkskin (+4s)
+		},
+		ROGUE = {
+			{
+				BuffDuration = 10,
+				Cooldown = 120,
+				Important = true,
+				ExternalDefensive = false,
+				BigDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 5277,
+			}, -- Evasion
+			{
+				BuffDuration = 5,
+				Cooldown = 120,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = false,
+				RequiresEvidence = "Cast",
+				SpellId = 31224,
+			}, -- Cloak of Shadows
+		},
+		DEATHKNIGHT = {
+			{
+				BuffDuration = 5,
+				Cooldown = 60,
+				BigDefensive = true,
+				Important = true,
+				ExternalDefensive = false,
+				CanCancelEarly = true,
+				SpellId = 48707,
+				RequiresEvidence = { "Cast", "Shield" },
+			}, -- Anti-Magic Shell (BigDefensive, without Spellwarding)
+			{
+				BuffDuration = 7,
+				Cooldown = 60,
+				BigDefensive = true,
+				Important = true,
+				ExternalDefensive = false,
+				CanCancelEarly = true,
+				SpellId = 48707,
+				RequiresEvidence = { "Cast", "Shield" },
+			}, -- Anti-Magic Shell + Anti-Magic Barrier (+40%) (BigDefensive, without Spellwarding)
+			{
+				BuffDuration = 8,
+				Cooldown = 120,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				SpellId = 48792,
+			}, -- Icebound Fortitude
+			{
+				BuffDuration = 5,
+				Cooldown = 60,
+				BigDefensive = false,
+				Important = true,
+				ExternalDefensive = false,
+				CanCancelEarly = true,
+				SpellId = 48707,
+				RequiresEvidence = { "Cast", "Shield" },
+			}, -- Anti-Magic Shell (with Spellwarding)
+			{
+				BuffDuration = 7,
+				Cooldown = 60,
+				BigDefensive = false,
+				Important = true,
+				ExternalDefensive = false,
+				CanCancelEarly = true,
+				SpellId = 48707,
+				RequiresEvidence = { "Cast", "Shield" },
+			}, -- Anti-Magic Shell + Anti-Magic Barrier (+40%) (with Spellwarding)
+		},
+		DEMONHUNTER = {},
+		MONK = {
+			{
+				BuffDuration = 15,
+				Cooldown = 120,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = false,
+				RequiresEvidence = "Cast",
+				SpellId = 115203,
+			},
+		}, -- Fortifying Brew
+		SHAMAN = {
+			{
+				BuffDuration = 12,
+				Cooldown = 120,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				SpellId = 108271,
+			},
+		}, -- Astral Shift
+		WARLOCK = {
+			{
+				BuffDuration = 8,
+				Cooldown = 180,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				SpellId = 104773,
+			},
+		}, -- Unending Resolve
+		PRIEST = {
+			{
+				BuffDuration = 10,
+				Cooldown = 90,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				SpellId = 19236,
+			}, -- Desperate Prayer
+		},
+		EVOKER = {
+			{
+				BuffDuration = 12,
+				Cooldown = 90,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				RequiresEvidence = "Cast",
+				MinDuration = true,
+				SpellId = 363916,
+			}, -- Obsidian Scales
+		},
+	},
+}
+
+-- Spell IDs treated as offensive cooldowns for the ShowOffensiveCooldowns option.
+local offensiveSpellIds = {
+	[375087] = true, -- Dragonrage
+	[107574] = true, -- Avatar
+	[121471] = true, -- Shadow Blades
+	[31884] = true, -- Avenging Wrath
+	[216331] = true, -- Avenging Crusader
+	[190319] = true, -- Combustion
+	[288613] = true, -- Trueshot
+	[228260] = true, -- Voidform
+	[102560] = true, -- Incarnation: Chosen of Elune (Balance)
+	[102543] = true, -- Incarnation: Avatar of Ashamane (Feral)
+	[106951] = true, -- Berserk (Feral, same choice node as Incarnation)
+	[102558] = true, -- Incarnation: Guardian of Ursoc (Guardian)
+	[1250646] = true, -- Takedown
+}
+
+rules.OffensiveSpellIds = offensiveSpellIds
+
+addon.Modules.FriendlyCooldowns.Rules = rules

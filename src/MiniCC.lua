@@ -189,6 +189,14 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field FriendlyCooldownTalents FriendlyCooldownTalents
 ---@field TrinketsTracker TrinketsTracker
 
+---@class FriendlyCooldowns
+---@field Talents FriendlyCooldownTalents
+---@field Rules FriendlyCooldownRules
+---@field Observer FriendlyCooldownObserver
+---@field Brain FriendlyCooldownBrain
+---@field Display FriendlyCooldownDisplay
+---@field Module FriendlyCooldownTrackerModule
+
 ---@class Modules
 ---@field TestModeManager TestModeManager
 ---@field PortraitModule PortraitModule
@@ -200,6 +208,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field FriendlyIndicatorModule FriendlyIndicatorModule
 ---@field PrecogGuesserModule PrecogGuesserModule
 ---@field FriendlyCooldownTrackerModule FriendlyCooldownTrackerModule
+---@field FriendlyCooldowns FriendlyCooldowns
 
 ---@class IModule
 ---@field Init fun(self: IModule) Initialises the module to be ready for use.

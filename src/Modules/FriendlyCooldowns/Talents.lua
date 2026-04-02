@@ -1,10 +1,14 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local inspector = addon.Core.Inspector
+
+addon.Modules.FriendlyCooldowns = addon.Modules.FriendlyCooldowns or {}
 
 ---@class FriendlyCooldownTalents
 local M = {}
-addon.Core.FriendlyCooldownTalents = M
+addon.Modules.FriendlyCooldowns.Talents = M
+addon.Core.FriendlyCooldownTalents = M -- backward compat
 
 -- playerName -> talentRanks (spellId -> rank purchased)
 local unitTalentRanks = {}
@@ -12,6 +16,9 @@ local unitTalentRanks = {}
 local unitTalentSpecId = {}
 -- playerName -> set of active PvP talent IDs ({ [talentId] = true })
 local unitPvPTalentIds = {}
+-- (classToken .. "_" .. specId) -> merged default talent ranks table
+-- The defaults are static constants so this never needs invalidation.
+local defaultTalentRanksCache = {}
 
 local db
 
@@ -123,17 +130,9 @@ local SpecCooldownModifiers = {
 	},
 
 	-- Holy Priest: Seraphic Crescendo -60s
-	[257] = { [419110] = { { { SpellId = 64843, Amount = -60 } } } },
-
-	-- Holy Paladin
-	[65] = {
-		-- Blessing of Sacrifice -15s
-		[384820] = { { { SpellId = 6940, Amount = -15 } } },
-		-- Call of the Righteous: AW -15s/-30s, AC -7.5s/-15s
-		[1241511] = {
-			{ { SpellId = 31884, Amount = -15 }, { SpellId = 216331, Amount = -7.5 } },
-			{ { SpellId = 31884, Amount = -30 }, { SpellId = 216331, Amount = -15 } },
-		},
+	[257] = {
+		[419110] = { { { SpellId = 64843, Amount = -60 } } }, -- Holy Priest: Divine Hymn -60s
+		[200209] = { { { SpellId = 47788, Amount = 60, PostBuff = true } } }, -- Guardian Angel: sets post-buff CD to 60s
 	},
 
 	-- Protection Paladin
@@ -149,7 +148,20 @@ local SpecCooldownModifiers = {
 			},
 		},
 		-- Righteous Protector: Avenging Wrath/Sentinel -50% cooldown
-		[204074] = { { { SpellId = 31884, Amount = -50, Mult = true }, { SpellId = 389539, Amount = -50, Mult = true } } },
+		[204074] = {
+			{ { SpellId = 31884, Amount = -50, Mult = true }, { SpellId = 389539, Amount = -50, Mult = true } },
+		},
+	},
+
+	-- Holy Paladin
+	[65] = {
+		-- Blessing of Sacrifice -15s
+		[384820] = { { { SpellId = 6940, Amount = -15 } } },
+		-- Call of the Righteous: AW -15s/-30s, AC -7.5s/-15s
+		[1241511] = {
+			{ { SpellId = 31884, Amount = -15 }, { SpellId = 216331, Amount = -7.5 } },
+			{ { SpellId = 31884, Amount = -30 }, { SpellId = 216331, Amount = -15 } },
+		},
 	},
 
 	-- Retribution Paladin: Blessing of Sacrifice -60s
@@ -157,12 +169,6 @@ local SpecCooldownModifiers = {
 
 	-- Shadow Priest: Dispersion -30s
 	[258] = { [288733] = { { { SpellId = 47585, Amount = -30 } } } },
-
-	-- Holy Priest: Divine Hymn -60s
-	[257] = {
-		[419110] = { { { SpellId = 64843, Amount = -60 } } }, -- Holy Priest: Divine Hymn -60s
-		[200209] = { { { SpellId = 47788, Amount = 60, PostBuff = true } } }, -- Guardian Angel: sets post-buff CD to 60s
-	},
 
 	-- Protection Warrior: Shield Wall -60s
 	[73] = { [397103] = { { { SpellId = 871, Amount = -60 } } } },
@@ -204,7 +210,9 @@ local ClassDurationModifiers = {
 local SpecDurationModifiers = {
 	-- Protection Paladin: Righteous Protector: Avenging Wrath/Sentinel -40% duration
 	[66] = {
-		[204074] = { { { SpellId = 31884, Amount = -40, Mult = true }, { SpellId = 389539, Amount = -40, Mult = true } } },
+		[204074] = {
+			{ { SpellId = 31884, Amount = -40, Mult = true }, { SpellId = 389539, Amount = -40, Mult = true } },
+		},
 	},
 	-- Blood Death Knight: Vampiric Blood +2s / +4s
 	[250] = {
@@ -297,6 +305,8 @@ local SpecDefaultTalentRanks = {
 
 -- specId -> { [talentNodeId_choiceIndex] = { spellId, maxRank, type, subTreeID } }
 local talentMapCache = {}
+
+local talentCallbacks = {}
 
 local function BuildTalentToSpellMap(specId)
 	if talentMapCache[specId] then
@@ -444,10 +454,82 @@ local function GetEffectiveTalentRanks(playerName, classToken, specId)
 	if not classDef and not specDef then
 		return nil
 	end
+	local cacheKey = (classToken or "") .. "_" .. (specId or "")
+	local cached = defaultTalentRanksCache[cacheKey]
+	if cached then
+		return cached
+	end
 	local merged = {}
-	if classDef then for k, v in pairs(classDef) do merged[k] = v end end
-	if specDef then for k, v in pairs(specDef) do merged[k] = v end end
+	if classDef then
+		for k, v in pairs(classDef) do
+			merged[k] = v
+		end
+	end
+	if specDef then
+		for k, v in pairs(specDef) do
+			merged[k] = v
+		end
+	end
+	defaultTalentRanksCache[cacheKey] = merged
 	return merged
+end
+
+local function FireTalentCallbacks(playerName)
+	for _, fn in ipairs(talentCallbacks) do
+		fn(playerName)
+	end
+end
+
+---Called by LibSpecialization when a group member's spec/talents are known.
+---@param specId number
+---@param playerName string
+---@param talentString string?
+local function OnLibSpecUpdate(specId, playerName, talentString)
+	if not talentString then
+		return
+	end
+	local ranks = GetTalentRanks(specId, talentString)
+	if ranks then
+		local name = playerName:match("^([^%-]+)") or playerName
+		unitTalentRanks[name] = ranks
+		unitTalentSpecId[name] = specId
+		if db then
+			db.TalentCache[name] = { SpecId = specId, TalentString = talentString, Time = time() }
+		end
+		FireTalentCallbacks(name)
+	end
+end
+
+local function UpdateLocalPlayer()
+	if not (GetSpecialization and GetSpecializationInfo) then
+		return
+	end
+	local specIdx = GetSpecialization()
+	if not specIdx then
+		return
+	end
+	local specId = GetSpecializationInfo(specIdx)
+	if not specId then
+		return
+	end
+	local configId = C_ClassTalents and C_ClassTalents.GetActiveConfigID and C_ClassTalents.GetActiveConfigID()
+	if not configId then
+		return
+	end
+	local talentString = C_Traits and C_Traits.GenerateImportString and C_Traits.GenerateImportString(configId)
+	if not talentString then
+		return
+	end
+	local playerName = UnitNameUnmodified("player")
+	local ranks = GetTalentRanks(specId, talentString)
+	if ranks then
+		unitTalentRanks[playerName] = ranks
+		unitTalentSpecId[playerName] = specId
+		if db then
+			db.TalentCache[playerName] = { SpecId = specId, TalentString = talentString, Time = time() }
+		end
+		FireTalentCallbacks(playerName)
+	end
 end
 
 ---Returns the effective cooldown for abilityId after applying known talent modifiers.
@@ -631,6 +713,16 @@ end
 ---@param unit string
 ---@return number|nil
 function M:GetUnitSpecId(unit)
+	-- FrameSort is most authoritative (real-time); inspector is the fallback real-time source;
+	-- unitTalentSpecId covers cross-realm players and situations where the above return nil.
+	local fs = FrameSortApi and FrameSortApi.v3
+	if fs and fs.Inspector then
+		return fs.Inspector:GetUnitSpecId(unit)
+	end
+	local specId = inspector:GetUnitSpecId(unit)
+	if specId then
+		return specId
+	end
 	local playerName = UnitNameUnmodified(unit)
 	if not playerName or issecretvalue(playerName) then
 		return nil
@@ -638,71 +730,11 @@ function M:GetUnitSpecId(unit)
 	return unitTalentSpecId[playerName]
 end
 
-local talentCallbacks = {}
-
 ---Registers a callback to be fired when any unit's talent data is updated.
 ---The callback receives the player name (without realm) as its argument.
 ---@param fn fun(playerName: string)
 function M:RegisterTalentCallback(fn)
 	talentCallbacks[#talentCallbacks + 1] = fn
-end
-
-local function FireTalentCallbacks(playerName)
-	for _, fn in ipairs(talentCallbacks) do
-		fn(playerName)
-	end
-end
-
----Called by LibSpecialization when a group member's spec/talents are known.
----@param specId number
----@param playerName string
----@param talentString string?
-local function OnLibSpecUpdate(specId, playerName, talentString)
-	if not talentString then
-		return
-	end
-	local ranks = GetTalentRanks(specId, talentString)
-	if ranks then
-		local name = playerName:match("^([^%-]+)") or playerName
-		unitTalentRanks[name] = ranks
-		unitTalentSpecId[name] = specId
-		if db then
-			db.TalentCache[name] = { SpecId = specId, TalentString = talentString, Time = time() }
-		end
-		FireTalentCallbacks(name)
-	end
-end
-
-local function UpdateLocalPlayer()
-	if not (GetSpecialization and GetSpecializationInfo) then
-		return
-	end
-	local specIdx = GetSpecialization()
-	if not specIdx then
-		return
-	end
-	local specId = GetSpecializationInfo(specIdx)
-	if not specId then
-		return
-	end
-	local configId = C_ClassTalents and C_ClassTalents.GetActiveConfigID and C_ClassTalents.GetActiveConfigID()
-	if not configId then
-		return
-	end
-	local talentString = C_Traits and C_Traits.GenerateImportString and C_Traits.GenerateImportString(configId)
-	if not talentString then
-		return
-	end
-	local playerName = UnitNameUnmodified("player")
-	local ranks = GetTalentRanks(specId, talentString)
-	if ranks then
-		unitTalentRanks[playerName] = ranks
-		unitTalentSpecId[playerName] = specId
-		if db then
-			db.TalentCache[playerName] = { SpecId = specId, TalentString = talentString, Time = time() }
-		end
-		FireTalentCallbacks(playerName)
-	end
 end
 
 function M:Refresh() end
@@ -760,7 +792,7 @@ function M:Init()
 	frame:RegisterEvent("PLAYER_LOGIN")
 
 	-- Receive PvP talent data from group members via PvPTalentSync.
-	addon.Utils.PvPTalentSync:RegisterCallback(function(playerName, pvpTalentIds)
+	addon.Modules.FriendlyCooldowns.PvPTalentSync:RegisterCallback(function(playerName, pvpTalentIds)
 		local name = playerName:match("^([^%-]+)") or playerName
 		if pvpTalentIds then
 			local ids = {}
@@ -782,6 +814,7 @@ end
 
 ---@class FriendlyCooldownTalents
 ---@field Init fun(self: FriendlyCooldownTalents)
+---@field Refresh fun(self: FriendlyCooldownTalents)
 ---@field GetUnitCooldown fun(self: FriendlyCooldownTalents, unit: string, specId: number|nil, classToken: string, abilityId: number, baseCooldown: number, measuredDuration: number?): number
 ---@field GetUnitBuffDuration fun(self: FriendlyCooldownTalents, unit: string, specId: number|nil, classToken: string, abilityId: number, baseDuration: number): number
 ---@field GetUnitSpecId fun(self: FriendlyCooldownTalents, unit: string): number|nil

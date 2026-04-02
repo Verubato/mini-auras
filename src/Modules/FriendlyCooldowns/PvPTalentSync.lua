@@ -1,9 +1,12 @@
 ---@type string, Addon
 local _, addon = ...
 
+addon.Modules.FriendlyCooldowns = addon.Modules.FriendlyCooldowns or {}
+
 ---@class PvPTalentSync
 local M = {}
-addon.Utils.PvPTalentSync = M
+addon.Modules.FriendlyCooldowns.PvPTalentSync = M
+addon.Utils.PvPTalentSync = M -- backward compat
 
 local prefix = "MiniCC:Talents"
 local throttleTimer = 3
@@ -33,18 +36,26 @@ local function GetLocalPvPTalentIds()
 end
 
 local function IdsToMessage(ids)
-	if not ids then return "" end
+	if not ids then
+		return ""
+	end
 	local parts = {}
-	for i, id in ipairs(ids) do parts[i] = tostring(id) end
+	for i, id in ipairs(ids) do
+		parts[i] = tostring(id)
+	end
 	return table.concat(parts, ",")
 end
 
 local function MessageToIds(msg)
-	if not msg or msg == "" then return nil end
+	if not msg or msg == "" then
+		return nil
+	end
 	local ids = {}
 	for part in msg:gmatch("[^,]+") do
 		local id = tonumber(part)
-		if id then ids[#ids + 1] = id end
+		if id then
+			ids[#ids + 1] = id
+		end
 	end
 	return #ids > 0 and ids or nil
 end
@@ -138,8 +149,12 @@ frame:SetScript("OnEvent", function(_, event, p, msg, channel, sender)
 		-- Broadcast updated talents and notify local callbacks.
 		FireCallbacks(pName, GetLocalPvPTalentIds())
 		if IsInGroup() then
-			if IsInGroup(2) then PrepareForInstance() end
-			if IsInGroup(1) then PrepareForGroup() end
+			if IsInGroup(2) then
+				PrepareForInstance()
+			end
+			if IsInGroup(1) then
+				PrepareForGroup()
+			end
 		end
 	elseif event == "PLAYER_LOGIN" then
 		M:RequestSync()
