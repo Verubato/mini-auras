@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.1
+
+Blizzard party frames strata fix for friendly cooldowns.
+
 ## 3.3.0
 
 - Added Spells selection screens so you can select which spells are tracked.
