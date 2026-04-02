@@ -76,7 +76,7 @@ end
 
 local function CreateContainer(unitFrame, portrait)
 	-- Only 1 slot, multiple layers; no border for portrait icons
-	local container = iconSlotContainer:New(unitFrame, 1, 0, 0, nil, true)
+	local container = iconSlotContainer:New(unitFrame, 1, 0, 0, nil, true, "Portraits")
 
 	-- Position the container over the portrait with inset
 	container.Frame:SetPoint("TOPLEFT", portrait, "TOPLEFT", 2, -2)

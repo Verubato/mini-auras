@@ -160,7 +160,7 @@ local function EnsureWatcher(anchor, unit)
 		local count = options.Icons.Count or 5
 		local size = tonumber(options.Icons.Size) or (isPet and 24 or 32)
 		local spacing = db.IconSpacing or 2
-		local container = iconSlotContainer:New(UIParent, count, size, spacing, "CC")
+		local container = iconSlotContainer:New(UIParent, count, size, spacing, "CC", nil, "CC")
 		local watcher = unitAuraWatcher:New(unit, nil, { CC = true })
 
 		entry = {

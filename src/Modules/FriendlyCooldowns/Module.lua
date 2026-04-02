@@ -91,7 +91,7 @@ local function EnsureEntry(anchor, unit)
 		local size = tonumber(anchorOptions.Icons.Size) or 32
 		local maxIcons = tonumber(anchorOptions.Icons.MaxIcons) or 3
 		-- noBorder = true: cooldown icons don't need debuff-style borders
-		local container = iconSlotContainer:New(UIParent, maxIcons, size, db.IconSpacing or 2, "Friendly CDs", true)
+		local container = iconSlotContainer:New(UIParent, maxIcons, size, db.IconSpacing or 2, "Friendly CDs", true, "Friendly CDs")
 
 		entry = {
 			Anchor = anchor,

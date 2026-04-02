@@ -686,7 +686,7 @@ function M:Init()
 	cachedTTSImportantEnabled = options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
 	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
 
-	container = iconSlotContainer:New(UIParent, count, size, db.IconSpacing or 2, "Alerts")
+	container = iconSlotContainer:New(UIParent, count, size, db.IconSpacing or 2, "Alerts", nil, "Alerts")
 
 	local initialRelativeTo = _G[options.RelativeTo] or UIParent
 	container.Frame:SetPoint(

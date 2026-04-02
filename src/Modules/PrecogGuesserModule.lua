@@ -238,7 +238,7 @@ function M:Init()
 	end)
 
 	local iconSize = tonumber(options.Icons.Size) or 40
-	container = iconSlotContainer:New(anchor, 1, iconSize, db.IconSpacing or 2, "Precognition")
+	container = iconSlotContainer:New(anchor, 1, iconSize, db.IconSpacing or 2, "Precognition", nil, "Precognition")
 	container.Frame:SetPoint("CENTER", anchor, "CENTER", 0, 0)
 	container.Frame:Show()
 

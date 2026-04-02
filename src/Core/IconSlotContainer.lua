@@ -392,8 +392,9 @@ end
 ---@param spacing number between slots (default: 2)
 ---@param groupName string? Masque sub-group name (e.g. "CC", "Trinkets"). Omit to skip Masque.
 ---@param noBorder boolean? When true, skips creating the border texture on each layer.
+---@param moduleName string? Overrides the MiniCCModule label set on Frame. Defaults to groupName.
 ---@return IconSlotContainer
-function M:New(parent, count, size, spacing, groupName, noBorder)
+function M:New(parent, count, size, spacing, groupName, noBorder, moduleName)
 	local instance = setmetatable({}, M)
 
 	count = count or 3
@@ -411,7 +412,7 @@ function M:New(parent, count, size, spacing, groupName, noBorder)
 	instance.RowAlignment = nil
 	instance.InvertLayout = false
 	instance.NoBorder = noBorder or false
-	instance.MiniCCModule = groupName or nil
+	instance.Frame.MiniCCModule = moduleName or nil
 	instance.MasqueGroup = Masque and groupName and Masque:Group("MiniCC", groupName) or nil
 
 	instance:SetCount(count)
