@@ -54,10 +54,6 @@ function M:IsPet(unit)
 		return true
 	end
 
-	if UnitIsUnit(unit, "pet") then
-		return true
-	end
-
 	if UnitIsOtherPlayersPet(unit) then
 		return true
 	end
