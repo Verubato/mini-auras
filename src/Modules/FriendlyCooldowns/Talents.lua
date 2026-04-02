@@ -172,6 +172,9 @@ local SpecCooldownModifiers = {
 
 	-- Protection Warrior: Shield Wall -60s
 	[73] = { [397103] = { { { SpellId = 871, Amount = -60 } } } },
+
+	-- Enhancement Shaman: Thorim's Invocation: Ascendance -60s
+	[263] = { [384444] = { { { SpellId = 114051, Amount = -60 } } } },
 }
 
 -- PvP talent cooldown modifiers. No ranks — talent is either active or not.
@@ -225,6 +228,8 @@ local SpecDurationModifiers = {
 	[255] = { [1253830] = { { { SpellId = 1250646, Amount = 2 } } } },
 	-- Fury Warrior: Invigorating Fury: Enraged Regeneration +3s
 	[72] = { [383468] = { { { SpellId = 184364, Amount = 3 } } } },
+	-- Enhancement Shaman: Thorim's Invocation: Doomwinds +2s
+	[263] = { [384444] = { { { SpellId = 384352, Amount = 2 } } } },
 }
 
 -- Assumed talent ranks used when no real talent data is available for a unit.
@@ -303,6 +308,7 @@ local SpecDefaultTalentRanks = {
 	},
 	[263] = {
 		[384352] = 1, -- Doomwinds (Enhancement Shaman): nearly universal
+		[384444] = 1, -- Thorim's Invocation (Enhancement Shaman): nearly universal
 	},
 }
 

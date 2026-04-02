@@ -686,8 +686,19 @@ local rules = {
 				ExcludeIfTalent = { 114051, 378270 },
 			}, -- Doomwinds (hidden if Ascendance or Deeply Rooted Elements talented)
 			{
+				BuffDuration = 12,
+				Cooldown = 60,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 384352,
+				RequiresTalent = 384352,
+				ExcludeIfTalent = { 114051, 378270 },
+			}, -- Doomwinds +2s (Thorim's Invocation)
+			{
 				BuffDuration = 15,
-				Cooldown = 120,
+				Cooldown = 180,
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
