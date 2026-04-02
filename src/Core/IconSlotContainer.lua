@@ -698,19 +698,26 @@ function M:SetSlot(slotIndex, options)
 	end
 
 	slot.SpellId = options.SpellId
-	if options.SpellId and not slot.MouseEnabled then
-		slot.MouseEnabled = true
-		slot.Frame:EnableMouse(true)
-		slot.Frame:SetScript("OnEnter", function(self)
-			if slot.SpellId then
-				GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-				GameTooltip:SetSpellByID(slot.SpellId)
-				GameTooltip:Show()
-			end
-		end)
-		slot.Frame:SetScript("OnLeave", function()
-			GameTooltip:Hide()
-		end)
+	if options.SpellId then
+		if not slot.MouseEnabled then
+			slot.MouseEnabled = true
+			slot.Frame:EnableMouse(true)
+			slot.Frame:SetScript("OnEnter", function(self)
+				if slot.SpellId then
+					GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+					GameTooltip:SetSpellByID(slot.SpellId)
+					GameTooltip:Show()
+				end
+			end)
+			slot.Frame:SetScript("OnLeave", function()
+				GameTooltip:Hide()
+			end)
+		end
+	elseif slot.MouseEnabled then
+		slot.MouseEnabled = false
+		slot.Frame:EnableMouse(false)
+		slot.Frame:SetScript("OnEnter", nil)
+		slot.Frame:SetScript("OnLeave", nil)
 	end
 
 	local layerIndex = options.Layer or 1
