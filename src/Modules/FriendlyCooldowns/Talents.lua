@@ -175,6 +175,9 @@ local SpecCooldownModifiers = {
 
 	-- Enhancement Shaman: Thorim's Invocation: Ascendance -60s
 	[263] = { [384444] = { { { SpellId = 114051, Amount = -60 } } } },
+
+	-- Elemental Shaman: First Ascendant: Ascendance -60s
+	[262] = { [462440] = { { { SpellId = 114050, Amount = -60 } } } },
 }
 
 -- PvP talent cooldown modifiers. No ranks — talent is either active or not.
@@ -230,6 +233,8 @@ local SpecDurationModifiers = {
 	[72] = { [383468] = { { { SpellId = 184364, Amount = 3 } } } },
 	-- Enhancement Shaman: Thorim's Invocation: Doomwinds +2s
 	[263] = { [384444] = { { { SpellId = 384352, Amount = 2 } } } },
+	-- Elemental Shaman: Preeminence: Ascendance +3s
+	[262] = { [462443] = { { { SpellId = 114050, Amount = 3 } } } },
 }
 
 -- Assumed talent ranks used when no real talent data is available for a unit.
@@ -305,6 +310,11 @@ local SpecDefaultTalentRanks = {
 	},
 	[72] = {
 		[383468] = 1, -- Invigorating Fury (Fury Warrior): Enraged Regeneration +3s, nearly universal
+	},
+	[262] = {
+		[114050] = 1, -- Ascendance (Elemental Shaman): nearly universal
+		[462440] = 1, -- First Ascendant (Elemental Shaman): Ascendance -60s, nearly universal
+		[462443] = 1, -- Preeminence (Elemental Shaman): Ascendance +3s, nearly universal
 	},
 	[263] = {
 		[384352] = 1, -- Doomwinds (Enhancement Shaman): nearly universal

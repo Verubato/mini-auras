@@ -673,6 +673,28 @@ local rules = {
 				SpellId = 363916,
 			},
 		}, -- Augmentation Evoker: Obsidian Scales
+		[262] = { -- Elemental Shaman
+			{
+				BuffDuration = 15,
+				Cooldown = 180,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 114050,
+				RequiresTalent = 114050,
+			}, -- Ascendance
+			{
+				BuffDuration = 18,
+				Cooldown = 180,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 114050,
+				RequiresTalent = 114050,
+			}, -- Ascendance +3s (Preeminence)
+		},
 		[263] = { -- Enhancement Shaman
 			{
 				BuffDuration = 10,
@@ -987,6 +1009,7 @@ local offensiveSpellIds = {
 	[1250646] = true, -- Takedown
 	[384352] = true, -- Doomwinds
 	[114051] = true, -- Ascendance (Enhancement)
+	[114050] = true, -- Ascendance (Elemental)
 }
 
 rules.OffensiveSpellIds = offensiveSpellIds
