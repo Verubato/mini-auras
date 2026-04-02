@@ -16,15 +16,20 @@ local castCallbacks = {}
 local shieldCallbacks = {}
 local unitFlagsCallbacks = {}
 local debuffEvidenceCallbacks = {}
+-- Scratch table reused by FireAuraChanged to avoid per-event allocation.
+local candidateUnitsScratch = {}
 
 local function FireAuraChanged(entry, watcher)
-	-- Build candidateUnits from all currently-watched entries.
-	local candidateUnits = {}
+	-- Build candidateUnits from all currently-watched entries, reusing the scratch table.
+	local t = candidateUnitsScratch
+	local n = 0
 	for e in pairs(watched) do
-		candidateUnits[#candidateUnits + 1] = e.Unit
+		n = n + 1
+		t[n] = e.Unit
 	end
+	for i = n + 1, #t do t[i] = nil end -- trim tail from a prior larger raid group
 	for _, fn in ipairs(auraChangedCallbacks) do
-		fn(entry, watcher, candidateUnits)
+		fn(entry, watcher, t)
 	end
 end
 

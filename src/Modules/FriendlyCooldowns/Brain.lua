@@ -42,7 +42,8 @@ local candidateEvidenceScratch = {}
 -- Signature: fn(ruleUnit, cdKey, cdData, detectedFromEntry)
 -- cdData fields: StartTime, Cooldown, Remaining, SpellId, IsOffensive
 local cooldownCallback = nil
--- Callback fired when OnWatcherChanged completes and the display should be updated.
+-- Callback fired when a tracked defensive aura ends and a cooldown is committed,
+-- so the detected entry's display (which may differ from the caster's entry) can update.
 -- Signature: fn(entry)
 local displayCallback = nil
 
@@ -322,15 +323,17 @@ end
 ---@param tracked FcdTrackedAura
 ---@param now number
 ---@param candidateUnits string[]
+---Returns true if a cooldown was committed, false if no rule matched.
 local function OnAuraRemoved(entry, tracked, now, candidateUnits)
 	local measuredDuration = now - tracked.StartTime
 	local rule, ruleUnit = FindBestCandidate(entry, tracked, measuredDuration, candidateUnits)
 
 	if not rule then
-		return
+		return false
 	end
 
 	CommitCooldown(entry, tracked, rule, ruleUnit, measuredDuration)
+	return true
 end
 
 ---Builds a table of current aura instance IDs → { AuraTypes } from the watcher.
@@ -448,6 +451,7 @@ local function OnWatcherChanged(entry, watcher, candidateUnits)
 		newIdsBySignature[sig][#newIdsBySignature[sig] + 1] = id
 	end
 
+	local cooldownCommitted = false
 	for id, tracked in pairs(trackedAuras) do
 		if not currentIds[id] then
 			local sig = AuraTypesSignature(tracked.AuraTypes)
@@ -457,7 +461,9 @@ local function OnWatcherChanged(entry, watcher, candidateUnits)
 				local reassignedId = table.remove(candidates, 1)
 				trackedAuras[reassignedId] = tracked
 			else
-				OnAuraRemoved(entry, tracked, now, candidateUnits)
+				if OnAuraRemoved(entry, tracked, now, candidateUnits) then
+					cooldownCommitted = true
+				end
 			end
 			trackedAuras[id] = nil
 		end
@@ -469,7 +475,10 @@ local function OnWatcherChanged(entry, watcher, candidateUnits)
 		end
 	end
 
-	if displayCallback then
+	-- Only update the detected entry's display when a cooldown was actually committed.
+	-- The caster entry is updated immediately in the cooldownCallback; this covers the
+	-- case where the detected entry differs from the caster entry (e.g. external defensives).
+	if displayCallback and cooldownCommitted then
 		displayCallback(entry)
 	end
 end
