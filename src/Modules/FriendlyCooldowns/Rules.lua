@@ -709,7 +709,7 @@ local rules = {
 		},
 		[263] = { -- Enhancement Shaman
 			{
-				BuffDuration = 10,
+				BuffDuration = 8,
 				Cooldown = 60,
 				Important = true,
 				BigDefensive = false,
@@ -720,7 +720,7 @@ local rules = {
 				ExcludeIfTalent = { 114051, 378270 },
 			}, -- Doomwinds (hidden if Ascendance or Deeply Rooted Elements talented)
 			{
-				BuffDuration = 12,
+				BuffDuration = 10,
 				Cooldown = 60,
 				Important = true,
 				BigDefensive = false,
