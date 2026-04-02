@@ -415,6 +415,7 @@ local dbDefaults = {
 			},
 		},
 		---@class FriendlyCooldownTrackerModuleOptions
+		---@field DisabledSpells table<number, boolean> SpellIds excluded from the static-ability display; keyed by SpellId, value true. Treated as an opaque user hash — CleanTable must not recurse into it.
 		FriendlyCooldownTrackerModule = {
 			Enabled = {
 				World = true,
@@ -423,6 +424,7 @@ local dbDefaults = {
 				Dungeons = true,
 				Raid = false,
 			},
+			DisabledSpells = {},
 
 			---@class FriendlyCooldownTrackerAnchorOptions
 			---@field ShowOffensiveCooldowns boolean?
@@ -2080,12 +2082,21 @@ local function SaveOpaqueCaches(vars)
 	for _, key in ipairs(opaqueCacheKeys) do
 		saved[key] = mini:CopyValueOrTable(vars[key])
 	end
+	-- DisabledSpells is a user-edited hash (spellId -> true) nested inside the module options.
+	-- CleanTable would strip all SpellId keys because none are in the empty-table schema, so
+	-- we save and restore it the same way as the top-level opaque caches above.
+	local fcdModule = vars.Modules and vars.Modules.FriendlyCooldownTrackerModule
+	saved._FcdDisabledSpells = fcdModule and mini:CopyValueOrTable(fcdModule.DisabledSpells) or {}
 	return saved
 end
 
 local function RestoreOpaqueCaches(vars, saved)
 	for _, key in ipairs(opaqueCacheKeys) do
 		vars[key] = saved[key]
+	end
+	local fcdModule = vars.Modules and vars.Modules.FriendlyCooldownTrackerModule
+	if fcdModule then
+		fcdModule.DisabledSpells = saved._FcdDisabledSpells or {}
 	end
 end
 

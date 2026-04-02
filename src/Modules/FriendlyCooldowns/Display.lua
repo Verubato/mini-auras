@@ -63,12 +63,14 @@ local function GetStaticAbilities(unit)
 	local seen = {}
 	local result = {}
 
+	local disabledSpells = db and db.Modules and db.Modules.FriendlyCooldownTrackerModule and db.Modules.FriendlyCooldownTrackerModule.DisabledSpells or {}
+
 	local function addRules(ruleList)
 		if not ruleList then
 			return
 		end
 		for _, rule in ipairs(ruleList) do
-			if rule.SpellId and not seen[rule.SpellId] then
+			if rule.SpellId and not seen[rule.SpellId] and not disabledSpells[rule.SpellId] then
 				local excluded = rule.ExcludeIfTalent and fcdTalents:UnitHasTalent(unit, rule.ExcludeIfTalent, specId)
 				local required = rule.RequiresTalent and not fcdTalents:UnitHasTalent(unit, rule.RequiresTalent, specId)
 				if not excluded and not required then
