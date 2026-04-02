@@ -327,6 +327,21 @@ local function BuildSpellsList(parent, disabledSpells)
 	local divH   = 26   -- divider height
 	local classSpells = CollectSpellsByClass()
 
+	-- Build a count of how many distinct spell IDs share each localized name.
+	-- Any name appearing more than once gets the spell ID appended for disambiguation.
+	local nameCounts = {}
+	for _, classToken in ipairs(classOrder) do
+		local spells = classSpells[classToken]
+		if spells then
+			for _, spellId in ipairs(spells) do
+				local name = C_Spell.GetSpellName(spellId)
+				if name then
+					nameCounts[name] = (nameCounts[name] or 0) + 1
+				end
+			end
+		end
+	end
+
 	local y = 0  -- grows downward (negative offsets from parent top)
 
 	for _, classToken in ipairs(classOrder) do
@@ -341,6 +356,9 @@ local function BuildSpellsList(parent, disabledSpells)
 			-- One row per spell
 			for _, spellId in ipairs(spells) do
 				local spellName = C_Spell.GetSpellName(spellId) or ("Spell #" .. spellId)
+				if nameCounts[spellName] and nameCounts[spellName] > 1 then
+					spellName = spellName .. " (" .. spellId .. ")"
+				end
 				local texture   = C_Spell.GetSpellTexture(spellId)
 
 				local chk = mini:Checkbox({

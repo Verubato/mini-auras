@@ -673,6 +673,18 @@ local rules = {
 				SpellId = 363916,
 			},
 		}, -- Augmentation Evoker: Obsidian Scales
+		[264] = { -- Restoration Shaman
+			{
+				BuffDuration = 15,
+				Cooldown = 180,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				RequiresEvidence = "Cast",
+				SpellId = 114052,
+				RequiresTalent = 114052,
+			}, -- Ascendance
+		},
 		[262] = { -- Elemental Shaman
 			{
 				BuffDuration = 15,

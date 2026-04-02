@@ -178,6 +178,9 @@ local SpecCooldownModifiers = {
 
 	-- Elemental Shaman: First Ascendant: Ascendance -60s
 	[262] = { [462440] = { { { SpellId = 114050, Amount = -60 } } } },
+
+	-- Restoration Shaman: First Ascendant: Ascendance -60s
+	[264] = { [462440] = { { { SpellId = 114052, Amount = -60 } } } },
 }
 
 -- PvP talent cooldown modifiers. No ranks — talent is either active or not.
@@ -315,6 +318,10 @@ local SpecDefaultTalentRanks = {
 		[114050] = 1, -- Ascendance (Elemental Shaman): nearly universal
 		[462440] = 1, -- First Ascendant (Elemental Shaman): Ascendance -60s, nearly universal
 		[462443] = 1, -- Preeminence (Elemental Shaman): Ascendance +3s, nearly universal
+	},
+	[264] = {
+		[114052] = 1, -- Ascendance (Restoration Shaman): nearly universal
+		[462440] = 1, -- First Ascendant (Restoration Shaman): Ascendance -60s, nearly universal
 	},
 	[263] = {
 		[384352] = 1, -- Doomwinds (Enhancement Shaman): nearly universal
