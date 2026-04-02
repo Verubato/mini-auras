@@ -433,8 +433,8 @@ function M:Layout()
 	-- Build a cheap signature from the current size, row settings, and used slot indices.
 	-- If it matches the last run, the visual result would be identical so we
 	-- can skip all the SetPoint/SetSize/Show/Hide calls.
-	local numRows = (self.NumRows and self.NumRows > 1) and self.NumRows or nil
-	local sig = self.Size .. ":" .. (numRows or 1) .. ":" .. (self.RowAlignment or "C") .. ":" .. (self.OverflowRowAlignment or "C") .. ":" .. (self.InvertLayout and "1" or "0") .. ":" .. table.concat(layoutScratch, ",", 1, n)
+	local numRows = (not self.GrowDown and self.NumRows and self.NumRows > 1) and self.NumRows or nil
+	local sig = self.Size .. ":" .. (numRows or 1) .. ":" .. (self.RowAlignment or "C") .. ":" .. (self.OverflowRowAlignment or "C") .. ":" .. (self.InvertLayout and "1" or "0") .. ":" .. (self.GrowDown and "D" or "H") .. ":" .. table.concat(layoutScratch, ",", 1, n)
 	if self.LayoutSignature == sig then
 		return
 	end
@@ -491,6 +491,20 @@ function M:Layout()
 
 			slot.Frame:ClearAllPoints()
 			slot.Frame:SetPoint("CENTER", self.Frame, "CENTER", x, y)
+			slot.Frame:SetSize(self.Size, self.Size)
+			slot.Frame:Show()
+		end
+	elseif self.GrowDown then
+		-- Vertical single column, growing downward
+		local totalHeight = usedCount * self.Size + (usedCount - 1) * self.Spacing
+		self.Frame:SetSize(self.Size, totalHeight)
+		self.Frame:SetAlpha(1)
+
+		for displayIndex = 1, usedCount do
+			local slot = self.Slots[layoutScratch[displayIndex]]
+			local y = (totalHeight / 2) - (self.Size / 2) - (displayIndex - 1) * (self.Size + self.Spacing)
+			slot.Frame:ClearAllPoints()
+			slot.Frame:SetPoint("CENTER", self.Frame, "CENTER", 0, y)
 			slot.Frame:SetSize(self.Size, self.Size)
 			slot.Frame:Show()
 		end
@@ -575,6 +589,19 @@ function M:SetRows(numRows, alignment, invertLayout)
 	self.RowAlignment = alignment
 	self.OverflowRowAlignment = overflowAlignment
 	self.InvertLayout = invertLayout
+	self.LayoutSignature = nil
+	self:Layout()
+end
+
+---Switches the container to a vertical single-column layout, growing downward.
+---When enabled, multi-row settings are ignored.
+---@param enabled boolean
+function M:SetGrowDown(enabled)
+	enabled = enabled and true or false
+	if self.GrowDown == enabled then
+		return
+	end
+	self.GrowDown = enabled
 	self.LayoutSignature = nil
 	self:Layout()
 end

@@ -278,6 +278,8 @@ local function AnchorContainer(entry)
 			frame:SetPoint("TOPRIGHT", anchor, "LEFT", options.Offset.X, yOffset)
 		elseif options.Grow == "RIGHT" then
 			frame:SetPoint("TOPLEFT", anchor, "RIGHT", options.Offset.X, yOffset)
+		elseif options.Grow == "DOWN" then
+			frame:SetPoint("TOP", anchor, "BOTTOM", options.Offset.X, options.Offset.Y)
 		else
 			frame:SetPoint("TOP", anchor, "CENTER", options.Offset.X, yOffset)
 		end
@@ -286,10 +288,14 @@ local function AnchorContainer(entry)
 			frame:SetPoint("RIGHT", anchor, "LEFT", options.Offset.X, options.Offset.Y)
 		elseif options.Grow == "RIGHT" then
 			frame:SetPoint("LEFT", anchor, "RIGHT", options.Offset.X, options.Offset.Y)
+		elseif options.Grow == "DOWN" then
+			frame:SetPoint("TOP", anchor, "BOTTOM", options.Offset.X, options.Offset.Y)
 		else
 			frame:SetPoint("CENTER", anchor, "CENTER", options.Offset.X, options.Offset.Y)
 		end
 	end
+
+	entry.Container:SetGrowDown(options.Grow == "DOWN")
 end
 
 ---Must be called once from M:Init before any display functions are used.

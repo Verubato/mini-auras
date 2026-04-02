@@ -99,6 +99,8 @@ local function GrowToAnchor(grow)
 		return "RIGHT", "LEFT"
 	elseif grow == "RIGHT" then
 		return "LEFT", "RIGHT"
+	elseif grow == "DOWN" then
+		return "TOP", "BOTTOM"
 	else
 		return "CENTER", "CENTER"
 	end
@@ -883,6 +885,7 @@ local function RefreshAnchorsAndSizes()
 							combinedOptions.Offset.X,
 							combinedOptions.Offset.Y
 						)
+						combinedContainer:SetGrowDown(combinedOptions.Grow == "DOWN")
 						combinedContainer:SetIconSize(combinedOptions.Icons.Size)
 						combinedContainer:SetSpacing(db.IconSpacing or 2)
 						combinedContainer:SetCount(combinedOptions.Icons.MaxIcons)
@@ -907,6 +910,7 @@ local function RefreshAnchorsAndSizes()
 							ccOptions.Offset.X,
 							ccOptions.Offset.Y
 						)
+						ccContainer:SetGrowDown(ccOptions.Grow == "DOWN")
 						ccContainer:SetIconSize(ccOptions.Icons.Size)
 						ccContainer:SetSpacing(db.IconSpacing or 2)
 						ccContainer:SetCount(ccOptions.Icons.MaxIcons)
@@ -930,6 +934,7 @@ local function RefreshAnchorsAndSizes()
 							importantOptions.Offset.X,
 							importantOptions.Offset.Y
 						)
+						importantContainer:SetGrowDown(importantOptions.Grow == "DOWN")
 						importantContainer:SetIconSize(importantOptions.Icons.Size)
 						importantContainer:SetSpacing(db.IconSpacing or 2)
 						importantContainer:SetCount(importantOptions.Icons.MaxIcons)

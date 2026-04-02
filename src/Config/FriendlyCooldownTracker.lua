@@ -15,6 +15,7 @@ local growOptions = {
 	"LEFT",
 	"RIGHT",
 	"CENTER",
+	"DOWN",
 }
 
 local columns = 4
