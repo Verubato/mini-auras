@@ -964,8 +964,19 @@ local rules = {
 				Important = true,
 				RequiresEvidence = "Cast",
 				SpellId = 104773,
-			},
-		}, -- Unending Resolve
+			}, -- Unending Resolve
+			{
+				BuffDuration = 3,
+				Cooldown = 45,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 212295,
+				RequiresTalent = 3624,
+			}, -- Nether Ward (PvP talent)
+		},
 		PRIEST = {
 			{
 				BuffDuration = 10,
