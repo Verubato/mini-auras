@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.2
+
+Regression fix that was causing tracking inaccuracies.
+
 ## 3.3.1
 
 Blizzard party frames strata fix for friendly cooldowns.
