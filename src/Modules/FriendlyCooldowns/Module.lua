@@ -223,29 +223,46 @@ function M:Init()
 	-- When Brain detects that a buff ended and a rule matched, store the cooldown entry and
 	-- schedule a cleanup timer so the icon disappears once the cooldown expires.
 	brain:RegisterCooldownCallback(function(ruleUnit, cdKey, cdData, detectedFromEntry)
-		local entry = GetEntryForUnit(ruleUnit)
-		if not entry then
-			return
-		end
-		-- Cancel any existing cleanup timer for this key (e.g. rapid re-cast).
-		local existing = entry.ActiveCooldowns[cdKey]
-		if existing and existing.CleanupTimer then
-			existing.CleanupTimer:Cancel()
-		end
-		-- Schedule cleanup when the cooldown window elapses.
-		cdData.CleanupTimer = C_Timer.NewTimer(math.max(0, cdData.Remaining), function()
-			if entry.ActiveCooldowns[cdKey] == cdData then
-				entry.ActiveCooldowns[cdKey] = nil
+		-- Store the cooldown in every entry whose unit matches the caster (e.g. a player
+		-- tracked by both a party frame and a player frame), falling back to the detecting
+		-- entry if no caster entry exists.
+		local casterEntries = {}
+		for _, e in pairs(watchEntries) do
+			if UnitIsUnit(e.Unit, ruleUnit) then
+				casterEntries[#casterEntries + 1] = e
 			end
-			display:UpdateDisplay(entry)
-			ShowHideEntryContainer(entry.Container.Frame, entry.Anchor)
+		end
+		if #casterEntries == 0 then
+			casterEntries[1] = detectedFromEntry
+		end
+
+		-- Cancel any existing cleanup timer for this key across all caster entries (e.g. rapid re-cast).
+		for _, e in ipairs(casterEntries) do
+			local existing = e.ActiveCooldowns[cdKey]
+			if existing and existing.CleanupTimer then
+				existing.CleanupTimer:Cancel()
+			end
+			e.ActiveCooldowns[cdKey] = cdData
+		end
+
+		-- Schedule a single cleanup timer shared across all caster entries.
+		cdData.CleanupTimer = C_Timer.NewTimer(math.max(0, cdData.Remaining), function()
+			for _, e in ipairs(casterEntries) do
+				if e.ActiveCooldowns[cdKey] == cdData then
+					e.ActiveCooldowns[cdKey] = nil
+				end
+				display:UpdateDisplay(e)
+				ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+			end
 		end)
-		entry.ActiveCooldowns[cdKey] = cdData
-		-- Update the caster entry immediately. The detected entry's display is handled
+
+		-- Update all caster entries immediately. The detected entry's display is handled
 		-- by the displayCallback fired at the end of OnWatcherChanged.
-		display:UpdateDisplay(entry)
-		if entry ~= detectedFromEntry then
-			ShowHideEntryContainer(entry.Container.Frame, entry.Anchor)
+		for _, e in ipairs(casterEntries) do
+			display:UpdateDisplay(e)
+			if e ~= detectedFromEntry then
+				ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+			end
 		end
 	end)
 
