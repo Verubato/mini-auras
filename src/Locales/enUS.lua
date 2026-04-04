@@ -219,6 +219,8 @@ L:SetDefaultStrings({
 	["Offensive cooldowns"] = "Offensive cooldowns",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Shows offensive cooldowns such as Combustion, Avatar and Dragonrage.",
 	["Rows"] = "Rows",
+	["Icons Per Row"] = "Icons Per Row",
+	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames.",
 
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "It works by taking any 4 second 'important' self buff and showing that icon.",

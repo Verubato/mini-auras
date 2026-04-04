@@ -216,6 +216,8 @@ L:SetStrings({
 	["Offensive cooldowns"] = "Offensive Abklingzeiten anzeigen",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Zeigt offensive Abklingzeiten wie Verbrennung, Avatar und Drachenzorn an.",
 	["Rows"] = "Reihen",
+	["Icons Per Row"] = "Symbole pro Reihe",
+	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Wenn Wachsen auf Unten gesetzt ist, legt fest, wie viele Symbole pro Reihe angezeigt werden. Nützlich für horizontale Gruppenrahmen.",
 
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Es funktioniert, indem es jeden 4-sekündigen 'wichtigen' Selbst-Buff erkennt und dieses Symbol anzeigt.",

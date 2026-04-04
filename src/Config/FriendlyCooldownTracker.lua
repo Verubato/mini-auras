@@ -199,7 +199,29 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	growLbl:SetPoint("TOPLEFT", rowsSlider.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 2)
+	local columnsPerRowSlider = mini:Slider({
+		Parent = panel,
+		LabelText = L["Icons Per Row"],
+		Tooltip = L["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."],
+		Min = 1,
+		Max = 10,
+		Step = 1,
+		Width = columnWidth * 2 - horizontalSpacing,
+		GetValue = function()
+			return anchorOptions.Icons.ColumnsPerRow or 1
+		end,
+		SetValue = function(v)
+			local newValue = mini:ClampInt(v, 1, 10, 1)
+			if anchorOptions.Icons.ColumnsPerRow ~= newValue then
+				anchorOptions.Icons.ColumnsPerRow = newValue
+				config:Apply()
+			end
+		end,
+	})
+
+	columnsPerRowSlider.Slider:SetPoint("TOPLEFT", rowsSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
+	growLbl:SetPoint("TOPLEFT", columnsPerRowSlider.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 2)
 	growDdl:SetPoint("TOPLEFT", growLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
 
 	local offsetX = mini:Slider({
