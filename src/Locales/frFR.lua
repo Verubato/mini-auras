@@ -217,6 +217,8 @@ L:SetStrings({
 	["Offensive cooldowns"] = "Afficher les temps de recharge offensifs",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Affiche les temps de recharge offensifs tels que Combustion, Avatar et Rage du dragon.",
 	["Rows"] = "Rangées",
+	["Icons Per Row"] = "Icônes par rangée",
+	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Quand Agrandir est défini sur Bas, détermine combien d'icônes apparaissent par rangée avant de passer à la suivante. Utile pour les cadres de groupe horizontaux.",
 
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Cela fonctionne en détectant tout buff personnel « important » de 4 secondes et en affichant cette icône.",

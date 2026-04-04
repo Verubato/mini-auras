@@ -220,6 +220,8 @@ L:SetStrings({
 	["Offensive cooldowns"] = "顯示攻擊性冷卻",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "顯示攻擊性冷卻，如燃燒、化身和龍怒。",
 	["Rows"] = "行數",
+	["Icons Per Row"] = "每行圖示數",
+	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "當增長方向為向下時，設定每行顯示的圖示數量。適用於水平隊伍框架。",
 
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "其運作原理是偵測任何4秒的「重要」自身增益效果並顯示該圖示。",

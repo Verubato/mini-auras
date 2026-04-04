@@ -216,6 +216,8 @@ L:SetStrings({
 	["Offensive cooldowns"] = "Mostrar tiempos de reutilización ofensivos",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Muestra tiempos de reutilización ofensivos como Combustión, Avatar y Furia del dragón.",
 	["Rows"] = "Filas",
+	["Icons Per Row"] = "Iconos por fila",
+	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Cuando Crecer está en Abajo, define cuántos iconos aparecen por fila antes de pasar a la siguiente. Útil para marcos de grupo horizontales.",
 
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Funciona detectando cualquier buff propio «importante» de 4 segundos y mostrando ese icono.",
