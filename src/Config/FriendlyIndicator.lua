@@ -67,28 +67,7 @@ local function BuildAnchorSettings(parent, options)
 		end,
 	})
 
-	local columnsPerRowSlider = mini:Slider({
-		Parent = panel,
-		Min = 1,
-		Max = 10,
-		Step = 1,
-		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = L["Icons Per Row"],
-		Tooltip = L["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."],
-		GetValue = function()
-			return options.Icons.ColumnsPerRow or 1
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 1, 10, 1)
-			if options.Icons.ColumnsPerRow ~= newValue then
-				options.Icons.ColumnsPerRow = newValue
-				config:Apply()
-			end
-		end,
-	})
-
-	columnsPerRowSlider.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
-	containerX.Slider:SetPoint("TOPLEFT", columnsPerRowSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	containerX.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	local containerY = mini:Slider({
 		Parent = panel,
@@ -111,7 +90,7 @@ local function BuildAnchorSettings(parent, options)
 
 	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
 
-	panel:SetHeight(containerX.Slider:GetHeight() + columnsPerRowSlider.Slider:GetHeight() + growDdl:GetHeight() + growDdlLbl:GetHeight() + verticalSpacing * 6)
+	panel:SetHeight(containerX.Slider:GetHeight() + growDdl:GetHeight() + growDdlLbl:GetHeight() + verticalSpacing * 4)
 
 	return panel
 end

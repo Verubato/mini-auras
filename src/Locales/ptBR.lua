@@ -217,7 +217,7 @@ L:SetStrings({
 	["Offensive cooldowns"] = "Mostrar recarga ofensiva",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Mostra recargas ofensivas como Combustão, Avatar e Fúria do Dragão.",
 	["Rows"] = "Linhas",
-	["Icons Per Row"] = "Ícones por linha",
+	["Columns"] = "Colunas",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Quando Crescer está definido como Baixo, define quantos ícones aparecem por linha antes de quebrar. Útil para molduras de grupo horizontais.",
 
 	-- Precognition tab

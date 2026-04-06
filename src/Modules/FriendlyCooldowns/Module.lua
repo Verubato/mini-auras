@@ -182,7 +182,7 @@ function M:Refresh()
 			entry.Container:SetSpacing(anchorOptions.IconSpacing or db.IconSpacing or 2)
 			local isDown = anchorOptions.Grow == "DOWN"
 			entry.Container:SetRows(isDown and nil or rows, isDown and "CENTER" or anchorOptions.Grow, not isDown and anchorOptions.Grow ~= "RIGHT")
-			entry.Container:SetColumnsPerRow(isDown and (tonumber(anchorOptions.Icons.ColumnsPerRow) or 1) or nil)
+			entry.Container:SetColumns(isDown and (tonumber(anchorOptions.Icons.Columns) or 1) or nil)
 			display:AnchorContainer(entry)
 			ShowHideEntryContainer(entry.Container.Frame, anchor)
 			display:UpdateDisplay(entry)

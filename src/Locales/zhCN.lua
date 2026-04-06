@@ -217,7 +217,7 @@ L:SetStrings({
 	["Offensive cooldowns"] = "显示进攻性冷却",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "显示进攻性冷却，如燃烧、化身和龙怒。",
 	["Rows"] = "行数",
-	["Icons Per Row"] = "每行图标数",
+	["Columns"] = "列数",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "当增长方向为向下时，设置每行显示的图标数量。适用于水平队伍框架。",
 
 	-- Precognition tab

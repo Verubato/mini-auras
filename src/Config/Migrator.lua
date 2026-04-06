@@ -43,7 +43,6 @@ local dbDefaults = {
 					ReverseCooldown = true,
 					ColorByDispelType = true,
 					Count = 3,
-					ColumnsPerRow = 1,
 				},
 
 				ShowTooltips = false,
@@ -64,7 +63,6 @@ local dbDefaults = {
 					ReverseCooldown = true,
 					ColorByDispelType = true,
 					Count = 3,
-					ColumnsPerRow = 1,
 				},
 
 				ShowTooltips = false,
@@ -93,7 +91,6 @@ local dbDefaults = {
 				Glow = true,
 				ReverseCooldown = true,
 				ColorByDispelType = true,
-				ColumnsPerRow = 1,
 			},
 
 			ShowTooltips = false,
@@ -395,7 +392,6 @@ local dbDefaults = {
 					ReverseCooldown = true,
 					MaxIcons = 1,
 					ColorByDispelType = true,
-					ColumnsPerRow = 1,
 				},
 				ShowTooltips = false,
 			},
@@ -414,7 +410,6 @@ local dbDefaults = {
 					ReverseCooldown = true,
 					MaxIcons = 1,
 					ColorByDispelType = true,
-					ColumnsPerRow = 1,
 				},
 				ShowTooltips = false,
 			},
@@ -445,7 +440,7 @@ local dbDefaults = {
 					ReverseCooldown = true,
 					MaxIcons = 10,
 					Rows = 1,
-					ColumnsPerRow = 1,
+					Columns = 1,
 				},
 			},
 
@@ -462,7 +457,7 @@ local dbDefaults = {
 					ReverseCooldown = true,
 					MaxIcons = 5,
 					Rows = 1,
-					ColumnsPerRow = 1,
+					Columns = 1,
 				},
 			},
 		},

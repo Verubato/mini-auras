@@ -217,7 +217,7 @@ L:SetStrings({
 	["Offensive cooldowns"] = "Показывать наступательные откаты",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Показывает наступательные откаты, такие как Горение, Аватар и Ярость дракона.",
 	["Rows"] = "Ряды",
-	["Icons Per Row"] = "Иконок в ряду",
+	["Columns"] = "Столбцы",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Когда направление роста — Вниз, определяет количество иконок в одном ряду до переноса. Полезно для горизонтальных рамок группы.",
 
 	-- Precognition tab

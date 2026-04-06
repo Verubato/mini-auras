@@ -294,7 +294,7 @@ local function AnchorContainer(entry)
 	end
 
 	entry.Container:SetGrowDown(options.Grow == "DOWN")
-	entry.Container:SetColumnsPerRow(options.Grow == "DOWN" and options.Icons.ColumnsPerRow or nil)
+	entry.Container:SetColumns(options.Grow == "DOWN" and options.Icons.Columns or nil)
 end
 
 ---Must be called once from M:Init before any display functions are used.

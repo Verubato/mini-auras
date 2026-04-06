@@ -411,7 +411,7 @@ function M:New(parent, count, size, spacing, groupName, noBorder, moduleName)
 	instance.NumRows = nil
 	instance.RowAlignment = nil
 	instance.InvertLayout = false
-	instance.ColumnsPerRow = nil
+	instance.Columns = nil
 	instance.NoBorder = noBorder or false
 	instance.Frame.MiniCCModule = moduleName or nil
 	instance.MasqueGroup = Masque and groupName and Masque:Group("MiniCC", groupName) or nil
@@ -435,7 +435,7 @@ function M:Layout()
 	-- If it matches the last run, the visual result would be identical so we
 	-- can skip all the SetPoint/SetSize/Show/Hide calls.
 	local numRows = (not self.GrowDown and self.NumRows and self.NumRows > 1) and self.NumRows or nil
-	local columnsPerRow = (self.GrowDown and self.ColumnsPerRow and self.ColumnsPerRow > 1) and self.ColumnsPerRow or nil
+	local columnsPerRow = (self.GrowDown and self.Columns and self.Columns > 1) and self.Columns or nil
 	local sig = self.Size .. ":" .. (numRows or 1) .. ":" .. (self.RowAlignment or "C") .. ":" .. (self.OverflowRowAlignment or "C") .. ":" .. (self.InvertLayout and "1" or "0") .. ":" .. (self.GrowDown and "D" or "H") .. ":" .. (columnsPerRow or 1) .. ":" .. table.concat(layoutScratch, ",", 1, n)
 	if self.LayoutSignature == sig then
 		return
@@ -636,12 +636,12 @@ end
 ---Sets the maximum number of icons per row when growing downward.
 ---Only effective when GrowDown is true; a value of 1 or nil reverts to a single column.
 ---@param n number? Maximum icons per row; nil or 1 means single column
-function M:SetColumnsPerRow(n)
+function M:SetColumns(n)
 	n = (n and n > 1) and math.floor(n) or nil
-	if self.ColumnsPerRow == n then
+	if self.Columns == n then
 		return
 	end
-	self.ColumnsPerRow = n
+	self.Columns = n
 	self.LayoutSignature = nil
 	self:Layout()
 end
@@ -928,13 +928,13 @@ end
 ---@field RowAlignment string?
 ---@field OverflowRowAlignment string?
 ---@field InvertLayout boolean
----@field ColumnsPerRow number?
+---@field Columns number?
 ---@field NoBorder boolean
 ---@field SetCount fun(self: IconSlotContainer, count: number)
 ---@field SetSpacing fun(self: IconSlotContainer, spacing: number)
 ---@field SetRows fun(self: IconSlotContainer, iconsPerRow: number?, alignment: string?, invertLayout: boolean?)
 ---@field SetGrowDown fun(self: IconSlotContainer, enabled: boolean)
----@field SetColumnsPerRow fun(self: IconSlotContainer, n: number?)
+---@field SetColumns fun(self: IconSlotContainer, n: number?)
 ---@field SetIconSize fun(self: IconSlotContainer, size: number)
 ---@field SetSlot fun(self: IconSlotContainer, slotIndex: number, options: IconLayerOptions)
 ---@field ClearSlot fun(self: IconSlotContainer, slotIndex: number)

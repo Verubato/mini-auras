@@ -178,7 +178,7 @@ local function AnchorContainer(header, anchor, options)
 	end
 
 	header:SetGrowDown(options.Grow == "DOWN")
-	header:SetColumnsPerRow(options.Grow == "DOWN" and options.Icons.ColumnsPerRow or nil)
+	header:SetColumns(nil)
 	frame:SetPoint(anchorPoint, anchor, relativeToPoint, options.Offset.X, options.Offset.Y)
 end
 

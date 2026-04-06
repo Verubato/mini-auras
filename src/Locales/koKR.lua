@@ -216,7 +216,7 @@ L:SetStrings({
 	["Offensive cooldowns"] = "공격 쿨다운 표시",
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "발화, 화신, 용의 분노 등 공격 쿨다운을 표시합니다.",
 	["Rows"] = "줄 수",
-	["Icons Per Row"] = "줄당 아이콘 수",
+	["Columns"] = "열",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "확장 방향이 아래일 때, 줄 바꿈 전에 한 줄에 표시할 아이콘 수를 설정합니다. 가로 파티 프레임에 유용합니다.",
 
 	-- Precognition tab
