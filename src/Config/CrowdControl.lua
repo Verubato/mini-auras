@@ -227,7 +227,7 @@ local function BuildInstance(panel, options, addTestButton)
 	if addTestButton then
 		local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 		testBtn:SetSize(160, 26)
-		testBtn:SetPoint("TOPLEFT", anchorPanel, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+		testBtn:SetPoint("TOPLEFT", anchorPanel, "BOTTOMLEFT", 0, -verticalSpacing)
 		testBtn:SetText(L["Test these settings"])
 		testBtn:SetScript("OnClick", function()
 			addon:TestWithOptions(true)
@@ -554,7 +554,7 @@ function M:Build(panel, default, raid)
 	defaultDivider:SetPoint("RIGHT", panel, "RIGHT")
 	defaultDivider:SetPoint("TOP", enabledEverywhere, "BOTTOM", 0, -verticalSpacing)
 
-	local subPanelHeight = 290
+	local subPanelHeight = 340
 	local defaultPanel = BuildInstance(panel, default, false)
 
 	defaultPanel:SetPoint("TOPLEFT", defaultDivider, "BOTTOMLEFT", 0, -verticalSpacing)
