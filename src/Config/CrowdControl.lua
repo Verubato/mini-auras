@@ -97,7 +97,7 @@ end
 
 ---@param panel table
 ---@param options CrowdControlInstanceOptions
-local function BuildInstance(panel, options, addTestButton)
+local function BuildInstance(panel, options)
 	local parent = CreateFrame("Frame", nil, panel)
 	local anchorPanel = BuildAnchorSettings(parent, options)
 
@@ -223,16 +223,6 @@ local function BuildInstance(panel, options, addTestButton)
 
 	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
-
-	if addTestButton then
-		local testBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-		testBtn:SetSize(160, 26)
-		testBtn:SetPoint("TOPLEFT", anchorPanel, "BOTTOMLEFT", 0, -verticalSpacing)
-		testBtn:SetText(L["Test these settings"])
-		testBtn:SetScript("OnClick", function()
-			addon:TestWithOptions(true)
-		end)
-	end
 
 	parent.OnMiniRefresh = function()
 		anchorPanel:MiniRefresh()
@@ -545,51 +535,52 @@ function M:Build(panel, default, raid)
 	enabledRaid:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 4, 0)
 	enabledRaid:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
-	local defaultDivider = mini:Divider({
-		Parent = panel,
-		Text = L["Less than 5 members (arena/dungeons)"],
+	local subPanelHeight = 340
+	local tabContainer = CreateFrame("Frame", nil, panel)
+	tabContainer:SetPoint("TOPLEFT",  enabledEverywhere, "BOTTOMLEFT",  0, -verticalSpacing)
+	tabContainer:SetPoint("TOPRIGHT", panel,             "TOPRIGHT",    0, 0)
+	tabContainer:SetHeight(subPanelHeight + 34)
+
+	local tabIsRaid = { default = false, raid = true }
+
+	local tabCtrl = mini:CreateTabs({
+		Parent = tabContainer,
+		TabHeight = 28,
+		StripHeight = 34,
+		TabFitToParent = true,
+		ContentInsets = { Top = verticalSpacing },
+		Tabs = {
+			{ Key = "default", Title = L["World/Arena/Dungeons"] },
+			{ Key = "raid",    Title = L["Raids/Battlegrounds"] },
+			{ Key = "pet",     Title = L["Pet Frames"] },
+		},
+		OnTabChanged = function(key)
+			local isRaid = tabIsRaid[key]
+			if isRaid ~= nil then
+				addon.CurrentTestIsRaid = isRaid
+				if addon:IsTestActive() then
+					addon:TestWithOptions(isRaid)
+				end
+			end
+		end,
 	})
 
-	defaultDivider:SetPoint("LEFT", panel, "LEFT")
-	defaultDivider:SetPoint("RIGHT", panel, "RIGHT")
-	defaultDivider:SetPoint("TOP", enabledEverywhere, "BOTTOM", 0, -verticalSpacing)
-
-	local subPanelHeight = 340
-	local defaultPanel = BuildInstance(panel, default, false)
-
-	defaultPanel:SetPoint("TOPLEFT", defaultDivider, "BOTTOMLEFT", 0, -verticalSpacing)
-	defaultPanel:SetPoint("TOPRIGHT", defaultDivider, "BOTTOMRIGHT", 0, -verticalSpacing)
-	-- TODO: calculate real child height
+	local defaultContent = tabCtrl:GetContent("default")
+	local defaultPanel = BuildInstance(defaultContent, default)
+	defaultPanel:SetPoint("TOPLEFT",  defaultContent, "TOPLEFT",  0, 0)
+	defaultPanel:SetPoint("TOPRIGHT", defaultContent, "TOPRIGHT", 0, 0)
 	defaultPanel:SetHeight(subPanelHeight)
 
-	local raidDivider = mini:Divider({
-		Parent = panel,
-		Text = L["Greater than 5 members (raids/bgs)"],
-	})
-
-	raidDivider:SetPoint("LEFT", panel, "LEFT")
-	raidDivider:SetPoint("RIGHT", panel, "RIGHT")
-	raidDivider:SetPoint("TOP", defaultPanel, "BOTTOM")
-
-	local raidPanel = BuildInstance(panel, raid, true)
-
-	raidPanel:SetPoint("TOPLEFT", raidDivider, "BOTTOMLEFT", 0, -verticalSpacing)
-	raidPanel:SetPoint("TOPRIGHT", raidDivider, "TOPRIGHT")
+	local raidContent = tabCtrl:GetContent("raid")
+	local raidPanel = BuildInstance(raidContent, raid)
+	raidPanel:SetPoint("TOPLEFT",  raidContent, "TOPLEFT",  0, 0)
+	raidPanel:SetPoint("TOPRIGHT", raidContent, "TOPRIGHT", 0, 0)
 	raidPanel:SetHeight(subPanelHeight)
 
-	local petDivider = mini:Divider({
-		Parent = panel,
-		Text = L["Pet frames"],
-	})
-
-	petDivider:SetPoint("LEFT", panel, "LEFT")
-	petDivider:SetPoint("RIGHT", panel, "RIGHT")
-	petDivider:SetPoint("TOP", raidPanel, "BOTTOM", 0, -verticalSpacing * 2)
-
-	local petPanel = BuildPetInstance(panel, db.Modules.PetCCModule)
-
-	petPanel:SetPoint("TOPLEFT", petDivider, "BOTTOMLEFT", 0, -verticalSpacing)
-	petPanel:SetPoint("TOPRIGHT", petDivider, "TOPRIGHT")
+	local petContent = tabCtrl:GetContent("pet")
+	local petPanel = BuildPetInstance(petContent, db.Modules.PetCCModule)
+	petPanel:SetPoint("TOPLEFT",  petContent, "TOPLEFT",  0, 0)
+	petPanel:SetPoint("TOPRIGHT", petContent, "TOPRIGHT", 0, 0)
 	petPanel:SetHeight(subPanelHeight)
 
 	panel.OnMiniRefresh = function()

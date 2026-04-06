@@ -157,7 +157,7 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	rowsSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	rowsSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	local iconSpacingSlider = mini:Slider({
 		Parent    = panel,
@@ -202,7 +202,7 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	columnsPerRowSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	columnsPerRowSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	local function refreshRowControls()
 		local isDown = anchorOptions.Grow == "DOWN"
@@ -370,12 +370,10 @@ local function BuildSpellsList(parent, disabledSpells)
 		end
 	end
 
-	-- Sidebar background
-	local sidebar = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+	-- Sidebar
+	local sidebar = CreateFrame("Frame", nil, parent)
 	sidebar:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
 	sidebar:SetWidth(sidebarW)
-	sidebar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
-	sidebar:SetBackdropColor(0.06, 0.06, 0.06, 0.5)
 
 	-- Build per-class spell panels (all parented to parent, shown/hidden on tab select)
 	local classPanels = {}
@@ -522,89 +520,24 @@ function M:Build(panel, default, raid)
 	columnWidth = mini:ColumnWidth(columns, 0, 0)
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
 
-	-- Inner horizontal tab strip
-	local tabH   = 28
-	local tabSep = 4
-	local tabW   = 110
-
-	local tabStrip = CreateFrame("Frame", nil, panel, "BackdropTemplate")
-	tabStrip:SetHeight(tabH)
-	tabStrip:SetPoint("TOPLEFT",  panel, "TOPLEFT",  0, 0)
-	tabStrip:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, 0)
-	tabStrip:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
-	tabStrip:SetBackdropColor(0.08, 0.08, 0.08, 0.6)
-
-	local topLine = tabStrip:CreateTexture(nil, "OVERLAY")
-	topLine:SetHeight(1)
-	topLine:SetColorTexture(0.35, 0.35, 0.35, 0.8)
-	topLine:SetPoint("TOPLEFT",  tabStrip, "TOPLEFT",  0, 0)
-	topLine:SetPoint("TOPRIGHT", tabStrip, "TOPRIGHT", 0, 0)
-
-	local function MakeTabButton(labelText, xOffset)
-		local btn = CreateFrame("Button", nil, tabStrip, "BackdropTemplate")
-		btn:SetSize(tabW, tabH - 4)
-		btn:SetPoint("LEFT", tabStrip, "LEFT", xOffset, 0)
-
-		btn:SetBackdrop({
-			bgFile   = "Interface\\Buttons\\WHITE8X8",
-			edgeFile = "Interface\\Buttons\\WHITE8X8",
-			edgeSize = 1,
-		})
-		btn:SetBackdropColor(0, 0, 0, 0)
-		btn:SetBackdropBorderColor(0.3, 0.3, 0.3, 0.8)
-
-		local accent = btn:CreateTexture(nil, "OVERLAY")
-		accent:SetHeight(2)
-		accent:SetPoint("BOTTOMLEFT",  btn, "BOTTOMLEFT",  0, 0)
-		accent:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 0, 0)
-		accent:SetColorTexture(0.4, 0.7, 1.0, 0)
-		btn.Accent = accent
-
-		local hl = btn:CreateTexture(nil, "HIGHLIGHT")
-		hl:SetAllPoints()
-		hl:SetColorTexture(1, 1, 1, 0.06)
-
-		local fs = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-		fs:SetPoint("CENTER", btn, "CENTER", 0, 0)
-		fs:SetText(labelText)
-		btn.Text = fs
-
-		return btn
-	end
-
-	local settingsBtn = MakeTabButton(L["Settings"] or "Settings", tabSep)
-	local spellsBtn   = MakeTabButton(L["Spells"]   or "Spells",   tabW + tabSep * 2)
-
-	-- Settings sub-frame
-	local contentY = -(tabH + verticalSpacing)
-
-	local subPanelHeight = 330
-	-- Generous fixed height so the outer scroll auto-size (which measures direct children of
-	-- panel via GetBottom()) sees the full settings content and sizes the scrollChild correctly.
-	-- Two BuildInstance panels (360 each) plus headers, checkboxes, dividers, and spacing.
-	local settingsContentH = subPanelHeight * 2 + 500
-
-	local settingsFrame = CreateFrame("Frame", nil, panel)
-	settingsFrame:SetPoint("TOPLEFT",  panel, "TOPLEFT",  0, contentY)
-	settingsFrame:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, contentY)
-	settingsFrame:SetHeight(settingsContentH)
+	local subPanelHeight = 321
 
 	local description = mini:TextBlock({
-		Parent = settingsFrame,
+		Parent = panel,
 		Lines = {
 			L["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."],
 			L["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"],
 		},
 	})
-	description:SetPoint("TOPLEFT", settingsFrame, "TOPLEFT", 0, 0)
+	description:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
-	local enabledDivider = mini:Divider({ Parent = settingsFrame, Text = L["Enable in"] })
-	enabledDivider:SetPoint("LEFT",  settingsFrame, "LEFT")
-	enabledDivider:SetPoint("RIGHT", settingsFrame, "RIGHT")
+	local enabledDivider = mini:Divider({ Parent = panel, Text = L["Enable in"] })
+	enabledDivider:SetPoint("LEFT",  panel, "LEFT")
+	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
 	enabledDivider:SetPoint("TOP",   description, "BOTTOM", 0, -verticalSpacing)
 
 	local enabledWorld = mini:Checkbox({
-		Parent    = settingsFrame,
+		Parent    = panel,
 		LabelText = L["World"],
 		Tooltip   = L["Enable this module in the open world."],
 		GetValue  = function() return options.Enabled.World end,
@@ -613,119 +546,95 @@ function M:Build(panel, default, raid)
 	enabledWorld:SetPoint("TOPLEFT", enabledDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local enabledArena = mini:Checkbox({
-		Parent    = settingsFrame,
+		Parent    = panel,
 		LabelText = L["Arena"],
 		Tooltip   = L["Enable this module in arena."],
 		GetValue  = function() return options.Enabled.Arena end,
 		SetValue  = function(value) options.Enabled.Arena = value; config:Apply() end,
 	})
-	enabledArena:SetPoint("LEFT", settingsFrame, "LEFT", enabledColumnWidth, 0)
-	enabledArena:SetPoint("TOP",  enabledWorld,  "TOP",  0, 0)
+	enabledArena:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth, 0)
+	enabledArena:SetPoint("TOP",  enabledWorld, "TOP", 0, 0)
 
 	local enabledBattleGrounds = mini:Checkbox({
-		Parent    = settingsFrame,
+		Parent    = panel,
 		LabelText = L["Battlegrounds"],
 		Tooltip   = L["Enable this module in battlegrounds."],
 		GetValue  = function() return options.Enabled.BattleGrounds end,
 		SetValue  = function(value) options.Enabled.BattleGrounds = value; config:Apply() end,
 	})
-	enabledBattleGrounds:SetPoint("LEFT", settingsFrame, "LEFT", enabledColumnWidth * 2, 0)
-	enabledBattleGrounds:SetPoint("TOP",  enabledWorld,  "TOP",  0, 0)
+	enabledBattleGrounds:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 2, 0)
+	enabledBattleGrounds:SetPoint("TOP",  enabledWorld, "TOP", 0, 0)
 
 	local enabledDungeons = mini:Checkbox({
-		Parent    = settingsFrame,
+		Parent    = panel,
 		LabelText = L["Dungeons"],
 		Tooltip   = L["Enable this module in dungeons."],
 		GetValue  = function() return options.Enabled.Dungeons end,
 		SetValue  = function(value) options.Enabled.Dungeons = value; config:Apply() end,
 	})
-	enabledDungeons:SetPoint("LEFT", settingsFrame, "LEFT", enabledColumnWidth * 3, 0)
-	enabledDungeons:SetPoint("TOP",  enabledWorld,  "TOP",  0, 0)
+	enabledDungeons:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 3, 0)
+	enabledDungeons:SetPoint("TOP",  enabledWorld, "TOP", 0, 0)
 
 	local enabledRaid = mini:Checkbox({
-		Parent    = settingsFrame,
+		Parent    = panel,
 		LabelText = L["Raid"],
 		Tooltip   = L["Enable this module in raids."],
 		GetValue  = function() return options.Enabled.Raid end,
 		SetValue  = function(value) options.Enabled.Raid = value; config:Apply() end,
 	})
-	enabledRaid:SetPoint("LEFT", settingsFrame, "LEFT", enabledColumnWidth * 4, 0)
-	enabledRaid:SetPoint("TOP",  enabledWorld,  "TOP",  0, 0)
+	enabledRaid:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 4, 0)
+	enabledRaid:SetPoint("TOP",  enabledWorld, "TOP", 0, 0)
 
-	local defaultDivider = mini:Divider({ Parent = settingsFrame, Text = L["Less than 5 members (arena/dungeons)"] })
-	defaultDivider:SetPoint("LEFT",  settingsFrame, "LEFT")
-	defaultDivider:SetPoint("RIGHT", settingsFrame, "RIGHT")
-	defaultDivider:SetPoint("TOP",   enabledWorld, "BOTTOM", 0, -verticalSpacing)
+	local tabContainer = CreateFrame("Frame", nil, panel)
+	tabContainer:SetPoint("TOPLEFT",  enabledWorld, "BOTTOMLEFT", 0, -verticalSpacing)
+	tabContainer:SetPoint("TOPRIGHT", panel,        "TOPRIGHT",   0, 0)
+	tabContainer:SetHeight(subPanelHeight + 34)
 
-	local defaultPanel = BuildInstance(settingsFrame, default)
-	defaultPanel:SetPoint("TOPLEFT",  defaultDivider, "BOTTOMLEFT",  0, -verticalSpacing)
-	defaultPanel:SetPoint("TOPRIGHT", defaultDivider, "BOTTOMRIGHT", 0, -verticalSpacing)
+	local tabIsRaid = { default = false, raid = true }
+
+	local tabCtrl = mini:CreateTabs({
+		Parent = tabContainer,
+		TabHeight = 28,
+		StripHeight = 34,
+		TabFitToParent = true,
+		ContentInsets = { Top = verticalSpacing },
+		Tabs = {
+			{ Key = "default", Title = L["World/Arena/Dungeons"] },
+			{ Key = "raid",    Title = L["Raids/Battlegrounds"] },
+			{ Key = "spells",  Title = L["Spells"] },
+		},
+		OnTabChanged = function(key)
+			local isRaid = tabIsRaid[key]
+			if isRaid ~= nil then
+				addon.CurrentTestIsRaid = isRaid
+				if addon:IsTestActive() then
+					addon:TestWithOptions(isRaid)
+				end
+			end
+		end,
+	})
+
+	local defaultContent = tabCtrl:GetContent("default")
+	local defaultPanel = BuildInstance(defaultContent, default)
+	defaultPanel:SetPoint("TOPLEFT",  defaultContent, "TOPLEFT",  0, 0)
+	defaultPanel:SetPoint("TOPRIGHT", defaultContent, "TOPRIGHT", 0, 0)
 	defaultPanel:SetHeight(subPanelHeight)
 
-	local raidDivider = mini:Divider({ Parent = settingsFrame, Text = L["Greater than 5 members (raids/bgs)"] })
-	raidDivider:SetPoint("LEFT",  settingsFrame, "LEFT")
-	raidDivider:SetPoint("RIGHT", settingsFrame, "RIGHT")
-	raidDivider:SetPoint("TOP",   defaultPanel,  "BOTTOM", 0, -verticalSpacing)
-
-	local raidPanel = BuildInstance(settingsFrame, raid)
-	raidPanel:SetPoint("TOPLEFT",  raidDivider, "BOTTOMLEFT",  0, -verticalSpacing)
-	raidPanel:SetPoint("TOPRIGHT", raidDivider, "BOTTOMRIGHT", 0, -verticalSpacing)
+	local raidContent = tabCtrl:GetContent("raid")
+	local raidPanel = BuildInstance(raidContent, raid)
+	raidPanel:SetPoint("TOPLEFT",  raidContent, "TOPLEFT",  0, 0)
+	raidPanel:SetPoint("TOPRIGHT", raidContent, "TOPRIGHT", 0, 0)
 	raidPanel:SetHeight(subPanelHeight)
 
-	settingsFrame.OnMiniRefresh = function()
-		defaultPanel:MiniRefresh()
-		raidPanel:MiniRefresh()
-	end
-
-	local spellsFrame = CreateFrame("Frame", nil, panel)
-	spellsFrame:SetPoint("TOPLEFT",  panel, "TOPLEFT",  0, contentY)
-	spellsFrame:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, contentY)
-	spellsFrame:Hide()
-
+	local spellsContent = tabCtrl:GetContent("spells")
 	local disabledSpells = db.Modules.FriendlyCooldownTrackerModule.DisabledSpells
-	local spellsContentHeight = BuildSpellsList(spellsFrame, disabledSpells)
-	spellsFrame:SetHeight(spellsContentHeight)
+	local spellsContentHeight = BuildSpellsList(spellsContent, disabledSpells)
 
-	-- Tab selection logic
-	local settingsPanelH = tabH + verticalSpacing + settingsContentH + 20
-
-	local function SetTabSelected(btn, selected)
-		if selected then
-			btn:SetBackdropColor(0.12, 0.12, 0.12, 0.9)
-			btn.Accent:SetColorTexture(0.4, 0.7, 1.0, 1.0)
-			btn.Text:SetTextColor(1, 1, 1, 1)
-		else
-			btn:SetBackdropColor(0, 0, 0, 0)
-			btn.Accent:SetColorTexture(0.4, 0.7, 1.0, 0)
-			local r, g, b = GameFontNormal:GetTextColor()
-			btn.Text:SetTextColor(r, g, b, 1)
-		end
-	end
-
-	local function SelectSettings()
-		settingsFrame:Show()
-		spellsFrame:Hide()
-		SetTabSelected(settingsBtn, true)
-		SetTabSelected(spellsBtn,   false)
-		panel:SetHeight(settingsPanelH)
-	end
-
-	local function SelectSpells()
-		settingsFrame:Hide()
-		spellsFrame:Show()
-		SetTabSelected(settingsBtn, false)
-		SetTabSelected(spellsBtn,   true)
-		panel:SetHeight(tabH + verticalSpacing + spellsContentHeight + 20)
-	end
-
-	settingsBtn:SetScript("OnClick", SelectSettings)
-	spellsBtn:SetScript("OnClick",   SelectSpells)
-
-	-- Start on Settings tab.
-	SetTabSelected(settingsBtn, true)
-	SetTabSelected(spellsBtn,   false)
+	-- Size the container to whichever tab needs the most vertical space.
+	tabContainer:SetHeight(math.max(subPanelHeight, spellsContentHeight) + 34)
 
 	panel.OnMiniRefresh = function()
-		settingsFrame.OnMiniRefresh()
+		defaultPanel:MiniRefresh()
+		raidPanel:MiniRefresh()
 	end
 end

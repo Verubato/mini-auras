@@ -15,12 +15,19 @@ function M:Build(panel)
 	local columns = 3
 	local columnWidth = mini:ColumnWidth(columns, 0, 0)
 	local horizontalSpacing = mini.HorizontalSpacing
+	local description = mini:TextLine({
+		Parent = panel,
+		Text = L["Shows enemy kick cooldowns in arena."],
+	})
+
+	description:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+
 	local text = mini:TextLine({
 		Parent = panel,
 		Text = L["Enable if you are:"],
 	})
 
-	text:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	text:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local healerEnabled = mini:Checkbox({
 		Parent = panel,

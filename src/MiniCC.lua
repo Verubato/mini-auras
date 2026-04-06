@@ -135,11 +135,13 @@ function addon:Refresh()
 end
 
 ---@param isRaid boolean?
+addon.CurrentTestIsRaid = false
+
 function addon:ToggleTest(isRaid)
 	if testModeManager:IsActive() then
 		testModeManager:StopTesting()
 	else
-		testModeManager:StartTesting(isRaid)
+		testModeManager:StartTesting(isRaid ~= nil and isRaid or self.CurrentTestIsRaid)
 	end
 
 	addon:Refresh()
@@ -156,6 +158,10 @@ function addon:TestWithOptions(isRaid)
 	addon:Refresh()
 end
 
+function addon:IsTestActive()
+	return testModeManager:IsActive()
+end
+
 mini:WaitForAddonLoad(OnAddonLoaded)
 
 ---@class Addon
@@ -167,6 +173,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Refresh fun(self: table)
 ---@field ToggleTest fun(self: table, isRaid: boolean?)
 ---@field TestWithOptions fun(self: table, isRaid: boolean?)
+---@field IsTestActive fun(self: table): boolean
 
 ---@class Utils
 ---@field Scheduler SchedulerUtil

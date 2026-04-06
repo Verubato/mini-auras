@@ -105,7 +105,7 @@ function M:Init()
 	local tabs = {
 		{
 			Key = "General",
-			Title = L["General"],
+			Title = L["Home"],
 			Build = function(content)
 				M.General:Build(content)
 			end,
@@ -175,23 +175,23 @@ function M:Init()
 			end,
 		},
 		{
-			Key = "OtherAddons",
-			Title = L["Other Mini Addons_Short"] or L["Other Mini Addons"],
-			Build = function(content)
-				M.OtherAddons:Build(content)
-			end,
-		},
-		{
 			Key = "Miscellaneous",
 			Title = L["Miscellaneous_Short"] or L["Miscellaneous"],
 			Build = function(content)
 				M.Miscellaneous:Build(content)
 			end,
 		},
+		{
+			Key = "OtherAddons",
+			Title = L["Other Mini Addons_Short"] or L["Other Mini Addons"],
+			Build = function(content)
+				M.OtherAddons:Build(content)
+			end,
+		},
 	}
 
 	local contentPadding = 12
-	local windowInset = 2 + contentPadding * 2 + 8 -- border, padding, and small right margin
+	local windowInset = 2 + contentPadding * 2 + 14 -- border (2), padding (24), scrollbar (14)
 	local tabStripWidth = 130
 	local tabHorizontalPadding = 12
 	local contentWidth = windowWidth - windowInset - tabStripWidth - tabHorizontalPadding

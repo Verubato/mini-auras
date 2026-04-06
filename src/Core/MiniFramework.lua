@@ -1061,20 +1061,20 @@ function M:CreateTabs(options)
 
 	-- Horizontal mode: single continuous underline split around the selected tab.
 	local lineLeft = strip:CreateTexture(nil, "OVERLAY")
-	lineLeft:SetHeight(1)
+	PixelUtil.SetHeight(lineLeft, 1)
 	lineLeft:SetColorTexture(0.35, 0.35, 0.35, 0.8)
 
 	local lineRight = strip:CreateTexture(nil, "OVERLAY")
-	lineRight:SetHeight(1)
+	PixelUtil.SetHeight(lineRight, 1)
 	lineRight:SetColorTexture(0.35, 0.35, 0.35, 0.8)
 
 	-- Vertical mode: static right-edge separator line.
 	if vertical then
 		local vLine = strip:CreateTexture(nil, "OVERLAY")
-		vLine:SetWidth(1)
+		PixelUtil.SetWidth(vLine, 1)
 		vLine:SetColorTexture(0.35, 0.35, 0.35, 0.8)
-		vLine:SetPoint("TOPRIGHT", strip, "TOPRIGHT", 0, 0)
-		vLine:SetPoint("BOTTOMRIGHT", strip, "BOTTOMRIGHT", 0, 0)
+		PixelUtil.SetPoint(vLine, "TOPRIGHT", strip, "TOPRIGHT", 0, 0)
+		PixelUtil.SetPoint(vLine, "BOTTOMRIGHT", strip, "BOTTOMRIGHT", 0, 0)
 	end
 
 	-- Assigned after the tab loop; used in horizontal mode to limit the line to the last tab.
@@ -1095,14 +1095,15 @@ function M:CreateTabs(options)
 				btn.BottomEdge:Hide()
 				btn.BottomLeftCorner:Hide()
 				btn.BottomRightCorner:Hide()
+				if btn.Accent then btn.Accent:Show() end
 				-- Reanchor line segments to leave a gap at this button.
 				lineLeft:ClearAllPoints()
-				lineLeft:SetPoint("TOPLEFT", strip, "BOTTOMLEFT", 0, 2)
-				lineLeft:SetPoint("BOTTOMRIGHT", btn, "BOTTOMLEFT", 0, 0)
+				PixelUtil.SetPoint(lineLeft, "TOPLEFT", strip, "BOTTOMLEFT", 0, 2)
+				PixelUtil.SetPoint(lineLeft, "BOTTOMRIGHT", btn, "BOTTOMLEFT", 0, 0)
 				lineRight:ClearAllPoints()
 				if lastBtn and btn ~= lastBtn then
-					lineRight:SetPoint("TOPLEFT", btn, "BOTTOMRIGHT", 0, 1)
-					lineRight:SetPoint("BOTTOMRIGHT", lastBtn, "BOTTOMRIGHT", 0, 0)
+					PixelUtil.SetPoint(lineRight, "TOPLEFT", btn, "BOTTOMRIGHT", 0, 1)
+					PixelUtil.SetPoint(lineRight, "BOTTOMRIGHT", lastBtn, "BOTTOMRIGHT", 0, 0)
 					lineRight:Show()
 				else
 					lineRight:Hide()
@@ -1117,6 +1118,7 @@ function M:CreateTabs(options)
 			if vertical then
 				if btn.Indicator then btn.Indicator:Hide() end
 			else
+				if btn.Accent then btn.Accent:Hide() end
 				btn.BottomEdge:Hide()
 				btn.BottomLeftCorner:Hide()
 				btn.BottomRightCorner:Hide()
@@ -1177,7 +1179,6 @@ function M:CreateTabs(options)
 			edgeFile = "Interface\\Buttons\\WHITE8X8",
 			edgeSize = 1,
 		})
-
 		btn.Text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		btn.Text:SetPoint("CENTER", btn, "CENTER", 0, 0)
 		btn.Text:SetText(def.Title or def.Key)
@@ -1203,6 +1204,14 @@ function M:CreateTabs(options)
 				btn:SetPoint("TOPRIGHT", prev, "BOTTOMRIGHT", 0, -tabSpacing)
 			end
 		else
+			-- Bottom-edge accent bar for selected state
+			btn.Accent = btn:CreateTexture(nil, "OVERLAY")
+			btn.Accent:SetHeight(2)
+			btn.Accent:SetPoint("BOTTOMLEFT",  btn, "BOTTOMLEFT",  0, 0)
+			btn.Accent:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 0, 0)
+			btn.Accent:SetColorTexture(0.4, 0.7, 1.0, 1.0)
+			btn.Accent:Hide()
+
 			SizeToText(btn)
 
 			if not prev then
@@ -1269,7 +1278,7 @@ function M:CreateTabs(options)
 				if maxScroll > 0.5 then
 					scrollBar:Show()
 					scrollBar:SetMinMaxValues(0, maxScroll)
-					scrollBar:SetValue(math.min(scrollFrame:GetVerticalScroll(), maxScroll))
+					scrollBar:SetValue(maxScroll - math.min(scrollFrame:GetVerticalScroll(), maxScroll))
 					thumb:SetHeight(math.max(20, scrollBar:GetHeight() * (frameH / childH)))
 				else
 					scrollBar:Hide()
@@ -1277,7 +1286,8 @@ function M:CreateTabs(options)
 			end
 
 			scrollBar:SetScript("OnValueChanged", function(_, val)
-				scrollFrame:SetVerticalScroll(val)
+				local _, max = scrollBar:GetMinMaxValues()
+				scrollFrame:SetVerticalScroll(max - val)
 			end)
 
 			scrollFrame:SetScript("OnScrollRangeChanged", function()
@@ -1285,7 +1295,8 @@ function M:CreateTabs(options)
 			end)
 
 			scrollFrame:HookScript("OnMouseWheel", function()
-				scrollBar:SetValue(scrollFrame:GetVerticalScroll())
+				local _, max = scrollBar:GetMinMaxValues()
+				scrollBar:SetValue(max - scrollFrame:GetVerticalScroll())
 			end)
 
 			scrollBar:Hide()
@@ -1379,9 +1390,11 @@ function M:CreateTabs(options)
 				if w == 0 or #tabs == 0 then
 					return
 				end
-				local btnW = math.floor((w - tabSpacing * (#tabs - 1)) / #tabs)
-				for _, tab in ipairs(tabs) do
-					tab.Button:SetWidth(btnW)
+				local available = w - tabSpacing * (#tabs - 1)
+				local btnW = math.floor(available / #tabs)
+				local remainder = available - btnW * #tabs
+				for i, tab in ipairs(tabs) do
+					tab.Button:SetWidth(i == #tabs and btnW + remainder or btnW)
 				end
 			end
 			strip:SetScript("OnSizeChanged", function(s, w)
