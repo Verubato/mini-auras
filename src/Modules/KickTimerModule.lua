@@ -113,9 +113,9 @@ local specInfoBySpecId = {
 	[255] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(147362) }, -- Survival
 
 	-- Mage — Counterspell
-	[62] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(2139) }, -- Arcane
-	[63] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(2139) }, -- Fire
-	[64] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(2139) }, -- Frost
+	[62] = { KickCd = 20, IsCaster = true, IsHealer = false, KickIcon = KI(2139) }, -- Arcane
+	[63] = { KickCd = 20, IsCaster = true, IsHealer = false, KickIcon = KI(2139) }, -- Fire
+	[64] = { KickCd = 20, IsCaster = true, IsHealer = false, KickIcon = KI(2139) }, -- Frost
 
 	-- Warlock — Spell Lock (Felhunter)
 	[265] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(19647) }, -- Affliction
