@@ -343,52 +343,64 @@ local function CollectSpellsByClass()
 	return classSpells
 end
 
----Builds the Spells tab content: a scrollable list of checkboxes grouped by class.
+---Builds the Spells tab content: a vertical class tab sidebar on the left,
+---with the selected class's spell checkboxes displayed on the right.
 ---@param parent table  the spells sub-frame (already sized)
 ---@param disabledSpells table<number, boolean>  db.FcdDisabledSpells, modified in place
 ---@return number  total content height in pixels
 local function BuildSpellsList(parent, disabledSpells)
-	local rowH   = 26   -- height of each spell row
-	local iconSz = 18   -- spell icon size
-	local divH   = 26   -- divider height
+	local sidebarW   = 120  -- width of the vertical class tab strip
+	local sidebarSep = 8    -- gap between sidebar and spell content
+	local classTabH  = 24   -- height of each class tab button
+	local classTabGap = 1   -- gap between tab buttons
+	local rowH   = 26
+	local iconSz = 18
+
 	local classSpells = CollectSpellsByClass()
 
-	-- Build a count of how many distinct spell IDs share each localized name.
-	-- Any name appearing more than once gets the spell ID appended for disambiguation.
+	-- Disambiguation: spell names shared across any class get the spell ID appended.
 	local nameCounts = {}
 	for _, classToken in ipairs(classOrder) do
 		local spells = classSpells[classToken]
 		if spells then
 			for _, spellId in ipairs(spells) do
 				local name = C_Spell.GetSpellName(spellId)
-				if name then
-					nameCounts[name] = (nameCounts[name] or 0) + 1
-				end
+				if name then nameCounts[name] = (nameCounts[name] or 0) + 1 end
 			end
 		end
 	end
 
-	local y = 0  -- grows downward (negative offsets from parent top)
+	-- Sidebar background
+	local sidebar = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+	sidebar:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+	sidebar:SetWidth(sidebarW)
+	sidebar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
+	sidebar:SetBackdropColor(0.06, 0.06, 0.06, 0.5)
+
+	-- Build per-class spell panels (all parented to parent, shown/hidden on tab select)
+	local classPanels = {}
+	local maxContentH = 0
+	local contentOffsetX = sidebarW + sidebarSep
 
 	for _, classToken in ipairs(classOrder) do
 		local spells = classSpells[classToken]
 		if spells and #spells > 0 then
-			-- Class header divider
-			local divider = mini:Divider({ Parent = parent, Text = classDisplayNames[classToken] or classToken })
-			divider:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, y)
-			divider:SetPoint("RIGHT",   parent, "RIGHT",   0, 0)
-			y = y - divH - verticalSpacing
+			local classPanel = CreateFrame("Frame", nil, parent)
+			classPanel:SetPoint("TOPLEFT",  parent, "TOPLEFT",  contentOffsetX, 0)
+			classPanel:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, 0)
+			classPanel:Hide()
+			classPanels[classToken] = classPanel
 
-			-- One row per spell
+			local y = 0
 			for _, spellId in ipairs(spells) do
 				local spellName = C_Spell.GetSpellName(spellId) or ("Spell #" .. spellId)
 				if nameCounts[spellName] and nameCounts[spellName] > 1 then
 					spellName = spellName .. " (" .. spellId .. ")"
 				end
-				local texture   = C_Spell.GetSpellTexture(spellId)
+				local texture = C_Spell.GetSpellTexture(spellId)
 
 				local chk = mini:Checkbox({
-					Parent    = parent,
+					Parent    = classPanel,
 					LabelText = spellName,
 					GetValue  = function() return not disabledSpells[spellId] end,
 					SetValue  = function(value)
@@ -401,11 +413,10 @@ local function BuildSpellsList(parent, disabledSpells)
 						fcdModule:RefreshDisplays()
 					end,
 				})
-				chk:SetPoint("TOPLEFT", parent, "TOPLEFT", 26, y)
+				chk:SetPoint("TOPLEFT", classPanel, "TOPLEFT", 26, y)
 
-				-- Spell icon to the left of the checkbox label
 				if texture then
-					local iconBtn = CreateFrame("Button", nil, parent)
+					local iconBtn = CreateFrame("Button", nil, classPanel)
 					iconBtn:SetSize(iconSz, iconSz)
 					iconBtn:SetPoint("RIGHT", chk, "LEFT", -2, 0)
 					iconBtn:SetScript("OnEnter", function(self)
@@ -413,10 +424,7 @@ local function BuildSpellsList(parent, disabledSpells)
 						GameTooltip:SetSpellByID(spellId)
 						GameTooltip:Show()
 					end)
-					iconBtn:SetScript("OnLeave", function()
-						GameTooltip:Hide()
-					end)
-
+					iconBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 					local icon = iconBtn:CreateTexture(nil, "ARTWORK")
 					icon:SetAllPoints()
 					icon:SetTexture(texture)
@@ -426,11 +434,83 @@ local function BuildSpellsList(parent, disabledSpells)
 				y = y - rowH
 			end
 
-			y = y - verticalSpacing
+			local h = -y
+			classPanel:SetHeight(h)
+			maxContentH = math.max(maxContentH, h)
 		end
 	end
 
-	return -y  -- total height used
+	-- Build vertical class tab buttons
+	local classTabBtns = {}
+
+	local function SetClassTabSelected(entry, selected)
+		if selected then
+			entry.btn:SetBackdropColor(0.15, 0.15, 0.15, 0.9)
+			entry.accent:SetColorTexture(entry.r, entry.g, entry.b, 1)
+		else
+			entry.btn:SetBackdropColor(0, 0, 0, 0)
+			entry.accent:SetColorTexture(entry.r, entry.g, entry.b, 0)
+		end
+	end
+
+	local function SelectClass(classToken)
+		for _, entry in ipairs(classTabBtns) do
+			local isSelected = entry.classToken == classToken
+			SetClassTabSelected(entry, isSelected)
+			if classPanels[entry.classToken] then
+				classPanels[entry.classToken]:SetShown(isSelected)
+			end
+		end
+	end
+
+	local tabY = 0
+	local firstClass = nil
+	for _, classToken in ipairs(classOrder) do
+		local spells = classSpells[classToken]
+		if spells and #spells > 0 then
+			if not firstClass then firstClass = classToken end
+
+			local cc = RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken]
+			local r = cc and cc.r or 1
+			local g = cc and cc.g or 1
+			local b = cc and cc.b or 0.8
+
+			local btn = CreateFrame("Button", nil, sidebar, "BackdropTemplate")
+			btn:SetHeight(classTabH)
+			btn:SetPoint("TOPLEFT",  sidebar, "TOPLEFT",  0, tabY)
+			btn:SetPoint("TOPRIGHT", sidebar, "TOPRIGHT", 0, tabY)
+			btn:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
+			btn:SetBackdropColor(0, 0, 0, 0)
+
+			local accent = btn:CreateTexture(nil, "OVERLAY")
+			accent:SetWidth(2)
+			accent:SetPoint("TOPLEFT",    btn, "TOPLEFT",    0, 0)
+			accent:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", 0, 0)
+			accent:SetColorTexture(r, g, b, 0)
+
+			local hl = btn:CreateTexture(nil, "HIGHLIGHT")
+			hl:SetAllPoints()
+			hl:SetColorTexture(1, 1, 1, 0.05)
+
+			local fs = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+			fs:SetPoint("LEFT", btn, "LEFT", 8, 0)
+			fs:SetText(classDisplayNames[classToken] or classToken)
+			fs:SetTextColor(r, g, b, 1)
+
+			local token = classToken
+			btn:SetScript("OnClick", function() SelectClass(token) end)
+
+			table.insert(classTabBtns, { btn = btn, accent = accent, classToken = classToken, r = r, g = g, b = b })
+			tabY = tabY - classTabH - classTabGap
+		end
+	end
+
+	local sidebarH = -tabY
+	sidebar:SetHeight(sidebarH)
+
+	if firstClass then SelectClass(firstClass) end
+
+	return math.max(sidebarH, maxContentH)
 end
 
 ---@param panel table
