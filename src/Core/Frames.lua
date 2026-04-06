@@ -475,6 +475,48 @@ function M:EnhancedQoLFrames(visibleOnly)
 	return frames
 end
 
+---Retrieves a list of BuzzardFrames unit frames.
+---@param visibleOnly boolean
+---@return table
+function M:BuzzardFrames(visibleOnly)
+	local BF = _G["BuzzardFrames"]
+	if not BF or not BF.GetUnitFrames then
+		return {}
+	end
+
+	local frames = {}
+	local playerSuccess, playerFrames = pcall(BF.GetUnitFrames, BF, "player")
+	local playerFrame = playerSuccess and playerFrames and next(playerFrames)
+
+	if playerFrame and (playerFrame:IsVisible() or not visibleOnly) then
+		frames[#frames + 1] = playerFrame
+	end
+
+	for i = 1, maxParty do
+		local partySuccess, partyFrames = pcall(BF.GetUnitFrames, BF, "party" .. i)
+		local frame = partySuccess and partyFrames and next(partyFrames)
+
+		if not frame then
+			break
+		end
+
+		if frame:IsVisible() or not visibleOnly then
+			frames[#frames + 1] = frame
+		end
+	end
+
+	for i = 1, maxRaid do
+		local raidSuccess, raidFrames = pcall(BF.GetUnitFrames, BF, "raid" .. i)
+		local frame = raidSuccess and raidFrames and next(raidFrames)
+
+		if frame and (frame:IsVisible() or not visibleOnly) then
+			frames[#frames + 1] = frame
+		end
+	end
+
+	return frames
+end
+
 ---Retrieves a list of custom frames from our saved vars.
 ---@param visibleOnly boolean
 ---@return table
@@ -520,6 +562,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	local vuhdo = M:VuhDoFrames(visibleOnly)
 	local tperl = M:TPerlFrames(visibleOnly)
 	local eqol = M:EnhancedQoLFrames(visibleOnly)
+	local buzzard = M:BuzzardFrames(visibleOnly)
 	local custom = M:CustomFrames(visibleOnly)
 
 	array:Append(blizzard, anchors)
@@ -533,6 +576,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	array:Append(vuhdo, anchors)
 	array:Append(tperl, anchors)
 	array:Append(eqol, anchors)
+	array:Append(buzzard, anchors)
 	array:Append(custom, anchors)
 
 	if includeTestFrames then
