@@ -338,6 +338,42 @@ function M:PlexusFrames(visibleOnly)
 	return frames
 end
 
+---Retrieves a list of VuhDo unit frames.
+---VuhDo panel frames are globals named Vd1, Vd2, … up to 10.
+---Unit buttons are direct children; the unit token is in :GetAttribute("unit") or button.raidid.
+---@param visibleOnly boolean
+---@return table
+function M:VuhDoFrames(visibleOnly)
+	if not _G["Vd1"] then
+		return {}
+	end
+
+	local frames = {}
+	local seen = {}
+
+	local panelNum = 1
+	while true do
+		local panel = _G["Vd" .. panelNum]
+		if not panel then break end
+
+		for _, child in ipairs({ panel:GetChildren() }) do
+			if not seen[child] then
+				local unit = (child.GetAttribute and child:GetAttribute("unit")) or child.raidid
+				if unit and unit ~= "" then
+					if (not child.IsForbidden or not child:IsForbidden()) and (child:IsVisible() or not visibleOnly) then
+						seen[child] = true
+						frames[#frames + 1] = child
+					end
+				end
+			end
+		end
+
+		panelNum = panelNum + 1
+	end
+
+	return frames
+end
+
 ---Retrieves a list of Cell party/raid unit frames.
 ---@param visibleOnly boolean
 ---@return table
@@ -481,6 +517,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	local suf = M:ShadowedUFFrames(visibleOnly)
 	local plexus = M:PlexusFrames(visibleOnly)
 	local cell = M:CellFrames(visibleOnly)
+	local vuhdo = M:VuhDoFrames(visibleOnly)
 	local tperl = M:TPerlFrames(visibleOnly)
 	local eqol = M:EnhancedQoLFrames(visibleOnly)
 	local custom = M:CustomFrames(visibleOnly)
@@ -493,6 +530,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	array:Append(suf, anchors)
 	array:Append(plexus, anchors)
 	array:Append(cell, anchors)
+	array:Append(vuhdo, anchors)
 	array:Append(tperl, anchors)
 	array:Append(eqol, anchors)
 	array:Append(custom, anchors)
@@ -514,6 +552,22 @@ for i, v in ipairs(strataOrder) do strataIndex[v] = i end
 ---@return string
 function M:GetNextStrata(strata)
 	return strataOrder[math.min((strataIndex[strata] or 1) + 1, #strataOrder)]
+end
+
+
+---Returns true if the frame is a VuhDo unit button.
+---Used to decide whether to bump strata so FCD icons render above VuhDo frame elements.
+---@param frame table
+---@return boolean
+function M:IsVuhDoFrame(frame)
+	if not frame or issecretvalue(frame) then
+		return false
+	end
+	if frame:IsForbidden() then
+		return false
+	end
+	local name = frame:GetName()
+	return name ~= nil and string.find(name, "^Vd%d+H%d+") ~= nil
 end
 
 ---Returns true if the frame is a Blizzard compact or standard party frame (not a raid frame).

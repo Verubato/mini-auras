@@ -256,11 +256,12 @@ local function AnchorContainer(entry)
 
 	frame:ClearAllPoints()
 	frame:SetAlpha(1)
-	local strata = frames:IsBlizzardPartyFrame(anchor)
+	local strata = (frames:IsBlizzardPartyFrame(anchor) or frames:IsVuhDoFrame(anchor))
 		and frames:GetNextStrata(anchor:GetFrameStrata())
 		or anchor:GetFrameStrata()
 	frame:SetFrameStrata(strata)
-	frame:SetFrameLevel(anchor:GetFrameLevel() + 10)
+	local level = anchor:GetFrameLevel() + 10
+	frame:SetFrameLevel(level)
 
 	local rowsEnabled = options.Icons.Rows and options.Icons.Rows > 1
 
