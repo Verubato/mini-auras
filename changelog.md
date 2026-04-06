@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.4.0
+
+- Added VuhDo and Buzzard Frames support.
+- Friendly cooldowns spells tab layout change.
+- Added columns option when growing icons down.
+- Fixed mage counter spell to be 20 seconds (was 24).
+
 ## 3.3.2
 
 Regression fix that was causing tracking inaccuracies.
