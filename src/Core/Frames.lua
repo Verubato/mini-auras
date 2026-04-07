@@ -252,21 +252,6 @@ function M:ShadowedUFFrames(visibleOnly)
 		end
 	end
 
-	local unitNames = {
-		"player",
-		"pet",
-		"pettarget",
-		"target",
-		"targettarget",
-		"targettargettarget",
-		"focus",
-		"focustarget",
-	}
-
-	for _, unitName in ipairs(unitNames) do
-		Add(_G["SUFUnit" .. unitName])
-	end
-
 	-- Party / Raid header buttons (SUFHeaderpartyUnitButton# / SUFHeaderraidUnitButton#) :contentReference[oaicite:2]{index=2}
 	for i = 1, maxParty do
 		Add(_G["SUFHeaderpartyUnitButton" .. i])
