@@ -2,7 +2,6 @@
 local _, addon = ...
 ---@type Db
 local db
-local instanceOptions
 
 ---@class ModuleName
 local ModuleName = {
@@ -27,7 +26,6 @@ addon.Utils.ModuleName = ModuleName
 
 function M:Init()
 	db = addon.Core.Framework:GetSavedVars()
-	instanceOptions = addon.Core.InstanceOptions
 end
 
 ---@param moduleName string The module key (e.g., "AlertsModule", "CcModule")
@@ -50,7 +48,7 @@ function M:IsModuleEnabled(moduleName)
 	local inInstance, instanceType = IsInInstance()
 
 	if not inInstance then
-		if instanceOptions and instanceOptions:IsRaid() then
+		if IsInRaid() then
 			return settings.Raid
 		end
 		return settings.World or false
