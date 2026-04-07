@@ -1193,7 +1193,7 @@ function M:CreateTabs(options)
 		if vertical then
 			-- Left-edge accent bar for selected state
 			btn.Indicator = btn:CreateTexture(nil, "OVERLAY")
-			btn.Indicator:SetWidth(3)
+			PixelUtil.SetWidth(btn.Indicator, 3)
 			btn.Indicator:SetPoint("TOPLEFT", btn, "TOPLEFT", 0, 0)
 			btn.Indicator:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", 0, 0)
 			btn.Indicator:SetColorTexture(0.4, 0.7, 1.0, 1.0)
@@ -1209,7 +1209,7 @@ function M:CreateTabs(options)
 		else
 			-- Bottom-edge accent bar for selected state
 			btn.Accent = btn:CreateTexture(nil, "OVERLAY")
-			btn.Accent:SetHeight(2)
+			PixelUtil.SetHeight(btn.Accent, 2)
 			btn.Accent:SetPoint("BOTTOMLEFT",  btn, "BOTTOMLEFT",  0, 0)
 			btn.Accent:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 0, 0)
 			btn.Accent:SetColorTexture(0.4, 0.7, 1.0, 1.0)
