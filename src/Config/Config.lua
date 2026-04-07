@@ -182,17 +182,17 @@ function M:Init()
 			end,
 		},
 		{
-			Key = "OtherAddons",
-			Title = L["Other Mini Addons_Short"] or L["Other Mini Addons"],
-			Build = function(content)
-				M.OtherAddons:Build(content)
-			end,
-		},
-		{
 			Key = "Profiles",
 			Title = L["Profiles"],
 			Build = function(content)
 				M.Profiles:Build(content)
+			end,
+		},
+		{
+			Key = "OtherAddons",
+			Title = L["Other Mini Addons_Short"] or L["Other Mini Addons"],
+			Build = function(content)
+				M.OtherAddons:Build(content)
 			end,
 		},
 	}
