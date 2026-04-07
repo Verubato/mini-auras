@@ -153,7 +153,7 @@ local function AppendStaticSlots(slots, entry, now, showTooltips, iconOptions)
 				DurationObject = durationObject,
 				Alpha = 1,
 				ReverseCooldown = iconOptions.ReverseCooldown,
-				Desaturate = iconOptions.DesaturateOnCooldown and durationObject ~= nil,
+				Desaturate = iconOptions.DesaturateOnCooldown,
 				FontScale = db.FontScale,
 			}
 		end
@@ -227,11 +227,11 @@ local function UpdateDisplay(entry)
 		local durationData = trinketsTracker:GetUnitDuration(entry.Unit)
 		slots[1] = {
 			Texture = trinketsTracker:GetDefaultIcon(),
-			DurationObject = durationData or wowEx:CreateDuration(0, 0),
+			DurationObject = durationData,
 			Alpha = true,
 			ReverseCooldown = false,
 			Glow = false,
-			Desaturate = iconOptions.DesaturateOnCooldown and durationData ~= nil,
+			Desaturate = iconOptions.DesaturateOnCooldown,
 			FontScale = db.FontScale,
 		}
 	end

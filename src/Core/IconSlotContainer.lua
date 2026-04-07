@@ -60,6 +60,12 @@ local function CreateLayer(parentFrame, level, iconSize, noBorder)
 	cd:SetDrawBling(false)
 	cd:SetHideCountdownNumbers(false)
 	cd:SetSwipeColor(0, 0, 0, 0.8)
+	-- When the cooldown expires naturally the frame hides itself via OnCooldownDone without
+	-- any external code calling SetSlot again. Clear desaturation immediately so the icon
+	-- doesn't stay grey until the next UpdateDisplay (e.g. the delayed ARENA_COOLDOWNS_UPDATE).
+	cd:SetScript("OnCooldownDone", function()
+		icon:SetDesaturated(false)
+	end)
 
 	local border
 	if not noBorder then
@@ -802,7 +808,6 @@ function M:SetSlot(slotIndex, options)
 
 	local db = GetDb()
 	layer.Icon:SetTexture(options.Texture)
-	layer.Icon:SetDesaturated(options.Desaturate and true or false)
 	layer.Cooldown:SetReverse(options.ReverseCooldown)
 	if options.DurationObject then
 		layer.Cooldown:SetCooldownFromDurationObject(options.DurationObject)
@@ -811,6 +816,9 @@ function M:SetSlot(slotIndex, options)
 		layer.Cooldown:Clear()
 		layer.Cooldown:SetDrawSwipe(false)
 	end
+	-- Query IsShown() AFTER setting the cooldown — the frame hides itself when the
+	-- duration is zero or expired, so this is the authoritative "on cooldown" check.
+	layer.Icon:SetDesaturated(options.Desaturate and layer.Cooldown:IsShown() or false)
 
 	ApplyAlpha(layer.Frame, options.Alpha)
 
