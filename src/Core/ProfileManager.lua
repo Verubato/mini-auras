@@ -223,6 +223,25 @@ function M:SetAutoSwitchRule(specId, profileName)
 	db.AutoSwitch[charKey][specId] = profileName
 end
 
+---Resets the current profile to factory defaults.
+---Uses MutateTableInPlace on db.Modules so table references captured by Config UI
+---closures at Build time remain valid — controls keep working after the reset.
+function M:ResetCurrentProfileToDefaults()
+	if not db or not migrator then return end
+	-- Reset primitive payload keys; FillDefaults will restore them from dbDefaults.
+	for _, k in ipairs(M.PayloadKeys) do
+		if k ~= "Modules" then
+			db[k] = nil
+		end
+	end
+	-- Reset Modules in-place to preserve table identities held by closures.
+	if db.Modules then
+		MutateTableInPlace(db.Modules, migrator:GetModuleDefaults())
+	end
+	migrator:FillDefaults()
+	M:SaveCurrentProfile()
+end
+
 ---@param key string
 ---@param callback fun(name: string)
 function M:RegisterOnProfileChanged(key, callback)

@@ -2211,6 +2211,12 @@ function M:FillDefaults()
 	mini:GetSavedVars(dbDefaults)
 end
 
+---Returns a deep copy of the Modules portion of dbDefaults.
+---Used by ProfileManager to reset a profile while preserving live table identities.
+function M:GetModuleDefaults()
+	return mini:CopyTable(dbDefaults.Modules, {})
+end
+
 ---@return Db
 function M:ResetToFactory()
 	return mini:ResetSavedVars(dbDefaults)

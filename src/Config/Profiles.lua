@@ -340,8 +340,6 @@ function M:Build(panel)
 			})
 	end)
 
-	local dbMigrator = addon.Config.Migrator
-
 	local resetBtn = MakeButton(panel, L["Reset"], 90)
 	resetBtn:SetPoint("TOPLEFT", newBtn, "BOTTOMLEFT", 0, -4)
 	resetBtn:SetScript("OnClick", function()
@@ -353,12 +351,7 @@ function M:Build(panel)
 		StaticPopup_Show("MINICC_CONFIRM",
 			string.format(L['Reset profile "%s" to defaults?'], current), nil, {
 				OnYes = function()
-					local db = mini:GetSavedVars()
-					for _, k in ipairs(addon.Core.ProfileManager.PayloadKeys) do
-						db[k] = nil
-					end
-					dbMigrator:FillDefaults()
-					profileManager:SaveCurrentProfile()
+					profileManager:ResetCurrentProfileToDefaults()
 					local tabController = addon.Config.TabController
 					if tabController then
 						for i = 1, #tabController.Tabs do
