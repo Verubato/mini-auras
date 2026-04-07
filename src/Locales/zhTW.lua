@@ -70,6 +70,27 @@ L:SetStrings({
 	["Profile string is corrupted."] = "設定檔字串已損毀。",
 	["Settings reset to default."] = "設定已重置為預設值。",
 
+	-- Profiles tab
+	["Active Profile"] = "目前設定檔",
+	["Profiles"] = "設定檔",
+	["New"] = "新增",
+	["Rename"] = "重新命名",
+	["Delete"] = "刪除",
+	["Clone"] = "複製",
+	["New Profile"] = "新增設定檔",
+	["Clone Profile"] = "複製設定檔",
+	["Rename Profile"] = "重新命名設定檔",
+	["Auto-Switch"] = "自動切換",
+	["Automatically switch profiles based on your specialization."] = "根據您的專精自動切換設定檔。",
+	['A profile named "%s" already exists.'] = '已存在名為「%s」的設定檔。',
+	["Cannot delete the last profile."] = "無法刪除最後一個設定檔。",
+	['Delete profile "%s"?'] = '刪除設定檔「%s」？',
+	['Reset profile "%s" to defaults?'] = '將設定檔「%s」重設為預設值？',
+	["Profile reset to defaults."] = "設定檔已重設為預設值。",
+	["Profile Name"] = "設定檔名稱",
+	["Profile String"] = "設定檔字串",
+	["Please enter a profile name."] = "請輸入設定檔名稱。",
+
 	-- General tab
 	["Discord"] = "Discord",
 	["Export Profile"] = "匯出設定檔",

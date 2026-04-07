@@ -70,6 +70,27 @@ L:SetStrings({
 	["Profile string is corrupted."] = "La stringa del profilo è corrotta.",
 	["Settings reset to default."] = "Impostazioni ripristinate ai valori predefiniti.",
 
+	-- Profiles tab
+	["Active Profile"] = "Profilo attivo",
+	["Profiles"] = "Profili",
+	["New"] = "Nuovo",
+	["Rename"] = "Rinomina",
+	["Delete"] = "Elimina",
+	["Clone"] = "Clona",
+	["New Profile"] = "Nuovo profilo",
+	["Clone Profile"] = "Clona profilo",
+	["Rename Profile"] = "Rinomina profilo",
+	["Auto-Switch"] = "Cambio automatico",
+	["Automatically switch profiles based on your specialization."] = "Cambia automaticamente profilo in base alla tua specializzazione.",
+	['A profile named "%s" already exists.'] = 'Esiste già un profilo chiamato «%s».',
+	["Cannot delete the last profile."] = "Impossibile eliminare l'ultimo profilo.",
+	['Delete profile "%s"?'] = 'Eliminare il profilo «%s»?',
+	['Reset profile "%s" to defaults?'] = 'Ripristinare il profilo «%s» ai valori predefiniti?',
+	["Profile reset to defaults."] = "Profilo ripristinato ai valori predefiniti.",
+	["Profile Name"] = "Nome profilo",
+	["Profile String"] = "Stringa profilo",
+	["Please enter a profile name."] = "Inserisci un nome per il profilo.",
+
 	-- General tab
 	["Discord"] = "Discord",
 	["Export Profile"] = "Esporta profilo",

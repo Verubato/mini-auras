@@ -67,6 +67,27 @@ L:SetDefaultStrings({
 	["Profile string is corrupted."] = "Profile string is corrupted.",
 	["Settings reset to default."] = "Settings reset to default.",
 
+	-- Profiles tab
+	["Active Profile"] = "Active Profile",
+	["Profiles"] = "Profiles",
+	["New"] = "New",
+	["Rename"] = "Rename",
+	["Delete"] = "Delete",
+	["New Profile"] = "New Profile",
+	["Clone"] = "Clone",
+	["Clone Profile"] = "Clone Profile",
+	["Rename Profile"] = "Rename Profile",
+	["Auto-Switch"] = "Auto-Switch",
+	["Automatically switch profiles based on your specialization."] = "Automatically switch profiles based on your specialization.",
+	['A profile named "%s" already exists.'] = 'A profile named "%s" already exists.',
+	["Cannot delete the last profile."] = "Cannot delete the last profile.",
+	['Delete profile "%s"?'] = 'Delete profile "%s"?',
+	['Reset profile "%s" to defaults?'] = 'Reset profile "%s" to defaults?',
+	["Profile reset to defaults."] = "Profile reset to defaults.",
+	["Profile Name"] = "Profile Name",
+	["Profile String"] = "Profile String",
+	["Please enter a profile name."] = "Please enter a profile name.",
+
 	-- General tab
 	["Autocast Shine"] = "Autocast Shine",
 	["Discord"] = "Discord",

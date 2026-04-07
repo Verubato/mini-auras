@@ -70,6 +70,27 @@ L:SetStrings({
 	["Profile string is corrupted."] = "Profilzeichenkette ist beschädigt.",
 	["Settings reset to default."] = "Einstellungen auf Standard zurückgesetzt.",
 
+	-- Profiles tab
+	["Active Profile"] = "Aktives Profil",
+	["Profiles"] = "Profile",
+	["New"] = "Neu",
+	["Rename"] = "Umbenennen",
+	["Delete"] = "Löschen",
+	["Clone"] = "Klonen",
+	["New Profile"] = "Neues Profil",
+	["Clone Profile"] = "Profil klonen",
+	["Rename Profile"] = "Profil umbenennen",
+	["Auto-Switch"] = "Auto-Wechsel",
+	["Automatically switch profiles based on your specialization."] = "Profile automatisch basierend auf deiner Spezialisierung wechseln.",
+	['A profile named "%s" already exists.'] = 'Ein Profil namens „%s" existiert bereits.',
+	["Cannot delete the last profile."] = "Das letzte Profil kann nicht gelöscht werden.",
+	['Delete profile "%s"?'] = 'Profil „%s" löschen?',
+	['Reset profile "%s" to defaults?'] = 'Profil „%s" auf Standardwerte zurücksetzen?',
+	["Profile reset to defaults."] = "Profil auf Standardwerte zurückgesetzt.",
+	["Profile Name"] = "Profilname",
+	["Profile String"] = "Profilzeichenkette",
+	["Please enter a profile name."] = "Bitte einen Profilnamen eingeben.",
+
 	-- General tab
 	["Discord"] = "Discord",
 	["Export Profile"] = "Profil exportieren",

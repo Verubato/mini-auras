@@ -188,6 +188,13 @@ function M:Init()
 				M.OtherAddons:Build(content)
 			end,
 		},
+		{
+			Key = "Profiles",
+			Title = L["Profiles"],
+			Build = function(content)
+				M.Profiles:Build(content)
+			end,
+		},
 	}
 
 	local contentPadding = 12

@@ -70,6 +70,27 @@ L:SetStrings({
 	["Profile string is corrupted."] = "프로필 문자열이 손상되었습니다.",
 	["Settings reset to default."] = "설정이 기본값으로 재설정되었습니다.",
 
+	-- Profiles tab
+	["Active Profile"] = "현재 프로필",
+	["Profiles"] = "프로필",
+	["New"] = "새로 만들기",
+	["Rename"] = "이름 변경",
+	["Delete"] = "삭제",
+	["Clone"] = "복제",
+	["New Profile"] = "새 프로필",
+	["Clone Profile"] = "프로필 복제",
+	["Rename Profile"] = "프로필 이름 변경",
+	["Auto-Switch"] = "자동 전환",
+	["Automatically switch profiles based on your specialization."] = "전문화에 따라 자동으로 프로필을 전환합니다.",
+	['A profile named "%s" already exists.'] = '이름이 "%s"인 프로필이 이미 존재합니다.',
+	["Cannot delete the last profile."] = "마지막 프로필은 삭제할 수 없습니다.",
+	['Delete profile "%s"?'] = '프로필 "%s"을(를) 삭제하시겠습니까?',
+	['Reset profile "%s" to defaults?'] = '프로필 "%s"을(를) 기본값으로 초기화하시겠습니까?',
+	["Profile reset to defaults."] = "프로필이 기본값으로 초기화되었습니다.",
+	["Profile Name"] = "프로필 이름",
+	["Profile String"] = "프로필 문자열",
+	["Please enter a profile name."] = "프로필 이름을 입력하십시오.",
+
 	-- General tab
 	["Discord"] = "Discord",
 	["Export Profile"] = "프로필 내보내기",

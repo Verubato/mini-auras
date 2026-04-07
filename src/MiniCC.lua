@@ -105,6 +105,7 @@ local function OnAddonLoaded()
 	scheduler:Init()
 	frames:Init()
 	addon.Utils.ModuleUtil:Init()
+	addon.Core.ProfileManager:Init()
 
 	for _, module in ipairs(modules) do
 		module:Init()

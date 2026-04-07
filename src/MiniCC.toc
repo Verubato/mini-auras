@@ -43,6 +43,7 @@ Core\UnitAuraWatcher.lua
 Core\Inspector.lua
 Core\Frames.lua
 Core\TrinketsTracker.lua
+Core\ProfileManager.lua
 
 Modules\CrowdControlModule.lua
 Modules\HealerCrowdControlModule.lua
@@ -75,5 +76,6 @@ Config\FriendlyIndicator.lua
 Config\FriendlyCooldownTracker.lua
 Config\OtherAddons.lua
 Config\Miscellaneous.lua
+Config\Profiles.lua
 
 MiniCC.lua

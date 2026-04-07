@@ -70,6 +70,27 @@ L:SetStrings({
 	["Profile string is corrupted."] = "Строка профиля повреждена.",
 	["Settings reset to default."] = "Настройки сброшены по умолчанию.",
 
+	-- Profiles tab
+	["Active Profile"] = "Активный профиль",
+	["Profiles"] = "Профили",
+	["New"] = "Создать",
+	["Rename"] = "Переименовать",
+	["Delete"] = "Удалить",
+	["Clone"] = "Клонировать",
+	["New Profile"] = "Новый профиль",
+	["Clone Profile"] = "Клонировать профиль",
+	["Rename Profile"] = "Переименовать профиль",
+	["Auto-Switch"] = "Авто-переключение",
+	["Automatically switch profiles based on your specialization."] = "Автоматически переключать профили в зависимости от специализации.",
+	['A profile named "%s" already exists.'] = 'Профиль с именем «%s» уже существует.',
+	["Cannot delete the last profile."] = "Невозможно удалить последний профиль.",
+	['Delete profile "%s"?'] = 'Удалить профиль «%s»?',
+	['Reset profile "%s" to defaults?'] = 'Сбросить профиль «%s» до значений по умолчанию?',
+	["Profile reset to defaults."] = "Профиль сброшен до значений по умолчанию.",
+	["Profile Name"] = "Название профиля",
+	["Profile String"] = "Строка профиля",
+	["Please enter a profile name."] = "Пожалуйста, введите название профиля.",
+
 	-- General tab
 	["Discord"] = "Discord",
 	["Export Profile"] = "Экспорт профиля",

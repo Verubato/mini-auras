@@ -8,7 +8,10 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 36,
+	Version = 37,
+	Profiles = {},
+	ActiveProfile = "Default",
+	AutoSwitch = {},
 	WhatsNew = {},
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
@@ -2066,6 +2069,30 @@ function M:UpgradeToVersion36(vars)
 	return true
 end
 
+function M:UpgradeToVersion37(vars)
+	if vars.Version ~= 36 then return false end
+
+	vars.Profiles = vars.Profiles or {}
+	vars.ActiveProfile = vars.ActiveProfile or "Default"
+	vars.AutoSwitch = vars.AutoSwitch or {}
+
+	-- Snapshot the current settings into the "Default" profile slot so existing
+	-- users don't lose their configuration after upgrading.
+	if not vars.Profiles["Default"] then
+		local payloadKeys = addon.Core.ProfileManager.PayloadKeys
+		local snapshot = {}
+		for _, k in ipairs(payloadKeys) do
+			if vars[k] ~= nil then
+				snapshot[k] = mini:CopyValueOrTable(vars[k])
+			end
+		end
+		vars.Profiles["Default"] = snapshot
+	end
+
+	vars.Version = 37
+	return true
+end
+
 ---@return boolean true if any deferred migrations were applied
 function M:RunDeferredMigrations(vars)
 	local applied = false
@@ -2095,7 +2122,10 @@ function M:RunDeferredMigrations(vars)
 end
 
 -- Opaque per-player caches that CleanTable must not recurse into.
-local opaqueCacheKeys = { "SpecCache", "TalentCache", "PvPTalentCache", "WhatsNew", "NotifiedChanges" }
+-- "Profiles", "ActiveProfile", and "AutoSwitch" are included here because CleanTable
+-- would otherwise wipe all stored profile snapshots (profile names are unknown keys
+-- relative to the dbDefaults.Profiles = {} template).
+local opaqueCacheKeys = { "SpecCache", "TalentCache", "PvPTalentCache", "WhatsNew", "NotifiedChanges", "Profiles", "ActiveProfile", "AutoSwitch" }
 
 local function SaveOpaqueCaches(vars)
 	local saved = {}
@@ -2171,6 +2201,12 @@ function M:GetAndUpgradeDb()
 	end
 
 	return vars
+end
+
+---Fills any missing keys in the live db from dbDefaults without overwriting existing values.
+---Call this after a profile switch to ensure all settings have a value.
+function M:FillDefaults()
+	mini:GetSavedVars(dbDefaults)
 end
 
 ---@return Db

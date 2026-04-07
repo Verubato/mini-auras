@@ -602,6 +602,9 @@ function M:Dropdown(options)
 
 		function dd.MiniRefresh(ddSelf)
 			ddSelf:Update()
+			local value = options.GetValue()
+			local text = options.GetText and options.GetText(value) or tostring(value)
+			ddSelf:SetText(text)
 		end
 
 		AddControlForRefresh(options.Parent, dd)
