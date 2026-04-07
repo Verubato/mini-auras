@@ -526,6 +526,12 @@ function M:Init()
 		fs.Sorting:RegisterPostSortCallback(OnFrameSortSorted)
 	end
 
+	frames:HookCellSpotlightVisibility(function()
+		if moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator) then
+			EnsureWatchers()
+		end
+	end)
+
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator)
 
 	if moduleEnabled then

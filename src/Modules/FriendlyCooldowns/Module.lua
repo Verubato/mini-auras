@@ -393,6 +393,12 @@ function M:Init()
 	if moduleUtil:IsModuleEnabled(moduleName.FriendlyCooldownTracker) then
 		EnsureAllEntries()
 	end
+
+	frames:HookCellSpotlightVisibility(function()
+		if moduleUtil:IsModuleEnabled(moduleName.FriendlyCooldownTracker) then
+			EnsureAllEntries()
+		end
+	end)
 end
 
 ---@class FriendlyCooldownTrackerModule

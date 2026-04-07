@@ -394,6 +394,29 @@ function M:CellFrames(visibleOnly)
 	return frames
 end
 
+---Retrieves a list of Cell spotlight unit frames.
+---@param visibleOnly boolean
+---@return table
+function M:CellSpotlightFrames(visibleOnly)
+	if not _G["CellSpotlightFrameUnitButton1"] then
+		return {}
+	end
+
+	local frames = {}
+
+	for i = 1, 15 do
+		local frame = _G["CellSpotlightFrameUnitButton" .. i]
+		if not frame then
+			break
+		end
+		if not frame.IsForbidden or not frame:IsForbidden() then
+			frames[#frames + 1] = frame
+		end
+	end
+
+	return frames
+end
+
 ---Retrieves a list of TPerl party unit frames.
 ---@param visibleOnly boolean
 ---@return table
@@ -544,6 +567,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	local suf = M:ShadowedUFFrames(visibleOnly)
 	local plexus = M:PlexusFrames(visibleOnly)
 	local cell = M:CellFrames(visibleOnly)
+	local cellSpotlight = M:CellSpotlightFrames(visibleOnly)
 	local vuhdo = M:VuhDoFrames(visibleOnly)
 	local tperl = M:TPerlFrames(visibleOnly)
 	local eqol = M:EnhancedQoLFrames(visibleOnly)
@@ -558,6 +582,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	array:Append(suf, anchors)
 	array:Append(plexus, anchors)
 	array:Append(cell, anchors)
+	array:Append(cellSpotlight, anchors)
 	array:Append(vuhdo, anchors)
 	array:Append(tperl, anchors)
 	array:Append(eqol, anchors)
@@ -674,6 +699,19 @@ function M:ShowHideFrame(frame, anchor, isTest, excludePlayer)
 		frame:Show()
 	else
 		frame:Hide()
+	end
+end
+
+---Hooks OnShow/OnHide on all 15 Cell spotlight unit buttons, calling callback() on each change.
+---Safe to call even if Cell is not loaded (buttons simply won't exist).
+---@param callback fun()
+function M:HookCellSpotlightVisibility(callback)
+	for i = 1, 15 do
+		local btn = _G["CellSpotlightFrameUnitButton" .. i]
+		if btn then
+			btn:HookScript("OnShow", callback)
+			btn:HookScript("OnHide", callback)
+		end
 	end
 end
 

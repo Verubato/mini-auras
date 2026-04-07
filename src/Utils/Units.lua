@@ -88,9 +88,14 @@ function M:IsEnemy(unitToken)
 	return UnitIsEnemy("player", unitToken)
 end
 
----Returns true if the unit token contains "target" (e.g. "raid1target", "boss1target"), otherwise false
+---Returns true if the unit token is a compound/derived unit (e.g. "raid1target", "boss1target"),
+---meaning it's relative to another unit rather than a first-class unit token.
+---Plain tokens like "target" and "focus" are NOT considered compound.
 ---@param unitToken string
 ---@return boolean
 function M:IsCompoundUnit(unitToken)
+	if unitToken == "target" then
+		return false
+	end
 	return string.find(unitToken, "target") ~= nil
 end
