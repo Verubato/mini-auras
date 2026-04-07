@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.5.1
+
+Fixed wrong instance settings being used in arena.
+
 ## 3.5.0
 
 - Added profile system.
