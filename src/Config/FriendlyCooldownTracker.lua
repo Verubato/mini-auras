@@ -95,6 +95,21 @@ local function BuildInstance(parent, anchorOptions)
 	showTrinketChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
 	showTrinketChk:SetPoint("TOP", excludeSelfChk, "TOP", 0, 0)
 
+	local desaturateChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Desaturate on cooldown"],
+		Tooltip = L["Desaturates the icon while it is on cooldown."],
+		GetValue = function()
+			return anchorOptions.Icons.DesaturateOnCooldown
+		end,
+		SetValue = function(value)
+			anchorOptions.Icons.DesaturateOnCooldown = value
+			config:Apply()
+		end,
+	})
+
+	desaturateChk:SetPoint("TOPLEFT", excludeSelfChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,
 		LabelText = L["Icon Size"],
@@ -114,7 +129,7 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	iconSizeSlider.Slider:SetPoint("TOPLEFT", excludeSelfChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSizeSlider.Slider:SetPoint("TOPLEFT", desaturateChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local maxIconsSlider = mini:Slider({
 		Parent = panel,
@@ -526,7 +541,6 @@ function M:Build(panel, default, raid)
 		Parent = panel,
 		Lines = {
 			L["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."],
-			L["This module is in early beta, so expect some bugs and inaccuracies. If you find any, please report them to us on Discord!"],
 		},
 	})
 	description:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)

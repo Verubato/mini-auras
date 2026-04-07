@@ -802,6 +802,7 @@ function M:SetSlot(slotIndex, options)
 
 	local db = GetDb()
 	layer.Icon:SetTexture(options.Texture)
+	layer.Icon:SetDesaturated(options.Desaturate and true or false)
 	layer.Cooldown:SetReverse(options.ReverseCooldown)
 	if options.DurationObject then
 		layer.Cooldown:SetCooldownFromDurationObject(options.DurationObject)

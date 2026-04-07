@@ -109,6 +109,7 @@ local function BuildTestSlots(showTrinket, showTooltips, iconOptions)
 			Alpha = 1,
 			ReverseCooldown = false,
 			Glow = false,
+			Desaturate = iconOptions.DesaturateOnCooldown,
 			FontScale = db.FontScale,
 		}
 	end
@@ -127,6 +128,7 @@ local function BuildTestSlots(showTrinket, showTooltips, iconOptions)
 				DurationObject = wowEx:CreateDuration(now - t.StartOffset, t.Cooldown),
 				Alpha = 1,
 				ReverseCooldown = iconOptions.ReverseCooldown,
+				Desaturate = iconOptions.DesaturateOnCooldown,
 				FontScale = db.FontScale,
 			}
 		end
@@ -151,6 +153,7 @@ local function AppendStaticSlots(slots, entry, now, showTooltips, iconOptions)
 				DurationObject = durationObject,
 				Alpha = 1,
 				ReverseCooldown = iconOptions.ReverseCooldown,
+				Desaturate = iconOptions.DesaturateOnCooldown and durationObject ~= nil,
 				FontScale = db.FontScale,
 			}
 		end
@@ -172,6 +175,7 @@ local function AppendDynamicSlots(slots, entry, now, showTooltips, iconOptions)
 						DurationObject = wowEx:CreateDuration(cd.StartTime, cd.Cooldown),
 						Alpha = 1,
 						ReverseCooldown = iconOptions.ReverseCooldown,
+						Desaturate = iconOptions.DesaturateOnCooldown,
 						FontScale = db.FontScale,
 					}
 				end
@@ -227,6 +231,7 @@ local function UpdateDisplay(entry)
 			Alpha = true,
 			ReverseCooldown = false,
 			Glow = false,
+			Desaturate = iconOptions.DesaturateOnCooldown and durationData ~= nil,
 			FontScale = db.FontScale,
 		}
 	end
