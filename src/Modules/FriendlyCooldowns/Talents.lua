@@ -240,6 +240,8 @@ local SpecDurationModifiers = {
 	[263] = { [384444] = { { { SpellId = 384352, Amount = 2 } } } },
 	-- Elemental Shaman: Preeminence: Ascendance +3s
 	[262] = { [462443] = { { { SpellId = 114050, Amount = 3 } } } },
+	-- Holy Priest: Foreseen Circumstances: Guardian Spirit +2s
+	[257] = { [440738] = { { { SpellId = 47788, Amount = 2 } } } },
 }
 
 -- Assumed talent ranks used when no real talent data is available for a unit.
@@ -289,6 +291,7 @@ local SpecDefaultTalentRanks = {
 	},
 	[257] = {
 		[419110] = 1, -- Seraphic Crescendo (Holy Priest): nearly universal
+		[440738] = 1, -- Foreseen Circumstances (Holy Priest): Guardian Spirit +2s, nearly universal
 	},
 	[105] = {
 		[382552] = 1, -- Improved Ironbark (Restoration Druid): Ironbark -20s (nearly universal)

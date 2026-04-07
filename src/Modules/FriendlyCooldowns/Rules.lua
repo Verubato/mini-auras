@@ -412,7 +412,19 @@ local rules = {
 				CanCancelEarly = true,
 				RequiresEvidence = "Cast",
 				SpellId = 47788,
+				ExcludeIfTalent = 440738,
 			}, -- Guardian Spirit
+			{
+				BuffDuration = 12,
+				Cooldown = 180,
+				ExternalDefensive = true,
+				BigDefensive = false,
+				Important = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 47788,
+				RequiresTalent = 440738,
+			}, -- Guardian Spirit (Foreseen Circumstances)
 			{
 				BuffDuration = 5,
 				Cooldown = 180,
