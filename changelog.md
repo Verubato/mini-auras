@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.5.0
+
+- Added profile system.
+- UI rework to utilise tabs instead of scrolling.
+- Added mising Guardian Spirit +2 second duration talent.
+- Added cell spotlight frame support.
+- Added desaturated icon support for friendly cooldowns.
+- Raid settings now trigger in open world when in a raid group.
+- Nicer UI for the other addons screen.
+
 ## 3.4.0
 
 - Added VuhDo and Buzzard Frames support.
