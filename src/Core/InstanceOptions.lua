@@ -14,7 +14,7 @@ function M:IsRaid()
 	if testIsRaid ~= nil then
 		return testIsRaid
 	end
-	return GetNumGroupMembers() > 5
+	return IsInRaid()
 end
 
 ---@param isRaid boolean?
