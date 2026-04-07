@@ -39,6 +39,20 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		colorTooltip = L["Change the colour of the glow/border. Defensive spells are green and Important spells are red."]
 	end
 
+	local enabledChk = mini:Checkbox({
+		Parent = container,
+		LabelText = L["Enabled"],
+		GetValue = function()
+			return options.Enabled
+		end,
+		SetValue = function(value)
+			options.Enabled = value
+			config:Apply()
+		end,
+	})
+
+	enabledChk:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0)
+
 	local glowChk = mini:Checkbox({
 		Parent = container,
 		LabelText = L["Glow icons"],
@@ -52,23 +66,8 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	glowChk:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0)
-
-	local dispelColoursChk = mini:Checkbox({
-		Parent = container,
-		LabelText = L["Spell colours"],
-		Tooltip = colorTooltip,
-		GetValue = function()
-			return options.Icons.ColorByCategory
-		end,
-		SetValue = function(value)
-			options.Icons.ColorByCategory = value
-			config:Apply()
-		end,
-	})
-
-	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
-	dispelColoursChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+	glowChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	glowChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
 	local reverseChk = mini:Checkbox({
 		Parent = container,
@@ -83,8 +82,24 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
-	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+	reverseChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	reverseChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+
+	local dispelColoursChk = mini:Checkbox({
+		Parent = container,
+		LabelText = L["Spell colours"],
+		Tooltip = colorTooltip,
+		GetValue = function()
+			return options.Icons.ColorByCategory
+		end,
+		SetValue = function(value)
+			options.Icons.ColorByCategory = value
+			config:Apply()
+		end,
+	})
+
+	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	dispelColoursChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
 	local iconSize = mini:Slider({
 		Parent = container,
@@ -106,7 +121,7 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
+	iconSize.Slider:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
 	-- Add Max Icons slider for all section types
 	local maxIconsMax = sectionType == "Combined" and 8 or 5
