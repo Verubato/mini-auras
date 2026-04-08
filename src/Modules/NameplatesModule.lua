@@ -264,6 +264,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 	local iconsGlow = combinedOptions.Icons.Glow
 	local iconsReverse = combinedOptions.Icons.ReverseCooldown
 	local colorByCategory = combinedOptions.Icons.ColorByCategory
+	local showTooltips = combinedOptions.ShowTooltips ~= false
 	local fontScale = db.FontScale
 
 	-- Calculate slot distribution
@@ -287,6 +288,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and entry.DispelColor or nil
+			layerScratch.SpellId = showTooltips and entry.SpellId or nil
 			container:SetSlot(slot, layerScratch)
 		end
 	end
@@ -306,6 +308,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and defensiveColor or nil
+			layerScratch.SpellId = showTooltips and entry.SpellId or nil
 			container:SetSlot(slot, layerScratch)
 		end
 	end
@@ -325,6 +328,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and importantColor or nil
+			layerScratch.SpellId = showTooltips and entry.SpellId or nil
 			container:SetSlot(slot, layerScratch)
 		end
 	end
@@ -360,6 +364,7 @@ local function ApplyCcToNameplate(data, watcher, unitOptions)
 	local iconsGlow = options.Icons.Glow
 	local iconsReverse = options.Icons.ReverseCooldown
 	local colorByCategory = options.Icons.ColorByCategory
+	local showTooltips = options.ShowTooltips ~= false
 	local fontScale = db.FontScale
 	local limit = mathMin(ccDataCount, container.Count)
 
@@ -372,6 +377,7 @@ local function ApplyCcToNameplate(data, watcher, unitOptions)
 		layerScratch.ReverseCooldown = iconsReverse
 		layerScratch.FontScale = fontScale
 		layerScratch.Color = colorByCategory and entry.DispelColor or nil
+		layerScratch.SpellId = showTooltips and entry.SpellId or nil
 		container:SetSlot(i, layerScratch)
 	end
 
@@ -398,6 +404,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitOptions)
 	local iconsGlow = options.Icons.Glow
 	local iconsReverse = options.Icons.ReverseCooldown
 	local colorByCategory = options.Icons.ColorByCategory
+	local showTooltips = options.ShowTooltips ~= false
 	local fontScale = db.FontScale
 	local defensivesData = watcher:GetDefensiveState()
 	local importantData = watcher:GetImportantState()
@@ -424,6 +431,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitOptions)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and importantColor or nil
+			layerScratch.SpellId = showTooltips and entry.SpellId or nil
 			container:SetSlot(slot, layerScratch)
 		end
 	end
@@ -443,6 +451,7 @@ local function ApplyImportantSpellsToNameplate(data, watcher, unitOptions)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and defensiveColor or nil
+			layerScratch.SpellId = showTooltips and entry.SpellId or nil
 			container:SetSlot(slot, layerScratch)
 		end
 	end
@@ -491,6 +500,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 	local iconsGlow = combinedOptions.Icons.Glow
 	local iconsReverse = combinedOptions.Icons.ReverseCooldown
 	local colorByCategory = combinedOptions.Icons.ColorByCategory
+	local showTooltips = combinedOptions.ShowTooltips ~= false
 	local fontScale = db.FontScale
 	local slot = 0
 
@@ -511,6 +521,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and testCcDispelColors[spellId] or nil
+			layerScratch.SpellId = showTooltips and spellId or nil
 			combinedContainer:SetSlot(slot, layerScratch)
 		end
 	end
@@ -532,6 +543,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and defensiveColor or nil
+			layerScratch.SpellId = showTooltips and spellId or nil
 			combinedContainer:SetSlot(slot, layerScratch)
 		end
 	end
@@ -553,6 +565,7 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and importantColor or nil
+			layerScratch.SpellId = showTooltips and spellId or nil
 			combinedContainer:SetSlot(slot, layerScratch)
 		end
 	end
@@ -568,6 +581,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 		local iconsGlow = ccOptions.Icons.Glow
 		local iconsReverse = ccOptions.Icons.ReverseCooldown
 		local colorByCategory = ccOptions.Icons.ColorByCategory
+		local showTooltips = ccOptions.ShowTooltips ~= false
 		local fontScale = db.FontScale
 		local limit = mathMin(testCcCount, ccContainer.Count)
 
@@ -584,6 +598,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 				layerScratch.ReverseCooldown = iconsReverse
 				layerScratch.FontScale = fontScale
 				layerScratch.Color = colorByCategory and testCcDispelColors[spellId] or nil
+				layerScratch.SpellId = showTooltips and spellId or nil
 				ccContainer:SetSlot(i, layerScratch)
 			end
 		end
@@ -598,6 +613,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 		local iconsGlow = importantOptions.Icons.Glow
 		local iconsReverse = importantOptions.Icons.ReverseCooldown
 		local colorByCategory = importantOptions.Icons.ColorByCategory
+		local showTooltips = importantOptions.ShowTooltips ~= false
 		local fontScale = db.FontScale
 
 		-- Calculate slot distribution (Important has higher priority than Defensive)
@@ -625,6 +641,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 					layerScratch.ReverseCooldown = iconsReverse
 					layerScratch.FontScale = fontScale
 					layerScratch.Color = colorByCategory and importantColor or nil
+					layerScratch.SpellId = showTooltips and spellId or nil
 					importantContainer:SetSlot(slot, layerScratch)
 				end
 			end
@@ -649,6 +666,7 @@ local function ShowSeparateModeTestIcons(ccContainer, ccOptions, importantContai
 					layerScratch.ReverseCooldown = iconsReverse
 					layerScratch.FontScale = fontScale
 					layerScratch.Color = colorByCategory and defensiveColor or nil
+					layerScratch.SpellId = showTooltips and spellId or nil
 					importantContainer:SetSlot(slot, layerScratch)
 				end
 			end

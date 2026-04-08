@@ -101,6 +101,21 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
 	dispelColoursChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
+	local showTooltipsChk = mini:Checkbox({
+		Parent = container,
+		LabelText = L["Show tooltips"],
+		Tooltip = L["Shows a spell tooltip when hovering over an icon."],
+		GetValue = function()
+			return options.ShowTooltips ~= false
+		end,
+		SetValue = function(value)
+			options.ShowTooltips = value
+			config:Apply()
+		end,
+	})
+
+	showTooltipsChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local iconSize = mini:Slider({
 		Parent = container,
 		Min = 10,
@@ -121,7 +136,7 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
+	iconSize.Slider:SetPoint("TOPLEFT", showTooltipsChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
 	-- Add Max Icons slider for all section types
 	local maxIconsMax = sectionType == "Combined" and 8 or 5

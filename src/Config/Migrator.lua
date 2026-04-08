@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 37,
+	Version = 38,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -235,6 +235,8 @@ local dbDefaults = {
 						ColorByCategory = true,
 						MaxIcons = 5,
 					},
+
+					ShowTooltips = false,
 				},
 				Important = {
 					Enabled = false,
@@ -251,6 +253,8 @@ local dbDefaults = {
 						ColorByCategory = true,
 						MaxIcons = 5,
 					},
+
+					ShowTooltips = false,
 				},
 				Combined = {
 					Enabled = false,
@@ -267,6 +271,8 @@ local dbDefaults = {
 						ColorByCategory = true,
 						MaxIcons = 5,
 					},
+
+					ShowTooltips = false,
 				},
 			},
 			Enemy = {
@@ -286,6 +292,8 @@ local dbDefaults = {
 						ColorByCategory = true,
 						MaxIcons = 5,
 					},
+
+					ShowTooltips = false,
 				},
 				Important = {
 					Enabled = true,
@@ -302,6 +310,8 @@ local dbDefaults = {
 						ColorByCategory = true,
 						MaxIcons = 5,
 					},
+
+					ShowTooltips = false,
 				},
 				Combined = {
 					Enabled = false,
@@ -318,6 +328,8 @@ local dbDefaults = {
 						ColorByCategory = true,
 						MaxIcons = 5,
 					},
+
+					ShowTooltips = false,
 				},
 			},
 		},
@@ -2092,6 +2104,27 @@ function M:UpgradeToVersion37(vars)
 	end
 
 	vars.Version = 37
+	return true
+end
+
+function M:UpgradeToVersion38(vars)
+	if vars.Version ~= 37 then return false end
+
+	-- Add ShowTooltips to each NameplateSpellTypeOptions section. Existing installs default to true.
+	if vars.Modules and vars.Modules.NameplatesModule then
+		local nm = vars.Modules.NameplatesModule
+		for _, faction in ipairs({ nm.Friendly, nm.Enemy }) do
+			if faction then
+				for _, section in ipairs({ faction.CC, faction.Important, faction.Combined }) do
+					if section and section.ShowTooltips == nil then
+						section.ShowTooltips = false
+					end
+				end
+			end
+		end
+	end
+
+	vars.Version = 38
 	return true
 end
 
