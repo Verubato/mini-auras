@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.6.0
+
+- Raid settings now trigger in open world when in a raid group.
+- Added Time Stop for evokers.
+- Added NDui support.
+- Added show tooltips to nameplates.
+- Fixed Warlock Nether Ward not always showing.
+
 ## 3.5.1
 
 Fixed wrong instance settings being used in arena.
