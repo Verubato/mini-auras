@@ -702,6 +702,17 @@ local rules = {
 				MinDuration = true,
 				SpellId = 363916,
 			},
+			{
+				BuffDuration = 5,
+				Cooldown = 41,
+				BigDefensive = false,
+				Important = true,
+				ExternalDefensive = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 378441,
+				RequiresTalent = { 5463, 5464, 5619 },
+			}, -- Time Stop (PvP talent)
 		}, -- Augmentation Evoker: Obsidian Scales
 		[264] = { -- Restoration Shaman
 			{
@@ -1041,6 +1052,17 @@ local rules = {
 				MinDuration = true,
 				SpellId = 363916,
 			}, -- Obsidian Scales
+			{
+				BuffDuration = 5,
+				Cooldown = 45,
+				BigDefensive = false,
+				Important = true,
+				ExternalDefensive = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 378441,
+				RequiresTalent = { 5463, 5464, 5619 },
+			}, -- Time Stop (PvP talent)
 		},
 	},
 }
