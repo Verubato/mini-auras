@@ -155,7 +155,12 @@ local function AppendStaticSlots(slots, entry, now, showTooltips, iconOptions)
 		if texture then
 			local durationObject = nil
 			if cd and now < cd.StartTime + cd.Cooldown then
+				-- Confirmed cooldown running: show the CD swipe.
 				durationObject = wowEx:CreateDuration(cd.StartTime, cd.Cooldown)
+			elseif entry.PredictedGlows[ability.SpellId] then
+				-- Buff still active (no CD committed yet): count down the aura duration so
+				-- the icon shows how long the buff has left rather than being empty.
+				durationObject = entry.PredictedGlowDurations[ability.SpellId]
 			end
 			slots[#slots + 1] = {
 				Texture = texture,
@@ -164,6 +169,7 @@ local function AppendStaticSlots(slots, entry, now, showTooltips, iconOptions)
 				Alpha = 1,
 				ReverseCooldown = iconOptions.ReverseCooldown,
 				Desaturate = iconOptions.DesaturateOnCooldown,
+				Glow = entry.PredictedGlows[ability.SpellId] and true or nil,
 				FontScale = db.FontScale,
 			}
 		end

@@ -78,7 +78,7 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
+				RequiresEvidence = { "Cast", "Debuff" },
 				SpellId = 204018,
 				RequiresTalent = 5692,
 			}, -- Blessing of Spellwarding (replaces BoP)
@@ -89,7 +89,7 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
+				RequiresEvidence = { "Cast", "Debuff" },
 				SpellId = 1022,
 				ExcludeIfTalent = 5692,
 			}, -- Blessing of Protection
@@ -162,7 +162,7 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
+				RequiresEvidence = { "Cast", "Debuff" },
 				SpellId = 204018,
 				RequiresTalent = 5692,
 			}, -- Blessing of Spellwarding (replaces BoP)
@@ -173,7 +173,7 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
+				RequiresEvidence = { "Cast", "Debuff" },
 				SpellId = 1022,
 				ExcludeIfTalent = 5692,
 			}, -- Blessing of Protection
@@ -224,7 +224,7 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
+				RequiresEvidence = { "Cast", "Debuff" },
 				SpellId = 204018,
 				RequiresTalent = 5692,
 			}, -- Blessing of Spellwarding (replaces BoP)
@@ -235,7 +235,7 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
+				RequiresEvidence = { "Cast", "Debuff" },
 				SpellId = 1022,
 				ExcludeIfTalent = 5692,
 			}, -- Blessing of Protection
@@ -432,6 +432,7 @@ local rules = {
 				BigDefensive = false,
 				ExternalDefensive = false,
 				CanCancelEarly = true,
+				MinCancelDuration = 1.5, -- Phase Shift (PvP talent) applies a 1s IMPORTANT buff on Fade; exclude it
 				RequiresEvidence = "Cast",
 				SpellId = 64843,
 			}, -- Divine Hymn
@@ -803,6 +804,7 @@ local rules = {
 				BigDefensive = false,
 				CanCancelEarly = true,
 				RequiresEvidence = "Cast",
+				CastableOnOthers = true,
 				SpellId = 1044,
 			}, -- Blessing of Freedom
 			{
@@ -812,7 +814,7 @@ local rules = {
 				Important = false,
 				BigDefensive = false,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
+				RequiresEvidence = { "Cast", "Debuff" },
 				SpellId = 204018,
 				RequiresTalent = 5692,
 			}, -- Blessing of Spellwarding (replaces BoP)
@@ -823,7 +825,7 @@ local rules = {
 				Important = false,
 				BigDefensive = false,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
+				RequiresEvidence = { "Cast", "Debuff" },
 				SpellId = 1022,
 				ExcludeIfTalent = 5692,
 			}, -- Blessing of Protection

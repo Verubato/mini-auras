@@ -30,6 +30,11 @@ local lastDebuffTime = {}
 local lastShieldTime = {}
 -- unit -> timestamp of most recent UNIT_SPELLCAST_SUCCEEDED (self-cast evidence e.g. Alter Time).
 local lastCastTime = {}
+-- unit -> list of { SpellId, Time } for recent non-secret cast spell IDs within castWindow.
+-- Stored as a list because a single keypress can fire multiple UNIT_SPELLCAST_SUCCEEDED events
+-- (e.g. Desperate Prayer triggers procs or follow-up spells), and we must check all of them.
+-- Only populated for the local player (UNIT_SPELLCAST_SUCCEEDED provides non-secret IDs locally).
+local lastCastSpellIds = {}
 -- unit -> timestamp of most recent UNIT_FLAGS (unit combat/immune flags changed e.g. Aspect of the Turtle).
 local lastUnitFlagsTime = {}
 -- unit -> timestamp of most recent feign death activation (UnitIsFeignDeath transition false->true).
@@ -50,6 +55,20 @@ local cooldownCallback = nil
 -- so the detected entry's display (which may differ from the caster's entry) can update.
 -- Signature: fn(entry)
 local displayCallback = nil
+-- Callback fired when a new non-external aura is detected and a predictive spell match is found.
+-- Signature: fn(entry, spellId)
+local predictiveGlowCallback = nil
+-- Callback fired when a predictively-matched aura is removed.
+-- Signature: fn(entry, spellId)
+local predictiveGlowEndCallback = nil
+-- Lookup function returning a unit's ActiveCooldowns table, or nil if the unit is not watched.
+-- Registered by Module so Brain has no direct dependency on Module.
+-- Signature: fn(unit) -> table?
+local activeCooldownsLookup = nil
+-- Callback fired when an active predicted-glow aura's duration changes (e.g. Combustion extended
+-- by a talent proc, Avatar extended by a proc).  Lets Module refresh PredictedGlowDurations.
+-- Signature: fn(entry, spellId, casterUnit, durationObject)
+local predictiveGlowDurationChangedCallback = nil
 
 ---@class EvidenceSet
 ---@field Debuff     boolean?  a HARMFUL aura appeared near detectionTime (e.g. Forbearance from Divine Shield)
@@ -162,6 +181,55 @@ local function EvidenceMatchesReq(req, evidence)
 	return false
 end
 
+---Finds the first rule for the given spellId that passes talent checks and aura type constraints.
+---Used by the cast-spell-ID fast path in both MatchRule and PredictRule: having a non-secret
+---spell ID from UNIT_SPELLCAST_SUCCEEDED means duration and evidence checks can be skipped.
+---Returns the matching rule, or nil if none is found.
+---@param unit string
+---@param specId number?
+---@param auraTypes table<string,boolean>
+---@param spellId number
+---@return table?
+local function FindRuleBySpellId(unit, specId, auraTypes, spellId)
+	local _, classToken = UnitClass(unit)
+	if not classToken then return nil end
+
+	local function checkList(ruleList)
+		if not ruleList then return nil end
+		for _, rule in ipairs(ruleList) do
+			if rule.SpellId == spellId then
+				local excluded = false
+				if rule.ExcludeIfTalent then
+					if type(rule.ExcludeIfTalent) == "table" then
+						for _, talentId in ipairs(rule.ExcludeIfTalent) do
+							if fcdTalents:UnitHasTalent(unit, talentId, specId) then excluded = true; break end
+						end
+					else
+						excluded = fcdTalents:UnitHasTalent(unit, rule.ExcludeIfTalent, specId)
+					end
+				end
+				local required = false
+				if rule.RequiresTalent then
+					if type(rule.RequiresTalent) == "table" then
+						required = true
+						for _, talentId in ipairs(rule.RequiresTalent) do
+							if fcdTalents:UnitHasTalent(unit, talentId, specId) then required = false; break end
+						end
+					else
+						required = not fcdTalents:UnitHasTalent(unit, rule.RequiresTalent, specId)
+					end
+				end
+				if not excluded and not required and AuraTypeMatchesRule(auraTypes, rule) then
+					return rule
+				end
+			end
+		end
+		return nil
+	end
+
+	return checkList(specId and rules.BySpec[specId]) or checkList(rules.ByClass[classToken])
+end
+
 ---Finds the first rule matching the aura type and measured duration.
 ---Tries spec-level rules first for precision, falls back to class-level rules.
 ---@param unit string   caster unit for EXTERNAL_DEFENSIVE, recipient unit for BIG_DEFENSIVE/IMPORTANT
@@ -178,6 +246,19 @@ local function MatchRule(unit, auraTypes, measuredDuration, context)
 	local specId = fcdTalents:GetUnitSpecId(unit)
 	local evidence = context and context.Evidence
 	local activeCooldowns = context and context.ActiveCooldowns
+
+	-- Fast path: non-secret spell IDs from UNIT_SPELLCAST_SUCCEEDED skip duration and evidence
+	-- checks when an ID matches a tracked rule.  Falls through to normal matching when none match:
+	-- MatchRule has MinCancelDuration and duration/evidence guards that correctly reject short proc
+	-- buffs, so returning nil here would only create false negatives (e.g. Desperate Prayer).
+	-- Multiple IDs are checked because one keypress can fire several UNIT_SPELLCAST_SUCCEEDED events.
+	local knownSpellIds = context and context.KnownSpellIds
+	if knownSpellIds then
+		for _, sid in ipairs(knownSpellIds) do
+			local fastRule = FindRuleBySpellId(unit, specId, auraTypes, sid)
+			if fastRule then return fastRule end
+		end
+	end
 
 	local function tryRuleList(ruleList)
 		if not ruleList then
@@ -220,6 +301,7 @@ local function MatchRule(unit, auraTypes, measuredDuration, context)
 							durationOk = measuredDuration >= expectedDuration - tolerance
 						elseif rule.CanCancelEarly == true then
 							durationOk = measuredDuration <= expectedDuration + tolerance
+								and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration)
 						else
 							durationOk = math.abs(measuredDuration - expectedDuration) <= tolerance
 						end
@@ -240,6 +322,204 @@ local function MatchRule(unit, auraTypes, measuredDuration, context)
 
 	-- Spec rules take priority; fall through to class rules if no match.
 	return tryRuleList(specId and rules.BySpec[specId]) or tryRuleList(rules.ByClass[classToken])
+end
+
+---Tries to match auraTypes + evidence against a single unit's rule lists.
+---Returns the matched SpellId and whether that spell is currently on cooldown, or nil.
+---Stops at the FIRST matching rule (the intended ability) rather than falling through to
+---alternatives — a fallback to a different spell would cause false ambiguity in PredictRule
+---when compared against other candidates who correctly matched the primary spell.
+---@param unit string
+---@param auraTypes table<string,boolean>
+---@param evidence EvidenceSet?
+---@param castableFilter string?  nil = no filter; "only" = only CastableOnOthers rules; "exclude" = exclude CastableOnOthers rules
+---@return number? spellId
+---@return boolean isOnCooldown
+local function PredictSpellIdForUnit(unit, auraTypes, evidence, castableFilter)
+	local _, classToken = UnitClass(unit)
+	if not classToken then
+		return nil
+	end
+
+	local specId = fcdTalents:GetUnitSpecId(unit)
+	local activeCooldowns = activeCooldownsLookup and activeCooldownsLookup(unit)
+
+	local function tryRuleList(ruleList)
+		if not ruleList then
+			return nil
+		end
+		for _, rule in ipairs(ruleList) do
+			if rule.SpellId then
+				if castableFilter == "only" and not rule.CastableOnOthers then
+					-- skip self-only rules when searching for cross-unit casters
+				elseif castableFilter == "exclude" and rule.CastableOnOthers then
+					-- skip cross-unit rules when searching for self-cast spells
+				else
+					local excluded = false
+					if rule.ExcludeIfTalent then
+						if type(rule.ExcludeIfTalent) == "table" then
+							for _, talentId in ipairs(rule.ExcludeIfTalent) do
+								if fcdTalents:UnitHasTalent(unit, talentId, specId) then excluded = true; break end
+							end
+						else
+							excluded = fcdTalents:UnitHasTalent(unit, rule.ExcludeIfTalent, specId)
+						end
+					end
+					local required = false
+					if rule.RequiresTalent then
+						if type(rule.RequiresTalent) == "table" then
+							required = true
+							for _, talentId in ipairs(rule.RequiresTalent) do
+								if fcdTalents:UnitHasTalent(unit, talentId, specId) then required = false; break end
+							end
+						else
+							required = not fcdTalents:UnitHasTalent(unit, rule.RequiresTalent, specId)
+						end
+					end
+					if not excluded and not required then
+						if AuraTypeMatchesRule(auraTypes, rule) and EvidenceMatchesReq(rule.RequiresEvidence, evidence) then
+							-- Return the first match plus its CD state.  Do NOT fall through to
+							-- other rules: if this spell is on CD this candidate is ineligible
+							-- rather than being attributed to a different spell, which would
+							-- produce false ambiguity against candidates who matched correctly.
+							return rule.SpellId, activeCooldowns and activeCooldowns[rule.SpellId] ~= nil
+						end
+					end
+				end
+			end
+		end
+		return nil
+	end
+
+	-- Spec rules take priority.  Explicit branch rather than `or` so both return values
+	-- (spellId, isOnCooldown) are forwarded correctly — `or` only propagates one value.
+	local spellId, onCd = tryRuleList(specId and rules.BySpec[specId])
+	if spellId ~= nil then
+		return spellId, onCd
+	end
+	return tryRuleList(rules.ByClass[classToken])
+end
+
+---Returns the predicted SpellId and caster unit for a newly-detected aura, or nil.
+---For non-external auras, matches against the target unit itself (which is the caster).
+---For EXTERNAL_DEFENSIVE, searches candidateUnits for a unit with recent cast evidence and a matching rule.
+---Returns spellId, casterUnit — casterUnit is nil for self-cast auras (caster == target).
+---@param targetUnit string
+---@param auraTypes table<string,boolean>
+---@param evidence EvidenceSet?
+---@param castSnapshot table<string,number>
+---@param castSpellIdSnapshot table<string,{SpellId:number,Time:number}>
+---@param detectionTime number
+---@param candidateUnits string[]
+---@return number?, string?
+local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSpellIdSnapshot, detectionTime, candidateUnits)
+	-- Fast path: UNIT_SPELLCAST_SUCCEEDED provides a non-secret spell ID for the local player.
+	-- If the target unit's cast spell ID is known and falls within the detection window, verify
+	-- it against talent checks + aura type and return immediately — no ambiguity analysis needed.
+	-- This bypasses evidence inference entirely, which is the correct behaviour: having the exact
+	-- spell ID is a stronger signal than any combination of indirect evidence types.
+	-- Not applicable to EXTERNAL_DEFENSIVE (where the caster is a different unit).
+	if not auraTypes["EXTERNAL_DEFENSIVE"] then
+		local knownCasts = castSpellIdSnapshot and castSpellIdSnapshot[targetUnit]
+		if knownCasts then
+			-- Check whether any entry in the list falls within the detection window.
+			-- A single keypress can produce multiple UNIT_SPELLCAST_SUCCEEDED events, so the list
+			-- may contain several spell IDs; we check all of them before falling through.
+			local anyInWindow = false
+			for _, knownCast in ipairs(knownCasts) do
+				if math.abs(knownCast.Time - detectionTime) <= castWindow then
+					anyInWindow = true
+					break
+				end
+			end
+			if anyInWindow then
+				local specId = fcdTalents:GetUnitSpecId(targetUnit)
+				for _, knownCast in ipairs(knownCasts) do
+					if math.abs(knownCast.Time - detectionTime) <= castWindow then
+						if FindRuleBySpellId(targetUnit, specId, auraTypes, knownCast.SpellId) then
+							return knownCast.SpellId, nil
+						end
+					end
+				end
+				-- None of the known spell IDs matched a tracked rule.  Don't fall through to
+				-- indirect evidence matching: we know what was cast (e.g. Fade -> Phase Shift proc).
+				return nil, nil
+			end
+		end
+	end
+
+	local matchSpellId = nil
+	local matchCasterUnit = nil
+	local matchCastDiff = nil -- absolute cast-time distance for the current best caster
+	local ambiguous = false
+
+	-- Evaluates one candidate and records the match (or ambiguity) into the outer locals.
+	-- castableFilter: nil = no filter, "only" = CastableOnOthers rules only, "exclude" = exclude them.
+	local function consider(candidate, useSnapshot, castableFilter)
+		if ambiguous then return end
+		local candidateEvidence = evidence
+		local castTime = nil
+		if useSnapshot then
+			castTime = castSnapshot[candidate]
+			if not castTime or math.abs(castTime - detectionTime) > castWindow then return end
+			candidateEvidence = { Cast = true }
+			if evidence then
+				for k, v in pairs(evidence) do
+					if k ~= "Cast" then candidateEvidence[k] = v end
+				end
+			end
+		end
+		local spellId, isOnCd = PredictSpellIdForUnit(candidate, auraTypes, candidateEvidence, castableFilter)
+		-- nil  -> no rule matched this aura for this candidate at all
+		-- true -> rule matched but spell is on CD; candidate is ineligible, not ambiguous
+		if not spellId or isOnCd then return end
+		if matchSpellId == nil then
+			matchSpellId = spellId
+			matchCasterUnit = (candidate ~= targetUnit) and candidate or nil
+			matchCastDiff = castTime and math.abs(castTime - detectionTime) or nil
+		elseif matchSpellId ~= spellId then
+			ambiguous = true
+		else
+			-- Same spell matched by a different candidate.  Prefer whoever's cast was closest
+			-- to the moment the buff appeared — disambiguates e.g. two Paladins who both had
+			-- recent casts but only one actually pressed BoP.
+			local diff = castTime and math.abs(castTime - detectionTime) or nil
+			if diff and (not matchCastDiff or diff < matchCastDiff) then
+				matchCasterUnit = (candidate ~= targetUnit) and candidate or nil
+				matchCastDiff = diff
+			end
+		end
+	end
+
+	if auraTypes["EXTERNAL_DEFENSIVE"] then
+		-- Some externals (e.g. Ironbark) can be self-cast; targetUnit is a valid candidate.
+		local seen = {}
+		for _, candidate in ipairs(candidateUnits) do
+			if not seen[candidate] then
+				seen[candidate] = true
+				consider(candidate, true, nil)
+			end
+		end
+	else
+		-- Self-cast path: check what the target unit's own self-only rules match.
+		consider(targetUnit, false, "exclude")
+		-- Also check whether the target matches a CastableOnOthers rule via cast snapshot.
+		-- If so, and the spellId differs, the prediction is ambiguous (e.g. a Paladin self-casting
+		-- Blessing of Freedom — we can't distinguish it from Avenging Crusader at detection time).
+		consider(targetUnit, true, "only")
+		-- Cross-unit path: only CastableOnOthers rules, so self-only spells like Avenging Crusader
+		-- are never returned as the caster of a buff on a different unit.
+		local seen = { [targetUnit] = true }
+		for _, candidate in ipairs(candidateUnits) do
+			if not seen[candidate] then
+				seen[candidate] = true
+				consider(candidate, true, "only")
+			end
+		end
+	end
+
+	if ambiguous then return nil, nil end
+	return matchSpellId, matchCasterUnit
 end
 
 ---Evaluates all candidate units and returns the best-matching rule and caster unit.
@@ -281,11 +561,22 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 			hasEvidence = true
 		end
 		local candidateEvidence = hasEvidence and scratch or nil
+		-- Extract non-secret spell IDs for this candidate if any were snapshotted within the cast window.
+		local castSpellDataList = tracked.CastSpellIdSnapshot and tracked.CastSpellIdSnapshot[candidate]
+		local knownSpellIds = nil
+		if castSpellDataList then
+			for _, data in ipairs(castSpellDataList) do
+				if math.abs(data.Time - tracked.StartTime) <= castWindow then
+					knownSpellIds = knownSpellIds or {}
+					knownSpellIds[#knownSpellIds + 1] = data.SpellId
+				end
+			end
+		end
 		local candidateRule = MatchRule(
 			candidate,
 			tracked.AuraTypes,
 			measuredDuration,
-			{ Evidence = candidateEvidence, ActiveCooldowns = entry.ActiveCooldowns }
+			{ Evidence = candidateEvidence, ActiveCooldowns = entry.ActiveCooldowns, KnownSpellIds = knownSpellIds }
 		)
 		if not candidateRule then
 			return
@@ -359,7 +650,7 @@ local function OnAuraRemoved(entry, tracked, now, candidateUnits)
 	return true
 end
 
----Builds a table of current aura instance IDs → { AuraTypes } from the watcher.
+---Builds a table of current aura instance IDs -> { AuraTypes } from the watcher.
 ---GetDefensiveState doesn't expose which filter each aura came from, so each aura is
 ---re-checked via IsAuraFilteredOutByInstanceID to classify EXTERNAL_DEFENSIVE vs BIG_DEFENSIVE.
 local function BuildCurrentAuraIds(unit, watcher)
@@ -374,7 +665,7 @@ local function BuildCurrentAuraIds(unit, watcher)
 			if isImportant then
 				auraTypes["IMPORTANT"] = true
 			end
-			currentIds[id] = { AuraTypes = auraTypes }
+			currentIds[id] = { AuraTypes = auraTypes, DurationObject = aura.DurationObject }
 		end
 	end
 	-- Auras already added from GetDefensiveState are excluded from GetImportantState by the
@@ -385,7 +676,7 @@ local function BuildCurrentAuraIds(unit, watcher)
 			if currentIds[id] then
 				currentIds[id].AuraTypes["IMPORTANT"] = true
 			else
-				currentIds[id] = { AuraTypes = { IMPORTANT = true } }
+				currentIds[id] = { AuraTypes = { IMPORTANT = true }, DurationObject = aura.DurationObject }
 			end
 		end
 	end
@@ -394,7 +685,17 @@ end
 
 ---Begins tracking a newly detected aura: records evidence and a cast snapshot,
 ---then schedules a deferred backfill for events that may arrive after UNIT_AURA.
-local function TrackNewAura(unit, trackedAuras, id, info, now)
+local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
+	local unit = entry.Unit
+
+	-- candidateUnits is a shared scratch table in Observer that is reused on every aura event.
+	-- Copy it now so the deferred timer closure has a stable snapshot of the current candidates.
+	local candidatesCopy = {}
+	for i = 1, #candidateUnits do
+		candidatesCopy[i] = candidateUnits[i]
+	end
+	candidateUnits = candidatesCopy
+
 	-- Collect concurrent Debuff/Shield/UnitFlags evidence (HARMFUL auras fire in the same
 	-- UNIT_AURA batch). Cast evidence is intentionally excluded here — it is derived
 	-- per-candidate from CastSnapshot in OnAuraRemoved so a cast by unit A cannot satisfy
@@ -408,11 +709,29 @@ local function TrackNewAura(unit, trackedAuras, id, info, now)
 		castSnapshot[snapshotUnit] = snapshotTime
 	end
 
+	-- Snapshot non-secret cast spell IDs (local player only).  Used by PredictRule as a
+	-- definitive signal when the player's own UNIT_SPELLCAST_SUCCEEDED is available.
+	-- Stored as a list per unit so all events from a single keypress are captured.
+	local castSpellIdSnapshot = {}
+	for snapshotUnit, list in pairs(lastCastSpellIds) do
+		local filtered = {}
+		for _, data in ipairs(list) do
+			if math.abs(data.Time - now) <= castWindow then
+				filtered[#filtered + 1] = data
+			end
+		end
+		if #filtered > 0 then
+			castSpellIdSnapshot[snapshotUnit] = filtered
+		end
+	end
+
 	trackedAuras[id] = {
 		StartTime = now,
 		AuraTypes = info.AuraTypes,
 		Evidence = evidence,
 		CastSnapshot = castSnapshot,
+		CastSpellIdSnapshot = castSpellIdSnapshot,
+		DurationObject = info.DurationObject,
 	}
 
 	-- Deferred backfill: UNIT_SPELLCAST_SUCCEEDED and UNIT_ABSORB_AMOUNT_CHANGED can arrive
@@ -434,6 +753,34 @@ local function TrackNewAura(unit, trackedAuras, id, info, now)
 		for snapshotUnit, snapshotTime in pairs(lastCastTime) do
 			if math.abs(snapshotTime - now) <= castWindow and not tracked.CastSnapshot[snapshotUnit] then
 				tracked.CastSnapshot[snapshotUnit] = snapshotTime
+			end
+		end
+		-- Backfill non-secret cast spell IDs that arrived after UNIT_AURA.
+		for snapshotUnit, list in pairs(lastCastSpellIds) do
+			for _, data in ipairs(list) do
+				if math.abs(data.Time - now) <= castWindow then
+					local existing = tracked.CastSpellIdSnapshot[snapshotUnit]
+					if not existing then
+						tracked.CastSpellIdSnapshot[snapshotUnit] = { data }
+					else
+						local found = false
+						for _, e in ipairs(existing) do
+							if e.SpellId == data.SpellId and e.Time == data.Time then found = true; break end
+						end
+						if not found then existing[#existing + 1] = data end
+					end
+				end
+			end
+		end
+
+		-- Predictive glow: identify the spell by aura type + talent + evidence.
+		-- For EXTERNAL_DEFENSIVE, searches candidateUnits for the caster via cast snapshot.
+		if predictiveGlowCallback and not tracked.PredictedSpellId then
+			local spellId, casterUnit = PredictRule(unit, info.AuraTypes, tracked.Evidence, tracked.CastSnapshot, tracked.CastSpellIdSnapshot, now, candidateUnits)
+			if spellId then
+				tracked.PredictedSpellId = spellId
+				tracked.PredictedCasterUnit = casterUnit
+				predictiveGlowCallback(entry, spellId, casterUnit, tracked.DurationObject)
 			end
 		end
 	end)
@@ -484,17 +831,29 @@ local function OnWatcherChanged(entry, watcher, candidateUnits)
 				local reassignedId = table.remove(candidates, 1)
 				trackedAuras[reassignedId] = tracked
 			else
+				-- Fire glow-end before OnAuraRemoved so that when UpdateDisplay runs the glow is already cleared.
+				if tracked.PredictedSpellId and predictiveGlowEndCallback then
+					predictiveGlowEndCallback(entry, tracked.PredictedSpellId, tracked.PredictedCasterUnit)
+				end
 				if OnAuraRemoved(entry, tracked, now, candidateUnits) then
 					cooldownCommitted = true
 				end
 			end
 			trackedAuras[id] = nil
+		elseif tracked.PredictedSpellId and predictiveGlowDurationChangedCallback then
+			-- Aura is still active: refresh DurationObject so the glow icon tracks any
+			-- duration extensions (e.g. Combustion extended by talents, Avatar by procs).
+			local newDuration = currentIds[id].DurationObject
+			if newDuration then
+				tracked.DurationObject = newDuration
+				predictiveGlowDurationChangedCallback(entry, tracked.PredictedSpellId, tracked.PredictedCasterUnit, newDuration)
+			end
 		end
 	end
 
 	for id, info in pairs(currentIds) do
 		if not trackedAuras[id] then
-			TrackNewAura(entry.Unit, trackedAuras, id, info, now)
+			TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 		end
 	end
 
@@ -506,10 +865,31 @@ local function OnWatcherChanged(entry, watcher, candidateUnits)
 	end
 end
 
-local function RecordCast(unit)
+local function RecordCast(unit, spellId)
 	local now = GetTime()
 	if lastCastTime[unit] ~= now then
 		lastCastTime[unit] = now
+	end
+	-- Store the spell ID only when non-secret (i.e. the local player).  Remote players'
+	-- UNIT_SPELLCAST_SUCCEEDED spell IDs are secret values that cannot be used for matching.
+	-- Appended to a list (rather than overwriting) because one keypress can fire multiple events.
+	if spellId and not issecretvalue(spellId) then
+		local list = lastCastSpellIds[unit]
+		if not list then
+			list = {}
+			lastCastSpellIds[unit] = list
+		end
+		list[#list + 1] = { SpellId = spellId, Time = now }
+		-- Prune entries outside the cast window to bound list size.
+		local cutoff = now - castWindow
+		local keep = 1
+		for i = 1, #list do
+			if list[i].Time >= cutoff then
+				if i ~= keep then list[keep] = list[i] end
+				keep = keep + 1
+			end
+		end
+		for i = keep, #list do list[i] = nil end
 	end
 end
 
@@ -565,6 +945,39 @@ end
 ---@param fn fun(entry: FcdWatchEntry)
 function B:RegisterDisplayCallback(fn)
 	displayCallback = fn
+end
+
+---Registers a lookup function that returns the ActiveCooldowns table for a given unit.
+---Used by PredictSpellIdForUnit to skip rules whose spell is already on cooldown.
+---@param fn fun(unit: string): table?
+function B:RegisterActiveCooldownsLookup(fn)
+	activeCooldownsLookup = fn
+end
+
+---Registers the callback fired when a new aura is matched to a predicted spell.
+---entry is the detecting (target) entry. casterUnit is the predicted caster unit string,
+---or nil when the caster is the target unit itself (self-cast auras).
+---durationObject is the aura's DurationObject at detection time, for driving the countdown display.
+---fn(entry, spellId, casterUnit, durationObject)
+---@param fn fun(entry: FcdWatchEntry, spellId: number, casterUnit: string?, durationObject: table?)
+function B:RegisterPredictiveGlowCallback(fn)
+	predictiveGlowCallback = fn
+end
+
+---Registers the callback fired when a predictively-matched aura is removed.
+---Mirrors RegisterPredictiveGlowCallback — casterUnit is nil for self-cast auras.
+---fn(entry, spellId, casterUnit)
+---@param fn fun(entry: FcdWatchEntry, spellId: number, casterUnit: string?)
+function B:RegisterPredictiveGlowEndCallback(fn)
+	predictiveGlowEndCallback = fn
+end
+
+---Registers the callback fired when an active predicted-glow aura's duration changes.
+---Fired on every UNIT_AURA update while the glow is live, so callers should be cheap.
+---fn(entry, spellId, casterUnit, durationObject)
+---@param fn fun(entry: FcdWatchEntry, spellId: number, casterUnit: string?, durationObject: table?)
+function B:RegisterPredictiveGlowDurationChangedCallback(fn)
+	predictiveGlowDurationChangedCallback = fn
 end
 
 -- Brain registers with Observer at file-load time; no explicit Init needed.

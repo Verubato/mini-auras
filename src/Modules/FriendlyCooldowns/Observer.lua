@@ -18,24 +18,34 @@ local unitFlagsCallbacks = {}
 local debuffEvidenceCallbacks = {}
 -- Scratch table reused by FireAuraChanged to avoid per-event allocation.
 local candidateUnitsScratch = {}
+-- Scratch set reused by FireAuraChanged to deduplicate unit tokens.
+local candidateSeenScratch = {}
 
 local function FireAuraChanged(entry, watcher)
-	-- Build candidateUnits from all currently-watched entries, reusing the scratch table.
+	-- Build a deduplicated candidateUnits list from all currently-watched entries.
+	-- Multiple anchor frames can share the same unit token (e.g. 41 frames all pointing to "player"),
+	-- so deduplication is required to avoid redundant cast-snapshot lookups and flooding debug output.
 	local t = candidateUnitsScratch
+	local seen = candidateSeenScratch
 	local n = 0
 	for e in pairs(watched) do
-		n = n + 1
-		t[n] = e.Unit
+		local u = e.Unit
+		if not seen[u] then
+			seen[u] = true
+			n = n + 1
+			t[n] = u
+		end
 	end
-	for i = n + 1, #t do t[i] = nil end -- trim tail from a prior larger raid group
+	for i = n + 1, #t do t[i] = nil end -- trim tail from a prior larger group
+	for k in pairs(seen) do seen[k] = nil end -- reset seen set for next call
 	for _, fn in ipairs(auraChangedCallbacks) do
 		fn(entry, watcher, t)
 	end
 end
 
-local function FireCast(unit)
+local function FireCast(unit, spellId)
 	for _, fn in ipairs(castCallbacks) do
-		fn(unit)
+		fn(unit, spellId)
 	end
 end
 
@@ -67,7 +77,8 @@ local function CreateCastEventFrame(entry)
 			return
 		end
 		if event == "UNIT_SPELLCAST_SUCCEEDED" then
-			FireCast(u)
+			local _, _, spellId = ...
+			FireCast(u, spellId)
 		elseif event == "UNIT_FLAGS" then
 			FireUnitFlags(u)
 		elseif event == "UNIT_AURA" then

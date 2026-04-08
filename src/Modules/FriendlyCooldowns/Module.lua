@@ -99,6 +99,8 @@ local function EnsureEntry(anchor, unit)
 			Container = container,
 			TrackedAuras = {},
 			ActiveCooldowns = {},
+			PredictedGlows = {},
+			PredictedGlowDurations = {},
 			IsExcludedSelf = anchorOptions.ExcludeSelf and UnitIsUnit(unit, "player") or false,
 		}
 		watchEntries[anchor] = entry
@@ -109,6 +111,8 @@ local function EnsureEntry(anchor, unit)
 		entry.IsExcludedSelf = anchorOptions.ExcludeSelf and UnitIsUnit(unit, "player") or false
 		entry.TrackedAuras = {}
 		entry.ActiveCooldowns = {}
+		entry.PredictedGlows = {}
+		entry.PredictedGlowDurations = {}
 		entry.Container:ResetAllSlots()
 		observer:Rewatch(entry)
 	end
@@ -221,6 +225,13 @@ function M:Init()
 
 	display:Init()
 
+	-- Provide Brain with a way to look up a unit's active cooldowns so PredictSpellIdForUnit
+	-- can skip rules whose spell is already on cooldown (e.g. BoF on CD when AW is cast).
+	brain:RegisterActiveCooldownsLookup(function(unit)
+		local e = GetEntryForUnit(unit)
+		return e and e.ActiveCooldowns
+	end)
+
 	-- When Brain detects that a buff ended and a rule matched, store the cooldown entry and
 	-- schedule a cleanup timer so the icon disappears once the cooldown expires.
 	brain:RegisterCooldownCallback(function(ruleUnit, cdKey, cdData, detectedFromEntry)
@@ -272,6 +283,81 @@ function M:Init()
 		display:UpdateDisplay(entry)
 	end)
 
+	-- When a new aura is matched to a predicted spell, glow that icon and drive its countdown
+	-- from the aura's own duration so the icon counts down while the buff is active.
+	-- For externals, casterUnit is provided and we glow the caster's entries instead of the target's.
+	brain:RegisterPredictiveGlowCallback(function(entry, spellId, casterUnit, durationObject)
+		local glowEntries
+		if casterUnit then
+			glowEntries = {}
+			for _, e in pairs(watchEntries) do
+				if UnitIsUnit(e.Unit, casterUnit) then
+					glowEntries[#glowEntries + 1] = e
+				end
+			end
+		end
+		if not glowEntries or #glowEntries == 0 then
+			glowEntries = { entry }
+		end
+		for _, e in ipairs(glowEntries) do
+			e.PredictedGlows[spellId] = (e.PredictedGlows[spellId] or 0) + 1
+			e.PredictedGlowDurations[spellId] = durationObject
+			display:UpdateDisplay(e)
+			ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+		end
+	end)
+
+	-- When the aura ends, stop glowing and clear the duration, then refresh the display.
+	brain:RegisterPredictiveGlowEndCallback(function(entry, spellId, casterUnit)
+		local glowEntries
+		if casterUnit then
+			glowEntries = {}
+			for _, e in pairs(watchEntries) do
+				if UnitIsUnit(e.Unit, casterUnit) then
+					glowEntries[#glowEntries + 1] = e
+				end
+			end
+		end
+		if not glowEntries or #glowEntries == 0 then
+			glowEntries = { entry }
+		end
+		for _, e in ipairs(glowEntries) do
+			local count = e.PredictedGlows[spellId]
+			if count then
+				if count <= 1 then
+					e.PredictedGlows[spellId] = nil
+					e.PredictedGlowDurations[spellId] = nil
+				else
+					e.PredictedGlows[spellId] = count - 1
+				end
+			end
+			display:UpdateDisplay(e)
+		end
+	end)
+
+	-- When a predicted-glow aura's duration is extended (e.g. Combustion, Avatar procs),
+	-- refresh PredictedGlowDurations so the icon countdown stays accurate.
+	brain:RegisterPredictiveGlowDurationChangedCallback(function(entry, spellId, casterUnit, durationObject)
+		local glowEntries
+		if casterUnit then
+			glowEntries = {}
+			for _, e in pairs(watchEntries) do
+				if UnitIsUnit(e.Unit, casterUnit) then
+					glowEntries[#glowEntries + 1] = e
+				end
+			end
+		end
+		if not glowEntries or #glowEntries == 0 then
+			glowEntries = { entry }
+		end
+		for _, e in ipairs(glowEntries) do
+			if e.PredictedGlows[spellId] then
+				e.PredictedGlowDurations[spellId] = durationObject
+				display:UpdateDisplay(e)
+			end
+		end
+	end)
+
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", function(_, event)
 		if event == "GROUP_ROSTER_UPDATE" then
@@ -291,6 +377,8 @@ function M:Init()
 				for _, entry in pairs(watchEntries) do
 					entry.ActiveCooldowns = {}
 					entry.TrackedAuras = {}
+					entry.PredictedGlows = {}
+					entry.PredictedGlowDurations = {}
 					display:UpdateDisplay(entry)
 				end
 			end
@@ -415,11 +503,14 @@ end
 ---@field StopTesting fun(self: FriendlyCooldownTrackerModule)
 
 ---@class FcdTrackedAura
----@field StartTime      number                  GetTime() when the aura was first detected
----@field AuraTypes      table<string,boolean>   set of applicable types: "BIG_DEFENSIVE", "IMPORTANT", "EXTERNAL_DEFENSIVE"
----@field SpellId        number                  aura.spellId (may be a secret value)
----@field Evidence       EvidenceSet?            evidence types collected at detection time; nil if none found
----@field CastSnapshot   table<string,number>    snapshot of lastCastTime at detection; used by OnAuraRemoved to attribute the cooldown to the correct caster
+---@field StartTime        number                  GetTime() when the aura was first detected
+---@field AuraTypes        table<string,boolean>   set of applicable types: "BIG_DEFENSIVE", "IMPORTANT", "EXTERNAL_DEFENSIVE"
+---@field SpellId          number                  aura.spellId (may be a secret value)
+---@field Evidence         EvidenceSet?            evidence types collected at detection time; nil if none found
+---@field CastSnapshot         table<string,number>                     snapshot of lastCastTime at detection; used by OnAuraRemoved to attribute the cooldown to the correct caster
+---@field CastSpellIdSnapshot  table<string,{SpellId:number,Time:number}[]>  snapshot of recent non-secret cast spell IDs at detection (list per unit); handles multiple UNIT_SPELLCAST_SUCCEEDED per keypress
+---@field PredictedSpellId   number?                SpellId predicted by PredictRule after the backfill window; nil if no match was found
+---@field PredictedCasterUnit string?               Unit string of the predicted caster; nil when the caster is the target itself (self-cast)
 
 ---@class FcdCooldownEntry
 ---@field StartTime     number       GetTime() when the defensive was cast (buff start)
@@ -435,8 +526,10 @@ end
 ---@field Container       IconSlotContainer
 ---@field TrackedAuras    table<number, FcdTrackedAura>              keyed by auraInstanceID
 ---@field ActiveCooldowns table<number|string, FcdCooldownEntry>     keyed by rule.SpellId or primaryAuraType_buffDuration_cooldown
+---@field PredictedGlows  table<number, number>                      spellId -> active instance count; non-zero means the buff is up and the icon should glow
 ---@field IsExcludedSelf  boolean                                    set by Module; bypasses Brain's container-visibility guard when true
 
 ---@class MatchRuleContext
 ---@field Evidence EvidenceSet? evidence types present when the aura was detected; nil if none
 ---@field ActiveCooldowns table? active cooldowns keyed by SpellId; used to deprioritise already-cooling rules
+---@field KnownSpellIds number[]? non-secret spell IDs from UNIT_SPELLCAST_SUCCEEDED within the cast window; fast-path checks each in order, falls through on no match
