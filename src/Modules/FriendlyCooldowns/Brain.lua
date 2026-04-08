@@ -195,7 +195,17 @@ local function MatchRule(unit, auraTypes, measuredDuration, context)
 					excluded = fcdTalents:UnitHasTalent(unit, rule.ExcludeIfTalent, specId)
 				end
 			end
-			local required = rule.RequiresTalent and not fcdTalents:UnitHasTalent(unit, rule.RequiresTalent, specId)
+			local required = false
+			if rule.RequiresTalent then
+				if type(rule.RequiresTalent) == "table" then
+					required = true
+					for _, talentId in ipairs(rule.RequiresTalent) do
+						if fcdTalents:UnitHasTalent(unit, talentId, specId) then required = false; break end
+					end
+				else
+					required = not fcdTalents:UnitHasTalent(unit, rule.RequiresTalent, specId)
+				end
+			end
 			if not excluded and not required then
 				local expectedDuration = rule.SpellId
 						and fcdTalents:GetUnitBuffDuration(unit, specId, classToken, rule.SpellId, rule.BuffDuration)
