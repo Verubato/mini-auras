@@ -503,6 +503,12 @@ function M:Init()
 		end
 	end)
 
+	frames:HookNDuiVisibility(function()
+		if moduleUtil:IsModuleEnabled(moduleName.CrowdControl) or moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+			EnsureWatchers()
+		end
+	end)
+
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
 
 	if moduleEnabled then

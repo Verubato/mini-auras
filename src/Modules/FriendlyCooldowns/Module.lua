@@ -399,6 +399,12 @@ function M:Init()
 			EnsureAllEntries()
 		end
 	end)
+
+	frames:HookNDuiVisibility(function()
+		if moduleUtil:IsModuleEnabled(moduleName.FriendlyCooldownTracker) then
+			EnsureAllEntries()
+		end
+	end)
 end
 
 ---@class FriendlyCooldownTrackerModule
