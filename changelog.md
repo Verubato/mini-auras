@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.7.0
+
+- Added friendly cooldown glows when aura is active.
+- Added Sacred Duty talent for Prot Paladins.
+- Fixed tracking issue when Bubbling while already having Forbearance.
+
 ## 3.6.0
 
 - Raid settings now trigger in open world when in a raid group.
