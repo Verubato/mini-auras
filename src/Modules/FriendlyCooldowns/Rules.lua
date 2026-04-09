@@ -58,7 +58,7 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				RequiresEvidence = { "Cast", "UnitFlags" },
 				CanCancelEarly = true,
 				SpellId = 642,
 			}, -- Divine Shield
@@ -133,7 +133,7 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				RequiresEvidence = { "Cast", "UnitFlags" },
 				CanCancelEarly = true,
 				SpellId = 642,
 			}, -- Divine Shield
@@ -204,7 +204,7 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				RequiresEvidence = { "Cast", "UnitFlags" },
 				CanCancelEarly = true,
 				SpellId = 642,
 			}, -- Divine Shield
@@ -792,7 +792,7 @@ local rules = {
 				BigDefensive = true,
 				Important = true,
 				ExternalDefensive = false,
-				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				RequiresEvidence = { "Cast", "UnitFlags" },
 				CanCancelEarly = true,
 				SpellId = 642,
 			}, -- Divine Shield

@@ -193,7 +193,16 @@ local cases = {
         unit = "player", class = "PALADIN", specId = 65,
         spellId = 642, buffDuration = 8,
         auraIsDefensive = true, isExternal = false, isImportant = true,
-        evidence = {"Debuff", "UnitFlags"},
+        evidence = {"UnitFlags"},
+    },
+    {
+        -- Regression: Forbearance was already active (e.g. from a prior BoP), so no new Debuff
+        -- fires when Divine Shield is cast.  UnitFlags (immunity) must be enough to match it.
+        desc = "Holy Paladin — Divine Shield (642) over existing Forbearance (no Debuff evidence)",
+        unit = "player", class = "PALADIN", specId = 65,
+        spellId = 642, buffDuration = 8,
+        auraIsDefensive = true, isExternal = false, isImportant = true,
+        evidence = {"UnitFlags"},
     },
     {
         desc = "Holy Paladin — Divine Protection (498)",
@@ -261,7 +270,7 @@ local cases = {
         unit = "player", class = "PALADIN", specId = 70,
         spellId = 642, buffDuration = 8,
         auraIsDefensive = true, isExternal = false, isImportant = true,
-        evidence = {"Debuff", "UnitFlags"},
+        evidence = {"UnitFlags"},
     },
     {
         desc = "Ret Paladin — Divine Protection (403876, requires Shield evidence)",
@@ -630,7 +639,7 @@ local cases = {
         unit = "player", class = "PALADIN", specId = nil,
         spellId = 642, buffDuration = 8,
         auraIsDefensive = true, isExternal = false, isImportant = true,
-        evidence = {"Debuff", "UnitFlags"},
+        evidence = {"UnitFlags"},
     },
     {
         desc = "Paladin (class, no spec) — Blessing of Protection (1022)",
