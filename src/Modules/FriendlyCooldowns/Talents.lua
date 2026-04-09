@@ -206,6 +206,8 @@ local SpecPvPCooldownModifiers = {
 	[252] = { [5590] = { { SpellId = 48707, Amount = -10 } } },
 	-- Subtlety Rogue: Thief's Bargain (Shadow Blades -20%)
 	[261] = { [354825] = { { SpellId = 121471, Amount = -20, Mult = true } } },
+	-- Protection Paladin: Sacred Duty (Blessing of Protection & Blessing of Sacrifice -33%)
+	[66] = { [92] = { { SpellId = 1022, Amount = -33, Mult = true }, { SpellId = 6940, Amount = -33, Mult = true } } },
 }
 
 -- Duration-affecting talent modifiers. Supports additive (seconds) and Mult (% of base).
