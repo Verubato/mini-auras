@@ -223,6 +223,7 @@ end
 function M:Init()
 	db = mini:GetSavedVars()
 
+	fcdTalents:Init()
 	display:Init()
 
 	-- Provide Brain with a way to look up a unit's active cooldowns so PredictSpellIdForUnit
@@ -413,20 +414,13 @@ function M:Init()
 	end)
 
 	fcdTalents:RegisterTalentCallback(function(playerName)
-		-- playerName is a realm-stripped short name.
-		-- GetEntryForUnit uses UnitIsUnit which is unreliable with bare player names and fails
-		-- for cross-realm players whose UnitNameUnmodified returns "Name-RealmName".
-		-- Iterate directly and compare short names so the display always refreshes.
-		for _, entry in pairs(watchEntries) do
-			local entryName = UnitNameUnmodified(entry.Unit)
-			if entryName and not issecretvalue(entryName) then
-				local shortName = entryName:match("^([^%-]+)") or entryName
-				if shortName == playerName then
-					display:InvalidateStaticAbilitiesCache(entry.Unit)
-					display:UpdateDisplay(entry)
-				end
-			end
-		end
+		-- Reset the entire static-abilities cache whenever any unit's talent data arrives.
+		-- We previously tried to match by unit name, but UnitNameUnmodified can return a secret
+		-- value intermittently, silently skipping the invalidation and leaving stale icons.
+		-- A full reset is safe: GetStaticAbilities rebuilds only on cache miss, and talent
+		-- callbacks are rare events (LibSpec + PvP sync, not per-frame).
+		display:ResetStaticAbilitiesCache()
+		M:RefreshDisplays()
 	end)
 
 	observer:Init()
@@ -467,9 +461,24 @@ function M:Init()
 
 	local fs = FrameSortApi and FrameSortApi.v3
 
+	-- When the inspector asynchronously resolves a unit's spec (e.g. cross-realm player whose
+	-- spec was nil on first render), rebuild static abilities so the correct spec-specific
+	-- defaults are used (e.g. AC vs AW for Holy Paladin before LibSpec delivers real data).
+	local function OnInspectorSpecChanged()
+		-- GetStaticAbilities caches per unit keyed by specId. When spec was previously nil
+		-- and is now resolved, the per-entry cache comparison (cached.specId == specId) will
+		-- miss only for the affected unit and rebuild just that entry's ability list.
+		C_Timer.After(0, function()
+			M:RefreshDisplays()
+		end)
+	end
+
 	-- Use FrameSort's inspector if available; otherwise start our own.
-	if not (fs and fs.Inspector) then
+	if fs and fs.Inspector then
+		fs.Inspector:RegisterCallback(OnInspectorSpecChanged)
+	else
 		inspector:Init()
+		inspector:RegisterCallback(OnInspectorSpecChanged)
 	end
 
 	if fs and fs.Sorting and fs.Sorting.RegisterPostSortCallback then

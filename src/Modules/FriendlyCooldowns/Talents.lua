@@ -10,6 +10,13 @@ local M = {}
 addon.Modules.FriendlyCooldowns.Talents = M
 addon.Core.FriendlyCooldownTalents = M -- backward compat
 
+-- All talent data is keyed by the realm-stripped short name (e.g. "Bob" not "Bob-Realm").
+-- UnitNameUnmodified returns the full name for cross-realm players, so strip the realm here
+-- before any table lookup to ensure cross-realm players' data is found correctly.
+local function ShortName(name)
+	return name:match("^([^%-]+)") or name
+end
+
 -- playerName -> talentRanks (spellId -> rank purchased)
 local unitTalentRanks = {}
 -- playerName -> specId (captured when talent string was decoded)
@@ -334,15 +341,9 @@ local SpecDefaultTalentRanks = {
 	},
 }
 
--- specId -> { [talentNodeId_choiceIndex] = { spellId, maxRank, type, subTreeID } }
-local talentMapCache = {}
-
 local talentCallbacks = {}
 
 local function BuildTalentToSpellMap(specId)
-	if talentMapCache[specId] then
-		return talentMapCache[specId]
-	end
 
 	if not (C_ClassTalents and C_Traits and Constants and Constants.TraitConsts) then
 		return nil
@@ -387,7 +388,6 @@ local function BuildTalentToSpellMap(specId)
 		end
 	end
 
-	talentMapCache[specId] = talentmap
 	return talentmap
 end
 
@@ -521,7 +521,7 @@ local function OnLibSpecUpdate(specId, playerName, talentString)
 	end
 	local ranks = GetTalentRanks(specId, talentString)
 	if ranks then
-		local name = playerName:match("^([^%-]+)") or playerName
+		local name = ShortName(playerName)
 		unitTalentRanks[name] = ranks
 		unitTalentSpecId[name] = specId
 		if db then
@@ -579,6 +579,7 @@ function M:GetUnitCooldown(unit, specId, classToken, abilityId, baseCooldown, me
 	if not playerName or issecretvalue(playerName) then
 		return baseCooldown
 	end
+	playerName = ShortName(playerName)
 	local talentRanks = GetEffectiveTalentRanks(playerName, classToken, specId)
 	if not talentRanks then
 		return baseCooldown
@@ -670,6 +671,7 @@ function M:GetUnitBuffDuration(unit, specId, classToken, abilityId, baseDuration
 	if not playerName or issecretvalue(playerName) then
 		return baseDuration
 	end
+	playerName = ShortName(playerName)
 	local talentRanks = GetEffectiveTalentRanks(playerName, classToken, specId)
 	if not talentRanks then
 		return baseDuration
@@ -715,29 +717,35 @@ end
 ---@return boolean
 function M:UnitHasTalent(unit, talentSpellId, callerSpecId)
 	local playerName = UnitNameUnmodified(unit)
-	if not playerName or issecretvalue(playerName) then
-		return false
-	end
-	local talentRanks = unitTalentRanks[playerName]
-	if talentRanks ~= nil and (talentRanks[talentSpellId] or 0) > 0 then
-		return true
-	end
-	local pvpIds = unitPvPTalentIds[playerName]
-	if pvpIds ~= nil and pvpIds[talentSpellId] == true then
-		return true
-	end
-	-- No real talent data — check class/spec defaults.
-	-- Prefer the caller-supplied spec ID (from Inspector) over our stored one,
-	-- since non-MiniCC players won't have an entry in unitTalentSpecId.
-	if talentRanks == nil then
-		local _, classToken = UnitClass(unit)
-		local specId = unitTalentSpecId[playerName] or callerSpecId
-		local effectiveRanks = GetEffectiveTalentRanks(playerName, classToken, specId)
-		if effectiveRanks and (effectiveRanks[talentSpellId] or 0) > 0 then
+	if playerName and not issecretvalue(playerName) then
+		playerName = ShortName(playerName)
+		local talentRanks = unitTalentRanks[playerName]
+		if talentRanks ~= nil and (talentRanks[talentSpellId] or 0) > 0 then
 			return true
 		end
+		local pvpIds = unitPvPTalentIds[playerName]
+		if pvpIds ~= nil and pvpIds[talentSpellId] == true then
+			return true
+		end
+		-- No real talent data — check class/spec defaults.
+		-- Prefer the caller-supplied spec ID (from Inspector) over our stored one,
+		-- since non-MiniCC players won't have an entry in unitTalentSpecId.
+		if talentRanks == nil then
+			local _, classToken = UnitClass(unit)
+			local specId = unitTalentSpecId[playerName] or callerSpecId
+			local effectiveRanks = GetEffectiveTalentRanks(playerName, classToken, specId)
+			if effectiveRanks and (effectiveRanks[talentSpellId] or 0) > 0 then
+				return true
+			end
+		end
+		return false
 	end
-	return false
+	-- playerName is nil or a secret value — can't look up stored data.
+	-- Fall back to class/spec defaults using callerSpecId so spec-specific icons
+	-- (e.g. AC vs AW for Holy Paladin) still render correctly.
+	local _, classToken = UnitClass(unit)
+	local effectiveRanks = GetEffectiveTalentRanks(nil, classToken, callerSpecId)
+	return effectiveRanks ~= nil and (effectiveRanks[talentSpellId] or 0) > 0
 end
 
 ---Returns the spec ID stored for a unit from talent decode (LibSpec or local player).
@@ -748,7 +756,11 @@ function M:GetUnitSpecId(unit)
 	-- unitTalentSpecId covers cross-realm players and situations where the above return nil.
 	local fs = FrameSortApi and FrameSortApi.v3
 	if fs and fs.Inspector then
-		return fs.Inspector:GetUnitSpecId(unit)
+		local id = fs.Inspector:GetUnitSpecId(unit)
+		if id then
+			return id
+		end
+		-- FrameSort returned nil; fall through to tooltip check and talent cache.
 	end
 	local specId = inspector:GetUnitSpecId(unit)
 	if specId then
@@ -758,7 +770,7 @@ function M:GetUnitSpecId(unit)
 	if not playerName or issecretvalue(playerName) then
 		return nil
 	end
-	return unitTalentSpecId[playerName]
+	return unitTalentSpecId[ShortName(playerName)]
 end
 
 ---Registers a callback to be fired when any unit's talent data is updated.
@@ -840,6 +852,7 @@ function M:Init()
 			db.PvPTalentCache[name] = nil
 			unitPvPTalentIds[name] = nil
 		end
+		FireTalentCallbacks(name)
 	end)
 end
 

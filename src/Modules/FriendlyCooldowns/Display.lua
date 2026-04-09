@@ -20,6 +20,21 @@ addon.Modules.FriendlyCooldowns.Display = D
 local db
 local testModeActive = false
 
+-- C_Spell.GetSpellTexture follows spell overrides: if the local player has a
+-- talent that replaces spell X with spell Y, then GetSpellTexture(X) returns Y's
+-- icon even when we are asking on behalf of a party member who does NOT have the
+-- override. This corrupts the displayed icon for abilities whose base spell is
+-- overridden locally (e.g. Holy Paladin Avenging Wrath being replaced by
+-- Avenging Crusader when the *viewing* player is specced into AC).
+--
+-- C_Spell.GetSpellInfo(spellId).originalIconID returns the canonical, non-
+-- overridden icon, so we prefer it and only fall back to GetSpellTexture when
+-- the new API is unavailable or returns nil.
+local function GetSpellIcon(spellId)
+	local info = C_Spell and C_Spell.GetSpellInfo and C_Spell.GetSpellInfo(spellId)
+	return (info and info.originalIconID) or C_Spell.GetSpellTexture(spellId)
+end
+
 local function GetAnchorOptions()
 	local m = db and db.Modules.FriendlyCooldownTrackerModule
 	if not m then
@@ -104,7 +119,9 @@ local function GetStaticAbilities(unit)
 	addRules(specId and rules.BySpec[specId])
 	addRules(rules.ByClass[classToken])
 
-	staticAbilitiesCache[unit] = { specId = specId, result = result }
+	if specId then
+		staticAbilitiesCache[unit] = { specId = specId, result = result }
+	end
 	return result
 end
 
@@ -130,7 +147,7 @@ local function BuildTestSlots(showTrinket, showTooltips, iconOptions)
 		{ SpellId = 190319, StartOffset = 10,  Cooldown = 120 }, -- Combustion
 	}
 	for _, t in ipairs(testSpells) do
-		local texture = C_Spell.GetSpellTexture(t.SpellId)
+		local texture = GetSpellIcon(t.SpellId)
 		if texture then
 			slots[#slots + 1] = {
 				Texture = texture,
@@ -150,7 +167,7 @@ end
 local function AppendStaticSlots(slots, entry, now, showTooltips, iconOptions)
 	local staticAbilities = GetStaticAbilities(entry.Unit)
 	for _, ability in ipairs(staticAbilities) do
-		local texture = C_Spell.GetSpellTexture(ability.SpellId)
+		local texture = GetSpellIcon(ability.SpellId)
 		local cd = entry.ActiveCooldowns[ability.SpellId]
 		if texture then
 			local durationObject = nil
@@ -183,7 +200,7 @@ local function AppendDynamicSlots(slots, entry, now, showTooltips, iconOptions)
 			if now >= cd.StartTime + cd.Cooldown then
 				entry.ActiveCooldowns[cdKey] = nil
 			else
-				local texture = C_Spell.GetSpellTexture(cd.SpellId)
+				local texture = GetSpellIcon(cd.SpellId)
 				if texture then
 					slots[#slots + 1] = {
 						Texture = texture,
