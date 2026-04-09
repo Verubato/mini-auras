@@ -242,6 +242,8 @@ L:SetStrings({
 	["Shows the trinket cooldown icon."] = "Muestra el icono de tiempo de reutilización del abalorio.",
 	["Desaturate on cooldown"] = "Desaturar en recarga",
 	["Desaturates the icon while it is on cooldown."] = "Desatura el icono mientras está en tiempo de reutilización.",
+	["Predictive"] = "Predictivo",
+	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "Mientras un beneficio de recarga está activo, ilumina el icono y muestra una cuenta regresiva antes de que comience el temporizador.",
 	["Defensive cooldowns"] = "Enfriamientos defensivos",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Muestra los enfriamientos defensivos como Bendición de protección e Ironbark.",
 	["Offensive cooldowns"] = "Mostrar tiempos de reutilización ofensivos",

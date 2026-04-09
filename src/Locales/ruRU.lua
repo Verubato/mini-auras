@@ -243,6 +243,8 @@ L:SetStrings({
 	["Shows the trinket cooldown icon."] = "Показывает иконку перезарядки аксессуара.",
 	["Desaturate on cooldown"] = "Обесцветить во время перезарядки",
 	["Desaturates the icon while it is on cooldown."] = "Обесцвечивает иконку, пока она находится на перезарядке.",
+	["Predictive"] = "Предсказание",
+	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "Когда активен бафф перезарядки, подсвечивает иконку и показывает обратный отсчёт до начала таймера.",
 	["Defensive cooldowns"] = "Защитные перезарядки",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Показывает защитные перезарядки, такие как Благословение защиты и Железная кора.",
 	["Offensive cooldowns"] = "Показывать наступательные откаты",

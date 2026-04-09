@@ -243,6 +243,8 @@ L:SetStrings({
 	["Shows the trinket cooldown icon."] = "Exibe o ícone de recarga do berloque.",
 	["Desaturate on cooldown"] = "Dessaturar em recarga",
 	["Desaturates the icon while it is on cooldown."] = "Dessatura o ícone enquanto está em recarga.",
+	["Predictive"] = "Preditivo",
+	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "Enquanto um buff de recarga estiver ativo, ilumina o ícone e exibe uma contagem regressiva antes do início do temporizador.",
 	["Defensive cooldowns"] = "Recargas defensivas",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Exibe as recargas defensivas como Bênção de proteção e Casca de ferro.",
 	["Offensive cooldowns"] = "Mostrar recarga ofensiva",

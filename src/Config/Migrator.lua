@@ -443,12 +443,14 @@ local dbDefaults = {
 
 			---@class FriendlyCooldownTrackerAnchorOptions
 			---@field IconSpacing number
+			---@field Predictive boolean When true, icons glow and show a countdown while a buff is active before the cooldown timer is committed.
 			Default = {
 				Grow = "LEFT",
 				Offset = { X = -2, Y = 0 },
 				ExcludeSelf = false,
 				ShowTooltips = true,
 				ShowTrinket = true,
+				Predictive = true,
 				IconSpacing = 2,
 				Icons = {
 					Size = 40,
@@ -467,6 +469,7 @@ local dbDefaults = {
 				ExcludeSelf = false,
 				ShowTooltips = true,
 				ShowTrinket = true,
+				Predictive = true,
 				IconSpacing = 2,
 				Icons = {
 					Size = 20,

@@ -243,6 +243,8 @@ L:SetStrings({
 	["Shows the trinket cooldown icon."] = "Affiche l'icône de temps de recharge du bijou.",
 	["Desaturate on cooldown"] = "Désaturer en recharge",
 	["Desaturates the icon while it is on cooldown."] = "Désature l'icône pendant qu'elle est en temps de recharge.",
+	["Predictive"] = "Prédictif",
+	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "Lorsqu'un buff de temps de recharge est actif, illumine l'icône et affiche un compte à rebours avant le début du minuteur.",
 	["Defensive cooldowns"] = "Temps de recharge défensifs",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Affiche les temps de recharge défensifs tels que Bénédiction de protection et Écorce de fer.",
 	["Offensive cooldowns"] = "Afficher les temps de recharge offensifs",

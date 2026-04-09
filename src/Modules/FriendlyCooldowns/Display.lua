@@ -164,20 +164,22 @@ local function BuildTestSlots(showTrinket, showTooltips, iconOptions)
 end
 
 ---Appends always-visible static ability slots, with a cooldown swipe when active.
-local function AppendStaticSlots(slots, entry, now, showTooltips, iconOptions)
+local function AppendStaticSlots(slots, entry, now, showTooltips, iconOptions, predictiveGlow)
 	local staticAbilities = GetStaticAbilities(entry.Unit)
 	for _, ability in ipairs(staticAbilities) do
 		local texture = GetSpellIcon(ability.SpellId)
 		local cd = entry.ActiveCooldowns[ability.SpellId]
 		if texture then
 			local durationObject = nil
+			local glow = nil
 			if cd and now < cd.StartTime + cd.Cooldown then
 				-- Confirmed cooldown running: show the CD swipe.
 				durationObject = wowEx:CreateDuration(cd.StartTime, cd.Cooldown)
-			elseif entry.PredictedGlows[ability.SpellId] then
+			elseif predictiveGlow and entry.PredictedGlows[ability.SpellId] then
 				-- Buff still active (no CD committed yet): count down the aura duration so
 				-- the icon shows how long the buff has left rather than being empty.
 				durationObject = entry.PredictedGlowDurations[ability.SpellId]
+				glow = true
 			end
 			slots[#slots + 1] = {
 				Texture = texture,
@@ -186,7 +188,7 @@ local function AppendStaticSlots(slots, entry, now, showTooltips, iconOptions)
 				Alpha = 1,
 				ReverseCooldown = iconOptions.ReverseCooldown,
 				Desaturate = iconOptions.DesaturateOnCooldown,
-				Glow = entry.PredictedGlows[ability.SpellId] and true or nil,
+				Glow = glow,
 				FontScale = db.FontScale,
 			}
 		end
@@ -234,6 +236,7 @@ local function UpdateDisplay(entry)
 	local showTooltips = anchorOptions.ShowTooltips
 	local iconOptions = anchorOptions.Icons
 	local showTrinket = anchorOptions.ShowTrinket ~= false
+	local predictiveGlow = anchorOptions.Predictive ~= false
 
 	if testModeActive then
 		local testSlots = BuildTestSlots(showTrinket, showTooltips, iconOptions)
@@ -269,7 +272,7 @@ local function UpdateDisplay(entry)
 		}
 	end
 
-	AppendStaticSlots(slots, entry, now, showTooltips, iconOptions)
+	AppendStaticSlots(slots, entry, now, showTooltips, iconOptions, predictiveGlow)
 	AppendDynamicSlots(slots, entry, now, showTooltips, iconOptions)
 
 	local usedCount = math.min(#slots, container.Count)

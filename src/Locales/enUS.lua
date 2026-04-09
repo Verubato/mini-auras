@@ -240,6 +240,8 @@ L:SetDefaultStrings({
 	["Shows the trinket cooldown icon."] = "Shows the trinket cooldown icon.",
 	["Desaturate on cooldown"] = "Desaturate on cooldown",
 	["Desaturates the icon while it is on cooldown."] = "Desaturates the icon while it is on cooldown.",
+	["Predictive"] = "Predictive",
+	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts.",
 
 	["Defensive cooldowns"] = "Defensive cooldowns",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Shows defensive cooldowns such as Blessing of Protection and Ironbark.",

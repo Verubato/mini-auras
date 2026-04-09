@@ -110,6 +110,22 @@ local function BuildInstance(parent, anchorOptions)
 
 	desaturateChk:SetPoint("TOPLEFT", excludeSelfChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
+	local predictiveChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Predictive"],
+		Tooltip = L["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."],
+		GetValue = function()
+			return anchorOptions.Predictive ~= false
+		end,
+		SetValue = function(value)
+			anchorOptions.Predictive = value
+			config:Apply()
+		end,
+	})
+
+	predictiveChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	predictiveChk:SetPoint("TOP", desaturateChk, "TOP", 0, 0)
+
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,
 		LabelText = L["Icon Size"],

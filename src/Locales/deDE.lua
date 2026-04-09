@@ -242,6 +242,8 @@ L:SetStrings({
 	["Shows the trinket cooldown icon."] = "Zeigt das Schmuckstück-Abklingzeitsymbol an.",
 	["Desaturate on cooldown"] = "Bei Abklingzeit entsättigen",
 	["Desaturates the icon while it is on cooldown."] = "Entsättigt das Symbol, während es sich in der Abklingzeit befindet.",
+	["Predictive"] = "Vorhersage",
+	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "Leuchtet das Symbol auf und zeigt einen Countdown an, während ein Abklingzeit-Buff aktiv ist, bevor der Timer beginnt.",
 	["Defensive cooldowns"] = "Defensive Abklingzeiten",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Zeigt defensive Abklingzeiten wie Gottesschild und Eisenrinde an.",
 	["Offensive cooldowns"] = "Offensive Abklingzeiten anzeigen",

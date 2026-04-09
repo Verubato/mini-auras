@@ -242,6 +242,8 @@ L:SetStrings({
 	["Shows the trinket cooldown icon."] = "장신구 재사용 대기시간 아이콘을 표시합니다.",
 	["Desaturate on cooldown"] = "재사용 대기 중 흑백 처리",
 	["Desaturates the icon while it is on cooldown."] = "재사용 대기 중인 아이콘을 흑백으로 표시합니다.",
+	["Predictive"] = "예측",
+	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "재사용 대기 버프가 활성 중일 때, 타이머 시작 전에 아이콘을 빛나게 하고 카운트다운을 표시합니다.",
 	["Defensive cooldowns"] = "방어기 재사용 대기시간",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "신성한 보호막, 철나무 껍질 등의 방어기 재사용 대기시간을 표시합니다.",
 	["Offensive cooldowns"] = "공격 쿨다운 표시",

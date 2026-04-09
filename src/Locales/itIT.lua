@@ -242,6 +242,8 @@ L:SetStrings({
 	["Shows the trinket cooldown icon."] = "Mostra l'icona di recupero del monile.",
 	["Desaturate on cooldown"] = "Desatura in recupero",
 	["Desaturates the icon while it is on cooldown."] = "Desatura l'icona mentre è in tempo di recupero.",
+	["Predictive"] = "Predittivo",
+	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "Quando un buff di recupero è attivo, fa brillare l'icona e mostra un conto alla rovescia prima dell'avvio del timer.",
 	["Defensive cooldowns"] = "Recuperi difensivi",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Mostra i recuperi difensivi come Benedizione di protezione e Corteccia di ferro.",
 	["Offensive cooldowns"] = "Mostra tempi di recupero offensivi",

@@ -243,6 +243,8 @@ L:SetStrings({
 	["Shows the trinket cooldown icon."] = "显示饰品冷却时间图标。",
 	["Desaturate on cooldown"] = "冷却时去饱和",
 	["Desaturates the icon while it is on cooldown."] = "冷却期间将图标显示为灰色。",
+	["Predictive"] = "预测",
+	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "冷却增益效果激活时，在冷却计时器开始前使图标发光并显示倒计时。",
 	["Defensive cooldowns"] = "防御性冷却",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "显示防御性冷却，如保护祝福和铁树皮。",
 	["Offensive cooldowns"] = "显示进攻性冷却",
