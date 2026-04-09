@@ -126,7 +126,7 @@ local function GetStaticAbilities(unit)
 end
 
 ---Builds the slot list shown in test mode.
-local function BuildTestSlots(showTrinket, showTooltips, iconOptions)
+local function BuildTestSlots(showTrinket, showTooltips, iconOptions, predictiveGlow)
 	local now = GetTime()
 	local slots = {}
 	if showTrinket then
@@ -141,10 +141,9 @@ local function BuildTestSlots(showTrinket, showTooltips, iconOptions)
 		}
 	end
 	local testSpells = {
-		{ SpellId = 642,    StartOffset = 60,  Cooldown = 300 }, -- Divine Shield
-		{ SpellId = 33206,  StartOffset = 30,  Cooldown = 180 }, -- Pain Suppression
-		{ SpellId = 45438,  StartOffset = 120, Cooldown = 240 }, -- Ice Block
-		{ SpellId = 190319, StartOffset = 10,  Cooldown = 120 }, -- Combustion
+		{ SpellId = 642,   StartOffset = 60,  Cooldown = 300 }, -- Divine Shield
+		{ SpellId = 33206, StartOffset = 30,  Cooldown = 180 }, -- Pain Suppression
+		{ SpellId = 45438, StartOffset = 120, Cooldown = 240 }, -- Ice Block
 	}
 	for _, t in ipairs(testSpells) do
 		local texture = GetSpellIcon(t.SpellId)
@@ -156,6 +155,27 @@ local function BuildTestSlots(showTrinket, showTooltips, iconOptions)
 				Alpha = 1,
 				ReverseCooldown = iconOptions.ReverseCooldown,
 				Desaturate = iconOptions.DesaturateOnCooldown,
+				FontScale = db.FontScale,
+			}
+		end
+	end
+	-- Predictive test spells: buff is active, cooldown not yet committed.
+	-- Shows the glow + buff countdown behaviour before the CD swipe starts.
+	local testPredictiveSpells = {
+		{ SpellId = 288613, StartOffset = 5, BuffDuration = 17 }, -- Trueshot (MM Hunter)
+		{ SpellId = 190319, StartOffset = 3, BuffDuration = 15 }, -- Combustion (Fire Mage)
+	}
+	for _, t in ipairs(testPredictiveSpells) do
+		local texture = GetSpellIcon(t.SpellId)
+		if texture then
+			slots[#slots + 1] = {
+				Texture = texture,
+				SpellId = showTooltips and t.SpellId or nil,
+				DurationObject = predictiveGlow and wowEx:CreateDuration(now - t.StartOffset, t.BuffDuration) or nil,
+				Alpha = 1,
+				ReverseCooldown = iconOptions.ReverseCooldown,
+				Desaturate = false,
+				Glow = predictiveGlow and true or nil,
 				FontScale = db.FontScale,
 			}
 		end
@@ -241,7 +261,7 @@ local function UpdateDisplay(entry)
 	local predictiveGlow = anchorOptions.Predictive ~= false
 
 	if testModeActive then
-		local testSlots = BuildTestSlots(showTrinket, showTooltips, iconOptions)
+		local testSlots = BuildTestSlots(showTrinket, showTooltips, iconOptions, predictiveGlow)
 		local usedCount = math.min(#testSlots, container.Count)
 		for i = 1, usedCount do
 			container:SetSlot(i, testSlots[i])
