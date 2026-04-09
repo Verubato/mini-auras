@@ -980,6 +980,19 @@ function B:RegisterPredictiveGlowDurationChangedCallback(fn)
 	predictiveGlowDurationChangedCallback = fn
 end
 
+-- Clears all per-unit timestamp state. Called by tests between cases so state
+-- from one test cannot bleed into the next.
+function B._TestReset()
+	for k in pairs(lastDebuffTime)      do lastDebuffTime[k]      = nil end
+	for k in pairs(lastShieldTime)      do lastShieldTime[k]      = nil end
+	for k in pairs(lastCastTime)        do lastCastTime[k]        = nil end
+	for k in pairs(lastCastSpellIds)    do lastCastSpellIds[k]    = nil end
+	for k in pairs(lastUnitFlagsTime)   do lastUnitFlagsTime[k]   = nil end
+	for k in pairs(lastFeignDeathTime)  do lastFeignDeathTime[k]  = nil end
+	for k in pairs(lastFeignDeathState) do lastFeignDeathState[k] = nil end
+	for k in pairs(unitCanFeign)        do unitCanFeign[k]        = nil end
+end
+
 -- Brain registers with Observer at file-load time; no explicit Init needed.
 observer:RegisterAuraChangedCallback(function(entry, watcher, candidateUnits)
 	OnWatcherChanged(entry, watcher, candidateUnits)
