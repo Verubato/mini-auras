@@ -1091,4 +1091,45 @@ local offensiveSpellIds = {
 
 rules.OffensiveSpellIds = offensiveSpellIds
 
+-- Lazily built spellId → rule lookup for GetSpellType.
+local spellTypeCache = nil
+
+local function BuildSpellTypeCache()
+	spellTypeCache = {}
+	for _, ruleList in pairs(rules.BySpec) do
+		for _, rule in ipairs(ruleList) do
+			if rule.SpellId then
+				spellTypeCache[rule.SpellId] = rule
+			end
+		end
+	end
+	for _, ruleList in pairs(rules.ByClass) do
+		for _, rule in ipairs(ruleList) do
+			if rule.SpellId and not spellTypeCache[rule.SpellId] then
+				spellTypeCache[rule.SpellId] = rule
+			end
+		end
+	end
+end
+
+---Returns the type of a spell: "Offensive", "Defensive", or "Important".
+---"Defensive" means the rule has BigDefensive or ExternalDefensive set.
+---"Offensive" means the spell is in the offensive set.
+---"Important" is the fallback for spells that are neither.
+---@param spellId number
+---@return "Offensive"|"Defensive"|"Important"
+function rules.GetSpellType(spellId)
+	if offensiveSpellIds[spellId] then
+		return "Offensive"
+	end
+	if not spellTypeCache then
+		BuildSpellTypeCache()
+	end
+	local rule = spellTypeCache[spellId]
+	if rule and (rule.BigDefensive or rule.ExternalDefensive) then
+		return "Defensive"
+	end
+	return "Important"
+end
+
 addon.Modules.FriendlyCooldowns.Rules = rules

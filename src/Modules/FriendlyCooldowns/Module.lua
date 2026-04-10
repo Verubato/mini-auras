@@ -16,6 +16,7 @@ local fcdTalents = addon.Modules.FriendlyCooldowns.Talents
 local observer = addon.Modules.FriendlyCooldowns.Observer
 local brain = addon.Modules.FriendlyCooldowns.Brain
 local display = addon.Modules.FriendlyCooldowns.Display
+local rules = addon.Modules.FriendlyCooldowns.Rules
 
 ---@class FriendlyCooldownTrackerModule : IModule
 local M = {}
@@ -28,6 +29,10 @@ local editModeActive = false
 local eventsFrame
 ---@type Db
 local db
+
+-- External API callbacks registered via M:RegisterPredictedCallback / M:RegisterMatchedCallback.
+local predictedCallbacks = {}
+local matchedCallbacks = {}
 
 ---Shows or hides an entry's container frame, suppressing display while edit mode is active.
 local function ShowHideEntryContainer(frame, anchor)
@@ -277,6 +282,15 @@ function M:Init()
 				ShowHideEntryContainer(e.Container.Frame, e.Anchor)
 			end
 		end
+
+		-- Notify external API subscribers.
+		if next(matchedCallbacks) then
+			local unit = casterEntries[1] and casterEntries[1].Unit or detectedFromEntry.Unit
+			local spellType = rules.GetSpellType(cdData.SpellId)
+			for _, fn in ipairs(matchedCallbacks) do
+				securecallfunction(fn, unit, cdData.SpellId, spellType)
+			end
+		end
 	end)
 
 	-- After each watcher update, refresh the detected entry's display.
@@ -305,6 +319,15 @@ function M:Init()
 			e.PredictedGlowDurations[spellId] = durationObject
 			display:UpdateDisplay(e)
 			ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+		end
+
+		-- Notify external API subscribers.
+		if next(predictedCallbacks) then
+			local unit = casterUnit or entry.Unit
+			local spellType = rules.GetSpellType(spellId)
+			for _, fn in ipairs(predictedCallbacks) do
+				securecallfunction(fn, unit, spellId, spellType)
+			end
 		end
 	end)
 
@@ -504,12 +527,28 @@ function M:Init()
 	end)
 end
 
+---Registers a callback invoked when a buff is matched to a predicted spell (glow starts).
+---Signature: function(unit, spellId, spellType) where spellType is "Offensive", "Defensive", or "Important"
+---@param fn function
+function M:RegisterPredictedCallback(fn)
+	predictedCallbacks[#predictedCallbacks + 1] = fn
+end
+
+---Registers a callback invoked when an aura ends and a cooldown rule is committed.
+---Signature: function(unit, spellId, spellType) where spellType is "Offensive", "Defensive", or "Important"
+---@param fn function
+function M:RegisterMatchedCallback(fn)
+	matchedCallbacks[#matchedCallbacks + 1] = fn
+end
+
 ---@class FriendlyCooldownTrackerModule
 ---@field Init fun(self: FriendlyCooldownTrackerModule)
 ---@field Refresh fun(self: FriendlyCooldownTrackerModule)
 ---@field RefreshDisplays fun(self: FriendlyCooldownTrackerModule)
 ---@field StartTesting fun(self: FriendlyCooldownTrackerModule)
 ---@field StopTesting fun(self: FriendlyCooldownTrackerModule)
+---@field RegisterPredictedCallback fun(self: FriendlyCooldownTrackerModule, fn: function)
+---@field RegisterMatchedCallback fun(self: FriendlyCooldownTrackerModule, fn: function)
 
 ---@class FcdTrackedAura
 ---@field StartTime        number                  GetTime() when the aura was first detected

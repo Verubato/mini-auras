@@ -62,6 +62,8 @@ Modules\FriendlyCooldowns\Display.lua
 Modules\FriendlyCooldowns\Module.lua
 Modules\TestModeManager.lua
 
+Api\v1.lua
+
 Config\Migrator.lua
 Config\Config.lua
 Config\General.lua
