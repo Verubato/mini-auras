@@ -164,6 +164,10 @@ local function OnClearInspect()
 end
 
 local function OnNotifyInspect(unit)
+	-- Ignore inspects of non-friendly units (e.g. enemy players inspected by other addons).
+	if not UnitIsFriend(unit, "player") then
+		return
+	end
 	if currentInspectUnit and unit ~= currentInspectUnit then
 		currentInspectUnit = nil
 	end
