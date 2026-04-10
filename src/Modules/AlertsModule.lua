@@ -15,6 +15,14 @@ local soundFile
 ---@type Db
 local db
 
+local function GetDefaultVoiceID()
+	local voices = C_VoiceChat and C_VoiceChat.GetTtsVoices and C_VoiceChat.GetTtsVoices() or nil
+	if voices and #voices > 0 and voices[1].voiceID ~= nil then
+		return voices[1].voiceID
+	end
+	return C_TTSSettings.GetVoiceOptionID(0)
+end
+
 ---@type table<number, boolean>
 local previousImportantAuras = {}
 ---@type table<number, boolean>
@@ -647,7 +655,7 @@ end
 function M:Refresh()
 	local options = db.Modules.AlertsModule
 
-	cachedVoiceID = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
+	cachedVoiceID = (options.TTS and options.TTS.VoiceID) or GetDefaultVoiceID()
 	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
 	cachedTTSSpeechRate = options.TTS and options.TTS.SpeechRate or 0
 	cachedTTSImportantEnabled = options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
@@ -680,7 +688,7 @@ function M:Init()
 	local count = options.Icons.MaxIcons or 8
 	local size = options.Icons.Size
 
-	cachedVoiceID = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
+	cachedVoiceID = (options.TTS and options.TTS.VoiceID) or GetDefaultVoiceID()
 	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
 	cachedTTSSpeechRate = options.TTS and options.TTS.SpeechRate or 0
 	cachedTTSImportantEnabled = options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false

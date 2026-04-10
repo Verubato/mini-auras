@@ -9,6 +9,14 @@ local columnWidth
 local enabledColumnWidth
 local config = addon.Config
 
+local function GetDefaultVoiceID()
+	local voices = C_VoiceChat and C_VoiceChat.GetTtsVoices and C_VoiceChat.GetTtsVoices() or nil
+	if voices and #voices > 0 and voices[1].voiceID ~= nil then
+		return voices[1].voiceID
+	end
+	return C_TTSSettings.GetVoiceOptionID(0)
+end
+
 ---@class AlertsConfig
 local M = {}
 
@@ -309,7 +317,7 @@ local function BuildTtsTab(parent, options)
 
 	if #voiceItems == 0 then
 		-- Fallback to the current default voice option if the list isn't available.
-		local fallback = C_TTSSettings.GetVoiceOptionID(0)
+		local fallback = GetDefaultVoiceID()
 		voiceItems = { fallback }
 		voiceNameById[fallback] = tostring(fallback)
 	end
@@ -320,7 +328,7 @@ local function BuildTtsTab(parent, options)
 		Width = 400,
 		GetValue = function()
 			EnsureTtsOptions()
-			return options.TTS.VoiceID or C_TTSSettings.GetVoiceOptionID(0)
+			return options.TTS.VoiceID or GetDefaultVoiceID()
 		end,
 		SetValue = function(value)
 			EnsureTtsOptions()
@@ -351,7 +359,7 @@ local function BuildTtsTab(parent, options)
 			options.TTS.Important.Enabled = value
 
 			if value then
-				local voiceId = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
+				local voiceId = (options.TTS and options.TTS.VoiceID) or GetDefaultVoiceID()
 				local volume = options.TTS.Volume or 100
 				local speechRate = options.TTS.SpeechRate or 0
 
@@ -378,7 +386,7 @@ local function BuildTtsTab(parent, options)
 			options.TTS.Defensive.Enabled = value
 
 			if value then
-				local voiceId = (options.TTS and options.TTS.VoiceID) or C_TTSSettings.GetVoiceOptionID(0)
+				local voiceId = (options.TTS and options.TTS.VoiceID) or GetDefaultVoiceID()
 				local volume = options.TTS.Volume or 100
 				local speechRate = options.TTS.SpeechRate or 0
 
