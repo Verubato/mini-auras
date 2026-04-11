@@ -12,6 +12,19 @@ addon.Modules.FriendlyCooldowns = addon.Modules.FriendlyCooldowns or {}
 local B = {}
 addon.Modules.FriendlyCooldowns.Brain = B
 
+-- In patch 12.0.5 (TOC 120005), UNIT_SPELLCAST_SUCCEEDED no longer fires for other players,
+-- so cast evidence can never be populated for teammates. When running on that build or later,
+-- RequiresEvidence="Cast" and mixed requirements including "Cast" are treated as satisfied.
+-- When true, simulates patch 12.0.5 behaviour where UNIT_SPELLCAST_SUCCEEDED no longer fires
+-- for other players. Two consequences:
+--   1. RecordCast is a no-op for non-local units, so CastSnapshot and lastCastTime stay empty
+--      for everyone except "player" (whose events still fire and are recorded as normal).
+--   2. In FindBestCandidate and PredictRule, non-local candidates receive synthetic Cast=true
+--      evidence (benefit of the doubt), while "player" uses real snapshot data — so if the
+--      local player did NOT cast, they are correctly excluded as a candidate.
+-- TODO: restore to `select(4, GetBuildInfo()) >= 120005` before shipping 12.0.5 support.
+local simulateNoCastSucceeded = false
+
 -- Seconds of timing tolerance when matching a measured buff duration to a rule.
 -- Covers frame-rate jitter, network latency, and slight timestamp rounding.
 local tolerance = 0.5
@@ -468,6 +481,14 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 					if k ~= "Cast" then candidateEvidence[k] = v end
 				end
 			end
+		elseif simulateNoCastSucceeded and candidate ~= "player" then
+			-- 12.0.5+: for non-local self-cast candidates we have no cast data; synthesize
+			-- Cast evidence so RequiresEvidence="Cast" is satisfied. "player" uses real evidence.
+			local synthetic = { Cast = true }
+			if evidence then
+				for k, v in pairs(evidence) do synthetic[k] = v end
+			end
+			candidateEvidence = synthetic
 		end
 		local spellId, isOnCd = PredictSpellIdForUnit(candidate, auraTypes, candidateEvidence, castableFilter)
 		-- nil  -> no rule matched this aura for this candidate at all
@@ -535,6 +556,7 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 	local ruleUnit = entry.Unit
 	local bestTime = nil
 	local isExternal = tracked.AuraTypes["EXTERNAL_DEFENSIVE"]
+	local ambiguous = false
 
 	local function consider(candidate, isTarget)
 		-- Build candidate-specific evidence into the scratch table: share Debuff/Shield/UnitFlags
@@ -557,6 +579,13 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 		end
 		local castTime = tracked.CastSnapshot[candidate]
 		if castTime and math.abs(castTime - tracked.StartTime) <= castWindow then
+			scratch.Cast = true
+			hasEvidence = true
+		elseif simulateNoCastSucceeded and candidate ~= "player" then
+			-- 12.0.5+: UNIT_SPELLCAST_SUCCEEDED no longer fires for other players, so absence
+			-- of a cast snapshot is uninformative — give non-local candidates benefit of the doubt.
+			-- For "player" we have reliable cast data, so no snapshot means they did NOT cast
+			-- and will correctly fail RequiresEvidence="Cast", excluding them as a candidate.
 			scratch.Cast = true
 			hasEvidence = true
 		end
@@ -586,6 +615,10 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 			or (not castTime and not bestTime and isExternal and not isTarget)
 		if isBetter then
 			rule, ruleUnit, bestTime = candidateRule, candidate, castTime
+		elseif not castTime and not bestTime then
+			-- A second candidate also qualifies, but neither this candidate nor the current
+			-- winner has real cast evidence to break the tie — the match is ambiguous.
+			ambiguous = true
 		end
 	end
 
@@ -596,6 +629,7 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 		end
 	end
 
+	if ambiguous then return nil, nil end
 	return rule, ruleUnit
 end
 
@@ -866,6 +900,7 @@ local function OnWatcherChanged(entry, watcher, candidateUnits)
 end
 
 local function RecordCast(unit, spellId)
+	if simulateNoCastSucceeded and unit ~= "player" then return end
 	local now = GetTime()
 	if lastCastTime[unit] ~= now then
 		lastCastTime[unit] = now
