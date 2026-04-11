@@ -49,12 +49,16 @@ function M:FriendlyUnits()
 	return results
 end
 
-function M:IsPet(unit)
+function M:IsPetOrMinion(unit)
 	if string.find(unit, "pet", 1, true) then
 		return true
 	end
 
 	if UnitIsOtherPlayersPet(unit) then
+		return true
+	end
+
+	if UnitIsMinion(unit) then
 		return true
 	end
 

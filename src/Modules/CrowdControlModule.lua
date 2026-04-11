@@ -44,7 +44,7 @@ local function UpdateWatcherAuras(entry)
 		return
 	end
 
-	local isPet = units:IsPet(entry.Unit)
+	local isPet = units:IsPetOrMinion(entry.Unit)
 	local options
 
 	if isPet then
@@ -139,7 +139,7 @@ local function EnsureWatcher(anchor, unit)
 		return nil
 	end
 
-	local isPet = units:IsPet(unit)
+	local isPet = units:IsPetOrMinion(unit)
 
 	if isPet and not testModeActive and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
 		local existing = watchers[anchor]
@@ -235,7 +235,7 @@ local function OnCufUpdateVisible(frame)
 		return
 	end
 
-	local isPet = units:IsPet(entry.Unit)
+	local isPet = units:IsPetOrMinion(entry.Unit)
 
 	-- If this is a pet frame and pet CC is disabled, keep it hidden
 	if isPet and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
@@ -289,7 +289,7 @@ local function RefreshTestIcons()
 	local petOptions = db.Modules.PetCCModule
 
 	for anchor, entry in pairs(watchers) do
-		local isPet = units:IsPet(entry.Unit)
+		local isPet = units:IsPetOrMinion(entry.Unit)
 		local entryEnabled
 		if isPet then
 			entryEnabled = petEnabled
@@ -379,7 +379,7 @@ local function EnableWatchers()
 
 	for _, entry in pairs(watchers) do
 		if entry.Watcher then
-			local isPet = units:IsPet(entry.Unit)
+			local isPet = units:IsPetOrMinion(entry.Unit)
 			if (isPet and petEnabled) or (not isPet and ccEnabled) then
 				entry.Watcher:Enable()
 			end
@@ -427,7 +427,7 @@ function M:Refresh()
 	local petOptions = db.Modules.PetCCModule
 
 	for anchor, entry in pairs(watchers) do
-		local isPet = units:IsPet(entry.Unit)
+		local isPet = units:IsPetOrMinion(entry.Unit)
 		local entryOptions = isPet and petOptions or options
 		local entryEnabled
 

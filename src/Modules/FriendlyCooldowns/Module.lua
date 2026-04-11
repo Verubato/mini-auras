@@ -78,7 +78,7 @@ local function EnsureEntry(anchor, unit)
 		return nil
 	end
 
-	if units:IsPet(unit) or units:IsCompoundUnit(unit) then
+	if units:IsPetOrMinion(unit) or units:IsCompoundUnit(unit) then
 		return nil
 	end
 

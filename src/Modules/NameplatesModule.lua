@@ -712,7 +712,7 @@ local function OnNamePlateAdded(unitToken)
 
 	-- Check if we should ignore pets
 	local unitOptions = M:GetUnitOptions(unitToken)
-	if unitOptions.IgnorePets and units:IsPet(unitToken) then
+	if unitOptions.IgnorePets and units:IsPetOrMinion(unitToken) then
 		return
 	end
 

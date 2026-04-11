@@ -194,7 +194,7 @@ local function EnsureWatcher(anchor, unit)
 		return nil
 	end
 
-	if units:IsPet(unit) then
+	if units:IsPetOrMinion(unit) then
 		return nil
 	end
 
