@@ -273,5 +273,6 @@ L:SetStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - 예지 추측 모듈을 추가했습니다. 예지 효과를 받을 때 표시됩니다.",
 	[" - Added profile import/export feature."] = " - 프로필 가져오기/내보내기 기능이 추가되었습니다.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - 아군 쿨다운 추측 모듈이 추가되었습니다. 이제 팀원들의 쿨다운을 어느 정도 추적할 수 있습니다!",
+	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. We will look for workarounds, but please be aware that tracking will lose accuracy."] = "주의: Blizzard가 패치 12.0.5(4월 21일)에서 변경 사항을 적용하여 아군 CD 추적 정확도를 크게 감소시키고, 누를 때 쿨다운 발광 효과를 제거하며, PvP 적 기술 차단 추적을 완전히 제거할 예정입니다. 해결 방법을 찾아보겠지만, 추적 정확도가 낮아질 수 있다는 점을 참고해 주세요.",
 	["MiniCC - What's New?"] = "MiniCC - 새로운 소식?",
 })

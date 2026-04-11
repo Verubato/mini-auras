@@ -274,5 +274,6 @@ L:SetStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - Добавляет модуль угадывания предвидения, который показывает, когда вы получаете предвидение.",
 	[" - Added profile import/export feature."] = " - Добавлена функция импорта/экспорта профиля.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Добавлен модуль угадывания откатов союзников. Теперь вы можете примерно отслеживать откаты ваших товарищей по команде!",
+	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. We will look for workarounds, but please be aware that tracking will lose accuracy."] = "ВНИМАНИЕ: В патче 12.0.5 (21 апреля) Blizzard вносит изменения, которые значительно снизят точность отслеживания КД союзников, отключат подсветку откатов при нажатии и полностью уберут отслеживание вражеских прерываний в PvP. Мы постараемся найти обходные пути, но имейте в виду, что точность отслеживания снизится.",
 	["MiniCC - What's New?"] = "MiniCC - Что нового?",
 })

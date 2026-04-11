@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 38,
+	Version = 39,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -2128,6 +2128,16 @@ function M:UpgradeToVersion38(vars)
 	end
 
 	vars.Version = 38
+	return true
+end
+
+function M:UpgradeToVersion39(vars)
+	if vars.Version ~= 38 then return false end
+
+	table.insert(vars.WhatsNew, L["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. We will look for workarounds, but please be aware that tracking will lose accuracy."])
+
+	vars.NotifiedChanges = false
+	vars.Version = 39
 	return true
 end
 

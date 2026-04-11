@@ -274,5 +274,6 @@ L:SetStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - Ajoute un module de devinette de précognition qui s'affiche quand vous obtenez la précognition.",
 	[" - Added profile import/export feature."] = " - Ajout d'une fonctionnalité d'importation/exportation de profil.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Ajout d'un module de devinette des temps de recharge alliés. Vous pouvez désormais suivre approximativement les temps de recharge de vos coéquipiers !",
+	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. We will look for workarounds, but please be aware that tracking will lose accuracy."] = "ATTENTION : Blizzard apporte des modifications dans le patch 12.0.5 (21 avril) qui réduiront considérablement la précision du suivi des CD alliés, supprimeront la lueur des cooldowns à l'appui et retireront complètement le suivi des interruptions ennemies en JcJ. Nous chercherons des solutions, mais veuillez noter que la précision du suivi diminuera.",
 	["MiniCC - What's New?"] = "MiniCC - Quoi de neuf ?",
 })

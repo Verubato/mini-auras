@@ -274,5 +274,6 @@ L:SetStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - 新增了預知猜測模組，當你獲得預知效果時顯示。",
 	[" - Added profile import/export feature."] = " - 新增了設定檔匯入/匯出功能。",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - 新增了友方冷卻時間猜測模組。現在你可以大致追蹤隊友的冷卻時間！",
+	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. We will look for workarounds, but please be aware that tracking will lose accuracy."] = "注意：暴雪將在12.0.5版本（4月21日）進行更改，這將嚴重降低友方CD追蹤的準確性、取消按鍵時的冷卻發光效果，並完全移除PvP敵方打斷追蹤。我們會尋找解決方案，但請注意追蹤精度將會下降。",
 	["MiniCC - What's New?"] = "MiniCC - 有什麼新鮮事？",
 })
