@@ -267,6 +267,9 @@ L:SetDefaultStrings({
 	["Configure Blizzard Nameplates"] = "Configure Blizzard Nameplates",
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."] = "Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates.",
 
+	-- General home screen
+	["Important News"] = "Important News",
+
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Added CC icons on pet party/raid frames (disabled by default).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - Added precognition guesser module that shows when you get precog.",

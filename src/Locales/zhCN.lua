@@ -269,6 +269,9 @@ L:SetStrings({
 	["Configure Blizzard Nameplates"] = "配置暴雪姓名板",
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."] = "使用MiniCC姓名板时，在暴雪姓名板上禁用CC和BigDebuffs。",
 
+	-- General home screen
+	["Important News"] = "重要消息",
+
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - 为队伍/团队的宠物框架新增了CC图标（默认禁用）。",
 	[" - Added precognition guesser module that shows when you get precog."] = " - 新增了预知猜测模块，当你获得预知效果时显示。",

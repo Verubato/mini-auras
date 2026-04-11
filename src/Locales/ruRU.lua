@@ -269,6 +269,9 @@ L:SetStrings({
 	["Configure Blizzard Nameplates"] = "Настроить таблички Blizzard",
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."] = "Отключает CC и BigDebuffs на табличках Blizzard при использовании табличек MiniCC.",
 
+	-- General home screen
+	["Important News"] = "Важные новости",
+
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Добавлены иконки контроля на рамки групп/рейдов питомцев (отключено по умолчанию).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - Добавляет модуль угадывания предвидения, который показывает, когда вы получаете предвидение.",

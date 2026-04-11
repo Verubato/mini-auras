@@ -268,6 +268,9 @@ L:SetStrings({
 	["Configure Blizzard Nameplates"] = "Configurar placas de nombre de Blizzard",
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."] = "Desactiva CC y BigDebuffs en las placas de nombre de Blizzard al usar las placas de nombre de MiniCC.",
 
+	-- General home screen
+	["Important News"] = "Noticias importantes",
+
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Añadidos iconos de CC en los marcos de grupo/banda de mascotas (desactivado por defecto).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - Añade un módulo de predicción de precognición que muestra cuándo obtienes precog.",

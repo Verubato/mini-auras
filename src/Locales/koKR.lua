@@ -268,6 +268,9 @@ L:SetStrings({
 	["Configure Blizzard Nameplates"] = "블리자드 네임플레이트 설정",
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."] = "MiniCC 이름표 사용 시 블리자드 이름표의 CC와 BigDebuffs를 비활성화합니다.",
 
+	-- General home screen
+	["Important News"] = "중요 소식",
+
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - 파티/공격대 소환수 프레임에 CC 아이콘이 추가되었습니다 (기본적으로 비활성화).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - 예지 추측 모듈을 추가했습니다. 예지 효과를 받을 때 표시됩니다.",

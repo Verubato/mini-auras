@@ -268,6 +268,9 @@ L:SetStrings({
 	["Configure Blizzard Nameplates"] = "Configura i segnaposto di Blizzard",
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."] = "Disabilita CC e BigDebuffs sulle barre dei nomi di Blizzard quando si usano le barre dei nomi di MiniCC.",
 
+	-- General home screen
+	["Important News"] = "Notizie importanti",
+
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Aggiunte icone CC sui frame di gruppo/incursione degli animali da compagnia (disabilitato per impostazione predefinita).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - Aggiunge un modulo di indovinello precognizione che mostra quando si ottiene precog.",
