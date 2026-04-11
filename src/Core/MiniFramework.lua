@@ -1695,9 +1695,13 @@ function M:CreateStandaloneWindow(options)
 			if options.OnClose then
 				options.OnClose()
 			end
-			windowSelf:SetPropagateKeyboardInput(false)
+			if not InCombatLockdown() then
+				windowSelf:SetPropagateKeyboardInput(false)
+			end
 		else
-			windowSelf:SetPropagateKeyboardInput(true)
+			if not InCombatLockdown() then
+				windowSelf:SetPropagateKeyboardInput(true)
+			end
 		end
 	end)
 
