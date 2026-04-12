@@ -26,7 +26,7 @@ M.SoundFiles = {
 local locale = GetLocale()
 
 if locale == "zhCN" or locale == "zhTW" then
-	table.insert(M.SoundFiles, "夏一可.ogg")
+	table.insert(M.SoundFiles, "XiaYike.ogg")
 end
 
 function M:Apply()

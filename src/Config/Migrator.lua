@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 39,
+	Version = 40,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -2138,6 +2138,41 @@ function M:UpgradeToVersion39(vars)
 
 	vars.NotifiedChanges = false
 	vars.Version = 39
+	return true
+end
+
+function M:UpgradeToVersion40(vars)
+	if vars.Version ~= 39 then return false end
+
+	-- Rename "夏一可.ogg" → "XiaYike.ogg" in the three known Sound.File locations.
+	local function RenameSound(modules)
+		if not modules then return end
+
+		local healer = modules.HealerCCModule
+		if healer and healer.Sound and healer.Sound.File == "夏一可.ogg" then
+			healer.Sound.File = "XiaYike.ogg"
+		end
+
+		local alerts = modules.AlertsModule
+		if alerts and alerts.Sound then
+			if alerts.Sound.Important and alerts.Sound.Important.File == "夏一可.ogg" then
+				alerts.Sound.Important.File = "XiaYike.ogg"
+			end
+			if alerts.Sound.Defensive and alerts.Sound.Defensive.File == "夏一可.ogg" then
+				alerts.Sound.Defensive.File = "XiaYike.ogg"
+			end
+		end
+	end
+
+	RenameSound(vars.Modules)
+
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			RenameSound(profile.Modules)
+		end
+	end
+
+	vars.Version = 40
 	return true
 end
 
