@@ -568,6 +568,48 @@ function M:NDuiFrames(visibleOnly)
 	return frames
 end
 
+---Retrieves a list of GW2 UI unit frames.
+---GW2 UI stores all spawned oUF headers in GW.GridHeaders. Each header's direct
+---children are either unit buttons (have .unit) or sub-group frames (when groupingOrder
+---is set), whose children are the actual unit buttons.
+---@param visibleOnly boolean
+---@return table
+function M:GW2UIFrames(visibleOnly)
+	if not GW2_ADDON or not GW2_ADDON.GridHeaders then
+		return {}
+	end
+
+	local frames = {}
+	local seen = {}
+
+	local function Add(frame)
+		if not frame or seen[frame] then return end
+		if frame.IsForbidden and frame:IsForbidden() then return end
+		if visibleOnly and not frame:IsVisible() then return end
+		seen[frame] = true
+		frames[#frames + 1] = frame
+	end
+
+	for _, header in ipairs(GW2_ADDON.GridHeaders) do
+		for _, child in ipairs({ header:GetChildren() }) do
+			local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
+			if unit and unit ~= "" then
+				Add(child)
+			else
+				-- sub-group frame — walk one level deeper
+				for _, grandchild in ipairs({ child:GetChildren() }) do
+					local gcUnit = grandchild.unit or (grandchild.GetAttribute and grandchild:GetAttribute("unit"))
+					if gcUnit and gcUnit ~= "" then
+						Add(grandchild)
+					end
+				end
+			end
+		end
+	end
+
+	return frames
+end
+
 ---Retrieves a list of custom frames from our saved vars.
 ---@param visibleOnly boolean
 ---@return table
@@ -616,6 +658,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	local eqol = M:EnhancedQoLFrames(visibleOnly)
 	local buzzard = M:BuzzardFrames(visibleOnly)
 	local ndui = M:NDuiFrames(visibleOnly)
+	local gw2ui = M:GW2UIFrames(visibleOnly)
 	local custom = M:CustomFrames(visibleOnly)
 
 	array:Append(blizzard, anchors)
@@ -632,6 +675,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	array:Append(eqol, anchors)
 	array:Append(buzzard, anchors)
 	array:Append(ndui, anchors)
+	array:Append(gw2ui, anchors)
 	array:Append(custom, anchors)
 
 	if includeTestFrames then
