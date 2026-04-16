@@ -22,8 +22,7 @@ addon.Modules.FriendlyCooldowns.Brain = B
 --   2. In FindBestCandidate and PredictRule, non-local candidates receive synthetic Cast=true
 --      evidence (benefit of the doubt), while "player" uses real snapshot data — so if the
 --      local player did NOT cast, they are correctly excluded as a candidate.
--- TODO: restore to `select(4, GetBuildInfo()) >= 120005` before shipping 12.0.5 support.
-local simulateNoCastSucceeded = false
+local simulateNoCastSucceeded = select(4, GetBuildInfo()) >= 120005
 
 -- Seconds of timing tolerance when matching a measured buff duration to a rule.
 -- Covers frame-rate jitter, network latency, and slight timestamp rounding.

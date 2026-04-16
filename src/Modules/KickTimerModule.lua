@@ -55,6 +55,11 @@ local lastEnemyCastState = {
 -- unsure if it's affected by lag or not, needs testing
 local lastEnemyKickTimeDuration = 0.5
 
+-- In patch 12.0.5 (TOC 120005), UNIT_SPELLCAST_SUCCEEDED no longer fires for other players,
+-- so enemy cast attribution (lastEnemyCastState) cannot be populated. When true, skip
+-- registering UNIT_SPELLCAST_SUCCEEDED for enemy units entirely.
+local noCastSucceeded = select(4, GetBuildInfo()) >= 120005
+
 -- per arena unit computed at arena prep
 local kickDurationsByUnit = {} ---@type table<string, number?>
 local kickIconsByUnit = {} ---@type table<string, any?>
@@ -430,11 +435,13 @@ local function Disable()
 		kickedByUnits[unit] = nil
 	end
 
-	for _, unit in ipairs(enemyUnitsToWatch) do
-		local frame = enemyUnitsEventsFrames[unit]
-		if frame then
-			frame:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
-			frame:SetScript("OnEvent", nil)
+	if not noCastSucceeded then
+		for _, unit in ipairs(enemyUnitsToWatch) do
+			local frame = enemyUnitsEventsFrames[unit]
+			if frame then
+				frame:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+				frame:SetScript("OnEvent", nil)
+			end
 		end
 	end
 
@@ -463,13 +470,15 @@ local function Enable()
 		end
 	end
 
-	for _, unit in ipairs(enemyUnitsToWatch) do
-		local frame = enemyUnitsEventsFrames[unit]
-		if frame then
-			frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", unit)
-			frame:SetScript("OnEvent", function(...)
-				OnEnemyUnitEvent(unit, ...)
-			end)
+	if not noCastSucceeded then
+		for _, unit in ipairs(enemyUnitsToWatch) do
+			local frame = enemyUnitsEventsFrames[unit]
+			if frame then
+				frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", unit)
+				frame:SetScript("OnEvent", function(...)
+					OnEnemyUnitEvent(unit, ...)
+				end)
+			end
 		end
 	end
 
