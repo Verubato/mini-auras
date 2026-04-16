@@ -1,7 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 
-addon.Modules.FriendlyCooldowns = addon.Modules.FriendlyCooldowns or {}
+addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
 
 -- Rules keyed first by spec ID (more precise), then by class token (fallback).
 -- Each rule carries flags for which aura type(s) it can match:
@@ -26,7 +26,7 @@ addon.Modules.FriendlyCooldowns = addon.Modules.FriendlyCooldowns or {}
 
 -- SpellId maps a rule to the canonical spell ID used for talent CDR lookups.
 
----@class FriendlyCooldownRules
+---@class CooldownRules
 local rules = {
 	BySpec = {
 		[65] = { -- Holy Paladin
@@ -1132,4 +1132,4 @@ function rules.GetSpellType(spellId)
 	return "Important"
 end
 
-addon.Modules.FriendlyCooldowns.Rules = rules
+addon.Modules.Cooldowns.Rules = rules

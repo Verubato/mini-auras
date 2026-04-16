@@ -3,7 +3,6 @@ local _, addon = ...
 local mini = addon.Core.Framework
 local L = addon.L
 local profileManager = addon.Core.ProfileManager
-local verticalSpacing = mini.VerticalSpacing
 
 ---@class ProfilesConfig
 local M = {}
@@ -11,7 +10,6 @@ addon.Config.Profiles = M
 
 local noneLabel = "(none)"
 local rowHeight = 28
-local ctxColW = 110
 local specColW = 160
 
 local profilePrefix    = "!MiniCC:2!"
@@ -461,7 +459,7 @@ function M:Build(panel)
 		if panel.OnMiniRefresh then panel:OnMiniRefresh() end
 	end)
 
-	-- ── MiniRefresh ────────────────────────────────────────────────────
+	-- MiniRefresh
 	panel.OnMiniRefresh = function()
 		for i = #profileItems, 1, -1 do profileItems[i] = nil end
 		for _, name in ipairs(profileManager:GetProfileNames()) do

@@ -188,7 +188,7 @@ function O:RegisterAuraChangedCallback(fn)
 end
 
 ---Registers a callback fired when a watched unit successfully casts a spell.
----@param fn fun(unit: string)
+---@param fn fun(unit: string, spellId: number)
 function O:RegisterCastCallback(fn)
 	castCallbacks[#castCallbacks + 1] = fn
 end

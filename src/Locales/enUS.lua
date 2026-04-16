@@ -251,6 +251,27 @@ L:SetDefaultStrings({
 	["Columns"] = "Columns",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames.",
 
+	-- Enemy Cooldown Tracker tab
+	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire.",
+	["Enable enemy cooldown tracking in arena."] = "Enable enemy cooldown tracking in arena.",
+	["Number of icon rows for the Linear Bar. Icons per row is determined by the Max Icons setting."] = "Number of icon rows for the Linear Bar. Icons per row is determined by the Max Icons setting.",
+	["Show spell tooltips when hovering over cooldown icons."] = "Show spell tooltips when hovering over cooldown icons.",
+	["Reverse the cooldown swipe animation direction on icons."] = "Reverse the cooldown swipe animation direction on icons.",
+	["The display size of each cooldown icon in pixels."] = "The display size of each cooldown icon in pixels.",
+	["The spacing in pixels between each cooldown icon."] = "The spacing in pixels between each cooldown icon.",
+	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar.",
+	["The direction cooldown icons grow from the arena frame anchor point."] = "The direction cooldown icons grow from the arena frame anchor point.",
+	["Horizontal pixel offset from the arena frame anchor point."] = "Horizontal pixel offset from the arena frame anchor point.",
+	["Vertical pixel offset from the arena frame anchor point."] = "Vertical pixel offset from the arena frame anchor point.",
+	["Vertical spacing in pixels between each enemy's cooldown row."] = "Vertical spacing in pixels between each enemy's cooldown row.",
+	["Display"] = "Display",
+	["Layout Mode"] = "Layout Mode",
+	["Mode"] = "Mode",
+	["Arena Frames Anchoring"] = "Arena Frames Anchoring",
+	["Linear Bar Position"] = "Linear Bar Position",
+	["Entry Spacing"] = "Entry Spacing",
+	["Vertical spacing between each enemy's icon row in Linear mode."] = "Vertical spacing between each enemy's icon row in Linear mode.",
+
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "It works by taking any 4 second 'important' self buff and showing that icon.",
 	["Note that you can't simply filter by spell id these days."] = "Note that you can't simply filter by spell id these days.",
@@ -275,7 +296,8 @@ L:SetDefaultStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - Added precognition guesser module that shows when you get precog.",
 	[" - Added profile import/export feature."] = " - Added profile import/export feature.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!",
-	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. We will look for workarounds, but please be aware that tracking will lose accuracy."] = "HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. We will look for workarounds, but please be aware that tracking will lose accuracy.",
+	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon.",
+	[" - Added enemy cooldown tracking module."] = " - Added enemy cooldown tracking module.",
 	["MiniCC - What's New?"] = "MiniCC - What's New?",
 })
 

@@ -252,6 +252,27 @@ L:SetStrings({
 	["Columns"] = "열",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "확장 방향이 아래일 때, 줄 바꿈 전에 한 줄에 표시할 아이콘 수를 설정합니다. 가로 파티 프레임에 유용합니다.",
 
+	-- Enemy Cooldown Tracker tab
+	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "버프가 만료된 후 적 투기장 상대의 방어 및 공격 재사용 대기시간을 표시합니다.",
+	["Display"] = "표시",
+	["Layout Mode"] = "레이아웃 모드",
+	["Mode"] = "모드",
+	["Arena Frames Anchoring"] = "투기장 프레임 고정",
+	["Linear Bar Position"] = "선형 바 위치",
+	["Entry Spacing"] = "항목 간격",
+	["Vertical spacing between each enemy's icon row in Linear mode."] = "선형 모드에서 각 적의 아이콘 행 사이의 수직 간격.",
+	["Enable enemy cooldown tracking in arena."] = "투기장에서 적 쿨다운 추적을 활성화합니다.",
+	["Show spell tooltips when hovering over cooldown icons."] = "쿨다운 아이콘 위에 마우스를 올리면 주문 툴팁을 표시합니다.",
+	["Reverse the cooldown swipe animation direction on icons."] = "아이콘의 쿨다운 스와이프 애니메이션 방향을 반전합니다.",
+	["The display size of each cooldown icon in pixels."] = "각 쿨다운 아이콘의 표시 크기(픽셀).",
+	["The spacing in pixels between each cooldown icon."] = "각 쿨다운 아이콘 간의 간격(픽셀).",
+	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "투기장 프레임: 각 적의 투기장 프레임 옆에 아이콘을 고정합니다. 선형 바: 모든 쿨다운을 하나의 통합 바에 표시합니다.",
+	["The direction cooldown icons grow from the arena frame anchor point."] = "쿨다운 아이콘이 투기장 프레임 앵커 포인트에서 성장하는 방향.",
+	["Horizontal pixel offset from the arena frame anchor point."] = "투기장 프레임 앵커 포인트로부터의 수평 픽셀 오프셋.",
+	["Vertical pixel offset from the arena frame anchor point."] = "투기장 프레임 앵커 포인트로부터의 수직 픽셀 오프셋.",
+	["Vertical spacing in pixels between each enemy's cooldown row."] = "각 적의 쿨다운 행 사이의 수직 간격(픽셀).",
+	["Number of icon rows for the Linear Bar. Icons per row is determined by the Max Icons setting."] = "선형 바의 아이콘 행 수. 행당 아이콘 수는 최대 아이콘 설정으로 결정됩니다.",
+
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "4초짜리 '중요한' 자신 버프를 감지하여 해당 아이콘을 표시하는 방식으로 작동합니다.",
 	["Note that you can't simply filter by spell id these days."] = "요즘은 주문 ID로 단순히 필터링할 수 없다는 점에 유의하세요.",
@@ -276,6 +297,7 @@ L:SetStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - 예지 추측 모듈을 추가했습니다. 예지 효과를 받을 때 표시됩니다.",
 	[" - Added profile import/export feature."] = " - 프로필 가져오기/내보내기 기능이 추가되었습니다.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - 아군 쿨다운 추측 모듈이 추가되었습니다. 이제 팀원들의 쿨다운을 어느 정도 추적할 수 있습니다!",
-	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. We will look for workarounds, but please be aware that tracking will lose accuracy."] = "주의: Blizzard가 패치 12.0.5(4월 21일)에서 변경 사항을 적용하여 아군 CD 추적 정확도를 크게 감소시키고, 누를 때 쿨다운 발광 효과를 제거하며, PvP 적 기술 차단 추적을 완전히 제거할 예정입니다. 해결 방법을 찾아보겠지만, 추적 정확도가 낮아질 수 있다는 점을 참고해 주세요.",
+	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "주의: Blizzard가 패치 12.0.5(4월 21일)에서 변경 사항을 적용하여 아군 CD 추적 정확도를 크게 감소시키고, 누를 때 쿨다운 발광 효과를 제거하며, PvP 적 기술 차단 추적을 완전히 제거할 예정입니다. 따라서 곧 추적 정확도가 낮아질 것임을 참고해 주세요.",
+	[" - Added enemy cooldown tracking module."] = " - 적 쿨다운 추적 모듈이 추가되었습니다.",
 	["MiniCC - What's New?"] = "MiniCC - 새로운 소식?",
 })

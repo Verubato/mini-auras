@@ -1,11 +1,11 @@
 ---@type string, Addon
 local _, addon = ...
 
-addon.Modules.FriendlyCooldowns = addon.Modules.FriendlyCooldowns or {}
+addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
 
 ---@class PvPTalentSync
 local M = {}
-addon.Modules.FriendlyCooldowns.PvPTalentSync = M
+addon.Modules.Cooldowns.PvPTalentSync = M
 addon.Utils.PvPTalentSync = M -- backward compat
 
 local prefix = "MiniCC:Talents"

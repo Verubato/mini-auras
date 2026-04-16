@@ -252,6 +252,27 @@ L:SetStrings({
 	["Columns"] = "Columnas",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Cuando Crecer está en Abajo, define cuántos iconos aparecen por fila antes de pasar a la siguiente. Útil para marcos de grupo horizontales.",
 
+	-- Enemy Cooldown Tracker tab
+	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "Muestra los tiempos de reutilización defensivos y ofensivos de los adversarios de arena tras expirar sus efectos positivos.",
+	["Display"] = "Mostrar",
+	["Layout Mode"] = "Modo de disposición",
+	["Mode"] = "Modo",
+	["Arena Frames Anchoring"] = "Anclaje de marcos de arena",
+	["Linear Bar Position"] = "Posición de la barra lineal",
+	["Entry Spacing"] = "Separación de entradas",
+	["Vertical spacing between each enemy's icon row in Linear mode."] = "Espacio vertical entre la fila de iconos de cada enemigo en modo Lineal.",
+	["Enable enemy cooldown tracking in arena."] = "Habilitar el seguimiento de tiempos de reutilización de enemigos en arena.",
+	["Show spell tooltips when hovering over cooldown icons."] = "Mostrar tooltips de hechizos al pasar el ratón sobre los iconos de tiempo de reutilización.",
+	["Reverse the cooldown swipe animation direction on icons."] = "Invertir la dirección de la animación de barrido del tiempo de reutilización en los iconos.",
+	["The display size of each cooldown icon in pixels."] = "El tamaño de visualización de cada icono de tiempo de reutilización en píxeles.",
+	["The spacing in pixels between each cooldown icon."] = "El espaciado en píxeles entre cada icono de tiempo de reutilización.",
+	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "Marcos de arena: ancla los iconos junto al marco de arena de cada enemigo. Barra lineal: muestra todos los tiempos de reutilización en una barra combinada.",
+	["The direction cooldown icons grow from the arena frame anchor point."] = "La dirección en que los iconos de tiempo de reutilización crecen desde el punto de anclaje del marco de arena.",
+	["Horizontal pixel offset from the arena frame anchor point."] = "Desplazamiento horizontal en píxeles desde el punto de anclaje del marco de arena.",
+	["Vertical pixel offset from the arena frame anchor point."] = "Desplazamiento vertical en píxeles desde el punto de anclaje del marco de arena.",
+	["Vertical spacing in pixels between each enemy's cooldown row."] = "Espaciado vertical en píxeles entre la fila de tiempos de reutilización de cada enemigo.",
+	["Number of icon rows for the Linear Bar. Icons per row is determined by the Max Icons setting."] = "Número de filas de iconos para la Barra Lineal. Los iconos por fila se determinan por la configuración Máx. Iconos.",
+
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Funciona detectando cualquier buff propio «importante» de 4 segundos y mostrando ese icono.",
 	["Note that you can't simply filter by spell id these days."] = "Ten en cuenta que hoy en día no puedes simplemente filtrar por ID de hechizo.",
@@ -276,6 +297,7 @@ L:SetStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - Añade un módulo de predicción de precognición que muestra cuándo obtienes precog.",
 	[" - Added profile import/export feature."] = " - Añadida la función de importar/exportar perfil.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Añadido el módulo de estimación de tiempos de reutilización aliados. ¡Ahora puedes seguir aproximadamente los tiempos de reutilización de tus compañeros de equipo!",
-	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. We will look for workarounds, but please be aware that tracking will lose accuracy."] = "AVISO: Blizzard está realizando cambios en el parche 12.0.5 (21 de abril) que reducirán gravemente la precisión del seguimiento de CD aliados, eliminarán el brillo de los enfriamientos al presionar y eliminarán completamente el seguimiento de interrupciones enemigas en JcJ. Buscaremos soluciones alternativas, pero ten en cuenta que la precisión del seguimiento disminuirá.",
+	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "AVISO: Blizzard está realizando cambios en el parche 12.0.5 (21 de abril) que reducirán gravemente la precisión del seguimiento de CD aliados, eliminarán el brillo de los enfriamientos al presionar y eliminarán completamente el seguimiento de interrupciones enemigas en JcJ. Por lo tanto, ten en cuenta que la precisión del seguimiento disminuirá pronto.",
+	[" - Added enemy cooldown tracking module."] = " - Módulo de seguimiento de tiempos de reutilización de enemigos añadido.",
 	["MiniCC - What's New?"] = "MiniCC - ¿Qué hay de nuevo?",
 })

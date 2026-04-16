@@ -53,13 +53,16 @@ Modules\NameplatesModule.lua
 Modules\KickTimerModule.lua
 Modules\FriendlyIndicatorModule.lua
 Modules\PrecogGuesserModule.lua
-Modules\FriendlyCooldowns\PvPTalentSync.lua
-Modules\FriendlyCooldowns\Talents.lua
-Modules\FriendlyCooldowns\Rules.lua
+Modules\Cooldowns\PvPTalentSync.lua
+Modules\Cooldowns\Talents.lua
+Modules\Cooldowns\Rules.lua
 Modules\FriendlyCooldowns\Observer.lua
-Modules\FriendlyCooldowns\Brain.lua
+Modules\Cooldowns\Brain.lua
 Modules\FriendlyCooldowns\Display.lua
 Modules\FriendlyCooldowns\Module.lua
+Modules\EnemyCooldowns\Observer.lua
+Modules\EnemyCooldowns\Display.lua
+Modules\EnemyCooldowns\Module.lua
 Modules\TestModeManager.lua
 
 Api\v1.lua
@@ -76,6 +79,7 @@ Config\KickTimer.lua
 Config\PrecogGuesser.lua
 Config\FriendlyIndicator.lua
 Config\FriendlyCooldownTracker.lua
+Config\EnemyCooldownTracker.lua
 Config\OtherAddons.lua
 Config\Miscellaneous.lua
 Config\Profiles.lua

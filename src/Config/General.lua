@@ -57,6 +57,6 @@ function M:Build(panel)
 	newsText:SetTextColor(0.9, 0.2, 0.2, 1)
 	newsText:SetWidth(contentWidth - 40)
 	newsText:SetJustifyH("CENTER")
-	newsText:SetText(L["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. We will look for workarounds, but please be aware that tracking will lose accuracy."])
+	newsText:SetText(L["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."])
 	newsText:SetPoint("TOPLEFT", newsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 end

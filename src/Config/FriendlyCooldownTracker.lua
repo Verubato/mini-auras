@@ -7,7 +7,7 @@ local horizontalSpacing = mini.HorizontalSpacing
 local config = addon.Config
 
 -- Loaded before this file in TOC order (via Config.lua which runs after all Modules).
-local rules = addon.Modules.FriendlyCooldowns.Rules
+local rules = addon.Modules.Cooldowns.Rules
 local fcdDisplay = addon.Modules.FriendlyCooldowns.Display
 local fcdModule = addon.Modules.FriendlyCooldowns.Module
 
@@ -286,7 +286,7 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	offsetX.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	offsetX.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local offsetY = mini:Slider({
 		Parent = panel,
@@ -539,6 +539,12 @@ local function BuildSpellsList(parent, disabledSpells)
 
 	if firstClass then SelectClass(firstClass) end
 
+	parent.MiniRefresh = function()
+		for _, cp in pairs(classPanels) do
+			if cp.MiniRefresh then cp:MiniRefresh() end
+		end
+	end
+
 	return math.max(sidebarH, maxContentH)
 end
 
@@ -666,5 +672,6 @@ function M:Build(panel, default, raid)
 	panel.OnMiniRefresh = function()
 		defaultPanel:MiniRefresh()
 		raidPanel:MiniRefresh()
+		spellsContent:MiniRefresh()
 	end
 end

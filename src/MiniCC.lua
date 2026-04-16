@@ -17,9 +17,10 @@ local modules = {
 	addon.Modules.KickTimerModule,
 	addon.Modules.FriendlyIndicatorModule,
 	addon.Modules.PrecogGuesserModule,
-	addon.Core.FriendlyCooldownTalents,
+	addon.Modules.Cooldowns.Talents,
 	addon.Core.TrinketsTracker,
 	addon.Modules.FriendlyCooldownTrackerModule,
+	addon.Modules.EnemyCooldownTrackerModule,
 }
 local eventsFrame
 local db
@@ -193,16 +194,23 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Inspector Inspector
 ---@field IconSlotContainer IconSlotContainer
 ---@field InstanceOptions InstanceOptions
----@field FriendlyCooldownTalents FriendlyCooldownTalents
 ---@field TrinketsTracker TrinketsTracker
 
+---@class Cooldowns
+---@field PvPTalentSync PvPTalentSync
+---@field Talents CooldownTalents
+---@field Rules CooldownRules
+---@field Brain CooldownBrain
+
 ---@class FriendlyCooldowns
----@field Talents FriendlyCooldownTalents
----@field Rules FriendlyCooldownRules
 ---@field Observer FriendlyCooldownObserver
----@field Brain FriendlyCooldownBrain
 ---@field Display FriendlyCooldownDisplay
 ---@field Module FriendlyCooldownTrackerModule
+
+---@class EnemyCooldowns
+---@field Observer EnemyCooldownObserver
+---@field Display EnemyCooldownDisplay
+---@field Module EnemyCooldownTrackerModule
 
 ---@class Modules
 ---@field TestModeManager TestModeManager
@@ -215,7 +223,10 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field FriendlyIndicatorModule FriendlyIndicatorModule
 ---@field PrecogGuesserModule PrecogGuesserModule
 ---@field FriendlyCooldownTrackerModule FriendlyCooldownTrackerModule
+---@field EnemyCooldownTrackerModule EnemyCooldownTrackerModule
+---@field Cooldowns Cooldowns
 ---@field FriendlyCooldowns FriendlyCooldowns
+---@field EnemyCooldowns EnemyCooldowns
 
 ---@class IModule
 ---@field Init fun(self: IModule) Initialises the module to be ready for use.

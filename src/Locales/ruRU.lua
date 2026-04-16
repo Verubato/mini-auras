@@ -253,6 +253,27 @@ L:SetStrings({
 	["Columns"] = "Столбцы",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Когда направление роста — Вниз, определяет количество иконок в одном ряду до переноса. Полезно для горизонтальных рамок группы.",
 
+	-- Enemy Cooldown Tracker tab
+	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "Отображает откаты защитных и наступательных способностей противников на арене после истечения их баффов.",
+	["Display"] = "Отображение",
+	["Layout Mode"] = "Режим расположения",
+	["Mode"] = "Режим",
+	["Arena Frames Anchoring"] = "Привязка рамок арены",
+	["Linear Bar Position"] = "Позиция линейной полосы",
+	["Entry Spacing"] = "Отступ между записями",
+	["Vertical spacing between each enemy's icon row in Linear mode."] = "Вертикальный отступ между рядами иконок каждого противника в линейном режиме.",
+	["Enable enemy cooldown tracking in arena."] = "Включить отслеживание перезарядки врагов на арене.",
+	["Show spell tooltips when hovering over cooldown icons."] = "Показывать подсказки по заклинаниям при наведении на иконки перезарядки.",
+	["Reverse the cooldown swipe animation direction on icons."] = "Изменить направление анимации смахивания перезарядки на иконках.",
+	["The display size of each cooldown icon in pixels."] = "Размер отображения каждой иконки перезарядки в пикселях.",
+	["The spacing in pixels between each cooldown icon."] = "Расстояние в пикселях между каждой иконкой перезарядки.",
+	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "Рамки арены: привязывает иконки рядом с рамкой арены каждого врага. Линейная полоса: отображает все перезарядки в одной объединённой полосе.",
+	["The direction cooldown icons grow from the arena frame anchor point."] = "Направление роста иконок перезарядки от точки привязки рамки арены.",
+	["Horizontal pixel offset from the arena frame anchor point."] = "Горизонтальное смещение в пикселях от точки привязки рамки арены.",
+	["Vertical pixel offset from the arena frame anchor point."] = "Вертикальное смещение в пикселях от точки привязки рамки арены.",
+	["Vertical spacing in pixels between each enemy's cooldown row."] = "Вертикальный отступ в пикселях между рядами перезарядки каждого врага.",
+	["Number of icon rows for the Linear Bar. Icons per row is determined by the Max Icons setting."] = "Количество рядов иконок для линейной полосы. Иконки в ряду определяются настройкой Макс. иконки.",
+
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Работает, отслеживая любой 4-секундный «важный» бафф на себя и отображая его иконку.",
 	["Note that you can't simply filter by spell id these days."] = "Обратите внимание, что в наши дни нельзя просто фильтровать по ID заклинания.",
@@ -277,6 +298,7 @@ L:SetStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - Добавляет модуль угадывания предвидения, который показывает, когда вы получаете предвидение.",
 	[" - Added profile import/export feature."] = " - Добавлена функция импорта/экспорта профиля.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Добавлен модуль угадывания откатов союзников. Теперь вы можете примерно отслеживать откаты ваших товарищей по команде!",
-	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. We will look for workarounds, but please be aware that tracking will lose accuracy."] = "ВНИМАНИЕ: В патче 12.0.5 (21 апреля) Blizzard вносит изменения, которые значительно снизят точность отслеживания КД союзников, отключат подсветку откатов при нажатии и полностью уберут отслеживание вражеских прерываний в PvP. Мы постараемся найти обходные пути, но имейте в виду, что точность отслеживания снизится.",
+	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "ВНИМАНИЕ: В патче 12.0.5 (21 апреля) Blizzard вносит изменения, которые значительно снизят точность отслеживания КД союзников, отключат подсветку откатов при нажатии и полностью уберут отслеживание вражеских прерываний в PvP. Поэтому имейте в виду, что точность отслеживания скоро снизится.",
+	[" - Added enemy cooldown tracking module."] = " - Добавлен модуль отслеживания перезарядки врагов.",
 	["MiniCC - What's New?"] = "MiniCC - Что нового?",
 })

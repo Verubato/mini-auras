@@ -253,6 +253,27 @@ L:SetStrings({
 	["Columns"] = "欄數",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "當增長方向為向下時，設定每行顯示的圖示數量。適用於水平隊伍框架。",
 
+	-- Enemy Cooldown Tracker tab
+	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "在敵方競技場對手的增益效果消失後，顯示其防禦性和進攻性冷卻時間。",
+	["Display"] = "顯示",
+	["Layout Mode"] = "版面模式",
+	["Mode"] = "模式",
+	["Arena Frames Anchoring"] = "競技場框架錨定",
+	["Linear Bar Position"] = "線性條位置",
+	["Entry Spacing"] = "項目間距",
+	["Vertical spacing between each enemy's icon row in Linear mode."] = "線性模式中各敵人圖示列之間的垂直間距。",
+	["Enable enemy cooldown tracking in arena."] = "在競技場中啟用敵人冷卻追蹤。",
+	["Show spell tooltips when hovering over cooldown icons."] = "將滑鼠懸停在冷卻圖示上時顯示法術提示。",
+	["Reverse the cooldown swipe animation direction on icons."] = "反轉圖示上冷卻掃描動畫的方向。",
+	["The display size of each cooldown icon in pixels."] = "每個冷卻圖示的顯示尺寸（像素）。",
+	["The spacing in pixels between each cooldown icon."] = "每個冷卻圖示之間的間距（像素）。",
+	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "競技場框架：將圖示固定在每個敵人的競技場框架旁邊。線性條：在單個組合條中顯示所有冷卻。",
+	["The direction cooldown icons grow from the arena frame anchor point."] = "冷卻圖示從競技場框架錨點增長的方向。",
+	["Horizontal pixel offset from the arena frame anchor point."] = "距競技場框架錨點的水平像素偏移。",
+	["Vertical pixel offset from the arena frame anchor point."] = "距競技場框架錨點的垂直像素偏移。",
+	["Vertical spacing in pixels between each enemy's cooldown row."] = "每個敵人冷卻列之間的垂直間距（像素）。",
+	["Number of icon rows for the Linear Bar. Icons per row is determined by the Max Icons setting."] = "線性條的圖示列數。每列圖示數由最大圖示設定決定。",
+
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "其運作原理是偵測任何4秒的「重要」自身增益效果並顯示該圖示。",
 	["Note that you can't simply filter by spell id these days."] = "請注意，現在無法簡單地通過法術ID進行過濾。",
@@ -277,6 +298,7 @@ L:SetStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - 新增了預知猜測模組，當你獲得預知效果時顯示。",
 	[" - Added profile import/export feature."] = " - 新增了設定檔匯入/匯出功能。",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - 新增了友方冷卻時間猜測模組。現在你可以大致追蹤隊友的冷卻時間！",
-	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. We will look for workarounds, but please be aware that tracking will lose accuracy."] = "注意：暴雪將在12.0.5版本（4月21日）進行更改，這將嚴重降低友方CD追蹤的準確性、取消按鍵時的冷卻發光效果，並完全移除PvP敵方打斷追蹤。我們會尋找解決方案，但請注意追蹤精度將會下降。",
+	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "注意：暴雪將在12.0.5版本（4月21日）進行更改，這將嚴重降低友方CD追蹤的準確性、取消按鍵時的冷卻發光效果，並完全移除PvP敵方打斷追蹤。因此請注意，追蹤精度即將下降。",
+	[" - Added enemy cooldown tracking module."] = " - 新增敵人冷卻追蹤模組。",
 	["MiniCC - What's New?"] = "MiniCC - 有什麼新鮮事？",
 })

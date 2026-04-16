@@ -12,11 +12,11 @@ local trinketsTracker = addon.Core.TrinketsTracker
 local instanceOptions = addon.Core.InstanceOptions
 
 -- Loaded before this file in TOC order.
-local fcdTalents = addon.Modules.FriendlyCooldowns.Talents
+local fcdTalents = addon.Modules.Cooldowns.Talents
 local observer = addon.Modules.FriendlyCooldowns.Observer
-local brain = addon.Modules.FriendlyCooldowns.Brain
+local brain = addon.Modules.Cooldowns.Brain
 local display = addon.Modules.FriendlyCooldowns.Display
-local rules = addon.Modules.FriendlyCooldowns.Rules
+local rules = addon.Modules.Cooldowns.Rules
 
 ---@class FriendlyCooldownTrackerModule : IModule
 local M = {}
@@ -26,6 +26,7 @@ addon.Modules.FriendlyCooldownTrackerModule = M -- backward compat
 local watchEntries = {} ---@type table<table, FcdWatchEntry>  keyed by anchor frame
 local testModeActive = false
 local editModeActive = false
+local observersEnabled = false
 local eventsFrame
 ---@type Db
 local db
@@ -122,18 +123,6 @@ local function EnsureEntry(anchor, unit)
 		observer:Rewatch(entry)
 	end
 
-	display:AnchorContainer(entry)
-
-	local anchorOptionsForShow = GetAnchorOptions()
-	if anchorOptionsForShow and anchorOptionsForShow.ExcludeSelf and UnitIsUnit(unit, "player") then
-		entry.IsExcludedSelf = true
-		entry.Container:ResetAllSlots()
-		entry.Container.Frame:Hide()
-	else
-		entry.IsExcludedSelf = false
-		ShowHideEntryContainer(entry.Container.Frame, anchor)
-	end
-
 	return entry
 end
 
@@ -144,6 +133,10 @@ local function EnsureAllEntries()
 end
 
 local function DisableAll()
+	if not observersEnabled then
+		return
+	end
+	observersEnabled = false
 	for _, entry in pairs(watchEntries) do
 		observer:Disable(entry)
 		entry.Container:ResetAllSlots()
@@ -152,6 +145,10 @@ local function DisableAll()
 end
 
 local function EnableAll()
+	if observersEnabled then
+		return
+	end
+	observersEnabled = true
 	for _, entry in pairs(watchEntries) do
 		observer:Enable(entry)
 	end
@@ -171,8 +168,8 @@ function M:Refresh()
 		return
 	end
 
-	EnableAll()
 	EnsureAllEntries()
+	EnableAll()
 
 	for anchor, entry in pairs(watchEntries) do
 		if anchorOptions.ExcludeSelf and UnitIsUnit(entry.Unit, "player") then
@@ -193,8 +190,11 @@ function M:Refresh()
 			entry.Container:SetRows(isDown and nil or rows, isDown and "CENTER" or anchorOptions.Grow, not isDown and anchorOptions.Grow ~= "RIGHT")
 			entry.Container:SetColumns(isDown and (tonumber(anchorOptions.Icons.Columns) or 1) or nil)
 			display:AnchorContainer(entry)
+			local wasHidden = not entry.Container.Frame:IsShown()
 			ShowHideEntryContainer(entry.Container.Frame, anchor)
-			display:UpdateDisplay(entry)
+			if wasHidden and entry.Container.Frame:IsShown() then
+				display:UpdateDisplay(entry)
+			end
 		end
 	end
 end
@@ -230,6 +230,8 @@ function M:Init()
 
 	fcdTalents:Init()
 	display:Init()
+
+	brain:RegisterWithObserver(observer)
 
 	-- Provide Brain with a way to look up a unit's active cooldowns so PredictSpellIdForUnit
 	-- can skip rules whose spell is already on cooldown (e.g. BoF on CD when AW is cast).

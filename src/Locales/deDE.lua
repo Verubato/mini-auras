@@ -252,6 +252,27 @@ L:SetStrings({
 	["Columns"] = "Spalten",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Wenn Wachsen auf Unten gesetzt ist, legt fest, wie viele Symbole pro Reihe angezeigt werden. Nützlich für horizontale Gruppenrahmen.",
 
+	-- Enemy Cooldown Tracker tab
+	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "Zeigt defensive und offensive Abklingzeiten der Arena-Gegner an, nachdem deren Buffs ablaufen.",
+	["Display"] = "Anzeige",
+	["Layout Mode"] = "Layout-Modus",
+	["Mode"] = "Modus",
+	["Arena Frames Anchoring"] = "Arena-Rahmen-Verankerung",
+	["Linear Bar Position"] = "Lineare Leisten-Position",
+	["Entry Spacing"] = "Eintragsabstand",
+	["Vertical spacing between each enemy's icon row in Linear mode."] = "Vertikaler Abstand zwischen den Symbol-Reihen jedes Gegners im linearen Modus.",
+	["Enable enemy cooldown tracking in arena."] = "Feindliche Abklingzeit-Verfolgung in der Arena aktivieren.",
+	["Show spell tooltips when hovering over cooldown icons."] = "Zauber-Tooltips beim Überfahren von Abklingzeit-Symbolen anzeigen.",
+	["Reverse the cooldown swipe animation direction on icons."] = "Richtung der Abklingzeit-Wischanimation auf Symbolen umkehren.",
+	["The display size of each cooldown icon in pixels."] = "Die Anzeigestärke jedes Abklingzeit-Symbols in Pixeln.",
+	["The spacing in pixels between each cooldown icon."] = "Der Abstand in Pixeln zwischen jedem Abklingzeit-Symbol.",
+	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "Arena-Rahmen: Symbole neben jedem Gegner-Arena-Rahmen verankern. Lineare Leiste: Alle Abklingzeiten in einer kombinierten Leiste anzeigen.",
+	["The direction cooldown icons grow from the arena frame anchor point."] = "Die Richtung, in die Abklingzeit-Symbole vom Arena-Rahmen-Ankerpunkt wachsen.",
+	["Horizontal pixel offset from the arena frame anchor point."] = "Horizontaler Pixel-Versatz vom Arena-Rahmen-Ankerpunkt.",
+	["Vertical pixel offset from the arena frame anchor point."] = "Vertikaler Pixel-Versatz vom Arena-Rahmen-Ankerpunkt.",
+	["Vertical spacing in pixels between each enemy's cooldown row."] = "Vertikaler Abstand in Pixeln zwischen den Abklingzeit-Reihen jedes Gegners.",
+	["Number of icon rows for the Linear Bar. Icons per row is determined by the Max Icons setting."] = "Anzahl der Symbol-Reihen für die lineare Leiste. Symbole pro Reihe werden durch die Einstellung 'Max. Symbole' bestimmt.",
+
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Es funktioniert, indem es jeden 4-sekündigen 'wichtigen' Selbst-Buff erkennt und dieses Symbol anzeigt.",
 	["Note that you can't simply filter by spell id these days."] = "Beachte, dass man heutzutage nicht einfach nach Zauber-ID filtern kann.",
@@ -276,6 +297,7 @@ L:SetStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - Fügt ein Vorausahnungs-Ratemodul hinzu, das anzeigt, wenn du Vorausahnung erhältst.",
 	[" - Added profile import/export feature."] = " - Profil-Import-/Exportfunktion hinzugefügt.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Freundliches Abklingzeit-Schätzmodul hinzugefügt. Du kannst jetzt die Abklingzeiten deiner Teammitglieder einigermaßen verfolgen!",
-	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. We will look for workarounds, but please be aware that tracking will lose accuracy."] = "ACHTUNG: Blizzard nimmt in Patch 12.0.5 (21. April) Änderungen vor, die die Genauigkeit der Freund-CD-Verfolgung stark reduzieren, das Cooldown-Leuchten beim Drücken deaktivieren und das feindliche Kick-Tracking im PvP vollständig entfernen werden. Wir werden nach Lösungen suchen, aber bitte sei dir bewusst, dass die Verfolgungsgenauigkeit nachlassen wird.",
+	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "ACHTUNG: Blizzard nimmt in Patch 12.0.5 (21. April) Änderungen vor, die die Genauigkeit der Freund-CD-Verfolgung stark reduzieren, das Cooldown-Leuchten beim Drücken deaktivieren und das feindliche Kick-Tracking im PvP vollständig entfernen werden. Bitte sei dir also bewusst, dass die Verfolgungsgenauigkeit bald nachlassen wird.",
+	[" - Added enemy cooldown tracking module."] = " - Feindliches Abklingzeit-Verfolgungsmodul hinzugefügt.",
 	["MiniCC - What's New?"] = "MiniCC - Was gibt es Neues?",
 })

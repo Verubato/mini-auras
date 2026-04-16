@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 40,
+	Version = 43,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -479,6 +479,45 @@ local dbDefaults = {
 					Rows = 1,
 					Columns = 1,
 				},
+			},
+		},
+
+		---@class EnemyCooldownTrackerModuleOptions
+		---@field DisabledSpells table<number, boolean> SpellIds excluded from the display; keyed by SpellId, value true. Treated as an opaque user hash — CleanTable must not recurse into it.
+		EnemyCooldownTrackerModule = {
+			Enabled = {
+				World = false,
+				Arena = true,
+				BattleGrounds = false,
+				Dungeons = false,
+				Raid = false,
+			},
+
+			DisabledSpells = {},
+
+			DisplayMode  = "Linear",
+			ShowTooltips = false,
+			IconSpacing  = 2,
+			EntrySpacing = 4,
+
+			Icons = {
+				Size            = 40,
+				ReverseCooldown = true,
+			},
+
+			---@class EcdArenaFramesOptions
+			ArenaFrames = {
+				Grow   = "RIGHT",
+				Offset = { X = 58, Y = 0 },
+			},
+
+			---@class EcdLinearOptions
+			Linear = {
+				Point         = "CENTER",
+				RelativeTo    = "UIParent",
+				RelativePoint = "CENTER",
+				X             = 0,
+				Y             = -100,
 			},
 		},
 
@@ -2134,7 +2173,7 @@ end
 function M:UpgradeToVersion39(vars)
 	if vars.Version ~= 38 then return false end
 
-	table.insert(vars.WhatsNew, L["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. We will look for workarounds, but please be aware that tracking will lose accuracy."])
+	table.insert(vars.WhatsNew, L["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."])
 
 	vars.NotifiedChanges = false
 	vars.Version = 39
@@ -2173,6 +2212,38 @@ function M:UpgradeToVersion40(vars)
 	end
 
 	vars.Version = 40
+	return true
+end
+
+function M:UpgradeToVersion41(vars)
+	if vars.Version ~= 40 then return false end
+
+	-- Add DisabledSpells to EnemyCooldownTrackerModule (new spell-filter feature).
+	-- DisabledSpells is an opaque user hash; initialise to empty for existing installs.
+	local ecd = vars.Modules and vars.Modules.EnemyCooldownTrackerModule
+	if ecd and ecd.DisabledSpells == nil then
+		ecd.DisabledSpells = {}
+	end
+
+	vars.Version = 41
+	return true
+end
+
+function M:UpgradeToVersion42(vars)
+	if vars.Version ~= 41 then return false end
+
+	vars.Version = 42
+	return true
+end
+
+function M:UpgradeToVersion43(vars)
+	if vars.Version ~= 42 then return false end
+
+	vars.WhatsNew = vars.WhatsNew or {}
+	table.insert(vars.WhatsNew, L[" - Added enemy cooldown tracking module."])
+	vars.NotifiedChanges = false
+
+	vars.Version = 43
 	return true
 end
 
@@ -2217,9 +2288,11 @@ local function SaveOpaqueCaches(vars)
 	end
 	-- DisabledSpells is a user-edited hash (spellId -> true) nested inside the module options.
 	-- CleanTable would strip all SpellId keys because none are in the empty-table schema, so
-	-- we save and restore it the same way as the top-level opaque caches above.
+	-- we save and restore each module's DisabledSpells the same way as top-level opaque caches.
 	local fcdModule = vars.Modules and vars.Modules.FriendlyCooldownTrackerModule
 	saved._FcdDisabledSpells = fcdModule and mini:CopyValueOrTable(fcdModule.DisabledSpells) or {}
+	local ecdModule = vars.Modules and vars.Modules.EnemyCooldownTrackerModule
+	saved._EcdDisabledSpells = ecdModule and mini:CopyValueOrTable(ecdModule.DisabledSpells) or {}
 	return saved
 end
 
@@ -2230,6 +2303,10 @@ local function RestoreOpaqueCaches(vars, saved)
 	local fcdModule = vars.Modules and vars.Modules.FriendlyCooldownTrackerModule
 	if fcdModule then
 		fcdModule.DisabledSpells = saved._FcdDisabledSpells or {}
+	end
+	local ecdModule = vars.Modules and vars.Modules.EnemyCooldownTrackerModule
+	if ecdModule then
+		ecdModule.DisabledSpells = saved._EcdDisabledSpells or {}
 	end
 end
 

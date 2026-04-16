@@ -133,6 +133,13 @@ function M:Init()
 			end,
 		},
 		{
+			Key = "EnemyCooldowns",
+			Title = "Enemy CDs",
+			Build = function(content)
+				M.EnemyCooldownTracker:Build(content, db.Modules.EnemyCooldownTrackerModule)
+			end,
+		},
+		{
 			Key = "Alerts",
 			Title = L["Alerts"],
 			Build = function(content)
@@ -281,4 +288,5 @@ end
 ---@field OtherAddons OtherAddonsConfig
 ---@field FriendlyIndicator FriendlyIndicatorConfig
 ---@field FriendlyCooldownTracker FriendlyCooldownTrackerConfig
+---@field EnemyCooldownTracker EnemyCooldownTrackerConfig
 ---@field Miscellaneous MiscellaneousConfig

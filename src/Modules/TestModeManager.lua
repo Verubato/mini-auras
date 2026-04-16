@@ -12,6 +12,7 @@ local testModules = {
 	addon.Modules.FriendlyIndicatorModule,
 	addon.Modules.PrecogGuesserModule,
 	addon.Modules.FriendlyCooldownTrackerModule,
+	addon.Modules.EnemyCooldownTrackerModule,
 }
 local active = false
 

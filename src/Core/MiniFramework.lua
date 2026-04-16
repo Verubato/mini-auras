@@ -1281,7 +1281,7 @@ function M:CreateTabs(options)
 				if maxScroll > 0.5 then
 					scrollBar:Show()
 					scrollBar:SetMinMaxValues(0, maxScroll)
-					scrollBar:SetValue(maxScroll - math.min(scrollFrame:GetVerticalScroll(), maxScroll))
+					scrollBar:SetValue(math.min(scrollFrame:GetVerticalScroll(), maxScroll))
 					thumb:SetHeight(math.max(20, scrollBar:GetHeight() * (frameH / childH)))
 				else
 					scrollBar:Hide()
@@ -1289,8 +1289,7 @@ function M:CreateTabs(options)
 			end
 
 			scrollBar:SetScript("OnValueChanged", function(_, val)
-				local _, max = scrollBar:GetMinMaxValues()
-				scrollFrame:SetVerticalScroll(max - val)
+				scrollFrame:SetVerticalScroll(val)
 			end)
 
 			scrollFrame:SetScript("OnScrollRangeChanged", function()
@@ -1298,8 +1297,7 @@ function M:CreateTabs(options)
 			end)
 
 			scrollFrame:HookScript("OnMouseWheel", function()
-				local _, max = scrollBar:GetMinMaxValues()
-				scrollBar:SetValue(max - scrollFrame:GetVerticalScroll())
+				scrollBar:SetValue(scrollFrame:GetVerticalScroll())
 			end)
 
 			scrollBar:Hide()

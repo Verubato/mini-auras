@@ -3,12 +3,11 @@ local _, addon = ...
 local mini = addon.Core.Framework
 local inspector = addon.Core.Inspector
 
-addon.Modules.FriendlyCooldowns = addon.Modules.FriendlyCooldowns or {}
+addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
 
----@class FriendlyCooldownTalents
+---@class CooldownTalents
 local M = {}
-addon.Modules.FriendlyCooldowns.Talents = M
-addon.Core.FriendlyCooldownTalents = M -- backward compat
+addon.Modules.Cooldowns.Talents = M
 
 -- All talent data is keyed by the realm-stripped short name (e.g. "Bob" not "Bob-Realm").
 -- UnitNameUnmodified returns the full name for cross-realm players, so strip the realm here
@@ -577,11 +576,10 @@ end
 ---@param measuredDuration number?
 ---@return number
 function M:GetUnitCooldown(unit, specId, classToken, abilityId, baseCooldown, measuredDuration)
-	local playerName = UnitNameUnmodified(unit)
-	if not playerName or issecretvalue(playerName) then
-		return baseCooldown
-	end
-	playerName = ShortName(playerName)
+	local rawName = UnitNameUnmodified(unit)
+	-- Arena enemy names are secret values; resolve to nil so GetEffectiveTalentRanks
+	-- falls back to class/spec defaults rather than returning baseCooldown unchanged.
+	local playerName = (rawName and not issecretvalue(rawName)) and ShortName(rawName) or nil
 	local talentRanks = GetEffectiveTalentRanks(playerName, classToken, specId)
 	if not talentRanks then
 		return baseCooldown
@@ -591,7 +589,7 @@ function M:GetUnitCooldown(unit, specId, classToken, abilityId, baseCooldown, me
 	local multAmount = 0
 	local postBuffRemaining = nil
 	local classMods = ClassCooldownModifiers[classToken]
-	local resolvedSpec = unitTalentSpecId[playerName] or specId
+	local resolvedSpec = (playerName and unitTalentSpecId[playerName]) or specId
 	local specMods = resolvedSpec and SpecCooldownModifiers[resolvedSpec]
 
 	local function applyModTable(modTable)
@@ -621,7 +619,7 @@ function M:GetUnitCooldown(unit, specId, classToken, abilityId, baseCooldown, me
 	applyModTable(classMods)
 	applyModTable(specMods)
 
-	local pvpIds = unitPvPTalentIds[playerName]
+	local pvpIds = playerName and unitPvPTalentIds[playerName]
 
 	-- PostBuff: talent sets remaining cooldown after the buff expires.
 	-- Return measuredDuration + postBuffRemaining so that remaining = cooldown - measuredDuration = postBuffRemaining.
@@ -669,11 +667,10 @@ end
 ---@param baseDuration number
 ---@return number
 function M:GetUnitBuffDuration(unit, specId, classToken, abilityId, baseDuration)
-	local playerName = UnitNameUnmodified(unit)
-	if not playerName or issecretvalue(playerName) then
-		return baseDuration
-	end
-	playerName = ShortName(playerName)
+	local rawName = UnitNameUnmodified(unit)
+	-- Arena enemy names are secret values; resolve to nil so GetEffectiveTalentRanks
+	-- falls back to class/spec defaults rather than returning baseDuration unchanged.
+	local playerName = (rawName and not issecretvalue(rawName)) and ShortName(rawName) or nil
 	local talentRanks = GetEffectiveTalentRanks(playerName, classToken, specId)
 	if not talentRanks then
 		return baseDuration
@@ -681,7 +678,7 @@ function M:GetUnitBuffDuration(unit, specId, classToken, abilityId, baseDuration
 
 	local addAmount = 0
 	local multAmount = 0
-	local resolvedSpec = unitTalentSpecId[playerName] or specId
+	local resolvedSpec = (playerName and unitTalentSpecId[playerName]) or specId
 
 	local function applyDurationModTable(modTable)
 		if not modTable then
@@ -768,6 +765,15 @@ function M:GetUnitSpecId(unit)
 	if specId then
 		return specId
 	end
+	-- For enemy arena units use GetArenaOpponentSpec, which is authoritative and available
+	-- as soon as ARENA_PREP_OPPONENT_SPECIALIZATIONS fires.
+	local arenaIndex = unit:match("^arena(%d)$")
+	if arenaIndex then
+		local id = GetArenaOpponentSpec and GetArenaOpponentSpec(tonumber(arenaIndex))
+		if id and id > 0 then
+			return id
+		end
+	end
 	local playerName = UnitNameUnmodified(unit)
 	if not playerName or issecretvalue(playerName) then
 		return nil
@@ -837,7 +843,7 @@ function M:Init()
 	frame:RegisterEvent("PLAYER_LOGIN")
 
 	-- Receive PvP talent data from group members via PvPTalentSync.
-	addon.Modules.FriendlyCooldowns.PvPTalentSync:RegisterCallback(function(playerName, pvpTalentIds)
+	addon.Modules.Cooldowns.PvPTalentSync:RegisterCallback(function(playerName, pvpTalentIds)
 		local name = playerName:match("^([^%-]+)") or playerName
 		if pvpTalentIds then
 			local ids = {}
@@ -858,11 +864,11 @@ function M:Init()
 	end)
 end
 
----@class FriendlyCooldownTalents
----@field Init fun(self: FriendlyCooldownTalents)
----@field Refresh fun(self: FriendlyCooldownTalents)
----@field GetUnitCooldown fun(self: FriendlyCooldownTalents, unit: string, specId: number|nil, classToken: string, abilityId: number, baseCooldown: number, measuredDuration: number?): number
----@field GetUnitBuffDuration fun(self: FriendlyCooldownTalents, unit: string, specId: number|nil, classToken: string, abilityId: number, baseDuration: number): number
----@field GetUnitSpecId fun(self: FriendlyCooldownTalents, unit: string): number|nil
----@field UnitHasTalent fun(self: FriendlyCooldownTalents, unit: string, talentSpellId: number): boolean
----@field RegisterTalentCallback fun(self: FriendlyCooldownTalents, fn: fun(playerName: string))
+---@class CooldownTalents
+---@field Init fun(self: CooldownTalents)
+---@field Refresh fun(self: CooldownTalents)
+---@field GetUnitCooldown fun(self: CooldownTalents, unit: string, specId: number|nil, classToken: string, abilityId: number, baseCooldown: number, measuredDuration: number?): number
+---@field GetUnitBuffDuration fun(self: CooldownTalents, unit: string, specId: number|nil, classToken: string, abilityId: number, baseDuration: number): number
+---@field GetUnitSpecId fun(self: CooldownTalents, unit: string): number|nil
+---@field UnitHasTalent fun(self: CooldownTalents, unit: string, talentSpellId: number): boolean
+---@field RegisterTalentCallback fun(self: CooldownTalents, fn: fun(playerName: string))

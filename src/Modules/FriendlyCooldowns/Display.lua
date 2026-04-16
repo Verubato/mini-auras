@@ -7,8 +7,8 @@ local instanceOptions = addon.Core.InstanceOptions
 local frames = addon.Core.Frames
 
 -- Loaded before this file in TOC order.
-local fcdTalents = addon.Modules.FriendlyCooldowns.Talents
-local rules = addon.Modules.FriendlyCooldowns.Rules
+local fcdTalents = addon.Modules.Cooldowns.Talents
+local rules = addon.Modules.Cooldowns.Rules
 
 addon.Modules.FriendlyCooldowns = addon.Modules.FriendlyCooldowns or {}
 
