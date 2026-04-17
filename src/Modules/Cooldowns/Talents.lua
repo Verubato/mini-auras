@@ -250,6 +250,8 @@ local SpecDurationModifiers = {
 	[262] = { [462443] = { { { SpellId = 114050, Amount = 3 } } } },
 	-- Holy Priest: Foreseen Circumstances: Guardian Spirit +2s
 	[257] = { [440738] = { { { SpellId = 47788, Amount = 2 } } } },
+	-- Shadow Priest: Heightened Alteration: Dispersion +2s
+	[258] = { [453729] = { { { SpellId = 47585, Amount = 2 } } } },
 }
 
 -- Assumed talent ranks used when no real talent data is available for a unit.

@@ -455,6 +455,8 @@ local rules = {
 				ExternalDefensive = false,
 				BigDefensive = false,
 				RequiresEvidence = "Cast",
+				-- Archon Sustainted Potency can increase the duration
+				MinDuration = true,
 				SpellId = 228260,
 			}, -- Voidform
 		},
