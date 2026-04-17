@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.9.0
+
+- Added enemy cooldown tracking.
+- Fixed bug with mind control interfering with cooldown tracking.
+- Linux/Wine TTS compatibility fix.
+- 12.0.5 compatibility fix.
+
 ## 3.8.0
 
 - Added GW2 UI support.
