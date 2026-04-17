@@ -48,10 +48,6 @@ local function CreateUnitEventFrame(entry)
 	local frame = CreateFrame("Frame")
 	frame:SetScript("OnEvent", function(_, event, ...)
 		local u = entry.Unit
-		-- Only process events for actual enemy units (attackable by the player).
-		if not UnitCanAttack("player", u) then
-			return
-		end
 		if event == "UNIT_FLAGS" then
 			FireUnitFlags(u)
 		elseif event == "UNIT_AURA" then
@@ -83,8 +79,7 @@ local function MakeWatcher(entry)
 		if testModeActive then
 			return
 		end
-		-- Only fire for units that are valid enemies (exist and can be attacked).
-		if not UnitExists(entry.Unit) or not UnitCanAttack("player", entry.Unit) then
+		if not UnitExists(entry.Unit) then
 			return
 		end
 		FireAuraChanged(entry, w)

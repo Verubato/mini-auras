@@ -73,9 +73,6 @@ local function CreateCastEventFrame(entry)
 		-- Use entry.Unit rather than a closed-over unit string so that if the anchor
 		-- is reassigned after a unit token change, evidence is keyed to the current unit.
 		local u = entry.Unit
-		if UnitCanAttack("player", u) then
-			return
-		end
 		if event == "UNIT_SPELLCAST_SUCCEEDED" then
 			local _, _, spellId = ...
 			FireCast(u, spellId)
@@ -102,9 +99,6 @@ local function MakeWatcher(entry)
 	local watcher = unitAuraWatcher:New(entry.Unit, nil, { Defensives = true, Important = true })
 	watcher:RegisterCallback(function(w)
 		if testModeActive then
-			return
-		end
-		if UnitCanAttack("player", entry.Unit) then
 			return
 		end
 		FireAuraChanged(entry, w)
