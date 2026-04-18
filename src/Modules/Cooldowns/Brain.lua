@@ -552,6 +552,7 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 	local rule = nil
 	local ruleUnit = entry.Unit
 	local bestTime = nil
+	local bestIsTarget = false   -- true when the current best match came from the target unit
 	local isExternal = tracked.AuraTypes["EXTERNAL_DEFENSIVE"]
 	local ambiguous = false
 	local ignoreTalentReqs = opts and opts.IgnoreTalentRequirements
@@ -610,9 +611,9 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 		end
 		local isBetter = not rule
 			or (castTime and (not bestTime or castTime > bestTime))
-			or (not castTime and not bestTime and isExternal and not isTarget)
+			or (not castTime and not bestTime and isExternal and not isTarget and bestIsTarget and candidateRule == rule)
 		if isBetter then
-			rule, ruleUnit, bestTime = candidateRule, candidate, castTime
+			rule, ruleUnit, bestTime, bestIsTarget = candidateRule, candidate, castTime, isTarget
 		elseif not castTime and not bestTime then
 			-- A second candidate also qualifies, but neither this candidate nor the current
 			-- winner has real cast evidence to break the tie — the match is ambiguous.
@@ -621,9 +622,17 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 	end
 
 	consider(entry.Unit, true)
-	for _, unit in ipairs(candidateUnits) do
-		if unit ~= entry.Unit then
-			consider(unit, false)
+	-- On 12.0.5+ UNIT_SPELLCAST_SUCCEEDED no longer fires for other players, so all
+	-- non-local candidates receive synthetic Cast evidence.  For BIG_DEFENSIVE and IMPORTANT
+	-- auras (always self-cast), that causes false ambiguity when multiple same-class players
+	-- are in the group (e.g. two Druids both matching Barkskin).  Restrict candidate search
+	-- to EXTERNAL_DEFENSIVE auras where the caster genuinely differs from the target.
+	-- On earlier builds real cast snapshots disambiguate correctly, so the full loop runs.
+	if isExternal or not simulateNoCastSucceeded then
+		for _, unit in ipairs(candidateUnits) do
+			if unit ~= entry.Unit then
+				consider(unit, false)
+			end
 		end
 	end
 
