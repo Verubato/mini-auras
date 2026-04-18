@@ -58,7 +58,14 @@ local function UpdateWatcherAuras(entry)
 		return
 	end
 
-	if not entry.Unit or not UnitExists(entry.Unit) then
+	if not entry.Unit then
+		return
+	end
+
+	if not UnitExists(entry.Unit) then
+		for i = 1, entry.Container.Count do
+			entry.Container:SetSlotUnused(i)
+		end
 		return
 	end
 
