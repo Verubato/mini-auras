@@ -461,6 +461,29 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 		end
 	end
 
+	-- On 12.0.5+, UNIT_SPELLCAST_SUCCEEDED no longer fires for other players.
+	-- Synthetic Cast evidence is unsafe in general (no duration guard here), but is safe when:
+	--   * Not in arena or battleground (Precognition, a PvP gem, cannot fire in PvE)
+	--   * No Paladin in the group other than the target (Blessing of Freedom, an IMPORTANT
+	--     external buff cast by a Paladin, cannot cause false self-cast predictions)
+	-- When both conditions hold, self-only predictions are re-enabled for non-local units.
+	-- Only applies to the no-snapshot (self-cast, "exclude") path; external and CastableOnOthers
+	-- paths still require a real cast snapshot for disambiguation.
+	local allowSyntheticCast = false
+	if simulateNoCastSucceeded and not auraTypes["EXTERNAL_DEFENSIVE"] then
+		local _, instanceType = IsInInstance()
+		if instanceType ~= "arena" and instanceType ~= "pvp" then
+			local hasPaladin = false
+			for _, unit in ipairs(candidateUnits) do
+				if unit ~= targetUnit then
+					local _, classToken = UnitClass(unit)
+					if classToken == "PALADIN" then hasPaladin = true; break end
+				end
+			end
+			allowSyntheticCast = not hasPaladin
+		end
+	end
+
 	local matchSpellId = nil
 	local matchCasterUnit = nil
 	local matchCastDiff = nil -- absolute cast-time distance for the current best caster
@@ -475,6 +498,8 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 		if useSnapshot then
 			castTime = castSnapshot[candidate]
 			if not castTime or math.abs(castTime - detectionTime) > castWindow then return end
+		end
+		if useSnapshot or allowSyntheticCast then
 			candidateEvidence = { Cast = true }
 			if evidence then
 				for k, v in pairs(evidence) do
@@ -482,11 +507,6 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 				end
 			end
 		end
-		-- Synthetic cast evidence is intentionally NOT added here for 12.0.5+ builds.
-		-- PredictRule fires while the buff is still active and has no duration guard,
-		-- so synthetic Cast would cause false-positive predictions for any candidate
-		-- whose class/spec has a matching rule.  FindBestCandidate (the commit path)
-		-- retains synthetic cast because it also matches against measured buff duration.
 		local spellId, isOnCd = PredictSpellIdForUnit(candidate, auraTypes, candidateEvidence, castableFilter)
 		-- nil  -> no rule matched this aura for this candidate at all
 		-- true -> rule matched but spell is on CD; candidate is ineligible, not ambiguous

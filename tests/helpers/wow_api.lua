@@ -6,6 +6,7 @@ local M = {}
 -- Module-level state reset on each M.reset() call.
 local _time          = 0
 local _buildNumber   = 110000  -- default: pre-12.0.5 (TOC 110000)
+local _instanceType  = "none"  -- default: not in any instance (PvE)
 local _unitClasses   = {}   -- unit -> { name, token }
 local _feignDeath    = {}   -- unit -> bool
 local _auraFiltered  = {}   -- "unit:id:filter" -> bool  (true = filtered out = absent)
@@ -18,6 +19,13 @@ function M.setup()
 	-- Brain.lua reads via  select(4, GetBuildInfo()) >= 120005).
 	_G.GetBuildInfo = function()
 		return "0.0.0", "0", "Jan 1 2020", _buildNumber
+	end
+
+	-- Instance type
+	-- Returns (isInInstance, instanceType). instanceType values: "none", "party", "raid",
+	-- "scenario", "arena", "pvp". Default "none" = PvE overworld (not in any instance).
+	_G.IsInInstance = function()
+		return _instanceType ~= "none", _instanceType
 	end
 
 	-- Time
@@ -140,16 +148,26 @@ function M.setUnitExists(unit, exists)
 	_unitExists[unit] = exists ~= false
 end
 
+---Set the instance type returned by IsInInstance().
+---Values: "none" (overworld/PvE), "party", "raid", "scenario", "arena", "pvp".
+function M.setInstanceType(t)
+	_instanceType = t
+	_G.IsInInstance = function()
+		return t ~= "none", t
+	end
+end
+
 -- Reset
 
 function M.reset()
-	_time         = 0
-	_buildNumber  = 110000
-	_unitClasses  = {}
-	_feignDeath   = {}
-	_auraFiltered = {}
-	_secretValues = {}
-	_unitExists   = {}
+	_time          = 0
+	_buildNumber   = 110000
+	_instanceType  = "none"
+	_unitClasses   = {}
+	_feignDeath    = {}
+	_auraFiltered  = {}
+	_secretValues  = {}
+	_unitExists    = {}
 	M.setup()
 end
 
