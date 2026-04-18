@@ -129,9 +129,10 @@ local SpecCooldownModifiers = {
 	-- Windwalker Monk: Expeditious Fortification -30s
 	[269] = { [388813] = { { { SpellId = 115203, Amount = -30 } } } },
 
-	-- Mistweaver Monk: Life Cocoon -45s; Expeditious Fortification -30s
+	-- Mistweaver Monk: Life Cocoon (Chrysalis); Expeditious Fortification -30s
+	-- Chrysalis reduces Life Cocoon by 45s pre-12.0.5, 30s from 12.0.5 onwards.
 	[270] = {
-		[202424] = { { { SpellId = 116849, Amount = -45 } } }, -- Life Cocoon -45s
+		[202424] = { { { SpellId = 116849, Amount = select(4, GetBuildInfo()) >= 120005 and -30 or -45 } } }, -- Life Cocoon (Chrysalis)
 		[388813] = { { { SpellId = 115203, Amount = -30 } } }, -- Expeditious Fortification -30s
 	},
 
@@ -310,7 +311,7 @@ local SpecDefaultTalentRanks = {
 		[288733] = 1, -- Intangibility (Shadow Priest): Dispersion -30s (nearly universal)
 	},
 	[270] = {
-		[202424] = 1, -- Chrysalis (Mistweaver): Life Cocoon -45s (nearly universal)
+		[202424] = 1, -- Chrysalis (Mistweaver): Life Cocoon -30s/45s (nearly universal)
 	},
 	[1468] = {
 		[376204] = 1, -- Just in Time (Preservation Evoker): Time Dilation -10s (nearly universal)
