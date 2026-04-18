@@ -5,16 +5,29 @@ local M = {}
 
 -- Module-level state reset on each M.reset() call.
 local _time          = 0
+local _buildNumber   = 110000  -- default: pre-12.0.5 (TOC 110000)
 local _unitClasses   = {}   -- unit -> { name, token }
 local _feignDeath    = {}   -- unit -> bool
 local _auraFiltered  = {}   -- "unit:id:filter" -> bool  (true = filtered out = absent)
 local _secretValues  = {}   -- value -> bool (treated as secret)
+local _unitExists    = {}   -- unit -> bool
 
 function M.setup()
-	-- ── Time ──────────────────────────────────────────────────────────────────
+	-- Build info
+	-- Returns the current fake build number as the 4th return value (the one
+	-- Brain.lua reads via  select(4, GetBuildInfo()) >= 120005).
+	_G.GetBuildInfo = function()
+		return "0.0.0", "0", "Jan 1 2020", _buildNumber
+	end
+
+	-- Time
 	_G.GetTime = function() return _time end
 
-	-- ── Unit queries ──────────────────────────────────────────────────────────
+	-- Unit queries
+	_G.UnitExists = function(unit)
+		return _unitExists[unit] == true
+	end
+
 	_G.UnitClass = function(unit)
 		local c = _unitClasses[unit]
 		return c and c.name or nil, c and c.token or nil
@@ -30,7 +43,7 @@ function M.setup()
 	-- UnitIsUnit: simple string equality (sufficient for tests).
 	_G.UnitIsUnit = function(a, b) return a == b end
 
-	-- ── Aura filter ───────────────────────────────────────────────────────────
+	-- Aura filter
 	-- Returns true when the aura is NOT present under that filter (i.e. filtered out).
 	-- Default: nothing is filtered out (every aura passes every filter).
 	_G.C_UnitAuras = {
@@ -41,18 +54,18 @@ function M.setup()
 		end,
 	}
 
-	-- ── Secret values ─────────────────────────────────────────────────────────
+	-- Secret values
 	-- In a test environment all values are non-secret unless explicitly marked.
 	_G.issecretvalue = function(v)
 		return _secretValues[v] == true
 	end
 
-	-- ── Timer: execute deferred callbacks synchronously ───────────────────────
+	-- Timer: execute deferred callbacks synchronously
 	_G.C_Timer = {
 		After = function(delay, fn) fn() end,
 	}
 
-	-- ── Frame stub ────────────────────────────────────────────────────────────
+	-- Frame stub
 	_G.CreateFrame = function(frameType, name, parent)
 		local f = {}
 		local _events = {}
@@ -77,7 +90,7 @@ function M.setup()
 	end
 end
 
--- ── Control helpers ───────────────────────────────────────────────────────────
+-- Control helpers
 
 function M.setTime(t)          _time = t          end
 function M.advanceTime(dt)     _time = _time + dt end
@@ -114,14 +127,29 @@ function M.markSecret(v)
 	_secretValues[v] = true
 end
 
--- ── Reset ─────────────────────────────────────────────────────────────────────
+---Set the TOC build number returned by GetBuildInfo (4th return value).
+---Call before loading any module that reads GetBuildInfo() at module scope.
+function M.setBuildNumber(n)
+	_buildNumber = n
+	_G.GetBuildInfo = function()
+		return "0.0.0", "0", "Jan 1 2020", n
+	end
+end
+
+function M.setUnitExists(unit, exists)
+	_unitExists[unit] = exists ~= false
+end
+
+-- Reset
 
 function M.reset()
 	_time         = 0
+	_buildNumber  = 110000
 	_unitClasses  = {}
 	_feignDeath   = {}
 	_auraFiltered = {}
 	_secretValues = {}
+	_unitExists   = {}
 	M.setup()
 end
 

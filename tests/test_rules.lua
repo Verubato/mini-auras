@@ -1,8 +1,8 @@
 -- Integration tests: one test per trackable spell, exercising the full pipeline:
 --
 --   Observer collects evidence (cast, shield, debuff, unit-flags)
---   Brain fires aura-added → predictive glow callback (asserts spell identified)
---   Brain fires aura-removed → cooldown callback (asserts spell committed)
+--   Brain fires aura-added -> predictive glow callback (asserts spell identified)
+--   Brain fires aura-removed -> cooldown callback (asserts spell committed)
 --
 -- Because C_Timer.After is stubbed synchronous, the deferred backfill and
 -- PredictRule run inside the same _fireAuraChanged call, so everything is
@@ -135,7 +135,7 @@ local function runTest(tc)
     observer:_fireCast(caster, tc.spellId)
     fireEvidence(tc.unit, tc.evidence or {})
 
-    -- Aura-added: fires TrackNewAura → deferred backfill (synchronous) → PredictRule.
+    -- Aura-added: fires TrackNewAura -> deferred backfill (synchronous) -> PredictRule.
     local watcher = buildWatcher(tc.unit, tc.auraIsDefensive, tc.isExternal, tc.isImportant)
     observer:_fireAuraChanged(entry, watcher, candidateUnits)
 
@@ -149,7 +149,7 @@ local function runTest(tc)
             tostring(predictedCaster), tc.caster)
     end
 
-    -- Advance time and fire aura-removed: triggers FindBestCandidate → CommitCooldown.
+    -- Advance time and fire aura-removed: triggers FindBestCandidate -> CommitCooldown.
     wow.setTime(tc.buffDuration)
     local emptyWatcher = loader.makeWatcher({}, {})
     observer:_fireAuraChanged(entry, emptyWatcher, candidateUnits)

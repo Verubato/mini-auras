@@ -2,17 +2,17 @@
 -- Returns a singleton: call loader.get() from any test file to access the loaded modules.
 --
 -- Returned table fields:
---   .brain    FriendlyCooldownBrain  (addon.Modules.FriendlyCooldowns.Brain)
+--   .brain    CooldownBrain  (addon.Modules.Cooldowns.Brain)
 --   .observer mock Observer with ._fire* helpers
 --   .talents  mock Talents with ._set* helpers
---   .rules    loaded FriendlyCooldownRules table
+--   .rules    loaded CooldownRules table
 
 local wow = require("wow_api")
 wow.setup()   -- initialise WoW globals before any module is loaded
 
 local M = {}
 
--- ── Mock Talents ──────────────────────────────────────────────────────────────
+-- Mock Talents
 
 local function makeTalents()
 	local talentData = {}   -- unit -> { [talentId] = true/false }
@@ -40,7 +40,7 @@ local function makeTalents()
 
 	function t:RegisterTalentCallback(fn) end
 
-	-- ── Test helpers ──────────────────────────────────────────────────────────
+	-- Test helpers
 
 	function t._setTalent(unit, talentId, has)
 		talentData[unit] = talentData[unit] or {}
@@ -59,7 +59,7 @@ local function makeTalents()
 	return t
 end
 
--- ── Mock Observer ─────────────────────────────────────────────────────────────
+-- Mock Observer
 
 local function makeObserver()
 	local cbs = {
@@ -88,7 +88,7 @@ local function makeObserver()
 		cbs.debuffEvidence[#cbs.debuffEvidence + 1] = fn
 	end
 
-	-- ── Fire helpers (called from tests to simulate events) ───────────────────
+	-- Fire helpers (called from tests to simulate events)
 
 	function o:_fireCast(unit, spellId)
 		for _, fn in ipairs(cbs.cast) do fn(unit, spellId) end
@@ -113,7 +113,7 @@ local function makeObserver()
 	return o
 end
 
--- ── Module loader ─────────────────────────────────────────────────────────────
+-- Module loader
 
 local function loadModule(path, addonTable)
 	local fn, err = loadfile(path)
@@ -130,7 +130,7 @@ function M.get()
 	if _cache then return _cache end
 
 	local addon = {
-		Modules = { FriendlyCooldowns = {} },
+		Modules = { Cooldowns = {} },
 		Core = {
 			UnitAuraWatcher = {
 				New = function(self, unit, filter, types)
@@ -151,17 +151,19 @@ function M.get()
 
 	local talents  = makeTalents()
 	local observer = makeObserver()
-	addon.Modules.FriendlyCooldowns.Talents  = talents
-	addon.Modules.FriendlyCooldowns.Observer = observer
+	addon.Modules.Cooldowns.Talents  = talents
+	addon.Modules.Cooldowns.Observer = observer
 
 	-- Rules is a pure data file — load it for real.
-	loadModule("src/Modules/FriendlyCooldowns/Rules.lua", addon)
+	loadModule("src/Modules/Cooldowns/Rules.lua", addon)
 
-	-- Brain registers its observer callbacks at load time.
-	loadModule("src/Modules/FriendlyCooldowns/Brain.lua", addon)
+	-- Brain registers its observer callbacks via RegisterWithObserver.
+	loadModule("src/Modules/Cooldowns/Brain.lua", addon)
 
-	local brain = addon.Modules.FriendlyCooldowns.Brain
-	local rules = addon.Modules.FriendlyCooldowns.Rules
+	local brain = addon.Modules.Cooldowns.Brain
+	local rules = addon.Modules.Cooldowns.Rules
+
+	brain:RegisterWithObserver(observer)
 
 	_cache = {
 		brain    = brain,
@@ -172,7 +174,7 @@ function M.get()
 	return _cache
 end
 
--- ── Helpers shared by test files ──────────────────────────────────────────────
+-- Helpers shared by test files
 
 ---Creates a minimal FcdWatchEntry for use in tests.
 ---@param unit string

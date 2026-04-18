@@ -1076,6 +1076,13 @@ function B:FindBestCandidate(entry, tracked, measuredDuration, candidateUnits, o
 	return FindBestCandidate(entry, tracked, measuredDuration, candidateUnits, opts)
 end
 
+---Test-only: override the simulateNoCastSucceeded flag so tests can exercise both
+---pre-12.0.5 and 12.0.5+ code paths without changing the actual build number.
+---@param val boolean
+function B:_TestSetSimulateNoCastSucceeded(val)
+	simulateNoCastSucceeded = val
+end
+
 ---Predicts the first matching spell ID for a unit given aura types and evidence.
 ---Does NOT consult the module-level activeCooldownsLookup; pass activeCooldowns directly.
 ---@param unit string

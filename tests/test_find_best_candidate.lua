@@ -1,0 +1,402 @@
+-- Unit tests for Brain:FindBestCandidate.
+--
+-- Covers all logical pathways in the function:
+--   · No match (unknown class, wrong duration)
+--   · Self-cast BIG_DEFENSIVE match
+--   · Cast snapshot tiebreaking (most-recent wins)
+--   · Cast snapshot outside window -> no Cast evidence -> rule fails
+--   · Ambiguity: two external candidates, same rule, no tiebreaker -> nil
+--   · bestIsTarget: target + external non-target, same rule -> non-target wins
+--   · bestIsTarget + different rules (Ironbark/BoF bug fix) -> ambiguous -> nil
+--   · BIG_DEFENSIVE on 12.0.5: candidate loop skipped -> no false ambiguity
+--   · EXTERNAL_DEFENSIVE on 12.0.5: candidate loop still runs
+--   · 12.0.5 synthetic cast for non-player; "player" gets no synthetic cast
+--   · KnownSpellIds fast path bypasses duration check
+--   · ActiveCooldowns: on-CD rule returned as fallback only
+--   · IgnoreTalentRequirements passes RequiresTalent check
+--
+-- Rule constants used (from Rules.lua):
+--   Barkskin     SpellId 22812   DRUID class, BigDefensive+Important, BuffDuration 8, RequiresEvidence="Cast"
+--   Ironbark     SpellId 102342  Resto Druid spec 105, ExternalDefensive, BuffDuration 12, RequiresEvidence="Cast"
+--   BoF          SpellId 6940    Holy Paladin spec 65, ExternalDefensive, BuffDuration 12, RequiresEvidence="Cast"
+--   Av.Crusader  SpellId 216331  Holy Paladin spec 65, Important, BuffDuration 10, MinDuration, RequiresTalent=216331
+
+local fw     = require("framework")
+local wow    = require("wow_api")
+local loader = require("loader")
+
+local mods = loader.get()
+local B    = mods.brain
+
+-- Must match Brain.lua's castWindow constant (0.15 s).
+local castWindow = 0.15
+
+-- Aura-type sets that match specific rule flags.
+local EXT = { EXTERNAL_DEFENSIVE = true }                       -- Ironbark, BoF
+local BIG = { BIG_DEFENSIVE = true, IMPORTANT = true }          -- Barkskin
+local IMP = { IMPORTANT = true }                                -- Avenging Crusader / Wrath, Dispersion
+
+local function reset()
+    B._TestReset()
+    B:_TestSetSimulateNoCastSucceeded(false)
+    wow.reset()
+    mods.talents._reset()
+end
+
+local function makeTracked(auraTypes, startTime, castSnapshot, evidence, castSpellIdSnapshot)
+    return {
+        StartTime           = startTime or 1.0,
+        AuraTypes           = auraTypes,
+        Evidence            = evidence,
+        CastSnapshot        = castSnapshot or {},
+        CastSpellIdSnapshot = castSpellIdSnapshot or {},
+    }
+end
+
+-- Section 1: Basic matching and no-match cases
+
+fw.describe("FindBestCandidate — no-match cases", function()
+    fw.before_each(reset)
+
+    fw.it("returns nil when the target unit has no class set", function()
+        -- party1 has no UnitClass entry -> MatchRule returns nil immediately.
+        -- (ruleUnit defaults to entry.Unit even on no-match; only rule matters.)
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(BIG, 1.0, { party1 = 1.0 })
+        local rule = B:FindBestCandidate(entry, t, 8.0, {})
+        fw.is_nil(rule, "rule")
+    end)
+
+    fw.it("returns nil when measured duration does not match any rule", function()
+        -- Barkskin expects 8 s; 3 s is too short (tolerance is 0.5 s)
+        wow.setUnitClass("party1", "DRUID")
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(BIG, 1.0, { party1 = 1.0 })
+        local rule = B:FindBestCandidate(entry, t, 3.0, {})
+        fw.is_nil(rule, "rule")
+    end)
+end)
+
+-- Section 2: Self-cast BIG_DEFENSIVE (Barkskin)
+
+fw.describe("FindBestCandidate — self-cast BIG_DEFENSIVE", function()
+    fw.before_each(reset)
+
+    fw.it("matches Barkskin when target is a Druid with cast snapshot", function()
+        wow.setUnitClass("party1", "DRUID")
+        local entry = loader.makeEntry("party1")
+        -- CastSnapshot at StartTime -> within castWindow
+        local t = makeTracked(BIG, 1.0, { party1 = 1.0 })
+        local rule, unit = B:FindBestCandidate(entry, t, 8.0, {})
+        fw.not_nil(rule, "rule")
+        fw.eq(rule.SpellId, 22812, "SpellId should be Barkskin")
+        fw.eq(unit, "party1", "ruleUnit")
+    end)
+
+    fw.it("ignores other candidates for BIG_DEFENSIVE when only target qualifies", function()
+        -- party1 = Druid (Barkskin caster), party2 = Warrior (no Barkskin rule)
+        -- candidateUnits includes party2 but it should not affect the outcome
+        wow.setUnitClass("party1", "DRUID")
+        wow.setUnitClass("party2", "WARRIOR")
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(BIG, 1.0, { party1 = 1.0 })
+        local rule, unit = B:FindBestCandidate(entry, t, 8.0, { "party2" })
+        fw.not_nil(rule, "rule")
+        fw.eq(rule.SpellId, 22812, "SpellId")
+        fw.eq(unit, "party1", "ruleUnit")
+    end)
+end)
+
+-- Section 3: Cast snapshot tiebreaking (pre-12.0.5)
+-- Ironbark (spec 105, EXTERNAL_DEFENSIVE, BuffDuration 12, RequiresEvidence="Cast")
+-- party1 = Warrior (receives buff, cannot be the caster)
+-- party2/party3 = Resto Druid (caster candidates)
+
+fw.describe("FindBestCandidate — cast snapshot tiebreaking (pre-12.0.5)", function()
+    fw.before_each(function()
+        reset()
+        wow.setUnitClass("party1", "WARRIOR")
+        wow.setUnitClass("party2", "DRUID")
+        mods.talents._setSpec("party2", 105)   -- Restoration Druid
+    end)
+
+    fw.it("single external caster with snapshot wins", function()
+        local t = makeTracked(EXT, 5.0, { party2 = 5.0 })
+        local rule, unit = B:FindBestCandidate(loader.makeEntry("party1"), t, 12.0, { "party2" })
+        fw.not_nil(rule, "rule")
+        fw.eq(rule.SpellId, 102342, "Ironbark SpellId")
+        fw.eq(unit, "party2", "ruleUnit")
+    end)
+
+    fw.it("prefers the candidate with a cast snapshot over one without", function()
+        -- party3 has no snapshot (Ironbark requires Cast -> no match for party3)
+        wow.setUnitClass("party3", "DRUID")
+        mods.talents._setSpec("party3", 105)
+        -- Only party2 has snapshot within window
+        local t = makeTracked(EXT, 5.0, { party2 = 5.0 })
+        local rule, unit = B:FindBestCandidate(loader.makeEntry("party1"), t, 12.0, { "party2", "party3" })
+        fw.not_nil(rule, "rule")
+        fw.eq(unit, "party2", "party2 has snapshot, party3 does not -> party2 wins")
+    end)
+
+    fw.it("picks the candidate with the most recent cast snapshot", function()
+        -- party2: snapshot at 4.9 s (0.1 s before aura start — within window)
+        -- party3: snapshot at 5.05 s (0.05 s after aura start — also within window, more recent)
+        wow.setUnitClass("party3", "DRUID")
+        mods.talents._setSpec("party3", 105)
+        local t = makeTracked(EXT, 5.0, { party2 = 4.9, party3 = 5.05 })
+        local rule, unit = B:FindBestCandidate(loader.makeEntry("party1"), t, 12.0, { "party2", "party3" })
+        fw.not_nil(rule, "rule")
+        fw.eq(unit, "party3", "party3 has the more recent snapshot")
+    end)
+
+    fw.it("ignores cast snapshot outside the cast window", function()
+        -- party2 cast 4 s before the aura appeared — outside the 0.15 s window
+        -- -> no Cast evidence for party2 -> Ironbark (RequiresEvidence="Cast") fails -> nil
+        local t = makeTracked(EXT, 5.0, { party2 = 1.0 })
+        local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 12.0, { "party2" })
+        fw.is_nil(rule, "cast outside window should not count as evidence")
+    end)
+end)
+
+-- Section 4: Ambiguity and bestIsTarget (pre-12.0.5)
+-- Note: pre-12.0.5 requires real cast snapshots for RequiresEvidence="Cast" rules.
+-- The scenarios below use cast snapshots to satisfy evidence, then examine how
+-- multiple matches interact.
+
+fw.describe("FindBestCandidate — ambiguity and bestIsTarget (pre-12.0.5)", function()
+    fw.before_each(reset)
+
+    fw.it("two non-target casters, same rule, neither has snapshot -> both fail RequiresEvidence -> nil", function()
+        wow.setUnitClass("party1", "WARRIOR")
+        wow.setUnitClass("party2", "DRUID")
+        wow.setUnitClass("party3", "DRUID")
+        mods.talents._setSpec("party2", 105)
+        mods.talents._setSpec("party3", 105)
+        -- No snapshots -> Ironbark RequiresEvidence="Cast" fails for both
+        local t = makeTracked(EXT, 5.0, {})
+        local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 12.0, { "party2", "party3" })
+        fw.is_nil(rule, "should be nil — no cast evidence for either")
+    end)
+
+    fw.it("target (Druid) + non-target (Druid), same rule, no real cast -> non-target overwrites target", function()
+        -- On pre-12.0.5, BOTH have cast snapshots to satisfy RequiresEvidence="Cast".
+        -- party1 (target, Druid spec 105) has an older snapshot; party2 (non-target) has a newer one.
+        -- The more-recent-snapshot path (isBetter condition 2) picks party2.
+        wow.setUnitClass("party1", "DRUID")
+        wow.setUnitClass("party2", "DRUID")
+        mods.talents._setSpec("party1", 105)
+        mods.talents._setSpec("party2", 105)
+        local t = makeTracked(EXT, 5.0, { party1 = 4.9, party2 = 5.05 })
+        local rule, unit = B:FindBestCandidate(loader.makeEntry("party1"), t, 12.0, { "party2" })
+        fw.not_nil(rule, "rule")
+        fw.eq(unit, "party2", "party2 has newer snapshot -> wins")
+    end)
+
+    fw.it("non-target with newer snapshot wins over target (different rules, pre-12.0.5 snapshot tiebreak)", function()
+        -- On pre-12.0.5 with real cast snapshots, snapshot recency is the authoritative tiebreaker —
+        -- even when the two candidates match different rules.  party2 (Paladin->BoF) has a more
+        -- recent snapshot than party1 (Druid->Ironbark), so BoF wins.
+        -- The bestIsTarget/Ironbark-vs-BoF ambiguity case only arises on 12.0.5 (no real snapshot
+        -- data), which is covered by the dedicated 12.0.5 test section.
+        wow.setUnitClass("party1", "DRUID")
+        wow.setUnitClass("party2", "PALADIN")
+        mods.talents._setSpec("party1", 105)   -- Resto Druid -> Ironbark
+        mods.talents._setSpec("party2", 65)    -- Holy Paladin -> BoF
+        -- party2 has a more recent snapshot -> snapshot tiebreak (condition 2) picks party2
+        local t = makeTracked(EXT, 5.0, { party1 = 4.9, party2 = 5.05 })
+        local rule, unit = B:FindBestCandidate(loader.makeEntry("party1"), t, 12.0, { "party2" })
+        fw.not_nil(rule, "rule")
+        fw.eq(rule.SpellId, 6940, "BoF SpellId — newer snapshot wins")
+        fw.eq(unit, "party2", "ruleUnit")
+    end)
+end)
+
+-- Section 5: 12.0.5 mode
+
+fw.describe("FindBestCandidate — 12.0.5 synthetic cast", function()
+    fw.before_each(function()
+        reset()
+        B:_TestSetSimulateNoCastSucceeded(true)
+    end)
+
+    fw.it("BIG_DEFENSIVE: candidate loop skipped -> two Druids do not create ambiguity", function()
+        -- Without the 12.0.5 guard, party2 would also receive synthetic cast and create
+        -- a second Barkskin match -> ambiguous -> nil.  With the guard, only the target runs.
+        wow.setUnitClass("party1", "DRUID")   -- target + caster
+        wow.setUnitClass("party2", "DRUID")   -- second Druid; must NOT be considered
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(BIG, 1.0, {})   -- no real snapshots needed; synthetic cast applies
+        local rule, unit = B:FindBestCandidate(entry, t, 8.0, { "party2" })
+        fw.not_nil(rule, "Barkskin should match party1")
+        fw.eq(rule.SpellId, 22812, "SpellId")
+        fw.eq(unit, "party1", "ruleUnit should be party1 (candidate loop skipped)")
+    end)
+
+    fw.it("EXTERNAL_DEFENSIVE: candidate loop still runs on 12.0.5", function()
+        -- isExternal=true so the BIG_DEFENSIVE guard does not apply; party2 is found.
+        wow.setUnitClass("party1", "WARRIOR")   -- target, no Ironbark rule
+        wow.setUnitClass("party2", "DRUID")
+        mods.talents._setSpec("party2", 105)
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(EXT, 5.0, {})
+        local rule, unit = B:FindBestCandidate(entry, t, 12.0, { "party2" })
+        fw.not_nil(rule, "Ironbark should be found via candidate loop")
+        fw.eq(rule.SpellId, 102342, "SpellId")
+        fw.eq(unit, "party2", "ruleUnit")
+    end)
+
+    fw.it("EXTERNAL_DEFENSIVE, two Resto Druids -> ambiguous -> nil", function()
+        wow.setUnitClass("party1", "WARRIOR")
+        wow.setUnitClass("party2", "DRUID")
+        wow.setUnitClass("party3", "DRUID")
+        mods.talents._setSpec("party2", 105)
+        mods.talents._setSpec("party3", 105)
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(EXT, 5.0, {})
+        local rule = B:FindBestCandidate(entry, t, 12.0, { "party2", "party3" })
+        fw.is_nil(rule, "two matching Druids without tiebreaker -> ambiguous")
+    end)
+
+    fw.it("bestIsTarget: target (Druid) + external Druid, same Ironbark rule -> non-target wins", function()
+        -- party1 (target, Druid spec 105) matches Ironbark first -> bestIsTarget=true
+        -- party2 (non-target, Druid spec 105) also matches Ironbark, same rule
+        -- -> condition 3 (bestIsTarget=true, candidateRule==rule) fires -> party2 wins
+        wow.setUnitClass("party1", "DRUID")
+        wow.setUnitClass("party2", "DRUID")
+        mods.talents._setSpec("party1", 105)
+        mods.talents._setSpec("party2", 105)
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(EXT, 5.0, {})
+        local rule, unit = B:FindBestCandidate(entry, t, 12.0, { "party2" })
+        fw.not_nil(rule, "Ironbark should match")
+        fw.eq(rule.SpellId, 102342, "SpellId")
+        fw.eq(unit, "party2", "non-target should win over target when same rule")
+    end)
+
+    fw.it("Ironbark/BoF fix: target (Druid) + non-target (Paladin), different rules -> ambiguous -> nil", function()
+        -- party1 (target, Druid spec 105) matches Ironbark -> bestIsTarget=true, rule=Ironbark
+        -- party2 (Paladin spec 65) matches BoF -> candidateRule(BoF) ≠ rule(Ironbark)
+        -- -> condition 3 false -> ambiguous = true -> nil
+        wow.setUnitClass("party1", "DRUID")
+        wow.setUnitClass("party2", "PALADIN")
+        mods.talents._setSpec("party1", 105)   -- Resto Druid -> Ironbark
+        mods.talents._setSpec("party2", 65)    -- Holy Paladin -> BoF
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(EXT, 5.0, {})
+        local rule = B:FindBestCandidate(entry, t, 12.0, { "party2" })
+        fw.is_nil(rule, "Ironbark vs BoF with no tiebreaker should be ambiguous")
+    end)
+
+    fw.it("player unit does not get synthetic cast -> excluded when no snapshot", function()
+        -- On 12.0.5, only non-"player" candidates get synthetic Cast.
+        -- "player" has no snapshot -> RequiresEvidence="Cast" fails -> no match -> nil
+        wow.setUnitClass("party1", "WARRIOR")
+        wow.setUnitClass("player", "DRUID")
+        mods.talents._setSpec("player", 105)
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(EXT, 5.0, {})   -- no snapshot for "player"
+        local rule = B:FindBestCandidate(entry, t, 12.0, { "player" })
+        fw.is_nil(rule, "player with no snapshot should not match on 12.0.5")
+    end)
+
+    fw.it("player unit with a cast snapshot matches normally", function()
+        -- Real snapshot for "player" within window -> Cast evidence provided -> matches
+        wow.setUnitClass("party1", "WARRIOR")
+        wow.setUnitClass("player", "DRUID")
+        mods.talents._setSpec("player", 105)
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(EXT, 5.0, { player = 5.0 })
+        local rule, unit = B:FindBestCandidate(entry, t, 12.0, { "player" })
+        fw.not_nil(rule, "player with snapshot should match")
+        fw.eq(rule.SpellId, 102342, "Ironbark SpellId")
+        fw.eq(unit, "player", "ruleUnit")
+    end)
+end)
+
+-- Section 6: KnownSpellIds fast path
+
+fw.describe("FindBestCandidate — KnownSpellIds fast path", function()
+    fw.before_each(reset)
+
+    fw.it("KnownSpellIds bypasses the duration check", function()
+        -- Barkskin expects 8 s; we use 3 s which would normally fail the duration guard.
+        -- A KnownSpellId for 22812 within castWindow lets FindRuleBySpellId return the rule directly.
+        wow.setUnitClass("party1", "DRUID")
+        local entry = loader.makeEntry("party1")
+        local castSpellIdSnapshot = { party1 = { { SpellId = 22812, Time = 1.0 } } }
+        local t = makeTracked(BIG, 1.0, {}, nil, castSpellIdSnapshot)
+        local rule, unit = B:FindBestCandidate(entry, t, 3.0, {})
+        fw.not_nil(rule, "KnownSpellIds should bypass duration check and return Barkskin")
+        fw.eq(rule.SpellId, 22812, "SpellId")
+        fw.eq(unit, "party1", "ruleUnit")
+    end)
+
+    fw.it("KnownSpellIds outside cast window falls through to normal duration matching", function()
+        -- SpellId snapshot is 4 s old — outside the cast window -> not used as KnownSpellId
+        -- Duration 3 s is too short for any Barkskin variant -> nil
+        wow.setUnitClass("party1", "DRUID")
+        local entry = loader.makeEntry("party1")
+        local castSpellIdSnapshot = { party1 = { { SpellId = 22812, Time = -3.0 } } }
+        -- StartTime=1.0, snapshot at -3.0 -> |−3.0 − 1.0| = 4.0 > 0.15 -> outside window
+        local t = makeTracked(BIG, 1.0, { party1 = 1.0 }, nil, castSpellIdSnapshot)
+        -- Even though there's a CastSnapshot (to satisfy RequiresEvidence), the wrong duration
+        -- without KnownSpellId should cause a mismatch.
+        local rule = B:FindBestCandidate(entry, t, 3.0, {})
+        fw.is_nil(rule, "duration mismatch without valid KnownSpellId should return nil")
+    end)
+end)
+
+-- Section 7: ActiveCooldowns — fallback behaviour
+
+fw.describe("FindBestCandidate — ActiveCooldowns fallback", function()
+    fw.before_each(reset)
+
+    fw.it("on-CD rule is returned as fallback when it is the only match", function()
+        -- Barkskin (22812) is listed as active cooldown.
+        -- MatchRule stores it as fallback (not nil) and returns it at the end if nothing else matches.
+        wow.setUnitClass("party1", "DRUID")
+        local entry = loader.makeEntry("party1", { [22812] = true })   -- Barkskin on CD
+        local t = makeTracked(BIG, 1.0, { party1 = 1.0 })
+        local rule, unit = B:FindBestCandidate(entry, t, 8.0, {})
+        fw.not_nil(rule, "on-CD rule should still be returned as fallback")
+        fw.eq(rule.SpellId, 22812, "SpellId")
+        fw.eq(unit, "party1", "ruleUnit")
+    end)
+end)
+
+-- Section 8: IgnoreTalentRequirements
+-- Avenging Crusader (SpellId 216331, spec 65 Holy Paladin):
+--   BuffDuration=10, MinDuration=true, RequiresTalent=216331, RequiresEvidence="Cast"
+-- Avenging Wrath (SpellId 31884, spec 65 Holy Paladin):
+--   BuffDuration=12, MinDuration=true, RequiresEvidence="Cast", ExcludeIfTalent=216331
+-- measuredDuration=10: Avenging Wrath needs ≥ 11.5 s (fails); Crusader needs ≥ 9.5 s (passes if talent ok).
+
+fw.describe("FindBestCandidate — IgnoreTalentRequirements", function()
+    fw.before_each(function()
+        reset()
+        wow.setUnitClass("party1", "PALADIN")
+        mods.talents._setSpec("party1", 65)   -- Holy Paladin
+    end)
+
+    fw.it("without IgnoreTalentRequirements: RequiresTalent rule skipped -> nil", function()
+        -- No talent set -> Avenging Crusader (RequiresTalent=216331) is skipped
+        -- Avenging Wrath needs ≥ 11.5 s but we measured 10 -> also fails
+        -- -> nil
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(IMP, 1.0, { party1 = 1.0 })
+        local rule = B:FindBestCandidate(entry, t, 10.0, {})
+        fw.is_nil(rule, "RequiresTalent should block the rule without the talent")
+    end)
+
+    fw.it("with IgnoreTalentRequirements=true: RequiresTalent check skipped -> rule matches", function()
+        -- Same setup; opts.IgnoreTalentRequirements=true skips the RequiresTalent gate
+        -- Avenging Crusader: MinDuration -> 10.0 ≥ 9.5, evidence=Cast -> matches
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(IMP, 1.0, { party1 = 1.0 })
+        local rule, unit = B:FindBestCandidate(entry, t, 10.0, {}, { IgnoreTalentRequirements = true })
+        fw.not_nil(rule, "IgnoreTalentRequirements should allow the rule to match")
+        fw.eq(rule.SpellId, 216331, "SpellId should be Avenging Crusader")
+        fw.eq(unit, "party1", "ruleUnit")
+    end)
+end)

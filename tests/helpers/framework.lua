@@ -42,7 +42,7 @@ function M.it(name, fn)
 	end
 end
 
--- ── Assertions ────────────────────────────────────────────────────────────────
+-- Assertions
 
 function M.eq(actual, expected, label)
 	if actual ~= expected then
@@ -94,7 +94,7 @@ function M.no_key(t, k, label)
 	end
 end
 
--- ── Summary ───────────────────────────────────────────────────────────────────
+-- Summary
 
 ---Prints the pass/fail summary and returns true if all tests passed.
 function M.summary()
