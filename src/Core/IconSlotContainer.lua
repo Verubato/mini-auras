@@ -809,6 +809,10 @@ function M:SetSlot(slotIndex, options)
 	local db = GetDb()
 	layer.Icon:SetTexture(options.Texture)
 	layer.Cooldown:SetReverse(options.ReverseCooldown)
+	if layer.Cooldown.SetCountdownMillisecondsThreshold then
+		layer.Cooldown:SetCountdownMillisecondsThreshold(options.ShowMilliseconds and (db and db.MillisecondsThreshold or 5) or 0)
+	end
+	
 	if options.DurationObject then
 		layer.Cooldown:SetCooldownFromDurationObject(options.DurationObject)
 		layer.Cooldown:SetDrawSwipe(not (db and db.DisableSwipe))

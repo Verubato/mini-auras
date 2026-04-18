@@ -20,6 +20,7 @@ local dbDefaults = {
 	ConfigureBlizzardNameplates = true,
 	CCNativeOrder = false,
 	DisableSwipe = false,
+	MillisecondsThreshold = 5,
 	Modules = {
 		---@class CrowdControlModuleOptions
 		CCModule = {
@@ -46,6 +47,7 @@ local dbDefaults = {
 					ReverseCooldown = true,
 					ColorByDispelType = true,
 					Count = 3,
+					ShowMilliseconds = false,
 				},
 
 				ShowTooltips = false,
@@ -66,6 +68,7 @@ local dbDefaults = {
 					ReverseCooldown = true,
 					ColorByDispelType = true,
 					Count = 3,
+					ShowMilliseconds = false,
 				},
 
 				ShowTooltips = false,
@@ -234,6 +237,7 @@ local dbDefaults = {
 						ReverseCooldown = true,
 						ColorByCategory = true,
 						MaxIcons = 5,
+						ShowMilliseconds = false,
 					},
 
 					ShowTooltips = false,
@@ -291,6 +295,7 @@ local dbDefaults = {
 						ReverseCooldown = true,
 						ColorByCategory = true,
 						MaxIcons = 5,
+						ShowMilliseconds = false,
 					},
 
 					ShowTooltips = false,

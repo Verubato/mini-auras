@@ -78,6 +78,7 @@ local function UpdateWatcherAuras(entry)
 			DurationObject = aura.DurationObject,
 			Alpha = aura.IsCC,
 			ReverseCooldown = options.Icons.ReverseCooldown,
+			ShowMilliseconds = options.Icons.ShowMilliseconds,
 			Glow = options.Icons.Glow,
 			Color = options.Icons.ColorByDispelType and aura.DispelColor,
 			FontScale = db.FontScale,

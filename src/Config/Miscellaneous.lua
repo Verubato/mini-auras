@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Core.Framework
 local L = addon.L
+local supportsMilliseconds = select(4, GetBuildInfo()) >= 120005
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 ---@class MiscellaneousConfig
@@ -132,4 +133,27 @@ function M:Build(panel)
 	})
 
 	disableSwipeChk:SetPoint("TOPLEFT", ccNativeOrderChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	if supportsMilliseconds then
+	local millisThresholdSlider = mini:Slider({
+		Parent = panel,
+		LabelText = L["Milliseconds Threshold"],
+		Min = 1,
+		Max = 6,
+		Step = 1,
+		GetValue = function()
+			return db.MillisecondsThreshold or 5
+		end,
+		SetValue = function(value)
+			local newValue = mini:ClampInt(value, 1, 6, 5)
+			if db.MillisecondsThreshold ~= newValue then
+				db.MillisecondsThreshold = newValue
+				addon:Refresh()
+			end
+		end,
+		Width = columnWidth - horizontalSpacing,
+	})
+
+	millisThresholdSlider.Slider:SetPoint("TOPLEFT", disableSwipeChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	end
 end

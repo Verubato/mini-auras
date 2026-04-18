@@ -363,6 +363,7 @@ local function ApplyCcToNameplate(data, watcher, unitOptions)
 
 	local iconsGlow = options.Icons.Glow
 	local iconsReverse = options.Icons.ReverseCooldown
+	local showMilliseconds = options.Icons.ShowMilliseconds
 	local colorByCategory = options.Icons.ColorByCategory
 	local showTooltips = options.ShowTooltips ~= false
 	local fontScale = db.FontScale
@@ -375,6 +376,7 @@ local function ApplyCcToNameplate(data, watcher, unitOptions)
 		layerScratch.Alpha = entry.IsCC
 		layerScratch.Glow = iconsGlow
 		layerScratch.ReverseCooldown = iconsReverse
+		layerScratch.ShowMilliseconds = showMilliseconds
 		layerScratch.FontScale = fontScale
 		layerScratch.Color = colorByCategory and entry.DispelColor or nil
 		layerScratch.SpellId = showTooltips and entry.SpellId or nil

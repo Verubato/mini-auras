@@ -8,6 +8,7 @@ local growOptions = {
 	"RIGHT",
 	"CENTER",
 }
+local supportsMilliseconds = select(4, GetBuildInfo()) >= 120005
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local columns = 4
@@ -115,6 +116,24 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 	})
 
 	showTooltipsChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	if sectionType == "CC" and supportsMilliseconds then
+		local showMillisChk = mini:Checkbox({
+			Parent = container,
+			LabelText = L["Milliseconds"],
+			Tooltip = L["Show decimal milliseconds on the cooldown timer when below the configured threshold."],
+			GetValue = function()
+				return options.Icons.ShowMilliseconds == true
+			end,
+			SetValue = function(value)
+				options.Icons.ShowMilliseconds = value
+				config:Apply()
+			end,
+		})
+
+		showMillisChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+		showMillisChk:SetPoint("TOP", showTooltipsChk, "TOP", 0, 0)
+	end
 
 	local iconSize = mini:Slider({
 		Parent = container,
