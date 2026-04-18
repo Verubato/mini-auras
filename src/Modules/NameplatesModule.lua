@@ -480,6 +480,32 @@ local function OnAuraDataChanged(unitToken)
 	-- Fetch once and pass down to avoid each Apply function re-traversing the db path
 	local unitOptions = M:GetUnitOptions(unitToken)
 
+	-- BUGFIX (duels): If GetUnitOptions() switches between Friendly and Enemy for the
+	-- same unitToken (e.g. duel starts), the cached container references may be nil
+	-- for the now-active options. Rebuild lazily so aura data isn't silently dropped.
+	local needRebuild = false
+	if unitOptions.Combined and unitOptions.Combined.Enabled then
+		if not data.CombinedContainer then needRebuild = true end
+	else
+		if unitOptions.CC and unitOptions.CC.Enabled and not data.CcContainer then
+			needRebuild = true
+		end
+		if unitOptions.Important and unitOptions.Important.Enabled and not data.ImportantContainer then
+			needRebuild = true
+		end
+	end
+
+	if needRebuild then
+		local nameplate = data.Nameplate or C_NamePlate.GetNamePlateForUnit(unitToken)
+		if nameplate then
+			local ccContainer, importantContainer, combinedContainer =
+				EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
+			data.CcContainer = ccContainer
+			data.ImportantContainer = importantContainer
+			data.CombinedContainer = combinedContainer
+		end
+	end
+
 	if unitOptions.Combined.Enabled then
 		ApplyCombinedToNameplate(data, watcher, unitOptions)
 	else
@@ -720,7 +746,21 @@ local function OnNamePlateAdded(unitToken)
 	local ccContainer, importantContainer, combinedContainer =
 		EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 
-	if not ccContainer and not importantContainer and not combinedContainer then
+	-- BUGFIX (duels): Previously this returned early if no containers were created for
+	-- the current options table (e.g. friendly player with Friendly.* all disabled).
+	-- That meant `nameplateAnchors[unitToken]` and `watchers[unitToken]` were never
+	-- populated, so when the unit later became a duel opponent and GetUnitOptions()
+	-- started returning Enemy options, there was no watcher listening to UNIT_AURA and
+	-- OnAuraDataChanged would never fire to rebuild containers.
+	-- We now also create data+watcher if the *opposite* faction has any mode enabled,
+	-- so a future duel-start can materialize the Enemy containers on-demand via the
+	-- self-heal path in OnAuraDataChanged.
+	local oppositeOptions = units:IsEnemy(unitToken) and nmModule.Friendly or nmModule.Enemy
+	local anyEnabledOpposite = (oppositeOptions.Combined and oppositeOptions.Combined.Enabled)
+		or (oppositeOptions.CC and oppositeOptions.CC.Enabled)
+		or (oppositeOptions.Important and oppositeOptions.Important.Enabled)
+
+	if not ccContainer and not importantContainer and not combinedContainer and not anyEnabledOpposite then
 		return
 	end
 
