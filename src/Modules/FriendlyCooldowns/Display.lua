@@ -46,8 +46,10 @@ end
 -- Scratch table reused by UpdateDisplay to avoid per-call allocation.
 local slotsScratch = {}
 
--- Cache: unit -> { specId, result } — invalidated by the talent callback.
+-- Cache: unit -> { specId, hideExternalDefensives, result } — invalidated by the talent callback.
 local staticAbilitiesCache = {}
+
+local noCastSucceeded = select(4, GetBuildInfo()) >= 120005
 
 local function IsInArena()
 	local inInstance, instanceType = IsInInstance()
@@ -70,8 +72,12 @@ local function GetStaticAbilities(unit)
 
 	local specId = fcdTalents:GetUnitSpecId(unit)
 
+	local _, instanceType = IsInInstance()
+	local hideExternalDefensives = noCastSucceeded
+		and (instanceType == "raid" or instanceType == "pvp")
+
 	local cached = staticAbilitiesCache[unit]
-	if cached and cached.specId == specId then
+	if cached and cached.specId == specId and cached.hideExternalDefensives == hideExternalDefensives then
 		return cached.result
 	end
 
@@ -85,7 +91,9 @@ local function GetStaticAbilities(unit)
 			return
 		end
 		for _, rule in ipairs(ruleList) do
-			if rule.SpellId and not seen[rule.SpellId] and not disabledSpells[rule.SpellId] then
+			if rule.SpellId and not seen[rule.SpellId] and not disabledSpells[rule.SpellId]
+				and not (hideExternalDefensives and rule.ExternalDefensive)
+			then
 				local excluded = false
 				if rule.ExcludeIfTalent then
 					if type(rule.ExcludeIfTalent) == "table" then
@@ -120,7 +128,7 @@ local function GetStaticAbilities(unit)
 	addRules(rules.ByClass[classToken])
 
 	if specId then
-		staticAbilitiesCache[unit] = { specId = specId, result = result }
+		staticAbilitiesCache[unit] = { specId = specId, hideExternalDefensives = hideExternalDefensives, result = result }
 	end
 	return result
 end

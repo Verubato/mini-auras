@@ -648,7 +648,12 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 	-- are in the group (e.g. two Druids both matching Barkskin).  Restrict candidate search
 	-- to EXTERNAL_DEFENSIVE auras where the caster genuinely differs from the target.
 	-- On earlier builds real cast snapshots disambiguate correctly, so the full loop runs.
-	if isExternal or not simulateNoCastSucceeded then
+	-- In raids and battlegrounds on 12.0.5+, external defensives are untraceable without
+	-- cast events — the caster cannot be reliably attributed among many candidates.
+	local _, instanceType = IsInInstance()
+	local externalTrackable = isExternal
+		and (not simulateNoCastSucceeded or (instanceType ~= "raid" and instanceType ~= "pvp"))
+	if externalTrackable or not simulateNoCastSucceeded then
 		for _, unit in ipairs(candidateUnits) do
 			if unit ~= entry.Unit then
 				consider(unit, false)
