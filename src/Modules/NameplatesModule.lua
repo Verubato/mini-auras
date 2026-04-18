@@ -753,12 +753,14 @@ local function OnNamePlateAdded(unitToken)
 	-- started returning Enemy options, there was no watcher listening to UNIT_AURA and
 	-- OnAuraDataChanged would never fire to rebuild containers.
 	-- We now also create data+watcher if the *opposite* faction has any mode enabled,
-	-- so a future duel-start can materialize the Enemy containers on-demand via the
-	-- self-heal path in OnAuraDataChanged.
+	-- but only in the open world where duels can occur — inside instances this overhead
+	-- is unnecessary since friendly units can never become duel opponents there.
+	local inInstance = IsInInstance()
 	local oppositeOptions = units:IsEnemy(unitToken) and nmModule.Friendly or nmModule.Enemy
-	local anyEnabledOpposite = (oppositeOptions.Combined and oppositeOptions.Combined.Enabled)
-		or (oppositeOptions.CC and oppositeOptions.CC.Enabled)
-		or (oppositeOptions.Important and oppositeOptions.Important.Enabled)
+	local anyEnabledOpposite = not inInstance
+		and ((oppositeOptions.Combined and oppositeOptions.Combined.Enabled)
+			or (oppositeOptions.CC and oppositeOptions.CC.Enabled)
+			or (oppositeOptions.Important and oppositeOptions.Important.Enabled))
 
 	if not ccContainer and not importantContainer and not combinedContainer and not anyEnabledOpposite then
 		return
