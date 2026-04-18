@@ -173,7 +173,7 @@ local function CommitCooldown(entry, tracked, rule, measuredDuration)
 		Remaining = cooldown - measuredDuration,
 		SpellId   = rule.SpellId,
 	}
-	cdData.CleanupTimer = C_Timer.NewTimer(math.max(0, cdData.Remaining), function()
+	cdData.CleanupTimer = C_Timer.NewTimer(math.max(0, tracked.StartTime + cooldown - GetTime()), function()
 		if entry.ActiveCooldowns[cdKey] == cdData then
 			entry.ActiveCooldowns[cdKey] = nil
 		end
