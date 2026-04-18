@@ -52,6 +52,18 @@ local lastUnitFlagsTime = {}
 local lastFeignDeathTime = {}
 -- unit -> last known feign death state, used to detect false->true transitions.
 local lastFeignDeathState = {}
+-- Classes ignored by the Precognition PvP gem check (physical/melee specs that are never
+-- interrupted and have no use for it).  All caster and healer classes are excluded from this
+-- set because they DO use Precognition, making their IMPORTANT auras ambiguous in PvP.
+local precogIgnoreClasses = {
+	WARRIOR     = true,
+	DEATHKNIGHT = true,
+	ROGUE       = true,
+	HUNTER      = true,
+	DEMONHUNTER = true,
+}
+-- Spell ID for Blessing of Freedom, used to check whether a paladin could have cast it.
+local BOF_SPELL_ID = 1044
 -- Module-level scratch table reused by FindBestCandidate to avoid per-call allocation.
 local candidateEvidenceScratch = {}
 -- unit -> boolean: whether the unit's class can feign death (Hunter only).
@@ -462,26 +474,56 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 	end
 
 	-- On 12.0.5+, UNIT_SPELLCAST_SUCCEEDED no longer fires for other players.
-	-- Synthetic Cast evidence is unsafe in general (no duration guard here), but is safe when:
-	--   * Not in arena or battleground (Precognition, a PvP gem, cannot fire in PvE)
-	--   * No Paladin in the group other than the target (Blessing of Freedom, an IMPORTANT
-	--     external buff cast by a Paladin, cannot cause false self-cast predictions)
-	-- When both conditions hold, self-only predictions are re-enabled for non-local units.
+	-- Synthetic Cast evidence is unsafe in general (no duration guard here), but is safe when
+	-- both of the following hold:
+	--
+	--   pvpSafe: Precognition (a PvP gem) grants a 4 s IMPORTANT aura when an enemy misses an
+	--     interrupt.  Only caster and healer classes equip it; physical/melee classes
+	--     (precogImmuneClasses) do not, so their IMPORTANT auras are safe to predict even in
+	--     arena.  Non-IMPORTANT aura types (BIG_DEFENSIVE) can never be confused with Precog.
+	--
+	--   bofSafe: Blessing of Freedom (IMPORTANT, CastableOnOthers, paladin) can be mistaken
+	--     for the target's own important CD without cast evidence.  If every paladin in the
+	--     group has BoF on cooldown it cannot be the source, so prediction is safe.
+	--     Non-IMPORTANT aura types are not confused with BoF.
+	--
 	-- Only applies to the no-snapshot (self-cast, "exclude") path; external and CastableOnOthers
 	-- paths still require a real cast snapshot for disambiguation.
 	local allowSyntheticCast = false
 	if simulateNoCastSucceeded and not auraTypes["EXTERNAL_DEFENSIVE"] then
 		local _, instanceType = IsInInstance()
-		if instanceType ~= "arena" and instanceType ~= "pvp" then
-			local hasPaladin = false
+		local inPvP = instanceType == "arena" or instanceType == "pvp"
+
+		-- Precognition check: only relevant for IMPORTANT auras in PvP.
+		local pvpSafe
+		if not inPvP then
+			pvpSafe = true
+		elseif auraTypes["IMPORTANT"] then
+			local _, targetClassToken = UnitClass(targetUnit)
+			pvpSafe = targetClassToken ~= nil and precogIgnoreClasses[targetClassToken] == true
+		else
+			-- BIG_DEFENSIVE in PvP: Precognition cannot produce this aura type.
+			pvpSafe = true
+		end
+
+		-- BoF check: only relevant for IMPORTANT auras when a paladin is in the group.
+		local bofSafe = true
+		if pvpSafe and auraTypes["IMPORTANT"] then
 			for _, unit in ipairs(candidateUnits) do
 				if unit ~= targetUnit then
 					local _, classToken = UnitClass(unit)
-					if classToken == "PALADIN" then hasPaladin = true; break end
+					if classToken == "PALADIN" then
+						local palCooldowns = activeCooldownsLookup and activeCooldownsLookup(unit)
+						if not (palCooldowns and palCooldowns[BOF_SPELL_ID]) then
+							bofSafe = false
+							break
+						end
+					end
 				end
 			end
-			allowSyntheticCast = not hasPaladin
 		end
+
+		allowSyntheticCast = pvpSafe and bofSafe
 	end
 
 	local matchSpellId = nil
