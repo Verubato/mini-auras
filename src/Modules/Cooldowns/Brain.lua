@@ -282,8 +282,8 @@ local function MatchRule(unit, auraTypes, measuredDuration, context)
 		end
 		local fallback = nil
 		for _, rule in ipairs(ruleList) do
-			local excluded = false
-			if rule.ExcludeIfTalent then
+			local excluded = ignoreTalentReqs and rule.ExcludeFromEnemyTracking
+			if not excluded and rule.ExcludeIfTalent then
 				if type(rule.ExcludeIfTalent) == "table" then
 					for _, talentId in ipairs(rule.ExcludeIfTalent) do
 						if fcdTalents:UnitHasTalent(unit, talentId, specId) then excluded = true; break end

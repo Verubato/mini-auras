@@ -715,6 +715,7 @@ local rules = {
 				RequiresEvidence = "Cast",
 				SpellId = 378441,
 				RequiresTalent = { 5463, 5464, 5619 },
+				ExcludeFromEnemyTracking = true,
 			}, -- Time Stop (PvP talent)
 		}, -- Augmentation Evoker: Obsidian Scales
 		[264] = { -- Restoration Shaman
@@ -1066,6 +1067,7 @@ local rules = {
 				RequiresEvidence = "Cast",
 				SpellId = 378441,
 				RequiresTalent = { 5463, 5464, 5619 },
+				ExcludeFromEnemyTracking = true,
 			}, -- Time Stop (PvP talent)
 		},
 	},
