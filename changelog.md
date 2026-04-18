@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.10.0
+
+- 12.0.5 improvements for cooldown tracking.
+- Nameplate fix for duels of players from the same faction.
+- Voidform and Dispersion Archon talents added.
+- Chrysalis Mistweaver monk talent change for 12.0.5.
+- Added decimals support to CC icons for 12.0.5.
+- Fixed Nullifying Shroud causing Time Stop to trigger on enemy cooldowns.
+
 ## 3.9.0
 
 - Added enemy cooldown tracking.
