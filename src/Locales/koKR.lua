@@ -36,8 +36,6 @@ L:SetStrings({
 	["Icon Padding"] = "아이콘 여백",
 	["Icon Size"] = "아이콘 크기",
 	["Important"] = "중요",
-	["Important Notes"] = "중요 사항",
-	["Limitations:"] = "제한 사항:",
 	["Max Icons"] = "최대 아이콘",
 	["Notification"] = "알림",
 	["Offset X"] = "X 오프셋",
@@ -184,15 +182,8 @@ L:SetStrings({
 	["Text Size"] = "텍스트 크기",
 
 	-- Kick Timer tab
-	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - 현재 경기장에서만 작동합니다(결투/세계에서는 작동하지 않으며, 나중에 추가할 예정).",
-	[" - Doesn't work if the enemy misses kick (still investigating potential workaround/solution)."] = " - 적이 차단을 빗나가면 작동하지 않습니다(해결 방법 조사 중).",
-	["As you can tell it's not guaranteed to be accurate, but so far from our testing it's pretty damn good with ancedotally a 95%+ success rate."] = "보시다시피 정확성이 보장되지는 않지만, 지금까지의 테스트에서는 일화적으로 95%+ 성공률로 꽤 좋습니다.",
-	["For example you are facing 3 enemies who are all pressing buttons."] = "예를 들어 모두 버튼을 누르고 있는 3명의 적과 마주하고 있습니다.",
-	["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."] = "어떻게 작동하나요? 적의 행동 이벤트와 차단 이벤트를 연관시켜 누가 차단했는지 추측합니다.",
 	["Kick timer"] = "차단 타이머",
 	["Kick timer_Short"] = "차단",
-	["Still working on improving this, so stay tuned for updates."] = "개선 작업을 계속하고 있으니 업데이트를 기다려주세요.",
-	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "방금 차단당했고 마지막으로 주문을 성공적으로 사용한 적이 적 A였다면, 적 A가 차단했다고 추론합니다.",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "해제 유형에 따라 발광/테두리 색상을 변경합니다 (예: 마법은 파란색, 물리는 빨간색).",
@@ -234,7 +225,7 @@ L:SetStrings({
 	["Friendly Cooldowns_Short"] = "아군 쿨타임",
 	["Icon Spacing"] = "아이콘 간격",
 	["Spells"] = "주문",
-	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "방어기가 만료된 후 파티/공격대 프레임에 PvP 장신구와 아군 방어기 재사용 대기시간을 표시합니다.",
+	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames."] = "방어기가 만료된 후 파티/공격대 프레임에 PvP 장신구와 아군 방어기 재사용 대기시간을 표시합니다.",
 ["Excludes yourself from being tracked."] = "자신을 추적에서 제외합니다.",
 	["Milliseconds"] = "밀리초",
 	["Milliseconds Threshold"] = "밀리초 임계값",
@@ -300,7 +291,7 @@ L:SetStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - 예지 추측 모듈을 추가했습니다. 예지 효과를 받을 때 표시됩니다.",
 	[" - Added profile import/export feature."] = " - 프로필 가져오기/내보내기 기능이 추가되었습니다.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - 아군 쿨다운 추측 모듈이 추가되었습니다. 이제 팀원들의 쿨다운을 어느 정도 추적할 수 있습니다!",
-	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "주의: Blizzard가 패치 12.0.5(4월 21일)에서 변경 사항을 적용하여 아군 CD 추적 정확도를 크게 감소시키고, 누를 때 쿨다운 발광 효과를 제거하며, PvP 적 기술 차단 추적을 완전히 제거할 예정입니다. 따라서 곧 추적 정확도가 낮아질 것임을 참고해 주세요.",
+	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "12.0.5의 새로운 블리자드 제한으로 인해 MiniCC에서 변경된 사항입니다.\n\n좋은 소식:\n* 쿨다운 추적은 투기장과 던전에서 여전히 대부분 정상 작동합니다.\n* 아군 및 적 CD 모두에 대해 여러 주문 충전 지원이 추가되었습니다(예: 고통 억제 2x, 흡릿하게 하기 2x).\n\n나쁜 소식:\n* 아군 외부 주문이 공격대와 전장에서 더 이상 추적되지 않습니다.\n* 예측 발광이 덜 신뢰할 수 있습니다.\n* PvP 방해 추적이 더 이상 방해자를 식별할 수 없습니다. 이제 알려진 가장 짧은 적 방해 쿨다운을 사용하는 일반 아이콘만 표시됩니다.\n\n이 업데이트에 많은 노력을 기울였지만 여전히 문제가 있을 수 있습니다. \nDiscord에 버그를 보고해 주시면 수정하겠습니다.",
 	[" - Added enemy cooldown tracking module."] = " - 적 쿨다운 추적 모듈이 추가되었습니다.",
 	["MiniCC - What's New?"] = "MiniCC - 새로운 소식?",
 })

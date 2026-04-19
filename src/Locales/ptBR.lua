@@ -36,8 +36,6 @@ L:SetStrings({
 	["Icon Padding"] = "Espaçamento de ícone",
 	["Icon Size"] = "Tamanho do ícone",
 	["Important"] = "Importante",
-	["Important Notes"] = "Notas importantes",
-	["Limitations:"] = "Limitações:",
 	["Max Icons"] = "Ícones máx",
 	["Notification"] = "Notificação",
 	["Offset X"] = "Deslocamento X",
@@ -185,15 +183,8 @@ L:SetStrings({
 	["Text Size"] = "Tamanho do texto",
 
 	-- Kick Timer tab
-	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - Atualmente funciona apenas na arena (não funciona em duelos/mundo, será adicionado depois).",
-	[" - Doesn't work if the enemy misses kick (still investigating potential workaround/solution)."] = " - Não funciona se o inimigo errar a interrupção (ainda investigando possíveis soluções).",
-	["As you can tell it's not guaranteed to be accurate, but so far from our testing it's pretty damn good with ancedotally a 95%+ success rate."] = "Como você pode ver, não é garantido ser preciso, mas até agora em nossos testes é muito bom com uma taxa de sucesso anedótica de 95%+.",
-	["For example you are facing 3 enemies who are all pressing buttons."] = "Por exemplo, você está enfrentando 3 inimigos que estão todos pressionando botões.",
-	["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."] = "Como funciona? Ele adivinha quem interrompeu você correlacionando eventos de ação inimiga com eventos de interrupção.",
 	["Kick timer"] = "Temporizador de interrupção",
 	["Kick timer_Short"] = "Interrup.",
-	["Still working on improving this, so stay tuned for updates."] = "Ainda trabalhando para melhorar isto, fique atento às atualizações.",
-	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "Você acabou de ser interrompido e o último inimigo que lançou um feitiço com sucesso foi o inimigo A, portanto deduzimos que foi o inimigo A quem interrompeu você.",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Muda a cor do brilho/borda com base no tipo de dissipar (por ex. azul para magia, vermelho para físico).",
@@ -235,7 +226,7 @@ L:SetStrings({
 	["Friendly Cooldowns_Short"] = "Rec. aliadas",
 	["Icon Spacing"] = "Espaço entre ícones",
 	["Spells"] = "Feitiços",
-	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Exibe as recargas do berloque de PvP e defensivas aliadas nos frames do grupo/raid após uma defensiva expirar.",
+	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames."] = "Exibe as recargas do berloque de PvP e defensivas aliadas nos frames do grupo/raid após uma defensiva expirar.",
 ["Excludes yourself from being tracked."] = "Exclui você do rastreamento.",
 	["Milliseconds"] = "Milissegundos",
 	["Milliseconds Threshold"] = "Limite de milissegundos",
@@ -301,7 +292,7 @@ L:SetStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - Adiciona um módulo de adivinhação de precognição que mostra quando você recebe precog.",
 	[" - Added profile import/export feature."] = " - Adicionada a funcionalidade de importar/exportar perfil.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Adicionado o módulo de estimativa de recarga aliada. Agora você pode rastrear aproximadamente os recargas dos seus companheiros de equipe!",
-	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "ATENÇÃO: A Blizzard está fazendo alterações no patch 12.0.5 (21 de abril) que reduzirão drasticamente a precisão do rastreamento de CD aliados, eliminarão o brilho de recarga ao pressionar e removerão completamente o rastreamento de interrupções inimigas no JcJ. Por isso, esteja ciente de que a precisão do rastreamento diminuirá em breve.",
+	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "Com as novas restrições da Blizzard na 12.0.5, isto é o que mudou no MiniCC.\n\nAs boas notícias:\n* O rastreamento de recarga ainda funciona bem em arenas e masmorras.\n* Adicionado suporte para múltiplas cargas de feitiços (ex. 2x Supressão de Dor, 2x Borrão) para CDs amigos e inimigos.\n\nAs más notícias:\n* Feitiços externos amigos não são mais rastreados em Raides e Campos de Batalha.\n* Os brilhos preditivos são menos confiáveis.\n* O rastreamento de interrupções PvP não consegue mais identificar quem interrompeu. Agora exibe apenas um ícone genérico com o menor tempo de recarga de interrupção inimiga conhecido.\n\nTrabalhamos muito nesta atualização, mas ainda pode haver problemas. \nPor favor, reporte os bugs que encontrar em nosso Discord para que possamos corrigi-los.",
 	[" - Added enemy cooldown tracking module."] = " - Módulo de rastreamento de recarga de inimigos adicionado.",
 	["MiniCC - What's New?"] = "MiniCC - O que há de novo?",
 })

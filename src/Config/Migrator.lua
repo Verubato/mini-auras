@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 43,
+	Version = 44,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -435,7 +435,7 @@ local dbDefaults = {
 			},
 		},
 		---@class FriendlyCooldownTrackerModuleOptions
-		---@field DisabledSpells table<number, boolean> SpellIds excluded from the static-ability display; keyed by SpellId, value true. Treated as an opaque user hash — CleanTable must not recurse into it.
+		---@field DisabledSpells table<number, boolean> SpellIds excluded from the static-ability display; keyed by SpellId, value true. Treated as an opaque user hash - CleanTable must not recurse into it.
 		FriendlyCooldownTrackerModule = {
 			Enabled = {
 				World = true,
@@ -488,7 +488,7 @@ local dbDefaults = {
 		},
 
 		---@class EnemyCooldownTrackerModuleOptions
-		---@field DisabledSpells table<number, boolean> SpellIds excluded from the display; keyed by SpellId, value true. Treated as an opaque user hash — CleanTable must not recurse into it.
+		---@field DisabledSpells table<number, boolean> SpellIds excluded from the display; keyed by SpellId, value true. Treated as an opaque user hash - CleanTable must not recurse into it.
 		EnemyCooldownTrackerModule = {
 			Enabled = {
 				World = false,
@@ -1851,7 +1851,7 @@ function M:UpgradeToVersion25(vars)
 		return false
 	end
 
-	-- Rename Raids→BattleGrounds and Dungeons→PvE in all module Enabled tables
+	-- Rename Raids->BattleGrounds and Dungeons->PvE in all module Enabled tables
 	if vars.Modules then
 		local modules = {
 			"CCModule",
@@ -1899,7 +1899,7 @@ function M:UpgradeToVersion27(vars)
 		return false
 	end
 
-	-- Rename Always→World in location-based modules.
+	-- Rename Always->World in location-based modules.
 	-- If Always was true, it acted as an override for all contexts, so enable all of them.
 	if vars.Modules then
 		local modules = {
@@ -2188,7 +2188,7 @@ end
 function M:UpgradeToVersion40(vars)
 	if vars.Version ~= 39 then return false end
 
-	-- Rename "夏一可.ogg" → "XiaYike.ogg" in the three known Sound.File locations.
+	-- Rename "夏一可.ogg" -> "XiaYike.ogg" in the three known Sound.File locations.
 	local function RenameSound(modules)
 		if not modules then return end
 
@@ -2249,6 +2249,17 @@ function M:UpgradeToVersion43(vars)
 	vars.NotifiedChanges = false
 
 	vars.Version = 43
+	return true
+end
+
+function M:UpgradeToVersion44(vars)
+	if vars.Version ~= 43 then return false end
+
+	vars.WhatsNew = vars.WhatsNew or {}
+	table.insert(vars.WhatsNew, L["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."])
+	vars.NotifiedChanges = false
+
+	vars.Version = 44
 	return true
 end
 

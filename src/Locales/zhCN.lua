@@ -36,8 +36,6 @@ L:SetStrings({
 	["Icon Padding"] = "图标间距",
 	["Icon Size"] = "图标大小",
 	["Important"] = "重要",
-	["Important Notes"] = "重要说明",
-	["Limitations:"] = "限制：",
 	["Max Icons"] = "最大图标",
 	["Notification"] = "通知",
 	["Offset X"] = "X偏移",
@@ -185,15 +183,8 @@ L:SetStrings({
 	["Text Size"] = "文字大小",
 
 	-- Kick Timer tab
-	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - 目前仅在竞技场内工作（在决斗/世界中无效，将来会添加）。",
-	[" - Doesn't work if the enemy misses kick (still investigating potential workaround/solution)."] = " - 如果敌人打断未命中则无效（仍在研究潜在的解决方案）。",
-	["As you can tell it's not guaranteed to be accurate, but so far from our testing it's pretty damn good with ancedotally a 95%+ success rate."] = "如你所见，它不能保证准确，但到目前为止我们的测试显示它非常好，轶事性成功率95%+。",
-	["For example you are facing 3 enemies who are all pressing buttons."] = "例如，你面对的3个敌人都在按按钮。",
-	["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."] = "它如何工作？它通过关联敌人行动事件和打断事件来猜测是谁打断了你。",
 	["Kick timer"] = "打断计时器",
 	["Kick timer_Short"] = "打断",
-	["Still working on improving this, so stay tuned for updates."] = "仍在努力改进这一功能，请关注更新。",
-	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "你刚刚被打断，最后一个成功释放法术的敌人是敌人A，因此我们推断是敌人A打断了你。",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "根据驱散类型更改发光/边框的颜色（例如，魔法为蓝色，物理为红色）。",
@@ -235,7 +226,7 @@ L:SetStrings({
 	["Friendly Cooldowns_Short"] = "友方冷却",
 	["Icon Spacing"] = "图标间隔",
 	["Spells"] = "法术",
-	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "防御技能到期后，在小队/团队框架上显示PvP饰品和友方防御技能的冷却时间。",
+	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames."] = "防御技能到期后，在小队/团队框架上显示PvP饰品和友方防御技能的冷却时间。",
 ["Excludes yourself from being tracked."] = "将自己排除在追踪之外。",
 	["Milliseconds"] = "毫秒",
 	["Milliseconds Threshold"] = "毫秒阈值",
@@ -301,7 +292,7 @@ L:SetStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - 新增了预知猜测模块，当你获得预知效果时显示。",
 	[" - Added profile import/export feature."] = " - 新增了配置导入/导出功能。",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - 新增了友方冷却时间猜测模块。现在你可以大致追踪队友的冷却时间！",
-	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "注意：暴雪将在12.0.5版本（4月21日）进行更改，这将严重降低友方CD追踪的准确性、取消按键时的冷却发光效果，并完全移除PvP敌方打断追踪。因此请注意，追踪精度即将下降。",
+	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "随着 12.0.5 版本的新暴雪限制，MiniCC 发生了以下变化。\n\n好消息：\n* 冷却时间追踪在竞技场和地下城中仍然基本正常运行。\n* 为友方和敌方 CD 添加了多层法术充能支持（例妋 2x 痛苦压制、2x 模糊）。\n\n坏消息：\n* 友方外部技能在团队副本和战场中不再被追踪。\n* 预测光效变得不那么可靠。\n* PvP 打断追踪无法再识别打断者。现在仅显示使用最短已知敌方打断冷却时间的通用图标。\n\n我们在这次更新上投入了大量工作，但可能仍有问题。 \n请在我们的 Discord 中报告您发现的任何错误，以便我们解决。",
 	[" - Added enemy cooldown tracking module."] = " - 新增敌人冷却追踪模块。",
 	["MiniCC - What's New?"] = "MiniCC - 新内容？",
 })

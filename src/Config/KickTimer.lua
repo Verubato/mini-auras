@@ -104,16 +104,7 @@ function M:Build(panel)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			L["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."],
-			L["For example you are facing 3 enemies who are all pressing buttons."],
-			L["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."],
-			L["As you can tell it's not guaranteed to be accurate, but so far from our testing it's pretty damn good with ancedotally a 95%+ success rate."],
-			"",
-			L["Limitations:"],
-			L[" - Doesn't work if the enemy misses kick (still investigating potential workaround/solution)."],
-			L[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."],
-			"",
-			L["Still working on improving this, so stay tuned for updates."],
+			L["As of 12.0.5, the caster of an interrupt can no longer be identified. This module now just displays a generic icon using the shortest known enemy kick cooldown."],
 		},
 	})
 

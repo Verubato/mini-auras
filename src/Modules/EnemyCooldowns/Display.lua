@@ -97,7 +97,25 @@ local function UpdateDisplay(entry)
 
 	-- Committed cooldowns: buff has expired, CD timer is running.
 	for cdKey, cd in pairs(entry.ActiveCooldowns) do
-		if now < cd.StartTime + cd.Cooldown then
+		if cd.UsedCharges then
+			-- Multi-charge entry: visible while at least one charge is recharging.
+			local usedCount = #cd.UsedCharges
+			if usedCount > 0 then
+				local texture = cd.SpellId and not disabledSpells[cd.SpellId] and GetSpellIcon(cd.SpellId)
+				if texture then
+					local startTime = cd.UsedCharges[1].Expiry - cd.Cooldown
+					slots[#slots + 1] = {
+						Texture        = texture,
+						SpellId        = showTooltips and cd.SpellId or nil,
+						DurationObject = wowEx:CreateDuration(startTime, cd.Cooldown),
+						Alpha          = 1,
+						ReverseCooldown = iconOptions.ReverseCooldown,
+						FontScale      = db.FontScale,
+						ChargeText     = tostring(cd.MaxCharges - usedCount),
+					}
+				end
+			end
+		elseif now < cd.StartTime + cd.Cooldown then
 			local texture = cd.SpellId and not disabledSpells[cd.SpellId] and GetSpellIcon(cd.SpellId)
 			if texture then
 				slots[#slots + 1] = {
@@ -246,7 +264,24 @@ function D:UpdateLinearDisplay(entries)
 
 	for _, entry in pairs(entries) do
 		for cdKey, cd in pairs(entry.ActiveCooldowns) do
-			if now < cd.StartTime + cd.Cooldown then
+			if cd.UsedCharges then
+				local usedCount = #cd.UsedCharges
+				if usedCount > 0 then
+					local texture = cd.SpellId and not disabledSpells[cd.SpellId] and GetSpellIcon(cd.SpellId)
+					if texture then
+						local startTime = cd.UsedCharges[1].Expiry - cd.Cooldown
+						slots[#slots + 1] = {
+							Texture        = texture,
+							SpellId        = showTooltips and cd.SpellId or nil,
+							DurationObject = wowEx:CreateDuration(startTime, cd.Cooldown),
+							Alpha          = 1,
+							ReverseCooldown = iconOptions.ReverseCooldown,
+							FontScale      = db.FontScale,
+							ChargeText     = tostring(cd.MaxCharges - usedCount),
+						}
+					end
+				end
+			elseif now < cd.StartTime + cd.Cooldown then
 				local texture = cd.SpellId and not disabledSpells[cd.SpellId] and GetSpellIcon(cd.SpellId)
 				if texture then
 					slots[#slots + 1] = {

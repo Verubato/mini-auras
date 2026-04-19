@@ -76,32 +76,32 @@ end
 
 ---@type table<number, SpecKickInfo>
 local specInfoBySpecId = {
-	-- Rogue — Kick
+	-- Rogue - Kick
 	[259] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(1766) }, -- Assassination
 	[260] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(1766) }, -- Outlaw
 	[261] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(1766) }, -- Subtlety
 
-	-- Warrior — Pummel
+	-- Warrior - Pummel
 	[71] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(6552) }, -- Arms
 	[72] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(6552) }, -- Fury
 	[73] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(6552) }, -- Protection
 
-	-- Death Knight — Mind Freeze
+	-- Death Knight - Mind Freeze
 	[250] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(47528) }, -- Blood
 	[251] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(47528) }, -- Frost
 	[252] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(47528) }, -- Unholy
 
-	-- Demon Hunter — Disrupt
+	-- Demon Hunter - Disrupt
 	[577] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(183752) }, -- Havoc
 	[581] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(183752) }, -- Vengeance
 	[1480] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(183752) }, -- Devourer
 
-	-- Monk — Spear Hand Strike
+	-- Monk - Spear Hand Strike
 	[268] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(116705) }, -- Brewmaster
 	[269] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(116705) }, -- Windwalker
 	[270] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = nil }, -- Mistweaver
 
-	-- Paladin — Rebuke
+	-- Paladin - Rebuke
 	[65] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = nil }, -- Holy
 	[66] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(96231) }, -- Protection
 	[70] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(96231) }, -- Retribution
@@ -112,27 +112,27 @@ local specInfoBySpecId = {
 	[104] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(106839) }, -- Guardian (Skull Bash)
 	[105] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = nil }, -- Restoration
 
-	-- Hunter — Counter Shot
+	-- Hunter - Counter Shot
 	[253] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(147362) }, -- Beast Mastery
 	[254] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(147362) }, -- Marksmanship
 	[255] = { KickCd = 15, IsCaster = false, IsHealer = false, KickIcon = KI(147362) }, -- Survival
 
-	-- Mage — Counterspell
+	-- Mage - Counterspell
 	[62] = { KickCd = 20, IsCaster = true, IsHealer = false, KickIcon = KI(2139) }, -- Arcane
 	[63] = { KickCd = 20, IsCaster = true, IsHealer = false, KickIcon = KI(2139) }, -- Fire
 	[64] = { KickCd = 20, IsCaster = true, IsHealer = false, KickIcon = KI(2139) }, -- Frost
 
-	-- Warlock — Spell Lock (Felhunter)
+	-- Warlock - Spell Lock (Felhunter)
 	[265] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(19647) }, -- Affliction
 	[266] = { KickCd = 30, IsCaster = true, IsHealer = false, KickIcon = KI(89766) }, -- Demonology
 	[267] = { KickCd = 24, IsCaster = true, IsHealer = false, KickIcon = KI(19647) }, -- Destruction
 
-	-- Shaman — Wind Shear
+	-- Shaman - Wind Shear
 	[262] = { KickCd = 12, IsCaster = true, IsHealer = false, KickIcon = KI(57994) }, -- Elemental
 	[263] = { KickCd = 12, IsCaster = false, IsHealer = false, KickIcon = KI(57994) }, -- Enhancement
 	[264] = { KickCd = 30, IsCaster = false, IsHealer = true, KickIcon = KI(57994) }, -- Restoration
 
-	-- Evoker — Quell
+	-- Evoker - Quell
 	[1467] = { KickCd = 20, IsCaster = true, IsHealer = false, KickIcon = KI(351338) }, -- Devastation
 	[1468] = { KickCd = nil, IsCaster = false, IsHealer = true, KickIcon = KI(351338) }, -- Preservation
 	[1473] = { KickCd = nil, IsCaster = true, IsHealer = false, KickIcon = nil }, -- Augmentation

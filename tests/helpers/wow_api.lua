@@ -5,13 +5,14 @@ local M = {}
 
 -- Module-level state reset on each M.reset() call.
 local _time          = 0
-local _buildNumber   = 110000  -- default: pre-12.0.5 (TOC 110000)
+local _buildNumber   = 120005  -- default: 12.0.5 (TOC 120005)
 local _instanceType  = "none"  -- default: not in any instance (PvE)
 local _unitClasses   = {}   -- unit -> { name, token }
 local _feignDeath    = {}   -- unit -> bool
 local _auraFiltered  = {}   -- "unit:id:filter" -> bool  (true = filtered out = absent)
 local _secretValues  = {}   -- value -> bool (treated as secret)
 local _unitExists    = {}   -- unit -> bool
+local _unitGuids     = {}   -- unit -> guid string override
 
 function M.setup()
 	-- Build info
@@ -45,20 +46,41 @@ function M.setup()
 		return _feignDeath[unit] == true
 	end
 
+	_G.UnitIsPVP = function(unit)
+		return false
+	end
+
 	-- UnitCanAttack: default false (units are friendly) unless overridden per test.
 	_G.UnitCanAttack = function(a, b) return false end
 
 	-- UnitIsUnit: simple string equality (sufficient for tests).
 	_G.UnitIsUnit = function(a, b) return a == b end
 
+	-- UnitGUID: returns an override if set, otherwise the unit string itself.
+	-- Each unit is unique by default; use M.setUnitGUID to alias two units to
+	-- the same player (simulating "raid2" and "party1" being the same person).
+	_G.UnitGUID = function(unit)
+		return _unitGuids[unit] or unit
+	end
+
+	-- UnitIsConnected: default true (all units online unless overridden).
+	_G.UnitIsConnected = function(unit) return true end
+
 	-- Aura filter
 	-- Returns true when the aura is NOT present under that filter (i.e. filtered out).
-	-- Default: nothing is filtered out (every aura passes every filter).
+	-- Default: HELPFUL filters pass (not filtered out); HARMFUL|CROWD_CONTROL is filtered
+	-- out by default (auras are not CC unless explicitly marked with setAuraFiltered(..., false)).
 	_G.C_UnitAuras = {
 		IsAuraFilteredOutByInstanceID = function(unit, id, filter)
 			local key = unit .. ":" .. tostring(id) .. ":" .. filter
 			local v = _auraFiltered[key]
-			return v == true   -- nil -> false (not filtered = visible)
+			if v ~= nil then return v == true end
+			-- Both CC filter variants default to filtered-out (not CC) so tests don't need to
+			-- explicitly exclude non-CC auras.  Use setAuraFiltered(..., false) to mark as CC.
+			-- HARMFUL|CROWD_CONTROL: hostile self-CCs (e.g. Dispersion).
+			-- HELPFUL|CROWD_CONTROL: friendly CCs applied to an ally (e.g. Time Stop).
+			if filter == "HARMFUL|CROWD_CONTROL" or filter == "HELPFUL|CROWD_CONTROL" then return true end
+			return false
 		end,
 	}
 
@@ -148,6 +170,12 @@ function M.setUnitExists(unit, exists)
 	_unitExists[unit] = exists ~= false
 end
 
+---Override the GUID for a unit.  Pass the same guid to two unit strings to
+---simulate a single player appearing under multiple IDs (e.g. "raid2"/"party1").
+function M.setUnitGUID(unit, guid)
+	_unitGuids[unit] = guid
+end
+
 ---Set the instance type returned by IsInInstance().
 ---Values: "none" (overworld/PvE), "party", "raid", "scenario", "arena", "pvp".
 function M.setInstanceType(t)
@@ -168,6 +196,7 @@ function M.reset()
 	_auraFiltered  = {}
 	_secretValues  = {}
 	_unitExists    = {}
+	_unitGuids     = {}
 	M.setup()
 end
 

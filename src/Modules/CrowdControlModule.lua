@@ -214,7 +214,7 @@ local function EnsureWatchers()
 		EnsureWatcher(anchor)
 	end
 
-	-- Pet frames never appear in GetAll — discover them directly.
+	-- Pet frames never appear in GetAll - discover them directly.
 	if testModeActive or moduleUtil:IsModuleEnabled(moduleName.PetCC) then
 		for i = 1, 6 do
 			local frame = _G["CompactPartyFramePet" .. i]
@@ -299,7 +299,7 @@ local function RefreshTestIcons()
 		end
 
 		if not entryEnabled then
-			-- This frame type is disabled — hide and clear it
+			-- This frame type is disabled - hide and clear it
 			entry.Container:ResetAllSlots()
 			entry.Container.Frame:Hide()
 		else
@@ -440,7 +440,7 @@ function M:Refresh()
 		end
 
 		if not entryEnabled or not entryOptions then
-			-- This entry's feature is toggled off — hide and disable it
+			-- This entry's feature is toggled off - hide and disable it
 			entry.Watcher:Disable()
 			entry.Container:ResetAllSlots()
 			entry.Container.Frame:Hide()

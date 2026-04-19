@@ -78,10 +78,10 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Debuff" },
-				SpellId = 204018,
-				RequiresTalent = 5692,
-			}, -- Blessing of Spellwarding (replaces BoP)
+				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				SpellId = 1022,
+				ExcludeIfTalent = 5692,
+			}, -- Blessing of Protection (excluded when Spellwarding talented; both share the same 300s CD)
 			{
 				BuffDuration = 10,
 				Cooldown = 300,
@@ -89,17 +89,19 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Debuff" },
-				SpellId = 1022,
-				ExcludeIfTalent = 5692,
-			}, -- Blessing of Protection
+				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				SpellId = 204018,
+				CastSpellId = 1022,
+				RequiresTalent = 5692,
+			}, -- Blessing of Spellwarding (matches both BoS and BoP casts when talented; CastSpellId=1022 so local player casting BoP is still attributed to BoS)
 			{
 				BuffDuration = 12,
 				Cooldown = 120,
 				ExternalDefensive = true,
 				BigDefensive = false,
 				Important = false,
-				RequiresEvidence = "Cast",
+				RequiresEvidence = { "Cast", "Shield" },
+				SelfCastable = false,
 				SpellId = 6940,
 			}, -- Blessing of Sacrifice
 		},
@@ -154,6 +156,7 @@ local rules = {
 				ExternalDefensive = false,
 				RequiresEvidence = "Cast",
 				SpellId = 86659,
+				MaxCharges = 2,
 			}, -- Guardian of Ancient Kings
 			{
 				BuffDuration = 10,
@@ -162,10 +165,10 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Debuff" },
-				SpellId = 204018,
-				RequiresTalent = 5692,
-			}, -- Blessing of Spellwarding (replaces BoP)
+				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				SpellId = 1022,
+				ExcludeIfTalent = 5692,
+			}, -- Blessing of Protection (excluded when Spellwarding talented; both share the same 300s CD)
 			{
 				BuffDuration = 10,
 				Cooldown = 300,
@@ -173,17 +176,19 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Debuff" },
-				SpellId = 1022,
-				ExcludeIfTalent = 5692,
-			}, -- Blessing of Protection
+				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				SpellId = 204018,
+				CastSpellId = 1022,
+				RequiresTalent = 5692,
+			}, -- Blessing of Spellwarding (matches both BoS and BoP casts when talented; CastSpellId=1022 so local player casting BoP is still attributed to BoS)
 			{
 				BuffDuration = 12,
 				Cooldown = 120,
 				ExternalDefensive = true,
 				BigDefensive = false,
 				Important = false,
-				RequiresEvidence = "Cast",
+				RequiresEvidence = { "Cast", "Shield" },
+				SelfCastable = false,
 				SpellId = 6940,
 			}, -- Blessing of Sacrifice
 		},
@@ -224,10 +229,10 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Debuff" },
-				SpellId = 204018,
-				RequiresTalent = 5692,
-			}, -- Blessing of Spellwarding (replaces BoP)
+				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				SpellId = 1022,
+				ExcludeIfTalent = 5573,
+			}, -- Blessing of Protection (excluded when Spellwarding talented; both share the same 300s CD)
 			{
 				BuffDuration = 10,
 				Cooldown = 300,
@@ -235,21 +240,23 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Debuff" },
-				SpellId = 1022,
-				ExcludeIfTalent = 5692,
-			}, -- Blessing of Protection
+				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				SpellId = 204018,
+				CastSpellId = 1022,
+				RequiresTalent = 5573,
+			}, -- Blessing of Spellwarding (matches both BoS and BoP casts when talented; CastSpellId=1022 so local player casting BoP is still attributed to BoS)
 			{
 				BuffDuration = 12,
 				Cooldown = 120,
 				ExternalDefensive = true,
 				BigDefensive = false,
 				Important = false,
-				RequiresEvidence = "Cast",
+				RequiresEvidence = { "Cast", "Shield" },
+				SelfCastable = false,
 				SpellId = 6940,
 			}, -- Blessing of Sacrifice
 		},
-		[62] = {
+		[62] = { -- Arcane Mage
 			{
 				BuffDuration = 15,
 				Cooldown = 90,
@@ -259,9 +266,20 @@ local rules = {
 				RequiresEvidence = "Cast",
 				MinDuration = true,
 				SpellId = 365350,
-			},
-		}, -- Arcane Mage: Arcane Surge
-		[63] = {
+			}, -- Arcane Surge
+			{
+				BuffDuration = 10,
+				Cooldown = 240,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				CanCancelEarly = true,
+				SpellId = 45438,
+				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				ExcludeIfTalent = 414659,
+			}, -- Ice Block
+		},
+		[63] = { -- Fire Mage
 			{
 				BuffDuration = 10,
 				Cooldown = 120,
@@ -271,8 +289,45 @@ local rules = {
 				RequiresEvidence = "Cast",
 				SpellId = 190319,
 				MinDuration = true,
-			},
-		}, -- Fire Mage: Combustion
+			}, -- Combustion
+			{
+				BuffDuration = 10,
+				Cooldown = 240,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				CanCancelEarly = true,
+				SpellId = 45438,
+				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				ExcludeIfTalent = 414659,
+			}, -- Ice Block
+		},
+		[64] = { -- Frost Mage
+			{
+				BuffDuration = 10,
+				Cooldown = 240,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				CanCancelEarly = true,
+				SpellId = 45438,
+				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				ExcludeIfTalent = 414659,
+				MaxCharges = 2,
+			}, -- Ice Block
+			{
+				BuffDuration = 6,
+				Cooldown = 240,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				SpellId = 414659,
+				CastSpellId = 414658,
+				RequiresEvidence = { "Cast", "Debuff" },
+				RequiresTalent = 414659,
+				MaxCharges = 2,
+			}, -- Ice Cold (replaces Ice Block)
+		},
 		[71] = { -- Arms Warrior
 			{
 				BuffDuration = 8,
@@ -337,6 +392,7 @@ local rules = {
 				Important = true,
 				RequiresEvidence = "Cast",
 				SpellId = 871,
+				MaxCharges = 2,
 			}, -- Shield Wall
 			{
 				BuffDuration = 20,
@@ -400,6 +456,7 @@ local rules = {
 				Important = false,
 				RequiresEvidence = "Cast",
 				SpellId = 33206,
+				MaxCharges = 2,
 			},
 		}, -- Discipline Priest: Pain Suppression
 		[257] = { -- Holy Priest
@@ -444,10 +501,23 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
+				CrowdControl = true,
 				CanCancelEarly = true,
 				RequiresEvidence = "Cast",
 				SpellId = 47585,
 			}, -- Dispersion
+			{
+				BuffDuration = 8,
+				Cooldown = 120,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				CrowdControl = true,
+				CanCancelEarly = true,
+				RequiresEvidence = "Cast",
+				SpellId = 47585,
+				RequiresTalent = 453729,
+			}, -- Dispersion + Heightened Alteration (+2s)
 			{
 				BuffDuration = 20,
 				Cooldown = 120,
@@ -470,6 +540,7 @@ local rules = {
 				RequiresEvidence = "Cast",
 				MinDuration = true,
 				SpellId = 102560,
+				MaxCharges = 2,
 			},
 		}, -- Balance Druid: Incarnation: Chosen of Elune
 		[103] = {
@@ -546,7 +617,7 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
+				RequiresEvidence = { "Cast", "Shield" },
 				SpellId = 116849,
 			},
 		}, -- Mistweaver Monk: Life Cocoon
@@ -559,6 +630,7 @@ local rules = {
 				Important = true,
 				RequiresEvidence = "Cast",
 				SpellId = 198589,
+				MaxCharges = 2,
 			}, -- Blur
 		},
 		[1480] = { -- Devourer Demon Hunter
@@ -570,6 +642,7 @@ local rules = {
 				Important = false,
 				RequiresEvidence = "Cast",
 				SpellId = 198589,
+				MaxCharges = 2,
 			}, -- Blur
 		},
 		[581] = { -- Vengeance Demon Hunter
@@ -692,6 +765,7 @@ local rules = {
 				Important = false,
 				RequiresEvidence = "Cast",
 				SpellId = 357170,
+				MaxCharges = 2,
 			},
 		}, -- Preservation Evoker: Time Dilation
 		[1473] = {
@@ -704,6 +778,7 @@ local rules = {
 				RequiresEvidence = "Cast",
 				MinDuration = true,
 				SpellId = 363916,
+				MaxCharges = 2,
 			},
 			{
 				BuffDuration = 5,
@@ -711,11 +786,12 @@ local rules = {
 				BigDefensive = false,
 				Important = true,
 				ExternalDefensive = false,
+				CrowdControl = true,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
+				CastableOnOthers = true,
+				RequiresEvidence = { "Cast", "UnitFlags" },
 				SpellId = 378441,
 				RequiresTalent = { 5463, 5464, 5619 },
-				ExcludeFromEnemyTracking = true,
 			}, -- Time Stop (PvP talent)
 		}, -- Augmentation Evoker: Obsidian Scales
 		[264] = { -- Restoration Shaman
@@ -805,57 +881,16 @@ local rules = {
 				Important = true,
 				ExternalDefensive = false,
 				BigDefensive = false,
+				CrowdControl = false, -- BoF is not a CC; rejects Time Stop (CrowdControl=true) false matches
 				CanCancelEarly = true,
+				MinCancelDuration = 1.5, -- Phase Shift (PvP talent) applies a 1s IMPORTANT buff on Fade; exclude it
 				RequiresEvidence = "Cast",
 				CastableOnOthers = true,
 				SpellId = 1044,
 			}, -- Blessing of Freedom
-			{
-				BuffDuration = 10,
-				Cooldown = 45,
-				ExternalDefensive = true,
-				Important = false,
-				BigDefensive = false,
-				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Debuff" },
-				SpellId = 204018,
-				RequiresTalent = 5692,
-			}, -- Blessing of Spellwarding (replaces BoP)
-			{
-				BuffDuration = 10,
-				Cooldown = 300,
-				ExternalDefensive = true,
-				Important = false,
-				BigDefensive = false,
-				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Debuff" },
-				SpellId = 1022,
-				ExcludeIfTalent = 5692,
-			}, -- Blessing of Protection
 		},
 		WARRIOR = {},
 		MAGE = {
-			{
-				BuffDuration = 10,
-				Cooldown = 240,
-				BigDefensive = true,
-				ExternalDefensive = false,
-				Important = true,
-				CanCancelEarly = true,
-				SpellId = 45438,
-				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
-				ExcludeIfTalent = 414659,
-			}, -- Ice Block
-			{
-				BuffDuration = 6,
-				Cooldown = 240,
-				BigDefensive = true,
-				ExternalDefensive = false,
-				Important = true,
-				SpellId = 414659,
-				RequiresEvidence = "Cast",
-				RequiresTalent = 414659,
-			}, -- Ice Cold (replaces Ice Block)
 			{
 				BuffDuration = 10,
 				Cooldown = 50,
@@ -864,6 +899,7 @@ local rules = {
 				Important = true,
 				CanCancelEarly = true,
 				SpellId = 342246,
+				CastSpellId = { 342245, 342247 },
 				RequiresEvidence = "Cast",
 			}, -- Alter Time
 		},
@@ -887,6 +923,7 @@ local rules = {
 				MinDuration = true,
 				SpellId = 264735,
 				RequiresEvidence = "Cast",
+				MaxCharges = 2,
 			}, -- Survival of the Fittest
 			{
 				BuffDuration = 8,
@@ -897,6 +934,7 @@ local rules = {
 				MinDuration = true,
 				SpellId = 264735,
 				RequiresEvidence = "Cast",
+				MaxCharges = 2,
 			}, -- Survival of the Fittest + Survival of the Fittest talent (+2s)
 		},
 		DRUID = {
@@ -977,8 +1015,10 @@ local rules = {
 				ExternalDefensive = false,
 				CanCancelEarly = true,
 				SpellId = 48707,
+				CastSpellId = 410358,
+				CastableOnOthers = true,
 				RequiresEvidence = { "Cast", "Shield" },
-			}, -- Anti-Magic Shell (with Spellwarding)
+			}, -- Anti-Magic Shell (Spellwarding self-cast, or cast on ally)
 			{
 				BuffDuration = 7,
 				Cooldown = 60,
@@ -986,9 +1026,11 @@ local rules = {
 				Important = true,
 				ExternalDefensive = false,
 				CanCancelEarly = true,
+				CastableOnOthers = true,
 				SpellId = 48707,
+				CastSpellId = 410358,
 				RequiresEvidence = { "Cast", "Shield" },
-			}, -- Anti-Magic Shell + Anti-Magic Barrier (+40%) (with Spellwarding)
+			}, -- Anti-Magic Shell + AMB +40% (Spellwarding self-cast, or cast on ally)
 		},
 		DEMONHUNTER = {},
 		MONK = {
@@ -1056,6 +1098,7 @@ local rules = {
 				RequiresEvidence = "Cast",
 				MinDuration = true,
 				SpellId = 363916,
+				MaxCharges = 2,
 			}, -- Obsidian Scales
 			{
 				BuffDuration = 5,
@@ -1063,15 +1106,32 @@ local rules = {
 				BigDefensive = false,
 				Important = true,
 				ExternalDefensive = false,
+				CrowdControl = true,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
+				CastableOnOthers = true,
+				RequiresEvidence = { "Cast", "UnitFlags" },
 				SpellId = 378441,
 				RequiresTalent = { 5463, 5464, 5619 },
-				ExcludeFromEnemyTracking = true,
 			}, -- Time Stop (PvP talent)
 		},
 	},
 }
+
+-- Zenith is only trackable in build 12.0.5+
+if select(4, GetBuildInfo()) >= 120005 then
+	rules.BySpec[269] = { -- Windwalker Monk
+		{
+			BuffDuration = 15,
+			Cooldown = 90,
+			Important = true,
+			BigDefensive = false,
+			ExternalDefensive = false,
+			BaseCharges = 2,
+			RequiresEvidence = "Cast",
+			SpellId = 1249625,
+		}, -- Zenith
+	}
+end
 
 -- Spell IDs treated as offensive cooldowns for the ShowOffensiveCooldowns option.
 local offensiveSpellIds = {
@@ -1095,7 +1155,7 @@ local offensiveSpellIds = {
 
 rules.OffensiveSpellIds = offensiveSpellIds
 
--- Lazily built spellId → rule lookup for GetSpellType.
+-- Lazily built spellId -> rule lookup for GetSpellType.
 local spellTypeCache = nil
 
 local function BuildSpellTypeCache()

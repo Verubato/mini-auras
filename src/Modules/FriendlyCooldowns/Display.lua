@@ -46,7 +46,7 @@ end
 -- Scratch table reused by UpdateDisplay to avoid per-call allocation.
 local slotsScratch = {}
 
--- Cache: unit -> { specId, hideExternalDefensives, result } — invalidated by the talent callback.
+-- Cache: unit -> { specId, hideExternalDefensives, result } - invalidated by the talent callback.
 local staticAbilitiesCache = {}
 
 local noCastSucceeded = select(4, GetBuildInfo()) >= 120005
@@ -59,6 +59,7 @@ end
 ---@class FcdStaticAbility
 ---@field SpellId number
 ---@field IsOffensive boolean
+---@field MaxCharges number? Effective max charges (nil = single charge)
 
 ---Returns ordered list of abilities for a unit's known spells (spec rules first, then class fallback).
 ---Used to populate static icon slots that are always visible regardless of cooldown state.
@@ -74,7 +75,7 @@ local function GetStaticAbilities(unit)
 
 	local _, instanceType = IsInInstance()
 	local hideExternalDefensives = noCastSucceeded
-		and (instanceType == "raid" or instanceType == "pvp")
+		and (instanceOptions:IsRaid() or instanceType == "pvp")
 
 	local cached = staticAbilitiesCache[unit]
 	if cached and cached.specId == specId and cached.hideExternalDefensives == hideExternalDefensives then
@@ -117,8 +118,17 @@ local function GetStaticAbilities(unit)
 				end
 				if not excluded and not required then
 					seen[rule.SpellId] = true
-					result[#result + 1] =
-						{ SpellId = rule.SpellId, IsOffensive = rules.OffensiveSpellIds[rule.SpellId] == true }
+					local maxCharges = nil
+					local ruleBaseCharges = rule.BaseCharges or 1
+					if (rule.MaxCharges or ruleBaseCharges) > 1 then
+						local mc = fcdTalents:GetUnitMaxCharges(unit, specId, classToken, rule.SpellId)
+						maxCharges = math.max(ruleBaseCharges, mc)
+					end
+					result[#result + 1] = {
+						SpellId = rule.SpellId,
+						IsOffensive = rules.OffensiveSpellIds[rule.SpellId] == true,
+						MaxCharges = maxCharges,
+					}
 				end
 			end
 		end
@@ -201,15 +211,38 @@ local function AppendStaticSlots(slots, entry, now, showTooltips, iconOptions, p
 			local durationObject = nil
 			local glow = nil
 			local onCooldown = false
-			if cd and now < cd.StartTime + cd.Cooldown then
-				-- Confirmed cooldown running: show the CD swipe.
-				durationObject = wowEx:CreateDuration(cd.StartTime, cd.Cooldown)
-				onCooldown = true
-			elseif predictiveGlow and entry.PredictedGlows[ability.SpellId] then
-				-- Buff still active (no CD committed yet): count down the aura duration so
-				-- the icon shows how long the buff has left rather than being empty.
-				durationObject = entry.PredictedGlowDurations[ability.SpellId]
+			local chargeText = nil
+			if cd then
+				-- For multi-charge abilities, derive the effective start from the earliest charge's
+				-- stored expiry so the timer reflects sequential recharge (not raw use time).
+				local startTime = cd.UsedCharges and cd.UsedCharges[1]
+					and (cd.UsedCharges[1].Expiry - cd.Cooldown)
+					or cd.StartTime
+				if now < startTime + cd.Cooldown then
+					-- Confirmed cooldown running: show the CD swipe from the earliest charge.
+					durationObject = wowEx:CreateDuration(startTime, cd.Cooldown)
+					if cd.MaxCharges and cd.MaxCharges > 1 then
+						local usedCount = cd.UsedCharges and #cd.UsedCharges or 1
+						local available = cd.MaxCharges - usedCount
+						onCooldown = available == 0
+						chargeText = tostring(available)
+					else
+						onCooldown = true
+					end
+				end
+			end
+			if predictiveGlow and entry.PredictedGlows[ability.SpellId] then
+				-- Buff is active: always glow, regardless of whether a charge is also recharging.
+				-- When no CD is running yet, also show the aura duration countdown.
 				glow = true
+				if not durationObject then
+					durationObject = entry.PredictedGlowDurations[ability.SpellId]
+				end
+			elseif not durationObject then
+				if ability.MaxCharges and ability.MaxCharges > 1 then
+					-- All charges available: show the max charge count.
+					chargeText = tostring(ability.MaxCharges)
+				end
 			end
 			slots[#slots + 1] = {
 				Texture = texture,
@@ -220,6 +253,7 @@ local function AppendStaticSlots(slots, entry, now, showTooltips, iconOptions, p
 				Desaturate = iconOptions.DesaturateOnCooldown and onCooldown,
 				Glow = glow,
 				FontScale = db.FontScale,
+				ChargeText = chargeText,
 			}
 		end
 	end

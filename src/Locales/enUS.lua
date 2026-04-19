@@ -33,8 +33,6 @@ L:SetDefaultStrings({
 	["Icon Padding"] = "Icon Padding",
 	["Icon Size"] = "Icon Size",
 	["Important"] = "Important",
-	["Important Notes"] = "Important Notes",
-	["Limitations:"] = "Limitations:",
 	["Max Icons"] = "Max Icons",
 	["Notification"] = "Notification",
 	["Offset X"] = "Offset X",
@@ -182,15 +180,9 @@ L:SetDefaultStrings({
 	["Text Size"] = "Text Size",
 
 	-- Kick Timer tab
-	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - Currently only works inside arena (doesn't work in duels/world, will add this later).",
-	[" - Doesn't work if the enemy misses kick (still investigating potential workaround/solution)."] = " - Doesn't work if the enemy misses kick (still investigating potential workaround/solution).",
-	["As you can tell it's not guaranteed to be accurate, but so far from our testing it's pretty damn good with ancedotally a 95%+ success rate."] = "As you can tell it's not guaranteed to be accurate, but so far from our testing it's pretty damn good with ancedotally a 95%+ success rate.",
-	["For example you are facing 3 enemies who are all pressing buttons."] = "For example you are facing 3 enemies who are all pressing buttons.",
-	["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."] = "How does it work? It guesses who kicked you by correlating enemy action events against interrupt events.",
+	["As of 12.0.5, the caster of an interrupt can no longer be identified. This module now just displays a generic icon using the shortest known enemy kick cooldown."] = "As of 12.0.5, the caster of an interrupt can no longer be identified. This module now just displays a generic icon using the shortest known enemy kick cooldown.",
 	["Kick timer"] = "Kick timer",
 	["Kick timer_Short"] = "Kick Timer",
-	["Still working on improving this, so stay tuned for updates."] = "Still working on improving this, so stay tuned for updates.",
-	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you.",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical).",
@@ -232,7 +224,7 @@ L:SetDefaultStrings({
 	["Friendly Cooldowns_Short"] = "Friendly CDs",
 	["Icon Spacing"] = "Icon Spacing",
 	["Spells"] = "Spells",
-	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires.",
+	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames."] = "Shows PvP trinket and friendly defensive cooldowns on party/raid frames.",
 ["Excludes yourself from being tracked."] = "Excludes yourself from being tracked.",
 	["Milliseconds"] = "Milliseconds",
 	["Milliseconds Threshold"] = "Milliseconds Threshold",
@@ -299,7 +291,7 @@ L:SetDefaultStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - Added precognition guesser module that shows when you get precog.",
 	[" - Added profile import/export feature."] = " - Added profile import/export feature.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!",
-	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon.",
+	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them.",
 	[" - Added enemy cooldown tracking module."] = " - Added enemy cooldown tracking module.",
 	["MiniCC - What's New?"] = "MiniCC - What's New?",
 })

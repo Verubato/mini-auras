@@ -225,7 +225,7 @@ end
 
 ---Resets the current profile to factory defaults.
 ---Uses MutateTableInPlace on db.Modules so table references captured by Config UI
----closures at Build time remain valid — controls keep working after the reset.
+---closures at Build time remain valid - controls keep working after the reset.
 function M:ResetCurrentProfileToDefaults()
 	if not db or not migrator then return end
 	-- Reset primitive payload keys; FillDefaults will restore them from dbDefaults.

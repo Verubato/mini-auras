@@ -1,4 +1,4 @@
--- Entry point for the MiniCC FriendlyCooldowns test suite.
+-- Entry point for the MiniCC Cooldowns test suite.
 -- Run from the repository root:
 --
 --   lua tests/run_all.lua
@@ -7,13 +7,26 @@
 
 package.path = "tests/helpers/?.lua;tests/?.lua;" .. package.path
 
-io.write("MiniCC — FriendlyCooldowns unit tests\n")
+io.write("MiniCC - Cooldowns unit tests\n")
 io.write("======================================\n")
 
 local testFiles = {
     "tests/test_rules.lua",
     "tests/test_find_best_candidate.lua",
     "tests/test_predict_pve_12_0_5.lua",
+    "tests/test_match_rule.lua",
+    "tests/test_find_best_candidate_extended.lua",
+    "tests/test_predict_extended.lua",
+    "tests/test_evidence_pipeline.lua",
+    "tests/test_enemy_matching.lua",
+    "tests/test_multicharge.lua",
+    "tests/test_simulator_2v2.lua",
+    "tests/test_simulator_3v3.lua",
+    "tests/test_cross_class_ext.lua",
+    "tests/test_phase_shift.lua",
+    "tests/test_time_stop.lua",
+    "tests/test_local_player_alias.lua",
+    "tests/test_dispersion_dp.lua",
 }
 
 local loadErrors = {}

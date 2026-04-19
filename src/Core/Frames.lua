@@ -596,7 +596,7 @@ function M:GW2UIFrames(visibleOnly)
 			if unit and unit ~= "" then
 				Add(child)
 			else
-				-- sub-group frame — walk one level deeper
+				-- sub-group frame - walk one level deeper
 				for _, grandchild in ipairs({ child:GetChildren() }) do
 					local gcUnit = grandchild.unit or (grandchild.GetAttribute and grandchild:GetAttribute("unit"))
 					if gcUnit and gcUnit ~= "" then

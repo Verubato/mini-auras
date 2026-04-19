@@ -6,6 +6,13 @@ local Masque = LibStub and LibStub("Masque", true)
 local masqueReskinPending = {}
 local fontUtil = addon.Utils.FontUtil
 local cachedDb = nil
+
+local function UpdateChargeTextFontSize(chargeText, iconSize)
+	local font, _, flags = chargeText:GetFont()
+	if font then
+		chargeText:SetFont(font, math.floor(iconSize * 0.35), flags)
+	end
+end
 -- Reused across Layout() calls to avoid a table allocation on the hot path
 local layoutScratch = {}
 local frameIdCounter = 0
@@ -197,6 +204,9 @@ local function ClearLayerData(layer, glowFrame)
 	end
 	layer.Icon:SetTexture(nil)
 	layer.Cooldown:Clear()
+	if layer.ChargeText then
+		layer.ChargeText:Hide()
+	end
 	if LCG then
 		if glowFrame._ProcGlow and LCG.ProcGlow_Stop then
 			LCG.ProcGlow_Stop(glowFrame)
@@ -678,6 +688,9 @@ function M:SetIconSize(newSize)
 				local fontScale = layer.Cooldown.FontScale or 1.0
 				fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, fontScale)
 			end
+			if layer and layer.ChargeText then
+				UpdateChargeTextFontSize(layer.ChargeText, self.Size)
+			end
 
 			if slot.ExtraLayers then
 				for _, el in ipairs(slot.ExtraLayers) do
@@ -689,6 +702,9 @@ function M:SetIconSize(newSize)
 							el.Cooldown.DesiredIconSize = self.Size
 							local fontScale = el.Cooldown.FontScale or 1.0
 							fontUtil:UpdateCooldownFontSize(el.Cooldown, self.Size, nil, fontScale)
+						end
+						if el.ChargeText then
+							UpdateChargeTextFontSize(el.ChargeText, self.Size)
 						end
 					end
 				end
@@ -820,9 +836,24 @@ function M:SetSlot(slotIndex, options)
 		layer.Cooldown:Clear()
 		layer.Cooldown:SetDrawSwipe(false)
 	end
-	-- Query IsShown() AFTER setting the cooldown — the frame hides itself when the
+	-- Query IsShown() AFTER setting the cooldown - the frame hides itself when the
 	-- duration is zero or expired, so this is the authoritative "on cooldown" check.
 	layer.Icon:SetDesaturated(options.Desaturate and layer.Cooldown:IsShown() or false)
+
+	if options.ChargeText then
+		if not layer.ChargeText then
+			local overlay = CreateFrame("Frame", nil, layer.Frame)
+			overlay:SetAllPoints(layer.Frame)
+			overlay:SetFrameLevel(layer.Cooldown:GetFrameLevel() + 1)
+			layer.ChargeText = overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+			layer.ChargeText:SetPoint("BOTTOMRIGHT", layer.Frame, "BOTTOMRIGHT", -3, 1)
+		end
+		UpdateChargeTextFontSize(layer.ChargeText, self.Size)
+		layer.ChargeText:SetText(options.ChargeText)
+		layer.ChargeText:Show()
+	elseif layer.ChargeText then
+		layer.ChargeText:Hide()
+	end
 
 	ApplyAlpha(layer.Frame, options.Alpha)
 

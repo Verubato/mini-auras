@@ -396,7 +396,7 @@ function M:Build(panel)
 	noteText:SetWidth(mini.ContentWidth or 600)
 	noteText:SetJustifyH("LEFT")
 
-	-- Spec rows — built lazily on first panel show because spec data is unavailable
+	-- Spec rows - built lazily on first panel show because spec data is unavailable
 	-- at ADDON_LOADED time (only ready after PLAYER_LOGIN).
 	local specRows = {}
 	local specRowsBuilt = false

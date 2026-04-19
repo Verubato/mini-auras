@@ -48,8 +48,8 @@ local function OnSpecInformationChanged()
 	end
 end
 
--- Lazily built map of "Spec Name Class Name" → specId for tooltip matching.
--- e.g. "Discipline Priest" → 256, "Holy Paladin" → 65, etc.
+-- Lazily built map of "Spec Name Class Name" -> specId for tooltip matching.
+-- e.g. "Discipline Priest" -> 256, "Holy Paladin" -> 65, etc.
 local tooltipSpecMap = nil
 
 local function GetTooltipSpecMap()
@@ -331,7 +331,7 @@ function M:Init()
 		return
 	end
 
-	-- Persist the GUID→spec cache in saved variables so it survives reloads.
+	-- Persist the GUID->spec cache in saved variables so it survives reloads.
 	local db = addon.Core.Framework:GetSavedVars()
 	db.SpecCache = db.SpecCache or {}
 	unitGuidToSpec = db.SpecCache

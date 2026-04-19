@@ -1609,7 +1609,7 @@ function M:CreateStandaloneWindow(options)
 	end)
 	window:Hide()
 
-	-- Border only — fill is provided by gradient textures below
+	-- Border only - fill is provided by gradient textures below
 	window:SetBackdrop({
 		bgFile = "Interface\\Buttons\\WHITE8X8",
 		edgeFile = "Interface\\Buttons\\WHITE8X8",
@@ -1683,7 +1683,7 @@ function M:CreateStandaloneWindow(options)
 	content:SetPoint("TOPLEFT", accentLine, "BOTTOMLEFT", pad, -(pad + 1))
 	content:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -(pad + 1), pad + 1)
 
-	-- ESC key closes this window (via OnKeyDown, not UISpecialFrames — avoids being
+	-- ESC key closes this window (via OnKeyDown, not UISpecialFrames - avoids being
 	-- closed when Blizzard's settings panel closes)
 	window:SetPropagateKeyboardInput(true)
 	window:EnableKeyboard(true)

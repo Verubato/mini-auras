@@ -36,8 +36,6 @@ L:SetStrings({
 	["Icon Padding"] = "Отступ иконки",
 	["Icon Size"] = "Размер иконки",
 	["Important"] = "Важное",
-	["Important Notes"] = "Важные заметки",
-	["Limitations:"] = "Ограничения:",
 	["Max Icons"] = "Макс. иконок",
 	["Notification"] = "Уведомление",
 	["Offset X"] = "Смещение X",
@@ -185,15 +183,8 @@ L:SetStrings({
 	["Text Size"] = "Размер текста",
 
 	-- Kick Timer tab
-	[" - Currently only works inside arena (doesn't work in duels/world, will add this later)."] = " - В настоящее время работает только на арене (не работает в дуэлях/мире, добавим позже).",
-	[" - Doesn't work if the enemy misses kick (still investigating potential workaround/solution)."] = " - Не работает, если враг промахнулся прерыванием (исследуем возможные решения).",
-	["As you can tell it's not guaranteed to be accurate, but so far from our testing it's pretty damn good with ancedotally a 95%+ success rate."] = "Как видите, точность не гарантирована, но по нашим тестам система работает очень хорошо с неофициальной точностью 95%+.",
-	["For example you are facing 3 enemies who are all pressing buttons."] = "Например, вы сражаетесь с 3 противниками, которые все нажимают кнопки.",
-	["How does it work? It guesses who kicked you by correlating enemy action events against interrupt events."] = "Как это работает? Система угадывает, кто вас прервал, сопоставляя действия врагов с событиями прерывания.",
 	["Kick timer"] = "Таймер прерывания",
 	["Kick timer_Short"] = "Прерыв.",
-	["Still working on improving this, so stay tuned for updates."] = "Продолжаем улучшать это, следите за обновлениями.",
-	["You just got kicked and the last enemy who successfully landed a spell was enemy A, therefore we deduce it was enemy A who kicked you."] = "Вас только что прервали, и последний враг, успешно применивший заклинание, был противник A, поэтому мы делаем вывод, что именно противник A прервал вас.",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Изменить цвет свечения/границы в зависимости от типа рассеивания (напр. синий для магии, красный для физического).",
@@ -235,7 +226,7 @@ L:SetStrings({
 	["Friendly Cooldowns_Short"] = "Перезар. союзн.",
 	["Icon Spacing"] = "Промежуток между иконками",
 	["Spells"] = "Заклинания",
-	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."] = "Показывает перезарядки PvP-украшения и защитных умений союзников на фреймах группы/рейда после окончания защиты.",
+	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames."] = "Показывает перезарядки PvP-украшения и защитных умений союзников на фреймах группы/рейда после окончания защиты.",
 ["Excludes yourself from being tracked."] = "Исключает вас из отслеживания.",
 	["Milliseconds"] = "Миллисекунды",
 	["Milliseconds Threshold"] = "Порог миллисекунд",
@@ -254,7 +245,7 @@ L:SetStrings({
 	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Показывает наступательные откаты, такие как Горение, Аватар и Ярость дракона.",
 	["Rows"] = "Ряды",
 	["Columns"] = "Столбцы",
-	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Когда направление роста — Вниз, определяет количество иконок в одном ряду до переноса. Полезно для горизонтальных рамок группы.",
+	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Когда направление роста - Вниз, определяет количество иконок в одном ряду до переноса. Полезно для горизонтальных рамок группы.",
 
 	-- Enemy Cooldown Tracker tab
 	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "Отображает откаты защитных и наступательных способностей противников на арене после истечения их баффов.",
@@ -301,7 +292,7 @@ L:SetStrings({
 	[" - Added precognition guesser module that shows when you get precog."] = " - Добавляет модуль угадывания предвидения, который показывает, когда вы получаете предвидение.",
 	[" - Added profile import/export feature."] = " - Добавлена функция импорта/экспорта профиля.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Добавлен модуль угадывания откатов союзников. Теперь вы можете примерно отслеживать откаты ваших товарищей по команде!",
-	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "ВНИМАНИЕ: В патче 12.0.5 (21 апреля) Blizzard вносит изменения, которые значительно снизят точность отслеживания КД союзников, отключат подсветку откатов при нажатии и полностью уберут отслеживание вражеских прерываний в PvP. Поэтому имейте в виду, что точность отслеживания скоро снизится.",
+	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "С новыми ограничениями Blizzard в патче 12.0.5 в MiniCC произошли следующие изменения.\n\nХорошие новости:\n* Отслеживание кулдаунов по-прежнему в основном работает в аренах и подземельях.\n* Добавлена поддержка нескольких зарядов заклинаний (например, 2x Подавление боли, 2x Размытие) для кулдаунов союзников и врагов.\n\nПлохие новости:\n* Внешние заклинания союзников больше не отслеживаются в рейдах и на полях боя.\n* Предсказывающее свечение стало менее надёжным.\n* Отслеживание кика в PvP больше не может определить, кто прервал. Теперь отображается только общая иконка с наименьшим известным кулдауном прерывания врага.\n\nМы вложили много труда в это обновление, но проблемы всё ещё могут возникать. \nПожалуйста, сообщайте о найденных ошибках в нашем Discord, чтобы мы могли их исправить.",
 	[" - Added enemy cooldown tracking module."] = " - Добавлен модуль отслеживания перезарядки врагов.",
 	["MiniCC - What's New?"] = "MiniCC - Что нового?",
 })

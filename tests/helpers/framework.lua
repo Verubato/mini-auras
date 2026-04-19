@@ -42,6 +42,26 @@ function M.it(name, fn)
 	end
 end
 
+---Declares a test case that is expected to fail (known ambiguity / known limitation).
+-- A failure counts as [xfail] and is added to the pass count.
+-- An unexpected pass counts as [XPASS] and is added to the fail count.
+function M.xfail(name, fn)
+	local ok, err = pcall(function()
+		if _beforeEach then _beforeEach() end
+		fn()
+	end)
+	if ok then
+		_failures = _failures + 1
+		io.write("    [XPASS] " .. name .. "\n")
+		io.write("           XPASS: marked xfail but passed - remove from knownAmbiguities\n")
+		_errors[#_errors + 1] = string.format("(%s) %s\n           XPASS: marked xfail but passed unexpectedly",
+			_suiteName or "?", name)
+	else
+		_passes = _passes + 1
+		io.write("    [xfail] " .. name .. "\n")
+	end
+end
+
 -- Assertions
 
 function M.eq(actual, expected, label)

@@ -38,6 +38,11 @@ local function makeTalents()
 		return baseCooldown
 	end
 
+	-- Default: return 1 (no talent-granted extra charges).
+	function t:GetUnitMaxCharges(unit, specId, classToken, abilityId)
+		return 1
+	end
+
 	function t:RegisterTalentCallback(fn) end
 
 	-- Test helpers
@@ -154,7 +159,7 @@ function M.get()
 	addon.Modules.Cooldowns.Talents  = talents
 	addon.Modules.Cooldowns.Observer = observer
 
-	-- Rules is a pure data file — load it for real.
+	-- Rules is a pure data file - load it for real.
 	loadModule("src/Modules/Cooldowns/Rules.lua", addon)
 
 	-- Brain registers its observer callbacks via RegisterWithObserver.

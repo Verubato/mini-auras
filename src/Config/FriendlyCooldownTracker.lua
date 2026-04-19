@@ -562,7 +562,7 @@ function M:Build(panel, default, raid)
 	local description = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			L["Shows PvP trinket and friendly defensive cooldowns on party/raid frames after a defensive expires."],
+			L["Shows PvP trinket and friendly defensive cooldowns on party/raid frames."],
 		},
 	})
 	description:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
