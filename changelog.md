@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.11.0
+
+- 12.0.5 support and fixes for cooldown tracking.
+- Added spell charges support.
+- Various bug fixes.
+
 ## 3.10.0
 
 - 12.0.5 improvements for cooldown tracking.
