@@ -63,7 +63,6 @@ local function reset()
     B:RegisterPredictiveGlowCallback(nil)
     B:RegisterCooldownCallback(nil)
     B:RegisterActiveCooldownsLookup(nil)
-    B:_TestSetSimulateNoCastSucceeded(false)
 end
 
 local function inferAuraTypes(rule)
@@ -104,8 +103,9 @@ end
 
 local function fireNonCastEvidence(rule, unit)
     local req = rule.RequiresEvidence
-    if type(req) ~= "table" then return end
-    for _, r in ipairs(req) do
+    if not req then return end
+    local list = type(req) == "table" and req or { req }
+    for _, r in ipairs(list) do
         if r == "Debuff" then
             observer:_fireDebuffEvidence(unit, {
                 isFullUpdate = false,
@@ -143,27 +143,26 @@ end
 -- those are non-EXT self-cast rules where party3 is not in the candidate list.
 local knownAmbiguities3v3 = {
     bySpec = {
-        -- Holy Paladin: 2v2 predict ambiguities inherited; BoSpellwarding predict+commit ambiguous.
-        [65] = {
-            [31884]  = { predict = true },
-            [216331] = { predict = true },
-            [204018] = { predict = true, commit = true },
-        },
-        -- Protection Paladin: same.
+        -- Holy Paladin: BoSpellwarding predict+commit ambiguous (party3 candidate matches BoP instead).
+        [65] = { [204018] = { predict = true, commit = true } },
+        -- Protection Paladin: GAoK structurally ambiguous with Ardent Defender; BoSpellwarding same.
         [66] = {
-            [31884]  = { predict = true },
-            [389539] = { predict = true },
             [86659]  = { predict = true, commit = true },
             [204018] = { predict = true, commit = true },
         },
-        -- Retribution Paladin: same.
+        -- Retribution Paladin: Divine Protection (403876) predict-ambiguous with AW (no duration gate
+        -- in predict path); commit correctly resolves via duration check.  BoSpellwarding ambiguous.
         [70] = {
-            [31884]  = { predict = true },
             [403876] = { predict = true },
             [204018] = { predict = true, commit = true },
         },
     },
-    byClass = {},
+    byClass = {
+        -- Blessing of Freedom (1044): CastableOnOthers, no RequiresEvidence.
+        -- party2 and party3 (both non-local Paladins) have no UNIT_SPELLCAST_SUCCEEDED -> no snapshot.
+        -- The "only_evidence" filter skips RequiresEvidence=nil rules in the evidence-only COO fallback.
+        PALADIN = { [1044] = { predict = true } },
+    },
 }
 
 local function sortedKeys(t, cmp)
@@ -197,7 +196,6 @@ local function runRuleTests(source, specId, classToken, rule)
     --   RequiresTalent.  Models a teammate whose talent state is unknown; their presence
     --   creates the 3v3 commit ambiguity for rules that fire no real cast evidence.
     local function setupFriendly()
-        B:_TestSetSimulateNoCastSucceeded(true)
         if hasCaster then
             wow.setUnitClass("party1", "WARRIOR")
             wow.setUnitClass("party2", classToken)

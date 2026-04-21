@@ -1,4 +1,4 @@
----@type string, Addon
+--@type string, Addon
 local _, addon = ...
 
 addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
@@ -36,7 +36,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 31884,
 				MinDuration = true,
 				ExcludeIfTalent = 216331,
@@ -47,7 +46,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 216331,
 				MinDuration = true,
 				RequiresTalent = 216331,
@@ -58,7 +56,7 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = { "Cast", "UnitFlags" },
+				RequiresEvidence = "UnitFlags",
 				CanCancelEarly = true,
 				SpellId = 642,
 			}, -- Divine Shield
@@ -68,7 +66,6 @@ local rules = {
 				BigDefensive = true,
 				Important = true,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 498,
 			}, -- Divine Protection
 			{
@@ -78,7 +75,7 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				RequiresEvidence = { "Debuff", "UnitFlags" },
 				SpellId = 1022,
 				ExcludeIfTalent = 5692,
 			}, -- Blessing of Protection (excluded when Spellwarding talented; both share the same 300s CD)
@@ -89,7 +86,7 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				RequiresEvidence = { "Debuff", "UnitFlags" },
 				SpellId = 204018,
 				CastSpellId = 1022,
 				RequiresTalent = 5692,
@@ -100,7 +97,7 @@ local rules = {
 				ExternalDefensive = true,
 				BigDefensive = false,
 				Important = false,
-				RequiresEvidence = { "Cast", "Shield" },
+				RequiresEvidence = "Shield",
 				SelfCastable = false,
 				SpellId = 6940,
 			}, -- Blessing of Sacrifice
@@ -113,7 +110,6 @@ local rules = {
 				ExternalDefensive = false,
 				BigDefensive = false,
 				MinDuration = true,
-				RequiresEvidence = "Cast",
 				SpellId = 31884,
 				ExcludeIfTalent = 389539,
 			}, -- Avenging Wrath (hidden if Sentinel talented)
@@ -124,7 +120,6 @@ local rules = {
 				ExternalDefensive = false,
 				BigDefensive = false,
 				MinDuration = true,
-				RequiresEvidence = "Cast",
 				SpellId = 389539,
 				RequiresTalent = 389539,
 				ExcludeIfTalent = 31884,
@@ -135,7 +130,7 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = { "Cast", "UnitFlags" },
+				RequiresEvidence = "UnitFlags",
 				CanCancelEarly = true,
 				SpellId = 642,
 			}, -- Divine Shield
@@ -146,7 +141,6 @@ local rules = {
 				Important = true,
 				ExternalDefensive = false,
 				SpellId = 31850,
-				RequiresEvidence = "Cast",
 			}, -- Ardent Defender
 			{
 				BuffDuration = 8,
@@ -154,7 +148,6 @@ local rules = {
 				BigDefensive = true,
 				Important = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 86659,
 				MaxCharges = 2,
 			}, -- Guardian of Ancient Kings
@@ -165,7 +158,7 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				RequiresEvidence = { "Debuff", "UnitFlags" },
 				SpellId = 1022,
 				ExcludeIfTalent = 5692,
 			}, -- Blessing of Protection (excluded when Spellwarding talented; both share the same 300s CD)
@@ -176,7 +169,7 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				RequiresEvidence = { "Debuff", "UnitFlags" },
 				SpellId = 204018,
 				CastSpellId = 1022,
 				RequiresTalent = 5692,
@@ -187,7 +180,7 @@ local rules = {
 				ExternalDefensive = true,
 				BigDefensive = false,
 				Important = false,
-				RequiresEvidence = { "Cast", "Shield" },
+				RequiresEvidence = "Shield",
 				SelfCastable = false,
 				SpellId = 6940,
 			}, -- Blessing of Sacrifice
@@ -199,7 +192,6 @@ local rules = {
 				Important = true,
 				ExternalDefensive = false,
 				BigDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 31884,
 				ExcludeIfTalent = 458359,
 			}, -- Avenging Wrath (hidden if Radiant Glory talented)
@@ -209,7 +201,7 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = { "Cast", "UnitFlags" },
+				RequiresEvidence = "UnitFlags",
 				CanCancelEarly = true,
 				SpellId = 642,
 			}, -- Divine Shield
@@ -219,7 +211,7 @@ local rules = {
 				Important = true,
 				ExternalDefensive = false,
 				BigDefensive = false,
-				RequiresEvidence = { "Cast", "Shield" },
+				RequiresEvidence = "Shield",
 				SpellId = 403876,
 			}, -- Divine Protection (90s base for Ret)
 			{
@@ -229,7 +221,7 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				RequiresEvidence = { "Debuff", "UnitFlags" },
 				SpellId = 1022,
 				ExcludeIfTalent = 5573,
 			}, -- Blessing of Protection (excluded when Spellwarding talented; both share the same 300s CD)
@@ -240,7 +232,7 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				RequiresEvidence = { "Debuff", "UnitFlags" },
 				SpellId = 204018,
 				CastSpellId = 1022,
 				RequiresTalent = 5573,
@@ -251,7 +243,7 @@ local rules = {
 				ExternalDefensive = true,
 				BigDefensive = false,
 				Important = false,
-				RequiresEvidence = { "Cast", "Shield" },
+				RequiresEvidence = "Shield",
 				SelfCastable = false,
 				SpellId = 6940,
 			}, -- Blessing of Sacrifice
@@ -263,7 +255,6 @@ local rules = {
 				Important = true,
 				ExternalDefensive = false,
 				BigDefensive = false,
-				RequiresEvidence = "Cast",
 				MinDuration = true,
 				SpellId = 365350,
 			}, -- Arcane Surge
@@ -275,7 +266,7 @@ local rules = {
 				Important = true,
 				CanCancelEarly = true,
 				SpellId = 45438,
-				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				RequiresEvidence = { "Debuff", "UnitFlags" },
 				ExcludeIfTalent = 414659,
 			}, -- Ice Block
 		},
@@ -286,7 +277,6 @@ local rules = {
 				Important = true,
 				ExternalDefensive = false,
 				BigDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 190319,
 				MinDuration = true,
 			}, -- Combustion
@@ -298,7 +288,7 @@ local rules = {
 				Important = true,
 				CanCancelEarly = true,
 				SpellId = 45438,
-				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				RequiresEvidence = { "Debuff", "UnitFlags" },
 				ExcludeIfTalent = 414659,
 			}, -- Ice Block
 		},
@@ -311,7 +301,7 @@ local rules = {
 				Important = true,
 				CanCancelEarly = true,
 				SpellId = 45438,
-				RequiresEvidence = { "Cast", "Debuff", "UnitFlags" },
+				RequiresEvidence = { "Debuff", "UnitFlags" },
 				ExcludeIfTalent = 414659,
 				MaxCharges = 2,
 			}, -- Ice Block
@@ -323,7 +313,7 @@ local rules = {
 				Important = true,
 				SpellId = 414659,
 				CastSpellId = 414658,
-				RequiresEvidence = { "Cast", "Debuff" },
+				RequiresEvidence = "Debuff",
 				RequiresTalent = 414659,
 				MaxCharges = 2,
 			}, -- Ice Cold (replaces Ice Block)
@@ -335,7 +325,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				SpellId = 118038,
 			}, -- Die by the Sword
 			{
@@ -344,7 +333,6 @@ local rules = {
 				Important = true,
 				ExternalDefensive = false,
 				BigDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 107574,
 				MinDuration = true,
 				RequiresTalent = 107574,
@@ -357,7 +345,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				SpellId = 184364,
 				RequiresTalent = 184364,
 			}, -- Enraged Regeneration
@@ -367,7 +354,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				SpellId = 184364,
 				RequiresTalent = 184364,
 			}, -- Enraged Regeneration + duration talent
@@ -377,7 +363,6 @@ local rules = {
 				Important = true,
 				ExternalDefensive = false,
 				BigDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 107574,
 				MinDuration = true,
 				RequiresTalent = 107574,
@@ -390,7 +375,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				SpellId = 871,
 				MaxCharges = 2,
 			}, -- Shield Wall
@@ -400,7 +384,6 @@ local rules = {
 				Important = true,
 				ExternalDefensive = false,
 				BigDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 107574,
 				MinDuration = true,
 				RequiresTalent = 107574,
@@ -413,7 +396,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				MinDuration = true,
 				SpellId = 51271,
 			},
@@ -425,7 +407,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				SpellId = 55233,
 			}, -- Vampiric Blood
 			{
@@ -434,7 +415,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				SpellId = 55233,
 			}, -- Vampiric Blood + Goreringers Anguish rank 1 (+2s)
 			{
@@ -443,7 +423,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				SpellId = 55233,
 			}, -- Vampiric Blood + Goreringers Anguish rank 2 (+4s)
 		},
@@ -454,7 +433,6 @@ local rules = {
 				ExternalDefensive = true,
 				BigDefensive = false,
 				Important = false,
-				RequiresEvidence = "Cast",
 				SpellId = 33206,
 				MaxCharges = 2,
 			},
@@ -467,7 +445,6 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
 				SpellId = 47788,
 				ExcludeIfTalent = 440738,
 			}, -- Guardian Spirit
@@ -478,7 +455,6 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
 				SpellId = 47788,
 				RequiresTalent = 440738,
 			}, -- Guardian Spirit (Foreseen Circumstances)
@@ -490,7 +466,6 @@ local rules = {
 				ExternalDefensive = false,
 				CanCancelEarly = true,
 				MinCancelDuration = 1.5, -- Phase Shift (PvP talent) applies a 1s IMPORTANT buff on Fade; exclude it
-				RequiresEvidence = "Cast",
 				SpellId = 64843,
 			}, -- Divine Hymn
 		},
@@ -503,7 +478,6 @@ local rules = {
 				Important = true,
 				CrowdControl = true,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
 				SpellId = 47585,
 			}, -- Dispersion
 			{
@@ -514,7 +488,6 @@ local rules = {
 				Important = true,
 				CrowdControl = true,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
 				SpellId = 47585,
 				RequiresTalent = 453729,
 			}, -- Dispersion + Heightened Alteration (+2s)
@@ -524,7 +497,6 @@ local rules = {
 				Important = true,
 				ExternalDefensive = false,
 				BigDefensive = false,
-				RequiresEvidence = "Cast",
 				-- Archon Sustainted Potency can increase the duration
 				MinDuration = true,
 				SpellId = 228260,
@@ -537,7 +509,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				MinDuration = true,
 				SpellId = 102560,
 				MaxCharges = 2,
@@ -550,7 +521,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				MinDuration = true,
 				SpellId = 106951,
 				RequiresTalent = 106951,
@@ -562,7 +532,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 102543,
 				RequiresTalent = 102543,
 			}, -- Feral Druid: Incarnation: Avatar of Ashamane (shown when 102543 talented; Berserk self-excludes via ExcludeIfTalent=102543)
@@ -574,7 +543,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 102558,
 			},
 		}, -- Guardian Druid: Incarnation: Guardian of Ursoc
@@ -585,7 +553,6 @@ local rules = {
 				ExternalDefensive = true,
 				BigDefensive = false,
 				Important = false,
-				RequiresEvidence = "Cast",
 				SpellId = 102342,
 			},
 		}, -- Restoration Druid: Ironbark
@@ -596,7 +563,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 132578,
 			}, -- Invoke Niuzao, the Black Ox
 			{
@@ -605,7 +571,6 @@ local rules = {
 				BigDefensive = true,
 				Important = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 115203,
 			}, -- Fortifying Brew
 		},
@@ -617,10 +582,21 @@ local rules = {
 				BigDefensive = false,
 				Important = false,
 				CanCancelEarly = true,
-				RequiresEvidence = { "Cast", "Shield" },
+				RequiresEvidence = "Shield",
 				SpellId = 116849,
 			},
 		}, -- Mistweaver Monk: Life Cocoon
+		[269] = { -- Windwalker Monk
+			{
+				BuffDuration = 15,
+				Cooldown = 90,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				BaseCharges = 2,
+				SpellId = 1249625,
+			}, -- Zenith
+		},
 		[577] = { -- Havoc Demon Hunter
 			{
 				BuffDuration = 10,
@@ -628,7 +604,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				SpellId = 198589,
 				MaxCharges = 2,
 			}, -- Blur
@@ -640,7 +615,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = false,
-				RequiresEvidence = "Cast",
 				SpellId = 198589,
 				MaxCharges = 2,
 			}, -- Blur
@@ -653,7 +627,6 @@ local rules = {
 				ExternalDefensive = false,
 				Important = false,
 				MinDuration = true,
-				RequiresEvidence = "Cast",
 				SpellId = 204021,
 			}, -- Fiery Brand
 			{
@@ -662,7 +635,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 187827,
 			}, -- Metamorphosis
 			{
@@ -671,7 +643,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 187827,
 			}, -- Metamorphosis +5s (Vengeful Beast)
 		},
@@ -682,7 +653,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 288613,
 			}, -- Marksmanship Hunter: Trueshot
 			{
@@ -691,7 +661,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 288613,
 			}, -- Marksmanship Hunter: Trueshot +2s
 		},
@@ -702,7 +671,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 1250646,
 			}, -- Takedown
 			{
@@ -711,7 +679,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 1250646,
 			}, -- Takedown +2s
 		},
@@ -722,7 +689,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 121471,
 			}, -- Subtlety Rogue: Shadow Blades
 			{
@@ -731,7 +697,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 121471,
 			}, -- Shadow Blades +2s (set bonus)
 			{
@@ -740,7 +705,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 121471,
 			}, -- Shadow Blades +4s (set bonus)
 		},
@@ -751,7 +715,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				MinDuration = true,
 				SpellId = 375087,
 			},
@@ -763,7 +726,6 @@ local rules = {
 				ExternalDefensive = true,
 				BigDefensive = false,
 				Important = false,
-				RequiresEvidence = "Cast",
 				SpellId = 357170,
 				MaxCharges = 2,
 			},
@@ -775,7 +737,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				MinDuration = true,
 				SpellId = 363916,
 				MaxCharges = 2,
@@ -789,7 +750,7 @@ local rules = {
 				CrowdControl = true,
 				CanCancelEarly = true,
 				CastableOnOthers = true,
-				RequiresEvidence = { "Cast", "UnitFlags" },
+				RequiresEvidence = "UnitFlags",
 				SpellId = 378441,
 				RequiresTalent = { 5463, 5464, 5619 },
 			}, -- Time Stop (PvP talent)
@@ -801,7 +762,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 114052,
 				RequiresTalent = 114052,
 			}, -- Ascendance
@@ -813,7 +773,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 114050,
 				RequiresTalent = 114050,
 			}, -- Ascendance
@@ -823,7 +782,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 114050,
 				RequiresTalent = 114050,
 			}, -- Ascendance +3s (Preeminence)
@@ -835,7 +793,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 384352,
 				RequiresTalent = 384352,
 				ExcludeIfTalent = { 114051, 378270 },
@@ -846,7 +803,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 384352,
 				RequiresTalent = 384352,
 				ExcludeIfTalent = { 114051, 378270 },
@@ -857,7 +813,6 @@ local rules = {
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 114051,
 				RequiresTalent = 114051,
 			}, -- Ascendance
@@ -871,7 +826,7 @@ local rules = {
 				BigDefensive = true,
 				Important = true,
 				ExternalDefensive = false,
-				RequiresEvidence = { "Cast", "UnitFlags" },
+				RequiresEvidence = "UnitFlags",
 				CanCancelEarly = true,
 				SpellId = 642,
 			}, -- Divine Shield
@@ -884,7 +839,6 @@ local rules = {
 				CrowdControl = false, -- BoF is not a CC; rejects Time Stop (CrowdControl=true) false matches
 				CanCancelEarly = true,
 				MinCancelDuration = 1.5, -- Phase Shift (PvP talent) applies a 1s IMPORTANT buff on Fade; exclude it
-				RequiresEvidence = "Cast",
 				CastableOnOthers = true,
 				SpellId = 1044,
 			}, -- Blessing of Freedom
@@ -900,7 +854,6 @@ local rules = {
 				CanCancelEarly = true,
 				SpellId = 342246,
 				CastSpellId = { 342245, 342247 },
-				RequiresEvidence = "Cast",
 			}, -- Alter Time
 		},
 		HUNTER = {
@@ -912,7 +865,7 @@ local rules = {
 				Important = true,
 				CanCancelEarly = true,
 				SpellId = 186265,
-				RequiresEvidence = { "Cast", "UnitFlags" },
+				RequiresEvidence = "UnitFlags",
 			}, -- Aspect of the Turtle
 			{
 				BuffDuration = 6,
@@ -922,7 +875,6 @@ local rules = {
 				Important = true,
 				MinDuration = true,
 				SpellId = 264735,
-				RequiresEvidence = "Cast",
 				MaxCharges = 2,
 			}, -- Survival of the Fittest
 			{
@@ -933,7 +885,6 @@ local rules = {
 				Important = true,
 				MinDuration = true,
 				SpellId = 264735,
-				RequiresEvidence = "Cast",
 				MaxCharges = 2,
 			}, -- Survival of the Fittest + Survival of the Fittest talent (+2s)
 		},
@@ -944,7 +895,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				SpellId = 22812,
 			}, -- Barkskin
 			{
@@ -953,7 +903,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				SpellId = 22812,
 			}, -- Barkskin + Improved Barkskin (+4s)
 		},
@@ -964,7 +913,6 @@ local rules = {
 				Important = true,
 				ExternalDefensive = false,
 				BigDefensive = false,
-				RequiresEvidence = "Cast",
 				SpellId = 5277,
 			}, -- Evasion
 			{
@@ -973,7 +921,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = false,
-				RequiresEvidence = "Cast",
 				SpellId = 31224,
 			}, -- Cloak of Shadows
 		},
@@ -986,7 +933,7 @@ local rules = {
 				ExternalDefensive = false,
 				CanCancelEarly = true,
 				SpellId = 48707,
-				RequiresEvidence = { "Cast", "Shield" },
+				RequiresEvidence = "Shield",
 			}, -- Anti-Magic Shell (BigDefensive, without Spellwarding)
 			{
 				BuffDuration = 7,
@@ -996,7 +943,7 @@ local rules = {
 				ExternalDefensive = false,
 				CanCancelEarly = true,
 				SpellId = 48707,
-				RequiresEvidence = { "Cast", "Shield" },
+				RequiresEvidence = "Shield",
 			}, -- Anti-Magic Shell + Anti-Magic Barrier (+40%) (BigDefensive, without Spellwarding)
 			{
 				BuffDuration = 8,
@@ -1004,7 +951,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				SpellId = 48792,
 			}, -- Icebound Fortitude
 			{
@@ -1017,7 +963,7 @@ local rules = {
 				SpellId = 48707,
 				CastSpellId = 410358,
 				CastableOnOthers = true,
-				RequiresEvidence = { "Cast", "Shield" },
+				RequiresEvidence = "Shield",
 			}, -- Anti-Magic Shell (Spellwarding self-cast, or cast on ally)
 			{
 				BuffDuration = 7,
@@ -1029,7 +975,7 @@ local rules = {
 				CastableOnOthers = true,
 				SpellId = 48707,
 				CastSpellId = 410358,
-				RequiresEvidence = { "Cast", "Shield" },
+				RequiresEvidence = "Shield",
 			}, -- Anti-Magic Shell + AMB +40% (Spellwarding self-cast, or cast on ally)
 		},
 		DEMONHUNTER = {},
@@ -1040,7 +986,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = false,
-				RequiresEvidence = "Cast",
 				SpellId = 115203,
 			},
 		}, -- Fortifying Brew
@@ -1051,7 +996,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				SpellId = 108271,
 			},
 		}, -- Astral Shift
@@ -1062,7 +1006,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				SpellId = 104773,
 			}, -- Unending Resolve
 			{
@@ -1072,7 +1015,6 @@ local rules = {
 				BigDefensive = false,
 				ExternalDefensive = false,
 				CanCancelEarly = true,
-				RequiresEvidence = "Cast",
 				SpellId = 212295,
 				RequiresTalent = { 18, 3508, 3624 },
 			}, -- Nether Ward (PvP talent)
@@ -1084,7 +1026,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				SpellId = 19236,
 			}, -- Desperate Prayer
 		},
@@ -1095,7 +1036,6 @@ local rules = {
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
-				RequiresEvidence = "Cast",
 				MinDuration = true,
 				SpellId = 363916,
 				MaxCharges = 2,
@@ -1109,29 +1049,13 @@ local rules = {
 				CrowdControl = true,
 				CanCancelEarly = true,
 				CastableOnOthers = true,
-				RequiresEvidence = { "Cast", "UnitFlags" },
+				RequiresEvidence = "UnitFlags",
 				SpellId = 378441,
 				RequiresTalent = { 5463, 5464, 5619 },
 			}, -- Time Stop (PvP talent)
 		},
 	},
 }
-
--- Zenith is only trackable in build 12.0.5+
-if select(4, GetBuildInfo()) >= 120005 then
-	rules.BySpec[269] = { -- Windwalker Monk
-		{
-			BuffDuration = 15,
-			Cooldown = 90,
-			Important = true,
-			BigDefensive = false,
-			ExternalDefensive = false,
-			BaseCharges = 2,
-			RequiresEvidence = "Cast",
-			SpellId = 1249625,
-		}, -- Zenith
-	}
-end
 
 -- Spell IDs treated as offensive cooldowns for the ShowOffensiveCooldowns option.
 local offensiveSpellIds = {

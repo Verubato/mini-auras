@@ -20,7 +20,6 @@ local B    = mods.brain
 
 local function reset()
     B._TestReset()
-    B:_TestSetSimulateNoCastSucceeded(false)
     wow.reset()
     mods.talents._reset()
 end
@@ -41,11 +40,7 @@ end
 fw.describe("MatchRule - evidence requirement: nil (no constraint)", function()
     fw.before_each(reset)
 
-    -- Desperate Prayer: PRIEST class, BIG+IMP, RequiresEvidence="Cast", BuffDuration=10
-    -- We test a rule that has no evidence requirement; Barkskin has RequiresEvidence="Cast",
-    -- so use Fortifying Brew (Monk class, BIG, RequiresEvidence="Cast", BuffDuration=15).
-    -- There is no rule with RequiresEvidence=nil in the current set, so we test via
-    -- a rule that passes when the required evidence IS present.
+    -- Barkskin (DRUID class): BIG+IMP, BuffDuration=8, no RequiresEvidence (Cast was removed in 12.0.5).
 
     fw.it("Barkskin matches when Cast evidence is present", function()
         wow.setUnitClass("party1", "DRUID")
@@ -54,20 +49,17 @@ fw.describe("MatchRule - evidence requirement: nil (no constraint)", function()
         fw.eq(rule.SpellId, 22812, "SpellId should be Barkskin")
     end)
 
-    fw.it("Barkskin does not match when Cast evidence is absent", function()
+    fw.it("Barkskin matches with no evidence (no RequiresEvidence after 12.0.5 Cast removal)", function()
         wow.setUnitClass("party1", "DRUID")
         local rule = matchRule("party1", BIG, 8.0, { Evidence = nil })
-        fw.is_nil(rule, "Barkskin requires Cast evidence")
+        fw.not_nil(rule, "Barkskin has no RequiresEvidence; matches with nil evidence")
+        fw.eq(rule.SpellId, 22812, "SpellId Barkskin")
     end)
 end)
 
--- Section 2: EvidenceMatchesReq - req = false (requires NO evidence)
--- No current live rule uses RequiresEvidence=false, but the logic path exists.
--- We test it indirectly: when evidence IS present for a req="Cast" rule the match works;
--- absence breaks it.  The false-req path is already exercised implicitly by the evidence=nil
--- tests above; here we test the "no evidence at all" pass-through scenario.
+-- Section 2: Evasion (ROGUE class): IMP, BuffDuration=10, no RequiresEvidence (Cast was removed in 12.0.5).
 
-fw.describe("MatchRule - evidence requirement: string ('Cast')", function()
+fw.describe("MatchRule - evidence requirement: no constraint (Evasion)", function()
     fw.before_each(reset)
 
     fw.it("Evasion matches Rogue with Cast evidence", function()
@@ -77,23 +69,24 @@ fw.describe("MatchRule - evidence requirement: string ('Cast')", function()
         fw.eq(rule.SpellId, 5277, "Evasion")
     end)
 
-    fw.it("Evasion does not match Rogue with Shield evidence only (wrong type)", function()
+    fw.it("Evasion matches Rogue with Shield evidence (no RequiresEvidence)", function()
         wow.setUnitClass("party1", "ROGUE")
         local rule = matchRule("party1", IMP, 10.0, { Evidence = { Shield = true } })
-        fw.is_nil(rule, "Cast is required, Shield alone does not satisfy it")
+        fw.not_nil(rule, "Evasion has no RequiresEvidence; any evidence is fine")
+        fw.eq(rule.SpellId, 5277, "Evasion")
     end)
 
-    fw.it("Evasion does not match Rogue with no evidence", function()
+    fw.it("Evasion matches Rogue with no evidence (no RequiresEvidence)", function()
         wow.setUnitClass("party1", "ROGUE")
         local rule = matchRule("party1", IMP, 10.0, { Evidence = nil })
-        fw.is_nil(rule, "Cast evidence absent -> no match")
+        fw.not_nil(rule, "Evasion has no RequiresEvidence; matches with nil evidence")
+        fw.eq(rule.SpellId, 5277, "Evasion")
     end)
 
     fw.it("Evasion matches with both Cast and extra irrelevant evidence (Debuff)", function()
         wow.setUnitClass("party1", "ROGUE")
-        -- Extra evidence types should not block a string requirement.
         local rule = matchRule("party1", IMP, 10.0, { Evidence = { Cast = true, Debuff = true } })
-        fw.not_nil(rule, "extra evidence types should not block a Cast-only requirement")
+        fw.not_nil(rule, "extra evidence does not block a nil-requirement rule")
         fw.eq(rule.SpellId, 5277, "Evasion")
     end)
 end)
@@ -101,8 +94,10 @@ end)
 fw.describe("MatchRule - evidence requirement: table (all must be present)", function()
     fw.before_each(reset)
 
-    -- Divine Shield (PALADIN class): RequiresEvidence={"Cast","UnitFlags"}, BIG+IMP, BuffDuration=8
-    -- Ice Block (MAGE class): RequiresEvidence={"Cast","Debuff","UnitFlags"}, BIG+IMP, BuffDuration=10
+    -- Divine Shield (PALADIN class): RequiresEvidence="UnitFlags", BIG+IMP, BuffDuration=8
+    --   (Cast was removed in 12.0.5; only UnitFlags is now required)
+    -- Ice Block (MAGE spec64): RequiresEvidence={"Debuff","UnitFlags"}, BIG+IMP, BuffDuration=10
+    --   (Cast was removed in 12.0.5; Debuff+UnitFlags are now required)
 
     fw.it("Divine Shield matches when Cast+UnitFlags both present", function()
         wow.setUnitClass("party1", "PALADIN")
@@ -114,13 +109,14 @@ fw.describe("MatchRule - evidence requirement: table (all must be present)", fun
     fw.it("Divine Shield does not match when only Cast is present (UnitFlags missing)", function()
         wow.setUnitClass("party1", "PALADIN")
         local rule = matchRule("party1", BIG, 8.0, { Evidence = { Cast = true } })
-        fw.is_nil(rule, "both Cast and UnitFlags are required")
+        fw.is_nil(rule, "DS requires UnitFlags; Cast alone is not enough")
     end)
 
-    fw.it("Divine Shield does not match when only UnitFlags is present (Cast missing)", function()
+    fw.it("Divine Shield matches when only UnitFlags is present (Cast no longer required)", function()
         wow.setUnitClass("party1", "PALADIN")
         local rule = matchRule("party1", BIG, 8.0, { Evidence = { UnitFlags = true } })
-        fw.is_nil(rule, "both Cast and UnitFlags are required")
+        fw.not_nil(rule, "DS requires only UnitFlags; Cast is no longer required")
+        fw.eq(rule.SpellId, 642, "Divine Shield")
     end)
 
     fw.it("Ice Block matches when Cast+Debuff+UnitFlags all present", function()
@@ -131,19 +127,22 @@ fw.describe("MatchRule - evidence requirement: table (all must be present)", fun
         fw.eq(rule.SpellId, 45438, "Ice Block")
     end)
 
-    fw.it("Ice Block does not match when only UnitFlags+Debuff present (Cast missing) -> Alter Time also fails -> nil", function()
+    fw.it("Ice Block matches when Debuff+UnitFlags present (Cast no longer required)", function()
         wow.setUnitClass("party1", "MAGE")
         mods.talents._setSpec("party1", 64)
-        -- Neither Ice Block (needs Cast+Debuff+UnitFlags) nor Alter Time (needs Cast) can match
-        -- without Cast evidence.  Ice Cold (RequiresTalent=414659, not set) is also excluded.
+        -- Ice Block now requires only {Debuff, UnitFlags} (Cast removed in 12.0.5).
         local rule = matchRule("party1", BIG, 10.0, { Evidence = { UnitFlags = true, Debuff = true } })
-        fw.is_nil(rule, "Cast absent -> both Ice Block and Alter Time fail their RequiresEvidence check")
+        fw.not_nil(rule, "Ice Block requires Debuff+UnitFlags; both present -> matches")
+        fw.eq(rule.SpellId, 45438, "Ice Block")
     end)
 
-    fw.it("Ice Block does not match with no evidence", function()
+    fw.it("Alter Time matches with no evidence when no spec set (class-level, no RequiresEvidence)", function()
         wow.setUnitClass("party1", "MAGE")
+        -- Without spec, only MAGE class rules apply. Alter Time (342246) has no RequiresEvidence
+        -- and matches a 10s BIG aura.  Ice Block is spec64-only and not applicable here.
         local rule = matchRule("party1", BIG, 10.0, { Evidence = nil })
-        fw.is_nil(rule, "no evidence -> table requirement fails")
+        fw.not_nil(rule, "Alter Time has no RequiresEvidence; matches class-level with nil evidence")
+        fw.eq(rule.SpellId, 342246, "Alter Time")
     end)
 end)
 

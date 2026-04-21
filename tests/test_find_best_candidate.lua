@@ -38,7 +38,6 @@ local IMP = { IMPORTANT = true }                                -- Avenging Crus
 
 local function reset()
     B._TestReset()
-    B:_TestSetSimulateNoCastSucceeded(false)
     wow.reset()
     mods.talents._reset()
 end
@@ -107,12 +106,12 @@ fw.describe("FindBestCandidate - self-cast BIG_DEFENSIVE", function()
     end)
 end)
 
--- Section 3: Cast snapshot tiebreaking (pre-12.0.5)
+-- Section 3: Cast snapshot tiebreaking
 -- Ironbark (spec 105, EXTERNAL_DEFENSIVE, BuffDuration 12, RequiresEvidence="Cast")
 -- party1 = Warrior (receives buff, cannot be the caster)
 -- party2/party3 = Resto Druid (caster candidates)
 
-fw.describe("FindBestCandidate - cast snapshot tiebreaking (pre-12.0.5)", function()
+fw.describe("FindBestCandidate - cast snapshot tiebreaking", function()
     fw.before_each(function()
         reset()
         wow.setUnitClass("party1", "WARRIOR")
@@ -150,37 +149,14 @@ fw.describe("FindBestCandidate - cast snapshot tiebreaking (pre-12.0.5)", functi
         fw.eq(unit, "party3", "party3 has the more recent snapshot")
     end)
 
-    fw.it("ignores cast snapshot outside the cast window", function()
-        -- party2 cast 4 s before the aura appeared - outside the 0.15 s window
-        -- -> no Cast evidence for party2 -> Ironbark (RequiresEvidence="Cast") fails -> nil
-        local t = makeTracked(EXT, 5.0, { party2 = 1.0 })
-        local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 12.0, { "party2" })
-        fw.is_nil(rule, "cast outside window should not count as evidence")
-    end)
 end)
 
--- Section 4: Ambiguity and bestIsTarget (pre-12.0.5)
--- Note: pre-12.0.5 requires real cast snapshots for RequiresEvidence="Cast" rules.
--- The scenarios below use cast snapshots to satisfy evidence, then examine how
--- multiple matches interact.
+-- Section 4: Ambiguity and bestIsTarget
 
-fw.describe("FindBestCandidate - ambiguity and bestIsTarget (pre-12.0.5)", function()
+fw.describe("FindBestCandidate - ambiguity and bestIsTarget", function()
     fw.before_each(reset)
 
-    fw.it("two non-target casters, same rule, neither has snapshot -> both fail RequiresEvidence -> nil", function()
-        wow.setUnitClass("party1", "WARRIOR")
-        wow.setUnitClass("party2", "DRUID")
-        wow.setUnitClass("party3", "DRUID")
-        mods.talents._setSpec("party2", 105)
-        mods.talents._setSpec("party3", 105)
-        -- No snapshots -> Ironbark RequiresEvidence="Cast" fails for both
-        local t = makeTracked(EXT, 5.0, {})
-        local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 12.0, { "party2", "party3" })
-        fw.is_nil(rule, "should be nil - no cast evidence for either")
-    end)
-
-    fw.it("target (Druid) + non-target (Druid), same rule, no real cast -> non-target overwrites target", function()
-        -- On pre-12.0.5, BOTH have cast snapshots to satisfy RequiresEvidence="Cast".
+    fw.it("target (Druid) + non-target (Druid), same rule -> non-target with newer snapshot wins", function()
         -- party1 (target, Druid spec 105) has an older snapshot; party2 (non-target) has a newer one.
         -- The more-recent-snapshot path (isBetter condition 2) picks party2.
         wow.setUnitClass("party1", "DRUID")
@@ -193,12 +169,9 @@ fw.describe("FindBestCandidate - ambiguity and bestIsTarget (pre-12.0.5)", funct
         fw.eq(unit, "party2", "party2 has newer snapshot -> wins")
     end)
 
-    fw.it("non-target with newer snapshot wins over target (different rules, pre-12.0.5 snapshot tiebreak)", function()
-        -- On pre-12.0.5 with real cast snapshots, snapshot recency is the authoritative tiebreaker -
-        -- even when the two candidates match different rules.  party2 (Paladin->BoF) has a more
-        -- recent snapshot than party1 (Druid->Ironbark), so BoF wins.
-        -- The bestIsTarget/Ironbark-vs-BoF ambiguity case only arises on 12.0.5 (no real snapshot
-        -- data), which is covered by the dedicated 12.0.5 test section.
+    fw.it("non-target with newer snapshot wins over target (different rules, snapshot tiebreak)", function()
+        -- party2 (Paladin->BoF) has a more recent snapshot than party1 (Druid->Ironbark),
+        -- so BoF wins via snapshot recency tiebreaker (isBetter condition 2).
         wow.setUnitClass("party1", "DRUID")
         wow.setUnitClass("party2", "PALADIN")
         mods.talents._setSpec("party1", 105)   -- Resto Druid -> Ironbark
@@ -217,7 +190,6 @@ end)
 fw.describe("FindBestCandidate - 12.0.5 synthetic cast", function()
     fw.before_each(function()
         reset()
-        B:_TestSetSimulateNoCastSucceeded(true)
     end)
 
     fw.it("BIG_DEFENSIVE: candidate loop skipped -> two Druids do not create ambiguity", function()
@@ -377,7 +349,6 @@ end)
 fw.describe("FindBestCandidate - AMS Spellwarding on ally (12.0.5)", function()
     fw.before_each(function()
         reset()
-        B:_TestSetSimulateNoCastSucceeded(true)
     end)
 
     fw.it("DK candidate matches CastableOnOthers AMS on non-DK target via synthetic cast", function()
@@ -447,7 +418,6 @@ end)
 fw.describe("FindBestCandidate - EXTERNAL_DEFENSIVE with incidental Shield evidence", function()
     fw.before_each(function()
         reset()
-        B:_TestSetSimulateNoCastSucceeded(true)
     end)
 
     fw.it("Blessing of Sacrifice tracks even when Shield evidence is present", function()
@@ -511,7 +481,6 @@ end)
 fw.describe("FindBestCandidate - local player unit alias excluded from EXT when no cast (12.0.5)", function()
     fw.before_each(function()
         reset()
-        B:_TestSetSimulateNoCastSucceeded(true)
     end)
 
     fw.it("Life Cocoon self-cast not confused with BoSac when local Paladin is raid2 with no cast", function()
@@ -591,7 +560,6 @@ end)
 fw.describe("FindBestCandidate - SelfCastable=false (Blessing of Sacrifice)", function()
     fw.before_each(function()
         reset()
-        B:_TestSetSimulateNoCastSucceeded(true)
     end)
 
     fw.it("self-cast fallback does not attribute BoSac to the target Paladin", function()

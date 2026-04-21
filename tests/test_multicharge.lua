@@ -35,7 +35,6 @@ local IMP = { IMPORTANT = true }
 
 local function reset()
     B._TestReset()
-    B:_TestSetSimulateNoCastSucceeded(true)   -- 12.0.5 mode throughout
     wow.reset()
     mods.talents._reset()
     B:RegisterPredictiveGlowCallback(nil)
@@ -186,7 +185,6 @@ end)
 fw.describe("FindBestCandidate - multi-charge alreadyOnCd check", function()
     fw.before_each(function()
         reset()
-        B:_TestSetSimulateNoCastSucceeded(true)
         wow.setUnitClass("arena1", "MONK")
         mods.talents._setSpec("arena1", 269)
     end)

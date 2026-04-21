@@ -21,7 +21,6 @@ local AURA_ID = 8001   -- distinct from all other test files
 
 local function reset()
     B._TestReset()
-    B:_TestSetSimulateNoCastSucceeded(true)   -- 12.0.5 / arena mode throughout
     wow.reset()
     mods.talents._reset()
     B:RegisterPredictiveGlowCallback(nil)

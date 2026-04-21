@@ -42,7 +42,6 @@ local EXT = { EXTERNAL_DEFENSIVE = true }
 
 local function reset()
     B._TestReset()
-    B:_TestSetSimulateNoCastSucceeded(false)  -- default: pre-12.0.5
     wow.reset()
     mods.talents._reset()
     B:RegisterPredictiveGlowCallback(nil)
@@ -71,120 +70,78 @@ local function makeBigImportantWatcher(unit)
     return loader.makeWatcher({ { AuraInstanceID = AURA_ID } }, {})
 end
 
--- Section 1: Pre-12.0.5 cross-unit Blessing of Freedom prediction
+-- Section 1: Cross-unit Blessing of Freedom prediction
 --
 -- BoF is CastableOnOthers: when a Paladin casts it on a Warrior ally, the aura appears
 -- as IMPORTANT-only on the Warrior.  PredictRule takes the non-EXT path, finds no self-only
--- match on the Warrior, then scans candidateUnits for CastableOnOthers rules.  The Paladin
--- has a real cast snapshot -> BoF predicted with the Paladin as casterUnit.
+-- match on the Warrior, then scans candidateUnits for CastableOnOthers rules.
+-- In 12.0.5+, UNIT_SPELLCAST_SUCCEEDED fires only for the local "player", so BoF can only
+-- be predicted when the local player is the Paladin caster (has a real cast snapshot).
+-- Non-local Paladin candidates have no snapshot and BoF has no RequiresEvidence, so the
+-- "only_evidence" filter skips them in the evidence-only fallback.
 
-fw.describe("PredictRule pre-12.0.5 - cross-unit BoF from Paladin caster", function()
-    fw.before_each(reset)  -- pre-12.0.5
+fw.describe("PredictRule - cross-unit BoF from Paladin caster", function()
+    fw.before_each(reset)
 
-    fw.it("predicts BoF when Paladin has a real cast snapshot and Warrior is the target", function()
+    fw.it("predicts BoF when local Paladin ('player') has a real cast snapshot and Warrior is the target", function()
+        -- In 12.0.5, UNIT_SPELLCAST_SUCCEEDED fires for "player" -> snapshot recorded.
+        -- The cross-unit CastableOnOthers loop finds the local Paladin via snapshot.
         wow.setUnitClass("party1", "WARRIOR")  -- target; no self-only IMPORTANT rules
-        wow.setUnitClass("party2", "PALADIN")  -- caster with BoF (CastableOnOthers)
+        wow.setUnitClass("player", "PALADIN")  -- local Paladin caster; snapshot IS recorded
 
         local entry = loader.makeEntry("party1")
         local getGlow, getCaster = captureGlow()
 
         wow.setTime(0)
-        observer:_fireCast("party2", 1044)   -- BoF cast by Paladin; records lastCastTime[party2]
-
-        -- IMPORTANT-only aura appears on Warrior at T=0.
-        local watcher = makeImportantWatcher()
-        observer:_fireAuraChanged(entry, watcher, { "party1", "party2" })
-
-        fw.eq(getGlow(), 1044, "BoF should be predicted via cross-unit CastableOnOthers path")
-        fw.eq(getCaster(), "party2", "Paladin should be attributed as the caster")
-    end)
-
-    fw.it("no prediction when Paladin cast snapshot is outside the cast window (stale)", function()
-        wow.setUnitClass("party1", "WARRIOR")
-        wow.setUnitClass("party2", "PALADIN")
-
-        local entry = loader.makeEntry("party1")
-        local getGlow = captureGlow()
-
-        -- Paladin cast BoF 1s ago; aura appears now at T=1.0 -> cast delta = 1.0 > 0.15s window.
-        wow.setTime(0)
-        observer:_fireCast("party2", 1044)
-        wow.setTime(1.0)
+        observer:_fireCast("player", 1044)   -- local Paladin casts BoF; snapshot recorded for "player"
 
         local watcher = makeImportantWatcher()
-        observer:_fireAuraChanged(entry, watcher, { "party1", "party2" })
+        observer:_fireAuraChanged(entry, watcher, { "party1", "player" })
 
-        fw.is_nil(getGlow(), "stale snapshot outside 0.15s window -> no Cast evidence -> no BoF prediction")
+        fw.eq(getGlow(), 1044, "BoF predicted via local Paladin's cast snapshot")
+        fw.eq(getCaster(), "player", "local Paladin attributed as caster")
     end)
 
     fw.it("Warrior target excluded from CastableOnOthers path (no CastableOnOthers rules)", function()
-        -- Warrior has no CastableOnOthers IMPORTANT rules, so consider(party1, true, "only")
-        -- finds nothing.  The Paladin candidate wins via the cross-unit CastableOnOthers loop.
-        -- NOTE: we do NOT fire a cast for party1 (Warrior) because a known spellId in the window
-        -- that matches no tracked rule triggers PredictRule's negative signal and returns nil early.
+        -- Warrior has no CastableOnOthers IMPORTANT rules, so self-cast finds nothing.
+        -- Local Paladin candidate wins via the cross-unit CastableOnOthers snapshot loop.
         wow.setUnitClass("party1", "WARRIOR")
-        wow.setUnitClass("party2", "PALADIN")
+        wow.setUnitClass("player", "PALADIN")
 
         local entry = loader.makeEntry("party1")
         local getGlow, getCaster = captureGlow()
 
         wow.setTime(0)
-        observer:_fireCast("party2", 1044)   -- Paladin cast BoF
+        observer:_fireCast("player", 1044)  -- local Paladin cast BoF
 
         local watcher = makeImportantWatcher()
-        observer:_fireAuraChanged(entry, watcher, { "party1", "party2" })
+        observer:_fireAuraChanged(entry, watcher, { "party1", "player" })
 
         fw.eq(getGlow(), 1044, "BoF predicted")
-        fw.eq(getCaster(), "party2", "Paladin is the attributed caster (Warrior has no CastableOnOthers rule)")
+        fw.eq(getCaster(), "player", "local Paladin attributed (Warrior has no CastableOnOthers rule)")
     end)
 
-    fw.it("two Paladins both match BoF -> same spell in PredictRule -> NOT ambiguous, first match kept", function()
-        -- PredictRule only sets ambiguous=true when two DIFFERENT spells match.
-        -- Two Paladins both have BoF -> same spell -> first match is kept.
+    fw.it("non-local Paladin without snapshot does not create ambiguity with local Paladin", function()
+        -- In 12.0.5, only the local player's UNIT_SPELLCAST_SUCCEEDED is recorded.
+        -- party2 (non-local Paladin) has no snapshot -> skipped in primary COO loop.
+        -- BoF has no RequiresEvidence -> also skipped by evidence-only fallback ("only_evidence" filter).
+        -- "player" (local Paladin) wins via snapshot -> BoF predicted unambiguously.
         wow.setUnitClass("party1", "WARRIOR")
+        wow.setUnitClass("player", "PALADIN")
         wow.setUnitClass("party2", "PALADIN")
-        wow.setUnitClass("party3", "PALADIN")
 
         local entry = loader.makeEntry("party1")
         local getGlow = captureGlow()
 
         wow.setTime(0)
-        observer:_fireCast("party2", 1044)
-        observer:_fireCast("party3", 1044)
+        observer:_fireCast("player", 1044)  -- only local player's cast is recorded
 
         local watcher = makeImportantWatcher()
-        observer:_fireAuraChanged(entry, watcher, { "party1", "party2", "party3" })
+        observer:_fireAuraChanged(entry, watcher, { "party1", "player", "party2" })
 
-        fw.eq(getGlow(), 1044, "BoF is predicted (same spell from two Paladins is not ambiguous in PredictRule)")
+        fw.eq(getGlow(), 1044, "BoF predicted from local Paladin; non-local Paladin without snapshot is not a candidate")
     end)
 
-    fw.it("BoF + self-only IMPORTANT on same Paladin target -> ambiguous (AW vs BoF cross-unit)", function()
-        -- Target IS a Paladin (spec 65). Self-only IMPORTANT check: AW matches (no talent, no cast, wrong).
-        -- Actually on pre-12.0.5: consider(party1, false, "exclude") -> Paladin self-cast IMPORTANT rules.
-        -- AW requires RequiresEvidence="Cast", MinDuration. Without cast evidence (no snapshot for party1
-        -- on the self-cast path), AW fails. So only BoF wins from the cross-unit Paladin candidate.
-        -- But: consider(party1, true, "only") also checks party1's BoF (CastableOnOthers=true).
-        -- party1 has no snapshot in CastableOnOthers path -> requires snapshot for "only" -> fails.
-        -- So the only match is party2's BoF -> predicted.
-        -- Note: This tests that a Paladin TARGET does NOT self-match BoF without snapshot.
-        wow.setUnitClass("party1", "PALADIN")
-        mods.talents._setSpec("party1", 65)
-        wow.setUnitClass("party2", "PALADIN")
-
-        local entry = loader.makeEntry("party1")
-        local getGlow, getCaster = captureGlow()
-
-        wow.setTime(0)
-        observer:_fireCast("party2", 1044)   -- party2 cast BoF on party1
-
-        local watcher = makeImportantWatcher()
-        observer:_fireAuraChanged(entry, watcher, { "party1", "party2" })
-
-        -- party1 has no snapshot -> consider(party1, true, "only") fails (no castTime, no syntheticOk in pre-12.0.5).
-        -- party2 has snapshot -> BoF matches.
-        fw.eq(getGlow(), 1044, "BoF predicted via party2 (party1 Paladin target has no snapshot)")
-        fw.eq(getCaster(), "party2", "party2 is the caster")
-    end)
 end)
 
 -- Section 2: RecordCast no-op on 12.0.5 for non-player units
@@ -192,7 +149,6 @@ end)
 fw.describe("RecordCast - no-op on 12.0.5 for non-player units", function()
     fw.before_each(function()
         reset()
-        B:_TestSetSimulateNoCastSucceeded(true)   -- 12.0.5 mode
     end)
 
     fw.it("cast by non-player unit is not recorded -> no Cast evidence in CastSnapshot", function()
@@ -361,14 +317,14 @@ fw.describe("MatchRule KnownSpellIds - ExcludeIfTalent still gates the fast path
         mods.talents._setTalent("party1", 216331, true)  -- Avenging Crusader -> excludes AW
 
         -- KnownSpellIds=[31884] (AW); talent 216331 is active -> ExcludeIfTalent blocks the fast path.
-        -- Falls through to normal matching: AW excluded by talent; AC (RequiresTalent=216331) needs
-        -- RequiresEvidence="Cast" but no evidence is supplied; BoF (CastableOnOthers) also needs Cast.
-        -- Neither AC nor BoF can satisfy their evidence requirement -> nil.
-        -- (No Evidence param = nil, so all evidence-gated rules fail.)
+        -- Falls through to normal matching: AW excluded by talent; AC (MinDuration, 10s) requires
+        -- 9.5s+ (8.0 < 9.5 -> fails duration); BoF (CanCancelEarly, 8s, CastableOnOthers) matches
+        -- 8.0s duration (within CanCancelEarly range) and has no RequiresEvidence -> nil evidence ok.
         local rule = B:MatchRule("party1", IMP, 8.0, {
             KnownSpellIds = { 31884 },
         })
-        fw.is_nil(rule, "ExcludeIfTalent active -> fast path blocked; fallback rules need Cast evidence -> nil")
+        fw.not_nil(rule, "ExcludeIfTalent blocks AW; BoF (8s CanCancelEarly) matches instead")
+        fw.eq(rule and rule.SpellId, 1044, "BoF matches 8s IMPORTANT when AW is excluded by Avenging Crusader talent")
     end)
 
     fw.it("KnownSpellIds matches when ExcludeIfTalent talent is absent", function()
@@ -485,7 +441,7 @@ end)
 -- With castSpellIdSnapshot=[31884] (AW), the fast path resolves it unambiguously.
 
 fw.describe("PredictRule - castSpellIdSnapshot disambiguates AW vs BoF for Paladin target", function()
-    fw.before_each(reset)  -- pre-12.0.5
+    fw.before_each(reset)
 
     fw.it("castSpellIdSnapshot=31884 predicts AW unambiguously (no BoF fallback)", function()
         wow.setUnitClass("player", "PALADIN")
@@ -534,7 +490,10 @@ fw.describe("PredictRule - castSpellIdSnapshot disambiguates AW vs BoF for Palad
         -- No cast event fired -> no castSpellIdSnapshot -> fast path not taken.
         -- consider(player, false, "exclude") -> AW (self-only, requires Cast) -> no Cast evidence -> fails.
         -- consider(player, true, "only") -> BoF (CastableOnOthers) -> requires Cast -> no snapshot -> fails.
-        -- Result: nil (no match in pre-12.0.5 without cast evidence).
+        -- Without synthetic cast, AW (no RequiresEvidence) predicts directly without needing
+        -- a cast snapshot.  BoF (no RequiresEvidence, CastableOnOthers) is in the COO-only
+        -- fallback which requires RequiresEvidence != nil ("only_evidence" filter) -> skipped.
+        -- So AW predicts cleanly for a Paladin without any cast snapshot.
         wow.setUnitClass("player", "PALADIN")
         mods.talents._setSpec("player", 65)
 
@@ -546,6 +505,6 @@ fw.describe("PredictRule - castSpellIdSnapshot disambiguates AW vs BoF for Palad
         local watcher = loader.makeWatcher({}, { { AuraInstanceID = AURA_ID } })
         observer:_fireAuraChanged(entry, watcher, { "player" })
 
-        fw.is_nil(getGlow(), "no cast snapshot in pre-12.0.5 -> AW and BoF both fail RequiresEvidence -> nil")
+        fw.eq(getGlow(), 31884, "AW predicts without snapshot; BoF skipped by only_evidence filter")
     end)
 end)

@@ -55,7 +55,6 @@ local function reset()
     B:RegisterPredictiveGlowCallback(nil)
     B:RegisterCooldownCallback(nil)
     B:RegisterActiveCooldownsLookup(nil)
-    B:_TestSetSimulateNoCastSucceeded(false)
 end
 
 -- Derive the minimal aura-type table from a rule's flags.
@@ -103,11 +102,11 @@ local function makePresenceWatcher(unit, auraTypes, id)
 end
 
 -- Fire non-Cast evidence events required by a rule on the given unit.
--- Cast evidence is supplied by the real cast event (friendly) or synthetic Cast (enemy).
 local function fireNonCastEvidence(rule, unit)
     local req = rule.RequiresEvidence
-    if type(req) ~= "table" then return end
-    for _, r in ipairs(req) do
+    if not req then return end
+    local list = type(req) == "table" and req or { req }
+    for _, r in ipairs(list) do
         if r == "Debuff" then
             observer:_fireDebuffEvidence(unit, {
                 isFullUpdate = false,
@@ -126,8 +125,9 @@ end
 local function buildNonCastEvidence(rule)
     local ev = {}
     local req = rule.RequiresEvidence
-    if type(req) == "table" then
-        for _, r in ipairs(req) do
+    if req then
+        local list = type(req) == "table" and req or { req }
+        for _, r in ipairs(list) do
             if r ~= "Cast" then ev[r] = true end
         end
     end
@@ -151,22 +151,24 @@ end
 --         knownAmbiguities.byClass[classToken][spellId] = { predict=true, commit=true }
 local knownAmbiguities = {
     bySpec = {
-        -- Holy Paladin: AW (31884) and AC (216331) are ambiguous with class BoF in 12.0.5
-        -- because both consider("exclude") and consider("only") produce synthetic Cast matches
-        -- for different SpellIds -> PredictRule returns nil.
-        [65] = { [31884] = { predict = true }, [216331] = { predict = true } },
-        -- Prot Paladin: AW (31884) and Sentinel (389539) same reason; Guardian of AK (86659)
-        -- is structurally ambiguous with Ardent Defender (both BIG+IMP+Cast+8s, listed first).
-        [66] = {
-            [31884]  = { predict = true },
-            [389539] = { predict = true },
-            [86659]  = { predict = true, commit = true },
-        },
-        -- Ret Paladin: AW (31884) same BoF ambiguity; DP (403876) IMP aura - AW is listed
-        -- first in spec70 and also matches the IMP aura type at the same duration.
-        [70] = { [31884] = { predict = true }, [403876] = { predict = true } },
+        -- Prot Paladin: Guardian of Ancient Kings (86659) is structurally ambiguous with
+        -- Ardent Defender (both BIG+IMP+8s, Ardent Defender listed first in spec66 rules).
+        -- PredictRule returns Ardent Defender; FindBestCandidate sees two different SpellIds
+        -- -> ambiguous -> nil.  Unresolvable without duration or talent data at detection time.
+        [66] = { [86659] = { predict = true, commit = true } },
+        -- Ret Paladin: Divine Protection (403876) is IMPORTANT+Shield, but Avenging Wrath (31884)
+        -- is also IMPORTANT with no evidence requirement and is listed first in spec70 rules.
+        -- PredictSpellIdForUnit has no duration gate, so AW always wins the predict pass;
+        -- MatchRule's duration check correctly rejects AW at commit time (24s != 8s).
+        [70] = { [403876] = { predict = true } },
     },
-    byClass = {},
+    byClass = {
+        -- Blessing of Freedom (1044): CastableOnOthers, no RequiresEvidence.
+        -- In 12.0.5 the Paladin caster (party2) has no UNIT_SPELLCAST_SUCCEEDED -> no snapshot.
+        -- The evidence-only COO fallback ("only_evidence" filter) skips rules with RequiresEvidence=nil,
+        -- so BoF cannot be predicted without a cast snapshot from the local player.
+        PALADIN = { [1044] = { predict = true } },
+    },
 }
 
 -- Sorted-keys helper for deterministic iteration.
@@ -196,7 +198,6 @@ local function runRuleTests(source, specId, classToken, rule)
 
     -- Set up friendly units and talents in 12.0.5 mode (synthetic Cast, no snapshots).
     local function setupFriendly()
-        B:_TestSetSimulateNoCastSucceeded(true)
         if hasCaster then
             wow.setUnitClass("party1", "WARRIOR")
             wow.setUnitClass("party2", classToken)
@@ -213,7 +214,6 @@ local function runRuleTests(source, specId, classToken, rule)
     -- Setting RequiresTalent activates any sibling rule's ExcludeIfTalent gate, so
     -- the correct (RequiresTalent) rule wins rather than the sibling matching first.
     local function setupEnemy()
-        B:_TestSetSimulateNoCastSucceeded(true)
         wow.setUnitClass("arena1", classToken)
         if specId then mods.talents._setSpec("arena1", specId) end
         setRequiredTalent("arena1", rule.RequiresTalent)

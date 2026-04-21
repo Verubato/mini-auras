@@ -2,7 +2,6 @@
 local _, addon = ...
 local mini = addon.Core.Framework
 local L = addon.L
-local supportsMilliseconds = select(4, GetBuildInfo()) >= 120005
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 ---@class MiscellaneousConfig
@@ -134,7 +133,6 @@ function M:Build(panel)
 
 	disableSwipeChk:SetPoint("TOPLEFT", ccNativeOrderChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	if supportsMilliseconds then
 	local millisThresholdSlider = mini:Slider({
 		Parent = panel,
 		LabelText = L["Milliseconds Threshold"],
@@ -155,5 +153,4 @@ function M:Build(panel)
 	})
 
 	millisThresholdSlider.Slider:SetPoint("TOPLEFT", disableSwipeChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
-	end
 end

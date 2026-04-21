@@ -29,7 +29,6 @@ local EXT = { EXTERNAL_DEFENSIVE = true }
 
 local function reset()
     B._TestReset()
-    B:_TestSetSimulateNoCastSucceeded(false)
     wow.reset()
     mods.talents._reset()
 end
@@ -76,15 +75,16 @@ fw.describe("FindBestCandidate - FeignDeath suppresses UnitFlags evidence", func
         fw.eq(rule.SpellId, 264735, "Survival of the Fittest (UnitFlags suppressed -> AotT excluded)")
     end)
 
-    fw.it("AotT is nil when evidence is FeignDeath-only with no CastSnapshot (no Cast anywhere)", function()
+    fw.it("FeignDeath-only, no UnitFlags, synthetic Cast (12.0.5) -> SotF matches (not AotT)", function()
         wow.setUnitClass("party1", "HUNTER")
-        -- No CastSnapshot and no Cast in evidence; FeignDeath only.
-        -- AotT needs Cast+UnitFlags (both absent) -> fails.
-        -- SotF needs Cast (absent) -> fails.
-        -- Result: nil.
+        -- No CastSnapshot; FeignDeath evidence only (no UnitFlags).
+        -- On 12.0.5, synthetic Cast is granted for non-local units.
+        -- AotT needs Cast+UnitFlags: Cast=synthetic, UnitFlags=absent -> AotT fails.
+        -- SotF needs Cast only: Cast=synthetic -> SotF matches (MinDuration=true, 8s >= 7.5).
         local t = makeTracked(BIG, 1.0, {}, { FeignDeath = true })
         local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 8.0, {})
-        fw.is_nil(rule, "FeignDeath only, no Cast (no snapshot) -> no Hunter BIG rule matches")
+        fw.not_nil(rule, "SotF matches via synthetic Cast (FeignDeath suppresses UnitFlags -> AotT excluded)")
+        fw.eq(rule.SpellId, 264735, "Survival of the Fittest")
     end)
 end)
 
@@ -141,7 +141,6 @@ end)
 fw.describe("FindBestCandidate - CastableOnOthers non-target beats target self-match (12.0.5)", function()
     fw.before_each(function()
         reset()
-        B:_TestSetSimulateNoCastSucceeded(true)
     end)
 
     -- isBetter condition 4: non-target matching a different CastableOnOthers rule beats the
@@ -187,7 +186,7 @@ fw.describe("FindBestCandidate - ActiveCooldowns with two candidates", function(
 
     -- Two Restoration Druids; Ironbark is on cooldown for party2 but not party3.
     -- party2's Ironbark is on CD -> skipped; party3's is not -> party3 wins.
-    -- (pre-12.0.5: real snapshots needed for RequiresEvidence="Cast")
+    -- (non-local units receive synthetic Cast if they have no real snapshot)
 
     fw.it("candidate with spell on CD is skipped; off-CD candidate wins", function()
         wow.setUnitClass("party1", "WARRIOR")  -- target
@@ -220,7 +219,6 @@ end)
 fw.describe("FindBestCandidate - GUID dedup in self-cast candidate loop (12.0.5)", function()
     fw.before_each(function()
         reset()
-        B:_TestSetSimulateNoCastSucceeded(true)
     end)
 
     -- On 12.0.5, a Paladin appearing as both "party1" (target) and "party2" (candidate) with
@@ -497,7 +495,6 @@ end)
 fw.describe("FindBestCandidate - BoS vs Life Cocoon ambiguity (12.0.5)", function()
     fw.before_each(function()
         reset()
-        B:_TestSetSimulateNoCastSucceeded(true)
     end)
 
     fw.it("ambiguous when Paladin (BoS) and Monk (Life Cocoon) are both off-CD candidates", function()
@@ -526,11 +523,8 @@ fw.describe("FindBestCandidate - BoS vs Life Cocoon ambiguity (12.0.5)", functio
         mods.talents._setSpec("party3", 270)
 
         -- CastSnapshot gives the paladin cast evidence so BoS resolves without ambiguity.
-        -- On 12.0.5 with synthetic Cast the monk also matches initially, but its spell is
-        -- on CD so it is treated as a fallback and the off-CD BoS wins cleanly.
-        -- Use pre-12.0.5 mode here (simulateNoCastSucceeded=false) to let real snapshots
-        -- drive the result; the CD-check behaviour is the same on both paths.
-        B:_TestSetSimulateNoCastSucceeded(false)
+        -- The monk also gets synthetic Cast but its spell is on CD so it is treated as
+        -- a fallback and the off-CD BoS wins cleanly.
         wow.setUnitClass("player", "WARRIOR") -- local player is an unrelated unit
 
         local entry = loader.makeEntry("party1", { [116849] = { MaxCharges = 1, UsedCharges = { 1 } } })
@@ -562,10 +556,9 @@ fw.describe("FindBestCandidate - BoS vs Life Cocoon ambiguity (12.0.5)", functio
         fw.eq(unit, "party4", "Monk is the caster")
     end)
 
-    fw.it("monk cast wins via cast-time tiebreaker over synthetic BoS candidate (pre-12.0.5)", function()
-        -- Pre-12.0.5: monk has real cast evidence for Life Cocoon; paladin has no cast snapshot.
-        -- BoS requires Cast evidence -> paladin fails RequiresEvidence -> only Life Cocoon matches.
-        B:_TestSetSimulateNoCastSucceeded(false)
+    fw.it("monk cast wins via cast-time tiebreaker over synthetic BoS candidate", function()
+        -- Monk has real cast evidence; paladin gets synthetic Cast only (no real snapshot).
+        -- Both match their respective EXT rule, but monk's real castTime beats paladin's nil castTime.
         wow.setUnitClass("party1", "WARRIOR")
         wow.setUnitClass("party2", "PALADIN")
         wow.setUnitClass("party3", "MONK")
@@ -624,7 +617,6 @@ end)
 fw.describe("FindBestCandidate - BoF commit in mixed group (CastableOnOthers cross-unit filter)", function()
     fw.before_each(function()
         reset()
-        B:_TestSetSimulateNoCastSucceeded(true)
     end)
 
     fw.it("BoF (party1=Paladin caster) commits on party2 (Evoker target) in mixed group", function()

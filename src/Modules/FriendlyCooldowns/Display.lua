@@ -49,8 +49,6 @@ local slotsScratch = {}
 -- Cache: unit -> { specId, hideExternalDefensives, result } - invalidated by the talent callback.
 local staticAbilitiesCache = {}
 
-local noCastSucceeded = select(4, GetBuildInfo()) >= 120005
-
 local function IsInArena()
 	local inInstance, instanceType = IsInInstance()
 	return inInstance and instanceType == "arena"
@@ -74,8 +72,7 @@ local function GetStaticAbilities(unit)
 	local specId = fcdTalents:GetUnitSpecId(unit)
 
 	local _, instanceType = IsInInstance()
-	local hideExternalDefensives = noCastSucceeded
-		and (instanceOptions:IsRaid() or instanceType == "pvp")
+	local hideExternalDefensives = instanceOptions:IsRaid() or instanceType == "pvp"
 
 	local cached = staticAbilitiesCache[unit]
 	if cached and cached.specId == specId and cached.hideExternalDefensives == hideExternalDefensives then

@@ -8,7 +8,6 @@ local growOptions = {
 	"RIGHT",
 	"CENTER",
 }
-local supportsMilliseconds = select(4, GetBuildInfo()) >= 120005
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local columns = 4
@@ -117,7 +116,7 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 
 	showTooltipsChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	if sectionType == "CC" and supportsMilliseconds then
+	if sectionType == "CC" then
 		local showMillisChk = mini:Checkbox({
 			Parent = container,
 			LabelText = L["Milliseconds"],

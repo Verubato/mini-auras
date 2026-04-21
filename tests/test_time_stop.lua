@@ -37,7 +37,6 @@ local TIME_STOP_TALENT_IDS = { 5463, 5464, 5619 }
 
 local function reset()
     B._TestReset()
-    B:_TestSetSimulateNoCastSucceeded(true)   -- 12.0.5 / arena mode throughout
     wow.reset()
     mods.talents._reset()
     B:RegisterPredictiveGlowCallback(nil)

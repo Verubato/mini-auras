@@ -370,7 +370,7 @@ local function TrackNewAura(entry, trackedAuras, id, info, now)
 					local candidateEntry = watchEntries[candidateUnit]
 					if candidateEntry then
 						local snap    = tracked.CastSnapshot[candidateUnit]
-						local hasCast = (snap ~= nil and math.abs(snap - now) <= castWindow) or noCastSucceeded
+						local hasCast = true
 						local predEv  = BuildPredictEvidence(tracked.Evidence, hasCast)
 						local spellId, isOnCd = fcdBrain:PredictSpellId(
 							candidateUnit, tracked.AuraTypes, predEv, candidateEntry.ActiveCooldowns)

@@ -8,10 +8,6 @@ addon.Modules.EnemyCooldowns = addon.Modules.EnemyCooldowns or {}
 local O = {}
 addon.Modules.EnemyCooldowns.Observer = O
 
--- In patch 12.0.5 (TOC 120005), UNIT_SPELLCAST_SUCCEEDED no longer fires for other players,
--- including enemy arena opponents. When true, the observer skips registering that event.
-local noCastSucceeded = select(4, GetBuildInfo()) >= 120005
-
 -- entry -> { Watcher, UnitEventFrame }
 local watched = {}
 local testModeActive = false
@@ -67,10 +63,6 @@ local function RegisterUnitEvents(frame, unit)
 	-- creating/enabling the watcher to preserve this ordering.
 	frame:RegisterUnitEvent("UNIT_FLAGS", unit)
 	frame:RegisterUnitEvent("UNIT_AURA", unit)
-	-- UNIT_SPELLCAST_SUCCEEDED was removed for other players in 12.0.5 (TOC 120005).
-	if not noCastSucceeded then
-		frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", unit)
-	end
 end
 
 local function MakeWatcher(entry)
@@ -170,7 +162,7 @@ function O:RegisterDebuffEvidenceCallback(fn)
 	debuffEvidenceCallbacks[#debuffEvidenceCallbacks + 1] = fn
 end
 
----Registers a callback fired when a watched enemy unit casts a spell (pre-12.0.5 only).
+---Registers a callback fired when a watched enemy unit casts a spell.
 ---Enemy spell IDs are always secret, so only the unit string is passed (no spell ID).
 ---@param fn fun(unit: string)
 function O:RegisterCastCallback(fn)

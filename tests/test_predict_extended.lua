@@ -32,7 +32,6 @@ local EXT = { EXTERNAL_DEFENSIVE = true }
 
 local function reset()
     B._TestReset()
-    B:_TestSetSimulateNoCastSucceeded(true)   -- 12.0.5 mode throughout this file
     wow.reset()
     mods.talents._reset()
     B:RegisterPredictiveGlowCallback(nil)
@@ -233,7 +232,6 @@ end)
 fw.describe("PredictRule - negative castSpellIdSnapshot (player cast something else)", function()
     fw.before_each(function()
         reset()
-        B:_TestSetSimulateNoCastSucceeded(false)   -- pre-12.0.5: cast events fire normally
     end)
 
     fw.it("prediction returns nil when player's castSpellIdSnapshot is an unrelated spell", function()
@@ -492,7 +490,6 @@ end)
 fw.describe("PredictSpellId - active cooldowns filter", function()
     fw.before_each(function()
         reset()
-        B:_TestSetSimulateNoCastSucceeded(false)
     end)
 
     -- PredictSpellId is called by PredictRule internally, and is also exposed as B:PredictSpellId.
@@ -527,10 +524,12 @@ fw.describe("PredictSpellId - active cooldowns filter", function()
         fw.is_nil(spellId, "Druid class has no EXTERNAL_DEFENSIVE rule")
     end)
 
-    fw.it("returns nil when evidence requirement is not met", function()
+    fw.it("Barkskin predicts with nil evidence (no RequiresEvidence)", function()
+        -- Barkskin has no RequiresEvidence after removing the Cast requirement;
+        -- PredictSpellIdForUnit matches it even with nil evidence.
         wow.setUnitClass("party1", "DRUID")
         local spellId = B:PredictSpellId("party1", BIG, nil, nil)
-        fw.is_nil(spellId, "Barkskin requires Cast evidence; nil evidence -> no match")
+        fw.eq(spellId, 22812, "Barkskin matches with nil evidence")
     end)
 
     fw.it("spec rule takes priority: Blood DK VB returned before class AMS", function()
@@ -562,7 +561,6 @@ end)
 fw.describe("PredictRule - player excluded via negative castSpellId signal in EXT loop", function()
     fw.before_each(function()
         reset()
-        B:_TestSetSimulateNoCastSucceeded(false)   -- pre-12.0.5 so castSpellIds apply to any unit
     end)
 
     fw.it("player excluded from EXT attribution when they cast an unrelated spell", function()
@@ -620,7 +618,7 @@ end)
 -- for a 4-second aura regardless of class or instance type -> no commit.
 
 fw.describe("Precognition false-positive prevention (predict + commit)", function()
-    fw.before_each(reset)   -- 12.0.5 mode throughout
+    fw.before_each(reset)
 
     -- Predict blocked: Fire Mage (caster class) in arena with 4-second IMP-only aura.
     -- allowSyntheticCast=false (IMPORTANT + arena + MAGE not in precogIgnoreClasses) -> no glow.

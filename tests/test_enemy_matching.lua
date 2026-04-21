@@ -11,7 +11,7 @@
 -- Covered here:
 --   · ExcludeIfTalent is NOT bypassed by IgnoreTalentRequirements (semantic boundary)
 --   · ExcludeIfTalent is effectively inactive for real enemies (no talent data loaded)
---   · Empty candidateUnits: EXT aura -> nil pre-12.0.5; self-cast fallback on 12.0.5
+--   · Empty candidateUnits: EXT aura -> self-cast fallback fires; nil when no matching EXT class rule
 --   · UnitFlags evidence for enemy Hunter -> AotT detection via direct API
 --   · FeignDeath suppresses UnitFlags -> AotT not matched
 --   · Observer pipeline: UnitFlags and FeignDeath recording for enemy units
@@ -30,7 +30,6 @@ local EXT = { EXTERNAL_DEFENSIVE = true }
 
 local function reset()
     B._TestReset()
-    B:_TestSetSimulateNoCastSucceeded(false)
     wow.reset()
     mods.talents._reset()
     B:RegisterPredictiveGlowCallback(nil)
@@ -153,20 +152,19 @@ end)
 fw.describe("Enemy FindBestCandidate - empty candidateUnits for EXT auras", function()
     fw.before_each(reset)
 
-    fw.it("pre-12.0.5: EXT aura with no candidateUnits -> nil (no attribution possible)", function()
+    fw.it("EXT aura with no candidateUnits, Druid has no class-level EXT rule -> nil", function()
         wow.setUnitClass("arena2", "DRUID")
         local entry = loader.makeEntry("arena2")
-        -- No Cast evidence, no candidates -> nothing matches.
+        -- Self-cast fallback fires but Druid has no class-level EXT rule (Ironbark is spec 105 only).
         local tracked = makeTracked(EXT, 1.0, {})
         local rule = B:FindBestCandidate(entry, tracked, 10.0, {}, { IgnoreTalentRequirements = true })
-        fw.is_nil(rule, "EXT aura with empty candidateUnits on pre-12.0.5 -> nil")
+        fw.is_nil(rule, "Druid has no class-level EXT rule -> self-cast fallback finds nothing")
     end)
 
     fw.it("12.0.5: EXT aura self-cast fallback -> Disc Priest Pain Suppression on self", function()
         -- On 12.0.5, when no non-target candidates match, the self-cast fallback gives the
         -- target synthetic Cast evidence and tries again.  Disc Priest spec 256 has Pain
         -- Suppression (SpellId=33206, EXT, BuffDuration=8, RequiresEvidence="Cast").
-        B:_TestSetSimulateNoCastSucceeded(true)
         wow.setUnitClass("arena2", "PRIEST")
         mods.talents._setSpec("arena2", 256)
         local entry = loader.makeEntry("arena2")
@@ -181,7 +179,6 @@ fw.describe("Enemy FindBestCandidate - empty candidateUnits for EXT auras", func
     fw.it("non-EXT (BIG) aura: only target is checked, empty candidateUnits is fine", function()
         -- BIG_DEFENSIVE auras are always self-cast; only entry.Unit is considered.
         -- Empty candidateUnits is irrelevant for BIG auras.
-        B:_TestSetSimulateNoCastSucceeded(true)
         wow.setUnitClass("arena1", "DRUID")
         local entry = loader.makeEntry("arena1")
         -- Synthetic Cast is granted to non-player candidates on 12.0.5.
@@ -222,13 +219,15 @@ fw.describe("Enemy FindBestCandidate - UnitFlags evidence enables AotT detection
         fw.is_nil(rule, "AotT requires UnitFlags - Cast alone is not sufficient")
     end)
 
-    fw.it("UnitFlags only (no Cast) -> AotT does NOT match", function()
+    fw.it("UnitFlags evidence + synthetic Cast (12.0.5) -> AotT matches", function()
         wow.setUnitClass("arena1", "HUNTER")
         local entry = loader.makeEntry("arena1")
-        -- No cast snapshot (no Cast evidence), only UnitFlags.
+        -- No cast snapshot, but 12.0.5 grants synthetic Cast to non-local candidates.
+        -- AotT requires Cast+UnitFlags: synthetic Cast + UnitFlags evidence -> AotT matches.
         local tracked = makeTracked(BIG, 1.0, {}, { UnitFlags = true })
         local rule = B:FindBestCandidate(entry, tracked, 5.0, {}, { IgnoreTalentRequirements = true })
-        fw.is_nil(rule, "AotT requires Cast - UnitFlags alone is not sufficient")
+        fw.not_nil(rule, "AotT matches: UnitFlags evidence + synthetic Cast (12.0.5)")
+        fw.eq(rule.SpellId, 186265, "Aspect of the Turtle")
     end)
 end)
 

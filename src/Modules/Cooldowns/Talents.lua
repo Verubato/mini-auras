@@ -132,9 +132,8 @@ local SpecCooldownModifiers = {
 	},
 
 	-- Mistweaver Monk: Life Cocoon (Chrysalis); Expeditious Fortification -30s
-	-- Chrysalis reduces Life Cocoon by 45s pre-12.0.5, 30s from 12.0.5 onwards.
 	[270] = {
-		[202424] = { { { SpellId = 116849, Amount = select(4, GetBuildInfo()) >= 120005 and -30 or -45 } } }, -- Life Cocoon (Chrysalis)
+		[202424] = { { { SpellId = 116849, Amount = -30 } } }, -- Life Cocoon (Chrysalis)
 		[388813] = { { { SpellId = 115203, Amount = -30 } } }, -- Expeditious Fortification -30s
 	},
 

@@ -29,7 +29,6 @@ local IMP = { IMPORTANT = true }
 
 local function reset()
     B._TestReset()
-    B:_TestSetSimulateNoCastSucceeded(true)   -- 12.0.5 / arena mode throughout
     wow.reset()
     mods.talents._reset()
     B:RegisterPredictiveGlowCallback(nil)
@@ -98,7 +97,6 @@ fw.describe("Phase Shift - Blessing of Freedom false positives", function()
 
         for _, palSpec in ipairs({ 65, 66, 70 }) do   -- Holy, Prot, Ret
             reset()
-            B:_TestSetSimulateNoCastSucceeded(true)
             wow.setUnitClass("party1", "PRIEST")
             mods.talents._setSpec("party1", 257)
             wow.setUnitClass("party2", "PALADIN")
