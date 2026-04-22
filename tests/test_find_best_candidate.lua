@@ -406,6 +406,29 @@ fw.describe("FindBestCandidate - AMS Spellwarding on ally (12.0.5)", function()
         fw.eq(rule and rule.SpellId, 48707, "SpellId should be AMS, not BoF")
         fw.eq(unit, "party2", "DK should be the attributed caster")
     end)
+
+    fw.it("stale BoF CastSnapshot does not block AMS betterCOO attribution to DK (regression)", function()
+        -- Regression: Paladin (player) cast BoF on the DK at T=1.0, then the DK cast AMS on the
+        -- Paladin at T=5.0 (4 seconds later). CastSnapshot["player"] = 1.0 was stored when the
+        -- aura was applied. Before the fix, BuildCandidateEvidence returned castTime=1.0 (stale),
+        -- which set bestTime non-nil and blocked betterCOO from firing for the DK candidate.
+        -- The Paladin's BoF (already on CD in ActiveCooldowns) was returned as a fallback instead.
+        --
+        -- Fix: castTime is only returned when within castWindow (0.15s) of StartTime; stale entries
+        -- produce nil, leaving bestTime nil so betterCOO correctly fires for the DK.
+        wow.setUnitClass("player",  "PALADIN")
+        wow.setUnitClass("party1",  "DEATHKNIGHT")
+        mods.talents._setSpec("player", 65)   -- Holy Paladin -> BoF available
+        -- BoF is already on cooldown (Paladin cast it on the DK 4 seconds ago)
+        local entry = loader.makeEntry("player", { [1044] = {} })
+        -- StartTime=5.0; CastSnapshot["player"]=1.0 -> |1.0 - 5.0| = 4.0 > 0.15 -> stale
+        local t = makeTracked(IMP, 5.0, { player = 1.0 }, { Shield = true })
+        -- dur=7.0 matches the 7s AMS Spellwarding rule
+        local rule, unit = B:FindBestCandidate(entry, t, 7.0, { "party1" })
+        fw.not_nil(rule, "AMS should be attributed to the DK, not fall back to stale BoF")
+        fw.eq(rule and rule.SpellId, 48707, "SpellId should be AMS (48707), not BoF (1044)")
+        fw.eq(unit, "party1", "DK (party1) should win via betterCOO, not the Paladin with stale snapshot")
+    end)
 end)
 
 -- Section 10: EXTERNAL_DEFENSIVE + Shield evidence

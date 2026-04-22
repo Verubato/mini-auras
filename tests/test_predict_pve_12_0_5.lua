@@ -136,11 +136,12 @@ fw.describe("PredictRule 12.0.5 - PvE synthetic cast re-enabled", function()
         fw.eq(getGlow(), 47585, "Dispersion should be predicted - BoF cannot produce a BIG_DEFENSIVE aura")
     end)
 
-    fw.it("Avenging Wrath predicts for Paladin target (BoF no longer creates snapshot ambiguity)", function()
+    fw.it("Avenging Wrath is ambiguous with BoF on a remote Paladin (no cast snapshot)", function()
         -- The target IS a Paladin; candidateUnits = {"party1"}.
-        -- Without synthetic cast, BoF (CastableOnOthers, no RequiresEvidence) is NOT matched
-        -- by the evidence-only COO fallback (requires RequiresEvidence != nil), so AW predicts
-        -- cleanly without ambiguity.
+        -- With no cast snapshot for party1 (remote in 12.0.5+), both AW (self-only IMPORTANT)
+        -- and BoF (CastableOnOthers IMPORTANT) are valid explanations for the aura.  The
+        -- prediction is ambiguous and correctly suppressed to avoid false glows (e.g. Paladin
+        -- self-casting BoF causing a false AW glow on the DK's UI).
         wow.setUnitClass("party1", "PALADIN")
         mods.talents._setSpec("party1", 65)   -- Holy Paladin
 
@@ -150,13 +151,13 @@ fw.describe("PredictRule 12.0.5 - PvE synthetic cast re-enabled", function()
         local watcher = makeImportantOnlyWatcher()
         observer:_fireAuraChanged(entry, watcher, { "party1" })
 
-        fw.eq(getGlow(), 31884, "AW predicts unambiguously; BoF no longer creates false ambiguity without cast evidence")
+        fw.is_nil(getGlow(), "AW vs BoF ambiguity: no prediction without cast evidence for remote Paladin")
     end)
 
-    fw.it("Avenging Wrath predicts even with two Paladins in the group", function()
-        -- party2 = another Paladin. Without synthetic cast, BoF (no RequiresEvidence) is
-        -- excluded from the evidence-only COO fallback, so party2 does not create ambiguity.
-        -- AW predicts for party1 as a self-cast spell.
+    fw.it("Avenging Wrath is ambiguous with BoF even with two Paladins in the group", function()
+        -- party2 = another Paladin. Both AW (self-only) and BoF (CastableOnOthers) are valid
+        -- explanations for party1's IMPORTANT aura; no cast snapshot disambiguates.
+        -- The second Paladin (party2) does not change this: they also have no snapshot.
         wow.setUnitClass("party1", "PALADIN")
         wow.setUnitClass("party2", "PALADIN")
         mods.talents._setSpec("party1", 65)
@@ -168,7 +169,7 @@ fw.describe("PredictRule 12.0.5 - PvE synthetic cast re-enabled", function()
         local watcher = makeImportantOnlyWatcher()
         observer:_fireAuraChanged(entry, watcher, { "party1", "party2" })
 
-        fw.eq(getGlow(), 31884, "AW predicts; second Paladin no longer suppresses prediction without synthetic cast")
+        fw.is_nil(getGlow(), "AW vs BoF ambiguity: no prediction without cast evidence even with two Paladins")
     end)
 
     fw.it("prediction still works via real cast snapshot regardless of Paladin/instance", function()

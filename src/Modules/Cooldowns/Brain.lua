@@ -740,7 +740,10 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 		-- their RequiresEvidence constraint alone.  Restricted to rules that have a non-nil
 		-- RequiresEvidence ("only_evidence" filter) so that no-evidence-required spells like
 		-- BoF cannot falsely match any IMPORTANT aura when a Paladin is in the group.
-		if not matchSpellId and not ambiguous then
+		-- Must run even when matchSpellId is already set: if a cross-unit evidence-constrained
+		-- candidate matches a different spell (e.g. DK's AMS vs Paladin's self-cast AW), the
+		-- result is genuinely ambiguous and the self-cast prediction must be suppressed.
+		if not ambiguous then
 			local seen2 = {}
 			AddIfUnseen(seen2, targetUnit)
 			for _, candidate in ipairs(candidateUnits) do
@@ -748,6 +751,19 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 					consider(candidate, false, "only_evidence")
 				end
 			end
+		end
+		-- For remote targets (12.0.5+, no cast-ID snapshot), also check the target's own
+		-- CastableOnOthers rules without a snapshot.  A remote Paladin self-casting BoF
+		-- produces an IMPORTANT aura that is indistinguishable from AW (also IMPORTANT,
+		-- self-only) when there is no cast evidence.  If a CastableOnOthers rule matches a
+		-- different spell than the self-only match (matchSpellId), the prediction is ambiguous
+		-- and correctly suppressed.  Only runs when something already matched (matchSpellId ~= nil)
+		-- so that arena suppression (AllowNoEvidencePredict=false) is respected and this pass
+		-- cannot introduce a false match when nothing else would have predicted.  Skipped for the
+		-- local player (snapshotUnit == "player") because their actual cast IDs are always
+		-- available via castSpellIdSnapshot and empty-snapshot means they provably cast nothing.
+		if not ambiguous and matchSpellId ~= nil and ResolveSnapshotUnit(targetUnit) ~= "player" then
+			consider(targetUnit, false, "only")
 		end
 	end
 
@@ -764,11 +780,14 @@ end
 ---Builds the per-candidate evidence set used by FindBestCandidate's consider() function.
 ---Copies non-Cast evidence from tracked.Evidence, then sets Cast when the candidate has a
 ---real CastSnapshot entry within the cast window.
----Returns the evidence table (pointing at the shared scratch buffer) and the raw castTime.
+---Returns the evidence table (pointing at the shared scratch buffer) and the in-window castTime.
+---castTime is nil when the snapshot entry is outside the cast window; callers use it for
+---betterByTime/betterCOO, so stale times (e.g. a spell cast seconds before this aura appeared)
+---must not be forwarded — they would set bestTime non-nil and prevent betterCOO from firing.
 ---@param snapshotUnit string  candidate remapped to "player" when it is the local player's alias
 ---@param tracked table  FcdTrackedAura
 ---@return EvidenceSet? candidateEvidence
----@return number? castTime
+---@return number? castTime  nil when outside castWindow
 local function BuildCandidateEvidence(snapshotUnit, tracked)
 	local scratch = candidateEvidenceScratch
 	scratch.Debuff     = nil
@@ -782,8 +801,9 @@ local function BuildCandidateEvidence(snapshotUnit, tracked)
 			if k ~= "Cast" then scratch[k] = v; hasEvidence = true end
 		end
 	end
-	local castTime = tracked.CastSnapshot[snapshotUnit]
-	if castTime and math.abs(castTime - tracked.StartTime) <= castWindow then
+	local rawCastTime = tracked.CastSnapshot[snapshotUnit]
+	local castTime = rawCastTime and math.abs(rawCastTime - tracked.StartTime) <= castWindow and rawCastTime or nil
+	if castTime then
 		scratch.Cast = true
 		hasEvidence  = true
 	end

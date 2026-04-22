@@ -151,16 +151,26 @@ end
 --         knownAmbiguities.byClass[classToken][spellId] = { predict=true, commit=true }
 local knownAmbiguities = {
     bySpec = {
+        -- Holy Paladin: all self-only IMPORTANT spells are ambiguous with Blessing of Freedom
+        -- (class rule, CastableOnOthers, also IMPORTANT, no RequiresEvidence) for remote targets
+        -- in 12.0.5+ (no cast snapshot to disambiguate).  Predict is suppressed; commit still
+        -- works because MatchRule discriminates by duration.
+        --   AW (31884): ambiguous with BoF (both IMPORTANT, no evidence requirement).
+        --   Avenging Crusader (216331): same; talent makes it mutually exclusive with AW but
+        --   BoF still matches alongside it.
+        [65] = { [31884] = { predict = true }, [216331] = { predict = true } },
         -- Prot Paladin: Guardian of Ancient Kings (86659) is structurally ambiguous with
         -- Ardent Defender (both BIG+IMP+8s, Ardent Defender listed first in spec66 rules).
         -- PredictRule returns Ardent Defender; FindBestCandidate sees two different SpellIds
         -- -> ambiguous -> nil.  Unresolvable without duration or talent data at detection time.
-        [66] = { [86659] = { predict = true, commit = true } },
+        -- AW (31884) and Sentinel (389539) are also ambiguous with BoF (IMPORTANT, no evidence).
+        [66] = { [86659] = { predict = true, commit = true }, [31884] = { predict = true }, [389539] = { predict = true } },
         -- Ret Paladin: Divine Protection (403876) is IMPORTANT+Shield, but Avenging Wrath (31884)
         -- is also IMPORTANT with no evidence requirement and is listed first in spec70 rules.
         -- PredictSpellIdForUnit has no duration gate, so AW always wins the predict pass;
         -- MatchRule's duration check correctly rejects AW at commit time (24s != 8s).
-        [70] = { [403876] = { predict = true } },
+        -- AW (31884) is also ambiguous with BoF (same IMPORTANT, no evidence) for remote Paladins.
+        [70] = { [403876] = { predict = true }, [31884] = { predict = true } },
     },
     byClass = {
         -- Blessing of Freedom (1044): CastableOnOthers, no RequiresEvidence.

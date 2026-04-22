@@ -143,16 +143,27 @@ end
 -- those are non-EXT self-cast rules where party3 is not in the candidate list.
 local knownAmbiguities3v3 = {
     bySpec = {
-        -- Holy Paladin: BoSpellwarding predict+commit ambiguous (party3 candidate matches BoP instead).
-        [65] = { [204018] = { predict = true, commit = true } },
+        -- Holy Paladin: all self-only IMPORTANT spells are ambiguous with Blessing of Freedom
+        -- (class rule, CastableOnOthers, also IMPORTANT, no RequiresEvidence) for remote targets
+        -- in 12.0.5+ (no cast snapshot).  BoSpellwarding is also ambiguous (party3 candidate).
+        [65] = {
+            [31884]  = { predict = true },
+            [216331] = { predict = true },
+            [204018] = { predict = true, commit = true },
+        },
         -- Protection Paladin: GAoK structurally ambiguous with Ardent Defender; BoSpellwarding same.
+        -- AW (31884) and Sentinel (389539) also ambiguous with BoF (IMPORTANT, no evidence).
         [66] = {
             [86659]  = { predict = true, commit = true },
+            [31884]  = { predict = true },
+            [389539] = { predict = true },
             [204018] = { predict = true, commit = true },
         },
         -- Retribution Paladin: Divine Protection (403876) predict-ambiguous with AW (no duration gate
         -- in predict path); commit correctly resolves via duration check.  BoSpellwarding ambiguous.
+        -- AW (31884) also ambiguous with BoF (same IMPORTANT, no evidence) for remote Paladins.
         [70] = {
+            [31884]  = { predict = true },
             [403876] = { predict = true },
             [204018] = { predict = true, commit = true },
         },

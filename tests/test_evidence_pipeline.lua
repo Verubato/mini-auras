@@ -486,14 +486,14 @@ fw.describe("PredictRule - castSpellIdSnapshot disambiguates AW vs BoF for Palad
         fw.eq(getGlow(), 1044, "castSpellId 1044 -> fast path resolves to BoF (class rule, IMP aura)")
     end)
 
-    fw.it("without castSpellIdSnapshot, Holy Paladin AW vs BoF remains ambiguous", function()
+    fw.it("local player Holy Paladin: AW predicts without castSpellIdSnapshot (BoF ambiguity pass skipped)", function()
         -- No cast event fired -> no castSpellIdSnapshot -> fast path not taken.
-        -- consider(player, false, "exclude") -> AW (self-only, requires Cast) -> no Cast evidence -> fails.
-        -- consider(player, true, "only") -> BoF (CastableOnOthers) -> requires Cast -> no snapshot -> fails.
-        -- Without synthetic cast, AW (no RequiresEvidence) predicts directly without needing
-        -- a cast snapshot.  BoF (no RequiresEvidence, CastableOnOthers) is in the COO-only
-        -- fallback which requires RequiresEvidence != nil ("only_evidence" filter) -> skipped.
-        -- So AW predicts cleanly for a Paladin without any cast snapshot.
+        -- consider(player, false, "exclude") -> AW (self-only, no RequiresEvidence) -> matches.
+        -- consider(player, true, "only") -> BoF (CastableOnOthers) -> no snapshot -> fails.
+        -- The CastableOnOthers-without-snapshot ambiguity pass is gated out for the local player
+        -- (ResolveSnapshotUnit("player") == "player"), so BoF does not create ambiguity here.
+        -- AW predicts cleanly: the local player's real casts are always available via the snapshot
+        -- when they actually cast, so no-snapshot is a valid "player did not cast BoF" signal.
         wow.setUnitClass("player", "PALADIN")
         mods.talents._setSpec("player", 65)
 
@@ -505,6 +505,6 @@ fw.describe("PredictRule - castSpellIdSnapshot disambiguates AW vs BoF for Palad
         local watcher = loader.makeWatcher({}, { { AuraInstanceID = AURA_ID } })
         observer:_fireAuraChanged(entry, watcher, { "player" })
 
-        fw.eq(getGlow(), 31884, "AW predicts without snapshot; BoF skipped by only_evidence filter")
+        fw.eq(getGlow(), 31884, "AW predicts for local player without snapshot; remote-only ambiguity pass skipped")
     end)
 end)
