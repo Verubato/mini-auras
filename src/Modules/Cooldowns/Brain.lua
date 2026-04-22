@@ -1198,8 +1198,10 @@ local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 		local shamInGroup = false
 		if info.AuraTypes["IMPORTANT"] and UnitIsPVP("player") then
 			for _, candidate in ipairs(candidateUnits) do
-				local _, cls = UnitClass(candidate)
-				if cls == "SHAMAN" then shamInGroup = true; break end
+				if not UnitIsUnit(candidate, unit) then
+					local _, cls = UnitClass(candidate)
+					if cls == "SHAMAN" then shamInGroup = true; break end
+				end
 			end
 		end
 		if not tracked.PredictedSpellId and not shamInGroup then
