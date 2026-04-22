@@ -4,6 +4,7 @@ local _, addon = ...
 -- Loaded before this file in TOC order.
 local rules = addon.Modules.Cooldowns.Rules
 local fcdTalents = addon.Modules.Cooldowns.Talents
+local units = addon.Utils.Units
 
 addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
 
@@ -555,8 +556,7 @@ end
 ---@return boolean
 local function IsProbablyPrecognition(auraTypes, targetUnit)
 	if not auraTypes["IMPORTANT"] then return false end
-	if auraTypes["EXTERNAL_DEFENSIVE"] then return false end
-	if auraTypes["BIG_DEFENSIVE"] then return false end
+	if auraTypes["BIG_DEFENSIVE"] or auraTypes["EXTERNAL_DEFENSIVE"] then return false end
 	local _, instanceType = IsInInstance()
 	local inPvpContext = instanceType == "arena" or instanceType == "pvp" or UnitIsPVP(targetUnit)
 	if not inPvpContext then return false end
@@ -1149,7 +1149,6 @@ local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 		CastSpellIdSnapshot = castSpellIdSnapshot,
 		DurationObject = info.DurationObject,
 	}
-
 	-- Deferred backfill: UNIT_SPELLCAST_SUCCEEDED and UNIT_ABSORB_AMOUNT_CHANGED can arrive
 	-- slightly after UNIT_AURA. Augment Evidence and CastSnapshot once the window elapses.
 	C_Timer.After(evidenceTolerance, function()
@@ -1198,7 +1197,7 @@ local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 		local shamInGroup = false
 		if info.AuraTypes["IMPORTANT"] and UnitIsPVP("player") then
 			for _, candidate in ipairs(candidateUnits) do
-				if not UnitIsUnit(candidate, unit) then
+				if not units:SameUnit(candidate, unit) then
 					local _, cls = UnitClass(candidate)
 					if cls == "SHAMAN" then shamInGroup = true; break end
 				end

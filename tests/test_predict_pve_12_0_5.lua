@@ -92,7 +92,9 @@ fw.describe("PredictRule 12.0.5 - PvE synthetic cast re-enabled", function()
         fw.eq(getGlow(), 47585, "raid instance is still PvE - prediction should fire")
     end)
 
-    fw.it("no prediction in arena (Precognition concern)", function()
+    fw.it("predicts Dispersion in arena (BIG_DEFENSIVE bypasses Precognition gate)", function()
+        -- Dispersion is BIG_DEFENSIVE+IMPORTANT. IsProbablyPrecognition returns false for
+        -- BIG_DEFENSIVE auras, so the predict gate is bypassed even for caster classes in PvP.
         wow.setInstanceType("arena")
         wow.setUnitClass("party1", "PRIEST")
         mods.talents._setSpec("party1", 258)
@@ -103,10 +105,10 @@ fw.describe("PredictRule 12.0.5 - PvE synthetic cast re-enabled", function()
         local watcher = makeBigImportantWatcher("party1")
         observer:_fireAuraChanged(entry, watcher, { "party1" })
 
-        fw.is_nil(getGlow(), "arena should suppress synthetic Cast -> no prediction")
+        fw.eq(getGlow(), 47585, "BIG_DEFENSIVE bypasses Precognition gate -> Dispersion predicted in arena")
     end)
 
-    fw.it("no prediction in pvp battleground (Precognition concern)", function()
+    fw.it("predicts Dispersion in pvp battleground (BIG_DEFENSIVE bypasses Precognition gate)", function()
         wow.setInstanceType("pvp")
         wow.setUnitClass("party1", "PRIEST")
         mods.talents._setSpec("party1", 258)
@@ -117,13 +119,12 @@ fw.describe("PredictRule 12.0.5 - PvE synthetic cast re-enabled", function()
         local watcher = makeBigImportantWatcher("party1")
         observer:_fireAuraChanged(entry, watcher, { "party1" })
 
-        fw.is_nil(getGlow(), "battleground should suppress synthetic Cast -> no prediction")
+        fw.eq(getGlow(), 47585, "BIG_DEFENSIVE bypasses Precognition gate -> Dispersion predicted in battleground")
     end)
 
-    fw.it("no prediction in open-world War Mode (UnitIsPVP=true, Precognition concern)", function()
-        -- instanceType is "" (not a pvp/arena instance) but unit is pvp-flagged via War Mode.
-        -- AllowNoEvidencePredict must also check UnitIsPVP so Precognition does not cause
-        -- false glows on caster classes in the open world.
+    fw.it("predicts Dispersion in open-world War Mode (BIG_DEFENSIVE bypasses Precognition gate)", function()
+        -- BIG_DEFENSIVE auras can never be Precognition, so the gate is bypassed regardless of
+        -- instance type or UnitIsPVP flag.
         wow.setUnitClass("party1", "PRIEST")
         mods.talents._setSpec("party1", 258)
         wow.setUnitPvp("party1", true)
@@ -134,7 +135,7 @@ fw.describe("PredictRule 12.0.5 - PvE synthetic cast re-enabled", function()
         local watcher = makeBigImportantWatcher("party1")
         observer:_fireAuraChanged(entry, watcher, { "party1" })
 
-        fw.is_nil(getGlow(), "War Mode pvp-flagged unit should suppress IMPORTANT predict for caster classes")
+        fw.eq(getGlow(), 47585, "BIG_DEFENSIVE bypasses Precognition gate -> Dispersion predicted in War Mode")
     end)
 
     fw.it("IsProbablyPrecognition: IMPORTANT-only + UnitFlags + arena suppresses predict", function()

@@ -56,13 +56,7 @@ local function GetAnchorOptions()
 	return instanceOptions:IsRaid() and m.Raid or m.Default
 end
 
--- UnitIsUnit occasionally returns a secret boolean on 12.0.5+; ignore it in that case.
-local function SameUnit(unitA, unitB)
-	if unitA == unitB then return true end
-	local result = UnitIsUnit(unitA, unitB)
-	if issecretvalue(result) then return false end
-	return result
-end
+local SameUnit = function(unitA, unitB) return units:SameUnit(unitA, unitB) end
 
 local function GetEntryForUnit(unit)
 	local fallback = nil

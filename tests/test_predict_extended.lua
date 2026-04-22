@@ -126,7 +126,9 @@ fw.describe("PredictRule 12.0.5 - PvP + melee class bypasses Precognition gate",
         fw.eq(getGlow(), 48792, "Icebound Fortitude predicted for Frost DK BIG+IMP aura in arena")
     end)
 
-    fw.it("no prediction for a Shadow Priest in arena (caster class, not precog-safe)", function()
+    fw.it("predicts Desperate Prayer for a Shadow Priest in arena (BIG_DEFENSIVE bypasses Precognition gate)", function()
+        -- BIG_DEFENSIVE auras can never be Precognition; IsProbablyPrecognition returns false for them.
+        -- So even caster classes like Priest get a prediction in arena for BIG_DEFENSIVE auras.
         wow.setInstanceType("arena")
         wow.setUnitClass("party1", "PRIEST")
         mods.talents._setSpec("party1", 258)
@@ -137,7 +139,7 @@ fw.describe("PredictRule 12.0.5 - PvP + melee class bypasses Precognition gate",
         local watcher = makeBigImportantWatcher("party1")
         observer:_fireAuraChanged(entry, watcher, { "party1" })
 
-        fw.is_nil(getGlow(), "Priest is a caster class (not in precogIgnoreClasses) -> no synthetic cast in arena")
+        fw.eq(getGlow(), 19236, "BIG_DEFENSIVE bypasses Precognition gate -> Desperate Prayer predicted for Priest in arena")
     end)
 
     fw.it("no prediction for a Fire Mage in arena (caster class, not precog-safe)", function()
@@ -156,22 +158,18 @@ fw.describe("PredictRule 12.0.5 - PvP + melee class bypasses Precognition gate",
     end)
 end)
 
--- Section 2: BIG_DEFENSIVE aura in PvP is always safe
+-- Section 2: BIG_DEFENSIVE aura in PvP is always safe to predict
 --
 -- Precognition only produces IMPORTANT auras; a BIG_DEFENSIVE aura cannot be Precognition.
--- Therefore synthetic Cast is granted for BIG_DEFENSIVE auras regardless of instance type,
--- even for caster classes that are otherwise blocked in PvP.
+-- IsProbablyPrecognition returns false when BIG_DEFENSIVE is set, so these auras bypass the
+-- Precognition gate entirely and are predicted even for caster classes in arena/battleground.
 
-fw.describe("PredictRule 12.0.5 - BIG_DEFENSIVE in PvP: IMPORTANT flag still gates caster classes", function()
+fw.describe("PredictRule 12.0.5 - BIG_DEFENSIVE in PvP bypasses Precognition gate", function()
     fw.before_each(reset)
 
-    -- The Precognition gate checks auraTypes["IMPORTANT"] first.  If IMPORTANT is set (even for
-    -- a BIG+IMP aura), caster/healer classes are still blocked in PvP.  Only auras that are
-    -- purely BIG_DEFENSIVE without IMPORTANT bypass the Precognition check via the `else` branch.
-    -- In practice, all current BIG_DEFENSIVE rules also have Important=true, so the safe `else`
-    -- branch is only reachable for future rules with Important=false (e.g. Brewmaster Fortifying Brew).
-
-    fw.it("BIG+IMP aura in arena still blocks caster class Priest (IMPORTANT flag present)", function()
+    fw.it("BIG+IMP aura in arena predicts Desperate Prayer for Priest (BIG_DEFENSIVE bypasses gate)", function()
+        -- IsProbablyPrecognition returns false for BIG_DEFENSIVE auras, so prediction proceeds
+        -- even for caster classes like Priest that are otherwise blocked by the Precognition gate.
         wow.setInstanceType("arena")
         wow.setUnitClass("party1", "PRIEST")
         mods.talents._setSpec("party1", 258)
@@ -179,15 +177,13 @@ fw.describe("PredictRule 12.0.5 - BIG_DEFENSIVE in PvP: IMPORTANT flag still gat
         local entry = loader.makeEntry("party1")
         local getGlow = captureGlow()
 
-        -- Dispersion is BIG+IMP; IMPORTANT=true causes the Precognition branch to fire;
-        -- PRIEST is not in precogIgnoreClasses -> allowSyntheticCast = false -> no prediction.
         local watcher = makeBigImportantWatcher("party1")
         observer:_fireAuraChanged(entry, watcher, { "party1" })
 
-        fw.is_nil(getGlow(), "BIG+IMP in arena with caster Priest -> IMPORTANT triggers precog check -> nil")
+        fw.eq(getGlow(), 19236, "BIG_DEFENSIVE bypasses Precognition gate -> Desperate Prayer predicted for Priest in arena")
     end)
 
-    fw.it("BIG+IMP aura in arena still blocks Warlock (caster class, IMPORTANT flag present)", function()
+    fw.it("BIG+IMP aura in pvp predicts Unending Resolve for Warlock (BIG_DEFENSIVE bypasses gate)", function()
         wow.setInstanceType("pvp")
         wow.setUnitClass("party1", "WARLOCK")
 
@@ -197,13 +193,13 @@ fw.describe("PredictRule 12.0.5 - BIG_DEFENSIVE in PvP: IMPORTANT flag still gat
         local watcher = makeBigImportantWatcher("party1")
         observer:_fireAuraChanged(entry, watcher, { "party1" })
 
-        fw.is_nil(getGlow(), "BIG+IMP aura for Warlock in pvp -> blocked by Precognition gate")
+        fw.eq(getGlow(), 104773, "BIG_DEFENSIVE bypasses Precognition gate -> Unending Resolve predicted for Warlock in pvp")
     end)
 
-    fw.it("Fortifying Brew (BIG-only, no IMPORTANT) predicted for Brewmaster in arena via safe else branch", function()
+    fw.it("Fortifying Brew (BIG-only, no IMPORTANT) predicted for Brewmaster in arena", function()
         -- Fortifying Brew (class MONK rule): BigDefensive=true, Important=false.
         -- The aura watcher produces only BIG_DEFENSIVE (not IMPORTANT) because isImportant=false.
-        -- In PredictRule: inPvP=true, auraTypes["IMPORTANT"]=nil -> `else` branch -> allowSyntheticCast=true.
+        -- IsProbablyPrecognition: IMPORTANT absent -> returns false immediately -> prediction proceeds.
         wow.setInstanceType("arena")
         wow.setUnitClass("party1", "MONK")
         mods.talents._setSpec("party1", 268)  -- Brewmaster

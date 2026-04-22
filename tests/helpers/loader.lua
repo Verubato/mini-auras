@@ -151,7 +151,15 @@ function M.get()
 				end,
 			},
 		},
-		Utils = {},
+		Utils = {
+			Units = {
+				SameUnit = function(self, a, b)
+					if a == b then return true end
+					local result = UnitIsUnit(a, b)
+					return not issecretvalue(result) and result == true
+				end,
+			},
+		},
 	}
 
 	local talents  = makeTalents()

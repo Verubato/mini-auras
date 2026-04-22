@@ -103,3 +103,15 @@ function M:IsCompoundUnit(unitToken)
 	end
 	return string.find(unitToken, "target") ~= nil
 end
+
+---Returns true if unitA and unitB refer to the same unit.
+---UnitIsUnit occasionally returns a secret boolean on 12.0.5+; treats that as false.
+---@param unitA string
+---@param unitB string
+---@return boolean
+function M:SameUnit(unitA, unitB)
+	if unitA == unitB then return true end
+	local result = UnitIsUnit(unitA, unitB)
+	if issecretvalue(result) then return false end
+	return result
+end
