@@ -293,14 +293,27 @@ local function OnFriendlyUnitEvent(unit, _, event, ...)
 		return
 	end
 
-	if event == "UNIT_SPELLCAST_START" then
+	if event == "UNIT_SPELLCAST_START" or event == "UNIT_SPELLCAST_CHANNEL_START" or event == "UNIT_SPELLCAST_EMPOWER_START" then
 		kickedByUnits[unit] = false
-	elseif event == "UNIT_SPELLCAST_INTERRUPTED" then
+	elseif event == "UNIT_SPELLCAST_INTERRUPTED" or event == "UNIT_SPELLCAST_CHANNEL_STOP" then
 		if kickedByUnits[unit] then
 			return
 		end
 
 		local kickedBy = select(4, ...)
+		if not kickedBy then
+			return
+		end
+
+		kickedByUnits[unit] = true
+		Kicked()
+	elseif event == "UNIT_SPELLCAST_EMPOWER_STOP" then
+		if kickedByUnits[unit] then
+			return
+		end
+
+		-- interruptedBy is arg 5 (arg 4 is "complete")
+		local kickedBy = select(5, ...)
 		if not kickedBy then
 			return
 		end
@@ -348,6 +361,10 @@ local function Disable()
 		if frame then
 			frame:UnregisterEvent("UNIT_SPELLCAST_START")
 			frame:UnregisterEvent("UNIT_SPELLCAST_INTERRUPTED")
+			frame:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_START")
+			frame:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
+			frame:UnregisterEvent("UNIT_SPELLCAST_EMPOWER_START")
+			frame:UnregisterEvent("UNIT_SPELLCAST_EMPOWER_STOP")
 			frame:SetScript("OnEvent", nil)
 		end
 		kickedByUnits[unit] = nil
@@ -372,6 +389,10 @@ local function Enable()
 		if frame then
 			frame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
 			frame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", unit)
+			frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unit)
+			frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
+			frame:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_START", unit)
+			frame:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_STOP", unit)
 			frame:SetScript("OnEvent", function(...)
 				OnFriendlyUnitEvent(unit, ...)
 			end)
