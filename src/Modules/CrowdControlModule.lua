@@ -498,6 +498,12 @@ function M:Init()
 		fs.Sorting:RegisterPostSortCallback(OnFrameSortSorted)
 	end
 
+	if DandersFrames and DandersFrames.RegisterCallback then
+		DandersFrames.RegisterCallback(eventsFrame, "OnFramesSorted", function()
+			M:Refresh()
+		end)
+	end
+
 	frames:HookCellSpotlightVisibility(function()
 		if moduleUtil:IsModuleEnabled(moduleName.CrowdControl) or moduleUtil:IsModuleEnabled(moduleName.PetCC) then
 			EnsureWatchers()

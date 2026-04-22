@@ -642,6 +642,12 @@ function M:Init()
 		end)
 	end
 
+	if DandersFrames and DandersFrames.RegisterCallback then
+		DandersFrames.RegisterCallback(eventsFrame, "OnFramesSorted", function()
+			M:Refresh()
+		end)
+	end
+
 	if moduleUtil:IsModuleEnabled(moduleName.FriendlyCooldownTracker) then
 		EnsureAllEntries()
 	end
