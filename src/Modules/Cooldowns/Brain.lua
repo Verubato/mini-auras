@@ -1195,7 +1195,7 @@ local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 		-- nearby members, making attribution unreliable and causing false predictions
 		-- (Void Form, Freedom, AMS, etc.).
 		local shamInGroup = false
-		if info.AuraTypes["IMPORTANT"] and UnitIsPVP("player") then
+		if info.AuraTypes["IMPORTANT"] and not info.AuraTypes["BIG_DEFENSIVE"] and not info.AuraTypes["EXTERNAL_DEFENSIVE"] and UnitIsPVP("player") then
 			for _, candidate in ipairs(candidateUnits) do
 				if not units:SameUnit(candidate, unit) then
 					local _, cls = UnitClass(candidate)
