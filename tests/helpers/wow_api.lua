@@ -9,6 +9,7 @@ local _buildNumber   = 120005  -- default: 12.0.5 (TOC 120005)
 local _instanceType  = "none"  -- default: not in any instance (PvE)
 local _unitClasses   = {}   -- unit -> { name, token }
 local _feignDeath    = {}   -- unit -> bool
+local _pvpUnits      = {}   -- unit -> bool (pvp-flagged, e.g. War Mode in open world)
 local _auraFiltered  = {}   -- "unit:id:filter" -> bool  (true = filtered out = absent)
 local _secretValues  = {}   -- value -> bool (treated as secret)
 local _unitExists    = {}   -- unit -> bool
@@ -47,7 +48,7 @@ function M.setup()
 	end
 
 	_G.UnitIsPVP = function(unit)
-		return false
+		return _pvpUnits[unit] == true
 	end
 
 	-- UnitCanAttack: default false (units are friendly) unless overridden per test.
@@ -178,6 +179,10 @@ end
 
 ---Set the instance type returned by IsInInstance().
 ---Values: "none" (overworld/PvE), "party", "raid", "scenario", "arena", "pvp".
+function M.setUnitPvp(unit, state)
+	_pvpUnits[unit] = state == true or nil
+end
+
 function M.setInstanceType(t)
 	_instanceType = t
 	_G.IsInInstance = function()
@@ -193,6 +198,7 @@ function M.reset()
 	_instanceType  = "none"
 	_unitClasses   = {}
 	_feignDeath    = {}
+	_pvpUnits      = {}
 	_auraFiltered  = {}
 	_secretValues  = {}
 	_unitExists    = {}

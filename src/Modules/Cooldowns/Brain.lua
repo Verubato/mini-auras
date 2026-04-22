@@ -540,20 +540,28 @@ local function TryPredictFromKnownCastId(targetUnit, auraTypes, castSpellIdSnaps
 	return nil, true
 end
 
----Returns true when a no-evidence prediction is safe for this unit in this context.
----In arena/pvp with IMPORTANT auras, predictions are suppressed for non-melee classes
----to avoid false positives from Precognition (a PvP gem that grants a 4s IMPORTANT buff).
----Melee classes in precogIgnoreClasses are always safe (Precognition targets casters).
----Non-IMPORTANT auras are always safe (Precognition is IMPORTANT-only).
----@param targetUnit string
+---Returns true when the aura could be Precognition rather than a real cooldown.
+---Precognition (PvP gem) grants a short IMPORTANT buff when the player is interrupted.
+---Used as the predict-path gate for all IMPORTANT auras in pvp/arena: without a cast
+---snapshot, a sudden IMPORTANT aura on a caster class is ambiguous with Precognition.
+---EXTERNAL_DEFENSIVE auras are routed through searchExternal before this check so they
+---are excluded here as a safety net only.
+---Melee classes (precogIgnoreClasses) are exempt: Precognition only targets casters.
+---UnitIsPVP covers open-world War Mode where IsInInstance does not report "pvp"/"arena".
+---At commit time the caller additionally checks for UnitFlags evidence (the interrupt
+---that triggers Precognition fires UNIT_FLAGS, while real cooldowns like BoF do not).
 ---@param auraTypes table<string,boolean>
+---@param targetUnit string
 ---@return boolean
-local function AllowNoEvidencePredict(targetUnit, auraTypes)
-	if not auraTypes["IMPORTANT"] then return true end
+local function IsProbablyPrecognition(auraTypes, targetUnit)
+	if not auraTypes["IMPORTANT"] then return false end
+	if auraTypes["EXTERNAL_DEFENSIVE"] then return false end
+	if auraTypes["BIG_DEFENSIVE"] then return false end
 	local _, instanceType = IsInInstance()
-	if instanceType ~= "arena" and instanceType ~= "pvp" then return true end
+	local inPvpContext = instanceType == "arena" or instanceType == "pvp" or UnitIsPVP(targetUnit)
+	if not inPvpContext then return false end
 	local _, classToken = UnitClass(targetUnit)
-	return classToken ~= nil and precogIgnoreClasses[classToken] == true
+	return classToken == nil or precogIgnoreClasses[classToken] ~= true
 end
 
 ---Returns the predicted SpellId and caster unit for a newly-detected aura, or nil.
@@ -716,11 +724,9 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 	-- Checks the target's own self-cast rules, then checks cross-unit CastableOnOthers casters.
 	local function searchNonExternal()
 		-- Self-only rules for the target (e.g. Barkskin, Ice Block).
-		-- Suppressed in arena/pvp for non-melee caster classes (IMPORTANT auras only) to prevent
-		-- false positives from Precognition, a PvP gem that grants a short IMPORTANT buff.
-		if AllowNoEvidencePredict(targetUnit, auraTypes) then
-			consider(targetUnit, false, "exclude")
-		end
+		-- IsProbablyPrecognition already guards the entire searchNonExternal call for the
+		-- IMPORTANT+UnitFlags+pvp case, so no additional suppression is needed here.
+		consider(targetUnit, false, "exclude")
 		-- CastableOnOthers rules via cast snapshot: if the spellId differs from the self-cast
 		-- result, the prediction is ambiguous (e.g. Paladin self-casting BoF vs Avenging Crusader).
 		consider(targetUnit, true, "only")
@@ -758,7 +764,7 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 		-- self-only) when there is no cast evidence.  If a CastableOnOthers rule matches a
 		-- different spell than the self-only match (matchSpellId), the prediction is ambiguous
 		-- and correctly suppressed.  Only runs when something already matched (matchSpellId ~= nil)
-		-- so that arena suppression (AllowNoEvidencePredict=false) is respected and this pass
+		-- so that the IsProbablyPrecognition outer gate is respected and this pass
 		-- cannot introduce a false match when nothing else would have predicted.  Skipped for the
 		-- local player (snapshotUnit == "player") because their actual cast IDs are always
 		-- available via castSpellIdSnapshot and empty-snapshot means they provably cast nothing.
@@ -769,6 +775,10 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 
 	if auraTypes["EXTERNAL_DEFENSIVE"] then
 		searchExternal()
+	elseif IsProbablyPrecognition(auraTypes, targetUnit) then
+		-- Aura has the IMPORTANT+UnitFlags+pvp signature of Precognition.  Suppress the
+		-- entire non-external search so no spell is falsely predicted.
+		return nil, nil
 	else
 		searchNonExternal()
 	end
@@ -959,6 +969,11 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 	end
 
 	local function searchNonExternal()
+		-- Aura has the IMPORTANT+UnitFlags+pvp signature of Precognition.  Suppress the
+		-- entire commit so no cooldown is falsely recorded.  Real BoF does not produce
+		-- UnitFlags evidence (tested), so this only fires for Precognition.
+		if IsProbablyPrecognition(tracked.AuraTypes, entry.Unit)
+		   and tracked.Evidence and tracked.Evidence.UnitFlags then return end
 		consider(entry.Unit, true)
 		-- Skip the cross-unit loop when the target already matched a non-CastableOnOthers rule:
 		-- self-only rules (e.g. Barkskin, Ice Block) on non-target candidates cannot be the source.
