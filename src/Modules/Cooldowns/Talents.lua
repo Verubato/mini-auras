@@ -285,6 +285,13 @@ local SpecDurationModifiers = {
 	-- Desperate Prayer (9.9s) to be incorrectly committed as Dispersion.
 	-- Windwalker Monk: Drinking Horn Cover: Zenith +5s
 	[269] = { [391370] = { { { SpellId = 1249625, Amount = 5 } } } },
+	-- Preservation Evoker: Timeless Magic: Time Dilation +15% / +30%
+	[1468] = {
+		[376240] = {
+			{ { SpellId = 357170, Amount = 15, Mult = true } }, -- rank 1
+			{ { SpellId = 357170, Amount = 30, Mult = true } }, -- rank 2
+		},
+	},
 }
 
 -- Assumed talent ranks used when no real talent data is available for a unit.
@@ -361,6 +368,7 @@ local SpecDefaultTalentRanks = {
 	},
 	[1468] = {
 		[376204] = 1, -- Just in Time (Preservation Evoker): Time Dilation -10s (nearly universal)
+		[376240] = 2, -- Timeless Magic (Preservation Evoker): Time Dilation +30% duration (nearly universal)
 	},
 	[65] = {
 		[384820] = 1, -- Sacrifice of the Just (Holy Paladin): BoSac -15s, nearly universal
