@@ -27,6 +27,7 @@ local testFiles = {
     "tests/test_time_stop.lua",
     "tests/test_local_player_alias.lua",
     "tests/test_dispersion_dp.lua",
+    "tests/test_ams_bof_gt_regression.lua",
 }
 
 local loadErrors = {}

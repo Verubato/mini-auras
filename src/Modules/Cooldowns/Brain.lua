@@ -578,13 +578,17 @@ local groundingTotemMaxDuration = 3.5
 ---for non-shaman allies who received the buff without casting anything themselves.
 ---measuredDuration: when provided (commit path), auras longer than GT's max are excluded.
 ---evidence: when provided, Shield evidence rules out GT spillover (GT grants no absorb to allies).
+---castSpellIdSnapshot/startTime: when provided, used to disambiguate two-shaman scenarios via
+---UNIT_SPELLCAST_SUCCEEDED (fires for local player only on 12.0.5+).
 ---@param auraTypes table<string,boolean>
 ---@param targetUnit string
 ---@param candidateUnits string[]
 ---@param measuredDuration number?
 ---@param evidence EvidenceSet?
+---@param castSpellIdSnapshot table<string,{SpellId:number,Time:number}[]>?
+---@param startTime number?
 ---@return boolean
-local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, measuredDuration, evidence)
+local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, measuredDuration, evidence, castSpellIdSnapshot, startTime)
 	if not auraTypes["IMPORTANT"] then return false end
 	if auraTypes["BIG_DEFENSIVE"] or auraTypes["EXTERNAL_DEFENSIVE"] then return false end
 	-- If the aura lasted longer than GT's maximum possible duration it can't be GT.
@@ -604,8 +608,78 @@ local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, m
 		return false
 	end
 
-	-- The shaman's own GT aura is tracked via the rule; don't suppress their commit.
-	if shamanHasGroundingTotem(targetUnit) then return false end
+	-- When the target is a shaman (their own GT aura), use cast evidence to disambiguate
+	-- two-shaman scenarios.  UNIT_SPELLCAST_SUCCEEDED only fires for the local player, so:
+	--   Case A: local player is the target, no GT cast in their snapshot, and another GT shaman
+	--           is a candidate -> local player did not press GT; suppress to let the other shaman
+	--           be attributed.
+	--   Case B: target is a remote shaman, local player's snapshot proves THEY pressed GT, and
+	--           local player also has GT talent -> remote shaman's aura is GT spillover from the
+	--           local player; suppress the remote shaman's commit.
+	--   Tiebreaker: no cast evidence (e.g. 3rd-party observer watching two GT shamans).  Suppress
+	--           this shaman if another GT shaman candidate sorts earlier by unit string, mirroring
+	--           BoF's first-candidate-wins behaviour when two paladins compete for the same entry.
+	if shamanHasGroundingTotem(targetUnit) then
+		local groundingTotemSpellId = 204336
+		if ResolveSnapshotUnit(targetUnit) == "player" then
+			-- Case A: local player is the shaman target.  If they have no GT cast in the window
+			-- and another GT shaman is in the candidate list, the other shaman pressed it.
+			local localCasts = castSpellIdSnapshot and castSpellIdSnapshot["player"]
+			local localPressedGT = false
+			if localCasts and startTime then
+				for _, cast in ipairs(localCasts) do
+					if cast.SpellId == groundingTotemSpellId and math.abs(cast.Time - startTime) <= castWindow then
+						localPressedGT = true
+						break
+					end
+				end
+			end
+			if not localPressedGT then
+				for _, candidate in ipairs(candidateUnits) do
+					if ResolveSnapshotUnit(candidate) ~= "player" and shamanHasGroundingTotem(candidate) then
+						return true
+					end
+				end
+			end
+		elseif castSpellIdSnapshot and startTime then
+			-- Case B: target is a remote shaman.  If the local player's snapshot proves they pressed
+			-- GT within the window and they also have GT talent, the remote shaman's aura is spillover.
+			local localCasts = castSpellIdSnapshot["player"]
+			if localCasts and shamanHasGroundingTotem("player") then
+				for _, cast in ipairs(localCasts) do
+					if cast.SpellId == groundingTotemSpellId and math.abs(cast.Time - startTime) <= castWindow then
+						return true
+					end
+				end
+			end
+		end
+		-- Tiebreaker: suppress this shaman if another GT shaman candidate sorts earlier by unit
+		-- string.  The "smallest" unit wins the commit; all others are suppressed.
+		-- Exception: when the earlier candidate is the local player, only count them if their
+		-- snapshot proves they pressed GT.  An absent or empty snapshot means they provably did
+		-- not press GT (UNIT_SPELLCAST_SUCCEEDED always fires for "player" on 12.0.5+).
+		for _, candidate in ipairs(candidateUnits) do
+			local resolvedCandidate = ResolveSnapshotUnit(candidate)
+			if resolvedCandidate ~= ResolveSnapshotUnit(targetUnit)
+				and shamanHasGroundingTotem(candidate)
+				and candidate < targetUnit then
+				local eligible = true
+				if resolvedCandidate == "player" then
+					eligible = false
+					local localCasts = castSpellIdSnapshot and castSpellIdSnapshot["player"]
+					if localCasts and startTime then
+						for _, cast in ipairs(localCasts) do
+							if cast.SpellId == groundingTotemSpellId and math.abs(cast.Time - startTime) <= castWindow then
+								eligible = true; break
+							end
+						end
+					end
+				end
+				if eligible then return true end
+			end
+		end
+		return false
+	end
 
 	for _, candidate in ipairs(candidateUnits) do
 		if shamanHasGroundingTotem(candidate) then
@@ -830,7 +904,7 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 		-- Aura has the IMPORTANT+UnitFlags+pvp signature of Precognition.  Suppress the
 		-- entire non-external search so no spell is falsely predicted.
 		return nil, nil
-	elseif IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, nil, evidence) then
+	elseif IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, nil, evidence, castSpellIdSnapshot, detectionTime) then
 		-- Non-shaman ally received Grounding Totem's AoE buff; suppress to avoid false predictions.
 		return nil, nil
 	else
@@ -1034,7 +1108,7 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 		-- UnitFlags evidence (tested), so this only fires for Precognition.
 		if IsProbablyPrecognition(tracked.AuraTypes, entry.Unit)
 		   and tracked.Evidence and tracked.Evidence.UnitFlags then return end
-		if IsProbablyGroundingTotem(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, tracked.Evidence) then return end
+		if IsProbablyGroundingTotem(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, tracked.Evidence, tracked.CastSpellIdSnapshot, tracked.StartTime) then return end
 		consider(entry.Unit, true)
 		-- Skip the cross-unit loop when the target already matched a non-CastableOnOthers rule:
 		-- self-only rules (e.g. Barkskin, Ice Block) on non-target candidates cannot be the source.
