@@ -311,6 +311,20 @@ fw.describe("Two-shaman GT disambiguation via cast snapshot", function()
         fw.eq(unit, "party1", "party1 (local player) is the attributed caster")
     end)
 
+    fw.it("Case A: local player tracked as 'player' commits GT despite other shaman sorting first", function()
+        -- Real-game regression: local player's aura is tracked under unit "player".
+        -- Another shaman is "party1". "party1" < "player" alphabetically, so the tiebreaker
+        -- would suppress "player" without the localPressedGT early-return fix.
+        setupTwoShamans()
+        local entry = loader.makeEntry("player")
+        local castSnap = { ["player"] = { { SpellId = 204336, Time = 1.0 } } }
+        local t = makeTracked(IMP, 1.0, {}, nil, castSnap)
+        local rule, unit = B:FindBestCandidate(entry, t, 2.0, { "party1" })
+        fw.not_nil(rule, "local player should commit GT when they provably pressed it")
+        fw.eq(rule and rule.SpellId, 204336, "SpellId should be Grounding Totem")
+        fw.eq(unit, "player", "player is the attributed caster")
+    end)
+
     fw.it("Tiebreaker: 3rd-party observer - party1 (sorts first) commits, party2 suppressed", function()
         -- Rogue (local player, not a shaman) watches two GT shamans.  No cast evidence available.
         -- Tiebreaker: party1 < party2 by unit string, so party2 is suppressed and party1 commits.

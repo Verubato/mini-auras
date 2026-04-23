@@ -635,11 +635,12 @@ local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, m
 					end
 				end
 			end
-			if not localPressedGT then
-				for _, candidate in ipairs(candidateUnits) do
-					if ResolveSnapshotUnit(candidate) ~= "player" and shamanHasGroundingTotem(candidate) then
-						return true
-					end
+			if localPressedGT then
+				return false  -- local player provably pressed GT; skip tiebreaker
+			end
+			for _, candidate in ipairs(candidateUnits) do
+				if ResolveSnapshotUnit(candidate) ~= "player" and shamanHasGroundingTotem(candidate) then
+					return true
 				end
 			end
 		elseif castSpellIdSnapshot and startTime then
