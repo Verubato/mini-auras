@@ -690,6 +690,7 @@ local rules = {
 				BigDefensive = false,
 				ExternalDefensive = false,
 				SpellId = 121471,
+				ExcludeFromPrediction = true, -- Shadow Dance (also IMPORTANT) cannot be distinguished without duration
 			}, -- Subtlety Rogue: Shadow Blades
 			{
 				BuffDuration = 18,
@@ -698,6 +699,7 @@ local rules = {
 				BigDefensive = false,
 				ExternalDefensive = false,
 				SpellId = 121471,
+				ExcludeFromPrediction = true, -- Shadow Dance (also IMPORTANT) cannot be distinguished without duration
 			}, -- Shadow Blades +2s (set bonus)
 			{
 				BuffDuration = 20,
@@ -706,6 +708,7 @@ local rules = {
 				BigDefensive = false,
 				ExternalDefensive = false,
 				SpellId = 121471,
+				ExcludeFromPrediction = true, -- Shadow Dance (also IMPORTANT) cannot be distinguished without duration
 			}, -- Shadow Blades +4s (set bonus)
 		},
 		[1467] = {
@@ -914,6 +917,7 @@ local rules = {
 				ExternalDefensive = false,
 				BigDefensive = false,
 				SpellId = 5277,
+				ExcludeFromPrediction = true, -- Shadow Dance (also IMPORTANT) cannot be distinguished without duration
 			}, -- Evasion
 			{
 				BuffDuration = 5,

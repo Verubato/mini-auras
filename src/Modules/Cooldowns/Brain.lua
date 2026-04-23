@@ -459,7 +459,8 @@ local function PredictSpellIdForUnit(unit, auraTypes, evidence, castableFilter)
 			if rule.SpellId then
 				if not ((castableFilter == "only" or castableFilter == "only_evidence") and not rule.CastableOnOthers)
 				and not (castableFilter == "exclude" and rule.CastableOnOthers)
-				and not (castableFilter == "only_evidence" and rule.RequiresEvidence == nil) then
+				and not (castableFilter == "only_evidence" and rule.RequiresEvidence == nil)
+				and not rule.ExcludeFromPrediction then
 					if RulePassesTalentGates(rule, unit, specId, nil) then
 						if AuraTypeMatchesRule(auraTypes, rule)
 						and EvidenceMatchesReq(rule.RequiresEvidence, evidence) then

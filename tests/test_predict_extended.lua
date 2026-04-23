@@ -92,19 +92,13 @@ fw.describe("PredictRule 12.0.5 - PvP + melee class bypasses Precognition gate",
         local entry = loader.makeEntry("party1")
         local getGlow = captureGlow()
 
-        -- Shadow Blades is IMPORTANT-only with MinDuration; use makeImportantOnlyWatcher.
-        -- Evasion: IMP-only, BuffDuration=10, RequiresEvidence="Cast" (class rule).
-        -- makeImportantOnlyWatcher triggers IMPORTANT aura.
+        -- Shadow Blades (spec 261) and Evasion (class ROGUE) both have ExcludeFromPrediction=true
+        -- because Shadow Dance is also IMPORTANT and indistinguishable at prediction time.
+        -- No ROGUE IMPORTANT rule is eligible for prediction -> no glow fires.
         local watcher = makeImportantOnlyWatcher()
         observer:_fireAuraChanged(entry, watcher, { "party1" })
 
-        -- Both Evasion (10s IMP class) and Shadow Blades (16/18/20s IMP spec) match IMP.
-        -- No cast evidence -> Evasion and SB both require "Cast" -> both fail.
-        -- Wait: allowSyntheticCast=true for precog-safe class in arena.
-        -- consider(party1, false, "exclude"): synthetic Cast ok -> Evasion (spec 261: SB requires Cast, matches)
-        -- But SB also needs RequiresEvidence="Cast" and gets synthetic -> also matches IMP.
-        -- First rule in spec 261 list is Shadow Blades -> that's returned (spec before class).
-        fw.eq(getGlow(), 121471, "Shadow Blades (first spec rule for Subtlety Rogue in IMP)")
+        fw.is_nil(getGlow(), "no prediction for ROGUE IMPORTANT aura (Shadow Dance ambiguity excludes all candidates)")
     end)
 
     fw.it("predicts Icebound Fortitude for a Frost DK in arena", function()

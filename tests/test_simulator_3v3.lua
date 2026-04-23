@@ -167,12 +167,19 @@ local knownAmbiguities3v3 = {
             [403876] = { predict = true },
             [204018] = { predict = true, commit = true },
         },
+        -- Subtlety Rogue: Shadow Blades (121471) is excluded from prediction (ExcludeFromPrediction=true)
+        -- because Shadow Dance is also IMPORTANT and indistinguishable from Shadow Blades at
+        -- detection time (before the aura expires and duration is measured).
+        [261] = { [121471] = { predict = true } },
     },
     byClass = {
         -- Blessing of Freedom (1044): CastableOnOthers, no RequiresEvidence.
         -- party2 and party3 (both non-local Paladins) have no UNIT_SPELLCAST_SUCCEEDED -> no snapshot.
         -- The "only_evidence" filter skips RequiresEvidence=nil rules in the evidence-only COO fallback.
         PALADIN = { [1044] = { predict = true } },
+        -- Evasion (5277): ExcludeFromPrediction=true because Shadow Dance is also IMPORTANT
+        -- and indistinguishable from Evasion at detection time (before duration is measured).
+        ROGUE = { [5277] = { predict = true } },
     },
 }
 

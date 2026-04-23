@@ -171,6 +171,10 @@ local knownAmbiguities = {
         -- MatchRule's duration check correctly rejects AW at commit time (24s != 8s).
         -- AW (31884) is also ambiguous with BoF (same IMPORTANT, no evidence) for remote Paladins.
         [70] = { [403876] = { predict = true }, [31884] = { predict = true } },
+        -- Subtlety Rogue: Shadow Blades (121471) is excluded from prediction (ExcludeFromPrediction=true)
+        -- because Shadow Dance is also IMPORTANT and indistinguishable from Shadow Blades at
+        -- detection time (before the aura expires and duration is measured).
+        [261] = { [121471] = { predict = true } },
     },
     byClass = {
         -- Blessing of Freedom (1044): CastableOnOthers, no RequiresEvidence.
@@ -178,6 +182,9 @@ local knownAmbiguities = {
         -- The evidence-only COO fallback ("only_evidence" filter) skips rules with RequiresEvidence=nil,
         -- so BoF cannot be predicted without a cast snapshot from the local player.
         PALADIN = { [1044] = { predict = true } },
+        -- Evasion (5277): ExcludeFromPrediction=true because Shadow Dance is also IMPORTANT
+        -- and indistinguishable from Evasion at detection time (before duration is measured).
+        ROGUE = { [5277] = { predict = true } },
     },
 }
 
