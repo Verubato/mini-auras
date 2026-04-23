@@ -542,6 +542,9 @@ local function TryPredictFromKnownCastId(targetUnit, auraTypes, castSpellIdSnaps
 	return nil, true
 end
 
+-- Maximum duration (seconds) that Precognition can last.
+local precognitionMaxDuration = 4.0
+
 ---Returns true when the aura could be Precognition rather than a real cooldown.
 ---Precognition (PvP gem) grants a short IMPORTANT buff when the player is interrupted.
 ---Used as the predict-path gate for all IMPORTANT auras in pvp/arena: without a cast
@@ -550,14 +553,20 @@ end
 ---are excluded here as a safety net only.
 ---Melee classes (precogIgnoreClasses) are exempt: Precognition only targets casters.
 ---UnitIsPVP covers open-world War Mode where IsInInstance does not report "pvp"/"arena".
----At commit time the caller additionally checks for UnitFlags evidence (the interrupt
----that triggers Precognition fires UNIT_FLAGS, while real cooldowns like BoF do not).
+---measuredDuration: when provided, auras longer than Precognition's max are excluded.
+---evidence: when provided, UnitFlags must be present (the interrupt that triggers Precognition
+---fires UNIT_FLAGS; real cooldowns like Doomwinds do not).  Nil on the predict path where
+---evidence may not have arrived yet.
 ---@param auraTypes table<string,boolean>
 ---@param targetUnit string
+---@param measuredDuration number?
+---@param evidence EvidenceSet?
 ---@return boolean
-local function IsProbablyPrecognition(auraTypes, targetUnit)
+local function IsProbablyPrecognition(auraTypes, targetUnit, measuredDuration, evidence)
 	if not auraTypes["IMPORTANT"] then return false end
 	if auraTypes["BIG_DEFENSIVE"] or auraTypes["EXTERNAL_DEFENSIVE"] then return false end
+	if measuredDuration and measuredDuration > precognitionMaxDuration + tolerance then return false end
+	if evidence and not evidence.UnitFlags then return false end
 	local _, instanceType = IsInInstance()
 	local inPvpContext = instanceType == "arena" or instanceType == "pvp" or UnitIsPVP(targetUnit)
 	if not inPvpContext then return false end
@@ -1108,8 +1117,7 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 		-- Aura has the IMPORTANT+UnitFlags+pvp signature of Precognition.  Suppress the
 		-- entire commit so no cooldown is falsely recorded.  Real BoF does not produce
 		-- UnitFlags evidence (tested), so this only fires for Precognition.
-		if IsProbablyPrecognition(tracked.AuraTypes, entry.Unit)
-		   and tracked.Evidence and tracked.Evidence.UnitFlags then return end
+		if IsProbablyPrecognition(tracked.AuraTypes, entry.Unit, measuredDuration, tracked.Evidence or {}) then return end
 		if IsProbablyGroundingTotem(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, tracked.Evidence, tracked.CastSpellIdSnapshot, tracked.StartTime) then return end
 		consider(entry.Unit, true)
 		-- Skip the cross-unit loop when the target already matched a non-CastableOnOthers rule:
