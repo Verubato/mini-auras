@@ -108,6 +108,14 @@ local function SpecFromTooltip(unit)
 	return nil
 end
 
+-- UnitGUID throws "Player/pet name are not valid arguments for this call" when called
+-- on an enemy unit by name. The error message is misleading since UnitGUID does accept
+-- unit names in general -- pcall is the only way to handle this gracefully.
+local function SafeUnitGUID(unit)
+	local ok, guid = pcall(UnitGUID, unit)
+	return ok and guid or nil
+end
+
 local function PurgeOldEntries()
 	local now = Now()
 	for guid, entry in pairs(unitGuidToSpec) do
@@ -118,7 +126,7 @@ local function PurgeOldEntries()
 end
 
 local function EnsureCacheEntry(unit)
-	local guid = UnitGUID(unit)
+	local guid = SafeUnitGUID(unit)
 	if not guid or issecretvalue(guid) then
 		return nil
 	end
@@ -151,7 +159,7 @@ local function Inspect(unit)
 end
 
 local function InvalidateEntry(unit)
-	local guid = UnitGUID(unit)
+	local guid = SafeUnitGUID(unit)
 	if not guid or issecretvalue(guid) then
 		return
 	end
@@ -164,6 +172,10 @@ local function OnClearInspect()
 end
 
 local function OnNotifyInspect(unit)
+	local guid = SafeUnitGUID(unit)
+	if not guid or issecretvalue(guid) then
+		return
+	end
 	-- Ignore inspects of non-friendly units (e.g. enemy players inspected by other addons).
 	if not UnitIsFriend(unit, "player") then
 		return
