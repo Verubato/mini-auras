@@ -696,7 +696,7 @@ function M:GetUnitCooldown(unit, specId, classToken, abilityId, baseCooldown, me
 	local pvpAddAmount = 0
 	local pvpMultAmount = 0
 	local function applyPvPModTable(modTable)
-		if not modTable or not pvpIds then
+		if not modTable or not pvpIds or not UnitIsPVP(unit) then
 			return
 		end
 		for pvpTalentId, mods in pairs(modTable) do
