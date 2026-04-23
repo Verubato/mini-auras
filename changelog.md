@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.12.0
+
+- Icons now stay in sync Danders Frames when they are sorted.
+- Removed 12.0.1 code.
+- Added tracking for Grounding Totem.
+- Now tracking kicks on channelled spells.
+- Inspector UnitGUID error fix.
+- Added Timeless Magic evoker talent to fix Time Dilation not tracking.
+- Fixed pvp talents applying in pve instances.
+- Various other cooldown tracking bug fixes and improvements.
+
 ## 3.11.0
 
 - 12.0.5 support and fixes for cooldown tracking.
