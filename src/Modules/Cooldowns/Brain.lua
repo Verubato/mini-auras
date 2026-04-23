@@ -962,9 +962,15 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 		local betterByTime = castTime ~= nil and (bestTime == nil or castTime > bestTime)
 		-- A non-target matching a DIFFERENT CastableOnOthers rule (e.g. DK's AMS) beats a
 		-- target self-matching a CastableOnOthers rule (e.g. Paladin self-matching BoF).
+		-- Guard: do NOT let a no-evidence rule displace an evidence-constrained match via
+		-- betterCOO.  When the existing rule requires evidence (e.g. Spellwarding AMS) and
+		-- the new one does not (e.g. BoF), evidence takes priority and the elseif branch
+		-- handles it correctly.  betterCOO still fires when evidence favours the new rule
+		-- (existing has none, new has some) or when both sides are equivalent.
 		local betterCOO    = not castTime and not bestTime
 			and not isExternal and not isTarget and bestIsTarget
 			and rule.CastableOnOthers and candidateRule ~= rule
+			and not (rule.RequiresEvidence ~= nil and candidateRule.RequiresEvidence == nil)
 		if not rule or betterByTime or betterCOO then
 			rule, ruleUnit, bestTime, bestIsTarget = candidateRule, candidate, castTime, isTarget
 		elseif not castTime and not bestTime then
