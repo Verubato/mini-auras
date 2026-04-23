@@ -997,8 +997,19 @@ local rules = {
 				ExternalDefensive = false,
 				Important = true,
 				SpellId = 108271,
-			},
-		}, -- Astral Shift
+			}, -- Astral Shift
+			{
+				BuffDuration = 3.5,
+				Cooldown = 30,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				CanCancelEarly = true,
+				MinCancelDuration = 0.5,
+				SpellId = 204336,
+				RequiresTalent = { 3620, 3622, 715 },
+			}, -- Grounding Totem (PvP talent, consumed in 0.5-3s)
+		},
 		WARLOCK = {
 			{
 				BuffDuration = 8,

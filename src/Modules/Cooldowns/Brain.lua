@@ -564,6 +564,57 @@ local function IsProbablyPrecognition(auraTypes, targetUnit)
 	return classToken == nil or precogIgnoreClasses[classToken] ~= true
 end
 
+-- PvP talent spell IDs that grant Grounding Totem (one per shaman spec).
+local groundingTotemPvPTalentIds = { 3620, 3622, 715 }
+
+-- Maximum duration (seconds) that Grounding Totem can last, used to rule it out
+-- when the measured aura duration is clearly longer than GT could ever be.
+-- Set slightly above the stated 3s cap to absorb server/client timing jitter.
+local groundingTotemMaxDuration = 3.5
+
+---Returns true when a non-shaman unit's IMPORTANT aura is probably Grounding Totem spillover.
+---Grounding Totem (spell 204336) always affects the shaman and passively affects nearby allies.
+---The shaman's own aura is handled by the GT rule directly; this suppresses false commits/predictions
+---for non-shaman allies who received the buff without casting anything themselves.
+---measuredDuration: when provided (commit path), auras longer than GT's max are excluded.
+---evidence: when provided, Shield evidence rules out GT spillover (GT grants no absorb to allies).
+---@param auraTypes table<string,boolean>
+---@param targetUnit string
+---@param candidateUnits string[]
+---@param measuredDuration number?
+---@param evidence EvidenceSet?
+---@return boolean
+local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, measuredDuration, evidence)
+	if not auraTypes["IMPORTANT"] then return false end
+	if auraTypes["BIG_DEFENSIVE"] or auraTypes["EXTERNAL_DEFENSIVE"] then return false end
+	-- If the aura lasted longer than GT's maximum possible duration it can't be GT.
+	if measuredDuration and measuredDuration > groundingTotemMaxDuration + tolerance then return false end
+	-- GT grants no absorb shield to allies; Shield evidence means this is a different spell.
+	if evidence and evidence.Shield then return false end
+	local _, instanceType = IsInInstance()
+	local inPvpContext = instanceType == "arena" or instanceType == "pvp" or UnitIsPVP(targetUnit)
+	if not inPvpContext then return false end
+
+	local function shamanHasGroundingTotem(unit)
+		local _, cls = UnitClass(unit)
+		if cls ~= "SHAMAN" then return false end
+		for _, talentId in ipairs(groundingTotemPvPTalentIds) do
+			if fcdTalents:UnitHasTalent(unit, talentId) then return true end
+		end
+		return false
+	end
+
+	-- The shaman's own GT aura is tracked via the rule; don't suppress their commit.
+	if shamanHasGroundingTotem(targetUnit) then return false end
+
+	for _, candidate in ipairs(candidateUnits) do
+		if shamanHasGroundingTotem(candidate) then
+			return true
+		end
+	end
+	return false
+end
+
 ---Returns the predicted SpellId and caster unit for a newly-detected aura, or nil.
 ---For non-external auras, matches against the target unit itself (which is the caster).
 ---For EXTERNAL_DEFENSIVE, searches candidateUnits for a unit with recent cast evidence and a matching rule.
@@ -779,6 +830,9 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 		-- Aura has the IMPORTANT+UnitFlags+pvp signature of Precognition.  Suppress the
 		-- entire non-external search so no spell is falsely predicted.
 		return nil, nil
+	elseif IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, nil, evidence) then
+		-- Non-shaman ally received Grounding Totem's AoE buff; suppress to avoid false predictions.
+		return nil, nil
 	else
 		searchNonExternal()
 	end
@@ -974,6 +1028,7 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 		-- UnitFlags evidence (tested), so this only fires for Precognition.
 		if IsProbablyPrecognition(tracked.AuraTypes, entry.Unit)
 		   and tracked.Evidence and tracked.Evidence.UnitFlags then return end
+		if IsProbablyGroundingTotem(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, tracked.Evidence) then return end
 		consider(entry.Unit, true)
 		-- Skip the cross-unit loop when the target already matched a non-CastableOnOthers rule:
 		-- self-only rules (e.g. Barkskin, Ice Block) on non-target candidates cannot be the source.
@@ -1190,20 +1245,7 @@ local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 
 		-- Predictive glow: identify the spell by aura type + talent + evidence.
 		-- For EXTERNAL_DEFENSIVE, searches candidateUnits for the caster via cast snapshot.
-		-- Skip prediction for IMPORTANT auras when a Shaman is in the group and the player
-		-- is PvP flagged: Grounding Totem (PvP talent) applies an AoE IMPORTANT aura to all
-		-- nearby members, making attribution unreliable and causing false predictions
-		-- (Void Form, Freedom, AMS, etc.).
-		local shamInGroup = false
-		if info.AuraTypes["IMPORTANT"] and not info.AuraTypes["BIG_DEFENSIVE"] and not info.AuraTypes["EXTERNAL_DEFENSIVE"] and UnitIsPVP("player") then
-			for _, candidate in ipairs(candidateUnits) do
-				if not units:SameUnit(candidate, unit) then
-					local _, cls = UnitClass(candidate)
-					if cls == "SHAMAN" then shamInGroup = true; break end
-				end
-			end
-		end
-		if not tracked.PredictedSpellId and not shamInGroup then
+		if not tracked.PredictedSpellId then
 			local spellId, casterUnit = PredictRule(unit, info.AuraTypes, tracked.Evidence, tracked.CastSnapshot, tracked.CastSpellIdSnapshot, now, candidateUnits)
 			if spellId and predictiveGlowCallback then
 				tracked.PredictedSpellId = spellId

@@ -69,7 +69,10 @@ local ClassCooldownModifiers = {
 		},
 	},
 	MONK = {},
-	SHAMAN = { [381647] = { { { SpellId = 108271, Amount = -30 } } } },
+	SHAMAN = {
+		[381647] = { { { SpellId = 108271, Amount = -30 } } }, -- Planes Traveler: Astral Shift -30s
+		[381867] = { { { SpellId = 204336, Amount = -5 } } },  -- Totemic Surge: Grounding Totem -5s
+	},
 	WARLOCK = { [386659] = { { { SpellId = 104773, Amount = -45 } } } },
 	WARRIOR = {
 		-- Honed Reflexes: Die by the Sword -10% (mult)
@@ -318,6 +321,7 @@ local ClassDefaultTalentRanks = {
 	},
 	SHAMAN = {
 		[381647] = 1, -- Planes Traveler: Astral Shift -30s (nearly universal)
+		[381867] = 1, -- Totemic Surge: Grounding Totem -5s (nearly universal)
 	},
 	WARRIOR = {
 		[107574] = 1, -- Avatar: nearly universal across all specs
