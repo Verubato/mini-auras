@@ -21,6 +21,7 @@ local dbDefaults = {
 	CCNativeOrder = false,
 	DisableSwipe = false,
 	MillisecondsThreshold = 5,
+	LocaleOverride = false,
 	Modules = {
 		---@class CrowdControlModuleOptions
 		CCModule = {

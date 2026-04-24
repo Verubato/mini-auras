@@ -102,6 +102,9 @@ local function OnEvent(_, event)
 end
 
 local function OnAddonLoaded()
+	local savedVars = MiniCCDB
+	L:ApplyLocale(savedVars and savedVars.LocaleOverride or GetLocale())
+
 	config:Init()
 	scheduler:Init()
 	frames:Init()

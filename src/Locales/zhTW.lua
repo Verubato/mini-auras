@@ -2,11 +2,7 @@
 local _, addon = ...
 local L = addon.L
 
-if GetLocale() ~= "zhTW" then
-	return
-end
-
-L:SetStrings({
+L:RegisterLocale("zhTW", {
 
 	-- Shared strings
 	["Any"] = "任何",
@@ -248,6 +244,8 @@ L:SetStrings({
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "當增長方向為向下時，設定每行顯示的圖示數量。適用於水平隊伍框架。",
 
 	-- Enemy Cooldown Tracker tab
+	["Enemy Cooldowns"] = "敵方冷卻",
+	["Enemy Cooldowns_Short"] = "敵方冷卻",
 	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "在敵方競技場對手的增益效果消失後，顯示其防禦性和進攻性冷卻時間。",
 	["Display"] = "顯示",
 	["Layout Mode"] = "版面模式",
@@ -295,4 +293,11 @@ L:SetStrings({
 	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "隨著 12.0.5 版本的新暴雪限制，MiniCC 發生了以下變化。\n\n好消息：\n* 冷卻時間追蹤在競技場和地下城中仍然基本正常運行。\n* 為友方和敵方 CD 添加了多層法术充能支援（例妋 2x 痛苦壓制、2x 模糊）。\n\n壞消息：\n* 友方外部技能在團隊副本和戰場中不再被追蹤。\n* 預測光效變得不那麼可靠。\n* PvP 打斷追蹤無法再識別打斷者。現在僅顯示使用最短已知敵方打斷冷卻時間的通用圖示。\n\n我們在這次更新上投入了大量工作，但可能仍有問題。 \n請在我們的 Discord 中回報您發現的任何錯誤，以便我們解決。",
 	[" - Added enemy cooldown tracking module."] = " - 新增敵人冷卻追蹤模組。",
 	["MiniCC - What's New?"] = "MiniCC - 有什麼新鮮事？",
+
+	-- Language option
+	["Language"] = "語言",
+	["Language override"] = "語言覆蓋",
+	["Override the addon language. By default, your game client language is used."] = "覆蓋插件語言。預設使用遊戲客戶端語言。",
+	["Auto (client language)"] = "自動（客戶端語言）",
+	["Language changed. Reload UI now?"] = "語言已變更。立即重新載入介面嗎？",
 })

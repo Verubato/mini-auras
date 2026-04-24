@@ -247,6 +247,8 @@ L:SetDefaultStrings({
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames.",
 
 	-- Enemy Cooldown Tracker tab
+	["Enemy Cooldowns"] = "Enemy Cooldowns",
+	["Enemy Cooldowns_Short"] = "Enemy CDs",
 	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire.",
 	["Enable enemy cooldown tracking in arena."] = "Enable enemy cooldown tracking in arena.",
 	["Number of icon rows for the Linear Bar. Icons per row is determined by the Max Icons setting."] = "Number of icon rows for the Linear Bar. Icons per row is determined by the Max Icons setting.",
@@ -294,13 +296,14 @@ L:SetDefaultStrings({
 	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them.",
 	[" - Added enemy cooldown tracking module."] = " - Added enemy cooldown tracking module.",
 	["MiniCC - What's New?"] = "MiniCC - What's New?",
+
+	-- Language option
+	["Language"] = "Language",
+	["Language override"] = "Language override",
+	["Override the addon language. By default, your game client language is used."] = "Override the addon language. By default, your game client language is used.",
+	["Auto (client language)"] = "Auto (client language)",
+	["Language changed. Reload UI now?"] = "Language changed. Reload UI now?",
 })
 
--- Also set as current locale strings for enUS/enGB
-if GetLocale() == "enUS" or GetLocale() == "enGB" then
-	for key, value in pairs(addon.L) do
-		if type(value) == "string" then
-			L:SetString(key, value)
-		end
-	end
-end
+L:RegisterLocale("enUS", {})
+L:RegisterLocale("enGB", {})

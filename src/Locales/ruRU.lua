@@ -2,11 +2,7 @@
 local _, addon = ...
 local L = addon.L
 
-if GetLocale() ~= "ruRU" then
-	return
-end
-
-L:SetStrings({
+L:RegisterLocale("ruRU", {
 
 	-- Shared strings
 	["Any"] = "Любой",
@@ -248,6 +244,8 @@ L:SetStrings({
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Когда направление роста - Вниз, определяет количество иконок в одном ряду до переноса. Полезно для горизонтальных рамок группы.",
 
 	-- Enemy Cooldown Tracker tab
+	["Enemy Cooldowns"] = "КД противников",
+	["Enemy Cooldowns_Short"] = "КД противников",
 	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "Отображает откаты защитных и наступательных способностей противников на арене после истечения их баффов.",
 	["Display"] = "Отображение",
 	["Layout Mode"] = "Режим расположения",
@@ -295,4 +293,11 @@ L:SetStrings({
 	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "С новыми ограничениями Blizzard в патче 12.0.5 в MiniCC произошли следующие изменения.\n\nХорошие новости:\n* Отслеживание кулдаунов по-прежнему в основном работает в аренах и подземельях.\n* Добавлена поддержка нескольких зарядов заклинаний (например, 2x Подавление боли, 2x Размытие) для кулдаунов союзников и врагов.\n\nПлохие новости:\n* Внешние заклинания союзников больше не отслеживаются в рейдах и на полях боя.\n* Предсказывающее свечение стало менее надёжным.\n* Отслеживание кика в PvP больше не может определить, кто прервал. Теперь отображается только общая иконка с наименьшим известным кулдауном прерывания врага.\n\nМы вложили много труда в это обновление, но проблемы всё ещё могут возникать. \nПожалуйста, сообщайте о найденных ошибках в нашем Discord, чтобы мы могли их исправить.",
 	[" - Added enemy cooldown tracking module."] = " - Добавлен модуль отслеживания перезарядки врагов.",
 	["MiniCC - What's New?"] = "MiniCC - Что нового?",
+
+	-- Language option
+	["Language"] = "Язык",
+	["Language override"] = "Язык аддона",
+	["Override the addon language. By default, your game client language is used."] = "Изменяет язык аддона. По умолчанию используется язык игрового клиента.",
+	["Auto (client language)"] = "Авто (язык клиента)",
+	["Language changed. Reload UI now?"] = "Язык изменён. Перезагрузить интерфейс сейчас?",
 })

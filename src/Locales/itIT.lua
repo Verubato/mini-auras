@@ -2,11 +2,7 @@
 local _, addon = ...
 local L = addon.L
 
-if GetLocale() ~= "itIT" then
-	return
-end
-
-L:SetStrings({
+L:RegisterLocale("itIT", {
 
 	-- Shared strings
 	["Any"] = "Qualsiasi",
@@ -247,6 +243,8 @@ L:SetStrings({
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Quando Crescita è impostata su Giù, stabilisce quante icone appaiono per riga prima di andare a capo. Utile per cornici del gruppo orizzontali.",
 
 	-- Enemy Cooldown Tracker tab
+	["Enemy Cooldowns"] = "CD nemici",
+	["Enemy Cooldowns_Short"] = "CD nemici",
 	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "Mostra i tempi di recupero difensivi e offensivi degli avversari nell'arena dopo la scadenza dei loro buff.",
 	["Display"] = "Visualizzazione",
 	["Layout Mode"] = "Modalità di layout",
@@ -294,4 +292,11 @@ L:SetStrings({
 	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "Con le nuove restrizioni di Blizzard nella 12.0.5, ecco cosa è cambiato in MiniCC.\n\nLe buone notizie:\n* Il tracciamento dei cooldown funziona ancora bene in arena e nei dungeon.\n* Aggiunto il supporto per più cariche degli incantesimi (es. 2x Soppressione del dolore, 2x Sfocatura) per i CD amici e nemici.\n\nLe cattive notizie:\n* I CD esterni amici non vengono più tracciati in Raid e Campi di battaglia.\n* I bagliori predittivi sono meno affidabili.\n* Il tracciamento dei kick PvP non può più identificare chi ha interrotto. Ora mostra solo un’icona generica con il cooldown di kick nemico più breve conosciuto.\n\nAbbiamo lavorato molto su questo aggiornamento, ma potrebbero esserci ancora problemi. \nPer favore segnala i bug nel nostro Discord così possiamo risolverli.",
 	[" - Added enemy cooldown tracking module."] = " - Modulo di tracciamento dei tempi di recupero nemici aggiunto.",
 	["MiniCC - What's New?"] = "MiniCC - Novità?",
+
+	-- Language option
+	["Language"] = "Lingua",
+	["Language override"] = "Lingua dell'addon",
+	["Override the addon language. By default, your game client language is used."] = "Cambia la lingua dell'addon. Per impostazione predefinita viene usata la lingua del client di gioco.",
+	["Auto (client language)"] = "Auto (lingua del client)",
+	["Language changed. Reload UI now?"] = "Lingua cambiata. Ricaricare l'interfaccia adesso?",
 })

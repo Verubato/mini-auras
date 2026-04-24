@@ -369,37 +369,36 @@ local function AnchorContainer(entry)
 
 	local rowsEnabled = options.Icons.Rows and options.Icons.Rows > 1
 
+	local grow = options.Grow
+	local isGrowDown = grow == "DOWN"
+
 	if rowsEnabled then
-		-- For multi-row, anchor the container's top edge so that the first row appears at
-		-- the same position as the single-row icon (vertically centred on the party frame).
-		-- Adding half an icon height to the Y offset achieves this because the top of the
-		-- container sits half an icon above the first row's centre.
 		local size = tonumber(options.Icons.Size) or 32
 		local yOffset = options.Offset.Y + size / 2
 
-		if options.Grow == "LEFT" then
+		if grow == "LEFT" then
 			frame:SetPoint("TOPRIGHT", anchor, "LEFT", options.Offset.X, yOffset)
-		elseif options.Grow == "RIGHT" then
+		elseif grow == "RIGHT" then
 			frame:SetPoint("TOPLEFT", anchor, "RIGHT", options.Offset.X, yOffset)
-		elseif options.Grow == "DOWN" then
+		elseif grow == "DOWN" then
 			frame:SetPoint("TOP", anchor, "BOTTOM", options.Offset.X, options.Offset.Y)
 		else
 			frame:SetPoint("TOP", anchor, "CENTER", options.Offset.X, yOffset)
 		end
 	else
-		if options.Grow == "LEFT" then
+		if grow == "LEFT" then
 			frame:SetPoint("RIGHT", anchor, "LEFT", options.Offset.X, options.Offset.Y)
-		elseif options.Grow == "RIGHT" then
+		elseif grow == "RIGHT" then
 			frame:SetPoint("LEFT", anchor, "RIGHT", options.Offset.X, options.Offset.Y)
-		elseif options.Grow == "DOWN" then
+		elseif grow == "DOWN" then
 			frame:SetPoint("TOP", anchor, "BOTTOM", options.Offset.X, options.Offset.Y)
 		else
 			frame:SetPoint("CENTER", anchor, "CENTER", options.Offset.X, options.Offset.Y)
 		end
 	end
 
-	entry.Container:SetGrowDown(options.Grow == "DOWN")
-	entry.Container:SetColumns(options.Grow == "DOWN" and options.Icons.Columns or nil)
+	entry.Container:SetGrowDown(isGrowDown)
+	entry.Container:SetColumns(options.Icons.Columns)
 end
 
 ---Must be called once from M:Init before any display functions are used.
