@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.14.0
+
+- Added Regenerative Heartwood talent for rdruid.
+
 ## 3.13.0
 
 - Excluded pvp spells (Grounding Totem, Time Stop) from showing in PvE contexts.
