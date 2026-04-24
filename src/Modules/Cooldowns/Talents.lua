@@ -295,6 +295,8 @@ local SpecDurationModifiers = {
 			{ { SpellId = 357170, Amount = 30, Mult = true } }, -- rank 2
 		},
 	},
+	-- Restoration Druid: Regenerative Heartwood: Ironbark +4s
+	[105] = { [392116] = { { { SpellId = 102342, Amount = 4 } } } },
 }
 
 -- Assumed talent ranks used when no real talent data is available for a unit.
