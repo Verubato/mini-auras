@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.13.0
+
+- Excluded pvp spells (Grounding Totem, Time Stop) from showing in PvE contexts.
+- Added Roar of Sacrifice and Exhilaration tracking.
+- Improved Shadow Blades tracking.
+- Hunter Turtle false positives fixes.
+
 ## 3.12.0
 
 - Icons now stay in sync Danders Frames when they are sorted.
