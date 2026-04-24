@@ -73,9 +73,10 @@ local function GetStaticAbilities(unit)
 
 	local _, instanceType = IsInInstance()
 	local hideExternalDefensives = instanceOptions:IsRaid() or instanceType == "pvp"
+	local inPvpContext = instanceType == "arena" or instanceType == "pvp" or UnitIsPVP(unit)
 
 	local cached = staticAbilitiesCache[unit]
-	if cached and cached.specId == specId and cached.hideExternalDefensives == hideExternalDefensives then
+	if cached and cached.specId == specId and cached.hideExternalDefensives == hideExternalDefensives and cached.inPvpContext == inPvpContext then
 		return cached.result
 	end
 
@@ -91,6 +92,7 @@ local function GetStaticAbilities(unit)
 		for _, rule in ipairs(ruleList) do
 			if rule.SpellId and not seen[rule.SpellId] and not disabledSpells[rule.SpellId]
 				and not (hideExternalDefensives and rule.ExternalDefensive)
+				and not (rule.PvPOnly and not inPvpContext)
 			then
 				local excluded = false
 				if rule.ExcludeIfTalent then
@@ -135,7 +137,7 @@ local function GetStaticAbilities(unit)
 	addRules(rules.ByClass[classToken])
 
 	if specId then
-		staticAbilitiesCache[unit] = { specId = specId, hideExternalDefensives = hideExternalDefensives, result = result }
+		staticAbilitiesCache[unit] = { specId = specId, hideExternalDefensives = hideExternalDefensives, inPvpContext = inPvpContext, result = result }
 	end
 	return result
 end

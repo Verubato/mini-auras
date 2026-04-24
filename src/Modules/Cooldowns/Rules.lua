@@ -756,6 +756,7 @@ local rules = {
 				RequiresEvidence = "UnitFlags",
 				SpellId = 378441,
 				RequiresTalent = { 5463, 5464, 5619 },
+				PvPOnly = true,
 			}, -- Time Stop (PvP talent)
 		}, -- Augmentation Evoker: Obsidian Scales
 		[264] = { -- Restoration Shaman
@@ -1012,6 +1013,7 @@ local rules = {
 				MinCancelDuration = 0.5,
 				SpellId = 204336,
 				RequiresTalent = { 3620, 3622, 715 },
+				PvPOnly = true,
 			}, -- Grounding Totem (PvP talent, consumed in 0.5-3s)
 		},
 		WARLOCK = {
@@ -1067,6 +1069,7 @@ local rules = {
 				RequiresEvidence = "UnitFlags",
 				SpellId = 378441,
 				RequiresTalent = { 5463, 5464, 5619 },
+				PvPOnly = true,
 			}, -- Time Stop (PvP talent)
 		},
 	},
