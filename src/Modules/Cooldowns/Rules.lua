@@ -895,6 +895,15 @@ local rules = {
 				RequiresEvidence = false,
 			}, -- Survival of the Fittest + Survival of the Fittest talent (+2s)
 			{
+				BuffDuration = 3,
+				Cooldown = 60,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				SpellId = 109304,
+				RequiresTalent = 430709,
+			}, -- Exhilaration (Dark Ranger: applies 3s SotF)
+			{
 				BuffDuration = 10,
 				Cooldown = 120,
 				BigDefensive = false,
