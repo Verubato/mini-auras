@@ -891,6 +891,16 @@ local rules = {
 				SpellId = 264735,
 				MaxCharges = 2,
 			}, -- Survival of the Fittest + Survival of the Fittest talent (+2s)
+			{
+				BuffDuration = 10,
+				Cooldown = 120,
+				BigDefensive = false,
+				ExternalDefensive = true,
+				Important = false,
+				CastableOnOthers = true,
+				SpellId = 53480,
+				RequiresTalent = 53480,
+			}, -- Roar of Sacrifice
 		},
 		DRUID = {
 			{

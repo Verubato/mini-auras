@@ -307,6 +307,7 @@ local ClassDefaultTalentRanks = {
 	HUNTER = {
 		[1258485] = 1, -- Improved Aspect of the Turtle: Turtle -30s (nearly universal)
 		[459450] = 1,  -- Survival of the Fittest: +1 charge (nearly universal)
+		[53480] = 1,   -- Roar of Sacrifice (universal)
 	},
 	MAGE = {
 		[382424] = 2, -- Winter's Protection: Ice Block/Ice Cold -60s at rank 2 (nearly universal)
