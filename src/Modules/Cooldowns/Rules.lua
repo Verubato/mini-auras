@@ -870,6 +870,7 @@ local rules = {
 				CanCancelEarly = true,
 				SpellId = 186265,
 				RequiresEvidence = "UnitFlags",
+				ExcludeFromPrediction = true,
 			}, -- Aspect of the Turtle
 			{
 				BuffDuration = 6,
@@ -880,6 +881,7 @@ local rules = {
 				MinDuration = true,
 				SpellId = 264735,
 				MaxCharges = 2,
+				RequiresEvidence = false,
 			}, -- Survival of the Fittest
 			{
 				BuffDuration = 8,
@@ -890,6 +892,7 @@ local rules = {
 				MinDuration = true,
 				SpellId = 264735,
 				MaxCharges = 2,
+				RequiresEvidence = false,
 			}, -- Survival of the Fittest + Survival of the Fittest talent (+2s)
 			{
 				BuffDuration = 10,
