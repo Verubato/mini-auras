@@ -799,8 +799,13 @@ function M:Slider(options)
 		high:SetText(options.Max)
 	end
 
+	local text = _G[slider:GetName() .. "Text"]
+	if text then
+		text:Hide()
+	end
+
 	local hasFloat = math.floor(options.Step) ~= options.Step
-	local box = CreateFrame("EditBox", nil, options.Parent, "InputBoxTemplate")
+	local box = CreateFrame("EditBox", nil, slider, "InputBoxTemplate")
 
 	if not hasFloat then
 		ConfigureNumbericBox(box, options.Min < 0)

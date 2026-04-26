@@ -2,11 +2,7 @@
 local _, addon = ...
 local L = addon.L
 
-if GetLocale() ~= "ptBR" then
-	return
-end
-
-L:SetStrings({
+L:RegisterLocale("ptBR", {
 
 	-- Shared strings
 	["Any"] = "Qualquer",
@@ -248,6 +244,8 @@ L:SetStrings({
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Quando Crescer está definido como Baixo, define quantos ícones aparecem por linha antes de quebrar. Útil para molduras de grupo horizontais.",
 
 	-- Enemy Cooldown Tracker tab
+	["Enemy Cooldowns"] = "CDs inimigos",
+	["Enemy Cooldowns_Short"] = "CDs inimigos",
 	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "Exibe os tempos de recarga defensivos e ofensivos dos adversários de arena após seus buffs expirarem.",
 	["Display"] = "Exibição",
 	["Layout Mode"] = "Modo de layout",
@@ -295,4 +293,11 @@ L:SetStrings({
 	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "Com as novas restrições da Blizzard na 12.0.5, isto é o que mudou no MiniCC.\n\nAs boas notícias:\n* O rastreamento de recarga ainda funciona bem em arenas e masmorras.\n* Adicionado suporte para múltiplas cargas de feitiços (ex. 2x Supressão de Dor, 2x Borrão) para CDs amigos e inimigos.\n\nAs más notícias:\n* Feitiços externos amigos não são mais rastreados em Raides e Campos de Batalha.\n* Os brilhos preditivos são menos confiáveis.\n* O rastreamento de interrupções PvP não consegue mais identificar quem interrompeu. Agora exibe apenas um ícone genérico com o menor tempo de recarga de interrupção inimiga conhecido.\n\nTrabalhamos muito nesta atualização, mas ainda pode haver problemas. \nPor favor, reporte os bugs que encontrar em nosso Discord para que possamos corrigi-los.",
 	[" - Added enemy cooldown tracking module."] = " - Módulo de rastreamento de recarga de inimigos adicionado.",
 	["MiniCC - What's New?"] = "MiniCC - O que há de novo?",
+
+	-- Language option
+	["Language"] = "Idioma",
+	["Language override"] = "Idioma do addon",
+	["Override the addon language. By default, your game client language is used."] = "Altera o idioma do addon. Por padrão, o idioma do cliente de jogo é usado.",
+	["Auto (client language)"] = "Auto (idioma do cliente)",
+	["Language changed. Reload UI now?"] = "Idioma alterado. Recarregar a interface agora?",
 })

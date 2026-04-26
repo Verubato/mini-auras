@@ -2,11 +2,7 @@
 local _, addon = ...
 local L = addon.L
 
-if GetLocale() ~= "esES" then
-	return
-end
-
-L:SetStrings({
+L:RegisterLocale("esES", {
 
 	-- Shared strings
 	["Any"] = "Cualquiera",
@@ -247,6 +243,8 @@ L:SetStrings({
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Cuando Crecer está en Abajo, define cuántos iconos aparecen por fila antes de pasar a la siguiente. Útil para marcos de grupo horizontales.",
 
 	-- Enemy Cooldown Tracker tab
+	["Enemy Cooldowns"] = "CDs enemigos",
+	["Enemy Cooldowns_Short"] = "CDs enemigos",
 	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "Muestra los tiempos de reutilización defensivos y ofensivos de los adversarios de arena tras expirar sus efectos positivos.",
 	["Display"] = "Mostrar",
 	["Layout Mode"] = "Modo de disposición",
@@ -294,4 +292,11 @@ L:SetStrings({
 	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "Con las nuevas restricciones de Blizzard en 12.0.5, esto es lo que ha cambiado en MiniCC.\n\nLas buenas noticias:\n* El seguimiento de tiempos de reutilización sigue funcionando bien en arenas y mazmorras.\n* Se ha añadido soporte para múltiples cargas de hechizos (p. ej. 2x Supresión del dolor, 2x Desenfoque) para CDs amigos y enemigos.\n\nLas malas noticias:\n* Los externos amigos ya no se rastrean en Bandas y Campos de batalla.\n* Los brillos predictivos son menos fiables.\n* El seguimiento de interrupciones PvP ya no puede identificar al interruptor. Ahora solo muestra un icono genérico con el tiempo de reutilización de interrupción enemiga más corto conocido.\n\nHemos trabajado mucho en esta actualización, pero puede que aún haya problemas. \nPor favor, reporta los errores que encuentres en nuestro Discord para que podamos solucionarlos.",
 	[" - Added enemy cooldown tracking module."] = " - Módulo de seguimiento de tiempos de reutilización de enemigos añadido.",
 	["MiniCC - What's New?"] = "MiniCC - ¿Qué hay de nuevo?",
+
+	-- Language option
+	["Language"] = "Idioma",
+	["Language override"] = "Idioma del addon",
+	["Override the addon language. By default, your game client language is used."] = "Cambia el idioma del addon. Por defecto se usa el idioma del cliente de juego.",
+	["Auto (client language)"] = "Auto (idioma del cliente)",
+	["Language changed. Reload UI now?"] = "Idioma cambiado. ¿Recargar la interfaz ahora?",
 })

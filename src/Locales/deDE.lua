@@ -2,11 +2,7 @@
 local _, addon = ...
 local L = addon.L
 
-if GetLocale() ~= "deDE" then
-	return
-end
-
-L:SetStrings({
+L:RegisterLocale("deDE", {
 
 	-- Shared strings
 	["Any"] = "Beliebig",
@@ -247,6 +243,8 @@ L:SetStrings({
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Wenn Wachsen auf Unten gesetzt ist, legt fest, wie viele Symbole pro Reihe angezeigt werden. Nützlich für horizontale Gruppenrahmen.",
 
 	-- Enemy Cooldown Tracker tab
+	["Enemy Cooldowns"] = "Gegner-Abklingzeiten",
+	["Enemy Cooldowns_Short"] = "Gegner-CDs",
 	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "Zeigt defensive und offensive Abklingzeiten der Arena-Gegner an, nachdem deren Buffs ablaufen.",
 	["Display"] = "Anzeige",
 	["Layout Mode"] = "Layout-Modus",
@@ -294,4 +292,11 @@ L:SetStrings({
 	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "Mit den neuen Blizzard-Einschränkungen in 12.0.5 hat sich in MiniCC Folgendes geändert.\n\nDie guten Neuigkeiten:\n* Cooldown-Tracking funktioniert in Arenen und Dungeons weiterhin größtenteils einwandfrei.\n* Unterstützung für mehrere Zauberladungen (z.B. 2x Schmerzunterdückung, 2x Unschärfe) für freundliche und feindliche CDs hinzugefügt.\n\nDie schlechten Neuigkeiten:\n* Externe freundliche Fähigkeiten werden in Schlachtzügen und Schlachtfeldern nicht mehr verfolgt.\n* Vorhersage-Glows sind weniger zuverlässig.\n* PvP-Kick-Tracking kann den Kicker nicht mehr identifizieren. Zeigt jetzt nur noch ein generisches Symbol mit dem kürzesten bekannten feindlichen Kick-Cooldown an.\n\nWir haben viel Arbeit in dieses Update gesteckt, aber es können noch Probleme auftreten. \nBitte meldet Fehler in unserem Discord, damit wir sie beheben können.",
 	[" - Added enemy cooldown tracking module."] = " - Feindliches Abklingzeit-Verfolgungsmodul hinzugefügt.",
 	["MiniCC - What's New?"] = "MiniCC - Was gibt es Neues?",
+
+	-- Language option
+	["Language"] = "Sprache",
+	["Language override"] = "Sprache überschreiben",
+	["Override the addon language. By default, your game client language is used."] = "Überschreibt die Addon-Sprache. Standardmäßig wird die Sprache deines Spielclients verwendet.",
+	["Auto (client language)"] = "Auto (Client-Sprache)",
+	["Language changed. Reload UI now?"] = "Sprache geändert. Benutzeroberfläche jetzt neu laden?",
 })

@@ -134,7 +134,7 @@ function M:Init()
 		},
 		{
 			Key = "EnemyCooldowns",
-			Title = "Enemy CDs",
+			Title = L["Enemy Cooldowns_Short"] or L["Enemy Cooldowns"],
 			Build = function(content)
 				M.EnemyCooldownTracker:Build(content, db.Modules.EnemyCooldownTrackerModule)
 			end,
@@ -226,6 +226,18 @@ function M:Init()
 	})
 
 	M.TabController = tabController
+
+	StaticPopupDialogs["MINICC_RELOAD_CONFIRM"] = {
+		text = L["Language changed. Reload UI now?"],
+		button1 = YES,
+		button2 = NO,
+		OnAccept = function()
+			C_UI.Reload()
+		end,
+		timeout = 0,
+		whileDead = true,
+		hideOnEscape = true,
+	}
 
 	StaticPopupDialogs["MINICC_CONFIRM"] = {
 		text = "%s",

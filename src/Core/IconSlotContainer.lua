@@ -450,8 +450,9 @@ function M:Layout()
 	-- Build a cheap signature from the current size, row settings, and used slot indices.
 	-- If it matches the last run, the visual result would be identical so we
 	-- can skip all the SetPoint/SetSize/Show/Hide calls.
-	local numRows = (not self.GrowDown and self.NumRows and self.NumRows > 1) and self.NumRows or nil
-	local columnsPerRow = (self.GrowDown and self.Columns and self.Columns > 1) and self.Columns or nil
+	local numRows = (self.NumRows and self.NumRows > 1) and self.NumRows or nil
+	local columnsPerRow = (self.Columns and self.Columns > 1) and self.Columns or nil
+	local hasGrid = numRows or columnsPerRow
 	local sig = self.Size .. ":" .. (numRows or 1) .. ":" .. (self.RowAlignment or "C") .. ":" .. (self.OverflowRowAlignment or "C") .. ":" .. (self.InvertLayout and "1" or "0") .. ":" .. (self.GrowDown and "D" or "H") .. ":" .. (columnsPerRow or 1) .. ":" .. table.concat(layoutScratch, ",", 1, n)
 	if self.LayoutSignature == sig then
 		return
@@ -467,11 +468,19 @@ function M:Layout()
 
 	if usedCount == 0 then
 		self.Frame:SetSize(self.Size, self.Size)
-	elseif numRows then
-		-- Multi-row layout: divide active icons across the requested number of rows
-		local iconsPerRow = math.max(1, math.ceil(usedCount / numRows))
-		local actualRows = math.ceil(usedCount / iconsPerRow)
-		local rowWidth = iconsPerRow * self.Size + (iconsPerRow - 1) * self.Spacing
+	elseif hasGrid then
+
+		local cols
+		if columnsPerRow then
+			cols = columnsPerRow
+		elseif numRows then
+			cols = math.max(1, math.ceil(usedCount / numRows))
+		else
+			cols = usedCount
+		end
+
+		local actualRows = math.ceil(usedCount / cols)
+		local rowWidth = cols * self.Size + (cols - 1) * self.Spacing
 		local totalHeight = actualRows * self.Size + (actualRows - 1) * self.Spacing
 		self.Frame:SetSize(rowWidth, totalHeight)
 		self.Frame:SetAlpha(1)
@@ -481,57 +490,28 @@ function M:Layout()
 
 		for displayIndex = 1, usedCount do
 			local slot = self.Slots[layoutScratch[displayIndex]]
-			local rowIndex = math.floor((displayIndex - 1) / iconsPerRow) -- 0-based
-			-- When InvertLayout is set, reverse the column order so slot 1 lands at the
-			-- rightmost position of every row instead of the leftmost.
-			local rawCol = (displayIndex - 1) % iconsPerRow -- 0-based
-			local colIndex = self.InvertLayout and (iconsPerRow - 1 - rawCol) or rawCol
-			local rowIcons = (rowIndex == actualRows - 1) and (usedCount - (actualRows - 1) * iconsPerRow) or iconsPerRow
+			local rowIndex = math.floor((displayIndex - 1) / cols)
+			local rawCol = (displayIndex - 1) % cols
+			local colIndex = self.InvertLayout and (cols - 1 - rawCol) or rawCol
+			local rowIcons = math.min(cols, usedCount - rowIndex * cols)
 
 			local x
 			if self.InvertLayout then
-				-- Inverted: use simple LEFT formula; column reversal already handles right-to-left
-				-- fill, so partial rows are naturally right-aligned without an extra shift.
 				x = colIndex * (self.Size + self.Spacing) - (rowWidth / 2) + (self.Size / 2)
 			else
 				local alignment = rowIndex == 0 and row1Alignment or overflowAlignment
 				if alignment == "LEFT" then
 					x = colIndex * (self.Size + self.Spacing) - (rowWidth / 2) + (self.Size / 2)
 				elseif alignment == "RIGHT" then
-					local shift = (iconsPerRow - rowIcons) * (self.Size + self.Spacing)
+					local shift = (cols - rowIcons) * (self.Size + self.Spacing)
 					x = colIndex * (self.Size + self.Spacing) - (rowWidth / 2) + (self.Size / 2) + shift
-				else -- CENTER
+				else
 					local thisRowWidth = rowIcons * self.Size + (rowIcons - 1) * self.Spacing
 					x = colIndex * (self.Size + self.Spacing) - (thisRowWidth / 2) + (self.Size / 2)
 				end
 			end
 			local y = (totalHeight / 2) - (self.Size / 2) - rowIndex * (self.Size + self.Spacing)
 
-			slot.Frame:ClearAllPoints()
-			slot.Frame:SetPoint("CENTER", self.Frame, "CENTER", x, y)
-			slot.Frame:SetSize(self.Size, self.Size)
-			slot.Frame:Show()
-		end
-	elseif self.GrowDown and columnsPerRow then
-		-- Grid grow-down: icons fill left-to-right up to columnsPerRow per row, then wrap down
-		local cols = columnsPerRow
-		local actualRows = math.ceil(usedCount / cols)
-		local rowWidth = cols * self.Size + (cols - 1) * self.Spacing
-		local totalHeight = actualRows * self.Size + (actualRows - 1) * self.Spacing
-		self.Frame:SetSize(rowWidth, totalHeight)
-		self.Frame:SetAlpha(1)
-
-		for displayIndex = 1, usedCount do
-			local slot = self.Slots[layoutScratch[displayIndex]]
-			local rowIndex = math.floor((displayIndex - 1) / cols) -- 0-based
-			local colIndex = (displayIndex - 1) % cols             -- 0-based
-			-- Number of icons in this row (may be less than cols on the last row)
-			local rowIcons = math.min(cols, usedCount - rowIndex * cols)
-			-- Center this row within the full grid width
-			local thisRowWidth = rowIcons * self.Size + (rowIcons - 1) * self.Spacing
-			local rowOffsetX = (rowWidth - thisRowWidth) / 2
-			local x = rowOffsetX + colIndex * (self.Size + self.Spacing) - (rowWidth / 2) + (self.Size / 2)
-			local y = (totalHeight / 2) - (self.Size / 2) - rowIndex * (self.Size + self.Spacing)
 			slot.Frame:ClearAllPoints()
 			slot.Frame:SetPoint("CENTER", self.Frame, "CENTER", x, y)
 			slot.Frame:SetSize(self.Size, self.Size)
@@ -828,7 +808,7 @@ function M:SetSlot(slotIndex, options)
 	if layer.Cooldown.SetCountdownMillisecondsThreshold then
 		layer.Cooldown:SetCountdownMillisecondsThreshold(options.ShowMilliseconds and (db and db.MillisecondsThreshold or 5) or 0)
 	end
-	
+
 	if options.DurationObject then
 		layer.Cooldown:SetCooldownFromDurationObject(options.DurationObject)
 		layer.Cooldown:SetDrawSwipe(not (db and db.DisableSwipe))

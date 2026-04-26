@@ -2,11 +2,7 @@
 local _, addon = ...
 local L = addon.L
 
-if GetLocale() ~= "koKR" then
-	return
-end
-
-L:SetStrings({
+L:RegisterLocale("koKR", {
 
 	-- Shared strings
 	["Any"] = "모두",
@@ -247,6 +243,8 @@ L:SetStrings({
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "확장 방향이 아래일 때, 줄 바꿈 전에 한 줄에 표시할 아이콘 수를 설정합니다. 가로 파티 프레임에 유용합니다.",
 
 	-- Enemy Cooldown Tracker tab
+	["Enemy Cooldowns"] = "적 쿨다운",
+	["Enemy Cooldowns_Short"] = "적 쿨다운",
 	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "버프가 만료된 후 적 투기장 상대의 방어 및 공격 재사용 대기시간을 표시합니다.",
 	["Display"] = "표시",
 	["Layout Mode"] = "레이아웃 모드",
@@ -294,4 +292,11 @@ L:SetStrings({
 	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "12.0.5의 새로운 블리자드 제한으로 인해 MiniCC에서 변경된 사항입니다.\n\n좋은 소식:\n* 쿨다운 추적은 투기장과 던전에서 여전히 대부분 정상 작동합니다.\n* 아군 및 적 CD 모두에 대해 여러 주문 충전 지원이 추가되었습니다(예: 고통 억제 2x, 흡릿하게 하기 2x).\n\n나쁜 소식:\n* 아군 외부 주문이 공격대와 전장에서 더 이상 추적되지 않습니다.\n* 예측 발광이 덜 신뢰할 수 있습니다.\n* PvP 방해 추적이 더 이상 방해자를 식별할 수 없습니다. 이제 알려진 가장 짧은 적 방해 쿨다운을 사용하는 일반 아이콘만 표시됩니다.\n\n이 업데이트에 많은 노력을 기울였지만 여전히 문제가 있을 수 있습니다. \nDiscord에 버그를 보고해 주시면 수정하겠습니다.",
 	[" - Added enemy cooldown tracking module."] = " - 적 쿨다운 추적 모듈이 추가되었습니다.",
 	["MiniCC - What's New?"] = "MiniCC - 새로운 소식?",
+
+	-- Language option
+	["Language"] = "언어",
+	["Language override"] = "언어 변경",
+	["Override the addon language. By default, your game client language is used."] = "애드온 언어를 변경합니다. 기본값은 게임 클라이언트 언어입니다.",
+	["Auto (client language)"] = "자동 (클라이언트 언어)",
+	["Language changed. Reload UI now?"] = "언어가 변경되었습니다. 지금 UI를 새로고침하시겠습니까?",
 })

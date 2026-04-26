@@ -2,11 +2,7 @@
 local _, addon = ...
 local L = addon.L
 
-if GetLocale() ~= "zhCN" then
-	return
-end
-
-L:SetStrings({
+L:RegisterLocale("zhCN", {
 
 	-- Shared strings
 	["Any"] = "任何",
@@ -248,6 +244,8 @@ L:SetStrings({
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "当增长方向为向下时，设置每行显示的图标数量。适用于水平队伍框架。",
 
 	-- Enemy Cooldown Tracker tab
+	["Enemy Cooldowns"] = "敌方冷却",
+	["Enemy Cooldowns_Short"] = "敌方冷却",
 	["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."] = "在敌方竞技场对手的增益效果消失后，显示其防御性和进攻性冷却时间。",
 	["Display"] = "显示",
 	["Layout Mode"] = "布局模式",
@@ -295,4 +293,11 @@ L:SetStrings({
 	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "随着 12.0.5 版本的新暴雪限制，MiniCC 发生了以下变化。\n\n好消息：\n* 冷却时间追踪在竞技场和地下城中仍然基本正常运行。\n* 为友方和敌方 CD 添加了多层法术充能支持（例妋 2x 痛苦压制、2x 模糊）。\n\n坏消息：\n* 友方外部技能在团队副本和战场中不再被追踪。\n* 预测光效变得不那么可靠。\n* PvP 打断追踪无法再识别打断者。现在仅显示使用最短已知敌方打断冷却时间的通用图标。\n\n我们在这次更新上投入了大量工作，但可能仍有问题。 \n请在我们的 Discord 中报告您发现的任何错误，以便我们解决。",
 	[" - Added enemy cooldown tracking module."] = " - 新增敌人冷却追踪模块。",
 	["MiniCC - What's New?"] = "MiniCC - 新内容？",
+
+	-- Language option
+	["Language"] = "语言",
+	["Language override"] = "语言覆盖",
+	["Override the addon language. By default, your game client language is used."] = "覆盖插件语言。默认使用游戏客户端语言。",
+	["Auto (client language)"] = "自动（客户端语言）",
+	["Language changed. Reload UI now?"] = "语言已更改。立即重新加载界面吗？",
 })

@@ -11,6 +11,54 @@ local strings = {}
 -- Default locale (English)
 local defaultStrings = {}
 
+-- Registry of all locale strings keyed by locale code
+local registry = {}
+
+local localeDisplayNames = {
+	["enUS"] = "English",
+	["enGB"] = "English",
+	["deDE"] = "Deutsch",
+	["esES"] = "Español",
+	["esMX"] = "Español (México)",
+	["frFR"] = "Français",
+	["itIT"] = "Italiano",
+	["ptBR"] = "Português",
+	["koKR"] = "한국어",
+	["ruRU"] = "Русский",
+	["zhCN"] = "简体中文",
+	["zhTW"] = "繁體中文",
+}
+
+-- Register a locale's strings for later activation
+function L:RegisterLocale(localeKey, stringTable)
+	registry[localeKey] = stringTable
+end
+
+-- Apply a registered locale as the active strings
+function L:ApplyLocale(localeKey)
+	wipe(strings)
+	locale = localeKey
+
+	local registered = registry[localeKey]
+	if registered then
+		for key, value in pairs(registered) do
+			strings[key] = value
+		end
+	end
+end
+
+-- Return all registered locale codes with display names
+function L:GetAvailableLocales()
+	local result = {}
+	for key in pairs(registry) do
+		table.insert(result, { Key = key, Name = localeDisplayNames[key] or key })
+	end
+	table.sort(result, function(a, b)
+		return a.Name < b.Name
+	end)
+	return result
+end
+
 -- Set a localized string
 function L:SetString(key, value)
 	strings[key] = value
@@ -48,4 +96,8 @@ setmetatable(L, {
 -- Return current locale
 function L:GetLocale()
 	return locale
+end
+
+function L:GetDisplayName(localeKey)
+	return localeDisplayNames[localeKey] or localeKey
 end
