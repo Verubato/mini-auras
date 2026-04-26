@@ -190,28 +190,6 @@ local function BuildInstance(parent, anchorOptions)
 
 	rowsSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
-	local columnsPerRowSlider = mini:Slider({
-		Parent = panel,
-		LabelText = L["Columns"],
-		Min = 1,
-		Max = 10,
-		Step = 1,
-		Width = columnWidth * 2 - horizontalSpacing,
-		GetValue = function()
-			return anchorOptions.Icons.Columns or 1
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 1, 10, 1)
-			if anchorOptions.Icons.Columns ~= newValue then
-				anchorOptions.Icons.Columns = newValue
-				config:Apply()
-			end
-		end,
-	})
-
-	columnsPerRowSlider.Slider:SetPoint("LEFT", rowsSlider.Slider, "RIGHT", horizontalSpacing, 0)
-	columnsPerRowSlider.Slider:SetPoint("TOP", rowsSlider.Slider, "TOP", 0, 0)
-
 	local iconSpacingSlider = mini:Slider({
 		Parent    = panel,
 		LabelText = L["Icon Spacing"],
@@ -231,7 +209,39 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	iconSpacingSlider.Slider:SetPoint("TOPLEFT", rowsSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	iconSpacingSlider.Slider:SetPoint("LEFT", rowsSlider.Slider, "RIGHT", horizontalSpacing, 0)
+	iconSpacingSlider.Slider:SetPoint("TOP", rowsSlider.Slider, "TOP", 0, 0)
+
+	-- Shares the same position as rowsSlider; only one is shown at a time based on Grow direction.
+	local columnsPerRowSlider = mini:Slider({
+		Parent = panel,
+		LabelText = L["Columns"],
+		Tooltip = L["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."],
+		Min = 1,
+		Max = 10,
+		Step = 1,
+		Width = columnWidth * 2 - horizontalSpacing,
+		GetValue = function()
+			return anchorOptions.Icons.Columns or 1
+		end,
+		SetValue = function(v)
+			local newValue = mini:ClampInt(v, 1, 10, 1)
+			if anchorOptions.Icons.Columns ~= newValue then
+				anchorOptions.Icons.Columns = newValue
+				config:Apply()
+			end
+		end,
+	})
+
+	columnsPerRowSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+
+	local function refreshRowControls()
+		local isDown = anchorOptions.Grow == "DOWN"
+		rowsSlider.Slider:SetShown(not isDown)
+		rowsSlider.Label:SetShown(not isDown)
+		columnsPerRowSlider.Slider:SetShown(isDown)
+		columnsPerRowSlider.Label:SetShown(isDown)
+	end
 
 	local growLbl = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	growLbl:SetText(L["Grow"])
@@ -246,13 +256,16 @@ local function BuildInstance(parent, anchorOptions)
 		SetValue = function(value)
 			if anchorOptions.Grow ~= value then
 				anchorOptions.Grow = value
+				refreshRowControls()
 				config:Apply()
 			end
 		end,
 	})
 
-	growLbl:SetPoint("TOPLEFT", iconSpacingSlider.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 2)
+	growLbl:SetPoint("TOPLEFT", rowsSlider.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 2)
 	growDdl:SetPoint("TOPLEFT", growLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
+
+	refreshRowControls()
 
 	local offsetX = mini:Slider({
 		Parent = panel,
