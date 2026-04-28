@@ -610,6 +610,33 @@ function M:GW2UIFrames(visibleOnly)
 	return frames
 end
 
+---Retrieves a list of MidnightSimpleUnitFrames (MSUF) unit frames.
+---MSUF registers all its unit frames (player, target, focus, pet, party1-4,
+---raid1-40, boss1-5, arena1-5, etc.) in _G.MSUF_UnitFrames, keyed by unit
+---@param visibleOnly boolean
+---@return table
+function M:MSUFFrames(visibleOnly)
+	local registry = _G.MSUF_UnitFrames
+	if type(registry) ~= "table" then
+		return {}
+	end
+
+	local frames = {}
+
+	for _, frame in pairs(registry) do
+		if frame
+			and (not frame.IsForbidden or not frame:IsForbidden())
+			and frame.unit
+			and frame.unit ~= ""
+			and (not visibleOnly or frame:IsVisible())
+		then
+			frames[#frames + 1] = frame
+		end
+	end
+
+	return frames
+end
+
 ---Retrieves a list of custom frames from our saved vars.
 ---@param visibleOnly boolean
 ---@return table
@@ -659,6 +686,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	local buzzard = M:BuzzardFrames(visibleOnly)
 	local ndui = M:NDuiFrames(visibleOnly)
 	local gw2ui = M:GW2UIFrames(visibleOnly)
+	local msuf = M:MSUFFrames(visibleOnly)
 	local custom = M:CustomFrames(visibleOnly)
 
 	array:Append(blizzard, anchors)
@@ -676,6 +704,7 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	array:Append(buzzard, anchors)
 	array:Append(ndui, anchors)
 	array:Append(gw2ui, anchors)
+	array:Append(msuf, anchors)
 	array:Append(custom, anchors)
 
 	if includeTestFrames then
