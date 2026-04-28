@@ -446,7 +446,7 @@ local function AttachMSUFFrame(unit)
 	local portraitLevel = msufPortrait.GetFrameLevel and msufPortrait:GetFrameLevel()
 		or msufFrame:GetFrameLevel()
 		or 0
-	container.Frame:SetFrameLevel(portraitLevel + 1)
+	container.Frame:SetFrameLevel(portraitLevel + 10)
 
 	local originalSetSlot = container.SetSlot
 	container.SetSlot = function(self, slotIndex, options)
