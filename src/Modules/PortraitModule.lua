@@ -228,6 +228,30 @@ local function GetTPerlFrame(unit)
 	return nil
 end
 
+---@param unit string
+---@return table? unitFrame
+---@return table? portrait
+local function GetMSUFFrame(unit)
+	local registry = _G.MSUF_UnitFrames
+	if type(registry) ~= "table" then
+		return nil, nil
+	end
+
+	local frame = registry[unit]
+	if not frame then
+		return nil, nil
+	end
+
+	if frame.IsForbidden and frame:IsForbidden() then
+		return nil, nil
+	end
+
+	-- Prefer 3D model when active, fall back to 2D portrait texture
+	local portrait = rawget(frame, "portraitModel") or frame.portrait
+
+	return frame, portrait
+end
+
 ---@return table? unitFrame
 ---@return table? portrait
 local function GetElvUIFrame(unit)
@@ -404,6 +428,45 @@ local function AttachUUFFrame(unit)
 	containers[#containers + 1] = container
 end
 
+---@param unit string
+local function AttachMSUFFrame(unit)
+	local msufFrame, msufPortrait = GetMSUFFrame(unit)
+
+	if not msufFrame or not msufPortrait then
+		return
+	end
+
+	local watcher = watchers[unit]
+
+	if not watcher then
+		return
+	end
+
+	local container = CreateContainer(msufFrame, msufPortrait)
+	local portraitLevel = msufPortrait.GetFrameLevel and msufPortrait:GetFrameLevel()
+		or msufFrame:GetFrameLevel()
+		or 0
+	container.Frame:SetFrameLevel(portraitLevel + 1)
+
+	local originalSetSlot = container.SetSlot
+	container.SetSlot = function(self, slotIndex, options)
+		originalSetSlot(self, slotIndex, options)
+		local slot = self.Slots[slotIndex]
+		if slot and slot.Container and slot.Container.Icon and slot.Container.Cooldown then
+			slot.Frame:SetAllPoints(msufPortrait)
+			slot.Container.Frame:SetAllPoints(msufPortrait)
+			slot.Container.Icon:SetAllPoints(msufPortrait)
+			slot.Container.Icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+			slot.Container.Cooldown:SetAllPoints(msufPortrait)
+		end
+	end
+
+	watcher:RegisterCallback(function()
+		OnAuraInfo(watcher, container)
+	end)
+	containers[#containers + 1] = container
+end
+
 local function RefreshTestIcons()
 	local spellId = testSpells[1].SpellId
 	local tex = C_Spell.GetSpellTexture(spellId)
@@ -519,6 +582,10 @@ function M:Init()
 		AttachUUFFrame("target")
 		AttachUUFFrame("focus")
 		AttachUUFFrame("pet")
+		AttachMSUFFrame("player")
+		AttachMSUFFrame("target")
+		AttachMSUFFrame("focus")
+		AttachMSUFFrame("pet")
 	end)
 
 	M:Refresh()
