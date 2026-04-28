@@ -627,7 +627,7 @@ function M:MSUFFrames(visibleOnly)
 		if frame
 			and (not frame.IsForbidden or not frame:IsForbidden())
 			and frame.unit
-			and frame.unit ~= ""
+			and (frame.unit:match("^party%d") or frame.unit:match("^raid%d"))
 			and (not visibleOnly or frame:IsVisible())
 		then
 			frames[#frames + 1] = frame
