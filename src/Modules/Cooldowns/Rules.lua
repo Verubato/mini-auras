@@ -596,6 +596,16 @@ local rules = {
 				BaseCharges = 2,
 				SpellId = 1249625,
 			}, -- Zenith
+			{
+				BuffDuration = 10,
+				Cooldown = 90,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = false,
+				CanCancelEarly = true,
+				RequiresEvidence = "Shield",
+				SpellId = 125174,
+			}, -- Touch of Karma
 		},
 		[577] = { -- Havoc Demon Hunter
 			{
