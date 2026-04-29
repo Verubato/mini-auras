@@ -85,6 +85,28 @@ local function EnsureEntry(anchor, unit)
 		return nil
 	end
 
+	-- Skip NPC units (friendly mobs, scenario NPCs, etc.).
+	if not UnitIsPlayer(unit) then
+		local existing = watchEntries[anchor]
+		if existing then
+			-- Cancel pending timers so their closures can't re-show the container later.
+			for _, cd in pairs(existing.ActiveCooldowns) do
+				if cd.CleanupTimer then cd.CleanupTimer:Cancel() end
+				if cd.UsedCharges then
+					for _, uc in ipairs(cd.UsedCharges) do
+						if uc.Timer then uc.Timer:Cancel() end
+					end
+				end
+			end
+			observer:Forget(existing)
+			existing.Container:ResetAllSlots()
+			existing.Container.Frame:Hide()
+			-- Remove from watchEntries so M:Refresh()'s loop and EnableAll don't re-show it.
+			watchEntries[anchor] = nil
+		end
+		return nil
+	end
+
 	local options = GetOptions()
 	local anchorOptions = GetAnchorOptions()
 	if not options or not anchorOptions then

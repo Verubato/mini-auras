@@ -650,3 +650,4 @@ fw.describe("FindBestCandidate - BoF commit in mixed group (CastableOnOthers cro
         fw.is_nil(rule, "no CastableOnOthers IMP caster found -> no match")
     end)
 end)
+

@@ -155,6 +155,19 @@ function O:Disable(entry)
 	state.Watcher:Disable()
 end
 
+---Fully stops watching an entry and releases its watcher resources.
+---Use instead of Disable when the entry will not be re-enabled.
+---@param entry FcdWatchEntry
+function O:Forget(entry)
+	local state = watched[entry]
+	if not state then
+		return
+	end
+	state.CastEventFrame:UnregisterAllEvents()
+	state.Watcher:Dispose()
+	watched[entry] = nil
+end
+
 ---Re-enables watching for an entry after Disable.
 ---@param entry FcdWatchEntry
 function O:Enable(entry)
