@@ -62,29 +62,24 @@ fw.describe("FindBestCandidate - FeignDeath suppresses UnitFlags evidence", func
         fw.eq(unit, "party1", "ruleUnit")
     end)
 
-    fw.it("Aspect of the Turtle does not match when only FeignDeath evidence (UnitFlags suppressed)", function()
+    fw.it("no cooldown committed when FD+AotT pressed simultaneously (FeignDeath evidence only)", function()
         wow.setUnitClass("party1", "HUNTER")
-        -- FeignDeath in evidence; UnitFlags is absent (suppressed by the mutual-exclusion logic).
-        -- Survival of the Fittest: RequiresEvidence="Cast", BIG+IMP, BuffDuration=6 (MinDuration).
-        -- At 8.0s, SotF (>= 6-0.5=5.5) and AotT (needs UnitFlags, absent) compete.
-        -- SotF should win (evidence={Cast,FeignDeath} satisfies Cast-only req).
+        -- FeignDeath in evidence; UnitFlags absent (FD suppressed it in RecordUnitFlagsChange).
+        -- AotT: needs UnitFlags (absent) -> fails.
+        -- SotF: RequiresEvidence=false (requires NO evidence) -> fails because FeignDeath is present.
         local t = makeTracked(BIG, 1.0, { party1 = 1.0 }, { Cast = true, FeignDeath = true })
-        local rule, unit = B:FindBestCandidate(loader.makeEntry("party1"), t, 8.0, {})
-        -- SotF has MinDuration and BuffDuration=8 (+2s variant); 8.0 >= 7.5 -> matches.
-        fw.not_nil(rule, "SotF should match when FeignDeath suppresses UnitFlags for AotT")
-        fw.eq(rule.SpellId, 264735, "Survival of the Fittest (UnitFlags suppressed -> AotT excluded)")
+        local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 8.0, {})
+        fw.is_nil(rule, "no rule should match when FD+AotT simultaneous press produces only FeignDeath evidence")
     end)
 
-    fw.it("FeignDeath-only, no UnitFlags, synthetic Cast (12.0.5) -> SotF matches (not AotT)", function()
+    fw.it("FeignDeath-only evidence -> no match (AotT excluded, SotF requires no evidence)", function()
         wow.setUnitClass("party1", "HUNTER")
-        -- No CastSnapshot; FeignDeath evidence only (no UnitFlags).
-        -- On 12.0.5, synthetic Cast is granted for non-local units.
-        -- AotT needs Cast+UnitFlags: Cast=synthetic, UnitFlags=absent -> AotT fails.
-        -- SotF needs Cast only: Cast=synthetic -> SotF matches (MinDuration=true, 8s >= 7.5).
+        -- FeignDeath evidence only; no UnitFlags, no Cast.
+        -- AotT needs UnitFlags (absent) -> fails.
+        -- SotF: RequiresEvidence=false -> fails because FeignDeath evidence is present.
         local t = makeTracked(BIG, 1.0, {}, { FeignDeath = true })
         local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 8.0, {})
-        fw.not_nil(rule, "SotF matches via synthetic Cast (FeignDeath suppresses UnitFlags -> AotT excluded)")
-        fw.eq(rule.SpellId, 264735, "Survival of the Fittest")
+        fw.is_nil(rule, "no rule should match with FeignDeath-only evidence")
     end)
 end)
 
@@ -369,14 +364,14 @@ fw.describe("FindBestCandidate - Shadow Blades duration variants", function()
         fw.eq(rule.SpellId, 121471, "Shadow Blades 20s")
     end)
 
-    fw.it("does not match Shadow Blades at 12s (outside all windows)", function()
+    fw.it("does not match Shadow Blades at 8s (outside all windows)", function()
         -- Falls through to class ROGUE rules: Evasion (10s IMP, not BIG) and Cloak (5s BIG).
-        -- 12s is outside Evasion 10±0.5 and Cloak 5±0.5 -> nil.
+        -- 8s is outside Evasion 10±0.5, Cloak 5±0.5, and Shadow Blades MinCancelDuration=11 -> nil.
         wow.setUnitClass("party1", "ROGUE")
         mods.talents._setSpec("party1", 261)
         local t = makeTracked(IMP, 1.0, { party1 = 1.0 }, { Cast = true })
-        local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 12.0, {})
-        fw.is_nil(rule, "12s is outside all Shadow Blades windows and class Rogue IMP rules")
+        local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 8.0, {})
+        fw.is_nil(rule, "8s is outside all Shadow Blades windows and class Rogue IMP rules")
     end)
 end)
 

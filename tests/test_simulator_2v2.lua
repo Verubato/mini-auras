@@ -189,6 +189,12 @@ local knownAmbiguities = {
         -- Evasion (5277): ExcludeFromPrediction=true because Shadow Dance is also IMPORTANT
         -- and indistinguishable from Evasion at detection time (before duration is measured).
         ROGUE = { [5277] = { predict = true } },
+        -- Aspect of the Turtle (186265): ExcludeFromPrediction=true because SotF is also BIG+IMP
+        -- and indistinguishable from AotT at detection time.  SotF predicts instead; AotT is
+        -- committed correctly via MatchRule after duration is measured.
+        -- Exhilaration/Dark Ranger (109304): applies a 3s SotF buff; indistinguishable from SotF
+        -- at detection time (no duration gate in prediction).  Commit resolves correctly via duration.
+        HUNTER = { [186265] = { predict = true }, [109304] = { predict = true } },
     },
 }
 
