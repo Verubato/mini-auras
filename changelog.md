@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.15.0
+
+- Added Midnight Simple Unit Frames support.
+- Added Touch of Karma tracking.
+- Exclude Nether Ward in PvE contexts.
+- Fixed IBF and Anti-Magic Shell triggering Vampiric Blood.
+- Exclude NPCs from showing cooldowns (e.g. Valeera in Delves).
+- Added option to manually select the config language.
+- Improved FR translations.
+
 ## 3.14.0
 
 - Added Regenerative Heartwood talent for rdruid.
