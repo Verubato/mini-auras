@@ -167,6 +167,10 @@ local knownAmbiguities3v3 = {
             [403876] = { predict = true },
             [204018] = { predict = true, commit = true },
         },
+        -- Blood DK: Vampiric Blood (55233) is ambiguous with Icebound Fortitude (class rule,
+        -- BIG+IMP, no RequiresEvidence) for remote targets in 12.0.5+ (no cast snapshot to
+        -- disambiguate).  Predict is suppressed; commit still works via MatchRule duration check.
+        [250] = { [55233] = { predict = true } },
         -- Subtlety Rogue: Shadow Blades (121471) is excluded from prediction (ExcludeFromPrediction=true)
         -- because Shadow Dance is also IMPORTANT and indistinguishable from Shadow Blades at
         -- detection time (before the aura expires and duration is measured).

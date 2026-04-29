@@ -468,7 +468,7 @@ local function PredictSpellIdForUnit(unit, auraTypes, evidence, castableFilter)
 							-- other rules: if this spell is on CD this candidate is ineligible
 							-- rather than being attributed to a different spell, which would
 							-- produce false ambiguity against candidates who matched correctly.
-							return rule.SpellId, IsSpellOnCooldown(activeCooldowns, rule.SpellId)
+							return rule.SpellId, IsSpellOnCooldown(activeCooldowns, rule.SpellId), rule
 						end
 					end
 				end
@@ -479,8 +479,36 @@ local function PredictSpellIdForUnit(unit, auraTypes, evidence, castableFilter)
 
 	-- Spec rules take priority.  Explicit branch rather than `or` so both return values
 	-- (spellId, isOnCooldown) are forwarded correctly - `or` only propagates one value.
-	local spellId, onCd = tryRuleList(specId and rules.BySpec[specId])
+	local spellId, onCd, specRule = tryRuleList(specId and rules.BySpec[specId])
 	if spellId ~= nil then
+		-- Cross-level ambiguity: when the spec rule has no evidence requirement, a class rule
+		-- with a different spell ID is an equally plausible match (e.g. Blood DK Vampiric Blood
+		-- vs Icebound Fortitude or Anti-Magic Shell).  Suppress prediction so the caller does not
+		-- commit to the spec-rule spell without cast evidence.
+		-- When the spec rule has a specific RequiresEvidence, that evidence uniquely identifies it
+		-- (e.g. Ice Block requiring Debuff+UnitFlags), so a more permissive class rule matching
+		-- the same aura is not a genuine alternative candidate.
+		if specRule.RequiresEvidence == nil then
+			local classSpellId, classOnCd, classRule = tryRuleList(rules.ByClass[classToken])
+			if classSpellId ~= nil and not classOnCd and classSpellId ~= spellId then
+				-- Genuine ambiguity only when the class rule explicitly covers every aura-type
+				-- dimension that the spec rule requires.  If the spec rule declares CrowdControl=true
+				-- but the class rule leaves it nil, the class rule is not a real alternative for a
+				-- CC aura (e.g. Dispersion vs Desperate Prayer).
+				if (specRule.BigDefensive ~= true or classRule.BigDefensive == true)
+				and (specRule.ExternalDefensive ~= true or classRule.ExternalDefensive == true)
+				and (specRule.Important ~= true or classRule.Important == true)
+				and (specRule.CrowdControl ~= true or classRule.CrowdControl == true) then
+					-- If the class rule requires specific evidence (e.g. Shield for AMS) but the
+					-- spec rule does not, the evidence is a positive signal for the class rule.
+					-- Defer to it rather than treating the result as ambiguous.
+					if classRule.RequiresEvidence ~= nil then
+						return classSpellId, classOnCd
+					end
+					return nil, false
+				end
+			end
+		end
 		return spellId, onCd
 	end
 	return tryRuleList(rules.ByClass[classToken])

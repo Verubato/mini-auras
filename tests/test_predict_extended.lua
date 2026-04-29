@@ -435,13 +435,14 @@ end)
 
 -- Section 7: Spec-level rule preferred over class in PredictRule (Blood DK)
 
-fw.describe("PredictRule 12.0.5 - spec rule preferred over class rule", function()
+fw.describe("PredictRule 12.0.5 - cross-level ambiguity suppression (spec vs class)", function()
     fw.before_each(reset)
 
-    fw.it("Blood DK Vampiric Blood (spec) predicted over AMS (class) for BIG+IMP aura at 10s", function()
-        -- Vampiric Blood (spec 250): BIG+IMP, RequiresEvidence="Cast"
-        -- AMS class rule (DK): BIG+IMP, RequiresEvidence={"Cast","Shield"}
-        -- With synthetic Cast but no Shield -> AMS fails; VB matches.
+    fw.it("Blood DK BIG+IMP aura: prediction suppressed (VB vs IBF cross-level ambiguity)", function()
+        -- Vampiric Blood (spec 250): BIG+IMP, RequiresEvidence=nil.
+        -- Icebound Fortitude (class DK): BIG+IMP, RequiresEvidence=nil.
+        -- Both match identically without cast evidence -> cross-level ambiguity -> prediction nil.
+        -- MatchRule resolves correctly at commit time via measured duration.
         wow.setUnitClass("party1", "DEATHKNIGHT")
         mods.talents._setSpec("party1", 250)
 
@@ -451,10 +452,7 @@ fw.describe("PredictRule 12.0.5 - spec rule preferred over class rule", function
         local watcher = makeBigImportantWatcher("party1")
         observer:_fireAuraChanged(entry, watcher, { "party1" })
 
-        -- Note: PredictSpellIdForUnit tries spec list first, finds VB (10s rule at min duration >= 9.5)
-        -- but PredictRule doesn't do duration matching - it just checks aura type + evidence.
-        -- VB: BigDefensive=true, Important=true -> matches BIG+IMP aura; RequiresEvidence="Cast" -> synthetic ok.
-        fw.eq(getGlow(), 55233, "Vampiric Blood predicted via spec rule (not AMS class rule)")
+        fw.eq(getGlow(), nil, "prediction suppressed: VB and IBF are cross-level ambiguous without cast evidence")
     end)
 
     fw.it("DK class rule AMS predicted when spec VB rule fails (no spec set, only class rules)", function()
