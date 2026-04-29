@@ -1062,6 +1062,7 @@ local rules = {
 				CanCancelEarly = true,
 				SpellId = 212295,
 				RequiresTalent = { 18, 3508, 3624 },
+				PvPOnly = true,
 			}, -- Nether Ward (PvP talent)
 		},
 		PRIEST = {
