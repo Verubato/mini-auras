@@ -918,6 +918,7 @@ local rules = {
 				Important = true,
 				SpellId = 109304,
 				RequiresTalent = 430709,
+				ExcludeFromPrediction = true,
 			}, -- Exhilaration (Dark Ranger: applies 3s SotF)
 			{
 				BuffDuration = 10,
