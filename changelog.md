@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.15.1
+
+Fixed Touch of Karma not tracking for the local player.
+
 ## 3.15.0
 
 - Added Midnight Simple Unit Frames support.
