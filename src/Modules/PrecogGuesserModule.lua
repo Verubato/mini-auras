@@ -9,8 +9,6 @@ local moduleName = addon.Utils.ModuleName
 local testModeActive = false
 local paused = false
 local classHasPrecog
----@type table<number, any>
-local auraAlphas = {}
 local precogCurve
 ---@type Db
 local db
@@ -47,19 +45,7 @@ local function ScanAndDisplay()
 	if #importantState == 0 then
 		container:ResetAllSlots()
 		anchor:Hide()
-		auraAlphas = {}
 		return
-	end
-
-	-- Clean up cached alphas for auras that are no longer active
-	local activeIds = {}
-	for _, entry in ipairs(importantState) do
-		activeIds[entry.AuraInstanceID] = true
-	end
-	for id in pairs(auraAlphas) do
-		if not activeIds[id] then
-			auraAlphas[id] = nil
-		end
 	end
 
 	local options = db.Modules.PrecogGuesserModule
@@ -74,17 +60,13 @@ local function ScanAndDisplay()
 
 	for i, entry in ipairs(importantState) do
 		if entry.SpellIcon and entry.DurationObject then
-			-- Evaluate alpha only once when the aura is first detected,
-			-- because we need the total duration at the time of application.
-			if auraAlphas[entry.AuraInstanceID] == nil then
-				local durationInfo = C_UnitAuras.GetAuraDuration("player", entry.AuraInstanceID)
-				auraAlphas[entry.AuraInstanceID] = durationInfo and durationInfo:EvaluateRemainingDuration(precogCurve)
-			end
+			local durationInfo = C_UnitAuras.GetAuraDuration("player", entry.AuraInstanceID)
+			local alpha = durationInfo and durationInfo:EvaluateTotalDuration(precogCurve)
 
 			container:SetSlot(1, {
 				Texture = entry.SpellIcon,
 				DurationObject = entry.DurationObject,
-				Alpha = auraAlphas[entry.AuraInstanceID] or 0,
+				Alpha = alpha or false,
 				ReverseCooldown = iconsReverse,
 				Glow = iconsGlow,
 				FontScale = db.FontScale,
@@ -140,7 +122,6 @@ end
 function M:StopTesting()
 	testModeActive = false
 	Resume()
-	auraAlphas = {}
 
 	if container then
 		container:ResetAllSlots()
@@ -246,8 +227,7 @@ function M:Init()
 	precogCurve:SetType(Enum.LuaCurveType.Step)
 	precogCurve:AddPoint(0, 0)
 	-- precog is 4 seconds
-	-- account for some lag, not sure if this is needed though
-	precogCurve:AddPoint(3.7, 1)
+	precogCurve:AddPoint(3.9, 0)
 	precogCurve:AddPoint(4, 1)
 	precogCurve:AddPoint(4.1, 0)
 
