@@ -25,13 +25,18 @@ local function GetOptions()
 end
 
 ---Returns the arena enemy frame for the given index, checking known frame addons in order:
----Blizzard (CompactArenaFrame.memberUnitFrames[index]), then sArena Reloaded (sArenaEnemyFrame1/2/3).
+---sArena Reloaded (sArenaEnemyFrame1/2/3), ElvUI (ElvUF_Arena1/2/3),
+---then Blizzard (CompactArenaFrame.memberUnitFrames[index]).
 ---@param index number
 ---@return table?
 local function GetArenaEnemyFrame(index)
 	local sArena = _G["sArenaEnemyFrame" .. index]
 	if sArena then
 		return sArena
+	end
+	local elvui = _G["ElvUF_Arena" .. index]
+	if elvui then
+		return elvui
 	end
 	local blizz = CompactArenaFrame and CompactArenaFrame.memberUnitFrames
 	return blizz and blizz[index]
