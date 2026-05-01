@@ -605,6 +605,7 @@ local rules = {
 				CanCancelEarly = true,
 				RequiresEvidence = "Shield",
 				SpellId = 125174,
+				CastSpellId = 122470,
 			}, -- Touch of Karma
 		},
 		[577] = { -- Havoc Demon Hunter

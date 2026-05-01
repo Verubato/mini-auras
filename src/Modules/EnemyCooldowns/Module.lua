@@ -81,8 +81,6 @@ local function BuildPredictEvidence(base, hasCast)
 	return { Cast = true }
 end
 
--- Logging helpers
-
 -- Aura ID classification
 
 local function AuraTypesSignature(auraTypes)
