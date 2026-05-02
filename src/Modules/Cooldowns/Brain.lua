@@ -1325,6 +1325,14 @@ local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 	-- Deferred backfill: UNIT_SPELLCAST_SUCCEEDED and UNIT_ABSORB_AMOUNT_CHANGED can arrive
 	-- slightly after UNIT_AURA. Augment Evidence and CastSnapshot once the window elapses.
 	C_Timer.After(evidenceTolerance, function()
+		-- Guard: if entry.TrackedAuras was replaced (e.g. by ClearAllCooldownState on
+		-- PLAYER_ENTERING_WORLD or a unit-token reassignment), this timer is stale.
+		-- Without this check the glow callback fires after the reset and sets
+		-- PredictedGlows[spellId] = 1 with no matching TrackedAuras entry to ever
+		-- clear it, leaving the glow permanently lit.
+		if entry.TrackedAuras ~= trackedAuras then
+			return
+		end
 		local tracked = trackedAuras[id]
 		if not tracked then
 			return
