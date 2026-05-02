@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.15.2
+
+- Potential fix for glows persisting through reloads.
+- Fix for cooldowns and auras showing on Valeera/NPCs.
+
 ## 3.15.1
 
 Fixed Touch of Karma not tracking for the local player.
