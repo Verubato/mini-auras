@@ -98,6 +98,10 @@ local function EnsureEntry(anchor, unit)
 					end
 				end
 			end
+			-- Replace TrackedAuras so any in-flight C_Timer.After closures from TrackNewAura
+			-- detect the stale table and bail before firing predictiveGlowCallback, which would
+			-- otherwise call ShowHideEntryContainer and re-show the container on this NPC frame.
+			existing.TrackedAuras = {}
 			observer:Forget(existing)
 			existing.Container:ResetAllSlots()
 			existing.Container.Frame:Hide()
