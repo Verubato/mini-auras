@@ -1711,7 +1711,7 @@ function B:PredictSpellId(unit, auraTypes, evidence, activeCooldowns)
 	local function tryRuleList(ruleList)
 		if not ruleList then return nil, false end
 		for _, rule in ipairs(ruleList) do
-			if rule.SpellId and RulePassesTalentGates(rule, unit, specId, nil) then
+			if rule.SpellId and not rule.ExcludeFromPrediction and RulePassesTalentGates(rule, unit, specId, nil) then
 				if AuraTypeMatchesRule(auraTypes, rule) and EvidenceMatchesReq(rule.RequiresEvidence, evidence) then
 					return rule.SpellId, IsSpellOnCooldown(activeCooldowns, rule.SpellId)
 				end
