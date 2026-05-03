@@ -28,6 +28,7 @@ local testFiles = {
     "tests/test_local_player_alias.lua",
     "tests/test_dispersion_dp.lua",
     "tests/test_ams_bof_gt_regression.lua",
+    "tests/test_revival_gt_ambiguity.lua",
 }
 
 local loadErrors = {}

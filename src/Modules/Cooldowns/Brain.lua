@@ -352,14 +352,14 @@ local function MatchRule(unit, auraTypes, measuredDuration, context)
 	if knownSpellIds then
 		for _, sid in ipairs(knownSpellIds) do
 			local fastRule = FindRuleBySpellId(unit, specId, auraTypes, sid)
-			if fastRule then return fastRule end
+			if fastRule then
+				return fastRule
+			end
 		end
 	end
 
 	local function tryRuleList(ruleList)
-		if not ruleList then
-			return nil
-		end
+		if not ruleList or #ruleList == 0 then return nil end
 		local fallback = nil
 		for _, rule in ipairs(ruleList) do
 			if RulePassesTalentGates(rule, unit, specId, ignoreTalentReqs) then
@@ -383,8 +383,8 @@ local function MatchRule(unit, auraTypes, measuredDuration, context)
 						if durationOk then
 							if not IsSpellOnCooldown(activeCooldowns, rule.SpellId) then
 								return rule
-							elseif not fallback then
-								fallback = rule
+							else
+								if not fallback then fallback = rule end
 							end
 						end
 					end
@@ -605,10 +605,39 @@ end
 -- PvP talent spell IDs that grant Grounding Totem (one per shaman spec).
 local groundingTotemPvPTalentIds = { 3620, 3622, 715 }
 
+-- Spell IDs produced by the Peaceweaver PvP talent (Revival / Restoral).
+local peaceweaverSpellIds = { [115310] = true, [388615] = true }
+
 -- Maximum duration (seconds) that Grounding Totem can last, used to rule it out
 -- when the measured aura duration is clearly longer than GT could ever be.
 -- Set slightly above the stated 3s cap to absorb server/client timing jitter.
 local groundingTotemMaxDuration = 3.5
+
+---Returns true when an IMPORTANT-only aura is probably from a Peaceweaver Monk's Revival or Restoral.
+---Handles two cases:
+---  * targetUnit IS the local Monk (self-cast): local player has Peaceweaver and cast Revival/Restoral.
+---  * targetUnit is NOT a Monk (spillover): local player (a Monk) cast Revival/Restoral and the
+---    AoE buff landed on this non-Monk party member.
+---Remote Monks always return false (their casts are not observable via UNIT_SPELLCAST_SUCCEEDED).
+local function IsProbablyRevival(auraTypes, targetUnit, castSpellIdSnapshot, startTime)
+	if not auraTypes["IMPORTANT"] then return false end
+	if auraTypes["BIG_DEFENSIVE"] or auraTypes["EXTERNAL_DEFENSIVE"] then return false end
+	if not castSpellIdSnapshot or not startTime then return false end
+	local _, targetClass = UnitClass(targetUnit)
+	if targetClass == "MONK" then
+		-- Only the local Monk's cast is observable.
+		if ResolveSnapshotUnit(targetUnit) ~= "player" then return false end
+		if not fcdTalents:UnitHasTalent(targetUnit, 5395) then return false end
+	end
+	local playerCasts = castSpellIdSnapshot["player"]
+	if not playerCasts then return false end
+	for _, cast in ipairs(playerCasts) do
+		if peaceweaverSpellIds[cast.SpellId] and math.abs(cast.Time - startTime) <= castWindow then
+			return true
+		end
+	end
+	return false
+end
 
 ---Returns true when a non-shaman unit's IMPORTANT aura is probably Grounding Totem spillover.
 ---Grounding Totem (spell 204336) always affects the shaman and passively affects nearby allies.
@@ -636,6 +665,20 @@ local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, m
 	local _, instanceType = IsInInstance()
 	local inPvpContext = instanceType == "arena" or instanceType == "pvp" or UnitIsPVP(targetUnit)
 	if not inPvpContext then return false end
+
+	-- Mistweaver Monks with Peaceweaver (PvP talent 5395) produce a 2s IMPORTANT aura
+	-- (Revival/Restoral) that is indistinguishable from GT spillover by duration alone.
+	-- IsProbablyRevival disambiguates for the local Monk via cast snapshot:
+	--   • Monk pressed Revival -> IsProbablyRevival=true -> skip GT suppression so MatchRule attributes it.
+	--   • Monk did not press Revival -> fall through to GT detection (Shaman probably pressed GT).
+	-- Remote Monks always return false from IsProbablyRevival; the second guard also returns false
+	-- for them (unobservable cast), so we exit early and let MatchRule handle the ambiguity.
+	local _, targetClass = UnitClass(targetUnit)
+	if targetClass == "MONK" and fcdTalents:UnitHasTalent(targetUnit, 5395) then
+		if IsProbablyRevival(auraTypes, targetUnit, castSpellIdSnapshot, startTime) then return false end
+		if ResolveSnapshotUnit(targetUnit) ~= "player" then return false end
+		-- Local Monk did not cast Revival/Restoral; fall through so a GT Shaman suppresses this.
+	end
 
 	local function shamanHasGroundingTotem(unit)
 		local _, cls = UnitClass(unit)
@@ -946,6 +989,9 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 	elseif IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, nil, evidence, castSpellIdSnapshot, detectionTime) then
 		-- Non-shaman ally received Grounding Totem's AoE buff; suppress to avoid false predictions.
 		return nil, nil
+	elseif IsProbablyRevival(auraTypes, targetUnit, castSpellIdSnapshot, detectionTime) then
+		-- Revival/Restoral spillover on a non-Monk ally; suppress to avoid false predictions.
+		return nil, nil
 	else
 		searchNonExternal()
 	end
@@ -1145,8 +1191,18 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 		-- Aura has the IMPORTANT+UnitFlags+pvp signature of Precognition.  Suppress the
 		-- entire commit so no cooldown is falsely recorded.  Real BoF does not produce
 		-- UnitFlags evidence (tested), so this only fires for Precognition.
-		if IsProbablyPrecognition(tracked.AuraTypes, entry.Unit, measuredDuration, tracked.Evidence or {}) then return end
-		if IsProbablyGroundingTotem(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, tracked.Evidence, tracked.CastSpellIdSnapshot, tracked.StartTime) then return end
+		if IsProbablyPrecognition(tracked.AuraTypes, entry.Unit, measuredDuration, tracked.Evidence or {}) then
+			return
+		end
+		if IsProbablyGroundingTotem(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, tracked.Evidence, tracked.CastSpellIdSnapshot, tracked.StartTime) then
+			return
+		end
+		-- Revival spillover suppression: only applies to non-Monk units. For the Monk
+		-- themselves, their Revival/Restoral is attributed via the fast-path cast-ID match below.
+		local _, entryClass = UnitClass(entry.Unit)
+		if entryClass ~= "MONK" and IsProbablyRevival(tracked.AuraTypes, entry.Unit, tracked.CastSpellIdSnapshot, tracked.StartTime) then
+			return
+		end
 		consider(entry.Unit, true)
 		-- Skip the cross-unit loop when the target already matched a non-CastableOnOthers rule:
 		-- self-only rules (e.g. Barkskin, Ice Block) on non-target candidates cannot be the source.

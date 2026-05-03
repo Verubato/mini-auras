@@ -229,10 +229,12 @@ local function runRuleTests(source, specId, classToken, rule)
             wow.setUnitClass("party2", classToken)
             if specId then mods.talents._setSpec("party2", specId) end
             setRequiredTalent("party2", rule.RequiresTalent)
+            if rule.SpellId then mods.talents._setTalent("party2", rule.SpellId, true) end
         else
             wow.setUnitClass("party1", classToken)
             if specId then mods.talents._setSpec("party1", specId) end
             setRequiredTalent("party1", rule.RequiresTalent)
+            if rule.SpellId then mods.talents._setTalent("party1", rule.SpellId, true) end
         end
         if isExt then
             wow.setUnitClass("party3", classToken)

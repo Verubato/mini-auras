@@ -68,7 +68,10 @@ local ClassCooldownModifiers = {
 			},
 		},
 	},
-	MONK = {},
+	MONK = {
+		-- Uplifted Spirits: Revival/Restoral -30s
+		[388551] = { { { SpellId = 115310, Amount = -30 }, { SpellId = 388615, Amount = -30 } } },
+	},
 	SHAMAN = {
 		[381647] = { { { SpellId = 108271, Amount = -30 } } }, -- Planes Traveler: Astral Shift -30s
 		[381867] = { { { SpellId = 204336, Amount = -5 } } },  -- Totemic Surge: Grounding Totem -5s
@@ -227,6 +230,8 @@ local ClassPvPCooldownModifiers = {}
 local SpecPvPCooldownModifiers = {
 	-- Brewmaster Monk: Microbrew (Fortifying Brew -50%)
 	[268] = { [666] = { { SpellId = 115203, Amount = -50, Mult = true } } },
+	-- Mistweaver Monk: Peaceweaver (Revival/Restoral -16%, applied to base before flat mods)
+	[270] = { [5395] = { { SpellId = 115310, Amount = -16, Mult = true, ApplyToBase = true }, { SpellId = 388615, Amount = -16, Mult = true, ApplyToBase = true } } },
 	-- Blood Death Knight: Spellwarden (Anti-Magic Shell -10s)
 	[250] = { [5592] = { { SpellId = 48707, Amount = -10 } } },
 	-- Frost Death Knight: Spellwarden (Anti-Magic Shell -10s)
@@ -318,6 +323,7 @@ local ClassDefaultTalentRanks = {
 	},
 	MONK = {
 		[388813] = 1, -- Expeditious Fortification: Fortifying Brew CDR (nearly universal)
+		[388551] = 1, -- Uplifted Spirits: Revival/Restoral -30s, nearly universal
 	},
 	PALADIN = {
 		[114154] = 1, -- Unbreakable Spirit: Bubble/DP/Ardent Defender -30% (nearly universal)
@@ -700,11 +706,13 @@ function M:GetUnitCooldown(unit, specId, classToken, abilityId, baseCooldown, me
 		return math.max((measuredDuration or 0) + postBuffRemaining, 0)
 	end
 
-	-- Apply regular mods first, then PvP mods on top of that result.
-	local cd = baseCooldown + addAmount + (baseCooldown * multAmount / 100)
-
+	-- PvP mults with ApplyToBase=true are folded into the base calculation alongside
+	-- regular mults so they apply before any flat deductions (e.g. Peaceweaver -16%
+	-- must reduce the base cooldown before Uplifted Spirits -30s is subtracted).
+	-- Other PvP mults (ApplyToBase=false/nil) apply after flat mods, as before.
 	local pvpAddAmount = 0
 	local pvpMultAmount = 0
+	local pvpBaseMultAmount = 0
 	local function applyPvPModTable(modTable)
 		if not modTable or not pvpIds or not UnitIsPVP(unit) then
 			return
@@ -713,7 +721,9 @@ function M:GetUnitCooldown(unit, specId, classToken, abilityId, baseCooldown, me
 			if pvpIds[pvpTalentId] then
 				for _, mod in ipairs(mods) do
 					if mod.SpellId == abilityId then
-						if mod.Mult then
+						if mod.Mult and mod.ApplyToBase then
+							pvpBaseMultAmount = pvpBaseMultAmount + mod.Amount
+						elseif mod.Mult then
 							pvpMultAmount = pvpMultAmount + mod.Amount
 						else
 							pvpAddAmount = pvpAddAmount + mod.Amount
@@ -726,6 +736,7 @@ function M:GetUnitCooldown(unit, specId, classToken, abilityId, baseCooldown, me
 	applyPvPModTable(ClassPvPCooldownModifiers[classToken])
 	applyPvPModTable(resolvedSpec and SpecPvPCooldownModifiers[resolvedSpec])
 
+	local cd = baseCooldown + addAmount + (baseCooldown * (multAmount + pvpBaseMultAmount) / 100)
 	cd = cd + pvpAddAmount + (cd * pvpMultAmount / 100)
 	return math.max(cd, 0)
 end

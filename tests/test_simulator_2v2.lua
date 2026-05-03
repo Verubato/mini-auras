@@ -224,26 +224,31 @@ local function runRuleTests(source, specId, classToken, rule)
     local candidates = hasCaster and { "party1", "party2" } or { "party1" }
 
     -- Set up friendly units and talents in 12.0.5 mode (synthetic Cast, no snapshots).
+    -- Setting RequiresTalent activates sibling rules' ExcludeIfTalent gates when
+    -- RequiresTalent == sibling's ExcludeIfTalent (e.g. Avenging Crusader).  For rules
+    -- where ExcludeIfTalent uses the sibling's SpellId instead (e.g. Revival/Restoral),
+    -- also set the rule's own SpellId as a talent so those gates fire correctly.
     local function setupFriendly()
         if hasCaster then
             wow.setUnitClass("party1", "WARRIOR")
             wow.setUnitClass("party2", classToken)
             if specId then mods.talents._setSpec("party2", specId) end
             setRequiredTalent("party2", rule.RequiresTalent)
+            if rule.SpellId then mods.talents._setTalent("party2", rule.SpellId, true) end
         else
             wow.setUnitClass("party1", classToken)
             if specId then mods.talents._setSpec("party1", specId) end
             setRequiredTalent("party1", rule.RequiresTalent)
+            if rule.SpellId then mods.talents._setTalent("party1", rule.SpellId, true) end
         end
     end
 
     -- Set up enemy unit, talents, and 12.0.5 mode.
-    -- Setting RequiresTalent activates any sibling rule's ExcludeIfTalent gate, so
-    -- the correct (RequiresTalent) rule wins rather than the sibling matching first.
     local function setupEnemy()
         wow.setUnitClass("arena1", classToken)
         if specId then mods.talents._setSpec("arena1", specId) end
         setRequiredTalent("arena1", rule.RequiresTalent)
+        if rule.SpellId then mods.talents._setTalent("arena1", rule.SpellId, true) end
     end
 
     local label = source .. " | " .. tostring(rule.SpellId) .. " | " .. rule.BuffDuration .. "s"

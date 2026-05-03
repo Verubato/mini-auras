@@ -584,8 +584,30 @@ local rules = {
 				CanCancelEarly = true,
 				RequiresEvidence = "Shield",
 				SpellId = 116849,
-			},
-		}, -- Mistweaver Monk: Life Cocoon
+			}, -- Life Cocoon
+			{
+				BuffDuration = 2,
+				Cooldown = 180,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				Important = true,
+				PvPOnly = true,
+				SpellId = 115310,
+				RequiresTalent = 5395,
+				ExcludeIfTalent = 388615,
+			}, -- Revival (requires Peaceweaver PvP talent)
+			{
+				BuffDuration = 2,
+				Cooldown = 180,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				Important = true,
+				PvPOnly = true,
+				SpellId = 388615,
+				RequiresTalent = 5395,
+				ExcludeIfTalent = 115310,
+			}, -- Restoral (requires Peaceweaver PvP talent)
+		}, -- Mistweaver Monk
 		[269] = { -- Windwalker Monk
 			{
 				BuffDuration = 15,
