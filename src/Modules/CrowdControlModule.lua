@@ -262,6 +262,17 @@ local function OnCufSetUnit(frame, unit)
 		return
 	end
 
+	local isPet = units:IsPetOrMinion(unit)
+	if isPet then
+		if not testModeActive and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+			return
+		end
+	else
+		if not moduleUtil:IsModuleEnabled(moduleName.CrowdControl) then
+			return
+		end
+	end
+
 	EnsureWatcher(frame, unit)
 end
 
