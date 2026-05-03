@@ -7,10 +7,10 @@ local masqueReskinPending = {}
 local fontUtil = addon.Utils.FontUtil
 local cachedDb = nil
 
-local function UpdateChargeTextFontSize(chargeText, iconSize)
+local function UpdateChargeTextFontSize(chargeText, iconSize, fontScale)
 	local font, _, flags = chargeText:GetFont()
 	if font then
-		chargeText:SetFont(font, math.floor(iconSize * 0.35), flags)
+		chargeText:SetFont(font, math.floor(iconSize * 0.35 * (fontScale or 1.0)), flags)
 	end
 end
 -- Reused across Layout() calls to avoid a table allocation on the hot path
@@ -690,7 +690,7 @@ function M:SetIconSize(newSize)
 				fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, fontScale)
 			end
 			if layer and layer.ChargeText then
-				UpdateChargeTextFontSize(layer.ChargeText, self.Size)
+				UpdateChargeTextFontSize(layer.ChargeText, self.Size, layer.Cooldown and layer.Cooldown.FontScale)
 			end
 
 			if slot.ExtraLayers then
@@ -705,7 +705,7 @@ function M:SetIconSize(newSize)
 							fontUtil:UpdateCooldownFontSize(el.Cooldown, self.Size, nil, fontScale)
 						end
 						if el.ChargeText then
-							UpdateChargeTextFontSize(el.ChargeText, self.Size)
+							UpdateChargeTextFontSize(el.ChargeText, self.Size, el.Cooldown and el.Cooldown.FontScale)
 						end
 					end
 				end
@@ -849,7 +849,7 @@ function M:SetSlot(slotIndex, options)
 			layer.ChargeText = overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 			layer.ChargeText:SetPoint("BOTTOMRIGHT", layer.Frame, "BOTTOMRIGHT", -3, 1)
 		end
-		UpdateChargeTextFontSize(layer.ChargeText, self.Size)
+		UpdateChargeTextFontSize(layer.ChargeText, self.Size, options.FontScale or layer.Cooldown.FontScale)
 		layer.ChargeText:SetText(options.ChargeText)
 		layer.ChargeText:Show()
 	elseif layer.ChargeText then
