@@ -864,7 +864,18 @@ local rules = {
 				SpellId = 1044,
 			}, -- Blessing of Freedom
 		},
-		WARRIOR = {},
+		WARRIOR = {
+			{
+				BuffDuration = 5,
+				Cooldown = 25,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				Important = true,
+				CanCancelEarly = true,
+				SpellId = 23920,
+				RequiresTalent = 23920,
+			}, -- Spell Reflect
+		},
 		MAGE = {
 			{
 				BuffDuration = 10,

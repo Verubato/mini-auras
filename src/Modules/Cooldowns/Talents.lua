@@ -75,10 +75,11 @@ local ClassCooldownModifiers = {
 	},
 	WARLOCK = { [386659] = { { { SpellId = 104773, Amount = -45 } } } },
 	WARRIOR = {
-		-- Honed Reflexes: Die by the Sword -10% (mult)
+		-- Honed Reflexes: Die by the Sword -10% (mult), Spell Reflect -10% (mult)
 		[391271] = {
 			{
 				{ SpellId = 118038, Amount = -10, Mult = true },
+				{ SpellId = 23920,  Amount = -10, Mult = true },
 			},
 		},
 	},
@@ -329,6 +330,8 @@ local ClassDefaultTalentRanks = {
 	WARRIOR = {
 		[107574] = 1, -- Avatar: nearly universal across all specs
 		[184364] = 1, -- Enraged Regeneration: nearly universal for Fury
+		[23920]  = 1, -- Spell Reflect: universal talent
+		[391271] = 1, -- Honed Reflexes: Die by the Sword/Spell Reflect -10%, nearly universal
 	},
 }
 
