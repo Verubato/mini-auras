@@ -655,7 +655,7 @@ end
 ---@param castSpellIdSnapshot table<string,{SpellId:number,Time:number}[]>?
 ---@param startTime number?
 ---@return boolean
-local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, measuredDuration, evidence, castSpellIdSnapshot, startTime)
+local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, measuredDuration, evidence, castSpellIdSnapshot, startTime, ignoreTalentReqs)
 	if not auraTypes["IMPORTANT"] then return false end
 	if auraTypes["BIG_DEFENSIVE"] or auraTypes["EXTERNAL_DEFENSIVE"] then return false end
 	-- If the aura lasted longer than GT's maximum possible duration it can't be GT.
@@ -668,21 +668,27 @@ local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, m
 
 	-- Mistweaver Monks with Peaceweaver (PvP talent 5395) produce a 2s IMPORTANT aura
 	-- (Revival/Restoral) that is indistinguishable from GT spillover by duration alone.
+	-- Peaceweaver talent is only verifiable for friendly units; on the enemy path (ignoreTalentReqs)
+	-- we skip this branch since we can't confirm the talent and proceed to shaman candidate detection.
 	-- IsProbablyRevival disambiguates for the local Monk via cast snapshot:
 	--   • Monk pressed Revival -> IsProbablyRevival=true -> skip GT suppression so MatchRule attributes it.
 	--   • Monk did not press Revival -> fall through to GT detection (Shaman probably pressed GT).
 	-- Remote Monks always return false from IsProbablyRevival; the second guard also returns false
 	-- for them (unobservable cast), so we exit early and let MatchRule handle the ambiguity.
-	local _, targetClass = UnitClass(targetUnit)
-	if targetClass == "MONK" and fcdTalents:UnitHasTalent(targetUnit, 5395) then
-		if IsProbablyRevival(auraTypes, targetUnit, castSpellIdSnapshot, startTime) then return false end
-		if ResolveSnapshotUnit(targetUnit) ~= "player" then return false end
-		-- Local Monk did not cast Revival/Restoral; fall through so a GT Shaman suppresses this.
+	if not ignoreTalentReqs then
+		local _, targetClass = UnitClass(targetUnit)
+		if targetClass == "MONK" and fcdTalents:UnitHasTalent(targetUnit, 5395) then
+			if IsProbablyRevival(auraTypes, targetUnit, castSpellIdSnapshot, startTime) then return false end
+			if ResolveSnapshotUnit(targetUnit) ~= "player" then return false end
+			-- Local Monk did not cast Revival/Restoral; fall through so a GT Shaman suppresses this.
+		end
 	end
 
 	local function shamanHasGroundingTotem(unit)
 		local _, cls = UnitClass(unit)
 		if cls ~= "SHAMAN" then return false end
+		-- On the enemy path talent data is unavailable, so treat any Shaman as potentially having GT.
+		if ignoreTalentReqs then return true end
 		for _, talentId in ipairs(groundingTotemPvPTalentIds) do
 			if fcdTalents:UnitHasTalent(unit, talentId) then return true end
 		end
@@ -1194,7 +1200,7 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 		if IsProbablyPrecognition(tracked.AuraTypes, entry.Unit, measuredDuration, tracked.Evidence or {}) then
 			return
 		end
-		if IsProbablyGroundingTotem(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, tracked.Evidence, tracked.CastSpellIdSnapshot, tracked.StartTime) then
+		if IsProbablyGroundingTotem(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, tracked.Evidence, tracked.CastSpellIdSnapshot, tracked.StartTime, ignoreTalentReqs) then
 			return
 		end
 		-- Revival spillover suppression: only applies to non-Monk units. For the Monk
