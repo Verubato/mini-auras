@@ -140,7 +140,7 @@ local function EnsureEntry(anchor, unit)
 		watchEntries[anchor] = entry
 		observer:Watch(entry)
 	elseif entry.Unit ~= unit then
-		-- Unit token changed (e.g. frame reassigned after group change)
+		-- Unit token changed (e.g. frame reassigned after group change or arena zone-in).
 		entry.Unit = unit
 		entry.IsExcludedSelf = anchorOptions.ExcludeSelf and SameUnit(unit, "player") or false
 		entry.TrackedAuras = {}
@@ -148,6 +148,17 @@ local function EnsureEntry(anchor, unit)
 		entry.PredictedGlows = {}
 		entry.PredictedGlowDurations = {}
 		entry.Container:ResetAllSlots()
+		-- Update container visibility immediately so that frame-visibility hooks (e.g.
+		-- CompactUnitFrame_UpdateVisible) that fire before the next M:Refresh see the
+		-- correct hidden/shown state rather than whatever was left from the previous unit.
+		if entry.IsExcludedSelf then
+			entry.Container.Frame:Hide()
+		else
+			ShowHideEntryContainer(entry.Container.Frame, anchor)
+			if entry.Container.Frame:IsShown() then
+				display:UpdateDisplay(entry)
+			end
+		end
 		observer:Rewatch(entry)
 	end
 
@@ -327,8 +338,10 @@ function M:Init()
 								e.ActiveCooldowns[cdKey] = nil
 							end
 						end
-						display:UpdateDisplay(e)
-						ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+						if SameUnit(e.Unit, ruleUnit) then
+							display:UpdateDisplay(e)
+							ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+						end
 					end
 				end)
 				-- Update CleanupTimer alias on the shared entry so external code sees the latest timer.
@@ -368,8 +381,10 @@ function M:Init()
 								e.ActiveCooldowns[cdKey] = nil
 							end
 						end
-						display:UpdateDisplay(e)
-						ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+						if SameUnit(e.Unit, ruleUnit) then
+							display:UpdateDisplay(e)
+							ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+						end
 					end
 				end)
 				cdData.CleanupTimer = firstCharge.Timer
@@ -390,8 +405,10 @@ function M:Init()
 					if e.ActiveCooldowns[cdKey] == cdData then
 						e.ActiveCooldowns[cdKey] = nil
 					end
-					display:UpdateDisplay(e)
-					ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+					if SameUnit(e.Unit, ruleUnit) then
+						display:UpdateDisplay(e)
+						ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+					end
 				end
 			end)
 		end
@@ -534,6 +551,16 @@ function M:Init()
 				-- Reset cache so the next UpdateDisplay picks up any instanceType change
 				-- (e.g. party -> raid conversion) for hideExternalDefensives.
 				display:ResetStaticAbilitiesCache()
+				-- UNIT_AURA stops firing for party members once you leave the group, so
+				-- glows for auras that expired while out-of-group are never cleared by the
+				-- normal glow-end callback. Clear stale state and Rewatch so the brain
+				-- re-scans current auras and re-establishes any still-active glows.
+				for _, entry in pairs(watchEntries) do
+					entry.TrackedAuras = {}
+					entry.PredictedGlows = {}
+					entry.PredictedGlowDurations = {}
+					observer:Rewatch(entry)
+				end
 				M:Refresh()
 			end)
 		elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
@@ -628,7 +655,11 @@ function M:Init()
 				end
 				local options = GetOptions()
 				if options then
-					ShowHideEntryContainer(entry.Container.Frame, frame)
+					if entry.IsExcludedSelf then
+						entry.Container.Frame:Hide()
+					else
+						ShowHideEntryContainer(entry.Container.Frame, frame)
+					end
 				end
 			end)
 		end
