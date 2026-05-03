@@ -86,7 +86,9 @@ local function EnsureEntry(anchor, unit)
 	end
 
 	-- Skip NPC units (friendly mobs, scenario NPCs, etc.).
-	if not UnitIsPlayer(unit) then
+	-- In test mode, party slots may be unoccupied by a real player; skip the check so
+	-- fake test frames are processed normally.
+	if not testModeActive and not UnitIsPlayer(unit) then
 		local existing = watchEntries[anchor]
 		if existing then
 			-- Cancel pending timers so their closures can't re-show the container later.
