@@ -18,6 +18,7 @@ local unitFlagsCallbacks      = {}
 local debuffEvidenceCallbacks = {}
 local modelChangedCallbacks   = {}
 local portraitUpdateCallbacks = {}
+local channelStartCallbacks   = {}
 -- Scratch table reused by FireAuraChanged to avoid per-event allocation.
 local candidateUnitsScratch = {}
 -- Scratch set reused by FireAuraChanged to deduplicate unit tokens.
@@ -75,6 +76,10 @@ local function FirePortraitUpdate(unit)
 	end
 end
 
+local function FireChannelStart(unit)
+	for _, fn in ipairs(channelStartCallbacks) do fn(unit) end
+end
+
 local function FireDebuffEvidence(unit, updateInfo)
 	for _, fn in ipairs(debuffEvidenceCallbacks) do
 		fn(unit, updateInfo)
@@ -99,6 +104,8 @@ local function CreateCastEventFrame(entry)
 			FireModelChanged(u)
 		elseif event == "UNIT_PORTRAIT_UPDATE" then
 			FirePortraitUpdate(u)
+		elseif event == "UNIT_SPELLCAST_CHANNEL_START" then
+			FireChannelStart(u)
 		end
 	end)
 	return frame
@@ -113,6 +120,7 @@ local function RegisterCastEvents(frame, unit)
 	frame:RegisterUnitEvent("UNIT_AURA", unit)
 	frame:RegisterUnitEvent("UNIT_MODEL_CHANGED", unit)
 	frame:RegisterUnitEvent("UNIT_PORTRAIT_UPDATE", unit)
+	frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unit)
 end
 
 local function MakeWatcher(entry)
@@ -248,6 +256,12 @@ end
 ---@param fn fun(unit: string)
 function O:RegisterPortraitUpdateCallback(fn)
 	portraitUpdateCallbacks[#portraitUpdateCallbacks + 1] = fn
+end
+
+---Registers a callback fired when a watched unit begins channeling a spell (UNIT_SPELLCAST_CHANNEL_START).
+---@param fn fun(unit: string)
+function O:RegisterChannelStartCallback(fn)
+	channelStartCallbacks[#channelStartCallbacks + 1] = fn
 end
 
 ---Creates the global absorb-shield frame. Must be called once from M:Init.

@@ -68,13 +68,14 @@ end
 
 local function makeObserver()
 	local cbs = {
-		auraChanged    = {},
-		cast           = {},
-		shield         = {},
-		unitFlags      = {},
-		debuffEvidence = {},
-		modelChanged   = {},
-		portraitUpdate = {},
+		auraChanged      = {},
+		cast             = {},
+		shield           = {},
+		unitFlags        = {},
+		debuffEvidence   = {},
+		modelChanged     = {},
+		portraitUpdate   = {},
+		channelStart     = {},
 	}
 
 	local o = {}
@@ -99,6 +100,9 @@ local function makeObserver()
 	end
 	function o:RegisterPortraitUpdateCallback(fn)
 		cbs.portraitUpdate[#cbs.portraitUpdate + 1] = fn
+	end
+	function o:RegisterChannelStartCallback(fn)
+		cbs.channelStart[#cbs.channelStart + 1] = fn
 	end
 
 	-- Fire helpers (called from tests to simulate events)
@@ -127,6 +131,10 @@ local function makeObserver()
 	end
 	function o:_firePortraitUpdate(unit)
 		for _, fn in ipairs(cbs.portraitUpdate) do fn(unit) end
+	end
+
+	function o:_fireChannelStart(unit)
+		for _, fn in ipairs(cbs.channelStart) do fn(unit) end
 	end
 
 	return o

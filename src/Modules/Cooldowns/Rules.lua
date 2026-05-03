@@ -1163,6 +1163,13 @@ local rules = {
 				RequiresTalent = { 5463, 5464, 5619 },
 				PvPOnly = true,
 			}, -- Time Stop (PvP talent)
+			{
+				Cooldown = 180,
+				SpellId  = 370960,
+				RequiresTalent = 5718,
+				PvPOnly = true,
+				NoAura  = true,
+			}, -- Emerald Communion (PvP talent, detected via UNIT_SPELLCAST_CHANNEL_START+UNIT_FLAGS)
 		},
 	},
 }

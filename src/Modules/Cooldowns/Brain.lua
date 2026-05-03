@@ -43,6 +43,10 @@ local lastModelChangedTime = {}
 local lastPortraitUpdateTime = {}
 -- unit -> timestamp of most recent Burrow commit; suppresses the second event batch that fires when Burrow ends.
 local lastBurrowCommitTime = {}
+-- unit -> timestamp of most recent UNIT_SPELLCAST_CHANNEL_START (Emerald Communion detection).
+local lastChannelStartTime = {}
+-- unit -> timestamp of last Emerald Communion commit; suppresses false re-detection during the channel.
+local lastECCommitTime     = {}
 -- unit -> timestamp of most recent feign death activation (UnitIsFeignDeath transition false->true).
 local lastFeignDeathTime = {}
 -- unit -> last known feign death state, used to detect false->true transitions.
@@ -65,18 +69,28 @@ local candidateEvidenceScratch = {}
 -- Populated lazily in RecordUnitFlagsChange so UnitIsFeignDeath is never called for units
 -- that cannot feign, avoiding a pointless API call on every UNIT_FLAGS event in a raid.
 local unitCanFeign = {}
+-- Shared detection window: all signature events must fire within this window.
+local correlationWindow = 0.5
 -- Burrow (PvP talent 5575, SpellId 409293): detected via UNIT_FLAGS + UNIT_MODEL_CHANGED +
--- UNIT_PORTRAIT_UPDATE firing within 0.5s of each other.  Two batches of these events fire per
--- cast (one when entering Burrow, one when exiting/cancelling); burrowRearmWindow suppresses the
--- second batch.
-local burrowSpellId    = 409293
-local burrowCooldown   = 120
-local burrowTalentId   = 5575
-local burrowWindow     = 0.5   -- all three events must fire within this window
+-- UNIT_PORTRAIT_UPDATE firing within correlationWindow of each other.  Two batches of these
+-- events fire per cast (one when entering Burrow, one when exiting/cancelling);
+-- burrowRearmWindow suppresses the second batch.
+local burrowSpellId     = 409293
+local burrowCooldown    = 120
+local burrowTalentId    = 5575
 local burrowRearmWindow = 12   -- seconds to suppress re-detection (covers Burrow's active duration)
 -- Callback fired when a Burrow cast is detected via the event-signature path.
 -- Signature: fn(unit, now)
 local burrowCooldownCallback = nil
+-- Emerald Communion (PvP talent 5718, SpellId 370960): detected via UNIT_SPELLCAST_CHANNEL_START +
+-- UNIT_FLAGS firing within correlationWindow of each other.
+local ecSpellId     = 370960
+local ecCooldown    = 180
+local ecTalentId    = 5718
+local ecRearmWindow = 10   -- covers the ~6s channel duration plus margin
+-- Callback fired when an Emerald Communion channel is detected via the event-signature path.
+-- Signature: fn(unit, now)
+local ecCooldownCallback = nil
 -- Callback fired when a buff ends and a matching rule is found.
 -- Signature: fn(ruleUnit, cdKey, cdData, detectedFromEntry)
 -- cdData fields: StartTime, Cooldown, Remaining, SpellId, IsOffensive
@@ -1645,7 +1659,7 @@ local function TryCommitBurrow(unit, now)
 	if not ft or not mt or not pt then return end
 	local earliest = math.min(ft, mt, pt)
 	local latest   = math.max(ft, mt, pt)
-	if latest - earliest > burrowWindow then return end
+	if latest - earliest > correlationWindow then return end
 	-- Suppress the second batch of events fired when Burrow ends or is cancelled early.
 	local lastCommit = lastBurrowCommitTime[unit]
 	if lastCommit and now - lastCommit < burrowRearmWindow then return end
@@ -1658,6 +1672,25 @@ local function TryCommitBurrow(unit, now)
 	lastPortraitUpdateTime[unit] = nil
 	if burrowCooldownCallback then
 		burrowCooldownCallback(unit, now)
+	end
+end
+
+---Checks whether UNIT_SPELLCAST_CHANNEL_START and UNIT_FLAGS have both fired within
+---correlationWindow for unit.  If so, fires ecCooldownCallback.
+local function TryCommitEmeraldCommunion(unit, now)
+	local cst = lastChannelStartTime[unit]
+	local ft  = lastUnitFlagsTime[unit]
+	if not cst or not ft then return end
+	if math.abs(cst - ft) > correlationWindow then return end
+	local lastCommit = lastECCommitTime[unit]
+	if lastCommit and now - lastCommit < ecRearmWindow then return end
+	local _, classToken = UnitClass(unit)
+	if classToken ~= "EVOKER" then return end
+	if not fcdTalents:UnitHasTalent(unit, ecTalentId) then return end
+	lastECCommitTime[unit]     = now
+	lastChannelStartTime[unit] = nil
+	if ecCooldownCallback then
+		ecCooldownCallback(unit, now)
 	end
 end
 
@@ -1680,6 +1713,7 @@ local function RecordUnitFlagsChange(unit)
 	if not isFeign then
 		lastUnitFlagsTime[unit] = now
 		TryCommitBurrow(unit, now)
+		TryCommitEmeraldCommunion(unit, now)
 	end
 end
 
@@ -1693,6 +1727,12 @@ local function RecordPortraitUpdate(unit)
 	local now = GetTime()
 	lastPortraitUpdateTime[unit] = now
 	TryCommitBurrow(unit, now)
+end
+
+local function RecordChannelStart(unit)
+	local now = GetTime()
+	lastChannelStartTime[unit] = now
+	TryCommitEmeraldCommunion(unit, now)
 end
 
 local function TryRecordDebuffEvidence(unit, updateInfo)
@@ -1768,7 +1808,9 @@ function B._TestReset()
 	for k in pairs(lastModelChangedTime)  do lastModelChangedTime[k]  = nil end
 	for k in pairs(lastPortraitUpdateTime) do lastPortraitUpdateTime[k] = nil end
 	for k in pairs(lastBurrowCommitTime)  do lastBurrowCommitTime[k]  = nil end
-	for k in pairs(lastFeignDeathTime)   do lastFeignDeathTime[k]   = nil end
+	for k in pairs(lastChannelStartTime) do lastChannelStartTime[k]  = nil end
+	for k in pairs(lastECCommitTime)     do lastECCommitTime[k]      = nil end
+	for k in pairs(lastFeignDeathTime)   do lastFeignDeathTime[k]    = nil end
 	for k in pairs(lastFeignDeathState)  do lastFeignDeathState[k]  = nil end
 	for k in pairs(unitCanFeign)         do unitCanFeign[k]         = nil end
 end
@@ -1786,6 +1828,7 @@ function B:RegisterWithObserver(obs)
 	obs:RegisterDebuffEvidenceCallback(TryRecordDebuffEvidence)
 	obs:RegisterModelChangedCallback(RecordModelChanged)
 	obs:RegisterPortraitUpdateCallback(RecordPortraitUpdate)
+	obs:RegisterChannelStartCallback(RecordChannelStart)
 end
 
 ---Registers the callback fired when a Burrow cast is detected via its event signature.
@@ -1793,6 +1836,13 @@ end
 ---@param fn fun(unit: string, now: number)
 function B:RegisterBurrowCallback(fn)
 	burrowCooldownCallback = fn
+end
+
+---Registers the callback fired when an Emerald Communion channel is detected via its event signature.
+---fn(unit, now) where unit is the caster and now is the detection timestamp.
+---@param fn fun(unit: string, now: number)
+function B:RegisterEmeraldCommunionCallback(fn)
+	ecCooldownCallback = fn
 end
 
 -- Public API used by EnemyCooldowns module to share rule-matching logic.

@@ -316,6 +316,49 @@ function M:Init()
 		end
 	end)
 
+	-- Emerald Communion (Preservation Evoker PvP talent): detected via event signature in Brain.
+	brain:RegisterEmeraldCommunionCallback(function(unit, now)
+		local casterEntries = {}
+		for _, e in pairs(watchEntries) do
+			if SameUnit(e.Unit, unit) then
+				casterEntries[#casterEntries + 1] = e
+			end
+		end
+		if #casterEntries == 0 then return end
+		local cdKey    = 370960
+		local cooldown = 180
+		for _, e in ipairs(casterEntries) do
+			local existing = e.ActiveCooldowns[cdKey]
+			if existing and existing.CleanupTimer then
+				existing.CleanupTimer:Cancel()
+			end
+			e.ActiveCooldowns[cdKey] = nil
+		end
+		local cdData = {
+			StartTime   = now,
+			Cooldown    = cooldown,
+			Remaining   = cooldown,
+			SpellId     = cdKey,
+			IsOffensive = false,
+		}
+		cdData.CleanupTimer = C_Timer.NewTimer(cooldown, function()
+			for _, e in ipairs(casterEntries) do
+				if e.ActiveCooldowns[cdKey] == cdData then
+					e.ActiveCooldowns[cdKey] = nil
+				end
+				if SameUnit(e.Unit, unit) then
+					display:UpdateDisplay(e)
+					ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+				end
+			end
+		end)
+		for _, e in ipairs(casterEntries) do
+			e.ActiveCooldowns[cdKey] = cdData
+			display:UpdateDisplay(e)
+			ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+		end
+	end)
+
 	-- Provide Brain with a way to look up a unit's active cooldowns so PredictSpellIdForUnit
 	-- can skip rules whose spell is already on cooldown (e.g. BoF on CD when AW is cast).
 	brain:RegisterActiveCooldownsLookup(function(unit)

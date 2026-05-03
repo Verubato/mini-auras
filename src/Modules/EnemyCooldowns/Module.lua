@@ -39,7 +39,9 @@ local lastShieldTime         = {}  ---@type table<string, number>
 local lastModelChangedTime   = {}  ---@type table<string, number>
 local lastPortraitUpdateTime = {}  ---@type table<string, number>
 -- Suppresses the second batch of Burrow events (fired when Burrow ends/is cancelled).
-local lastBurrowCommitTime   = {}  ---@type table<string, number>
+local lastBurrowCommitTime = {}  ---@type table<string, number>
+local lastChannelStartTime = {}  ---@type table<string, number>
+local lastECCommitTime     = {}  ---@type table<string, number>
 
 local function GetOptions()
 	return db and db.Modules.EnemyCooldownTrackerModule
@@ -276,10 +278,11 @@ local function CommitCooldown(entry, tracked, rule, measuredDuration)
 	entry.ActiveCooldowns[cdKey] = cdData
 end
 
--- Burrow detection
+-- Event-signature detection
 
-local burrowWindow      = 0.5  -- all three events must fire within this window
-local burrowRearmWindow = 12   -- seconds to suppress re-detection (covers Burrow's active duration)
+local correlationWindow = 0.5  -- all signature events must fire within this window
+local burrowRearmWindow = 12   -- seconds to suppress Burrow re-detection (covers Burrow's active duration)
+local ecRearmWindow     = 10   -- seconds to suppress EC re-detection (covers the ~6s channel duration)
 
 ---Checks whether the Burrow event signature has fired for an enemy Shaman and commits the cooldown.
 ---On the enemy path talent data is unavailable, so any Shaman class unit is treated as a potential
@@ -291,7 +294,7 @@ local function TryCommitBurrow(unit, now)
 	if not ft or not mt or not pt then return end
 	local earliest = math.min(ft, mt, pt)
 	local latest   = math.max(ft, mt, pt)
-	if latest - earliest > burrowWindow then return end
+	if latest - earliest > correlationWindow then return end
 	local lastCommit = lastBurrowCommitTime[unit]
 	if lastCommit and now - lastCommit < burrowRearmWindow then return end
 	local _, classToken = UnitClass(unit)
@@ -304,6 +307,28 @@ local function TryCommitBurrow(unit, now)
 	lastPortraitUpdateTime[unit] = nil
 	local syntheticTracked = { StartTime = now, AuraTypes = {} }
 	CommitCooldown(entry, syntheticTracked, { SpellId = 409293, Cooldown = 120 }, 0)
+	TriggerDisplayUpdate(entry)
+end
+
+---Checks whether UNIT_SPELLCAST_CHANNEL_START and UNIT_FLAGS have both fired within
+---correlationWindow for unit and commits the EC cooldown.
+---On the enemy path talent data is unavailable, so any Evoker class unit is treated as a
+---potential EC user (mirrors the ignoreTalentReqs pattern used for Grounding Totem / Burrow).
+local function TryCommitEmeraldCommunion(unit, now)
+	local cst = lastChannelStartTime[unit]
+	local ft  = lastUnitFlagsTime[unit]
+	if not cst or not ft then return end
+	if math.abs(cst - ft) > correlationWindow then return end
+	local lastCommit = lastECCommitTime[unit]
+	if lastCommit and now - lastCommit < ecRearmWindow then return end
+	local _, classToken = UnitClass(unit)
+	if classToken ~= "EVOKER" then return end
+	local entry = watchEntries[unit]
+	if not entry then return end
+	lastECCommitTime[unit]     = now
+	lastChannelStartTime[unit] = nil
+	local syntheticTracked = { StartTime = now, AuraTypes = {} }
+	CommitCooldown(entry, syntheticTracked, { SpellId = 370960, Cooldown = 180 }, 0)
 	TriggerDisplayUpdate(entry)
 end
 
@@ -653,7 +678,9 @@ local function ClearAllCooldownState()
 	for k in pairs(lastUnitFlagsTime)      do lastUnitFlagsTime[k]      = nil end
 	for k in pairs(lastModelChangedTime)   do lastModelChangedTime[k]   = nil end
 	for k in pairs(lastPortraitUpdateTime) do lastPortraitUpdateTime[k] = nil end
-	for k in pairs(lastBurrowCommitTime)   do lastBurrowCommitTime[k]   = nil end
+	for k in pairs(lastBurrowCommitTime) do lastBurrowCommitTime[k] = nil end
+	for k in pairs(lastChannelStartTime) do lastChannelStartTime[k] = nil end
+	for k in pairs(lastECCommitTime)     do lastECCommitTime[k]     = nil end
 	for _, entry in pairs(watchEntries) do
 		for _, cd in pairs(entry.ActiveCooldowns) do
 			if cd.CleanupTimer then cd.CleanupTimer:Cancel() end
@@ -761,6 +788,7 @@ function M:Init()
 		local now = GetTime()
 		lastUnitFlagsTime[unit] = now
 		TryCommitBurrow(unit, now)
+		TryCommitEmeraldCommunion(unit, now)
 	end)
 	observer:RegisterModelChangedCallback(function(unit)
 		local now = GetTime()
@@ -771,6 +799,11 @@ function M:Init()
 		local now = GetTime()
 		lastPortraitUpdateTime[unit] = now
 		TryCommitBurrow(unit, now)
+	end)
+	observer:RegisterChannelStartCallback(function(unit)
+		local now = GetTime()
+		lastChannelStartTime[unit] = now
+		TryCommitEmeraldCommunion(unit, now)
 	end)
 	observer:RegisterDebuffEvidenceCallback(function(unit, updateInfo)
 		if updateInfo and not updateInfo.isFullUpdate and updateInfo.addedAuras then

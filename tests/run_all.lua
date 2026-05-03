@@ -31,6 +31,7 @@ local testFiles = {
     "tests/test_revival_gt_ambiguity.lua",
     "tests/test_ecd_precog_gt.lua",
     "tests/test_burrow.lua",
+    "tests/test_emerald_communion.lua",
 }
 
 local loadErrors = {}

@@ -17,6 +17,7 @@ local debuffEvidenceCallbacks = {}
 local castCallbacks           = {}
 local modelChangedCallbacks   = {}
 local portraitUpdateCallbacks = {}
+local channelStartCallbacks = {}
 
 local function FireAuraChanged(entry, watcher)
 	for _, fn in ipairs(auraChangedCallbacks) do
@@ -54,6 +55,10 @@ local function FirePortraitUpdate(unit)
 	end
 end
 
+local function FireChannelStart(unit)
+	for _, fn in ipairs(channelStartCallbacks) do fn(unit) end
+end
+
 local function CreateUnitEventFrame(entry)
 	local frame = CreateFrame("Frame")
 	frame:SetScript("OnEvent", function(_, event, ...)
@@ -70,6 +75,8 @@ local function CreateUnitEventFrame(entry)
 			FireModelChanged(u)
 		elseif event == "UNIT_PORTRAIT_UPDATE" then
 			FirePortraitUpdate(u)
+		elseif event == "UNIT_SPELLCAST_CHANNEL_START" then
+			FireChannelStart(u)
 		end
 	end)
 	return frame
@@ -83,6 +90,7 @@ local function RegisterUnitEvents(frame, unit)
 	frame:RegisterUnitEvent("UNIT_AURA", unit)
 	frame:RegisterUnitEvent("UNIT_MODEL_CHANGED", unit)
 	frame:RegisterUnitEvent("UNIT_PORTRAIT_UPDATE", unit)
+	frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unit)
 end
 
 local function MakeWatcher(entry)
@@ -199,4 +207,10 @@ end
 ---@param fn fun(unit: string)
 function O:RegisterPortraitUpdateCallback(fn)
 	portraitUpdateCallbacks[#portraitUpdateCallbacks + 1] = fn
+end
+
+---Registers a callback fired when a watched enemy unit begins channeling (UNIT_SPELLCAST_CHANNEL_START).
+---@param fn fun(unit: string)
+function O:RegisterChannelStartCallback(fn)
+	channelStartCallbacks[#channelStartCallbacks + 1] = fn
 end
