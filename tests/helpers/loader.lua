@@ -76,6 +76,7 @@ local function makeObserver()
 		modelChanged     = {},
 		portraitUpdate   = {},
 		channelStart     = {},
+		channelStop      = {},
 	}
 
 	local o = {}
@@ -103,6 +104,9 @@ local function makeObserver()
 	end
 	function o:RegisterChannelStartCallback(fn)
 		cbs.channelStart[#cbs.channelStart + 1] = fn
+	end
+	function o:RegisterChannelStopCallback(fn)
+		cbs.channelStop[#cbs.channelStop + 1] = fn
 	end
 
 	-- Fire helpers (called from tests to simulate events)
@@ -135,6 +139,10 @@ local function makeObserver()
 
 	function o:_fireChannelStart(unit)
 		for _, fn in ipairs(cbs.channelStart) do fn(unit) end
+	end
+
+	function o:_fireChannelStop(unit)
+		for _, fn in ipairs(cbs.channelStop) do fn(unit) end
 	end
 
 	return o

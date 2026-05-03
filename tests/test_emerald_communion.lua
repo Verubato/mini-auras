@@ -1,13 +1,15 @@
 -- Tests for Emerald Communion (Preservation Evoker PvP talent 5718, SpellId 370960) detection.
 --
--- Emerald Communion produces no aura.  Brain detects it by requiring both
--- UNIT_SPELLCAST_CHANNEL_START and UNIT_FLAGS to fire within the 0.5-second
--- correlationWindow for the same unit.  A 10-second rearm guard suppresses
--- re-detection during the channel.
+-- Emerald Communion produces no aura.  Brain detects it in two phases:
+--   Predict: UNIT_SPELLCAST_CHANNEL_START + UNIT_FLAGS within 0.5s → ecPredictCallback.
+--   Commit:  UNIT_SPELLCAST_CHANNEL_STOP  + UNIT_FLAGS within 0.5s → ecCooldownCallback.
+-- The 10-second rearm window ties predict to commit and suppresses re-detection during the channel.
 --
 -- Public APIs tested:
---   B:RegisterEmeraldCommunionCallback(fn)   -- fn(unit, now)
+--   B:RegisterEmeraldCommunionPredictCallback(fn)  -- fn(unit, now)
+--   B:RegisterEmeraldCommunionCallback(fn)         -- fn(unit, now, castTime)
 --   obs:_fireChannelStart(unit)
+--   obs:_fireChannelStop(unit)
 --   obs:_fireUnitFlags(unit)
 --
 -- Spell/talent IDs referenced:
@@ -36,54 +38,54 @@ local function setupEvoker(unit)
     mods.talents._setTalent(unit, EC_TALENT, true)
 end
 
--- Section 1: Both events must fire within the detection window
+-- Section 1: Predict fires on CHANNEL_START + UNIT_FLAGS within window
 
-fw.describe("Emerald Communion detection - event pair within window", function()
+fw.describe("Emerald Communion detection - predict on CHANNEL_START + UNIT_FLAGS", function()
     fw.before_each(reset)
 
-    fw.it("fires callback when CHANNEL_START then UNIT_FLAGS arrive within 0.5s", function()
+    fw.it("fires predict when CHANNEL_START then UNIT_FLAGS arrive within 0.5s", function()
         setupEvoker("party1")
         local fired = 0
-        B:RegisterEmeraldCommunionCallback(function() fired = fired + 1 end)
+        B:RegisterEmeraldCommunionPredictCallback(function() fired = fired + 1 end)
 
         wow.setTime(100.0)
         obs:_fireChannelStart("party1")
         wow.setTime(100.4)
         obs:_fireUnitFlags("party1")
 
-        fw.eq(fired, 1, "callback should fire once when both events arrive within 0.5s")
+        fw.eq(fired, 1, "predict should fire when both events arrive within 0.5s")
     end)
 
-    fw.it("fires callback when UNIT_FLAGS then CHANNEL_START arrive within 0.5s", function()
+    fw.it("fires predict when UNIT_FLAGS then CHANNEL_START arrive within 0.5s", function()
         setupEvoker("party1")
         local fired = 0
-        B:RegisterEmeraldCommunionCallback(function() fired = fired + 1 end)
+        B:RegisterEmeraldCommunionPredictCallback(function() fired = fired + 1 end)
 
         wow.setTime(200.0)
         obs:_fireUnitFlags("party1")
         wow.setTime(200.4)
         obs:_fireChannelStart("party1")
 
-        fw.eq(fired, 1, "event order should not matter")
+        fw.eq(fired, 1, "event order should not matter for predict")
     end)
 
-    fw.it("does not fire when the gap between the two events exceeds 0.5s", function()
+    fw.it("does not predict when the gap between events exceeds 0.5s", function()
         setupEvoker("party1")
         local fired = 0
-        B:RegisterEmeraldCommunionCallback(function() fired = fired + 1 end)
+        B:RegisterEmeraldCommunionPredictCallback(function() fired = fired + 1 end)
 
         wow.setTime(300.0)
         obs:_fireChannelStart("party1")
         wow.setTime(300.6)   -- 0.6s gap > correlationWindow (0.5s)
         obs:_fireUnitFlags("party1")
 
-        fw.eq(fired, 0, "events more than 0.5s apart should not trigger EC detection")
+        fw.eq(fired, 0, "events more than 0.5s apart should not trigger EC predict")
     end)
 
-    fw.it("passes the unit and detection timestamp to the callback", function()
+    fw.it("passes the unit and timestamp to the predict callback", function()
         setupEvoker("party1")
         local capturedUnit, capturedNow
-        B:RegisterEmeraldCommunionCallback(function(unit, now)
+        B:RegisterEmeraldCommunionPredictCallback(function(unit, now)
             capturedUnit = unit
             capturedNow  = now
         end)
@@ -93,166 +95,316 @@ fw.describe("Emerald Communion detection - event pair within window", function()
         wow.setTime(400.3)
         obs:_fireUnitFlags("party1")
 
-        fw.eq(capturedUnit, "party1", "callback should receive the correct unit string")
-        fw.eq(capturedNow,  400.3,   "callback should receive the time of the triggering event")
+        fw.eq(capturedUnit, "party1", "predict callback should receive the correct unit")
+        fw.eq(capturedNow,  400.3,   "predict callback should receive the completing event time")
     end)
 end)
 
--- Section 2: Missing one event does not trigger detection
+-- Section 2: Commit fires on CHANNEL_STOP + UNIT_FLAGS within window
 
-fw.describe("Emerald Communion detection - single event does not fire", function()
+fw.describe("Emerald Communion detection - commit on CHANNEL_STOP + UNIT_FLAGS", function()
     fw.before_each(reset)
 
-    fw.it("does not fire when only CHANNEL_START fires", function()
+    fw.it("fires commit when CHANNEL_STOP then UNIT_FLAGS arrive within 0.5s after a predict", function()
         setupEvoker("party1")
-        local fired = 0
-        B:RegisterEmeraldCommunionCallback(function() fired = fired + 1 end)
+        local committed = 0
+        B:RegisterEmeraldCommunionCallback(function() committed = committed + 1 end)
+
+        -- Predict
+        wow.setTime(100.0)
+        obs:_fireChannelStart("party1")
+        wow.setTime(100.1)
+        obs:_fireUnitFlags("party1")
+
+        -- Commit
+        wow.setTime(106.0)
+        obs:_fireChannelStop("party1")
+        wow.setTime(106.1)
+        obs:_fireUnitFlags("party1")
+
+        fw.eq(committed, 1, "commit should fire on CHANNEL_STOP + UNIT_FLAGS after a predict")
+    end)
+
+    fw.it("fires commit when UNIT_FLAGS then CHANNEL_STOP arrive within 0.5s after a predict", function()
+        setupEvoker("party1")
+        local committed = 0
+        B:RegisterEmeraldCommunionCallback(function() committed = committed + 1 end)
+
+        -- Predict
+        wow.setTime(100.0)
+        obs:_fireChannelStart("party1")
+        wow.setTime(100.1)
+        obs:_fireUnitFlags("party1")
+
+        -- Commit (FLAGS before STOP)
+        wow.setTime(106.0)
+        obs:_fireUnitFlags("party1")
+        wow.setTime(106.4)
+        obs:_fireChannelStop("party1")
+
+        fw.eq(committed, 1, "event order should not matter for commit")
+    end)
+
+    fw.it("does not commit when CHANNEL_STOP gap to UNIT_FLAGS exceeds 0.5s", function()
+        setupEvoker("party1")
+        local committed = 0
+        B:RegisterEmeraldCommunionCallback(function() committed = committed + 1 end)
+
+        -- Predict
+        wow.setTime(100.0)
+        obs:_fireChannelStart("party1")
+        wow.setTime(100.1)
+        obs:_fireUnitFlags("party1")
+
+        -- Commit attempt with stale UNIT_FLAGS
+        wow.setTime(106.0)
+        obs:_fireChannelStop("party1")
+        wow.setTime(106.6)   -- 0.6s gap > correlationWindow
+        obs:_fireUnitFlags("party1")
+
+        fw.eq(committed, 0, "CHANNEL_STOP + UNIT_FLAGS more than 0.5s apart should not commit")
+    end)
+
+    fw.it("does not commit when CHANNEL_STOP arrives without a prior predict", function()
+        setupEvoker("party1")
+        local committed = 0
+        B:RegisterEmeraldCommunionCallback(function() committed = committed + 1 end)
+
+        wow.setTime(100.0)
+        obs:_fireChannelStop("party1")
+        wow.setTime(100.1)
+        obs:_fireUnitFlags("party1")
+
+        fw.eq(committed, 0, "CHANNEL_STOP without a prior predict should not commit")
+    end)
+
+    fw.it("commit callback receives castTime equal to the predict timestamp", function()
+        setupEvoker("party1")
+        local predictedNow
+        local committedNow, committedCastTime
+        B:RegisterEmeraldCommunionPredictCallback(function(unit, now) predictedNow = now end)
+        B:RegisterEmeraldCommunionCallback(function(unit, now, castTime)
+            committedNow      = now
+            committedCastTime = castTime
+        end)
 
         wow.setTime(100.0)
         obs:_fireChannelStart("party1")
-
-        fw.eq(fired, 0, "CHANNEL_START alone is not sufficient for EC detection")
-    end)
-
-    fw.it("does not fire when only UNIT_FLAGS fires", function()
-        setupEvoker("party1")
-        local fired = 0
-        B:RegisterEmeraldCommunionCallback(function() fired = fired + 1 end)
-
-        wow.setTime(100.0)
+        wow.setTime(100.1)
         obs:_fireUnitFlags("party1")
 
-        fw.eq(fired, 0, "UNIT_FLAGS alone is not sufficient for EC detection")
+        wow.setTime(106.0)
+        obs:_fireChannelStop("party1")
+        wow.setTime(106.1)
+        obs:_fireUnitFlags("party1")
+
+        fw.eq(committedCastTime, predictedNow, "castTime in commit should equal the predict timestamp")
+        fw.eq(committedNow, 106.1, "now in commit should be the time of the completing second-batch event")
     end)
 end)
 
--- Section 3: Class and talent gates
+-- Section 3: Predict fires only once per channel; commit does not re-predict
 
-fw.describe("Emerald Communion detection - class and talent guards", function()
+fw.describe("Emerald Communion detection - predict/commit split", function()
     fw.before_each(reset)
 
-    fw.it("does not fire for a Warrior - EC is Evoker-only", function()
-        wow.setUnitClass("party1", "WARRIOR")
-        local fired = 0
-        B:RegisterEmeraldCommunionCallback(function() fired = fired + 1 end)
-
-        wow.setTime(100.0)
-        obs:_fireChannelStart("party1")
-        wow.setTime(100.1)
-        obs:_fireUnitFlags("party1")
-
-        fw.eq(fired, 0, "non-Evoker unit should never trigger EC detection")
-    end)
-
-    fw.it("does not fire for an Evoker without the EC talent (5718)", function()
-        wow.setUnitClass("party1", "EVOKER")
-        -- Deliberately do NOT set talent 5718.
-        local fired = 0
-        B:RegisterEmeraldCommunionCallback(function() fired = fired + 1 end)
-
-        wow.setTime(100.0)
-        obs:_fireChannelStart("party1")
-        wow.setTime(100.1)
-        obs:_fireUnitFlags("party1")
-
-        fw.eq(fired, 0, "Evoker without talent 5718 should not commit EC")
-    end)
-
-    fw.it("fires for an Evoker who has the EC talent (5718)", function()
+    fw.it("first batch fires predict but not commit", function()
         setupEvoker("party1")
-        local fired = 0
-        B:RegisterEmeraldCommunionCallback(function() fired = fired + 1 end)
+        local predicted = 0
+        local committed = 0
+        B:RegisterEmeraldCommunionPredictCallback(function() predicted = predicted + 1 end)
+        B:RegisterEmeraldCommunionCallback(function() committed = committed + 1 end)
 
         wow.setTime(100.0)
         obs:_fireChannelStart("party1")
         wow.setTime(100.1)
         obs:_fireUnitFlags("party1")
 
-        fw.eq(fired, 1, "Evoker with talent 5718 and both events should commit EC")
+        fw.eq(predicted, 1, "predict should fire on the first batch")
+        fw.eq(committed, 0, "commit should not fire on the first batch")
     end)
 
-    fw.it("only fires for the Evoker when multiple units receive events", function()
+    fw.it("second batch fires commit but not a second predict", function()
         setupEvoker("party1")
-        wow.setUnitClass("party2", "WARRIOR")
-        local fired = {}
-        B:RegisterEmeraldCommunionCallback(function(unit) fired[unit] = (fired[unit] or 0) + 1 end)
+        local predicted = 0
+        local committed = 0
+        B:RegisterEmeraldCommunionPredictCallback(function() predicted = predicted + 1 end)
+        B:RegisterEmeraldCommunionCallback(function() committed = committed + 1 end)
 
-        wow.setTime(100.0)
-        obs:_fireChannelStart("party1")
-        obs:_fireChannelStart("party2")
-        wow.setTime(100.1)
-        obs:_fireUnitFlags("party1")
-        obs:_fireUnitFlags("party2")
-
-        fw.eq(fired["party1"] or 0, 1, "EC should fire for the Evoker (party1)")
-        fw.eq(fired["party2"] or 0, 0, "EC should not fire for the Warrior (party2)")
-    end)
-end)
-
--- Section 4: Rearm window suppresses re-detection during the channel
-
-fw.describe("Emerald Communion detection - rearm window suppresses re-detection", function()
-    fw.before_each(reset)
-
-    fw.it("suppresses a second pair that arrives within the 10s rearm window", function()
-        setupEvoker("party1")
-        local fired = 0
-        B:RegisterEmeraldCommunionCallback(function() fired = fired + 1 end)
-
-        -- First detection (EC channel starts)
+        -- First batch
         wow.setTime(100.0)
         obs:_fireChannelStart("party1")
         wow.setTime(100.1)
         obs:_fireUnitFlags("party1")
-        fw.eq(fired, 1, "first event pair should commit EC")
 
-        -- Second pair within the 10s rearm window
-        wow.setTime(107.0)   -- 6.9s after first commit (< 10s rearm)
-        obs:_fireChannelStart("party1")
-        wow.setTime(107.1)
+        -- Second batch
+        wow.setTime(106.0)
+        obs:_fireChannelStop("party1")
+        wow.setTime(106.1)
         obs:_fireUnitFlags("party1")
-        fw.eq(fired, 1, "second pair within rearm window should be suppressed")
+
+        fw.eq(predicted, 1, "predict should fire only on the first batch")
+        fw.eq(committed, 1, "commit should fire on the second batch")
     end)
 
-    fw.it("fires again after the 10s rearm window expires", function()
+    fw.it("does not commit when CHANNEL_STOP arrives after the 10s rearm window", function()
         setupEvoker("party1")
-        local fired = 0
-        B:RegisterEmeraldCommunionCallback(function() fired = fired + 1 end)
+        local committed = 0
+        B:RegisterEmeraldCommunionCallback(function() committed = committed + 1 end)
 
-        -- First use
+        -- Predict
         wow.setTime(100.0)
         obs:_fireChannelStart("party1")
         wow.setTime(100.1)
         obs:_fireUnitFlags("party1")
-        fw.eq(fired, 1, "first event pair should commit EC")
 
-        -- Second use after rearm window has passed
-        wow.setTime(111.0)   -- 10.9s after first commit (> 10s rearm)
-        obs:_fireChannelStart("party1")
+        -- Channel stop arrives after rearm has expired
+        wow.setTime(111.0)   -- 10.9s after predict (> 10s rearm)
+        obs:_fireChannelStop("party1")
         wow.setTime(111.1)
         obs:_fireUnitFlags("party1")
-        fw.eq(fired, 2, "second pair after rearm window should commit a new EC cast")
+
+        fw.eq(committed, 0, "CHANNEL_STOP after rearm expiry should not commit")
     end)
 
-    fw.it("resets per-unit so a second Evoker is not affected by the first's rearm", function()
+    fw.it("resets per-unit so a second Evoker's predict/commit is independent", function()
         setupEvoker("party1")
         setupEvoker("party2")
-        local fired = {}
-        B:RegisterEmeraldCommunionCallback(function(unit) fired[unit] = (fired[unit] or 0) + 1 end)
+        local predicted = {}
+        local committed = {}
+        B:RegisterEmeraldCommunionPredictCallback(function(unit) predicted[unit] = (predicted[unit] or 0) + 1 end)
+        B:RegisterEmeraldCommunionCallback(function(unit) committed[unit] = (committed[unit] or 0) + 1 end)
 
-        -- party1 uses EC
+        -- party1 predict
         wow.setTime(100.0)
         obs:_fireChannelStart("party1")
         wow.setTime(100.1)
         obs:_fireUnitFlags("party1")
 
-        -- party2 uses EC shortly after — rearm for party1 should not block party2
+        -- party2 predict
         wow.setTime(101.0)
         obs:_fireChannelStart("party2")
         wow.setTime(101.1)
         obs:_fireUnitFlags("party2")
 
-        fw.eq(fired["party1"] or 0, 1, "party1 EC should have committed")
-        fw.eq(fired["party2"] or 0, 1, "party2 EC should commit independently of party1's rearm")
+        -- party1 commit
+        wow.setTime(106.0)
+        obs:_fireChannelStop("party1")
+        wow.setTime(106.1)
+        obs:_fireUnitFlags("party1")
+
+        fw.eq(predicted["party1"] or 0, 1, "party1 predict should have fired")
+        fw.eq(predicted["party2"] or 0, 1, "party2 predict should have fired independently")
+        fw.eq(committed["party1"] or 0, 1, "party1 commit should fire on its second batch")
+        fw.eq(committed["party2"] or 0, 0, "party2 commit should not fire (no second batch yet)")
+    end)
+end)
+
+-- Section 4: Class and talent gates
+
+fw.describe("Emerald Communion detection - class and talent guards", function()
+    fw.before_each(reset)
+
+    fw.it("does not predict for a Warrior - EC is Evoker-only", function()
+        wow.setUnitClass("party1", "WARRIOR")
+        local fired = 0
+        B:RegisterEmeraldCommunionPredictCallback(function() fired = fired + 1 end)
+
+        wow.setTime(100.0)
+        obs:_fireChannelStart("party1")
+        wow.setTime(100.1)
+        obs:_fireUnitFlags("party1")
+
+        fw.eq(fired, 0, "non-Evoker unit should never trigger EC predict")
+    end)
+
+    fw.it("does not predict for an Evoker without the EC talent (5718)", function()
+        wow.setUnitClass("party1", "EVOKER")
+        -- Deliberately do NOT set talent 5718.
+        local fired = 0
+        B:RegisterEmeraldCommunionPredictCallback(function() fired = fired + 1 end)
+
+        wow.setTime(100.0)
+        obs:_fireChannelStart("party1")
+        wow.setTime(100.1)
+        obs:_fireUnitFlags("party1")
+
+        fw.eq(fired, 0, "Evoker without talent 5718 should not predict EC")
+    end)
+
+    fw.it("predicts for an Evoker who has the EC talent (5718)", function()
+        setupEvoker("party1")
+        local fired = 0
+        B:RegisterEmeraldCommunionPredictCallback(function() fired = fired + 1 end)
+
+        wow.setTime(100.0)
+        obs:_fireChannelStart("party1")
+        wow.setTime(100.1)
+        obs:_fireUnitFlags("party1")
+
+        fw.eq(fired, 1, "Evoker with talent 5718 and both events should predict EC")
+    end)
+
+    fw.it("only predicts for the Evoker when multiple units receive events", function()
+        setupEvoker("party1")
+        wow.setUnitClass("party2", "WARRIOR")
+        local fired = {}
+        B:RegisterEmeraldCommunionPredictCallback(function(unit) fired[unit] = (fired[unit] or 0) + 1 end)
+
+        wow.setTime(100.0)
+        obs:_fireChannelStart("party1")
+        obs:_fireChannelStart("party2")
+        wow.setTime(100.1)
+        obs:_fireUnitFlags("party1")
+        obs:_fireUnitFlags("party2")
+
+        fw.eq(fired["party1"] or 0, 1, "EC predict should fire for the Evoker (party1)")
+        fw.eq(fired["party2"] or 0, 0, "EC predict should not fire for the Warrior (party2)")
+    end)
+end)
+
+-- Section 5: Single event does not trigger either callback
+
+fw.describe("Emerald Communion detection - single event does not fire", function()
+    fw.before_each(reset)
+
+    fw.it("does not predict when only CHANNEL_START fires", function()
+        setupEvoker("party1")
+        local fired = 0
+        B:RegisterEmeraldCommunionPredictCallback(function() fired = fired + 1 end)
+
+        wow.setTime(100.0)
+        obs:_fireChannelStart("party1")
+
+        fw.eq(fired, 0, "CHANNEL_START alone is not sufficient for EC predict")
+    end)
+
+    fw.it("does not predict when only UNIT_FLAGS fires", function()
+        setupEvoker("party1")
+        local fired = 0
+        B:RegisterEmeraldCommunionPredictCallback(function() fired = fired + 1 end)
+
+        wow.setTime(100.0)
+        obs:_fireUnitFlags("party1")
+
+        fw.eq(fired, 0, "UNIT_FLAGS alone is not sufficient for EC predict")
+    end)
+
+    fw.it("does not commit when only CHANNEL_STOP fires", function()
+        setupEvoker("party1")
+        -- Set up a predict first so the rearm guard doesn't reject the commit.
+        B:RegisterEmeraldCommunionPredictCallback(function() end)
+        wow.setTime(100.0)
+        obs:_fireChannelStart("party1")
+        wow.setTime(100.1)
+        obs:_fireUnitFlags("party1")
+
+        local committed = 0
+        B:RegisterEmeraldCommunionCallback(function() committed = committed + 1 end)
+
+        wow.setTime(106.0)
+        obs:_fireChannelStop("party1")
+
+        fw.eq(committed, 0, "CHANNEL_STOP alone is not sufficient for EC commit")
     end)
 end)

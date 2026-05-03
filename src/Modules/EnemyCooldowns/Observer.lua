@@ -18,6 +18,7 @@ local castCallbacks           = {}
 local modelChangedCallbacks   = {}
 local portraitUpdateCallbacks = {}
 local channelStartCallbacks = {}
+local channelStopCallbacks  = {}
 
 local function FireAuraChanged(entry, watcher)
 	for _, fn in ipairs(auraChangedCallbacks) do
@@ -59,6 +60,10 @@ local function FireChannelStart(unit)
 	for _, fn in ipairs(channelStartCallbacks) do fn(unit) end
 end
 
+local function FireChannelStop(unit)
+	for _, fn in ipairs(channelStopCallbacks) do fn(unit) end
+end
+
 local function CreateUnitEventFrame(entry)
 	local frame = CreateFrame("Frame")
 	frame:SetScript("OnEvent", function(_, event, ...)
@@ -77,6 +82,8 @@ local function CreateUnitEventFrame(entry)
 			FirePortraitUpdate(u)
 		elseif event == "UNIT_SPELLCAST_CHANNEL_START" then
 			FireChannelStart(u)
+		elseif event == "UNIT_SPELLCAST_CHANNEL_STOP" then
+			FireChannelStop(u)
 		end
 	end)
 	return frame
@@ -91,6 +98,7 @@ local function RegisterUnitEvents(frame, unit)
 	frame:RegisterUnitEvent("UNIT_MODEL_CHANGED", unit)
 	frame:RegisterUnitEvent("UNIT_PORTRAIT_UPDATE", unit)
 	frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unit)
+	frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
 end
 
 local function MakeWatcher(entry)
@@ -213,4 +221,10 @@ end
 ---@param fn fun(unit: string)
 function O:RegisterChannelStartCallback(fn)
 	channelStartCallbacks[#channelStartCallbacks + 1] = fn
+end
+
+---Registers a callback fired when a watched enemy unit's channel ends or is interrupted (UNIT_SPELLCAST_CHANNEL_STOP).
+---@param fn fun(unit: string)
+function O:RegisterChannelStopCallback(fn)
+	channelStopCallbacks[#channelStopCallbacks + 1] = fn
 end

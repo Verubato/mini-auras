@@ -45,8 +45,8 @@ local specClass = {
 local columns = 4
 local columnWidth
 
----Collects all unique spell IDs from defensive/important rules, grouped by class token.
----Only includes rules that EnemyCooldowns can actually track (BigDefensive, ExternalDefensive, or Important).
+---Collects all unique spell IDs from rules that EnemyCooldowns can track, grouped by class token.
+---Includes aura-based rules (BigDefensive, ExternalDefensive, Important) and event-signature rules (NoAura).
 ---@return table<string, number[]>  classToken -> ordered list of spell IDs
 local function CollectSpellsByClass()
 	local classSpells = {}
@@ -54,7 +54,7 @@ local function CollectSpellsByClass()
 
 	local function addSpell(classToken, spellId, rule)
 		if not spellId or seen[spellId] then return end
-		if not (rule.BigDefensive or rule.ExternalDefensive or rule.Important) then return end
+		if not (rule.BigDefensive or rule.ExternalDefensive or rule.Important or rule.NoAura) then return end
 		seen[spellId] = true
 		classSpells[classToken] = classSpells[classToken] or {}
 		table.insert(classSpells[classToken], spellId)

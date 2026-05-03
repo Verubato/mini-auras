@@ -41,12 +41,14 @@ local lastUnitFlagsTime = {}
 local lastModelChangedTime = {}
 -- unit -> timestamp of most recent UNIT_PORTRAIT_UPDATE (Burrow detection).
 local lastPortraitUpdateTime = {}
--- unit -> timestamp of most recent Burrow commit; suppresses the second event batch that fires when Burrow ends.
-local lastBurrowCommitTime = {}
--- unit -> timestamp of most recent UNIT_SPELLCAST_CHANNEL_START (Emerald Communion detection).
+-- unit -> timestamp of the first Burrow event batch (Burrow started); nil once commit fires or rearm expires.
+local lastBurrowPredictTime = {}
+-- unit -> timestamp of most recent UNIT_SPELLCAST_CHANNEL_START (Emerald Communion detect).
 local lastChannelStartTime = {}
--- unit -> timestamp of last Emerald Communion commit; suppresses false re-detection during the channel.
-local lastECCommitTime     = {}
+-- unit -> timestamp of most recent UNIT_SPELLCAST_CHANNEL_STOP (Emerald Communion commit).
+local lastChannelStopTime  = {}
+-- unit -> timestamp of the first EC event batch (channel started); nil once commit fires or rearm expires.
+local lastECPredictTime    = {}
 -- unit -> timestamp of most recent feign death activation (UnitIsFeignDeath transition false->true).
 local lastFeignDeathTime = {}
 -- unit -> last known feign death state, used to detect false->true transitions.
@@ -73,24 +75,26 @@ local unitCanFeign = {}
 local correlationWindow = 0.5
 -- Burrow (PvP talent 5575, SpellId 409293): detected via UNIT_FLAGS + UNIT_MODEL_CHANGED +
 -- UNIT_PORTRAIT_UPDATE firing within correlationWindow of each other.  Two batches of these
--- events fire per cast (one when entering Burrow, one when exiting/cancelling);
--- burrowRearmWindow suppresses the second batch.
+-- events fire per cast (one when entering Burrow, one when exiting/cancelling).
+-- First batch fires burrowPredictCallback (Burrow started); second batch within burrowRearmWindow
+-- fires burrowCooldownCallback with the measured channel duration (Burrow ended).
 local burrowSpellId     = 409293
 local burrowCooldown    = 120
 local burrowTalentId    = 5575
-local burrowRearmWindow = 12   -- seconds to suppress re-detection (covers Burrow's active duration)
--- Callback fired when a Burrow cast is detected via the event-signature path.
--- Signature: fn(unit, now)
-local burrowCooldownCallback = nil
--- Emerald Communion (PvP talent 5718, SpellId 370960): detected via UNIT_SPELLCAST_CHANNEL_START +
--- UNIT_FLAGS firing within correlationWindow of each other.
+local burrowRearmWindow = 12   -- seconds to expect the exit batch (covers Burrow's active duration)
+-- Callbacks fired on the two Burrow detection paths.
+local burrowPredictCallback  = nil  -- fn(unit, now) — first batch (Burrow started)
+local burrowCooldownCallback = nil  -- fn(unit, now, castTime) — second batch (Burrow ended)
+-- Emerald Communion (PvP talent 5718, SpellId 370960): two-phase detection.
+-- Predict: UNIT_SPELLCAST_CHANNEL_START + UNIT_FLAGS within correlationWindow → ecPredictCallback.
+-- Commit:  UNIT_SPELLCAST_CHANNEL_STOP  + UNIT_FLAGS within correlationWindow → ecCooldownCallback.
 local ecSpellId     = 370960
 local ecCooldown    = 180
 local ecTalentId    = 5718
-local ecRearmWindow = 10   -- covers the ~6s channel duration plus margin
--- Callback fired when an Emerald Communion channel is detected via the event-signature path.
--- Signature: fn(unit, now)
-local ecCooldownCallback = nil
+local ecRearmWindow = 10   -- seconds to expect the CHANNEL_STOP batch (covers the ~6s channel)
+-- Callbacks fired on the two EC detection paths.
+local ecPredictCallback  = nil  -- fn(unit, now)          — first batch (channel started)
+local ecCooldownCallback = nil  -- fn(unit, now, castTime) — second batch (channel ended)
 -- Callback fired when a buff ends and a matching rule is found.
 -- Signature: fn(ruleUnit, cdKey, cdData, detectedFromEntry)
 -- cdData fields: StartTime, Cooldown, Remaining, SpellId, IsOffensive
@@ -1649,48 +1653,77 @@ local function RecordShield(unit)
 	lastShieldTime[unit] = GetTime()
 end
 
----Checks whether the three Burrow-signature events have all fired within burrowWindow for unit.
----If so, fires burrowCooldownCallback.  The rearm guard suppresses the second event batch that
----fires when Burrow ends or is cancelled early.
+---Checks whether the three Burrow-signature events have all fired within correlationWindow for unit.
+---First batch fires burrowPredictCallback and records the predict time.
+---Second batch (within burrowRearmWindow) fires burrowCooldownCallback with the measured duration.
 local function TryCommitBurrow(unit, now)
 	local ft = lastUnitFlagsTime[unit]
 	local mt = lastModelChangedTime[unit]
 	local pt = lastPortraitUpdateTime[unit]
 	if not ft or not mt or not pt then return end
-	local earliest = math.min(ft, mt, pt)
-	local latest   = math.max(ft, mt, pt)
-	if latest - earliest > correlationWindow then return end
-	-- Suppress the second batch of events fired when Burrow ends or is cancelled early.
-	local lastCommit = lastBurrowCommitTime[unit]
-	if lastCommit and now - lastCommit < burrowRearmWindow then return end
+	if now - ft > correlationWindow then return end
+	if now - mt > correlationWindow then return end
+	if now - pt > correlationWindow then return end
 	local _, classToken = UnitClass(unit)
 	if classToken ~= "SHAMAN" then return end
 	if not fcdTalents:UnitHasTalent(unit, burrowTalentId) then return end
-	lastBurrowCommitTime[unit]   = now
 	lastUnitFlagsTime[unit]      = nil
 	lastModelChangedTime[unit]   = nil
 	lastPortraitUpdateTime[unit] = nil
-	if burrowCooldownCallback then
-		burrowCooldownCallback(unit, now)
+	local lastPredict = lastBurrowPredictTime[unit]
+	if lastPredict and now - lastPredict < burrowRearmWindow then
+		-- Second batch (Burrow ended): commit with measured duration.
+		lastBurrowPredictTime[unit] = nil
+		if burrowCooldownCallback then
+			burrowCooldownCallback(unit, now, lastPredict)
+		end
+	else
+		-- First batch (Burrow started): predict.
+		lastBurrowPredictTime[unit] = now
+		if burrowPredictCallback then
+			burrowPredictCallback(unit, now)
+		end
 	end
 end
 
 ---Checks whether UNIT_SPELLCAST_CHANNEL_START and UNIT_FLAGS have both fired within
----correlationWindow for unit.  If so, fires ecCooldownCallback.
-local function TryCommitEmeraldCommunion(unit, now)
+---correlationWindow for unit.  If so, fires ecPredictCallback (channel started).
+local function TryPredictEmeraldCommunion(unit, now)
 	local cst = lastChannelStartTime[unit]
 	local ft  = lastUnitFlagsTime[unit]
 	if not cst or not ft then return end
-	if math.abs(cst - ft) > correlationWindow then return end
-	local lastCommit = lastECCommitTime[unit]
-	if lastCommit and now - lastCommit < ecRearmWindow then return end
+	if now - cst > correlationWindow then return end
+	if now - ft  > correlationWindow then return end
+	-- Suppress re-prediction if a predict already fired during this channel.
+	local lastPredict = lastECPredictTime[unit]
+	if lastPredict and now - lastPredict < ecRearmWindow then return end
 	local _, classToken = UnitClass(unit)
 	if classToken ~= "EVOKER" then return end
 	if not fcdTalents:UnitHasTalent(unit, ecTalentId) then return end
-	lastECCommitTime[unit]     = now
+	lastECPredictTime[unit]    = now
 	lastChannelStartTime[unit] = nil
+	if ecPredictCallback then
+		ecPredictCallback(unit, now)
+	end
+end
+
+---Checks whether UNIT_SPELLCAST_CHANNEL_STOP and UNIT_FLAGS have both fired within
+---correlationWindow for unit and a matching predict exists.  If so, fires ecCooldownCallback (channel ended).
+local function TryCommitEmeraldCommunion(unit, now)
+	local csp = lastChannelStopTime[unit]
+	local ft  = lastUnitFlagsTime[unit]
+	if not csp or not ft then return end
+	if now - csp > correlationWindow then return end
+	if now - ft  > correlationWindow then return end
+	local lastPredict = lastECPredictTime[unit]
+	if not lastPredict or now - lastPredict >= ecRearmWindow then return end
+	local _, classToken = UnitClass(unit)
+	if classToken ~= "EVOKER" then return end
+	if not fcdTalents:UnitHasTalent(unit, ecTalentId) then return end
+	lastECPredictTime[unit]   = nil
+	lastChannelStopTime[unit] = nil
 	if ecCooldownCallback then
-		ecCooldownCallback(unit, now)
+		ecCooldownCallback(unit, now, lastPredict)
 	end
 end
 
@@ -1713,6 +1746,7 @@ local function RecordUnitFlagsChange(unit)
 	if not isFeign then
 		lastUnitFlagsTime[unit] = now
 		TryCommitBurrow(unit, now)
+		TryPredictEmeraldCommunion(unit, now)
 		TryCommitEmeraldCommunion(unit, now)
 	end
 end
@@ -1732,6 +1766,12 @@ end
 local function RecordChannelStart(unit)
 	local now = GetTime()
 	lastChannelStartTime[unit] = now
+	TryPredictEmeraldCommunion(unit, now)
+end
+
+local function RecordChannelStop(unit)
+	local now = GetTime()
+	lastChannelStopTime[unit] = now
 	TryCommitEmeraldCommunion(unit, now)
 end
 
@@ -1807,9 +1847,10 @@ function B._TestReset()
 	for k in pairs(lastUnitFlagsTime)    do lastUnitFlagsTime[k]    = nil end
 	for k in pairs(lastModelChangedTime)  do lastModelChangedTime[k]  = nil end
 	for k in pairs(lastPortraitUpdateTime) do lastPortraitUpdateTime[k] = nil end
-	for k in pairs(lastBurrowCommitTime)  do lastBurrowCommitTime[k]  = nil end
+	for k in pairs(lastBurrowPredictTime)  do lastBurrowPredictTime[k]  = nil end
 	for k in pairs(lastChannelStartTime) do lastChannelStartTime[k]  = nil end
-	for k in pairs(lastECCommitTime)     do lastECCommitTime[k]      = nil end
+	for k in pairs(lastChannelStopTime)  do lastChannelStopTime[k]   = nil end
+	for k in pairs(lastECPredictTime)    do lastECPredictTime[k]     = nil end
 	for k in pairs(lastFeignDeathTime)   do lastFeignDeathTime[k]    = nil end
 	for k in pairs(lastFeignDeathState)  do lastFeignDeathState[k]  = nil end
 	for k in pairs(unitCanFeign)         do unitCanFeign[k]         = nil end
@@ -1829,18 +1870,33 @@ function B:RegisterWithObserver(obs)
 	obs:RegisterModelChangedCallback(RecordModelChanged)
 	obs:RegisterPortraitUpdateCallback(RecordPortraitUpdate)
 	obs:RegisterChannelStartCallback(RecordChannelStart)
+	obs:RegisterChannelStopCallback(RecordChannelStop)
 end
 
----Registers the callback fired when a Burrow cast is detected via its event signature.
----fn(unit, now) where unit is the caster and now is the detection timestamp.
+---Registers the callback fired when the first Burrow event batch fires (Burrow started).
+---fn(unit, now) where now is the predict timestamp.
 ---@param fn fun(unit: string, now: number)
+function B:RegisterBurrowPredictCallback(fn)
+	burrowPredictCallback = fn
+end
+
+---Registers the callback fired when the second Burrow event batch fires (Burrow ended).
+---fn(unit, now, castTime) where castTime is the predict timestamp (first batch).
+---@param fn fun(unit: string, now: number, castTime: number)
 function B:RegisterBurrowCallback(fn)
 	burrowCooldownCallback = fn
 end
 
----Registers the callback fired when an Emerald Communion channel is detected via its event signature.
----fn(unit, now) where unit is the caster and now is the detection timestamp.
+---Registers the callback fired when the first EC event batch fires (channel started).
+---fn(unit, now) where now is the predict timestamp.
 ---@param fn fun(unit: string, now: number)
+function B:RegisterEmeraldCommunionPredictCallback(fn)
+	ecPredictCallback = fn
+end
+
+---Registers the callback fired when the second EC event batch fires (channel ended).
+---fn(unit, now, castTime) where castTime is the predict timestamp (channel started).
+---@param fn fun(unit: string, now: number, castTime: number)
 function B:RegisterEmeraldCommunionCallback(fn)
 	ecCooldownCallback = fn
 end

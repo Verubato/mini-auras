@@ -2,11 +2,14 @@
 --
 -- Burrow produces no aura.  Brain detects it by requiring all three of
 -- UNIT_FLAGS, UNIT_MODEL_CHANGED, and UNIT_PORTRAIT_UPDATE to fire within a
--- 0.5-second window for the same unit.  A 12-second rearm guard suppresses
--- the second event batch that fires when Burrow ends or is cancelled.
+-- 0.5-second window for the same unit.  Two event batches fire per cast:
+-- the first batch (Burrow enters ground) fires burrowPredictCallback;
+-- the second batch within the 12s rearm window (Burrow exits) fires
+-- burrowCooldownCallback with the measured channel duration.
 --
 -- Public APIs tested:
---   B:RegisterBurrowCallback(fn)   -- fn(unit, now)
+--   B:RegisterBurrowPredictCallback(fn)   -- fn(unit, now)
+--   B:RegisterBurrowCallback(fn)          -- fn(unit, now, castTime)
 --   observer:_fireUnitFlags(unit)
 --   observer:_fireModelChanged(unit)
 --   observer:_firePortraitUpdate(unit)
@@ -42,10 +45,10 @@ end
 fw.describe("Burrow detection - event triplet within window", function()
     fw.before_each(reset)
 
-    fw.it("fires callback when FLAGS → MODEL → PORTRAIT arrive within 0.5s", function()
+    fw.it("fires predict callback when FLAGS → MODEL → PORTRAIT arrive within 0.5s", function()
         setupShaman("party1")
         local fired = 0
-        B:RegisterBurrowCallback(function(unit, now) fired = fired + 1 end)
+        B:RegisterBurrowPredictCallback(function(unit, now) fired = fired + 1 end)
 
         wow.setTime(100.0)
         obs:_fireUnitFlags("party1")
@@ -54,13 +57,13 @@ fw.describe("Burrow detection - event triplet within window", function()
         wow.setTime(100.4)
         obs:_firePortraitUpdate("party1")
 
-        fw.eq(fired, 1, "callback should fire once when all three events arrive within 0.5s")
+        fw.eq(fired, 1, "predict callback should fire once when all three events arrive within 0.5s")
     end)
 
-    fw.it("fires callback when MODEL → PORTRAIT → FLAGS arrive within 0.5s", function()
+    fw.it("fires predict callback when MODEL → PORTRAIT → FLAGS arrive within 0.5s", function()
         setupShaman("party1")
         local fired = 0
-        B:RegisterBurrowCallback(function(unit, now) fired = fired + 1 end)
+        B:RegisterBurrowPredictCallback(function(unit, now) fired = fired + 1 end)
 
         wow.setTime(200.0)
         obs:_fireModelChanged("party1")
@@ -72,10 +75,10 @@ fw.describe("Burrow detection - event triplet within window", function()
         fw.eq(fired, 1, "event order should not matter - all orderings trigger detection")
     end)
 
-    fw.it("fires callback when PORTRAIT → FLAGS → MODEL arrive within 0.5s", function()
+    fw.it("fires predict callback when PORTRAIT → FLAGS → MODEL arrive within 0.5s", function()
         setupShaman("party1")
         local fired = 0
-        B:RegisterBurrowCallback(function(unit, now) fired = fired + 1 end)
+        B:RegisterBurrowPredictCallback(function(unit, now) fired = fired + 1 end)
 
         wow.setTime(300.0)
         obs:_firePortraitUpdate("party1")
@@ -87,14 +90,14 @@ fw.describe("Burrow detection - event triplet within window", function()
         fw.eq(fired, 1, "PORTRAIT → FLAGS → MODEL ordering also triggers detection")
     end)
 
-    fw.it("does not fire when the window between first and last event exceeds 0.5s", function()
+    fw.it("does not fire when the gap between first and last event exceeds 0.5s", function()
         setupShaman("party1")
         local fired = 0
-        B:RegisterBurrowCallback(function(unit, now) fired = fired + 1 end)
+        B:RegisterBurrowPredictCallback(function(unit, now) fired = fired + 1 end)
 
         wow.setTime(400.0)
         obs:_fireUnitFlags("party1")
-        wow.setTime(400.6)   -- 0.6s gap > burrowWindow (0.5s)
+        wow.setTime(400.6)   -- 0.6s gap > correlationWindow (0.5s)
         obs:_fireModelChanged("party1")
         wow.setTime(400.8)
         obs:_firePortraitUpdate("party1")
@@ -102,10 +105,10 @@ fw.describe("Burrow detection - event triplet within window", function()
         fw.eq(fired, 0, "events spread across > 0.5s should not trigger Burrow detection")
     end)
 
-    fw.it("passes the unit and detection timestamp to the callback", function()
+    fw.it("passes the unit and detection timestamp to the predict callback", function()
         setupShaman("party1")
         local capturedUnit, capturedNow
-        B:RegisterBurrowCallback(function(unit, now)
+        B:RegisterBurrowPredictCallback(function(unit, now)
             capturedUnit = unit
             capturedNow  = now
         end)
@@ -117,8 +120,8 @@ fw.describe("Burrow detection - event triplet within window", function()
         wow.setTime(500.3)
         obs:_firePortraitUpdate("party1")
 
-        fw.eq(capturedUnit, "party1", "callback should receive the correct unit string")
-        fw.eq(capturedNow,  500.3,   "callback should receive the time of the triggering event")
+        fw.eq(capturedUnit, "party1", "predict callback should receive the correct unit string")
+        fw.eq(capturedNow,  500.3,   "predict callback should receive the time of the triggering event")
     end)
 end)
 
@@ -130,7 +133,7 @@ fw.describe("Burrow detection - incomplete event sets do not fire", function()
     fw.it("does not fire when only UNIT_FLAGS fires", function()
         setupShaman("party1")
         local fired = 0
-        B:RegisterBurrowCallback(function() fired = fired + 1 end)
+        B:RegisterBurrowPredictCallback(function() fired = fired + 1 end)
 
         wow.setTime(100.0)
         obs:_fireUnitFlags("party1")
@@ -141,7 +144,7 @@ fw.describe("Burrow detection - incomplete event sets do not fire", function()
     fw.it("does not fire when only UNIT_MODEL_CHANGED fires", function()
         setupShaman("party1")
         local fired = 0
-        B:RegisterBurrowCallback(function() fired = fired + 1 end)
+        B:RegisterBurrowPredictCallback(function() fired = fired + 1 end)
 
         wow.setTime(100.0)
         obs:_fireModelChanged("party1")
@@ -152,7 +155,7 @@ fw.describe("Burrow detection - incomplete event sets do not fire", function()
     fw.it("does not fire when only UNIT_PORTRAIT_UPDATE fires", function()
         setupShaman("party1")
         local fired = 0
-        B:RegisterBurrowCallback(function() fired = fired + 1 end)
+        B:RegisterBurrowPredictCallback(function() fired = fired + 1 end)
 
         wow.setTime(100.0)
         obs:_firePortraitUpdate("party1")
@@ -163,7 +166,7 @@ fw.describe("Burrow detection - incomplete event sets do not fire", function()
     fw.it("does not fire when FLAGS and MODEL fire but PORTRAIT is missing", function()
         setupShaman("party1")
         local fired = 0
-        B:RegisterBurrowCallback(function() fired = fired + 1 end)
+        B:RegisterBurrowPredictCallback(function() fired = fired + 1 end)
 
         wow.setTime(100.0)
         obs:_fireUnitFlags("party1")
@@ -176,7 +179,7 @@ fw.describe("Burrow detection - incomplete event sets do not fire", function()
     fw.it("does not fire when FLAGS and PORTRAIT fire but MODEL is missing", function()
         setupShaman("party1")
         local fired = 0
-        B:RegisterBurrowCallback(function() fired = fired + 1 end)
+        B:RegisterBurrowPredictCallback(function() fired = fired + 1 end)
 
         wow.setTime(100.0)
         obs:_fireUnitFlags("party1")
@@ -189,7 +192,7 @@ fw.describe("Burrow detection - incomplete event sets do not fire", function()
     fw.it("does not fire when MODEL and PORTRAIT fire but FLAGS is missing", function()
         setupShaman("party1")
         local fired = 0
-        B:RegisterBurrowCallback(function() fired = fired + 1 end)
+        B:RegisterBurrowPredictCallback(function() fired = fired + 1 end)
 
         wow.setTime(100.0)
         obs:_fireModelChanged("party1")
@@ -208,7 +211,7 @@ fw.describe("Burrow detection - class and talent guards", function()
     fw.it("does not fire for a Warrior - Burrow is Shaman-only", function()
         wow.setUnitClass("party1", "WARRIOR")
         local fired = 0
-        B:RegisterBurrowCallback(function() fired = fired + 1 end)
+        B:RegisterBurrowPredictCallback(function() fired = fired + 1 end)
 
         wow.setTime(100.0)
         obs:_fireUnitFlags("party1")
@@ -223,7 +226,7 @@ fw.describe("Burrow detection - class and talent guards", function()
     fw.it("does not fire for a Druid - Burrow is Shaman-only", function()
         wow.setUnitClass("party1", "DRUID")
         local fired = 0
-        B:RegisterBurrowCallback(function() fired = fired + 1 end)
+        B:RegisterBurrowPredictCallback(function() fired = fired + 1 end)
 
         wow.setTime(100.0)
         obs:_fireUnitFlags("party1")
@@ -239,7 +242,7 @@ fw.describe("Burrow detection - class and talent guards", function()
         wow.setUnitClass("party1", "SHAMAN")
         -- Deliberately do NOT set talent 5575.
         local fired = 0
-        B:RegisterBurrowCallback(function() fired = fired + 1 end)
+        B:RegisterBurrowPredictCallback(function() fired = fired + 1 end)
 
         wow.setTime(100.0)
         obs:_fireUnitFlags("party1")
@@ -254,7 +257,7 @@ fw.describe("Burrow detection - class and talent guards", function()
     fw.it("fires for a Shaman who has the Burrow talent (5575)", function()
         setupShaman("party1")
         local fired = 0
-        B:RegisterBurrowCallback(function() fired = fired + 1 end)
+        B:RegisterBurrowPredictCallback(function() fired = fired + 1 end)
 
         wow.setTime(100.0)
         obs:_fireUnitFlags("party1")
@@ -270,7 +273,7 @@ fw.describe("Burrow detection - class and talent guards", function()
         setupShaman("party1")
         wow.setUnitClass("party2", "WARRIOR")
         local fired = {}
-        B:RegisterBurrowCallback(function(unit) fired[unit] = (fired[unit] or 0) + 1 end)
+        B:RegisterBurrowPredictCallback(function(unit) fired[unit] = (fired[unit] or 0) + 1 end)
 
         wow.setTime(100.0)
         obs:_fireUnitFlags("party1")
@@ -287,39 +290,90 @@ fw.describe("Burrow detection - class and talent guards", function()
     end)
 end)
 
--- Section 4: Rearm window suppresses the second event batch
+-- Section 4: Predict/commit split
 
-fw.describe("Burrow detection - rearm window suppresses second event batch", function()
+fw.describe("Burrow detection - predict/commit split", function()
     fw.before_each(reset)
 
-    fw.it("suppresses a second triplet that arrives within the 12s rearm window", function()
+    fw.it("first batch fires predict callback but not commit", function()
         setupShaman("party1")
-        local fired = 0
-        B:RegisterBurrowCallback(function() fired = fired + 1 end)
+        local predicted = 0
+        local committed = 0
+        B:RegisterBurrowPredictCallback(function() predicted = predicted + 1 end)
+        B:RegisterBurrowCallback(function() committed = committed + 1 end)
 
-        -- First batch (enters Burrow)
         wow.setTime(100.0)
         obs:_fireUnitFlags("party1")
         wow.setTime(100.1)
         obs:_fireModelChanged("party1")
         wow.setTime(100.2)
         obs:_firePortraitUpdate("party1")
-        fw.eq(fired, 1, "first event triplet should commit Burrow")
 
-        -- Second batch (exits Burrow) within the 12s rearm window
-        wow.setTime(108.0)   -- 7.8s after first commit (< 12s rearm)
-        obs:_fireUnitFlags("party1")
-        wow.setTime(108.1)
-        obs:_fireModelChanged("party1")
-        wow.setTime(108.2)
-        obs:_firePortraitUpdate("party1")
-        fw.eq(fired, 1, "second triplet within rearm window should be suppressed")
+        fw.eq(predicted, 1, "predict callback should fire on first batch")
+        fw.eq(committed, 0, "commit callback should not fire on first batch")
     end)
 
-    fw.it("fires again after the 12s rearm window expires", function()
+    fw.it("second batch within rearm window fires commit callback but not predict", function()
         setupShaman("party1")
-        local fired = 0
-        B:RegisterBurrowCallback(function() fired = fired + 1 end)
+        local predicted = 0
+        local committed = 0
+        B:RegisterBurrowPredictCallback(function() predicted = predicted + 1 end)
+        B:RegisterBurrowCallback(function() committed = committed + 1 end)
+
+        -- First batch (Burrow enters)
+        wow.setTime(100.0)
+        obs:_fireUnitFlags("party1")
+        wow.setTime(100.1)
+        obs:_fireModelChanged("party1")
+        wow.setTime(100.2)
+        obs:_firePortraitUpdate("party1")
+
+        -- Second batch within 12s rearm window (Burrow exits)
+        wow.setTime(106.0)
+        obs:_fireUnitFlags("party1")
+        wow.setTime(106.1)
+        obs:_fireModelChanged("party1")
+        wow.setTime(106.2)
+        obs:_firePortraitUpdate("party1")
+
+        fw.eq(predicted, 1, "predict should fire only on the first batch")
+        fw.eq(committed, 1, "commit should fire on the second batch within rearm window")
+    end)
+
+    fw.it("commit callback receives castTime equal to the predict timestamp", function()
+        setupShaman("party1")
+        local predictedNow
+        local committedNow, committedCastTime
+        B:RegisterBurrowPredictCallback(function(unit, now) predictedNow = now end)
+        B:RegisterBurrowCallback(function(unit, now, castTime)
+            committedNow      = now
+            committedCastTime = castTime
+        end)
+
+        wow.setTime(100.0)
+        obs:_fireUnitFlags("party1")
+        wow.setTime(100.1)
+        obs:_fireModelChanged("party1")
+        wow.setTime(100.2)
+        obs:_firePortraitUpdate("party1")
+
+        wow.setTime(106.0)
+        obs:_fireUnitFlags("party1")
+        wow.setTime(106.1)
+        obs:_fireModelChanged("party1")
+        wow.setTime(106.2)
+        obs:_firePortraitUpdate("party1")
+
+        fw.eq(committedCastTime, predictedNow, "castTime in commit should equal the predict timestamp")
+        fw.eq(committedNow, 106.2, "now in commit should be the time of the completing second-batch event")
+    end)
+
+    fw.it("second batch after rearm window fires a new predict instead of commit", function()
+        setupShaman("party1")
+        local predicted = 0
+        local committed = 0
+        B:RegisterBurrowPredictCallback(function() predicted = predicted + 1 end)
+        B:RegisterBurrowCallback(function() committed = committed + 1 end)
 
         -- First batch
         wow.setTime(100.0)
@@ -328,50 +382,29 @@ fw.describe("Burrow detection - rearm window suppresses second event batch", fun
         obs:_fireModelChanged("party1")
         wow.setTime(100.2)
         obs:_firePortraitUpdate("party1")
-        fw.eq(fired, 1, "first event triplet should commit Burrow")
+        fw.eq(predicted, 1, "first batch fires predict")
 
-        -- Second use after rearm window has passed
-        wow.setTime(113.0)   -- 12.8s after first commit (> 12s rearm)
+        -- Second batch after 12s rearm window (new Burrow cast, not an exit batch)
+        wow.setTime(113.0)   -- 12.8s after predict (> 12s rearm)
         obs:_fireUnitFlags("party1")
         wow.setTime(113.1)
         obs:_fireModelChanged("party1")
         wow.setTime(113.2)
         obs:_firePortraitUpdate("party1")
-        fw.eq(fired, 2, "second triplet after rearm window should commit a new Burrow cast")
+
+        fw.eq(predicted, 2, "batch after rearm window fires a new predict (new Burrow cast)")
+        fw.eq(committed, 0, "no commit should have fired")
     end)
 
-    fw.it("suppresses a triplet whose completing event is 9s after the original commit", function()
-        -- The rearm check fires at TryCommitBurrow time, which is the completing event's
-        -- timestamp, not the first event's.  All three events of the second batch must
-        -- complete within 12s of the commit for suppression to apply.
-        setupShaman("party1")
-        local fired = 0
-        B:RegisterBurrowCallback(function() fired = fired + 1 end)
-
-        wow.setTime(100.0)
-        obs:_fireUnitFlags("party1")
-        wow.setTime(100.1)
-        obs:_fireModelChanged("party1")
-        wow.setTime(100.2)   -- commit stored at 100.2
-        obs:_firePortraitUpdate("party1")
-
-        wow.setTime(109.0)   -- 8.8s after commit
-        obs:_fireUnitFlags("party1")
-        wow.setTime(109.1)
-        obs:_fireModelChanged("party1")
-        wow.setTime(109.2)   -- completing event at 9.0s after commit < 12s rearm
-        obs:_firePortraitUpdate("party1")
-
-        fw.eq(fired, 1, "second triplet completing 9s after commit should be suppressed by rearm window")
-    end)
-
-    fw.it("resets per-unit so a second Shaman is not affected by the first's rearm", function()
+    fw.it("resets per-unit so a second Shaman's predict/commit cycle is independent", function()
         setupShaman("party1")
         setupShaman("party2")
-        local fired = {}
-        B:RegisterBurrowCallback(function(unit) fired[unit] = (fired[unit] or 0) + 1 end)
+        local predicted = {}
+        local committed = {}
+        B:RegisterBurrowPredictCallback(function(unit) predicted[unit] = (predicted[unit] or 0) + 1 end)
+        B:RegisterBurrowCallback(function(unit) committed[unit] = (committed[unit] or 0) + 1 end)
 
-        -- party1 uses Burrow
+        -- party1 first batch
         wow.setTime(100.0)
         obs:_fireUnitFlags("party1")
         wow.setTime(100.1)
@@ -379,7 +412,7 @@ fw.describe("Burrow detection - rearm window suppresses second event batch", fun
         wow.setTime(100.2)
         obs:_firePortraitUpdate("party1")
 
-        -- party2 uses Burrow shortly after - rearm for party1 should not block party2
+        -- party2 first batch
         wow.setTime(101.0)
         obs:_fireUnitFlags("party2")
         wow.setTime(101.1)
@@ -387,7 +420,17 @@ fw.describe("Burrow detection - rearm window suppresses second event batch", fun
         wow.setTime(101.2)
         obs:_firePortraitUpdate("party2")
 
-        fw.eq(fired["party1"] or 0, 1, "party1 Burrow should have committed")
-        fw.eq(fired["party2"] or 0, 1, "party2 Burrow should commit independently of party1's rearm")
+        -- party1 second batch (exit)
+        wow.setTime(106.0)
+        obs:_fireUnitFlags("party1")
+        wow.setTime(106.1)
+        obs:_fireModelChanged("party1")
+        wow.setTime(106.2)
+        obs:_firePortraitUpdate("party1")
+
+        fw.eq(predicted["party1"] or 0, 1, "party1 predict should have fired once")
+        fw.eq(predicted["party2"] or 0, 1, "party2 predict should have fired independently")
+        fw.eq(committed["party1"] or 0, 1, "party1 commit should fire on its second batch")
+        fw.eq(committed["party2"] or 0, 0, "party2 commit should not fire (no second batch yet)")
     end)
 end)

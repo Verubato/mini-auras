@@ -273,8 +273,8 @@ function M:Init()
 
 	brain:RegisterWithObserver(observer)
 
-	-- Burrow (Shaman PvP talent): detected via event signature in Brain, committed here.
-	brain:RegisterBurrowCallback(function(unit, now)
+	-- Burrow predict: Burrow started — show glow while the Shaman is underground.
+	brain:RegisterBurrowPredictCallback(function(unit, castTime)
 		local casterEntries = {}
 		for _, e in pairs(watchEntries) do
 			if SameUnit(e.Unit, unit) then
@@ -282,42 +282,17 @@ function M:Init()
 			end
 		end
 		if #casterEntries == 0 then return end
-		local cdKey    = 409293
-		local cooldown = 120
+		local spellId = 409293
 		for _, e in ipairs(casterEntries) do
-			local existing = e.ActiveCooldowns[cdKey]
-			if existing and existing.CleanupTimer then
-				existing.CleanupTimer:Cancel()
-			end
-			e.ActiveCooldowns[cdKey] = nil
-		end
-		local cdData = {
-			StartTime   = now,
-			Cooldown    = cooldown,
-			Remaining   = cooldown,
-			SpellId     = cdKey,
-			IsOffensive = false,
-		}
-		cdData.CleanupTimer = C_Timer.NewTimer(cooldown, function()
-			for _, e in ipairs(casterEntries) do
-				if e.ActiveCooldowns[cdKey] == cdData then
-					e.ActiveCooldowns[cdKey] = nil
-				end
-				if SameUnit(e.Unit, unit) then
-					display:UpdateDisplay(e)
-					ShowHideEntryContainer(e.Container.Frame, e.Anchor)
-				end
-			end
-		end)
-		for _, e in ipairs(casterEntries) do
-			e.ActiveCooldowns[cdKey] = cdData
+			e.PredictedGlows[spellId] = (e.PredictedGlows[spellId] or 0) + 1
+			e.PredictedGlowDurations[spellId] = nil
 			display:UpdateDisplay(e)
 			ShowHideEntryContainer(e.Container.Frame, e.Anchor)
 		end
 	end)
 
-	-- Emerald Communion (Preservation Evoker PvP talent): detected via event signature in Brain.
-	brain:RegisterEmeraldCommunionCallback(function(unit, now)
+	-- Burrow commit: Burrow ended — clear glow and commit CD with accurate remaining time.
+	brain:RegisterBurrowCallback(function(unit, now, castTime)
 		local casterEntries = {}
 		for _, e in pairs(watchEntries) do
 			if SameUnit(e.Unit, unit) then
@@ -325,26 +300,36 @@ function M:Init()
 			end
 		end
 		if #casterEntries == 0 then return end
-		local cdKey    = 370960
-		local cooldown = 180
+		local spellId  = 409293
+		local cooldown = 120
+		local remaining = math.max(0, cooldown - (now - castTime))
 		for _, e in ipairs(casterEntries) do
-			local existing = e.ActiveCooldowns[cdKey]
+			local count = e.PredictedGlows[spellId]
+			if count then
+				if count <= 1 then
+					e.PredictedGlows[spellId] = nil
+					e.PredictedGlowDurations[spellId] = nil
+				else
+					e.PredictedGlows[spellId] = count - 1
+				end
+			end
+			local existing = e.ActiveCooldowns[spellId]
 			if existing and existing.CleanupTimer then
 				existing.CleanupTimer:Cancel()
 			end
-			e.ActiveCooldowns[cdKey] = nil
+			e.ActiveCooldowns[spellId] = nil
 		end
 		local cdData = {
-			StartTime   = now,
+			StartTime   = castTime,
 			Cooldown    = cooldown,
-			Remaining   = cooldown,
-			SpellId     = cdKey,
+			Remaining   = remaining,
+			SpellId     = spellId,
 			IsOffensive = false,
 		}
-		cdData.CleanupTimer = C_Timer.NewTimer(cooldown, function()
+		cdData.CleanupTimer = C_Timer.NewTimer(remaining, function()
 			for _, e in ipairs(casterEntries) do
-				if e.ActiveCooldowns[cdKey] == cdData then
-					e.ActiveCooldowns[cdKey] = nil
+				if e.ActiveCooldowns[spellId] == cdData then
+					e.ActiveCooldowns[spellId] = nil
 				end
 				if SameUnit(e.Unit, unit) then
 					display:UpdateDisplay(e)
@@ -353,7 +338,78 @@ function M:Init()
 			end
 		end)
 		for _, e in ipairs(casterEntries) do
-			e.ActiveCooldowns[cdKey] = cdData
+			e.ActiveCooldowns[spellId] = cdData
+			display:UpdateDisplay(e)
+			ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+		end
+	end)
+
+	-- Emerald Communion predict: channel started — show glow while the Evoker is channeling.
+	brain:RegisterEmeraldCommunionPredictCallback(function(unit, castTime)
+		local casterEntries = {}
+		for _, e in pairs(watchEntries) do
+			if SameUnit(e.Unit, unit) then
+				casterEntries[#casterEntries + 1] = e
+			end
+		end
+		if #casterEntries == 0 then return end
+		local spellId = 370960
+		for _, e in ipairs(casterEntries) do
+			e.PredictedGlows[spellId] = (e.PredictedGlows[spellId] or 0) + 1
+			e.PredictedGlowDurations[spellId] = nil
+			display:UpdateDisplay(e)
+			ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+		end
+	end)
+
+	-- Emerald Communion commit: channel ended — clear glow and commit CD with accurate remaining time.
+	brain:RegisterEmeraldCommunionCallback(function(unit, now, castTime)
+		local casterEntries = {}
+		for _, e in pairs(watchEntries) do
+			if SameUnit(e.Unit, unit) then
+				casterEntries[#casterEntries + 1] = e
+			end
+		end
+		if #casterEntries == 0 then return end
+		local spellId  = 370960
+		local cooldown = 180
+		local remaining = math.max(0, cooldown - (now - castTime))
+		for _, e in ipairs(casterEntries) do
+			local count = e.PredictedGlows[spellId]
+			if count then
+				if count <= 1 then
+					e.PredictedGlows[spellId] = nil
+					e.PredictedGlowDurations[spellId] = nil
+				else
+					e.PredictedGlows[spellId] = count - 1
+				end
+			end
+			local existing = e.ActiveCooldowns[spellId]
+			if existing and existing.CleanupTimer then
+				existing.CleanupTimer:Cancel()
+			end
+			e.ActiveCooldowns[spellId] = nil
+		end
+		local cdData = {
+			StartTime   = castTime,
+			Cooldown    = cooldown,
+			Remaining   = remaining,
+			SpellId     = spellId,
+			IsOffensive = false,
+		}
+		cdData.CleanupTimer = C_Timer.NewTimer(remaining, function()
+			for _, e in ipairs(casterEntries) do
+				if e.ActiveCooldowns[spellId] == cdData then
+					e.ActiveCooldowns[spellId] = nil
+				end
+				if SameUnit(e.Unit, unit) then
+					display:UpdateDisplay(e)
+					ShowHideEntryContainer(e.Container.Frame, e.Anchor)
+				end
+			end
+		end)
+		for _, e in ipairs(casterEntries) do
+			e.ActiveCooldowns[spellId] = cdData
 			display:UpdateDisplay(e)
 			ShowHideEntryContainer(e.Container.Frame, e.Anchor)
 		end
