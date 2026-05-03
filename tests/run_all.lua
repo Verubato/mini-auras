@@ -29,6 +29,7 @@ local testFiles = {
     "tests/test_dispersion_dp.lua",
     "tests/test_ams_bof_gt_regression.lua",
     "tests/test_revival_gt_ambiguity.lua",
+    "tests/test_ecd_precog_gt.lua",
 }
 
 local loadErrors = {}

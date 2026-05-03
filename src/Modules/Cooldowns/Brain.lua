@@ -678,8 +678,12 @@ local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, m
 	if not ignoreTalentReqs then
 		local _, targetClass = UnitClass(targetUnit)
 		if targetClass == "MONK" and fcdTalents:UnitHasTalent(targetUnit, 5395) then
-			if IsProbablyRevival(auraTypes, targetUnit, castSpellIdSnapshot, startTime) then return false end
-			if ResolveSnapshotUnit(targetUnit) ~= "player" then return false end
+			if IsProbablyRevival(auraTypes, targetUnit, castSpellIdSnapshot, startTime) then
+				return false
+			end
+			if ResolveSnapshotUnit(targetUnit) ~= "player" then
+				return false
+			end
 			-- Local Monk did not cast Revival/Restoral; fall through so a GT Shaman suppresses this.
 		end
 	end
@@ -763,7 +767,9 @@ local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, m
 						end
 					end
 				end
-				if eligible then return true end
+				if eligible then
+					return true
+				end
 			end
 		end
 		return false
@@ -1729,4 +1735,36 @@ function B:PredictSpellId(unit, auraTypes, evidence, activeCooldowns)
 	local spellId, onCd = tryRuleList(specId and rules.BySpec[specId])
 	if spellId ~= nil then return spellId, onCd end
 	return tryRuleList(rules.ByClass[classToken])
+end
+
+---Returns true when an IMPORTANT-only aura is probably Precognition rather than a real cooldown.
+---In PvP, caster-class units can receive Precognition (a short IMPORTANT buff) when interrupted.
+---This is identical in aura type to many IMPORTANT offensive/defensive cooldowns, so it must be
+---suppressed on the prediction path to avoid false early commits.
+---Melee classes (WARRIOR, DEATHKNIGHT, ROGUE, HUNTER, DEMONHUNTER) cannot receive Precognition
+---and are exempt.  Pass measuredDuration and evidence only on the commit path.
+---@param auraTypes table<string,boolean>
+---@param targetUnit string
+---@param measuredDuration number?
+---@param evidence EvidenceSet?
+---@return boolean
+function B:IsProbablyPrecognition(auraTypes, targetUnit, measuredDuration, evidence)
+	return IsProbablyPrecognition(auraTypes, targetUnit, measuredDuration, evidence)
+end
+
+---Returns true when an IMPORTANT-only aura on targetUnit is probably Grounding Totem spillover.
+---candidateUnits: units to check for a GT Shaman (all enemy units on the ECD path).
+---ignoreTalentReqs: pass true on the enemy path where talent data is unavailable (any Shaman
+---  is treated as potentially having GT).
+---@param auraTypes table<string,boolean>
+---@param targetUnit string
+---@param candidateUnits string[]
+---@param measuredDuration number?
+---@param evidence EvidenceSet?
+---@param castSpellIdSnapshot table?
+---@param startTime number?
+---@param ignoreTalentReqs boolean?
+---@return boolean
+function B:IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, measuredDuration, evidence, castSpellIdSnapshot, startTime, ignoreTalentReqs)
+	return IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, measuredDuration, evidence, castSpellIdSnapshot, startTime, ignoreTalentReqs)
 end

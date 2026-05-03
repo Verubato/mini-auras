@@ -361,6 +361,24 @@ local function TrackNewAura(entry, trackedAuras, id, info, now)
 		-- so the icon appears immediately when the enemy uses the ability rather than after
 		-- the buff drops. OnAuraRemoved will recommit when the buff ends with accurate
 		-- measured duration; CommitCooldown's CleanupTimer:Cancel() handles deduplication.
+		-- Mirror the suppression gates that FriendlyCooldowns Brain's PredictRule applies so
+		-- the same IMPORTANT auras that are filtered there are also filtered here.
+		--
+		-- IsProbablyPrecognition: in PvP, IMPORTANT-only auras on caster-class enemies with no
+		-- cast evidence are indistinguishable from Precognition.  This is what suppresses false
+		-- predictions for Voidform (Priest), Astral Shift (Shaman), Doomwinds (Enh Shaman), etc.
+		-- when Grounding Totem fires and its aura lands on them.
+		--
+		-- IsProbablyGroundingTotem: suppresses IMPORTANT-only spillover on melee-class enemies
+		-- (WARRIOR, ROGUE, etc.) that are exempt from the Precognition check.
+		if fcdBrain:IsProbablyPrecognition(tracked.AuraTypes, unit) then
+			return
+		end
+		local candidateUnits = {}
+		for u in pairs(watchEntries) do candidateUnits[#candidateUnits + 1] = u end
+		if fcdBrain:IsProbablyGroundingTotem(tracked.AuraTypes, unit, candidateUnits, nil, tracked.Evidence, nil, now, true) then
+			return
+		end
 		if not tracked.PredictedSpellId then
 			local predEntry, predRule
 			if tracked.AuraTypes["EXTERNAL_DEFENSIVE"] then
