@@ -1088,6 +1088,13 @@ local rules = {
 				RequiresTalent = { 3620, 3622, 715 },
 				PvPOnly = true,
 			}, -- Grounding Totem (PvP talent, consumed in 0.5-3s)
+			{
+				Cooldown = 120,
+				SpellId  = 409293,
+				RequiresTalent = 5575,
+				PvPOnly = true,
+				NoAura  = true,
+			}, -- Burrow (PvP talent, detected via UNIT_FLAGS+UNIT_MODEL_CHANGED+UNIT_PORTRAIT_UPDATE)
 		},
 		WARLOCK = {
 			{
@@ -1119,6 +1126,17 @@ local rules = {
 				Important = true,
 				SpellId = 19236,
 			}, -- Desperate Prayer
+			{
+				BuffDuration = 1,
+				Cooldown = 30,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				Important = true,
+				SpellId = 408557,
+				CastSpellId = 586,
+				RequiresTalent = { 5569 },
+				PvPOnly = true,
+			}, -- Phase Shift (PvP talent)
 		},
 		EVOKER = {
 			{

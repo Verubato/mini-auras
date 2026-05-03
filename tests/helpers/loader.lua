@@ -73,6 +73,8 @@ local function makeObserver()
 		shield         = {},
 		unitFlags      = {},
 		debuffEvidence = {},
+		modelChanged   = {},
+		portraitUpdate = {},
 	}
 
 	local o = {}
@@ -91,6 +93,12 @@ local function makeObserver()
 	end
 	function o:RegisterDebuffEvidenceCallback(fn)
 		cbs.debuffEvidence[#cbs.debuffEvidence + 1] = fn
+	end
+	function o:RegisterModelChangedCallback(fn)
+		cbs.modelChanged[#cbs.modelChanged + 1] = fn
+	end
+	function o:RegisterPortraitUpdateCallback(fn)
+		cbs.portraitUpdate[#cbs.portraitUpdate + 1] = fn
 	end
 
 	-- Fire helpers (called from tests to simulate events)
@@ -113,6 +121,12 @@ local function makeObserver()
 
 	function o:_fireAuraChanged(entry, watcher, candidateUnits)
 		for _, fn in ipairs(cbs.auraChanged) do fn(entry, watcher, candidateUnits) end
+	end
+	function o:_fireModelChanged(unit)
+		for _, fn in ipairs(cbs.modelChanged) do fn(unit) end
+	end
+	function o:_firePortraitUpdate(unit)
+		for _, fn in ipairs(cbs.portraitUpdate) do fn(unit) end
 	end
 
 	return o

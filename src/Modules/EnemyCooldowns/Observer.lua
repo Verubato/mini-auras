@@ -11,10 +11,12 @@ addon.Modules.EnemyCooldowns.Observer = O
 -- entry -> { Watcher, UnitEventFrame }
 local watched = {}
 local testModeActive = false
-local auraChangedCallbacks = {}
-local unitFlagsCallbacks = {}
+local auraChangedCallbacks    = {}
+local unitFlagsCallbacks      = {}
 local debuffEvidenceCallbacks = {}
-local castCallbacks = {}
+local castCallbacks           = {}
+local modelChangedCallbacks   = {}
+local portraitUpdateCallbacks = {}
 
 local function FireAuraChanged(entry, watcher)
 	for _, fn in ipairs(auraChangedCallbacks) do
@@ -40,6 +42,18 @@ local function FireCast(unit)
 	end
 end
 
+local function FireModelChanged(unit)
+	for _, fn in ipairs(modelChangedCallbacks) do
+		fn(unit)
+	end
+end
+
+local function FirePortraitUpdate(unit)
+	for _, fn in ipairs(portraitUpdateCallbacks) do
+		fn(unit)
+	end
+end
+
 local function CreateUnitEventFrame(entry)
 	local frame = CreateFrame("Frame")
 	frame:SetScript("OnEvent", function(_, event, ...)
@@ -52,6 +66,10 @@ local function CreateUnitEventFrame(entry)
 		elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
 			-- Enemy spell IDs are always secret values; only record that a cast occurred.
 			FireCast(u)
+		elseif event == "UNIT_MODEL_CHANGED" then
+			FireModelChanged(u)
+		elseif event == "UNIT_PORTRAIT_UPDATE" then
+			FirePortraitUpdate(u)
 		end
 	end)
 	return frame
@@ -63,6 +81,8 @@ local function RegisterUnitEvents(frame, unit)
 	-- creating/enabling the watcher to preserve this ordering.
 	frame:RegisterUnitEvent("UNIT_FLAGS", unit)
 	frame:RegisterUnitEvent("UNIT_AURA", unit)
+	frame:RegisterUnitEvent("UNIT_MODEL_CHANGED", unit)
+	frame:RegisterUnitEvent("UNIT_PORTRAIT_UPDATE", unit)
 end
 
 local function MakeWatcher(entry)
@@ -167,4 +187,16 @@ end
 ---@param fn fun(unit: string)
 function O:RegisterCastCallback(fn)
 	castCallbacks[#castCallbacks + 1] = fn
+end
+
+---Registers a callback fired when a watched enemy unit's model changes (UNIT_MODEL_CHANGED).
+---@param fn fun(unit: string)
+function O:RegisterModelChangedCallback(fn)
+	modelChangedCallbacks[#modelChangedCallbacks + 1] = fn
+end
+
+---Registers a callback fired when a watched enemy unit's portrait updates (UNIT_PORTRAIT_UPDATE).
+---@param fn fun(unit: string)
+function O:RegisterPortraitUpdateCallback(fn)
+	portraitUpdateCallbacks[#portraitUpdateCallbacks + 1] = fn
 end

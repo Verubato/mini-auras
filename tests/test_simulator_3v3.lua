@@ -202,6 +202,7 @@ end
 
 local function runRuleTests(source, specId, classToken, rule)
     if not rule.SpellId then return end
+    if rule.NoAura then return end  -- event-detected spells have no aura to simulate
 
     local auraTypes = inferAuraTypes(rule)
     local isExt = auraTypes.EXTERNAL_DEFENSIVE == true

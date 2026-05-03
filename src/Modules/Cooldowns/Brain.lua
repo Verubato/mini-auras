@@ -37,6 +37,12 @@ local lastCastTime = {}
 local lastCastSpellIds = {}
 -- unit -> timestamp of most recent UNIT_FLAGS (unit combat/immune flags changed e.g. Aspect of the Turtle).
 local lastUnitFlagsTime = {}
+-- unit -> timestamp of most recent UNIT_MODEL_CHANGED (Burrow detection).
+local lastModelChangedTime = {}
+-- unit -> timestamp of most recent UNIT_PORTRAIT_UPDATE (Burrow detection).
+local lastPortraitUpdateTime = {}
+-- unit -> timestamp of most recent Burrow commit; suppresses the second event batch that fires when Burrow ends.
+local lastBurrowCommitTime = {}
 -- unit -> timestamp of most recent feign death activation (UnitIsFeignDeath transition false->true).
 local lastFeignDeathTime = {}
 -- unit -> last known feign death state, used to detect false->true transitions.
@@ -59,6 +65,18 @@ local candidateEvidenceScratch = {}
 -- Populated lazily in RecordUnitFlagsChange so UnitIsFeignDeath is never called for units
 -- that cannot feign, avoiding a pointless API call on every UNIT_FLAGS event in a raid.
 local unitCanFeign = {}
+-- Burrow (PvP talent 5575, SpellId 409293): detected via UNIT_FLAGS + UNIT_MODEL_CHANGED +
+-- UNIT_PORTRAIT_UPDATE firing within 0.5s of each other.  Two batches of these events fire per
+-- cast (one when entering Burrow, one when exiting/cancelling); burrowRearmWindow suppresses the
+-- second batch.
+local burrowSpellId    = 409293
+local burrowCooldown   = 120
+local burrowTalentId   = 5575
+local burrowWindow     = 0.5   -- all three events must fire within this window
+local burrowRearmWindow = 12   -- seconds to suppress re-detection (covers Burrow's active duration)
+-- Callback fired when a Burrow cast is detected via the event-signature path.
+-- Signature: fn(unit, now)
+local burrowCooldownCallback = nil
 -- Callback fired when a buff ends and a matching rule is found.
 -- Signature: fn(ruleUnit, cdKey, cdData, detectedFromEntry)
 -- cdData fields: StartTime, Cooldown, Remaining, SpellId, IsOffensive
@@ -274,7 +292,7 @@ local function FindRuleBySpellId(unit, specId, auraTypes, spellId)
 		if not ruleList then return nil end
 		for _, rule in ipairs(ruleList) do
 			if rule.SpellId == spellId or CastSpellIdMatches(rule.CastSpellId, spellId) then
-				if RulePassesTalentGates(rule, unit, specId, nil) and AuraTypeMatchesRule(auraTypes, rule) then
+				if not rule.NoAura and RulePassesTalentGates(rule, unit, specId, nil) and AuraTypeMatchesRule(auraTypes, rule) then
 					return rule
 				end
 			end
@@ -362,7 +380,7 @@ local function MatchRule(unit, auraTypes, measuredDuration, context)
 		if not ruleList or #ruleList == 0 then return nil end
 		local fallback = nil
 		for _, rule in ipairs(ruleList) do
-			if RulePassesTalentGates(rule, unit, specId, ignoreTalentReqs) then
+			if not rule.NoAura and RulePassesTalentGates(rule, unit, specId, ignoreTalentReqs) then
 				local expectedDuration = rule.SpellId
 						and fcdTalents:GetUnitBuffDuration(unit, specId, classToken, rule.SpellId, rule.BuffDuration)
 					or rule.BuffDuration
@@ -600,6 +618,49 @@ local function IsProbablyPrecognition(auraTypes, targetUnit, measuredDuration, e
 	if not inPvpContext then return false end
 	local _, classToken = UnitClass(targetUnit)
 	return classToken == nil or precogIgnoreClasses[classToken] ~= true
+end
+
+-- Maximum duration (seconds) that Phase Shift can last.
+local phaseShiftMaxDuration = 1.0
+
+---Returns true when a Priest's IMPORTANT-only aura is probably Phase Shift (PvP talent)
+---rather than Grounding Totem spillover.  Phase Shift applies a ~1-second IMPORTANT buff
+---via Fade; the combination of class (PRIEST) and short duration distinguishes it from the
+---~3-second GT spillover aura.
+---For the local player, cast evidence is used instead of the heuristic: Fade (586) must appear
+---in the snapshot within the cast window.  An absent snapshot proves they did not cast Fade.
+---measuredDuration: when provided, auras longer than 1s + tolerance are excluded.
+---castSpellIdSnapshot/startTime: when provided and target is the local player, used to confirm
+---  the Fade cast rather than relying on class+duration alone.
+---@param auraTypes table<string,boolean>
+---@param targetUnit string
+---@param measuredDuration number?
+---@param castSpellIdSnapshot table<string,{SpellId:number,Time:number}[]>?
+---@param startTime number?
+---@return boolean
+local function IsProbablyPhaseShift(auraTypes, targetUnit, measuredDuration, castSpellIdSnapshot, startTime)
+	if not auraTypes["IMPORTANT"] then return false end
+	if auraTypes["BIG_DEFENSIVE"] or auraTypes["EXTERNAL_DEFENSIVE"] then return false end
+	if measuredDuration and measuredDuration > phaseShiftMaxDuration + tolerance then return false end
+	local _, classToken = UnitClass(targetUnit)
+	if classToken ~= "PRIEST" then return false end
+	local _, instanceType = IsInInstance()
+	local inPvpContext = instanceType == "arena" or instanceType == "pvp" or UnitIsPVP(targetUnit)
+	if not inPvpContext then return false end
+	-- For the local player, confirm with cast evidence: Fade (586) must appear in the snapshot
+	-- within the cast window.  An absent or empty snapshot means they provably did not cast Fade.
+	if ResolveSnapshotUnit(targetUnit) == "player" then
+		if not castSpellIdSnapshot or not startTime then return false end
+		local playerCasts = castSpellIdSnapshot["player"]
+		if not playerCasts then return false end
+		for _, cast in ipairs(playerCasts) do
+			if cast.SpellId == 586 and math.abs(cast.Time - startTime) <= castWindow then
+				return true
+			end
+		end
+		return false
+	end
+	return true
 end
 
 -- PvP talent spell IDs that grant Grounding Totem (one per shaman spec).
@@ -998,6 +1059,9 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 		-- Aura has the IMPORTANT+UnitFlags+pvp signature of Precognition.  Suppress the
 		-- entire non-external search so no spell is falsely predicted.
 		return nil, nil
+	elseif IsProbablyPhaseShift(auraTypes, targetUnit, nil, castSpellIdSnapshot, detectionTime) then
+		-- Priest's ~1s IMPORTANT aura is Phase Shift, not GT spillover; proceed to search.
+		searchNonExternal()
 	elseif IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, nil, evidence, castSpellIdSnapshot, detectionTime) then
 		-- Non-shaman ally received Grounding Totem's AoE buff; suppress to avoid false predictions.
 		return nil, nil
@@ -1206,7 +1270,9 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 		if IsProbablyPrecognition(tracked.AuraTypes, entry.Unit, measuredDuration, tracked.Evidence or {}) then
 			return
 		end
-		if IsProbablyGroundingTotem(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, tracked.Evidence, tracked.CastSpellIdSnapshot, tracked.StartTime, ignoreTalentReqs) then
+		if IsProbablyPhaseShift(tracked.AuraTypes, entry.Unit, measuredDuration, tracked.CastSpellIdSnapshot, tracked.StartTime) then
+			-- Priest's ~1s IMPORTANT aura is Phase Shift, not GT spillover; bypass suppression.
+		elseif IsProbablyGroundingTotem(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, tracked.Evidence, tracked.CastSpellIdSnapshot, tracked.StartTime, ignoreTalentReqs) then
 			return
 		end
 		-- Revival spillover suppression: only applies to non-Monk units. For the Monk
@@ -1569,6 +1635,32 @@ local function RecordShield(unit)
 	lastShieldTime[unit] = GetTime()
 end
 
+---Checks whether the three Burrow-signature events have all fired within burrowWindow for unit.
+---If so, fires burrowCooldownCallback.  The rearm guard suppresses the second event batch that
+---fires when Burrow ends or is cancelled early.
+local function TryCommitBurrow(unit, now)
+	local ft = lastUnitFlagsTime[unit]
+	local mt = lastModelChangedTime[unit]
+	local pt = lastPortraitUpdateTime[unit]
+	if not ft or not mt or not pt then return end
+	local earliest = math.min(ft, mt, pt)
+	local latest   = math.max(ft, mt, pt)
+	if latest - earliest > burrowWindow then return end
+	-- Suppress the second batch of events fired when Burrow ends or is cancelled early.
+	local lastCommit = lastBurrowCommitTime[unit]
+	if lastCommit and now - lastCommit < burrowRearmWindow then return end
+	local _, classToken = UnitClass(unit)
+	if classToken ~= "SHAMAN" then return end
+	if not fcdTalents:UnitHasTalent(unit, burrowTalentId) then return end
+	lastBurrowCommitTime[unit]   = now
+	lastUnitFlagsTime[unit]      = nil
+	lastModelChangedTime[unit]   = nil
+	lastPortraitUpdateTime[unit] = nil
+	if burrowCooldownCallback then
+		burrowCooldownCallback(unit, now)
+	end
+end
+
 local function RecordUnitFlagsChange(unit)
 	local now = GetTime()
 	-- Populate canFeign lazily: only Hunters can feign death, so skip UnitIsFeignDeath for
@@ -1587,7 +1679,20 @@ local function RecordUnitFlagsChange(unit)
 	lastFeignDeathState[unit] = isFeign
 	if not isFeign then
 		lastUnitFlagsTime[unit] = now
+		TryCommitBurrow(unit, now)
 	end
+end
+
+local function RecordModelChanged(unit)
+	local now = GetTime()
+	lastModelChangedTime[unit] = now
+	TryCommitBurrow(unit, now)
+end
+
+local function RecordPortraitUpdate(unit)
+	local now = GetTime()
+	lastPortraitUpdateTime[unit] = now
+	TryCommitBurrow(unit, now)
 end
 
 local function TryRecordDebuffEvidence(unit, updateInfo)
@@ -1659,10 +1764,13 @@ function B._TestReset()
 	for k in pairs(lastShieldTime)      do lastShieldTime[k]      = nil end
 	for k in pairs(lastCastTime)        do lastCastTime[k]        = nil end
 	for k in pairs(lastCastSpellIds)    do lastCastSpellIds[k]    = nil end
-	for k in pairs(lastUnitFlagsTime)   do lastUnitFlagsTime[k]   = nil end
-	for k in pairs(lastFeignDeathTime)  do lastFeignDeathTime[k]  = nil end
-	for k in pairs(lastFeignDeathState) do lastFeignDeathState[k] = nil end
-	for k in pairs(unitCanFeign)        do unitCanFeign[k]        = nil end
+	for k in pairs(lastUnitFlagsTime)    do lastUnitFlagsTime[k]    = nil end
+	for k in pairs(lastModelChangedTime)  do lastModelChangedTime[k]  = nil end
+	for k in pairs(lastPortraitUpdateTime) do lastPortraitUpdateTime[k] = nil end
+	for k in pairs(lastBurrowCommitTime)  do lastBurrowCommitTime[k]  = nil end
+	for k in pairs(lastFeignDeathTime)   do lastFeignDeathTime[k]   = nil end
+	for k in pairs(lastFeignDeathState)  do lastFeignDeathState[k]  = nil end
+	for k in pairs(unitCanFeign)         do unitCanFeign[k]         = nil end
 end
 
 ---Wires Brain into an observer. Called by FriendlyCooldowns Module during Init.
@@ -1676,6 +1784,15 @@ function B:RegisterWithObserver(obs)
 	obs:RegisterShieldCallback(RecordShield)
 	obs:RegisterUnitFlagsCallback(RecordUnitFlagsChange)
 	obs:RegisterDebuffEvidenceCallback(TryRecordDebuffEvidence)
+	obs:RegisterModelChangedCallback(RecordModelChanged)
+	obs:RegisterPortraitUpdateCallback(RecordPortraitUpdate)
+end
+
+---Registers the callback fired when a Burrow cast is detected via its event signature.
+---fn(unit, now) where unit is the caster and now is the detection timestamp.
+---@param fn fun(unit: string, now: number)
+function B:RegisterBurrowCallback(fn)
+	burrowCooldownCallback = fn
 end
 
 -- Public API used by EnemyCooldowns module to share rule-matching logic.
@@ -1723,7 +1840,7 @@ function B:PredictSpellId(unit, auraTypes, evidence, activeCooldowns)
 	local function tryRuleList(ruleList)
 		if not ruleList then return nil, false end
 		for _, rule in ipairs(ruleList) do
-			if rule.SpellId and not rule.ExcludeFromPrediction and RulePassesTalentGates(rule, unit, specId, nil) then
+			if rule.SpellId and not rule.ExcludeFromPrediction and not rule.NoAura and RulePassesTalentGates(rule, unit, specId, nil) then
 				if AuraTypeMatchesRule(auraTypes, rule) and EvidenceMatchesReq(rule.RequiresEvidence, evidence) then
 					return rule.SpellId, IsSpellOnCooldown(activeCooldowns, rule.SpellId)
 				end
@@ -1767,4 +1884,13 @@ end
 ---@return boolean
 function B:IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, measuredDuration, evidence, castSpellIdSnapshot, startTime, ignoreTalentReqs)
 	return IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, measuredDuration, evidence, castSpellIdSnapshot, startTime, ignoreTalentReqs)
+end
+
+---Returns true when a Priest's IMPORTANT-only aura is probably Phase Shift rather than GT spillover.
+---@param auraTypes table<string,boolean>
+---@param targetUnit string
+---@param measuredDuration number?
+---@return boolean
+function B:IsProbablyPhaseShift(auraTypes, targetUnit, measuredDuration, castSpellIdSnapshot, startTime)
+	return IsProbablyPhaseShift(auraTypes, targetUnit, measuredDuration, castSpellIdSnapshot, startTime)
 end

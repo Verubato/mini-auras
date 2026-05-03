@@ -11,11 +11,13 @@ addon.Modules.FriendlyCooldowns.Observer = O
 -- entry -> { Watcher, CastEventFrame }
 local watched = {}
 local testModeActive = false
-local auraChangedCallbacks = {}
-local castCallbacks = {}
-local shieldCallbacks = {}
-local unitFlagsCallbacks = {}
+local auraChangedCallbacks    = {}
+local castCallbacks           = {}
+local shieldCallbacks         = {}
+local unitFlagsCallbacks      = {}
 local debuffEvidenceCallbacks = {}
+local modelChangedCallbacks   = {}
+local portraitUpdateCallbacks = {}
 -- Scratch table reused by FireAuraChanged to avoid per-event allocation.
 local candidateUnitsScratch = {}
 -- Scratch set reused by FireAuraChanged to deduplicate unit tokens.
@@ -61,6 +63,18 @@ local function FireUnitFlags(unit)
 	end
 end
 
+local function FireModelChanged(unit)
+	for _, fn in ipairs(modelChangedCallbacks) do
+		fn(unit)
+	end
+end
+
+local function FirePortraitUpdate(unit)
+	for _, fn in ipairs(portraitUpdateCallbacks) do
+		fn(unit)
+	end
+end
+
 local function FireDebuffEvidence(unit, updateInfo)
 	for _, fn in ipairs(debuffEvidenceCallbacks) do
 		fn(unit, updateInfo)
@@ -81,6 +95,10 @@ local function CreateCastEventFrame(entry)
 		elseif event == "UNIT_AURA" then
 			local _, updateInfo = ...
 			FireDebuffEvidence(u, updateInfo)
+		elseif event == "UNIT_MODEL_CHANGED" then
+			FireModelChanged(u)
+		elseif event == "UNIT_PORTRAIT_UPDATE" then
+			FirePortraitUpdate(u)
 		end
 	end)
 	return frame
@@ -93,6 +111,8 @@ local function RegisterCastEvents(frame, unit)
 	frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", unit)
 	frame:RegisterUnitEvent("UNIT_FLAGS", unit)
 	frame:RegisterUnitEvent("UNIT_AURA", unit)
+	frame:RegisterUnitEvent("UNIT_MODEL_CHANGED", unit)
+	frame:RegisterUnitEvent("UNIT_PORTRAIT_UPDATE", unit)
 end
 
 local function MakeWatcher(entry)
@@ -216,6 +236,18 @@ end
 ---@param fn fun(unit: string, updateInfo: table?)
 function O:RegisterDebuffEvidenceCallback(fn)
 	debuffEvidenceCallbacks[#debuffEvidenceCallbacks + 1] = fn
+end
+
+---Registers a callback fired when a watched unit's model changes (UNIT_MODEL_CHANGED).
+---@param fn fun(unit: string)
+function O:RegisterModelChangedCallback(fn)
+	modelChangedCallbacks[#modelChangedCallbacks + 1] = fn
+end
+
+---Registers a callback fired when a watched unit's portrait updates (UNIT_PORTRAIT_UPDATE).
+---@param fn fun(unit: string)
+function O:RegisterPortraitUpdateCallback(fn)
+	portraitUpdateCallbacks[#portraitUpdateCallbacks + 1] = fn
 end
 
 ---Creates the global absorb-shield frame. Must be called once from M:Init.

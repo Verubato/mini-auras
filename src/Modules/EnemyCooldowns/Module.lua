@@ -32,10 +32,14 @@ local castWindow = 0.15
 
 -- Per-unit evidence timestamps (separate from FriendlyCooldowns Brain's state so
 -- enemy and friendly evidence don't cross-contaminate).
-local lastUnitFlagsTime = {}  ---@type table<string, number>
-local lastDebuffTime    = {}  ---@type table<string, number>
-local lastCastTime      = {}  ---@type table<string, number>
-local lastShieldTime    = {}  ---@type table<string, number>
+local lastUnitFlagsTime      = {}  ---@type table<string, number>
+local lastDebuffTime         = {}  ---@type table<string, number>
+local lastCastTime           = {}  ---@type table<string, number>
+local lastShieldTime         = {}  ---@type table<string, number>
+local lastModelChangedTime   = {}  ---@type table<string, number>
+local lastPortraitUpdateTime = {}  ---@type table<string, number>
+-- Suppresses the second batch of Burrow events (fired when Burrow ends/is cancelled).
+local lastBurrowCommitTime   = {}  ---@type table<string, number>
 
 local function GetOptions()
 	return db and db.Modules.EnemyCooldownTrackerModule
@@ -270,6 +274,37 @@ local function CommitCooldown(entry, tracked, rule, measuredDuration)
 	end)
 
 	entry.ActiveCooldowns[cdKey] = cdData
+end
+
+-- Burrow detection
+
+local burrowWindow      = 0.5  -- all three events must fire within this window
+local burrowRearmWindow = 12   -- seconds to suppress re-detection (covers Burrow's active duration)
+
+---Checks whether the Burrow event signature has fired for an enemy Shaman and commits the cooldown.
+---On the enemy path talent data is unavailable, so any Shaman class unit is treated as a potential
+---Burrow user (mirrors the ignoreTalentReqs pattern used for Grounding Totem).
+local function TryCommitBurrow(unit, now)
+	local ft = lastUnitFlagsTime[unit]
+	local mt = lastModelChangedTime[unit]
+	local pt = lastPortraitUpdateTime[unit]
+	if not ft or not mt or not pt then return end
+	local earliest = math.min(ft, mt, pt)
+	local latest   = math.max(ft, mt, pt)
+	if latest - earliest > burrowWindow then return end
+	local lastCommit = lastBurrowCommitTime[unit]
+	if lastCommit and now - lastCommit < burrowRearmWindow then return end
+	local _, classToken = UnitClass(unit)
+	if classToken ~= "SHAMAN" then return end
+	local entry = watchEntries[unit]
+	if not entry then return end
+	lastBurrowCommitTime[unit]   = now
+	lastUnitFlagsTime[unit]      = nil
+	lastModelChangedTime[unit]   = nil
+	lastPortraitUpdateTime[unit] = nil
+	local syntheticTracked = { StartTime = now, AuraTypes = {} }
+	CommitCooldown(entry, syntheticTracked, { SpellId = 409293, Cooldown = 120 }, 0)
+	TriggerDisplayUpdate(entry)
 end
 
 -- Aura lifecycle
@@ -612,10 +647,13 @@ end
 ---Cancels all active cooldown timers and wipes per-entry and per-unit evidence state.
 ---Called on PLAYER_ENTERING_WORLD (arena exit) and PVP_MATCH_STATE_CHANGED/StartUp (new match).
 local function ClearAllCooldownState()
-	for k in pairs(lastCastTime)      do lastCastTime[k]      = nil end
-	for k in pairs(lastShieldTime)    do lastShieldTime[k]    = nil end
-	for k in pairs(lastDebuffTime)    do lastDebuffTime[k]    = nil end
-	for k in pairs(lastUnitFlagsTime) do lastUnitFlagsTime[k] = nil end
+	for k in pairs(lastCastTime)           do lastCastTime[k]           = nil end
+	for k in pairs(lastShieldTime)         do lastShieldTime[k]         = nil end
+	for k in pairs(lastDebuffTime)         do lastDebuffTime[k]         = nil end
+	for k in pairs(lastUnitFlagsTime)      do lastUnitFlagsTime[k]      = nil end
+	for k in pairs(lastModelChangedTime)   do lastModelChangedTime[k]   = nil end
+	for k in pairs(lastPortraitUpdateTime) do lastPortraitUpdateTime[k] = nil end
+	for k in pairs(lastBurrowCommitTime)   do lastBurrowCommitTime[k]   = nil end
 	for _, entry in pairs(watchEntries) do
 		for _, cd in pairs(entry.ActiveCooldowns) do
 			if cd.CleanupTimer then cd.CleanupTimer:Cancel() end
@@ -720,7 +758,19 @@ function M:Init()
 		lastCastTime[unit] = GetTime()
 	end)
 	observer:RegisterUnitFlagsCallback(function(unit)
-		lastUnitFlagsTime[unit] = GetTime()
+		local now = GetTime()
+		lastUnitFlagsTime[unit] = now
+		TryCommitBurrow(unit, now)
+	end)
+	observer:RegisterModelChangedCallback(function(unit)
+		local now = GetTime()
+		lastModelChangedTime[unit] = now
+		TryCommitBurrow(unit, now)
+	end)
+	observer:RegisterPortraitUpdateCallback(function(unit)
+		local now = GetTime()
+		lastPortraitUpdateTime[unit] = now
+		TryCommitBurrow(unit, now)
 	end)
 	observer:RegisterDebuffEvidenceCallback(function(unit, updateInfo)
 		if updateInfo and not updateInfo.isFullUpdate and updateInfo.addedAuras then

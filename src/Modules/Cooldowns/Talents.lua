@@ -72,6 +72,13 @@ local ClassCooldownModifiers = {
 		-- Uplifted Spirits: Revival/Restoral -30s
 		[388551] = { { { SpellId = 115310, Amount = -30 }, { SpellId = 388615, Amount = -30 } } },
 	},
+	PRIEST = {
+		-- Improved Fade: Phase Shift -5s / -10s
+		[390670] = {
+			{ { SpellId = 408557, Amount = -5 } },
+			{ { SpellId = 408557, Amount = -10 } },
+		},
+	},
 	SHAMAN = {
 		[381647] = { { { SpellId = 108271, Amount = -30 } } }, -- Planes Traveler: Astral Shift -30s
 		[381867] = { { { SpellId = 204336, Amount = -5 } } },  -- Totemic Surge: Grounding Totem -5s
@@ -328,6 +335,10 @@ local ClassDefaultTalentRanks = {
 	PALADIN = {
 		[114154] = 1, -- Unbreakable Spirit: Bubble/DP/Ardent Defender -30% (nearly universal)
 		[384909] = 1, -- Blessed Protector: BoP/Spellwarding -60s (nearly universal)
+	},
+	PRIEST = {
+		[5569]   = 1, -- Phase Shift (PvP): universal
+		[390670] = 2, -- Improved Fade: assume 2/2 (universal)
 	},
 	SHAMAN = {
 		[381647] = 1, -- Planes Traveler: Astral Shift -30s (nearly universal)
