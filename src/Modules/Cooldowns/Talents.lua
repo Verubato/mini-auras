@@ -249,6 +249,10 @@ local SpecPvPCooldownModifiers = {
 	[261] = { [354825] = { { SpellId = 121471, Amount = -20, Mult = true } } },
 	-- Protection Paladin: Sacred Duty (Blessing of Protection & Blessing of Sacrifice -33%)
 	[66] = { [92] = { { SpellId = 1022, Amount = -33, Mult = true }, { SpellId = 6940, Amount = -33, Mult = true } } },
+	-- Warrior: Rebound (Spell Reflect +10s); talent ID differs per spec
+	[71] = { [5547] = { { SpellId = 23920, Amount = 10 } } },  -- Arms
+	[72] = { [5548] = { { SpellId = 23920, Amount = 10 } } },  -- Fury
+	[73] = { [833]  = { { SpellId = 23920, Amount = 10 } } },  -- Protection
 }
 
 -- Duration-affecting talent modifiers. Supports additive (seconds) and Mult (% of base).

@@ -337,6 +337,16 @@ local rules = {
 				MinDuration = true,
 				RequiresTalent = 107574,
 			}, -- Avatar
+			{
+				BuffDuration = 5,
+				Cooldown = 25,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				Important = true,
+				CanCancelEarly = true,
+				SpellId = 23920,
+				RequiresTalent = 23920,
+			}, -- Spell Reflect
 		},
 		[72] = { -- Fury Warrior
 			{
@@ -367,6 +377,16 @@ local rules = {
 				MinDuration = true,
 				RequiresTalent = 107574,
 			}, -- Avatar
+			{
+				BuffDuration = 5,
+				Cooldown = 25,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				Important = true,
+				CanCancelEarly = true,
+				SpellId = 23920,
+				RequiresTalent = 23920,
+			}, -- Spell Reflect
 		},
 		[73] = { -- Protection Warrior
 			{
@@ -388,6 +408,16 @@ local rules = {
 				MinDuration = true,
 				RequiresTalent = 107574,
 			}, -- Avatar
+			{
+				BuffDuration = 5,
+				Cooldown = 20,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				Important = true,
+				CanCancelEarly = true,
+				SpellId = 23920,
+				RequiresTalent = 23920,
+			}, -- Spell Reflect
 		},
 		[251] = {
 			{
@@ -906,18 +936,6 @@ local rules = {
 				CastableOnOthers = true,
 				SpellId = 1044,
 			}, -- Blessing of Freedom
-		},
-		WARRIOR = {
-			{
-				BuffDuration = 5,
-				Cooldown = 25,
-				BigDefensive = false,
-				ExternalDefensive = false,
-				Important = true,
-				CanCancelEarly = true,
-				SpellId = 23920,
-				RequiresTalent = 23920,
-			}, -- Spell Reflect
 		},
 		MAGE = {
 			{
