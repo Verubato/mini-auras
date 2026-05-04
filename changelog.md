@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.16.0
+
+- Added new feature to show interrupts on nameplates/portraits/raid frames.
+- Added Warrior Spell Reflect tracking.
+- Added Monk Revival/Restoral tracking (pvp only).
+- Added Shaman Burrow tracking (pvp only).
+- Added Priest Fade/Phase Shift tracking (pvp only).
+- Added Emerald Communion tracking (pvp only).
+- Potential fix for glows persisting through screen loads.
+- Fixed friendly cooldowns not showing in test mode.
+- Fixed Grounding Totem causing some other enemy CD spells to go on cooldown (e.g. Doomwinds).
+- Fixed Adrenaline Rush causing enemy CD Evasion to go on cooldown.
+
 ## 3.15.2
 
 - Potential fix for glows persisting through reloads.
