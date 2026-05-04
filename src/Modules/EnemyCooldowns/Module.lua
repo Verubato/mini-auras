@@ -291,13 +291,6 @@ local sd = SignatureDetector:New({
 		CommitCooldown(entry, syntheticTracked, { SpellId = 409293, Cooldown = 120 }, now - castTime)
 		TriggerDisplayUpdate(entry)
 	end,
-	ecPredict = function(unit, now)
-		local entry = watchEntries[unit]
-		if not entry then return end
-		local syntheticTracked = { StartTime = now, AuraTypes = {} }
-		CommitCooldown(entry, syntheticTracked, { SpellId = 370960, Cooldown = 180 }, 0)
-		TriggerDisplayUpdate(entry)
-	end,
 	ecCommit = function(unit, now, castTime)
 		local entry = watchEntries[unit]
 		if not entry then return end

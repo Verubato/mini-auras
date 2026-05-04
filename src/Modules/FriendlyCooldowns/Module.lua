@@ -344,24 +344,6 @@ function M:Init()
 		end
 	end)
 
-	-- Emerald Communion predict: channel started — show glow while the Evoker is channeling.
-	brain:RegisterEmeraldCommunionPredictCallback(function(unit, castTime)
-		local casterEntries = {}
-		for _, e in pairs(watchEntries) do
-			if SameUnit(e.Unit, unit) then
-				casterEntries[#casterEntries + 1] = e
-			end
-		end
-		if #casterEntries == 0 then return end
-		local spellId = 370960
-		for _, e in ipairs(casterEntries) do
-			e.PredictedGlows[spellId] = (e.PredictedGlows[spellId] or 0) + 1
-			e.PredictedGlowDurations[spellId] = nil
-			display:UpdateDisplay(e)
-			ShowHideEntryContainer(e.Container.Frame, e.Anchor)
-		end
-	end)
-
 	-- Emerald Communion commit: channel ended — clear glow and commit CD with accurate remaining time.
 	brain:RegisterEmeraldCommunionCallback(function(unit, now, castTime)
 		local casterEntries = {}

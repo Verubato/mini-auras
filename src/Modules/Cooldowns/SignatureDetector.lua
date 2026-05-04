@@ -29,14 +29,13 @@ local methods = {}
 methods.__index = methods
 
 ---Creates a new detector instance.
----@param config table  checkTalent (bool), talents (table?), burrowPredict, burrowCommit, ecPredict, ecCommit
+---@param config table  checkTalent (bool), talents (table?), burrowPredict, burrowCommit, ecCommit
 function SD:New(config)
 	return setmetatable({
 		checkTalent   = config.checkTalent or false,
 		talents       = config.talents,
 		burrowPredict = config.burrowPredict,
 		burrowCommit  = config.burrowCommit,
-		ecPredict     = config.ecPredict,
 		ecCommit      = config.ecCommit,
 		_flags    = {},  -- unit -> number (last UNIT_FLAGS time for detection)
 		_model    = {},  -- unit -> number (last UNIT_MODEL_CHANGED time)
@@ -83,14 +82,11 @@ function methods:_tryPredictEC(unit, now)
 	if not cst or not ft then return end
 	if now - cst > CORRELATION_WINDOW then return end
 	if now - ft  > CORRELATION_WINDOW then return end
-	local lastPredict = self._ecpred[unit]
-	if lastPredict and now - lastPredict < EC_REARM_WINDOW then return end
 	local _, classToken = UnitClass(unit)
 	if classToken ~= "EVOKER" then return end
 	if self.checkTalent and not self.talents:UnitHasTalent(unit, EC_TALENT_ID) then return end
 	self._ecpred[unit]  = now
 	self._cstart[unit]  = nil
-	if self.ecPredict then self.ecPredict(unit, now) end
 end
 
 function methods:_tryCommitEC(unit, now)

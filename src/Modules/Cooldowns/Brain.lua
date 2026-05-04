@@ -1802,13 +1802,6 @@ function B:RegisterBurrowCallback(fn)
 	sd.burrowCommit = fn
 end
 
----Registers the callback fired when the first EC event batch fires (channel started).
----fn(unit, now) where now is the predict timestamp.
----@param fn fun(unit: string, now: number)
-function B:RegisterEmeraldCommunionPredictCallback(fn)
-	sd.ecPredict = fn
-end
-
 ---Registers the callback fired when the second EC event batch fires (channel ended).
 ---fn(unit, now, castTime) where castTime is the predict timestamp (channel started).
 ---@param fn fun(unit: string, now: number, castTime: number)
