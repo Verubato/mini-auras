@@ -821,6 +821,43 @@ local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, m
 		return false
 	end
 
+	-- Before concluding GT spillover on a non-Shaman target, check whether the target has a
+	-- CanCancelEarly rule (e.g. Spell Reflect on a Warrior) that can legitimately explain this
+	-- IMPORTANT aura.  If the talent gate passes, the aura is more likely the target's own spell
+	-- than GT spillover, so don't suppress.
+	-- On the predict path (measuredDuration=nil) rule existence alone is sufficient.
+	-- Skipped on the enemy path (ignoreTalentReqs) since talent data is unavailable.
+	if not ignoreTalentReqs then
+		local _, targetClass = UnitClass(targetUnit)
+		if targetClass then
+			local specId = fcdTalents:GetUnitSpecId(targetUnit)
+			local function hasMatchingEarlyCancelRule(ruleList)
+				if not ruleList then return false end
+				for _, rule in ipairs(ruleList) do
+					if rule.CanCancelEarly and not rule.NoAura
+					   and AuraTypeMatchesRule(auraTypes, rule)
+					   and RulePassesTalentGates(rule, targetUnit, specId, false) then
+						if not measuredDuration then
+							return true
+						end
+						local expectedDuration = rule.SpellId
+							and fcdTalents:GetUnitBuffDuration(targetUnit, specId, targetClass, rule.SpellId, rule.BuffDuration)
+							or rule.BuffDuration
+						if measuredDuration <= expectedDuration + tolerance
+						   and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration) then
+							return true
+						end
+					end
+				end
+				return false
+			end
+			if hasMatchingEarlyCancelRule(specId and rules.BySpec[specId])
+			   or hasMatchingEarlyCancelRule(rules.ByClass[targetClass]) then
+				return false
+			end
+		end
+	end
+
 	for _, candidate in ipairs(candidateUnits) do
 		if shamanHasGroundingTotem(candidate) then
 			return true
