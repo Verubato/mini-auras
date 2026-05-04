@@ -5,9 +5,12 @@ addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
 
 -- All signature events must arrive within this window of each other to count as one batch.
 local CORRELATION_WINDOW  = 0.5
--- Burrow (Shaman PvP talent 5575, SpellId 409293): UNIT_FLAGS + UNIT_MODEL_CHANGED + UNIT_PORTRAIT_UPDATE.
+-- Burrow (SpellId 409293): UNIT_FLAGS + UNIT_MODEL_CHANGED + UNIT_PORTRAIT_UPDATE.
 -- Two batches fire per cast: first when entering Burrow (predict), second when exiting (commit).
-local BURROW_TALENT_ID    = 5575
+-- PvP talent ID differs by spec: 5574 (Elemental), 5575 (Enhancement), 5576 (Restoration).
+local BURROW_TALENT_ID_ELEMENTAL = 5574
+local BURROW_TALENT_ID_ENHANCE   = 5575
+local BURROW_TALENT_ID_RESTO     = 5576
 local BURROW_REARM_WINDOW = 12   -- seconds to expect the exit batch (covers Burrow's active phase)
 -- Emerald Communion (Evoker PvP talent 5718, SpellId 370960): two-phase detection.
 -- Predict: CHANNEL_START + UNIT_FLAGS within CORRELATION_WINDOW.
@@ -57,7 +60,10 @@ function methods:_tryCommitBurrow(unit, now)
 	if now - pt > CORRELATION_WINDOW then return end
 	local _, classToken = UnitClass(unit)
 	if classToken ~= "SHAMAN" then return end
-	if self.checkTalent and not self.talents:UnitHasTalent(unit, BURROW_TALENT_ID) then return end
+	if self.checkTalent
+	   and not self.talents:UnitHasTalent(unit, BURROW_TALENT_ID_ELEMENTAL)
+	   and not self.talents:UnitHasTalent(unit, BURROW_TALENT_ID_ENHANCE)
+	   and not self.talents:UnitHasTalent(unit, BURROW_TALENT_ID_RESTO) then return end
 	self._flags[unit]    = nil
 	self._model[unit]    = nil
 	self._portrait[unit] = nil

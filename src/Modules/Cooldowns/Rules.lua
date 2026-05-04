@@ -808,6 +808,13 @@ local rules = {
 				SpellId = 114052,
 				RequiresTalent = 114052,
 			}, -- Ascendance
+			{
+				Cooldown = 120,
+				SpellId  = 409293,
+				RequiresTalent = 5576,
+				PvPOnly = true,
+				NoAura  = true,
+			}, -- Burrow
 		},
 		[262] = { -- Elemental Shaman
 			{
@@ -828,6 +835,13 @@ local rules = {
 				SpellId = 114050,
 				RequiresTalent = 114050,
 			}, -- Ascendance +3s (Preeminence)
+			{
+				Cooldown = 120,
+				SpellId  = 409293,
+				RequiresTalent = 5574,
+				PvPOnly = true,
+				NoAura  = true,
+			}, -- Burrow
 		},
 		[263] = { -- Enhancement Shaman
 			{
@@ -859,6 +873,13 @@ local rules = {
 				SpellId = 114051,
 				RequiresTalent = 114051,
 			}, -- Ascendance
+			{
+				Cooldown = 120,
+				SpellId  = 409293,
+				RequiresTalent = 5575,
+				PvPOnly = true,
+				NoAura  = true,
+			}, -- Burrow
 		},
 	},
 	ByClass = {
@@ -1088,13 +1109,6 @@ local rules = {
 				RequiresTalent = { 3620, 3622, 715 },
 				PvPOnly = true,
 			}, -- Grounding Totem (PvP talent, consumed in 0.5-3s)
-			{
-				Cooldown = 120,
-				SpellId  = 409293,
-				RequiresTalent = 5575,
-				PvPOnly = true,
-				NoAura  = true,
-			}, -- Burrow (PvP talent, detected via UNIT_FLAGS+UNIT_MODEL_CHANGED+UNIT_PORTRAIT_UPDATE)
 		},
 		WARLOCK = {
 			{

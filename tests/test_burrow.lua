@@ -238,9 +238,9 @@ fw.describe("Burrow detection - class and talent guards", function()
         fw.eq(fired, 0, "Druid model changes (e.g. shapeshifts) should not trigger Burrow")
     end)
 
-    fw.it("does not fire for a Shaman without the Burrow talent (5575)", function()
+    fw.it("does not fire for a Shaman without the Burrow talent (neither 5575 nor 5574)", function()
         wow.setUnitClass("party1", "SHAMAN")
-        -- Deliberately do NOT set talent 5575.
+        -- Deliberately do NOT set either Burrow talent.
         local fired = 0
         B:RegisterBurrowPredictCallback(function() fired = fired + 1 end)
 
@@ -251,10 +251,10 @@ fw.describe("Burrow detection - class and talent guards", function()
         wow.setTime(100.2)
         obs:_firePortraitUpdate("party1")
 
-        fw.eq(fired, 0, "Shaman without talent 5575 should not commit Burrow")
+        fw.eq(fired, 0, "Shaman without either Burrow talent should not commit Burrow")
     end)
 
-    fw.it("fires for a Shaman who has the Burrow talent (5575)", function()
+    fw.it("fires for a Shaman who has the Burrow talent (5575 - Enhancement/Restoration)", function()
         setupShaman("party1")
         local fired = 0
         B:RegisterBurrowPredictCallback(function() fired = fired + 1 end)
@@ -267,6 +267,38 @@ fw.describe("Burrow detection - class and talent guards", function()
         obs:_firePortraitUpdate("party1")
 
         fw.eq(fired, 1, "Shaman with talent 5575 and all three events should commit Burrow")
+    end)
+
+    fw.it("fires for a Shaman who has the Burrow talent (5574 - Elemental)", function()
+        wow.setUnitClass("party1", "SHAMAN")
+        mods.talents._setTalent("party1", 5574, true)
+        local fired = 0
+        B:RegisterBurrowPredictCallback(function() fired = fired + 1 end)
+
+        wow.setTime(100.0)
+        obs:_fireUnitFlags("party1")
+        wow.setTime(100.1)
+        obs:_fireModelChanged("party1")
+        wow.setTime(100.2)
+        obs:_firePortraitUpdate("party1")
+
+        fw.eq(fired, 1, "Shaman with talent 5574 and all three events should commit Burrow")
+    end)
+
+    fw.it("fires for a Shaman who has the Burrow talent (5576 - Restoration)", function()
+        wow.setUnitClass("party1", "SHAMAN")
+        mods.talents._setTalent("party1", 5576, true)
+        local fired = 0
+        B:RegisterBurrowPredictCallback(function() fired = fired + 1 end)
+
+        wow.setTime(100.0)
+        obs:_fireUnitFlags("party1")
+        wow.setTime(100.1)
+        obs:_fireModelChanged("party1")
+        wow.setTime(100.2)
+        obs:_firePortraitUpdate("party1")
+
+        fw.eq(fired, 1, "Shaman with talent 5576 and all three events should commit Burrow")
     end)
 
     fw.it("only fires for the Shaman when multiple units receive events", function()
