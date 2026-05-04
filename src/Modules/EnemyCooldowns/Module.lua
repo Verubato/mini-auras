@@ -8,6 +8,7 @@ local moduleName = addon.Utils.ModuleName
 -- Loaded before this file in TOC order.
 local fcdTalents = addon.Modules.Cooldowns.Talents
 local fcdBrain   = addon.Modules.Cooldowns.Brain
+local SignatureDetector = addon.Modules.Cooldowns.SignatureDetector
 local observer   = addon.Modules.EnemyCooldowns.Observer
 local display    = addon.Modules.EnemyCooldowns.Display
 
@@ -36,13 +37,6 @@ local lastUnitFlagsTime      = {}  ---@type table<string, number>
 local lastDebuffTime         = {}  ---@type table<string, number>
 local lastCastTime           = {}  ---@type table<string, number>
 local lastShieldTime         = {}  ---@type table<string, number>
-local lastModelChangedTime   = {}  ---@type table<string, number>
-local lastPortraitUpdateTime = {}  ---@type table<string, number>
--- Timestamp of the first Burrow event batch (Burrow started); used to commit the second batch.
-local lastBurrowPredictTime = {}  ---@type table<string, number>
-local lastChannelStartTime = {}  ---@type table<string, number>
-local lastChannelStopTime  = {}  ---@type table<string, number>
-local lastECPredictTime    = {}  ---@type table<string, number>
 
 local function GetOptions()
 	return db and db.Modules.EnemyCooldownTrackerModule
@@ -279,94 +273,39 @@ local function CommitCooldown(entry, tracked, rule, measuredDuration)
 	entry.ActiveCooldowns[cdKey] = cdData
 end
 
--- Event-signature detection
-
-local correlationWindow  = 0.5  -- all signature events must fire within this window
-local burrowRearmWindow  = 12   -- seconds to suppress Burrow re-detection (covers Burrow's active duration)
-local ecRearmWindow      = 10   -- seconds to suppress EC re-detection (covers the ~6s channel duration)
-local ecMinDuration      = 4    -- EC channels for ~4.6s (stat-dependent); reject anything shorter
-local ecMaxDuration      = 5    -- reject anything longer (non-EC UNIT_FLAGS pair)
-local ecDurationTolerance = 0.5 -- same tolerance used for aura duration matching elsewhere
-
----Checks whether the Burrow event signature has fired for an enemy Shaman.
----First batch (Burrow started): commits with measuredDuration=0 (predict) and records predict time.
----Second batch within burrowRearmWindow (Burrow ended): recommits with accurate measured duration.
----On the enemy path talent data is unavailable, so any Shaman is treated as a potential Burrow user.
-local function TryCommitBurrow(unit, now)
-	local ft = lastUnitFlagsTime[unit]
-	local mt = lastModelChangedTime[unit]
-	local pt = lastPortraitUpdateTime[unit]
-	if not ft or not mt or not pt then return end
-	if now - ft > correlationWindow then return end
-	if now - mt > correlationWindow then return end
-	if now - pt > correlationWindow then return end
-	local _, classToken = UnitClass(unit)
-	if classToken ~= "SHAMAN" then return end
-	local entry = watchEntries[unit]
-	if not entry then return end
-	lastUnitFlagsTime[unit]      = nil
-	lastModelChangedTime[unit]   = nil
-	lastPortraitUpdateTime[unit] = nil
-	local lastPredict = lastBurrowPredictTime[unit]
-	if lastPredict and now - lastPredict < burrowRearmWindow then
-		-- Second batch (Burrow ended): commit with accurate measured duration.
-		lastBurrowPredictTime[unit] = nil
-		local syntheticTracked = { StartTime = lastPredict, AuraTypes = {} }
-		CommitCooldown(entry, syntheticTracked, { SpellId = 409293, Cooldown = 120 }, now - lastPredict)
-		TriggerDisplayUpdate(entry)
-	else
-		-- First batch (Burrow started): predict.
-		lastBurrowPredictTime[unit] = now
+-- Event-signature detection (Burrow + Emerald Communion).
+-- No talent checks on the enemy path: talent data is unavailable for arena opponents.
+local sd = SignatureDetector:New({
+	checkTalent  = false,
+	burrowPredict = function(unit, now)
+		local entry = watchEntries[unit]
+		if not entry then return end
 		local syntheticTracked = { StartTime = now, AuraTypes = {} }
 		CommitCooldown(entry, syntheticTracked, { SpellId = 409293, Cooldown = 120 }, 0)
 		TriggerDisplayUpdate(entry)
-	end
-end
-
----First EC batch: UNIT_SPELLCAST_CHANNEL_START + UNIT_FLAGS within correlationWindow.
----Commits with measuredDuration=0 (predict) and records predict time.
-local function TryPredictEmeraldCommunion(unit, now)
-	local cst = lastChannelStartTime[unit]
-	local ft  = lastUnitFlagsTime[unit]
-	if not cst or not ft then return end
-	if now - cst > correlationWindow then return end
-	if now - ft  > correlationWindow then return end
-	local lastPredict = lastECPredictTime[unit]
-	if lastPredict and now - lastPredict < ecRearmWindow then return end
-	local _, classToken = UnitClass(unit)
-	if classToken ~= "EVOKER" then return end
-	local entry = watchEntries[unit]
-	if not entry then return end
-	lastECPredictTime[unit]    = now
-	lastChannelStartTime[unit] = nil
-	local syntheticTracked = { StartTime = now, AuraTypes = {} }
-	CommitCooldown(entry, syntheticTracked, { SpellId = 370960, Cooldown = 180 }, 0)
-	TriggerDisplayUpdate(entry)
-end
-
----Second EC batch: UNIT_SPELLCAST_CHANNEL_STOP + UNIT_FLAGS within correlationWindow.
----Recommits with accurate measured duration.
-local function TryCommitEmeraldCommunion(unit, now)
-	local csp = lastChannelStopTime[unit]
-	local ft  = lastUnitFlagsTime[unit]
-	if not csp or not ft then return end
-	if now - csp > correlationWindow then return end
-	if now - ft  > correlationWindow then return end
-	local lastPredict = lastECPredictTime[unit]
-	if not lastPredict or now - lastPredict >= ecRearmWindow then return end
-	local elapsed = csp - lastPredict
-	if elapsed < ecMinDuration - ecDurationTolerance then return end
-	if elapsed > ecMaxDuration + ecDurationTolerance then return end
-	local _, classToken = UnitClass(unit)
-	if classToken ~= "EVOKER" then return end
-	local entry = watchEntries[unit]
-	if not entry then return end
-	lastECPredictTime[unit]   = nil
-	lastChannelStopTime[unit] = nil
-	local syntheticTracked = { StartTime = lastPredict, AuraTypes = {} }
-	CommitCooldown(entry, syntheticTracked, { SpellId = 370960, Cooldown = 180 }, now - lastPredict)
-	TriggerDisplayUpdate(entry)
-end
+	end,
+	burrowCommit = function(unit, now, castTime)
+		local entry = watchEntries[unit]
+		if not entry then return end
+		local syntheticTracked = { StartTime = castTime, AuraTypes = {} }
+		CommitCooldown(entry, syntheticTracked, { SpellId = 409293, Cooldown = 120 }, now - castTime)
+		TriggerDisplayUpdate(entry)
+	end,
+	ecPredict = function(unit, now)
+		local entry = watchEntries[unit]
+		if not entry then return end
+		local syntheticTracked = { StartTime = now, AuraTypes = {} }
+		CommitCooldown(entry, syntheticTracked, { SpellId = 370960, Cooldown = 180 }, 0)
+		TriggerDisplayUpdate(entry)
+	end,
+	ecCommit = function(unit, now, castTime)
+		local entry = watchEntries[unit]
+		if not entry then return end
+		local syntheticTracked = { StartTime = castTime, AuraTypes = {} }
+		CommitCooldown(entry, syntheticTracked, { SpellId = 370960, Cooldown = 180 }, now - castTime)
+		TriggerDisplayUpdate(entry)
+	end,
+})
 
 -- Aura lifecycle
 
@@ -712,12 +651,7 @@ local function ClearAllCooldownState()
 	for k in pairs(lastShieldTime)         do lastShieldTime[k]         = nil end
 	for k in pairs(lastDebuffTime)         do lastDebuffTime[k]         = nil end
 	for k in pairs(lastUnitFlagsTime)      do lastUnitFlagsTime[k]      = nil end
-	for k in pairs(lastModelChangedTime)   do lastModelChangedTime[k]   = nil end
-	for k in pairs(lastPortraitUpdateTime) do lastPortraitUpdateTime[k] = nil end
-	for k in pairs(lastBurrowPredictTime) do lastBurrowPredictTime[k] = nil end
-	for k in pairs(lastChannelStartTime) do lastChannelStartTime[k] = nil end
-	for k in pairs(lastChannelStopTime)  do lastChannelStopTime[k]  = nil end
-	for k in pairs(lastECPredictTime)    do lastECPredictTime[k]    = nil end
+	sd:ResetAll()
 	for _, entry in pairs(watchEntries) do
 		for _, cd in pairs(entry.ActiveCooldowns) do
 			if cd.CleanupTimer then cd.CleanupTimer:Cancel() end
@@ -824,29 +758,19 @@ function M:Init()
 	observer:RegisterUnitFlagsCallback(function(unit)
 		local now = GetTime()
 		lastUnitFlagsTime[unit] = now
-		TryCommitBurrow(unit, now)
-		TryPredictEmeraldCommunion(unit, now)
-		TryCommitEmeraldCommunion(unit, now)
+		sd:OnUnitFlags(unit, now)
 	end)
 	observer:RegisterModelChangedCallback(function(unit)
-		local now = GetTime()
-		lastModelChangedTime[unit] = now
-		TryCommitBurrow(unit, now)
+		sd:OnModelChanged(unit, GetTime())
 	end)
 	observer:RegisterPortraitUpdateCallback(function(unit)
-		local now = GetTime()
-		lastPortraitUpdateTime[unit] = now
-		TryCommitBurrow(unit, now)
+		sd:OnPortraitUpdate(unit, GetTime())
 	end)
 	observer:RegisterChannelStartCallback(function(unit)
-		local now = GetTime()
-		lastChannelStartTime[unit] = now
-		TryPredictEmeraldCommunion(unit, now)
+		sd:OnChannelStart(unit, GetTime())
 	end)
 	observer:RegisterChannelStopCallback(function(unit)
-		local now = GetTime()
-		lastChannelStopTime[unit] = now
-		TryCommitEmeraldCommunion(unit, now)
+		sd:OnChannelStop(unit, GetTime())
 	end)
 	observer:RegisterDebuffEvidenceCallback(function(unit, updateInfo)
 		if updateInfo and not updateInfo.isFullUpdate and updateInfo.addedAuras then

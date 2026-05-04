@@ -200,6 +200,8 @@ function M.get()
 	-- Rules is a pure data file - load it for real.
 	loadModule("src/Modules/Cooldowns/Rules.lua", addon)
 
+	loadModule("src/Modules/Cooldowns/SignatureDetector.lua", addon)
+
 	-- Brain registers its observer callbacks via RegisterWithObserver.
 	loadModule("src/Modules/Cooldowns/Brain.lua", addon)
 
