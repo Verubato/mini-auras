@@ -258,7 +258,7 @@ local function runRuleTests(source, specId, classToken, rule)
     local ambig = (specId and knownAmbiguities.bySpec[specId] and knownAmbiguities.bySpec[specId][rule.SpellId])
                or (not specId and knownAmbiguities.byClass[classToken] and knownAmbiguities.byClass[classToken][rule.SpellId])
                or {}
-    local itPredict = ambig.predict and fw.xfail or fw.it
+    local itPredict = rule.ExcludeFromPrediction and fw.skip or (ambig.predict and fw.xfail or fw.it)
     local itCommit  = ambig.commit  and fw.xfail or fw.it
 
     -- Friendly predict: aura appears -> predictiveGlowCallback fires with rule.SpellId.

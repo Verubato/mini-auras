@@ -62,6 +62,12 @@ function M.xfail(name, fn)
 	end
 end
 
+---Declares a test case that is intentionally not exercised (e.g. ExcludeFromPrediction rules).
+-- Does not add to pass or fail counts.
+function M.skip(name, _fn)
+	io.write("    [skip] " .. name .. "\n")
+end
+
 -- Assertions
 
 function M.eq(actual, expected, label)

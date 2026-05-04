@@ -466,6 +466,18 @@ local rules = {
 				SpellId = 33206,
 				MaxCharges = 2,
 			},
+			{
+				BuffDuration = 1,
+				Cooldown = 30,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				Important = true,
+				ExcludeFromPrediction = true,
+				SpellId = 408557,
+				CastSpellId = 586,
+				RequiresTalent = 5570,
+				PvPOnly = true,
+			}, -- Phase Shift (PvP talent)
 		}, -- Discipline Priest: Pain Suppression
 		[257] = { -- Holy Priest
 			{
@@ -498,6 +510,18 @@ local rules = {
 				MinCancelDuration = 1.5, -- Phase Shift (PvP talent) applies a 1s IMPORTANT buff on Fade; exclude it
 				SpellId = 64843,
 			}, -- Divine Hymn
+			{
+				BuffDuration = 1,
+				Cooldown = 30,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				Important = true,
+				ExcludeFromPrediction = true,
+				SpellId = 408557,
+				CastSpellId = 586,
+				RequiresTalent = 5569,
+				PvPOnly = true,
+			}, -- Phase Shift (PvP talent)
 		},
 		[258] = { -- Shadow Priest
 			{
@@ -531,6 +555,18 @@ local rules = {
 				MinDuration = true,
 				SpellId = 228260,
 			}, -- Voidform
+			{
+				BuffDuration = 1,
+				Cooldown = 30,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				Important = true,
+				ExcludeFromPrediction = true,
+				SpellId = 408557,
+				CastSpellId = 586,
+				RequiresTalent = 5568,
+				PvPOnly = true,
+			}, -- Phase Shift (PvP talent)
 		},
 		[102] = {
 			{
@@ -1158,17 +1194,6 @@ local rules = {
 				Important = true,
 				SpellId = 19236,
 			}, -- Desperate Prayer
-			{
-				BuffDuration = 1,
-				Cooldown = 30,
-				BigDefensive = false,
-				ExternalDefensive = false,
-				Important = true,
-				SpellId = 408557,
-				CastSpellId = 586,
-				RequiresTalent = { 5569 },
-				PvPOnly = true,
-			}, -- Phase Shift (PvP talent)
 		},
 		EVOKER = {
 			{

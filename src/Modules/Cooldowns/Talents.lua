@@ -341,7 +341,6 @@ local ClassDefaultTalentRanks = {
 		[384909] = 1, -- Blessed Protector: BoP/Spellwarding -60s (nearly universal)
 	},
 	PRIEST = {
-		[5569]   = 1, -- Phase Shift (PvP): universal
 		[390670] = 2, -- Improved Fade: assume 2/2 (universal)
 	},
 	SHAMAN = {
@@ -377,16 +376,19 @@ local SpecDefaultTalentRanks = {
 	},
 	[256] = {
 		[373035] = 1, -- Twins of the Sun Priestess (Disc Priest): Pain Suppression +1 charge, nearly universal
+		[5570]   = 1, -- Phase Shift (PvP, Discipline): universal
 	},
 	[257] = {
 		[419110] = 1, -- Seraphic Crescendo (Holy Priest): nearly universal
 		[440738] = 1, -- Foreseen Circumstances (Holy Priest): Guardian Spirit +2s, nearly universal
+		[5569]   = 1, -- Phase Shift (PvP, Holy): universal
 	},
 	[105] = {
 		[382552] = 1, -- Improved Ironbark (Restoration Druid): Ironbark -20s (nearly universal)
 	},
 	[258] = {
 		[288733] = 1, -- Intangibility (Shadow Priest): Dispersion -30s (nearly universal)
+		[5568]   = 1, -- Phase Shift (PvP, Shadow): universal
 	},
 	[73] = {
 		[397103] = 1, -- Defender's Aegis (Protection Warrior): Shield Wall +1 charge (nearly universal)
