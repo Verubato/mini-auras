@@ -117,9 +117,9 @@ fw.describe("Emerald Communion detection - commit on CHANNEL_STOP + UNIT_FLAGS",
         obs:_fireUnitFlags("party1")
 
         -- Commit
-        wow.setTime(106.0)
+        wow.setTime(105.0)
         obs:_fireChannelStop("party1")
-        wow.setTime(106.1)
+        wow.setTime(105.1)
         obs:_fireUnitFlags("party1")
 
         fw.eq(committed, 1, "commit should fire on CHANNEL_STOP + UNIT_FLAGS after a predict")
@@ -137,9 +137,9 @@ fw.describe("Emerald Communion detection - commit on CHANNEL_STOP + UNIT_FLAGS",
         obs:_fireUnitFlags("party1")
 
         -- Commit (FLAGS before STOP)
-        wow.setTime(106.0)
+        wow.setTime(105.0)
         obs:_fireUnitFlags("party1")
-        wow.setTime(106.4)
+        wow.setTime(105.4)
         obs:_fireChannelStop("party1")
 
         fw.eq(committed, 1, "event order should not matter for commit")
@@ -157,9 +157,9 @@ fw.describe("Emerald Communion detection - commit on CHANNEL_STOP + UNIT_FLAGS",
         obs:_fireUnitFlags("party1")
 
         -- Commit attempt with stale UNIT_FLAGS
-        wow.setTime(106.0)
+        wow.setTime(105.0)
         obs:_fireChannelStop("party1")
-        wow.setTime(106.6)   -- 0.6s gap > correlationWindow
+        wow.setTime(105.6)   -- 0.6s gap > correlationWindow
         obs:_fireUnitFlags("party1")
 
         fw.eq(committed, 0, "CHANNEL_STOP + UNIT_FLAGS more than 0.5s apart should not commit")
@@ -193,13 +193,13 @@ fw.describe("Emerald Communion detection - commit on CHANNEL_STOP + UNIT_FLAGS",
         wow.setTime(100.1)
         obs:_fireUnitFlags("party1")
 
-        wow.setTime(106.0)
+        wow.setTime(105.0)
         obs:_fireChannelStop("party1")
-        wow.setTime(106.1)
+        wow.setTime(105.1)
         obs:_fireUnitFlags("party1")
 
         fw.eq(committedCastTime, predictedNow, "castTime in commit should equal the predict timestamp")
-        fw.eq(committedNow, 106.1, "now in commit should be the time of the completing second-batch event")
+        fw.eq(committedNow, 105.1, "now in commit should be the time of the completing second-batch event")
     end)
 end)
 
@@ -238,9 +238,9 @@ fw.describe("Emerald Communion detection - predict/commit split", function()
         obs:_fireUnitFlags("party1")
 
         -- Second batch
-        wow.setTime(106.0)
+        wow.setTime(105.0)
         obs:_fireChannelStop("party1")
-        wow.setTime(106.1)
+        wow.setTime(105.1)
         obs:_fireUnitFlags("party1")
 
         fw.eq(predicted, 1, "predict should fire only on the first batch")
@@ -267,6 +267,82 @@ fw.describe("Emerald Communion detection - predict/commit split", function()
         fw.eq(committed, 0, "CHANNEL_STOP after rearm expiry should not commit")
     end)
 
+    fw.it("does not commit when channel duration is shorter than 3.5s (4s min - tolerance)", function()
+        setupEvoker("party1")
+        local committed = 0
+        B:RegisterEmeraldCommunionCallback(function() committed = committed + 1 end)
+
+        wow.setTime(100.0)
+        obs:_fireChannelStart("party1")
+        wow.setTime(100.1)
+        obs:_fireUnitFlags("party1")
+
+        -- 3.0s elapsed < 3.5s minimum
+        wow.setTime(103.1)
+        obs:_fireChannelStop("party1")
+        wow.setTime(103.2)
+        obs:_fireUnitFlags("party1")
+
+        fw.eq(committed, 0, "channel duration under 3.5s should not commit EC")
+    end)
+
+    fw.it("commits when channel duration is exactly at the 3.5s minimum boundary", function()
+        setupEvoker("party1")
+        local committed = 0
+        B:RegisterEmeraldCommunionCallback(function() committed = committed + 1 end)
+
+        wow.setTime(100.0)
+        obs:_fireChannelStart("party1")
+        wow.setTime(100.1)
+        obs:_fireUnitFlags("party1")
+
+        -- 3.5s elapsed = 4s min - 0.5 tolerance
+        wow.setTime(103.6)
+        obs:_fireChannelStop("party1")
+        wow.setTime(103.7)
+        obs:_fireUnitFlags("party1")
+
+        fw.eq(committed, 1, "channel duration at exactly 3.5s should commit EC")
+    end)
+
+    fw.it("commits when channel duration is exactly at the 5.5s maximum boundary", function()
+        setupEvoker("party1")
+        local committed = 0
+        B:RegisterEmeraldCommunionCallback(function() committed = committed + 1 end)
+
+        wow.setTime(100.0)
+        obs:_fireChannelStart("party1")
+        wow.setTime(100.1)
+        obs:_fireUnitFlags("party1")
+
+        -- 5.5s elapsed = 5s max + 0.5 tolerance
+        wow.setTime(105.6)
+        obs:_fireChannelStop("party1")
+        wow.setTime(105.7)
+        obs:_fireUnitFlags("party1")
+
+        fw.eq(committed, 1, "channel duration at exactly 5.5s should commit EC")
+    end)
+
+    fw.it("does not commit when channel duration exceeds 5.5s (5s max + tolerance)", function()
+        setupEvoker("party1")
+        local committed = 0
+        B:RegisterEmeraldCommunionCallback(function() committed = committed + 1 end)
+
+        wow.setTime(100.0)
+        obs:_fireChannelStart("party1")
+        wow.setTime(100.1)
+        obs:_fireUnitFlags("party1")
+
+        -- 6.0s elapsed > 5.5s maximum
+        wow.setTime(106.1)
+        obs:_fireChannelStop("party1")
+        wow.setTime(106.2)
+        obs:_fireUnitFlags("party1")
+
+        fw.eq(committed, 0, "channel duration over 5.5s should not commit EC")
+    end)
+
     fw.it("resets per-unit so a second Evoker's predict/commit is independent", function()
         setupEvoker("party1")
         setupEvoker("party2")
@@ -288,9 +364,9 @@ fw.describe("Emerald Communion detection - predict/commit split", function()
         obs:_fireUnitFlags("party2")
 
         -- party1 commit
-        wow.setTime(106.0)
+        wow.setTime(105.0)
         obs:_fireChannelStop("party1")
-        wow.setTime(106.1)
+        wow.setTime(105.1)
         obs:_fireUnitFlags("party1")
 
         fw.eq(predicted["party1"] or 0, 1, "party1 predict should have fired")

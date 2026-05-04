@@ -281,9 +281,12 @@ end
 
 -- Event-signature detection
 
-local correlationWindow = 0.5  -- all signature events must fire within this window
-local burrowRearmWindow = 12   -- seconds to suppress Burrow re-detection (covers Burrow's active duration)
-local ecRearmWindow     = 10   -- seconds to suppress EC re-detection (covers the ~6s channel duration)
+local correlationWindow  = 0.5  -- all signature events must fire within this window
+local burrowRearmWindow  = 12   -- seconds to suppress Burrow re-detection (covers Burrow's active duration)
+local ecRearmWindow      = 10   -- seconds to suppress EC re-detection (covers the ~6s channel duration)
+local ecMinDuration      = 4    -- EC channels for ~4.6s (stat-dependent); reject anything shorter
+local ecMaxDuration      = 5    -- reject anything longer (non-EC UNIT_FLAGS pair)
+local ecDurationTolerance = 0.5 -- same tolerance used for aura duration matching elsewhere
 
 ---Checks whether the Burrow event signature has fired for an enemy Shaman.
 ---First batch (Burrow started): commits with measuredDuration=0 (predict) and records predict time.
@@ -351,6 +354,9 @@ local function TryCommitEmeraldCommunion(unit, now)
 	if now - ft  > correlationWindow then return end
 	local lastPredict = lastECPredictTime[unit]
 	if not lastPredict or now - lastPredict >= ecRearmWindow then return end
+	local elapsed = csp - lastPredict
+	if elapsed < ecMinDuration - ecDurationTolerance then return end
+	if elapsed > ecMaxDuration + ecDurationTolerance then return end
 	local _, classToken = UnitClass(unit)
 	if classToken ~= "EVOKER" then return end
 	local entry = watchEntries[unit]

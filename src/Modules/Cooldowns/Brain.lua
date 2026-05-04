@@ -91,7 +91,9 @@ local burrowCooldownCallback = nil  -- fn(unit, now, castTime) — second batch 
 local ecSpellId     = 370960
 local ecCooldown    = 180
 local ecTalentId    = 5718
-local ecRearmWindow = 10   -- seconds to expect the CHANNEL_STOP batch (covers the ~6s channel)
+local ecRearmWindow    = 10   -- seconds to expect the CHANNEL_STOP batch (covers the ~6s channel)
+local ecMinDuration = 4   -- EC channels for ~4.6s (stat-dependent); reject anything shorter
+local ecMaxDuration = 5   -- reject anything longer (non-EC UNIT_FLAGS pair)
 -- Callbacks fired on the two EC detection paths.
 local ecPredictCallback  = nil  -- fn(unit, now)          — first batch (channel started)
 local ecCooldownCallback = nil  -- fn(unit, now, castTime) — second batch (channel ended)
@@ -1717,6 +1719,9 @@ local function TryCommitEmeraldCommunion(unit, now)
 	if now - ft  > correlationWindow then return end
 	local lastPredict = lastECPredictTime[unit]
 	if not lastPredict or now - lastPredict >= ecRearmWindow then return end
+	local elapsed = csp - lastPredict
+	if elapsed < ecMinDuration - tolerance then return end
+	if elapsed > ecMaxDuration + tolerance then return end
 	local _, classToken = UnitClass(unit)
 	if classToken ~= "EVOKER" then return end
 	if not fcdTalents:UnitHasTalent(unit, ecTalentId) then return end
