@@ -3,6 +3,8 @@ local _, addon = ...
 local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
 local iconSlotContainer = addon.Core.IconSlotContainer
+local inspectorFacade = addon.Core.InspectorFacade
+local kickData = addon.Core.KickData
 local paused = false
 local testModeActive = false
 local enabled = false
@@ -38,79 +40,6 @@ local minKickCooldown = 15
 
 -- per arena unit computed at arena prep
 
----@class SpecKickInfo
----@field KickCd number?
----@field IsCaster boolean
----@field IsHealer boolean
-
----@type table<number, SpecKickInfo>
-local specInfoBySpecId = {
-	-- Rogue - Kick
-	[259] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Assassination
-	[260] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Outlaw
-	[261] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Subtlety
-
-	-- Warrior - Pummel
-	[71] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Arms
-	[72] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Fury
-	[73] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Protection
-
-	-- Death Knight - Mind Freeze
-	[250] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Blood
-	[251] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Frost
-	[252] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Unholy
-
-	-- Demon Hunter - Disrupt
-	[577] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Havoc
-	[581] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Vengeance
-	[1480] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Devourer
-
-	-- Monk - Spear Hand Strike
-	[268] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Brewmaster
-	[269] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Windwalker
-	[270] = { KickCd = nil, IsCaster = false, IsHealer = true }, -- Mistweaver
-
-	-- Paladin - Rebuke
-	[65] = { KickCd = nil, IsCaster = false, IsHealer = true }, -- Holy
-	[66] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Protection
-	[70] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Retribution
-
-	-- Druid
-	[102] = { KickCd = 60, IsCaster = true, IsHealer = false }, -- Balance (Solar Beam)
-	[103] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Feral (Skull Bash)
-	[104] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Guardian (Skull Bash)
-	[105] = { KickCd = nil, IsCaster = false, IsHealer = true }, -- Restoration
-
-	-- Hunter - Counter Shot
-	[253] = { KickCd = 24, IsCaster = true, IsHealer = false }, -- Beast Mastery
-	[254] = { KickCd = 24, IsCaster = true, IsHealer = false }, -- Marksmanship
-	[255] = { KickCd = 15, IsCaster = false, IsHealer = false }, -- Survival
-
-	-- Mage - Counterspell
-	[62] = { KickCd = 20, IsCaster = true, IsHealer = false }, -- Arcane
-	[63] = { KickCd = 20, IsCaster = true, IsHealer = false }, -- Fire
-	[64] = { KickCd = 20, IsCaster = true, IsHealer = false }, -- Frost
-
-	-- Warlock - Spell Lock (Felhunter)
-	[265] = { KickCd = 24, IsCaster = true, IsHealer = false }, -- Affliction
-	[266] = { KickCd = 30, IsCaster = true, IsHealer = false }, -- Demonology
-	[267] = { KickCd = 24, IsCaster = true, IsHealer = false }, -- Destruction
-
-	-- Shaman - Wind Shear
-	[262] = { KickCd = 12, IsCaster = true, IsHealer = false }, -- Elemental
-	[263] = { KickCd = 12, IsCaster = false, IsHealer = false }, -- Enhancement
-	[264] = { KickCd = 30, IsCaster = false, IsHealer = true }, -- Restoration
-
-	-- Evoker - Quell
-	[1467] = { KickCd = 20, IsCaster = true, IsHealer = false }, -- Devastation
-	[1468] = { KickCd = nil, IsCaster = false, IsHealer = true }, -- Preservation
-	[1473] = { KickCd = nil, IsCaster = true, IsHealer = false }, -- Augmentation
-
-	-- Priest
-	[256] = { KickCd = nil, IsCaster = false, IsHealer = true }, -- Discipline
-	[257] = { KickCd = nil, IsCaster = false, IsHealer = true }, -- Holy
-	[258] = { KickCd = 45, IsCaster = true, IsHealer = false }, -- Shadow (Silence)
-}
 
 ---@class KickTimerModule : IModule
 local M = {}
@@ -275,7 +204,7 @@ local function KickedBySpec(specId)
 		return
 	end
 
-	local specInfo = specInfoBySpecId[specId]
+	local specInfo = kickData.SpecData[specId]
 
 	if not specInfo or not specInfo.KickCd then
 		return
@@ -330,9 +259,9 @@ local function UpdateMinKickCooldown()
 	local specs = GetNumArenaOpponentSpecs()
 
 	for i = 1, specs do
-		local specId = GetArenaOpponentSpec(i)
+		local specId = inspectorFacade:GetUnitSpecId("arena" .. i)
 		if specId and specId > 0 then
-			local info = specInfoBySpecId[specId]
+			local info = kickData.SpecData[specId]
 			local cd = info and info.KickCd
 			if cd then
 				if not found or cd < minCd then
@@ -477,7 +406,7 @@ function M:IsEnabledForPlayer(options)
 		return true
 	end
 
-	local info = specInfoBySpecId[specId]
+	local info = kickData.SpecData[specId]
 	if not info then
 		return false
 	end

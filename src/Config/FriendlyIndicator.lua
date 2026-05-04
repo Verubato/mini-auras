@@ -166,7 +166,7 @@ local function BuildInstance(panel, options)
 
 	local showDefensivesChk = mini:Checkbox({
 		Parent = parent,
-		LabelText = L["Show Defensives"],
+		LabelText = L["Show defensives"],
 		Tooltip = L["Show defensive spell icons."],
 		GetValue = function()
 			return options.ShowDefensives
@@ -181,7 +181,7 @@ local function BuildInstance(panel, options)
 
 	local showImportantChk = mini:Checkbox({
 		Parent = parent,
-		LabelText = L["Show Important"],
+		LabelText = L["Show important"],
 		Tooltip = L["Show important spell icons."],
 		GetValue = function()
 			return options.ShowImportant
@@ -211,6 +211,22 @@ local function BuildInstance(panel, options)
 	showCCChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
 	showCCChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
 
+	local showKicksChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Show interrupts"],
+		Tooltip = L["Show an icon when a friendly unit gets interrupted."],
+		GetValue = function()
+			return options.ShowKicks ~= false
+		end,
+		SetValue = function(value)
+			options.ShowKicks = value
+			config:Apply()
+		end,
+	})
+
+	showKicksChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	showKicksChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
+
 	local showTooltipsChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Show tooltips"],
@@ -224,8 +240,7 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
-	showTooltipsChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
+	showTooltipsChk:SetPoint("TOPLEFT", showDefensivesChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local iconSize = mini:Slider({
 		Parent = parent,
@@ -246,7 +261,7 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", showDefensivesChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", showTooltipsChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local maxIcons = mini:Slider({
 		Parent = parent,
@@ -291,8 +306,6 @@ function M:Build(panel, default, raid)
 		Parent = panel,
 		Lines = {
 			L["Shows CC, defensives, and important auras as one set of icons on party/raid frames."],
-			L["Tip: Disable the CC module for BGs and enable CC within this module."],
-			L["Don't forget to disable the Blizzard 'center big defensives' option when using this."],
 		},
 	})
 

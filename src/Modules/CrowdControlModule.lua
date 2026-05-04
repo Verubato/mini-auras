@@ -6,6 +6,7 @@ local frames = addon.Core.Frames
 local units = addon.Utils.Units
 local iconSlotContainer = addon.Core.IconSlotContainer
 local unitAuraWatcher = addon.Core.UnitAuraWatcher
+local kickTracker = addon.Core.KickTracker
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local wowEx = addon.Utils.WoWEx
@@ -67,6 +68,21 @@ local function UpdateWatcherAuras(entry)
 	local ccState = entry.Watcher:GetCcState()
 	local slotIndex = 1
 	local showTooltips = options.ShowTooltips ~= false
+
+	local kickEntry = not isPet and kickTracker:GetKick(entry.Unit) or nil
+	if kickEntry then
+		container:SetSlot(slotIndex, {
+			Texture = kickEntry.Texture,
+			DurationObject = kickEntry.DurationObject,
+			Alpha = true,
+			ReverseCooldown = options.Icons.ReverseCooldown,
+			ShowMilliseconds = options.Icons.ShowMilliseconds,
+			Glow = options.Icons.Glow,
+			Color = kickEntry.Color,
+			FontScale = db.FontScale,
+		})
+		slotIndex = slotIndex + 1
+	end
 
 	for _, aura in ipairs(ccState) do
 		if slotIndex > container.Count then
@@ -180,9 +196,20 @@ local function EnsureWatcher(anchor, unit)
 		watcher:RegisterCallback(function()
 			UpdateWatcherAuras(entry)
 		end)
+
+		if not isPet then
+			kickTracker:Watch(unit)
+			kickTracker:Subscribe(unit, function()
+				UpdateWatcherAuras(entry)
+			end)
+		end
 	else
 		-- Check if unit has changed
 		if entry.Unit ~= unit then
+			if not units:IsPetOrMinion(entry.Unit) then
+				kickTracker:Unwatch(entry.Unit)
+			end
+
 			-- Unit changed, recreate the watcher
 			entry.Watcher:Dispose()
 			entry.Watcher = unitAuraWatcher:New(unit, nil, { CC = true })
@@ -193,6 +220,13 @@ local function EnsureWatcher(anchor, unit)
 
 			-- Clear the container since it's a different unit now
 			entry.Container:ResetAllSlots()
+
+			if not isPet then
+				kickTracker:Watch(unit)
+				kickTracker:Subscribe(unit, function()
+					UpdateWatcherAuras(entry)
+				end)
+			end
 
 			-- Force immediate refresh for the new unit
 			UpdateWatcherAuras(entry)

@@ -40,7 +40,10 @@ Core\MiniFramework.lua
 Core\InstanceOptions.lua
 Core\IconSlotContainer.lua
 Core\UnitAuraWatcher.lua
+Core\KickData.lua
+Core\KickTracker.lua
 Core\Inspector.lua
+Core\InspectorFacade.lua
 Core\Frames.lua
 Core\TrinketsTracker.lua
 Core\ProfileManager.lua

@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Core.Framework
 local inspector = addon.Core.Inspector
+local inspectorFacade = addon.Core.InspectorFacade
 
 addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
 
@@ -897,28 +898,11 @@ end
 ---@param unit string
 ---@return number|nil
 function M:GetUnitSpecId(unit)
-	-- FrameSort is most authoritative (real-time); inspector is the fallback real-time source;
+	-- InspectorFacade covers FrameSort → Inspector → Arena API.
 	-- unitTalentSpecId covers cross-realm players and situations where the above return nil.
-	local fs = FrameSortApi and FrameSortApi.v3
-	if fs and fs.Inspector then
-		local id = fs.Inspector:GetUnitSpecId(unit)
-		if id then
-			return id
-		end
-		-- FrameSort returned nil; fall through to tooltip check and talent cache.
-	end
-	local specId = inspector:GetUnitSpecId(unit)
+	local specId = inspectorFacade:GetUnitSpecId(unit)
 	if specId then
 		return specId
-	end
-	-- For enemy arena units use GetArenaOpponentSpec, which is authoritative and available
-	-- as soon as ARENA_PREP_OPPONENT_SPECIALIZATIONS fires.
-	local arenaIndex = unit:match("^arena(%d)$")
-	if arenaIndex then
-		local id = GetArenaOpponentSpec and GetArenaOpponentSpec(tonumber(arenaIndex))
-		if id and id > 0 then
-			return id
-		end
 	end
 	local playerName = UnitNameUnmodified(unit)
 	if not playerName or issecretvalue(playerName) then

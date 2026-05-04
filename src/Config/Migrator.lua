@@ -405,6 +405,7 @@ local dbDefaults = {
 				ShowDefensives = true,
 				ShowImportant = true,
 				ShowCC = false,
+				ShowKicks = true,
 				Offset = { X = 0, Y = 0 },
 				Grow = "CENTER",
 				Icons = {
@@ -423,6 +424,7 @@ local dbDefaults = {
 				ShowDefensives = true,
 				ShowImportant = true,
 				ShowCC = true,
+				ShowKicks = true,
 				Offset = { X = 0, Y = 0 },
 				Grow = "CENTER",
 				Icons = {

@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
+local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
@@ -11,6 +12,8 @@ local paused = false
 local containers = {}
 ---@type { string: Watcher }
 local watchers = {}
+-- Callbacks to re-render each container attached to "target"; populated by Attach/Attach* calls.
+local unitUpdateFns = {} -- unit → array of update fns; populated per framework Attach call
 ---@type Db
 local db
 ---@type TestSpell[]
@@ -108,10 +111,24 @@ local function CreateContainer(unitFrame, portrait)
 	return container
 end
 
+---@param unit string
 ---@param watcher Watcher
 ---@param container IconSlotContainer
-local function OnAuraInfo(watcher, container)
+local function OnAuraInfo(unit, watcher, container)
 	if paused then
+		return
+	end
+
+	local kickEntry = kickTracker:GetKick(unit)
+	if kickEntry then
+		container:SetSlot(1, {
+			Texture = kickEntry.Texture,
+			DurationObject = kickEntry.DurationObject,
+			Alpha = true,
+			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
+			FontScale = db.FontScale,
+			Color = kickEntry.Color,
+		})
 		return
 	end
 
@@ -313,8 +330,14 @@ local function Attach(unit, events)
 	end
 
 	watcher:RegisterCallback(function()
-		OnAuraInfo(watcher, container)
+		OnAuraInfo(unit, watcher, container)
 	end)
+	if unit == "target" or unit == "focus" then
+		unitUpdateFns[unit] = unitUpdateFns[unit] or {}
+		unitUpdateFns[unit][#unitUpdateFns[unit] + 1] = function()
+			OnAuraInfo(unit, watcher, container)
+		end
+	end
 	portrait:SetDrawLayer("BACKGROUND", 0)
 	containers[#containers + 1] = container
 end
@@ -354,8 +377,14 @@ local function AttachElvUIFrame(unit)
 	end
 
 	watcher:RegisterCallback(function()
-		OnAuraInfo(watcher, container)
+		OnAuraInfo(unit, watcher, container)
 	end)
+	if unit == "target" or unit == "focus" then
+		unitUpdateFns[unit] = unitUpdateFns[unit] or {}
+		unitUpdateFns[unit][#unitUpdateFns[unit] + 1] = function()
+			OnAuraInfo(unit, watcher, container)
+		end
+	end
 	containers[#containers + 1] = container
 end
 
@@ -380,8 +409,14 @@ local function AttachTPerlFrame(unit)
 	container.Frame:SetFrameLevel(portraitLevel)
 
 	watcher:RegisterCallback(function()
-		OnAuraInfo(watcher, container)
+		OnAuraInfo(unit, watcher, container)
 	end)
+	if unit == "target" or unit == "focus" then
+		unitUpdateFns[unit] = unitUpdateFns[unit] or {}
+		unitUpdateFns[unit][#unitUpdateFns[unit] + 1] = function()
+			OnAuraInfo(unit, watcher, container)
+		end
+	end
 	containers[#containers + 1] = container
 end
 
@@ -423,8 +458,14 @@ local function AttachUUFFrame(unit)
 	end
 
 	watcher:RegisterCallback(function()
-		OnAuraInfo(watcher, container)
+		OnAuraInfo(unit, watcher, container)
 	end)
+	if unit == "target" or unit == "focus" then
+		unitUpdateFns[unit] = unitUpdateFns[unit] or {}
+		unitUpdateFns[unit][#unitUpdateFns[unit] + 1] = function()
+			OnAuraInfo(unit, watcher, container)
+		end
+	end
 	containers[#containers + 1] = container
 end
 
@@ -462,8 +503,14 @@ local function AttachMSUFFrame(unit)
 	end
 
 	watcher:RegisterCallback(function()
-		OnAuraInfo(watcher, container)
+		OnAuraInfo(unit, watcher, container)
 	end)
+	if unit == "target" or unit == "focus" then
+		unitUpdateFns[unit] = unitUpdateFns[unit] or {}
+		unitUpdateFns[unit][#unitUpdateFns[unit] + 1] = function()
+			OnAuraInfo(unit, watcher, container)
+		end
+	end
 	containers[#containers + 1] = container
 end
 
@@ -586,6 +633,21 @@ function M:Init()
 		AttachMSUFFrame("target")
 		AttachMSUFFrame("focus")
 		AttachMSUFFrame("pet")
+	end)
+
+	kickTracker:Watch("target", { "PLAYER_TARGET_CHANGED" })
+	kickTracker:Subscribe("target", function()
+		local fns = unitUpdateFns["target"]
+		if fns then
+			for _, fn in ipairs(fns) do fn() end
+		end
+	end)
+	kickTracker:Watch("focus", { "PLAYER_FOCUS_CHANGED" })
+	kickTracker:Subscribe("focus", function()
+		local fns = unitUpdateFns["focus"]
+		if fns then
+			for _, fn in ipairs(fns) do fn() end
+		end
 	end)
 
 	M:Refresh()

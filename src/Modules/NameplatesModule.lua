@@ -4,6 +4,7 @@ local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
 local units = addon.Utils.Units
 local unitWatcher = addon.Core.UnitAuraWatcher
+local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
@@ -258,6 +259,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 		return
 	end
 
+	local kickEntry = kickTracker:GetKick(data.UnitToken)
 	local ccData = watcher:GetCcState()
 	local defensivesData = watcher:GetDefensiveState()
 	local importantData = watcher:GetImportantState()
@@ -266,15 +268,29 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 	local colorByCategory = combinedOptions.Icons.ColorByCategory
 	local showTooltips = combinedOptions.ShowTooltips ~= false
 	local fontScale = db.FontScale
+	local kickCount = kickEntry and 1 or 0
 
-	-- Calculate slot distribution
+	-- Calculate slot distribution; kick counts as one CC slot
 	local ccSlots, defensiveSlots, importantSlots =
-		slotDistribution.Calculate(container.Count, #ccData, #defensivesData, #importantData)
+		slotDistribution.Calculate(container.Count, #ccData + kickCount, #defensivesData, #importantData)
 
 	local slot = 0
 
-	-- Add CC spells (highest priority)
+	-- Add CC spells (highest priority); kick icon fills the first CC slot
 	if ccSlots > 0 then
+		if kickEntry then
+			slot = slot + 1
+			layerScratch.Texture = kickEntry.Texture
+			layerScratch.DurationObject = kickEntry.DurationObject
+			layerScratch.Alpha = true
+			layerScratch.Glow = iconsGlow
+			layerScratch.ReverseCooldown = iconsReverse
+			layerScratch.FontScale = fontScale
+			layerScratch.Color = kickEntry.Color
+			layerScratch.SpellId = nil
+			container:SetSlot(slot, layerScratch)
+			ccSlots = ccSlots - 1
+		end
 		for i = 1, mathMin(ccSlots, #ccData) do
 			if slot >= container.Count then
 				break
@@ -353,10 +369,11 @@ local function ApplyCcToNameplate(data, watcher, unitOptions)
 		return
 	end
 
+	local kickEntry = kickTracker:GetKick(data.UnitToken)
 	local ccData = watcher:GetCcState()
 	local ccDataCount = #ccData
 
-	if ccDataCount == 0 then
+	if ccDataCount == 0 and not kickEntry then
 		container:ResetAllSlots()
 		return
 	end
@@ -367,9 +384,25 @@ local function ApplyCcToNameplate(data, watcher, unitOptions)
 	local colorByCategory = options.Icons.ColorByCategory
 	local showTooltips = options.ShowTooltips ~= false
 	local fontScale = db.FontScale
-	local limit = mathMin(ccDataCount, container.Count)
+	local slot = 0
 
+	if kickEntry then
+		slot = slot + 1
+		layerScratch.Texture = kickEntry.Texture
+		layerScratch.DurationObject = kickEntry.DurationObject
+		layerScratch.Alpha = true
+		layerScratch.Glow = iconsGlow
+		layerScratch.ReverseCooldown = iconsReverse
+		layerScratch.ShowMilliseconds = showMilliseconds
+		layerScratch.FontScale = fontScale
+		layerScratch.Color = kickEntry.Color
+		layerScratch.SpellId = nil
+		container:SetSlot(slot, layerScratch)
+	end
+
+	local limit = mathMin(ccDataCount, container.Count - slot)
 	for i = 1, limit do
+		slot = slot + 1
 		local entry = ccData[i]
 		layerScratch.Texture = entry.SpellIcon
 		layerScratch.DurationObject = entry.DurationObject
@@ -380,11 +413,11 @@ local function ApplyCcToNameplate(data, watcher, unitOptions)
 		layerScratch.FontScale = fontScale
 		layerScratch.Color = colorByCategory and entry.DispelColor or nil
 		layerScratch.SpellId = showTooltips and entry.SpellId or nil
-		container:SetSlot(i, layerScratch)
+		container:SetSlot(slot, layerScratch)
 	end
 
 	-- Clear any unused slots beyond the CC count
-	for i = limit + 1, container.Count do
+	for i = slot + 1, container.Count do
 		container:SetSlotUnused(i)
 	end
 end
@@ -723,6 +756,8 @@ local function OnNamePlateRemoved(unitToken)
 		watchers[unitToken] = nil
 	end
 
+	kickTracker:Unwatch(unitToken)
+
 	-- Remove all data for this unit token
 	nameplateAnchors[unitToken] = nil
 end
@@ -781,6 +816,11 @@ local function OnNamePlateAdded(unitToken)
 	local sortRule, sortDirection = GetCCSortOptions()
 	watchers[unitToken] = unitWatcher:New(unitToken, nil, nil, sortRule, sortDirection)
 	watchers[unitToken]:RegisterCallback(function()
+		OnAuraDataChanged(unitToken)
+	end)
+
+	kickTracker:Watch(unitToken)
+	kickTracker:Subscribe(unitToken, function()
 		OnAuraDataChanged(unitToken)
 	end)
 

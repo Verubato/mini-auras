@@ -35,7 +35,7 @@ local function BuildSettingsTab(parent, options)
 
 	local includeDefensivesChk = mini:Checkbox({
 		Parent = parent,
-		LabelText = L["Include Defensives"],
+		LabelText = L["Include defensives"],
 		Tooltip = L["Includes defensives in the alerts."],
 		GetValue = function()
 			return options.IncludeDefensives
