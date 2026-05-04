@@ -492,6 +492,37 @@ local function PredictSpellIdForUnit(unit, auraTypes, evidence, castableFilter)
 		-- (e.g. Ice Block requiring Debuff+UnitFlags), so a more permissive class rule matching
 		-- the same aura is not a genuine alternative candidate.
 		if specRule.RequiresEvidence == nil then
+			-- Intra-spec ambiguity: if another rule in the same spec list also matches the same
+			-- aura type (e.g. Avatar and Spell Reflect both IMPORTANT on Warrior), the two spells
+			-- are indistinguishable at prediction time without a cast-ID snapshot.  Suppress rather
+			-- than confidently predicting the wrong one.
+			-- Genuine alternative: different spell, not excluded, passes castable/CD/talent/aura/evidence
+			-- gates identical to tryRuleList, plus symmetric aura-type check (AuraTypeMatchesRule is
+			-- one-directional, so GoAK with Important=false would otherwise match an IMPORTANT aura).
+			local function isAmbiguousAlternative(other)
+				return other.SpellId ~= nil
+					and other.SpellId ~= spellId
+					and not other.ExcludeFromPrediction
+					and not ((castableFilter == "only" or castableFilter == "only_evidence") and not other.CastableOnOthers)
+					and not (castableFilter == "exclude" and other.CastableOnOthers)
+					and not (castableFilter == "only_evidence" and other.RequiresEvidence == nil)
+					and not IsSpellOnCooldown(activeCooldowns, other.SpellId)
+					and RulePassesTalentGates(other, unit, specId, nil)
+					and AuraTypeMatchesRule(auraTypes, other)
+					and (not auraTypes["IMPORTANT"]          or other.Important          == true)
+					and (not auraTypes["BIG_DEFENSIVE"]      or other.BigDefensive       == true)
+					and (not auraTypes["EXTERNAL_DEFENSIVE"] or other.ExternalDefensive  == true)
+					and (not auraTypes["CROWD_CONTROL"]      or other.CrowdControl       == true)
+					and EvidenceMatchesReq(other.RequiresEvidence, evidence)
+			end
+			local specList = specId and rules.BySpec[specId]
+			if specList then
+				for _, other in ipairs(specList) do
+					if isAmbiguousAlternative(other) then
+						return nil, false
+					end
+				end
+			end
 			local classSpellId, classOnCd, classRule = tryRuleList(rules.ByClass[classToken])
 			if classSpellId ~= nil and not classOnCd and classSpellId ~= spellId then
 				-- Genuine ambiguity only when the class rule explicitly covers every aura-type
