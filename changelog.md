@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.17.0
+
+- Fixed kicks showing on portraits when portrait module is disabled.
+- Memory optimisations.
+- Kick icon colour now honours spell colours option.
+
 ## 3.16.0
 
 - Added new feature to show interrupts on nameplates/portraits/raid frames.
