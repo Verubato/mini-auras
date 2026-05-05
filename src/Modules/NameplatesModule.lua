@@ -286,7 +286,7 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
-			layerScratch.Color = kickEntry.Color
+			layerScratch.Color = colorByCategory and kickEntry.Color or nil
 			layerScratch.SpellId = nil
 			container:SetSlot(slot, layerScratch)
 			ccSlots = ccSlots - 1
@@ -395,7 +395,7 @@ local function ApplyCcToNameplate(data, watcher, unitOptions)
 		layerScratch.ReverseCooldown = iconsReverse
 		layerScratch.ShowMilliseconds = showMilliseconds
 		layerScratch.FontScale = fontScale
-		layerScratch.Color = kickEntry.Color
+		layerScratch.Color = colorByCategory and kickEntry.Color or nil
 		layerScratch.SpellId = nil
 		container:SetSlot(slot, layerScratch)
 	end

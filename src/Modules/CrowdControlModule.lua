@@ -78,7 +78,7 @@ local function UpdateWatcherAuras(entry)
 			ReverseCooldown = options.Icons.ReverseCooldown,
 			ShowMilliseconds = options.Icons.ShowMilliseconds,
 			Glow = options.Icons.Glow,
-			Color = kickEntry.Color,
+			Color = options.Icons.ColorByDispelType and kickEntry.Color,
 			FontScale = db.FontScale,
 		})
 		slotIndex = slotIndex + 1

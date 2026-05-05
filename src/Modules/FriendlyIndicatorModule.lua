@@ -101,7 +101,7 @@ local function UpdateWatcherAuras(entry)
 		container:SetSlot(slotIndex, {
 			Texture = kickEntry.Texture,
 			DurationObject = kickEntry.DurationObject,
-			Color = kickEntry.Color,
+			Color = colorByDispelType and kickEntry.Color,
 			Alpha = true,
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
