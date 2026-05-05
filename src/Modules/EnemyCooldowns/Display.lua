@@ -44,6 +44,14 @@ end
 
 -- Scratch table reused by UpdateDisplay to avoid per-call allocation.
 local slotsScratch = {}
+-- Pool of reusable slot descriptor tables indexed by slot position.
+-- SetSlot reads these synchronously and does not store references, so pooling is safe.
+local slotTablePool = {}
+local function GetSlotTable(idx)
+	local t = slotTablePool[idx]
+	if not t then t = {}; slotTablePool[idx] = t else wipe(t) end
+	return t
+end
 
 ---Populates an entry's icon container with the current enemy cooldown state.
 ---Shows committed cooldowns (buff has expired, CD timer running).
@@ -109,28 +117,30 @@ local function UpdateDisplay(entry)
 				local texture = cd.SpellId and not disabledSpells[cd.SpellId] and GetSpellIcon(cd.SpellId)
 				if texture then
 					local startTime = cd.UsedCharges[1].Expiry - cd.Cooldown
-					slots[#slots + 1] = {
-						Texture        = texture,
-						SpellId        = showTooltips and cd.SpellId or nil,
-						DurationObject = wowEx:CreateDuration(startTime, cd.Cooldown),
-						Alpha          = 1,
-						ReverseCooldown = iconOptions.ReverseCooldown,
-						FontScale      = db.FontScale,
-						ChargeText     = tostring(cd.MaxCharges - usedCount),
-					}
+					local idx = #slots + 1
+					local s = GetSlotTable(idx)
+					s.Texture         = texture
+					s.SpellId         = showTooltips and cd.SpellId or nil
+					s.DurationObject  = wowEx:CreateDuration(startTime, cd.Cooldown)
+					s.Alpha           = 1
+					s.ReverseCooldown = iconOptions.ReverseCooldown
+					s.FontScale       = db.FontScale
+					s.ChargeText      = tostring(cd.MaxCharges - usedCount)
+					slots[idx] = s
 				end
 			end
 		elseif now < cd.StartTime + cd.Cooldown then
 			local texture = cd.SpellId and not disabledSpells[cd.SpellId] and GetSpellIcon(cd.SpellId)
 			if texture then
-				slots[#slots + 1] = {
-					Texture = texture,
-					SpellId = showTooltips and cd.SpellId or nil,
-					DurationObject = wowEx:CreateDuration(cd.StartTime, cd.Cooldown),
-					Alpha = 1,
-					ReverseCooldown = iconOptions.ReverseCooldown,
-					FontScale = db.FontScale,
-				}
+				local idx = #slots + 1
+				local s = GetSlotTable(idx)
+				s.Texture         = texture
+				s.SpellId         = showTooltips and cd.SpellId or nil
+				s.DurationObject  = wowEx:CreateDuration(cd.StartTime, cd.Cooldown)
+				s.Alpha           = 1
+				s.ReverseCooldown = iconOptions.ReverseCooldown
+				s.FontScale       = db.FontScale
+				slots[idx] = s
 			end
 		else
 			entry.ActiveCooldowns[cdKey] = nil
@@ -275,28 +285,30 @@ function D:UpdateLinearDisplay(entries)
 					local texture = cd.SpellId and not disabledSpells[cd.SpellId] and GetSpellIcon(cd.SpellId)
 					if texture then
 						local startTime = cd.UsedCharges[1].Expiry - cd.Cooldown
-						slots[#slots + 1] = {
-							Texture        = texture,
-							SpellId        = showTooltips and cd.SpellId or nil,
-							DurationObject = wowEx:CreateDuration(startTime, cd.Cooldown),
-							Alpha          = 1,
-							ReverseCooldown = iconOptions.ReverseCooldown,
-							FontScale      = db.FontScale,
-							ChargeText     = tostring(cd.MaxCharges - usedCount),
-						}
+						local idx = #slots + 1
+						local s = GetSlotTable(idx)
+						s.Texture         = texture
+						s.SpellId         = showTooltips and cd.SpellId or nil
+						s.DurationObject  = wowEx:CreateDuration(startTime, cd.Cooldown)
+						s.Alpha           = 1
+						s.ReverseCooldown = iconOptions.ReverseCooldown
+						s.FontScale       = db.FontScale
+						s.ChargeText      = tostring(cd.MaxCharges - usedCount)
+						slots[idx] = s
 					end
 				end
 			elseif now < cd.StartTime + cd.Cooldown then
 				local texture = cd.SpellId and not disabledSpells[cd.SpellId] and GetSpellIcon(cd.SpellId)
 				if texture then
-					slots[#slots + 1] = {
-						Texture        = texture,
-						SpellId        = showTooltips and cd.SpellId or nil,
-						DurationObject = wowEx:CreateDuration(cd.StartTime, cd.Cooldown),
-						Alpha          = 1,
-						ReverseCooldown = iconOptions.ReverseCooldown,
-						FontScale      = db.FontScale,
-					}
+					local idx = #slots + 1
+					local s = GetSlotTable(idx)
+					s.Texture         = texture
+					s.SpellId         = showTooltips and cd.SpellId or nil
+					s.DurationObject  = wowEx:CreateDuration(cd.StartTime, cd.Cooldown)
+					s.Alpha           = 1
+					s.ReverseCooldown = iconOptions.ReverseCooldown
+					s.FontScale       = db.FontScale
+					slots[idx] = s
 				end
 			else
 				entry.ActiveCooldowns[cdKey] = nil

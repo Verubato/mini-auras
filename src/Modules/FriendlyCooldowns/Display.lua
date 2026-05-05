@@ -45,6 +45,14 @@ end
 
 -- Scratch table reused by UpdateDisplay to avoid per-call allocation.
 local slotsScratch = {}
+-- Pool of reusable slot descriptor tables indexed by slot position.
+-- SetSlot reads these synchronously and does not store references, so pooling is safe.
+local slotTablePool = {}
+local function GetSlotTable(idx)
+	local t = slotTablePool[idx]
+	if not t then t = {}; slotTablePool[idx] = t else wipe(t) end
+	return t
+end
 
 -- Cache: unit -> { specId, hideExternalDefensives, result } - invalidated by the talent callback.
 local staticAbilitiesCache = {}
@@ -243,17 +251,18 @@ local function AppendStaticSlots(slots, entry, now, showTooltips, iconOptions, p
 					chargeText = tostring(ability.MaxCharges)
 				end
 			end
-			slots[#slots + 1] = {
-				Texture = texture,
-				SpellId = showTooltips and ability.SpellId or nil,
-				DurationObject = durationObject,
-				Alpha = 1,
-				ReverseCooldown = iconOptions.ReverseCooldown,
-				Desaturate = iconOptions.DesaturateOnCooldown and onCooldown,
-				Glow = glow,
-				FontScale = db.FontScale,
-				ChargeText = chargeText,
-			}
+			local idx = #slots + 1
+			local s = GetSlotTable(idx)
+			s.Texture = texture
+			s.SpellId = showTooltips and ability.SpellId or nil
+			s.DurationObject = durationObject
+			s.Alpha = 1
+			s.ReverseCooldown = iconOptions.ReverseCooldown
+			s.Desaturate = iconOptions.DesaturateOnCooldown and onCooldown
+			s.Glow = glow
+			s.FontScale = db.FontScale
+			s.ChargeText = chargeText
+			slots[idx] = s
 		end
 	end
 end
@@ -267,15 +276,16 @@ local function AppendDynamicSlots(slots, entry, now, showTooltips, iconOptions)
 			else
 				local texture = GetSpellIcon(cd.SpellId)
 				if texture then
-					slots[#slots + 1] = {
-						Texture = texture,
-						SpellId = showTooltips and cd.SpellId or nil,
-						DurationObject = wowEx:CreateDuration(cd.StartTime, cd.Cooldown),
-						Alpha = 1,
-						ReverseCooldown = iconOptions.ReverseCooldown,
-						Desaturate = iconOptions.DesaturateOnCooldown,
-						FontScale = db.FontScale,
-					}
+					local idx = #slots + 1
+					local s = GetSlotTable(idx)
+					s.Texture = texture
+					s.SpellId = showTooltips and cd.SpellId or nil
+					s.DurationObject = wowEx:CreateDuration(cd.StartTime, cd.Cooldown)
+					s.Alpha = 1
+					s.ReverseCooldown = iconOptions.ReverseCooldown
+					s.Desaturate = iconOptions.DesaturateOnCooldown
+					s.FontScale = db.FontScale
+					slots[idx] = s
 				end
 			end
 		end
@@ -324,15 +334,15 @@ local function UpdateDisplay(entry)
 	-- Trinket: always slot 1 in arena so it lands at the priority position determined by InvertLayout.
 	if showTrinket and IsInArena() then
 		local durationData = trinketsTracker:GetUnitDuration(entry.Unit)
-		slots[1] = {
-			Texture = trinketsTracker:GetDefaultIcon(),
-			DurationObject = durationData,
-			Alpha = true,
-			ReverseCooldown = false,
-			Glow = false,
-			Desaturate = iconOptions.DesaturateOnCooldown,
-			FontScale = db.FontScale,
-		}
+		local s = GetSlotTable(1)
+		s.Texture = trinketsTracker:GetDefaultIcon()
+		s.DurationObject = durationData
+		s.Alpha = true
+		s.ReverseCooldown = false
+		s.Glow = false
+		s.Desaturate = iconOptions.DesaturateOnCooldown
+		s.FontScale = db.FontScale
+		slots[1] = s
 	end
 
 	AppendStaticSlots(slots, entry, now, showTooltips, iconOptions, predictiveGlow)

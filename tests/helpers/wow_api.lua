@@ -91,6 +91,12 @@ function M.setup()
 		return _secretValues[v] == true
 	end
 
+	-- wipe: WoW global that empties a table in-place (all keys set to nil).
+	_G.wipe = function(t)
+		for k in next, t do t[k] = nil end
+		return t
+	end
+
 	-- Timer: execute deferred callbacks synchronously
 	_G.C_Timer = {
 		After = function(delay, fn) fn() end,

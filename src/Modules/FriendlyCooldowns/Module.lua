@@ -30,6 +30,9 @@ local observersEnabled = false
 local eventsFrame
 ---@type Db
 local db
+-- Set to true by the talent callback when it handles a refresh; cleared by the deferred
+-- PLAYER_SPECIALIZATION_CHANGED handler so the defer is skipped when redundant.
+local talentCallbackFiredForSpecChange = false
 
 -- External API callbacks registered via M:RegisterPredictedCallback / M:RegisterMatchedCallback.
 local predictedCallbacks = {}
@@ -690,8 +693,14 @@ function M:Init()
 				M:Refresh()
 			end)
 		elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
-			-- Defer so Talents updates spec/talent data first.
+			-- Defer so Talents updates spec/talent data first. Skip if the talent callback
+			-- already handled the reset+refresh synchronously during this same event dispatch.
 			C_Timer.After(0, function()
+				local handled = talentCallbackFiredForSpecChange
+				talentCallbackFiredForSpecChange = false
+				if handled then
+					return
+				end
 				display:ResetStaticAbilitiesCache()
 				M:RefreshDisplays()
 			end)
@@ -749,6 +758,7 @@ function M:Init()
 		-- callbacks are rare events (LibSpec + PvP sync, not per-frame).
 		display:ResetStaticAbilitiesCache()
 		M:RefreshDisplays()
+		talentCallbackFiredForSpecChange = true
 	end)
 
 	observer:Init()

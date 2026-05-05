@@ -441,7 +441,20 @@ local SpecDefaultTalentRanks = {
 
 local talentCallbacks = {}
 
+-- Cache talentmap by specId: C_Traits.GetNodeInfo/GetEntryInfo/GetDefinitionInfo return new
+-- Lua tables on every call, so rebuilding for the same spec repeatedly is expensive.
+-- The tree structure is stable within a WoW session (no hotfixes mid-session).
+local talentToSpellMapCache = {}
+
+-- processedTalentStrings[playerName] = last talent export string successfully decoded.
+-- Shared by UpdateLocalPlayer and OnLibSpecUpdate so both can avoid re-processing the same
+-- spec+talent selection that fires via multiple events in a single tick.
+local processedTalentStrings = {}
+
 local function BuildTalentToSpellMap(specId)
+	if talentToSpellMapCache[specId] then
+		return talentToSpellMapCache[specId]
+	end
 
 	if not (C_ClassTalents and C_Traits and Constants and Constants.TraitConsts) then
 		return nil
@@ -486,6 +499,7 @@ local function BuildTalentToSpellMap(specId)
 		end
 	end
 
+	talentToSpellMapCache[specId] = talentmap
 	return talentmap
 end
 
@@ -617,9 +631,16 @@ local function OnLibSpecUpdate(specId, playerName, talentString)
 	if not talentString then
 		return
 	end
+	local name = ShortName(playerName)
+	-- Skip if this exact talent string was already decoded for this player. LibSpec fires
+	-- both ACTIVE_COMBAT_CONFIG_CHANGED and TRAIT_CONFIG_UPDATED on a single spec change,
+	-- and UpdateLocalPlayer may also have already decoded the local player's string.
+	if processedTalentStrings[name] == talentString then
+		return
+	end
 	local ranks = GetTalentRanks(specId, talentString)
 	if ranks then
-		local name = ShortName(playerName)
+		processedTalentStrings[name] = talentString
 		unitTalentRanks[name] = ranks
 		unitTalentSpecId[name] = specId
 		if db then
@@ -650,8 +671,15 @@ local function UpdateLocalPlayer()
 		return
 	end
 	local playerName = UnitNameUnmodified("player")
+	-- Skip if this exact spec+talent selection was already decoded. PLAYER_SPECIALIZATION_CHANGED,
+	-- ACTIVE_COMBAT_CONFIG_CHANGED, and TRAIT_CONFIG_UPDATED all fire on a single spec change;
+	-- only the first one should do the expensive BuildTalentToSpellMap+GetTalentRanks work.
+	if unitTalentSpecId[playerName] == specId and processedTalentStrings[playerName] == talentString then
+		return
+	end
 	local ranks = GetTalentRanks(specId, talentString)
 	if ranks then
+		processedTalentStrings[playerName] = talentString
 		unitTalentRanks[playerName] = ranks
 		unitTalentSpecId[playerName] = specId
 		if db then

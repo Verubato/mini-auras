@@ -26,6 +26,14 @@ local function InitColourCurve()
 	end
 end
 
+-- Shared empty state returned when a unit has no live data. Never mutate this.
+local emptyAuraState = {}
+-- Scratch table reused by RebuildStates as a dedup set; wiped at start of each call.
+local rebuildSeen = {}
+-- Hoisted sort comparators so RebuildStates doesn't allocate new closures each call.
+local function byInstanceIdForward(a, b) return a.AuraInstanceID < b.AuraInstanceID end
+local function byInstanceIdReverse(a, b) return a.AuraInstanceID > b.AuraInstanceID end
+
 ---@class UnitAuraWatcher
 local M = {}
 addon.Core.UnitAuraWatcher = M
@@ -167,9 +175,9 @@ end
 ---@param notify boolean?
 function Watcher:ClearState(notify)
 	local state = self.State
-	state.CcAuraState = {}
-	state.ImportantAuraState = {}
-	state.DefensiveState = {}
+	wipe(state.CcAuraState)
+	wipe(state.ImportantAuraState)
+	wipe(state.DefensiveState)
 
 	if notify then
 		NotifyCallbacks(self)
@@ -210,7 +218,7 @@ end
 function Watcher:GetCcState()
 	local unit = self.State.Unit
 	if not unit or not UnitExists(unit) or UnitIsDeadOrGhost(unit) then
-		return {}
+		return emptyAuraState
 	end
 
 	return self.State.CcAuraState
@@ -220,7 +228,7 @@ end
 function Watcher:GetImportantState()
 	local unit = self.State.Unit
 	if not unit or not UnitExists(unit) or UnitIsDeadOrGhost(unit) then
-		return {}
+		return emptyAuraState
 	end
 
 	return self.State.ImportantAuraState
@@ -230,7 +238,7 @@ end
 function Watcher:GetDefensiveState()
 	local unit = self.State.Unit
 	if not unit or not UnitExists(unit) or UnitIsDeadOrGhost(unit) then
-		return {}
+		return emptyAuraState
 	end
 
 	return self.State.DefensiveState
@@ -272,22 +280,29 @@ function Watcher:RebuildStates()
 		return
 	end
 
+	local state = self.State
+
 	---@type AuraTypeFilter?
-	local interestedIn = self.State.InterestedIn
+	local interestedIn = state.InterestedIn
 	local interestedInDefensives = not interestedIn or (interestedIn and interestedIn.Defensives)
 	local interestedInCC = not interestedIn or (interestedIn and interestedIn.CC)
 	local interestedInImportant = not interestedIn or (interestedIn and interestedIn.Important)
 
+	-- Reuse the existing state arrays in-place to avoid per-call allocation.
 	---@type AuraInfo[]
-	local ccSpellData = {}
+	local ccSpellData = state.CcAuraState
 	---@type AuraInfo[]
-	local importantSpellData = {}
+	local importantSpellData = state.ImportantAuraState
 	---@type AuraInfo[]
-	local defensivesSpellData = {}
-	local seen = {}
+	local defensivesSpellData = state.DefensiveState
+	wipe(ccSpellData)
+	wipe(importantSpellData)
+	wipe(defensivesSpellData)
+	local seen = rebuildSeen
+	wipe(seen)
 
-	local sortRule = self.State.SortRule
-	local sortDirection = self.State.SortDirection
+	local sortRule = state.SortRule
+	local sortDirection = state.SortDirection
 
 	-- process big defensives first so we can exclude duplicates from important
 	if interestedInDefensives then
@@ -376,19 +391,13 @@ function Watcher:RebuildStates()
 	-- When unsorted, the API may return auras in a non-deterministic order (observed on Chinese clients).
 	-- Sort by AuraInstanceID to ensure a consistent order, respecting the requested direction.
 	if sortRule == Enum.UnitAuraSortRule.Unsorted then
-		local reversed = sortDirection == Enum.UnitAuraSortDirection.Reverse
-		local byInstanceId = reversed
-			and function(a, b) return a.AuraInstanceID > b.AuraInstanceID end
-			or  function(a, b) return a.AuraInstanceID < b.AuraInstanceID end
+		local byInstanceId = sortDirection == Enum.UnitAuraSortDirection.Reverse
+			and byInstanceIdReverse or byInstanceIdForward
 		table.sort(ccSpellData, byInstanceId)
 		table.sort(importantSpellData, byInstanceId)
 		table.sort(defensivesSpellData, byInstanceId)
 	end
-
-	local state = self.State
-	state.CcAuraState = ccSpellData
-	state.ImportantAuraState = importantSpellData
-	state.DefensiveState = defensivesSpellData
+	-- Arrays were modified in-place; no reassignment needed.
 end
 
 function Watcher:OnEvent(event, ...)

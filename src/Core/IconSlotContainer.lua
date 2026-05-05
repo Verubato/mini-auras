@@ -15,6 +15,10 @@ local function UpdateChargeTextFontSize(chargeText, iconSize, fontScale)
 end
 -- Reused across Layout() calls to avoid a table allocation on the hot path
 local layoutScratch = {}
+-- Reused by UpdateGlow() to avoid allocating glow option tables on every call.
+-- LCG functions read these values immediately and do not store references.
+local glowOptionsScratch = { startAnim = false }
+local glowColorScratch = { 0, 0, 0, 0 }
 local frameIdCounter = 0
 local function NextFrameName(frameType)
 	frameIdCounter = frameIdCounter + 1
@@ -322,10 +326,16 @@ local function UpdateGlow(layerFrame, options)
 
 		-- Only start glow if needed
 		if needsGlow then
-			local glowOptions = { startAnim = false }
+			local glowOptions = glowOptionsScratch
 
 			if options.Color then
-				glowOptions.color = { options.Color.r, options.Color.g, options.Color.b, options.Color.a }
+				glowColorScratch[1] = options.Color.r or 1
+				glowColorScratch[2] = options.Color.g or 1
+				glowColorScratch[3] = options.Color.b or 1
+				glowColorScratch[4] = options.Color.a or 1
+				glowOptions.color = glowColorScratch
+			else
+				glowOptions.color = nil
 			end
 
 			if glowType == "Pixel Glow" and LCG and LCG.PixelGlow_Start then
@@ -377,9 +387,15 @@ local function UpdateGlow(layerFrame, options)
 
 		-- calling ProcGlow_Start on an existing glow will reset its size to match the current icon size
 		if glowType == "Proc Glow" and layerFrame._ProcGlow and LCG and LCG.ProcGlow_Start then
-			local glowOptions = { startAnim = false }
+			local glowOptions = glowOptionsScratch
 			if options.Color then
-				glowOptions.color = { options.Color.r, options.Color.g, options.Color.b, options.Color.a }
+				glowColorScratch[1] = options.Color.r or 1
+				glowColorScratch[2] = options.Color.g or 1
+				glowColorScratch[3] = options.Color.b or 1
+				glowColorScratch[4] = options.Color.a or 1
+				glowOptions.color = glowColorScratch
+			else
+				glowOptions.color = nil
 			end
 			LCG.ProcGlow_Start(layerFrame, glowOptions)
 		end

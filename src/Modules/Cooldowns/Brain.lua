@@ -56,6 +56,13 @@ local precogIgnoreClasses = {
 }
 -- Module-level scratch table reused by FindBestCandidate to avoid per-call allocation.
 local candidateEvidenceScratch = {}
+-- Module-level scratch table reused by PredictRule's consider() closure per candidate.
+local considerEvidenceScratch = {}
+-- Module-level scratch tables reused by OnWatcherChanged to avoid per-call allocation.
+-- unmatchedNewIdsScratch: list of new aura IDs not yet in trackedAuras.
+-- newIdsBySignatureScratch: outer table persists; inner per-sig tables are wiped after each call.
+local unmatchedNewIdsScratch = {}
+local newIdsBySignatureScratch = {}
 -- unit -> boolean: whether the unit's class can feign death (Hunter only).
 -- Populated lazily in RecordUnitFlagsChange so UnitIsFeignDeath is never called for units
 -- that cannot feign, avoiding a pointless API call on every UNIT_FLAGS event in a raid.
@@ -126,21 +133,20 @@ local function BuildEvidenceSet(unit, detectionTime)
 	return ev
 end
 
+-- Pre-computed signature strings indexed by a 4-bit key (B=8, E=4, I=2, C=1).
+-- Eliminates repeated string concatenation on the hot OnWatcherChanged path.
+local auraTypesSigTable = {
+	[0]  = "",     [1]  = "C",    [2]  = "I",    [3]  = "IC",
+	[4]  = "E",    [5]  = "EC",   [6]  = "EI",   [7]  = "EIC",
+	[8]  = "B",    [9]  = "BC",   [10] = "BI",   [11] = "BIC",
+	[12] = "BE",   [13] = "BEC",  [14] = "BEI",  [15] = "BEIC",
+}
 local function AuraTypesSignature(auraTypes)
-	local s = ""
-	if auraTypes["BIG_DEFENSIVE"] then
-		s = s .. "B"
-	end
-	if auraTypes["EXTERNAL_DEFENSIVE"] then
-		s = s .. "E"
-	end
-	if auraTypes["IMPORTANT"] then
-		s = s .. "I"
-	end
-	if auraTypes["CROWD_CONTROL"] then
-		s = s .. "C"
-	end
-	return s
+	local k = (auraTypes["BIG_DEFENSIVE"]      and 8 or 0)
+	        + (auraTypes["EXTERNAL_DEFENSIVE"]  and 4 or 0)
+	        + (auraTypes["IMPORTANT"]           and 2 or 0)
+	        + (auraTypes["CROWD_CONTROL"]       and 1 or 0)
+	return auraTypesSigTable[k]
 end
 
 ---Returns true if every defined flag on the rule matches the aura's type set.
@@ -957,12 +963,16 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 			if anyInWindow and not anyMatch then return end
 		end
 		if useSnapshot then
-			candidateEvidence = { Cast = true }
-			if evidence then
-				for k, v in pairs(evidence) do
-					if k ~= "Cast" then candidateEvidence[k] = v end
-				end
-			end
+			-- Reuse module-level scratch to avoid one table alloc per candidate considered.
+			-- IMPORTANT: all EvidenceSet fields must be listed here explicitly.
+			-- If BuildEvidenceSet gains a new field, add it here too or it won't be copied.
+			local ce = considerEvidenceScratch
+			ce.Cast       = true
+			ce.Debuff     = evidence and evidence.Debuff     or nil
+			ce.Shield     = evidence and evidence.Shield     or nil
+			ce.UnitFlags  = evidence and evidence.UnitFlags  or nil
+			ce.FeignDeath = evidence and evidence.FeignDeath or nil
+			candidateEvidence = ce
 		end
 		-- Use snapshotUnit for talent/class lookup: when candidate is a local player alias
 		-- (e.g. "raid2"), snapshotUnit ("player") carries the correct spec data.
@@ -1490,13 +1500,15 @@ local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 	-- Stored as a list per unit so all events from a single keypress are captured.
 	local castSpellIdSnapshot = {}
 	for snapshotUnit, list in pairs(lastCastSpellIds) do
-		local filtered = {}
+		-- Only allocate filtered when at least one entry falls within the window (common case: none).
+		local filtered
 		for _, data in ipairs(list) do
 			if math.abs(data.Time - now) <= castWindow then
+				if not filtered then filtered = {} end
 				filtered[#filtered + 1] = data
 			end
 		end
-		if #filtered > 0 then
+		if filtered then
 			castSpellIdSnapshot[snapshotUnit] = filtered
 		end
 	end
@@ -1589,19 +1601,31 @@ local function OnWatcherChanged(entry, watcher, candidateUnits)
 	-- On full updates the server reassigns aura instance IDs, so a tracked ID disappearing does
 	-- not necessarily mean the buff dropped. We match orphaned entries to new IDs by AuraTypes
 	-- signature - the only non-secret identity information available to us.
-	local unmatchedNewIds = {}
+	local unmatchedNewIds = unmatchedNewIdsScratch
+	local unmatchedCount = 0
 	for id in pairs(currentIds) do
 		if not trackedAuras[id] then
-			unmatchedNewIds[#unmatchedNewIds + 1] = id
+			unmatchedCount = unmatchedCount + 1
+			unmatchedNewIds[unmatchedCount] = id
 		end
+	end
+	-- Trim stale entries from a previous call with a longer list.
+	for i = unmatchedCount + 1, #unmatchedNewIds do
+		unmatchedNewIds[i] = nil
 	end
 
 	-- Group unmatched new IDs by their AuraTypes signature.
-	local newIdsBySignature = {}
-	for _, id in ipairs(unmatchedNewIds) do
+	-- Inner bucket tables persist across calls and are wiped after use (see end of function).
+	local newIdsBySignature = newIdsBySignatureScratch
+	for i = 1, unmatchedCount do
+		local id = unmatchedNewIds[i]
 		local sig = AuraTypesSignature(currentIds[id].AuraTypes)
-		newIdsBySignature[sig] = newIdsBySignature[sig] or {}
-		newIdsBySignature[sig][#newIdsBySignature[sig] + 1] = id
+		local bucket = newIdsBySignature[sig]
+		if not bucket then
+			bucket = {}
+			newIdsBySignature[sig] = bucket
+		end
+		bucket[#bucket + 1] = id
 	end
 
 	local cooldownCommitted = false
@@ -1645,6 +1669,11 @@ local function OnWatcherChanged(entry, watcher, candidateUnits)
 	-- case where the detected entry differs from the caster entry (e.g. external defensives).
 	if displayCallback and cooldownCommitted then
 		displayCallback(entry)
+	end
+
+	-- Wipe signature buckets so stale IDs don't bleed into the next call.
+	for _, bucket in pairs(newIdsBySignatureScratch) do
+		wipe(bucket)
 	end
 end
 
