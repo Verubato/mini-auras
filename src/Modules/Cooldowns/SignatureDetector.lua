@@ -4,22 +4,22 @@ local _, addon = ...
 addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
 
 -- All signature events must arrive within this window of each other to count as one batch.
-local CORRELATION_WINDOW  = 0.5
+local correlationWindow  = 0.5
 -- Burrow (SpellId 409293): UNIT_FLAGS + UNIT_MODEL_CHANGED + UNIT_PORTRAIT_UPDATE.
 -- Two batches fire per cast: first when entering Burrow (predict), second when exiting (commit).
 -- PvP talent ID differs by spec: 5574 (Elemental), 5575 (Enhancement), 5576 (Restoration).
-local BURROW_TALENT_ID_ELEMENTAL = 5574
-local BURROW_TALENT_ID_ENHANCE   = 5575
-local BURROW_TALENT_ID_RESTO     = 5576
-local BURROW_REARM_WINDOW = 12   -- seconds to expect the exit batch (covers Burrow's active phase)
+local burrowTalentIdElemental = 5574
+local burrowTalentIdEnhance   = 5575
+local burrowTalentIdResto     = 5576
+local burrowRearmWindow = 12   -- seconds to expect the exit batch (covers Burrow's active phase)
 -- Emerald Communion (Evoker PvP talent 5718, SpellId 370960): two-phase detection.
--- Predict: CHANNEL_START + UNIT_FLAGS within CORRELATION_WINDOW.
--- Commit:  CHANNEL_STOP  + UNIT_FLAGS within CORRELATION_WINDOW after a valid channel duration.
-local EC_TALENT_ID        = 5718
-local EC_REARM_WINDOW     = 10   -- seconds to expect the CHANNEL_STOP batch (covers the ~6s channel)
-local EC_MIN_DURATION     = 4    -- EC channels for ~4.6s (stat-dependent); reject anything shorter
-local EC_MAX_DURATION     = 5    -- reject anything longer (non-EC UNIT_FLAGS pair)
-local EC_DURATION_TOLERANCE = 0.5
+-- Predict: CHANNEL_START + UNIT_FLAGS within correlationWindow.
+-- Commit:  CHANNEL_STOP  + UNIT_FLAGS within correlationWindow after a valid channel duration.
+local ecTalentId        = 5718
+local ecRearmWindow     = 10   -- seconds to expect the CHANNEL_STOP batch (covers the ~6s channel)
+local ecMinDuration     = 4    -- EC channels for ~4.6s (stat-dependent); reject anything shorter
+local ecMaxDuration     = 5    -- reject anything longer (non-EC UNIT_FLAGS pair)
+local ecDurationTolerance = 0.5
 
 ---@class SignatureDetector
 local SD = {}
@@ -54,20 +54,20 @@ function methods:_tryCommitBurrow(unit, now)
 	local mt = self._model[unit]
 	local pt = self._portrait[unit]
 	if not ft or not mt or not pt then return end
-	if now - ft > CORRELATION_WINDOW then return end
-	if now - mt > CORRELATION_WINDOW then return end
-	if now - pt > CORRELATION_WINDOW then return end
+	if now - ft > correlationWindow then return end
+	if now - mt > correlationWindow then return end
+	if now - pt > correlationWindow then return end
 	local _, classToken = UnitClass(unit)
 	if classToken ~= "SHAMAN" then return end
 	if self.checkTalent
-	   and not self.talents:UnitHasTalent(unit, BURROW_TALENT_ID_ELEMENTAL)
-	   and not self.talents:UnitHasTalent(unit, BURROW_TALENT_ID_ENHANCE)
-	   and not self.talents:UnitHasTalent(unit, BURROW_TALENT_ID_RESTO) then return end
+	   and not self.talents:UnitHasTalent(unit, burrowTalentIdElemental)
+	   and not self.talents:UnitHasTalent(unit, burrowTalentIdEnhance)
+	   and not self.talents:UnitHasTalent(unit, burrowTalentIdResto) then return end
 	self._flags[unit]    = nil
 	self._model[unit]    = nil
 	self._portrait[unit] = nil
 	local lastPredict = self._bpred[unit]
-	if lastPredict and now - lastPredict < BURROW_REARM_WINDOW then
+	if lastPredict and now - lastPredict < burrowRearmWindow then
 		self._bpred[unit] = nil
 		if self.burrowCommit then self.burrowCommit(unit, now, lastPredict) end
 	else
@@ -80,11 +80,11 @@ function methods:_tryPredictEC(unit, now)
 	local cst = self._cstart[unit]
 	local ft  = self._flags[unit]
 	if not cst or not ft then return end
-	if now - cst > CORRELATION_WINDOW then return end
-	if now - ft  > CORRELATION_WINDOW then return end
+	if now - cst > correlationWindow then return end
+	if now - ft  > correlationWindow then return end
 	local _, classToken = UnitClass(unit)
 	if classToken ~= "EVOKER" then return end
-	if self.checkTalent and not self.talents:UnitHasTalent(unit, EC_TALENT_ID) then return end
+	if self.checkTalent and not self.talents:UnitHasTalent(unit, ecTalentId) then return end
 	self._ecpred[unit]  = now
 	self._cstart[unit]  = nil
 end
@@ -93,16 +93,16 @@ function methods:_tryCommitEC(unit, now)
 	local csp = self._cstop[unit]
 	local ft  = self._flags[unit]
 	if not csp or not ft then return end
-	if now - csp > CORRELATION_WINDOW then return end
-	if now - ft  > CORRELATION_WINDOW then return end
+	if now - csp > correlationWindow then return end
+	if now - ft  > correlationWindow then return end
 	local lastPredict = self._ecpred[unit]
-	if not lastPredict or now - lastPredict >= EC_REARM_WINDOW then return end
+	if not lastPredict or now - lastPredict >= ecRearmWindow then return end
 	local dur = csp - lastPredict
-	if dur < EC_MIN_DURATION - EC_DURATION_TOLERANCE then return end
-	if dur > EC_MAX_DURATION + EC_DURATION_TOLERANCE then return end
+	if dur < ecMinDuration - ecDurationTolerance then return end
+	if dur > ecMaxDuration + ecDurationTolerance then return end
 	local _, classToken = UnitClass(unit)
 	if classToken ~= "EVOKER" then return end
-	if self.checkTalent and not self.talents:UnitHasTalent(unit, EC_TALENT_ID) then return end
+	if self.checkTalent and not self.talents:UnitHasTalent(unit, ecTalentId) then return end
 	self._ecpred[unit]  = nil
 	self._cstop[unit]   = nil
 	if self.ecCommit then self.ecCommit(unit, now, lastPredict) end
