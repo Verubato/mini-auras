@@ -9,6 +9,7 @@ local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
 local testModeActive = false
 local paused = false
+local enabled = false
 local containers = {}
 ---@type { string: Watcher }
 local watchers = {}
@@ -115,7 +116,7 @@ end
 ---@param watcher Watcher
 ---@param container IconSlotContainer
 local function OnAuraInfo(unit, watcher, container)
-	if paused then
+	if not enabled or paused then
 		return
 	end
 
@@ -581,10 +582,10 @@ local function GetCCSortOptions()
 end
 
 function M:Refresh()
-	local moduleEnabled = moduleUtil:IsModuleEnabled(ModuleName.Portrait)
+	enabled = moduleUtil:IsModuleEnabled(ModuleName.Portrait)
 
 	-- If disabled, disable watchers and clear
-	if not moduleEnabled then
+	if not enabled then
 		DisableWatchers()
 		return
 	end
