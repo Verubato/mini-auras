@@ -190,6 +190,7 @@ local function EnsureWatcher(anchor, unit)
 			Watcher = watcher,
 			Anchor = anchor,
 			Unit = unit,
+			KickKey = 0,
 		}
 		watchers[anchor] = entry
 
@@ -199,7 +200,7 @@ local function EnsureWatcher(anchor, unit)
 
 		if not isPet then
 			kickTracker:Watch(unit)
-			kickTracker:Subscribe(unit, function()
+			entry.KickKey = kickTracker:Subscribe(unit, function()
 				UpdateWatcherAuras(entry)
 			end)
 		end
@@ -207,7 +208,7 @@ local function EnsureWatcher(anchor, unit)
 		-- Check if unit has changed
 		if entry.Unit ~= unit then
 			if not units:IsPetOrMinion(entry.Unit) then
-				kickTracker:Unwatch(entry.Unit)
+				kickTracker:Unsubscribe(entry.Unit, entry.KickKey)
 			end
 
 			-- Unit changed, recreate the watcher
@@ -223,7 +224,7 @@ local function EnsureWatcher(anchor, unit)
 
 			if not isPet then
 				kickTracker:Watch(unit)
-				kickTracker:Subscribe(unit, function()
+				entry.KickKey = kickTracker:Subscribe(unit, function()
 					UpdateWatcherAuras(entry)
 				end)
 			end
