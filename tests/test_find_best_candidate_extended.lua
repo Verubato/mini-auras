@@ -62,24 +62,26 @@ fw.describe("FindBestCandidate - FeignDeath suppresses UnitFlags evidence", func
         fw.eq(unit, "party1", "ruleUnit")
     end)
 
-    fw.it("no cooldown committed when FD+AotT pressed simultaneously (FeignDeath evidence only)", function()
+    fw.it("SotF matches when FD+AotT pressed simultaneously (FeignDeath evidence, no UnitFlags)", function()
         wow.setUnitClass("party1", "HUNTER")
         -- FeignDeath in evidence; UnitFlags absent (FD suppressed it in RecordUnitFlagsChange).
         -- AotT: needs UnitFlags (absent) -> fails.
-        -- SotF: RequiresEvidence=false (requires NO evidence) -> fails because FeignDeath is present.
+        -- SotF: Exclude=UnitFlags -> UnitFlags absent -> matches.
         local t = makeTracked(BIG, 1.0, { party1 = 1.0 }, { Cast = true, FeignDeath = true })
         local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 8.0, {})
-        fw.is_nil(rule, "no rule should match when FD+AotT simultaneous press produces only FeignDeath evidence")
+        fw.not_nil(rule, "SotF should match when UnitFlags is absent")
+        fw.eq(rule.SpellId, 264735, "Survival of the Fittest")
     end)
 
-    fw.it("FeignDeath-only evidence -> no match (AotT excluded, SotF requires no evidence)", function()
+    fw.it("SotF matches with FeignDeath-only evidence (AotT excluded, UnitFlags absent)", function()
         wow.setUnitClass("party1", "HUNTER")
         -- FeignDeath evidence only; no UnitFlags, no Cast.
         -- AotT needs UnitFlags (absent) -> fails.
-        -- SotF: RequiresEvidence=false -> fails because FeignDeath evidence is present.
+        -- SotF: Exclude=UnitFlags -> UnitFlags absent -> matches.
         local t = makeTracked(BIG, 1.0, {}, { FeignDeath = true })
         local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 8.0, {})
-        fw.is_nil(rule, "no rule should match with FeignDeath-only evidence")
+        fw.not_nil(rule, "SotF should match with FeignDeath-only evidence")
+        fw.eq(rule.SpellId, 264735, "Survival of the Fittest")
     end)
 end)
 

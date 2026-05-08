@@ -1006,7 +1006,7 @@ local rules = {
 				MinDuration = true,
 				SpellId = 264735,
 				MaxCharges = 2,
-				RequiresEvidence = false,
+				RequiresEvidence = { Exclude = "UnitFlags" },
 			}, -- Survival of the Fittest
 			{
 				BuffDuration = 8,
@@ -1017,7 +1017,7 @@ local rules = {
 				MinDuration = true,
 				SpellId = 264735,
 				MaxCharges = 2,
-				RequiresEvidence = false,
+				RequiresEvidence = { Exclude = "UnitFlags" },
 			}, -- Survival of the Fittest + Survival of the Fittest talent (+2s)
 			{
 				BuffDuration = 3,

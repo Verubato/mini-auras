@@ -180,10 +180,11 @@ local function AuraTypeMatchesRule(auraTypes, rule)
 end
 
 ---Returns true if evidence satisfies a RequiresEvidence value.
----  nil         -> no constraint (always ok)
----  false       -> requires no evidence present
----  string      -> that key must be present in evidence
----  string[]    -> ALL listed keys must be present in evidence
+---  nil                  -> no constraint (always ok)
+---  false                -> requires no evidence present
+---  string               -> that key must be present in evidence
+---  string[]             -> ALL listed keys must be present in evidence
+---  { Exclude = string } -> that key must be absent from evidence
 ---@param req any
 ---@param evidence EvidenceSet?
 ---@return boolean
@@ -198,6 +199,15 @@ local function EvidenceMatchesReq(req, evidence)
 		return evidence ~= nil and evidence[req] == true
 	end
 	if type(req) == "table" then
+		if req.Exclude then
+			local excl = type(req.Exclude) == "string" and { req.Exclude } or req.Exclude
+			for _, k in ipairs(excl) do
+				if evidence and evidence[k] then
+					return false
+				end
+			end
+			return true
+		end
 		if not evidence then
 			return false
 		end
