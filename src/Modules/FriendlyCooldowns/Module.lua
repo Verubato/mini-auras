@@ -294,25 +294,7 @@ function M:Init()
 
 	brain:RegisterWithObserver(observer)
 
-	-- Burrow predict: Burrow started — show glow while the Shaman is underground.
-	brain:RegisterBurrowPredictCallback(function(unit, castTime)
-		local casterEntries = {}
-		for _, e in pairs(watchEntries) do
-			if SameUnit(e.Unit, unit) then
-				casterEntries[#casterEntries + 1] = e
-			end
-		end
-		if #casterEntries == 0 then return end
-		local spellId = 409293
-		for _, e in ipairs(casterEntries) do
-			e.PredictedGlows[spellId] = (e.PredictedGlows[spellId] or 0) + 1
-			e.PredictedGlowDurations[spellId] = nil
-			display:UpdateDisplay(e)
-			ShowHideEntryContainer(e.Container.Frame, e.Anchor)
-		end
-	end)
-
-	-- Burrow commit: Burrow ended — clear glow and commit CD with accurate remaining time.
+	-- Burrow commit: Burrow ended — commit CD with accurate remaining time.
 	brain:RegisterBurrowCallback(function(unit, now, castTime)
 		local casterEntries = {}
 		for _, e in pairs(watchEntries) do
@@ -325,15 +307,6 @@ function M:Init()
 		local cooldown = 120
 		local remaining = math.max(0, cooldown - (now - castTime))
 		for _, e in ipairs(casterEntries) do
-			local count = e.PredictedGlows[spellId]
-			if count then
-				if count <= 1 then
-					e.PredictedGlows[spellId] = nil
-					e.PredictedGlowDurations[spellId] = nil
-				else
-					e.PredictedGlows[spellId] = count - 1
-				end
-			end
 			local existing = e.ActiveCooldowns[spellId]
 			if existing and existing.CleanupTimer then
 				existing.CleanupTimer:Cancel()

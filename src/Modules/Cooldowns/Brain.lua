@@ -1858,22 +1858,15 @@ function B:RegisterWithObserver(obs)
 	obs:RegisterChannelStopCallback(RecordChannelStop)
 end
 
----Registers the callback fired when the first Burrow event batch fires (Burrow started).
----fn(unit, now) where now is the predict timestamp.
----@param fn fun(unit: string, now: number)
-function B:RegisterBurrowPredictCallback(fn)
-	sd.burrowPredict = fn
-end
-
 ---Registers the callback fired when the second Burrow event batch fires (Burrow ended).
----fn(unit, now, castTime) where castTime is the predict timestamp (first batch).
+---fn(unit, now, castTime) where castTime is the arm timestamp (first batch).
 ---@param fn fun(unit: string, now: number, castTime: number)
 function B:RegisterBurrowCallback(fn)
 	sd.burrowCommit = fn
 end
 
 ---Registers the callback fired when the second EC event batch fires (channel ended).
----fn(unit, now, castTime) where castTime is the predict timestamp (channel started).
+---fn(unit, now, castTime) where castTime is the arm timestamp (channel started).
 ---@param fn fun(unit: string, now: number, castTime: number)
 function B:RegisterEmeraldCommunionCallback(fn)
 	sd.ecCommit = fn

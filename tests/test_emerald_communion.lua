@@ -25,7 +25,7 @@ local obs  = mods.observer
 
 local EC_TALENT = 5718
 local EC_WINDOW = 0.5
-local EC_REARM  = 10
+local EC_REARM  = 6.5
 
 local function reset()
     B._TestReset()
@@ -237,7 +237,7 @@ fw.describe("Emerald Communion detection - arm/commit split", function()
         fw.eq(committed, 1, "commit should fire exactly once on the second batch")
     end)
 
-    fw.it("does not commit when CHANNEL_STOP arrives after the 10s rearm window", function()
+    fw.it("does not commit when CHANNEL_STOP arrives after the 6.5s rearm window", function()
         setupEvoker("party1")
         local committed = 0
         B:RegisterEmeraldCommunionCallback(function() committed = committed + 1 end)
@@ -249,7 +249,7 @@ fw.describe("Emerald Communion detection - arm/commit split", function()
         obs:_fireUnitFlags("party1")
 
         -- Channel stop arrives after rearm has expired
-        wow.setTime(111.0)   -- 10.9s after arm (> 10s rearm)
+        wow.setTime(111.0)   -- 10.9s after arm (> 6.5s rearm)
         obs:_fireChannelStop("party1")
         wow.setTime(111.1)
         obs:_fireUnitFlags("party1")
