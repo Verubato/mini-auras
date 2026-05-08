@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.17.1
+
+- Potential fix for lingering kick CC icon.
+- Fix for hunter wall sometimes not tracking.
+- Fixed enemy Shaman Burrow tracking at start of arena.
+- Fix for sometimes showing wrong friendly cooldown icons.
+
 ## 3.17.0
 
 - Fixed kicks showing on portraits when portrait module is disabled.
