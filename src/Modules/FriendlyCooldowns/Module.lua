@@ -126,6 +126,14 @@ local function EnsureEntry(anchor, unit)
 	-- for externals cast by the player onto others. The container is hidden in M:Refresh.
 	local entry = watchEntries[anchor]
 
+	local currentGuid = UnitGUID(unit)
+	local hasGuid = currentGuid ~= nil and not issecretvalue(currentGuid)
+	-- Same token, different player: DK leaves and Druid joins as "raid5". The token
+	-- check below won't fire, but the GUID has changed so all stale data must be cleared.
+	local guidChanged = hasGuid and entry ~= nil
+		and entry.UnitGuid ~= nil
+		and entry.UnitGuid ~= currentGuid
+
 	if not entry then
 		local size = tonumber(anchorOptions.Icons.Size) or 32
 		local maxIcons = tonumber(anchorOptions.Icons.MaxIcons) or 3
@@ -135,6 +143,7 @@ local function EnsureEntry(anchor, unit)
 		entry = {
 			Anchor = anchor,
 			Unit = unit,
+			UnitGuid = hasGuid and currentGuid or nil,
 			Container = container,
 			TrackedAuras = {},
 			ActiveCooldowns = {},
@@ -144,8 +153,8 @@ local function EnsureEntry(anchor, unit)
 		}
 		watchEntries[anchor] = entry
 		observer:Watch(entry)
-	elseif entry.Unit ~= unit then
-		-- Unit token changed (e.g. frame reassigned after group change or arena zone-in).
+	elseif entry.Unit ~= unit or guidChanged then
+		-- Unit token changed, or same token but a different player now occupies the slot.
 		entry.Unit = unit
 		entry.IsExcludedSelf = anchorOptions.ExcludeSelf and SameUnit(unit, "player") or false
 		entry.TrackedAuras = {}
@@ -153,6 +162,10 @@ local function EnsureEntry(anchor, unit)
 		entry.PredictedGlows = {}
 		entry.PredictedGlowDurations = {}
 		entry.Container:ResetAllSlots()
+		-- Stale spec data from the previous occupant (e.g. DK spec still cached in the
+		-- Inspector by unit token) would cause the wrong class's icons to render until the
+		-- Inspector delivers a fresh result. Invalidate now so GetStaticAbilities rebuilds.
+		display:InvalidateStaticAbilitiesCache(unit)
 		-- Update container visibility immediately so that frame-visibility hooks (e.g.
 		-- CompactUnitFrame_UpdateVisible) that fire before the next M:Refresh see the
 		-- correct hidden/shown state rather than whatever was left from the previous unit.
@@ -165,6 +178,11 @@ local function EnsureEntry(anchor, unit)
 			end
 		end
 		observer:Rewatch(entry)
+	end
+
+	-- Always refresh the cached GUID so the next call can detect a player swap.
+	if hasGuid and entry then
+		entry.UnitGuid = currentGuid
 	end
 
 	return entry
@@ -896,6 +914,7 @@ end
 ---@class FcdWatchEntry
 ---@field Anchor          table
 ---@field Unit            string
+---@field UnitGuid        string?
 ---@field Container       IconSlotContainer
 ---@field TrackedAuras    table<number, FcdTrackedAura>              keyed by auraInstanceID
 ---@field ActiveCooldowns table<number|string, FcdCooldownEntry>     keyed by rule.SpellId or primaryAuraType_buffDuration_cooldown
