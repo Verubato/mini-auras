@@ -367,6 +367,165 @@ local function runRuleTests(source, specId, classToken, rule)
             end)
         end
     end
+
+    -- ExcludeIfTalent suppression: with the exclusion talent active, FindBestCandidate must
+    -- not return this rule.  A sibling with RequiresTalent = ExcludeIfTalent may match
+    -- instead (different SpellId is fine; same SpellId via CanCancelEarly at the test
+    -- duration is ambiguous and skipped).  Only the enemy path is tested: it calls
+    -- MatchRule directly through FindBestCandidate with no candidate ambiguity.
+    if rule.ExcludeIfTalent and not rule.ExcludeFromEnemyTracking then
+        local excludeId = type(rule.ExcludeIfTalent) == "table"
+                          and rule.ExcludeIfTalent[1]
+                           or rule.ExcludeIfTalent
+        -- Skip when a sibling with the same SpellId could match at rule.BuffDuration
+        -- (e.g. Guardian Spirit 12s CanCancelEarly matching at the 10s test duration),
+        -- because we cannot distinguish the excluded rule from the sibling by SpellId.
+        local matchTol = 0.5
+        local function samespellIdSiblingMatchesAt(dur)
+            local function check(list)
+                if not list then return false end
+                for _, r in ipairs(list) do
+                    if r ~= rule and r.SpellId == rule.SpellId and not r.NoAura then
+                        if r.MinDuration and dur >= r.BuffDuration - matchTol then return true end
+                        if r.CanCancelEarly and dur <= r.BuffDuration + matchTol
+                        and (not r.MinCancelDuration or dur >= r.MinCancelDuration) then return true end
+                        if not r.MinDuration and not r.CanCancelEarly
+                        and math.abs(dur - r.BuffDuration) <= matchTol then return true end
+                    end
+                end
+                return false
+            end
+            if specId and check(rules.BySpec[specId]) then return true end
+            return check(rules.ByClass[classToken])
+        end
+        if not samespellIdSiblingMatchesAt(rule.BuffDuration) then
+            fw.it(label .. " | suppressed-when-ExcludeIfTalent", function()
+                setupEnemy()
+                mods.talents._setTalent("arena1", excludeId, true)
+
+                local entry   = loader.makeEntry("arena1")
+                local tracked = {
+                    StartTime           = 1.0,
+                    AuraTypes           = auraTypes,
+                    Evidence            = buildNonCastEvidence(rule),
+                    CastSnapshot        = {},
+                    CastSpellIdSnapshot = {},
+                }
+                local matched = B:FindBestCandidate(
+                    entry, tracked, rule.BuffDuration, {}, { IgnoreTalentRequirements = true }
+                )
+                -- The excluded rule must not be returned.  nil (nothing matched) is fine.
+                -- A sibling with a different SpellId is also fine.
+                if matched then
+                    fw.neq(matched.SpellId, rule.SpellId, label .. " ExcludeIfTalent should suppress")
+                end
+            end)
+        end
+    end
+
+    -- MinDuration extended-duration commit: a rule with MinDuration=true must also commit when
+    -- the aura lasts significantly longer than BuffDuration (e.g. talent-extended Combustion).
+    -- Catches accidental removal of MinDuration=true or inversion of the >= comparison.
+    if rule.MinDuration then
+        local extDuration = rule.BuffDuration + 10
+        local elabel      = label .. " | MinDuration@" .. extDuration .. "s"
+
+        itCommit(elabel .. " | friendly-commit", function()
+            setupFriendly()
+            local committed = nil
+            B:RegisterCooldownCallback(function(_, cdKey) committed = cdKey end)
+
+            wow.setTime(0)
+            fireNonCastEvidence(rule, targetUnit)
+
+            local entry   = loader.makeEntry(targetUnit)
+            local watcher = makePresenceWatcher(targetUnit, auraTypes, SIM_ID)
+            observer:_fireAuraChanged(entry, watcher, candidates)
+
+            wow.advanceTime(extDuration)
+            observer:_fireAuraChanged(entry, loader.makeWatcher({}, {}), candidates)
+
+            fw.eq(committed, rule.SpellId, elabel)
+        end)
+
+        if not rule.ExcludeFromEnemyTracking then
+            fw.it(elabel .. " | enemy-commit", function()
+                setupEnemy()
+
+                local entry   = loader.makeEntry("arena1")
+                local tracked = {
+                    StartTime           = 1.0,
+                    AuraTypes           = auraTypes,
+                    Evidence            = buildNonCastEvidence(rule),
+                    CastSnapshot        = {},
+                    CastSpellIdSnapshot = {},
+                }
+                local matched = B:FindBestCandidate(
+                    entry, tracked, extDuration, {}, { IgnoreTalentRequirements = true }
+                )
+                fw.not_nil(matched, elabel .. " enemy got nil")
+                if matched then
+                    fw.eq(matched.SpellId, rule.SpellId, elabel .. " enemy SpellId")
+                end
+            end)
+        end
+    end
+
+    -- MinCancelDuration floor rejection: a duration just below MinCancelDuration must not match.
+    -- Catches MinCancelDuration set too low or accidentally removed.
+    -- Skipped when another rule in the same spec/class could incidentally match at the test
+    -- duration (would create a spurious interference).
+    if rule.CanCancelEarly and rule.MinCancelDuration and rule.MinCancelDuration >= 1
+    and not rule.ExcludeFromEnemyTracking then
+        local rejectDur = rule.MinCancelDuration - 0.5
+        if rejectDur > 0 then
+            local matchTolerance = 0.5
+            local function otherRuleMatchesAt(dur)
+                local function check(list)
+                    if not list then return false end
+                    for _, r in ipairs(list) do
+                        if r ~= rule and r.SpellId and not r.NoAura then
+                            local typeOk = (not r.BigDefensive      or auraTypes["BIG_DEFENSIVE"])
+                                        and (not r.ExternalDefensive or auraTypes["EXTERNAL_DEFENSIVE"])
+                                        and (not r.Important         or auraTypes["IMPORTANT"])
+                            if typeOk then
+                                if r.MinDuration and dur >= r.BuffDuration - matchTolerance then
+                                    return true
+                                elseif r.CanCancelEarly and dur <= r.BuffDuration + matchTolerance
+                                and (not r.MinCancelDuration or dur >= r.MinCancelDuration) then
+                                    return true
+                                elseif not r.MinDuration and not r.CanCancelEarly
+                                and math.abs(dur - r.BuffDuration) <= matchTolerance then
+                                    return true
+                                end
+                            end
+                        end
+                    end
+                    return false
+                end
+                if specId and check(rules.BySpec[specId]) then return true end
+                return check(rules.ByClass[classToken])
+            end
+            if not otherRuleMatchesAt(rejectDur) then
+                local rlabel = label .. " | rejected-below-MinCancelDuration@" .. rejectDur .. "s"
+                fw.it(rlabel .. " | enemy-no-match", function()
+                    setupEnemy()
+                    local entry   = loader.makeEntry("arena1")
+                    local tracked = {
+                        StartTime           = 1.0,
+                        AuraTypes           = auraTypes,
+                        Evidence            = buildNonCastEvidence(rule),
+                        CastSnapshot        = {},
+                        CastSpellIdSnapshot = {},
+                    }
+                    local matched = B:FindBestCandidate(
+                        entry, tracked, rejectDur, {}, { IgnoreTalentRequirements = true }
+                    )
+                    fw.is_nil(matched, rlabel)
+                end)
+            end
+        end
+    end
 end
 
 -- Run all simulator tests inside one describe block so before_each(reset) applies uniformly.
