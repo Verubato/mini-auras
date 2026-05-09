@@ -7,12 +7,6 @@ local masqueReskinPending = {}
 local fontUtil = addon.Utils.FontUtil
 local cachedDb = nil
 
-local function UpdateChargeTextFontSize(chargeText, iconSize, fontScale)
-	local font, _, flags = chargeText:GetFont()
-	if font then
-		chargeText:SetFont(font, math.floor(iconSize * 0.35 * (fontScale or 1.0)), flags)
-	end
-end
 -- Reused across Layout() calls to avoid a table allocation on the hot path
 local layoutScratch = {}
 -- Reused by UpdateGlow() to avoid allocating glow option tables on every call.
@@ -20,6 +14,14 @@ local layoutScratch = {}
 local glowOptionsScratch = { startAnim = false }
 local glowColorScratch = { 0, 0, 0, 0 }
 local frameIdCounter = 0
+
+local function UpdateChargeTextFontSize(chargeText, iconSize, fontScale)
+	local font, _, flags = chargeText:GetFont()
+	if font then
+		chargeText:SetFont(font, math.floor(iconSize * 0.35 * (fontScale or 1.0)), flags)
+	end
+end
+
 local function NextFrameName(frameType)
 	frameIdCounter = frameIdCounter + 1
 	return "MiniCC_" .. frameType .. "_" .. frameIdCounter

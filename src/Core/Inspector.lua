@@ -18,6 +18,9 @@ local isOurInspect        = false
 local needUpdate          = true
 local inspectStarted      = nil
 local callbacks           = {}
+-- Lazily built map of "Spec Name Class Name" -> specId for tooltip matching.
+-- e.g. "Discipline Priest" -> 256, "Holy Paladin" -> 65, etc.
+local tooltipSpecMap = nil
 
 ---@class Inspector
 local M = {}
@@ -47,10 +50,6 @@ local function OnSpecInformationChanged()
 		pcall(callback)
 	end
 end
-
--- Lazily built map of "Spec Name Class Name" -> specId for tooltip matching.
--- e.g. "Discipline Priest" -> 256, "Holy Paladin" -> 65, etc.
-local tooltipSpecMap = nil
 
 local function GetTooltipSpecMap()
 	if tooltipSpecMap then

@@ -15,14 +15,14 @@ local paused = false
 local testModeActive = false
 ---@type Db
 local db
-
-local function GetOptions()
-	return instanceOptions:IsRaid() and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
-end
 ---@type table<table, CrowdControlWatchEntry>
 local watchers = {}
 ---@type TestSpell[]
 local testSpells = {}
+
+local function GetOptions()
+	return instanceOptions:IsRaid() and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
+end
 
 ---@class CrowdControlModule : IModule
 local M = {}

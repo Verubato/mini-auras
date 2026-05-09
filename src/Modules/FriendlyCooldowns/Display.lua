@@ -19,6 +19,13 @@ addon.Modules.FriendlyCooldowns.Display = D
 ---@type Db
 local db
 local testModeActive = false
+-- Scratch table reused by UpdateDisplay to avoid per-call allocation.
+local slotsScratch = {}
+-- Pool of reusable slot descriptor tables indexed by slot position.
+-- SetSlot reads these synchronously and does not store references, so pooling is safe.
+local slotTablePool = {}
+-- Cache: unit -> { specId, hideExternalDefensives, result } - invalidated by the talent callback.
+local staticAbilitiesCache = {}
 
 -- C_Spell.GetSpellTexture follows spell overrides: if the local player has a
 -- talent that replaces spell X with spell Y, then GetSpellTexture(X) returns Y's
@@ -43,19 +50,11 @@ local function GetAnchorOptions()
 	return instanceOptions:IsRaid() and m.Raid or m.Default
 end
 
--- Scratch table reused by UpdateDisplay to avoid per-call allocation.
-local slotsScratch = {}
--- Pool of reusable slot descriptor tables indexed by slot position.
--- SetSlot reads these synchronously and does not store references, so pooling is safe.
-local slotTablePool = {}
 local function GetSlotTable(idx)
 	local t = slotTablePool[idx]
 	if not t then t = {}; slotTablePool[idx] = t else wipe(t) end
 	return t
 end
-
--- Cache: unit -> { specId, hideExternalDefensives, result } - invalidated by the talent callback.
-local staticAbilitiesCache = {}
 
 local function IsInArena()
 	local inInstance, instanceType = IsInInstance()

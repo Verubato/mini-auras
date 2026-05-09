@@ -94,6 +94,38 @@ local activeCooldownsLookup = nil
 -- Signature: fn(entry, spellId, casterUnit, durationObject)
 local predictiveGlowDurationChangedCallback = nil
 
+-- Pre-computed signature strings indexed by a 4-bit key (B=8, E=4, I=2, C=1).
+-- Eliminates repeated string concatenation on the hot OnWatcherChanged path.
+local auraTypesSigTable = {
+	[0]  = "",     [1]  = "C",    [2]  = "I",    [3]  = "IC",
+	[4]  = "E",    [5]  = "EC",   [6]  = "EI",   [7]  = "EIC",
+	[8]  = "B",    [9]  = "BC",   [10] = "BI",   [11] = "BIC",
+	[12] = "BE",   [13] = "BEC",  [14] = "BEI",  [15] = "BEIC",
+}
+-- Maximum duration (seconds) that Precognition can last.
+local precognitionMaxDuration = 4.0
+-- Maximum duration (seconds) that Phase Shift can last.
+local phaseShiftMaxDuration = 1.0
+-- PvP talent spell IDs that grant Grounding Totem (one per shaman spec).
+local groundingTotemPvPTalentIds = { 3620, 3622, 715 }
+-- Spell IDs produced by the Peaceweaver PvP talent (Revival / Restoral).
+local peaceweaverSpellIds = { [115310] = true, [388615] = true }
+-- Maximum duration (seconds) that Grounding Totem can last, used to rule it out
+-- when the measured aura duration is clearly longer than GT could ever be.
+-- Set slightly above the stated 3s cap to absorb server/client timing jitter.
+local groundingTotemMaxDuration = 3.5
+-- Beserker Roar (Warrior PvP talent 5702, SpellId 1227751): AoE IMPORTANT buff applied to all
+-- nearby party members including the caster.  Max duration must match the BuffDuration in the rule.
+local beserkerRoarPvPTalentId = 5702
+local beserkerRoarMaxDuration = 10
+-- Window (seconds) within which IMPORTANT-only aura start times are considered co-occurring.
+-- BR and GT are AoE: all affected units receive the aura in the same server tick.
+local importantAuraCoOccurrenceWindow = 0.5
+-- Records the most recent IMPORTANT-only (non-BIG_DEFENSIVE, non-EXTERNAL_DEFENSIVE) aura
+-- start time per unit.  Used by IsProbablyBeserkerRoar / IsProbablyGroundingTotem to detect
+-- multi-unit AoE events vs solo spell presses (e.g. Evasion, Doomwinds).
+local lastImportantOnlyAuraStart = {}
+
 ---@class EvidenceSet
 ---@field Debuff     boolean?  a HARMFUL aura appeared near detectionTime (e.g. Forbearance from Divine Shield)
 ---@field Shield     boolean?  an absorb change appeared near detectionTime (e.g. Divine Protection)
@@ -140,14 +172,6 @@ local function BuildEvidenceSet(unit, detectionTime)
 	return ev
 end
 
--- Pre-computed signature strings indexed by a 4-bit key (B=8, E=4, I=2, C=1).
--- Eliminates repeated string concatenation on the hot OnWatcherChanged path.
-local auraTypesSigTable = {
-	[0]  = "",     [1]  = "C",    [2]  = "I",    [3]  = "IC",
-	[4]  = "E",    [5]  = "EC",   [6]  = "EI",   [7]  = "EIC",
-	[8]  = "B",    [9]  = "BC",   [10] = "BI",   [11] = "BIC",
-	[12] = "BE",   [13] = "BEC",  [14] = "BEI",  [15] = "BEIC",
-}
 local function AuraTypesSignature(auraTypes)
 	local k = (auraTypes["BIG_DEFENSIVE"]      and 8 or 0)
 	        + (auraTypes["EXTERNAL_DEFENSIVE"]  and 4 or 0)
@@ -631,9 +655,6 @@ local function TryPredictFromKnownCastId(targetUnit, auraTypes, castSpellIdSnaps
 	return nil, true
 end
 
--- Maximum duration (seconds) that Precognition can last.
-local precognitionMaxDuration = 4.0
-
 ---Returns true when the aura could be Precognition rather than a real cooldown.
 ---Precognition (PvP gem) grants a short IMPORTANT buff when the player is interrupted.
 ---Used as the predict-path gate for all IMPORTANT auras in pvp/arena: without a cast
@@ -662,9 +683,6 @@ local function IsProbablyPrecognition(auraTypes, targetUnit, measuredDuration, e
 	local _, classToken = UnitClass(targetUnit)
 	return classToken == nil or precogIgnoreClasses[classToken] ~= true
 end
-
--- Maximum duration (seconds) that Phase Shift can last.
-local phaseShiftMaxDuration = 1.0
 
 ---Returns true when a Priest's IMPORTANT-only aura is probably Phase Shift (PvP talent)
 ---rather than Grounding Totem spillover.  Phase Shift applies a ~1-second IMPORTANT buff
@@ -705,29 +723,6 @@ local function IsProbablyPhaseShift(auraTypes, targetUnit, measuredDuration, cas
 	end
 	return true
 end
-
--- PvP talent spell IDs that grant Grounding Totem (one per shaman spec).
-local groundingTotemPvPTalentIds = { 3620, 3622, 715 }
-
--- Spell IDs produced by the Peaceweaver PvP talent (Revival / Restoral).
-local peaceweaverSpellIds = { [115310] = true, [388615] = true }
-
--- Maximum duration (seconds) that Grounding Totem can last, used to rule it out
--- when the measured aura duration is clearly longer than GT could ever be.
--- Set slightly above the stated 3s cap to absorb server/client timing jitter.
-local groundingTotemMaxDuration = 3.5
-
--- Beserker Roar (Warrior PvP talent 5702, SpellId 1227751): AoE IMPORTANT buff applied to all
--- nearby party members including the caster.  Max duration must match the BuffDuration in the rule.
-local beserkerRoarPvPTalentId = 5702
-local beserkerRoarMaxDuration = 10
--- Window (seconds) within which IMPORTANT-only aura start times are considered co-occurring.
--- BR and GT are AoE: all affected units receive the aura in the same server tick.
-local importantAuraCoOccurrenceWindow = 0.5
--- Records the most recent IMPORTANT-only (non-BIG_DEFENSIVE, non-EXTERNAL_DEFENSIVE) aura
--- start time per unit.  Used by IsProbablyBeserkerRoar / IsProbablyGroundingTotem to detect
--- multi-unit AoE events vs solo spell presses (e.g. Evasion, Doomwinds).
-local lastImportantOnlyAuraStart = {}
 
 ---Returns the number of units other than excludeUnit that have an IMPORTANT-only aura whose
 ---start time falls within importantAuraCoOccurrenceWindow of startTime.

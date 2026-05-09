@@ -15,6 +15,9 @@ local kickColor = { r = 1.0, g = 0.2, b = 0.2 }
 -- fires within playerKickTolerance seconds, replacing the default icon with the player's own spell.
 local pendingPlayerKick = nil -- { Texture, Duration, Time, Timer }
 
+---@type table<string, KickUnitData>
+local tracked = {}
+
 -- Returns the interrupt spell ID for a party unit, using spec if known, class otherwise.
 -- Returns nil if the unit has no interrupt or can't be determined.
 local function GetAllyInterruptSpellId(unit)
@@ -67,9 +70,6 @@ end
 ---@field Kicked boolean
 ---@field Callbacks table<number, function>
 ---@field NextKey number
-
----@type table<string, KickUnitData>
-local tracked = {}
 
 ---@class KickTracker
 local M = {}

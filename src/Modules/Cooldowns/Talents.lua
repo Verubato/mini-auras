@@ -10,13 +10,6 @@ addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
 local M = {}
 addon.Modules.Cooldowns.Talents = M
 
--- All talent data is keyed by the realm-stripped short name (e.g. "Bob" not "Bob-Realm").
--- UnitNameUnmodified returns the full name for cross-realm players, so strip the realm here
--- before any table lookup to ensure cross-realm players' data is found correctly.
-local function ShortName(name)
-	return name:match("^([^%-]+)") or name
-end
-
 -- playerName -> talentRanks (spellId -> rank purchased)
 local unitTalentRanks = {}
 -- playerName -> specId (captured when talent string was decoded)
@@ -26,8 +19,23 @@ local unitPvPTalentIds = {}
 -- (classToken .. "_" .. specId) -> merged default talent ranks table
 -- The defaults are static constants so this never needs invalidation.
 local defaultTalentRanksCache = {}
-
 local db
+local talentCallbacks = {}
+-- Cache talentmap by specId: C_Traits.GetNodeInfo/GetEntryInfo/GetDefinitionInfo return new
+-- Lua tables on every call, so rebuilding for the same spec repeatedly is expensive.
+-- The tree structure is stable within a WoW session (no hotfixes mid-session).
+local talentToSpellMapCache = {}
+-- processedTalentStrings[playerName] = last talent export string successfully decoded.
+-- Shared by UpdateLocalPlayer and OnLibSpecUpdate so both can avoid re-processing the same
+-- spec+talent selection that fires via multiple events in a single tick.
+local processedTalentStrings = {}
+
+-- All talent data is keyed by the realm-stripped short name (e.g. "Bob" not "Bob-Realm").
+-- UnitNameUnmodified returns the full name for cross-realm players, so strip the realm here
+-- before any table lookup to ensure cross-realm players' data is found correctly.
+local function ShortName(name)
+	return name:match("^([^%-]+)") or name
+end
 
 -- Cooldown/duration-affecting talent modifiers.
 -- Structure: [talentSpellId] = { {rank1_mods}, {rank2_mods}, ... }
@@ -438,18 +446,6 @@ local SpecDefaultTalentRanks = {
 		[1266307] = 1, -- Demonic Resilience (Devourer Demon Hunter): Blur +1 charge, nearly universal
 	},
 }
-
-local talentCallbacks = {}
-
--- Cache talentmap by specId: C_Traits.GetNodeInfo/GetEntryInfo/GetDefinitionInfo return new
--- Lua tables on every call, so rebuilding for the same spec repeatedly is expensive.
--- The tree structure is stable within a WoW session (no hotfixes mid-session).
-local talentToSpellMapCache = {}
-
--- processedTalentStrings[playerName] = last talent export string successfully decoded.
--- Shared by UpdateLocalPlayer and OnLibSpecUpdate so both can avoid re-processing the same
--- spec+talent selection that fires via multiple events in a single tick.
-local processedTalentStrings = {}
 
 local function BuildTalentToSpellMap(specId)
 	if talentToSpellMapCache[specId] then

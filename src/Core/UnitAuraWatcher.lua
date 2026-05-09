@@ -12,6 +12,10 @@ local dispelColours = {
 	[11] = DEBUFF_TYPE_BLEED_COLOR,
 }
 local dispelColorCurve
+-- Shared empty state returned when a unit has no live data. Never mutate this.
+local emptyAuraState = {}
+-- Scratch table reused by RebuildStates as a dedup set; wiped at start of each call.
+local rebuildSeen = {}
 
 local function InitColourCurve()
 	if dispelColorCurve then
@@ -26,10 +30,6 @@ local function InitColourCurve()
 	end
 end
 
--- Shared empty state returned when a unit has no live data. Never mutate this.
-local emptyAuraState = {}
--- Scratch table reused by RebuildStates as a dedup set; wiped at start of each call.
-local rebuildSeen = {}
 -- Hoisted sort comparators so RebuildStates doesn't allocate new closures each call.
 local function byInstanceIdForward(a, b) return a.AuraInstanceID < b.AuraInstanceID end
 local function byInstanceIdReverse(a, b) return a.AuraInstanceID > b.AuraInstanceID end

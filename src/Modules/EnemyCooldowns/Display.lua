@@ -12,6 +12,11 @@ addon.Modules.EnemyCooldowns.Display = D
 ---@type Db
 local db
 local testModeActive = false
+-- Scratch table reused by UpdateDisplay to avoid per-call allocation.
+local slotsScratch = {}
+-- Pool of reusable slot descriptor tables indexed by slot position.
+-- SetSlot reads these synchronously and does not store references, so pooling is safe.
+local slotTablePool = {}
 
 -- C_Spell.GetSpellInfo follows talent overrides locally; use originalIconID to get the
 -- canonical icon unaffected by the viewing player's own talent replacements.
@@ -42,11 +47,6 @@ local function GetArenaEnemyFrame(index)
 	return blizz and blizz[index]
 end
 
--- Scratch table reused by UpdateDisplay to avoid per-call allocation.
-local slotsScratch = {}
--- Pool of reusable slot descriptor tables indexed by slot position.
--- SetSlot reads these synchronously and does not store references, so pooling is safe.
-local slotTablePool = {}
 local function GetSlotTable(idx)
 	local t = slotTablePool[idx]
 	if not t then t = {}; slotTablePool[idx] = t else wipe(t) end

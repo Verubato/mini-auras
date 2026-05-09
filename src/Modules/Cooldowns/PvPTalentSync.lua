@@ -18,6 +18,8 @@ local IsInGroup = IsInGroup
 local CTimerNewTimer = C_Timer.NewTimer
 local next, securecallfunction, tonumber = next, securecallfunction, tonumber
 local Ambiguate = Ambiguate
+-- Shared current message updated before either send function fires.
+local currentMsg = ""
 
 -- 0=success, 1=duplicate, 2=invalid, 3=toomany; silently disabled on failure.
 C_ChatInfo.RegisterAddonMessagePrefix(prefix)
@@ -60,9 +62,6 @@ local function FireCallbacks(playerName, pvpTalentIds)
 		securecallfunction(func, playerName, pvpTalentIds)
 	end
 end
-
--- Shared current message updated before either send function fires.
-local currentMsg = ""
 
 local PrepareForGroup, PrepareForInstance
 do
