@@ -1006,8 +1006,30 @@ local rules = {
 				MinDuration = true,
 				SpellId = 264735,
 				MaxCharges = 2,
+				RequiresEvidence = "PetAura",
+			}, -- Survival of the Fittest (pet aura confirms over Aspect of the Turtle)
+			{
+				BuffDuration = 8,
+				Cooldown = 90,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				MinDuration = true,
+				SpellId = 264735,
+				MaxCharges = 2,
+				RequiresEvidence = "PetAura",
+			}, -- Survival of the Fittest + talent (+2s) (pet aura confirms over Aspect of the Turtle)
+			{
+				BuffDuration = 6,
+				Cooldown = 90,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				MinDuration = true,
+				SpellId = 264735,
+				MaxCharges = 2,
 				RequiresEvidence = { Exclude = "UnitFlags" },
-			}, -- Survival of the Fittest
+			}, -- Survival of the Fittest (no UnitFlags = not Aspect of the Turtle)
 			{
 				BuffDuration = 8,
 				Cooldown = 90,
@@ -1018,7 +1040,7 @@ local rules = {
 				SpellId = 264735,
 				MaxCharges = 2,
 				RequiresEvidence = { Exclude = "UnitFlags" },
-			}, -- Survival of the Fittest + Survival of the Fittest talent (+2s)
+			}, -- Survival of the Fittest + talent (+2s) (no UnitFlags = not Aspect of the Turtle)
 			{
 				BuffDuration = 3,
 				Cooldown = 60,

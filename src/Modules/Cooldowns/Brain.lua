@@ -38,6 +38,8 @@ local lastCastTime = {}
 local lastCastSpellIds = {}
 -- unit -> timestamp of most recent UNIT_FLAGS (unit combat/immune flags changed e.g. Aspect of the Turtle).
 local lastUnitFlagsTime = {}
+-- unit -> timestamp of most recent BIG_DEFENSIVE aura added to the unit's pet (confirms Survival of the Fittest).
+local lastPetAuraTime = {}
 -- unit -> timestamp of most recent feign death activation (UnitIsFeignDeath transition false->true).
 local lastFeignDeathTime = {}
 -- unit -> last known feign death state, used to detect false->true transitions.
@@ -98,6 +100,7 @@ local predictiveGlowDurationChangedCallback = nil
 ---@field UnitFlags  boolean?  unit combat/immune flags changed near detectionTime (e.g. Aspect of the Turtle); suppressed when FeignDeath is the source
 ---@field FeignDeath boolean?  unit entered feign death near detectionTime; mutually exclusive with UnitFlags to prevent false AoT matches
 ---@field Cast       boolean?  the local player cast a spell near detectionTime (UNIT_SPELLCAST_SUCCEEDED fires locally only)
+---@field PetAura    boolean?  the unit's pet received a BIG_DEFENSIVE aura near detectionTime (confirms Survival of the Fittest over Aspect of the Turtle)
 
 ---Collects all concurrent evidence types for a unit near detectionTime.
 ---Returns an EvidenceSet or nil if no evidence was found.
@@ -129,6 +132,10 @@ local function BuildEvidenceSet(unit, detectionTime)
 	if lastCastTime[unit] and math.abs(lastCastTime[unit] - detectionTime) <= castWindow then
 		ev = ev or {}
 		ev.Cast = true
+	end
+	if lastPetAuraTime[unit] and math.abs(lastPetAuraTime[unit] - detectionTime) <= evidenceTolerance then
+		ev = ev or {}
+		ev.PetAura = true
 	end
 	return ev
 end
@@ -180,11 +187,12 @@ local function AuraTypeMatchesRule(auraTypes, rule)
 end
 
 ---Returns true if evidence satisfies a RequiresEvidence value.
----  nil                  -> no constraint (always ok)
----  false                -> requires no evidence present
----  string               -> that key must be present in evidence
----  string[]             -> ALL listed keys must be present in evidence
----  { Exclude = string } -> that key must be absent from evidence
+---  nil                              -> no constraint (always ok)
+---  false                            -> requires no evidence present
+---  string                           -> that key must be present in evidence
+---  string[]                         -> ALL listed keys must be present in evidence
+---  { Exclude = string }             -> that key must be absent from evidence
+---  { "Key", Exclude = "OtherKey" } -> Key must be present AND OtherKey must be absent
 ---@param req any
 ---@param evidence EvidenceSet?
 ---@return boolean
@@ -206,14 +214,17 @@ local function EvidenceMatchesReq(req, evidence)
 					return false
 				end
 			end
-			return true
 		end
-		if not evidence then
-			return false
-		end
-		for _, k in ipairs(req) do
-			if not evidence[k] then
+		-- Check required keys in the array part (supports combined include+exclude tables).
+		-- Guarded by #req so { Exclude = "X" } (no array part) still passes with nil evidence.
+		if #req > 0 then
+			if not evidence then
 				return false
+			end
+			for _, k in ipairs(req) do
+				if not evidence[k] then
+					return false
+				end
 			end
 		end
 		return true
@@ -1749,6 +1760,10 @@ local function RecordUnitFlagsChange(unit)
 	end
 end
 
+local function RecordPetAura(unit)
+	lastPetAuraTime[unit] = GetTime()
+end
+
 local function RecordModelChanged(unit)
 	sd:OnModelChanged(unit, GetTime())
 end
@@ -1835,6 +1850,7 @@ function B._TestReset()
 	for k in pairs(lastCastTime)        do lastCastTime[k]        = nil end
 	for k in pairs(lastCastSpellIds)    do lastCastSpellIds[k]    = nil end
 	for k in pairs(lastUnitFlagsTime)    do lastUnitFlagsTime[k]    = nil end
+	for k in pairs(lastPetAuraTime)      do lastPetAuraTime[k]      = nil end
 	sd:ResetAll()
 	for k in pairs(lastFeignDeathTime)   do lastFeignDeathTime[k]    = nil end
 	for k in pairs(lastFeignDeathState)  do lastFeignDeathState[k]  = nil end
@@ -1851,6 +1867,7 @@ function B:RegisterWithObserver(obs)
 	obs:RegisterCastCallback(RecordCast)
 	obs:RegisterShieldCallback(RecordShield)
 	obs:RegisterUnitFlagsCallback(RecordUnitFlagsChange)
+	obs:RegisterPetAuraCallback(RecordPetAura)
 	obs:RegisterDebuffEvidenceCallback(TryRecordDebuffEvidence)
 	obs:RegisterModelChangedCallback(RecordModelChanged)
 	obs:RegisterPortraitUpdateCallback(RecordPortraitUpdate)

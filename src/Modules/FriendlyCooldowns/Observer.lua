@@ -15,6 +15,7 @@ local auraChangedCallbacks    = {}
 local castCallbacks           = {}
 local shieldCallbacks         = {}
 local unitFlagsCallbacks      = {}
+local petAuraCallbacks        = {}
 local debuffEvidenceCallbacks = {}
 local modelChangedCallbacks   = {}
 local portraitUpdateCallbacks = {}
@@ -65,6 +66,12 @@ local function FireUnitFlags(unit)
 	end
 end
 
+local function FirePetAura(ownerUnit)
+	for _, fn in ipairs(petAuraCallbacks) do
+		fn(ownerUnit)
+	end
+end
+
 local function FireModelChanged(unit)
 	for _, fn in ipairs(modelChangedCallbacks) do
 		fn(unit)
@@ -89,6 +96,34 @@ local function FireDebuffEvidence(unit, updateInfo)
 	for _, fn in ipairs(debuffEvidenceCallbacks) do
 		fn(unit, updateInfo)
 	end
+end
+
+local function PetUnitForUnit(unit)
+	return unit == "player" and "pet" or (unit .. "pet")
+end
+
+local function TryRecordPetDefensiveAura(ownerUnit, petUnit, updateInfo)
+	if not updateInfo or updateInfo.isFullUpdate or not updateInfo.addedAuras then return end
+	for _, aura in ipairs(updateInfo.addedAuras) do
+		if aura.auraInstanceID
+		   and not C_UnitAuras.IsAuraFilteredOutByInstanceID(petUnit, aura.auraInstanceID, "HELPFUL|BIG_DEFENSIVE")
+		then
+			FirePetAura(ownerUnit)
+			return
+		end
+	end
+end
+
+local function CreatePetEventFrame(entry)
+	local frame = CreateFrame("Frame")
+	frame:SetScript("OnEvent", function(_, _, petUnit, updateInfo)
+		TryRecordPetDefensiveAura(entry.Unit, petUnit, updateInfo)
+	end)
+	return frame
+end
+
+local function RegisterPetEvents(frame, unit)
+	frame:RegisterUnitEvent("UNIT_AURA", PetUnitForUnit(unit))
 end
 
 local function CreateCastEventFrame(entry)
@@ -150,8 +185,11 @@ function O:Watch(entry)
 	local castEventFrame = CreateCastEventFrame(entry)
 	RegisterCastEvents(castEventFrame, entry.Unit)
 
+	local petEventFrame = CreatePetEventFrame(entry)
+	RegisterPetEvents(petEventFrame, entry.Unit)
+
 	local watcher = MakeWatcher(entry)
-	watched[entry] = { Watcher = watcher, CastEventFrame = castEventFrame }
+	watched[entry] = { Watcher = watcher, CastEventFrame = castEventFrame, PetEventFrame = petEventFrame }
 
 	-- Seed: the watcher primed its state before our callback was registered; process it now.
 	if not testModeActive then
@@ -172,6 +210,9 @@ function O:Rewatch(entry)
 	state.CastEventFrame:UnregisterAllEvents()
 	RegisterCastEvents(state.CastEventFrame, entry.Unit)
 
+	state.PetEventFrame:UnregisterAllEvents()
+	RegisterPetEvents(state.PetEventFrame, entry.Unit)
+
 	state.Watcher:Dispose()
 	state.Watcher = MakeWatcher(entry)
 
@@ -188,6 +229,7 @@ function O:Disable(entry)
 		return
 	end
 	state.CastEventFrame:UnregisterAllEvents()
+	state.PetEventFrame:UnregisterAllEvents()
 	state.Watcher:Disable()
 end
 
@@ -200,6 +242,7 @@ function O:Forget(entry)
 		return
 	end
 	state.CastEventFrame:UnregisterAllEvents()
+	state.PetEventFrame:UnregisterAllEvents()
 	state.Watcher:Dispose()
 	watched[entry] = nil
 end
@@ -213,6 +256,7 @@ function O:Enable(entry)
 	end
 	-- Register cast events before Watcher:Enable to preserve handler fire order.
 	RegisterCastEvents(state.CastEventFrame, entry.Unit)
+	RegisterPetEvents(state.PetEventFrame, entry.Unit)
 	state.Watcher:Enable()
 	state.Watcher:ForceFullUpdate()
 end
@@ -246,6 +290,13 @@ end
 ---@param fn fun(unit: string)
 function O:RegisterUnitFlagsCallback(fn)
 	unitFlagsCallbacks[#unitFlagsCallbacks + 1] = fn
+end
+
+---Registers a callback fired when a watched unit's pet receives a BIG_DEFENSIVE aura.
+---fn(unit) where unit is the owner (hunter), not the pet.
+---@param fn fun(unit: string)
+function O:RegisterPetAuraCallback(fn)
+	petAuraCallbacks[#petAuraCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a HARMFUL aura is added to a watched unit.
