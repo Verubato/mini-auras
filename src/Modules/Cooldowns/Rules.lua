@@ -1154,6 +1154,20 @@ local rules = {
 			}, -- Anti-Magic Shell + AMB +40% (Spellwarding self-cast, or cast on ally)
 		},
 		DEMONHUNTER = {},
+		WARRIOR = {
+			{
+				BuffDuration = 10,
+				Cooldown = 60,
+				Important = true,
+				BigDefensive = false,
+				ExternalDefensive = false,
+				CanCancelEarly = true,
+				SpellId = 1227751,
+				CastSpellId = 384100,
+				RequiresTalent = 5702,
+				PvPOnly = true,
+			}, -- Beserker Roar (PvP talent; AoE IMPORTANT buff for nearby party members)
+		},
 		MONK = {
 			{
 				BuffDuration = 15,

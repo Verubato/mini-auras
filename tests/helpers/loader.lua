@@ -72,6 +72,7 @@ local function makeObserver()
 		cast             = {},
 		shield           = {},
 		unitFlags        = {},
+		petAura          = {},
 		debuffEvidence   = {},
 		modelChanged     = {},
 		portraitUpdate   = {},
@@ -92,6 +93,9 @@ local function makeObserver()
 	end
 	function o:RegisterUnitFlagsCallback(fn)
 		cbs.unitFlags[#cbs.unitFlags + 1] = fn
+	end
+	function o:RegisterPetAuraCallback(fn)
+		cbs.petAura[#cbs.petAura + 1] = fn
 	end
 	function o:RegisterDebuffEvidenceCallback(fn)
 		cbs.debuffEvidence[#cbs.debuffEvidence + 1] = fn
@@ -121,6 +125,10 @@ local function makeObserver()
 
 	function o:_fireUnitFlags(unit)
 		for _, fn in ipairs(cbs.unitFlags) do fn(unit) end
+	end
+
+	function o:_firePetAura(unit)
+		for _, fn in ipairs(cbs.petAura) do fn(unit) end
 	end
 
 	function o:_fireDebuffEvidence(unit, updateInfo)

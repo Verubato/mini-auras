@@ -717,6 +717,11 @@ local peaceweaverSpellIds = { [115310] = true, [388615] = true }
 -- Set slightly above the stated 3s cap to absorb server/client timing jitter.
 local groundingTotemMaxDuration = 3.5
 
+-- Beserker Roar (Warrior PvP talent 5702, SpellId 1227751): AoE IMPORTANT buff applied to all
+-- nearby party members including the caster.  Max duration must match the BuffDuration in the rule.
+local beserkerRoarPvPTalentId = 5702
+local beserkerRoarMaxDuration = 10
+
 ---Returns true when an IMPORTANT-only aura is probably from a Peaceweaver Monk's Revival or Restoral.
 ---Handles two cases:
 ---  * targetUnit IS the local Monk (self-cast): local player has Peaceweaver and cast Revival/Restoral.
@@ -918,6 +923,81 @@ local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, m
 
 	for _, candidate in ipairs(candidateUnits) do
 		if shamanHasGroundingTotem(candidate) then
+			return true
+		end
+	end
+	return false
+end
+
+---Returns true when a non-warrior unit's IMPORTANT aura is probably Beserker Roar spillover.
+---Beserker Roar (Warrior PvP talent 5702) applies an IMPORTANT aura on all nearby party members,
+---including the caster.  The warrior's own aura is handled by the BR rule directly; this
+---suppresses false commits/predictions for non-warrior allies who received the buff without
+---casting anything themselves.
+---measuredDuration: when provided (commit path), auras longer than BR's max are excluded.
+---ignoreTalentReqs: pass true on the enemy path where talent data is unavailable (any Warrior
+---  is treated as potentially having BR).
+---@param auraTypes table<string,boolean>
+---@param targetUnit string
+---@param candidateUnits string[]
+---@param measuredDuration number?
+---@param ignoreTalentReqs boolean?
+---@return boolean
+local function IsProbablyBeserkerRoar(auraTypes, targetUnit, candidateUnits, measuredDuration, ignoreTalentReqs)
+	if not auraTypes["IMPORTANT"] then return false end
+	if auraTypes["BIG_DEFENSIVE"] or auraTypes["EXTERNAL_DEFENSIVE"] then return false end
+	if measuredDuration and measuredDuration > beserkerRoarMaxDuration + tolerance then return false end
+	local _, instanceType = IsInInstance()
+	local inPvpContext = instanceType == "arena" or instanceType == "pvp" or UnitIsPVP(targetUnit)
+	if not inPvpContext then return false end
+
+	local function warriorHasBeserkerRoar(unit)
+		local _, cls = UnitClass(unit)
+		if cls ~= "WARRIOR" then return false end
+		if ignoreTalentReqs then return true end
+		return fcdTalents:UnitHasTalent(unit, beserkerRoarPvPTalentId)
+	end
+
+	-- The warrior who casts BR also receives the aura; the BR rule handles it directly.
+	if warriorHasBeserkerRoar(targetUnit) then return false end
+
+	-- Before suppressing a non-warrior target, check whether they have a CanCancelEarly
+	-- IMPORTANT rule of their own that can legitimately explain this aura.
+	-- On the predict path (measuredDuration=nil) rule existence alone is sufficient.
+	-- Skipped on the enemy path (ignoreTalentReqs) since talent data is unavailable.
+	if not ignoreTalentReqs then
+		local _, targetClass = UnitClass(targetUnit)
+		if targetClass then
+			local specId = fcdTalents:GetUnitSpecId(targetUnit)
+			local function hasMatchingEarlyCancelRule(ruleList)
+				if not ruleList then return false end
+				for _, rule in ipairs(ruleList) do
+					if rule.CanCancelEarly and not rule.NoAura
+					   and AuraTypeMatchesRule(auraTypes, rule)
+					   and RulePassesTalentGates(rule, targetUnit, specId, false) then
+						if not measuredDuration then
+							return true
+						end
+						local expectedDuration = rule.SpellId
+							and fcdTalents:GetUnitBuffDuration(targetUnit, specId, targetClass, rule.SpellId, rule.BuffDuration)
+							or rule.BuffDuration
+						if measuredDuration <= expectedDuration + tolerance
+						   and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration) then
+							return true
+						end
+					end
+				end
+				return false
+			end
+			if hasMatchingEarlyCancelRule(specId and rules.BySpec[specId])
+			   or hasMatchingEarlyCancelRule(rules.ByClass[targetClass]) then
+				return false
+			end
+		end
+	end
+
+	for _, candidate in ipairs(candidateUnits) do
+		if warriorHasBeserkerRoar(candidate) then
 			return true
 		end
 	end
@@ -1149,6 +1229,9 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 	elseif IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, nil, evidence, castSpellIdSnapshot, detectionTime) then
 		-- Non-shaman ally received Grounding Totem's AoE buff; suppress to avoid false predictions.
 		return nil, nil
+	elseif IsProbablyBeserkerRoar(auraTypes, targetUnit, candidateUnits, nil) then
+		-- Non-warrior ally received Beserker Roar's AoE buff; suppress to avoid false predictions.
+		return nil, nil
 	elseif IsProbablyRevival(auraTypes, targetUnit, castSpellIdSnapshot, detectionTime) then
 		-- Revival/Restoral spillover on a non-Monk ally; suppress to avoid false predictions.
 		return nil, nil
@@ -1357,6 +1440,8 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 		if IsProbablyPhaseShift(tracked.AuraTypes, entry.Unit, measuredDuration, tracked.CastSpellIdSnapshot, tracked.StartTime) then
 			-- Priest's ~1s IMPORTANT aura is Phase Shift, not GT spillover; bypass suppression.
 		elseif IsProbablyGroundingTotem(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, tracked.Evidence, tracked.CastSpellIdSnapshot, tracked.StartTime, ignoreTalentReqs) then
+			return
+		elseif IsProbablyBeserkerRoar(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, ignoreTalentReqs) then
 			return
 		end
 		-- Revival spillover suppression: only applies to non-Monk units. For the Monk
@@ -1978,6 +2063,20 @@ end
 ---@return boolean
 function B:IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, measuredDuration, evidence, castSpellIdSnapshot, startTime, ignoreTalentReqs)
 	return IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, measuredDuration, evidence, castSpellIdSnapshot, startTime, ignoreTalentReqs)
+end
+
+---Returns true when a non-warrior unit's IMPORTANT aura is probably Beserker Roar spillover.
+---candidateUnits: units to check for a BR Warrior (all enemy units on the ECD path).
+---ignoreTalentReqs: pass true on the enemy path where talent data is unavailable (any Warrior
+---  is treated as potentially having BR).
+---@param auraTypes table<string,boolean>
+---@param targetUnit string
+---@param candidateUnits string[]
+---@param measuredDuration number?
+---@param ignoreTalentReqs boolean?
+---@return boolean
+function B:IsProbablyBeserkerRoar(auraTypes, targetUnit, candidateUnits, measuredDuration, ignoreTalentReqs)
+	return IsProbablyBeserkerRoar(auraTypes, targetUnit, candidateUnits, measuredDuration, ignoreTalentReqs)
 end
 
 ---Returns true when a Priest's IMPORTANT-only aura is probably Phase Shift rather than GT spillover.
