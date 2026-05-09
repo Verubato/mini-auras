@@ -721,6 +721,25 @@ local groundingTotemMaxDuration = 3.5
 -- nearby party members including the caster.  Max duration must match the BuffDuration in the rule.
 local beserkerRoarPvPTalentId = 5702
 local beserkerRoarMaxDuration = 10
+-- Window (seconds) within which IMPORTANT-only aura start times are considered co-occurring.
+-- BR and GT are AoE: all affected units receive the aura in the same server tick.
+local importantAuraCoOccurrenceWindow = 0.5
+-- Records the most recent IMPORTANT-only (non-BIG_DEFENSIVE, non-EXTERNAL_DEFENSIVE) aura
+-- start time per unit.  Used by IsProbablyBeserkerRoar / IsProbablyGroundingTotem to detect
+-- multi-unit AoE events vs solo spell presses (e.g. Evasion, Doomwinds).
+local lastImportantOnlyAuraStart = {}
+
+---Returns the number of units other than excludeUnit that have an IMPORTANT-only aura whose
+---start time falls within importantAuraCoOccurrenceWindow of startTime.
+local function CountConcurrentImportantAuras(startTime, excludeUnit)
+	local count = 0
+	for unit, t in pairs(lastImportantOnlyAuraStart) do
+		if unit ~= excludeUnit and math.abs(t - startTime) <= importantAuraCoOccurrenceWindow then
+			count = count + 1
+		end
+	end
+	return count
+end
 
 ---Returns true when an IMPORTANT-only aura is probably from a Peaceweaver Monk's Revival or Restoral.
 ---Handles two cases:
@@ -884,39 +903,78 @@ local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, m
 		return false
 	end
 
-	-- Before concluding GT spillover on a non-Shaman target, check whether the target has a
-	-- CanCancelEarly rule (e.g. Spell Reflect on a Warrior) that can legitimately explain this
-	-- IMPORTANT aura.  If the talent gate passes, the aura is more likely the target's own spell
-	-- than GT spillover, so don't suppress.
-	-- On the predict path (measuredDuration=nil) rule existence alone is sufficient.
-	-- Skipped on the enemy path (ignoreTalentReqs) since talent data is unavailable.
+	-- When count > 0, multiple units share a concurrent IMPORTANT-only aura start → confirmed AoE
+	-- GT event.  Use strict CanCancelEarly-only check so that exact-duration solo spells cannot
+	-- falsely lift suppression during a real GT press.
+	-- When count = 0 (GT may have only hit the shaman, or concurrent data not yet recorded),
+	-- fall back to the full rule check: a matching solo spell lifts suppression; if nothing matches,
+	-- GT is the fallback and the aura is suppressed.
+	local confirmedAoeEvent = startTime and CountConcurrentImportantAuras(startTime, targetUnit) > 0
 	if not ignoreTalentReqs then
 		local _, targetClass = UnitClass(targetUnit)
 		if targetClass then
 			local specId = fcdTalents:GetUnitSpecId(targetUnit)
-			local function hasMatchingEarlyCancelRule(ruleList)
-				if not ruleList then return false end
-				for _, rule in ipairs(ruleList) do
-					if rule.CanCancelEarly and not rule.NoAura
-					   and AuraTypeMatchesRule(auraTypes, rule)
-					   and RulePassesTalentGates(rule, targetUnit, specId, false) then
-						if not measuredDuration then
-							return true
-						end
-						local expectedDuration = rule.SpellId
-							and fcdTalents:GetUnitBuffDuration(targetUnit, specId, targetClass, rule.SpellId, rule.BuffDuration)
-							or rule.BuffDuration
-						if measuredDuration <= expectedDuration + tolerance
-						   and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration) then
-							return true
+			if confirmedAoeEvent then
+				local function hasMatchingEarlyCancelRule(ruleList)
+					if not ruleList then return false end
+					for _, rule in ipairs(ruleList) do
+						if rule.CanCancelEarly and not rule.NoAura
+						   and AuraTypeMatchesRule(auraTypes, rule)
+						   and RulePassesTalentGates(rule, targetUnit, specId, false) then
+							if not measuredDuration then
+								return true
+							end
+							local expectedDuration = rule.SpellId
+								and fcdTalents:GetUnitBuffDuration(targetUnit, specId, targetClass, rule.SpellId, rule.BuffDuration)
+								or rule.BuffDuration
+							if measuredDuration <= expectedDuration + tolerance
+							   and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration) then
+								return true
+							end
 						end
 					end
+					return false
 				end
-				return false
-			end
-			if hasMatchingEarlyCancelRule(specId and rules.BySpec[specId])
-			   or hasMatchingEarlyCancelRule(rules.ByClass[targetClass]) then
-				return false
+				if hasMatchingEarlyCancelRule(specId and rules.BySpec[specId])
+				   or hasMatchingEarlyCancelRule(rules.ByClass[targetClass]) then
+					return false
+				end
+			else
+				local function hasMatchingRule(ruleList)
+					if not ruleList then return false end
+					for _, rule in ipairs(ruleList) do
+						if not rule.NoAura
+						   and AuraTypeMatchesRule(auraTypes, rule)
+						   and RulePassesTalentGates(rule, targetUnit, specId, false) then
+							if not measuredDuration then
+								if rule.CanCancelEarly then return true end
+							else
+								local expectedDuration = rule.SpellId
+									and fcdTalents:GetUnitBuffDuration(targetUnit, specId, targetClass, rule.SpellId, rule.BuffDuration)
+									or rule.BuffDuration
+								if rule.CanCancelEarly then
+									if measuredDuration <= expectedDuration + tolerance
+									   and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration) then
+										return true
+									end
+								elseif rule.MinDuration then
+									if measuredDuration >= expectedDuration - tolerance then
+										return true
+									end
+								else
+									if math.abs(measuredDuration - expectedDuration) <= tolerance then
+										return true
+									end
+								end
+							end
+						end
+					end
+					return false
+				end
+				if hasMatchingRule(specId and rules.BySpec[specId])
+				   or hasMatchingRule(rules.ByClass[targetClass]) then
+					return false
+				end
 			end
 		end
 	end
@@ -943,7 +1001,7 @@ end
 ---@param measuredDuration number?
 ---@param ignoreTalentReqs boolean?
 ---@return boolean
-local function IsProbablyBeserkerRoar(auraTypes, targetUnit, candidateUnits, measuredDuration, ignoreTalentReqs)
+local function IsProbablyBeserkerRoar(auraTypes, targetUnit, candidateUnits, measuredDuration, startTime, ignoreTalentReqs)
 	if not auraTypes["IMPORTANT"] then return false end
 	if auraTypes["BIG_DEFENSIVE"] or auraTypes["EXTERNAL_DEFENSIVE"] then return false end
 	if measuredDuration and measuredDuration > beserkerRoarMaxDuration + tolerance then return false end
@@ -961,37 +1019,78 @@ local function IsProbablyBeserkerRoar(auraTypes, targetUnit, candidateUnits, mea
 	-- The warrior who casts BR also receives the aura; the BR rule handles it directly.
 	if warriorHasBeserkerRoar(targetUnit) then return false end
 
-	-- Before suppressing a non-warrior target, check whether they have a CanCancelEarly
-	-- IMPORTANT rule of their own that can legitimately explain this aura.
-	-- On the predict path (measuredDuration=nil) rule existence alone is sufficient.
-	-- Skipped on the enemy path (ignoreTalentReqs) since talent data is unavailable.
+	-- When count > 0, multiple units share a concurrent IMPORTANT-only aura start → confirmed AoE
+	-- BR event.  Use strict CanCancelEarly-only check so that exact-duration solo spells (Evasion,
+	-- Doomwinds) cannot falsely lift suppression during a real BR press.
+	-- When count = 0 (BR may have only hit the warrior, or concurrent data not yet recorded),
+	-- fall back to the full rule check: a matching solo spell lifts suppression; if nothing matches,
+	-- BR is the fallback and the aura is suppressed.
+	local confirmedAoeEvent = startTime and CountConcurrentImportantAuras(startTime, targetUnit) > 0
 	if not ignoreTalentReqs then
 		local _, targetClass = UnitClass(targetUnit)
 		if targetClass then
 			local specId = fcdTalents:GetUnitSpecId(targetUnit)
-			local function hasMatchingEarlyCancelRule(ruleList)
-				if not ruleList then return false end
-				for _, rule in ipairs(ruleList) do
-					if rule.CanCancelEarly and not rule.NoAura
-					   and AuraTypeMatchesRule(auraTypes, rule)
-					   and RulePassesTalentGates(rule, targetUnit, specId, false) then
-						if not measuredDuration then
-							return true
-						end
-						local expectedDuration = rule.SpellId
-							and fcdTalents:GetUnitBuffDuration(targetUnit, specId, targetClass, rule.SpellId, rule.BuffDuration)
-							or rule.BuffDuration
-						if measuredDuration <= expectedDuration + tolerance
-						   and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration) then
-							return true
+			if confirmedAoeEvent then
+				local function hasMatchingEarlyCancelRule(ruleList)
+					if not ruleList then return false end
+					for _, rule in ipairs(ruleList) do
+						if rule.CanCancelEarly and not rule.NoAura
+						   and AuraTypeMatchesRule(auraTypes, rule)
+						   and RulePassesTalentGates(rule, targetUnit, specId, false) then
+							if not measuredDuration then
+								return true
+							end
+							local expectedDuration = rule.SpellId
+								and fcdTalents:GetUnitBuffDuration(targetUnit, specId, targetClass, rule.SpellId, rule.BuffDuration)
+								or rule.BuffDuration
+							if measuredDuration <= expectedDuration + tolerance
+							   and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration) then
+								return true
+							end
 						end
 					end
+					return false
 				end
-				return false
-			end
-			if hasMatchingEarlyCancelRule(specId and rules.BySpec[specId])
-			   or hasMatchingEarlyCancelRule(rules.ByClass[targetClass]) then
-				return false
+				if hasMatchingEarlyCancelRule(specId and rules.BySpec[specId])
+				   or hasMatchingEarlyCancelRule(rules.ByClass[targetClass]) then
+					return false
+				end
+			else
+				local function hasMatchingRule(ruleList)
+					if not ruleList then return false end
+					for _, rule in ipairs(ruleList) do
+						if not rule.NoAura
+						   and AuraTypeMatchesRule(auraTypes, rule)
+						   and RulePassesTalentGates(rule, targetUnit, specId, false) then
+							if not measuredDuration then
+								if rule.CanCancelEarly then return true end
+							else
+								local expectedDuration = rule.SpellId
+									and fcdTalents:GetUnitBuffDuration(targetUnit, specId, targetClass, rule.SpellId, rule.BuffDuration)
+									or rule.BuffDuration
+								if rule.CanCancelEarly then
+									if measuredDuration <= expectedDuration + tolerance
+									   and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration) then
+										return true
+									end
+								elseif rule.MinDuration then
+									if measuredDuration >= expectedDuration - tolerance then
+										return true
+									end
+								else
+									if math.abs(measuredDuration - expectedDuration) <= tolerance then
+										return true
+									end
+								end
+							end
+						end
+					end
+					return false
+				end
+				if hasMatchingRule(specId and rules.BySpec[specId])
+				   or hasMatchingRule(rules.ByClass[targetClass]) then
+					return false
+				end
 			end
 		end
 	end
@@ -1229,7 +1328,7 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 	elseif IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, nil, evidence, castSpellIdSnapshot, detectionTime) then
 		-- Non-shaman ally received Grounding Totem's AoE buff; suppress to avoid false predictions.
 		return nil, nil
-	elseif IsProbablyBeserkerRoar(auraTypes, targetUnit, candidateUnits, nil) then
+	elseif IsProbablyBeserkerRoar(auraTypes, targetUnit, candidateUnits, nil, detectionTime) then
 		-- Non-warrior ally received Beserker Roar's AoE buff; suppress to avoid false predictions.
 		return nil, nil
 	elseif IsProbablyRevival(auraTypes, targetUnit, castSpellIdSnapshot, detectionTime) then
@@ -1441,7 +1540,7 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 			-- Priest's ~1s IMPORTANT aura is Phase Shift, not GT spillover; bypass suppression.
 		elseif IsProbablyGroundingTotem(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, tracked.Evidence, tracked.CastSpellIdSnapshot, tracked.StartTime, ignoreTalentReqs) then
 			return
-		elseif IsProbablyBeserkerRoar(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, ignoreTalentReqs) then
+		elseif IsProbablyBeserkerRoar(tracked.AuraTypes, entry.Unit, candidateUnits, measuredDuration, tracked.StartTime, ignoreTalentReqs) then
 			return
 		end
 		-- Revival spillover suppression: only applies to non-Monk units. For the Monk
@@ -1627,6 +1726,10 @@ local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 		CastSpellIdSnapshot = castSpellIdSnapshot,
 		DurationObject = info.DurationObject,
 	}
+	-- Record IMPORTANT-only aura start for co-occurrence detection.
+	if info.AuraTypes["IMPORTANT"] and not info.AuraTypes["BIG_DEFENSIVE"] and not info.AuraTypes["EXTERNAL_DEFENSIVE"] then
+		lastImportantOnlyAuraStart[unit] = now
+	end
 	-- Deferred backfill: UNIT_SPELLCAST_SUCCEEDED and UNIT_ABSORB_AMOUNT_CHANGED can arrive
 	-- slightly after UNIT_AURA. Augment Evidence and CastSnapshot once the window elapses.
 	C_Timer.After(evidenceTolerance, function()
@@ -1940,6 +2043,13 @@ function B._TestReset()
 	for k in pairs(lastFeignDeathTime)   do lastFeignDeathTime[k]    = nil end
 	for k in pairs(lastFeignDeathState)  do lastFeignDeathState[k]  = nil end
 	for k in pairs(unitCanFeign)         do unitCanFeign[k]         = nil end
+	for k in pairs(lastImportantOnlyAuraStart) do lastImportantOnlyAuraStart[k] = nil end
+end
+
+---Test helper: manually set the recorded IMPORTANT-only aura start time for a unit.
+---Used to simulate co-occurring AoE events (GT / BR) in unit tests.
+function B._TestSetImportantAuraStart(unit, time)
+	lastImportantOnlyAuraStart[unit] = time
 end
 
 ---Wires Brain into an observer. Called by FriendlyCooldowns Module during Init.
@@ -2075,8 +2185,8 @@ end
 ---@param measuredDuration number?
 ---@param ignoreTalentReqs boolean?
 ---@return boolean
-function B:IsProbablyBeserkerRoar(auraTypes, targetUnit, candidateUnits, measuredDuration, ignoreTalentReqs)
-	return IsProbablyBeserkerRoar(auraTypes, targetUnit, candidateUnits, measuredDuration, ignoreTalentReqs)
+function B:IsProbablyBeserkerRoar(auraTypes, targetUnit, candidateUnits, measuredDuration, startTime, ignoreTalentReqs)
+	return IsProbablyBeserkerRoar(auraTypes, targetUnit, candidateUnits, measuredDuration, startTime, ignoreTalentReqs)
 end
 
 ---Returns true when a Priest's IMPORTANT-only aura is probably Phase Shift rather than GT spillover.

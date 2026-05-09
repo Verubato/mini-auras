@@ -100,7 +100,9 @@ fw.describe("Revival vs GT: Monk (local player) as target", function()
 
     fw.it("Monk aura suppressed when no Revival cast and GT Shaman is in group", function()
         setupMonkAndShaman()
-        -- Empty snapshot: local player cast nothing -> GT spillover suppresses the Monk's aura.
+        -- Shaman also received a concurrent IMPORTANT aura (GT AoE event) -> count=1 -> confirmed.
+        -- hasMatchingEarlyCancelRule: Revival has no CanCancelEarly -> not found -> GT suppresses.
+        B._TestSetImportantAuraStart("party2", 1.0)
         local entry    = loader.makeEntry("party1")
         local t        = makeTracked(IMP, 1.0, {}, nil, {})
         local rule = B:FindBestCandidate(entry, t, 2.0, { "party2" })
