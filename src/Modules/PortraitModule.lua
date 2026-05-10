@@ -98,14 +98,14 @@ local function CreateContainer(unitFrame, portrait)
 	-- in case something hides the portrait by setting alpha to 0
 	container.Frame:SetIgnoreParentAlpha(false)
 
-	-- Set initial size to match portrait
-	local width = portrait:GetWidth() - 4
-	local height = portrait:GetHeight() - 4
-	local size = math.min(width, height)
+	-- Skip attachment if the portrait dimensions are secret (tainted frame)
+	-- seems to happen with ElvUI when their portraits are disabled
+	local w = portrait:GetWidth()
+	local h = portrait:GetHeight()
+	if issecretvalue(w) or issecretvalue(h) then return nil end
 
-	if size <= 0 then
-		size = 32
-	end
+	local size = math.min(w - 4, h - 4)
+	if size <= 0 then size = 32 end
 
 	container:SetIconSize(size)
 
@@ -312,6 +312,7 @@ local function Attach(unit, events)
 	watchers[unit] = watcher
 
 	local container = CreateContainer(unitFrame, portrait)
+	if not container then return end
 
 	if unit == "pet" then
 		container.Frame:SetFrameLevel(math.max(0, (PetFrame:GetFrameLevel() or 0) - 2))
@@ -358,6 +359,7 @@ local function AttachElvUIFrame(unit)
 	end
 
 	local container = CreateContainer(elvuiFrame, elvuiPortrait)
+	if not container then return end
 	-- 3d models are a frame, where as 2d portraits are textures which don't have a frame level
 	-- so for 2d textures we get the frame level from the parent frame, for 3d portraits we get it directly from the portrait frame
 	local portraitLevel = elvuiPortrait.GetFrameLevel and elvuiPortrait:GetFrameLevel()
@@ -404,6 +406,7 @@ local function AttachTPerlFrame(unit)
 	end
 
 	local container = CreateContainer(tperlFrame, tperlPortrait)
+	if not container then return end
 	local portraitLevel = tperlPortrait.GetFrameLevel and tperlPortrait:GetFrameLevel()
 		or tperlFrame:GetFrameLevel()
 		or 0
@@ -440,6 +443,7 @@ local function AttachUUFFrame(unit)
 	-- uufFrame directly would leave the container far below in the level hierarchy.
 	local highLevelContainer = uufPortrait:GetParent()
 	local container = CreateContainer(highLevelContainer, uufPortrait)
+	if not container then return end
 	local portraitLevel = uufPortrait.GetFrameLevel and uufPortrait:GetFrameLevel()
 		or highLevelContainer:GetFrameLevel()
 		or 0
@@ -485,6 +489,7 @@ local function AttachMSUFFrame(unit)
 	end
 
 	local container = CreateContainer(msufFrame, msufPortrait)
+	if not container then return end
 	local portraitLevel = msufPortrait.GetFrameLevel and msufPortrait:GetFrameLevel()
 		or msufFrame:GetFrameLevel()
 		or 0
