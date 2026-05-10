@@ -349,3 +349,62 @@ fw.describe("Two-shaman GT disambiguation via cast snapshot", function()
         fw.is_nil(rule2, "party2 (sorts later) should be suppressed by the tiebreaker")
     end)
 end)
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Section 4: Grounding Totem MinCancelDuration floor (0.5s)
+--
+-- GT (204336) is CanCancelEarly with MinCancelDuration=0.5.  A measurement below
+-- 0.5s means the aura was consumed almost instantly — too short to be a real GT
+-- activation (could be a network blip or the GT being consumed by a spell before
+-- any real tracking window opens).  The floor must be enforced correctly so a
+-- sub-floor measurement never commits GT.
+--
+-- Tested via FindBestCandidate with IgnoreTalentRequirements=true so that no
+-- talent setup is needed (mirrors the enemy-cooldown path where enemy talent
+-- data is unavailable).
+-- ─────────────────────────────────────────────────────────────────────────────
+
+local GT_OPTS = { IgnoreTalentRequirements = true }
+
+fw.describe("Grounding Totem - MinCancelDuration=0.5 floor", function()
+    fw.before_each(reset)
+
+    fw.it("GT does NOT commit at 0.3s (below MinCancelDuration floor)", function()
+        -- CanCancelEarly: 0.3 ≤ 3.5 + 0.5 = 4.0 → duration window passes.
+        -- MinCancelDuration: 0.3 < 0.5 → fails → rule rejected.
+        wow.setUnitClass("arena1", "SHAMAN")
+        local entry = loader.makeEntry("arena1")
+        local t     = makeTracked(IMP, 1.0, {}, nil)
+        local rule  = B:FindBestCandidate(entry, t, 0.3, {}, GT_OPTS)
+        fw.is_nil(rule, "GT MinCancelDuration=0.5 must reject a 0.3s measurement")
+    end)
+
+    fw.it("GT commits at exactly 0.5s (MinCancelDuration floor, inclusive)", function()
+        -- MinCancelDuration check: dur >= MinCancelDuration → 0.5 >= 0.5 → passes.
+        wow.setUnitClass("arena1", "SHAMAN")
+        local entry = loader.makeEntry("arena1")
+        local t     = makeTracked(IMP, 1.0, {}, nil)
+        local rule  = B:FindBestCandidate(entry, t, 0.5, {}, GT_OPTS)
+        fw.not_nil(rule, "GT should commit at exactly the MinCancelDuration floor (0.5s)")
+        fw.eq(rule and rule.SpellId, 204336, "SpellId should be Grounding Totem (204336)")
+    end)
+
+    fw.it("GT commits at 0.7s (above MinCancelDuration floor)", function()
+        wow.setUnitClass("arena1", "SHAMAN")
+        local entry = loader.makeEntry("arena1")
+        local t     = makeTracked(IMP, 1.0, {}, nil)
+        local rule  = B:FindBestCandidate(entry, t, 0.7, {}, GT_OPTS)
+        fw.not_nil(rule, "GT should commit at 0.7s (above the 0.5s floor)")
+        fw.eq(rule and rule.SpellId, 204336, "SpellId should be Grounding Totem (204336)")
+    end)
+
+    fw.it("GT does NOT commit at 0.3s even when Shaman has non-GT IMPORTANT rules", function()
+        -- Astral Shift is 12s BIG+IMP; at 0.3s it would not match (|0.3-12|>>0.5).
+        -- Confirms nothing else accidentally fills the gap left by GT's MinCancelDuration rejection.
+        wow.setUnitClass("arena1", "SHAMAN")
+        local entry = loader.makeEntry("arena1")
+        local t     = makeTracked({ BIG_DEFENSIVE = true, IMPORTANT = true }, 1.0, {}, nil)
+        local rule  = B:FindBestCandidate(entry, t, 0.3, {}, GT_OPTS)
+        fw.is_nil(rule, "No Shaman rule should match at 0.3s (GT blocked, Astral Shift too long)")
+    end)
+end)
