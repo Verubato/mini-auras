@@ -408,3 +408,72 @@ fw.describe("Grounding Totem - MinCancelDuration=0.5 floor", function()
         fw.is_nil(rule, "No Shaman rule should match at 0.3s (GT blocked, Astral Shift too long)")
     end)
 end)
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Section 5: GT suppression with confirmed AoE event - Warrior Spell Reflect regression
+--
+-- When multiple units simultaneously received a concurrent IMPORTANT-only aura
+-- (confirmed AoE, CountConcurrentImportantAuras > 0), GT suppression must hold
+-- even for warriors who have Spell Reflect (CanCancelEarly, BuffDuration=5s).
+-- SR's CanCancelEarly window (0-5.5s) completely covers GT's range (0.5-4s), so
+-- a naive CanCancelEarly rule check would always lift suppression on warriors.
+--
+-- Fix: when confirmedAoeEvent=true, skip the rule check entirely and trust the
+-- AoE signal.  SR pressed alongside GT creates a separate aura instance ID that
+-- commits independently when it ends.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+fw.describe("GT suppression holds for Warriors with Spell Reflect (confirmed AoE)", function()
+    fw.before_each(reset)
+
+    fw.it("GT suppressed for warrior when shaman also got concurrent IMPORTANT aura", function()
+        -- party1=warrior (Arms, has Spell Reflect), party2=shaman (GT talent).
+        -- Both received a concurrent IMPORTANT-only aura at the same start time.
+        -- SR (CanCancelEarly, 5s) covers the 2.0s duration, but the AoE signal must win.
+        wow.setInstanceType("arena")
+        wow.setUnitClass("party1", "WARRIOR")
+        mods.talents._setSpec("party1", 71)   -- Arms; SR rule is in BySpec[71]
+        mods.talents._setTalent("party1", 23920, true)
+        wow.setUnitClass("party2", "SHAMAN")
+        mods.talents._setTalent("party2", 3620, true)
+        -- Simulate shaman also receiving the IMPORTANT aura at the same time (t=1.0).
+        B._TestSetImportantAuraStart("party2", 1.0)
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(IMP, 1.0, {}, nil)
+        local rule = B:FindBestCandidate(entry, t, 2.0, { "party2" })
+        fw.is_nil(rule, "GT suppression must hold when AoE event is confirmed, even for warriors with SR")
+    end)
+
+    fw.it("GT suppressed at 3.5s (GT max) when AoE confirmed", function()
+        -- Duration at GT's max: SR still covers it (3.5 <= 5.5), but AoE signal wins.
+        wow.setInstanceType("arena")
+        wow.setUnitClass("party1", "WARRIOR")
+        mods.talents._setSpec("party1", 71)
+        mods.talents._setTalent("party1", 23920, true)
+        wow.setUnitClass("party2", "SHAMAN")
+        mods.talents._setTalent("party2", 3620, true)
+        B._TestSetImportantAuraStart("party2", 1.0)
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(IMP, 1.0, {}, nil)
+        local rule = B:FindBestCandidate(entry, t, 3.5, { "party2" })
+        fw.is_nil(rule, "GT suppression must hold at GT max duration when AoE confirmed")
+    end)
+
+    fw.it("SR commits for warrior when no concurrent AoE event (GT only hit shaman)", function()
+        -- No concurrent IMPORTANT aura on other units: confirmedAoeEvent=false.
+        -- hasMatchingRule finds SR -> suppression lifted -> SR committed.
+        -- (GT only hit the shaman in this scenario; warrior pressed SR independently.)
+        wow.setInstanceType("arena")
+        wow.setUnitClass("party1", "WARRIOR")
+        mods.talents._setSpec("party1", 71)
+        mods.talents._setTalent("party1", 23920, true)
+        wow.setUnitClass("party2", "SHAMAN")
+        mods.talents._setTalent("party2", 3620, true)
+        -- No _TestSetImportantAuraStart call: no concurrent aura on party2.
+        local entry = loader.makeEntry("party1")
+        local t = makeTracked(IMP, 1.0, {}, nil)
+        local rule = B:FindBestCandidate(entry, t, 2.0, { "party2" })
+        fw.not_nil(rule, "SR should commit when no concurrent AoE event confirms GT")
+        fw.eq(rule and rule.SpellId, 23920, "SpellId must be Spell Reflect (23920)")
+    end)
+end)

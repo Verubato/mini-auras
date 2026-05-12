@@ -501,7 +501,7 @@ local rules = {
 				RequiresTalent = 440738,
 			}, -- Guardian Spirit (Foreseen Circumstances)
 			{
-				BuffDuration = 5,
+				BuffDuration = 4.5,
 				Cooldown = 180,
 				Important = true,
 				BigDefensive = false,

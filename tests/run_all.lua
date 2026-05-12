@@ -33,6 +33,7 @@ local testFiles = {
     "tests/test_emerald_communion.lua",
     "tests/test_intraspec_ambiguity.lua",
     "tests/test_beserker_roar.lua",
+    "tests/test_isprobably_signals.lua",
 }
 
 local loadErrors = {}
