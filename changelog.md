@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.18.0
+
+- Added Warrior Beserker Roar.
+- Better Survival of the Fittest tracking.
+- Fixed ElvUI error when portraits are disabled.
+
 ## 3.17.1
 
 - Potential fix for lingering kick CC icon.
