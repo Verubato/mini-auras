@@ -388,6 +388,51 @@ local function FindRuleBySpellId(unit, specId, auraTypes, spellId)
 	return checkList(specId and rules.BySpec[specId]) or checkList(rules.ByClass[classToken])
 end
 
+---Returns true when measuredDuration satisfies the duration check for rule's matching mode
+---(CanCancelEarly, MinDuration, or exact within tolerance).  measuredDuration=nil short-circuits
+---to true so predict-path callers that haven't measured a duration yet still pass.
+---expectedDurationOverride lets callers substitute a talent-adjusted duration for rule.BuffDuration.
+---@param rule table
+---@param measuredDuration number?
+---@param expectedDurationOverride number?
+---@return boolean
+local function RuleAcceptsMeasuredDuration(rule, measuredDuration, expectedDurationOverride)
+	if not measuredDuration then return true end
+	local expectedDur = expectedDurationOverride or rule.BuffDuration or 0
+	if rule.CanCancelEarly then
+		return measuredDuration <= expectedDur + tolerance
+			and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration)
+	elseif rule.MinDuration then
+		return measuredDuration >= expectedDur - tolerance
+	end
+	return math.abs(measuredDuration - expectedDur) <= tolerance
+end
+
+---Returns true when the local player has, within the cast window, a cast whose SpellId
+---resolves to a rule for this auraTypes set (optionally also satisfying the rule's duration
+---check when measuredDuration is provided).  Shared by PlayerHasExtCastInWindow,
+---LocalPlayerCastMatchesAuraRule, and LocalPlayerHasSnapshotButNoMatch.
+---@param castSpellIdSnapshot table<string,{SpellId:number,Time:number}[]>?
+---@param startTime number?
+---@param auraTypes table<string,boolean>
+---@param measuredDuration number?
+---@return boolean
+local function PlayerCastMatchesAuraRule(castSpellIdSnapshot, startTime, auraTypes, measuredDuration)
+	if not castSpellIdSnapshot or not startTime then return false end
+	local playerCasts = castSpellIdSnapshot["player"]
+	if not playerCasts then return false end
+	local playerSpecId = fcdTalents:GetUnitSpecId("player")
+	for _, cast in ipairs(playerCasts) do
+		if math.abs(cast.Time - startTime) <= castWindow then
+			local matchedRule = FindRuleBySpellId("player", playerSpecId, auraTypes, cast.SpellId)
+			if matchedRule and RuleAcceptsMeasuredDuration(matchedRule, measuredDuration) then
+				return true
+			end
+		end
+	end
+	return false
+end
+
 ---Returns true when the local player cast an EXT-matching spell within the detection window.
 ---Returns false when the player provably did not cast one (no snapshot or no match found).
 ---@param castSpellIdSnapshot table<string,{SpellId:number,Time:number}[]>?
@@ -395,17 +440,7 @@ end
 ---@param auraTypes table<string,boolean>
 ---@return boolean
 local function PlayerHasExtCastInWindow(castSpellIdSnapshot, startTime, auraTypes)
-	local playerCasts = castSpellIdSnapshot and castSpellIdSnapshot["player"]
-	if not playerCasts then return false end
-	local playerSpecId = fcdTalents:GetUnitSpecId("player")
-	for _, cast in ipairs(playerCasts) do
-		if math.abs(cast.Time - startTime) <= castWindow then
-			if FindRuleBySpellId("player", playerSpecId, auraTypes, cast.SpellId) then
-				return true
-			end
-		end
-	end
-	return false
+	return PlayerCastMatchesAuraRule(castSpellIdSnapshot, startTime, auraTypes, nil)
 end
 
 ---Checks whether unit (or its GUID) has already been seen.
@@ -465,31 +500,17 @@ local function MatchRule(unit, auraTypes, measuredDuration, context)
 		if not ruleList or #ruleList == 0 then return nil end
 		local fallback = nil
 		for _, rule in ipairs(ruleList) do
-			if not rule.NoAura and RulePassesTalentGates(rule, unit, specId, ignoreTalentReqs) then
+			if not rule.NoAura and RulePassesTalentGates(rule, unit, specId, ignoreTalentReqs)
+			   and AuraTypeMatchesRule(auraTypes, rule)
+			   and EvidenceMatchesReq(rule.RequiresEvidence, evidence) then
 				local expectedDuration = rule.SpellId
-						and fcdTalents:GetUnitBuffDuration(unit, specId, classToken, rule.SpellId, rule.BuffDuration)
+					and fcdTalents:GetUnitBuffDuration(unit, specId, classToken, rule.SpellId, rule.BuffDuration)
 					or rule.BuffDuration
-				local typeMatch = AuraTypeMatchesRule(auraTypes, rule)
-				if typeMatch then
-					local req = rule.RequiresEvidence
-					local evidenceOk = EvidenceMatchesReq(req, evidence)
-					if evidenceOk then
-						local durationOk
-						if rule.MinDuration then
-							durationOk = measuredDuration >= expectedDuration - tolerance
-						elseif rule.CanCancelEarly == true then
-							durationOk = measuredDuration <= expectedDuration + tolerance
-								and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration)
-						else
-							durationOk = math.abs(measuredDuration - expectedDuration) <= tolerance
-						end
-						if durationOk then
-							if not IsSpellOnCooldown(activeCooldowns, rule.SpellId) then
-								return rule
-							else
-								if not fallback then fallback = rule end
-							end
-						end
+				if RuleAcceptsMeasuredDuration(rule, measuredDuration, expectedDuration) then
+					if not IsSpellOnCooldown(activeCooldowns, rule.SpellId) then
+						return rule
+					elseif not fallback then
+						fallback = rule
 					end
 				end
 			end
@@ -499,39 +520,6 @@ local function MatchRule(unit, auraTypes, measuredDuration, context)
 
 	-- Spec rules take priority; fall through to class rules if no match.
 	return tryRuleList(specId and rules.BySpec[specId]) or tryRuleList(rules.ByClass[classToken])
-end
-
----Returns true when 'unit' has at least one CastableOnOthers rule that matches 'auraTypes'
----and requires Shield evidence.  Used to grant selective synthetic Cast to candidates that
----can only win via a Shield-requiring spell (e.g. AMS from Spellwarding), so a Paladin whose
----BoF does not require Shield is never mistakenly promoted via the same bypass.
----@param unit string
----@param auraTypes table<string,boolean>
----@return boolean
-local function CandidateHasShieldRule(unit, auraTypes)
-	local _, classToken = UnitClass(unit)
-	if not classToken then return false end
-	local specId = fcdTalents:GetUnitSpecId(unit)
-	local function checkList(ruleList)
-		if not ruleList then return false end
-		for _, rule in ipairs(ruleList) do
-			if rule.CastableOnOthers and AuraTypeMatchesRule(auraTypes, rule) then
-				local req = rule.RequiresEvidence
-				if req then
-					if type(req) == "table" then
-						for _, r in ipairs(req) do
-							if r == "Shield" then return true end
-						end
-					elseif req == "Shield" then
-						return true
-					end
-				end
-			end
-		end
-		return false
-	end
-	if specId and checkList(rules.BySpec[specId]) then return true end
-	return checkList(rules.ByClass[classToken])
 end
 
 ---Tries to match auraTypes + evidence against a single unit's rule lists.
@@ -809,6 +797,27 @@ local function HasCasterTalent(cfg, unit, ignoreTalentReqs)
 	return false
 end
 
+---Returns true when the local player has a cast in the window whose SpellId matches idOrSet
+---(a single ID or a {[id]=true} lookup set).  Returns false when no snapshot, no match, or
+---idOrSet is nil.  Centralises the "did the local player press X?" check used throughout
+---IsProbablyAoeSpillover and its supporting helpers.
+local function LocalPlayerCastIdInSet(castSpellIdSnapshot, startTime, idOrSet)
+	if not idOrSet or not castSpellIdSnapshot or not startTime then return false end
+	local playerCasts = castSpellIdSnapshot["player"]
+	if not playerCasts then return false end
+	local isSet = type(idOrSet) == "table"
+	for _, cast in ipairs(playerCasts) do
+		if math.abs(cast.Time - startTime) <= castWindow then
+			if isSet then
+				if idOrSet[cast.SpellId] then return true end
+			elseif cast.SpellId == idOrSet then
+				return true
+			end
+		end
+	end
+	return false
+end
+
 ---Returns true when targetUnit (a Monk with Peaceweaver) probably has their own Revival/Restoral
 ---aura rather than GT/BR spillover.  Used inside GT and BR detection to avoid suppressing a
 ---valid Revival commit.  Remote Monk: talent + duration gate is sufficient.  Local Monk: cast
@@ -817,19 +826,8 @@ local function IsMonkRevivalAura(targetUnit, measuredDuration, startTime, castSp
 	if measuredDuration and measuredDuration > revivalSpilloverCfg.MaxDuration + tolerance then
 		return false
 	end
-	if ResolveSnapshotUnit(targetUnit) ~= "player" then
-		return true
-	end
-	local localCasts = castSpellIdSnapshot and startTime and castSpellIdSnapshot["player"]
-	if localCasts then
-		for _, cast in ipairs(localCasts) do
-			if revivalSpilloverCfg.CasterSpellIds[cast.SpellId]
-			and math.abs(cast.Time - startTime) <= castWindow then
-				return true
-			end
-		end
-	end
-	return false
+	if ResolveSnapshotUnit(targetUnit) ~= "player" then return true end
+	return LocalPlayerCastIdInSet(castSpellIdSnapshot, startTime, revivalSpilloverCfg.CasterSpellIds)
 end
 
 ---Returns true when targetUnit (a GT shaman) should be suppressed as an AoE spillover recipient
@@ -840,55 +838,31 @@ end
 ---Case B: remote shaman target; suppress if local player's snapshot proves THEY pressed GT.
 ---Tiebreaker: suppress this shaman if another GT shaman candidate sorts earlier by unit string.
 local function IsGroundingTotemCasterSuppressed(cfg, targetUnit, candidateUnits, startTime, castSpellIdSnapshot, ignoreTalentReqs)
-	local casterSpellId = cfg.CasterSpellId
-	if ResolveSnapshotUnit(targetUnit) == "player" then
-		-- Case A
-		local localCasts = castSpellIdSnapshot and castSpellIdSnapshot["player"]
-		local localPressedIt = false
-		if localCasts and startTime then
-			for _, cast in ipairs(localCasts) do
-				if cast.SpellId == casterSpellId and math.abs(cast.Time - startTime) <= castWindow then
-					localPressedIt = true; break
-				end
-			end
-		end
-		if localPressedIt then return false end
+	local localPressedGT = LocalPlayerCastIdInSet(castSpellIdSnapshot, startTime, cfg.CasterSpellId)
+	local targetResolved = ResolveSnapshotUnit(targetUnit)
+
+	if targetResolved == "player" then
+		-- Case A: local player is the shaman target.
+		if localPressedGT then return false end
 		for _, candidate in ipairs(candidateUnits) do
 			if ResolveSnapshotUnit(candidate) ~= "player" and HasCasterTalent(cfg, candidate, ignoreTalentReqs) then
 				return true
 			end
 		end
-	elseif castSpellIdSnapshot and startTime then
-		-- Case B
-		local localCasts = castSpellIdSnapshot["player"]
-		if localCasts and HasCasterTalent(cfg, "player", ignoreTalentReqs) then
-			for _, cast in ipairs(localCasts) do
-				if cast.SpellId == casterSpellId and math.abs(cast.Time - startTime) <= castWindow then
-					return true
-				end
-			end
-		end
+	elseif localPressedGT and HasCasterTalent(cfg, "player", ignoreTalentReqs) then
+		-- Case B: remote shaman target, local player demonstrably pressed GT.
+		return true
 	end
+
 	-- Tiebreaker: the "smallest" unit string wins the commit; all others are suppressed.
 	-- Exception: the local player is only counted when their snapshot proves they pressed GT
 	-- (UNIT_SPELLCAST_SUCCEEDED always fires for "player" on 12.0.5+).
 	for _, candidate in ipairs(candidateUnits) do
-		local resolvedCandidate = ResolveSnapshotUnit(candidate)
-		if resolvedCandidate ~= ResolveSnapshotUnit(targetUnit)
-			and HasCasterTalent(cfg, candidate, ignoreTalentReqs)
-			and candidate < targetUnit then
-			local eligible = true
-			if resolvedCandidate == "player" then
-				eligible = false
-				local localCasts = castSpellIdSnapshot and castSpellIdSnapshot["player"]
-				if localCasts and startTime then
-					for _, cast in ipairs(localCasts) do
-						if cast.SpellId == casterSpellId and math.abs(cast.Time - startTime) <= castWindow then
-							eligible = true; break
-						end
-					end
-				end
-			end
+		local candidateResolved = ResolveSnapshotUnit(candidate)
+		if candidateResolved ~= targetResolved
+		   and HasCasterTalent(cfg, candidate, ignoreTalentReqs)
+		   and candidate < targetUnit then
+			local eligible = candidateResolved ~= "player" or localPressedGT
 			if eligible then return true end
 		end
 	end
@@ -906,64 +880,104 @@ end
 local function TargetExplainsOwnAura(auraTypes, targetUnit, measuredDuration, confirmedAoeEvent, strictAoeCheck)
 	local _, targetClass = UnitClass(targetUnit)
 	if not targetClass then return false end
+	-- GT confirmed (confirmedAoeEvent=true, strictAoeCheck=false): trust the AoE signal entirely.
+	if confirmedAoeEvent and not strictAoeCheck then return false end
 	local specId = fcdTalents:GetUnitSpecId(targetUnit)
-	if confirmedAoeEvent and strictAoeCheck then
-		local function hasMatchingEarlyCancelRule(ruleList)
-			if not ruleList then return false end
-			for _, rule in ipairs(ruleList) do
-				if rule.CanCancelEarly and not rule.NoAura
-				   and AuraTypeMatchesRule(auraTypes, rule)
-				   and RulePassesTalentGates(rule, targetUnit, specId, false) then
-					if not measuredDuration then
-						return true
-					end
-					local expectedDuration = rule.SpellId
-						and fcdTalents:GetUnitBuffDuration(targetUnit, specId, targetClass, rule.SpellId, rule.BuffDuration)
-						or rule.BuffDuration
-					if measuredDuration <= expectedDuration + tolerance
-					   and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration) then
-						return true
-					end
-				end
-			end
-			return false
+	-- BR/Revival confirmed: only CanCancelEarly rules can lift suppression (exact-duration solo
+	-- spells like Evasion cannot override a real AoE signal).  Otherwise any matching rule wins.
+	local strictMode = confirmedAoeEvent and strictAoeCheck
+
+	local function ruleExplains(rule)
+		if rule.NoAura then return false end
+		if strictMode and not rule.CanCancelEarly then return false end
+		if not AuraTypeMatchesRule(auraTypes, rule) then return false end
+		if not RulePassesTalentGates(rule, targetUnit, specId, false) then return false end
+		if not measuredDuration then
+			-- Predict-path: only CanCancelEarly rules can lift without a measurement; exact-duration
+			-- spells need the eventual duration to decide.
+			return rule.CanCancelEarly == true
 		end
-		return hasMatchingEarlyCancelRule(specId and rules.BySpec[specId])
-			or hasMatchingEarlyCancelRule(rules.ByClass[targetClass])
-	elseif not (confirmedAoeEvent and not strictAoeCheck) then
-		local function hasMatchingRule(ruleList)
-			if not ruleList then return false end
-			for _, rule in ipairs(ruleList) do
-				if not rule.NoAura
-				   and AuraTypeMatchesRule(auraTypes, rule)
-				   and RulePassesTalentGates(rule, targetUnit, specId, false) then
-					if not measuredDuration then
-						if rule.CanCancelEarly then return true end
-					else
-						local expectedDuration = rule.SpellId
-							and fcdTalents:GetUnitBuffDuration(targetUnit, specId, targetClass, rule.SpellId, rule.BuffDuration)
-							or rule.BuffDuration
-						if rule.CanCancelEarly then
-							if measuredDuration <= expectedDuration + tolerance
-							   and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration) then
-								return true
-							end
-						elseif rule.MinDuration then
-							if measuredDuration >= expectedDuration - tolerance then
-								return true
-							end
-						else
-							if math.abs(measuredDuration - expectedDuration) <= tolerance then
-								return true
-							end
-						end
-					end
-				end
-			end
-			return false
+		local expectedDuration = rule.SpellId
+			and fcdTalents:GetUnitBuffDuration(targetUnit, specId, targetClass, rule.SpellId, rule.BuffDuration)
+			or rule.BuffDuration
+		return RuleAcceptsMeasuredDuration(rule, measuredDuration, expectedDuration)
+	end
+
+	local function scanList(ruleList)
+		if not ruleList then return false end
+		for _, rule in ipairs(ruleList) do
+			if ruleExplains(rule) then return true end
 		end
-		return hasMatchingRule(specId and rules.BySpec[specId])
-			or hasMatchingRule(rules.ByClass[targetClass])
+		return false
+	end
+	return scanList(specId and rules.BySpec[specId]) or scanList(rules.ByClass[targetClass])
+end
+
+---Like PlayerCastMatchesAuraRule but additionally requires the target to resolve to the local
+---player.  Returns true only when the local player IS the target AND has a matching cast.
+local function LocalPlayerCastMatchesAuraRule(castSpellIdSnapshot, startTime, targetUnit, auraTypes, measuredDuration)
+	if ResolveSnapshotUnit(targetUnit) ~= "player" then return false end
+	return PlayerCastMatchesAuraRule(castSpellIdSnapshot, startTime, auraTypes, measuredDuration)
+end
+
+---Returns true when targetUnit is the local player AND no cast in the window matches a rule
+---for this aura type.  Distinguishes "player demonstrably cast nothing relevant" (true) from
+---"target is not the player" / "no snapshot" (false).  Used to skip TargetExplainsOwnAura
+---when the player's own rule would have lifted suppression but they provably didn't press it.
+local function LocalPlayerHasSnapshotButNoMatch(castSpellIdSnapshot, startTime, targetUnit, auraTypes)
+	if not castSpellIdSnapshot or not startTime then return false end
+	if ResolveSnapshotUnit(targetUnit) ~= "player" then return false end
+	return not PlayerCastMatchesAuraRule(castSpellIdSnapshot, startTime, auraTypes, nil)
+end
+
+---Returns (handled, suppress) when the target is a Monk with the Peaceweaver PvP talent
+---receiving a short aura while the spillover check is for GT or BR.  handled=false means
+---"not applicable, keep going"; handled=true means the caller should return suppress directly.
+---  * Local player cast GT/BR → Monk's aura is spillover from that cast (handled, true).
+---  * Monk's cast snapshot proves Revival/Restoral, or it's a remote Monk and the duration fits
+---    Revival → it's the Monk's own Revival rule (handled, false).
+---  * Remote Monk where Revival cannot be confirmed → assume Revival to be safe (handled, false).
+---  * Local Monk whose Revival was ruled out → fall through (handled=false).
+local function HandleMonkPeaceweaverTarget(cfg, targetUnit, measuredDuration, startTime, castSpellIdSnapshot)
+	local _, targetClass = UnitClass(targetUnit)
+	if targetClass ~= "MONK" then return false, nil end
+	if not fcdTalents:UnitHasTalent(targetUnit, 5395) then return false, nil end
+
+	-- Local player cast GT (cfg.CasterSpellId) or BR (cfg.CasterCastSpellId) → spillover from that cast.
+	if LocalPlayerCastIdInSet(castSpellIdSnapshot, startTime, cfg.CasterSpellId)
+	   or LocalPlayerCastIdInSet(castSpellIdSnapshot, startTime, cfg.CasterCastSpellId) then
+		return true, true
+	end
+	-- Monk demonstrably cast Revival, or remote Monk with a duration consistent with Revival.
+	if IsMonkRevivalAura(targetUnit, measuredDuration, startTime, castSpellIdSnapshot) then
+		return true, false
+	end
+	-- Remote Monk where IsMonkRevivalAura was inconclusive: prefer the safer Revival reading.
+	if ResolveSnapshotUnit(targetUnit) ~= "player" then
+		return true, false
+	end
+	-- Local Monk whose Revival cast was not present: fall through to the caller's normal flow.
+	return false, nil
+end
+
+---Returns true when an AoE event for cfg is confirmed: either ≥1 concurrent IMPORTANT-only
+---aura starts on other units, or (GT/Revival only) ≥1 simultaneous IMPORTANT-only aura removals
+---at the expected end time.  BR explicitly opts out of the removal signal via SimultaneousExpiry=false.
+local function ConfirmedAoeEvent(cfg, targetUnit, startTime, measuredDuration)
+	if not startTime then return false end
+	if CountConcurrentImportantAuras(startTime, targetUnit) > 0 then return true end
+	if cfg.SimultaneousExpiry and measuredDuration then
+		return CountConcurrentImportantAuraRemovals(startTime + measuredDuration, targetUnit) > 0
+	end
+	return false
+end
+
+---Returns true when at least one candidate has cfg's caster talent (i.e. is a plausible caster
+---of the spillover aura).  Honours ignoreTalentReqs so the enemy-tracking path still works
+---without talent data.
+local function AnyCandidateHasCasterTalent(cfg, candidateUnits, ignoreTalentReqs)
+	for _, candidate in ipairs(candidateUnits) do
+		if HasCasterTalent(cfg, candidate, ignoreTalentReqs) then return true end
 	end
 	return false
 end
@@ -971,6 +985,18 @@ end
 ---Returns true when a unit's IMPORTANT aura is probably AoE spillover from cfg.CasterClass's
 ---PvP ability (Grounding Totem, Beserker Roar, or Revival).  Configured via a cfg table
 ---(gtSpilloverCfg, brSpilloverCfg, revivalSpilloverCfg).
+---
+---Decision flow:
+---  1. Base gates  - aura type, max duration, shield exclusion, PvP context.
+---  2. BR-only     - simultaneous aura removals rule out BR (GT/Revival expire allies together).
+---  3. Monk cross  - Monk+Peaceweaver target needs Revival disambiguation for GT/BR cfgs.
+---  4. Monk caster - cfg.CasterClass=MONK never suppresses its own Monk targets.
+---  5. Fast exit   - local player's cast matches a rule for this aura → not spillover.
+---  6. Caster-self - target is the caster: GT uses tiebreaker logic; BR returns true when AoE
+---                   concurrent starts are detected so TryWarriorBRSelfCommit can commit BR.
+---  7. Definitive  - local player cast cfg's caster ability (Revival/BR) → spillover confirmed.
+---  8. Rule lift   - target's own personal ability rule may explain the aura instead.
+---  9. Scan        - any other candidate with the caster talent → spillover.
 ---@param cfg AoeSpilloverCfg
 ---@param auraTypes table<string,boolean>
 ---@param targetUnit string
@@ -982,6 +1008,7 @@ end
 ---@param ignoreTalentReqs boolean?
 ---@return boolean
 local function IsProbablyAoeSpillover(cfg, auraTypes, targetUnit, candidateUnits, measuredDuration, startTime, evidence, castSpellIdSnapshot, ignoreTalentReqs)
+	-- 1. Base gates
 	if not auraTypes["IMPORTANT"] then return false end
 	if auraTypes["BIG_DEFENSIVE"] or auraTypes["EXTERNAL_DEFENSIVE"] then return false end
 	if measuredDuration and measuredDuration > cfg.MaxDuration + tolerance then return false end
@@ -991,7 +1018,7 @@ local function IsProbablyAoeSpillover(cfg, auraTypes, targetUnit, candidateUnits
 		return false
 	end
 
-	-- BR: simultaneous aura removals are caused by GT/Revival expiry, which rules out BR.
+	-- 2. BR: simultaneous removals are caused by GT/Revival expiry, which rules out BR.
 	if not cfg.SimultaneousExpiry then
 		local endTime = startTime and measuredDuration and (startTime + measuredDuration)
 		if endTime and CountConcurrentImportantAuraRemovals(endTime, targetUnit) > 0 then
@@ -999,170 +1026,57 @@ local function IsProbablyAoeSpillover(cfg, auraTypes, targetUnit, candidateUnits
 		end
 	end
 
-	-- GT/BR: a Monk with Peaceweaver produces a 2s Revival/Restoral aura indistinguishable from
-	-- GT/BR spillover by duration alone.  Confirm or rule out Revival before proceeding.
-	-- Exception: if the local player's snapshot proves THEY pressed the caster ability (GT/BR),
-	-- the Monk's aura is definitively spillover from that cast — suppress immediately, bypassing
-	-- TargetExplainsOwnAura (which would otherwise find the Revival rule and lift suppression).
+	-- 3. Monk+Peaceweaver target receiving GT/BR spillover may shadow as Revival.
 	if not ignoreTalentReqs and cfg.CasterClass ~= "MONK" then
-		local _, targetClass = UnitClass(targetUnit)
-		if targetClass == "MONK" and fcdTalents:UnitHasTalent(targetUnit, 5395) then
-			local localCasterCastId = cfg.CasterSpellId or cfg.CasterCastSpellId
-			local localCasterConfirmed = false
-			if localCasterCastId and castSpellIdSnapshot and startTime then
-				local localCasts = castSpellIdSnapshot["player"]
-				if localCasts then
-					for _, cast in ipairs(localCasts) do
-						if cast.SpellId == localCasterCastId
-						   and math.abs(cast.Time - startTime) <= castWindow then
-							localCasterConfirmed = true; break
-						end
-					end
-				end
-			end
-			if localCasterConfirmed then
-				-- Local player cast GT/BR → Monk's aura is spillover from that cast.
-				-- Returning true here skips TargetExplainsOwnAura, which would otherwise
-				-- find the Revival rule and incorrectly lift suppression.
-				return true
-			end
-			if IsMonkRevivalAura(targetUnit, measuredDuration, startTime, castSpellIdSnapshot) then
-				return false
-			end
-			if ResolveSnapshotUnit(targetUnit) ~= "player" then
-				return false
-			end
-			-- Local Monk whose Revival was ruled out; fall through to GT candidate detection.
-		end
+		local handled, suppress = HandleMonkPeaceweaverTarget(cfg, targetUnit, measuredDuration, startTime, castSpellIdSnapshot)
+		if handled then return suppress end
 	end
 
-	-- Revival: Monk targets always commit their own spell via MatchRule, not spillover detection.
+	-- 4. Revival: Monk targets always commit their own spell via MatchRule.
 	if cfg.CasterClass == "MONK" then
 		local _, targetClass = UnitClass(targetUnit)
 		if targetClass == "MONK" then return false end
 	end
 
-	-- Fast exit: if the local player's cast snapshot contains a cast that matches a tracked
-	-- rule for this aura type, they pressed their own spell — not a spillover recipient.
-	-- On 12.0.5+, UNIT_SPELLCAST_SUCCEEDED fires on every keypress, so a matching cast ID
-	-- is definitive proof.  Example: a warrior who pressed BR has cast 384100 → BR rule;
-	-- GT's AoE signal (concurrent starts from BR itself) must not override this evidence.
-	-- Duration guard: when measuredDuration is known, verify it's consistent with the matched
-	-- rule so a valid cast ID for a short spell (e.g. Revival at 2s) does not mask a spillover
-	-- aura of a different duration (e.g. GT at 3s appearing on the same Monk).
-	if not ignoreTalentReqs and castSpellIdSnapshot and startTime
-	   and ResolveSnapshotUnit(targetUnit) == "player" then
-		local playerCasts = castSpellIdSnapshot["player"]
-		if playerCasts then
-			local specId = fcdTalents:GetUnitSpecId("player")
-			for _, cast in ipairs(playerCasts) do
-				if math.abs(cast.Time - startTime) <= castWindow then
-					local matchedRule = FindRuleBySpellId("player", specId, auraTypes, cast.SpellId)
-					if matchedRule then
-						local durationOk = true
-						if measuredDuration then
-							local expectedDur = matchedRule.BuffDuration or 0
-							if matchedRule.CanCancelEarly then
-								durationOk = measuredDuration <= expectedDur + tolerance
-									and (not matchedRule.MinCancelDuration
-										or measuredDuration >= matchedRule.MinCancelDuration)
-							elseif matchedRule.MinDuration then
-								durationOk = measuredDuration >= expectedDur - tolerance
-							else
-								durationOk = math.abs(measuredDuration - expectedDur) <= tolerance
-							end
-						end
-						if durationOk then return false end
-					end
-				end
-			end
-		end
+	-- 5. Fast exit: local player's own cast (with matching rule and duration) is definitive.
+	if not ignoreTalentReqs
+	   and LocalPlayerCastMatchesAuraRule(castSpellIdSnapshot, startTime, targetUnit, auraTypes, measuredDuration) then
+		return false
 	end
 
-	-- Caster-as-target: apply caster-side disambiguation.
-	-- GT shamans use cast evidence + unit-string tiebreaker (IsGroundingTotemCasterSuppressed).
-	-- BR warriors: if a concurrent AoE start was detected, the warrior's IMP aura is the
-	-- BR Spell Reflect buff applied by their own cast — suppress it so it isn't committed
-	-- as Spell Reflect (23920).  Without concurrent starts (solo press), fall through so the
-	-- BR rule (1227751) can commit normally via MatchRule.
+	-- 6. Caster-as-target disambiguation.
 	if HasCasterTalent(cfg, targetUnit, ignoreTalentReqs) then
 		if cfg.CasterClass == "SHAMAN" then
 			return IsGroundingTotemCasterSuppressed(cfg, targetUnit, candidateUnits, startTime, castSpellIdSnapshot, ignoreTalentReqs)
 		end
-		if startTime and CountConcurrentImportantAuras(startTime, targetUnit) > 0 then
-			return true
-		end
-		return false
+		-- BR warrior caster: concurrent starts → suppress so TryWarriorBRSelfCommit commits BR
+		-- directly (MatchRule would otherwise attribute the aura to Spell Reflect first).
+		return startTime ~= nil and CountConcurrentImportantAuras(startTime, targetUnit) > 0
 	end
 
-	-- Revival: local player's cast snapshot is definitive evidence; bypass the rule check.
-	-- Handles targets (e.g. GT shamans) whose own rules would otherwise lift suppression.
-	if cfg.CasterSpellIds and castSpellIdSnapshot and startTime then
-		local localCasts = castSpellIdSnapshot["player"]
-		if localCasts then
-			for _, cast in ipairs(localCasts) do
-				if cfg.CasterSpellIds[cast.SpellId] and math.abs(cast.Time - startTime) <= castWindow then
-					for _, candidate in ipairs(candidateUnits) do
-						if HasCasterTalent(cfg, candidate, ignoreTalentReqs) then return true end
-					end
-					return false
-				end
-			end
-		end
+	-- 7. Definitive local-cast evidence for the caster ability.
+	--    Revival (CasterSpellIds) requires a Monk candidate to confirm spillover.
+	--    BR (CasterCastSpellId) is sufficient on its own (warrior may have left candidates).
+	if cfg.CasterSpellIds and LocalPlayerCastIdInSet(castSpellIdSnapshot, startTime, cfg.CasterSpellIds) then
+		return AnyCandidateHasCasterTalent(cfg, candidateUnits, ignoreTalentReqs)
+	end
+	if LocalPlayerCastIdInSet(castSpellIdSnapshot, startTime, cfg.CasterCastSpellId) then
+		return true
 	end
 
-	-- BR: if the local player cast the caster ability, every non-caster ally receiving a
-	-- concurrent IMPORTANT aura is definitively spillover.  Handles the case where the warrior
-	-- has since left candidateUnits (e.g. cancelled their own buff and is no longer watched)
-	-- but their cast ID remains in the snapshot captured at aura-start time.
-	if cfg.CasterCastSpellId and castSpellIdSnapshot and startTime then
-		local localCasts = castSpellIdSnapshot["player"]
-		if localCasts then
-			for _, cast in ipairs(localCasts) do
-				if cast.SpellId == cfg.CasterCastSpellId and math.abs(cast.Time - startTime) <= castWindow then
-					return true
-				end
-			end
-		end
-	end
-
-	-- If the target has a personal ability that explains the aura, lift suppression.
-	local confirmedAoeEvent = startTime and CountConcurrentImportantAuras(startTime, targetUnit) > 0
-	-- GT/Revival only: simultaneous removal is an equally strong AoE signal as concurrent starts.
-	if cfg.SimultaneousExpiry and not confirmedAoeEvent and startTime and measuredDuration then
-		confirmedAoeEvent = CountConcurrentImportantAuraRemovals(startTime + measuredDuration, targetUnit) > 0
-	end
-	-- Local player + cast snapshot: if we reach this point, the local player either had no
-	-- matching cast (suppressRuleCheck=true → skip TargetExplainsOwnAura) or is not the target
-	-- (suppressRuleCheck stays false).  The matching-cast case returned false above via the
-	-- fast exit, so this only handles the "snapshot present but no match" scenario.
-	local suppressRuleCheck = false
-	if not ignoreTalentReqs and castSpellIdSnapshot and startTime
-	   and ResolveSnapshotUnit(targetUnit) == "player" then
-		local playerCasts = castSpellIdSnapshot["player"]
-		suppressRuleCheck = true
-		if playerCasts then
-			local specId = fcdTalents:GetUnitSpecId("player")
-			for _, cast in ipairs(playerCasts) do
-				if math.abs(cast.Time - startTime) <= castWindow
-				   and FindRuleBySpellId("player", specId, auraTypes, cast.SpellId) then
-					suppressRuleCheck = false; break
-				end
-			end
-		end
-	end
-	if not suppressRuleCheck and not ignoreTalentReqs
+	-- 8. If the target's own personal ability explains the aura, lift suppression - unless the
+	--    local player provably cast nothing relevant (in which case any "explanation" by their
+	--    own rule is spurious, since they didn't actually press it).
+	local confirmedAoeEvent = ConfirmedAoeEvent(cfg, targetUnit, startTime, measuredDuration)
+	local snapshotProvesNoCast = not ignoreTalentReqs
+		and LocalPlayerHasSnapshotButNoMatch(castSpellIdSnapshot, startTime, targetUnit, auraTypes)
+	if not snapshotProvesNoCast and not ignoreTalentReqs
 	   and TargetExplainsOwnAura(auraTypes, targetUnit, measuredDuration, confirmedAoeEvent, cfg.StrictAoeCheck) then
 		return false
 	end
 
-	-- Scan candidates for anyone with the caster ability.
-	for _, candidate in ipairs(candidateUnits) do
-		if HasCasterTalent(cfg, candidate, ignoreTalentReqs) then
-			return true
-		end
-	end
-	return false
+	-- 9. Any other candidate with the caster talent confirms spillover.
+	return AnyCandidateHasCasterTalent(cfg, candidateUnits, ignoreTalentReqs)
 end
 
 local function IsProbablyGroundingTotem(auraTypes, targetUnit, candidateUnits, measuredDuration, evidence, castSpellIdSnapshot, startTime, ignoreTalentReqs)
@@ -1171,6 +1085,27 @@ end
 
 local function IsProbablyBeserkerRoar(auraTypes, targetUnit, candidateUnits, measuredDuration, startTime, ignoreTalentReqs, castSpellIdSnapshot)
 	return IsProbablyAoeSpillover(brSpilloverCfg, auraTypes, targetUnit, candidateUnits, measuredDuration, startTime, nil, castSpellIdSnapshot, ignoreTalentReqs)
+end
+
+---Returns the Beserker Roar rule when targetUnit is a warrior with BR talent and concurrent
+---AoE starts confirm they cast BR.  Used by both PredictRule and FindBestCandidate to commit
+---BR directly after IsProbablyBeserkerRoar suppresses the normal MatchRule path: spec rules
+---(Spell Reflect, 23920) iterate before class rules (BR, 1227751), so without this override
+---SR would win on the duration check and the BR cooldown would be lost.
+---Returns nil when the override does not apply, leaving normal handling to proceed.
+---@param targetUnit string
+---@param auraTypes table<string,boolean>
+---@param startTime number?
+---@return table?
+local function TryWarriorBRSelfCommit(targetUnit, auraTypes, startTime)
+	local _, targetClass = UnitClass(targetUnit)
+	if targetClass ~= "WARRIOR" then return nil end
+	if not fcdTalents:UnitHasTalent(targetUnit, beserkerRoarPvPTalentId) then return nil end
+	if not startTime then return nil end
+	if CountConcurrentImportantAuras(startTime, targetUnit) == 0 then return nil end
+	local snapshotUnit = ResolveSnapshotUnit(targetUnit)
+	local specId = fcdTalents:GetUnitSpecId(snapshotUnit)
+	return FindRuleBySpellId(snapshotUnit, specId, auraTypes, beserkerRoarCastSpellId)
 end
 
 ---Returns candidateUnits with the local player removed if they provably didn't cast anything
@@ -1188,24 +1123,13 @@ local function FilterLocalPlayerCandidates(candidateUnits, castSpellIdSnapshot, 
 	local playerIdx = nil
 	for i, candidate in ipairs(candidateUnits) do
 		if ResolveSnapshotUnit(candidate) == "player" then
-			playerIdx = i
-			break
+			playerIdx = i; break
 		end
 	end
 	if not playerIdx then return candidateUnits end
-
-	local playerCasts = castSpellIdSnapshot["player"]
-	local playerSpecId = fcdTalents:GetUnitSpecId("player")
-	if playerCasts then
-		for _, cast in ipairs(playerCasts) do
-			if math.abs(cast.Time - startTime) <= castWindow then
-				if FindRuleBySpellId("player", playerSpecId, auraTypes, cast.SpellId) then
-					return candidateUnits
-				end
-			end
-		end
+	if PlayerHasExtCastInWindow(castSpellIdSnapshot, startTime, auraTypes) then
+		return candidateUnits
 	end
-
 	-- No matching cast found — remove the local player alias from candidates.
 	local filtered = {}
 	for i, candidate in ipairs(candidateUnits) do
@@ -1447,18 +1371,11 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 		-- Non-shaman ally received Grounding Totem's AoE buff; suppress to avoid false predictions.
 		return nil, nil
 	elseif IsProbablyBeserkerRoar(auraTypes, targetUnit, filteredCandidates, nil, detectionTime, nil, castSpellIdSnapshot) then
-		-- Warrior caster: if target IS the warrior with BR talent and a concurrent AoE start
-		-- was detected, predict BR directly so the warrior's BR cooldown is shown immediately.
-		local _, targetClass = UnitClass(targetUnit)
-		if targetClass == "WARRIOR" and fcdTalents:UnitHasTalent(targetUnit, 5702)
-		   and detectionTime
-		   and CountConcurrentImportantAuras(detectionTime, targetUnit) > 0 then
-			local snapshotUnit = ResolveSnapshotUnit(targetUnit)
-			local specId = fcdTalents:GetUnitSpecId(snapshotUnit)
-			local brRule = FindRuleBySpellId(snapshotUnit, specId, auraTypes, beserkerRoarCastSpellId)
-			if brRule and brRule.SpellId then
-				return brRule.SpellId, nil
-			end
+		-- Warrior caster: commit BR directly when its self-AoE signature is present, otherwise
+		-- the spec-rule iteration would attribute the aura to Spell Reflect.
+		local brRule = TryWarriorBRSelfCommit(targetUnit, auraTypes, detectionTime)
+		if brRule and brRule.SpellId then
+			return brRule.SpellId, nil
 		end
 		-- Non-warrior ally received Beserker Roar's AoE buff; suppress to avoid false predictions.
 		return nil, nil
@@ -1674,20 +1591,11 @@ local function FindBestCandidate(entry, tracked, measuredDuration, candidateUnit
 		elseif IsProbablyGroundingTotem(tracked.AuraTypes, entry.Unit, filteredCandidates, measuredDuration, tracked.Evidence, tracked.CastSpellIdSnapshot, tracked.StartTime, ignoreTalentReqs) then
 			return
 		elseif IsProbablyBeserkerRoar(tracked.AuraTypes, entry.Unit, filteredCandidates, measuredDuration, tracked.StartTime, ignoreTalentReqs, tracked.CastSpellIdSnapshot) then
-			-- Warrior caster: if target IS the warrior with BR talent and a concurrent AoE start
-			-- was detected, their own IMP aura is the BR Spell Reflect buff applied by their cast.
-			-- MatchRule would commit Spell Reflect (23920) first via spec-rule iteration, hiding
-			-- the BR cooldown.  Commit BR directly so observers still track the warrior's BR.
-			local _, targetClass = UnitClass(entry.Unit)
-			if targetClass == "WARRIOR" and fcdTalents:UnitHasTalent(entry.Unit, 5702)
-			   and tracked.StartTime
-			   and CountConcurrentImportantAuras(tracked.StartTime, entry.Unit) > 0 then
-				local snapshotUnit = ResolveSnapshotUnit(entry.Unit)
-				local specId = fcdTalents:GetUnitSpecId(snapshotUnit)
-				local brRule = FindRuleBySpellId(snapshotUnit, specId, tracked.AuraTypes, beserkerRoarCastSpellId)
-				if brRule then
-					rule, ruleUnit = brRule, entry.Unit
-				end
+			-- Warrior caster: commit BR directly when its self-AoE signature is present, otherwise
+			-- the spec-rule iteration would attribute the aura to Spell Reflect.
+			local brRule = TryWarriorBRSelfCommit(entry.Unit, tracked.AuraTypes, tracked.StartTime)
+			if brRule then
+				rule, ruleUnit = brRule, entry.Unit
 			end
 			return
 		end

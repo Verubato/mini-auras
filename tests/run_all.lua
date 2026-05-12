@@ -34,6 +34,7 @@ local testFiles = {
     "tests/test_intraspec_ambiguity.lua",
     "tests/test_beserker_roar.lua",
     "tests/test_isprobably_signals.lua",
+    "tests/test_aoe_spillover_gaps.lua",
 }
 
 local loadErrors = {}
