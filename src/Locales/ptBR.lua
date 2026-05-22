@@ -261,7 +261,7 @@ L:RegisterLocale("ptBR", {
 	["Reverse the cooldown swipe animation direction on icons."] = "Inverter a direção da animação de varredura de recarga nos ícones.",
 	["The display size of each cooldown icon in pixels."] = "O tamanho de exibição de cada ícone de recarga em pixels.",
 	["The spacing in pixels between each cooldown icon."] = "O espaçamento em pixels entre cada ícone de recarga.",
-	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "Quadros de Arena: ancora os ícones ao lado do quadro de arena de cada inimigo. Barra Linear: exibe todas as recargas em uma única barra combinada.",
+	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar. Split: shows offensive cooldowns on the linear bar and defensive cooldowns on the arena frames."] = "Quadros de Arena: ancora os ícones ao lado do quadro de arena de cada inimigo. Barra Linear: exibe todas as recargas em uma única barra combinada. Dividido: exibe recargas ofensivas na barra linear e recargas defensivas nos quadros de arena.",
 	["The direction cooldown icons grow from the arena frame anchor point."] = "A direção em que os ícones de recarga crescem a partir do ponto de ancoragem do quadro de arena.",
 	["Horizontal pixel offset from the arena frame anchor point."] = "Deslocamento horizontal em pixels a partir do ponto de ancoragem do quadro de arena.",
 	["Vertical pixel offset from the arena frame anchor point."] = "Deslocamento vertical em pixels a partir do ponto de ancoragem do quadro de arena.",

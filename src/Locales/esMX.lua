@@ -261,7 +261,7 @@ L:RegisterLocale("esMX", {
 	["Reverse the cooldown swipe animation direction on icons."] = "Invertir la dirección de la animación de barrido del tiempo de reutilización en los iconos.",
 	["The display size of each cooldown icon in pixels."] = "El tamaño de visualización de cada icono de tiempo de reutilización en píxeles.",
 	["The spacing in pixels between each cooldown icon."] = "El espaciado en píxeles entre cada icono de tiempo de reutilización.",
-	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "Marcos de arena: ancla los iconos junto al marco de arena de cada enemigo. Barra lineal: muestra todos los tiempos de reutilización en una barra combinada.",
+	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar. Split: shows offensive cooldowns on the linear bar and defensive cooldowns on the arena frames."] = "Marcos de arena: ancla los iconos junto al marco de arena de cada enemigo. Barra lineal: muestra todos los tiempos de reutilización en una barra combinada. Dividido: muestra los tiempos de reutilización ofensivos en la barra lineal y los defensivos en los marcos de arena.",
 	["The direction cooldown icons grow from the arena frame anchor point."] = "La dirección en que los iconos de tiempo de reutilización crecen desde el punto de anclaje del marco de arena.",
 	["Horizontal pixel offset from the arena frame anchor point."] = "Desplazamiento horizontal en píxeles desde el punto de anclaje del marco de arena.",
 	["Vertical pixel offset from the arena frame anchor point."] = "Desplazamiento vertical en píxeles desde el punto de anclaje del marco de arena.",

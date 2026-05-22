@@ -260,7 +260,7 @@ L:RegisterLocale("koKR", {
 	["Reverse the cooldown swipe animation direction on icons."] = "아이콘의 쿨다운 스와이프 애니메이션 방향을 반전합니다.",
 	["The display size of each cooldown icon in pixels."] = "각 쿨다운 아이콘의 표시 크기(픽셀).",
 	["The spacing in pixels between each cooldown icon."] = "각 쿨다운 아이콘 간의 간격(픽셀).",
-	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "투기장 프레임: 각 적의 투기장 프레임 옆에 아이콘을 고정합니다. 선형 바: 모든 쿨다운을 하나의 통합 바에 표시합니다.",
+	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar. Split: shows offensive cooldowns on the linear bar and defensive cooldowns on the arena frames."] = "투기장 프레임: 각 적의 투기장 프레임 옆에 아이콘을 고정합니다. 선형 바: 모든 쿨다운을 하나의 통합 바에 표시합니다. 분할: 공격 쿨다운은 선형 바에, 방어 쿨다운은 투기장 프레임에 표시합니다.",
 	["The direction cooldown icons grow from the arena frame anchor point."] = "쿨다운 아이콘이 투기장 프레임 앵커 포인트에서 성장하는 방향.",
 	["Horizontal pixel offset from the arena frame anchor point."] = "투기장 프레임 앵커 포인트로부터의 수평 픽셀 오프셋.",
 	["Vertical pixel offset from the arena frame anchor point."] = "투기장 프레임 앵커 포인트로부터의 수직 픽셀 오프셋.",

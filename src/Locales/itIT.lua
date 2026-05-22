@@ -260,7 +260,7 @@ L:RegisterLocale("itIT", {
 	["Reverse the cooldown swipe animation direction on icons."] = "Inverti la direzione dell'animazione di scorrimento del tempo di recupero sulle icone.",
 	["The display size of each cooldown icon in pixels."] = "La dimensione di visualizzazione di ogni icona del tempo di recupero in pixel.",
 	["The spacing in pixels between each cooldown icon."] = "La spaziatura in pixel tra ogni icona del tempo di recupero.",
-	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "Riquadri Arena: ancora le icone accanto al riquadro arena di ogni nemico. Barra Lineare: mostra tutti i tempi di recupero in una singola barra combinata.",
+	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar. Split: shows offensive cooldowns on the linear bar and defensive cooldowns on the arena frames."] = "Riquadri Arena: ancora le icone accanto al riquadro arena di ogni nemico. Barra Lineare: mostra tutti i tempi di recupero in una singola barra combinata. Diviso: mostra i tempi di recupero offensivi sulla barra lineare e quelli difensivi sui riquadri arena.",
 	["The direction cooldown icons grow from the arena frame anchor point."] = "La direzione in cui le icone del tempo di recupero crescono dal punto di ancoraggio del riquadro arena.",
 	["Horizontal pixel offset from the arena frame anchor point."] = "Offset orizzontale in pixel dal punto di ancoraggio del riquadro arena.",
 	["Vertical pixel offset from the arena frame anchor point."] = "Offset verticale in pixel dal punto di ancoraggio del riquadro arena.",

@@ -10,10 +10,11 @@ local ecdModule = addon.Modules.EnemyCooldowns.Module
 local rules = addon.Modules.Cooldowns.Rules
 
 local growOptions = { "LEFT", "RIGHT", "CENTER" }
-local displayModeOptions = { "ArenaFrames", "Linear" }
+local displayModeOptions = { "ArenaFrames", "Linear", "Split" }
 local displayModeText = {
 	ArenaFrames = "Arena Frames",
 	Linear      = "Linear Bar",
+	Split       = "Split",
 }
 
 -- Class display name/ordering tables (identical to FriendlyCooldownTracker).
@@ -343,6 +344,13 @@ local function BuildSettings(parent, options)
 	-- Forward-declare so the modeDdl SetValue closure can reference it before creation.
 	local setAfShown
 
+	-- Arena-frame anchoring settings apply to both ArenaFrames and Split modes (Split also
+	-- anchors per-enemy defensives to the arena frames).  Helper kept inline so SetValue and
+	-- the initial visibility expression stay in sync.
+	local function arenaAnchorVisible(mode)
+		return mode == "ArenaFrames" or mode == "Split"
+	end
+
 	local modeDdl, modernModeDdl = mini:Dropdown({
 		Parent   = parent,
 		Items    = displayModeOptions,
@@ -352,21 +360,20 @@ local function BuildSettings(parent, options)
 		SetValue = function(v)
 			if options.DisplayMode ~= v then
 				options.DisplayMode = v
-				local isAf = v == "ArenaFrames"
-				if setAfShown then setAfShown(isAf) end
+				if setAfShown then setAfShown(arenaAnchorVisible(v)) end
 				config:Apply()
 			end
 		end,
 	})
 	modeDdl:SetPoint("TOPLEFT", modeLbl, "BOTTOMLEFT", modernModeDdl and 0 or -16, -8)
 	AddDropdownTooltip(modeDdl, L["Layout Mode"],
-		L["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."])
+		L["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar. Split: shows offensive cooldowns on the linear bar and defensive cooldowns on the arena frames."])
 
 	-- Arena Frames layout options (hidden when Linear mode is selected).
 	-- All controls are parented directly to parent and toggled individually to avoid
 	-- WoW container-frame visibility propagation issues.
 
-	local isArena = options.DisplayMode == "ArenaFrames"
+	local isArena = arenaAnchorVisible(options.DisplayMode)
 
 	local afDivider = mini:Divider({ Parent = parent, Text = L["Arena Frames Anchoring"] })
 	afDivider:SetPoint("LEFT",  parent, "LEFT")

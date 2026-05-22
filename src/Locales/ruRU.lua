@@ -261,7 +261,7 @@ L:RegisterLocale("ruRU", {
 	["Reverse the cooldown swipe animation direction on icons."] = "Изменить направление анимации смахивания перезарядки на иконках.",
 	["The display size of each cooldown icon in pixels."] = "Размер отображения каждой иконки перезарядки в пикселях.",
 	["The spacing in pixels between each cooldown icon."] = "Расстояние в пикселях между каждой иконкой перезарядки.",
-	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "Рамки арены: привязывает иконки рядом с рамкой арены каждого врага. Линейная полоса: отображает все перезарядки в одной объединённой полосе.",
+	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar. Split: shows offensive cooldowns on the linear bar and defensive cooldowns on the arena frames."] = "Рамки арены: привязывает иконки рядом с рамкой арены каждого врага. Линейная полоса: отображает все перезарядки в одной объединённой полосе. Раздельно: показывает атакующие перезарядки на линейной полосе, а защитные — на рамках арены.",
 	["The direction cooldown icons grow from the arena frame anchor point."] = "Направление роста иконок перезарядки от точки привязки рамки арены.",
 	["Horizontal pixel offset from the arena frame anchor point."] = "Горизонтальное смещение в пикселях от точки привязки рамки арены.",
 	["Vertical pixel offset from the arena frame anchor point."] = "Вертикальное смещение в пикселях от точки привязки рамки арены.",

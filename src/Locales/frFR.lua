@@ -261,7 +261,7 @@ L:RegisterLocale("frFR", {
 	["Reverse the cooldown swipe animation direction on icons."] = "Inverse le sens de l'animation de recharge sur les icônes.",
 	["The display size of each cooldown icon in pixels."] = "Taille de chaque icône de CD en pixels.",
 	["The spacing in pixels between each cooldown icon."] = "Espacement en pixels entre chaque icône.",
-	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "Cadres d'arène : ancre les icônes à côté de chaque cadre ennemi. Barre linéaire : affiche tous les CDs dans une seule barre combinée.",
+	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar. Split: shows offensive cooldowns on the linear bar and defensive cooldowns on the arena frames."] = "Cadres d'arène : ancre les icônes à côté de chaque cadre ennemi. Barre linéaire : affiche tous les CDs dans une seule barre combinée. Séparé : affiche les CDs offensifs sur la barre linéaire et les CDs défensifs sur les cadres d'arène.",
 	["The direction cooldown icons grow from the arena frame anchor point."] = "Direction dans laquelle les icônes s'étendent depuis le point d'ancrage.",
 	["Horizontal pixel offset from the arena frame anchor point."] = "Décalage horizontal en pixels depuis le point d'ancrage.",
 	["Vertical pixel offset from the arena frame anchor point."] = "Décalage vertical en pixels depuis le point d'ancrage.",

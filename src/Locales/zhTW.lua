@@ -261,7 +261,7 @@ L:RegisterLocale("zhTW", {
 	["Reverse the cooldown swipe animation direction on icons."] = "反轉圖示上冷卻掃描動畫的方向。",
 	["The display size of each cooldown icon in pixels."] = "每個冷卻圖示的顯示尺寸（像素）。",
 	["The spacing in pixels between each cooldown icon."] = "每個冷卻圖示之間的間距（像素）。",
-	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "競技場框架：將圖示固定在每個敵人的競技場框架旁邊。線性條：在單個組合條中顯示所有冷卻。",
+	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar. Split: shows offensive cooldowns on the linear bar and defensive cooldowns on the arena frames."] = "競技場框架：將圖示固定在每個敵人的競技場框架旁邊。線性條：在單個組合條中顯示所有冷卻。分離：在線性條上顯示進攻冷卻，在競技場框架上顯示防禦冷卻。",
 	["The direction cooldown icons grow from the arena frame anchor point."] = "冷卻圖示從競技場框架錨點增長的方向。",
 	["Horizontal pixel offset from the arena frame anchor point."] = "距競技場框架錨點的水平像素偏移。",
 	["Vertical pixel offset from the arena frame anchor point."] = "距競技場框架錨點的垂直像素偏移。",

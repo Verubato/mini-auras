@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
+local rules = addon.Modules.Cooldowns.Rules
 
 addon.Modules.EnemyCooldowns = addon.Modules.EnemyCooldowns or {}
 
@@ -17,6 +18,28 @@ local slotsScratch = {}
 -- Pool of reusable slot descriptor tables indexed by slot position.
 -- SetSlot reads these synchronously and does not store references, so pooling is safe.
 local slotTablePool = {}
+
+-- Test-mode preview cooldowns.  In Split mode the filter routes offensives to the linear bar
+-- and the remainder to the arena-frame containers, so a couple of offensives are included.
+local testSpells = {
+	{ SpellId = 45438,   StartOffset = 30, Cooldown = 240 }, -- Ice Block        (defensive)
+	{ SpellId = 642,     StartOffset = 15, Cooldown = 300 }, -- Divine Shield    (defensive)
+	{ SpellId = 31224,   StartOffset = 10, Cooldown = 60  }, -- Cloak of Shadows (defensive)
+	{ SpellId = 48792,   StartOffset = 45, Cooldown = 180 }, -- Icebound Fortitude (defensive)
+	{ SpellId = 47585,   StartOffset = 5,  Cooldown = 120 }, -- Dispersion       (defensive)
+	{ SpellId = 22812,   StartOffset = 20, Cooldown = 60  }, -- Barkskin         (defensive)
+	{ SpellId = 871,     StartOffset = 60, Cooldown = 240 }, -- Shield Wall      (defensive)
+	{ SpellId = 33206,   StartOffset = 8,  Cooldown = 120 }, -- Pain Suppression (external defensive)
+	{ SpellId = 31884,   StartOffset = 12, Cooldown = 120 }, -- Avenging Wrath   (offensive)
+	{ SpellId = 190319,  StartOffset = 35, Cooldown = 120 }, -- Combustion       (offensive)
+	{ SpellId = 288613,  StartOffset = 50, Cooldown = 120 }, -- Trueshot         (offensive)
+}
+
+---Returns true when the cooldown belongs to the Offensive spell set (used by Split mode to route
+---offensives to the linear bar and everything else to the arena-frame containers).
+local function IsOffensiveCooldown(cd)
+	return cd.SpellId ~= nil and rules.OffensiveSpellIds[cd.SpellId] == true
+end
 
 -- C_Spell.GetSpellInfo follows talent overrides locally; use originalIconID to get the
 -- canonical icon unaffected by the viewing player's own talent replacements.
@@ -53,33 +76,17 @@ local function GetSlotTable(idx)
 	return t
 end
 
----Populates an entry's icon container with the current enemy cooldown state.
----Shows committed cooldowns (buff has expired, CD timer running).
----@param entry EcdWatchEntry
-local function UpdateDisplay(entry)
-	local options = GetOptions()
-	if not options then
-		return
-	end
-
-	local container = entry.Container
+---Renders the test-mode preview spells into the given container, optionally filtered.
+---@param container IconSlotContainer
+---@param options table  options snapshot (showTooltips, iconOptions, etc.)
+---@param filter fun(cd):boolean?  nil = include everything
+local function RenderTestSpells(container, options, filter)
+	local now          = GetTime()
 	local showTooltips = options.ShowTooltips
-	local iconOptions = options.Icons
-
-	if testModeActive then
-		local now = GetTime()
-		local testSpells = {
-			{ SpellId = 45438,  StartOffset = 30,  Cooldown = 240 }, -- Ice Block
-			{ SpellId = 642,    StartOffset = 15,  Cooldown = 300 }, -- Divine Shield
-			{ SpellId = 31224,  StartOffset = 10,  Cooldown = 60  }, -- Cloak of Shadows
-			{ SpellId = 48792,  StartOffset = 45,  Cooldown = 180 }, -- Icebound Fortitude
-			{ SpellId = 47585,  StartOffset = 5,   Cooldown = 120 }, -- Dispersion
-			{ SpellId = 22812,  StartOffset = 20,  Cooldown = 60  }, -- Barkskin
-			{ SpellId = 871,    StartOffset = 60,  Cooldown = 240 }, -- Shield Wall
-			{ SpellId = 33206,  StartOffset = 8,   Cooldown = 120 }, -- Pain Suppression
-		}
-		local usedCount = 0
-		for _, t in ipairs(testSpells) do
+	local iconOptions  = options.Icons
+	local usedCount    = 0
+	for _, t in ipairs(testSpells) do
+		if not filter or filter(t) then
 			local texture = GetSpellIcon(t.SpellId)
 			if texture and usedCount < container.Count then
 				usedCount = usedCount + 1
@@ -93,28 +100,37 @@ local function UpdateDisplay(entry)
 				})
 			end
 		end
-		for i = usedCount + 1, container.Count do
-			container:SetSlotUnused(i)
-		end
-		return
 	end
+	for i = usedCount + 1, container.Count do
+		container:SetSlotUnused(i)
+	end
+end
 
-	-- Reuse the scratch table to avoid per-call allocation.
+---Builds the slot list for one entry's ActiveCooldowns, optionally filtered.  Expired entries
+---are pruned from ActiveCooldowns as a side effect (existing behaviour).  Returns the populated
+---scratch table; callers must not retain references to entries.
+---@param entry EcdWatchEntry
+---@param options table
+---@param filter fun(cd):boolean?
+local function CollectSlots(entry, options, filter)
 	local slots = slotsScratch
 	for i = 1, #slots do
 		slots[i] = nil
 	end
 
-	local now = GetTime()
+	local now            = GetTime()
+	local showTooltips   = options.ShowTooltips
+	local iconOptions    = options.Icons
 	local disabledSpells = options.DisabledSpells or {}
 
-	-- Committed cooldowns: buff has expired, CD timer is running.
 	for cdKey, cd in pairs(entry.ActiveCooldowns) do
 		if cd.UsedCharges then
 			-- Multi-charge entry: visible while at least one charge is recharging.
 			local usedCount = #cd.UsedCharges
 			if usedCount > 0 then
-				local texture = cd.SpellId and not disabledSpells[cd.SpellId] and GetSpellIcon(cd.SpellId)
+				local texture = cd.SpellId and not disabledSpells[cd.SpellId]
+					and (not filter or filter(cd))
+					and GetSpellIcon(cd.SpellId)
 				if texture then
 					local startTime = cd.UsedCharges[1].Expiry - cd.Cooldown
 					local idx = #slots + 1
@@ -130,7 +146,9 @@ local function UpdateDisplay(entry)
 				end
 			end
 		elseif now < cd.StartTime + cd.Cooldown then
-			local texture = cd.SpellId and not disabledSpells[cd.SpellId] and GetSpellIcon(cd.SpellId)
+			local texture = cd.SpellId and not disabledSpells[cd.SpellId]
+				and (not filter or filter(cd))
+				and GetSpellIcon(cd.SpellId)
 			if texture then
 				local idx = #slots + 1
 				local s = GetSlotTable(idx)
@@ -146,7 +164,11 @@ local function UpdateDisplay(entry)
 			entry.ActiveCooldowns[cdKey] = nil
 		end
 	end
+	return slots
+end
 
+---Writes a slot list into a container, padding unused slots.
+local function ApplySlotsToContainer(container, slots)
 	local usedCount = math.min(#slots, container.Count)
 	for i = 1, usedCount do
 		container:SetSlot(i, slots[i])
@@ -154,6 +176,21 @@ local function UpdateDisplay(entry)
 	for i = usedCount + 1, container.Count do
 		container:SetSlotUnused(i)
 	end
+end
+
+---Populates an entry's icon container with the current enemy cooldown state.
+---Shows committed cooldowns (buff has expired, CD timer running).
+---@param entry EcdWatchEntry
+---@param filter fun(cd):boolean?  optional cooldown filter (used by Split mode)
+local function UpdateDisplay(entry, filter)
+	local options = GetOptions()
+	if not options then return end
+
+	if testModeActive then
+		RenderTestSpells(entry.Container, options, filter)
+		return
+	end
+	ApplySlotsToContainer(entry.Container, CollectSlots(entry, options, filter))
 end
 
 ---Positions an entry's container in Linear display mode.
@@ -245,36 +282,31 @@ function D:UpdateDisplay(entry)
 	UpdateDisplay(entry)
 end
 
----Populates the arena1 container with combined cooldowns from all watch entries.
----Used in Linear mode so all enemies' cooldowns appear in one row.
----@param entries table<string, EcdWatchEntry>
-function D:UpdateLinearDisplay(entries)
+---@param entry EcdWatchEntry
+function D:UpdateSplitArenaDisplay(entry)
+	UpdateDisplay(entry, function(cd) return not IsOffensiveCooldown(cd) end)
+end
+
+---Renders combined cooldowns from a set of entries into a target container.
+---@param targetContainer IconSlotContainer  the destination container
+---@param entries table<string, EcdWatchEntry>  source entries to aggregate from
+---@param filter fun(cd):boolean?  nil = include everything
+local function RenderAggregate(targetContainer, entries, filter)
 	local options = GetOptions()
-	if not options then
-		return
-	end
-
-	local entry1 = entries["arena1"]
-	if not entry1 then
-		return
-	end
-
-	-- In test mode, just show the standard test icons in the single container.
+	if not options then return end
 	if testModeActive then
-		UpdateDisplay(entry1)
+		RenderTestSpells(targetContainer, options, filter)
 		return
 	end
-
-	local container = entry1.Container
-	local showTooltips = options.ShowTooltips
-	local iconOptions = options.Icons
 
 	local slots = slotsScratch
 	for i = 1, #slots do
 		slots[i] = nil
 	end
 
-	local now = GetTime()
+	local now            = GetTime()
+	local showTooltips   = options.ShowTooltips
+	local iconOptions    = options.Icons
 	local disabledSpells = options.DisabledSpells or {}
 
 	for _, entry in pairs(entries) do
@@ -282,7 +314,9 @@ function D:UpdateLinearDisplay(entries)
 			if cd.UsedCharges then
 				local usedCount = #cd.UsedCharges
 				if usedCount > 0 then
-					local texture = cd.SpellId and not disabledSpells[cd.SpellId] and GetSpellIcon(cd.SpellId)
+					local texture = cd.SpellId and not disabledSpells[cd.SpellId]
+						and (not filter or filter(cd))
+						and GetSpellIcon(cd.SpellId)
 					if texture then
 						local startTime = cd.UsedCharges[1].Expiry - cd.Cooldown
 						local idx = #slots + 1
@@ -298,7 +332,9 @@ function D:UpdateLinearDisplay(entries)
 					end
 				end
 			elseif now < cd.StartTime + cd.Cooldown then
-				local texture = cd.SpellId and not disabledSpells[cd.SpellId] and GetSpellIcon(cd.SpellId)
+				local texture = cd.SpellId and not disabledSpells[cd.SpellId]
+					and (not filter or filter(cd))
+					and GetSpellIcon(cd.SpellId)
 				if texture then
 					local idx = #slots + 1
 					local s = GetSlotTable(idx)
@@ -316,13 +352,26 @@ function D:UpdateLinearDisplay(entries)
 		end
 	end
 
-	local usedCount = math.min(#slots, container.Count)
-	for i = 1, usedCount do
-		container:SetSlot(i, slots[i])
-	end
-	for i = usedCount + 1, container.Count do
-		container:SetSlotUnused(i)
-	end
+	ApplySlotsToContainer(targetContainer, slots)
+end
+
+---Populates the arena1 container with combined cooldowns from all watch entries.
+---Used in Linear mode so all enemies' cooldowns appear in one row.
+---@param entries table<string, EcdWatchEntry>
+function D:UpdateLinearDisplay(entries)
+	local entry1 = entries["arena1"]
+	if not entry1 then return end
+	RenderAggregate(entry1.Container, entries, nil)
+end
+
+---Populates the dedicated Split-mode linear container with offensive cooldowns aggregated
+---from all watch entries.  The defensive (non-offensive) cooldowns continue to render into
+---each entry's own container via UpdateSplitArenaDisplay.
+---@param splitLinearEntry table  { Container = IconSlotContainer }
+---@param entries table<string, EcdWatchEntry>
+function D:UpdateSplitLinearDisplay(splitLinearEntry, entries)
+	if not splitLinearEntry then return end
+	RenderAggregate(splitLinearEntry.Container, entries, IsOffensiveCooldown)
 end
 
 ---@param entry EcdWatchEntry
@@ -330,15 +379,36 @@ end
 ---@param prevEntry EcdWatchEntry?
 function D:AnchorContainer(entry, index, prevEntry)
 	local options = GetOptions()
-	if not options then
-		return
-	end
+	if not options then return end
 
+	-- Linear mode: arena1 is the only visible per-unit container; arena2/3 stack below it.
+	-- Split / ArenaFrames mode: each per-unit container anchors to its corresponding arena frame.
 	if options.DisplayMode == "Linear" then
 		AnchorContainerLinear(entry, index, prevEntry)
 	else
 		AnchorContainerArenaFrames(entry, index)
 	end
+end
+
+---Anchors the dedicated Split-mode linear container to the saved Linear position.  Reuses the
+---same options.Linear.X/Y/Point as Linear mode so a single drag updates both surfaces.
+---@param splitLinearEntry table  { Container = IconSlotContainer }
+function D:AnchorSplitLinearContainer(splitLinearEntry)
+	local options = GetOptions()
+	if not options or not splitLinearEntry then return end
+	local frame = splitLinearEntry.Container.Frame
+	frame:ClearAllPoints()
+	frame:SetFrameStrata("MEDIUM")
+	frame:SetFrameLevel(100)
+	frame:SetAlpha(1)
+	local relTo = _G[options.Linear.RelativeTo] or UIParent
+	frame:SetPoint(
+		options.Linear.Point or "CENTER",
+		relTo,
+		options.Linear.RelativePoint or "CENTER",
+		options.Linear.X or 0,
+		options.Linear.Y or 200
+	)
 end
 
 ---@param index number

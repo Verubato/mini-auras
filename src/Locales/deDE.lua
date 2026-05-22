@@ -260,7 +260,7 @@ L:RegisterLocale("deDE", {
 	["Reverse the cooldown swipe animation direction on icons."] = "Richtung der Abklingzeit-Wischanimation auf Symbolen umkehren.",
 	["The display size of each cooldown icon in pixels."] = "Die Anzeigestärke jedes Abklingzeit-Symbols in Pixeln.",
 	["The spacing in pixels between each cooldown icon."] = "Der Abstand in Pixeln zwischen jedem Abklingzeit-Symbol.",
-	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "Arena-Rahmen: Symbole neben jedem Gegner-Arena-Rahmen verankern. Lineare Leiste: Alle Abklingzeiten in einer kombinierten Leiste anzeigen.",
+	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar. Split: shows offensive cooldowns on the linear bar and defensive cooldowns on the arena frames."] = "Arena-Rahmen: Symbole neben jedem Gegner-Arena-Rahmen verankern. Lineare Leiste: Alle Abklingzeiten in einer kombinierten Leiste anzeigen. Geteilt: Zeigt offensive Abklingzeiten auf der linearen Leiste und defensive Abklingzeiten an den Arena-Rahmen.",
 	["The direction cooldown icons grow from the arena frame anchor point."] = "Die Richtung, in die Abklingzeit-Symbole vom Arena-Rahmen-Ankerpunkt wachsen.",
 	["Horizontal pixel offset from the arena frame anchor point."] = "Horizontaler Pixel-Versatz vom Arena-Rahmen-Ankerpunkt.",
 	["Vertical pixel offset from the arena frame anchor point."] = "Vertikaler Pixel-Versatz vom Arena-Rahmen-Ankerpunkt.",
