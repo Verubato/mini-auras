@@ -351,6 +351,7 @@ local rules = {
 		[72] = { -- Fury Warrior
 			{
 				BuffDuration = 8,
+				AlternativeDurations = { 11 }, -- Invigorating Fury (+3s)
 				Cooldown = 108,
 				BigDefensive = true,
 				ExternalDefensive = false,
@@ -358,15 +359,6 @@ local rules = {
 				SpellId = 184364,
 				RequiresTalent = 184364,
 			}, -- Enraged Regeneration
-			{
-				BuffDuration = 11,
-				Cooldown = 108,
-				BigDefensive = true,
-				ExternalDefensive = false,
-				Important = true,
-				SpellId = 184364,
-				RequiresTalent = 184364,
-			}, -- Enraged Regeneration + duration talent
 			{
 				BuffDuration = 20,
 				Cooldown = 90,
@@ -433,28 +425,13 @@ local rules = {
 		[250] = { -- Blood Death Knight
 			{
 				BuffDuration = 10,
+				AlternativeDurations = { 12, 14 }, -- Goreringers Anguish rank 1 (+2s) / rank 2 (+4s)
 				Cooldown = 90,
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
 				SpellId = 55233,
 			}, -- Vampiric Blood
-			{
-				BuffDuration = 12,
-				Cooldown = 90,
-				BigDefensive = true,
-				ExternalDefensive = false,
-				Important = true,
-				SpellId = 55233,
-			}, -- Vampiric Blood + Goreringers Anguish rank 1 (+2s)
-			{
-				BuffDuration = 14,
-				Cooldown = 90,
-				BigDefensive = true,
-				ExternalDefensive = false,
-				Important = true,
-				SpellId = 55233,
-			}, -- Vampiric Blood + Goreringers Anguish rank 2 (+4s)
 		},
 		[256] = {
 			{
@@ -730,60 +707,40 @@ local rules = {
 			}, -- Fiery Brand
 			{
 				BuffDuration = 15,
+				AlternativeDurations = { 20 }, -- Vengeful Beast (+5s)
 				Cooldown = 120,
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
 				SpellId = 187827,
 			}, -- Metamorphosis
-			{
-				BuffDuration = 20,
-				Cooldown = 120,
-				Important = true,
-				BigDefensive = false,
-				ExternalDefensive = false,
-				SpellId = 187827,
-			}, -- Metamorphosis +5s (Vengeful Beast)
 		},
 		[254] = {
 			{
 				BuffDuration = 15,
+				AlternativeDurations = { 17 }, -- +2s talent
 				Cooldown = 120,
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
 				SpellId = 288613,
 			}, -- Marksmanship Hunter: Trueshot
-			{
-				BuffDuration = 17,
-				Cooldown = 120,
-				Important = true,
-				BigDefensive = false,
-				ExternalDefensive = false,
-				SpellId = 288613,
-			}, -- Marksmanship Hunter: Trueshot +2s
 		},
 		[255] = { -- Survival Hunter
 			{
 				BuffDuration = 8,
+				AlternativeDurations = { 10 }, -- +2s talent
 				Cooldown = 90,
 				Important = true,
 				BigDefensive = false,
 				ExternalDefensive = false,
 				SpellId = 1250646,
 			}, -- Takedown
-			{
-				BuffDuration = 10,
-				Cooldown = 90,
-				Important = true,
-				BigDefensive = false,
-				ExternalDefensive = false,
-				SpellId = 1250646,
-			}, -- Takedown +2s
 		},
 		[261] = {
 			{
 				BuffDuration = 16,
+				AlternativeDurations = { 18, 20 }, -- set bonus +2s / +4s
 				Cooldown = 90,
 				Important = true,
 				BigDefensive = false,
@@ -793,28 +750,6 @@ local rules = {
 				CanCancelEarly = true,
 				MinCancelDuration = 11,
 			}, -- Subtlety Rogue: Shadow Blades
-			{
-				BuffDuration = 18,
-				Cooldown = 90,
-				Important = true,
-				BigDefensive = false,
-				ExternalDefensive = false,
-				SpellId = 121471,
-				ExcludeFromPrediction = true, -- Shadow Dance (also IMPORTANT) cannot be distinguished without duration
-				CanCancelEarly = true,
-				MinCancelDuration = 11,
-			}, -- Shadow Blades +2s (set bonus)
-			{
-				BuffDuration = 20,
-				Cooldown = 90,
-				Important = true,
-				BigDefensive = false,
-				ExternalDefensive = false,
-				SpellId = 121471,
-				ExcludeFromPrediction = true, -- Shadow Dance (also IMPORTANT) cannot be distinguished without duration
-				CanCancelEarly = true,
-				MinCancelDuration = 11,
-			}, -- Shadow Blades +4s (set bonus)
 		},
 		[1467] = {
 			{
@@ -885,6 +820,7 @@ local rules = {
 		[262] = { -- Elemental Shaman
 			{
 				BuffDuration = 15,
+				AlternativeDurations = { 18 }, -- Preeminence (+3s)
 				Cooldown = 180,
 				Important = true,
 				BigDefensive = false,
@@ -892,15 +828,6 @@ local rules = {
 				SpellId = 114050,
 				RequiresTalent = 114050,
 			}, -- Ascendance
-			{
-				BuffDuration = 18,
-				Cooldown = 180,
-				Important = true,
-				BigDefensive = false,
-				ExternalDefensive = false,
-				SpellId = 114050,
-				RequiresTalent = 114050,
-			}, -- Ascendance +3s (Preeminence)
 			{
 				Cooldown = 120,
 				SpellId  = 409293,
@@ -912,6 +839,7 @@ local rules = {
 		[263] = { -- Enhancement Shaman
 			{
 				BuffDuration = 8,
+				AlternativeDurations = { 10 }, -- Thorim's Invocation (+2s)
 				Cooldown = 60,
 				Important = true,
 				BigDefensive = false,
@@ -920,16 +848,6 @@ local rules = {
 				RequiresTalent = 384352,
 				ExcludeIfTalent = { 114051, 378270 },
 			}, -- Doomwinds (hidden if Ascendance or Deeply Rooted Elements talented)
-			{
-				BuffDuration = 10,
-				Cooldown = 60,
-				Important = true,
-				BigDefensive = false,
-				ExternalDefensive = false,
-				SpellId = 384352,
-				RequiresTalent = 384352,
-				ExcludeIfTalent = { 114051, 378270 },
-			}, -- Doomwinds +2s (Thorim's Invocation)
 			{
 				BuffDuration = 15,
 				Cooldown = 180,
@@ -1065,20 +983,13 @@ local rules = {
 		DRUID = {
 			{
 				BuffDuration = 8,
+				AlternativeDurations = { 12 }, -- Improved Barkskin (+4s)
 				Cooldown = 60,
 				BigDefensive = true,
 				ExternalDefensive = false,
 				Important = true,
 				SpellId = 22812,
 			}, -- Barkskin
-			{
-				BuffDuration = 12,
-				Cooldown = 60,
-				BigDefensive = true,
-				ExternalDefensive = false,
-				Important = true,
-				SpellId = 22812,
-			}, -- Barkskin + Improved Barkskin (+4s)
 		},
 		ROGUE = {
 			{

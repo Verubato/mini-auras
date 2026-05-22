@@ -751,6 +751,45 @@ local cases = {
         evidence = {},
     },
 
+    -- AlternativeDurations variants (single rule matches several discrete durations)
+    {
+        desc = "MM Hunter - Trueshot +2s (288613, 17s)",
+        unit = "player", class = "HUNTER", specId = 254,
+        spellId = 288613, buffDuration = 17,
+        auraIsDefensive = false, isExternal = false, isImportant = true,
+        evidence = {},
+    },
+    {
+        desc = "Fury Warrior - Enraged Regeneration +3s Invigorating Fury (184364, 11s)",
+        unit = "player", class = "WARRIOR", specId = 72,
+        spellId = 184364, buffDuration = 11,
+        auraIsDefensive = true, isExternal = false, isImportant = true,
+        evidence = {},
+        talents = { {"player", 184364} },
+    },
+    {
+        desc = "Vengeance DH - Metamorphosis +5s Vengeful Beast (187827, 20s)",
+        unit = "player", class = "DEMONHUNTER", specId = 581,
+        spellId = 187827, buffDuration = 20,
+        auraIsDefensive = false, isExternal = false, isImportant = true,
+        evidence = {},
+    },
+    {
+        desc = "Elemental Shaman - Ascendance +3s Preeminence (114050, 18s)",
+        unit = "player", class = "SHAMAN", specId = 262,
+        spellId = 114050, buffDuration = 18,
+        auraIsDefensive = false, isExternal = false, isImportant = true,
+        evidence = {},
+        talents = { {"player", 114050} },
+    },
+    {
+        desc = "Druid (class) - Barkskin +4s Improved Barkskin (22812, 12s)",
+        unit = "player", class = "DRUID", specId = nil,
+        spellId = 22812, buffDuration = 12,
+        auraIsDefensive = true, isExternal = false, isImportant = true,
+        evidence = {},
+    },
+
     -- PRIEST - Holy Guardian Spirit Foreseen Circumstances (+2s variant)
     {
         desc = "Holy Priest - Guardian Spirit Foreseen Circumstances (47788, 12s) [talent]",

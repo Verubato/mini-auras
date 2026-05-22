@@ -388,17 +388,13 @@ local function FindRuleBySpellId(unit, specId, auraTypes, spellId)
 	return checkList(specId and rules.BySpec[specId]) or checkList(rules.ByClass[classToken])
 end
 
----Returns true when measuredDuration satisfies the duration check for rule's matching mode
----(CanCancelEarly, MinDuration, or exact within tolerance).  measuredDuration=nil short-circuits
----to true so predict-path callers that haven't measured a duration yet still pass.
----expectedDurationOverride lets callers substitute a talent-adjusted duration for rule.BuffDuration.
+---Returns true when measuredDuration falls within the rule's window for a single expected
+---duration, using the rule's matching mode (CanCancelEarly, MinDuration, or exact ±tolerance).
 ---@param rule table
----@param measuredDuration number?
----@param expectedDurationOverride number?
+---@param measuredDuration number
+---@param expectedDur number
 ---@return boolean
-local function RuleAcceptsMeasuredDuration(rule, measuredDuration, expectedDurationOverride)
-	if not measuredDuration then return true end
-	local expectedDur = expectedDurationOverride or rule.BuffDuration or 0
+local function DurationWithinWindow(rule, measuredDuration, expectedDur)
 	if rule.CanCancelEarly then
 		return measuredDuration <= expectedDur + tolerance
 			and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration)
@@ -406,6 +402,31 @@ local function RuleAcceptsMeasuredDuration(rule, measuredDuration, expectedDurat
 		return measuredDuration >= expectedDur - tolerance
 	end
 	return math.abs(measuredDuration - expectedDur) <= tolerance
+end
+
+---Returns true when measuredDuration satisfies the duration check for rule's matching mode.
+---measuredDuration=nil short-circuits to true so predict-path callers that haven't measured a
+---duration yet still pass.  expectedDurationOverride lets callers substitute a talent-adjusted
+---duration for the primary rule.BuffDuration.  rule.AlternativeDurations (absolute, non-talent-
+---adjusted) lets a single rule match several discrete durations of the same ability (e.g. set
+---bonus or talent variants) instead of declaring a duplicate rule per duration.
+---@param rule table
+---@param measuredDuration number?
+---@param expectedDurationOverride number?
+---@return boolean
+local function RuleAcceptsMeasuredDuration(rule, measuredDuration, expectedDurationOverride)
+	if not measuredDuration then return true end
+	if DurationWithinWindow(rule, measuredDuration, expectedDurationOverride or rule.BuffDuration or 0) then
+		return true
+	end
+	if rule.AlternativeDurations then
+		for _, dur in ipairs(rule.AlternativeDurations) do
+			if DurationWithinWindow(rule, measuredDuration, dur) then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 ---Returns true when the local player has, within the cast window, a cast whose SpellId
