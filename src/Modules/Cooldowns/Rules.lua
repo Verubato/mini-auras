@@ -1330,4 +1330,41 @@ function rules.GetSpellType(spellId)
 	return "Important"
 end
 
+-- Lazily built specId/classToken -> ordered, deduplicated spell ID list for GetTrackableSpellIds.
+local trackableSpellIdCache = {}
+
+---Returns a deduplicated, ordered list of trackable spell IDs for the given spec and class.
+---Used by the EnemyCooldowns "always show" display to render every cooldown an enemy of that
+---spec might use.  Spec rules come first (more specific), class rules are appended; duplicate
+---SpellIds (talent/duration variants of the same ability) collapse to one entry.  Rules flagged
+---ExcludeFromEnemyTracking are skipped.  The returned table is cached and must not be mutated.
+---@param specId number?
+---@param classToken string?
+---@return number[]
+function rules.GetTrackableSpellIds(specId, classToken)
+	local cacheKey = (specId or "?") .. ":" .. (classToken or "?")
+	local cached = trackableSpellIdCache[cacheKey]
+	if cached then
+		return cached
+	end
+
+	local result = {}
+	local seen = {}
+	local function addList(ruleList)
+		if not ruleList then return end
+		for _, rule in ipairs(ruleList) do
+			local id = rule.SpellId
+			if id and not seen[id] and not rule.ExcludeFromEnemyTracking then
+				seen[id] = true
+				result[#result + 1] = id
+			end
+		end
+	end
+	addList(specId and rules.BySpec[specId])
+	addList(classToken and rules.ByClass[classToken])
+
+	trackableSpellIdCache[cacheKey] = result
+	return result
+end
+
 addon.Modules.Cooldowns.Rules = rules

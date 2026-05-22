@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 44,
+	Version = 45,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -507,6 +507,7 @@ local dbDefaults = {
 			ShowTooltips = false,
 			IconSpacing  = 2,
 			EntrySpacing = 4,
+			AlwaysShow   = false,
 
 			Icons = {
 				Size            = 40,
@@ -2263,6 +2264,19 @@ function M:UpgradeToVersion44(vars)
 	vars.NotifiedChanges = false
 
 	vars.Version = 44
+	return true
+end
+
+function M:UpgradeToVersion45(vars)
+	if vars.Version ~= 44 then return false end
+
+	-- The new AlwaysShow key is filled from dbDefaults by GetAndUpgradeDb; this step exists to
+	-- bump the version and surface the feature in What's New.
+	vars.WhatsNew = vars.WhatsNew or {}
+	table.insert(vars.WhatsNew, L[" - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames)."])
+	vars.NotifiedChanges = false
+
+	vars.Version = 45
 	return true
 end
 

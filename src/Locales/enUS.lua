@@ -270,6 +270,9 @@ L:SetDefaultStrings({
 	["Linear Bar Position"] = "Linear Bar Position",
 	["Entry Spacing"] = "Entry Spacing",
 	["Vertical spacing between each enemy's icon row in Linear mode."] = "Vertical spacing between each enemy's icon row in Linear mode.",
+	["Always show cooldowns"] = "Always show cooldowns",
+	["Always display every cooldown for the enemy's specialization, faded when not on cooldown and fully opaque while active."] = "Always display every cooldown for the enemy's specialization, faded when not on cooldown and fully opaque while active.",
+	[" - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames)."] = " - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames).",
 
 	-- Precognition tab
 	["It works by taking any 4 second 'important' self buff and showing that icon."] = "It works by taking any 4 second 'important' self buff and showing that icon.",

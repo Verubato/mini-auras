@@ -306,6 +306,22 @@ local function BuildSettings(parent, options)
 	reverseChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
 	reverseChk:SetPoint("TOP",  enabledChk, "TOP", 0, 0)
 
+	-- Always-show: render every cooldown the enemy's spec can use, faded (fixed 0.6 opacity)
+	-- when off cooldown and fully opaque while active.
+	local alwaysShowChk = mini:Checkbox({
+		Parent    = parent,
+		LabelText = L["Always show cooldowns"],
+		Tooltip   = L["Always display every cooldown for the enemy's specialization, faded when not on cooldown and fully opaque while active."],
+		GetValue  = function() return options.AlwaysShow end,
+		SetValue  = function(v)
+			options.AlwaysShow = v
+			config:Apply()
+			ecdModule:RefreshDisplays()
+		end,
+	})
+	alwaysShowChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	alwaysShowChk:SetPoint("TOP",  enabledChk, "TOP", 0, 0)
+
 	local iconSizeSlider = mini:Slider({
 		Parent    = parent,
 		LabelText = L["Icon Size"],
