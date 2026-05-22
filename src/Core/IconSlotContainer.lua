@@ -446,6 +446,8 @@ function M:New(parent, count, size, spacing, groupName, noBorder, moduleName)
 	instance.RowAlignment = nil
 	instance.InvertLayout = false
 	instance.Columns = nil
+	instance.GrowDown = false
+	instance.GrowUp = false
 	instance.NoBorder = noBorder or false
 	instance.Frame.MiniCCModule = moduleName or nil
 	instance.MasqueGroup = Masque and groupName and Masque:Group("MiniCC", groupName) or nil
@@ -468,9 +470,13 @@ function M:Layout()
 	-- Build a cheap signature from the current size, row settings, and used slot indices.
 	-- If it matches the last run, the visual result would be identical so we
 	-- can skip all the SetPoint/SetSize/Show/Hide calls.
-	local numRows = (not self.GrowDown and self.NumRows and self.NumRows > 1) and self.NumRows or nil
-	local columnsPerRow = (self.GrowDown and self.Columns and self.Columns > 1) and self.Columns or nil
-	local sig = self.Size .. ":" .. (numRows or 1) .. ":" .. (self.RowAlignment or "C") .. ":" .. (self.OverflowRowAlignment or "C") .. ":" .. (self.InvertLayout and "1" or "0") .. ":" .. (self.GrowDown and "D" or "H") .. ":" .. (columnsPerRow or 1) .. ":" .. table.concat(layoutScratch, ",", 1, n)
+	-- Vertical layout covers both grow-down and grow-up; the only difference is icon ordering
+	-- (grow-up reverses the stack so slot 1 sits at the bottom, nearest the anchor).
+	local vertical = self.GrowDown or self.GrowUp
+	local numRows = (not vertical and self.NumRows and self.NumRows > 1) and self.NumRows or nil
+	local columnsPerRow = (vertical and self.Columns and self.Columns > 1) and self.Columns or nil
+	local verticalTag = self.GrowUp and "U" or (self.GrowDown and "D" or "H")
+	local sig = self.Size .. ":" .. (numRows or 1) .. ":" .. (self.RowAlignment or "C") .. ":" .. (self.OverflowRowAlignment or "C") .. ":" .. (self.InvertLayout and "1" or "0") .. ":" .. verticalTag .. ":" .. (columnsPerRow or 1) .. ":" .. table.concat(layoutScratch, ",", 1, n)
 	if self.LayoutSignature == sig then
 		return
 	end
@@ -530,8 +536,9 @@ function M:Layout()
 			slot.Frame:SetSize(self.Size, self.Size)
 			slot.Frame:Show()
 		end
-	elseif self.GrowDown and columnsPerRow then
-		-- Grid grow-down: icons fill left-to-right up to columnsPerRow per row, then wrap down
+	elseif vertical and columnsPerRow then
+		-- Grid vertical: icons fill left-to-right up to columnsPerRow per row, then wrap to the
+		-- next row.  Grow-down wraps downward (row 0 at top); grow-up wraps upward (row 0 at bottom).
 		local cols = columnsPerRow
 		local actualRows = math.ceil(usedCount / cols)
 		local rowWidth = cols * self.Size + (cols - 1) * self.Spacing
@@ -549,22 +556,35 @@ function M:Layout()
 			local thisRowWidth = rowIcons * self.Size + (rowIcons - 1) * self.Spacing
 			local rowOffsetX = (rowWidth - thisRowWidth) / 2
 			local x = rowOffsetX + colIndex * (self.Size + self.Spacing) - (rowWidth / 2) + (self.Size / 2)
-			local y = (totalHeight / 2) - (self.Size / 2) - rowIndex * (self.Size + self.Spacing)
+			local rowStep = rowIndex * (self.Size + self.Spacing)
+			local y
+			if self.GrowUp then
+				y = -(totalHeight / 2) + (self.Size / 2) + rowStep
+			else
+				y = (totalHeight / 2) - (self.Size / 2) - rowStep
+			end
 
 			slot.Frame:ClearAllPoints()
 			slot.Frame:SetPoint("CENTER", self.Frame, "CENTER", x, y)
 			slot.Frame:SetSize(self.Size, self.Size)
 			slot.Frame:Show()
 		end
-	elseif self.GrowDown then
-		-- Vertical single column, growing downward
+	elseif vertical then
+		-- Vertical single column.  Grow-down places slot 1 at the top; grow-up places slot 1 at
+		-- the bottom (nearest the anchor) so the column extends upward.
 		local totalHeight = usedCount * self.Size + (usedCount - 1) * self.Spacing
 		self.Frame:SetSize(self.Size, totalHeight)
 		self.Frame:SetAlpha(1)
 
 		for displayIndex = 1, usedCount do
 			local slot = self.Slots[layoutScratch[displayIndex]]
-			local y = (totalHeight / 2) - (self.Size / 2) - (displayIndex - 1) * (self.Size + self.Spacing)
+			local step = (displayIndex - 1) * (self.Size + self.Spacing)
+			local y
+			if self.GrowUp then
+				y = -(totalHeight / 2) + (self.Size / 2) + step
+			else
+				y = (totalHeight / 2) - (self.Size / 2) - step
+			end
 			slot.Frame:ClearAllPoints()
 			slot.Frame:SetPoint("CENTER", self.Frame, "CENTER", 0, y)
 			slot.Frame:SetSize(self.Size, self.Size)
@@ -655,15 +675,32 @@ function M:SetRows(numRows, alignment, invertLayout)
 	self:Layout()
 end
 
----Switches the container to a vertical single-column layout, growing downward.
----When enabled, multi-row settings are ignored.
+---Switches the container to a vertical layout, growing downward (slot 1 at the top).
+---When enabled, multi-row settings are ignored and grow-up is cleared (mutually exclusive).
 ---@param enabled boolean
 function M:SetGrowDown(enabled)
 	enabled = enabled and true or false
-	if self.GrowDown == enabled then
+	local newGrowUp = enabled and false or self.GrowUp
+	if self.GrowDown == enabled and self.GrowUp == newGrowUp then
 		return
 	end
 	self.GrowDown = enabled
+	self.GrowUp = newGrowUp
+	self.LayoutSignature = nil
+	self:Layout()
+end
+
+---Switches the container to a vertical layout, growing upward (slot 1 at the bottom, nearest
+---the anchor).  When enabled, multi-row settings are ignored and grow-down is cleared.
+---@param enabled boolean
+function M:SetGrowUp(enabled)
+	enabled = enabled and true or false
+	local newGrowDown = enabled and false or self.GrowDown
+	if self.GrowUp == enabled and self.GrowDown == newGrowDown then
+		return
+	end
+	self.GrowUp = enabled
+	self.GrowDown = newGrowDown
 	self.LayoutSignature = nil
 	self:Layout()
 end
@@ -992,11 +1029,14 @@ end
 ---@field OverflowRowAlignment string?
 ---@field InvertLayout boolean
 ---@field Columns number?
+---@field GrowDown boolean
+---@field GrowUp boolean
 ---@field NoBorder boolean
 ---@field SetCount fun(self: IconSlotContainer, count: number)
 ---@field SetSpacing fun(self: IconSlotContainer, spacing: number)
 ---@field SetRows fun(self: IconSlotContainer, iconsPerRow: number?, alignment: string?, invertLayout: boolean?)
 ---@field SetGrowDown fun(self: IconSlotContainer, enabled: boolean)
+---@field SetGrowUp fun(self: IconSlotContainer, enabled: boolean)
 ---@field SetColumns fun(self: IconSlotContainer, n: number?)
 ---@field SetIconSize fun(self: IconSlotContainer, size: number)
 ---@field SetSlot fun(self: IconSlotContainer, slotIndex: number, options: IconLayerOptions)

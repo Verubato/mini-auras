@@ -379,7 +379,6 @@ local function AnchorContainer(entry)
 	local rowsEnabled = options.Icons.Rows and options.Icons.Rows > 1
 
 	local grow = options.Grow
-	local isGrowDown = grow == "DOWN"
 
 	if rowsEnabled then
 		local size = tonumber(options.Icons.Size) or 32
@@ -391,6 +390,8 @@ local function AnchorContainer(entry)
 			frame:SetPoint("TOPLEFT", anchor, "RIGHT", options.Offset.X, yOffset)
 		elseif grow == "DOWN" then
 			frame:SetPoint("TOP", anchor, "BOTTOM", options.Offset.X, options.Offset.Y)
+		elseif grow == "UP" then
+			frame:SetPoint("BOTTOM", anchor, "TOP", options.Offset.X, options.Offset.Y)
 		else
 			frame:SetPoint("TOP", anchor, "CENTER", options.Offset.X, yOffset)
 		end
@@ -401,12 +402,15 @@ local function AnchorContainer(entry)
 			frame:SetPoint("LEFT", anchor, "RIGHT", options.Offset.X, options.Offset.Y)
 		elseif grow == "DOWN" then
 			frame:SetPoint("TOP", anchor, "BOTTOM", options.Offset.X, options.Offset.Y)
+		elseif grow == "UP" then
+			frame:SetPoint("BOTTOM", anchor, "TOP", options.Offset.X, options.Offset.Y)
 		else
 			frame:SetPoint("CENTER", anchor, "CENTER", options.Offset.X, options.Offset.Y)
 		end
 	end
 
-	entry.Container:SetGrowDown(isGrowDown)
+	entry.Container:SetGrowDown(grow == "DOWN")
+	entry.Container:SetGrowUp(grow == "UP")
 	entry.Container:SetColumns(options.Icons.Columns)
 end
 

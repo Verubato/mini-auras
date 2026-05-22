@@ -199,9 +199,13 @@ local function AnchorContainer(header, anchor, options)
 	elseif options.Grow == "DOWN" then
 		anchorPoint = "TOP"
 		relativeToPoint = "BOTTOM"
+	elseif options.Grow == "UP" then
+		anchorPoint = "BOTTOM"
+		relativeToPoint = "TOP"
 	end
 
 	header:SetGrowDown(options.Grow == "DOWN")
+	header:SetGrowUp(options.Grow == "UP")
 	header:SetColumns(nil)
 	frame:SetPoint(anchorPoint, anchor, relativeToPoint, options.Offset.X, options.Offset.Y)
 end

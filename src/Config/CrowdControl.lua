@@ -8,6 +8,7 @@ local growOptions = {
 	"RIGHT",
 	"CENTER",
 	"DOWN",
+	"UP",
 }
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing

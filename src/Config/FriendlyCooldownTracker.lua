@@ -16,6 +16,7 @@ local growOptions = {
 	"RIGHT",
 	"CENTER",
 	"DOWN",
+	"UP",
 }
 
 local columns = 4
@@ -236,11 +237,12 @@ local function BuildInstance(parent, anchorOptions)
 	columnsPerRowSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	local function refreshRowControls()
-		local isDown = anchorOptions.Grow == "DOWN"
-		rowsSlider.Slider:SetShown(not isDown)
-		rowsSlider.Label:SetShown(not isDown)
-		columnsPerRowSlider.Slider:SetShown(isDown)
-		columnsPerRowSlider.Label:SetShown(isDown)
+		-- DOWN and UP are vertical layouts that use "columns per row"; horizontal layouts use "rows".
+		local isVertical = anchorOptions.Grow == "DOWN" or anchorOptions.Grow == "UP"
+		rowsSlider.Slider:SetShown(not isVertical)
+		rowsSlider.Label:SetShown(not isVertical)
+		columnsPerRowSlider.Slider:SetShown(isVertical)
+		columnsPerRowSlider.Label:SetShown(isVertical)
 	end
 
 	local growLbl = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
