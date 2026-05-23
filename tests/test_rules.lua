@@ -470,6 +470,15 @@ local cases = {
         auraIsDefensive = true, isExternal = false, isImportant = true,
         evidence = {},
     },
+    {
+        -- Guardian has its own Barkskin rule (34s CD); verify the spec rule is reachable
+        -- end-to-end and isn't shadowed by Incarnation: Guardian of Ursoc in the same spec list.
+        desc = "Guardian Druid - Barkskin (22812)",
+        unit = "player", class = "DRUID", specId = 104,
+        spellId = 22812, buffDuration = 8,
+        auraIsDefensive = true, isExternal = false, isImportant = true,
+        evidence = {},
+    },
 
     -- MONK
     {

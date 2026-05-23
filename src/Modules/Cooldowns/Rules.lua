@@ -587,8 +587,17 @@ local rules = {
 				BigDefensive = false,
 				ExternalDefensive = false,
 				SpellId = 102558,
-			},
-		}, -- Guardian Druid: Incarnation: Guardian of Ursoc
+			}, -- Guardian Druid: Incarnation: Guardian of Ursoc
+			{
+				BuffDuration = 8,
+				AlternativeDurations = { 12 }, -- Improved Barkskin (+4s)
+				Cooldown = 34,
+				BigDefensive = true,
+				ExternalDefensive = false,
+				Important = true,
+				SpellId = 22812,
+			}, -- Guardian Druid: Barkskin (34s cooldown vs the 60s class-wide rule for other specs)
+		},
 		[105] = {
 			{
 				BuffDuration = 12,

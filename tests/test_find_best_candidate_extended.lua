@@ -444,6 +444,28 @@ fw.describe("FindBestCandidate - Barkskin Improved Barkskin variant (+4s)", func
         local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 10.0, {})
         fw.is_nil(rule, "10s falls between Barkskin 8±0.5 and 12±0.5 windows -> no match")
     end)
+
+    -- Guardian's Barkskin has a 34s cooldown vs the 60s class-wide rule used by other specs.
+    -- The spec rule (BySpec[104]) must take priority over the ByClass.DRUID fallback.
+    fw.it("Guardian Druid commits Barkskin with its 34s cooldown (spec rule overrides class)", function()
+        wow.setUnitClass("party1", "DRUID")
+        mods.talents._setSpec("party1", 104)
+        local t = makeTracked(BIG, 1.0, { party1 = 1.0 }, { Cast = true })
+        local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 8.0, {})
+        fw.not_nil(rule, "Guardian Barkskin should match")
+        fw.eq(rule.SpellId, 22812, "Barkskin")
+        fw.eq(rule.Cooldown, 34, "Guardian Barkskin cooldown is 34s")
+    end)
+
+    fw.it("non-Guardian Druid commits Barkskin with the 60s class cooldown", function()
+        wow.setUnitClass("party1", "DRUID")
+        mods.talents._setSpec("party1", 102) -- Balance: no Barkskin spec rule, falls through to class
+        local t = makeTracked(BIG, 1.0, { party1 = 1.0 }, { Cast = true })
+        local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 8.0, {})
+        fw.not_nil(rule, "Balance Barkskin should match via the class rule")
+        fw.eq(rule.SpellId, 22812, "Barkskin")
+        fw.eq(rule.Cooldown, 60, "non-Guardian Barkskin cooldown is 60s")
+    end)
 end)
 
 -- Section 11: Life Cocoon (Mistweaver) requires Shield evidence

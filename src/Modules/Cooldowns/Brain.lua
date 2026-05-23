@@ -93,6 +93,9 @@ local activeCooldownsLookup = nil
 -- by a talent proc, Avatar extended by a proc).  Lets Module refresh PredictedGlowDurations.
 -- Signature: fn(entry, spellId, casterUnit, durationObject)
 local predictiveGlowDurationChangedCallback = nil
+-- When true, the predict/remove pathways print diagnostic lines (matched rule, aura types,
+-- evidence).  Off by default since it fires on the hot UNIT_AURA path; toggle via "/mcc debug".
+local debugEnabled = false
 
 -- Pre-computed signature strings indexed by a 4-bit key (B=8, E=4, I=2, C=1).
 -- Eliminates repeated string concatenation on the hot OnWatcherChanged path.
@@ -182,6 +185,25 @@ local revivalSpilloverCfg = {
 ---@field FeignDeath boolean?  unit entered feign death near detectionTime; mutually exclusive with UnitFlags to prevent false AoT matches
 ---@field Cast       boolean?  the local player cast a spell near detectionTime (UNIT_SPELLCAST_SUCCEEDED fires locally only)
 ---@field PetAura    boolean?  the unit's pet received a BIG_DEFENSIVE aura near detectionTime (confirms Survival of the Fittest over Aspect of the Turtle)
+
+-- Renders a {key=true} set (AuraTypes / EvidenceSet) as a stable, sorted "a, b, c" string,
+-- or "none" when the set is nil or empty.  Used only for debug output.
+local function FormatBoolSet(t)
+	if not t then return "none" end
+	local keys = {}
+	for k, v in pairs(t) do
+		if v then keys[#keys + 1] = tostring(k) end
+	end
+	if #keys == 0 then return "none" end
+	table.sort(keys)
+	return table.concat(keys, ", ")
+end
+
+-- Prints a debug line (prefixed with the addon name) when debug logging is enabled.
+local function DebugLog(fmt, ...)
+	if not debugEnabled then return end
+	addon.Core.Framework:Notify("[FCD] " .. fmt, ...)
+end
 
 ---Collects all concurrent evidence types for a unit near detectionTime.
 ---Returns an EvidenceSet or nil if no evidence was found.
@@ -1698,9 +1720,14 @@ local function OnAuraRemoved(entry, tracked, now, candidateUnits)
 	local rule, ruleUnit = FindBestCandidate(entry, tracked, measuredDuration, candidateUnits)
 
 	if not rule then
+		DebugLog("removed %s: NO MATCH | dur=%.2fs | auraTypes={%s} | evidence={%s}",
+			entry.Unit, measuredDuration, FormatBoolSet(tracked.AuraTypes), FormatBoolSet(tracked.Evidence))
 		return false
 	end
 
+	DebugLog("removed %s: MATCHED spell=%s caster=%s | dur=%.2fs | auraTypes={%s} | evidence={%s}",
+		entry.Unit, tostring(rule.SpellId), tostring(ruleUnit), measuredDuration,
+		FormatBoolSet(tracked.AuraTypes), FormatBoolSet(tracked.Evidence))
 	CommitCooldown(entry, tracked, rule, ruleUnit, measuredDuration)
 	return true
 end
@@ -1859,6 +1886,14 @@ local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 		-- For EXTERNAL_DEFENSIVE, searches candidateUnits for the caster via cast snapshot.
 		if not tracked.PredictedSpellId then
 			local spellId, casterUnit = PredictRule(unit, info.AuraTypes, tracked.Evidence, tracked.CastSnapshot, tracked.CastSpellIdSnapshot, now, candidateUnits)
+			if spellId then
+				DebugLog("predicted %s: MATCHED spell=%s caster=%s | auraTypes={%s} | evidence={%s}",
+					unit, tostring(spellId), tostring(casterUnit),
+					FormatBoolSet(info.AuraTypes), FormatBoolSet(tracked.Evidence))
+			else
+				DebugLog("predicted %s: NO MATCH | auraTypes={%s} | evidence={%s}",
+					unit, FormatBoolSet(info.AuraTypes), FormatBoolSet(tracked.Evidence))
+			end
 			if spellId and predictiveGlowCallback then
 				tracked.PredictedSpellId = spellId
 				tracked.PredictedCasterUnit = casterUnit
@@ -2080,6 +2115,14 @@ end
 ---@param fn fun(unit: string): table?
 function B:RegisterActiveCooldownsLookup(fn)
 	activeCooldownsLookup = fn
+end
+
+---Toggles diagnostic logging of the aura predict/remove pathways and returns the new state.
+---Wired to "/mcc debug"; prints whether a rule matched plus the aura types and evidence.
+---@return boolean enabled
+function B:ToggleDebug()
+	debugEnabled = not debugEnabled
+	return debugEnabled
 end
 
 ---Registers the callback fired when a new aura is matched to a predicted spell.
