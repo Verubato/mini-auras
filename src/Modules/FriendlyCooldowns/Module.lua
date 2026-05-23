@@ -703,6 +703,9 @@ function M:Init()
 				-- Arena match is starting: clear all tracked state so the previous match's
 				-- cooldowns don't bleed into the new one.
 				ClearAllCooldownState()
+				-- Then refresh so the prep-room icons are shown using the now-available
+				-- group/spec data, rather than only once the gates open.
+				C_Timer.After(0, function() M:Refresh() end)
 			end
 		elseif event == "PLAYER_ENTERING_WORLD" then
 			-- Fired after every loading screen, including when leaving an arena.

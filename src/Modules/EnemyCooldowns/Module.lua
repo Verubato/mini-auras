@@ -622,9 +622,25 @@ end
 
 ---Returns true when any arena opponent slot exists (or test mode is active).
 ---Used to decide whether the combined linear bar should be visible.
+---During arena prep the unit tokens (arena1-3) don't exist yet, but opponent specs are already
+---known via GetNumArenaOpponentSpecs - treat that as "present" so the always-show icons can be
+---displayed in the prep room rather than only once the gates open.
 local function AnyArenaUnitExists()
 	return testModeActive
 		or UnitExists("arena1") or UnitExists("arena2") or UnitExists("arena3")
+		or (GetNumArenaOpponentSpecs and GetNumArenaOpponentSpecs() > 0)
+end
+
+---Returns true when a specific arena opponent slot is present: either its unit token exists (once
+---the gates open) or its spec is already known during the prep room (before the tokens exist).
+---@param unit string
+---@param index number  1=arena1, 2=arena2, 3=arena3
+local function ArenaUnitPresent(unit, index)
+	if UnitExists(unit) then
+		return true
+	end
+	local spec = GetArenaOpponentSpec and GetArenaOpponentSpec(index)
+	return spec ~= nil and spec > 0
 end
 
 ---Shows or hides each entry's container frame based on display mode and unit visibility.
@@ -645,8 +661,11 @@ local function ShowHideAllEntries()
 				-- Only arena1's container is visible in Linear mode; it shows all enemies combined.
 				shouldShow = i == 1 and not editModeActive and AnyArenaUnitExists()
 			else
-				-- ArenaFrames and Split share per-unit visibility based on UnitExists + arena frame.
-				shouldShow = not editModeActive and (testModeActive or UnitExists(unit))
+				-- ArenaFrames and Split share per-unit visibility based on the opponent slot being
+				-- present (existing unit token, or known spec during prep) plus an arena frame to
+				-- anchor to.  Using ArenaUnitPresent lets the per-unit containers show in the prep
+				-- room, before the unit tokens exist, the same way the linear bar already does.
+				shouldShow = not editModeActive and (testModeActive or ArenaUnitPresent(unit, i))
 				if shouldShow and not testModeActive then
 					shouldShow = display:GetArenaEnemyFrame(i) ~= nil
 				end
@@ -903,6 +922,9 @@ function M:Init()
 				-- Arena match is starting: clear all tracked state so the previous match's
 				-- cooldowns don't bleed into the new one.
 				ClearAllCooldownState()
+				-- Then refresh so the prep-room icons are shown using the now-available opponent
+				-- spec data, rather than only once the gates open.
+				C_Timer.After(0, function() M:Refresh() end)
 			end
 		elseif event == "PLAYER_ENTERING_WORLD" then
 			-- Fired after every loading screen, including when leaving an arena.

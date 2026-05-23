@@ -175,6 +175,18 @@ local function BuildSlotContext(options, filter)
 	}
 end
 
+---Resolves an enemy unit's class token, deriving it from the spec ID when UnitClass is nil.
+---During arena prep the enemy unit tokens (arena1-3) don't exist yet, so UnitClass returns nil
+---even though the spec - and therefore the class - is known via GetArenaOpponentSpec.  Without
+---this fallback the always-show list would drop every ByClass cooldown until the gates open.
+---@param unit string
+---@param specId number?
+---@return string? classToken
+local function ResolveClassToken(unit, specId)
+	local _, classToken = UnitClass(unit)
+	return classToken or rules.GetClassForSpec(specId)
+end
+
 ---Appends one entry's display slots to `slots`.
 ---Always-show mode: renders the entry's full spec/class spell set, faded when off cooldown and
 ---  full-opacity with a swipe when active; active cooldowns outside the spec list are appended too.
@@ -189,7 +201,7 @@ local function CollectEntrySlots(entry, options, ctx, slots, now)
 	-- visible.  Falls back to active-only rendering until spec/class data is available.
 	if options.AlwaysShow then
 		local specId = fcdTalents:GetUnitSpecId(entry.Unit)
-		local _, classToken = UnitClass(entry.Unit)
+		local classToken = ResolveClassToken(entry.Unit, specId)
 		local trackable = rules.GetTrackableSpellIds(specId, classToken)
 		if #trackable > 0 then
 			local emitted = {}

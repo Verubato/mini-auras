@@ -1253,6 +1253,33 @@ function rules.GetSpellType(spellId)
 	return "Important"
 end
 
+-- Static spec ID -> class token mapping for every spec declared above.  A hardcoded table is used
+-- (rather than GetSpecializationInfoByID) because that API can return nil for newer or
+-- environment-dependent specs.  Lets callers recover an enemy's class from their spec when
+-- UnitClass is unavailable - notably during arena prep, before the unit tokens exist.
+local specToClass = {
+	[250]  = "DEATHKNIGHT", [251]  = "DEATHKNIGHT", [252]  = "DEATHKNIGHT",
+	[577]  = "DEMONHUNTER", [581]  = "DEMONHUNTER", [1480] = "DEMONHUNTER",
+	[102]  = "DRUID",       [103]  = "DRUID",        [104]  = "DRUID",       [105] = "DRUID",
+	[1467] = "EVOKER",      [1468] = "EVOKER",       [1473] = "EVOKER",
+	[253]  = "HUNTER",      [254]  = "HUNTER",       [255]  = "HUNTER",
+	[62]   = "MAGE",        [63]   = "MAGE",         [64]   = "MAGE",
+	[268]  = "MONK",        [269]  = "MONK",         [270]  = "MONK",
+	[65]   = "PALADIN",     [66]   = "PALADIN",      [70]   = "PALADIN",
+	[256]  = "PRIEST",      [257]  = "PRIEST",       [258]  = "PRIEST",
+	[259]  = "ROGUE",       [260]  = "ROGUE",        [261]  = "ROGUE",
+	[262]  = "SHAMAN",      [263]  = "SHAMAN",       [264]  = "SHAMAN",
+	[265]  = "WARLOCK",     [266]  = "WARLOCK",      [267]  = "WARLOCK",
+	[71]   = "WARRIOR",     [72]   = "WARRIOR",      [73]   = "WARRIOR",
+}
+
+---Returns the class token for a spec ID, or nil if the spec is unknown.
+---@param specId number?
+---@return string? classToken
+function rules.GetClassForSpec(specId)
+	return specId and specToClass[specId] or nil
+end
+
 -- Lazily built specId/classToken -> ordered, deduplicated spell ID list for GetTrackableSpellIds.
 local trackableSpellIdCache = {}
 

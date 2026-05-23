@@ -905,3 +905,31 @@ fw.describe("Burrow - excluded from enemy cooldown tracking", function()
         fw.eq(listContains(trackable, 114051), true, "Ascendance should still be tracked")
     end)
 end)
+
+-- During arena prep the enemy unit tokens don't exist, so UnitClass returns nil; the spec is still
+-- known via GetArenaOpponentSpec.  GetClassForSpec recovers the class so the always-show static list
+-- includes ByClass cooldowns (e.g. Barkskin) during prep instead of only the BySpec ones.
+
+fw.describe("GetClassForSpec - spec to class resolution", function()
+    fw.it("maps known spec IDs to their class token", function()
+        fw.eq(rules.GetClassForSpec(263), "SHAMAN", "263 -> SHAMAN")
+        fw.eq(rules.GetClassForSpec(102), "DRUID", "102 -> DRUID")
+        fw.eq(rules.GetClassForSpec(70), "PALADIN", "70 -> PALADIN")
+    end)
+
+    fw.it("returns nil for nil / unknown spec IDs", function()
+        fw.eq(rules.GetClassForSpec(nil), nil, "nil spec -> nil")
+        fw.eq(rules.GetClassForSpec(999999), nil, "unknown spec -> nil")
+    end)
+
+    fw.it("recovers ByClass cooldowns when class is derived from the spec", function()
+        -- Balance Druid (102): Barkskin (22812) is a ByClass.DRUID rule, not in BySpec[102].
+        -- Without a class token (the prep situation) it is missing; with the derived class it appears.
+        local withoutClass = rules.GetTrackableSpellIds(102, nil)
+        fw.eq(listContains(withoutClass, 22812), false, "Barkskin absent when class is unknown")
+
+        local derived = rules.GetClassForSpec(102)
+        local withClass = rules.GetTrackableSpellIds(102, derived)
+        fw.eq(listContains(withClass, 22812), true, "Barkskin present once class is derived from spec")
+    end)
+end)
