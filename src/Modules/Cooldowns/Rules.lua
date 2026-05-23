@@ -824,6 +824,7 @@ local rules = {
 				RequiresTalent = 5576,
 				PvPOnly = true,
 				NoAura  = true,
+				ExcludeFromEnemyTracking = true,
 			}, -- Burrow
 		},
 		[262] = { -- Elemental Shaman
@@ -843,6 +844,7 @@ local rules = {
 				RequiresTalent = 5574,
 				PvPOnly = true,
 				NoAura  = true,
+				ExcludeFromEnemyTracking = true,
 			}, -- Burrow
 		},
 		[263] = { -- Enhancement Shaman
@@ -872,6 +874,7 @@ local rules = {
 				RequiresTalent = 5575,
 				PvPOnly = true,
 				NoAura  = true,
+				ExcludeFromEnemyTracking = true,
 			}, -- Burrow
 		},
 	},
@@ -1285,6 +1288,34 @@ function rules.GetTrackableSpellIds(specId, classToken)
 
 	trackableSpellIdCache[cacheKey] = result
 	return result
+end
+
+-- Lazily built set of spell IDs whose rule(s) carry ExcludeFromEnemyTracking.
+local enemyExcludedSpellIds = nil
+
+local function BuildEnemyExcludedSet()
+	enemyExcludedSpellIds = {}
+	local function scan(ruleList)
+		for _, rule in ipairs(ruleList) do
+			if rule.SpellId and rule.ExcludeFromEnemyTracking then
+				enemyExcludedSpellIds[rule.SpellId] = true
+			end
+		end
+	end
+	for _, ruleList in pairs(rules.BySpec) do scan(ruleList) end
+	for _, ruleList in pairs(rules.ByClass) do scan(ruleList) end
+end
+
+---Returns true if the given spell ID is flagged ExcludeFromEnemyTracking on any of its rules.
+---The aura-match path already drops these via RulePassesTalentGates, and the always-show list
+---skips them in GetTrackableSpellIds; this lets the signature-detection commit path (which builds
+---synthetic rules, e.g. Burrow) honour the same flag.
+---@param spellId number?
+---@return boolean
+function rules.IsExcludedFromEnemyTracking(spellId)
+	if not spellId then return false end
+	if not enemyExcludedSpellIds then BuildEnemyExcludedSet() end
+	return enemyExcludedSpellIds[spellId] == true
 end
 
 addon.Modules.Cooldowns.Rules = rules

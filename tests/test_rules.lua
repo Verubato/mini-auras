@@ -860,3 +860,48 @@ fw.describe("Rule integration - prediction and cooldown commit", function()
         end)
     end
 end)
+
+-- Burrow is excluded from enemy tracking: its talent can't be confirmed on opponents, so the
+-- rule carries ExcludeFromEnemyTracking.  That both drops it from the always-show static list
+-- (GetTrackableSpellIds) and lets the enemy commit path skip it (IsExcludedFromEnemyTracking).
+
+local rules = mods.rules
+local BURROW = 409293
+
+local function listContains(list, value)
+    for _, v in ipairs(list) do
+        if v == value then return true end
+    end
+    return false
+end
+
+fw.describe("Burrow - excluded from enemy cooldown tracking", function()
+    fw.it("IsExcludedFromEnemyTracking is true for Burrow", function()
+        fw.eq(rules.IsExcludedFromEnemyTracking(BURROW), true, "Burrow (409293) is enemy-excluded")
+    end)
+
+    fw.it("IsExcludedFromEnemyTracking is false for a normal Shaman cooldown", function()
+        -- Ascendance (Elemental, 114050) is a regular tracked cooldown, not enemy-excluded.
+        fw.eq(rules.IsExcludedFromEnemyTracking(114050), false, "Ascendance is not enemy-excluded")
+    end)
+
+    fw.it("IsExcludedFromEnemyTracking is false for nil / unknown spell IDs", function()
+        fw.eq(rules.IsExcludedFromEnemyTracking(nil), false, "nil spellId is not excluded")
+        fw.eq(rules.IsExcludedFromEnemyTracking(123456), false, "unknown spellId is not excluded")
+    end)
+
+    fw.it("Burrow is hidden from the always-show static list for every Shaman spec", function()
+        for _, specId in ipairs({ 262, 263, 264 }) do
+            local trackable = rules.GetTrackableSpellIds(specId, "SHAMAN")
+            fw.eq(listContains(trackable, BURROW), false,
+                "Burrow should not appear in the static list for spec " .. specId)
+        end
+    end)
+
+    fw.it("Enhancement's other cooldowns still appear in the static list", function()
+        -- Sanity: excluding Burrow must not drop the spec's normal cooldowns.
+        local trackable = rules.GetTrackableSpellIds(263, "SHAMAN")
+        fw.eq(listContains(trackable, 384352), true, "Doomwinds should still be tracked")
+        fw.eq(listContains(trackable, 114051), true, "Ascendance should still be tracked")
+    end)
+end)

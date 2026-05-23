@@ -6,6 +6,7 @@ local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 
 -- Loaded before this file in TOC order.
+local rules      = addon.Modules.Cooldowns.Rules
 local fcdTalents = addon.Modules.Cooldowns.Talents
 local fcdBrain   = addon.Modules.Cooldowns.Brain
 local SignatureDetector = addon.Modules.Cooldowns.SignatureDetector
@@ -181,6 +182,11 @@ end
 
 ---Stores a committed cooldown entry on the watch entry and schedules its cleanup.
 local function CommitCooldown(entry, tracked, rule, measuredDuration)
+	-- Rules flagged ExcludeFromEnemyTracking are never tracked for enemies (e.g. Burrow, whose
+	-- talent we can't confirm on opponents).  The aura-match path already drops these, so this
+	-- guard exists for the signature-detection path, which commits synthetic rules directly.
+	if rules.IsExcludedFromEnemyTracking(rule.SpellId) then return end
+
 	-- Apply talent-based cooldown reduction and look up max charges.
 	local cooldown = rule.Cooldown
 	local maxCharges = nil
@@ -290,6 +296,8 @@ end
 
 -- Event-signature detection (Burrow + Emerald Communion).
 -- No talent checks on the enemy path: talent data is unavailable for arena opponents.
+-- Burrow never commits here because its rule is flagged ExcludeFromEnemyTracking (see
+-- CommitCooldown's guard); it remains here only so the detector's shared state stays consistent.
 local sd = SignatureDetector:New({
 	checkTalent  = false,
 	burrowCommit = function(unit, now, castTime)
