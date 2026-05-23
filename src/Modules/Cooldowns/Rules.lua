@@ -1283,11 +1283,31 @@ end
 -- Lazily built specId/classToken -> ordered, deduplicated spell ID list for GetTrackableSpellIds.
 local trackableSpellIdCache = {}
 
+---Returns true when a rule's ability is removed/replaced by a near-universal default talent, so it
+---should not appear in the enemy always-show list (e.g. Avenging Wrath when Radiant Glory - a spec
+---default - is assumed).  Enemy talents are unknowable, so the assumed-default build is the best
+---guess; the ability still tracks live (via the active-cooldown path) if the enemy actually casts it.
+local function ExcludedByDefaultTalent(rule, specId, classToken)
+	local excl = rule.ExcludeIfTalent
+	if not excl then return false end
+	local talents = addon.Modules.Cooldowns.Talents
+	if not (talents and talents.IsDefaultTalent) then return false end
+	if type(excl) == "table" then
+		for _, id in ipairs(excl) do
+			if talents:IsDefaultTalent(classToken, specId, id) then return true end
+		end
+		return false
+	end
+	return talents:IsDefaultTalent(classToken, specId, excl)
+end
+
 ---Returns a deduplicated, ordered list of trackable spell IDs for the given spec and class.
 ---Used by the EnemyCooldowns "always show" display to render every cooldown an enemy of that
 ---spec might use.  Spec rules come first (more specific), class rules are appended; duplicate
 ---SpellIds (talent/duration variants of the same ability) collapse to one entry.  Rules flagged
----ExcludeFromEnemyTracking are skipped.  The returned table is cached and must not be mutated.
+---ExcludeFromEnemyTracking, or whose ExcludeIfTalent is a near-universal default (so the ability is
+---almost certainly replaced - e.g. Avenging Wrath under Radiant Glory), are skipped.  The returned
+---table is cached and must not be mutated.
 ---@param specId number?
 ---@param classToken string?
 ---@return number[]
@@ -1304,7 +1324,8 @@ function rules.GetTrackableSpellIds(specId, classToken)
 		if not ruleList then return end
 		for _, rule in ipairs(ruleList) do
 			local id = rule.SpellId
-			if id and not seen[id] and not rule.ExcludeFromEnemyTracking then
+			if id and not seen[id] and not rule.ExcludeFromEnemyTracking
+			   and not ExcludedByDefaultTalent(rule, specId, classToken) then
 				seen[id] = true
 				result[#result + 1] = id
 			end
@@ -1315,6 +1336,12 @@ function rules.GetTrackableSpellIds(specId, classToken)
 
 	trackableSpellIdCache[cacheKey] = result
 	return result
+end
+
+---Test helper: clears the trackable-spell cache so it rebuilds against current (mock) talent
+---data.  Production code never needs this - default talents are static at runtime.
+function rules._TestResetTrackableCache()
+	for k in pairs(trackableSpellIdCache) do trackableSpellIdCache[k] = nil end
 end
 
 -- Lazily built set of spell IDs whose rule(s) carry ExcludeFromEnemyTracking.

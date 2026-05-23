@@ -918,6 +918,18 @@ function M:UnitHasTalent(unit, talentSpellId, callerSpecId)
 	return effectiveRanks ~= nil and (effectiveRanks[talentSpellId] or 0) > 0
 end
 
+---Returns true if a talent is a near-universal default for the given class/spec, per the
+---assumed-talent tables.  Unit-less (unlike UnitHasTalent), so callers without a unit - e.g. the
+---enemy always-show static list, which renders from spec/class alone - can assume the default build.
+---@param classToken string?
+---@param specId number?
+---@param talentId number
+---@return boolean
+function M:IsDefaultTalent(classToken, specId, talentId)
+	local ranks = GetEffectiveTalentRanks(nil, classToken, specId)
+	return ranks ~= nil and (ranks[talentId] or 0) > 0
+end
+
 ---Returns the spec ID stored for a unit from talent decode (LibSpec or local player).
 ---@param unit string
 ---@return number|nil

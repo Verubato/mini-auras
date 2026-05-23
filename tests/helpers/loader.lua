@@ -15,13 +15,20 @@ local M = {}
 -- Mock Talents
 
 local function makeTalents()
-	local talentData = {}   -- unit -> { [talentId] = true/false }
-	local specIds    = {}   -- unit -> specId
+	local talentData    = {}   -- unit -> { [talentId] = true/false }
+	local specIds       = {}   -- unit -> specId
+	local defaultTalents = {}  -- specId -> { [talentId] = true }  (near-universal assumed talents)
 
 	local t = {}
 
 	function t:UnitHasTalent(unit, talentId, callerSpecId)
 		local d = talentData[unit]
+		return d ~= nil and d[talentId] == true
+	end
+
+	-- Mirrors the real Talents:IsDefaultTalent, driven by a configurable per-spec table.
+	function t:IsDefaultTalent(classToken, specId, talentId)
+		local d = specId and defaultTalents[specId]
 		return d ~= nil and d[talentId] == true
 	end
 
@@ -56,9 +63,15 @@ local function makeTalents()
 		specIds[unit] = specId
 	end
 
+	function t._setDefaultTalent(specId, talentId)
+		defaultTalents[specId] = defaultTalents[specId] or {}
+		defaultTalents[specId][talentId] = true
+	end
+
 	function t._reset()
-		talentData = {}
-		specIds    = {}
+		talentData     = {}
+		specIds        = {}
+		defaultTalents = {}
 	end
 
 	return t

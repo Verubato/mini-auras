@@ -906,6 +906,48 @@ fw.describe("Burrow - excluded from enemy cooldown tracking", function()
     end)
 end)
 
+-- The enemy always-show static list assumes the near-universal default build (enemy talents are
+-- unknowable).  GetTrackableSpellIds skips a rule when its ExcludeIfTalent is a default talent, so an
+-- ability replaced by a near-universal talent (e.g. Avenging Wrath under Radiant Glory) isn't shown.
+
+local AVENGING_WRATH    = 31884
+local RADIANT_GLORY     = 458359  -- Ret talent that converts AW into a passive proc
+local AVENGING_CRUSADER = 216331  -- Holy talent that replaces AW
+
+fw.describe("GetTrackableSpellIds - default-talent filtering", function()
+    fw.before_each(function()
+        mods.talents._reset()
+        rules._TestResetTrackableCache()
+    end)
+
+    fw.it("omits Avenging Wrath for Ret when Radiant Glory is the default", function()
+        mods.talents._setDefaultTalent(70, RADIANT_GLORY)
+        local trackable = rules.GetTrackableSpellIds(70, "PALADIN")
+        fw.eq(listContains(trackable, AVENGING_WRATH), false, "AW omitted when Radiant Glory assumed")
+    end)
+
+    fw.it("keeps Avenging Wrath when its exclude-talent is not a default", function()
+        -- No defaults set: ExcludeIfTalent (Radiant Glory) is not assumed, so AW stays listed.
+        local trackable = rules.GetTrackableSpellIds(70, "PALADIN")
+        fw.eq(listContains(trackable, AVENGING_WRATH), true, "AW listed when Radiant Glory not assumed")
+    end)
+
+    fw.it("Holy lists Avenging Crusader instead of Avenging Wrath when AC is the default", function()
+        mods.talents._setDefaultTalent(65, AVENGING_CRUSADER)
+        local trackable = rules.GetTrackableSpellIds(65, "PALADIN")
+        fw.eq(listContains(trackable, AVENGING_WRATH), false, "AW omitted (replaced by Avenging Crusader)")
+        fw.eq(listContains(trackable, AVENGING_CRUSADER), true, "Avenging Crusader still listed")
+    end)
+
+    fw.it("handles table-form ExcludeIfTalent (Enhancement Doomwinds vs Ascendance)", function()
+        -- Doomwinds (384352) has ExcludeIfTalent = { 114051, 378270 }; a default match on either omits it.
+        mods.talents._setDefaultTalent(263, 114051)  -- Ascendance assumed
+        local trackable = rules.GetTrackableSpellIds(263, "SHAMAN")
+        fw.eq(listContains(trackable, 384352), false, "Doomwinds omitted when an exclude-talent is default")
+        fw.eq(listContains(trackable, 114051), true, "Ascendance still listed")
+    end)
+end)
+
 -- During arena prep the enemy unit tokens don't exist, so UnitClass returns nil; the spec is still
 -- known via GetArenaOpponentSpec.  GetClassForSpec recovers the class so the always-show static list
 -- includes ByClass cooldowns (e.g. Barkskin) during prep instead of only the BySpec ones.
