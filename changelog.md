@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.19.0
+
+- Added new "Split" mode for enemy cooldowns.
+- Added "Always Show" feature for enemy cooldown icons.
+- Fixed guardian druid barkskin not tracking.
+- Added grow up option.
+
 ## 3.18.0
 
 - Added Warrior Beserker Roar.
