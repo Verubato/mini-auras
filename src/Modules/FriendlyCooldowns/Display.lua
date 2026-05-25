@@ -5,6 +5,7 @@ local wowEx = addon.Utils.WoWEx
 local trinketsTracker = addon.Core.TrinketsTracker
 local instanceOptions = addon.Core.InstanceOptions
 local frames = addon.Core.Frames
+local units = addon.Utils.Units
 
 -- Loaded before this file in TOC order.
 local fcdTalents = addon.Modules.Cooldowns.Talents
@@ -301,6 +302,14 @@ local function UpdateDisplay(entry)
 
 	-- ExcludeSelf: container is intentionally hidden; don't populate it.
 	if anchorOptions.ExcludeSelf and UnitIsUnit(entry.Unit, "player") then
+		return
+	end
+
+	-- Freeze the display while the tracked unit isn't a friend: mind control flips allied unit
+	-- tokens to the enemy team, and repainting now would replace the ally's cooldowns with the
+	-- enemy's. Leave the last friendly slots in place until the unit is an ally again. Test mode
+	-- uses fake frames that may not be friends, so skip the guard there.
+	if not testModeActive and not units:IsFriend(entry.Unit) then
 		return
 	end
 

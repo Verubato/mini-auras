@@ -88,6 +88,14 @@ local function EnsureEntry(anchor, unit)
 		return nil
 	end
 
+	-- Mind control flips allied unit tokens to the enemy team (UnitIsFriend returns false).
+	-- Don't create or rebuild an entry onto an enemy unit: return the existing entry untouched
+	-- so its icons stay frozen as the ally's, rather than morphing into the enemy's cooldowns.
+	-- Test mode uses fake frames that may not be friends, so skip the guard there.
+	if not testModeActive and not units:IsFriend(unit) then
+		return watchEntries[anchor]
+	end
+
 	-- Skip NPC units (friendly mobs, scenario NPCs, etc.).
 	-- In test mode, party slots may be unoccupied by a real player; skip the check so
 	-- fake test frames are processed normally.

@@ -84,8 +84,18 @@ function M:FindHealers()
 	return healers
 end
 
+---Returns true only if the unit is, right now, confidently a friend of the local player.
+---A secret-value result (possible on 12.0.5+) is treated as "not a friend" so the boolean is
+---safe to use in plain conditions. Mind control flips allied unit tokens to the enemy team, so
+---this returns false for former allies while the player is controlled.
+---@param unitToken string
+---@return boolean
 function M:IsFriend(unitToken)
-	return UnitIsFriend("player", unitToken)
+	local result = UnitIsFriend("player", unitToken)
+	if issecretvalue(result) then
+		return false
+	end
+	return result and true or false
 end
 
 function M:IsEnemy(unitToken)
