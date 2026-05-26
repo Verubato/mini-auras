@@ -270,6 +270,36 @@ local function GetMSUFFrame(unit)
 	return frame, portrait
 end
 
+---@param unit string
+---@return table? unitFrame
+---@return table? portrait
+local function GetEllesmereUIFrame(unit)
+	local frame
+	if unit == "player" then
+		frame = _G["EllesmereUIUnitFrames_Player"]
+	elseif unit == "target" then
+		frame = _G["EllesmereUIUnitFrames_Target"]
+	elseif unit == "focus" then
+		frame = _G["EllesmereUIUnitFrames_Focus"]
+	elseif unit == "pet" then
+		frame = _G["EllesmereUIUnitFrames_Pet"]
+	end
+
+	if not frame or (frame.IsForbidden and frame:IsForbidden()) then
+		return nil, nil
+	end
+
+	-- frame.Portrait is the active visual (2D texture / 3D PlayerModel / class icon),
+	-- and frame.Portrait.backdrop is the parent Frame that owns the slot. Anchor to the
+	-- backdrop since it's always a Frame with stable dimensions across portrait modes.
+	local portrait = frame.Portrait and frame.Portrait.backdrop
+	if not portrait then
+		return nil, nil
+	end
+
+	return frame, portrait
+end
+
 ---@return table? unitFrame
 ---@return table? portrait
 local function GetElvUIFrame(unit)
@@ -520,6 +550,54 @@ local function AttachMSUFFrame(unit)
 	containers[#containers + 1] = container
 end
 
+---@param unit string
+local function AttachEllesmereUIFrame(unit)
+	local euiFrame, euiPortrait = GetEllesmereUIFrame(unit)
+
+	if not euiFrame or not euiPortrait then
+		return
+	end
+
+	local watcher = watchers[unit]
+
+	if not watcher then
+		return
+	end
+
+	local container = CreateContainer(euiFrame, euiPortrait)
+	if not container then return end
+	local portraitLevel = euiPortrait.GetFrameLevel and euiPortrait:GetFrameLevel()
+		or euiFrame:GetFrameLevel()
+		or 0
+	container.Frame:SetFrameLevel(portraitLevel + 10)
+
+	-- EllesmereUI insets its portrait texture with SetTexCoord(0.15, 0.85). Match that on our
+	-- overlay so the CC icon visually fills the same area as the portrait beneath it.
+	local originalSetSlot = container.SetSlot
+	container.SetSlot = function(self, slotIndex, options)
+		originalSetSlot(self, slotIndex, options)
+		local slot = self.Slots[slotIndex]
+		if slot and slot.Container and slot.Container.Icon and slot.Container.Cooldown then
+			slot.Frame:SetAllPoints(euiPortrait)
+			slot.Container.Frame:SetAllPoints(euiPortrait)
+			slot.Container.Icon:SetAllPoints(euiPortrait)
+			slot.Container.Icon:SetTexCoord(0.15, 0.85, 0.15, 0.85)
+			slot.Container.Cooldown:SetAllPoints(euiPortrait)
+		end
+	end
+
+	watcher:RegisterCallback(function()
+		OnAuraInfo(unit, watcher, container)
+	end)
+	if unit == "target" or unit == "focus" then
+		unitUpdateFns[unit] = unitUpdateFns[unit] or {}
+		unitUpdateFns[unit][#unitUpdateFns[unit] + 1] = function()
+			OnAuraInfo(unit, watcher, container)
+		end
+	end
+	containers[#containers + 1] = container
+end
+
 local function RefreshTestIcons()
 	local spellId = testSpells[1].SpellId
 	local tex = C_Spell.GetSpellTexture(spellId)
@@ -639,6 +717,10 @@ function M:Init()
 		AttachMSUFFrame("target")
 		AttachMSUFFrame("focus")
 		AttachMSUFFrame("pet")
+		AttachEllesmereUIFrame("player")
+		AttachEllesmereUIFrame("target")
+		AttachEllesmereUIFrame("focus")
+		AttachEllesmereUIFrame("pet")
 	end)
 
 	kickTracker:Watch("target", { "PLAYER_TARGET_CHANGED" })
