@@ -323,6 +323,8 @@ local SpecDurationModifiers = {
 	},
 	-- Restoration Druid: Regenerative Heartwood: Ironbark +4s
 	[105] = { [392116] = { { { SpellId = 102342, Amount = 4 } } } },
+	-- Guardian Druid: Ursoc's Endurance: Barkskin +2s
+	[104] = { [393611] = { { { SpellId = 22812, Amount = 2 } } } },
 }
 
 -- Assumed talent ranks used when no real talent data is available for a unit.

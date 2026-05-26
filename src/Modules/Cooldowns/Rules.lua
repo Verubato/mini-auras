@@ -590,7 +590,7 @@ local rules = {
 			}, -- Guardian Druid: Incarnation: Guardian of Ursoc
 			{
 				BuffDuration = 8,
-				AlternativeDurations = { 12 }, -- Improved Barkskin (+4s)
+				AlternativeDurations = { 12, 14 }, -- Improved Barkskin (+4s); 14s = Improved Barkskin + Ursoc's Endurance (+2s)
 				Cooldown = 34,
 				BigDefensive = true,
 				ExternalDefensive = false,
