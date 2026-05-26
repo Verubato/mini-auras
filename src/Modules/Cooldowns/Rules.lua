@@ -1079,7 +1079,7 @@ local rules = {
 		DEMONHUNTER = {},
 		WARRIOR = {
 			{
-				BuffDuration = 10,
+				BuffDuration = 5,
 				Cooldown = 60,
 				Important = true,
 				BigDefensive = false,
