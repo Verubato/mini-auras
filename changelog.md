@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.21.0
+
+- Added new glow type "Slot glow".
+- Added new option to the alert module to split offensives and defensives to separate bars.
+- Another fix for guardian druid's barkskin not tracking.
+
 ## 3.20.0
 
 - Updated Beserker Shout to 5 seconds.
