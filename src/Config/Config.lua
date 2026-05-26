@@ -65,7 +65,7 @@ function M:Init()
 	-- Standalone config window
 	local version = C_AddOns.GetAddOnMetadata(addonName, "Version")
 	local windowWidth = 1000
-	local windowHeight = 620
+	local windowHeight = 650
 
 	local window = mini:CreateStandaloneWindow({
 		Name = addonName .. "ConfigFrame",

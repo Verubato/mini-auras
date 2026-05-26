@@ -510,8 +510,9 @@ local dbDefaults = {
 			AlwaysShow   = false,
 
 			Icons = {
-				Size            = 40,
-				ReverseCooldown = true,
+				Size                 = 40,
+				ReverseCooldown      = true,
+				DesaturateOnCooldown = false,
 			},
 
 			---@class EcdArenaFramesOptions

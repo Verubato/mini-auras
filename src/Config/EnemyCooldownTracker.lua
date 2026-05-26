@@ -322,6 +322,19 @@ local function BuildSettings(parent, options)
 	alwaysShowChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
 	alwaysShowChk:SetPoint("TOP",  enabledChk, "TOP", 0, 0)
 
+	local desaturateChk = mini:Checkbox({
+		Parent    = parent,
+		LabelText = L["Desaturate on cooldown"],
+		Tooltip   = L["Desaturates the icon while it is on cooldown."],
+		GetValue  = function() return options.Icons.DesaturateOnCooldown end,
+		SetValue  = function(v)
+			options.Icons.DesaturateOnCooldown = v
+			config:Apply()
+			ecdModule:RefreshDisplays()
+		end,
+	})
+	desaturateChk:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local iconSizeSlider = mini:Slider({
 		Parent    = parent,
 		LabelText = L["Icon Size"],
@@ -333,7 +346,7 @@ local function BuildSettings(parent, options)
 			if options.Icons.Size ~= n then options.Icons.Size = n; config:Apply() end
 		end,
 	})
-	iconSizeSlider.Slider:SetPoint("TOPLEFT", enabledChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSizeSlider.Slider:SetPoint("TOPLEFT", desaturateChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 	AddSliderTooltip(iconSizeSlider.Slider, L["Icon Size"], L["The display size of each cooldown icon in pixels."])
 
 	local iconSpacingSlider = mini:Slider({
@@ -394,7 +407,7 @@ local function BuildSettings(parent, options)
 	local afDivider = mini:Divider({ Parent = parent, Text = L["Arena Frames Anchoring"] })
 	afDivider:SetPoint("LEFT",  parent, "LEFT")
 	afDivider:SetPoint("RIGHT", parent, "RIGHT")
-	afDivider:SetPoint("TOP",   modeDdl, "BOTTOM", 0, -verticalSpacing * 2)
+	afDivider:SetPoint("TOP",   modeDdl, "BOTTOM", 0, -verticalSpacing)
 	afDivider:SetShown(isArena)
 
 	local afGrowLbl = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
@@ -480,7 +493,7 @@ local function BuildSettings(parent, options)
 	end
 
 	-- Return the approximate height of all content.
-	return 380
+	return 410
 end
 
 ---@class EnemyCooldownTrackerConfig

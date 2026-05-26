@@ -119,6 +119,7 @@ local function RenderTestSpells(container, options, filter)
 					DurationObject = (not faded) and wowEx:CreateDuration(now - t.StartOffset, t.Cooldown) or nil,
 					Alpha = faded and inactiveAlpha or 1,
 					ReverseCooldown = iconOptions.ReverseCooldown,
+					Desaturate = iconOptions.DesaturateOnCooldown and not faded,
 					FontScale = db.FontScale,
 				})
 			end
@@ -151,6 +152,7 @@ local function AppendSlot(slots, spellId, cd, ctx)
 	s.FontScale       = db.FontScale
 	if cd then
 		s.Alpha = 1
+		s.Desaturate = ctx.desaturateOnCooldown
 		if cd.UsedCharges then
 			s.DurationObject = wowEx:CreateDuration(cd.UsedCharges[1].Expiry - cd.Cooldown, cd.Cooldown)
 			s.ChargeText     = tostring(cd.MaxCharges - #cd.UsedCharges)
@@ -159,6 +161,7 @@ local function AppendSlot(slots, spellId, cd, ctx)
 		end
 	else
 		s.Alpha          = ctx.inactiveAlpha
+		s.Desaturate     = false
 		s.DurationObject  = nil
 	end
 	slots[idx] = s
@@ -167,11 +170,12 @@ end
 ---Builds an options-derived context table reused by AppendSlot for one render pass.
 local function BuildSlotContext(options, filter)
 	return {
-		showTooltips    = options.ShowTooltips,
-		reverseCooldown = options.Icons.ReverseCooldown,
-		disabledSpells  = options.DisabledSpells or {},
-		filter          = filter,
-		inactiveAlpha   = defaultInactiveAlpha,
+		showTooltips         = options.ShowTooltips,
+		reverseCooldown      = options.Icons.ReverseCooldown,
+		desaturateOnCooldown = options.Icons.DesaturateOnCooldown,
+		disabledSpells       = options.DisabledSpells or {},
+		filter               = filter,
+		inactiveAlpha        = defaultInactiveAlpha,
 	}
 end
 
