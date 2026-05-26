@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 45,
+	Version = 46,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -164,6 +164,7 @@ local dbDefaults = {
 
 			IncludeDefensives = true,
 			TargetFocusOnly = false,
+			SplitBars = false,
 			Point = "CENTER",
 			RelativePoint = "TOP",
 			RelativeTo = "UIParent",
@@ -171,6 +172,16 @@ local dbDefaults = {
 			Offset = {
 				X = 0,
 				Y = -100,
+			},
+
+			Defensives = {
+				Point = "CENTER",
+				RelativePoint = "TOP",
+				RelativeTo = "UIParent",
+				Offset = {
+					X = 0,
+					Y = -160,
+				},
 			},
 
 			Sound = {
@@ -2278,6 +2289,14 @@ function M:UpgradeToVersion45(vars)
 	vars.NotifiedChanges = false
 
 	vars.Version = 45
+	return true
+end
+
+function M:UpgradeToVersion46(vars)
+	if vars.Version ~= 45 then return false end
+
+	-- New SplitBars + Defensives anchor block is filled from dbDefaults by GetAndUpgradeDb.
+	vars.Version = 46
 	return true
 end
 

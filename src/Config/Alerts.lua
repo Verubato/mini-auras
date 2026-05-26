@@ -169,6 +169,22 @@ local function BuildSettingsTab(parent, options)
 
 	targetFocusOnlyChk:SetPoint("TOP", iconsEnabledChk, "TOP", 0, 0)
 	targetFocusOnlyChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+
+	local splitBarsChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Split bars"],
+		Tooltip = L["Show defensive alerts on a separate, movable bar."],
+		GetValue = function()
+			return options.SplitBars
+		end,
+		SetValue = function(value)
+			options.SplitBars = value
+			config:Apply()
+		end,
+	})
+
+	splitBarsChk:SetPoint("TOP", iconsEnabledChk, "TOP", 0, 0)
+	splitBarsChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
 end
 
 ---@param parent table

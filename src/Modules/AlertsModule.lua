@@ -40,6 +40,8 @@ local cachedTTSImportantEnabled
 local cachedTTSDefensiveEnabled
 ---@type IconSlotContainer
 local container
+---@type IconSlotContainer
+local defensivesContainer
 ---@type Watcher[]
 local arenaWatchers
 ---@type table<string, Watcher>
@@ -98,19 +100,19 @@ local function AnnounceTTS(spellName, spellType)
 	end)
 end
 
-local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, includeDefensives, showTooltips)
+local function ProcessWatcherData(watcher, impSlot, defSlot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, includeDefensives, showTooltips, splitBars)
 	local unit = watcher:GetUnit()
 
 	-- when units go stealth, we can't get their aura data anymore
 	if not unit or not UnitExists(unit) then
-		return slot
+		return impSlot, defSlot
 	end
 
 	local defensivesData = watcher:GetDefensiveState()
 	local importantData = watcher:GetImportantState()
 
 	if #importantData == 0 and #defensivesData == 0 then
-		return slot
+		return impSlot, defSlot
 	end
 
 	local color = nil
@@ -134,8 +136,8 @@ local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsR
 
 	-- Process important spells
 	for _, data in ipairs(importantData) do
-		if iconsEnabled and slot < container.Count then
-			slot = slot + 1
+		if iconsEnabled and impSlot < container.Count then
+			impSlot = impSlot + 1
 			slotOptionsScratch.Texture = data.SpellIcon
 			slotOptionsScratch.DurationObject = data.DurationObject
 			slotOptionsScratch.Alpha = data.IsImportant
@@ -144,7 +146,7 @@ local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsR
 			slotOptionsScratch.Color = color
 			slotOptionsScratch.FontScale = fontScale
 			slotOptionsScratch.SpellId = showTooltips and data.SpellId or nil
-			container:SetSlot(slot, slotOptionsScratch)
+			container:SetSlot(impSlot, slotOptionsScratch)
 		end
 
 		-- Track and announce new important auras
@@ -158,17 +160,32 @@ local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsR
 
 	-- Process defensive spells
 	for _, data in ipairs(defensivesData) do
-		if includeDefensives and iconsEnabled and slot < container.Count then
-			slot = slot + 1
-			slotOptionsScratch.Texture = data.SpellIcon
-			slotOptionsScratch.DurationObject = data.DurationObject
-			slotOptionsScratch.Alpha = data.IsDefensive
-			slotOptionsScratch.Glow = iconsGlow
-			slotOptionsScratch.ReverseCooldown = iconsReverse
-			slotOptionsScratch.Color = color
-			slotOptionsScratch.FontScale = fontScale
-			slotOptionsScratch.SpellId = showTooltips and data.SpellId or nil
-			container:SetSlot(slot, slotOptionsScratch)
+		if includeDefensives and iconsEnabled then
+			if splitBars then
+				if defSlot < defensivesContainer.Count then
+					defSlot = defSlot + 1
+					slotOptionsScratch.Texture = data.SpellIcon
+					slotOptionsScratch.DurationObject = data.DurationObject
+					slotOptionsScratch.Alpha = data.IsDefensive
+					slotOptionsScratch.Glow = iconsGlow
+					slotOptionsScratch.ReverseCooldown = iconsReverse
+					slotOptionsScratch.Color = color
+					slotOptionsScratch.FontScale = fontScale
+					slotOptionsScratch.SpellId = showTooltips and data.SpellId or nil
+					defensivesContainer:SetSlot(defSlot, slotOptionsScratch)
+				end
+			elseif impSlot < container.Count then
+				impSlot = impSlot + 1
+				slotOptionsScratch.Texture = data.SpellIcon
+				slotOptionsScratch.DurationObject = data.DurationObject
+				slotOptionsScratch.Alpha = data.IsDefensive
+				slotOptionsScratch.Glow = iconsGlow
+				slotOptionsScratch.ReverseCooldown = iconsReverse
+				slotOptionsScratch.Color = color
+				slotOptionsScratch.FontScale = fontScale
+				slotOptionsScratch.SpellId = showTooltips and data.SpellId or nil
+				container:SetSlot(impSlot, slotOptionsScratch)
+			end
 		end
 
 		-- Track and announce new defensive auras
@@ -180,7 +197,7 @@ local function ProcessWatcherData(watcher, slot, iconsEnabled, iconsGlow, iconsR
 		end
 	end
 
-	return slot
+	return impSlot, defSlot
 end
 
 local function OnAuraDataChanged()
@@ -195,6 +212,9 @@ local function OnAuraDataChanged()
 	if inPrepRoom then
 		-- don't know why it picks up garbage in the starting room
 		container:ResetAllSlots()
+		if defensivesContainer then
+			defensivesContainer:ResetAllSlots()
+		end
 		return
 	end
 
@@ -203,8 +223,10 @@ local function OnAuraDataChanged()
 	local iconsReverse = db.Modules.AlertsModule.Icons.ReverseCooldown
 	local colorByClass = db.Modules.AlertsModule.Icons.ColorByClass
 	local includeDefensives = db.Modules.AlertsModule.IncludeDefensives
+	local splitBars = db.Modules.AlertsModule.SplitBars and includeDefensives
 	local showTooltips = db.Modules.AlertsModule.ShowTooltips ~= false
-	local slot = 0
+	local impSlot = 0
+	local defSlot = 0
 	local hasImportantAlerts
 	local hasDefensiveAlerts
 	local inInstance, instanceType = IsInInstance()
@@ -215,15 +237,17 @@ local function OnAuraDataChanged()
 	-- Process arena watchers
 	if instanceType == "arena" then
 		for _, watcher in ipairs(arenaWatchers) do
-			slot = ProcessWatcherData(
+			impSlot, defSlot = ProcessWatcherData(
 				watcher,
-				slot,
-				(slot < container.Count) and iconsEnabled,
+				impSlot,
+				defSlot,
+				iconsEnabled,
 				iconsGlow,
 				iconsReverse,
 				colorByClass,
 				includeDefensives,
-				showTooltips
+				showTooltips,
+				splitBars
 			)
 		end
 	end
@@ -236,28 +260,34 @@ local function OnAuraDataChanged()
 			for _, pair in ipairs({ { targetWatcher, "target" }, { focusWatcher, "focus" } }) do
 				local watcher, unit = pair[1], pair[2]
 				if watcher and UnitExists(unit) and units:IsEnemy(unit) then
-					slot = ProcessWatcherData(
+					impSlot, defSlot = ProcessWatcherData(
 						watcher,
-						slot,
-						(slot < container.Count) and iconsEnabled,
+						impSlot,
+						defSlot,
+						iconsEnabled,
 						iconsGlow,
 						iconsReverse,
 						colorByClass,
-						includeDefensives
+						includeDefensives,
+						showTooltips,
+						splitBars
 					)
 				end
 			end
 		else
 			-- Process nameplate watchers
 			for _, watcher in pairs(nameplateWatchers) do
-				slot = ProcessWatcherData(
+				impSlot, defSlot = ProcessWatcherData(
 					watcher,
-					slot,
-					(slot < container.Count) and iconsEnabled,
+					impSlot,
+					defSlot,
+					iconsEnabled,
 					iconsGlow,
 					iconsReverse,
 					colorByClass,
-					includeDefensives
+					includeDefensives,
+					showTooltips,
+					splitBars
 				)
 			end
 		end
@@ -287,20 +317,41 @@ local function OnAuraDataChanged()
 	-- If icons are disabled, keep sounds/TTS logic but don't show anything.
 	if not iconsEnabled then
 		container:ResetAllSlots()
+		if defensivesContainer then
+			defensivesContainer:ResetAllSlots()
+		end
 		return
 	end
 
 	-- advance forward by 1 for clearing
-	if slot > 0 then
-		slot = slot + 1
+	if impSlot > 0 then
+		impSlot = impSlot + 1
 	end
 
-	if slot == 0 then
+	if impSlot == 0 then
 		container:ResetAllSlots()
 	else
 		-- clear any slots above what we used
-		for i = slot, container.Count do
+		for i = impSlot, container.Count do
 			container:SetSlotUnused(i)
+		end
+	end
+
+	if defensivesContainer then
+		if not splitBars then
+			defensivesContainer:ResetAllSlots()
+		else
+			if defSlot > 0 then
+				defSlot = defSlot + 1
+			end
+
+			if defSlot == 0 then
+				defensivesContainer:ResetAllSlots()
+			else
+				for i = defSlot, defensivesContainer.Count do
+					defensivesContainer:SetSlotUnused(i)
+				end
+			end
 		end
 	end
 end
@@ -342,6 +393,9 @@ local function OnMatchStateChanged()
 	end
 
 	container:ResetAllSlots()
+	if defensivesContainer then
+		defensivesContainer:ResetAllSlots()
+	end
 	hadImportantAlerts = false
 	hadDefensiveAlerts = false
 	previousImportantAuras = {}
@@ -351,10 +405,14 @@ end
 local function RefreshTestAlerts()
 	if not db.Modules.AlertsModule.Icons.Enabled then
 		container:ResetAllSlots()
+		if defensivesContainer then
+			defensivesContainer:ResetAllSlots()
+		end
 		return
 	end
 
 	local includeDefensives = db.Modules.AlertsModule.IncludeDefensives
+	local splitBars = db.Modules.AlertsModule.SplitBars and includeDefensives
 
 	local testAlertSpells = {
 		{ spellId = 190319, class = "MAGE" }, -- Combustion
@@ -364,53 +422,71 @@ local function RefreshTestAlerts()
 		{ spellId = 45438, class = "MAGE", defensive = true }, -- Ice Block
 	}
 
-	local testAlertSpellIds = {}
-	local testClassColors = {}
-	for _, entry in ipairs(testAlertSpells) do
-		if not entry.defensive or includeDefensives then
-			testAlertSpellIds[#testAlertSpellIds + 1] = entry.spellId
-			testClassColors[#testClassColors + 1] = entry.class
-		end
-	end
-
-	local count = math.min(#testAlertSpellIds, container.Count or #testAlertSpellIds)
 	local now = GetTime()
 	local colorByClass = db.Modules.AlertsModule.Icons.ColorByClass
 	local iconsGlow = db.Modules.AlertsModule.Icons.Glow
 	local showTooltips = db.Modules.AlertsModule.ShowTooltips ~= false
 
-	for i = 1, count do
-		local spellId = testAlertSpellIds[i]
-		local tex = C_Spell.GetSpellTexture(spellId)
+	local impSlot = 0
+	local defSlot = 0
+	local stepIndex = 0
+	for _, entry in ipairs(testAlertSpells) do
+		if not entry.defensive or includeDefensives then
+			local tex = C_Spell.GetSpellTexture(entry.spellId)
+			if tex then
+				local glowColor = nil
+				if colorByClass and entry.class then
+					local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.class]
+					if classColor then
+						glowColor = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1 }
+					end
+				end
 
-		if tex then
-			local duration = 12 + (i - 1) * 3
-			local startTime = now - (i - 1) * 1.25
+				local duration = 12 + stepIndex * 3
+				local startTime = now - stepIndex * 1.25
+				stepIndex = stepIndex + 1
 
-			local glowColor = nil
-			if colorByClass and testClassColors[i] then
-				local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[testClassColors[i]]
-				if classColor then
-					glowColor = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1 }
+				local targetContainer
+				local targetSlot
+				if entry.defensive and splitBars then
+					defSlot = defSlot + 1
+					targetContainer = defensivesContainer
+					targetSlot = defSlot
+				else
+					impSlot = impSlot + 1
+					targetContainer = container
+					targetSlot = impSlot
+				end
+
+				if targetSlot <= targetContainer.Count then
+					targetContainer:SetSlot(targetSlot, {
+						Texture = tex,
+						DurationObject = wowEx:CreateDuration(startTime, duration),
+						Alpha = true,
+						Glow = iconsGlow,
+						ReverseCooldown = db.Modules.AlertsModule.Icons.ReverseCooldown,
+						Color = glowColor,
+						FontScale = db.FontScale,
+						SpellId = showTooltips and entry.spellId or nil,
+					})
 				end
 			end
-
-			container:SetSlot(i, {
-				Texture = tex,
-				DurationObject = wowEx:CreateDuration(startTime, duration),
-				Alpha = true,
-				Glow = iconsGlow,
-				ReverseCooldown = db.Modules.AlertsModule.Icons.ReverseCooldown,
-				Color = glowColor,
-				FontScale = db.FontScale,
-				SpellId = showTooltips and spellId or nil,
-			})
 		end
 	end
 
 	-- Clear any unused slots beyond test alert count
-	for i = count + 1, container.Count do
+	for i = impSlot + 1, container.Count do
 		container:SetSlotUnused(i)
+	end
+
+	if defensivesContainer then
+		if splitBars then
+			for i = defSlot + 1, defensivesContainer.Count do
+				defensivesContainer:SetSlotUnused(i)
+			end
+		else
+			defensivesContainer:ResetAllSlots()
+		end
 	end
 end
 
@@ -560,6 +636,9 @@ local function DisableWatchers()
 	if container then
 		container:ResetAllSlots()
 	end
+	if defensivesContainer then
+		defensivesContainer:ResetAllSlots()
+	end
 	hadImportantAlerts = false
 	hadDefensiveAlerts = false
 	previousImportantAuras = {}
@@ -628,6 +707,11 @@ function M:StartTesting()
 
 	container.Frame:EnableMouse(true)
 	container.Frame:SetMovable(true)
+
+	if defensivesContainer and defensivesContainer.Frame:IsShown() then
+		defensivesContainer.Frame:EnableMouse(true)
+		defensivesContainer.Frame:SetMovable(true)
+	end
 end
 
 function M:StopTesting()
@@ -638,10 +722,18 @@ function M:StopTesting()
 	end
 
 	container:ResetAllSlots()
+	if defensivesContainer then
+		defensivesContainer:ResetAllSlots()
+	end
 	Resume()
 
 	container.Frame:EnableMouse(false)
 	container.Frame:SetMovable(false)
+
+	if defensivesContainer then
+		defensivesContainer.Frame:EnableMouse(false)
+		defensivesContainer.Frame:SetMovable(false)
+	end
 end
 
 function M:Refresh()
@@ -667,6 +759,35 @@ function M:Refresh()
 	container:SetIconSize(options.Icons.Size)
 	container:SetSpacing(db.IconSpacing or 2)
 	container:SetCount(options.Icons.MaxIcons or 8)
+
+	if defensivesContainer then
+		local splitVisible = options.SplitBars and options.IncludeDefensives
+		local defAnchor = options.Defensives
+		defensivesContainer.Frame:ClearAllPoints()
+		defensivesContainer.Frame:SetPoint(
+			defAnchor.Point,
+			_G[defAnchor.RelativeTo] or UIParent,
+			defAnchor.RelativePoint,
+			defAnchor.Offset.X,
+			defAnchor.Offset.Y
+		)
+
+		defensivesContainer:SetIconSize(options.Icons.Size)
+		defensivesContainer:SetSpacing(db.IconSpacing or 2)
+		defensivesContainer:SetCount(options.Icons.MaxIcons or 8)
+
+		if splitVisible then
+			defensivesContainer.Frame:Show()
+			local moveable = testModeActive and moduleUtil:IsModuleEnabled(moduleName.Alerts)
+			defensivesContainer.Frame:EnableMouse(moveable)
+			defensivesContainer.Frame:SetMovable(moveable)
+		else
+			defensivesContainer:ResetAllSlots()
+			defensivesContainer.Frame:Hide()
+			defensivesContainer.Frame:EnableMouse(false)
+			defensivesContainer.Frame:SetMovable(false)
+		end
+	end
 
 	if testModeActive and moduleUtil:IsModuleEnabled(moduleName.Alerts) then
 		RefreshTestAlerts()
@@ -715,6 +836,42 @@ function M:Init()
 		options.Offset.Y = y
 	end)
 	container.Frame:Show()
+
+	defensivesContainer = iconSlotContainer:New(UIParent, count, size, db.IconSpacing or 2, "Alerts", nil, "Alerts")
+
+	local defAnchor = options.Defensives
+	local defInitialRelativeTo = _G[defAnchor.RelativeTo] or UIParent
+	defensivesContainer.Frame:SetPoint(
+		defAnchor.Point,
+		defInitialRelativeTo,
+		defAnchor.RelativePoint,
+		defAnchor.Offset.X,
+		defAnchor.Offset.Y
+	)
+	defensivesContainer.Frame:SetFrameLevel((defInitialRelativeTo:GetFrameLevel() or 0) + 5)
+	defensivesContainer.Frame:EnableMouse(false)
+	defensivesContainer.Frame:SetMovable(false)
+	defensivesContainer.Frame:SetClampedToScreen(true)
+	defensivesContainer.Frame:RegisterForDrag("LeftButton")
+	defensivesContainer.Frame:SetScript("OnDragStart", function(anchorSelf)
+		anchorSelf:StartMoving()
+	end)
+	defensivesContainer.Frame:SetScript("OnDragStop", function(anchorSelf)
+		anchorSelf:StopMovingOrSizing()
+
+		local point, relativeTo, relativePoint, x, y = anchorSelf:GetPoint()
+		defAnchor.Point = point
+		defAnchor.RelativePoint = relativePoint
+		defAnchor.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
+		defAnchor.Offset.X = x
+		defAnchor.Offset.Y = y
+	end)
+
+	if options.SplitBars and options.IncludeDefensives then
+		defensivesContainer.Frame:Show()
+	else
+		defensivesContainer.Frame:Hide()
+	end
 
 	InitArenaWatchers()
 	InitTargetFocusWatchers()
