@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.20.0
+
+- Updated Beserker Shout to 5 seconds.
+- Added EllesmereUI portraits support.
+- Added desaturate enemy cooldown icons feature.
+- Added API for addons to register their frames.
+- Fixed mind control causing friendly cooldowns icons to change to the enemy's cooldowns.
+
 ## 3.19.0
 
 - Added new "Split" mode for enemy cooldowns.
