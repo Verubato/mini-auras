@@ -127,6 +127,24 @@ local function BuildInstance(parent, anchorOptions)
 	predictiveChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	predictiveChk:SetPoint("TOP", desaturateChk, "TOP", 0, 0)
 
+	local refreshSizeMode
+	local relativeSizeChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Relative size"],
+		Tooltip = L["Sizes the icon as a percentage of the unit frame's height instead of in pixels."],
+		GetValue = function()
+			return anchorOptions.Icons.SizeIsPercent == true
+		end,
+		SetValue = function(value)
+			anchorOptions.Icons.SizeIsPercent = value
+			refreshSizeMode()
+			config:Apply()
+		end,
+	})
+
+	relativeSizeChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	relativeSizeChk:SetPoint("TOP", desaturateChk, "TOP", 0, 0)
+
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,
 		LabelText = L["Icon Size"],
@@ -147,6 +165,38 @@ local function BuildInstance(parent, anchorOptions)
 	})
 
 	iconSizeSlider.Slider:SetPoint("TOPLEFT", desaturateChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+
+	local iconSizePctSlider = mini:Slider({
+		Parent = panel,
+		LabelText = L["Icon Size (%)"],
+		Min = 25,
+		Max = 100,
+		Step = 1,
+		Width = columnWidth * 2 - horizontalSpacing,
+		GetValue = function()
+			return anchorOptions.Icons.SizePercent or 100
+		end,
+		SetValue = function(v)
+			local newValue = mini:ClampInt(v, 25, 100, 100)
+			if anchorOptions.Icons.SizePercent ~= newValue then
+				anchorOptions.Icons.SizePercent = newValue
+				config:Apply()
+			end
+		end,
+	})
+
+	iconSizePctSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "TOPLEFT", 0, 0)
+
+	refreshSizeMode = function()
+		local isPercent = anchorOptions.Icons.SizeIsPercent == true
+		iconSizeSlider.Slider:SetShown(not isPercent)
+		iconSizeSlider.Label:SetShown(not isPercent)
+		iconSizeSlider.EditBox:SetShown(not isPercent)
+		iconSizePctSlider.Slider:SetShown(isPercent)
+		iconSizePctSlider.Label:SetShown(isPercent)
+		iconSizePctSlider.EditBox:SetShown(isPercent)
+	end
+	refreshSizeMode()
 
 	local maxIconsSlider = mini:Slider({
 		Parent = panel,

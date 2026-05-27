@@ -6,6 +6,7 @@ local trinketsTracker = addon.Core.TrinketsTracker
 local instanceOptions = addon.Core.InstanceOptions
 local frames = addon.Core.Frames
 local units = addon.Utils.Units
+local moduleUtil = addon.Utils.ModuleUtil
 
 -- Loaded before this file in TOC order.
 local fcdTalents = addon.Modules.Cooldowns.Talents
@@ -390,7 +391,7 @@ local function AnchorContainer(entry)
 	local grow = options.Grow
 
 	if rowsEnabled then
-		local size = tonumber(options.Icons.Size) or 32
+		local size = moduleUtil:GetIconSize(options.Icons, anchor, 32, 100)
 		local yOffset = options.Offset.Y + size / 2
 
 		if grow == "LEFT" then

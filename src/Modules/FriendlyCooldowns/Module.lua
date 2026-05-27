@@ -143,7 +143,7 @@ local function EnsureEntry(anchor, unit)
 		and entry.UnitGuid ~= currentGuid
 
 	if not entry then
-		local size = tonumber(anchorOptions.Icons.Size) or 32
+		local size = moduleUtil:GetIconSize(anchorOptions.Icons, anchor, 32, 100)
 		local maxIcons = tonumber(anchorOptions.Icons.MaxIcons) or 3
 		-- noBorder = true: cooldown icons don't need debuff-style borders
 		local container = iconSlotContainer:New(UIParent, maxIcons, size, (anchorOptions.IconSpacing or db.IconSpacing or 2), "Friendly CDs", true, "Friendly CDs")
@@ -250,7 +250,7 @@ function M:Refresh()
 			entry.Container.Frame:Hide()
 		else
 			entry.IsExcludedSelf = false
-			local size = tonumber(anchorOptions.Icons.Size) or 32
+			local size = moduleUtil:GetIconSize(anchorOptions.Icons, anchor, 32, 100)
 			local maxIcons = tonumber(anchorOptions.Icons.MaxIcons) or 3
 			local rows = math.max(1, tonumber(anchorOptions.Icons.Rows) or 1)
 			entry.Container:SetIconSize(size)

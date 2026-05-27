@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 46,
+	Version = 47,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -44,6 +44,8 @@ local dbDefaults = {
 
 				Icons = {
 					Size = 32,
+					SizeIsPercent = false,
+					SizePercent = 80,
 					Glow = true,
 					ReverseCooldown = true,
 					ColorByDispelType = true,
@@ -65,6 +67,8 @@ local dbDefaults = {
 
 				Icons = {
 					Size = 20,
+					SizeIsPercent = false,
+					SizePercent = 50,
 					Glow = true,
 					ReverseCooldown = true,
 					ColorByDispelType = true,
@@ -94,6 +98,8 @@ local dbDefaults = {
 
 			Icons = {
 				Size = 20,
+				SizeIsPercent = false,
+				SizePercent = 50,
 				Count = 3,
 				Glow = true,
 				ReverseCooldown = true,
@@ -421,6 +427,8 @@ local dbDefaults = {
 				Grow = "CENTER",
 				Icons = {
 					Size = 30,
+					SizeIsPercent = false,
+					SizePercent = 75,
 					Glow = true,
 					ReverseCooldown = true,
 					MaxIcons = 1,
@@ -440,6 +448,8 @@ local dbDefaults = {
 				Grow = "CENTER",
 				Icons = {
 					Size = 25,
+					SizeIsPercent = false,
+					SizePercent = 65,
 					Glow = true,
 					ReverseCooldown = true,
 					MaxIcons = 1,
@@ -473,6 +483,8 @@ local dbDefaults = {
 				IconSpacing = 2,
 				Icons = {
 					Size = 40,
+					SizeIsPercent = false,
+					SizePercent = 100,
 					ReverseCooldown = true,
 					DesaturateOnCooldown = false,
 					MaxIcons = 10,
@@ -492,6 +504,8 @@ local dbDefaults = {
 				IconSpacing = 2,
 				Icons = {
 					Size = 20,
+					SizeIsPercent = false,
+					SizePercent = 50,
 					ReverseCooldown = true,
 					DesaturateOnCooldown = false,
 					MaxIcons = 5,
@@ -2297,6 +2311,14 @@ function M:UpgradeToVersion46(vars)
 
 	-- New SplitBars + Defensives anchor block is filled from dbDefaults by GetAndUpgradeDb.
 	vars.Version = 46
+	return true
+end
+
+function M:UpgradeToVersion47(vars)
+	if vars.Version ~= 46 then return false end
+
+	-- New Icons.SizeIsPercent + Icons.SizePercent fields are filled from dbDefaults by GetAndUpgradeDb.
+	vars.Version = 47
 	return true
 end
 
