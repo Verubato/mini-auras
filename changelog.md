@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.22.0
+
+- Added new relative size option to scale icons using a percentage of the parent frame.
+- Fixed warlock kick not showing when using a pet.
+- Fixed kick icon not showing when dueling party members.
+
 ## 3.21.0
 
 - Added new glow type "Slot glow".
