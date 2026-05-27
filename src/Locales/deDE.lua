@@ -281,6 +281,7 @@ L:RegisterLocale("deDE", {
 	["Precognition"] = "Präkognition",
 	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Falls du zufällig einen anderen 4-sekündigen wichtigen Selbst-Buff hast, würde dieses Symbol ebenfalls angezeigt, tut uns leid.",
 	["This isn't precision perfect but it should be close enough."] = "Das ist nicht präzise perfekt, aber es sollte nah genug sein.",
+	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Verfolgt auch die Aufhebende Hülle des Bewahrungs-Rufers (3-sekündiger wichtiger Selbst-Buff).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "Andere Mini-Addons",

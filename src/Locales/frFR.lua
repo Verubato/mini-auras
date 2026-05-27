@@ -282,6 +282,7 @@ L:RegisterLocale("frFR", {
 	["Precognition"] = "Précognition",
 	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Si par hasard vous avez un autre buff important de 4 secondes, son icône s'affichera aussi.",
 	["This isn't precision perfect but it should be close enough."] = "Ce n'est pas parfait mais ça devrait suffire.",
+	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Détecte aussi le Voile annihilant de l'Évocateur Préservation (buff personnel important de 3 secondes).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "Autres Mini Addons",

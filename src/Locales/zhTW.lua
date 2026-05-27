@@ -282,6 +282,7 @@ L:RegisterLocale("zhTW", {
 	["Precognition"] = "預知",
 	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "如果你恰好有其他4秒的重要自身增益效果，該圖示也會顯示，敬請見諒。",
 	["This isn't precision perfect but it should be close enough."] = "這並非完全精確，但應該足夠接近。",
+	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "同時追蹤保護系喚能師的「廢除之幕」（3秒重要自身增益效果）。",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "其他Mini插件",

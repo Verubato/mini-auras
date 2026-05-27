@@ -282,6 +282,7 @@ L:RegisterLocale("ruRU", {
 	["Precognition"] = "Предвидение",
 	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Если у вас есть другой 4-секундный важный бафф на себя, то его иконка также будет отображаться, приносим извинения.",
 	["This isn't precision perfect but it should be close enough."] = "Это не идеально точно, но должно быть достаточно близко.",
+	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Также отслеживает «Нейтрализующее покрывало» Призывателя Сохранения (3-секундный важный бафф на себя).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "Другие Mini аддоны",

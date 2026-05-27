@@ -22,6 +22,7 @@ function M:Build(panel)
 			L["It works by taking any 4 second 'important' self buff and showing that icon."],
 			L["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."],
 			L["Note that you can't simply filter by spell id these days."],
+			L["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."],
 		},
 	})
 

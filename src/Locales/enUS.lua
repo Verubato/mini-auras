@@ -285,6 +285,7 @@ L:SetDefaultStrings({
 	["Precognition"] = "Precognition",
 	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry.",
 	["This isn't precision perfect but it should be close enough."] = "This isn't precision perfect but it should be close enough.",
+	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "Other Mini Addons",

@@ -226,6 +226,12 @@ function M:Init()
 	precogCurve = C_CurveUtil.CreateCurve()
 	precogCurve:SetType(Enum.LuaCurveType.Step)
 	precogCurve:AddPoint(0, 0)
+	-- Preservation Evoker Nullifying Shroud is 3 seconds
+	if UnitClassBase("player") == "EVOKER" then
+		precogCurve:AddPoint(2.9, 0)
+		precogCurve:AddPoint(3, 1)
+		precogCurve:AddPoint(3.1, 0)
+	end
 	-- precog is 4 seconds
 	precogCurve:AddPoint(3.9, 0)
 	precogCurve:AddPoint(4, 1)
