@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.23.0
+
+Added support for new Nullifying Shroud 3s duration to the precog tracker.
+
 ## 3.22.0
 
 - Added new relative size option to scale icons using a percentage of the parent frame.
