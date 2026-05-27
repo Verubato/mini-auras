@@ -125,10 +125,11 @@ local function OnInterrupted(unitToken)
 	local texture = kickIcon
 	local duration = defaultKickDuration
 
-	-- InferAllyKick looks at friendly party member specs to guess who kicked the enemy.
-	-- It must not run when the interrupted unit is friendly — in that case an enemy did the
-	-- kicking and party specs are irrelevant, so we just show the generic rogue icon.
-	if not UnitIsFriend(unitToken, "player") then
+	-- UnitIsEnemy covers duel opponents, arena/BG enemies, and MC'd allies — i.e. every case
+	-- where the local player or an ally could legitimately be the interrupter. When the
+	-- interrupted unit is a genuine teammate, an enemy did the kicking and our party-spec
+	-- heuristic / player-cast tracking is irrelevant, so we just show the generic rogue icon.
+	if UnitIsEnemy(unitToken, "player") then
 		local pending = pendingPlayerKick
 		if pending and (GetTimePreciseSec() - pending.Time) <= playerKickTolerance then
 			texture = pending.Texture

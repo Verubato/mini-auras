@@ -28,6 +28,7 @@ M.SpellLockoutDuration = {
 	[57994]  = 2, -- Wind Shear (Shaman)
 	[351338] = 3, -- Quell (Evoker)
 	[132409] = 5, -- Spell Lock (Warlock pet)
+	[119910] = 5, -- Command Demon: Spell Lock (Warlock player-side cast)
 }
 
 -- Class token fallback used when a unit's spec is unknown.
