@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.24.0
+
+Updated LibCustomGlow to version 24 (latest).
+
 ## 3.23.0
 
 Added support for new Nullifying Shroud 3s duration to the precog tracker.
