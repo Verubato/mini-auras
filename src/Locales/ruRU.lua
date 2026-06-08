@@ -60,7 +60,7 @@ L:RegisterLocale("ruRU", {
 	["Can't apply settings during combat."] = "Невозможно применить настройки во время боя.",
 	["Can't do that during combat."] = "Невозможно сделать это во время боя.",
 	["Failed to decode profile string."] = "Не удалось декодировать строку профиля.",
-	["Healer in CC!"] = "Целитель под контролем!",
+	["Healer in CC!"] = "Целитель в СС",
 	["Invalid profile string."] = "Неверная строка профиля.",
 	["Please paste a profile string to import."] = "Пожалуйста, вставьте строку профиля для импорта.",
 	["Profile imported successfully."] = "Профиль успешно импортирован.",
@@ -183,7 +183,7 @@ L:RegisterLocale("ruRU", {
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "Отдельная область для когда ваш целитель под контролем.",
 	["Play a sound when the healer is CC'd."] = "Воспроизводить звук, когда целитель под контролем.",
-	["Show the 'Healer in CC!' text above the icons."] = "Показать 'Целитель под контролем!' над иконками.",
+	["Show the 'Healer in CC!' text above the icons."] = "Показать 'Целитель в СС' над иконками.",
 	["Show warning text"] = "Текст предупреждения",
 	["Text Size"] = "Размер текста",
 
