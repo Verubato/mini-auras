@@ -95,9 +95,6 @@ local function CreateContainer(unitFrame, portrait)
 	-- inherit scale from portrait so icons scale with it
 	container.Frame:SetIgnoreParentScale(false)
 
-	-- in case something hides the portrait by setting alpha to 0
-	container.Frame:SetIgnoreParentAlpha(false)
-
 	-- Skip attachment if the portrait dimensions are secret (tainted frame)
 	-- seems to happen with ElvUI when their portraits are disabled
 	local w = portrait:GetWidth()

@@ -377,6 +377,12 @@ local function AnchorContainer(entry)
 	local frame = entry.Container.Frame
 	local anchor = entry.Anchor
 
+	-- Parent to the anchor so the icons inherit its alpha and fade with the unit frame
+	-- (e.g. when the unit goes out of range).
+	if frame:GetParent() ~= anchor then
+		frame:SetParent(anchor)
+	end
+
 	frame:ClearAllPoints()
 	frame:SetAlpha(1)
 	local strata = (frames:IsBlizzardPartyFrame(anchor) or frames:IsVuhDoFrame(anchor))

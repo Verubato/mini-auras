@@ -182,6 +182,11 @@ local function AnchorContainer(header, anchor, options)
 	end
 
 	local frame = header.Frame
+	-- Parent to the anchor so the icons inherit its alpha and fade with the unit frame
+	-- (e.g. when the unit goes out of range).
+	if frame:GetParent() ~= anchor then
+		frame:SetParent(anchor)
+	end
 	frame:ClearAllPoints()
 	frame:SetAlpha(1)
 	frame:SetFrameStrata(frames:GetNextStrata(anchor:GetFrameStrata()))

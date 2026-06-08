@@ -422,7 +422,9 @@ function M:New(parent, count, size, spacing, groupName, noBorder, moduleName)
 
 	instance.Frame = CreateFrame("Frame", NextFrameName("Container"), parent)
 	instance.Frame:SetIgnoreParentScale(true)
-	instance.Frame:SetIgnoreParentAlpha(true)
+	-- Inherit the parent's alpha so icons fade with the unit frame they're anchored under
+	-- (e.g. dimming when the unit is out of range). Modules that track a unit frame parent the
+	-- container to it; standalone bars parent to UIParent (alpha 1) and are unaffected.
 	instance.Slots = {}
 	instance.Count = 0
 	instance.Size = size
