@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.25.0
+
+- Icons now fade if the parent frame fades (e.g. if unit is out of range.).
+- Added new option to show CC icons on the pet frame.
+- Added EQoL portrait support.
+- Fixed tabs underline not always showing.
+- Shortened Russian "Healer in CC" text.
+
 ## 3.24.0
 
 Updated LibCustomGlow to version 24 (latest).
