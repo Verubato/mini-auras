@@ -1105,12 +1105,16 @@ function M:CreateTabs(options)
 				btn.BottomRightCorner:Hide()
 				if btn.Accent then btn.Accent:Show() end
 				-- Reanchor line segments to leave a gap at this button.
+				-- Anchor only the bottom edge to a single shared baseline (the tabs' bottom,
+				-- strip_bottom + 1); height comes from PixelUtil.SetHeight(...,1). Anchoring both
+				-- top and bottom with a 1px delta lets the height collapse to zero under
+				-- fractional UI scale rounding, which made the underline intermittently disappear.
 				lineLeft:ClearAllPoints()
-				PixelUtil.SetPoint(lineLeft, "TOPLEFT", strip, "BOTTOMLEFT", 0, 2)
+				PixelUtil.SetPoint(lineLeft, "BOTTOMLEFT", strip, "BOTTOMLEFT", 0, 1)
 				PixelUtil.SetPoint(lineLeft, "BOTTOMRIGHT", btn, "BOTTOMLEFT", 0, 0)
 				lineRight:ClearAllPoints()
 				if lastBtn and btn ~= lastBtn then
-					PixelUtil.SetPoint(lineRight, "TOPLEFT", btn, "BOTTOMRIGHT", 0, 1)
+					PixelUtil.SetPoint(lineRight, "BOTTOMLEFT", btn, "BOTTOMRIGHT", 0, 0)
 					PixelUtil.SetPoint(lineRight, "BOTTOMRIGHT", lastBtn, "BOTTOMRIGHT", 0, 0)
 					lineRight:Show()
 				else
