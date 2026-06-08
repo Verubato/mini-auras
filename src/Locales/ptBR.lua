@@ -151,6 +151,8 @@ L:RegisterLocale("ptBR", {
 	["Enable pet frame CC in battlegrounds."] = "Ativar CC do painel de pet nos campos de batalha.",
 	["Enable pet frame CC in dungeons."] = "Ativar CC do painel de pet no JcA.",
 	["Enable pet frame CC in raids."] = "Ativar CC do painel de pet no JcA.",
+	["Show on pet unit frame"] = "Mostrar no painel de pet",
+	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "Mostra também ícones de controle ao lado do painel de unidade do seu próprio pet (Blizzard ou addons de painéis compatíveis), além dos painéis de pet de grupo/raide.",
 	["Exclude yourself from showing CC icons."] = "Exclua-se de mostrar ícones de controle.",
 	["Greater than 5 members (raids/bgs)"] = "Mais de 5 membros (raides/CdB)",
 	["Less than 5 members (arena/dungeons)"] = "Menos de 5 membros (arena/masmorras)",

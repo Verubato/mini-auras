@@ -151,6 +151,8 @@ L:RegisterLocale("ruRU", {
 	["Enable pet frame CC in battlegrounds."] = "Включить КО рамки питомца на полях боя.",
 	["Enable pet frame CC in dungeons."] = "Включить КО рамки питомца в PvE.",
 	["Enable pet frame CC in raids."] = "Включить КО рамки питомца в PvE.",
+	["Show on pet unit frame"] = "Показывать на рамке питомца",
+	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "Также показывать иконки контроля рядом с рамкой вашего собственного питомца (Blizzard или поддерживаемые аддоны рамок), в дополнение к рамкам питомцев группы/рейда.",
 	["Exclude yourself from showing CC icons."] = "Исключить себя из отображения иконок контроля.",
 	["Greater than 5 members (raids/bgs)"] = "Более 5 членов (рейды/ПВП)",
 	["Less than 5 members (arena/dungeons)"] = "Менее 5 членов (арена/подземелья)",

@@ -151,6 +151,8 @@ L:RegisterLocale("zhCN", {
 	["Enable pet frame CC in battlegrounds."] = "在战场启用宠物框架控制图标。",
 	["Enable pet frame CC in dungeons."] = "在PvE中启用宠物框架控制图标。",
 	["Enable pet frame CC in raids."] = "在PvE中启用宠物框架控制图标。",
+	["Show on pet unit frame"] = "在宠物单位框架上显示",
+	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "除队伍/团队宠物框架外，同时在你自己宠物的单位框架（暴雪或受支持的单位框架插件）旁显示控制图标。",
 	["Exclude yourself from showing CC icons."] = "将自己从显示控制图标中排除。",
 	["Greater than 5 members (raids/bgs)"] = "多于5名成员（团队/战场）",
 	["Less than 5 members (arena/dungeons)"] = "少于5名成员（竞技场/地下城）",

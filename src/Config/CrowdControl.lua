@@ -464,6 +464,21 @@ local function BuildPetInstance(panel, options)
 	relativeSizeChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
 	relativeSizeChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
+	local includePetFrameChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Show on pet unit frame"],
+		Tooltip = L["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."],
+		GetValue = function()
+			return options.IncludePetFrame == true
+		end,
+		SetValue = function(value)
+			options.IncludePetFrame = value
+			config:Apply()
+		end,
+	})
+
+	includePetFrameChk:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local iconSize = mini:Slider({
 		Parent = parent,
 		Min = 10,
@@ -483,7 +498,7 @@ local function BuildPetInstance(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", includePetFrameChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local iconSizePct = mini:Slider({
 		Parent = parent,

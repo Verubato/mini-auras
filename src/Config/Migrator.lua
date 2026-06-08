@@ -81,6 +81,7 @@ local dbDefaults = {
 		},
 
 		---@class PetCrowdControlModuleOptions
+		---@field IncludePetFrame boolean Also anchor a CC container to the player's own pet unit frame (Blizzard PetFrame).
 		PetCCModule = {
 			Enabled = {
 				World = false,
@@ -89,6 +90,10 @@ local dbDefaults = {
 				Dungeons = false,
 				Raid = false,
 			},
+
+			-- Also show a CC icon container next to the player's own pet unit frame (Blizzard PetFrame),
+			-- in addition to the party/raid pet frames.
+			IncludePetFrame = false,
 
 			Grow = "CENTER",
 			Offset = {

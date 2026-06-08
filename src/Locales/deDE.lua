@@ -151,6 +151,8 @@ L:RegisterLocale("deDE", {
 	["Enable pet frame CC in battlegrounds."] = "Begleiterrahmen-KE auf Schlachtfeldern aktivieren.",
 	["Enable pet frame CC in dungeons."] = "Begleiterrahmen-KE in PvE aktivieren.",
 	["Enable pet frame CC in raids."] = "Begleiterrahmen-KE in PvE aktivieren.",
+	["Show on pet unit frame"] = "Am Begleiterrahmen anzeigen",
+	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "Zeige Massenkontroll-Symbole auch neben dem Einheitenrahmen deines eigenen Begleiters (Blizzard oder unterstützte Einheitenrahmen-Addons), zusätzlich zu den Gruppen-/Schlachtzugs-Begleiterrahmen.",
 	["Exclude yourself from showing CC icons."] = "Schließe dich selbst vom Anzeigen von Massenkontroll-Symbolen aus.",
 	["Greater than 5 members (raids/bgs)"] = "Mehr als 5 Mitglieder (Schlachtzüge/Schlachtfelder)",
 	["Less than 5 members (arena/dungeons)"] = "Weniger als 5 Mitglieder (Arena/Dungeons)",

@@ -152,6 +152,8 @@ L:RegisterLocale("esMX", {
 	["Enable pet frame CC in battlegrounds."] = "Activar CC del marco de mascota en campos de batalla.",
 	["Enable pet frame CC in dungeons."] = "Activar CC del marco de mascota en PvE.",
 	["Enable pet frame CC in raids."] = "Activar CC del marco de mascota en PvE.",
+	["Show on pet unit frame"] = "Mostrar en el marco de mascota",
+	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "Muestra también iconos de control junto al marco de unidad de tu propia mascota (Blizzard o addons de marcos compatibles), además de en los marcos de mascota de grupo/banda.",
 	["Exclude yourself from showing CC icons."] = "Exclúyete de mostrar iconos de control.",
 	["Greater than 5 members (raids/bgs)"] = "Más de 5 miembros (bandas/CdB)",
 	["Less than 5 members (arena/dungeons)"] = "Menos de 5 miembros (arena/mazmorras)",

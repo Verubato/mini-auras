@@ -19,6 +19,8 @@ local db
 local watchers = {}
 ---@type TestSpell[]
 local testSpells = {}
+-- Reused buffer for GetPetUnitFrames so discovery doesn't allocate each refresh.
+local petUnitFrameScratch = {}
 
 local function GetOptions()
 	return instanceOptions:IsRaid() and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
@@ -34,6 +36,7 @@ addon.Modules.CrowdControlModule = M
 ---@field Watcher Watcher
 ---@field Anchor table
 ---@field Unit string
+---@field IsPetUnitFrame boolean? True when the anchor is a standalone player pet unit frame (opt-in via IncludePetFrame).
 
 ---@param entry CrowdControlWatchEntry
 local function UpdateWatcherAuras(entry)
@@ -251,6 +254,38 @@ local function EnsureWatcher(anchor, unit)
 	return entry
 end
 
+---@param frame table?
+local function AddPetUnitFrame(frame)
+	if frame and not (frame.IsForbidden and frame:IsForbidden()) then
+		petUnitFrameScratch[#petUnitFrameScratch + 1] = frame
+	end
+end
+
+-- Collects the player's standalone pet unit frame from every supported unit-frame addon. The pet
+-- has its own frame separate from the party/raid pet frames, and each addon names it differently;
+-- whichever addon is active shows its own, so we gather all candidates and filter by visibility.
+---@return table[]
+local function GetPetUnitFrames()
+	wipe(petUnitFrameScratch)
+
+	AddPetUnitFrame(PetFrame)                       -- Blizzard
+	AddPetUnitFrame(_G.ElvUF_Pet)                   -- ElvUI
+	AddPetUnitFrame(_G.UUF_Pet)                     -- Unhalted Unit Frames
+	AddPetUnitFrame(_G.EllesmereUIUnitFrames_Pet)   -- EllesmereUI
+	AddPetUnitFrame(_G.EQOLUFPetFrame)              -- EQol Unit Frames
+	AddPetUnitFrame(_G.SUFUnitpet)                  -- Shadowed Unit Frames
+	AddPetUnitFrame(_G.XPerl_Player_Pet)            -- X-Perl / Z-Perl (both keep the XPerl_ frame name)
+	AddPetUnitFrame(_G.TPerl_Player_Pet)            -- TPerl
+
+	-- MSUF keeps its frames in a registry table keyed by unit token.
+	local msuf = _G.MSUF_UnitFrames
+	if type(msuf) == "table" then
+		AddPetUnitFrame(msuf.pet)
+	end
+
+	return petUnitFrameScratch
+end
+
 local function EnsureWatchers()
 	local anchors = frames:GetAll(true, testModeActive)
 
@@ -264,6 +299,20 @@ local function EnsureWatchers()
 			local frame = _G["CompactPartyFramePet" .. i]
 			if frame and (frame:IsVisible() or testModeActive) then
 				EnsureWatcher(frame)
+			end
+		end
+
+		-- The player's own pet unit frame is opt-in via IncludePetFrame. Supports the Blizzard pet
+		-- frame and the standalone pet frames of other unit-frame addons (ElvUI, UUF, MSUF, etc.).
+		local petOptions = db.Modules.PetCCModule
+		if petOptions and petOptions.IncludePetFrame then
+			for _, frame in ipairs(GetPetUnitFrames()) do
+				if frame:IsVisible() or testModeActive then
+					local petEntry = EnsureWatcher(frame, "pet")
+					if petEntry then
+						petEntry.IsPetUnitFrame = true
+					end
+				end
 			end
 		end
 	end
@@ -330,6 +379,15 @@ local function OnEvent(_, event)
 		C_Timer.After(0, function()
 			M:Refresh()
 		end)
+	elseif event == "UNIT_PET" then
+		-- A pet was summoned/dismissed; refresh so the opt-in pet unit frame containers show/hide
+		-- with it. Only relevant when IncludePetFrame is enabled, so skip the work otherwise.
+		local petOptions = db.Modules.PetCCModule
+		if petOptions and petOptions.IncludePetFrame and moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+			C_Timer.After(0, function()
+				M:Refresh()
+			end)
+		end
 	end
 end
 
@@ -349,6 +407,10 @@ local function RefreshTestIcons()
 		local entryEnabled
 		if isPet then
 			entryEnabled = petEnabled
+			-- Standalone pet unit frames are additionally gated by the IncludePetFrame option.
+			if entry.IsPetUnitFrame and not (petOptions and petOptions.IncludePetFrame) then
+				entryEnabled = false
+			end
 		else
 			entryEnabled = moduleEnabled
 		end
@@ -490,6 +552,10 @@ function M:Refresh()
 		if isPet then
 			-- In test mode always treat pet as enabled so icons show
 			entryEnabled = testModeActive or petEnabled
+			-- Standalone pet unit frames are additionally gated by the IncludePetFrame option.
+			if entry.IsPetUnitFrame and not (petOptions and petOptions.IncludePetFrame) then
+				entryEnabled = false
+			end
 		else
 			entryEnabled = moduleEnabled
 		end
@@ -537,6 +603,9 @@ function M:Init()
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
 	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+	-- Tracks the player's pet being summoned/dismissed so the opt-in pet unit frame containers
+	-- follow it, regardless of which unit-frame addon owns the pet frame.
+	eventsFrame:RegisterEvent("UNIT_PET")
 
 	if not wowEx:IsDandersEnabled() then
 		if CompactUnitFrame_SetUnit then

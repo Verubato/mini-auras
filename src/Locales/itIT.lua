@@ -151,6 +151,8 @@ L:RegisterLocale("itIT", {
 	["Enable pet frame CC in battlegrounds."] = "Abilita CC del riquadro pet nei campi di battaglia.",
 	["Enable pet frame CC in dungeons."] = "Abilita CC del riquadro pet in JvA.",
 	["Enable pet frame CC in raids."] = "Abilita CC del riquadro pet in JvA.",
+	["Show on pet unit frame"] = "Mostra sul riquadro del pet",
+	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "Mostra anche le icone di controllo accanto al riquadro unità del tuo pet (Blizzard o addon di riquadri supportati), oltre ai riquadri del pet di gruppo/incursione.",
 	["Exclude yourself from showing CC icons."] = "Escluditi dalla visualizzazione delle icone di controllo.",
 	["Greater than 5 members (raids/bgs)"] = "Più di 5 membri (incursioni/CdB)",
 	["Less than 5 members (arena/dungeons)"] = "Meno di 5 membri (arena/spedizioni)",

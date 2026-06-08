@@ -151,6 +151,8 @@ L:RegisterLocale("koKR", {
 	["Enable pet frame CC in battlegrounds."] = "전장에서 펫 프레임 CC를 활성화합니다.",
 	["Enable pet frame CC in dungeons."] = "PvE에서 펫 프레임 CC를 활성화합니다.",
 	["Enable pet frame CC in raids."] = "PvE에서 펫 프레임 CC를 활성화합니다.",
+	["Show on pet unit frame"] = "펫 유닛 프레임에 표시",
+	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "파티/공격대 펫 프레임에 더해, 자신의 펫 유닛 프레임(Blizzard 또는 지원되는 유닛 프레임 애드온) 옆에도 군중 제어 아이콘을 표시합니다.",
 	["Exclude yourself from showing CC icons."] = "군중 제어 아이콘 표시에서 자신을 제외합니다.",
 	["Greater than 5 members (raids/bgs)"] = "5명 초과 (공격대/전장)",
 	["Less than 5 members (arena/dungeons)"] = "5명 미만 (투기장/던전)",

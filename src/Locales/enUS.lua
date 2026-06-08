@@ -153,6 +153,8 @@ L:SetDefaultStrings({
 	["Enable pet frame CC in battlegrounds."] = "Enable pet frame CC in battlegrounds.",
 	["Enable pet frame CC in dungeons."] = "Enable pet frame CC in dungeons.",
 	["Enable pet frame CC in raids."] = "Enable pet frame CC in raids.",
+	["Show on pet unit frame"] = "Show on pet unit frame",
+	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames.",
 	["Exclude yourself from showing CC icons."] = "Exclude yourself from showing CC icons.",
 	["Greater than 5 members (raids/bgs)"] = "Greater than 5 members (raids/bgs)",
 	["Less than 5 members (arena/dungeons)"] = "Less than 5 members (arena/dungeons)",

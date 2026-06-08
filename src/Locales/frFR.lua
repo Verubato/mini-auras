@@ -151,6 +151,8 @@ L:RegisterLocale("frFR", {
 	["Enable pet frame CC in battlegrounds."] = "Activer le CC des familiers en champs de bataille.",
 	["Enable pet frame CC in dungeons."] = "Activer le CC des familiers en donjons.",
 	["Enable pet frame CC in raids."] = "Activer le CC des familiers en raid.",
+	["Show on pet unit frame"] = "Afficher sur le cadre du familier",
+	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "Affiche également des icônes de CC à côté du cadre d'unité de votre propre familier (Blizzard ou addons de cadres compatibles), en plus des cadres de familier de groupe/raid.",
 	["Exclude yourself from showing CC icons."] = "Ne pas afficher les icônes de CC sur vous-même.",
 	["Greater than 5 members (raids/bgs)"] = "Plus de 5 joueurs (raids/BG)",
 	["Less than 5 members (arena/dungeons)"] = "5 joueurs ou moins (arène/donjons)",
