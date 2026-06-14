@@ -1208,6 +1208,7 @@ local offensiveSpellIds = {
 	[384352] = true, -- Doomwinds
 	[114051] = true, -- Ascendance (Enhancement)
 	[114050] = true, -- Ascendance (Elemental)
+	[51271] = true, -- Pillar of Frost (Frost DK)
 }
 
 rules.OffensiveSpellIds = offensiveSpellIds
