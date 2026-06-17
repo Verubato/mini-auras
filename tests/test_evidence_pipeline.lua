@@ -70,80 +70,6 @@ local function makeBigImportantWatcher(unit)
     return loader.makeWatcher({ { AuraInstanceID = AURA_ID } }, {})
 end
 
--- Section 1: Cross-unit Blessing of Freedom prediction
---
--- BoF is CastableOnOthers: when a Paladin casts it on a Warrior ally, the aura appears
--- as IMPORTANT-only on the Warrior.  PredictRule takes the non-EXT path, finds no self-only
--- match on the Warrior, then scans candidateUnits for CastableOnOthers rules.
--- In 12.0.5+, UNIT_SPELLCAST_SUCCEEDED fires only for the local "player", so BoF can only
--- be predicted when the local player is the Paladin caster (has a real cast snapshot).
--- Non-local Paladin candidates have no snapshot and BoF has no RequiresEvidence, so the
--- "only_evidence" filter skips them in the evidence-only fallback.
-
-fw.describe("PredictRule - cross-unit BoF from Paladin caster", function()
-    fw.before_each(reset)
-
-    fw.it("predicts BoF when local Paladin ('player') has a real cast snapshot and Warrior is the target", function()
-        -- In 12.0.5, UNIT_SPELLCAST_SUCCEEDED fires for "player" -> snapshot recorded.
-        -- The cross-unit CastableOnOthers loop finds the local Paladin via snapshot.
-        wow.setUnitClass("party1", "WARRIOR")  -- target; no self-only IMPORTANT rules
-        wow.setUnitClass("player", "PALADIN")  -- local Paladin caster; snapshot IS recorded
-
-        local entry = loader.makeEntry("party1")
-        local getGlow, getCaster = captureGlow()
-
-        wow.setTime(0)
-        observer:_fireCast("player", 1044)   -- local Paladin casts BoF; snapshot recorded for "player"
-
-        local watcher = makeImportantWatcher()
-        observer:_fireAuraChanged(entry, watcher, { "party1", "player" })
-
-        fw.eq(getGlow(), 1044, "BoF predicted via local Paladin's cast snapshot")
-        fw.eq(getCaster(), "player", "local Paladin attributed as caster")
-    end)
-
-    fw.it("Warrior target excluded from CastableOnOthers path (no CastableOnOthers rules)", function()
-        -- Warrior has no CastableOnOthers IMPORTANT rules, so self-cast finds nothing.
-        -- Local Paladin candidate wins via the cross-unit CastableOnOthers snapshot loop.
-        wow.setUnitClass("party1", "WARRIOR")
-        wow.setUnitClass("player", "PALADIN")
-
-        local entry = loader.makeEntry("party1")
-        local getGlow, getCaster = captureGlow()
-
-        wow.setTime(0)
-        observer:_fireCast("player", 1044)  -- local Paladin cast BoF
-
-        local watcher = makeImportantWatcher()
-        observer:_fireAuraChanged(entry, watcher, { "party1", "player" })
-
-        fw.eq(getGlow(), 1044, "BoF predicted")
-        fw.eq(getCaster(), "player", "local Paladin attributed (Warrior has no CastableOnOthers rule)")
-    end)
-
-    fw.it("non-local Paladin without snapshot does not create ambiguity with local Paladin", function()
-        -- In 12.0.5, only the local player's UNIT_SPELLCAST_SUCCEEDED is recorded.
-        -- party2 (non-local Paladin) has no snapshot -> skipped in primary COO loop.
-        -- BoF has no RequiresEvidence -> also skipped by evidence-only fallback ("only_evidence" filter).
-        -- "player" (local Paladin) wins via snapshot -> BoF predicted unambiguously.
-        wow.setUnitClass("party1", "WARRIOR")
-        wow.setUnitClass("player", "PALADIN")
-        wow.setUnitClass("party2", "PALADIN")
-
-        local entry = loader.makeEntry("party1")
-        local getGlow = captureGlow()
-
-        wow.setTime(0)
-        observer:_fireCast("player", 1044)  -- only local player's cast is recorded
-
-        local watcher = makeImportantWatcher()
-        observer:_fireAuraChanged(entry, watcher, { "party1", "player", "party2" })
-
-        fw.eq(getGlow(), 1044, "BoF predicted from local Paladin; non-local Paladin without snapshot is not a candidate")
-    end)
-
-end)
-
 -- Section 2: RecordCast no-op on 12.0.5 for non-player units
 
 fw.describe("RecordCast - no-op on 12.0.5 for non-player units", function()
@@ -307,36 +233,35 @@ end)
 fw.describe("MatchRule KnownSpellIds - ExcludeIfTalent still gates the fast path", function()
     fw.before_each(reset)
 
-    -- Avenging Wrath (spec 65): ExcludeIfTalent=216331.
-    -- When the talent 216331 is active, FindRuleBySpellId returns nil for SpellId=31884.
+    -- Ice Block (spec 64): ExcludeIfTalent=414659.
+    -- When the talent 414659 is active, FindRuleBySpellId returns nil for SpellId=45438.
     -- The fast path then falls through to normal duration matching.
 
     fw.it("KnownSpellIds excludes the rule when ExcludeIfTalent talent is active", function()
-        wow.setUnitClass("party1", "PALADIN")
-        mods.talents._setSpec("party1", 65)
-        mods.talents._setTalent("party1", 216331, true)  -- Avenging Crusader -> excludes AW
+        wow.setUnitClass("party1", "MAGE")
+        mods.talents._setSpec("party1", 64)
+        mods.talents._setTalent("party1", 414659, true)  -- Ice Cold -> excludes Ice Block
 
-        -- KnownSpellIds=[31884] (AW); talent 216331 is active -> ExcludeIfTalent blocks the fast path.
-        -- Falls through to normal matching: AW excluded by talent; AC (MinDuration, 10s) requires
-        -- 9.5s+ (8.0 < 9.5 -> fails duration); BoF (CanCancelEarly, 8s, CastableOnOthers) matches
-        -- 8.0s duration (within CanCancelEarly range) and has no RequiresEvidence -> nil evidence ok.
-        local rule = B:MatchRule("party1", IMP, 8.0, {
-            KnownSpellIds = { 31884 },
+        -- KnownSpellIds=[45438] (Ice Block); talent 414659 active -> ExcludeIfTalent blocks the fast path.
+        -- Falls through to normal matching: Ice Block excluded by talent; Ice Cold (6s, Debuff) matches.
+        local rule = B:MatchRule("party1", BIG, 6.0, {
+            KnownSpellIds = { 45438 },
+            Evidence = { Debuff = true },
         })
-        fw.not_nil(rule, "ExcludeIfTalent blocks AW; BoF (8s CanCancelEarly) matches instead")
-        fw.eq(rule and rule.SpellId, 1044, "BoF matches 8s IMPORTANT when AW is excluded by Avenging Crusader talent")
+        fw.not_nil(rule, "ExcludeIfTalent blocks Ice Block; Ice Cold (6s) matches instead")
+        fw.eq(rule and rule.SpellId, 414659, "Ice Cold matches when Ice Block is excluded by talent")
     end)
 
     fw.it("KnownSpellIds matches when ExcludeIfTalent talent is absent", function()
-        wow.setUnitClass("party1", "PALADIN")
-        mods.talents._setSpec("party1", 65)
-        -- No talent 216331 -> AW not excluded.
+        wow.setUnitClass("party1", "MAGE")
+        mods.talents._setSpec("party1", 64)
+        -- No talent 414659 -> Ice Block not excluded.
 
-        local rule = B:MatchRule("party1", IMP, 8.0, {
-            KnownSpellIds = { 31884 },
+        local rule = B:MatchRule("party1", BIG, 10.0, {
+            KnownSpellIds = { 45438 },
         })
-        fw.not_nil(rule, "AW should match via KnownSpellIds when ExcludeIfTalent is absent")
-        fw.eq(rule.SpellId, 31884, "Avenging Wrath")
+        fw.not_nil(rule, "Ice Block should match via KnownSpellIds when ExcludeIfTalent is absent")
+        fw.eq(rule.SpellId, 45438, "Ice Block")
     end)
 end)
 
@@ -434,77 +359,3 @@ fw.describe("Evidence tolerance boundary - exactly at 0.15s included, beyond exc
     end)
 end)
 
--- Section 6: Pre-12.0.5 Avenging Wrath vs BoF disambiguation via castSpellIdSnapshot
---
--- A Holy Paladin target can self-cast either AW (self-only) or BoF (CastableOnOthers).
--- Without a spell ID, these are indistinguishable (both IMPORTANT, both require Cast).
--- With castSpellIdSnapshot=[31884] (AW), the fast path resolves it unambiguously.
-
-fw.describe("PredictRule - castSpellIdSnapshot disambiguates AW vs BoF for Paladin target", function()
-    fw.before_each(reset)
-
-    fw.it("castSpellIdSnapshot=31884 predicts AW unambiguously (no BoF fallback)", function()
-        wow.setUnitClass("player", "PALADIN")
-        mods.talents._setSpec("player", 65)
-
-        local entry = loader.makeEntry("player")
-        local getGlow = captureGlow()
-
-        wow.setTime(0)
-        observer:_fireCast("player", 31884)   -- AW cast; spellId recorded in lastCastSpellIds
-
-        -- IMPORTANT-only aura on the Paladin (could be AW or BoF).
-        local watcher = loader.makeWatcher({}, { { AuraInstanceID = AURA_ID } })
-        observer:_fireAuraChanged(entry, watcher, { "player" })
-
-        fw.eq(getGlow(), 31884, "castSpellId 31884 -> fast path resolves to AW unambiguously")
-    end)
-
-    fw.it("castSpellIdSnapshot=1044 (BoF spell ID not a KnownSpellId for AW) -> BoF via cross-unit cast", function()
-        -- The player cast BoF (spellId=1044). The fast path checks castSpellIdSnapshot for
-        -- non-EXT auras on the target. FindRuleBySpellId("player", 65, IMP, 1044) ->
-        -- BoF rule has Important=true, BigDefensive=false, CastableOnOthers=true -> AuraTypeMatchesRule(IMP, BoF).
-        -- IMP aura has IMPORTANT=true, no BIG_DEFENSIVE. BoF: BigDefensive not set (nil -> unconstrained),
-        -- ExternalDefensive=false (requires absence; IMP has no EXT -> ok), Important=true (IMP has IMP -> ok).
-        -- Actually: BoF SpellId=1044 is a PALADIN CLASS rule. FindRuleBySpellId checks BySpec[specId] first.
-        -- spec 65 (Holy Paladin) has BoF as ExternalDefensive=true. EXT rule + IMP aura -> AuraTypeMatchesRule fails
-        -- (ExternalDefensive=true requires EXTERNAL_DEFENSIVE in auraTypes, but IMP aura has none). So the spec
-        -- rule fails. Class rule BoF: ExternalDefensive=false, Important=true -> IMP aura -> matches.
-        -- So castSpellId=1044 -> fast path finds class BoF rule -> returns BoF without further ambiguity.
-        wow.setUnitClass("player", "PALADIN")
-        mods.talents._setSpec("player", 65)
-
-        local entry = loader.makeEntry("player")
-        local getGlow = captureGlow()
-
-        wow.setTime(0)
-        observer:_fireCast("player", 1044)   -- BoF cast
-
-        local watcher = loader.makeWatcher({}, { { AuraInstanceID = AURA_ID } })
-        observer:_fireAuraChanged(entry, watcher, { "player" })
-
-        fw.eq(getGlow(), 1044, "castSpellId 1044 -> fast path resolves to BoF (class rule, IMP aura)")
-    end)
-
-    fw.it("local player Holy Paladin: AW predicts without castSpellIdSnapshot (BoF ambiguity pass skipped)", function()
-        -- No cast event fired -> no castSpellIdSnapshot -> fast path not taken.
-        -- consider(player, false, "exclude") -> AW (self-only, no RequiresEvidence) -> matches.
-        -- consider(player, true, "only") -> BoF (CastableOnOthers) -> no snapshot -> fails.
-        -- The CastableOnOthers-without-snapshot ambiguity pass is gated out for the local player
-        -- (ResolveSnapshotUnit("player") == "player"), so BoF does not create ambiguity here.
-        -- AW predicts cleanly: the local player's real casts are always available via the snapshot
-        -- when they actually cast, so no-snapshot is a valid "player did not cast BoF" signal.
-        wow.setUnitClass("player", "PALADIN")
-        mods.talents._setSpec("player", 65)
-
-        local entry = loader.makeEntry("player")
-        local getGlow = captureGlow()
-
-        -- No cast fired -> no snapshot.
-
-        local watcher = loader.makeWatcher({}, { { AuraInstanceID = AURA_ID } })
-        observer:_fireAuraChanged(entry, watcher, { "player" })
-
-        fw.eq(getGlow(), 31884, "AW predicts for local player without snapshot; remote-only ambiguity pass skipped")
-    end)
-end)

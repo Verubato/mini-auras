@@ -22,7 +22,7 @@ config.Nameplates = M
 
 ---@param parent table Tab content frame
 ---@param options NameplateSpellTypeOptions
----@param sectionType string Type of section: "CC", "Important", or "Combined"
+---@param sectionType string Type of section: "CC" or "Combined"
 local function BuildSpellTypeSettings(parent, options, sectionType)
 	local container = CreateFrame("Frame", nil, parent)
 
@@ -32,11 +32,9 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 	-- Build tooltip based on section type
 	local colorTooltip
 	if sectionType == "Combined" then
-		colorTooltip = L["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), Defensive spells are green, and Important spells are red."]
-	elseif sectionType == "CC" then
-		colorTooltip = L["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."]
+		colorTooltip = L["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."]
 	else
-		colorTooltip = L["Change the colour of the glow/border. Defensive spells are green and Important spells are red."]
+		colorTooltip = L["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."]
 	end
 
 	local enabledChk = mini:Checkbox({
@@ -259,7 +257,7 @@ function M:Build(parent, options)
 	local lines = mini:TextBlock({
 		Parent = parent,
 		Lines = {
-			L["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."],
+			L["Shows CC and defensive spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."],
 		},
 	})
 
@@ -422,19 +420,15 @@ function M:Build(parent, options)
 		ContentInsets = { Top = verticalSpacing },
 		Tabs = {
 			{ Key = "enemyCC",           Title = L["Enemy - CC"] },
-			{ Key = "enemyImportant",    Title = L["Enemy - Important"] },
 			{ Key = "enemyCombined",     Title = L["Enemy - Combined"] },
 			{ Key = "friendlyCC",        Title = L["Friendly - CC"] },
-			{ Key = "friendlyImportant", Title = L["Friendly - Important"] },
 			{ Key = "friendlyCombined",  Title = L["Friendly - Combined"] },
 		},
 	})
 
 	BuildSpellTypeSettings(tabCtrl:GetContent("enemyCC"),           options.Enemy.CC,        "CC")
-	BuildSpellTypeSettings(tabCtrl:GetContent("enemyImportant"),    options.Enemy.Important, "Important")
 	BuildSpellTypeSettings(tabCtrl:GetContent("enemyCombined"),     options.Enemy.Combined,  "Combined")
 	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyCC"),        options.Friendly.CC,        "CC")
-	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyImportant"), options.Friendly.Important, "Important")
 	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyCombined"),  options.Friendly.Combined,  "Combined")
 
 end

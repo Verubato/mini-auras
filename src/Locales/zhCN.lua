@@ -34,7 +34,6 @@ L:RegisterLocale("zhCN", {
 	["Icon Size (%)"] = "图标大小 (%)",
 	["Relative size"] = "相对大小",
 	["Sizes the icon as a percentage of the unit frame's height instead of in pixels."] = "按单位框架高度的百分比调整图标大小，而非使用像素。",
-	["Important"] = "重要",
 	["Max Icons"] = "最大图标",
 	["Notification"] = "通知",
 	["Offset X"] = "X偏移",
@@ -101,32 +100,30 @@ L:RegisterLocale("zhCN", {
 	["Miscellaneous"] = "杂项",
 	["Reset"] = "重置",
 	["Mini addon, massive awareness."] = "小插件，超凡感知。",
+	["Important News"] = "重要消息",
+	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "自暴雪 12.0.7 补丁起，以下功能不再可用：\n- 在警报中显示进攻技能。\n- 在姓名板上显示进攻技能。\n- 在头像上显示进攻技能。\n- 在小队/团队框体上显示进攻技能。\n- 追踪进攻冷却。\n- 显示预知和虚无披风。\n- 重要技能的声音提示。\n- 重要技能的语音播报。",
 	["CC Native Order"] = "CC原生顺序",
 	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "不显示最新应用的控制效果（MiniCC行为），而是使用暴雪默认的CC优先级，通常显示最先应用的控制效果（有少数例外）。",
 	["The others seem to use a non-trivial amount of CPU."] = "其他的似乎使用了大量的CPU。",
 	["The Proc Glow uses the least CPU."] = "触发发光使用最少的CPU。",
 
 	-- Alerts tab
-	["A separate region for showing important enemy spells."] = "用于显示重要敌方法术的单独区域。",
 	["Alerts"] = "警报",
 	["Announce defensive spell names using text-to-speech when they are cast."] = "施放防御法术时使用语音合成播报法术名称。",
-	["Announce important spell names using text-to-speech when they are cast."] = "施放重要法术时使用语音合成播报法术名称。",
 	["Announce spell names using text-to-speech when they are cast."] = "施放法术时使用语音合成播报法术名称。",
 	["Defensive Spells"] = "防御法术",
-	["Important Spells"] = "重要法术",
 	["Include defensives"] = "包括防御技能",
 	["Includes defensives in the alerts."] = "在警报中包括防御技能。",
 	["Only show alerts for your target and focus in battlegrounds and the open world."] = "在战场和开放世界中仅显示目标和焦点的提示。",
 	["Play a sound when a defensive spell is pressed."] = "使用防御法术时播放声音。",
-	["Play a sound when an important spell is pressed."] = "使用重要法术时播放声音。",
 	["Show alert icons in the alerts region."] = "在警报区域显示警报图标。",
 	["Show CC icons when healer is CC'd."] = "治疗者被控制时显示CC图标。",
 	["Show defensive alerts on a separate, movable bar."] = "在单独的可移动条上显示防御警报。",
 	["Show icons"] = "显示图标",
-	["Shows CC and other important spell alerts."] = "显示控制和其他重要法术警报。",
+	["Shows CC and defensive spell alerts."] = "显示控制和防御技能警报。",
 	["Split bars"] = "拆分条",
 	["Sound"] = "声音",
-	["Plays a sound when an enemy presses an important or defensive spell."] = "当敌人使用重要或防御法术时播放声音。",
+	["Plays a sound when an enemy presses a defensive spell."] = "当敌人使用防御技能时播放声音。",
 	["Sound Alerts"] = "声音提醒",
 	["Sound File"] = "声音文件",
 	["Target/Focus Only"] = "仅目标/焦点",
@@ -164,7 +161,7 @@ L:RegisterLocale("zhCN", {
 
 	-- Indicator tab
 	["Auras"] = "光环",
-	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "更改发光/边框的颜色。防御法术为绿色，重要法术为红色。",
+	["Change the colour of the glow/border. Defensive spells are green."] = "更改发光/边框的颜色。防御技能为绿色。",
 	["Defensive"] = "防御",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "使用此功能时不要忘记禁用暴雪的'居中显示大型防御技能'选项。",
 	["Exclude yourself from showing trinket icons."] = "将自己从显示饰品图标中排除。",
@@ -172,11 +169,9 @@ L:RegisterLocale("zhCN", {
 	["Show CC icons."] = "显示控制图标。",
 	["Show defensives"] = "显示防御技能",
 	["Show defensive spell icons."] = "显示防御法术图标。",
-	["Show important"] = "显示重要技能",
-	["Show important spell icons."] = "显示重要法术图标。",
 	["Show interrupts"] = "显示打断",
 	["Show an icon when a friendly unit gets interrupted."] = "当友方单位被打断时显示图标。",
-	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "在队伍/团队框架上将CC、防御技能和重要光环显示为一组图标。",
+	["Shows CC and defensives as one set of icons on party/raid frames."] = "在小队/团队框架上将控制和防御作为一组图标显示。",
 	["Tip: Disable the CC module for BGs and enable CC within this module."] = "提示：对于战场禁用CC模块，并在此模块中启用CC。",
 
 
@@ -194,31 +189,27 @@ L:RegisterLocale("zhCN", {
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "根据驱散类型更改发光/边框的颜色（例如，魔法为蓝色，物理为红色）。",
 	["Change the colour of the glow/border based on the type of debuff."] = "根据减益类型更改发光/边框的颜色。",
-	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), Defensive spells are green, and Important spells are red."] = "更改发光/边框的颜色。控制法术使用驱散类型颜色（例如，魔法为蓝色），防御法术为绿色，重要法术为红色。",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."] = "更改发光/边框的颜色。控制技能使用驱散类型颜色（例如魔法为蓝色），防御技能为绿色。",
 	["Do not show auras on enemy pet nameplates."] = "不在敌方宠物姓名板上显示光环。",
 	["Do not show auras on friendly pet nameplates."] = "不在友方宠物姓名板上显示光环。",
 	["Enemy - CC"] = "敌人 - 控制",
 	["Enemy - Combined"] = "敌人 - 组合",
-	["Enemy - Important Spells"] = "敌人 - 重要法术",
-	["Enemy - Important"] = "敌人 - 重要",
 	["Friendly - CC"] = "友方 - 控制",
 	["Friendly - Combined"] = "友方 - 组合",
-	["Friendly - Important Spells"] = "友方 - 重要法术",
-	["Friendly - Important"] = "友方 - 重要",
 	["Ignore Enemy Pets"] = "忽略敌方宠物",
 	["Ignore Friendly Pets"] = "忽略友方宠物",
 	["Nameplates"] = "姓名板",
 	["Nameplates_Short"] = "姓名板",
 	["Scale with Nameplate"] = "随姓名板缩放",
 	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "图标随姓名板缩放一起缩放。如果你的目标姓名板有不同的大小（例如在BBF的设置中），请使用此选项。",
-	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "在姓名板上显示控制和重要法术（与姓名板插件一起工作，例如BBP、Platynator和Plater）。",
+	["Shows CC and defensives on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "在姓名板上显示控制和防御（兼容 BBP、Platynator 和 Plater 等姓名板插件）。",
 	["Spell colours"] = "法术颜色",
 
 	-- Portraits tab
 	["Portraits"] = "头像",
 	["Portraits_Short"] = "头像",
 	["Reverses the direction of the cooldown swipe."] = "反转冷却时间滑动动画的方向。",
-	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "在玩家/目标/焦点头像上显示控制、防御技能和其他重要法术。",
+	["Shows CC and defensives on the player/target/focus portraits."] = "在玩家/目标/焦点头像上显示控制和防御。",
 
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - 如果队友在起始房间使用饰品则无效。",
@@ -246,8 +237,6 @@ L:RegisterLocale("zhCN", {
 	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "冷却增益效果激活时，在冷却计时器开始前使图标发光并显示倒计时。",
 	["Defensive cooldowns"] = "防御性冷却",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "显示防御性冷却，如保护祝福和铁树皮。",
-	["Offensive cooldowns"] = "显示进攻性冷却",
-	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "显示进攻性冷却，如燃烧、化身和龙怒。",
 	["Rows"] = "行数",
 	["Columns"] = "列数",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "当增长方向为向下时，设置每行显示的图标数量。适用于水平队伍框架。",
@@ -279,12 +268,9 @@ L:RegisterLocale("zhCN", {
 	["Number of icon rows for the Linear Bar. Icons per row is determined by the Max Icons setting."] = "线性条的图标行数。每行图标数由最大图标设置决定。",
 
 	-- Precognition tab
-	["It works by taking any 4 second 'important' self buff and showing that icon."] = "其工作原理是检测任何4秒的'重要'自身增益效果并显示该图标。",
 	["Note that you can't simply filter by spell id these days."] = "请注意，现在无法简单地通过法术ID进行过滤。",
 	["Precognition"] = "预知",
-	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "如果你恰好有其他4秒的重要自身增益效果，该图标也会显示，敬请谅解。",
 	["This isn't precision perfect but it should be close enough."] = "这并非完全精确，但应该足够接近。",
-	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "同时追踪保护系唤魔师的「废除之幕」（3秒重要自身增益效果）。",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "其他Mini插件",
@@ -296,14 +282,12 @@ L:RegisterLocale("zhCN", {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."] = "使用MiniCC姓名板时，在暴雪姓名板上禁用CC和BigDebuffs。",
 
 	-- General home screen
-	["Important News"] = "重要消息",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - 为队伍/团队的宠物框架新增了CC图标（默认禁用）。",
 	[" - Added precognition guesser module that shows when you get precog."] = " - 新增了预知猜测模块，当你获得预知效果时显示。",
 	[" - Added profile import/export feature."] = " - 新增了配置导入/导出功能。",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - 新增了友方冷却时间猜测模块。现在你可以大致追踪队友的冷却时间！",
-	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "随着 12.0.5 版本的新暴雪限制，MiniCC 发生了以下变化。\n\n好消息：\n* 冷却时间追踪在竞技场和地下城中仍然基本正常运行。\n* 为友方和敌方 CD 添加了多层法术充能支持（例妋 2x 痛苦压制、2x 模糊）。\n\n坏消息：\n* 友方外部技能在团队副本和战场中不再被追踪。\n* 预测光效变得不那么可靠。\n* PvP 打断追踪无法再识别打断者。现在仅显示使用最短已知敌方打断冷却时间的通用图标。\n\n我们在这次更新上投入了大量工作，但可能仍有问题。 \n请在我们的 Discord 中报告您发现的任何错误，以便我们解决。",
 	[" - Added enemy cooldown tracking module."] = " - 新增敌人冷却追踪模块。",
 	["MiniCC - What's New?"] = "MiniCC - 新内容？",
 

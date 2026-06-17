@@ -34,7 +34,6 @@ L:RegisterLocale("ptBR", {
 	["Icon Size (%)"] = "Tamanho do ícone (%)",
 	["Relative size"] = "Tamanho relativo",
 	["Sizes the icon as a percentage of the unit frame's height instead of in pixels."] = "Dimensiona o ícone como uma porcentagem da altura do quadro da unidade em vez de em pixels.",
-	["Important"] = "Importante",
 	["Max Icons"] = "Ícones máx",
 	["Notification"] = "Notificação",
 	["Offset X"] = "Deslocamento X",
@@ -101,32 +100,30 @@ L:RegisterLocale("ptBR", {
 	["Miscellaneous"] = "Diverso",
 	["Reset"] = "Redefinir",
 	["Mini addon, massive awareness."] = "Addon pequeno, grande percepção.",
+	["Important News"] = "Notícias importantes",
+	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "A partir do patch 12.0.7 da Blizzard, os seguintes recursos não são mais possíveis:\n- Exibir ofensivos nos alertas.\n- Exibir ofensivos nas placas de nome.\n- Exibir ofensivos nos retratos.\n- Exibir ofensivos nos quadros de grupo/raide.\n- Rastrear recargas ofensivas.\n- Mostrar Precognição e Manto Anulador.\n- Alerta sonoro para magias importantes.\n- Conversão de texto em voz de magias importantes.",
 	["CC Native Order"] = "Ordem CC nativa",
 	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Em vez de mostrar o último CC aplicado (comportamento MiniCC), usa a prioridade CC padrão da Blizzard que geralmente mostra o primeiro CC aplicado (com algumas exceções).",
 	["The others seem to use a non-trivial amount of CPU."] = "Os outros parecem usar uma quantidade considerável de CPU.",
 	["The Proc Glow uses the least CPU."] = "O brilho proc usa menos CPU.",
 
 	-- Alerts tab
-	["A separate region for showing important enemy spells."] = "Uma região separada para mostrar feitiços inimigos importantes.",
 	["Alerts"] = "Alertas",
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Anunciar nomes de feitiços defensivos usando texto para fala quando forem lançados.",
-	["Announce important spell names using text-to-speech when they are cast."] = "Anunciar nomes de feitiços importantes usando texto para fala quando forem lançados.",
 	["Announce spell names using text-to-speech when they are cast."] = "Anunciar nomes de feitiços usando texto para fala quando forem lançados.",
 	["Defensive Spells"] = "Feitiços defensivos",
-	["Important Spells"] = "Feitiços importantes",
 	["Include defensives"] = "Incluir defensivos",
 	["Includes defensives in the alerts."] = "Inclui habilidades defensivas nos alertas.",
 	["Only show alerts for your target and focus in battlegrounds and the open world."] = "Mostrar alertas apenas para o seu alvo e foco nos campos de batalha e no mundo aberto.",
 	["Play a sound when a defensive spell is pressed."] = "Reproduzir um som quando um feitiço defensivo for lançado.",
-	["Play a sound when an important spell is pressed."] = "Reproduzir um som quando um feitiço importante for lançado.",
 	["Show alert icons in the alerts region."] = "Mostrar ícones de alerta na região de alertas.",
 	["Show CC icons when healer is CC'd."] = "Mostrar ícones de controle quando o curandeiro estiver sob controle.",
 	["Show defensive alerts on a separate, movable bar."] = "Mostrar os alertas defensivos em uma barra separada e móvel.",
 	["Show icons"] = "Mostrar ícones",
-	["Shows CC and other important spell alerts."] = "Mostra alertas de controle e outros feitiços importantes.",
+	["Shows CC and defensive spell alerts."] = "Mostra alertas de controle de grupo e magias defensivas.",
 	["Split bars"] = "Dividir barras",
 	["Sound"] = "Som",
-	["Plays a sound when an enemy presses an important or defensive spell."] = "Reproduz um som quando um inimigo usa um feitiço importante ou defensivo.",
+	["Plays a sound when an enemy presses a defensive spell."] = "Reproduz um som quando um inimigo usa uma magia defensiva.",
 	["Sound Alerts"] = "Alertas sonoros",
 	["Sound File"] = "Arquivo de som",
 	["Target/Focus Only"] = "Apenas alvo/foco",
@@ -164,7 +161,7 @@ L:RegisterLocale("ptBR", {
 
 	-- Indicator tab
 	["Auras"] = "Auras",
-	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "Muda a cor do brilho/borda. Feitiços defensivos são verdes e feitiços importantes são vermelhos.",
+	["Change the colour of the glow/border. Defensive spells are green."] = "Altera a cor do brilho/borda. As magias defensivas são verdes.",
 	["Defensive"] = "Defensivo",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Não esqueça de desativar a opção do Blizzard 'centralizar grandes defensivos' ao usar isto.",
 	["Exclude yourself from showing trinket icons."] = "Exclua-se de mostrar ícones de berloques.",
@@ -172,11 +169,9 @@ L:RegisterLocale("ptBR", {
 	["Show CC icons."] = "Mostrar ícones de controle.",
 	["Show defensives"] = "Mostrar defensivos",
 	["Show defensive spell icons."] = "Mostrar ícones de feitiços defensivos.",
-	["Show important"] = "Mostrar importantes",
-	["Show important spell icons."] = "Mostrar ícones de feitiços importantes.",
 	["Show interrupts"] = "Mostrar interrupções",
 	["Show an icon when a friendly unit gets interrupted."] = "Mostra um ícone quando uma unidade aliada é interrompida.",
-	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Mostra CC, defensivos e auras importantes como um conjunto de ícones em quadros de grupo/raide.",
+	["Shows CC and defensives as one set of icons on party/raid frames."] = "Mostra controle de grupo e defensivas como um único conjunto de ícones nos quadros de grupo/raide.",
 	["Tip: Disable the CC module for BGs and enable CC within this module."] = "Dica: Desative o módulo CC para Campos de Batalha e ative CC dentro deste módulo.",
 
 
@@ -194,31 +189,27 @@ L:RegisterLocale("ptBR", {
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Muda a cor do brilho/borda com base no tipo de dissipar (por ex. azul para magia, vermelho para físico).",
 	["Change the colour of the glow/border based on the type of debuff."] = "Muda a cor do brilho/borda com base no tipo de penalidade.",
-	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), Defensive spells are green, and Important spells are red."] = "Muda a cor do brilho/borda. Feitiços de controle usam cores de tipo de dissipar (por ex. azul para magia), feitiços defensivos são verdes e feitiços importantes são vermelhos.",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."] = "Altera a cor do brilho/borda. As magias de controle de grupo usam as cores do tipo de dissipação (ex.: azul para magia) e as magias defensivas são verdes.",
 	["Do not show auras on enemy pet nameplates."] = "Não mostrar auras em placas de nome de mascotes inimigas.",
 	["Do not show auras on friendly pet nameplates."] = "Não mostrar auras em placas de nome de mascotes aliadas.",
 	["Enemy - CC"] = "Inimigos - Controle",
 	["Enemy - Combined"] = "Inimigos - Combinado",
-	["Enemy - Important Spells"] = "Inimigos - Feitiços importantes",
-	["Enemy - Important"] = "Inimigos - Importantes",
 	["Friendly - CC"] = "Aliados - Controle",
 	["Friendly - Combined"] = "Aliados - Combinado",
-	["Friendly - Important Spells"] = "Aliados - Feitiços importantes",
-	["Friendly - Important"] = "Aliados - Importantes",
 	["Ignore Enemy Pets"] = "Ignorar mascotes inimigas",
 	["Ignore Friendly Pets"] = "Ignorar mascotes aliadas",
 	["Nameplates"] = "Placas de nome",
 	["Nameplates_Short"] = "Placas",
 	["Scale with Nameplate"] = "Escalar com placa de nome",
 	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Os ícones escalam junto com a escala da placa de nome. Use esta opção se tiver um tamanho diferente para a placa de nome do alvo (ex: nas configurações do BBF).",
-	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Mostra controle e feitiços importantes em placas de nome (funciona com addons de placas de nome como BBP, Platynator e Plater).",
+	["Shows CC and defensives on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Mostra controle de grupo e defensivas nas placas de nome (funciona com addons de placas como BBP, Platynator e Plater).",
 	["Spell colours"] = "Cores de feitiços",
 
 	-- Portraits tab
 	["Portraits"] = "Retratos",
 	["Portraits_Short"] = "Retrato",
 	["Reverses the direction of the cooldown swipe."] = "Inverte a direção do deslize da recarga.",
-	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Mostra controle, defensivos e outros feitiços importantes nos retratos do jogador/alvo/foco.",
+	["Shows CC and defensives on the player/target/focus portraits."] = "Mostra controle de grupo e defensivas nos retratos de jogador/alvo/foco.",
 
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Não funciona se seus companheiros de equipe usarem berloque na sala inicial.",
@@ -246,8 +237,6 @@ L:RegisterLocale("ptBR", {
 	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "Enquanto um buff de recarga estiver ativo, ilumina o ícone e exibe uma contagem regressiva antes do início do temporizador.",
 	["Defensive cooldowns"] = "Recargas defensivas",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Exibe as recargas defensivas como Bênção de proteção e Casca de ferro.",
-	["Offensive cooldowns"] = "Mostrar recarga ofensiva",
-	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Mostra recargas ofensivas como Combustão, Avatar e Fúria do Dragão.",
 	["Rows"] = "Linhas",
 	["Columns"] = "Colunas",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Quando Crescer está definido como Baixo, define quantos ícones aparecem por linha antes de quebrar. Útil para molduras de grupo horizontais.",
@@ -279,12 +268,9 @@ L:RegisterLocale("ptBR", {
 	["Number of icon rows for the Linear Bar. Icons per row is determined by the Max Icons setting."] = "Número de fileiras de ícones para a Barra Linear. Os ícones por fileira são determinados pela configuração Máx. Ícones.",
 
 	-- Precognition tab
-	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Funciona detectando qualquer buff pessoal «importante» de 4 segundos e exibindo esse ícone.",
 	["Note that you can't simply filter by spell id these days."] = "Note que hoje em dia você não pode simplesmente filtrar por ID de feitiço.",
 	["Precognition"] = "Precognição",
-	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Se por acaso você tiver outro buff pessoal importante de 4 segundos, ele também exibiria esse ícone, desculpe.",
 	["This isn't precision perfect but it should be close enough."] = "Não é perfeitamente preciso, mas deve ser suficientemente próximo.",
-	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Também detecta o Manto Anulador do Evocador de Preservação (buff pessoal importante de 3 segundos).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "Outros Mini Addons",
@@ -295,15 +281,11 @@ L:RegisterLocale("ptBR", {
 	["Configure Blizzard Nameplates"] = "Configurar placas de nome da Blizzard",
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."] = "Desativa CC e BigDebuffs nas placas de nome da Blizzard ao usar as placas de nome do MiniCC.",
 
-	-- General home screen
-	["Important News"] = "Notícias importantes",
-
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Adicionados ícones de CC nos quadros de grupo/raide de mascotes (desativado por padrão).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - Adiciona um módulo de adivinhação de precognição que mostra quando você recebe precog.",
 	[" - Added profile import/export feature."] = " - Adicionada a funcionalidade de importar/exportar perfil.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Adicionado o módulo de estimativa de recarga aliada. Agora você pode rastrear aproximadamente os recargas dos seus companheiros de equipe!",
-	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "Com as novas restrições da Blizzard na 12.0.5, isto é o que mudou no MiniCC.\n\nAs boas notícias:\n* O rastreamento de recarga ainda funciona bem em arenas e masmorras.\n* Adicionado suporte para múltiplas cargas de feitiços (ex. 2x Supressão de Dor, 2x Borrão) para CDs amigos e inimigos.\n\nAs más notícias:\n* Feitiços externos amigos não são mais rastreados em Raides e Campos de Batalha.\n* Os brilhos preditivos são menos confiáveis.\n* O rastreamento de interrupções PvP não consegue mais identificar quem interrompeu. Agora exibe apenas um ícone genérico com o menor tempo de recarga de interrupção inimiga conhecido.\n\nTrabalhamos muito nesta atualização, mas ainda pode haver problemas. \nPor favor, reporte os bugs que encontrar em nosso Discord para que possamos corrigi-los.",
 	[" - Added enemy cooldown tracking module."] = " - Módulo de rastreamento de recarga de inimigos adicionado.",
 	["MiniCC - What's New?"] = "MiniCC - O que há de novo?",
 

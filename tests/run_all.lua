@@ -21,20 +21,11 @@ local testFiles = {
     "tests/test_enemy_matching.lua",
     "tests/test_multicharge.lua",
     "tests/test_cross_class_ext.lua",
-    "tests/test_phase_shift.lua",
-    "tests/test_time_stop.lua",
     "tests/test_local_player_alias.lua",
     "tests/test_dispersion_dp.lua",
-    "tests/test_ams_bof_gt_regression.lua",
-    "tests/test_revival_gt_ambiguity.lua",
-    "tests/test_ecd_precog_gt.lua",
     "tests/test_feign_death_aott_sotf.lua",
     "tests/test_burrow.lua",
     "tests/test_emerald_communion.lua",
-    "tests/test_intraspec_ambiguity.lua",
-    "tests/test_beserker_roar.lua",
-    "tests/test_isprobably_signals.lua",
-    "tests/test_aoe_spillover_gaps.lua",
 }
 
 local loadErrors = {}

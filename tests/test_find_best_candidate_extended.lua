@@ -133,49 +133,6 @@ fw.describe("FindBestCandidate - Vampiric Blood duration variants (10/12/14s)", 
     end)
 end)
 
--- Section 3: CastableOnOthers - non-target with different rule beats target self-match
-
-fw.describe("FindBestCandidate - CastableOnOthers non-target beats target self-match (12.0.5)", function()
-    fw.before_each(function()
-        reset()
-    end)
-
-    -- isBetter condition 4: non-target matching a different CastableOnOthers rule beats the
-    -- target that self-matched via synthetic cast.
-    -- Scenario: target is a Paladin (self-matches BoF via synthetic Cast + CastableOnOthers),
-    -- and a DK candidate also has a CastableOnOthers rule (AMS Spellwarding) that matches
-    -- a different spell ID.  The DK should win over the Paladin self-match.
-
-    fw.it("DK AMS Spellwarding (non-target) beats Paladin self-match BoF when different rule", function()
-        -- party1 = Paladin (target): self-matches BoF (CastableOnOthers, IMPORTANT, 8s)
-        -- party2 = DK (candidate): matches AMS Spellwarding (CastableOnOthers, IMPORTANT, 5s, Shield req)
-        -- Shield evidence present -> DK gets synthetic Cast; Paladin blocked by Shield guard.
-        wow.setUnitClass("party1", "PALADIN")
-        wow.setUnitClass("party2", "DEATHKNIGHT")
-        local entry = loader.makeEntry("party1")
-        -- IMP-only aura, Shield evidence, duration=6.01 (within AMS 7+0.5 window, and BoF 8+0.5=8.5 > 6.01).
-        -- BoF: CanCancelEarly, BuffDuration=8, CastableOnOthers; 6.01 <= 8.5 -> matches.
-        -- AMS Spellwarding: CanCancelEarly, BuffDuration=5 (or 7), 6.01 <= 5.5? No, 6.01 > 5.5.
-        -- AMS 7s variant: 6.01 <= 7.5 -> matches.
-        local t = makeTracked(IMP, 1.0, {}, { Shield = true })
-        local rule, unit = B:FindBestCandidate(entry, t, 6.01, { "party2" })
-        fw.not_nil(rule, "AMS should win via condition 4 (non-target different CastableOnOthers rule)")
-        fw.eq(rule.SpellId, 48707, "AMS Spellwarding (not BoF)")
-        fw.eq(unit, "party2", "DK should be the attributed caster")
-    end)
-
-    fw.it("target self-matches BoF, no non-target DK -> BoF is returned", function()
-        -- Without any DK candidate, BoF self-match on the Paladin target stands.
-        wow.setUnitClass("party1", "PALADIN")
-        local entry = loader.makeEntry("party1")
-        local t = makeTracked(IMP, 1.0, {}, nil)
-        local rule, unit = B:FindBestCandidate(entry, t, 6.01, {})
-        fw.not_nil(rule, "BoF should match when no DK is present to compete")
-        fw.eq(rule.SpellId, 1044, "Blessing of Freedom")
-        fw.eq(unit, "party1", "Paladin is the caster (self-match)")
-    end)
-end)
-
 -- Section 4: ActiveCooldowns - on-CD rule vs off-CD rule with two candidates
 
 fw.describe("FindBestCandidate - ActiveCooldowns with two candidates", function()
@@ -208,46 +165,6 @@ fw.describe("FindBestCandidate - ActiveCooldowns with two candidates", function(
         fw.not_nil(rule, "fallback rule should be returned")
         fw.eq(rule.SpellId, 102342, "Ironbark (fallback)")
         fw.eq(unit, "party3", "party3 has more recent snapshot -> wins tiebreak even as fallback")
-    end)
-end)
-
--- Section 5: GUID deduplication in non-EXTERNAL candidate loop
-
-fw.describe("FindBestCandidate - GUID dedup in self-cast candidate loop (12.0.5)", function()
-    fw.before_each(function()
-        reset()
-    end)
-
-    -- On 12.0.5, a Paladin appearing as both "party1" (target) and "party2" (candidate) with
-    -- the same GUID should not create ambiguity for BoF (CastableOnOthers path).
-
-    fw.it("same player as party1+party2 via GUID dedup does not cause ambiguity for BoF", function()
-        wow.setUnitClass("party1", "PALADIN")
-        wow.setUnitClass("party2", "PALADIN")
-        -- Same player appears under two unit IDs.
-        wow.setUnitGUID("party1", "Player-GUID-PAL")
-        wow.setUnitGUID("party2", "Player-GUID-PAL")
-        local entry = loader.makeEntry("party1")
-        local t = makeTracked(IMP, 1.0, {}, nil)
-        local rule, unit = B:FindBestCandidate(entry, t, 6.01, { "party2" })
-        -- party2 is deduplicated via GUID -> not visited -> no second BoF match -> not ambiguous.
-        fw.not_nil(rule, "BoF should match without ambiguity when same player has two unit IDs")
-        fw.eq(rule.SpellId, 1044, "Blessing of Freedom")
-    end)
-
-    fw.it("two distinct Paladins (different GUIDs) with IMP-only BoF -> same SpellId -> first wins", function()
-        wow.setUnitClass("party1", "PALADIN")
-        wow.setUnitClass("party2", "PALADIN")
-        -- Different GUIDs (default: unit string = GUID)
-        local entry = loader.makeEntry("party1")
-        local t = makeTracked(IMP, 1.0, {}, nil)
-        local rule, unit = B:FindBestCandidate(entry, t, 6.01, { "party2" })
-        -- party1 self-matches BoF (COO, via synthetic Cast); party2 also matches BoF.
-        -- isBetter condition 3: candidateRule == rule (same BoF table) -> false.
-        -- elseif no cast tiebreaker: same SpellId (1044) -> sameSpell=true -> not ambiguous.
-        -- First match (party1 self) stands; cooldown is attributed to BoF either way.
-        fw.not_nil(rule, "two Paladins, same BoF SpellId, no cast tiebreaker -> first wins")
-        fw.eq(rule.SpellId, 1044, "SpellId")
     end)
 end)
 
@@ -328,52 +245,6 @@ fw.describe("FindBestCandidate - Blessing of Protection evidence requirements", 
         local rule, unit = B:FindBestCandidate(loader.makeEntry("party1"), t, 5.0, { "party2" })
         fw.not_nil(rule, "BoP CanCancelEarly allows early removal (5s < 10s expected)")
         fw.eq(rule.SpellId, 1022, "Blessing of Protection")
-    end)
-end)
-
--- Section 8: Shadow Blades duration variants (Subtlety Rogue)
-
-fw.describe("FindBestCandidate - Shadow Blades duration variants", function()
-    fw.before_each(reset)
-
-    -- Shadow Blades (spec 261): 16s base, 18s (+set bonus), 20s (+4s set bonus).
-    -- All share SpellId=121471.
-
-    fw.it("matches Shadow Blades at base duration 16s", function()
-        wow.setUnitClass("party1", "ROGUE")
-        mods.talents._setSpec("party1", 261)
-        local t = makeTracked(IMP, 1.0, { party1 = 1.0 }, { Cast = true })
-        local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 16.0, {})
-        fw.not_nil(rule, "rule")
-        fw.eq(rule.SpellId, 121471, "Shadow Blades 16s")
-    end)
-
-    fw.it("matches Shadow Blades at +2s set bonus (18s)", function()
-        wow.setUnitClass("party1", "ROGUE")
-        mods.talents._setSpec("party1", 261)
-        local t = makeTracked(IMP, 1.0, { party1 = 1.0 }, { Cast = true })
-        local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 18.0, {})
-        fw.not_nil(rule, "rule")
-        fw.eq(rule.SpellId, 121471, "Shadow Blades 18s")
-    end)
-
-    fw.it("matches Shadow Blades at +4s set bonus (20s)", function()
-        wow.setUnitClass("party1", "ROGUE")
-        mods.talents._setSpec("party1", 261)
-        local t = makeTracked(IMP, 1.0, { party1 = 1.0 }, { Cast = true })
-        local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 20.0, {})
-        fw.not_nil(rule, "rule")
-        fw.eq(rule.SpellId, 121471, "Shadow Blades 20s")
-    end)
-
-    fw.it("does not match Shadow Blades at 8s (outside all windows)", function()
-        -- Falls through to class ROGUE rules: Evasion (10s IMP, not BIG) and Cloak (5s BIG).
-        -- 8s is outside Evasion 10±0.5, Cloak 5±0.5, and Shadow Blades MinCancelDuration=11 -> nil.
-        wow.setUnitClass("party1", "ROGUE")
-        mods.talents._setSpec("party1", 261)
-        local t = makeTracked(IMP, 1.0, { party1 = 1.0 }, { Cast = true })
-        local rule = B:FindBestCandidate(loader.makeEntry("party1"), t, 8.0, {})
-        fw.is_nil(rule, "8s is outside all Shadow Blades windows and class Rogue IMP rules")
     end)
 end)
 
@@ -626,52 +497,6 @@ fw.describe("FindBestCandidate - BoS vs Life Cocoon ambiguity (12.0.5)", functio
         fw.not_nil(rule, "Monk self-cast with real snapshot should resolve unambiguously")
         fw.eq(rule.SpellId, 116849, "Life Cocoon")
         fw.eq(unit, "party1", "Monk is both target and caster")
-    end)
-end)
-
--- Section 13: CastableOnOthers cross-unit filter prevents false ambiguity from self-only rules
--- The Paladin's BoF (CastableOnOthers) on an Evoker target must commit even when Hunter, Priest,
--- and Shaman candidates are in the group (their self-only IMP rules must NOT create false ambiguity).
-
-fw.describe("FindBestCandidate - BoF commit in mixed group (CastableOnOthers cross-unit filter)", function()
-    fw.before_each(function()
-        reset()
-    end)
-
-    fw.it("BoF (party1=Paladin caster) commits on party2 (Evoker target) in mixed group", function()
-        -- Matches the real bug: Evoker receives BoF (8s IMP), Paladin in group casts it.
-        -- Non-Paladin candidates (Evoker, Hunter, Shaman, Priest) must NOT create false ambiguity
-        -- with the Paladin's BoF via their own self-only IMP rules.
-        wow.setUnitClass("party2", "EVOKER")
-        mods.talents._setSpec("party2", 1467)  -- Devastation
-        wow.setUnitClass("party4", "HUNTER")
-        wow.setUnitClass("player",  "SHAMAN")
-        wow.setUnitClass("party3", "PRIEST")
-        mods.talents._setSpec("party3", 256)   -- Discipline
-        wow.setUnitClass("party1", "PALADIN")
-
-        local entry = loader.makeEntry("party2")
-        local t = makeTracked(IMP, 1.0, {}, nil)  -- no evidence at all (12.0.5: no cast snapshot)
-
-        local rule, unit = B:FindBestCandidate(entry, t, 8.1,
-            { "party2", "party4", "player", "party3", "party1" })
-
-        fw.not_nil(rule, "BoF should commit with Paladin in group")
-        fw.eq(rule.SpellId, 1044, "Blessing of Freedom")
-        fw.eq(unit, "party1", "Paladin is the caster")
-    end)
-
-    fw.it("no match when no Paladin is in the group (cross-unit loop finds no CastableOnOthers match)", function()
-        -- Without a Paladin, no CastableOnOthers IMP rule matches.
-        wow.setUnitClass("party2", "EVOKER")
-        mods.talents._setSpec("party2", 1467)
-        wow.setUnitClass("party4", "HUNTER")
-        wow.setUnitClass("player",  "SHAMAN")
-
-        local entry = loader.makeEntry("party2")
-        local t = makeTracked(IMP, 1.0, {}, nil)
-        local rule = B:FindBestCandidate(entry, t, 8.1, { "party2", "party4", "player" })
-        fw.is_nil(rule, "no CastableOnOthers IMP caster found -> no match")
     end)
 end)
 

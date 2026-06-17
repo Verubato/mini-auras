@@ -317,32 +317,6 @@ fw.describe("PredictRule 12.0.5 - PvE synthetic cast re-enabled", function()
         fw.eq(getGlow(), 1022, "Blessing of Protection should predict on self-cast with only a Monk in group")
     end)
 
-    -- AMS (Spellwarding): IMPORTANT-only on recipient, Shield evidence, CastableOnOthers.
-    -- A Paladin in the group normally blocks allowSyntheticCast (BoF concern), but Shield
-    -- evidence proves BoF is not the source -> bofSafe bypass -> DK gets synthetic Cast.
-
-    fw.it("predicts AMS (Spellwarding) on Warrior even when Paladin is in the group", function()
-        -- party1 = Warrior (target), party2 = Death Knight (caster), party3 = Paladin (not on cd)
-        wow.setUnitClass("party1", "WARRIOR")
-        wow.setUnitClass("party2", "DEATHKNIGHT")
-        wow.setUnitClass("party3", "PALADIN")
-        mods.talents._setSpec("party2", 250) -- Blood DK (any spec works; AMS is class-level)
-        mods.talents._setSpec("party3", 65)  -- Holy Paladin
-
-        local entry = loader.makeEntry("party1")
-        local getGlow = captureGlow()
-
-        -- Shield evidence must arrive before (or simultaneous with) the aura.
-        wow.setTime(0)
-        observer:_fireShield("party1")
-
-        -- IMPORTANT-only aura (AMS on recipient's frame is not filtered as BIG_DEF).
-        local watcher = makeImportantOnlyWatcher()
-        observer:_fireAuraChanged(entry, watcher, { "party1", "party2", "party3" })
-
-        fw.eq(getGlow(), 48707, "AMS should predict: Shield evidence bypasses Paladin bofSafe check")
-    end)
-
     fw.it("external defensive is ambiguous when two non-target candidates have different spells", function()
         -- party1 is a Warrior (the target, no external spells).
         -- party2 (Resto Druid) could cast Ironbark; party3 (Holy Paladin) could cast BoP.

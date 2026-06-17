@@ -131,7 +131,6 @@ local function OnAuraInfo(unit, watcher, container)
 	end
 
 	local ccAuras = watcher:GetCcState()
-	local importantAuras = watcher:GetImportantState()
 	local defensiveAuras = watcher:GetDefensiveState()
 	local slotIndex = 1
 
@@ -153,18 +152,6 @@ local function OnAuraInfo(unit, watcher, container)
 			Texture = defensiveAuras[1].SpellIcon,
 			DurationObject = defensiveAuras[1].DurationObject,
 			Alpha = defensiveAuras[1].IsDefensive,
-			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
-			FontScale = db.FontScale,
-		})
-		return
-	end
-
-	-- Show the latest important aura
-	if importantAuras[1] then
-		container:SetSlot(slotIndex, {
-			Texture = importantAuras[1].SpellIcon,
-			DurationObject = importantAuras[1].DurationObject,
-			Alpha = importantAuras[1].IsImportant,
 			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 			FontScale = db.FontScale,
 		})

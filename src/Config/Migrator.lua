@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 47,
+	Version = 48,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -196,6 +196,8 @@ local dbDefaults = {
 			},
 
 			Sound = {
+				-- TODO(IMPORTANT-revert): inert default kept so players' saved settings survive the
+				-- 12.0.7 IMPORTANT-filter removal. Remove once that removal is confirmed permanent.
 				Important = {
 					Enabled = false,
 					Channel = "Master",
@@ -212,6 +214,7 @@ local dbDefaults = {
 				Volume = 100,
 				VoiceID = 0,
 				SpeechRate = 0,
+				-- TODO(IMPORTANT-revert): inert default; remove once 12.0.7 removal is permanent.
 				Important = {
 					Enabled = false,
 				},
@@ -265,6 +268,7 @@ local dbDefaults = {
 
 					ShowTooltips = false,
 				},
+				-- TODO(IMPORTANT-revert): inert default; remove once 12.0.7 removal is permanent.
 				Important = {
 					Enabled = false,
 					Grow = "LEFT",
@@ -323,6 +327,7 @@ local dbDefaults = {
 
 					ShowTooltips = false,
 				},
+				-- TODO(IMPORTANT-revert): inert default; remove once 12.0.7 removal is permanent.
 				Important = {
 					Enabled = true,
 					Grow = "LEFT",
@@ -425,6 +430,7 @@ local dbDefaults = {
 			Default = {
 				ExcludePlayer = false,
 				ShowDefensives = true,
+				-- TODO(IMPORTANT-revert): inert default; remove once 12.0.7 removal is permanent.
 				ShowImportant = true,
 				ShowCC = false,
 				ShowKicks = true,
@@ -446,6 +452,7 @@ local dbDefaults = {
 			Raid = {
 				ExcludePlayer = false,
 				ShowDefensives = true,
+				-- TODO(IMPORTANT-revert): inert default; remove once 12.0.7 removal is permanent.
 				ShowImportant = true,
 				ShowCC = true,
 				ShowKicks = true,
@@ -561,6 +568,8 @@ local dbDefaults = {
 			},
 		},
 
+		-- TODO(IMPORTANT-revert): inert defaults for the removed PrecogGuesser module; remove
+		-- once the 12.0.7 IMPORTANT-filter removal is permanent.
 		---@class PrecogGuesserModuleOptions
 		PrecogGuesserModule = {
 			Enabled = {
@@ -2324,6 +2333,24 @@ function M:UpgradeToVersion47(vars)
 
 	-- New Icons.SizeIsPercent + Icons.SizePercent fields are filled from dbDefaults by GetAndUpgradeDb.
 	vars.Version = 47
+	return true
+end
+
+function M:UpgradeToVersion48(vars)
+	if vars.Version ~= 47 then return false end
+
+	-- The "Split" enemy-cooldown layout mode has been removed (it split offensive vs defensive
+	-- cooldowns, and offensive cooldown tracking no longer exists). Fall back to "Linear".
+	local ecd = vars.Modules and vars.Modules.EnemyCooldownTrackerModule
+	if ecd and ecd.DisplayMode == "Split" then
+		ecd.DisplayMode = "Linear"
+	end
+
+	vars.WhatsNew = vars.WhatsNew or {}
+	table.insert(vars.WhatsNew, L["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."])
+	vars.NotifiedChanges = false
+
+	vars.Version = 48
 	return true
 end
 

@@ -61,24 +61,6 @@ end
 fw.describe("Local player alias (raid1 = player) - predict path", function()
     fw.before_each(reset)
 
-    fw.it("Avenging Wrath predicted when local Holy Paladin appears as raid1", function()
-        wow.setInstanceType("arena")
-        wow.setUnitClass("raid1", "PALADIN")
-        mods.talents._setSpec("raid1", 65)  -- Holy Paladin
-        aliasRaid1ToPlayer("PALADIN", 65)
-
-        local glowed = nil
-        B:RegisterPredictiveGlowCallback(function(_, sid) glowed = sid end)
-
-        wow.setTime(0)
-        observer:_fireCast("raid1", 31884)
-
-        local entry = loader.makeEntry("raid1")
-        observer:_fireAuraChanged(entry, makeAvengingWrathWatcher(), { "raid1" })
-
-        fw.eq(glowed, 31884, "Avenging Wrath must be predicted when local player appears as raid1")
-    end)
-
     fw.it("no predict when non-local raid1 casts (no GUID alias)", function()
         wow.setInstanceType("arena")
         wow.setUnitClass("raid1", "PALADIN")
@@ -123,26 +105,5 @@ fw.describe("Local player alias (raid1 = player) - commit path", function()
         observer:_fireAuraChanged(entry, loader.makeWatcher({}, {}), { "raid1" })
 
         fw.eq(committed, 47585, "Dispersion must commit for local player appearing as raid1")
-    end)
-
-    fw.it("Avenging Wrath (MinDuration) commits at full duration for local player as raid1", function()
-        wow.setInstanceType("arena")
-        wow.setUnitClass("raid1", "PALADIN")
-        mods.talents._setSpec("raid1", 65)  -- Holy Paladin
-        aliasRaid1ToPlayer("PALADIN", 65)
-
-        local committed = nil
-        B:RegisterCooldownCallback(function(_, cdKey) committed = cdKey end)
-
-        wow.setTime(0)
-        observer:_fireCast("raid1", 31884)
-
-        local entry = loader.makeEntry("raid1")
-        observer:_fireAuraChanged(entry, makeAvengingWrathWatcher(), { "raid1" })
-
-        wow.advanceTime(12.0)
-        observer:_fireAuraChanged(entry, loader.makeWatcher({}, {}), { "raid1" })
-
-        fw.eq(committed, 31884, "Avenging Wrath must commit for local player as raid1")
     end)
 end)

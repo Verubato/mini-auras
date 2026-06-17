@@ -10,11 +10,10 @@ local ecdModule = addon.Modules.EnemyCooldowns.Module
 local rules = addon.Modules.Cooldowns.Rules
 
 local growOptions = { "LEFT", "RIGHT", "CENTER" }
-local displayModeOptions = { "ArenaFrames", "Linear", "Split" }
+local displayModeOptions = { "ArenaFrames", "Linear" }
 local displayModeText = {
 	ArenaFrames = "Arena Frames",
 	Linear      = "Linear Bar",
-	Split       = "Split",
 }
 
 -- Class display name/ordering tables (identical to FriendlyCooldownTracker).
@@ -47,7 +46,7 @@ local columns = 4
 local columnWidth
 
 ---Collects all unique spell IDs from rules that EnemyCooldowns can track, grouped by class token.
----Includes aura-based rules (BigDefensive, ExternalDefensive, Important) and event-signature rules (NoAura).
+---Includes aura-based rules (BigDefensive, ExternalDefensive) and event-signature rules (NoAura).
 ---@return table<string, number[]>  classToken -> ordered list of spell IDs
 local function CollectSpellsByClass()
 	local classSpells = {}
@@ -55,7 +54,7 @@ local function CollectSpellsByClass()
 
 	local function addSpell(classToken, spellId, rule)
 		if not spellId or seen[spellId] then return end
-		if not (rule.BigDefensive or rule.ExternalDefensive or rule.Important or rule.NoAura) then return end
+		if not (rule.BigDefensive or rule.ExternalDefensive or rule.NoAura) then return end
 		seen[spellId] = true
 		classSpells[classToken] = classSpells[classToken] or {}
 		table.insert(classSpells[classToken], spellId)
@@ -373,11 +372,10 @@ local function BuildSettings(parent, options)
 	-- Forward-declare so the modeDdl SetValue closure can reference it before creation.
 	local setAfShown
 
-	-- Arena-frame anchoring settings apply to both ArenaFrames and Split modes (Split also
-	-- anchors per-enemy defensives to the arena frames).  Helper kept inline so SetValue and
-	-- the initial visibility expression stay in sync.
+	-- Arena-frame anchoring settings apply only to ArenaFrames mode.  Helper kept inline so
+	-- SetValue and the initial visibility expression stay in sync.
 	local function arenaAnchorVisible(mode)
-		return mode == "ArenaFrames" or mode == "Split"
+		return mode == "ArenaFrames"
 	end
 
 	local modeDdl, modernModeDdl = mini:Dropdown({
@@ -396,7 +394,7 @@ local function BuildSettings(parent, options)
 	})
 	modeDdl:SetPoint("TOPLEFT", modeLbl, "BOTTOMLEFT", modernModeDdl and 0 or -16, -8)
 	AddDropdownTooltip(modeDdl, L["Layout Mode"],
-		L["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar. Split: shows offensive cooldowns on the linear bar and defensive cooldowns on the arena frames."])
+		L["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."])
 
 	-- Arena Frames layout options (hidden when Linear mode is selected).
 	-- All controls are parented directly to parent and toggled individually to avoid
@@ -508,7 +506,7 @@ function M:Build(panel, options)
 	local description = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			L["Shows enemy arena opponent defensive and offensive cooldowns after their buffs expire."],
+			L["Shows enemy arena opponent defensive cooldowns after their buffs expire."],
 		},
 	})
 	description:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)

@@ -34,7 +34,6 @@ L:RegisterLocale("koKR", {
 	["Icon Size (%)"] = "아이콘 크기 (%)",
 	["Relative size"] = "상대 크기",
 	["Sizes the icon as a percentage of the unit frame's height instead of in pixels."] = "아이콘 크기를 픽셀이 아닌 유닛 프레임 높이의 백분율로 설정합니다.",
-	["Important"] = "중요",
 	["Max Icons"] = "최대 아이콘",
 	["Notification"] = "알림",
 	["Offset X"] = "X 오프셋",
@@ -101,32 +100,30 @@ L:RegisterLocale("koKR", {
 	["Miscellaneous"] = "기타",
 	["Reset"] = "재설정",
 	["Mini addon, massive awareness."] = "작은 애드온, 강력한 인식.",
+	["Important News"] = "중요 소식",
+	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "블리자드 12.0.7 패치부터 다음 기능을 더 이상 사용할 수 없습니다:\n- 알림에 공격기 표시.\n- 이름표에 공격기 표시.\n- 초상화에 공격기 표시.\n- 파티/공격대 프레임에 공격기 표시.\n- 공격 재사용 대기시간 추적.\n- 예지와 무효화의 장막 표시.\n- 중요 주문 소리 알림.\n- 중요 주문 음성 안내.",
 	["CC Native Order"] = "CC 기본 순서",
 	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "마지막으로 적용된 CC를 표시하는 대신(MiniCC 방식), 일반적으로 처음 적용된 CC를 표시하는 블리자드의 기본 CC 우선순위를 사용합니다(일부 예외 있음).",
 	["The others seem to use a non-trivial amount of CPU."] = "다른 것들은 상당한 CPU를 사용하는 것 같습니다.",
 	["The Proc Glow uses the least CPU."] = "프록 발광은 CPU를 가장 적게 사용합니다.",
 
 	-- Alerts tab
-	["A separate region for showing important enemy spells."] = "중요한 적 주문을 표시하는 별도 영역입니다.",
 	["Alerts"] = "알림",
 	["Announce defensive spell names using text-to-speech when they are cast."] = "방어 주문이 사용될 때 음성 합성으로 주문 이름을 알립니다.",
-	["Announce important spell names using text-to-speech when they are cast."] = "중요한 주문이 사용될 때 음성 합성으로 주문 이름을 알립니다.",
 	["Announce spell names using text-to-speech when they are cast."] = "주문이 사용될 때 음성 합성으로 주문 이름을 알립니다.",
 	["Defensive Spells"] = "방어 주문",
-	["Important Spells"] = "중요한 주문",
 	["Include defensives"] = "방어 기술 포함",
 	["Includes defensives in the alerts."] = "알림에 방어 기술을 포함합니다.",
 	["Only show alerts for your target and focus in battlegrounds and the open world."] = "전장 및 야외에서 대상과 주시 대상에 대한 알림만 표시합니다.",
 	["Play a sound when a defensive spell is pressed."] = "방어 주문이 사용될 때 소리 재생.",
-	["Play a sound when an important spell is pressed."] = "중요한 주문이 사용될 때 소리 재생.",
 	["Show alert icons in the alerts region."] = "알림 영역에 경고 아이콘을 표시합니다.",
 	["Show CC icons when healer is CC'd."] = "치유사가 군중 제어당할 때 CC 아이콘을 표시합니다.",
 	["Show defensive alerts on a separate, movable bar."] = "방어 알림을 별도의 이동 가능한 막대에 표시합니다.",
 	["Show icons"] = "아이콘 표시",
-	["Shows CC and other important spell alerts."] = "군중 제어 및 기타 중요한 주문 알림을 표시합니다.",
+	["Shows CC and defensive spell alerts."] = "군중 제어 및 방어 주문 알림을 표시합니다.",
 	["Split bars"] = "막대 분리",
 	["Sound"] = "소리",
-	["Plays a sound when an enemy presses an important or defensive spell."] = "적이 중요하거나 방어적인 주문을 사용할 때 소리를 재생합니다.",
+	["Plays a sound when an enemy presses a defensive spell."] = "적이 방어 주문을 사용할 때 소리를 재생합니다.",
 	["Sound Alerts"] = "소리 알림",
 	["Sound File"] = "사운드 파일",
 	["Target/Focus Only"] = "대상/주시만",
@@ -164,7 +161,7 @@ L:RegisterLocale("koKR", {
 
 	-- Indicator tab
 	["Auras"] = "오라",
-	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "발광/테두리 색상을 변경합니다. 방어 주문은 녹색이고 중요한 주문은 빨간색입니다.",
+	["Change the colour of the glow/border. Defensive spells are green."] = "발광/테두리 색상을 변경합니다. 방어 주문은 녹색입니다.",
 	["Defensive"] = "방어",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "이것을 사용할 때 Blizzard의 '큰 방어 기술 중앙 표시' 옵션을 비활성화하는 것을 잊지 마세요.",
 	["Exclude yourself from showing trinket icons."] = "장신구 아이콘 표시에서 자신을 제외합니다.",
@@ -172,11 +169,9 @@ L:RegisterLocale("koKR", {
 	["Show CC icons."] = "CC 아이콘을 표시합니다.",
 	["Show defensives"] = "방어기술 표시",
 	["Show defensive spell icons."] = "방어 주문 아이콘을 표시합니다.",
-	["Show important"] = "중요 기술 표시",
-	["Show important spell icons."] = "중요 주문 아이콘을 표시합니다.",
 	["Show interrupts"] = "차단 표시",
 	["Show an icon when a friendly unit gets interrupted."] = "아군 유닛이 차단당할 때 아이콘을 표시합니다.",
-	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "파티/공격대 프레임에 CC, 방어기 및 중요 오라를 하나의 아이콘 세트로 표시합니다.",
+	["Shows CC and defensives as one set of icons on party/raid frames."] = "군중 제어와 방어 효과를 파티/공격대 프레임에 하나의 아이콘 세트로 표시합니다.",
 	["Tip: Disable the CC module for BGs and enable CC within this module."] = "팁: 전장에서 CC 모듈을 비활성화하고 이 모듈 내에서 CC를 활성화하십시오.",
 
 	-- Healer tab
@@ -193,31 +188,27 @@ L:RegisterLocale("koKR", {
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "해제 유형에 따라 발광/테두리 색상을 변경합니다 (예: 마법은 파란색, 물리는 빨간색).",
 	["Change the colour of the glow/border based on the type of debuff."] = "디버프 유형에 따라 발광/테두리 색상을 변경합니다.",
-	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), Defensive spells are green, and Important spells are red."] = "발광/테두리 색상을 변경합니다. 군중 제어 주문은 해제 유형 색상을 사용하고 (예: 마법은 파란색), 방어 주문은 녹색, 중요한 주문은 빨간색입니다.",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."] = "발광/테두리 색상을 변경합니다. 군중 제어 주문은 해제 유형 색상(예: 마법은 파란색)을 사용하고 방어 주문은 녹색입니다.",
 	["Do not show auras on enemy pet nameplates."] = "적 소환수 이름표에 효과를 표시하지 않습니다.",
 	["Do not show auras on friendly pet nameplates."] = "아군 소환수 이름표에 효과를 표시하지 않습니다.",
 	["Enemy - CC"] = "적 - 군중 제어",
 	["Enemy - Combined"] = "적 - 결합",
-	["Enemy - Important Spells"] = "적 - 중요한 주문",
-	["Enemy - Important"] = "적 - 중요한",
 	["Friendly - CC"] = "아군 - 군중 제어",
 	["Friendly - Combined"] = "아군 - 결합",
-	["Friendly - Important Spells"] = "아군 - 중요한 주문",
-	["Friendly - Important"] = "아군 - 중요한",
 	["Ignore Enemy Pets"] = "적 소환수 무시",
 	["Ignore Friendly Pets"] = "아군 소환수 무시",
 	["Nameplates"] = "이름표",
 	["Nameplates_Short"] = "이름표",
 	["Scale with Nameplate"] = "네임플레이트에 맞게 크기 조정",
 	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "아이콘이 네임플레이트 크기와 함께 조정됩니다. 대상 네임플레이트의 크기가 다를 경우 이 옵션을 사용하세요 (예: BBF 설정에서).",
-	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "이름표에 군중 제어와 중요한 주문을 표시합니다 (BBP, Platynator, Plater 등의 이름표 애드온과 함께 작동합니다).",
+	["Shows CC and defensives on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "이름표에 군중 제어와 방어 효과를 표시합니다 (BBP, Platynator, Plater 등 이름표 애드온과 호환됩니다).",
 	["Spell colours"] = "주문 색상",
 
 	-- Portraits tab
 	["Portraits"] = "초상화",
 	["Portraits_Short"] = "초상화",
 	["Reverses the direction of the cooldown swipe."] = "재사용 대기시간 스와이프 방향을 반대로 합니다.",
-	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "플레이어/대상/주시 대상 초상화에 군중 제어, 방어 기술 및 기타 중요한 주문을 표시합니다.",
+	["Shows CC and defensives on the player/target/focus portraits."] = "플레이어/대상/주시 대상 초상화에 군중 제어와 방어 효과를 표시합니다.",
 
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - 팀원이 시작 방에서 장신구를 사용하면 작동하지 않습니다.",
@@ -245,8 +236,6 @@ L:RegisterLocale("koKR", {
 	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "재사용 대기 버프가 활성 중일 때, 타이머 시작 전에 아이콘을 빛나게 하고 카운트다운을 표시합니다.",
 	["Defensive cooldowns"] = "방어기 재사용 대기시간",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "신성한 보호막, 철나무 껍질 등의 방어기 재사용 대기시간을 표시합니다.",
-	["Offensive cooldowns"] = "공격 쿨다운 표시",
-	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "발화, 화신, 용의 분노 등 공격 쿨다운을 표시합니다.",
 	["Rows"] = "줄 수",
 	["Columns"] = "열",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "확장 방향이 아래일 때, 줄 바꿈 전에 한 줄에 표시할 아이콘 수를 설정합니다. 가로 파티 프레임에 유용합니다.",
@@ -278,12 +267,9 @@ L:RegisterLocale("koKR", {
 	["Number of icon rows for the Linear Bar. Icons per row is determined by the Max Icons setting."] = "선형 바의 아이콘 행 수. 행당 아이콘 수는 최대 아이콘 설정으로 결정됩니다.",
 
 	-- Precognition tab
-	["It works by taking any 4 second 'important' self buff and showing that icon."] = "4초짜리 '중요한' 자신 버프를 감지하여 해당 아이콘을 표시하는 방식으로 작동합니다.",
 	["Note that you can't simply filter by spell id these days."] = "요즘은 주문 ID로 단순히 필터링할 수 없다는 점에 유의하세요.",
 	["Precognition"] = "예지력",
-	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "혹시 다른 4초짜리 중요한 자신 버프가 있다면 그 아이콘도 표시될 수 있으니 양해 부탁드립니다.",
 	["This isn't precision perfect but it should be close enough."] = "완벽하게 정확하지는 않지만 충분히 근접합니다.",
-	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "보존 기원사의 무효화의 장막도 함께 추적합니다 (3초짜리 중요한 자신 버프).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "기타 Mini 애드온",
@@ -295,14 +281,12 @@ L:RegisterLocale("koKR", {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."] = "MiniCC 이름표 사용 시 블리자드 이름표의 CC와 BigDebuffs를 비활성화합니다.",
 
 	-- General home screen
-	["Important News"] = "중요 소식",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - 파티/공격대 소환수 프레임에 CC 아이콘이 추가되었습니다 (기본적으로 비활성화).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - 예지 추측 모듈을 추가했습니다. 예지 효과를 받을 때 표시됩니다.",
 	[" - Added profile import/export feature."] = " - 프로필 가져오기/내보내기 기능이 추가되었습니다.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - 아군 쿨다운 추측 모듈이 추가되었습니다. 이제 팀원들의 쿨다운을 어느 정도 추적할 수 있습니다!",
-	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "12.0.5의 새로운 블리자드 제한으로 인해 MiniCC에서 변경된 사항입니다.\n\n좋은 소식:\n* 쿨다운 추적은 투기장과 던전에서 여전히 대부분 정상 작동합니다.\n* 아군 및 적 CD 모두에 대해 여러 주문 충전 지원이 추가되었습니다(예: 고통 억제 2x, 흡릿하게 하기 2x).\n\n나쁜 소식:\n* 아군 외부 주문이 공격대와 전장에서 더 이상 추적되지 않습니다.\n* 예측 발광이 덜 신뢰할 수 있습니다.\n* PvP 방해 추적이 더 이상 방해자를 식별할 수 없습니다. 이제 알려진 가장 짧은 적 방해 쿨다운을 사용하는 일반 아이콘만 표시됩니다.\n\n이 업데이트에 많은 노력을 기울였지만 여전히 문제가 있을 수 있습니다. \nDiscord에 버그를 보고해 주시면 수정하겠습니다.",
 	[" - Added enemy cooldown tracking module."] = " - 적 쿨다운 추적 모듈이 추가되었습니다.",
 	["MiniCC - What's New?"] = "MiniCC - 새로운 소식?",
 

@@ -180,22 +180,6 @@ local function BuildInstance(panel, options)
 
 	showDefensivesChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	local showImportantChk = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Show important"],
-		Tooltip = L["Show important spell icons."],
-		GetValue = function()
-			return options.ShowImportant
-		end,
-		SetValue = function(value)
-			options.ShowImportant = value
-			config:Apply()
-		end,
-	})
-
-	showImportantChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
-	showImportantChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
-
 	local showCCChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Show CC"],
@@ -209,7 +193,7 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	showCCChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	showCCChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
 	showCCChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
 
 	local showKicksChk = mini:Checkbox({
@@ -225,7 +209,7 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	showKicksChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	showKicksChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
 	showKicksChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
 
 	local showTooltipsChk = mini:Checkbox({
@@ -356,7 +340,7 @@ function M:Build(panel, default, raid)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			L["Shows CC, defensives, and important auras as one set of icons on party/raid frames."],
+			L["Shows CC and defensive auras as one set of icons on party/raid frames."],
 		},
 	})
 

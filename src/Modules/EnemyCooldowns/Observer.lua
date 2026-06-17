@@ -102,7 +102,7 @@ local function RegisterUnitEvents(frame, unit)
 end
 
 local function MakeWatcher(entry)
-	local watcher = unitAuraWatcher:New(entry.Unit, nil, { Defensives = true, Important = true })
+	local watcher = unitAuraWatcher:New(entry.Unit, nil, { Defensives = true })
 	watcher:RegisterCallback(function(w)
 		if testModeActive then
 			return

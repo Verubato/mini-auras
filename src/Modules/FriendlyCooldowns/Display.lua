@@ -65,7 +65,6 @@ end
 
 ---@class FcdStaticAbility
 ---@field SpellId number
----@field IsOffensive boolean
 ---@field MaxCharges number? Effective max charges (nil = single charge)
 
 ---Returns ordered list of abilities for a unit's known spells (spec rules first, then class fallback).
@@ -134,7 +133,6 @@ local function GetStaticAbilities(unit)
 					end
 					result[#result + 1] = {
 						SpellId = rule.SpellId,
-						IsOffensive = rules.OffensiveSpellIds[rule.SpellId] == true,
 						MaxCharges = maxCharges,
 					}
 				end

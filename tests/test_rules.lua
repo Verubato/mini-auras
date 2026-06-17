@@ -180,21 +180,6 @@ local cases = {
 
     -- PALADIN
     {
-        desc = "Holy Paladin - Avenging Wrath (31884)",
-        unit = "player", class = "PALADIN", specId = 65,
-        spellId = 31884, buffDuration = 12,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-    {
-        desc = "Holy Paladin - Avenging Crusader (216331) [talent]",
-        unit = "player", class = "PALADIN", specId = 65,
-        spellId = 216331, buffDuration = 10,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-        talents = { {"player", 216331} },
-    },
-    {
         desc = "Holy Paladin - Divine Shield (642)",
         unit = "player", class = "PALADIN", specId = 65,
         spellId = 642, buffDuration = 8,
@@ -257,50 +242,14 @@ local cases = {
         evidence = {},
     },
     {
-        desc = "Prot Paladin - Sentinel (389539) [talent]",
-        unit = "player", class = "PALADIN", specId = 66,
-        spellId = 389539, buffDuration = 20,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-        talents = { {"player", 389539} },
-    },
-    {
-        desc = "Ret Paladin - Avenging Wrath (31884)",
-        unit = "player", class = "PALADIN", specId = 70,
-        spellId = 31884, buffDuration = 24,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-    {
         desc = "Ret Paladin - Divine Shield (642)",
         unit = "player", class = "PALADIN", specId = 70,
         spellId = 642, buffDuration = 8,
         auraIsDefensive = true, isExternal = false, isImportant = true,
         evidence = {"UnitFlags"},
     },
-    {
-        desc = "Ret Paladin - Divine Protection (403876, requires Shield evidence)",
-        unit = "player", class = "PALADIN", specId = 70,
-        spellId = 403876, buffDuration = 8,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {"Shield"},
-    },
 
     -- MAGE
-    {
-        desc = "Fire Mage - Combustion (190319)",
-        unit = "player", class = "MAGE", specId = 63,
-        spellId = 190319, buffDuration = 10,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-    {
-        desc = "Arcane Mage - Arcane Surge (365350)",
-        unit = "player", class = "MAGE", specId = 62,
-        spellId = 365350, buffDuration = 15,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
     {
         desc = "Frost Mage - Ice Block (45438)",
         unit = "player", class = "MAGE", specId = 64,
@@ -325,14 +274,6 @@ local cases = {
         evidence = {},
     },
     {
-        desc = "Arms Warrior - Avatar (107574) [talent]",
-        unit = "player", class = "WARRIOR", specId = 71,
-        spellId = 107574, buffDuration = 20,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-        talents = { {"player", 107574} },
-    },
-    {
         desc = "Prot Warrior - Shield Wall (871)",
         unit = "player", class = "WARRIOR", specId = 73,
         spellId = 871, buffDuration = 8,
@@ -354,13 +295,6 @@ local cases = {
         unit = "player", class = "DEATHKNIGHT", specId = 250,
         spellId = 55233, buffDuration = 10,
         auraIsDefensive = true, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-    {
-        desc = "Frost DK - Pillar of Frost (51271)",
-        unit = "player", class = "DEATHKNIGHT", specId = 251,
-        spellId = 51271, buffDuration = 12,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
         evidence = {},
     },
     {
@@ -396,13 +330,6 @@ local cases = {
         evidence = {},
     },
     {
-        desc = "Holy Priest - Divine Hymn (64843)",
-        unit = "player", class = "PRIEST", specId = 257,
-        spellId = 64843, buffDuration = 5,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-    {
         desc = "Shadow Priest - Dispersion (47585)",
         unit = "player", class = "PRIEST", specId = 258,
         spellId = 47585, buffDuration = 6,
@@ -418,13 +345,6 @@ local cases = {
         talents = { {"player", 453729} },
     },
     {
-        desc = "Shadow Priest - Voidform (228260)",
-        unit = "player", class = "PRIEST", specId = 258,
-        spellId = 228260, buffDuration = 20,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-    {
         desc = "Priest (class) - Desperate Prayer (19236)",
         unit = "player", class = "PRIEST", specId = nil,
         spellId = 19236, buffDuration = 10,
@@ -433,28 +353,6 @@ local cases = {
     },
 
     -- DRUID
-    {
-        desc = "Balance Druid - Incarnation: Chosen of Elune (102560)",
-        unit = "player", class = "DRUID", specId = 102,
-        spellId = 102560, buffDuration = 20,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-    {
-        desc = "Feral Druid - Berserk (106951) [talent]",
-        unit = "player", class = "DRUID", specId = 103,
-        spellId = 106951, buffDuration = 15,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-        talents = { {"player", 106951} },
-    },
-    {
-        desc = "Guardian Druid - Incarnation: Guardian of Ursoc (102558)",
-        unit = "player", class = "DRUID", specId = 104,
-        spellId = 102558, buffDuration = 30,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
     {
         desc = "Resto Druid - Ironbark (102342) cast on warrior",
         unit = "warrior1", class = "WARRIOR", specId = 73,
@@ -489,13 +387,6 @@ local cases = {
         evidence = {},
     },
     {
-        desc = "Brewmaster Monk - Invoke Niuzao (132578)",
-        unit = "player", class = "MONK", specId = 268,
-        spellId = 132578, buffDuration = 25,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-    {
         desc = "Mistweaver Monk - Life Cocoon (116849) cast on warrior",
         unit = "warrior1", class = "WARRIOR", specId = 73,
         caster = "monk1", casterClass = "MONK", casterSpecId = 270,
@@ -520,13 +411,6 @@ local cases = {
         evidence = {},
     },
     {
-        desc = "Vengeance DH - Metamorphosis (187827)",
-        unit = "player", class = "DEMONHUNTER", specId = 581,
-        spellId = 187827, buffDuration = 15,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-    {
         desc = "Vengeance DH - Fiery Brand (204021)",
         unit = "player", class = "DEMONHUNTER", specId = 581,
         spellId = 204021, buffDuration = 12,
@@ -535,13 +419,6 @@ local cases = {
     },
 
     -- HUNTER
-    {
-        desc = "MM Hunter - Trueshot (288613)",
-        unit = "player", class = "HUNTER", specId = 254,
-        spellId = 288613, buffDuration = 15,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
     {
         desc = "Hunter (class) - Aspect of the Turtle (186265)",
         -- UnitFlags fires when the immunity is applied; unit is a Hunter so we
@@ -561,20 +438,6 @@ local cases = {
 
     -- ROGUE
     {
-        desc = "Subtlety Rogue - Shadow Blades (121471)",
-        unit = "player", class = "ROGUE", specId = 261,
-        spellId = 121471, buffDuration = 16,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-    {
-        desc = "Rogue (class) - Evasion (5277)",
-        unit = "player", class = "ROGUE", specId = nil,
-        spellId = 5277, buffDuration = 10,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-    {
         desc = "Rogue (class) - Cloak of Shadows (31224)",
         unit = "player", class = "ROGUE", specId = nil,
         spellId = 31224, buffDuration = 5,
@@ -583,13 +446,6 @@ local cases = {
     },
 
     -- EVOKER
-    {
-        desc = "Devastation Evoker - Dragonrage (375087)",
-        unit = "player", class = "EVOKER", specId = 1467,
-        spellId = 375087, buffDuration = 18,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
     {
         desc = "Preservation Evoker - Time Dilation (357170) cast on warrior",
         unit = "warrior1", class = "WARRIOR", specId = 73,
@@ -614,30 +470,6 @@ local cases = {
     },
 
     -- SHAMAN
-    {
-        desc = "Resto Shaman - Ascendance (114052) [talent]",
-        unit = "player", class = "SHAMAN", specId = 264,
-        spellId = 114052, buffDuration = 15,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-        talents = { {"player", 114052} },
-    },
-    {
-        desc = "Elemental Shaman - Ascendance (114050) [talent]",
-        unit = "player", class = "SHAMAN", specId = 262,
-        spellId = 114050, buffDuration = 15,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-        talents = { {"player", 114050} },
-    },
-    {
-        desc = "Enhancement Shaman - Ascendance (114051) [talent]",
-        unit = "player", class = "SHAMAN", specId = 263,
-        spellId = 114051, buffDuration = 15,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-        talents = { {"player", 114051} },
-    },
     {
         desc = "Shaman (class) - Astral Shift (108271)",
         unit = "player", class = "SHAMAN", specId = nil,
@@ -664,15 +496,6 @@ local cases = {
         auraIsDefensive = true, isExternal = false, isImportant = true,
         evidence = {"UnitFlags"},
     },
-    -- WARLOCK
-    {
-        desc = "Warlock (class) - Nether Ward (212295) [PvP talent: id=18]",
-        unit = "player", class = "WARLOCK", specId = nil,
-        spellId = 212295, buffDuration = 3,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-        talents = { {"player", 18} },
-    },
 
     -- DEATH KNIGHT - Vampiric Blood extended variants
     {
@@ -690,50 +513,6 @@ local cases = {
         evidence = {},
     },
 
-    -- HUNTER - Survival
-    {
-        desc = "Survival Hunter - Takedown (1250646, 8s base)",
-        unit = "player", class = "HUNTER", specId = 255,
-        spellId = 1250646, buffDuration = 8,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-    {
-        desc = "Survival Hunter - Takedown +2s (1250646, 10s)",
-        unit = "player", class = "HUNTER", specId = 255,
-        spellId = 1250646, buffDuration = 10,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-
-    -- DRUID - Feral Incarnation: Avatar of Ashamane
-    {
-        desc = "Feral Druid - Incarnation: Avatar of Ashamane (102543) [talent, replaces Berserk]",
-        unit = "player", class = "DRUID", specId = 103,
-        spellId = 102543, buffDuration = 20,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-        talents = { {"player", 102543} },
-    },
-
-    -- SHAMAN - Enhancement Doomwinds
-    {
-        desc = "Enhancement Shaman - Doomwinds (384352, 8s base) [talent, no Ascendance]",
-        unit = "player", class = "SHAMAN", specId = 263,
-        spellId = 384352, buffDuration = 8,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-        talents = { {"player", 384352} },
-    },
-    {
-        desc = "Enhancement Shaman - Doomwinds +2s Thorim's Invocation (384352, 10s)",
-        unit = "player", class = "SHAMAN", specId = 263,
-        spellId = 384352, buffDuration = 10,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-        talents = { {"player", 384352} },
-    },
-
     -- MAGE - Ice Cold (replaces Ice Block)
     {
         desc = "Frost Mage - Ice Cold (414659) [talent, replaces Ice Block]",
@@ -744,30 +523,7 @@ local cases = {
         talents = { {"player", 414659} },
     },
 
-    -- ROGUE - Shadow Blades extended variants
-    {
-        desc = "Subtlety Rogue - Shadow Blades +2s set bonus (121471, 18s)",
-        unit = "player", class = "ROGUE", specId = 261,
-        spellId = 121471, buffDuration = 18,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-    {
-        desc = "Subtlety Rogue - Shadow Blades +4s set bonus (121471, 20s)",
-        unit = "player", class = "ROGUE", specId = 261,
-        spellId = 121471, buffDuration = 20,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-
     -- AlternativeDurations variants (single rule matches several discrete durations)
-    {
-        desc = "MM Hunter - Trueshot +2s (288613, 17s)",
-        unit = "player", class = "HUNTER", specId = 254,
-        spellId = 288613, buffDuration = 17,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
     {
         desc = "Fury Warrior - Enraged Regeneration +3s Invigorating Fury (184364, 11s)",
         unit = "player", class = "WARRIOR", specId = 72,
@@ -775,21 +531,6 @@ local cases = {
         auraIsDefensive = true, isExternal = false, isImportant = true,
         evidence = {},
         talents = { {"player", 184364} },
-    },
-    {
-        desc = "Vengeance DH - Metamorphosis +5s Vengeful Beast (187827, 20s)",
-        unit = "player", class = "DEMONHUNTER", specId = 581,
-        spellId = 187827, buffDuration = 20,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-    {
-        desc = "Elemental Shaman - Ascendance +3s Preeminence (114050, 18s)",
-        unit = "player", class = "SHAMAN", specId = 262,
-        spellId = 114050, buffDuration = 18,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-        talents = { {"player", 114050} },
     },
     {
         desc = "Druid (class) - Barkskin +4s Improved Barkskin (22812, 12s)",
@@ -808,27 +549,6 @@ local cases = {
         auraIsDefensive = true, isExternal = true, isImportant = false,
         evidence = {},
         talents = { {"priest1", 440738} },
-    },
-
-    -- PALADIN - Protection Sentinel (talent, replaces Avenging Wrath)
-    {
-        desc = "Prot Paladin - Avenging Wrath (31884, 25s) without Sentinel talent",
-        unit = "player", class = "PALADIN", specId = 66,
-        spellId = 31884, buffDuration = 25,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        evidence = {},
-    },
-
-    -- EVOKER - Augmentation Time Stop (PvP talent, requires any of three talent IDs)
-    -- ExcludeFromEnemyTracking=true prevents ECD from using it, but FCD can still track it.
-    {
-        desc = "Augmentation Evoker - Time Stop (378441, 5s) [PvP talent: id=5463]",
-        unit = "player", class = "EVOKER", specId = 1473,
-        spellId = 378441, buffDuration = 5,
-        auraIsDefensive = false, isExternal = false, isImportant = true,
-        isCrowdControl = true,
-        evidence = { "UnitFlags" },
-        talents = { {"player", 5463} },
     },
 
     -- MONK - Windwalker (no spec rule) falls through to class Fortifying Brew
@@ -881,8 +601,8 @@ fw.describe("Burrow - excluded from enemy cooldown tracking", function()
     end)
 
     fw.it("IsExcludedFromEnemyTracking is false for a normal Shaman cooldown", function()
-        -- Ascendance (Elemental, 114050) is a regular tracked cooldown, not enemy-excluded.
-        fw.eq(rules.IsExcludedFromEnemyTracking(114050), false, "Ascendance is not enemy-excluded")
+        -- Astral Shift (108271) is a regular tracked cooldown, not enemy-excluded.
+        fw.eq(rules.IsExcludedFromEnemyTracking(108271), false, "Astral Shift is not enemy-excluded")
     end)
 
     fw.it("IsExcludedFromEnemyTracking is false for nil / unknown spell IDs", function()
@@ -901,50 +621,7 @@ fw.describe("Burrow - excluded from enemy cooldown tracking", function()
     fw.it("Enhancement's other cooldowns still appear in the static list", function()
         -- Sanity: excluding Burrow must not drop the spec's normal cooldowns.
         local trackable = rules.GetTrackableSpellIds(263, "SHAMAN")
-        fw.eq(listContains(trackable, 384352), true, "Doomwinds should still be tracked")
-        fw.eq(listContains(trackable, 114051), true, "Ascendance should still be tracked")
-    end)
-end)
-
--- The enemy always-show static list assumes the near-universal default build (enemy talents are
--- unknowable).  GetTrackableSpellIds skips a rule when its ExcludeIfTalent is a default talent, so an
--- ability replaced by a near-universal talent (e.g. Avenging Wrath under Radiant Glory) isn't shown.
-
-local AVENGING_WRATH    = 31884
-local RADIANT_GLORY     = 458359  -- Ret talent that converts AW into a passive proc
-local AVENGING_CRUSADER = 216331  -- Holy talent that replaces AW
-
-fw.describe("GetTrackableSpellIds - default-talent filtering", function()
-    fw.before_each(function()
-        mods.talents._reset()
-        rules._TestResetTrackableCache()
-    end)
-
-    fw.it("omits Avenging Wrath for Ret when Radiant Glory is the default", function()
-        mods.talents._setDefaultTalent(70, RADIANT_GLORY)
-        local trackable = rules.GetTrackableSpellIds(70, "PALADIN")
-        fw.eq(listContains(trackable, AVENGING_WRATH), false, "AW omitted when Radiant Glory assumed")
-    end)
-
-    fw.it("keeps Avenging Wrath when its exclude-talent is not a default", function()
-        -- No defaults set: ExcludeIfTalent (Radiant Glory) is not assumed, so AW stays listed.
-        local trackable = rules.GetTrackableSpellIds(70, "PALADIN")
-        fw.eq(listContains(trackable, AVENGING_WRATH), true, "AW listed when Radiant Glory not assumed")
-    end)
-
-    fw.it("Holy lists Avenging Crusader instead of Avenging Wrath when AC is the default", function()
-        mods.talents._setDefaultTalent(65, AVENGING_CRUSADER)
-        local trackable = rules.GetTrackableSpellIds(65, "PALADIN")
-        fw.eq(listContains(trackable, AVENGING_WRATH), false, "AW omitted (replaced by Avenging Crusader)")
-        fw.eq(listContains(trackable, AVENGING_CRUSADER), true, "Avenging Crusader still listed")
-    end)
-
-    fw.it("handles table-form ExcludeIfTalent (Enhancement Doomwinds vs Ascendance)", function()
-        -- Doomwinds (384352) has ExcludeIfTalent = { 114051, 378270 }; a default match on either omits it.
-        mods.talents._setDefaultTalent(263, 114051)  -- Ascendance assumed
-        local trackable = rules.GetTrackableSpellIds(263, "SHAMAN")
-        fw.eq(listContains(trackable, 384352), false, "Doomwinds omitted when an exclude-talent is default")
-        fw.eq(listContains(trackable, 114051), true, "Ascendance still listed")
+        fw.eq(listContains(trackable, 108271), true, "Astral Shift should still be tracked")
     end)
 end)
 

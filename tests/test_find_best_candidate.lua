@@ -342,95 +342,6 @@ fw.describe("FindBestCandidate - ActiveCooldowns fallback", function()
     end)
 end)
 
--- Section 8: AMS Spellwarding on ally (CastableOnOthers, 12.0.5)
--- AMS Spellwarding rules: BigDefensive=false, Important=true, CastableOnOthers=true,
--- SpellId=48707, CastSpellId=410358, RequiresEvidence={Cast,Shield}, BuffDuration=5 or 7.
-
-fw.describe("FindBestCandidate - AMS Spellwarding on ally (12.0.5)", function()
-    fw.before_each(function()
-        reset()
-    end)
-
-    fw.it("DK candidate matches CastableOnOthers AMS on non-DK target via synthetic cast", function()
-        -- The recipient (party1, Warrior) is not a DK -> target self-match fails.
-        -- The caster (party2, DK) gets synthetic Cast + Shield from evidence -> rule matches.
-        wow.setUnitClass("party1", "WARRIOR")
-        wow.setUnitClass("party2", "DEATHKNIGHT")
-        local entry = loader.makeEntry("party1")
-        -- IMP-only (as seen on the recipient's frame), Shield evidence, dur=6.01 (within 7+0.5 window)
-        local t = makeTracked(IMP, 1.0, {}, { Shield = true })
-        local rule, unit = B:FindBestCandidate(entry, t, 6.01, { "party2" })
-        fw.not_nil(rule, "AMS should match via DK candidate")
-        fw.eq(rule and rule.SpellId, 48707, "SpellId should be AMS")
-        fw.eq(unit, "party2", "DK should be the attributed caster")
-    end)
-
-    fw.it("DK self-casting AMS: DK is the target, IMP-only aura, synthetic cast", function()
-        -- The DK (party1) self-cast AMS via Spellwarding; no other DK in group.
-        -- Target self-matches via synthetic cast -> rule returned with ruleUnit=party1.
-        wow.setUnitClass("party1", "DEATHKNIGHT")
-        local entry = loader.makeEntry("party1")
-        local t = makeTracked(IMP, 1.0, {}, { Shield = true })
-        local rule, unit = B:FindBestCandidate(entry, t, 6.01, {})
-        fw.not_nil(rule, "AMS should match for DK self-casting")
-        fw.eq(rule and rule.SpellId, 48707, "SpellId should be AMS")
-    end)
-
-    fw.it("same player appearing as two unit IDs does not cause ambiguity", function()
-        -- WoW can expose the same physical player as both "party1" and "raid2" simultaneously.
-        -- Without GUID deduplication both receive synthetic Cast, both match AMS -> ambiguous.
-        wow.setUnitClass("party1", "WARRIOR")   -- target
-        wow.setUnitClass("party2", "DEATHKNIGHT")
-        wow.setUnitClass("party3", "DEATHKNIGHT")
-        -- party2 and party3 are the same player
-        wow.setUnitGUID("party2", "Player-GUID-DK")
-        wow.setUnitGUID("party3", "Player-GUID-DK")
-        local entry = loader.makeEntry("party1")
-        local t = makeTracked(IMP, 1.0, {}, { Shield = true })
-        local rule, unit = B:FindBestCandidate(entry, t, 6.01, { "party2", "party3" })
-        fw.not_nil(rule, "AMS should match - duplicate unit IDs deduped by GUID")
-        fw.eq(rule and rule.SpellId, 48707, "SpellId should be AMS")
-    end)
-
-    fw.it("DK + Paladin in group: AMS matches DK, Paladin does not get synthetic cast (BoF has no Shield req)", function()
-        -- The presence of a Paladin previously caused ambiguity: both DK (AMS) and Paladin (BoF)
-        -- received synthetic Cast, producing different spell IDs -> ambiguous -> nil.
-        -- With the Shield-evidence guard, the Paladin is denied synthetic Cast -> only DK matches.
-        wow.setUnitClass("party1", "WARRIOR")
-        wow.setUnitClass("party2", "DEATHKNIGHT")
-        wow.setUnitClass("party3", "PALADIN")
-        local entry = loader.makeEntry("party1")
-        local t = makeTracked(IMP, 1.0, {}, { Shield = true })
-        local rule, unit = B:FindBestCandidate(entry, t, 6.01, { "party2", "party3" })
-        fw.not_nil(rule, "AMS should match despite Paladin in group")
-        fw.eq(rule and rule.SpellId, 48707, "SpellId should be AMS, not BoF")
-        fw.eq(unit, "party2", "DK should be the attributed caster")
-    end)
-
-    fw.it("stale BoF CastSnapshot does not block AMS betterCOO attribution to DK (regression)", function()
-        -- Regression: Paladin (player) cast BoF on the DK at T=1.0, then the DK cast AMS on the
-        -- Paladin at T=5.0 (4 seconds later). CastSnapshot["player"] = 1.0 was stored when the
-        -- aura was applied. Before the fix, BuildCandidateEvidence returned castTime=1.0 (stale),
-        -- which set bestTime non-nil and blocked betterCOO from firing for the DK candidate.
-        -- The Paladin's BoF (already on CD in ActiveCooldowns) was returned as a fallback instead.
-        --
-        -- Fix: castTime is only returned when within castWindow (0.15s) of StartTime; stale entries
-        -- produce nil, leaving bestTime nil so betterCOO correctly fires for the DK.
-        wow.setUnitClass("player",  "PALADIN")
-        wow.setUnitClass("party1",  "DEATHKNIGHT")
-        mods.talents._setSpec("player", 65)   -- Holy Paladin -> BoF available
-        -- BoF is already on cooldown (Paladin cast it on the DK 4 seconds ago)
-        local entry = loader.makeEntry("player", { [1044] = {} })
-        -- StartTime=5.0; CastSnapshot["player"]=1.0 -> |1.0 - 5.0| = 4.0 > 0.15 -> stale
-        local t = makeTracked(IMP, 5.0, { player = 1.0 }, { Shield = true })
-        -- dur=7.0 matches the 7s AMS Spellwarding rule
-        local rule, unit = B:FindBestCandidate(entry, t, 7.0, { "party1" })
-        fw.not_nil(rule, "AMS should be attributed to the DK, not fall back to stale BoF")
-        fw.eq(rule and rule.SpellId, 48707, "SpellId should be AMS (48707), not BoF (1044)")
-        fw.eq(unit, "party1", "DK (party1) should win via betterCOO, not the Paladin with stale snapshot")
-    end)
-end)
-
 -- Section 10: EXTERNAL_DEFENSIVE + Shield evidence
 -- Blessing of Sacrifice (SpellId 6940, Holy Paladin spec 65):
 --   BuffDuration=12, ExternalDefensive=true, RequiresEvidence="Cast".
@@ -459,37 +370,34 @@ fw.describe("FindBestCandidate - EXTERNAL_DEFENSIVE with incidental Shield evide
 end)
 
 -- Section 11: IgnoreTalentRequirements
--- Avenging Crusader (SpellId 216331, spec 65 Holy Paladin):
---   BuffDuration=10, MinDuration=true, RequiresTalent=216331, RequiresEvidence="Cast"
--- Avenging Wrath (SpellId 31884, spec 65 Holy Paladin):
---   BuffDuration=12, MinDuration=true, RequiresEvidence="Cast", ExcludeIfTalent=216331
--- measuredDuration=10: Avenging Wrath needs ≥ 11.5 s (fails); Crusader needs ≥ 9.5 s (passes if talent ok).
+-- Enraged Regeneration (SpellId 184364, spec 72 Fury Warrior):
+--   BuffDuration=8, BigDefensive, RequiresTalent=184364. WARRIOR class rules are empty
+--   and Fury has no other spec rule, so this is a clean RequiresTalent subject.
 
 fw.describe("FindBestCandidate - IgnoreTalentRequirements", function()
     fw.before_each(function()
         reset()
-        wow.setUnitClass("party1", "PALADIN")
-        mods.talents._setSpec("party1", 65)   -- Holy Paladin
+        wow.setUnitClass("party1", "WARRIOR")
+        mods.talents._setSpec("party1", 72)   -- Fury Warrior
     end)
 
     fw.it("without IgnoreTalentRequirements: RequiresTalent rule skipped -> nil", function()
-        -- No talent set -> Avenging Crusader (RequiresTalent=216331) is skipped
-        -- Avenging Wrath needs ≥ 11.5 s but we measured 10 -> also fails
-        -- -> nil
+        -- No talent set -> Enraged Regeneration (RequiresTalent=184364) is skipped.
+        -- Nothing else matches an 8s BIG aura -> nil.
         local entry = loader.makeEntry("party1")
-        local t = makeTracked(IMP, 1.0, { party1 = 1.0 })
-        local rule = B:FindBestCandidate(entry, t, 10.0, {})
+        local t = makeTracked(BIG, 1.0, { party1 = 1.0 })
+        local rule = B:FindBestCandidate(entry, t, 8.0, {})
         fw.is_nil(rule, "RequiresTalent should block the rule without the talent")
     end)
 
     fw.it("with IgnoreTalentRequirements=true: RequiresTalent check skipped -> rule matches", function()
-        -- Same setup; opts.IgnoreTalentRequirements=true skips the RequiresTalent gate
-        -- Avenging Crusader: MinDuration -> 10.0 ≥ 9.5, evidence=Cast -> matches
+        -- Same setup; opts.IgnoreTalentRequirements=true skips the RequiresTalent gate.
+        -- Enraged Regeneration: 8.0 matches BuffDuration=8 -> matches.
         local entry = loader.makeEntry("party1")
-        local t = makeTracked(IMP, 1.0, { party1 = 1.0 })
-        local rule, unit = B:FindBestCandidate(entry, t, 10.0, {}, { IgnoreTalentRequirements = true })
+        local t = makeTracked(BIG, 1.0, { party1 = 1.0 })
+        local rule, unit = B:FindBestCandidate(entry, t, 8.0, {}, { IgnoreTalentRequirements = true })
         fw.not_nil(rule, "IgnoreTalentRequirements should allow the rule to match")
-        fw.eq(rule.SpellId, 216331, "SpellId should be Avenging Crusader")
+        fw.eq(rule.SpellId, 184364, "SpellId should be Enraged Regeneration")
         fw.eq(unit, "party1", "ruleUnit")
     end)
 end)

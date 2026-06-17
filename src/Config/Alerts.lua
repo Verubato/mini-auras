@@ -193,53 +193,10 @@ local function BuildSoundsTab(parent, options)
 	local intro = mini:TextBlock({
 		Parent = parent,
 		Lines = {
-			L["Plays a sound when an enemy presses an important or defensive spell."],
+			L["Plays a sound when an enemy presses a defensive spell."],
 		},
 	})
 	intro:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-
-	-- Important Spells Sound
-	local soundImportantChk = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Important Spells"],
-		Tooltip = L["Play a sound when an important spell is pressed."],
-		GetValue = function()
-			return options.Sound.Important.Enabled
-		end,
-		SetValue = function(value)
-			options.Sound.Important.Enabled = value
-			if value then
-				local soundFileName = options.Sound.Important.File or "Sonar.ogg"
-				local soundFile = config.MediaLocation .. soundFileName
-				PlaySoundFile(soundFile, options.Sound.Important.Channel or "Master")
-			end
-			config:Apply()
-		end,
-	})
-
-	soundImportantChk:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local soundImportantDropdown = mini:Dropdown({
-		Parent = parent,
-		Items = config.SoundFiles,
-		Width = 200,
-		GetValue = function()
-			return options.Sound.Important.File
-		end,
-		SetValue = function(value)
-			options.Sound.Important.File = value
-			local soundFile = config.MediaLocation .. value
-			PlaySoundFile(soundFile, options.Sound.Important.Channel or "Master")
-			config:Apply()
-		end,
-		GetText = function(value)
-			return value:gsub("%.ogg$", "")
-		end,
-	})
-
-	soundImportantDropdown:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
-	soundImportantDropdown:SetPoint("TOP", soundImportantChk, "TOP", 0, -4)
-	soundImportantDropdown:SetWidth(200)
 
 	-- Defensive Spells Sound
 	local soundDefensiveChk = mini:Checkbox({
@@ -260,8 +217,7 @@ local function BuildSoundsTab(parent, options)
 		end,
 	})
 
-	soundDefensiveChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
-	soundDefensiveChk:SetPoint("TOP", soundImportantChk, "TOP", 0, 0)
+	soundDefensiveChk:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local soundDefensiveDropdown = mini:Dropdown({
 		Parent = parent,
@@ -280,7 +236,7 @@ local function BuildSoundsTab(parent, options)
 		end,
 	})
 
-	soundDefensiveDropdown:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	soundDefensiveDropdown:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
 	soundDefensiveDropdown:SetPoint("TOP", soundDefensiveChk, "TOP", 0, -4)
 	soundDefensiveDropdown:SetWidth(200)
 end
@@ -353,33 +309,6 @@ local function BuildTtsTab(parent, options)
 	voiceDropdown:SetPoint("TOPLEFT", ttsIntro, "BOTTOMLEFT", 0, -verticalSpacing)
 	voiceDropdown:SetWidth(400)
 
-	local announceImportantSpellsChk = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Important"],
-		Tooltip = L["Announce important spell names using text-to-speech when they are cast."],
-		GetValue = function()
-			return options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
-		end,
-		SetValue = function(value)
-			EnsureTtsOptions()
-			if not options.TTS.Important then
-				options.TTS.Important = { Enabled = false }
-			end
-			options.TTS.Important.Enabled = value
-
-			if value then
-				local voiceId = wowEx:ResolveVoiceID(options.TTS and options.TTS.VoiceID)
-				local volume = options.TTS.Volume or 100
-				local speechRate = options.TTS.SpeechRate or 0
-
-				C_VoiceChat.SpeakText(voiceId, L["Important"], speechRate, volume, true)
-			end
-			config:Apply()
-		end,
-	})
-
-	announceImportantSpellsChk:SetPoint("TOPLEFT", voiceDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
-
 	local announceDefensiveSpellsChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Defensive"],
@@ -406,8 +335,7 @@ local function BuildTtsTab(parent, options)
 		end,
 	})
 
-	announceDefensiveSpellsChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
-	announceDefensiveSpellsChk:SetPoint("TOP", announceImportantSpellsChk, "TOP", 0, 0)
+	announceDefensiveSpellsChk:SetPoint("TOPLEFT", voiceDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local volumeSlider = mini:Slider({
 		Parent = parent,
@@ -429,7 +357,7 @@ local function BuildTtsTab(parent, options)
 		end,
 	})
 
-	volumeSlider.Slider:SetPoint("TOPLEFT", announceImportantSpellsChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	volumeSlider.Slider:SetPoint("TOPLEFT", announceDefensiveSpellsChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local speechRateSlider = mini:Slider({
 		Parent = parent,
@@ -466,7 +394,7 @@ function M:Build(panel, options)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			L["A separate region for showing important enemy spells."],
+			L["A separate region for showing enemy defensive spells."],
 		},
 	})
 

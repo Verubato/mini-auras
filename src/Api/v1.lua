@@ -6,7 +6,7 @@ local _, addon = ...
 local fcdModule = addon.Modules.FriendlyCooldowns.Module
 local framesCore = addon.Core.Frames
 
----@alias MiniCCSpellType "Offensive"|"Defensive"|"Important"
+---@alias MiniCCSpellType "Defensive"
 ---@alias MiniCCPredictedCallback fun(unit: string, spellId: number, spellType: MiniCCSpellType)
 ---@alias MiniCCMatchedCallback fun(unit: string, spellId: number, spellType: MiniCCSpellType)
 ---@alias MiniCCRefreshCallback fun()

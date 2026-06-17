@@ -34,7 +34,6 @@ L:RegisterLocale("ruRU", {
 	["Icon Size (%)"] = "Размер иконки (%)",
 	["Relative size"] = "Относительный размер",
 	["Sizes the icon as a percentage of the unit frame's height instead of in pixels."] = "Задаёт размер иконки в процентах от высоты рамки персонажа вместо пикселей.",
-	["Important"] = "Важное",
 	["Max Icons"] = "Макс. иконок",
 	["Notification"] = "Уведомление",
 	["Offset X"] = "Смещение X",
@@ -101,32 +100,30 @@ L:RegisterLocale("ruRU", {
 	["Miscellaneous"] = "Прочее",
 	["Reset"] = "Сброс",
 	["Mini addon, massive awareness."] = "Маленький аддон, полное осознание.",
+	["Important News"] = "Важные новости",
+	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "С патча Blizzard 12.0.7 следующие функции больше недоступны:\n- Показ атакующих в оповещениях.\n- Показ атакующих на индикаторах имён.\n- Показ атакующих на портретах.\n- Показ атакующих на рамках группы/рейда.\n- Отслеживание атакующих перезарядок.\n- Показ Предвидения и Нивелирующего покрова.\n- Звуковое оповещение о важных заклинаниях.\n- Озвучивание важных заклинаний.",
 	["CC Native Order"] = "Стандартный порядок CC",
 	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Вместо отображения последнего применённого CC (поведение MiniCC), использует стандартный приоритет CC Blizzard, который обычно показывает первый применённый CC (с некоторыми исключениями).",
 	["The others seem to use a non-trivial amount of CPU."] = "Остальные используют значительное количество ЦП.",
 	["The Proc Glow uses the least CPU."] = "Proc свечение использует меньше всего ЦП.",
 
 	-- Alerts tab
-	["A separate region for showing important enemy spells."] = "Отдельная область для отображения важных заклинаний противника.",
 	["Alerts"] = "Оповещения",
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Объявлять названия защитных заклинаний с помощью синтеза речи при их применении.",
-	["Announce important spell names using text-to-speech when they are cast."] = "Объявлять названия важных заклинаний с помощью синтеза речи при их применении.",
 	["Announce spell names using text-to-speech when they are cast."] = "Объявлять названия заклинаний с помощью синтеза речи при их применении.",
 	["Defensive Spells"] = "Защитные заклинания",
-	["Important Spells"] = "Важные заклинания",
 	["Include defensives"] = "Включить защитные способности",
 	["Includes defensives in the alerts."] = "Включает защитные способности в оповещения.",
 	["Only show alerts for your target and focus in battlegrounds and the open world."] = "Показывать оповещения только для цели и фокуса на полях боя и в открытом мире.",
 	["Play a sound when a defensive spell is pressed."] = "Воспроизводить звук при использовании защитного заклинания.",
-	["Play a sound when an important spell is pressed."] = "Воспроизводить звук при использовании важного заклинания.",
 	["Show alert icons in the alerts region."] = "Показывать значки оповещений в области оповещений.",
 	["Show CC icons when healer is CC'd."] = "Показывать иконки контроля, когда целитель под контролем.",
 	["Show defensive alerts on a separate, movable bar."] = "Показывать защитные оповещения на отдельной перемещаемой панели.",
 	["Show icons"] = "Показывать значки",
-	["Shows CC and other important spell alerts."] = "Показывает оповещения о контроле и других важных заклинаниях.",
+	["Shows CC and defensive spell alerts."] = "Показывает оповещения о контроле и защитных заклинаниях.",
 	["Split bars"] = "Разделить панели",
 	["Sound"] = "Звук",
-	["Plays a sound when an enemy presses an important or defensive spell."] = "Воспроизводит звук, когда враг использует важное или защитное заклинание.",
+	["Plays a sound when an enemy presses a defensive spell."] = "Воспроизводит звук, когда противник использует защитное заклинание.",
 	["Sound Alerts"] = "Звуковые оповещения",
 	["Sound File"] = "Звуковой файл",
 	["Target/Focus Only"] = "Только цель/фокус",
@@ -164,7 +161,7 @@ L:RegisterLocale("ruRU", {
 
 	-- Indicator tab
 	["Auras"] = "Ауры",
-	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "Изменить цвет свечения/границы. Защитные заклинания - зеленые, важные заклинания - красные.",
+	["Change the colour of the glow/border. Defensive spells are green."] = "Изменяет цвет свечения/рамки. Защитные заклинания зелёные.",
 	["Defensive"] = "Защитное",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Не забудьте отключить опцию Blizzard 'центрировать большие защитные способности' при использовании этого.",
 	["Exclude yourself from showing trinket icons."] = "Исключить себя из отображения иконок аксессуаров.",
@@ -172,11 +169,9 @@ L:RegisterLocale("ruRU", {
 	["Show CC icons."] = "Показывать иконки контроля.",
 	["Show defensives"] = "Показать защитные",
 	["Show defensive spell icons."] = "Показывать иконки защитных заклинаний.",
-	["Show important"] = "Показать важные",
-	["Show important spell icons."] = "Показывать иконки важных заклинаний.",
 	["Show interrupts"] = "Показать прерывания",
 	["Show an icon when a friendly unit gets interrupted."] = "Показывает иконку, когда дружественный персонаж прерывается.",
-	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Показывает CC, защитные способности и важные ауры одним набором иконок на рамках группы/рейда.",
+	["Shows CC and defensives as one set of icons on party/raid frames."] = "Показывает контроль и защиту единым набором значков на рамках группы/рейда.",
 	["Tip: Disable the CC module for BGs and enable CC within this module."] = "Совет: отключите модуль контроля для полей боя и включите контроль в этом модуле.",
 
 
@@ -194,31 +189,27 @@ L:RegisterLocale("ruRU", {
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Изменить цвет свечения/границы в зависимости от типа рассеивания (напр. синий для магии, красный для физического).",
 	["Change the colour of the glow/border based on the type of debuff."] = "Изменить цвет свечения/границы в зависимости от типа дебаффа.",
-	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), Defensive spells are green, and Important spells are red."] = "Изменить цвет свечения/границы. Заклинания контроля используют цвета типа рассеивания (напр. синий для магии), защитные заклинания - зеленые, важные заклинания - красные.",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."] = "Изменяет цвет свечения/рамки. Заклинания контроля используют цвета по типу рассеивания (например, синий для магии), а защитные заклинания зелёные.",
 	["Do not show auras on enemy pet nameplates."] = "Не показывать ауры на полосках здоровья питомцев противника.",
 	["Do not show auras on friendly pet nameplates."] = "Не показывать ауры на полосках здоровья союзных питомцев.",
 	["Enemy - CC"] = "Противник - Контроль",
 	["Enemy - Combined"] = "Противник - Комбинированный",
-	["Enemy - Important Spells"] = "Противник - Важные заклинания",
-	["Enemy - Important"] = "Противник - Важные",
 	["Friendly - CC"] = "Союзники - Контроль",
 	["Friendly - Combined"] = "Союзники - Комбинированный",
-	["Friendly - Important Spells"] = "Союзники - Важные заклинания",
-	["Friendly - Important"] = "Союзники - Важные",
 	["Ignore Enemy Pets"] = "Игнорировать питомцев противника",
 	["Ignore Friendly Pets"] = "Игнорировать союзных питомцев",
 	["Nameplates"] = "Полоски здоровья",
 	["Nameplates_Short"] = "Полоски",
 	["Scale with Nameplate"] = "Масштабировать с табличкой",
 	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Иконки масштабируются вместе с масштабом таблички с именем. Используйте этот параметр, если у вас другой размер для таблички с именем цели (например, в настройках BBF).",
-	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Показывает контроль и важные заклинания на полосках здоровья (работает с аддонами полосок здоровья, например BBP, Platynator и Plater).",
+	["Shows CC and defensives on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Показывает контроль и защиту на полосках имён (работает с аддонами полосок имён, например BBP, Platynator и Plater).",
 	["Spell colours"] = "Цвета заклинаний",
 
 	-- Portraits tab
 	["Portraits"] = "Портреты",
 	["Portraits_Short"] = "Портрет",
 	["Reverses the direction of the cooldown swipe."] = "Изменяет направление смахивания перезарядки.",
-	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Показывает контроль, защитные способности и другие важные заклинания на портретах игрока/цели/фокуса.",
+	["Shows CC and defensives on the player/target/focus portraits."] = "Показывает контроль и защиту на портретах игрока/цели/фокуса.",
 
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Не работает, если ваши союзники используют аксессуар в стартовой комнате.",
@@ -246,8 +237,6 @@ L:RegisterLocale("ruRU", {
 	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "Когда активен бафф перезарядки, подсвечивает иконку и показывает обратный отсчёт до начала таймера.",
 	["Defensive cooldowns"] = "Защитные перезарядки",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Показывает защитные перезарядки, такие как Благословение защиты и Железная кора.",
-	["Offensive cooldowns"] = "Показывать наступательные откаты",
-	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Показывает наступательные откаты, такие как Горение, Аватар и Ярость дракона.",
 	["Rows"] = "Ряды",
 	["Columns"] = "Столбцы",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "Когда направление роста - Вниз, определяет количество иконок в одном ряду до переноса. Полезно для горизонтальных рамок группы.",
@@ -279,12 +268,9 @@ L:RegisterLocale("ruRU", {
 	["Number of icon rows for the Linear Bar. Icons per row is determined by the Max Icons setting."] = "Количество рядов иконок для линейной полосы. Иконки в ряду определяются настройкой Макс. иконки.",
 
 	-- Precognition tab
-	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Работает, отслеживая любой 4-секундный «важный» бафф на себя и отображая его иконку.",
 	["Note that you can't simply filter by spell id these days."] = "Обратите внимание, что в наши дни нельзя просто фильтровать по ID заклинания.",
 	["Precognition"] = "Предвидение",
-	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Если у вас есть другой 4-секундный важный бафф на себя, то его иконка также будет отображаться, приносим извинения.",
 	["This isn't precision perfect but it should be close enough."] = "Это не идеально точно, но должно быть достаточно близко.",
-	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Также отслеживает «Нейтрализующее покрывало» Призывателя Сохранения (3-секундный важный бафф на себя).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "Другие Mini аддоны",
@@ -296,14 +282,12 @@ L:RegisterLocale("ruRU", {
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."] = "Отключает CC и BigDebuffs на табличках Blizzard при использовании табличек MiniCC.",
 
 	-- General home screen
-	["Important News"] = "Важные новости",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Добавлены иконки контроля на рамки групп/рейдов питомцев (отключено по умолчанию).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - Добавляет модуль угадывания предвидения, который показывает, когда вы получаете предвидение.",
 	[" - Added profile import/export feature."] = " - Добавлена функция импорта/экспорта профиля.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Добавлен модуль угадывания откатов союзников. Теперь вы можете примерно отслеживать откаты ваших товарищей по команде!",
-	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "С новыми ограничениями Blizzard в патче 12.0.5 в MiniCC произошли следующие изменения.\n\nХорошие новости:\n* Отслеживание кулдаунов по-прежнему в основном работает в аренах и подземельях.\n* Добавлена поддержка нескольких зарядов заклинаний (например, 2x Подавление боли, 2x Размытие) для кулдаунов союзников и врагов.\n\nПлохие новости:\n* Внешние заклинания союзников больше не отслеживаются в рейдах и на полях боя.\n* Предсказывающее свечение стало менее надёжным.\n* Отслеживание кика в PvP больше не может определить, кто прервал. Теперь отображается только общая иконка с наименьшим известным кулдауном прерывания врага.\n\nМы вложили много труда в это обновление, но проблемы всё ещё могут возникать. \nПожалуйста, сообщайте о найденных ошибках в нашем Discord, чтобы мы могли их исправить.",
 	[" - Added enemy cooldown tracking module."] = " - Добавлен модуль отслеживания перезарядки врагов.",
 	["MiniCC - What's New?"] = "MiniCC - Что нового?",
 

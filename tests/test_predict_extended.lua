@@ -529,19 +529,6 @@ fw.describe("PredictSpellId - active cooldowns filter", function()
         fw.eq(onCd, false, "not on cooldown")
     end)
 
-    fw.it("CastableOnOthers filter 'only': returns CastableOnOthers rule if it matches", function()
-        -- Paladin class has BoF: CastableOnOthers=true, Important=true, BuffDuration=8.
-        -- With castableFilter="only", only CastableOnOthers rules are checked.
-        wow.setUnitClass("party1", "PALADIN")
-        -- No spec; class only has BoF among CastableOnOthers rules.
-        -- BoF: RequiresEvidence="Cast", IMP-only rule (BigDefensive=false, ExternalDefensive=false).
-        local evidence = { Cast = true }
-        -- B:PredictSpellId does not take a castableFilter; that's internal to PredictSpellIdForUnit.
-        -- We test through PredictRule by checking what gets returned for an IMP-only aura on a Paladin.
-        -- Instead test that Paladin's class rules return BoF for IMP-only aura.
-        local spellId = B:PredictSpellId("party1", IMP, evidence, nil)
-        fw.eq(spellId, 1044, "Blessing of Freedom (first CastableOnOthers rule in PALADIN class list)")
-    end)
 end)
 
 -- Section 9: PredictRule EXTERNAL_DEFENSIVE - player excluded as candidate when they cast something else
@@ -676,43 +663,5 @@ fw.describe("Precognition false-positive prevention (predict + commit)", functio
         fw.is_nil(committed, "Precognition (4s) on Fire Mage in pvp -> no rule has 4s BuffDuration -> no commit")
     end)
 
-    -- Contrast: Fire Mage NOT in arena/pvp - predict DOES fire (Combustion 190319).
-    -- wow.reset() leaves instance type as "none"; allowSyntheticCast=true -> Combustion predicted.
-    fw.it("Fire Mage NOT in arena: IMPORTANT aura triggers Combustion predict (contrast)", function()
-        -- instance type remains "none" after reset
-        wow.setUnitClass("party1", "MAGE")
-        mods.talents._setSpec("party1", 63)
-
-        local entry   = loader.makeEntry("party1")
-        local getGlow = captureGlow()
-
-        observer:_fireAuraChanged(entry, makeImportantOnlyWatcher(), { "party1" })
-
-        fw.eq(getGlow(), 190319, "outside arena: allowSyntheticCast=true -> Combustion (190319) predicted for Fire Mage")
-    end)
-
-    -- Contrast: Fire Mage in arena with a real UNIT_SPELLCAST_SUCCEEDED event at full duration -> commit fires.
-    -- The Precognition gate only blocks synthetic cast evidence; a real cast event (always visible
-    -- for the local player even in 12.0.5) bypasses the gate.  Combustion has MinDuration=true so
-    -- needs >= 9.5s measured duration; advancing 10s satisfies that.
-    fw.it("Fire Mage in arena with real cast + 10s aura: Combustion commits (contrast)", function()
-        wow.setInstanceType("arena")
-        wow.setUnitClass("player", "MAGE")
-        mods.talents._setSpec("player", 63)
-
-        local committed = nil
-        B:RegisterCooldownCallback(function(_, cdKey) committed = cdKey end)
-
-        local entry = loader.makeEntry("player")
-
-        wow.setTime(0)
-        observer:_fireCast("player", 190319)   -- local player's own cast is always visible in 12.0.5
-
-        observer:_fireAuraChanged(entry, makeImportantOnlyWatcher(), { "player" })
-        wow.advanceTime(10)
-        observer:_fireAuraChanged(entry, loader.makeWatcher({}, {}), { "player" })
-
-        fw.eq(committed, 190319, "real cast + 10s duration in arena -> Combustion commits (real cast, not Precognition)")
-    end)
 end)
 

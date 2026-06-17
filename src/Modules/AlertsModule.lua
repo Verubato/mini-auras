@@ -16,12 +16,8 @@ local soundFile
 local db
 
 ---@type table<number, boolean>
-local previousImportantAuras = {}
----@type table<number, boolean>
 local previousDefensiveAuras = {}
 -- Reused each OnAuraDataChanged call to avoid per-frame allocation
----@type table<number, boolean>
-local currentImportantAuras = {}
 ---@type table<number, boolean>
 local currentDefensiveAuras = {}
 -- Scratch table reused for every SetSlot call in ProcessWatcherData
@@ -29,14 +25,12 @@ local slotOptionsScratch = {}
 -- Scratch table reused for every class-color lookup in ProcessWatcherData
 local colorScratch = { r = 0, g = 0, b = 0, a = 1 }
 
-local hadImportantAlerts = false
 local hadDefensiveAlerts = false
 local pendingAuraUpdate = false
 
 local cachedVoiceID
 local cachedTTSVolume
 local cachedTTSSpeechRate
-local cachedTTSImportantEnabled
 local cachedTTSDefensiveEnabled
 ---@type IconSlotContainer
 local container
@@ -57,9 +51,7 @@ addon.Modules.AlertsModule = M
 
 local function PlaySound(spellType)
 	local soundConfig
-	if spellType == "important" then
-		soundConfig = db.Modules.AlertsModule.Sound.Important
-	elseif spellType == "defensive" then
+	if spellType == "defensive" then
 		soundConfig = db.Modules.AlertsModule.Sound.Defensive
 	else
 		return
@@ -84,9 +76,7 @@ local function AnnounceTTS(spellName, spellType)
 	end
 
 	local enabled = false
-	if spellType == "important" and cachedTTSImportantEnabled then
-		enabled = true
-	elseif spellType == "defensive" and cachedTTSDefensiveEnabled then
+	if spellType == "defensive" and cachedTTSDefensiveEnabled then
 		enabled = true
 	end
 
@@ -109,9 +99,8 @@ local function ProcessWatcherData(watcher, impSlot, defSlot, iconsEnabled, icons
 	end
 
 	local defensivesData = watcher:GetDefensiveState()
-	local importantData = watcher:GetImportantState()
 
-	if #importantData == 0 and #defensivesData == 0 then
+	if #defensivesData == 0 then
 		return impSlot, defSlot
 	end
 
@@ -133,30 +122,6 @@ local function ProcessWatcherData(watcher, impSlot, defSlot, iconsEnabled, icons
 	end
 
 	local fontScale = db.FontScale
-
-	-- Process important spells
-	for _, data in ipairs(importantData) do
-		if iconsEnabled and impSlot < container.Count then
-			impSlot = impSlot + 1
-			slotOptionsScratch.Texture = data.SpellIcon
-			slotOptionsScratch.DurationObject = data.DurationObject
-			slotOptionsScratch.Alpha = data.IsImportant
-			slotOptionsScratch.Glow = iconsGlow
-			slotOptionsScratch.ReverseCooldown = iconsReverse
-			slotOptionsScratch.Color = color
-			slotOptionsScratch.FontScale = fontScale
-			slotOptionsScratch.SpellId = showTooltips and data.SpellId or nil
-			container:SetSlot(impSlot, slotOptionsScratch)
-		end
-
-		-- Track and announce new important auras
-		if data.AuraInstanceID then
-			currentImportantAuras[data.AuraInstanceID] = true
-			if not previousImportantAuras[data.AuraInstanceID] then
-				AnnounceTTS(data.SpellName, "important")
-			end
-		end
-	end
 
 	-- Process defensive spells
 	for _, data in ipairs(defensivesData) do
@@ -227,11 +192,9 @@ local function OnAuraDataChanged()
 	local showTooltips = db.Modules.AlertsModule.ShowTooltips ~= false
 	local impSlot = 0
 	local defSlot = 0
-	local hasImportantAlerts
 	local hasDefensiveAlerts
 	local inInstance, instanceType = IsInInstance()
 
-	wipe(currentImportantAuras)
 	wipe(currentDefensiveAuras)
 
 	-- Process arena watchers
@@ -294,24 +257,17 @@ local function OnAuraDataChanged()
 	end
 
 	-- Check if we have alerts for sound playback
-	hasImportantAlerts = next(currentImportantAuras) ~= nil
 	hasDefensiveAlerts = next(currentDefensiveAuras) ~= nil
 
-	-- Play sound only when transitioning from no alerts to having alerts for each type
-	if hasImportantAlerts and not hadImportantAlerts then
-		PlaySound("important")
-	end
-
+	-- Play sound only when transitioning from no alerts to having alerts
 	if hasDefensiveAlerts and not hadDefensiveAlerts then
 		PlaySound("defensive")
 	end
 
-	hadImportantAlerts = hasImportantAlerts
 	hadDefensiveAlerts = hasDefensiveAlerts
 
 	-- Swap buffers: previous gets this frame's data and current gets the old previous table
 	-- (which will be wiped at the top of the next call)
-	previousImportantAuras, currentImportantAuras = currentImportantAuras, previousImportantAuras
 	previousDefensiveAuras, currentDefensiveAuras = currentDefensiveAuras, previousDefensiveAuras
 
 	-- If icons are disabled, keep sounds/TTS logic but don't show anything.
@@ -396,9 +352,7 @@ local function OnMatchStateChanged()
 	if defensivesContainer then
 		defensivesContainer:ResetAllSlots()
 	end
-	hadImportantAlerts = false
 	hadDefensiveAlerts = false
-	previousImportantAuras = {}
 	previousDefensiveAuras = {}
 end
 
@@ -506,7 +460,6 @@ local function OnNamePlateAdded(unitToken)
 	local watcherFilter = {
 		CC = true,
 		Defensives = true,
-		Important = true,
 	}
 
 	local watcher = unitWatcher:New(unitToken, nil, watcherFilter)
@@ -583,7 +536,6 @@ local function InitTargetFocusWatchers()
 	local watcherFilter = {
 		CC = true,
 		Defensives = true,
-		Important = true,
 	}
 
 	targetWatcher = unitWatcher:New("target", { "PLAYER_TARGET_CHANGED" }, watcherFilter)
@@ -598,7 +550,6 @@ local function InitArenaWatchers()
 	local watcherFilter = {
 		CC = true,
 		Defensives = true,
-		Important = true,
 	}
 
 	local events = {
@@ -639,9 +590,7 @@ local function DisableWatchers()
 	if defensivesContainer then
 		defensivesContainer:ResetAllSlots()
 	end
-	hadImportantAlerts = false
 	hadDefensiveAlerts = false
-	previousImportantAuras = {}
 	previousDefensiveAuras = {}
 end
 
@@ -742,7 +691,6 @@ function M:Refresh()
 	cachedVoiceID = wowEx:ResolveVoiceID(options.TTS and options.TTS.VoiceID)
 	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
 	cachedTTSSpeechRate = options.TTS and options.TTS.SpeechRate or 0
-	cachedTTSImportantEnabled = options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
 	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
 
 	EnableDisable()
@@ -804,7 +752,6 @@ function M:Init()
 	cachedVoiceID = wowEx:ResolveVoiceID(options.TTS and options.TTS.VoiceID)
 	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
 	cachedTTSSpeechRate = options.TTS and options.TTS.SpeechRate or 0
-	cachedTTSImportantEnabled = options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
 	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
 
 	container = iconSlotContainer:New(UIParent, count, size, db.IconSpacing or 2, "Alerts", nil, "Alerts")

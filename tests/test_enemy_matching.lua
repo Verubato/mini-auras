@@ -50,96 +50,60 @@ end
 -- Section 1: ExcludeIfTalent is NOT bypassed by IgnoreTalentRequirements
 --
 -- IgnoreTalentRequirements=true only skips the RequiresTalent check; the ExcludeIfTalent check
--- still runs.  This is verified using Prot Paladin (spec 66):
---   AW  (31884): ExcludeIfTalent=389539, listed FIRST in the spec rule list.
---   Sentinel (389539): RequiresTalent=389539, listed SECOND.
--- With talent 389539 active and IgnoreTalentRequirements=true:
---   · AW is excluded (ExcludeIfTalent not bypassed) -> Sentinel considered next.
---   · Sentinel's RequiresTalent is bypassed -> Sentinel matches.
--- If IgnoreTalentRequirements had bypassed ExcludeIfTalent, AW (first in list) would win.
+-- still runs.  This is verified using Frost Mage (spec 64):
+--   Ice Block (45438): ExcludeIfTalent=414659, listed FIRST in the spec rule list.
+--   Ice Cold  (414659): RequiresTalent=414659, listed SECOND.
+-- With talent 414659 active and IgnoreTalentRequirements=true:
+--   · Ice Block is excluded (ExcludeIfTalent not bypassed) -> Ice Cold considered next.
+--   · Ice Cold's RequiresTalent is bypassed -> Ice Cold matches.
+-- If IgnoreTalentRequirements had bypassed ExcludeIfTalent, Ice Block (first in list) would win.
 
 fw.describe("Enemy MatchRule - IgnoreTalentRequirements does NOT bypass ExcludeIfTalent", function()
     fw.before_each(reset)
 
-    fw.it("ExcludeIfTalent talent active + IgnoreTalentRequirements=true -> AW excluded, Sentinel wins", function()
-        -- Talent 389539 (Sentinel) is active, which excludes AW (ExcludeIfTalent=389539).
-        -- IgnoreTalentRequirements=true bypasses Sentinel's RequiresTalent=389539.
-        -- AW is still excluded -> Sentinel wins.
-        wow.setUnitClass("arena1", "PALADIN")
-        mods.talents._setSpec("arena1", 66)
-        mods.talents._setTalent("arena1", 389539, true)
+    fw.it("ExcludeIfTalent talent active + IgnoreTalentRequirements=true -> Ice Block excluded, Ice Cold wins", function()
+        -- Talent 414659 (Ice Cold) is active, which excludes Ice Block (ExcludeIfTalent=414659).
+        -- IgnoreTalentRequirements=true bypasses Ice Cold's RequiresTalent=414659.
+        -- Ice Block is still excluded -> Ice Cold wins.
+        wow.setUnitClass("arena1", "MAGE")
+        mods.talents._setSpec("arena1", 64)
+        mods.talents._setTalent("arena1", 414659, true)
 
-        local rule = B:MatchRule("arena1", IMP, 25.0, {
-            Evidence = { Cast = true },
+        local rule = B:MatchRule("arena1", BIG, 6.0, {
+            Evidence = { Debuff = true },
             IgnoreTalentRequirements = true,
         })
-        fw.not_nil(rule, "Sentinel should match")
-        fw.eq(rule.SpellId, 389539,
-            "Sentinel (389539), not AW (31884) - ExcludeIfTalent not bypassed by IgnoreTalentRequirements")
+        fw.not_nil(rule, "Ice Cold should match")
+        fw.eq(rule.SpellId, 414659,
+            "Ice Cold (414659), not Ice Block (45438) - ExcludeIfTalent not bypassed by IgnoreTalentRequirements")
     end)
 
-    fw.it("same talent, WITHOUT IgnoreTalentRequirements -> Sentinel still matches (talent present)", function()
-        wow.setUnitClass("arena1", "PALADIN")
-        mods.talents._setSpec("arena1", 66)
-        mods.talents._setTalent("arena1", 389539, true)
+    fw.it("same talent, WITHOUT IgnoreTalentRequirements -> Ice Cold still matches (talent present)", function()
+        wow.setUnitClass("arena1", "MAGE")
+        mods.talents._setSpec("arena1", 64)
+        mods.talents._setTalent("arena1", 414659, true)
 
-        local rule = B:MatchRule("arena1", IMP, 25.0, {
-            Evidence = { Cast = true },
+        local rule = B:MatchRule("arena1", BIG, 6.0, {
+            Evidence = { Debuff = true },
         })
         fw.not_nil(rule)
-        fw.eq(rule.SpellId, 389539, "Sentinel matches normally when talent is present")
+        fw.eq(rule.SpellId, 414659, "Ice Cold matches normally when talent is present")
     end)
 
-    fw.it("no talent data (real enemy scenario) -> ExcludeIfTalent inactive -> AW matches first", function()
+    fw.it("no talent data (real enemy scenario) -> ExcludeIfTalent inactive -> Ice Block matches first", function()
         -- For real enemies, UnitHasTalent always returns false (no talent data loaded).
-        -- AW's ExcludeIfTalent=389539 never fires -> AW is returned first (precedes Sentinel in list).
-        wow.setUnitClass("arena1", "PALADIN")
-        mods.talents._setSpec("arena1", 66)
-        -- talent 389539 NOT set -> UnitHasTalent returns false -> ExcludeIfTalent inactive
+        -- Ice Block's ExcludeIfTalent=414659 never fires -> Ice Block is returned first (precedes Ice Cold).
+        wow.setUnitClass("arena1", "MAGE")
+        mods.talents._setSpec("arena1", 64)
+        -- talent 414659 NOT set -> UnitHasTalent returns false -> ExcludeIfTalent inactive
 
-        local rule = B:MatchRule("arena1", IMP, 25.0, {
-            Evidence = { Cast = true },
+        local rule = B:MatchRule("arena1", BIG, 10.0, {
+            Evidence = { Debuff = true, UnitFlags = true },
             IgnoreTalentRequirements = true,
         })
         fw.not_nil(rule)
-        fw.eq(rule.SpellId, 31884,
-            "AW matches when no talent data is loaded (ExcludeIfTalent never fires for real enemies)")
-    end)
-end)
-
--- Section 2: AW vs AC duration ambiguity for enemy Paladins
---
--- Because enemy talent data is absent, neither ExcludeIfTalent (AW) nor RequiresTalent (AC)
--- fires for enemies.  Duration is the only distinguisher:
---   AW: MinDuration=true, BuffDuration=12 -> matches at measuredDuration ≥ 11.5
---   AC: MinDuration=true, BuffDuration=10 -> matches at measuredDuration ≥ 9.5
--- Brain resolves ambiguity by spec rule order: AW precedes AC in spec 65's list.
-
-fw.describe("Enemy MatchRule - Holy Paladin AW vs AC without talent data", function()
-    fw.before_each(reset)
-
-    fw.it("10s aura -> AW fails MinDuration (10 < 11.5) -> AC matches via IgnoreTalentRequirements", function()
-        wow.setUnitClass("arena1", "PALADIN")
-        mods.talents._setSpec("arena1", 65)
-
-        local rule = B:MatchRule("arena1", IMP, 10.0, {
-            Evidence = { Cast = true },
-            IgnoreTalentRequirements = true,
-        })
-        fw.not_nil(rule)
-        fw.eq(rule.SpellId, 216331, "10s -> only AC passes MinDuration (≥ 9.5)")
-    end)
-
-    fw.it("12s aura -> AW passes MinDuration first (listed before AC) -> AW returned", function()
-        wow.setUnitClass("arena1", "PALADIN")
-        mods.talents._setSpec("arena1", 65)
-
-        local rule = B:MatchRule("arena1", IMP, 12.0, {
-            Evidence = { Cast = true },
-            IgnoreTalentRequirements = true,
-        })
-        fw.not_nil(rule)
-        fw.eq(rule.SpellId, 31884, "12s -> AW is listed first and passes MinDuration (≥ 11.5)")
+        fw.eq(rule.SpellId, 45438,
+            "Ice Block matches when no talent data is loaded (ExcludeIfTalent never fires for real enemies)")
     end)
 end)
 

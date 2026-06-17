@@ -22,8 +22,7 @@ local slotsScratch = {}
 -- SetSlot reads these synchronously and does not store references, so pooling is safe.
 local slotTablePool = {}
 
--- Test-mode preview cooldowns.  In Split mode the filter routes offensives to the linear bar
--- and the remainder to the arena-frame containers, so a couple of offensives are included.
+-- Test-mode preview cooldowns.
 -- Inactive=true entries preview the always-show faded state when that option is enabled.
 local testSpells = {
 	{ SpellId = 45438,   StartOffset = 30, Cooldown = 240 }, -- Ice Block        (defensive)
@@ -34,21 +33,7 @@ local testSpells = {
 	{ SpellId = 22812,   StartOffset = 20, Cooldown = 60  }, -- Barkskin         (defensive)
 	{ SpellId = 871,     StartOffset = 60, Cooldown = 240, Inactive = true }, -- Shield Wall (defensive)
 	{ SpellId = 33206,   StartOffset = 8,  Cooldown = 120 }, -- Pain Suppression (external defensive)
-	{ SpellId = 31884,   StartOffset = 12, Cooldown = 120 }, -- Avenging Wrath   (offensive)
-	{ SpellId = 190319,  StartOffset = 35, Cooldown = 120, Inactive = true }, -- Combustion (offensive)
-	{ SpellId = 288613,  StartOffset = 50, Cooldown = 120 }, -- Trueshot         (offensive)
 }
-
----Returns true when spellId belongs to the Offensive spell set (used by Split mode to route
----offensives to the linear bar and everything else to the arena-frame containers).
-local function IsOffensiveSpell(spellId)
-	return spellId ~= nil and rules.OffensiveSpellIds[spellId] == true
-end
-
----Split-mode filter for arena-frame containers: everything that is not Offensive.
-local function IsNonOffensiveSpell(spellId)
-	return not IsOffensiveSpell(spellId)
-end
 
 ---Returns true when a committed cooldown entry is currently counting down.
 ---Multi-charge entries are active while any charge is recharging; single-charge entries are
@@ -252,7 +237,7 @@ end
 
 ---Populates an entry's icon container with the current enemy cooldown state.
 ---@param entry EcdWatchEntry
----@param filter fun(spellId:number):boolean?  optional spell filter (used by Split mode)
+---@param filter fun(spellId:number):boolean?  optional spell filter
 local function UpdateDisplay(entry, filter)
 	local options = GetOptions()
 	if not options then return end
@@ -358,14 +343,9 @@ function D:UpdateDisplay(entry)
 	UpdateDisplay(entry)
 end
 
----@param entry EcdWatchEntry
-function D:UpdateSplitArenaDisplay(entry)
-	UpdateDisplay(entry, IsNonOffensiveSpell)
-end
-
 ---Renders combined cooldowns from a set of entries into a target container.
 ---Honours always-show (each source entry contributes its full spec/class set) and the optional
----filter (used by Split mode to route offensive vs non-offensive spells).
+---filter.
 ---@param targetContainer IconSlotContainer  the destination container
 ---@param entries table<string, EcdWatchEntry>  source entries to aggregate from
 ---@param filter fun(spellId:number):boolean?  nil = include everything
@@ -400,16 +380,6 @@ function D:UpdateLinearDisplay(entries)
 	RenderAggregate(entry1.Container, entries, nil)
 end
 
----Populates the dedicated Split-mode linear container with offensive cooldowns aggregated
----from all watch entries.  The defensive (non-offensive) cooldowns continue to render into
----each entry's own container via UpdateSplitArenaDisplay.
----@param splitLinearEntry table  { Container = IconSlotContainer }
----@param entries table<string, EcdWatchEntry>
-function D:UpdateSplitLinearDisplay(splitLinearEntry, entries)
-	if not splitLinearEntry then return end
-	RenderAggregate(splitLinearEntry.Container, entries, IsOffensiveSpell)
-end
-
 ---@param entry EcdWatchEntry
 ---@param index number
 ---@param prevEntry EcdWatchEntry?
@@ -418,33 +388,12 @@ function D:AnchorContainer(entry, index, prevEntry)
 	if not options then return end
 
 	-- Linear mode: arena1 is the only visible per-unit container; arena2/3 stack below it.
-	-- Split / ArenaFrames mode: each per-unit container anchors to its corresponding arena frame.
+	-- ArenaFrames mode: each per-unit container anchors to its corresponding arena frame.
 	if options.DisplayMode == "Linear" then
 		AnchorContainerLinear(entry, index, prevEntry)
 	else
 		AnchorContainerArenaFrames(entry, index)
 	end
-end
-
----Anchors the dedicated Split-mode linear container to the saved Linear position.  Reuses the
----same options.Linear.X/Y/Point as Linear mode so a single drag updates both surfaces.
----@param splitLinearEntry table  { Container = IconSlotContainer }
-function D:AnchorSplitLinearContainer(splitLinearEntry)
-	local options = GetOptions()
-	if not options or not splitLinearEntry then return end
-	local frame = splitLinearEntry.Container.Frame
-	frame:ClearAllPoints()
-	frame:SetFrameStrata("MEDIUM")
-	frame:SetFrameLevel(100)
-	frame:SetAlpha(1)
-	local relTo = _G[options.Linear.RelativeTo] or UIParent
-	frame:SetPoint(
-		options.Linear.Point or "CENTER",
-		relTo,
-		options.Linear.RelativePoint or "CENTER",
-		options.Linear.X or 0,
-		options.Linear.Y or 200
-	)
 end
 
 ---@param index number

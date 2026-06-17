@@ -35,7 +35,6 @@ L:SetDefaultStrings({
 	["Icon Size (%)"] = "Icon Size (%)",
 	["Relative size"] = "Relative size",
 	["Sizes the icon as a percentage of the unit frame's height instead of in pixels."] = "Sizes the icon as a percentage of the unit frame's height instead of in pixels.",
-	["Important"] = "Important",
 	["Max Icons"] = "Max Icons",
 	["Notification"] = "Notification",
 	["Offset X"] = "Offset X",
@@ -103,32 +102,30 @@ L:SetDefaultStrings({
 	["Miscellaneous"] = "Miscellaneous",
 	["Reset"] = "Reset",
 	["Mini addon, massive awareness."] = "Mini addon, massive awareness.",
+	["Important News"] = "Important News",
+	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells.",
 	["CC Native Order"] = "CC Native Order",
 	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions).",
 	["The others seem to use a non-trivial amount of CPU."] = "The others seem to use a non-trivial amount of CPU.",
 	["The Proc Glow uses the least CPU."] = "The Proc Glow uses the least CPU.",
 
 	-- Alerts tab
-	["A separate region for showing important enemy spells."] = "A separate region for showing important enemy spells.",
 	["Alerts"] = "Alerts",
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Announce defensive spell names using text-to-speech when they are cast.",
-	["Announce important spell names using text-to-speech when they are cast."] = "Announce important spell names using text-to-speech when they are cast.",
 	["Announce spell names using text-to-speech when they are cast."] = "Announce spell names using text-to-speech when they are cast.",
 	["Defensive Spells"] = "Defensive Spells",
-	["Important Spells"] = "Important Spells",
 	["Include defensives"] = "Include defensives",
 	["Includes defensives in the alerts."] = "Includes defensives in the alerts.",
 	["Only show alerts for your target and focus in battlegrounds and the open world."] = "Only show alerts for your target and focus in battlegrounds and the open world.",
 	["Play a sound when a defensive spell is pressed."] = "Play a sound when a defensive spell is pressed.",
-	["Play a sound when an important spell is pressed."] = "Play a sound when an important spell is pressed.",
 	["Show alert icons in the alerts region."] = "Show alert icons in the alerts region.",
 	["Show CC icons when healer is CC'd."] = "Show CC icons when healer is CC'd.",
 	["Show defensive alerts on a separate, movable bar."] = "Show defensive alerts on a separate, movable bar.",
 	["Show icons"] = "Show icons",
-	["Shows CC and other important spell alerts."] = "Shows CC and other important spell alerts.",
+	["Shows CC and defensive spell alerts."] = "Shows CC and defensive spell alerts.",
 	["Split bars"] = "Split bars",
 	["Sound"] = "Sound",
-	["Plays a sound when an enemy presses an important or defensive spell."] = "Plays a sound when an enemy presses an important or defensive spell.",
+	["Plays a sound when an enemy presses a defensive spell."] = "Plays a sound when an enemy presses a defensive spell.",
 	["Sound Alerts"] = "Sound Alerts",
 	["Sound File"] = "Sound File",
 	["Target/Focus Only"] = "Target/Focus Only",
@@ -166,7 +163,7 @@ L:SetDefaultStrings({
 
 	-- Indicator tab
 	["Auras"] = "Auras",
-	["Change the colour of the glow/border. Defensive spells are green and Important spells are red."] = "Change the colour of the glow/border. Defensive spells are green and Important spells are red.",
+	["Change the colour of the glow/border. Defensive spells are green."] = "Change the colour of the glow/border. Defensive spells are green.",
 	["Defensive"] = "Defensive",
 	["Don't forget to disable the Blizzard 'center big defensives' option when using this."] = "Don't forget to disable the Blizzard 'center big defensives' option when using this.",
 	["Exclude yourself from showing trinket icons."] = "Exclude yourself from showing trinket icons.",
@@ -174,11 +171,9 @@ L:SetDefaultStrings({
 	["Show CC icons."] = "Show CC icons.",
 	["Show defensives"] = "Show defensives",
 	["Show defensive spell icons."] = "Show defensive spell icons.",
-	["Show important"] = "Show important",
 	["Show interrupts"] = "Show interrupts",
 	["Show an icon when a friendly unit gets interrupted."] = "Show an icon when a friendly unit gets interrupted.",
-	["Show important spell icons."] = "Show important spell icons.",
-	["Shows CC, defensives, and important auras as one set of icons on party/raid frames."] = "Shows CC, defensives, and important auras as one set of icons on party/raid frames.",
+	["Shows CC and defensives as one set of icons on party/raid frames."] = "Shows CC and defensives as one set of icons on party/raid frames.",
 	["Tip: Disable the CC module for BGs and enable CC within this module."] = "Tip: Disable the CC module for BGs and enable CC within this module.",
 
 	-- Healer tab
@@ -196,31 +191,27 @@ L:SetDefaultStrings({
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical).",
 	["Change the colour of the glow/border based on the type of debuff."] = "Change the colour of the glow/border based on the type of debuff.",
-	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), Defensive spells are green, and Important spells are red."] = "Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), Defensive spells are green, and Important spells are red.",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."] = "Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green.",
 	["Do not show auras on enemy pet nameplates."] = "Do not show auras on enemy pet nameplates.",
 	["Do not show auras on friendly pet nameplates."] = "Do not show auras on friendly pet nameplates.",
 	["Enemy - CC"] = "Enemy - CC",
 	["Enemy - Combined"] = "Enemy - Combined",
-	["Enemy - Important Spells"] = "Enemy - Important Spells",
-	["Enemy - Important"] = "Enemy - Important",
 	["Friendly - CC"] = "Friendly - CC",
 	["Friendly - Combined"] = "Friendly - Combined",
-	["Friendly - Important Spells"] = "Friendly - Important Spells",
-	["Friendly - Important"] = "Friendly - Important",
 	["Ignore Enemy Pets"] = "Ignore Enemy Pets",
 	["Ignore Friendly Pets"] = "Ignore Friendly Pets",
 	["Nameplates"] = "Nameplates",
 	["Nameplates_Short"] = "Nameplates",
 	["Scale with Nameplate"] = "Scale with Nameplate",
 	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings).",
-	["Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Shows CC and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater).",
+	["Shows CC and defensives on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Shows CC and defensives on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater).",
 	["Spell colours"] = "Spell colours",
 
 	-- Portraits tab
 	["Portraits"] = "Portraits",
 	["Portraits_Short"] = "Portraits",
 	["Reverses the direction of the cooldown swipe."] = "Reverses the direction of the cooldown swipe.",
-	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Shows CC, defensives, and other important spells on the player/target/focus portraits.",
+	["Shows CC and defensives on the player/target/focus portraits."] = "Shows CC and defensives on the player/target/focus portraits.",
 
 	-- Party Trinkets tab
 	[" - Doesn't work if your team mates trinket in the starting room."] = " - Doesn't work if your team mates trinket in the starting room.",
@@ -249,8 +240,6 @@ L:SetDefaultStrings({
 
 	["Defensive cooldowns"] = "Defensive cooldowns",
 	["Shows defensive cooldowns such as Blessing of Protection and Ironbark."] = "Shows defensive cooldowns such as Blessing of Protection and Ironbark.",
-	["Offensive cooldowns"] = "Offensive cooldowns",
-	["Shows offensive cooldowns such as Combustion, Avatar and Dragonrage."] = "Shows offensive cooldowns such as Combustion, Avatar and Dragonrage.",
 	["Rows"] = "Rows",
 	["Columns"] = "Columns",
 	["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."] = "When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames.",
@@ -282,12 +271,9 @@ L:SetDefaultStrings({
 	[" - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames)."] = " - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames).",
 
 	-- Precognition tab
-	["It works by taking any 4 second 'important' self buff and showing that icon."] = "It works by taking any 4 second 'important' self buff and showing that icon.",
 	["Note that you can't simply filter by spell id these days."] = "Note that you can't simply filter by spell id these days.",
 	["Precognition"] = "Precognition",
-	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry.",
 	["This isn't precision perfect but it should be close enough."] = "This isn't precision perfect but it should be close enough.",
-	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "Other Mini Addons",
@@ -299,14 +285,12 @@ L:SetDefaultStrings({
 	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."] = "Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates.",
 
 	-- General home screen
-	["Important News"] = "Important News",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Added CC icons on pet party/raid frames (disabled by default).",
 	[" - Added precognition guesser module that shows when you get precog."] = " - Added precognition guesser module that shows when you get precog.",
 	[" - Added profile import/export feature."] = " - Added profile import/export feature.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!",
-	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them.",
 	[" - Added enemy cooldown tracking module."] = " - Added enemy cooldown tracking module.",
 	["MiniCC - What's New?"] = "MiniCC - What's New?",
 
