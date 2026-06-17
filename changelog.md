@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.0.0
+
+Removed all important aura usage now that it's gone from the game.
+
 ## 3.25.0
 
 - Icons now fade if the parent frame fades (e.g. if unit is out of range.).
