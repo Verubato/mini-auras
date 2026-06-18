@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.2.0
+
+Made the nameplate config more generic so you can combine CC and Defensives easier.
+
 ## 4.1.0
 
 Renamed combined nameplate mode to defensive and allowed it to be enabled independently of the CC nameplate option.
