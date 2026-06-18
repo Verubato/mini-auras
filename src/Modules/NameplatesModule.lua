@@ -8,6 +8,7 @@ local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
+local slotDistribution = addon.Utils.SlotDistribution
 local mathMin = math.min
 local GetTime = GetTime
 local C_NamePlate = C_NamePlate
@@ -46,17 +47,17 @@ local defensiveColor = { r = 0.0, g = 0.8, b = 0.0 } -- Green
 
 ---@class NameplateData
 ---@field Nameplate table
----@field CcContainer IconSlotContainer?
----@field CombinedContainer IconSlotContainer?
+---@field Bar1Container IconSlotContainer?
+---@field Bar2Container IconSlotContainer?
 ---@field UnitToken string
 
 local previousFriendlyEnabled = {
-	CC = false,
-	Combined = false,
+	Bar1 = false,
+	Bar2 = false,
 }
 local previousEnemyEnabled = {
-	CC = false,
-	Combined = false,
+	Bar1 = false,
+	Bar2 = false,
 }
 local previousPetEnabled = {
 	Friendly = false,
@@ -69,12 +70,22 @@ local previousModuleEnabled = { Always = false, Arena = false, BattleGrounds = f
 -- which significantly reduces garbage collection pressure.
 local layerScratch = {}
 
+-- Shared empty list returned when a bar isn't showing a given spell type. Never mutate this.
+local EMPTY = {}
+
 ---@class NameplatesModule
 local M = {}
 addon.Modules.NameplatesModule = M
 
-local nameplateCcKey = addonName .. "_CcContainer"
-local nameplateCombinedKey = addonName .. "_CombinedContainer"
+local nameplateBar1Key = addonName .. "_Bar1Container"
+local nameplateBar2Key = addonName .. "_Bar2Container"
+
+-- The two generic nameplate bars. Each bar independently shows CC and/or defensives based on
+-- its ShowCC / ShowDefensives options, and both bars can display at the same time.
+local BARS = {
+	{ Key = "Bar1", ContainerKey = nameplateBar1Key, DataField = "Bar1Container" },
+	{ Key = "Bar2", ContainerKey = nameplateBar2Key, DataField = "Bar2Container" },
+}
 
 local function GetCCSortOptions()
 	if db.CCNativeOrder then
@@ -148,168 +159,126 @@ end
 ---@param nameplate table
 ---@param unitToken string
 ---@param unitOptions table
----@return IconSlotContainer? ccContainer, IconSlotContainer? combinedContainer
+---@return IconSlotContainer? bar1Container, IconSlotContainer? bar2Container
 local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
-	-- CC and the Defensives section (stored under the historical "Combined" key) are
-	-- independent: each shows when its own Enabled flag is set, so both can display at once.
-	local ccContainer = nil
-	local combinedContainer = nil
+	-- Each bar shows when its own Enabled flag is set, so both bars can display at once.
+	local result = {}
+	for _, bar in ipairs(BARS) do
+		local barOptions = unitOptions[bar.Key]
+		if barOptions and barOptions.Enabled then
+			local size = barOptions.Icons.Size or 35
+			local maxIcons = barOptions.Icons.MaxIcons or 5
+			local offsetX = barOptions.Offset.X or 0
+			local offsetY = barOptions.Offset.Y or 0
+			local anchorPoint, relativeToPoint = GetAnchorPoint(unitToken, bar.Key)
 
-	-- CC
-	local ccOptions = unitOptions.CC
-	if ccOptions and ccOptions.Enabled then
-		local size = ccOptions.Icons.Size or 20
-		local maxIcons = ccOptions.Icons.MaxIcons or 5
-		local offsetX = ccOptions.Offset.X or 0
-		local offsetY = ccOptions.Offset.Y or 5
-		local anchorPoint, relativeToPoint = GetAnchorPoint(unitToken, "CC")
+			local container = nameplate[bar.ContainerKey]
+			if not container then
+				container = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2, "Nameplates", nil, "Nameplates")
+				nameplate[bar.ContainerKey] = container
+			else
+				container:SetIconSize(size)
+				container:SetCount(maxIcons)
+			end
 
-		ccContainer = nameplate[nameplateCcKey]
-		if not ccContainer then
-			ccContainer = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2, "Nameplates", nil, "Nameplates")
-			nameplate[nameplateCcKey] = ccContainer
+			SetupContainerFrame(container, nameplate, anchorPoint, relativeToPoint, offsetX, offsetY)
+			result[bar.Key] = container
 		else
-			ccContainer:SetIconSize(size)
-			ccContainer:SetCount(maxIcons)
+			HideAndReset(nameplate[bar.ContainerKey])
 		end
-
-		SetupContainerFrame(ccContainer, nameplate, anchorPoint, relativeToPoint, offsetX, offsetY)
-	else
-		HideAndReset(nameplate[nameplateCcKey])
 	end
 
-	-- Defensives (the "Combined" db key)
-	local combinedOptions = unitOptions.Combined
-	if combinedOptions and combinedOptions.Enabled then
-		local size = combinedOptions.Icons.Size or 50
-		local maxIcons = combinedOptions.Icons.MaxIcons or 8
-		local offsetX = combinedOptions.Offset.X or 0
-		local offsetY = combinedOptions.Offset.Y or 0
-		local anchorPoint, relativeToPoint = GetAnchorPoint(unitToken, "Combined")
-
-		combinedContainer = nameplate[nameplateCombinedKey]
-		if not combinedContainer then
-			combinedContainer = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2, "Nameplates", nil, "Nameplates")
-			nameplate[nameplateCombinedKey] = combinedContainer
-		else
-			combinedContainer:SetIconSize(size)
-			combinedContainer:SetCount(maxIcons)
-		end
-
-		SetupContainerFrame(combinedContainer, nameplate, anchorPoint, relativeToPoint, offsetX, offsetY)
-	else
-		HideAndReset(nameplate[nameplateCombinedKey])
-	end
-
-	return ccContainer, combinedContainer
+	return result.Bar1, result.Bar2
 end
 
----@param data NameplateData
+---Renders one bar: CC spells (with the kick icon) when the bar has ShowCC, and/or defensive
+---spells when it has ShowDefensives. When a bar shows both, CC takes priority and the remaining
+---slots are filled with defensives (the same slot distribution the old combined bar used).
+---@param container IconSlotContainer?
+---@param barOptions table?
 ---@param watcher Watcher
----@param unitOptions table Pre-fetched unit options
--- The "Combined" container now shows defensives only (relabelled "Defensives" in the UI). It runs
--- independently of the CC container, so CC and defensives can be displayed at the same time.
-local function ApplyCombinedToNameplate(data, watcher, unitOptions)
-	local container = data.CombinedContainer
-	if not container then
+---@param data NameplateData
+local function ApplyBarToNameplate(container, barOptions, watcher, data)
+	if not container or not barOptions or not barOptions.Enabled then
 		return
 	end
 
-	local combinedOptions = unitOptions and unitOptions.Combined
-	if not combinedOptions or not combinedOptions.Enabled then
-		return
-	end
+	local showCC = barOptions.ShowCC
+	local showDefensives = barOptions.ShowDefensives
 
-	local defensivesData = watcher:GetDefensiveState()
-	local iconsGlow = combinedOptions.Icons.Glow
-	local iconsReverse = combinedOptions.Icons.ReverseCooldown
-	local colorByCategory = combinedOptions.Icons.ColorByCategory
-	local showTooltips = combinedOptions.ShowTooltips ~= false
+	local kickEntry = showCC and kickTracker:GetKick(data.UnitToken) or nil
+	local ccData = showCC and watcher:GetCcState() or EMPTY
+	local defensivesData = showDefensives and watcher:GetDefensiveState() or EMPTY
+	local kickCount = kickEntry and 1 or 0
+
+	local ccSlots, defensiveSlots =
+		slotDistribution.Calculate(container.Count, #ccData + kickCount, #defensivesData, 0)
+
+	local iconsGlow = barOptions.Icons.Glow
+	local iconsReverse = barOptions.Icons.ReverseCooldown
+	local showMilliseconds = barOptions.Icons.ShowMilliseconds
+	local colorByCategory = barOptions.Icons.ColorByCategory
+	local showTooltips = barOptions.ShowTooltips ~= false
 	local fontScale = db.FontScale
-
 	local slot = 0
-	for i = 1, mathMin(container.Count, #defensivesData) do
-		slot = slot + 1
-		local entry = defensivesData[i]
-		layerScratch.Texture = entry.SpellIcon
-		layerScratch.DurationObject = entry.DurationObject
-		layerScratch.Alpha = entry.IsDefensive
-		layerScratch.Glow = iconsGlow
-		layerScratch.ReverseCooldown = iconsReverse
-		layerScratch.FontScale = fontScale
-		layerScratch.Color = colorByCategory and defensiveColor or nil
-		layerScratch.SpellId = showTooltips and entry.SpellId or nil
-		container:SetSlot(slot, layerScratch)
+
+	-- CC spells (highest priority); kick icon fills the first CC slot
+	if ccSlots > 0 then
+		if kickEntry then
+			slot = slot + 1
+			layerScratch.Texture = kickEntry.Texture
+			layerScratch.DurationObject = kickEntry.DurationObject
+			layerScratch.Alpha = true
+			layerScratch.Glow = iconsGlow
+			layerScratch.ReverseCooldown = iconsReverse
+			layerScratch.ShowMilliseconds = showMilliseconds
+			layerScratch.FontScale = fontScale
+			layerScratch.Color = colorByCategory and kickEntry.Color or nil
+			layerScratch.SpellId = nil
+			container:SetSlot(slot, layerScratch)
+			ccSlots = ccSlots - 1
+		end
+		for i = 1, mathMin(ccSlots, #ccData) do
+			if slot >= container.Count then
+				break
+			end
+			slot = slot + 1
+			local entry = ccData[i]
+			layerScratch.Texture = entry.SpellIcon
+			layerScratch.DurationObject = entry.DurationObject
+			layerScratch.Alpha = entry.IsCC
+			layerScratch.Glow = iconsGlow
+			layerScratch.ReverseCooldown = iconsReverse
+			layerScratch.ShowMilliseconds = showMilliseconds
+			layerScratch.FontScale = fontScale
+			layerScratch.Color = colorByCategory and entry.DispelColor or nil
+			layerScratch.SpellId = showTooltips and entry.SpellId or nil
+			container:SetSlot(slot, layerScratch)
+		end
+	end
+
+	-- Defensive spells (second priority)
+	if defensiveSlots > 0 then
+		for i = 1, mathMin(defensiveSlots, #defensivesData) do
+			if slot >= container.Count then
+				break
+			end
+			slot = slot + 1
+			local entry = defensivesData[i]
+			layerScratch.Texture = entry.SpellIcon
+			layerScratch.DurationObject = entry.DurationObject
+			layerScratch.Alpha = entry.IsDefensive
+			layerScratch.Glow = iconsGlow
+			layerScratch.ReverseCooldown = iconsReverse
+			layerScratch.ShowMilliseconds = nil
+			layerScratch.FontScale = fontScale
+			layerScratch.Color = colorByCategory and defensiveColor or nil
+			layerScratch.SpellId = showTooltips and entry.SpellId or nil
+			container:SetSlot(slot, layerScratch)
+		end
 	end
 
 	-- Clear any unused slots beyond the used count
-	for i = slot + 1, container.Count do
-		container:SetSlotUnused(i)
-	end
-end
-
----@param data NameplateData
----@param watcher Watcher
----@param unitOptions table Pre-fetched unit options
-local function ApplyCcToNameplate(data, watcher, unitOptions)
-	local container = data.CcContainer
-	if not container then
-		return
-	end
-
-	local options = unitOptions and unitOptions.CC
-	if not options or not options.Enabled then
-		return
-	end
-
-	local kickEntry = kickTracker:GetKick(data.UnitToken)
-	local ccData = watcher:GetCcState()
-	local ccDataCount = #ccData
-
-	if ccDataCount == 0 and not kickEntry then
-		container:ResetAllSlots()
-		return
-	end
-
-	local iconsGlow = options.Icons.Glow
-	local iconsReverse = options.Icons.ReverseCooldown
-	local showMilliseconds = options.Icons.ShowMilliseconds
-	local colorByCategory = options.Icons.ColorByCategory
-	local showTooltips = options.ShowTooltips ~= false
-	local fontScale = db.FontScale
-	local slot = 0
-
-	if kickEntry then
-		slot = slot + 1
-		layerScratch.Texture = kickEntry.Texture
-		layerScratch.DurationObject = kickEntry.DurationObject
-		layerScratch.Alpha = true
-		layerScratch.Glow = iconsGlow
-		layerScratch.ReverseCooldown = iconsReverse
-		layerScratch.ShowMilliseconds = showMilliseconds
-		layerScratch.FontScale = fontScale
-		layerScratch.Color = colorByCategory and kickEntry.Color or nil
-		layerScratch.SpellId = nil
-		container:SetSlot(slot, layerScratch)
-	end
-
-	local limit = mathMin(ccDataCount, container.Count - slot)
-	for i = 1, limit do
-		slot = slot + 1
-		local entry = ccData[i]
-		layerScratch.Texture = entry.SpellIcon
-		layerScratch.DurationObject = entry.DurationObject
-		layerScratch.Alpha = entry.IsCC
-		layerScratch.Glow = iconsGlow
-		layerScratch.ReverseCooldown = iconsReverse
-		layerScratch.ShowMilliseconds = showMilliseconds
-		layerScratch.FontScale = fontScale
-		layerScratch.Color = colorByCategory and entry.DispelColor or nil
-		layerScratch.SpellId = showTooltips and entry.SpellId or nil
-		container:SetSlot(slot, layerScratch)
-	end
-
-	-- Clear any unused slots beyond the CC count
 	for i = slot + 1, container.Count do
 		container:SetSlotUnused(i)
 	end
@@ -337,48 +306,77 @@ local function OnAuraDataChanged(unitToken)
 	-- same unitToken (e.g. duel starts), the cached container references may be nil
 	-- for the now-active options. Rebuild lazily so aura data isn't silently dropped.
 	local needRebuild = false
-	if unitOptions.CC and unitOptions.CC.Enabled and not data.CcContainer then
-		needRebuild = true
-	end
-	if unitOptions.Combined and unitOptions.Combined.Enabled and not data.CombinedContainer then
-		needRebuild = true
+	for _, bar in ipairs(BARS) do
+		local barOptions = unitOptions[bar.Key]
+		if barOptions and barOptions.Enabled and not data[bar.DataField] then
+			needRebuild = true
+		end
 	end
 
 	if needRebuild then
 		local nameplate = data.Nameplate or C_NamePlate.GetNamePlateForUnit(unitToken)
 		if nameplate then
-			local ccContainer, combinedContainer =
+			local bar1Container, bar2Container =
 				EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
-			data.CcContainer = ccContainer
-			data.CombinedContainer = combinedContainer
+			data.Bar1Container = bar1Container
+			data.Bar2Container = bar2Container
 		end
 	end
 
-	if unitOptions.CC and unitOptions.CC.Enabled then
-		ApplyCcToNameplate(data, watcher, unitOptions)
-	end
-	if unitOptions.Combined and unitOptions.Combined.Enabled then
-		ApplyCombinedToNameplate(data, watcher, unitOptions)
+	for _, bar in ipairs(BARS) do
+		local barOptions = unitOptions[bar.Key]
+		if barOptions and barOptions.Enabled then
+			ApplyBarToNameplate(data[bar.DataField], barOptions, watcher, data)
+		end
 	end
 end
 
-local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
-	if not combinedContainer or not combinedOptions then
+---Shows test icons for one bar: CC test spells when the bar has ShowCC, defensive test spells
+---when it has ShowDefensives, using the same CC-priority slot distribution as the live path.
+local function ShowBarTestIcons(container, barOptions, now)
+	if not container or not barOptions then
 		return
 	end
 
-	local iconsGlow = combinedOptions.Icons.Glow
-	local iconsReverse = combinedOptions.Icons.ReverseCooldown
-	local colorByCategory = combinedOptions.Icons.ColorByCategory
-	local showTooltips = combinedOptions.ShowTooltips ~= false
+	local ccCount = barOptions.ShowCC and testCcCount or 0
+	local defensiveCount = barOptions.ShowDefensives and testDefensiveCount or 0
+	local ccSlots, defensiveSlots =
+		slotDistribution.Calculate(container.Count, ccCount, defensiveCount, 0)
+
+	local iconsGlow = barOptions.Icons.Glow
+	local iconsReverse = barOptions.Icons.ReverseCooldown
+	local colorByCategory = barOptions.Icons.ColorByCategory
+	local showTooltips = barOptions.ShowTooltips ~= false
 	local fontScale = db.FontScale
 	local slot = 0
 
-	-- Defensive test spells only
-	local limit = mathMin(testDefensiveCount, combinedContainer.Count)
-	for i = 1, limit do
+	-- CC test spells first (highest priority)
+	for i = 1, ccSlots do
+		if slot >= container.Count then
+			break
+		end
 		slot = slot + 1
+		local spellId = testCcNameplateSpellIds[i]
+		local tex = C_Spell.GetSpellTexture(spellId)
+		if tex then
+			layerScratch.Texture = tex
+			layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
+			layerScratch.Alpha = true
+			layerScratch.Glow = iconsGlow
+			layerScratch.ReverseCooldown = iconsReverse
+			layerScratch.FontScale = fontScale
+			layerScratch.Color = colorByCategory and testCcDispelColors[spellId] or nil
+			layerScratch.SpellId = showTooltips and spellId or nil
+			container:SetSlot(slot, layerScratch)
+		end
+	end
 
+	-- Defensive test spells (second priority)
+	for i = 1, defensiveSlots do
+		if slot >= container.Count then
+			break
+		end
+		slot = slot + 1
 		local spellId = testDefensiveNameplateSpellIds[i]
 		local tex = C_Spell.GetSpellTexture(spellId)
 		if tex then
@@ -390,47 +388,13 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and defensiveColor or nil
 			layerScratch.SpellId = showTooltips and spellId or nil
-			combinedContainer:SetSlot(slot, layerScratch)
+			container:SetSlot(slot, layerScratch)
 		end
 	end
 
 	-- Clear any unused slots beyond what we just set
-	for i = slot + 1, combinedContainer.Count do
-		combinedContainer:SetSlotUnused(i)
-	end
-end
-
-local function ShowSeparateModeTestIcons(ccContainer, ccOptions, now)
-	if ccContainer and ccOptions then
-		local iconsGlow = ccOptions.Icons.Glow
-		local iconsReverse = ccOptions.Icons.ReverseCooldown
-		local colorByCategory = ccOptions.Icons.ColorByCategory
-		local showTooltips = ccOptions.ShowTooltips ~= false
-		local fontScale = db.FontScale
-		local limit = mathMin(testCcCount, ccContainer.Count)
-
-		-- Show CC test spells (limited to container count)
-		for i = 1, limit do
-			local spellId = testCcNameplateSpellIds[i]
-			local tex = C_Spell.GetSpellTexture(spellId)
-
-			if tex then
-				layerScratch.Texture = tex
-				layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
-				layerScratch.Alpha = true
-				layerScratch.Glow = iconsGlow
-				layerScratch.ReverseCooldown = iconsReverse
-				layerScratch.FontScale = fontScale
-				layerScratch.Color = colorByCategory and testCcDispelColors[spellId] or nil
-				layerScratch.SpellId = showTooltips and spellId or nil
-				ccContainer:SetSlot(i, layerScratch)
-			end
-		end
-
-		-- Clear any unused slots beyond test CC spells
-		for i = limit + 1, ccContainer.Count do
-			ccContainer:SetSlotUnused(i)
-		end
+	for i = slot + 1, container.Count do
+		container:SetSlotUnused(i)
 	end
 end
 
@@ -440,8 +404,8 @@ local function OnNamePlateRemoved(unitToken)
 		return
 	end
 
-	HideAndReset(data.CcContainer)
-	HideAndReset(data.CombinedContainer)
+	HideAndReset(data.Bar1Container)
+	HideAndReset(data.Bar2Container)
 
 	-- Dispose of watcher
 	if watchers[unitToken] then
@@ -473,7 +437,7 @@ local function OnNamePlateAdded(unitToken)
 	end
 
 	-- Reuse containers stored on the nameplate; only create if missing
-	local ccContainer, combinedContainer =
+	local bar1Container, bar2Container =
 		EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 
 	-- BUGFIX (duels): Previously this returned early if no containers were created for
@@ -488,20 +452,21 @@ local function OnNamePlateAdded(unitToken)
 	local inInstance = IsInInstance()
 	local oppositeOptions = units:IsEnemy(unitToken) and nmModule.Friendly or nmModule.Enemy
 	local anyEnabledOpposite = not inInstance
-		and ((oppositeOptions.Combined and oppositeOptions.Combined.Enabled)
-			or (oppositeOptions.CC and oppositeOptions.CC.Enabled))
+		and ((oppositeOptions.Bar1 and oppositeOptions.Bar1.Enabled)
+			or (oppositeOptions.Bar2 and oppositeOptions.Bar2.Enabled))
 
-	if not ccContainer and not combinedContainer and not anyEnabledOpposite then
+	if not bar1Container and not bar2Container and not anyEnabledOpposite then
 		return
 	end
 
 	-- Create / update nameplate data
-	nameplateAnchors[unitToken] = {
+	local data = {
 		Nameplate = nameplate,
-		CcContainer = ccContainer,
-		CombinedContainer = combinedContainer,
+		Bar1Container = bar1Container,
+		Bar2Container = bar2Container,
 		UnitToken = unitToken,
 	}
+	nameplateAnchors[unitToken] = data
 
 	-- Create new watcher
 	local sortRule, sortDirection = GetCCSortOptions()
@@ -520,11 +485,11 @@ local function OnNamePlateAdded(unitToken)
 		-- In test mode, show test icons for this specific nameplate
 		local now = GetTime()
 
-		if unitOptions.CC.Enabled and ccContainer then
-			ShowSeparateModeTestIcons(ccContainer, unitOptions.CC, now)
-		end
-		if unitOptions.Combined.Enabled and combinedContainer then
-			ShowCombinedTestIcons(combinedContainer, unitOptions.Combined, now)
+		for _, bar in ipairs(BARS) do
+			local barOptions = unitOptions[bar.Key]
+			if barOptions and barOptions.Enabled and data[bar.DataField] then
+				ShowBarTestIcons(data[bar.DataField], barOptions, now)
+			end
 		end
 	end
 end
@@ -535,12 +500,10 @@ local function ClearNameplate(unitToken)
 		return
 	end
 
-	if data.CcContainer then
-		data.CcContainer:ResetAllSlots()
-	end
-
-	if data.CombinedContainer then
-		data.CombinedContainer:ResetAllSlots()
+	for _, bar in ipairs(BARS) do
+		if data[bar.DataField] then
+			data[bar.DataField]:ResetAllSlots()
+		end
 	end
 end
 
@@ -581,10 +544,10 @@ local function RebuildContainers()
 end
 
 local function AnyEnabled()
-	return nmModule.Friendly.CC.Enabled
-		or nmModule.Friendly.Combined.Enabled
-		or nmModule.Enemy.CC.Enabled
-		or nmModule.Enemy.Combined.Enabled
+	return nmModule.Friendly.Bar1.Enabled
+		or nmModule.Friendly.Bar2.Enabled
+		or nmModule.Enemy.Bar1.Enabled
+		or nmModule.Enemy.Bar2.Enabled
 end
 
 local function CacheEnabledModes()
@@ -592,11 +555,11 @@ local function CacheEnabledModes()
 	local friendly = nmModule.Friendly
 	local enabled = nmModule.Enabled
 
-	previousEnemyEnabled.CC = enemy.CC.Enabled
-	previousEnemyEnabled.Combined = enemy.Combined.Enabled
+	previousEnemyEnabled.Bar1 = enemy.Bar1.Enabled
+	previousEnemyEnabled.Bar2 = enemy.Bar2.Enabled
 
-	previousFriendlyEnabled.CC = friendly.CC.Enabled
-	previousFriendlyEnabled.Combined = friendly.Combined.Enabled
+	previousFriendlyEnabled.Bar1 = friendly.Bar1.Enabled
+	previousFriendlyEnabled.Bar2 = friendly.Bar2.Enabled
 
 	previousPetEnabled.Friendly = friendly.IgnorePets
 	previousPetEnabled.Enemy = enemy.IgnorePets
@@ -612,10 +575,10 @@ local function HaveModesChanged()
 	local friendly = nmModule.Friendly
 	local enabled = nmModule.Enabled
 
-	return previousEnemyEnabled.CC ~= enemy.CC.Enabled
-		or previousEnemyEnabled.Combined ~= enemy.Combined.Enabled
-		or previousFriendlyEnabled.CC ~= friendly.CC.Enabled
-		or previousFriendlyEnabled.Combined ~= friendly.Combined.Enabled
+	return previousEnemyEnabled.Bar1 ~= enemy.Bar1.Enabled
+		or previousEnemyEnabled.Bar2 ~= enemy.Bar2.Enabled
+		or previousFriendlyEnabled.Bar1 ~= friendly.Bar1.Enabled
+		or previousFriendlyEnabled.Bar2 ~= friendly.Bar2.Enabled
 		or previousPetEnabled.Friendly ~= friendly.IgnorePets
 		or previousPetEnabled.Enemy ~= enemy.IgnorePets
 		or previousModuleEnabled.Always ~= enabled.Always
@@ -626,18 +589,13 @@ end
 
 local function ShowTestIcons()
 	local now = GetTime()
-	for _, container in pairs(nameplateAnchors) do
-		local options = M:GetUnitOptions(container.UnitToken)
-		local ccOptions = options.CC
-		local ccContainer = container.CcContainer
-		local combinedOptions = options.Combined
-		local combinedContainer = container.CombinedContainer
-
-		if options.CC.Enabled and ccContainer and ccOptions then
-			ShowSeparateModeTestIcons(ccContainer, ccOptions, now)
-		end
-		if options.Combined.Enabled and combinedContainer and combinedOptions then
-			ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
+	for _, data in pairs(nameplateAnchors) do
+		local options = M:GetUnitOptions(data.UnitToken)
+		for _, bar in ipairs(BARS) do
+			local barOptions = options[bar.Key]
+			if barOptions and barOptions.Enabled and data[bar.DataField] then
+				ShowBarTestIcons(data[bar.DataField], barOptions, now)
+			end
 		end
 	end
 end
@@ -649,49 +607,29 @@ local function RefreshAnchorsAndSizes()
 			local unitOptions = M:GetUnitOptions(data.UnitToken)
 			local anchorFrame = GetNameplateAnchorFrame(data.Nameplate)
 
-			-- CC and Defensives are independent; reposition each that exists.
-			local ccOptions = unitOptions.CC
-			local ccContainer = data.CcContainer
-			if ccContainer and ccOptions then
-				ccContainer.Frame:ClearAllPoints()
+			-- Both bars are independent; reposition each that exists.
+			for _, bar in ipairs(BARS) do
+				local container = data[bar.DataField]
+				local barOptions = unitOptions[bar.Key]
+				if container then
+					container.Frame:ClearAllPoints()
 
-				if ccOptions.Enabled then
-					local ccAnchorPoint, ccRelativeToPoint = GrowToAnchor(ccOptions.Grow)
-					ccContainer.Frame:SetPoint(
-						ccAnchorPoint,
-						anchorFrame,
-						ccRelativeToPoint,
-						ccOptions.Offset.X,
-						ccOptions.Offset.Y
-					)
-					ccContainer:SetGrowDown(ccOptions.Grow == "DOWN")
-					ccContainer:SetIconSize(ccOptions.Icons.Size)
-					ccContainer:SetSpacing(db.IconSpacing or 2)
-					ccContainer:SetCount(ccOptions.Icons.MaxIcons)
-					ccContainer.Frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
-				end
-				ccContainer.Frame:SetIgnoreParentScale(ignoreParentScale)
-			end
-
-			local combinedContainer = data.CombinedContainer
-			if combinedContainer then
-				local combinedOptions = unitOptions.Combined
-				if combinedOptions and combinedOptions.Enabled then
-					local combinedAnchorPoint, combinedRelativeToPoint = GrowToAnchor(combinedOptions.Grow)
-					combinedContainer.Frame:ClearAllPoints()
-					combinedContainer.Frame:SetPoint(
-						combinedAnchorPoint,
-						anchorFrame,
-						combinedRelativeToPoint,
-						combinedOptions.Offset.X,
-						combinedOptions.Offset.Y
-					)
-					combinedContainer:SetGrowDown(combinedOptions.Grow == "DOWN")
-					combinedContainer:SetIconSize(combinedOptions.Icons.Size)
-					combinedContainer:SetSpacing(db.IconSpacing or 2)
-					combinedContainer:SetCount(combinedOptions.Icons.MaxIcons)
-					combinedContainer.Frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
-					combinedContainer.Frame:SetIgnoreParentScale(ignoreParentScale)
+					if barOptions and barOptions.Enabled then
+						local anchorPoint, relativeToPoint = GrowToAnchor(barOptions.Grow)
+						container.Frame:SetPoint(
+							anchorPoint,
+							anchorFrame,
+							relativeToPoint,
+							barOptions.Offset.X,
+							barOptions.Offset.Y
+						)
+						container:SetGrowDown(barOptions.Grow == "DOWN")
+						container:SetIconSize(barOptions.Icons.Size)
+						container:SetSpacing(db.IconSpacing or 2)
+						container:SetCount(barOptions.Icons.MaxIcons)
+						container.Frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
+					end
+					container.Frame:SetIgnoreParentScale(ignoreParentScale)
 				end
 			end
 		end
@@ -751,11 +689,11 @@ local function ApplyBlizzardNameplateSettings()
 		configureEnabled = true
 	end
 
-	local anyEnemyEnabled = nmModule.Enemy.CC.Enabled
-		or nmModule.Enemy.Combined.Enabled
+	local anyEnemyEnabled = nmModule.Enemy.Bar1.Enabled
+		or nmModule.Enemy.Bar2.Enabled
 
-	local anyFriendlyEnabled = nmModule.Friendly.CC.Enabled
-		or nmModule.Friendly.Combined.Enabled
+	local anyFriendlyEnabled = nmModule.Friendly.Bar1.Enabled
+		or nmModule.Friendly.Bar2.Enabled
 
 	if configureEnabled and anyEnemyEnabled then
 		C_CVar.SetCVarBitfield("nameplateEnemyPlayerAuraDisplay", Enum.NamePlateEnemyPlayerAuraDisplay.LossOfControl, false)

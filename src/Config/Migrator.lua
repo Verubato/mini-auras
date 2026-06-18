@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 48,
+	Version = 49,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -249,8 +249,10 @@ local dbDefaults = {
 			Friendly = {
 				IgnorePets = true,
 				---@class NameplateSpellTypeOptions
-				CC = {
+				Bar1 = {
 					Enabled = false,
+					ShowCC = true,
+					ShowDefensives = false,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -268,27 +270,10 @@ local dbDefaults = {
 
 					ShowTooltips = false,
 				},
-				-- TODO(IMPORTANT-revert): inert default; remove once 12.0.7 removal is permanent.
-				Important = {
+				Bar2 = {
 					Enabled = false,
-					Grow = "LEFT",
-					Offset = {
-						X = 0,
-						Y = 0,
-					},
-
-					Icons = {
-						Size = 35,
-						Glow = true,
-						ReverseCooldown = true,
-						ColorByCategory = true,
-						MaxIcons = 5,
-					},
-
-					ShowTooltips = false,
-				},
-				Combined = {
-					Enabled = false,
+					ShowCC = false,
+					ShowDefensives = true,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -301,6 +286,7 @@ local dbDefaults = {
 						ReverseCooldown = true,
 						ColorByCategory = true,
 						MaxIcons = 5,
+						ShowMilliseconds = false,
 					},
 
 					ShowTooltips = false,
@@ -308,8 +294,10 @@ local dbDefaults = {
 			},
 			Enemy = {
 				IgnorePets = true,
-				CC = {
+				Bar1 = {
 					Enabled = true,
+					ShowCC = true,
+					ShowDefensives = false,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -327,27 +315,10 @@ local dbDefaults = {
 
 					ShowTooltips = false,
 				},
-				-- TODO(IMPORTANT-revert): inert default; remove once 12.0.7 removal is permanent.
-				Important = {
-					Enabled = true,
-					Grow = "LEFT",
-					Offset = {
-						X = 0,
-						Y = 0,
-					},
-
-					Icons = {
-						Size = 35,
-						Glow = true,
-						ReverseCooldown = true,
-						ColorByCategory = true,
-						MaxIcons = 5,
-					},
-
-					ShowTooltips = false,
-				},
-				Combined = {
+				Bar2 = {
 					Enabled = false,
+					ShowCC = false,
+					ShowDefensives = true,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -360,6 +331,7 @@ local dbDefaults = {
 						ReverseCooldown = true,
 						ColorByCategory = true,
 						MaxIcons = 5,
+						ShowMilliseconds = false,
 					},
 
 					ShowTooltips = false,
@@ -2351,6 +2323,39 @@ function M:UpgradeToVersion48(vars)
 	vars.NotifiedChanges = false
 
 	vars.Version = 48
+	return true
+end
+
+function M:UpgradeToVersion49(vars)
+	if vars.Version ~= 48 then return false end
+
+	-- Nameplates: the fixed "CC" and "Combined/Defensives" sections became two generic bars
+	-- ("Bar1", "Bar2"), each with its own ShowCC / ShowDefensives toggles. Map the old sections
+	-- onto the bars - CC -> Bar1 (Show CC), Combined -> Bar2 (Show Defensives) - so each user's
+	-- existing size/position/enabled settings carry over. Leftover CC/Combined keys are stripped
+	-- by CleanTable against the new defaults.
+	local nameplates = vars.Modules and vars.Modules.NameplatesModule
+	if nameplates then
+		for _, factionKey in ipairs({ "Friendly", "Enemy" }) do
+			local faction = nameplates[factionKey]
+			if faction then
+				if faction.CC and not faction.Bar1 then
+					faction.CC.ShowCC = true
+					faction.CC.ShowDefensives = false
+					faction.Bar1 = faction.CC
+					faction.CC = nil
+				end
+				if faction.Combined and not faction.Bar2 then
+					faction.Combined.ShowCC = false
+					faction.Combined.ShowDefensives = true
+					faction.Bar2 = faction.Combined
+					faction.Combined = nil
+				end
+			end
+		end
+	end
+
+	vars.Version = 49
 	return true
 end
 
