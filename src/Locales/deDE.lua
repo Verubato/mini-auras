@@ -279,6 +279,9 @@ L:RegisterLocale("deDE", {
 	["Note that you can't simply filter by spell id these days."] = "Beachte, dass man heutzutage nicht einfach nach Zauber-ID filtern kann.",
 	["Precognition"] = "Präkognition",
 	["This isn't precision perfect but it should be close enough."] = "Das ist nicht präzise perfekt, aber es sollte nah genug sein.",
+	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Es funktioniert, indem es jeden 4-sekündigen 'wichtigen' Selbst-Buff erkennt und dieses Symbol anzeigt.",
+	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Falls du zufällig einen anderen 4-sekündigen wichtigen Selbst-Buff hast, würde dieses Symbol ebenfalls angezeigt, tut uns leid.",
+	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Verfolgt auch die Aufhebende Hülle des Bewahrungs-Rufers (3-sekündiger wichtiger Selbst-Buff).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "Andere Mini-Addons",

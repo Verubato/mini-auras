@@ -280,6 +280,9 @@ L:RegisterLocale("frFR", {
 	["Note that you can't simply filter by spell id these days."] = "Il n'est plus possible de filtrer simplement par ID de sort.",
 	["Precognition"] = "Précognition",
 	["This isn't precision perfect but it should be close enough."] = "Ce n'est pas parfait mais ça devrait suffire.",
+	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Détecte tout buff personnel « important » de 4 secondes et affiche l'icône correspondante.",
+	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Si par hasard vous avez un autre buff important de 4 secondes, son icône s'affichera aussi.",
+	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Détecte aussi le Voile annihilant de l'Évocateur Préservation (buff personnel important de 3 secondes).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "Autres Mini Addons",

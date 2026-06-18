@@ -541,8 +541,6 @@ local dbDefaults = {
 			},
 		},
 
-		-- TODO(IMPORTANT-revert): inert defaults for the removed PrecogGuesser module; remove
-		-- once the 12.0.7 IMPORTANT-filter removal is permanent.
 		---@class PrecogGuesserModuleOptions
 		PrecogGuesserModule = {
 			Enabled = {

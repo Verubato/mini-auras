@@ -280,6 +280,9 @@ L:RegisterLocale("ruRU", {
 	["Note that you can't simply filter by spell id these days."] = "Обратите внимание, что в наши дни нельзя просто фильтровать по ID заклинания.",
 	["Precognition"] = "Предвидение",
 	["This isn't precision perfect but it should be close enough."] = "Это не идеально точно, но должно быть достаточно близко.",
+	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Работает, отслеживая любой 4-секундный «важный» бафф на себя и отображая его иконку.",
+	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Если у вас есть другой 4-секундный важный бафф на себя, то его иконка также будет отображаться, приносим извинения.",
+	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Также отслеживает «Нейтрализующее покрывало» Призывателя Сохранения (3-секундный важный бафф на себя).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "Другие Mini аддоны",

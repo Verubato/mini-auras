@@ -283,6 +283,9 @@ L:SetDefaultStrings({
 	["Note that you can't simply filter by spell id these days."] = "Note that you can't simply filter by spell id these days.",
 	["Precognition"] = "Precognition",
 	["This isn't precision perfect but it should be close enough."] = "This isn't precision perfect but it should be close enough.",
+	["It works by taking any 4 second 'important' self buff and showing that icon."] = "It works by taking any 4 second 'important' self buff and showing that icon.",
+	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry.",
+	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "Other Mini Addons",

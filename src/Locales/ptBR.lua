@@ -280,6 +280,9 @@ L:RegisterLocale("ptBR", {
 	["Note that you can't simply filter by spell id these days."] = "Note que hoje em dia você não pode simplesmente filtrar por ID de feitiço.",
 	["Precognition"] = "Precognição",
 	["This isn't precision perfect but it should be close enough."] = "Não é perfeitamente preciso, mas deve ser suficientemente próximo.",
+	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Funciona detectando qualquer buff pessoal «importante» de 4 segundos e exibindo esse ícone.",
+	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Se por acaso você tiver outro buff pessoal importante de 4 segundos, ele também exibiria esse ícone, desculpe.",
+	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Também detecta o Manto Anulador do Evocador de Preservação (buff pessoal importante de 3 segundos).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "Outros Mini Addons",

@@ -94,11 +94,15 @@ local function InterestedIn(watcher, updateInfo)
 	if updateInfo.removedAuraInstanceIDs and next(updateInfo.removedAuraInstanceIDs) ~= nil then
 		local ccState = state.CcAuraState
 		local defState = state.DefensiveState
+		local buffState = state.BuffState
 		for _, id in pairs(updateInfo.removedAuraInstanceIDs) do
 			for _, aura in ipairs(ccState) do
 				if aura.AuraInstanceID == id then return true end
 			end
 			for _, aura in ipairs(defState) do
+				if aura.AuraInstanceID == id then return true end
+			end
+			for _, aura in ipairs(buffState) do
 				if aura.AuraInstanceID == id then return true end
 			end
 		end
@@ -173,6 +177,7 @@ function Watcher:ClearState(notify)
 	local state = self.State
 	wipe(state.CcAuraState)
 	wipe(state.DefensiveState)
+	wipe(state.BuffState)
 
 	if notify then
 		NotifyCallbacks(self)
@@ -229,6 +234,19 @@ function Watcher:GetDefensiveState()
 	return self.State.DefensiveState
 end
 
+---Every HELPFUL aura on the unit (no IsSpellImportant/IsDefensive gating). Callers that only
+---want "important" auras must check C_Spell.IsSpellImportant themselves - it returns a secret
+---value, so it can't be filtered here.
+---@return AuraInfo[]
+function Watcher:GetBuffState()
+	local unit = self.State.Unit
+	if not unit or not UnitExists(unit) or UnitIsDeadOrGhost(unit) then
+		return emptyAuraState
+	end
+
+	return self.State.BuffState
+end
+
 ---@param unit string
 ---@param filter string
 ---@param sortRule number?
@@ -258,6 +276,7 @@ function Watcher:RebuildStates()
 		local state = self.State
 		local hasState = next(state.CcAuraState) ~= nil
 			or next(state.DefensiveState) ~= nil
+			or next(state.BuffState) ~= nil
 		if hasState then
 			self:ClearState(true)
 		end
@@ -270,14 +289,19 @@ function Watcher:RebuildStates()
 	local interestedIn = state.InterestedIn
 	local interestedInDefensives = not interestedIn or (interestedIn and interestedIn.Defensives)
 	local interestedInCC = not interestedIn or (interestedIn and interestedIn.CC)
+	-- Buffs are opt-in only (never part of the "all" default) to avoid duplicating defensives.
+	local interestedInBuffs = interestedIn and interestedIn.Buffs
 
 	-- Reuse the existing state arrays in-place to avoid per-call allocation.
 	---@type AuraInfo[]
 	local ccSpellData = state.CcAuraState
 	---@type AuraInfo[]
 	local defensivesSpellData = state.DefensiveState
+	---@type AuraInfo[]
+	local buffSpellData = state.BuffState
 	wipe(ccSpellData)
 	wipe(defensivesSpellData)
+	wipe(buffSpellData)
 	local seen = rebuildSeen
 	wipe(seen)
 
@@ -342,6 +366,21 @@ function Watcher:RebuildStates()
 		end)
 	end
 
+	if interestedInBuffs then
+		-- Collect every helpful aura with no gating. The "important" check (precog, Nullifying
+		-- Shroud) is a secret value, so consumers must apply it themselves at display time.
+		IterateAuras(unit, "HELPFUL", sortRule, sortDirection, function(auraData, durationInfo, dispelColor)
+			buffSpellData[#buffSpellData + 1] = {
+				SpellId = auraData.spellId,
+				SpellName = auraData.name,
+				SpellIcon = auraData.icon,
+				DurationObject = durationInfo,
+				DispelColor = dispelColor,
+				AuraInstanceID = auraData.auraInstanceID,
+			}
+		end)
+	end
+
 	-- When unsorted, the API may return auras in a non-deterministic order (observed on Chinese clients).
 	-- Sort by AuraInstanceID to ensure a consistent order, respecting the requested direction.
 	if sortRule == Enum.UnitAuraSortRule.Unsorted then
@@ -349,6 +388,7 @@ function Watcher:RebuildStates()
 			and byInstanceIdReverse or byInstanceIdForward
 		table.sort(ccSpellData, byInstanceId)
 		table.sort(defensivesSpellData, byInstanceId)
+		table.sort(buffSpellData, byInstanceId)
 	end
 	-- Arrays were modified in-place; no reassignment needed.
 end
@@ -401,6 +441,10 @@ function M:New(unit, events, interestedIn, sortRule, sortDirection)
 	if all or interestedIn.CC then
 		activeFilters[#activeFilters + 1] = "HARMFUL|CROWD_CONTROL"
 	end
+	-- Opt-in only; not part of the "all" default (would duplicate the defensive filters).
+	if interestedIn and interestedIn.Buffs then
+		activeFilters[#activeFilters + 1] = "HELPFUL"
+	end
 
 	---@type Watcher
 	local watcher = setmetatable({
@@ -412,6 +456,7 @@ function M:New(unit, events, interestedIn, sortRule, sortDirection)
 			Callbacks = {},
 			CcAuraState = {},
 			DefensiveState = {},
+			BuffState = {},
 			InterestedIn = interestedIn,
 			ActiveFilters = activeFilters,
 			SortRule = sortRule or Enum.UnitAuraSortRule.Unsorted,
@@ -438,6 +483,7 @@ InitColourCurve()
 ---@class AuraTypeFilter
 ---@field CC boolean?
 ---@field Defensives boolean?
+---@field Buffs boolean?  -- collect every HELPFUL aura (ungated); opt-in only
 
 ---@class AuraInfo
 ---@field IsCC? boolean
@@ -456,6 +502,7 @@ InitColourCurve()
 ---@field Callbacks (fun(self: Watcher))[]
 ---@field CcAuraState AuraInfo[]
 ---@field DefensiveState AuraInfo[]
+---@field BuffState AuraInfo[]
 ---@field InterestedIn AuraTypeFilter
 ---@field ActiveFilters string[]
 ---@field SortRule number
@@ -466,6 +513,7 @@ InitColourCurve()
 ---@field State WatcherState
 ---@field GetCcState fun(self: Watcher): AuraInfo[]
 ---@field GetDefensiveState fun(self: Watcher): AuraInfo[]
+---@field GetBuffState fun(self: Watcher): AuraInfo[]
 ---@field RegisterCallback fun(self: Watcher, callback: fun(self: Watcher))
 ---@field GetUnit fun(self: Watcher): string
 ---@field IsEnabled fun(self: Watcher): boolean

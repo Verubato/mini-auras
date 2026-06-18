@@ -16,6 +16,7 @@ local modules = {
 	addon.Modules.NameplatesModule,
 	addon.Modules.KickTimerModule,
 	addon.Modules.FriendlyIndicatorModule,
+	addon.Modules.PrecogGuesserModule,
 	addon.Modules.Cooldowns.Talents,
 	addon.Core.TrinketsTracker,
 	addon.Modules.FriendlyCooldownTrackerModule,
@@ -223,6 +224,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field AlertsModule AlertsModule
 ---@field CrowdControlModule CrowdControlModule
 ---@field FriendlyIndicatorModule FriendlyIndicatorModule
+---@field PrecogGuesserModule PrecogGuesserModule
 ---@field FriendlyCooldownTrackerModule FriendlyCooldownTrackerModule
 ---@field EnemyCooldownTrackerModule EnemyCooldownTrackerModule
 ---@field Cooldowns Cooldowns

@@ -280,6 +280,9 @@ L:RegisterLocale("zhCN", {
 	["Note that you can't simply filter by spell id these days."] = "请注意，现在无法简单地通过法术ID进行过滤。",
 	["Precognition"] = "预知",
 	["This isn't precision perfect but it should be close enough."] = "这并非完全精确，但应该足够接近。",
+	["It works by taking any 4 second 'important' self buff and showing that icon."] = "其工作原理是检测任何4秒的'重要'自身增益效果并显示该图标。",
+	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "如果你恰好有其他4秒的重要自身增益效果，该图标也会显示，敬请谅解。",
+	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "同时追踪保护系唤魔师的「废除之幕」（3秒重要自身增益效果）。",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "其他Mini插件",

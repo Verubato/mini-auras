@@ -279,6 +279,9 @@ L:RegisterLocale("koKR", {
 	["Note that you can't simply filter by spell id these days."] = "요즘은 주문 ID로 단순히 필터링할 수 없다는 점에 유의하세요.",
 	["Precognition"] = "예지력",
 	["This isn't precision perfect but it should be close enough."] = "완벽하게 정확하지는 않지만 충분히 근접합니다.",
+	["It works by taking any 4 second 'important' self buff and showing that icon."] = "4초짜리 '중요한' 자신 버프를 감지하여 해당 아이콘을 표시하는 방식으로 작동합니다.",
+	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "혹시 다른 4초짜리 중요한 자신 버프가 있다면 그 아이콘도 표시될 수 있으니 양해 부탁드립니다.",
+	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "보존 기원사의 무효화의 장막도 함께 추적합니다 (3초짜리 중요한 자신 버프).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "기타 Mini 애드온",

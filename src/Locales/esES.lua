@@ -279,6 +279,9 @@ L:RegisterLocale("esES", {
 	["Note that you can't simply filter by spell id these days."] = "Ten en cuenta que hoy en día no puedes simplemente filtrar por ID de hechizo.",
 	["Precognition"] = "Precognición",
 	["This isn't precision perfect but it should be close enough."] = "No es perfectamente preciso, pero debería ser suficientemente cercano.",
+	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Funciona detectando cualquier buff propio «importante» de 4 segundos y mostrando ese icono.",
+	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Si por casualidad tienes otro buff propio importante de 4 segundos, también mostraría ese icono, lo sentimos.",
+	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "También detecta el Sudario anulador del Evocador de Preservación (buff propio importante de 3 segundos).",
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "Otros Mini Addons",

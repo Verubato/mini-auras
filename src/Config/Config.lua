@@ -175,6 +175,13 @@ function M:Init()
 			end,
 		},
 		{
+			Key = "Precog",
+			Title = L["Precognition"],
+			Build = function(content)
+				M.PrecogGuesser:Build(content)
+			end,
+		},
+		{
 			Key = "Miscellaneous",
 			Title = L["Miscellaneous_Short"] or L["Miscellaneous"],
 			Build = function(content)
@@ -295,6 +302,7 @@ end
 ---@field Alerts AlertsConfig
 ---@field Nameplates NameplatesConfig
 ---@field KickTimer KickTimerConfig
+---@field PrecogGuesser PrecogGuesserConfig
 ---@field OtherAddons OtherAddonsConfig
 ---@field FriendlyIndicator FriendlyIndicatorConfig
 ---@field FriendlyCooldownTracker FriendlyCooldownTrackerConfig
