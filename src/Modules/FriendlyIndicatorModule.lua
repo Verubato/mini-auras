@@ -22,6 +22,14 @@ local testDefensiveSpells = {}
 local testCcSpells = {}
 ---@type Db
 local db
+-- Shared empty list returned when important isn't shown. Never mutate this.
+local EMPTY = {}
+-- Scratch tables reused by the important stack (avoids per-update allocations).
+local importantOptionsScratch = {}
+local importantSkipScratch = {}
+-- Whether watchers are currently collecting helpful buffs (for the important slot). Tracked so a
+-- config toggle can recreate watchers with the right filter instead of always paying the cost.
+local importantWatchEnabled = false
 
 local function GetOptions()
 	local m = db.Modules.FriendlyIndicatorModule
@@ -29,6 +37,13 @@ local function GetOptions()
 		return nil
 	end
 	return instanceOptions:IsRaid() and m.Raid or m.Default
+end
+
+-- Whether either context (party/raid) wants the important slot, so watchers know to collect
+-- helpful buffs. Checked across both because a watcher persists as the group type changes.
+local function ImportantNeeded()
+	local m = db.Modules.FriendlyIndicatorModule
+	return m ~= nil and ((m.Default and m.Default.ShowImportant) or (m.Raid and m.Raid.ShowImportant)) or false
 end
 
 ---@class FriendlyIndicatorModule : IModule
@@ -84,10 +99,13 @@ local function UpdateWatcherAuras(entry)
 	-- Get aura states
 	local ccState = entry.Watcher:GetCcState()
 	local defensiveState = entry.Watcher:GetDefensiveState()
+	local buffState = options.ShowImportant and entry.Watcher:GetBuffState() or EMPTY
 	local kickEntry = options.ShowKicks ~= false and kickTracker:GetKick(entry.Unit) or nil
 
 	local ccCount = options.ShowCC and #ccState or 0
 	local defensiveCount = options.ShowDefensives and #defensiveState or 0
+	-- Important collapses to a single stacked slot regardless of how many buffs the unit has.
+	local importantCount = #buffState > 0 and 1 or 0
 
 	local slotIndex = 1
 
@@ -105,10 +123,10 @@ local function UpdateWatcherAuras(entry)
 		slotIndex = slotIndex + 1
 	end
 
-	-- Distribute remaining slots: CC first, then Defensive
+	-- Distribute remaining slots: CC first, then Defensive, then the important slot
 	local remainingSlots = maxIcons - (slotIndex - 1)
-	local ccSlots, defensiveSlots =
-		slotDistribution.Calculate(remainingSlots, ccCount, defensiveCount, 0)
+	local ccSlots, defensiveSlots, importantSlots =
+		slotDistribution.Calculate(remainingSlots, ccCount, defensiveCount, importantCount)
 
 	for i = 1, ccSlots do
 		if slotIndex > container.Count then
@@ -142,6 +160,28 @@ local function UpdateWatcherAuras(entry)
 			FontScale = db.FontScale,
 			SpellId = showTooltips and aura.SpellId or nil,
 		})
+		slotIndex = slotIndex + 1
+	end
+
+	-- Important spell: one stacked slot at the end that lets IsSpellImportant decide which buff
+	-- shows. Exclude defensives already shown so a both-important-and-defensive aura isn't doubled.
+	if importantSlots > 0 and slotIndex <= container.Count then
+		local skipIds = nil
+		if options.ShowDefensives then
+			wipe(importantSkipScratch)
+			for _, aura in ipairs(defensiveState) do
+				if aura.AuraInstanceID then
+					importantSkipScratch[aura.AuraInstanceID] = true
+				end
+			end
+			skipIds = importantSkipScratch
+		end
+
+		importantOptionsScratch.Glow = iconsGlow
+		importantOptionsScratch.ReverseCooldown = iconsReverse
+		importantOptionsScratch.Color = nil
+		importantOptionsScratch.FontScale = db.FontScale
+		container:StackImportantBuffs(slotIndex, buffState, importantOptionsScratch, false, skipIds)
 		slotIndex = slotIndex + 1
 	end
 
@@ -224,7 +264,7 @@ local function EnsureWatcher(anchor, unit)
 		local size = moduleUtil:GetIconSize(options.Icons, anchor, 32, 75)
 		local spacing = db.IconSpacing or 2
 		local container = iconSlotContainer:New(UIParent, maxIcons, size, spacing, "Friendly Indicators", nil, "Friendly Indicators")
-		local watcher = UnitAuraWatcher:New(unit, nil, { Defensives = true, CC = true })
+		local watcher = UnitAuraWatcher:New(unit, nil, { Defensives = true, CC = true, Buffs = ImportantNeeded() })
 
 		entry = {
 			Container = container,
@@ -248,7 +288,7 @@ local function EnsureWatcher(anchor, unit)
 		if entry.Unit ~= unit then
 			-- Unit changed, recreate the watcher
 			entry.Watcher:Dispose()
-			entry.Watcher = UnitAuraWatcher:New(unit, nil, { Defensives = true, CC = true })
+			entry.Watcher = UnitAuraWatcher:New(unit, nil, { Defensives = true, CC = true, Buffs = ImportantNeeded() })
 			entry.Watcher:RegisterCallback(function()
 				UpdateWatcherAuras(entry)
 			end)
@@ -345,6 +385,7 @@ local function RefreshTestIcons()
 
 	local ccCount = options.ShowCC and #testCcSpells or 0
 	local defensiveCount = options.ShowDefensives and #testDefensiveSpells or 0
+	local importantCount = options.ShowImportant and 1 or 0
 	local showKicks = options.ShowKicks ~= false
 
 	for _, entry in ipairs(orderedEntries) do
@@ -371,8 +412,8 @@ local function RefreshTestIcons()
 		end
 
 		local remainingSlots = maxIcons - (slotIndex - 1)
-		local ccSlots, defensiveSlots =
-			slotDistribution.Calculate(remainingSlots, ccCount, defensiveCount, 0)
+		local ccSlots, defensiveSlots, importantSlots =
+			slotDistribution.Calculate(remainingSlots, ccCount, defensiveCount, importantCount)
 
 		for i = 1, ccSlots do
 			if slotIndex > container.Count then
@@ -410,6 +451,22 @@ local function RefreshTestIcons()
 					Glow = iconsGlow,
 					FontScale = db.FontScale,
 					SpellId = showTooltips and spell.SpellId or nil,
+				})
+				slotIndex = slotIndex + 1
+			end
+		end
+
+		-- Important test icon (shown directly; the live path gates it by IsSpellImportant)
+		if importantSlots > 0 and slotIndex <= container.Count then
+			local texture = C_Spell.GetSpellTexture(377362) -- precog
+			if texture then
+				container:SetSlot(slotIndex, {
+					Texture = texture,
+					DurationObject = wowEx:CreateDuration(now, 4),
+					Alpha = true,
+					ReverseCooldown = iconsReverse,
+					Glow = iconsGlow,
+					FontScale = db.FontScale,
 				})
 				slotIndex = slotIndex + 1
 			end
@@ -470,6 +527,24 @@ function M:Refresh()
 
 	-- Module is enabled, ensure watchers are enabled
 	EnableWatchers()
+
+	-- If the important toggle changed, recreate existing watchers so they start/stop collecting
+	-- helpful buffs (kept off by default to avoid scanning every aura on up to 40 raid frames).
+	-- Containers are preserved; only the watcher is swapped.
+	local needBuffs = ImportantNeeded()
+	if needBuffs ~= importantWatchEnabled then
+		importantWatchEnabled = needBuffs
+		for _, entry in pairs(watchers) do
+			if entry.Watcher then
+				entry.Watcher:Dispose()
+				entry.Watcher = UnitAuraWatcher:New(entry.Unit, nil, { Defensives = true, CC = true, Buffs = needBuffs })
+				entry.Watcher:RegisterCallback(function()
+					UpdateWatcherAuras(entry)
+				end)
+			end
+		end
+	end
+
 	EnsureWatchers()
 
 	for anchor, entry in pairs(watchers) do

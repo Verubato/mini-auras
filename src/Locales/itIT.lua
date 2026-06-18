@@ -107,6 +107,7 @@ L:RegisterLocale("itIT", {
 	["Show crowd control spells in this bar."] = "Mostra gli incantesimi di controllo in questa barra.",
 	["Show defensive spells in this bar."] = "Mostra gli incantesimi difensivi in questa barra.",
 	["Adds one icon at the end of this bar that shows the enemy's important spell (e.g. precognition)."] = "Aggiunge un'icona alla fine di questa barra che mostra l'incantesimo importante del nemico (es. precognizione).",
+	["Adds one icon at the end that shows the unit's important spell (e.g. precognition)."] = "Aggiunge un'icona alla fine che mostra l'incantesimo importante dell'unità (es. precognizione).",
 	["Show a separate, movable arena bar with one slot per opponent for their important spell (e.g. precognition)."] = "Mostra una barra arena separata e spostabile con uno spazio per avversario per il loro incantesimo importante (es. precognizione).",
 	["Enemy - Bar 1"] = "Nemici - Barra 1",
 	["Enemy - Bar 2"] = "Nemici - Barra 2",

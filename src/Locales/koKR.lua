@@ -107,6 +107,7 @@ L:RegisterLocale("koKR", {
 	["Show crowd control spells in this bar."] = "이 막대에 군중 제어 주문을 표시합니다.",
 	["Show defensive spells in this bar."] = "이 막대에 방어 주문을 표시합니다.",
 	["Adds one icon at the end of this bar that shows the enemy's important spell (e.g. precognition)."] = "이 막대 끝에 적의 중요 주문(예: 예지)을 표시하는 아이콘을 하나 추가합니다.",
+	["Adds one icon at the end that shows the unit's important spell (e.g. precognition)."] = "끝에 대상의 중요 주문(예: 예지)을 표시하는 아이콘을 하나 추가합니다.",
 	["Show a separate, movable arena bar with one slot per opponent for their important spell (e.g. precognition)."] = "상대별로 칸이 하나씩 있는 별도의 이동 가능한 투기장 막대에 중요 주문(예: 예지)을 표시합니다.",
 	["Enemy - Bar 1"] = "적 - 막대 1",
 	["Enemy - Bar 2"] = "적 - 막대 2",

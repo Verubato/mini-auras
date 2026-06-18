@@ -409,7 +409,6 @@ local dbDefaults = {
 			Default = {
 				ExcludePlayer = false,
 				ShowDefensives = true,
-				-- TODO(IMPORTANT-revert): inert default; remove once 12.0.7 removal is permanent.
 				ShowImportant = true,
 				ShowCC = false,
 				ShowKicks = true,
@@ -431,7 +430,6 @@ local dbDefaults = {
 			Raid = {
 				ExcludePlayer = false,
 				ShowDefensives = true,
-				-- TODO(IMPORTANT-revert): inert default; remove once 12.0.7 removal is permanent.
 				ShowImportant = true,
 				ShowCC = true,
 				ShowKicks = true,

@@ -107,6 +107,7 @@ L:RegisterLocale("frFR", {
 	["Show crowd control spells in this bar."] = "Affiche les sorts de contrôle dans cette barre.",
 	["Show defensive spells in this bar."] = "Affiche les sorts défensifs dans cette barre.",
 	["Adds one icon at the end of this bar that shows the enemy's important spell (e.g. precognition)."] = "Ajoute une icône à la fin de cette barre qui affiche le sort important de l'ennemi (par ex. prémonition).",
+	["Adds one icon at the end that shows the unit's important spell (e.g. precognition)."] = "Ajoute une icône à la fin qui affiche le sort important de l'unité (par ex. prémonition).",
 	["Show a separate, movable arena bar with one slot per opponent for their important spell (e.g. precognition)."] = "Affiche une barre d'arène séparée et déplaçable avec un emplacement par adversaire pour son sort important (par ex. prémonition).",
 	["Enemy - Bar 1"] = "Ennemis - Barre 1",
 	["Enemy - Bar 2"] = "Ennemis - Barre 2",

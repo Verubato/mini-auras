@@ -212,6 +212,22 @@ local function BuildInstance(panel, options)
 	showKicksChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
 	showKicksChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
 
+	local showImportantChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Show Important"],
+		Tooltip = L["Adds one icon at the end that shows the unit's important spell (e.g. precognition)."],
+		GetValue = function()
+			return options.ShowImportant
+		end,
+		SetValue = function(value)
+			options.ShowImportant = value
+			config:Apply()
+		end,
+	})
+
+	showImportantChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	showImportantChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
+
 	local showTooltipsChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Show tooltips"],

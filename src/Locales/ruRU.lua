@@ -107,6 +107,7 @@ L:RegisterLocale("ruRU", {
 	["Show crowd control spells in this bar."] = "Показывать заклинания контроля на этой панели.",
 	["Show defensive spells in this bar."] = "Показывать защитные заклинания на этой панели.",
 	["Adds one icon at the end of this bar that shows the enemy's important spell (e.g. precognition)."] = "Добавляет в конце этой панели иконку, показывающую важное заклинание противника (например, предвидение).",
+	["Adds one icon at the end that shows the unit's important spell (e.g. precognition)."] = "Добавляет в конце иконку, показывающую важное заклинание юнита (например, предвидение).",
 	["Show a separate, movable arena bar with one slot per opponent for their important spell (e.g. precognition)."] = "Показывать отдельную перемещаемую арена-панель с одной ячейкой на противника для его важного заклинания (например, предвидение).",
 	["Enemy - Bar 1"] = "Противник - Панель 1",
 	["Enemy - Bar 2"] = "Противник - Панель 2",

@@ -107,6 +107,7 @@ L:RegisterLocale("zhCN", {
 	["Show crowd control spells in this bar."] = "在此栏中显示控制技能。",
 	["Show defensive spells in this bar."] = "在此栏中显示防御技能。",
 	["Adds one icon at the end of this bar that shows the enemy's important spell (e.g. precognition)."] = "在此栏末尾添加一个图标，显示敌人的重要技能（例如预知）。",
+	["Adds one icon at the end that shows the unit's important spell (e.g. precognition)."] = "在末尾添加一个图标，显示该单位的重要技能（例如预知）。",
 	["Show a separate, movable arena bar with one slot per opponent for their important spell (e.g. precognition)."] = "显示一个独立、可移动的竞技场栏，每个对手占一个格子来显示其重要技能（例如预知）。",
 	["Enemy - Bar 1"] = "敌人 - 栏 1",
 	["Enemy - Bar 2"] = "敌人 - 栏 2",

@@ -107,6 +107,7 @@ L:RegisterLocale("deDE", {
 	["Show crowd control spells in this bar."] = "Zeigt Massenkontroll-Zauber in dieser Leiste an.",
 	["Show defensive spells in this bar."] = "Zeigt defensive Zauber in dieser Leiste an.",
 	["Adds one icon at the end of this bar that shows the enemy's important spell (e.g. precognition)."] = "Fügt am Ende dieser Leiste ein Symbol hinzu, das den wichtigen Zauber des Gegners anzeigt (z. B. Vorahnung).",
+	["Adds one icon at the end that shows the unit's important spell (e.g. precognition)."] = "Fügt am Ende ein Symbol hinzu, das den wichtigen Zauber der Einheit anzeigt (z. B. Vorahnung).",
 	["Show a separate, movable arena bar with one slot per opponent for their important spell (e.g. precognition)."] = "Zeigt eine separate, bewegliche Arena-Leiste mit einem Platz pro Gegner für dessen wichtigen Zauber (z. B. Vorahnung).",
 	["Enemy - Bar 1"] = "Gegner - Leiste 1",
 	["Enemy - Bar 2"] = "Gegner - Leiste 2",

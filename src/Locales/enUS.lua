@@ -109,6 +109,7 @@ L:SetDefaultStrings({
 	["Show crowd control spells in this bar."] = "Show crowd control spells in this bar.",
 	["Show defensive spells in this bar."] = "Show defensive spells in this bar.",
 	["Adds one icon at the end of this bar that shows the enemy's important spell (e.g. precognition)."] = "Adds one icon at the end of this bar that shows the enemy's important spell (e.g. precognition).",
+	["Adds one icon at the end that shows the unit's important spell (e.g. precognition)."] = "Adds one icon at the end that shows the unit's important spell (e.g. precognition).",
 	["Show a separate, movable arena bar with one slot per opponent for their important spell (e.g. precognition)."] = "Show a separate, movable arena bar with one slot per opponent for their important spell (e.g. precognition).",
 	["Enemy - Bar 1"] = "Enemy - Bar 1",
 	["Enemy - Bar 2"] = "Enemy - Bar 2",
