@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.1.0
+
+Renamed combined nameplate mode to defensive and allowed it to be enabled independently of the CC nameplate option.
+
 ## 4.0.0
 
 Removed all important aura usage now that it's gone from the game.
