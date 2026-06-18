@@ -22,7 +22,7 @@ config.Nameplates = M
 
 ---@param parent table Tab content frame
 ---@param options NameplateSpellTypeOptions
----@param sectionType string Type of section: "CC" or "Combined"
+---@param sectionType string Type of section: "CC" or "Combined" (the "Combined" key is the Defensives section)
 local function BuildSpellTypeSettings(parent, options, sectionType)
 	local container = CreateFrame("Frame", nil, parent)
 
@@ -32,7 +32,7 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 	-- Build tooltip based on section type
 	local colorTooltip
 	if sectionType == "Combined" then
-		colorTooltip = L["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."]
+		colorTooltip = L["Change the colour of the glow/border. Defensive spells are green."]
 	else
 		colorTooltip = L["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."]
 	end
@@ -420,9 +420,9 @@ function M:Build(parent, options)
 		ContentInsets = { Top = verticalSpacing },
 		Tabs = {
 			{ Key = "enemyCC",           Title = L["Enemy - CC"] },
-			{ Key = "enemyCombined",     Title = L["Enemy - Combined"] },
+			{ Key = "enemyCombined",     Title = L["Enemy - Defensives"] },
 			{ Key = "friendlyCC",        Title = L["Friendly - CC"] },
-			{ Key = "friendlyCombined",  Title = L["Friendly - Combined"] },
+			{ Key = "friendlyCombined",  Title = L["Friendly - Defensives"] },
 		},
 	})
 

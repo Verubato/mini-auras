@@ -8,7 +8,6 @@ local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
-local slotDistribution = addon.Utils.SlotDistribution
 local mathMin = math.min
 local GetTime = GetTime
 local C_NamePlate = C_NamePlate
@@ -151,34 +150,10 @@ end
 ---@param unitOptions table
 ---@return IconSlotContainer? ccContainer, IconSlotContainer? combinedContainer
 local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
-	-- Combined mode
-	if unitOptions.Combined and unitOptions.Combined.Enabled then
-		local combinedOptions = unitOptions.Combined
-		local size = combinedOptions.Icons.Size or 50
-		local maxIcons = combinedOptions.Icons.MaxIcons or 8
-		local offsetX = combinedOptions.Offset.X or 0
-		local offsetY = combinedOptions.Offset.Y or 0
-		local anchorPoint, relativeToPoint = GetAnchorPoint(unitToken, "Combined")
-
-		local combinedContainer = nameplate[nameplateCombinedKey]
-		if not combinedContainer then
-			combinedContainer = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2, "Nameplates", nil, "Nameplates")
-			nameplate[nameplateCombinedKey] = combinedContainer
-		else
-			combinedContainer:SetIconSize(size)
-			combinedContainer:SetCount(maxIcons)
-		end
-
-		SetupContainerFrame(combinedContainer, nameplate, anchorPoint, relativeToPoint, offsetX, offsetY)
-
-		-- Hide unused separate containers (keep references)
-		HideAndReset(nameplate[nameplateCcKey])
-
-		return nil, combinedContainer
-	end
-
-	-- Separate mode
+	-- CC and the Defensives section (stored under the historical "Combined" key) are
+	-- independent: each shows when its own Enabled flag is set, so both can display at once.
 	local ccContainer = nil
+	local combinedContainer = nil
 
 	-- CC
 	local ccOptions = unitOptions.CC
@@ -203,15 +178,37 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 		HideAndReset(nameplate[nameplateCcKey])
 	end
 
-	-- Hide combined in separate mode (keep reference)
-	HideAndReset(nameplate[nameplateCombinedKey])
+	-- Defensives (the "Combined" db key)
+	local combinedOptions = unitOptions.Combined
+	if combinedOptions and combinedOptions.Enabled then
+		local size = combinedOptions.Icons.Size or 50
+		local maxIcons = combinedOptions.Icons.MaxIcons or 8
+		local offsetX = combinedOptions.Offset.X or 0
+		local offsetY = combinedOptions.Offset.Y or 0
+		local anchorPoint, relativeToPoint = GetAnchorPoint(unitToken, "Combined")
 
-	return ccContainer, nil
+		combinedContainer = nameplate[nameplateCombinedKey]
+		if not combinedContainer then
+			combinedContainer = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2, "Nameplates", nil, "Nameplates")
+			nameplate[nameplateCombinedKey] = combinedContainer
+		else
+			combinedContainer:SetIconSize(size)
+			combinedContainer:SetCount(maxIcons)
+		end
+
+		SetupContainerFrame(combinedContainer, nameplate, anchorPoint, relativeToPoint, offsetX, offsetY)
+	else
+		HideAndReset(nameplate[nameplateCombinedKey])
+	end
+
+	return ccContainer, combinedContainer
 end
 
 ---@param data NameplateData
 ---@param watcher Watcher
 ---@param unitOptions table Pre-fetched unit options
+-- The "Combined" container now shows defensives only (relabelled "Defensives" in the UI). It runs
+-- independently of the CC container, so CC and defensives can be displayed at the same time.
 local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 	local container = data.CombinedContainer
 	if not container then
@@ -223,73 +220,26 @@ local function ApplyCombinedToNameplate(data, watcher, unitOptions)
 		return
 	end
 
-	local kickEntry = kickTracker:GetKick(data.UnitToken)
-	local ccData = watcher:GetCcState()
 	local defensivesData = watcher:GetDefensiveState()
 	local iconsGlow = combinedOptions.Icons.Glow
 	local iconsReverse = combinedOptions.Icons.ReverseCooldown
 	local colorByCategory = combinedOptions.Icons.ColorByCategory
 	local showTooltips = combinedOptions.ShowTooltips ~= false
 	local fontScale = db.FontScale
-	local kickCount = kickEntry and 1 or 0
-
-	-- Calculate slot distribution; kick counts as one CC slot
-	local ccSlots, defensiveSlots =
-		slotDistribution.Calculate(container.Count, #ccData + kickCount, #defensivesData, 0)
 
 	local slot = 0
-
-	-- Add CC spells (highest priority); kick icon fills the first CC slot
-	if ccSlots > 0 then
-		if kickEntry then
-			slot = slot + 1
-			layerScratch.Texture = kickEntry.Texture
-			layerScratch.DurationObject = kickEntry.DurationObject
-			layerScratch.Alpha = true
-			layerScratch.Glow = iconsGlow
-			layerScratch.ReverseCooldown = iconsReverse
-			layerScratch.FontScale = fontScale
-			layerScratch.Color = colorByCategory and kickEntry.Color or nil
-			layerScratch.SpellId = nil
-			container:SetSlot(slot, layerScratch)
-			ccSlots = ccSlots - 1
-		end
-		for i = 1, mathMin(ccSlots, #ccData) do
-			if slot >= container.Count then
-				break
-			end
-			slot = slot + 1
-			local entry = ccData[i]
-			layerScratch.Texture = entry.SpellIcon
-			layerScratch.DurationObject = entry.DurationObject
-			layerScratch.Alpha = entry.IsCC
-			layerScratch.Glow = iconsGlow
-			layerScratch.ReverseCooldown = iconsReverse
-			layerScratch.FontScale = fontScale
-			layerScratch.Color = colorByCategory and entry.DispelColor or nil
-			layerScratch.SpellId = showTooltips and entry.SpellId or nil
-			container:SetSlot(slot, layerScratch)
-		end
-	end
-
-	-- Add Defensive spells (second priority)
-	if defensiveSlots > 0 then
-		for i = 1, mathMin(defensiveSlots, #defensivesData) do
-			if slot >= container.Count then
-				break
-			end
-			slot = slot + 1
-			local entry = defensivesData[i]
-			layerScratch.Texture = entry.SpellIcon
-			layerScratch.DurationObject = entry.DurationObject
-			layerScratch.Alpha = entry.IsDefensive
-			layerScratch.Glow = iconsGlow
-			layerScratch.ReverseCooldown = iconsReverse
-			layerScratch.FontScale = fontScale
-			layerScratch.Color = colorByCategory and defensiveColor or nil
-			layerScratch.SpellId = showTooltips and entry.SpellId or nil
-			container:SetSlot(slot, layerScratch)
-		end
+	for i = 1, mathMin(container.Count, #defensivesData) do
+		slot = slot + 1
+		local entry = defensivesData[i]
+		layerScratch.Texture = entry.SpellIcon
+		layerScratch.DurationObject = entry.DurationObject
+		layerScratch.Alpha = entry.IsDefensive
+		layerScratch.Glow = iconsGlow
+		layerScratch.ReverseCooldown = iconsReverse
+		layerScratch.FontScale = fontScale
+		layerScratch.Color = colorByCategory and defensiveColor or nil
+		layerScratch.SpellId = showTooltips and entry.SpellId or nil
+		container:SetSlot(slot, layerScratch)
 	end
 
 	-- Clear any unused slots beyond the used count
@@ -387,12 +337,11 @@ local function OnAuraDataChanged(unitToken)
 	-- same unitToken (e.g. duel starts), the cached container references may be nil
 	-- for the now-active options. Rebuild lazily so aura data isn't silently dropped.
 	local needRebuild = false
-	if unitOptions.Combined and unitOptions.Combined.Enabled then
-		if not data.CombinedContainer then needRebuild = true end
-	else
-		if unitOptions.CC and unitOptions.CC.Enabled and not data.CcContainer then
-			needRebuild = true
-		end
+	if unitOptions.CC and unitOptions.CC.Enabled and not data.CcContainer then
+		needRebuild = true
+	end
+	if unitOptions.Combined and unitOptions.Combined.Enabled and not data.CombinedContainer then
+		needRebuild = true
 	end
 
 	if needRebuild then
@@ -405,10 +354,11 @@ local function OnAuraDataChanged(unitToken)
 		end
 	end
 
-	if unitOptions.Combined.Enabled then
-		ApplyCombinedToNameplate(data, watcher, unitOptions)
-	else
+	if unitOptions.CC and unitOptions.CC.Enabled then
 		ApplyCcToNameplate(data, watcher, unitOptions)
+	end
+	if unitOptions.Combined and unitOptions.Combined.Enabled then
+		ApplyCombinedToNameplate(data, watcher, unitOptions)
 	end
 end
 
@@ -417,10 +367,6 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 		return
 	end
 
-	-- Calculate slot distribution
-	local ccSlots, defensiveSlots =
-		slotDistribution.Calculate(combinedContainer.Count, testCcCount, testDefensiveCount, 0)
-
 	local iconsGlow = combinedOptions.Icons.Glow
 	local iconsReverse = combinedOptions.Icons.ReverseCooldown
 	local colorByCategory = combinedOptions.Icons.ColorByCategory
@@ -428,33 +374,9 @@ local function ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 	local fontScale = db.FontScale
 	local slot = 0
 
-	-- Add CC spells first (highest priority)
-	for i = 1, ccSlots do
-		if slot >= combinedContainer.Count then
-			break
-		end
-		slot = slot + 1
-
-		local spellId = testCcNameplateSpellIds[i]
-		local tex = C_Spell.GetSpellTexture(spellId)
-		if tex then
-			layerScratch.Texture = tex
-			layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
-			layerScratch.Alpha = true
-			layerScratch.Glow = iconsGlow
-			layerScratch.ReverseCooldown = iconsReverse
-			layerScratch.FontScale = fontScale
-			layerScratch.Color = colorByCategory and testCcDispelColors[spellId] or nil
-			layerScratch.SpellId = showTooltips and spellId or nil
-			combinedContainer:SetSlot(slot, layerScratch)
-		end
-	end
-
-	-- Add Defensive spells (second priority)
-	for i = 1, defensiveSlots do
-		if slot >= combinedContainer.Count then
-			break
-		end
+	-- Defensive test spells only
+	local limit = mathMin(testDefensiveCount, combinedContainer.Count)
+	for i = 1, limit do
 		slot = slot + 1
 
 		local spellId = testDefensiveNameplateSpellIds[i]
@@ -598,12 +520,11 @@ local function OnNamePlateAdded(unitToken)
 		-- In test mode, show test icons for this specific nameplate
 		local now = GetTime()
 
-		if unitOptions.Combined.Enabled then
-			if combinedContainer then
-				ShowCombinedTestIcons(combinedContainer, unitOptions.Combined, now)
-			end
-		else
+		if unitOptions.CC.Enabled and ccContainer then
 			ShowSeparateModeTestIcons(ccContainer, unitOptions.CC, now)
+		end
+		if unitOptions.Combined.Enabled and combinedContainer then
+			ShowCombinedTestIcons(combinedContainer, unitOptions.Combined, now)
 		end
 	end
 end
@@ -712,12 +633,11 @@ local function ShowTestIcons()
 		local combinedOptions = options.Combined
 		local combinedContainer = container.CombinedContainer
 
-		if options.Combined.Enabled then
-			if combinedContainer and combinedOptions then
-				ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
-			end
-		else
+		if options.CC.Enabled and ccContainer and ccOptions then
 			ShowSeparateModeTestIcons(ccContainer, ccOptions, now)
+		end
+		if options.Combined.Enabled and combinedContainer and combinedOptions then
+			ShowCombinedTestIcons(combinedContainer, combinedOptions, now)
 		end
 	end
 end
@@ -729,53 +649,49 @@ local function RefreshAnchorsAndSizes()
 			local unitOptions = M:GetUnitOptions(data.UnitToken)
 			local anchorFrame = GetNameplateAnchorFrame(data.Nameplate)
 
-			if unitOptions.Combined.Enabled then
-				-- Handle combined container
-				local combinedContainer = data.CombinedContainer
-				if combinedContainer then
-					local combinedOptions = unitOptions.Combined
-					if combinedOptions then
-						local combinedAnchorPoint, combinedRelativeToPoint = GrowToAnchor(combinedOptions.Grow)
-						combinedContainer.Frame:ClearAllPoints()
-						combinedContainer.Frame:SetPoint(
-							combinedAnchorPoint,
-							anchorFrame,
-							combinedRelativeToPoint,
-							combinedOptions.Offset.X,
-							combinedOptions.Offset.Y
-						)
-						combinedContainer:SetGrowDown(combinedOptions.Grow == "DOWN")
-						combinedContainer:SetIconSize(combinedOptions.Icons.Size)
-						combinedContainer:SetSpacing(db.IconSpacing or 2)
-						combinedContainer:SetCount(combinedOptions.Icons.MaxIcons)
-						combinedContainer.Frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
-						combinedContainer.Frame:SetIgnoreParentScale(ignoreParentScale)
-					end
+			-- CC and Defensives are independent; reposition each that exists.
+			local ccOptions = unitOptions.CC
+			local ccContainer = data.CcContainer
+			if ccContainer and ccOptions then
+				ccContainer.Frame:ClearAllPoints()
+
+				if ccOptions.Enabled then
+					local ccAnchorPoint, ccRelativeToPoint = GrowToAnchor(ccOptions.Grow)
+					ccContainer.Frame:SetPoint(
+						ccAnchorPoint,
+						anchorFrame,
+						ccRelativeToPoint,
+						ccOptions.Offset.X,
+						ccOptions.Offset.Y
+					)
+					ccContainer:SetGrowDown(ccOptions.Grow == "DOWN")
+					ccContainer:SetIconSize(ccOptions.Icons.Size)
+					ccContainer:SetSpacing(db.IconSpacing or 2)
+					ccContainer:SetCount(ccOptions.Icons.MaxIcons)
+					ccContainer.Frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
 				end
-			else
-				-- Handle separate containers
-				local ccOptions = unitOptions.CC
-				local ccContainer = data.CcContainer
+				ccContainer.Frame:SetIgnoreParentScale(ignoreParentScale)
+			end
 
-				if ccContainer and ccOptions then
-					ccContainer.Frame:ClearAllPoints()
-
-					if ccOptions.Enabled then
-						local ccAnchorPoint, ccRelativeToPoint = GrowToAnchor(ccOptions.Grow)
-						ccContainer.Frame:SetPoint(
-							ccAnchorPoint,
-							anchorFrame,
-							ccRelativeToPoint,
-							ccOptions.Offset.X,
-							ccOptions.Offset.Y
-						)
-						ccContainer:SetGrowDown(ccOptions.Grow == "DOWN")
-						ccContainer:SetIconSize(ccOptions.Icons.Size)
-						ccContainer:SetSpacing(db.IconSpacing or 2)
-						ccContainer:SetCount(ccOptions.Icons.MaxIcons)
-						ccContainer.Frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
-					end
-					ccContainer.Frame:SetIgnoreParentScale(ignoreParentScale)
+			local combinedContainer = data.CombinedContainer
+			if combinedContainer then
+				local combinedOptions = unitOptions.Combined
+				if combinedOptions and combinedOptions.Enabled then
+					local combinedAnchorPoint, combinedRelativeToPoint = GrowToAnchor(combinedOptions.Grow)
+					combinedContainer.Frame:ClearAllPoints()
+					combinedContainer.Frame:SetPoint(
+						combinedAnchorPoint,
+						anchorFrame,
+						combinedRelativeToPoint,
+						combinedOptions.Offset.X,
+						combinedOptions.Offset.Y
+					)
+					combinedContainer:SetGrowDown(combinedOptions.Grow == "DOWN")
+					combinedContainer:SetIconSize(combinedOptions.Icons.Size)
+					combinedContainer:SetSpacing(db.IconSpacing or 2)
+					combinedContainer:SetCount(combinedOptions.Icons.MaxIcons)
+					combinedContainer.Frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
+					combinedContainer.Frame:SetIgnoreParentScale(ignoreParentScale)
 				end
 			end
 		end
