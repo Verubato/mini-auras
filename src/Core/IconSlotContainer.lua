@@ -863,6 +863,16 @@ function M:SetSlot(slotIndex, options)
 
 	if layerIndex <= 1 then
 		layer = EnsureContainer(slot, self.Size, self.MasqueGroup, self.NoBorder)
+		-- Setting the base layer means this slot is now a single icon. Clear any stacked extra
+		-- layers left from a prior stacked render (e.g. the important slot relocating to a new
+		-- index), otherwise those old layers linger visible underneath the new icon.
+		if slot.ExtraLayers then
+			for _, el in ipairs(slot.ExtraLayers) do
+				if el then
+					ClearLayerData(el, el.Frame)
+				end
+			end
+		end
 	else
 		layer = EnsureExtraLayer(slot, layerIndex, self.Size)
 	end
@@ -1007,7 +1017,8 @@ end
 ---@param keepReserved boolean? When true, an empty buff list keeps the slot occupied with an
 ---  invisible placeholder (so fixed-position layouts don't collapse); otherwise the slot is freed.
 ---@param skipIds table<number, boolean>? AuraInstanceIDs to exclude (e.g. auras already shown as
----  defensives), so a spell that's both important and defensive isn't drawn twice.
+---  defensives), so a spell that's both important and defensive isn't drawn twice. Keyed by
+---  AuraInstanceID because SpellId/SpellIcon are secret values and can't be used as table keys.
 ---@return boolean used true when the slot is occupied (visible candidate or reserved placeholder)
 function M:StackImportantBuffs(slotIndex, buffState, opts, keepReserved, skipIds)
 	if slotIndex < 1 or slotIndex > self.Count then
