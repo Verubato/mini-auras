@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 50,
+	Version = 51,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -176,7 +176,6 @@ local dbDefaults = {
 
 			IncludeDefensives = true,
 			TargetFocusOnly = false,
-			SplitBars = false,
 			Point = "CENTER",
 			RelativePoint = "TOP",
 			RelativeTo = "UIParent",
@@ -186,13 +185,16 @@ local dbDefaults = {
 				Y = -100,
 			},
 
-			Defensives = {
+			-- Dedicated arena-only important bar: one fixed slot per arena token, stacked and
+			-- gated by IsSpellImportant so only precog / important enemy buffs show.
+			Important = {
+				Enabled = true,
 				Point = "CENTER",
 				RelativePoint = "TOP",
 				RelativeTo = "UIParent",
 				Offset = {
 					X = 0,
-					Y = -160,
+					Y = -220,
 				},
 			},
 
@@ -254,6 +256,7 @@ local dbDefaults = {
 					Enabled = false,
 					ShowCC = true,
 					ShowDefensives = false,
+					ShowImportant = false,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -275,6 +278,7 @@ local dbDefaults = {
 					Enabled = false,
 					ShowCC = false,
 					ShowDefensives = true,
+					ShowImportant = false,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -299,6 +303,7 @@ local dbDefaults = {
 					Enabled = true,
 					ShowCC = true,
 					ShowDefensives = false,
+					ShowImportant = false,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -320,6 +325,7 @@ local dbDefaults = {
 					Enabled = false,
 					ShowCC = false,
 					ShowDefensives = true,
+					ShowImportant = false,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -2363,6 +2369,32 @@ function M:UpgradeToVersion50(vars)
 
 	-- New FadeWithParent option (default true) is filled from dbDefaults by GetAndUpgradeDb.
 	vars.Version = 50
+	return true
+end
+
+function M:UpgradeToVersion51(vars)
+	if vars.Version ~= 50 then return false end
+
+	-- New per-bar nameplate "Show Important" option and the dedicated arena important alerts bar
+	-- are filled from dbDefaults by GetAndUpgradeDb. So existing users discover the feature, turn
+	-- Show Important on for the first already-enabled bar of each nameplate faction.
+	local nameplates = vars.Modules and vars.Modules.NameplatesModule
+	if nameplates then
+		for _, factionKey in ipairs({ "Friendly", "Enemy" }) do
+			local faction = nameplates[factionKey]
+			if faction then
+				for _, barKey in ipairs({ "Bar1", "Bar2" }) do
+					local bar = faction[barKey]
+					if bar and bar.Enabled then
+						bar.ShowImportant = true
+						break
+					end
+				end
+			end
+		end
+	end
+
+	vars.Version = 51
 	return true
 end
 

@@ -170,21 +170,22 @@ local function BuildSettingsTab(parent, options)
 	targetFocusOnlyChk:SetPoint("TOP", iconsEnabledChk, "TOP", 0, 0)
 	targetFocusOnlyChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
 
-	local splitBarsChk = mini:Checkbox({
+	local importantBarChk = mini:Checkbox({
 		Parent = parent,
-		LabelText = L["Split bars"],
-		Tooltip = L["Show defensive alerts on a separate, movable bar."],
+		LabelText = L["Show Important"],
+		Tooltip = L["Show a separate, movable arena bar with one slot per opponent for their important spell (e.g. precognition)."],
 		GetValue = function()
-			return options.SplitBars
+			return options.Important and options.Important.Enabled
 		end,
 		SetValue = function(value)
-			options.SplitBars = value
+			options.Important = options.Important or {}
+			options.Important.Enabled = value
 			config:Apply()
 		end,
 	})
 
-	splitBarsChk:SetPoint("TOP", iconsEnabledChk, "TOP", 0, 0)
-	splitBarsChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	importantBarChk:SetPoint("TOP", iconsEnabledChk, "TOP", 0, 0)
+	importantBarChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
 end
 
 ---@param parent table

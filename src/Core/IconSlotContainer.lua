@@ -14,6 +14,8 @@ local layoutScratch = {}
 local glowOptionsScratch = { startAnim = false }
 local glowColorScratch = { 0, 0, 0, 0 }
 local frameIdCounter = 0
+-- Texture used to hold a reserved slot's position while it has nothing visible to show.
+local reservedPlaceholderTexture = "Interface\\Buttons\\WHITE8X8"
 
 -- Static texture-based glow types share the same layout pattern: an OVERLAY texture
 -- on a child frame sized proportionally to the icon. The field on the parent is the
@@ -991,6 +993,61 @@ function M:ResetAllSlots()
 	if needsLayout then
 		self:Layout()
 	end
+end
+
+---Stacks every aura in `buffState` onto a single slot, one layer per aura. Each layer's alpha is
+---driven by C_Spell.IsSpellImportant (a secret value handed straight to SetAlphaFromBoolean), so
+---only the auras the game flags as "important" show through and everything else stays invisible.
+---This is the same "stack and let alpha decide" trick the precog tracker uses, reused so alerts
+---and nameplates can surface important enemy buffs without filtering by spell id (impossible now).
+---@param slotIndex number Slot to stack onto
+---@param buffState AuraInfo[] Auras from Watcher:GetBuffState()
+---@param opts IconLayerOptions Shared per-layer options (Glow/ReverseCooldown/Color/FontScale);
+---  Texture/DurationObject/Alpha/Layer/SpellId are overwritten per aura by this method.
+---@param keepReserved boolean? When true, an empty buff list keeps the slot occupied with an
+---  invisible placeholder (so fixed-position layouts don't collapse); otherwise the slot is freed.
+---@param skipIds table<number, boolean>? AuraInstanceIDs to exclude (e.g. auras already shown as
+---  defensives), so a spell that's both important and defensive isn't drawn twice.
+---@return boolean used true when the slot is occupied (visible candidate or reserved placeholder)
+function M:StackImportantBuffs(slotIndex, buffState, opts, keepReserved, skipIds)
+	if slotIndex < 1 or slotIndex > self.Count then
+		return false
+	end
+
+	-- Clear any layers left from a previous (possibly longer) buff list so none linger visible.
+	self:ClearSlot(slotIndex)
+
+	-- Tooltips are meaningless on a stacked slot (many spells share it), so never set SpellId.
+	opts.SpellId = nil
+
+	local count = 0
+	for i = 1, #buffState do
+		local entry = buffState[i]
+		if entry.SpellIcon and entry.SpellId
+			and not (skipIds and entry.AuraInstanceID and skipIds[entry.AuraInstanceID]) then
+			count = count + 1
+			opts.Texture = entry.SpellIcon
+			opts.DurationObject = entry.DurationObject
+			opts.Alpha = C_Spell.IsSpellImportant(entry.SpellId)
+			opts.Layer = count
+			self:SetSlot(slotIndex, opts)
+		end
+	end
+
+	if count == 0 then
+		if keepReserved then
+			opts.Texture = reservedPlaceholderTexture
+			opts.DurationObject = nil
+			opts.Alpha = false
+			opts.Layer = 1
+			self:SetSlot(slotIndex, opts)
+			return true
+		end
+		self:SetSlotUnused(slotIndex)
+		return false
+	end
+
+	return true
 end
 
 ---@class IconLayer
