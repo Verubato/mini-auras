@@ -40,6 +40,8 @@ L:RegisterLocale("deDE", {
 	["Offset Y"] = "Versatz Y",
 	["Disable Swipe Animation"] = "Wischanimation deaktivieren",
 	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Deaktiviert die Wischanimation (Tortendiagramm) der Abklingzeit auf allen Symbolen. Der Countdown-Text wird weiterhin angezeigt.",
+	["Fade With Parent Frame"] = "Mit übergeordnetem Rahmen ausblenden",
+	["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."] = "Blendet die Symbole zusammen mit dem Einheitenfenster aus, an dem sie angebracht sind, z. B. abgedunkelt, wenn die Einheit außer Reichweite ist.",
 	["Reverse swipe"] = "Umgekehrtes Wischen",
 	["Reverses the direction of the cooldown swipe animation."] = "Kehrt die Richtung der Abklingzeit-Wischanimation um.",
 	["Settings"] = "Einstellungen",

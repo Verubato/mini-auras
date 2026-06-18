@@ -40,6 +40,8 @@ L:RegisterLocale("frFR", {
 	["Offset Y"] = "Décalage Y",
 	["Disable Swipe Animation"] = "Désactiver l'animation de recharge",
 	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Désactive l'animation circulaire de recharge sur toutes les icônes. Le texte du décompte reste affiché.",
+	["Fade With Parent Frame"] = "Estomper avec le cadre parent",
+	["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."] = "Estompe les icônes en même temps que le cadre d'unité auquel elles sont rattachées, par ex. en s'atténuant lorsque l'unité est hors de portée.",
 	["Reverse swipe"] = "Inverser l'animation",
 	["Reverses the direction of the cooldown swipe animation."] = "Inverse le sens de l'animation circulaire de recharge.",
 	["Settings"] = "Options",

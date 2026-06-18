@@ -40,6 +40,8 @@ L:RegisterLocale("esES", {
 	["Offset Y"] = "Desplazamiento Y",
 	["Disable Swipe Animation"] = "Desactivar animación de barrido",
 	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Desactiva la animación de barrido (gráfico circular) del tiempo de reutilización en todos los iconos. El texto del temporizador seguirá mostrándose.",
+	["Fade With Parent Frame"] = "Atenuar con el marco principal",
+	["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."] = "Atenúa los iconos junto con el marco de unidad al que están anclados, p. ej. atenuándose cuando la unidad está fuera de alcance.",
 	["Reverse swipe"] = "Barrido inverso",
 	["Reverses the direction of the cooldown swipe animation."] = "Invierte la dirección de la animación de barrido del tiempo de reutilización.",
 	["Settings"] = "Configuración",

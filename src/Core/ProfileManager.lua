@@ -18,6 +18,7 @@ M.PayloadKeys = {
 	"ConfigureBlizzardNameplates",
 	"CCNativeOrder",
 	"DisableSwipe",
+	"FadeWithParent",
 	"Modules",
 }
 

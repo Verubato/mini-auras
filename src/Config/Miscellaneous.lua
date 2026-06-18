@@ -186,6 +186,24 @@ function M:Build(panel)
 
 	disableSwipeChk:SetPoint("TOPLEFT", ccNativeOrderChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
+	local fadeWithParentChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Fade With Parent Frame"],
+		Tooltip = L["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."],
+		GetValue = function()
+			if db.FadeWithParent == nil then
+				return true
+			end
+			return db.FadeWithParent
+		end,
+		SetValue = function(value)
+			db.FadeWithParent = value
+			addon:Refresh()
+		end,
+	})
+
+	fadeWithParentChk:SetPoint("TOPLEFT", disableSwipeChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local millisThresholdSlider = mini:Slider({
 		Parent = panel,
 		LabelText = L["Milliseconds Threshold"],
@@ -205,5 +223,5 @@ function M:Build(panel)
 		Width = columnWidth - horizontalSpacing,
 	})
 
-	millisThresholdSlider.Slider:SetPoint("TOPLEFT", disableSwipeChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	millisThresholdSlider.Slider:SetPoint("TOPLEFT", fadeWithParentChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 end

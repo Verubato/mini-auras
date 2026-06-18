@@ -40,6 +40,8 @@ L:RegisterLocale("zhTW", {
 	["Offset Y"] = "Y偏移",
 	["Disable Swipe Animation"] = "停用滑動動畫",
 	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "停用所有圖示上的冷卻時間滑動（圓餅圖）動畫。倒數計時文字仍將顯示。",
+	["Fade With Parent Frame"] = "隨父框體淡出",
+	["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."] = "圖示會隨其附著的單位框體一起淡出，例如當單位超出距離時變暗。",
 	["Reverse swipe"] = "反向滑動",
 	["Reverses the direction of the cooldown swipe animation."] = "反轉冷卻時間滑動動畫的方向。",
 	["Settings"] = "設定",

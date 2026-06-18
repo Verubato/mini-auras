@@ -376,10 +376,12 @@ local function AnchorContainer(entry)
 	local anchor = entry.Anchor
 
 	-- Parent to the anchor so the icons inherit its alpha and fade with the unit frame
-	-- (e.g. when the unit goes out of range).
+	-- (e.g. when the unit goes out of range). Honour the FadeWithParent option: when disabled,
+	-- ignore the parent's alpha so the icons stay fully opaque.
 	if frame:GetParent() ~= anchor then
 		frame:SetParent(anchor)
 	end
+	frame:SetIgnoreParentAlpha(db.FadeWithParent == false)
 
 	frame:ClearAllPoints()
 	frame:SetAlpha(1)

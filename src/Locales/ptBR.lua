@@ -40,6 +40,8 @@ L:RegisterLocale("ptBR", {
 	["Offset Y"] = "Deslocamento Y",
 	["Disable Swipe Animation"] = "Desativar animação de deslize",
 	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Desativa a animação de deslize (gráfico de pizza) da recarga em todos os ícones. O texto do temporizador de contagem regressiva ainda será exibido.",
+	["Fade With Parent Frame"] = "Esmaecer com o quadro principal",
+	["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."] = "Esmaece os ícones junto com o quadro de unidade ao qual estão anexados, por exemplo, escurecendo quando a unidade está fora de alcance.",
 	["Reverse swipe"] = "Deslize reverso",
 	["Reverses the direction of the cooldown swipe animation."] = "Inverte a direção da animação de deslize da recarga.",
 	["Settings"] = "Configurações",

@@ -41,6 +41,8 @@ L:SetDefaultStrings({
 	["Offset Y"] = "Offset Y",
 	["Disable Swipe Animation"] = "Disable Swipe Animation",
 	["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."] = "Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown.",
+	["Fade With Parent Frame"] = "Fade With Parent Frame",
+	["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."] = "Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range.",
 	["Reverse swipe"] = "Reverse swipe",
 	["Reverses the direction of the cooldown swipe animation."] = "Reverses the direction of the cooldown swipe animation.",
 	["Settings"] = "Settings",

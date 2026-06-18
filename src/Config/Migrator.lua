@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 49,
+	Version = 50,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -20,6 +20,7 @@ local dbDefaults = {
 	ConfigureBlizzardNameplates = true,
 	CCNativeOrder = false,
 	DisableSwipe = false,
+	FadeWithParent = true,
 	MillisecondsThreshold = 5,
 	LocaleOverride = false,
 	Modules = {
@@ -2356,6 +2357,14 @@ function M:UpgradeToVersion49(vars)
 	end
 
 	vars.Version = 49
+	return true
+end
+
+function M:UpgradeToVersion50(vars)
+	if vars.Version ~= 49 then return false end
+
+	-- New FadeWithParent option (default true) is filled from dbDefaults by GetAndUpgradeDb.
+	vars.Version = 50
 	return true
 end
 
