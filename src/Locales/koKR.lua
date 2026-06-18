@@ -115,6 +115,7 @@ L:RegisterLocale("koKR", {
 	["Friendly - Bar 2"] = "아군 - 막대 2",
 	["Important News"] = "중요 소식",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "블리자드 12.0.7 패치부터 다음 기능을 더 이상 사용할 수 없습니다:\n- 알림에 공격기 표시.\n- 이름표에 공격기 표시.\n- 초상화에 공격기 표시.\n- 파티/공격대 프레임에 공격기 표시.\n- 공격 재사용 대기시간 추적.\n- 예지와 무효화의 장막 표시.\n- 중요 주문 소리 알림.\n- 중요 주문 음성 안내.",
+	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- You can now show at most 1 important/offensive icon on alerts, nameplates, and raid frames.\n\nThese features won't work as well as before, but it's better than nothing."] = "12.0.7 제한 이후의 반가운 소식:\n- 예지/무효화의 장막 모듈이 돌아왔습니다.\n- 이제 알림, 이름표, 공격대 프레임에 중요/공격 아이콘을 최대 1개 표시할 수 있습니다.\n\n이 기능들은 예전만큼 잘 작동하지는 않지만, 없는 것보다는 낫습니다.",
 	["CC Native Order"] = "CC 기본 순서",
 	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "마지막으로 적용된 CC를 표시하는 대신(MiniCC 방식), 일반적으로 처음 적용된 CC를 표시하는 블리자드의 기본 CC 우선순위를 사용합니다(일부 예외 있음).",
 	["The others seem to use a non-trivial amount of CPU."] = "다른 것들은 상당한 CPU를 사용하는 것 같습니다.",

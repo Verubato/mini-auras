@@ -115,6 +115,7 @@ L:RegisterLocale("zhTW", {
 	["Friendly - Bar 2"] = "友方 - 列 2",
 	["Important News"] = "重要消息",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "自暴雪 12.0.7 改版起，以下功能無法再使用：\n- 在警報中顯示進攻技能。\n- 在名條上顯示進攻技能。\n- 在頭像上顯示進攻技能。\n- 在隊伍/團隊框架上顯示進攻技能。\n- 追蹤進攻冷卻。\n- 顯示預知和虛無披風。\n- 重要技能的聲音提示。\n- 重要技能的語音播報。",
+	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- You can now show at most 1 important/offensive icon on alerts, nameplates, and raid frames.\n\nThese features won't work as well as before, but it's better than nothing."] = "12.0.7 限制之後的一些好消息：\n- 預知/虛無披風模組回歸了。\n- 現在你可以在警報、名條和團隊框架上最多顯示 1 個重要/進攻圖示。\n\n這些功能不會像以前那樣好用，但聊勝於無。",
 	["CC Native Order"] = "CC原生順序",
 	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "不顯示最新應用的控制效果（MiniCC行為），而是使用暴雪預設的CC優先級，通常顯示最先應用的控制效果（有少數例外）。",
 	["The others seem to use a non-trivial amount of CPU."] = "其他的似乎使用了大量的CPU。",

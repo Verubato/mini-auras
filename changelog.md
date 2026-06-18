@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.3.0
+
+- The precog/nullifying shroud module is back.
+- You can now show at most 1 important/offensive icon on alerts, nameplates, and raid frames.
+- These features won't work as well as before, but it's better than nothing.
+
 ## 4.2.0
 
 Made the nameplate config more generic so you can combine CC and Defensives easier.

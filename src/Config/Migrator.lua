@@ -2392,6 +2392,10 @@ function M:UpgradeToVersion51(vars)
 		end
 	end
 
+	vars.WhatsNew = vars.WhatsNew or {}
+	table.insert(vars.WhatsNew, L["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- You can now show at most 1 important/offensive icon on alerts, nameplates, and raid frames.\n\nThese features won't work as well as before, but it's better than nothing."])
+	vars.NotifiedChanges = false
+
 	vars.Version = 51
 	return true
 end
