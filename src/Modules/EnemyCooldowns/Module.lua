@@ -38,6 +38,10 @@ local lastUnitFlagsTime      = {}  ---@type table<string, number>
 local lastDebuffTime         = {}  ---@type table<string, number>
 local lastCastTime           = {}  ---@type table<string, number>
 local lastShieldTime         = {}  ---@type table<string, number>
+-- True while in the arena prep room (PvPMatchState.StartUp). Auras are still tracked so pre-applied
+-- buffs aren't treated as new when the gates open, but cooldown prediction/commit is suppressed -
+-- otherwise pre-existing enemy buffs seen as the watcher starts would falsely trigger cooldowns.
+local inPrepRoom             = false
 
 local function GetOptions()
 	return db and db.Modules.EnemyCooldownTrackerModule
@@ -292,6 +296,11 @@ local sd = SignatureDetector:New({
 
 ---Called when a tracked aura disappears. Tries to match a rule; returns true if a cooldown was committed.
 local function OnAuraRemoved(entry, tracked)
+	-- Don't commit cooldowns from auras dropping during the prep room.
+	if inPrepRoom then
+		return false
+	end
+
 	local now              = GetTime()
 	local measuredDuration = now - tracked.StartTime
 
@@ -340,6 +349,13 @@ local function TrackNewAura(entry, trackedAuras, id, info, now)
 		DurationObject = info.DurationObject,
 		CastSnapshot   = castSnapshot,
 	}
+
+	-- During the prep room, track the aura (above) but don't predict/commit a cooldown from it -
+	-- pre-existing enemy buffs would otherwise falsely trigger as the watcher starts. Tracking it
+	-- still means it won't be seen as "new" (re-triggering) once the gates open.
+	if inPrepRoom then
+		return
+	end
 
 	-- Deferred backfill: UNIT_FLAGS and UNIT_SPELLCAST_SUCCEEDED can arrive slightly after UNIT_AURA.
 	C_Timer.After(evidenceTolerance, function()
@@ -783,7 +799,10 @@ function M:Init()
 				M:Refresh()
 			end)
 		elseif event == "PVP_MATCH_STATE_CHANGED" then
-			if C_PvP.GetActiveMatchState() == Enum.PvPMatchState.StartUp then
+			-- StartUp is the prep room; suppress cooldown prediction while in it (auras are still
+			-- tracked) so pre-existing enemy buffs don't falsely trigger. Cleared once the gates open.
+			inPrepRoom = C_PvP.GetActiveMatchState() == Enum.PvPMatchState.StartUp
+			if inPrepRoom then
 				-- Arena match is starting: clear all tracked state so the previous match's
 				-- cooldowns don't bleed into the new one.
 				ClearAllCooldownState()
@@ -797,6 +816,7 @@ function M:Init()
 			-- the next arena begins (PVP_MATCH_STATE_CHANGED/StartUp also fires,
 			-- but PLAYER_ENTERING_WORLD covers the case where a match ends without
 			-- a new StartUp following immediately).
+			inPrepRoom = C_PvP.GetActiveMatchState() == Enum.PvPMatchState.StartUp
 			ClearAllCooldownState()
 		end
 	end)
