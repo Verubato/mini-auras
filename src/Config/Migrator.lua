@@ -256,7 +256,6 @@ local dbDefaults = {
 					Enabled = false,
 					ShowCC = true,
 					ShowDefensives = false,
-					ShowImportant = false,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -278,7 +277,6 @@ local dbDefaults = {
 					Enabled = false,
 					ShowCC = false,
 					ShowDefensives = true,
-					ShowImportant = true,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -303,7 +301,6 @@ local dbDefaults = {
 					Enabled = true,
 					ShowCC = true,
 					ShowDefensives = false,
-					ShowImportant = false,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -325,7 +322,6 @@ local dbDefaults = {
 					Enabled = false,
 					ShowCC = false,
 					ShowDefensives = true,
-					ShowImportant = true,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -409,7 +405,6 @@ local dbDefaults = {
 			Default = {
 				ExcludePlayer = false,
 				ShowDefensives = true,
-				ShowImportant = true,
 				ShowCC = false,
 				ShowKicks = true,
 				Offset = { X = 0, Y = 0 },
@@ -430,7 +425,6 @@ local dbDefaults = {
 			Raid = {
 				ExcludePlayer = false,
 				ShowDefensives = true,
-				ShowImportant = false,
 				ShowCC = true,
 				ShowKicks = true,
 				Offset = { X = 0, Y = 0 },
@@ -2373,27 +2367,9 @@ end
 function M:UpgradeToVersion51(vars)
 	if vars.Version ~= 50 then return false end
 
-	-- New per-bar nameplate "Show Important" option and the dedicated arena important alerts bar
-	-- are filled from dbDefaults by GetAndUpgradeDb. So existing users discover the feature, turn
-	-- Show Important on for the first already-enabled bar of each nameplate faction.
-	local nameplates = vars.Modules and vars.Modules.NameplatesModule
-	if nameplates then
-		for _, factionKey in ipairs({ "Friendly", "Enemy" }) do
-			local faction = nameplates[factionKey]
-			if faction then
-				for _, barKey in ipairs({ "Bar1", "Bar2" }) do
-					local bar = faction[barKey]
-					if bar and bar.Enabled then
-						bar.ShowImportant = true
-						break
-					end
-				end
-			end
-		end
-	end
-
+	-- The dedicated arena important alerts bar is filled from dbDefaults by GetAndUpgradeDb.
 	vars.WhatsNew = vars.WhatsNew or {}
-	table.insert(vars.WhatsNew, L["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- You can now show at most 1 important/offensive icon on alerts, nameplates, and raid frames.\n\nThese features won't work as well as before, but it's better than nothing."])
+	table.insert(vars.WhatsNew, L["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."])
 	vars.NotifiedChanges = false
 
 	vars.Version = 51

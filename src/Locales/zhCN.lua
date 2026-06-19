@@ -115,7 +115,7 @@ L:RegisterLocale("zhCN", {
 	["Friendly - Bar 2"] = "友方 - 栏 2",
 	["Important News"] = "重要消息",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "自暴雪 12.0.7 补丁起，以下功能不再可用：\n- 在警报中显示进攻技能。\n- 在姓名板上显示进攻技能。\n- 在头像上显示进攻技能。\n- 在小队/团队框体上显示进攻技能。\n- 追踪进攻冷却。\n- 显示预知和虚无披风。\n- 重要技能的声音提示。\n- 重要技能的语音播报。",
-	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- You can now show at most 1 important/offensive icon on alerts, nameplates, and raid frames.\n\nThese features won't work as well as before, but it's better than nothing."] = "12.0.7 限制之后的一些好消息：\n- 预知/虚无披风模块回归了。\n- 现在你可以在警报、姓名板和团队框体上最多显示 1 个重要/进攻图标。\n\n这些功能不会像以前那样好用，但聊胜于无。",
+	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "12.0.7 限制之后的一些好消息：\n- 预知/虚无披风模块回归了。\n- 现在警报模块可以为每个竞技场对手显示 1 个重要/进攻图标。\n\n这些功能不会像以前那样好用，但聊胜于无。",
 	["CC Native Order"] = "CC原生顺序",
 	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "不显示最新应用的控制效果（MiniCC行为），而是使用暴雪默认的CC优先级，通常显示最先应用的控制效果（有少数例外）。",
 	["The others seem to use a non-trivial amount of CPU."] = "其他的似乎使用了大量的CPU。",

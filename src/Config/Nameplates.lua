@@ -79,22 +79,6 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 	showDefChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
 	showDefChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
-	local showImportantChk = mini:Checkbox({
-		Parent = container,
-		LabelText = L["Show Important"],
-		Tooltip = L["Adds one icon at the end of this bar that shows the enemy's important spell (e.g. precognition)."],
-		GetValue = function()
-			return options.ShowImportant
-		end,
-		SetValue = function(value)
-			options.ShowImportant = value
-			config:Apply()
-		end,
-	})
-
-	showImportantChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
-	showImportantChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
-
 	-- Row 2: Glow, Reverse, Spell colours, Milliseconds
 	local glowChk = mini:Checkbox({
 		Parent = container,
@@ -156,8 +140,8 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	-- Row 3: Show tooltips (moved down so the three "Show" toggles share row 1)
-	showTooltipsChk:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	showTooltipsChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
 	-- Milliseconds (applies to CC icons shown in this bar)
 	local showMillisChk = mini:Checkbox({
@@ -196,7 +180,7 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", showTooltipsChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	-- Each bar can hold up to 8 icons.
 	local maxIconsMax = 8
@@ -449,7 +433,7 @@ function M:Build(parent, options)
 	scaleWithNameplateChk:SetPoint("TOP", enemyIgnorePetsChk, "TOP", 0, 0)
 	scaleWithNameplateChk:SetPoint("LEFT", parent, "LEFT", threeColWidth * 2, 0)
 
-	local subPanelHeight = 281
+	local subPanelHeight = 251
 
 	local tabContainer = CreateFrame("Frame", nil, parent)
 	tabContainer:SetPoint("TOPLEFT",  enemyIgnorePetsChk, "BOTTOMLEFT", 0, -verticalSpacing)
