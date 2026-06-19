@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.4.2
+
+Fixed enemy CDs randomly triggering in the prep room.
+
 ## 4.4.1
 
 - Fix for lingering borders.
