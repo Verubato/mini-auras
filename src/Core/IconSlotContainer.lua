@@ -955,6 +955,11 @@ function M:ClearSlot(slotIndex)
 			end
 		end
 	end
+
+	-- Stop the single slot-level glow that StackImportantBuffs puts on slot.Frame. Cheap when none
+	-- exists (just nil-field checks) and ensures it never lingers when the slot is freed/reused.
+	StopLCGGlowsExcept(slot.Frame, nil)
+	HideStaticGlowsExcept(slot.Frame, nil)
 end
 
 ---Marks a slot as unused and triggers layout update
@@ -1028,24 +1033,37 @@ function M:StackImportantBuffs(slotIndex, buffState, opts, keepReserved, skipIds
 	-- Clear any layers left from a previous (possibly longer) buff list so none linger visible.
 	self:ClearSlot(slotIndex)
 
+	local slot = self.Slots[slotIndex]
+
+	-- The stacked layers carry NO glow; a single glow goes on slot.Frame below (all layers overlap
+	-- at the slot position, so one glow there wraps whichever icon is visible). A per-layer glow
+	-- would run one glow animation per helpful buff - most of them invisible - on every update.
+	local glowWanted = opts.Glow
+	opts.Glow = false
 	-- Tooltips are meaningless on a stacked slot (many spells share it), so never set SpellId.
 	opts.SpellId = nil
 
 	local count = 0
+	-- OR of every layer's importance as a 0/1 alpha for the single glow (valueIfTrue/valueIfFalse
+	-- must be numbers, not booleans).
+	local anyImportant = 0
 	for i = 1, #buffState do
 		local entry = buffState[i]
 		if entry.SpellIcon and entry.SpellId
 			and not (skipIds and entry.AuraInstanceID and skipIds[entry.AuraInstanceID]) then
 			count = count + 1
+			local isImportant = C_Spell.IsSpellImportant(entry.SpellId)
 			opts.Texture = entry.SpellIcon
 			opts.DurationObject = entry.DurationObject
-			opts.Alpha = C_Spell.IsSpellImportant(entry.SpellId)
+			opts.Alpha = isImportant
 			opts.Layer = count
 			self:SetSlot(slotIndex, opts)
+			anyImportant = C_CurveUtil.EvaluateColorValueFromBoolean(isImportant, 1, anyImportant)
 		end
 	end
 
 	if count == 0 then
+		-- Nothing stacked: glow already stopped by the ClearSlot above.
 		if keepReserved then
 			opts.Texture = reservedPlaceholderTexture
 			opts.DurationObject = nil
@@ -1056,6 +1074,13 @@ function M:StackImportantBuffs(slotIndex, buffState, opts, keepReserved, skipIds
 		end
 		self:SetSlotUnused(slotIndex)
 		return false
+	end
+
+	-- Single glow on the slot frame, shown only when an important aura is present.
+	if glowWanted and slot then
+		opts.Glow = true
+		opts.Alpha = anyImportant
+		UpdateGlow(slot.Frame, opts)
 	end
 
 	return true
