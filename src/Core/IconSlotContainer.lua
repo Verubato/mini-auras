@@ -280,6 +280,11 @@ local function ClearLayerData(layer, glowFrame)
 	end
 	layer.Icon:SetTexture(nil)
 	layer.Cooldown:Clear()
+	if layer.Border then
+		-- Hide the coloured border too; otherwise a cleared layer that had a border (e.g. a stacked
+		-- important layer with Color set) leaves the border visible around an empty icon.
+		layer.Border:Hide()
+	end
 	if layer.ChargeText then
 		layer.ChargeText:Hide()
 	end
