@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.4.1
+
+- Fix for lingering borders.
+
 ## 4.4.0
 
 - Removed important buff from nameplate and friendly indicator because it's causing too much lag.
