@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.4.3
+
+Fixed friendly CDs randomly triggering in the prep room.
+
 ## 4.4.2
 
 Fixed enemy CDs randomly triggering in the prep room.
