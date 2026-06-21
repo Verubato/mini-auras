@@ -705,7 +705,11 @@ function M:Init()
 		elseif event == "UNIT_FACTION" then
 			M:RefreshDisplays()
 		elseif event == "PVP_MATCH_STATE_CHANGED" then
-			if C_PvP.GetActiveMatchState() == Enum.PvPMatchState.StartUp then
+			-- StartUp is the prep room; suppress cooldown prediction while in it (auras are still
+			-- tracked) so pre-existing friendly buffs don't falsely trigger. Cleared once the gates open.
+			local inPrepRoom = C_PvP.GetActiveMatchState() == Enum.PvPMatchState.StartUp
+			brain:SetInPrepRoom(inPrepRoom)
+			if inPrepRoom then
 				-- Arena match is starting: clear all tracked state so the previous match's
 				-- cooldowns don't bleed into the new one.
 				ClearAllCooldownState()
@@ -719,6 +723,7 @@ function M:Init()
 			-- the next arena begins (PVP_MATCH_STATE_CHANGED/StartUp also fires,
 			-- but PLAYER_ENTERING_WORLD covers the case where a match ends without
 			-- a new StartUp following immediately).
+			brain:SetInPrepRoom(C_PvP.GetActiveMatchState() == Enum.PvPMatchState.StartUp)
 			ClearAllCooldownState()
 		end
 	end)

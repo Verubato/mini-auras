@@ -84,6 +84,11 @@ local predictiveGlowDurationChangedCallback = nil
 -- When true, the predict/remove pathways print diagnostic lines (matched rule, aura types,
 -- evidence).  Off by default since it fires on the hot UNIT_AURA path; toggle via "/mcc debug".
 local debugEnabled = false
+-- True while in the arena prep room (PvPMatchState.StartUp). Auras are still tracked so pre-applied
+-- buffs aren't treated as new when the gates open, but cooldown prediction/commit is suppressed -
+-- otherwise pre-existing friendly buffs seen as the watcher starts would falsely trigger cooldowns.
+-- Set by the FriendlyCooldowns Module via B:SetInPrepRoom.
+local inPrepRoom = false
 
 -- Pre-computed signature strings indexed by a 3-bit key (B=8, E=4, C=1).
 -- Eliminates repeated string concatenation on the hot OnWatcherChanged path.
@@ -1146,6 +1151,11 @@ end
 ---@param candidateUnits string[]
 ---Returns true if a cooldown was committed, false if no rule matched.
 local function OnAuraRemoved(entry, tracked, now, candidateUnits)
+	-- Don't commit cooldowns from auras dropping during the prep room.
+	if inPrepRoom then
+		return false
+	end
+
 	local measuredDuration = now - tracked.StartTime
 	local rule, ruleUnit = FindBestCandidate(entry, tracked, measuredDuration, candidateUnits)
 
@@ -1245,6 +1255,14 @@ local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 		CastSpellIdSnapshot = castSpellIdSnapshot,
 		DurationObject = info.DurationObject,
 	}
+
+	-- During the prep room, track the aura (above) but don't predict/commit a cooldown from it -
+	-- pre-existing friendly buffs would otherwise falsely trigger as the watcher starts. Tracking it
+	-- still means it won't be seen as "new" (re-triggering) once the gates open.
+	if inPrepRoom then
+		return
+	end
+
 	-- Deferred backfill: UNIT_SPELLCAST_SUCCEEDED and UNIT_ABSORB_AMOUNT_CHANGED can arrive
 	-- slightly after UNIT_AURA. Augment Evidence and CastSnapshot once the window elapses.
 	C_Timer.After(evidenceTolerance, function()
@@ -1533,6 +1551,13 @@ end
 function B:ToggleDebug()
 	debugEnabled = not debugEnabled
 	return debugEnabled
+end
+
+---Sets whether the tracker is in the arena prep room. While true, auras are still tracked but
+---cooldown prediction/commit is suppressed so pre-existing friendly buffs don't falsely trigger.
+---@param value boolean
+function B:SetInPrepRoom(value)
+	inPrepRoom = value
 end
 
 ---Registers the callback fired when a new aura is matched to a predicted spell.
