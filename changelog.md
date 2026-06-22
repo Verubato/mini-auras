@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.4.4
+
+Fixed a Lua error caused by another addon's copy of LibCustomGlow ("Attempted to release object that doesn't belong to this pool").
+
 ## 4.4.3
 
 Fixed friendly CDs randomly triggering in the prep room.
