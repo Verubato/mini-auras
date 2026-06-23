@@ -1179,9 +1179,9 @@ function M:CreateTabs(options)
 		assert(not keyToIndex[def.Key], "CreateTabs: duplicate Key: " .. def.Key)
 
 		local btn = CreateFrame("Button", nil, strip, "BackdropTemplate")
-		-- Pixel-snap the height so the 1px backdrop edges (esp. the top) land on physical pixels.
-		-- Plain SetHeight at fractional UI scale leaves the top edge between rows and it vanishes.
-		PixelUtil.SetHeight(btn, tabHeight)
+		-- Plain SetHeight/SetPoint (no PixelUtil) for the buttons: pixel-snapping the frame pushed the
+		-- 1px backdrop top edge off the physical-pixel grid on some pages, making it vanish.
+		btn:SetHeight(tabHeight)
 		btn:SetBackdrop({
 			bgFile = "Interface\\Buttons\\WHITE8X8",
 			edgeFile = "Interface\\Buttons\\WHITE8X8",
@@ -1222,12 +1222,11 @@ function M:CreateTabs(options)
 
 			SizeToText(btn)
 
-			-- Anchor all buttons to a single pixel-snapped bottom baseline so their top edges
-			-- align to physical pixels and render consistently across fractional UI scales.
+			-- Anchor all buttons to a single shared bottom baseline (the tabs' bottom).
 			if not prev then
-				PixelUtil.SetPoint(btn, "BOTTOMLEFT", strip, "BOTTOMLEFT", 0, 1)
+				btn:SetPoint("BOTTOMLEFT", strip, "BOTTOMLEFT", 0, 1)
 			else
-				PixelUtil.SetPoint(btn, "BOTTOMLEFT", prev, "BOTTOMRIGHT", tabSpacing, 0)
+				btn:SetPoint("BOTTOMLEFT", prev, "BOTTOMRIGHT", tabSpacing, 0)
 			end
 		end
 
