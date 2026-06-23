@@ -207,6 +207,13 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 				container:SetCount(maxIcons)
 			end
 
+			-- Match the slot layout to the grow direction. Grow LEFT mirrors the slots so slot 1 (highest
+			-- priority - e.g. the important buffs Blizzard sorts to the front) sits at the rightmost icon,
+			-- nearest the nameplate. RIGHT/DOWN already place slot 1 nearest the anchor. This runs on every
+			-- container (re)build, so newly-shown nameplates get it without waiting for a config refresh.
+			container:SetGrowDown(barOptions.Grow == "DOWN")
+			container:SetRows(nil, "CENTER", barOptions.Grow == "LEFT")
+
 			SetupContainerFrame(container, nameplate, anchorPoint, relativeToPoint, offsetX, offsetY)
 			result[bar.Key] = container
 		else
@@ -817,6 +824,10 @@ local function RefreshAnchorsAndSizes()
 							barOptions.Offset.Y
 						)
 						container:SetGrowDown(barOptions.Grow == "DOWN")
+						-- Grow LEFT mirrors the slot order so slot 1 (highest priority - e.g. the important
+						-- buffs Blizzard sorts to the front) sits at the rightmost icon, nearest the nameplate.
+						-- RIGHT and DOWN already place slot 1 nearest the anchor.
+						container:SetRows(nil, "CENTER", barOptions.Grow == "LEFT")
 						container:SetIconSize(barOptions.Icons.Size)
 						container:SetSpacing(db.IconSpacing or 2)
 						container:SetCount(barOptions.Icons.MaxIcons)
