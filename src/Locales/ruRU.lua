@@ -3,6 +3,7 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("ruRU", {
+	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "Хорошие новости:\n- Реализован обходной способ снова показывать важные ауры на полосках имён/портретах/оповещениях.",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Показывает важные заклинания на отдельной перемещаемой панели вместо объединения с защитными оповещениями.",
 	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "Показывает важные заклинания противника (например, атакующие способности, предвидение), считанные с полосок имён.",
 	["Important"] = "Важное",

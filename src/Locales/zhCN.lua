@@ -3,6 +3,7 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("zhCN", {
+	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "好消息：\n- 已实现一种变通方法，可在姓名板/头像/警报上再次显示重要光环。",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "在单独的可移动条上显示重要法术，而不是与防御警报合并。",
 	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "显示从姓名板读取的敌方重要法术（例如进攻冷却、预知）。",
 	["Important"] = "重要",

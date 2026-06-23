@@ -57,6 +57,6 @@ function M:Build(panel)
 	newsText:SetTextColor(1, 1, 1, 1)
 	newsText:SetWidth(contentWidth - 40)
 	newsText:SetJustifyH("LEFT")
-	newsText:SetText(L["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."])
+	newsText:SetText(L["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."])
 	newsText:SetPoint("TOPLEFT", newsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 end

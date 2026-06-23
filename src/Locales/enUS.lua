@@ -4,6 +4,7 @@ local L = addon.L
 
 -- Set English as the default
 L:SetDefaultStrings({
+	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts.",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Show important spells on a separate, movable bar instead of combined with the defensive alerts.",
 	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates.",
 	["Important"] = "Important",

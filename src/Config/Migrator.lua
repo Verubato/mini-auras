@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 52,
+	Version = 53,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -2418,6 +2418,18 @@ function M:UpgradeToVersion52(vars)
 	end
 
 	vars.Version = 52
+	return true
+end
+
+function M:UpgradeToVersion53(vars)
+	if vars.Version ~= 52 then return false end
+
+	-- Important auras are back via a nameplate-buff-list workaround (nameplates/portraits/alerts).
+	vars.WhatsNew = vars.WhatsNew or {}
+	table.insert(vars.WhatsNew, L["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."])
+	vars.NotifiedChanges = false
+
+	vars.Version = 53
 	return true
 end
 

@@ -3,6 +3,7 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("koKR", {
+	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "좋은 소식:\n- 이름표/초상화/경고에 중요 효과를 다시 표시하는 우회 방법이 구현되었습니다.",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "중요 주문을 방어 경고와 결합하지 않고 별도의 이동 가능한 막대에 표시합니다.",
 	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "이름표에서 읽은 적의 중요 주문(예: 공격 재사용 대기시간, 예지)을 표시합니다.",
 	["Important"] = "중요",

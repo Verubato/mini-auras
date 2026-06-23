@@ -3,6 +3,7 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("itIT", {
+	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "Buone notizie:\n- È stata implementata una soluzione alternativa per mostrare di nuovo le auree importanti su targhette/ritratti/avvisi.",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Mostra gli incantesimi importanti su una barra separata e spostabile invece che combinati con gli avvisi difensivi.",
 	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "Mostra gli incantesimi importanti del nemico (es. tempi di recupero offensivi, precognizione) letti dalle targhette.",
 	["Important"] = "Importante",
