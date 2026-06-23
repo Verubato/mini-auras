@@ -216,7 +216,8 @@ L:RegisterLocale("zhCN", {
 	["Nameplates_Short"] = "姓名板",
 	["Scale with Nameplate"] = "随姓名板缩放",
 	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "图标随姓名板缩放一起缩放。如果你的目标姓名板有不同的大小（例如在BBF的设置中），请使用此选项。",
-	["Shows CC and defensives on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "在姓名板上显示控制和防御（兼容 BBP、Platynator 和 Plater 等姓名板插件）。",
+	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "在姓名板上显示控制、防御和重要法术（兼容 BBP、Platynator 和 Plater 等姓名板插件）。",
+	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "显示暴雪允许在姓名板上显示的重要增益（例如敌方的进攻性冷却技能）。",
 	["Spell colours"] = "法术颜色",
 
 	-- Portraits tab

@@ -218,7 +218,8 @@ L:SetDefaultStrings({
 	["Nameplates_Short"] = "Nameplates",
 	["Scale with Nameplate"] = "Scale with Nameplate",
 	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings).",
-	["Shows CC and defensives on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Shows CC and defensives on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater).",
+	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater).",
+	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns).",
 	["Spell colours"] = "Spell colours",
 
 	-- Portraits tab

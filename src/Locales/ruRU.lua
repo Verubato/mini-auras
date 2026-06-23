@@ -216,7 +216,8 @@ L:RegisterLocale("ruRU", {
 	["Nameplates_Short"] = "Полоски",
 	["Scale with Nameplate"] = "Масштабировать с табличкой",
 	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Иконки масштабируются вместе с масштабом таблички с именем. Используйте этот параметр, если у вас другой размер для таблички с именем цели (например, в настройках BBF).",
-	["Shows CC and defensives on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Показывает контроль и защиту на полосках имён (работает с аддонами полосок имён, например BBP, Platynator и Plater).",
+	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Показывает контроль, защиту и важные эффекты на полосках имён (работает с аддонами полосок имён, например BBP, Platynator и Plater).",
+	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Показывает важные положительные эффекты, которые Blizzard разрешает на полосках имён (например, атакующие способности противника).",
 	["Spell colours"] = "Цвета заклинаний",
 
 	-- Portraits tab

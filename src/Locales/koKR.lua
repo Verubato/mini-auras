@@ -215,7 +215,8 @@ L:RegisterLocale("koKR", {
 	["Nameplates_Short"] = "이름표",
 	["Scale with Nameplate"] = "네임플레이트에 맞게 크기 조정",
 	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "아이콘이 네임플레이트 크기와 함께 조정됩니다. 대상 네임플레이트의 크기가 다를 경우 이 옵션을 사용하세요 (예: BBF 설정에서).",
-	["Shows CC and defensives on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "이름표에 군중 제어와 방어 효과를 표시합니다 (BBP, Platynator, Plater 등 이름표 애드온과 호환됩니다).",
+	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "이름표에 군중 제어, 방어, 중요 효과를 표시합니다 (BBP, Platynator, Plater 등 이름표 애드온과 호환됩니다).",
+	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Blizzard가 이름표에 허용하는 중요 버프를 표시합니다 (예: 적의 공격 재사용 대기시간).",
 	["Spell colours"] = "주문 색상",
 
 	-- Portraits tab

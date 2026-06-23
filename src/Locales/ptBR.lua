@@ -216,7 +216,8 @@ L:RegisterLocale("ptBR", {
 	["Nameplates_Short"] = "Placas",
 	["Scale with Nameplate"] = "Escalar com placa de nome",
 	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Os ícones escalam junto com a escala da placa de nome. Use esta opção se tiver um tamanho diferente para a placa de nome do alvo (ex: nas configurações do BBF).",
-	["Shows CC and defensives on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Mostra controle de grupo e defensivas nas placas de nome (funciona com addons de placas como BBP, Platynator e Plater).",
+	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Mostra controle de grupo, defensivas e importantes nas placas de nome (funciona com addons de placas como BBP, Platynator e Plater).",
+	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Mostra os benefícios importantes que a Blizzard permite nas placas de nome (ex.: recargas ofensivas do inimigo).",
 	["Spell colours"] = "Cores de feitiços",
 
 	-- Portraits tab

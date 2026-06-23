@@ -31,10 +31,15 @@ local testDefensiveNameplateSpellIds = {
 	104773, -- warlock wall
 	1022, -- bop
 }
+local testImportantNameplateSpellIds = {
+	31884, -- avenging wrath
+	121471, -- shadow blades
+}
 -- Pre-computed lengths; these lists never change at runtime so recalculating
 -- #list on every test-mode call is pure waste.
 local testCcCount = #testCcNameplateSpellIds
 local testDefensiveCount = #testDefensiveNameplateSpellIds
+local testImportantCount = #testImportantNameplateSpellIds
 
 -- Test spell dispel colors for CC spells
 local testCcDispelColors = {
@@ -44,6 +49,7 @@ local testCcDispelColors = {
 
 -- Category colors
 local defensiveColor = { r = 0.0, g = 0.8, b = 0.0 } -- Green
+local importantColor = { r = 0.85, g = 0.7, b = 0.1 } -- Gold
 
 ---@class NameplateData
 ---@field Nameplate table
@@ -64,6 +70,7 @@ local previousPetEnabled = {
 	Enemy = false,
 }
 local previousModuleEnabled = { Always = false, Arena = false, BattleGrounds = false, PvE = false }
+local previousImportantNeeded = false
 
 -- Reusable scratch table for SetSlot calls.
 -- This avoids creating a new table on every aura update for every nameplate slot,
@@ -73,6 +80,10 @@ local layerScratch = {}
 -- Shared empty list returned when a bar isn't showing a given spell type. Never mutate this.
 local EMPTY = {}
 
+local importantDisplayScratch = {}
+local importantEntryPool = {}
+local hookedAuraFrames = {}
+
 ---@class NameplatesModule
 local M = {}
 addon.Modules.NameplatesModule = M
@@ -80,12 +91,23 @@ addon.Modules.NameplatesModule = M
 local nameplateBar1Key = addonName .. "_Bar1Container"
 local nameplateBar2Key = addonName .. "_Bar2Container"
 
--- The two generic nameplate bars. Each bar independently shows CC and/or defensives based on
--- its ShowCC / ShowDefensives options, and both bars can display at the same time.
+-- The two generic nameplate bars. Each bar independently shows CC, defensives, and/or important
+-- buffs based on its ShowCC / ShowDefensives / ShowImportant options, and both bars can display
+-- at the same time.
 local BARS = {
 	{ Key = "Bar1", ContainerKey = nameplateBar1Key, DataField = "Bar1Container" },
 	{ Key = "Bar2", ContainerKey = nameplateBar2Key, DataField = "Bar2Container" },
 }
+
+local function ImportantNeeded()
+	local enemy = nmModule.Enemy
+	local friendly = nmModule.Friendly
+	return (enemy.Bar1.Enabled and enemy.Bar1.ShowImportant)
+		or (enemy.Bar2.Enabled and enemy.Bar2.ShowImportant)
+		or (friendly.Bar1.Enabled and friendly.Bar1.ShowImportant)
+		or (friendly.Bar2.Enabled and friendly.Bar2.ShowImportant)
+		or false
+end
 
 local function GetCCSortOptions()
 	if db.CCNativeOrder then
@@ -191,9 +213,55 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 	return result.Bar1, result.Bar2
 end
 
----Renders one bar: CC spells (with the kick icon) when the bar has ShowCC, and/or defensive
----spells when it has ShowDefensives. When a bar shows both, CC takes priority and the remaining
----slots are filled with defensives (the same slot distribution the old combined bar used).
+local function GetNameplateBuffList(nameplate)
+	local uf = nameplate and nameplate.UnitFrame
+	local af = uf and uf.AurasFrame
+	if af and af.buffList and af.buffList.Iterate and not (af.IsForbidden and af:IsForbidden()) then
+		return af.buffList
+	end
+	return nil
+end
+
+-- Unit for the in-progress GetImportantBuffs iteration. Passed to the hoisted callback via this
+-- upvalue rather than a per-call closure, since the buff scan runs on the aura hot path.
+local importantIterUnit
+
+local function CollectImportantBuff(auraInstanceID)
+	local unit = importantIterUnit
+	local aura = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, auraInstanceID)
+	if aura then
+		local filtered = importantDisplayScratch
+		local n = #filtered + 1
+		local entry = importantEntryPool[n]
+		if not entry then
+			entry = {}
+			importantEntryPool[n] = entry
+		end
+		entry.SpellIcon = aura.icon
+		entry.SpellId = aura.spellId
+		entry.AuraInstanceID = auraInstanceID
+		entry.DurationObject = C_UnitAuras.GetAuraDuration(unit, auraInstanceID)
+		filtered[n] = entry
+	end
+end
+
+---Collects the "important" buffs Blizzard chooses to display on a nameplate (e.g. enemy
+---offensive cooldowns). These come straight from Blizzard's own nameplate buff list rather
+---than the aura watcher, so we never have to evaluate importance ourselves.
+local function GetImportantBuffs(data)
+	local filtered = importantDisplayScratch
+	wipe(filtered)
+	local buffList = GetNameplateBuffList(data.Nameplate)
+	if buffList then
+		importantIterUnit = data.UnitToken
+		buffList:Iterate(CollectImportantBuff)
+	end
+	return filtered
+end
+
+---Renders one bar from the spell types it has enabled: CC (with the kick icon) for ShowCC,
+---defensives for ShowDefensives, and Blizzard's important buffs for ShowImportant. Priority is
+---CC, then defensives, then important; slotDistribution divides the bar's slots between them.
 ---@param container IconSlotContainer?
 ---@param barOptions table?
 ---@param watcher Watcher
@@ -205,14 +273,16 @@ local function ApplyBarToNameplate(container, barOptions, watcher, data)
 
 	local showCC = barOptions.ShowCC
 	local showDefensives = barOptions.ShowDefensives
+	local showImportant = barOptions.ShowImportant
 
 	local kickEntry = showCC and kickTracker:GetKick(data.UnitToken) or nil
 	local ccData = showCC and watcher:GetCcState() or EMPTY
 	local defensivesData = showDefensives and watcher:GetDefensiveState() or EMPTY
+	local importantData = showImportant and GetImportantBuffs(data) or EMPTY
 	local kickCount = kickEntry and 1 or 0
 
-	local ccSlots, defensiveSlots =
-		slotDistribution.Calculate(container.Count, #ccData + kickCount, #defensivesData, 0)
+	local ccSlots, defensiveSlots, importantSlots =
+		slotDistribution.Calculate(container.Count, #ccData + kickCount, #defensivesData, #importantData)
 
 	local iconsGlow = barOptions.Icons.Glow
 	local iconsReverse = barOptions.Icons.ReverseCooldown
@@ -273,6 +343,26 @@ local function ApplyBarToNameplate(container, barOptions, watcher, data)
 			layerScratch.ShowMilliseconds = nil
 			layerScratch.FontScale = fontScale
 			layerScratch.Color = colorByCategory and defensiveColor or nil
+			layerScratch.SpellId = showTooltips and entry.SpellId or nil
+			container:SetSlot(slot, layerScratch)
+		end
+	end
+
+	if importantSlots > 0 then
+		for i = 1, mathMin(importantSlots, #importantData) do
+			if slot >= container.Count then
+				break
+			end
+			slot = slot + 1
+			local entry = importantData[i]
+			layerScratch.Texture = entry.SpellIcon
+			layerScratch.DurationObject = entry.DurationObject
+			layerScratch.Alpha = true
+			layerScratch.Glow = iconsGlow
+			layerScratch.ReverseCooldown = iconsReverse
+			layerScratch.ShowMilliseconds = nil
+			layerScratch.FontScale = fontScale
+			layerScratch.Color = colorByCategory and importantColor or nil
 			layerScratch.SpellId = showTooltips and entry.SpellId or nil
 			container:SetSlot(slot, layerScratch)
 		end
@@ -340,8 +430,9 @@ local function ShowBarTestIcons(container, barOptions, now)
 
 	local ccCount = barOptions.ShowCC and testCcCount or 0
 	local defensiveCount = barOptions.ShowDefensives and testDefensiveCount or 0
-	local ccSlots, defensiveSlots =
-		slotDistribution.Calculate(container.Count, ccCount, defensiveCount, 0)
+	local importantCount = barOptions.ShowImportant and testImportantCount or 0
+	local ccSlots, defensiveSlots, importantSlots =
+		slotDistribution.Calculate(container.Count, ccCount, defensiveCount, importantCount)
 
 	local iconsGlow = barOptions.Icons.Glow
 	local iconsReverse = barOptions.Icons.ReverseCooldown
@@ -392,6 +483,26 @@ local function ShowBarTestIcons(container, barOptions, now)
 		end
 	end
 
+	for i = 1, importantSlots do
+		if slot >= container.Count then
+			break
+		end
+		slot = slot + 1
+		local spellId = testImportantNameplateSpellIds[i]
+		local tex = C_Spell.GetSpellTexture(spellId)
+		if tex then
+			layerScratch.Texture = tex
+			layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
+			layerScratch.Alpha = true
+			layerScratch.Glow = iconsGlow
+			layerScratch.ReverseCooldown = iconsReverse
+			layerScratch.FontScale = fontScale
+			layerScratch.Color = colorByCategory and importantColor or nil
+			layerScratch.SpellId = showTooltips and spellId or nil
+			container:SetSlot(slot, layerScratch)
+		end
+	end
+
 	-- Clear any unused slots beyond what we just set
 	for i = slot + 1, container.Count do
 		container:SetSlotUnused(i)
@@ -419,11 +530,31 @@ local function OnNamePlateRemoved(unitToken)
 	nameplateAnchors[unitToken] = nil
 end
 
+local function HookNameplateAuraFrame(nameplate)
+	local uf = nameplate and nameplate.UnitFrame
+	local af = uf and uf.AurasFrame
+	if af and af.RefreshAuras and not hookedAuraFrames[af] then
+		hookedAuraFrames[af] = true
+		hooksecurefunc(af, "RefreshAuras", function(self)
+			if self.IsForbidden and self:IsForbidden() then
+				return
+			end
+			local parent = self:GetParent()
+			local u = parent and parent.unit
+			if u and ImportantNeeded() and nameplateAnchors[u] and watchers[u] then
+				OnAuraDataChanged(u)
+			end
+		end)
+	end
+end
+
 local function OnNamePlateAdded(unitToken)
 	local nameplate = C_NamePlate.GetNamePlateForUnit(unitToken)
 	if not nameplate then
 		return
 	end
+
+	HookNameplateAuraFrame(nameplate)
 
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
 	if not moduleEnabled then
@@ -469,8 +600,17 @@ local function OnNamePlateAdded(unitToken)
 	nameplateAnchors[unitToken] = data
 
 	-- Create new watcher
+	if watchers[unitToken] then
+		watchers[unitToken]:Dispose()
+	end
+
+	-- Important buffs are read straight from Blizzard's nameplate buff list (see GetImportantBuffs),
+	-- so the watcher only tracks CC + defensives. We always track both (rather than narrowing to the
+	-- bars' current ShowCC/ShowDefensives) so a duel faction flip can't leave the watcher querying the
+	-- wrong aura types. Stated explicitly so we don't silently inherit any future change to the "all"
+	-- default (e.g. if it ever started including buffs, which we don't want here).
 	local sortRule, sortDirection = GetCCSortOptions()
-	watchers[unitToken] = unitWatcher:New(unitToken, nil, nil, sortRule, sortDirection)
+	watchers[unitToken] = unitWatcher:New(unitToken, nil, { CC = true, Defensives = true }, sortRule, sortDirection)
 	watchers[unitToken]:RegisterCallback(function()
 		OnAuraDataChanged(unitToken)
 	end)
@@ -568,6 +708,8 @@ local function CacheEnabledModes()
 	previousModuleEnabled.Arena = enabled.Arena
 	previousModuleEnabled.BattleGrounds = enabled.BattleGrounds
 	previousModuleEnabled.PvE = enabled.PvE
+
+	previousImportantNeeded = ImportantNeeded()
 end
 
 local function HaveModesChanged()
@@ -585,6 +727,7 @@ local function HaveModesChanged()
 		or previousModuleEnabled.Arena ~= enabled.Arena
 		or previousModuleEnabled.BattleGrounds ~= enabled.BattleGrounds
 		or previousModuleEnabled.PvE ~= enabled.PvE
+		or previousImportantNeeded ~= ImportantNeeded()
 end
 
 local function ShowTestIcons()

@@ -29,6 +29,8 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 	container:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
 	container:SetPoint("RIGHT", parent, "RIGHT", 0, 0)
 
+	local topColWidth = mini:ColumnWidth(5, 0, 0)
+
 	-- Each bar can show CC and/or defensives, so the colour tooltip covers both.
 	local colorTooltip = L["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."]
 
@@ -60,7 +62,7 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	showCcChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	showCcChk:SetPoint("LEFT", parent, "LEFT", topColWidth, 0)
 	showCcChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
 	local showDefChk = mini:Checkbox({
@@ -76,8 +78,24 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	showDefChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	showDefChk:SetPoint("LEFT", parent, "LEFT", topColWidth * 2, 0)
 	showDefChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
+
+	local showImportantChk = mini:Checkbox({
+		Parent = container,
+		LabelText = L["Show Important"],
+		Tooltip = L["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."],
+		GetValue = function()
+			return options.ShowImportant
+		end,
+		SetValue = function(value)
+			options.ShowImportant = value
+			config:Apply()
+		end,
+	})
+
+	showImportantChk:SetPoint("LEFT", parent, "LEFT", topColWidth * 3, 0)
+	showImportantChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
 	-- Row 2: Glow, Reverse, Spell colours, Milliseconds
 	local glowChk = mini:Checkbox({
@@ -108,7 +126,7 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	reverseChk:SetPoint("LEFT", parent, "LEFT", topColWidth, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local dispelColoursChk = mini:Checkbox({
@@ -124,7 +142,7 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", topColWidth * 2, 0)
 	dispelColoursChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local showTooltipsChk = mini:Checkbox({
@@ -140,7 +158,7 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", topColWidth * 4, 0)
 	showTooltipsChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
 	-- Milliseconds (applies to CC icons shown in this bar)
@@ -157,7 +175,7 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	showMillisChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	showMillisChk:SetPoint("LEFT", parent, "LEFT", topColWidth * 3, 0)
 	showMillisChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local iconSize = mini:Slider({
@@ -285,7 +303,7 @@ function M:Build(parent, options)
 	local lines = mini:TextBlock({
 		Parent = parent,
 		Lines = {
-			L["Shows CC and defensive spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."],
+			L["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."],
 		},
 	})
 

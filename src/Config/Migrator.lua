@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 51,
+	Version = 52,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -256,6 +256,7 @@ local dbDefaults = {
 					Enabled = false,
 					ShowCC = true,
 					ShowDefensives = false,
+					ShowImportant = false,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -277,6 +278,7 @@ local dbDefaults = {
 					Enabled = false,
 					ShowCC = false,
 					ShowDefensives = true,
+					ShowImportant = false,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -301,6 +303,7 @@ local dbDefaults = {
 					Enabled = true,
 					ShowCC = true,
 					ShowDefensives = false,
+					ShowImportant = true,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -322,6 +325,7 @@ local dbDefaults = {
 					Enabled = false,
 					ShowCC = false,
 					ShowDefensives = true,
+					ShowImportant = false,
 					Grow = "RIGHT",
 					Offset = {
 						X = 0,
@@ -2373,6 +2377,46 @@ function M:UpgradeToVersion51(vars)
 	vars.NotifiedChanges = false
 
 	vars.Version = 51
+	return true
+end
+
+function M:UpgradeToVersion52(vars)
+	if vars.Version ~= 51 then return false end
+
+	-- Nameplates can now show the "important" buffs Blizzard permits (e.g. enemy offensive
+	-- cooldowns) via a per-bar ShowImportant toggle. Missing ShowImportant keys are filled
+	-- from dbDefaults by GetAndUpgradeDb (Enemy Bar1 defaults to on). For existing users we
+	-- additionally turn it on for one enabled bar so the feature surfaces somewhere sensible
+	-- without retroactively overriding a deliberately empty layout. Prefer an enabled bar that
+	-- already shows defensives (important buffs are cooldowns, so they sit naturally alongside
+	-- them); otherwise fall back to the first enabled bar.
+	local nameplates = vars.Modules and vars.Modules.NameplatesModule
+	local enemy = nameplates and nameplates.Enemy
+	local friendly = nameplates and nameplates.Friendly
+	local scanOrder = {
+		enemy and enemy.Bar1,
+		friendly and friendly.Bar1,
+		enemy and enemy.Bar2,
+		friendly and friendly.Bar2,
+	}
+	local firstEnabled, defensivesBar
+	for i = 1, 4 do
+		local bar = scanOrder[i]
+		if bar and bar.Enabled then
+			firstEnabled = firstEnabled or bar
+			if bar.ShowDefensives then
+				defensivesBar = bar
+				break
+			end
+		end
+	end
+
+	local target = defensivesBar or firstEnabled
+	if target then
+		target.ShowImportant = true
+	end
+
+	vars.Version = 52
 	return true
 end
 

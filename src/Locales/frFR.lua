@@ -216,7 +216,8 @@ L:RegisterLocale("frFR", {
 	["Nameplates_Short"] = "Nameplates",
 	["Scale with Nameplate"] = "Suivre l'échelle de la nameplate",
 	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Les icônes s'adaptent à la taille de la nameplate. Utile si vous avez une taille différente pour la nameplate de cible (ex. dans BBF).",
-	["Shows CC and defensives on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Affiche le contrôle de foule et les défensifs sur les barres de nom (fonctionne avec les addons de barres de nom comme BBP, Platynator et Plater).",
+	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Affiche le contrôle de foule, les défensifs et les sorts importants sur les barres de nom (fonctionne avec les addons de barres de nom comme BBP, Platynator et Plater).",
+	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Affiche les améliorations importantes que Blizzard autorise sur les barres de nom (par ex. les temps de recharge offensifs de l'ennemi).",
 	["Spell colours"] = "Couleurs par sort",
 
 	-- Portraits tab

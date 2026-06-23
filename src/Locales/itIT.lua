@@ -215,7 +215,8 @@ L:RegisterLocale("itIT", {
 	["Nameplates_Short"] = "Barre",
 	["Scale with Nameplate"] = "Scala con segnaposto",
 	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Le icone si ridimensionano insieme alla scala del segnaposto. Usa questa opzione se hai una dimensione diversa per il segnaposto del bersaglio (es. nelle impostazioni BBF).",
-	["Shows CC and defensives on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Mostra controllo della folla e difensivi sulle targhette (funziona con addon per targhette come BBP, Platynator e Plater).",
+	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Mostra controllo della folla, difensivi e importanti sulle targhette (funziona con addon per targhette come BBP, Platynator e Plater).",
+	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Mostra i potenziamenti importanti che Blizzard consente sulle targhette (es. tempi di recupero offensivi del nemico).",
 	["Spell colours"] = "Colori incantesimi",
 
 	-- Portraits tab
