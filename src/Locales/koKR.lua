@@ -133,7 +133,6 @@ L:RegisterLocale("koKR", {
 	["Announce defensive spell names using text-to-speech when they are cast."] = "방어 주문이 사용될 때 음성 합성으로 주문 이름을 알립니다.",
 	["Announce spell names using text-to-speech when they are cast."] = "주문이 사용될 때 음성 합성으로 주문 이름을 알립니다.",
 	["Defensive Spells"] = "방어 주문",
-	["Include defensives"] = "방어 기술 포함",
 	["Includes defensives in the alerts."] = "알림에 방어 기술을 포함합니다.",
 	["Play a sound when a defensive spell is pressed."] = "방어 주문이 사용될 때 소리 재생.",
 	["Show alert icons in the alerts region."] = "알림 영역에 경고 아이콘을 표시합니다.",

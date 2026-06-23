@@ -133,7 +133,6 @@ L:RegisterLocale("ruRU", {
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Объявлять названия защитных заклинаний с помощью синтеза речи при их применении.",
 	["Announce spell names using text-to-speech when they are cast."] = "Объявлять названия заклинаний с помощью синтеза речи при их применении.",
 	["Defensive Spells"] = "Защитные заклинания",
-	["Include defensives"] = "Включить защитные способности",
 	["Includes defensives in the alerts."] = "Включает защитные способности в оповещения.",
 	["Play a sound when a defensive spell is pressed."] = "Воспроизводить звук при использовании защитного заклинания.",
 	["Show alert icons in the alerts region."] = "Показывать значки оповещений в области оповещений.",

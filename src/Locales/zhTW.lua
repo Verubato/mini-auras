@@ -133,7 +133,6 @@ L:RegisterLocale("zhTW", {
 	["Announce defensive spell names using text-to-speech when they are cast."] = "施放防禦法術時使用語音合成播報法術名稱。",
 	["Announce spell names using text-to-speech when they are cast."] = "施放法術時使用語音合成播報法術名稱。",
 	["Defensive Spells"] = "防禦法術",
-	["Include defensives"] = "包括防禦技能",
 	["Includes defensives in the alerts."] = "在警報中包括防禦技能。",
 	["Play a sound when a defensive spell is pressed."] = "使用防禦法術時播放聲音。",
 	["Show alert icons in the alerts region."] = "在警報區域顯示警報圖示.",

@@ -133,7 +133,6 @@ L:RegisterLocale("frFR", {
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Annonce le nom des sorts défensifs par synthèse vocale quand ils sont lancés.",
 	["Announce spell names using text-to-speech when they are cast."] = "Annonce le nom des sorts par synthèse vocale quand ils sont lancés.",
 	["Defensive Spells"] = "Sorts défensifs",
-	["Include defensives"] = "Inclure les défensifs",
 	["Includes defensives in the alerts."] = "Inclut les sorts défensifs dans les alertes.",
 	["Play a sound when a defensive spell is pressed."] = "Joue un son quand un sort défensif est utilisé.",
 	["Show alert icons in the alerts region."] = "Affiche les icônes d'alerte dans la zone d'alertes.",

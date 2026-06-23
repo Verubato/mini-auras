@@ -134,7 +134,6 @@ L:RegisterLocale("esMX", {
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Anunciar nombres de hechizos defensivos mediante texto a voz cuando se lancen.",
 	["Announce spell names using text-to-speech when they are cast."] = "Anunciar nombres de hechizos mediante texto a voz cuando se lancen.",
 	["Defensive Spells"] = "Hechizos defensivos",
-	["Include defensives"] = "Incluir defensivos",
 	["Includes defensives in the alerts."] = "Incluye habilidades defensivas en las alertas.",
 	["Play a sound when a defensive spell is pressed."] = "Reproducir un sonido cuando se lance un hechizo defensivo.",
 	["Show alert icons in the alerts region."] = "Mostrar íconos de alerta en la región de alertas.",

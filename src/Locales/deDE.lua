@@ -133,7 +133,6 @@ L:RegisterLocale("deDE", {
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Sage defensive Zaubernamen mittels Sprachausgabe an, wenn sie gewirkt werden.",
 	["Announce spell names using text-to-speech when they are cast."] = "Sage Zaubernamen mittels Sprachausgabe an, wenn sie gewirkt werden.",
 	["Defensive Spells"] = "Defensive Zauber",
-	["Include defensives"] = "Defensive einschließen",
 	["Includes defensives in the alerts."] = "Schließt defensive Fähigkeiten in den Warnungen ein.",
 	["Play a sound when a defensive spell is pressed."] = "Spiele einen Sound ab, wenn ein defensiver Zauber gewirkt wird.",
 	["Show alert icons in the alerts region."] = "Warnsymbole im Warnbereich anzeigen.",

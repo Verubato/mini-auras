@@ -133,7 +133,6 @@ L:RegisterLocale("ptBR", {
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Anunciar nomes de feitiços defensivos usando texto para fala quando forem lançados.",
 	["Announce spell names using text-to-speech when they are cast."] = "Anunciar nomes de feitiços usando texto para fala quando forem lançados.",
 	["Defensive Spells"] = "Feitiços defensivos",
-	["Include defensives"] = "Incluir defensivos",
 	["Includes defensives in the alerts."] = "Inclui habilidades defensivas nos alertas.",
 	["Play a sound when a defensive spell is pressed."] = "Reproduzir um som quando um feitiço defensivo for lançado.",
 	["Show alert icons in the alerts region."] = "Mostrar ícones de alerta na região de alertas.",

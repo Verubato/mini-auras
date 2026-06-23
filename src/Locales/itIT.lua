@@ -133,7 +133,6 @@ L:RegisterLocale("itIT", {
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Annuncia i nomi degli incantesimi difensivi usando la sintesi vocale quando vengono lanciati.",
 	["Announce spell names using text-to-speech when they are cast."] = "Annuncia i nomi degli incantesimi usando la sintesi vocale quando vengono lanciati.",
 	["Defensive Spells"] = "Incantesimi difensivi",
-	["Include defensives"] = "Includi difensive",
 	["Includes defensives in the alerts."] = "Include abilità difensive negli avvisi.",
 	["Play a sound when a defensive spell is pressed."] = "Riproduci un suono quando viene lanciato un incantesimo difensivo.",
 	["Show alert icons in the alerts region."] = "Mostra le icone di avviso nell'area degli avvisi.",

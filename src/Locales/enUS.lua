@@ -135,7 +135,6 @@ L:SetDefaultStrings({
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Announce defensive spell names using text-to-speech when they are cast.",
 	["Announce spell names using text-to-speech when they are cast."] = "Announce spell names using text-to-speech when they are cast.",
 	["Defensive Spells"] = "Defensive Spells",
-	["Include defensives"] = "Include defensives",
 	["Includes defensives in the alerts."] = "Includes defensives in the alerts.",
 	["Play a sound when a defensive spell is pressed."] = "Play a sound when a defensive spell is pressed.",
 	["Show alert icons in the alerts region."] = "Show alert icons in the alerts region.",
