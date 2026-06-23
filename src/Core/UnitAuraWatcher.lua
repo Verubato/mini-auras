@@ -16,6 +16,11 @@ local dispelColorCurve
 local emptyAuraState = {}
 -- Scratch table reused by RebuildStates as a dedup set; wiped at start of each call.
 local rebuildSeen = {}
+-- Context for the hoisted RebuildStates collectors, set before each IterateAuras pass so the
+-- callbacks aren't reallocated as closures every rebuild. Entry tables live in `rebuildTarget` and
+-- are reused by index across rebuilds, avoiding a per-aura table allocation (a GC hotspot in groups).
+local rebuildTarget
+local rebuildCount = 0
 
 local function InitColourCurve()
 	if dispelColorCurve then
@@ -265,6 +270,85 @@ local function IterateAuras(unit, filter, sortRule, sortDirection, callback)
 	end
 end
 
+-- Returns the next pooled entry in rebuildTarget, creating it once and reusing it on later rebuilds.
+local function NextRebuildEntry()
+	rebuildCount = rebuildCount + 1
+	local entry = rebuildTarget[rebuildCount]
+	if not entry then
+		entry = {}
+		rebuildTarget[rebuildCount] = entry
+	end
+	return entry
+end
+
+-- Trims pooled entries past `count` so #arr reflects the live entries (and releases the surplus).
+local function TrimRebuildArray(arr, count)
+	for i = #arr, count + 1, -1 do
+		arr[i] = nil
+	end
+end
+
+local function CollectBigDefensive(auraData, durationInfo, dispelColor)
+	-- units out of range produce garbage data, so double check
+	local isDefensive = C_UnitAuras.AuraIsBigDefensive(auraData.spellId)
+	if issecretvalue(isDefensive) or isDefensive then
+		local entry = NextRebuildEntry()
+		entry.IsDefensive = isDefensive
+		entry.SpellId = auraData.spellId
+		entry.SpellName = auraData.name
+		entry.SpellIcon = auraData.icon
+		entry.DurationObject = durationInfo
+		entry.DispelColor = dispelColor
+		entry.AuraInstanceID = auraData.auraInstanceID
+	end
+
+	rebuildSeen[auraData.auraInstanceID] = true
+end
+
+local function CollectExternalDefensive(auraData, durationInfo, dispelColor)
+	if not rebuildSeen[auraData.auraInstanceID] then
+		local entry = NextRebuildEntry()
+		entry.IsDefensive = true
+		entry.SpellId = auraData.spellId
+		entry.SpellName = auraData.name
+		entry.SpellIcon = auraData.icon
+		entry.DurationObject = durationInfo
+		entry.DispelColor = dispelColor
+		entry.AuraInstanceID = auraData.auraInstanceID
+
+		rebuildSeen[auraData.auraInstanceID] = true
+	end
+end
+
+local function CollectCC(auraData, durationInfo, dispelColor)
+	-- protect against garbage data
+	local isCC = C_Spell.IsSpellCrowdControl(auraData.spellId)
+	if issecretvalue(isCC) or isCC then
+		local entry = NextRebuildEntry()
+		entry.IsCC = isCC
+		entry.SpellId = auraData.spellId
+		entry.SpellName = auraData.name
+		entry.SpellIcon = auraData.icon
+		entry.DurationObject = durationInfo
+		entry.DispelColor = dispelColor
+		entry.AuraInstanceID = auraData.auraInstanceID
+	end
+
+	rebuildSeen[auraData.auraInstanceID] = true
+end
+
+local function CollectBuff(auraData, durationInfo, dispelColor)
+	-- Every helpful aura, ungated. The "important" check (precog, Nullifying Shroud) is a secret
+	-- value, so consumers apply it themselves at display time.
+	local entry = NextRebuildEntry()
+	entry.SpellId = auraData.spellId
+	entry.SpellName = auraData.name
+	entry.SpellIcon = auraData.icon
+	entry.DurationObject = durationInfo
+	entry.DispelColor = dispelColor
+	entry.AuraInstanceID = auraData.auraInstanceID
+end
+
 function Watcher:RebuildStates()
 	local unit = self.State.Unit
 
@@ -292,93 +376,46 @@ function Watcher:RebuildStates()
 	-- Buffs are opt-in only (never part of the "all" default) to avoid duplicating defensives.
 	local interestedInBuffs = interestedIn and interestedIn.Buffs
 
-	-- Reuse the existing state arrays in-place to avoid per-call allocation.
+	-- Reuse the existing state arrays in-place to avoid per-call allocation. Entry tables are pooled
+	-- (reused by index via NextRebuildEntry), so the arrays are NOT wiped up front - instead each is
+	-- trimmed to its live count after filling.
 	---@type AuraInfo[]
 	local ccSpellData = state.CcAuraState
 	---@type AuraInfo[]
 	local defensivesSpellData = state.DefensiveState
 	---@type AuraInfo[]
 	local buffSpellData = state.BuffState
-	wipe(ccSpellData)
-	wipe(defensivesSpellData)
-	wipe(buffSpellData)
-	local seen = rebuildSeen
-	wipe(seen)
+	wipe(rebuildSeen)
 
 	local sortRule = state.SortRule
 	local sortDirection = state.SortDirection
 
 	if interestedInDefensives then
-		IterateAuras(unit, "HELPFUL|BIG_DEFENSIVE", sortRule, sortDirection, function(auraData, durationInfo, dispelColor)
-			-- units out of range produce garbage data, so double check
-			local isDefensive = C_UnitAuras.AuraIsBigDefensive(auraData.spellId)
-
-			if issecretvalue(isDefensive) or isDefensive then
-				defensivesSpellData[#defensivesSpellData + 1] = {
-					IsDefensive = isDefensive,
-					SpellId = auraData.spellId,
-					SpellName = auraData.name,
-					SpellIcon = auraData.icon,
-					DurationObject = durationInfo,
-					DispelColor = dispelColor,
-					AuraInstanceID = auraData.auraInstanceID,
-				}
-			end
-
-			seen[auraData.auraInstanceID] = true
-		end)
-
-		IterateAuras(unit, "HELPFUL|EXTERNAL_DEFENSIVE", sortRule, sortDirection, function(auraData, durationInfo, dispelColor)
-			if not seen[auraData.auraInstanceID] then
-				defensivesSpellData[#defensivesSpellData + 1] = {
-					IsDefensive = true,
-					SpellId = auraData.spellId,
-					SpellName = auraData.name,
-					SpellIcon = auraData.icon,
-					DurationObject = durationInfo,
-					DispelColor = dispelColor,
-					AuraInstanceID = auraData.auraInstanceID,
-				}
-
-				seen[auraData.auraInstanceID] = true
-			end
-		end)
+		rebuildTarget = defensivesSpellData
+		rebuildCount = 0
+		IterateAuras(unit, "HELPFUL|BIG_DEFENSIVE", sortRule, sortDirection, CollectBigDefensive)
+		IterateAuras(unit, "HELPFUL|EXTERNAL_DEFENSIVE", sortRule, sortDirection, CollectExternalDefensive)
+		TrimRebuildArray(defensivesSpellData, rebuildCount)
+	else
+		TrimRebuildArray(defensivesSpellData, 0)
 	end
 
 	if interestedInCC then
-		IterateAuras(unit, "HARMFUL|CROWD_CONTROL", sortRule, sortDirection, function(auraData, durationInfo, dispelColor)
-			-- protect against garbage data
-			local isCC = C_Spell.IsSpellCrowdControl(auraData.spellId)
-
-			if issecretvalue(isCC) or isCC then
-				ccSpellData[#ccSpellData + 1] = {
-					IsCC = isCC,
-					SpellId = auraData.spellId,
-					SpellName = auraData.name,
-					SpellIcon = auraData.icon,
-					DurationObject = durationInfo,
-					DispelColor = dispelColor,
-					AuraInstanceID = auraData.auraInstanceID,
-				}
-			end
-
-			seen[auraData.auraInstanceID] = true
-		end)
+		rebuildTarget = ccSpellData
+		rebuildCount = 0
+		IterateAuras(unit, "HARMFUL|CROWD_CONTROL", sortRule, sortDirection, CollectCC)
+		TrimRebuildArray(ccSpellData, rebuildCount)
+	else
+		TrimRebuildArray(ccSpellData, 0)
 	end
 
 	if interestedInBuffs then
-		-- Collect every helpful aura with no gating. The "important" check (precog, Nullifying
-		-- Shroud) is a secret value, so consumers must apply it themselves at display time.
-		IterateAuras(unit, "HELPFUL", sortRule, sortDirection, function(auraData, durationInfo, dispelColor)
-			buffSpellData[#buffSpellData + 1] = {
-				SpellId = auraData.spellId,
-				SpellName = auraData.name,
-				SpellIcon = auraData.icon,
-				DurationObject = durationInfo,
-				DispelColor = dispelColor,
-				AuraInstanceID = auraData.auraInstanceID,
-			}
-		end)
+		rebuildTarget = buffSpellData
+		rebuildCount = 0
+		IterateAuras(unit, "HELPFUL", sortRule, sortDirection, CollectBuff)
+		TrimRebuildArray(buffSpellData, rebuildCount)
+	else
+		TrimRebuildArray(buffSpellData, 0)
 	end
 
 	-- When unsorted, the API may return auras in a non-deterministic order (observed on Chinese clients).
