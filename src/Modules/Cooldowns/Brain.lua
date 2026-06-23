@@ -5,7 +5,6 @@ local _, addon = ...
 local rules = addon.Modules.Cooldowns.Rules
 local fcdTalents = addon.Modules.Cooldowns.Talents
 local SignatureDetector = addon.Modules.Cooldowns.SignatureDetector
-local units = addon.Utils.Units
 
 addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
 
@@ -819,10 +818,10 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 						-- cast in the snapshot window.  UNIT_SPELLCAST_SUCCEEDED fires for "player",
 						-- so empty CastSpellIdSnapshot means they provably cast nothing relevant.
 						local snapshotUnit = ResolveSnapshotUnit(candidate)
-						if snapshotUnit == "player"
-						and not PlayerHasExtCastInWindow(castSpellIdSnapshot, detectionTime, auraTypes) then
-							-- skip: player cast no EXT spell
-						else
+						-- Skip the local player when they provably cast no EXT spell in the window.
+						local playerCastNoExt = snapshotUnit == "player"
+							and not PlayerHasExtCastInWindow(castSpellIdSnapshot, detectionTime, auraTypes)
+						if not playerCastNoExt then
 							consider(candidate, false, nil)
 						end
 					end

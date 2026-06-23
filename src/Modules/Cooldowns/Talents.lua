@@ -1,7 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
-local inspector = addon.Core.Inspector
 local inspectorFacade = addon.Core.InspectorFacade
 
 addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}

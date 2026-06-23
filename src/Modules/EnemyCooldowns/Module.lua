@@ -393,7 +393,6 @@ local function TrackNewAura(entry, trackedAuras, id, info, now)
 				for _, candidateUnit in ipairs(arenaUnits) do
 					local candidateEntry = watchEntries[candidateUnit]
 					if candidateEntry then
-						local snap    = tracked.CastSnapshot[candidateUnit]
 						local hasCast = true
 						local predEv  = BuildPredictEvidence(tracked.Evidence, hasCast)
 						local spellId, isOnCd = fcdBrain:PredictSpellId(

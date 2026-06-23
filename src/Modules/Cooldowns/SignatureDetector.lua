@@ -49,8 +49,6 @@ function SD:New(config)
 	}, methods)
 end
 
-local function elapsed(a, b) return b - a end  -- b is always "now"
-
 function methods:_tryCommitBurrow(unit, now)
 	local ft = self._flags[unit]
 	local mt = self._model[unit]
