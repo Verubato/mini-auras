@@ -7,6 +7,7 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local units = addon.Utils.Units
+local auras = addon.Utils.Auras
 local testModeActive = false
 local paused = false
 local inPrepRoom = false
@@ -45,9 +46,9 @@ local hookedAuraFrames = {}
 -- the aura hot path). The constant-per-frame fields are set in OnAuraDataChanged; the per-unit
 -- fields (Unit/Color/Skip) are set by ProcessImportantForUnit.
 local impCtxUnit, impCtxColor, impCtxSkip, impCtxGlow, impCtxReverse, impCtxShowTooltips, impCtxDraw
--- Set for friendly units only: an extra nameplate aura filter to drop the non-important buffs that
--- friendly nameplates list (Blizzard only pre-curates ENEMY buff lists to the important ones); nil
--- for enemies. Mirrors the same filter the nameplates module applies.
+-- Set for friendly units (i.e. duel opponents): an extra nameplate aura filter to drop the
+-- non-important buffs friendly nameplate buff lists contain. Mirrors the nameplates module. nil for
+-- true enemies, whose list is already curated.
 local impCtxFriendlyFilter
 -- Target container for important icons (the main bar when combined, importantContainer when split).
 local impCtxContainer
@@ -209,6 +210,11 @@ local function PlaceImportantBuff(auraInstanceID)
 		and C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraInstanceID, impCtxFriendlyFilter) then
 		return
 	end
+	-- Drop purgeable non-defensive buffs (sound/TTS and bar): the non-important garbage Blizzard's
+	-- enemy list bundles in. Purgeable defensives (e.g. magic barriers) are kept.
+	if auras:IsPurgeableNonDefensive(unit, auraInstanceID) then
+		return
+	end
 	local aura = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, auraInstanceID)
 	if not aura then
 		return
@@ -266,10 +272,8 @@ local function ProcessImportantForUnit(watcher, colorByClass, includeDefensives)
 	impCtxUnit = unit
 	impCtxColor = ClassColorFor(unit, colorByClass)
 	impCtxSkip = skipIds
-	-- Alerts only tracks enemies, yet we still check IsFriend here because of duels: a duel opponent
-	-- is attackable (IsEnemy, so we track them) but still the same faction (IsFriend). Blizzard only
-	-- curates ENEMY nameplate buff lists to the important ones, so a same-faction dueler's list is the
-	-- uncurated friendly one - this extra filter drops that garbage. nil for true enemies.
+	-- Alerts only tracks enemies, but a duel opponent is same-faction (IsFriend) so their nameplate
+	-- buff list is the uncurated friendly one - apply the friendly filter to drop the garbage.
 	impCtxFriendlyFilter = units:IsFriend(unit)
 		and "HELPFUL|INCLUDE_NAME_PLATE_ONLY|RAID_IN_COMBAT|PLAYER"
 		or nil

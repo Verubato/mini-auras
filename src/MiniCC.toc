@@ -30,6 +30,7 @@ Locales\zhTW.lua
 
 Utils\Scheduler.lua
 Utils\Units.lua
+Utils\Auras.lua
 Utils\Array.lua
 Utils\FontUtil.lua
 Utils\ModuleUtil.lua

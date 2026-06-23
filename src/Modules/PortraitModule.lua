@@ -8,6 +8,7 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
 local units = addon.Utils.Units
+local auras = addon.Utils.Auras
 local testModeActive = false
 local paused = false
 local enabled = false
@@ -143,6 +144,11 @@ local function GetFirstImportantBuff(unit)
 			return
 		end
 		if friendlyFilter and C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraInstanceID, friendlyFilter) then
+			return
+		end
+		-- Drop purgeable non-defensive buffs (the non-important garbage Blizzard's enemy list bundles
+		-- in); purgeable defensives like magic barriers are kept.
+		if auras:IsPurgeableNonDefensive(unit, auraInstanceID) then
 			return
 		end
 		firstId = auraInstanceID

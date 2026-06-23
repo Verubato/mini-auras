@@ -3,6 +3,7 @@ local addonName, addon = ...
 local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
 local units = addon.Utils.Units
+local auras = addon.Utils.Auras
 local unitWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
@@ -228,10 +229,11 @@ end
 -- Context for the in-progress GetImportantBuffs iteration. Passed to the hoisted callback via these
 -- upvalues rather than a per-call closure, since the buff scan runs on the aura hot path.
 local importantIterUnit
--- Set for friendly units only: an extra nameplate aura filter to drop the non-important buffs that
--- friendly nameplates list (Blizzard only pre-curates ENEMY buff lists to the important ones). nil
--- for enemies (their list is already curated). We can't evaluate importance ourselves
--- (C_Spell.IsSpellImportant is a secret value that can't be compared/filtered).
+-- Set for friendly units (including duel opponents, who are same-faction): an extra nameplate aura
+-- filter to drop the non-important buffs friendly nameplates list (Blizzard only pre-curates ENEMY
+-- buff lists to the important ones), since we can't evaluate importance ourselves
+-- (C_Spell.IsSpellImportant is a secret value that can't be compared/filtered). nil for enemies,
+-- whose list is already curated.
 local importantIterFriendlyFilter
 
 local function CollectImportantBuff(auraInstanceID)
@@ -241,6 +243,11 @@ local function CollectImportantBuff(auraInstanceID)
 	local unit = importantIterUnit
 	if importantIterFriendlyFilter
 		and C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraInstanceID, importantIterFriendlyFilter) then
+		return
+	end
+	-- Drop purgeable non-defensive buffs: the non-important garbage Blizzard's enemy list bundles in
+	-- with the real cooldowns. Purgeable defensives (e.g. magic barriers) are kept.
+	if auras:IsPurgeableNonDefensive(unit, auraInstanceID) then
 		return
 	end
 	local aura = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, auraInstanceID)
