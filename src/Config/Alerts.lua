@@ -296,6 +296,14 @@ local function BuildTtsTab(parent, options)
 
 	ttsIntro:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
 
+	local importantTtsNote = mini:TextBlock({
+		Parent = parent,
+		Lines = {
+			L["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."],
+		},
+	})
+	importantTtsNote:SetPoint("TOPLEFT", ttsIntro, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local function EnsureTtsOptions()
 		if not options.TTS then
 			options.TTS = { Volume = 100, SpeechRate = 0 }
@@ -349,7 +357,7 @@ local function BuildTtsTab(parent, options)
 			return voiceNameById[value] or tostring(value)
 		end,
 	})
-	voiceDropdown:SetPoint("TOPLEFT", ttsIntro, "BOTTOMLEFT", 0, -verticalSpacing)
+	voiceDropdown:SetPoint("TOPLEFT", importantTtsNote, "BOTTOMLEFT", 0, -verticalSpacing)
 	voiceDropdown:SetWidth(400)
 
 	local announceImportantSpellsChk = mini:Checkbox({

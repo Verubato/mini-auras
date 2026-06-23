@@ -10,6 +10,7 @@ L:RegisterLocale("ptBR", {
 	["Important Spells"] = "Feitiços importantes",
 	["Play a sound when an important spell is pressed."] = "Reproduzir um som quando um feitiço importante for lançado.",
 	["Announce important spell names using text-to-speech when they are cast."] = "Anunciar nomes de feitiços importantes usando texto para fala quando forem lançados.",
+	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "Devido a limitações da API da Blizzard, o texto para fala de feitiços importantes não funciona para Magos, Evocadores, Caçadores de Demônios, Caçadores e Sacerdotes Sombrios.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "Reproduz um som quando um inimigo usa um feitiço importante ou defensivo.",
 
 	-- Shared strings

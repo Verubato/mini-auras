@@ -11,6 +11,7 @@ L:SetDefaultStrings({
 	["Important Spells"] = "Important Spells",
 	["Play a sound when an important spell is pressed."] = "Play a sound when an important spell is pressed.",
 	["Announce important spell names using text-to-speech when they are cast."] = "Announce important spell names using text-to-speech when they are cast.",
+	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "Plays a sound when an enemy presses an important or defensive spell.",
 
 	-- Shared strings

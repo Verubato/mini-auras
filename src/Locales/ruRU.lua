@@ -10,6 +10,7 @@ L:RegisterLocale("ruRU", {
 	["Important Spells"] = "Важные заклинания",
 	["Play a sound when an important spell is pressed."] = "Воспроизводить звук при использовании важного заклинания.",
 	["Announce important spell names using text-to-speech when they are cast."] = "Объявлять названия важных заклинаний с помощью синтеза речи при их применении.",
+	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "Из-за ограничений API Blizzard синтез речи для важных заклинаний не работает для магов, призывателей, охотников на демонов, охотников и жрецов Тьмы.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "Воспроизводит звук, когда враг использует важное или защитное заклинание.",
 
 	-- Shared strings

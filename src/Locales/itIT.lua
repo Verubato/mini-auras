@@ -10,6 +10,7 @@ L:RegisterLocale("itIT", {
 	["Important Spells"] = "Incantesimi importanti",
 	["Play a sound when an important spell is pressed."] = "Riproduci un suono quando viene lanciato un incantesimo importante.",
 	["Announce important spell names using text-to-speech when they are cast."] = "Annuncia i nomi degli incantesimi importanti usando la sintesi vocale quando vengono lanciati.",
+	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "A causa delle limitazioni dell'API di Blizzard, la sintesi vocale per gli incantesimi importanti non funziona per Maghi, Evocatori, Cacciatori di demoni, Cacciatori e Sacerdoti Ombra.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "Riproduce un suono quando un nemico usa un incantesimo importante o difensivo.",
 
 	-- Shared strings

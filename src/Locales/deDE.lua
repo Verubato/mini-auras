@@ -10,6 +10,7 @@ L:RegisterLocale("deDE", {
 	["Important Spells"] = "Wichtige Zauber",
 	["Play a sound when an important spell is pressed."] = "Spiele einen Sound ab, wenn ein wichtiger Zauber gewirkt wird.",
 	["Announce important spell names using text-to-speech when they are cast."] = "Sage wichtige Zaubernamen mittels Sprachausgabe an, wenn sie gewirkt werden.",
+	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "Aufgrund von Einschränkungen der Blizzard-API funktioniert die Sprachausgabe für wichtige Zauber nicht für Magier, Rufer, Dämonenjäger, Jäger und Schattenpriester.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "Spielt einen Sound ab, wenn ein Gegner einen wichtigen oder defensiven Zauber wirkt.",
 
 	-- Shared strings

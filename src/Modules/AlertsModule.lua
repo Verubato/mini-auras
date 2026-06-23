@@ -64,6 +64,17 @@ local cachedTTSVolume
 local cachedTTSSpeechRate
 local cachedTTSDefensiveEnabled
 local cachedTTSImportantEnabled
+-- DH/Mage/Evoker (any spec) and Shadow Priest can purge or steal enemy magic buffs, so enemy
+-- nameplates surface a lot of non-important purgeable buffs. The important alpha hides those visually,
+-- but TTS can't be gated on the secret IsSpellImportant value (branching would taint), so it would
+-- announce the garbage. Important TTS is suppressed entirely for these specs.
+local importantTTSSuppressedClasses = {
+	DEMONHUNTER = true,
+	MAGE = true,
+	EVOKER = true,
+	HUNTER = true,
+}
+local shadowPriestSpecId = 258
 -- Main alerts bar: enemy defensive cooldowns, plus important spells when combined.
 ---@type IconSlotContainer
 local container
@@ -95,6 +106,28 @@ local function PlaySound(spellType)
 	local soundFileName = soundConfig.File or "Sonar.ogg"
 	soundFile = addon.Config.MediaLocation .. soundFileName
 	PlaySoundFile(soundFile, soundConfig.Channel or "Master")
+end
+
+-- True when the player's class/spec should never announce important buffs over TTS (see the comment
+-- on importantTTSSuppressedClasses).
+local function ImportantTTSSuppressedForPlayer()
+	local _, class = UnitClass("player")
+	if importantTTSSuppressedClasses[class] then
+		return true
+	end
+	if class == "PRIEST" then
+		local specIndex = GetSpecialization()
+		return (specIndex and GetSpecializationInfo(specIndex)) == shadowPriestSpecId
+	end
+	return false
+end
+
+-- Recomputes cachedTTSImportantEnabled from the saved option AND the class/spec suppression. Called on
+-- refresh/init and on spec change (suppression depends on the player's current spec).
+local function UpdateImportantTTSCache()
+	local ttsOptions = db and db.Modules.AlertsModule.TTS
+	cachedTTSImportantEnabled = (ttsOptions and ttsOptions.Important and ttsOptions.Important.Enabled or false)
+		and not ImportantTTSSuppressedForPlayer()
 end
 
 local function AnnounceTTS(spellName, spellType)
@@ -235,7 +268,11 @@ local function PlaceImportantBuff(auraInstanceID)
 	impCtxSlot = impCtxSlot + 1
 	importantOptionsScratch.Texture = aura.icon
 	importantOptionsScratch.DurationObject = C_UnitAuras.GetAuraDuration(unit, auraInstanceID)
-	importantOptionsScratch.Alpha = true
+	-- Hide non-important survivors via alpha: IsSpellImportant is a secret boolean SetAlphaFromBoolean
+	-- accepts directly. Catches the non-important garbage the purgeable filter can't (e.g. for
+	-- non-dispel specs). Sound/TTS above can't be gated the same way - branching on the secret value
+	-- would taint - so they still fire for every tracked buff (see the class-based TTS suppression).
+	importantOptionsScratch.Alpha = C_Spell.IsSpellImportant(aura.spellId)
 	importantOptionsScratch.Glow = impCtxGlow
 	importantOptionsScratch.ReverseCooldown = impCtxReverse
 	importantOptionsScratch.Color = impCtxColor
@@ -725,7 +762,7 @@ function M:Refresh()
 	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
 	cachedTTSSpeechRate = options.TTS and options.TTS.SpeechRate or 0
 	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
-	cachedTTSImportantEnabled = options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
+	UpdateImportantTTSCache()
 
 	EnableDisable()
 
@@ -789,7 +826,7 @@ function M:Init()
 	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
 	cachedTTSSpeechRate = options.TTS and options.TTS.SpeechRate or 0
 	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
-	cachedTTSImportantEnabled = options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
+	UpdateImportantTTSCache()
 
 	container = iconSlotContainer:New(UIParent, count, size, db.IconSpacing or 2, "Alerts", nil, "Alerts")
 
@@ -863,9 +900,13 @@ function M:Init()
 	eventsFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
 	eventsFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
 	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+	eventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
 		if event == "PVP_MATCH_STATE_CHANGED" then
 			OnMatchStateChanged()
+		elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
+			-- Important-TTS suppression depends on the player's spec (Shadow Priest), so refresh it.
+			UpdateImportantTTSCache()
 		elseif event == "NAME_PLATE_UNIT_ADDED" then
 			-- Hook every enemy nameplate's aura refresh so the important bar can react to buff changes.
 			if units:IsEnemy(unitToken) then

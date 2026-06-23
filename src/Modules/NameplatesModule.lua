@@ -263,6 +263,11 @@ local function CollectImportantBuff(auraInstanceID)
 		entry.SpellId = aura.spellId
 		entry.AuraInstanceID = auraInstanceID
 		entry.DurationObject = C_UnitAuras.GetAuraDuration(unit, auraInstanceID)
+		-- Hide non-important survivors via alpha. IsSpellImportant is a secret boolean we can't branch
+		-- on, but SetAlphaFromBoolean accepts it directly (same as IsCC/IsDefensive). This catches the
+		-- non-important garbage the purgeable filter can't (e.g. for non-dispel specs, where
+		-- RAID_PLAYER_DISPELLABLE matches nothing).
+		entry.ImportantAlpha = C_Spell.IsSpellImportant(aura.spellId)
 		filtered[n] = entry
 	end
 end
@@ -382,7 +387,7 @@ local function ApplyBarToNameplate(container, barOptions, watcher, data)
 			local entry = importantData[i]
 			layerScratch.Texture = entry.SpellIcon
 			layerScratch.DurationObject = entry.DurationObject
-			layerScratch.Alpha = true
+			layerScratch.Alpha = entry.ImportantAlpha
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.ShowMilliseconds = nil

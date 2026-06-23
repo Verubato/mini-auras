@@ -10,6 +10,7 @@ L:RegisterLocale("zhCN", {
 	["Important Spells"] = "重要法术",
 	["Play a sound when an important spell is pressed."] = "使用重要法术时播放声音。",
 	["Announce important spell names using text-to-speech when they are cast."] = "施放重要法术时使用语音合成播报法术名称。",
+	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "由于暴雪API的限制，重要法术的语音合成播报对法师、唤魔师、恶魔猎手、猎人和暗影牧师无效。",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "当敌人使用重要或防御法术时播放声音。",
 
 	-- Shared strings

@@ -215,7 +215,10 @@ local function OnAuraInfo(unit, watcher, container)
 		container:SetSlot(slotIndex, {
 			Texture = importantAura.icon,
 			DurationObject = C_UnitAuras.GetAuraDuration(unit, importantAura.auraInstanceID),
-			Alpha = true,
+			-- Hide a non-important buff via alpha: IsSpellImportant is a secret boolean SetAlphaFromBoolean
+			-- accepts directly. Catches the non-important garbage the purgeable filter can't (e.g. for
+			-- non-dispel specs).
+			Alpha = C_Spell.IsSpellImportant(importantAura.spellId),
 			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
 			FontScale = db.FontScale,
 		})

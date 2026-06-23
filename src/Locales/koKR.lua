@@ -10,6 +10,7 @@ L:RegisterLocale("koKR", {
 	["Important Spells"] = "중요한 주문",
 	["Play a sound when an important spell is pressed."] = "중요한 주문이 사용될 때 소리 재생.",
 	["Announce important spell names using text-to-speech when they are cast."] = "중요한 주문이 사용될 때 음성 합성으로 주문 이름을 알립니다.",
+	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "블리자드 API 제한으로 인해 중요한 주문 음성 합성은 마법사, 환기사, 악마사냥꾼, 사냥꾼, 암흑 사제에게는 작동하지 않습니다.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "적이 중요하거나 방어적인 주문을 사용할 때 소리를 재생합니다.",
 
 	-- Shared strings

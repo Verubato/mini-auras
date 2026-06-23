@@ -10,6 +10,7 @@ L:RegisterLocale("frFR", {
 	["Important Spells"] = "Sorts importants",
 	["Play a sound when an important spell is pressed."] = "Joue un son quand un sort important est utilisé.",
 	["Announce important spell names using text-to-speech when they are cast."] = "Annonce le nom des sorts importants par synthèse vocale quand ils sont lancés.",
+	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "En raison des limitations de l'API de Blizzard, la synthèse vocale des sorts importants ne fonctionne pas pour les Mages, les Évocateurs, les Chasseurs de démons, les Chasseurs et les Prêtres Ombre.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "Joue un son quand un ennemi utilise un sort important ou défensif.",
 
 	-- Shared strings
