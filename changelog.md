@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.5.2
+
+Fix for gaps on nameplate icons for purge classes.
+
 ## 4.5.1
 
 Fixes/workaround to hide garbage buffs in alerts/nameplates/portraits for DPS purge classes.
