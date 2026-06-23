@@ -45,6 +45,10 @@ local hookedAuraFrames = {}
 -- the aura hot path). The constant-per-frame fields are set in OnAuraDataChanged; the per-unit
 -- fields (Unit/Color/Skip) are set by ProcessImportantForUnit.
 local impCtxUnit, impCtxColor, impCtxSkip, impCtxGlow, impCtxReverse, impCtxShowTooltips, impCtxDraw
+-- Set for friendly units only: an extra nameplate aura filter to drop the non-important buffs that
+-- friendly nameplates list (Blizzard only pre-curates ENEMY buff lists to the important ones); nil
+-- for enemies. Mirrors the same filter the nameplates module applies.
+local impCtxFriendlyFilter
 -- Target container for important icons (the main bar when combined, importantContainer when split).
 local impCtxContainer
 -- Running slot cursor across all units processed this frame for the important bar.
@@ -201,6 +205,10 @@ local function PlaceImportantBuff(auraInstanceID)
 		return
 	end
 	local unit = impCtxUnit
+	if impCtxFriendlyFilter
+		and C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraInstanceID, impCtxFriendlyFilter) then
+		return
+	end
 	local aura = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, auraInstanceID)
 	if not aura then
 		return
@@ -258,6 +266,13 @@ local function ProcessImportantForUnit(watcher, colorByClass, includeDefensives)
 	impCtxUnit = unit
 	impCtxColor = ClassColorFor(unit, colorByClass)
 	impCtxSkip = skipIds
+	-- Alerts only tracks enemies, yet we still check IsFriend here because of duels: a duel opponent
+	-- is attackable (IsEnemy, so we track them) but still the same faction (IsFriend). Blizzard only
+	-- curates ENEMY nameplate buff lists to the important ones, so a same-faction dueler's list is the
+	-- uncurated friendly one - this extra filter drops that garbage. nil for true enemies.
+	impCtxFriendlyFilter = units:IsFriend(unit)
+		and "HELPFUL|INCLUDE_NAME_PLATE_ONLY|RAID_IN_COMBAT|PLAYER"
+		or nil
 	buffList:Iterate(PlaceImportantBuff)
 end
 
