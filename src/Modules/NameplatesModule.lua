@@ -225,15 +225,24 @@ local function GetNameplateBuffList(nameplate)
 	return nil
 end
 
--- Unit for the in-progress GetImportantBuffs iteration. Passed to the hoisted callback via this
--- upvalue rather than a per-call closure, since the buff scan runs on the aura hot path.
+-- Context for the in-progress GetImportantBuffs iteration. Passed to the hoisted callback via these
+-- upvalues rather than a per-call closure, since the buff scan runs on the aura hot path.
 local importantIterUnit
+-- Set for friendly units only: an extra nameplate aura filter to drop the non-important buffs that
+-- friendly nameplates list (Blizzard only pre-curates ENEMY buff lists to the important ones). nil
+-- for enemies (their list is already curated). We can't evaluate importance ourselves
+-- (C_Spell.IsSpellImportant is a secret value that can't be compared/filtered).
+local importantIterFriendlyFilter
 
 local function CollectImportantBuff(auraInstanceID)
 	if importantSkipScratch[auraInstanceID] then
 		return
 	end
 	local unit = importantIterUnit
+	if importantIterFriendlyFilter
+		and C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraInstanceID, importantIterFriendlyFilter) then
+		return
+	end
 	local aura = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, auraInstanceID)
 	if aura then
 		local filtered = importantDisplayScratch
@@ -260,6 +269,9 @@ local function GetImportantBuffs(data)
 	local buffList = GetNameplateBuffList(data.Nameplate)
 	if buffList then
 		importantIterUnit = data.UnitToken
+		importantIterFriendlyFilter = units:IsFriend(data.UnitToken)
+			and "HELPFUL|INCLUDE_NAME_PLATE_ONLY|RAID_IN_COMBAT|PLAYER"
+			or nil
 		buffList:Iterate(CollectImportantBuff)
 	end
 	return filtered
@@ -904,6 +916,14 @@ function M:Refresh()
 	if testModeActive then
 		-- update test icons
 		ShowTestIcons()
+	else
+		-- Re-render every tracked nameplate so per-bar option changes (Show CC / Defensives /
+		-- Important, colours, glow, tooltips, etc.) apply immediately instead of waiting for the next
+		-- aura event. HaveModesChanged only catches enabled/mode toggles, and SetSort no-ops when the
+		-- sort is unchanged, so neither re-applies the bars on their own.
+		for unitToken in pairs(nameplateAnchors) do
+			OnAuraDataChanged(unitToken)
+		end
 	end
 end
 

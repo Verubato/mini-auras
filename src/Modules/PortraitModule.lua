@@ -24,7 +24,6 @@ local testSpells = {}
 -- Important buffs are read from Blizzard's nameplate buff lists (like the nameplates/alerts
 -- modules), so a portrait can surface its unit's important spell (e.g. offensive cooldown, precog).
 local hookedAuraFrames = {}
-local firstImportantId
 local pendingImportantUnits = {}
 local importantUpdateScheduled = false
 
@@ -121,17 +120,11 @@ local function CreateContainer(unitFrame, portrait)
 	return container
 end
 
--- Captures the first important buff's AuraInstanceID during a buffList:Iterate. Hoisted to avoid a
--- per-call closure on the aura update path.
-local function CaptureFirstImportant(auraInstanceID)
-	if firstImportantId == nil then
-		firstImportantId = auraInstanceID
-	end
-end
-
 -- Returns the aura data for the unit's first important nameplate buff, or nil. These come from
 -- Blizzard's own nameplate buff list, so the unit needs a visible nameplate (e.g. an enemy target
--- in range); the player's own portrait only shows one if self-nameplates are enabled.
+-- in range); the player's own portrait only shows one if self-nameplates are enabled. Friendly
+-- nameplate buff lists aren't pre-curated to the important ones, so for friendly units an extra
+-- nameplate aura filter drops the non-important junk.
 local function GetFirstImportantBuff(unit)
 	local nameplate = C_NamePlate.GetNamePlateForUnit(unit)
 	local uf = nameplate and nameplate.UnitFrame
@@ -139,12 +132,26 @@ local function GetFirstImportantBuff(unit)
 	if not (af and af.buffList and af.buffList.Iterate and not (af.IsForbidden and af:IsForbidden())) then
 		return nil
 	end
-	firstImportantId = nil
-	af.buffList:Iterate(CaptureFirstImportant)
-	if not firstImportantId then
+
+	local friendlyFilter = units:IsFriend(unit)
+		and "HELPFUL|INCLUDE_NAME_PLATE_ONLY|RAID_IN_COMBAT|PLAYER"
+		or nil
+
+	local firstId
+	af.buffList:Iterate(function(auraInstanceID)
+		if firstId ~= nil then
+			return
+		end
+		if friendlyFilter and C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraInstanceID, friendlyFilter) then
+			return
+		end
+		firstId = auraInstanceID
+	end)
+
+	if not firstId then
 		return nil
 	end
-	return C_UnitAuras.GetAuraDataByAuraInstanceID(unit, firstImportantId)
+	return C_UnitAuras.GetAuraDataByAuraInstanceID(unit, firstId)
 end
 
 ---@param unit string
