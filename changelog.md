@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.5.0
+
+Important auras for nameplates/alerts/portraits are back.
+
 ## 4.4.4
 
 Fixed a Lua error caused by another addon's copy of LibCustomGlow ("Attempted to release object that doesn't belong to this pool").
