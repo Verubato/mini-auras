@@ -175,7 +175,8 @@ local dbDefaults = {
 			},
 
 			IncludeDefensives = true,
-			TargetFocusOnly = false,
+			-- false = important spells share the main alerts bar (combined); true = separate bars.
+			SplitBars = false,
 			Point = "CENTER",
 			RelativePoint = "TOP",
 			RelativeTo = "UIParent",
@@ -185,8 +186,8 @@ local dbDefaults = {
 				Y = -100,
 			},
 
-			-- Dedicated arena-only important bar: one fixed slot per arena token, stacked and
-			-- gated by IsSpellImportant so only precog / important enemy buffs show.
+			-- Dedicated, separately-movable bar for important enemy buffs (e.g. offensive cooldowns,
+			-- precog), read from Blizzard's nameplate buff lists across every active enemy.
 			Important = {
 				Enabled = true,
 				Point = "CENTER",
@@ -199,8 +200,8 @@ local dbDefaults = {
 			},
 
 			Sound = {
-				-- TODO(IMPORTANT-revert): inert default kept so players' saved settings survive the
-				-- 12.0.7 IMPORTANT-filter removal. Remove once that removal is confirmed permanent.
+				-- Important-spell sound (opt-in, like the defensive sound). Important auras are now
+				-- read reliably from Blizzard's nameplate buff lists.
 				Important = {
 					Enabled = false,
 					Channel = "Master",
@@ -217,7 +218,7 @@ local dbDefaults = {
 				Volume = 100,
 				VoiceID = 0,
 				SpeechRate = 0,
-				-- TODO(IMPORTANT-revert): inert default; remove once 12.0.7 removal is permanent.
+				-- Important-spell TTS (opt-in, like the defensive TTS).
 				Important = {
 					Enabled = false,
 				},

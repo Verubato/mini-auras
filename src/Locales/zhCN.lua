@@ -3,6 +3,13 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("zhCN", {
+	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "在单独的可移动条上显示重要法术，而不是与防御警报合并。",
+	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "显示从姓名板读取的敌方重要法术（例如进攻冷却、预知）。",
+	["Important"] = "重要",
+	["Important Spells"] = "重要法术",
+	["Play a sound when an important spell is pressed."] = "使用重要法术时播放声音。",
+	["Announce important spell names using text-to-speech when they are cast."] = "施放重要法术时使用语音合成播报法术名称。",
+	["Plays a sound when an enemy presses an important or defensive spell."] = "当敌人使用重要或防御法术时播放声音。",
 
 	-- Shared strings
 	["Any"] = "任何",

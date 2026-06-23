@@ -3,6 +3,13 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("frFR", {
+	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Affiche les sorts importants sur une barre séparée et déplaçable au lieu d'être combinés avec les alertes défensives.",
+	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "Affiche les sorts importants de l'ennemi (par ex. temps de recharge offensifs, précognition) lus depuis les barres de nom.",
+	["Important"] = "Important",
+	["Important Spells"] = "Sorts importants",
+	["Play a sound when an important spell is pressed."] = "Joue un son quand un sort important est utilisé.",
+	["Announce important spell names using text-to-speech when they are cast."] = "Annonce le nom des sorts importants par synthèse vocale quand ils sont lancés.",
+	["Plays a sound when an enemy presses an important or defensive spell."] = "Joue un son quand un ennemi utilise un sort important ou défensif.",
 
 	-- Shared strings
 	["Any"] = "Tous",

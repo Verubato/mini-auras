@@ -4,6 +4,13 @@ local L = addon.L
 
 -- Set English as the default
 L:SetDefaultStrings({
+	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Show important spells on a separate, movable bar instead of combined with the defensive alerts.",
+	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates.",
+	["Important"] = "Important",
+	["Important Spells"] = "Important Spells",
+	["Play a sound when an important spell is pressed."] = "Play a sound when an important spell is pressed.",
+	["Announce important spell names using text-to-speech when they are cast."] = "Announce important spell names using text-to-speech when they are cast.",
+	["Plays a sound when an enemy presses an important or defensive spell."] = "Plays a sound when an enemy presses an important or defensive spell.",
 
 	-- Shared strings
 	["Any"] = "Any",

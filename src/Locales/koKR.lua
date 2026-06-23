@@ -3,6 +3,13 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("koKR", {
+	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "중요 주문을 방어 경고와 결합하지 않고 별도의 이동 가능한 막대에 표시합니다.",
+	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "이름표에서 읽은 적의 중요 주문(예: 공격 재사용 대기시간, 예지)을 표시합니다.",
+	["Important"] = "중요",
+	["Important Spells"] = "중요한 주문",
+	["Play a sound when an important spell is pressed."] = "중요한 주문이 사용될 때 소리 재생.",
+	["Announce important spell names using text-to-speech when they are cast."] = "중요한 주문이 사용될 때 음성 합성으로 주문 이름을 알립니다.",
+	["Plays a sound when an enemy presses an important or defensive spell."] = "적이 중요하거나 방어적인 주문을 사용할 때 소리를 재생합니다.",
 
 	-- Shared strings
 	["Any"] = "모두",

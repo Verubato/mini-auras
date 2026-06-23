@@ -3,6 +3,13 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("ruRU", {
+	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Показывает важные заклинания на отдельной перемещаемой панели вместо объединения с защитными оповещениями.",
+	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "Показывает важные заклинания противника (например, атакующие способности, предвидение), считанные с полосок имён.",
+	["Important"] = "Важное",
+	["Important Spells"] = "Важные заклинания",
+	["Play a sound when an important spell is pressed."] = "Воспроизводить звук при использовании важного заклинания.",
+	["Announce important spell names using text-to-speech when they are cast."] = "Объявлять названия важных заклинаний с помощью синтеза речи при их применении.",
+	["Plays a sound when an enemy presses an important or defensive spell."] = "Воспроизводит звук, когда враг использует важное или защитное заклинание.",
 
 	-- Shared strings
 	["Any"] = "Любой",

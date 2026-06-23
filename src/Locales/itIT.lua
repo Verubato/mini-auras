@@ -3,6 +3,13 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("itIT", {
+	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Mostra gli incantesimi importanti su una barra separata e spostabile invece che combinati con gli avvisi difensivi.",
+	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "Mostra gli incantesimi importanti del nemico (es. tempi di recupero offensivi, precognizione) letti dalle targhette.",
+	["Important"] = "Importante",
+	["Important Spells"] = "Incantesimi importanti",
+	["Play a sound when an important spell is pressed."] = "Riproduci un suono quando viene lanciato un incantesimo importante.",
+	["Announce important spell names using text-to-speech when they are cast."] = "Annuncia i nomi degli incantesimi importanti usando la sintesi vocale quando vengono lanciati.",
+	["Plays a sound when an enemy presses an important or defensive spell."] = "Riproduce un suono quando un nemico usa un incantesimo importante o difensivo.",
 
 	-- Shared strings
 	["Any"] = "Qualsiasi",

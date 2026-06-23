@@ -3,6 +3,13 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("esES", {
+	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Muestra los hechizos importantes en una barra separada y movible en lugar de combinados con las alertas defensivas.",
+	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "Muestra hechizos importantes del enemigo (p. ej. reutilizaciones ofensivas, precognición) leídos de las placas de nombre.",
+	["Important"] = "Importante",
+	["Important Spells"] = "Hechizos importantes",
+	["Play a sound when an important spell is pressed."] = "Reproducir un sonido cuando se lance un hechizo importante.",
+	["Announce important spell names using text-to-speech when they are cast."] = "Anunciar nombres de hechizos importantes mediante texto a voz cuando se lancen.",
+	["Plays a sound when an enemy presses an important or defensive spell."] = "Reproduce un sonido cuando un enemigo lanza un hechizo importante o defensivo.",
 
 	-- Shared strings
 	["Any"] = "Cualquiera",

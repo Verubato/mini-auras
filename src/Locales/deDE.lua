@@ -3,6 +3,13 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("deDE", {
+	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Zeigt wichtige Zauber auf einer separaten, beweglichen Leiste statt zusammen mit den defensiven Warnungen.",
+	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "Zeigt wichtige gegnerische Zauber (z. B. offensive Abklingzeiten, Vorahnung) von Namensplaketten.",
+	["Important"] = "Wichtig",
+	["Important Spells"] = "Wichtige Zauber",
+	["Play a sound when an important spell is pressed."] = "Spiele einen Sound ab, wenn ein wichtiger Zauber gewirkt wird.",
+	["Announce important spell names using text-to-speech when they are cast."] = "Sage wichtige Zaubernamen mittels Sprachausgabe an, wenn sie gewirkt werden.",
+	["Plays a sound when an enemy presses an important or defensive spell."] = "Spielt einen Sound ab, wenn ein Gegner einen wichtigen oder defensiven Zauber wirkt.",
 
 	-- Shared strings
 	["Any"] = "Beliebig",
