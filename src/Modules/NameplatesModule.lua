@@ -83,6 +83,9 @@ local EMPTY = {}
 local importantDisplayScratch = {}
 local importantEntryPool = {}
 local hookedAuraFrames = {}
+-- AuraInstanceIDs already shown as defensives this update, excluded from the important set so a
+-- both-important-and-defensive aura isn't drawn twice. Rebuilt per unit in OnAuraDataChanged.
+local importantSkipScratch = {}
 
 ---@class NameplatesModule
 local M = {}
@@ -227,6 +230,9 @@ end
 local importantIterUnit
 
 local function CollectImportantBuff(auraInstanceID)
+	if importantSkipScratch[auraInstanceID] then
+		return
+	end
 	local unit = importantIterUnit
 	local aura = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, auraInstanceID)
 	if aura then
@@ -410,6 +416,26 @@ local function OnAuraDataChanged(unitToken)
 				EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 			data.Bar1Container = bar1Container
 			data.Bar2Container = bar2Container
+		end
+	end
+
+	-- Dedup: an aura can be both a defensive and an "important" buff. When any enabled bar shows
+	-- defensives, exclude those auras (by AuraInstanceID) from the important set on every bar so the
+	-- same icon isn't drawn twice (defensives win - they carry the real category/duration tracking).
+	wipe(importantSkipScratch)
+	local anyDefensives, anyImportant = false, false
+	for _, bar in ipairs(BARS) do
+		local barOptions = unitOptions[bar.Key]
+		if barOptions and barOptions.Enabled then
+			anyDefensives = anyDefensives or barOptions.ShowDefensives
+			anyImportant = anyImportant or barOptions.ShowImportant
+		end
+	end
+	if anyDefensives and anyImportant then
+		for _, d in ipairs(watcher:GetDefensiveState()) do
+			if d.AuraInstanceID then
+				importantSkipScratch[d.AuraInstanceID] = true
+			end
 		end
 	end
 
