@@ -98,8 +98,18 @@ function M:IsFriend(unitToken)
 	return result and true or false
 end
 
+---Returns true only if the unit is, right now, confidently an enemy of the local player.
+---A secret-value result (possible on 12.0.5+) is treated as "not an enemy" so the boolean is safe
+---to use in plain conditions. Note IsEnemy and IsFriend are NOT inverses: a duel opponent is both
+---(same faction, attackable), and a unit you mind-control is a friend but not an enemy.
+---@param unitToken string
+---@return boolean
 function M:IsEnemy(unitToken)
-	return UnitIsEnemy("player", unitToken)
+	local result = UnitIsEnemy("player", unitToken)
+	if issecretvalue(result) then
+		return false
+	end
+	return result and true or false
 end
 
 ---Returns true if the unit token is a compound/derived unit (e.g. "raid1target", "boss1target"),
@@ -107,6 +117,20 @@ end
 ---Plain tokens like "target" and "focus" are NOT considered compound.
 ---@param unitToken string
 ---@return boolean
+---Returns true only if the local player can, right now, attack the unit. A secret-value result
+---(possible on 12.0.5+) is treated as "can attack" so a real enemy is never accidentally dropped.
+---Used to detect units we control: you can't attack a unit you mind-control, while real enemies and
+---duel opponents stay attackable.
+---@param unitToken string
+---@return boolean
+function M:CanAttack(unitToken)
+	local result = UnitCanAttack("player", unitToken)
+	if issecretvalue(result) then
+		return true
+	end
+	return result and true or false
+end
+
 function M:IsCompoundUnit(unitToken)
 	if unitToken == "target" then
 		return false

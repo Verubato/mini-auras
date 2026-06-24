@@ -370,7 +370,15 @@ local function OnAuraDataChanged()
 	wipe(activeWatchers)
 	if instanceType == "arena" or instanceType == "pvp" or not inInstance then
 		for _, watcher in pairs(nameplateWatchers) do
-			activeWatchers[#activeWatchers + 1] = watcher
+			-- Skip units we've come to control: a unit the player (or an ally) mind-controls becomes
+			-- non-attackable, so its watcher (created while it was an enemy) lingers and the nameplate buff
+			-- list fills with the controller's own non-purgeable buffs, spamming TTS and invisible
+			-- important-icon slots. Real enemies and duel opponents stay attackable, so they stay tracked.
+			local watcherUnit = watcher:GetUnit()
+			local controlled = watcherUnit and not units:CanAttack(watcherUnit)
+			if not controlled then
+				activeWatchers[#activeWatchers + 1] = watcher
+			end
 		end
 	end
 
