@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.5.3
+
+Potential fix for mind controlled units causing alerts to spam with garbage buffs.
+
 ## 4.5.2
 
 Fix for gaps on nameplate icons for purge classes.
