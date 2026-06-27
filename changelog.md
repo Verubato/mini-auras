@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.5.4
+
+Changed important icons border from yellow to red.
+
 ## 4.5.3
 
 Potential fix for mind controlled units causing alerts to spam with garbage buffs.
