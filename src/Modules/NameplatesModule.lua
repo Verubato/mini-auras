@@ -50,7 +50,7 @@ local testCcDispelColors = {
 
 -- Category colors
 local defensiveColor = { r = 0.0, g = 0.8, b = 0.0 } -- Green
-local importantColor = { r = 0.85, g = 0.7, b = 0.1 } -- Gold
+local importantColor = { r = 0.9, g = 0.1, b = 0.1 } -- Red
 
 ---@class NameplateData
 ---@field Nameplate table
