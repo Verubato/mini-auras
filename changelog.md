@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.6.0
+
+Moved icon spacing option to module level instead of 1 global option for all modules.
+
 ## 4.5.4
 
 Changed important icons border from yellow to red.
