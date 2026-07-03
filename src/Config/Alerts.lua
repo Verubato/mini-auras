@@ -169,6 +169,27 @@ local function BuildSettingsTab(parent, options)
 
 	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
 
+	local iconSpacing = mini:Slider({
+		Parent = parent,
+		Min = 0,
+		Max = 20,
+		Width = columnWidth * 2 - horizontalSpacing,
+		Step = 1,
+		LabelText = L["Icon Padding"],
+		GetValue = function()
+			return options.IconSpacing or 2
+		end,
+		SetValue = function(v)
+			local newValue = mini:ClampInt(v, 0, 20, 2)
+			if options.IconSpacing ~= newValue then
+				options.IconSpacing = newValue
+				config:Apply()
+			end
+		end,
+	})
+
+	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
 	local importantBarChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Show Important"],

@@ -198,8 +198,6 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
-
 	-- Each bar can hold up to 8 icons.
 	local maxIconsMax = 8
 	local maxIconsDefault = 6
@@ -245,8 +243,32 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 	})
 
 	growDdl:SetWidth(dropdownWidth)
-	growDdlLbl:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing)
+	growDdlLbl:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing)
 	growDdl:SetPoint("TOPLEFT", growDdlLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
+
+	iconSize.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
+	local iconSpacing = mini:Slider({
+		Parent = container,
+		Min = 0,
+		Max = 20,
+		Step = 1,
+		Width = columnWidth * 2 - horizontalSpacing,
+		LabelText = L["Icon Padding"],
+		GetValue = function()
+			return options.Icons.Spacing or 2
+		end,
+		SetValue = function(v)
+			local new = mini:ClampInt(v, 0, 20, 2)
+
+			if new ~= options.Icons.Spacing then
+				options.Icons.Spacing = new
+				config:Apply()
+			end
+		end,
+	})
+
+	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	local containerX = mini:Slider({
 		Parent = container,
@@ -268,7 +290,7 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	containerX.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	containerX.Slider:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	local containerY = mini:Slider({
 		Parent = container,
@@ -451,7 +473,7 @@ function M:Build(parent, options)
 	scaleWithNameplateChk:SetPoint("TOP", enemyIgnorePetsChk, "TOP", 0, 0)
 	scaleWithNameplateChk:SetPoint("LEFT", parent, "LEFT", threeColWidth * 2, 0)
 
-	local subPanelHeight = 251
+	local subPanelHeight = 285
 
 	local tabContainer = CreateFrame("Frame", nil, parent)
 	tabContainer:SetPoint("TOPLEFT",  enemyIgnorePetsChk, "BOTTOMLEFT", 0, -verticalSpacing)

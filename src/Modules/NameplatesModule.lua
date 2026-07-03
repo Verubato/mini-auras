@@ -200,7 +200,7 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 
 			local container = nameplate[bar.ContainerKey]
 			if not container then
-				container = iconSlotContainer:New(nameplate, maxIcons, size, db.IconSpacing or 2, "Nameplates", nil, "Nameplates")
+				container = iconSlotContainer:New(nameplate, maxIcons, size, barOptions.Icons.Spacing or 2, "Nameplates", nil, "Nameplates")
 				nameplate[bar.ContainerKey] = container
 			else
 				container:SetIconSize(size)
@@ -829,7 +829,7 @@ local function RefreshAnchorsAndSizes()
 						-- RIGHT and DOWN already place slot 1 nearest the anchor.
 						container:SetRows(nil, "CENTER", barOptions.Grow == "LEFT")
 						container:SetIconSize(barOptions.Icons.Size)
-						container:SetSpacing(db.IconSpacing or 2)
+						container:SetSpacing(barOptions.Icons.Spacing or 2)
 						container:SetCount(barOptions.Icons.MaxIcons)
 						container.Frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
 					end

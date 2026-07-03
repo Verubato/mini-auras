@@ -195,7 +195,7 @@ local function EnsureWatcher(anchor, unit)
 	if not entry then
 		local count = options.Icons.Count or 5
 		local size = moduleUtil:GetIconSize(options.Icons, anchor, isPet and 24 or 32, isPet and 50 or 80)
-		local spacing = db.IconSpacing or 2
+		local spacing = options.IconSpacing or 2
 		local container = iconSlotContainer:New(UIParent, count, size, spacing, "CC", nil, "CC")
 		local watcher = unitAuraWatcher:New(unit, nil, { CC = true })
 
@@ -573,7 +573,7 @@ function M:Refresh()
 
 			entry.Container:SetIconSize(iconSize)
 			entry.Container:SetCount(iconCount)
-			entry.Container:SetSpacing(db.IconSpacing or 2)
+			entry.Container:SetSpacing(entryOptions.IconSpacing or 2)
 
 			if not testModeActive then
 				UpdateWatcherAuras(entry)

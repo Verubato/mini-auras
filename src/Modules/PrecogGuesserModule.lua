@@ -183,7 +183,8 @@ function M:Refresh()
 	local iconSize = tonumber(options.Icons.Size) or 40
 	container:SetIconSize(iconSize)
 	container:SetCount(1)
-	container:SetSpacing(db.IconSpacing or 2)
+	-- Single icon, so spacing never applies; kept at the default.
+	container:SetSpacing(2)
 
 	UpdateAnchorSize()
 
@@ -232,7 +233,8 @@ function M:Init()
 	end)
 
 	local iconSize = tonumber(options.Icons.Size) or 40
-	container = iconSlotContainer:New(anchor, 1, iconSize, db.IconSpacing or 2, "Precognition", nil, "Precognition")
+	-- Single icon, so spacing never applies; kept at the default.
+	container = iconSlotContainer:New(anchor, 1, iconSize, 2, "Precognition", nil, "Precognition")
 	container.Frame:SetPoint("CENTER", anchor, "CENTER", 0, 0)
 	container.Frame:Show()
 

@@ -97,8 +97,29 @@ function M:Build(panel)
 
 	iconSizeSlider.Slider:SetPoint("TOPLEFT", healerEnabled, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
+	local iconSpacingSlider = mini:Slider({
+		Parent = panel,
+		LabelText = L["Icon Padding"],
+		GetValue = function()
+			return db.Modules.KickTimerModule.IconSpacing or 2
+		end,
+		SetValue = function(value)
+			local newValue = mini:ClampInt(value, 0, 20, 2)
+			if db.Modules.KickTimerModule.IconSpacing ~= newValue then
+				db.Modules.KickTimerModule.IconSpacing = newValue
+				config:Apply()
+			end
+		end,
+		Width = columns * columnWidth - horizontalSpacing,
+		Min = 0,
+		Max = 20,
+		Step = 1,
+	})
+
+	iconSpacingSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
 	local important = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-	important:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	important:SetPoint("TOPLEFT", iconSpacingSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 	important:SetText(L["Important Notes"])
 
 	local lines = mini:TextBlock({

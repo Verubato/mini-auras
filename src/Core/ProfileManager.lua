@@ -14,7 +14,6 @@ addon.Core.ProfileManager = M
 M.PayloadKeys = {
 	"GlowType",
 	"FontScale",
-	"IconSpacing",
 	"ConfigureBlizzardNameplates",
 	"CCNativeOrder",
 	"DisableSwipe",

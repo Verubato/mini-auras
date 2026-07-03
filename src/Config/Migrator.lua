@@ -8,7 +8,7 @@ local L = addon.L
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 53,
+	Version = 55,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -16,7 +16,6 @@ local dbDefaults = {
 	NotifiedChanges = true,
 	GlowType = "Proc Glow",
 	FontScale = 1.0,
-	IconSpacing = 2,
 	ConfigureBlizzardNameplates = true,
 	CCNativeOrder = false,
 	DisableSwipe = false,
@@ -42,6 +41,7 @@ local dbDefaults = {
 					Y = 0,
 				},
 				Grow = "RIGHT",
+				IconSpacing = 2,
 
 				Icons = {
 					Size = 32,
@@ -65,6 +65,7 @@ local dbDefaults = {
 					Y = 0,
 				},
 				Grow = "CENTER",
+				IconSpacing = 2,
 
 				Icons = {
 					Size = 20,
@@ -102,6 +103,8 @@ local dbDefaults = {
 				Y = 0,
 			},
 
+			IconSpacing = 2,
+
 			Icons = {
 				Size = 20,
 				SizeIsPercent = false,
@@ -138,6 +141,8 @@ local dbDefaults = {
 				X = 0,
 				Y = -200,
 			},
+
+			IconSpacing = 2,
 
 			Icons = {
 				Enabled = true,
@@ -177,6 +182,8 @@ local dbDefaults = {
 			IncludeDefensives = true,
 			-- false = important spells share the main alerts bar (combined); true = separate bars.
 			SplitBars = false,
+			-- Pixel padding between the alerts bar icons.
+			IconSpacing = 2,
 			Point = "CENTER",
 			RelativePoint = "TOP",
 			RelativeTo = "UIParent",
@@ -271,6 +278,8 @@ local dbDefaults = {
 						ColorByCategory = true,
 						MaxIcons = 5,
 						ShowMilliseconds = false,
+						-- Pixel padding between this bar's icons.
+						Spacing = 2,
 					},
 
 					ShowTooltips = false,
@@ -293,6 +302,7 @@ local dbDefaults = {
 						ColorByCategory = true,
 						MaxIcons = 5,
 						ShowMilliseconds = false,
+						Spacing = 2,
 					},
 
 					ShowTooltips = false,
@@ -318,6 +328,7 @@ local dbDefaults = {
 						ColorByCategory = true,
 						MaxIcons = 5,
 						ShowMilliseconds = false,
+						Spacing = 2,
 					},
 
 					ShowTooltips = false,
@@ -340,6 +351,7 @@ local dbDefaults = {
 						ColorByCategory = true,
 						MaxIcons = 5,
 						ShowMilliseconds = false,
+						Spacing = 2,
 					},
 
 					ShowTooltips = false,
@@ -361,6 +373,8 @@ local dbDefaults = {
 				X = 0,
 				Y = -200,
 			},
+
+			IconSpacing = 2,
 
 			Icons = {
 				Size = 50,
@@ -414,6 +428,7 @@ local dbDefaults = {
 				ShowKicks = true,
 				Offset = { X = 0, Y = 0 },
 				Grow = "CENTER",
+				IconSpacing = 2,
 				Icons = {
 					Size = 30,
 					SizeIsPercent = false,
@@ -434,6 +449,7 @@ local dbDefaults = {
 				ShowKicks = true,
 				Offset = { X = 0, Y = 0 },
 				Grow = "CENTER",
+				IconSpacing = 2,
 				Icons = {
 					Size = 25,
 					SizeIsPercent = false,
@@ -2430,6 +2446,70 @@ function M:UpgradeToVersion53(vars)
 	vars.NotifiedChanges = false
 
 	vars.Version = 53
+	return true
+end
+
+function M:UpgradeToVersion54(vars)
+	if vars.Version ~= 53 then return false end
+
+	-- Alerts and Nameplates now have their own icon padding instead of sharing the global
+	-- (Miscellaneous) IconSpacing. Seed each from the current global so existing layouts don't shift;
+	-- the module sliders take over once the user changes them. Alerts has one shared value; nameplates
+	-- are per-bar (like their Icon Size / Max Icons).
+	local spacing = vars.IconSpacing or 2
+	local alerts = vars.Modules and vars.Modules.AlertsModule
+	if alerts then
+		alerts.IconSpacing = spacing
+	end
+	local nameplates = vars.Modules and vars.Modules.NameplatesModule
+	if nameplates then
+		local function seedBar(bar)
+			if bar and bar.Icons then
+				bar.Icons.Spacing = spacing
+			end
+		end
+		if nameplates.Enemy then
+			seedBar(nameplates.Enemy.Bar1)
+			seedBar(nameplates.Enemy.Bar2)
+		end
+		if nameplates.Friendly then
+			seedBar(nameplates.Friendly.Bar1)
+			seedBar(nameplates.Friendly.Bar2)
+		end
+	end
+
+	vars.Version = 54
+	return true
+end
+
+function M:UpgradeToVersion55(vars)
+	if vars.Version ~= 54 then return false end
+
+	-- The remaining modules that shared the global (Miscellaneous) IconSpacing now own their padding,
+	-- and the global setting is retired. Seed each from the current global so existing layouts don't
+	-- shift. CC and FriendlyIndicator are per-instance (Default/Raid); Healer and KickTimer are single.
+	local spacing = vars.IconSpacing or 2
+	local modules = vars.Modules
+	if modules then
+		local function seed(t)
+			if t then
+				t.IconSpacing = spacing
+			end
+		end
+		if modules.CCModule then
+			seed(modules.CCModule.Default)
+			seed(modules.CCModule.Raid)
+		end
+		seed(modules.PetCCModule)
+		if modules.FriendlyIndicatorModule then
+			seed(modules.FriendlyIndicatorModule.Default)
+			seed(modules.FriendlyIndicatorModule.Raid)
+		end
+		seed(modules.HealerCCModule)
+		seed(modules.KickTimerModule)
+	end
+
+	vars.Version = 55
 	return true
 end
 

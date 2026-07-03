@@ -164,8 +164,6 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	iconSizeSlider.Slider:SetPoint("TOPLEFT", desaturateChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
-
 	local iconSizePctSlider = mini:Slider({
 		Parent = panel,
 		LabelText = L["Icon Size (%)"],
@@ -314,8 +312,10 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	growLbl:SetPoint("TOPLEFT", rowsSlider.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 2)
+	growLbl:SetPoint("TOPLEFT", desaturateChk, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 	growDdl:SetPoint("TOPLEFT", growLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
+
+	iconSizeSlider.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	refreshRowControls()
 
@@ -338,7 +338,7 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	offsetX.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	offsetX.Slider:SetPoint("TOPLEFT", rowsSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	local offsetY = mini:Slider({
 		Parent = panel,

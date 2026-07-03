@@ -222,7 +222,7 @@ local function EnsureWatcher(anchor, unit)
 	if not entry then
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 		local size = moduleUtil:GetIconSize(options.Icons, anchor, 32, 75)
-		local spacing = db.IconSpacing or 2
+		local spacing = options.IconSpacing or 2
 		local container = iconSlotContainer:New(UIParent, maxIcons, size, spacing, "Friendly Indicators", nil, "Friendly Indicators")
 		local watcher = UnitAuraWatcher:New(unit, nil, { Defensives = true, CC = true })
 
@@ -477,7 +477,7 @@ function M:Refresh()
 		local iconSize = moduleUtil:GetIconSize(options.Icons, anchor, 32, 75)
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 		container:SetIconSize(iconSize)
-		container:SetSpacing(db.IconSpacing or 2)
+		container:SetSpacing(options.IconSpacing or 2)
 		container:SetCount(maxIcons)
 
 		if not testModeActive then

@@ -24,14 +24,14 @@ config.FriendlyIndicator = M
 
 ---@param parent table
 ---@param options FriendlyIndicatorInstanceOptions
-local function BuildAnchorSettings(parent, options)
-	local panel = CreateFrame("Frame", nil, parent)
-
-	local growDdlLbl = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+-- Builds the "Grow" dropdown (label + dropdown) anchored below `anchorFrame`, returning the dropdown so
+-- the first slider can sit directly beneath it. Kept above the sliders so all sliders group together.
+local function BuildGrowDropdown(parent, options, anchorFrame)
+	local growDdlLbl = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	growDdlLbl:SetText(L["Grow"])
 
 	local growDdl, modernDdl = mini:Dropdown({
-		Parent = panel,
+		Parent = parent,
 		Items = growOptions,
 		Width = columnWidth * 2 - horizontalSpacing,
 		GetValue = function()
@@ -46,8 +46,14 @@ local function BuildAnchorSettings(parent, options)
 	})
 
 	growDdl:SetWidth(dropdownWidth)
-	growDdlLbl:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	growDdlLbl:SetPoint("TOPLEFT", anchorFrame, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 	growDdl:SetPoint("TOPLEFT", growDdlLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
+
+	return growDdl
+end
+
+local function BuildAnchorSettings(parent, options)
+	local panel = CreateFrame("Frame", nil, parent)
 
 	local containerX = mini:Slider({
 		Parent = panel,
@@ -68,7 +74,7 @@ local function BuildAnchorSettings(parent, options)
 		end,
 	})
 
-	containerX.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	containerX.Slider:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
 	local containerY = mini:Slider({
 		Parent = panel,
@@ -91,7 +97,7 @@ local function BuildAnchorSettings(parent, options)
 
 	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
 
-	panel:SetHeight(containerX.Slider:GetHeight() + growDdl:GetHeight() + growDdlLbl:GetHeight() + verticalSpacing * 3 + 8)
+	panel:SetHeight(containerX.Slider:GetHeight() + verticalSpacing * 2)
 
 	return panel
 end
@@ -245,6 +251,8 @@ local function BuildInstance(panel, options)
 	relativeSizeChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
 	relativeSizeChk:SetPoint("TOP", showTooltipsChk, "TOP", 0, 0)
 
+	local growDdl = BuildGrowDropdown(parent, options, showTooltipsChk)
+
 	local iconSize = mini:Slider({
 		Parent = parent,
 		Min = 10,
@@ -264,7 +272,7 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", showTooltipsChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	local iconSizePct = mini:Slider({
 		Parent = parent,
@@ -319,8 +327,29 @@ local function BuildInstance(panel, options)
 
 	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
 
-	anchorPanel:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-	anchorPanel:SetPoint("TOPRIGHT", iconSize.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
+	local iconSpacing = mini:Slider({
+		Parent = parent,
+		Min = 0,
+		Max = 20,
+		Width = columnWidth * 2 - horizontalSpacing,
+		Step = 1,
+		LabelText = L["Icon Padding"],
+		GetValue = function()
+			return options.IconSpacing or 2
+		end,
+		SetValue = function(v)
+			local newValue = mini:ClampInt(v, 0, 20, 2)
+			if options.IconSpacing ~= newValue then
+				options.IconSpacing = newValue
+				config:Apply()
+			end
+		end,
+	})
+
+	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+
+	anchorPanel:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	anchorPanel:SetPoint("TOPRIGHT", iconSpacing.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
 
 	parent.OnMiniRefresh = function()
 		anchorPanel:MiniRefresh()

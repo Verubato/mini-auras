@@ -784,7 +784,7 @@ function M:Refresh()
 	)
 
 	container:SetIconSize(options.Icons.Size)
-	container:SetSpacing(db.IconSpacing or 2)
+	container:SetSpacing(options.IconSpacing or 2)
 	container:SetCount(options.Icons.MaxIcons or 8)
 
 	if importantContainer then
@@ -802,7 +802,7 @@ function M:Refresh()
 		)
 
 		importantContainer:SetIconSize(options.Icons.Size)
-		importantContainer:SetSpacing(db.IconSpacing or 2)
+		importantContainer:SetSpacing(options.IconSpacing or 2)
 		importantContainer:SetCount(options.Icons.MaxIcons or 8)
 
 		if importantVisible then
@@ -836,7 +836,7 @@ function M:Init()
 	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
 	UpdateImportantTTSCache()
 
-	container = iconSlotContainer:New(UIParent, count, size, db.IconSpacing or 2, "Alerts", nil, "Alerts")
+	container = iconSlotContainer:New(UIParent, count, size, options.IconSpacing or 2, "Alerts", nil, "Alerts")
 
 	local initialRelativeTo = _G[options.RelativeTo] or UIParent
 	container.Frame:SetPoint(
@@ -867,7 +867,7 @@ function M:Init()
 	container.Frame:Show()
 
 	-- Dedicated important-buff bar (split mode); sized to MaxIcons (Refresh keeps it in sync).
-	importantContainer = iconSlotContainer:New(UIParent, count, size, db.IconSpacing or 2, "Alerts", nil, "Alerts")
+	importantContainer = iconSlotContainer:New(UIParent, count, size, options.IconSpacing or 2, "Alerts", nil, "Alerts")
 
 	local impAnchor = options.Important or options
 	local impInitialRelativeTo = _G[impAnchor.RelativeTo] or UIParent

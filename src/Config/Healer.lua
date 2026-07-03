@@ -308,6 +308,27 @@ function M:Build(panel, options)
 	fontSize.Slider:SetPoint("LEFT", panel, "LEFT", columnWidth * 2 + 4, 0)
 	fontSize.Slider:SetPoint("TOP", iconSize.Slider, "TOP", 0, 0)
 
+	local iconSpacing = mini:Slider({
+		Parent = panel,
+		Min = 0,
+		Max = 20,
+		Width = sliderWidth,
+		Step = 1,
+		LabelText = L["Icon Padding"],
+		GetValue = function()
+			return options.IconSpacing or 2
+		end,
+		SetValue = function(v)
+			local newValue = mini:ClampInt(v, 0, 20, 2)
+			if options.IconSpacing ~= newValue then
+				options.IconSpacing = newValue
+				config:Apply()
+			end
+		end,
+	})
+
+	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()
 	end)
