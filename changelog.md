@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.6.1
+
+Assumed all evokers take the double wall talent so 2 charges show when no talent data is available.
+
 ## 4.6.0
 
 Moved icon spacing option to module level instead of 1 global option for all modules.
