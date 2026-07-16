@@ -370,12 +370,14 @@ local function OnAuraDataChanged()
 	wipe(activeWatchers)
 	if instanceType == "arena" or instanceType == "pvp" or not inInstance then
 		for _, watcher in pairs(nameplateWatchers) do
-			-- Skip units we've come to control: a unit the player (or an ally) mind-controls becomes
-			-- non-attackable, so its watcher (created while it was an enemy) lingers and the nameplate buff
-			-- list fills with the controller's own non-purgeable buffs, spamming TTS and invisible
-			-- important-icon slots. Real enemies and duel opponents stay attackable, so they stay tracked.
+			-- Skip mind-controlled units: charm flips the nameplate buff list to the uncurated friendly
+			-- one, spamming TTS and invisible important-icon slots. A charmed enemy player stays
+			-- attackable by the controller's team, so CanAttack alone can't detect this - test the charm
+			-- state directly. Also covers a charmed ally whose plate flipped to an enemy one. The
+			-- CanAttack skip stays for units that genuinely become non-attackable.
 			local watcherUnit = watcher:GetUnit()
-			local controlled = watcherUnit and not units:CanAttack(watcherUnit)
+			local controlled = watcherUnit
+				and (units:IsCharmed(watcherUnit) or not units:CanAttack(watcherUnit))
 			if not controlled then
 				activeWatchers[#activeWatchers + 1] = watcher
 			end

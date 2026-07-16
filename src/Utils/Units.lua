@@ -112,6 +112,20 @@ function M:IsEnemy(unitToken)
 	return result and true or false
 end
 
+---Returns true only if the unit is, right now, confidently charmed (mind controlled / controlled
+---by another player). A secret-value result is treated as "not charmed" so a real enemy is never
+---accidentally dropped. Note a charmed enemy player in PvP STAYS attackable by the controller's
+---team, so this cannot be inferred from CanAttack.
+---@param unitToken string
+---@return boolean
+function M:IsCharmed(unitToken)
+	local result = UnitIsCharmed(unitToken)
+	if issecretvalue(result) then
+		return false
+	end
+	return result and true or false
+end
+
 ---Returns true if the unit token is a compound/derived unit (e.g. "raid1target", "boss1target"),
 ---meaning it's relative to another unit rather than a first-class unit token.
 ---Plain tokens like "target" and "focus" are NOT considered compound.
