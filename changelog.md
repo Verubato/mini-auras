@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.6.2
+
+Potential fix for mind control causing TTS spam.
+
 ## 4.6.1
 
 Assumed all evokers take the double wall talent so 2 charges show when no talent data is available.
