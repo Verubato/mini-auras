@@ -48,7 +48,13 @@ function M:GetIconSize(iconOptions, anchorFrame, pixelFallback, percentFallback)
 			-- regardless of UIParent's UI scale. Match the anchor's visible (physical) height by
 			-- multiplying logical height by the anchor's effective scale.
 			local anchorScale = anchorFrame.GetEffectiveScale and anchorFrame:GetEffectiveScale() or 1
-			return math.max(1, math.floor(h * anchorScale * percent / 100 + 0.5))
+			local size = math.floor(h * anchorScale * percent / 100 + 0.5)
+			-- An anchor that hasn't been laid out yet (or is scale-collapsed by another addon)
+			-- yields a degenerately small size; fall back to the pixel size so icons stay usable
+			-- until a later refresh sees the real height.
+			if size >= 8 then
+				return size
+			end
 		end
 	end
 	return tonumber(iconOptions.Size) or pixelFallback

@@ -26,7 +26,7 @@ local staticGlowFields = {
 local function UpdateChargeTextFontSize(chargeText, iconSize, fontScale)
 	local font, _, flags = chargeText:GetFont()
 	if font then
-		chargeText:SetFont(font, math.floor(iconSize * 0.35 * (fontScale or 1.0)), flags)
+		chargeText:SetFont(font, math.max(1, math.floor(iconSize * 0.35 * (fontScale or 1.0))), flags)
 	end
 end
 

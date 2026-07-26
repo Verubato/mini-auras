@@ -18,7 +18,8 @@ function M:UpdateCooldownFontSize(cd, iconSize, coefficient, fontScale)
 	coefficient = coefficient or 0.4
 	fontScale = fontScale or 1.0
 
-	local fontSize = math.floor(iconSize * coefficient * fontScale)
+	-- SetFont errors on height <= 0; a degenerate icon size (e.g. anchor not yet laid out) can floor to 0.
+	local fontSize = math.max(1, math.floor(iconSize * coefficient * fontScale))
 
 	-- Scan once, cache result on the cooldown frame
 	if not cd.MiniCCFontString then
