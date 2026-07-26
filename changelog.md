@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.6.3
+
+Fixed font size of 0 error.
+
 ## 4.6.2
 
 Potential fix for mind control causing TTS spam.
