@@ -67,22 +67,44 @@ local function StyleButton(instance, button)
 	cd.FontScale = style.FontScale or 1.0
 	fontUtil:UpdateCooldownFontSize(cd, instance.Size, nil, cd.FontScale)
 
-	-- The dispel border is registered once and shown/hidden per aura by the button itself; the
-	-- ColorByDispelType option only controls whether the border texture participates at all.
-	if not widgets.BorderRegistered then
-		-- Not yet handed to the button, so its visibility is still ours to control.
-		widgets.Border:Hide()
-	end
-	if style.ColorByDispelType and not widgets.BorderRegistered then
-		widgets.BorderRegistered = true
-		button:AddDispelTypeTexture(widgets.Border, {
-			style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
-			showWhenHarmful = true,
-			showWhenHelpful = true,
-		})
-	elseif not style.ColorByDispelType and widgets.BorderRegistered then
-		widgets.BorderRegistered = false
+	-- Dispel-type registrations: the engine tints registered textures by dispel type and
+	-- drives their per-aura visibility (PreserveAsset style keeps our asset and only colours
+	-- it). The border participates when ColorByDispelType is on; the glow's flipbook texture
+	-- ALSO registers when the glow is enabled, which is how the glow inherits the border
+	-- colour - the legacy paths tinted the glow with the aura's dispel colour, which is
+	-- unreadable here, so the engine applies it instead. showWithoutDispelType keeps the glow
+	-- visible for physical CC, tinted with the "None" palette colour like legacy.
+	local wantBorder = style.ColorByDispelType == true
+	local wantGlowTint = wantBorder and style.Glow == true and widgets.Glow ~= nil
+	local dispelSignature = (wantBorder and "b" or "") .. (wantGlowTint and "g" or "")
+	if dispelSignature ~= widgets.DispelSignature then
+		widgets.DispelSignature = dispelSignature
 		button:ClearDispelTypeTextures()
+
+		if wantBorder then
+			button:AddDispelTypeTexture(widgets.Border, {
+				style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
+				showWhenHarmful = true,
+				showWhenHelpful = true,
+			})
+		else
+			-- Unregistered again: visibility is ours, keep it hidden.
+			widgets.Border:Hide()
+		end
+
+		if wantGlowTint then
+			button:AddDispelTypeTexture(widgets.Glow.Texture, {
+				style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
+				showWhenHarmful = true,
+				showWhenHelpful = true,
+				showWithoutDispelType = true,
+			})
+		elseif widgets.Glow then
+			-- Unregistered again: restore the plain white glow and make sure the engine's
+			-- last hidden state doesn't linger on the texture.
+			widgets.Glow.Texture:SetVertexColor(1, 1, 1, 1)
+			widgets.Glow.Texture:Show()
+		end
 	end
 
 	-- Glow: the frame is created as a button child at init (LibCustomGlow can't be used here -
@@ -162,7 +184,7 @@ local function InitializeButton(instance, button)
 	instance.ButtonWidgets[button] = {
 		Cooldown = cd,
 		Border = border,
-		BorderRegistered = false,
+		DispelSignature = nil,
 		Glow = glow,
 	}
 	instance.Buttons[#instance.Buttons + 1] = button
@@ -231,7 +253,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName)
 	instance.Grow = "CENTER"
 	instance.Style = {}
 	instance.Buttons = {}
-	-- button -> { Cooldown, Border, BorderRegistered, Glow } for restyling.
+	-- button -> { Cooldown, Border, DispelSignature, Glow } for restyling.
 	instance.ButtonWidgets = {}
 
 	local frame = CreateFrame("AuraContainer", NextFrameName("Container"), parent, "CustomAuraContainerTemplate")

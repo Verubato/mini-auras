@@ -154,6 +154,47 @@ fw.describe("AuraContainerDisplay - restriction model", function()
 	end)
 end)
 
+fw.describe("AuraContainerDisplay - dispel-type registrations", function()
+	fw.before_each(acm.reset)
+
+	local function countCalls(instance, methodName)
+		local total = 0
+		for _, button in ipairs(instance.Buttons) do
+			total = total + (button._calls[methodName] or 0)
+		end
+		return total
+	end
+
+	fw.it("registers border only, or border + glow texture when the glow is enabled too", function()
+		local instance = newInstance()
+		local buttons = #instance.Buttons
+
+		instance:SetStyle({ ColorByDispelType = true, Glow = false })
+		assert(countCalls(instance, "AddDispelTypeTexture") == buttons, "border registered per button")
+
+		instance:SetStyle({ ColorByDispelType = true, Glow = true })
+		-- Re-registration clears and adds border + glow texture: 2 more adds per button.
+		assert(countCalls(instance, "AddDispelTypeTexture") == 3 * buttons, "glow tint joins the border")
+		assert(countCalls(instance, "ClearDispelTypeTextures") >= buttons, "cleared before re-registering")
+	end)
+
+	fw.it("unchanged registration needs are not re-registered on restyle", function()
+		local instance = newInstance()
+		instance:SetStyle({ ColorByDispelType = true, Glow = true })
+		local adds = countCalls(instance, "AddDispelTypeTexture")
+		instance:SetIconSize(44) -- restyles every button, but the dispel needs are unchanged
+		assert(countCalls(instance, "AddDispelTypeTexture") == adds, "no registration churn")
+	end)
+
+	fw.it("disabling dispel colours clears the registrations", function()
+		local instance = newInstance()
+		instance:SetStyle({ ColorByDispelType = true, Glow = true })
+		local clears = countCalls(instance, "ClearDispelTypeTextures")
+		instance:SetStyle({ ColorByDispelType = false, Glow = true })
+		assert(countCalls(instance, "ClearDispelTypeTextures") > clears, "registrations cleared")
+	end)
+end)
+
 fw.describe("AuraContainerDisplay - glow lifecycle", function()
 	fw.before_each(acm.reset)
 
