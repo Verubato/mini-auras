@@ -5,11 +5,16 @@ local instanceOptions = addon.Core.InstanceOptions
 local frames = addon.Core.Frames
 local units = addon.Utils.Units
 local iconSlotContainer = addon.Core.IconSlotContainer
+local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local unitAuraWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local wowEx = addon.Utils.WoWEx
+-- 12.1 path: CC auras render through an AuraContainer per anchor; the IconSlotContainer is kept
+-- for the kick icon and test-mode icons only (neither reads aura data). TEMPORARY dual path:
+-- remove the watcher branch once 12.1 is live everywhere.
+local useAuraContainers = wowEx:UseAuraContainers()
 local eventsFrame
 local paused = false
 local testModeActive = false
@@ -32,8 +37,10 @@ local M = {}
 addon.Modules.CrowdControlModule = M
 
 ---@class CrowdControlWatchEntry
----@field Container IconSlotContainer
----@field Watcher Watcher
+---@field Container IconSlotContainer On 12.1 this only renders the kick icon and test icons.
+---@field Watcher Watcher? Legacy path only (nil on 12.1).
+---@field Display AuraContainerDisplay? 12.1 path only: CC auras render through this.
+---@field KickTimer table? 12.1 path only: timer that clears the kick icon on expiry.
 ---@field Anchor table
 ---@field Unit string
 ---@field IsPetUnitFrame boolean? True when the anchor is a standalone player pet unit frame (opt-in via IncludePetFrame).
@@ -111,6 +118,91 @@ local function UpdateWatcherAuras(entry)
 	end
 end
 
+---Resolves the options table for an entry, mirroring the gating in UpdateWatcherAuras.
+---Returns nil when the relevant module (CC or Pet CC) is disabled.
+---@param entry CrowdControlWatchEntry
+---@return table? options, boolean isPet
+local function GetEntryOptions(entry)
+	local isPet = units:IsPetOrMinion(entry.Unit)
+
+	if isPet then
+		if not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+			return nil, isPet
+		end
+		return db.Modules.PetCCModule, isPet
+	end
+
+	if not moduleUtil:IsModuleEnabled(moduleName.CrowdControl) then
+		return nil, isPet
+	end
+
+	return GetOptions(), isPet
+end
+
+---12.1 path: positions the aura display on its anchor, chaining after the kick container while
+---a kick icon is showing (the kick occupied slot 1 in the legacy layout).
+---@param entry CrowdControlWatchEntry
+---@param anchor table
+---@param options table
+local function AnchorAuraDisplay(entry, anchor, options)
+	local display = entry.Display
+	if not display then
+		return
+	end
+
+	local frame = display.Frame
+	if frame:GetParent() ~= anchor then
+		frame:SetParent(anchor)
+	end
+	frame:SetIgnoreParentAlpha(db.FadeWithParent == false)
+	frame:SetFrameStrata(frames:GetNextStrata(anchor:GetFrameStrata()))
+	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
+
+	local kickActive = not units:IsPetOrMinion(entry.Unit) and kickTracker:GetKick(entry.Unit) ~= nil
+	display:AnchorAfterKick(
+		entry.Container.Frame,
+		anchor,
+		options.Grow or "CENTER",
+		options.IconSpacing or 2,
+		options.Offset.X,
+		options.Offset.Y,
+		kickActive
+	)
+end
+
+---12.1 path: renders the kick icon into the entry's IconSlotContainer (slot 1) and re-anchors the
+---aura display around it. Aura icons themselves are fully container-driven and need no update here.
+---@param entry CrowdControlWatchEntry
+local function UpdateKickIcon(entry)
+	if not entry or not entry.Container or paused or testModeActive then
+		return
+	end
+
+	local options, isPet = GetEntryOptions(entry)
+	if not options then
+		return
+	end
+
+	local kickEntry = not isPet and kickTracker:GetKick(entry.Unit) or nil
+	local slotOptions = kickEntry and {
+		Texture = kickEntry.Texture,
+		DurationObject = kickEntry.DurationObject,
+		Alpha = true,
+		ReverseCooldown = options.Icons.ReverseCooldown,
+		ShowMilliseconds = options.Icons.ShowMilliseconds,
+		Glow = options.Icons.Glow,
+		Color = options.Icons.ColorByDispelType and kickEntry.Color,
+		FontScale = db.FontScale,
+	} or nil
+
+	entry.KickTimer = auraContainerDisplay:RenderKickSlot(entry.Container, kickEntry, slotOptions, entry.KickTimer, function()
+		entry.KickTimer = nil
+		UpdateKickIcon(entry)
+	end)
+
+	AnchorAuraDisplay(entry, entry.Anchor, options)
+end
+
 ---@param header IconSlotContainer
 ---@param anchor table
 ---@param options CrowdControlInstanceOptions|PetCrowdControlModuleOptions
@@ -175,7 +267,13 @@ local function EnsureWatcher(anchor, unit)
 	if isPet and not testModeActive and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
 		local existing = watchers[anchor]
 		if existing then
-			existing.Watcher:Disable()
+			if existing.Watcher then
+				existing.Watcher:Disable()
+			end
+			if existing.Display then
+				existing.Display:SetEnabled(false)
+				existing.Display.Frame:Hide()
+			end
 			existing.Container:ResetAllSlots()
 			existing.Container.Frame:Hide()
 		end
@@ -197,25 +295,34 @@ local function EnsureWatcher(anchor, unit)
 		local size = moduleUtil:GetIconSize(options.Icons, anchor, isPet and 24 or 32, isPet and 50 or 80)
 		local spacing = options.IconSpacing or 2
 		local container = iconSlotContainer:New(UIParent, count, size, spacing, "CC", nil, "CC")
-		local watcher = unitAuraWatcher:New(unit, nil, { CC = true })
 
 		entry = {
 			Container = container,
-			Watcher = watcher,
 			Anchor = anchor,
 			Unit = unit,
 			KickKey = 0,
 		}
 		watchers[anchor] = entry
 
-		watcher:RegisterCallback(function()
-			UpdateWatcherAuras(entry)
-		end)
+		if useAuraContainers then
+			entry.Display = auraContainerDisplay:New(UIParent, unit, {
+				{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = count },
+			}, size, spacing, "CC")
+		else
+			entry.Watcher = unitAuraWatcher:New(unit, nil, { CC = true })
+			entry.Watcher:RegisterCallback(function()
+				UpdateWatcherAuras(entry)
+			end)
+		end
 
 		if not isPet then
 			kickTracker:Watch(unit)
 			entry.KickKey = kickTracker:Subscribe(unit, function()
-				UpdateWatcherAuras(entry)
+				if useAuraContainers then
+					UpdateKickIcon(entry)
+				else
+					UpdateWatcherAuras(entry)
+				end
 			end)
 		end
 	else
@@ -225,12 +332,17 @@ local function EnsureWatcher(anchor, unit)
 				kickTracker:Unsubscribe(entry.Unit, entry.KickKey)
 			end
 
-			-- Unit changed, recreate the watcher
-			entry.Watcher:Dispose()
-			entry.Watcher = unitAuraWatcher:New(unit, nil, { CC = true })
-			entry.Watcher:RegisterCallback(function()
-				UpdateWatcherAuras(entry)
-			end)
+			if useAuraContainers then
+				-- The container tracks the new unit itself; only the unit token changes.
+				entry.Display:SetUnit(unit)
+			else
+				-- Unit changed, recreate the watcher
+				entry.Watcher:Dispose()
+				entry.Watcher = unitAuraWatcher:New(unit, nil, { CC = true })
+				entry.Watcher:RegisterCallback(function()
+					UpdateWatcherAuras(entry)
+				end)
+			end
 			entry.Unit = unit
 
 			-- Clear the container since it's a different unit now
@@ -239,17 +351,34 @@ local function EnsureWatcher(anchor, unit)
 			if not isPet then
 				kickTracker:Watch(unit)
 				entry.KickKey = kickTracker:Subscribe(unit, function()
-					UpdateWatcherAuras(entry)
+					if useAuraContainers then
+						UpdateKickIcon(entry)
+					else
+						UpdateWatcherAuras(entry)
+					end
 				end)
 			end
 
 			-- Force immediate refresh for the new unit
-			UpdateWatcherAuras(entry)
+			if useAuraContainers then
+				UpdateKickIcon(entry)
+			else
+				UpdateWatcherAuras(entry)
+			end
 		end
 	end
 
-	UpdateWatcherAuras(entry)
+	if useAuraContainers then
+		UpdateKickIcon(entry)
+	else
+		UpdateWatcherAuras(entry)
+	end
 	AnchorContainer(entry.Container, anchor, options)
+
+	if entry.Display then
+		AnchorAuraDisplay(entry, anchor, options)
+		frames:ShowHideFrame(entry.Display.Frame, anchor, false, isPet and false or options.ExcludePlayer)
+	end
 
 	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, isPet and false or options.ExcludePlayer)
 
@@ -478,6 +607,9 @@ end
 function M:Hide()
 	for _, entry in pairs(watchers) do
 		entry.Container.Frame:Hide()
+		if entry.Display then
+			entry.Display.Frame:Hide()
+		end
 	end
 end
 
@@ -485,6 +617,10 @@ local function DisableWatchers()
 	for _, entry in pairs(watchers) do
 		if entry.Watcher then
 			entry.Watcher:Disable()
+		end
+		if entry.Display then
+			entry.Display:SetEnabled(false)
+			entry.Display.Frame:Hide()
 		end
 		if entry.Container then
 			entry.Container:ResetAllSlots()
@@ -498,11 +634,14 @@ local function EnableWatchers()
 	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
 
 	for _, entry in pairs(watchers) do
-		if entry.Watcher then
-			local isPet = units:IsPetOrMinion(entry.Unit)
-			if (isPet and petEnabled) or (not isPet and ccEnabled) then
-				entry.Watcher:Enable()
-			end
+		local isPet = units:IsPetOrMinion(entry.Unit)
+		local entryEnabled = (isPet and petEnabled) or (not isPet and ccEnabled)
+
+		if entry.Watcher and entryEnabled then
+			entry.Watcher:Enable()
+		end
+		if entry.Display then
+			entry.Display:SetEnabled(entryEnabled)
 		end
 	end
 end
@@ -523,6 +662,13 @@ function M:StopTesting()
 
 	Resume()
 	M:Refresh()
+
+	-- 12.1: repopulate the kick icons the test-mode reset wiped.
+	if useAuraContainers then
+		for _, entry in pairs(watchers) do
+			UpdateKickIcon(entry)
+		end
+	end
 end
 
 function M:Refresh()
@@ -564,7 +710,13 @@ function M:Refresh()
 
 		if not entryEnabled or not entryOptions then
 			-- This entry's feature is toggled off - hide and disable it
-			entry.Watcher:Disable()
+			if entry.Watcher then
+				entry.Watcher:Disable()
+			end
+			if entry.Display then
+				entry.Display:SetEnabled(false)
+				entry.Display.Frame:Hide()
+			end
 			entry.Container:ResetAllSlots()
 			entry.Container.Frame:Hide()
 		else
@@ -575,8 +727,27 @@ function M:Refresh()
 			entry.Container:SetCount(iconCount)
 			entry.Container:SetSpacing(entryOptions.IconSpacing or 2)
 
+			if entry.Display then
+				entry.Display:SetIconSize(iconSize)
+				entry.Display:SetMaxIcons("cc", iconCount)
+				entry.Display:SetSpacing(entryOptions.IconSpacing or 2)
+				entry.Display:SetStyle({
+					ReverseCooldown = entryOptions.Icons.ReverseCooldown,
+					ShowMilliseconds = entryOptions.Icons.ShowMilliseconds,
+					ColorByDispelType = entryOptions.Icons.ColorByDispelType,
+					Glow = entryOptions.Icons.Glow,
+					FontScale = db.FontScale,
+					ShowTooltips = entryOptions.ShowTooltips ~= false,
+				})
+				entry.Display:SetEnabled(true)
+			end
+
 			if not testModeActive then
-				UpdateWatcherAuras(entry)
+				if useAuraContainers then
+					UpdateKickIcon(entry)
+				else
+					UpdateWatcherAuras(entry)
+				end
 			end
 
 			AnchorContainer(entry.Container, anchor, entryOptions)
@@ -586,6 +757,22 @@ function M:Refresh()
 				testModeActive,
 				isPet and false or entryOptions.ExcludePlayer
 			)
+
+			if entry.Display then
+				if testModeActive then
+					-- Test icons render through the IconSlotContainer; hide the live aura display
+					-- so real and fake icons don't mix.
+					entry.Display.Frame:Hide()
+				else
+					AnchorAuraDisplay(entry, anchor, entryOptions)
+					frames:ShowHideFrame(
+						entry.Display.Frame,
+						anchor,
+						false,
+						isPet and false or entryOptions.ExcludePlayer
+					)
+				end
+			end
 		end
 	end
 

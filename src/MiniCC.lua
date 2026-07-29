@@ -196,6 +196,8 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field UnitAuraWatcher UnitAuraWatcher
 ---@field Inspector Inspector
 ---@field IconSlotContainer IconSlotContainer
+---@field AuraContainerDisplay AuraContainerDisplay
+---@field AuraSoundData AuraSoundData
 ---@field InstanceOptions InstanceOptions
 ---@field TrinketsTracker TrinketsTracker
 

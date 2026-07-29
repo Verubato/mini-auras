@@ -7,12 +7,22 @@ local auras = addon.Utils.Auras
 local unitWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
+local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local slotDistribution = addon.Utils.SlotDistribution
 local mathMin = math.min
 local GetTime = GetTime
 local C_NamePlate = C_NamePlate
+-- 12.1 path: each bar gets an AuraContainer drawn from a central pre-created pool (acquired,
+-- reparented to the plate, and retargeted with SetUnit as plates come and go) with one group
+-- per category; the bar's IconSlotContainer is kept for the kick icon and test icons. The
+-- legacy watcher/buffList path never runs there
+-- (no watchers are created). Deviations forced by aura data being unreadable: no dynamic slot
+-- split between categories (each enabled category gets the bar's full MaxIcons budget) and no
+-- category colours (ColorByCategory maps to dispel-type colouring). TEMPORARY dual path:
+-- remove the watcher branch once 12.1 is live everywhere.
+local useAuraContainers = wowEx:UseAuraContainers()
 local testModeActive = false
 local paused = false
 ---@type Db
@@ -56,6 +66,9 @@ local importantColor = { r = 0.9, g = 0.1, b = 0.1 } -- Red
 ---@field Nameplate table
 ---@field Bar1Container IconSlotContainer?
 ---@field Bar2Container IconSlotContainer?
+---@field Bar1Display AuraContainerDisplay? 12.1 path only.
+---@field Bar2Display AuraContainerDisplay? 12.1 path only.
+---@field KickTimer table? 12.1 path only: timer that clears the kick icon on expiry.
 ---@field UnitToken string
 
 local previousFriendlyEnabled = {
@@ -99,9 +112,14 @@ local nameplateBar2Key = addonName .. "_Bar2Container"
 -- buffs based on its ShowCC / ShowDefensives / ShowImportant options, and both bars can display
 -- at the same time.
 local BARS = {
-	{ Key = "Bar1", ContainerKey = nameplateBar1Key, DataField = "Bar1Container" },
-	{ Key = "Bar2", ContainerKey = nameplateBar2Key, DataField = "Bar2Container" },
+	{ Key = "Bar1", ContainerKey = nameplateBar1Key, DataField = "Bar1Container", DisplayField = "Bar1Display" },
+	{ Key = "Bar2", ContainerKey = nameplateBar2Key, DataField = "Bar2Container", DisplayField = "Bar2Display" },
 }
+
+-- 12.1 path: central pool of pre-created bar displays. Displays are
+-- created out of combat via the pool's staggered pre-creation, then acquired/reparented/
+-- retargeted as plates come and go, so plate churn mid-combat never creates containers.
+local displayPool
 
 local function ImportantNeeded()
 	local enemy = nmModule.Enemy
@@ -182,6 +200,128 @@ local function SetupContainerFrame(container, nameplate, anchorPoint, relativeTo
 	frame:Show()
 end
 
+---12.1 path: positions a bar's aura display, chaining after the bar's kick container while a
+---kick icon is showing.
+local function AnchorBarDisplay(display, container, nameplate, barOptions, kickActive)
+	local anchorFrame = GetNameplateAnchorFrame(nameplate)
+	local frame = display.Frame
+	frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
+	frame:SetIgnoreParentScale(not nmModule.ScaleWithNameplate)
+
+	display:AnchorAfterKick(
+		container.Frame,
+		anchorFrame,
+		barOptions.Grow or "CENTER",
+		barOptions.Icons.Spacing or 2,
+		barOptions.Offset.X or 0,
+		barOptions.Offset.Y or 0,
+		kickActive
+	)
+end
+
+---12.1 path: builds one pooled bar display. Filter negation partitions the categories so an
+---aura only ever lands in one group (EXTERNAL can overlap BIG, and importants can also be
+---defensives). Budgets/unit/style are applied per bar on acquisition.
+local function CreateBarDisplay()
+	return auraContainerDisplay:New(UIParent, "none", {
+		{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 5 },
+		{ Key = "bigdef", FilterString = "HELPFUL|BIG_DEFENSIVE", MaxIcons = 5 },
+		{ Key = "extdef", FilterString = "HELPFUL|EXTERNAL_DEFENSIVE|!BIG_DEFENSIVE", MaxIcons = 5 },
+		{ Key = "important", FilterString = "HELPFUL|IMPORTANT|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE", MaxIcons = 5 },
+	}, 35, 2, "Nameplates")
+end
+
+---12.1 path: parks a pooled bar display.
+local function ResetBarDisplay(display)
+	display:SetEnabled(false)
+	display:StopGlowAnimations()
+	display.Frame:Hide()
+	display.Frame:ClearAllPoints()
+	display.Frame:SetParent(UIParent)
+end
+
+---12.1 path: acquires (or reuses) and reconfigures a bar's aura display for a tracked plate.
+---@param data NameplateData
+local function EnsureBarDisplay(data, bar, barOptions)
+	local display = data[bar.DisplayField]
+	if not display then
+		display = displayPool:Acquire()
+		data[bar.DisplayField] = display
+	end
+
+	local size = barOptions.Icons.Size or 35
+	local maxIcons = barOptions.Icons.MaxIcons or 5
+	local spacing = barOptions.Icons.Spacing or 2
+
+	display.Frame:SetParent(data.Nameplate)
+	display:SetUnit(data.UnitToken)
+	display:SetIconSize(size)
+	display:SetSpacing(spacing)
+	display:SetMaxIcons("cc", barOptions.ShowCC and maxIcons or 0)
+	display:SetMaxIcons("bigdef", barOptions.ShowDefensives and maxIcons or 0)
+	display:SetMaxIcons("extdef", barOptions.ShowDefensives and maxIcons or 0)
+	display:SetMaxIcons("important", barOptions.ShowImportant and maxIcons or 0)
+	display:SetStyle({
+		ReverseCooldown = barOptions.Icons.ReverseCooldown,
+		ShowMilliseconds = barOptions.Icons.ShowMilliseconds,
+		-- Category colours can't be applied per group; dispel-type colouring is the nearest fit.
+		ColorByDispelType = barOptions.Icons.ColorByCategory,
+		Glow = barOptions.Icons.Glow,
+		FontScale = db.FontScale,
+		ShowTooltips = barOptions.ShowTooltips ~= false,
+	})
+	-- SetEnabled(false -> true) triggers the container's own full refresh, so a pooled display
+	-- re-acquired for a recycled unit token still repopulates.
+	display:SetEnabled(true)
+	display.Frame:SetShown(not testModeActive)
+
+	return display
+end
+
+---12.1 path: releases a tracked plate's pooled displays (and its kick timer). Used when the
+---plate goes away AND when tracking stops for other reasons (module/pet options turning off
+---for an already-tracked token) so displays never linger active outside the pool.
+---@param data NameplateData?
+local function ReleaseDataDisplays(data)
+	if not data then
+		return
+	end
+
+	if data.KickTimer then
+		data.KickTimer:Cancel()
+		data.KickTimer = nil
+	end
+	if data.Bar1Display then
+		displayPool:Release(data.Bar1Display)
+		data.Bar1Display = nil
+	end
+	if data.Bar2Display then
+		displayPool:Release(data.Bar2Display)
+		data.Bar2Display = nil
+	end
+end
+
+---12.1 path: acquires/reconfigures displays for every enabled bar on a tracked plate and
+---releases displays of bars that are now disabled.
+---@param data NameplateData
+local function EnsureBarDisplays(data, unitOptions)
+	for _, bar in ipairs(BARS) do
+		local barOptions = unitOptions[bar.Key]
+		local container = data[bar.DataField]
+		if barOptions and barOptions.Enabled and container then
+			local display = EnsureBarDisplay(data, bar, barOptions)
+			local kickActive = barOptions.ShowCC and kickTracker:GetKick(data.UnitToken) ~= nil
+			AnchorBarDisplay(display, container, data.Nameplate, barOptions, kickActive)
+		else
+			local display = data[bar.DisplayField]
+			if display then
+				data[bar.DisplayField] = nil
+				displayPool:Release(display)
+			end
+		end
+	end
+end
+
 ---@param nameplate table
 ---@param unitToken string
 ---@param unitOptions table
@@ -222,6 +362,61 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 	end
 
 	return result.Bar1, result.Bar2
+end
+
+---12.1 path: renders the kick icon into each ShowCC bar's kick container (slot 1) and re-anchors
+---the aura displays around it. Schedules a follow-up when the kick expires, since no aura event
+---will fire to clear it.
+---@param data NameplateData
+local function UpdateNameplateKick(data)
+	if paused or testModeActive then
+		return
+	end
+
+	local unitOptions = M:GetUnitOptions(data.UnitToken)
+
+	if data.KickTimer then
+		data.KickTimer:Cancel()
+		data.KickTimer = nil
+	end
+
+	local kickEntry = kickTracker:GetKick(data.UnitToken)
+
+	for _, bar in ipairs(BARS) do
+		local barOptions = unitOptions[bar.Key]
+		local container = data[bar.DataField]
+		if barOptions and barOptions.Enabled and container then
+			if barOptions.ShowCC and kickEntry then
+				layerScratch.Texture = kickEntry.Texture
+				layerScratch.DurationObject = kickEntry.DurationObject
+				layerScratch.Alpha = true
+				layerScratch.Glow = barOptions.Icons.Glow
+				layerScratch.ReverseCooldown = barOptions.Icons.ReverseCooldown
+				layerScratch.ShowMilliseconds = barOptions.Icons.ShowMilliseconds
+				layerScratch.FontScale = db.FontScale
+				layerScratch.Color = barOptions.Icons.ColorByCategory and kickEntry.Color or nil
+				layerScratch.SpellId = nil
+				container:SetSlot(1, layerScratch)
+			else
+				container:SetSlotUnused(1)
+			end
+
+			local display = data[bar.DisplayField]
+			if display then
+				AnchorBarDisplay(display, container, data.Nameplate, barOptions, barOptions.ShowCC and kickEntry ~= nil)
+			end
+		end
+	end
+
+	if kickEntry then
+		local remaining = (kickEntry.StartTime or 0) + (kickEntry.Duration or 0) - GetTime()
+		if remaining > 0 then
+			data.KickTimer = C_Timer.NewTimer(remaining + 0.05, function()
+				data.KickTimer = nil
+				UpdateNameplateKick(data)
+			end)
+		end
+	end
 end
 
 local function GetNameplateBuffList(nameplate)
@@ -575,6 +770,11 @@ local function OnNamePlateRemoved(unitToken)
 	HideAndReset(data.Bar1Container)
 	HideAndReset(data.Bar2Container)
 
+	-- 12.1: park the displays back in the central pool for the next plate.
+	if useAuraContainers then
+		ReleaseDataDisplays(data)
+	end
+
 	-- Dispose of watcher
 	if watchers[unitToken] then
 		watchers[unitToken]:Dispose()
@@ -615,12 +815,21 @@ local function OnNamePlateAdded(unitToken)
 
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
 	if not moduleEnabled then
+		-- 12.1: an already-tracked token may still hold pooled displays from before the
+		-- module/option flip; release them instead of leaving them tracking until the
+		-- plate despawns.
+		if useAuraContainers then
+			ReleaseDataDisplays(nameplateAnchors[unitToken])
+		end
 		return
 	end
 
 	-- Check if we should ignore pets
 	local unitOptions = M:GetUnitOptions(unitToken)
 	if unitOptions.IgnorePets and units:IsPetOrMinion(unitToken) then
+		if useAuraContainers then
+			ReleaseDataDisplays(nameplateAnchors[unitToken])
+		end
 		return
 	end
 
@@ -647,35 +856,56 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
-	-- Create / update nameplate data
+	-- Create / update nameplate data. Rebuilds for an already-tracked token (e.g. from
+	-- RebuildContainers) must carry the pooled displays over, or they'd leak out of the pool.
+	local previous = nameplateAnchors[unitToken]
+	if previous and previous.KickTimer then
+		previous.KickTimer:Cancel()
+	end
 	local data = {
 		Nameplate = nameplate,
 		Bar1Container = bar1Container,
 		Bar2Container = bar2Container,
+		Bar1Display = previous and previous.Bar1Display or nil,
+		Bar2Display = previous and previous.Bar2Display or nil,
 		UnitToken = unitToken,
 	}
 	nameplateAnchors[unitToken] = data
 
-	-- Create new watcher
-	if watchers[unitToken] then
-		watchers[unitToken]:Dispose()
+	if useAuraContainers then
+		EnsureBarDisplays(data, unitOptions)
 	end
 
-	-- Important buffs are read straight from Blizzard's nameplate buff list (see GetImportantBuffs),
-	-- so the watcher only tracks CC + defensives. We always track both (rather than narrowing to the
-	-- bars' current ShowCC/ShowDefensives) so a duel faction flip can't leave the watcher querying the
-	-- wrong aura types. Stated explicitly so we don't silently inherit any future change to the "all"
-	-- default (e.g. if it ever started including buffs, which we don't want here).
-	local sortRule, sortDirection = GetCCSortOptions()
-	watchers[unitToken] = unitWatcher:New(unitToken, nil, { CC = true, Defensives = true }, sortRule, sortDirection)
-	watchers[unitToken]:RegisterCallback(function()
-		OnAuraDataChanged(unitToken)
-	end)
+	if not useAuraContainers then
+		-- Create new watcher
+		if watchers[unitToken] then
+			watchers[unitToken]:Dispose()
+		end
+
+		-- Important buffs are read straight from Blizzard's nameplate buff list (see GetImportantBuffs),
+		-- so the watcher only tracks CC + defensives. We always track both (rather than narrowing to the
+		-- bars' current ShowCC/ShowDefensives) so a duel faction flip can't leave the watcher querying the
+		-- wrong aura types. Stated explicitly so we don't silently inherit any future change to the "all"
+		-- default (e.g. if it ever started including buffs, which we don't want here).
+		local sortRule, sortDirection = GetCCSortOptions()
+		watchers[unitToken] = unitWatcher:New(unitToken, nil, { CC = true, Defensives = true }, sortRule, sortDirection)
+		watchers[unitToken]:RegisterCallback(function()
+			OnAuraDataChanged(unitToken)
+		end)
+	end
 
 	kickTracker:Watch(unitToken)
 	kickTracker:Subscribe(unitToken, function()
-		OnAuraDataChanged(unitToken)
+		if useAuraContainers then
+			UpdateNameplateKick(data)
+		else
+			OnAuraDataChanged(unitToken)
+		end
 	end)
+
+	if useAuraContainers then
+		UpdateNameplateKick(data)
+	end
 
 	-- Initial update
 	if testModeActive then
@@ -711,8 +941,16 @@ local function DisableWatchers()
 		end
 	end
 
-	for unitToken, _ in pairs(nameplateAnchors) do
+	for unitToken, data in pairs(nameplateAnchors) do
 		ClearNameplate(unitToken)
+		if data.Bar1Display then
+			data.Bar1Display:SetEnabled(false)
+			data.Bar1Display.Frame:Hide()
+		end
+		if data.Bar2Display then
+			data.Bar2Display:SetEnabled(false)
+			data.Bar2Display.Frame:Hide()
+		end
 	end
 end
 
@@ -832,6 +1070,13 @@ local function RefreshAnchorsAndSizes()
 						container:SetSpacing(barOptions.Icons.Spacing or 2)
 						container:SetCount(barOptions.Icons.MaxIcons)
 						container.Frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
+
+						-- 12.1: re-apply option changes to the bar's aura display too.
+						if useAuraContainers then
+							local display = EnsureBarDisplay(data, bar, barOptions)
+							local kickActive = barOptions.ShowCC and kickTracker:GetKick(data.UnitToken) ~= nil
+							AnchorBarDisplay(display, container, data.Nameplate, barOptions, kickActive)
+						end
 					end
 					container.Frame:SetIgnoreParentScale(ignoreParentScale)
 				end
@@ -954,6 +1199,11 @@ function M:Init()
 	db = mini:GetSavedVars()
 	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> NameplatesModule
 	nmModule = db.Modules.NameplatesModule
+
+	if useAuraContainers then
+		-- Pre-create enough displays for a full screen of plates (staggered, out of combat).
+		displayPool = auraContainerDisplay:NewPool(CreateBarDisplay, ResetBarDisplay, 40)
+	end
 
 	local eventFrame = CreateFrame("Frame")
 	eventFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")

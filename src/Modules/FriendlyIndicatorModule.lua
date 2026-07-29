@@ -5,12 +5,19 @@ local instanceOptions = addon.Core.InstanceOptions
 local frames = addon.Core.Frames
 local units = addon.Utils.Units
 local iconSlotContainer = addon.Core.IconSlotContainer
+local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local UnitAuraWatcher = addon.Core.UnitAuraWatcher
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local slotDistribution = addon.Utils.SlotDistribution
 local wowEx = addon.Utils.WoWEx
 local kickTracker = addon.Core.KickTracker
+-- 12.1 path: CC + defensive auras render through an AuraContainer per anchor (one group per
+-- category); the IconSlotContainer is kept for the kick icon and test mode. Unlike the legacy
+-- path there is no dynamic slot split between categories (aura counts are unreadable), so each
+-- enabled category gets the full MaxIcons budget. TEMPORARY dual path: remove the watcher
+-- branch once 12.1 is live everywhere.
+local useAuraContainers = wowEx:UseAuraContainers()
 local eventsFrame
 local paused = false
 local testModeActive = false
@@ -37,8 +44,10 @@ local M = {}
 addon.Modules.FriendlyIndicatorModule = M
 
 ---@class FriendlyIndicatorWatchEntry
----@field Container IconSlotContainer
----@field Watcher Watcher
+---@field Container IconSlotContainer On 12.1 this only renders the kick icon and test icons.
+---@field Watcher Watcher? Legacy path only (nil on 12.1).
+---@field Display AuraContainerDisplay? 12.1 path only: CC/defensive auras render through this.
+---@field KickTimer table? 12.1 path only: timer that clears the kick icon on expiry.
 ---@field Anchor table
 ---@field Unit string
 ---@field KickKey number
@@ -151,6 +160,69 @@ local function UpdateWatcherAuras(entry)
 	end
 end
 
+---12.1 path: positions the aura display on its anchor, chaining after the kick container while
+---a kick icon is showing (the kick occupied slot 1 in the legacy layout).
+---@param entry FriendlyIndicatorWatchEntry
+---@param anchor table
+---@param options table
+local function AnchorAuraDisplay(entry, anchor, options)
+	local display = entry.Display
+	if not display then
+		return
+	end
+
+	local frame = display.Frame
+	if frame:GetParent() ~= anchor then
+		frame:SetParent(anchor)
+	end
+	frame:SetIgnoreParentAlpha(db.FadeWithParent == false)
+	frame:SetFrameStrata(frames:GetNextStrata(anchor:GetFrameStrata()))
+	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
+
+	local kickActive = options.ShowKicks ~= false and kickTracker:GetKick(entry.Unit) ~= nil
+	display:AnchorAfterKick(
+		entry.Container.Frame,
+		anchor,
+		options.Grow or "CENTER",
+		options.IconSpacing or 2,
+		options.Offset.X,
+		options.Offset.Y,
+		kickActive
+	)
+end
+
+---12.1 path: renders the kick icon into the entry's IconSlotContainer (slot 1) and re-anchors
+---the aura display around it.
+---@param entry FriendlyIndicatorWatchEntry
+local function UpdateKickIcon(entry)
+	if not entry or not entry.Container or paused or testModeActive then
+		return
+	end
+
+	local options = GetOptions()
+	if not options or not moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator) then
+		return
+	end
+
+	local kickEntry = options.ShowKicks ~= false and kickTracker:GetKick(entry.Unit) or nil
+	local slotOptions = kickEntry and {
+		Texture = kickEntry.Texture,
+		DurationObject = kickEntry.DurationObject,
+		Color = options.Icons.ColorByDispelType and kickEntry.Color,
+		Alpha = true,
+		ReverseCooldown = options.Icons.ReverseCooldown,
+		Glow = options.Icons.Glow,
+		FontScale = db.FontScale,
+	} or nil
+
+	entry.KickTimer = auraContainerDisplay:RenderKickSlot(entry.Container, kickEntry, slotOptions, entry.KickTimer, function()
+		entry.KickTimer = nil
+		UpdateKickIcon(entry)
+	end)
+
+	AnchorAuraDisplay(entry, entry.Anchor, options)
+end
+
 ---@param header IconSlotContainer
 ---@param anchor table
 ---@param options FriendlyIndicatorInstanceOptions
@@ -224,39 +296,65 @@ local function EnsureWatcher(anchor, unit)
 		local size = moduleUtil:GetIconSize(options.Icons, anchor, 32, 75)
 		local spacing = options.IconSpacing or 2
 		local container = iconSlotContainer:New(UIParent, maxIcons, size, spacing, "Friendly Indicators", nil, "Friendly Indicators")
-		local watcher = UnitAuraWatcher:New(unit, nil, { Defensives = true, CC = true })
 
 		entry = {
 			Container = container,
-			Watcher = watcher,
 			Anchor = anchor,
 			Unit = unit,
 			KickKey = 0,
 		}
 		watchers[anchor] = entry
 
-		watcher:RegisterCallback(function()
-			UpdateWatcherAuras(entry)
-		end)
-
-		kickTracker:Watch(unit)
-		entry.KickKey = kickTracker:Subscribe(unit, function()
-			UpdateWatcherAuras(entry)
-		end)
-	else
-		-- Check if unit has changed
-		if entry.Unit ~= unit then
-			-- Unit changed, recreate the watcher
-			entry.Watcher:Dispose()
+		if useAuraContainers then
+			-- Filter negation partitions the groups so an aura only ever lands in one: EXTERNAL
+			-- excludes BIG (they can overlap; legacy deduped by AuraInstanceID) and important
+			-- excludes both defensive categories.
+			-- The important group is a 12.1 addition with no legacy equivalent (the legacy path
+			-- can't identify important buffs without the secret-alpha stacking trick).
+			entry.Display = auraContainerDisplay:New(UIParent, unit, {
+				{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = maxIcons },
+				{ Key = "bigdef", FilterString = "HELPFUL|BIG_DEFENSIVE", MaxIcons = maxIcons },
+				{ Key = "extdef", FilterString = "HELPFUL|EXTERNAL_DEFENSIVE|!BIG_DEFENSIVE", MaxIcons = maxIcons },
+				{ Key = "important", FilterString = "HELPFUL|IMPORTANT|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE", MaxIcons = maxIcons },
+			}, size, spacing, "Friendly Indicators")
+		else
 			entry.Watcher = UnitAuraWatcher:New(unit, nil, { Defensives = true, CC = true })
 			entry.Watcher:RegisterCallback(function()
 				UpdateWatcherAuras(entry)
 			end)
+		end
+
+		kickTracker:Watch(unit)
+		entry.KickKey = kickTracker:Subscribe(unit, function()
+			if useAuraContainers then
+				UpdateKickIcon(entry)
+			else
+				UpdateWatcherAuras(entry)
+			end
+		end)
+	else
+		-- Check if unit has changed
+		if entry.Unit ~= unit then
+			if useAuraContainers then
+				-- The container tracks the new unit itself; only the unit token changes.
+				entry.Display:SetUnit(unit)
+			else
+				-- Unit changed, recreate the watcher
+				entry.Watcher:Dispose()
+				entry.Watcher = UnitAuraWatcher:New(unit, nil, { Defensives = true, CC = true })
+				entry.Watcher:RegisterCallback(function()
+					UpdateWatcherAuras(entry)
+				end)
+			end
 
 			kickTracker:Unsubscribe(entry.Unit, entry.KickKey)
 			kickTracker:Watch(unit)
 			entry.KickKey = kickTracker:Subscribe(unit, function()
-				UpdateWatcherAuras(entry)
+				if useAuraContainers then
+					UpdateKickIcon(entry)
+				else
+					UpdateWatcherAuras(entry)
+				end
 			end)
 
 			entry.Unit = unit
@@ -265,12 +363,26 @@ local function EnsureWatcher(anchor, unit)
 			entry.Container:ResetAllSlots()
 
 			-- Force immediate refresh for the new unit
-			UpdateWatcherAuras(entry)
+			if useAuraContainers then
+				UpdateKickIcon(entry)
+			else
+				UpdateWatcherAuras(entry)
+			end
 		end
 	end
 
-	UpdateWatcherAuras(entry)
+	if useAuraContainers then
+		UpdateKickIcon(entry)
+	else
+		UpdateWatcherAuras(entry)
+	end
 	AnchorContainer(entry.Container, anchor, options)
+
+	if entry.Display then
+		AnchorAuraDisplay(entry, anchor, options)
+		frames:ShowHideFrame(entry.Display.Frame, anchor, false, options.ExcludePlayer)
+	end
+
 	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, options.ExcludePlayer)
 
 	return entry
@@ -438,6 +550,11 @@ local function DisableWatchers()
 			entry.Watcher:Disable()
 		end
 
+		if entry.Display then
+			entry.Display:SetEnabled(false)
+			entry.Display.Frame:Hide()
+		end
+
 		if entry.Container then
 			entry.Container:ResetAllSlots()
 			entry.Container.Frame:Hide()
@@ -449,6 +566,9 @@ local function EnableWatchers()
 	for _, entry in pairs(watchers) do
 		if entry.Watcher then
 			entry.Watcher:Enable()
+		end
+		if entry.Display then
+			entry.Display:SetEnabled(true)
 		end
 	end
 end
@@ -480,12 +600,46 @@ function M:Refresh()
 		container:SetSpacing(options.IconSpacing or 2)
 		container:SetCount(maxIcons)
 
+		if entry.Display then
+			entry.Display:SetIconSize(iconSize)
+			entry.Display:SetSpacing(options.IconSpacing or 2)
+			-- Category toggles map to a zero icon budget for the disabled group. Important buffs
+			-- follow the defensives toggle (12.1-only category with no dedicated option yet).
+			entry.Display:SetMaxIcons("cc", options.ShowCC and maxIcons or 0)
+			entry.Display:SetMaxIcons("bigdef", options.ShowDefensives and maxIcons or 0)
+			entry.Display:SetMaxIcons("extdef", options.ShowDefensives and maxIcons or 0)
+			entry.Display:SetMaxIcons("important", options.ShowDefensives and maxIcons or 0)
+			entry.Display:SetStyle({
+				ReverseCooldown = options.Icons.ReverseCooldown,
+				ColorByDispelType = options.Icons.ColorByDispelType,
+				Glow = options.Icons.Glow,
+				FontScale = db.FontScale,
+				ShowTooltips = options.ShowTooltips ~= false,
+			})
+			entry.Display:SetEnabled(true)
+		end
+
 		if not testModeActive then
-			UpdateWatcherAuras(entry)
+			if useAuraContainers then
+				UpdateKickIcon(entry)
+			else
+				UpdateWatcherAuras(entry)
+			end
 		end
 
 		AnchorContainer(container, anchor, options)
 		frames:ShowHideFrame(container.Frame, anchor, testModeActive, options.ExcludePlayer)
+
+		if entry.Display then
+			if testModeActive then
+				-- Test icons render through the IconSlotContainer; hide the live aura display
+				-- so real and fake icons don't mix.
+				entry.Display.Frame:Hide()
+			else
+				AnchorAuraDisplay(entry, anchor, options)
+				frames:ShowHideFrame(entry.Display.Frame, anchor, false, options.ExcludePlayer)
+			end
+		end
 	end
 
 	if testModeActive then
@@ -510,6 +664,13 @@ function M:StopTesting()
 
 	Resume()
 	M:Refresh()
+
+	-- 12.1: repopulate the kick icons the test-mode reset wiped.
+	if useAuraContainers then
+		for _, entry in pairs(watchers) do
+			UpdateKickIcon(entry)
+		end
+	end
 end
 
 function M:Init()

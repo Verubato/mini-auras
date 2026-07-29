@@ -593,17 +593,24 @@ function M:Build(panel, options)
 	tabContainer:SetPoint("TOPRIGHT", panel,             "TOPRIGHT",    0, 0)
 	tabContainer:SetHeight(subPanelHeight + 34)
 
+	-- TTS is dead on 12.1: announcing a spell name requires reading which aura appeared, which
+	-- is secret there (unlike sounds, which the engine can play itself via AddAuraSound), so
+	-- its tab is hidden. TEMPORARY: remove the gate with the legacy path once 12.1 is live.
+	local subTabs = {
+		{ Key = "settings", Title = L["Settings"] },
+		{ Key = "sounds", Title = L["Sound Alerts"] },
+	}
+	if not wowEx:UseAuraContainers() then
+		subTabs[#subTabs + 1] = { Key = "tts", Title = L["TTS"] }
+	end
+
 	local tabCtrl = mini:CreateTabs({
 		Parent = tabContainer,
 		TabHeight = 28,
 		StripHeight = 34,
 		TabFitToParent = true,
 		ContentInsets = { Top = verticalSpacing },
-		Tabs = {
-			{ Key = "settings", Title = L["Settings"] },
-			{ Key = "sounds",   Title = L["Sound Alerts"] },
-			{ Key = "tts",      Title = L["TTS"] },
-		},
+		Tabs = subTabs,
 	})
 
 	local settingsContent = tabCtrl:GetContent("settings")
@@ -613,7 +620,9 @@ function M:Build(panel, options)
 	BuildSoundsTab(soundsContent, options)
 
 	local ttsContent = tabCtrl:GetContent("tts")
-	BuildTtsTab(ttsContent, options)
+	if ttsContent then
+		BuildTtsTab(ttsContent, options)
+	end
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()

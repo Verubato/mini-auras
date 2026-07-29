@@ -4,10 +4,20 @@ local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
+local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local units = addon.Utils.Units
 local auras = addon.Utils.Auras
+-- 12.1 path: the alert bars become rows of per-nameplate AuraContainers chained off the movable
+-- bar frames (one container can only track one unit, and aura data can't be read to aggregate).
+-- Sound and TTS are disabled there: both fire on "a new aura appeared", which is exactly the
+-- information 12.1 makes secret. (A future path for sound is the 12.1 AddAuraAppliedSound API.)
+-- The Blizzard nameplate buffList scan is replaced by a HELPFUL|IMPORTANT container group, which
+-- also obsoletes the mind-control and purgeable-garbage workarounds on this path. The legacy
+-- IconSlotContainer bars stay as drag anchors and test-mode renderers. TEMPORARY dual path:
+-- remove the watcher branch once 12.1 is live everywhere.
+local useAuraContainers = wowEx:UseAuraContainers()
 local testModeActive = false
 local paused = false
 local inPrepRoom = false
@@ -84,12 +94,26 @@ local container
 local importantContainer
 ---@type table<string, Watcher>
 local nameplateWatchers = {}
+-- 12.1 path: per-token display pairs (Def on the main bar, Imp on the important bar in split
+-- mode), drawn from a central pre-created pool: acquired and retargeted
+-- with SetUnit when an enemy plate appears, released back when it goes away, so plate churn
+-- mid-combat never creates containers. Presence in this map means the token is active.
+---@type table<string, {Def: AuraContainerDisplay, Imp: AuraContainerDisplay}>
+local nameplateDisplays = {}
+local displayPairPool
+-- Sorted token list scratch for deterministic chaining order.
+local displayOrderScratch = {}
 
 ---@class AlertsModule : IModule
 local M = {}
 addon.Modules.AlertsModule = M
 
 local function PlaySound(spellType)
+	-- 12.1: sound alerts are disabled - they fire on aura transitions, which are unreadable there.
+	if useAuraContainers then
+		return
+	end
+
 	local soundConfig
 	if spellType == "important" then
 		soundConfig = db.Modules.AlertsModule.Sound.Important
@@ -131,6 +155,11 @@ local function UpdateImportantTTSCache()
 end
 
 local function AnnounceTTS(spellName, spellType)
+	-- 12.1: TTS is disabled - it fires on aura transitions, which are unreadable there.
+	if useAuraContainers then
+		return
+	end
+
 	if not db.Modules.AlertsModule.TTS then
 		return
 	end
@@ -318,6 +347,12 @@ local function ProcessImportantForUnit(watcher, colorByClass, includeDefensives)
 end
 
 local function OnAuraDataChanged()
+	-- 12.1: the container path renders everything and no watchers feed this; skip the wasted
+	-- scratch-table wipes and bar resets it would otherwise do on every scheduled update.
+	if useAuraContainers then
+		return
+	end
+
 	if paused then
 		return
 	end
@@ -467,6 +502,12 @@ local function OnMatchStateChanged()
 
 	inPrepRoom = matchState == Enum.PvPMatchState.StartUp
 
+	if useAuraContainers then
+		-- Prep-room garbage handling: RefreshNameplateDisplays hides the displays while
+		-- inPrepRoom is set and re-shows them when the match starts.
+		RefreshNameplateDisplays()
+	end
+
 	if not inPrepRoom then
 		return
 	end
@@ -584,10 +625,192 @@ local function RefreshTestAlerts()
 	end
 end
 
+-- Numeric-aware token order so nameplate10 doesn't sort between nameplate1 and nameplate2.
+local function NameplateTokenLess(a, b)
+	local numberA = tonumber(a:match("^nameplate(%d+)$"))
+	local numberB = tonumber(b:match("^nameplate(%d+)$"))
+	if numberA and numberB then
+		return numberA < numberB
+	end
+	return a < b
+end
+
+-- 12.1 path: re-anchors the active per-nameplate displays into rows. Defensive displays chain
+-- off the main bar frame; important displays chain off the important bar in split mode, or
+-- continue the main-bar chain when combined. Chaining container-to-container avoids reading
+-- their (possibly secret) sizes; empty containers collapse to nothing.
+-- (Category overlap is handled by filter negation at group creation, not here.)
+local function ChainAlertDisplays()
+	local options = db.Modules.AlertsModule
+	local spacing = options.IconSpacing or 2
+	local splitBars = options.SplitBars
+
+	local tokens = displayOrderScratch
+	wipe(tokens)
+	for token in pairs(nameplateDisplays) do
+		tokens[#tokens + 1] = token
+	end
+	table.sort(tokens, NameplateTokenLess)
+
+	-- Two passes so combined mode matches the legacy ordering: every unit's defensives first,
+	-- then every unit's importants continuing the same row (split mode puts importants on
+	-- their own bar instead).
+	local prevMain
+	for _, token in ipairs(tokens) do
+		local defFrame = nameplateDisplays[token].Def.Frame
+		defFrame:ClearAllPoints()
+		if prevMain then
+			defFrame:SetPoint("LEFT", prevMain, "RIGHT", spacing, 0)
+		else
+			defFrame:SetPoint("LEFT", container.Frame, "LEFT", 0, 0)
+		end
+		prevMain = defFrame
+	end
+
+	local prevImp
+	for _, token in ipairs(tokens) do
+		local impFrame = nameplateDisplays[token].Imp.Frame
+		impFrame:ClearAllPoints()
+		if splitBars then
+			if prevImp then
+				impFrame:SetPoint("LEFT", prevImp, "RIGHT", spacing, 0)
+			else
+				impFrame:SetPoint("LEFT", importantContainer.Frame, "LEFT", 0, 0)
+			end
+			prevImp = impFrame
+		elseif prevMain then
+			impFrame:SetPoint("LEFT", prevMain, "RIGHT", spacing, 0)
+			prevMain = impFrame
+		else
+			impFrame:SetPoint("LEFT", container.Frame, "LEFT", 0, 0)
+			prevMain = impFrame
+		end
+	end
+end
+
+---12.1 path: whether the alert bars should currently render at all.
+local function GetAlertBarsShown()
+	local options = db.Modules.AlertsModule
+	return moduleUtil:IsModuleEnabled(moduleName.Alerts)
+		and options.Icons.Enabled
+		and not inPrepRoom
+		and not testModeActive
+end
+
+-- 12.1 path: applies options (size, style, per-category budgets, visibility) to ONE pooled
+-- display pair. Deviations from the legacy bar, forced by aura data being unreadable: no
+-- class-colored glow/border, and MaxIcons caps each unit's icons rather than the whole bar.
+-- (Important-vs-defensive dedup is handled by filter negation at creation.)
+local function ApplyNameplateDisplayOptions(entry, options, showBars)
+	local includeDefensives = options.IncludeDefensives
+	local importantEnabled = options.Important and options.Important.Enabled
+	local maxIcons = options.Icons.MaxIcons or 8
+	local size = options.Icons.Size
+	local spacing = options.IconSpacing or 2
+	local showTooltips = options.ShowTooltips ~= false
+
+	entry.Def:SetIconSize(size)
+	entry.Def:SetSpacing(spacing)
+	entry.Def:SetMaxIcons("bigdef", includeDefensives and maxIcons or 0)
+	entry.Def:SetMaxIcons("extdef", includeDefensives and maxIcons or 0)
+	entry.Def:SetStyle({
+		ReverseCooldown = options.Icons.ReverseCooldown,
+		Glow = options.Icons.Glow,
+		FontScale = db.FontScale,
+		ShowTooltips = showTooltips,
+	})
+	entry.Def:SetEnabled(showBars == true)
+	entry.Def.Frame:SetShown(showBars == true)
+
+	entry.Imp:SetIconSize(size)
+	entry.Imp:SetSpacing(spacing)
+	entry.Imp:SetMaxIcons("important", importantEnabled and maxIcons or 0)
+	entry.Imp:SetStyle({
+		ReverseCooldown = options.Icons.ReverseCooldown,
+		Glow = options.Icons.Glow,
+		FontScale = db.FontScale,
+		ShowTooltips = showTooltips,
+	})
+	local impShown = showBars and importantEnabled
+	entry.Imp:SetEnabled(impShown == true)
+	entry.Imp.Frame:SetShown(impShown == true)
+end
+
+-- 12.1 path: applies options to every pooled display pair and re-chains the rows.
+local function RefreshNameplateDisplays()
+	local options = db.Modules.AlertsModule
+	local showBars = GetAlertBarsShown()
+
+	for _, entry in pairs(nameplateDisplays) do
+		ApplyNameplateDisplayOptions(entry, options, showBars)
+	end
+
+	ChainAlertDisplays()
+end
+
+-- 12.1 path: builds one pooled display pair. Filter negation partitions the categories:
+-- EXTERNAL excludes BIG (they can overlap) and the important display excludes both defensive
+-- categories so a both-important-and-defensive aura isn't drawn on both bars (legacy deduped
+-- by id). Sizes/budgets are applied per token by RefreshNameplateDisplays.
+local function CreateAlertDisplayPair()
+	return {
+		Def = auraContainerDisplay:New(UIParent, "none", {
+			{ Key = "bigdef", FilterString = "HELPFUL|BIG_DEFENSIVE", MaxIcons = 8 },
+			{ Key = "extdef", FilterString = "HELPFUL|EXTERNAL_DEFENSIVE|!BIG_DEFENSIVE", MaxIcons = 8 },
+		}, 24, 2, "Alerts"),
+		Imp = auraContainerDisplay:New(UIParent, "none", {
+			{ Key = "important", FilterString = "HELPFUL|IMPORTANT|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE", MaxIcons = 8 },
+		}, 24, 2, "Alerts"),
+	}
+end
+
+-- 12.1 path: parks a pooled display pair (both displays stay parented to UIParent).
+local function ResetAlertDisplayPair(entry)
+	entry.Def:SetEnabled(false)
+	entry.Def:StopGlowAnimations()
+	entry.Def.Frame:Hide()
+	entry.Def.Frame:ClearAllPoints()
+	entry.Imp:SetEnabled(false)
+	entry.Imp:StopGlowAnimations()
+	entry.Imp.Frame:Hide()
+	entry.Imp.Frame:ClearAllPoints()
+end
+
+-- 12.1 path: activates the display pair for a nameplate token, acquiring from the pool on
+-- first sight. SetEnabled(false -> true) in RefreshNameplateDisplays triggers the containers'
+-- own full refresh, so a pair re-acquired for a recycled token repopulates.
+local function EnsureNameplateDisplay(unitToken)
+	local entry = nameplateDisplays[unitToken]
+
+	if not entry then
+		entry = displayPairPool:Acquire()
+		nameplateDisplays[unitToken] = entry
+	end
+
+	entry.Def:SetUnit(unitToken)
+	entry.Imp:SetUnit(unitToken)
+	return entry
+end
+
+-- 12.1 path: releases a token's display pair back to the central pool when its plate goes away.
+local function ReleaseNameplateDisplay(unitToken)
+	local entry = nameplateDisplays[unitToken]
+	if entry then
+		nameplateDisplays[unitToken] = nil
+		displayPairPool:Release(entry)
+	end
+end
+
+local function ReleaseAllNameplateDisplays()
+	for unitToken in pairs(nameplateDisplays) do
+		ReleaseNameplateDisplay(unitToken)
+	end
+end
+
 -- Hooks a nameplate's RefreshAuras so the important bar (which reads Blizzard's nameplate buff
 -- lists) refreshes when the game updates them. Watchers don't track buffs, so this is the only
 -- signal for buff changes. Installed for every enemy nameplate; the hook is a cheap no-op when
--- nothing important-related is enabled.
+-- nothing important-related is enabled. Legacy path only.
 local function HookNameplateAuraFrame(unitToken)
 	local nameplate = C_NamePlate.GetNamePlateForUnit(unitToken)
 	local uf = nameplate and nameplate.UnitFrame
@@ -613,15 +836,27 @@ local function HookNameplateAuraFrame(unitToken)
 end
 
 local function OnNamePlateAdded(unitToken)
+	-- Only track enemy nameplates
+	if not units:IsEnemy(unitToken) then
+		if useAuraContainers then
+			ReleaseNameplateDisplay(unitToken)
+		end
+		return
+	end
+
+	if useAuraContainers then
+		-- Configure only the new entry (styling every pooled pair per plate spawn adds up in
+		-- busy fights); the chain re-anchor is cheap and covers the row shift.
+		local entry = EnsureNameplateDisplay(unitToken)
+		ApplyNameplateDisplayOptions(entry, db.Modules.AlertsModule, GetAlertBarsShown())
+		ChainAlertDisplays()
+		return
+	end
+
 	-- Clean up any existing watcher for this unit token
 	if nameplateWatchers[unitToken] then
 		nameplateWatchers[unitToken]:Dispose()
 		nameplateWatchers[unitToken] = nil
-	end
-
-	-- Only track enemy nameplates
-	if not units:IsEnemy(unitToken) then
-		return
 	end
 
 	---@type AuraTypeFilter
@@ -639,6 +874,12 @@ local function OnNamePlateAdded(unitToken)
 end
 
 local function OnNamePlateRemoved(unitToken)
+	if useAuraContainers then
+		ReleaseNameplateDisplay(unitToken)
+		ChainAlertDisplays()
+		return
+	end
+
 	if nameplateWatchers[unitToken] then
 		nameplateWatchers[unitToken]:Dispose()
 		nameplateWatchers[unitToken] = nil
@@ -647,6 +888,11 @@ local function OnNamePlateRemoved(unitToken)
 end
 
 local function ClearNamePlateWatchers()
+	if useAuraContainers then
+		ReleaseAllNameplateDisplays()
+		return
+	end
+
 	for unitToken, watcher in pairs(nameplateWatchers) do
 		watcher:Dispose()
 		nameplateWatchers[unitToken] = nil
@@ -661,6 +907,19 @@ local function RebuildNameplateWatchers()
 		if unitToken and units:IsEnemy(unitToken) then
 			activeTokens[unitToken] = true
 		end
+	end
+
+	if useAuraContainers then
+		for unitToken in pairs(nameplateDisplays) do
+			if not activeTokens[unitToken] then
+				ReleaseNameplateDisplay(unitToken)
+			end
+		end
+		for unitToken in pairs(activeTokens) do
+			EnsureNameplateDisplay(unitToken)
+		end
+		RefreshNameplateDisplays()
+		return
 	end
 
 	-- Remove watchers for tokens that are no longer active
@@ -682,6 +941,10 @@ end
 local function DisableWatchers()
 	for _, watcher in pairs(nameplateWatchers) do
 		watcher:Disable()
+	end
+
+	if useAuraContainers then
+		ReleaseAllNameplateDisplays()
 	end
 
 	if container then
@@ -820,6 +1083,10 @@ function M:Refresh()
 		end
 	end
 
+	if useAuraContainers then
+		RefreshNameplateDisplays()
+	end
+
 	if testModeActive and moduleUtil:IsModuleEnabled(moduleName.Alerts) then
 		RefreshTestAlerts()
 	end
@@ -827,6 +1094,12 @@ end
 
 function M:Init()
 	db = mini:GetSavedVars()
+
+	if useAuraContainers then
+		-- Pre-create display pairs for a typical screen of enemy plates (staggered, out of
+		-- combat); Acquire falls back to on-demand creation past this.
+		displayPairPool = auraContainerDisplay:NewPool(CreateAlertDisplayPair, ResetAlertDisplayPair, 20)
+	end
 
 	local options = db.Modules.AlertsModule
 	local count = options.Icons.MaxIcons or 8
@@ -919,7 +1192,8 @@ function M:Init()
 			UpdateImportantTTSCache()
 		elseif event == "NAME_PLATE_UNIT_ADDED" then
 			-- Hook every enemy nameplate's aura refresh so the important bar can react to buff changes.
-			if units:IsEnemy(unitToken) then
+			-- Legacy only: on 12.1 the containers track their unit themselves.
+			if not useAuraContainers and units:IsEnemy(unitToken) then
 				HookNameplateAuraFrame(unitToken)
 			end
 			local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)

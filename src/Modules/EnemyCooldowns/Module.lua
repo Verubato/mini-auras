@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
+local wowEx = addon.Utils.WoWEx
 local iconSlotContainer = addon.Core.IconSlotContainer
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
@@ -662,6 +663,11 @@ end
 -- Module interface
 
 function M:Refresh()
+	-- Dead on 12.1: cooldown inference needs readable aura data (see Init).
+	if wowEx:UseAuraContainers() then
+		return
+	end
+
 	local options = GetOptions()
 	if not options then
 		return
@@ -718,6 +724,10 @@ function M:RefreshDisplays()
 end
 
 function M:StartTesting()
+	if wowEx:UseAuraContainers() then
+		return
+	end
+
 	testModeActive = true
 	observer:SetTestMode(true)
 	display:SetTestMode(true)
@@ -736,6 +746,14 @@ function M:StopTesting()
 end
 
 function M:Init()
+	-- Enemy cooldown tracking is dead on 12.1 for the same reason as the friendly tracker:
+	-- it infers cooldown usage by observing enemy aura appear/disappear (UnitAuraWatcher),
+	-- and 12.1 removes addon access to aura data entirely. Skip all setup; the config panel
+	-- is hidden separately. TEMPORARY: remove the module once 12.1 is live everywhere.
+	if wowEx:UseAuraContainers() then
+		return
+	end
+
 	db = mini:GetSavedVars()
 	display:Init()
 

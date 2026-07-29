@@ -1,4 +1,4 @@
-## Interface: 120007
+## Interface: 120007, 120100
 ## Title: MiniCC
 ## Notes: Shows CC and important spells on frames/nameplates/alerts in PvP.
 ## Author: Verz
@@ -40,6 +40,8 @@ Utils\WoWEx.lua
 Core\MiniFramework.lua
 Core\InstanceOptions.lua
 Core\IconSlotContainer.lua
+Core\AuraContainerDisplay.lua
+Core\AuraSoundData.lua
 Core\UnitAuraWatcher.lua
 Core\KickData.lua
 Core\KickTracker.lua

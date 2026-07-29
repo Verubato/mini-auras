@@ -59,41 +59,48 @@ function M:Build(panel)
 	languageDropdown:SetPoint("TOPLEFT", languageLabel, "BOTTOMLEFT", 0, -4)
 	languageDropdown:SetWidth(columnWidth)
 
-	-- Glow Type
-	local glowTypeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-	glowTypeLabel:SetText(L["Glow Type"])
-	glowTypeLabel:SetPoint("TOPLEFT", languageDropdown, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	-- Glow Type: hidden on 12.1 - aura icons there always use the built-in flipbook glow
+	-- (LibCustomGlow can't attach to AuraButtons, so the choice no longer does anything
+	-- user-visible). TEMPORARY: remove the gate with the legacy path once 12.1 is live.
+	local fontScaleAnchor = languageDropdown
 
-	local glowTypeDropdown = mini:Dropdown({
-		Parent = panel,
-		Items = {
-			"Proc Glow",
-			"Rotation Assist",
-			"Pixel Glow",
-			"Autocast Shine",
-			"Slot Glow",
-		},
-		GetValue = function()
-			return db.GlowType or "Proc Glow"
-		end,
-		SetValue = function(value)
-			db.GlowType = value
-			addon:Refresh()
-		end,
-	})
+	if not addon.Utils.WoWEx:UseAuraContainers() then
+		local glowTypeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+		glowTypeLabel:SetText(L["Glow Type"])
+		glowTypeLabel:SetPoint("TOPLEFT", languageDropdown, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
-	glowTypeDropdown:SetPoint("TOPLEFT", glowTypeLabel, "BOTTOMLEFT", 0, -4)
-	glowTypeDropdown:SetWidth(columnWidth)
+		local glowTypeDropdown = mini:Dropdown({
+			Parent = panel,
+			Items = {
+				"Proc Glow",
+				"Rotation Assist",
+				"Pixel Glow",
+				"Autocast Shine",
+				"Slot Glow",
+			},
+			GetValue = function()
+				return db.GlowType or "Proc Glow"
+			end,
+			SetValue = function(value)
+				db.GlowType = value
+				addon:Refresh()
+			end,
+		})
 
-	local glowNote = mini:TextBlock({
-		Parent = panel,
-		Lines = {
-			L["The Proc Glow uses the least CPU."],
-			L["The others seem to use a non-trivial amount of CPU."],
-		},
-	})
+		glowTypeDropdown:SetPoint("TOPLEFT", glowTypeLabel, "BOTTOMLEFT", 0, -4)
+		glowTypeDropdown:SetWidth(columnWidth)
 
-	glowNote:SetPoint("TOPLEFT", glowTypeDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
+		local glowNote = mini:TextBlock({
+			Parent = panel,
+			Lines = {
+				L["The Proc Glow uses the least CPU."],
+				L["The others seem to use a non-trivial amount of CPU."],
+			},
+		})
+
+		glowNote:SetPoint("TOPLEFT", glowTypeDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
+		fontScaleAnchor = glowNote
+	end
 
 	local fontScaleSlider = mini:Slider({
 		Parent = panel,
@@ -114,7 +121,7 @@ function M:Build(panel)
 		Width = columnWidth - horizontalSpacing,
 	})
 
-	fontScaleSlider.Slider:SetPoint("TOPLEFT", glowNote, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	fontScaleSlider.Slider:SetPoint("TOPLEFT", fontScaleAnchor, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local configureBlizzardNameplatesChk = mini:Checkbox({
 		Parent = panel,

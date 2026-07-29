@@ -4,8 +4,15 @@ local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
+local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
+-- 12.1 path: the whole guess ("~4 second IMPORTANT self buff") maps directly onto an
+-- AuraContainer group: HELPFUL|IMPORTANT filter + a maxDuration candidate filter. The secret
+-- curve/EvaluateColorValueFromBoolean dance is only needed on the legacy path. The
+-- IconSlotContainer is kept for test mode. TEMPORARY dual path: remove the legacy branch once
+-- 12.1 is live everywhere.
+local useAuraContainers = wowEx:UseAuraContainers()
 local testModeActive = false
 local paused = false
 local classHasPrecog
@@ -16,8 +23,10 @@ local db
 local anchor
 ---@type IconSlotContainer
 local container
----@type Watcher
+---@type Watcher?
 local watcher
+---@type AuraContainerDisplay?
+local display
 ---@type TestSpell
 local testSpell
 
@@ -159,11 +168,17 @@ function M:Refresh()
 
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.PrecogGuesser) and classHasPrecog
 
-	if moduleEnabled and not watcher:IsEnabled() then
-		watcher:Enable()
-	elseif not moduleEnabled and watcher:IsEnabled() then
-		watcher:Disable()
-		watcher:ClearState(true)
+	if watcher then
+		if moduleEnabled and not watcher:IsEnabled() then
+			watcher:Enable()
+		elseif not moduleEnabled and watcher:IsEnabled() then
+			watcher:Disable()
+			watcher:ClearState(true)
+		end
+	end
+
+	if display then
+		display:SetEnabled(moduleEnabled == true)
 	end
 
 	if not moduleEnabled then
@@ -186,11 +201,30 @@ function M:Refresh()
 	-- Single icon, so spacing never applies; kept at the default.
 	container:SetSpacing(2)
 
+	if display then
+		display:SetIconSize(iconSize)
+		display:SetStyle({
+			ReverseCooldown = options.Icons.ReverseCooldown,
+			Glow = options.Icons.Glow,
+			FontScale = db.FontScale,
+			ShowTooltips = false,
+		})
+	end
+
 	UpdateAnchorSize()
 
 	if testModeActive then
+		if display then
+			display.Frame:Hide()
+		end
 		anchor:Show()
 		RefreshTestIcons()
+	elseif display then
+		-- 12.1: the container decides visibility per aura internally; the anchor just has to be
+		-- shown (it is invisible itself, and mouse input is disabled outside test mode).
+		container:ResetAllSlots()
+		display.Frame:Show()
+		anchor:Show()
 	else
 		ScanAndDisplay()
 	end
@@ -240,30 +274,49 @@ function M:Init()
 
 	-- Step curve mapping an aura's total duration to an alpha: 1 only at the precog window
 	-- (~4s, plus ~3s for Preservation Evoker's Nullifying Shroud), 0 everywhere else.
-	precogCurve = C_CurveUtil.CreateCurve()
-	precogCurve:SetType(Enum.LuaCurveType.Step)
-	precogCurve:AddPoint(0, 0)
-	-- Preservation Evoker Nullifying Shroud is 3 seconds
-	if UnitClassBase("player") == "EVOKER" then
-		precogCurve:AddPoint(2.9, 0)
-		precogCurve:AddPoint(3, 1)
-		precogCurve:AddPoint(3.1, 0)
+	-- Legacy path only; the 12.1 container expresses the window via a maxDuration filter.
+	if not useAuraContainers then
+		precogCurve = C_CurveUtil.CreateCurve()
+		precogCurve:SetType(Enum.LuaCurveType.Step)
+		precogCurve:AddPoint(0, 0)
+		-- Preservation Evoker Nullifying Shroud is 3 seconds
+		if UnitClassBase("player") == "EVOKER" then
+			precogCurve:AddPoint(2.9, 0)
+			precogCurve:AddPoint(3, 1)
+			precogCurve:AddPoint(3.1, 0)
+		end
+		-- precog is 4 seconds
+		precogCurve:AddPoint(3.9, 0)
+		precogCurve:AddPoint(4, 1)
+		precogCurve:AddPoint(4.1, 0)
 	end
-	-- precog is 4 seconds
-	precogCurve:AddPoint(3.9, 0)
-	precogCurve:AddPoint(4, 1)
-	precogCurve:AddPoint(4.1, 0)
 
-	-- Watch every helpful self-buff (ungated); ScanAndDisplay narrows them down to the precog
-	-- buff per aura via the duration curve + C_Spell.IsSpellImportant, so there's no need to
-	-- filter by spell id or duration here (and duration is a secret value that can't be anyway).
-	watcher = unitWatcher:New("player", nil, {
-		Buffs = true,
-	})
+	if useAuraContainers then
+		-- 12.1: IMPORTANT + a short maxDuration expresses "precog-length important self buff"
+		-- natively. maxDuration 4.1 covers both the 4s precog window and the Evoker's 3s
+		-- Nullifying Shroud (it is an upper bound, not an exact match like the legacy curve,
+		-- so other sub-4s important buffs would also show - acceptably rare).
+		display = auraContainerDisplay:New(anchor, "player", {
+			{
+				Key = "precog",
+				FilterString = "HELPFUL|IMPORTANT",
+				MaxIcons = 1,
+				CandidateFilters = { maxDuration = 4.1 },
+			},
+		}, iconSize, 2, "Precognition")
+		display.Frame:SetPoint("CENTER", anchor, "CENTER", 0, 0)
+	else
+		-- Watch every helpful self-buff (ungated); ScanAndDisplay narrows them down to the precog
+		-- buff per aura via the duration curve + C_Spell.IsSpellImportant, so there's no need to
+		-- filter by spell id or duration here (and duration is a secret value that can't be anyway).
+		watcher = unitWatcher:New("player", nil, {
+			Buffs = true,
+		})
 
-	watcher:RegisterCallback(function()
-		ScanAndDisplay()
-	end)
+		watcher:RegisterCallback(function()
+			ScanAndDisplay()
+		end)
+	end
 
 	M:Refresh()
 end

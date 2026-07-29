@@ -5,10 +5,20 @@ local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
+local fontUtil = addon.Utils.FontUtil
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
 local units = addon.Utils.Units
 local auras = addon.Utils.Auras
+-- 12.1 path: each portrait gets an AuraContainer with four manually-anchored AuraSlots (cc, big
+-- defensive, external defensive, important) covering the portrait. The legacy strict priority is
+-- expressed with frame levels: kick (IconSlotContainer, topmost) > cc > big > external >
+-- important - a higher-priority icon simply covers the ones below, and empty slots hide
+-- themselves (secretly). Slot containers carry no aura groups, so none of the group-related
+-- layout restrictions apply. The Blizzard nameplate buffList scan for important buffs is
+-- replaced by the HELPFUL|IMPORTANT slot. TEMPORARY dual path: remove the watcher branch once
+-- 12.1 is live everywhere.
+local useAuraContainers = wowEx:UseAuraContainers()
 local testModeActive = false
 local paused = false
 local enabled = false
@@ -86,7 +96,91 @@ local function ApplyMaskToLayer(layer, mask)
 	end
 end
 
-local function CreateContainer(unitFrame, portrait)
+---12.1 path: builds the layered AuraSlot stack over a portrait. The container is parented to
+---the kick container's frame so it follows the per-addon frame level adjustments the attach
+---functions apply afterwards (child levels shift with the parent).
+---@param kickFrame table The kick IconSlotContainer's frame (already anchored over the portrait).
+---@param unit string
+---@param texCoord table? {left, right, top, bottom} icon crop, per unit-frame addon.
+---@param mask table? MaskTexture for round portraits (Blizzard frames).
+---@param iconSize number Used for the cooldown countdown font size.
+local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSize)
+	-- One single-icon aura GROUP container per category, stacked by frame level (priority:
+	-- kick > cc > big defensive > external defensive > important; a higher-priority icon
+	-- covers the ones below, and empty containers hide their button secretly). AuraSlots
+	-- would be the natural fit, but they silently failed to render on the 12.1 PTR and no
+	-- known addon exercises them - single-icon groups are the same thing ("slots" are
+	-- documented as groups with maxFrameCount 1) built on the verified-working group API.
+	--
+	-- Levels stack UP from the kick frame: the kick frame sits at unitFrame-1, so anything
+	-- below it renders BEHIND the unit frame's own portrait texture (diagnosed on PTR:
+	-- TargetFrame is level 500 and displays at 494-497 were invisible under it, while
+	-- PlayerFrame at level 1 with displays at 1-4 happened to work). Displays are children
+	-- of the kick frame so per-addon level adjustments shift the whole stack together.
+	local baseLevel = (kickFrame:GetFrameLevel() or 0) + 1
+	local cooldowns = {}
+	local frames = {}
+
+	local function InitButton(button)
+		button:SetSize(iconSize, iconSize)
+
+		local icon = button:CreateTexture(nil, "BACKGROUND", nil, 1)
+		icon:SetAllPoints(button)
+		if texCoord then
+			icon:SetTexCoord(texCoord[1], texCoord[2], texCoord[3], texCoord[4])
+		end
+		if mask then
+			icon:AddMaskTexture(mask)
+		end
+		button:SetIcon(icon)
+
+		local cd = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
+		cd:SetAllPoints(button)
+		cd:SetDrawEdge(false)
+		cd:SetDrawBling(false)
+		cd:SetHideCountdownNumbers(false)
+		cd:SetSwipeColor(0, 0, 0, 0.8)
+		if mask then
+			-- Keep cooldown within the portrait icon
+			cd:SetSwipeTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
+		end
+		cd:SetReverse(db.Modules.PortraitModule.ReverseCooldown or false)
+		fontUtil:UpdateCooldownFontSize(cd, iconSize, nil, db.FontScale or 1.0)
+		button:SetDurationCooldown(cd)
+		cooldowns[#cooldowns + 1] = cd
+
+		button:EnableMouse(false)
+	end
+
+	-- Priority stack, lowest first (buttons render one level above their container).
+	local categorySpecs = {
+		{ filter = "HELPFUL|IMPORTANT", level = baseLevel },
+		{ filter = "HELPFUL|EXTERNAL_DEFENSIVE", level = baseLevel + 1 },
+		{ filter = "HELPFUL|BIG_DEFENSIVE", level = baseLevel + 2 },
+		{ filter = "HARMFUL|CROWD_CONTROL", level = baseLevel + 3 },
+	}
+
+	for _, spec in ipairs(categorySpecs) do
+		local ac = CreateFrame("AuraContainer", nil, kickFrame, "CustomAuraContainerTemplate")
+		ac:SetAllPoints(kickFrame)
+		ac:SetIgnoreParentAlpha(true)
+		ac:SetFrameLevel(spec.level)
+		ac:SetUnit(unit)
+		ac:AddAuraGroup("main", spec.filter, {
+			maxFrameCount = 1,
+			-- Reverse instance-id order = newest aura first, matching the legacy Reverse sort.
+			sortMethod = AuraContainerSortMethod.AuraInstanceIDOnly,
+			sortDirection = AuraContainerSortDirection.Reverse,
+			initializeFrame = InitButton,
+			layout = { elementWidth = iconSize, elementHeight = iconSize },
+		})
+		frames[#frames + 1] = ac
+	end
+
+	return { Frames = frames, Cooldowns = cooldowns }
+end
+
+local function CreateContainer(unitFrame, portrait, unit, texCoord, mask)
 	-- Only 1 slot, multiple layers; no border for portrait icons
 	local container = iconSlotContainer:New(unitFrame, 1, 0, 0, nil, true, "Portraits")
 
@@ -118,7 +212,59 @@ local function CreateContainer(unitFrame, portrait)
 
 	container:SetIconSize(size)
 
+	if useAuraContainers and unit then
+		-- Lift the kick slot above the whole aura display stack (displays at kick+1..+4,
+		-- buttons one higher) so an active kick lockout covers any aura icon. The slot frame
+		-- is a child of the kick frame, so later per-addon level adjustments shift everything
+		-- together and the ordering holds.
+		local slot = container.Slots[1]
+		if slot and slot.Frame then
+			slot.Frame:SetFrameLevel(container.Frame:GetFrameLevel() + 7)
+		end
+
+		container.AuraDisplay = CreatePortraitAuraDisplay(container.Frame, unit, texCoord, mask, size)
+		container.AuraUnit = unit
+	end
+
 	return container
+end
+
+---12.1 path: renders the kick icon into the kick container (the aura slots underneath handle
+---everything else). Schedules a follow-up when the kick expires, since no aura event will fire
+---to clear it.
+---@param unit string
+---@param container IconSlotContainer
+local function UpdateKickIcon(unit, container)
+	if not enabled or paused then
+		return
+	end
+
+	if container.KickTimer then
+		container.KickTimer:Cancel()
+		container.KickTimer = nil
+	end
+
+	local kickEntry = kickTracker:GetKick(unit)
+	if kickEntry then
+		container:SetSlot(1, {
+			Texture = kickEntry.Texture,
+			DurationObject = kickEntry.DurationObject,
+			Alpha = true,
+			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
+			FontScale = db.FontScale,
+			Color = kickEntry.Color,
+		})
+
+		local remaining = (kickEntry.StartTime or 0) + (kickEntry.Duration or 0) - GetTime()
+		if remaining > 0 then
+			container.KickTimer = C_Timer.NewTimer(remaining + 0.05, function()
+				container.KickTimer = nil
+				UpdateKickIcon(unit, container)
+			end)
+		end
+	else
+		container:SetSlotUnused(1)
+	end
 end
 
 -- Returns the aura data for the unit's first important nameplate buff, or nil. These come from
@@ -227,6 +373,30 @@ local function OnAuraInfo(unit, watcher, container)
 
 	-- No auras to display, clear the slot if it was used
 	container:SetSlotUnused(slotIndex)
+end
+
+---Registers the per-unit re-render hooks shared by every attach variant: the watcher callback
+---(legacy) and the target/focus update list used by kick and important-buff refreshes.
+---@param unit string
+---@param watcher Watcher?
+---@param container IconSlotContainer
+local function RegisterUnitUpdate(unit, watcher, container)
+	if watcher then
+		watcher:RegisterCallback(function()
+			OnAuraInfo(unit, watcher, container)
+		end)
+	end
+
+	if unit == "target" or unit == "focus" then
+		unitUpdateFns[unit] = unitUpdateFns[unit] or {}
+		unitUpdateFns[unit][#unitUpdateFns[unit] + 1] = function()
+			if watcher then
+				OnAuraInfo(unit, watcher, container)
+			else
+				UpdateKickIcon(unit, container)
+			end
+		end
+	end
 end
 
 ---@return table? unitFrame
@@ -416,17 +586,20 @@ local function Attach(unit, events)
 		return
 	end
 
-	local watcher = unitWatcher:New(unit, events, nil, nil, Enum.UnitAuraSortDirection.Reverse)
-	watchers[unit] = watcher
+	local watcher
+	if not useAuraContainers then
+		watcher = unitWatcher:New(unit, events, nil, nil, Enum.UnitAuraSortDirection.Reverse)
+		watchers[unit] = watcher
+	end
 
-	local container = CreateContainer(unitFrame, portrait)
+	local mask = GetPortraitMask(unitFrame) or CreatePortraitMask(portrait)
+
+	local container = CreateContainer(unitFrame, portrait, unit, { 0.1, 0.9, 0.1, 0.9 }, mask)
 	if not container then return end
 
 	if unit == "pet" then
 		container.Frame:SetFrameLevel(math.max(0, (PetFrame:GetFrameLevel() or 0) - 2))
 	end
-
-	local mask = GetPortraitMask(unitFrame) or CreatePortraitMask(portrait)
 
 	if mask then
 		local originalSetSlot = container.SetSlot
@@ -439,15 +612,7 @@ local function Attach(unit, events)
 		end
 	end
 
-	watcher:RegisterCallback(function()
-		OnAuraInfo(unit, watcher, container)
-	end)
-	if unit == "target" or unit == "focus" then
-		unitUpdateFns[unit] = unitUpdateFns[unit] or {}
-		unitUpdateFns[unit][#unitUpdateFns[unit] + 1] = function()
-			OnAuraInfo(unit, watcher, container)
-		end
-	end
+	RegisterUnitUpdate(unit, watcher, container)
 	portrait:SetDrawLayer("BACKGROUND", 0)
 	containers[#containers + 1] = container
 end
@@ -462,11 +627,11 @@ local function AttachElvUIFrame(unit)
 
 	local watcher = watchers[unit]
 
-	if not watcher then
+	if not useAuraContainers and not watcher then
 		return
 	end
 
-	local container = CreateContainer(elvuiFrame, elvuiPortrait)
+	local container = CreateContainer(elvuiFrame, elvuiPortrait, unit, { 0.07, 0.93, 0.07, 0.93 })
 	if not container then return end
 	-- 3d models are a frame, where as 2d portraits are textures which don't have a frame level
 	-- so for 2d textures we get the frame level from the parent frame, for 3d portraits we get it directly from the portrait frame
@@ -487,15 +652,7 @@ local function AttachElvUIFrame(unit)
 		end
 	end
 
-	watcher:RegisterCallback(function()
-		OnAuraInfo(unit, watcher, container)
-	end)
-	if unit == "target" or unit == "focus" then
-		unitUpdateFns[unit] = unitUpdateFns[unit] or {}
-		unitUpdateFns[unit][#unitUpdateFns[unit] + 1] = function()
-			OnAuraInfo(unit, watcher, container)
-		end
-	end
+	RegisterUnitUpdate(unit, watcher, container)
 	containers[#containers + 1] = container
 end
 
@@ -509,26 +666,18 @@ local function AttachTPerlFrame(unit)
 
 	local watcher = watchers[unit]
 
-	if not watcher then
+	if not useAuraContainers and not watcher then
 		return
 	end
 
-	local container = CreateContainer(tperlFrame, tperlPortrait)
+	local container = CreateContainer(tperlFrame, tperlPortrait, unit)
 	if not container then return end
 	local portraitLevel = tperlPortrait.GetFrameLevel and tperlPortrait:GetFrameLevel()
 		or tperlFrame:GetFrameLevel()
 		or 0
 	container.Frame:SetFrameLevel(portraitLevel)
 
-	watcher:RegisterCallback(function()
-		OnAuraInfo(unit, watcher, container)
-	end)
-	if unit == "target" or unit == "focus" then
-		unitUpdateFns[unit] = unitUpdateFns[unit] or {}
-		unitUpdateFns[unit][#unitUpdateFns[unit] + 1] = function()
-			OnAuraInfo(unit, watcher, container)
-		end
-	end
+	RegisterUnitUpdate(unit, watcher, container)
 	containers[#containers + 1] = container
 end
 
@@ -542,7 +691,7 @@ local function AttachUUFFrame(unit)
 
 	local watcher = watchers[unit]
 
-	if not watcher then
+	if not useAuraContainers and not watcher then
 		return
 	end
 
@@ -550,7 +699,7 @@ local function AttachUUFFrame(unit)
 	-- UUF renders portraits inside HighLevelContainer at level 999, so parenting to
 	-- uufFrame directly would leave the container far below in the level hierarchy.
 	local highLevelContainer = uufPortrait:GetParent()
-	local container = CreateContainer(highLevelContainer, uufPortrait)
+	local container = CreateContainer(highLevelContainer, uufPortrait, unit, { 0.07, 0.93, 0.07, 0.93 })
 	if not container then return end
 	local portraitLevel = uufPortrait.GetFrameLevel and uufPortrait:GetFrameLevel()
 		or highLevelContainer:GetFrameLevel()
@@ -570,15 +719,7 @@ local function AttachUUFFrame(unit)
 		end
 	end
 
-	watcher:RegisterCallback(function()
-		OnAuraInfo(unit, watcher, container)
-	end)
-	if unit == "target" or unit == "focus" then
-		unitUpdateFns[unit] = unitUpdateFns[unit] or {}
-		unitUpdateFns[unit][#unitUpdateFns[unit] + 1] = function()
-			OnAuraInfo(unit, watcher, container)
-		end
-	end
+	RegisterUnitUpdate(unit, watcher, container)
 	containers[#containers + 1] = container
 end
 
@@ -592,11 +733,11 @@ local function AttachMSUFFrame(unit)
 
 	local watcher = watchers[unit]
 
-	if not watcher then
+	if not useAuraContainers and not watcher then
 		return
 	end
 
-	local container = CreateContainer(msufFrame, msufPortrait)
+	local container = CreateContainer(msufFrame, msufPortrait, unit, { 0.07, 0.93, 0.07, 0.93 })
 	if not container then return end
 	local portraitLevel = msufPortrait.GetFrameLevel and msufPortrait:GetFrameLevel()
 		or msufFrame:GetFrameLevel()
@@ -616,15 +757,7 @@ local function AttachMSUFFrame(unit)
 		end
 	end
 
-	watcher:RegisterCallback(function()
-		OnAuraInfo(unit, watcher, container)
-	end)
-	if unit == "target" or unit == "focus" then
-		unitUpdateFns[unit] = unitUpdateFns[unit] or {}
-		unitUpdateFns[unit][#unitUpdateFns[unit] + 1] = function()
-			OnAuraInfo(unit, watcher, container)
-		end
-	end
+	RegisterUnitUpdate(unit, watcher, container)
 	containers[#containers + 1] = container
 end
 
@@ -638,11 +771,11 @@ local function AttachEllesmereUIFrame(unit)
 
 	local watcher = watchers[unit]
 
-	if not watcher then
+	if not useAuraContainers and not watcher then
 		return
 	end
 
-	local container = CreateContainer(euiFrame, euiPortrait)
+	local container = CreateContainer(euiFrame, euiPortrait, unit, { 0.15, 0.85, 0.15, 0.85 })
 	if not container then return end
 	local portraitLevel = euiPortrait.GetFrameLevel and euiPortrait:GetFrameLevel()
 		or euiFrame:GetFrameLevel()
@@ -664,15 +797,7 @@ local function AttachEllesmereUIFrame(unit)
 		end
 	end
 
-	watcher:RegisterCallback(function()
-		OnAuraInfo(unit, watcher, container)
-	end)
-	if unit == "target" or unit == "focus" then
-		unitUpdateFns[unit] = unitUpdateFns[unit] or {}
-		unitUpdateFns[unit][#unitUpdateFns[unit] + 1] = function()
-			OnAuraInfo(unit, watcher, container)
-		end
-	end
+	RegisterUnitUpdate(unit, watcher, container)
 	containers[#containers + 1] = container
 end
 
@@ -686,11 +811,11 @@ local function AttachEQolFrame(unit)
 
 	local watcher = watchers[unit]
 
-	if not watcher then
+	if not useAuraContainers and not watcher then
 		return
 	end
 
-	local container = CreateContainer(eqolFrame, eqolPortrait)
+	local container = CreateContainer(eqolFrame, eqolPortrait, unit, { 0.07, 0.93, 0.07, 0.93 })
 	if not container then return end
 	local portraitLevel = eqolPortrait.GetFrameLevel and eqolPortrait:GetFrameLevel()
 		or eqolFrame:GetFrameLevel()
@@ -710,15 +835,7 @@ local function AttachEQolFrame(unit)
 		end
 	end
 
-	watcher:RegisterCallback(function()
-		OnAuraInfo(unit, watcher, container)
-	end)
-	if unit == "target" or unit == "focus" then
-		unitUpdateFns[unit] = unitUpdateFns[unit] or {}
-		unitUpdateFns[unit][#unitUpdateFns[unit] + 1] = function()
-			OnAuraInfo(unit, watcher, container)
-		end
-	end
+	RegisterUnitUpdate(unit, watcher, container)
 	containers[#containers + 1] = container
 end
 
@@ -747,12 +864,27 @@ local function DisableWatchers()
 
 	for _, container in pairs(containers) do
 		container:ResetAllSlots()
+		if container.AuraDisplay then
+			for _, frame in ipairs(container.AuraDisplay.Frames) do
+				frame:SetEnabled(false)
+				frame:Hide()
+			end
+		end
 	end
 end
 
 local function EnableWatchers()
 	for _, watcher in pairs(watchers) do
 		watcher:Enable()
+	end
+
+	for _, container in pairs(containers) do
+		if container.AuraDisplay then
+			for _, frame in ipairs(container.AuraDisplay.Frames) do
+				frame:SetEnabled(true)
+				frame:Show()
+			end
+		end
 	end
 end
 
@@ -803,6 +935,27 @@ function M:Refresh()
 	local sortRule, sortDirection = GetCCSortOptions()
 	for _, watcher in pairs(watchers) do
 		watcher:SetSort(sortRule, sortDirection)
+	end
+
+	-- 12.1: re-apply the cooldown style to the aura buttons (only possible while auras aren't
+	-- secret - button APIs error otherwise, including out-of-combat in M+/encounters/PvP) and
+	-- hide the live displays in test mode so real and fake icons don't mix.
+	if useAuraContainers then
+		local reverse = db.Modules.PortraitModule.ReverseCooldown or false
+		local canStyle = not wowEx:IsAuraStylingRestricted()
+		for _, container in pairs(containers) do
+			local auraDisplay = container.AuraDisplay
+			if auraDisplay then
+				if canStyle then
+					for _, cd in ipairs(auraDisplay.Cooldowns) do
+						cd:SetReverse(reverse)
+					end
+				end
+				for _, frame in ipairs(auraDisplay.Frames) do
+					frame:SetShown(not testModeActive)
+				end
+			end
+		end
 	end
 
 	if testModeActive then
@@ -906,11 +1059,39 @@ function M:Init()
 	end)
 
 	-- Hook each nameplate's aura refresh so important buffs on the target/focus update live.
-	local nameplateEvents = CreateFrame("Frame")
-	nameplateEvents:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-	nameplateEvents:SetScript("OnEvent", function(_, _, unitToken)
-		HookNameplateAuraFrame(unitToken)
-	end)
+	-- Legacy only: on 12.1 the important slot tracks its unit itself.
+	if not useAuraContainers then
+		local nameplateEvents = CreateFrame("Frame")
+		nameplateEvents:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+		nameplateEvents:SetScript("OnEvent", function(_, _, unitToken)
+			HookNameplateAuraFrame(unitToken)
+		end)
+	end
+
+	-- 12.1: containers track their unit token but don't refresh when the token's occupant
+	-- changes (the legacy watchers registered these events themselves); Blizzard's container
+	-- mixin exposes UpdateAllAuras for exactly this.
+	if useAuraContainers then
+		local unitChangeEvents = CreateFrame("Frame")
+		unitChangeEvents:RegisterEvent("PLAYER_TARGET_CHANGED")
+		unitChangeEvents:RegisterEvent("PLAYER_FOCUS_CHANGED")
+		unitChangeEvents:SetScript("OnEvent", function(_, event)
+			local unit = event == "PLAYER_TARGET_CHANGED" and "target" or "focus"
+			for _, container in pairs(containers) do
+				if container.AuraUnit == unit and container.AuraDisplay then
+					for _, frame in ipairs(container.AuraDisplay.Frames) do
+						frame:UpdateAllAuras()
+					end
+				end
+			end
+			local fns = unitUpdateFns[unit]
+			if fns then
+				for _, fn in ipairs(fns) do
+					fn()
+				end
+			end
+		end)
+	end
 
 	kickTracker:Watch("target", { "PLAYER_TARGET_CHANGED" })
 	kickTracker:Subscribe("target", function()

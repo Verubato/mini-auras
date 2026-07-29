@@ -330,6 +330,14 @@ local function UpdateGlow(layerFrame, options)
 	local db = GetDb()
 	local glowType = (db and db.GlowType) or "Proc Glow"
 
+	-- 12.1: aura icons render through AuraContainerDisplay, which can only use the flipbook
+	-- glow (LibCustomGlow can't attach to AuraButtons). Kick and test icons still render here,
+	-- so force the same style to keep all glows visually consistent; the Glow Type option is
+	-- hidden from the config on 12.1. TEMPORARY: remove with the legacy path once 12.1 is live.
+	if addon.Utils.WoWEx:UseAuraContainers() then
+		glowType = "Rotation Assist"
+	end
+
 	if not options.Glow then
 		StopLCGGlowsExcept(layerFrame, nil)
 		HideStaticGlowsExcept(layerFrame, nil)

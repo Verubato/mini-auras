@@ -204,6 +204,17 @@ function M:Init()
 		},
 	}
 
+	-- Cooldown tracking (friendly and enemy) is disabled on 12.1 - it infers cooldowns from
+	-- aura data, which addons can no longer read - so those config tabs are hidden there.
+	-- TEMPORARY: remove with the modules once 12.1 is live.
+	if addon.Utils.WoWEx:UseAuraContainers() then
+		for i = #tabs, 1, -1 do
+			if tabs[i].Key == "FriendlyCooldowns" or tabs[i].Key == "EnemyCooldowns" then
+				table.remove(tabs, i)
+			end
+		end
+	end
+
 	local contentPadding = 12
 	local windowInset = 2 + contentPadding * 2 + 14 -- border (2), padding (24), scrollbar (14)
 	local tabStripWidth = 130

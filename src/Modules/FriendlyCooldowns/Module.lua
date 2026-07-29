@@ -225,6 +225,11 @@ local function EnableAll()
 end
 
 function M:Refresh()
+	-- Dead on 12.1: cooldown inference needs readable aura data (see Init).
+	if wowEx:UseAuraContainers() then
+		return
+	end
+
 	local options = GetOptions()
 	local anchorOptions = GetAnchorOptions()
 	if not options or not anchorOptions then
@@ -276,6 +281,10 @@ function M:RefreshDisplays()
 end
 
 function M:StartTesting()
+	if wowEx:UseAuraContainers() then
+		return
+	end
+
 	testModeActive = true
 	observer:SetTestMode(true)
 	display:SetTestMode(true)
@@ -296,6 +305,14 @@ function M:StopTesting()
 end
 
 function M:Init()
+	-- Party cooldown tracking is dead on 12.1: it infers cooldown usage from aura evidence
+	-- (UnitAuraWatcher), and 12.1 removes addon access to aura data entirely. Skip all setup
+	-- so no watchers, displays, or event registrations are created; the config panel is
+	-- hidden separately. TEMPORARY: remove the module once 12.1 is live everywhere.
+	if wowEx:UseAuraContainers() then
+		return
+	end
+
 	db = mini:GetSavedVars()
 
 	fcdTalents:Init()

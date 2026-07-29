@@ -20,6 +20,10 @@ function M:Build(panel, options)
 	columnWidth = mini:ColumnWidth(columns, 0, 0)
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
 	local db = mini:GetSavedVars()
+	-- 12.1: the warning text and sound fire on "a healer became CC'd", which addons can no
+	-- longer detect (aura presence is secret), so their options are hidden there. TEMPORARY:
+	-- remove the gates with the legacy path once 12.1 is live.
+	local useAuraContainers = addon.Utils.WoWEx:UseAuraContainers()
 
 	local lines = mini:TextBlock({
 		Parent = panel,
@@ -156,21 +160,23 @@ function M:Build(panel, options)
 	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	glowChk:SetPoint("TOP", showIconsChk, "TOP", 0, 0)
 
-	local showTextChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Show warning text"],
-		Tooltip = L["Show the 'Healer in CC!' text above the icons."],
-		GetValue = function()
-			return options.ShowWarningText
-		end,
-		SetValue = function(value)
-			options.ShowWarningText = value
-			config:Apply()
-		end,
-	})
+	if not useAuraContainers then
+		local showTextChk = mini:Checkbox({
+			Parent = panel,
+			LabelText = L["Show warning text"],
+			Tooltip = L["Show the 'Healer in CC!' text above the icons."],
+			GetValue = function()
+				return options.ShowWarningText
+			end,
+			SetValue = function(value)
+				options.ShowWarningText = value
+				config:Apply()
+			end,
+		})
 
-	showTextChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	showTextChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+		showTextChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+		showTextChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+	end
 
 	local reverseChk = mini:Checkbox({
 		Parent = panel,
@@ -185,7 +191,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * (useAuraContainers and 2 or 3), 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local dispelColoursChk = mini:Checkbox({
@@ -219,6 +225,8 @@ function M:Build(panel, options)
 	showTooltipsChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	showTooltipsChk:SetPoint("TOP", dispelColoursChk, "TOP", 0, 0)
 
+	-- On 12.1 the sound plays engine-side via C_UnitAuras.AddAuraSound (registered per healer
+	-- and per known CC spell in the module), so the option works on both paths.
 	local soundChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Sound"],
@@ -263,6 +271,8 @@ function M:Build(panel, options)
 	soundFileDropdown:SetPoint("TOP", soundChk, "TOP", 0, -4)
 	soundFileDropdown:SetWidth(200)
 
+	local slidersAnchor = soundChk
+
 	local sliderWidth = (columnWidth * 2) - horizontalSpacing
 
 	local iconSize = mini:Slider({
@@ -284,29 +294,31 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", soundChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", slidersAnchor, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
-	local fontSize = mini:Slider({
-		Parent = panel,
-		Min = 10,
-		Max = 100,
-		Width = sliderWidth,
-		Step = 1,
-		LabelText = L["Text Size"],
-		GetValue = function()
-			return options.Font.Size
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 10, 100, 32)
-			if options.Font.Size ~= newValue then
-				options.Font.Size = newValue
-				config:Apply()
-			end
-		end,
-	})
+	if not useAuraContainers then
+		local fontSize = mini:Slider({
+			Parent = panel,
+			Min = 10,
+			Max = 100,
+			Width = sliderWidth,
+			Step = 1,
+			LabelText = L["Text Size"],
+			GetValue = function()
+				return options.Font.Size
+			end,
+			SetValue = function(v)
+				local newValue = mini:ClampInt(v, 10, 100, 32)
+				if options.Font.Size ~= newValue then
+					options.Font.Size = newValue
+					config:Apply()
+				end
+			end,
+		})
 
-	fontSize.Slider:SetPoint("LEFT", panel, "LEFT", columnWidth * 2 + 4, 0)
-	fontSize.Slider:SetPoint("TOP", iconSize.Slider, "TOP", 0, 0)
+		fontSize.Slider:SetPoint("LEFT", panel, "LEFT", columnWidth * 2 + 4, 0)
+		fontSize.Slider:SetPoint("TOP", iconSize.Slider, "TOP", 0, 0)
+	end
 
 	local iconSpacing = mini:Slider({
 		Parent = panel,

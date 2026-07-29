@@ -5,12 +5,29 @@ local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
 local L = addon.L
 local iconSlotContainer = addon.Core.IconSlotContainer
+local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local unitWatcher = addon.Core.UnitAuraWatcher
 local units = addon.Utils.Units
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
 local rc = LibStub("LibRangeCheck-3.0")
+-- 12.1 path: healer CC icons render through one AuraContainer per healer. The warning text
+-- cannot work there (it requires knowing whether a CC aura is present, which 12.1 makes
+-- secret). The sound survives via C_UnitAuras.AddAuraSound: the ENGINE plays a sound when a
+-- known CC aura lands on a registered healer, without the addon ever reading aura state -
+-- registrations are per (unit, spellId), fed from the generated Core/AuraSoundData CC list.
+-- The IconSlotContainer is kept for test mode. TEMPORARY dual path: remove the watcher branch
+-- once 12.1 is live everywhere.
+local useAuraContainers = wowEx:UseAuraContainers()
 local paused = false
+-- 12.1 path: handles returned by AddAuraSound, so registrations can be removed on change.
+local registeredAuraSounds = {}
+-- 12.1 path: sorted healer-unit scratch so the display chain has a stable order (pairs order
+-- would let the healer rows swap places between refreshes).
+local healerOrderScratch = {}
+-- Signature of the last registration set (healers + sound settings), to skip redundant
+-- re-registration (each refresh would otherwise re-issue ~1k API calls per healer).
+local auraSoundSignature = nil
 local testModeActive = false
 local previousTestSoundEnabled = false
 local soundFile
@@ -35,7 +52,8 @@ local testSpells = {}
 
 ---@class HealerWatchEntry
 ---@field Unit string
----@field Watcher Watcher
+---@field Watcher Watcher? Legacy path only (nil on 12.1).
+---@field Display AuraContainerDisplay? 12.1 path only.
 
 ---@class HealerCrowdControlModule : IModule
 local M = {}
@@ -52,6 +70,12 @@ local function IsInRange(unit)
 end
 
 local function PlaySound()
+	-- 12.1: sounds play engine-side via the AddAuraSound registrations (see RegisterAuraSounds);
+	-- this legacy transition-based path must not double up.
+	if useAuraContainers then
+		return
+	end
+
 	local soundFileName = db.Modules.HealerCCModule.Sound.File or "Sonar.ogg"
 	soundFile = addon.Config.MediaLocation .. soundFileName
 	PlaySoundFile(soundFile, db.Modules.HealerCCModule.Sound.Channel or "Master")
@@ -66,13 +90,123 @@ local function UpdateAnchorSize()
 	local iconSize = tonumber(options.Icons.Size) or 32
 	local text = healerAnchor.HealerWarning
 	local stringWidth = text and text:GetStringWidth() or 0
-	local showText = options.ShowWarningText
+	-- 12.1: the warning text is disabled (see the header comment) and an AuraContainer's size can
+	-- be secret, so only the icon size feeds the anchor size there.
+	local showText = not useAuraContainers and options.ShowWarningText
 	local stringHeight = (showText and text and text:GetStringHeight()) or 0
-	local containerWidth = (iconsContainer and iconsContainer.Frame and iconsContainer.Frame:GetWidth()) or iconSize
+	local containerWidth = iconSize
+	if not useAuraContainers and iconsContainer and iconsContainer.Frame then
+		containerWidth = iconsContainer.Frame:GetWidth() or iconSize
+	end
 	local width = math.max(iconSize, stringWidth, containerWidth)
 	local height = iconSize + stringHeight
 
 	healerAnchor:SetSize(width, height)
+end
+
+---12.1 path: removes every registered aura sound.
+local function ClearAuraSounds()
+	for i = #registeredAuraSounds, 1, -1 do
+		C_UnitAuras.RemoveAuraSound(registeredAuraSounds[i])
+		registeredAuraSounds[i] = nil
+	end
+	auraSoundSignature = nil
+end
+
+---12.1 path: registers an engine-side sound for every known player CC spell on every active
+---healer. Skipped (cheaply) when the healer set and sound settings are unchanged.
+local function RegisterAuraSounds()
+	local options = db.Modules.HealerCCModule
+	local enabled = options.Sound.Enabled
+		and moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl)
+		and next(activePool) ~= nil
+
+	if not enabled then
+		ClearAuraSounds()
+		return
+	end
+
+	local soundFilePath = addon.Config.MediaLocation .. (options.Sound.File or "Sonar.ogg")
+	local channel = options.Sound.Channel or "Master"
+
+	local healerUnits = {}
+	for unit in pairs(activePool) do
+		healerUnits[#healerUnits + 1] = unit
+	end
+	table.sort(healerUnits)
+	local signature = table.concat(healerUnits, ",") .. "|" .. soundFilePath .. "|" .. channel
+	if signature == auraSoundSignature then
+		return
+	end
+
+	ClearAuraSounds()
+	auraSoundSignature = signature
+
+	local soundInfo = { unitToken = nil, spellID = nil, soundFileName = soundFilePath, outputChannel = channel }
+	for _, unit in ipairs(healerUnits) do
+		soundInfo.unitToken = unit
+		for spellId in pairs(addon.Core.AuraSoundData.CC) do
+			soundInfo.spellID = spellId
+			local soundId = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, soundInfo)
+			if soundId then
+				registeredAuraSounds[#registeredAuraSounds + 1] = soundId
+			end
+		end
+	end
+end
+
+---12.1 path: lays the per-healer aura containers out in a chain under the anchor. Chaining
+---containers to each other avoids reading their (possibly secret) sizes; empty containers
+---collapse so the row only occupies space for healers that are actually CC'd.
+local function LayoutHealerDisplays()
+	local options = db.Modules.HealerCCModule
+	local spacing = options.IconSpacing or 2
+
+	wipe(healerOrderScratch)
+	for unit in pairs(activePool) do
+		healerOrderScratch[#healerOrderScratch + 1] = unit
+	end
+	table.sort(healerOrderScratch)
+
+	local previous
+	for _, unit in ipairs(healerOrderScratch) do
+		local item = activePool[unit]
+		local frame = item and item.Display and item.Display.Frame
+		if frame then
+			frame:ClearAllPoints()
+			if previous then
+				frame:SetPoint("LEFT", previous, "RIGHT", spacing, 0)
+			else
+				frame:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
+			end
+			previous = frame
+		end
+	end
+end
+
+---12.1 path: applies size/style options to every healer display.
+local function RefreshHealerDisplays()
+	local options = db.Modules.HealerCCModule
+	local iconSize = tonumber(options.Icons.Size) or 32
+
+	for _, item in pairs(activePool) do
+		local display = item.Display
+		if display then
+			display:SetIconSize(iconSize)
+			display:SetSpacing(options.IconSpacing or 2)
+			display:SetStyle({
+				ReverseCooldown = options.Icons.ReverseCooldown,
+				ColorByDispelType = options.Icons.ColorByDispelType,
+				Glow = options.Icons.Glow,
+				FontScale = db.FontScale,
+				ShowTooltips = options.ShowTooltips ~= false,
+			})
+			display:SetEnabled(options.Icons.Enabled ~= false)
+			display.Frame:SetShown(options.Icons.Enabled ~= false and not testModeActive)
+		end
+	end
+
+	LayoutHealerDisplays()
 end
 
 local function OnAuraStateUpdated()
@@ -153,7 +287,13 @@ local function DisableWatchers()
 	for _, unit in ipairs(toDiscard) do
 		local item = activePool[unit]
 		if item then
-			item.Watcher:Disable()
+			if item.Watcher then
+				item.Watcher:Disable()
+			end
+			if item.Display then
+				item.Display:SetEnabled(false)
+				item.Display.Frame:Hide()
+			end
 			discardPool[unit] = item
 			activePool[unit] = nil
 		end
@@ -166,6 +306,11 @@ local function DisableWatchers()
 	if healerAnchor then
 		healerAnchor:Hide()
 	end
+
+	if useAuraContainers then
+		ClearAuraSounds()
+	end
+
 	paused = true
 end
 
@@ -174,6 +319,9 @@ local function EnableWatchers()
 	for _, item in pairs(activePool) do
 		if item.Watcher then
 			item.Watcher:Enable()
+		end
+		if item.Display then
+			item.Display:SetEnabled(true)
 		end
 	end
 end
@@ -188,7 +336,13 @@ local function RefreshHealers()
 	for _, unit in ipairs(toDiscard) do
 		local item = activePool[unit]
 		if item then
-			item.Watcher:Disable()
+			if item.Watcher then
+				item.Watcher:Disable()
+			end
+			if item.Display then
+				item.Display:SetEnabled(false)
+				item.Display.Frame:Hide()
+			end
 			discardPool[unit] = item
 			activePool[unit] = nil
 		end
@@ -201,9 +355,30 @@ local function RefreshHealers()
 		local item = discardPool[healer]
 
 		if item then
-			item.Watcher:Enable()
+			if item.Watcher then
+				item.Watcher:Enable()
+			end
+			if item.Display then
+				item.Display:SetUnit(healer)
+				item.Display:SetEnabled(true)
+			end
+			item.Unit = healer
 			activePool[healer] = item
 			discardPool[healer] = nil
+		elseif useAuraContainers then
+			local options = db.Modules.HealerCCModule
+			item = {
+				Unit = healer,
+				Display = auraContainerDisplay:New(
+					healerAnchor,
+					healer,
+					{ { Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 5 } },
+					tonumber(options.Icons.Size) or 32,
+					options.IconSpacing or 2,
+					"Healer CC"
+				),
+			}
+			activePool[healer] = item
 		else
 			item = {
 				Unit = healer,
@@ -215,6 +390,19 @@ local function RefreshHealers()
 			item.Watcher:RegisterCallback(OnAuraStateUpdated)
 			activePool[healer] = item
 		end
+	end
+
+	if useAuraContainers then
+		RefreshHealerDisplays()
+		RegisterAuraSounds()
+		-- The anchor is the fixed positioning frame for the healer displays; with aura presence
+		-- unreadable, it stays shown while the module is active and the icons come and go inside.
+		if next(activePool) ~= nil and db.Modules.HealerCCModule.Icons.Enabled ~= false then
+			healerAnchor:Show()
+		else
+			healerAnchor:Hide()
+		end
+		return
 	end
 
 	OnAuraStateUpdated()
@@ -289,6 +477,14 @@ local function EnableDisable()
 		if not moduleEnabled then
 			healerAnchor:Hide()
 			return
+		end
+
+		-- 12.1: test icons render through the IconSlotContainer; hide the live aura displays
+		-- so real and fake icons don't mix.
+		for _, item in pairs(activePool) do
+			if item.Display then
+				item.Display.Frame:Hide()
+			end
 		end
 
 		healerAnchor:Show()
@@ -366,7 +562,9 @@ function M:Refresh()
 	iconsContainer:SetIconSize(tonumber(options.Icons.Size) or 32)
 	iconsContainer:SetSpacing(options.IconSpacing or 2)
 
-	if options.ShowWarningText then
+	-- 12.1: the warning text needs to know whether a CC aura is present, which is secret there,
+	-- so it is disabled outright.
+	if options.ShowWarningText and not useAuraContainers then
 		healerAnchor.HealerWarning:Show()
 	else
 		healerAnchor.HealerWarning:Hide()
