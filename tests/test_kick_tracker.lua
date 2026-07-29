@@ -1,0 +1,163 @@
+-- Tests for Core/KickTracker.lua - the interrupt lockout tracker. Fully event-driven and
+-- 12.1-independent (kicks aren't auras), feeding the CC, FriendlyIndicator, Portrait, and
+-- Nameplates kick icons on both paths.
+
+local fw = require("framework")
+local wow = require("wow_api")
+wow.setup()
+local acm = require("aura_container_mock")
+acm.setup()
+
+-- Environment: KickTracker captures these at load.
+local enemyUnits = {}
+_G.UnitIsEnemy = function(unit)
+	return enemyUnits[unit] == true
+end
+_G.UnitIsUnit = function(a, b)
+	return a == b
+end
+_G.GetTimePreciseSec = function()
+	return _G.GetTime()
+end
+_G.C_Spell = _G.C_Spell or {}
+_G.C_Spell.GetSpellTexture = function(spellId)
+	return "tex:" .. tostring(spellId)
+end
+
+local addon = {
+	Utils = {
+		WoWEx = {
+			CreateDuration = function(_, startTime, duration)
+				return { start = startTime, duration = duration }
+			end,
+		},
+	},
+	Core = {
+		InspectorFacade = {
+			GetUnitSpecId = function()
+				return nil
+			end,
+		},
+	},
+	Modules = {},
+	Config = {},
+}
+
+assert(loadfile("src/Core/KickData.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/KickTracker.lua"))("MiniCC", addon)
+
+local kickTracker = addon.Core.KickTracker
+
+-- Fires an event on the unit event frame KickTracker created for the given Watch call.
+local function unitFrame()
+	return acm.lastFrameForEvent("UNIT_SPELLCAST_INTERRUPTED")
+end
+
+local function interrupt(frame, unit, kickedBy)
+	frame:TriggerEvent("UNIT_SPELLCAST_INTERRUPTED", unit, "castGUID", 12345, kickedBy)
+end
+
+local watchCounter = 0
+local function newWatchedUnit(resetEvents)
+	-- Unique token per test so state never leaks between cases (Watch is idempotent per token).
+	watchCounter = watchCounter + 1
+	local unit = "testunit" .. watchCounter
+	kickTracker:Watch(unit, resetEvents)
+	return unit, unitFrame()
+end
+
+fw.describe("KickTracker - kick detection", function()
+	fw.it("an interrupt with an interrupter creates a kick entry and notifies subscribers", function()
+		wow.setTime(100)
+		local unit, frame = newWatchedUnit()
+		local notified = 0
+		kickTracker:Subscribe(unit, function()
+			notified = notified + 1
+		end)
+
+		interrupt(frame, unit, "Player-Kicker")
+
+		local entry = kickTracker:GetKick(unit)
+		assert(entry, "kick entry created")
+		assert(entry.Duration == 3, "default lockout duration")
+		assert(entry.StartTime == 100, "stamped with the current time")
+		assert(entry.DurationObject.duration == 3, "duration object built")
+		assert(notified == 1, "subscriber fired once, got " .. notified)
+	end)
+
+	fw.it("a cast ending without an interrupter creates nothing", function()
+		local unit, frame = newWatchedUnit()
+		interrupt(frame, unit, nil)
+		assert(kickTracker:GetKick(unit) == nil)
+	end)
+
+	fw.it("INTERRUPTED and CHANNEL_STOP for the same interrupt only fire once", function()
+		wow.setTime(50)
+		local unit, frame = newWatchedUnit()
+		local notified = 0
+		kickTracker:Subscribe(unit, function()
+			notified = notified + 1
+		end)
+
+		interrupt(frame, unit, "Player-Kicker")
+		frame:TriggerEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit, "castGUID", 12345, "Player-Kicker")
+
+		assert(notified == 1, "double-trigger guard, got " .. notified)
+	end)
+
+	fw.it("a new cast re-arms the guard for the next interrupt", function()
+		wow.setTime(60)
+		local unit, frame = newWatchedUnit()
+		interrupt(frame, unit, "Player-Kicker")
+		wow.setTime(61)
+		frame:TriggerEvent("UNIT_SPELLCAST_START", unit, "castGUID", 12345)
+		interrupt(frame, unit, "Player-Kicker")
+		local entry = kickTracker:GetKick(unit)
+		assert(entry and entry.StartTime == 61, "second interrupt tracked after a new cast")
+	end)
+end)
+
+fw.describe("KickTracker - lifecycle", function()
+	fw.it("the entry clears and notifies when the lockout expires", function()
+		wow.setTime(100)
+		local unit, frame = newWatchedUnit()
+		local notified = 0
+		kickTracker:Subscribe(unit, function()
+			notified = notified + 1
+		end)
+
+		interrupt(frame, unit, "Player-Kicker")
+		assert(kickTracker:GetKick(unit))
+		acm.runTimers()
+		assert(kickTracker:GetKick(unit) == nil, "entry cleared on expiry")
+		assert(notified == 2, "subscriber notified for both create and clear, got " .. notified)
+	end)
+
+	fw.it("a reset event clears an active entry", function()
+		wow.setTime(100)
+		local unit, frame = newWatchedUnit({ "PLAYER_TARGET_CHANGED" })
+		interrupt(frame, unit, "Player-Kicker")
+		assert(kickTracker:GetKick(unit))
+
+		frame:TriggerEvent("PLAYER_TARGET_CHANGED")
+		assert(kickTracker:GetKick(unit) == nil, "reset event cleared the entry")
+	end)
+
+	fw.it("Unwatch stops tracking entirely", function()
+		local unit, frame = newWatchedUnit()
+		interrupt(frame, unit, "Player-Kicker")
+		kickTracker:Unwatch(unit)
+		assert(kickTracker:GetKick(unit) == nil, "no entry after Unwatch")
+	end)
+
+	fw.it("Unsubscribe stops notifications", function()
+		local unit, frame = newWatchedUnit()
+		local notified = 0
+		local key = kickTracker:Subscribe(unit, function()
+			notified = notified + 1
+		end)
+		kickTracker:Unsubscribe(unit, key)
+		interrupt(frame, unit, "Player-Kicker")
+		assert(notified == 0, "unsubscribed callback must not fire, got " .. notified)
+	end)
+end)

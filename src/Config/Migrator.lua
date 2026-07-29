@@ -2655,5 +2655,11 @@ function M:SoftReset()
 	mini:CleanTable(vars, dbDefaults, true, true)
 	RestoreOpaqueCaches(vars, caches)
 
+	-- The default-merge above only fills MISSING keys, so a stale Version (from a corrupt
+	-- migration chain or a db written by a newer addon version) would survive - leaving the
+	-- future-version case soft-resetting on every single login. The data now matches the
+	-- current schema, so stamp it as such.
+	vars.Version = dbDefaults.Version
+
 	return vars
 end
