@@ -15,6 +15,30 @@ local M = {
 }
 addon.Core.Framework = M
 
+-- Config-UI palette: one crimson accent (the MiniCC logo red) plus warm neutrals. Plain
+-- tables at file scope; ColorMixins are created lazily because CreateColor only exists in
+-- the real client (this file also loads in the test harness).
+local accent = { r = 0.78, g = 0.20, b = 0.24 }
+local accentHi = { r = 0.88, g = 0.29, b = 0.32 }
+-- Idle/hover text for tab buttons (warm greys; selected is pure white).
+local tabTextIdle = { r = 0.73, g = 0.70, b = 0.66 }
+local tabTextHover = { r = 0.91, g = 0.89, b = 0.85 }
+-- Divider rules and label (muted gold - the one deliberate nod to the WoW default palette).
+local dividerLine = { r = 0.42, g = 0.35, b = 0.25 }
+local dividerGold = { r = 0.81, g = 0.66, b = 0.31 }
+
+---Turns a texture into a horizontal gradient (first color left, second right).
+local function SetGradientH(texture, r1, g1, b1, a1, r2, g2, b2, a2)
+	texture:SetColorTexture(1, 1, 1, 1)
+	texture:SetGradient("HORIZONTAL", CreateColor(r1, g1, b1, a1), CreateColor(r2, g2, b2, a2))
+end
+
+---Turns a texture into a vertical gradient (first color bottom, second top).
+local function SetGradientV(texture, r1, g1, b1, a1, r2, g2, b2, a2)
+	texture:SetColorTexture(1, 1, 1, 1)
+	texture:SetGradient("VERTICAL", CreateColor(r1, g1, b1, a1), CreateColor(r2, g2, b2, a2))
+end
+
 local function AddControlForRefresh(panel, control)
 	-- store controls for refresh behaviour
 	panel.MiniControls = panel.MiniControls or {}
@@ -114,13 +138,15 @@ local function GetOrCreateDialog()
 	dialog.Text:SetJustifyH("LEFT")
 	dialog.Text:SetJustifyV("TOP")
 
-	dialog.CloseButton = CreateFrame("Button", nil, dialog, "UIPanelButtonTemplate")
-	dialog.CloseButton:SetSize(80, 22)
+	dialog.CloseButton = M:Button({
+		Parent = dialog,
+		Text = CLOSE,
+		Width = 80,
+		OnClick = function()
+			dialog:Hide()
+		end,
+	})
 	dialog.CloseButton:SetPoint("BOTTOM", 0, 12)
-	dialog.CloseButton:SetText(CLOSE)
-	dialog.CloseButton:SetScript("OnClick", function()
-		dialog:Hide()
-	end)
 
 	return dialog
 end
@@ -497,17 +523,18 @@ function M:Divider(options)
 	local container = CreateFrame("Frame", nil, options.Parent)
 	container:SetHeight(26)
 
+	-- Rules fade out toward the page edges instead of running edge to edge at constant grey.
 	local leftLine = container:CreateTexture(nil, "ARTWORK")
-	leftLine:SetColorTexture(1, 1, 1, 0.15)
+	SetGradientH(leftLine, dividerLine.r, dividerLine.g, dividerLine.b, 0, dividerLine.r, dividerLine.g, dividerLine.b, 0.6)
 	PixelUtil.SetHeight(leftLine, 1)
 
 	local rightLine = container:CreateTexture(nil, "ARTWORK")
-	rightLine:SetColorTexture(1, 1, 1, 0.15)
+	SetGradientH(rightLine, dividerLine.r, dividerLine.g, dividerLine.b, 0.6, dividerLine.r, dividerLine.g, dividerLine.b, 0)
 	PixelUtil.SetHeight(rightLine, 1)
 
-	local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	label:SetText(options.Text or "")
-	label:SetTextColor(1, 1, 1, 1)
+	local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	label:SetText((options.Text or ""):upper())
+	label:SetTextColor(dividerGold.r, dividerGold.g, dividerGold.b, 1)
 	label:SetPoint("CENTER", container, "CENTER")
 
 	PixelUtil.SetPoint(leftLine, "LEFT", container, "LEFT", 0, 0)
@@ -517,6 +544,74 @@ function M:Divider(options)
 	PixelUtil.SetPoint(rightLine, "RIGHT", container, "RIGHT", 0, 0)
 
 	return container
+end
+
+---Creates a flat accent-outline button matching the config restyle (same look as the
+---title bar Test button).
+---@param options {Parent:table, Text:string, Width:number?, Height:number?, OnClick:fun()?}
+---@return table
+function M:Button(options)
+	local btn = CreateFrame("Button", nil, options.Parent, "BackdropTemplate")
+	btn:SetSize(options.Width or 100, options.Height or 22)
+	btn:SetBackdrop({
+		bgFile = "Interface\\Buttons\\WHITE8X8",
+		edgeFile = "Interface\\Buttons\\WHITE8X8",
+		edgeSize = 1,
+	})
+	btn:SetNormalFontObject("GameFontNormal")
+	btn:SetText(options.Text or "")
+
+	local function ApplyIdle()
+		local fs = btn:GetFontString()
+		if btn:IsEnabled() then
+			btn:SetBackdropColor(accent.r, accent.g, accent.b, 0.10)
+			btn:SetBackdropBorderColor(accent.r, accent.g, accent.b, 0.45)
+			if fs then fs:SetTextColor(0.93, 0.55, 0.58, 1) end
+		else
+			btn:SetBackdropColor(1, 1, 1, 0.03)
+			btn:SetBackdropBorderColor(1, 1, 1, 0.12)
+			if fs then fs:SetTextColor(0.45, 0.43, 0.42, 1) end
+		end
+	end
+
+	btn:SetScript("OnEnter", function()
+		if not btn:IsEnabled() then
+			return
+		end
+		btn:SetBackdropColor(accent.r, accent.g, accent.b, 0.22)
+		btn:SetBackdropBorderColor(accentHi.r, accentHi.g, accentHi.b, 0.9)
+		local fs = btn:GetFontString()
+		if fs then fs:SetTextColor(1, 1, 1, 1) end
+	end)
+	btn:SetScript("OnLeave", ApplyIdle)
+	btn:SetScript("OnEnable", ApplyIdle)
+	btn:SetScript("OnDisable", ApplyIdle)
+
+	if options.OnClick then
+		btn:SetScript("OnClick", options.OnClick)
+	end
+
+	ApplyIdle()
+	return btn
+end
+
+---Strips InputBoxTemplate's parchment inset art and draws a flat dark field in its place.
+---(The template's art extends ~5px left of the frame rect; the flat field mirrors that.)
+---@param box table An EditBox created from InputBoxTemplate.
+function M:FlattenEditBox(box)
+	if box.Left then box.Left:Hide() end
+	if box.Middle then box.Middle:Hide() end
+	if box.Right then box.Right:Hide() end
+
+	local border = box:CreateTexture(nil, "BACKGROUND", nil, 0)
+	border:SetPoint("TOPLEFT", box, "TOPLEFT", -6, 1)
+	border:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", 2, -1)
+	border:SetColorTexture(0.30, 0.27, 0.26, 1)
+
+	local fill = box:CreateTexture(nil, "BACKGROUND", nil, 1)
+	fill:SetPoint("TOPLEFT", border, "TOPLEFT", 1, -1)
+	fill:SetPoint("BOTTOMRIGHT", border, "BOTTOMRIGHT", -1, 1)
+	fill:SetColorTexture(0.05, 0.045, 0.045, 1)
 end
 
 ---Creates an edit box with a label using the specified options.
@@ -531,10 +626,11 @@ function M:EditBox(options)
 		error("EditBox - invalid options.")
 	end
 
-	local label = options.Parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local label = options.Parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	label:SetText(options.LabelText or "")
 
 	local box = CreateFrame("EditBox", nil, options.Parent, "InputBoxTemplate")
+	M:FlattenEditBox(box)
 	box:SetSize(options.Width or 80, options.Height or 20)
 	box:SetAutoFocus(false)
 
@@ -723,6 +819,13 @@ function M:Checkbox(options)
 	local checkbox = CreateFrame("CheckButton", nil, options.Parent, "UICheckButtonTemplate")
 	checkbox.Text:SetText(" " .. options.LabelText)
 	checkbox.Text:SetFontObject("GameFontNormal")
+	checkbox.Text:SetTextColor(1, 1, 1, 1)
+	-- Crimson check instead of the template's yellow-green (accent unification).
+	local checkedTex = checkbox:GetCheckedTexture()
+	if checkedTex then
+		checkedTex:SetDesaturated(true)
+		checkedTex:SetVertexColor(accentHi.r, accentHi.g, accentHi.b, 1)
+	end
 	checkbox:SetChecked(options.GetValue())
 	checkbox:HookScript("OnClick", function()
 		options.SetValue(checkbox:GetChecked())
@@ -779,7 +882,7 @@ function M:Slider(options)
 	local slider = CreateFrame("Slider", addonName .. "Slider" .. sliderId, options.Parent, "OptionsSliderTemplate")
 	sliderId = sliderId + 1
 
-	local label = slider:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local label = slider:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	label:SetPoint("BOTTOMLEFT", slider, "TOPLEFT", 0, 8)
 	label:SetText(options.LabelText)
 
@@ -790,6 +893,30 @@ function M:Slider(options)
 	slider:SetObeyStepOnDrag(true)
 	slider:SetHeight(20)
 	slider:SetWidth(options.Width or 400)
+
+	-- Flat restyle: drop the template's ornate rail for a thin track with a crimson fill up
+	-- to the thumb (the fill's right edge is anchored to the thumb texture, so it follows
+	-- the value with no OnValueChanged bookkeeping).
+	if slider.SetBackdrop then
+		slider:SetBackdrop(nil)
+	end
+
+	local track = slider:CreateTexture(nil, "BACKGROUND")
+	PixelUtil.SetHeight(track, 4)
+	track:SetPoint("LEFT", slider, "LEFT", 0, 0)
+	track:SetPoint("RIGHT", slider, "RIGHT", 0, 0)
+	track:SetColorTexture(0.17, 0.15, 0.15, 1)
+
+	slider:SetThumbTexture("Interface\\Buttons\\WHITE8X8")
+	local thumb = slider:GetThumbTexture()
+	thumb:SetSize(10, 16)
+	thumb:SetVertexColor(0.91, 0.89, 0.85, 1)
+
+	local fill = slider:CreateTexture(nil, "BACKGROUND", nil, 1)
+	PixelUtil.SetHeight(fill, 4)
+	fill:SetPoint("LEFT", track, "LEFT", 0, 0)
+	fill:SetPoint("RIGHT", thumb, "CENTER", 0, 0)
+	SetGradientH(fill, accent.r * 0.6, accent.g * 0.6, accent.b * 0.6, 1, accent.r, accent.g, accent.b, 1)
 
 	local low = _G[slider:GetName() .. "Low"]
 	local high = _G[slider:GetName() .. "High"]
@@ -806,6 +933,7 @@ function M:Slider(options)
 
 	local hasFloat = math.floor(options.Step) ~= options.Step
 	local box = CreateFrame("EditBox", nil, slider, "InputBoxTemplate")
+	M:FlattenEditBox(box)
 
 	if not hasFloat then
 		ConfigureNumbericBox(box, options.Min < 0)
@@ -941,10 +1069,13 @@ function M:List(options)
 				row.Text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 				row.Text:SetPoint("LEFT", 0, 0)
 
-				row.Remove = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-				row.Remove:SetSize(options.RemoveButtonWidth or 80, options.RowHeight - 2)
+				row.Remove = M:Button({
+					Parent = row,
+					Text = "Remove",
+					Width = options.RemoveButtonWidth or 80,
+					Height = options.RowHeight - 2,
+				})
 				row.Remove:SetPoint("RIGHT", 0, 0)
-				row.Remove:SetText("Remove")
 
 				rows[i] = row
 			end
@@ -1006,11 +1137,12 @@ function M:CreateTabs(options)
 	assert(options.Tabs and #options.Tabs > 0, "CreateTabs: options.Tabs required")
 
 	local parent = options.Parent
+	local vertical = options.Vertical
 	local tabHeight = options.TabHeight or 22
 	local tabMinWidth = options.TabMinWidth or 80
-	local tabSpacing = options.TabSpacing or 6
+	-- Vertical rows are flat (no boxes), so they sit nearly flush.
+	local tabSpacing = options.TabSpacing or (vertical and 2 or 6)
 	local stripHeight = options.StripHeight or 28
-	local vertical = options.Vertical
 	local stripWidth = options.StripWidth or 130
 	local horizontalPadding = options.HorizontalPadding or 0
 
@@ -1065,16 +1197,11 @@ function M:CreateTabs(options)
 		btn:SetWidth(w)
 	end
 
-	local normalR, normalG, normalB = GameFontNormal:GetTextColor()
-
-	-- Horizontal mode: single continuous underline split around the selected tab.
-	local lineLeft = strip:CreateTexture(nil, "OVERLAY")
-	PixelUtil.SetHeight(lineLeft, 1)
-	lineLeft:SetColorTexture(0.35, 0.35, 0.35, 0.8)
-
-	local lineRight = strip:CreateTexture(nil, "OVERLAY")
-	PixelUtil.SetHeight(lineRight, 1)
-	lineRight:SetColorTexture(0.35, 0.35, 0.35, 0.8)
+	-- Horizontal mode: single continuous baseline under every tab; the selected tab's accent
+	-- underline overlays it. Anchored after the tab loop.
+	local baseline = strip:CreateTexture(nil, "OVERLAY")
+	PixelUtil.SetHeight(baseline, 1)
+	baseline:SetColorTexture(1, 1, 1, 0.10)
 
 	-- Vertical mode: static right-edge separator line. The bottom edge is anchored to the last
 	-- button after the tab loop (the strip itself extends past it to the parent's bottom).
@@ -1082,51 +1209,38 @@ function M:CreateTabs(options)
 	if vertical then
 		vLine = strip:CreateTexture(nil, "OVERLAY")
 		PixelUtil.SetWidth(vLine, 1)
-		vLine:SetColorTexture(0.35, 0.35, 0.35, 0.8)
+		vLine:SetColorTexture(1, 1, 1, 0.10)
 		PixelUtil.SetPoint(vLine, "TOPRIGHT", strip, "TOPRIGHT", 0, 0)
 	end
 
-	-- Assigned after the tab loop; used in horizontal mode to limit the line to the last tab.
+	-- Assigned after the tab loop; anchors the separator/baseline end points.
 	local lastBtn
 
 	local function SetSelected(btn, isSelected)
 		if isSelected then
 			btn.Text:SetTextColor(1, 1, 1, 1)
-			btn.Highlight:SetAlpha(0)
+			btn.Highlight:Hide()
 
 			if vertical then
-				btn:SetBackdropColor(0.12, 0.12, 0.12, 0.9)
-				btn:SetBackdropBorderColor(0.45, 0.45, 0.45, 0.8)
+				if btn.Wash then btn.Wash:Show() end
 				if btn.Indicator then btn.Indicator:Show() end
-			else
-				btn:SetBackdropColor(0, 0, 0, 0)
-				btn:SetBackdropBorderColor(0.55, 0.55, 0.55, 1)
-				if btn.Accent then btn.Accent:Show() end
-				-- Reanchor line segments to leave a gap at this button.
-				-- Anchor only the bottom edge to a single shared baseline (the tabs' bottom,
-				-- strip_bottom + 1); height comes from PixelUtil.SetHeight(...,1). Anchoring both
-				-- top and bottom with a 1px delta lets the height collapse to zero under
-				-- fractional UI scale rounding, which made the underline intermittently disappear.
-				lineLeft:ClearAllPoints()
-				PixelUtil.SetPoint(lineLeft, "BOTTOMLEFT", strip, "BOTTOMLEFT", 0, 1)
-				PixelUtil.SetPoint(lineLeft, "BOTTOMRIGHT", btn, "BOTTOMLEFT", 0, 0)
-				lineRight:ClearAllPoints()
-				if lastBtn and btn ~= lastBtn then
-					PixelUtil.SetPoint(lineRight, "BOTTOMLEFT", btn, "BOTTOMRIGHT", 0, 0)
-					PixelUtil.SetPoint(lineRight, "BOTTOMRIGHT", lastBtn, "BOTTOMRIGHT", 0, 0)
-					lineRight:Show()
-				else
-					lineRight:Hide()
+				if btn.Icon then
+					btn.Icon:SetDesaturated(false)
+					btn.Icon:SetVertexColor(1, 1, 1, 1)
 				end
+			else
+				if btn.Accent then btn.Accent:Show() end
 			end
 		else
-			btn:SetBackdropColor(0, 0, 0, 0)
-			btn:SetBackdropBorderColor(0.35, 0.35, 0.35, 0.8)
-			btn.Text:SetTextColor(normalR, normalG, normalB, 1)
-			btn.Highlight:SetAlpha(0.06)
+			btn.Text:SetTextColor(tabTextIdle.r, tabTextIdle.g, tabTextIdle.b, 1)
 
 			if vertical then
+				if btn.Wash then btn.Wash:Hide() end
 				if btn.Indicator then btn.Indicator:Hide() end
+				if btn.Icon then
+					btn.Icon:SetDesaturated(true)
+					btn.Icon:SetVertexColor(0.75, 0.72, 0.68, 0.9)
+				end
 			else
 				if btn.Accent then btn.Accent:Hide() end
 			end
@@ -1179,31 +1293,64 @@ function M:CreateTabs(options)
 		assert(def.Key and def.Key ~= "", "CreateTabs: each tab needs Key")
 		assert(not keyToIndex[def.Key], "CreateTabs: duplicate Key: " .. def.Key)
 
-		local btn = CreateFrame("Button", nil, strip, "BackdropTemplate")
-		-- Plain SetHeight/SetPoint (no PixelUtil) for the buttons: pixel-snapping the frame pushed the
-		-- 1px backdrop top edge off the physical-pixel grid on some pages, making it vanish.
+		-- Flat buttons: no boxes or borders; selection is carried by the accent bar/underline,
+		-- a gradient wash, and text color.
+		local btn = CreateFrame("Button", nil, strip)
+		-- Plain SetHeight/SetPoint (no PixelUtil): pixel-snapping the frame pushed 1px details
+		-- off the physical-pixel grid on some pages, making them vanish.
 		btn:SetHeight(tabHeight)
-		btn:SetBackdrop({
-			bgFile = "Interface\\Buttons\\WHITE8X8",
-			edgeFile = "Interface\\Buttons\\WHITE8X8",
-			edgeSize = 1,
-		})
 		btn.Text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-		btn.Text:SetPoint("CENTER", btn, "CENTER", 0, 0)
 		btn.Text:SetText(def.Title or def.Key)
 
-		btn.Highlight = btn:CreateTexture(nil, "HIGHLIGHT")
+		-- Hover fill managed by OnEnter/OnLeave rather than a HIGHLIGHT-layer texture:
+		-- SetGradient replaces vertex alpha, so SetAlpha can't dim a gradient highlight -
+		-- the faintness has to be baked into the gradient colors themselves.
+		btn.Highlight = btn:CreateTexture(nil, "BACKGROUND", nil, 2)
 		btn.Highlight:SetAllPoints(btn)
-		btn.Highlight:SetColorTexture(1, 1, 1, 1)
+		btn.Highlight:Hide()
+
+		btn:SetScript("OnEnter", function()
+			if selectedKey ~= def.Key then
+				btn.Text:SetTextColor(tabTextHover.r, tabTextHover.g, tabTextHover.b, 1)
+				btn.Highlight:Show()
+			end
+		end)
+		btn:SetScript("OnLeave", function()
+			if selectedKey ~= def.Key then
+				btn.Text:SetTextColor(tabTextIdle.r, tabTextIdle.g, tabTextIdle.b, 1)
+			end
+			btn.Highlight:Hide()
+		end)
 
 		if vertical then
+			-- Hover wash fading out to the right, matching the selection wash below.
+			SetGradientH(btn.Highlight, 1, 1, 1, 0.06, 1, 1, 1, 0)
+
+			-- Selection wash: accent gradient fading out to the right.
+			btn.Wash = btn:CreateTexture(nil, "BACKGROUND")
+			btn.Wash:SetAllPoints(btn)
+			SetGradientH(btn.Wash, accent.r, accent.g, accent.b, 0.20, accent.r, accent.g, accent.b, 0)
+			btn.Wash:Hide()
+
 			-- Left-edge accent bar for selected state
 			btn.Indicator = btn:CreateTexture(nil, "OVERLAY")
 			PixelUtil.SetWidth(btn.Indicator, 3)
 			btn.Indicator:SetPoint("TOPLEFT", btn, "TOPLEFT", 0, 0)
 			btn.Indicator:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", 0, 0)
-			btn.Indicator:SetColorTexture(0.4, 0.7, 1.0, 1.0)
+			SetGradientV(btn.Indicator, accent.r, accent.g, accent.b, 1, accentHi.r, accentHi.g, accentHi.b, 1)
 			btn.Indicator:Hide()
+
+			-- Optional icon (spell/interface texture path or fileID); desaturated until selected.
+			if def.Icon then
+				btn.Icon = btn:CreateTexture(nil, "ARTWORK")
+				btn.Icon:SetSize(16, 16)
+				btn.Icon:SetPoint("LEFT", btn, "LEFT", 10, 0)
+				btn.Icon:SetTexture(def.Icon)
+				btn.Icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+				btn.Text:SetPoint("LEFT", btn.Icon, "RIGHT", 8, 0)
+			else
+				btn.Text:SetPoint("LEFT", btn, "LEFT", 12, 0)
+			end
 
 			if not prev then
 				btn:SetPoint("TOPLEFT", strip, "TOPLEFT", 0, 0)
@@ -1213,12 +1360,15 @@ function M:CreateTabs(options)
 				btn:SetPoint("TOPRIGHT", prev, "BOTTOMRIGHT", 0, -tabSpacing)
 			end
 		else
-			-- Bottom-edge accent bar for selected state
-			btn.Accent = btn:CreateTexture(nil, "OVERLAY")
+			btn.Highlight:SetColorTexture(1, 1, 1, 0.05)
+			btn.Text:SetPoint("CENTER", btn, "CENTER", 0, 0)
+
+			-- Bottom-edge accent underline for selected state; overlays the shared baseline.
+			btn.Accent = btn:CreateTexture(nil, "OVERLAY", nil, 1)
 			PixelUtil.SetHeight(btn.Accent, 2)
 			btn.Accent:SetPoint("BOTTOMLEFT",  btn, "BOTTOMLEFT",  0, 0)
 			btn.Accent:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 0, 0)
-			btn.Accent:SetColorTexture(0.4, 0.7, 1.0, 1.0)
+			SetGradientH(btn.Accent, accent.r, accent.g, accent.b, 1, accentHi.r, accentHi.g, accentHi.b, 1)
 			btn.Accent:Hide()
 
 			SizeToText(btn)
@@ -1363,6 +1513,12 @@ function M:CreateTabs(options)
 	-- where the separator should stop.
 	if vLine and lastBtn then
 		PixelUtil.SetPoint(vLine, "BOTTOMRIGHT", lastBtn, "BOTTOMRIGHT", 0, 0)
+	end
+
+	-- Horizontal baseline sits at the buttons' shared bottom edge, full strip width.
+	if not vertical then
+		PixelUtil.SetPoint(baseline, "BOTTOMLEFT", strip, "BOTTOMLEFT", 0, 1)
+		PixelUtil.SetPoint(baseline, "BOTTOMRIGHT", strip, "BOTTOMRIGHT", 0, 1)
 	end
 
 	local initialIndex = 1
@@ -1629,7 +1785,7 @@ function M:CreateStandaloneWindow(options)
 		edgeSize = 1,
 	})
 	window:SetBackdropColor(0, 0, 0, 0.75)
-	window:SetBackdropBorderColor(0.20, 0.20, 0.24, 1)
+	window:SetBackdropBorderColor(0.21, 0.17, 0.18, 1)
 
 	-- Title bar (transparent bg; gradient above provides the fill)
 	local titleBar = CreateFrame("Frame", nil, window, "BackdropTemplate")
@@ -1639,12 +1795,12 @@ function M:CreateStandaloneWindow(options)
 	titleBar:SetBackdropColor(0, 0, 0, 0)
 	titleBar:SetBackdropBorderColor(0, 0, 0, 0)
 
-	-- Accent line beneath title bar
+	-- Accent line beneath title bar: crimson fading out from the logo side.
 	local accentLine = window:CreateTexture(nil, "ARTWORK")
 	accentLine:SetHeight(1)
 	accentLine:SetPoint("TOPLEFT", titleBar, "BOTTOMLEFT", 0, 0)
 	accentLine:SetPoint("TOPRIGHT", titleBar, "BOTTOMRIGHT", 0, 0)
-	accentLine:SetColorTexture(1, 1, 1, 0.15)
+	SetGradientH(accentLine, accent.r, accent.g, accent.b, 0.9, accent.r, accent.g, accent.b, 0.04)
 
 	-- Title text (warm white)
 	local titleText = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -1835,6 +1991,7 @@ loader:SetScript("OnEvent", OnAddonLoaded)
 ---@field Key string
 ---@field Title string
 ---@field Build? fun(content:table)
+---@field Icon? string|number Icon texture path or fileID, shown left of the title (vertical tabs only)
 
 ---@class TabOptions
 ---@field Parent table

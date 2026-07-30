@@ -27,7 +27,7 @@ config.CrowdControl = M
 -- Builds the "Grow" dropdown (label + dropdown) anchored below `anchorFrame`, returning the dropdown so
 -- the first slider can sit directly beneath it. Kept above the sliders so all sliders group together.
 local function BuildGrowDropdown(parent, options, anchorFrame)
-	local growDdlLbl = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local growDdlLbl = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	growDdlLbl:SetText(L["Grow"])
 
 	local growDdl, modernDdl = mini:Dropdown({
@@ -136,7 +136,7 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	glowChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	glowChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
 	glowChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
 
 	local dispelColoursChk = mini:Checkbox({
@@ -152,7 +152,7 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
 	dispelColoursChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
 
 	local reverseChk = mini:Checkbox({
@@ -168,7 +168,7 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
 	reverseChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
 
 	local showTooltipsChk = mini:Checkbox({
@@ -184,7 +184,8 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	showTooltipsChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
+	showTooltipsChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
 
 	local showMillisChk = mini:Checkbox({
 		Parent = parent,
@@ -199,8 +200,7 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	showMillisChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
-	showMillisChk:SetPoint("TOP", showTooltipsChk, "TOP", 0, 0)
+	showMillisChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local refreshSizeMode
 	local relativeSizeChk = mini:Checkbox({
@@ -217,10 +217,10 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	relativeSizeChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
-	relativeSizeChk:SetPoint("TOP", showTooltipsChk, "TOP", 0, 0)
+	relativeSizeChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
+	relativeSizeChk:SetPoint("TOP", showMillisChk, "TOP", 0, 0)
 
-	local growDdl = BuildGrowDropdown(parent, options, showTooltipsChk)
+	local growDdl = BuildGrowDropdown(parent, options, showMillisChk)
 
 	local iconSize = mini:Slider({
 		Parent = parent,
@@ -620,6 +620,8 @@ end
 ---@param raid CrowdControlInstanceOptions
 function M:Build(panel, default, raid)
 	columnWidth = mini:ColumnWidth(columns, 0, 0)
+	-- Shared 5-column checkbox grid: the Enable-in row and settings checkbox rows all sit on
+	-- the same vertical lines.
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
 	local db = mini:GetSavedVars()
 

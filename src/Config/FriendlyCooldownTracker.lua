@@ -61,7 +61,7 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	showTooltipsChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	showTooltipsChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth, 0)
 	showTooltipsChk:SetPoint("TOP", excludeSelfChk, "TOP", 0, 0)
 
 	local reverseChk = mini:Checkbox({
@@ -77,7 +77,7 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	reverseChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", excludeSelfChk, "TOP", 0, 0)
 
 	local showTrinketChk = mini:Checkbox({
@@ -93,7 +93,7 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	showTrinketChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	showTrinketChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 3, 0)
 	showTrinketChk:SetPoint("TOP", excludeSelfChk, "TOP", 0, 0)
 
 	local desaturateChk = mini:Checkbox({
@@ -124,7 +124,7 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	predictiveChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	predictiveChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth, 0)
 	predictiveChk:SetPoint("TOP", desaturateChk, "TOP", 0, 0)
 
 	local refreshSizeMode
@@ -142,7 +142,7 @@ local function BuildInstance(parent, anchorOptions)
 		end,
 	})
 
-	relativeSizeChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	relativeSizeChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 2, 0)
 	relativeSizeChk:SetPoint("TOP", desaturateChk, "TOP", 0, 0)
 
 	local iconSizeSlider = mini:Slider({
@@ -293,7 +293,7 @@ local function BuildInstance(parent, anchorOptions)
 		columnsPerRowSlider.Label:SetShown(isVertical)
 	end
 
-	local growLbl = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local growLbl = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	growLbl:SetText(L["Grow"])
 
 	local growDdl, modernDdl = mini:Dropdown({
@@ -588,6 +588,8 @@ function M:Build(panel, default, raid)
 	local db = mini:GetSavedVars()
 	local options = db.Modules.FriendlyCooldownTrackerModule
 	columnWidth = mini:ColumnWidth(columns, 0, 0)
+	-- Shared 5-column checkbox grid: the Enable-in row and settings checkbox rows all sit on
+	-- the same vertical lines.
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
 
 	local subPanelHeight = 321

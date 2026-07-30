@@ -13,8 +13,8 @@ addon.Config.Portraits = M
 function M:Build(panel)
 	db = mini:GetSavedVars()
 
-	local columns = 4
-	local columnWidth = mini:ColumnWidth(columns, 0, 0)
+	-- Shared 5-column checkbox grid so checkbox rows align across pages.
+	local checkColumnWidth = mini:ColumnWidth(5, 0, 0)
 
 	local lines = mini:TextBlock({
 		Parent = panel,
@@ -24,6 +24,14 @@ function M:Build(panel)
 	})
 
 	lines:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+
+	local settingsDivider = mini:Divider({
+		Parent = panel,
+		Text = L["Settings"],
+	})
+	settingsDivider:SetPoint("LEFT", panel, "LEFT")
+	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
+	settingsDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
 	local enabled = mini:Checkbox({
 		Parent = panel,
@@ -38,7 +46,7 @@ function M:Build(panel)
 		end,
 	})
 
-	enabled:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 0, -verticalSpacing)
+	enabled:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local reverseSweepChk = mini:Checkbox({
 		Parent = panel,
@@ -54,5 +62,5 @@ function M:Build(panel)
 	})
 
 	reverseSweepChk:SetPoint("TOP", enabled, "TOP", 0, 0)
-	reverseSweepChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	reverseSweepChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
 end

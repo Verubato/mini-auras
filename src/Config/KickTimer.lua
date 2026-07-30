@@ -12,9 +12,11 @@ config.KickTimer = M
 
 function M:Build(panel)
 	local db = mini:GetSavedVars()
-	local columns = 3
-	local columnWidth = mini:ColumnWidth(columns, 0, 0)
+	-- Shared 5-column checkbox grid so checkbox rows align across pages.
+	local checkColumnWidth = mini:ColumnWidth(5, 0, 0)
 	local horizontalSpacing = mini.HorizontalSpacing
+	-- Half-page sliders, same sizing as the other config screens.
+	local sliderWidth = mini:ColumnWidth(4, 0, 0) * 2 - horizontalSpacing
 	local description = mini:TextLine({
 		Parent = panel,
 		Text = L["Shows enemy kick cooldowns in arena."],
@@ -22,12 +24,14 @@ function M:Build(panel)
 
 	description:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
-	local text = mini:TextLine({
+	-- The existing localized "Enable if you are:" string, minus its trailing (fullwidth) colon.
+	local enableDivider = mini:Divider({
 		Parent = panel,
-		Text = L["Enable if you are:"],
+		Text = (L["Enable if you are:"]):gsub(":$", ""):gsub("：$", ""),
 	})
-
-	text:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -verticalSpacing)
+	enableDivider:SetPoint("LEFT", panel, "LEFT")
+	enableDivider:SetPoint("RIGHT", panel, "RIGHT")
+	enableDivider:SetPoint("TOP", description, "BOTTOM", 0, -verticalSpacing)
 
 	local healerEnabled = mini:Checkbox({
 		Parent = panel,
@@ -42,7 +46,7 @@ function M:Build(panel)
 		end,
 	})
 
-	healerEnabled:SetPoint("TOPLEFT", text, "BOTTOMLEFT", 0, -verticalSpacing)
+	healerEnabled:SetPoint("TOPLEFT", enableDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local casterEnabled = mini:Checkbox({
 		Parent = panel,
@@ -57,7 +61,7 @@ function M:Build(panel)
 		end,
 	})
 
-	casterEnabled:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	casterEnabled:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
 	casterEnabled:SetPoint("TOP", healerEnabled, "TOP", 0, 0)
 
 	local allEnabled = mini:Checkbox({
@@ -73,7 +77,7 @@ function M:Build(panel)
 		end,
 	})
 
-	allEnabled:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	allEnabled:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
 	allEnabled:SetPoint("TOP", healerEnabled, "TOP", 0, 0)
 
 	local iconSizeSlider = mini:Slider({
@@ -89,13 +93,21 @@ function M:Build(panel)
 				config:Apply()
 			end
 		end,
-		Width = columns * columnWidth - horizontalSpacing,
+		Width = sliderWidth,
 		Min = 20,
 		Max = 120,
 		Step = 1,
 	})
 
-	iconSizeSlider.Slider:SetPoint("TOPLEFT", healerEnabled, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	local settingsDivider = mini:Divider({
+		Parent = panel,
+		Text = L["Settings"],
+	})
+	settingsDivider:SetPoint("LEFT", panel, "LEFT")
+	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
+	settingsDivider:SetPoint("TOP", healerEnabled, "BOTTOM", 0, -verticalSpacing)
+
+	iconSizeSlider.Slider:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
 	local iconSpacingSlider = mini:Slider({
 		Parent = panel,
@@ -110,26 +122,14 @@ function M:Build(panel)
 				config:Apply()
 			end
 		end,
-		Width = columns * columnWidth - horizontalSpacing,
+		Width = sliderWidth,
 		Min = 0,
 		Max = 20,
 		Step = 1,
 	})
 
-	iconSpacingSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
-
-	local important = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-	important:SetPoint("TOPLEFT", iconSpacingSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-	important:SetText(L["Important Notes"])
-
-	local lines = mini:TextBlock({
-		Parent = panel,
-		Lines = {
-			L["As of 12.0.5, the caster of an interrupt can no longer be identified. This module now just displays a generic icon using the shortest known enemy kick cooldown."],
-		},
-	})
-
-	lines:SetPoint("TOPLEFT", important, "BOTTOMLEFT", 0, -verticalSpacing)
+	iconSpacingSlider.Slider:SetPoint("LEFT", iconSizeSlider.Slider, "RIGHT", horizontalSpacing, 0)
+	iconSpacingSlider.Slider:SetPoint("TOP", iconSizeSlider.Slider, "TOP", 0, 0)
 
 	M.Panel = panel
 end

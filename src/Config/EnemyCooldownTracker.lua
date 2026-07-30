@@ -44,6 +44,8 @@ local specClass = {
 
 local columns = 4
 local columnWidth
+-- Shared 5-column checkbox grid so checkbox rows align across pages.
+local checkColumnWidth
 
 ---Collects all unique spell IDs from rules that EnemyCooldowns can track, grouped by class token.
 ---Includes aura-based rules (BigDefensive, ExternalDefensive) and event-signature rules (NoAura).
@@ -292,7 +294,7 @@ local function BuildSettings(parent, options)
 		GetValue  = function() return options.ShowTooltips end,
 		SetValue  = function(v) options.ShowTooltips = v; config:Apply() end,
 	})
-	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", checkColumnWidth, 0)
 	showTooltipsChk:SetPoint("TOP",  enabledChk, "TOP", 0, 0)
 
 	local reverseChk = mini:Checkbox({
@@ -302,7 +304,7 @@ local function BuildSettings(parent, options)
 		GetValue  = function() return options.Icons.ReverseCooldown end,
 		SetValue  = function(v) options.Icons.ReverseCooldown = v; config:Apply() end,
 	})
-	reverseChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	reverseChk:SetPoint("LEFT", parent, "LEFT", checkColumnWidth * 2, 0)
 	reverseChk:SetPoint("TOP",  enabledChk, "TOP", 0, 0)
 
 	-- Always-show: render every cooldown the enemy's spec can use, faded (fixed 0.6 opacity)
@@ -318,7 +320,7 @@ local function BuildSettings(parent, options)
 			ecdModule:RefreshDisplays()
 		end,
 	})
-	alwaysShowChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
+	alwaysShowChk:SetPoint("LEFT", parent, "LEFT", checkColumnWidth * 3, 0)
 	alwaysShowChk:SetPoint("TOP",  enabledChk, "TOP", 0, 0)
 
 	local desaturateChk = mini:Checkbox({
@@ -365,7 +367,7 @@ local function BuildSettings(parent, options)
 
 	-- Display mode
 
-	local modeLbl = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local modeLbl = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	modeLbl:SetText(L["Layout Mode"])
 	modeLbl:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 2)
 
@@ -408,7 +410,7 @@ local function BuildSettings(parent, options)
 	afDivider:SetPoint("TOP",   modeDdl, "BOTTOM", 0, -verticalSpacing)
 	afDivider:SetShown(isArena)
 
-	local afGrowLbl = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local afGrowLbl = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	afGrowLbl:SetText(L["Grow"])
 	afGrowLbl:SetPoint("TOPLEFT", afDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 	afGrowLbl:SetShown(isArena)
@@ -502,6 +504,7 @@ config.EnemyCooldownTracker = M
 ---@param options table  db.Modules.EnemyCooldownTrackerModule
 function M:Build(panel, options)
 	columnWidth = mini:ColumnWidth(columns, 0, 0)
+	checkColumnWidth = mini:ColumnWidth(5, 0, 0)
 
 	local description = mini:TextBlock({
 		Parent = panel,

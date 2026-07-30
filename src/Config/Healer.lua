@@ -18,6 +18,8 @@ config.Healer = M
 ---@param options HealerCrowdControlModuleOptions
 function M:Build(panel, options)
 	columnWidth = mini:ColumnWidth(columns, 0, 0)
+	-- Shared 5-column checkbox grid: the Enable-in row and settings checkbox rows all sit on
+	-- the same vertical lines.
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
 	local db = mini:GetSavedVars()
 	-- 12.1: the warning text and sound fire on "a healer became CC'd", which addons can no
@@ -157,7 +159,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	glowChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth, 0)
 	glowChk:SetPoint("TOP", showIconsChk, "TOP", 0, 0)
 
 	if not useAuraContainers then
@@ -174,7 +176,7 @@ function M:Build(panel, options)
 			end,
 		})
 
-		showTextChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+		showTextChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 2, 0)
 		showTextChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 	end
 
@@ -191,7 +193,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", columnWidth * (useAuraContainers and 2 or 3), 0)
+	reverseChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * (useAuraContainers and 2 or 3), 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local dispelColoursChk = mini:Checkbox({
@@ -207,7 +209,8 @@ function M:Build(panel, options)
 		end,
 	})
 
-	dispelColoursChk:SetPoint("TOPLEFT", showIconsChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	dispelColoursChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * (useAuraContainers and 3 or 4), 0)
+	dispelColoursChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local showTooltipsChk = mini:Checkbox({
 		Parent = panel,
@@ -222,8 +225,14 @@ function M:Build(panel, options)
 		end,
 	})
 
-	showTooltipsChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	showTooltipsChk:SetPoint("TOP", dispelColoursChk, "TOP", 0, 0)
+	-- 12.1 fits every checkbox on one row (no warning-text option there); legacy wraps
+	-- tooltips onto a second row.
+	if useAuraContainers then
+		showTooltipsChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 4, 0)
+		showTooltipsChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+	else
+		showTooltipsChk:SetPoint("TOPLEFT", showIconsChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	end
 
 	-- On 12.1 the sound plays engine-side via C_UnitAuras.AddAuraSound (registered per healer
 	-- and per known CC spell in the module), so the option works on both paths.
@@ -246,7 +255,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	soundChk:SetPoint("TOPLEFT", dispelColoursChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	soundChk:SetPoint("TOPLEFT", useAuraContainers and showIconsChk or showTooltipsChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local soundFileDropdown = mini:Dropdown({
 		Parent = panel,
@@ -339,7 +348,14 @@ function M:Build(panel, options)
 		end,
 	})
 
-	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	-- 12.1 has no Text Size slider, so Icon Padding takes its place beside Icon Size;
+	-- legacy keeps it on the next row.
+	if useAuraContainers then
+		iconSpacing.Slider:SetPoint("LEFT", panel, "LEFT", columnWidth * 2 + 4, 0)
+		iconSpacing.Slider:SetPoint("TOP", iconSize.Slider, "TOP", 0, 0)
+	else
+		iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	end
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()

@@ -224,7 +224,7 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 
 	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
 
-	local growDdlLbl = container:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local growDdlLbl = container:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	growDdlLbl:SetText(L["Grow"])
 
 	local growDdl, modernDdl = mini:Dropdown({
@@ -318,7 +318,10 @@ end
 ---@param parent table
 ---@param options NameplateModuleOptions
 local function BuildSettingsTab(parent, options)
-	local threeColWidth = mini:ColumnWidth(3, 0, 0)
+	-- Shared 5-column checkbox grid so checkbox rows align across pages. These labels are
+	-- long in several locales (ruRU "Ignore Enemy Pets" needs ~220px), so the checkboxes
+	-- sit two grid columns apart in a 2x2 block instead of one per column.
+	local checkColumnWidth = mini:ColumnWidth(5, 0, 0)
 
 	local enemyIgnorePetsChk = mini:Checkbox({
 		Parent = parent,
@@ -347,7 +350,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 	})
 	friendlyIgnorePetsChk:SetPoint("TOP", enemyIgnorePetsChk, "TOP", 0, 0)
-	friendlyIgnorePetsChk:SetPoint("LEFT", parent, "LEFT", threeColWidth, 0)
+	friendlyIgnorePetsChk:SetPoint("LEFT", parent, "LEFT", checkColumnWidth * 2, 0)
 
 	local scaleWithNameplateChk = mini:Checkbox({
 		Parent = parent,
@@ -361,8 +364,7 @@ local function BuildSettingsTab(parent, options)
 			config:Apply()
 		end,
 	})
-	scaleWithNameplateChk:SetPoint("TOP", enemyIgnorePetsChk, "TOP", 0, 0)
-	scaleWithNameplateChk:SetPoint("LEFT", parent, "LEFT", threeColWidth * 2, 0)
+	scaleWithNameplateChk:SetPoint("TOPLEFT", enemyIgnorePetsChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local anchorToHealthBarChk = mini:Checkbox({
 		Parent = parent,
@@ -376,7 +378,8 @@ local function BuildSettingsTab(parent, options)
 			config:Apply()
 		end,
 	})
-	anchorToHealthBarChk:SetPoint("TOPLEFT", enemyIgnorePetsChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	anchorToHealthBarChk:SetPoint("TOP", scaleWithNameplateChk, "TOP", 0, 0)
+	anchorToHealthBarChk:SetPoint("LEFT", parent, "LEFT", checkColumnWidth * 2, 0)
 end
 
 ---@param parent table

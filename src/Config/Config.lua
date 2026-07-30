@@ -91,21 +91,25 @@ function M:Init()
 	end)
 
 	-- Test button in the title bar
-	local testBtn = CreateFrame("Button", nil, window.TitleBar, "UIPanelButtonTemplate")
-	testBtn:SetSize(80, 22)
+	local testBtn = mini:Button({
+		Parent = window.TitleBar,
+		Text = L["Test"],
+		Width = 80,
+		OnClick = function()
+			addon:ToggleTest(nil)
+		end,
+	})
 	testBtn:SetPoint("RIGHT", window.CloseButton, "LEFT", -8, 0)
-	testBtn:SetText(L["Test"])
-	testBtn:SetScript("OnClick", function()
-		addon:ToggleTest(nil)
-	end)
 
 	-- Tabs fill the content area of the window
 	local tabsPanel = window.Content
 
+	-- Sidebar icons: desaturated by CreateTabs until the tab is selected.
 	local tabs = {
 		{
 			Key = "General",
 			Title = L["Home"],
+			Icon = "Interface\\Icons\\INV_Misc_Rune_01",
 			Build = function(content)
 				M.General:Build(content)
 			end,
@@ -113,6 +117,7 @@ function M:Init()
 		{
 			Key = "CC",
 			Title = L["CC"],
+			Icon = "Interface\\Icons\\Spell_Nature_Polymorph",
 			Build = function(content)
 				M.CrowdControl:Build(content, db.Modules.CCModule.Default, db.Modules.CCModule.Raid)
 			end,
@@ -120,6 +125,7 @@ function M:Init()
 		{
 			Key = "Indicator",
 			Title = L["Auras"],
+			Icon = "Interface\\Icons\\Spell_Holy_PowerWordShield",
 			Build = function(content)
 				M.FriendlyIndicator:Build(content, db.Modules.FriendlyIndicatorModule.Default, db.Modules.FriendlyIndicatorModule.Raid)
 			end,
@@ -127,6 +133,7 @@ function M:Init()
 		{
 			Key = "FriendlyCooldowns",
 			Title = L["Friendly Cooldowns_Short"] or L["Friendly Cooldowns"],
+			Icon = "Interface\\Icons\\Spell_Holy_GuardianSpirit",
 			Build = function(content)
 				local m = db.Modules.FriendlyCooldownTrackerModule
 			M.FriendlyCooldownTracker:Build(content, m.Default, m.Raid)
@@ -135,6 +142,7 @@ function M:Init()
 		{
 			Key = "EnemyCooldowns",
 			Title = L["Enemy Cooldowns_Short"] or L["Enemy Cooldowns"],
+			Icon = "Interface\\Icons\\Ability_CriticalStrike",
 			Build = function(content)
 				M.EnemyCooldownTracker:Build(content, db.Modules.EnemyCooldownTrackerModule)
 			end,
@@ -142,6 +150,7 @@ function M:Init()
 		{
 			Key = "Alerts",
 			Title = L["Alerts"],
+			Icon = "Interface\\Icons\\Ability_Warrior_BattleShout",
 			Build = function(content)
 				M.Alerts:Build(content, db.Modules.AlertsModule)
 			end,
@@ -149,6 +158,7 @@ function M:Init()
 		{
 			Key = "Healer",
 			Title = L["Healer"],
+			Icon = "Interface\\Icons\\Spell_Holy_FlashHeal",
 			Build = function(content)
 				M.Healer:Build(content, db.Modules.HealerCCModule)
 			end,
@@ -156,6 +166,7 @@ function M:Init()
 		{
 			Key = "Nameplates",
 			Title = L["Nameplates_Short"] or L["Nameplates"],
+			Icon = "Interface\\Icons\\Ability_Hunter_SniperShot",
 			Build = function(content)
 				M.Nameplates:Build(content, db.Modules.NameplatesModule)
 			end,
@@ -163,6 +174,7 @@ function M:Init()
 		{
 			Key = "Portraits",
 			Title = L["Portraits_Short"] or L["Portraits"],
+			Icon = "Interface\\Icons\\INV_Misc_Head_Human_01",
 			Build = function(content)
 				M.Portraits:Build(content)
 			end,
@@ -170,6 +182,7 @@ function M:Init()
 		{
 			Key = "KickTimer",
 			Title = L["Kick timer_Short"] or L["Kick timer"],
+			Icon = "Interface\\Icons\\Ability_Kick",
 			Build = function(content)
 				M.KickTimer:Build(content)
 			end,
@@ -177,6 +190,7 @@ function M:Init()
 		{
 			Key = "Precog",
 			Title = L["Precognition"],
+			Icon = "Interface\\Icons\\Spell_Holy_MindVision",
 			Build = function(content)
 				M.PrecogGuesser:Build(content)
 			end,
@@ -184,6 +198,7 @@ function M:Init()
 		{
 			Key = "Miscellaneous",
 			Title = L["Miscellaneous_Short"] or L["Miscellaneous"],
+			Icon = "Interface\\Icons\\Trade_Engineering",
 			Build = function(content)
 				M.Miscellaneous:Build(content)
 			end,
@@ -191,6 +206,7 @@ function M:Init()
 		{
 			Key = "Profiles",
 			Title = L["Profiles"],
+			Icon = "Interface\\Icons\\INV_Misc_Note_01",
 			Build = function(content)
 				M.Profiles:Build(content)
 			end,
@@ -198,6 +214,7 @@ function M:Init()
 		{
 			Key = "OtherAddons",
 			Title = L["Other Mini Addons_Short"] or L["Other Mini Addons"],
+			Icon = "Interface\\Icons\\INV_Misc_Bag_08",
 			Build = function(content)
 				M.OtherAddons:Build(content)
 			end,

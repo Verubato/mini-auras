@@ -3,6 +3,7 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("ruRU", {
+	["In Blizzard's 12.1 patch, addons can no longer read any aura information. The following features are not possible in 12.1 and have been removed:\n- Cooldown tracking (friendly and enemy).\n- The warning text when the healer is CC'd.\n- Text-to-speech announcements.\n- Sound alerts for enemy defensives/important spells (the healer CC sound still works).\n- Class colours on alert icons.\n- Glow type selection (icons always use the built-in glow).\n- Masque icon skinning."] = "С патчем 12.1 аддоны больше не могут читать информацию об аурах. Следующие возможности недоступны в 12.1 и были удалены:\n- Отслеживание кулдаунов (союзники и противники).\n- Предупреждающий текст, когда лекарь под контролем.\n- Озвучивание (TTS).\n- Звуковые оповещения о защитных/важных заклинаниях противника (звук контроля лекаря по-прежнему работает).\n- Цвета классов на иконках оповещений.\n- Выбор типа свечения (иконки всегда используют встроенное свечение).\n- Скины Masque для иконок.",
 	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "Хорошие новости:\n- Реализован обходной способ снова показывать важные ауры на полосках имён/портретах/оповещениях.",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Показывает важные заклинания на отдельной перемещаемой панели вместо объединения с защитными оповещениями.",
 	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "Показывает важные заклинания противника (например, атакующие способности, предвидение), считанные с полосок имён.",
@@ -36,7 +37,14 @@ L:RegisterLocale("ruRU", {
 	["Enable this module in raids."] = "Включить этот модуль в подземельях и M+.",
 	["Exclude self"] = "Исключить себя",
 	["Glow icons"] = "Светящиеся иконки",
+	["Icons"] = "Иконки",
+	["Behaviour"] = "Поведение",
 	["Glow Type"] = "Тип свечения",
+	["A separate region for showing enemy defensive spells."] = "Отдельная область для отображения защитных заклинаний противника.",
+	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "Показывает ауры контроля и защиты одним набором иконок на рамках группы/рейда.",
+	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Показывает контроль, защитные и другие важные заклинания на портретах игрока/цели/фокуса.",
+	["It works by showing any 'important' buff with a maximum duration of 4.1 seconds or less (precognition is a 4 second buff)."] = "Показывает любой 'важный' положительный эффект с максимальной длительностью 4,1 секунды или меньше (предвидение — эффект на 4 секунды).",
+	["So if a unit happens to have some other short important buff then that icon would also show, sorry."] = "Поэтому если у цели окажется другой короткий важный эффект, его иконка тоже будет показана, увы.",
 	["Grow"] = "Рост",
 	["Icon Padding"] = "Отступ иконки",
 	["Icon Size"] = "Размер иконки",
@@ -197,7 +205,7 @@ L:RegisterLocale("ruRU", {
 	["A separate region for when your healer is CC'd."] = "Отдельная область для когда ваш целитель под контролем.",
 	["Play a sound when the healer is CC'd."] = "Воспроизводить звук, когда целитель под контролем.",
 	["Show the 'Healer in CC!' text above the icons."] = "Показать 'Целитель в СС' над иконками.",
-	["Show warning text"] = "Текст предупреждения",
+	["Show warning text"] = "Предупреждение",
 	["Text Size"] = "Размер текста",
 
 	-- Kick Timer tab
@@ -248,7 +256,7 @@ L:RegisterLocale("ruRU", {
 	["Milliseconds"] = "Миллисекунды",
 	["Milliseconds Threshold"] = "Порог миллисекунд",
 	["Show decimal milliseconds on the cooldown timer when below the configured threshold."] = "Отображает десятичные миллисекунды на таймере перезарядки при значении ниже настроенного порога.",
-	["Show tooltips"] = "Показывать подсказки",
+	["Show tooltips"] = "Подсказки",
 	["Shows a spell tooltip when hovering over an icon."] = "Показывает подсказку заклинания при наведении на значок.",
 	["Trinket"] = "Аксессуар",
 	["Shows the trinket cooldown icon."] = "Показывает иконку перезарядки аксессуара.",

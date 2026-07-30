@@ -3,6 +3,7 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("ptBR", {
+	["In Blizzard's 12.1 patch, addons can no longer read any aura information. The following features are not possible in 12.1 and have been removed:\n- Cooldown tracking (friendly and enemy).\n- The warning text when the healer is CC'd.\n- Text-to-speech announcements.\n- Sound alerts for enemy defensives/important spells (the healer CC sound still works).\n- Class colours on alert icons.\n- Glow type selection (icons always use the built-in glow).\n- Masque icon skinning."] = "Com o patch 12.1, os addons não podem mais ler informações de auras. Os seguintes recursos não são possíveis no 12.1 e foram removidos:\n- Rastreamento de tempos de recarga (aliados e inimigos).\n- O texto de aviso quando o curandeiro está controlado.\n- Anúncios por voz (TTS).\n- Alertas sonoros para defensivos/feitiços importantes inimigos (o som de CC do curandeiro ainda funciona).\n- Cores de classe nos ícones de alerta.\n- Escolha do tipo de brilho (os ícones sempre usam o brilho integrado).\n- Skins Masque nos ícones.",
 	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "Boas notícias:\n- Uma solução alternativa foi implementada para exibir novamente as auras importantes em placas de nome/retratos/alertas.",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Mostra os feitiços importantes em uma barra separada e móvel em vez de combinados com os alertas defensivos.",
 	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "Mostra feitiços importantes do inimigo (ex.: recargas ofensivas, precognição) lidos das placas de nome.",
@@ -36,7 +37,14 @@ L:RegisterLocale("ptBR", {
 	["Enable this module in raids."] = "Ativar este módulo em masmorras e M+.",
 	["Exclude self"] = "Excluir a si mesmo",
 	["Glow icons"] = "Ícones brilhantes",
+	["Icons"] = "Ícones",
+	["Behaviour"] = "Comportamento",
 	["Glow Type"] = "Tipo de brilho",
+	["A separate region for showing enemy defensive spells."] = "Uma região separada para mostrar feitiços defensivos inimigos.",
+	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "Mostra auras de controle e defensivas como um conjunto de ícones nos quadros de grupo/raide.",
+	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Mostra CC, defensivos e outros feitiços importantes nos retratos do jogador/alvo/foco.",
+	["It works by showing any 'important' buff with a maximum duration of 4.1 seconds or less (precognition is a 4 second buff)."] = "Funciona mostrando qualquer bônus 'importante' com duração máxima de 4,1 segundos ou menos (precognição é um bônus de 4 segundos).",
+	["So if a unit happens to have some other short important buff then that icon would also show, sorry."] = "Então, se uma unidade por acaso tiver outro bônus importante de curta duração, esse ícone também será mostrado, desculpe.",
 	["Grow"] = "Crescer",
 	["Icon Padding"] = "Espaçamento de ícone",
 	["Icon Size"] = "Tamanho do ícone",

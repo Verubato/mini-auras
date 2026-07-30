@@ -3,6 +3,7 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("zhCN", {
+	["In Blizzard's 12.1 patch, addons can no longer read any aura information. The following features are not possible in 12.1 and have been removed:\n- Cooldown tracking (friendly and enemy).\n- The warning text when the healer is CC'd.\n- Text-to-speech announcements.\n- Sound alerts for enemy defensives/important spells (the healer CC sound still works).\n- Class colours on alert icons.\n- Glow type selection (icons always use the built-in glow).\n- Masque icon skinning."] = "自12.1补丁起，插件无法再读取任何光环信息。以下功能在12.1中无法实现，已被移除：\n- 冷却追踪（友方和敌方）。\n- 治疗者被控制时的警告文字。\n- 语音合成播报。\n- 敌方防御/重要法术的声音提示（治疗者被控制的声音仍然有效）。\n- 警报图标的职业颜色。\n- 发光类型选择（图标始终使用内置发光）。\n- Masque图标皮肤。",
 	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "好消息：\n- 已实现一种变通方法，可在姓名板/头像/警报上再次显示重要光环。",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "在单独的可移动条上显示重要法术，而不是与防御警报合并。",
 	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "显示从姓名板读取的敌方重要法术（例如进攻冷却、预知）。",
@@ -36,7 +37,14 @@ L:RegisterLocale("zhCN", {
 	["Enable this module in raids."] = "在地下城和M+中启用此模块。",
 	["Exclude self"] = "排除自己",
 	["Glow icons"] = "图标发光",
+	["Icons"] = "图标",
+	["Behaviour"] = "行为",
 	["Glow Type"] = "发光类型",
+	["A separate region for showing enemy defensive spells."] = "用于显示敌方防御法术的独立区域。",
+	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "在小队/团队框体上将控制和防御光环显示为一组图标。",
+	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "在玩家/目标/焦点头像上显示控制、防御和其他重要法术。",
+	["It works by showing any 'important' buff with a maximum duration of 4.1 seconds or less (precognition is a 4 second buff)."] = "它通过显示任何最大持续时间不超过4.1秒的'重要'增益来工作（预知是4秒增益）。",
+	["So if a unit happens to have some other short important buff then that icon would also show, sorry."] = "因此，如果单位碰巧有其他短时间的重要增益，该图标也会显示，抱歉。",
 	["Grow"] = "增长",
 	["Icon Padding"] = "图标间距",
 	["Icon Size"] = "图标大小",

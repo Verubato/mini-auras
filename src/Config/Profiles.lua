@@ -108,6 +108,7 @@ local function GetOrCreateProfileIOWindow()
 	exportLabel:SetText(L["Export Profile"])
 
 	local exportBox = CreateFrame("EditBox", nil, win, "InputBoxTemplate")
+	mini:FlattenEditBox(exportBox)
 	exportBox:SetHeight(28)
 	exportBox:SetWidth(innerWidth)
 	exportBox:SetPoint("TOPLEFT", exportLabel, "BOTTOMLEFT", 0, -6)
@@ -131,6 +132,7 @@ local function GetOrCreateProfileIOWindow()
 	nameLabel:SetText(L["Profile Name"])
 
 	local nameBox = CreateFrame("EditBox", nil, win, "InputBoxTemplate")
+	mini:FlattenEditBox(nameBox)
 	nameBox:SetHeight(28)
 	nameBox:SetWidth(innerWidth)
 	nameBox:SetPoint("TOPLEFT", nameLabel, "BOTTOMLEFT", 0, -4)
@@ -143,6 +145,7 @@ local function GetOrCreateProfileIOWindow()
 	stringLabel:SetText(L["Profile String"])
 
 	local importBox = CreateFrame("EditBox", nil, win, "InputBoxTemplate")
+	mini:FlattenEditBox(importBox)
 	importBox:SetHeight(28)
 	importBox:SetWidth(innerWidth)
 	importBox:SetPoint("TOPLEFT", stringLabel, "BOTTOMLEFT", 0, -4)
@@ -150,10 +153,12 @@ local function GetOrCreateProfileIOWindow()
 	importBox:SetMaxLetters(0)
 	importBox:SetScript("OnEscapePressed", function() win:Hide() end)
 
-	local importBtn = CreateFrame("Button", nil, win, "UIPanelButtonTemplate")
-	importBtn:SetSize(100, 22)
+	local importBtn = mini:Button({
+		Parent = win,
+		Text = L["Import"],
+		Width = 100,
+	})
 	importBtn:SetPoint("TOPRIGHT", importBox, "BOTTOMRIGHT", 0, -12)
-	importBtn:SetText(L["Import"])
 	importBtn:SetScript("OnClick", function()
 		local str = importBox:GetText():gsub("%s+", "")
 		local name = nameBox:GetText():match("^%s*(.-)%s*$")
@@ -175,11 +180,13 @@ local function GetOrCreateProfileIOWindow()
 		win:Hide()
 	end)
 
-	local closeBtn = CreateFrame("Button", nil, win, "UIPanelButtonTemplate")
-	closeBtn:SetSize(80, 22)
+	local closeBtn = mini:Button({
+		Parent = win,
+		Text = CLOSE,
+		Width = 80,
+		OnClick = function() win:Hide() end,
+	})
 	closeBtn:SetPoint("TOPRIGHT", importBtn, "TOPLEFT", -8, 0)
-	closeBtn:SetText(CLOSE)
-	closeBtn:SetScript("OnClick", function() win:Hide() end)
 
 	win.ExportBox = exportBox
 	win.ImportBox = importBox
@@ -230,17 +237,18 @@ StaticPopupDialogs["MINICC_PROFILE_NAME"] = {
 }
 
 local function MakeButton(parent, text, width)
-	local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-	btn:SetSize(width or 80, 22)
-	btn:SetText(text)
-	return btn
+	return mini:Button({
+		Parent = parent,
+		Text = text,
+		Width = width or 80,
+	})
 end
 
 function M:Build(panel)
 	local db = mini:GetSavedVars()
 
 	-- ── Active profile ─────────────────────────────────────────────────
-	local activeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local activeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	activeLabel:SetText(L["Active Profile"])
 	activeLabel:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
@@ -424,7 +432,7 @@ function M:Build(panel)
 				icon:SetPoint("LEFT", row, "LEFT", 0, 0)
 				icon:SetPoint("TOP", row, "TOP", 0, -4)
 
-				local lbl = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+				local lbl = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 				lbl:SetText(specName)
 				lbl:SetPoint("TOPLEFT", icon, "TOPRIGHT", 4, 0)
 				lbl:SetWidth(specColW - 28)

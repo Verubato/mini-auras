@@ -51,7 +51,7 @@ local function BuildSettingsTab(parent, options)
 	})
 
 	includeDefensivesChk:SetPoint("TOP", iconsEnabledChk, "TOP", 0, 0)
-	includeDefensivesChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	includeDefensivesChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
 
 	local glowChk = mini:Checkbox({
 		Parent = parent,
@@ -81,7 +81,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 	})
 
-	colorByClassChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+	colorByClassChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
 	colorByClassChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local reverseChk = mini:Checkbox({
@@ -97,7 +97,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local showTooltipsChk = mini:Checkbox({
@@ -113,8 +113,8 @@ local function BuildSettingsTab(parent, options)
 		end,
 	})
 
-	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
-	showTooltipsChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
+	showTooltipsChk:SetPoint("TOP", iconsEnabledChk, "TOP", 0, 0)
 
 	local splitBarsChk = mini:Checkbox({
 		Parent = parent,
@@ -129,7 +129,8 @@ local function BuildSettingsTab(parent, options)
 		end,
 	})
 
-	splitBarsChk:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	splitBarsChk:SetPoint("TOP", iconsEnabledChk, "TOP", 0, 0)
+	splitBarsChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
 
 	local iconSize = mini:Slider({
 		Parent = parent,
@@ -150,7 +151,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", splitBarsChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local maxIcons = mini:Slider({
 		Parent = parent,
@@ -194,7 +195,7 @@ local function BuildSettingsTab(parent, options)
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
-	local growLbl = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	local growLbl = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	growLbl:SetText(L["Grow"])
 
 	local growDdl, modernDdl = mini:Dropdown({
@@ -237,7 +238,7 @@ local function BuildSettingsTab(parent, options)
 	})
 
 	importantBarChk:SetPoint("TOP", iconsEnabledChk, "TOP", 0, 0)
-	importantBarChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+	importantBarChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
 end
 
 ---@param parent table
@@ -520,6 +521,8 @@ end
 ---@param options AlertsModuleOptions
 function M:Build(panel, options)
 	columnWidth = mini:ColumnWidth(columns, 0, 0)
+	-- Shared 5-column checkbox grid: the Enable-in row and settings checkbox rows all sit on
+	-- the same vertical lines.
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
 	local db = mini:GetSavedVars()
 

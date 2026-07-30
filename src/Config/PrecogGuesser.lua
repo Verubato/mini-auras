@@ -15,18 +15,42 @@ function M:Build(panel)
 	local db = mini:GetSavedVars()
 	local columns = 3
 	local columnWidth = mini:ColumnWidth(columns, 0, 0)
-	local description = mini:TextBlock({
-		Parent = panel,
-		Lines = {
+	-- Shared 5-column checkbox grid so checkbox rows align across pages.
+	local checkColumnWidth = mini:ColumnWidth(5, 0, 0)
+	-- TEMPORARY dual path: on 12.1 the module filters by aura max duration (<= 4.1s) via
+	-- CandidateFilters; the legacy text describes the 12.0.7 buff-scan heuristic.
+	local descriptionLines
+	if addon.Utils.WoWEx:UseAuraContainers() then
+		descriptionLines = {
+			L["This isn't precision perfect but it should be close enough."],
+			L["It works by showing any 'important' buff with a maximum duration of 4.1 seconds or less (precognition is a 4 second buff)."],
+			L["So if a unit happens to have some other short important buff then that icon would also show, sorry."],
+			L["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."],
+		}
+	else
+		descriptionLines = {
 			L["This isn't precision perfect but it should be close enough."],
 			L["It works by taking any 4 second 'important' self buff and showing that icon."],
 			L["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."],
 			L["Note that you can't simply filter by spell id these days."],
 			L["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."],
-		},
+		}
+	end
+
+	local description = mini:TextBlock({
+		Parent = panel,
+		Lines = descriptionLines,
 	})
 
 	description:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+
+	local settingsDivider = mini:Divider({
+		Parent = panel,
+		Text = L["Settings"],
+	})
+	settingsDivider:SetPoint("LEFT", panel, "LEFT")
+	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
+	settingsDivider:SetPoint("TOP", description, "BOTTOM", 0, -verticalSpacing)
 
 	local enabled = mini:Checkbox({
 		Parent = panel,
@@ -41,7 +65,7 @@ function M:Build(panel)
 		end,
 	})
 
-	enabled:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -verticalSpacing)
+	enabled:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local glowChk = mini:Checkbox({
 		Parent = panel,
@@ -56,7 +80,7 @@ function M:Build(panel)
 	})
 
 	glowChk:SetPoint("TOP", enabled, "TOP", 0, 0)
-	glowChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	glowChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
 
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,

@@ -3,6 +3,7 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("itIT", {
+	["In Blizzard's 12.1 patch, addons can no longer read any aura information. The following features are not possible in 12.1 and have been removed:\n- Cooldown tracking (friendly and enemy).\n- The warning text when the healer is CC'd.\n- Text-to-speech announcements.\n- Sound alerts for enemy defensives/important spells (the healer CC sound still works).\n- Class colours on alert icons.\n- Glow type selection (icons always use the built-in glow).\n- Masque icon skinning."] = "Con la patch 12.1 gli addon non possono più leggere le informazioni sulle aure. Le seguenti funzionalità non sono possibili nella 12.1 e sono state rimosse:\n- Tracciamento dei tempi di recupero (alleati e nemici).\n- Il testo di avviso quando il curatore è sotto CC.\n- Gli annunci di sintesi vocale.\n- Gli avvisi sonori per difensive/incantesimi importanti nemici (il suono del CC sul curatore funziona ancora).\n- I colori di classe sulle icone degli avvisi.\n- La scelta del tipo di bagliore (le icone usano sempre il bagliore integrato).\n- Le skin Masque sulle icone.",
 	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "Buone notizie:\n- È stata implementata una soluzione alternativa per mostrare di nuovo le auree importanti su targhette/ritratti/avvisi.",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Mostra gli incantesimi importanti su una barra separata e spostabile invece che combinati con gli avvisi difensivi.",
 	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "Mostra gli incantesimi importanti del nemico (es. tempi di recupero offensivi, precognizione) letti dalle targhette.",
@@ -36,7 +37,14 @@ L:RegisterLocale("itIT", {
 	["Enable this module in raids."] = "Abilita questo modulo nelle spedizioni e M+.",
 	["Exclude self"] = "Escludi se stesso",
 	["Glow icons"] = "Icone brillanti",
+	["Icons"] = "Icone",
+	["Behaviour"] = "Comportamento",
 	["Glow Type"] = "Tipo di bagliore",
+	["A separate region for showing enemy defensive spells."] = "Un'area separata per mostrare gli incantesimi difensivi nemici.",
+	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "Mostra le aure di controllo e difensive come un unico set di icone sui riquadri di gruppo/incursione.",
+	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Mostra CC, difensive e altri incantesimi importanti sui ritratti di giocatore/bersaglio/focus.",
+	["It works by showing any 'important' buff with a maximum duration of 4.1 seconds or less (precognition is a 4 second buff)."] = "Funziona mostrando qualsiasi beneficio 'importante' con una durata massima di 4,1 secondi o meno (la precognizione è un beneficio di 4 secondi).",
+	["So if a unit happens to have some other short important buff then that icon would also show, sorry."] = "Quindi, se un'unità ha per caso un altro beneficio importante di breve durata, verrà mostrata anche quella icona, spiacenti.",
 	["Grow"] = "Cresci",
 	["Icon Padding"] = "Spaziatura icona",
 	["Icon Size"] = "Dimensione icona",

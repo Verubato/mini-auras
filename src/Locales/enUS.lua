@@ -4,6 +4,7 @@ local L = addon.L
 
 -- Set English as the default
 L:SetDefaultStrings({
+	["In Blizzard's 12.1 patch, addons can no longer read any aura information. The following features are not possible in 12.1 and have been removed:\n- Cooldown tracking (friendly and enemy).\n- The warning text when the healer is CC'd.\n- Text-to-speech announcements.\n- Sound alerts for enemy defensives/important spells (the healer CC sound still works).\n- Class colours on alert icons.\n- Glow type selection (icons always use the built-in glow).\n- Masque icon skinning."] = "In Blizzard's 12.1 patch, addons can no longer read any aura information. The following features are not possible in 12.1 and have been removed:\n- Cooldown tracking (friendly and enemy).\n- The warning text when the healer is CC'd.\n- Text-to-speech announcements.\n- Sound alerts for enemy defensives/important spells (the healer CC sound still works).\n- Class colours on alert icons.\n- Glow type selection (icons always use the built-in glow).\n- Masque icon skinning.",
 	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts.",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Show important spells on a separate, movable bar instead of combined with the defensive alerts.",
 	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates.",
@@ -37,7 +38,14 @@ L:SetDefaultStrings({
 	["Enable this module in raids."] = "Enable this module in raids.",
 	["Exclude self"] = "Exclude self",
 	["Glow icons"] = "Glow icons",
+	["Icons"] = "Icons",
+	["Behaviour"] = "Behaviour",
 	["Glow Type"] = "Glow Type",
+	["A separate region for showing enemy defensive spells."] = "A separate region for showing enemy defensive spells.",
+	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "Shows CC and defensive auras as one set of icons on party/raid frames.",
+	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Shows CC, defensives, and other important spells on the player/target/focus portraits.",
+	["It works by showing any 'important' buff with a maximum duration of 4.1 seconds or less (precognition is a 4 second buff)."] = "It works by showing any 'important' buff with a maximum duration of 4.1 seconds or less (precognition is a 4 second buff).",
+	["So if a unit happens to have some other short important buff then that icon would also show, sorry."] = "So if a unit happens to have some other short important buff then that icon would also show, sorry.",
 	["Grow"] = "Grow",
 	["Icon Padding"] = "Icon Padding",
 	["Icon Size"] = "Icon Size",

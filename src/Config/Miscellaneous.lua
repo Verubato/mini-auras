@@ -12,11 +12,22 @@ function M:Build(panel)
 	local db = mini:GetSavedVars()
 	local columns = 2
 	local columnWidth = mini:ColumnWidth(columns, 0, 0)
+	-- Shared 5-column checkbox grid so checkbox rows align across pages. The long labels on
+	-- this page sit two grid columns apart so they never overlap.
+	local checkColumnWidth = mini:ColumnWidth(5, 0, 0)
 
-	-- Language override
-	local languageLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	-- General: client-level settings
+	local generalDivider = mini:Divider({
+		Parent = panel,
+		Text = L["General"],
+	})
+	generalDivider:SetPoint("LEFT", panel, "LEFT")
+	generalDivider:SetPoint("RIGHT", panel, "RIGHT")
+	generalDivider:SetPoint("TOP", panel, "TOP", 0, 0)
+
+	local languageLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	languageLabel:SetText(L["Language override"])
-	languageLabel:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	languageLabel:SetPoint("TOPLEFT", generalDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local availableLocales = L:GetAvailableLocales()
 	local autoLabel = L["Auto (client language)"] .. " (" .. L:GetDisplayName(GetLocale()) .. ")"
@@ -59,15 +70,58 @@ function M:Build(panel)
 	languageDropdown:SetPoint("TOPLEFT", languageLabel, "BOTTOMLEFT", 0, -4)
 	languageDropdown:SetWidth(columnWidth)
 
+	-- Icons: appearance of every icon MiniCC draws
+	local iconsDivider = mini:Divider({
+		Parent = panel,
+		Text = L["Icons"],
+	})
+	iconsDivider:SetPoint("LEFT", panel, "LEFT")
+	iconsDivider:SetPoint("RIGHT", panel, "RIGHT")
+	iconsDivider:SetPoint("TOP", languageDropdown, "BOTTOM", 0, -verticalSpacing)
+
+	local disableSwipeChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Disable Swipe Animation"],
+		Tooltip = L["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."],
+		GetValue = function()
+			return db.DisableSwipe or false
+		end,
+		SetValue = function(value)
+			db.DisableSwipe = value
+			addon:Refresh()
+		end,
+	})
+
+	disableSwipeChk:SetPoint("TOPLEFT", iconsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local fadeWithParentChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Fade With Parent Frame"],
+		Tooltip = L["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."],
+		GetValue = function()
+			if db.FadeWithParent == nil then
+				return true
+			end
+			return db.FadeWithParent
+		end,
+		SetValue = function(value)
+			db.FadeWithParent = value
+			addon:Refresh()
+		end,
+	})
+
+	fadeWithParentChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+	fadeWithParentChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
+
 	-- Glow Type: hidden on 12.1 - aura icons there always use the built-in flipbook glow
 	-- (LibCustomGlow can't attach to AuraButtons, so the choice no longer does anything
 	-- user-visible). TEMPORARY: remove the gate with the legacy path once 12.1 is live.
-	local fontScaleAnchor = languageDropdown
+	local slidersAnchor = disableSwipeChk
 
 	if not addon.Utils.WoWEx:UseAuraContainers() then
-		local glowTypeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+		local glowTypeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 		glowTypeLabel:SetText(L["Glow Type"])
-		glowTypeLabel:SetPoint("TOPLEFT", languageDropdown, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+		glowTypeLabel:SetPoint("TOPLEFT", disableSwipeChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 		local glowTypeDropdown = mini:Dropdown({
 			Parent = panel,
@@ -99,7 +153,7 @@ function M:Build(panel)
 		})
 
 		glowNote:SetPoint("TOPLEFT", glowTypeDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
-		fontScaleAnchor = glowNote
+		slidersAnchor = glowNote
 	end
 
 	local fontScaleSlider = mini:Slider({
@@ -121,73 +175,7 @@ function M:Build(panel)
 		Width = columnWidth - horizontalSpacing,
 	})
 
-	fontScaleSlider.Slider:SetPoint("TOPLEFT", fontScaleAnchor, "BOTTOMLEFT", 4, -verticalSpacing * 3)
-
-	local configureBlizzardNameplatesChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Configure Blizzard Nameplates"],
-		Tooltip = L["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."],
-		GetValue = function()
-			if db.ConfigureBlizzardNameplates == nil then
-				return true
-			end
-			return db.ConfigureBlizzardNameplates
-		end,
-		SetValue = function(value)
-			db.ConfigureBlizzardNameplates = value
-			addon:Refresh()
-		end,
-	})
-
-	configureBlizzardNameplatesChk:SetPoint("TOPLEFT", fontScaleSlider.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 2)
-
-	local ccNativeOrderChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["CC Native Order"],
-		Tooltip = L["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."],
-		GetValue = function()
-			return db.CCNativeOrder or false
-		end,
-		SetValue = function(value)
-			db.CCNativeOrder = value
-			addon:Refresh()
-		end,
-	})
-
-	ccNativeOrderChk:SetPoint("TOPLEFT", configureBlizzardNameplatesChk, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local disableSwipeChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Disable Swipe Animation"],
-		Tooltip = L["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."],
-		GetValue = function()
-			return db.DisableSwipe or false
-		end,
-		SetValue = function(value)
-			db.DisableSwipe = value
-			addon:Refresh()
-		end,
-	})
-
-	disableSwipeChk:SetPoint("TOPLEFT", ccNativeOrderChk, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local fadeWithParentChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Fade With Parent Frame"],
-		Tooltip = L["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."],
-		GetValue = function()
-			if db.FadeWithParent == nil then
-				return true
-			end
-			return db.FadeWithParent
-		end,
-		SetValue = function(value)
-			db.FadeWithParent = value
-			addon:Refresh()
-		end,
-	})
-
-	fadeWithParentChk:SetPoint("TOPLEFT", disableSwipeChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	fontScaleSlider.Slider:SetPoint("TOPLEFT", slidersAnchor, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
 	local millisThresholdSlider = mini:Slider({
 		Parent = panel,
@@ -208,5 +196,49 @@ function M:Build(panel)
 		Width = columnWidth - horizontalSpacing,
 	})
 
-	millisThresholdSlider.Slider:SetPoint("TOPLEFT", fadeWithParentChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	millisThresholdSlider.Slider:SetPoint("LEFT", fontScaleSlider.Slider, "RIGHT", horizontalSpacing, 0)
+	millisThresholdSlider.Slider:SetPoint("TOP", fontScaleSlider.Slider, "TOP", 0, 0)
+
+	-- Behaviour: how the CC displays interact with the rest of the UI
+	local behaviourDivider = mini:Divider({
+		Parent = panel,
+		Text = L["Behaviour"],
+	})
+	behaviourDivider:SetPoint("LEFT", panel, "LEFT")
+	behaviourDivider:SetPoint("RIGHT", panel, "RIGHT")
+	behaviourDivider:SetPoint("TOP", fontScaleSlider.Slider, "BOTTOM", 0, -verticalSpacing * 2)
+
+	local configureBlizzardNameplatesChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Configure Blizzard Nameplates"],
+		Tooltip = L["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."],
+		GetValue = function()
+			if db.ConfigureBlizzardNameplates == nil then
+				return true
+			end
+			return db.ConfigureBlizzardNameplates
+		end,
+		SetValue = function(value)
+			db.ConfigureBlizzardNameplates = value
+			addon:Refresh()
+		end,
+	})
+
+	configureBlizzardNameplatesChk:SetPoint("TOPLEFT", behaviourDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local ccNativeOrderChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["CC Native Order"],
+		Tooltip = L["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."],
+		GetValue = function()
+			return db.CCNativeOrder or false
+		end,
+		SetValue = function(value)
+			db.CCNativeOrder = value
+			addon:Refresh()
+		end,
+	})
+
+	ccNativeOrderChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+	ccNativeOrderChk:SetPoint("TOP", configureBlizzardNameplatesChk, "TOP", 0, 0)
 end

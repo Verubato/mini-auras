@@ -3,6 +3,7 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("frFR", {
+	["In Blizzard's 12.1 patch, addons can no longer read any aura information. The following features are not possible in 12.1 and have been removed:\n- Cooldown tracking (friendly and enemy).\n- The warning text when the healer is CC'd.\n- Text-to-speech announcements.\n- Sound alerts for enemy defensives/important spells (the healer CC sound still works).\n- Class colours on alert icons.\n- Glow type selection (icons always use the built-in glow).\n- Masque icon skinning."] = "Avec le patch 12.1, les addons ne peuvent plus lire les informations d'auras. Les fonctionnalités suivantes ne sont plus possibles en 12.1 et ont été retirées :\n- Suivi des temps de recharge (alliés et ennemis).\n- Le texte d'avertissement quand le soigneur est contrôlé.\n- Les annonces par synthèse vocale.\n- Les alertes sonores pour les défensifs/sorts importants ennemis (le son de CC du soigneur fonctionne toujours).\n- Les couleurs de classe sur les icônes d'alerte.\n- Le choix du type de lueur (les icônes utilisent toujours la lueur intégrée).\n- Les skins Masque sur les icônes.",
 	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "Bonne nouvelle :\n- Une solution de contournement a été implémentée pour afficher à nouveau les auras importantes sur les barres de nom/portraits/alertes.",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Affiche les sorts importants sur une barre séparée et déplaçable au lieu d'être combinés avec les alertes défensives.",
 	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "Affiche les sorts importants de l'ennemi (par ex. temps de recharge offensifs, précognition) lus depuis les barres de nom.",
@@ -36,7 +37,14 @@ L:RegisterLocale("frFR", {
 	["Enable this module in raids."] = "Activer ce module en raid.",
 	["Exclude self"] = "S'exclure",
 	["Glow icons"] = "Lueur des icônes",
+	["Icons"] = "Icônes",
+	["Behaviour"] = "Comportement",
 	["Glow Type"] = "Type de lueur",
+	["A separate region for showing enemy defensive spells."] = "Une zone séparée pour afficher les sorts défensifs ennemis.",
+	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "Affiche les auras de contrôle et défensives comme un ensemble d'icônes sur les cadres de groupe/raid.",
+	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Affiche les contrôles, défensifs et autres sorts importants sur les portraits du joueur/de la cible/du focus.",
+	["It works by showing any 'important' buff with a maximum duration of 4.1 seconds or less (precognition is a 4 second buff)."] = "Il affiche tout buff 'important' d'une durée maximale de 4,1 secondes ou moins (la précognition est un buff de 4 secondes).",
+	["So if a unit happens to have some other short important buff then that icon would also show, sorry."] = "Donc si une unité a par hasard un autre buff important de courte durée, cette icône s'affichera aussi, désolé.",
 	["Grow"] = "Direction",
 	["Icon Padding"] = "Espacement des icônes",
 	["Icon Size"] = "Taille des icônes",
@@ -187,7 +195,7 @@ L:RegisterLocale("frFR", {
 	["Show CC icons."] = "Affiche les icônes de CC.",
 	["Show defensives"] = "Afficher les défensifs",
 	["Show defensive spell icons."] = "Affiche les icônes de sorts défensifs.",
-	["Show interrupts"] = "Afficher les interruptions",
+	["Show interrupts"] = "Interruptions",
 	["Show an icon when a friendly unit gets interrupted."] = "Affiche une icône lorsqu'une unité alliée est interrompue.",
 	["Shows CC and defensives as one set of icons on party/raid frames."] = "Affiche le contrôle de foule et les défensifs comme un seul ensemble d'icônes sur les cadres de groupe/raid.",
 	["Tip: Disable the CC module for BGs and enable CC within this module."] = "Astuce : Désactivez le module CC pour les BG et activez le CC dans ce module.",
