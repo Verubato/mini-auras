@@ -103,6 +103,9 @@ local nameplateDisplays = {}
 local displayPairPool
 -- Sorted token list scratch for deterministic chaining order.
 local displayOrderScratch = {}
+-- Grow direction -> which edge of a bar frame gets pinned at the saved anchor position.
+-- Pinning the trailing edge is what makes the row extend the other way as icons appear.
+local growPinPoints = { LEFT = "RIGHT", RIGHT = "LEFT", CENTER = "CENTER" }
 
 ---@class AlertsModule : IModule
 local M = {}
@@ -635,6 +638,52 @@ local function NameplateTokenLess(a, b)
 	return a < b
 end
 
+-- Effective grow direction for the alert bars. CENTER (the default, symmetric growth around
+-- the anchor) needs a readable row width to center on, which the 12.1 chained displays don't
+-- have, so it falls back to RIGHT there.
+local function GetGrow()
+	local grow = db.Modules.AlertsModule.Grow
+	if grow ~= "LEFT" and grow ~= "RIGHT" then
+		grow = "CENTER"
+	end
+	if useAuraContainers and grow == "CENTER" then
+		return "RIGHT"
+	end
+	return grow
+end
+
+-- Rewrites a bar's saved anchor so the pinned edge matches the grow direction, keeping the
+-- frame at its current on-screen position (changing Grow never visibly moves the bar). Rect
+-- values are in the frame's own scale, which is also the scale SetPoint offsets use, so no
+-- conversion is needed even though the bars ignore parent scale.
+local function NormalizeBarAnchor(frame, anchorOptions, grow)
+	local point = growPinPoints[grow]
+	if anchorOptions.Point == point then
+		return
+	end
+	local left, right = frame:GetLeft(), frame:GetRight()
+	local centerX, centerY = frame:GetCenter()
+	if not left or not right or not centerY then
+		return
+	end
+	anchorOptions.Point = point
+	anchorOptions.RelativeTo = "UIParent"
+	anchorOptions.RelativePoint = "BOTTOMLEFT"
+	anchorOptions.Offset.X = (point == "RIGHT" and right) or (point == "LEFT" and left) or centerX
+	anchorOptions.Offset.Y = centerY
+end
+
+-- Saves a bar's position after a drag, normalized to the grow-appropriate pinned edge.
+local function SaveDraggedPosition(frame, anchorOptions)
+	local point, relativeTo, relativePoint, x, y = frame:GetPoint()
+	anchorOptions.Point = point
+	anchorOptions.RelativePoint = relativePoint
+	anchorOptions.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
+	anchorOptions.Offset.X = x
+	anchorOptions.Offset.Y = y
+	NormalizeBarAnchor(frame, anchorOptions, GetGrow())
+end
+
 -- 12.1 path: re-anchors the active per-nameplate displays into rows. Defensive displays chain
 -- off the main bar frame; important displays chain off the important bar in split mode, or
 -- continue the main-bar chain when combined. Chaining container-to-container avoids reading
@@ -644,6 +693,10 @@ local function ChainAlertDisplays()
 	local options = db.Modules.AlertsModule
 	local spacing = options.IconSpacing or 2
 	local splitBars = options.SplitBars
+	local growLeft = GetGrow() == "LEFT"
+	local point = growLeft and "RIGHT" or "LEFT"
+	local relativePoint = growLeft and "LEFT" or "RIGHT"
+	local step = growLeft and -spacing or spacing
 
 	local tokens = displayOrderScratch
 	wipe(tokens)
@@ -660,9 +713,9 @@ local function ChainAlertDisplays()
 		local defFrame = nameplateDisplays[token].Def.Frame
 		defFrame:ClearAllPoints()
 		if prevMain then
-			defFrame:SetPoint("LEFT", prevMain, "RIGHT", spacing, 0)
+			defFrame:SetPoint(point, prevMain, relativePoint, step, 0)
 		else
-			defFrame:SetPoint("LEFT", container.Frame, "LEFT", 0, 0)
+			defFrame:SetPoint(point, container.Frame, point, 0, 0)
 		end
 		prevMain = defFrame
 	end
@@ -673,16 +726,16 @@ local function ChainAlertDisplays()
 		impFrame:ClearAllPoints()
 		if splitBars then
 			if prevImp then
-				impFrame:SetPoint("LEFT", prevImp, "RIGHT", spacing, 0)
+				impFrame:SetPoint(point, prevImp, relativePoint, step, 0)
 			else
-				impFrame:SetPoint("LEFT", importantContainer.Frame, "LEFT", 0, 0)
+				impFrame:SetPoint(point, importantContainer.Frame, point, 0, 0)
 			end
 			prevImp = impFrame
 		elseif prevMain then
-			impFrame:SetPoint("LEFT", prevMain, "RIGHT", spacing, 0)
+			impFrame:SetPoint(point, prevMain, relativePoint, step, 0)
 			prevMain = impFrame
 		else
-			impFrame:SetPoint("LEFT", container.Frame, "LEFT", 0, 0)
+			impFrame:SetPoint(point, container.Frame, point, 0, 0)
 			prevMain = impFrame
 		end
 	end
@@ -708,7 +761,9 @@ local function ApplyNameplateDisplayOptions(entry, options, showBars)
 	local size = options.Icons.Size
 	local spacing = options.IconSpacing or 2
 	local showTooltips = options.ShowTooltips ~= false
+	local grow = GetGrow()
 
+	entry.Def:SetGrow(grow)
 	entry.Def:SetIconSize(size)
 	entry.Def:SetSpacing(spacing)
 	entry.Def:SetMaxIcons("bigdef", includeDefensives and maxIcons or 0)
@@ -722,6 +777,7 @@ local function ApplyNameplateDisplayOptions(entry, options, showBars)
 	entry.Def:SetEnabled(showBars == true)
 	entry.Def.Frame:SetShown(showBars == true)
 
+	entry.Imp:SetGrow(grow)
 	entry.Imp:SetIconSize(size)
 	entry.Imp:SetSpacing(spacing)
 	entry.Imp:SetMaxIcons("important", importantEnabled and maxIcons or 0)
@@ -748,7 +804,10 @@ local function RefreshNameplateDisplays()
 	ChainAlertDisplays()
 end
 
--- 12.1 path: builds one pooled display pair. Filter negation partitions the categories:
+-- 12.1 path: builds one pooled display pair. BIG and EXTERNAL defensives are separate groups
+-- because filter-string tokens combine with AND - "HELPFUL|BIG_DEFENSIVE|EXTERNAL_DEFENSIVE"
+-- would only match auras flagged as BOTH, i.e. almost nothing; two groups on one container is
+-- the idiom for OR (they render as one continuous row). Filter negation partitions them:
 -- EXTERNAL excludes BIG (they can overlap) and the important display excludes both defensive
 -- categories so a both-important-and-defensive aura isn't drawn on both bars (legacy deduped
 -- by id). Sizes/budgets are applied per token by RefreshNameplateDisplays.
@@ -1039,6 +1098,9 @@ function M:Refresh()
 
 	EnableDisable()
 
+	local grow = GetGrow()
+	NormalizeBarAnchor(container.Frame, options, grow)
+
 	container.Frame:ClearAllPoints()
 	container.Frame:SetPoint(
 		options.Point,
@@ -1051,12 +1113,18 @@ function M:Refresh()
 	container:SetIconSize(options.Icons.Size)
 	container:SetSpacing(options.IconSpacing or 2)
 	container:SetCount(options.Icons.MaxIcons or 8)
+	-- Grow-left rows fill right-to-left so the first icon sits nearest the pinned edge,
+	-- matching the 12.1 flow layouts.
+	container:SetRows(nil, "CENTER", grow == "LEFT")
 
 	if importantContainer then
 		local importantOptions = options.Important
 		-- The dedicated important bar only appears in split mode; combined merges into the main bar.
 		local importantVisible = importantOptions and importantOptions.Enabled and options.SplitBars
 		local impAnchor = importantOptions or options
+		if impAnchor ~= options then
+			NormalizeBarAnchor(importantContainer.Frame, impAnchor, grow)
+		end
 		importantContainer.Frame:ClearAllPoints()
 		importantContainer.Frame:SetPoint(
 			impAnchor.Point,
@@ -1069,6 +1137,7 @@ function M:Refresh()
 		importantContainer:SetIconSize(options.Icons.Size)
 		importantContainer:SetSpacing(options.IconSpacing or 2)
 		importantContainer:SetCount(options.Icons.MaxIcons or 8)
+		importantContainer:SetRows(nil, "CENTER", grow == "LEFT")
 
 		if importantVisible then
 			importantContainer.Frame:Show()
@@ -1131,13 +1200,7 @@ function M:Init()
 	end)
 	container.Frame:SetScript("OnDragStop", function(anchorSelf)
 		anchorSelf:StopMovingOrSizing()
-
-		local point, relativeTo, relativePoint, x, y = anchorSelf:GetPoint()
-		options.Point = point
-		options.RelativePoint = relativePoint
-		options.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
-		options.Offset.X = x
-		options.Offset.Y = y
+		SaveDraggedPosition(anchorSelf, options)
 	end)
 	container.Frame:Show()
 
@@ -1163,13 +1226,7 @@ function M:Init()
 	end)
 	importantContainer.Frame:SetScript("OnDragStop", function(anchorSelf)
 		anchorSelf:StopMovingOrSizing()
-
-		local point, relativeTo, relativePoint, x, y = anchorSelf:GetPoint()
-		impAnchor.Point = point
-		impAnchor.RelativePoint = relativePoint
-		impAnchor.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
-		impAnchor.Offset.X = x
-		impAnchor.Offset.Y = y
+		SaveDraggedPosition(anchorSelf, impAnchor)
 	end)
 
 	if options.Important and options.Important.Enabled and options.SplitBars then

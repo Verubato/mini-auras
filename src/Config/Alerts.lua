@@ -9,6 +9,10 @@ local columns = 4
 local columnWidth
 local enabledColumnWidth
 local config = addon.Config
+-- TEMPORARY (12.1): CENTER growth needs a readable row width to center on the anchor, which
+-- the 12.1 chained displays don't have, so only LEFT/RIGHT are offered there.
+local useAuraContainers = wowEx:UseAuraContainers()
+local growOptions = useAuraContainers and { "LEFT", "RIGHT" } or { "LEFT", "RIGHT", "CENTER" }
 
 ---@class AlertsConfig
 local M = {}
@@ -189,6 +193,34 @@ local function BuildSettingsTab(parent, options)
 	})
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
+	local growLbl = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+	growLbl:SetText(L["Grow"])
+
+	local growDdl, modernDdl = mini:Dropdown({
+		Parent = parent,
+		Items = growOptions,
+		Width = columnWidth * 2 - horizontalSpacing,
+		GetValue = function()
+			local grow = options.Grow
+			if grow ~= "LEFT" and grow ~= "RIGHT" then
+				grow = "CENTER"
+			end
+			if useAuraContainers and grow == "CENTER" then
+				return "RIGHT"
+			end
+			return grow
+		end,
+		SetValue = function(value)
+			if options.Grow ~= value then
+				options.Grow = value
+				config:Apply()
+			end
+		end,
+	})
+
+	growLbl:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 2)
+	growDdl:SetPoint("TOPLEFT", growLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
 
 	local importantBarChk = mini:Checkbox({
 		Parent = parent,

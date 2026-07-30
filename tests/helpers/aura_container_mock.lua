@@ -251,6 +251,11 @@ function M.NewFrame(frameType, name, parent, template)
 	function frame:GetHeight()
 		return frame._height
 	end
+	-- Rect queries return nil (frames are never laid out here); anchor-normalization code
+	-- treats that as "rect unavailable" and skips.
+	function frame:GetLeft() end
+	function frame:GetRight() end
+	function frame:GetCenter() end
 	function frame:SetFrameLevel(level)
 		frame._level = level
 	end

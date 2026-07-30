@@ -184,6 +184,10 @@ local dbDefaults = {
 			SplitBars = false,
 			-- Pixel padding between the alerts bar icons.
 			IconSpacing = 2,
+			-- Direction the alert bars extend as icons appear: LEFT, RIGHT, or CENTER (symmetric
+			-- growth around the anchor; treated as RIGHT on 12.1, where the chained per-unit rows
+			-- have secret widths and can't be centered). Filled from dbDefaults for existing dbs.
+			Grow = "CENTER",
 			Point = "CENTER",
 			RelativePoint = "TOP",
 			RelativeTo = "UIParent",

@@ -111,6 +111,38 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		local _, impRelativeTo = imp7:GetPoint(1)
 		assert(impRelativeTo == def10, "combined mode: first important chains after the LAST defensive")
 	end)
+
+	fw.it("Grow LEFT flips the chain: right edges pinned, negative spacing steps", function()
+		db.Modules.AlertsModule.Grow = "LEFT"
+		db.Modules.AlertsModule.IconSpacing = 2
+		env.addon.Modules.AlertsModule:Refresh()
+
+		local function defOf(token)
+			for _, container in ipairs(env.containersForUnit(token)) do
+				if env.groupCount(container) == 2 then
+					return container
+				end
+			end
+		end
+
+		-- nameplate2, nameplate7 and nameplate10 are still active from the previous tests;
+		-- nameplate2 sorts first, so it is the chain start.
+		local def2 = defOf("nameplate2")
+		local def7, def10 = defOf("nameplate7"), defOf("nameplate10")
+		local point2, _, relativePoint2, x2 = def2:GetPoint(1)
+		assert(point2 == "RIGHT" and relativePoint2 == "RIGHT" and x2 == 0,
+			"chain start pins its RIGHT edge to the bar frame's RIGHT edge")
+		local point10, relativeTo10, relativePoint10, x10 = def10:GetPoint(1)
+		assert(point10 == "RIGHT" and relativeTo10 == def7 and relativePoint10 == "LEFT" and x10 == -2,
+			"next link hangs off the previous display's LEFT edge with negative spacing")
+
+		-- Back to the default; on 12.1 that behaves as RIGHT (LEFT edges, positive spacing).
+		db.Modules.AlertsModule.Grow = "CENTER"
+		env.addon.Modules.AlertsModule:Refresh()
+		local pointAfter, _, relativePointAfter, xAfter = def10:GetPoint(1)
+		assert(pointAfter == "LEFT" and relativePointAfter == "RIGHT" and xAfter == 2,
+			"CENTER falls back to RIGHT growth on 12.1")
+	end)
 end)
 
 fw.describe("NameplatesModule 12.1 - pooled bar displays", function()

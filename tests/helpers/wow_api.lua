@@ -123,6 +123,9 @@ function M.setup()
 		f.ClearAllPoints      = function() end
 		f.SetPoint            = function() end
 		f.SetAlpha            = function() end
+		f.GetLeft             = function() end
+		f.GetRight            = function() end
+		f.GetCenter           = function() end
 		return f
 	end
 end
