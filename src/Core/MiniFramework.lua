@@ -1076,13 +1076,14 @@ function M:CreateTabs(options)
 	PixelUtil.SetHeight(lineRight, 1)
 	lineRight:SetColorTexture(0.35, 0.35, 0.35, 0.8)
 
-	-- Vertical mode: static right-edge separator line.
+	-- Vertical mode: static right-edge separator line. The bottom edge is anchored to the last
+	-- button after the tab loop (the strip itself extends past it to the parent's bottom).
+	local vLine
 	if vertical then
-		local vLine = strip:CreateTexture(nil, "OVERLAY")
+		vLine = strip:CreateTexture(nil, "OVERLAY")
 		PixelUtil.SetWidth(vLine, 1)
 		vLine:SetColorTexture(0.35, 0.35, 0.35, 0.8)
 		PixelUtil.SetPoint(vLine, "TOPRIGHT", strip, "TOPRIGHT", 0, 0)
-		PixelUtil.SetPoint(vLine, "BOTTOMRIGHT", strip, "BOTTOMRIGHT", 0, 0)
 	end
 
 	-- Assigned after the tab loop; used in horizontal mode to limit the line to the last tab.
@@ -1357,6 +1358,12 @@ function M:CreateTabs(options)
 	end
 
 	lastBtn = tabs[#tabs] and tabs[#tabs].Button
+
+	-- Vertical buttons span the full strip width, so the last button's corner is exactly
+	-- where the separator should stop.
+	if vLine and lastBtn then
+		PixelUtil.SetPoint(vLine, "BOTTOMRIGHT", lastBtn, "BOTTOMRIGHT", 0, 0)
+	end
 
 	local initialIndex = 1
 	if options.InitialKey and keyToIndex[options.InitialKey] then
