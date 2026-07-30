@@ -54,8 +54,8 @@ local ccNames = {
 	["Time Stop"] = true, ["Chains of Ice"] = true,
 }
 
--- Player important ability names (offensive/defensive cooldowns + specials). Matched against
--- the Important-flagged set.
+-- Player important ability names (specials + offensive cooldowns). Matched against the
+-- Important-flagged set; emitted as AuraSoundData.Important (the "important spell" sound).
 local importantNames = {
 	-- Specials
 	["Precognition"] = true, ["Nullifying Shroud"] = true, ["Grounding Totem"] = true,
@@ -78,6 +78,11 @@ local importantNames = {
 	["Invoke Niuzao, the Black Ox"] = true, ["Invoke Chi-Ji, the Red Crane"] = true,
 	["Invoke Xuen, the White Tiger"] = true, ["Invoke Yu'lon, the Jade Serpent"] = true,
 	["Thunder Blast"] = true,
+}
+
+-- Player defensive ability names (defensives + healer throughput cooldowns). Matched against
+-- the Important-flagged set; emitted as AuraSoundData.Defensive (the "defensive spell" sound).
+local defensiveNames = {
 	-- Defensive cooldowns
 	["Ice Block"] = true, ["Ice Cold"] = true, ["Divine Shield"] = true,
 	["Aspect of the Turtle"] = true, ["Cloak of Shadows"] = true, ["Evasion"] = true,
@@ -118,10 +123,12 @@ end
 
 local ccMatched, ccByName = filter(MiniCCSpellScan.CC, ccNames)
 local impMatched, impByName = filter(MiniCCSpellScan.Important, importantNames)
+local defMatched, defByName = filter(MiniCCSpellScan.Important, defensiveNames)
 
 if mode == "report" then
 	print(("CC matched: %d ids"):format(#ccMatched))
 	print(("Important matched: %d ids"):format(#impMatched))
+	print(("Defensive matched: %d ids"):format(#defMatched))
 
 	print("\nCC names with no matches:")
 	for name in pairs(ccNames) do
@@ -135,28 +142,35 @@ if mode == "report" then
 			print("  " .. name)
 		end
 	end
+	print("\nDefensive names with no matches:")
+	for name in pairs(defensiveNames) do
+		if not defByName[name] then
+			print("  " .. name)
+		end
+	end
 
 	-- Player-relevant important names present in the scan that we did NOT match (id < 1.2M),
-	-- to spot anything missing from the curated list.
+	-- to spot anything missing from the curated lists.
 	print("\nUnmatched Important names below 1.2M (candidates to add):")
 	local seen = {}
 	for id, name in pairs(MiniCCSpellScan.Important) do
-		if type(name) == "string" and id < 1200000 and not importantNames[name] and not seen[name] then
+		if type(name) == "string" and id < 1200000 and not importantNames[name] and not defensiveNames[name] and not seen[name] then
 			seen[name] = true
 			print(("  [%d] %s"):format(id, name))
 		end
 	end
 elseif mode == "generate" then
 	local out = {}
-	local function emit(label, list)
-		out[#out + 1] = ("\t-- %s (%d ids)"):format(label, #list)
+	local function emit(label, comment, list)
+		out[#out + 1] = ("\t-- %s (%d ids)"):format(comment, #list)
 		out[#out + 1] = ("\t%s = {"):format(label)
 		for _, e in ipairs(list) do
 			out[#out + 1] = ("\t\t[%d] = true, -- %s"):format(e.id, e.name)
 		end
 		out[#out + 1] = "\t},"
 	end
-	emit("CC", ccMatched)
-	emit("Important", impMatched)
+	emit("CC", "CC", ccMatched)
+	emit("Important", "Important: specials + offensive cooldowns", impMatched)
+	emit("Defensive", "Defensive: defensive + healer throughput cooldowns", defMatched)
 	print(table.concat(out, "\n"))
 end

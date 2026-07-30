@@ -143,6 +143,51 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		assert(pointAfter == "LEFT" and relativePointAfter == "RIGHT" and xAfter == 2,
 			"CENTER falls back to RIGHT growth on 12.1")
 	end)
+
+	fw.it("alert sounds register per enemy plate and unregister on release/disable", function()
+		-- The healer sound tests later assert on the shared counters in absolute terms, so
+		-- restore them at the end (net registrations here end at zero anyway).
+		local adds0, removes0 = env.auraSoundAdds, env.auraSoundRemoves
+		local perToken = 0
+		for _ in pairs(env.addon.Core.AuraSoundData.Important) do
+			perToken = perToken + 1
+		end
+		for _ in pairs(env.addon.Core.AuraSoundData.Defensive) do
+			perToken = perToken + 1
+		end
+		assert(perToken > 0, "sound data present")
+
+		local function net()
+			return env.auraSoundAdds - env.auraSoundRemoves
+		end
+
+		-- nameplate2, nameplate7 and nameplate10 are active from the earlier tests.
+		local baseline = net()
+		db.Modules.AlertsModule.Sound.Important.Enabled = true
+		db.Modules.AlertsModule.Sound.Defensive.Enabled = true
+		env.addon.Modules.AlertsModule:Refresh()
+		assert(net() - baseline == perToken * 3, "3 active tokens registered, net " .. (net() - baseline))
+
+		-- A new enemy plate registers incrementally.
+		env.enemies.nameplate11 = true
+		env.addPlate("nameplate11")
+		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate11")
+		assert(net() - baseline == perToken * 4, "new plate registered")
+
+		-- Releasing the plate removes exactly its registrations.
+		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "nameplate11")
+		env.plates.nameplate11 = nil
+		env.enemies.nameplate11 = nil
+		assert(net() - baseline == perToken * 3, "released plate unregistered")
+
+		-- Turning the sounds off clears the remaining registrations.
+		db.Modules.AlertsModule.Sound.Important.Enabled = false
+		db.Modules.AlertsModule.Sound.Defensive.Enabled = false
+		env.addon.Modules.AlertsModule:Refresh()
+		assert(net() - baseline == 0, "disable clears every registration")
+
+		env.auraSoundAdds, env.auraSoundRemoves = adds0, removes0
+	end)
 end)
 
 fw.describe("NameplatesModule 12.1 - pooled bar displays", function()

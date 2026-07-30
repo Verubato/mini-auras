@@ -106,6 +106,17 @@ local displayOrderScratch = {}
 -- Grow direction -> which edge of a bar frame gets pinned at the saved anchor position.
 -- Pinning the trailing edge is what makes the row extend the other way as icons appear.
 local growPinPoints = { LEFT = "RIGHT", RIGHT = "LEFT", CENTER = "CENTER" }
+-- 12.1 path: engine-side alert sounds via C_UnitAuras.AddAuraSound (the aura transitions the
+-- legacy sound reacted to are secret there, but the engine can play sounds on them for us -
+-- same pattern as HealerCrowdControlModule). Registrations are per (enemy nameplate token,
+-- spellId), fed from the generated Core/AuraSoundData Important/Defensive lists.
+-- token -> array of auraSoundIDs for that token.
+local alertSoundsByToken = {}
+-- Signature of the sound settings the current registrations were made with; when it changes
+-- every active token is re-registered.
+local alertSoundSettingsSignature = nil
+-- Reused UnitAuraSoundInfo table for registrations.
+local alertSoundInfoScratch = { unitToken = nil, spellID = nil, soundFileName = nil, outputChannel = nil }
 
 ---@class AlertsModule : IModule
 local M = {}
@@ -804,6 +815,97 @@ local function RefreshNameplateDisplays()
 	ChainAlertDisplays()
 end
 
+-- 12.1 path: removes the engine sound registrations for one nameplate token.
+local function RemoveTokenAlertSounds(unitToken)
+	local ids = alertSoundsByToken[unitToken]
+	if not ids then
+		return
+	end
+	for i = #ids, 1, -1 do
+		C_UnitAuras.RemoveAuraSound(ids[i])
+		ids[i] = nil
+	end
+	alertSoundsByToken[unitToken] = nil
+end
+
+-- 12.1 path: registers the important/defensive alert sounds for one enemy nameplate token.
+-- No-op when already registered or when no alert sound is enabled.
+local function RegisterTokenAlertSounds(unitToken)
+	if not useAuraContainers or alertSoundsByToken[unitToken] then
+		return
+	end
+	if paused or not moduleUtil:IsModuleEnabled(moduleName.Alerts) then
+		return
+	end
+	local sound = db.Modules.AlertsModule.Sound
+	local importantEnabled = sound.Important and sound.Important.Enabled
+	local defensiveEnabled = sound.Defensive and sound.Defensive.Enabled
+	if not importantEnabled and not defensiveEnabled then
+		return
+	end
+
+	local ids = {}
+	local info = alertSoundInfoScratch
+	info.unitToken = unitToken
+
+	local function registerList(list, config, fallbackFile)
+		info.soundFileName = addon.Config.MediaLocation .. (config.File or fallbackFile)
+		info.outputChannel = config.Channel or "Master"
+		for spellId in pairs(list) do
+			info.spellID = spellId
+			local soundId = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
+			if soundId then
+				ids[#ids + 1] = soundId
+			end
+		end
+	end
+
+	if importantEnabled then
+		registerList(addon.Core.AuraSoundData.Important, sound.Important, "AirHorn.ogg")
+	end
+	if defensiveEnabled then
+		registerList(addon.Core.AuraSoundData.Defensive, sound.Defensive, "AlertToastWarm.ogg")
+	end
+
+	alertSoundsByToken[unitToken] = ids
+end
+
+-- 12.1 path: re-evaluates the sound settings; when they change, every active token's
+-- registrations are rebuilt (token add/remove is handled incrementally at the
+-- Ensure/ReleaseNameplateDisplay chokepoints). Called from Refresh, which also runs after
+-- the test-mode Pause/Resume transitions.
+local function RefreshAlertSounds()
+	if not useAuraContainers then
+		return
+	end
+	local sound = db.Modules.AlertsModule.Sound
+	local importantEnabled = (sound.Important and sound.Important.Enabled) or false
+	local defensiveEnabled = (sound.Defensive and sound.Defensive.Enabled) or false
+	local active = (importantEnabled or defensiveEnabled)
+		and moduleUtil:IsModuleEnabled(moduleName.Alerts)
+		and not paused
+	local signature = tostring(active)
+		.. "|" .. tostring(importantEnabled)
+		.. "|" .. tostring(sound.Important and sound.Important.File)
+		.. "|" .. tostring(sound.Important and sound.Important.Channel)
+		.. "|" .. tostring(defensiveEnabled)
+		.. "|" .. tostring(sound.Defensive and sound.Defensive.File)
+		.. "|" .. tostring(sound.Defensive and sound.Defensive.Channel)
+	if signature == alertSoundSettingsSignature then
+		return
+	end
+	alertSoundSettingsSignature = signature
+
+	for unitToken in pairs(alertSoundsByToken) do
+		RemoveTokenAlertSounds(unitToken)
+	end
+	if active then
+		for unitToken in pairs(nameplateDisplays) do
+			RegisterTokenAlertSounds(unitToken)
+		end
+	end
+end
+
 -- 12.1 path: builds one pooled display pair. BIG and EXTERNAL defensives are separate groups
 -- because filter-string tokens combine with AND - "HELPFUL|BIG_DEFENSIVE|EXTERNAL_DEFENSIVE"
 -- would only match auras flagged as BOTH, i.e. almost nothing; two groups on one container is
@@ -848,11 +950,13 @@ local function EnsureNameplateDisplay(unitToken)
 
 	entry.Def:SetUnit(unitToken)
 	entry.Imp:SetUnit(unitToken)
+	RegisterTokenAlertSounds(unitToken)
 	return entry
 end
 
 -- 12.1 path: releases a token's display pair back to the central pool when its plate goes away.
 local function ReleaseNameplateDisplay(unitToken)
+	RemoveTokenAlertSounds(unitToken)
 	local entry = nameplateDisplays[unitToken]
 	if entry then
 		nameplateDisplays[unitToken] = nil
@@ -1154,6 +1258,7 @@ function M:Refresh()
 
 	if useAuraContainers then
 		RefreshNameplateDisplays()
+		RefreshAlertSounds()
 	end
 
 	if testModeActive and moduleUtil:IsModuleEnabled(moduleName.Alerts) then

@@ -215,11 +215,12 @@ fw.describe("AuraSoundData", function()
 
 	fw.it("has plausible list sizes", function()
 		assert(count(data.CC) > 500, "CC list unexpectedly small: " .. count(data.CC))
-		assert(count(data.Important) > 50, "Important list unexpectedly small: " .. count(data.Important))
+		assert(count(data.Important) > 40, "Important list unexpectedly small: " .. count(data.Important))
+		assert(count(data.Defensive) > 40, "Defensive list unexpectedly small: " .. count(data.Defensive))
 	end)
 
 	fw.it("is keyed by numeric spell ids with true values", function()
-		for _, list in pairs({ data.CC, data.Important }) do
+		for _, list in pairs({ data.CC, data.Important, data.Defensive }) do
 			for id, value in pairs(list) do
 				assert(type(id) == "number" and value == true, "bad entry: " .. tostring(id))
 			end
@@ -230,6 +231,12 @@ fw.describe("AuraSoundData", function()
 		assert(data.CC[408], "Kidney Shot in CC")
 		assert(data.CC[118], "Polymorph in CC")
 		assert(data.Important[377362], "Precognition in Important")
-		assert(data.Important[45438], "Ice Block in Important")
+		assert(data.Defensive[45438], "Ice Block in Defensive")
+	end)
+
+	fw.it("Important and Defensive are disjoint", function()
+		for id in pairs(data.Important) do
+			assert(not data.Defensive[id], "spell in both lists: " .. id)
+		end
 	end)
 end)

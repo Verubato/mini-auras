@@ -59,7 +59,7 @@ function M:Build(panel)
 	newsText:SetJustifyH("LEFT")
 	-- TEMPORARY dual path: drop the 12.0.7 message with the legacy path once 12.1 is live.
 	if addon.Utils.WoWEx:UseAuraContainers() then
-		newsText:SetText(L["In Blizzard's 12.1 patch, addons can no longer read any aura information. The following features are not possible in 12.1 and have been removed:\n- Cooldown tracking (friendly and enemy).\n- The warning text when the healer is CC'd.\n- Text-to-speech announcements.\n- Sound alerts for enemy defensives/important spells (the healer CC sound still works).\n- Class colours on alert icons.\n- Glow type selection (icons always use the built-in glow).\n- Masque icon skinning."])
+		newsText:SetText(L["In Blizzard's 12.1 patch, addons can no longer read any aura information. The following features are not possible in 12.1 and have been removed:\n- Cooldown tracking (friendly and enemy).\n- The warning text when the healer is CC'd.\n- Text-to-speech announcements.\n- Class colours on alert icons.\n- Glow type selection (icons always use the built-in glow).\n- Masque icon skinning."])
 	else
 		newsText:SetText(L["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."])
 	end

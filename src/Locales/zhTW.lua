@@ -3,7 +3,7 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("zhTW", {
-	["In Blizzard's 12.1 patch, addons can no longer read any aura information. The following features are not possible in 12.1 and have been removed:\n- Cooldown tracking (friendly and enemy).\n- The warning text when the healer is CC'd.\n- Text-to-speech announcements.\n- Sound alerts for enemy defensives/important spells (the healer CC sound still works).\n- Class colours on alert icons.\n- Glow type selection (icons always use the built-in glow).\n- Masque icon skinning."] = "自12.1改版起，插件無法再讀取任何光環資訊。以下功能在12.1中無法實現，已被移除：\n- 冷卻追蹤（友方和敵方）。\n- 治療者被控制時的警告文字。\n- 語音合成播報。\n- 敵方防禦/重要法術的聲音提示（治療者被控制的聲音仍然有效）。\n- 警報圖示的職業顏色。\n- 發光類型選擇（圖示始終使用內建發光）。\n- Masque圖示外觀。",
+	["In Blizzard's 12.1 patch, addons can no longer read any aura information. The following features are not possible in 12.1 and have been removed:\n- Cooldown tracking (friendly and enemy).\n- The warning text when the healer is CC'd.\n- Text-to-speech announcements.\n- Class colours on alert icons.\n- Glow type selection (icons always use the built-in glow).\n- Masque icon skinning."] = "自12.1改版起，插件無法再讀取任何光環資訊。以下功能在12.1中無法實現，已被移除：\n- 冷卻追蹤（友方和敵方）。\n- 治療者被控制時的警告文字。\n- 語音合成播報。\n- 警報圖示的職業顏色。\n- 發光類型選擇（圖示始終使用內建發光）。\n- Masque圖示外觀。",
 	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "好消息：\n- 已實作一種變通方法，可在名條/頭像/警報上再次顯示重要光環。",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "在獨立、可移動的名條上顯示重要法術，而不是與防禦警報合併。",
 	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "顯示從名條讀取的敵方重要法術（例如進攻冷卻、預知）。",
