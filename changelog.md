@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.0.0a-1
+
+12.1 support for the new aura container system.
+
 ## 4.6.3
 
 Fixed font size of 0 error.
