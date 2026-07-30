@@ -220,6 +220,8 @@ L:RegisterLocale("ruRU", {
 	["Nameplates_Short"] = "Полоски",
 	["Scale with Nameplate"] = "Масштабировать с табличкой",
 	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Иконки масштабируются вместе с масштабом таблички с именем. Используйте этот параметр, если у вас другой размер для таблички с именем цели (например, в настройках BBF).",
+	["Anchor to Health Bar"] = "Привязать к полосе здоровья",
+	["Anchor the icons to the nameplate's health bar instead of the nameplate frame. Use this option if another addon (e.g. BetterBlizzPlates) changes the nameplate width or height."] = "Привязывает иконки к полосе здоровья таблички с именем вместо рамки таблички. Используйте этот параметр, если другой аддон (например, BetterBlizzPlates) изменяет ширину или высоту таблички с именем.",
 	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Показывает контроль, защиту и важные эффекты на полосках имён (работает с аддонами полосок имён, например BBP, Platynator и Plater).",
 	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Показывает важные положительные эффекты, которые Blizzard разрешает на полосках имён (например, атакующие способности противника).",
 	["Spell colours"] = "Цвета заклинаний",

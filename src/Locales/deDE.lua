@@ -219,6 +219,8 @@ L:RegisterLocale("deDE", {
 	["Nameplates_Short"] = "Platten",
 	["Scale with Nameplate"] = "Mit Namensschild skalieren",
 	["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."] = "Icons skalieren zusammen mit der Namensschild-Skalierung. Verwende diese Option, wenn du eine andere Größe für das Ziel-Namensschild hast (z. B. in den BBF-Einstellungen).",
+	["Anchor to Health Bar"] = "Am Lebensbalken verankern",
+	["Anchor the icons to the nameplate's health bar instead of the nameplate frame. Use this option if another addon (e.g. BetterBlizzPlates) changes the nameplate width or height."] = "Verankert die Icons am Lebensbalken des Namensschilds statt am Namensschild-Rahmen. Verwende diese Option, wenn ein anderes Addon (z. B. BetterBlizzPlates) die Breite oder Höhe des Namensschilds ändert.",
 	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Zeigt Massenkontrolle, Defensives und wichtige Zauber auf Namensplaketten (funktioniert mit Namensplaketten-Addons wie BBP, Platynator und Plater).",
 	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Zeigt die wichtigen Stärkungszauber, die Blizzard auf Namensplaketten erlaubt (z. B. offensive Abklingzeiten von Gegnern).",
 	["Spell colours"] = "Zauberfarben",

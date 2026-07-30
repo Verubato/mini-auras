@@ -317,6 +317,70 @@ end
 
 ---@param parent table
 ---@param options NameplateModuleOptions
+local function BuildSettingsTab(parent, options)
+	local threeColWidth = mini:ColumnWidth(3, 0, 0)
+
+	local enemyIgnorePetsChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Ignore Enemy Pets"],
+		Tooltip = L["Do not show auras on enemy pet nameplates."],
+		GetValue = function()
+			return options.Enemy.IgnorePets
+		end,
+		SetValue = function(value)
+			options.Enemy.IgnorePets = value
+			config:Apply()
+		end,
+	})
+	enemyIgnorePetsChk:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+
+	local friendlyIgnorePetsChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Ignore Friendly Pets"],
+		Tooltip = L["Do not show auras on friendly pet nameplates."],
+		GetValue = function()
+			return options.Friendly.IgnorePets
+		end,
+		SetValue = function(value)
+			options.Friendly.IgnorePets = value
+			config:Apply()
+		end,
+	})
+	friendlyIgnorePetsChk:SetPoint("TOP", enemyIgnorePetsChk, "TOP", 0, 0)
+	friendlyIgnorePetsChk:SetPoint("LEFT", parent, "LEFT", threeColWidth, 0)
+
+	local scaleWithNameplateChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Scale with Nameplate"],
+		Tooltip = L["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."],
+		GetValue = function()
+			return options.ScaleWithNameplate
+		end,
+		SetValue = function(value)
+			options.ScaleWithNameplate = value
+			config:Apply()
+		end,
+	})
+	scaleWithNameplateChk:SetPoint("TOP", enemyIgnorePetsChk, "TOP", 0, 0)
+	scaleWithNameplateChk:SetPoint("LEFT", parent, "LEFT", threeColWidth * 2, 0)
+
+	local anchorToHealthBarChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Anchor to Health Bar"],
+		Tooltip = L["Anchor the icons to the nameplate's health bar instead of the nameplate frame. Use this option if another addon (e.g. BetterBlizzPlates) changes the nameplate width or height."],
+		GetValue = function()
+			return options.AnchorToHealthBar
+		end,
+		SetValue = function(value)
+			options.AnchorToHealthBar = value
+			config:Apply()
+		end,
+	})
+	anchorToHealthBarChk:SetPoint("TOPLEFT", enemyIgnorePetsChk, "BOTTOMLEFT", 0, -verticalSpacing)
+end
+
+---@param parent table
+---@param options NameplateModuleOptions
 function M:Build(parent, options)
 	columnWidth = mini:ColumnWidth(columns, 0, 0)
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
@@ -418,66 +482,11 @@ function M:Build(parent, options)
 	enabledRaid:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
 	enabledRaid:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
 
-	local settingsDivider = mini:Divider({
-		Parent = parent,
-		Text = L["Settings"],
-	})
-	settingsDivider:SetPoint("LEFT", parent, "LEFT")
-	settingsDivider:SetPoint("RIGHT", parent, "RIGHT")
-	settingsDivider:SetPoint("TOP", enabledEverywhere, "BOTTOM", 0, -verticalSpacing)
-
-	-- Enemy Ignore Pets checkbox
-	local enemyIgnorePetsChk = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Ignore Enemy Pets"],
-		Tooltip = L["Do not show auras on enemy pet nameplates."],
-		GetValue = function()
-			return options.Enemy.IgnorePets
-		end,
-		SetValue = function(value)
-			options.Enemy.IgnorePets = value
-			config:Apply()
-		end,
-	})
-	enemyIgnorePetsChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local friendlyIgnorePetsChk = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Ignore Friendly Pets"],
-		Tooltip = L["Do not show auras on friendly pet nameplates."],
-		GetValue = function()
-			return options.Friendly.IgnorePets
-		end,
-		SetValue = function(value)
-			options.Friendly.IgnorePets = value
-			config:Apply()
-		end,
-	})
-	local threeColWidth = mini:ColumnWidth(3, 0, 0)
-
-	friendlyIgnorePetsChk:SetPoint("TOP", enemyIgnorePetsChk, "TOP", 0, 0)
-	friendlyIgnorePetsChk:SetPoint("LEFT", parent, "LEFT", threeColWidth, 0)
-
-	local scaleWithNameplateChk = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Scale with Nameplate"],
-		Tooltip = L["Icons scale along with the nameplate scale. Use this option if you have a different size for the target nameplate (e.g. in BBF's settings)."],
-		GetValue = function()
-			return options.ScaleWithNameplate
-		end,
-		SetValue = function(value)
-			options.ScaleWithNameplate = value
-			config:Apply()
-		end,
-	})
-	scaleWithNameplateChk:SetPoint("TOP", enemyIgnorePetsChk, "TOP", 0, 0)
-	scaleWithNameplateChk:SetPoint("LEFT", parent, "LEFT", threeColWidth * 2, 0)
-
 	local subPanelHeight = 285
 
 	local tabContainer = CreateFrame("Frame", nil, parent)
-	tabContainer:SetPoint("TOPLEFT",  enemyIgnorePetsChk, "BOTTOMLEFT", 0, -verticalSpacing)
-	tabContainer:SetPoint("TOPRIGHT", parent,             "TOPRIGHT",   0, 0)
+	tabContainer:SetPoint("TOPLEFT",  enabledEverywhere, "BOTTOMLEFT", 0, -verticalSpacing)
+	tabContainer:SetPoint("TOPRIGHT", parent,            "TOPRIGHT",   0, 0)
 	tabContainer:SetHeight(subPanelHeight + 34)
 
 	local tabCtrl = mini:CreateTabs({
@@ -487,6 +496,7 @@ function M:Build(parent, options)
 		TabFitToParent = true,
 		ContentInsets = { Top = verticalSpacing },
 		Tabs = {
+			{ Key = "settings",      Title = L["Settings"] },
 			{ Key = "enemyBar1",     Title = L["Enemy - Bar 1"] },
 			{ Key = "enemyBar2",     Title = L["Enemy - Bar 2"] },
 			{ Key = "friendlyBar1",  Title = L["Friendly - Bar 1"] },
@@ -494,6 +504,7 @@ function M:Build(parent, options)
 		},
 	})
 
+	BuildSettingsTab(tabCtrl:GetContent("settings"), options)
 	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar1"),     options.Enemy.Bar1,     "Bar1")
 	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar2"),     options.Enemy.Bar2,     "Bar2")
 	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyBar1"),  options.Friendly.Bar1,  "Bar1")

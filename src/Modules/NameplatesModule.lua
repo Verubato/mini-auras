@@ -186,6 +186,17 @@ local function GetNameplateAnchorFrame(nameplate)
 		end
 		return nameplate.TPFrame
 	end
+	-- Optionally anchor to the health bar container: addons that resize plates (e.g.
+	-- BetterBlizzPlates) do it by shrinking HealthBarsContainer, which the base nameplate
+	-- frame doesn't follow. Deliberately NOT HealthBarsContainer.healthBar - that bar
+	-- shifts around inside the container with the anti-heal display (since TWW).
+	if nmModule.AnchorToHealthBar then
+		local uf = nameplate.UnitFrame
+		local healthBars = uf and uf.HealthBarsContainer
+		if healthBars then
+			return healthBars
+		end
+	end
 	return nameplate
 end
 

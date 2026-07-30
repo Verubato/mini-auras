@@ -259,6 +259,9 @@ local dbDefaults = {
 				Raid = true,
 			},
 			ScaleWithNameplate = true,
+			-- Anchor icons to UnitFrame.HealthBarsContainer instead of the nameplate frame, so
+			-- they follow addons that resize plates by shrinking that container (e.g. BBP).
+			AnchorToHealthBar = false,
 
 			---@class NameplateFactionOptions
 			Friendly = {
