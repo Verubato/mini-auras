@@ -20,7 +20,8 @@ addon.Core.Framework = M
 -- the real client (this file also loads in the test harness).
 local accent = { r = 0.78, g = 0.20, b = 0.24 }
 local accentHi = { r = 0.88, g = 0.29, b = 0.32 }
--- Idle/hover text for tab buttons (warm greys; selected is pure white).
+-- Idle/hover text for tab buttons (warm greys; selected is pure white). Horizontal sub-tabs
+-- dim when idle; the vertical sidebar stays bright, with only the wash/bar marking selection.
 local tabTextIdle = { r = 0.73, g = 0.70, b = 0.66 }
 local tabTextHover = { r = 0.91, g = 0.89, b = 0.85 }
 -- Divider rules and label (muted gold - the one deliberate nod to the WoW default palette).
@@ -1224,23 +1225,16 @@ function M:CreateTabs(options)
 			if vertical then
 				if btn.Wash then btn.Wash:Show() end
 				if btn.Indicator then btn.Indicator:Show() end
-				if btn.Icon then
-					btn.Icon:SetDesaturated(false)
-					btn.Icon:SetVertexColor(1, 1, 1, 1)
-				end
 			else
 				if btn.Accent then btn.Accent:Show() end
 			end
 		else
-			btn.Text:SetTextColor(tabTextIdle.r, tabTextIdle.g, tabTextIdle.b, 1)
+			local idle = vertical and tabTextHover or tabTextIdle
+			btn.Text:SetTextColor(idle.r, idle.g, idle.b, 1)
 
 			if vertical then
 				if btn.Wash then btn.Wash:Hide() end
 				if btn.Indicator then btn.Indicator:Hide() end
-				if btn.Icon then
-					btn.Icon:SetDesaturated(true)
-					btn.Icon:SetVertexColor(0.75, 0.72, 0.68, 0.9)
-				end
 			else
 				if btn.Accent then btn.Accent:Hide() end
 			end
@@ -1311,13 +1305,18 @@ function M:CreateTabs(options)
 
 		btn:SetScript("OnEnter", function()
 			if selectedKey ~= def.Key then
-				btn.Text:SetTextColor(tabTextHover.r, tabTextHover.g, tabTextHover.b, 1)
+				if vertical then
+					btn.Text:SetTextColor(1, 1, 1, 1)
+				else
+					btn.Text:SetTextColor(tabTextHover.r, tabTextHover.g, tabTextHover.b, 1)
+				end
 				btn.Highlight:Show()
 			end
 		end)
 		btn:SetScript("OnLeave", function()
 			if selectedKey ~= def.Key then
-				btn.Text:SetTextColor(tabTextIdle.r, tabTextIdle.g, tabTextIdle.b, 1)
+				local idle = vertical and tabTextHover or tabTextIdle
+				btn.Text:SetTextColor(idle.r, idle.g, idle.b, 1)
 			end
 			btn.Highlight:Hide()
 		end)
@@ -1340,7 +1339,8 @@ function M:CreateTabs(options)
 			SetGradientV(btn.Indicator, accent.r, accent.g, accent.b, 1, accentHi.r, accentHi.g, accentHi.b, 1)
 			btn.Indicator:Hide()
 
-			-- Optional icon (spell/interface texture path or fileID); desaturated until selected.
+			-- Optional icon (spell/interface texture path or fileID), always full color;
+			-- selection is carried by the wash and edge bar alone.
 			if def.Icon then
 				btn.Icon = btn:CreateTexture(nil, "ARTWORK")
 				btn.Icon:SetSize(16, 16)
