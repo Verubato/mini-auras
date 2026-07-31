@@ -195,6 +195,8 @@ L:RegisterLocale("ruRU", {
 	["Show CC icons."] = "Показывать иконки контроля.",
 	["Show defensives"] = "Показать защитные",
 	["Show defensive spell icons."] = "Показывать иконки защитных заклинаний.",
+	["Show important"] = "Показывать важные",
+	["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."] = "Показывает положительные эффекты, которые Blizzard отмечает как важные (например, атакующие способности).",
 	["Show interrupts"] = "Показать прерывания",
 	["Show an icon when a friendly unit gets interrupted."] = "Показывает иконку, когда дружественный персонаж прерывается.",
 	["Shows CC and defensives as one set of icons on party/raid frames."] = "Показывает контроль и защиту единым набором значков на рамках группы/рейда.",

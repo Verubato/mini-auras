@@ -262,3 +262,23 @@ function M:UpgradeToVersion55(vars)
 	return true
 end
 
+function M:UpgradeToVersion56(vars)
+	if vars.Version ~= 55 then return false end
+
+	-- FriendlyIndicator's important-buff category (12.1) used to follow the defensives toggle.
+	-- It now has its own ShowImportant option; seed it from ShowDefensives so nobody's
+	-- indicator gains or loses icons on upgrade.
+	local fi = vars.Modules and vars.Modules.FriendlyIndicatorModule
+	if fi then
+		if fi.Default then
+			fi.Default.ShowImportant = fi.Default.ShowDefensives == true
+		end
+		if fi.Raid then
+			fi.Raid.ShowImportant = fi.Raid.ShowDefensives == true
+		end
+	end
+
+	vars.Version = 56
+	return true
+end
+

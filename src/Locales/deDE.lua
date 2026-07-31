@@ -195,6 +195,8 @@ L:RegisterLocale("deDE", {
 	["Show CC icons."] = "CC-Symbole anzeigen.",
 	["Show defensives"] = "Defensive anzeigen",
 	["Show defensive spell icons."] = "Symbole für defensive Zauber anzeigen.",
+	["Show important"] = "Wichtige anzeigen",
+	["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."] = "Zeigt die Stärkungszauber, die Blizzard als wichtig markiert (z. B. offensive Abklingzeiten).",
 	["Show interrupts"] = "Interrupts anzeigen",
 	["Show an icon when a friendly unit gets interrupted."] = "Zeigt ein Symbol an, wenn eine befreundete Einheit unterbrochen wird.",
 	["Shows CC and defensives as one set of icons on party/raid frames."] = "Zeigt CC und Defensives als einen Satz Symbole auf Gruppen-/Schlachtzugs-Rahmen.",

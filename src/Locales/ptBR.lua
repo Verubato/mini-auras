@@ -195,6 +195,8 @@ L:RegisterLocale("ptBR", {
 	["Show CC icons."] = "Mostrar ícones de controle.",
 	["Show defensives"] = "Mostrar defensivos",
 	["Show defensive spell icons."] = "Mostrar ícones de feitiços defensivos.",
+	["Show important"] = "Exibir importantes",
+	["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."] = "Mostra os benefícios que a Blizzard marca como importantes (ex.: recargas ofensivas).",
 	["Show interrupts"] = "Mostrar interrupções",
 	["Show an icon when a friendly unit gets interrupted."] = "Mostra um ícone quando uma unidade aliada é interrompida.",
 	["Shows CC and defensives as one set of icons on party/raid frames."] = "Mostra controle de grupo e defensivas como um único conjunto de ícones nos quadros de grupo/raide.",

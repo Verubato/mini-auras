@@ -6,7 +6,7 @@ local _, addon = ...
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 55,
+	Version = 56,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -429,6 +429,7 @@ local dbDefaults = {
 			Default = {
 				ExcludePlayer = false,
 				ShowDefensives = true,
+				ShowImportant = true,
 				ShowCC = false,
 				ShowKicks = true,
 				Offset = { X = 0, Y = 0 },
@@ -450,6 +451,7 @@ local dbDefaults = {
 			Raid = {
 				ExcludePlayer = false,
 				ShowDefensives = true,
+				ShowImportant = true,
 				ShowCC = true,
 				ShowKicks = true,
 				Offset = { X = 0, Y = 0 },

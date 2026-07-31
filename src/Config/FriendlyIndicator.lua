@@ -171,6 +171,28 @@ local function BuildInstance(panel, options)
 	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
 	reverseChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
 
+	-- The important-buff category only exists on the 12.1 aura container path; when present it
+	-- leads the second row and shifts the other category toggles right one column.
+	local catOffset = 0
+	local showImportantChk
+	if addon.Utils.WoWEx:UseAuraContainers() then
+		catOffset = 1
+		showImportantChk = mini:Checkbox({
+			Parent = parent,
+			LabelText = L["Show important"],
+			Tooltip = L["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."],
+			GetValue = function()
+				return options.ShowImportant
+			end,
+			SetValue = function(value)
+				options.ShowImportant = value
+				config:Apply()
+			end,
+		})
+
+		showImportantChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	end
+
 	local showDefensivesChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Show defensives"],
@@ -184,7 +206,8 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	showDefensivesChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	showDefensivesChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * catOffset, 0)
+	showDefensivesChk:SetPoint("TOP", excludePlayerChk, "BOTTOM", 0, -verticalSpacing)
 
 	local showCCChk = mini:Checkbox({
 		Parent = parent,
@@ -199,7 +222,7 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	showCCChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
+	showCCChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * (1 + catOffset), 0)
 	showCCChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
 
 	local showKicksChk = mini:Checkbox({
@@ -215,7 +238,7 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	showKicksChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
+	showKicksChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * (2 + catOffset), 0)
 	showKicksChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
 
 	local showTooltipsChk = mini:Checkbox({
@@ -249,10 +272,10 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	relativeSizeChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
+	relativeSizeChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * (3 + catOffset), 0)
 	relativeSizeChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
 
-	local growDdl = BuildGrowDropdown(parent, options, showDefensivesChk)
+	local growDdl = BuildGrowDropdown(parent, options, showImportantChk or showDefensivesChk)
 
 	local iconSize = mini:Slider({
 		Parent = parent,

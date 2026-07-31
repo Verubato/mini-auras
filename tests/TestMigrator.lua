@@ -491,6 +491,21 @@ fw.describe("Migrator - individual migrations", function()
 		assert(vars.Modules.CCModule.Default.IconSpacing == 9 and vars.Modules.CCModule.Raid.IconSpacing == 9)
 		assert(vars.Modules.HealerCCModule.IconSpacing == 9 and vars.Modules.KickTimerModule.IconSpacing == 9)
 	end)
+
+	fw.it("v56 seeds FriendlyIndicator ShowImportant from ShowDefensives", function()
+		local vars = {
+			Version = 55,
+			Modules = {
+				FriendlyIndicatorModule = {
+					Default = { ShowDefensives = false },
+					Raid = { ShowDefensives = true },
+				},
+			},
+		}
+		assert(migrator:UpgradeToVersion56(vars) == true)
+		assert(vars.Modules.FriendlyIndicatorModule.Default.ShowImportant == false, "off follows off")
+		assert(vars.Modules.FriendlyIndicatorModule.Raid.ShowImportant == true, "on follows on")
+	end)
 end)
 
 fw.describe("Migrator - defaults helpers", function()

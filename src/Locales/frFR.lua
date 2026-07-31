@@ -195,6 +195,8 @@ L:RegisterLocale("frFR", {
 	["Show CC icons."] = "Affiche les icônes de CC.",
 	["Show defensives"] = "Afficher les défensifs",
 	["Show defensive spell icons."] = "Affiche les icônes de sorts défensifs.",
+	["Show important"] = "Afficher les importants",
+	["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."] = "Affiche les améliorations que Blizzard marque comme importantes (par ex. les temps de recharge offensifs).",
 	["Show interrupts"] = "Interruptions",
 	["Show an icon when a friendly unit gets interrupted."] = "Affiche une icône lorsqu'une unité alliée est interrompue.",
 	["Shows CC and defensives as one set of icons on party/raid frames."] = "Affiche le contrôle de foule et les défensifs comme un seul ensemble d'icônes sur les cadres de groupe/raid.",

@@ -195,6 +195,8 @@ L:RegisterLocale("koKR", {
 	["Show CC icons."] = "CC 아이콘을 표시합니다.",
 	["Show defensives"] = "방어기술 표시",
 	["Show defensive spell icons."] = "방어 주문 아이콘을 표시합니다.",
+	["Show important"] = "중요 표시",
+	["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."] = "Blizzard가 중요로 표시한 버프를 표시합니다 (예: 공격 재사용 대기시간).",
 	["Show interrupts"] = "차단 표시",
 	["Show an icon when a friendly unit gets interrupted."] = "아군 유닛이 차단당할 때 아이콘을 표시합니다.",
 	["Shows CC and defensives as one set of icons on party/raid frames."] = "군중 제어와 방어 효과를 파티/공격대 프레임에 하나의 아이콘 세트로 표시합니다.",

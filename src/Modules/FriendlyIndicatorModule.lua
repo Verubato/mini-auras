@@ -54,6 +54,7 @@ addon.Modules.FriendlyIndicatorModule = M
 
 ---@class FriendlyIndicatorModuleOptions
 ---@field ShowDefensives boolean
+---@field ShowImportant boolean 12.1 only: Blizzard-flagged important buffs.
 ---@field ShowCC boolean
 
 ---@param entry FriendlyIndicatorWatchEntry
@@ -609,12 +610,11 @@ function M:Refresh()
 		if entry.Display then
 			entry.Display:SetIconSize(iconSize)
 			entry.Display:SetSpacing(options.IconSpacing or 2)
-			-- Category toggles map to a zero icon budget for the disabled group. Important buffs
-			-- follow the defensives toggle (12.1-only category with no dedicated option yet).
+			-- Category toggles map to a zero icon budget for the disabled group.
 			entry.Display:SetMaxIcons("cc", options.ShowCC and maxIcons or 0)
 			entry.Display:SetMaxIcons("bigdef", options.ShowDefensives and maxIcons or 0)
 			entry.Display:SetMaxIcons("extdef", options.ShowDefensives and maxIcons or 0)
-			entry.Display:SetMaxIcons("important", options.ShowDefensives and maxIcons or 0)
+			entry.Display:SetMaxIcons("important", options.ShowImportant and maxIcons or 0)
 			entry.Display:SetStyle({
 				ReverseCooldown = options.Icons.ReverseCooldown,
 				ColorByDispelType = options.Icons.ColorByDispelType,

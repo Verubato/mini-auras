@@ -195,6 +195,8 @@ L:RegisterLocale("zhTW", {
 	["Show CC icons."] = "顯示控制圖示。",
 	["Show defensives"] = "顯示防禦技能",
 	["Show defensive spell icons."] = "顯示防禦法術圖示。",
+	["Show important"] = "顯示重要",
+	["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."] = "顯示暴雪標記為重要的增益（例如進攻性冷卻技能）。",
 	["Show interrupts"] = "顯示打斷",
 	["Show an icon when a friendly unit gets interrupted."] = "當友方單位被打斷時顯示圖示。",
 	["Shows CC and defensives as one set of icons on party/raid frames."] = "在小隊/團隊框架上將控制和防禦顯示為一組圖示。",
