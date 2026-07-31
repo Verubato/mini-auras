@@ -101,6 +101,9 @@ local function CreateLayer(parentFrame, level, iconSize, noBorder)
 	end
 
 	if iconSize then
+		-- Inside nameplate hierarchies GetWidth() can return a secret number, so
+		-- remember the size we set ourselves for anything that needs to do math on it.
+		f.DesiredSize = iconSize
 		cd.DesiredIconSize = iconSize
 		-- FontScale will be set when SetSlot is called
 		cd.FontScale = 1.0
@@ -170,9 +173,11 @@ local function ApplyAlpha(target, alpha)
 end
 
 local function ApplyStaticGlowPadding(glowFrame, parent)
+	-- GetWidth() returns a secret number inside nameplate hierarchies, which can't
+	-- be compared or multiplied; fall back to the size we set on the layer ourselves.
 	local width = parent:GetWidth()
-	if not (width and width > 0) then
-		width = 30
+	if issecretvalue(width) or not (width and width > 0) then
+		width = parent.DesiredSize or 30
 	end
 	local padding = width * glowFrame.PaddingFactor
 	glowFrame:SetPoint("TOPLEFT", parent, "TOPLEFT", -padding, padding)
@@ -760,6 +765,9 @@ function M:SetIconSize(newSize)
 			slot.Frame:SetSize(self.Size, self.Size)
 
 			local layer = slot.Container
+			if layer and layer.Frame then
+				layer.Frame.DesiredSize = self.Size
+			end
 			if layer and layer.Cooldown then
 				layer.Cooldown.DesiredIconSize = self.Size
 				local fontScale = layer.Cooldown.FontScale or 1.0
@@ -773,6 +781,7 @@ function M:SetIconSize(newSize)
 				for _, el in ipairs(slot.ExtraLayers) do
 					if el then
 						if el.Frame then
+							el.Frame.DesiredSize = self.Size
 							el.Frame:SetSize(self.Size, self.Size)
 						end
 						if el.Cooldown then
