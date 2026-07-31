@@ -597,3 +597,44 @@ fw.describe("AuraContainerDisplay - deferred restyle", function()
 		assert(totalSetSizeCalls(instance) > styled, "buttons restyled on show")
 	end)
 end)
+
+fw.describe("AuraContainerDisplay - per-display button options", function()
+	fw.before_each(acm.reset)
+
+	local function newOptionInstance(options)
+		return display:New(_G.UIParent, "target", {
+			{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 1 },
+		}, 30, 0, "Test", options)
+	end
+
+	fw.it("Minimal skips the dispel border and the glow frame", function()
+		-- Portrait icons take neither, and creating them anyway would cost two frames per button
+		-- across every portrait container.
+		local instance = newOptionInstance({ Minimal = true })
+		local widgets = select(2, next(instance.ButtonWidgets))
+
+		assert(widgets.Border == nil and widgets.Glow == nil, "no border/glow widgets created")
+		-- Styling must not assume they exist.
+		local ok, err = pcall(function()
+			instance:SetStyle({ ColorByDispelType = true, Glow = true })
+		end)
+		assert(ok, "styling a minimal display must not error: " .. tostring(err))
+	end)
+
+	fw.it("applies the icon crop and mask to every button icon", function()
+		local mask = { _mask = true }
+		local instance = newOptionInstance({ IconTexCoord = { 0.1, 0.9, 0.1, 0.9 }, IconMask = mask })
+		local button = instance.Buttons[1]
+		local icon = button._createdTextures and button._createdTextures[1]
+
+		assert(icon, "the button created an icon texture")
+		assert(icon._lastArgs.SetTexCoord and icon._lastArgs.SetTexCoord[1] == 0.1, "crop applied")
+		assert(icon._lastArgs.AddMaskTexture and icon._lastArgs.AddMaskTexture[1] == mask, "mask applied")
+	end)
+
+	fw.it("a plain display still builds the border and glow", function()
+		local instance = newOptionInstance()
+		local widgets = select(2, next(instance.ButtonWidgets))
+		assert(widgets.Border and widgets.Glow, "default displays keep the full chrome")
+	end)
+end)

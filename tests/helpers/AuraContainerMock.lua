@@ -298,8 +298,13 @@ function M.NewFrame(frameType, name, parent, template)
 
 	M.frames[#M.frames + 1] = frame
 
+	-- Textures are kept in creation order so tests can reach a button's icon (the first one).
+	frame._createdTextures = {}
+
 	function frame:CreateTexture(_, layer)
-		return NewRegion(frame, "Texture")
+		local texture = NewRegion(frame, "Texture")
+		frame._createdTextures[#frame._createdTextures + 1] = texture
+		return texture
 	end
 	function frame:CreateFontString()
 		return NewRegion(frame, "FontString")

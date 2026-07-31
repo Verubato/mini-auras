@@ -10,7 +10,7 @@ local editModePreviewActive = false
 local displayEventsFrame = nil
 
 -- 12.1 AuraContainer-backed icon display. One instance wraps a CreateFrame("AuraContainer")
--- with a single aura group and styles the container-created AuraButtons to match the legacy
+-- with one or more aura groups and styles the container-created AuraButtons to match the legacy
 -- IconSlotContainer look (icon, cooldown swipe + countdown, dispel-type border, glow).
 --
 -- Constraints inherited from the AuraContainer system:
@@ -138,7 +138,9 @@ end
 --
 -- Modules re-parent and re-anchor these frames constantly, so suppression can't live on an
 -- intermediate holder frame. Instead every display remembers the visibility its module asked for
--- and the real frame shows only when the preview isn't running.
+-- and the real frame shows only when the preview isn't running. This is also why every container
+-- MUST be created through this wrapper: one built directly with CreateFrame("AuraContainer")
+-- isn't in liveDisplays and will happily show Blizzard's placeholder auras.
 
 ---@param instance AuraContainerDisplay
 local function ApplyShownState(instance)
@@ -212,8 +214,9 @@ local function GetGlowStyleName()
 	return (name and GLOW_STYLES[name]) and name or DEFAULT_GLOW_STYLE
 end
 
--- Stand-in for a nil style, so SetStyle never has to allocate one. Read-only.
+-- Stand-ins for nil arguments, so the setters never have to allocate. Read-only.
 local EMPTY_STYLE = {}
+local EMPTY_OPTIONS = {}
 
 -- Shared scratch handed out by GetStyleScratch. Every field is cleared on hand-out, so a caller
 -- can only ever set the fields it cares about and can never inherit a value from whoever used it
@@ -304,6 +307,55 @@ local function ApplyGlowStyle(widgets, button, styleName, size)
 	end
 end
 
+---Registers (or unregisters) the button's dispel-type textures. The engine tints registered
+---textures by dispel type and drives their per-aura visibility (PreserveAsset style keeps our
+---asset and only colours it). The border participates when ColorByDispelType is on; the glow's
+---texture ALSO registers when the glow is enabled, which is how the glow inherits the border
+---colour - the legacy paths tinted the glow with the aura's dispel colour, which is unreadable
+---here, so the engine applies it instead. showWithoutDispelType keeps the glow visible for
+---physical CC, tinted with the "None" palette colour like legacy.
+---@param instance AuraContainerDisplay
+---@param button table
+---@param widgets table
+local function ApplyDispelTextures(instance, button, widgets)
+	local style = instance.Style
+	local wantBorder = style.ColorByDispelType == true and widgets.Border ~= nil
+	local wantGlowTint = wantBorder and style.Glow == true and widgets.Glow ~= nil
+	local dispelSignature = (wantBorder and "b" or "") .. (wantGlowTint and "g" or "")
+
+	if dispelSignature == widgets.DispelSignature then
+		return
+	end
+
+	widgets.DispelSignature = dispelSignature
+	button:ClearDispelTypeTextures()
+
+	if wantBorder then
+		button:AddDispelTypeTexture(widgets.Border, {
+			style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
+			showWhenHarmful = true,
+			showWhenHelpful = true,
+		})
+	elseif widgets.Border then
+		-- Unregistered again: visibility is ours, keep it hidden.
+		widgets.Border:Hide()
+	end
+
+	if wantGlowTint then
+		button:AddDispelTypeTexture(widgets.Glow.Texture, {
+			style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
+			showWhenHarmful = true,
+			showWhenHelpful = true,
+			showWithoutDispelType = true,
+		})
+	elseif widgets.Glow then
+		-- Unregistered again: restore the plain white glow and make sure the engine's
+		-- last hidden state doesn't linger on the texture.
+		widgets.Glow.Texture:SetVertexColor(1, 1, 1, 1)
+		widgets.Glow.Texture:Show()
+	end
+end
+
 -- Applies the stored per-button style (size, cooldown settings, border, glow, mouse) to one
 -- button. Safe only while buttons are not forbidden (initializeFrame or out of combat).
 ---@param instance AuraContainerDisplay
@@ -329,44 +381,8 @@ local function StyleButton(instance, button)
 	cd.FontScale = style.FontScale or 1.0
 	fontUtil:UpdateCooldownFontSize(cd, instance.Size, nil, cd.FontScale)
 
-	-- Dispel-type registrations: the engine tints registered textures by dispel type and
-	-- drives their per-aura visibility (PreserveAsset style keeps our asset and only colours
-	-- it). The border participates when ColorByDispelType is on; the glow's flipbook texture
-	-- ALSO registers when the glow is enabled, which is how the glow inherits the border
-	-- colour - the legacy paths tinted the glow with the aura's dispel colour, which is
-	-- unreadable here, so the engine applies it instead. showWithoutDispelType keeps the glow
-	-- visible for physical CC, tinted with the "None" palette colour like legacy.
-	local wantBorder = style.ColorByDispelType == true
-	local wantGlowTint = wantBorder and style.Glow == true and widgets.Glow ~= nil
-	local dispelSignature = (wantBorder and "b" or "") .. (wantGlowTint and "g" or "")
-	if dispelSignature ~= widgets.DispelSignature then
-		widgets.DispelSignature = dispelSignature
-		button:ClearDispelTypeTextures()
-
-		if wantBorder then
-			button:AddDispelTypeTexture(widgets.Border, {
-				style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
-				showWhenHarmful = true,
-				showWhenHelpful = true,
-			})
-		else
-			-- Unregistered again: visibility is ours, keep it hidden.
-			widgets.Border:Hide()
-		end
-
-		if wantGlowTint then
-			button:AddDispelTypeTexture(widgets.Glow.Texture, {
-				style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
-				showWhenHarmful = true,
-				showWhenHelpful = true,
-				showWithoutDispelType = true,
-			})
-		elseif widgets.Glow then
-			-- Unregistered again: restore the plain white glow and make sure the engine's
-			-- last hidden state doesn't linger on the texture.
-			widgets.Glow.Texture:SetVertexColor(1, 1, 1, 1)
-			widgets.Glow.Texture:Show()
-		end
+	if widgets.Border or widgets.Glow then
+		ApplyDispelTextures(instance, button, widgets)
 	end
 
 	-- Glow: the frame is created as a button child at init (LibCustomGlow can't be used here -
@@ -400,6 +416,13 @@ local function InitializeButton(instance, button)
 	-- Icon on the lowest layer, swipe + border above, matching CreateLayer in IconSlotContainer.
 	local icon = button:CreateTexture(nil, "BACKGROUND", nil, 1)
 	icon:SetAllPoints(button)
+	local texCoord = instance.IconTexCoord
+	if texCoord then
+		icon:SetTexCoord(texCoord[1], texCoord[2], texCoord[3], texCoord[4])
+	end
+	if instance.IconMask then
+		icon:AddMaskTexture(instance.IconMask)
+	end
 	button:SetIcon(icon)
 
 	local cd = CreateFrame("Cooldown", NextFrameName("Cooldown"), button, "CooldownFrameTemplate")
@@ -408,38 +431,46 @@ local function InitializeButton(instance, button)
 	cd:SetDrawBling(false)
 	cd:SetHideCountdownNumbers(false)
 	cd:SetSwipeColor(0, 0, 0, 0.8)
+	if instance.IconMask then
+		-- Keep the swipe inside the masked (round) icon.
+		cd:SetSwipeTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
+	end
 	button:SetDurationCooldown(cd)
 
-	-- Border sized 1px past the icon, same asset/coords as the legacy border.
-	local border = button:CreateTexture(nil, "OVERLAY")
-	border:SetPoint("TOPLEFT", button, "TOPLEFT", -1, 1)
-	border:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 1, -1)
-	border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
-	border:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
-	-- Hidden until registered via AddDispelTypeTexture, which takes over its visibility;
-	-- otherwise it would render (uncoloured) over every aura icon.
-	border:Hide()
+	local border, glow
+
+	if not instance.Minimal then
+		-- Border sized 1px past the icon, same asset/coords as the legacy border.
+		border = button:CreateTexture(nil, "OVERLAY")
+		border:SetPoint("TOPLEFT", button, "TOPLEFT", -1, 1)
+		border:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 1, -1)
+		border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
+		border:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
+		-- Hidden until registered via AddDispelTypeTexture, which takes over its visibility;
+		-- otherwise it would render (uncoloured) over every aura icon.
+		border:Hide()
+
+		-- Glow overlay, created up-front as a direct child (creation is allowed on AuraButtons;
+		-- re-parenting is not). The asset is left unset: StyleButton applies whichever style from
+		-- GLOW_STYLES is configured, and the flipbook animation is built here either way so a
+		-- later switch to "Rotation Assist" doesn't have to touch the button.
+		glow = CreateFrame("Frame", NextFrameName("Glow"), button)
+		glow:SetFrameLevel(button:GetFrameLevel() + 5)
+		glow.Texture = glow:CreateTexture(nil, "OVERLAY")
+		glow.Texture:SetAllPoints()
+		glow.Anim = glow:CreateAnimationGroup()
+		glow.Anim:SetLooping("REPEAT")
+		local flip = glow.Anim:CreateAnimation("FlipBook")
+		flip:SetChildKey("Texture")
+		flip:SetFlipBookRows(6)
+		flip:SetFlipBookColumns(5)
+		flip:SetFlipBookFrames(30)
+		flip:SetDuration(1.0)
+		-- Deliberately NOT played here: StyleButton starts/stops it with the glow style.
+		glow:Hide()
+	end
 
 	button:SetTooltipAnchorPoint("ANCHOR_RIGHT")
-
-	-- Glow overlay, created up-front as a direct child (creation is allowed on AuraButtons;
-	-- re-parenting is not). The asset is left unset: StyleButton applies whichever style from
-	-- GLOW_STYLES is configured, and the flipbook animation is built here either way so a later
-	-- switch to "Rotation Assist" doesn't have to touch the button.
-	local glow = CreateFrame("Frame", NextFrameName("Glow"), button)
-	glow:SetFrameLevel(button:GetFrameLevel() + 5)
-	glow.Texture = glow:CreateTexture(nil, "OVERLAY")
-	glow.Texture:SetAllPoints()
-	glow.Anim = glow:CreateAnimationGroup()
-	glow.Anim:SetLooping("REPEAT")
-	local flip = glow.Anim:CreateAnimation("FlipBook")
-	flip:SetChildKey("Texture")
-	flip:SetFlipBookRows(6)
-	flip:SetFlipBookColumns(5)
-	flip:SetFlipBookFrames(30)
-	flip:SetDuration(1.0)
-	-- Deliberately NOT played here: StyleButton starts/stops it with the glow style.
-	glow:Hide()
 
 	instance.ButtonWidgets[button] = {
 		Cooldown = cd,
@@ -493,17 +524,20 @@ local function ApplyGroupLayout(instance)
 end
 
 ---Creates a new AuraContainer-backed display with one aura group per spec. Groups anchor
----sequentially in the order given (an aura matching several groups' filters may appear once
----per group - pick filters that don't overlap where that matters).
+---sequentially in the order given; use Core/AuraFilters so overlapping categories are
+---partitioned by filter negation rather than showing an aura once per group.
 ---@param parent table Frame to parent the container to.
 ---@param unit string Unit token to track.
 ---@param groups AuraDisplayGroupSpec[] Group specs, e.g. { { Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 5 } }.
 ---@param size number Icon size in pixels.
 ---@param spacing number Spacing between icons.
 ---@param moduleName string? MiniCCModule label set on the frame (matches IconSlotContainer).
+---@param options AuraDisplayOptions? Per-button rendering options (icon crop/mask, minimal chrome).
 ---@return AuraContainerDisplay
-function M:New(parent, unit, groups, size, spacing, moduleName)
+function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	local instance = setmetatable({}, M)
+
+	options = options or EMPTY_OPTIONS
 
 	instance.Size = size or 20
 	instance.Spacing = spacing or 2
@@ -511,7 +545,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName)
 	-- Key -> spec, so the per-category budget setter is a lookup rather than a scan (and can
 	-- tell a caller that its group key is wrong instead of silently doing nothing).
 	instance.GroupsByKey = {}
-	instance.Grow = "CENTER"
+	instance.Grow = growAnchors.Default
 	-- Owned by the instance and mutated in place by StoreStyle; callers never hand us a table
 	-- we keep, so they are free to pass a reused scratch.
 	instance.Style = {}
@@ -522,6 +556,9 @@ function M:New(parent, unit, groups, size, spacing, moduleName)
 	-- Visibility the owning module last asked for; frames are created shown.
 	instance.DesiredShown = true
 	instance.RestylePending = false
+	instance.IconTexCoord = options.IconTexCoord
+	instance.IconMask = options.IconMask
+	instance.Minimal = options.Minimal == true
 
 	-- Seed the db-derived style fields so buttons created before the first SetStyle (which
 	-- restyles everything anyway) still pick up the global swipe/countdown/glow settings.
@@ -545,7 +582,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName)
 			maxFrameCount = group.MaxIcons or 3,
 			candidateFilters = group.CandidateFilters,
 			sortMethod = AuraContainerSortMethod.AuraInstanceIDOnly,
-			sortDirection = AuraContainerSortDirection.Normal,
+			sortDirection = group.SortDirection or AuraContainerSortDirection.Normal,
 			initializeFrame = function(button)
 				InitializeButton(instance, button)
 			end,
@@ -734,7 +771,7 @@ function M:RestyleButtons()
 end
 
 ---Positions this display relative to its anchor, chaining after the kick container while a
----kick icon is showing.
+---kick icon is showing (the kick occupied the first slot in the legacy layouts).
 ---@param kickFrame table The kick IconSlotContainer's frame.
 ---@param anchor table The frame the display is positioned against when no kick is active.
 ---@param grow string "LEFT"|"RIGHT"|"CENTER"|"UP"|"DOWN"
@@ -776,6 +813,12 @@ end
 ---@field FilterString string Aura filter string (e.g. "HARMFUL|CROWD_CONTROL").
 ---@field MaxIcons number? Icon budget for this group (default 3).
 ---@field CandidateFilters table? Extra 12.1 candidate filters (e.g. { maxDuration = 4.1 }).
+---@field SortDirection number? AuraContainerSortDirection value (default Normal; Reverse = newest first).
+
+---@class AuraDisplayOptions
+---@field IconTexCoord number[]? {left, right, top, bottom} crop applied to every icon.
+---@field IconMask table? MaskTexture applied to every icon, and to the cooldown swipe.
+---@field Minimal boolean? Skip the dispel border and the glow frame (portrait icons want neither).
 
 ---@class AuraContainerDisplay
 ---@field Frame table The AuraContainer frame (anchor/show/hide through this).
@@ -790,3 +833,6 @@ end
 ---@field ButtonWidgets table<table, table>
 ---@field DesiredShown boolean
 ---@field RestylePending boolean
+---@field IconTexCoord number[]?
+---@field IconMask table?
+---@field Minimal boolean

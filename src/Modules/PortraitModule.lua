@@ -5,8 +5,9 @@ local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
+local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local auraFilters = addon.Core.AuraFilters
 local eventGate = addon.Core.EventGate
-local fontUtil = addon.Utils.FontUtil
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
 local units = addon.Utils.Units
@@ -106,88 +107,89 @@ local function ApplyMaskToLayer(layer, mask)
 	end
 end
 
----12.1 path: builds the layered AuraSlot stack over a portrait. The container is parented to
----the kick container's frame so it follows the per-addon frame level adjustments the attach
----functions apply afterwards (child levels shift with the parent).
+-- Priority stack for the portrait icon, LOWEST first: a higher-priority display simply covers
+-- the ones below it, and an empty one hides its button secretly. The filters are the shared
+-- partitioned ones, so an aura that qualifies for several categories only ever lands in the
+-- highest of them.
+local PORTRAIT_CATEGORIES = {
+	{ Key = "important", Filter = "Important" },
+	{ Key = "extdef", Filter = "ExternalDefensive" },
+	{ Key = "bigdef", Filter = "BigDefensive" },
+	{ Key = "cc", Filter = "CrowdControl" },
+}
+
+---The button style every portrait display takes: cooldown direction from the options, and never
+---a border, glow or mouse input. Returned in the wrapper's shared scratch, so use it and hand it
+---straight to SetStyle.
+---@return AuraDisplayStyle
+local function BuildPortraitStyle()
+	local style = auraContainerDisplay:GetStyleScratch()
+	style.ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown or false
+	style.FontScale = db.FontScale
+	style.ShowTooltips = false
+
+	return style
+end
+
+---12.1 path: builds the layered single-icon display stack over a portrait. Each display is
+---parented to the kick container's frame so it follows the per-addon frame level adjustments the
+---attach functions apply afterwards (child levels shift with the parent).
 ---@param kickFrame table The kick IconSlotContainer's frame (already anchored over the portrait).
 ---@param unit string
 ---@param texCoord table? {left, right, top, bottom} icon crop, per unit-frame addon.
 ---@param mask table? MaskTexture for round portraits (Blizzard frames).
----@param iconSize number Used for the cooldown countdown font size.
+---@param iconSize number
+---@return { Displays: AuraContainerDisplay[] }
 local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSize)
-	-- One single-icon aura GROUP container per category, stacked by frame level (priority:
-	-- kick > cc > big defensive > external defensive > important; a higher-priority icon
-	-- covers the ones below, and empty containers hide their button secretly). AuraSlots
-	-- would be the natural fit, but they silently failed to render on the 12.1 PTR and no
-	-- known addon exercises them - single-icon groups are the same thing ("slots" are
-	-- documented as groups with maxFrameCount 1) built on the verified-working group API.
+	-- One single-icon aura GROUP container per category. AuraSlots would be the natural fit,
+	-- but they silently failed to render on the 12.1 PTR and no known addon exercises them -
+	-- single-icon groups are the same thing ("slots" are documented as groups with
+	-- maxFrameCount 1) built on the verified-working group API.
 	--
 	-- Levels stack UP from the kick frame: the kick frame sits at unitFrame-1, so anything
 	-- below it renders BEHIND the unit frame's own portrait texture (diagnosed on PTR:
 	-- TargetFrame is level 500 and displays at 494-497 were invisible under it, while
 	-- PlayerFrame at level 1 with displays at 1-4 happened to work). Displays are children
 	-- of the kick frame so per-addon level adjustments shift the whole stack together.
+	--
+	-- These go through AuraContainerDisplay like every other container in the addon: it owns
+	-- the Edit Mode placeholder-aura suppression (a hand-rolled container would happily show
+	-- Blizzard's fake auras over the portrait) and the deferred restyling that re-applies
+	-- option changes made while aura styling was restricted.
 	local baseLevel = (kickFrame:GetFrameLevel() or 0) + 1
-	local cooldowns = {}
-	local frames = {}
+	local displays = {}
 
-	local function InitButton(button)
-		button:SetSize(iconSize, iconSize)
-
-		local icon = button:CreateTexture(nil, "BACKGROUND", nil, 1)
-		icon:SetAllPoints(button)
-		if texCoord then
-			icon:SetTexCoord(texCoord[1], texCoord[2], texCoord[3], texCoord[4])
-		end
-		if mask then
-			icon:AddMaskTexture(mask)
-		end
-		button:SetIcon(icon)
-
-		local cd = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
-		cd:SetAllPoints(button)
-		cd:SetDrawEdge(false)
-		cd:SetDrawBling(false)
-		cd:SetHideCountdownNumbers(false)
-		cd:SetSwipeColor(0, 0, 0, 0.8)
-		if mask then
-			-- Keep cooldown within the portrait icon
-			cd:SetSwipeTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
-		end
-		cd:SetReverse(db.Modules.PortraitModule.ReverseCooldown or false)
-		fontUtil:UpdateCooldownFontSize(cd, iconSize, nil, db.FontScale or 1.0)
-		button:SetDurationCooldown(cd)
-		cooldowns[#cooldowns + 1] = cd
-
-		button:EnableMouse(false)
-	end
-
-	-- Priority stack, lowest first (buttons render one level above their container).
-	local categorySpecs = {
-		{ filter = "HELPFUL|IMPORTANT", level = baseLevel },
-		{ filter = "HELPFUL|EXTERNAL_DEFENSIVE", level = baseLevel + 1 },
-		{ filter = "HELPFUL|BIG_DEFENSIVE", level = baseLevel + 2 },
-		{ filter = "HARMFUL|CROWD_CONTROL", level = baseLevel + 3 },
-	}
-
-	for _, spec in ipairs(categorySpecs) do
-		local ac = CreateFrame("AuraContainer", nil, kickFrame, "CustomAuraContainerTemplate")
-		ac:SetAllPoints(kickFrame)
-		ac:SetIgnoreParentAlpha(true)
-		ac:SetFrameLevel(spec.level)
-		ac:SetUnit(unit)
-		ac:AddAuraGroup("main", spec.filter, {
-			maxFrameCount = 1,
-			-- Reverse instance-id order = newest aura first, matching the legacy Reverse sort.
-			sortMethod = AuraContainerSortMethod.AuraInstanceIDOnly,
-			sortDirection = AuraContainerSortDirection.Reverse,
-			initializeFrame = InitButton,
-			layout = { elementWidth = iconSize, elementHeight = iconSize },
+	for index, category in ipairs(PORTRAIT_CATEGORIES) do
+		local display = auraContainerDisplay:New(kickFrame, unit, {
+			{
+				Key = category.Key,
+				FilterString = auraFilters.Filter[category.Filter],
+				MaxIcons = 1,
+				-- Reverse instance-id order = newest aura first, matching the legacy Reverse sort.
+				SortDirection = AuraContainerSortDirection.Reverse,
+			},
+		}, iconSize, 0, "Portraits", {
+			IconTexCoord = texCoord,
+			IconMask = mask,
+			-- Portrait icons carry no dispel border and no glow.
+			Minimal = true,
 		})
-		frames[#frames + 1] = ac
+
+		-- Style now rather than waiting for the first ApplyOptions, so the buttons never spend a
+		-- moment with mouse input enabled over the portrait.
+		display:SetStyle(BuildPortraitStyle())
+
+		local frame = display.Frame
+		frame:SetAllPoints(kickFrame)
+		frame:SetIgnoreParentAlpha(true)
+		-- Scale with the portrait, unlike the free-standing displays elsewhere.
+		frame:SetIgnoreParentScale(false)
+		frame:SetFrameLevel(baseLevel + index - 1)
+
+		displays[#displays + 1] = display
 	end
 
-	return { Frames = frames, Cooldowns = cooldowns }
+	return { Displays = displays }
 end
 
 local function CreateContainer(unitFrame, portrait, unit, texCoord, mask)
@@ -970,9 +972,9 @@ local function Teardown()
 	for _, container in pairs(containers) do
 		container:ResetAllSlots()
 		if container.AuraDisplay then
-			for _, frame in ipairs(container.AuraDisplay.Frames) do
-				frame:SetEnabled(false)
-				frame:Hide()
+			for _, display in ipairs(container.AuraDisplay.Displays) do
+				display:SetEnabled(false)
+				display:Hide()
 			end
 		end
 	end
@@ -985,9 +987,9 @@ local function EnsureFrames()
 
 	for _, container in pairs(containers) do
 		if container.AuraDisplay then
-			for _, frame in ipairs(container.AuraDisplay.Frames) do
-				frame:SetEnabled(true)
-				frame:Show()
+			for _, display in ipairs(container.AuraDisplay.Displays) do
+				display:SetEnabled(true)
+				display:Show()
 			end
 		end
 	end
@@ -1004,22 +1006,17 @@ local function ApplyOptions(options)
 		return
 	end
 
-	-- 12.1: re-apply the cooldown style to the aura buttons (only possible while auras aren't
-	-- secret - button APIs error otherwise, including out-of-combat in M+/encounters/PvP) and
-	-- hide the live displays in test mode so real and fake icons don't mix.
-	local reverse = options.ReverseCooldown or false
-	local canStyle = not wowEx:IsAuraStylingRestricted()
+	-- 12.1: re-apply the button style (the wrapper defers it if aura styling is currently
+	-- restricted and retries once it lifts) and hide the live displays in test mode so real and
+	-- fake icons don't mix.
+	local style = BuildPortraitStyle()
 
 	for _, container in pairs(containers) do
 		local auraDisplay = container.AuraDisplay
 		if auraDisplay then
-			if canStyle then
-				for _, cd in ipairs(auraDisplay.Cooldowns) do
-					cd:SetReverse(reverse)
-				end
-			end
-			for _, frame in ipairs(auraDisplay.Frames) do
-				frame:SetShown(not testModeActive)
+			for _, display in ipairs(auraDisplay.Displays) do
+				display:SetStyle(style)
+				display:SetShown(not testModeActive)
 			end
 		end
 	end
@@ -1118,8 +1115,8 @@ local function CreateEvents()
 			local unit = event == "PLAYER_TARGET_CHANGED" and "target" or "focus"
 			for _, container in pairs(containers) do
 				if container.AuraUnit == unit and container.AuraDisplay then
-					for _, frame in ipairs(container.AuraDisplay.Frames) do
-						frame:UpdateAllAuras()
+					for _, display in ipairs(container.AuraDisplay.Displays) do
+						display.Frame:UpdateAllAuras()
 					end
 				end
 			end
