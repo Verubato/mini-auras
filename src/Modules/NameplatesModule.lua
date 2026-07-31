@@ -985,34 +985,6 @@ local function ClearNameplate(unitToken)
 	end
 end
 
-local function DisableWatchers()
-	for _, watcher in pairs(watchers) do
-		if watcher then
-			watcher:Disable()
-		end
-	end
-
-	for unitToken, data in pairs(nameplateAnchors) do
-		ClearNameplate(unitToken)
-		if data.Bar1Display then
-			data.Bar1Display:SetEnabled(false)
-			data.Bar1Display.Frame:Hide()
-		end
-		if data.Bar2Display then
-			data.Bar2Display:SetEnabled(false)
-			data.Bar2Display.Frame:Hide()
-		end
-	end
-end
-
-local function EnableWatchers()
-	for _, watcher in pairs(watchers) do
-		if watcher then
-			watcher:Enable()
-		end
-	end
-end
-
 local function RebuildContainers()
 	if not moduleUtil:IsModuleEnabled(moduleName.Nameplates) then
 		return
@@ -1164,25 +1136,6 @@ function M:GetUnitOptions(unitToken)
 	return nmModule.Enemy
 end
 
-function M:StartTesting()
-	testModeActive = true
-	Pause()
-
-	M:Refresh()
-end
-
-function M:StopTesting()
-	testModeActive = false
-	ClearAll()
-
-	Resume()
-
-	-- Refresh all nameplates
-	for _, watcher in pairs(watchers) do
-		watcher:ForceFullUpdate()
-	end
-end
-
 local function ApplyBlizzardNameplateSettings()
 	local configureEnabled = db.ConfigureBlizzardNameplates
 	if configureEnabled == nil then
@@ -1205,25 +1158,57 @@ local function ApplyBlizzardNameplateSettings()
 	end
 end
 
-function M:Refresh()
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
-	local active = moduleEnabled and AnyEnabled()
+-- Lifecycle
 
+---@return NameplatesModuleOptions?
+local function GetOptions()
+	-- Cached in Init off db.Modules.NameplatesModule.
+	return nmModule
+end
+
+---@return boolean
+local function IsEnabled()
+	return moduleUtil:IsModuleEnabled(moduleName.Nameplates) and AnyEnabled()
+end
+
+---@param active boolean
+local function SetEventsActive(active)
 	-- While inactive no state tracks nameplates, so the plate events can be unregistered
 	-- entirely; reactivation rebuilds from the live plate list. The addon-wide Refresh
 	-- (config, world change, raid flip) re-runs this gate.
 	plateGate:SetActive(active)
+end
 
-	if not active then
-		DisableWatchers()
-		CacheEnabledModes()
-		return
+local function Teardown()
+	for _, watcher in pairs(watchers) do
+		if watcher then
+			watcher:Disable()
+		end
 	end
 
+	for unitToken, data in pairs(nameplateAnchors) do
+		ClearNameplate(unitToken)
+		if data.Bar1Display then
+			data.Bar1Display:SetEnabled(false)
+			data.Bar1Display.Frame:Hide()
+		end
+		if data.Bar2Display then
+			data.Bar2Display:SetEnabled(false)
+			data.Bar2Display.Frame:Hide()
+		end
+	end
+
+	CacheEnabledModes()
+end
+
+local function EnsureFrames()
 	ApplyBlizzardNameplateSettings()
 
-	-- Module is enabled, ensure watchers are enabled
-	EnableWatchers()
+	for _, watcher in pairs(watchers) do
+		if watcher then
+			watcher:Enable()
+		end
+	end
 
 	-- if the user has enabled/disabled a mode, rebuild the containers
 	if HaveModesChanged() then
@@ -1231,37 +1216,63 @@ function M:Refresh()
 	end
 
 	CacheEnabledModes()
+end
+
+---@param options NameplatesModuleOptions
+local function ApplyOptions(options)
 	RefreshAnchorsAndSizes()
 
 	local sortRule, sortDirection = GetCCSortOptions()
 	for _, watcher in pairs(watchers) do
 		watcher:SetSort(sortRule, sortDirection)
 	end
+end
 
+---@param options NameplatesModuleOptions
+local function UpdateContent(options)
 	if testModeActive then
-		-- update test icons
 		ShowTestIcons()
+		return
+	end
+
+	-- Re-render every tracked nameplate so per-bar option changes (Show CC / Defensives /
+	-- Important, colours, glow, tooltips, etc.) apply immediately instead of waiting for the next
+	-- aura event. HaveModesChanged only catches enabled/mode toggles, and SetSort no-ops when the
+	-- sort is unchanged, so neither re-applies the bars on their own.
+	for unitToken in pairs(nameplateAnchors) do
+		OnAuraDataChanged(unitToken)
+	end
+end
+
+---@param active boolean
+local function SetTestMode(active)
+	testModeActive = active
+
+	if active then
+		Pause()
 	else
-		-- Re-render every tracked nameplate so per-bar option changes (Show CC / Defensives /
-		-- Important, colours, glow, tooltips, etc.) apply immediately instead of waiting for the next
-		-- aura event. HaveModesChanged only catches enabled/mode toggles, and SetSort no-ops when the
-		-- sort is unchanged, so neither re-applies the bars on their own.
-		for unitToken in pairs(nameplateAnchors) do
-			OnAuraDataChanged(unitToken)
+		ClearAll()
+		Resume()
+	end
+
+	M:Refresh()
+
+	if not active then
+		-- Repopulate from live aura data; the test icons overwrote whatever the plates had.
+		for _, watcher in pairs(watchers) do
+			watcher:ForceFullUpdate()
 		end
 	end
 end
 
-function M:Init()
-	db = mini:GetSavedVars()
-	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> NameplatesModule
-	nmModule = db.Modules.NameplatesModule
-
+local function CreateFrames()
 	if USE_AURA_CONTAINERS then
 		-- Pre-create enough displays for a full screen of plates (staggered, out of combat).
 		displayPool = auraContainerDisplay:NewPool(CreateBarDisplay, ResetBarDisplay, 40)
 	end
+end
 
+local function CreateEvents()
 	local eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
 		if event == "NAME_PLATE_UNIT_ADDED" then
@@ -1292,9 +1303,50 @@ function M:Init()
 	})
 
 	C_Timer.NewTicker(DUEL_POLL_INTERVAL, PollDuelFactionFlips)
+end
 
+local function ApplyInitialState()
 	-- Registers the plate events and initializes existing nameplates when active.
-	plateGate:SetActive(moduleUtil:IsModuleEnabled(moduleName.Nameplates) and AnyEnabled())
+	SetEventsActive(IsEnabled())
 
 	CacheEnabledModes()
+end
+
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	local isEnabled = IsEnabled()
+
+	SetEventsActive(isEnabled)
+
+	if not isEnabled then
+		Teardown()
+		return
+	end
+
+	EnsureFrames()
+	ApplyOptions(options)
+	UpdateContent(options)
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
+	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> NameplatesModule
+	nmModule = db.Modules.NameplatesModule
+
+	CreateFrames()
+	CreateEvents()
+	ApplyInitialState()
 end

@@ -47,15 +47,27 @@ local function ShowHideEntryContainer(frame, anchor)
 	frames:ShowHideFrame(frame, anchor, testModeActive, false)
 end
 
-local function GetOptions()
+---Cooldown inference reads aura data through UnitAuraWatcher, which 12.1 removes entirely.
+---@return boolean
+local function IsSupported()
+	return not wowEx:UseAuraContainers()
+end
+
+local function GetModuleOptions()
 	return db and db.Modules.FriendlyCooldownTrackerModule
 end
 
-local function GetAnchorOptions()
-	local m = GetOptions()
+---@return FriendlyCooldownInstanceOptions?
+local function GetOptions()
+	if not IsSupported() then
+		return nil
+	end
+
+	local m = GetModuleOptions()
 	if not m then
 		return nil
 	end
+
 	return instanceOptions:IsRaid() and m.Raid or m.Default
 end
 
@@ -124,9 +136,8 @@ local function EnsureEntry(anchor, unit)
 		return nil
 	end
 
-	local options = GetOptions()
-	local anchorOptions = GetAnchorOptions()
-	if not options or not anchorOptions then
+	local anchorOptions = GetOptions()
+	if not anchorOptions then
 		return nil
 	end
 
@@ -202,10 +213,24 @@ local function EnsureAllEntries()
 	end
 end
 
-local function DisableAll()
+-- Lifecycle
+
+---@return boolean
+local function IsEnabled()
+	return moduleUtil:IsModuleEnabled(moduleName.FriendlyCooldownTracker)
+end
+
+---The observers are the module's only event source, so enabling them is the gate.
+---@param active boolean
+local function SetEventsActive(active)
+	observer:SetAbsorbTrackingEnabled(active)
+end
+
+local function Teardown()
 	if not observersEnabled then
 		return
 	end
+
 	observersEnabled = false
 	for _, entry in pairs(watchEntries) do
 		observer:Disable(entry)
@@ -214,113 +239,91 @@ local function DisableAll()
 	end
 end
 
-local function EnableAll()
+local function EnsureFrames()
+	EnsureAllEntries()
+
 	if observersEnabled then
 		return
 	end
+
 	observersEnabled = true
 	for _, entry in pairs(watchEntries) do
 		observer:Enable(entry)
 	end
 end
 
-function M:Refresh()
-	-- Dead on 12.1: cooldown inference needs readable aura data (see Init).
-	if wowEx:UseAuraContainers() then
-		return
-	end
+---@param entry FcdWatchEntry
+---@param anchor table
+---@param options FriendlyCooldownInstanceOptions
+local function ApplyEntryOptions(entry, anchor, options)
+	local size = moduleUtil:GetIconSize(options.Icons, anchor, 32, 100)
+	local maxIcons = tonumber(options.Icons.MaxIcons) or 3
+	local rows = math.max(1, tonumber(options.Icons.Rows) or 1)
 
-	local options = GetOptions()
-	local anchorOptions = GetAnchorOptions()
-	if not options or not anchorOptions then
-		return
-	end
+	entry.Container:SetIconSize(size)
+	entry.Container:SetCount(maxIcons)
+	entry.Container:SetSpacing(options.IconSpacing or 2)
+	-- DOWN and UP are both vertical layouts (single/multi column); LEFT/RIGHT/CENTER are horizontal rows.
+	local isVertical = options.Grow == "DOWN" or options.Grow == "UP"
+	entry.Container:SetRows(isVertical and nil or rows, isVertical and "CENTER" or options.Grow, not isVertical and options.Grow ~= "RIGHT")
+	entry.Container:SetColumns(isVertical and (tonumber(options.Icons.Columns) or 1) or nil)
 
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.FriendlyCooldownTracker)
+	display:AnchorContainer(entry)
+	ShowHideEntryContainer(entry.Container.Frame, anchor)
 
-	if not moduleEnabled then
-		observer:SetAbsorbTrackingEnabled(false)
-		DisableAll()
-		return
-	end
-
-	observer:SetAbsorbTrackingEnabled(true)
-
-	EnsureAllEntries()
-	EnableAll()
-
-	for anchor, entry in pairs(watchEntries) do
-		if anchorOptions.ExcludeSelf and SameUnit(entry.Unit, "player") then
-			-- Hide the container but leave the watcher active: aura detection and cast evidence
-			-- must still run so external defensives cast by the player are tracked correctly.
-			entry.IsExcludedSelf = true
-			entry.Container:ResetAllSlots()
-			entry.Container.Frame:Hide()
-		else
-			entry.IsExcludedSelf = false
-			local size = moduleUtil:GetIconSize(anchorOptions.Icons, anchor, 32, 100)
-			local maxIcons = tonumber(anchorOptions.Icons.MaxIcons) or 3
-			local rows = math.max(1, tonumber(anchorOptions.Icons.Rows) or 1)
-			entry.Container:SetIconSize(size)
-			entry.Container:SetCount(maxIcons)
-			entry.Container:SetSpacing(anchorOptions.IconSpacing or 2)
-			-- DOWN and UP are both vertical layouts (single/multi column); LEFT/RIGHT/CENTER are horizontal rows.
-			local isVertical = anchorOptions.Grow == "DOWN" or anchorOptions.Grow == "UP"
-			entry.Container:SetRows(isVertical and nil or rows, isVertical and "CENTER" or anchorOptions.Grow, not isVertical and anchorOptions.Grow ~= "RIGHT")
-			entry.Container:SetColumns(isVertical and (tonumber(anchorOptions.Icons.Columns) or 1) or nil)
-			display:AnchorContainer(entry)
-			ShowHideEntryContainer(entry.Container.Frame, anchor)
-			if entry.Container.Frame:IsShown() then
-				display:UpdateDisplay(entry)
-			end
-		end
-	end
-end
-
-function M:RefreshDisplays()
-	for _, entry in pairs(watchEntries) do
+	if entry.Container.Frame:IsShown() then
 		display:UpdateDisplay(entry)
 	end
 end
 
-function M:StartTesting()
-	if wowEx:UseAuraContainers() then
+---Hides the container but leaves the watcher active: aura detection and cast evidence must
+---still run so external defensives cast by the player are tracked correctly.
+---@param entry FcdWatchEntry
+local function TeardownEntry(entry)
+	entry.Container:ResetAllSlots()
+	entry.Container.Frame:Hide()
+end
+
+---@param options FriendlyCooldownInstanceOptions
+local function ApplyOptions(options)
+	for anchor, entry in pairs(watchEntries) do
+		entry.IsExcludedSelf = options.ExcludeSelf and SameUnit(entry.Unit, "player") or false
+
+		if entry.IsExcludedSelf then
+			TeardownEntry(entry)
+		else
+			ApplyEntryOptions(entry, anchor, options)
+		end
+	end
+end
+
+---@param active boolean
+local function SetTestMode(active)
+	if not IsSupported() then
 		return
 	end
 
-	testModeActive = true
-	observer:SetTestMode(true)
-	display:SetTestMode(true)
-	M:Refresh()
-end
+	testModeActive = active
+	observer:SetTestMode(active)
+	display:SetTestMode(active)
 
-function M:StopTesting()
-	testModeActive = false
-	observer:SetTestMode(false)
-	display:SetTestMode(false)
-
-	for _, entry in pairs(watchEntries) do
-		entry.Container:ResetAllSlots()
-		entry.Container.Frame:Hide()
+	if not active then
+		for _, entry in pairs(watchEntries) do
+			entry.Container:ResetAllSlots()
+			entry.Container.Frame:Hide()
+		end
 	end
 
 	M:Refresh()
 end
 
-function M:Init()
-	-- Party cooldown tracking is dead on 12.1: it infers cooldown usage from aura evidence
-	-- (UnitAuraWatcher), and 12.1 removes addon access to aura data entirely. Skip all setup
-	-- so no watchers, displays, or event registrations are created; the config panel is
-	-- hidden separately. TEMPORARY: remove the module once 12.1 is live everywhere.
-	if wowEx:UseAuraContainers() then
-		return
-	end
-
-	db = mini:GetSavedVars()
-
+local function CreateFrames()
 	fcdTalents:Init()
 	display:Init()
+	observer:Init()
+end
 
+local function RegisterBrainCallbacks()
 	brain:RegisterWithObserver(observer)
 
 	-- Burrow commit: Burrow ended — commit CD with accurate remaining time.
@@ -667,7 +670,9 @@ function M:Init()
 			end
 		end
 	end)
+end
 
+local function CreateEvents()
 	-- Cancels all active cooldown timers and wipes per-entry state.
 	-- Called on PLAYER_ENTERING_WORLD (arena exit) and PVP_MATCH_STATE_CHANGED/StartUp (new match).
 	local function ClearAllCooldownState()
@@ -752,7 +757,9 @@ function M:Init()
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
 	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	eventsFrame:RegisterEvent("UNIT_FACTION")
+end
 
+local function InstallHooks()
 	EventRegistry:RegisterCallback("EditMode.Enter", function()
 		editModeActive = true
 		for _, entry in pairs(watchEntries) do
@@ -786,8 +793,6 @@ function M:Init()
 		M:RefreshDisplays()
 		talentCallbackFiredForSpecChange = true
 	end)
-
-	observer:Init()
 
 	if not wowEx:IsDandersEnabled() then
 		if CompactUnitFrame_SetUnit then
@@ -861,10 +866,6 @@ function M:Init()
 		end)
 	end
 
-	if moduleUtil:IsModuleEnabled(moduleName.FriendlyCooldownTracker) then
-		EnsureAllEntries()
-	end
-
 	frames:HookCellSpotlightVisibility(function()
 		if moduleUtil:IsModuleEnabled(moduleName.FriendlyCooldownTracker) then
 			EnsureAllEntries()
@@ -878,7 +879,65 @@ function M:Init()
 	end)
 end
 
----Registers a callback invoked when a buff is matched to a predicted spell (glow starts).
+local function ApplyInitialState()
+	if moduleUtil:IsModuleEnabled(moduleName.FriendlyCooldownTracker) then
+		EnsureAllEntries()
+	end
+end
+
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	local isEnabled = IsEnabled()
+
+	SetEventsActive(isEnabled)
+
+	if not isEnabled then
+		Teardown()
+		return
+	end
+
+	EnsureFrames()
+	ApplyOptions(options)
+	-- No UpdateContent step: cooldown icons are pushed in by the observer/brain, never rebuilt here.
+end
+
+function M:RefreshDisplays()
+	for _, entry in pairs(watchEntries) do
+		display:UpdateDisplay(entry)
+	end
+end
+
+function M:Init()
+	-- Party cooldown tracking is dead on 12.1: it infers cooldown usage from aura evidence
+	-- (UnitAuraWatcher), and 12.1 removes addon access to aura data entirely. Skip all setup
+	-- so no watchers, displays, or event registrations are created; the config panel is
+	-- hidden separately. TEMPORARY: remove the module once 12.1 is live everywhere.
+	if not IsSupported() then
+		return
+	end
+
+	db = mini:GetSavedVars()
+
+	CreateFrames()
+	RegisterBrainCallbacks()
+	CreateEvents()
+	InstallHooks()
+	ApplyInitialState()
+end
+
 ---Signature: function(unit, spellId, spellType) where spellType is "Defensive"
 ---@param fn function
 function M:RegisterPredictedCallback(fn)

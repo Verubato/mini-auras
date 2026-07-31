@@ -65,7 +65,7 @@ local function GetPlayerSpecId()
 	return nil
 end
 
-local function CreateKickBar()
+local function CreateFrames()
 	local options = db.Modules.KickTimerModule
 	local iconOptions = options.Icons
 	local size = tonumber(iconOptions.Size) or 50
@@ -96,16 +96,14 @@ local function CreateKickBar()
 	kickBar.Anchor = container.Frame
 end
 
-local function ApplyKickBarIconOptions()
-	local options = db.Modules.KickTimerModule
-	local iconOptions = options.Icons
-	local size = tonumber(iconOptions.Size) or 50
-
-	if kickBar.Container then
-		kickBar.Container:SetIconSize(size)
-		kickBar.Container:SetSpacing(options.IconSpacing or 2)
+---@param options KickTimerModuleOptions
+local function ApplyStyle(options)
+	if not kickBar.Container then
+		return
 	end
 
+	kickBar.Container:SetIconSize(tonumber(options.Icons.Size) or 50)
+	kickBar.Container:SetSpacing(options.IconSpacing or 2)
 end
 
 local function UpdateKickBarVisibility()
@@ -138,14 +136,14 @@ local function ClearIcons()
 	UpdateKickBarVisibility()
 end
 
-local function PositionKickBar()
+---@param options KickTimerModuleOptions
+local function ApplyLayout(options)
 	local frame = kickBar.Anchor
 
 	if not frame then
 		return
 	end
 
-	local options = db.Modules.KickTimerModule
 	local relativeTo = _G[options.RelativeTo] or UIParent
 
 	frame:ClearAllPoints()
@@ -330,29 +328,23 @@ local function Enable()
 		end
 	end
 
-	local options = db.Modules.KickTimerModule
-	local relativeTo = _G[options.RelativeTo] or UIParent
-	kickBar.Anchor:ClearAllPoints()
-	kickBar.Anchor:SetPoint(options.Point, relativeTo, options.RelativePoint, options.Offset.X, options.Offset.Y)
-	kickBar.Anchor:Show()
+	-- Positioning is left to ApplyLayout, which Refresh runs immediately after this.
+	if kickBar.Anchor then
+		kickBar.Anchor:Show()
+	end
 
 	enabled = true
 end
 
-local function EnableDisable()
-	-- don't do a moduleUtil check here, as we cover that inside IsEnabledForPlayer
-	-- and we'd end up with a falsey response as the kick timer has different enabled values
-	if not M:IsEnabledForPlayer(db.Modules.KickTimerModule) then
+-- The cast events only produce icons inside an arena, so they stay unregistered elsewhere
+-- even while the module is enabled for this spec.
+---@param active boolean
+local function SetEventsActive(active)
+	if active and IsArena() then
+		Enable()
+	else
 		Disable()
-		return
 	end
-
-	if not IsArena() then
-		Disable()
-		return
-	end
-
-	Enable()
 end
 
 local function OnEnteringWorld()
@@ -360,7 +352,7 @@ local function OnEnteringWorld()
 	-- while the module itself is disabled, as they might re-enable before gates open.
 	matchPrepGate:SetActive(IsArena())
 
-	EnableDisable()
+	M:Refresh()
 
 	if IsArena() then
 		OnArenaPrep()
@@ -435,69 +427,78 @@ local function Resume()
 	paused = false
 end
 
-function M:StartTesting()
-	testModeActive = true
-	Pause()
-	M:Refresh()
+-- Lifecycle
 
-	local container = kickBar.Anchor
-
-	if not container then
-		return
-	end
-
-	container:SetMovable(true)
-	container:EnableMouse(true)
-	container:Show()
+---@return KickTimerModuleOptions?
+local function GetOptions()
+	return db and db.Modules.KickTimerModule
 end
 
-function M:StopTesting()
-	testModeActive = false
-	Resume()
+---@return boolean
+local function IsEnabled()
+	-- No moduleUtil check here: the kick timer carries its own per-spec enabled values, and
+	-- the generic check would report false for them.
+	return M:IsEnabledForPlayer(GetOptions())
+end
+
+local function Teardown()
 	ClearIcons()
-	M:Refresh()
 
-	local container = kickBar.Anchor
-
-	if not container then
-		return
+	if kickBar.Anchor then
+		kickBar.Anchor:Hide()
 	end
-
-	container:SetMovable(false)
-	container:EnableMouse(false)
-	container:Hide()
 end
 
-function M:Refresh()
-	EnableDisable()
-
-	-- Apply icon options even if already enabled (for config changes)
-	ApplyKickBarIconOptions()
-
-	PositionKickBar()
-
-	local container = kickBar.Anchor
-
-	if not container then
+local function EnsureFrames()
+	if kickBar.Container then
 		return
 	end
 
-	if not M:IsEnabledForPlayer(db.Modules.KickTimerModule) then
-		ClearIcons()
-		container:Hide()
-		return
-	end
+	CreateFrames()
+end
 
+---@param options KickTimerModuleOptions
+local function ApplyOptions(options)
+	ApplyLayout(options)
+	ApplyStyle(options)
+end
+
+-- Live icons are pushed in by the cast events, so only the fake ones need rebuilding here.
+local function UpdateContent()
 	if testModeActive then
 		ShowTestIcons()
 	end
 end
 
-function M:Init()
-	db = mini:GetSavedVars()
+---@param active boolean
+local function SetAnchorInteractive(active)
+	local anchor = kickBar.Anchor
 
-	CreateKickBar()
+	if not anchor then
+		return
+	end
 
+	anchor:SetMovable(active)
+	anchor:EnableMouse(active)
+	anchor:SetShown(active)
+end
+
+---@param active boolean
+local function SetTestMode(active)
+	testModeActive = active
+
+	if active then
+		Pause()
+	else
+		ClearIcons()
+		Resume()
+	end
+
+	M:Refresh()
+	SetAnchorInteractive(active)
+end
+
+local function CreateEvents()
 	for _, unit in ipairs(FRIENDLY_UNITS_TO_WATCH) do
 		partyUnitsEventsFrames[unit] = CreateFrame("Frame")
 	end
@@ -513,16 +514,52 @@ function M:Init()
 
 	playerSpecEventsFrame = CreateFrame("Frame")
 	playerSpecEventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-	playerSpecEventsFrame:SetScript("OnEvent", function(_, event, ...)
-		if event == "PLAYER_SPECIALIZATION_CHANGED" then
-			local unit = ...
-			if unit == "player" then
-				M:Refresh()
-			end
+	playerSpecEventsFrame:SetScript("OnEvent", function(_, event, unit)
+		if event == "PLAYER_SPECIALIZATION_CHANGED" and unit == "player" then
+			M:Refresh()
 		end
 	end)
+end
 
+local function ApplyInitialState()
 	M:Refresh()
+end
+
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	local isEnabled = IsEnabled()
+
+	SetEventsActive(isEnabled)
+
+	if not isEnabled then
+		Teardown()
+		return
+	end
+
+	EnsureFrames()
+	ApplyOptions(options)
+	UpdateContent(options)
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
+
+	CreateFrames()
+	CreateEvents()
+	ApplyInitialState()
 end
 
 ---@class KickBar

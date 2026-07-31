@@ -863,38 +863,6 @@ local function RefreshTestIcons()
 	end
 end
 
-local function DisableWatchers()
-	for _, watcher in pairs(watchers) do
-		watcher:Disable()
-		watcher:ClearState(true)
-	end
-
-	for _, container in pairs(containers) do
-		container:ResetAllSlots()
-		if container.AuraDisplay then
-			for _, frame in ipairs(container.AuraDisplay.Frames) do
-				frame:SetEnabled(false)
-				frame:Hide()
-			end
-		end
-	end
-end
-
-local function EnableWatchers()
-	for _, watcher in pairs(watchers) do
-		watcher:Enable()
-	end
-
-	for _, container in pairs(containers) do
-		if container.AuraDisplay then
-			for _, frame in ipairs(container.AuraDisplay.Frames) do
-				frame:SetEnabled(true)
-				frame:Show()
-			end
-		end
-	end
-end
-
 local function Pause()
 	paused = true
 end
@@ -903,80 +871,11 @@ local function Resume()
 	paused = false
 end
 
-function M:StartTesting()
-	testModeActive = true
-	Pause()
-	M:Refresh()
-end
-
-function M:StopTesting()
-	testModeActive = false
-	Resume()
-
-	for _, container in pairs(containers) do
-		container:ResetAllSlots()
-	end
-
-	M:Refresh()
-end
-
 local function GetCCSortOptions()
 	if db.CCNativeOrder then
 		return Enum.UnitAuraSortRule.Default, Enum.UnitAuraSortDirection.Normal
 	end
 	return Enum.UnitAuraSortRule.Unsorted, Enum.UnitAuraSortDirection.Reverse
-end
-
-function M:Refresh()
-	enabled = moduleUtil:IsModuleEnabled(ModuleName.Portrait)
-
-	-- Events stay unregistered while disabled; the addon-wide Refresh (config, world
-	-- change, raid flip) re-runs this gate.
-	if nameplateGate then
-		nameplateGate:SetActive(enabled)
-	end
-	if unitChangeGate then
-		unitChangeGate:SetActive(enabled)
-	end
-
-	-- If disabled, disable watchers and clear
-	if not enabled then
-		DisableWatchers()
-		return
-	end
-
-	-- Module is enabled, ensure watchers are enabled
-	EnableWatchers()
-
-	local sortRule, sortDirection = GetCCSortOptions()
-	for _, watcher in pairs(watchers) do
-		watcher:SetSort(sortRule, sortDirection)
-	end
-
-	-- 12.1: re-apply the cooldown style to the aura buttons (only possible while auras aren't
-	-- secret - button APIs error otherwise, including out-of-combat in M+/encounters/PvP) and
-	-- hide the live displays in test mode so real and fake icons don't mix.
-	if USE_AURA_CONTAINERS then
-		local reverse = db.Modules.PortraitModule.ReverseCooldown or false
-		local canStyle = not wowEx:IsAuraStylingRestricted()
-		for _, container in pairs(containers) do
-			local auraDisplay = container.AuraDisplay
-			if auraDisplay then
-				if canStyle then
-					for _, cd in ipairs(auraDisplay.Cooldowns) do
-						cd:SetReverse(reverse)
-					end
-				end
-				for _, frame in ipairs(auraDisplay.Frames) do
-					frame:SetShown(not testModeActive)
-				end
-			end
-		end
-	end
-
-	if testModeActive then
-		RefreshTestIcons()
-	end
 end
 
 local function FlushImportantUpdates()
@@ -1033,19 +932,133 @@ local function HookNameplateAuraFrame(unitToken)
 	end
 end
 
-function M:Init()
-	db = mini:GetSavedVars()
+-- Lifecycle
 
-	-- Initialize test spells
+---@return PortraitModuleOptions?
+local function GetOptions()
+	return db and db.Modules.PortraitModule
+end
+
+---Also refreshes the `enabled` cache that the nameplate RefreshAuras hook reads on its hot path.
+---@return boolean
+local function IsEnabled()
+	enabled = moduleUtil:IsModuleEnabled(ModuleName.Portrait)
+	return enabled
+end
+
+---@param active boolean
+local function SetEventsActive(active)
+	-- Events stay unregistered while disabled; the addon-wide Refresh (config, world
+	-- change, raid flip) re-runs this gate.
+	if nameplateGate then
+		nameplateGate:SetActive(active)
+	end
+	if unitChangeGate then
+		unitChangeGate:SetActive(active)
+	end
+end
+
+local function Teardown()
+	for _, watcher in pairs(watchers) do
+		watcher:Disable()
+		watcher:ClearState(true)
+	end
+
+	for _, container in pairs(containers) do
+		container:ResetAllSlots()
+		if container.AuraDisplay then
+			for _, frame in ipairs(container.AuraDisplay.Frames) do
+				frame:SetEnabled(false)
+				frame:Hide()
+			end
+		end
+	end
+end
+
+local function EnsureFrames()
+	for _, watcher in pairs(watchers) do
+		watcher:Enable()
+	end
+
+	for _, container in pairs(containers) do
+		if container.AuraDisplay then
+			for _, frame in ipairs(container.AuraDisplay.Frames) do
+				frame:SetEnabled(true)
+				frame:Show()
+			end
+		end
+	end
+end
+
+---@param options PortraitModuleOptions
+local function ApplyOptions(options)
+	local sortRule, sortDirection = GetCCSortOptions()
+	for _, watcher in pairs(watchers) do
+		watcher:SetSort(sortRule, sortDirection)
+	end
+
+	if not USE_AURA_CONTAINERS then
+		return
+	end
+
+	-- 12.1: re-apply the cooldown style to the aura buttons (only possible while auras aren't
+	-- secret - button APIs error otherwise, including out-of-combat in M+/encounters/PvP) and
+	-- hide the live displays in test mode so real and fake icons don't mix.
+	local reverse = options.ReverseCooldown or false
+	local canStyle = not wowEx:IsAuraStylingRestricted()
+
+	for _, container in pairs(containers) do
+		local auraDisplay = container.AuraDisplay
+		if auraDisplay then
+			if canStyle then
+				for _, cd in ipairs(auraDisplay.Cooldowns) do
+					cd:SetReverse(reverse)
+				end
+			end
+			for _, frame in ipairs(auraDisplay.Frames) do
+				frame:SetShown(not testModeActive)
+			end
+		end
+	end
+end
+
+-- Live auras are pushed in by the watchers/containers, so only the fake ones rebuild here.
+local function UpdateContent()
+	if testModeActive then
+		RefreshTestIcons()
+	end
+end
+
+---@param active boolean
+local function SetTestMode(active)
+	testModeActive = active
+
+	if active then
+		Pause()
+	else
+		for _, container in pairs(containers) do
+			container:ResetAllSlots()
+		end
+		Resume()
+	end
+
+	M:Refresh()
+end
+
+local function CreateTestData()
 	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
 	testSpells = { kidneyShot }
+end
 
+local function CreateFrames()
 	Attach("player")
 	Attach("target", { "PLAYER_TARGET_CHANGED" })
 	Attach("focus", { "PLAYER_FOCUS_CHANGED" })
 	Attach("pet")
+end
 
-	-- defer attaching to ElvUI frames until they are created
+local function CreateEvents()
+	-- defer attaching to third-party unit frames until they are created
 	local eventsFrame = CreateFrame("Frame")
 	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	eventsFrame:SetScript("OnEvent", function()
@@ -1116,7 +1129,9 @@ function M:Init()
 		end)
 		unitChangeGate = eventGate:New(unitChangeEvents, { "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED" })
 	end
+end
 
+local function InstallHooks()
 	kickTracker:Watch("target", { "PLAYER_TARGET_CHANGED" })
 	kickTracker:Subscribe("target", function()
 		local fns = unitUpdateFns["target"]
@@ -1131,6 +1146,47 @@ function M:Init()
 			for _, fn in ipairs(fns) do fn() end
 		end
 	end)
+end
 
+local function ApplyInitialState()
 	M:Refresh()
+end
+
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	local isEnabled = IsEnabled()
+
+	SetEventsActive(isEnabled)
+
+	if not isEnabled then
+		Teardown()
+		return
+	end
+
+	EnsureFrames()
+	ApplyOptions(options)
+	UpdateContent(options)
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
+
+	CreateTestData()
+	CreateFrames()
+	CreateEvents()
+	InstallHooks()
+	ApplyInitialState()
 end

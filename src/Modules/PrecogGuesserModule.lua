@@ -128,71 +128,54 @@ local function Resume()
 	paused = false
 end
 
-function M:StartTesting()
-	Pause()
-	testModeActive = true
+-- Lifecycle
 
-	if anchor then
-		anchor:EnableMouse(true)
-		anchor:SetMovable(true)
-		anchor:Show()
+---@return PrecogGuesserModuleOptions?
+local function GetOptions()
+	-- The anchor and container are built in Init; without them there is nothing to configure.
+	if not db or not anchor or not container then
+		return nil
 	end
 
-	M:Refresh()
+	return db.Modules.PrecogGuesserModule
 end
 
-function M:StopTesting()
-	testModeActive = false
-	Resume()
-
-	if container then
-		container:ResetAllSlots()
-	end
-
-	if anchor then
-		anchor:EnableMouse(false)
-		anchor:SetMovable(false)
-		anchor:Hide()
-	end
-
-	-- 12.1: no watcher callback exists to re-show the container-driven display, and the
-	-- deferred addon:Refresh may not run until combat ends - recover it here directly.
-	if USE_AURA_CONTAINERS and display and anchor then
-		display.Frame:Show()
-		anchor:Show()
-	end
+---@return boolean
+local function IsEnabled()
+	return moduleUtil:IsModuleEnabled(moduleName.PrecogGuesser) and classHasPrecog == true
 end
 
-function M:Refresh()
-	if not anchor or not container then
+---The legacy watcher is the module's only event source, so enabling/disabling it is the gate.
+---@param active boolean
+local function SetEventsActive(active)
+	if not watcher then
 		return
 	end
 
-	local options = db.Modules.PrecogGuesserModule
-	if not options then
-		return
+	if active and not watcher:IsEnabled() then
+		watcher:Enable()
+	elseif not active and watcher:IsEnabled() then
+		watcher:Disable()
+		watcher:ClearState(true)
 	end
+end
 
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.PrecogGuesser) and classHasPrecog
-
-	if watcher then
-		if moduleEnabled and not watcher:IsEnabled() then
-			watcher:Enable()
-		elseif not moduleEnabled and watcher:IsEnabled() then
-			watcher:Disable()
-			watcher:ClearState(true)
-		end
-	end
-
+local function Teardown()
 	if display then
-		display:SetEnabled(moduleEnabled == true)
+		display:SetEnabled(false)
 	end
 
-	if not moduleEnabled then
-		anchor:Hide()
-		return
-	end
+	anchor:Hide()
+end
 
+local function EnsureFrames()
+	if display then
+		display:SetEnabled(true)
+	end
+end
+
+---@param options PrecogGuesserModuleOptions
+local function ApplyOptions(options)
 	anchor:ClearAllPoints()
 	anchor:SetPoint(
 		options.Point,
@@ -219,27 +202,65 @@ function M:Refresh()
 	end
 
 	UpdateAnchorSize()
+end
 
+---@param options PrecogGuesserModuleOptions
+local function UpdateContent(options)
 	if testModeActive then
 		if display then
 			display.Frame:Hide()
 		end
 		anchor:Show()
 		RefreshTestIcons()
-	elseif display then
-		-- 12.1: the container decides visibility per aura internally; the anchor just has to be
-		-- shown (it is invisible itself, and mouse input is disabled outside test mode).
-		container:ResetAllSlots()
-		display.Frame:Show()
-		anchor:Show()
-	else
+		return
+	end
+
+	if not display then
 		ScanAndDisplay()
+		return
+	end
+
+	-- 12.1: the container decides visibility per aura internally; the anchor just has to be
+	-- shown (it is invisible itself, and mouse input is disabled outside test mode).
+	container:ResetAllSlots()
+	display.Frame:Show()
+	anchor:Show()
+end
+
+---Visibility is left to Refresh: on 12.1 no watcher callback exists to re-show the
+---container-driven display, so hiding here would blank it until the next addon-wide Refresh.
+---@param active boolean
+local function SetAnchorInteractive(active)
+	if not anchor then
+		return
+	end
+
+	anchor:EnableMouse(active)
+	anchor:SetMovable(active)
+
+	if active then
+		anchor:Show()
 	end
 end
 
-function M:Init()
-	db = mini:GetSavedVars()
+---@param active boolean
+local function SetTestMode(active)
+	testModeActive = active
 
+	if active then
+		Pause()
+	else
+		if container then
+			container:ResetAllSlots()
+		end
+		Resume()
+	end
+
+	M:Refresh()
+	SetAnchorInteractive(active)
+end
+
+local function CreateTestData()
 	classHasPrecog = not ({
 		WARRIOR = true,
 		DEATHKNIGHT = true,
@@ -249,7 +270,9 @@ function M:Init()
 	})[UnitClassBase("player")]
 
 	testSpell = { SpellId = 377360 }
+end
 
+local function CreateFrames()
 	local options = db.Modules.PrecogGuesserModule
 
 	anchor = CreateFrame("Frame", addonName .. "PrecogGuesser")
@@ -279,53 +302,100 @@ function M:Init()
 	container.Frame:SetPoint("CENTER", anchor, "CENTER", 0, 0)
 	container.Frame:Show()
 
+	if not USE_AURA_CONTAINERS then
+		return
+	end
+
+	-- 12.1: IMPORTANT + a short maxDuration expresses "precog-length important self buff"
+	-- natively. maxDuration 4.1 covers both the 4s precog window and the Evoker's 3s
+	-- Nullifying Shroud (it is an upper bound, not an exact match like the legacy curve,
+	-- so other sub-4s important buffs would also show - acceptably rare).
+	display = auraContainerDisplay:New(anchor, "player", {
+		{
+			Key = "precog",
+			FilterString = "HELPFUL|IMPORTANT",
+			MaxIcons = 1,
+			CandidateFilters = { maxDuration = 4.1 },
+		},
+	}, iconSize, 2, "Precognition")
+	display.Frame:SetPoint("CENTER", anchor, "CENTER", 0, 0)
+end
+
+local function CreateEvents()
+	if USE_AURA_CONTAINERS then
+		-- The container tracks its own auras; no watcher and no events of our own.
+		return
+	end
+
 	-- Step curve mapping an aura's total duration to an alpha: 1 only at the precog window
 	-- (~4s, plus ~3s for Preservation Evoker's Nullifying Shroud), 0 everywhere else.
 	-- Legacy path only; the 12.1 container expresses the window via a maxDuration filter.
-	if not USE_AURA_CONTAINERS then
-		precogCurve = C_CurveUtil.CreateCurve()
-		precogCurve:SetType(Enum.LuaCurveType.Step)
-		precogCurve:AddPoint(0, 0)
-		-- Preservation Evoker Nullifying Shroud is 3 seconds
-		if UnitClassBase("player") == "EVOKER" then
-			precogCurve:AddPoint(2.9, 0)
-			precogCurve:AddPoint(3, 1)
-			precogCurve:AddPoint(3.1, 0)
-		end
-		-- precog is 4 seconds
-		precogCurve:AddPoint(3.9, 0)
-		precogCurve:AddPoint(4, 1)
-		precogCurve:AddPoint(4.1, 0)
+	precogCurve = C_CurveUtil.CreateCurve()
+	precogCurve:SetType(Enum.LuaCurveType.Step)
+	precogCurve:AddPoint(0, 0)
+	-- Preservation Evoker Nullifying Shroud is 3 seconds
+	if UnitClassBase("player") == "EVOKER" then
+		precogCurve:AddPoint(2.9, 0)
+		precogCurve:AddPoint(3, 1)
+		precogCurve:AddPoint(3.1, 0)
 	end
+	-- precog is 4 seconds
+	precogCurve:AddPoint(3.9, 0)
+	precogCurve:AddPoint(4, 1)
+	precogCurve:AddPoint(4.1, 0)
 
-	if USE_AURA_CONTAINERS then
-		-- 12.1: IMPORTANT + a short maxDuration expresses "precog-length important self buff"
-		-- natively. maxDuration 4.1 covers both the 4s precog window and the Evoker's 3s
-		-- Nullifying Shroud (it is an upper bound, not an exact match like the legacy curve,
-		-- so other sub-4s important buffs would also show - acceptably rare).
-		display = auraContainerDisplay:New(anchor, "player", {
-			{
-				Key = "precog",
-				FilterString = "HELPFUL|IMPORTANT",
-				MaxIcons = 1,
-				CandidateFilters = { maxDuration = 4.1 },
-			},
-		}, iconSize, 2, "Precognition")
-		display.Frame:SetPoint("CENTER", anchor, "CENTER", 0, 0)
-	else
-		-- Watch every helpful self-buff (ungated); ScanAndDisplay narrows them down to the precog
-		-- buff per aura via the duration curve + C_Spell.IsSpellImportant, so there's no need to
-		-- filter by spell id or duration here (and duration is a secret value that can't be anyway).
-		watcher = unitWatcher:New("player", nil, {
-			Buffs = true,
-		})
+	-- Watch every helpful self-buff (ungated); ScanAndDisplay narrows them down to the precog
+	-- buff per aura via the duration curve + C_Spell.IsSpellImportant, so there's no need to
+	-- filter by spell id or duration here (and duration is a secret value that can't be anyway).
+	watcher = unitWatcher:New("player", nil, {
+		Buffs = true,
+	})
 
-		watcher:RegisterCallback(function()
-			ScanAndDisplay()
-		end)
-	end
+	watcher:RegisterCallback(function()
+		ScanAndDisplay()
+	end)
+end
 
+local function ApplyInitialState()
 	M:Refresh()
+end
+
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	local isEnabled = IsEnabled()
+
+	SetEventsActive(isEnabled)
+
+	if not isEnabled then
+		Teardown()
+		return
+	end
+
+	EnsureFrames()
+	ApplyOptions(options)
+	UpdateContent(options)
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
+
+	CreateTestData()
+	CreateFrames()
+	CreateEvents()
+	ApplyInitialState()
 end
 
 ---@class PrecogGuesserModule

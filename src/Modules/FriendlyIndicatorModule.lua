@@ -21,6 +21,8 @@ local eventGate = addon.Core.EventGate
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 ---@type EventGate?
 local rosterGate
+---@type table?
+local eventsFrame
 local paused = false
 local testModeActive = false
 ---@type table<table, FriendlyIndicatorWatchEntry>
@@ -553,7 +555,21 @@ local function Resume()
 	paused = false
 end
 
-local function DisableWatchers()
+-- Lifecycle
+
+---@return boolean
+local function IsEnabled()
+	return moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator)
+end
+
+---@param active boolean
+local function SetEventsActive(active)
+	-- Events stay unregistered while disabled; the addon-wide Refresh (config, world
+	-- change, raid flip) re-runs this gate.
+	rosterGate:SetActive(active)
+end
+
+local function Teardown()
 	for _, entry in pairs(watchers) do
 		if entry.Watcher then
 			entry.Watcher:Disable()
@@ -571,7 +587,9 @@ local function DisableWatchers()
 	end
 end
 
-local function EnableWatchers()
+-- Wakes every entry's watcher/display back up, then discovers any unit frames that have
+-- appeared since the last refresh.
+local function EnsureFrames()
 	for _, entry in pairs(watchers) do
 		if entry.Watcher then
 			entry.Watcher:Enable()
@@ -580,114 +598,104 @@ local function EnableWatchers()
 			entry.Display:SetEnabled(true)
 		end
 	end
+
+	EnsureWatchers()
 end
 
-function M:Refresh()
-	local options = GetOptions()
+---@param entry FriendlyIndicatorWatchEntry
+---@param anchor table
+---@param options FriendlyIndicatorInstanceOptions
+local function ApplyEntryOptions(entry, anchor, options)
+	local container = entry.Container
+	local iconSize = moduleUtil:GetIconSize(options.Icons, anchor, 32, 75)
+	local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 
-	if not options then
+	container:SetIconSize(iconSize)
+	container:SetSpacing(options.IconSpacing or 2)
+	container:SetCount(maxIcons)
+
+	if entry.Display then
+		entry.Display:SetIconSize(iconSize)
+		entry.Display:SetSpacing(options.IconSpacing or 2)
+		-- Category toggles map to a zero icon budget for the disabled group.
+		entry.Display:SetMaxIcons("cc", options.ShowCC and maxIcons or 0)
+		entry.Display:SetMaxIcons("bigdef", options.ShowDefensives and maxIcons or 0)
+		entry.Display:SetMaxIcons("extdef", options.ShowDefensives and maxIcons or 0)
+		entry.Display:SetMaxIcons("important", options.ShowImportant and maxIcons or 0)
+		entry.Display:SetStyle({
+			ReverseCooldown = options.Icons.ReverseCooldown,
+			ColorByDispelType = options.Icons.ColorByDispelType,
+			Glow = options.Icons.Glow,
+			FontScale = db.FontScale,
+			ShowTooltips = options.ShowTooltips ~= false,
+		})
+		entry.Display:SetEnabled(true)
+	end
+
+	if not testModeActive then
+		if USE_AURA_CONTAINERS then
+			UpdateKickIcon(entry)
+		else
+			UpdateWatcherAuras(entry)
+		end
+	end
+
+	AnchorContainer(container, anchor, options)
+	frames:ShowHideFrame(container.Frame, anchor, testModeActive, options.ExcludePlayer)
+
+	if not entry.Display then
 		return
 	end
 
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator)
-
-	-- Events stay unregistered while disabled; the addon-wide Refresh (config, world
-	-- change, raid flip) re-runs this gate.
-	rosterGate:SetActive(moduleEnabled)
-
-	-- If disabled, disable watchers and hide everything
-	if not moduleEnabled then
-		DisableWatchers()
-		return
+	if testModeActive then
+		-- Test icons render through the IconSlotContainer; hide the live aura display
+		-- so real and fake icons don't mix.
+		entry.Display.Frame:Hide()
+	else
+		AnchorAuraDisplay(entry, anchor, options)
+		frames:ShowHideFrame(entry.Display.Frame, anchor, false, options.ExcludePlayer)
 	end
+end
 
-	-- Module is enabled, ensure watchers are enabled
-	EnableWatchers()
-	EnsureWatchers()
-
+---@param options FriendlyIndicatorInstanceOptions
+local function ApplyOptions(options)
 	for anchor, entry in pairs(watchers) do
-		local container = entry.Container
-		local iconSize = moduleUtil:GetIconSize(options.Icons, anchor, 32, 75)
-		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
-		container:SetIconSize(iconSize)
-		container:SetSpacing(options.IconSpacing or 2)
-		container:SetCount(maxIcons)
-
-		if entry.Display then
-			entry.Display:SetIconSize(iconSize)
-			entry.Display:SetSpacing(options.IconSpacing or 2)
-			-- Category toggles map to a zero icon budget for the disabled group.
-			entry.Display:SetMaxIcons("cc", options.ShowCC and maxIcons or 0)
-			entry.Display:SetMaxIcons("bigdef", options.ShowDefensives and maxIcons or 0)
-			entry.Display:SetMaxIcons("extdef", options.ShowDefensives and maxIcons or 0)
-			entry.Display:SetMaxIcons("important", options.ShowImportant and maxIcons or 0)
-			entry.Display:SetStyle({
-				ReverseCooldown = options.Icons.ReverseCooldown,
-				ColorByDispelType = options.Icons.ColorByDispelType,
-				Glow = options.Icons.Glow,
-				FontScale = db.FontScale,
-				ShowTooltips = options.ShowTooltips ~= false,
-			})
-			entry.Display:SetEnabled(true)
-		end
-
-		if not testModeActive then
-			if USE_AURA_CONTAINERS then
-				UpdateKickIcon(entry)
-			else
-				UpdateWatcherAuras(entry)
-			end
-		end
-
-		AnchorContainer(container, anchor, options)
-		frames:ShowHideFrame(container.Frame, anchor, testModeActive, options.ExcludePlayer)
-
-		if entry.Display then
-			if testModeActive then
-				-- Test icons render through the IconSlotContainer; hide the live aura display
-				-- so real and fake icons don't mix.
-				entry.Display.Frame:Hide()
-			else
-				AnchorAuraDisplay(entry, anchor, options)
-				frames:ShowHideFrame(entry.Display.Frame, anchor, false, options.ExcludePlayer)
-			end
-		end
+		ApplyEntryOptions(entry, anchor, options)
 	end
+end
 
+-- Live auras are pushed in by the watchers/containers, so only the fake ones rebuild here.
+local function UpdateContent()
 	if testModeActive then
 		RefreshTestIcons()
 	end
 end
 
-function M:StartTesting()
-	testModeActive = true
-	Pause()
+---@param active boolean
+local function SetTestMode(active)
+	testModeActive = active
 
-	M:Refresh()
-end
-
-function M:StopTesting()
-	testModeActive = false
-
-	for _, entry in pairs(watchers) do
-		entry.Container:ResetAllSlots()
-		entry.Container.Frame:Hide()
+	if active then
+		Pause()
+	else
+		for _, entry in pairs(watchers) do
+			entry.Container:ResetAllSlots()
+			entry.Container.Frame:Hide()
+		end
+		Resume()
 	end
 
-	Resume()
 	M:Refresh()
 
 	-- 12.1: repopulate the kick icons the test-mode reset wiped.
-	if USE_AURA_CONTAINERS then
+	if not active and USE_AURA_CONTAINERS then
 		for _, entry in pairs(watchers) do
 			UpdateKickIcon(entry)
 		end
 	end
 end
 
-function M:Init()
-	db = mini:GetSavedVars()
-
+local function CreateTestData()
 	local painSupp = { SpellId = 33206 }
 	local blessingOfProtection = { SpellId = 1022 }
 	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
@@ -695,12 +703,16 @@ function M:Init()
 	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
 	testDefensiveSpells = { painSupp, blessingOfProtection }
 	testCcSpells = { kidneyShot, fear, hex }
+end
 
-	local eventsFrame = CreateFrame("Frame")
+local function CreateEvents()
+	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
 	-- Registered by the Refresh gate while the module is enabled.
 	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE" })
+end
 
+local function InstallHooks()
 	if not wowEx:IsDandersEnabled() then
 		if CompactUnitFrame_SetUnit then
 			hooksecurefunc("CompactUnitFrame_SetUnit", OnCufSetUnit)
@@ -723,22 +735,60 @@ function M:Init()
 	end
 
 	frames:HookCellSpotlightVisibility(function()
-		if moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator) then
+		if IsEnabled() then
 			EnsureWatchers()
 		end
 	end)
 
 	frames:HookNDuiVisibility(function()
-		if moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator) then
+		if IsEnabled() then
 			EnsureWatchers()
 		end
 	end)
+end
 
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator)
-
-	if moduleEnabled then
+local function ApplyInitialState()
+	if IsEnabled() then
 		EnsureWatchers()
 	end
+end
+
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	local isEnabled = IsEnabled()
+
+	SetEventsActive(isEnabled)
+
+	if not isEnabled then
+		Teardown()
+		return
+	end
+
+	EnsureFrames()
+	ApplyOptions(options)
+	UpdateContent(options)
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
+
+	CreateTestData()
+	CreateEvents()
+	InstallHooks()
+	ApplyInitialState()
 end
 
 ---@class FriendlyIndicatorModule

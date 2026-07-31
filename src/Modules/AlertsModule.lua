@@ -1138,7 +1138,51 @@ local function RebuildNameplateWatchers()
 	end
 end
 
-local function DisableWatchers()
+local function Pause()
+	paused = true
+end
+
+local function Resume()
+	paused = false
+	ScheduleAuraDataUpdate()
+end
+
+-- Lifecycle
+
+---@return AlertsModuleOptions?
+local function GetOptions()
+	-- The bars are built in Init; without them there is nothing to configure.
+	if not db or not container then
+		return nil
+	end
+
+	return db.Modules.AlertsModule
+end
+
+---@return boolean
+local function IsEnabled()
+	return moduleUtil:IsModuleEnabled(moduleName.Alerts)
+end
+
+---Arena, battlegrounds, and the open world all read enemy nameplate watchers; nowhere else does.
+---@param isEnabled boolean
+---@return boolean
+local function AreNameplatesNeeded(isEnabled)
+	local inInstance, instanceType = IsInInstance()
+
+	return isEnabled and (instanceType == "arena" or instanceType == "pvp" or not inInstance)
+end
+
+---@param active boolean
+local function SetEventsActive(active)
+	-- Plate events stay unregistered while inactive; ZONE_CHANGED_NEW_AREA and
+	-- PVP_MATCH_STATE_CHANGED stay registered as they drive this gate.
+	if plateGate then
+		plateGate:SetActive(AreNameplatesNeeded(active))
+	end
+end
+
+local function Teardown()
 	for _, watcher in pairs(nameplateWatchers) do
 		watcher:Disable()
 	end
@@ -1159,25 +1203,8 @@ local function DisableWatchers()
 	previousImportantAuras = {}
 end
 
-local function EnableDisable()
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
-	local inInstance, instanceType = IsInInstance()
-
-	-- Arena, battlegrounds, and the open world all read enemy nameplate watchers.
-	local nameplatesNeeded = moduleEnabled and (instanceType == "arena" or instanceType == "pvp" or not inInstance)
-
-	-- Plate events stay unregistered while inactive; ZONE_CHANGED_NEW_AREA and
-	-- PVP_MATCH_STATE_CHANGED stay registered as they drive this gate.
-	if plateGate then
-		plateGate:SetActive(nameplatesNeeded)
-	end
-
-	if not moduleEnabled then
-		DisableWatchers()
-		return
-	end
-
-	if nameplatesNeeded then
+local function EnsureFrames()
+	if AreNameplatesNeeded(true) then
 		RebuildNameplateWatchers()
 	else
 		ClearNamePlateWatchers()
@@ -1186,67 +1213,18 @@ local function EnableDisable()
 	ScheduleAuraDataUpdate()
 end
 
-local function Pause()
-	paused = true
-end
-
-local function Resume()
-	paused = false
-	ScheduleAuraDataUpdate()
-end
-
-function M:StartTesting()
-	testModeActive = true
-	Pause()
-	M:Refresh()
-
-	if not container then
-		return
-	end
-
-	container.Frame:EnableMouse(true)
-	container.Frame:SetMovable(true)
-
-	if importantContainer and importantContainer.Frame:IsShown() then
-		importantContainer.Frame:EnableMouse(true)
-		importantContainer.Frame:SetMovable(true)
-	end
-end
-
-function M:StopTesting()
-	testModeActive = false
-
-	if not container then
-		return
-	end
-
-	container:ResetAllSlots()
-	if importantContainer then
-		importantContainer:ResetAllSlots()
-	end
-	Resume()
-
-	container.Frame:EnableMouse(false)
-	container.Frame:SetMovable(false)
-
-	if importantContainer then
-		importantContainer.Frame:EnableMouse(false)
-		importantContainer.Frame:SetMovable(false)
-	end
-end
-
-function M:Refresh()
-	local options = db.Modules.AlertsModule
-
+---@param options AlertsModuleOptions
+local function ApplyTTSOptions(options)
 	cachedVoiceID = wowEx:ResolveVoiceID(options.TTS and options.TTS.VoiceID)
 	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
 	cachedTTSSpeechRate = options.TTS and options.TTS.SpeechRate or 0
 	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
 	UpdateImportantTTSCache()
+end
 
-	EnableDisable()
-
-	local grow = GetGrow()
+---@param options AlertsModuleOptions
+---@param grow string
+local function ApplyMainBarOptions(options, grow)
 	NormalizeBarAnchor(container.Frame, options, grow)
 
 	container.Frame:ClearAllPoints()
@@ -1264,55 +1242,138 @@ function M:Refresh()
 	-- Grow-left rows fill right-to-left so the first icon sits nearest the pinned edge,
 	-- matching the 12.1 flow layouts.
 	container:SetRows(nil, "CENTER", grow == "LEFT")
+end
 
-	if importantContainer then
-		local importantOptions = options.Important
-		-- The dedicated important bar only appears in split mode; combined merges into the main bar.
-		local importantVisible = importantOptions and importantOptions.Enabled and options.SplitBars
-		local impAnchor = importantOptions or options
-		if impAnchor ~= options then
-			NormalizeBarAnchor(importantContainer.Frame, impAnchor, grow)
-		end
-		importantContainer.Frame:ClearAllPoints()
-		importantContainer.Frame:SetPoint(
-			impAnchor.Point,
-			_G[impAnchor.RelativeTo] or UIParent,
-			impAnchor.RelativePoint,
-			impAnchor.Offset.X,
-			impAnchor.Offset.Y
-		)
-
-		importantContainer:SetIconSize(options.Icons.Size)
-		importantContainer:SetSpacing(options.IconSpacing or 2)
-		importantContainer:SetCount(options.Icons.MaxIcons or 8)
-		importantContainer:SetRows(nil, "CENTER", grow == "LEFT")
-
-		if importantVisible then
-			importantContainer.Frame:Show()
-			local moveable = testModeActive and moduleUtil:IsModuleEnabled(moduleName.Alerts)
-			importantContainer.Frame:EnableMouse(moveable)
-			importantContainer.Frame:SetMovable(moveable)
-		else
-			importantContainer:ResetAllSlots()
-			importantContainer.Frame:Hide()
-			importantContainer.Frame:EnableMouse(false)
-			importantContainer.Frame:SetMovable(false)
-		end
+---@param options AlertsModuleOptions
+---@param grow string
+local function ApplyImportantBarOptions(options, grow)
+	if not importantContainer then
+		return
 	end
 
+	local importantOptions = options.Important
+	-- The dedicated important bar only appears in split mode; combined merges into the main bar.
+	local importantVisible = importantOptions and importantOptions.Enabled and options.SplitBars
+	local impAnchor = importantOptions or options
+
+	if impAnchor ~= options then
+		NormalizeBarAnchor(importantContainer.Frame, impAnchor, grow)
+	end
+
+	importantContainer.Frame:ClearAllPoints()
+	importantContainer.Frame:SetPoint(
+		impAnchor.Point,
+		_G[impAnchor.RelativeTo] or UIParent,
+		impAnchor.RelativePoint,
+		impAnchor.Offset.X,
+		impAnchor.Offset.Y
+	)
+
+	importantContainer:SetIconSize(options.Icons.Size)
+	importantContainer:SetSpacing(options.IconSpacing or 2)
+	importantContainer:SetCount(options.Icons.MaxIcons or 8)
+	importantContainer:SetRows(nil, "CENTER", grow == "LEFT")
+
+	if importantVisible then
+		importantContainer.Frame:Show()
+		-- Only draggable while the test bars are up; this runs with the module enabled.
+		importantContainer.Frame:EnableMouse(testModeActive)
+		importantContainer.Frame:SetMovable(testModeActive)
+	else
+		importantContainer:ResetAllSlots()
+		importantContainer.Frame:Hide()
+		importantContainer.Frame:EnableMouse(false)
+		importantContainer.Frame:SetMovable(false)
+	end
+end
+
+---@param options AlertsModuleOptions
+local function ApplyOptions(options)
+	ApplyTTSOptions(options)
+
+	local grow = GetGrow()
+	ApplyMainBarOptions(options, grow)
+	ApplyImportantBarOptions(options, grow)
+end
+
+---@param options AlertsModuleOptions
+local function UpdateContent(options)
 	if USE_AURA_CONTAINERS then
 		RefreshNameplateDisplays()
 		RefreshAlertSounds()
 	end
 
-	if testModeActive and moduleUtil:IsModuleEnabled(moduleName.Alerts) then
+	if testModeActive then
 		RefreshTestAlerts()
 	end
 end
 
-function M:Init()
-	db = mini:GetSavedVars()
+---@param active boolean
+local function SetAnchorInteractive(active)
+	if not container then
+		return
+	end
 
+	container.Frame:EnableMouse(active)
+	container.Frame:SetMovable(active)
+
+	if not importantContainer then
+		return
+	end
+
+	-- The important bar is only draggable while it is actually on screen (split mode).
+	local moveable = active and importantContainer.Frame:IsShown()
+	importantContainer.Frame:EnableMouse(moveable)
+	importantContainer.Frame:SetMovable(moveable)
+end
+
+---@param active boolean
+local function SetTestMode(active)
+	testModeActive = active
+
+	if active then
+		Pause()
+	else
+		if container then
+			container:ResetAllSlots()
+		end
+		if importantContainer then
+			importantContainer:ResetAllSlots()
+		end
+		Resume()
+	end
+
+	M:Refresh()
+	SetAnchorInteractive(active)
+end
+
+---@param bar IconSlotContainer
+---@param anchorOptions table
+local function SetUpBarDragging(bar, anchorOptions)
+	local relativeTo = _G[anchorOptions.RelativeTo] or UIParent
+
+	bar.Frame:SetPoint(
+		anchorOptions.Point,
+		relativeTo,
+		anchorOptions.RelativePoint,
+		anchorOptions.Offset.X,
+		anchorOptions.Offset.Y
+	)
+	bar.Frame:SetFrameLevel((relativeTo:GetFrameLevel() or 0) + 5)
+	bar.Frame:EnableMouse(false)
+	bar.Frame:SetMovable(false)
+	bar.Frame:SetClampedToScreen(true)
+	bar.Frame:RegisterForDrag("LeftButton")
+	bar.Frame:SetScript("OnDragStart", function(anchorSelf)
+		anchorSelf:StartMoving()
+	end)
+	bar.Frame:SetScript("OnDragStop", function(anchorSelf)
+		anchorSelf:StopMovingOrSizing()
+		SaveDraggedPosition(anchorSelf, anchorOptions)
+	end)
+end
+
+local function CreateFrames()
 	if USE_AURA_CONTAINERS then
 		-- Pre-create display pairs for a typical screen of enemy plates (staggered, out of
 		-- combat); Acquire falls back to on-demand creation past this.
@@ -1323,69 +1384,24 @@ function M:Init()
 	local count = options.Icons.MaxIcons or 8
 	local size = options.Icons.Size
 
-	cachedVoiceID = wowEx:ResolveVoiceID(options.TTS and options.TTS.VoiceID)
-	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
-	cachedTTSSpeechRate = options.TTS and options.TTS.SpeechRate or 0
-	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
-	UpdateImportantTTSCache()
-
 	container = iconSlotContainer:New(UIParent, count, size, options.IconSpacing or 2, "Alerts", nil, "Alerts")
-
-	local initialRelativeTo = _G[options.RelativeTo] or UIParent
-	container.Frame:SetPoint(
-		options.Point,
-		initialRelativeTo,
-		options.RelativePoint,
-		options.Offset.X,
-		options.Offset.Y
-	)
-	container.Frame:SetFrameLevel((initialRelativeTo:GetFrameLevel() or 0) + 5)
-	container.Frame:EnableMouse(false)
-	container.Frame:SetMovable(false)
-	container.Frame:SetClampedToScreen(true)
-	container.Frame:RegisterForDrag("LeftButton")
-	container.Frame:SetScript("OnDragStart", function(anchorSelf)
-		anchorSelf:StartMoving()
-	end)
-	container.Frame:SetScript("OnDragStop", function(anchorSelf)
-		anchorSelf:StopMovingOrSizing()
-		SaveDraggedPosition(anchorSelf, options)
-	end)
+	SetUpBarDragging(container, options)
 	container.Frame:Show()
 
 	-- Dedicated important-buff bar (split mode); sized to MaxIcons (Refresh keeps it in sync).
 	importantContainer = iconSlotContainer:New(UIParent, count, size, options.IconSpacing or 2, "Alerts", nil, "Alerts")
-
-	local impAnchor = options.Important or options
-	local impInitialRelativeTo = _G[impAnchor.RelativeTo] or UIParent
-	importantContainer.Frame:SetPoint(
-		impAnchor.Point,
-		impInitialRelativeTo,
-		impAnchor.RelativePoint,
-		impAnchor.Offset.X,
-		impAnchor.Offset.Y
-	)
-	importantContainer.Frame:SetFrameLevel((impInitialRelativeTo:GetFrameLevel() or 0) + 5)
-	importantContainer.Frame:EnableMouse(false)
-	importantContainer.Frame:SetMovable(false)
-	importantContainer.Frame:SetClampedToScreen(true)
-	importantContainer.Frame:RegisterForDrag("LeftButton")
-	importantContainer.Frame:SetScript("OnDragStart", function(anchorSelf)
-		anchorSelf:StartMoving()
-	end)
-	importantContainer.Frame:SetScript("OnDragStop", function(anchorSelf)
-		anchorSelf:StopMovingOrSizing()
-		SaveDraggedPosition(anchorSelf, impAnchor)
-	end)
+	SetUpBarDragging(importantContainer, options.Important or options)
 
 	if options.Important and options.Important.Enabled and options.SplitBars then
 		importantContainer.Frame:Show()
 	else
 		importantContainer.Frame:Hide()
 	end
+end
 
+local function CreateEvents()
 	local eventsFrame = CreateFrame("Frame")
-	-- The plate events are gated by EnableDisable; PVP_MATCH_STATE_CHANGED and
+	-- The plate events are gated by Refresh; PVP_MATCH_STATE_CHANGED and
 	-- ZONE_CHANGED_NEW_AREA drive that gate so they stay always-registered.
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
 	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
@@ -1409,21 +1425,56 @@ function M:Init()
 			if not USE_AURA_CONTAINERS and units:IsEnemy(unitToken) then
 				HookNameplateAuraFrame(unitToken)
 			end
-			local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
-			if moduleEnabled then
-				local inInstance, instanceType = IsInInstance()
-				if instanceType == "arena" or instanceType == "pvp" or not inInstance then
-					OnNamePlateAdded(unitToken)
-				end
+			if IsEnabled() and AreNameplatesNeeded(true) then
+				OnNamePlateAdded(unitToken)
 			end
 		elseif event == "NAME_PLATE_UNIT_REMOVED" then
 			OnNamePlateRemoved(unitToken)
 		elseif event == "ZONE_CHANGED_NEW_AREA" then
-			EnableDisable()
+			M:Refresh()
 		end
 	end)
 
 	C_Timer.NewTicker(DUEL_POLL_INTERVAL, PollDuelFactionFlips)
+end
 
-	EnableDisable()
+local function ApplyInitialState()
+	M:Refresh()
+end
+
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	local isEnabled = IsEnabled()
+
+	SetEventsActive(isEnabled)
+
+	if not isEnabled then
+		Teardown()
+		return
+	end
+
+	EnsureFrames()
+	ApplyOptions(options)
+	UpdateContent(options)
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
+
+	CreateFrames()
+	CreateEvents()
+	ApplyInitialState()
 end

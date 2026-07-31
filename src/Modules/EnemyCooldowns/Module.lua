@@ -24,7 +24,7 @@ local ARENA_UNITS = { "arena1", "arena2", "arena3" }
 local watchEntries = {}  ---@type table<string, EcdWatchEntry>  keyed by unit string
 local testModeActive = false
 local editModeActive = false
-local observersEnabled = false  -- true once EnableAll() has been called; prevents redundant ForceFullUpdate on every Refresh
+local observersEnabled = false  -- true once EnsureFrames() has enabled them; prevents redundant ForceFullUpdate on every Refresh
 local eventsFrame
 ---@type Db
 local db
@@ -47,7 +47,18 @@ local absorbGate
 -- otherwise pre-existing enemy buffs seen as the watcher starts would falsely trigger cooldowns.
 local inPrepRoom             = false
 
+---Cooldown inference reads aura data through UnitAuraWatcher, which 12.1 removes entirely.
+---@return boolean
+local function IsSupported()
+	return not wowEx:UseAuraContainers()
+end
+
+---@return EnemyCooldownTrackerModuleOptions?
 local function GetOptions()
+	if not IsSupported() then
+		return nil
+	end
+
 	return db and db.Modules.EnemyCooldownTrackerModule
 end
 
@@ -616,28 +627,6 @@ local function ShowHideAllEntries()
 	end
 end
 
-local function DisableAll()
-	if not observersEnabled then
-		return
-	end
-	observersEnabled = false
-	for _, entry in pairs(watchEntries) do
-		observer:Disable(entry)
-		entry.Container:ResetAllSlots()
-		entry.Container.Frame:Hide()
-	end
-end
-
-local function EnableAll()
-	if observersEnabled then
-		return
-	end
-	observersEnabled = true
-	for _, entry in pairs(watchEntries) do
-		observer:Enable(entry)
-	end
-end
-
 -- State reset
 
 ---Cancels all active cooldown timers and wipes per-entry and per-unit evidence state.
@@ -665,35 +654,83 @@ end
 
 -- Module interface
 
-function M:Refresh()
-	-- Dead on 12.1: cooldown inference needs readable aura data (see Init).
-	if wowEx:UseAuraContainers() then
-		return
-	end
+-- Lifecycle
 
-	local options = GetOptions()
-	if not options then
-		return
-	end
+---Cooldown inference reads aura data through UnitAuraWatcher, which 12.1 removes entirely.
+---@return boolean
+local function IsSupported()
+	return not wowEx:UseAuraContainers()
+end
 
+---@return boolean
+local function IsEnabled()
 	-- In test mode, simulate arena: respect options.Enabled.Arena so the checkbox works.
-	local moduleEnabled = testModeActive
-		and (options.Enabled and options.Enabled.Arena)
-		or moduleUtil:IsModuleEnabled(moduleName.EnemyCooldownTracker)
+	if testModeActive then
+		local options = GetOptions()
+		return (options and options.Enabled and options.Enabled.Arena) == true
+	end
 
+	return moduleUtil:IsModuleEnabled(moduleName.EnemyCooldownTracker)
+end
+
+---@param active boolean
+local function SetEventsActive(active)
 	-- The absorb event is global (fires for every unit); keep it off while disabled.
 	if absorbGate then
-		absorbGate:SetActive(moduleEnabled)
+		absorbGate:SetActive(active)
 	end
+end
 
-	if not moduleEnabled then
-		DisableAll()
+local function Teardown()
+	if not observersEnabled then
 		return
 	end
 
-	EnsureAllEntries()
-	EnableAll()
+	observersEnabled = false
+	for _, entry in pairs(watchEntries) do
+		observer:Disable(entry)
+		entry.Container:ResetAllSlots()
+		entry.Container.Frame:Hide()
+	end
+end
 
+local function EnsureFrames()
+	EnsureAllEntries()
+
+	if observersEnabled then
+		return
+	end
+
+	observersEnabled = true
+	for _, entry in pairs(watchEntries) do
+		observer:Enable(entry)
+	end
+end
+
+---Drag state: arena1 is the drag handle in Linear mode, writing to options.Linear.
+---Guarded with IsMovable() to avoid the expensive EnableMouse rebuild on every Refresh.
+---@param options EnemyCooldownTrackerModuleOptions
+local function ApplyDragState(options)
+	local entry1 = watchEntries["arena1"]
+
+	if not entry1 then
+		return
+	end
+
+	local canDrag = testModeActive and options.DisplayMode == "Linear"
+	local frame = entry1.Container.Frame
+
+	if frame:IsMovable() == canDrag then
+		return
+	end
+
+	frame:SetMovable(canDrag)
+	frame:SetClampedToScreen(canDrag)
+	frame:EnableMouse(canDrag)
+end
+
+---@param options EnemyCooldownTrackerModuleOptions
+local function ApplyOptions(options)
 	local size = tonumber(options.Icons.Size) or 24
 	local spacing = options.IconSpacing or 2
 
@@ -710,61 +747,33 @@ function M:Refresh()
 	end
 
 	ShowHideAllEntries()
+	ApplyDragState(options)
+end
 
-	-- Drag state: arena1 is the drag handle in Linear mode, writing to options.Linear.
-	-- Guarded with IsMovable() to avoid the expensive EnableMouse rebuild on every Refresh.
-	local entry1 = watchEntries["arena1"]
-	if entry1 then
-		local canDrag = testModeActive and options.DisplayMode == "Linear"
-		if entry1.Container.Frame:IsMovable() ~= canDrag then
-			local frame = entry1.Container.Frame
-			frame:SetMovable(canDrag)
-			frame:SetClampedToScreen(canDrag)
-			frame:EnableMouse(canDrag)
+---@param active boolean
+local function SetTestMode(active)
+	if not IsSupported() then
+		return
+	end
+
+	testModeActive = active
+	observer:SetTestMode(active)
+	display:SetTestMode(active)
+
+	if not active then
+		for _, entry in pairs(watchEntries) do
+			entry.Container:ResetAllSlots()
 		end
 	end
-end
 
-function M:RefreshDisplays()
-	for _, entry in pairs(watchEntries) do
-		TriggerDisplayUpdate(entry)
-	end
-end
-
-function M:StartTesting()
-	if wowEx:UseAuraContainers() then
-		return
-	end
-
-	testModeActive = true
-	observer:SetTestMode(true)
-	display:SetTestMode(true)
-	EnsureAllEntries()
 	M:Refresh()
 end
 
-function M:StopTesting()
-	testModeActive = false
-	observer:SetTestMode(false)
-	display:SetTestMode(false)
-	for _, entry in pairs(watchEntries) do
-		entry.Container:ResetAllSlots()
-	end
-	M:Refresh()
-end
-
-function M:Init()
-	-- Enemy cooldown tracking is dead on 12.1 for the same reason as the friendly tracker:
-	-- it infers cooldown usage by observing enemy aura appear/disappear (UnitAuraWatcher),
-	-- and 12.1 removes addon access to aura data entirely. Skip all setup; the config panel
-	-- is hidden separately. TEMPORARY: remove the module once 12.1 is live everywhere.
-	if wowEx:UseAuraContainers() then
-		return
-	end
-
-	db = mini:GetSavedVars()
+local function CreateFrames()
 	display:Init()
+end
 
+local function RegisterObserverCallbacks()
 	-- Wire Observer callbacks into our brain logic.
 	observer:RegisterAuraChangedCallback(function(entry, watcher)
 		OnWatcherChanged(entry, watcher)
@@ -802,7 +811,9 @@ function M:Init()
 			end
 		end
 	end)
+end
 
+local function CreateEvents()
 	-- Track absorb changes on enemy units as Shield evidence (e.g. AMS on a DK, Divine Protection).
 	-- Registered globally (same approach as FriendlyCooldowns Observer) because UNIT_ABSORB_AMOUNT_CHANGED
 	-- fires per-unit but only as a global event - the unit is passed as the first argument.
@@ -851,7 +862,9 @@ function M:Init()
 	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
 	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+end
 
+local function InstallHooks()
 	EventRegistry:RegisterCallback("EditMode.Enter", function()
 		editModeActive = true
 		for _, entry in pairs(watchEntries) do
@@ -868,9 +881,65 @@ function M:Init()
 	fcdTalents:RegisterTalentCallback(function()
 		M:RefreshDisplays()
 	end)
+end
 
+local function ApplyInitialState()
 	M:Refresh()
 end
+
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	local isEnabled = IsEnabled()
+
+	SetEventsActive(isEnabled)
+
+	if not isEnabled then
+		Teardown()
+		return
+	end
+
+	EnsureFrames()
+	ApplyOptions(options)
+	-- No UpdateContent step: cooldown icons are pushed in by the observer/brain, never rebuilt here.
+end
+
+function M:RefreshDisplays()
+	for _, entry in pairs(watchEntries) do
+		TriggerDisplayUpdate(entry)
+	end
+end
+
+function M:Init()
+	-- Enemy cooldown tracking is dead on 12.1 for the same reason as the friendly tracker:
+	-- it infers cooldown usage by observing enemy aura appear/disappear (UnitAuraWatcher),
+	-- and 12.1 removes addon access to aura data entirely. Skip all setup; the config panel
+	-- is hidden separately. TEMPORARY: remove the module once 12.1 is live everywhere.
+	if not IsSupported() then
+		return
+	end
+
+	db = mini:GetSavedVars()
+
+	CreateFrames()
+	RegisterObserverCallbacks()
+	CreateEvents()
+	InstallHooks()
+	ApplyInitialState()
+end
+
 
 -- Type annotations
 

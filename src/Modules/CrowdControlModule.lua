@@ -18,6 +18,8 @@ local wowEx = addon.Utils.WoWEx
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 ---@type EventGate?
 local rosterGate
+---@type table?
+local eventsFrame
 local paused = false
 local testModeActive = false
 ---@type Db
@@ -624,7 +626,21 @@ function M:Hide()
 	end
 end
 
-local function DisableWatchers()
+-- Lifecycle
+
+---@return boolean
+local function IsEnabled()
+	return moduleUtil:IsModuleEnabled(moduleName.CrowdControl) or moduleUtil:IsModuleEnabled(moduleName.PetCC)
+end
+
+---@param active boolean
+local function SetEventsActive(active)
+	-- Events stay unregistered while both features are off; the addon-wide Refresh
+	-- (config, world change, raid flip) re-runs this gate.
+	rosterGate:SetActive(active)
+end
+
+local function Teardown()
 	for _, entry in pairs(watchers) do
 		if entry.Watcher then
 			entry.Watcher:Disable()
@@ -640,7 +656,9 @@ local function DisableWatchers()
 	end
 end
 
-local function EnableWatchers()
+-- Brings every entry's watcher/display back in line with its feature toggle, then discovers
+-- any unit frames that have appeared since the last refresh.
+local function EnsureFrames()
 	local ccEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
 	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
 
@@ -655,162 +673,166 @@ local function EnableWatchers()
 			entry.Display:SetEnabled(entryEnabled)
 		end
 	end
+
+	EnsureWatchers()
 end
 
-function M:StartTesting()
-	testModeActive = true
-	Pause()
-	M:Refresh()
-end
+---Per-entry enabled state and options: pet entries follow the PetCC toggle (plus the
+---IncludePetFrame opt-in for standalone pet frames), everything else follows the CC toggle.
+---@param entry CrowdControlWatchEntry
+---@param options CrowdControlInstanceOptions
+---@param moduleEnabled boolean
+---@param petEnabled boolean
+---@return boolean entryEnabled, table? entryOptions, boolean isPet
+local function GetEntryState(entry, options, moduleEnabled, petEnabled)
+	local isPet = units:IsPetOrMinion(entry.Unit)
 
-function M:StopTesting()
-	testModeActive = false
-
-	for _, entry in pairs(watchers) do
-		entry.Container:ResetAllSlots()
-		entry.Container.Frame:Hide()
+	if not isPet then
+		return moduleEnabled, options, false
 	end
 
-	Resume()
+	local petOptions = db.Modules.PetCCModule
+	-- In test mode always treat pet as enabled so icons show
+	local entryEnabled = testModeActive or petEnabled
+
+	-- Standalone pet unit frames are additionally gated by the IncludePetFrame option.
+	if entry.IsPetUnitFrame and not (petOptions and petOptions.IncludePetFrame) then
+		entryEnabled = false
+	end
+
+	return entryEnabled, petOptions, true
+end
+
+---This entry's feature is toggled off - hide and disable it.
+---@param entry CrowdControlWatchEntry
+local function TeardownEntry(entry)
+	if entry.Watcher then
+		entry.Watcher:Disable()
+	end
+	if entry.Display then
+		entry.Display:SetEnabled(false)
+		entry.Display.Frame:Hide()
+	end
+	entry.Container:ResetAllSlots()
+	entry.Container.Frame:Hide()
+end
+
+---@param entry CrowdControlWatchEntry
+---@param anchor table
+---@param entryOptions CrowdControlInstanceOptions|PetCrowdControlModuleOptions
+---@param isPet boolean
+local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
+	local iconSize = moduleUtil:GetIconSize(entryOptions.Icons, anchor, isPet and 24 or 32, isPet and 50 or 80)
+	local iconCount = entryOptions.Icons.Count or 5
+
+	entry.Container:SetIconSize(iconSize)
+	entry.Container:SetCount(iconCount)
+	entry.Container:SetSpacing(entryOptions.IconSpacing or 2)
+
+	if entry.Display then
+		entry.Display:SetIconSize(iconSize)
+		entry.Display:SetMaxIcons("cc", iconCount)
+		entry.Display:SetSpacing(entryOptions.IconSpacing or 2)
+		entry.Display:SetStyle({
+			ReverseCooldown = entryOptions.Icons.ReverseCooldown,
+			ShowMilliseconds = entryOptions.Icons.ShowMilliseconds,
+			ColorByDispelType = entryOptions.Icons.ColorByDispelType,
+			Glow = entryOptions.Icons.Glow,
+			FontScale = db.FontScale,
+			ShowTooltips = entryOptions.ShowTooltips ~= false,
+		})
+		entry.Display:SetEnabled(true)
+	end
+
+	if not testModeActive then
+		if USE_AURA_CONTAINERS then
+			UpdateKickIcon(entry)
+		else
+			UpdateWatcherAuras(entry)
+		end
+	end
+
+	AnchorContainer(entry.Container, anchor, entryOptions)
+	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, isPet and false or entryOptions.ExcludePlayer)
+
+	if not entry.Display then
+		return
+	end
+
+	if testModeActive then
+		-- Test icons render through the IconSlotContainer; hide the live aura display
+		-- so real and fake icons don't mix.
+		entry.Display.Frame:Hide()
+	else
+		AnchorAuraDisplay(entry, anchor, entryOptions)
+		frames:ShowHideFrame(entry.Display.Frame, anchor, false, isPet and false or entryOptions.ExcludePlayer)
+	end
+end
+
+---@param options CrowdControlInstanceOptions
+local function ApplyOptions(options)
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
+	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
+
+	for anchor, entry in pairs(watchers) do
+		local entryEnabled, entryOptions, isPet = GetEntryState(entry, options, moduleEnabled, petEnabled)
+
+		if not entryEnabled or not entryOptions then
+			TeardownEntry(entry)
+		else
+			ApplyEntryOptions(entry, anchor, entryOptions, isPet)
+		end
+	end
+end
+
+-- Live auras are pushed in by the watchers/containers, so only the fake ones rebuild here.
+local function UpdateContent()
+	if testModeActive then
+		RefreshTestIcons()
+	end
+end
+
+---@param active boolean
+local function SetTestMode(active)
+	testModeActive = active
+
+	if active then
+		Pause()
+	else
+		for _, entry in pairs(watchers) do
+			entry.Container:ResetAllSlots()
+			entry.Container.Frame:Hide()
+		end
+		Resume()
+	end
+
 	M:Refresh()
 
 	-- 12.1: repopulate the kick icons the test-mode reset wiped.
-	if USE_AURA_CONTAINERS then
+	if not active and USE_AURA_CONTAINERS then
 		for _, entry in pairs(watchers) do
 			UpdateKickIcon(entry)
 		end
 	end
 end
 
-function M:Refresh()
-	local options = GetOptions()
-
-	if not options then
-		return
-	end
-
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
-	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
-
-	-- Events stay unregistered while both features are off; the addon-wide Refresh
-	-- (config, world change, raid flip) re-runs this gate.
-	rosterGate:SetActive(moduleEnabled or petEnabled)
-
-	-- If both are off, disable everything and bail early
-	if not moduleEnabled and not petEnabled then
-		DisableWatchers()
-		return
-	end
-
-	EnableWatchers()
-	EnsureWatchers()
-
-	local petOptions = db.Modules.PetCCModule
-
-	for anchor, entry in pairs(watchers) do
-		local isPet = units:IsPetOrMinion(entry.Unit)
-		local entryOptions = isPet and petOptions or options
-		local entryEnabled
-
-		if isPet then
-			-- In test mode always treat pet as enabled so icons show
-			entryEnabled = testModeActive or petEnabled
-			-- Standalone pet unit frames are additionally gated by the IncludePetFrame option.
-			if entry.IsPetUnitFrame and not (petOptions and petOptions.IncludePetFrame) then
-				entryEnabled = false
-			end
-		else
-			entryEnabled = moduleEnabled
-		end
-
-		if not entryEnabled or not entryOptions then
-			-- This entry's feature is toggled off - hide and disable it
-			if entry.Watcher then
-				entry.Watcher:Disable()
-			end
-			if entry.Display then
-				entry.Display:SetEnabled(false)
-				entry.Display.Frame:Hide()
-			end
-			entry.Container:ResetAllSlots()
-			entry.Container.Frame:Hide()
-		else
-			local iconSize = moduleUtil:GetIconSize(entryOptions.Icons, anchor, isPet and 24 or 32, isPet and 50 or 80)
-			local iconCount = entryOptions.Icons.Count or 5
-
-			entry.Container:SetIconSize(iconSize)
-			entry.Container:SetCount(iconCount)
-			entry.Container:SetSpacing(entryOptions.IconSpacing or 2)
-
-			if entry.Display then
-				entry.Display:SetIconSize(iconSize)
-				entry.Display:SetMaxIcons("cc", iconCount)
-				entry.Display:SetSpacing(entryOptions.IconSpacing or 2)
-				entry.Display:SetStyle({
-					ReverseCooldown = entryOptions.Icons.ReverseCooldown,
-					ShowMilliseconds = entryOptions.Icons.ShowMilliseconds,
-					ColorByDispelType = entryOptions.Icons.ColorByDispelType,
-					Glow = entryOptions.Icons.Glow,
-					FontScale = db.FontScale,
-					ShowTooltips = entryOptions.ShowTooltips ~= false,
-				})
-				entry.Display:SetEnabled(true)
-			end
-
-			if not testModeActive then
-				if USE_AURA_CONTAINERS then
-					UpdateKickIcon(entry)
-				else
-					UpdateWatcherAuras(entry)
-				end
-			end
-
-			AnchorContainer(entry.Container, anchor, entryOptions)
-			frames:ShowHideFrame(
-				entry.Container.Frame,
-				anchor,
-				testModeActive,
-				isPet and false or entryOptions.ExcludePlayer
-			)
-
-			if entry.Display then
-				if testModeActive then
-					-- Test icons render through the IconSlotContainer; hide the live aura display
-					-- so real and fake icons don't mix.
-					entry.Display.Frame:Hide()
-				else
-					AnchorAuraDisplay(entry, anchor, entryOptions)
-					frames:ShowHideFrame(
-						entry.Display.Frame,
-						anchor,
-						false,
-						isPet and false or entryOptions.ExcludePlayer
-					)
-				end
-			end
-		end
-	end
-
-	if testModeActive then
-		RefreshTestIcons()
-	end
-end
-
-function M:Init()
-	db = mini:GetSavedVars()
-
+local function CreateTestData()
 	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
 	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
 	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
 	testSpells = { kidneyShot, fear, hex }
+end
 
-	local eventsFrame = CreateFrame("Frame")
+local function CreateEvents()
+	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
 	-- Registered by the Refresh gate while either feature is on. UNIT_PET tracks the player's
 	-- pet being summoned/dismissed so the opt-in pet unit frame containers follow it,
 	-- regardless of which unit-frame addon owns the pet frame.
 	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE", "UNIT_PET" })
+end
 
+local function InstallHooks()
 	if not wowEx:IsDandersEnabled() then
 		if CompactUnitFrame_SetUnit then
 			hooksecurefunc("CompactUnitFrame_SetUnit", OnCufSetUnit)
@@ -833,20 +855,58 @@ function M:Init()
 	end
 
 	frames:HookCellSpotlightVisibility(function()
-		if moduleUtil:IsModuleEnabled(moduleName.CrowdControl) or moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+		if IsEnabled() then
 			EnsureWatchers()
 		end
 	end)
 
 	frames:HookNDuiVisibility(function()
-		if moduleUtil:IsModuleEnabled(moduleName.CrowdControl) or moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+		if IsEnabled() then
 			EnsureWatchers()
 		end
 	end)
+end
 
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
-
-	if moduleEnabled then
+local function ApplyInitialState()
+	if moduleUtil:IsModuleEnabled(moduleName.CrowdControl) then
 		EnsureWatchers()
 	end
+end
+
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	local isEnabled = IsEnabled()
+
+	SetEventsActive(isEnabled)
+
+	if not isEnabled then
+		Teardown()
+		return
+	end
+
+	EnsureFrames()
+	ApplyOptions(options)
+	UpdateContent(options)
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
+
+	CreateTestData()
+	CreateEvents()
+	InstallHooks()
+	ApplyInitialState()
 end

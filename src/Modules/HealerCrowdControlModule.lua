@@ -285,7 +285,7 @@ local function OnAuraStateUpdated()
 	end
 end
 
-local function DisableWatchers()
+local function Teardown()
 	local toDiscard = {}
 	for unit in pairs(activePool) do
 		toDiscard[#toDiscard + 1] = unit
@@ -476,21 +476,35 @@ local function Resume()
 	OnAuraStateUpdated()
 end
 
-local function EnableDisable()
-	local options = db.Modules.HealerCCModule
-	local moduleEnabled = moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl)
+-- Lifecycle
 
-	-- Events stay unregistered while disabled; the addon-wide Refresh re-runs this gate.
-	if rosterGate then
-		rosterGate:SetActive(moduleEnabled)
+---@return HealerCCModuleOptions?
+local function GetOptions()
+	-- The anchor is built in Init; without it there is nothing to configure.
+	if not db or not healerAnchor then
+		return nil
 	end
 
-	if testModeActive then
-		if not moduleEnabled then
-			healerAnchor:Hide()
-			return
-		end
+	return db.Modules.HealerCCModule
+end
 
+---@return boolean
+local function IsEnabled()
+	return moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl)
+end
+
+---@param active boolean
+local function SetEventsActive(active)
+	-- Events stay unregistered while disabled; the addon-wide Refresh re-runs this gate.
+	-- Keyed on the module toggle alone rather than on the player's own spec: a respec fires
+	-- no world or raid event, so the roster event has to stay registered to wake this up.
+	if rosterGate then
+		rosterGate:SetActive(active)
+	end
+end
+
+local function EnsureFrames()
+	if testModeActive then
 		-- 12.1: test icons render through the IconSlotContainer; hide the live aura displays
 		-- so real and fake icons don't mix.
 		for _, item in pairs(activePool) do
@@ -498,74 +512,22 @@ local function EnableDisable()
 				item.Display.Frame:Hide()
 			end
 		end
-
-		healerAnchor:Show()
-		RefreshTestFrame()
-
-		if previousTestSoundEnabled ~= options.Sound.Enabled and options.Sound.Enabled then
-			if USE_AURA_CONTAINERS then
-				-- The transition-based PlaySound is disabled on 12.1 (engine-side AddAuraSound
-				-- covers live auras), but the config preview still needs to demo the file.
-				PlaySoundFile(addon.Config.MediaLocation .. (options.Sound.File or "Sonar.ogg"), options.Sound.Channel or "Master")
-			else
-				PlaySound()
-			end
-		end
-
-		previousTestSoundEnabled = options.Sound.Enabled
 		return
 	end
 
+	-- Watchers only cover other people's healers, so the module goes dormant when the player
+	-- is the healer.
 	if units:IsHealer("player") then
-		DisableWatchers()
+		Teardown()
 		return
 	end
 
-	if not moduleEnabled then
-		DisableWatchers()
-		return
-	end
-
-	-- Module is enabled, ensure watchers are enabled
 	EnableWatchers()
 	RefreshHealers()
 end
 
-function M:StartTesting()
-	testModeActive = true
-	Pause()
-	M:Refresh()
-
-	if not healerAnchor then
-		return
-	end
-
-	healerAnchor:EnableMouse(true)
-	healerAnchor:SetMovable(true)
-	healerAnchor:Show()
-end
-
-function M:StopTesting()
-	testModeActive = false
-	Resume()
-
-	if not healerAnchor then
-		return
-	end
-
-	healerAnchor:EnableMouse(false)
-	healerAnchor:SetMovable(false)
-	healerAnchor:Hide()
-end
-
-function M:Refresh()
-	if not healerAnchor then
-		return
-	end
-
-	local options = db.Modules.HealerCCModule
-
-	-- update anchor positions and sizes
+---@param options HealerCCModuleOptions
+local function ApplyOptions(options)
 	healerAnchor:ClearAllPoints()
 	healerAnchor:SetPoint(
 		options.Point,
@@ -587,21 +549,74 @@ function M:Refresh()
 	else
 		healerAnchor.HealerWarning:Hide()
 	end
-
-	EnableDisable()
 end
 
-function M:Init()
-	db = mini:GetSavedVars()
+---Live icons are driven by the watchers/containers; only the fake ones rebuild here.
+---@param options HealerCCModuleOptions
+local function UpdateContent(options)
+	if not testModeActive then
+		return
+	end
 
+	healerAnchor:Show()
+	RefreshTestFrame()
+
+	if previousTestSoundEnabled ~= options.Sound.Enabled and options.Sound.Enabled then
+		if USE_AURA_CONTAINERS then
+			-- The transition-based PlaySound is disabled on 12.1 (engine-side AddAuraSound
+			-- covers live auras), but the config preview still needs to demo the file.
+			PlaySoundFile(addon.Config.MediaLocation .. (options.Sound.File or "Sonar.ogg"), options.Sound.Channel or "Master")
+		else
+			PlaySound()
+		end
+	end
+
+	previousTestSoundEnabled = options.Sound.Enabled
+end
+
+---Visibility is left to Refresh: on 12.1 the anchor has to stay shown while the module is
+---active, so hiding it here would blank the live display until the next addon-wide Refresh.
+---@param active boolean
+local function SetAnchorInteractive(active)
+	if not healerAnchor then
+		return
+	end
+
+	healerAnchor:EnableMouse(active)
+	healerAnchor:SetMovable(active)
+
+	if active then
+		healerAnchor:Show()
+	end
+end
+
+---@param active boolean
+local function SetTestMode(active)
+	testModeActive = active
+
+	if active then
+		Pause()
+	else
+		if iconsContainer then
+			iconsContainer:ResetAllSlots()
+		end
+		Resume()
+	end
+
+	M:Refresh()
+	SetAnchorInteractive(active)
+end
+
+local function CreateTestData()
 	previousTestSoundEnabled = db.Modules.HealerCCModule.Sound.Enabled
 
-	-- Initialize test spells
 	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
 	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
 	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
 	testSpells = { kidneyShot, fear, hex }
+end
 
+local function CreateFrames()
 	local options = db.Modules.HealerCCModule
 
 	healerAnchor = CreateFrame("Frame", addonName .. "HealerContainer")
@@ -645,11 +660,53 @@ function M:Init()
 	iconsContainer = iconSlotContainer:New(healerAnchor, 5, tonumber(options.Icons.Size) or 32, options.IconSpacing or 2, "Healer CC", nil, "Healer CC")
 	iconsContainer.Frame:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
 	iconsContainer.Frame:Show()
+end
 
+local function CreateEvents()
 	local eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
-	-- Registered by the EnableDisable gate while the module is enabled.
+	-- Registered by the Refresh gate while the module is enabled.
 	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE" })
+end
 
-	EnableDisable()
+local function ApplyInitialState()
+	M:Refresh()
+end
+
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	local isEnabled = IsEnabled()
+
+	SetEventsActive(isEnabled)
+
+	if not isEnabled then
+		Teardown()
+		return
+	end
+
+	EnsureFrames()
+	ApplyOptions(options)
+	UpdateContent(options)
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
+
+	CreateTestData()
+	CreateFrames()
+	CreateEvents()
+	ApplyInitialState()
 end

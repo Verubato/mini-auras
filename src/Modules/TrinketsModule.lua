@@ -269,83 +269,76 @@ local function Resume()
 	paused = false
 end
 
-function M:StartTesting()
-	if not USE_AURA_CONTAINERS then
+-- Lifecycle
+
+---Trinket tracking reads the 12.1 trinket API and has no legacy equivalent.
+---@return boolean
+local function IsSupported()
+	return USE_AURA_CONTAINERS
+end
+
+---@return TrinketsModuleOptions?
+local function GetOptions()
+	if not IsSupported() then
+		return nil
+	end
+
+	return options
+end
+
+---@return boolean
+local function IsEnabled()
+	return moduleUtil:IsModuleEnabled(moduleName.Trinkets)
+end
+
+---Edge-triggered: the roster/world events are the module's only event source, so they are
+---created on wake and torn down on sleep.
+---@param active boolean
+local function SetEventsActive(active)
+	if active == enabled then
 		return
 	end
 
-	testModeActive = true
-	Pause()
-	M:Refresh()
-end
+	enabled = active
+	paused = not active
 
-function M:StopTesting()
-	if not USE_AURA_CONTAINERS then
-		return
-	end
-
-	testModeActive = false
-	ClearAll()
-	Resume()
-	M:Refresh()
-end
-
-function M:Enable()
-	if eventFrame then
-		return
-	end
-
-	enabled = true
-	paused = false
-
-	eventFrame = CreateFrame("Frame")
-	eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-	eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-	eventFrame:SetScript("OnEvent", OnEvent)
-end
-
-function M:Disable()
-	enabled = false
-	paused = true
-
-	if eventFrame then
+	if active then
+		eventFrame = CreateFrame("Frame")
+		eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+		eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+		eventFrame:SetScript("OnEvent", OnEvent)
+	elseif eventFrame then
 		eventFrame:UnregisterAllEvents()
 		eventFrame:SetScript("OnEvent", nil)
 		eventFrame = nil
 	end
+end
 
+local function Teardown()
 	for anchorFrame in pairs(watchers) do
 		DestroyWatcher(anchorFrame)
 	end
 end
 
-function M:Refresh()
-	if not USE_AURA_CONTAINERS then
-		return
-	end
-
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Trinkets)
-
-	if moduleEnabled and not enabled then
-		M:Enable()
-	elseif not moduleEnabled and enabled then
-		M:Disable()
-	end
-
-	if not moduleEnabled then
-		return
-	end
-
+local function EnsureFrames()
 	RebuildAnchors()
+end
+
+---@param options TrinketsModuleOptions
+local function ApplyOptions(options)
 	UpdateVisibility()
+
+	local size = tonumber(options.Icons.Size) or 32
 
 	for _, watcher in pairs(watchers) do
 		if watcher.Container then
-			local size = tonumber(options.Icons.Size) or 32
 			watcher.Container:SetIconSize(size)
 		end
 	end
+end
 
+---@param options TrinketsModuleOptions
+local function UpdateContent(options)
 	if IsInArena() then
 		RefreshAll()
 	elseif testModeActive then
@@ -353,17 +346,71 @@ function M:Refresh()
 	end
 end
 
+---@param active boolean
+local function SetTestMode(active)
+	if not IsSupported() then
+		return
+	end
+
+	testModeActive = active
+
+	if active then
+		Pause()
+	else
+		ClearAll()
+		Resume()
+	end
+
+	M:Refresh()
+end
+
+local function InstallHooks()
+	trinketsTracker:RegisterCallback(OnTrinketDataChanged)
+end
+
+local function ApplyInitialState()
+	M:Refresh()
+end
+
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	local isEnabled = IsEnabled()
+
+	SetEventsActive(isEnabled)
+
+	if not isEnabled then
+		Teardown()
+		return
+	end
+
+	EnsureFrames()
+	ApplyOptions(options)
+	UpdateContent(options)
+end
+
 function M:Init()
-	if not USE_AURA_CONTAINERS then
+	if not IsSupported() then
 		return
 	end
 
 	db = mini:GetSavedVars()
 	options = db.Modules.TrinketsModule
 
-	trinketsTracker:RegisterCallback(OnTrinketDataChanged)
-
-	M:Refresh()
+	InstallHooks()
+	ApplyInitialState()
 end
 
 ---@class TrinketWatcher
