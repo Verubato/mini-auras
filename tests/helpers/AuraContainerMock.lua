@@ -193,6 +193,9 @@ function M.NewFrame(frameType, name, parent, template)
 	function frame:RegisterUnitEvent(event, unit)
 		frame._events[event] = unit or true
 	end
+	function frame:UnregisterEvent(event)
+		frame._events[event] = nil
+	end
 	function frame:UnregisterAllEvents()
 		frame._events = {}
 	end
@@ -259,11 +262,29 @@ function M.NewFrame(frameType, name, parent, template)
 	function frame:GetHeight()
 		return frame._height
 	end
-	-- Rect queries return nil (frames are never laid out here); anchor-normalization code
-	-- treats that as "rect unavailable" and skips.
-	function frame:GetLeft() end
-	function frame:GetRight() end
-	function frame:GetCenter() end
+	-- Rect queries return nil until a test supplies one with SetMockRect (frames are never
+	-- laid out here); anchor-normalization code treats nil as "rect unavailable" and skips.
+	function frame:SetMockRect(left, bottom, width, height)
+		frame._rect = { left = left, bottom = bottom, width = width, height = height }
+	end
+	function frame:GetLeft()
+		return frame._rect and frame._rect.left
+	end
+	function frame:GetRight()
+		return frame._rect and (frame._rect.left + frame._rect.width)
+	end
+	function frame:GetBottom()
+		return frame._rect and frame._rect.bottom
+	end
+	function frame:GetTop()
+		return frame._rect and (frame._rect.bottom + frame._rect.height)
+	end
+	function frame:GetCenter()
+		if not frame._rect then
+			return nil
+		end
+		return frame._rect.left + frame._rect.width / 2, frame._rect.bottom + frame._rect.height / 2
+	end
 	function frame:SetFrameLevel(level)
 		frame._level = level
 	end
@@ -306,6 +327,15 @@ function M.NewFrame(frameType, name, parent, template)
 		frame._createdTextures[#frame._createdTextures + 1] = texture
 		return texture
 	end
+	function frame:CreateMaskTexture()
+		return NewRegion(frame, "MaskTexture")
+	end
+	-- Unit-frame portraits are textures in the client; the mock models them as frames so they
+	-- can carry a parent and a rect, which means the frame surface needs the region methods
+	-- the portrait paths call.
+	function frame:SetDrawLayer() end
+	function frame:AddMaskTexture() end
+	function frame:SetTexCoord() end
 	function frame:CreateFontString()
 		return NewRegion(frame, "FontString")
 	end

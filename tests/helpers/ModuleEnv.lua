@@ -29,6 +29,14 @@ function M.build()
 		auraSoundAdds = 0,
 		auraSoundRemoves = 0,
 		kicks = {},
+		-- Unit frames handed to the modules that anchor to raid frames (CC, FriendlyIndicator).
+		unitFrames = {},
+		-- PvP match state driving the alerts prep-room gate (99 = not in a match).
+		matchState = 99,
+		-- Everything the addon reported through mini:Notify. A module warning here is almost
+		-- always a misuse (e.g. SetMaxIcons on a group key that does not exist), so tests
+		-- assert this stays empty.
+		notifications = {},
 	}
 
 	-- Globals
@@ -53,6 +61,18 @@ function M.build()
 		return true
 	end
 	_G.PlaySoundFile = function() end
+	_G.PlaySound = function() end
+	-- Duration objects are opaque handles; test mode builds them for its synthetic cooldowns.
+	_G.C_DurationUtil = {
+		CreateDuration = function()
+			return {
+				SetTimeFromStart = function() end,
+				GetRemainingDuration = function()
+					return 0
+				end,
+			}
+		end,
+	}
 	_G.GetSpecialization = function()
 		return nil
 	end
@@ -63,8 +83,20 @@ function M.build()
 		return 0
 	end }
 	_G.C_CVar = { SetCVarBitfield = function() end }
+	_G.UnitName = function(unit)
+		return unit
+	end
+	-- No third-party addon is "installed": the unit frame modules probe for ElvUI/Cell/... here.
+	_G.C_AddOns = {
+		GetAddOnEnableState = function()
+			return 0
+		end,
+		GetAddOnMetadata = function()
+			return nil
+		end,
+	}
 	_G.C_PvP = { GetActiveMatchState = function()
-		return 99
+		return env.matchState
 	end }
 	_G.C_Spell = _G.C_Spell or {}
 	_G.C_Spell.GetSpellTexture = function(spellId)
@@ -76,6 +108,9 @@ function M.build()
 	_G.Enum.NamePlateEnemyNpcAuraDisplay = { CrowdControl = 1 }
 	_G.Enum.NamePlateFriendlyPlayerAuraDisplay = { LossOfControl = 1 }
 	_G.Enum.UnitAuraSoundTrigger = { Added = 0, ApplicationsIncreased = 1, Removed = 2 }
+	_G.Enum.UnitAuraSortRule = { Default = 0, Unsorted = 1 }
+	_G.Enum.UnitAuraSortDirection = { Normal = 0, Reverse = 1 }
+	_G.DEBUFF_TYPE_NONE_COLOR = { r = 0.8, g = 0, b = 0 }
 	_G.C_NamePlate = {
 		GetNamePlates = function()
 			local list = {}
@@ -132,6 +167,11 @@ function M.build()
 	loadFile("src/Core/ProfileManager.lua")
 	addonFiles.load(addonFiles.migrator, addon)
 	env.db = addon.Config.Migrator:GetAndUpgradeDb()
+
+	-- Capture warnings instead of printing them; a warning is a test failure signal, not noise.
+	addon.Core.Framework.Notify = function(_, message, ...)
+		env.notifications[#env.notifications + 1] = string.format(message, ...)
+	end
 
 	loadFile("src/Utils/WoWEx.lua")
 	assert(addon.Utils.WoWEx:UseAuraContainers(), "env must be in 12.1 mode")
@@ -196,8 +236,11 @@ function M.build()
 		ShowHideFrame = function(_, frame)
 			frame:Show()
 		end,
+		ShowHideDisplay = function(_, display)
+			display:Show()
+		end,
 		GetAll = function()
-			return {}
+			return env.unitFrames
 		end,
 		IsFriendlyCuf = function()
 			return false
@@ -205,17 +248,46 @@ function M.build()
 		HookCellSpotlightVisibility = function() end,
 		HookNDuiVisibility = function() end,
 	}
+	-- Kick tracking is recorded rather than simulated: modules that re-target a container to a
+	-- different unit have to move their kick subscription with it, and nothing else would show
+	-- that they forgot.
+	env.kickCalls = {}
+	local kickKey = 0
+	local function recordKick(action, unit, key)
+		env.kickCalls[#env.kickCalls + 1] = { Action = action, Unit = unit, Key = key }
+	end
+
 	addon.Core.KickTracker = {
-		Watch = function() end,
-		Unwatch = function() end,
+		Watch = function(_, unit)
+			recordKick("Watch", unit)
+		end,
+		Unwatch = function(_, unit)
+			recordKick("Unwatch", unit)
+		end,
 		GetKick = function(_, unit)
 			return env.kicks[unit]
 		end,
-		Subscribe = function()
-			return 1
+		Subscribe = function(_, unit)
+			kickKey = kickKey + 1
+			recordKick("Subscribe", unit, kickKey)
+			return kickKey
 		end,
-		Unsubscribe = function() end,
+		Unsubscribe = function(_, unit, key)
+			recordKick("Unsubscribe", unit, key)
+		end,
 	}
+
+	---Kick tracker calls for a unit since the given index into env.kickCalls.
+	env.kickCallsSince = function(index, unit)
+		local list = {}
+		for i = index + 1, #env.kickCalls do
+			local call = env.kickCalls[i]
+			if not unit or call.Unit == unit then
+				list[#list + 1] = call
+			end
+		end
+		return list
+	end
 	-- Tripwire: the 12.1 path must never construct legacy watchers.
 	addon.Core.UnitAuraWatcher = {
 		New = function()
@@ -242,6 +314,41 @@ function M.build()
 		plate.unitToken = token
 		env.plates[token] = plate
 		return plate
+	end
+
+	---Switches a module on or off for EVERY context. Setting `Always` alone is not enough - the
+	---per-context flags (World, Arena, ...) still enable a module on their own, so a test that
+	---only clears `Always` is testing an enabled module.
+	---@param moduleKey string db.Modules key, e.g. "CCModule".
+	---@param enabled boolean
+	env.setModuleEnabled = function(moduleKey, enabled)
+		local settings = assert(env.db.Modules[moduleKey], "no module " .. moduleKey).Enabled
+		for context in pairs(settings) do
+			settings[context] = enabled
+		end
+	end
+
+	---Registers a mock raid/party unit frame for the CC + FriendlyIndicator anchors and returns it.
+	env.addUnitFrame = function(unit, name)
+		local frame = acm.NewFrame("Frame", name or ("CUF_" .. unit))
+		frame.unit = unit
+		frame.GetAttribute = function(_, key)
+			return key == "unit" and frame.unit or nil
+		end
+		env.unitFrames[#env.unitFrames + 1] = frame
+		return frame
+	end
+
+	---Total AuraContainers ever created. Pooled modules must not grow this on plate churn - a
+	---display that leaks out of its pool shows up as an extra container here.
+	env.auraContainerCount = function()
+		local count = 0
+		for _, frame in ipairs(acm.frames) do
+			if frame._type == "AuraContainer" then
+				count = count + 1
+			end
+		end
+		return count
 	end
 
 	---All mock AuraContainers currently assigned to the given unit token.

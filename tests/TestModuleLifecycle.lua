@@ -398,3 +398,117 @@ fw.describe("HealerCrowdControlModule 12.1 - AddAuraSound registration", functio
 		assert(env.auraSoundRemoves == removesBefore + 2 * ccSpellCount, "all registrations removed")
 	end)
 end)
+
+fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
+	-- Every path that stops tracking a plate has to hand its displays back. A display that
+	-- escapes the pool has no symptom until the pool runs dry and plates start building
+	-- containers on demand - and then two plates can end up sharing one, which draws one
+	-- enemy's auras on another's nameplate. Total containers created is the observable: a
+	-- released display gets reused, a leaked one forces a new one.
+
+	local nameplates = env.addon.Modules.NameplatesModule
+
+	local function addPlate(token, isEnemy)
+		env.enemies[token] = isEnemy ~= false or nil
+		env.addPlate(token)
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", token)
+	end
+
+	local function removePlate(token)
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", token)
+		env.plates[token] = nil
+		env.enemies[token] = nil
+	end
+
+	---Displays actually driving a token. A parked display keeps whatever unit it last tracked
+	---until it is acquired again (harmless - a disabled container unregisters its events), so
+	---the unit lookup alone would count displays that are back in the pool.
+	local function activeDisplays(token)
+		local list = {}
+		for _, container in ipairs(env.containersForUnit(token)) do
+			if container._enabled then
+				list[#list + 1] = container
+			end
+		end
+		return list
+	end
+
+	fw.it("a repeated ADD for the same token carries its displays over", function()
+		-- Re-adds are routine: RebuildContainers replays every live plate through
+		-- OnNamePlateAdded whenever the enabled bars change.
+		addPlate("np_leak1")
+		local display = env.containersForUnit("np_leak1")[1]
+		local created = env.auraContainerCount()
+
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_leak1")
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_leak1")
+
+		assert(env.auraContainerCount() == created, "re-adds must not build new containers")
+		assert(env.containersForUnit("np_leak1")[1] == display, "the same display stayed on the plate")
+		assert(display._enabled, "and it is still live")
+	end)
+
+	fw.it("toggling a bar releases and re-acquires rather than discarding", function()
+		-- Flipping an enabled bar is what drives RebuildContainers, i.e. a re-ADD for every
+		-- live plate.
+		db.Modules.NameplatesModule.Enemy.Bar2.Enabled = true
+		nameplates:Refresh()
+		assert(#activeDisplays("np_leak1") == 2, "both bars have a display")
+		local created = env.auraContainerCount()
+
+		db.Modules.NameplatesModule.Enemy.Bar2.Enabled = false
+		nameplates:Refresh()
+		assert(#activeDisplays("np_leak1") == 1, "the disabled bar gave its display back")
+		assert(env.auraContainerCount() == created, "released, not discarded")
+
+		db.Modules.NameplatesModule.Enemy.Bar2.Enabled = true
+		nameplates:Refresh()
+		assert(#activeDisplays("np_leak1") == 2, "and it comes back")
+		assert(env.auraContainerCount() == created, "out of the pool, without building anything new")
+
+		db.Modules.NameplatesModule.Enemy.Bar2.Enabled = false
+		nameplates:Refresh()
+	end)
+
+	fw.it("plate churn is served entirely from the pool", function()
+		removePlate("np_leak1")
+		local created = env.auraContainerCount()
+
+		for index = 1, 5 do
+			local token = "np_churn" .. index
+			addPlate(token)
+			assert(#activeDisplays(token) == 1, token .. " tracked by the one enabled bar")
+			removePlate(token)
+		end
+
+		assert(env.auraContainerCount() == created,
+			"five spawn/despawn cycles must reuse one display, got " .. (env.auraContainerCount() - created) .. " extra")
+	end)
+
+	fw.it("a plate that stops qualifying releases before it despawns", function()
+		-- The module can stop tracking a plate without a removal event: the module is switched
+		-- off, or the unit turns out to be a pet with IgnorePets on. Both re-enter through
+		-- OnNamePlateAdded, which has to release what the token was already holding.
+		addPlate("np_drop")
+		local created = env.auraContainerCount()
+
+		env.setModuleEnabled("NameplatesModule", false)
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_drop")
+
+		env.setModuleEnabled("NameplatesModule", true)
+		db.Modules.NameplatesModule.Enemy.Bar1.Enabled = true
+		addPlate("np_drop2")
+
+		assert(env.auraContainerCount() == created,
+			"the dropped plate's display was reused by the next one")
+
+		removePlate("np_drop")
+		removePlate("np_drop2")
+	end)
+
+	fw.it("nothing in the module's lifecycle was reported as misuse", function()
+		-- Catches a group key that exists in one file and not the other: SetMaxIcons only warns,
+		-- so a typo would silently switch a whole category off with no other symptom.
+		assert(#env.notifications == 0, "unexpected warnings: " .. table.concat(env.notifications, "; "))
+	end)
+end)

@@ -14,6 +14,7 @@ acm.setup()
 local display, addon, mockDb = acm.loadDisplay()
 local objectPool = addon.Core.Pool
 local kickSlot = addon.Core.KickSlot
+local auraFilters = addon.Core.AuraFilters
 
 local BATCH = acm.batchSize
 
@@ -636,5 +637,172 @@ fw.describe("AuraContainerDisplay - per-display button options", function()
 		local instance = newOptionInstance()
 		local widgets = select(2, next(instance.ButtonWidgets))
 		assert(widgets.Border and widgets.Glow, "default displays keep the full chrome")
+	end)
+end)
+
+fw.describe("AuraContainerDisplay - Edit Mode preview suppression", function()
+	-- Blizzard force-feeds every AuraContainer placeholder auras while Edit Mode is open, with no
+	-- opt-out; hiding the container is the only escape. That makes visibility a two-input state
+	-- machine (what the module asked for x whether the preview is running), and getting it wrong
+	-- paints fake auras over portraits and nameplates.
+
+	local function setPreview(active)
+		displayEvents:TriggerEvent("AURA_DATA_PROVIDER_SWITCH", not active)
+	end
+
+	fw.before_each(function()
+		acm.reset()
+		setPreview(false)
+	end)
+
+	fw.it("the preview hides live containers without changing what the module asked for", function()
+		local instance = newInstance()
+		assert(instance.Frame:IsShown(), "precondition: shown")
+
+		setPreview(true)
+		assert(not instance.Frame:IsShown(), "the real frame hides while the preview runs")
+		assert(instance:IsShown(), "the module's requested visibility is unchanged")
+
+		setPreview(false)
+		assert(instance.Frame:IsShown(), "and comes back when the preview ends")
+	end)
+
+	fw.it("a display created during the preview starts hidden", function()
+		-- Modules build containers on roster/plate events, which keep firing while Edit Mode is
+		-- open; one created then must not miss the suppression.
+		setPreview(true)
+		local instance = newInstance()
+		assert(not instance.Frame:IsShown(), "created hidden while the preview runs")
+
+		setPreview(false)
+		assert(instance.Frame:IsShown(), "revealed when the preview ends")
+	end)
+
+	fw.it("SetShown during the preview cannot reveal placeholder auras", function()
+		local instance = newInstance()
+		setPreview(true)
+
+		instance:Hide()
+		instance:Show()
+
+		assert(not instance.Frame:IsShown(), "the module's Show must not defeat the suppression")
+		assert(instance:IsShown(), "but it is still recorded as the desired state")
+	end)
+
+	fw.it("the preview ending restores each display's own visibility", function()
+		local shown = newInstance()
+		local hidden = newInstance()
+		hidden:Hide()
+
+		setPreview(true)
+		setPreview(false)
+
+		assert(shown.Frame:IsShown(), "a display the module wanted shown comes back")
+		assert(not hidden.Frame:IsShown(), "a display the module had hidden stays hidden")
+	end)
+end)
+
+fw.describe("AuraFilters - category partitioning", function()
+	-- The four category filters must partition the aura space: an aura flagged both BIG_DEFENSIVE
+	-- and IMPORTANT is a normal thing, and without the `!` negations it would be drawn once per
+	-- matching group on the same display.
+
+	---Evaluates one of our filter strings against a synthetic aura, the way the engine does:
+	---tokens combine with AND, `!` negates.
+	local function matches(filterString, aura)
+		for token in filterString:gmatch("[^|]+") do
+			local negated = token:sub(1, 1) == "!"
+			local flag = negated and token:sub(2) or token
+			local present
+			if flag == "HELPFUL" then
+				present = aura.Helpful == true
+			elseif flag == "HARMFUL" then
+				present = aura.Helpful ~= true
+			else
+				present = aura[flag] == true
+			end
+			if present == negated then
+				return false
+			end
+		end
+		return true
+	end
+
+	local CATEGORIES = { "CrowdControl", "BigDefensive", "ExternalDefensive", "Important" }
+
+	local function matchingCategories(aura)
+		local hits = {}
+		for _, name in ipairs(CATEGORIES) do
+			if matches(auraFilters.Filter[name], aura) then
+				hits[#hits + 1] = name
+			end
+		end
+		return hits
+	end
+
+	local function assertOnly(aura, expected, label)
+		local hits = matchingCategories(aura)
+		assert(#hits == 1 and hits[1] == expected,
+			("[%s] expected only %s, got {%s}"):format(label, expected, table.concat(hits, ", ")))
+	end
+
+	fw.it("an aura lands in exactly one category, by priority", function()
+		assertOnly({ Helpful = false, CROWD_CONTROL = true }, "CrowdControl", "plain cc")
+		assertOnly({ Helpful = true, BIG_DEFENSIVE = true }, "BigDefensive", "plain big defensive")
+		assertOnly({ Helpful = true, EXTERNAL_DEFENSIVE = true }, "ExternalDefensive", "plain external")
+		assertOnly({ Helpful = true, IMPORTANT = true }, "Important", "plain important")
+
+		-- The overlaps that actually occur in game.
+		assertOnly({ Helpful = true, BIG_DEFENSIVE = true, IMPORTANT = true },
+			"BigDefensive", "important big defensive")
+		assertOnly({ Helpful = true, EXTERNAL_DEFENSIVE = true, IMPORTANT = true },
+			"ExternalDefensive", "important external")
+		assertOnly({ Helpful = true, BIG_DEFENSIVE = true, EXTERNAL_DEFENSIVE = true, IMPORTANT = true },
+			"BigDefensive", "all three flags")
+	end)
+
+	fw.it("harmful and helpful never cross over", function()
+		assert(#matchingCategories({ Helpful = false, IMPORTANT = true }) == 0,
+			"a harmful important is not a helpful category")
+		assertOnly({ Helpful = false, CROWD_CONTROL = true, IMPORTANT = true }, "CrowdControl", "cc + important")
+		assert(#matchingCategories({ Helpful = true, CROWD_CONTROL = true }) == 0,
+			"the cc filter is harmful-only")
+	end)
+
+	fw.it("ImportantOnly is deliberately unpartitioned", function()
+		-- Precognition shows importants and nothing else, so it must NOT carry the defensive
+		-- negations - a precog buff that also flagged defensive would vanish.
+		assert(matches(auraFilters.Filter.ImportantOnly, { Helpful = true, BIG_DEFENSIVE = true, IMPORTANT = true }),
+			"ImportantOnly matches an important that is also a defensive")
+	end)
+
+	fw.it("BuildCategoryGroups hands out a fresh spec list per display", function()
+		-- SetMaxIcons mutates group.MaxIcons in place, so a shared list would make one display's
+		-- category toggle silently re-budget every other display's.
+		local first = auraFilters:BuildCategoryGroups(5)
+		local second = auraFilters:BuildCategoryGroups(5)
+
+		assert(first ~= second, "distinct lists")
+		assert(first[1] ~= second[1], "distinct group specs")
+
+		first[1].MaxIcons = 0
+		assert(second[1].MaxIcons == 5, "mutating one list must not touch the other")
+	end)
+
+	fw.it("the built groups are exactly the keys ApplyCategoryBudgets drives", function()
+		-- The two halves are written in different files; a key renamed in one and not the other
+		-- would silently disable a whole category (SetMaxIcons only warns).
+		local instance = display:New(_G.UIParent, "target", auraFilters:BuildCategoryGroups(5), 30, 2, "Test")
+		acm.notifications = {}
+
+		auraFilters:ApplyCategoryBudgets(instance, 4, false, true, false)
+
+		assert(#acm.notifications == 0, "every budgeted key exists: " .. table.concat(acm.notifications, "; "))
+		local groups = instance.Frame._groups
+		assert(groups[auraFilters.GroupKey.CrowdControl].maxFrameCount == 0, "cc off")
+		assert(groups[auraFilters.GroupKey.BigDefensive].maxFrameCount == 4, "big defensive on")
+		assert(groups[auraFilters.GroupKey.ExternalDefensive].maxFrameCount == 4,
+			"the defensives toggle covers BOTH defensive groups")
+		assert(groups[auraFilters.GroupKey.Important].maxFrameCount == 0, "important off")
 	end)
 end)

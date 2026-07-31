@@ -32,6 +32,10 @@ local testFiles = {
     "tests/TestMigrator.lua",
     "tests/TestKickTracker.lua",
     "tests/TestModuleLifecycle.lua",
+    "tests/TestModuleSmoke.lua",
+    "tests/TestAlertsBars.lua",
+    "tests/TestPortraitDisplay.lua",
+    "tests/TestUnitFrameRetarget.lua",
     "tests/TestProfileManager.lua",
 }
 
