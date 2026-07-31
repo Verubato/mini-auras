@@ -174,6 +174,9 @@ function M.NewFrame(frameType, name, parent, template)
 	function frame:SetScript(event, fn)
 		frame._scripts[event] = fn
 	end
+	function frame:GetScript(event)
+		return frame._scripts[event]
+	end
 	function frame:TriggerEvent(event, ...)
 		if frame._scripts.OnEvent then
 			frame._scripts.OnEvent(frame, event, ...)

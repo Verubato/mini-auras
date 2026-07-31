@@ -241,6 +241,90 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 	end)
 end)
 
+fw.describe("Duel faction flip - poll-based re-registration", function()
+	fw.it("alerts: a friendly plate that turns enemy gains displays and sound registrations", function()
+		local adds0, removes0 = env.auraSoundAdds, env.auraSoundRemoves
+		db.Modules.AlertsModule.Sound.Important.Enabled = true
+		db.Modules.AlertsModule.Sound.Defensive.Enabled = true
+		env.addon.Modules.AlertsModule:Refresh()
+		local function net()
+			return env.auraSoundAdds - env.auraSoundRemoves
+		end
+		local netBefore = net()
+
+		env.addPlate("nameplate20")
+		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate20")
+		assert(#env.containersForUnit("nameplate20") == 0, "friendly plate starts untracked")
+
+		-- Duel starts: the unit becomes an enemy with no event; only the poll can see it.
+		env.enemies.nameplate20 = true
+		acm.tickAll(1)
+		local containers = env.containersForUnit("nameplate20")
+		assert(#containers == 2, "duel opponent gained a Def+Imp pair, got " .. #containers)
+		for _, container in ipairs(containers) do
+			assert(container._enabled, "pair enabled")
+		end
+		assert(net() > netBefore, "alert sounds registered for the duel opponent")
+
+		-- Duel ends: the flip back releases the pair and its sound registrations.
+		env.enemies.nameplate20 = nil
+		acm.tickAll(1)
+		for _, container in ipairs(containers) do
+			assert(not container._enabled, "duel end released the pair")
+		end
+		assert(net() == netBefore, "duel end removed the opponent's sound registrations")
+
+		-- Restore the shared sound state and counters for the healer tests below.
+		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "nameplate20")
+		env.plates.nameplate20 = nil
+		db.Modules.AlertsModule.Sound.Important.Enabled = false
+		db.Modules.AlertsModule.Sound.Defensive.Enabled = false
+		env.addon.Modules.AlertsModule:Refresh()
+		env.auraSoundAdds, env.auraSoundRemoves = adds0, removes0
+	end)
+
+	fw.it("nameplates: the same flip rebuilds the bars with the other faction's options", function()
+		db.Modules.NameplatesModule.Friendly.Bar1.Enabled = false
+		db.Modules.NameplatesModule.Friendly.Bar2.Enabled = false
+
+		local plate = env.addPlate("np_duel")
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_duel")
+		assert(#env.containersForUnit("np_duel") == 0, "friendly plate starts bare with Friendly bars off")
+
+		env.enemies.np_duel = true
+		acm.tickAll(1)
+		local containers = env.containersForUnit("np_duel")
+		assert(#containers == 1, "enemy Bar1 display acquired on duel start, got " .. #containers)
+		assert(containers[1]._parent == plate and containers[1]._enabled, "parented to the plate and enabled")
+
+		env.enemies.np_duel = nil
+		acm.tickAll(1)
+		assert(not containers[1]._enabled and containers[1]._parent == _G.UIParent, "duel end released the display")
+
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_duel")
+		env.plates.np_duel = nil
+	end)
+
+	fw.it("plates inside instances are not polled", function()
+		env.inInstance = true
+		env.instanceType = "party"
+		env.addPlate("np_dungeon")
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_dungeon")
+		env.enemies.np_dungeon = true
+		acm.tickAll(1)
+		assert(#env.containersForUnit("np_dungeon") == 0, "no rebuild while instanced")
+
+		env.inInstance = false
+		env.instanceType = "none"
+		acm.tickAll(1)
+		assert(#env.containersForUnit("np_dungeon") == 1, "flip picked up once back in the world")
+
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_dungeon")
+		env.plates.np_dungeon = nil
+		env.enemies.np_dungeon = nil
+	end)
+end)
+
 fw.describe("HealerCrowdControlModule 12.1 - AddAuraSound registration", function()
 	local healerCC = env.addon.Modules.HealerCrowdControlModule
 	local ccSpellCount = countAuraSoundSpells()

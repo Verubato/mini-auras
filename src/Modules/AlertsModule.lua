@@ -117,6 +117,12 @@ local alertSoundsByToken = {}
 local alertSoundSettingsSignature = nil
 -- Reused UnitAuraSoundInfo table for registrations.
 local alertSoundInfoScratch = { unitToken = nil, spellID = nil, soundFileName = nil, outputChannel = nil }
+-- Duel detection: no event fires when a friendly unit turns attackable at duel start (or back
+-- at duel end), so visible plates are polled and re-registered when their enemy status flips.
+-- Baselines are seeded on plate add and cleared on plate remove.
+local DUEL_POLL_INTERVAL = 0.25
+---@type table<string, boolean>
+local nameplateEnemyState = {}
 
 ---@class AlertsModule : IModule
 local M = {}
@@ -999,8 +1005,12 @@ local function HookNameplateAuraFrame(unitToken)
 end
 
 local function OnNamePlateAdded(unitToken)
+	-- Baseline for the duel poll, kept fresh on every (re)registration.
+	local isEnemy = units:IsEnemy(unitToken)
+	nameplateEnemyState[unitToken] = isEnemy
+
 	-- Only track enemy nameplates
-	if not units:IsEnemy(unitToken) then
+	if not isEnemy then
 		if USE_AURA_CONTAINERS then
 			ReleaseNameplateDisplay(unitToken)
 		end
@@ -1037,6 +1047,8 @@ local function OnNamePlateAdded(unitToken)
 end
 
 local function OnNamePlateRemoved(unitToken)
+	nameplateEnemyState[unitToken] = nil
+
 	if USE_AURA_CONTAINERS then
 		ReleaseNameplateDisplay(unitToken)
 		ChainAlertDisplays()
@@ -1047,6 +1059,23 @@ local function OnNamePlateRemoved(unitToken)
 		nameplateWatchers[unitToken]:Dispose()
 		nameplateWatchers[unitToken] = nil
 		ScheduleAuraDataUpdate()
+	end
+end
+
+-- Re-registers plates whose enemy status flipped. A duel opponent starts as an untracked
+-- friendly plate; when the duel begins OnNamePlateAdded builds its displays and sound
+-- registrations, and when it ends the same call releases them. Open world only - the only
+-- place duels occur.
+local function PollDuelFactionFlips()
+	if IsInInstance() or not moduleUtil:IsModuleEnabled(moduleName.Alerts) then
+		return
+	end
+	for unitToken, wasEnemy in pairs(nameplateEnemyState) do
+		local isEnemy = units:IsEnemy(unitToken)
+		if isEnemy ~= wasEnemy then
+			nameplateEnemyState[unitToken] = isEnemy
+			OnNamePlateAdded(unitToken)
+		end
 	end
 end
 
@@ -1067,8 +1096,14 @@ local function RebuildNameplateWatchers()
 	local activeTokens = {}
 	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
 		local unitToken = nameplate.unitToken
-		if unitToken and units:IsEnemy(unitToken) then
-			activeTokens[unitToken] = true
+		if unitToken then
+			-- Seed the duel-poll baseline here too: plates that existed before Init/enable
+			-- never fire NAME_PLATE_UNIT_ADDED.
+			local isEnemy = units:IsEnemy(unitToken)
+			nameplateEnemyState[unitToken] = isEnemy
+			if isEnemy then
+				activeTokens[unitToken] = true
+			end
 		end
 	end
 
@@ -1371,6 +1406,8 @@ function M:Init()
 			EnableDisable()
 		end
 	end)
+
+	C_Timer.NewTicker(DUEL_POLL_INTERVAL, PollDuelFactionFlips)
 
 	EnableDisable()
 end
