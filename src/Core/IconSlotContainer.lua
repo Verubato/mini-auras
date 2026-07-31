@@ -333,7 +333,7 @@ end
 ---@param options IconLayerOptions Options containing glow settings
 local function UpdateGlow(layerFrame, options)
 	local db = GetDb()
-	local glowType = (db and db.GlowType) or "Proc Glow"
+	local glowType = (db and db.GlowType) or "Slot Glow"
 
 	-- 12.1: aura icons render through AuraContainerDisplay, which can only use the texture-based
 	-- glows (LibCustomGlow can't attach to AuraButtons). Kick and test icons still render here,
@@ -429,7 +429,7 @@ local function UpdateGlow(layerFrame, options)
 			end
 		end
 	else
-		-- Default: Proc Glow. Always call Start so the glow resizes when icon size changes.
+		-- Remaining LCG type: Proc Glow. Always call Start so the glow resizes when icon size changes.
 		if LCG and LCG.ProcGlow_Start then
 			if colorChanged and layerFrame._ProcGlow and LCG.ProcGlow_Stop then
 				SafeStopGlow(layerFrame, "_ProcGlow", LCG.ProcGlowPool, LCG.ProcGlow_Stop)

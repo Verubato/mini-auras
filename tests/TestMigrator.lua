@@ -88,7 +88,7 @@ fw.describe("Migrator - fresh install", function()
 			assert(type(db.Modules[name]) == "table", "missing module defaults: " .. name)
 		end
 		assert(type(db.Modules.CCModule.Default.Icons.Size) == "number", "representative nested default")
-		assert(db.GlowType == "Proc Glow" and type(db.FontScale) == "number", "top-level defaults")
+		assert(db.GlowType == "Slot Glow" and type(db.FontScale) == "number", "top-level defaults")
 	end)
 
 	fw.it("is idempotent", function()

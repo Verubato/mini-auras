@@ -144,7 +144,7 @@ function M:Build(panel)
 		Parent = panel,
 		Items = glowItems,
 		GetValue = function()
-			local current = db.GlowType or "Proc Glow"
+			local current = db.GlowType or "Slot Glow"
 
 			-- A profile saved on 12.0 can hold an LCG-only type; show what actually renders.
 			if useAuraContainers and current ~= "Slot Glow" then
