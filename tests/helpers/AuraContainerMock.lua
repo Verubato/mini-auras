@@ -110,9 +110,14 @@ local function NewRegion(parent, regionType)
 		_calls = {},
 	}
 
+	-- _calls counts invocations; _lastArgs keeps the most recent argument list per method so
+	-- tests can assert on what was actually applied (e.g. which texture asset).
+	region._lastArgs = {}
+
 	local function record(name)
 		region[name] = function(_, ...)
 			region._calls[name] = (region._calls[name] or 0) + 1
+			region._lastArgs[name] = { ... }
 			return nil
 		end
 	end

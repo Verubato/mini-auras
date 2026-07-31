@@ -43,6 +43,83 @@ local function NextFrameName(frameType)
 	return "MiniCC_AC_" .. frameType .. "_" .. frameIdCounter
 end
 
+-- Glow styles available here. LibCustomGlow can't attach to AuraButtons (it re-parents pooled
+-- frames onto the target, and 12.1 disallows SetParent onto AuraButtons), so only the two
+-- texture-based styles from IconSlotContainer are offered; anything else falls back to the
+-- flipbook. PaddingFactor is a multiple of the icon size, matching ApplyStaticGlowPadding.
+local GLOW_STYLES = {
+	["Rotation Assist"] = {
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhite.tga",
+		BlendMode = "ADD",
+		Desaturated = false,
+		PaddingFactor = 1 / 3,
+		Animated = true,
+	},
+	["Slot Glow"] = {
+		-- The atlas carries a lot of transparent margin, so it has to extend well past the
+		-- icon edges for the halo to read correctly.
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\newplayertutorial-drag-slotgreen.tga",
+		BlendMode = "BLEND",
+		Desaturated = true,
+		PaddingFactor = 1.19,
+		Animated = false,
+	},
+}
+
+local DEFAULT_GLOW_STYLE = "Rotation Assist"
+
+---Resolves the configured glow type to one this display can actually render.
+---@return string
+local function GetGlowStyleName()
+	local db = GetDb()
+	local name = db and db.GlowType
+
+	return (name and GLOW_STYLES[name]) and name or DEFAULT_GLOW_STYLE
+end
+
+---Applies a glow style's asset and geometry to a button's glow frame. Only touches the texture
+---when the style actually changed - this runs per button on every restyle.
+---@param widgets table
+---@param button table
+---@param styleName string
+---@param size number
+local function ApplyGlowStyle(widgets, button, styleName, size)
+	local glow = widgets.Glow
+	local spec = GLOW_STYLES[styleName]
+
+	if widgets.GlowStyle ~= styleName then
+		widgets.GlowStyle = styleName
+
+		-- Stop before re-skinning: the flipbook drives tex coords, so a running animation
+		-- would fight the reset below (and Stop may restore its own pre-animation coords).
+		glow.Anim:Stop()
+
+		glow.Texture:SetTexture(spec.Texture)
+		glow.Texture:SetBlendMode(spec.BlendMode)
+		glow.Texture:SetDesaturated(spec.Desaturated)
+		-- The flipbook leaves the coords on its last cell; reset them so a static asset
+		-- isn't rendered as a 1/30th crop of itself.
+		if not spec.Animated then
+			glow.Texture:SetTexCoord(0, 1, 0, 1)
+		end
+	end
+
+	local padding = size * spec.PaddingFactor
+	glow:SetPoint("TOPLEFT", button, "TOPLEFT", -padding, padding)
+	glow:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", padding, -padding)
+
+	-- A REPEAT animation costs CPU every frame even on hidden frames, and with thousands of
+	-- pre-created buttons that showed up as constant background load; only run it when the
+	-- chosen style is actually animated.
+	if spec.Animated then
+		if not glow.Anim:IsPlaying() then
+			glow.Anim:Play()
+		end
+	else
+		glow.Anim:Stop()
+	end
+end
+
 -- Applies the stored per-button style (size, cooldown settings, border, glow, mouse) to one
 -- button. Safe only while buttons are not forbidden (initializeFrame or out of combat).
 ---@param instance AuraContainerDisplay
@@ -111,19 +188,13 @@ local function StyleButton(instance, button)
 	-- it re-parents pooled frames onto the target, and 12.1 disallows SetParent onto AuraButtons
 	-- because the child would inherit their forbidden aspects). It shows and hides with the
 	-- button (button visibility is secret, but child rendering follows the parent without any
-	-- addon-readable state). The looping animation only runs while the glow style is enabled:
-	-- a REPEAT animation costs CPU every frame even on hidden frames, and with thousands of
-	-- pre-created buttons that showed up as constant background load.
+	-- addon-readable state). ApplyGlowStyle picks the asset and only runs the looping animation
+	-- for the styles that need one.
 	local glow = widgets.Glow
 	if glow then
 		if style.Glow then
-			local padding = instance.Size / 3
-			glow:SetPoint("TOPLEFT", button, "TOPLEFT", -padding, padding)
-			glow:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", padding, -padding)
+			ApplyGlowStyle(widgets, button, GetGlowStyleName(), instance.Size)
 			glow:Show()
-			if not glow.Anim:IsPlaying() then
-				glow.Anim:Play()
-			end
 		else
 			glow:Hide()
 			glow.Anim:Stop()
@@ -167,13 +238,13 @@ local function InitializeButton(instance, button)
 	button:SetTooltipAnchorPoint("ANCHOR_RIGHT")
 
 	-- Glow overlay, created up-front as a direct child (creation is allowed on AuraButtons;
-	-- re-parenting is not). Same flipbook visual as IconSlotContainer's "Rotation Assist" glow.
+	-- re-parenting is not). The asset is left unset: StyleButton applies whichever style from
+	-- GLOW_STYLES is configured, and the flipbook animation is built here either way so a later
+	-- switch to "Rotation Assist" doesn't have to touch the button.
 	local glow = CreateFrame("Frame", NextFrameName("Glow"), button)
 	glow:SetFrameLevel(button:GetFrameLevel() + 5)
 	glow.Texture = glow:CreateTexture(nil, "OVERLAY")
 	glow.Texture:SetAllPoints()
-	glow.Texture:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhite.tga")
-	glow.Texture:SetBlendMode("ADD")
 	glow.Anim = glow:CreateAnimationGroup()
 	glow.Anim:SetLooping("REPEAT")
 	local flip = glow.Anim:CreateAnimation("FlipBook")
@@ -190,6 +261,7 @@ local function InitializeButton(instance, button)
 		Border = border,
 		DispelSignature = nil,
 		Glow = glow,
+		GlowStyle = nil,
 	}
 	instance.Buttons[#instance.Buttons + 1] = button
 
@@ -257,7 +329,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName)
 	instance.Grow = "CENTER"
 	instance.Style = {}
 	instance.Buttons = {}
-	-- button -> { Cooldown, Border, DispelSignature, Glow } for restyling.
+	-- button -> { Cooldown, Border, DispelSignature, Glow, GlowStyle } for restyling.
 	instance.ButtonWidgets = {}
 
 	local frame = CreateFrame("AuraContainer", NextFrameName("Container"), parent, "CustomAuraContainerTemplate")
@@ -415,6 +487,7 @@ local function StyleSignature(style)
 		tostring(style.ShowTooltips),
 		tostring(db and db.DisableSwipe),
 		tostring(db and db.MillisecondsThreshold),
+		GetGlowStyleName(),
 	}, "|")
 end
 

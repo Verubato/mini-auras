@@ -136,6 +136,7 @@ L:RegisterLocale("itIT", {
 	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Invece di mostrare l'ultimo CC applicato (comportamento MiniCC), usa la priorità CC predefinita di Blizzard che di solito mostra il primo CC applicato (con alcune eccezioni).",
 	["The others seem to use a non-trivial amount of CPU."] = "Gli altri sembrano usare una quantità considerevole di CPU.",
 	["The Proc Glow uses the least CPU."] = "Il bagliore proc usa meno CPU.",
+	["The Slot Glow is static and uses the least CPU."] = "Il bagliore slot è statico e usa meno CPU.",
 
 	-- Alerts tab
 	["Alerts"] = "Avvisi",

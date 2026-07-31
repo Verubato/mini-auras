@@ -138,6 +138,7 @@ L:SetDefaultStrings({
 	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions).",
 	["The others seem to use a non-trivial amount of CPU."] = "The others seem to use a non-trivial amount of CPU.",
 	["The Proc Glow uses the least CPU."] = "The Proc Glow uses the least CPU.",
+	["The Slot Glow is static and uses the least CPU."] = "The Slot Glow is static and uses the least CPU.",
 
 	-- Alerts tab
 	["Alerts"] = "Alerts",

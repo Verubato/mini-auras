@@ -136,6 +136,7 @@ L:RegisterLocale("koKR", {
 	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "마지막으로 적용된 CC를 표시하는 대신(MiniCC 방식), 일반적으로 처음 적용된 CC를 표시하는 블리자드의 기본 CC 우선순위를 사용합니다(일부 예외 있음).",
 	["The others seem to use a non-trivial amount of CPU."] = "다른 것들은 상당한 CPU를 사용하는 것 같습니다.",
 	["The Proc Glow uses the least CPU."] = "프록 발광은 CPU를 가장 적게 사용합니다.",
+	["The Slot Glow is static and uses the least CPU."] = "슬롯 발광은 정적이며 CPU를 가장 적게 사용합니다.",
 
 	-- Alerts tab
 	["Alerts"] = "알림",

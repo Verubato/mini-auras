@@ -28,6 +28,14 @@ local function totalSetSizeCalls(instance)
 	return total
 end
 
+local function firstGlowWidgets(instance)
+	for _, widgets in pairs(instance.ButtonWidgets) do
+		if widgets.Glow then
+			return widgets
+		end
+	end
+end
+
 local function anyGlowPlaying(instance)
 	for _, widgets in pairs(instance.ButtonWidgets) do
 		if widgets.Glow and widgets.Glow.Anim:IsPlaying() then
@@ -213,6 +221,75 @@ fw.describe("AuraContainerDisplay - glow lifecycle", function()
 		assert(not anyGlowPlaying(instance), "parked -> stopped")
 		instance:SetStyle({ Glow = true })
 		assert(anyGlowPlaying(instance), "reuse with identical style must resume animations")
+	end)
+end)
+
+fw.describe("AuraContainerDisplay - glow styles", function()
+	fw.before_each(function()
+		acm.reset()
+		mockDb.GlowType = nil
+	end)
+
+	fw.it("defaults to the animated flipbook glow", function()
+		local instance = newInstance()
+		instance:SetStyle({ Glow = true })
+		assert(firstGlowWidgets(instance).GlowStyle == "Rotation Assist", "default is the flipbook")
+		assert(anyGlowPlaying(instance), "the flipbook animates")
+	end)
+
+	fw.it("Slot Glow applies the static atlas and runs no animation", function()
+		mockDb.GlowType = "Slot Glow"
+		local instance = newInstance()
+		instance:SetStyle({ Glow = true })
+
+		local widgets = firstGlowWidgets(instance)
+		assert(widgets.GlowStyle == "Slot Glow", "slot glow selected")
+		assert(not anyGlowPlaying(instance), "a static glow must not animate")
+
+		local asset = widgets.Glow.Texture._lastArgs.SetTexture[1]
+		assert(asset:find("newplayertutorial%-drag%-slotgreen"), "slot atlas applied, got " .. tostring(asset))
+	end)
+
+	fw.it("an LCG-only glow type falls back to the flipbook", function()
+		mockDb.GlowType = "Proc Glow"
+		local instance = newInstance()
+		instance:SetStyle({ Glow = true })
+		assert(firstGlowWidgets(instance).GlowStyle == "Rotation Assist", "unsupported type falls back")
+	end)
+
+	fw.it("changing the glow type restyles despite an identical style table", function()
+		local instance = newInstance()
+		instance:SetStyle({ Glow = true })
+		local afterFirst = totalSetSizeCalls(instance)
+
+		mockDb.GlowType = "Slot Glow"
+		instance:SetStyle({ Glow = true })
+		assert(totalSetSizeCalls(instance) > afterFirst, "glow type must be part of the style signature")
+	end)
+
+	fw.it("re-applying the same glow type does not re-set the asset", function()
+		mockDb.GlowType = "Slot Glow"
+		local instance = newInstance()
+		instance:SetStyle({ Glow = true })
+
+		local texture = firstGlowWidgets(instance).Glow.Texture
+		local applied = texture._calls.SetTexture
+		assert(applied == 1, "asset applied once, got " .. tostring(applied))
+
+		instance:SetIconSize(40)
+		assert(texture._calls.SetTexture == applied, "restyle without a type change must not re-skin")
+	end)
+
+	fw.it("switching away from the flipbook resets its tex coords", function()
+		local instance = newInstance()
+		instance:SetStyle({ Glow = true })
+
+		local texture = firstGlowWidgets(instance).Glow.Texture
+		local before = texture._calls.SetTexCoord or 0
+
+		mockDb.GlowType = "Slot Glow"
+		instance:SetStyle({ Glow = true })
+		assert((texture._calls.SetTexCoord or 0) > before, "static asset must clear the flipbook's cell coords")
 	end)
 end)
 

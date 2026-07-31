@@ -136,6 +136,7 @@ L:RegisterLocale("zhTW", {
 	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "不顯示最新應用的控制效果（MiniCC行為），而是使用暴雪預設的CC優先級，通常顯示最先應用的控制效果（有少數例外）。",
 	["The others seem to use a non-trivial amount of CPU."] = "其他的似乎使用了大量的CPU。",
 	["The Proc Glow uses the least CPU."] = "觸發發光使用最少的CPU。",
+	["The Slot Glow is static and uses the least CPU."] = "槽位發光是靜態的，使用最少的CPU。",
 
 	-- Alerts tab
 	["Alerts"] = "警報",

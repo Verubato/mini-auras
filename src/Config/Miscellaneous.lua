@@ -113,48 +113,63 @@ function M:Build(panel)
 	fadeWithParentChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
 	fadeWithParentChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
 
-	-- Glow Type: hidden on 12.1 - aura icons there always use the built-in flipbook glow
-	-- (LibCustomGlow can't attach to AuraButtons, so the choice no longer does anything
-	-- user-visible). TEMPORARY: remove the gate with the legacy path once 12.1 is live.
-	local slidersAnchor = disableSwipeChk
+	-- Glow Type: on 12.1 aura icons render as AuraButtons, which LibCustomGlow can't attach to,
+	-- so only the two texture-based glows are offered there. TEMPORARY: drop the split and keep
+	-- the full list once the legacy path is retired.
+	local useAuraContainers = addon.Utils.WoWEx:UseAuraContainers()
 
-	if not addon.Utils.WoWEx:UseAuraContainers() then
-		local glowTypeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-		glowTypeLabel:SetText(L["Glow Type"])
-		glowTypeLabel:SetPoint("TOPLEFT", disableSwipeChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	local glowItems = useAuraContainers and {
+		"Rotation Assist",
+		"Slot Glow",
+	} or {
+		"Proc Glow",
+		"Rotation Assist",
+		"Pixel Glow",
+		"Autocast Shine",
+		"Slot Glow",
+	}
 
-		local glowTypeDropdown = mini:Dropdown({
-			Parent = panel,
-			Items = {
-				"Proc Glow",
-				"Rotation Assist",
-				"Pixel Glow",
-				"Autocast Shine",
-				"Slot Glow",
-			},
-			GetValue = function()
-				return db.GlowType or "Proc Glow"
-			end,
-			SetValue = function(value)
-				db.GlowType = value
-				addon:Refresh()
-			end,
-		})
+	local glowNoteLines = useAuraContainers and {
+		L["The Slot Glow is static and uses the least CPU."],
+	} or {
+		L["The Proc Glow uses the least CPU."],
+		L["The others seem to use a non-trivial amount of CPU."],
+	}
 
-		glowTypeDropdown:SetPoint("TOPLEFT", glowTypeLabel, "BOTTOMLEFT", 0, -4)
-		glowTypeDropdown:SetWidth(columnWidth)
+	local glowTypeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+	glowTypeLabel:SetText(L["Glow Type"])
+	glowTypeLabel:SetPoint("TOPLEFT", disableSwipeChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
-		local glowNote = mini:TextBlock({
-			Parent = panel,
-			Lines = {
-				L["The Proc Glow uses the least CPU."],
-				L["The others seem to use a non-trivial amount of CPU."],
-			},
-		})
+	local glowTypeDropdown = mini:Dropdown({
+		Parent = panel,
+		Items = glowItems,
+		GetValue = function()
+			local current = db.GlowType or "Proc Glow"
 
-		glowNote:SetPoint("TOPLEFT", glowTypeDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
-		slidersAnchor = glowNote
-	end
+			-- A profile saved on 12.0 can hold an LCG-only type; show what actually renders.
+			if useAuraContainers and current ~= "Slot Glow" then
+				return "Rotation Assist"
+			end
+
+			return current
+		end,
+		SetValue = function(value)
+			db.GlowType = value
+			addon:Refresh()
+		end,
+	})
+
+	glowTypeDropdown:SetPoint("TOPLEFT", glowTypeLabel, "BOTTOMLEFT", 0, -4)
+	glowTypeDropdown:SetWidth(columnWidth)
+
+	local glowNote = mini:TextBlock({
+		Parent = panel,
+		Lines = glowNoteLines,
+	})
+
+	glowNote:SetPoint("TOPLEFT", glowTypeDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local slidersAnchor = glowNote
 
 	local fontScaleSlider = mini:Slider({
 		Parent = panel,
