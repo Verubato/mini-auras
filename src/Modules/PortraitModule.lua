@@ -44,6 +44,9 @@ local testSpells = {}
 local hookedAuraFrames = {}
 local pendingImportantUnits = {}
 local importantUpdateScheduled = false
+-- 12.1 scratch: kick slot options, rebuilt on every kick event and expiry timer. SetSlot reads
+-- it synchronously and keeps nothing.
+local kickSlotScratch = {}
 
 ---@class PortraitModule : IModule
 local M = {}
@@ -253,14 +256,14 @@ local function UpdateKickIcon(unit, container)
 
 	local kickEntry = kickTracker:GetKick(unit)
 	if kickEntry then
-		container:SetSlot(1, {
-			Texture = kickEntry.Texture,
-			DurationObject = kickEntry.DurationObject,
-			Alpha = true,
-			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
-			FontScale = db.FontScale,
-			Color = kickEntry.Color,
-		})
+		local slotOptions = kickSlotScratch
+		slotOptions.Texture = kickEntry.Texture
+		slotOptions.DurationObject = kickEntry.DurationObject
+		slotOptions.Alpha = true
+		slotOptions.ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown
+		slotOptions.FontScale = db.FontScale
+		slotOptions.Color = kickEntry.Color
+		container:SetSlot(1, slotOptions)
 
 		local remaining = (kickEntry.StartTime or 0) + (kickEntry.Duration or 0) - GetTime()
 		if remaining > 0 then

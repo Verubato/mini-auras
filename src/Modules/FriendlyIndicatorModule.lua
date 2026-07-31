@@ -33,6 +33,10 @@ local testDefensiveSpells = {}
 local testCcSpells = {}
 ---@type Db
 local db
+-- 12.1 scratch tables: the kick slot options and the display style are rebuilt on every kick
+-- event and every options pass, and both consumers read them synchronously and keep nothing.
+local kickSlotScratch = {}
+local displayStyleScratch = {}
 
 local function GetOptions()
 	local m = db.Modules.FriendlyIndicatorModule
@@ -210,15 +214,17 @@ local function UpdateKickIcon(entry)
 	end
 
 	local kickEntry = options.ShowKicks ~= false and kickTracker:GetKick(entry.Unit) or nil
-	local slotOptions = kickEntry and {
-		Texture = kickEntry.Texture,
-		DurationObject = kickEntry.DurationObject,
-		Color = options.Icons.ColorByDispelType and kickEntry.Color,
-		Alpha = true,
-		ReverseCooldown = options.Icons.ReverseCooldown,
-		Glow = options.Icons.Glow,
-		FontScale = db.FontScale,
-	} or nil
+	local slotOptions = nil
+	if kickEntry then
+		slotOptions = kickSlotScratch
+		slotOptions.Texture = kickEntry.Texture
+		slotOptions.DurationObject = kickEntry.DurationObject
+		slotOptions.Color = options.Icons.ColorByDispelType and kickEntry.Color or nil
+		slotOptions.Alpha = true
+		slotOptions.ReverseCooldown = options.Icons.ReverseCooldown
+		slotOptions.Glow = options.Icons.Glow
+		slotOptions.FontScale = db.FontScale
+	end
 
 	entry.KickTimer = auraContainerDisplay:RenderKickSlot(entry.Container, kickEntry, slotOptions, entry.KickTimer, function()
 		entry.KickTimer = nil
@@ -622,13 +628,16 @@ local function ApplyEntryOptions(entry, anchor, options)
 		entry.Display:SetMaxIcons("bigdef", options.ShowDefensives and maxIcons or 0)
 		entry.Display:SetMaxIcons("extdef", options.ShowDefensives and maxIcons or 0)
 		entry.Display:SetMaxIcons("important", options.ShowImportant and maxIcons or 0)
-		entry.Display:SetStyle({
-			ReverseCooldown = options.Icons.ReverseCooldown,
-			ColorByDispelType = options.Icons.ColorByDispelType,
-			Glow = options.Icons.Glow,
-			FontScale = db.FontScale,
-			ShowTooltips = options.ShowTooltips ~= false,
-		})
+
+		local style = displayStyleScratch
+		style.ReverseCooldown = options.Icons.ReverseCooldown
+		style.ShowMilliseconds = nil
+		style.ColorByDispelType = options.Icons.ColorByDispelType
+		style.Glow = options.Icons.Glow
+		style.FontScale = db.FontScale
+		style.ShowTooltips = options.ShowTooltips ~= false
+		entry.Display:SetStyle(style)
+
 		entry.Display:SetEnabled(true)
 	end
 

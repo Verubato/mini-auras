@@ -14,6 +14,7 @@ local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local slotDistribution = addon.Utils.SlotDistribution
 local mathMin = math.min
+local mathMax = math.max
 local GetTime = GetTime
 local C_NamePlate = C_NamePlate
 -- 12.1 path: each bar gets an AuraContainer drawn from a central pre-created pool (acquired,
@@ -130,6 +131,10 @@ local BARS = {
 -- created out of combat via the pool's staggered pre-creation, then acquired/reparented/
 -- retargeted as plates come and go, so plate churn mid-combat never creates containers.
 local displayPool
+-- Reused style table for the pooled displays; SetStyle copies out of it and keeps nothing.
+local displayStyleScratch = {}
+-- Rough upper bound on simultaneously visible nameplates, used to size the display pool.
+local PLATE_ESTIMATE = 40
 
 local function ImportantNeeded()
 	local enemy = nmModule.Enemy
@@ -139,6 +144,17 @@ local function ImportantNeeded()
 		or (friendly.Bar1.Enabled and friendly.Bar1.ShowImportant)
 		or (friendly.Bar2.Enabled and friendly.Bar2.ShowImportant)
 		or false
+end
+
+-- 12.1: how many displays a full screen of plates needs. Each enabled bar takes its own display,
+-- and a plate is only ever one faction, so the busiest case is the faction with the most bars on.
+-- Undersizing the pool means falling back to creating AuraContainers mid-combat, which is exactly
+-- what the pool exists to avoid.
+local function DisplayPoolTarget()
+	local enemyBars = (nmModule.Enemy.Bar1.Enabled and 1 or 0) + (nmModule.Enemy.Bar2.Enabled and 1 or 0)
+	local friendlyBars = (nmModule.Friendly.Bar1.Enabled and 1 or 0) + (nmModule.Friendly.Bar2.Enabled and 1 or 0)
+
+	return PLATE_ESTIMATE * mathMax(enemyBars, friendlyBars)
 end
 
 local function GetCCSortOptions()
@@ -282,15 +298,16 @@ local function EnsureBarDisplay(data, bar, barOptions)
 	display:SetMaxIcons("bigdef", barOptions.ShowDefensives and maxIcons or 0)
 	display:SetMaxIcons("extdef", barOptions.ShowDefensives and maxIcons or 0)
 	display:SetMaxIcons("important", barOptions.ShowImportant and maxIcons or 0)
-	display:SetStyle({
-		ReverseCooldown = barOptions.Icons.ReverseCooldown,
-		ShowMilliseconds = barOptions.Icons.ShowMilliseconds,
-		-- Category colours can't be applied per group; dispel-type colouring is the nearest fit.
-		ColorByDispelType = barOptions.Icons.ColorByCategory,
-		Glow = barOptions.Icons.Glow,
-		FontScale = db.FontScale,
-		ShowTooltips = barOptions.ShowTooltips ~= false,
-	})
+
+	local style = displayStyleScratch
+	style.ReverseCooldown = barOptions.Icons.ReverseCooldown
+	style.ShowMilliseconds = barOptions.Icons.ShowMilliseconds
+	-- Category colours can't be applied per group; dispel-type colouring is the nearest fit.
+	style.ColorByDispelType = barOptions.Icons.ColorByCategory
+	style.Glow = barOptions.Icons.Glow
+	style.FontScale = db.FontScale
+	style.ShowTooltips = barOptions.ShowTooltips ~= false
+	display:SetStyle(style)
 	-- SetEnabled(false -> true) triggers the container's own full refresh, so a pooled display
 	-- re-acquired for a recycled unit token still repopulates.
 	display:SetEnabled(true)
@@ -349,7 +366,7 @@ end
 ---@return IconSlotContainer? bar1Container, IconSlotContainer? bar2Container
 local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 	-- Each bar shows when its own Enabled flag is set, so both bars can display at once.
-	local result = {}
+	local bar1Container, bar2Container
 	for _, bar in ipairs(BARS) do
 		local barOptions = unitOptions[bar.Key]
 		if barOptions and barOptions.Enabled then
@@ -376,13 +393,17 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 			container:SetRows(nil, "CENTER", barOptions.Grow == "LEFT")
 
 			SetupContainerFrame(container, nameplate, anchorPoint, relativeToPoint, offsetX, offsetY)
-			result[bar.Key] = container
+			if bar.Key == "Bar1" then
+				bar1Container = container
+			else
+				bar2Container = container
+			end
 		else
 			HideAndReset(nameplate[bar.ContainerKey])
 		end
 	end
 
-	return result.Bar1, result.Bar2
+	return bar1Container, bar2Container
 end
 
 ---12.1 path: renders the kick icon into each ShowCC bar's kick container (slot 1) and re-anchors
@@ -1167,6 +1188,12 @@ local function SetEventsActive(active)
 	-- entirely; reactivation rebuilds from the live plate list. The addon-wide Refresh
 	-- (config, world change, raid flip) re-runs this gate.
 	plateGate:SetActive(active)
+
+	-- 12.1: fill the display pool only once the module is actually running, and re-target it
+	-- whenever the enabled-bar count changes. Idempotent, so running it on every gate flip is fine.
+	if active and USE_AURA_CONTAINERS and displayPool then
+		displayPool:Prewarm(DisplayPoolTarget())
+	end
 end
 
 local function Teardown()
@@ -1225,6 +1252,13 @@ local function UpdateContent(options)
 		return
 	end
 
+	-- 12.1: the containers render themselves and no watchers exist, so OnAuraDataChanged would
+	-- bail on the watcher lookup for every tracked plate. RefreshAnchorsAndSizes (via ApplyOptions)
+	-- has already re-applied the bar options to the displays.
+	if USE_AURA_CONTAINERS then
+		return
+	end
+
 	-- Re-render every tracked nameplate so per-bar option changes (Show CC / Defensives /
 	-- Important, colours, glow, tooltips, etc.) apply immediately instead of waiting for the next
 	-- aura event. HaveModesChanged only catches enabled/mode toggles, and SetSort no-ops when the
@@ -1257,8 +1291,9 @@ end
 
 local function CreateFrames()
 	if USE_AURA_CONTAINERS then
-		-- Pre-create enough displays for a full screen of plates (staggered, out of combat).
-		displayPool = auraContainerDisplay:NewPool(CreateBarDisplay, ResetBarDisplay, 40)
+		-- The pool itself is just two closures; pre-creation is deferred to the enable path
+		-- (see SetEventsActive) so a disabled module never builds a screen's worth of containers.
+		displayPool = auraContainerDisplay:NewPool(CreateBarDisplay, ResetBarDisplay, PLATE_ESTIMATE)
 	end
 end
 

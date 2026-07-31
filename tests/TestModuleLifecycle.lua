@@ -363,11 +363,30 @@ fw.describe("HealerCrowdControlModule 12.1 - AddAuraSound registration", functio
 		assert(env.auraSoundAdds == addsBefore + ccSpellCount, "full set re-registered")
 	end)
 
-	fw.it("a roster change re-registers for the new healer set", function()
+	fw.it("a healer joining registers only that healer", function()
 		local addsBefore = env.auraSoundAdds
+		local removesBefore = env.auraSoundRemoves
 		env.healers.party2 = true
 		healerCC:Refresh()
-		assert(env.auraSoundAdds == addsBefore + 2 * ccSpellCount, "two healers registered")
+		assert(env.auraSoundAdds == addsBefore + ccSpellCount,
+			("only the new healer registers, expected %d adds, got %d")
+				:format(addsBefore + ccSpellCount, env.auraSoundAdds))
+		assert(env.auraSoundRemoves == removesBefore, "the existing healer's registrations are kept")
+	end)
+
+	fw.it("a healer leaving removes only that healer", function()
+		local addsBefore = env.auraSoundAdds
+		local removesBefore = env.auraSoundRemoves
+		env.healers.party2 = nil
+		healerCC:Refresh()
+		assert(env.auraSoundRemoves == removesBefore + ccSpellCount,
+			("only the departed healer unregisters, expected %d removes, got %d")
+				:format(removesBefore + ccSpellCount, env.auraSoundRemoves))
+		assert(env.auraSoundAdds == addsBefore, "no re-registration of the healers that stayed")
+
+		-- Restore the two-healer set the following test expects.
+		env.healers.party2 = true
+		healerCC:Refresh()
 	end)
 
 	fw.it("disabling the sound clears everything", function()

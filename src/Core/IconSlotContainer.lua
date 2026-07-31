@@ -6,6 +6,9 @@ local Masque = LibStub and LibStub("Masque", true)
 local masqueReskinPending = {}
 local fontUtil = addon.Utils.FontUtil
 local cachedDb = nil
+-- Hoisted out of UpdateGlow: that runs per slot on every icon update, and the value never
+-- changes for the life of the session.
+local USE_AURA_CONTAINERS = addon.Utils.WoWEx:UseAuraContainers()
 
 -- Reused across Layout() calls to avoid a table allocation on the hot path
 local layoutScratch = {}
@@ -339,7 +342,7 @@ local function UpdateGlow(layerFrame, options)
 	-- glows (LibCustomGlow can't attach to AuraButtons). Kick and test icons still render here,
 	-- so clamp to the same set to keep all glows visually consistent; the config offers only
 	-- these on 12.1. TEMPORARY: remove with the legacy path once 12.1 is live.
-	if addon.Utils.WoWEx:UseAuraContainers() and not STATIC_GLOW_FIELDS[glowType] then
+	if USE_AURA_CONTAINERS and not STATIC_GLOW_FIELDS[glowType] then
 		glowType = "Rotation Assist"
 	end
 

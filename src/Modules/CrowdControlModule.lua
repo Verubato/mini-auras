@@ -30,6 +30,10 @@ local watchers = {}
 local testSpells = {}
 -- Reused buffer for GetPetUnitFrames so discovery doesn't allocate each refresh.
 local petUnitFrameScratch = {}
+-- 12.1 scratch tables: the kick slot options and the display style are rebuilt on every kick
+-- event and every options pass, and both consumers read them synchronously and keep nothing.
+local kickSlotScratch = {}
+local displayStyleScratch = {}
 
 local function GetOptions()
 	return instanceOptions:IsRaid() and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
@@ -188,16 +192,18 @@ local function UpdateKickIcon(entry)
 	end
 
 	local kickEntry = not isPet and kickTracker:GetKick(entry.Unit) or nil
-	local slotOptions = kickEntry and {
-		Texture = kickEntry.Texture,
-		DurationObject = kickEntry.DurationObject,
-		Alpha = true,
-		ReverseCooldown = options.Icons.ReverseCooldown,
-		ShowMilliseconds = options.Icons.ShowMilliseconds,
-		Glow = options.Icons.Glow,
-		Color = options.Icons.ColorByDispelType and kickEntry.Color,
-		FontScale = db.FontScale,
-	} or nil
+	local slotOptions = nil
+	if kickEntry then
+		slotOptions = kickSlotScratch
+		slotOptions.Texture = kickEntry.Texture
+		slotOptions.DurationObject = kickEntry.DurationObject
+		slotOptions.Alpha = true
+		slotOptions.ReverseCooldown = options.Icons.ReverseCooldown
+		slotOptions.ShowMilliseconds = options.Icons.ShowMilliseconds
+		slotOptions.Glow = options.Icons.Glow
+		slotOptions.Color = options.Icons.ColorByDispelType and kickEntry.Color or nil
+		slotOptions.FontScale = db.FontScale
+	end
 
 	entry.KickTimer = auraContainerDisplay:RenderKickSlot(entry.Container, kickEntry, slotOptions, entry.KickTimer, function()
 		entry.KickTimer = nil
@@ -733,14 +739,16 @@ local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 		entry.Display:SetIconSize(iconSize)
 		entry.Display:SetMaxIcons("cc", iconCount)
 		entry.Display:SetSpacing(entryOptions.IconSpacing or 2)
-		entry.Display:SetStyle({
-			ReverseCooldown = entryOptions.Icons.ReverseCooldown,
-			ShowMilliseconds = entryOptions.Icons.ShowMilliseconds,
-			ColorByDispelType = entryOptions.Icons.ColorByDispelType,
-			Glow = entryOptions.Icons.Glow,
-			FontScale = db.FontScale,
-			ShowTooltips = entryOptions.ShowTooltips ~= false,
-		})
+
+		local style = displayStyleScratch
+		style.ReverseCooldown = entryOptions.Icons.ReverseCooldown
+		style.ShowMilliseconds = entryOptions.Icons.ShowMilliseconds
+		style.ColorByDispelType = entryOptions.Icons.ColorByDispelType
+		style.Glow = entryOptions.Icons.Glow
+		style.FontScale = db.FontScale
+		style.ShowTooltips = entryOptions.ShowTooltips ~= false
+		entry.Display:SetStyle(style)
+
 		entry.Display:SetEnabled(true)
 	end
 

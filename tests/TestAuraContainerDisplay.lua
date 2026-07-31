@@ -96,6 +96,32 @@ fw.describe("AuraContainerDisplay - SetStyle signature", function()
 		assert(totalSetSizeCalls(instance) > afterFirst, "changed style must restyle")
 	end)
 
+	fw.it("detects changes when the caller reuses one mutated style table", function()
+		-- Callers pass a module-level scratch table, so the display must copy the fields out
+		-- rather than hold the reference (holding it would make every comparison a self-compare
+		-- and no style change would ever be seen again).
+		local instance = newInstance()
+		local scratch = { Glow = false, FontScale = 1 }
+
+		instance:SetStyle(scratch)
+		local afterFirst = totalSetSizeCalls(instance)
+
+		instance:SetStyle(scratch)
+		assert(totalSetSizeCalls(instance) == afterFirst, "unchanged scratch must not restyle")
+
+		scratch.Glow = true
+		instance:SetStyle(scratch)
+		assert(totalSetSizeCalls(instance) > afterFirst, "mutated scratch must restyle")
+
+		-- Mutating the caller's table afterwards must not corrupt what the display stored.
+		local afterThird = totalSetSizeCalls(instance)
+		scratch.Glow = false
+		scratch.FontScale = 99
+		assert(instance.Style.Glow == true and instance.Style.FontScale == 1,
+			"the display must keep its own copy of the style")
+		assert(totalSetSizeCalls(instance) == afterThird, "mutating the caller's table alone must not restyle")
+	end)
+
 	fw.it("restyles when a db-derived value changes (DisableSwipe)", function()
 		local instance = newInstance()
 		instance:SetStyle({ Glow = false })
@@ -307,8 +333,15 @@ fw.describe("AuraContainerDisplay - NewPool", function()
 		return pool, function() return created end, function() return resets end
 	end
 
+	fw.it("does not pre-create until Prewarm is called", function()
+		local pool, created = newCountingPool(5)
+		acm.tickAll(10)
+		assert(created() == 0, "an un-prewarmed pool must stay empty, got " .. created())
+	end)
+
 	fw.it("pre-creates staggered until the target, then stops the ticker", function()
 		local pool, created = newCountingPool(5)
+		pool:Prewarm()
 		assert(created() == 0, "nothing created before ticks")
 		acm.tickAll(2) -- 2 per tick
 		assert(created() == 4, "2 items per tick")
@@ -316,8 +349,25 @@ fw.describe("AuraContainerDisplay - NewPool", function()
 		assert(created() == 5, "stops at the preallocation target, got " .. created())
 	end)
 
+	fw.it("Prewarm is idempotent and can raise (never lower) the target", function()
+		local pool, created = newCountingPool(2)
+		pool:Prewarm()
+		pool:Prewarm() -- must not start a second ticker
+		acm.tickAll(10)
+		assert(created() == 2, "repeat Prewarm must not over-create, got " .. created())
+
+		pool:Prewarm(4)
+		acm.tickAll(10)
+		assert(created() == 4, "a raised target resumes pre-creation, got " .. created())
+
+		pool:Prewarm(1)
+		acm.tickAll(10)
+		assert(created() == 4, "a lower target must not create or discard anything")
+	end)
+
 	fw.it("Acquire drains the pool then falls back to on-demand creation", function()
 		local pool, created = newCountingPool(2)
+		pool:Prewarm()
 		acm.tickAll(5)
 		assert(created() == 2)
 		local a = pool:Acquire()

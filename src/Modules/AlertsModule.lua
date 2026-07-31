@@ -106,6 +106,19 @@ local nameplateDisplays = {}
 local displayPairPool
 -- Sorted token list scratch for deterministic chaining order.
 local displayOrderScratch = {}
+-- nameplate token -> its numeric index, memoized. The sort comparator ran a string match per
+-- comparison, and the chain re-sorts on every plate add/remove; the token set is small and fixed,
+-- so resolving each token once removes all of that per-comparison string churn.
+local nameplateTokenOrder = {}
+-- Reused style table for the pooled displays; SetStyle copies out of it and keeps nothing.
+local displayStyleScratch = {}
+-- Reused enemy-token set for RebuildNameplateWatchers.
+local activeTokensScratch = {}
+-- Freed id lists from RemoveTokenAlertSounds, reused by the next registration instead of
+-- allocating a fresh ~116-entry table per nameplate.
+local alertSoundIdListPool = {}
+-- Rough upper bound on simultaneously visible enemy nameplates, used to size the display pool.
+local PLATE_ESTIMATE = 20
 -- Grow direction -> which edge of a bar frame gets pinned at the saved anchor position.
 -- Pinning the trailing edge is what makes the row extend the other way as icons appear.
 local GROW_PIN_POINTS = { LEFT = "RIGHT", RIGHT = "LEFT", CENTER = "CENTER" }
@@ -622,10 +635,22 @@ local function RefreshTestAlerts()
 	end
 end
 
+-- Resolves (and memoizes) a token's numeric index, so the comparator below never has to run a
+-- pattern match. Non-nameplate tokens memoize as false and fall back to a string compare.
+local function NameplateTokenIndex(token)
+	local index = nameplateTokenOrder[token]
+	if index == nil then
+		index = tonumber(token:match("^nameplate(%d+)$")) or false
+		nameplateTokenOrder[token] = index
+	end
+
+	return index
+end
+
 -- Numeric-aware token order so nameplate10 doesn't sort between nameplate1 and nameplate2.
 local function NameplateTokenLess(a, b)
-	local numberA = tonumber(a:match("^nameplate(%d+)$"))
-	local numberB = tonumber(b:match("^nameplate(%d+)$"))
+	local numberA = NameplateTokenIndex(a)
+	local numberB = NameplateTokenIndex(b)
 	if numberA and numberB then
 		return numberA < numberB
 	end
@@ -762,12 +787,17 @@ local function ApplyNameplateDisplayOptions(entry, options, showBars)
 	entry.Def:SetSpacing(spacing)
 	entry.Def:SetMaxIcons("bigdef", includeDefensives and maxIcons or 0)
 	entry.Def:SetMaxIcons("extdef", includeDefensives and maxIcons or 0)
-	entry.Def:SetStyle({
-		ReverseCooldown = options.Icons.ReverseCooldown,
-		Glow = options.Icons.Glow,
-		FontScale = db.FontScale,
-		ShowTooltips = showTooltips,
-	})
+
+	-- Both displays take the same style; fill the scratch once and hand it to each.
+	local style = displayStyleScratch
+	style.ReverseCooldown = options.Icons.ReverseCooldown
+	style.ShowMilliseconds = nil
+	style.ColorByDispelType = nil
+	style.Glow = options.Icons.Glow
+	style.FontScale = db.FontScale
+	style.ShowTooltips = showTooltips
+
+	entry.Def:SetStyle(style)
 	entry.Def:SetEnabled(showBars == true)
 	entry.Def.Frame:SetShown(showBars == true)
 
@@ -775,12 +805,7 @@ local function ApplyNameplateDisplayOptions(entry, options, showBars)
 	entry.Imp:SetIconSize(size)
 	entry.Imp:SetSpacing(spacing)
 	entry.Imp:SetMaxIcons("important", importantEnabled and maxIcons or 0)
-	entry.Imp:SetStyle({
-		ReverseCooldown = options.Icons.ReverseCooldown,
-		Glow = options.Icons.Glow,
-		FontScale = db.FontScale,
-		ShowTooltips = showTooltips,
-	})
+	entry.Imp:SetStyle(style)
 	local impShown = showBars and importantEnabled
 	entry.Imp:SetEnabled(impShown == true)
 	entry.Imp.Frame:SetShown(impShown == true)
@@ -838,11 +863,34 @@ local function RemoveTokenAlertSounds(unitToken)
 		ids[i] = nil
 	end
 	alertSoundsByToken[unitToken] = nil
+	-- Now empty; hand it back for the next token instead of garbaging a ~116-entry table.
+	alertSoundIdListPool[#alertSoundIdListPool + 1] = ids
 end
 
 local function RemoveAllTokenAlertSounds()
 	for unitToken in pairs(alertSoundsByToken) do
 		RemoveTokenAlertSounds(unitToken)
+	end
+end
+
+-- Registers one spell list's sounds against the token already set on `info`, appending the
+-- returned ids to `ids`. Hoisted out of RegisterTokenAlertSounds so the per-nameplate path
+-- doesn't build a closure each time.
+---@param ids number[]
+---@param info table The shared UnitAuraSoundInfo scratch, with unitToken already set.
+---@param list table<number, boolean> Spell ids to register.
+---@param config table Sound options (File/Channel).
+---@param fallbackFile string
+local function RegisterAlertSoundList(ids, info, list, config, fallbackFile)
+	info.soundFileName = addon.Config.MediaLocation .. (config.File or fallbackFile)
+	info.outputChannel = config.Channel or "Master"
+
+	for spellId in pairs(list) do
+		info.spellID = spellId
+		local soundId = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
+		if soundId then
+			ids[#ids + 1] = soundId
+		end
 	end
 end
 
@@ -863,27 +911,15 @@ local function RegisterTokenAlertSounds(unitToken)
 		return
 	end
 
-	local ids = {}
+	local ids = table.remove(alertSoundIdListPool) or {}
 	local info = alertSoundInfoScratch
 	info.unitToken = unitToken
 
-	local function registerList(list, config, fallbackFile)
-		info.soundFileName = addon.Config.MediaLocation .. (config.File or fallbackFile)
-		info.outputChannel = config.Channel or "Master"
-		for spellId in pairs(list) do
-			info.spellID = spellId
-			local soundId = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
-			if soundId then
-				ids[#ids + 1] = soundId
-			end
-		end
-	end
-
 	if importantEnabled then
-		registerList(addon.Core.AuraSoundData.Important, sound.Important, "AirHorn.ogg")
+		RegisterAlertSoundList(ids, info, addon.Core.AuraSoundData.Important, sound.Important, "AirHorn.ogg")
 	end
 	if defensiveEnabled then
-		registerList(addon.Core.AuraSoundData.Defensive, sound.Defensive, "AlertToastWarm.ogg")
+		RegisterAlertSoundList(ids, info, addon.Core.AuraSoundData.Defensive, sound.Defensive, "AlertToastWarm.ogg")
 	end
 
 	alertSoundsByToken[unitToken] = ids
@@ -1092,7 +1128,8 @@ end
 
 local function RebuildNameplateWatchers()
 	-- Build a set of currently active enemy unit tokens
-	local activeTokens = {}
+	local activeTokens = activeTokensScratch
+	wipe(activeTokens)
 	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
 		local unitToken = nameplate.unitToken
 		if unitToken then
@@ -1172,8 +1209,16 @@ end
 local function SetEventsActive(active)
 	-- Plate events stay unregistered while inactive; ZONE_CHANGED_NEW_AREA and
 	-- PVP_MATCH_STATE_CHANGED stay registered as they drive this gate.
+	local nameplatesNeeded = AreNameplatesNeeded(active)
+
 	if plateGate then
-		plateGate:SetActive(AreNameplatesNeeded(active))
+		plateGate:SetActive(nameplatesNeeded)
+	end
+
+	-- 12.1: fill the display pool only once plates are actually being tracked. Idempotent, so
+	-- running it on every gate flip is fine.
+	if nameplatesNeeded and USE_AURA_CONTAINERS and displayPairPool then
+		displayPairPool:Prewarm()
 	end
 end
 
@@ -1370,9 +1415,11 @@ end
 
 local function CreateFrames()
 	if USE_AURA_CONTAINERS then
-		-- Pre-create display pairs for a typical screen of enemy plates (staggered, out of
-		-- combat); Acquire falls back to on-demand creation past this.
-		displayPairPool = auraContainerDisplay:NewPool(CreateAlertDisplayPair, ResetAlertDisplayPair, 20)
+		-- The pool itself is just two closures; pre-creation of the pairs is deferred to the
+		-- enable path (see SetEventsActive) so a disabled module - or a zone that never shows
+		-- alerts - doesn't build a screen's worth of containers. Acquire falls back to on-demand
+		-- creation past the pre-created count.
+		displayPairPool = auraContainerDisplay:NewPool(CreateAlertDisplayPair, ResetAlertDisplayPair, PLATE_ESTIMATE)
 	end
 
 	local options = db.Modules.AlertsModule

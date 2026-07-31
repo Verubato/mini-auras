@@ -20,13 +20,23 @@ local rc = LibStub("LibRangeCheck-3.0")
 -- once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local paused = false
--- 12.1 path: handles returned by AddAuraSound, so registrations can be removed on change.
-local registeredAuraSounds = {}
+-- 12.1 path: AddAuraSound handles keyed by healer unit, so a healer joining or leaving only
+-- re-registers that unit. The CC spell list is ~1k entries, so a full teardown/rebuild of every
+-- healer on each roster change was ~1k API calls per healer for no reason.
+---@type table<string, number[]>
+local registeredAuraSoundsByUnit = {}
+-- Freed handle lists, reused by the next registration instead of allocating a fresh ~1k-entry
+-- table per healer.
+local auraSoundIdListPool = {}
+-- Reused UnitAuraSoundInfo table for registrations.
+local auraSoundInfoScratch = { unitToken = nil, spellID = nil, soundFileName = nil, outputChannel = nil }
 -- 12.1 path: sorted healer-unit scratch so the display chain has a stable order (pairs order
 -- would let the healer rows swap places between refreshes).
 local healerOrderScratch = {}
--- Signature of the last registration set (healers + sound settings), to skip redundant
--- re-registration (each refresh would otherwise re-issue ~1k API calls per healer).
+-- Reused style table for the healer displays; SetStyle copies out of it and keeps nothing.
+local displayStyleScratch = {}
+-- The sound settings the current registrations were made with; when these change every healer is
+-- re-registered (the unit set is handled incrementally).
 local auraSoundSignature = nil
 local testModeActive = false
 local previousTestSoundEnabled = false
@@ -105,17 +115,61 @@ local function UpdateAnchorSize()
 	healerAnchor:SetSize(width, height)
 end
 
+---12.1 path: removes one healer's registered aura sounds.
+---@param unit string
+local function RemoveUnitAuraSounds(unit)
+	local ids = registeredAuraSoundsByUnit[unit]
+	if not ids then
+		return
+	end
+
+	for i = #ids, 1, -1 do
+		C_UnitAuras.RemoveAuraSound(ids[i])
+		ids[i] = nil
+	end
+	registeredAuraSoundsByUnit[unit] = nil
+	-- Now empty; hand it back for the next healer instead of garbaging a ~1k-entry table.
+	auraSoundIdListPool[#auraSoundIdListPool + 1] = ids
+end
+
 ---12.1 path: removes every registered aura sound.
 local function ClearAuraSounds()
-	for i = #registeredAuraSounds, 1, -1 do
-		C_UnitAuras.RemoveAuraSound(registeredAuraSounds[i])
-		registeredAuraSounds[i] = nil
+	for unit in pairs(registeredAuraSoundsByUnit) do
+		RemoveUnitAuraSounds(unit)
 	end
 	auraSoundSignature = nil
 end
 
----12.1 path: registers an engine-side sound for every known player CC spell on every active
----healer. Skipped (cheaply) when the healer set and sound settings are unchanged.
+---12.1 path: registers an engine-side sound for every known player CC spell on one healer.
+---No-op when the unit is already registered - that is what keeps roster churn cheap.
+---@param unit string
+---@param soundFilePath string
+---@param channel string
+local function RegisterUnitAuraSounds(unit, soundFilePath, channel)
+	if registeredAuraSoundsByUnit[unit] then
+		return
+	end
+
+	local ids = table.remove(auraSoundIdListPool) or {}
+	local info = auraSoundInfoScratch
+	info.unitToken = unit
+	info.soundFileName = soundFilePath
+	info.outputChannel = channel
+
+	for spellId in pairs(addon.Core.AuraSoundData.CC) do
+		info.spellID = spellId
+		local soundId = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
+		if soundId then
+			ids[#ids + 1] = soundId
+		end
+	end
+
+	registeredAuraSoundsByUnit[unit] = ids
+end
+
+---12.1 path: reconciles the engine-side CC sounds against the active healer set. The CC list is
+---~1k spells, so this is strictly incremental: only healers that joined get registered and only
+---those that left get removed. A change to the sound file/channel itself invalidates everything.
 local function RegisterAuraSounds()
 	local options = db.Modules.HealerCCModule
 	local enabled = options.Sound.Enabled
@@ -130,29 +184,22 @@ local function RegisterAuraSounds()
 	local soundFilePath = addon.Config.MediaLocation .. (options.Sound.File or "Sonar.ogg")
 	local channel = options.Sound.Channel or "Master"
 
-	local healerUnits = {}
-	for unit in pairs(activePool) do
-		healerUnits[#healerUnits + 1] = unit
-	end
-	table.sort(healerUnits)
-	local signature = table.concat(healerUnits, ",") .. "|" .. soundFilePath .. "|" .. channel
-	if signature == auraSoundSignature then
-		return
+	-- The sound itself is baked into each registration, so changing it means re-registering
+	-- everyone; the healer set alone never does.
+	local signature = soundFilePath .. "|" .. channel
+	if signature ~= auraSoundSignature then
+		ClearAuraSounds()
+		auraSoundSignature = signature
 	end
 
-	ClearAuraSounds()
-	auraSoundSignature = signature
-
-	local soundInfo = { unitToken = nil, spellID = nil, soundFileName = soundFilePath, outputChannel = channel }
-	for _, unit in ipairs(healerUnits) do
-		soundInfo.unitToken = unit
-		for spellId in pairs(addon.Core.AuraSoundData.CC) do
-			soundInfo.spellID = spellId
-			local soundId = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, soundInfo)
-			if soundId then
-				registeredAuraSounds[#registeredAuraSounds + 1] = soundId
-			end
+	for unit in pairs(registeredAuraSoundsByUnit) do
+		if not activePool[unit] then
+			RemoveUnitAuraSounds(unit)
 		end
+	end
+
+	for unit in pairs(activePool) do
+		RegisterUnitAuraSounds(unit, soundFilePath, channel)
 	end
 end
 
@@ -195,13 +242,15 @@ local function RefreshHealerDisplays()
 		if display then
 			display:SetIconSize(iconSize)
 			display:SetSpacing(options.IconSpacing or 2)
-			display:SetStyle({
-				ReverseCooldown = options.Icons.ReverseCooldown,
-				ColorByDispelType = options.Icons.ColorByDispelType,
-				Glow = options.Icons.Glow,
-				FontScale = db.FontScale,
-				ShowTooltips = options.ShowTooltips ~= false,
-			})
+
+			local style = displayStyleScratch
+			style.ReverseCooldown = options.Icons.ReverseCooldown
+			style.ShowMilliseconds = nil
+			style.ColorByDispelType = options.Icons.ColorByDispelType
+			style.Glow = options.Icons.Glow
+			style.FontScale = db.FontScale
+			style.ShowTooltips = options.ShowTooltips ~= false
+			display:SetStyle(style)
 			display:SetEnabled(options.Icons.Enabled ~= false)
 			display.Frame:SetShown(options.Icons.Enabled ~= false and not testModeActive)
 		end

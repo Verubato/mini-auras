@@ -77,6 +77,50 @@ local function GetGlowStyleName()
 	return (name and GLOW_STYLES[name]) and name or DEFAULT_GLOW_STYLE
 end
 
+-- Stand-in for a nil style, so SetStyle never has to allocate one. Read-only.
+local EMPTY_STYLE = {}
+
+---Copies a style into the instance's own persistent style table, resolving the global db values
+---StyleButton needs along the way, and reports whether any of it actually changed. Callers can
+---therefore hand in a reused scratch table - nothing here retains the argument.
+---@param instance AuraContainerDisplay
+---@param style AuraDisplayStyle
+---@return boolean changed
+local function StoreStyle(instance, style)
+	local db = GetDb()
+	local stored = instance.Style
+	local disableSwipe = (db and db.DisableSwipe) or false
+	local millisecondsThreshold = db and db.MillisecondsThreshold
+	local glowStyleName = GetGlowStyleName()
+
+	if stored.ReverseCooldown == style.ReverseCooldown
+		and stored.ShowMilliseconds == style.ShowMilliseconds
+		and stored.ColorByDispelType == style.ColorByDispelType
+		and stored.Glow == style.Glow
+		and stored.FontScale == style.FontScale
+		and stored.ShowTooltips == style.ShowTooltips
+		and stored.DisableSwipe == disableSwipe
+		and stored.MillisecondsThreshold == millisecondsThreshold
+		and stored.GlowStyleName == glowStyleName
+		and stored.Populated
+	then
+		return false
+	end
+
+	stored.ReverseCooldown = style.ReverseCooldown
+	stored.ShowMilliseconds = style.ShowMilliseconds
+	stored.ColorByDispelType = style.ColorByDispelType
+	stored.Glow = style.Glow
+	stored.FontScale = style.FontScale
+	stored.ShowTooltips = style.ShowTooltips
+	stored.DisableSwipe = disableSwipe
+	stored.MillisecondsThreshold = millisecondsThreshold
+	stored.GlowStyleName = glowStyleName
+	stored.Populated = true
+
+	return true
+end
+
 ---Applies a glow style's asset and geometry to a button's glow frame. Only touches the texture
 ---when the style actually changed - this runs per button on every restyle.
 ---@param widgets table
@@ -134,12 +178,13 @@ local function StyleButton(instance, button)
 
 	button:SetSize(instance.Size, instance.Size)
 
-	local db = GetDb()
+	-- DisableSwipe/MillisecondsThreshold/GlowStyleName are the global db values StoreStyle
+	-- resolved when the style was set, so this hot loop never re-reads the db per button.
 	local cd = widgets.Cooldown
 	cd:SetReverse(style.ReverseCooldown or false)
-	cd:SetDrawSwipe(not (db and db.DisableSwipe))
+	cd:SetDrawSwipe(not style.DisableSwipe)
 	if cd.SetCountdownMillisecondsThreshold then
-		cd:SetCountdownMillisecondsThreshold(style.ShowMilliseconds and (db and db.MillisecondsThreshold or 5) or 0)
+		cd:SetCountdownMillisecondsThreshold(style.ShowMilliseconds and (style.MillisecondsThreshold or 5) or 0)
 	end
 	cd.FontScale = style.FontScale or 1.0
 	fontUtil:UpdateCooldownFontSize(cd, instance.Size, nil, cd.FontScale)
@@ -193,7 +238,7 @@ local function StyleButton(instance, button)
 	local glow = widgets.Glow
 	if glow then
 		if style.Glow then
-			ApplyGlowStyle(widgets, button, GetGlowStyleName(), instance.Size)
+			ApplyGlowStyle(widgets, button, style.GlowStyleName or DEFAULT_GLOW_STYLE, instance.Size)
 			glow:Show()
 		else
 			glow:Hide()
@@ -287,20 +332,24 @@ local function ApplyFlowLayout(instance)
 	frame:SetFlowLayoutGrowthDirection(AnchorUtil.FlowDirection[layout.h], AnchorUtil.FlowDirection[layout.v])
 end
 
----Builds a group layout table. Spacing keys are passed under BOTH the older and newer PTR
----spellings (elementSpacing/lineSpacing was renamed to elementSpacingX/elementSpacingY in a
+---Fills the instance's own layout table. Spacing keys are passed under BOTH the older and newer
+---PTR spellings (elementSpacing/lineSpacing was renamed to elementSpacingX/elementSpacingY in a
 ---later 12.1 build); validators ignore unknown keys, so this works on either build.
+---The table is per-instance and reused rather than rebuilt per call: every group on a display
+---always gets the same layout, so sharing one table across them is safe even if the engine
+---retains the reference.
 ---@param instance AuraContainerDisplay
 ---@return table
 local function BuildGroupLayout(instance)
-	return {
-		elementSpacing = instance.Spacing,
-		lineSpacing = instance.Spacing,
-		elementSpacingX = instance.Spacing,
-		elementSpacingY = instance.Spacing,
-		elementWidth = instance.Size,
-		elementHeight = instance.Size,
-	}
+	local layout = instance.Layout
+	layout.elementSpacing = instance.Spacing
+	layout.lineSpacing = instance.Spacing
+	layout.elementSpacingX = instance.Spacing
+	layout.elementSpacingY = instance.Spacing
+	layout.elementWidth = instance.Size
+	layout.elementHeight = instance.Size
+
+	return layout
 end
 
 ---@param instance AuraContainerDisplay
@@ -327,10 +376,17 @@ function M:New(parent, unit, groups, size, spacing, moduleName)
 	instance.Spacing = spacing or 2
 	instance.Groups = groups
 	instance.Grow = "CENTER"
+	-- Owned by the instance and mutated in place by StoreStyle; callers never hand us a table
+	-- we keep, so they are free to pass a reused scratch.
 	instance.Style = {}
+	instance.Layout = {}
 	instance.Buttons = {}
 	-- button -> { Cooldown, Border, DispelSignature, Glow, GlowStyle } for restyling.
 	instance.ButtonWidgets = {}
+
+	-- Seed the db-derived style fields so buttons created before the first SetStyle (which
+	-- restyles everything anyway) still pick up the global swipe/countdown/glow settings.
+	StoreStyle(instance, EMPTY_STYLE)
 
 	local frame = CreateFrame("AuraContainer", NextFrameName("Container"), parent, "CustomAuraContainerTemplate")
 	frame:SetIgnoreParentScale(true)
@@ -356,15 +412,19 @@ function M:New(parent, unit, groups, size, spacing, moduleName)
 	return instance
 end
 
----Creates a pre-creating pool of display objects (a display or a bundle of displays per item,
----as built by createFn; resetFn parks an item - disable, hide, unanchor). Pre-creation is
----staggered on a timer so login doesn't hitch, and containers are never created mid-combat in
----practice; Acquire falls back to on-demand creation only if demand outruns the pool (which
----the 12.1 API permits, at the cost of a combat frame spike).
+---Creates a pool of display objects (a display or a bundle of displays per item, as built by
+---createFn; resetFn parks an item - disable, hide, unanchor). Pre-creation is staggered on a
+---timer so login doesn't hitch, and containers are never created mid-combat in practice;
+---Acquire falls back to on-demand creation only if demand outruns the pool (which the 12.1 API
+---permits, at the cost of a combat frame spike).
+---
+---Pre-creation does NOT start on its own: modules Init unconditionally, so a pool that filled
+---itself would build a screen's worth of containers for a module the user has switched off.
+---Call Prewarm() from the module's enable path instead (it is idempotent and cheap to repeat).
 ---@param createFn fun(): table
 ---@param resetFn fun(item: table)
 ---@param preallocateCount number
----@return table pool Pool with Acquire/Release methods.
+---@return table pool Pool with Acquire/Release/Prewarm methods.
 function M:NewPool(createFn, resetFn, preallocateCount)
 	local pool = { Free = {} }
 
@@ -383,21 +443,39 @@ function M:NewPool(createFn, resetFn, preallocateCount)
 	end
 
 	local created = 0
+	local target = preallocateCount
 	local ticker
-	ticker = C_Timer.NewTicker(0.1, function()
-		if created >= preallocateCount then
-			ticker:Cancel()
+
+	---Starts (or resumes) staggered pre-creation. Safe to call on every enable: it no-ops once
+	---the pool is full or while a fill is already running. Pass targetCount to raise the target
+	---when demand grows (e.g. the user enables a second bar, doubling displays per nameplate);
+	---it never lowers it, since the extra items are already built.
+	---@param targetCount number?
+	function pool.Prewarm(_, targetCount)
+		if targetCount and targetCount > target then
+			target = targetCount
+		end
+
+		if ticker or created >= target then
 			return
 		end
-		for _ = 1, 2 do
-			if created < preallocateCount then
-				created = created + 1
-				local item = createFn()
-				resetFn(item)
-				pool.Free[#pool.Free + 1] = item
+
+		ticker = C_Timer.NewTicker(0.1, function()
+			if created >= target then
+				ticker:Cancel()
+				ticker = nil
+				return
 			end
-		end
-	end)
+			for _ = 1, 2 do
+				if created < target then
+					created = created + 1
+					local item = createFn()
+					resetFn(item)
+					pool.Free[#pool.Free + 1] = item
+				end
+			end
+		end)
+	end
 
 	return pool
 end
@@ -472,37 +550,18 @@ function M:SetGrow(grow)
 	ApplyFlowLayout(self)
 end
 
----Builds a change-detection signature for a style, including the global db values StyleButton
----reads (so config changes to those still trigger a restyle).
----@param style AuraDisplayStyle
----@return string
-local function StyleSignature(style)
-	local db = GetDb()
-	return table.concat({
-		tostring(style.ReverseCooldown),
-		tostring(style.ShowMilliseconds),
-		tostring(style.ColorByDispelType),
-		tostring(style.Glow),
-		tostring(style.FontScale),
-		tostring(style.ShowTooltips),
-		tostring(db and db.DisableSwipe),
-		tostring(db and db.MillisecondsThreshold),
-		GetGlowStyleName(),
-	}, "|")
-end
-
 ---Stores the per-button style and applies it to existing buttons when possible. Skipped
 ---entirely when nothing changed - this runs on hot paths (every nameplate add), and restyling
 ---means ~10 API calls across every pre-created button.
+---The style is copied field-by-field into the instance's own table, so this allocates nothing
+---and callers may pass a reused scratch table.
 ---@param style AuraDisplayStyle
 function M:SetStyle(style)
-	self.Style = style or {}
+	local changed = StoreStyle(self, style or EMPTY_STYLE)
 
-	local signature = StyleSignature(self.Style)
-	if signature == self.StyleSignature and not self.RestylePending then
+	if not changed and not self.RestylePending then
 		return
 	end
-	self.StyleSignature = signature
 
 	self:RestyleButtons()
 end
@@ -625,6 +684,11 @@ end
 ---@field Glow boolean?
 ---@field FontScale number?
 ---@field ShowTooltips boolean?
+---Resolved from the global db by StoreStyle; callers never set these.
+---@field DisableSwipe boolean?
+---@field MillisecondsThreshold number?
+---@field GlowStyleName string?
+---@field Populated boolean?
 
 ---@class AuraDisplayGroupSpec
 ---@field Key string Group key (arbitrary, unique within the display).
@@ -639,5 +703,6 @@ end
 ---@field Groups AuraDisplayGroupSpec[]
 ---@field Grow string
 ---@field Style AuraDisplayStyle
+---@field Layout table
 ---@field Buttons table[]
 ---@field ButtonWidgets table<table, table>
