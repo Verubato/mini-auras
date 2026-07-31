@@ -511,35 +511,6 @@ local function ScheduleAuraDataUpdate()
 	end)
 end
 
-local function OnMatchStateChanged()
-	local matchState = C_PvP.GetActiveMatchState()
-
-	inPrepRoom = matchState == Enum.PvPMatchState.StartUp
-
-	if USE_AURA_CONTAINERS then
-		-- Prep-room garbage handling: RefreshNameplateDisplays hides the displays while
-		-- inPrepRoom is set and re-shows them when the match starts.
-		RefreshNameplateDisplays()
-	end
-
-	if not inPrepRoom then
-		return
-	end
-
-	for _, watcher in pairs(nameplateWatchers) do
-		watcher:ClearState(true)
-	end
-
-	container:ResetAllSlots()
-	if importantContainer then
-		importantContainer:ResetAllSlots()
-	end
-	hadDefensiveAlerts = false
-	hadImportantAlerts = false
-	previousDefensiveAuras = {}
-	previousImportantAuras = {}
-end
-
 local function RefreshTestAlerts()
 	if not db.Modules.AlertsModule.Icons.Enabled then
 		container:ResetAllSlots()
@@ -813,6 +784,35 @@ local function RefreshNameplateDisplays()
 	end
 
 	ChainAlertDisplays()
+end
+
+local function OnMatchStateChanged()
+	local matchState = C_PvP.GetActiveMatchState()
+
+	inPrepRoom = matchState == Enum.PvPMatchState.StartUp
+
+	if USE_AURA_CONTAINERS then
+		-- Prep-room garbage handling: RefreshNameplateDisplays hides the displays while
+		-- inPrepRoom is set and re-shows them when the match starts.
+		RefreshNameplateDisplays()
+	end
+
+	if not inPrepRoom then
+		return
+	end
+
+	for _, watcher in pairs(nameplateWatchers) do
+		watcher:ClearState(true)
+	end
+
+	container:ResetAllSlots()
+	if importantContainer then
+		importantContainer:ResetAllSlots()
+	end
+	hadDefensiveAlerts = false
+	hadImportantAlerts = false
+	previousDefensiveAuras = {}
+	previousImportantAuras = {}
 end
 
 -- 12.1 path: removes the engine sound registrations for one nameplate token.
