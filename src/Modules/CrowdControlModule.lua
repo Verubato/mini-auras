@@ -46,15 +46,6 @@ local M = {}
 
 addon.Modules.CrowdControlModule = M
 
----@class CrowdControlWatchEntry
----@field Container IconSlotContainer On 12.1 this only renders the kick icon and test icons.
----@field Watcher Watcher? Legacy path only (nil on 12.1).
----@field Display AuraContainerDisplay? 12.1 path only: CC auras render through this.
----@field KickTimer table? 12.1 path only: timer that clears the kick icon on expiry.
----@field Anchor table
----@field Unit string
----@field IsPetUnitFrame boolean? True when the anchor is a standalone player pet unit frame (opt-in via IncludePetFrame).
-
 ---@param entry CrowdControlWatchEntry
 local function UpdateWatcherAuras(entry)
 	if not entry or not entry.Watcher or not entry.Container then
@@ -606,15 +597,6 @@ local function Resume()
 	paused = false
 end
 
-function M:Hide()
-	for _, entry in pairs(watchers) do
-		entry.Container.Frame:Hide()
-		if entry.Display then
-			entry.Display:Hide()
-		end
-	end
-end
-
 -- Lifecycle
 
 ---@return boolean
@@ -860,6 +842,15 @@ local function ApplyInitialState()
 	end
 end
 
+function M:Hide()
+	for _, entry in pairs(watchers) do
+		entry.Container.Frame:Hide()
+		if entry.Display then
+			entry.Display:Hide()
+		end
+	end
+end
+
 function M:StartTesting()
 	SetTestMode(true)
 end
@@ -897,3 +888,12 @@ function M:Init()
 	InstallHooks()
 	ApplyInitialState()
 end
+
+---@class CrowdControlWatchEntry
+---@field Container IconSlotContainer On 12.1 this only renders the kick icon and test icons.
+---@field Watcher Watcher? Legacy path only (nil on 12.1).
+---@field Display AuraContainerDisplay? 12.1 path only: CC auras render through this.
+---@field KickTimer table? 12.1 path only: timer that clears the kick icon on expiry.
+---@field Anchor table
+---@field Unit string
+---@field IsPetUnitFrame boolean? True when the anchor is a standalone player pet unit frame (opt-in via IncludePetFrame).

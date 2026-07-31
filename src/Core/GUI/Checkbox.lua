@@ -2,13 +2,6 @@ local _, addon = ...
 local M = addon.Core.Framework
 local GUI = addon.Core.GUI
 
----@class CheckboxOptions
----@field Parent table
----@field LabelText string
----@field Tooltip string?
----@field GetValue fun(): boolean
----@field SetValue fun(value: boolean)
-
 ---Creates a checkbox using the specified options.
 ---@param options CheckboxOptions
 ---@return table checkbox
@@ -64,3 +57,10 @@ function M:Checkbox(options)
 
 	return checkbox
 end
+
+---@class CheckboxOptions
+---@field Parent table
+---@field LabelText string
+---@field Tooltip string?
+---@field GetValue fun(): boolean
+---@field SetValue fun(value: boolean)

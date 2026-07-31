@@ -643,15 +643,6 @@ local rules = {
 	},
 }
 
----Returns the type of a spell.  Every tracked cooldown is now a defensive
----(BigDefensive or ExternalDefensive), so this always returns "Defensive".
----Retained so callers that branch on spell type keep working without change.
----@param spellId number
----@return "Defensive"
-function rules.GetSpellType(spellId)
-	return "Defensive"
-end
-
 -- Static spec ID -> class token mapping for every spec declared above.  A hardcoded table is used
 -- (rather than GetSpecializationInfoByID) because that API can return nil for newer or
 -- environment-dependent specs.  Lets callers recover an enemy's class from their spec when
@@ -672,13 +663,6 @@ local SPEC_TO_CLASS = {
 	[71]   = "WARRIOR",     [72]   = "WARRIOR",      [73]   = "WARRIOR",
 }
 
----Returns the class token for a spec ID, or nil if the spec is unknown.
----@param specId number?
----@return string? classToken
-function rules.GetClassForSpec(specId)
-	return specId and SPEC_TO_CLASS[specId] or nil
-end
-
 -- Lazily built specId/classToken -> ordered, deduplicated spell ID list for GetTrackableSpellIds.
 local trackableSpellIdCache = {}
 
@@ -698,6 +682,40 @@ local function ExcludedByDefaultTalent(rule, specId, classToken)
 		return false
 	end
 	return talents:IsDefaultTalent(classToken, specId, excl)
+end
+
+-- Lazily built set of spell IDs whose rule(s) carry ExcludeFromEnemyTracking.
+local enemyExcludedSpellIds = nil
+
+local function BuildEnemyExcludedSet()
+	enemyExcludedSpellIds = {}
+	local function scan(ruleList)
+		for _, rule in ipairs(ruleList) do
+			if rule.SpellId and rule.ExcludeFromEnemyTracking then
+				enemyExcludedSpellIds[rule.SpellId] = true
+			end
+		end
+	end
+	for _, ruleList in pairs(rules.BySpec) do scan(ruleList) end
+	for _, ruleList in pairs(rules.ByClass) do scan(ruleList) end
+end
+
+addon.Modules.Cooldowns.Rules = rules
+
+---Returns the type of a spell.  Every tracked cooldown is now a defensive
+---(BigDefensive or ExternalDefensive), so this always returns "Defensive".
+---Retained so callers that branch on spell type keep working without change.
+---@param spellId number
+---@return "Defensive"
+function rules.GetSpellType(spellId)
+	return "Defensive"
+end
+
+---Returns the class token for a spec ID, or nil if the spec is unknown.
+---@param specId number?
+---@return string? classToken
+function rules.GetClassForSpec(specId)
+	return specId and SPEC_TO_CLASS[specId] or nil
 end
 
 ---Returns a deduplicated, ordered list of trackable spell IDs for the given spec and class.
@@ -743,22 +761,6 @@ function rules._TestResetTrackableCache()
 	for k in pairs(trackableSpellIdCache) do trackableSpellIdCache[k] = nil end
 end
 
--- Lazily built set of spell IDs whose rule(s) carry ExcludeFromEnemyTracking.
-local enemyExcludedSpellIds = nil
-
-local function BuildEnemyExcludedSet()
-	enemyExcludedSpellIds = {}
-	local function scan(ruleList)
-		for _, rule in ipairs(ruleList) do
-			if rule.SpellId and rule.ExcludeFromEnemyTracking then
-				enemyExcludedSpellIds[rule.SpellId] = true
-			end
-		end
-	end
-	for _, ruleList in pairs(rules.BySpec) do scan(ruleList) end
-	for _, ruleList in pairs(rules.ByClass) do scan(ruleList) end
-end
-
 ---Returns true if the given spell ID is flagged ExcludeFromEnemyTracking on any of its rules.
 ---The aura-match path already drops these via RulePassesTalentGates, and the always-show list
 ---skips them in GetTrackableSpellIds; this lets the signature-detection commit path (which builds
@@ -770,5 +772,3 @@ function rules.IsExcludedFromEnemyTracking(spellId)
 	if not enemyExcludedSpellIds then BuildEnemyExcludedSet() end
 	return enemyExcludedSpellIds[spellId] == true
 end
-
-addon.Modules.Cooldowns.Rules = rules

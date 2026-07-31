@@ -77,15 +77,6 @@ local TEST_CC_DISPEL_COLORS = {
 local DEFENSIVE_COLOR = { r = 0.0, g = 0.8, b = 0.0 } -- Green
 local IMPORTANT_COLOR = { r = 0.9, g = 0.1, b = 0.1 } -- Red
 
----@class NameplateData
----@field Nameplate table
----@field Bar1Container IconSlotContainer?
----@field Bar2Container IconSlotContainer?
----@field Bar1Display AuraContainerDisplay? 12.1 path only.
----@field Bar2Display AuraContainerDisplay? 12.1 path only.
----@field KickTimer table? 12.1 path only: timer that clears the kick icon on expiry.
----@field UnitToken string
-
 local previousFriendlyEnabled = {
 	Bar1 = false,
 	Bar2 = false,
@@ -135,6 +126,12 @@ local BARS = {
 -- created out of combat via the pool's staggered pre-creation, then acquired/reparented/
 -- retargeted as plates come and go, so plate churn mid-combat never creates containers.
 local displayPool
+-- Placeholder geometry for a pooled display; the real size/spacing/budgets are applied per bar
+-- on acquisition (EnsureBarDisplay).
+local DEFAULT_BAR_ICONS = 5
+local DEFAULT_BAR_SIZE = 35
+local DEFAULT_BAR_SPACING = 2
+
 -- Rough upper bound on simultaneously visible nameplates, used to size the display pool.
 local PLATE_ESTIMATE = 40
 
@@ -245,12 +242,6 @@ local function AnchorBarDisplay(display, container, nameplate, barOptions, kickA
 		kickActive
 	)
 end
-
--- Placeholder geometry for a pooled display; the real size/spacing/budgets are applied per bar
--- on acquisition (EnsureBarDisplay).
-local DEFAULT_BAR_ICONS = 5
-local DEFAULT_BAR_SIZE = 35
-local DEFAULT_BAR_SPACING = 2
 
 ---12.1 path: builds one pooled bar display with the four standard categories (partitioned by
 ---filter negation, see Core/AuraFilters). Budgets/unit/style are applied per bar on acquisition.
@@ -1125,19 +1116,6 @@ local function Resume()
 	paused = false
 end
 
-function M:GetUnitOptions(unitToken)
-	if units:IsEnemy(unitToken) then
-		-- friendly units can also be enemies in a duel
-		return nmModule.Enemy
-	end
-
-	if units:IsFriend(unitToken) then
-		return nmModule.Friendly
-	end
-
-	return nmModule.Enemy
-end
-
 local function ApplyBlizzardNameplateSettings()
 	local configureEnabled = db.ConfigureBlizzardNameplates
 	if configureEnabled == nil then
@@ -1330,6 +1308,19 @@ local function ApplyInitialState()
 	CacheEnabledModes()
 end
 
+function M:GetUnitOptions(unitToken)
+	if units:IsEnemy(unitToken) then
+		-- friendly units can also be enemies in a duel
+		return nmModule.Enemy
+	end
+
+	if units:IsFriend(unitToken) then
+		return nmModule.Friendly
+	end
+
+	return nmModule.Enemy
+end
+
 function M:StartTesting()
 	SetTestMode(true)
 end
@@ -1368,3 +1359,12 @@ function M:Init()
 	CreateEvents()
 	ApplyInitialState()
 end
+
+---@class NameplateData
+---@field Nameplate table
+---@field Bar1Container IconSlotContainer?
+---@field Bar2Container IconSlotContainer?
+---@field Bar1Display AuraContainerDisplay? 12.1 path only.
+---@field Bar2Display AuraContainerDisplay? 12.1 path only.
+---@field KickTimer table? 12.1 path only: timer that clears the kick icon on expiry.
+---@field UnitToken string

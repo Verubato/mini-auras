@@ -23,24 +23,6 @@ local ticker
 local Subscriber = {}
 Subscriber.__index = Subscriber
 
----Seeds or refreshes a token's baseline from its current enemy status, returning that status.
----@param unitToken string
----@return boolean isEnemy
-function Subscriber:Seed(unitToken)
-	local isEnemy = units:IsEnemy(unitToken)
-	self.Baselines[unitToken] = isEnemy
-	return isEnemy
-end
-
----@param unitToken string
-function Subscriber:Clear(unitToken)
-	self.Baselines[unitToken] = nil
-end
-
-function Subscriber:ClearAll()
-	wipe(self.Baselines)
-end
-
 local function Poll()
 	if IsInInstance() then
 		return
@@ -58,6 +40,24 @@ local function Poll()
 			end
 		end
 	end
+end
+
+---Seeds or refreshes a token's baseline from its current enemy status, returning that status.
+---@param unitToken string
+---@return boolean isEnemy
+function Subscriber:Seed(unitToken)
+	local isEnemy = units:IsEnemy(unitToken)
+	self.Baselines[unitToken] = isEnemy
+	return isEnemy
+end
+
+---@param unitToken string
+function Subscriber:Clear(unitToken)
+	self.Baselines[unitToken] = nil
+end
+
+function Subscriber:ClearAll()
+	wipe(self.Baselines)
 end
 
 ---Registers a poll subscriber. IsActive gates the subscriber's whole scan (typically the

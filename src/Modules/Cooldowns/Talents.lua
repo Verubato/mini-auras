@@ -30,13 +30,6 @@ local talentToSpellMapCache = {}
 -- spec+talent selection that fires via multiple events in a single tick.
 local processedTalentStrings = {}
 
--- All talent data is keyed by the realm-stripped short name (e.g. "Bob" not "Bob-Realm").
--- UnitNameUnmodified returns the full name for cross-realm players, so strip the realm here
--- before any table lookup to ensure cross-realm players' data is found correctly.
-local function ShortName(name)
-	return name:match("^([^%-]+)") or name
-end
-
 -- Cooldown/duration-affecting talent modifiers.
 -- Structure: [talentSpellId] = { {rank1_mods}, {rank2_mods}, ... }
 -- Each mod:  { SpellId = affectedSpellId, Amount = number [, Mult = true] }
@@ -451,6 +444,13 @@ local SPEC_DEFAULT_TALENT_RANKS = {
 		[1266307] = 1, -- Demonic Resilience (Devourer Demon Hunter): Blur +1 charge, nearly universal
 	},
 }
+
+-- All talent data is keyed by the realm-stripped short name (e.g. "Bob" not "Bob-Realm").
+-- UnitNameUnmodified returns the full name for cross-realm players, so strip the realm here
+-- before any table lookup to ensure cross-realm players' data is found correctly.
+local function ShortName(name)
+	return name:match("^([^%-]+)") or name
+end
 
 local function BuildTalentToSpellMap(specId)
 	if talentToSpellMapCache[specId] then

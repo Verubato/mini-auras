@@ -1,21 +1,6 @@
 local _, addon = ...
 local M = addon.Core.Framework
 
----@class ListOptions
----@field Parent table
----@field RowGap number?
----@field RowWidth number
----@field RowHeight number
----@field RemoveButtonWidth number?
----@field OnRemove fun(item: any)
-
----@class ListReturn
----@field ScrollFrame table
----@field Content table
----@field Add fun(self: table, item: any)
----@field SetItems fun(self: table, items: table)
----@field GetItems fun(self: table): table
-
 ---Creates a generic list of items
 ---@param options ListOptions
 ---@return ListReturn
@@ -126,3 +111,18 @@ function M:List(options)
 
 	return api
 end
+
+---@class ListOptions
+---@field Parent table
+---@field RowGap number?
+---@field RowWidth number
+---@field RowHeight number
+---@field RemoveButtonWidth number?
+---@field OnRemove fun(item: any)
+
+---@class ListReturn
+---@field ScrollFrame table
+---@field Content table
+---@field Add fun(self: table, item: any)
+---@field SetItems fun(self: table, items: table)
+---@field GetItems fun(self: table): table

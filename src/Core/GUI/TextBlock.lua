@@ -1,12 +1,6 @@
 local _, addon = ...
 local M = addon.Core.Framework
 
----@class TextBlockOptions
----@field Lines string[]
----@field Parent table
----@field Font string?
----@field VerticalSpacing number?
-
 ---@param options TextBlockOptions
 ---@return table container
 function M:TextBlock(options)
@@ -50,3 +44,9 @@ function M:TextBlock(options)
 
 	return container
 end
+
+---@class TextBlockOptions
+---@field Lines string[]
+---@field Parent table
+---@field Font string?
+---@field VerticalSpacing number?

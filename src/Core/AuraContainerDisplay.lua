@@ -3,11 +3,51 @@ local addonName, addon = ...
 local fontUtil = addon.Utils.FontUtil
 local wowEx = addon.Utils.WoWEx
 local growAnchors = addon.Core.GrowAnchors
+
+-- Glow styles available here. LibCustomGlow can't attach to AuraButtons (it re-parents pooled
+-- frames onto the target, and 12.1 disallows SetParent onto AuraButtons), so only the two
+-- texture-based styles from IconSlotContainer are offered; anything else falls back to the
+-- flipbook. PaddingFactor is a multiple of the icon size, matching ApplyStaticGlowPadding.
+local GLOW_STYLES = {
+	["Rotation Assist"] = {
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhite.tga",
+		BlendMode = "ADD",
+		Desaturated = false,
+		PaddingFactor = 1 / 3,
+		Animated = true,
+	},
+	["Slot Glow"] = {
+		-- The atlas carries a lot of transparent margin, so it has to extend well past the
+		-- icon edges for the halo to read correctly.
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\newplayertutorial-drag-slotgreen.tga",
+		BlendMode = "BLEND",
+		Desaturated = true,
+		PaddingFactor = 1.19,
+		Animated = false,
+	},
+}
+
+local DEFAULT_GLOW_STYLE = "Rotation Assist"
+
+-- How often the deferred restyle retry runs while any display is stale (see RestyleButtons).
+local RESTYLE_RETRY_INTERVAL = 1
+
+-- Stand-ins for nil arguments, so the setters never have to allocate. Read-only.
+local EMPTY_STYLE = {}
+local EMPTY_OPTIONS = {}
+
+-- Shared scratch handed out by GetStyleScratch. Every field is cleared on hand-out, so a caller
+-- can only ever set the fields it cares about and can never inherit a value from whoever used it
+-- last (which is exactly the bug a per-module scratch table invites).
+local styleScratch = {}
+
 local cachedDb = nil
 local frameIdCounter = 0
 local liveDisplays = {}
 local editModePreviewActive = false
 local displayEventsFrame = nil
+local pendingRestyleCount = 0
+local restyleTicker = nil
 
 -- 12.1 AuraContainer-backed icon display. One instance wraps a CreateFrame("AuraContainer")
 -- with one or more aura groups and styles the container-created AuraButtons to match the legacy
@@ -67,10 +107,6 @@ end
 -- PLAYER_REGEN_ENABLED covers the common case immediately; the ticker covers the rest
 -- (C_Secrets.ShouldAurasBeSecret has no event) and only runs while something is actually
 -- pending, so an idle UI pays nothing.
-
-local pendingRestyleCount = 0
-local restyleTicker = nil
-local RESTYLE_RETRY_INTERVAL = 1
 
 local function StopRestyleTicker()
 	if restyleTicker then
@@ -180,31 +216,6 @@ local function EnsureDisplayEvents()
 	end)
 end
 
--- Glow styles available here. LibCustomGlow can't attach to AuraButtons (it re-parents pooled
--- frames onto the target, and 12.1 disallows SetParent onto AuraButtons), so only the two
--- texture-based styles from IconSlotContainer are offered; anything else falls back to the
--- flipbook. PaddingFactor is a multiple of the icon size, matching ApplyStaticGlowPadding.
-local GLOW_STYLES = {
-	["Rotation Assist"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhite.tga",
-		BlendMode = "ADD",
-		Desaturated = false,
-		PaddingFactor = 1 / 3,
-		Animated = true,
-	},
-	["Slot Glow"] = {
-		-- The atlas carries a lot of transparent margin, so it has to extend well past the
-		-- icon edges for the halo to read correctly.
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\newplayertutorial-drag-slotgreen.tga",
-		BlendMode = "BLEND",
-		Desaturated = true,
-		PaddingFactor = 1.19,
-		Animated = false,
-	},
-}
-
-local DEFAULT_GLOW_STYLE = "Rotation Assist"
-
 ---Resolves the configured glow type to one this display can actually render.
 ---@return string
 local function GetGlowStyleName()
@@ -213,15 +224,6 @@ local function GetGlowStyleName()
 
 	return (name and GLOW_STYLES[name]) and name or DEFAULT_GLOW_STYLE
 end
-
--- Stand-ins for nil arguments, so the setters never have to allocate. Read-only.
-local EMPTY_STYLE = {}
-local EMPTY_OPTIONS = {}
-
--- Shared scratch handed out by GetStyleScratch. Every field is cleared on hand-out, so a caller
--- can only ever set the fields it cares about and can never inherit a value from whoever used it
--- last (which is exactly the bug a per-module scratch table invites).
-local styleScratch = {}
 
 ---Copies a style into the instance's own persistent style table, resolving the global db values
 ---StyleButton needs along the way, and reports whether any of it actually changed. Callers can

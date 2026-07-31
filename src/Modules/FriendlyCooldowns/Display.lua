@@ -63,10 +63,6 @@ local function IsInArena()
 	return inInstance and instanceType == "arena"
 end
 
----@class FcdStaticAbility
----@field SpellId number
----@field MaxCharges number? Effective max charges (nil = single charge)
-
 ---Returns ordered list of abilities for a unit's known spells (spec rules first, then class fallback).
 ---Used to populate static icon slots that are always visible regardless of cooldown state.
 ---@param unit string
@@ -460,3 +456,7 @@ end
 function D:ResetStaticAbilitiesCache()
 	staticAbilitiesCache = {}
 end
+
+---@class FcdStaticAbility
+---@field SpellId number
+---@field MaxCharges number? Effective max charges (nil = single charge)

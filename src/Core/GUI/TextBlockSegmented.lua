@@ -1,20 +1,6 @@
 local _, addon = ...
 local M = addon.Core.Framework
 
----@class TextLine
----@field Prefix string
----@field Suffix string
----@field Text string
-
----@class TextBlockSegmentedOptions
----@field Parent table
----@field Lines (string|TextLine)[]
----@field PrefixFont? string|table
----@field TextFont?  string|table
----@field SuffixFont? string|table
----@field VerticalSpacing? number
----@field SegmentSpacing? number
-
 ---@param options TextBlockSegmentedOptions
 function M:TextBlockSegmented(options)
 	if not options or not options.Parent or not options.Lines then
@@ -120,3 +106,17 @@ function M:TextBlockSegmented(options)
 	container:SetHeight(math.max(1, totalHeight))
 	return container
 end
+
+---@class TextLine
+---@field Prefix string
+---@field Suffix string
+---@field Text string
+
+---@class TextBlockSegmentedOptions
+---@field Parent table
+---@field Lines (string|TextLine)[]
+---@field PrefixFont? string|table
+---@field TextFont?  string|table
+---@field SuffixFont? string|table
+---@field VerticalSpacing? number
+---@field SegmentSpacing? number

@@ -60,11 +60,6 @@ local rosterGate
 ---@type TestSpell[]
 local testSpells = {}
 
----@class HealerWatchEntry
----@field Unit string
----@field Watcher Watcher? Legacy path only (nil on 12.1).
----@field Display AuraContainerDisplay? 12.1 path only.
-
 ---@class HealerCrowdControlModule : IModule
 local M = {}
 addon.Modules.HealerCrowdControlModule = M
@@ -763,3 +758,8 @@ function M:Init()
 	CreateEvents()
 	ApplyInitialState()
 end
+
+---@class HealerWatchEntry
+---@field Unit string
+---@field Watcher Watcher? Legacy path only (nil on 12.1).
+---@field Display AuraContainerDisplay? 12.1 path only.

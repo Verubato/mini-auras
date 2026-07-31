@@ -98,14 +98,6 @@ local AURA_TYPES_SIG_TABLE = {
 	[12] = "BE",   [13] = "BEC",
 }
 
----@class EvidenceSet
----@field Debuff     boolean?  a HARMFUL aura appeared near detectionTime (e.g. Forbearance from Divine Shield)
----@field Shield     boolean?  an absorb change appeared near detectionTime (e.g. Divine Protection)
----@field UnitFlags  boolean?  unit combat/immune flags changed near detectionTime (e.g. Aspect of the Turtle); suppressed when FeignDeath is the source
----@field FeignDeath boolean?  unit entered feign death near detectionTime; mutually exclusive with UnitFlags to prevent false AoT matches
----@field Cast       boolean?  the local player cast a spell near detectionTime (UNIT_SPELLCAST_SUCCEEDED fires locally only)
----@field PetAura    boolean?  the unit's pet received a BIG_DEFENSIVE aura near detectionTime (confirms Survival of the Fittest over Aspect of the Turtle)
-
 -- Renders a {key=true} set (AuraTypes / EvidenceSet) as a stable, sorted "a, b, c" string,
 -- or "none" when the set is nil or empty.  Used only for debug output.
 local function FormatBoolSet(t)
@@ -1695,3 +1687,11 @@ function B:PredictSpellId(unit, auraTypes, evidence, activeCooldowns)
 	if spellId ~= nil then return spellId, onCd end
 	return tryRuleList(rules.ByClass[classToken])
 end
+
+---@class EvidenceSet
+---@field Debuff     boolean?  a HARMFUL aura appeared near detectionTime (e.g. Forbearance from Divine Shield)
+---@field Shield     boolean?  an absorb change appeared near detectionTime (e.g. Divine Protection)
+---@field UnitFlags  boolean?  unit combat/immune flags changed near detectionTime (e.g. Aspect of the Turtle); suppressed when FeignDeath is the source
+---@field FeignDeath boolean?  unit entered feign death near detectionTime; mutually exclusive with UnitFlags to prevent false AoT matches
+---@field Cast       boolean?  the local player cast a spell near detectionTime (UNIT_SPELLCAST_SUCCEEDED fires locally only)
+---@field PetAura    boolean?  the unit's pet received a BIG_DEFENSIVE aura near detectionTime (confirms Survival of the Fittest over Aspect of the Turtle)

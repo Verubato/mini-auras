@@ -56,21 +56,6 @@ local function InferAllyKick()
 	return KICK_ICON, DEFAULT_KICK_DURATION
 end
 
----@class KickEntry
----@field Texture string
----@field DurationObject table
----@field Color table
----@field StartTime number
----@field Duration number
-
----@class KickUnitData
----@field EventFrame table
----@field Entry KickEntry?
----@field EntryTimer table?
----@field Kicked boolean
----@field Callbacks table<number, function>
----@field NextKey number
-
 ---@class KickTracker
 local M = {}
 addon.Core.KickTracker = M
@@ -324,3 +309,18 @@ playerKickFrame:SetScript("OnEvent", function(_, _, _, _, spellId)
 	end)
 	pendingPlayerKick = pending
 end)
+
+---@class KickEntry
+---@field Texture string
+---@field DurationObject table
+---@field Color table
+---@field StartTime number
+---@field Duration number
+
+---@class KickUnitData
+---@field EventFrame table
+---@field Entry KickEntry?
+---@field EntryTimer table?
+---@field Kicked boolean
+---@field Callbacks table<number, function>
+---@field NextKey number

@@ -40,6 +40,17 @@ local db
 ---@type TestSpell[]
 local testSpells = {}
 
+-- Priority stack for the portrait icon, LOWEST first: a higher-priority display simply covers
+-- the ones below it, and an empty one hides its button secretly. The filters are the shared
+-- partitioned ones, so an aura that qualifies for several categories only ever lands in the
+-- highest of them.
+local PORTRAIT_CATEGORIES = {
+	{ Key = "important", Filter = "Important" },
+	{ Key = "extdef", Filter = "ExternalDefensive" },
+	{ Key = "bigdef", Filter = "BigDefensive" },
+	{ Key = "cc", Filter = "CrowdControl" },
+}
+
 -- Important buffs are read from Blizzard's nameplate buff lists (like the nameplates/alerts
 -- modules), so a portrait can surface its unit's important spell (e.g. offensive cooldown, precog).
 local hookedAuraFrames = {}
@@ -106,17 +117,6 @@ local function ApplyMaskToLayer(layer, mask)
 		layer.Cooldown:SetSwipeTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
 	end
 end
-
--- Priority stack for the portrait icon, LOWEST first: a higher-priority display simply covers
--- the ones below it, and an empty one hides its button secretly. The filters are the shared
--- partitioned ones, so an aura that qualifies for several categories only ever lands in the
--- highest of them.
-local PORTRAIT_CATEGORIES = {
-	{ Key = "important", Filter = "Important" },
-	{ Key = "extdef", Filter = "ExternalDefensive" },
-	{ Key = "bigdef", Filter = "BigDefensive" },
-	{ Key = "cc", Filter = "CrowdControl" },
-}
 
 ---The button style every portrait display takes: cooldown direction from the options, and never
 ---a border, glow or mouse input. Returned in the wrapper's shared scratch, so use it and hand it
@@ -578,15 +578,6 @@ local function GetElvUIFrame(unit)
 	end
 
 	return nil
-end
-
----@return IconSlotContainer[]
-function M:GetContainers()
-	local result = {}
-	for _, container in pairs(containers) do
-		result[#result + 1] = container
-	end
-	return result
 end
 
 ---@param unit string
@@ -1150,6 +1141,15 @@ end
 
 local function ApplyInitialState()
 	M:Refresh()
+end
+
+---@return IconSlotContainer[]
+function M:GetContainers()
+	local result = {}
+	for _, container in pairs(containers) do
+		result[#result + 1] = container
+	end
+	return result
 end
 
 function M:StartTesting()

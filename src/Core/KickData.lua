@@ -1,12 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
 
----@class KickSpecData
----@field SpellId number?  -- interrupt spell ID; nil = spec has no interrupt
----@field KickCd number?   -- cooldown of the interrupt in seconds; nil = no interrupt
----@field IsCaster boolean
----@field IsHealer boolean
-
 ---@class KickData
 local M = {}
 addon.Core.KickData = M
@@ -118,3 +112,9 @@ M.SpecData = {
 	[257] = { SpellId = nil,    KickCd = nil,  IsCaster = false, IsHealer = true  }, -- Holy
 	[258] = { SpellId = nil,    KickCd = nil,  IsCaster = true,  IsHealer = false }, -- Shadow
 }
+
+---@class KickSpecData
+---@field SpellId number?  -- interrupt spell ID; nil = spec has no interrupt
+---@field KickCd number?   -- cooldown of the interrupt in seconds; nil = no interrupt
+---@field IsCaster boolean
+---@field IsHealer boolean

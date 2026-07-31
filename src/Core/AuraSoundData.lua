@@ -7,7 +7,6 @@ local _, addon = ...
 -- (see their headers). Used for 12.1 C_UnitAuras.AddAuraSound registrations (aura presence
 -- itself is unreadable there, but the engine can play sounds on aura transitions for us).
 
----@class AuraSoundData
 addon.Core.AuraSoundData = {
 	-- CC (1031 ids)
 	CC = {
@@ -1166,3 +1165,5 @@ addon.Core.AuraSoundData = {
 		[55233] = true, -- Vampiric Blood
 	},
 }
+
+---@class AuraSoundData

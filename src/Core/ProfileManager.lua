@@ -63,6 +63,22 @@ local function FireProfileChanged(name)
 	end
 end
 
+local function TryAutoSwitch()
+	if not db or not db.AutoSwitch then return end
+	local charKey = GetCharKey()
+	if not charKey then return end
+	local charRules = db.AutoSwitch[charKey]
+	if not charRules then return end
+	local specIdx = GetSpecialization and GetSpecialization()
+	if not specIdx then return end
+	local specId = GetSpecializationInfo(specIdx)
+	if not specId then return end
+	local target = charRules[specId]
+	if target and db.Profiles and db.Profiles[target] and target ~= db.ActiveProfile then
+		M:SwitchProfile(target)
+	end
+end
+
 -- Saves the current live db payload into the active profile slot.
 function M:SaveCurrentProfile()
 	if not db then return end
@@ -252,22 +268,6 @@ function M:UnregisterOnProfileChanged(key)
 	onProfileChangedCallbacks[key] = nil
 end
 
-local function TryAutoSwitch()
-	if not db or not db.AutoSwitch then return end
-	local charKey = GetCharKey()
-	if not charKey then return end
-	local charRules = db.AutoSwitch[charKey]
-	if not charRules then return end
-	local specIdx = GetSpecialization and GetSpecialization()
-	if not specIdx then return end
-	local specId = GetSpecializationInfo(specIdx)
-	if not specId then return end
-	local target = charRules[specId]
-	if target and db.Profiles and db.Profiles[target] and target ~= db.ActiveProfile then
-		M:SwitchProfile(target)
-	end
-end
-
 function M:Init()
 	migrator = addon.Config.Migrator
 	db = mini:GetSavedVars()
@@ -291,3 +291,4 @@ function M:Init()
 end
 
 function M:Refresh() end
+

@@ -7,34 +7,6 @@ local dbDefaults = addon.Config.Defaults
 local M = {}
 addon.Config.Migrator = M
 
----@return boolean true if any deferred migrations were applied
-function M:RunDeferredMigrations(vars)
-	local applied = false
-
-	if vars.PendingScaleMigration26 then
-		local scale = UIParent:GetScale()
-		if vars.Modules then
-			local ccModule = vars.Modules.CCModule
-			if ccModule then
-				if ccModule.Default and ccModule.Default.Icons and ccModule.Default.Icons.Size then
-					ccModule.Default.Icons.Size = math.floor(ccModule.Default.Icons.Size * scale + 0.5)
-				end
-				if ccModule.Raid and ccModule.Raid.Icons and ccModule.Raid.Icons.Size then
-					ccModule.Raid.Icons.Size = math.floor(ccModule.Raid.Icons.Size * scale + 0.5)
-				end
-			end
-			local petCCModule = vars.Modules.PetCCModule
-			if petCCModule and petCCModule.Icons and petCCModule.Icons.Size then
-				petCCModule.Icons.Size = math.floor(petCCModule.Icons.Size * scale + 0.5)
-			end
-		end
-		vars.PendingScaleMigration26 = nil
-		applied = true
-	end
-
-	return applied
-end
-
 -- Opaque per-player caches that CleanTable must not recurse into.
 -- "Profiles", "ActiveProfile", and "AutoSwitch" are included here because CleanTable
 -- would otherwise wipe all stored profile snapshots (profile names are unknown keys
@@ -156,4 +128,32 @@ function M:SoftReset()
 	vars.Version = dbDefaults.Version
 
 	return vars
+end
+
+---@return boolean true if any deferred migrations were applied
+function M:RunDeferredMigrations(vars)
+	local applied = false
+
+	if vars.PendingScaleMigration26 then
+		local scale = UIParent:GetScale()
+		if vars.Modules then
+			local ccModule = vars.Modules.CCModule
+			if ccModule then
+				if ccModule.Default and ccModule.Default.Icons and ccModule.Default.Icons.Size then
+					ccModule.Default.Icons.Size = math.floor(ccModule.Default.Icons.Size * scale + 0.5)
+				end
+				if ccModule.Raid and ccModule.Raid.Icons and ccModule.Raid.Icons.Size then
+					ccModule.Raid.Icons.Size = math.floor(ccModule.Raid.Icons.Size * scale + 0.5)
+				end
+			end
+			local petCCModule = vars.Modules.PetCCModule
+			if petCCModule and petCCModule.Icons and petCCModule.Icons.Size then
+				petCCModule.Icons.Size = math.floor(petCCModule.Icons.Size * scale + 0.5)
+			end
+		end
+		vars.PendingScaleMigration26 = nil
+		applied = true
+	end
+
+	return applied
 end

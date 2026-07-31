@@ -40,9 +40,6 @@ local worldEventsFrame
 local playerSpecEventsFrame
 local minKickCooldown = 15
 
--- per arena unit computed at arena prep
-
-
 ---@class KickTimerModule : IModule
 local M = {}
 addon.Modules.KickTimerModule = M
@@ -382,43 +379,6 @@ local function ShowTestIcons()
 	end
 end
 
----@param options KickTimerModuleOptions
-function M:IsEnabledForPlayer(options)
-	if not options or not options.Enabled then
-		return false
-	end
-
-	-- nothing toggled on
-	if not (options.Enabled.Always or options.Enabled.Caster or options.Enabled.Healer) then
-		return false
-	end
-
-	if options.Enabled.Always then
-		return true
-	end
-
-	local specId = GetPlayerSpecId()
-	if not specId then
-		-- no data, just assume enabled in this case
-		return true
-	end
-
-	local info = kickData.SpecData[specId]
-	if not info then
-		return false
-	end
-
-	if options.Enabled.Healer and info.IsHealer then
-		return true
-	end
-
-	if options.Enabled.Caster and info.IsCaster then
-		return true
-	end
-
-	return false
-end
-
 local function Pause()
 	paused = true
 end
@@ -523,6 +483,43 @@ end
 
 local function ApplyInitialState()
 	M:Refresh()
+end
+
+---@param options KickTimerModuleOptions
+function M:IsEnabledForPlayer(options)
+	if not options or not options.Enabled then
+		return false
+	end
+
+	-- nothing toggled on
+	if not (options.Enabled.Always or options.Enabled.Caster or options.Enabled.Healer) then
+		return false
+	end
+
+	if options.Enabled.Always then
+		return true
+	end
+
+	local specId = GetPlayerSpecId()
+	if not specId then
+		-- no data, just assume enabled in this case
+		return true
+	end
+
+	local info = kickData.SpecData[specId]
+	if not info then
+		return false
+	end
+
+	if options.Enabled.Healer and info.IsHealer then
+		return true
+	end
+
+	if options.Enabled.Caster and info.IsCaster then
+		return true
+	end
+
+	return false
 end
 
 function M:StartTesting()

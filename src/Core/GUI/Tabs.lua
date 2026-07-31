@@ -2,40 +2,6 @@ local _, addon = ...
 local M = addon.Core.Framework
 local GUI = addon.Core.GUI
 
----@class Tab
----@field Key string
----@field Title string
----@field Build? fun(content:table)
----@field Icon? string|number Icon texture path or fileID, shown left of the title (vertical tabs only)
-
----@class TabOptions
----@field Parent table
----@field Tabs Tab[]
----@field InitialKey? string
----@field TabHeight? number
----@field TabMinWidth? number
----@field TabSpacing? number
----@field StripHeight? number
----@field ContentInsets? table
----@field OnTabChanged? fun(key:string, index:number)
----@field ScrollBody? boolean  Wrap each tab content in a scroll frame
----@field ScrollContentHeight? number  Height of the scroll child (default 1400)
----@field ScrollContentWidth? number   Explicit width of the scroll child (default 800)
----@field TabFitToParent? boolean  Distribute tab buttons evenly across the strip width
-
----@class TabReturn
----@field Select fun(keyOrIndex: string|number)
----@field GetSelected fun(): string
----@field GetContent fun(self: table, keyOrIndex: string|number): table?
----@field GetTabButton fun(self: table, keyOrIndex: string|number): table?
----@field Tabs Tab[]
-
----@class Insets
----@field Top number?
----@field Left number?
----@field Right number?
----@field Bottom number?
-
 ---@param options TabOptions
 ---@return TabReturn
 function M:CreateTabs(options)
@@ -489,3 +455,37 @@ function M:CreateTabs(options)
 
 	return controller
 end
+
+---@class Tab
+---@field Key string
+---@field Title string
+---@field Build? fun(content:table)
+---@field Icon? string|number Icon texture path or fileID, shown left of the title (vertical tabs only)
+
+---@class TabOptions
+---@field Parent table
+---@field Tabs Tab[]
+---@field InitialKey? string
+---@field TabHeight? number
+---@field TabMinWidth? number
+---@field TabSpacing? number
+---@field StripHeight? number
+---@field ContentInsets? table
+---@field OnTabChanged? fun(key:string, index:number)
+---@field ScrollBody? boolean  Wrap each tab content in a scroll frame
+---@field ScrollContentHeight? number  Height of the scroll child (default 1400)
+---@field ScrollContentWidth? number   Explicit width of the scroll child (default 800)
+---@field TabFitToParent? boolean  Distribute tab buttons evenly across the strip width
+
+---@class TabReturn
+---@field Select fun(keyOrIndex: string|number)
+---@field GetSelected fun(): string
+---@field GetContent fun(self: table, keyOrIndex: string|number): table?
+---@field GetTabButton fun(self: table, keyOrIndex: string|number): table?
+---@field Tabs Tab[]
+
+---@class Insets
+---@field Top number?
+---@field Left number?
+---@field Right number?
+---@field Bottom number?

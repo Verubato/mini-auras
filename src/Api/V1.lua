@@ -12,11 +12,6 @@ local framesCore = addon.Core.Frames
 ---@alias MiniCCRefreshCallback fun()
 
 ---External frame provider spec passed to MiniCCApiV1:RegisterFrameProvider.
----@class MiniCCFrameProvider
----@field Name string Unique identifier for the provider.
----@field GetFrames fun(): table Returns an array of unit frames to anchor icons onto.
----@field RegisterRefreshFrames? fun(cb: MiniCCRefreshCallback) Optional; MiniCC calls this once at registration, passing a callback the provider should invoke whenever its frame list changes.
-
 ---@class MiniCCApiV1
 ---@field RegisterPredictedCallback fun(self: MiniCCApiV1, fn: MiniCCPredictedCallback)
 ---@field RegisterMatchedCallback fun(self: MiniCCApiV1, fn: MiniCCMatchedCallback)
@@ -49,3 +44,8 @@ end
 ---@field v1 MiniCCApiV1
 MiniCCApi = MiniCCApi or {}
 MiniCCApi.v1 = v1
+
+---@class MiniCCFrameProvider
+---@field Name string Unique identifier for the provider.
+---@field GetFrames fun(): table Returns an array of unit frames to anchor icons onto.
+---@field RegisterRefreshFrames? fun(cb: MiniCCRefreshCallback) Optional; MiniCC calls this once at registration, passing a callback the provider should invoke whenever its frame list changes.

@@ -2,21 +2,6 @@ local _, addon = ...
 local M = addon.Core.Framework
 local GUI = addon.Core.GUI
 
----@class EditboxOptions
----@field Parent table
----@field LabelText string
----@field Tooltip string?
----@field Numeric boolean?
----@field AllowNegatives boolean?
----@field Width number?
----@field Height number?
----@field GetValue fun(): string|number
----@field SetValue fun(value: string|number)
-
----@class EditBoxReturn
----@field EditBox table
----@field Label table
-
 ---Strips InputBoxTemplate's parchment inset art and draws a flat dark field in its place.
 ---(The template's art extends ~5px left of the frame rect; the flat field mirrors that.)
 ---@param box table An EditBox created from InputBoxTemplate.
@@ -90,3 +75,18 @@ function M:EditBox(options)
 
 	return { EditBox = box, Label = label }
 end
+
+---@class EditboxOptions
+---@field Parent table
+---@field LabelText string
+---@field Tooltip string?
+---@field Numeric boolean?
+---@field AllowNegatives boolean?
+---@field Width number?
+---@field Height number?
+---@field GetValue fun(): string|number
+---@field SetValue fun(value: string|number)
+
+---@class EditBoxReturn
+---@field EditBox table
+---@field Label table

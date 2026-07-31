@@ -3,14 +3,6 @@ local M = addon.Core.Framework
 local GUI = addon.Core.GUI
 local dropDownId = 1
 
----@class DropdownOptions
----@field Parent table
----@field Items any[]
----@field Tooltip string?
----@field GetValue fun(): string
----@field SetValue fun(value: string)
----@field GetText? fun(value: any): string
-
 ---Creates a dropdown menu using the specified options.
 ---@param options DropdownOptions
 ---@return table the dropdown menu control
@@ -145,3 +137,11 @@ function M:Dropdown(options)
 
 	error("Failed to create a dropdown control")
 end
+
+---@class DropdownOptions
+---@field Parent table
+---@field Items any[]
+---@field Tooltip string?
+---@field GetValue fun(): string
+---@field SetValue fun(value: string)
+---@field GetText? fun(value: any): string

@@ -1,11 +1,6 @@
 local _, addon = ...
 local M = addon.Core.Framework
 
----@class TextLineOptions
----@field Text string
----@field Parent table
----@field Font string?
-
 ---@param options TextLineOptions
 ---@return table control
 function M:TextLine(options)
@@ -25,3 +20,8 @@ function M:TextLine(options)
 
 	return fstring
 end
+
+---@class TextLineOptions
+---@field Text string
+---@field Parent table
+---@field Font string?

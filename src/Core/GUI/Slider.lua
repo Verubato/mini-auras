@@ -3,23 +3,6 @@ local M = addon.Core.Framework
 local GUI = addon.Core.GUI
 local sliderId = 1
 
----@class SliderOptions
----@field Parent table
----@field LabelText string
----@field Tooltip string?
----@field Min number
----@field Max number
----@field Step number
----@field Width number?
----@field GetValue fun(): number
----@field SetValue fun(value: number)
-
----@class SliderReturn
----@field Container table
----@field Label table
----@field EditBox table
----@field Slider table
-
 ---Creates a slider using the specified options.
 ---@param options SliderOptions
 ---@return SliderReturn
@@ -180,3 +163,20 @@ function M:Slider(options)
 
 	return { Slider = slider, EditBox = box, Label = label }
 end
+
+---@class SliderOptions
+---@field Parent table
+---@field LabelText string
+---@field Tooltip string?
+---@field Min number
+---@field Max number
+---@field Step number
+---@field Width number?
+---@field GetValue fun(): number
+---@field SetValue fun(value: number)
+
+---@class SliderReturn
+---@field Container table
+---@field Label table
+---@field EditBox table
+---@field Slider table

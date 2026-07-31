@@ -328,21 +328,6 @@ local function AnchorContainerArenaFrames(entry, index)
 
 end
 
----Must be called once from M:Init before any display functions are used.
-function D:Init()
-	db = mini:GetSavedVars()
-end
-
----@param active boolean
-function D:SetTestMode(active)
-	testModeActive = active
-end
-
----@param entry EcdWatchEntry
-function D:UpdateDisplay(entry)
-	UpdateDisplay(entry)
-end
-
 ---Renders combined cooldowns from a set of entries into a target container.
 ---Honours always-show (each source entry contributes its full spec/class set) and the optional
 ---filter.
@@ -400,4 +385,19 @@ end
 ---@return table?
 function D:GetArenaEnemyFrame(index)
 	return GetArenaEnemyFrame(index)
+end
+
+---@param active boolean
+function D:SetTestMode(active)
+	testModeActive = active
+end
+
+---@param entry EcdWatchEntry
+function D:UpdateDisplay(entry)
+	UpdateDisplay(entry)
+end
+
+---Must be called once from M:Init before any display functions are used.
+function D:Init()
+	db = mini:GetSavedVars()
 end

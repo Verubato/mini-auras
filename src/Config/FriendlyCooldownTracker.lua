@@ -20,6 +20,13 @@ local GROW_OPTIONS = {
 }
 
 local COLUMNS = 4
+
+local CLASS_ORDER = {
+	"DEATHKNIGHT", "DEMONHUNTER", "DRUID", "EVOKER", "HUNTER",
+	"MAGE", "MONK", "PALADIN", "PRIEST", "ROGUE",
+	"SHAMAN", "WARLOCK", "WARRIOR",
+}
+
 local columnWidth
 local enabledColumnWidth
 
@@ -367,14 +374,9 @@ local function BuildInstance(parent, anchorOptions)
 	return panel
 end
 
--- Localized class display names keyed by class token.
+-- Localized class display names keyed by class token. Stays here rather than with the other
+-- constants at the top: it is computed from LocalizedClassList, declared above.
 local CLASS_DISPLAY_NAMES = LocalizedClassList()
-
-local CLASS_ORDER = {
-	"DEATHKNIGHT", "DEMONHUNTER", "DRUID", "EVOKER", "HUNTER",
-	"MAGE", "MONK", "PALADIN", "PRIEST", "ROGUE",
-	"SHAMAN", "WARLOCK", "WARRIOR",
-}
 
 ---Collects all unique spell IDs from rules, grouped by class token.
 ---@return table<string, number[]>  classToken -> ordered list of spell IDs

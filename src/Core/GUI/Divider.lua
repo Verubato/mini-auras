@@ -2,10 +2,6 @@ local _, addon = ...
 local M = addon.Core.Framework
 local GUI = addon.Core.GUI
 
----@class DividerOptions
----@field Parent table
----@field Text string
-
 ---Creates a horizontal line with a label.
 ---@param options DividerOptions
 ---@return table
@@ -46,3 +42,7 @@ function M:Divider(options)
 
 	return container
 end
+
+---@class DividerOptions
+---@field Parent table
+---@field Text string

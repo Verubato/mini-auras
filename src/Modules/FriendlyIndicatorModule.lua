@@ -53,20 +53,6 @@ local M = {}
 
 addon.Modules.FriendlyIndicatorModule = M
 
----@class FriendlyIndicatorWatchEntry
----@field Container IconSlotContainer On 12.1 this only renders the kick icon and test icons.
----@field Watcher Watcher? Legacy path only (nil on 12.1).
----@field Display AuraContainerDisplay? 12.1 path only: CC/defensive auras render through this.
----@field KickTimer table? 12.1 path only: timer that clears the kick icon on expiry.
----@field Anchor table
----@field Unit string
----@field KickKey number
-
----@class FriendlyIndicatorModuleOptions
----@field ShowDefensives boolean
----@field ShowImportant boolean 12.1 only: Blizzard-flagged important buffs.
----@field ShowCC boolean
-
 ---@param entry FriendlyIndicatorWatchEntry
 local function UpdateWatcherAuras(entry)
 	if not entry or not entry.Watcher or not entry.Container then
@@ -777,6 +763,20 @@ function M:Init()
 	InstallHooks()
 	ApplyInitialState()
 end
+
+---@class FriendlyIndicatorWatchEntry
+---@field Container IconSlotContainer On 12.1 this only renders the kick icon and test icons.
+---@field Watcher Watcher? Legacy path only (nil on 12.1).
+---@field Display AuraContainerDisplay? 12.1 path only: CC/defensive auras render through this.
+---@field KickTimer table? 12.1 path only: timer that clears the kick icon on expiry.
+---@field Anchor table
+---@field Unit string
+---@field KickKey number
+
+---@class FriendlyIndicatorModuleOptions
+---@field ShowDefensives boolean
+---@field ShowImportant boolean 12.1 only: Blizzard-flagged important buffs.
+---@field ShowCC boolean
 
 ---@class FriendlyIndicatorModule
 ---@field Init fun(self: FriendlyIndicatorModule)

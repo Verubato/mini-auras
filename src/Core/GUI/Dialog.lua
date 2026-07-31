@@ -3,12 +3,6 @@ local L = addon.L
 local M = addon.Core.Framework
 local dialog
 
----@class DialogOptions
----@field Title string
----@field Text string
----@field Width number?
----@field Height number?
-
 local function GetOrCreateDialog()
 	if dialog then
 		return dialog
@@ -101,3 +95,9 @@ function M:HideDialog()
 		dialog:Hide()
 	end
 end
+
+---@class DialogOptions
+---@field Title string
+---@field Text string
+---@field Width number?
+---@field Height number?
