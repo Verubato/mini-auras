@@ -7,6 +7,12 @@ local frames = addon.Core.Frames
 local config = addon.Config
 local migrator = addon.Config.Migrator
 local testModeManager = addon.Modules.TestModeManager
+-- Every module Inits and Refreshes on every client; none of them are conditionally listed here.
+-- Client support is each module's own decision, made once at file load from
+-- WoWEx:UseAuraContainers() and enforced by early-returning from Init/Refresh/StartTesting. So a
+-- module in this list may legitimately do nothing at all: TrinketsModule is 12.1-only, and the
+-- two cooldown trackers (which infer cooldowns from aura data) are legacy-only.
+-- TEMPORARY: the cooldown trackers leave this list when the legacy path is removed.
 local modules = {
 	addon.Modules.CrowdControlModule,
 	addon.Modules.HealerCrowdControlModule,

@@ -22,9 +22,11 @@ function M:Build(panel, options)
 	-- the same vertical lines.
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
 	local db = mini:GetSavedVars()
-	-- 12.1: the warning text and sound fire on "a healer became CC'd", which addons can no
-	-- longer detect (aura presence is secret), so their options are hidden there. TEMPORARY:
-	-- remove the gates with the legacy path once 12.1 is live.
+	-- 12.1: the warning text (and its Text Size slider) is hidden - it needs the addon to know a
+	-- healer is CC'd, and aura presence is secret there. The SOUND options stay visible: the
+	-- engine plays those itself via AddAuraSound, so that feature survived. Hiding the text also
+	-- frees a column, which is why several controls below are positioned differently per path.
+	-- TEMPORARY: remove the gates with the legacy path once 12.1 is live.
 	local useAuraContainers = addon.Utils.WoWEx:UseAuraContainers()
 
 	local lines = mini:TextBlock({

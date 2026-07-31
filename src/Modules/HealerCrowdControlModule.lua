@@ -17,8 +17,14 @@ local rc = LibStub("LibRangeCheck-3.0")
 -- secret). The sound survives via C_UnitAuras.AddAuraSound: the ENGINE plays a sound when a
 -- known CC aura lands on a registered healer, without the addon ever reading aura state -
 -- registrations are per (unit, spellId), fed from the generated Core/AuraSoundData CC list.
--- The IconSlotContainer is kept for test mode. TEMPORARY dual path: remove the watcher branch
--- once 12.1 is live everywhere.
+-- The IconSlotContainer is kept for test mode.
+--
+-- The battleground 40-yard range gate (IsInRange, below) is also dropped on 12.1: it works by
+-- skipping healers when rendering, and rendering is the engine's job there. In a battleground
+-- every healer in the raid now gets a container, not just the nearby ones. Re-adding it would
+-- mean SetEnabled(false) on out-of-range healers' displays on a range poll - possible, but it
+-- was never wired up, so don't read the missing gate as an oversight in the sound/display code.
+-- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local paused = false
 -- 12.1 path: AddAuraSound handles keyed by healer unit, so a healer joining or leaving only

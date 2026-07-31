@@ -10,6 +10,11 @@ addon.Utils.WoWEx = M
 -- the AuraContainer system. True when running on a 12.1+ client, where all aura display must go
 -- through AuraContainers and aura-reading modules (party cooldown tracking) must be disabled.
 -- TEMPORARY dual-path support: remove the 12.0 path once 12.1 is live everywhere.
+--
+-- Resolved once at file load, and most modules then cache it into their own file-load-time
+-- `USE_AURA_CONTAINERS` local. It can never change during a session, so this is intentional -
+-- but it does mean tests must set the build number BEFORE loading any module, or the module
+-- captures the wrong path and no amount of later re-stubbing will move it.
 local INTERFACE_VERSION = select(4, GetBuildInfo())
 M.IsAuraContainerEra = INTERFACE_VERSION >= 120100
 

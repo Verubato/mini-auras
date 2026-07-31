@@ -567,6 +567,9 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	StoreStyle(instance, EMPTY_STYLE)
 
 	local frame = CreateFrame("AuraContainer", NextFrameName("Container"), parent, "CustomAuraContainerTemplate")
+	-- Icon sizes are configured in absolute pixels, so a scaled parent (a nameplate, a unit frame
+	-- addon's scaled header) would silently change them. Displays that SHOULD scale with their host
+	-- (the portrait icons) turn this back off after New.
 	frame:SetIgnoreParentScale(true)
 	frame.MiniCCModule = moduleName or nil
 	instance.Frame = frame
@@ -583,6 +586,10 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 		frame:AddAuraGroup(group.Key, group.FilterString, {
 			maxFrameCount = group.MaxIcons or 3,
 			candidateFilters = group.CandidateFilters,
+			-- Aura instance IDs increase monotonically as auras are applied, so sorting on them
+			-- alone is "oldest first" - the same order the legacy watcher produced (it kept the
+			-- game's order and broke ties by instance id). The alternatives all sort by data the
+			-- addon can't see, which makes them impossible to reason about or match in test mode.
 			sortMethod = AuraContainerSortMethod.AuraInstanceIDOnly,
 			sortDirection = group.SortDirection or AuraContainerSortDirection.Normal,
 			initializeFrame = function(button)

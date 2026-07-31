@@ -15,13 +15,19 @@ local moduleName = addon.Utils.ModuleName
 local units = addon.Utils.Units
 local auras = addon.Utils.Auras
 -- 12.1 path: the alert bars become rows of per-nameplate AuraContainers chained off the movable
--- bar frames (one container can only track one unit, and aura data can't be read to aggregate).
--- Sound and TTS are disabled there: both fire on "a new aura appeared", which is exactly the
--- information 12.1 makes secret. (A future path for sound is the 12.1 AddAuraAppliedSound API.)
--- The Blizzard nameplate buffList scan is replaced by a HELPFUL|IMPORTANT container group, which
--- also obsoletes the mind-control and purgeable-garbage workarounds on this path. The legacy
--- IconSlotContainer bars stay as drag anchors and test-mode renderers. TEMPORARY dual path:
--- remove the watcher branch once 12.1 is live everywhere.
+-- bar frames. The bar can't stay a single aggregated list there because a container tracks
+-- exactly one unit and there is no readable aura data to merge across units - so instead of one
+-- bar of N icons, it is N containers laid end to end, and an enemy with no alerts collapses to
+-- nothing. The Blizzard nameplate buffList scan is replaced by a HELPFUL|IMPORTANT container
+-- group, which also obsoletes the mind-control and purgeable-garbage workarounds on this path.
+-- The legacy IconSlotContainer bars stay as drag anchors and test-mode renderers.
+--
+-- Sounds DO work on 12.1, just inverted: the addon can't notice "a new aura appeared", but
+-- C_UnitAuras.AddAuraSound lets the ENGINE play a sound when a named spell lands on a registered
+-- unit. See alertSoundsByToken. TTS has no such escape hatch (it needs the spell NAME at the
+-- moment it appears) and stays disabled, as do class colours on icons (UnitClass is secret while
+-- the unit's identity is).
+-- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local testModeActive = false
 local paused = false
@@ -729,6 +735,10 @@ local function ChainAlertDisplays()
 	-- Two passes so combined mode matches the legacy ordering: every unit's defensives first,
 	-- then every unit's importants continuing the same row (split mode puts importants on
 	-- their own bar instead).
+	--
+	-- Note the first display in each row anchors point -> POINT on the bar frame, not
+	-- point -> relativePoint: it starts AT the bar's pinned edge rather than continuing past it,
+	-- since the (zero-width) bar frame is the row's origin and not a preceding icon.
 	local prevMain
 	for _, token in ipairs(tokens) do
 		local defFrame = nameplateDisplays[token].Def.Frame

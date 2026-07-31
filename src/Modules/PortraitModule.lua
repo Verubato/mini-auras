@@ -12,14 +12,21 @@ local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
 local units = addon.Utils.Units
 local auras = addon.Utils.Auras
--- 12.1 path: each portrait gets an AuraContainer with four manually-anchored AuraSlots (cc, big
--- defensive, external defensive, important) covering the portrait. The legacy strict priority is
--- expressed with frame levels: kick (IconSlotContainer, topmost) > cc > big > external >
--- important - a higher-priority icon simply covers the ones below, and empty slots hide
--- themselves (secretly). Slot containers carry no aura groups, so none of the group-related
--- layout restrictions apply. The Blizzard nameplate buffList scan for important buffs is
--- replaced by the HELPFUL|IMPORTANT slot. TEMPORARY dual path: remove the watcher branch once
--- 12.1 is live everywhere.
+-- 12.1 path: a portrait shows ONE icon, but which aura wins has to be decided by the engine
+-- (aura presence is secret), so it gets FOUR single-icon containers stacked on top of each other -
+-- one per category, cc / big defensive / external defensive / important. The legacy strict
+-- priority becomes frame levels: kick (IconSlotContainer, topmost) > cc > big > external >
+-- important. A higher-priority container's button simply covers the ones below it, and a
+-- container with no matching aura hides its own button secretly, revealing the next one down.
+-- The Blizzard nameplate buffList scan for important buffs is replaced by the HELPFUL|IMPORTANT
+-- container.
+--
+-- Not AuraSlots, despite those being the documented fit for "one icon, top-priority aura":
+-- a 4-slot portrait container rendered NOTHING on the 12.1 PTR - no errors, AddAuraSlot existed
+-- and returned buttons, and groups worked on the same client. No known addon uses slots, so
+-- there is no outside verification either. RULE: don't reach for AuraSlots until they are proven
+-- on a live build; a group with maxFrameCount = 1 is the same thing on the verified API.
+-- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local testModeActive = false
 local paused = false

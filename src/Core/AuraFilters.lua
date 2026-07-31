@@ -12,6 +12,19 @@ local _, addon = ...
 -- These strings are shared by every module that shows the standard categories, which matters
 -- because AddAuraGroup validates the filter string loudly - if a token or a negation turns out
 -- not to be supported on a live build, it is fixed here once rather than in four modules.
+--
+-- WHY THESE ARE FILTER STRINGS AND NOT SPELL-ID LISTS
+-- The obvious way to track "the CC spells we care about" would be a candidateFilters
+-- includeSpellIDs map, and it is a trap: the engine only APPLIES spell-ID include/exclude maps
+-- when the aura is helpful on an assistable unit or harmful on a non-assistable one. Everywhere
+-- else they are SILENTLY SKIPPED - no error, the filter just does nothing and every aura passes.
+-- For this addon that kills the main case outright: debuffs on friendlies (party/raid CC), which
+-- is exactly what CrowdControl/FriendlyIndicator/HealerCC track. Blizzard's CROWD_CONTROL /
+-- BIG_DEFENSIVE / EXTERNAL_DEFENSIVE / IMPORTANT flags are the only curation available there, so
+-- the addon no longer decides which spells count - the game does.
+-- Filters that are NOT identity-gated and therefore always safe: dispel types and the booleans
+-- (isStealable, isBossAura, nameplateShowPersonal, maxDuration, ...). Precognition uses the
+-- maxDuration one for exactly this reason.
 
 ---@class AuraFilters
 local M = {}
