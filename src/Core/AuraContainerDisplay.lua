@@ -137,6 +137,10 @@ end
 ---@param instance AuraContainerDisplay
 ---@param button table
 local function InitializeButton(instance, button)
+	-- Composite each button's icon/cooldown/border/glow in a single render pass. Must happen
+	-- here: initializeFrame is the only place AuraButtons are guaranteed not forbidden.
+	button:SetFlattensRenderLayers(true)
+
 	-- Icon on the lowest layer, swipe + border above, matching CreateLayer in IconSlotContainer.
 	local icon = button:CreateTexture(nil, "BACKGROUND", nil, 1)
 	icon:SetAllPoints(button)

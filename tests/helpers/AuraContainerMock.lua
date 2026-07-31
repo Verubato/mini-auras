@@ -271,6 +271,7 @@ function M.NewFrame(frameType, name, parent, template)
 	end
 	function frame:SetIgnoreParentScale() end
 	function frame:SetIgnoreParentAlpha() end
+	function frame:SetFlattensRenderLayers() end
 	function frame:SetAlpha() end
 	function frame:SetAlphaFromBoolean() end
 	function frame:HookScript() end

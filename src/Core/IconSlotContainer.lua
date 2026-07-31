@@ -822,6 +822,10 @@ function M:SetCount(newCount)
 		local slotFrame = CreateFrame(self.MasqueGroup and "Button" or "Frame", NextFrameName("Slot"), self.Frame)
 		slotFrame:SetSize(self.Size, self.Size)
 		slotFrame:EnableMouse(false)
+		-- Composite the slot's icon/cooldown/border/glow regions in a single render pass.
+		-- Applied per slot (not per bar) so an animating cooldown swipe only re-composites
+		-- its own icon rather than the whole bar.
+		slotFrame:SetFlattensRenderLayers(true)
 
 		self.Slots[i] = {
 			Frame = slotFrame,
