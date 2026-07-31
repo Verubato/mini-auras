@@ -39,6 +39,7 @@ local lastUnitFlagsTime      = {}  ---@type table<string, number>
 local lastDebuffTime         = {}  ---@type table<string, number>
 local lastCastTime           = {}  ---@type table<string, number>
 local lastShieldTime         = {}  ---@type table<string, number>
+local absorbFrame
 -- True while in the arena prep room (PvPMatchState.StartUp). Auras are still tracked so pre-applied
 -- buffs aren't treated as new when the gates open, but cooldown prediction/commit is suppressed -
 -- otherwise pre-existing enemy buffs seen as the watcher starts would falsely trigger cooldowns.
@@ -679,8 +680,16 @@ function M:Refresh()
 		or moduleUtil:IsModuleEnabled(moduleName.EnemyCooldownTracker)
 
 	if not moduleEnabled then
+		-- The absorb event is global (fires for every unit); keep it off while disabled.
+		if absorbFrame then
+			absorbFrame:UnregisterAllEvents()
+		end
 		DisableAll()
 		return
+	end
+
+	if absorbFrame then
+		absorbFrame:RegisterEvent("UNIT_ABSORB_AMOUNT_CHANGED")
 	end
 
 	EnsureAllEntries()
@@ -798,7 +807,7 @@ function M:Init()
 	-- Track absorb changes on enemy units as Shield evidence (e.g. AMS on a DK, Divine Protection).
 	-- Registered globally (same approach as FriendlyCooldowns Observer) because UNIT_ABSORB_AMOUNT_CHANGED
 	-- fires per-unit but only as a global event - the unit is passed as the first argument.
-	local absorbFrame = CreateFrame("Frame")
+	absorbFrame = CreateFrame("Frame")
 	absorbFrame:SetScript("OnEvent", function(_, _, unit)
 		if watchEntries[unit] then
 			lastShieldTime[unit] = GetTime()

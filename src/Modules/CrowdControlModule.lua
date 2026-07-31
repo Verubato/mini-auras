@@ -690,11 +690,16 @@ function M:Refresh()
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
 	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
 
-	-- If both are off, disable everything and bail early
+	-- If both are off, disable everything and bail early. Events stay unregistered while
+	-- disabled; the addon-wide Refresh (config, world change, raid flip) re-runs this gate.
 	if not moduleEnabled and not petEnabled then
+		eventsFrame:UnregisterAllEvents()
 		DisableWatchers()
 		return
 	end
+
+	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+	eventsFrame:RegisterEvent("UNIT_PET")
 
 	EnableWatchers()
 	EnsureWatchers()

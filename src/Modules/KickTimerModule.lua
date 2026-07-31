@@ -354,9 +354,16 @@ local function EnableDisable()
 end
 
 local function OnEnteringWorld()
+	-- Prep data only exists inside arenas; keep the event off elsewhere. Registered even
+	-- while the module itself is disabled, as they might re-enable before gates open.
+	if IsArena() then
+		matchEventsFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+	else
+		matchEventsFrame:UnregisterAllEvents()
+	end
+
 	EnableDisable()
 
-	-- always prep event if disabled, as they might re-enable before gates open
 	if IsArena() then
 		OnArenaPrep()
 	end

@@ -478,6 +478,15 @@ local function EnableDisable()
 	local options = db.Modules.HealerCCModule
 	local moduleEnabled = moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl)
 
+	-- Events stay unregistered while disabled; the addon-wide Refresh re-runs this gate.
+	if eventsFrame then
+		if moduleEnabled then
+			eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+		else
+			eventsFrame:UnregisterAllEvents()
+		end
+	end
+
 	if testModeActive then
 		if not moduleEnabled then
 			healerAnchor:Hide()

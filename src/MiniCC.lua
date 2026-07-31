@@ -24,6 +24,7 @@ local modules = {
 }
 local eventsFrame
 local db
+local lastIsInRaid = false
 
 local function NotifyChanges()
 	if db.NotifiedChanges then
@@ -96,8 +97,18 @@ local function OnEvent(_, event)
 			end
 		end
 	elseif event == "PLAYER_ENTERING_WORLD" then
+		lastIsInRaid = IsInRaid()
 		NotifyChanges()
 		addon:Refresh()
+	elseif event == "GROUP_ROSTER_UPDATE" then
+		-- Modules unregister their events entirely while disabled, and IsModuleEnabled depends
+		-- on raid membership; re-evaluate every module's gate when it flips so a disabled
+		-- module can wake back up (instance changes are covered by PLAYER_ENTERING_WORLD).
+		local inRaid = IsInRaid()
+		if inRaid ~= lastIsInRaid then
+			lastIsInRaid = inRaid
+			addon:Refresh()
+		end
 	end
 end
 
@@ -121,6 +132,7 @@ local function OnAddonLoaded()
 	eventsFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 	eventsFrame:RegisterEvent("PLAYER_LOGIN")
 	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
 	db = mini:GetSavedVars()
 end

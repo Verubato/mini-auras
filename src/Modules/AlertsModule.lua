@@ -1159,16 +1159,32 @@ end
 
 local function EnableDisable()
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)
+	local inInstance, instanceType = IsInInstance()
+
+	-- Arena, battlegrounds, and the open world all read enemy nameplate watchers.
+	local nameplatesNeeded = moduleEnabled and (instanceType == "arena" or instanceType == "pvp" or not inInstance)
+
+	-- Plate events stay unregistered while inactive; ZONE_CHANGED_NEW_AREA and
+	-- PVP_MATCH_STATE_CHANGED stay registered as they drive this gate.
+	if eventsFrame then
+		if nameplatesNeeded then
+			eventsFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+			eventsFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+		else
+			eventsFrame:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
+			eventsFrame:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
+			-- Plate events maintain the duel baselines; drop them so reactivation reseeds
+			-- via RebuildNameplateWatchers instead of trusting stale tokens.
+			wipe(nameplateEnemyState)
+		end
+	end
 
 	if not moduleEnabled then
 		DisableWatchers()
 		return
 	end
 
-	local inInstance, instanceType = IsInInstance()
-
-	-- Arena, battlegrounds, and the open world all read enemy nameplate watchers.
-	if instanceType == "arena" or instanceType == "pvp" or not inInstance then
+	if nameplatesNeeded then
 		RebuildNameplateWatchers()
 	else
 		ClearNamePlateWatchers()
@@ -1376,9 +1392,8 @@ function M:Init()
 	end
 
 	eventsFrame = CreateFrame("Frame")
+	-- NAME_PLATE_UNIT_ADDED/REMOVED are registered by EnableDisable, and only while active.
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
-	eventsFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-	eventsFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
 	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 	eventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)

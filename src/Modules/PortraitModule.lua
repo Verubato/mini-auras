@@ -23,6 +23,12 @@ local testModeActive = false
 local paused = false
 local enabled = false
 local containers = {}
+local nameplateEvents
+local unitChangeEvents
+-- Init registers the frames' events unconditionally, so the gate starts registered.
+local eventsRegistered = true
+-- Forward-declared: M:Refresh calls it but it needs HookNameplateAuraFrame, defined later.
+local UpdateEventSubscriptions
 ---@type { string: Watcher }
 local watchers = {}
 -- Callbacks to re-render each container attached to "target"; populated by Attach/Attach* calls.
@@ -923,6 +929,8 @@ end
 function M:Refresh()
 	enabled = moduleUtil:IsModuleEnabled(ModuleName.Portrait)
 
+	UpdateEventSubscriptions(enabled)
+
 	-- If disabled, disable watchers and clear
 	if not enabled then
 		DisableWatchers()
@@ -1017,6 +1025,39 @@ local function HookNameplateAuraFrame(unitToken)
 	end
 end
 
+-- Registers/unregisters the target/focus and nameplate events with the module's enabled
+-- state, so a disabled portrait module receives no events at all. The addon-wide Refresh
+-- (config, world change, raid flip) re-runs this gate.
+function UpdateEventSubscriptions(isEnabled)
+	if isEnabled == eventsRegistered then
+		return
+	end
+	eventsRegistered = isEnabled
+
+	if nameplateEvents then
+		if isEnabled then
+			nameplateEvents:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+			-- Hook plates that spawned while disabled - their add events were never seen.
+			for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
+				if nameplate.unitToken then
+					HookNameplateAuraFrame(nameplate.unitToken)
+				end
+			end
+		else
+			nameplateEvents:UnregisterAllEvents()
+		end
+	end
+
+	if unitChangeEvents then
+		if isEnabled then
+			unitChangeEvents:RegisterEvent("PLAYER_TARGET_CHANGED")
+			unitChangeEvents:RegisterEvent("PLAYER_FOCUS_CHANGED")
+		else
+			unitChangeEvents:UnregisterAllEvents()
+		end
+	end
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 
@@ -1061,7 +1102,7 @@ function M:Init()
 	-- Hook each nameplate's aura refresh so important buffs on the target/focus update live.
 	-- Legacy only: on 12.1 the important slot tracks its unit itself.
 	if not USE_AURA_CONTAINERS then
-		local nameplateEvents = CreateFrame("Frame")
+		nameplateEvents = CreateFrame("Frame")
 		nameplateEvents:RegisterEvent("NAME_PLATE_UNIT_ADDED")
 		nameplateEvents:SetScript("OnEvent", function(_, _, unitToken)
 			HookNameplateAuraFrame(unitToken)
@@ -1072,7 +1113,7 @@ function M:Init()
 	-- changes (the legacy watchers registered these events themselves); Blizzard's container
 	-- mixin exposes UpdateAllAuras for exactly this.
 	if USE_AURA_CONTAINERS then
-		local unitChangeEvents = CreateFrame("Frame")
+		unitChangeEvents = CreateFrame("Frame")
 		unitChangeEvents:RegisterEvent("PLAYER_TARGET_CHANGED")
 		unitChangeEvents:RegisterEvent("PLAYER_FOCUS_CHANGED")
 		unitChangeEvents:SetScript("OnEvent", function(_, event)

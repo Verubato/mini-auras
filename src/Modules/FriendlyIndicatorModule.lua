@@ -589,11 +589,15 @@ function M:Refresh()
 
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator)
 
-	-- If disabled, disable watchers and hide everything
+	-- If disabled, disable watchers and hide everything. Events stay unregistered while
+	-- disabled; the addon-wide Refresh (config, world change, raid flip) re-runs this gate.
 	if not moduleEnabled then
+		eventsFrame:UnregisterAllEvents()
 		DisableWatchers()
 		return
 	end
+
+	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
 	-- Module is enabled, ensure watchers are enabled
 	EnableWatchers()

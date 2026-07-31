@@ -8,6 +8,8 @@ addon.Core.TrinketsTracker = M
 local DEFAULT_SPELL_ID = 336126
 local defaultIcon
 local callbacks = {}
+local eventsFrame
+local eventsRegistered = false
 
 local function FireCallbacks(unit)
 	for _, fn in ipairs(callbacks) do
@@ -34,13 +36,39 @@ function M:RegisterCallback(fn)
 	callbacks[#callbacks + 1] = fn
 end
 
-function M:Refresh() end
+function M:Refresh()
+	if not eventsFrame then
+		return
+	end
+
+	-- Trinket cooldown data only exists inside arenas, so all events stay unregistered
+	-- everywhere else. Arena transitions always pass a loading screen, which re-runs this
+	-- via the addon-wide Refresh.
+	local _, instanceType = IsInInstance()
+	local inArena = instanceType == "arena"
+
+	if inArena == eventsRegistered then
+		return
+	end
+	eventsRegistered = inArena
+
+	if inArena then
+		eventsFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
+		eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
+		eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+		-- Replaces the PLAYER_ENTERING_WORLD fire the tracker no longer listens for.
+		FireCallbacks(nil)
+	else
+		eventsFrame:UnregisterAllEvents()
+	end
+end
 
 function M:Init()
 	defaultIcon = C_Spell.GetSpellTexture(DEFAULT_SPELL_ID)
 
-	local frame = CreateFrame("Frame")
-	frame:SetScript("OnEvent", function(_, event, ...)
+	-- Events are registered by Refresh, and only inside arenas.
+	eventsFrame = CreateFrame("Frame")
+	eventsFrame:SetScript("OnEvent", function(_, event, ...)
 		if event == "PVP_MATCH_STATE_CHANGED" then
 			local matchState = C_PvP.GetActiveMatchState()
 			if matchState == Enum.PvPMatchState.StartUp or matchState == Enum.PvPMatchState.Engaged then
@@ -49,14 +77,10 @@ function M:Init()
 		elseif event == "ARENA_COOLDOWNS_UPDATE" then
 			local unit = ...
 			FireCallbacks((unit and unit ~= "") and unit or nil)
-		elseif event == "PLAYER_ENTERING_WORLD" or event == "GROUP_ROSTER_UPDATE" then
+		elseif event == "GROUP_ROSTER_UPDATE" then
 			FireCallbacks(nil)
 		end
 	end)
-	frame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
-	frame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
-	frame:RegisterEvent("PLAYER_ENTERING_WORLD")
-	frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 end
 
 ---@class TrinketsTracker

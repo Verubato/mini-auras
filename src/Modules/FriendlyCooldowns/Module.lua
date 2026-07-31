@@ -239,9 +239,12 @@ function M:Refresh()
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.FriendlyCooldownTracker)
 
 	if not moduleEnabled then
+		observer:SetAbsorbTrackingEnabled(false)
 		DisableAll()
 		return
 	end
+
+	observer:SetAbsorbTrackingEnabled(true)
 
 	EnsureAllEntries()
 	EnableAll()
