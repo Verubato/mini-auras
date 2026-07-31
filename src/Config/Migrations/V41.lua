@@ -282,3 +282,52 @@ function M:UpgradeToVersion56(vars)
 	return true
 end
 
+local KICK_DUPE_ZONES = { "World", "Arena", "BattleGrounds", "Dungeons", "Raid" }
+
+function M:UpgradeToVersion57(vars)
+	if vars.Version ~= 56 then return false end
+
+	-- The CC module always draws the kick icon (it has no toggle), so anyone running it in the
+	-- same zone as the friendly indicator with ShowKicks on got two identical interrupt icons
+	-- on the same unit frames. Drop the indicator's copy where the two overlap; CC keeps its own.
+	local function DisableDuplicateKicks(modules)
+		local cc = modules and modules.CCModule
+		local fi = modules and modules.FriendlyIndicatorModule
+		if not cc or not fi or not cc.Enabled or not fi.Enabled then
+			return
+		end
+
+		local overlaps = false
+		for _, zone in ipairs(KICK_DUPE_ZONES) do
+			if cc.Enabled[zone] and fi.Enabled[zone] then
+				overlaps = true
+				break
+			end
+		end
+
+		if not overlaps then
+			return
+		end
+
+		-- ShowKicks is per instance profile (Default/Raid) and either can apply in any zone -
+		-- the split is group size, not zone - so an overlap anywhere turns both off.
+		if fi.Default then
+			fi.Default.ShowKicks = false
+		end
+		if fi.Raid then
+			fi.Raid.ShowKicks = false
+		end
+	end
+
+	DisableDuplicateKicks(vars.Modules)
+
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			DisableDuplicateKicks(profile.Modules)
+		end
+	end
+
+	vars.Version = 57
+	return true
+end
+

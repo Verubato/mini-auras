@@ -506,6 +506,52 @@ fw.describe("Migrator - individual migrations", function()
 		assert(vars.Modules.FriendlyIndicatorModule.Default.ShowImportant == false, "off follows off")
 		assert(vars.Modules.FriendlyIndicatorModule.Raid.ShowImportant == true, "on follows on")
 	end)
+
+	fw.it("v57 turns off FriendlyIndicator kicks where the CC module already shows them", function()
+		local vars = {
+			Version = 56,
+			Modules = {
+				CCModule = { Enabled = { World = false, Arena = true } },
+				FriendlyIndicatorModule = {
+					Enabled = { World = true, Arena = true },
+					Default = { ShowKicks = true },
+					Raid = { ShowKicks = true },
+				},
+			},
+			Profiles = {
+				Other = {
+					Modules = {
+						CCModule = { Enabled = { Arena = false } },
+						FriendlyIndicatorModule = {
+							Enabled = { Arena = true },
+							Default = { ShowKicks = true },
+						},
+					},
+				},
+			},
+		}
+		assert(migrator:UpgradeToVersion57(vars) == true)
+		local fi = vars.Modules.FriendlyIndicatorModule
+		assert(fi.Default.ShowKicks == false and fi.Raid.ShowKicks == false, "overlap in arena disables both profiles")
+		assert(vars.Profiles.Other.Modules.FriendlyIndicatorModule.Default.ShowKicks == true, "no overlap, kicks kept")
+	end)
+
+	fw.it("v57 leaves kicks alone when the CC module is disabled everywhere", function()
+		local vars = {
+			Version = 56,
+			Modules = {
+				CCModule = { Enabled = { World = false, Arena = false } },
+				FriendlyIndicatorModule = {
+					Enabled = { World = true, Arena = true },
+					Default = { ShowKicks = true },
+					Raid = { ShowKicks = true },
+				},
+			},
+		}
+		assert(migrator:UpgradeToVersion57(vars) == true)
+		assert(vars.Modules.FriendlyIndicatorModule.Default.ShowKicks == true)
+		assert(vars.Modules.FriendlyIndicatorModule.Raid.ShowKicks == true)
+	end)
 end)
 
 fw.describe("Migrator - defaults helpers", function()
