@@ -1043,7 +1043,7 @@ addon.Core.AuraSoundData = {
 		[260457] = true, -- Wyvern Sting
 		[262000] = true, -- Wyvern Sting
 	},
-	-- Important: specials + offensive cooldowns (61 ids)
+	-- Important: specials + offensive cooldowns (62 ids)
 	Important = {
 		[13750] = true, -- Adrenaline Rush
 		[275699] = true, -- Apocalypse
@@ -1106,6 +1106,7 @@ addon.Core.AuraSoundData = {
 		[194249] = true, -- Voidform
 		[228260] = true, -- Voidform
 		[236321] = true, -- War Banner
+		[1249625] = true, -- Zenith
 	},
 	-- Defensive: defensive + healer throughput cooldowns (54 ids)
 	Defensive = {

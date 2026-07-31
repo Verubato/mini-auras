@@ -75,6 +75,7 @@ local importantNames = {
 	["Summon Demonic Tyrant"] = true, ["Summon Darkglare"] = true, ["Summon Infernal"] = true,
 	["Dragonrage"] = true, ["Dancing Rune Weapon"] = true, ["Pillar of Frost"] = true,
 	["Apocalypse"] = true, ["Storm, Earth, and Fire"] = true, ["Serenity"] = true,
+	["Zenith"] = true,
 	["Invoke Niuzao, the Black Ox"] = true, ["Invoke Chi-Ji, the Red Crane"] = true,
 	["Invoke Xuen, the White Tiger"] = true, ["Invoke Yu'lon, the Jade Serpent"] = true,
 	["Thunder Blast"] = true,
@@ -149,12 +150,13 @@ if mode == "report" then
 		end
 	end
 
-	-- Player-relevant important names present in the scan that we did NOT match (id < 1.2M),
-	-- to spot anything missing from the curated lists.
-	print("\nUnmatched Important names below 1.2M (candidates to add):")
+	-- Player-relevant important names present in the scan that we did NOT match, to spot
+	-- anything missing from the curated lists. Keep the cutoff at or above ScanSpellFlags'
+	-- MAX_ID - a lower cutoff hid the Midnight-era spell IDs (>1.2M, e.g. Zenith) entirely.
+	print("\nUnmatched Important names (candidates to add):")
 	local seen = {}
 	for id, name in pairs(MiniCCSpellScan.Important) do
-		if type(name) == "string" and id < 1200000 and not importantNames[name] and not defensiveNames[name] and not seen[name] then
+		if type(name) == "string" and id < 1400000 and not importantNames[name] and not defensiveNames[name] and not seen[name] then
 			seen[name] = true
 			print(("  [%d] %s"):format(id, name))
 		end
