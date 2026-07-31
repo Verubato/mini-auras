@@ -6,6 +6,7 @@ local frames = addon.Core.Frames
 local units = addon.Utils.Units
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local growAnchors = addon.Core.GrowAnchors
 local UnitAuraWatcher = addon.Core.UnitAuraWatcher
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
@@ -255,22 +256,7 @@ local function AnchorContainer(header, anchor, options)
 	frame:SetFrameStrata(frames:GetNextStrata(anchor:GetFrameStrata()))
 	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
 
-	local anchorPoint = "CENTER"
-	local relativeToPoint = "CENTER"
-
-	if options.Grow == "LEFT" then
-		anchorPoint = "RIGHT"
-		relativeToPoint = "LEFT"
-	elseif options.Grow == "RIGHT" then
-		anchorPoint = "LEFT"
-		relativeToPoint = "RIGHT"
-	elseif options.Grow == "DOWN" then
-		anchorPoint = "TOP"
-		relativeToPoint = "BOTTOM"
-	elseif options.Grow == "UP" then
-		anchorPoint = "BOTTOM"
-		relativeToPoint = "TOP"
-	end
+	local anchorPoint, relativeToPoint = growAnchors:GetAnchor(options.Grow)
 
 	header:SetGrowDown(options.Grow == "DOWN")
 	header:SetGrowUp(options.Grow == "UP")

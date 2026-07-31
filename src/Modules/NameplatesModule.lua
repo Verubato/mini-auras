@@ -8,6 +8,7 @@ local unitWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local growAnchors = addon.Core.GrowAnchors
 local eventGate = addon.Core.EventGate
 local duelPoller = addon.Core.DuelPoller
 local moduleUtil = addon.Utils.ModuleUtil
@@ -164,23 +165,11 @@ local function GetCCSortOptions()
 	return Enum.UnitAuraSortRule.Unsorted, Enum.UnitAuraSortDirection.Reverse
 end
 
-local function GrowToAnchor(grow)
-	if grow == "LEFT" then
-		return "RIGHT", "LEFT"
-	elseif grow == "RIGHT" then
-		return "LEFT", "RIGHT"
-	elseif grow == "DOWN" then
-		return "TOP", "BOTTOM"
-	else
-		return "CENTER", "CENTER"
-	end
-end
-
 ---@return string point
 ---@return string relativeToPoint
 local function GetAnchorPoint(unitToken, containerType)
 	local config = M:GetUnitOptions(unitToken)
-	return GrowToAnchor(config[containerType].Grow)
+	return growAnchors:GetAnchor(config[containerType].Grow)
 end
 
 ---@param container IconSlotContainer?
@@ -1087,7 +1076,7 @@ local function RefreshAnchorsAndSizes()
 					container.Frame:ClearAllPoints()
 
 					if barOptions and barOptions.Enabled then
-						local anchorPoint, relativeToPoint = GrowToAnchor(barOptions.Grow)
+						local anchorPoint, relativeToPoint = growAnchors:GetAnchor(barOptions.Grow)
 						container.Frame:SetPoint(
 							anchorPoint,
 							anchorFrame,

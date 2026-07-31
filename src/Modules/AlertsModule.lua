@@ -5,6 +5,7 @@ local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local growAnchors = addon.Core.GrowAnchors
 local eventGate = addon.Core.EventGate
 local duelPoller = addon.Core.DuelPoller
 local moduleUtil = addon.Utils.ModuleUtil
@@ -119,9 +120,6 @@ local activeTokensScratch = {}
 local alertSoundIdListPool = {}
 -- Rough upper bound on simultaneously visible enemy nameplates, used to size the display pool.
 local PLATE_ESTIMATE = 20
--- Grow direction -> which edge of a bar frame gets pinned at the saved anchor position.
--- Pinning the trailing edge is what makes the row extend the other way as icons appear.
-local GROW_PIN_POINTS = { LEFT = "RIGHT", RIGHT = "LEFT", CENTER = "CENTER" }
 -- 12.1 path: engine-side alert sounds via C_UnitAuras.AddAuraSound (the aura transitions the
 -- legacy sound reacted to are secret there, but the engine can play sounds on them for us -
 -- same pattern as HealerCrowdControlModule). Registrations are per (enemy nameplate token,
@@ -676,7 +674,7 @@ end
 -- values are in the frame's own scale, which is also the scale SetPoint offsets use, so no
 -- conversion is needed even though the bars ignore parent scale.
 local function NormalizeBarAnchor(frame, anchorOptions, grow)
-	local point = GROW_PIN_POINTS[grow]
+	local point = growAnchors:GetPinPoint(grow)
 	if anchorOptions.Point == point then
 		return
 	end
@@ -712,10 +710,9 @@ local function ChainAlertDisplays()
 	local options = db.Modules.AlertsModule
 	local spacing = options.IconSpacing or 2
 	local splitBars = options.SplitBars
-	local growLeft = GetGrow() == "LEFT"
-	local point = growLeft and "RIGHT" or "LEFT"
-	local relativePoint = growLeft and "LEFT" or "RIGHT"
-	local step = growLeft and -spacing or spacing
+	-- Same chain geometry the aura displays use when they follow a kick icon: continue the row
+	-- in the grow direction, offset by the icon spacing.
+	local point, relativePoint, step = growAnchors:GetChain(GetGrow(), spacing)
 
 	local tokens = displayOrderScratch
 	wipe(tokens)

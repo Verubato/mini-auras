@@ -2,6 +2,7 @@
 local addonName, addon = ...
 local fontUtil = addon.Utils.FontUtil
 local wowEx = addon.Utils.WoWEx
+local growAnchors = addon.Core.GrowAnchors
 local cachedDb = nil
 local frameIdCounter = 0
 local liveDisplays = {}
@@ -366,23 +367,16 @@ local function InitializeButton(instance, button)
 	StyleButton(instance, button)
 end
 
--- Maps a module Grow option to flow layout settings. The first icon always sits nearest the
--- container's anchored edge, matching the legacy layouts.
-local GROW_LAYOUTS = {
-	LEFT = { axis = "Horizontal", anchorPoint = "RIGHT", h = "Left", v = "Down" },
-	RIGHT = { axis = "Horizontal", anchorPoint = "LEFT", h = "Right", v = "Down" },
-	CENTER = { axis = "Horizontal", anchorPoint = "LEFT", h = "Right", v = "Down" },
-	DOWN = { axis = "Vertical", anchorPoint = "TOP", h = "Right", v = "Down" },
-	UP = { axis = "Vertical", anchorPoint = "BOTTOM", h = "Right", v = "Up" },
-}
-
 ---@param instance AuraContainerDisplay
 local function ApplyFlowLayout(instance)
-	local layout = GROW_LAYOUTS[instance.Grow] or GROW_LAYOUTS.CENTER
+	local layout = growAnchors:GetFlow(instance.Grow)
 	local frame = instance.Frame
-	frame:SetFlowLayoutAxis(AnchorUtil.FlowLayoutAxis[layout.axis])
-	frame:SetFlowLayoutAnchorPoint(layout.anchorPoint)
-	frame:SetFlowLayoutGrowthDirection(AnchorUtil.FlowDirection[layout.h], AnchorUtil.FlowDirection[layout.v])
+	frame:SetFlowLayoutAxis(AnchorUtil.FlowLayoutAxis[layout.Axis])
+	frame:SetFlowLayoutAnchorPoint(layout.AnchorPoint)
+	frame:SetFlowLayoutGrowthDirection(
+		AnchorUtil.FlowDirection[layout.Horizontal],
+		AnchorUtil.FlowDirection[layout.Vertical]
+	)
 end
 
 ---Fills the instance's own layout table. Spacing keys are passed under BOTH the older and newer
@@ -687,25 +681,6 @@ function M:RestyleButtons()
 	end
 end
 
--- Chain edges for anchoring a display after a kick icon frame, per grow direction (the kick
--- occupied the first slot in the legacy layouts, so the aura row continues after it).
-local KICK_CHAIN_POINTS = {
-	LEFT = { point = "RIGHT", relativeTo = "LEFT", xMul = -1, yMul = 0 },
-	RIGHT = { point = "LEFT", relativeTo = "RIGHT", xMul = 1, yMul = 0 },
-	CENTER = { point = "LEFT", relativeTo = "RIGHT", xMul = 1, yMul = 0 },
-	DOWN = { point = "TOP", relativeTo = "BOTTOM", xMul = 0, yMul = -1 },
-	UP = { point = "BOTTOM", relativeTo = "TOP", xMul = 0, yMul = 1 },
-}
-
--- Grow direction -> anchor points for positioning a display against its anchor frame.
-local GROW_ANCHOR_POINTS = {
-	LEFT = { point = "RIGHT", relativeTo = "LEFT" },
-	RIGHT = { point = "LEFT", relativeTo = "RIGHT" },
-	DOWN = { point = "TOP", relativeTo = "BOTTOM" },
-	UP = { point = "BOTTOM", relativeTo = "TOP" },
-	CENTER = { point = "CENTER", relativeTo = "CENTER" },
-}
-
 ---Positions this display relative to its anchor, chaining after the kick container while a
 ---kick icon is showing.
 ---@param kickFrame table The kick IconSlotContainer's frame.
@@ -716,17 +691,18 @@ local GROW_ANCHOR_POINTS = {
 ---@param offsetY number
 ---@param kickActive boolean
 function M:AnchorAfterKick(kickFrame, anchor, grow, spacing, offsetX, offsetY, kickActive)
-	self:SetGrow(grow or "CENTER")
+	grow = grow or growAnchors.Default
+	self:SetGrow(grow)
 
 	local frame = self.Frame
 	frame:ClearAllPoints()
 
 	if kickActive then
-		local chain = KICK_CHAIN_POINTS[grow] or KICK_CHAIN_POINTS.CENTER
-		frame:SetPoint(chain.point, kickFrame, chain.relativeTo, chain.xMul * spacing, chain.yMul * spacing)
+		local point, relativePoint, x, y = growAnchors:GetChain(grow, spacing)
+		frame:SetPoint(point, kickFrame, relativePoint, x, y)
 	else
-		local point = GROW_ANCHOR_POINTS[grow] or GROW_ANCHOR_POINTS.CENTER
-		frame:SetPoint(point.point, anchor, point.relativeTo, offsetX, offsetY)
+		local point, relativePoint = growAnchors:GetAnchor(grow)
+		frame:SetPoint(point, anchor, relativePoint, offsetX, offsetY)
 	end
 end
 
