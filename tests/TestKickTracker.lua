@@ -2,10 +2,10 @@
 -- 12.1-independent (kicks aren't auras), feeding the CC, FriendlyIndicator, Portrait, and
 -- Nameplates kick icons on both paths.
 
-local fw = require("framework")
-local wow = require("wow_api")
+local fw = require("Framework")
+local wow = require("WowApi")
 wow.setup()
-local acm = require("aura_container_mock")
+local acm = require("AuraContainerMock")
 acm.setup()
 
 -- Environment: KickTracker captures these at load.

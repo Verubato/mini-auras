@@ -15,7 +15,7 @@ addon.Modules.EnemyCooldowns.Display = D
 local db
 local testModeActive = false
 -- Default opacity for always-show icons that are not currently on cooldown.
-local defaultInactiveAlpha = 0.6
+local DEFAULT_INACTIVE_ALPHA = 0.6
 -- Scratch table reused by UpdateDisplay to avoid per-call allocation.
 local slotsScratch = {}
 -- Pool of reusable slot descriptor tables indexed by slot position.
@@ -24,7 +24,7 @@ local slotTablePool = {}
 
 -- Test-mode preview cooldowns.
 -- Inactive=true entries preview the always-show faded state when that option is enabled.
-local testSpells = {
+local TEST_SPELLS = {
 	{ SpellId = 45438,   StartOffset = 30, Cooldown = 240 }, -- Ice Block        (defensive)
 	{ SpellId = 642,     StartOffset = 15, Cooldown = 300, Inactive = true }, -- Divine Shield (defensive)
 	{ SpellId = 31224,   StartOffset = 10, Cooldown = 60  }, -- Cloak of Shadows (defensive)
@@ -90,9 +90,9 @@ local function RenderTestSpells(container, options, filter)
 	local showTooltips  = options.ShowTooltips
 	local iconOptions   = options.Icons
 	local alwaysShow    = options.AlwaysShow
-	local inactiveAlpha = defaultInactiveAlpha
+	local inactiveAlpha = DEFAULT_INACTIVE_ALPHA
 	local usedCount     = 0
-	for _, t in ipairs(testSpells) do
+	for _, t in ipairs(TEST_SPELLS) do
 		if not filter or filter(t.SpellId) then
 			local texture = GetSpellIcon(t.SpellId)
 			if texture and usedCount < container.Count then
@@ -160,7 +160,7 @@ local function BuildSlotContext(options, filter)
 		desaturateOnCooldown = options.Icons.DesaturateOnCooldown,
 		disabledSpells       = options.DisabledSpells or {},
 		filter               = filter,
-		inactiveAlpha        = defaultInactiveAlpha,
+		inactiveAlpha        = DEFAULT_INACTIVE_ALPHA,
 	}
 end
 

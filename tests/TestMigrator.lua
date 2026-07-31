@@ -3,10 +3,10 @@
 -- The Migrator transforms every user's saved variables on upgrade - the black-box invariant is
 -- "any input produces a valid current-version db".
 
-local fw = require("framework")
-local wow = require("wow_api")
+local fw = require("Framework")
+local wow = require("WowApi")
 wow.setup()
-local acm = require("aura_container_mock")
+local acm = require("AuraContainerMock")
 acm.setup()
 
 local addon = {
@@ -21,7 +21,7 @@ local addon = {
 	}),
 }
 
-local addonFiles = require("addon_files")
+local addonFiles = require("AddonFiles")
 addonFiles.load(addonFiles.framework, addon)
 -- ProfileManager before Migrator: UpgradeToVersion37 snapshots profiles via its PayloadKeys.
 addon.Utils.Scheduler = { Init = function() end }

@@ -19,7 +19,7 @@ local M = {}
 addon.Modules.EnemyCooldowns.Module = M
 addon.Modules.EnemyCooldownTrackerModule = M
 
-local arenaUnits = { "arena1", "arena2", "arena3" }
+local ARENA_UNITS = { "arena1", "arena2", "arena3" }
 local watchEntries = {}  ---@type table<string, EcdWatchEntry>  keyed by unit string
 local testModeActive = false
 local editModeActive = false
@@ -30,8 +30,8 @@ local db
 
 -- Seconds of timing tolerance when matching a measured buff duration to a rule.
 -- Shared with FriendlyCooldowns Brain to ensure identical matching behaviour.
-local evidenceTolerance = 0.15
-local castWindow = 0.15
+local EVIDENCE_TOLERANCE = 0.15
+local CAST_WINDOW = 0.15
 
 -- Per-unit evidence timestamps (separate from FriendlyCooldowns Brain's state so
 -- enemy and friendly evidence don't cross-contaminate).
@@ -57,15 +57,15 @@ end
 ---@return EvidenceSet?
 local function BuildEvidenceSet(unit, detectionTime)
 	local ev = nil
-	if lastDebuffTime[unit] and math.abs(lastDebuffTime[unit] - detectionTime) <= evidenceTolerance then
+	if lastDebuffTime[unit] and math.abs(lastDebuffTime[unit] - detectionTime) <= EVIDENCE_TOLERANCE then
 		ev = ev or {}
 		ev.Debuff = true
 	end
-	if lastShieldTime[unit] and math.abs(lastShieldTime[unit] - detectionTime) <= evidenceTolerance then
+	if lastShieldTime[unit] and math.abs(lastShieldTime[unit] - detectionTime) <= EVIDENCE_TOLERANCE then
 		ev = ev or {}
 		ev.Shield = true
 	end
-	if lastUnitFlagsTime[unit] and math.abs(lastUnitFlagsTime[unit] - detectionTime) <= castWindow then
+	if lastUnitFlagsTime[unit] and math.abs(lastUnitFlagsTime[unit] - detectionTime) <= CAST_WINDOW then
 		ev = ev or {}
 		ev.UnitFlags = true
 	end
@@ -339,7 +339,7 @@ local function TrackNewAura(entry, trackedAuras, id, info, now)
 	-- Snapshot cast times for all arena units so FindBestCandidate can attribute the
 	-- cooldown to the correct caster (used for both external and self-cast auras).
 	local castSnapshot = {}
-	for _, u in ipairs(arenaUnits) do
+	for _, u in ipairs(ARENA_UNITS) do
 		castSnapshot[u] = lastCastTime[u]
 	end
 
@@ -359,7 +359,7 @@ local function TrackNewAura(entry, trackedAuras, id, info, now)
 	end
 
 	-- Deferred backfill: UNIT_FLAGS and UNIT_SPELLCAST_SUCCEEDED can arrive slightly after UNIT_AURA.
-	C_Timer.After(evidenceTolerance, function()
+	C_Timer.After(EVIDENCE_TOLERANCE, function()
 		local tracked = trackedAuras[id]
 		if not tracked then
 			return
@@ -375,10 +375,10 @@ local function TrackNewAura(entry, trackedAuras, id, info, now)
 		end
 
 		-- Backfill cast timestamps that arrived after UNIT_AURA.
-		for _, u in ipairs(arenaUnits) do
+		for _, u in ipairs(ARENA_UNITS) do
 			if not tracked.CastSnapshot[u] then
 				local ct = lastCastTime[u]
-				if ct and math.abs(ct - now) <= castWindow then
+				if ct and math.abs(ct - now) <= CAST_WINDOW then
 					tracked.CastSnapshot[u] = ct
 				end
 			end
@@ -391,7 +391,7 @@ local function TrackNewAura(entry, trackedAuras, id, info, now)
 		if not tracked.PredictedSpellId then
 			local predEntry, predRule
 			if tracked.AuraTypes["EXTERNAL_DEFENSIVE"] then
-				for _, candidateUnit in ipairs(arenaUnits) do
+				for _, candidateUnit in ipairs(ARENA_UNITS) do
 					local candidateEntry = watchEntries[candidateUnit]
 					if candidateEntry then
 						local hasCast = true
@@ -411,7 +411,7 @@ local function TrackNewAura(entry, trackedAuras, id, info, now)
 				end
 			else
 				local snap    = tracked.CastSnapshot[unit]
-				local hasCast = snap ~= nil and math.abs(snap - now) <= castWindow
+				local hasCast = snap ~= nil and math.abs(snap - now) <= CAST_WINDOW
 				local predEv  = BuildPredictEvidence(tracked.Evidence, hasCast)
 				local spellId, isOnCd = fcdBrain:PredictSpellId(
 					unit, tracked.AuraTypes, predEv, entry.ActiveCooldowns)
@@ -543,7 +543,7 @@ local function EnsureEntry(unit, index)
 end
 
 local function EnsureAllEntries()
-	for i, unit in ipairs(arenaUnits) do
+	for i, unit in ipairs(ARENA_UNITS) do
 		EnsureEntry(unit, i)
 	end
 end
@@ -580,7 +580,7 @@ local function ShowHideAllEntries()
 
 	local mode = options.DisplayMode
 
-	for i, unit in ipairs(arenaUnits) do
+	for i, unit in ipairs(ARENA_UNITS) do
 		local entry = watchEntries[unit]
 		if entry then
 			local shouldShow
@@ -690,7 +690,7 @@ function M:Refresh()
 	local spacing = options.IconSpacing or 2
 
 	local prevEntry
-	for i, unit in ipairs(arenaUnits) do
+	for i, unit in ipairs(ARENA_UNITS) do
 		local entry = watchEntries[unit]
 		if entry then
 			entry.Container:SetIconSize(size)

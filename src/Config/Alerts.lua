@@ -5,14 +5,14 @@ local L = addon.L
 local wowEx = addon.Utils.WoWEx
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
-local columns = 4
+local COLUMNS = 4
 local columnWidth
 local enabledColumnWidth
 local config = addon.Config
 -- TEMPORARY (12.1): CENTER growth needs a readable row width to center on the anchor, which
 -- the 12.1 chained displays don't have, so only LEFT/RIGHT are offered there.
-local useAuraContainers = wowEx:UseAuraContainers()
-local growOptions = useAuraContainers and { "LEFT", "RIGHT" } or { "LEFT", "RIGHT", "CENTER" }
+local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
+local GROW_OPTIONS = USE_AURA_CONTAINERS and { "LEFT", "RIGHT" } or { "LEFT", "RIGHT", "CENTER" }
 
 ---@class AlertsConfig
 local M = {}
@@ -200,14 +200,14 @@ local function BuildSettingsTab(parent, options)
 
 	local growDdl, modernDdl = mini:Dropdown({
 		Parent = parent,
-		Items = growOptions,
+		Items = GROW_OPTIONS,
 		Width = columnWidth * 2 - horizontalSpacing,
 		GetValue = function()
 			local grow = options.Grow
 			if grow ~= "LEFT" and grow ~= "RIGHT" then
 				grow = "CENTER"
 			end
-			if useAuraContainers and grow == "CENTER" then
+			if USE_AURA_CONTAINERS and grow == "CENTER" then
 				return "RIGHT"
 			end
 			return grow
@@ -520,7 +520,7 @@ end
 ---@param panel table
 ---@param options AlertsModuleOptions
 function M:Build(panel, options)
-	columnWidth = mini:ColumnWidth(columns, 0, 0)
+	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
 	-- Shared 5-column checkbox grid: the Enable-in row and settings checkbox rows all sit on
 	-- the same vertical lines.
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)

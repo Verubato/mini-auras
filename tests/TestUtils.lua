@@ -1,8 +1,8 @@
 -- Tier 2 pure-logic tests: SlotDistribution, ModuleUtil (enable gating + icon sizing),
 -- WoWEx (12.1 build gate + styling restriction), Array, and AuraSoundData sanity.
 
-local fw = require("framework")
-local wow = require("wow_api")
+local fw = require("Framework")
+local wow = require("WowApi")
 wow.setup()
 
 local function loadModule(path, addon)

@@ -6,10 +6,10 @@
 --   * every payload key is healable from dbDefaults (FillDefaults),
 --   * lifecycle operations (create/delete/rename/auto-switch) keep the db consistent.
 
-local fw = require("framework")
-local wow = require("wow_api")
+local fw = require("Framework")
+local wow = require("WowApi")
 wow.setup()
-local acm = require("aura_container_mock")
+local acm = require("AuraContainerMock")
 acm.setup()
 acm.reset()
 
@@ -50,7 +50,7 @@ local addon = {
 	end,
 }
 
-local addonFiles = require("addon_files")
+local addonFiles = require("AddonFiles")
 addonFiles.load(addonFiles.framework, addon)
 
 -- Queueing scheduler so the combat-deferral path is observable.

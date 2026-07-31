@@ -18,7 +18,7 @@ local auras = addon.Utils.Auras
 -- layout restrictions apply. The Blizzard nameplate buffList scan for important buffs is
 -- replaced by the HELPFUL|IMPORTANT slot. TEMPORARY dual path: remove the watcher branch once
 -- 12.1 is live everywhere.
-local useAuraContainers = wowEx:UseAuraContainers()
+local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local testModeActive = false
 local paused = false
 local enabled = false
@@ -212,7 +212,7 @@ local function CreateContainer(unitFrame, portrait, unit, texCoord, mask)
 
 	container:SetIconSize(size)
 
-	if useAuraContainers and unit then
+	if USE_AURA_CONTAINERS and unit then
 		-- Lift the kick slot above the whole aura display stack (displays at kick+1..+4,
 		-- buttons one higher) so an active kick lockout covers any aura icon. The slot frame
 		-- is a child of the kick frame, so later per-addon level adjustments shift everything
@@ -587,7 +587,7 @@ local function Attach(unit, events)
 	end
 
 	local watcher
-	if not useAuraContainers then
+	if not USE_AURA_CONTAINERS then
 		watcher = unitWatcher:New(unit, events, nil, nil, Enum.UnitAuraSortDirection.Reverse)
 		watchers[unit] = watcher
 	end
@@ -627,7 +627,7 @@ local function AttachElvUIFrame(unit)
 
 	local watcher = watchers[unit]
 
-	if not useAuraContainers and not watcher then
+	if not USE_AURA_CONTAINERS and not watcher then
 		return
 	end
 
@@ -666,7 +666,7 @@ local function AttachTPerlFrame(unit)
 
 	local watcher = watchers[unit]
 
-	if not useAuraContainers and not watcher then
+	if not USE_AURA_CONTAINERS and not watcher then
 		return
 	end
 
@@ -691,7 +691,7 @@ local function AttachUUFFrame(unit)
 
 	local watcher = watchers[unit]
 
-	if not useAuraContainers and not watcher then
+	if not USE_AURA_CONTAINERS and not watcher then
 		return
 	end
 
@@ -733,7 +733,7 @@ local function AttachMSUFFrame(unit)
 
 	local watcher = watchers[unit]
 
-	if not useAuraContainers and not watcher then
+	if not USE_AURA_CONTAINERS and not watcher then
 		return
 	end
 
@@ -771,7 +771,7 @@ local function AttachEllesmereUIFrame(unit)
 
 	local watcher = watchers[unit]
 
-	if not useAuraContainers and not watcher then
+	if not USE_AURA_CONTAINERS and not watcher then
 		return
 	end
 
@@ -811,7 +811,7 @@ local function AttachEQolFrame(unit)
 
 	local watcher = watchers[unit]
 
-	if not useAuraContainers and not watcher then
+	if not USE_AURA_CONTAINERS and not watcher then
 		return
 	end
 
@@ -940,7 +940,7 @@ function M:Refresh()
 	-- 12.1: re-apply the cooldown style to the aura buttons (only possible while auras aren't
 	-- secret - button APIs error otherwise, including out-of-combat in M+/encounters/PvP) and
 	-- hide the live displays in test mode so real and fake icons don't mix.
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		local reverse = db.Modules.PortraitModule.ReverseCooldown or false
 		local canStyle = not wowEx:IsAuraStylingRestricted()
 		for _, container in pairs(containers) do
@@ -1060,7 +1060,7 @@ function M:Init()
 
 	-- Hook each nameplate's aura refresh so important buffs on the target/focus update live.
 	-- Legacy only: on 12.1 the important slot tracks its unit itself.
-	if not useAuraContainers then
+	if not USE_AURA_CONTAINERS then
 		local nameplateEvents = CreateFrame("Frame")
 		nameplateEvents:RegisterEvent("NAME_PLATE_UNIT_ADDED")
 		nameplateEvents:SetScript("OnEvent", function(_, _, unitToken)
@@ -1071,7 +1071,7 @@ function M:Init()
 	-- 12.1: containers track their unit token but don't refresh when the token's occupant
 	-- changes (the legacy watchers registered these events themselves); Blizzard's container
 	-- mixin exposes UpdateAllAuras for exactly this.
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		local unitChangeEvents = CreateFrame("Frame")
 		unitChangeEvents:RegisterEvent("PLAYER_TARGET_CHANGED")
 		unitChangeEvents:RegisterEvent("PLAYER_FOCUS_CHANGED")

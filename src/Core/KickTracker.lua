@@ -4,15 +4,15 @@ local wowEx = addon.Utils.WoWEx
 local kickData = addon.Core.KickData
 local GetTimePreciseSec = GetTimePreciseSec
 
-local kickIcon = C_Spell.GetSpellTexture(1766) -- fallback: rogue Kick
+local KICK_ICON = C_Spell.GetSpellTexture(1766) -- fallback: rogue Kick
 
-local defaultKickDuration = 3
-local playerKickTolerance = 0.15
+local DEFAULT_KICK_DURATION = 3
+local PLAYER_KICK_TOLERANCE = 0.15
 
-local kickColor = { r = 1.0, g = 0.2, b = 0.2 }
+local KICK_COLOR = { r = 1.0, g = 0.2, b = 0.2 }
 
 -- Set when the local player successfully casts a kick spell; consumed by the first interrupt that
--- fires within playerKickTolerance seconds, replacing the default icon with the player's own spell.
+-- fires within PLAYER_KICK_TOLERANCE seconds, replacing the default icon with the player's own spell.
 local pendingPlayerKick = nil -- { Texture, Duration, Time, Timer }
 
 ---@type table<string, KickUnitData>
@@ -48,12 +48,12 @@ local function InferAllyKick()
 
 	if #candidates == 1 then
 		local spellId = candidates[1]
-		local texture = C_Spell.GetSpellTexture(spellId) or kickIcon
-		local duration = kickData.SpellLockoutDuration[spellId] or defaultKickDuration
+		local texture = C_Spell.GetSpellTexture(spellId) or KICK_ICON
+		local duration = kickData.SpellLockoutDuration[spellId] or DEFAULT_KICK_DURATION
 		return texture, duration
 	end
 
-	return kickIcon, defaultKickDuration
+	return KICK_ICON, DEFAULT_KICK_DURATION
 end
 
 ---@class KickEntry
@@ -96,7 +96,7 @@ local function CreateEntry(unitToken, texture, duration)
 	data.Entry = {
 		Texture = texture,
 		DurationObject = wowEx:CreateDuration(startTime, duration),
-		Color = kickColor,
+		Color = KICK_COLOR,
 		StartTime = startTime,
 		Duration = duration,
 	}
@@ -122,8 +122,8 @@ local function OnInterrupted(unitToken)
 	end
 	data.Kicked = true
 
-	local texture = kickIcon
-	local duration = defaultKickDuration
+	local texture = KICK_ICON
+	local duration = DEFAULT_KICK_DURATION
 
 	-- UnitIsEnemy covers duel opponents, arena/BG enemies, and MC'd allies — i.e. every case
 	-- where the local player or an ally could legitimately be the interrupter. When the
@@ -131,7 +131,7 @@ local function OnInterrupted(unitToken)
 	-- heuristic / player-cast tracking is irrelevant, so we just show the generic rogue icon.
 	if UnitIsEnemy(unitToken, "player") then
 		local pending = pendingPlayerKick
-		if pending and (GetTimePreciseSec() - pending.Time) <= playerKickTolerance then
+		if pending and (GetTimePreciseSec() - pending.Time) <= PLAYER_KICK_TOLERANCE then
 			texture = pending.Texture
 			duration = pending.Duration
 		else
@@ -310,14 +310,14 @@ playerKickFrame:SetScript("OnEvent", function(_, _, _, _, spellId)
 		return
 	end
 
-	local texture = C_Spell.GetSpellTexture(spellId) or kickIcon
+	local texture = C_Spell.GetSpellTexture(spellId) or KICK_ICON
 
 	if pendingPlayerKick and pendingPlayerKick.Timer then
 		pendingPlayerKick.Timer:Cancel()
 	end
 
 	local pending = { Texture = texture, Duration = duration, Time = GetTimePreciseSec() }
-	pending.Timer = C_Timer.NewTimer(playerKickTolerance, function()
+	pending.Timer = C_Timer.NewTimer(PLAYER_KICK_TOLERANCE, function()
 		if pendingPlayerKick == pending then
 			pendingPlayerKick = nil
 		end

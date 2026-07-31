@@ -110,7 +110,7 @@ Modules\EnemyCooldowns\Display.lua
 Modules\EnemyCooldowns\Module.lua
 Modules\TestModeManager.lua
 
-Api\v1.lua
+Api\V1.lua
 
 Config\Defaults.lua
 Config\Migrator.lua

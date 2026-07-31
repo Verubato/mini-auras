@@ -12,7 +12,7 @@ local moduleName = addon.Utils.ModuleName
 -- curve/EvaluateColorValueFromBoolean dance is only needed on the legacy path. The
 -- IconSlotContainer is kept for test mode. TEMPORARY dual path: remove the legacy branch once
 -- 12.1 is live everywhere.
-local useAuraContainers = wowEx:UseAuraContainers()
+local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local testModeActive = false
 local paused = false
 local classHasPrecog
@@ -275,7 +275,7 @@ function M:Init()
 	-- Step curve mapping an aura's total duration to an alpha: 1 only at the precog window
 	-- (~4s, plus ~3s for Preservation Evoker's Nullifying Shroud), 0 everywhere else.
 	-- Legacy path only; the 12.1 container expresses the window via a maxDuration filter.
-	if not useAuraContainers then
+	if not USE_AURA_CONTAINERS then
 		precogCurve = C_CurveUtil.CreateCurve()
 		precogCurve:SetType(Enum.LuaCurveType.Step)
 		precogCurve:AddPoint(0, 0)
@@ -291,7 +291,7 @@ function M:Init()
 		precogCurve:AddPoint(4.1, 0)
 	end
 
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		-- 12.1: IMPORTANT + a short maxDuration expresses "precog-length important self buff"
 		-- natively. maxDuration 4.1 covers both the 4s precog window and the Evoker's 3s
 		-- Nullifying Shroud (it is an upper bound, not an exact match like the legacy curve,

@@ -9,24 +9,24 @@ local config = addon.Config
 local ecdModule = addon.Modules.EnemyCooldowns.Module
 local rules = addon.Modules.Cooldowns.Rules
 
-local growOptions = { "LEFT", "RIGHT", "CENTER" }
-local displayModeOptions = { "ArenaFrames", "Linear" }
-local displayModeText = {
+local GROW_OPTIONS = { "LEFT", "RIGHT", "CENTER" }
+local DISPLAY_MODE_OPTIONS = { "ArenaFrames", "Linear" }
+local DISPLAY_MODE_TEXT = {
 	ArenaFrames = "Arena Frames",
 	Linear      = "Linear Bar",
 }
 
 -- Class display name/ordering tables (identical to FriendlyCooldownTracker).
-local classDisplayNames = LocalizedClassList()
+local CLASS_DISPLAY_NAMES = LocalizedClassList()
 
-local classOrder = {
+local CLASS_ORDER = {
 	"DEATHKNIGHT", "DEMONHUNTER", "DRUID", "EVOKER", "HUNTER",
 	"MAGE", "MONK", "PALADIN", "PRIEST", "ROGUE",
 	"SHAMAN", "WARLOCK", "WARRIOR",
 }
 
 -- Static spec ID -> class token mapping, matching the IDs declared in Rules.lua.
-local specClass = {
+local SPEC_CLASS = {
 	[250]  = "DEATHKNIGHT", [251]  = "DEATHKNIGHT", [252]  = "DEATHKNIGHT",
 	[577]  = "DEMONHUNTER", [581]  = "DEMONHUNTER", [1480] = "DEMONHUNTER",
 	[102]  = "DRUID",       [103]  = "DRUID",        [104]  = "DRUID",       [105] = "DRUID",
@@ -42,7 +42,7 @@ local specClass = {
 	[71]   = "WARRIOR",     [72]   = "WARRIOR",      [73]   = "WARRIOR",
 }
 
-local columns = 4
+local COLUMNS = 4
 local columnWidth
 -- Shared 5-column checkbox grid so checkbox rows align across pages.
 local checkColumnWidth
@@ -63,7 +63,7 @@ local function CollectSpellsByClass()
 	end
 
 	for specId, ruleList in pairs(rules.BySpec) do
-		local classToken = specClass[specId]
+		local classToken = SPEC_CLASS[specId]
 		if classToken then
 			for _, rule in ipairs(ruleList) do
 				addSpell(classToken, rule.SpellId, rule)
@@ -97,7 +97,7 @@ local function BuildSpellsList(parent, disabledSpells)
 
 	-- Disambiguation: spell names shared across any class get the spell ID appended.
 	local nameCounts = {}
-	for _, classToken in ipairs(classOrder) do
+	for _, classToken in ipairs(CLASS_ORDER) do
 		local spells = classSpells[classToken]
 		if spells then
 			for _, spellId in ipairs(spells) do
@@ -117,7 +117,7 @@ local function BuildSpellsList(parent, disabledSpells)
 	local maxContentH = 0
 	local contentOffsetX = sidebarW + sidebarSep
 
-	for _, classToken in ipairs(classOrder) do
+	for _, classToken in ipairs(CLASS_ORDER) do
 		local spells = classSpells[classToken]
 		if spells and #spells > 0 then
 			local classPanel = CreateFrame("Frame", nil, parent)
@@ -199,7 +199,7 @@ local function BuildSpellsList(parent, disabledSpells)
 
 	local tabY = 0
 	local firstClass = nil
-	for _, classToken in ipairs(classOrder) do
+	for _, classToken in ipairs(CLASS_ORDER) do
 		local spells = classSpells[classToken]
 		if spells and #spells > 0 then
 			if not firstClass then firstClass = classToken end
@@ -228,7 +228,7 @@ local function BuildSpellsList(parent, disabledSpells)
 
 			local fs = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 			fs:SetPoint("LEFT", btn, "LEFT", 8, 0)
-			fs:SetText(classDisplayNames[classToken] or classToken)
+			fs:SetText(CLASS_DISPLAY_NAMES[classToken] or classToken)
 			fs:SetTextColor(r, g, b, 1)
 
 			local token = classToken
@@ -382,8 +382,8 @@ local function BuildSettings(parent, options)
 
 	local modeDdl, modernModeDdl = mini:Dropdown({
 		Parent   = parent,
-		Items    = displayModeOptions,
-		GetText  = function(v) return displayModeText[v] or v end,
+		Items    = DISPLAY_MODE_OPTIONS,
+		GetText  = function(v) return DISPLAY_MODE_TEXT[v] or v end,
 		Width    = columnWidth * 2 - horizontalSpacing,
 		GetValue = function() return options.DisplayMode end,
 		SetValue = function(v)
@@ -417,7 +417,7 @@ local function BuildSettings(parent, options)
 
 	local afGrowDdl, modernAfGrow = mini:Dropdown({
 		Parent = parent,
-		Items  = growOptions,
+		Items  = GROW_OPTIONS,
 		Width  = columnWidth * 2 - horizontalSpacing,
 		GetValue = function() return options.ArenaFrames.Grow end,
 		SetValue = function(v)
@@ -503,7 +503,7 @@ config.EnemyCooldownTracker = M
 ---@param panel table
 ---@param options table  db.Modules.EnemyCooldownTrackerModule
 function M:Build(panel, options)
-	columnWidth = mini:ColumnWidth(columns, 0, 0)
+	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
 	checkColumnWidth = mini:ColumnWidth(5, 0, 0)
 
 	local description = mini:TextBlock({

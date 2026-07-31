@@ -23,9 +23,9 @@ M.SoundFiles = {
 	"WhooshSwing.ogg",
 }
 
-local locale = GetLocale()
+local LOCALE = GetLocale()
 
-if locale == "zhCN" or locale == "zhTW" then
+if LOCALE == "zhCN" or LOCALE == "zhTW" then
 	table.insert(M.SoundFiles, "XiaYike.ogg")
 end
 

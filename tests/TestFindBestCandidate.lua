@@ -21,9 +21,9 @@
 --   BoS          SpellId 6940    Holy Paladin spec 65, ExternalDefensive, BuffDuration 12, RequiresEvidence={"Cast","Shield"}
 --   Av.Crusader  SpellId 216331  Holy Paladin spec 65, Important, BuffDuration 10, MinDuration, RequiresTalent=216331
 
-local fw     = require("framework")
-local wow    = require("wow_api")
-local loader = require("loader")
+local fw     = require("Framework")
+local wow    = require("WowApi")
+local loader = require("Loader")
 
 local mods = loader.get()
 local B    = mods.brain

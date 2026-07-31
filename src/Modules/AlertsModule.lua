@@ -17,7 +17,7 @@ local auras = addon.Utils.Auras
 -- also obsoletes the mind-control and purgeable-garbage workarounds on this path. The legacy
 -- IconSlotContainer bars stay as drag anchors and test-mode renderers. TEMPORARY dual path:
 -- remove the watcher branch once 12.1 is live everywhere.
-local useAuraContainers = wowEx:UseAuraContainers()
+local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local testModeActive = false
 local paused = false
 local inPrepRoom = false
@@ -78,13 +78,13 @@ local cachedTTSImportantEnabled
 -- nameplates surface a lot of non-important purgeable buffs. The important alpha hides those visually,
 -- but TTS can't be gated on the secret IsSpellImportant value (branching would taint), so it would
 -- announce the garbage. Important TTS is suppressed entirely for these specs.
-local importantTTSSuppressedClasses = {
+local IMPORTANT_TTS_SUPPRESSED_CLASSES = {
 	DEMONHUNTER = true,
 	MAGE = true,
 	EVOKER = true,
 	HUNTER = true,
 }
-local shadowPriestSpecId = 258
+local SHADOW_PRIEST_SPEC_ID = 258
 -- Main alerts bar: enemy defensive cooldowns, plus important spells when combined.
 ---@type IconSlotContainer
 local container
@@ -105,7 +105,7 @@ local displayPairPool
 local displayOrderScratch = {}
 -- Grow direction -> which edge of a bar frame gets pinned at the saved anchor position.
 -- Pinning the trailing edge is what makes the row extend the other way as icons appear.
-local growPinPoints = { LEFT = "RIGHT", RIGHT = "LEFT", CENTER = "CENTER" }
+local GROW_PIN_POINTS = { LEFT = "RIGHT", RIGHT = "LEFT", CENTER = "CENTER" }
 -- 12.1 path: engine-side alert sounds via C_UnitAuras.AddAuraSound (the aura transitions the
 -- legacy sound reacted to are secret there, but the engine can play sounds on them for us -
 -- same pattern as HealerCrowdControlModule). Registrations are per (enemy nameplate token,
@@ -124,7 +124,7 @@ addon.Modules.AlertsModule = M
 
 local function PlaySound(spellType)
 	-- 12.1: sound alerts are disabled - they fire on aura transitions, which are unreadable there.
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		return
 	end
 
@@ -147,15 +147,15 @@ local function PlaySound(spellType)
 end
 
 -- True when the player's class/spec should never announce important buffs over TTS (see the comment
--- on importantTTSSuppressedClasses).
+-- on IMPORTANT_TTS_SUPPRESSED_CLASSES).
 local function ImportantTTSSuppressedForPlayer()
 	local _, class = UnitClass("player")
-	if importantTTSSuppressedClasses[class] then
+	if IMPORTANT_TTS_SUPPRESSED_CLASSES[class] then
 		return true
 	end
 	if class == "PRIEST" then
 		local specIndex = GetSpecialization()
-		return (specIndex and GetSpecializationInfo(specIndex)) == shadowPriestSpecId
+		return (specIndex and GetSpecializationInfo(specIndex)) == SHADOW_PRIEST_SPEC_ID
 	end
 	return false
 end
@@ -170,7 +170,7 @@ end
 
 local function AnnounceTTS(spellName, spellType)
 	-- 12.1: TTS is disabled - it fires on aura transitions, which are unreadable there.
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		return
 	end
 
@@ -363,7 +363,7 @@ end
 local function OnAuraDataChanged()
 	-- 12.1: the container path renders everything and no watchers feed this; skip the wasted
 	-- scratch-table wipes and bar resets it would otherwise do on every scheduled update.
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		return
 	end
 
@@ -516,7 +516,7 @@ local function OnMatchStateChanged()
 
 	inPrepRoom = matchState == Enum.PvPMatchState.StartUp
 
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		-- Prep-room garbage handling: RefreshNameplateDisplays hides the displays while
 		-- inPrepRoom is set and re-shows them when the match starts.
 		RefreshNameplateDisplays()
@@ -657,7 +657,7 @@ local function GetGrow()
 	if grow ~= "LEFT" and grow ~= "RIGHT" then
 		grow = "CENTER"
 	end
-	if useAuraContainers and grow == "CENTER" then
+	if USE_AURA_CONTAINERS and grow == "CENTER" then
 		return "RIGHT"
 	end
 	return grow
@@ -668,7 +668,7 @@ end
 -- values are in the frame's own scale, which is also the scale SetPoint offsets use, so no
 -- conversion is needed even though the bars ignore parent scale.
 local function NormalizeBarAnchor(frame, anchorOptions, grow)
-	local point = growPinPoints[grow]
+	local point = GROW_PIN_POINTS[grow]
 	if anchorOptions.Point == point then
 		return
 	end
@@ -831,7 +831,7 @@ end
 -- 12.1 path: registers the important/defensive alert sounds for one enemy nameplate token.
 -- No-op when already registered or when no alert sound is enabled.
 local function RegisterTokenAlertSounds(unitToken)
-	if not useAuraContainers or alertSoundsByToken[unitToken] then
+	if not USE_AURA_CONTAINERS or alertSoundsByToken[unitToken] then
 		return
 	end
 	if paused or not moduleUtil:IsModuleEnabled(moduleName.Alerts) then
@@ -875,7 +875,7 @@ end
 -- Ensure/ReleaseNameplateDisplay chokepoints). Called from Refresh, which also runs after
 -- the test-mode Pause/Resume transitions.
 local function RefreshAlertSounds()
-	if not useAuraContainers then
+	if not USE_AURA_CONTAINERS then
 		return
 	end
 	local sound = db.Modules.AlertsModule.Sound
@@ -1001,13 +1001,13 @@ end
 local function OnNamePlateAdded(unitToken)
 	-- Only track enemy nameplates
 	if not units:IsEnemy(unitToken) then
-		if useAuraContainers then
+		if USE_AURA_CONTAINERS then
 			ReleaseNameplateDisplay(unitToken)
 		end
 		return
 	end
 
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		-- Configure only the new entry (styling every pooled pair per plate spawn adds up in
 		-- busy fights); the chain re-anchor is cheap and covers the row shift.
 		local entry = EnsureNameplateDisplay(unitToken)
@@ -1037,7 +1037,7 @@ local function OnNamePlateAdded(unitToken)
 end
 
 local function OnNamePlateRemoved(unitToken)
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		ReleaseNameplateDisplay(unitToken)
 		ChainAlertDisplays()
 		return
@@ -1051,7 +1051,7 @@ local function OnNamePlateRemoved(unitToken)
 end
 
 local function ClearNamePlateWatchers()
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		ReleaseAllNameplateDisplays()
 		return
 	end
@@ -1072,7 +1072,7 @@ local function RebuildNameplateWatchers()
 		end
 	end
 
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		for unitToken in pairs(nameplateDisplays) do
 			if not activeTokens[unitToken] then
 				ReleaseNameplateDisplay(unitToken)
@@ -1106,7 +1106,7 @@ local function DisableWatchers()
 		watcher:Disable()
 	end
 
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		ReleaseAllNameplateDisplays()
 	end
 
@@ -1256,7 +1256,7 @@ function M:Refresh()
 		end
 	end
 
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		RefreshNameplateDisplays()
 		RefreshAlertSounds()
 	end
@@ -1269,7 +1269,7 @@ end
 function M:Init()
 	db = mini:GetSavedVars()
 
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		-- Pre-create display pairs for a typical screen of enemy plates (staggered, out of
 		-- combat); Acquire falls back to on-demand creation past this.
 		displayPairPool = auraContainerDisplay:NewPool(CreateAlertDisplayPair, ResetAlertDisplayPair, 20)
@@ -1355,7 +1355,7 @@ function M:Init()
 		elseif event == "NAME_PLATE_UNIT_ADDED" then
 			-- Hook every enemy nameplate's aura refresh so the important bar can react to buff changes.
 			-- Legacy only: on 12.1 the containers track their unit themselves.
-			if not useAuraContainers and units:IsEnemy(unitToken) then
+			if not USE_AURA_CONTAINERS and units:IsEnemy(unitToken) then
 				HookNameplateAuraFrame(unitToken)
 			end
 			local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Alerts)

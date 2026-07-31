@@ -17,7 +17,7 @@ local kickTracker = addon.Core.KickTracker
 -- path there is no dynamic slot split between categories (aura counts are unreadable), so each
 -- enabled category gets the full MaxIcons budget. TEMPORARY dual path: remove the watcher
 -- branch once 12.1 is live everywhere.
-local useAuraContainers = wowEx:UseAuraContainers()
+local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local eventsFrame
 local paused = false
 local testModeActive = false
@@ -305,7 +305,7 @@ local function EnsureWatcher(anchor, unit)
 		}
 		watchers[anchor] = entry
 
-		if useAuraContainers then
+		if USE_AURA_CONTAINERS then
 			-- Filter negation partitions the groups so an aura only ever lands in one: EXTERNAL
 			-- excludes BIG (they can overlap; legacy deduped by AuraInstanceID) and important
 			-- excludes both defensive categories.
@@ -326,7 +326,7 @@ local function EnsureWatcher(anchor, unit)
 
 		kickTracker:Watch(unit)
 		entry.KickKey = kickTracker:Subscribe(unit, function()
-			if useAuraContainers then
+			if USE_AURA_CONTAINERS then
 				UpdateKickIcon(entry)
 			else
 				UpdateWatcherAuras(entry)
@@ -335,7 +335,7 @@ local function EnsureWatcher(anchor, unit)
 	else
 		-- Check if unit has changed
 		if entry.Unit ~= unit then
-			if useAuraContainers then
+			if USE_AURA_CONTAINERS then
 				-- The container tracks the new unit itself; only the unit token changes.
 				entry.Display:SetUnit(unit)
 			else
@@ -350,7 +350,7 @@ local function EnsureWatcher(anchor, unit)
 			kickTracker:Unsubscribe(entry.Unit, entry.KickKey)
 			kickTracker:Watch(unit)
 			entry.KickKey = kickTracker:Subscribe(unit, function()
-				if useAuraContainers then
+				if USE_AURA_CONTAINERS then
 					UpdateKickIcon(entry)
 				else
 					UpdateWatcherAuras(entry)
@@ -363,7 +363,7 @@ local function EnsureWatcher(anchor, unit)
 			entry.Container:ResetAllSlots()
 
 			-- Force immediate refresh for the new unit
-			if useAuraContainers then
+			if USE_AURA_CONTAINERS then
 				UpdateKickIcon(entry)
 			else
 				UpdateWatcherAuras(entry)
@@ -371,7 +371,7 @@ local function EnsureWatcher(anchor, unit)
 		end
 	end
 
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		UpdateKickIcon(entry)
 	else
 		UpdateWatcherAuras(entry)
@@ -620,7 +620,7 @@ function M:Refresh()
 		end
 
 		if not testModeActive then
-			if useAuraContainers then
+			if USE_AURA_CONTAINERS then
 				UpdateKickIcon(entry)
 			else
 				UpdateWatcherAuras(entry)
@@ -666,7 +666,7 @@ function M:StopTesting()
 	M:Refresh()
 
 	-- 12.1: repopulate the kick icons the test-mode reset wiped.
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		for _, entry in pairs(watchers) do
 			UpdateKickIcon(entry)
 		end

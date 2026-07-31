@@ -8,8 +8,8 @@
 --      aura set (M.assertConsistent forces a rebuild and compares). This is the oracle that protects
 --      the incremental delta implementation.
 
-local fw  = require("framework")
-local sim = require("aura_sim")
+local fw  = require("Framework")
+local sim = require("AuraSim")
 
 local SORT_DEFAULT  = 0 -- Enum.UnitAuraSortRule.Default
 local SORT_UNSORTED = 1 -- Enum.UnitAuraSortRule.Unsorted

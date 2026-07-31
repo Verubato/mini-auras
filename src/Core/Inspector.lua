@@ -5,10 +5,10 @@
 ---@type string, Addon
 local _, addon = ...
 
-local inspectInterval  = 0.5
-local inspectTimeout   = 10
-local cacheTimeout     = 60
-local cacheExpiry      = 60 * 60 * 24 * 3 -- 3 days
+local INSPECT_INTERVAL  = 0.5
+local INSPECT_TIMEOUT   = 10
+local CACHE_TIMEOUT     = 60
+local CACHE_EXPIRY      = 60 * 60 * 24 * 3 -- 3 days
 
 local unitGuidToSpec      = {}
 local priorityStack       = {}
@@ -118,7 +118,7 @@ end
 local function PurgeOldEntries()
 	local now = Now()
 	for guid, entry in pairs(unitGuidToSpec) do
-		if not entry or type(entry) ~= "table" or not entry.LastSeen or (now - entry.LastSeen) > cacheExpiry then
+		if not entry or type(entry) ~= "table" or not entry.LastSeen or (now - entry.LastSeen) > CACHE_EXPIRY then
 			unitGuidToSpec[guid] = nil
 		end
 	end
@@ -226,7 +226,7 @@ local function GetNextTarget()
 					and (not cacheEntry.SpecId or cacheEntry.SpecId == 0)
 					and CanInspect(unit)
 					and UnitIsConnected(unit)
-					and (not cacheEntry.LastAttempt or (now - cacheEntry.LastAttempt > cacheTimeout))
+					and (not cacheEntry.LastAttempt or (now - cacheEntry.LastAttempt > CACHE_TIMEOUT))
 				then
 					return unit
 				end
@@ -238,12 +238,12 @@ local function GetNextTarget()
 end
 
 local function RunLoop()
-	C_Timer.After(inspectInterval, RunLoop)
+	C_Timer.After(INSPECT_INTERVAL, RunLoop)
 
 	local now = Now()
 	local timeSinceLastInspect = inspectStarted and (now - inspectStarted)
 
-	if requestedUnit ~= nil and timeSinceLastInspect and timeSinceLastInspect < inspectTimeout then
+	if requestedUnit ~= nil and timeSinceLastInspect and timeSinceLastInspect < INSPECT_TIMEOUT then
 		return
 	end
 

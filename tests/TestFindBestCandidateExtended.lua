@@ -13,9 +13,9 @@
 --   · CanCancelEarly rules match at short measured durations
 --   · Blessing of Protection requires Debuff evidence - missing Debuff -> no match
 
-local fw     = require("framework")
-local wow    = require("wow_api")
-local loader = require("loader")
+local fw     = require("Framework")
+local wow    = require("WowApi")
+local loader = require("Loader")
 
 local mods = loader.get()
 local B    = mods.brain

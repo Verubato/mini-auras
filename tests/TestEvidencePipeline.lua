@@ -26,9 +26,9 @@
 --       PredictRule keeps first match (not ambiguous) -> BoF predicted.
 --   · Pre-12.0.5 AW vs BoF disambiguated by castSpellIdSnapshot on a Paladin target.
 
-local fw     = require("framework")
-local wow    = require("wow_api")
-local loader = require("loader")
+local fw     = require("Framework")
+local wow    = require("WowApi")
+local loader = require("Loader")
 
 local mods     = loader.get()
 local B        = mods.brain

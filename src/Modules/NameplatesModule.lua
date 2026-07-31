@@ -22,7 +22,7 @@ local C_NamePlate = C_NamePlate
 -- split between categories (each enabled category gets the bar's full MaxIcons budget) and no
 -- category colours (ColorByCategory maps to dispel-type colouring). TEMPORARY dual path:
 -- remove the watcher branch once 12.1 is live everywhere.
-local useAuraContainers = wowEx:UseAuraContainers()
+local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local testModeActive = false
 local paused = false
 ---@type Db
@@ -34,33 +34,33 @@ local nameplateAnchors = {}
 ---@type table<string, Watcher>
 local watchers = {}
 
-local testCcNameplateSpellIds = {
+local TEST_CC_NAMEPLATE_SPELL_IDS = {
 	408, -- kidney shot
 	5782, -- fear
 }
-local testDefensiveNameplateSpellIds = {
+local TEST_DEFENSIVE_NAMEPLATE_SPELL_IDS = {
 	104773, -- warlock wall
 	1022, -- bop
 }
-local testImportantNameplateSpellIds = {
+local TEST_IMPORTANT_NAMEPLATE_SPELL_IDS = {
 	31884, -- avenging wrath
 	121471, -- shadow blades
 }
 -- Pre-computed lengths; these lists never change at runtime so recalculating
 -- #list on every test-mode call is pure waste.
-local testCcCount = #testCcNameplateSpellIds
-local testDefensiveCount = #testDefensiveNameplateSpellIds
-local testImportantCount = #testImportantNameplateSpellIds
+local TEST_CC_COUNT = #TEST_CC_NAMEPLATE_SPELL_IDS
+local TEST_DEFENSIVE_COUNT = #TEST_DEFENSIVE_NAMEPLATE_SPELL_IDS
+local TEST_IMPORTANT_COUNT = #TEST_IMPORTANT_NAMEPLATE_SPELL_IDS
 
 -- Test spell dispel colors for CC spells
-local testCcDispelColors = {
+local TEST_CC_DISPEL_COLORS = {
 	[408] = DEBUFF_TYPE_NONE_COLOR, -- kidney shot
 	[5782] = DEBUFF_TYPE_MAGIC_COLOR, -- fear
 }
 
 -- Category colors
-local defensiveColor = { r = 0.0, g = 0.8, b = 0.0 } -- Green
-local importantColor = { r = 0.9, g = 0.1, b = 0.1 } -- Red
+local DEFENSIVE_COLOR = { r = 0.0, g = 0.8, b = 0.0 } -- Green
+local IMPORTANT_COLOR = { r = 0.9, g = 0.1, b = 0.1 } -- Red
 
 ---@class NameplateData
 ---@field Nameplate table
@@ -105,15 +105,15 @@ local importantSkipScratch = {}
 local M = {}
 addon.Modules.NameplatesModule = M
 
-local nameplateBar1Key = addonName .. "_Bar1Container"
-local nameplateBar2Key = addonName .. "_Bar2Container"
+local NAMEPLATE_BAR1_KEY = addonName .. "_Bar1Container"
+local NAMEPLATE_BAR2_KEY = addonName .. "_Bar2Container"
 
 -- The two generic nameplate bars. Each bar independently shows CC, defensives, and/or important
 -- buffs based on its ShowCC / ShowDefensives / ShowImportant options, and both bars can display
 -- at the same time.
 local BARS = {
-	{ Key = "Bar1", ContainerKey = nameplateBar1Key, DataField = "Bar1Container", DisplayField = "Bar1Display" },
-	{ Key = "Bar2", ContainerKey = nameplateBar2Key, DataField = "Bar2Container", DisplayField = "Bar2Display" },
+	{ Key = "Bar1", ContainerKey = NAMEPLATE_BAR1_KEY, DataField = "Bar1Container", DisplayField = "Bar1Display" },
+	{ Key = "Bar2", ContainerKey = NAMEPLATE_BAR2_KEY, DataField = "Bar2Container", DisplayField = "Bar2Display" },
 }
 
 -- 12.1 path: central pool of pre-created bar displays. Displays are
@@ -585,7 +585,7 @@ local function ApplyBarToNameplate(container, barOptions, watcher, data)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.ShowMilliseconds = nil
 			layerScratch.FontScale = fontScale
-			layerScratch.Color = colorByCategory and defensiveColor or nil
+			layerScratch.Color = colorByCategory and DEFENSIVE_COLOR or nil
 			layerScratch.SpellId = showTooltips and entry.SpellId or nil
 			container:SetSlot(slot, layerScratch)
 		end
@@ -605,7 +605,7 @@ local function ApplyBarToNameplate(container, barOptions, watcher, data)
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.ShowMilliseconds = nil
 			layerScratch.FontScale = fontScale
-			layerScratch.Color = colorByCategory and importantColor or nil
+			layerScratch.Color = colorByCategory and IMPORTANT_COLOR or nil
 			layerScratch.SpellId = showTooltips and entry.SpellId or nil
 			container:SetSlot(slot, layerScratch)
 		end
@@ -691,9 +691,9 @@ local function ShowBarTestIcons(container, barOptions, now)
 		return
 	end
 
-	local ccCount = barOptions.ShowCC and testCcCount or 0
-	local defensiveCount = barOptions.ShowDefensives and testDefensiveCount or 0
-	local importantCount = barOptions.ShowImportant and testImportantCount or 0
+	local ccCount = barOptions.ShowCC and TEST_CC_COUNT or 0
+	local defensiveCount = barOptions.ShowDefensives and TEST_DEFENSIVE_COUNT or 0
+	local importantCount = barOptions.ShowImportant and TEST_IMPORTANT_COUNT or 0
 	local ccSlots, defensiveSlots, importantSlots =
 		slotDistribution.Calculate(container.Count, ccCount, defensiveCount, importantCount)
 
@@ -710,7 +710,7 @@ local function ShowBarTestIcons(container, barOptions, now)
 			break
 		end
 		slot = slot + 1
-		local spellId = testCcNameplateSpellIds[i]
+		local spellId = TEST_CC_NAMEPLATE_SPELL_IDS[i]
 		local tex = C_Spell.GetSpellTexture(spellId)
 		if tex then
 			layerScratch.Texture = tex
@@ -719,7 +719,7 @@ local function ShowBarTestIcons(container, barOptions, now)
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
-			layerScratch.Color = colorByCategory and testCcDispelColors[spellId] or nil
+			layerScratch.Color = colorByCategory and TEST_CC_DISPEL_COLORS[spellId] or nil
 			layerScratch.SpellId = showTooltips and spellId or nil
 			container:SetSlot(slot, layerScratch)
 		end
@@ -731,7 +731,7 @@ local function ShowBarTestIcons(container, barOptions, now)
 			break
 		end
 		slot = slot + 1
-		local spellId = testDefensiveNameplateSpellIds[i]
+		local spellId = TEST_DEFENSIVE_NAMEPLATE_SPELL_IDS[i]
 		local tex = C_Spell.GetSpellTexture(spellId)
 		if tex then
 			layerScratch.Texture = tex
@@ -740,7 +740,7 @@ local function ShowBarTestIcons(container, barOptions, now)
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
-			layerScratch.Color = colorByCategory and defensiveColor or nil
+			layerScratch.Color = colorByCategory and DEFENSIVE_COLOR or nil
 			layerScratch.SpellId = showTooltips and spellId or nil
 			container:SetSlot(slot, layerScratch)
 		end
@@ -751,7 +751,7 @@ local function ShowBarTestIcons(container, barOptions, now)
 			break
 		end
 		slot = slot + 1
-		local spellId = testImportantNameplateSpellIds[i]
+		local spellId = TEST_IMPORTANT_NAMEPLATE_SPELL_IDS[i]
 		local tex = C_Spell.GetSpellTexture(spellId)
 		if tex then
 			layerScratch.Texture = tex
@@ -760,7 +760,7 @@ local function ShowBarTestIcons(container, barOptions, now)
 			layerScratch.Glow = iconsGlow
 			layerScratch.ReverseCooldown = iconsReverse
 			layerScratch.FontScale = fontScale
-			layerScratch.Color = colorByCategory and importantColor or nil
+			layerScratch.Color = colorByCategory and IMPORTANT_COLOR or nil
 			layerScratch.SpellId = showTooltips and spellId or nil
 			container:SetSlot(slot, layerScratch)
 		end
@@ -782,7 +782,7 @@ local function OnNamePlateRemoved(unitToken)
 	HideAndReset(data.Bar2Container)
 
 	-- 12.1: park the displays back in the central pool for the next plate.
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		ReleaseDataDisplays(data)
 	end
 
@@ -829,7 +829,7 @@ local function OnNamePlateAdded(unitToken)
 		-- 12.1: an already-tracked token may still hold pooled displays from before the
 		-- module/option flip; release them instead of leaving them tracking until the
 		-- plate despawns.
-		if useAuraContainers then
+		if USE_AURA_CONTAINERS then
 			ReleaseDataDisplays(nameplateAnchors[unitToken])
 		end
 		return
@@ -838,7 +838,7 @@ local function OnNamePlateAdded(unitToken)
 	-- Check if we should ignore pets
 	local unitOptions = M:GetUnitOptions(unitToken)
 	if unitOptions.IgnorePets and units:IsPetOrMinion(unitToken) then
-		if useAuraContainers then
+		if USE_AURA_CONTAINERS then
 			ReleaseDataDisplays(nameplateAnchors[unitToken])
 		end
 		return
@@ -883,11 +883,11 @@ local function OnNamePlateAdded(unitToken)
 	}
 	nameplateAnchors[unitToken] = data
 
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		EnsureBarDisplays(data, unitOptions)
 	end
 
-	if not useAuraContainers then
+	if not USE_AURA_CONTAINERS then
 		-- Create new watcher
 		if watchers[unitToken] then
 			watchers[unitToken]:Dispose()
@@ -907,14 +907,14 @@ local function OnNamePlateAdded(unitToken)
 
 	kickTracker:Watch(unitToken)
 	kickTracker:Subscribe(unitToken, function()
-		if useAuraContainers then
+		if USE_AURA_CONTAINERS then
 			UpdateNameplateKick(data)
 		else
 			OnAuraDataChanged(unitToken)
 		end
 	end)
 
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		UpdateNameplateKick(data)
 	end
 
@@ -1083,7 +1083,7 @@ local function RefreshAnchorsAndSizes()
 						container.Frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
 
 						-- 12.1: re-apply option changes to the bar's aura display too.
-						if useAuraContainers then
+						if USE_AURA_CONTAINERS then
 							local display = EnsureBarDisplay(data, bar, barOptions)
 							local kickActive = barOptions.ShowCC and kickTracker:GetKick(data.UnitToken) ~= nil
 							AnchorBarDisplay(display, container, data.Nameplate, barOptions, kickActive)
@@ -1211,7 +1211,7 @@ function M:Init()
 	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> NameplatesModule
 	nmModule = db.Modules.NameplatesModule
 
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		-- Pre-create enough displays for a full screen of plates (staggered, out of combat).
 		displayPool = auraContainerDisplay:NewPool(CreateBarDisplay, ResetBarDisplay, 40)
 	end

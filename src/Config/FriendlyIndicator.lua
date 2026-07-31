@@ -2,8 +2,8 @@
 local _, addon = ...
 local mini = addon.Core.Framework
 local L = addon.L
-local dropdownWidth = 200
-local growOptions = {
+local DROPDOWN_WIDTH = 200
+local GROW_OPTIONS = {
 	"LEFT",
 	"RIGHT",
 	"CENTER",
@@ -12,7 +12,7 @@ local growOptions = {
 }
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
-local columns = 4
+local COLUMNS = 4
 local columnWidth
 local enabledColumnWidth
 local config = addon.Config
@@ -32,7 +32,7 @@ local function BuildGrowDropdown(parent, options, anchorFrame)
 
 	local growDdl, modernDdl = mini:Dropdown({
 		Parent = parent,
-		Items = growOptions,
+		Items = GROW_OPTIONS,
 		Width = columnWidth * 2 - horizontalSpacing,
 		GetValue = function()
 			return options.Grow
@@ -45,7 +45,7 @@ local function BuildGrowDropdown(parent, options, anchorFrame)
 		end,
 	})
 
-	growDdl:SetWidth(dropdownWidth)
+	growDdl:SetWidth(DROPDOWN_WIDTH)
 	growDdlLbl:SetPoint("TOPLEFT", anchorFrame, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 	growDdl:SetPoint("TOPLEFT", growDdlLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
 
@@ -363,7 +363,7 @@ end
 ---@param default FriendlyIndicatorInstanceOptions
 ---@param raid FriendlyIndicatorInstanceOptions
 function M:Build(panel, default, raid)
-	columnWidth = mini:ColumnWidth(columns, 0, 0)
+	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
 	-- Shared 5-column checkbox grid: the Enable-in row and settings checkbox rows all sit on
 	-- the same vertical lines.
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)

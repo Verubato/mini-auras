@@ -194,7 +194,7 @@ end
 
 -- Maps a module Grow option to flow layout settings. The first icon always sits nearest the
 -- container's anchored edge, matching the legacy layouts.
-local growLayouts = {
+local GROW_LAYOUTS = {
 	LEFT = { axis = "Horizontal", anchorPoint = "RIGHT", h = "Left", v = "Down" },
 	RIGHT = { axis = "Horizontal", anchorPoint = "LEFT", h = "Right", v = "Down" },
 	CENTER = { axis = "Horizontal", anchorPoint = "LEFT", h = "Right", v = "Down" },
@@ -204,7 +204,7 @@ local growLayouts = {
 
 ---@param instance AuraContainerDisplay
 local function ApplyFlowLayout(instance)
-	local layout = growLayouts[instance.Grow] or growLayouts.CENTER
+	local layout = GROW_LAYOUTS[instance.Grow] or GROW_LAYOUTS.CENTER
 	local frame = instance.Frame
 	frame:SetFlowLayoutAxis(AnchorUtil.FlowLayoutAxis[layout.axis])
 	frame:SetFlowLayoutAnchorPoint(layout.anchorPoint)
@@ -471,7 +471,7 @@ end
 
 -- Chain edges for anchoring a display after a kick icon frame, per grow direction (the kick
 -- occupied the first slot in the legacy layouts, so the aura row continues after it).
-local kickChainPoints = {
+local KICK_CHAIN_POINTS = {
 	LEFT = { point = "RIGHT", relativeTo = "LEFT", xMul = -1, yMul = 0 },
 	RIGHT = { point = "LEFT", relativeTo = "RIGHT", xMul = 1, yMul = 0 },
 	CENTER = { point = "LEFT", relativeTo = "RIGHT", xMul = 1, yMul = 0 },
@@ -480,7 +480,7 @@ local kickChainPoints = {
 }
 
 -- Grow direction -> anchor points for positioning a display against its anchor frame.
-local growAnchorPoints = {
+local GROW_ANCHOR_POINTS = {
 	LEFT = { point = "RIGHT", relativeTo = "LEFT" },
 	RIGHT = { point = "LEFT", relativeTo = "RIGHT" },
 	DOWN = { point = "TOP", relativeTo = "BOTTOM" },
@@ -504,10 +504,10 @@ function M:AnchorAfterKick(kickFrame, anchor, grow, spacing, offsetX, offsetY, k
 	frame:ClearAllPoints()
 
 	if kickActive then
-		local chain = kickChainPoints[grow] or kickChainPoints.CENTER
+		local chain = KICK_CHAIN_POINTS[grow] or KICK_CHAIN_POINTS.CENTER
 		frame:SetPoint(chain.point, kickFrame, chain.relativeTo, chain.xMul * spacing, chain.yMul * spacing)
 	else
-		local point = growAnchorPoints[grow] or growAnchorPoints.CENTER
+		local point = GROW_ANCHOR_POINTS[grow] or GROW_ANCHOR_POINTS.CENTER
 		frame:SetPoint(point.point, anchor, point.relativeTo, offsetX, offsetY)
 	end
 end

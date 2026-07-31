@@ -8,11 +8,11 @@ local M = {}
 addon.Modules.Cooldowns.PvPTalentSync = M
 addon.Utils.PvPTalentSync = M -- backward compat
 
-local prefix = "MiniCC:Talents"
-local throttleTimer = 3
+local PREFIX = "MiniCC:Talents"
+local THROTTLE_TIMER = 3
 local callbacks = {}
 local frame = CreateFrame("Frame")
-local pName = UnitNameUnmodified("player")
+local PLAYER_NAME = UnitNameUnmodified("player")
 local SendAddonMessage = C_ChatInfo.SendAddonMessage
 local IsInGroup = IsInGroup
 local CTimerNewTimer = C_Timer.NewTimer
@@ -22,7 +22,7 @@ local Ambiguate = Ambiguate
 local currentMsg = ""
 
 -- 0=success, 1=duplicate, 2=invalid, 3=toomany; silently disabled on failure.
-C_ChatInfo.RegisterAddonMessagePrefix(prefix)
+C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
 
 local function GetLocalPvPTalentIds()
 	if not (C_SpecializationInfo and C_SpecializationInfo.GetAllSelectedPvpTalentIDs) then
@@ -69,16 +69,16 @@ do
 	local function SendToGroup()
 		timerGroup = nil
 		if IsInGroup(1) then
-			local result = SendAddonMessage(prefix, currentMsg, "RAID") -- RAID auto-downgrades to PARTY
+			local result = SendAddonMessage(PREFIX, currentMsg, "RAID") -- RAID auto-downgrades to PARTY
 			if result == 9 then
-				timerGroup = CTimerNewTimer(throttleTimer, SendToGroup)
+				timerGroup = CTimerNewTimer(THROTTLE_TIMER, SendToGroup)
 			end
 		end
 	end
 	function PrepareForGroup()
 		currentMsg = IdsToMessage(GetLocalPvPTalentIds())
 		if not timerGroup then
-			timerGroup = CTimerNewTimer(throttleTimer, SendToGroup)
+			timerGroup = CTimerNewTimer(THROTTLE_TIMER, SendToGroup)
 		end
 	end
 end
@@ -88,16 +88,16 @@ do
 	local function SendToInstance()
 		timerInstance = nil
 		if IsInGroup(2) then
-			local result = SendAddonMessage(prefix, currentMsg, "INSTANCE_CHAT")
+			local result = SendAddonMessage(PREFIX, currentMsg, "INSTANCE_CHAT")
 			if result == 9 then
-				timerInstance = CTimerNewTimer(throttleTimer, SendToInstance)
+				timerInstance = CTimerNewTimer(THROTTLE_TIMER, SendToInstance)
 			end
 		end
 	end
 	function PrepareForInstance()
 		currentMsg = IdsToMessage(GetLocalPvPTalentIds())
 		if not timerInstance then
-			timerInstance = CTimerNewTimer(throttleTimer, SendToInstance)
+			timerInstance = CTimerNewTimer(THROTTLE_TIMER, SendToInstance)
 		end
 	end
 end
@@ -111,21 +111,21 @@ end
 ---Broadcasts own PvP talents and requests them from group members.
 function M:RequestSync()
 	-- Fire own data immediately for local use.
-	FireCallbacks(pName, GetLocalPvPTalentIds())
+	FireCallbacks(PLAYER_NAME, GetLocalPvPTalentIds())
 
 	if IsInGroup() then
 		if IsInGroup(2) then
-			SendAddonMessage(prefix, "R", "INSTANCE_CHAT")
+			SendAddonMessage(PREFIX, "R", "INSTANCE_CHAT")
 		end
 		if IsInGroup(1) then
-			SendAddonMessage(prefix, "R", "RAID")
+			SendAddonMessage(PREFIX, "R", "RAID")
 		end
 	end
 end
 
 frame:SetScript("OnEvent", function(_, event, p, msg, channel, sender)
 	if event == "CHAT_MSG_ADDON" then
-		if p == prefix and (channel == "RAID" or channel == "PARTY" or channel == "INSTANCE_CHAT") then
+		if p == PREFIX and (channel == "RAID" or channel == "PARTY" or channel == "INSTANCE_CHAT") then
 			if msg == "R" then
 				if channel == "INSTANCE_CHAT" then
 					PrepareForInstance()
@@ -141,7 +141,7 @@ frame:SetScript("OnEvent", function(_, event, p, msg, channel, sender)
 		M:RequestSync()
 	elseif event == "PLAYER_PVP_TALENT_UPDATE" then
 		-- Broadcast updated talents and notify local callbacks.
-		FireCallbacks(pName, GetLocalPvPTalentIds())
+		FireCallbacks(PLAYER_NAME, GetLocalPvPTalentIds())
 		if IsInGroup() then
 			if IsInGroup(2) then
 				PrepareForInstance()

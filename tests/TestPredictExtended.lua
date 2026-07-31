@@ -15,9 +15,9 @@
 --   · allowSyntheticCast gate for IMPORTANT aura on a warrior (physical, precog-safe) in arena.
 --   · On-cooldown spell excluded from prediction (PredictSpellId returns isOnCooldown=true).
 
-local fw     = require("framework")
-local wow    = require("wow_api")
-local loader = require("loader")
+local fw     = require("Framework")
+local wow    = require("WowApi")
+local loader = require("Loader")
 
 local mods     = loader.get()
 local B        = mods.brain

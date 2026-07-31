@@ -42,7 +42,7 @@ end
 -- Additive:  value = value + Amount
 -- Mult:      value = value + (baseValue * Amount / 100)   (Amount is typically negative %)
 
-local ClassCooldownModifiers = {
+local CLASS_COOLDOWN_MODIFIERS = {
 	DEATHKNIGHT = {
 		[205727] = { { { SpellId = 48707, Amount = -20 } } },
 		[457574] = { { { SpellId = 48707, Amount = 20 } } },
@@ -103,7 +103,7 @@ local ClassCooldownModifiers = {
 	},
 }
 
-local SpecCooldownModifiers = {
+local SPEC_COOLDOWN_MODIFIERS = {
 	-- Vengeance Demon Hunter: Fiery Brand -12s
 	[581] = { [389732] = { { { SpellId = 204021, Amount = -12 } } } },
 
@@ -216,7 +216,7 @@ local SpecCooldownModifiers = {
 -- Charge-affecting talent modifiers.
 -- Structure: [talentSpellId] = { {rank1_mods}, {rank2_mods}, ... }
 -- Each mod:  { SpellId = affectedSpellId, Amount = number }
-local ClassChargeModifiers = {
+local CLASS_CHARGE_MODIFIERS = {
 	EVOKER = {
 		[375406] = { { { SpellId = 363916, Amount = 1 } } }, -- Obsidian Scales +1 charge
 	},
@@ -228,7 +228,7 @@ local ClassChargeModifiers = {
 	},
 }
 
-local SpecChargeModifiers = {
+local SPEC_CHARGE_MODIFIERS = {
 	[102] = { [468743]  = { { { SpellId = 102560, Amount = 1 } } } }, -- Balance Druid: Whirling Stars: Incarnation +1 charge
 	[256] = { [373035]  = { { { SpellId = 33206,  Amount = 1 } } } }, -- Disc Priest: Pain Suppression +1 charge
 	[66]  = { [1246481] = { { { SpellId = 86659,  Amount = 1 } } } }, -- Prot Paladin: Guardian of Ancient Kings +1 charge
@@ -239,10 +239,10 @@ local SpecChargeModifiers = {
 
 -- PvP talent cooldown modifiers. No ranks - talent is either active or not.
 -- Structure: [pvpTalentId] = { { SpellId = x, Amount = y [, Mult = true] } }
-local ClassPvPCooldownModifiers = {}
+local CLASS_PVP_COOLDOWN_MODIFIERS = {}
 
 -- Structure: [specId] = { [pvpTalentId] = { { SpellId = x, Amount = y [, Mult = true] } } }
-local SpecPvPCooldownModifiers = {
+local SPEC_PVP_COOLDOWN_MODIFIERS = {
 	-- Brewmaster Monk: Microbrew (Fortifying Brew -50%)
 	[268] = { [666] = { { SpellId = 115203, Amount = -50, Mult = true } } },
 	-- Mistweaver Monk: Peaceweaver (Revival/Restoral -16%, applied to base before flat mods)
@@ -264,7 +264,7 @@ local SpecPvPCooldownModifiers = {
 }
 
 -- Duration-affecting talent modifiers. Supports additive (seconds) and Mult (% of base).
-local ClassDurationModifiers = {
+local CLASS_DURATION_MODIFIERS = {
 	DEATHKNIGHT = {
 		[205727] = { { { SpellId = 48707, Amount = 40, Mult = true } } }, -- Anti-Magic Barrier: AMS +40%
 	},
@@ -281,7 +281,7 @@ local ClassDurationModifiers = {
 
 -- Spec-specific duration-affecting talent modifiers. Supports additive (seconds) and Mult (% of base).
 -- Structure: [specId] = { [talentSpellId] = { {rank1_mods}, {rank2_mods}, ... } }
-local SpecDurationModifiers = {
+local SPEC_DURATION_MODIFIERS = {
 	-- Protection Paladin: Righteous Protector: Avenging Wrath/Sentinel -40% duration
 	[66] = {
 		[204074] = {
@@ -329,7 +329,7 @@ local SpecDurationModifiers = {
 -- Assumed talent ranks used when no real talent data is available for a unit.
 -- Applied as a fallback so near-universal talents still affect cooldown calculations.
 -- Format matches unitTalentRanks: { [spellId] = rank }
-local ClassDefaultTalentRanks = {
+local CLASS_DEFAULT_TALENT_RANKS = {
 	DEATHKNIGHT = {
 		[205727] = 1, -- Anti-Magic Barrier: AMS -20s cd, +40% duration (nearly universal)
 	},
@@ -369,7 +369,7 @@ local ClassDefaultTalentRanks = {
 }
 
 -- Spec-specific assumed talent ranks (specId-keyed), merged on top of class defaults.
-local SpecDefaultTalentRanks = {
+local SPEC_DEFAULT_TALENT_RANKS = {
 	[102] = {
 		[468743] = 1, -- Whirling Stars (Balance Druid): Incarnation -60s, nearly universal
 	},
@@ -592,8 +592,8 @@ local function GetEffectiveTalentRanks(playerName, classToken, specId)
 	if ranks then
 		return ranks
 	end
-	local classDef = ClassDefaultTalentRanks[classToken]
-	local specDef = specId and SpecDefaultTalentRanks[specId]
+	local classDef = CLASS_DEFAULT_TALENT_RANKS[classToken]
+	local specDef = specId and SPEC_DEFAULT_TALENT_RANKS[specId]
 	if not classDef and not specDef then
 		return nil
 	end
@@ -713,9 +713,9 @@ function M:GetUnitCooldown(unit, specId, classToken, abilityId, baseCooldown, me
 	local addAmount = 0
 	local multAmount = 0
 	local postBuffRemaining = nil
-	local classMods = ClassCooldownModifiers[classToken]
+	local classMods = CLASS_COOLDOWN_MODIFIERS[classToken]
 	local resolvedSpec = (playerName and unitTalentSpecId[playerName]) or specId
-	local specMods = resolvedSpec and SpecCooldownModifiers[resolvedSpec]
+	local specMods = resolvedSpec and SPEC_COOLDOWN_MODIFIERS[resolvedSpec]
 
 	local function applyModTable(modTable)
 		if not modTable then
@@ -779,8 +779,8 @@ function M:GetUnitCooldown(unit, specId, classToken, abilityId, baseCooldown, me
 			end
 		end
 	end
-	applyPvPModTable(ClassPvPCooldownModifiers[classToken])
-	applyPvPModTable(resolvedSpec and SpecPvPCooldownModifiers[resolvedSpec])
+	applyPvPModTable(CLASS_PVP_COOLDOWN_MODIFIERS[classToken])
+	applyPvPModTable(resolvedSpec and SPEC_PVP_COOLDOWN_MODIFIERS[resolvedSpec])
 
 	local cd = baseCooldown + addAmount + (baseCooldown * (multAmount + pvpBaseMultAmount) / 100)
 	cd = cd + pvpAddAmount + (cd * pvpMultAmount / 100)
@@ -832,8 +832,8 @@ function M:GetUnitBuffDuration(unit, specId, classToken, abilityId, baseDuration
 			end
 		end
 	end
-	applyDurationModTable(ClassDurationModifiers[classToken])
-	applyDurationModTable(resolvedSpec and SpecDurationModifiers[resolvedSpec])
+	applyDurationModTable(CLASS_DURATION_MODIFIERS[classToken])
+	applyDurationModTable(resolvedSpec and SPEC_DURATION_MODIFIERS[resolvedSpec])
 
 	return math.max(baseDuration + addAmount + (baseDuration * multAmount / 100), 0)
 end
@@ -855,9 +855,9 @@ function M:GetUnitMaxCharges(unit, specId, classToken, abilityId)
 	end
 
 	local addAmount = 0
-	local classMods = ClassChargeModifiers[classToken]
+	local classMods = CLASS_CHARGE_MODIFIERS[classToken]
 	local resolvedSpec = (playerName and unitTalentSpecId[playerName]) or specId
-	local specMods = resolvedSpec and SpecChargeModifiers[resolvedSpec]
+	local specMods = resolvedSpec and SPEC_CHARGE_MODIFIERS[resolvedSpec]
 
 	local function applyModTable(modTable)
 		if not modTable then
@@ -884,7 +884,7 @@ function M:GetUnitMaxCharges(unit, specId, classToken, abilityId)
 end
 
 ---Returns true if the unit has the given talent spell ID ranked (rank > 0), or has it as an active PvP talent.
----Falls back to ClassDefaultTalentRanks/SpecDefaultTalentRanks when no real talent data is available.
+---Falls back to CLASS_DEFAULT_TALENT_RANKS/SPEC_DEFAULT_TALENT_RANKS when no real talent data is available.
 ---@param unit string
 ---@param talentSpellId number
 ---@param callerSpecId number? Caller-resolved spec ID (e.g. from Inspector); used when unitTalentSpecId has no entry

@@ -1,6 +1,6 @@
 local addonName, addon = ...
 local M = addon.Core.Frames
-local maxTestFrames = 3
+local MAX_TEST_FRAMES = 3
 local testPartyFrames = {}
 local testFramesContainer = nil
 
@@ -51,7 +51,7 @@ function M:CreateTestFrames()
 	local width, height = 144, 72
 	local padding = 10
 
-	for i = 1, maxTestFrames do
+	for i = 1, MAX_TEST_FRAMES do
 		local frame = testPartyFrames[i]
 		if not frame then
 			frame = CreateTestFrame(i)
@@ -63,7 +63,7 @@ function M:CreateTestFrames()
 		frame:SetPoint("TOP", testFramesContainer, "TOP", 0, (i - 1) * -frame:GetHeight() - padding)
 	end
 
-	testFramesContainer:SetSize(width + padding * 2, height * maxTestFrames + padding * 2)
+	testFramesContainer:SetSize(width + padding * 2, height * MAX_TEST_FRAMES + padding * 2)
 end
 
 function M:GetTestFrameContainer()

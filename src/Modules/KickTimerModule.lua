@@ -12,7 +12,7 @@ local enabled = false
 local db
 
 -- fallback icon (rogue Kick)
-local kickIcon = C_Spell.GetSpellTexture(1766)
+local KICK_ICON = C_Spell.GetSpellTexture(1766)
 
 ---@type { string: boolean }
 local kickedByUnits = {}
@@ -25,7 +25,7 @@ local kickBar = {
 	MaxSlots = 10,
 }
 
-local friendlyUnitsToWatch = {
+local FRIENDLY_UNITS_TO_WATCH = {
 	"player",
 	"party1",
 	"party2",
@@ -210,11 +210,11 @@ local function KickedBySpec(specId)
 		return
 	end
 
-	CreateKickEntry(specInfo.KickCd, kickIcon)
+	CreateKickEntry(specInfo.KickCd, KICK_ICON)
 end
 
 local function Kicked()
-	CreateKickEntry(minKickCooldown, kickIcon)
+	CreateKickEntry(minKickCooldown, KICK_ICON)
 end
 
 local function OnFriendlyUnitEvent(unit, _, event, ...)
@@ -285,7 +285,7 @@ local function Disable()
 		return
 	end
 
-	for _, unit in ipairs(friendlyUnitsToWatch) do
+	for _, unit in ipairs(FRIENDLY_UNITS_TO_WATCH) do
 		local frame = partyUnitsEventsFrames[unit]
 		if frame then
 			frame:UnregisterEvent("UNIT_SPELLCAST_START")
@@ -313,7 +313,7 @@ local function Enable()
 		return
 	end
 
-	for _, unit in ipairs(friendlyUnitsToWatch) do
+	for _, unit in ipairs(FRIENDLY_UNITS_TO_WATCH) do
 		local frame = partyUnitsEventsFrames[unit]
 		if frame then
 			frame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
@@ -493,7 +493,7 @@ function M:Init()
 
 	CreateKickBar()
 
-	for _, unit in ipairs(friendlyUnitsToWatch) do
+	for _, unit in ipairs(FRIENDLY_UNITS_TO_WATCH) do
 		partyUnitsEventsFrames[unit] = CreateFrame("Frame")
 	end
 

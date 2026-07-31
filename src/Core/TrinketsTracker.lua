@@ -5,7 +5,7 @@ local _, addon = ...
 local M = {}
 addon.Core.TrinketsTracker = M
 
-local defaultSpellId = 336126
+local DEFAULT_SPELL_ID = 336126
 local defaultIcon
 local callbacks = {}
 
@@ -37,7 +37,7 @@ end
 function M:Refresh() end
 
 function M:Init()
-	defaultIcon = C_Spell.GetSpellTexture(defaultSpellId)
+	defaultIcon = C_Spell.GetSpellTexture(DEFAULT_SPELL_ID)
 
 	local frame = CreateFrame("Frame")
 	frame:SetScript("OnEvent", function(_, event, ...)

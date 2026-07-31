@@ -11,28 +11,28 @@ io.write("MiniCC - Cooldowns unit tests\n")
 io.write("======================================\n")
 
 local testFiles = {
-    "tests/test_rules.lua",
-    "tests/test_find_best_candidate.lua",
-    "tests/test_predict_pve_12_0_5.lua",
-    "tests/test_match_rule.lua",
-    "tests/test_find_best_candidate_extended.lua",
-    "tests/test_predict_extended.lua",
-    "tests/test_evidence_pipeline.lua",
-    "tests/test_enemy_matching.lua",
-    "tests/test_multicharge.lua",
-    "tests/test_cross_class_ext.lua",
-    "tests/test_local_player_alias.lua",
-    "tests/test_dispersion_dp.lua",
-    "tests/test_feign_death_aott_sotf.lua",
-    "tests/test_burrow.lua",
-    "tests/test_emerald_communion.lua",
-    "tests/test_aura_watcher.lua",
-    "tests/test_aura_container_display.lua",
-    "tests/test_utils.lua",
-    "tests/test_migrator.lua",
-    "tests/test_kick_tracker.lua",
-    "tests/test_module_lifecycle.lua",
-    "tests/test_profile_manager.lua",
+    "tests/TestRules.lua",
+    "tests/TestFindBestCandidate.lua",
+    "tests/TestPredictPve_12_0_5.lua",
+    "tests/TestMatchRule.lua",
+    "tests/TestFindBestCandidateExtended.lua",
+    "tests/TestPredictExtended.lua",
+    "tests/TestEvidencePipeline.lua",
+    "tests/TestEnemyMatching.lua",
+    "tests/TestMulticharge.lua",
+    "tests/TestCrossClassExt.lua",
+    "tests/TestLocalPlayerAlias.lua",
+    "tests/TestDispersionDp.lua",
+    "tests/TestFeignDeathAottSotf.lua",
+    "tests/TestBurrow.lua",
+    "tests/TestEmeraldCommunion.lua",
+    "tests/TestAuraWatcher.lua",
+    "tests/TestAuraContainerDisplay.lua",
+    "tests/TestUtils.lua",
+    "tests/TestMigrator.lua",
+    "tests/TestKickTracker.lua",
+    "tests/TestModuleLifecycle.lua",
+    "tests/TestProfileManager.lua",
 }
 
 local loadErrors = {}
@@ -52,7 +52,7 @@ for _, path in ipairs(testFiles) do
     end
 end
 
-local fw = require("framework")
+local fw = require("Framework")
 local allPassed = fw.summary()
 
 if #loadErrors > 0 then

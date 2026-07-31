@@ -2,7 +2,7 @@
 local _, addon = ...
 local frames = addon.Core.Frames
 local instanceOptions = addon.Core.InstanceOptions
-local testModules = {
+local TEST_MODULES = {
 	addon.Modules.CrowdControlModule,
 	addon.Modules.HealerCrowdControlModule,
 	addon.Modules.PortraitModule,
@@ -41,7 +41,7 @@ function M:StopTesting()
 	end
 
 	-- Stop all module test modes
-	for _, module in ipairs(testModules) do
+	for _, module in ipairs(TEST_MODULES) do
 		module:StopTesting()
 	end
 
@@ -84,7 +84,7 @@ function M:StartTesting(isRaid)
 		end
 	end
 
-	for _, module in ipairs(testModules) do
+	for _, module in ipairs(TEST_MODULES) do
 		module:StartTesting()
 	end
 end

@@ -2,15 +2,15 @@
 local _, addon = ...
 local mini = addon.Core.Framework
 local L = addon.L
-local dropdownWidth = 200
-local growOptions = {
+local DROPDOWN_WIDTH = 200
+local GROW_OPTIONS = {
 	"LEFT",
 	"RIGHT",
 	"CENTER",
 }
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
-local columns = 4
+local COLUMNS = 4
 local columnWidth
 local enabledColumnWidth
 local config = addon.Config
@@ -229,7 +229,7 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 
 	local growDdl, modernDdl = mini:Dropdown({
 		Parent = container,
-		Items = growOptions,
+		Items = GROW_OPTIONS,
 		Width = columnWidth * 2 - horizontalSpacing,
 		GetValue = function()
 			return options.Grow
@@ -242,7 +242,7 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 		end,
 	})
 
-	growDdl:SetWidth(dropdownWidth)
+	growDdl:SetWidth(DROPDOWN_WIDTH)
 	growDdlLbl:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing)
 	growDdl:SetPoint("TOPLEFT", growDdlLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
 
@@ -385,7 +385,7 @@ end
 ---@param parent table
 ---@param options NameplateModuleOptions
 function M:Build(parent, options)
-	columnWidth = mini:ColumnWidth(columns, 0, 0)
+	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
 	local db = mini:GetSavedVars()
 

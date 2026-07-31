@@ -1,7 +1,7 @@
 local _, addon = ...
 local M = addon.Core.Frames
-local maxParty = MAX_PARTY_MEMBERS or 4
-local maxRaid = MAX_RAID_MEMBERS or 40
+local MAX_PARTY = MAX_PARTY_MEMBERS or 4
+local MAX_RAID = MAX_RAID_MEMBERS or 40
 
 ---Retrieves a list of BuzzardFrames unit frames.
 ---@param visibleOnly boolean
@@ -20,7 +20,7 @@ function M:BuzzardFrames(visibleOnly)
 		frames[#frames + 1] = playerFrame
 	end
 
-	for i = 1, maxParty do
+	for i = 1, MAX_PARTY do
 		local partySuccess, partyFrames = pcall(BF.GetUnitFrames, BF, "party" .. i)
 		local frame = partySuccess and partyFrames and next(partyFrames)
 
@@ -33,7 +33,7 @@ function M:BuzzardFrames(visibleOnly)
 		end
 	end
 
-	for i = 1, maxRaid do
+	for i = 1, MAX_RAID do
 		local raidSuccess, raidFrames = pcall(BF.GetUnitFrames, BF, "raid" .. i)
 		local frame = raidSuccess and raidFrames and next(raidFrames)
 

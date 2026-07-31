@@ -8,12 +8,12 @@ local profileManager = addon.Core.ProfileManager
 local M = {}
 addon.Config.Profiles = M
 
-local noneLabel = "(none)"
-local rowHeight = 28
-local specColW = 160
+local NONE_LABEL = "(none)"
+local ROW_HEIGHT = 28
+local SPEC_COL_W = 160
 
-local profilePrefix    = "!MiniCC:2!"
-local legacyPrefix     = "!MiniCC!"
+local PROFILE_PREFIX    = "!MiniCC:2!"
+local LEGACY_PREFIX     = "!MiniCC!"
 local profileIOWindow
 
 local function ExportCurrentProfile()
@@ -23,16 +23,16 @@ local function ExportCurrentProfile()
 	if not profileData then return "" end
 	local serialized = C_EncodingUtil.SerializeCBOR(profileData)
 	local encoded = C_EncodingUtil.EncodeBase64(serialized)
-	return profilePrefix .. encoded
+	return PROFILE_PREFIX .. encoded
 end
 
 local function ImportAsProfile(str, name)
 	local encoded
 	local isLegacy = false
-	if str:sub(1, #profilePrefix) == profilePrefix then
-		encoded = str:sub(#profilePrefix + 1)
-	elseif str:sub(1, #legacyPrefix) == legacyPrefix then
-		encoded = str:sub(#legacyPrefix + 1)
+	if str:sub(1, #PROFILE_PREFIX) == PROFILE_PREFIX then
+		encoded = str:sub(#PROFILE_PREFIX + 1)
+	elseif str:sub(1, #LEGACY_PREFIX) == LEGACY_PREFIX then
+		encoded = str:sub(#LEGACY_PREFIX + 1)
 		isLegacy = true
 	else
 		return false, L["Invalid profile string."]
@@ -419,10 +419,10 @@ function M:Build(panel)
 			local specId, specName, _, specIcon = GetSpecializationInfo(specIdx)
 			if specId then
 				local capturedSpecId = specId
-				local thisItems = { noneLabel }
+				local thisItems = { NONE_LABEL }
 
 				local row = CreateFrame("Frame", nil, panel)
-				row:SetHeight(rowHeight)
+				row:SetHeight(ROW_HEIGHT)
 				row:SetPoint("TOPLEFT", prevRow, "BOTTOMLEFT", 0, -8)
 				row:SetPoint("RIGHT", panel, "RIGHT")
 
@@ -435,24 +435,24 @@ function M:Build(panel)
 				local lbl = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 				lbl:SetText(specName)
 				lbl:SetPoint("TOPLEFT", icon, "TOPRIGHT", 4, 0)
-				lbl:SetWidth(specColW - 28)
+				lbl:SetWidth(SPEC_COL_W - 28)
 
 				local dd, ddIsModern = mini:Dropdown({
 					Parent = panel,
 					Items = thisItems,
 					Width = 160,
 					GetValue = function()
-						return profileManager:GetAutoSwitchRule(capturedSpecId) or noneLabel
+						return profileManager:GetAutoSwitchRule(capturedSpecId) or NONE_LABEL
 					end,
 					SetValue = function(value)
 						profileManager:SetAutoSwitchRule(
 							capturedSpecId,
-							value == noneLabel and nil or value)
+							value == NONE_LABEL and nil or value)
 					end,
 				})
 				dd:SetWidth(160)
 				dd:SetPoint("TOPLEFT", row, "TOPLEFT",
-					specColW + (ddIsModern and 0 or -16),
+					SPEC_COL_W + (ddIsModern and 0 or -16),
 					ddIsModern and 0 or 4)
 
 				specRows[specIdx] = { dd = dd, items = thisItems }
@@ -474,7 +474,7 @@ function M:Build(panel)
 			profileItems[#profileItems + 1] = name
 		end
 
-		local allItems = { noneLabel }
+		local allItems = { NONE_LABEL }
 		for _, name in ipairs(profileManager:GetProfileNames()) do
 			allItems[#allItems + 1] = name
 		end

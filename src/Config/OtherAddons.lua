@@ -11,17 +11,17 @@ local M = {}
 
 config.OtherAddons = M
 
-local cols       = 3
-local iconSize   = 40
-local cardPad    = 10
-local cardHeight = 68
+local COLS       = 3
+local ICON_SIZE   = 40
+local CARD_PAD    = 10
+local CARD_HEIGHT = 68
 
 local addonName = (select(1, ...))
-local iconBase  = "Interface\\AddOns\\" .. addonName .. "\\Icons\\"
+local ICON_BASE  = "Interface\\AddOns\\" .. addonName .. "\\Icons\\"
 
 local function BuildAddonCard(parent, name, description, cardWidth, icon)
 	local card = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-	card:SetSize(cardWidth, cardHeight)
+	card:SetSize(cardWidth, CARD_HEIGHT)
 	card:SetBackdrop({
 		bgFile   = "Interface\\Buttons\\WHITE8X8",
 		edgeFile = "Interface\\Buttons\\WHITE8X8",
@@ -31,19 +31,19 @@ local function BuildAddonCard(parent, name, description, cardWidth, icon)
 	card:SetBackdropBorderColor(0.25, 0.25, 0.30, 0.8)
 
 	local iconTex = card:CreateTexture(nil, "ARTWORK")
-	iconTex:SetSize(iconSize, iconSize)
-	iconTex:SetPoint("LEFT", card, "LEFT", cardPad, 0)
-	iconTex:SetTexture(iconBase .. icon)
+	iconTex:SetSize(ICON_SIZE, ICON_SIZE)
+	iconTex:SetPoint("LEFT", card, "LEFT", CARD_PAD, 0)
+	iconTex:SetTexture(ICON_BASE .. icon)
 
 	local nameLabel = card:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-	nameLabel:SetPoint("LEFT",  iconTex, "RIGHT", cardPad,  8)
-	nameLabel:SetPoint("RIGHT", card,    "RIGHT", -cardPad, 0)
+	nameLabel:SetPoint("LEFT",  iconTex, "RIGHT", CARD_PAD,  8)
+	nameLabel:SetPoint("RIGHT", card,    "RIGHT", -CARD_PAD, 0)
 	nameLabel:SetJustifyH("LEFT")
 	nameLabel:SetText(name)
 
 	local descLabel = card:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
 	descLabel:SetPoint("TOPLEFT", nameLabel, "BOTTOMLEFT", 0, -3)
-	descLabel:SetPoint("RIGHT",   card,      "RIGHT", -cardPad, 0)
+	descLabel:SetPoint("RIGHT",   card,      "RIGHT", -CARD_PAD, 0)
 	descLabel:SetJustifyH("LEFT")
 	descLabel:SetText(description)
 	descLabel:SetTextColor(0.72, 0.72, 0.72, 1)
@@ -55,7 +55,7 @@ local function BuildGrid(panel, anchorFrame, addonDefs, cardWidth)
 	local firstInRow, prev
 
 	for i, def in ipairs(addonDefs) do
-		local col  = (i - 1) % cols
+		local col  = (i - 1) % COLS
 		local card = BuildAddonCard(panel, def.Name, L[def.Desc], cardWidth, def.Name)
 
 		if i == 1 then
@@ -75,7 +75,7 @@ local function BuildGrid(panel, anchorFrame, addonDefs, cardWidth)
 end
 
 function M:Build(panel)
-	local cardWidth = math.floor((mini.ContentWidth - horizontalSpacing * (cols - 1)) / cols)
+	local cardWidth = math.floor((mini.ContentWidth - horizontalSpacing * (COLS - 1)) / COLS)
 
 	local subtitle = mini:TextLine({
 		Parent = panel,

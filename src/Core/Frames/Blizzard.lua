@@ -1,7 +1,7 @@
 local _, addon = ...
 local M = addon.Core.Frames
-local maxParty = MAX_PARTY_MEMBERS or 4
-local maxRaid = MAX_RAID_MEMBERS or 40
+local MAX_PARTY = MAX_PARTY_MEMBERS or 4
+local MAX_RAID = MAX_RAID_MEMBERS or 40
 
 ---Retrieves a list of Blizzard compact party/raid member frames.
 ---@param visibleOnly boolean
@@ -10,7 +10,7 @@ function M:BlizzardFrames(visibleOnly)
 	local frames = {}
 
 	-- + 1 for player/self
-	for i = 1, maxParty + 1 do
+	for i = 1, MAX_PARTY + 1 do
 		local frame = _G["CompactPartyFrameMember" .. i]
 
 		if frame and (frame:IsVisible() or not visibleOnly) then
@@ -18,7 +18,7 @@ function M:BlizzardFrames(visibleOnly)
 		end
 	end
 
-	for i = 1, maxRaid do
+	for i = 1, MAX_RAID do
 		local frame = _G["CompactRaidFrame" .. i]
 
 		if frame and (frame:IsVisible() or not visibleOnly) then
@@ -39,7 +39,7 @@ function M:BlizzardPartyFrames(visibleOnly)
 
 	local frames = {}
 
-	for i = 1, maxParty + 1 do
+	for i = 1, MAX_PARTY + 1 do
 		local frame = PartyFrame["MemberFrame" .. i]
 
 		if frame and (frame:IsVisible() or not visibleOnly) then

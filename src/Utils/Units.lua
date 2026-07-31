@@ -4,26 +4,26 @@ local _, addon = ...
 local M = {}
 addon.Utils.Units = M
 
-local allPartyUnitsIds = {
+local ALL_PARTY_UNITS_IDS = {
 	"player",
 	"pet",
 }
-local allRaidUnitsIds = {}
+local ALL_RAID_UNITS_IDS = {}
 
 for i = 1, MAX_PARTY_MEMBERS do
-	allPartyUnitsIds[#allPartyUnitsIds + 1] = "party" .. i
+	ALL_PARTY_UNITS_IDS[#ALL_PARTY_UNITS_IDS + 1] = "party" .. i
 end
 
 for i = 1, MAX_PARTY_MEMBERS do
-	allPartyUnitsIds[#allPartyUnitsIds + 1] = "partypet" .. i
+	ALL_PARTY_UNITS_IDS[#ALL_PARTY_UNITS_IDS + 1] = "partypet" .. i
 end
 
 for i = 1, MAX_RAID_MEMBERS do
-	allRaidUnitsIds[#allRaidUnitsIds + 1] = "raid" .. i
+	ALL_RAID_UNITS_IDS[#ALL_RAID_UNITS_IDS + 1] = "raid" .. i
 end
 
 for i = 1, MAX_RAID_MEMBERS do
-	allRaidUnitsIds[#allRaidUnitsIds + 1] = "raidpet" .. i
+	ALL_RAID_UNITS_IDS[#ALL_RAID_UNITS_IDS + 1] = "raidpet" .. i
 end
 
 ---Returns a table of group member unit tokens where the unit exists.
@@ -34,7 +34,7 @@ function M:FriendlyUnits()
 	end
 
 	local isRaid = IsInRaid()
-	local units = isRaid and allRaidUnitsIds or allPartyUnitsIds
+	local units = isRaid and ALL_RAID_UNITS_IDS or ALL_PARTY_UNITS_IDS
 	local results = {}
 
 	for i = 1, #units do

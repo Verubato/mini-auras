@@ -6,8 +6,8 @@
 -- Call M.build() ONCE per test file, load the module under test with M.loadModule, then drive
 -- it through the event frames (find them via aura_container_mock's frame registry).
 
-local wow = require("wow_api")
-local acm = require("aura_container_mock")
+local wow = require("WowApi")
+local acm = require("AuraContainerMock")
 
 local M = {}
 
@@ -127,7 +127,7 @@ function M.build()
 		assert(loadfile(path))("MiniCC", addon)
 	end
 
-	local addonFiles = require("addon_files")
+	local addonFiles = require("AddonFiles")
 	addonFiles.load(addonFiles.framework, addon)
 	addon.Utils.Scheduler = {
 		Init = function() end,

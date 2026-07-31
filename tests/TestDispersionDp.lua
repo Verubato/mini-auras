@@ -16,9 +16,9 @@
 -- Synthetic Cast is granted (not arena) so both Dispersion and Desperate Prayer are
 -- candidates.  Duration at removal is the only disambiguating signal.
 
-local fw     = require("framework")
-local wow    = require("wow_api")
-local loader = require("loader")
+local fw     = require("Framework")
+local wow    = require("WowApi")
+local loader = require("Loader")
 
 local mods     = loader.get()
 local B        = mods.brain

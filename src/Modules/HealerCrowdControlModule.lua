@@ -18,7 +18,7 @@ local rc = LibStub("LibRangeCheck-3.0")
 -- registrations are per (unit, spellId), fed from the generated Core/AuraSoundData CC list.
 -- The IconSlotContainer is kept for test mode. TEMPORARY dual path: remove the watcher branch
 -- once 12.1 is live everywhere.
-local useAuraContainers = wowEx:UseAuraContainers()
+local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local paused = false
 -- 12.1 path: handles returned by AddAuraSound, so registrations can be removed on change.
 local registeredAuraSounds = {}
@@ -72,7 +72,7 @@ end
 local function PlaySound()
 	-- 12.1: sounds play engine-side via the AddAuraSound registrations (see RegisterAuraSounds);
 	-- this legacy transition-based path must not double up.
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		return
 	end
 
@@ -92,10 +92,10 @@ local function UpdateAnchorSize()
 	local stringWidth = text and text:GetStringWidth() or 0
 	-- 12.1: the warning text is disabled (see the header comment) and an AuraContainer's size can
 	-- be secret, so only the icon size feeds the anchor size there.
-	local showText = not useAuraContainers and options.ShowWarningText
+	local showText = not USE_AURA_CONTAINERS and options.ShowWarningText
 	local stringHeight = (showText and text and text:GetStringHeight()) or 0
 	local containerWidth = iconSize
-	if not useAuraContainers and iconsContainer and iconsContainer.Frame then
+	if not USE_AURA_CONTAINERS and iconsContainer and iconsContainer.Frame then
 		containerWidth = iconsContainer.Frame:GetWidth() or iconSize
 	end
 	local width = math.max(iconSize, stringWidth, containerWidth)
@@ -307,7 +307,7 @@ local function DisableWatchers()
 		healerAnchor:Hide()
 	end
 
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		ClearAuraSounds()
 	end
 
@@ -365,7 +365,7 @@ local function RefreshHealers()
 			item.Unit = healer
 			activePool[healer] = item
 			discardPool[healer] = nil
-		elseif useAuraContainers then
+		elseif USE_AURA_CONTAINERS then
 			local options = db.Modules.HealerCCModule
 			item = {
 				Unit = healer,
@@ -392,7 +392,7 @@ local function RefreshHealers()
 		end
 	end
 
-	if useAuraContainers then
+	if USE_AURA_CONTAINERS then
 		RefreshHealerDisplays()
 		RegisterAuraSounds()
 		-- The anchor is the fixed positioning frame for the healer displays; with aura presence
@@ -564,7 +564,7 @@ function M:Refresh()
 
 	-- 12.1: the warning text needs to know whether a CC aura is present, which is secret there,
 	-- so it is disabled outright.
-	if options.ShowWarningText and not useAuraContainers then
+	if options.ShowWarningText and not USE_AURA_CONTAINERS then
 		healerAnchor.HealerWarning:Show()
 	else
 		healerAnchor.HealerWarning:Hide()

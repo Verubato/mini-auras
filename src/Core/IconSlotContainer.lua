@@ -18,7 +18,7 @@ local frameIdCounter = 0
 -- Static texture-based glow types share the same layout pattern: an OVERLAY texture
 -- on a child frame sized proportionally to the icon. The field on the parent is the
 -- cache key so we never build the frame twice per layer.
-local staticGlowFields = {
+local STATIC_GLOW_FIELDS = {
 	["Rotation Assist"] = "_FlipbookGlow",
 	["Slot Glow"] = "_SlotGlow",
 }
@@ -192,7 +192,7 @@ local function CreateStaticGlowFrame(parent, field, name, paddingFactor)
 	if not parent._StaticGlowResizeHooked then
 		parent._StaticGlowResizeHooked = true
 		parent:HookScript("OnSizeChanged", function(self)
-			for _, fieldName in pairs(staticGlowFields) do
+			for _, fieldName in pairs(STATIC_GLOW_FIELDS) do
 				local g = self[fieldName]
 				if g then
 					ApplyStaticGlowPadding(g, self)
@@ -250,7 +250,7 @@ local function GetOrCreateStaticGlow(parent, glowType)
 end
 
 local function HideStaticGlowsExcept(parent, exceptType)
-	for glowType, field in pairs(staticGlowFields) do
+	for glowType, field in pairs(STATIC_GLOW_FIELDS) do
 		if glowType ~= exceptType and parent[field] then
 			parent[field]:Hide()
 		end
@@ -366,7 +366,7 @@ local function UpdateGlow(layerFrame, options)
 		colorChanged = true
 	end
 
-	if staticGlowFields[glowType] then
+	if STATIC_GLOW_FIELDS[glowType] then
 		-- Texture-based overlay: stop any LCG glows, hide other static overlays, then
 		-- show/tint the one matching the current glow type. Recolouring is a cheap
 		-- SetVertexColor so colorChanged doesn't need to recreate anything.

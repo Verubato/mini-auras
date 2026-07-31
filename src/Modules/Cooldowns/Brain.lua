@@ -14,23 +14,23 @@ addon.Modules.Cooldowns.Brain = B
 
 -- Seconds of timing tolerance when matching a measured buff duration to a rule.
 -- Covers frame-rate jitter, network latency, and slight timestamp rounding.
-local tolerance = 0.5
+local TOLERANCE = 0.5
 -- Seconds within which a UNIT_SPELLCAST_SUCCEEDED counts as cast evidence, and as a tiebreaker
 -- when multiple watched units match the same rule (e.g. two Paladins, both can produce BoP).
--- Must be >= evidenceTolerance so the deferred backfill can still catch late-arriving cast events.
--- Both castWindow and evidenceTolerance are kept equal for this reason.
-local castWindow = 0.15
+-- Must be >= EVIDENCE_TOLERANCE so the deferred backfill can still catch late-arriving cast events.
+-- Both CAST_WINDOW and EVIDENCE_TOLERANCE are kept equal for this reason.
+local CAST_WINDOW = 0.15
 -- How long (seconds) to wait for concurrent evidence after a buff appears.
 -- For cross-unit spells (e.g. BoF, BoP), UNIT_SPELLCAST_SUCCEEDED on the caster can arrive
 -- after UNIT_AURA on the target by one or more server ticks.
-local evidenceTolerance = 0.15
+local EVIDENCE_TOLERANCE = 0.15
 -- unit -> timestamp of most recent HARMFUL aura addition (Forbearance indicates Divine Shield).
 local lastDebuffTime = {}
 -- unit -> timestamp of most recent absorb change (absorb application indicates Divine Protection).
 local lastShieldTime = {}
 -- unit -> timestamp of most recent UNIT_SPELLCAST_SUCCEEDED (self-cast evidence e.g. Alter Time).
 local lastCastTime = {}
--- unit -> list of { SpellId, Time } for recent non-secret cast spell IDs within castWindow.
+-- unit -> list of { SpellId, Time } for recent non-secret cast spell IDs within CAST_WINDOW.
 -- Stored as a list because a single keypress can fire multiple UNIT_SPELLCAST_SUCCEEDED events
 -- (e.g. Desperate Prayer triggers procs or follow-up spells), and we must check all of them.
 -- Only populated for the local player (UNIT_SPELLCAST_SUCCEEDED provides non-secret IDs locally).
@@ -91,7 +91,7 @@ local inPrepRoom = false
 
 -- Pre-computed signature strings indexed by a 3-bit key (B=8, E=4, C=1).
 -- Eliminates repeated string concatenation on the hot OnWatcherChanged path.
-local auraTypesSigTable = {
+local AURA_TYPES_SIG_TABLE = {
 	[0]  = "",     [1]  = "C",
 	[4]  = "E",    [5]  = "EC",
 	[8]  = "B",    [9]  = "BC",
@@ -135,28 +135,28 @@ end
 local function BuildEvidenceSet(unit, detectionTime)
 	---@type EvidenceSet?
 	local ev = nil
-	if lastDebuffTime[unit] and math.abs(lastDebuffTime[unit] - detectionTime) <= evidenceTolerance then
+	if lastDebuffTime[unit] and math.abs(lastDebuffTime[unit] - detectionTime) <= EVIDENCE_TOLERANCE then
 		ev = ev or {}
 		ev.Debuff = true
 	end
-	if lastShieldTime[unit] and math.abs(lastShieldTime[unit] - detectionTime) <= evidenceTolerance then
+	if lastShieldTime[unit] and math.abs(lastShieldTime[unit] - detectionTime) <= EVIDENCE_TOLERANCE then
 		ev = ev or {}
 		ev.Shield = true
 	end
 	-- FeignDeath and UnitFlags are mutually exclusive: if feign death is the source of the flags
 	-- change, UnitFlags is suppressed to prevent false Aspect of the Turtle detections.
-	if lastFeignDeathTime[unit] and math.abs(lastFeignDeathTime[unit] - detectionTime) <= castWindow then
+	if lastFeignDeathTime[unit] and math.abs(lastFeignDeathTime[unit] - detectionTime) <= CAST_WINDOW then
 		ev = ev or {}
 		ev.FeignDeath = true
-	elseif lastUnitFlagsTime[unit] and math.abs(lastUnitFlagsTime[unit] - detectionTime) <= castWindow then
+	elseif lastUnitFlagsTime[unit] and math.abs(lastUnitFlagsTime[unit] - detectionTime) <= CAST_WINDOW then
 		ev = ev or {}
 		ev.UnitFlags = true
 	end
-	if lastCastTime[unit] and math.abs(lastCastTime[unit] - detectionTime) <= castWindow then
+	if lastCastTime[unit] and math.abs(lastCastTime[unit] - detectionTime) <= CAST_WINDOW then
 		ev = ev or {}
 		ev.Cast = true
 	end
-	if lastPetAuraTime[unit] and math.abs(lastPetAuraTime[unit] - detectionTime) <= evidenceTolerance then
+	if lastPetAuraTime[unit] and math.abs(lastPetAuraTime[unit] - detectionTime) <= EVIDENCE_TOLERANCE then
 		ev = ev or {}
 		ev.PetAura = true
 	end
@@ -167,7 +167,7 @@ local function AuraTypesSignature(auraTypes)
 	local k = (auraTypes["BIG_DEFENSIVE"]      and 8 or 0)
 	        + (auraTypes["EXTERNAL_DEFENSIVE"]  and 4 or 0)
 	        + (auraTypes["CROWD_CONTROL"]       and 1 or 0)
-	return auraTypesSigTable[k]
+	return AURA_TYPES_SIG_TABLE[k]
 end
 
 ---Returns true if every defined flag on the rule matches the aura's type set.
@@ -334,12 +334,12 @@ end
 ---@return boolean
 local function DurationWithinWindow(rule, measuredDuration, expectedDur)
 	if rule.CanCancelEarly then
-		return measuredDuration <= expectedDur + tolerance
+		return measuredDuration <= expectedDur + TOLERANCE
 			and (not rule.MinCancelDuration or measuredDuration >= rule.MinCancelDuration)
 	elseif rule.MinDuration then
-		return measuredDuration >= expectedDur - tolerance
+		return measuredDuration >= expectedDur - TOLERANCE
 	end
-	return math.abs(measuredDuration - expectedDur) <= tolerance
+	return math.abs(measuredDuration - expectedDur) <= TOLERANCE
 end
 
 ---Returns true when measuredDuration satisfies the duration check for rule's matching mode.
@@ -381,7 +381,7 @@ local function PlayerCastMatchesAuraRule(castSpellIdSnapshot, startTime, auraTyp
 	if not playerCasts then return false end
 	local playerSpecId = fcdTalents:GetUnitSpecId("player")
 	for _, cast in ipairs(playerCasts) do
-		if math.abs(cast.Time - startTime) <= castWindow then
+		if math.abs(cast.Time - startTime) <= CAST_WINDOW then
 			local matchedRule = FindRuleBySpellId("player", playerSpecId, auraTypes, cast.SpellId)
 			if matchedRule and RuleAcceptsMeasuredDuration(matchedRule, measuredDuration) then
 				return true
@@ -626,14 +626,14 @@ local function TryPredictFromKnownCastId(targetUnit, auraTypes, castSpellIdSnaps
 	-- multiple UNIT_SPELLCAST_SUCCEEDED events, so the list may contain several spell IDs.
 	local anyInWindow = false
 	for _, cast in ipairs(knownCasts) do
-		if math.abs(cast.Time - detectionTime) <= castWindow then
+		if math.abs(cast.Time - detectionTime) <= CAST_WINDOW then
 			anyInWindow = true; break
 		end
 	end
 	if not anyInWindow then return nil, false end
 	local specId = fcdTalents:GetUnitSpecId(targetUnit)
 	for _, cast in ipairs(knownCasts) do
-		if math.abs(cast.Time - detectionTime) <= castWindow then
+		if math.abs(cast.Time - detectionTime) <= CAST_WINDOW then
 			local fastRule = FindRuleBySpellId(targetUnit, specId, auraTypes, cast.SpellId)
 			if fastRule then
 				-- Return the rule's canonical SpellId, not the raw cast ID - these differ
@@ -712,7 +712,7 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 		local snapshotUnit = ResolveSnapshotUnit(candidate)
 		if useSnapshot then
 			castTime = castSnapshot[snapshotUnit]
-			if not castTime or math.abs(castTime - detectionTime) > castWindow then
+			if not castTime or math.abs(castTime - detectionTime) > CAST_WINDOW then
 				return
 			end
 		end
@@ -729,7 +729,7 @@ local function PredictRule(targetUnit, auraTypes, evidence, castSnapshot, castSp
 			local specId = fcdTalents:GetUnitSpecId(snapshotUnit)
 			local anyInWindow, anyMatch = false, false
 			for _, cast in ipairs(knownCasts) do
-				if math.abs(cast.Time - detectionTime) <= castWindow then
+				if math.abs(cast.Time - detectionTime) <= CAST_WINDOW then
 					anyInWindow = true
 					if FindRuleBySpellId(snapshotUnit, specId, auraTypes, cast.SpellId) then
 						anyMatch = true; break
@@ -907,7 +907,7 @@ end
 ---@param snapshotUnit string  candidate remapped to "player" when it is the local player's alias
 ---@param tracked table  FcdTrackedAura
 ---@return EvidenceSet? candidateEvidence
----@return number? castTime  nil when outside castWindow
+---@return number? castTime  nil when outside CAST_WINDOW
 local function BuildCandidateEvidence(snapshotUnit, tracked)
 	local scratch = candidateEvidenceScratch
 	scratch.Debuff     = nil
@@ -922,7 +922,7 @@ local function BuildCandidateEvidence(snapshotUnit, tracked)
 		end
 	end
 	local rawCastTime = tracked.CastSnapshot[snapshotUnit]
-	local castTime = rawCastTime and math.abs(rawCastTime - tracked.StartTime) <= castWindow and rawCastTime or nil
+	local castTime = rawCastTime and math.abs(rawCastTime - tracked.StartTime) <= CAST_WINDOW and rawCastTime or nil
 	if castTime then
 		scratch.Cast = true
 		hasEvidence  = true
@@ -941,7 +941,7 @@ local function GetKnownSpellIdsInWindow(snapshot, unit, startTime)
 	if not dataList then return nil end
 	local result = nil
 	for _, data in ipairs(dataList) do
-		if math.abs(data.Time - startTime) <= castWindow then
+		if math.abs(data.Time - startTime) <= CAST_WINDOW then
 			result = result or {}
 			result[#result + 1] = data.SpellId
 		end
@@ -1236,7 +1236,7 @@ local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 		-- Only allocate filtered when at least one entry falls within the window (common case: none).
 		local filtered
 		for _, data in ipairs(list) do
-			if math.abs(data.Time - now) <= castWindow then
+			if math.abs(data.Time - now) <= CAST_WINDOW then
 				if not filtered then filtered = {} end
 				filtered[#filtered + 1] = data
 			end
@@ -1264,7 +1264,7 @@ local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 
 	-- Deferred backfill: UNIT_SPELLCAST_SUCCEEDED and UNIT_ABSORB_AMOUNT_CHANGED can arrive
 	-- slightly after UNIT_AURA. Augment Evidence and CastSnapshot once the window elapses.
-	C_Timer.After(evidenceTolerance, function()
+	C_Timer.After(EVIDENCE_TOLERANCE, function()
 		-- Guard: if entry.TrackedAuras was replaced (e.g. by ClearAllCooldownState on
 		-- PLAYER_ENTERING_WORLD or a unit-token reassignment), this timer is stale.
 		-- Without this check the glow callback fires after the reset and sets
@@ -1285,16 +1285,16 @@ local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 			end
 		end
 		-- Backfill casters whose UNIT_SPELLCAST_SUCCEEDED arrived after UNIT_AURA.
-		-- Guard with castWindow to avoid picking up unrelated later casts.
+		-- Guard with CAST_WINDOW to avoid picking up unrelated later casts.
 		for snapshotUnit, snapshotTime in pairs(lastCastTime) do
-			if math.abs(snapshotTime - now) <= castWindow and not tracked.CastSnapshot[snapshotUnit] then
+			if math.abs(snapshotTime - now) <= CAST_WINDOW and not tracked.CastSnapshot[snapshotUnit] then
 				tracked.CastSnapshot[snapshotUnit] = snapshotTime
 			end
 		end
 		-- Backfill non-secret cast spell IDs that arrived after UNIT_AURA.
 		for snapshotUnit, list in pairs(lastCastSpellIds) do
 			for _, data in ipairs(list) do
-				if math.abs(data.Time - now) <= castWindow then
+				if math.abs(data.Time - now) <= CAST_WINDOW then
 					local existing = tracked.CastSpellIdSnapshot[snapshotUnit]
 					if not existing then
 						tracked.CastSpellIdSnapshot[snapshotUnit] = { data }
@@ -1450,7 +1450,7 @@ local function RecordCast(unit, spellId)
 		end
 		list[#list + 1] = { SpellId = spellId, Time = now }
 		-- Prune entries outside the cast window to bound list size.
-		local cutoff = now - castWindow
+		local cutoff = now - CAST_WINDOW
 		local keep = 1
 		for i = 1, #list do
 			if list[i].Time >= cutoff then

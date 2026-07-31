@@ -2,9 +2,9 @@
 -- ordering), Nameplates (pooled bar displays, release semantics), and HealerCC (AddAuraSound
 -- registration idempotency). Drives the REAL modules loaded against module_env.
 
-local fw = require("framework")
-local acm = require("aura_container_mock")
-local moduleEnv = require("module_env")
+local fw = require("Framework")
+local acm = require("AuraContainerMock")
+local moduleEnv = require("ModuleEnv")
 
 local env = moduleEnv.build()
 local db = env.db

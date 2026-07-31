@@ -7,7 +7,7 @@
 --   .talents  mock Talents with ._set* helpers
 --   .rules    loaded CooldownRules table
 
-local wow = require("wow_api")
+local wow = require("WowApi")
 wow.setup()   -- initialise WoW globals before any module is loaded
 
 local M = {}

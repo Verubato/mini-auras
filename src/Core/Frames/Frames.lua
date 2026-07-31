@@ -6,9 +6,9 @@ local wowEx = addon.Utils.WoWEx
 ---@type Db
 local db
 local initialised = false
-local strataOrder = { "BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG", "TOOLTIP" }
-local strataIndex = {}
-for i, v in ipairs(strataOrder) do strataIndex[v] = i end
+local STRATA_ORDER = { "BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG", "TOOLTIP" }
+local STRATA_INDEX = {}
+for i, v in ipairs(STRATA_ORDER) do STRATA_INDEX[v] = i end
 ---@class Frames
 local M = {}
 addon.Core.Frames = M
@@ -89,7 +89,7 @@ end
 ---@param strata string
 ---@return string
 function M:GetNextStrata(strata)
-	return strataOrder[math.min((strataIndex[strata] or 1) + 1, #strataOrder)]
+	return STRATA_ORDER[math.min((STRATA_INDEX[strata] or 1) + 1, #STRATA_ORDER)]
 end
 
 ---@param frame table

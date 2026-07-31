@@ -9,8 +9,8 @@
 --   { id=<number>, spellId=<number>, name=<string?>, icon=<any?>, duration=<any?>,
 --     helpful=bool, harmful=bool, bigDefensive=bool, externalDefensive=bool, crowdControl=bool }
 
-local fw  = require("framework")
-local wow = require("wow_api")
+local fw  = require("Framework")
+local wow = require("WowApi")
 
 local M = {}
 

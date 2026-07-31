@@ -11,7 +11,7 @@ local rules = addon.Modules.Cooldowns.Rules
 local fcdDisplay = addon.Modules.FriendlyCooldowns.Display
 local fcdModule = addon.Modules.FriendlyCooldowns.Module
 
-local growOptions = {
+local GROW_OPTIONS = {
 	"LEFT",
 	"RIGHT",
 	"CENTER",
@@ -19,7 +19,7 @@ local growOptions = {
 	"UP",
 }
 
-local columns = 4
+local COLUMNS = 4
 local columnWidth
 local enabledColumnWidth
 
@@ -298,7 +298,7 @@ local function BuildInstance(parent, anchorOptions)
 
 	local growDdl, modernDdl = mini:Dropdown({
 		Parent = panel,
-		Items = growOptions,
+		Items = GROW_OPTIONS,
 		Width = columnWidth * 2 - horizontalSpacing,
 		GetValue = function()
 			return anchorOptions.Grow
@@ -368,9 +368,9 @@ local function BuildInstance(parent, anchorOptions)
 end
 
 -- Localized class display names keyed by class token.
-local classDisplayNames = LocalizedClassList()
+local CLASS_DISPLAY_NAMES = LocalizedClassList()
 
-local classOrder = {
+local CLASS_ORDER = {
 	"DEATHKNIGHT", "DEMONHUNTER", "DRUID", "EVOKER", "HUNTER",
 	"MAGE", "MONK", "PALADIN", "PRIEST", "ROGUE",
 	"SHAMAN", "WARLOCK", "WARRIOR",
@@ -424,7 +424,7 @@ local function BuildSpellsList(parent, disabledSpells)
 
 	-- Disambiguation: spell names shared across any class get the spell ID appended.
 	local nameCounts = {}
-	for _, classToken in ipairs(classOrder) do
+	for _, classToken in ipairs(CLASS_ORDER) do
 		local spells = classSpells[classToken]
 		if spells then
 			for _, spellId in ipairs(spells) do
@@ -444,7 +444,7 @@ local function BuildSpellsList(parent, disabledSpells)
 	local maxContentH = 0
 	local contentOffsetX = sidebarW + sidebarSep
 
-	for _, classToken in ipairs(classOrder) do
+	for _, classToken in ipairs(CLASS_ORDER) do
 		local spells = classSpells[classToken]
 		if spells and #spells > 0 then
 			local classPanel = CreateFrame("Frame", nil, parent)
@@ -527,7 +527,7 @@ local function BuildSpellsList(parent, disabledSpells)
 
 	local tabY = 0
 	local firstClass = nil
-	for _, classToken in ipairs(classOrder) do
+	for _, classToken in ipairs(CLASS_ORDER) do
 		local spells = classSpells[classToken]
 		if spells and #spells > 0 then
 			if not firstClass then firstClass = classToken end
@@ -556,7 +556,7 @@ local function BuildSpellsList(parent, disabledSpells)
 
 			local fs = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 			fs:SetPoint("LEFT", btn, "LEFT", 8, 0)
-			fs:SetText(classDisplayNames[classToken] or classToken)
+			fs:SetText(CLASS_DISPLAY_NAMES[classToken] or classToken)
 			fs:SetTextColor(r, g, b, 1)
 
 			local token = classToken
@@ -587,7 +587,7 @@ end
 function M:Build(panel, default, raid)
 	local db = mini:GetSavedVars()
 	local options = db.Modules.FriendlyCooldownTrackerModule
-	columnWidth = mini:ColumnWidth(columns, 0, 0)
+	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
 	-- Shared 5-column checkbox grid: the Enable-in row and settings checkbox rows all sit on
 	-- the same vertical lines.
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)

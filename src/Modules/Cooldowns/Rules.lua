@@ -656,7 +656,7 @@ end
 -- (rather than GetSpecializationInfoByID) because that API can return nil for newer or
 -- environment-dependent specs.  Lets callers recover an enemy's class from their spec when
 -- UnitClass is unavailable - notably during arena prep, before the unit tokens exist.
-local specToClass = {
+local SPEC_TO_CLASS = {
 	[250]  = "DEATHKNIGHT", [251]  = "DEATHKNIGHT", [252]  = "DEATHKNIGHT",
 	[577]  = "DEMONHUNTER", [581]  = "DEMONHUNTER", [1480] = "DEMONHUNTER",
 	[102]  = "DRUID",       [103]  = "DRUID",        [104]  = "DRUID",       [105] = "DRUID",
@@ -676,7 +676,7 @@ local specToClass = {
 ---@param specId number?
 ---@return string? classToken
 function rules.GetClassForSpec(specId)
-	return specId and specToClass[specId] or nil
+	return specId and SPEC_TO_CLASS[specId] or nil
 end
 
 -- Lazily built specId/classToken -> ordered, deduplicated spell ID list for GetTrackableSpellIds.

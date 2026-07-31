@@ -39,11 +39,11 @@ end
 -- "Profiles", "ActiveProfile", and "AutoSwitch" are included here because CleanTable
 -- would otherwise wipe all stored profile snapshots (profile names are unknown keys
 -- relative to the dbDefaults.Profiles = {} template).
-local opaqueCacheKeys = { "SpecCache", "TalentCache", "PvPTalentCache", "WhatsNew", "NotifiedChanges", "Profiles", "ActiveProfile", "AutoSwitch" }
+local OPAQUE_CACHE_KEYS = { "SpecCache", "TalentCache", "PvPTalentCache", "WhatsNew", "NotifiedChanges", "Profiles", "ActiveProfile", "AutoSwitch" }
 
 local function SaveOpaqueCaches(vars)
 	local saved = {}
-	for _, key in ipairs(opaqueCacheKeys) do
+	for _, key in ipairs(OPAQUE_CACHE_KEYS) do
 		saved[key] = mini:CopyValueOrTable(vars[key])
 	end
 	-- DisabledSpells is a user-edited hash (spellId -> true) nested inside the module options.
@@ -57,7 +57,7 @@ local function SaveOpaqueCaches(vars)
 end
 
 local function RestoreOpaqueCaches(vars, saved)
-	for _, key in ipairs(opaqueCacheKeys) do
+	for _, key in ipairs(OPAQUE_CACHE_KEYS) do
 		vars[key] = saved[key]
 	end
 	local fcdModule = vars.Modules and vars.Modules.FriendlyCooldownTrackerModule

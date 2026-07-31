@@ -4,10 +4,10 @@
 -- model (button children are forbidden while auras are secret), pool pre-creation/reuse, the
 -- kick chain anchoring math, and the kick expiry timer.
 
-local fw = require("framework")
-local wow = require("wow_api")
+local fw = require("Framework")
+local wow = require("WowApi")
 wow.setup()
-local acm = require("aura_container_mock")
+local acm = require("AuraContainerMock")
 acm.setup()
 
 local display, _, mockDb = acm.loadDisplay()

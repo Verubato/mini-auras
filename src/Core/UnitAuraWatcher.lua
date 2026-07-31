@@ -2,7 +2,7 @@
 local _, addon = ...
 
 -- Dispel type color mapping
-local dispelColours = {
+local DISPEL_COLOURS = {
 	-- https://wago.tools/db2/SpellDispelType
 	[0] = DEBUFF_TYPE_NONE_COLOR,
 	[1] = DEBUFF_TYPE_MAGIC_COLOR,
@@ -13,7 +13,7 @@ local dispelColours = {
 }
 local dispelColorCurve
 -- Shared empty state returned when a unit has no live data. Never mutate this.
-local emptyAuraState = {}
+local EMPTY_AURA_STATE = {}
 -- Scratch table reused by RebuildStates as a dedup set; wiped at start of each call.
 local rebuildSeen = {}
 -- Context for the hoisted RebuildStates collectors, set before each IterateAuras pass so the
@@ -30,7 +30,7 @@ local function InitColourCurve()
 	dispelColorCurve = C_CurveUtil.CreateColorCurve()
 	dispelColorCurve:SetType(Enum.LuaCurveType.Step)
 
-	for type, colour in pairs(dispelColours) do
+	for type, colour in pairs(DISPEL_COLOURS) do
 		dispelColorCurve:AddPoint(type, colour)
 	end
 end
@@ -226,7 +226,7 @@ end
 function Watcher:GetCcState()
 	local unit = self.State.Unit
 	if not unit or not UnitExists(unit) or UnitIsDeadOrGhost(unit) then
-		return emptyAuraState
+		return EMPTY_AURA_STATE
 	end
 
 	return self.State.CcAuraState
@@ -236,7 +236,7 @@ end
 function Watcher:GetDefensiveState()
 	local unit = self.State.Unit
 	if not unit or not UnitExists(unit) or UnitIsDeadOrGhost(unit) then
-		return emptyAuraState
+		return EMPTY_AURA_STATE
 	end
 
 	return self.State.DefensiveState
@@ -249,7 +249,7 @@ end
 function Watcher:GetBuffState()
 	local unit = self.State.Unit
 	if not unit or not UnitExists(unit) or UnitIsDeadOrGhost(unit) then
-		return emptyAuraState
+		return EMPTY_AURA_STATE
 	end
 
 	return self.State.BuffState

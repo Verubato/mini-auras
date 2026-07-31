@@ -4,25 +4,25 @@ local _, addon = ...
 addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
 
 -- All signature events must arrive within this window of each other to count as one batch.
-local correlationWindow  = 0.5
+local CORRELATION_WINDOW  = 0.5
 -- Burrow (SpellId 409293): UNIT_FLAGS + UNIT_MODEL_CHANGED + UNIT_PORTRAIT_UPDATE.
 -- Two identical batches fire per cast: first when entering, second when exiting.
 -- Commit fires only when both batches arrive within the active duration + tolerance.
 -- This prevents a false commit from the single batch that fires on render-distance entry.
 -- PvP talent ID differs by spec: 5574 (Elemental), 5575 (Enhancement), 5576 (Restoration).
-local burrowTalentIdElemental = 5574
-local burrowTalentIdEnhance   = 5575
-local burrowTalentIdResto     = 5576
-local burrowActiveDuration = 5    -- seconds the Shaman is underground
-local burrowArmTolerance   = 1.5  -- covers timing variance and the correlation spread of the second batch
+local BURROW_TALENT_ID_ELEMENTAL = 5574
+local BURROW_TALENT_ID_ENHANCE   = 5575
+local BURROW_TALENT_ID_RESTO     = 5576
+local BURROW_ACTIVE_DURATION = 5    -- seconds the Shaman is underground
+local BURROW_ARM_TOLERANCE   = 1.5  -- covers timing variance and the correlation spread of the second batch
 -- Emerald Communion (Evoker PvP talent 5718, SpellId 370960): two-phase detection.
--- Arm:    CHANNEL_START + UNIT_FLAGS within correlationWindow.
--- Commit: CHANNEL_STOP  + UNIT_FLAGS within correlationWindow after a valid channel duration.
-local ecTalentId          = 5718
-local ecRearmWindow       = 6.5  -- max duration + tolerance + correlation window + 0.5s buffer
-local ecMinDuration       = 4    -- EC channels for ~4.6s (stat-dependent); reject anything shorter
-local ecMaxDuration       = 5    -- reject anything longer (non-EC UNIT_FLAGS pair)
-local ecDurationTolerance = 0.5
+-- Arm:    CHANNEL_START + UNIT_FLAGS within CORRELATION_WINDOW.
+-- Commit: CHANNEL_STOP  + UNIT_FLAGS within CORRELATION_WINDOW after a valid channel duration.
+local EC_TALENT_ID          = 5718
+local EC_REARM_WINDOW       = 6.5  -- max duration + tolerance + correlation window + 0.5s buffer
+local EC_MIN_DURATION       = 4    -- EC channels for ~4.6s (stat-dependent); reject anything shorter
+local EC_MAX_DURATION       = 5    -- reject anything longer (non-EC UNIT_FLAGS pair)
+local EC_DURATION_TOLERANCE = 0.5
 
 ---@class SignatureDetector
 local SD = {}
@@ -54,20 +54,20 @@ function methods:_tryCommitBurrow(unit, now)
 	local mt = self._model[unit]
 	local pt = self._portrait[unit]
 	if not ft or not mt or not pt then return end
-	if now - ft > correlationWindow then return end
-	if now - mt > correlationWindow then return end
-	if now - pt > correlationWindow then return end
+	if now - ft > CORRELATION_WINDOW then return end
+	if now - mt > CORRELATION_WINDOW then return end
+	if now - pt > CORRELATION_WINDOW then return end
 	local _, classToken = UnitClass(unit)
 	if classToken ~= "SHAMAN" then return end
 	if self.checkTalent
-	   and not self.talents:UnitHasTalent(unit, burrowTalentIdElemental)
-	   and not self.talents:UnitHasTalent(unit, burrowTalentIdEnhance)
-	   and not self.talents:UnitHasTalent(unit, burrowTalentIdResto) then return end
+	   and not self.talents:UnitHasTalent(unit, BURROW_TALENT_ID_ELEMENTAL)
+	   and not self.talents:UnitHasTalent(unit, BURROW_TALENT_ID_ENHANCE)
+	   and not self.talents:UnitHasTalent(unit, BURROW_TALENT_ID_RESTO) then return end
 	self._flags[unit]    = nil
 	self._model[unit]    = nil
 	self._portrait[unit] = nil
 	local lastArm = self._barm[unit]
-	if lastArm and now - lastArm <= burrowActiveDuration + burrowArmTolerance then
+	if lastArm and now - lastArm <= BURROW_ACTIVE_DURATION + BURROW_ARM_TOLERANCE then
 		self._barm[unit] = nil
 		if self.burrowCommit then self.burrowCommit(unit, now, lastArm) end
 	else
@@ -79,11 +79,11 @@ function methods:_tryArmEC(unit, now)
 	local cst = self._cstart[unit]
 	local ft  = self._flags[unit]
 	if not cst or not ft then return end
-	if now - cst > correlationWindow then return end
-	if now - ft  > correlationWindow then return end
+	if now - cst > CORRELATION_WINDOW then return end
+	if now - ft  > CORRELATION_WINDOW then return end
 	local _, classToken = UnitClass(unit)
 	if classToken ~= "EVOKER" then return end
-	if self.checkTalent and not self.talents:UnitHasTalent(unit, ecTalentId) then return end
+	if self.checkTalent and not self.talents:UnitHasTalent(unit, EC_TALENT_ID) then return end
 	self._ecarm[unit]  = now
 	self._cstart[unit] = nil
 end
@@ -92,16 +92,16 @@ function methods:_tryCommitEC(unit, now)
 	local csp = self._cstop[unit]
 	local ft  = self._flags[unit]
 	if not csp or not ft then return end
-	if now - csp > correlationWindow then return end
-	if now - ft  > correlationWindow then return end
+	if now - csp > CORRELATION_WINDOW then return end
+	if now - ft  > CORRELATION_WINDOW then return end
 	local lastArm = self._ecarm[unit]
-	if not lastArm or now - lastArm >= ecRearmWindow then return end
+	if not lastArm or now - lastArm >= EC_REARM_WINDOW then return end
 	local dur = csp - lastArm
-	if dur < ecMinDuration - ecDurationTolerance then return end
-	if dur > ecMaxDuration + ecDurationTolerance then return end
+	if dur < EC_MIN_DURATION - EC_DURATION_TOLERANCE then return end
+	if dur > EC_MAX_DURATION + EC_DURATION_TOLERANCE then return end
 	local _, classToken = UnitClass(unit)
 	if classToken ~= "EVOKER" then return end
-	if self.checkTalent and not self.talents:UnitHasTalent(unit, ecTalentId) then return end
+	if self.checkTalent and not self.talents:UnitHasTalent(unit, EC_TALENT_ID) then return end
 	self._ecarm[unit]  = nil
 	self._cstop[unit]  = nil
 	if self.ecCommit then self.ecCommit(unit, now, lastArm) end

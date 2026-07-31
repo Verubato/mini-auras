@@ -4,7 +4,7 @@ local mini = addon.Core.Framework
 local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
-local columns = 4
+local COLUMNS = 4
 local columnWidth
 local enabledColumnWidth
 local config = addon.Config
@@ -17,7 +17,7 @@ config.Healer = M
 ---@param panel table
 ---@param options HealerCrowdControlModuleOptions
 function M:Build(panel, options)
-	columnWidth = mini:ColumnWidth(columns, 0, 0)
+	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
 	-- Shared 5-column checkbox grid: the Enable-in row and settings checkbox rows all sit on
 	-- the same vertical lines.
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
