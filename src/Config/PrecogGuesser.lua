@@ -22,14 +22,12 @@ function M:Build(panel)
 	local descriptionLines
 	if addon.Utils.WoWEx:UseAuraContainers() then
 		descriptionLines = {
-			L["This isn't precision perfect but it should be close enough."],
 			L["It works by showing any 'important' buff with a maximum duration of 4.1 seconds or less (precognition is a 4 second buff)."],
 			L["So if a unit happens to have some other short important buff then that icon would also show, sorry."],
 			L["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."],
 		}
 	else
 		descriptionLines = {
-			L["This isn't precision perfect but it should be close enough."],
 			L["It works by taking any 4 second 'important' self buff and showing that icon."],
 			L["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."],
 			L["Note that you can't simply filter by spell id these days."],
