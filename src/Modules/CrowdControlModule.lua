@@ -33,10 +33,9 @@ local watchers = {}
 local testSpells = {}
 -- Reused buffer for GetPetUnitFrames so discovery doesn't allocate each refresh.
 local petUnitFrameScratch = {}
--- 12.1 scratch tables: the kick slot options and the display style are rebuilt on every kick
--- event and every options pass, and both consumers read them synchronously and keep nothing.
+-- 12.1 scratch: the kick slot options are rebuilt on every kick event, and SetSlot reads them
+-- synchronously and keeps nothing. (The display style uses the wrapper's shared scratch.)
 local kickSlotScratch = {}
-local displayStyleScratch = {}
 
 local function GetOptions()
 	return instanceOptions:IsRaid() and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
@@ -732,7 +731,7 @@ local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 		entry.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, iconCount)
 		entry.Display:SetSpacing(entryOptions.IconSpacing or 2)
 
-		local style = displayStyleScratch
+		local style = auraContainerDisplay:GetStyleScratch()
 		style.ReverseCooldown = entryOptions.Icons.ReverseCooldown
 		style.ShowMilliseconds = entryOptions.Icons.ShowMilliseconds
 		style.ColorByDispelType = entryOptions.Icons.ColorByDispelType

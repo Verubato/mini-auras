@@ -30,8 +30,6 @@ local watcher
 local display
 ---@type TestSpell
 local testSpell
--- Reused style table for the aura display; SetStyle copies out of it and keeps nothing.
-local displayStyleScratch = {}
 
 ---@class PrecogGuesserModule : IModule
 local M = {}
@@ -197,7 +195,7 @@ local function ApplyOptions(options)
 	if display then
 		display:SetIconSize(iconSize)
 
-		local style = displayStyleScratch
+		local style = auraContainerDisplay:GetStyleScratch()
 		style.ReverseCooldown = options.Icons.ReverseCooldown
 		style.Glow = options.Icons.Glow
 		style.FontScale = db.FontScale

@@ -34,8 +34,6 @@ local auraSoundInfoScratch = { unitToken = nil, spellID = nil, soundFileName = n
 -- 12.1 path: sorted healer-unit scratch so the display chain has a stable order (pairs order
 -- would let the healer rows swap places between refreshes).
 local healerOrderScratch = {}
--- Reused style table for the healer displays; SetStyle copies out of it and keeps nothing.
-local displayStyleScratch = {}
 -- The sound settings the current registrations were made with; when these change every healer is
 -- re-registered (the unit set is handled incrementally).
 local auraSoundSignature = nil
@@ -244,9 +242,8 @@ local function RefreshHealerDisplays()
 			display:SetIconSize(iconSize)
 			display:SetSpacing(options.IconSpacing or 2)
 
-			local style = displayStyleScratch
+			local style = auraContainerDisplay:GetStyleScratch()
 			style.ReverseCooldown = options.Icons.ReverseCooldown
-			style.ShowMilliseconds = nil
 			style.ColorByDispelType = options.Icons.ColorByDispelType
 			style.Glow = options.Icons.Glow
 			style.FontScale = db.FontScale

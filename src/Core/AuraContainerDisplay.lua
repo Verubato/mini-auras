@@ -141,6 +141,11 @@ end
 -- Stand-in for a nil style, so SetStyle never has to allocate one. Read-only.
 local EMPTY_STYLE = {}
 
+-- Shared scratch handed out by GetStyleScratch. Every field is cleared on hand-out, so a caller
+-- can only ever set the fields it cares about and can never inherit a value from whoever used it
+-- last (which is exactly the bug a per-module scratch table invites).
+local styleScratch = {}
+
 ---Copies a style into the instance's own persistent style table, resolving the global db values
 ---StyleButton needs along the way, and reports whether any of it actually changed. Callers can
 ---therefore hand in a reused scratch table - nothing here retains the argument.
@@ -572,6 +577,22 @@ function M:SetGrow(grow)
 
 	self.Grow = grow
 	ApplyFlowLayout(self)
+end
+
+---Returns the shared style scratch with every field cleared, ready to fill and hand to
+---SetStyle. Using this instead of a table literal keeps the per-refresh style updates
+---allocation-free, and clearing on hand-out means a caller can never inherit a field it forgot
+---to set from whoever styled a display last.
+---@return AuraDisplayStyle
+function M:GetStyleScratch()
+	styleScratch.ReverseCooldown = nil
+	styleScratch.ShowMilliseconds = nil
+	styleScratch.ColorByDispelType = nil
+	styleScratch.Glow = nil
+	styleScratch.FontScale = nil
+	styleScratch.ShowTooltips = nil
+
+	return styleScratch
 end
 
 ---Stores the per-button style and applies it to existing buttons when possible. Skipped

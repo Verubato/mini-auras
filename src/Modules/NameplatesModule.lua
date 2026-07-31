@@ -135,8 +135,6 @@ local BARS = {
 -- created out of combat via the pool's staggered pre-creation, then acquired/reparented/
 -- retargeted as plates come and go, so plate churn mid-combat never creates containers.
 local displayPool
--- Reused style table for the pooled displays; SetStyle copies out of it and keeps nothing.
-local displayStyleScratch = {}
 -- Rough upper bound on simultaneously visible nameplates, used to size the display pool.
 local PLATE_ESTIMATE = 40
 
@@ -301,7 +299,7 @@ local function EnsureBarDisplay(data, bar, barOptions)
 		barOptions.ShowImportant
 	)
 
-	local style = displayStyleScratch
+	local style = auraContainerDisplay:GetStyleScratch()
 	style.ReverseCooldown = barOptions.Icons.ReverseCooldown
 	style.ShowMilliseconds = barOptions.Icons.ShowMilliseconds
 	-- Category colours can't be applied per group; dispel-type colouring is the nearest fit.

@@ -113,8 +113,6 @@ local displayOrderScratch = {}
 -- comparison, and the chain re-sorts on every plate add/remove; the token set is small and fixed,
 -- so resolving each token once removes all of that per-comparison string churn.
 local nameplateTokenOrder = {}
--- Reused style table for the pooled displays; SetStyle copies out of it and keeps nothing.
-local displayStyleScratch = {}
 -- Reused enemy-token set for RebuildNameplateWatchers.
 local activeTokensScratch = {}
 -- Freed id lists from RemoveTokenAlertSounds, reused by the next registration instead of
@@ -793,10 +791,8 @@ local function ApplyNameplateDisplayOptions(entry, options, showBars)
 	entry.Def:SetMaxIcons(auraFilters.GroupKey.ExternalDefensive, includeDefensives and maxIcons or 0)
 
 	-- Both displays take the same style; fill the scratch once and hand it to each.
-	local style = displayStyleScratch
+	local style = auraContainerDisplay:GetStyleScratch()
 	style.ReverseCooldown = options.Icons.ReverseCooldown
-	style.ShowMilliseconds = nil
-	style.ColorByDispelType = nil
 	style.Glow = options.Icons.Glow
 	style.FontScale = db.FontScale
 	style.ShowTooltips = showTooltips

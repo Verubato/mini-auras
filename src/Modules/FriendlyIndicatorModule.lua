@@ -36,10 +36,9 @@ local testDefensiveSpells = {}
 local testCcSpells = {}
 ---@type Db
 local db
--- 12.1 scratch tables: the kick slot options and the display style are rebuilt on every kick
--- event and every options pass, and both consumers read them synchronously and keep nothing.
+-- 12.1 scratch: the kick slot options are rebuilt on every kick event, and SetSlot reads them
+-- synchronously and keeps nothing. (The display style uses the wrapper's shared scratch.)
 local kickSlotScratch = {}
-local displayStyleScratch = {}
 
 local function GetOptions()
 	local m = db.Modules.FriendlyIndicatorModule
@@ -621,9 +620,8 @@ local function ApplyEntryOptions(entry, anchor, options)
 			options.ShowImportant
 		)
 
-		local style = displayStyleScratch
+		local style = auraContainerDisplay:GetStyleScratch()
 		style.ReverseCooldown = options.Icons.ReverseCooldown
-		style.ShowMilliseconds = nil
 		style.ColorByDispelType = options.Icons.ColorByDispelType
 		style.Glow = options.Icons.Glow
 		style.FontScale = db.FontScale
