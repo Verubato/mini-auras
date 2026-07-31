@@ -465,74 +465,6 @@ function M:New(parent, unit, groups, size, spacing, moduleName)
 	return instance
 end
 
----Creates a pool of display objects (a display or a bundle of displays per item, as built by
----createFn; resetFn parks an item - disable, hide, unanchor). Pre-creation is staggered on a
----timer so login doesn't hitch, and containers are never created mid-combat in practice;
----Acquire falls back to on-demand creation only if demand outruns the pool (which the 12.1 API
----permits, at the cost of a combat frame spike).
----
----Pre-creation does NOT start on its own: modules Init unconditionally, so a pool that filled
----itself would build a screen's worth of containers for a module the user has switched off.
----Call Prewarm() from the module's enable path instead (it is idempotent and cheap to repeat).
----@param createFn fun(): table
----@param resetFn fun(item: table)
----@param preallocateCount number
----@return table pool Pool with Acquire/Release/Prewarm methods.
-function M:NewPool(createFn, resetFn, preallocateCount)
-	local pool = { Free = {} }
-
-	-- Closures over `pool` (dot-defined but callable with `:` too - the implicit self is unused).
-	function pool.Acquire()
-		local item = table.remove(pool.Free)
-		if not item then
-			item = createFn()
-		end
-		return item
-	end
-
-	function pool.Release(_, item)
-		resetFn(item)
-		pool.Free[#pool.Free + 1] = item
-	end
-
-	local created = 0
-	local target = preallocateCount
-	local ticker
-
-	---Starts (or resumes) staggered pre-creation. Safe to call on every enable: it no-ops once
-	---the pool is full or while a fill is already running. Pass targetCount to raise the target
-	---when demand grows (e.g. the user enables a second bar, doubling displays per nameplate);
-	---it never lowers it, since the extra items are already built.
-	---@param targetCount number?
-	function pool.Prewarm(_, targetCount)
-		if targetCount and targetCount > target then
-			target = targetCount
-		end
-
-		if ticker or created >= target then
-			return
-		end
-
-		ticker = C_Timer.NewTicker(0.1, function()
-			if created >= target then
-				ticker:Cancel()
-				ticker = nil
-				return
-			end
-			for _ = 1, 2 do
-				if created < target then
-					created = created + 1
-					local item = createFn()
-					resetFn(item)
-					pool.Free[#pool.Free + 1] = item
-				end
-			end
-		end)
-	end
-
-	return pool
-end
-
 ---@param unit string
 function M:SetUnit(unit)
 	self.Frame:SetUnit(unit)
@@ -704,35 +636,6 @@ function M:AnchorAfterKick(kickFrame, anchor, grow, spacing, offsetX, offsetY, k
 		local point, relativePoint = growAnchors:GetAnchor(grow)
 		frame:SetPoint(point, anchor, relativePoint, offsetX, offsetY)
 	end
-end
-
----Renders a kick lockout into slot 1 of a legacy IconSlotContainer (kicks aren't auras, so
----they can't render through a container) and schedules onExpired shortly after the lockout
----ends - no aura event fires to clear it. Cancels previousTimer; returns the new timer (nil
----when there is nothing to wait for). Pass kickEntry nil to clear the slot.
----@param container IconSlotContainer
----@param kickEntry table?
----@param slotOptions table? SetSlot options for the kick icon (required when kickEntry is set).
----@param previousTimer table?
----@param onExpired fun()
----@return table? timer
-function M:RenderKickSlot(container, kickEntry, slotOptions, previousTimer, onExpired)
-	if previousTimer then
-		previousTimer:Cancel()
-	end
-
-	if not kickEntry then
-		container:SetSlotUnused(1)
-		return nil
-	end
-
-	container:SetSlot(1, slotOptions)
-
-	local remaining = (kickEntry.StartTime or 0) + (kickEntry.Duration or 0) - GetTime()
-	if remaining > 0 then
-		return C_Timer.NewTimer(remaining + 0.05, onExpired)
-	end
-	return nil
 end
 
 ---@class AuraDisplayStyle

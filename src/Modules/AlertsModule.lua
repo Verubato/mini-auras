@@ -7,6 +7,7 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
 local growAnchors = addon.Core.GrowAnchors
+local pool = addon.Core.Pool
 local eventGate = addon.Core.EventGate
 local duelPoller = addon.Core.DuelPoller
 local moduleUtil = addon.Utils.ModuleUtil
@@ -1430,11 +1431,11 @@ end
 
 local function CreateFrames()
 	if USE_AURA_CONTAINERS then
-		-- The pool itself is just two closures; pre-creation of the pairs is deferred to the
-		-- enable path (see SetEventsActive) so a disabled module - or a zone that never shows
-		-- alerts - doesn't build a screen's worth of containers. Acquire falls back to on-demand
+		-- The pool itself is cheap; pre-creation of the pairs is deferred to the enable path
+		-- (see SetEventsActive) so a disabled module - or a zone that never shows alerts -
+		-- doesn't build a screen's worth of containers. Acquire falls back to on-demand
 		-- creation past the pre-created count.
-		displayPairPool = auraContainerDisplay:NewPool(CreateAlertDisplayPair, ResetAlertDisplayPair, PLATE_ESTIMATE)
+		displayPairPool = pool:New(CreateAlertDisplayPair, ResetAlertDisplayPair, PLATE_ESTIMATE)
 	end
 
 	local options = db.Modules.AlertsModule

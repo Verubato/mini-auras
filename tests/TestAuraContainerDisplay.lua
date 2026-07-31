@@ -1,8 +1,8 @@
--- Tests for the 12.1 AuraContainer display wrapper (Core/AuraContainerDisplay.lua), driven
--- through the aura_container_mock environment. Focus areas are the real bug classes from the
--- 12.1 bring-up: style-signature skipping (and its staleness edge cases), the restriction
--- model (button children are forbidden while auras are secret), pool pre-creation/reuse, the
--- kick chain anchoring math, and the kick expiry timer.
+-- Tests for the 12.1 AuraContainer display wrapper (Core/AuraContainerDisplay.lua) and the Core
+-- modules it leans on, driven through the aura_container_mock environment. Focus areas are the
+-- real bug classes from the 12.1 bring-up: style-signature skipping (and its staleness edge
+-- cases), the restriction model (button children are forbidden while auras are secret), pool
+-- pre-creation/reuse, the kick chain anchoring math, and the kick expiry timer.
 
 local fw = require("Framework")
 local wow = require("WowApi")
@@ -10,7 +10,9 @@ wow.setup()
 local acm = require("AuraContainerMock")
 acm.setup()
 
-local display, _, mockDb = acm.loadDisplay()
+local display, addon, mockDb = acm.loadDisplay()
+local objectPool = addon.Core.Pool
+local kickSlot = addon.Core.KickSlot
 
 local BATCH = acm.batchSize
 
@@ -319,12 +321,12 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 	end)
 end)
 
-fw.describe("AuraContainerDisplay - NewPool", function()
+fw.describe("Pool", function()
 	fw.before_each(acm.reset)
 
 	local function newCountingPool(prealloc)
 		local created, resets = 0, 0
-		local pool = display:NewPool(function()
+		local pool = objectPool:New(function()
 			created = created + 1
 			return { id = created }
 		end, function()
@@ -435,7 +437,7 @@ fw.describe("AuraContainerDisplay - AnchorAfterKick", function()
 	end)
 end)
 
-fw.describe("AuraContainerDisplay - RenderKickSlot", function()
+fw.describe("KickSlot", function()
 	fw.before_each(acm.reset)
 
 	local function newSlotRecorder()
@@ -455,7 +457,7 @@ fw.describe("AuraContainerDisplay - RenderKickSlot", function()
 		local expired = false
 		local kickEntry = { StartTime = 100, Duration = 5, Texture = "tex" }
 
-		local timer = display:RenderKickSlot(container, kickEntry, { Texture = "tex" }, nil, function()
+		local timer = kickSlot:Render(container, kickEntry, { Texture = "tex" }, nil, function()
 			expired = true
 		end)
 
@@ -468,15 +470,15 @@ fw.describe("AuraContainerDisplay - RenderKickSlot", function()
 	fw.it("cancels the previous timer on re-render", function()
 		wow.setTime(100)
 		local container = newSlotRecorder()
-		local first = display:RenderKickSlot(container, { StartTime = 100, Duration = 5 }, {}, nil, function() end)
-		local second = display:RenderKickSlot(container, { StartTime = 101, Duration = 5 }, {}, first, function() end)
+		local first = kickSlot:Render(container, { StartTime = 100, Duration = 5 }, {}, nil, function() end)
+		local second = kickSlot:Render(container, { StartTime = 101, Duration = 5 }, {}, first, function() end)
 		assert(first.cancelled, "previous timer cancelled")
 		assert(second and not second.cancelled, "new timer active")
 	end)
 
 	fw.it("clears the slot and returns no timer when the kick is gone", function()
 		local container = newSlotRecorder()
-		local timer = display:RenderKickSlot(container, nil, nil, nil, function() end)
+		local timer = kickSlot:Render(container, nil, nil, nil, function() end)
 		assert(timer == nil, "no timer without a kick")
 		assert(#container.unusedCalls == 1 and container.unusedCalls[1] == 1, "slot 1 cleared")
 	end)
@@ -484,7 +486,7 @@ fw.describe("AuraContainerDisplay - RenderKickSlot", function()
 	fw.it("an already-expired kick renders but schedules nothing", function()
 		wow.setTime(200)
 		local container = newSlotRecorder()
-		local timer = display:RenderKickSlot(container, { StartTime = 100, Duration = 5 }, {}, nil, function() end)
+		local timer = kickSlot:Render(container, { StartTime = 100, Duration = 5 }, {}, nil, function() end)
 		assert(timer == nil, "no timer for an expired kick")
 		assert(#container.setCalls == 1, "icon still rendered (cooldown shows it expired)")
 	end)

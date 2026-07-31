@@ -8,6 +8,7 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
 local growAnchors = addon.Core.GrowAnchors
+local kickSlot = addon.Core.KickSlot
 local UnitAuraWatcher = addon.Core.UnitAuraWatcher
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
@@ -228,7 +229,7 @@ local function UpdateKickIcon(entry)
 		slotOptions.FontScale = db.FontScale
 	end
 
-	entry.KickTimer = auraContainerDisplay:RenderKickSlot(entry.Container, kickEntry, slotOptions, entry.KickTimer, function()
+	entry.KickTimer = kickSlot:Render(entry.Container, kickEntry, slotOptions, entry.KickTimer, function()
 		entry.KickTimer = nil
 		UpdateKickIcon(entry)
 	end)

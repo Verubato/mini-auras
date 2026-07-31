@@ -10,6 +10,8 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
 local growAnchors = addon.Core.GrowAnchors
+local kickSlot = addon.Core.KickSlot
+local pool = addon.Core.Pool
 local eventGate = addon.Core.EventGate
 local duelPoller = addon.Core.DuelPoller
 local moduleUtil = addon.Utils.ModuleUtil
@@ -416,12 +418,6 @@ local function UpdateNameplateKick(data)
 	end
 
 	local unitOptions = M:GetUnitOptions(data.UnitToken)
-
-	if data.KickTimer then
-		data.KickTimer:Cancel()
-		data.KickTimer = nil
-	end
-
 	local kickEntry = kickTracker:GetKick(data.UnitToken)
 
 	for _, bar in ipairs(BARS) do
@@ -450,15 +446,12 @@ local function UpdateNameplateKick(data)
 		end
 	end
 
-	if kickEntry then
-		local remaining = (kickEntry.StartTime or 0) + (kickEntry.Duration or 0) - GetTime()
-		if remaining > 0 then
-			data.KickTimer = C_Timer.NewTimer(remaining + 0.05, function()
-				data.KickTimer = nil
-				UpdateNameplateKick(data)
-			end)
-		end
-	end
+	-- One timer for the plate: the icon is written into every enabled bar above, but they all
+	-- clear at the same moment.
+	data.KickTimer = kickSlot:ScheduleExpiry(kickEntry, data.KickTimer, function()
+		data.KickTimer = nil
+		UpdateNameplateKick(data)
+	end)
 end
 
 local function GetNameplateBuffList(nameplate)
@@ -1291,9 +1284,9 @@ end
 
 local function CreateFrames()
 	if USE_AURA_CONTAINERS then
-		-- The pool itself is just two closures; pre-creation is deferred to the enable path
-		-- (see SetEventsActive) so a disabled module never builds a screen's worth of containers.
-		displayPool = auraContainerDisplay:NewPool(CreateBarDisplay, ResetBarDisplay, PLATE_ESTIMATE)
+		-- The pool itself is cheap; pre-creation is deferred to the enable path (see
+		-- SetEventsActive) so a disabled module never builds a screen's worth of containers.
+		displayPool = pool:New(CreateBarDisplay, ResetBarDisplay, PLATE_ESTIMATE)
 	end
 end
 
