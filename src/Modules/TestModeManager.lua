@@ -11,6 +11,7 @@ local TEST_MODULES = {
 	addon.Modules.KickTimerModule,
 	addon.Modules.FriendlyIndicatorModule,
 	addon.Modules.PrecogGuesserModule,
+	addon.Modules.TrinketsModule,
 	addon.Modules.FriendlyCooldownTrackerModule,
 	addon.Modules.EnemyCooldownTrackerModule,
 }

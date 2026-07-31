@@ -16,6 +16,7 @@ local requestedUnit       = nil
 local currentInspectUnit  = nil
 local isOurInspect        = false
 local needUpdate          = true
+local initialised         = false
 local inspectStarted      = nil
 local callbacks           = {}
 -- Lazily built map of "Spec Name Class Name" -> specId for tooltip matching.
@@ -322,8 +323,10 @@ function M:GetUnitSpecId(unit)
 		return specId
 	end
 
-	-- Queue for async inspection on the next run loop tick.
-	if not cacheEntry then
+	-- Queue for async inspection on the next run loop tick. Only when Init has started the
+	-- run loop - otherwise nothing ever drains the stack (FrameSort provides inspection, or
+	-- the owning module skipped Init on 12.1) and it would grow for the whole session.
+	if not cacheEntry and initialised then
 		priorityStack[#priorityStack + 1] = unit
 		needUpdate = true
 	end
@@ -372,6 +375,7 @@ function M:Init()
 	eventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
+	initialised = true
 	RunLoop()
 end
 

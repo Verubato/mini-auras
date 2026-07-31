@@ -387,8 +387,8 @@ local dbDefaults = {
 				ReverseCooldown = true,
 			},
 		},
-		-- keeping this just in case we need to revert back for some reason
-		-- might remove it in a future release
+		-- Used by the standalone Party Trinkets module (12.1+); on older clients the friendly
+		-- cooldown tracker renders the trinket slot instead.
 		---@class TrinketsModuleOptions
 		TrinketsModule = {
 			Enabled = {

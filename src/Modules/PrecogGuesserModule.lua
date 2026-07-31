@@ -154,6 +154,13 @@ function M:StopTesting()
 		anchor:SetMovable(false)
 		anchor:Hide()
 	end
+
+	-- 12.1: no watcher callback exists to re-show the container-driven display, and the
+	-- deferred addon:Refresh may not run until combat ends - recover it here directly.
+	if USE_AURA_CONTAINERS and display and anchor then
+		display.Frame:Show()
+		anchor:Show()
+	end
 end
 
 function M:Refresh()

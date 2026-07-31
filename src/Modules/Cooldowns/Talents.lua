@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Core.Framework
 local inspectorFacade = addon.Core.InspectorFacade
+local wowEx = addon.Utils.WoWEx
 
 addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
 
@@ -961,6 +962,12 @@ end
 function M:Refresh() end
 
 function M:Init()
+	-- 12.1: the cooldown trackers are the only consumers of talent data and they're disabled
+	-- there - skip the cache restore, LibSpecialization enrolment and talent-event tracking.
+	if wowEx:UseAuraContainers() then
+		return
+	end
+
 	db = mini:GetSavedVars()
 	db.TalentCache = db.TalentCache or {}
 	db.PvPTalentCache = db.PvPTalentCache or {}

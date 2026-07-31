@@ -16,6 +16,7 @@ local modules = {
 	addon.Modules.KickTimerModule,
 	addon.Modules.FriendlyIndicatorModule,
 	addon.Modules.PrecogGuesserModule,
+	addon.Modules.TrinketsModule,
 	addon.Modules.Cooldowns.Talents,
 	addon.Core.TrinketsTracker,
 	addon.Modules.FriendlyCooldownTrackerModule,

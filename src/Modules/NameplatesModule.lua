@@ -822,7 +822,12 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
-	HookNameplateAuraFrame(nameplate)
+	-- Legacy only: the hook feeds watcher-driven re-renders. On 12.1 the containers track
+	-- their unit themselves and the hook body would no-op against the empty watcher table,
+	-- so installing it just bills us for a dead closure on every Blizzard aura refresh.
+	if not USE_AURA_CONTAINERS then
+		HookNameplateAuraFrame(nameplate)
+	end
 
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
 	if not moduleEnabled then

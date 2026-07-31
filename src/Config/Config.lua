@@ -223,10 +223,21 @@ function M:Init()
 
 	-- Cooldown tracking (friendly and enemy) is disabled on 12.1 - it infers cooldowns from
 	-- aura data, which addons can no longer read - so those config tabs are hidden there.
+	-- The standalone Party Trinkets module takes the friendly tracker's slot (trinket data
+	-- is C_PvP-based, not aura-based, so it survives the lockdown).
 	-- TEMPORARY: remove with the modules once 12.1 is live.
 	if addon.Utils.WoWEx:UseAuraContainers() then
 		for i = #tabs, 1, -1 do
-			if tabs[i].Key == "FriendlyCooldowns" or tabs[i].Key == "EnemyCooldowns" then
+			if tabs[i].Key == "FriendlyCooldowns" then
+				tabs[i] = {
+					Key = "Trinkets",
+					Title = L["Party Trinkets_Short"] or L["Party Trinkets"],
+					Icon = "Interface\\Icons\\INV_Jewelry_TrinketPVP_01",
+					Build = function(content)
+						M.Trinkets:Build(content)
+					end,
+				}
+			elseif tabs[i].Key == "EnemyCooldowns" then
 				table.remove(tabs, i)
 			end
 		end

@@ -96,6 +96,7 @@ Modules\NameplatesModule.lua
 Modules\KickTimerModule.lua
 Modules\FriendlyIndicatorModule.lua
 Modules\PrecogGuesserModule.lua
+Modules\TrinketsModule.lua
 Modules\Cooldowns\PvPTalentSync.lua
 Modules\Cooldowns\Talents.lua
 Modules\Cooldowns\Rules.lua
@@ -129,6 +130,7 @@ Config\PrecogGuesser.lua
 Config\FriendlyIndicator.lua
 Config\FriendlyCooldownTracker.lua
 Config\EnemyCooldownTracker.lua
+Config\Trinkets.lua
 Config\OtherAddons.lua
 Config\Miscellaneous.lua
 Config\Profiles.lua

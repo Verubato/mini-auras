@@ -605,11 +605,6 @@ function Watcher:OnEvent(event, ...)
 		if not InterestedIn(self, updateInfo) then
 			return
 		end
-	elseif event == "ARENA_OPPONENT_UPDATE" then
-		local unit = ...
-		if unit ~= state.Unit then
-			return
-		end
 	end
 
 	if not state.Unit then

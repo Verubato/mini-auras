@@ -465,6 +465,9 @@ local function OnCufUpdateVisible(frame)
 	-- If this is a pet frame and pet CC is disabled, keep it hidden
 	if isPet and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
 		entry.Container.Frame:Hide()
+		if entry.Display then
+			entry.Display.Frame:Hide()
+		end
 		return
 	end
 
@@ -472,6 +475,12 @@ local function OnCufUpdateVisible(frame)
 
 	if not options then
 		return
+	end
+
+	-- 12.1: the aura icons live in entry.Display, not the kick/test container - it must
+	-- follow the unit frame's visibility too.
+	if entry.Display then
+		frames:ShowHideFrame(entry.Display.Frame, frame, false, isPet and false or options.ExcludePlayer)
 	end
 
 	frames:ShowHideFrame(entry.Container.Frame, frame, false, options.ExcludePlayer)

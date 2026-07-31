@@ -209,6 +209,12 @@ local function RefreshHealerDisplays()
 end
 
 local function OnAuraStateUpdated()
+	-- 12.1: rendering is container-driven and pool entries carry no Watcher - this legacy
+	-- re-render would nil-index watcher.Watcher below.
+	if USE_AURA_CONTAINERS then
+		return
+	end
+
 	if paused then
 		return
 	end
@@ -490,7 +496,13 @@ local function EnableDisable()
 		RefreshTestFrame()
 
 		if previousTestSoundEnabled ~= options.Sound.Enabled and options.Sound.Enabled then
-			PlaySound()
+			if USE_AURA_CONTAINERS then
+				-- The transition-based PlaySound is disabled on 12.1 (engine-side AddAuraSound
+				-- covers live auras), but the config preview still needs to demo the file.
+				PlaySoundFile(addon.Config.MediaLocation .. (options.Sound.File or "Sonar.ogg"), options.Sound.Channel or "Master")
+			else
+				PlaySound()
+			end
 		end
 
 		previousTestSoundEnabled = options.Sound.Enabled

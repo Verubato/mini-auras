@@ -8,6 +8,7 @@ local M = {}
 addon.Modules.Cooldowns.PvPTalentSync = M
 addon.Utils.PvPTalentSync = M -- backward compat
 
+local wowEx = addon.Utils.WoWEx
 local PREFIX = "MiniCC:Talents"
 local THROTTLE_TIMER = 3
 local callbacks = {}
@@ -22,7 +23,11 @@ local Ambiguate = Ambiguate
 local currentMsg = ""
 
 -- 0=success, 1=duplicate, 2=invalid, 3=toomany; silently disabled on failure.
-C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
+-- 12.1: the cooldown trackers are disabled and nothing consumes talent sync, so don't
+-- claim a prefix slot or send/receive any addon messages there.
+if not wowEx:UseAuraContainers() then
+	C_ChatInfo.RegisterAddonMessagePrefix(PREFIX)
+end
 
 local function GetLocalPvPTalentIds()
 	if not (C_SpecializationInfo and C_SpecializationInfo.GetAllSelectedPvpTalentIDs) then
@@ -155,7 +160,9 @@ frame:SetScript("OnEvent", function(_, event, p, msg, channel, sender)
 	end
 end)
 
-frame:RegisterEvent("CHAT_MSG_ADDON")
-frame:RegisterEvent("GROUP_FORMED")
-frame:RegisterEvent("PLAYER_PVP_TALENT_UPDATE")
-frame:RegisterEvent("PLAYER_LOGIN")
+if not wowEx:UseAuraContainers() then
+	frame:RegisterEvent("CHAT_MSG_ADDON")
+	frame:RegisterEvent("GROUP_FORMED")
+	frame:RegisterEvent("PLAYER_PVP_TALENT_UPDATE")
+	frame:RegisterEvent("PLAYER_LOGIN")
+end

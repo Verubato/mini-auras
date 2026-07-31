@@ -413,6 +413,12 @@ local function OnCufUpdateVisible(frame)
 		return
 	end
 
+	-- 12.1: the aura icons live in entry.Display, not the kick/test container - it must
+	-- follow the unit frame's visibility too.
+	if entry.Display then
+		frames:ShowHideFrame(entry.Display.Frame, frame, false, options.ExcludePlayer)
+	end
+
 	frames:ShowHideFrame(entry.Container.Frame, frame, false, options.ExcludePlayer)
 end
 
