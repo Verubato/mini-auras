@@ -5,6 +5,7 @@ local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local eventGate = addon.Core.EventGate
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local units = addon.Utils.Units
@@ -21,7 +22,8 @@ local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local testModeActive = false
 local paused = false
 local inPrepRoom = false
-local eventsFrame
+---@type EventGate?
+local plateGate
 local soundFile
 ---@type Db
 local db
@@ -1166,17 +1168,8 @@ local function EnableDisable()
 
 	-- Plate events stay unregistered while inactive; ZONE_CHANGED_NEW_AREA and
 	-- PVP_MATCH_STATE_CHANGED stay registered as they drive this gate.
-	if eventsFrame then
-		if nameplatesNeeded then
-			eventsFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-			eventsFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
-		else
-			eventsFrame:UnregisterEvent("NAME_PLATE_UNIT_ADDED")
-			eventsFrame:UnregisterEvent("NAME_PLATE_UNIT_REMOVED")
-			-- Plate events maintain the duel baselines; drop them so reactivation reseeds
-			-- via RebuildNameplateWatchers instead of trusting stale tokens.
-			wipe(nameplateEnemyState)
-		end
+	if plateGate then
+		plateGate:SetActive(nameplatesNeeded)
 	end
 
 	if not moduleEnabled then
@@ -1391,11 +1384,19 @@ function M:Init()
 		importantContainer.Frame:Hide()
 	end
 
-	eventsFrame = CreateFrame("Frame")
-	-- NAME_PLATE_UNIT_ADDED/REMOVED are registered by EnableDisable, and only while active.
+	local eventsFrame = CreateFrame("Frame")
+	-- The plate events are gated by EnableDisable; PVP_MATCH_STATE_CHANGED and
+	-- ZONE_CHANGED_NEW_AREA drive that gate so they stay always-registered.
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
 	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 	eventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+	plateGate = eventGate:New(eventsFrame, { "NAME_PLATE_UNIT_ADDED", "NAME_PLATE_UNIT_REMOVED" }, {
+		-- Plate events maintain the duel baselines; drop them so reactivation reseeds
+		-- via RebuildNameplateWatchers instead of trusting stale tokens.
+		OnDeactivate = function()
+			wipe(nameplateEnemyState)
+		end,
+	})
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
 		if event == "PVP_MATCH_STATE_CHANGED" then
 			OnMatchStateChanged()

@@ -5,11 +5,12 @@ local _, addon = ...
 local M = {}
 addon.Core.TrinketsTracker = M
 
+local eventGate = addon.Core.EventGate
 local DEFAULT_SPELL_ID = 336126
 local defaultIcon
 local callbacks = {}
-local eventsFrame
-local eventsRegistered = false
+---@type EventGate?
+local arenaGate
 
 local function FireCallbacks(unit)
 	for _, fn in ipairs(callbacks) do
@@ -37,7 +38,7 @@ function M:RegisterCallback(fn)
 end
 
 function M:Refresh()
-	if not eventsFrame then
+	if not arenaGate then
 		return
 	end
 
@@ -45,29 +46,14 @@ function M:Refresh()
 	-- everywhere else. Arena transitions always pass a loading screen, which re-runs this
 	-- via the addon-wide Refresh.
 	local _, instanceType = IsInInstance()
-	local inArena = instanceType == "arena"
-
-	if inArena == eventsRegistered then
-		return
-	end
-	eventsRegistered = inArena
-
-	if inArena then
-		eventsFrame:RegisterEvent("ARENA_COOLDOWNS_UPDATE")
-		eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
-		eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-		-- Replaces the PLAYER_ENTERING_WORLD fire the tracker no longer listens for.
-		FireCallbacks(nil)
-	else
-		eventsFrame:UnregisterAllEvents()
-	end
+	arenaGate:SetActive(instanceType == "arena")
 end
 
 function M:Init()
 	defaultIcon = C_Spell.GetSpellTexture(DEFAULT_SPELL_ID)
 
 	-- Events are registered by Refresh, and only inside arenas.
-	eventsFrame = CreateFrame("Frame")
+	local eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", function(_, event, ...)
 		if event == "PVP_MATCH_STATE_CHANGED" then
 			local matchState = C_PvP.GetActiveMatchState()
@@ -81,6 +67,17 @@ function M:Init()
 			FireCallbacks(nil)
 		end
 	end)
+
+	arenaGate = eventGate:New(eventsFrame, {
+		"ARENA_COOLDOWNS_UPDATE",
+		"PVP_MATCH_STATE_CHANGED",
+		"GROUP_ROSTER_UPDATE",
+	}, {
+		-- Replaces the PLAYER_ENTERING_WORLD fire the tracker no longer listens for.
+		OnActivate = function()
+			FireCallbacks(nil)
+		end,
+	})
 end
 
 ---@class TrinketsTracker

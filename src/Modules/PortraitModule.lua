@@ -5,6 +5,7 @@ local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
+local eventGate = addon.Core.EventGate
 local fontUtil = addon.Utils.FontUtil
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
@@ -23,12 +24,12 @@ local testModeActive = false
 local paused = false
 local enabled = false
 local containers = {}
-local nameplateEvents
-local unitChangeEvents
--- Init registers the frames' events unconditionally, so the gate starts registered.
-local eventsRegistered = true
--- Forward-declared: M:Refresh calls it but it needs HookNameplateAuraFrame, defined later.
-local UpdateEventSubscriptions
+-- Legacy-only / 12.1-only event gates (see Init); a disabled portrait module receives no
+-- events at all.
+---@type EventGate?
+local nameplateGate
+---@type EventGate?
+local unitChangeGate
 ---@type { string: Watcher }
 local watchers = {}
 -- Callbacks to re-render each container attached to "target"; populated by Attach/Attach* calls.
@@ -929,7 +930,14 @@ end
 function M:Refresh()
 	enabled = moduleUtil:IsModuleEnabled(ModuleName.Portrait)
 
-	UpdateEventSubscriptions(enabled)
+	-- Events stay unregistered while disabled; the addon-wide Refresh (config, world
+	-- change, raid flip) re-runs this gate.
+	if nameplateGate then
+		nameplateGate:SetActive(enabled)
+	end
+	if unitChangeGate then
+		unitChangeGate:SetActive(enabled)
+	end
 
 	-- If disabled, disable watchers and clear
 	if not enabled then
@@ -1025,39 +1033,6 @@ local function HookNameplateAuraFrame(unitToken)
 	end
 end
 
--- Registers/unregisters the target/focus and nameplate events with the module's enabled
--- state, so a disabled portrait module receives no events at all. The addon-wide Refresh
--- (config, world change, raid flip) re-runs this gate.
-function UpdateEventSubscriptions(isEnabled)
-	if isEnabled == eventsRegistered then
-		return
-	end
-	eventsRegistered = isEnabled
-
-	if nameplateEvents then
-		if isEnabled then
-			nameplateEvents:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-			-- Hook plates that spawned while disabled - their add events were never seen.
-			for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
-				if nameplate.unitToken then
-					HookNameplateAuraFrame(nameplate.unitToken)
-				end
-			end
-		else
-			nameplateEvents:UnregisterAllEvents()
-		end
-	end
-
-	if unitChangeEvents then
-		if isEnabled then
-			unitChangeEvents:RegisterEvent("PLAYER_TARGET_CHANGED")
-			unitChangeEvents:RegisterEvent("PLAYER_FOCUS_CHANGED")
-		else
-			unitChangeEvents:UnregisterAllEvents()
-		end
-	end
-end
-
 function M:Init()
 	db = mini:GetSavedVars()
 
@@ -1102,20 +1077,27 @@ function M:Init()
 	-- Hook each nameplate's aura refresh so important buffs on the target/focus update live.
 	-- Legacy only: on 12.1 the important slot tracks its unit itself.
 	if not USE_AURA_CONTAINERS then
-		nameplateEvents = CreateFrame("Frame")
-		nameplateEvents:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+		local nameplateEvents = CreateFrame("Frame")
 		nameplateEvents:SetScript("OnEvent", function(_, _, unitToken)
 			HookNameplateAuraFrame(unitToken)
 		end)
+		nameplateGate = eventGate:New(nameplateEvents, { "NAME_PLATE_UNIT_ADDED" }, {
+			-- Hook plates that spawned while disabled - their add events were never seen.
+			OnActivate = function()
+				for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
+					if nameplate.unitToken then
+						HookNameplateAuraFrame(nameplate.unitToken)
+					end
+				end
+			end,
+		})
 	end
 
 	-- 12.1: containers track their unit token but don't refresh when the token's occupant
 	-- changes (the legacy watchers registered these events themselves); Blizzard's container
 	-- mixin exposes UpdateAllAuras for exactly this.
 	if USE_AURA_CONTAINERS then
-		unitChangeEvents = CreateFrame("Frame")
-		unitChangeEvents:RegisterEvent("PLAYER_TARGET_CHANGED")
-		unitChangeEvents:RegisterEvent("PLAYER_FOCUS_CHANGED")
+		local unitChangeEvents = CreateFrame("Frame")
 		unitChangeEvents:SetScript("OnEvent", function(_, event)
 			local unit = event == "PLAYER_TARGET_CHANGED" and "target" or "focus"
 			for _, container in pairs(containers) do
@@ -1132,6 +1114,7 @@ function M:Init()
 				end
 			end
 		end)
+		unitChangeGate = eventGate:New(unitChangeEvents, { "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED" })
 	end
 
 	kickTracker:Watch("target", { "PLAYER_TARGET_CHANGED" })

@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local unitAuraWatcher = addon.Core.UnitAuraWatcher
+local eventGate = addon.Core.EventGate
 
 addon.Modules.FriendlyCooldowns = addon.Modules.FriendlyCooldowns or {}
 
@@ -10,7 +11,8 @@ addon.Modules.FriendlyCooldowns.Observer = O
 
 -- entry -> { Watcher, CastEventFrame }
 local watched = {}
-local absorbFrame
+---@type EventGate?
+local absorbGate
 local testModeActive = false
 local auraChangedCallbacks    = {}
 local castCallbacks           = {}
@@ -334,24 +336,19 @@ end
 ---Tracks UNIT_ABSORB_AMOUNT_CHANGED globally (not per-unit) because absorb changes on any unit
 ---are used as concurrent evidence to disambiguate Paladin defensives.
 function O:Init()
-	absorbFrame = CreateFrame("Frame")
+	local absorbFrame = CreateFrame("Frame")
 	absorbFrame:SetScript("OnEvent", function(_, _, unit)
 		FireShield(unit)
 	end)
-	absorbFrame:RegisterEvent("UNIT_ABSORB_AMOUNT_CHANGED")
+	-- Registered via SetAbsorbTrackingEnabled while the module is enabled.
+	absorbGate = eventGate:New(absorbFrame, { "UNIT_ABSORB_AMOUNT_CHANGED" })
 end
 
 ---Enables/disables the absorb-shield evidence event. It fires for every unit's absorb changes
 ---(it is a global event, not per-unit), so it stays unregistered while the module is off.
 ---@param enabled boolean
 function O:SetAbsorbTrackingEnabled(enabled)
-	if not absorbFrame then
-		return
-	end
-
-	if enabled then
-		absorbFrame:RegisterEvent("UNIT_ABSORB_AMOUNT_CHANGED")
-	else
-		absorbFrame:UnregisterAllEvents()
+	if absorbGate then
+		absorbGate:SetActive(enabled)
 	end
 end

@@ -8,6 +8,7 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local unitAuraWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
+local eventGate = addon.Core.EventGate
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local wowEx = addon.Utils.WoWEx
@@ -15,7 +16,8 @@ local wowEx = addon.Utils.WoWEx
 -- for the kick icon and test-mode icons only (neither reads aura data). TEMPORARY dual path:
 -- remove the watcher branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
-local eventsFrame
+---@type EventGate?
+local rosterGate
 local paused = false
 local testModeActive = false
 ---@type Db
@@ -690,16 +692,15 @@ function M:Refresh()
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
 	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
 
-	-- If both are off, disable everything and bail early. Events stay unregistered while
-	-- disabled; the addon-wide Refresh (config, world change, raid flip) re-runs this gate.
+	-- Events stay unregistered while both features are off; the addon-wide Refresh
+	-- (config, world change, raid flip) re-runs this gate.
+	rosterGate:SetActive(moduleEnabled or petEnabled)
+
+	-- If both are off, disable everything and bail early
 	if not moduleEnabled and not petEnabled then
-		eventsFrame:UnregisterAllEvents()
 		DisableWatchers()
 		return
 	end
-
-	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-	eventsFrame:RegisterEvent("UNIT_PET")
 
 	EnableWatchers()
 	EnsureWatchers()
@@ -803,12 +804,12 @@ function M:Init()
 	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
 	testSpells = { kidneyShot, fear, hex }
 
-	eventsFrame = CreateFrame("Frame")
+	local eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
-	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-	-- Tracks the player's pet being summoned/dismissed so the opt-in pet unit frame containers
-	-- follow it, regardless of which unit-frame addon owns the pet frame.
-	eventsFrame:RegisterEvent("UNIT_PET")
+	-- Registered by the Refresh gate while either feature is on. UNIT_PET tracks the player's
+	-- pet being summoned/dismissed so the opt-in pet unit frame containers follow it,
+	-- regardless of which unit-frame addon owns the pet frame.
+	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE", "UNIT_PET" })
 
 	if not wowEx:IsDandersEnabled() then
 		if CompactUnitFrame_SetUnit then

@@ -12,13 +12,15 @@ local moduleName = addon.Utils.ModuleName
 local slotDistribution = addon.Utils.SlotDistribution
 local wowEx = addon.Utils.WoWEx
 local kickTracker = addon.Core.KickTracker
+local eventGate = addon.Core.EventGate
 -- 12.1 path: CC + defensive auras render through an AuraContainer per anchor (one group per
 -- category); the IconSlotContainer is kept for the kick icon and test mode. Unlike the legacy
 -- path there is no dynamic slot split between categories (aura counts are unreadable), so each
 -- enabled category gets the full MaxIcons budget. TEMPORARY dual path: remove the watcher
 -- branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
-local eventsFrame
+---@type EventGate?
+local rosterGate
 local paused = false
 local testModeActive = false
 ---@type table<table, FriendlyIndicatorWatchEntry>
@@ -589,15 +591,15 @@ function M:Refresh()
 
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator)
 
-	-- If disabled, disable watchers and hide everything. Events stay unregistered while
-	-- disabled; the addon-wide Refresh (config, world change, raid flip) re-runs this gate.
+	-- Events stay unregistered while disabled; the addon-wide Refresh (config, world
+	-- change, raid flip) re-runs this gate.
+	rosterGate:SetActive(moduleEnabled)
+
+	-- If disabled, disable watchers and hide everything
 	if not moduleEnabled then
-		eventsFrame:UnregisterAllEvents()
 		DisableWatchers()
 		return
 	end
-
-	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
 	-- Module is enabled, ensure watchers are enabled
 	EnableWatchers()
@@ -694,9 +696,10 @@ function M:Init()
 	testDefensiveSpells = { painSupp, blessingOfProtection }
 	testCcSpells = { kidneyShot, fear, hex }
 
-	eventsFrame = CreateFrame("Frame")
+	local eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
-	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+	-- Registered by the Refresh gate while the module is enabled.
+	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE" })
 
 	if not wowEx:IsDandersEnabled() then
 		if CompactUnitFrame_SetUnit then

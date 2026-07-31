@@ -8,6 +8,7 @@ local unitWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local eventGate = addon.Core.EventGate
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local slotDistribution = addon.Utils.SlotDistribution
@@ -25,8 +26,8 @@ local C_NamePlate = C_NamePlate
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local testModeActive = false
 local paused = false
-local eventsFrame
-local eventsRegistered = false
+---@type EventGate?
+local plateGate
 ---@type Db
 local db
 ---@type table
@@ -1204,36 +1205,14 @@ local function ApplyBlizzardNameplateSettings()
 	end
 end
 
--- While inactive no state tracks nameplates, so the plate events can be unregistered
--- entirely; reactivation rebuilds from the live plate list. The addon-wide Refresh
--- (config, world change, raid flip) re-runs this gate.
-local function UpdateEventSubscriptions(active)
-	if active == eventsRegistered then
-		return
-	end
-	eventsRegistered = active
-
-	if active then
-		eventsFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-		eventsFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
-		eventsFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-		-- Plates that spawned while inactive were never tracked.
-		RebuildContainers()
-	else
-		eventsFrame:UnregisterAllEvents()
-		-- Release tracked plates now - the removal events that normally clean them up are
-		-- no longer registered.
-		for unitToken in pairs(nameplateAnchors) do
-			OnNamePlateRemoved(unitToken)
-		end
-	end
-end
-
 function M:Refresh()
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
 	local active = moduleEnabled and AnyEnabled()
 
-	UpdateEventSubscriptions(active)
+	-- While inactive no state tracks nameplates, so the plate events can be unregistered
+	-- entirely; reactivation rebuilds from the live plate list. The addon-wide Refresh
+	-- (config, world change, raid flip) re-runs this gate.
+	plateGate:SetActive(active)
 
 	if not active then
 		DisableWatchers()
@@ -1283,7 +1262,7 @@ function M:Init()
 		displayPool = auraContainerDisplay:NewPool(CreateBarDisplay, ResetBarDisplay, 40)
 	end
 
-	eventsFrame = CreateFrame("Frame")
+	local eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
 		if event == "NAME_PLATE_UNIT_ADDED" then
 			OnNamePlateAdded(unitToken)
@@ -1296,10 +1275,26 @@ function M:Init()
 		end
 	end)
 
+	plateGate = eventGate:New(eventsFrame, {
+		"NAME_PLATE_UNIT_ADDED",
+		"NAME_PLATE_UNIT_REMOVED",
+		"PLAYER_TARGET_CHANGED",
+	}, {
+		-- Plates that spawned while inactive were never tracked.
+		OnActivate = RebuildContainers,
+		-- Release tracked plates now - the removal events that normally clean them up are
+		-- no longer registered.
+		OnDeactivate = function()
+			for unitToken in pairs(nameplateAnchors) do
+				OnNamePlateRemoved(unitToken)
+			end
+		end,
+	})
+
 	C_Timer.NewTicker(DUEL_POLL_INTERVAL, PollDuelFactionFlips)
 
 	-- Registers the plate events and initializes existing nameplates when active.
-	UpdateEventSubscriptions(moduleUtil:IsModuleEnabled(moduleName.Nameplates) and AnyEnabled())
+	plateGate:SetActive(moduleUtil:IsModuleEnabled(moduleName.Nameplates) and AnyEnabled())
 
 	CacheEnabledModes()
 end

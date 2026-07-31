@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
 local iconSlotContainer = addon.Core.IconSlotContainer
+local eventGate = addon.Core.EventGate
 local inspectorFacade = addon.Core.InspectorFacade
 local kickData = addon.Core.KickData
 local paused = false
@@ -33,7 +34,8 @@ local FRIENDLY_UNITS_TO_WATCH = {
 
 ---@type { string: table }
 local partyUnitsEventsFrames = {}
-local matchEventsFrame
+---@type EventGate?
+local matchPrepGate
 local worldEventsFrame
 local playerSpecEventsFrame
 local minKickCooldown = 15
@@ -356,11 +358,7 @@ end
 local function OnEnteringWorld()
 	-- Prep data only exists inside arenas; keep the event off elsewhere. Registered even
 	-- while the module itself is disabled, as they might re-enable before gates open.
-	if IsArena() then
-		matchEventsFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
-	else
-		matchEventsFrame:UnregisterAllEvents()
-	end
+	matchPrepGate:SetActive(IsArena())
 
 	EnableDisable()
 
@@ -504,10 +502,10 @@ function M:Init()
 		partyUnitsEventsFrames[unit] = CreateFrame("Frame")
 	end
 
-	-- always populate even if disabled, as they might re-enable during arena
-	matchEventsFrame = CreateFrame("Frame")
-	matchEventsFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+	-- Registered by OnEnteringWorld's gate, and only inside arenas.
+	local matchEventsFrame = CreateFrame("Frame")
 	matchEventsFrame:SetScript("OnEvent", OnArenaPrep)
+	matchPrepGate = eventGate:New(matchEventsFrame, { "ARENA_PREP_OPPONENT_SPECIALIZATIONS" })
 
 	worldEventsFrame = CreateFrame("Frame")
 	worldEventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")

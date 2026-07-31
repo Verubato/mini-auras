@@ -9,6 +9,7 @@ local unitWatcher = addon.Core.UnitAuraWatcher
 local units = addon.Utils.Units
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
+local eventGate = addon.Core.EventGate
 local rc = LibStub("LibRangeCheck-3.0")
 -- 12.1 path: healer CC icons render through one AuraContainer per healer. The warning text
 -- cannot work there (it requires knowing whether a CC aura is present, which 12.1 makes
@@ -44,7 +45,8 @@ local iconsContainer
 local activePool = {}
 ---@type table<string, HealerWatchEntry>
 local discardPool = {}
-local eventsFrame
+---@type EventGate?
+local rosterGate
 
 ---@type TestSpell[]
 local testSpells = {}
@@ -479,12 +481,8 @@ local function EnableDisable()
 	local moduleEnabled = moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl)
 
 	-- Events stay unregistered while disabled; the addon-wide Refresh re-runs this gate.
-	if eventsFrame then
-		if moduleEnabled then
-			eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-		else
-			eventsFrame:UnregisterAllEvents()
-		end
+	if rosterGate then
+		rosterGate:SetActive(moduleEnabled)
 	end
 
 	if testModeActive then
@@ -648,9 +646,10 @@ function M:Init()
 	iconsContainer.Frame:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
 	iconsContainer.Frame:Show()
 
-	eventsFrame = CreateFrame("Frame")
+	local eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
-	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+	-- Registered by the EnableDisable gate while the module is enabled.
+	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE" })
 
 	EnableDisable()
 end
