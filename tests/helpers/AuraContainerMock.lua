@@ -533,8 +533,13 @@ function M.setup()
 	_G.issecretvalue = _G.issecretvalue or function() return false end
 end
 
--- Loads the real AuraContainerDisplay against a mock addon table. Returns the module and the
--- mock addon (addon.Core.AuraContainerDisplay is the module; mockDb is live-editable).
+-- Notifications raised by the loaded modules (e.g. SetMaxIcons on an unknown group key), so
+-- tests can assert that a misuse is reported rather than swallowed.
+M.notifications = {}
+
+-- Loads the real AuraContainerDisplay - and the Core modules it now depends on - against a mock
+-- addon table. Returns the display module and the mock addon (mockDb is live-editable; the
+-- sibling modules are on addon.Core.Pool / .GrowAnchors / .AuraFilters / .KickSlot).
 function M.loadDisplay()
 	local mockDb = { DisableSwipe = false, MillisecondsThreshold = 3, GlowType = "Proc Glow" }
 	local addon = {
@@ -553,12 +558,22 @@ function M.loadDisplay()
 				GetSavedVars = function()
 					return mockDb
 				end,
+				Notify = function(_, message, ...)
+					M.notifications[#M.notifications + 1] = string.format(message, ...)
+				end,
 			},
 		},
 	}
 
-	local fn = assert(loadfile("src/Core/AuraContainerDisplay.lua"))
-	fn("MiniCC", addon)
+	for _, path in ipairs({
+		"src/Core/Pool.lua",
+		"src/Core/GrowAnchors.lua",
+		"src/Core/AuraFilters.lua",
+		"src/Core/KickSlot.lua",
+		"src/Core/AuraContainerDisplay.lua",
+	}) do
+		assert(loadfile(path))("MiniCC", addon)
+	end
 
 	return addon.Core.AuraContainerDisplay, addon, mockDb
 end

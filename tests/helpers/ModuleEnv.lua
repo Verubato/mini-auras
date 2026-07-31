@@ -224,8 +224,12 @@ function M.build()
 	}
 
 	loadFile("src/Core/EventGate.lua")
+	loadFile("src/Core/Pool.lua")
+	loadFile("src/Core/GrowAnchors.lua")
+	loadFile("src/Core/AuraFilters.lua")
 	loadFile("src/Core/DuelPoller.lua")
 	loadFile("src/Core/IconSlotContainer.lua")
+	loadFile("src/Core/KickSlot.lua")
 	loadFile("src/Core/AuraContainerDisplay.lua")
 
 	env.loadModule = function(path)

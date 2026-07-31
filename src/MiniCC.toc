@@ -61,8 +61,12 @@ Core\GUI\StandaloneWindow.lua
 
 Core\InstanceOptions.lua
 Core\EventGate.lua
+Core\Pool.lua
+Core\GrowAnchors.lua
+Core\AuraFilters.lua
 Core\DuelPoller.lua
 Core\IconSlotContainer.lua
+Core\KickSlot.lua
 Core\AuraContainerDisplay.lua
 Core\AuraSoundData.lua
 Core\UnitAuraWatcher.lua
