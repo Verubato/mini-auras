@@ -236,6 +236,14 @@ local function UpdateKickIcon(entry)
 	AnchorAuraDisplay(entry, entry.Anchor, options)
 end
 
+-- Which renderer a live aura update goes through. Bound once at load rather than branching on
+-- USE_AURA_CONTAINERS at each of the call sites below: on 12.1 the aura icons are entirely
+-- container-driven and only the kick slot needs pushing, on 12.0 the watcher redraws everything.
+-- TEMPORARY: when the legacy path goes, this alias goes with it and the callers just call
+-- UpdateKickIcon.
+---@type fun(entry: FriendlyIndicatorWatchEntry)
+local RenderEntry = USE_AURA_CONTAINERS and UpdateKickIcon or UpdateWatcherAuras
+
 ---@param header IconSlotContainer
 ---@param anchor table
 ---@param options FriendlyIndicatorInstanceOptions
@@ -325,11 +333,7 @@ local function EnsureWatcher(anchor, unit)
 
 		kickTracker:Watch(unit)
 		entry.KickKey = kickTracker:Subscribe(unit, function()
-			if USE_AURA_CONTAINERS then
-				UpdateKickIcon(entry)
-			else
-				UpdateWatcherAuras(entry)
-			end
+			RenderEntry(entry)
 		end)
 	else
 		-- Check if unit has changed
@@ -349,11 +353,7 @@ local function EnsureWatcher(anchor, unit)
 			kickTracker:Unsubscribe(entry.Unit, entry.KickKey)
 			kickTracker:Watch(unit)
 			entry.KickKey = kickTracker:Subscribe(unit, function()
-				if USE_AURA_CONTAINERS then
-					UpdateKickIcon(entry)
-				else
-					UpdateWatcherAuras(entry)
-				end
+				RenderEntry(entry)
 			end)
 
 			entry.Unit = unit
@@ -362,19 +362,11 @@ local function EnsureWatcher(anchor, unit)
 			entry.Container:ResetAllSlots()
 
 			-- Force immediate refresh for the new unit
-			if USE_AURA_CONTAINERS then
-				UpdateKickIcon(entry)
-			else
-				UpdateWatcherAuras(entry)
-			end
+			RenderEntry(entry)
 		end
 	end
 
-	if USE_AURA_CONTAINERS then
-		UpdateKickIcon(entry)
-	else
-		UpdateWatcherAuras(entry)
-	end
+	RenderEntry(entry)
 	AnchorContainer(entry.Container, anchor, options)
 
 	if entry.Display then
@@ -632,11 +624,7 @@ local function ApplyEntryOptions(entry, anchor, options)
 	end
 
 	if not testModeActive then
-		if USE_AURA_CONTAINERS then
-			UpdateKickIcon(entry)
-		else
-			UpdateWatcherAuras(entry)
-		end
+		RenderEntry(entry)
 	end
 
 	AnchorContainer(container, anchor, options)
