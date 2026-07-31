@@ -17,11 +17,3 @@ end
 function M:NotifyCombatLockdown()
 	M:Notify(L["Can't do that during combat."])
 end
-
-function M:IsSecret(value)
-	if not issecretvalue then
-		return false
-	end
-
-	return issecretvalue(value)
-end

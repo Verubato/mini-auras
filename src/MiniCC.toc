@@ -35,7 +35,7 @@ Utils\ModuleUtil.lua
 Utils\SlotDistribution.lua
 Utils\WoWEx.lua
 
-Core\Framework\Framework.lua
+Core\Framework\Notify.lua
 Core\Framework\Tables.lua
 Core\Framework\Math.lua
 Core\Framework\SavedVars.lua

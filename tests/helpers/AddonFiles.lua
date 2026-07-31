@@ -5,7 +5,7 @@ local M = {}
 
 -- Core framework (Core\Framework in the TOC)
 M.framework = {
-	"src/Core/Framework/Framework.lua",
+	"src/Core/Framework/Notify.lua",
 	"src/Core/Framework/Tables.lua",
 	"src/Core/Framework/Math.lua",
 	"src/Core/Framework/SavedVars.lua",
