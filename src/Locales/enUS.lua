@@ -139,6 +139,7 @@ L:SetDefaultStrings({
 	["The others seem to use a non-trivial amount of CPU."] = "The others seem to use a non-trivial amount of CPU.",
 	["The Proc Glow uses the least CPU."] = "The Proc Glow uses the least CPU.",
 	["The Slot Glow is static and uses the least CPU."] = "The Slot Glow is static and uses the least CPU.",
+	["Rotation Assist keeps animating icons with no aura, costing CPU while idle."] = "Rotation Assist keeps animating icons with no aura, costing CPU while idle.",
 
 	-- Alerts tab
 	["Alerts"] = "Alerts",

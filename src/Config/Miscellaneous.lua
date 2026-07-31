@@ -129,8 +129,14 @@ function M:Build(panel)
 		"Slot Glow",
 	}
 
+	-- Rotation Assist runs a looping flipbook per AuraButton, and the 12.1 containers pre-create
+	-- buttons well beyond the auras actually showing. Blizzard gives no way to gate the animation
+	-- per icon: AuraButtons forbid UntrustedScriptExecution (no OnShow/OnHide hook), their shown
+	-- state is deliberately secret (ApplyVisibility secretwraps it), and frames are acquired LIFO
+	-- so there's no stable "these can never show" set. Hence the warning rather than a fix.
 	local glowNoteLines = useAuraContainers and {
 		L["The Slot Glow is static and uses the least CPU."],
+		L["Rotation Assist keeps animating icons with no aura, costing CPU while idle."],
 	} or {
 		L["The Proc Glow uses the least CPU."],
 		L["The others seem to use a non-trivial amount of CPU."],

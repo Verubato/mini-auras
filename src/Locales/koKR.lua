@@ -137,6 +137,7 @@ L:RegisterLocale("koKR", {
 	["The others seem to use a non-trivial amount of CPU."] = "다른 것들은 상당한 CPU를 사용하는 것 같습니다.",
 	["The Proc Glow uses the least CPU."] = "프록 발광은 CPU를 가장 적게 사용합니다.",
 	["The Slot Glow is static and uses the least CPU."] = "슬롯 발광은 정적이며 CPU를 가장 적게 사용합니다.",
+	["Rotation Assist keeps animating icons with no aura, costing CPU while idle."] = "로테이션 도우미는 오라가 없는 아이콘도 계속 애니메이션하여 대기 중에도 CPU를 사용합니다.",
 
 	-- Alerts tab
 	["Alerts"] = "알림",

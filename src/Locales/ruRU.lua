@@ -137,6 +137,7 @@ L:RegisterLocale("ruRU", {
 	["The others seem to use a non-trivial amount of CPU."] = "Остальные используют значительное количество ЦП.",
 	["The Proc Glow uses the least CPU."] = "Proc свечение использует меньше всего ЦП.",
 	["The Slot Glow is static and uses the least CPU."] = "Свечение слота статично и использует меньше всего ЦП.",
+	["Rotation Assist keeps animating icons with no aura, costing CPU while idle."] = "«Помощник ротации» продолжает анимировать значки без аур, потребляя ЦП в простое.",
 
 	-- Alerts tab
 	["Alerts"] = "Оповещения",

@@ -137,6 +137,7 @@ L:RegisterLocale("deDE", {
 	["The others seem to use a non-trivial amount of CPU."] = "Die anderen scheinen eine beträchtliche Menge CPU zu verwenden.",
 	["The Proc Glow uses the least CPU."] = "Das Proc-Leuchten verwendet am wenigsten CPU.",
 	["The Slot Glow is static and uses the least CPU."] = "Das Slot-Leuchten ist statisch und verwendet am wenigsten CPU.",
+	["Rotation Assist keeps animating icons with no aura, costing CPU while idle."] = "Rotationshilfe animiert weiterhin Symbole ohne Aura und verbraucht dadurch CPU im Leerlauf.",
 
 	-- Alerts tab
 	["Alerts"] = "Warnungen",

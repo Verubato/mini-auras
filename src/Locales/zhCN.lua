@@ -137,6 +137,7 @@ L:RegisterLocale("zhCN", {
 	["The others seem to use a non-trivial amount of CPU."] = "其他的似乎使用了大量的CPU。",
 	["The Proc Glow uses the least CPU."] = "触发发光使用最少的CPU。",
 	["The Slot Glow is static and uses the least CPU."] = "槽位发光是静态的，使用最少的CPU。",
+	["Rotation Assist keeps animating icons with no aura, costing CPU while idle."] = "旋转辅助会持续动画没有光环的图标，空闲时也会占用CPU。",
 
 	-- Alerts tab
 	["Alerts"] = "警报",
