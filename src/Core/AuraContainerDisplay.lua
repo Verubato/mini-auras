@@ -7,7 +7,7 @@ local cachedDb = nil
 local frameIdCounter = 0
 local liveDisplays = {}
 local editModePreviewActive = false
-local providerSwitchListener = nil
+local displayEventsFrame = nil
 
 -- 12.1 AuraContainer-backed icon display. One instance wraps a CreateFrame("AuraContainer")
 -- with a single aura group and styles the container-created AuraButtons to match the legacy
@@ -54,6 +54,74 @@ local function NextFrameName(frameType)
 	return "MiniCC_AC_" .. frameType .. "_" .. frameIdCounter
 end
 
+-- Deferred restyling
+--
+-- Button styling is impossible while auras are secret, which covers combat but also whole
+-- encounters / M+ runs / PvP matches out of combat. RestyleButtons therefore records that the
+-- buttons are stale and returns. Something has to come back for that later: pooled displays are
+-- restyled on re-acquisition, but the displays that live on a unit frame or a portrait for the
+-- whole session are not, so without this an icon size change made in an arena would leave the
+-- buttons at their old size for the rest of the match (the container-level layout DOES take the
+-- new size, so the row ends up spaced for icons that aren't that size).
+--
+-- PLAYER_REGEN_ENABLED covers the common case immediately; the ticker covers the rest
+-- (C_Secrets.ShouldAurasBeSecret has no event) and only runs while something is actually
+-- pending, so an idle UI pays nothing.
+
+local pendingRestyleCount = 0
+local restyleTicker = nil
+local RESTYLE_RETRY_INTERVAL = 1
+
+local function StopRestyleTicker()
+	if restyleTicker then
+		restyleTicker:Cancel()
+		restyleTicker = nil
+	end
+end
+
+local function FlushPendingRestyles()
+	if pendingRestyleCount == 0 or wowEx:IsAuraStylingRestricted() then
+		return
+	end
+
+	for _, instance in ipairs(liveDisplays) do
+		-- Parked pool items are hidden and deliberately left stale (their looping glow
+		-- animations were stopped to save CPU); re-acquisition restyles them.
+		if instance.RestylePending and instance.DesiredShown then
+			instance:RestyleButtons()
+		end
+	end
+end
+
+local function OnRestyleTick()
+	FlushPendingRestyles()
+
+	if pendingRestyleCount == 0 then
+		StopRestyleTicker()
+	end
+end
+
+---Flags/clears a display's stale-style state, keeping the global pending count (and therefore
+---the retry ticker's lifetime) in sync. Always go through this rather than assigning the field.
+---@param instance AuraContainerDisplay
+---@param pending boolean
+local function SetRestylePending(instance, pending)
+	if instance.RestylePending == pending then
+		return
+	end
+
+	instance.RestylePending = pending
+	pendingRestyleCount = pendingRestyleCount + (pending and 1 or -1)
+
+	if pending then
+		if not restyleTicker then
+			restyleTicker = C_Timer.NewTicker(RESTYLE_RETRY_INTERVAL, OnRestyleTick)
+		end
+	elseif pendingRestyleCount == 0 then
+		StopRestyleTicker()
+	end
+end
+
 -- Edit Mode preview suppression.
 --
 -- Blizzard force-feeds every AuraContainer a fake data provider while Edit Mode is open, so
@@ -90,17 +158,23 @@ local function OnAuraDataProviderSwitch(useRealDataProvider)
 	end
 end
 
----Starts listening for the Edit Mode data provider switch. Called from New rather than at load,
----because the event only exists on clients that have the AuraContainer system.
-local function EnsureProviderSwitchListener()
-	if providerSwitchListener then
+---Starts listening for the Edit Mode data provider switch and for combat ending (which is the
+---most common moment the button restriction lifts). Called from New rather than at load,
+---because AURA_DATA_PROVIDER_SWITCH only exists on clients that have the AuraContainer system.
+local function EnsureDisplayEvents()
+	if displayEventsFrame then
 		return
 	end
 
-	providerSwitchListener = CreateFrame("Frame")
-	providerSwitchListener:RegisterEvent("AURA_DATA_PROVIDER_SWITCH")
-	providerSwitchListener:SetScript("OnEvent", function(_, _, useRealDataProvider)
-		OnAuraDataProviderSwitch(useRealDataProvider)
+	displayEventsFrame = CreateFrame("Frame")
+	displayEventsFrame:RegisterEvent("AURA_DATA_PROVIDER_SWITCH")
+	displayEventsFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+	displayEventsFrame:SetScript("OnEvent", function(_, event, useRealDataProvider)
+		if event == "AURA_DATA_PROVIDER_SWITCH" then
+			OnAuraDataProviderSwitch(useRealDataProvider)
+		else
+			FlushPendingRestyles()
+		end
 	end)
 end
 
@@ -447,6 +521,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName)
 	instance.ButtonWidgets = {}
 	-- Visibility the owning module last asked for; frames are created shown.
 	instance.DesiredShown = true
+	instance.RestylePending = false
 
 	-- Seed the db-derived style fields so buttons created before the first SetStyle (which
 	-- restyles everything anyway) still pick up the global swipe/countdown/glow settings.
@@ -457,7 +532,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName)
 	frame.MiniCCModule = moduleName or nil
 	instance.Frame = frame
 
-	EnsureProviderSwitchListener()
+	EnsureDisplayEvents()
 	liveDisplays[#liveDisplays + 1] = instance
 	ApplyShownState(instance)
 
@@ -498,11 +573,17 @@ function M:SetEnabled(enabled)
 end
 
 ---Shows or hides the display. Always use this instead of touching Frame:SetShown directly, so
----the Edit Mode placeholder auras stay suppressed (see EnsureProviderSwitchListener).
+---the Edit Mode placeholder auras stay suppressed (see EnsureDisplayEvents).
 ---@param shown boolean
 function M:SetShown(shown)
 	self.DesiredShown = shown == true
 	ApplyShownState(self)
+
+	-- Coming back into view is a chance to settle a restyle that was skipped while restricted
+	-- (a pooled display re-acquired mid-combat retries here as soon as combat drops).
+	if self.DesiredShown and self.RestylePending then
+		self:RestyleButtons()
+	end
 end
 
 function M:Show()
@@ -619,7 +700,7 @@ end
 ---restyled on every re-acquisition, so a skipped stop only leaves animations running until the
 ---display is reused or restrictions lift.
 function M:StopGlowAnimations()
-	self.RestylePending = true
+	SetRestylePending(self, true)
 
 	if wowEx:IsAuraStylingRestricted() then
 		return
@@ -637,13 +718,15 @@ end
 ---Re-applies the stored style to all created buttons. Buttons are forbidden while auras are
 ---secret (in combat, but also out-of-combat inside M+/encounters/PvP matches), so this is
 ---deferred then: the pending flag makes the next SetStyle/RestyleButtons retry even when the
----style itself is unchanged.
+---style itself is unchanged, and the retry ticker comes back for displays that would otherwise
+---never be touched again.
 function M:RestyleButtons()
 	if wowEx:IsAuraStylingRestricted() then
-		self.RestylePending = true
+		SetRestylePending(self, true)
 		return
 	end
-	self.RestylePending = false
+
+	SetRestylePending(self, false)
 
 	for _, button in ipairs(self.Buttons) do
 		StyleButton(self, button)
@@ -706,3 +789,4 @@ end
 ---@field Buttons table[]
 ---@field ButtonWidgets table<table, table>
 ---@field DesiredShown boolean
+---@field RestylePending boolean

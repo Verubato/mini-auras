@@ -1,8 +1,9 @@
 -- Tests for the 12.1 AuraContainer display wrapper (Core/AuraContainerDisplay.lua) and the Core
 -- modules it leans on, driven through the aura_container_mock environment. Focus areas are the
 -- real bug classes from the 12.1 bring-up: style-signature skipping (and its staleness edge
--- cases), the restriction model (button children are forbidden while auras are secret), pool
--- pre-creation/reuse, the kick chain anchoring math, and the kick expiry timer.
+-- cases), the restriction model (button children are forbidden while auras are secret) and the
+-- deferred restyle that has to settle once the restriction lifts, pool pre-creation/reuse, the
+-- kick chain anchoring math, and the kick expiry timer.
 
 local fw = require("Framework")
 local wow = require("WowApi")
@@ -46,6 +47,12 @@ local function anyGlowPlaying(instance)
 	end
 	return false
 end
+
+-- The wrapper creates ONE shared event frame, on the first display ever built. Capture it here,
+-- before any acm.reset() empties the frame registry.
+newInstance()
+local displayEvents = assert(acm.lastFrameForEvent("PLAYER_REGEN_ENABLED"),
+	"the display wrapper must listen for the end of combat")
 
 fw.describe("AuraContainerDisplay - creation", function()
 	fw.before_each(acm.reset)
@@ -522,5 +529,71 @@ fw.describe("AuraContainerDisplay - group budgets", function()
 		assert(#acm.notifications == 1, "expected one warning, got " .. #acm.notifications)
 		assert(acm.notifications[1]:find("nope", 1, true), "the warning names the bad key")
 		assert(instance.Frame._groups.a.maxFrameCount == 5, "the real group is untouched")
+	end)
+end)
+
+fw.describe("AuraContainerDisplay - deferred restyle", function()
+	fw.before_each(acm.reset)
+
+	---Puts an instance into the "styled, then a change was skipped while restricted" state.
+	local function newPendingInstance()
+		local instance = newInstance()
+		instance:SetStyle({ Glow = false })
+
+		acm.restricted = true
+		instance:SetStyle({ Glow = true })
+		acm.restricted = false
+
+		assert(instance.RestylePending, "precondition: restyle is pending")
+		return instance, totalSetSizeCalls(instance)
+	end
+
+	fw.it("settles a pending restyle when combat ends", function()
+		-- Without this the buttons keep the old style for the rest of the fight: nothing else
+		-- calls SetStyle again, and the container-level layout has ALREADY taken the new size.
+		local instance, styled = newPendingInstance()
+
+		displayEvents:TriggerEvent("PLAYER_REGEN_ENABLED")
+
+		assert(not instance.RestylePending, "pending flag cleared")
+		assert(totalSetSizeCalls(instance) > styled, "buttons restyled once the restriction lifted")
+	end)
+
+	fw.it("does not restyle while the restriction is still in force", function()
+		local instance, styled = newPendingInstance()
+		acm.restricted = true
+
+		displayEvents:TriggerEvent("PLAYER_REGEN_ENABLED")
+
+		assert(instance.RestylePending, "still pending")
+		assert(totalSetSizeCalls(instance) == styled, "no forbidden button calls attempted")
+	end)
+
+	fw.it("skips parked (hidden) displays so pooled glows stay stopped", function()
+		-- Parking a pooled display stops its looping glow animations and flags a restyle so they
+		-- resume on reuse. The retry must not undo that while the display sits in the pool.
+		local instance = newInstance()
+		instance:SetStyle({ Glow = true })
+		instance:StopGlowAnimations()
+		instance:Hide()
+		local styled = totalSetSizeCalls(instance)
+
+		displayEvents:TriggerEvent("PLAYER_REGEN_ENABLED")
+
+		assert(instance.RestylePending, "a parked display stays pending")
+		assert(totalSetSizeCalls(instance) == styled, "parked display not restyled")
+		assert(not anyGlowPlaying(instance), "glow animations stay stopped while parked")
+	end)
+
+	fw.it("settles a pending restyle when the display is shown again", function()
+		local instance, styled = newPendingInstance()
+		instance:Hide()
+		displayEvents:TriggerEvent("PLAYER_REGEN_ENABLED")
+		assert(totalSetSizeCalls(instance) == styled, "still parked")
+
+		instance:Show()
+
+		assert(not instance.RestylePending, "showing settles the pending restyle")
+		assert(totalSetSizeCalls(instance) > styled, "buttons restyled on show")
 	end)
 end)
