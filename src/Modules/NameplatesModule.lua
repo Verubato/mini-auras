@@ -111,7 +111,7 @@ local hookedAuraFrames = {}
 -- both-important-and-defensive aura isn't drawn twice. Rebuilt per unit in OnAuraDataChanged.
 local importantSkipScratch = {}
 
----@class NameplatesModule
+---@class NameplatesModule : IModule
 local M = {}
 addon.Modules.NameplatesModule = M
 
