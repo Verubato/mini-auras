@@ -76,7 +76,6 @@ L:SetDefaultStrings({
 
 	-- Runtime messages
 	["Are you sure you wish to reset to factory settings?"] = "Are you sure you wish to reset to factory settings?",
-	["Can't apply settings during combat."] = "Can't apply settings during combat.",
 	["Can't do that during combat."] = "Can't do that during combat.",
 	["Failed to decode profile string."] = "Failed to decode profile string.",
 	["Healer in CC!"] = "Healer in CC!",

@@ -349,10 +349,6 @@ function M:Build(panel)
 	local resetBtn = MakeButton(panel, L["Reset"], 90)
 	resetBtn:SetPoint("TOPLEFT", newBtn, "BOTTOMLEFT", 0, -4)
 	resetBtn:SetScript("OnClick", function()
-		if InCombatLockdown() then
-			mini:NotifyCombatLockdown()
-			return
-		end
 		local current = profileManager:GetActiveProfile()
 		StaticPopup_Show("MINICC_CONFIRM",
 			string.format(L['Reset profile "%s" to defaults?'], current), nil, {
@@ -375,10 +371,6 @@ function M:Build(panel)
 	importExportBtn:SetPoint("LEFT", resetBtn, "RIGHT", 4, 0)
 	importExportBtn:SetPoint("TOP", resetBtn, "TOP")
 	importExportBtn:SetScript("OnClick", function()
-		if InCombatLockdown() then
-			mini:NotifyCombatLockdown()
-			return
-		end
 		ShowProfileIOWindow()
 	end)
 

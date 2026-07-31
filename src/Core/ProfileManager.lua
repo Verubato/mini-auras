@@ -192,10 +192,6 @@ end
 ---@param name string
 function M:SwitchProfile(name)
 	if not db then return end
-	if InCombatLockdown() then
-		mini:RunWhenCombatEnds(function() M:SwitchProfile(name) end, "ProfileSwitch")
-		return
-	end
 	if not db.Profiles or not db.Profiles[name] then return end
 	if db.ActiveProfile == name then return end
 	M:SaveCurrentProfile()

@@ -75,7 +75,6 @@ L:RegisterLocale("deDE", {
 
 	-- Runtime messages
 	["Are you sure you wish to reset to factory settings?"] = "Möchtest du wirklich auf Werkseinstellungen zurücksetzen?",
-	["Can't apply settings during combat."] = "Einstellungen können während des Kampfes nicht angewendet werden.",
 	["Can't do that during combat."] = "Das geht nicht während des Kampfes.",
 	["Failed to decode profile string."] = "Profilzeichenkette konnte nicht dekodiert werden.",
 	["Healer in CC!"] = "Heiler unter Kontrolle!",

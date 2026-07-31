@@ -75,7 +75,6 @@ L:RegisterLocale("ruRU", {
 
 	-- Runtime messages
 	["Are you sure you wish to reset to factory settings?"] = "Вы уверены, что хотите сбросить до заводских настроек?",
-	["Can't apply settings during combat."] = "Невозможно применить настройки во время боя.",
 	["Can't do that during combat."] = "Невозможно сделать это во время боя.",
 	["Failed to decode profile string."] = "Не удалось декодировать строку профиля.",
 	["Healer in CC!"] = "Целитель в СС",

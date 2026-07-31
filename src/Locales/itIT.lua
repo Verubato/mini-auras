@@ -75,7 +75,6 @@ L:RegisterLocale("itIT", {
 
 	-- Runtime messages
 	["Are you sure you wish to reset to factory settings?"] = "Sei sicuro di voler ripristinare le impostazioni di fabbrica?",
-	["Can't apply settings during combat."] = "Impossibile applicare le impostazioni durante il combattimento.",
 	["Can't do that during combat."] = "Impossibile farlo durante il combattimento.",
 	["Failed to decode profile string."] = "Impossibile decodificare la stringa del profilo.",
 	["Healer in CC!"] = "Guaritore sotto controllo!",

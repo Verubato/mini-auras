@@ -75,7 +75,6 @@ L:RegisterLocale("zhCN", {
 
 	-- Runtime messages
 	["Are you sure you wish to reset to factory settings?"] = "您确定要重置为出厂设置吗？",
-	["Can't apply settings during combat."] = "战斗中无法应用设置。",
 	["Can't do that during combat."] = "战斗中无法执行该操作。",
 	["Failed to decode profile string."] = "无法解码配置字符串。",
 	["Healer in CC!"] = "治疗者被控制！",

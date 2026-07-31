@@ -41,7 +41,6 @@ Core\Framework\Math.lua
 Core\Framework\SavedVars.lua
 Core\Framework\Settings.lua
 Core\Framework\AddonLoad.lua
-Core\Framework\CombatSchedule.lua
 
 Core\GUI\Common.lua
 Core\GUI\TextLine.lua

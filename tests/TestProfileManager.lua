@@ -53,12 +53,6 @@ local addon = {
 local addonFiles = require("AddonFiles")
 addonFiles.load(addonFiles.framework, addon)
 
--- Queueing combat scheduler so the combat-deferral path is observable.
-local combatQueue = {}
-function addon.Core.Framework:RunWhenCombatEnds(fn)
-	combatQueue[#combatQueue + 1] = fn
-end
-
 assert(loadfile("src/Core/ProfileManager.lua"))("MiniCC", addon)
 addonFiles.load(addonFiles.migrator, addon)
 
@@ -130,16 +124,12 @@ fw.describe("ProfileManager - switching", function()
 		assert(firedWith == nil, "unregistered callback must not fire")
 	end)
 
-	fw.it("defers a combat switch until combat ends", function()
+	fw.it("switches immediately during combat", function()
 		inCombat = true
 		profileManager:SwitchProfile("Alt")
-		assert(db.ActiveProfile == "Default", "no switch during combat")
-		assert(#combatQueue == 1, "switch queued for combat end")
+		assert(db.ActiveProfile == "Alt", "switch applied during combat")
 
 		inCombat = false
-		combatQueue[1]()
-		combatQueue = {}
-		assert(db.ActiveProfile == "Alt", "queued switch applied after combat")
 		profileManager:SwitchProfile("Default")
 	end)
 

@@ -75,7 +75,6 @@ L:RegisterLocale("koKR", {
 
 	-- Runtime messages
 	["Are you sure you wish to reset to factory settings?"] = "공장 설정으로 재설정하시겠습니까?",
-	["Can't apply settings during combat."] = "전투 중에는 설정을 적용할 수 없습니다.",
 	["Can't do that during combat."] = "전투 중에는 할 수 없습니다.",
 	["Failed to decode profile string."] = "프로필 문자열을 디코딩하지 못했습니다.",
 	["Healer in CC!"] = "치유사가 군중 제어당함!",

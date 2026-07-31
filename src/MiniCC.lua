@@ -138,13 +138,6 @@ local function OnAddonLoaded()
 end
 
 function addon:Refresh()
-	if InCombatLockdown() then
-		mini:RunWhenCombatEnds(function()
-			addon:Refresh()
-		end, "Refresh")
-		return
-	end
-
 	for _, module in ipairs(modules) do
 		module:Refresh()
 	end

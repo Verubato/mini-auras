@@ -30,11 +30,6 @@ if LOCALE == "zhCN" or LOCALE == "zhTW" then
 end
 
 function M:Apply()
-	if InCombatLockdown() then
-		mini:Notify(L["Can't apply settings during combat."])
-		return
-	end
-
 	addon:Refresh()
 end
 
