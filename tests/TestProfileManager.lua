@@ -53,14 +53,11 @@ local addon = {
 local addonFiles = require("AddonFiles")
 addonFiles.load(addonFiles.framework, addon)
 
--- Queueing scheduler so the combat-deferral path is observable.
+-- Queueing combat scheduler so the combat-deferral path is observable.
 local combatQueue = {}
-addon.Utils.Scheduler = {
-	Init = function() end,
-	RunWhenCombatEnds = function(_, fn)
-		combatQueue[#combatQueue + 1] = fn
-	end,
-}
+function addon.Core.Framework:RunWhenCombatEnds(fn)
+	combatQueue[#combatQueue + 1] = fn
+end
 
 assert(loadfile("src/Core/ProfileManager.lua"))("MiniCC", addon)
 addonFiles.load(addonFiles.migrator, addon)

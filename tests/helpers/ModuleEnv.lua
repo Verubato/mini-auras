@@ -129,12 +129,6 @@ function M.build()
 
 	local addonFiles = require("AddonFiles")
 	addonFiles.load(addonFiles.framework, addon)
-	addon.Utils.Scheduler = {
-		Init = function() end,
-		RunWhenCombatEnds = function(_, fn)
-			fn()
-		end,
-	}
 	loadFile("src/Core/ProfileManager.lua")
 	addonFiles.load(addonFiles.migrator, addon)
 	env.db = addon.Config.Migrator:GetAndUpgradeDb()
@@ -143,7 +137,6 @@ function M.build()
 	assert(addon.Utils.WoWEx:UseAuraContainers(), "env must be in 12.1 mode")
 	loadFile("src/Utils/ModuleUtil.lua")
 	addon.Utils.ModuleUtil:Init()
-	loadFile("src/Utils/Array.lua")
 	loadFile("src/Utils/SlotDistribution.lua")
 	loadFile("src/Core/AuraSoundData.lua")
 

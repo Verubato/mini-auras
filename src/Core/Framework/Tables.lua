@@ -25,6 +25,24 @@ function M:CopyValueOrTable(src)
 	return M:CopyTable(src)
 end
 
+---Reverses the array in place and returns it.
+function M:Reverse(array)
+	local i, j = 1, #array
+	while i < j do
+		array[i], array[j] = array[j], array[i]
+		i = i + 1
+		j = j - 1
+	end
+	return array
+end
+
+---Appends all elements of src to the end of dst.
+function M:Append(src, dst)
+	for i = 1, #src do
+		dst[#dst + 1] = src[i]
+	end
+end
+
 ---Removes any erronous values from the options table.
 ---@param target table the target table to clean
 ---@param template table what the table should look like

@@ -3,7 +3,6 @@ local _, addon = ...
 local mini = addon.Core.Framework
 local L = addon.L
 local instanceOptions = addon.Core.InstanceOptions
-local scheduler = addon.Utils.Scheduler
 local frames = addon.Core.Frames
 local config = addon.Config
 local migrator = addon.Config.Migrator
@@ -106,7 +105,6 @@ local function OnAddonLoaded()
 	L:ApplyLocale(savedVars and savedVars.LocaleOverride or GetLocale())
 
 	config:Init()
-	scheduler:Init()
 	frames:Init()
 	addon.Utils.ModuleUtil:Init()
 	addon.Core.ProfileManager:Init()
@@ -128,7 +126,7 @@ end
 
 function addon:Refresh()
 	if InCombatLockdown() then
-		scheduler:RunWhenCombatEnds(function()
+		mini:RunWhenCombatEnds(function()
 			addon:Refresh()
 		end, "Refresh")
 		return
@@ -181,9 +179,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field IsTestActive fun(self: table): boolean
 
 ---@class Utils
----@field Scheduler SchedulerUtil
 ---@field Units UnitUtil
----@field Array ArrayUtil
 ---@field FontUtil FontUtil
 ---@field ModuleUtil ModuleUtil
 ---@field ModuleName ModuleName

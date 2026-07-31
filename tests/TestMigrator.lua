@@ -24,7 +24,6 @@ local addon = {
 local addonFiles = require("AddonFiles")
 addonFiles.load(addonFiles.framework, addon)
 -- ProfileManager before Migrator: UpgradeToVersion37 snapshots profiles via its PayloadKeys.
-addon.Utils.Scheduler = { Init = function() end }
 assert(loadfile("src/Core/ProfileManager.lua"))("MiniCC", addon)
 addonFiles.load(addonFiles.migrator, addon)
 

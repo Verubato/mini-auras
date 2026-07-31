@@ -1,7 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
-local scheduler = addon.Utils.Scheduler
 local migrator  -- set in Init after Migrator is loaded
 
 ---@class ProfileManager
@@ -178,7 +177,7 @@ end
 function M:SwitchProfile(name)
 	if not db then return end
 	if InCombatLockdown() then
-		scheduler:RunWhenCombatEnds(function() M:SwitchProfile(name) end, "ProfileSwitch")
+		mini:RunWhenCombatEnds(function() M:SwitchProfile(name) end, "ProfileSwitch")
 		return
 	end
 	if not db.Profiles or not db.Profiles[name] then return end

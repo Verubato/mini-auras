@@ -1,6 +1,5 @@
 ---@type string, Addon
 local addonName, addon = ...
-local array = addon.Utils.Array
 local mini = addon.Core.Framework
 local wowEx = addon.Utils.WoWEx
 local L = addon.L
@@ -235,7 +234,7 @@ local function OnAuraStateUpdated()
 	for _, watcher in pairs(activePool) do
 		if not checkRange or IsInRange(watcher.Unit) then
 			local ccState = watcher.Watcher:GetCcState()
-			array:Append(ccState, allCcAuraData)
+			mini:Append(ccState, allCcAuraData)
 
 			if iconsEnabled then
 				for _, aura in ipairs(ccState) do

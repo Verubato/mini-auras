@@ -11,6 +11,7 @@ M.framework = {
 	"src/Core/Framework/SavedVars.lua",
 	"src/Core/Framework/Settings.lua",
 	"src/Core/Framework/AddonLoad.lua",
+	"src/Core/Framework/CombatSchedule.lua",
 }
 
 -- Db defaults + migration engine + migration chunks (Config in the TOC)

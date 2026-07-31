@@ -1,7 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Core.Framework
-local array = addon.Utils.Array
 local wowEx = addon.Utils.WoWEx
 ---@type Db
 local db
@@ -58,28 +57,28 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	local external = M:ExternalFrames(visibleOnly)
 	local custom = M:CustomFrames(visibleOnly)
 
-	array:Append(blizzard, anchors)
-	array:Append(blizzardParty, anchors)
-	array:Append(elvui, anchors)
-	array:Append(grid2, anchors)
-	array:Append(danders, anchors)
-	array:Append(suf, anchors)
-	array:Append(plexus, anchors)
-	array:Append(cell, anchors)
-	array:Append(cellSpotlight, anchors)
-	array:Append(vuhdo, anchors)
-	array:Append(tperl, anchors)
-	array:Append(eqol, anchors)
-	array:Append(buzzard, anchors)
-	array:Append(ndui, anchors)
-	array:Append(gw2ui, anchors)
-	array:Append(msuf, anchors)
-	array:Append(external, anchors)
-	array:Append(custom, anchors)
+	mini:Append(blizzard, anchors)
+	mini:Append(blizzardParty, anchors)
+	mini:Append(elvui, anchors)
+	mini:Append(grid2, anchors)
+	mini:Append(danders, anchors)
+	mini:Append(suf, anchors)
+	mini:Append(plexus, anchors)
+	mini:Append(cell, anchors)
+	mini:Append(cellSpotlight, anchors)
+	mini:Append(vuhdo, anchors)
+	mini:Append(tperl, anchors)
+	mini:Append(eqol, anchors)
+	mini:Append(buzzard, anchors)
+	mini:Append(ndui, anchors)
+	mini:Append(gw2ui, anchors)
+	mini:Append(msuf, anchors)
+	mini:Append(external, anchors)
+	mini:Append(custom, anchors)
 
 	if includeTestFrames then
 		local testFrames = M:GetTestFrames()
-		array:Append(testFrames, anchors)
+		mini:Append(testFrames, anchors)
 	end
 
 	return anchors

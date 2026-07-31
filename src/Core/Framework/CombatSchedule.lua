@@ -1,9 +1,6 @@
----@type string, Addon
 local _, addon = ...
-local eventsFrame
----@class SchedulerUtil
-local M = {}
-addon.Utils.Scheduler = M
+local M = addon.Core.Framework
+local eventsFrame = CreateFrame("Frame")
 
 local combatEndCallbacks = {}
 local combatEndKeyedCallbacks = {}
@@ -19,12 +16,6 @@ local function OnCombatEnded()
 
 	wipe(combatEndCallbacks)
 	wipe(combatEndKeyedCallbacks)
-end
-
-local function OnEvent(_, event)
-	if event == "PLAYER_REGEN_ENABLED" then
-		OnCombatEnded()
-	end
 end
 
 ---Invokes the callback once combat ends.
@@ -47,9 +38,5 @@ function M:RunWhenCombatEnds(callback, key)
 	end
 end
 
-function M:Init()
-	eventsFrame = CreateFrame("Frame")
-	eventsFrame:SetScript("OnEvent", OnEvent)
-	eventsFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-	eventsFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
-end
+eventsFrame:SetScript("OnEvent", OnCombatEnded)
+eventsFrame:RegisterEvent("PLAYER_REGEN_ENABLED")

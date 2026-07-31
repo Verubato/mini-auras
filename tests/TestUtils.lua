@@ -59,8 +59,8 @@ end)
 
 -- Array
 
-local arrayAddon = loadModule("src/Utils/Array.lua", newAddon({}))
-local array = arrayAddon.Utils.Array
+local arrayAddon = loadModule("src/Core/Framework/Tables.lua", newAddon({}))
+local array = arrayAddon.Core.Framework
 
 fw.describe("Array", function()
 	fw.it("reverses odd and even length arrays in place", function()
