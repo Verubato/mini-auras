@@ -282,7 +282,7 @@ local function EnsureWatcher(anchor, unit)
 			end
 			if existing.Display then
 				existing.Display:SetEnabled(false)
-				existing.Display.Frame:Hide()
+				existing.Display:Hide()
 			end
 			existing.Container:ResetAllSlots()
 			existing.Container.Frame:Hide()
@@ -387,7 +387,7 @@ local function EnsureWatcher(anchor, unit)
 
 	if entry.Display then
 		AnchorAuraDisplay(entry, anchor, options)
-		frames:ShowHideFrame(entry.Display.Frame, anchor, false, isPet and false or options.ExcludePlayer)
+		frames:ShowHideDisplay(entry.Display, anchor, isPet and false or options.ExcludePlayer)
 	end
 
 	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, isPet and false or options.ExcludePlayer)
@@ -476,7 +476,7 @@ local function OnCufUpdateVisible(frame)
 	if isPet and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
 		entry.Container.Frame:Hide()
 		if entry.Display then
-			entry.Display.Frame:Hide()
+			entry.Display:Hide()
 		end
 		return
 	end
@@ -490,7 +490,7 @@ local function OnCufUpdateVisible(frame)
 	-- 12.1: the aura icons live in entry.Display, not the kick/test container - it must
 	-- follow the unit frame's visibility too.
 	if entry.Display then
-		frames:ShowHideFrame(entry.Display.Frame, frame, false, isPet and false or options.ExcludePlayer)
+		frames:ShowHideDisplay(entry.Display, frame, isPet and false or options.ExcludePlayer)
 	end
 
 	frames:ShowHideFrame(entry.Container.Frame, frame, false, options.ExcludePlayer)
@@ -627,7 +627,7 @@ function M:Hide()
 	for _, entry in pairs(watchers) do
 		entry.Container.Frame:Hide()
 		if entry.Display then
-			entry.Display.Frame:Hide()
+			entry.Display:Hide()
 		end
 	end
 end
@@ -653,7 +653,7 @@ local function Teardown()
 		end
 		if entry.Display then
 			entry.Display:SetEnabled(false)
-			entry.Display.Frame:Hide()
+			entry.Display:Hide()
 		end
 		if entry.Container then
 			entry.Container:ResetAllSlots()
@@ -717,7 +717,7 @@ local function TeardownEntry(entry)
 	end
 	if entry.Display then
 		entry.Display:SetEnabled(false)
-		entry.Display.Frame:Hide()
+		entry.Display:Hide()
 	end
 	entry.Container:ResetAllSlots()
 	entry.Container.Frame:Hide()
@@ -770,10 +770,10 @@ local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 	if testModeActive then
 		-- Test icons render through the IconSlotContainer; hide the live aura display
 		-- so real and fake icons don't mix.
-		entry.Display.Frame:Hide()
+		entry.Display:Hide()
 	else
 		AnchorAuraDisplay(entry, anchor, entryOptions)
-		frames:ShowHideFrame(entry.Display.Frame, anchor, false, isPet and false or entryOptions.ExcludePlayer)
+		frames:ShowHideDisplay(entry.Display, anchor, isPet and false or entryOptions.ExcludePlayer)
 	end
 end
 

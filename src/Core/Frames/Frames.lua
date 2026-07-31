@@ -91,32 +91,57 @@ function M:GetNextStrata(strata)
 	return STRATA_ORDER[math.min((STRATA_INDEX[strata] or 1) + 1, #STRATA_ORDER)]
 end
 
+---Whether a tracker frame should be visible on the given anchor. Split out of ShowHideFrame so
+---callers that own something other than a plain frame (e.g. an AuraContainerDisplay, which routes
+---visibility through its own setter) can reuse the decision.
 ---@param frame table
 ---@param anchor table
----@param isTest boolean
 ---@param excludePlayer boolean
-function M:ShowHideFrame(frame, anchor, isTest, excludePlayer)
+---@return boolean
+function M:ShouldShowFrame(frame, anchor, excludePlayer)
 	if anchor:IsForbidden() then
-		frame:Hide()
-		return
+		return false
 	end
 
 	local unit = frame:GetAttribute("unit") or anchor.unit or anchor:GetAttribute("unit")
 
 	if unit and unit ~= "" then
 		if excludePlayer and UnitIsUnit(unit, "player") then
-			frame:Hide()
-			return
+			return false
 		end
 	end
 
-	if anchor:IsVisible() then
-		-- technically it can be visible but have an alpha of 0, or even worse a secret alpha of 0
-		-- but we're going to assume frame addons are sane and properly hide frames instead of doing that
+	-- technically it can be visible but have an alpha of 0, or even worse a secret alpha of 0
+	-- but we're going to assume frame addons are sane and properly hide frames instead of doing that
+	return anchor:IsVisible() == true
+end
+
+---@param frame table
+---@param anchor table
+---@param isTest boolean
+---@param excludePlayer boolean
+function M:ShowHideFrame(frame, anchor, isTest, excludePlayer)
+	if M:ShouldShowFrame(frame, anchor, excludePlayer) then
 		frame:SetAlpha(1)
 		frame:Show()
 	else
 		frame:Hide()
+	end
+end
+
+---ShowHideFrame for an AuraContainerDisplay: same decision, but applied through the display so
+---Edit Mode placeholder auras stay suppressed.
+---@param display AuraContainerDisplay
+---@param anchor table
+---@param excludePlayer boolean
+function M:ShowHideDisplay(display, anchor, excludePlayer)
+	local frame = display.Frame
+
+	if M:ShouldShowFrame(frame, anchor, excludePlayer) then
+		frame:SetAlpha(1)
+		display:Show()
+	else
+		display:Hide()
 	end
 end
 

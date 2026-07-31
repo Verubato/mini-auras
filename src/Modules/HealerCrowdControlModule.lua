@@ -252,7 +252,7 @@ local function RefreshHealerDisplays()
 			style.ShowTooltips = options.ShowTooltips ~= false
 			display:SetStyle(style)
 			display:SetEnabled(options.Icons.Enabled ~= false)
-			display.Frame:SetShown(options.Icons.Enabled ~= false and not testModeActive)
+			display:SetShown(options.Icons.Enabled ~= false and not testModeActive)
 		end
 	end
 
@@ -348,7 +348,7 @@ local function Teardown()
 			end
 			if item.Display then
 				item.Display:SetEnabled(false)
-				item.Display.Frame:Hide()
+				item.Display:Hide()
 			end
 			discardPool[unit] = item
 			activePool[unit] = nil
@@ -397,7 +397,7 @@ local function RefreshHealers()
 			end
 			if item.Display then
 				item.Display:SetEnabled(false)
-				item.Display.Frame:Hide()
+				item.Display:Hide()
 			end
 			discardPool[unit] = item
 			activePool[unit] = nil
@@ -558,7 +558,7 @@ local function EnsureFrames()
 		-- so real and fake icons don't mix.
 		for _, item in pairs(activePool) do
 			if item.Display then
-				item.Display.Frame:Hide()
+				item.Display:Hide()
 			end
 		end
 		return

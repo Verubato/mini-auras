@@ -4,6 +4,9 @@ local fontUtil = addon.Utils.FontUtil
 local wowEx = addon.Utils.WoWEx
 local cachedDb = nil
 local frameIdCounter = 0
+local liveDisplays = {}
+local editModePreviewActive = false
+local providerSwitchListener = nil
 
 -- 12.1 AuraContainer-backed icon display. One instance wraps a CreateFrame("AuraContainer")
 -- with a single aura group and styles the container-created AuraButtons to match the legacy
@@ -41,6 +44,56 @@ end
 local function NextFrameName(frameType)
 	frameIdCounter = frameIdCounter + 1
 	return "MiniCC_AC_" .. frameType .. "_" .. frameIdCounter
+end
+
+-- Edit Mode preview suppression.
+--
+-- Blizzard force-feeds every AuraContainer a fake data provider while Edit Mode is open, so
+-- our containers fill up with placeholder auras ("Poison 1", "Buff 1", ... with random spellbook
+-- icons) that have nothing to do with the tracked unit. There is no opt-out: the container
+-- registers AURA_DATA_PROVIDER_SWITCH as a *static* event in OnLoad_Intrinsic (so SetEnabled and
+-- visibility don't gate it), and the switch flips ManagedAuraContainerPrivateMixin's aura source
+-- list to AuraContainerAuraSourceLists.EditMode. SetUseEditModeSource lives on the private mixin
+-- only, so addons can't call it.
+--
+-- Hiding the container does work, and is the intended escape hatch: dirty processing runs under
+-- Enum.OnUpdateMode.RunWhenVisibleOnce, so a hidden container never parses the fake auras at all,
+-- and OnShow_Intrinsic issues a full refresh from live data on the way back out.
+--
+-- Modules re-parent and re-anchor these frames constantly, so suppression can't live on an
+-- intermediate holder frame. Instead every display remembers the visibility its module asked for
+-- and the real frame shows only when the preview isn't running.
+
+---@param instance AuraContainerDisplay
+local function ApplyShownState(instance)
+	instance.Frame:SetShown(instance.DesiredShown and not editModePreviewActive)
+end
+
+local function OnAuraDataProviderSwitch(useRealDataProvider)
+	local previewActive = useRealDataProvider ~= true
+	if editModePreviewActive == previewActive then
+		return
+	end
+
+	editModePreviewActive = previewActive
+
+	for _, instance in ipairs(liveDisplays) do
+		ApplyShownState(instance)
+	end
+end
+
+---Starts listening for the Edit Mode data provider switch. Called from New rather than at load,
+---because the event only exists on clients that have the AuraContainer system.
+local function EnsureProviderSwitchListener()
+	if providerSwitchListener then
+		return
+	end
+
+	providerSwitchListener = CreateFrame("Frame")
+	providerSwitchListener:RegisterEvent("AURA_DATA_PROVIDER_SWITCH")
+	providerSwitchListener:SetScript("OnEvent", function(_, _, useRealDataProvider)
+		OnAuraDataProviderSwitch(useRealDataProvider)
+	end)
 end
 
 -- Glow styles available here. LibCustomGlow can't attach to AuraButtons (it re-parents pooled
@@ -383,6 +436,8 @@ function M:New(parent, unit, groups, size, spacing, moduleName)
 	instance.Buttons = {}
 	-- button -> { Cooldown, Border, DispelSignature, Glow, GlowStyle } for restyling.
 	instance.ButtonWidgets = {}
+	-- Visibility the owning module last asked for; frames are created shown.
+	instance.DesiredShown = true
 
 	-- Seed the db-derived style fields so buttons created before the first SetStyle (which
 	-- restyles everything anyway) still pick up the global swipe/countdown/glow settings.
@@ -392,6 +447,10 @@ function M:New(parent, unit, groups, size, spacing, moduleName)
 	frame:SetIgnoreParentScale(true)
 	frame.MiniCCModule = moduleName or nil
 	instance.Frame = frame
+
+	EnsureProviderSwitchListener()
+	liveDisplays[#liveDisplays + 1] = instance
+	ApplyShownState(instance)
 
 	frame:SetUnit(unit)
 	ApplyFlowLayout(instance)
@@ -494,6 +553,29 @@ end
 ---@param enabled boolean
 function M:SetEnabled(enabled)
 	self.Frame:SetEnabled(enabled)
+end
+
+---Shows or hides the display. Always use this instead of touching Frame:SetShown directly, so
+---the Edit Mode placeholder auras stay suppressed (see EnsureProviderSwitchListener).
+---@param shown boolean
+function M:SetShown(shown)
+	self.DesiredShown = shown == true
+	ApplyShownState(self)
+end
+
+function M:Show()
+	self:SetShown(true)
+end
+
+function M:Hide()
+	self:SetShown(false)
+end
+
+---The visibility the owning module asked for, which is not the frame's actual state while the
+---Edit Mode preview is suppressing it.
+---@return boolean
+function M:IsShown()
+	return self.DesiredShown
 end
 
 ---@param newSize number
@@ -706,3 +788,4 @@ end
 ---@field Layout table
 ---@field Buttons table[]
 ---@field ButtonWidgets table<table, table>
+---@field DesiredShown boolean

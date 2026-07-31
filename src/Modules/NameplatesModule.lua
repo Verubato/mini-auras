@@ -272,7 +272,7 @@ end
 local function ResetBarDisplay(display)
 	display:SetEnabled(false)
 	display:StopGlowAnimations()
-	display.Frame:Hide()
+	display:Hide()
 	display.Frame:ClearAllPoints()
 	display.Frame:SetParent(UIParent)
 end
@@ -311,7 +311,7 @@ local function EnsureBarDisplay(data, bar, barOptions)
 	-- SetEnabled(false -> true) triggers the container's own full refresh, so a pooled display
 	-- re-acquired for a recycled unit token still repopulates.
 	display:SetEnabled(true)
-	display.Frame:SetShown(not testModeActive)
+	display:SetShown(not testModeActive)
 
 	return display
 end
@@ -1207,11 +1207,11 @@ local function Teardown()
 		ClearNameplate(unitToken)
 		if data.Bar1Display then
 			data.Bar1Display:SetEnabled(false)
-			data.Bar1Display.Frame:Hide()
+			data.Bar1Display:Hide()
 		end
 		if data.Bar2Display then
 			data.Bar2Display:SetEnabled(false)
-			data.Bar2Display.Frame:Hide()
+			data.Bar2Display:Hide()
 		end
 	end
 

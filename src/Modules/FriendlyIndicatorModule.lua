@@ -391,7 +391,7 @@ local function EnsureWatcher(anchor, unit)
 
 	if entry.Display then
 		AnchorAuraDisplay(entry, anchor, options)
-		frames:ShowHideFrame(entry.Display.Frame, anchor, false, options.ExcludePlayer)
+		frames:ShowHideDisplay(entry.Display, anchor, options.ExcludePlayer)
 	end
 
 	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, options.ExcludePlayer)
@@ -427,7 +427,7 @@ local function OnCufUpdateVisible(frame)
 	-- 12.1: the aura icons live in entry.Display, not the kick/test container - it must
 	-- follow the unit frame's visibility too.
 	if entry.Display then
-		frames:ShowHideFrame(entry.Display.Frame, frame, false, options.ExcludePlayer)
+		frames:ShowHideDisplay(entry.Display, frame, options.ExcludePlayer)
 	end
 
 	frames:ShowHideFrame(entry.Container.Frame, frame, false, options.ExcludePlayer)
@@ -583,7 +583,7 @@ local function Teardown()
 
 		if entry.Display then
 			entry.Display:SetEnabled(false)
-			entry.Display.Frame:Hide()
+			entry.Display:Hide()
 		end
 
 		if entry.Container then
@@ -659,10 +659,10 @@ local function ApplyEntryOptions(entry, anchor, options)
 	if testModeActive then
 		-- Test icons render through the IconSlotContainer; hide the live aura display
 		-- so real and fake icons don't mix.
-		entry.Display.Frame:Hide()
+		entry.Display:Hide()
 	else
 		AnchorAuraDisplay(entry, anchor, options)
-		frames:ShowHideFrame(entry.Display.Frame, anchor, false, options.ExcludePlayer)
+		frames:ShowHideDisplay(entry.Display, anchor, options.ExcludePlayer)
 	end
 end
 

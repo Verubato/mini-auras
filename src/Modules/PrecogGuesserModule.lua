@@ -211,7 +211,7 @@ end
 local function UpdateContent(options)
 	if testModeActive then
 		if display then
-			display.Frame:Hide()
+			display:Hide()
 		end
 		anchor:Show()
 		RefreshTestIcons()
@@ -226,7 +226,7 @@ local function UpdateContent(options)
 	-- 12.1: the container decides visibility per aura internally; the anchor just has to be
 	-- shown (it is invisible itself, and mouse input is disabled outside test mode).
 	container:ResetAllSlots()
-	display.Frame:Show()
+	display:Show()
 	anchor:Show()
 end
 

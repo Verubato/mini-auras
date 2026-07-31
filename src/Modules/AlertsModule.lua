@@ -799,7 +799,7 @@ local function ApplyNameplateDisplayOptions(entry, options, showBars)
 
 	entry.Def:SetStyle(style)
 	entry.Def:SetEnabled(showBars == true)
-	entry.Def.Frame:SetShown(showBars == true)
+	entry.Def:SetShown(showBars == true)
 
 	entry.Imp:SetGrow(grow)
 	entry.Imp:SetIconSize(size)
@@ -808,7 +808,7 @@ local function ApplyNameplateDisplayOptions(entry, options, showBars)
 	entry.Imp:SetStyle(style)
 	local impShown = showBars and importantEnabled
 	entry.Imp:SetEnabled(impShown == true)
-	entry.Imp.Frame:SetShown(impShown == true)
+	entry.Imp:SetShown(impShown == true)
 end
 
 -- 12.1 path: applies options to every pooled display pair and re-chains the rows.
@@ -982,11 +982,11 @@ end
 local function ResetAlertDisplayPair(entry)
 	entry.Def:SetEnabled(false)
 	entry.Def:StopGlowAnimations()
-	entry.Def.Frame:Hide()
+	entry.Def:Hide()
 	entry.Def.Frame:ClearAllPoints()
 	entry.Imp:SetEnabled(false)
 	entry.Imp:StopGlowAnimations()
-	entry.Imp.Frame:Hide()
+	entry.Imp:Hide()
 	entry.Imp.Frame:ClearAllPoints()
 end
 
