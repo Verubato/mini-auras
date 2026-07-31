@@ -9,6 +9,7 @@ local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local eventGate = addon.Core.EventGate
+local duelPoller = addon.Core.DuelPoller
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local slotDistribution = addon.Utils.SlotDistribution
@@ -37,12 +38,11 @@ local nameplateAnchors = {}
 ---@type table<string, Watcher>
 local watchers = {}
 -- Duel detection: no event fires when a friendly unit turns attackable at duel start (or back
--- at duel end), so visible plates are polled and re-registered when their enemy status flips
+-- at duel end), so the shared DuelPoller re-registers plates whose enemy status flips
 -- (GetUnitOptions switches between Friendly and Enemy for the same token). Baselines are
 -- seeded on plate add and cleared on plate remove.
-local DUEL_POLL_INTERVAL = 0.25
----@type table<string, boolean>
-local nameplateEnemyState = {}
+---@type DuelPollerSubscriber
+local duelSub
 
 local TEST_CC_NAMEPLATE_SPELL_IDS = {
 	408, -- kidney shot
@@ -784,7 +784,7 @@ end
 
 local function OnNamePlateRemoved(unitToken)
 	-- Clear before the early return: friendly plates have a poll baseline but no anchor data.
-	nameplateEnemyState[unitToken] = nil
+	duelSub:Clear(unitToken)
 
 	local data = nameplateAnchors[unitToken]
 	if not data then
@@ -837,7 +837,7 @@ local function OnNamePlateAdded(unitToken)
 
 	-- Baseline for the duel poll, kept fresh on every (re)registration. RebuildContainers routes
 	-- through here too, so plates that existed before Init/enable are also seeded.
-	nameplateEnemyState[unitToken] = units:IsEnemy(unitToken)
+	duelSub:Seed(unitToken)
 
 	-- Legacy only: the hook feeds watcher-driven re-renders. On 12.1 the containers track
 	-- their unit themselves and the hook body would no-op against the empty watcher table,
@@ -954,22 +954,12 @@ local function OnNamePlateAdded(unitToken)
 	end
 end
 
--- Re-registers plates whose enemy status flipped: GetUnitOptions starts returning the other
+-- Rebuilds a plate whose enemy status flipped: GetUnitOptions starts returning the other
 -- faction's options, so the bars are rebuilt (12.1: displays re-acquired with the new faction's
--- budgets; legacy: containers rebuilt and the watcher re-rendered). Open world only - the only
--- place duels occur.
-local function PollDuelFactionFlips()
-	if IsInInstance() or not moduleUtil:IsModuleEnabled(moduleName.Nameplates) then
-		return
-	end
-	for unitToken, wasEnemy in pairs(nameplateEnemyState) do
-		local isEnemy = units:IsEnemy(unitToken)
-		if isEnemy ~= wasEnemy then
-			nameplateEnemyState[unitToken] = isEnemy
-			OnNamePlateAdded(unitToken)
-			OnAuraDataChanged(unitToken)
-		end
-	end
+-- budgets; legacy: containers rebuilt and the watcher re-rendered).
+local function OnDuelFactionFlip(unitToken)
+	OnNamePlateAdded(unitToken)
+	OnAuraDataChanged(unitToken)
 end
 
 local function ClearNameplate(unitToken)
@@ -1302,7 +1292,9 @@ local function CreateEvents()
 		end,
 	})
 
-	C_Timer.NewTicker(DUEL_POLL_INTERVAL, PollDuelFactionFlips)
+	duelSub = duelPoller:Register(function()
+		return moduleUtil:IsModuleEnabled(moduleName.Nameplates)
+	end, OnDuelFactionFlip)
 end
 
 local function ApplyInitialState()
