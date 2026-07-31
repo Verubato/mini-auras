@@ -508,4 +508,19 @@ fw.describe("AuraContainerDisplay - group budgets", function()
 		instance:SetMaxIcons("a", 0)
 		assert((instance.Frame._groups.a.maxFrameCountSets or 0) == sets, "unchanged budget skips the API call")
 	end)
+
+	fw.it("an unknown group key is reported, not silently ignored", function()
+		-- A budget of 0 is how a whole category is switched off, so a mistyped key would
+		-- silently disable one with no symptom anywhere.
+		local instance = newInstance({
+			{ Key = "a", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 5 },
+		})
+		acm.notifications = {}
+
+		instance:SetMaxIcons("nope", 0)
+
+		assert(#acm.notifications == 1, "expected one warning, got " .. #acm.notifications)
+		assert(acm.notifications[1]:find("nope", 1, true), "the warning names the bad key")
+		assert(instance.Frame._groups.a.maxFrameCount == 5, "the real group is untouched")
+	end)
 end)

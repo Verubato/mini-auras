@@ -42,6 +42,13 @@ local function GetDb()
 	return cachedDb
 end
 
+local function Warn(message, ...)
+	local mini = addon.Core.Framework
+	if mini and mini.Notify then
+		mini:Notify(message, ...)
+	end
+end
+
 local function NextFrameName(frameType)
 	frameIdCounter = frameIdCounter + 1
 	return "MiniCC_AC_" .. frameType .. "_" .. frameIdCounter
@@ -422,6 +429,9 @@ function M:New(parent, unit, groups, size, spacing, moduleName)
 	instance.Size = size or 20
 	instance.Spacing = spacing or 2
 	instance.Groups = groups
+	-- Key -> spec, so the per-category budget setter is a lookup rather than a scan (and can
+	-- tell a caller that its group key is wrong instead of silently doing nothing).
+	instance.GroupsByKey = {}
 	instance.Grow = "CENTER"
 	-- Owned by the instance and mutated in place by StoreStyle; callers never hand us a table
 	-- we keep, so they are free to pass a reused scratch.
@@ -450,6 +460,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName)
 	ApplyFlowLayout(instance)
 
 	for _, group in ipairs(groups) do
+		instance.GroupsByKey[group.Key] = group
 		frame:AddAuraGroup(group.Key, group.FilterString, {
 			maxFrameCount = group.MaxIcons or 3,
 			candidateFilters = group.CandidateFilters,
@@ -528,7 +539,8 @@ function M:SetSpacing(newSpacing)
 end
 
 ---Sets a group's icon budget. A value of 0 hides the group entirely (used for per-category
----toggles like ShowCC/ShowDefensives).
+---toggles like ShowCC/ShowDefensives), so a mistyped key would silently switch a whole category
+---off - hence the warning rather than a quiet return.
 ---@param groupKey string
 ---@param maxIcons number
 function M:SetMaxIcons(groupKey, maxIcons)
@@ -537,15 +549,19 @@ function M:SetMaxIcons(groupKey, maxIcons)
 		return
 	end
 
-	for _, group in ipairs(self.Groups) do
-		if group.Key == groupKey then
-			if group.MaxIcons ~= maxIcons then
-				group.MaxIcons = maxIcons
-				self.Frame:SetAuraGroupMaxFrameCount(groupKey, maxIcons)
-			end
-			return
-		end
+	local group = self.GroupsByKey[groupKey]
+
+	if not group then
+		Warn("SetMaxIcons: no aura group '%s' on this display.", tostring(groupKey))
+		return
 	end
+
+	if group.MaxIcons == maxIcons then
+		return
+	end
+
+	group.MaxIcons = maxIcons
+	self.Frame:SetAuraGroupMaxFrameCount(groupKey, maxIcons)
 end
 
 ---@param grow string "LEFT"|"RIGHT"|"CENTER"|"UP"|"DOWN"
@@ -662,6 +678,7 @@ end
 ---@field Size number
 ---@field Spacing number
 ---@field Groups AuraDisplayGroupSpec[]
+---@field GroupsByKey table<string, AuraDisplayGroupSpec>
 ---@field Grow string
 ---@field Style AuraDisplayStyle
 ---@field Layout table
