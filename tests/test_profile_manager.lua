@@ -67,7 +67,12 @@ addon.Utils.Scheduler = {
 }
 
 assert(loadfile("src/Core/ProfileManager.lua"))("MiniCC", addon)
+assert(loadfile("src/Config/Defaults.lua"))("MiniCC", addon)
 assert(loadfile("src/Config/Migrator.lua"))("MiniCC", addon)
+assert(loadfile("src/Config/Migrations/V01.lua"))("MiniCC", addon)
+assert(loadfile("src/Config/Migrations/V13.lua"))("MiniCC", addon)
+assert(loadfile("src/Config/Migrations/V19.lua"))("MiniCC", addon)
+assert(loadfile("src/Config/Migrations/V41.lua"))("MiniCC", addon)
 
 local profileManager = addon.Core.ProfileManager
 local migrator = addon.Config.Migrator

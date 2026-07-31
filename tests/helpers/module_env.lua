@@ -140,7 +140,12 @@ function M.build()
 		end,
 	}
 	loadFile("src/Core/ProfileManager.lua")
+	loadFile("src/Config/Defaults.lua")
 	loadFile("src/Config/Migrator.lua")
+	loadFile("src/Config/Migrations/V01.lua")
+	loadFile("src/Config/Migrations/V13.lua")
+	loadFile("src/Config/Migrations/V19.lua")
+	loadFile("src/Config/Migrations/V41.lua")
 	env.db = addon.Config.Migrator:GetAndUpgradeDb()
 
 	loadFile("src/Utils/WoWEx.lua")

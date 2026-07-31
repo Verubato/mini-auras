@@ -69,7 +69,23 @@ Core\KickData.lua
 Core\KickTracker.lua
 Core\Inspector.lua
 Core\InspectorFacade.lua
-Core\Frames.lua
+Core\Frames\Frames.lua
+Core\Frames\TestFrames.lua
+Core\Frames\ExternalProviders.lua
+Core\Frames\Blizzard.lua
+Core\Frames\DandersFrames.lua
+Core\Frames\ElvUI.lua
+Core\Frames\Grid2.lua
+Core\Frames\ShadowedUF.lua
+Core\Frames\Plexus.lua
+Core\Frames\VuhDo.lua
+Core\Frames\Cell.lua
+Core\Frames\TPerl.lua
+Core\Frames\EnhancedQoL.lua
+Core\Frames\Buzzard.lua
+Core\Frames\NDui.lua
+Core\Frames\GW2UI.lua
+Core\Frames\MSUF.lua
 Core\TrinketsTracker.lua
 Core\ProfileManager.lua
 
@@ -96,7 +112,12 @@ Modules\TestModeManager.lua
 
 Api\v1.lua
 
+Config\Defaults.lua
 Config\Migrator.lua
+Config\Migrations\V01.lua
+Config\Migrations\V13.lua
+Config\Migrations\V19.lua
+Config\Migrations\V41.lua
 Config\Config.lua
 Config\General.lua
 Config\Portraits.lua
