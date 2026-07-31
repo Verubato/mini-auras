@@ -5,6 +5,7 @@ local wowEx = addon.Utils.WoWEx
 local L = addon.L
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local auraFilters = addon.Core.AuraFilters
 local unitWatcher = addon.Core.UnitAuraWatcher
 local units = addon.Utils.Units
 local moduleUtil = addon.Utils.ModuleUtil
@@ -428,7 +429,13 @@ local function RefreshHealers()
 				Display = auraContainerDisplay:New(
 					healerAnchor,
 					healer,
-					{ { Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 5 } },
+					{
+						{
+							Key = auraFilters.GroupKey.CrowdControl,
+							FilterString = auraFilters.Filter.CrowdControl,
+							MaxIcons = 5,
+						},
+					},
 					tonumber(options.Icons.Size) or 32,
 					options.IconSpacing or 2,
 					"Healer CC"

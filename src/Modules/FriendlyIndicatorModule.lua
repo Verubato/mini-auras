@@ -6,6 +6,7 @@ local frames = addon.Core.Frames
 local units = addon.Utils.Units
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local auraFilters = addon.Core.AuraFilters
 local growAnchors = addon.Core.GrowAnchors
 local UnitAuraWatcher = addon.Core.UnitAuraWatcher
 local moduleUtil = addon.Utils.ModuleUtil
@@ -303,17 +304,18 @@ local function EnsureWatcher(anchor, unit)
 		watchers[anchor] = entry
 
 		if USE_AURA_CONTAINERS then
-			-- Filter negation partitions the groups so an aura only ever lands in one: EXTERNAL
-			-- excludes BIG (they can overlap; legacy deduped by AuraInstanceID) and important
-			-- excludes both defensive categories.
-			-- The important group is a 12.1 addition with no legacy equivalent (the legacy path
-			-- can't identify important buffs without the secret-alpha stacking trick).
-			entry.Display = auraContainerDisplay:New(UIParent, unit, {
-				{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = maxIcons },
-				{ Key = "bigdef", FilterString = "HELPFUL|BIG_DEFENSIVE", MaxIcons = maxIcons },
-				{ Key = "extdef", FilterString = "HELPFUL|EXTERNAL_DEFENSIVE|!BIG_DEFENSIVE", MaxIcons = maxIcons },
-				{ Key = "important", FilterString = "HELPFUL|IMPORTANT|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE", MaxIcons = maxIcons },
-			}, size, spacing, "Friendly Indicators")
+			-- The four standard categories, partitioned by filter negation so an aura only ever
+			-- lands in one group (see Core/AuraFilters). The important group is a 12.1 addition
+			-- with no legacy equivalent (the legacy path can't identify important buffs without
+			-- the secret-alpha stacking trick).
+			entry.Display = auraContainerDisplay:New(
+				UIParent,
+				unit,
+				auraFilters:BuildCategoryGroups(maxIcons),
+				size,
+				spacing,
+				"Friendly Indicators"
+			)
 		else
 			entry.Watcher = UnitAuraWatcher:New(unit, nil, { Defensives = true, CC = true })
 			entry.Watcher:RegisterCallback(function()
@@ -610,10 +612,13 @@ local function ApplyEntryOptions(entry, anchor, options)
 		entry.Display:SetIconSize(iconSize)
 		entry.Display:SetSpacing(options.IconSpacing or 2)
 		-- Category toggles map to a zero icon budget for the disabled group.
-		entry.Display:SetMaxIcons("cc", options.ShowCC and maxIcons or 0)
-		entry.Display:SetMaxIcons("bigdef", options.ShowDefensives and maxIcons or 0)
-		entry.Display:SetMaxIcons("extdef", options.ShowDefensives and maxIcons or 0)
-		entry.Display:SetMaxIcons("important", options.ShowImportant and maxIcons or 0)
+		auraFilters:ApplyCategoryBudgets(
+			entry.Display,
+			maxIcons,
+			options.ShowCC,
+			options.ShowDefensives,
+			options.ShowImportant
+		)
 
 		local style = displayStyleScratch
 		style.ReverseCooldown = options.Icons.ReverseCooldown

@@ -5,6 +5,7 @@ local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local auraFilters = addon.Core.AuraFilters
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 -- 12.1 path: the whole guess ("~4 second IMPORTANT self buff") maps directly onto an
@@ -316,7 +317,7 @@ local function CreateFrames()
 	display = auraContainerDisplay:New(anchor, "player", {
 		{
 			Key = "precog",
-			FilterString = "HELPFUL|IMPORTANT",
+			FilterString = auraFilters.Filter.ImportantOnly,
 			MaxIcons = 1,
 			CandidateFilters = { maxDuration = 4.1 },
 		},

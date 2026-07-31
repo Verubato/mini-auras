@@ -8,6 +8,7 @@ local unitWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local auraFilters = addon.Core.AuraFilters
 local growAnchors = addon.Core.GrowAnchors
 local eventGate = addon.Core.EventGate
 local duelPoller = addon.Core.DuelPoller
@@ -245,16 +246,23 @@ local function AnchorBarDisplay(display, container, nameplate, barOptions, kickA
 	)
 end
 
----12.1 path: builds one pooled bar display. Filter negation partitions the categories so an
----aura only ever lands in one group (EXTERNAL can overlap BIG, and importants can also be
----defensives). Budgets/unit/style are applied per bar on acquisition.
+-- Placeholder geometry for a pooled display; the real size/spacing/budgets are applied per bar
+-- on acquisition (EnsureBarDisplay).
+local DEFAULT_BAR_ICONS = 5
+local DEFAULT_BAR_SIZE = 35
+local DEFAULT_BAR_SPACING = 2
+
+---12.1 path: builds one pooled bar display with the four standard categories (partitioned by
+---filter negation, see Core/AuraFilters). Budgets/unit/style are applied per bar on acquisition.
 local function CreateBarDisplay()
-	return auraContainerDisplay:New(UIParent, "none", {
-		{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 5 },
-		{ Key = "bigdef", FilterString = "HELPFUL|BIG_DEFENSIVE", MaxIcons = 5 },
-		{ Key = "extdef", FilterString = "HELPFUL|EXTERNAL_DEFENSIVE|!BIG_DEFENSIVE", MaxIcons = 5 },
-		{ Key = "important", FilterString = "HELPFUL|IMPORTANT|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE", MaxIcons = 5 },
-	}, 35, 2, "Nameplates")
+	return auraContainerDisplay:New(
+		UIParent,
+		"none",
+		auraFilters:BuildCategoryGroups(DEFAULT_BAR_ICONS),
+		DEFAULT_BAR_SIZE,
+		DEFAULT_BAR_SPACING,
+		"Nameplates"
+	)
 end
 
 ---12.1 path: parks a pooled bar display.
@@ -283,10 +291,13 @@ local function EnsureBarDisplay(data, bar, barOptions)
 	display:SetUnit(data.UnitToken)
 	display:SetIconSize(size)
 	display:SetSpacing(spacing)
-	display:SetMaxIcons("cc", barOptions.ShowCC and maxIcons or 0)
-	display:SetMaxIcons("bigdef", barOptions.ShowDefensives and maxIcons or 0)
-	display:SetMaxIcons("extdef", barOptions.ShowDefensives and maxIcons or 0)
-	display:SetMaxIcons("important", barOptions.ShowImportant and maxIcons or 0)
+	auraFilters:ApplyCategoryBudgets(
+		display,
+		maxIcons,
+		barOptions.ShowCC,
+		barOptions.ShowDefensives,
+		barOptions.ShowImportant
+	)
 
 	local style = displayStyleScratch
 	style.ReverseCooldown = barOptions.Icons.ReverseCooldown

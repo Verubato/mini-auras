@@ -6,6 +6,7 @@ local frames = addon.Core.Frames
 local units = addon.Utils.Units
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local auraFilters = addon.Core.AuraFilters
 local growAnchors = addon.Core.GrowAnchors
 local unitAuraWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
@@ -302,7 +303,11 @@ local function EnsureWatcher(anchor, unit)
 
 		if USE_AURA_CONTAINERS then
 			entry.Display = auraContainerDisplay:New(UIParent, unit, {
-				{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = count },
+				{
+					Key = auraFilters.GroupKey.CrowdControl,
+					FilterString = auraFilters.Filter.CrowdControl,
+					MaxIcons = count,
+				},
 			}, size, spacing, "CC")
 		else
 			entry.Watcher = unitAuraWatcher:New(unit, nil, { CC = true })
@@ -723,7 +728,7 @@ local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 
 	if entry.Display then
 		entry.Display:SetIconSize(iconSize)
-		entry.Display:SetMaxIcons("cc", iconCount)
+		entry.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, iconCount)
 		entry.Display:SetSpacing(entryOptions.IconSpacing or 2)
 
 		local style = displayStyleScratch

@@ -5,6 +5,7 @@ local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local auraFilters = addon.Core.AuraFilters
 local growAnchors = addon.Core.GrowAnchors
 local eventGate = addon.Core.EventGate
 local duelPoller = addon.Core.DuelPoller
@@ -120,6 +121,11 @@ local activeTokensScratch = {}
 local alertSoundIdListPool = {}
 -- Rough upper bound on simultaneously visible enemy nameplates, used to size the display pool.
 local PLATE_ESTIMATE = 20
+-- Placeholder geometry for a pooled display pair; the real values are applied per token by
+-- ApplyNameplateDisplayOptions.
+local DEFAULT_PAIR_ICONS = 8
+local DEFAULT_PAIR_SIZE = 24
+local DEFAULT_PAIR_SPACING = 2
 -- 12.1 path: engine-side alert sounds via C_UnitAuras.AddAuraSound (the aura transitions the
 -- legacy sound reacted to are secret there, but the engine can play sounds on them for us -
 -- same pattern as HealerCrowdControlModule). Registrations are per (enemy nameplate token,
@@ -782,8 +788,8 @@ local function ApplyNameplateDisplayOptions(entry, options, showBars)
 	entry.Def:SetGrow(grow)
 	entry.Def:SetIconSize(size)
 	entry.Def:SetSpacing(spacing)
-	entry.Def:SetMaxIcons("bigdef", includeDefensives and maxIcons or 0)
-	entry.Def:SetMaxIcons("extdef", includeDefensives and maxIcons or 0)
+	entry.Def:SetMaxIcons(auraFilters.GroupKey.BigDefensive, includeDefensives and maxIcons or 0)
+	entry.Def:SetMaxIcons(auraFilters.GroupKey.ExternalDefensive, includeDefensives and maxIcons or 0)
 
 	-- Both displays take the same style; fill the scratch once and hand it to each.
 	local style = displayStyleScratch
@@ -801,7 +807,7 @@ local function ApplyNameplateDisplayOptions(entry, options, showBars)
 	entry.Imp:SetGrow(grow)
 	entry.Imp:SetIconSize(size)
 	entry.Imp:SetSpacing(spacing)
-	entry.Imp:SetMaxIcons("important", importantEnabled and maxIcons or 0)
+	entry.Imp:SetMaxIcons(auraFilters.GroupKey.Important, importantEnabled and maxIcons or 0)
 	entry.Imp:SetStyle(style)
 	local impShown = showBars and importantEnabled
 	entry.Imp:SetEnabled(impShown == true)
@@ -959,19 +965,31 @@ end
 -- 12.1 path: builds one pooled display pair. BIG and EXTERNAL defensives are separate groups
 -- because filter-string tokens combine with AND - "HELPFUL|BIG_DEFENSIVE|EXTERNAL_DEFENSIVE"
 -- would only match auras flagged as BOTH, i.e. almost nothing; two groups on one container is
--- the idiom for OR (they render as one continuous row). Filter negation partitions them:
--- EXTERNAL excludes BIG (they can overlap) and the important display excludes both defensive
--- categories so a both-important-and-defensive aura isn't drawn on both bars (legacy deduped
--- by id). Sizes/budgets are applied per token by RefreshNameplateDisplays.
+-- the idiom for OR (they render as one continuous row). The filters themselves are partitioned
+-- by negation (see Core/AuraFilters), so a both-important-and-defensive aura is never drawn on
+-- both bars (legacy deduped by id). Sizes/budgets are applied per token by
+-- RefreshNameplateDisplays.
 local function CreateAlertDisplayPair()
 	return {
 		Def = auraContainerDisplay:New(UIParent, "none", {
-			{ Key = "bigdef", FilterString = "HELPFUL|BIG_DEFENSIVE", MaxIcons = 8 },
-			{ Key = "extdef", FilterString = "HELPFUL|EXTERNAL_DEFENSIVE|!BIG_DEFENSIVE", MaxIcons = 8 },
-		}, 24, 2, "Alerts"),
+			{
+				Key = auraFilters.GroupKey.BigDefensive,
+				FilterString = auraFilters.Filter.BigDefensive,
+				MaxIcons = DEFAULT_PAIR_ICONS,
+			},
+			{
+				Key = auraFilters.GroupKey.ExternalDefensive,
+				FilterString = auraFilters.Filter.ExternalDefensive,
+				MaxIcons = DEFAULT_PAIR_ICONS,
+			},
+		}, DEFAULT_PAIR_SIZE, DEFAULT_PAIR_SPACING, "Alerts"),
 		Imp = auraContainerDisplay:New(UIParent, "none", {
-			{ Key = "important", FilterString = "HELPFUL|IMPORTANT|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE", MaxIcons = 8 },
-		}, 24, 2, "Alerts"),
+			{
+				Key = auraFilters.GroupKey.Important,
+				FilterString = auraFilters.Filter.Important,
+				MaxIcons = DEFAULT_PAIR_ICONS,
+			},
+		}, DEFAULT_PAIR_SIZE, DEFAULT_PAIR_SPACING, "Alerts"),
 	}
 end
 
