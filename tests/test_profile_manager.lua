@@ -50,7 +50,12 @@ local addon = {
 	end,
 }
 
-assert(loadfile("src/Core/MiniFramework.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Framework/Framework.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Framework/Tables.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Framework/Math.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Framework/SavedVars.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Framework/Settings.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Framework/AddonLoad.lua"))("MiniCC", addon)
 
 -- Queueing scheduler so the combat-deferral path is observable.
 local combatQueue = {}

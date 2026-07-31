@@ -127,7 +127,12 @@ function M.build()
 		assert(loadfile(path))("MiniCC", addon)
 	end
 
-	loadFile("src/Core/MiniFramework.lua")
+	loadFile("src/Core/Framework/Framework.lua")
+	loadFile("src/Core/Framework/Tables.lua")
+	loadFile("src/Core/Framework/Math.lua")
+	loadFile("src/Core/Framework/SavedVars.lua")
+	loadFile("src/Core/Framework/Settings.lua")
+	loadFile("src/Core/Framework/AddonLoad.lua")
 	addon.Utils.Scheduler = {
 		Init = function() end,
 		RunWhenCombatEnds = function(_, fn)

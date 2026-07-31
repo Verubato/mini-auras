@@ -21,7 +21,12 @@ local addon = {
 	}),
 }
 
-assert(loadfile("src/Core/MiniFramework.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Framework/Framework.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Framework/Tables.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Framework/Math.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Framework/SavedVars.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Framework/Settings.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Framework/AddonLoad.lua"))("MiniCC", addon)
 -- ProfileManager before Migrator: UpgradeToVersion37 snapshots profiles via its PayloadKeys.
 addon.Utils.Scheduler = { Init = function() end }
 assert(loadfile("src/Core/ProfileManager.lua"))("MiniCC", addon)
