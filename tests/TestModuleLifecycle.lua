@@ -144,7 +144,7 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 			"CENTER falls back to RIGHT growth on 12.1")
 	end)
 
-	fw.it("alert sounds register per enemy plate and unregister on release/disable", function()
+	fw.it("alert sounds register per enemy plate and stay warm across despawns", function()
 		-- The healer sound tests later assert on the shared counters in absolute terms, so
 		-- restore them at the end (net registrations here end at zero anyway).
 		local adds0, removes0 = env.auraSoundAdds, env.auraSoundRemoves
@@ -174,13 +174,25 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate11")
 		assert(net() - baseline == perToken * 4, "new plate registered")
 
-		-- Releasing the plate removes exactly its registrations.
+		-- Despawn keeps the token's registrations warm: the set is identical for whichever
+		-- enemy the token is recycled to, so removal would be pure API churn.
+		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "nameplate11")
+		assert(net() - baseline == perToken * 4, "despawn keeps registrations warm")
+
+		-- The token recycled to another enemy re-registers nothing.
+		local addsBefore = env.auraSoundAdds
+		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate11")
+		assert(env.auraSoundAdds == addsBefore, "warm token re-adds nothing")
+
+		-- The token recycled to a NON-enemy drops its registrations.
+		env.enemies.nameplate11 = nil
+		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate11")
+		assert(net() - baseline == perToken * 3, "non-enemy recycle removed the token's registrations")
+
 		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "nameplate11")
 		env.plates.nameplate11 = nil
-		env.enemies.nameplate11 = nil
-		assert(net() - baseline == perToken * 3, "released plate unregistered")
 
-		-- Turning the sounds off clears the remaining registrations.
+		-- Turning the sounds off clears the remaining registrations, warm ones included.
 		db.Modules.AlertsModule.Sound.Important.Enabled = false
 		db.Modules.AlertsModule.Sound.Defensive.Enabled = false
 		env.addon.Modules.AlertsModule:Refresh()

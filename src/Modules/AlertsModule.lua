@@ -112,7 +112,11 @@ local GROW_PIN_POINTS = { LEFT = "RIGHT", RIGHT = "LEFT", CENTER = "CENTER" }
 -- legacy sound reacted to are secret there, but the engine can play sounds on them for us -
 -- same pattern as HealerCrowdControlModule). Registrations are per (enemy nameplate token,
 -- spellId), fed from the generated Core/AuraSoundData Important/Defensive lists.
--- token -> array of auraSoundIDs for that token.
+-- token -> array of auraSoundIDs for that token. Registrations are kept warm across plate
+-- despawns: a token's registration set is identical no matter which enemy holds it, so tearing
+-- down and re-adding ~120 sounds per plate churn would be pure API traffic. They are removed
+-- only when the token reappears as a non-enemy, the sound settings change, or plate tracking
+-- stops entirely.
 local alertSoundsByToken = {}
 -- Signature of the sound settings the current registrations were made with; when it changes
 -- every active token is re-registered.
@@ -836,8 +840,15 @@ local function RemoveTokenAlertSounds(unitToken)
 	alertSoundsByToken[unitToken] = nil
 end
 
+local function RemoveAllTokenAlertSounds()
+	for unitToken in pairs(alertSoundsByToken) do
+		RemoveTokenAlertSounds(unitToken)
+	end
+end
+
 -- 12.1 path: registers the important/defensive alert sounds for one enemy nameplate token.
--- No-op when already registered or when no alert sound is enabled.
+-- No-op when already registered (which is what keeps warm registrations cheap on token reuse)
+-- or when no alert sound is enabled.
 local function RegisterTokenAlertSounds(unitToken)
 	if not USE_AURA_CONTAINERS or alertSoundsByToken[unitToken] then
 		return
@@ -904,9 +915,7 @@ local function RefreshAlertSounds()
 	end
 	alertSoundSettingsSignature = signature
 
-	for unitToken in pairs(alertSoundsByToken) do
-		RemoveTokenAlertSounds(unitToken)
-	end
+	RemoveAllTokenAlertSounds()
 	if active then
 		for unitToken in pairs(nameplateDisplays) do
 			RegisterTokenAlertSounds(unitToken)
@@ -963,8 +972,8 @@ local function EnsureNameplateDisplay(unitToken)
 end
 
 -- 12.1 path: releases a token's display pair back to the central pool when its plate goes away.
+-- Deliberately leaves the token's sound registrations warm (see alertSoundsByToken).
 local function ReleaseNameplateDisplay(unitToken)
-	RemoveTokenAlertSounds(unitToken)
 	local entry = nameplateDisplays[unitToken]
 	if entry then
 		nameplateDisplays[unitToken] = nil
@@ -972,7 +981,10 @@ local function ReleaseNameplateDisplay(unitToken)
 	end
 end
 
+-- Plate tracking is stopping entirely (module off, or a zone where alerts don't run), so the
+-- warm sound registrations go too.
 local function ReleaseAllNameplateDisplays()
+	RemoveAllTokenAlertSounds()
 	for unitToken in pairs(nameplateDisplays) do
 		ReleaseNameplateDisplay(unitToken)
 	end
@@ -1014,6 +1026,9 @@ local function OnNamePlateAdded(unitToken)
 	-- Only track enemy nameplates
 	if not isEnemy then
 		if USE_AURA_CONTAINERS then
+			-- The token now belongs to a non-enemy (recycled plate or duel ending), so its warm
+			-- sound registrations are dropped along with the display.
+			RemoveTokenAlertSounds(unitToken)
 			ReleaseNameplateDisplay(unitToken)
 		end
 		return
