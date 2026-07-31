@@ -50,12 +50,8 @@ local addon = {
 	end,
 }
 
-assert(loadfile("src/Core/Framework/Framework.lua"))("MiniCC", addon)
-assert(loadfile("src/Core/Framework/Tables.lua"))("MiniCC", addon)
-assert(loadfile("src/Core/Framework/Math.lua"))("MiniCC", addon)
-assert(loadfile("src/Core/Framework/SavedVars.lua"))("MiniCC", addon)
-assert(loadfile("src/Core/Framework/Settings.lua"))("MiniCC", addon)
-assert(loadfile("src/Core/Framework/AddonLoad.lua"))("MiniCC", addon)
+local addonFiles = require("addon_files")
+addonFiles.load(addonFiles.framework, addon)
 
 -- Queueing scheduler so the combat-deferral path is observable.
 local combatQueue = {}
@@ -67,12 +63,7 @@ addon.Utils.Scheduler = {
 }
 
 assert(loadfile("src/Core/ProfileManager.lua"))("MiniCC", addon)
-assert(loadfile("src/Config/Defaults.lua"))("MiniCC", addon)
-assert(loadfile("src/Config/Migrator.lua"))("MiniCC", addon)
-assert(loadfile("src/Config/Migrations/V01.lua"))("MiniCC", addon)
-assert(loadfile("src/Config/Migrations/V13.lua"))("MiniCC", addon)
-assert(loadfile("src/Config/Migrations/V19.lua"))("MiniCC", addon)
-assert(loadfile("src/Config/Migrations/V41.lua"))("MiniCC", addon)
+addonFiles.load(addonFiles.migrator, addon)
 
 local profileManager = addon.Core.ProfileManager
 local migrator = addon.Config.Migrator
