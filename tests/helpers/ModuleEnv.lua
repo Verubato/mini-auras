@@ -223,6 +223,7 @@ function M.build()
 		end,
 	}
 
+	loadFile("src/Core/EventGate.lua")
 	loadFile("src/Core/IconSlotContainer.lua")
 	loadFile("src/Core/AuraContainerDisplay.lua")
 
