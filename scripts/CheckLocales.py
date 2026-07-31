@@ -1,6 +1,6 @@
 """Cross-checks every L["..."] key referenced in the addon code against all locale files.
 
-Run from the repo root:  python scripts/check_locales.py
+Run from the repo root:  python scripts/CheckLocales.py
 Prints one line per locale per missing key (untranslated strings fall back to English
 in game). Keys used only by historical Migrator steps or the legacy 12.0-only pages
 may be intentionally untranslated.
