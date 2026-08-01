@@ -556,9 +556,13 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	instance.IconMask = options.IconMask
 	instance.Minimal = options.Minimal == true
 
-	-- Seed the db-derived style fields so buttons created before the first SetStyle (which
-	-- restyles everything anyway) still pick up the global swipe/countdown/glow settings.
-	StoreStyle(instance, EMPTY_STYLE)
+	-- Seed the style BEFORE any button exists, so initializeFrame styles them correctly first
+	-- time. Everything StyleButton applies - size, swipe, countdown, glow, dispel textures - is
+	-- baked into a button when it is created and can only be changed by a restyle, which is
+	-- blocked for as long as C_Secrets.ShouldAurasBeSecret is true (a whole arena). A display
+	-- created without its real style therefore keeps the wrong one for the entire match, so
+	-- callers pass options.Style rather than relying on a later SetStyle.
+	StoreStyle(instance, options.Style or EMPTY_STYLE)
 
 	local frame = CreateFrame("AuraContainer", NextFrameName("Container"), parent, "CustomAuraContainerTemplate")
 	-- Icon sizes are configured in absolute pixels, so a scaled parent (a nameplate, a unit frame
@@ -832,6 +836,8 @@ end
 ---@field IconTexCoord number[]? {left, right, top, bottom} crop applied to every icon.
 ---@field IconMask table? MaskTexture applied to every icon, and to the cooldown swipe.
 ---@field Minimal boolean? Skip the dispel border and the glow frame (portrait icons want neither).
+---@field Style AuraDisplayStyle? Style to build the buttons with. Pass it whenever the display
+---may be created while auras are secret - a later SetStyle cannot reach the buttons there.
 
 ---@class AuraContainerDisplay
 ---@field Frame table The AuraContainer frame (anchor/show/hide through this).
