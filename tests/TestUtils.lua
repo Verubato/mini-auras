@@ -233,14 +233,9 @@ fw.describe("AuraCategoryIds", function()
 		assert(data.Defensive[45438], "Ice Block in Defensive")
 	end)
 
-	fw.it("Important and Defensive overlap only where the game reclassifies with talents", function()
-		-- An overlap cannot double-render: the 12.1 filter tokens decide the category and
-		-- partition with `!` negation, so these maps only ever say "do not veto this id in
-		-- whichever group the game routes it to". Anti-Magic Shell reads as a defensive
-		-- normally and as important once talented into Spellwarding, so it needs both.
-		local reclassified = { [48707] = true, [410358] = true } -- Anti-Magic Shell
+	fw.it("Important and Defensive are disjoint", function()
 		for id in pairs(data.Important) do
-			assert(not data.Defensive[id] or reclassified[id], "spell in both lists: " .. id)
+			assert(not data.Defensive[id], "spell in both lists: " .. id)
 		end
 	end)
 end)

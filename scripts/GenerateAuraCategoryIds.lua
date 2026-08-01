@@ -63,11 +63,6 @@ local ccNames = {
 
 -- Player important ability names (specials + offensive cooldowns). Matched against the
 -- Important-flagged set; emitted as AuraCategoryIds.Important (the "important spell" sound).
--- A name may appear here AND in defensiveNames: the game decides an aura's category from its
--- own flags, and some spells move between them with talents (Anti-Magic Shell reads as a
--- defensive normally and as important once talented into Spellwarding). Listing the name in both
--- means whichever group the filter tokens route it to, the spell-ID map does not veto it. The
--- filter strings partition with `!` negation, so it still renders exactly once.
 local importantNames = {
 	-- Specials
 	["Precognition"] = true, ["Nullifying Shroud"] = true, ["Grounding Totem"] = true,
@@ -91,7 +86,7 @@ local importantNames = {
 	["Invoke Niuzao, the Black Ox"] = true, ["Invoke Chi-Ji, the Red Crane"] = true,
 	["Invoke Xuen, the White Tiger"] = true, ["Invoke Yu'lon, the Jade Serpent"] = true,
 	["Thunder Blast"] = true,
-	-- Defensive normally, important when talented into Spellwarding; see the note above.
+	-- Only the Spellwarding-talented id; see idCategory below.
 	["Anti-Magic Shell"] = true,
 }
 
@@ -119,10 +114,22 @@ local defensiveNames = {
 	["Divine Hymn"] = true, ["Tranquility"] = true,
 }
 
-local function filter(source, names)
+-- Abilities that change category with a talent do it by changing SPELL ID, not name, so name
+-- matching alone puts every variant in both lists. Pin the individual ids here instead: an id
+-- listed below is emitted only for the category named, and the ability's name goes in BOTH name
+-- sets above so each variant is a candidate for the right one.
+local idCategory = {
+	-- Anti-Magic Shell: important when talented into Spellwarding, a plain defensive otherwise.
+	[410358] = "Important",
+	[48707] = "Defensive",
+}
+
+---@param category string Which output list is being built, matched against idCategory.
+local function filter(source, names, category)
 	local matched, byName = {}, {}
 	for id, name in pairs(source) do
-		if type(name) == "string" and names[name] then
+		local pinned = idCategory[id]
+		if type(name) == "string" and names[name] and (pinned == nil or pinned == category) then
 			matched[#matched + 1] = { id = id, name = name }
 			byName[name] = (byName[name] or 0) + 1
 		end
@@ -136,9 +143,9 @@ local function filter(source, names)
 	return matched, byName
 end
 
-local ccMatched, ccByName = filter(MiniCCSpellScan.CC, ccNames)
-local impMatched, impByName = filter(MiniCCSpellScan.Important, importantNames)
-local defMatched, defByName = filter(MiniCCSpellScan.Important, defensiveNames)
+local ccMatched, ccByName = filter(MiniCCSpellScan.CC, ccNames, "CC")
+local impMatched, impByName = filter(MiniCCSpellScan.Important, importantNames, "Important")
+local defMatched, defByName = filter(MiniCCSpellScan.Important, defensiveNames, "Defensive")
 
 if mode == "report" then
 	print(("CC matched: %d ids"):format(#ccMatched))
