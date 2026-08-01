@@ -29,6 +29,76 @@ if LOCALE == "zhCN" or LOCALE == "zhTW" then
 	table.insert(M.SoundFiles, "XiaYike.ogg")
 end
 
+-- Blizzard settings panel splash. The accent matches the standalone window title, but the
+-- framework palette is private to the GUI widgets so the value is repeated here.
+local PANEL_ACCENT = { r = 0.90, g = 0.20, b = 0.20 }
+local PANEL_CONTENT_WIDTH = 460
+local PANEL_TEXT_WIDTH = 400
+local PANEL_RULE_HALF_WIDTH = 110
+
+---Rescales a font string, keeping the font object's face and flags.
+local function SetFontSize(fontString, size)
+	local path, _, flags = fontString:GetFont()
+
+	if path then
+		fontString:SetFont(path, size, flags)
+	end
+end
+
+---Builds the centred splash shown under Interface > AddOns: name, version and a button
+---through to the standalone window, which is where the real configuration lives.
+local function BuildRedirectPanel(panel, version)
+	local content = CreateFrame("Frame", nil, panel)
+	content:SetSize(PANEL_CONTENT_WIDTH, 200)
+	content:SetPoint("TOP", panel, "TOP", 0, -90)
+
+	local title = content:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
+	title:SetPoint("TOP", content, "TOP", 0, 0)
+	title:SetText(addonName)
+	title:SetTextColor(PANEL_ACCENT.r, PANEL_ACCENT.g, PANEL_ACCENT.b, 1)
+	SetFontSize(title, 32)
+
+	local versionLabel = content:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+	versionLabel:SetPoint("TOP", title, "BOTTOM", 0, -4)
+	versionLabel:SetText(version or "")
+	versionLabel:SetTextColor(0.62, 0.60, 0.58, 1)
+
+	-- Thin rule under the wordmark, brightest in the middle and fading out at both ends.
+	-- Two halves because a single texture can only gradient in one direction. Alpha is baked
+	-- into the gradient colours: SetGradient replaces vertex alpha, so SetAlpha can't dim it.
+	local ruleLeft = content:CreateTexture(nil, "ARTWORK")
+	ruleLeft:SetSize(PANEL_RULE_HALF_WIDTH, 1)
+	ruleLeft:SetPoint("TOPRIGHT", versionLabel, "BOTTOM", 0, -14)
+	ruleLeft:SetColorTexture(1, 1, 1, 1)
+	ruleLeft:SetGradient("HORIZONTAL",
+		CreateColor(PANEL_ACCENT.r, PANEL_ACCENT.g, PANEL_ACCENT.b, 0),
+		CreateColor(PANEL_ACCENT.r, PANEL_ACCENT.g, PANEL_ACCENT.b, 0.7))
+
+	local ruleRight = content:CreateTexture(nil, "ARTWORK")
+	ruleRight:SetSize(PANEL_RULE_HALF_WIDTH, 1)
+	ruleRight:SetPoint("TOPLEFT", versionLabel, "BOTTOM", 0, -14)
+	ruleRight:SetColorTexture(1, 1, 1, 1)
+	ruleRight:SetGradient("HORIZONTAL",
+		CreateColor(PANEL_ACCENT.r, PANEL_ACCENT.g, PANEL_ACCENT.b, 0.7),
+		CreateColor(PANEL_ACCENT.r, PANEL_ACCENT.g, PANEL_ACCENT.b, 0))
+
+	local message = content:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+	-- BOTTOMLEFT of the right half is where the two rules join, i.e. the horizontal centre.
+	message:SetPoint("TOP", ruleRight, "BOTTOMLEFT", 0, -18)
+	message:SetWidth(PANEL_TEXT_WIDTH)
+	message:SetJustifyH("CENTER")
+	message:SetText(L["Use /minicc, /mcc, or /cc to open the MiniCC config window."])
+
+	local button = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+	button:SetSize(240, 32)
+	button:SetPoint("TOP", message, "BOTTOM", 0, -20)
+	button:SetText(L["Open Settings"])
+	SetFontSize(button:GetFontString(), 14)
+	button:SetScript("OnClick", function()
+		M.Window:Show()
+	end)
+end
+
 function M:Apply()
 	addon:Refresh()
 end
@@ -40,6 +110,8 @@ function M:Init()
 	-- takes the accented restyle. Must come before any widget is built.
 	mini:SetCustomStyling(true)
 
+	local version = C_AddOns.GetAddOnMetadata(addonName, "Version")
+
 	-- Register a minimal WoW settings entry so sub-categories can attach to it,
 	-- and the addon appears in Interface > AddOns for discoverability.
 	local redirectPanel = CreateFrame("Frame")
@@ -48,21 +120,10 @@ function M:Init()
 	local category = mini:AddCategory(redirectPanel)
 
 	if category then
-		local redirectMsg = redirectPanel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-		redirectMsg:SetPoint("TOPLEFT", 16, -16)
-		redirectMsg:SetText(L["Use /minicc, /mcc, or /cc to open the MiniCC config window."])
-
-		local redirectBtn = CreateFrame("Button", nil, redirectPanel, "UIPanelButtonTemplate")
-		redirectBtn:SetSize(200, 26)
-		redirectBtn:SetPoint("TOPLEFT", redirectMsg, "BOTTOMLEFT", 0, -12)
-		redirectBtn:SetText(L["Open Settings"])
-		redirectBtn:SetScript("OnClick", function()
-			M.Window:Show()
-		end)
+		BuildRedirectPanel(redirectPanel, version)
 	end
 
 	-- Standalone config window
-	local version = C_AddOns.GetAddOnMetadata(addonName, "Version")
 	local windowWidth = 1000
 	local windowHeight = 690
 
