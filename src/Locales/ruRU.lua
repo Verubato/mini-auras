@@ -168,6 +168,8 @@ L:RegisterLocale("ruRU", {
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "Изменить цвет свечения/границы в зависимости от типа рассеивания (напр. синий для магии, красный для физического). Применяется только к иконкам контроля.",
 	["Color by class"] = "Цвет по классу",
 	["Color the glow/border by the enemy's class color."] = "Окрашивать свечение/границу цветом класса противника.",
+	["Color glow by category"] = "Цвет свечения по категории",
+	["Color the glow red for important enemy buffs and green for defensives."] = "Окрашивать свечение в красный для важных усилений противника и в зелёный для защитных.",
 	["Dispel colours"] = "Цвета рассеивания",
 	["Enable pet frame CC everywhere."] = "Включить КО рамки питомца везде.",
 	["Enable pet frame CC in the open world."] = "Включить КО рамки питомца в открытом мире.",

@@ -168,6 +168,8 @@ L:RegisterLocale("ptBR", {
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "Muda a cor do brilho/borda com base no tipo de dissipar (por ex. azul para magia, vermelho para físico). Isso só se aplica aos ícones de CC.",
 	["Color by class"] = "Cor por classe",
 	["Color the glow/border by the enemy's class color."] = "Colore o brilho/borda com a cor da classe do inimigo.",
+	["Color glow by category"] = "Colorir brilho por categoria",
+	["Color the glow red for important enemy buffs and green for defensives."] = "Colore o brilho de vermelho para bônus inimigos importantes e de verde para defensivos.",
 	["Dispel colours"] = "Cores de dissipar",
 	["Enable pet frame CC everywhere."] = "Ativar CC do painel de pet em todos os lugares.",
 	["Enable pet frame CC in the open world."] = "Ativar CC do painel de pet no mundo aberto.",

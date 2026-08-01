@@ -240,6 +240,8 @@ local dbDefaults = {
 				Enabled = true,
 				Size = 50,
 				Glow = true,
+				-- Tint the glow by category: red for important enemy buffs, green for defensives.
+				GlowColorByCategory = false,
 				ReverseCooldown = true,
 				ColorByClass = true,
 				MaxIcons = 8,

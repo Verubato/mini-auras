@@ -307,6 +307,27 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		assert(anyGlowPlaying(instance), "the flipbook animates")
 	end)
 
+	fw.it("tints each group's glow with its own category colour", function()
+		-- One container renders importants and defensives as separate aura groups, so a
+		-- per-group tint is the only way to colour them differently - the button can only be
+		-- styled in initializeFrame, which runs per group.
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "imp", FilterString = "HELPFUL", MaxIcons = 3, GlowColor = { 1, 0.2, 0.2 } },
+			{ Key = "def", FilterString = "HELPFUL", MaxIcons = 3, GlowColor = { 0.2, 1, 0.2 } },
+			{ Key = "plain", FilterString = "HELPFUL", MaxIcons = 3 },
+		}, 30, 2, "Test", { Style = { Glow = true } })
+
+		local function colorOf(groupKey)
+			local button = instance.Frame:GetAuraGroupFrame(groupKey, 1)
+			return instance.ButtonWidgets[button].Glow.Texture._lastArgs.SetVertexColor
+		end
+
+		local imp, def, plain = colorOf("imp"), colorOf("def"), colorOf("plain")
+		assert(imp[1] == 1 and imp[2] == 0.2 and imp[3] == 0.2, "importants glow red")
+		assert(def[1] == 0.2 and def[2] == 1 and def[3] == 0.2, "defensives glow green")
+		assert(plain[1] == 1 and plain[2] == 1 and plain[3] == 1, "a group with no colour stays white")
+	end)
+
 	fw.it("the style signature covers the global glow type", function()
 		-- Displays are cached by this signature, and the glow style is a global db value the
 		-- caller never passes in; leaving it out meant changing it in the options never reached

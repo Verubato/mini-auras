@@ -345,9 +345,17 @@ local function ApplyDispelTextures(instance, button, widgets)
 			showWithoutDispelType = true,
 		})
 	elseif widgets.Glow then
-		-- Unregistered again: restore the plain white glow and make sure the engine's
-		-- last hidden state doesn't linger on the texture.
-		widgets.Glow.Texture:SetVertexColor(1, 1, 1, 1)
+		-- Unregistered again: restore the glow's own colour and make sure the engine's
+		-- last hidden state doesn't linger on the texture. GlowColor is the group's category
+		-- tint (e.g. red importants, green defensives) and is nil unless the caller asked for
+		-- one, in which case this is the plain white glow. Dispel colouring wins when both are
+		-- on, since that branch hands the texture to the engine.
+		local color = widgets.GlowColor
+		if color then
+			widgets.Glow.Texture:SetVertexColor(color[1], color[2], color[3], 1)
+		else
+			widgets.Glow.Texture:SetVertexColor(1, 1, 1, 1)
+		end
 		widgets.Glow.Texture:Show()
 	end
 end
@@ -404,7 +412,7 @@ end
 
 ---@param instance AuraContainerDisplay
 ---@param button table
-local function InitializeButton(instance, button)
+local function InitializeButton(instance, button, glowColor)
 	-- Composite each button's icon/cooldown/border/glow in a single render pass. Must happen
 	-- here: initializeFrame is the only place AuraButtons are guaranteed not forbidden.
 	button:SetFlattensRenderLayers(true)
@@ -474,6 +482,7 @@ local function InitializeButton(instance, button)
 		DispelSignature = nil,
 		Glow = glow,
 		GlowStyle = nil,
+		GlowColor = glowColor,
 	}
 	instance.Buttons[#instance.Buttons + 1] = button
 
@@ -581,6 +590,9 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 
 	for _, group in ipairs(groups) do
 		instance.GroupsByKey[group.Key] = group
+		-- Captured per group: initializeFrame is the only place a button can be styled, so a
+		-- group's category glow tint has to be closed over here rather than looked up later.
+		local glowColor = group.GlowColor
 		frame:AddAuraGroup(group.Key, group.FilterString, {
 			maxFrameCount = group.MaxIcons or 3,
 			candidateFilters = group.CandidateFilters,
@@ -591,7 +603,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 			sortMethod = AuraContainerSortMethod.AuraInstanceIDOnly,
 			sortDirection = group.SortDirection or AuraContainerSortDirection.Normal,
 			initializeFrame = function(button)
-				InitializeButton(instance, button)
+				InitializeButton(instance, button, glowColor)
 			end,
 			layout = BuildGroupLayout(instance),
 		})
@@ -844,6 +856,8 @@ end
 ---@field MaxIcons number? Icon budget for this group (default 3).
 ---@field CandidateFilters table? 12.1 candidate filters (e.g. { includeSpellIDs = ..., maxDuration = 4.1 }). Every standard category passes an includeSpellIDs map here - see Core/AuraFilters for why it is needed on top of the filter string.
 ---@field SortDirection number? AuraContainerSortDirection value (default Normal; Reverse = newest first).
+---@field GlowColor number[]? {r, g, b} tint for this group's glow, so one container can colour
+---its categories differently. Dispel-type colouring takes over when it is also enabled.
 
 ---@class AuraDisplayOptions
 ---@field IconTexCoord number[]? {left, right, top, bottom} crop applied to every icon.

@@ -168,6 +168,8 @@ L:RegisterLocale("deDE", {
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "Ändere die Farbe des Leuchtens/Rahmens basierend auf dem Banntyp (z.B. blau für Magie, rot für physisch). Dies gilt nur für Betäubungs-Icons.",
 	["Color by class"] = "Nach Klasse färben",
 	["Color the glow/border by the enemy's class color."] = "Färbe das Leuchten/Rahmen mit der Klassenfarbe des Gegners.",
+	["Color glow by category"] = "Leuchten nach Kategorie färben",
+	["Color the glow red for important enemy buffs and green for defensives."] = "Färbe das Leuchten rot für wichtige gegnerische Buffs und grün für Verteidigungszauber.",
 	["Dispel colours"] = "Bannfarben",
 	["Enable pet frame CC everywhere."] = "Begleiterrahmen-KE überall aktivieren.",
 	["Enable pet frame CC in the open world."] = "Begleiterrahmen-KE in der offenen Welt aktivieren.",

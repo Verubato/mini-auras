@@ -998,6 +998,12 @@ end
 -- left a hole before the important icons; groups inside a single container flow tight instead.
 -- A display's group list is fixed for its lifetime (see New), so both groups always exist and
 -- the mode is chosen purely by budgeting one of them to 0 - no container churn on toggle.
+-- Category glow tints, used only when the option is on. Importants are the thing to react to,
+-- so they take the warning colour; defensives (big and external alike) read as "they are
+-- protected" and take the safe one.
+local IMPORTANT_GLOW_COLOR = { 1, 0.2, 0.2 }
+local DEFENSIVE_GLOW_COLOR = { 0.2, 1, 0.2 }
+
 ---Fills the shared style scratch from the alert options.
 ---@return AuraDisplayStyle
 local function AlertStyle()
@@ -1009,6 +1015,18 @@ local function AlertStyle()
 	style.FontScale = db and db.FontScale
 	style.ShowTooltips = not options or options.ShowTooltips ~= false
 	return style
+end
+
+---@return number[]? importantColor
+---@return number[]? defensiveColor
+local function AlertGlowColors()
+	local icons = db and db.Modules.AlertsModule.Icons
+
+	if not (icons and icons.Glow and icons.GlowColorByCategory) then
+		return nil, nil
+	end
+
+	return IMPORTANT_GLOW_COLOR, DEFENSIVE_GLOW_COLOR
 end
 
 local function CreateAlertDisplayPair()
@@ -1026,8 +1044,10 @@ local function CreateAlertDisplayPair()
 	local spacing = (options and options.IconSpacing) or DEFAULT_PAIR_SPACING
 
 	-- Style is applied at creation for the same reason as the size: StyleButton bakes it into
-	-- each button, and a later restyle can't reach them while auras are secret.
+	-- each button, and a later restyle can't reach them while auras are secret. The same goes
+	-- for the per-category glow tints, which are fixed per group in initializeFrame.
 	local style = AlertStyle()
+	local importantColor, defensiveColor = AlertGlowColors()
 
 	return {
 		Def = auraContainerDisplay:New(UIParent, "none", {
@@ -1037,6 +1057,7 @@ local function CreateAlertDisplayPair()
 				CandidateFilters = auraFilters.CandidateFilters.BigDefensive,
 				MaxIcons = maxIcons,
 
+				GlowColor = defensiveColor,
 			},
 			{
 				Key = auraFilters.GroupKey.ExternalDefensive,
@@ -1044,6 +1065,7 @@ local function CreateAlertDisplayPair()
 				CandidateFilters = auraFilters.CandidateFilters.ExternalDefensive,
 				MaxIcons = maxIcons,
 
+				GlowColor = defensiveColor,
 			},
 			-- Used in combined mode only; budgeted to 0 when the bars are split.
 			{
@@ -1052,6 +1074,7 @@ local function CreateAlertDisplayPair()
 				CandidateFilters = auraFilters.CandidateFilters.Important,
 				MaxIcons = maxIcons,
 
+				GlowColor = importantColor,
 			},
 		}, size, spacing, "Alerts", { Style = style }),
 		-- Used in split mode only; hidden and budgeted to 0 when combined.
@@ -1062,6 +1085,7 @@ local function CreateAlertDisplayPair()
 				CandidateFilters = auraFilters.CandidateFilters.Important,
 				MaxIcons = maxIcons,
 
+				GlowColor = importantColor,
 			},
 		}, size, spacing, "Alerts", { Style = style }),
 	}
@@ -1080,6 +1104,7 @@ local function AlertPairSignature()
 		(icons and icons.Size) or DEFAULT_PAIR_SIZE,
 		(options and options.IconSpacing) or DEFAULT_PAIR_SPACING
 	) .. ":" .. tostring(icons and icons.MaxIcons)
+		.. ":" .. tostring(icons and icons.GlowColorByCategory)
 end
 
 -- 12.1 path: parks a display pair (both displays stay parented to UIParent).

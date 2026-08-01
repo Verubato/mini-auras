@@ -168,6 +168,8 @@ L:RegisterLocale("koKR", {
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "해제 유형에 따라 발광/테두리 색상을 변경합니다 (예: 마법은 파란색, 물리는 빨간색). CC 아이콘에만 적용됩니다.",
 	["Color by class"] = "직업별 색상",
 	["Color the glow/border by the enemy's class color."] = "적의 직업 색상으로 발광/테두리를 색칠합니다.",
+	["Color glow by category"] = "종류별 발광 색상",
+	["Color the glow red for important enemy buffs and green for defensives."] = "중요한 적 버프는 빨간색, 방어 기술은 초록색으로 발광을 색칠합니다.",
 	["Dispel colours"] = "해제 색상",
 	["Enable pet frame CC everywhere."] = "모든 곳에서 펫 프레임 CC를 활성화합니다.",
 	["Enable pet frame CC in the open world."] = "야외에서 펫 프레임 CC를 활성화합니다.",
