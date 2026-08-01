@@ -28,6 +28,8 @@ L:RegisterLocale("frFR", {
 	["Shows enemy kick cooldowns in arena."] = "Affiche les CDs de kick ennemis en arène.",
 	["Enable if you are:"] = "Activer si vous êtes :",
 	["Enable in"] = "Activer en",
+	["Icon colour"] = "Couleur de l'icône",
+	["Change the colour of the icon's glow and border."] = "Change la couleur de la lueur et de la bordure de l'icône.",
 	["Enabled"] = "Activé",
 	["Enable this module everywhere."] = "Activer ce module partout.",
 	["Enable this module in the open world."] = "Activer ce module en monde ouvert.",

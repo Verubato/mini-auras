@@ -6,6 +6,7 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local eventGate = addon.Core.EventGate
 local inspectorFacade = addon.Core.InspectorFacade
 local kickData = addon.Core.KickData
+local moduleUtil = addon.Utils.ModuleUtil
 local paused = false
 local testModeActive = false
 local enabled = false
@@ -175,6 +176,7 @@ local function CreateKickEntry(duration, icon)
 		Alpha = true,
 		ReverseCooldown = iconOptions.ReverseCooldown or false,
 		Glow = iconOptions.Glow or false,
+		Color = moduleUtil:GetIconColor(iconOptions),
 		FontScale = db.FontScale,
 	})
 

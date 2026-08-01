@@ -80,6 +80,25 @@ function M:Build(panel)
 	glowChk:SetPoint("TOP", enabled, "TOP", 0, 0)
 	glowChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
 
+	local colorSwatch = mini:ColorSwatch({
+		Parent = panel,
+		LabelText = L["Icon colour"],
+		Tooltip = L["Change the colour of the icon's glow and border."],
+		HasOpacity = false,
+		GetValue = function()
+			local color = db.Modules.PrecogGuesserModule.Icons.Color
+			return color.R, color.G, color.B, color.A
+		end,
+		SetValue = function(r, g, b, a)
+			local color = db.Modules.PrecogGuesserModule.Icons.Color
+			color.R, color.G, color.B, color.A = r, g, b, a
+			config:Apply()
+		end,
+	})
+
+	colorSwatch:SetPoint("TOP", enabled, "TOP", 0, 0)
+	colorSwatch:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,
 		LabelText = L["Icon Size"],

@@ -62,6 +62,7 @@ local function SetIconState(container, durationData)
 		Alpha = true,
 		ReverseCooldown = options.Icons.ReverseCooldown,
 		Glow = options.Icons.Glow,
+		Color = moduleUtil:GetIconColor(options.Icons),
 		FontScale = db.FontScale,
 	})
 end

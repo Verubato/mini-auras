@@ -78,6 +78,25 @@ function M:Build(panel)
 	})
 
 	allEnabled:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+
+	local colorSwatch = mini:ColorSwatch({
+		Parent = panel,
+		LabelText = L["Icon colour"],
+		Tooltip = L["Change the colour of the icon's glow and border."],
+		HasOpacity = false,
+		GetValue = function()
+			local color = db.Modules.KickTimerModule.Icons.Color
+			return color.R, color.G, color.B, color.A
+		end,
+		SetValue = function(r, g, b, a)
+			local color = db.Modules.KickTimerModule.Icons.Color
+			color.R, color.G, color.B, color.A = r, g, b, a
+			config:Apply()
+		end,
+	})
+
+	colorSwatch:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 3, 0)
+	colorSwatch:SetPoint("TOP", allEnabled, "TOP", 0, 0)
 	allEnabled:SetPoint("TOP", healerEnabled, "TOP", 0, 0)
 
 	local iconSizeSlider = mini:Slider({

@@ -65,6 +65,7 @@ local function ScanAndDisplay()
 
 	local iconsReverse = options.Icons.ReverseCooldown
 	local iconsGlow = options.Icons.Glow
+	local iconsColor = moduleUtil:GetIconColor(options.Icons)
 
 	container:ResetAllSlots()
 
@@ -92,6 +93,7 @@ local function ScanAndDisplay()
 				Alpha = alpha,
 				ReverseCooldown = iconsReverse,
 				Glow = iconsGlow,
+				Color = iconsColor,
 				FontScale = db.FontScale,
 				Layer = i,
 			})
@@ -116,6 +118,7 @@ local function RefreshTestIcons()
 			Alpha = true,
 			ReverseCooldown = options.Icons.ReverseCooldown,
 			Glow = options.Icons.Glow,
+			Color = moduleUtil:GetIconColor(options.Icons),
 			FontScale = db.FontScale,
 		})
 	end
@@ -198,6 +201,7 @@ local function ApplyOptions(options)
 		local style = auraContainerDisplay:GetStyleScratch()
 		style.ReverseCooldown = options.Icons.ReverseCooldown
 		style.Glow = options.Icons.Glow
+		style.GlowColor = moduleUtil:GetIconColorRGB(options.Icons)
 		style.FontScale = db.FontScale
 		style.ShowTooltips = false
 		display:SetStyle(style)

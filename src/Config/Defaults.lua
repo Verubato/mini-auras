@@ -387,6 +387,9 @@ local dbDefaults = {
 				Size = 50,
 				Glow = false,
 				ReverseCooldown = true,
+				-- Glow/border tint. These icons carry no dispel or category colouring to derive
+				-- one from, so the colour is the user's choice.
+				Color = { R = 1, G = 1, B = 1, A = 1 },
 			},
 		},
 		-- Used by the standalone Party Trinkets module (12.1+); on older clients the friendly
@@ -411,6 +414,9 @@ local dbDefaults = {
 				Glow = false,
 				ReverseCooldown = false,
 				ShowText = true,
+				-- Glow/border tint. These icons carry no dispel or category colouring to derive
+				-- one from, so the colour is the user's choice.
+				Color = { R = 1, G = 1, B = 1, A = 1 },
 			},
 
 			Font = {
@@ -587,6 +593,9 @@ local dbDefaults = {
 				Size = 70,
 				Glow = true,
 				ReverseCooldown = true,
+				-- Glow/border tint. These icons carry no dispel or category colouring to derive
+				-- one from, so the colour is the user's choice.
+				Color = { R = 1, G = 1, B = 1, A = 1 },
 			},
 		},
 	},

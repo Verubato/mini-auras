@@ -28,6 +28,8 @@ L:RegisterLocale("zhCN", {
 	["Shows enemy kick cooldowns in arena."] = "在竞技场中显示敌方打断冷却时间。",
 	["Enable if you are:"] = "如果您是以下角色则启用：",
 	["Enable in"] = "启用于",
+	["Icon colour"] = "图标颜色",
+	["Change the colour of the icon's glow and border."] = "更改图标发光和边框的颜色。",
 	["Enabled"] = "已启用",
 	["Enable this module everywhere."] = "在任何地方启用此模块。",
 	["Enable this module in the open world."] = "在开放世界中启用此模块。",

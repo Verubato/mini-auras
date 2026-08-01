@@ -2,6 +2,9 @@
 local _, addon = ...
 ---@type Db
 local db
+-- Handed out by GetIconColor; every field is rewritten on each call.
+local iconColorScratch = {}
+local iconColorRgbScratch = {}
 
 ---@class ModuleName
 local ModuleName = {
@@ -58,6 +61,48 @@ function M:GetIconSize(iconOptions, anchorFrame, pixelFallback, percentFallback)
 		end
 	end
 	return tonumber(iconOptions.Size) or pixelFallback
+end
+
+---Resolves a module's configured glow/border colour into the {r, g, b, a} shape the icon
+---containers take. Modules whose icons carry no dispel or category colouring have nothing to
+---derive a colour from, so they let the user pick one instead.
+---Returns a shared scratch table: the containers copy the components straight out and keep
+---nothing, so this never allocates on the render path. Nil when no colour is configured, which
+---leaves the container on its plain untinted glow.
+---@param iconOptions table The Icons sub-table from a module's options.
+---@return table? color
+function M:GetIconColor(iconOptions)
+	local configured = iconOptions and iconOptions.Color
+
+	if not configured then
+		return nil
+	end
+
+	iconColorScratch.r = configured.R or 1
+	iconColorScratch.g = configured.G or 1
+	iconColorScratch.b = configured.B or 1
+	iconColorScratch.a = configured.A or 1
+
+	return iconColorScratch
+end
+
+---The same colour as GetIconColor in the positional {r, g, b} shape AuraContainerDisplay's
+---style takes. Two shapes because the two icon backends read colours differently; both hand
+---back a shared scratch that the consumer copies out of.
+---@param iconOptions table The Icons sub-table from a module's options.
+---@return number[]? color
+function M:GetIconColorRGB(iconOptions)
+	local configured = iconOptions and iconOptions.Color
+
+	if not configured then
+		return nil
+	end
+
+	iconColorRgbScratch[1] = configured.R or 1
+	iconColorRgbScratch[2] = configured.G or 1
+	iconColorRgbScratch[3] = configured.B or 1
+
+	return iconColorRgbScratch
 end
 
 ---@param moduleName string The module key (e.g., "AlertsModule", "CcModule")

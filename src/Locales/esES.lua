@@ -28,6 +28,8 @@ L:RegisterLocale("esES", {
 	["Shows enemy kick cooldowns in arena."] = "Muestra los tiempos de reutilización de interrupción enemigos en arena.",
 	["Enable if you are:"] = "Habilitar si eres:",
 	["Enable in"] = "Habilitar en",
+	["Icon colour"] = "Color del icono",
+	["Change the colour of the icon's glow and border."] = "Cambia el color del brillo y el borde del icono.",
 	["Enabled"] = "Habilitado",
 	["Enable this module everywhere."] = "Habilitar este módulo en todas partes.",
 	["Enable this module in the open world."] = "Habilitar este módulo en el mundo abierto.",

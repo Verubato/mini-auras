@@ -231,6 +231,8 @@ local function StoreStyle(instance, style)
 	local disableSwipe = (db and db.DisableSwipe) or false
 	local millisecondsThreshold = db and db.MillisecondsThreshold
 	local glowStyleName = GetGlowStyleName()
+	local color = style.GlowColor
+	local colorR, colorG, colorB = color and color[1], color and color[2], color and color[3]
 
 	if stored.ReverseCooldown == style.ReverseCooldown
 		and stored.ShowMilliseconds == style.ShowMilliseconds
@@ -241,6 +243,9 @@ local function StoreStyle(instance, style)
 		and stored.DisableSwipe == disableSwipe
 		and stored.MillisecondsThreshold == millisecondsThreshold
 		and stored.GlowStyleName == glowStyleName
+		and stored.GlowColorR == colorR
+		and stored.GlowColorG == colorG
+		and stored.GlowColorB == colorB
 		and stored.Populated
 	then
 		return false
@@ -255,6 +260,9 @@ local function StoreStyle(instance, style)
 	stored.DisableSwipe = disableSwipe
 	stored.MillisecondsThreshold = millisecondsThreshold
 	stored.GlowStyleName = glowStyleName
+	stored.GlowColorR = colorR
+	stored.GlowColorG = colorG
+	stored.GlowColorB = colorB
 	stored.Populated = true
 
 	return true
@@ -317,7 +325,15 @@ local function ApplyDispelTextures(instance, button, widgets)
 	local style = instance.Style
 	local wantBorder = style.ColorByDispelType == true and widgets.Border ~= nil
 	local wantGlowTint = wantBorder and style.Glow == true and widgets.Glow ~= nil
+	-- The group's own tint wins over the display-wide one: alerts colour by category, while a
+	-- single-category display just takes the user's picked colour.
+	local colorR = widgets.GlowColor and widgets.GlowColor[1] or style.GlowColorR
+	local colorG = widgets.GlowColor and widgets.GlowColor[2] or style.GlowColorG
+	local colorB = widgets.GlowColor and widgets.GlowColor[3] or style.GlowColorB
+	-- The colour rides in the signature so a colour-only change still repaints; without it the
+	-- early return below would swallow it.
 	local dispelSignature = (wantBorder and "b" or "") .. (wantGlowTint and "g" or "")
+		.. (colorR and (":" .. colorR .. "," .. colorG .. "," .. colorB) or "")
 
 	if dispelSignature == widgets.DispelSignature then
 		return
@@ -350,12 +366,7 @@ local function ApplyDispelTextures(instance, button, widgets)
 		-- tint (e.g. red importants, green defensives) and is nil unless the caller asked for
 		-- one, in which case this is the plain white glow. Dispel colouring wins when both are
 		-- on, since that branch hands the texture to the engine.
-		local color = widgets.GlowColor
-		if color then
-			widgets.Glow.Texture:SetVertexColor(color[1], color[2], color[3], 1)
-		else
-			widgets.Glow.Texture:SetVertexColor(1, 1, 1, 1)
-		end
+		widgets.Glow.Texture:SetVertexColor(colorR or 1, colorG or 1, colorB or 1, 1)
 		widgets.Glow.Texture:Show()
 	end
 end
@@ -768,6 +779,7 @@ function M:GetStyleScratch()
 	styleScratch.Glow = nil
 	styleScratch.FontScale = nil
 	styleScratch.ShowTooltips = nil
+	styleScratch.GlowColor = nil
 
 	return styleScratch
 end
@@ -794,6 +806,7 @@ function M:GetStyleSignature(style, size, spacing)
 		tostring(style.Glow),
 		tostring(style.FontScale),
 		tostring(style.ShowTooltips),
+		tostring(style.GlowColor and table.concat(style.GlowColor, ",")),
 		tostring(db and db.DisableSwipe),
 		tostring(db and db.MillisecondsThreshold),
 		GetGlowStyleName(),
@@ -886,6 +899,8 @@ end
 ---@field DisableSwipe boolean?
 ---@field MillisecondsThreshold number?
 ---@field GlowStyleName string?
+---@field GlowColor number[]? {r, g, b} tint for every glow on the display. A group's own
+---GlowColor overrides it; unset leaves the glow plain white.
 ---@field Populated boolean?
 
 ---@class AuraDisplayGroupSpec
