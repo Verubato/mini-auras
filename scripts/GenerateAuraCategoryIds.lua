@@ -11,6 +11,13 @@
 -- Matching is by exact spell name WITHIN the flagged sets, so every spell-ID variant of a
 -- named ability is captured, and generic names ("Fear", "Silence") are safe - everything in
 -- the source data is already CC/Important-flagged by the game.
+--
+-- The names below must be the name of the AURA THAT LANDS, not the button that casts it or the
+-- talent that modifies it. Those often differ, and a wrong name fails silently: the report only
+-- lists names matching NOTHING, so a wrong name that happens to collide with unrelated spells
+-- looks covered. That is exactly how the Shaman stun went missing for a whole expansion - the
+-- list said "Static Charge" (the PvP talent) and dutifully matched six unrelated spells of that
+-- name, while the real debuff, "Capacitor Totem" (118905), was never picked up.
 local scanPath = arg[1]
 local mode = arg[2] or "report"
 dofile(scanPath)
