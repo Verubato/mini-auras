@@ -29,6 +29,7 @@ L:SetDefaultStrings({
 	["Shows enemy kick cooldowns in arena."] = "Shows enemy kick cooldowns in arena.",
 	["Enable if you are:"] = "Enable if you are:",
 	["Enable in"] = "Enable in",
+	["Colour"] = "Colour",
 	["Icon colour"] = "Icon colour",
 	["Change the colour of the icon's glow and border."] = "Change the colour of the icon's glow and border.",
 	["Enabled"] = "Enabled",

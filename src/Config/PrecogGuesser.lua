@@ -82,7 +82,7 @@ function M:Build(panel)
 
 	local colorSwatch = mini:ColorSwatch({
 		Parent = panel,
-		LabelText = L["Icon colour"],
+		LabelText = L["Colour"],
 		Tooltip = L["Change the colour of the icon's glow and border."],
 		HasOpacity = false,
 		GetValue = function()
@@ -98,6 +98,7 @@ function M:Build(panel)
 
 	colorSwatch:SetPoint("TOP", enabled, "TOP", 0, 0)
 	colorSwatch:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+	colorSwatch.Label:SetPoint("LEFT", colorSwatch, "RIGHT", 4, 0)
 
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,

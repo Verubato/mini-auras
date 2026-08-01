@@ -28,6 +28,7 @@ L:RegisterLocale("zhTW", {
 	["Shows enemy kick cooldowns in arena."] = "在競技場中顯示敵方打斷冷卻時間。",
 	["Enable if you are:"] = "如果您是以下角色則啟用：",
 	["Enable in"] = "啟用於",
+	["Colour"] = "顏色",
 	["Icon colour"] = "圖示顏色",
 	["Change the colour of the icon's glow and border."] = "更改圖示發光和邊框的顏色。",
 	["Enabled"] = "已啟用",

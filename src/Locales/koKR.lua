@@ -28,6 +28,7 @@ L:RegisterLocale("koKR", {
 	["Shows enemy kick cooldowns in arena."] = "투기장에서 적의 차단 쿨다운을 표시합니다.",
 	["Enable if you are:"] = "다음인 경우 활성화:",
 	["Enable in"] = "활성화 위치",
+	["Colour"] = "색상",
 	["Icon colour"] = "아이콘 색상",
 	["Change the colour of the icon's glow and border."] = "아이콘의 발광과 테두리 색상을 변경합니다.",
 	["Enabled"] = "활성화",
