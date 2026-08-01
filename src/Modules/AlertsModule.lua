@@ -28,6 +28,12 @@ local auras = addon.Utils.Auras
 -- the unit's identity is).
 -- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
+-- Category glow tints, used only when the option is on. Importants are the thing to react to, so
+-- they take the warning colour; defensives (big and external alike) read as "they are protected"
+-- and take the safe one. Each carries both shapes its consumers want and is shared read-only:
+-- AuraContainer group specs index [1..3], IconSlotContainer (test mode) reads r/g/b/a.
+local IMPORTANT_GLOW_COLOR = { 1, 0.2, 0.2, r = 1, g = 0.2, b = 0.2, a = 1 }
+local DEFENSIVE_GLOW_COLOR = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
 local testModeActive = false
 local paused = false
 local inPrepRoom = false
@@ -552,6 +558,20 @@ local function ScheduleAuraDataUpdate()
 	end)
 end
 
+---The per-category glow tints in force, or nil when the option is off. 12.1 only: the legacy
+---live path colours by class instead, and the option is hidden there.
+---@return table? importantColor
+---@return table? defensiveColor
+local function AlertGlowColors()
+	local icons = db and db.Modules.AlertsModule.Icons
+
+	if not (USE_AURA_CONTAINERS and icons and icons.Glow and icons.GlowColorByCategory) then
+		return nil, nil
+	end
+
+	return IMPORTANT_GLOW_COLOR, DEFENSIVE_GLOW_COLOR
+end
+
 local function RefreshTestAlerts()
 	if not db.Modules.AlertsModule.Icons.Enabled then
 		container:ResetAllSlots()
@@ -574,6 +594,9 @@ local function RefreshTestAlerts()
 	-- real 12.1 bars can't (UnitClass is secret there, and the option is hidden in the config).
 	-- Colouring only the preview would advertise something the live display never does.
 	local colorByClass = not USE_AURA_CONTAINERS and db.Modules.AlertsModule.Icons.ColorByClass
+	-- Category tints, on the other hand, are exactly what the live 12.1 bars do, so the preview
+	-- has to show them.
+	local importantTestColor, defensiveTestColor = AlertGlowColors()
 	local iconsGlow = db.Modules.AlertsModule.Icons.Glow
 	local showTooltips = db.Modules.AlertsModule.ShowTooltips ~= false
 
@@ -584,7 +607,7 @@ local function RefreshTestAlerts()
 		for _, entry in ipairs(testDefensiveSpells) do
 			local tex = C_Spell.GetSpellTexture(entry.spellId)
 			if tex and defSlot < container.Count then
-				local glowColor = nil
+				local glowColor = defensiveTestColor
 				if colorByClass and entry.class then
 					local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.class]
 					if classColor then
@@ -629,6 +652,7 @@ local function RefreshTestAlerts()
 					Alpha = true,
 					Glow = iconsGlow,
 					ReverseCooldown = db.Modules.AlertsModule.Icons.ReverseCooldown,
+					Color = importantTestColor,
 					FontScale = db.FontScale,
 					SpellId = showTooltips and spellId or nil,
 				})
@@ -998,12 +1022,6 @@ end
 -- left a hole before the important icons; groups inside a single container flow tight instead.
 -- A display's group list is fixed for its lifetime (see New), so both groups always exist and
 -- the mode is chosen purely by budgeting one of them to 0 - no container churn on toggle.
--- Category glow tints, used only when the option is on. Importants are the thing to react to,
--- so they take the warning colour; defensives (big and external alike) read as "they are
--- protected" and take the safe one.
-local IMPORTANT_GLOW_COLOR = { 1, 0.2, 0.2 }
-local DEFENSIVE_GLOW_COLOR = { 0.2, 1, 0.2 }
-
 ---Fills the shared style scratch from the alert options.
 ---@return AuraDisplayStyle
 local function AlertStyle()
@@ -1015,18 +1033,6 @@ local function AlertStyle()
 	style.FontScale = db and db.FontScale
 	style.ShowTooltips = not options or options.ShowTooltips ~= false
 	return style
-end
-
----@return number[]? importantColor
----@return number[]? defensiveColor
-local function AlertGlowColors()
-	local icons = db and db.Modules.AlertsModule.Icons
-
-	if not (icons and icons.Glow and icons.GlowColorByCategory) then
-		return nil, nil
-	end
-
-	return IMPORTANT_GLOW_COLOR, DEFENSIVE_GLOW_COLOR
 end
 
 local function CreateAlertDisplayPair()
