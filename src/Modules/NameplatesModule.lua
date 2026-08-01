@@ -131,8 +131,16 @@ local BARS = {
 --
 -- Cached per token rather than created per plate spawn because WoW frames can never be freed:
 -- tokens are a small fixed set (nameplate1..N) so this is bounded, whereas creating one per
--- spawn would grow for the whole session. A display whose bar configuration changes is
--- abandoned and rebuilt - unavoidable, and rare enough to be the right trade.
+-- spawn would grow for the whole session. Exactly ONE display per (token, bar): a configuration
+-- change restyles it in place rather than building a replacement. Keying on the configuration
+-- instead meant every step of an icon-size slider drag built a fresh display for every tracked
+-- plate - twenty buttons apiece, each with its own cooldown, border and animated glow - and left
+-- all of them resident for the session.
+--
+-- Restyling is impossible while auras are secret, but that is already handled: ApplyConfig stores
+-- the new values and flags the display, and AuraContainerDisplay's retry settles the buttons when
+-- the restriction lifts. The cost is that a change made inside an arena shows late, which is the
+-- same deal every other display in the addon takes.
 ---@type table<string, table<string, {Display: AuraContainerDisplay, Signature: string}>>
 local barDisplays = {}
 -- Fallbacks for a bar with no configured geometry.
@@ -299,24 +307,29 @@ local function EnsureBarDisplay(data, bar, barOptions)
 		barDisplays[token] = byBar
 	end
 
-	-- Keyed by signature as well as bar, so a display is never restyled - it can't be, while
-	-- auras are secret - and never thrown away either. The same token legitimately alternates
-	-- between configurations: GetUnitOptions returns Friendly or Enemy for it, and a duel flips
-	-- that mid-session. Keying on the bar alone would rebuild on every flip and abandon the
-	-- previous frame, which WoW can never free.
-	local key = bar.Key .. "|" .. signature
-	local display = byBar[key]
+	-- One display per bar, restyled when the configuration moves. The same token legitimately
+	-- alternates between configurations - GetUnitOptions returns Friendly or Enemy for it and a
+	-- duel flips that mid-session - so this path is hot enough that it must not build frames.
+	local entry = byBar[bar.Key]
+
+	if not entry then
+		entry = { Display = CreateBarDisplay(size, spacing, style), Signature = signature }
+		byBar[bar.Key] = entry
+	elseif entry.Signature ~= signature then
+		-- One restyle pass for all three values; the individual setters would each walk every
+		-- button. Records the new signature even when the restyle has to defer, because the
+		-- display now WANTS this configuration and the retry will finish applying it.
+		entry.Display:ApplyConfig(size, spacing, style)
+		entry.Signature = signature
+	end
+
+	local display = entry.Display
 
 	-- Park whatever this bar was showing if it isn't the display we're about to use.
 	local previous = data[bar.DisplayField]
 
 	if previous and previous ~= display then
 		ResetBarDisplay(previous)
-	end
-
-	if not display then
-		display = CreateBarDisplay(size, spacing, style)
-		byBar[key] = display
 	end
 
 	data[bar.DisplayField] = display

@@ -517,11 +517,39 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 			"further cycles must reuse the token's display, got " .. (env.auraContainerCount() - created) .. " extra")
 	end)
 
-	fw.it("a token that flips faction rebuilds for the new styling and keeps both", function()
+	fw.it("dragging the icon size restyles instead of building a display per size", function()
+		-- Every step of a slider drag reaches Refresh. Keying displays on the configuration meant
+		-- a drag left one display per intermediate size on every tracked plate - twenty buttons
+		-- apiece - and WoW can never free them.
+		addPlate("np_resize")
+		local display = activeDisplays("np_resize")[1]
+		assert(display, "tracked by the one enabled bar")
+		local created = env.auraContainerCount()
+
+		local icons = db.Modules.NameplatesModule.Enemy.Bar1.Icons
+		local originalSize = icons.Size
+
+		for size = 30, 40 do
+			icons.Size = size
+			nameplates:Refresh()
+		end
+
+		assert(env.auraContainerCount() == created,
+			"a drag must build nothing, got " .. (env.auraContainerCount() - created) .. " extra")
+		assert(activeDisplays("np_resize")[1] == display, "the same display throughout")
+
+		local group = select(2, next(display._groups))
+		assert(group.layout.elementWidth == 40, "and it ends up at the size dragged to")
+
+		icons.Size = originalSize
+		nameplates:Refresh()
+		removePlate("np_resize")
+	end)
+
+	fw.it("a token that flips faction restyles its display instead of building another", function()
 		-- GetUnitOptions returns Friendly or Enemy for the same token, and a duel flips it
-		-- mid-session. Every style value is baked into a button at creation, so the display has
-		-- to be rebuilt for the new configuration - and the old one kept, or repeated flips
-		-- would strand a frame each time and WoW can never free them.
+		-- mid-session. Building a display per configuration would strand a frame on every flip,
+		-- and WoW can never free one - so the one display is restyled in place.
 		-- Mirror the enemy bar's configuration so only the size differs.
 		local enemyBar = db.Modules.NameplatesModule.Enemy.Bar1
 		local friendlyBar = db.Modules.NameplatesModule.Friendly.Bar1
@@ -550,20 +578,20 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		local friendly = activeDisplays("np_flip")[1]
 		assert(friendly and iconSize(friendly) == 21, "built at the friendly size")
 
+		local created = env.auraContainerCount()
+
 		-- Duel starts: same token, now an enemy.
 		env.enemies.np_flip = true
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_flip")
 		local enemy = activeDisplays("np_flip")[1]
-		assert(enemy and iconSize(enemy) == 44, "rebuilt at the enemy size")
-		assert(enemy ~= friendly, "a separate display, since the size is baked in at creation")
-		assert(not friendly._enabled, "the friendly display is parked, not left live")
+		assert(enemy == friendly, "the same display, restyled rather than replaced")
+		assert(iconSize(enemy) == 44, "resized to the enemy size")
+		assert(env.auraContainerCount() == created, "the flip builds nothing new")
 
-		local created = env.auraContainerCount()
-
-		-- Duel ends: back to friendly, and the original comes back rather than a third being built.
+		-- Duel ends: back to friendly, and it restyles back.
 		env.enemies.np_flip = nil
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_flip")
-		assert(activeDisplays("np_flip")[1] == friendly, "the friendly display is reused")
+		assert(iconSize(activeDisplays("np_flip")[1]) == 21, "restyled back to the friendly size")
 		assert(env.auraContainerCount() == created, "flipping back builds nothing new")
 
 		removePlate("np_flip")

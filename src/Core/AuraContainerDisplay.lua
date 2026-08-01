@@ -682,6 +682,44 @@ function M:SetSpacing(newSpacing)
 	self:RestyleButtons()
 end
 
+---Applies size, spacing and style together, restyling the buttons once. Callers changing more
+---than one of them must use this rather than the individual setters, which restyle every button
+---on each call - three passes over every button per config change is what made dragging an icon
+---size slider stutter. Nothing is applied to the buttons while aura styling is restricted; the
+---values are stored and the pending-restyle retry settles them when it lifts.
+---@param size number
+---@param spacing number
+---@param style AuraDisplayStyle
+---@return boolean changed
+function M:ApplyConfig(size, spacing, style)
+	size = tonumber(size)
+	spacing = tonumber(spacing)
+
+	local changed = false
+
+	if size and size > 0 and self.Size ~= size then
+		self.Size = size
+		changed = true
+	end
+
+	if spacing and spacing >= 0 and self.Spacing ~= spacing then
+		self.Spacing = spacing
+		changed = true
+	end
+
+	if StoreStyle(self, style or EMPTY_STYLE) then
+		changed = true
+	end
+
+	if not changed and not self.RestylePending then
+		return false
+	end
+
+	self:RestyleButtons()
+
+	return true
+end
+
 ---Sets a group's icon budget. A value of 0 hides the group entirely (used for per-category
 ---toggles like ShowCC/ShowDefensives), so a mistyped key would silently switch a whole category
 ---off - hence the warning rather than a quiet return.
