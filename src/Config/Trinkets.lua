@@ -62,9 +62,11 @@ function M:Build(panel)
 		end,
 	})
 
-	colorSwatch:SetPoint("TOP", enabled, "TOP", 0, 0)
+	-- Centred on the row rather than top-aligned: the swatch is shorter than a checkbox,
+	-- so sharing its TOP edge leaves it sitting low against the labels.
+	colorSwatch:SetPoint("TOP", enabled, "TOP", 0,
+		-math.floor((enabled:GetHeight() - colorSwatch:GetHeight()) / 2))
 	colorSwatch:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	colorSwatch.Label:SetPoint("LEFT", colorSwatch, "RIGHT", 4, 0)
 
 	local settingsDivider = mini:Divider({
 		Parent = panel,

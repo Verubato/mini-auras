@@ -5,6 +5,7 @@ local L = M.L
 
 local BORDER_COLOR = { r = 0.40, g = 0.40, b = 0.40 }
 local DEFAULT_SIZE = 22
+local DEFAULT_LABEL_GAP = 4
 
 ---Opens the colour picker.
 ---
@@ -108,14 +109,20 @@ function M:ColorSwatch(options)
 	local size = options.Size or DEFAULT_SIZE
 	local hasOpacity = options.HasOpacity ~= false
 
+	local btn = CreateFrame("Button", nil, options.Parent)
+	btn:SetSize(size, size)
+
+	-- Placed here rather than left to the caller: an unanchored FontString never renders, so a
+	-- LabelText that the caller did not also position was silently doing nothing. Sitting to the
+	-- right of the swatch and vertically centred on it reads correctly beside a row of
+	-- checkboxes, which is where these end up. A caller wanting it elsewhere clears the point
+	-- and re-anchors btn.Label.
 	local label
 	if options.LabelText then
 		label = options.Parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 		label:SetText(options.LabelText)
+		label:SetPoint("LEFT", btn, "RIGHT", options.LabelGap or DEFAULT_LABEL_GAP, 0)
 	end
-
-	local btn = CreateFrame("Button", nil, options.Parent)
-	btn:SetSize(size, size)
 
 	local fill = btn:CreateTexture(nil, "BACKGROUND")
 	fill:SetPoint("TOPLEFT", 1, -1)
@@ -168,6 +175,7 @@ end
 ---@field Tooltip string?
 ---@field Size number? default 22
 ---@field HasOpacity boolean? default true; when false, alpha is forced to 1
+---@field LabelGap number? pixels between the swatch and its label (default 4)
 ---@field GetValue fun(): number, number, number, number r, g, b, a
 ---@field SetValue fun(r: number, g: number, b: number, a: number)
 ---@field OnChange fun()? runs after SetValue, for applying the change live
