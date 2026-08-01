@@ -1,6 +1,8 @@
 local _, addon = ...
-local M = addon.Core.Framework
+local M = addon.Framework
 
+---Rounds v to the nearest integer and clamps it to [minV, maxV].
+---@return number the clamped value, or fallback when v isn't a number
 function M:ClampInt(v, minV, maxV, fallback)
 	v = tonumber(v)
 
@@ -21,6 +23,8 @@ function M:ClampInt(v, minV, maxV, fallback)
 	return v
 end
 
+---Clamps v to [minV, maxV] without rounding.
+---@return number the clamped value, or fallback when v isn't a number
 function M:ClampFloat(v, minV, maxV, fallback)
 	v = tonumber(v)
 

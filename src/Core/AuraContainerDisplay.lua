@@ -73,20 +73,14 @@ addon.Core.AuraContainerDisplay = M
 
 local function GetDb()
 	if not cachedDb then
-		local mini = addon.Core.Framework
-		if mini and mini.GetSavedVars then
-			cachedDb = mini:GetSavedVars()
-		end
+		cachedDb = addon.Framework:GetSavedVars()
 	end
 
 	return cachedDb
 end
 
 local function Warn(message, ...)
-	local mini = addon.Core.Framework
-	if mini and mini.Notify then
-		mini:Notify(message, ...)
-	end
+	addon.Framework:Notify(message, ...)
 end
 
 local function NextFrameName(frameType)

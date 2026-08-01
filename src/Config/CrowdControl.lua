@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Core.Framework
+local mini = addon.Framework
 local L = addon.L
 local DROPDOWN_WIDTH = 200
 local GROW_OPTIONS = {
@@ -33,7 +33,6 @@ local function BuildGrowDropdown(parent, options, anchorFrame)
 	local growDdl, modernDdl = mini:Dropdown({
 		Parent = parent,
 		Items = GROW_OPTIONS,
-		Width = columnWidth * 2 - horizontalSpacing,
 		GetValue = function()
 			return options.Grow
 		end,

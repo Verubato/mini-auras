@@ -1,6 +1,6 @@
 ---@diagnostic disable: unused-function
 local _, addon = ...
-local mini = addon.Core.Framework
+local mini = addon.Framework
 local L = addon.L
 local dbDefaults = addon.Config.Defaults
 local M = addon.Config.Migrator

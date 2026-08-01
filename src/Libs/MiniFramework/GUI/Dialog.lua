@@ -1,14 +1,24 @@
 local _, addon = ...
-local L = addon.L
-local M = addon.Core.Framework
+local M = addon.Framework
+local GUI = M.GUI
+local L = M.L
 local dialog
+
+local BACKDROP = {
+	bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+	tile = true,
+	tileSize = 16,
+	edgeSize = 16,
+	insets = { left = 4, right = 4, top = 4, bottom = 4 },
+}
 
 local function GetOrCreateDialog()
 	if dialog then
 		return dialog
 	end
 
-	dialog = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+	dialog = CreateFrame("Frame", nil, UIParent, GUI.BackdropTemplate)
 	dialog:SetSize(360, 140)
 	dialog:SetFrameStrata("DIALOG")
 	dialog:SetClampedToScreen(true)
@@ -19,15 +29,7 @@ local function GetOrCreateDialog()
 	dialog:SetScript("OnDragStop", dialog.StopMovingOrSizing)
 	dialog:Hide()
 
-	dialog:SetBackdrop({
-		bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-		edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-		tile = true,
-		tileSize = 16,
-		edgeSize = 16,
-		insets = { left = 4, right = 4, top = 4, bottom = 4 },
-	})
-	dialog:SetBackdropColor(0, 0, 0, 0.9)
+	GUI.ApplyBackdrop(dialog, BACKDROP, 0, 0, 0, 0.9)
 
 	dialog.Title = dialog:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 	dialog.Title:SetPoint("TOP", dialog, "TOP", 0, -8)
@@ -38,7 +40,7 @@ local function GetOrCreateDialog()
 	dialog.TitleDivider:SetHeight(1)
 	dialog.TitleDivider:SetPoint("TOPLEFT", dialog, "TOPLEFT", 8, -28)
 	dialog.TitleDivider:SetPoint("TOPRIGHT", dialog, "TOPRIGHT", -8, -28)
-	dialog.TitleDivider:SetColorTexture(1, 1, 1, 0.15)
+	GUI.SetSolid(dialog.TitleDivider, 1, 1, 1, 0.15)
 
 	dialog.Text = dialog:CreateFontString(nil, "ARTWORK", "GameFontHighlightLarge")
 	dialog.Text:SetPoint("TOPLEFT", 12, -40)
@@ -59,6 +61,7 @@ local function GetOrCreateDialog()
 	return dialog
 end
 
+---Shows the shared notification dialog, sized to fit the message.
 ---@param options DialogOptions
 function M:ShowDialog(options)
 	if not options then
@@ -90,6 +93,7 @@ function M:ShowDialog(options)
 	dlg:Show()
 end
 
+---Hides the shared notification dialog, if one has been created.
 function M:HideDialog()
 	if dialog then
 		dialog:Hide()
@@ -97,7 +101,6 @@ function M:HideDialog()
 end
 
 ---@class DialogOptions
----@field Title string
+---@field Title string?
 ---@field Text string
 ---@field Width number?
----@field Height number?

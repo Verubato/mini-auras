@@ -1,4 +1,4 @@
-## Interface: 120100, 120007
+﻿## Interface: 120100, 120007
 ## Title: MiniCC
 ## Notes: Shows CC and important spells on frames/nameplates/alerts in PvP.
 ## Author: Verz
@@ -12,6 +12,7 @@ Libs\LibStub\LibStub.lua
 Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.xml
 Libs\LibRangeCheck-3.0\LibRangeCheck-3.0.lua
 Libs\LibSpecialization\LibSpecialization.lua
+Libs\MiniFramework\MiniFramework.xml
 
 Namespace.lua
 
@@ -34,29 +35,6 @@ Utils\FontUtil.lua
 Utils\ModuleUtil.lua
 Utils\SlotDistribution.lua
 Utils\WoWEx.lua
-
-Core\Framework\Notify.lua
-Core\Framework\Tables.lua
-Core\Framework\Math.lua
-Core\Framework\SavedVars.lua
-Core\Framework\Settings.lua
-Core\Framework\AddonLoad.lua
-
-Core\GUI\Common.lua
-Core\GUI\TextLine.lua
-Core\GUI\TextBlock.lua
-Core\GUI\TextBlockSegmented.lua
-Core\GUI\Divider.lua
-Core\GUI\Button.lua
-Core\GUI\EditBox.lua
-Core\GUI\Dropdown.lua
-Core\GUI\Checkbox.lua
-Core\GUI\Slider.lua
-Core\GUI\List.lua
-Core\GUI\Tabs.lua
-Core\GUI\TabNavigation.lua
-Core\GUI\Dialog.lua
-Core\GUI\StandaloneWindow.lua
 
 Core\InstanceOptions.lua
 Core\EventGate.lua

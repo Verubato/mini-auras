@@ -114,7 +114,7 @@ end
 -- Prints a debug line (prefixed with the addon name) when debug logging is enabled.
 local function DebugLog(fmt, ...)
 	if not debugEnabled then return end
-	addon.Core.Framework:Notify("[FCD] " .. fmt, ...)
+	addon.Framework:Notify("[FCD] " .. fmt, ...)
 end
 
 ---Collects all concurrent evidence types for a unit near detectionTime.

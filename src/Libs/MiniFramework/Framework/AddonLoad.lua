@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local M = addon.Core.Framework
+local M = addon.Framework
 local loader = CreateFrame("Frame")
 local loaded = false
 local onLoadCallbacks = {}
@@ -20,6 +20,7 @@ end
 loader:RegisterEvent("ADDON_LOADED")
 loader:SetScript("OnEvent", OnAddonLoaded)
 
+---Runs the callback once this addon's saved variables are available, immediately if already loaded.
 function M:WaitForAddonLoad(callback)
 	if not callback then
 		error("WaitForAddonLoad - callback must not be nil.")

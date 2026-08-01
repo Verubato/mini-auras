@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Core.Framework
+local mini = addon.Framework
 local L = addon.L
 local wowEx = addon.Utils.WoWEx
 local verticalSpacing = mini.VerticalSpacing
@@ -201,7 +201,6 @@ local function BuildSettingsTab(parent, options)
 	local growDdl, modernDdl = mini:Dropdown({
 		Parent = parent,
 		Items = GROW_OPTIONS,
-		Width = columnWidth * 2 - horizontalSpacing,
 		GetValue = function()
 			local grow = options.Grow
 			if grow ~= "LEFT" and grow ~= "RIGHT" then
@@ -395,7 +394,6 @@ local function BuildTtsTab(parent, options)
 	local voiceDropdown = mini:Dropdown({
 		Parent = parent,
 		Items = voiceItems,
-		Width = 400,
 		GetValue = function()
 			EnsureTtsOptions()
 			return wowEx:ResolveVoiceID(options.TTS.VoiceID)

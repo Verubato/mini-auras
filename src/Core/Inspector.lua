@@ -354,7 +354,7 @@ function M:Init()
 	end
 
 	-- Persist the GUID->spec cache in saved variables so it survives reloads.
-	local db = addon.Core.Framework:GetSavedVars()
+	local db = addon.Framework:GetSavedVars()
 	db.SpecCache = db.SpecCache or {}
 	unitGuidToSpec = db.SpecCache
 

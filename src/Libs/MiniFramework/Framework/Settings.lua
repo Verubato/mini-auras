@@ -1,6 +1,12 @@
 local addonName, addon = ...
-local M = addon.Core.Framework
+local M = addon.Framework
 
+-- Width the config content is laid out against. Left nil so ColumnWidth falls back to the
+-- Blizzard settings container; addons hosting their own window assign their content width here.
+M.ContentWidth = nil
+
+---Whether the client still allows opening the settings panel while in combat.
+---@return boolean
 function M:CanOpenOptionsDuringCombat()
 	if LE_EXPANSION_LEVEL_CURRENT == nil or LE_EXPANSION_MIDNIGHT == nil then
 		return true
@@ -9,6 +15,7 @@ function M:CanOpenOptionsDuringCombat()
 	return LE_EXPANSION_LEVEL_CURRENT < LE_EXPANSION_MIDNIGHT
 end
 
+---@return number width, number height of the Blizzard settings content area
 function M:SettingsSize()
 	local settingsContainer = SettingsPanel and SettingsPanel.Container
 
@@ -23,6 +30,8 @@ function M:SettingsSize()
 	return 600, 600
 end
 
+---Registers the panel as an entry under Interface > AddOns.
+---@return table? category the settings category, or the panel itself on classic
 function M:AddCategory(panel)
 	if not panel then
 		error("AddCategory - panel must not be nil.")
@@ -42,6 +51,7 @@ function M:AddCategory(panel)
 	return nil
 end
 
+---Registers the panel as a child of an existing category.
 function M:AddSubCategory(parentCategory, panel)
 	if not parentCategory then
 		error("AddSubCategory - parentCategory must not be nil.")
@@ -58,10 +68,13 @@ function M:AddSubCategory(parentCategory, panel)
 	end
 end
 
+---Registers slash commands that open the settings panel.
+---@param commands string[]? extra aliases, e.g. { "/minicc", "/mcc" }
 function M:RegisterSlashCommand(category, panel, commands)
 	if not category then
 		error("RegisterSlashCommand - category must not be nil.")
 	end
+
 	if not panel then
 		error("RegisterSlashCommand - panel must not be nil.")
 	end
@@ -73,14 +86,13 @@ function M:RegisterSlashCommand(category, panel, commands)
 	end
 
 	if commands and #commands > 0 then
-		local addonUpper = string.upper(addonName)
-
 		for i, command in ipairs(commands) do
-			_G["SLASH_" .. addonUpper .. i] = command
+			_G["SLASH_" .. upper .. i] = command
 		end
 	end
 end
 
+---Opens the settings panel at the given category.
 function M:OpenSettings(category, panel)
 	if not category then
 		error("OpenSettings - category must not be nil.")
@@ -104,6 +116,8 @@ function M:OpenSettings(category, panel)
 	end
 end
 
+---Width of a single column when splitting the content area into evenly sized columns.
+---@return number
 function M:ColumnWidth(columns, padding, spacingColumns)
 	local settingsWidth = M.ContentWidth or (select(1, M:SettingsSize()))
 	-- add padding to the left and right

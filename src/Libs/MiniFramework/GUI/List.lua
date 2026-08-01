@@ -1,10 +1,19 @@
 local _, addon = ...
-local M = addon.Core.Framework
+local M = addon.Framework
+local L = M.L
 
----Creates a generic list of items
+---Creates a scrollable list of items, each with a Remove button.
 ---@param options ListOptions
 ---@return ListReturn
 function M:List(options)
+	if not options then
+		error("List - options must not be nil.")
+	end
+
+	if not options.Parent or not options.RowWidth or not options.RowHeight then
+		error("List - invalid options.")
+	end
+
 	local scroll = CreateFrame("ScrollFrame", nil, options.Parent, "UIPanelScrollFrameTemplate")
 	scroll:SetPoint("TOPLEFT", 0, 0)
 	scroll:SetPoint("BOTTOMRIGHT", options.Parent, "BOTTOMRIGHT", 0, 0)
@@ -21,14 +30,14 @@ function M:List(options)
 		local visibleHeight = scroll:GetHeight()
 		local contentHeight = content:GetHeight()
 
+		if not scroll.ScrollBar then
+			return
+		end
+
 		if contentHeight <= visibleHeight then
-			if scroll.ScrollBar then
-				scroll.ScrollBar:Hide()
-			end
+			scroll.ScrollBar:Hide()
 		else
-			if scroll.ScrollBar then
-				scroll.ScrollBar:Show()
-			end
+			scroll.ScrollBar:Show()
 		end
 	end
 
@@ -53,9 +62,11 @@ function M:List(options)
 
 				row.Remove = M:Button({
 					Parent = row,
-					Text = "Remove",
+					-- REMOVE is a Blizzard global, already localized in every client.
+					Text = REMOVE or L["Remove"],
 					Width = options.RemoveButtonWidth or 80,
 					Height = options.RowHeight - 2,
+					CustomStyling = options.CustomStyling,
 				})
 				row.Remove:SetPoint("RIGHT", 0, 0)
 
@@ -118,6 +129,7 @@ end
 ---@field RowWidth number
 ---@field RowHeight number
 ---@field RemoveButtonWidth number?
+---@field CustomStyling boolean? Override the framework-wide styling default for the row buttons
 ---@field OnRemove fun(item: any)
 
 ---@class ListReturn

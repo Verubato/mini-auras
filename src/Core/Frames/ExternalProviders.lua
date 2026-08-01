@@ -1,5 +1,5 @@
 local _, addon = ...
-local mini = addon.Core.Framework
+local mini = addon.Framework
 local M = addon.Core.Frames
 local externalProviders = {}
 

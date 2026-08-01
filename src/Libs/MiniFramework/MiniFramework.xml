@@ -1,0 +1,40 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+  <!--
+    Single entry point for the whole framework. Addons reference just this file from their
+    toc, so adding a framework file never requires touching 20-odd tocs.
+
+    Load order matters: Namespace creates addon.Framework, Notify seeds the shared strings,
+    Compat installs the cross-flavor shims every widget uses, and Common defines the palette.
+  -->
+  <Script file="Namespace.lua"/>
+
+  <Script file="Framework\Notify.lua"/>
+  <Script file="Framework\Math.lua"/>
+  <Script file="Framework\Tables.lua"/>
+  <Script file="Framework\Secrets.lua"/>
+  <Script file="Framework\SavedVars.lua"/>
+  <Script file="Framework\Settings.lua"/>
+  <Script file="Framework\AddonLoad.lua"/>
+  <Script file="Framework\Combat.lua"/>
+  <Script file="Framework\Position.lua"/>
+
+  <Script file="GUI\Compat.lua"/>
+  <Script file="GUI\Common.lua"/>
+  <Script file="GUI\TextLine.lua"/>
+  <Script file="GUI\TextBlock.lua"/>
+  <Script file="GUI\TextBlockSegmented.lua"/>
+  <Script file="GUI\PanelHeader.lua"/>
+  <Script file="GUI\Divider.lua"/>
+  <Script file="GUI\Button.lua"/>
+  <Script file="GUI\ColorSwatch.lua"/>
+  <Script file="GUI\EditBox.lua"/>
+  <Script file="GUI\Dropdown.lua"/>
+  <Script file="GUI\Checkbox.lua"/>
+  <Script file="GUI\Slider.lua"/>
+  <Script file="GUI\List.lua"/>
+  <Script file="GUI\Tabs.lua"/>
+  <Script file="GUI\TabNavigation.lua"/>
+  <Script file="GUI\Dialog.lua"/>
+  <Script file="GUI\StandaloneWindow.lua"/>
+</Ui>

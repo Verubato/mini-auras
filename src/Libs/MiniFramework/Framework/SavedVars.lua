@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local M = addon.Core.Framework
+local M = addon.Framework
 
 local function NilKeys(target)
 	for k, v in pairs(target) do
@@ -11,6 +11,8 @@ local function NilKeys(target)
 	end
 end
 
+---Returns the account-wide saved variables table (`<AddonName>DB`), merging in defaults.
+---The name must be declared in the addon's toc via `## SavedVariables`.
 function M:GetSavedVars(defaults)
 	local name = addonName .. "DB"
 	local vars = _G[name] or {}
@@ -24,6 +26,8 @@ function M:GetSavedVars(defaults)
 	return vars
 end
 
+---Returns the per-character saved variables table (`<AddonName>CharDB`), merging in defaults.
+---The name must be declared in the addon's toc via `## SavedVariablesPerCharacter`.
 function M:GetCharacterSavedVars(defaults)
 	local name = addonName .. "CharDB"
 	local vars = _G[name] or {}
@@ -37,6 +41,8 @@ function M:GetCharacterSavedVars(defaults)
 	return vars
 end
 
+---Clears the account-wide saved variables back to defaults.
+---@return table the same table instance, so existing references stay valid
 function M:ResetSavedVars(defaults)
 	local name = addonName .. "DB"
 	local vars = _G[name] or {}

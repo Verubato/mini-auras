@@ -1,10 +1,10 @@
 local _, addon = ...
-local M = addon.Core.Framework
+local M = addon.Framework
 
 ---Wires Tab/Shift+Tab keyboard focus cycling across the given controls.
 function M:WireTabNavigation(controls)
 	if not controls then
-		error("WireTabNavigation - controls must not be nil")
+		error("WireTabNavigation - controls must not be nil.")
 	end
 
 	for i, control in ipairs(controls) do
@@ -29,14 +29,15 @@ function M:WireTabNavigation(controls)
 				nextIndex = 1
 			end
 
-			local next = controls[nextIndex]
-			if next then
-				if next.SetFocus then
-					next:SetFocus()
+			local nextControl = controls[nextIndex]
+
+			if nextControl then
+				if nextControl.SetFocus then
+					nextControl:SetFocus()
 				end
 
-				if next.HighlightText then
-					next:HighlightText()
+				if nextControl.HighlightText then
+					nextControl:HighlightText()
 				end
 			end
 		end)

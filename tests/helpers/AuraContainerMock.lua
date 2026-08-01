@@ -588,15 +588,14 @@ function M.loadDisplay()
 				end,
 			},
 		},
-		Core = {
-			Framework = {
-				GetSavedVars = function()
-					return mockDb
-				end,
-				Notify = function(_, message, ...)
-					M.notifications[#M.notifications + 1] = string.format(message, ...)
-				end,
-			},
+		Core = {},
+		Framework = {
+			GetSavedVars = function()
+				return mockDb
+			end,
+			Notify = function(_, message, ...)
+				M.notifications[#M.notifications + 1] = string.format(message, ...)
+			end,
 		},
 	}
 

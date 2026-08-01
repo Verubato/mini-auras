@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Core.Framework
+local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
 local iconSlotContainer = addon.Core.IconSlotContainer
 local eventGate = addon.Core.EventGate
@@ -655,12 +655,6 @@ end
 -- Module interface
 
 -- Lifecycle
-
----Cooldown inference reads aura data through UnitAuraWatcher, which 12.1 removes entirely.
----@return boolean
-local function IsSupported()
-	return not wowEx:UseAuraContainers()
-end
 
 ---@return boolean
 local function IsEnabled()

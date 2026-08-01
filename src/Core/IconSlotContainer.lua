@@ -46,10 +46,7 @@ addon.Core.IconSlotContainer = M
 
 local function GetDb()
 	if not cachedDb then
-		local mini = addon.Core.Framework
-		if mini and mini.GetSavedVars then
-			cachedDb = mini:GetSavedVars()
-		end
+		cachedDb = addon.Framework:GetSavedVars()
 	end
 
 	return cachedDb

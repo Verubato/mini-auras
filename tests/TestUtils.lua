@@ -14,12 +14,11 @@ end
 local function newAddon(db)
 	return {
 		Utils = {},
-		Core = {
-			Framework = {
-				GetSavedVars = function()
-					return db
-				end,
-			},
+		Core = {},
+		Framework = {
+			GetSavedVars = function()
+				return db
+			end,
 		},
 		Modules = {},
 		Config = {},
@@ -59,8 +58,8 @@ end)
 
 -- Array
 
-local arrayAddon = loadModule("src/Core/Framework/Tables.lua", newAddon({}))
-local array = arrayAddon.Core.Framework
+local arrayAddon = loadModule("src/Libs/MiniFramework/Framework/Tables.lua", newAddon({}))
+local array = arrayAddon.Framework
 
 fw.describe("Array", function()
 	fw.it("reverses odd and even length arrays in place", function()

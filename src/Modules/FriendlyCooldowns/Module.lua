@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Core.Framework
+local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
 local iconSlotContainer = addon.Core.IconSlotContainer
 local frames = addon.Core.Frames

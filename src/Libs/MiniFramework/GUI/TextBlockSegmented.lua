@@ -1,7 +1,35 @@
 local _, addon = ...
-local M = addon.Core.Framework
+local M = addon.Framework
 
+local function ApplyFont(fs, font)
+	if type(font) == "string" then
+		fs:SetFontObject(_G[font] or GameFontWhite)
+	elseif type(font) == "table" then
+		fs:SetFontObject(font)
+	else
+		fs:SetFontObject(GameFontWhite)
+	end
+end
+
+local function CreateSeg(parent, text, font, width)
+	local fs = parent:CreateFontString(nil, "ARTWORK", "GameFontWhite")
+	fs:SetJustifyH("LEFT")
+	fs:SetSpacing(0)
+
+	ApplyFont(fs, font)
+
+	if width then
+		fs:SetWidth(width)
+	end
+
+	fs:SetText(text or "")
+
+	return fs
+end
+
+---Creates a block of text lines where each line can mix up to three differently styled segments.
 ---@param options TextBlockSegmentedOptions
+---@return table container
 function M:TextBlockSegmented(options)
 	if not options or not options.Parent or not options.Lines then
 		error("TextBlockSegmented - invalid options.")
@@ -12,43 +40,19 @@ function M:TextBlockSegmented(options)
 	local suffixFont = options.SuffixFont or "GameFontWhite"
 	local verticalSpacing = options.VerticalSpacing or M.VerticalSpacing
 	local segmentSpacing = options.SegmentSpacing or 0
+	local maxWidth = options.Width or M.TextMaxWidth
 
 	local container = CreateFrame("Frame", nil, options.Parent)
-	container:SetWidth(M.TextMaxWidth)
+	container:SetWidth(maxWidth)
 
 	local prevLine
 	local totalHeight = 0
-
-	local function ApplyFont(fs, font)
-		if type(font) == "string" then
-			fs:SetFontObject(_G[font] or GameFontWhite)
-		elseif type(font) == "table" then
-			fs:SetFontObject(font)
-		else
-			fs:SetFontObject(GameFontWhite)
-		end
-	end
-
-	local function CreateSeg(parent, text, font, width)
-		local fs = parent:CreateFontString(nil, "ARTWORK", "GameFontWhite")
-		fs:SetJustifyH("LEFT")
-		fs:SetSpacing(0)
-
-		ApplyFont(fs, font)
-
-		if width then
-			fs:SetWidth(width)
-		end
-
-		fs:SetText(text or "")
-		return fs
-	end
 
 	for i, entry in ipairs(options.Lines) do
 		local gap = (i == 1) and 0 or (verticalSpacing / 2)
 
 		local lineFrame = CreateFrame("Frame", nil, container)
-		lineFrame:SetWidth(M.TextMaxWidth)
+		lineFrame:SetWidth(maxWidth)
 
 		if i == 1 then
 			lineFrame:SetPoint("TOPLEFT", container, "TOPLEFT", 0, 0)
@@ -89,7 +93,7 @@ function M:TextBlockSegmented(options)
 			used = used + segments[s]:GetStringWidth() + segmentSpacing
 		end
 
-		local remain = math.max(10, M.TextMaxWidth - used)
+		local remain = math.max(10, maxWidth - used)
 		segments[#segments]:SetWidth(remain)
 
 		-- Height calc
@@ -104,19 +108,21 @@ function M:TextBlockSegmented(options)
 	end
 
 	container:SetHeight(math.max(1, totalHeight))
+
 	return container
 end
 
----@class TextLine
----@field Prefix string
----@field Suffix string
----@field Text string
+---@class TextSegment
+---@field Prefix string?
+---@field Text string?
+---@field Suffix string?
 
 ---@class TextBlockSegmentedOptions
 ---@field Parent table
----@field Lines (string|TextLine)[]
+---@field Lines (string|TextSegment)[]
 ---@field PrefixFont? string|table
----@field TextFont?  string|table
+---@field TextFont? string|table
 ---@field SuffixFont? string|table
+---@field Width? number
 ---@field VerticalSpacing? number
 ---@field SegmentSpacing? number

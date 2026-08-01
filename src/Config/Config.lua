@@ -1,7 +1,7 @@
 ---@type string, Addon
 local addonName, addon = ...
 local dbMigrator = addon.Config.Migrator
-local mini = addon.Core.Framework
+local mini = addon.Framework
 local L = addon.L
 ---@type Db
 local db
@@ -35,6 +35,10 @@ end
 
 function M:Init()
 	db = dbMigrator:GetAndUpgradeDb()
+
+	-- MiniCC is the one addon that runs its own window rather than a Blizzard panel, so it
+	-- takes the accented restyle. Must come before any widget is built.
+	mini:SetCustomStyling(true)
 
 	-- Register a minimal WoW settings entry so sub-categories can attach to it,
 	-- and the addon appears in Interface > AddOns for discoverability.

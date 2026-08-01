@@ -1,5 +1,5 @@
 local _, addon = ...
-local M = addon.Core.Framework
+local M = addon.Framework
 
 ---@param options TextBlockOptions
 ---@return table container
@@ -13,8 +13,9 @@ function M:TextBlock(options)
 	end
 
 	local verticalSpacing = options.VerticalSpacing or M.VerticalSpacing
+	local width = options.Width or M.TextMaxWidth
 	local container = CreateFrame("Frame", nil, options.Parent)
-	container:SetWidth(M.TextMaxWidth)
+	container:SetWidth(width)
 
 	local anchor
 	local totalHeight = 0
@@ -24,6 +25,7 @@ function M:TextBlock(options)
 			Text = line,
 			Parent = container,
 			Font = options.Font,
+			Width = width,
 		})
 
 		-- spacing between lines
@@ -49,4 +51,5 @@ end
 ---@field Lines string[]
 ---@field Parent table
 ---@field Font string?
+---@field Width number?
 ---@field VerticalSpacing number?

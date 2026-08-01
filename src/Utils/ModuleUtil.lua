@@ -26,7 +26,7 @@ addon.Utils.ModuleUtil = M
 addon.Utils.ModuleName = ModuleName
 
 function M:Init()
-	db = addon.Core.Framework:GetSavedVars()
+	db = addon.Framework:GetSavedVars()
 end
 
 ---Resolves the configured icon size, either as a static pixel value or as a percentage of

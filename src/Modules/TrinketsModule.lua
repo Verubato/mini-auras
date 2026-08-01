@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Core.Framework
+local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
 local frames = addon.Core.Frames
 local trinketsTracker = addon.Core.TrinketsTracker
@@ -324,11 +324,11 @@ local function EnsureFrames()
 	RebuildAnchors()
 end
 
----@param options TrinketsModuleOptions
-local function ApplyOptions(options)
+---@param moduleOptions TrinketsModuleOptions
+local function ApplyOptions(moduleOptions)
 	UpdateVisibility()
 
-	local size = tonumber(options.Icons.Size) or 32
+	local size = tonumber(moduleOptions.Icons.Size) or 32
 
 	for _, watcher in pairs(watchers) do
 		if watcher.Container then
@@ -337,8 +337,7 @@ local function ApplyOptions(options)
 	end
 end
 
----@param options TrinketsModuleOptions
-local function UpdateContent(options)
+local function UpdateContent()
 	if IsInArena() then
 		RefreshAll()
 	elseif testModeActive then
@@ -381,9 +380,9 @@ function M:StopTesting()
 end
 
 function M:Refresh()
-	local options = GetOptions()
+	local moduleOptions = GetOptions()
 
-	if not options then
+	if not moduleOptions then
 		return
 	end
 
@@ -397,8 +396,8 @@ function M:Refresh()
 	end
 
 	EnsureFrames()
-	ApplyOptions(options)
-	UpdateContent(options)
+	ApplyOptions(moduleOptions)
+	UpdateContent()
 end
 
 function M:Init()

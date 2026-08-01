@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Core.Framework
+local mini = addon.Framework
 local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
@@ -384,7 +384,6 @@ local function BuildSettings(parent, options)
 		Parent   = parent,
 		Items    = DISPLAY_MODE_OPTIONS,
 		GetText  = function(v) return DISPLAY_MODE_TEXT[v] or v end,
-		Width    = columnWidth * 2 - horizontalSpacing,
 		GetValue = function() return options.DisplayMode end,
 		SetValue = function(v)
 			if options.DisplayMode ~= v then
@@ -418,7 +417,6 @@ local function BuildSettings(parent, options)
 	local afGrowDdl, modernAfGrow = mini:Dropdown({
 		Parent = parent,
 		Items  = GROW_OPTIONS,
-		Width  = columnWidth * 2 - horizontalSpacing,
 		GetValue = function() return options.ArenaFrames.Grow end,
 		SetValue = function(v)
 			if options.ArenaFrames.Grow ~= v then

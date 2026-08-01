@@ -1,6 +1,7 @@
 local _, addon = ...
-local M = addon.Core.Framework
-local GUI = addon.Core.GUI
+local M = addon.Framework
+local GUI = M.GUI
+local pixel = GUI.Pixel
 
 ---@param options TabOptions
 ---@return TabReturn
@@ -29,7 +30,7 @@ function M:CreateTabs(options)
 	local insetT = insets.Top or 0
 	local insetB = insets.Bottom or 10
 
-	local strip = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+	local strip = CreateFrame("Frame", nil, parent, GUI.BackdropTemplate)
 	if vertical then
 		strip:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
 		strip:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
@@ -77,17 +78,17 @@ function M:CreateTabs(options)
 	-- Horizontal mode: single continuous baseline under every tab; the selected tab's accent
 	-- underline overlays it. Anchored after the tab loop.
 	local baseline = strip:CreateTexture(nil, "OVERLAY")
-	PixelUtil.SetHeight(baseline, 1)
-	baseline:SetColorTexture(1, 1, 1, 0.10)
+	pixel.SetHeight(baseline, 1)
+	GUI.SetSolid(baseline, 1, 1, 1, 0.10)
 
 	-- Vertical mode: static right-edge separator line. The bottom edge is anchored to the last
 	-- button after the tab loop (the strip itself extends past it to the parent's bottom).
 	local vLine
 	if vertical then
 		vLine = strip:CreateTexture(nil, "OVERLAY")
-		PixelUtil.SetWidth(vLine, 1)
-		vLine:SetColorTexture(1, 1, 1, 0.10)
-		PixelUtil.SetPoint(vLine, "TOPRIGHT", strip, "TOPRIGHT", 0, 0)
+		pixel.SetWidth(vLine, 1)
+		GUI.SetSolid(vLine, 1, 1, 1, 0.10)
+		pixel.SetPoint(vLine, "TOPRIGHT", strip, "TOPRIGHT", 0, 0)
 	end
 
 	-- Assigned after the tab loop; anchors the separator/baseline end points.
@@ -143,7 +144,7 @@ function M:CreateTabs(options)
 
 		for j = 1, #tabs do
 			local isSel = (j == i)
-			tabs[j].Container:SetShown(isSel)
+			GUI.SetShown(tabs[j].Container, isSel)
 			SetSelected(tabs[j].Button, isSel)
 		end
 
@@ -209,7 +210,7 @@ function M:CreateTabs(options)
 
 			-- Left-edge accent bar for selected state
 			btn.Indicator = btn:CreateTexture(nil, "OVERLAY")
-			PixelUtil.SetWidth(btn.Indicator, 3)
+			pixel.SetWidth(btn.Indicator, 3)
 			btn.Indicator:SetPoint("TOPLEFT", btn, "TOPLEFT", 0, 0)
 			btn.Indicator:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", 0, 0)
 			GUI.SetGradientV(btn.Indicator, accent.r, accent.g, accent.b, 1, accentHi.r, accentHi.g, accentHi.b, 1)
@@ -236,12 +237,12 @@ function M:CreateTabs(options)
 				btn:SetPoint("TOPRIGHT", prev, "BOTTOMRIGHT", 0, -tabSpacing)
 			end
 		else
-			btn.Highlight:SetColorTexture(1, 1, 1, 0.05)
+			GUI.SetSolid(btn.Highlight, 1, 1, 1, 0.05)
 			btn.Text:SetPoint("CENTER", btn, "CENTER", 0, 0)
 
 			-- Bottom-edge accent underline for selected state; overlays the shared baseline.
 			btn.Accent = btn:CreateTexture(nil, "OVERLAY", nil, 1)
-			PixelUtil.SetHeight(btn.Accent, 2)
+			pixel.SetHeight(btn.Accent, 2)
 			btn.Accent:SetPoint("BOTTOMLEFT",  btn, "BOTTOMLEFT",  0, 0)
 			btn.Accent:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 0, 0)
 			GUI.SetGradientH(btn.Accent, accent.r, accent.g, accent.b, 1, accentHi.r, accentHi.g, accentHi.b, 1)
@@ -285,23 +286,21 @@ function M:CreateTabs(options)
 			scrollFrame:SetScrollChild(scrollChild)
 
 			-- Scrollbar, visible only when content overflows
-			local scrollBar = CreateFrame("Slider", nil, scrollContainer, "BackdropTemplate")
+			local scrollBar = CreateFrame("Slider", nil, scrollContainer, GUI.BackdropTemplate)
 			scrollBar:SetWidth(10)
 			scrollBar:SetPoint("TOPRIGHT", scrollContainer, "TOPRIGHT", 0, -2)
 			scrollBar:SetPoint("BOTTOMRIGHT", scrollContainer, "BOTTOMRIGHT", 0, 2)
 			scrollBar:SetMinMaxValues(0, 1)
 			scrollBar:SetValue(0)
-			scrollBar:SetObeyStepOnDrag(true)
-			scrollBar:SetBackdrop({
+			GUI.TryCall(scrollBar, "SetObeyStepOnDrag", true)
+			GUI.ApplyBackdrop(scrollBar, {
 				bgFile = "Interface\\Buttons\\WHITE8X8",
 				edgeFile = "Interface\\Buttons\\WHITE8X8",
 				edgeSize = 1,
-			})
-			scrollBar:SetBackdropColor(0.10, 0.10, 0.10, 0.6)
-			scrollBar:SetBackdropBorderColor(0.25, 0.25, 0.25, 0.8)
+			}, 0.10, 0.10, 0.10, 0.6, 0.25, 0.25, 0.25, 0.8)
 
 			local thumb = scrollBar:CreateTexture(nil, "OVERLAY")
-			thumb:SetColorTexture(0.55, 0.55, 0.55, 0.85)
+			GUI.SetSolid(thumb, 0.55, 0.55, 0.55, 0.85)
 			scrollBar:SetThumbTexture(thumb)
 
 			local function UpdateScrollBar()
@@ -388,13 +387,13 @@ function M:CreateTabs(options)
 	-- Vertical buttons span the full strip width, so the last button's corner is exactly
 	-- where the separator should stop.
 	if vLine and lastBtn then
-		PixelUtil.SetPoint(vLine, "BOTTOMRIGHT", lastBtn, "BOTTOMRIGHT", 0, 0)
+		pixel.SetPoint(vLine, "BOTTOMRIGHT", lastBtn, "BOTTOMRIGHT", 0, 0)
 	end
 
 	-- Horizontal baseline sits at the buttons' shared bottom edge, full strip width.
 	if not vertical then
-		PixelUtil.SetPoint(baseline, "BOTTOMLEFT", strip, "BOTTOMLEFT", 0, 1)
-		PixelUtil.SetPoint(baseline, "BOTTOMRIGHT", strip, "BOTTOMRIGHT", 0, 1)
+		pixel.SetPoint(baseline, "BOTTOMLEFT", strip, "BOTTOMLEFT", 0, 1)
+		pixel.SetPoint(baseline, "BOTTOMRIGHT", strip, "BOTTOMRIGHT", 0, 1)
 	end
 
 	local initialIndex = 1
@@ -404,7 +403,7 @@ function M:CreateTabs(options)
 
 	for i = 1, #tabs do
 		local isSel = (i == initialIndex)
-		tabs[i].Container:SetShown(isSel)
+		GUI.SetShown(tabs[i].Container, isSel)
 		SetSelected(tabs[i].Button, isSel)
 	end
 	selectedKey = tabs[initialIndex].Key
@@ -466,10 +465,13 @@ end
 ---@field Parent table
 ---@field Tabs Tab[]
 ---@field InitialKey? string
+---@field Vertical? boolean  Render the strip as a left sidebar instead of a horizontal bar
 ---@field TabHeight? number
 ---@field TabMinWidth? number
 ---@field TabSpacing? number
----@field StripHeight? number
+---@field StripHeight? number  Height of a horizontal strip
+---@field StripWidth? number   Width of a vertical strip (default 130)
+---@field HorizontalPadding? number  Inset applied to each side of the strip
 ---@field ContentInsets? table
 ---@field OnTabChanged? fun(key:string, index:number)
 ---@field ScrollBody? boolean  Wrap each tab content in a scroll frame

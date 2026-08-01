@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Core.Framework
+local mini = addon.Framework
 local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
@@ -262,7 +262,6 @@ function M:Build(panel, options)
 	local soundFileDropdown = mini:Dropdown({
 		Parent = panel,
 		Items = config.SoundFiles,
-		Width = 200,
 		GetValue = function()
 			return options.Sound.File or "Sonar.ogg"
 		end,

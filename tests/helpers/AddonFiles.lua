@@ -3,14 +3,16 @@
 
 local M = {}
 
--- Core framework (Core\Framework in the TOC)
+-- Shared framework (Libs\MiniFramework\MiniFramework.xml in the TOC). Namespace.lua must come
+-- first - it creates addon.Framework, which every other file resolves at load time.
 M.framework = {
-	"src/Core/Framework/Notify.lua",
-	"src/Core/Framework/Tables.lua",
-	"src/Core/Framework/Math.lua",
-	"src/Core/Framework/SavedVars.lua",
-	"src/Core/Framework/Settings.lua",
-	"src/Core/Framework/AddonLoad.lua",
+	"src/Libs/MiniFramework/Namespace.lua",
+	"src/Libs/MiniFramework/Framework/Notify.lua",
+	"src/Libs/MiniFramework/Framework/Tables.lua",
+	"src/Libs/MiniFramework/Framework/Math.lua",
+	"src/Libs/MiniFramework/Framework/SavedVars.lua",
+	"src/Libs/MiniFramework/Framework/Settings.lua",
+	"src/Libs/MiniFramework/Framework/AddonLoad.lua",
 }
 
 -- Db defaults + migration engine + migration chunks (Config in the TOC)

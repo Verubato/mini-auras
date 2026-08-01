@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Core.Framework
+local mini = addon.Framework
 local migrator  -- set in Init after Migrator is loaded
 
 ---@class ProfileManager

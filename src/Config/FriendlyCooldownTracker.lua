@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Core.Framework
+local mini = addon.Framework
 local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
@@ -306,7 +306,6 @@ local function BuildInstance(parent, anchorOptions)
 	local growDdl, modernDdl = mini:Dropdown({
 		Parent = panel,
 		Items = GROW_OPTIONS,
-		Width = columnWidth * 2 - horizontalSpacing,
 		GetValue = function()
 			return anchorOptions.Grow
 		end,

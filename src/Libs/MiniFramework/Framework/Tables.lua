@@ -1,6 +1,8 @@
 local _, addon = ...
-local M = addon.Core.Framework
+local M = addon.Framework
 
+---Deep merge-copies src into dst, only filling keys that are nil in dst.
+---@return table dst
 function M:CopyTable(src, dst)
 	if type(dst) ~= "table" then
 		dst = {}
@@ -17,6 +19,7 @@ function M:CopyTable(src, dst)
 	return dst
 end
 
+---Returns src verbatim for non-tables, otherwise a deep clone.
 function M:CopyValueOrTable(src)
 	if type(src) ~= "table" then
 		return src
@@ -28,11 +31,13 @@ end
 ---Reverses the array in place and returns it.
 function M:Reverse(array)
 	local i, j = 1, #array
+
 	while i < j do
 		array[i], array[j] = array[j], array[i]
 		i = i + 1
 		j = j - 1
 	end
+
 	return array
 end
 

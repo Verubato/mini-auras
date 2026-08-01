@@ -1,5 +1,5 @@
 local _, addon = ...
-local M = addon.Core.Framework
+local M = addon.Framework
 
 ---@param options TextLineOptions
 ---@return table control
@@ -14,7 +14,7 @@ function M:TextLine(options)
 
 	local fstring = options.Parent:CreateFontString(nil, "ARTWORK", options.Font or "GameFontWhite")
 	fstring:SetSpacing(0)
-	fstring:SetWidth(M.TextMaxWidth)
+	fstring:SetWidth(options.Width or M.TextMaxWidth)
 	fstring:SetJustifyH("LEFT")
 	fstring:SetText(options.Text or "")
 
@@ -25,3 +25,4 @@ end
 ---@field Text string
 ---@field Parent table
 ---@field Font string?
+---@field Width number?

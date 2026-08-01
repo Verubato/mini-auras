@@ -169,7 +169,7 @@ function M.build()
 	env.db = addon.Config.Migrator:GetAndUpgradeDb()
 
 	-- Capture warnings instead of printing them; a warning is a test failure signal, not noise.
-	addon.Core.Framework.Notify = function(_, message, ...)
+	addon.Framework.Notify = function(_, message, ...)
 		env.notifications[#env.notifications + 1] = string.format(message, ...)
 	end
 

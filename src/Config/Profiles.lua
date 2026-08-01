@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local mini = addon.Core.Framework
+local mini = addon.Framework
 local L = addon.L
 local profileManager = addon.Core.ProfileManager
 
@@ -260,7 +260,6 @@ function M:Build(panel)
 	local activeDd, isModern = mini:Dropdown({
 		Parent = panel,
 		Items = profileItems,
-		Width = 160,
 		GetValue = function()
 			return profileManager:GetActiveProfile()
 		end,
@@ -432,7 +431,6 @@ function M:Build(panel)
 				local dd, ddIsModern = mini:Dropdown({
 					Parent = panel,
 					Items = thisItems,
-					Width = 160,
 					GetValue = function()
 						return profileManager:GetAutoSwitchRule(capturedSpecId) or NONE_LABEL
 					end,
