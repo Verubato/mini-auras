@@ -649,7 +649,7 @@ function M:SetIconSize(newSize)
 	end
 
 	self.Size = newSize
-	ApplyGroupLayout(self)
+	-- Applies the layout too, gated so it can't run ahead of the button resize.
 	self:RestyleButtons()
 end
 
@@ -661,7 +661,9 @@ function M:SetSpacing(newSpacing)
 	end
 
 	self.Spacing = newSpacing
-	ApplyGroupLayout(self)
+	-- Routed through the restyle gate as well: BuildGroupLayout reads Size, so applying the
+	-- layout for a spacing change would also publish a Size the buttons haven't taken yet.
+	self:RestyleButtons()
 end
 
 ---Sets a group's icon budget. A value of 0 hides the group entirely (used for per-category
@@ -767,6 +769,14 @@ function M:RestyleButtons()
 	end
 
 	SetRestylePending(self, false)
+
+	-- The group layout spaces icons by elementWidth, but the engine only ever positions a
+	-- button - CustomAuraContainerFlowLayoutMixin:ApplyElementLayout discards the width and
+	-- height it is handed. The button's real size comes from StyleButton below. Both therefore
+	-- have to be applied together: pushing the layout through while the restyle is deferred
+	-- spaces the row for the new size with buttons still at the old one, which shows up as gaps
+	-- when sizing up and overlap when sizing down.
+	ApplyGroupLayout(self)
 
 	for _, button in ipairs(self.Buttons) do
 		StyleButton(self, button)

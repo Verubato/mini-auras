@@ -173,6 +173,44 @@ fw.describe("AuraContainerDisplay - restriction model", function()
 		assert(totalSetSizeCalls(instance) > styled, "pending restyle must run after restriction lifts")
 	end)
 
+	fw.it("a size change while restricted keeps the layout and the buttons in step", function()
+		-- The engine only POSITIONS aura buttons: CustomAuraContainerFlowLayoutMixin's
+		-- ApplyElementLayout discards the width/height it is handed, and spaces the row by
+		-- group.elementWidth instead. The button's real size comes from the restyle, which is
+		-- skipped while restricted. Publishing the layout early therefore spaces the row for a
+		-- size the buttons have not taken - gaps when sizing up, overlap when sizing down.
+		local instance = newInstance()
+		local startSize = instance.Frame._groups.cc.layout.elementWidth
+
+		acm.restricted = true
+		instance:SetIconSize(startSize + 20)
+		assert(instance.Frame._groups.cc.layout.elementWidth == startSize,
+			"layout must not move ahead of the buttons while restricted")
+
+		acm.restricted = false
+		instance:RestyleButtons()
+		assert(instance.Frame._groups.cc.layout.elementWidth == startSize + 20,
+			"layout catches up once the restyle can run")
+	end)
+
+	fw.it("a spacing change while restricted does not publish a pending size either", function()
+		-- BuildGroupLayout reads Size, so applying the layout for a spacing-only change would
+		-- smuggle out a size the buttons have not taken yet.
+		local instance = newInstance()
+		local startSize = instance.Frame._groups.cc.layout.elementWidth
+
+		acm.restricted = true
+		instance:SetIconSize(startSize + 20)
+		instance:SetSpacing(9)
+		assert(instance.Frame._groups.cc.layout.elementWidth == startSize,
+			"a spacing change must not publish the pending icon size")
+
+		acm.restricted = false
+		instance:RestyleButtons()
+		assert(instance.Frame._groups.cc.layout.elementSpacing == 9, "spacing applied")
+		assert(instance.Frame._groups.cc.layout.elementWidth == startSize + 20, "size applied")
+	end)
+
 	fw.it("StopGlowAnimations under restriction does not touch forbidden children", function()
 		local instance = newInstance()
 		instance:SetStyle({ Glow = true })
