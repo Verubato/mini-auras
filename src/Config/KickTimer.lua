@@ -109,24 +109,6 @@ function M:Build(panel)
 
 	iconSizeSlider.Slider:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
-	local colorSwatch = mini:ColorSwatch({
-		Parent = panel,
-		LabelText = L["Colour"],
-		Tooltip = L["Change the colour of the icon's glow and border."],
-		HasOpacity = false,
-		GetValue = function()
-			local color = db.Modules.KickTimerModule.Icons.Color
-			return color.R, color.G, color.B, color.A
-		end,
-		SetValue = function(r, g, b, a)
-			local color = db.Modules.KickTimerModule.Icons.Color
-			color.R, color.G, color.B, color.A = r, g, b, a
-			config:Apply()
-		end,
-	})
-
-	-- One anchor point, so it lands vertically centred on the slider it sits beside.
-	colorSwatch:SetPoint("LEFT", iconSizeSlider.Slider, "RIGHT", horizontalSpacing * 3, 0)
 
 	local iconSpacingSlider = mini:Slider({
 		Parent = panel,
@@ -149,6 +131,25 @@ function M:Build(panel)
 
 	iconSpacingSlider.Slider:SetPoint("LEFT", iconSizeSlider.Slider, "RIGHT", horizontalSpacing, 0)
 	iconSpacingSlider.Slider:SetPoint("TOP", iconSizeSlider.Slider, "TOP", 0, 0)
+
+	local colorSwatch = mini:ColorSwatch({
+		Parent = panel,
+		LabelText = L["Colour"],
+		Tooltip = L["Change the colour of the icon's glow and border."],
+		HasOpacity = false,
+		GetValue = function()
+			local color = db.Modules.KickTimerModule.Icons.Color
+			return color.R, color.G, color.B, color.A
+		end,
+		SetValue = function(r, g, b, a)
+			local color = db.Modules.KickTimerModule.Icons.Color
+			color.R, color.G, color.B, color.A = r, g, b, a
+			config:Apply()
+		end,
+	})
+
+	-- Its own row under the two sliders; sharing theirs put it behind the padding slider.
+	colorSwatch:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	M.Panel = panel
 end
