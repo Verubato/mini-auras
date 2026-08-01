@@ -272,7 +272,6 @@ local function BuildInstance(parent, anchorOptions)
 	local columnsPerRowSlider = mini:Slider({
 		Parent = panel,
 		LabelText = L["Columns"],
-		Tooltip = L["When Grow is Down, sets how many icons appear per row before wrapping. Useful for horizontal party frames."],
 		Min = 1,
 		Max = 10,
 		Step = 1,
