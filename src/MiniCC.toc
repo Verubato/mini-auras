@@ -40,7 +40,7 @@ Core\InstanceOptions.lua
 Core\EventGate.lua
 Core\Pool.lua
 Core\GrowAnchors.lua
-Core\AuraSoundData.lua
+Core\AuraCategoryIds.lua
 Core\AuraFilters.lua
 Core\DuelPoller.lua
 Core\IconSlotContainer.lua

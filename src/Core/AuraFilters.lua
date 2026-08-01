@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local auraSoundData = addon.Core.AuraSoundData
+local auraCategoryIds = addon.Core.AuraCategoryIds
 
 -- 12.1 AuraContainer filter strings, spell-ID candidate filters, and group keys, in one place.
 --
@@ -36,7 +36,7 @@ local auraSoundData = addon.Core.AuraSoundData
 -- of only while it is out of range. Adding the map alongside the token can only ever tighten a
 -- group, never loosen it, so this is safe on the gated paths and fixes the bug on the rest.
 --
--- The ID lists come from Core/AuraSoundData - the same generated in-game scan of the
+-- The ID lists come from Core/AuraCategoryIds - the same generated in-game scan of the
 -- CROWD_CONTROL / IMPORTANT / defensive spell flags that feeds the aura-sound registrations,
 -- filtered offline to player PvP abilities. That last part is the one behaviour change: on the
 -- paths where the gate DOES apply the maps, category members with no player PvP ability behind
@@ -66,11 +66,11 @@ M.Filter = {
 -- up both. The generated Defensive list is not split into big/external - it does not have to be,
 -- because the filter strings still partition those two groups, so an aura is never drawn twice.
 M.SpellIds = {
-	CrowdControl = auraSoundData.CC,
-	BigDefensive = auraSoundData.Defensive,
-	ExternalDefensive = auraSoundData.Defensive,
-	Important = auraSoundData.Important,
-	ImportantOnly = auraSoundData.Important,
+	CrowdControl = auraCategoryIds.CC,
+	BigDefensive = auraCategoryIds.Defensive,
+	ExternalDefensive = auraCategoryIds.Defensive,
+	Important = auraCategoryIds.Important,
+	ImportantOnly = auraCategoryIds.Important,
 }
 
 -- Ready-made candidateFilters tables, keyed to match M.Filter, so a group spec can point straight

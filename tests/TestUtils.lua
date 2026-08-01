@@ -1,5 +1,5 @@
 -- Tier 2 pure-logic tests: SlotDistribution, ModuleUtil (enable gating + icon sizing),
--- WoWEx (12.1 build gate + styling restriction), Array, and AuraSoundData sanity.
+-- WoWEx (12.1 build gate + styling restriction), Array, and AuraCategoryIds sanity.
 
 local fw = require("Framework")
 local wow = require("WowApi")
@@ -199,10 +199,10 @@ fw.describe("WoWEx 12.1 gates", function()
 	end)
 end)
 
--- AuraSoundData sanity
+-- AuraCategoryIds sanity
 
-fw.describe("AuraSoundData", function()
-	local data = loadModule("src/Core/AuraSoundData.lua", newAddon({})).Core.AuraSoundData
+fw.describe("AuraCategoryIds", function()
+	local data = loadModule("src/Core/AuraCategoryIds.lua", newAddon({})).Core.AuraCategoryIds
 
 	local function count(t)
 		local n = 0

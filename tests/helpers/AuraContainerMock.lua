@@ -603,7 +603,7 @@ function M.loadDisplay()
 		"src/Core/Pool.lua",
 		"src/Core/GrowAnchors.lua",
 		-- Must precede AuraFilters: its spell-ID maps are built from these lists at load.
-		"src/Core/AuraSoundData.lua",
+		"src/Core/AuraCategoryIds.lua",
 		"src/Core/AuraFilters.lua",
 		"src/Core/KickSlot.lua",
 		"src/Core/AuraContainerDisplay.lua",

@@ -35,7 +35,7 @@ env.loadModule("src/Modules/HealerCrowdControlModule.lua")
 
 local function countAuraSoundSpells()
 	local n = 0
-	for _ in pairs(env.addon.Core.AuraSoundData.CC) do
+	for _ in pairs(env.addon.Core.AuraCategoryIds.CC) do
 		n = n + 1
 	end
 	return n
@@ -160,10 +160,10 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		-- restore them at the end (net registrations here end at zero anyway).
 		local adds0, removes0 = env.auraSoundAdds, env.auraSoundRemoves
 		local perToken = 0
-		for _ in pairs(env.addon.Core.AuraSoundData.Important) do
+		for _ in pairs(env.addon.Core.AuraCategoryIds.Important) do
 			perToken = perToken + 1
 		end
-		for _ in pairs(env.addon.Core.AuraSoundData.Defensive) do
+		for _ in pairs(env.addon.Core.AuraCategoryIds.Defensive) do
 			perToken = perToken + 1
 		end
 		assert(perToken > 0, "sound data present")

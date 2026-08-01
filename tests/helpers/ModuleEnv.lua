@@ -178,7 +178,7 @@ function M.build()
 	loadFile("src/Utils/ModuleUtil.lua")
 	addon.Utils.ModuleUtil:Init()
 	loadFile("src/Utils/SlotDistribution.lua")
-	loadFile("src/Core/AuraSoundData.lua")
+	loadFile("src/Core/AuraCategoryIds.lua")
 
 	-- Cross-module stubs
 

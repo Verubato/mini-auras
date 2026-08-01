@@ -1,12 +1,12 @@
--- Generates the curated player-PvP spell lists for src/Core/AuraSoundData.lua from a
+-- Generates the curated player-PvP spell lists for src/Core/AuraCategoryIds.lua from a
 -- MiniCCSpellScan saved variable (produced in game by scripts/ScanSpellFlags.lua - see its
 -- header for the full pipeline).
 --
 -- Usage (Lua 5.1, from the repo root):
---   lua scripts/GenerateAuraSoundData.lua <path-to-SavedVariables-MiniCC.lua> report
+--   lua scripts/GenerateAuraCategoryIds.lua <path-to-SavedVariables-MiniCC.lua> report
 --     - shows match counts, curated names with no matches, and unmatched candidates to review
---   lua scripts/GenerateAuraSoundData.lua <path-to-SavedVariables-MiniCC.lua> generate
---     - prints the table body; paste it into src/Core/AuraSoundData.lua between the braces
+--   lua scripts/GenerateAuraCategoryIds.lua <path-to-SavedVariables-MiniCC.lua> generate
+--     - prints the table body; paste it into src/Core/AuraCategoryIds.lua between the braces
 --
 -- Matching is by exact spell name WITHIN the flagged sets, so every spell-ID variant of a
 -- named ability is captured, and generic names ("Fear", "Silence") are safe - everything in
@@ -55,7 +55,7 @@ local ccNames = {
 }
 
 -- Player important ability names (specials + offensive cooldowns). Matched against the
--- Important-flagged set; emitted as AuraSoundData.Important (the "important spell" sound).
+-- Important-flagged set; emitted as AuraCategoryIds.Important (the "important spell" sound).
 local importantNames = {
 	-- Specials
 	["Precognition"] = true, ["Nullifying Shroud"] = true, ["Grounding Totem"] = true,
@@ -82,7 +82,7 @@ local importantNames = {
 }
 
 -- Player defensive ability names (defensives + healer throughput cooldowns). Matched against
--- the Important-flagged set; emitted as AuraSoundData.Defensive (the "defensive spell" sound).
+-- the Important-flagged set; emitted as AuraCategoryIds.Defensive (the "defensive spell" sound).
 local defensiveNames = {
 	-- Defensive cooldowns
 	["Ice Block"] = true, ["Ice Cold"] = true, ["Divine Shield"] = true,

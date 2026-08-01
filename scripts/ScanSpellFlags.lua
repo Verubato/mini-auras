@@ -1,11 +1,11 @@
 -- Dev tool (NOT shipped with the addon): scans every spell ID and collects the ones flagged
--- CrowdControl / Important, for regenerating src/Core/AuraSoundData.lua.
+-- CrowdControl / Important, for regenerating src/Core/AuraCategoryIds.lua.
 --
 -- Usage:
 --   1. Temporarily add to src/MiniCC.toc:  ScanSpellFlags.lua  (copy this file into src/)
 --      and extend the saved variables line: ## SavedVariables: MiniCCDB, MiniCCSpellScan
 --   2. In game: /miniccscan, then /reload to flush the results to disk.
---   3. Run scripts/GenerateAuraSoundData.lua on the resulting
+--   3. Run scripts/GenerateAuraCategoryIds.lua on the resulting
 --      WTF\Account\<ACCOUNT>\SavedVariables\MiniCC.lua (see that file's header).
 --   4. Revert the TOC changes.
 --

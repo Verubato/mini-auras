@@ -206,7 +206,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field IconSlotContainer IconSlotContainer
 ---@field AuraContainerDisplay AuraContainerDisplay
 ---@field EventGate EventGate
----@field AuraSoundData AuraSoundData
+---@field AuraCategoryIds AuraCategoryIds
 ---@field InstanceOptions InstanceOptions
 ---@field TrinketsTracker TrinketsTracker
 

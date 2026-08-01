@@ -16,7 +16,7 @@ local rc = LibStub("LibRangeCheck-3.0")
 -- cannot work there (it requires knowing whether a CC aura is present, which 12.1 makes
 -- secret). The sound survives via C_UnitAuras.AddAuraSound: the ENGINE plays a sound when a
 -- known CC aura lands on a registered healer, without the addon ever reading aura state -
--- registrations are per (unit, spellId), fed from the generated Core/AuraSoundData CC list.
+-- registrations are per (unit, spellId), fed from the generated Core/AuraCategoryIds CC list.
 -- The IconSlotContainer is kept for test mode.
 --
 -- The battleground 40-yard range gate (IsInRange, below) is also dropped on 12.1: it works by
@@ -156,7 +156,7 @@ local function RegisterUnitAuraSounds(unit, soundFilePath, channel)
 	info.soundFileName = soundFilePath
 	info.outputChannel = channel
 
-	for spellId in pairs(addon.Core.AuraSoundData.CC) do
+	for spellId in pairs(addon.Core.AuraCategoryIds.CC) do
 		info.spellID = spellId
 		local soundId = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
 		if soundId then

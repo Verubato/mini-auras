@@ -147,7 +147,7 @@ local DEFAULT_PAIR_SPACING = 2
 -- 12.1 path: engine-side alert sounds via C_UnitAuras.AddAuraSound (the aura transitions the
 -- legacy sound reacted to are secret there, but the engine can play sounds on them for us -
 -- same pattern as HealerCrowdControlModule). Registrations are per (enemy nameplate token,
--- spellId), fed from the generated Core/AuraSoundData Important/Defensive lists.
+-- spellId), fed from the generated Core/AuraCategoryIds Important/Defensive lists.
 -- token -> array of auraSoundIDs for that token. Registrations are kept warm across plate
 -- despawns: a token's registration set is identical no matter which enemy holds it, so tearing
 -- down and re-adding ~120 sounds per plate churn would be pure API traffic. They are removed
@@ -965,10 +965,10 @@ local function RegisterTokenAlertSounds(unitToken)
 	info.unitToken = unitToken
 
 	if importantEnabled then
-		RegisterAlertSoundList(ids, info, addon.Core.AuraSoundData.Important, sound.Important, "AirHorn.ogg")
+		RegisterAlertSoundList(ids, info, addon.Core.AuraCategoryIds.Important, sound.Important, "AirHorn.ogg")
 	end
 	if defensiveEnabled then
-		RegisterAlertSoundList(ids, info, addon.Core.AuraSoundData.Defensive, sound.Defensive, "AlertToastWarm.ogg")
+		RegisterAlertSoundList(ids, info, addon.Core.AuraCategoryIds.Defensive, sound.Defensive, "AlertToastWarm.ogg")
 	end
 
 	alertSoundsByToken[unitToken] = ids
