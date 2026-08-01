@@ -122,12 +122,20 @@ local BARS = {
 	{ Key = "Bar2", ContainerKey = NAMEPLATE_BAR2_KEY, DataField = "Bar2Container", DisplayField = "Bar2Display" },
 }
 
--- 12.1 path: central pool of pre-created bar displays. Displays are
--- created out of combat via the pool's staggered pre-creation, then acquired/reparented/
--- retargeted as plates come and go, so plate churn mid-combat never creates containers.
-local displayPool
--- Placeholder geometry for a pooled display; the real size/spacing/budgets are applied per bar
--- on acquisition (EnsureBarDisplay).
+-- 12.1 path: pre-created bar displays, pooled PER ICON SIZE. Displays are created out of combat
+-- via each pool's staggered pre-creation, then acquired/reparented/retargeted as plates come and
+-- go, so plate churn mid-combat never creates containers.
+--
+-- Keyed by size because a button takes its size in initializeFrame, which the frame pool runs
+-- once per button and never again on reuse. Resizing afterwards needs a restyle, and inside an
+-- arena C_Secrets.ShouldAurasBeSecret never clears, so the restyle never runs and the icons keep
+-- whatever size they were built at. One shared pool would hand a bar displays built for a
+-- different bar's size; keying by size means a bar always gets displays built for it. Bars that
+-- happen to share a size share a pool.
+---@type table<number, Pool>
+local displayPools = {}
+-- Budgets/spacing are applied per bar on acquisition (EnsureBarDisplay); only the size has to be
+-- right at creation. DEFAULT_BAR_SIZE is the fallback for a bar with no configured size.
 local DEFAULT_BAR_ICONS = 5
 local DEFAULT_BAR_SIZE = 35
 local DEFAULT_BAR_SPACING = 2
@@ -145,15 +153,37 @@ local function ImportantNeeded()
 		or false
 end
 
--- 12.1: how many displays a full screen of plates needs. Each enabled bar takes its own display,
--- and a plate is only ever one faction, so the busiest case is the faction with the most bars on.
--- Undersizing the pool means falling back to creating AuraContainers mid-combat, which is exactly
--- what the pool exists to avoid.
-local function DisplayPoolTarget()
-	local enemyBars = (nmModule.Enemy.Bar1.Enabled and 1 or 0) + (nmModule.Enemy.Bar2.Enabled and 1 or 0)
-	local friendlyBars = (nmModule.Friendly.Bar1.Enabled and 1 or 0) + (nmModule.Friendly.Bar2.Enabled and 1 or 0)
+---Counts a faction's enabled bars per icon size into `out`.
+local function CountBarsBySize(unitOptions, out)
+	for _, bar in ipairs(BARS) do
+		local barOptions = unitOptions[bar.Key]
 
-	return PLATE_ESTIMATE * mathMax(enemyBars, friendlyBars)
+		if barOptions and barOptions.Enabled then
+			local size = tonumber(barOptions.Icons.Size) or DEFAULT_BAR_SIZE
+			out[size] = (out[size] or 0) + 1
+		end
+	end
+end
+
+-- 12.1: how many displays a full screen of plates needs, per icon size. Each enabled bar takes its
+-- own display, and a plate is only ever one faction, so the busiest case for a given size is the
+-- faction with the most bars using it. Undersizing means falling back to creating AuraContainers
+-- mid-combat, which is exactly what the pools exist to avoid.
+---@return table<number, number> size -> display count
+local function DisplayPoolTargets()
+	local enemy, targets = {}, {}
+	CountBarsBySize(nmModule.Enemy, enemy)
+	CountBarsBySize(nmModule.Friendly, targets)
+
+	for size, count in pairs(enemy) do
+		targets[size] = mathMax(targets[size] or 0, count)
+	end
+
+	for size, count in pairs(targets) do
+		targets[size] = PLATE_ESTIMATE * count
+	end
+
+	return targets
 end
 
 local function GetCCSortOptions()
@@ -244,13 +274,15 @@ local function AnchorBarDisplay(display, container, nameplate, barOptions, kickA
 end
 
 ---12.1 path: builds one pooled bar display with the four standard categories (partitioned by
----filter negation, see Core/AuraFilters). Budgets/unit/style are applied per bar on acquisition.
-local function CreateBarDisplay()
+---filter negation, see Core/AuraFilters). Budgets/unit/style are applied per bar on acquisition;
+---the size is fixed here because the buttons take it at creation and can't be resized in an arena.
+---@param size number
+local function CreateBarDisplay(size)
 	return auraContainerDisplay:New(
 		UIParent,
 		"none",
 		auraFilters:BuildCategoryGroups(DEFAULT_BAR_ICONS),
-		DEFAULT_BAR_SIZE,
+		size,
 		DEFAULT_BAR_SPACING,
 		"Nameplates"
 	)
@@ -265,16 +297,52 @@ local function ResetBarDisplay(display)
 	display.Frame:SetParent(UIParent)
 end
 
+---@return number the icon size a bar's displays must be built at
+local function BarIconSize(barOptions)
+	return tonumber(barOptions.Icons.Size) or DEFAULT_BAR_SIZE
+end
+
+---Pool of displays built at one icon size, created on first use.
+---@param size number
+---@return Pool
+local function PoolForSize(size)
+	local sizePool = displayPools[size]
+
+	if not sizePool then
+		sizePool = pool:New(function()
+			return CreateBarDisplay(size)
+		end, ResetBarDisplay, 0)
+		displayPools[size] = sizePool
+	end
+
+	return sizePool
+end
+
+---Returns a display to the pool it was built for. Display.Size is the size it was created at,
+---so it always lands back in the right pool even after a bar's configured size has changed.
+local function ReleaseBarDisplay(display)
+	PoolForSize(display.Size):Release(display)
+end
+
 ---12.1 path: acquires (or reuses) and reconfigures a bar's aura display for a tracked plate.
 ---@param data NameplateData
 local function EnsureBarDisplay(data, bar, barOptions)
+	local size = BarIconSize(barOptions)
 	local display = data[bar.DisplayField]
+
+	-- A display is built for one size and can't be resized in an arena, so a bar whose size
+	-- changed swaps pools rather than keeping a display that would stay at the old size.
+	if display and display.Size ~= size then
+		ReleaseBarDisplay(display)
+		data[bar.DisplayField] = nil
+		display = nil
+	end
+
 	if not display then
-		display = displayPool:Acquire()
+		display = PoolForSize(size):Acquire()
 		data[bar.DisplayField] = display
 	end
 
-	local size = barOptions.Icons.Size or 35
 	local maxIcons = barOptions.Icons.MaxIcons or 5
 	local spacing = barOptions.Icons.Spacing or 2
 
@@ -321,11 +389,11 @@ local function ReleaseDataDisplays(data)
 		data.KickTimer = nil
 	end
 	if data.Bar1Display then
-		displayPool:Release(data.Bar1Display)
+		ReleaseBarDisplay(data.Bar1Display)
 		data.Bar1Display = nil
 	end
 	if data.Bar2Display then
-		displayPool:Release(data.Bar2Display)
+		ReleaseBarDisplay(data.Bar2Display)
 		data.Bar2Display = nil
 	end
 end
@@ -345,7 +413,7 @@ local function EnsureBarDisplays(data, unitOptions)
 			local display = data[bar.DisplayField]
 			if display then
 				data[bar.DisplayField] = nil
-				displayPool:Release(display)
+				ReleaseBarDisplay(display)
 			end
 		end
 	end
@@ -1158,10 +1226,14 @@ local function SetEventsActive(active)
 	-- (config, world change, raid flip) re-runs this gate.
 	plateGate:SetActive(active)
 
-	-- 12.1: fill the display pool only once the module is actually running, and re-target it
-	-- whenever the enabled-bar count changes. Idempotent, so running it on every gate flip is fine.
-	if active and USE_AURA_CONTAINERS and displayPool then
-		displayPool:Prewarm(DisplayPoolTarget())
+	-- 12.1: fill the display pools only once the module is actually running, and re-target them
+	-- whenever the enabled bars or their sizes change. Idempotent, so running it on every gate
+	-- flip is fine. A size that is no longer used keeps its pool; the displays in it are parked
+	-- and cost nothing until that size is configured again.
+	if active and USE_AURA_CONTAINERS then
+		for size, target in pairs(DisplayPoolTargets()) do
+			PoolForSize(size):Prewarm(target)
+		end
 	end
 end
 
@@ -1258,14 +1330,6 @@ local function SetTestMode(active)
 	end
 end
 
-local function CreateFrames()
-	if USE_AURA_CONTAINERS then
-		-- The pool itself is cheap; pre-creation is deferred to the enable path (see
-		-- SetEventsActive) so a disabled module never builds a screen's worth of containers.
-		displayPool = pool:New(CreateBarDisplay, ResetBarDisplay, PLATE_ESTIMATE)
-	end
-end
-
 local function CreateEvents()
 	local eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
@@ -1355,7 +1419,6 @@ function M:Init()
 	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> NameplatesModule
 	nmModule = db.Modules.NameplatesModule
 
-	CreateFrames()
 	CreateEvents()
 	ApplyInitialState()
 end

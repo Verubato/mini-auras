@@ -126,8 +126,10 @@ local activeTokensScratch = {}
 local alertSoundIdListPool = {}
 -- Rough upper bound on simultaneously visible enemy nameplates, used to size the display pool.
 local PLATE_ESTIMATE = 20
--- Placeholder geometry for a pooled display pair; the real values are applied per token by
--- ApplyNameplateDisplayOptions.
+-- Fallback geometry for a pooled display pair, used only if the db isn't readable yet.
+-- CreateAlertDisplayPair otherwise builds at the configured size: a button's size is fixed in
+-- initializeFrame, which never re-runs on pool reuse, so a placeholder size would survive any
+-- refresh that can't restyle (i.e. the whole of an arena).
 local DEFAULT_PAIR_ICONS = 8
 local DEFAULT_PAIR_SIZE = 24
 local DEFAULT_PAIR_SPACING = 2
@@ -987,37 +989,50 @@ end
 -- A display's group list is fixed for its lifetime (see New), so both groups always exist and
 -- the mode is chosen purely by budgeting one of them to 0 - no container churn on toggle.
 local function CreateAlertDisplayPair()
+	-- Build at the CONFIGURED size, not a placeholder. A button takes its size in
+	-- initializeFrame, which the frame pool runs once when it creates the button and never
+	-- again on reuse (AcquireFrame does not re-initialise). Correcting it afterwards needs a
+	-- restyle, and inside an arena C_Secrets.ShouldAurasBeSecret never clears, so the restyle
+	-- never gets to run and the icons keep the placeholder size for the whole match. Creating
+	-- them right means the common path needs no restyle at all. The constants stay as
+	-- fallbacks for the pre-creation that can run before the db is read.
+	local options = db and db.Modules.AlertsModule
+	local icons = options and options.Icons
+	local size = (icons and icons.Size) or DEFAULT_PAIR_SIZE
+	local maxIcons = (icons and icons.MaxIcons) or DEFAULT_PAIR_ICONS
+	local spacing = (options and options.IconSpacing) or DEFAULT_PAIR_SPACING
+
 	return {
 		Def = auraContainerDisplay:New(UIParent, "none", {
 			{
 				Key = auraFilters.GroupKey.BigDefensive,
 				FilterString = auraFilters.Filter.BigDefensive,
 				CandidateFilters = auraFilters.CandidateFilters.BigDefensive,
-				MaxIcons = DEFAULT_PAIR_ICONS,
+				MaxIcons = maxIcons,
 			},
 			{
 				Key = auraFilters.GroupKey.ExternalDefensive,
 				FilterString = auraFilters.Filter.ExternalDefensive,
 				CandidateFilters = auraFilters.CandidateFilters.ExternalDefensive,
-				MaxIcons = DEFAULT_PAIR_ICONS,
+				MaxIcons = maxIcons,
 			},
 			-- Used in combined mode only; budgeted to 0 when the bars are split.
 			{
 				Key = auraFilters.GroupKey.Important,
 				FilterString = auraFilters.Filter.Important,
 				CandidateFilters = auraFilters.CandidateFilters.Important,
-				MaxIcons = DEFAULT_PAIR_ICONS,
+				MaxIcons = maxIcons,
 			},
-		}, DEFAULT_PAIR_SIZE, DEFAULT_PAIR_SPACING, "Alerts"),
+		}, size, spacing, "Alerts"),
 		-- Used in split mode only; hidden and budgeted to 0 when combined.
 		Imp = auraContainerDisplay:New(UIParent, "none", {
 			{
 				Key = auraFilters.GroupKey.Important,
 				FilterString = auraFilters.Filter.Important,
 				CandidateFilters = auraFilters.CandidateFilters.Important,
-				MaxIcons = DEFAULT_PAIR_ICONS,
+				MaxIcons = maxIcons,
 			},
-		}, DEFAULT_PAIR_SIZE, DEFAULT_PAIR_SPACING, "Alerts"),
+		}, size, spacing, "Alerts"),
 	}
 end
 
