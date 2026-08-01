@@ -12,7 +12,7 @@ local _, addon = ...
 -- Core/AuraFilters) - so a gap in these lists now costs a missing ICON, not just a missing sound.
 
 addon.Core.AuraCategoryIds = {
-	-- CC (1031 ids)
+	-- CC (1032 ids)
 	CC = {
 		[33390] = true, -- Arcane Torrent
 		[36022] = true, -- Arcane Torrent
@@ -77,6 +77,7 @@ addon.Core.AuraCategoryIds = {
 		[1258514] = true, -- Blinding Light
 		[187406] = true, -- Bull Rush
 		[255723] = true, -- Bull Rush
+		[118905] = true, -- Capacitor Totem
 		[113] = true, -- Chains of Ice
 		[512] = true, -- Chains of Ice
 		[22744] = true, -- Chains of Ice

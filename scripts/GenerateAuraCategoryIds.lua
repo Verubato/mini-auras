@@ -27,7 +27,7 @@ local ccNames = {
 	["Fel Eruption"] = true, ["Shadowfury"] = true, ["Axe Toss"] = true,
 	["War Stomp"] = true, ["Bull Rush"] = true, ["Quaking Palm"] = true,
 	["Charge"] = true, ["Intercept"] = true, ["Deep Freeze"] = true,
-	["Lightning Lasso"] = true,
+	["Lightning Lasso"] = true, ["Capacitor Totem"] = true,
 	-- Incapacitates
 	["Polymorph"] = true, ["Hex"] = true, ["Freezing Trap"] = true, ["Repentance"] = true,
 	["Sap"] = true, ["Gouge"] = true, ["Ring of Frost"] = true, ["Shackle Undead"] = true,
