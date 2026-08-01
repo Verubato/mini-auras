@@ -4,8 +4,10 @@ local _, addon = ...
 -- GENERATED DATA - do not hand-edit. Produced from an in-game /miniccscan (build 120100, PTR)
 -- filtered offline to player-PvP ability names; every spell-ID variant of each named ability
 -- is included. Regenerate with scripts/ScanSpellFlags.lua + scripts/GenerateAuraSoundData.lua
--- (see their headers). Used for 12.1 C_UnitAuras.AddAuraSound registrations (aura presence
--- itself is unreadable there, but the engine can play sounds on aura transitions for us).
+-- (see their headers). Two consumers on 12.1: C_UnitAuras.AddAuraSound registrations (aura
+-- presence itself is unreadable there, but the engine can play sounds on aura transitions for
+-- us), and the includeSpellIDs candidate filters every AuraContainer group carries (see
+-- Core/AuraFilters) - so a gap in these lists now costs a missing ICON, not just a missing sound.
 
 addon.Core.AuraSoundData = {
 	-- CC (1031 ids)
@@ -1167,3 +1169,6 @@ addon.Core.AuraSoundData = {
 }
 
 ---@class AuraSoundData
+---@field CC table<number, boolean>
+---@field Important table<number, boolean>
+---@field Defensive table<number, boolean>

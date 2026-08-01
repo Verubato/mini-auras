@@ -982,11 +982,13 @@ local function CreateAlertDisplayPair()
 			{
 				Key = auraFilters.GroupKey.BigDefensive,
 				FilterString = auraFilters.Filter.BigDefensive,
+				CandidateFilters = auraFilters.CandidateFilters.BigDefensive,
 				MaxIcons = DEFAULT_PAIR_ICONS,
 			},
 			{
 				Key = auraFilters.GroupKey.ExternalDefensive,
 				FilterString = auraFilters.Filter.ExternalDefensive,
+				CandidateFilters = auraFilters.CandidateFilters.ExternalDefensive,
 				MaxIcons = DEFAULT_PAIR_ICONS,
 			},
 		}, DEFAULT_PAIR_SIZE, DEFAULT_PAIR_SPACING, "Alerts"),
@@ -994,6 +996,7 @@ local function CreateAlertDisplayPair()
 			{
 				Key = auraFilters.GroupKey.Important,
 				FilterString = auraFilters.Filter.Important,
+				CandidateFilters = auraFilters.CandidateFilters.Important,
 				MaxIcons = DEFAULT_PAIR_ICONS,
 			},
 		}, DEFAULT_PAIR_SIZE, DEFAULT_PAIR_SPACING, "Alerts"),

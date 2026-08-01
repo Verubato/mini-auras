@@ -312,12 +312,15 @@ local function CreateFrames()
 	-- natively. maxDuration 4.1 covers both the 4s precog window and the Evoker's 3s
 	-- Nullifying Shroud (it is an upper bound, not an exact match like the legacy curve,
 	-- so other sub-4s important buffs would also show - acceptably rare).
+	-- The spell-ID map is the out-of-range garbage-buff workaround shared by every category
+	-- display (see Core/AuraFilters); it has to be spliced in here rather than reused from
+	-- AuraFilters.CandidateFilters because this group needs maxDuration alongside it.
 	display = auraContainerDisplay:New(anchor, "player", {
 		{
 			Key = "precog",
 			FilterString = auraFilters.Filter.ImportantOnly,
 			MaxIcons = 1,
-			CandidateFilters = { maxDuration = 4.1 },
+			CandidateFilters = { maxDuration = 4.1, includeSpellIDs = auraFilters.SpellIds.ImportantOnly },
 		},
 	}, iconSize, 2, "Precognition")
 	display.Frame:SetPoint("CENTER", anchor, "CENTER", 0, 0)

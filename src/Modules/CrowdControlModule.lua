@@ -305,6 +305,7 @@ local function EnsureWatcher(anchor, unit)
 				{
 					Key = auraFilters.GroupKey.CrowdControl,
 					FilterString = auraFilters.Filter.CrowdControl,
+					CandidateFilters = auraFilters.CandidateFilters.CrowdControl,
 					MaxIcons = count,
 				},
 			}, size, spacing, "CC")

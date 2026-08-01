@@ -815,7 +815,7 @@ end
 ---@field Key string Group key (arbitrary, unique within the display).
 ---@field FilterString string Aura filter string (e.g. "HARMFUL|CROWD_CONTROL").
 ---@field MaxIcons number? Icon budget for this group (default 3).
----@field CandidateFilters table? Extra 12.1 candidate filters (e.g. { maxDuration = 4.1 }).
+---@field CandidateFilters table? 12.1 candidate filters (e.g. { includeSpellIDs = ..., maxDuration = 4.1 }). Every standard category passes an includeSpellIDs map here - see Core/AuraFilters for why it is needed on top of the filter string.
 ---@field SortDirection number? AuraContainerSortDirection value (default Normal; Reverse = newest first).
 
 ---@class AuraDisplayOptions

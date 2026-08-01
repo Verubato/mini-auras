@@ -431,6 +431,7 @@ local function RefreshHealers()
 						{
 							Key = auraFilters.GroupKey.CrowdControl,
 							FilterString = auraFilters.Filter.CrowdControl,
+							CandidateFilters = auraFilters.CandidateFilters.CrowdControl,
 							MaxIcons = 5,
 						},
 					},

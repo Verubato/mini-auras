@@ -171,6 +171,7 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 			{
 				Key = category.Key,
 				FilterString = auraFilters.Filter[category.Filter],
+				CandidateFilters = auraFilters.CandidateFilters[category.Filter],
 				MaxIcons = 1,
 				-- Reverse instance-id order = newest aura first, matching the legacy Reverse sort.
 				SortDirection = AuraContainerSortDirection.Reverse,
