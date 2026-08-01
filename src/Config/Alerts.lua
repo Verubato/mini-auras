@@ -68,21 +68,26 @@ local function BuildSettingsTab(parent, options)
 
 	glowChk:SetPoint("TOPLEFT", iconsEnabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	local colorByClassChk = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Color by class"],
-		Tooltip = L["Color the glow/border by the enemy's class color."],
-		GetValue = function()
-			return options.Icons.ColorByClass
-		end,
-		SetValue = function(value)
-			options.Icons.ColorByClass = value
-			config:Apply()
-		end,
-	})
+	-- 12.1 draws these icons through AuraContainers, where the unit's identity - and so
+	-- UnitClass - is secret, so the glow/border can't be class coloured. Hidden rather than left
+	-- as a toggle that does nothing.
+	if not USE_AURA_CONTAINERS then
+		local colorByClassChk = mini:Checkbox({
+			Parent = parent,
+			LabelText = L["Color by class"],
+			Tooltip = L["Color the glow/border by the enemy's class color."],
+			GetValue = function()
+				return options.Icons.ColorByClass
+			end,
+			SetValue = function(value)
+				options.Icons.ColorByClass = value
+				config:Apply()
+			end,
+		})
 
-	colorByClassChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
-	colorByClassChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+		colorByClassChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
+		colorByClassChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+	end
 
 	local reverseChk = mini:Checkbox({
 		Parent = parent,
@@ -97,7 +102,8 @@ local function BuildSettingsTab(parent, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
+	-- Takes the class-colour column when that option is hidden, so the row has no gap.
+	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * (USE_AURA_CONTAINERS and 1 or 2), 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local showTooltipsChk = mini:Checkbox({

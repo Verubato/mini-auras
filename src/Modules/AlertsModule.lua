@@ -565,7 +565,10 @@ local function RefreshTestAlerts()
 	}
 
 	local now = GetTime()
-	local colorByClass = db.Modules.AlertsModule.Icons.ColorByClass
+	-- Test icons render through the legacy IconSlotContainer, which CAN class colour - but the
+	-- real 12.1 bars can't (UnitClass is secret there, and the option is hidden in the config).
+	-- Colouring only the preview would advertise something the live display never does.
+	local colorByClass = not USE_AURA_CONTAINERS and db.Modules.AlertsModule.Icons.ColorByClass
 	local iconsGlow = db.Modules.AlertsModule.Icons.Glow
 	local showTooltips = db.Modules.AlertsModule.ShowTooltips ~= false
 
