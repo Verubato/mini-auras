@@ -5,8 +5,8 @@
 --     bar never moves on screen when the user flips the direction.
 --   * The prep room hides every display, and only the match-state event brings them back - a
 --     mistake here means no alerts for the whole arena.
---   * Split mode gives importants their own bar; combined mode continues the defensive row. The
---     two share one chaining function with interleaved branches.
+--   * Split mode gives importants their own bar and container; combined mode renders them as a
+--     third group inside the defensive container, which is what keeps the row gap-free.
 
 local fw = require("Framework")
 local acm = require("AuraContainerMock")
@@ -47,9 +47,11 @@ local function placeMainBar()
 	mainBar:SetMockRect(RECT.left, RECT.bottom, RECT.width, RECT.height)
 end
 
+-- The defensive container carries three groups (big, external, important); the dedicated
+-- important container carries one.
 local function defOf(token)
 	for _, container in ipairs(env.containersForUnit(token)) do
-		if env.groupCount(container) == 2 then
+		if env.groupCount(container) == 3 then
 			return container
 		end
 	end
@@ -150,9 +152,10 @@ fw.describe("AlertsModule 12.1 - prep room gating", function()
 		addEnemyPlate("nameplate1")
 		local containers = env.containersForUnit("nameplate1")
 		assert(#containers == 2, "pair acquired, got " .. #containers)
-		for _, container in ipairs(containers) do
-			assert(container._enabled and container:IsShown(), "precondition: live")
-		end
+		-- Combined mode parks the dedicated important container, so only the defensive one is
+		-- live here; the prep room still has to hide both.
+		local def = defOf("nameplate1")
+		assert(def._enabled and def:IsShown(), "precondition: live")
 
 		env.matchState = _G.Enum.PvPMatchState.StartUp
 		events:TriggerEvent("PVP_MATCH_STATE_CHANGED")
@@ -174,31 +177,31 @@ fw.describe("AlertsModule 12.1 - prep room gating", function()
 	fw.it("the match starting brings every display back", function()
 		-- Nothing else re-shows these: the aura containers have no events of ours to piggyback on,
 		-- so a missed refresh here means no alerts for the rest of the match.
-		local before = env.containersForUnit("nameplate1")
-
 		env.matchState = 99
 		events:TriggerEvent("PVP_MATCH_STATE_CHANGED")
 
-		for _, container in ipairs(before) do
-			assert(container._enabled and container:IsShown(), "restored when the match starts")
-		end
-		for _, container in ipairs(env.containersForUnit("nameplate2")) do
-			assert(container:IsShown(), "including the plate that spawned during the prep room")
-		end
+		local restored = defOf("nameplate1")
+		assert(restored._enabled and restored:IsShown(), "restored when the match starts")
+		assert(defOf("nameplate2"):IsShown(), "including the plate that spawned during the prep room")
 	end)
 end)
 
 fw.describe("AlertsModule 12.1 - split vs combined bars", function()
-	fw.it("combined mode continues the defensive row with the importants", function()
+	fw.it("combined mode draws the importants inside the defensive container", function()
 		alerts.SplitBars = false
 		module:Refresh()
 
-		local def1, imp1 = defOf("nameplate1"), defOf("nameplate2")
-		assert(def1 and imp1, "both plates tracked")
+		local def1, def2 = defOf("nameplate1"), defOf("nameplate2")
+		assert(def1 and def2, "both plates tracked")
 
-		local _, relativeTo = impOf("nameplate1"):GetPoint(1)
-		assert(relativeTo == imp1, "the first important chains after the LAST defensive")
+		-- One container per unit holding every category is what removes the gap: separate
+		-- containers are separate frames and the engine reserves each one's full icon budget.
+		assert(def1._groups.important.maxFrameCount > 0, "the defensive container carries them")
+		assert(not impOf("nameplate1"):IsShown(), "the dedicated important container is parked")
 		assert(not importantBar:IsShown(), "no dedicated bar in combined mode")
+
+		local _, relativeTo = def2:GetPoint(1)
+		assert(relativeTo == def1, "the row is one frame per unit, chained in order")
 	end)
 
 	fw.it("split mode starts the importants on their own bar", function()
@@ -217,29 +220,31 @@ fw.describe("AlertsModule 12.1 - split vs combined bars", function()
 		local _, defRelativeTo = defOf("nameplate2"):GetPoint(1)
 		assert(defRelativeTo == defOf("nameplate1"), "the defensive row is unaffected")
 		assert(importantBar:IsShown(), "the dedicated bar is visible in split mode")
+		assert(defOf("nameplate1")._groups.important.maxFrameCount == 0,
+			"the defensive container drops them so they aren't drawn twice")
 	end)
 
-	fw.it("switching back to combined re-chains the importants onto the main row", function()
+	fw.it("switching back to combined moves the importants into the defensive container", function()
 		alerts.SplitBars = false
 		module:Refresh()
 
-		local _, relativeTo = impOf("nameplate1"):GetPoint(1)
-		assert(relativeTo == defOf("nameplate2"), "back onto the tail of the defensive row")
+		assert(defOf("nameplate1")._groups.important.maxFrameCount > 0, "budget moves back")
+		assert(not impOf("nameplate1"):IsShown(), "and the dedicated container is parked again")
 		assert(not importantBar:IsShown(), "and the dedicated bar goes away again")
 	end)
 
-	fw.it("importants disabled zeroes their budget but keeps the chain intact", function()
+	fw.it("disabling importants zeroes the budget on whichever container holds them", function()
 		alerts.Important.Enabled = false
 		module:Refresh()
 
-		local imp = impOf("nameplate1")
-		assert(imp._groups.important.maxFrameCount == 0, "budget zeroed")
-		assert(not imp._enabled and not imp:IsShown(), "and the container is parked")
-		assert(imp:GetPoint(1) ~= nil, "still anchored, so re-enabling needs no re-chain")
+		local def = defOf("nameplate1")
+		assert(def._groups.important.maxFrameCount == 0, "budget zeroed")
+		assert(impOf("nameplate1")._groups.important.maxFrameCount == 0, "on both containers")
+		assert(def._enabled and def:IsShown(), "the defensive container stays live for its own auras")
 
 		alerts.Important.Enabled = true
 		module:Refresh()
-		assert(imp._enabled and imp:IsShown(), "re-enabled")
+		assert(def._groups.important.maxFrameCount > 0, "re-enabled")
 
 		removePlate("nameplate1")
 		removePlate("nameplate2")

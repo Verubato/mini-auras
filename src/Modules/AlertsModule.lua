@@ -732,10 +732,6 @@ local function ChainAlertDisplays()
 	end
 	table.sort(tokens, NameplateTokenLess)
 
-	-- Two passes so combined mode matches the legacy ordering: every unit's defensives first,
-	-- then every unit's importants continuing the same row (split mode puts importants on
-	-- their own bar instead).
-	--
 	-- Note the first display in each row anchors point -> POINT on the bar frame, not
 	-- point -> relativePoint: it starts AT the bar's pinned edge rather than continuing past it,
 	-- since the (zero-width) bar frame is the row's origin and not a preceding icon.
@@ -751,24 +747,25 @@ local function ChainAlertDisplays()
 		prevMain = defFrame
 	end
 
+	-- Combined mode draws importants from the Def container's own Important group, so there is
+	-- no second frame to place. Ordering differs from the legacy bar as a result: each unit's
+	-- categories stay together (u1 def+imp, u2 def+imp) rather than every defensive followed by
+	-- every important. That grouping is what removes the gap - the alternative needs one frame
+	-- per category per unit, and the engine reserves each frame's full icon budget of width.
+	if not splitBars then
+		return
+	end
+
 	local prevImp
 	for _, token in ipairs(tokens) do
 		local impFrame = nameplateDisplays[token].Imp.Frame
 		impFrame:ClearAllPoints()
-		if splitBars then
-			if prevImp then
-				impFrame:SetPoint(point, prevImp, relativePoint, step, 0)
-			else
-				impFrame:SetPoint(point, importantContainer.Frame, point, 0, 0)
-			end
-			prevImp = impFrame
-		elseif prevMain then
-			impFrame:SetPoint(point, prevMain, relativePoint, step, 0)
-			prevMain = impFrame
+		if prevImp then
+			impFrame:SetPoint(point, prevImp, relativePoint, step, 0)
 		else
-			impFrame:SetPoint(point, container.Frame, point, 0, 0)
-			prevMain = impFrame
+			impFrame:SetPoint(point, importantContainer.Frame, point, 0, 0)
 		end
+		prevImp = impFrame
 	end
 end
 
@@ -788,17 +785,23 @@ end
 local function ApplyNameplateDisplayOptions(entry, options, showBars)
 	local includeDefensives = options.IncludeDefensives
 	local importantEnabled = options.Important and options.Important.Enabled
+	local splitBars = options.SplitBars
 	local maxIcons = options.Icons.MaxIcons or 8
 	local size = options.Icons.Size
 	local spacing = options.IconSpacing or 2
 	local showTooltips = options.ShowTooltips ~= false
 	local grow = GetGrow()
 
+	-- Important renders on whichever display the current mode uses; the other is budgeted to 0.
+	local importantOnDef = importantEnabled and not splitBars
+	local importantOnImp = importantEnabled and splitBars
+
 	entry.Def:SetGrow(grow)
 	entry.Def:SetIconSize(size)
 	entry.Def:SetSpacing(spacing)
 	entry.Def:SetMaxIcons(auraFilters.GroupKey.BigDefensive, includeDefensives and maxIcons or 0)
 	entry.Def:SetMaxIcons(auraFilters.GroupKey.ExternalDefensive, includeDefensives and maxIcons or 0)
+	entry.Def:SetMaxIcons(auraFilters.GroupKey.Important, importantOnDef and maxIcons or 0)
 
 	-- Both displays take the same style; fill the scratch once and hand it to each.
 	local style = auraContainerDisplay:GetStyleScratch()
@@ -814,9 +817,9 @@ local function ApplyNameplateDisplayOptions(entry, options, showBars)
 	entry.Imp:SetGrow(grow)
 	entry.Imp:SetIconSize(size)
 	entry.Imp:SetSpacing(spacing)
-	entry.Imp:SetMaxIcons(auraFilters.GroupKey.Important, importantEnabled and maxIcons or 0)
+	entry.Imp:SetMaxIcons(auraFilters.GroupKey.Important, importantOnImp and maxIcons or 0)
 	entry.Imp:SetStyle(style)
-	local impShown = showBars and importantEnabled
+	local impShown = showBars and importantOnImp
 	entry.Imp:SetEnabled(impShown == true)
 	entry.Imp:SetShown(impShown == true)
 end
@@ -971,11 +974,18 @@ end
 
 -- 12.1 path: builds one pooled display pair. BIG and EXTERNAL defensives are separate groups
 -- because filter-string tokens combine with AND - "HELPFUL|BIG_DEFENSIVE|EXTERNAL_DEFENSIVE"
--- would only match auras flagged as BOTH, i.e. almost nothing; two groups on one container is
+-- would only match auras flagged as BOTH, i.e. almost nothing; groups on one container are
 -- the idiom for OR (they render as one continuous row). The filters themselves are partitioned
 -- by negation (see Core/AuraFilters), so a both-important-and-defensive aura is never drawn on
 -- both bars (legacy deduped by id). Sizes/budgets are applied per token by
 -- RefreshNameplateDisplays.
+--
+-- Def carries an Important group too, so combined mode can render all three categories in one
+-- container with no gap. Separate containers are separate frames chained by SetPoint and the
+-- engine reserves each one's maxFrameCount worth of width, so an under-filled defensive display
+-- left a hole before the important icons; groups inside a single container flow tight instead.
+-- A display's group list is fixed for its lifetime (see New), so both groups always exist and
+-- the mode is chosen purely by budgeting one of them to 0 - no container churn on toggle.
 local function CreateAlertDisplayPair()
 	return {
 		Def = auraContainerDisplay:New(UIParent, "none", {
@@ -991,7 +1001,15 @@ local function CreateAlertDisplayPair()
 				CandidateFilters = auraFilters.CandidateFilters.ExternalDefensive,
 				MaxIcons = DEFAULT_PAIR_ICONS,
 			},
+			-- Used in combined mode only; budgeted to 0 when the bars are split.
+			{
+				Key = auraFilters.GroupKey.Important,
+				FilterString = auraFilters.Filter.Important,
+				CandidateFilters = auraFilters.CandidateFilters.Important,
+				MaxIcons = DEFAULT_PAIR_ICONS,
+			},
 		}, DEFAULT_PAIR_SIZE, DEFAULT_PAIR_SPACING, "Alerts"),
+		-- Used in split mode only; hidden and budgeted to 0 when combined.
 		Imp = auraContainerDisplay:New(UIParent, "none", {
 			{
 				Key = auraFilters.GroupKey.Important,

@@ -51,10 +51,11 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		assert(#containers == 2, "expected Def+Imp pair, got " .. #containers)
 		local groupCounts = { env.groupCount(containers[1]), env.groupCount(containers[2]) }
 		table.sort(groupCounts)
-		assert(groupCounts[1] == 1 and groupCounts[2] == 2, "one 1-group Imp and one 2-group Def")
-		for _, container in ipairs(containers) do
-			assert(container._enabled and container:IsShown(), "pair enabled and shown")
-		end
+		assert(groupCounts[1] == 1 and groupCounts[2] == 3,
+			"one 1-group Imp and one 3-group Def (big, external, important)")
+		-- Combined mode renders importants inside Def, so only Def is live.
+		local def = groupCounts[2] == env.groupCount(containers[1]) and containers[1] or containers[2]
+		assert(def._enabled and def:IsShown(), "the defensive container is enabled and shown")
 	end)
 
 	fw.it("a non-enemy plate gets nothing", function()
@@ -90,7 +91,7 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 
 		local function defOf(token)
 			for _, container in ipairs(env.containersForUnit(token)) do
-				if env.groupCount(container) == 2 then
+				if env.groupCount(container) == 3 then
 					return container
 				end
 			end
@@ -107,9 +108,10 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		local _, relativeTo = def10:GetPoint(1)
 		assert(relativeTo == def7, "def(10) chains after def(7): numeric order")
 
-		local imp7 = impOf("nameplate7")
-		local _, impRelativeTo = imp7:GetPoint(1)
-		assert(impRelativeTo == def10, "combined mode: first important chains after the LAST defensive")
+		-- Combined mode draws importants inside each Def container rather than chaining a
+		-- separate frame, which is what keeps the row free of reserved-width gaps.
+		assert(def7._groups.important.maxFrameCount > 0, "importants ride along on the Def container")
+		assert(not impOf("nameplate7"):IsShown(), "the dedicated important container stays parked")
 	end)
 
 	fw.it("Grow LEFT flips the chain: right edges pinned, negative spacing steps", function()
@@ -119,7 +121,7 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 
 		local function defOf(token)
 			for _, container in ipairs(env.containersForUnit(token)) do
-				if env.groupCount(container) == 2 then
+				if env.groupCount(container) == 3 then
 					return container
 				end
 			end
@@ -273,9 +275,14 @@ fw.describe("Duel faction flip - poll-based re-registration", function()
 		acm.tickAll(1)
 		local containers = env.containersForUnit("nameplate20")
 		assert(#containers == 2, "duel opponent gained a Def+Imp pair, got " .. #containers)
+		-- Combined mode only enables the Def container; the Imp one is parked until bars split.
+		local live = 0
 		for _, container in ipairs(containers) do
-			assert(container._enabled, "pair enabled")
+			if container._enabled then
+				live = live + 1
+			end
 		end
+		assert(live >= 1, "at least the defensive container is enabled")
 		assert(net() > netBefore, "alert sounds registered for the duel opponent")
 
 		-- Duel ends: the flip back releases the pair and its sound registrations.
