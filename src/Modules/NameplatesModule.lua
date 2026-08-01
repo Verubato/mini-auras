@@ -258,7 +258,6 @@ end
 ---12.1 path: parks a pooled bar display.
 local function ResetBarDisplay(display)
 	display:SetEnabled(false)
-	display:StopGlowAnimations()
 	display:Hide()
 	display.Frame:ClearAllPoints()
 	display.Frame:SetParent(UIParent)
@@ -283,23 +282,6 @@ local function BarStyle(barOptions)
 	return style
 end
 
----Everything that is baked into a button when it is created. A display whose signature no longer
----matches its bar has to be rebuilt rather than restyled, because a restyle cannot reach the
----buttons while auras are secret.
----@return string
-local function BarSignature(size, spacing, style)
-	return table.concat({
-		size,
-		spacing,
-		tostring(style.ReverseCooldown),
-		tostring(style.ShowMilliseconds),
-		tostring(style.ColorByDispelType),
-		tostring(style.Glow),
-		tostring(style.FontScale),
-		tostring(style.ShowTooltips),
-	}, ":")
-end
-
 ---12.1 path: acquires (or reuses) and reconfigures a bar's aura display for a tracked plate.
 ---@param data NameplateData
 local function EnsureBarDisplay(data, bar, barOptions)
@@ -308,7 +290,7 @@ local function EnsureBarDisplay(data, bar, barOptions)
 	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
 	local maxIcons = barOptions.Icons.MaxIcons or 5
 	local style = BarStyle(barOptions)
-	local signature = BarSignature(size, spacing, style)
+	local signature = auraContainerDisplay:GetStyleSignature(style, size, spacing)
 
 	local byBar = barDisplays[token]
 

@@ -115,8 +115,8 @@ local function FlushPendingRestyles()
 	end
 
 	for _, instance in ipairs(liveDisplays) do
-		-- Parked pool items are hidden and deliberately left stale (their looping glow
-		-- animations were stopped to save CPU); re-acquisition restyles them.
+		-- Parked displays are hidden and left stale: nothing they show is on screen, and
+		-- they are restyled on the way back in.
 		if instance.RestylePending and instance.DesiredShown then
 			instance:RestyleButtons()
 		end
@@ -722,6 +722,34 @@ function M:GetStyleScratch()
 	return styleScratch
 end
 
+---Everything StyleButton bakes into a button, as a comparable string. Callers cache displays by
+---this: a button can only be styled when it is created, so a display whose signature no longer
+---matches has to be rebuilt rather than restyled. Deliberately includes the global db values
+---StoreStyle resolves (glow style, swipe, countdown threshold) - those are invisible to the
+---caller's own options table, and leaving them out meant changing the glow type in the options
+---never reached the already-built displays.
+---@param style AuraDisplayStyle
+---@param size number
+---@param spacing number
+---@return string
+function M:GetStyleSignature(style, size, spacing)
+	local db = GetDb()
+
+	return table.concat({
+		tostring(size),
+		tostring(spacing),
+		tostring(style.ReverseCooldown),
+		tostring(style.ShowMilliseconds),
+		tostring(style.ColorByDispelType),
+		tostring(style.Glow),
+		tostring(style.FontScale),
+		tostring(style.ShowTooltips),
+		tostring(db and db.DisableSwipe),
+		tostring(db and db.MillisecondsThreshold),
+		GetGlowStyleName(),
+	}, ":")
+end
+
 ---Stores the per-button style and applies it to existing buttons when possible. Skipped
 ---entirely when nothing changed - this runs on hot paths (every nameplate add), and restyling
 ---means ~10 API calls across every pre-created button.
@@ -738,28 +766,13 @@ function M:SetStyle(style)
 	self:RestyleButtons()
 end
 
----Stops every button's glow animation. Used when parking a pooled display: a parked display's
----looping animations would otherwise keep costing CPU while hidden. Skipped while aura styling
----is restricted - the glow frames are CHILDREN of forbidden AuraButtons, and in combat even
----Hide() on them errors (the child-frame protections announced for 12.1 are live). The pending
----flag makes the next unrestricted restyle settle the right state, and pooled displays are
----restyled on every re-acquisition, so a skipped stop only leaves animations running until the
----display is reused or restrictions lift.
-function M:StopGlowAnimations()
-	SetRestylePending(self, true)
-
-	if wowEx:IsAuraStylingRestricted() then
-		return
-	end
-
-	for _, widgets in pairs(self.ButtonWidgets) do
-		local glow = widgets.Glow
-		if glow then
-			glow:Hide()
-			glow.Anim:Stop()
-		end
-	end
-end
+-- There is deliberately no StopGlowAnimations counterpart to parking a display. Hiding a parked
+-- display's glow frames to save the looping flipbook's CPU cannot work: the glows are CHILDREN of
+-- AuraButtons, so re-showing them needs a restyle, and a restyle is blocked for as long as
+-- C_Secrets.ShouldAurasBeSecret is true. A display parked in the world and reused inside an arena
+-- therefore came back with its glows hidden for the whole match, which is why the glow appeared
+-- on some units and not others. It saved nothing either way: stopping set the restyle-pending
+-- flag, and the retry ticker started the animations again a second later.
 
 ---Re-applies the stored style to all created buttons. Buttons are forbidden while auras are
 ---secret (in combat, but also out-of-combat inside M+/encounters/PvP matches), so this is

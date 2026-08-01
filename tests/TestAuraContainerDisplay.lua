@@ -211,18 +211,22 @@ fw.describe("AuraContainerDisplay - restriction model", function()
 		assert(instance.Frame._groups.cc.layout.elementWidth == startSize + 20, "size applied")
 	end)
 
-	fw.it("StopGlowAnimations under restriction does not touch forbidden children", function()
+	fw.it("parking a display leaves its glows running, so reuse under restriction still glows", function()
+		-- Glow frames are children of AuraButtons, so re-showing one needs a restyle, and a
+		-- restyle is blocked for as long as auras are secret (the whole of an arena). Nothing on
+		-- the park path may stop them: a display parked in the world and reused inside an arena
+		-- would come back with no glow for the entire match.
 		local instance = newInstance()
 		instance:SetStyle({ Glow = true })
 		assert(anyGlowPlaying(instance), "glow animations playing while style.Glow")
 
+		instance:SetEnabled(false)
+		instance:Hide()
 		acm.restricted = true
-		local ok, err = pcall(function()
-			instance:StopGlowAnimations()
-		end)
-		assert(ok, "StopGlowAnimations must not error while restricted: " .. tostring(err))
-		assert(anyGlowPlaying(instance), "animations untouched while restricted")
-		assert(instance.RestylePending, "pending flag set for the eventual restyle")
+		instance:Show()
+		instance:SetEnabled(true)
+
+		assert(anyGlowPlaying(instance), "still glowing after a park and reuse under restriction")
 	end)
 
 	fw.it("touching a button child while restricted errors (mock sanity)", function()
@@ -288,14 +292,6 @@ fw.describe("AuraContainerDisplay - glow lifecycle", function()
 		assert(not anyGlowPlaying(instance), "disabled -> stopped")
 	end)
 
-	fw.it("StopGlowAnimations stops everything and glows resume on next identical SetStyle", function()
-		local instance = newInstance()
-		instance:SetStyle({ Glow = true })
-		instance:StopGlowAnimations()
-		assert(not anyGlowPlaying(instance), "parked -> stopped")
-		instance:SetStyle({ Glow = true })
-		assert(anyGlowPlaying(instance), "reuse with identical style must resume animations")
-	end)
 end)
 
 fw.describe("AuraContainerDisplay - glow styles", function()
@@ -309,6 +305,20 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		instance:SetStyle({ Glow = true })
 		assert(firstGlowWidgets(instance).GlowStyle == "Rotation Assist", "default is the flipbook")
 		assert(anyGlowPlaying(instance), "the flipbook animates")
+	end)
+
+	fw.it("the style signature covers the global glow type", function()
+		-- Displays are cached by this signature, and the glow style is a global db value the
+		-- caller never passes in; leaving it out meant changing it in the options never reached
+		-- the already-built buttons.
+		local style = display:GetStyleScratch()
+		style.Glow = true
+
+		local before = display:GetStyleSignature(style, 30, 2)
+		mockDb.GlowType = "Slot Glow"
+		local after = display:GetStyleSignature(style, 30, 2)
+
+		assert(before ~= after, "changing the glow type must invalidate cached displays")
 	end)
 
 	fw.it("Slot Glow applies the static atlas and runs no animation", function()
@@ -608,20 +618,14 @@ fw.describe("AuraContainerDisplay - deferred restyle", function()
 		assert(totalSetSizeCalls(instance) == styled, "no forbidden button calls attempted")
 	end)
 
-	fw.it("skips parked (hidden) displays so pooled glows stay stopped", function()
-		-- Parking a pooled display stops its looping glow animations and flags a restyle so they
-		-- resume on reuse. The retry must not undo that while the display sits in the pool.
-		local instance = newInstance()
-		instance:SetStyle({ Glow = true })
-		instance:StopGlowAnimations()
+	fw.it("skips parked (hidden) displays, whose buttons are off screen anyway", function()
+		local instance, styled = newPendingInstance()
 		instance:Hide()
-		local styled = totalSetSizeCalls(instance)
 
 		displayEvents:TriggerEvent("PLAYER_REGEN_ENABLED")
 
 		assert(instance.RestylePending, "a parked display stays pending")
 		assert(totalSetSizeCalls(instance) == styled, "parked display not restyled")
-		assert(not anyGlowPlaying(instance), "glow animations stay stopped while parked")
 	end)
 
 	fw.it("settles a pending restyle when the display is shown again", function()

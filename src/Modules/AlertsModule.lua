@@ -998,6 +998,19 @@ end
 -- left a hole before the important icons; groups inside a single container flow tight instead.
 -- A display's group list is fixed for its lifetime (see New), so both groups always exist and
 -- the mode is chosen purely by budgeting one of them to 0 - no container churn on toggle.
+---Fills the shared style scratch from the alert options.
+---@return AuraDisplayStyle
+local function AlertStyle()
+	local options = db and db.Modules.AlertsModule
+	local icons = options and options.Icons
+	local style = auraContainerDisplay:GetStyleScratch()
+	style.ReverseCooldown = icons and icons.ReverseCooldown
+	style.Glow = icons and icons.Glow
+	style.FontScale = db and db.FontScale
+	style.ShowTooltips = not options or options.ShowTooltips ~= false
+	return style
+end
+
 local function CreateAlertDisplayPair()
 	-- Build at the CONFIGURED size, not a placeholder. A button takes its size in
 	-- initializeFrame, which the frame pool runs once when it creates the button and never
@@ -1014,11 +1027,7 @@ local function CreateAlertDisplayPair()
 
 	-- Style is applied at creation for the same reason as the size: StyleButton bakes it into
 	-- each button, and a later restyle can't reach them while auras are secret.
-	local style = auraContainerDisplay:GetStyleScratch()
-	style.ReverseCooldown = icons and icons.ReverseCooldown
-	style.Glow = icons and icons.Glow
-	style.FontScale = db and db.FontScale
-	style.ShowTooltips = not options or options.ShowTooltips ~= false
+	local style = AlertStyle()
 
 	return {
 		Def = auraContainerDisplay:New(UIParent, "none", {
@@ -1027,12 +1036,14 @@ local function CreateAlertDisplayPair()
 				FilterString = auraFilters.Filter.BigDefensive,
 				CandidateFilters = auraFilters.CandidateFilters.BigDefensive,
 				MaxIcons = maxIcons,
+
 			},
 			{
 				Key = auraFilters.GroupKey.ExternalDefensive,
 				FilterString = auraFilters.Filter.ExternalDefensive,
 				CandidateFilters = auraFilters.CandidateFilters.ExternalDefensive,
 				MaxIcons = maxIcons,
+
 			},
 			-- Used in combined mode only; budgeted to 0 when the bars are split.
 			{
@@ -1040,6 +1051,7 @@ local function CreateAlertDisplayPair()
 				FilterString = auraFilters.Filter.Important,
 				CandidateFilters = auraFilters.CandidateFilters.Important,
 				MaxIcons = maxIcons,
+
 			},
 		}, size, spacing, "Alerts", { Style = style }),
 		-- Used in split mode only; hidden and budgeted to 0 when combined.
@@ -1049,6 +1061,7 @@ local function CreateAlertDisplayPair()
 				FilterString = auraFilters.Filter.Important,
 				CandidateFilters = auraFilters.CandidateFilters.Important,
 				MaxIcons = maxIcons,
+
 			},
 		}, size, spacing, "Alerts", { Style = style }),
 	}
@@ -1062,25 +1075,19 @@ local function AlertPairSignature()
 	local options = db and db.Modules.AlertsModule
 	local icons = options and options.Icons
 
-	return table.concat({
-		tostring(icons and icons.Size),
-		tostring(options and options.IconSpacing),
-		tostring(icons and icons.MaxIcons),
-		tostring(icons and icons.ReverseCooldown),
-		tostring(icons and icons.Glow),
-		tostring(db and db.FontScale),
-		tostring(not options or options.ShowTooltips ~= false),
-	}, ":")
+	return auraContainerDisplay:GetStyleSignature(
+		AlertStyle(),
+		(icons and icons.Size) or DEFAULT_PAIR_SIZE,
+		(options and options.IconSpacing) or DEFAULT_PAIR_SPACING
+	) .. ":" .. tostring(icons and icons.MaxIcons)
 end
 
 -- 12.1 path: parks a display pair (both displays stay parented to UIParent).
 local function ResetAlertDisplayPair(entry)
 	entry.Def:SetEnabled(false)
-	entry.Def:StopGlowAnimations()
 	entry.Def:Hide()
 	entry.Def.Frame:ClearAllPoints()
 	entry.Imp:SetEnabled(false)
-	entry.Imp:StopGlowAnimations()
 	entry.Imp:Hide()
 	entry.Imp.Frame:ClearAllPoints()
 end
