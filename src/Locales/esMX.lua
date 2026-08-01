@@ -169,7 +169,7 @@ L:RegisterLocale("esMX", {
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "Cambia el color del brillo/borde según el tipo de disipación (ej. azul para magia, rojo para físico). Esto solo se aplica a los iconos de CC.",
 	["Color by class"] = "Color por clase",
 	["Color the glow/border by the enemy's class color."] = "Colorea el brillo/borde con el color de clase del enemigo.",
-	["Color glow by category"] = "Colorear brillo por categoría",
+	["Colour by category"] = "Color por categoría",
 	["Color the glow red for important enemy buffs and green for defensives."] = "Colorea el brillo de rojo para las mejoras enemigas importantes y de verde para las defensivas.",
 	["Dispel colours"] = "Colores de disipación",
 	["Enable pet frame CC everywhere."] = "Activar CC del marco de mascota en todas partes.",

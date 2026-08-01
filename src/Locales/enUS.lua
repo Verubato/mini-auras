@@ -170,7 +170,7 @@ L:SetDefaultStrings({
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons.",
 	["Color by class"] = "Color by class",
 	["Color the glow/border by the enemy's class color."] = "Color the glow/border by the enemy's class color.",
-	["Color glow by category"] = "Color glow by category",
+	["Colour by category"] = "Colour by category",
 	["Color the glow red for important enemy buffs and green for defensives."] = "Color the glow red for important enemy buffs and green for defensives.",
 	["Dispel colours"] = "Dispel colours",
 	["Enable pet frame CC everywhere."] = "Enable pet frame CC everywhere.",

@@ -168,7 +168,7 @@ L:RegisterLocale("frFR", {
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "Colore la lueur/bordure selon le type de dissipation (ex. bleu pour magie, rouge pour physique). S'applique uniquement aux icônes de CC.",
 	["Color by class"] = "Couleur par classe",
 	["Color the glow/border by the enemy's class color."] = "Colore la lueur/bordure selon la couleur de classe de l'ennemi.",
-	["Color glow by category"] = "Colorer la lueur par catégorie",
+	["Colour by category"] = "Couleur par catégorie",
 	["Color the glow red for important enemy buffs and green for defensives."] = "Colore la lueur en rouge pour les buffs ennemis importants et en vert pour les défensifs.",
 	["Dispel colours"] = "Couleurs de dissipation",
 	["Enable pet frame CC everywhere."] = "Activer le CC des familiers partout.",

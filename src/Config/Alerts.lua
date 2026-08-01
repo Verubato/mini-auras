@@ -77,7 +77,7 @@ local function BuildSettingsTab(parent, options)
 	if USE_AURA_CONTAINERS then
 		glowColorChk = mini:Checkbox({
 			Parent = parent,
-			LabelText = L["Color glow by category"],
+			LabelText = L["Colour by category"],
 			Tooltip = L["Color the glow red for important enemy buffs and green for defensives."],
 			GetValue = function()
 				return options.Icons.GlowColorByCategory

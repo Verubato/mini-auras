@@ -168,7 +168,7 @@ L:RegisterLocale("zhTW", {
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "根據驅散類型更改發光/邊框的顏色（例如，魔法為藍色，物理為紅色）。僅適用於CC圖示。",
 	["Color by class"] = "按職業著色",
 	["Color the glow/border by the enemy's class color."] = "用敵人的職業顏色為發光/邊框著色。",
-	["Color glow by category"] = "按類別為發光著色",
+	["Colour by category"] = "按類別著色",
 	["Color the glow red for important enemy buffs and green for defensives."] = "重要的敵方增益顯示紅色發光，防禦技能顯示綠色發光。",
 	["Dispel colours"] = "驅散顏色",
 	["Enable pet frame CC everywhere."] = "在所有地方啟用寵物框架控制圖示。",

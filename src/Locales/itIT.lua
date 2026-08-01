@@ -168,7 +168,7 @@ L:RegisterLocale("itIT", {
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical). This only applies to CC icons."] = "Cambia il colore del bagliore/bordo in base al tipo di dissipazione (ad es. blu per magia, rosso per fisico). Si applica solo alle icone CC.",
 	["Color by class"] = "Colora per classe",
 	["Color the glow/border by the enemy's class color."] = "Colora il bagliore/bordo con il colore della classe nemica.",
-	["Color glow by category"] = "Colora il bagliore per categoria",
+	["Colour by category"] = "Colora per categoria",
 	["Color the glow red for important enemy buffs and green for defensives."] = "Colora il bagliore di rosso per i potenziamenti nemici importanti e di verde per i difensivi.",
 	["Dispel colours"] = "Colori dissipazione",
 	["Enable pet frame CC everywhere."] = "Abilita CC del riquadro pet ovunque.",
