@@ -159,12 +159,17 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		-- The healer sound tests later assert on the shared counters in absolute terms, so
 		-- restore them at the end (net registrations here end at zero anyway).
 		local adds0, removes0 = env.auraSoundAdds, env.auraSoundRemoves
+		-- A spell may sit in both lists (see AuraCategoryIds), and must still sound only once,
+		-- so the defensive pass skips whatever the important pass already registered.
+		local important = env.addon.Core.AuraCategoryIds.Important
 		local perToken = 0
-		for _ in pairs(env.addon.Core.AuraCategoryIds.Important) do
+		for _ in pairs(important) do
 			perToken = perToken + 1
 		end
-		for _ in pairs(env.addon.Core.AuraCategoryIds.Defensive) do
-			perToken = perToken + 1
+		for id in pairs(env.addon.Core.AuraCategoryIds.Defensive) do
+			if not important[id] then
+				perToken = perToken + 1
+			end
 		end
 		assert(perToken > 0, "sound data present")
 

@@ -930,15 +930,19 @@ end
 ---@param list table<number, boolean> Spell ids to register.
 ---@param config table Sound options (File/Channel).
 ---@param fallbackFile string
-local function RegisterAlertSoundList(ids, info, list, config, fallbackFile)
+---@param skip table<number, boolean>? Spell ids an earlier list already registered. A spell can
+---appear in two category lists (see Core/AuraCategoryIds), and it must still only sound once.
+local function RegisterAlertSoundList(ids, info, list, config, fallbackFile, skip)
 	info.soundFileName = addon.Config.MediaLocation .. (config.File or fallbackFile)
 	info.outputChannel = config.Channel or "Master"
 
 	for spellId in pairs(list) do
-		info.spellID = spellId
-		local soundId = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
-		if soundId then
-			ids[#ids + 1] = soundId
+		if not (skip and skip[spellId]) then
+			info.spellID = spellId
+			local soundId = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
+			if soundId then
+				ids[#ids + 1] = soundId
+			end
 		end
 	end
 end
@@ -968,7 +972,8 @@ local function RegisterTokenAlertSounds(unitToken)
 		RegisterAlertSoundList(ids, info, addon.Core.AuraCategoryIds.Important, sound.Important, "AirHorn.ogg")
 	end
 	if defensiveEnabled then
-		RegisterAlertSoundList(ids, info, addon.Core.AuraCategoryIds.Defensive, sound.Defensive, "AlertToastWarm.ogg")
+		RegisterAlertSoundList(ids, info, addon.Core.AuraCategoryIds.Defensive, sound.Defensive,
+			"AlertToastWarm.ogg", importantEnabled and addon.Core.AuraCategoryIds.Important or nil)
 	end
 
 	alertSoundsByToken[unitToken] = ids

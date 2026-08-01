@@ -63,6 +63,11 @@ local ccNames = {
 
 -- Player important ability names (specials + offensive cooldowns). Matched against the
 -- Important-flagged set; emitted as AuraCategoryIds.Important (the "important spell" sound).
+-- A name may appear here AND in defensiveNames: the game decides an aura's category from its
+-- own flags, and some spells move between them with talents (Anti-Magic Shell reads as a
+-- defensive normally and as important once talented into Spellwarding). Listing the name in both
+-- means whichever group the filter tokens route it to, the spell-ID map does not veto it. The
+-- filter strings partition with `!` negation, so it still renders exactly once.
 local importantNames = {
 	-- Specials
 	["Precognition"] = true, ["Nullifying Shroud"] = true, ["Grounding Totem"] = true,
@@ -86,6 +91,8 @@ local importantNames = {
 	["Invoke Niuzao, the Black Ox"] = true, ["Invoke Chi-Ji, the Red Crane"] = true,
 	["Invoke Xuen, the White Tiger"] = true, ["Invoke Yu'lon, the Jade Serpent"] = true,
 	["Thunder Blast"] = true,
+	-- Defensive normally, important when talented into Spellwarding; see the note above.
+	["Anti-Magic Shell"] = true,
 }
 
 -- Player defensive ability names (defensives + healer throughput cooldowns). Matched against

@@ -1047,9 +1047,11 @@ addon.Core.AuraCategoryIds = {
 		[260457] = true, -- Wyvern Sting
 		[262000] = true, -- Wyvern Sting
 	},
-	-- Important: specials + offensive cooldowns (62 ids)
+	-- Important: specials + offensive cooldowns (64 ids)
 	Important = {
 		[13750] = true, -- Adrenaline Rush
+		[48707] = true, -- Anti-Magic Shell
+		[410358] = true, -- Anti-Magic Shell
 		[275699] = true, -- Apocalypse
 		[365350] = true, -- Arcane Surge
 		[365362] = true, -- Arcane Surge
