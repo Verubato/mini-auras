@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
+local wowEx = addon.Utils.WoWEx
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 ---@class MiscellaneousConfig
@@ -247,19 +248,25 @@ function M:Build(panel)
 
 	configureBlizzardNameplatesChk:SetPoint("TOPLEFT", behaviourDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	local ccNativeOrderChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["CC Native Order"],
-		Tooltip = L["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."],
-		GetValue = function()
-			return db.CCNativeOrder or false
-		end,
-		SetValue = function(value)
-			db.CCNativeOrder = value
-			addon:Refresh()
-		end,
-	})
+	-- 12.1 sorts inside the AuraContainer, and only by aura instance id - every other sort rule
+	-- keys off data the addon cannot read there. The option fed the legacy UnitAuraWatcher's sort,
+	-- and no watcher exists on that path, so the toggle does nothing. Hidden rather than left as a
+	-- control with no effect.
+	if not wowEx:UseAuraContainers() then
+		local ccNativeOrderChk = mini:Checkbox({
+			Parent = panel,
+			LabelText = L["CC Native Order"],
+			Tooltip = L["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."],
+			GetValue = function()
+				return db.CCNativeOrder or false
+			end,
+			SetValue = function(value)
+				db.CCNativeOrder = value
+				addon:Refresh()
+			end,
+		})
 
-	ccNativeOrderChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
-	ccNativeOrderChk:SetPoint("TOP", configureBlizzardNameplatesChk, "TOP", 0, 0)
+		ccNativeOrderChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+		ccNativeOrderChk:SetPoint("TOP", configureBlizzardNameplatesChk, "TOP", 0, 0)
+	end
 end
