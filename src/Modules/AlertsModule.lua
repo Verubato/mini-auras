@@ -7,7 +7,6 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
 local growAnchors = addon.Core.GrowAnchors
-local pool = addon.Core.Pool
 local eventGate = addon.Core.EventGate
 local duelPoller = addon.Core.DuelPoller
 local moduleUtil = addon.Utils.ModuleUtil
@@ -112,7 +111,15 @@ local nameplateWatchers = {}
 -- mid-combat never creates containers. Presence in this map means the token is active.
 ---@type table<string, {Def: AuraContainerDisplay, Imp: AuraContainerDisplay}>
 local nameplateDisplays = {}
-local displayPairPool
+-- token -> its display pair, kept for the session. nameplateDisplays holds only the ACTIVE
+-- tokens; this keeps every pair that has been built so a token returning reuses its own, since
+-- WoW frames can never be freed. Pairs are rebuilt only when the configuration baked into their
+-- buttons changes (see AlertPairSignature).
+local displayPairsByToken = {}
+-- Configuration the live pairs were built with; a change rebuilds them. Forward-declared
+-- because RefreshNameplateDisplays is defined well above the display helpers.
+local pairSignature
+local RebuildStaleDisplayPairs
 -- Sorted token list scratch for deterministic chaining order.
 local displayOrderScratch = {}
 -- nameplate token -> its numeric index, memoized. The sort comparator ran a string match per
@@ -124,8 +131,6 @@ local activeTokensScratch = {}
 -- Freed id lists from RemoveTokenAlertSounds, reused by the next registration instead of
 -- allocating a fresh ~116-entry table per nameplate.
 local alertSoundIdListPool = {}
--- Rough upper bound on simultaneously visible enemy nameplates, used to size the display pool.
-local PLATE_ESTIMATE = 20
 -- Fallback geometry for a pooled display pair, used only if the db isn't readable yet.
 -- CreateAlertDisplayPair otherwise builds at the configured size: a button's size is fixed in
 -- initializeFrame, which never re-runs on pool reuse, so a placeholder size would survive any
@@ -834,6 +839,8 @@ local function RefreshNameplateDisplays()
 	local options = db.Modules.AlertsModule
 	local showBars = GetAlertBarsShown()
 
+	RebuildStaleDisplayPairs()
+
 	for _, entry in pairs(nameplateDisplays) do
 		ApplyNameplateDisplayOptions(entry, options, showBars)
 	end
@@ -1005,6 +1012,14 @@ local function CreateAlertDisplayPair()
 	local maxIcons = (icons and icons.MaxIcons) or DEFAULT_PAIR_ICONS
 	local spacing = (options and options.IconSpacing) or DEFAULT_PAIR_SPACING
 
+	-- Style is applied at creation for the same reason as the size: StyleButton bakes it into
+	-- each button, and a later restyle can't reach them while auras are secret.
+	local style = auraContainerDisplay:GetStyleScratch()
+	style.ReverseCooldown = icons and icons.ReverseCooldown
+	style.Glow = icons and icons.Glow
+	style.FontScale = db and db.FontScale
+	style.ShowTooltips = not options or options.ShowTooltips ~= false
+
 	return {
 		Def = auraContainerDisplay:New(UIParent, "none", {
 			{
@@ -1026,7 +1041,7 @@ local function CreateAlertDisplayPair()
 				CandidateFilters = auraFilters.CandidateFilters.Important,
 				MaxIcons = maxIcons,
 			},
-		}, size, spacing, "Alerts"),
+		}, size, spacing, "Alerts", { Style = style }),
 		-- Used in split mode only; hidden and budgeted to 0 when combined.
 		Imp = auraContainerDisplay:New(UIParent, "none", {
 			{
@@ -1035,11 +1050,30 @@ local function CreateAlertDisplayPair()
 				CandidateFilters = auraFilters.CandidateFilters.Important,
 				MaxIcons = maxIcons,
 			},
-		}, size, spacing, "Alerts"),
+		}, size, spacing, "Alerts", { Style = style }),
 	}
 end
 
--- 12.1 path: parks a pooled display pair (both displays stay parented to UIParent).
+-- Everything baked into a pair's buttons when it is created. A change means the live pairs have
+-- to be rebuilt rather than restyled, because a restyle can't reach the buttons while auras are
+-- secret (i.e. for the whole of an arena).
+---@return string
+local function AlertPairSignature()
+	local options = db and db.Modules.AlertsModule
+	local icons = options and options.Icons
+
+	return table.concat({
+		tostring(icons and icons.Size),
+		tostring(options and options.IconSpacing),
+		tostring(icons and icons.MaxIcons),
+		tostring(icons and icons.ReverseCooldown),
+		tostring(icons and icons.Glow),
+		tostring(db and db.FontScale),
+		tostring(not options or options.ShowTooltips ~= false),
+	}, ":")
+end
+
+-- 12.1 path: parks a display pair (both displays stay parented to UIParent).
 local function ResetAlertDisplayPair(entry)
 	entry.Def:SetEnabled(false)
 	entry.Def:StopGlowAnimations()
@@ -1058,7 +1092,13 @@ local function EnsureNameplateDisplay(unitToken)
 	local entry = nameplateDisplays[unitToken]
 
 	if not entry then
-		entry = displayPairPool:Acquire()
+		entry = displayPairsByToken[unitToken]
+
+		if not entry then
+			entry = CreateAlertDisplayPair()
+			displayPairsByToken[unitToken] = entry
+		end
+
 		nameplateDisplays[unitToken] = entry
 	end
 
@@ -1068,13 +1108,49 @@ local function EnsureNameplateDisplay(unitToken)
 	return entry
 end
 
--- 12.1 path: releases a token's display pair back to the central pool when its plate goes away.
--- Deliberately leaves the token's sound registrations warm (see alertSoundsByToken).
+-- 12.1 path: parks a token's display pair when its plate goes away. The pair stays in
+-- displayPairsByToken for the token's return; only the active map loses it. Deliberately leaves
+-- the token's sound registrations warm (see alertSoundsByToken).
 local function ReleaseNameplateDisplay(unitToken)
 	local entry = nameplateDisplays[unitToken]
 	if entry then
 		nameplateDisplays[unitToken] = nil
-		displayPairPool:Release(entry)
+		ResetAlertDisplayPair(entry)
+	end
+end
+
+-- Drops every built pair so the next Ensure rebuilds it. Used when the configuration baked into
+-- the buttons changes; there is no way to restyle in place.
+local function RebuildDisplayPairs()
+	for token, entry in pairs(displayPairsByToken) do
+		ResetAlertDisplayPair(entry)
+		displayPairsByToken[token] = nil
+		nameplateDisplays[token] = nil
+	end
+end
+
+-- Rebuilds every pair when the configuration baked into their buttons has changed. Tokens that
+-- are currently tracked get theirs back straight away so the bars never blank out.
+function RebuildStaleDisplayPairs()
+	local signature = AlertPairSignature()
+
+	if signature == pairSignature then
+		return
+	end
+
+	pairSignature = signature
+
+	local tracked = activeTokensScratch
+	wipe(tracked)
+
+	for token in pairs(nameplateDisplays) do
+		tracked[#tracked + 1] = token
+	end
+
+	RebuildDisplayPairs()
+
+	for _, token in ipairs(tracked) do
+		EnsureNameplateDisplay(token)
 	end
 end
 
@@ -1276,11 +1352,6 @@ local function SetEventsActive(active)
 		plateGate:SetActive(nameplatesNeeded)
 	end
 
-	-- 12.1: fill the display pool only once plates are actually being tracked. Idempotent, so
-	-- running it on every gate flip is fine.
-	if nameplatesNeeded and USE_AURA_CONTAINERS and displayPairPool then
-		displayPairPool:Prewarm()
-	end
 end
 
 local function Teardown()
@@ -1475,13 +1546,6 @@ local function SetUpBarDragging(bar, anchorOptions)
 end
 
 local function CreateFrames()
-	if USE_AURA_CONTAINERS then
-		-- The pool itself is cheap; pre-creation of the pairs is deferred to the enable path
-		-- (see SetEventsActive) so a disabled module - or a zone that never shows alerts -
-		-- doesn't build a screen's worth of containers. Acquire falls back to on-demand
-		-- creation past the pre-created count.
-		displayPairPool = pool:New(CreateAlertDisplayPair, ResetAlertDisplayPair, PLATE_ESTIMATE)
-	end
 
 	local options = db.Modules.AlertsModule
 	local count = options.Icons.MaxIcons or 8

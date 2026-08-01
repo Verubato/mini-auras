@@ -64,7 +64,7 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		assert(#env.containersForUnit("nameplate3") == 0)
 	end)
 
-	fw.it("plate removal parks the pair and a new token reuses it", function()
+	fw.it("plate removal parks the pair, and the token gets it back on return", function()
 		local before = env.containersForUnit("nameplate2")
 		assert(#before == 2, "pair still assigned from previous test")
 
@@ -73,13 +73,22 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 			assert(not container._enabled and not container:IsShown(), "parked: disabled and hidden")
 		end
 
+		-- Pairs are built per token rather than pooled, because the style is baked into each
+		-- button at creation and can't be restyled while auras are secret. So another token
+		-- gets its own pair...
 		env.enemies.nameplate7 = true
 		env.addPlate("nameplate7")
 		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate7")
-		local reused = env.containersForUnit("nameplate7")
-		assert(#reused == 2, "new token got a pair")
-		local reusedIdentity = (reused[1] == before[1] or reused[1] == before[2])
-		assert(reusedIdentity, "the parked pair was reused, not recreated")
+		local other = env.containersForUnit("nameplate7")
+		assert(#other == 2, "new token got its own pair")
+		assert(other[1] ~= before[1] and other[1] ~= before[2],
+			"a different token must not inherit another token's pair")
+
+		-- ...and nameplate2 picks its own back up, which is what bounds frame growth.
+		env.addPlate("nameplate2")
+		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate2")
+		local returned = env.containersForUnit("nameplate2")
+		assert(returned[1] == before[1] and returned[2] == before[2], "the token's own pair is reused")
 	end)
 
 	fw.it("chains defensives in numeric token order with importants after all defensives", function()
@@ -229,15 +238,24 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 		assert(display._parent == _G.UIParent, "reparented to UIParent")
 	end)
 
-	fw.it("the next plate reuses the released display", function()
+	fw.it("each token keeps its own display, and gets it back when it returns", function()
+		-- Displays are built per token now rather than pooled, because every style value is
+		-- baked into a button at creation and can't be changed while auras are secret. A
+		-- different token therefore gets a different display.
 		local parked = env.containersForUnit("np_a")[1]
 		env.enemies.np_b = true
 		local plate = env.addPlate("np_b")
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_b")
 
 		local display = env.containersForUnit("np_b")[1]
-		assert(display == parked, "released display reused for the new token")
-		assert(display._parent == plate and display._enabled, "reconfigured for the new plate")
+		assert(display ~= parked, "a different token must not inherit another token's display")
+		assert(display._parent == plate and display._enabled, "configured for its own plate")
+
+		-- np_a coming back reuses what it had; that is what bounds frame growth, since WoW
+		-- can never free a frame.
+		env.addPlate("np_a")
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_a")
+		assert(env.containersForUnit("np_a")[1] == parked, "the token's own display is reused")
 	end)
 
 	fw.it("an IgnorePets flip releases an already-tracked pet plate's display", function()
@@ -477,40 +495,107 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		nameplates:Refresh()
 	end)
 
-	fw.it("plate churn is served entirely from the pool", function()
+	fw.it("churn on one token creates containers only once", function()
+		-- The per-token cache is what keeps frame growth bounded: a token that spawns and
+		-- despawns repeatedly must not build a container each time, because WoW frames can
+		-- never be freed.
 		removePlate("np_leak1")
+
+		addPlate("np_churn")
+		assert(#activeDisplays("np_churn") == 1, "tracked by the one enabled bar")
+		removePlate("np_churn")
+
 		local created = env.auraContainerCount()
 
-		for index = 1, 5 do
-			local token = "np_churn" .. index
-			addPlate(token)
-			assert(#activeDisplays(token) == 1, token .. " tracked by the one enabled bar")
-			removePlate(token)
+		for _ = 1, 5 do
+			addPlate("np_churn")
+			assert(#activeDisplays("np_churn") == 1, "still tracked by the one enabled bar")
+			removePlate("np_churn")
 		end
 
 		assert(env.auraContainerCount() == created,
-			"five spawn/despawn cycles must reuse one display, got " .. (env.auraContainerCount() - created) .. " extra")
+			"further cycles must reuse the token's display, got " .. (env.auraContainerCount() - created) .. " extra")
 	end)
 
-	fw.it("a plate that stops qualifying releases before it despawns", function()
+	fw.it("a token that flips faction rebuilds for the new styling and keeps both", function()
+		-- GetUnitOptions returns Friendly or Enemy for the same token, and a duel flips it
+		-- mid-session. Every style value is baked into a button at creation, so the display has
+		-- to be rebuilt for the new configuration - and the old one kept, or repeated flips
+		-- would strand a frame each time and WoW can never free them.
+		-- Mirror the enemy bar's configuration so only the size differs.
+		local enemyBar = db.Modules.NameplatesModule.Enemy.Bar1
+		local friendlyBar = db.Modules.NameplatesModule.Friendly.Bar1
+		for key, value in pairs(enemyBar) do
+			if key ~= "Icons" then
+				friendlyBar[key] = value
+			end
+		end
+		for key, value in pairs(enemyBar.Icons) do
+			friendlyBar.Icons[key] = value
+		end
+		friendlyBar.Enabled = true
+		friendlyBar.Icons.Size = 21
+		enemyBar.Icons.Size = 44
+		nameplates:Refresh()
+
+		addPlate("np_flip", false)
+		-- The icon size is baked into the group layout at creation, so that is where it is
+		-- observable from the outside.
+		local function iconSize(container)
+			for _, group in pairs(container._groups) do
+				return group.layout and group.layout.elementWidth
+			end
+		end
+
+		local friendly = activeDisplays("np_flip")[1]
+		assert(friendly and iconSize(friendly) == 21, "built at the friendly size")
+
+		-- Duel starts: same token, now an enemy.
+		env.enemies.np_flip = true
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_flip")
+		local enemy = activeDisplays("np_flip")[1]
+		assert(enemy and iconSize(enemy) == 44, "rebuilt at the enemy size")
+		assert(enemy ~= friendly, "a separate display, since the size is baked in at creation")
+		assert(not friendly._enabled, "the friendly display is parked, not left live")
+
+		local created = env.auraContainerCount()
+
+		-- Duel ends: back to friendly, and the original comes back rather than a third being built.
+		env.enemies.np_flip = nil
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_flip")
+		assert(activeDisplays("np_flip")[1] == friendly, "the friendly display is reused")
+		assert(env.auraContainerCount() == created, "flipping back builds nothing new")
+
+		removePlate("np_flip")
+		db.Modules.NameplatesModule.Friendly.Bar1.Enabled = false
+		nameplates:Refresh()
+	end)
+
+	fw.it("a plate that stops qualifying parks its display instead of leaving it live", function()
 		-- The module can stop tracking a plate without a removal event: the module is switched
 		-- off, or the unit turns out to be a pet with IgnorePets on. Both re-enter through
-		-- OnNamePlateAdded, which has to release what the token was already holding.
+		-- OnNamePlateAdded, which has to park what the token was already holding.
 		addPlate("np_drop")
+		local display = activeDisplays("np_drop")[1]
+		assert(display and display._enabled, "tracked to begin with")
+
 		local created = env.auraContainerCount()
 
 		env.setModuleEnabled("NameplatesModule", false)
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_drop")
 
+		assert(not display._enabled and not display:IsShown(), "parked when it stopped qualifying")
+		assert(display._parent == _G.UIParent, "and reparented off the plate")
+
+		-- Re-qualifying reuses the same display rather than building another.
 		env.setModuleEnabled("NameplatesModule", true)
 		db.Modules.NameplatesModule.Enemy.Bar1.Enabled = true
-		addPlate("np_drop2")
+		addPlate("np_drop")
 
-		assert(env.auraContainerCount() == created,
-			"the dropped plate's display was reused by the next one")
+		assert(activeDisplays("np_drop")[1] == display, "the parked display is picked back up")
+		assert(env.auraContainerCount() == created, "and no new container was built")
 
 		removePlate("np_drop")
-		removePlate("np_drop2")
 	end)
 
 	fw.it("nothing in the module's lifecycle was reported as misuse", function()

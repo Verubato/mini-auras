@@ -11,19 +11,17 @@ local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
 local growAnchors = addon.Core.GrowAnchors
 local kickSlot = addon.Core.KickSlot
-local pool = addon.Core.Pool
 local eventGate = addon.Core.EventGate
 local duelPoller = addon.Core.DuelPoller
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local slotDistribution = addon.Utils.SlotDistribution
 local mathMin = math.min
-local mathMax = math.max
 local GetTime = GetTime
 local C_NamePlate = C_NamePlate
--- 12.1 path: each bar gets an AuraContainer drawn from a central pre-created pool (acquired,
--- reparented to the plate, and retargeted with SetUnit as plates come and go) with one group
--- per category; the bar's IconSlotContainer is kept for the kick icon and test icons. The
+-- 12.1 path: each bar gets its own AuraContainer per nameplate token (reparented to the plate
+-- and retargeted with SetUnit as plates come and go) with one group per category; the bar's
+-- IconSlotContainer is kept for the kick icon and test icons. The
 -- legacy watcher/buffList path never runs there
 -- (no watchers are created). Deviations forced by aura data being unreadable: no dynamic slot
 -- split between categories (each enabled category gets the bar's full MaxIcons budget) and no
@@ -122,26 +120,25 @@ local BARS = {
 	{ Key = "Bar2", ContainerKey = NAMEPLATE_BAR2_KEY, DataField = "Bar2Container", DisplayField = "Bar2Display" },
 }
 
--- 12.1 path: pre-created bar displays, pooled PER ICON SIZE. Displays are created out of combat
--- via each pool's staggered pre-creation, then acquired/reparented/retargeted as plates come and
--- go, so plate churn mid-combat never creates containers.
+-- 12.1 path: one AuraContainer per (nameplate token, bar), built with its bar's full
+-- configuration and kept for the session.
 --
--- Keyed by size because a button takes its size in initializeFrame, which the frame pool runs
--- once per button and never again on reuse. Resizing afterwards needs a restyle, and inside an
--- arena C_Secrets.ShouldAurasBeSecret never clears, so the restyle never runs and the icons keep
--- whatever size they were built at. One shared pool would hand a bar displays built for a
--- different bar's size; keying by size means a bar always gets displays built for it. Bars that
--- happen to share a size share a pool.
----@type table<number, Pool>
-local displayPools = {}
--- Budgets/spacing are applied per bar on acquisition (EnsureBarDisplay); only the size has to be
--- right at creation. DEFAULT_BAR_SIZE is the fallback for a bar with no configured size.
+-- Not pooled. Everything StyleButton applies - size, swipe, countdown, glow, dispel textures -
+-- is baked into a button when the frame pool creates it and can only be changed by a restyle,
+-- which is blocked for as long as C_Secrets.ShouldAurasBeSecret is true (a whole arena). A
+-- generic pool hands out displays built for some other bar's configuration, which then cannot be
+-- corrected. Building per bar means a display is right from the moment it exists.
+--
+-- Cached per token rather than created per plate spawn because WoW frames can never be freed:
+-- tokens are a small fixed set (nameplate1..N) so this is bounded, whereas creating one per
+-- spawn would grow for the whole session. A display whose bar configuration changes is
+-- abandoned and rebuilt - unavoidable, and rare enough to be the right trade.
+---@type table<string, table<string, {Display: AuraContainerDisplay, Signature: string}>>
+local barDisplays = {}
+-- Fallbacks for a bar with no configured geometry.
 local DEFAULT_BAR_ICONS = 5
 local DEFAULT_BAR_SIZE = 35
 local DEFAULT_BAR_SPACING = 2
-
--- Rough upper bound on simultaneously visible nameplates, used to size the display pool.
-local PLATE_ESTIMATE = 40
 
 local function ImportantNeeded()
 	local enemy = nmModule.Enemy
@@ -151,39 +148,6 @@ local function ImportantNeeded()
 		or (friendly.Bar1.Enabled and friendly.Bar1.ShowImportant)
 		or (friendly.Bar2.Enabled and friendly.Bar2.ShowImportant)
 		or false
-end
-
----Counts a faction's enabled bars per icon size into `out`.
-local function CountBarsBySize(unitOptions, out)
-	for _, bar in ipairs(BARS) do
-		local barOptions = unitOptions[bar.Key]
-
-		if barOptions and barOptions.Enabled then
-			local size = tonumber(barOptions.Icons.Size) or DEFAULT_BAR_SIZE
-			out[size] = (out[size] or 0) + 1
-		end
-	end
-end
-
--- 12.1: how many displays a full screen of plates needs, per icon size. Each enabled bar takes its
--- own display, and a plate is only ever one faction, so the busiest case for a given size is the
--- faction with the most bars using it. Undersizing means falling back to creating AuraContainers
--- mid-combat, which is exactly what the pools exist to avoid.
----@return table<number, number> size -> display count
-local function DisplayPoolTargets()
-	local enemy, targets = {}, {}
-	CountBarsBySize(nmModule.Enemy, enemy)
-	CountBarsBySize(nmModule.Friendly, targets)
-
-	for size, count in pairs(enemy) do
-		targets[size] = mathMax(targets[size] or 0, count)
-	end
-
-	for size, count in pairs(targets) do
-		targets[size] = PLATE_ESTIMATE * count
-	end
-
-	return targets
 end
 
 local function GetCCSortOptions()
@@ -277,14 +241,17 @@ end
 ---filter negation, see Core/AuraFilters). Budgets/unit/style are applied per bar on acquisition;
 ---the size is fixed here because the buttons take it at creation and can't be resized in an arena.
 ---@param size number
-local function CreateBarDisplay(size)
+---@param spacing number
+---@param style AuraDisplayStyle applied at creation; it cannot be changed while auras are secret
+local function CreateBarDisplay(size, spacing, style)
 	return auraContainerDisplay:New(
 		UIParent,
 		"none",
 		auraFilters:BuildCategoryGroups(DEFAULT_BAR_ICONS),
 		size,
-		DEFAULT_BAR_SPACING,
-		"Nameplates"
+		spacing,
+		"Nameplates",
+		{ Style = style }
 	)
 end
 
@@ -302,62 +269,9 @@ local function BarIconSize(barOptions)
 	return tonumber(barOptions.Icons.Size) or DEFAULT_BAR_SIZE
 end
 
----Pool of displays built at one icon size, created on first use.
----@param size number
----@return Pool
-local function PoolForSize(size)
-	local sizePool = displayPools[size]
-
-	if not sizePool then
-		sizePool = pool:New(function()
-			return CreateBarDisplay(size)
-		end, ResetBarDisplay, 0)
-		displayPools[size] = sizePool
-	end
-
-	return sizePool
-end
-
----Returns a display to the pool it was built for. Display.Size is the size it was created at,
----so it always lands back in the right pool even after a bar's configured size has changed.
-local function ReleaseBarDisplay(display)
-	PoolForSize(display.Size):Release(display)
-end
-
----12.1 path: acquires (or reuses) and reconfigures a bar's aura display for a tracked plate.
----@param data NameplateData
-local function EnsureBarDisplay(data, bar, barOptions)
-	local size = BarIconSize(barOptions)
-	local display = data[bar.DisplayField]
-
-	-- A display is built for one size and can't be resized in an arena, so a bar whose size
-	-- changed swaps pools rather than keeping a display that would stay at the old size.
-	if display and display.Size ~= size then
-		ReleaseBarDisplay(display)
-		data[bar.DisplayField] = nil
-		display = nil
-	end
-
-	if not display then
-		display = PoolForSize(size):Acquire()
-		data[bar.DisplayField] = display
-	end
-
-	local maxIcons = barOptions.Icons.MaxIcons or 5
-	local spacing = barOptions.Icons.Spacing or 2
-
-	display.Frame:SetParent(data.Nameplate)
-	display:SetUnit(data.UnitToken)
-	display:SetIconSize(size)
-	display:SetSpacing(spacing)
-	auraFilters:ApplyCategoryBudgets(
-		display,
-		maxIcons,
-		barOptions.ShowCC,
-		barOptions.ShowDefensives,
-		barOptions.ShowImportant
-	)
-
+---Fills the shared style scratch from a bar's options.
+---@return AuraDisplayStyle
+local function BarStyle(barOptions)
 	local style = auraContainerDisplay:GetStyleScratch()
 	style.ReverseCooldown = barOptions.Icons.ReverseCooldown
 	style.ShowMilliseconds = barOptions.Icons.ShowMilliseconds
@@ -366,9 +280,80 @@ local function EnsureBarDisplay(data, bar, barOptions)
 	style.Glow = barOptions.Icons.Glow
 	style.FontScale = db.FontScale
 	style.ShowTooltips = barOptions.ShowTooltips ~= false
-	display:SetStyle(style)
-	-- SetEnabled(false -> true) triggers the container's own full refresh, so a pooled display
-	-- re-acquired for a recycled unit token still repopulates.
+	return style
+end
+
+---Everything that is baked into a button when it is created. A display whose signature no longer
+---matches its bar has to be rebuilt rather than restyled, because a restyle cannot reach the
+---buttons while auras are secret.
+---@return string
+local function BarSignature(size, spacing, style)
+	return table.concat({
+		size,
+		spacing,
+		tostring(style.ReverseCooldown),
+		tostring(style.ShowMilliseconds),
+		tostring(style.ColorByDispelType),
+		tostring(style.Glow),
+		tostring(style.FontScale),
+		tostring(style.ShowTooltips),
+	}, ":")
+end
+
+---12.1 path: acquires (or reuses) and reconfigures a bar's aura display for a tracked plate.
+---@param data NameplateData
+local function EnsureBarDisplay(data, bar, barOptions)
+	local token = data.UnitToken
+	local size = BarIconSize(barOptions)
+	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
+	local maxIcons = barOptions.Icons.MaxIcons or 5
+	local style = BarStyle(barOptions)
+	local signature = BarSignature(size, spacing, style)
+
+	local byBar = barDisplays[token]
+
+	if not byBar then
+		byBar = {}
+		barDisplays[token] = byBar
+	end
+
+	-- Keyed by signature as well as bar, so a display is never restyled - it can't be, while
+	-- auras are secret - and never thrown away either. The same token legitimately alternates
+	-- between configurations: GetUnitOptions returns Friendly or Enemy for it, and a duel flips
+	-- that mid-session. Keying on the bar alone would rebuild on every flip and abandon the
+	-- previous frame, which WoW can never free.
+	local key = bar.Key .. "|" .. signature
+	local display = byBar[key]
+
+	-- Park whatever this bar was showing if it isn't the display we're about to use.
+	local previous = data[bar.DisplayField]
+
+	if previous and previous ~= display then
+		ResetBarDisplay(previous)
+	end
+
+	if not display then
+		display = CreateBarDisplay(size, spacing, style)
+		byBar[key] = display
+	end
+
+	data[bar.DisplayField] = display
+
+	display.Frame:SetParent(data.Nameplate)
+	display:SetUnit(token)
+	auraFilters:ApplyCategoryBudgets(
+		display,
+		maxIcons,
+		barOptions.ShowCC,
+		barOptions.ShowDefensives,
+		barOptions.ShowImportant
+	)
+
+	-- No SetStyle here: the style was applied when the display was built, and a signature change
+	-- rebuilds it. Restyling would be a no-op out of combat and impossible inside an arena.
+	--
+	-- SetEnabled(false -> true) triggers the container's own full refresh, so a display reused
+	-- for a recycled unit token still repopulates.
 	display:SetEnabled(true)
 	display:SetShown(not testModeActive)
 
@@ -388,12 +373,14 @@ local function ReleaseDataDisplays(data)
 		data.KickTimer:Cancel()
 		data.KickTimer = nil
 	end
+	-- Parked, not discarded: the cache keeps them for when this token comes back, since a
+	-- rebuild per plate spawn would grow frames forever.
 	if data.Bar1Display then
-		ReleaseBarDisplay(data.Bar1Display)
+		ResetBarDisplay(data.Bar1Display)
 		data.Bar1Display = nil
 	end
 	if data.Bar2Display then
-		ReleaseBarDisplay(data.Bar2Display)
+		ResetBarDisplay(data.Bar2Display)
 		data.Bar2Display = nil
 	end
 end
@@ -413,7 +400,7 @@ local function EnsureBarDisplays(data, unitOptions)
 			local display = data[bar.DisplayField]
 			if display then
 				data[bar.DisplayField] = nil
-				ReleaseBarDisplay(display)
+				ResetBarDisplay(display)
 			end
 		end
 	end
@@ -865,7 +852,7 @@ local function OnNamePlateRemoved(unitToken)
 	HideAndReset(data.Bar1Container)
 	HideAndReset(data.Bar2Container)
 
-	-- 12.1: park the displays back in the central pool for the next plate.
+	-- 12.1: park this plate's displays; the per-token cache keeps them for its return.
 	if USE_AURA_CONTAINERS then
 		ReleaseDataDisplays(data)
 	end
@@ -960,8 +947,8 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
-	-- Create / update nameplate data. Rebuilds for an already-tracked token (e.g. from
-	-- RebuildContainers) must carry the pooled displays over, or they'd leak out of the pool.
+	-- Create / update nameplate data. Displays live in the per-token cache rather than on this
+	-- table, so a rebuild for an already-tracked token picks them back up on the next Ensure.
 	local previous = nameplateAnchors[unitToken]
 	if previous and previous.KickTimer then
 		previous.KickTimer:Cancel()
@@ -1225,16 +1212,6 @@ local function SetEventsActive(active)
 	-- entirely; reactivation rebuilds from the live plate list. The addon-wide Refresh
 	-- (config, world change, raid flip) re-runs this gate.
 	plateGate:SetActive(active)
-
-	-- 12.1: fill the display pools only once the module is actually running, and re-target them
-	-- whenever the enabled bars or their sizes change. Idempotent, so running it on every gate
-	-- flip is fine. A size that is no longer used keeps its pool; the displays in it are parked
-	-- and cost nothing until that size is configured again.
-	if active and USE_AURA_CONTAINERS then
-		for size, target in pairs(DisplayPoolTargets()) do
-			PoolForSize(size):Prewarm(target)
-		end
-	end
 end
 
 local function Teardown()
