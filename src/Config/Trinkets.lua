@@ -76,6 +76,21 @@ function M:Build(panel)
 	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
 	settingsDivider:SetPoint("TOP", enabled, "BOTTOM", 0, -verticalSpacing)
 
+	local borderChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show border"],
+		Tooltip = L["Draw a border around the icons."],
+		GetValue = function()
+			return db.Modules.TrinketsModule.Icons.Border
+		end,
+		SetValue = function(value)
+			db.Modules.TrinketsModule.Icons.Border = value
+			config:Apply()
+		end,
+	})
+
+	borderChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,
 		LabelText = L["Icon Size"],
@@ -95,7 +110,7 @@ function M:Build(panel)
 		Step = 1,
 	})
 
-	iconSizeSlider.Slider:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 4, -verticalSpacing * 2)
+	iconSizeSlider.Slider:SetPoint("TOPLEFT", borderChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
 	local offsetXSlider = mini:Slider({
 		Parent = panel,

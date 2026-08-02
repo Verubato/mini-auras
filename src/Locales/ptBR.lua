@@ -28,6 +28,8 @@ L:RegisterLocale("ptBR", {
 	["Shows enemy kick cooldowns in arena."] = "Mostra os tempos de recarga de interrupção inimigos na arena.",
 	["Enable if you are:"] = "Ativar se você for:",
 	["Enable in"] = "Ativar em",
+	["Show border"] = "Mostrar borda",
+	["Draw a border around the icons."] = "Desenha uma borda ao redor dos ícones.",
 	["Colour"] = "Cor",
 	["Icon colour"] = "Cor do ícone",
 	["Change the colour of the icon's glow and border."] = "Altera a cor do brilho e da borda do ícone.",

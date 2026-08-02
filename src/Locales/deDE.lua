@@ -28,6 +28,8 @@ L:RegisterLocale("deDE", {
 	["Shows enemy kick cooldowns in arena."] = "Zeigt gegnerische Kick-Cooldowns in der Arena.",
 	["Enable if you are:"] = "Aktivieren, wenn du bist:",
 	["Enable in"] = "Aktivieren in",
+	["Show border"] = "Rahmen anzeigen",
+	["Draw a border around the icons."] = "Zeichnet einen Rahmen um die Symbole.",
 	["Colour"] = "Farbe",
 	["Icon colour"] = "Symbolfarbe",
 	["Change the colour of the icon's glow and border."] = "Ändert die Farbe des Leuchtens und Rahmens des Symbols.",

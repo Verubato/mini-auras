@@ -4,6 +4,8 @@ local _, addon = ...
 local db
 -- Handed out by GetIconColor; every field is rewritten on each call.
 local iconColorScratch = {}
+-- Stand-in when a border is on but no colour has been picked; white draws the plain border.
+local EMPTY_COLOR = {}
 local iconColorRgbScratch = {}
 
 ---@class ModuleName
@@ -69,14 +71,24 @@ end
 ---Returns a shared scratch table: the containers copy the components straight out and keep
 ---nothing, so this never allocates on the render path. Nil when no colour is configured, which
 ---leaves the container on its plain untinted glow.
+---Returns nil unless a glow or a border is switched on, since those are the only two things the
+---colour feeds.
 ---@param iconOptions table The Icons sub-table from a module's options.
 ---@return table? color
 function M:GetIconColor(iconOptions)
-	local configured = iconOptions and iconOptions.Color
-
-	if not configured then
+	if not iconOptions then
 		return nil
 	end
+
+	-- The icon containers draw a border whenever a colour is supplied, and hide it while a glow
+	-- is running. So a colour is only ever wanted for one of those two, and handing one over
+	-- otherwise draws a border nobody asked for.
+	if not iconOptions.Glow and not iconOptions.Border then
+		return nil
+	end
+
+	-- Border on with no colour picked still needs one, or there is nothing to draw.
+	local configured = iconOptions.Color or EMPTY_COLOR
 
 	iconColorScratch.r = configured.R or 1
 	iconColorScratch.g = configured.G or 1

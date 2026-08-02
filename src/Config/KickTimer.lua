@@ -148,8 +148,24 @@ function M:Build(panel)
 		end,
 	})
 
+	local borderChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show border"],
+		Tooltip = L["Draw a border around the icons."],
+		GetValue = function()
+			return db.Modules.KickTimerModule.Icons.Border
+		end,
+		SetValue = function(value)
+			db.Modules.KickTimerModule.Icons.Border = value
+			config:Apply()
+		end,
+	})
+
 	-- Its own row under the two sliders; sharing theirs put it behind the padding slider.
-	colorSwatch:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	borderChk:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 3)
+	colorSwatch:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+	colorSwatch:SetPoint("TOP", borderChk, "TOP", 0,
+		-math.floor((borderChk:GetHeight() - colorSwatch:GetHeight()) / 2))
 
 	M.Panel = panel
 end

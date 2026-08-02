@@ -386,6 +386,7 @@ local dbDefaults = {
 			Icons = {
 				Size = 50,
 				Glow = false,
+				Border = false,
 				ReverseCooldown = true,
 				-- Glow/border tint. These icons carry no dispel or category colouring to derive
 				-- one from, so the colour is the user's choice.
@@ -412,6 +413,9 @@ local dbDefaults = {
 			Icons = {
 				Size = 40,
 				Glow = false,
+				-- Off by default: the icons read fine bare, and a border only earns its pixels
+				-- when the user asks for one.
+				Border = false,
 				ReverseCooldown = false,
 				ShowText = true,
 				-- Glow/border tint. These icons carry no dispel or category colouring to derive

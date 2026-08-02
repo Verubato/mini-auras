@@ -28,6 +28,8 @@ L:RegisterLocale("ruRU", {
 	["Shows enemy kick cooldowns in arena."] = "Показывает перезарядку прерываний врагов на арене.",
 	["Enable if you are:"] = "Включить, если вы:",
 	["Enable in"] = "Включить в",
+	["Show border"] = "Показывать границу",
+	["Draw a border around the icons."] = "Рисует границу вокруг значков.",
 	["Colour"] = "Цвет",
 	["Icon colour"] = "Цвет значка",
 	["Change the colour of the icon's glow and border."] = "Изменяет цвет свечения и границы значка.",
