@@ -1122,7 +1122,7 @@ addon.Core.AuraCategoryIds = {
 		[236321] = true, -- War Banner
 		[1249625] = true, -- Zenith
 	},
-	-- Defensive: defensive + healer throughput cooldowns (46 ids)
+	-- Defensive: defensive + healer throughput cooldowns (47 ids)
 	Defensive = {
 		[110909] = true, -- Alter Time
 		[342246] = true, -- Alter Time
@@ -1157,6 +1157,7 @@ addon.Core.AuraCategoryIds = {
 		[48792] = true, -- Icebound Fortitude
 		[147833] = true, -- Intervene
 		[102342] = true, -- Ironbark
+		[116849] = true, -- Life Cocoon
 		[55342] = true, -- Mirror Image
 		[212295] = true, -- Nether Ward
 		[354540] = true, -- Nimble Brew

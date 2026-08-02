@@ -104,7 +104,7 @@ local defensiveNames = {
 	["Blessing of Protection"] = true, ["Blessing of Spellwarding"] = true,
 	["Blessing of Sacrifice"] = true,
 	["Ardent Defender"] = true, ["Pain Suppression"] = true,
-	["Guardian Spirit"] = true, ["Desperate Prayer"] = true, ["Fortifying Brew"] = true,
+	["Life Cocoon"] = true, ["Guardian Spirit"] = true, ["Desperate Prayer"] = true, ["Fortifying Brew"] = true,
 	["Anti-Magic Shell"] = true, ["Icebound Fortitude"] = true, ["Lichborne"] = true,
 	["Vampiric Blood"] = true, ["Unending Resolve"] = true, ["Nether Ward"] = true,
 	["Obsidian Scales"] = true, ["Exhilaration"] = true, ["Alter Time"] = true,
