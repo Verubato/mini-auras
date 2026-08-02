@@ -159,12 +159,19 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		-- The healer sound tests later assert on the shared counters in absolute terms, so
 		-- restore them at the end (net registrations here end at zero anyway).
 		local adds0, removes0 = env.auraSoundAdds, env.auraSoundRemoves
+		-- Some spells are deliberately silent (SILENT_ALERT_SPELL_IDS in the module): they show
+		-- an icon but register no sound, so they do not count towards the expected total.
+		local silent = { [1044] = true, [305395] = true } -- Blessing of Freedom
 		local perToken = 0
-		for _ in pairs(env.addon.Core.AuraCategoryIds.Important) do
-			perToken = perToken + 1
+		for id in pairs(env.addon.Core.AuraCategoryIds.Important) do
+			if not silent[id] then
+				perToken = perToken + 1
+			end
 		end
-		for _ in pairs(env.addon.Core.AuraCategoryIds.Defensive) do
-			perToken = perToken + 1
+		for id in pairs(env.addon.Core.AuraCategoryIds.Defensive) do
+			if not silent[id] then
+				perToken = perToken + 1
+			end
 		end
 		assert(perToken > 0, "sound data present")
 

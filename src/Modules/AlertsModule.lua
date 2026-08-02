@@ -32,6 +32,15 @@ local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 -- they take the warning colour; defensives (big and external alike) read as "they are protected"
 -- and take the safe one. Each carries both shapes its consumers want and is shared read-only:
 -- AuraContainer group specs index [1..3], IconSlotContainer (test mode) reads r/g/b/a.
+-- Spells worth an icon but not a noise. The engine plays these per aura application, so an
+-- ability that lands often turns the alert sound into a metronome. 12.1 only: the legacy path
+-- fires one sound per no-alerts-to-alerts transition rather than per spell, so it has nothing
+-- per-spell to exclude.
+local SILENT_ALERT_SPELL_IDS = {
+	[1044] = true, -- Blessing of Freedom
+	[305395] = true, -- Blessing of Freedom
+}
+
 local IMPORTANT_GLOW_COLOR = { 1, 0.2, 0.2, r = 1, g = 0.2, b = 0.2, a = 1 }
 local DEFENSIVE_GLOW_COLOR = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
 local testModeActive = false
@@ -935,10 +944,12 @@ local function RegisterAlertSoundList(ids, info, list, config, fallbackFile)
 	info.outputChannel = config.Channel or "Master"
 
 	for spellId in pairs(list) do
-		info.spellID = spellId
-		local soundId = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
-		if soundId then
-			ids[#ids + 1] = soundId
+		if not SILENT_ALERT_SPELL_IDS[spellId] then
+			info.spellID = spellId
+			local soundId = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
+			if soundId then
+				ids[#ids + 1] = soundId
+			end
 		end
 	end
 end
