@@ -1063,6 +1063,7 @@ addon.Core.AuraCategoryIds = {
 		[442726] = true, -- Malevolence
 		[1276767] = true, -- Tyrant's Oblation
 		[363534] = true, -- Rewind
+		[370960] = true, -- Emerald Communion
 		[374227] = true, -- Zephyr
 		[162264] = true, -- Metamorphosis
 		[209426] = true, -- Darkness
@@ -1130,6 +1131,7 @@ addon.Core.AuraCategoryIds = {
 		[102558] = "DRUID", -- Incarnation: Guardian of Ursoc
 		[102342] = "DRUID", -- Ironbark
 		-- Evoker
+		[370960] = "EVOKER", -- Emerald Communion
 		[363534] = "EVOKER", -- Rewind
 		[374227] = "EVOKER", -- Zephyr
 		[375087] = "EVOKER", -- Dragonrage

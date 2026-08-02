@@ -259,7 +259,7 @@ function M:Build(panel, options)
 
 	soundChk:SetPoint("TOPLEFT", useAuraContainers and showIconsChk or showTooltipsChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	local soundFileDropdown = mini:Dropdown({
+	local soundFileDropdown, soundFileModernDdl = mini:Dropdown({
 		Parent = panel,
 		Items = config.SoundFiles,
 		GetValue = function()
@@ -277,7 +277,10 @@ function M:Build(panel, options)
 		end,
 	})
 
-	soundFileDropdown:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	-- Lined up with the checkbox column above it rather than the 4-column grid, and pulled left
+	-- on the legacy dropdown, whose frame carries a wide inset before its text starts.
+	soundFileDropdown:SetPoint("LEFT", panel, "LEFT",
+		enabledColumnWidth + (soundFileModernDdl and 0 or -16), 0)
 	soundFileDropdown:SetPoint("TOP", soundChk, "TOP", 0, -4)
 	soundFileDropdown:SetWidth(200)
 
