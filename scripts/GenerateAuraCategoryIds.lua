@@ -85,7 +85,7 @@ local importantNames = {
 	["Zenith"] = true,
 	["Invoke Niuzao, the Black Ox"] = true, ["Invoke Chi-Ji, the Red Crane"] = true,
 	["Invoke Xuen, the White Tiger"] = true, ["Invoke Yu'lon, the Jade Serpent"] = true,
-	["Thunder Blast"] = true, ["Takedown"] = true, ["Spell Reflection"] = true,
+	["Thunder Blast"] = true, ["Takedown"] = true, ["Peaceweaver"] = true, ["Spell Reflection"] = true,
 	["Blessing of Freedom"] = true, ["Divine Protection"] = true, ["Revival"] = true,
 	-- Only the Spellwarding-talented id; see idCategory below.
 	["Anti-Magic Shell"] = true,

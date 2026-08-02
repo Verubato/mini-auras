@@ -1047,7 +1047,7 @@ addon.Core.AuraCategoryIds = {
 		[260457] = true, -- Wyvern Sting
 		[262000] = true, -- Wyvern Sting
 	},
-	-- Important: specials + offensive cooldowns (72 ids)
+	-- Important: specials + offensive cooldowns (73 ids)
 	Important = {
 		[13750] = true, -- Adrenaline Rush
 		[410358] = true, -- Anti-Magic Shell (Spellwarding)
@@ -1098,6 +1098,7 @@ addon.Core.AuraCategoryIds = {
 		[187827] = true, -- Metamorphosis
 		[191427] = true, -- Metamorphosis
 		[378464] = true, -- Nullifying Shroud
+		[353313] = true, -- Peaceweaver
 		[51271] = true, -- Pillar of Frost
 		[377362] = true, -- Precognition
 		[389722] = true, -- Recklessness
