@@ -201,6 +201,7 @@ local function ApplyOptions(options)
 		local style = auraContainerDisplay:GetStyleScratch()
 		style.ReverseCooldown = options.Icons.ReverseCooldown
 		style.Glow = options.Icons.Glow
+		style.Border = options.Icons.Border
 		style.GlowColor = moduleUtil:GetIconColorRGB(options.Icons)
 		style.FontScale = db.FontScale
 		style.ShowTooltips = false

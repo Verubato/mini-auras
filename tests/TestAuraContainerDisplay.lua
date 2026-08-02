@@ -307,6 +307,23 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		assert(anyGlowPlaying(instance), "the flipbook animates")
 	end)
 
+	fw.it("draws the plain border only when the style asks for one", function()
+		-- Dispel colouring hands the border to the engine; without it the border is ours to
+		-- show or hide, and it stays hidden unless a module opts in.
+		local instance = newInstance()
+		instance:SetStyle({ Glow = false })
+		local widgets = select(2, next(instance.ButtonWidgets))
+		assert(widgets.Border._shown == false, "no border by default")
+
+		instance:SetStyle({ Border = true, GlowColor = { 1, 0, 0 } })
+		assert(widgets.Border._shown, "shown once asked for")
+		local color = widgets.Border._lastArgs.SetVertexColor
+		assert(color[1] == 1 and color[2] == 0 and color[3] == 0, "tinted with the style colour")
+
+		instance:SetStyle({ Border = false })
+		assert(widgets.Border._shown == false, "and hidden again")
+	end)
+
 	fw.it("tints each group's glow with its own category colour", function()
 		-- One container renders importants and defensives as separate aura groups, so a
 		-- per-group tint is the only way to colour them differently - the button can only be

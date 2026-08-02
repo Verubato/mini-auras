@@ -234,7 +234,8 @@ local function StoreStyle(instance, style)
 	local color = style.GlowColor
 	local colorR, colorG, colorB = color and color[1], color and color[2], color and color[3]
 
-	if stored.ReverseCooldown == style.ReverseCooldown
+	if stored.Border == style.Border
+		and stored.ReverseCooldown == style.ReverseCooldown
 		and stored.ShowMilliseconds == style.ShowMilliseconds
 		and stored.ColorByDispelType == style.ColorByDispelType
 		and stored.Glow == style.Glow
@@ -251,6 +252,7 @@ local function StoreStyle(instance, style)
 		return false
 	end
 
+	stored.Border = style.Border
 	stored.ReverseCooldown = style.ReverseCooldown
 	stored.ShowMilliseconds = style.ShowMilliseconds
 	stored.ColorByDispelType = style.ColorByDispelType
@@ -333,6 +335,7 @@ local function ApplyDispelTextures(instance, button, widgets)
 	-- The colour rides in the signature so a colour-only change still repaints; without it the
 	-- early return below would swallow it.
 	local dispelSignature = (wantBorder and "b" or "") .. (wantGlowTint and "g" or "")
+		.. (style.Border and "B" or "")
 		.. (colorR and (":" .. colorR .. "," .. colorG .. "," .. colorB) or "")
 
 	if dispelSignature == widgets.DispelSignature then
@@ -349,8 +352,15 @@ local function ApplyDispelTextures(instance, button, widgets)
 			showWhenHelpful = true,
 		})
 	elseif widgets.Border then
-		-- Unregistered again: visibility is ours, keep it hidden.
-		widgets.Border:Hide()
+		-- Not registered for dispel colouring, so its visibility is ours to drive: draw the
+		-- plain border only when the module asked for one, tinted with the same colour the glow
+		-- would take.
+		if style.Border then
+			widgets.Border:SetVertexColor(colorR or 1, colorG or 1, colorB or 1, 1)
+			widgets.Border:Show()
+		else
+			widgets.Border:Hide()
+		end
 	end
 
 	if wantGlowTint then
@@ -780,6 +790,7 @@ function M:GetStyleScratch()
 	styleScratch.FontScale = nil
 	styleScratch.ShowTooltips = nil
 	styleScratch.GlowColor = nil
+	styleScratch.Border = nil
 
 	return styleScratch
 end
@@ -807,6 +818,7 @@ function M:GetStyleSignature(style, size, spacing)
 		tostring(style.FontScale),
 		tostring(style.ShowTooltips),
 		tostring(style.GlowColor and table.concat(style.GlowColor, ",")),
+		tostring(style.Border),
 		tostring(db and db.DisableSwipe),
 		tostring(db and db.MillisecondsThreshold),
 		GetGlowStyleName(),
@@ -899,6 +911,7 @@ end
 ---@field DisableSwipe boolean?
 ---@field MillisecondsThreshold number?
 ---@field GlowStyleName string?
+---@field Border boolean? Draw the plain (non dispel-coloured) border, tinted with GlowColor.
 ---@field GlowColor number[]? {r, g, b} tint for every glow on the display. A group's own
 ---GlowColor overrides it; unset leaves the glow plain white.
 ---@field Populated boolean?
