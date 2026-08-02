@@ -596,6 +596,7 @@ local dbDefaults = {
 			Icons = {
 				Size = 70,
 				Glow = true,
+				Border = false,
 				ReverseCooldown = true,
 				-- Glow/border tint. These icons carry no dispel or category colouring to derive
 				-- one from, so the colour is the user's choice.

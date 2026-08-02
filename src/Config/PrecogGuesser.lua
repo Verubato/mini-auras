@@ -80,6 +80,22 @@ function M:Build(panel)
 	glowChk:SetPoint("TOP", enabled, "TOP", 0, 0)
 	glowChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
 
+	local borderChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show border"],
+		Tooltip = L["Draw a border around the icons."],
+		GetValue = function()
+			return db.Modules.PrecogGuesserModule.Icons.Border
+		end,
+		SetValue = function(value)
+			db.Modules.PrecogGuesserModule.Icons.Border = value
+			config:Apply()
+		end,
+	})
+
+	borderChk:SetPoint("TOP", enabled, "TOP", 0, 0)
+	borderChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+
 	local colorSwatch = mini:ColorSwatch({
 		Parent = panel,
 		LabelText = L["Colour"],
@@ -100,7 +116,7 @@ function M:Build(panel)
 	-- so sharing its TOP edge leaves it sitting low against the labels.
 	colorSwatch:SetPoint("TOP", enabled, "TOP", 0,
 		-math.floor((enabled:GetHeight() - colorSwatch:GetHeight()) / 2))
-	colorSwatch:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+	colorSwatch:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 3, 0)
 
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,
