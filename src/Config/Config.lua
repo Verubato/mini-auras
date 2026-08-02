@@ -95,6 +95,25 @@ local function BuildRedirectPanel(panel, version)
 	button:SetText(L["Open Settings"])
 	SetFontSize(button:GetFontString(), 14)
 	button:SetScript("OnClick", function()
+		-- Close Blizzard's settings window on the way out: it opened this one, and leaving it
+		-- sitting behind the config window is just a panel the user has to dismiss afterwards.
+		-- HideUIPanel is protected though, so in combat this waits rather than erroring - the
+		-- panel closes itself the moment combat drops.
+		local settingsFrame = SettingsPanel or InterfaceOptionsFrame
+		if settingsFrame and HideUIPanel then
+			local function HideSettings()
+				if settingsFrame:IsShown() then
+					HideUIPanel(settingsFrame)
+				end
+			end
+
+			if InCombatLockdown() then
+				mini:RunWhenCombatEnds(HideSettings, "MiniCC_HideSettingsPanel")
+			else
+				HideSettings()
+			end
+		end
+
 		M.Window:Show()
 	end)
 end
