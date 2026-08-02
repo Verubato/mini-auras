@@ -39,6 +39,7 @@ local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local SILENT_ALERT_SPELL_IDS = {
 	[1044] = true, -- Blessing of Freedom
 	[305395] = true, -- Blessing of Freedom
+	[8178] = true, -- Grounding Totem
 }
 
 local IMPORTANT_GLOW_COLOR = { 1, 0.2, 0.2, r = 1, g = 0.2, b = 0.2, a = 1 }
@@ -177,6 +178,9 @@ local duelSub
 ---@class AlertsModule : IModule
 local M = {}
 addon.Modules.AlertsModule = M
+
+-- Read by the tests, which derive the expected registration count from it.
+M.SilentAlertSpellIds = SILENT_ALERT_SPELL_IDS
 
 local function PlaySound(spellType)
 	-- 12.1: sound alerts are disabled - they fire on aura transitions, which are unreadable there.

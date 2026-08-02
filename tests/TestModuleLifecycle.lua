@@ -161,7 +161,7 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		local adds0, removes0 = env.auraSoundAdds, env.auraSoundRemoves
 		-- Some spells are deliberately silent (SILENT_ALERT_SPELL_IDS in the module): they show
 		-- an icon but register no sound, so they do not count towards the expected total.
-		local silent = { [1044] = true, [305395] = true } -- Blessing of Freedom
+		local silent = env.addon.Modules.AlertsModule.SilentAlertSpellIds
 		local perToken = 0
 		for id in pairs(env.addon.Core.AuraCategoryIds.Important) do
 			if not silent[id] then
