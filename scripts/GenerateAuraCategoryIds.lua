@@ -85,7 +85,7 @@ local importantNames = {
 	["Zenith"] = true,
 	["Invoke Niuzao, the Black Ox"] = true, ["Invoke Chi-Ji, the Red Crane"] = true,
 	["Invoke Xuen, the White Tiger"] = true, ["Invoke Yu'lon, the Jade Serpent"] = true,
-	["Thunder Blast"] = true,
+	["Thunder Blast"] = true, ["Spell Reflection"] = true,
 	-- Only the Spellwarding-talented id; see idCategory below.
 	["Anti-Magic Shell"] = true,
 }
@@ -96,7 +96,7 @@ local defensiveNames = {
 	-- Defensive cooldowns
 	["Ice Block"] = true, ["Ice Cold"] = true, ["Divine Shield"] = true,
 	["Aspect of the Turtle"] = true, ["Cloak of Shadows"] = true, ["Evasion"] = true,
-	["Die by the Sword"] = true, ["Spell Reflection"] = true, ["Shield Wall"] = true,
+	["Die by the Sword"] = true, ["Shield Wall"] = true,
 	["Enraged Regeneration"] = true, ["Barkskin"] = true, ["Ironbark"] = true,
 	["Survival of the Fittest"] = true, ["Blur"] = true, ["Darkness"] = true,
 	["Netherwalk"] = true, ["Fiery Brand"] = true, ["Astral Shift"] = true,

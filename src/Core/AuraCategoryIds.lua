@@ -1047,7 +1047,7 @@ addon.Core.AuraCategoryIds = {
 		[260457] = true, -- Wyvern Sting
 		[262000] = true, -- Wyvern Sting
 	},
-	-- Important: specials + offensive cooldowns (63 ids)
+	-- Important: specials + offensive cooldowns (64 ids)
 	Important = {
 		[13750] = true, -- Adrenaline Rush
 		[410358] = true, -- Anti-Magic Shell (Spellwarding)
@@ -1098,6 +1098,7 @@ addon.Core.AuraCategoryIds = {
 		[389722] = true, -- Recklessness
 		[121471] = true, -- Shadow Blades
 		[185422] = true, -- Shadow Dance
+		[23920] = true, -- Spell Reflection
 		[192249] = true, -- Storm Elemental
 		[137639] = true, -- Storm, Earth, and Fire
 		[205180] = true, -- Summon Darkglare
@@ -1113,7 +1114,7 @@ addon.Core.AuraCategoryIds = {
 		[236321] = true, -- War Banner
 		[1249625] = true, -- Zenith
 	},
-	-- Defensive: defensive + healer throughput cooldowns (53 ids)
+	-- Defensive: defensive + healer throughput cooldowns (52 ids)
 	Defensive = {
 		[110909] = true, -- Alter Time
 		[342246] = true, -- Alter Time
@@ -1163,7 +1164,6 @@ addon.Core.AuraCategoryIds = {
 		[297850] = true, -- Revival
 		[389539] = true, -- Sentinel
 		[871] = true, -- Shield Wall
-		[23920] = true, -- Spell Reflection
 		[264735] = true, -- Survival of the Fittest
 		[1236574] = true, -- Tranquility
 		[104773] = true, -- Unending Resolve
