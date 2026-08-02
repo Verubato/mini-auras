@@ -1047,7 +1047,7 @@ addon.Core.AuraCategoryIds = {
 		[260457] = true, -- Wyvern Sting
 		[262000] = true, -- Wyvern Sting
 	},
-	-- Important: specials + offensive cooldowns (64 ids)
+	-- Important: specials + offensive cooldowns (66 ids)
 	Important = {
 		[13750] = true, -- Adrenaline Rush
 		[410358] = true, -- Anti-Magic Shell (Spellwarding)
@@ -1066,6 +1066,8 @@ addon.Core.AuraCategoryIds = {
 		[50334] = true, -- Berserk
 		[106951] = true, -- Berserk
 		[19574] = true, -- Bestial Wrath
+		[1044] = true, -- Blessing of Freedom
+		[305395] = true, -- Blessing of Freedom
 		[359844] = true, -- Call of the Wild
 		[194223] = true, -- Celestial Alignment
 		[383410] = true, -- Celestial Alignment
@@ -1114,7 +1116,7 @@ addon.Core.AuraCategoryIds = {
 		[236321] = true, -- War Banner
 		[1249625] = true, -- Zenith
 	},
-	-- Defensive: defensive + healer throughput cooldowns (52 ids)
+	-- Defensive: defensive + healer throughput cooldowns (50 ids)
 	Defensive = {
 		[110909] = true, -- Alter Time
 		[342246] = true, -- Alter Time
@@ -1123,8 +1125,6 @@ addon.Core.AuraCategoryIds = {
 		[186265] = true, -- Aspect of the Turtle
 		[108271] = true, -- Astral Shift
 		[22812] = true, -- Barkskin
-		[1044] = true, -- Blessing of Freedom
-		[305395] = true, -- Blessing of Freedom
 		[1022] = true, -- Blessing of Protection
 		[199448] = true, -- Blessing of Sacrifice
 		[204018] = true, -- Blessing of Spellwarding

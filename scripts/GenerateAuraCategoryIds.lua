@@ -86,6 +86,7 @@ local importantNames = {
 	["Invoke Niuzao, the Black Ox"] = true, ["Invoke Chi-Ji, the Red Crane"] = true,
 	["Invoke Xuen, the White Tiger"] = true, ["Invoke Yu'lon, the Jade Serpent"] = true,
 	["Thunder Blast"] = true, ["Spell Reflection"] = true,
+	["Blessing of Freedom"] = true,
 	-- Only the Spellwarding-talented id; see idCategory below.
 	["Anti-Magic Shell"] = true,
 }
@@ -101,7 +102,7 @@ local defensiveNames = {
 	["Survival of the Fittest"] = true, ["Blur"] = true, ["Darkness"] = true,
 	["Netherwalk"] = true, ["Fiery Brand"] = true, ["Astral Shift"] = true,
 	["Blessing of Protection"] = true, ["Blessing of Spellwarding"] = true,
-	["Blessing of Sacrifice"] = true, ["Blessing of Freedom"] = true,
+	["Blessing of Sacrifice"] = true,
 	["Divine Protection"] = true, ["Ardent Defender"] = true, ["Pain Suppression"] = true,
 	["Guardian Spirit"] = true, ["Desperate Prayer"] = true, ["Fortifying Brew"] = true,
 	["Anti-Magic Shell"] = true, ["Icebound Fortitude"] = true, ["Lichborne"] = true,
