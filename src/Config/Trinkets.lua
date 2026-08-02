@@ -62,12 +62,6 @@ function M:Build(panel)
 		end,
 	})
 
-	-- Centred on the row rather than top-aligned: the swatch is shorter than a checkbox,
-	-- so sharing its TOP edge leaves it sitting low against the labels.
-	colorSwatch:SetPoint("TOP", enabled, "TOP", 0,
-		-math.floor((enabled:GetHeight() - colorSwatch:GetHeight()) / 2))
-	colorSwatch:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-
 	local settingsDivider = mini:Divider({
 		Parent = panel,
 		Text = L["Settings"],
@@ -90,6 +84,13 @@ function M:Build(panel)
 	})
 
 	borderChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	-- Beside the border toggle it feeds, in Settings rather than up in the enable row.
+	-- Centred on the row: the swatch is shorter than a checkbox, so sharing its TOP edge
+	-- leaves it sitting low against the labels.
+	colorSwatch:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	colorSwatch:SetPoint("TOP", borderChk, "TOP", 0,
+		-math.floor((borderChk:GetHeight() - colorSwatch:GetHeight()) / 2))
 
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,
