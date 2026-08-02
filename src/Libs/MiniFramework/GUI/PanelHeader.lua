@@ -31,7 +31,16 @@ function M:PanelHeader(options)
 
 	local title = options.Title or addonName
 
-	if options.ShowVersion ~= false then
+	-- A panel with its own title is a subcategory; the version belongs on the addon's main
+	-- panel, which is the one that falls back to the addon name. Repeating it down every
+	-- subpage is noise. Pass ShowVersion explicitly to override either way.
+	local showVersion = options.ShowVersion
+
+	if showVersion == nil then
+		showVersion = options.Title == nil
+	end
+
+	if showVersion then
 		local version = M:AddonVersion()
 
 		if version ~= "" then
@@ -91,7 +100,7 @@ end
 ---@class PanelHeaderOptions
 ---@field Parent table
 ---@field Title string? defaults to the addon name
----@field ShowVersion boolean? append " - <toc version>", default true
+---@field ShowVersion boolean? append " - <toc version>", defaults to true only when Title is omitted
 ---@field Description string? single-line blurb under the title
 ---@field Lines string[]? multi-line blurb; takes precedence over Description
 ---@field Width number? wrap width for the blurb, defaults to TextMaxWidth
