@@ -86,6 +86,10 @@ function M.build()
 	_G.UnitName = function(unit)
 		return unit
 	end
+	-- Gates the friendly indicator's spell-id filter; false once a duel makes the unit hostile.
+	_G.UnitCanAssist = function(_, unit)
+		return env.enemies[unit] ~= true
+	end
 	-- No third-party addon is "installed": the unit frame modules probe for ElvUI/Cell/... here.
 	_G.C_AddOns = {
 		GetAddOnEnableState = function()

@@ -85,6 +85,32 @@ fw.describe("ProfileManager - payload invariants", function()
 end)
 
 fw.describe("ProfileManager - switching", function()
+	fw.it("carries the friendly indicator's tracked spell deltas per profile", function()
+		-- These are spellId -> true hashes against an empty default schema, the same shape that
+		-- CleanTable strips on a soft reset. Profiles copy them wholesale instead, so a custom
+		-- spell added under one profile must not leak into another.
+		local spells = db.Modules.FriendlyIndicatorModule.Spells
+		spells.Custom[123456] = true
+		spells.Disabled[45438] = true
+
+		profileManager:CreateProfile("Spells", nil)
+		profileManager:SwitchProfile("Spells")
+		db.Modules.FriendlyIndicatorModule.Spells.Custom[123456] = nil
+
+		profileManager:SwitchProfile("Default")
+		assert(db.Modules.FriendlyIndicatorModule.Spells.Custom[123456],
+			"the custom id came back with its own profile")
+		assert(db.Modules.FriendlyIndicatorModule.Spells.Disabled[45438],
+			"and so did the disabled one")
+
+		profileManager:SwitchProfile("Spells")
+		assert(not db.Modules.FriendlyIndicatorModule.Spells.Custom[123456],
+			"the other profile kept its own removal")
+
+		profileManager:SwitchProfile("Default")
+		profileManager:DeleteProfile("Spells")
+	end)
+
 	fw.it("round-trips values and preserves nested table identities", function()
 		-- Snapshot current state into a second profile, then diverge the live db.
 		profileManager:CreateProfile("Alt", nil)

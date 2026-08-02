@@ -7,6 +7,7 @@ local units = addon.Utils.Units
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
+local auraCategoryIds = addon.Core.AuraCategoryIds
 local growAnchors = addon.Core.GrowAnchors
 local kickSlot = addon.Core.KickSlot
 local UnitAuraWatcher = addon.Core.UnitAuraWatcher
@@ -16,6 +17,7 @@ local slotDistribution = addon.Utils.SlotDistribution
 local wowEx = addon.Utils.WoWEx
 local kickTracker = addon.Core.KickTracker
 local eventGate = addon.Core.EventGate
+local duelPoller = addon.Core.DuelPoller
 -- 12.1 path: CC + defensive auras render through an AuraContainer per anchor (one group per
 -- category); the IconSlotContainer is kept for the kick icon and test mode. Unlike the legacy
 -- path there is no dynamic slot split between categories (aura counts are unreadable), so each
@@ -39,6 +41,87 @@ local db
 -- 12.1 scratch: the kick slot options are rebuilt on every kick event, and SetSlot reads them
 -- synchronously and keeps nothing. (The display style uses the wrapper's shared scratch.)
 local kickSlotScratch = {}
+
+-- Helpful auras are filtered by spell id alone rather than by Blizzard's category flags. That is
+-- only possible here because the gate on spell-id filters is UnitCanAssist, and this module
+-- tracks assistable units - the same swap on an enemy-facing display would silently show every
+-- buff. It buys the ability to track spells the game never flags, at the cost of showing nothing
+-- that is not explicitly listed.
+--
+-- One group, not the usual big/external/important split: with the category tokens gone there is
+-- nothing left to partition them by, and three groups sharing one id list would each accept the
+-- same aura and draw it three times.
+-- Read-only stand-in so the lookups below never have to nil-check.
+local EMPTY_TABLE = {}
+local HELPFUL_GROUP_KEY = "helpful"
+local HELPFUL_FILTER = "HELPFUL"
+
+-- Rebuilt whenever the tracked set changes; handed straight to the engine, which keeps the
+-- reference, so it is replaced rather than mutated in place.
+local helpfulFilters = { includeSpellIDs = {} }
+
+---The spell ids currently tracked: the curated defensive and important lists, minus the ones the
+---user switched off, plus anything they added by hand.
+---@return table filters
+local function GetHelpfulFilters()
+	local overrides = db.Modules.FriendlyIndicatorModule.Spells
+	local disabled = (overrides and overrides.Disabled) or EMPTY_TABLE
+	local ids = {}
+
+	local sources = {
+		auraCategoryIds.Defensive,
+		auraCategoryIds.Important,
+		-- Not flagged by the game at all; only reachable because this group filters by id.
+		auraCategoryIds.Unflagged,
+	}
+
+	local curated = {}
+
+	for _, source in ipairs(sources) do
+		for spellId in pairs(source) do
+			curated[spellId] = true
+			if not disabled[spellId] then
+				ids[spellId] = true
+			end
+		end
+	end
+
+	local custom = (overrides and overrides.Custom) or EMPTY_TABLE
+
+	for spellId in pairs(custom) do
+		-- A spell the user added by hand can later ship in the curated lists. Drop their copy
+		-- when that happens: leaving it would list the spell twice in the options - once under
+		-- its class and once under Custom - with two checkboxes driving the same tracked state.
+		if curated[spellId] then
+			custom[spellId] = nil
+		elseif not disabled[spellId] then
+			ids[spellId] = true
+		end
+	end
+
+	helpfulFilters = { includeSpellIDs = ids }
+
+	return helpfulFilters
+end
+
+---@param maxIcons number
+---@return table[]
+local function BuildGroups(maxIcons)
+	return {
+		{
+			Key = auraFilters.GroupKey.CrowdControl,
+			FilterString = auraFilters.Filter.CrowdControl,
+			CandidateFilters = auraFilters.CandidateFilters.CrowdControl,
+			MaxIcons = maxIcons,
+		},
+		{
+			Key = HELPFUL_GROUP_KEY,
+			FilterString = HELPFUL_FILTER,
+			CandidateFilters = GetHelpfulFilters(),
+			MaxIcons = maxIcons,
+		},
+	}
+end
 
 local function GetOptions()
 	local m = db.Modules.FriendlyIndicatorModule
@@ -145,6 +228,7 @@ local function UpdateWatcherAuras(entry)
 			Alpha = aura.IsDefensive,
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
+			Color = colorByDispelType and aura.DispelColor,
 			FontScale = db.FontScale,
 			SpellId = showTooltips and aura.SpellId or nil,
 		})
@@ -305,7 +389,7 @@ local function EnsureWatcher(anchor, unit)
 			entry.Display = auraContainerDisplay:New(
 				UIParent,
 				unit,
-				auraFilters:BuildCategoryGroups(maxIcons),
+				BuildGroups(maxIcons),
 				size,
 				spacing,
 				"Friendly Indicators"
@@ -590,13 +674,22 @@ local function ApplyEntryOptions(entry, anchor, options)
 		entry.Display:SetIconSize(iconSize)
 		entry.Display:SetSpacing(options.IconSpacing or 2)
 		-- Category toggles map to a zero icon budget for the disabled group.
-		auraFilters:ApplyCategoryBudgets(
-			entry.Display,
-			maxIcons,
-			options.ShowCC,
-			options.ShowDefensives,
-			options.ShowImportant
-		)
+		entry.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, options.ShowCC and maxIcons or 0)
+		-- One group now covers both categories, so either toggle keeps it visible. They no
+		-- longer select BETWEEN categories - the Spells tab does that.
+		local showHelpful = options.ShowDefensives or options.ShowImportant
+		-- Spell-id filters are gated on UnitCanAssist, so the moment a party member becomes a
+		-- duel opponent the engine drops includeSpellIDs and the bare HELPFUL token matches
+		-- every buff they have. Nothing can narrow it back, so the group is budgeted to zero
+		-- until they are assistable again.
+		if not UnitCanAssist("player", entry.Unit) then
+			showHelpful = false
+		end
+
+		entry.Display:SetMaxIcons(HELPFUL_GROUP_KEY, showHelpful and maxIcons or 0)
+		-- The tracked set is editable at runtime, so re-publish it rather than assuming the
+		-- filters handed over at creation are still current.
+		entry.Display:SetCandidateFilters(HELPFUL_GROUP_KEY, GetHelpfulFilters())
 
 		local style = auraContainerDisplay:GetStyleScratch()
 		style.ReverseCooldown = options.Icons.ReverseCooldown
@@ -683,6 +776,15 @@ local function CreateEvents()
 	eventsFrame:SetScript("OnEvent", OnEvent)
 	-- Registered by the Refresh gate while the module is enabled.
 	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE" })
+
+	-- A duel flips a party member to hostile with no event of its own, and that decides whether
+	-- the spell-id filter applies at all, so the budgets have to be recomputed when it happens.
+	-- Registered for the module's lifetime; the predicate below gates it.
+	duelPoller:Register(function()
+		return moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator)
+	end, function()
+		M:Refresh()
+	end)
 end
 
 local function InstallHooks()

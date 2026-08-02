@@ -25,6 +25,12 @@ local function SaveOpaqueCaches(vars)
 	saved._FcdDisabledSpells = fcdModule and mini:CopyValueOrTable(fcdModule.DisabledSpells) or {}
 	local ecdModule = vars.Modules and vars.Modules.EnemyCooldownTrackerModule
 	saved._EcdDisabledSpells = ecdModule and mini:CopyValueOrTable(ecdModule.DisabledSpells) or {}
+	-- Same shape again: the friendly indicator's tracked-spell deltas are spellId -> true hashes
+	-- against an empty schema, so they would be cleaned away too.
+	local fiSpells = vars.Modules and vars.Modules.FriendlyIndicatorModule
+		and vars.Modules.FriendlyIndicatorModule.Spells
+	saved._FiDisabledSpells = fiSpells and mini:CopyValueOrTable(fiSpells.Disabled) or {}
+	saved._FiCustomSpells = fiSpells and mini:CopyValueOrTable(fiSpells.Custom) or {}
 	return saved
 end
 
@@ -39,6 +45,12 @@ local function RestoreOpaqueCaches(vars, saved)
 	local ecdModule = vars.Modules and vars.Modules.EnemyCooldownTrackerModule
 	if ecdModule then
 		ecdModule.DisabledSpells = saved._EcdDisabledSpells or {}
+	end
+	local fiModule = vars.Modules and vars.Modules.FriendlyIndicatorModule
+	if fiModule then
+		fiModule.Spells = fiModule.Spells or {}
+		fiModule.Spells.Disabled = saved._FiDisabledSpells or {}
+		fiModule.Spells.Custom = saved._FiCustomSpells or {}
 	end
 end
 

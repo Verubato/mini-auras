@@ -1047,11 +1047,202 @@ addon.Core.AuraCategoryIds = {
 		[260457] = true, -- Wyvern Sting
 		[262000] = true, -- Wyvern Sting
 	},
-	-- Important: specials + offensive cooldowns (73 ids)
+	-- Spells Blizzard flags as NEITHER defensive nor important, but that are still worth showing.
+	-- Usable only where the spell id IS the filter - the Friendly Indicator's bare HELPFUL group.
+	-- Anywhere a category token is in play the engine rejects them, since includeSpellIDs can only
+	-- narrow a group and never widen it.
+	Unflagged = {
+		[110960] = true, -- Greater Invisibility
+		[414664] = true, -- Mass Invisibility
+		[354610] = true, -- Glimpse
+		[203819] = true, -- Demon Spikes
+		[61336] = true, -- Survival Instincts
+		[5217] = true, -- Tiger's Fury
+		[117679] = true, -- Incarnation: Tree of Life
+		[108416] = true, -- Dark Pact
+		[442726] = true, -- Malevolence
+		[1276767] = true, -- Tyrant's Oblation
+		[363534] = true, -- Rewind
+		[374227] = true, -- Zephyr
+		[162264] = true, -- Metamorphosis
+		[209426] = true, -- Darkness
+		[188501] = true, -- Spectral Sight
+		[473909] = true, -- Ancient of Lore
+		[5215] = true, -- Stealth
+		[29166] = true, -- Innervate
+		[740] = true, -- Tranquility
+		[191634] = true, -- Stormkeeper
+		[409293] = true, -- Burrow
+		[10060] = true, -- Power Infusion
+		[200183] = true, -- Apotheosis
+		[1966] = true, -- Feint
+		[1784] = true, -- Stealth
+		[42650] = true, -- Army of the Dead
+		[145629] = true, -- Anti-Magic Zone
+		[81256] = true, -- Dancing Rune Weapon
+		[49039] = true, -- Lichborne
+		[210256] = true, -- Blessing of Sanctuary
+		[211210] = true, -- Aura Mastery
+		[31821] = true, -- Aura Mastery
+		[390260] = true, -- Commander of the Dead
+	},
+
+	-- Spell id -> the class that owns it, for grouping in the options UI only. Never used
+	-- for filtering: the category tables above are what reach the engine. GENERAL covers
+	-- anything not tied to a class, such as PvP gem effects.
+	Classes = {
+		-- Deathknight
+		[42650] = "DEATHKNIGHT", -- Army of the Dead
+		[145629] = "DEATHKNIGHT", -- Anti-Magic Zone
+		[81256] = "DEATHKNIGHT", -- Dancing Rune Weapon
+		[49039] = "DEATHKNIGHT", -- Lichborne
+		[390260] = "DEATHKNIGHT", -- Commander of the Dead
+		[410358] = "DEATHKNIGHT", -- Anti-Magic Shell (Spellwarding)
+		[48707] = "DEATHKNIGHT", -- Anti-Magic Shell (untalented)
+		[48792] = "DEATHKNIGHT", -- Icebound Fortitude
+		[51271] = "DEATHKNIGHT", -- Pillar of Frost
+		[55233] = "DEATHKNIGHT", -- Vampiric Blood
+		-- Demonhunter
+		[354610] = "DEMONHUNTER", -- Glimpse
+		[203819] = "DEMONHUNTER", -- Demon Spikes
+		[212800] = "DEMONHUNTER", -- Blur
+		[196718] = "DEMONHUNTER", -- Darkness
+		[207771] = "DEMONHUNTER", -- Fiery Brand
+		[209426] = "DEMONHUNTER", -- Darkness
+		[188501] = "DEMONHUNTER", -- Spectral Sight
+		[1217607] = "DEMONHUNTER", -- Void Metamorphosis
+		[162264] = "DEMONHUNTER", -- Metamorphosis
+		[187827] = "DEMONHUNTER", -- Metamorphosis
+		-- Druid
+		[61336] = "DRUID", -- Survival Instincts
+		[5217] = "DRUID", -- Tiger's Fury
+		[117679] = "DRUID", -- Incarnation: Tree of Life
+		[473909] = "DRUID", -- Ancient of Lore
+		[5215] = "DRUID", -- Stealth
+		[29166] = "DRUID", -- Innervate
+		[740] = "DRUID", -- Tranquility
+		[22812] = "DRUID", -- Barkskin
+		[50334] = "DRUID", -- Berserk
+		[106951] = "DRUID", -- Berserk
+		[383410] = "DRUID", -- Celestial Alignment
+		[102543] = "DRUID", -- Incarnation: Avatar of Ashamane
+		[390414] = "DRUID", -- Incarnation: Chosen of Elune
+		[102558] = "DRUID", -- Incarnation: Guardian of Ursoc
+		[102342] = "DRUID", -- Ironbark
+		-- Evoker
+		[363534] = "EVOKER", -- Rewind
+		[374227] = "EVOKER", -- Zephyr
+		[375087] = "EVOKER", -- Dragonrage
+		[378464] = "EVOKER", -- Nullifying Shroud
+		[363916] = "EVOKER", -- Obsidian Scales
+		[357170] = "EVOKER", -- Time Dilation
+		[378441] = "EVOKER", -- Time Stop
+		-- Hunter
+		[186265] = "HUNTER", -- Aspect of the Turtle
+		[19574] = "HUNTER", -- Bestial Wrath
+		[53480] = "HUNTER", -- Roar of Sacrifice
+		[264735] = "HUNTER", -- Survival of the Fittest
+		[1250646] = "HUNTER", -- Takedown
+		[288613] = "HUNTER", -- Trueshot
+		-- Mage
+		[110960] = "MAGE", -- Greater Invisibility
+		[414664] = "MAGE", -- Mass Invisibility
+		[110909] = "MAGE", -- Alter Time
+		[342246] = "MAGE", -- Alter Time
+		[365350] = "MAGE", -- Arcane Surge
+		[365362] = "MAGE", -- Arcane Surge
+		[190319] = "MAGE", -- Combustion
+		[45438] = "MAGE", -- Ice Block
+		[414658] = "MAGE", -- Ice Cold
+		[198144] = "MAGE", -- Ice Form
+		[12472] = "MAGE", -- Icy Veins
+		[55342] = "MAGE", -- Mirror Image
+		-- Monk
+		[115203] = "MONK", -- Fortifying Brew
+		[120954] = "MONK", -- Fortifying Brew
+		[243435] = "MONK", -- Fortifying Brew
+		[343818] = "MONK", -- Invoke Chi-Ji, the Red Crane
+		[132578] = "MONK", -- Invoke Niuzao, the Black Ox
+		[395267] = "MONK", -- Invoke Niuzao, the Black Ox
+		[116849] = "MONK", -- Life Cocoon
+		[354540] = "MONK", -- Nimble Brew
+		[353319] = "MONK", -- Peaceweaver
+		[388615] = "MONK", -- Restoral
+		[115310] = "MONK", -- Revival
+		[297850] = "MONK", -- Revival
+		[125174] = "MONK", -- Touch of Karma
+		[1249625] = "MONK", -- Zenith
+		-- Paladin
+		[211210] = "PALADIN", -- Aura Mastery
+		[31821] = "PALADIN", -- Aura Mastery
+		[210256] = "PALADIN", -- Blessing of Sanctuary
+		[389539] = "PALADIN", -- Sentinel
+		[31850] = "PALADIN", -- Ardent Defender
+		[216331] = "PALADIN", -- Avenging Crusader
+		[31884] = "PALADIN", -- Avenging Wrath
+		[231895] = "PALADIN", -- Avenging Wrath
+		[454351] = "PALADIN", -- Avenging Wrath
+		[454373] = "PALADIN", -- Avenging Wrath
+		[1044] = "PALADIN", -- Blessing of Freedom
+		[305395] = "PALADIN", -- Blessing of Freedom
+		[1022] = "PALADIN", -- Blessing of Protection
+		[6940] = "PALADIN", -- Blessing of Sacrifice
+		[199448] = "PALADIN", -- Blessing of Sacrifice
+		[204018] = "PALADIN", -- Blessing of Spellwarding
+		[498] = "PALADIN", -- Divine Protection
+		[403876] = "PALADIN", -- Divine Protection
+		[1261559] = "PALADIN", -- Divine Protection
+		[642] = "PALADIN", -- Divine Shield
+		-- Priest
+		[200183] = "PRIEST", -- Apotheosis
+		[10060] = "PRIEST", -- Power Infusion
+		[391109] = "PRIEST", -- Dark Ascension
+		[19236] = "PRIEST", -- Desperate Prayer
+		[47585] = "PRIEST", -- Dispersion
+		[64843] = "PRIEST", -- Divine Hymn
+		[47788] = "PRIEST", -- Guardian Spirit
+		[33206] = "PRIEST", -- Pain Suppression
+		[194249] = "PRIEST", -- Voidform
+		[228260] = "PRIEST", -- Voidform
+		-- Rogue
+		[1966] = "ROGUE", -- Feint
+		[1784] = "ROGUE", -- Stealth
+		[13750] = "ROGUE", -- Adrenaline Rush
+		[31224] = "ROGUE", -- Cloak of Shadows
+		[360194] = "ROGUE", -- Deathmark
+		[5277] = "ROGUE", -- Evasion
+		[121471] = "ROGUE", -- Shadow Blades
+		[185422] = "ROGUE", -- Shadow Dance
+		-- Shaman
+		[409293] = "SHAMAN", -- Burrow
+		[191634] = "SHAMAN", -- Stormkeeper
+		[114051] = "SHAMAN", -- Ascendance
+		[114052] = "SHAMAN", -- Ascendance
+		[1219480] = "SHAMAN", -- Ascendance
+		[108271] = "SHAMAN", -- Astral Shift
+		[466772] = "SHAMAN", -- Doom Winds
+		[8178] = "SHAMAN", -- Grounding Totem
+		-- Warlock
+		[442726] = "WARLOCK", -- Malevolence
+		[1276767] = "WARLOCK", -- Tyrant's Oblation
+		[108416] = "WARLOCK", -- Dark Pact
+		[212295] = "WARLOCK", -- Nether Ward
+		[104773] = "WARLOCK", -- Unending Resolve
+		-- Warrior
+		[107574] = "WARRIOR", -- Avatar
+		[118038] = "WARRIOR", -- Die by the Sword
+		[184364] = "WARRIOR", -- Enraged Regeneration
+		[147833] = "WARRIOR", -- Intervene
+		[389722] = "WARRIOR", -- Recklessness
+		[871] = "WARRIOR", -- Shield Wall
+		[23920] = "WARRIOR", -- Spell Reflection
+		-- General
+		[377362] = "GENERAL", -- Precognition
+	},
+	-- Important: specials + offensive cooldowns (54 ids)
 	Important = {
 		[13750] = true, -- Adrenaline Rush
 		[410358] = true, -- Anti-Magic Shell (Spellwarding)
-		[275699] = true, -- Apocalypse
 		[365350] = true, -- Arcane Surge
 		[365362] = true, -- Arcane Surge
 		[114051] = true, -- Ascendance
@@ -1068,14 +1259,8 @@ addon.Core.AuraCategoryIds = {
 		[19574] = true, -- Bestial Wrath
 		[1044] = true, -- Blessing of Freedom
 		[305395] = true, -- Blessing of Freedom
-		[359844] = true, -- Call of the Wild
-		[194223] = true, -- Celestial Alignment
 		[383410] = true, -- Celestial Alignment
 		[190319] = true, -- Combustion
-		[266779] = true, -- Coordinated Assault
-		[360952] = true, -- Coordinated Assault
-		[377572] = true, -- Coordinated Assault
-		[49028] = true, -- Dancing Rune Weapon
 		[391109] = true, -- Dark Ascension
 		[360194] = true, -- Deathmark
 		[498] = true, -- Divine Protection
@@ -1083,20 +1268,16 @@ addon.Core.AuraCategoryIds = {
 		[1261559] = true, -- Divine Protection
 		[466772] = true, -- Doom Winds
 		[375087] = true, -- Dragonrage
-		[51533] = true, -- Feral Spirit
-		[198067] = true, -- Fire Elemental
 		[8178] = true, -- Grounding Totem
 		[198144] = true, -- Ice Form
 		[12472] = true, -- Icy Veins
 		[102543] = true, -- Incarnation: Avatar of Ashamane
-		[102560] = true, -- Incarnation: Chosen of Elune
 		[390414] = true, -- Incarnation: Chosen of Elune
 		[102558] = true, -- Incarnation: Guardian of Ursoc
 		[343818] = true, -- Invoke Chi-Ji, the Red Crane
 		[132578] = true, -- Invoke Niuzao, the Black Ox
 		[395267] = true, -- Invoke Niuzao, the Black Ox
 		[187827] = true, -- Metamorphosis
-		[191427] = true, -- Metamorphosis
 		[378464] = true, -- Nullifying Shroud
 		[353319] = true, -- Peaceweaver
 		[51271] = true, -- Pillar of Frost
@@ -1107,23 +1288,15 @@ addon.Core.AuraCategoryIds = {
 		[121471] = true, -- Shadow Blades
 		[185422] = true, -- Shadow Dance
 		[23920] = true, -- Spell Reflection
-		[192249] = true, -- Storm Elemental
-		[137639] = true, -- Storm, Earth, and Fire
-		[205180] = true, -- Summon Darkglare
-		[387278] = true, -- Summon Darkglare
-		[265187] = true, -- Summon Demonic Tyrant
-		[335235] = true, -- Summon Infernal
 		[1250646] = true, -- Takedown
-		[392576] = true, -- Thunder Blast
 		[378441] = true, -- Time Stop
 		[288613] = true, -- Trueshot
-		[79140] = true, -- Vendetta
+		[1217607] = true, -- Void Metamorphosis
 		[194249] = true, -- Voidform
 		[228260] = true, -- Voidform
-		[236321] = true, -- War Banner
 		[1249625] = true, -- Zenith
 	},
-	-- Defensive: defensive + healer throughput cooldowns (49 ids)
+	-- Defensive: defensive + healer throughput cooldowns (46 ids)
 	Defensive = {
 		[110909] = true, -- Alter Time
 		[342246] = true, -- Alter Time
@@ -1133,9 +1306,9 @@ addon.Core.AuraCategoryIds = {
 		[108271] = true, -- Astral Shift
 		[22812] = true, -- Barkskin
 		[1022] = true, -- Blessing of Protection
+		[6940] = true, -- Blessing of Sacrifice
 		[199448] = true, -- Blessing of Sacrifice
 		[204018] = true, -- Blessing of Spellwarding
-		[198589] = true, -- Blur
 		[212800] = true, -- Blur
 		[31224] = true, -- Cloak of Shadows
 		[196718] = true, -- Darkness
@@ -1146,13 +1319,11 @@ addon.Core.AuraCategoryIds = {
 		[642] = true, -- Divine Shield
 		[184364] = true, -- Enraged Regeneration
 		[5277] = true, -- Evasion
-		[109304] = true, -- Exhilaration
-		[204021] = true, -- Fiery Brand
+		[207771] = true, -- Fiery Brand
 		[115203] = true, -- Fortifying Brew
 		[120954] = true, -- Fortifying Brew
 		[243435] = true, -- Fortifying Brew
 		[47788] = true, -- Guardian Spirit
-		[108280] = true, -- Healing Tide Totem
 		[45438] = true, -- Ice Block
 		[414658] = true, -- Ice Cold
 		[48792] = true, -- Icebound Fortitude
@@ -1171,7 +1342,6 @@ addon.Core.AuraCategoryIds = {
 		[264735] = true, -- Survival of the Fittest
 		[357170] = true, -- Time Dilation
 		[125174] = true, -- Touch of Karma
-		[1236574] = true, -- Tranquility
 		[104773] = true, -- Unending Resolve
 		[55233] = true, -- Vampiric Blood
 	},

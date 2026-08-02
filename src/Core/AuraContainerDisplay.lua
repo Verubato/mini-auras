@@ -741,6 +741,20 @@ function M:ApplyConfig(size, spacing, style)
 	return true
 end
 
+---Replaces a group's spell-id candidate filters. Swapping these at runtime is supported by the
+---engine, so a change to the tracked spell list re-filters in place rather than rebuilding the
+---display - which matters because the buttons can't be rebuilt while auras are secret.
+---@param groupKey string
+---@param filters table
+function M:SetCandidateFilters(groupKey, filters)
+	if not self.Frame:HasAuraGroup(groupKey) then
+		Warn("SetCandidateFilters: no group " .. tostring(groupKey))
+		return
+	end
+
+	self.Frame:SetAuraGroupCandidateFilters(groupKey, filters)
+end
+
 ---Sets a group's icon budget. A value of 0 hides the group entirely (used for per-category
 ---toggles like ShowCC/ShowDefensives), so a mistyped key would silently switch a whole category
 ---off - hence the warning rather than a quiet return.

@@ -29,7 +29,8 @@ local friendlyIndicator = env.addon.Modules.FriendlyIndicatorModule
 friendlyIndicator:Init()
 
 ---The display a module built for a given anchor, identified by its group signature: crowd control
----displays carry a single cc group, friendly indicator displays carry all four categories.
+---displays carry a single cc group, friendly indicator displays carry a cc group plus one
+---spell-id-filtered helpful group.
 local function displayForUnit(unit, groupCount)
 	for _, container in ipairs(env.containersForUnit(unit)) do
 		if env.groupCount(container) == groupCount then
@@ -43,7 +44,7 @@ local function ccDisplay(unit)
 end
 
 local function fiDisplay(unit)
-	return displayForUnit(unit, 4)
+	return displayForUnit(unit, 2)
 end
 
 fw.describe("CrowdControlModule 12.1 - unit frame anchors", function()
@@ -112,11 +113,10 @@ fw.describe("FriendlyIndicatorModule 12.1 - unit frame anchors", function()
 		local options = db.Modules.FriendlyIndicatorModule.Default
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 
+		-- One helpful group now covers both categories, so either toggle keeps it budgeted.
 		local expected = {
 			[auraFilters.GroupKey.CrowdControl] = options.ShowCC and maxIcons or 0,
-			[auraFilters.GroupKey.BigDefensive] = options.ShowDefensives and maxIcons or 0,
-			[auraFilters.GroupKey.ExternalDefensive] = options.ShowDefensives and maxIcons or 0,
-			[auraFilters.GroupKey.Important] = options.ShowImportant and maxIcons or 0,
+			helpful = (options.ShowDefensives or options.ShowImportant) and maxIcons or 0,
 		}
 		for key, budget in pairs(expected) do
 			local group = assert(display._groups[key], "missing group " .. key)
@@ -136,12 +136,14 @@ fw.describe("FriendlyIndicatorModule 12.1 - unit frame anchors", function()
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 		assert(display._groups[auraFilters.GroupKey.CrowdControl].maxFrameCount == maxIcons, "cc on")
 
+		-- Both helpful toggles have to go off before the one helpful group is unbudgeted.
 		options.ShowDefensives = false
+		options.ShowImportant = false
 		friendlyIndicator:Refresh()
-		assert(display._groups[auraFilters.GroupKey.BigDefensive].maxFrameCount == 0, "big defensive off")
-		assert(display._groups[auraFilters.GroupKey.ExternalDefensive].maxFrameCount == 0, "external off")
+		assert(display._groups.helpful.maxFrameCount == 0, "helpful off")
 		assert(display._groups[auraFilters.GroupKey.CrowdControl].maxFrameCount == maxIcons, "cc untouched")
 
+		options.ShowImportant = true
 		options.ShowDefensives = true
 		friendlyIndicator:Refresh()
 	end)
@@ -171,8 +173,9 @@ fw.describe("FriendlyIndicatorModule 12.1 - unit frame anchors", function()
 
 		assert(display._groups[auraFilters.GroupKey.CrowdControl].maxFrameCount ==
 			(options.ShowCC and maxIcons or 0), "cc budget intact")
-		assert(display._groups[auraFilters.GroupKey.Important].maxFrameCount ==
-			(options.ShowImportant and maxIcons or 0), "important budget intact")
+		assert(display._groups.helpful.maxFrameCount ==
+			((options.ShowDefensives or options.ShowImportant) and maxIcons or 0),
+			"helpful budget intact")
 	end)
 end)
 

@@ -66,26 +66,26 @@ local ccNames = {
 local importantNames = {
 	-- Specials
 	["Precognition"] = true, ["Nullifying Shroud"] = true, ["Grounding Totem"] = true,
-	["War Banner"] = true, ["Time Stop"] = true,
+	["Time Stop"] = true,
 	-- Offensive cooldowns
 	["Avenging Wrath"] = true, ["Avenging Crusader"] = true, ["Combustion"] = true,
 	["Icy Veins"] = true, ["Ice Form"] = true, ["Arcane Surge"] = true,
-	["Metamorphosis"] = true, ["Recklessness"] = true, ["Avatar"] = true,
+	["Metamorphosis"] = true, ["Void Metamorphosis"] = true, ["Recklessness"] = true, ["Avatar"] = true,
 	["Voidform"] = true, ["Dark Ascension"] = true, ["Celestial Alignment"] = true,
 	["Incarnation: Chosen of Elune"] = true, ["Incarnation: Avatar of Ashamane"] = true,
 	["Incarnation: Guardian of Ursoc"] = true, ["Incarnation: Tree of Life"] = true,
-	["Berserk"] = true, ["Ascendance"] = true, ["Feral Spirit"] = true,
-	["Fire Elemental"] = true, ["Storm Elemental"] = true, ["Doom Winds"] = true,
+	["Berserk"] = true, ["Ascendance"] = true, 
+	["Doom Winds"] = true,
 	["Adrenaline Rush"] = true, ["Shadow Blades"] = true, ["Shadow Dance"] = true,
-	["Deathmark"] = true, ["Vendetta"] = true, ["Trueshot"] = true,
-	["Call of the Wild"] = true, ["Coordinated Assault"] = true, ["Bestial Wrath"] = true,
-	["Summon Demonic Tyrant"] = true, ["Summon Darkglare"] = true, ["Summon Infernal"] = true,
+	["Deathmark"] = true, ["Trueshot"] = true,
+	["Bestial Wrath"] = true,
+	
 	["Dragonrage"] = true, ["Dancing Rune Weapon"] = true, ["Pillar of Frost"] = true,
-	["Apocalypse"] = true, ["Storm, Earth, and Fire"] = true, ["Serenity"] = true,
+	["Serenity"] = true,
 	["Zenith"] = true,
 	["Invoke Niuzao, the Black Ox"] = true, ["Invoke Chi-Ji, the Red Crane"] = true,
 	["Invoke Xuen, the White Tiger"] = true, ["Invoke Yu'lon, the Jade Serpent"] = true,
-	["Thunder Blast"] = true, ["Takedown"] = true, ["Peaceweaver"] = true, ["Spell Reflection"] = true,
+	["Takedown"] = true, ["Peaceweaver"] = true, ["Spell Reflection"] = true,
 	["Blessing of Freedom"] = true, ["Divine Protection"] = true, ["Revival"] = true,
 	-- Only the Spellwarding-talented id; see idCategory below.
 	["Anti-Magic Shell"] = true,
@@ -105,15 +105,15 @@ local defensiveNames = {
 	["Blessing of Sacrifice"] = true,
 	["Ardent Defender"] = true, ["Pain Suppression"] = true,
 	["Life Cocoon"] = true, ["Guardian Spirit"] = true, ["Desperate Prayer"] = true, ["Fortifying Brew"] = true,
-	["Anti-Magic Shell"] = true, ["Icebound Fortitude"] = true, ["Lichborne"] = true,
+	["Anti-Magic Shell"] = true, ["Icebound Fortitude"] = true,
 	["Vampiric Blood"] = true, ["Unending Resolve"] = true, ["Nether Ward"] = true,
-	["Obsidian Scales"] = true, ["Exhilaration"] = true, ["Alter Time"] = true,
+	["Obsidian Scales"] = true, ["Alter Time"] = true,
 	["Mirror Image"] = true, ["Sentinel"] = true, ["Dispersion"] = true,
 	["Intervene"] = true, ["Nimble Brew"] = true, ["Roar of Sacrifice"] = true,
 	["Touch of Karma"] = true, ["Time Dilation"] = true,
 	-- Healer throughput cooldowns
-	["Restoral"] = true, ["Healing Tide Totem"] = true,
-	["Divine Hymn"] = true, ["Tranquility"] = true,
+	["Restoral"] = true,
+	["Divine Hymn"] = true,
 }
 
 -- Abilities that change category with a talent do it by changing SPELL ID, not name, so name

@@ -429,6 +429,17 @@ local dbDefaults = {
 		},
 		---@class FriendlyIndicatorModuleOptions
 		FriendlyIndicatorModule = {
+			-- Helpful auras here are chosen by spell id rather than by Blizzard's category
+			-- flags, so anything can be tracked - including spells the game never flags. Stored
+			-- as deltas against the curated lists rather than a copy of them, so the saved
+			-- variables stay small and a regenerated list still reaches existing profiles.
+			Spells = {
+				-- [spellId] = true, curated entries the user switched off.
+				Disabled = {},
+				-- [spellId] = true, ids the user added by hand.
+				Custom = {},
+			},
+
 			Enabled = {
 				World = true,
 				Arena = true,
