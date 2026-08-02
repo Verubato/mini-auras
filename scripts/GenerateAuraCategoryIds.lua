@@ -85,7 +85,7 @@ local importantNames = {
 	["Zenith"] = true,
 	["Invoke Niuzao, the Black Ox"] = true, ["Invoke Chi-Ji, the Red Crane"] = true,
 	["Invoke Xuen, the White Tiger"] = true, ["Invoke Yu'lon, the Jade Serpent"] = true,
-	["Thunder Blast"] = true, ["Spell Reflection"] = true,
+	["Thunder Blast"] = true, ["Takedown"] = true, ["Spell Reflection"] = true,
 	["Blessing of Freedom"] = true, ["Divine Protection"] = true, ["Revival"] = true,
 	-- Only the Spellwarding-talented id; see idCategory below.
 	["Anti-Magic Shell"] = true,
@@ -109,7 +109,7 @@ local defensiveNames = {
 	["Vampiric Blood"] = true, ["Unending Resolve"] = true, ["Nether Ward"] = true,
 	["Obsidian Scales"] = true, ["Exhilaration"] = true, ["Alter Time"] = true,
 	["Mirror Image"] = true, ["Sentinel"] = true, ["Dispersion"] = true,
-	["Intervene"] = true, ["Nimble Brew"] = true,
+	["Intervene"] = true, ["Nimble Brew"] = true, ["Roar of Sacrifice"] = true,
 	-- Healer throughput cooldowns
 	["Restoral"] = true, ["Healing Tide Totem"] = true,
 	["Divine Hymn"] = true, ["Tranquility"] = true,

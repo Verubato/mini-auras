@@ -1047,7 +1047,7 @@ addon.Core.AuraCategoryIds = {
 		[260457] = true, -- Wyvern Sting
 		[262000] = true, -- Wyvern Sting
 	},
-	-- Important: specials + offensive cooldowns (71 ids)
+	-- Important: specials + offensive cooldowns (72 ids)
 	Important = {
 		[13750] = true, -- Adrenaline Rush
 		[410358] = true, -- Anti-Magic Shell (Spellwarding)
@@ -1112,6 +1112,7 @@ addon.Core.AuraCategoryIds = {
 		[387278] = true, -- Summon Darkglare
 		[265187] = true, -- Summon Demonic Tyrant
 		[335235] = true, -- Summon Infernal
+		[1250646] = true, -- Takedown
 		[392576] = true, -- Thunder Blast
 		[378441] = true, -- Time Stop
 		[288613] = true, -- Trueshot
@@ -1121,7 +1122,7 @@ addon.Core.AuraCategoryIds = {
 		[236321] = true, -- War Banner
 		[1249625] = true, -- Zenith
 	},
-	-- Defensive: defensive + healer throughput cooldowns (45 ids)
+	-- Defensive: defensive + healer throughput cooldowns (46 ids)
 	Defensive = {
 		[110909] = true, -- Alter Time
 		[342246] = true, -- Alter Time
@@ -1162,6 +1163,7 @@ addon.Core.AuraCategoryIds = {
 		[363916] = true, -- Obsidian Scales
 		[33206] = true, -- Pain Suppression
 		[388615] = true, -- Restoral
+		[53480] = true, -- Roar of Sacrifice
 		[389539] = true, -- Sentinel
 		[871] = true, -- Shield Wall
 		[264735] = true, -- Survival of the Fittest
