@@ -3,7 +3,7 @@ local _, addon = ...
 local L = addon.L
 
 L:RegisterLocale("zhCN", {
-	["In Blizzard's 12.1 patch, addons can no longer read any aura information. The following features are not possible in 12.1 and have been removed:\n- Cooldown tracking (friendly and enemy).\n- The warning text when the healer is CC'd.\n- Text-to-speech announcements.\n- Class colours on alert icons.\n- Glow type selection (icons always use the built-in glow).\n- Masque icon skinning."] = "自12.1补丁起，插件无法再读取任何光环信息。以下功能在12.1中无法实现，已被移除：\n- 冷却追踪（友方和敌方）。\n- 治疗者被控制时的警告文字。\n- 语音合成播报。\n- 警报图标的职业颜色。\n- 发光类型选择（图标始终使用内置发光）。\n- Masque图标皮肤。",
+	["In Blizzard's 12.1 patch, addons can no longer read any aura information. The following features are no longer possible and have been removed:\n- Cooldown tracking (friendly and enemy).\n- The warning text when the healer is CC'd.\n- Text-to-speech announcements.\n- Class colours on alert icons.\n- Masque icon skinning.\n\nSome good news though, we can now filter by spell id so auras are now customisable."] = "自12.1补丁起，插件无法再读取任何光环信息。以下功能在12.1中无法实现，已被移除：\n- 冷却追踪（友方和敌方）。\n- 治疗者被控制时的警告文字。\n- 语音合成播报。\n- 警报图标的职业颜色。\n- Masque图标皮肤。\n\n不过也有好消息：现在可以按法术 ID 过滤，光环可以自定义了。",
 	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "好消息：\n- 已实现一种变通方法，可在姓名板/头像/警报上再次显示重要光环。",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "在单独的可移动条上显示重要法术，而不是与防御警报合并。",
 	["Show important enemy spells (e.g. offensive cooldowns, precognition) read from nameplates."] = "显示从姓名板读取的敌方重要法术（例如进攻冷却、预知）。",
