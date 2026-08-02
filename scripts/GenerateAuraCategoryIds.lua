@@ -110,6 +110,7 @@ local defensiveNames = {
 	["Obsidian Scales"] = true, ["Exhilaration"] = true, ["Alter Time"] = true,
 	["Mirror Image"] = true, ["Sentinel"] = true, ["Dispersion"] = true,
 	["Intervene"] = true, ["Nimble Brew"] = true, ["Roar of Sacrifice"] = true,
+	["Touch of Karma"] = true,
 	-- Healer throughput cooldowns
 	["Restoral"] = true, ["Healing Tide Totem"] = true,
 	["Divine Hymn"] = true, ["Tranquility"] = true,

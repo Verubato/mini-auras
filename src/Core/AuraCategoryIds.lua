@@ -1123,7 +1123,7 @@ addon.Core.AuraCategoryIds = {
 		[236321] = true, -- War Banner
 		[1249625] = true, -- Zenith
 	},
-	-- Defensive: defensive + healer throughput cooldowns (47 ids)
+	-- Defensive: defensive + healer throughput cooldowns (48 ids)
 	Defensive = {
 		[110909] = true, -- Alter Time
 		[342246] = true, -- Alter Time
@@ -1169,6 +1169,7 @@ addon.Core.AuraCategoryIds = {
 		[389539] = true, -- Sentinel
 		[871] = true, -- Shield Wall
 		[264735] = true, -- Survival of the Fittest
+		[125174] = true, -- Touch of Karma
 		[1236574] = true, -- Tranquility
 		[104773] = true, -- Unending Resolve
 		[55233] = true, -- Vampiric Blood
