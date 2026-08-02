@@ -1047,7 +1047,7 @@ addon.Core.AuraCategoryIds = {
 		[260457] = true, -- Wyvern Sting
 		[262000] = true, -- Wyvern Sting
 	},
-	-- Important: specials + offensive cooldowns (66 ids)
+	-- Important: specials + offensive cooldowns (69 ids)
 	Important = {
 		[13750] = true, -- Adrenaline Rush
 		[410358] = true, -- Anti-Magic Shell (Spellwarding)
@@ -1078,6 +1078,9 @@ addon.Core.AuraCategoryIds = {
 		[49028] = true, -- Dancing Rune Weapon
 		[391109] = true, -- Dark Ascension
 		[360194] = true, -- Deathmark
+		[498] = true, -- Divine Protection
+		[403876] = true, -- Divine Protection
+		[1261559] = true, -- Divine Protection
 		[466772] = true, -- Doom Winds
 		[375087] = true, -- Dragonrage
 		[51533] = true, -- Feral Spirit
@@ -1116,7 +1119,7 @@ addon.Core.AuraCategoryIds = {
 		[236321] = true, -- War Banner
 		[1249625] = true, -- Zenith
 	},
-	-- Defensive: defensive + healer throughput cooldowns (50 ids)
+	-- Defensive: defensive + healer throughput cooldowns (47 ids)
 	Defensive = {
 		[110909] = true, -- Alter Time
 		[342246] = true, -- Alter Time
@@ -1136,9 +1139,6 @@ addon.Core.AuraCategoryIds = {
 		[118038] = true, -- Die by the Sword
 		[47585] = true, -- Dispersion
 		[64843] = true, -- Divine Hymn
-		[498] = true, -- Divine Protection
-		[403876] = true, -- Divine Protection
-		[1261559] = true, -- Divine Protection
 		[642] = true, -- Divine Shield
 		[184364] = true, -- Enraged Regeneration
 		[5277] = true, -- Evasion
