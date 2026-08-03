@@ -75,6 +75,7 @@ Core\Frames\GW2UI.lua
 Core\Frames\MSUF.lua
 Core\TrinketsTracker.lua
 Core\ProfileManager.lua
+Core\TestModeManager.lua
 Core\Cooldowns\PvPTalentSync.lua
 Core\Cooldowns\Talents.lua
 Core\Cooldowns\Rules.lua
@@ -111,7 +112,6 @@ Modules\FriendlyCooldowns\Module.lua
 Modules\EnemyCooldowns\Observer.lua
 Modules\EnemyCooldowns\Display.lua
 Modules\EnemyCooldowns\Module.lua
-Modules\TestModeManager.lua
 
 Api\V1.lua
 

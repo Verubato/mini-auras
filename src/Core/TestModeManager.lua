@@ -2,24 +2,29 @@
 local _, addon = ...
 local frames = addon.Core.Frames
 local instanceOptions = addon.Core.InstanceOptions
-local TEST_MODULES = {
-	addon.Modules.CrowdControlModule,
-	addon.Modules.HealerCrowdControlModule,
-	addon.Modules.PortraitModule,
-	addon.Modules.AlertsModule,
-	addon.Modules.NameplatesModule,
-	addon.Modules.EnemyKickTrackerModule,
-	addon.Modules.AurasModule,
-	addon.Modules.PrecogModule,
-	addon.Modules.TrinketsModule,
-	addon.Modules.FriendlyCooldownTrackerModule,
-	addon.Modules.EnemyCooldownTrackerModule,
+-- Filled in Init rather than at file scope: capturing the module tables here would tie this
+-- file's TOC position to being after every module, and a miss would land as a silent nil in
+-- the list rather than an error. Init runs after every module's, so the names all resolve.
+local MODULE_NAMES = {
+	"CrowdControlModule",
+	"HealerCrowdControlModule",
+	"PortraitModule",
+	"AlertsModule",
+	"NameplatesModule",
+	"EnemyKickTrackerModule",
+	"AurasModule",
+	"PrecogModule",
+	"TrinketsModule",
+	"FriendlyCooldownTrackerModule",
+	"EnemyCooldownTrackerModule",
 }
+---@type IModule[]
+local testModules = {}
 local active = false
 
 ---@class TestModeManager
 local M = {}
-addon.Modules.TestModeManager = M
+addon.Core.TestModeManager = M
 
 function M:IsActive()
 	return active
@@ -42,7 +47,7 @@ function M:StopTesting()
 	end
 
 	-- Stop all module test modes
-	for _, module in ipairs(TEST_MODULES) do
+	for _, module in ipairs(testModules) do
 		module:StopTesting()
 	end
 
@@ -85,12 +90,16 @@ function M:StartTesting(isRaid)
 		end
 	end
 
-	for _, module in ipairs(TEST_MODULES) do
+	for _, module in ipairs(testModules) do
 		module:StartTesting()
 	end
 end
 
-function M:Init() end
+function M:Init()
+	for _, name in ipairs(MODULE_NAMES) do
+		testModules[#testModules + 1] = assert(addon.Modules[name], "no module " .. name)
+	end
+end
 
 ---@class TestSpell
 ---@field SpellId number

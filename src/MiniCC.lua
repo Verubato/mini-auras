@@ -6,7 +6,7 @@ local instanceOptions = addon.Core.InstanceOptions
 local frames = addon.Core.Frames
 local config = addon.Config
 local migrator = addon.Config.Migrator
-local testModeManager = addon.Modules.TestModeManager
+local testModeManager = addon.Core.TestModeManager
 -- Every module Inits and Refreshes on every client; none of them are conditionally listed here.
 -- Client support is each module's own decision, made once at file load from
 -- WoWEx:UseAuraContainers() and enforced by early-returning from Init/Refresh/StartTesting. So a
@@ -209,6 +209,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field AuraCategoryIds AuraCategoryIds
 ---@field InstanceOptions InstanceOptions
 ---@field TrinketsTracker TrinketsTracker
+---@field TestModeManager TestModeManager
 ---@field Cooldowns Cooldowns
 
 ---@class Cooldowns
@@ -271,7 +272,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Module PortraitModule
 
 ---@class Modules
----@field TestModeManager TestModeManager
 ---@field PortraitModule PortraitModule
 ---@field HealerCrowdControlModule HealerCrowdControlModule
 ---@field NameplatesModule NameplatesModule
