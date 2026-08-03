@@ -5,7 +5,7 @@
 --
 -- Requirements: Lua 5.1 or later.
 
-package.path = "tests/helpers/?.lua;tests/?.lua;" .. package.path
+package.path = "tests/Helpers/?.lua;tests/?.lua;" .. package.path
 
 io.write("MiniCC - Cooldowns unit tests\n")
 io.write("======================================\n")
