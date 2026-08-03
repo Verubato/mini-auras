@@ -29,6 +29,7 @@ L:SetDefaultStrings({
 	["Shows enemy kick cooldowns in arena."] = "Shows enemy kick cooldowns in arena.",
 	["Enable if you are:"] = "Enable if you are:",
 	["Enable in"] = "Enable in",
+	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "Animated glows keep animating icons with no aura, costing CPU while idle.",
 	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "Shows an icon on your screen when you get Precognition or Nullifying Shroud.",
 	["Specify which spells are shown on raid frames."] = "Specify which spells are shown on raid frames.",
 	["Remove"] = "Remove",
@@ -149,7 +150,6 @@ L:SetDefaultStrings({
 	["The others seem to use a non-trivial amount of CPU."] = "The others seem to use a non-trivial amount of CPU.",
 	["The Proc Glow uses the least CPU."] = "The Proc Glow uses the least CPU.",
 	["The Slot Glow is static and uses the least CPU."] = "The Slot Glow is static and uses the least CPU.",
-	["Rotation Assist keeps animating icons with no aura, costing CPU while idle."] = "Rotation Assist keeps animating icons with no aura, costing CPU while idle.",
 
 	-- Alerts tab
 	["Alerts"] = "Alerts",

@@ -28,6 +28,7 @@ L:RegisterLocale("ruRU", {
 	["Shows enemy kick cooldowns in arena."] = "Показывает перезарядку прерываний врагов на арене.",
 	["Enable if you are:"] = "Включить, если вы:",
 	["Enable in"] = "Включить в",
+	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "Анимированные свечения продолжают анимировать значки без аур, расходуя ресурсы в простое.",
 	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "Показывает значок на экране, когда вы получаете «Предвидение» или «Аннулирующий покров».",
 	["Specify which spells are shown on raid frames."] = "Определяет, какие заклинания отображаются на рамках рейда.",
 	["Remove"] = "Удалить",
@@ -147,7 +148,6 @@ L:RegisterLocale("ruRU", {
 	["The others seem to use a non-trivial amount of CPU."] = "Остальные используют значительное количество ЦП.",
 	["The Proc Glow uses the least CPU."] = "Proc свечение использует меньше всего ЦП.",
 	["The Slot Glow is static and uses the least CPU."] = "Свечение слота статично и использует меньше всего ЦП.",
-	["Rotation Assist keeps animating icons with no aura, costing CPU while idle."] = "«Помощник ротации» продолжает анимировать значки без аур, потребляя ЦП в простое.",
 
 	-- Alerts tab
 	["Alerts"] = "Оповещения",

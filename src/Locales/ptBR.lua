@@ -28,6 +28,7 @@ L:RegisterLocale("ptBR", {
 	["Shows enemy kick cooldowns in arena."] = "Mostra os tempos de recarga de interrupção inimigos na arena.",
 	["Enable if you are:"] = "Ativar se você for:",
 	["Enable in"] = "Ativar em",
+	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "Brilhos animados continuam animando ícones sem aura, consumindo CPU ocioso.",
 	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "Mostra um ícone na tela quando você recebe Precognição ou Sudário Anulador.",
 	["Specify which spells are shown on raid frames."] = "Especifica quais magias são exibidas nos quadros de raide.",
 	["Remove"] = "Remover",
@@ -147,7 +148,6 @@ L:RegisterLocale("ptBR", {
 	["The others seem to use a non-trivial amount of CPU."] = "Os outros parecem usar uma quantidade considerável de CPU.",
 	["The Proc Glow uses the least CPU."] = "O brilho proc usa menos CPU.",
 	["The Slot Glow is static and uses the least CPU."] = "O brilho de slot é estático e usa menos CPU.",
-	["Rotation Assist keeps animating icons with no aura, costing CPU while idle."] = "A Assistência de rotação continua animando ícones sem aura, consumindo CPU ocioso.",
 
 	-- Alerts tab
 	["Alerts"] = "Alertas",

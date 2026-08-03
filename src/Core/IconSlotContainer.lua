@@ -22,7 +22,9 @@ local frameIdCounter = 0
 -- on a child frame sized proportionally to the icon. The field on the parent is the
 -- cache key so we never build the frame twice per layer.
 local STATIC_GLOW_FIELDS = {
-	["Rotation Assist"] = "_FlipbookGlow",
+	["Rotation Assist (Anti-clockwise)"] = "_FlipbookGlow",
+	["Rotation Assist (Clockwise)"] = "_RotationAssistCWGlow",
+	["Ants (Anti-Clockwise)"] = "_AntsGlow",
 	["Slot Glow"] = "_SlotGlow",
 }
 
@@ -217,9 +219,10 @@ local function EnsureFlipbookGlow(parent)
 		return parent._FlipbookGlow
 	end
 
-	local cg = CreateStaticGlowFrame(parent, "_FlipbookGlow", "FlipbookGlow", 1 / 3)
-	cg.Texture:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhite.tga")
-	cg.Texture:SetBlendMode("ADD")
+	local cg = CreateStaticGlowFrame(parent, "_FlipbookGlow", "FlipbookGlow", 1 / 4)
+	cg.Texture:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhiteAntiClockwise.tga")
+	cg.Texture:SetDesaturated(true)
+	cg.Texture:SetBlendMode("BLEND")
 
 	cg.Anim = cg:CreateAnimationGroup()
 	cg.Anim:SetLooping("REPEAT")
@@ -240,14 +243,65 @@ local function EnsureSlotGlow(parent)
 	end
 
 	-- atlas needs to extend well past the icon edges for the glow halo to read correctly.
-	local cg = CreateStaticGlowFrame(parent, "_SlotGlow", "SlotGlow", 1.19)
-	cg.Texture:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Textures\\newplayertutorial-drag-slotgreen.tga")
+	local cg = CreateStaticGlowFrame(parent, "_SlotGlow", "SlotGlow", 1 / 5)
+	cg.Texture:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Textures\\SlotGlow.tga")
 	cg.Texture:SetDesaturated(true)
 	return cg
 end
 
+local function EnsureRotationAssistCWGlow(parent)
+	if parent._RotationAssistCWGlow then
+		return parent._RotationAssistCWGlow
+	end
+
+	local cg = CreateStaticGlowFrame(parent, "_RotationAssistCWGlow", "RotationAssistCWGlow", 1 / 4)
+	cg.Texture:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhiteClockwise.tga")
+	cg.Texture:SetDesaturated(true)
+	cg.Texture:SetBlendMode("BLEND")
+
+	cg.Anim = cg:CreateAnimationGroup()
+	cg.Anim:SetLooping("REPEAT")
+	local flip = cg.Anim:CreateAnimation("FlipBook")
+	flip:SetChildKey("Texture")
+	flip:SetFlipBookRows(6)
+	flip:SetFlipBookColumns(5)
+	flip:SetFlipBookFrames(30)
+	flip:SetDuration(1.0)
+	cg.Anim:Play()
+
+	return cg
+end
+
+-- Ships with the client as an atlas, so there is no bundled file for this one.
+local function EnsureAntsGlow(parent)
+	if parent._AntsGlow then
+		return parent._AntsGlow
+	end
+
+	local cg = CreateStaticGlowFrame(parent, "_AntsGlow", "AntsGlow", 1 / 4)
+	cg.Texture:SetAtlas("RotationHelper_Ants_Flipbook")
+	cg.Texture:SetDesaturated(true)
+	cg.Texture:SetBlendMode("BLEND")
+
+	cg.Anim = cg:CreateAnimationGroup()
+	cg.Anim:SetLooping("REPEAT")
+	local flip = cg.Anim:CreateAnimation("FlipBook")
+	flip:SetChildKey("Texture")
+	flip:SetFlipBookRows(6)
+	flip:SetFlipBookColumns(5)
+	flip:SetFlipBookFrames(30)
+	flip:SetDuration(1.0)
+	cg.Anim:Play()
+
+	return cg
+end
+
 local function GetOrCreateStaticGlow(parent, glowType)
-	if glowType == "Rotation Assist" then
+	if glowType == "Rotation Assist (Clockwise)" then
+		return EnsureRotationAssistCWGlow(parent)
+	elseif glowType == "Ants (Anti-Clockwise)" then
+		return EnsureAntsGlow(parent)
+	elseif glowType == "Rotation Assist (Anti-clockwise)" then
 		return EnsureFlipbookGlow(parent)
 	elseif glowType == "Slot Glow" then
 		return EnsureSlotGlow(parent)
@@ -340,7 +394,7 @@ local function UpdateGlow(layerFrame, options)
 	-- so clamp to the same set to keep all glows visually consistent; the config offers only
 	-- these on 12.1. TEMPORARY: remove with the legacy path once 12.1 is live.
 	if USE_AURA_CONTAINERS and not STATIC_GLOW_FIELDS[glowType] then
-		glowType = "Rotation Assist"
+		glowType = "Slot Glow"
 	end
 
 	if not options.Glow then

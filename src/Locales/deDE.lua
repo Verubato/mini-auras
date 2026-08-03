@@ -28,6 +28,7 @@ L:RegisterLocale("deDE", {
 	["Shows enemy kick cooldowns in arena."] = "Zeigt gegnerische Kick-Cooldowns in der Arena.",
 	["Enable if you are:"] = "Aktivieren, wenn du bist:",
 	["Enable in"] = "Aktivieren in",
+	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "Animierte Leuchteffekte animieren auch Symbole ohne Aura und kosten im Leerlauf CPU.",
 	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "Zeigt ein Symbol auf dem Bildschirm, wenn du Präkognition oder Nichtenden Schleier erhältst.",
 	["Specify which spells are shown on raid frames."] = "Legt fest, welche Zauber auf Schlachtzugsrahmen angezeigt werden.",
 	["Remove"] = "Entfernen",
@@ -147,7 +148,6 @@ L:RegisterLocale("deDE", {
 	["The others seem to use a non-trivial amount of CPU."] = "Die anderen scheinen eine beträchtliche Menge CPU zu verwenden.",
 	["The Proc Glow uses the least CPU."] = "Das Proc-Leuchten verwendet am wenigsten CPU.",
 	["The Slot Glow is static and uses the least CPU."] = "Das Slot-Leuchten ist statisch und verwendet am wenigsten CPU.",
-	["Rotation Assist keeps animating icons with no aura, costing CPU while idle."] = "Rotationshilfe animiert weiterhin Symbole ohne Aura und verbraucht dadurch CPU im Leerlauf.",
 
 	-- Alerts tab
 	["Alerts"] = "Warnungen",

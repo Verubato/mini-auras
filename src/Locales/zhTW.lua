@@ -28,6 +28,7 @@ L:RegisterLocale("zhTW", {
 	["Shows enemy kick cooldowns in arena."] = "在競技場中顯示敵方打斷冷卻時間。",
 	["Enable if you are:"] = "如果您是以下角色則啟用：",
 	["Enable in"] = "啟用於",
+	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "動畫發光會繼續在沒有光環的圖示上播放，閒置時也會消耗 CPU。",
 	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "當你獲得預知或湮滅披風時，在螢幕上顯示一個圖示。",
 	["Specify which spells are shown on raid frames."] = "指定在團隊框體上顯示哪些法術。",
 	["Remove"] = "移除",
@@ -147,7 +148,6 @@ L:RegisterLocale("zhTW", {
 	["The others seem to use a non-trivial amount of CPU."] = "其他的似乎使用了大量的CPU。",
 	["The Proc Glow uses the least CPU."] = "觸發發光使用最少的CPU。",
 	["The Slot Glow is static and uses the least CPU."] = "槽位發光是靜態的，使用最少的CPU。",
-	["Rotation Assist keeps animating icons with no aura, costing CPU while idle."] = "旋轉輔助會持續動畫沒有光環的圖示，閒置時也會佔用CPU。",
 
 	-- Alerts tab
 	["Alerts"] = "警報",

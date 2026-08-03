@@ -18,6 +18,9 @@ local auraFilters = addon.Core.AuraFilters
 
 local BATCH = acm.batchSize
 
+-- The default glow is static, so anything asserting animation has to opt into a moving style.
+local ANIMATED_GLOW = "Rotation Assist (Anti-clockwise)"
+
 local function newInstance(groups)
 	return display:New(_G.UIParent, "target", groups or {
 		{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 5 },
@@ -216,6 +219,7 @@ fw.describe("AuraContainerDisplay - restriction model", function()
 		-- restyle is blocked for as long as auras are secret (the whole of an arena). Nothing on
 		-- the park path may stop them: a display parked in the world and reused inside an arena
 		-- would come back with no glow for the entire match.
+		mockDb.GlowType = ANIMATED_GLOW
 		local instance = newInstance()
 		instance:SetStyle({ Glow = true })
 		assert(anyGlowPlaying(instance), "glow animations playing while style.Glow")
@@ -285,6 +289,7 @@ fw.describe("AuraContainerDisplay - glow lifecycle", function()
 	fw.before_each(acm.reset)
 
 	fw.it("plays animations only while the glow style is enabled", function()
+		mockDb.GlowType = ANIMATED_GLOW
 		local instance = newInstance()
 		instance:SetStyle({ Glow = true })
 		assert(anyGlowPlaying(instance), "enabled -> playing")
@@ -300,11 +305,11 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		mockDb.GlowType = nil
 	end)
 
-	fw.it("defaults to the animated flipbook glow", function()
+	fw.it("defaults to the static slot glow", function()
 		local instance = newInstance()
 		instance:SetStyle({ Glow = true })
-		assert(firstGlowWidgets(instance).GlowStyle == "Rotation Assist", "default is the flipbook")
-		assert(anyGlowPlaying(instance), "the flipbook animates")
+		assert(firstGlowWidgets(instance).GlowStyle == "Slot Glow", "default is the slot glow")
+		assert(not anyGlowPlaying(instance), "and it does not animate")
 	end)
 
 	fw.it("draws the plain border only when the style asks for one", function()
@@ -353,13 +358,13 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		style.Glow = true
 
 		local before = display:GetStyleSignature(style, 30, 2)
-		mockDb.GlowType = "Slot Glow"
+		mockDb.GlowType = ANIMATED_GLOW
 		local after = display:GetStyleSignature(style, 30, 2)
 
 		assert(before ~= after, "changing the glow type must invalidate cached displays")
 	end)
 
-	fw.it("Slot Glow applies the static atlas and runs no animation", function()
+	fw.it("Slot Glow applies its static asset and runs no animation", function()
 		mockDb.GlowType = "Slot Glow"
 		local instance = newInstance()
 		instance:SetStyle({ Glow = true })
@@ -369,14 +374,26 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		assert(not anyGlowPlaying(instance), "a static glow must not animate")
 
 		local asset = widgets.Glow.Texture._lastArgs.SetTexture[1]
-		assert(asset:find("newplayertutorial%-drag%-slotgreen"), "slot atlas applied, got " .. tostring(asset))
+		assert(asset:find("SlotGlow"), "slot glow asset applied, got " .. tostring(asset))
 	end)
 
-	fw.it("an LCG-only glow type falls back to the flipbook", function()
+	fw.it("an atlas-backed glow style uses SetAtlas rather than SetTexture", function()
+		-- Ants ships with the client as an atlas, so it has no file of its own to point at.
+		mockDb.GlowType = "Ants (Anti-Clockwise)"
+		local instance = newInstance()
+		instance:SetStyle({ Glow = true })
+
+		local widgets = firstGlowWidgets(instance)
+		assert(widgets.GlowStyle == "Ants (Anti-Clockwise)", "ants selected")
+		assert(widgets.Glow.Texture._lastArgs.SetAtlas, "applied through SetAtlas")
+		assert(anyGlowPlaying(instance), "and it animates")
+	end)
+
+	fw.it("an LCG-only glow type falls back to the default", function()
 		mockDb.GlowType = "Proc Glow"
 		local instance = newInstance()
 		instance:SetStyle({ Glow = true })
-		assert(firstGlowWidgets(instance).GlowStyle == "Rotation Assist", "unsupported type falls back")
+		assert(firstGlowWidgets(instance).GlowStyle == "Slot Glow", "unsupported type falls back")
 	end)
 
 	fw.it("changing the glow type restyles despite an identical style table", function()
@@ -384,7 +401,7 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		instance:SetStyle({ Glow = true })
 		local afterFirst = totalSetSizeCalls(instance)
 
-		mockDb.GlowType = "Slot Glow"
+		mockDb.GlowType = ANIMATED_GLOW
 		instance:SetStyle({ Glow = true })
 		assert(totalSetSizeCalls(instance) > afterFirst, "glow type must be part of the style signature")
 	end)
@@ -403,6 +420,7 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 	end)
 
 	fw.it("switching away from the flipbook resets its tex coords", function()
+		mockDb.GlowType = ANIMATED_GLOW
 		local instance = newInstance()
 		instance:SetStyle({ Glow = true })
 

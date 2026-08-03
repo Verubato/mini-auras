@@ -9,25 +9,39 @@ local growAnchors = addon.Core.GrowAnchors
 -- texture-based styles from IconSlotContainer are offered; anything else falls back to the
 -- flipbook. PaddingFactor is a multiple of the icon size, matching ApplyStaticGlowPadding.
 local GLOW_STYLES = {
-	["Rotation Assist"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhite.tga",
-		BlendMode = "ADD",
-		Desaturated = false,
-		PaddingFactor = 1 / 3,
+	["Rotation Assist (Anti-clockwise)"] = {
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhiteAntiClockwise.tga",
+		BlendMode = "BLEND",
+		Desaturated = true,
+		PaddingFactor = 1 / 4,
+		Animated = true,
+	},
+	["Rotation Assist (Clockwise)"] = {
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhiteClockwise.tga",
+		BlendMode = "BLEND",
+		Desaturated = true,
+		PaddingFactor = 1 / 4,
+		Animated = true,
+	},
+	-- Atlas rather than a bundled file: this one ships with the client.
+	["Ants (Anti-Clockwise)"] = {
+		Atlas = "RotationHelper_Ants_Flipbook",
+		BlendMode = "BLEND",
+		Desaturated = true,
+		PaddingFactor = 1 / 4,
 		Animated = true,
 	},
 	["Slot Glow"] = {
-		-- The atlas carries a lot of transparent margin, so it has to extend well past the
-		-- icon edges for the halo to read correctly.
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\newplayertutorial-drag-slotgreen.tga",
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\SlotGlow.tga",
 		BlendMode = "BLEND",
-		Desaturated = true,
-		PaddingFactor = 1.19,
+		Desaturated = false,
+		PaddingFactor = 1 / 5,
 		Animated = false,
 	},
 }
 
-local DEFAULT_GLOW_STYLE = "Rotation Assist"
+
+local DEFAULT_GLOW_STYLE = "Slot Glow"
 
 -- How often the deferred restyle retry runs while any display is stale (see RestyleButtons).
 local RESTYLE_RETRY_INTERVAL = 1
@@ -287,7 +301,11 @@ local function ApplyGlowStyle(widgets, button, styleName, size)
 		-- would fight the reset below (and Stop may restore its own pre-animation coords).
 		glow.Anim:Stop()
 
-		glow.Texture:SetTexture(spec.Texture)
+		if spec.Atlas then
+			glow.Texture:SetAtlas(spec.Atlas)
+		else
+			glow.Texture:SetTexture(spec.Texture)
+		end
 		glow.Texture:SetBlendMode(spec.BlendMode)
 		glow.Texture:SetDesaturated(spec.Desaturated)
 		-- The flipbook leaves the coords on its last cell; reset them so a static asset
@@ -478,7 +496,7 @@ local function InitializeButton(instance, button, glowColor)
 		-- Glow overlay, created up-front as a direct child (creation is allowed on AuraButtons;
 		-- re-parenting is not). The asset is left unset: StyleButton applies whichever style from
 		-- GLOW_STYLES is configured, and the flipbook animation is built here either way so a
-		-- later switch to "Rotation Assist" doesn't have to touch the button.
+		-- later switch to an animated style doesn't have to touch the button.
 		glow = CreateFrame("Frame", NextFrameName("Glow"), button)
 		glow:SetFrameLevel(button:GetFrameLevel() + 5)
 		glow.Texture = glow:CreateTexture(nil, "OVERLAY")

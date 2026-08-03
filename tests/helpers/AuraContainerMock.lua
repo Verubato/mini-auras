@@ -125,6 +125,7 @@ local function NewRegion(parent, regionType)
 	for _, name in ipairs({
 		"SetAllPoints", "SetPoint", "ClearAllPoints", "SetTexture", "SetTexCoord",
 		"AddMaskTexture", "SetVertexColor", "SetBlendMode", "SetDesaturated", "SetScale",
+		"SetAtlas",
 		"SetText", "SetFont", "SetTextColor", "SetShadowColor", "SetShadowOffset",
 		"SetJustifyH", "SetDrawLayer",
 	}) do

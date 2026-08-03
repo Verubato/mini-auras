@@ -120,11 +120,13 @@ function M:Build(panel)
 	local useAuraContainers = addon.Utils.WoWEx:UseAuraContainers()
 
 	local glowItems = useAuraContainers and {
-		"Rotation Assist",
+		"Rotation Assist (Clockwise)",
+		"Rotation Assist (Anti-clockwise)",
+		"Ants (Anti-Clockwise)",
 		"Slot Glow",
 	} or {
 		"Proc Glow",
-		"Rotation Assist",
+		"Rotation Assist (Anti-clockwise)",
 		"Pixel Glow",
 		"Autocast Shine",
 		"Slot Glow",
@@ -137,7 +139,7 @@ function M:Build(panel)
 	-- so there's no stable "these can never show" set. Hence the warning rather than a fix.
 	local glowNoteLines = useAuraContainers and {
 		L["The Slot Glow is static and uses the least CPU."],
-		L["Rotation Assist keeps animating icons with no aura, costing CPU while idle."],
+		L["Animated glows keep animating icons with no aura, costing CPU while idle."],
 	} or {
 		L["The Proc Glow uses the least CPU."],
 		L["The others seem to use a non-trivial amount of CPU."],
@@ -154,8 +156,8 @@ function M:Build(panel)
 			local current = db.GlowType or "Slot Glow"
 
 			-- A profile saved on 12.0 can hold an LCG-only type; show what actually renders.
-			if useAuraContainers and current ~= "Slot Glow" then
-				return "Rotation Assist"
+			if useAuraContainers and not tContains(glowItems, current) then
+				return "Slot Glow"
 			end
 
 			return current

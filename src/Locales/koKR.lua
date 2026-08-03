@@ -28,6 +28,7 @@ L:RegisterLocale("koKR", {
 	["Shows enemy kick cooldowns in arena."] = "투기장에서 적의 차단 쿨다운을 표시합니다.",
 	["Enable if you are:"] = "다음인 경우 활성화:",
 	["Enable in"] = "활성화 위치",
+	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "애니메이션 발광은 오라가 없는 아이콘에서도 계속 재생되어 대기 중에도 CPU를 사용합니다.",
 	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "예지 또는 무효화의 장막을 받으면 화면에 아이콘을 표시합니다.",
 	["Specify which spells are shown on raid frames."] = "공격대 프레임에 표시할 주문을 지정합니다.",
 	["Remove"] = "제거",
@@ -147,7 +148,6 @@ L:RegisterLocale("koKR", {
 	["The others seem to use a non-trivial amount of CPU."] = "다른 것들은 상당한 CPU를 사용하는 것 같습니다.",
 	["The Proc Glow uses the least CPU."] = "프록 발광은 CPU를 가장 적게 사용합니다.",
 	["The Slot Glow is static and uses the least CPU."] = "슬롯 발광은 정적이며 CPU를 가장 적게 사용합니다.",
-	["Rotation Assist keeps animating icons with no aura, costing CPU while idle."] = "로테이션 도우미는 오라가 없는 아이콘도 계속 애니메이션하여 대기 중에도 CPU를 사용합니다.",
 
 	-- Alerts tab
 	["Alerts"] = "알림",

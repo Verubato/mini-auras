@@ -28,6 +28,7 @@ L:RegisterLocale("frFR", {
 	["Shows enemy kick cooldowns in arena."] = "Affiche les CDs de kick ennemis en arène.",
 	["Enable if you are:"] = "Activer si vous êtes :",
 	["Enable in"] = "Activer en",
+	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "Les lueurs animées continuent d'animer les icônes sans aura et consomment du CPU au repos.",
 	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "Affiche une icône à l'écran lorsque vous recevez Précognition ou Suaire annihilant.",
 	["Specify which spells are shown on raid frames."] = "Indique quels sorts sont affichés sur les cadres de raid.",
 	["Remove"] = "Supprimer",
@@ -147,7 +148,6 @@ L:RegisterLocale("frFR", {
 	["The others seem to use a non-trivial amount of CPU."] = "Les autres consomment sensiblement plus de CPU.",
 	["The Proc Glow uses the least CPU."] = "La lueur Proc consomme le moins de CPU.",
 	["The Slot Glow is static and uses the least CPU."] = "La lueur d'emplacement est statique et consomme le moins de CPU.",
-	["Rotation Assist keeps animating icons with no aura, costing CPU while idle."] = "L'assistance de rotation continue d'animer les icônes sans aura, consommant du CPU au repos.",
 
 	-- Alerts tab
 	["Alerts"] = "Alertes",
