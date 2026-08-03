@@ -31,6 +31,7 @@ local function SaveOpaqueCaches(vars)
 		and vars.Modules.FriendlyIndicatorModule.Spells
 	saved._FiDisabledSpells = fiSpells and mini:CopyValueOrTable(fiSpells.Disabled) or {}
 	saved._FiCustomSpells = fiSpells and mini:CopyValueOrTable(fiSpells.Custom) or {}
+	saved._FiEnabledSpells = fiSpells and mini:CopyValueOrTable(fiSpells.Enabled) or {}
 	return saved
 end
 
@@ -51,6 +52,7 @@ local function RestoreOpaqueCaches(vars, saved)
 		fiModule.Spells = fiModule.Spells or {}
 		fiModule.Spells.Disabled = saved._FiDisabledSpells or {}
 		fiModule.Spells.Custom = saved._FiCustomSpells or {}
+		fiModule.Spells.Enabled = saved._FiEnabledSpells or {}
 	end
 end
 

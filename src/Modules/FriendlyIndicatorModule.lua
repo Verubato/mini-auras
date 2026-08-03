@@ -76,11 +76,16 @@ local function GetHelpfulFilters()
 	}
 
 	local curated = {}
+	local enabled = (overrides and overrides.Enabled) or EMPTY_TABLE
 
 	for _, source in ipairs(sources) do
 		for spellId in pairs(source) do
 			curated[spellId] = true
-			if not disabled[spellId] then
+			-- Off-by-default spells need an explicit opt-in; the rest are on unless switched off.
+			local tracked = not disabled[spellId]
+				and (not auraCategoryIds.DefaultOff[spellId] or enabled[spellId])
+
+			if tracked then
 				ids[spellId] = true
 			end
 		end

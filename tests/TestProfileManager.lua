@@ -91,6 +91,7 @@ fw.describe("ProfileManager - switching", function()
 		-- spell added under one profile must not leak into another.
 		local spells = db.Modules.FriendlyIndicatorModule.Spells
 		spells.Custom[123456] = true
+		spells.Enabled[235313] = true
 		spells.Disabled[45438] = true
 
 		profileManager:CreateProfile("Spells", nil)
@@ -102,6 +103,8 @@ fw.describe("ProfileManager - switching", function()
 			"the custom id came back with its own profile")
 		assert(db.Modules.FriendlyIndicatorModule.Spells.Disabled[45438],
 			"and so did the disabled one")
+		assert(db.Modules.FriendlyIndicatorModule.Spells.Enabled[235313],
+			"and the opt-in for an off-by-default spell")
 
 		profileManager:SwitchProfile("Spells")
 		assert(not db.Modules.FriendlyIndicatorModule.Spells.Custom[123456],

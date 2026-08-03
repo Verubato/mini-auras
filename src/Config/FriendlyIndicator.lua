@@ -625,6 +625,10 @@ local function BuildSpells(parent)
 					Parent = panel,
 					LabelText = SpellLabel(spellId),
 					GetValue = function()
+						if auraCategoryIds.DefaultOff[spellId] then
+							return overrides.Enabled[spellId] == true
+						end
+
 						return not overrides.Disabled[spellId]
 					end,
 					SetValue = function(value)
@@ -632,6 +636,12 @@ local function BuildSpells(parent)
 						-- Remove button for that. Unticking used to drop a custom id from the list,
 						-- which left the row reading as tracked again on the next refresh, so the
 						-- first click never appeared to stick.
+						if auraCategoryIds.DefaultOff[spellId] then
+							-- Ships off, so tracking it is an explicit opt-in rather than the
+							-- absence of an opt-out.
+							overrides.Enabled[spellId] = value or nil
+						end
+
 						overrides.Disabled[spellId] = (not value) or nil
 
 						config:Apply()

@@ -438,6 +438,8 @@ local dbDefaults = {
 				Disabled = {},
 				-- [spellId] = true, ids the user added by hand.
 				Custom = {},
+				-- [spellId] = true, spells from AuraCategoryIds.DefaultOff the user switched ON.
+				Enabled = {},
 			},
 
 			Enabled = {

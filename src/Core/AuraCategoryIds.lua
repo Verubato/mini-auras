@@ -1051,7 +1051,34 @@ addon.Core.AuraCategoryIds = {
 	-- Usable only where the spell id IS the filter - the Friendly Indicator's bare HELPFUL group.
 	-- Anywhere a category token is in play the engine rejects them, since includeSpellIDs can only
 	-- narrow a group and never widen it.
+	-- Curated spells that ship switched OFF. They stay in the lists above so they can be found
+	-- and enabled, but are not tracked until the user asks for them. Expressed here rather than
+	-- as default Disabled entries because the saved-variable merge re-adds any default key, so a
+	-- user who enabled one would find it off again on the next reload.
+	DefaultOff = {
+		[378078] = true, -- Spiritwalker's Aegis
+		[79206] = true, -- Spiritwalker's Grace
+		[343818] = true, -- Invoke Chi-Ji, the Red Crane
+		[389422] = true, -- Invoke Yu'lon, the Jade Serpent
+		[209584] = true, -- Zen Focus Tea
+		[116841] = true, -- Tiger's Lust
+		[235313] = true, -- Blazing Barrier
+		[11426] = true, -- Ice Barrier
+		[235450] = true, -- Prismatic Barrier
+	},
+
 	Unflagged = {
+		[228050] = true, -- Guardian of the Forgotten Queen
+		[378078] = true, -- Spiritwalker's Aegis
+		[79206] = true, -- Spiritwalker's Grace
+		[389422] = true, -- Invoke Yu'lon, the Jade Serpent
+		[209584] = true, -- Zen Focus Tea
+		[116841] = true, -- Tiger's Lust
+		[1309793] = true, -- Refractive Images
+		[389794] = true, -- Snowdrift
+		[235450] = true, -- Prismatic Barrier
+		[11426] = true, -- Ice Barrier
+		[235313] = true, -- Blazing Barrier
 		[110960] = true, -- Greater Invisibility
 		[414664] = true, -- Mass Invisibility
 		[354610] = true, -- Glimpse
@@ -1083,7 +1110,6 @@ addon.Core.AuraCategoryIds = {
 		[81256] = true, -- Dancing Rune Weapon
 		[49039] = true, -- Lichborne
 		[210256] = true, -- Blessing of Sanctuary
-		[211210] = true, -- Aura Mastery
 		[31821] = true, -- Aura Mastery
 		[390260] = true, -- Commander of the Dead
 	},
@@ -1147,53 +1173,48 @@ addon.Core.AuraCategoryIds = {
 		[1250646] = "HUNTER", -- Takedown
 		[288613] = "HUNTER", -- Trueshot
 		-- Mage
+		[1309793] = "MAGE", -- Refractive Images
+		[389794] = "MAGE", -- Snowdrift
+		[235450] = "MAGE", -- Prismatic Barrier
+		[11426] = "MAGE", -- Ice Barrier
+		[235313] = "MAGE", -- Blazing Barrier
 		[110960] = "MAGE", -- Greater Invisibility
 		[414664] = "MAGE", -- Mass Invisibility
-		[110909] = "MAGE", -- Alter Time
 		[342246] = "MAGE", -- Alter Time
-		[365350] = "MAGE", -- Arcane Surge
 		[365362] = "MAGE", -- Arcane Surge
 		[190319] = "MAGE", -- Combustion
 		[45438] = "MAGE", -- Ice Block
 		[414658] = "MAGE", -- Ice Cold
 		[198144] = "MAGE", -- Ice Form
 		[12472] = "MAGE", -- Icy Veins
-		[55342] = "MAGE", -- Mirror Image
 		-- Monk
-		[115203] = "MONK", -- Fortifying Brew
+		[389422] = "MONK", -- Invoke Yu'lon, the Jade Serpent
+		[209584] = "MONK", -- Zen Focus Tea
+		[116841] = "MONK", -- Tiger's Lust
 		[120954] = "MONK", -- Fortifying Brew
-		[243435] = "MONK", -- Fortifying Brew
 		[343818] = "MONK", -- Invoke Chi-Ji, the Red Crane
 		[132578] = "MONK", -- Invoke Niuzao, the Black Ox
-		[395267] = "MONK", -- Invoke Niuzao, the Black Ox
 		[116849] = "MONK", -- Life Cocoon
 		[354540] = "MONK", -- Nimble Brew
 		[353319] = "MONK", -- Peaceweaver
-		[388615] = "MONK", -- Restoral
-		[115310] = "MONK", -- Revival
-		[297850] = "MONK", -- Revival
 		[125174] = "MONK", -- Touch of Karma
 		[1249625] = "MONK", -- Zenith
 		-- Paladin
-		[211210] = "PALADIN", -- Aura Mastery
+		[228050] = "PALADIN", -- Guardian of the Forgotten Queen
 		[31821] = "PALADIN", -- Aura Mastery
 		[210256] = "PALADIN", -- Blessing of Sanctuary
 		[389539] = "PALADIN", -- Sentinel
 		[31850] = "PALADIN", -- Ardent Defender
 		[216331] = "PALADIN", -- Avenging Crusader
 		[31884] = "PALADIN", -- Avenging Wrath
-		[231895] = "PALADIN", -- Avenging Wrath
 		[454351] = "PALADIN", -- Avenging Wrath
-		[454373] = "PALADIN", -- Avenging Wrath
 		[1044] = "PALADIN", -- Blessing of Freedom
-		[305395] = "PALADIN", -- Blessing of Freedom
 		[1022] = "PALADIN", -- Blessing of Protection
 		[6940] = "PALADIN", -- Blessing of Sacrifice
 		[199448] = "PALADIN", -- Blessing of Sacrifice
 		[204018] = "PALADIN", -- Blessing of Spellwarding
 		[498] = "PALADIN", -- Divine Protection
 		[403876] = "PALADIN", -- Divine Protection
-		[1261559] = "PALADIN", -- Divine Protection
 		[642] = "PALADIN", -- Divine Shield
 		-- Priest
 		[200183] = "PRIEST", -- Apotheosis
@@ -1205,7 +1226,6 @@ addon.Core.AuraCategoryIds = {
 		[47788] = "PRIEST", -- Guardian Spirit
 		[33206] = "PRIEST", -- Pain Suppression
 		[194249] = "PRIEST", -- Voidform
-		[228260] = "PRIEST", -- Voidform
 		-- Rogue
 		[1966] = "ROGUE", -- Feint
 		[1784] = "ROGUE", -- Stealth
@@ -1216,6 +1236,8 @@ addon.Core.AuraCategoryIds = {
 		[121471] = "ROGUE", -- Shadow Blades
 		[185422] = "ROGUE", -- Shadow Dance
 		-- Shaman
+		[378078] = "SHAMAN", -- Spiritwalker's Aegis
+		[79206] = "SHAMAN", -- Spiritwalker's Grace
 		[409293] = "SHAMAN", -- Burrow
 		[191634] = "SHAMAN", -- Stormkeeper
 		[114051] = "SHAMAN", -- Ascendance
@@ -1241,11 +1263,10 @@ addon.Core.AuraCategoryIds = {
 		-- General
 		[377362] = "GENERAL", -- Precognition
 	},
-	-- Important: specials + offensive cooldowns (54 ids)
+	-- Important: specials + offensive cooldowns (45 ids)
 	Important = {
 		[13750] = true, -- Adrenaline Rush
 		[410358] = true, -- Anti-Magic Shell (Spellwarding)
-		[365350] = true, -- Arcane Surge
 		[365362] = true, -- Arcane Surge
 		[114051] = true, -- Ascendance
 		[114052] = true, -- Ascendance
@@ -1253,21 +1274,17 @@ addon.Core.AuraCategoryIds = {
 		[107574] = true, -- Avatar
 		[216331] = true, -- Avenging Crusader
 		[31884] = true, -- Avenging Wrath
-		[231895] = true, -- Avenging Wrath
 		[454351] = true, -- Avenging Wrath
-		[454373] = true, -- Avenging Wrath
 		[50334] = true, -- Berserk
 		[106951] = true, -- Berserk
 		[19574] = true, -- Bestial Wrath
 		[1044] = true, -- Blessing of Freedom
-		[305395] = true, -- Blessing of Freedom
 		[383410] = true, -- Celestial Alignment
 		[190319] = true, -- Combustion
 		[391109] = true, -- Dark Ascension
 		[360194] = true, -- Deathmark
 		[498] = true, -- Divine Protection
 		[403876] = true, -- Divine Protection
-		[1261559] = true, -- Divine Protection
 		[466772] = true, -- Doom Winds
 		[375087] = true, -- Dragonrage
 		[8178] = true, -- Grounding Totem
@@ -1278,15 +1295,12 @@ addon.Core.AuraCategoryIds = {
 		[102558] = true, -- Incarnation: Guardian of Ursoc
 		[343818] = true, -- Invoke Chi-Ji, the Red Crane
 		[132578] = true, -- Invoke Niuzao, the Black Ox
-		[395267] = true, -- Invoke Niuzao, the Black Ox
 		[187827] = true, -- Metamorphosis
 		[378464] = true, -- Nullifying Shroud
 		[353319] = true, -- Peaceweaver
 		[51271] = true, -- Pillar of Frost
 		[377362] = true, -- Precognition
 		[389722] = true, -- Recklessness
-		[115310] = true, -- Revival
-		[297850] = true, -- Revival
 		[121471] = true, -- Shadow Blades
 		[185422] = true, -- Shadow Dance
 		[23920] = true, -- Spell Reflection
@@ -1295,12 +1309,10 @@ addon.Core.AuraCategoryIds = {
 		[288613] = true, -- Trueshot
 		[1217607] = true, -- Void Metamorphosis
 		[194249] = true, -- Voidform
-		[228260] = true, -- Voidform
 		[1249625] = true, -- Zenith
 	},
-	-- Defensive: defensive + healer throughput cooldowns (46 ids)
+	-- Defensive: defensive + healer throughput cooldowns (41 ids)
 	Defensive = {
-		[110909] = true, -- Alter Time
 		[342246] = true, -- Alter Time
 		[48707] = true, -- Anti-Magic Shell (untalented)
 		[31850] = true, -- Ardent Defender
@@ -1322,9 +1334,7 @@ addon.Core.AuraCategoryIds = {
 		[184364] = true, -- Enraged Regeneration
 		[5277] = true, -- Evasion
 		[207771] = true, -- Fiery Brand
-		[115203] = true, -- Fortifying Brew
 		[120954] = true, -- Fortifying Brew
-		[243435] = true, -- Fortifying Brew
 		[47788] = true, -- Guardian Spirit
 		[45438] = true, -- Ice Block
 		[414658] = true, -- Ice Cold
@@ -1332,12 +1342,10 @@ addon.Core.AuraCategoryIds = {
 		[147833] = true, -- Intervene
 		[102342] = true, -- Ironbark
 		[116849] = true, -- Life Cocoon
-		[55342] = true, -- Mirror Image
 		[212295] = true, -- Nether Ward
 		[354540] = true, -- Nimble Brew
 		[363916] = true, -- Obsidian Scales
 		[33206] = true, -- Pain Suppression
-		[388615] = true, -- Restoral
 		[53480] = true, -- Roar of Sacrifice
 		[389539] = true, -- Sentinel
 		[871] = true, -- Shield Wall
