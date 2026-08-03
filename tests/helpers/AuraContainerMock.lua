@@ -308,6 +308,7 @@ function M.NewFrame(frameType, name, parent, template)
 		return false
 	end
 	function frame:SetClampedToScreen() end
+	function frame:SetDontSavePosition() end
 	function frame:StartMoving() end
 	function frame:StopMovingOrSizing() end
 	function frame:GetEffectiveScale()

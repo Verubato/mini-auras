@@ -1,0 +1,265 @@
+---@type string, Addon
+local _, addon = ...
+local mini = addon.Framework
+local eventGate = addon.Core.EventGate
+local inspectorFacade = addon.Core.InspectorFacade
+local kickData = addon.Core.KickData
+
+-- Loaded before this file in TOC order.
+local observer = addon.Modules.EnemyKickTracker.Observer
+local display  = addon.Modules.EnemyKickTracker.Display
+
+---@class EnemyKickTrackerModule : IModule
+local M = {}
+addon.Modules.EnemyKickTracker.Module = M
+addon.Modules.EnemyKickTrackerModule = M
+
+---@type Db
+local db
+local testModeActive = false
+
+-- fallback icon (rogue Kick)
+local KICK_ICON = C_Spell.GetSpellTexture(1766)
+
+-- Specs previewed in test mode: mage, hunter, rogue.
+local TEST_SPEC_IDS = { 62, 254, 259 }
+-- Rebuilt on every preview; the display reads it synchronously and keeps nothing.
+local testEntriesScratch = {}
+
+---@type EventGate?
+local matchPrepGate
+local worldEventsFrame
+local playerSpecEventsFrame
+-- Shortest interrupt cooldown on the enemy team, so an unattributed kick is shown at its most
+-- pessimistic. Falls back to 15s until the opponents' specs are known.
+local minKickCooldown = 15
+
+local function IsArena()
+	local inInstance, instanceType = IsInInstance()
+
+	return inInstance and instanceType == "arena"
+end
+
+local function GetPlayerSpecId()
+	local specIndex = GetSpecialization()
+	if not specIndex then
+		return nil
+	end
+	local specId = GetSpecializationInfo(specIndex)
+	if specId and specId > 0 then
+		return specId
+	end
+	return nil
+end
+
+local function UpdateMinKickCooldown()
+	local minCd = 15
+	local found = false
+
+	local specs = GetNumArenaOpponentSpecs()
+
+	for i = 1, specs do
+		local specId = inspectorFacade:GetUnitSpecId("arena" .. i)
+		if specId and specId > 0 then
+			local info = kickData.SpecData[specId]
+			local cd = info and info.KickCd
+			if cd then
+				if not found or cd < minCd then
+					minCd = cd
+				end
+				found = true
+			end
+		end
+	end
+
+	minKickCooldown = found and minCd or 15
+end
+
+local function OnArenaPrep()
+	UpdateMinKickCooldown()
+	display:Clear()
+end
+
+local function OnKicked()
+	display:AddKick(minKickCooldown, KICK_ICON)
+end
+
+-- The cast events only produce icons inside an arena, so they stay unregistered elsewhere
+-- even while the module is enabled for this spec.
+---@param active boolean
+local function SetEventsActive(active)
+	if active and IsArena() then
+		if observer:Enable() then
+			display:Show()
+		end
+	elseif observer:Disable() then
+		display:Clear()
+		display:Hide()
+	end
+end
+
+local function OnEnteringWorld()
+	-- Prep data only exists inside arenas; keep the event off elsewhere. Registered even
+	-- while the module itself is disabled, as they might re-enable before gates open.
+	matchPrepGate:SetActive(IsArena())
+
+	M:Refresh()
+
+	if IsArena() then
+		OnArenaPrep()
+	end
+end
+
+local function ShowTestIcons()
+	wipe(testEntriesScratch)
+
+	for _, specId in ipairs(TEST_SPEC_IDS) do
+		local specInfo = kickData.SpecData[specId]
+
+		if specInfo and specInfo.KickCd then
+			testEntriesScratch[#testEntriesScratch + 1] = { Duration = specInfo.KickCd, Icon = KICK_ICON }
+		end
+	end
+
+	display:ShowTestKicks(testEntriesScratch)
+end
+
+-- Lifecycle
+
+---@return EnemyKickTrackerModuleOptions?
+local function GetOptions()
+	return db and db.Modules.EnemyKickTrackerModule
+end
+
+---@return boolean
+local function IsEnabled()
+	-- No moduleUtil check here: the kick timer carries its own per-spec enabled values, and
+	-- the generic check would report false for them.
+	return M:IsEnabledForPlayer(GetOptions())
+end
+
+local function Teardown()
+	display:Clear()
+	display:Hide()
+end
+
+-- Live icons are pushed in by the cast events, so only the fake ones need rebuilding here.
+local function UpdateContent()
+	if testModeActive then
+		ShowTestIcons()
+	end
+end
+
+---@param active boolean
+local function SetTestMode(active)
+	testModeActive = active
+	display:SetTestMode(active)
+	observer:SetPaused(active)
+
+	if not active then
+		display:Clear()
+	end
+
+	M:Refresh()
+	display:SetAnchorInteractive(active)
+end
+
+local function CreateEvents()
+	observer:Create()
+	observer:RegisterKickCallback(OnKicked)
+
+	-- Registered by OnEnteringWorld's gate, and only inside arenas.
+	local matchEventsFrame = CreateFrame("Frame")
+	matchEventsFrame:SetScript("OnEvent", OnArenaPrep)
+	matchPrepGate = eventGate:New(matchEventsFrame, { "ARENA_PREP_OPPONENT_SPECIALIZATIONS" })
+
+	worldEventsFrame = CreateFrame("Frame")
+	worldEventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	worldEventsFrame:SetScript("OnEvent", OnEnteringWorld)
+
+	playerSpecEventsFrame = CreateFrame("Frame")
+	playerSpecEventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+	playerSpecEventsFrame:SetScript("OnEvent", function(_, event, unit)
+		if event == "PLAYER_SPECIALIZATION_CHANGED" and unit == "player" then
+			M:Refresh()
+		end
+	end)
+end
+
+local function ApplyInitialState()
+	M:Refresh()
+end
+
+---@param options EnemyKickTrackerModuleOptions
+function M:IsEnabledForPlayer(options)
+	if not options or not options.Enabled then
+		return false
+	end
+
+	-- nothing toggled on
+	if not (options.Enabled.Always or options.Enabled.Caster or options.Enabled.Healer) then
+		return false
+	end
+
+	if options.Enabled.Always then
+		return true
+	end
+
+	local specId = GetPlayerSpecId()
+	if not specId then
+		-- no data, just assume enabled in this case
+		return true
+	end
+
+	local info = kickData.SpecData[specId]
+	if not info then
+		return false
+	end
+
+	if options.Enabled.Healer and info.IsHealer then
+		return true
+	end
+
+	if options.Enabled.Caster and info.IsCaster then
+		return true
+	end
+
+	return false
+end
+
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	local isEnabled = IsEnabled()
+
+	SetEventsActive(isEnabled)
+
+	if not isEnabled then
+		Teardown()
+		return
+	end
+
+	display:EnsureFrames()
+	display:ApplyOptions(options)
+	UpdateContent()
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
+
+	display:Init()
+	CreateEvents()
+	ApplyInitialState()
+end

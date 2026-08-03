@@ -81,7 +81,9 @@ Modules\HealerCrowdControlModule.lua
 Modules\PortraitModule.lua
 Modules\AlertsModule.lua
 Modules\NameplatesModule.lua
-Modules\EnemyKickTrackerModule.lua
+Modules\EnemyKickTracker\Observer.lua
+Modules\EnemyKickTracker\Display.lua
+Modules\EnemyKickTracker\Module.lua
 Modules\AurasModule.lua
 Modules\PrecogModule.lua
 Modules\TrinketsModule.lua

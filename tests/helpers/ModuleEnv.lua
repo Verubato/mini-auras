@@ -299,6 +299,23 @@ function M.build()
 		end,
 	}
 
+	-- Arena opponent specs, keyed by the arena unit token. The kick tracker reads them to work
+	-- out the shortest interrupt cooldown it could be looking at.
+	env.arenaSpecs = {}
+	_G.GetNumArenaOpponentSpecs = function()
+		local count = 0
+		for _ in pairs(env.arenaSpecs) do
+			count = count + 1
+		end
+		return count
+	end
+	addon.Core.InspectorFacade = {
+		GetUnitSpecId = function(_, unit)
+			return env.arenaSpecs[unit]
+		end,
+	}
+
+	loadFile("src/Core/KickData.lua")
 	loadFile("src/Core/EventGate.lua")
 	loadFile("src/Core/Pool.lua")
 	loadFile("src/Core/GrowAnchors.lua")
