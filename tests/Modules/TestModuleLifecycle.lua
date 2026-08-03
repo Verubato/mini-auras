@@ -584,9 +584,9 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		-- The icon size is baked into the group layout at creation, so that is where it is
 		-- observable from the outside.
 		local function iconSize(container)
-			for _, group in pairs(container._groups) do
-				return group.layout and group.layout.elementWidth
-			end
+			-- Every group on a display shares the icon size, so any one of them answers this.
+			local _, group = next(container._groups)
+			return group and group.layout and group.layout.elementWidth
 		end
 
 		local friendly = activeDisplays("np_flip")[1]

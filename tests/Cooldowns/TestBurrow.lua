@@ -26,8 +26,6 @@ local B    = mods.brain
 local obs  = mods.observer
 
 local BURROW_TALENT = 5575
-local BURROW_WINDOW = 0.5   -- correlation window per batch
-local BURROW_ARM    = 6.5   -- max gap between batch 1 and batch 2 (active duration + tolerance)
 
 local function reset()
     B._TestReset()

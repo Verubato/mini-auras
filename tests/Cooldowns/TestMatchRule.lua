@@ -28,7 +28,6 @@ end
 local BIG    = { BIG_DEFENSIVE = true, IMPORTANT = true }
 local BIG_CC = { BIG_DEFENSIVE = true, IMPORTANT = true, CROWD_CONTROL = true }
 local IMP = { IMPORTANT = true }
-local EXT = { EXTERNAL_DEFENSIVE = true }
 
 -- Thin wrapper so tests can read "nil" returns cleanly.
 local function matchRule(unit, auraTypes, duration, context)

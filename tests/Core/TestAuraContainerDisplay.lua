@@ -448,7 +448,7 @@ fw.describe("Pool", function()
 	end
 
 	fw.it("does not pre-create until Prewarm is called", function()
-		local pool, created = newCountingPool(5)
+		local _, created = newCountingPool(5)
 		acm.tickAll(10)
 		assert(created() == 0, "an un-prewarmed pool must stay empty, got " .. created())
 	end)

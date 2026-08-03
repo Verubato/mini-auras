@@ -27,7 +27,6 @@ local AURA_ID = 4001   -- distinct from other test files
 
 -- Aura type shorthand used throughout this file.
 local BIG = { BIG_DEFENSIVE = true, IMPORTANT = true }
-local IMP = { IMPORTANT = true }
 local EXT = { EXTERNAL_DEFENSIVE = true }
 
 local function reset()
@@ -566,7 +565,6 @@ fw.describe("PredictRule - player excluded via negative castSpellId signal in EX
         mods.talents._setSpec("player", 105)
 
         local entry = loader.makeEntry("party1")
-        local getGlow = captureGlow()
         local capturedCaster
         B:RegisterPredictiveGlowCallback(function(_, sid, cu) capturedCaster = cu end)
 

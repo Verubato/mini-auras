@@ -24,8 +24,6 @@ local B    = mods.brain
 local obs  = mods.observer
 
 local EC_TALENT = 5718
-local EC_WINDOW = 0.5
-local EC_REARM  = 6.5
 
 local function reset()
     B._TestReset()

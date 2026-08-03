@@ -199,7 +199,7 @@ fw.describe("FindBestCandidate - multi-charge alreadyOnCd check", function()
         }
         local tracked, _ = makeTracked(activeCooldowns)
         local entry = loader.makeEntry("arena1", activeCooldowns)
-        local rule, unit = B:FindBestCandidate(entry, tracked, 10.0, {}, { IgnoreTalentRequirements = true })
+        local rule, _ = B:FindBestCandidate(entry, tracked, 10.0, {}, { IgnoreTalentRequirements = true })
         fw.not_nil(rule, "rule returned via fallback even when all charges used")
         fw.eq(rule.SpellId, 198589, "Blur")
     end)

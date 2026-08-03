@@ -20,11 +20,9 @@ local loader = require("Loader")
 local mods = loader.get()
 local B    = mods.brain
 
-local castWindow = 0.15
 
 local BIG    = { BIG_DEFENSIVE = true, IMPORTANT = true }
 local BIG_CC = { BIG_DEFENSIVE = true, IMPORTANT = true, CROWD_CONTROL = true }
-local IMP = { IMPORTANT = true }
 local EXT = { EXTERNAL_DEFENSIVE = true }
 
 local function reset()
@@ -192,7 +190,7 @@ fw.describe("FindBestCandidate - CanCancelEarly at short measured durations", fu
         mods.talents._setSpec("party1", 65)
         -- CanCancelEarly=true, BuffDuration=8; 4.0 <= 8.5 -> passes.
         local t = makeTracked(BIG, 1.0, { party1 = 1.0 }, { Cast = true, UnitFlags = true })
-        local rule, unit = B:FindBestCandidate(loader.makeEntry("party1"), t, 4.0, {})
+        local rule, _ = B:FindBestCandidate(loader.makeEntry("party1"), t, 4.0, {})
         fw.not_nil(rule, "Divine Shield should match at 4s (cancelled early)")
         fw.eq(rule.SpellId, 642, "Divine Shield")
     end)
@@ -242,7 +240,7 @@ fw.describe("FindBestCandidate - Blessing of Protection evidence requirements", 
         wow.setUnitClass("party2", "PALADIN")
         mods.talents._setSpec("party2", 65)
         local t = makeTracked(EXT, 1.0, { party2 = 1.0 }, { Debuff = true, UnitFlags = true })
-        local rule, unit = B:FindBestCandidate(loader.makeEntry("party1"), t, 5.0, { "party2" })
+        local rule, _ = B:FindBestCandidate(loader.makeEntry("party1"), t, 5.0, { "party2" })
         fw.not_nil(rule, "BoP CanCancelEarly allows early removal (5s < 10s expected)")
         fw.eq(rule.SpellId, 1022, "Blessing of Protection")
     end)
@@ -277,7 +275,7 @@ fw.describe("FindBestCandidate - Guardian Spirit base vs Foreseen Circumstances 
         -- Foreseen Circumstances rule has CanCancelEarly + BuffDuration=12.
         -- 10.0 <= 12 + 0.5 = 12.5 -> passes CanCancelEarly (no MinCancelDuration).
         local t = makeTracked(EXT, 1.0, { party2 = 1.0 }, nil)
-        local rule, unit = B:FindBestCandidate(loader.makeEntry("party1"), t, 10.0, { "party2" })
+        local rule, _ = B:FindBestCandidate(loader.makeEntry("party1"), t, 10.0, { "party2" })
         fw.not_nil(rule, "Foreseen Circumstances (12s CanCancelEarly) matches at 10s early cancel")
         fw.eq(rule.SpellId, 47788, "Guardian Spirit (Foreseen Circumstances variant)")
     end)
@@ -369,7 +367,7 @@ fw.describe("FindBestCandidate - Life Cocoon requires Cast+Shield evidence", fun
         wow.setUnitClass("party2", "MONK")
         mods.talents._setSpec("party2", 270)
         local t = makeTracked(EXT, 1.0, { party2 = 1.0 }, { Shield = true })
-        local rule, unit = B:FindBestCandidate(loader.makeEntry("party1"), t, 6.0, { "party2" })
+        local rule, _ = B:FindBestCandidate(loader.makeEntry("party1"), t, 6.0, { "party2" })
         fw.not_nil(rule, "Life Cocoon CanCancelEarly -> 6s <= 12.5 should match")
         fw.eq(rule.SpellId, 116849, "Life Cocoon")
     end)

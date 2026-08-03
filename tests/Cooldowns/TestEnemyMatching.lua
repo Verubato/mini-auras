@@ -25,7 +25,6 @@ local B        = mods.brain
 local observer = mods.observer
 
 local BIG = { BIG_DEFENSIVE = true, IMPORTANT = true }
-local IMP = { IMPORTANT = true }
 local EXT = { EXTERNAL_DEFENSIVE = true }
 
 local function reset()

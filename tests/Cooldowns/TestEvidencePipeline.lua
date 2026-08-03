@@ -37,8 +37,6 @@ local observer = mods.observer
 local AURA_ID = 5001   -- distinct from other test files
 
 local BIG = { BIG_DEFENSIVE = true, IMPORTANT = true }
-local IMP = { IMPORTANT = true }
-local EXT = { EXTERNAL_DEFENSIVE = true }
 
 local function reset()
     B._TestReset()
@@ -59,10 +57,6 @@ local function captureGlow()
            function() return capturedCaster   end
 end
 
--- Helper: build an IMPORTANT-only watcher (aura lives in GetImportantState only).
-local function makeImportantWatcher()
-    return loader.makeWatcher({}, { { AuraInstanceID = AURA_ID } })
-end
 
 -- Helper: build a BIG+IMP watcher.
 local function makeBigImportantWatcher(unit)
@@ -139,10 +133,7 @@ fw.describe("TryRecordDebuffEvidence - isFullUpdate guard", function()
         wow.setUnitClass("party1", "PALADIN")
         mods.talents._setSpec("party1", 65)
 
-        local entry = loader.makeEntry("party1")
 
-        -- Capture the tracked aura's evidence after processing.
-        local trackedEvidence = nil
         B:RegisterCooldownCallback(function(ruleUnit, cdKey, cdData) end)
 
         wow.setTime(0)

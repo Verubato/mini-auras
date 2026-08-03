@@ -46,7 +46,7 @@ end
 -- A failure counts as [xfail] and is added to the pass count.
 -- An unexpected pass counts as [XPASS] and is added to the fail count.
 function M.xfail(name, fn)
-	local ok, err = pcall(function()
+	local ok = pcall(function()
 		if _beforeEach then _beforeEach() end
 		fn()
 	end)

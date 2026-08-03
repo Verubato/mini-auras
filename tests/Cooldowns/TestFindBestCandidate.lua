@@ -29,12 +29,10 @@ local mods = loader.get()
 local B    = mods.brain
 
 -- Must match Brain.lua's castWindow constant (0.15 s).
-local castWindow = 0.15
 
 -- Aura-type sets that match specific rule flags.
 local EXT = { EXTERNAL_DEFENSIVE = true }                       -- Ironbark, BoF
 local BIG = { BIG_DEFENSIVE = true, IMPORTANT = true }          -- Barkskin
-local IMP = { IMPORTANT = true }                                -- Avenging Crusader / Wrath, Dispersion
 
 local function reset()
     B._TestReset()
@@ -261,7 +259,7 @@ fw.describe("FindBestCandidate - 12.0.5 synthetic cast", function()
         mods.talents._setSpec("party2", 65)    -- Holy Paladin -> BoS
         local entry = loader.makeEntry("party1")
         local t = makeTracked(EXT, 5.0, {}, { Shield = true })
-        local rule, unit = B:FindBestCandidate(entry, t, 12.0, { "party2" })
+        local rule, _ = B:FindBestCandidate(entry, t, 12.0, { "party2" })
         fw.is_nil(rule, "ambiguous: Druid self-cast Ironbark vs Paladin synthetic BoS -> nil")
     end)
 
