@@ -43,7 +43,7 @@ local MODULES = {
 	{ Name = "AurasModule", Key = "AurasModule", Files = { "Auras/Display.lua", "Auras/Module.lua" } },
 	{ Name = "HealerCrowdControlModule", Key = "HealerCCModule",
 		Files = { "HealerCrowdControl/Sound.lua", "HealerCrowdControl/Display.lua", "HealerCrowdControl/Module.lua" } },
-	{ Name = "PrecogModule", Key = "PrecogModule", Files = { "PrecogModule.lua" } },
+	{ Name = "PrecogModule", Key = "PrecogModule", Files = { "Precog/Module.lua" } },
 	{ Name = "PortraitModule", Key = "PortraitModule",
 		Files = { "Portrait/Observer.lua", "Portrait/Display.lua", "Portrait/Anchors.lua", "Portrait/Module.lua" } },
 	{ Name = "NameplatesModule", Key = "NameplatesModule",

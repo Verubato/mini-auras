@@ -37,8 +37,11 @@ local display
 ---@type TestSpell
 local testSpell
 
+addon.Modules.Precog = addon.Modules.Precog or {}
+
 ---@class PrecogModule : IModule
 local M = {}
+addon.Modules.Precog.Module = M
 addon.Modules.PrecogModule = M
 
 local function UpdateAnchorSize()

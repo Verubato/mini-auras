@@ -102,7 +102,7 @@ Modules\EnemyKickTracker\Display.lua
 Modules\EnemyKickTracker\Module.lua
 Modules\Auras\Display.lua
 Modules\Auras\Module.lua
-Modules\PrecogModule.lua
+Modules\Precog\Module.lua
 Modules\Trinkets\Display.lua
 Modules\Trinkets\Module.lua
 Modules\FriendlyCooldowns\Observer.lua
