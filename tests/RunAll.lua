@@ -1,7 +1,7 @@
--- Entry point for the MiniCC Cooldowns test suite.
+-- Entry point for the MiniCC test suite.
 -- Run from the repository root:
 --
---   lua tests/run_all.lua
+--   lua tests/RunAll.lua
 --
 -- Requirements: Lua 5.1 or later.
 
@@ -11,33 +11,42 @@ io.write("MiniCC - Cooldowns unit tests\n")
 io.write("======================================\n")
 
 local testFiles = {
-    "tests/TestRules.lua",
-    "tests/TestFindBestCandidate.lua",
-    "tests/TestPredictPve_12_0_5.lua",
-    "tests/TestMatchRule.lua",
-    "tests/TestFindBestCandidateExtended.lua",
-    "tests/TestPredictExtended.lua",
-    "tests/TestEvidencePipeline.lua",
-    "tests/TestEnemyMatching.lua",
-    "tests/TestMulticharge.lua",
-    "tests/TestCrossClassExt.lua",
-    "tests/TestLocalPlayerAlias.lua",
-    "tests/TestDispersionDp.lua",
-    "tests/TestFeignDeathAottSotf.lua",
-    "tests/TestBurrow.lua",
-    "tests/TestEmeraldCommunion.lua",
-    "tests/TestAuraWatcher.lua",
-    "tests/TestAuraContainerDisplay.lua",
-    "tests/TestUtils.lua",
-    "tests/TestMigrator.lua",
-    "tests/TestKickTracker.lua",
-    "tests/TestEnemyKickTracker.lua",
-    "tests/TestModuleLifecycle.lua",
-    "tests/TestModuleSmoke.lua",
-    "tests/TestAlertsBars.lua",
-    "tests/TestPortraitDisplay.lua",
-    "tests/TestUnitFrameRetarget.lua",
-    "tests/TestProfileManager.lua",
+    -- Cooldown engine: rules, prediction and the evidence pipeline.
+    "tests/Cooldowns/TestRules.lua",
+    "tests/Cooldowns/TestFindBestCandidate.lua",
+    "tests/Cooldowns/TestPredictPve_12_0_5.lua",
+    "tests/Cooldowns/TestMatchRule.lua",
+    "tests/Cooldowns/TestFindBestCandidateExtended.lua",
+    "tests/Cooldowns/TestPredictExtended.lua",
+    "tests/Cooldowns/TestEvidencePipeline.lua",
+    "tests/Cooldowns/TestEnemyMatching.lua",
+    "tests/Cooldowns/TestMulticharge.lua",
+    "tests/Cooldowns/TestCrossClassExt.lua",
+    "tests/Cooldowns/TestLocalPlayerAlias.lua",
+    "tests/Cooldowns/TestDispersionDp.lua",
+    "tests/Cooldowns/TestFeignDeathAottSotf.lua",
+    "tests/Cooldowns/TestBurrow.lua",
+    "tests/Cooldowns/TestEmeraldCommunion.lua",
+
+    -- Shared machinery under Core.
+    "tests/Core/TestAuraWatcher.lua",
+    "tests/Core/TestAuraContainerDisplay.lua",
+    "tests/Core/TestKickTracker.lua",
+
+    -- Utils.
+    "tests/Utils/TestUtils.lua",
+
+    -- Saved variables: migrations and profiles.
+    "tests/Config/TestMigrator.lua",
+    "tests/Config/TestProfileManager.lua",
+
+    -- Modules, driven end to end against the mocked 12.1 environment.
+    "tests/Modules/TestEnemyKickTracker.lua",
+    "tests/Modules/TestModuleLifecycle.lua",
+    "tests/Modules/TestModuleSmoke.lua",
+    "tests/Modules/TestAlertsBars.lua",
+    "tests/Modules/TestPortraitDisplay.lua",
+    "tests/Modules/TestUnitFrameRetarget.lua",
 }
 
 local loadErrors = {}
