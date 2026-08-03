@@ -19,7 +19,7 @@ local ModuleName = {
 	KickTimer = "KickTimerModule",
 	Trinkets = "TrinketsModule",
 	FriendlyIndicator = "FriendlyIndicatorModule",
-	PrecogGuesser = "PrecogGuesserModule",
+	Precog = "PrecogModule",
 	FriendlyCooldownTracker = "FriendlyCooldownTrackerModule",
 	EnemyCooldownTracker    = "EnemyCooldownTrackerModule",
 }

@@ -273,7 +273,7 @@ function M:Init()
 			-- The spell's own icon, resolved rather than guessed at from the art names.
 			Icon = C_Spell.GetSpellTexture(377362),
 			Build = function(content)
-				M.PrecogGuesser:Build(content)
+				M.Precog:Build(content)
 			end,
 		},
 		{
@@ -431,7 +431,7 @@ end
 ---@field Alerts AlertsConfig
 ---@field Nameplates NameplatesConfig
 ---@field KickTimer KickTimerConfig
----@field PrecogGuesser PrecogGuesserConfig
+---@field Precog PrecogConfig
 ---@field OtherAddons OtherAddonsConfig
 ---@field FriendlyIndicator FriendlyIndicatorConfig
 ---@field FriendlyCooldownTracker FriendlyCooldownTrackerConfig

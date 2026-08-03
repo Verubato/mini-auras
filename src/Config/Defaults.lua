@@ -6,7 +6,7 @@ local _, addon = ...
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 57,
+	Version = 58,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -593,8 +593,8 @@ local dbDefaults = {
 			},
 		},
 
-		---@class PrecogGuesserModuleOptions
-		PrecogGuesserModule = {
+		---@class PrecogModuleOptions
+		PrecogModule = {
 			Enabled = {
 				Always = true,
 			},

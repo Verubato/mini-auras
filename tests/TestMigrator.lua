@@ -73,7 +73,7 @@ assert(type(LATEST_VERSION) == "number" and LATEST_VERSION >= 55, "sane latest v
 local expectedModules = {
 	"CCModule", "PetCCModule", "HealerCCModule", "PortraitModule", "AlertsModule",
 	"NameplatesModule", "KickTimerModule", "TrinketsModule", "FriendlyIndicatorModule",
-	"PrecogGuesserModule", "FriendlyCooldownTrackerModule", "EnemyCooldownTrackerModule",
+	"PrecogModule", "FriendlyCooldownTrackerModule", "EnemyCooldownTrackerModule",
 }
 
 fw.describe("Migrator - fresh install", function()
@@ -534,6 +534,36 @@ fw.describe("Migrator - individual migrations", function()
 		local fi = vars.Modules.FriendlyIndicatorModule
 		assert(fi.Default.ShowKicks == false and fi.Raid.ShowKicks == false, "overlap in arena disables both profiles")
 		assert(vars.Profiles.Other.Modules.FriendlyIndicatorModule.Default.ShowKicks == true, "no overlap, kicks kept")
+	end)
+
+	fw.it("v58 moves the precog settings onto the renamed module key", function()
+		local kept = { Enabled = { Always = false }, Icons = { Size = 44 } }
+		local vars = {
+			Version = 57,
+			Modules = { PrecogGuesserModule = kept },
+			Profiles = {
+				Other = { Modules = { PrecogGuesserModule = { Icons = { Size = 20 } } } },
+				Untouched = { Modules = {} },
+			},
+		}
+
+		assert(migrator:UpgradeToVersion58(vars) == true)
+		assert(vars.Modules.PrecogModule == kept, "the saved table moves across intact")
+		assert(vars.Modules.PrecogGuesserModule == nil, "and the old key is gone")
+		assert(vars.Profiles.Other.Modules.PrecogModule.Icons.Size == 20, "profiles move too")
+		assert(vars.Profiles.Untouched.Modules.PrecogModule == nil, "a profile without one is left alone")
+	end)
+
+	fw.it("v58 keeps an already-renamed key when both are present", function()
+		local current = { Icons = { Size = 60 } }
+		local vars = {
+			Version = 57,
+			Modules = { PrecogModule = current, PrecogGuesserModule = { Icons = { Size = 20 } } },
+		}
+
+		assert(migrator:UpgradeToVersion58(vars) == true)
+		assert(vars.Modules.PrecogModule == current, "the newer key wins")
+		assert(vars.Modules.PrecogGuesserModule == nil, "the stale one is cleared either way")
 	end)
 
 	fw.it("v57 leaves kicks alone when the CC module is disabled everywhere", function()

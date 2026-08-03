@@ -41,7 +41,7 @@ local MODULES = {
 	{ Name = "CrowdControlModule", Key = "CCModule" },
 	{ Name = "FriendlyIndicatorModule", Key = "FriendlyIndicatorModule" },
 	{ Name = "HealerCrowdControlModule", Key = "HealerCCModule" },
-	{ Name = "PrecogGuesserModule", Key = "PrecogGuesserModule" },
+	{ Name = "PrecogModule", Key = "PrecogModule" },
 	{ Name = "PortraitModule", Key = "PortraitModule" },
 	{ Name = "NameplatesModule", Key = "NameplatesModule" },
 	{ Name = "AlertsModule", Key = "AlertsModule" },

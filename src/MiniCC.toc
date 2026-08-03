@@ -78,7 +78,7 @@ Modules\AlertsModule.lua
 Modules\NameplatesModule.lua
 Modules\KickTimerModule.lua
 Modules\FriendlyIndicatorModule.lua
-Modules\PrecogGuesserModule.lua
+Modules\PrecogModule.lua
 Modules\TrinketsModule.lua
 Modules\Cooldowns\PvPTalentSync.lua
 Modules\Cooldowns\Talents.lua
@@ -109,7 +109,7 @@ Config\Healer.lua
 Config\Alerts.lua
 Config\Nameplates.lua
 Config\KickTimer.lua
-Config\PrecogGuesser.lua
+Config\Precog.lua
 Config\FriendlyIndicator.lua
 Config\FriendlyCooldownTracker.lua
 Config\EnemyCooldownTracker.lua

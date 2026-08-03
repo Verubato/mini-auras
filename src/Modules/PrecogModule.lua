@@ -37,16 +37,16 @@ local display
 ---@type TestSpell
 local testSpell
 
----@class PrecogGuesserModule : IModule
+---@class PrecogModule : IModule
 local M = {}
-addon.Modules.PrecogGuesserModule = M
+addon.Modules.PrecogModule = M
 
 local function UpdateAnchorSize()
 	if not anchor or not container then
 		return
 	end
 
-	local options = db.Modules.PrecogGuesserModule
+	local options = db.Modules.PrecogModule
 	local iconSize = tonumber(options.Icons.Size) or 40
 	anchor:SetSize(iconSize, iconSize)
 end
@@ -64,7 +64,7 @@ local function ScanAndDisplay()
 		return
 	end
 
-	local options = db.Modules.PrecogGuesserModule
+	local options = db.Modules.PrecogModule
 	if not options then
 		return
 	end
@@ -110,7 +110,7 @@ local function ScanAndDisplay()
 end
 
 local function RefreshTestIcons()
-	local options = db.Modules.PrecogGuesserModule
+	local options = db.Modules.PrecogModule
 	if not options then
 		return
 	end
@@ -140,19 +140,19 @@ end
 
 -- Lifecycle
 
----@return PrecogGuesserModuleOptions?
+---@return PrecogModuleOptions?
 local function GetOptions()
 	-- The anchor and container are built in Init; without them there is nothing to configure.
 	if not db or not anchor or not container then
 		return nil
 	end
 
-	return db.Modules.PrecogGuesserModule
+	return db.Modules.PrecogModule
 end
 
 ---@return boolean
 local function IsEnabled()
-	return moduleUtil:IsModuleEnabled(moduleName.PrecogGuesser) and classHasPrecog == true
+	return moduleUtil:IsModuleEnabled(moduleName.Precog) and classHasPrecog == true
 end
 
 ---The legacy watcher is the module's only event source, so enabling/disabling it is the gate.
@@ -184,7 +184,7 @@ local function EnsureFrames()
 	end
 end
 
----@param options PrecogGuesserModuleOptions
+---@param options PrecogModuleOptions
 local function ApplyOptions(options)
 	anchor:ClearAllPoints()
 	anchor:SetPoint(
@@ -217,7 +217,7 @@ local function ApplyOptions(options)
 	UpdateAnchorSize()
 end
 
----@param options PrecogGuesserModuleOptions
+---@param options PrecogModuleOptions
 local function UpdateContent(options)
 	if testModeActive then
 		if display then
@@ -286,9 +286,9 @@ local function CreateTestData()
 end
 
 local function CreateFrames()
-	local options = db.Modules.PrecogGuesserModule
+	local options = db.Modules.PrecogModule
 
-	anchor = CreateFrame("Frame", addonName .. "PrecogGuesser")
+	anchor = CreateFrame("Frame", addonName .. "Precog")
 	anchor:Hide()
 	anchor:EnableMouse(false)
 	anchor:SetMovable(false)
@@ -302,11 +302,11 @@ local function CreateFrames()
 		anchorSelf:StopMovingOrSizing()
 
 		local point, relativeTo, relativePoint, x, y = anchorSelf:GetPoint()
-		db.Modules.PrecogGuesserModule.Point = point
-		db.Modules.PrecogGuesserModule.RelativePoint = relativePoint
-		db.Modules.PrecogGuesserModule.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
-		db.Modules.PrecogGuesserModule.Offset.X = x
-		db.Modules.PrecogGuesserModule.Offset.Y = y
+		db.Modules.PrecogModule.Point = point
+		db.Modules.PrecogModule.RelativePoint = relativePoint
+		db.Modules.PrecogModule.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
+		db.Modules.PrecogModule.Offset.X = x
+		db.Modules.PrecogModule.Offset.Y = y
 	end)
 
 	local iconSize = tonumber(options.Icons.Size) or 40
@@ -411,8 +411,8 @@ function M:Init()
 	ApplyInitialState()
 end
 
----@class PrecogGuesserModule
----@field Init fun(self: PrecogGuesserModule)
----@field Refresh fun(self: PrecogGuesserModule)
----@field StartTesting fun(self: PrecogGuesserModule)
----@field StopTesting fun(self: PrecogGuesserModule)
+---@class PrecogModule
+---@field Init fun(self: PrecogModule)
+---@field Refresh fun(self: PrecogModule)
+---@field StartTesting fun(self: PrecogModule)
+---@field StopTesting fun(self: PrecogModule)

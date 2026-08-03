@@ -6,10 +6,10 @@ local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local config = addon.Config
 
----@class PrecogGuesserConfig
+---@class PrecogConfig
 local M = {}
 
-config.PrecogGuesser = M
+config.Precog = M
 
 function M:Build(panel)
 	local db = mini:GetSavedVars()
@@ -53,10 +53,10 @@ function M:Build(panel)
 		LabelText = L["Enabled"],
 		Tooltip = L["Whether to enable or disable this module."],
 		GetValue = function()
-			return db.Modules.PrecogGuesserModule.Enabled.Always
+			return db.Modules.PrecogModule.Enabled.Always
 		end,
 		SetValue = function(value)
-			db.Modules.PrecogGuesserModule.Enabled.Always = value
+			db.Modules.PrecogModule.Enabled.Always = value
 			config:Apply()
 		end,
 	})
@@ -67,10 +67,10 @@ function M:Build(panel)
 		Parent = panel,
 		LabelText = L["Glow icons"],
 		GetValue = function()
-			return db.Modules.PrecogGuesserModule.Icons.Glow
+			return db.Modules.PrecogModule.Icons.Glow
 		end,
 		SetValue = function(value)
-			db.Modules.PrecogGuesserModule.Icons.Glow = value
+			db.Modules.PrecogModule.Icons.Glow = value
 			config:Apply()
 		end,
 	})
@@ -83,10 +83,10 @@ function M:Build(panel)
 		LabelText = L["Show border"],
 		Tooltip = L["Draw a border around the icons."],
 		GetValue = function()
-			return db.Modules.PrecogGuesserModule.Icons.Border
+			return db.Modules.PrecogModule.Icons.Border
 		end,
 		SetValue = function(value)
-			db.Modules.PrecogGuesserModule.Icons.Border = value
+			db.Modules.PrecogModule.Icons.Border = value
 			config:Apply()
 		end,
 	})
@@ -100,11 +100,11 @@ function M:Build(panel)
 		Tooltip = L["Change the colour of the icon's glow and border."],
 		HasOpacity = false,
 		GetValue = function()
-			local color = db.Modules.PrecogGuesserModule.Icons.Color
+			local color = db.Modules.PrecogModule.Icons.Color
 			return color.R, color.G, color.B, color.A
 		end,
 		SetValue = function(r, g, b, a)
-			local color = db.Modules.PrecogGuesserModule.Icons.Color
+			local color = db.Modules.PrecogModule.Icons.Color
 			color.R, color.G, color.B, color.A = r, g, b, a
 			config:Apply()
 		end,
@@ -120,12 +120,12 @@ function M:Build(panel)
 		Parent = panel,
 		LabelText = L["Icon Size"],
 		GetValue = function()
-			return db.Modules.PrecogGuesserModule.Icons.Size
+			return db.Modules.PrecogModule.Icons.Size
 		end,
 		SetValue = function(value)
 			local newValue = mini:ClampInt(value, 20, 120, 70)
-			if db.Modules.PrecogGuesserModule.Icons.Size ~= newValue then
-				db.Modules.PrecogGuesserModule.Icons.Size = newValue
+			if db.Modules.PrecogModule.Icons.Size ~= newValue then
+				db.Modules.PrecogModule.Icons.Size = newValue
 				config:Apply()
 			end
 		end,

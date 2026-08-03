@@ -331,3 +331,33 @@ function M:UpgradeToVersion57(vars)
 	return true
 end
 
+
+function M:UpgradeToVersion58(vars)
+	if vars.Version ~= 57 then return false end
+
+	-- PrecogGuesserModule became PrecogModule when the module stopped guessing (it filters on
+	-- the spell IDs now). Carry the saved settings across rather than letting CleanTable drop
+	-- them as an unknown key.
+	local function MoveOptions(modules)
+		if not modules or not modules.PrecogGuesserModule then
+			return
+		end
+
+		if modules.PrecogModule == nil then
+			modules.PrecogModule = modules.PrecogGuesserModule
+		end
+
+		modules.PrecogGuesserModule = nil
+	end
+
+	MoveOptions(vars.Modules)
+
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			MoveOptions(profile.Modules)
+		end
+	end
+
+	vars.Version = 58
+	return true
+end

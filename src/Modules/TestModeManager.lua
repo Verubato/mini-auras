@@ -10,7 +10,7 @@ local TEST_MODULES = {
 	addon.Modules.NameplatesModule,
 	addon.Modules.KickTimerModule,
 	addon.Modules.FriendlyIndicatorModule,
-	addon.Modules.PrecogGuesserModule,
+	addon.Modules.PrecogModule,
 	addon.Modules.TrinketsModule,
 	addon.Modules.FriendlyCooldownTrackerModule,
 	addon.Modules.EnemyCooldownTrackerModule,
