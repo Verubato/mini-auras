@@ -82,7 +82,10 @@ Modules\Portrait\Observer.lua
 Modules\Portrait\Display.lua
 Modules\Portrait\Anchors.lua
 Modules\Portrait\Module.lua
-Modules\AlertsModule.lua
+Modules\Alerts\Sound.lua
+Modules\Alerts\Observer.lua
+Modules\Alerts\Display.lua
+Modules\Alerts\Module.lua
 Modules\Nameplates\Observer.lua
 Modules\Nameplates\Display.lua
 Modules\Nameplates\Module.lua

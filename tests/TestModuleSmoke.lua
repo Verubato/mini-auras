@@ -46,7 +46,8 @@ local MODULES = {
 		Files = { "Portrait/Observer.lua", "Portrait/Display.lua", "Portrait/Anchors.lua", "Portrait/Module.lua" } },
 	{ Name = "NameplatesModule", Key = "NameplatesModule",
 		Files = { "Nameplates/Observer.lua", "Nameplates/Display.lua", "Nameplates/Module.lua" } },
-	{ Name = "AlertsModule", Key = "AlertsModule", Files = { "AlertsModule.lua" } },
+	{ Name = "AlertsModule", Key = "AlertsModule",
+		Files = { "Alerts/Sound.lua", "Alerts/Observer.lua", "Alerts/Display.lua", "Alerts/Module.lua" } },
 }
 
 local modules = {}
