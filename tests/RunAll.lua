@@ -7,7 +7,7 @@
 
 package.path = "tests/Helpers/?.lua;tests/?.lua;" .. package.path
 
-io.write("MiniCC - Cooldowns unit tests\n")
+io.write("MiniCC - unit tests\n")
 io.write("======================================\n")
 
 local testFiles = {
