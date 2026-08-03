@@ -30,7 +30,7 @@ local rosterGate
 local eventsFrame
 local paused = false
 local testModeActive = false
----@type table<table, FriendlyIndicatorWatchEntry>
+---@type table<table, AurasWatchEntry>
 local watchers = {}
 ---@type TestSpell[]
 local testDefensiveSpells = {}
@@ -64,7 +64,7 @@ local helpfulFilters = { includeSpellIDs = {} }
 ---user switched off, plus anything they added by hand.
 ---@return table filters
 local function GetHelpfulFilters()
-	local overrides = db.Modules.FriendlyIndicatorModule.Spells
+	local overrides = db.Modules.AurasModule.Spells
 	local disabled = (overrides and overrides.Disabled) or EMPTY_TABLE
 	local ids = {}
 
@@ -129,19 +129,19 @@ local function BuildGroups(maxIcons)
 end
 
 local function GetOptions()
-	local m = db.Modules.FriendlyIndicatorModule
+	local m = db.Modules.AurasModule
 	if not m then
 		return nil
 	end
 	return instanceOptions:IsRaid() and m.Raid or m.Default
 end
 
----@class FriendlyIndicatorModule : IModule
+---@class AurasModule : IModule
 local M = {}
 
-addon.Modules.FriendlyIndicatorModule = M
+addon.Modules.AurasModule = M
 
----@param entry FriendlyIndicatorWatchEntry
+---@param entry AurasWatchEntry
 local function UpdateWatcherAuras(entry)
 	if not entry or not entry.Watcher or not entry.Container then
 		return
@@ -163,7 +163,7 @@ local function UpdateWatcherAuras(entry)
 	end
 
 	local options = GetOptions()
-	if not options or not moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator) then
+	if not options or not moduleUtil:IsModuleEnabled(moduleName.Auras) then
 		return
 	end
 
@@ -248,7 +248,7 @@ end
 
 ---12.1 path: positions the aura display on its anchor, chaining after the kick container while
 ---a kick icon is showing (the kick occupied slot 1 in the legacy layout).
----@param entry FriendlyIndicatorWatchEntry
+---@param entry AurasWatchEntry
 ---@param anchor table
 ---@param options table
 local function AnchorAuraDisplay(entry, anchor, options)
@@ -279,14 +279,14 @@ end
 
 ---12.1 path: renders the kick icon into the entry's IconSlotContainer (slot 1) and re-anchors
 ---the aura display around it.
----@param entry FriendlyIndicatorWatchEntry
+---@param entry AurasWatchEntry
 local function UpdateKickIcon(entry)
 	if not entry or not entry.Container or paused or testModeActive then
 		return
 	end
 
 	local options = GetOptions()
-	if not options or not moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator) then
+	if not options or not moduleUtil:IsModuleEnabled(moduleName.Auras) then
 		return
 	end
 
@@ -316,12 +316,12 @@ end
 -- container-driven and only the kick slot needs pushing, on 12.0 the watcher redraws everything.
 -- TEMPORARY: when the legacy path goes, this alias goes with it and the callers just call
 -- UpdateKickIcon.
----@type fun(entry: FriendlyIndicatorWatchEntry)
+---@type fun(entry: AurasWatchEntry)
 local RenderEntry = USE_AURA_CONTAINERS and UpdateKickIcon or UpdateWatcherAuras
 
 ---@param header IconSlotContainer
 ---@param anchor table
----@param options FriendlyIndicatorInstanceOptions
+---@param options AurasInstanceOptions
 local function AnchorContainer(header, anchor, options)
 	if not options then
 		return
@@ -376,6 +376,9 @@ local function EnsureWatcher(anchor, unit)
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 		local size = moduleUtil:GetIconSize(options.Icons, anchor, 32, 75)
 		local spacing = options.IconSpacing or 2
+		-- "Friendly Indicators" is the module's old name, kept because it is the Masque group name
+		-- (and the public MiniCCModule frame tag). Renaming it would orphan every skin users have
+		-- already assigned to this group.
 		local container = iconSlotContainer:New(UIParent, maxIcons, size, spacing, "Friendly Indicators", nil, "Friendly Indicators")
 
 		entry = {
@@ -620,7 +623,7 @@ end
 
 ---@return boolean
 local function IsEnabled()
-	return moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator)
+	return moduleUtil:IsModuleEnabled(moduleName.Auras)
 end
 
 ---@param active boolean
@@ -663,9 +666,9 @@ local function EnsureFrames()
 	EnsureWatchers()
 end
 
----@param entry FriendlyIndicatorWatchEntry
+---@param entry AurasWatchEntry
 ---@param anchor table
----@param options FriendlyIndicatorInstanceOptions
+---@param options AurasInstanceOptions
 local function ApplyEntryOptions(entry, anchor, options)
 	local container = entry.Container
 	local iconSize = moduleUtil:GetIconSize(options.Icons, anchor, 32, 75)
@@ -728,7 +731,7 @@ local function ApplyEntryOptions(entry, anchor, options)
 	end
 end
 
----@param options FriendlyIndicatorInstanceOptions
+---@param options AurasInstanceOptions
 local function ApplyOptions(options)
 	for anchor, entry in pairs(watchers) do
 		ApplyEntryOptions(entry, anchor, options)
@@ -786,7 +789,7 @@ local function CreateEvents()
 	-- the spell-id filter applies at all, so the budgets have to be recomputed when it happens.
 	-- Registered for the module's lifetime; the predicate below gates it.
 	duelPoller:Register(function()
-		return moduleUtil:IsModuleEnabled(moduleName.FriendlyIndicator)
+		return moduleUtil:IsModuleEnabled(moduleName.Auras)
 	end, function()
 		M:Refresh()
 	end)
@@ -871,7 +874,7 @@ function M:Init()
 	ApplyInitialState()
 end
 
----@class FriendlyIndicatorWatchEntry
+---@class AurasWatchEntry
 ---@field Container IconSlotContainer On 12.1 this only renders the kick icon and test icons.
 ---@field Watcher Watcher? Legacy path only (nil on 12.1).
 ---@field Display AuraContainerDisplay? 12.1 path only: CC/defensive auras render through this.
@@ -880,13 +883,13 @@ end
 ---@field Unit string
 ---@field KickKey number
 
----@class FriendlyIndicatorModuleOptions
+---@class AurasModuleOptions
 ---@field ShowDefensives boolean
 ---@field ShowImportant boolean 12.1 only: Blizzard-flagged important buffs.
 ---@field ShowCC boolean
 
----@class FriendlyIndicatorModule
----@field Init fun(self: FriendlyIndicatorModule)
----@field Refresh fun(self: FriendlyIndicatorModule)
----@field StartTesting fun(self: FriendlyIndicatorModule)
----@field StopTesting fun(self: FriendlyIndicatorModule)
+---@class AurasModule
+---@field Init fun(self: AurasModule)
+---@field Refresh fun(self: AurasModule)
+---@field StartTesting fun(self: AurasModule)
+---@field StopTesting fun(self: AurasModule)

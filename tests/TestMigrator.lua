@@ -72,7 +72,7 @@ assert(type(LATEST_VERSION) == "number" and LATEST_VERSION >= 55, "sane latest v
 
 local expectedModules = {
 	"CCModule", "PetCCModule", "HealerCCModule", "PortraitModule", "AlertsModule",
-	"NameplatesModule", "EnemyKickTrackerModule", "TrinketsModule", "FriendlyIndicatorModule",
+	"NameplatesModule", "EnemyKickTrackerModule", "TrinketsModule", "AurasModule",
 	"PrecogModule", "FriendlyCooldownTrackerModule", "EnemyCooldownTrackerModule",
 }
 
@@ -578,6 +578,21 @@ fw.describe("Migrator - individual migrations", function()
 		assert(vars.Modules.EnemyKickTrackerModule == kept, "the saved table moves across intact")
 		assert(vars.Modules.KickTimerModule == nil, "and the old key is gone")
 		assert(vars.Profiles.Other.Modules.EnemyKickTrackerModule.Icons.Size == 20, "profiles move too")
+	end)
+
+	fw.it("v60 moves the friendly indicator settings onto the auras module key", function()
+		local kept = { Spells = { Custom = { [123456] = true } }, Default = { ShowKicks = true } }
+		local vars = {
+			Version = 59,
+			Modules = { FriendlyIndicatorModule = kept },
+			Profiles = { Other = { Modules = { FriendlyIndicatorModule = { Default = { ShowCC = true } } } } },
+		}
+
+		assert(migrator:UpgradeToVersion60(vars) == true)
+		assert(vars.Modules.AurasModule == kept, "the saved table moves across intact")
+		assert(vars.Modules.AurasModule.Spells.Custom[123456], "hand-added spells survive the move")
+		assert(vars.Modules.FriendlyIndicatorModule == nil, "and the old key is gone")
+		assert(vars.Profiles.Other.Modules.AurasModule.Default.ShowCC == true, "profiles move too")
 	end)
 
 	fw.it("v57 leaves kicks alone when the CC module is disabled everywhere", function()

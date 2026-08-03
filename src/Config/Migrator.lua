@@ -25,13 +25,13 @@ local function SaveOpaqueCaches(vars)
 	saved._FcdDisabledSpells = fcdModule and mini:CopyValueOrTable(fcdModule.DisabledSpells) or {}
 	local ecdModule = vars.Modules and vars.Modules.EnemyCooldownTrackerModule
 	saved._EcdDisabledSpells = ecdModule and mini:CopyValueOrTable(ecdModule.DisabledSpells) or {}
-	-- Same shape again: the friendly indicator's tracked-spell deltas are spellId -> true hashes
+	-- Same shape again: the auras module's tracked-spell deltas are spellId -> true hashes
 	-- against an empty schema, so they would be cleaned away too.
-	local fiSpells = vars.Modules and vars.Modules.FriendlyIndicatorModule
-		and vars.Modules.FriendlyIndicatorModule.Spells
-	saved._FiDisabledSpells = fiSpells and mini:CopyValueOrTable(fiSpells.Disabled) or {}
-	saved._FiCustomSpells = fiSpells and mini:CopyValueOrTable(fiSpells.Custom) or {}
-	saved._FiEnabledSpells = fiSpells and mini:CopyValueOrTable(fiSpells.Enabled) or {}
+	local aurasSpells = vars.Modules and vars.Modules.AurasModule
+		and vars.Modules.AurasModule.Spells
+	saved._AurasDisabledSpells = aurasSpells and mini:CopyValueOrTable(aurasSpells.Disabled) or {}
+	saved._AurasCustomSpells = aurasSpells and mini:CopyValueOrTable(aurasSpells.Custom) or {}
+	saved._AurasEnabledSpells = aurasSpells and mini:CopyValueOrTable(aurasSpells.Enabled) or {}
 	return saved
 end
 
@@ -47,12 +47,12 @@ local function RestoreOpaqueCaches(vars, saved)
 	if ecdModule then
 		ecdModule.DisabledSpells = saved._EcdDisabledSpells or {}
 	end
-	local fiModule = vars.Modules and vars.Modules.FriendlyIndicatorModule
-	if fiModule then
-		fiModule.Spells = fiModule.Spells or {}
-		fiModule.Spells.Disabled = saved._FiDisabledSpells or {}
-		fiModule.Spells.Custom = saved._FiCustomSpells or {}
-		fiModule.Spells.Enabled = saved._FiEnabledSpells or {}
+	local aurasModule = vars.Modules and vars.Modules.AurasModule
+	if aurasModule then
+		aurasModule.Spells = aurasModule.Spells or {}
+		aurasModule.Spells.Disabled = saved._AurasDisabledSpells or {}
+		aurasModule.Spells.Custom = saved._AurasCustomSpells or {}
+		aurasModule.Spells.Enabled = saved._AurasEnabledSpells or {}
 	end
 end
 

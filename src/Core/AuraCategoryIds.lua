@@ -1048,7 +1048,7 @@ addon.Core.AuraCategoryIds = {
 		[262000] = true, -- Wyvern Sting
 	},
 	-- Spells Blizzard flags as NEITHER defensive nor important, but that are still worth showing.
-	-- Usable only where the spell id IS the filter - the Friendly Indicator's bare HELPFUL group.
+	-- Usable only where the spell id IS the filter - the Auras module's bare HELPFUL group.
 	-- Anywhere a category token is in play the engine rejects them, since includeSpellIDs can only
 	-- narrow a group and never widen it.
 	-- Curated spells that ship switched OFF. They stay in the lists above so they can be found

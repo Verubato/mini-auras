@@ -39,7 +39,7 @@ env.healers.party2 = true
 -- events can be driven per module.
 local MODULES = {
 	{ Name = "CrowdControlModule", Key = "CCModule" },
-	{ Name = "FriendlyIndicatorModule", Key = "FriendlyIndicatorModule" },
+	{ Name = "AurasModule", Key = "AurasModule" },
 	{ Name = "HealerCrowdControlModule", Key = "HealerCCModule" },
 	{ Name = "PrecogModule", Key = "PrecogModule" },
 	{ Name = "PortraitModule", Key = "PortraitModule" },
@@ -173,7 +173,7 @@ fw.describe("12.1 smoke - per-module container shape", function()
 		for _, filterString in pairs(auraFilters.Filter) do
 			known[filterString] = true
 		end
-		-- The friendly indicator filters helpful auras by spell id alone, so its group carries a
+		-- The auras module filters helpful auras by spell id alone, so its group carries a
 		-- bare token by design rather than one of the shared category strings.
 		known["HELPFUL"] = true
 

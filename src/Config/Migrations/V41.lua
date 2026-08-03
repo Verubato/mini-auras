@@ -391,3 +391,33 @@ function M:UpgradeToVersion59(vars)
 	vars.Version = 59
 	return true
 end
+
+function M:UpgradeToVersion60(vars)
+	if vars.Version ~= 59 then return false end
+
+	-- FriendlyIndicatorModule became AurasModule: the module shows any tracked aura, not just an
+	-- indicator on friendly frames, and the options page has been called Auras for a while.
+	-- Carry the saved settings across rather than letting CleanTable drop them as an unknown key.
+	local function MoveOptions(modules)
+		if not modules or not modules.FriendlyIndicatorModule then
+			return
+		end
+
+		if modules.AurasModule == nil then
+			modules.AurasModule = modules.FriendlyIndicatorModule
+		end
+
+		modules.FriendlyIndicatorModule = nil
+	end
+
+	MoveOptions(vars.Modules)
+
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			MoveOptions(profile.Modules)
+		end
+	end
+
+	vars.Version = 60
+	return true
+end

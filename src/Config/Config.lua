@@ -203,11 +203,11 @@ function M:Init()
 			end,
 		},
 		{
-			Key = "Indicator",
+			Key = "Auras",
 			Title = L["Auras"],
 			Icon = "Interface\\Icons\\Spell_Fire_SealOfFire",
 			Build = function(content)
-				M.FriendlyIndicator:Build(content, db.Modules.FriendlyIndicatorModule.Default, db.Modules.FriendlyIndicatorModule.Raid)
+				M.Auras:Build(content, db.Modules.AurasModule.Default, db.Modules.AurasModule.Raid)
 			end,
 		},
 		{
@@ -433,7 +433,7 @@ end
 ---@field EnemyKickTracker EnemyKickTrackerConfig
 ---@field Precog PrecogConfig
 ---@field OtherAddons OtherAddonsConfig
----@field FriendlyIndicator FriendlyIndicatorConfig
+---@field Auras AurasConfig
 ---@field FriendlyCooldownTracker FriendlyCooldownTrackerConfig
 ---@field EnemyCooldownTracker EnemyCooldownTrackerConfig
 ---@field Miscellaneous MiscellaneousConfig

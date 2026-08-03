@@ -29,7 +29,7 @@ function M.build()
 		auraSoundAdds = 0,
 		auraSoundRemoves = 0,
 		kicks = {},
-		-- Unit frames handed to the modules that anchor to raid frames (CC, FriendlyIndicator).
+		-- Unit frames handed to the modules that anchor to raid frames (CC, Auras).
 		unitFrames = {},
 		-- PvP match state driving the alerts prep-room gate (99 = not in a match).
 		matchState = 99,
@@ -86,7 +86,7 @@ function M.build()
 	_G.UnitName = function(unit)
 		return unit
 	end
-	-- Gates the friendly indicator's spell-id filter; false once a duel makes the unit hostile.
+	-- Gates the auras module's spell-id filter; false once a duel makes the unit hostile.
 	_G.UnitCanAssist = function(_, unit)
 		return env.enemies[unit] ~= true
 	end
@@ -332,7 +332,7 @@ function M.build()
 		end
 	end
 
-	---Registers a mock raid/party unit frame for the CC + FriendlyIndicator anchors and returns it.
+	---Registers a mock raid/party unit frame for the CC + Auras anchors and returns it.
 	env.addUnitFrame = function(unit, name)
 		local frame = acm.NewFrame("Frame", name or ("CUF_" .. unit))
 		frame.unit = unit

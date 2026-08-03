@@ -77,7 +77,7 @@ Modules\PortraitModule.lua
 Modules\AlertsModule.lua
 Modules\NameplatesModule.lua
 Modules\EnemyKickTrackerModule.lua
-Modules\FriendlyIndicatorModule.lua
+Modules\AurasModule.lua
 Modules\PrecogModule.lua
 Modules\TrinketsModule.lua
 Modules\Cooldowns\PvPTalentSync.lua
@@ -110,7 +110,7 @@ Config\Alerts.lua
 Config\Nameplates.lua
 Config\EnemyKickTracker.lua
 Config\Precog.lua
-Config\FriendlyIndicator.lua
+Config\Auras.lua
 Config\FriendlyCooldownTracker.lua
 Config\EnemyCooldownTracker.lua
 Config\Trinkets.lua

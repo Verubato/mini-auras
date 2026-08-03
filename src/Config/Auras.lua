@@ -31,13 +31,13 @@ local GENERAL_GROUP_KEY = "GENERAL"
 local MAX_SPELL_NAME_LENGTH = 24
 local CUSTOM_GROUP_KEY = "CUSTOM"
 
----@class FriendlyIndicatorConfig
+---@class AurasConfig
 local M = {}
 
-config.FriendlyIndicator = M
+config.Auras = M
 
 ---@param parent table
----@param options FriendlyIndicatorInstanceOptions
+---@param options AurasInstanceOptions
 -- Builds the "Grow" dropdown (label + dropdown) anchored below `anchorFrame`, returning the dropdown so
 -- the first slider can sit directly beneath it. Kept above the sliders so all sliders group together.
 local function BuildGrowDropdown(parent, options, anchorFrame)
@@ -116,7 +116,7 @@ local function BuildAnchorSettings(parent, options)
 end
 
 ---@param panel table
----@param options FriendlyIndicatorInstanceOptions
+---@param options AurasInstanceOptions
 local function BuildInstance(panel, options)
 	local parent = CreateFrame("Frame", nil, panel)
 	local anchorPanel = BuildAnchorSettings(parent, options)
@@ -396,8 +396,8 @@ local function BuildInstance(panel, options)
 end
 
 ---@param panel table
----@param default FriendlyIndicatorInstanceOptions
----@param raid FriendlyIndicatorInstanceOptions
+---@param default AurasInstanceOptions
+---@param raid AurasInstanceOptions
 ---Every helpful spell currently tracked. The curated lists are the starting point and the db
 ---only holds the differences, so this recombines them each time the tab is shown.
 ---@return number[]
@@ -435,7 +435,7 @@ end
 ---the same generated data as the spell lists, so this depends on nothing outside them.
 ---@return {Key: string, Title: string, SpellIds: number[]}[]
 local function SpellGroups()
-	local overrides = mini:GetSavedVars().Modules.FriendlyIndicatorModule.Spells
+	local overrides = mini:GetSavedVars().Modules.AurasModule.Spells
 	local classNames = LocalizedClassList() or {}
 	local buckets = {}
 
@@ -491,7 +491,7 @@ end
 ---@param parent table Tab content frame
 local function BuildSpells(parent)
 	local db = mini:GetSavedVars()
-	local overrides = db.Modules.FriendlyIndicatorModule.Spells
+	local overrides = db.Modules.AurasModule.Spells
 	local sidebarWidth, rowHeight, iconSize = 120, 26, 18
 	-- Two columns: a spell row is nowhere near as wide as the tab, so one column wasted most of
 	-- the horizontal space and made the list scroll far sooner than it needed to.
@@ -794,10 +794,10 @@ function M:Build(panel, default, raid)
 		LabelText = L["World"],
 		Tooltip = L["Enable this module in the open world."],
 		GetValue = function()
-			return db.Modules.FriendlyIndicatorModule.Enabled.World
+			return db.Modules.AurasModule.Enabled.World
 		end,
 		SetValue = function(value)
-			db.Modules.FriendlyIndicatorModule.Enabled.World = value
+			db.Modules.AurasModule.Enabled.World = value
 			config:Apply()
 		end,
 	})
@@ -809,10 +809,10 @@ function M:Build(panel, default, raid)
 		LabelText = L["Arena"],
 		Tooltip = L["Enable this module in arena."],
 		GetValue = function()
-			return db.Modules.FriendlyIndicatorModule.Enabled.Arena
+			return db.Modules.AurasModule.Enabled.Arena
 		end,
 		SetValue = function(value)
-			db.Modules.FriendlyIndicatorModule.Enabled.Arena = value
+			db.Modules.AurasModule.Enabled.Arena = value
 			config:Apply()
 		end,
 	})
@@ -825,10 +825,10 @@ function M:Build(panel, default, raid)
 		LabelText = L["Battlegrounds"],
 		Tooltip = L["Enable this module in battlegrounds."],
 		GetValue = function()
-			return db.Modules.FriendlyIndicatorModule.Enabled.BattleGrounds
+			return db.Modules.AurasModule.Enabled.BattleGrounds
 		end,
 		SetValue = function(value)
-			db.Modules.FriendlyIndicatorModule.Enabled.BattleGrounds = value
+			db.Modules.AurasModule.Enabled.BattleGrounds = value
 			config:Apply()
 		end,
 	})
@@ -841,10 +841,10 @@ function M:Build(panel, default, raid)
 		LabelText = L["Dungeons"],
 		Tooltip = L["Enable this module in dungeons."],
 		GetValue = function()
-			return db.Modules.FriendlyIndicatorModule.Enabled.Dungeons
+			return db.Modules.AurasModule.Enabled.Dungeons
 		end,
 		SetValue = function(value)
-			db.Modules.FriendlyIndicatorModule.Enabled.Dungeons = value
+			db.Modules.AurasModule.Enabled.Dungeons = value
 			config:Apply()
 		end,
 	})
@@ -857,10 +857,10 @@ function M:Build(panel, default, raid)
 		LabelText = L["Raid"],
 		Tooltip = L["Enable this module in raids."],
 		GetValue = function()
-			return db.Modules.FriendlyIndicatorModule.Enabled.Raid
+			return db.Modules.AurasModule.Enabled.Raid
 		end,
 		SetValue = function(value)
-			db.Modules.FriendlyIndicatorModule.Enabled.Raid = value
+			db.Modules.AurasModule.Enabled.Raid = value
 			config:Apply()
 		end,
 	})
