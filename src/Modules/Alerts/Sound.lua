@@ -8,8 +8,8 @@ local moduleName = addon.Utils.ModuleName
 addon.Modules.Alerts = addon.Modules.Alerts or {}
 
 ---@class AlertsSound
-local S = {}
-addon.Modules.Alerts.Sound = S
+local M = {}
+addon.Modules.Alerts.Sound = M
 
 -- Sounds DO work on 12.1, just inverted: the addon can't notice "a new aura appeared", but
 -- C_UnitAuras.AddAuraSound lets the ENGINE play a sound when a named spell lands on a registered
@@ -29,7 +29,7 @@ local SILENT_ALERT_SPELL_IDS = {
 }
 
 -- Read by the tests, which derive the expected registration count from it.
-S.SilentAlertSpellIds = SILENT_ALERT_SPELL_IDS
+M.SilentAlertSpellIds = SILENT_ALERT_SPELL_IDS
 
 ---@type Db
 local db
@@ -110,13 +110,13 @@ local function RegisterAlertSoundList(ids, info, list, config, fallbackFile)
 end
 
 ---@param value boolean
-function S:SetPaused(value)
+function M:SetPaused(value)
 	paused = value
 end
 
 -- Legacy path: one sound per no-alerts-to-alerts transition.
 ---@param spellType string "important" or "defensive"
-function S:PlaySound(spellType)
+function M:PlaySound(spellType)
 	-- 12.1: sound alerts are disabled - they fire on aura transitions, which are unreadable there.
 	if USE_AURA_CONTAINERS then
 		return
@@ -142,7 +142,7 @@ end
 
 ---@param spellName string?
 ---@param spellType string "important" or "defensive"
-function S:AnnounceTTS(spellName, spellType)
+function M:AnnounceTTS(spellName, spellType)
 	-- 12.1: TTS is disabled - it fires on aura transitions, which are unreadable there.
 	if USE_AURA_CONTAINERS then
 		return
@@ -175,19 +175,19 @@ end
 
 -- Recomputes the important-TTS cache from the saved option AND the class/spec suppression. Called
 -- on refresh/init and on spec change (suppression depends on the player's current spec).
-function S:UpdateImportantTTSCache()
+function M:UpdateImportantTTSCache()
 	local ttsOptions = db and db.Modules.AlertsModule.TTS
 	cachedTTSImportantEnabled = (ttsOptions and ttsOptions.Important and ttsOptions.Important.Enabled or false)
 		and not ImportantTTSSuppressedForPlayer()
 end
 
 ---@return boolean
-function S:IsImportantTTSEnabled()
+function M:IsImportantTTSEnabled()
 	return cachedTTSImportantEnabled or false
 end
 
 ---@param options AlertsModuleOptions
-function S:ApplyTTSOptions(options)
+function M:ApplyTTSOptions(options)
 	cachedVoiceID = wowEx:ResolveVoiceID(options.TTS and options.TTS.VoiceID)
 	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
 	cachedTTSSpeechRate = options.TTS and options.TTS.SpeechRate or 0
@@ -199,7 +199,7 @@ end
 -- No-op when already registered (which is what keeps warm registrations cheap on token reuse)
 -- or when no alert sound is enabled.
 ---@param unitToken string
-function S:RegisterToken(unitToken)
+function M:RegisterToken(unitToken)
 	if not USE_AURA_CONTAINERS or alertSoundsByToken[unitToken] then
 		return
 	end
@@ -229,7 +229,7 @@ end
 
 -- 12.1 path: removes the engine sound registrations for one nameplate token.
 ---@param unitToken string
-function S:RemoveToken(unitToken)
+function M:RemoveToken(unitToken)
 	local ids = alertSoundsByToken[unitToken]
 	if not ids then
 		return
@@ -243,7 +243,7 @@ function S:RemoveToken(unitToken)
 	alertSoundIdListPool[#alertSoundIdListPool + 1] = ids
 end
 
-function S:RemoveAllTokens()
+function M:RemoveAllTokens()
 	for unitToken in pairs(alertSoundsByToken) do
 		self:RemoveToken(unitToken)
 	end
@@ -254,7 +254,7 @@ end
 -- acquire/release chokepoints). Called from Refresh, which also runs after the test-mode
 -- pause/resume transitions.
 ---@param activeTokens table<string, any> keys are the tokens currently being drawn
-function S:Refresh(activeTokens)
+function M:Refresh(activeTokens)
 	if not USE_AURA_CONTAINERS then
 		return
 	end
@@ -284,6 +284,6 @@ function S:Refresh(activeTokens)
 	end
 end
 
-function S:Init()
+function M:Init()
 	db = mini:GetSavedVars()
 end

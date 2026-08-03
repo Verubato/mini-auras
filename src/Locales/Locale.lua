@@ -2,7 +2,7 @@
 local _, addon = ...
 
 ---@class Localization
-local L = {}
+local L = {} -- luaconv: L is the idiomatic locale-table name, read as addon.L
 addon.L = L
 
 local locale = GetLocale()

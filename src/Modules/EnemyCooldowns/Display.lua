@@ -9,8 +9,8 @@ local testSpellData = addon.Core.TestSpells
 addon.Modules.EnemyCooldowns = addon.Modules.EnemyCooldowns or {}
 
 ---@class EnemyCooldownDisplay
-local D = {}
-addon.Modules.EnemyCooldowns.Display = D
+local M = {}
+addon.Modules.EnemyCooldowns.Display = M
 
 ---@type Db
 local db
@@ -351,7 +351,7 @@ end
 ---Populates the arena1 container with combined cooldowns from all watch entries.
 ---Used in Linear mode so all enemies' cooldowns appear in one row.
 ---@param entries table<string, EcdWatchEntry>
-function D:UpdateLinearDisplay(entries)
+function M:UpdateLinearDisplay(entries)
 	local entry1 = entries["arena1"]
 	if not entry1 then return end
 	RenderAggregate(entry1.Container, entries, nil)
@@ -360,7 +360,7 @@ end
 ---@param entry EcdWatchEntry
 ---@param index number
 ---@param prevEntry EcdWatchEntry?
-function D:AnchorContainer(entry, index, prevEntry)
+function M:AnchorContainer(entry, index, prevEntry)
 	local options = GetOptions()
 	if not options then return end
 
@@ -375,21 +375,21 @@ end
 
 ---@param index number
 ---@return table?
-function D:GetArenaEnemyFrame(index)
+function M:GetArenaEnemyFrame(index)
 	return GetArenaEnemyFrame(index)
 end
 
 ---@param active boolean
-function D:SetTestMode(active)
+function M:SetTestMode(active)
 	testModeActive = active
 end
 
 ---@param entry EcdWatchEntry
-function D:UpdateDisplay(entry)
+function M:UpdateDisplay(entry)
 	UpdateDisplay(entry)
 end
 
----Must be called once from M:Init before any display functions are used.
-function D:Init()
+---Must be called once from the module's Init before any display functions are used.
+function M:Init()
 	db = mini:GetSavedVars()
 end

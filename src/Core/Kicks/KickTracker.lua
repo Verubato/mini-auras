@@ -18,6 +18,10 @@ local pendingPlayerKick = nil -- { Texture, Duration, Time, Timer }
 ---@type table<string, KickUnitData>
 local tracked = {}
 
+---@class KickTracker
+local M = {}
+addon.Core.KickTracker = M
+
 -- Returns the interrupt spell ID for a party unit, using spec if known, class otherwise.
 -- Returns nil if the unit has no interrupt or can't be determined.
 local function GetAllyInterruptSpellId(unit)
@@ -55,10 +59,6 @@ local function InferAllyKick()
 
 	return KICK_ICON, DEFAULT_KICK_DURATION
 end
-
----@class KickTracker
-local M = {}
-addon.Core.KickTracker = M
 
 local function FireCallbacks(data)
 	for _, fn in pairs(data.Callbacks) do
@@ -287,7 +287,7 @@ end
 
 -- Track when the local player successfully casts an interrupt spell so we can replace the default
 -- rogue-kick icon with the player's actual spell icon and lockout duration.
-local playerKickFrame = CreateFrame("Frame")
+local playerKickFrame = CreateFrame("Frame") -- luaconv: its handler calls functions defined above
 playerKickFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
 playerKickFrame:SetScript("OnEvent", function(_, _, _, _, spellId)
 	local duration = kickData.SpellLockoutDuration[spellId]

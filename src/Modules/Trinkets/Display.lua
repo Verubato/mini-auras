@@ -11,8 +11,8 @@ local moduleName = addon.Utils.ModuleName
 addon.Modules.Trinkets = addon.Modules.Trinkets or {}
 
 ---@class TrinketsDisplay
-local D = {}
-addon.Modules.Trinkets.Display = D
+local M = {}
+addon.Modules.Trinkets.Display = M
 
 -- track self + party for test mode; arena is a raid, so also raid units
 local TRACKED_UNITS = {
@@ -231,28 +231,28 @@ end
 -- Public surface
 
 ---@return TrinketsModuleOptions? nil until Init has read the saved variables
-function D:GetOptions()
+function M:GetOptions()
 	return options
 end
 
 ---@param value boolean
-function D:SetTestMode(value)
+function M:SetTestMode(value)
 	testModeActive = value
 end
 
 ---Rebuilds the anchor set from the currently visible unit frames.
-function D:EnsureFrames()
+function M:EnsureFrames()
 	RebuildAnchors()
 end
 
-function D:Teardown()
+function M:Teardown()
 	for anchorFrame in pairs(watchers) do
 		DestroyWatcher(anchorFrame)
 	end
 end
 
 ---@param moduleOptions TrinketsModuleOptions
-function D:ApplyOptions(moduleOptions)
+function M:ApplyOptions(moduleOptions)
 	UpdateVisibility()
 
 	local size = tonumber(moduleOptions.Icons.Size) or 32
@@ -265,7 +265,7 @@ function D:ApplyOptions(moduleOptions)
 end
 
 ---Live cooldowns in an arena, the staggered fake ones in test mode, nothing elsewhere.
-function D:UpdateContent()
+function M:UpdateContent()
 	if IsInArena() then
 		RefreshAll()
 	elseif testModeActive then
@@ -275,7 +275,7 @@ end
 
 ---Re-renders one unit's slot, or every slot when no unit is given.
 ---@param unit string?
-function D:Render(unit)
+function M:Render(unit)
 	if unit then
 		RefreshUnit(unit)
 	else
@@ -284,18 +284,18 @@ function D:Render(unit)
 end
 
 ---Blanks every slot back to the default icon.
-function D:ClearAll()
+function M:ClearAll()
 	ClearAll()
 end
 
 ---Anchor discovery and visibility only, for the paused case: the frames still have to follow
 ---the unit frames around so they can be positioned while the module is asleep.
-function D:RefreshAnchorsOnly()
+function M:RefreshAnchorsOnly()
 	RebuildAnchors()
 	UpdateVisibility()
 end
 
-function D:Init()
+function M:Init()
 	db = mini:GetSavedVars()
 	options = db.Modules.TrinketsModule
 end

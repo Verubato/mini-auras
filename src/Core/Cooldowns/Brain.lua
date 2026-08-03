@@ -9,8 +9,8 @@ local SignatureDetector = addon.Core.Cooldowns.SignatureDetector
 addon.Core.Cooldowns = addon.Core.Cooldowns or {}
 
 ---@class CooldownBrain
-local B = {}
-addon.Core.Cooldowns.Brain = B
+local M = {}
+addon.Core.Cooldowns.Brain = M
 
 -- Seconds of timing tolerance when matching a measured buff duration to a rule.
 -- Covers frame-rate jitter, network latency, and slight timestamp rounding.
@@ -86,15 +86,15 @@ local debugEnabled = false
 -- True while in the arena prep room (PvPMatchState.StartUp). Auras are still tracked so pre-applied
 -- buffs aren't treated as new when the gates open, but cooldown prediction/commit is suppressed -
 -- otherwise pre-existing friendly buffs seen as the watcher starts would falsely trigger cooldowns.
--- Set by the FriendlyCooldowns Module via B:SetInPrepRoom.
+-- Set by the FriendlyCooldowns Module via M:SetInPrepRoom.
 local inPrepRoom = false
 
--- Pre-computed signature strings indexed by a 3-bit key (B=8, E=4, C=1).
+-- Pre-computed signature strings indexed by a 3-bit key (M=8, E=4, C=1).
 -- Eliminates repeated string concatenation on the hot OnWatcherChanged path.
 local AURA_TYPES_SIG_TABLE = {
 	[0]  = "",     [1]  = "C",
 	[4]  = "E",    [5]  = "EC",
-	[8]  = "B",    [9]  = "BC",
+	[8]  = "M",    [9]  = "BC",
 	[12] = "BE",   [13] = "BEC",
 }
 
@@ -1210,7 +1210,7 @@ local function TrackNewAura(entry, trackedAuras, id, info, now, candidateUnits)
 	-- Collect concurrent Debuff/Shield/UnitFlags evidence (HARMFUL auras fire in the same
 	-- UNIT_AURA batch). Cast evidence is intentionally excluded here - it is derived
 	-- per-candidate from CastSnapshot in OnAuraRemoved so a cast by unit A cannot satisfy
-	-- RequiresEvidence="Cast" when evaluating unit B.
+	-- RequiresEvidence="Cast" when evaluating unit M.
 	local evidence = BuildEvidenceSet(unit, now)
 
 	-- Snapshot cast times so OnAuraRemoved can attribute the cooldown to the correct
@@ -1518,28 +1518,28 @@ end
 ---fn(ruleUnit, cdKey, cdData, detectedFromEntry)
 ---cdData: { StartTime, Cooldown, Remaining, SpellId }
 ---@param fn fun(ruleUnit: string, cdKey: number|string, cdData: table, detectedFromEntry: FcdWatchEntry)
-function B:RegisterCooldownCallback(fn)
+function M:RegisterCooldownCallback(fn)
 	cooldownCallback = fn
 end
 
 ---Registers the callback fired when the display should update after a watcher pass.
 ---fn(entry)
 ---@param fn fun(entry: FcdWatchEntry)
-function B:RegisterDisplayCallback(fn)
+function M:RegisterDisplayCallback(fn)
 	displayCallback = fn
 end
 
 ---Registers a lookup function that returns the ActiveCooldowns table for a given unit.
 ---Used by PredictSpellIdForUnit to skip rules whose spell is already on cooldown.
 ---@param fn fun(unit: string): table?
-function B:RegisterActiveCooldownsLookup(fn)
+function M:RegisterActiveCooldownsLookup(fn)
 	activeCooldownsLookup = fn
 end
 
 ---Toggles diagnostic logging of the aura predict/remove pathways and returns the new state.
 ---Wired to "/mcc debug"; prints whether a rule matched plus the aura types and evidence.
 ---@return boolean enabled
-function B:ToggleDebug()
+function M:ToggleDebug()
 	debugEnabled = not debugEnabled
 	return debugEnabled
 end
@@ -1547,7 +1547,7 @@ end
 ---Sets whether the tracker is in the arena prep room. While true, auras are still tracked but
 ---cooldown prediction/commit is suppressed so pre-existing friendly buffs don't falsely trigger.
 ---@param value boolean
-function B:SetInPrepRoom(value)
+function M:SetInPrepRoom(value)
 	inPrepRoom = value
 end
 
@@ -1557,7 +1557,7 @@ end
 ---durationObject is the aura's DurationObject at detection time, for driving the countdown display.
 ---fn(entry, spellId, casterUnit, durationObject)
 ---@param fn fun(entry: FcdWatchEntry, spellId: number, casterUnit: string?, durationObject: table?)
-function B:RegisterPredictiveGlowCallback(fn)
+function M:RegisterPredictiveGlowCallback(fn)
 	predictiveGlowCallback = fn
 end
 
@@ -1565,7 +1565,7 @@ end
 ---Mirrors RegisterPredictiveGlowCallback - casterUnit is nil for self-cast auras.
 ---fn(entry, spellId, casterUnit)
 ---@param fn fun(entry: FcdWatchEntry, spellId: number, casterUnit: string?)
-function B:RegisterPredictiveGlowEndCallback(fn)
+function M:RegisterPredictiveGlowEndCallback(fn)
 	predictiveGlowEndCallback = fn
 end
 
@@ -1573,13 +1573,13 @@ end
 ---Fired on every UNIT_AURA update while the glow is live, so callers should be cheap.
 ---fn(entry, spellId, casterUnit, durationObject)
 ---@param fn fun(entry: FcdWatchEntry, spellId: number, casterUnit: string?, durationObject: table?)
-function B:RegisterPredictiveGlowDurationChangedCallback(fn)
+function M:RegisterPredictiveGlowDurationChangedCallback(fn)
 	predictiveGlowDurationChangedCallback = fn
 end
 
 -- Clears all per-unit timestamp state. Called by tests between cases so state
 -- from one test cannot bleed into the next.
-function B._TestReset()
+function M._TestReset()
 	for k in pairs(lastDebuffTime)      do lastDebuffTime[k]      = nil end
 	for k in pairs(lastShieldTime)      do lastShieldTime[k]      = nil end
 	for k in pairs(lastCastTime)        do lastCastTime[k]        = nil end
@@ -1593,14 +1593,14 @@ function B._TestReset()
 end
 
 ---Test helper: exposes FilterLocalPlayerCandidates for unit tests.
-function B._TestFilterLocalPlayerCandidates(candidateUnits, castSpellIdSnapshot, auraTypes, startTime)
+function M._TestFilterLocalPlayerCandidates(candidateUnits, castSpellIdSnapshot, auraTypes, startTime)
 	return FilterLocalPlayerCandidates(candidateUnits, castSpellIdSnapshot, auraTypes, startTime)
 end
 
 ---Wires Brain into an observer. Called by FriendlyCooldowns Module during Init.
 ---Brain has no direct observer dependency; the caller supplies whichever observer to use.
 ---@param obs FriendlyCooldownObserver
-function B:RegisterWithObserver(obs)
+function M:RegisterWithObserver(obs)
 	obs:RegisterAuraChangedCallback(function(entry, watcher, candidateUnits)
 		OnWatcherChanged(entry, watcher, candidateUnits)
 	end)
@@ -1618,14 +1618,14 @@ end
 ---Registers the callback fired when the second Burrow event batch fires (Burrow ended).
 ---fn(unit, now, castTime) where castTime is the arm timestamp (first batch).
 ---@param fn fun(unit: string, now: number, castTime: number)
-function B:RegisterBurrowCallback(fn)
+function M:RegisterBurrowCallback(fn)
 	sd.burrowCommit = fn
 end
 
 ---Registers the callback fired when the second EC event batch fires (channel ended).
 ---fn(unit, now, castTime) where castTime is the arm timestamp (channel started).
 ---@param fn fun(unit: string, now: number, castTime: number)
-function B:RegisterEmeraldCommunionCallback(fn)
+function M:RegisterEmeraldCommunionCallback(fn)
 	sd.ecCommit = fn
 end
 
@@ -1637,7 +1637,7 @@ end
 ---@param measuredDuration number
 ---@param context MatchRuleContext?
 ---@return table?
-function B:MatchRule(unit, auraTypes, measuredDuration, context)
+function M:MatchRule(unit, auraTypes, measuredDuration, context)
 	return MatchRule(unit, auraTypes, measuredDuration, context)
 end
 
@@ -1653,7 +1653,7 @@ end
 ---@param opts table?  { IgnoreTalentRequirements: boolean? }
 ---@return table? rule
 ---@return string ruleUnit
-function B:FindBestCandidate(entry, tracked, measuredDuration, candidateUnits, opts)
+function M:FindBestCandidate(entry, tracked, measuredDuration, candidateUnits, opts)
 	return FindBestCandidate(entry, tracked, measuredDuration, candidateUnits, opts)
 end
 
@@ -1665,7 +1665,7 @@ end
 ---@param activeCooldowns table?  active cooldowns keyed by SpellId; nil = no cooldown filter
 ---@return number? spellId
 ---@return boolean isOnCooldown
-function B:PredictSpellId(unit, auraTypes, evidence, activeCooldowns)
+function M:PredictSpellId(unit, auraTypes, evidence, activeCooldowns)
 	local _, classToken = UnitClass(unit)
 	if not classToken then return nil, false end
 

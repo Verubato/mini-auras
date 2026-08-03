@@ -7,8 +7,8 @@ local units = addon.Utils.Units
 addon.Modules.Portrait = addon.Modules.Portrait or {}
 
 ---@class PortraitObserver
-local O = {}
-addon.Modules.Portrait.Observer = O
+local M = {}
+addon.Modules.Portrait.Observer = M
 
 ---@type { string: Watcher }
 local watchers = {}
@@ -30,7 +30,7 @@ local function FlushImportantUpdates()
 	importantUpdateScheduled = false
 	for unit in pairs(pendingImportantUnits) do
 		pendingImportantUnits[unit] = nil
-		O:FireUnitUpdate(unit)
+		M:FireUnitUpdate(unit)
 	end
 end
 
@@ -45,7 +45,7 @@ local function ScheduleImportantUpdate(unit)
 end
 
 ---@param value boolean
-function O:SetSuspended(value)
+function M:SetSuspended(value)
 	suspended = value
 end
 
@@ -53,7 +53,7 @@ end
 ---@param unit string
 ---@param events string[]?
 ---@return Watcher
-function O:CreateWatcher(unit, events)
+function M:CreateWatcher(unit, events)
 	local watcher = unitWatcher:New(unit, events, nil, nil, Enum.UnitAuraSortDirection.Reverse)
 	watchers[unit] = watcher
 	return watcher
@@ -61,17 +61,17 @@ end
 
 ---@param unit string
 ---@return Watcher?
-function O:GetWatcher(unit)
+function M:GetWatcher(unit)
 	return watchers[unit]
 end
 
-function O:EnableWatchers()
+function M:EnableWatchers()
 	for _, watcher in pairs(watchers) do
 		watcher:Enable()
 	end
 end
 
-function O:DisableWatchers()
+function M:DisableWatchers()
 	for _, watcher in pairs(watchers) do
 		watcher:Disable()
 		watcher:ClearState(true)
@@ -80,7 +80,7 @@ end
 
 ---@param sortRule number
 ---@param sortDirection number
-function O:SetSort(sortRule, sortDirection)
+function M:SetSort(sortRule, sortDirection)
 	for _, watcher in pairs(watchers) do
 		watcher:SetSort(sortRule, sortDirection)
 	end
@@ -88,14 +88,14 @@ end
 
 ---@param unit string
 ---@param callback fun()
-function O:RegisterUnitUpdate(unit, callback)
+function M:RegisterUnitUpdate(unit, callback)
 	unitUpdateFns[unit] = unitUpdateFns[unit] or {}
 	local fns = unitUpdateFns[unit]
 	fns[#fns + 1] = callback
 end
 
 ---@param unit string
-function O:FireUnitUpdate(unit)
+function M:FireUnitUpdate(unit)
 	local fns = unitUpdateFns[unit]
 	if not fns then
 		return
@@ -109,7 +109,7 @@ end
 ---Hooks a nameplate's aura refresh so important buffs on the target/focus portrait update live.
 ---Watchers only track CC + defensives, so this is the only buff-change signal on the legacy path.
 ---@param unitToken string
-function O:HookNameplateAuraFrame(unitToken)
+function M:HookNameplateAuraFrame(unitToken)
 	local nameplate = C_NamePlate.GetNamePlateForUnit(unitToken)
 	local uf = nameplate and nameplate.UnitFrame
 	local af = uf and uf.AurasFrame
@@ -138,12 +138,12 @@ function O:HookNameplateAuraFrame(unitToken)
 end
 
 ---A kick landing on the target or focus has to redraw that portrait; no aura event covers it.
-function O:WatchKicks()
+function M:WatchKicks()
 	for _, unit in ipairs({ "target", "focus" }) do
 		local event = unit == "target" and "PLAYER_TARGET_CHANGED" or "PLAYER_FOCUS_CHANGED"
 		kickTracker:Watch(unit, { event })
 		kickTracker:Subscribe(unit, function()
-			O:FireUnitUpdate(unit)
+			M:FireUnitUpdate(unit)
 		end)
 	end
 end

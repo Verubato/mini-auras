@@ -20,8 +20,8 @@ local testSpellData = addon.Core.TestSpells
 addon.Modules.Auras = addon.Modules.Auras or {}
 
 ---@class AurasDisplay
-local D = {}
-addon.Modules.Auras.Display = D
+local M = {}
+addon.Modules.Auras.Display = M
 
 -- 12.1 path: CC + defensive auras render through an AuraContainer per anchor (one group per
 -- category); the IconSlotContainer is kept for the kick icon and test mode. Unlike the legacy
@@ -283,7 +283,7 @@ end
 -- TEMPORARY: when the legacy path goes, this alias goes with it and the callers just call
 -- UpdateKickIcon.
 ---@type fun(entry: AurasWatchEntry)
-local RenderEntry = USE_AURA_CONTAINERS and UpdateKickIcon or UpdateWatcherAuras
+local RenderEntry = USE_AURA_CONTAINERS and UpdateKickIcon or UpdateWatcherAuras -- luaconv: aliases the two renderers above
 
 ---@param anchor table
 ---@param unit string?
@@ -632,68 +632,68 @@ end
 -- Public surface
 
 ---@return AurasInstanceOptions?
-function D:GetOptions()
+function M:GetOptions()
 	return db and GetOptions()
 end
 
 ---@param value boolean
-function D:SetPaused(value)
+function M:SetPaused(value)
 	paused = value
 end
 
 ---@param value boolean
-function D:SetTestMode(value)
+function M:SetTestMode(value)
 	testModeActive = value
 end
 
 ---@param anchor table
 ---@param unit string?
-function D:EnsureWatcher(anchor, unit)
+function M:EnsureWatcher(anchor, unit)
 	return EnsureWatcher(anchor, unit)
 end
 
-function D:EnsureWatchers()
+function M:EnsureWatchers()
 	EnsureWatchers()
 end
 
-function D:Teardown()
+function M:Teardown()
 	Teardown()
 end
 
-function D:EnsureFrames()
+function M:EnsureFrames()
 	EnsureFrames()
 end
 
 ---@param options AurasInstanceOptions
-function D:ApplyOptions(options)
+function M:ApplyOptions(options)
 	ApplyOptions(options)
 end
 
-function D:RefreshTestIcons()
+function M:RefreshTestIcons()
 	RefreshTestIcons()
 end
 
 ---Blanks and hides every entry's kick/test container, for the test-mode handover.
-function D:ResetAllContainers()
+function M:ResetAllContainers()
 	anchoredIcons:ResetContainers(watchers)
 end
 
 ---12.1 path: redraws the kick icons a test-mode reset wiped.
-function D:RefreshKickIcons()
+function M:RefreshKickIcons()
 	for _, entry in pairs(watchers) do
 		UpdateKickIcon(entry)
 	end
 end
 
-function D:OnCufUpdateVisible(frame)
+function M:OnCufUpdateVisible(frame)
 	OnCufUpdateVisible(frame)
 end
 
-function D:OnCufSetUnit(frame, unit)
+function M:OnCufSetUnit(frame, unit)
 	OnCufSetUnit(frame, unit)
 end
 
-function D:Init()
+function M:Init()
 	db = mini:GetSavedVars()
 
 	testDefensiveSpells = testSpellData.Defensive

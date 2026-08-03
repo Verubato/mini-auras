@@ -5,8 +5,8 @@ local unitAuraWatcher = addon.Core.UnitAuraWatcher
 addon.Modules.EnemyCooldowns = addon.Modules.EnemyCooldowns or {}
 
 ---@class EnemyCooldownObserver
-local O = {}
-addon.Modules.EnemyCooldowns.Observer = O
+local M = {}
+addon.Modules.EnemyCooldowns.Observer = M
 
 -- entry -> { Watcher, UnitEventFrame }
 local watched = {}
@@ -117,7 +117,7 @@ end
 
 ---Begins watching a new entry. entry.Unit must be set before calling.
 ---@param entry EcdWatchEntry
-function O:Watch(entry)
+function M:Watch(entry)
 	local unitEventFrame = CreateUnitEventFrame(entry)
 	RegisterUnitEvents(unitEventFrame, entry.Unit)
 
@@ -132,7 +132,7 @@ end
 
 ---Re-watches an entry after entry.Unit has changed.
 ---@param entry EcdWatchEntry
-function O:Rewatch(entry)
+function M:Rewatch(entry)
 	local state = watched[entry]
 	if not state then
 		return
@@ -152,7 +152,7 @@ end
 
 ---Disables watching for an entry without releasing resources.
 ---@param entry EcdWatchEntry
-function O:Disable(entry)
+function M:Disable(entry)
 	local state = watched[entry]
 	if not state then
 		return
@@ -163,7 +163,7 @@ end
 
 ---Re-enables watching for an entry after Disable.
 ---@param entry EcdWatchEntry
-function O:Enable(entry)
+function M:Enable(entry)
 	local state = watched[entry]
 	if not state then
 		return
@@ -175,56 +175,56 @@ function O:Enable(entry)
 end
 
 ---@param active boolean
-function O:SetTestMode(active)
+function M:SetTestMode(active)
 	testModeActive = active
 end
 
 ---Registers a callback fired when a watched enemy unit's aura state changes.
 ---fn(entry, watcher)
 ---@param fn fun(entry: EcdWatchEntry, watcher: Watcher)
-function O:RegisterAuraChangedCallback(fn)
+function M:RegisterAuraChangedCallback(fn)
 	auraChangedCallbacks[#auraChangedCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a watched enemy unit's combat/immune flags change.
 ---@param fn fun(unit: string)
-function O:RegisterUnitFlagsCallback(fn)
+function M:RegisterUnitFlagsCallback(fn)
 	unitFlagsCallbacks[#unitFlagsCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a HARMFUL aura is added to a watched enemy unit.
 ---@param fn fun(unit: string, updateInfo: table?)
-function O:RegisterDebuffEvidenceCallback(fn)
+function M:RegisterDebuffEvidenceCallback(fn)
 	debuffEvidenceCallbacks[#debuffEvidenceCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a watched enemy unit casts a spell.
 ---Enemy spell IDs are always secret, so only the unit string is passed (no spell ID).
 ---@param fn fun(unit: string)
-function O:RegisterCastCallback(fn)
+function M:RegisterCastCallback(fn)
 	castCallbacks[#castCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a watched enemy unit's model changes (UNIT_MODEL_CHANGED).
 ---@param fn fun(unit: string)
-function O:RegisterModelChangedCallback(fn)
+function M:RegisterModelChangedCallback(fn)
 	modelChangedCallbacks[#modelChangedCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a watched enemy unit's portrait updates (UNIT_PORTRAIT_UPDATE).
 ---@param fn fun(unit: string)
-function O:RegisterPortraitUpdateCallback(fn)
+function M:RegisterPortraitUpdateCallback(fn)
 	portraitUpdateCallbacks[#portraitUpdateCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a watched enemy unit begins channeling (UNIT_SPELLCAST_CHANNEL_START).
 ---@param fn fun(unit: string)
-function O:RegisterChannelStartCallback(fn)
+function M:RegisterChannelStartCallback(fn)
 	channelStartCallbacks[#channelStartCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a watched enemy unit's channel ends or is interrupted (UNIT_SPELLCAST_CHANNEL_STOP).
 ---@param fn fun(unit: string)
-function O:RegisterChannelStopCallback(fn)
+function M:RegisterChannelStopCallback(fn)
 	channelStopCallbacks[#channelStopCallbacks + 1] = fn
 end

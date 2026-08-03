@@ -5,8 +5,8 @@ local unitWatcher = addon.Core.UnitAuraWatcher
 addon.Modules.Nameplates = addon.Modules.Nameplates or {}
 
 ---@class NameplatesObserver
-local O = {}
-addon.Modules.Nameplates.Observer = O
+local M = {}
+addon.Modules.Nameplates.Observer = M
 
 -- Legacy path only: on 12.1 the aura containers track their own unit and no watcher is built,
 -- which leaves every function here operating on an empty table.
@@ -25,7 +25,7 @@ local hookedAuraFrames = {}
 ---@param sortRule number
 ---@param sortDirection number
 ---@param onChanged fun()
-function O:Create(unitToken, sortRule, sortDirection, onChanged)
+function M:Create(unitToken, sortRule, sortDirection, onChanged)
 	if watchers[unitToken] then
 		watchers[unitToken]:Dispose()
 	end
@@ -39,12 +39,12 @@ end
 
 ---@param unitToken string
 ---@return Watcher?
-function O:Get(unitToken)
+function M:Get(unitToken)
 	return watchers[unitToken]
 end
 
 ---@param unitToken string
-function O:Dispose(unitToken)
+function M:Dispose(unitToken)
 	local watcher = watchers[unitToken]
 	if watcher then
 		watcher:Dispose()
@@ -52,7 +52,7 @@ function O:Dispose(unitToken)
 	end
 end
 
-function O:EnableAll()
+function M:EnableAll()
 	for _, watcher in pairs(watchers) do
 		if watcher then
 			watcher:Enable()
@@ -60,7 +60,7 @@ function O:EnableAll()
 	end
 end
 
-function O:DisableAll()
+function M:DisableAll()
 	for _, watcher in pairs(watchers) do
 		if watcher then
 			watcher:Disable()
@@ -70,14 +70,14 @@ end
 
 ---@param sortRule number
 ---@param sortDirection number
-function O:SetSort(sortRule, sortDirection)
+function M:SetSort(sortRule, sortDirection)
 	for _, watcher in pairs(watchers) do
 		watcher:SetSort(sortRule, sortDirection)
 	end
 end
 
 ---Repopulates every watcher from live aura data; used after test icons have overwritten the bars.
-function O:ForceFullUpdate()
+function M:ForceFullUpdate()
 	for _, watcher in pairs(watchers) do
 		watcher:ForceFullUpdate()
 	end
@@ -87,7 +87,7 @@ end
 ---changed, since the watcher does not track them.
 ---@param nameplate table
 ---@param onRefresh fun(unit: string)
-function O:HookAuraFrame(nameplate, onRefresh)
+function M:HookAuraFrame(nameplate, onRefresh)
 	local uf = nameplate and nameplate.UnitFrame
 	local af = uf and uf.AurasFrame
 	if af and af.RefreshAuras and not hookedAuraFrames[af] then

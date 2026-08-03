@@ -16,8 +16,8 @@ local testSpellData = addon.Core.TestSpells
 addon.Modules.FriendlyCooldowns = addon.Modules.FriendlyCooldowns or {}
 
 ---@class FriendlyCooldownDisplay
-local D = {}
-addon.Modules.FriendlyCooldowns.Display = D
+local M = {}
+addon.Modules.FriendlyCooldowns.Display = M
 
 ---@type Db
 local db
@@ -418,35 +418,35 @@ local function AnchorContainer(entry)
 	entry.Container:SetColumns(options.Icons.Columns)
 end
 
----Must be called once from M:Init before any display functions are used.
-function D:Init()
-	db = mini:GetSavedVars()
-end
-
 ---@param active boolean
-function D:SetTestMode(active)
+function M:SetTestMode(active)
 	testModeActive = active
 end
 
 ---@param entry FcdWatchEntry
-function D:UpdateDisplay(entry)
+function M:UpdateDisplay(entry)
 	UpdateDisplay(entry)
 end
 
 ---@param entry FcdWatchEntry
-function D:AnchorContainer(entry)
+function M:AnchorContainer(entry)
 	AnchorContainer(entry)
 end
 
 ---Invalidates the static-abilities cache for a unit so the next UpdateDisplay rebuilds it.
 ---@param unit string
-function D:InvalidateStaticAbilitiesCache(unit)
+function M:InvalidateStaticAbilitiesCache(unit)
 	staticAbilitiesCache[unit] = nil
 end
 
 ---Clears the entire static-abilities cache (e.g. on PLAYER_SPECIALIZATION_CHANGED).
-function D:ResetStaticAbilitiesCache()
+function M:ResetStaticAbilitiesCache()
 	staticAbilitiesCache = {}
+end
+
+---Must be called once from the module's Init before any display functions are used.
+function M:Init()
+	db = mini:GetSavedVars()
 end
 
 ---@class FcdStaticAbility

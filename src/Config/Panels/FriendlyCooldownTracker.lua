@@ -374,7 +374,7 @@ end
 
 -- Localized class display names keyed by class token. Stays here rather than with the other
 -- constants at the top: it is computed from LocalizedClassList, declared above.
-local CLASS_DISPLAY_NAMES = LocalizedClassList()
+local CLASS_DISPLAY_NAMES = LocalizedClassList() -- luaconv: built by a local function above
 
 ---Collects all unique spell IDs from rules, grouped by class token.
 ---@return table<string, number[]>  classToken -> ordered list of spell IDs

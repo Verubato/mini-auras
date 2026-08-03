@@ -13,8 +13,8 @@ local auras = addon.Utils.Auras
 addon.Modules.Portrait = addon.Modules.Portrait or {}
 
 ---@class PortraitDisplay
-local D = {}
-addon.Modules.Portrait.Display = D
+local M = {}
+addon.Modules.Portrait.Display = M
 
 -- 12.1 path: a portrait shows ONE icon, but which aura wins has to be decided by the engine
 -- (aura presence is secret), so it gets FOUR single-icon containers stacked on top of each other -
@@ -177,7 +177,7 @@ local function GetFirstImportantBuff(unit)
 	return C_UnitAuras.GetAuraDataByAuraInstanceID(unit, firstId)
 end
 
-function D:GetPortraitMask(unitFrame)
+function M:GetPortraitMask(unitFrame)
 	-- player
 	if unitFrame.PlayerFrameContainer and unitFrame.PlayerFrameContainer.PlayerPortraitMask then
 		return unitFrame.PlayerFrameContainer.PlayerPortraitMask
@@ -196,7 +196,7 @@ function D:GetPortraitMask(unitFrame)
 	return nil
 end
 
-function D:CreatePortraitMask(portrait)
+function M:CreatePortraitMask(portrait)
 	local parent = portrait:GetParent()
 	if not parent then
 		return nil
@@ -208,7 +208,7 @@ function D:CreatePortraitMask(portrait)
 	return mask
 end
 
-function D:ApplyMaskToLayer(layer, mask)
+function M:ApplyMaskToLayer(layer, mask)
 	if not layer then
 		return
 	end
@@ -230,7 +230,7 @@ end
 ---Builds the kick container over a portrait, with the 12.1 aura display stack underneath it.
 ---Returns nil when the portrait's dimensions are secret, which is the tainted-frame case.
 ---@return IconSlotContainer?
-function D:CreateContainer(unitFrame, portrait, unit, texCoord, mask)
+function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask)
 	-- Only 1 slot, multiple layers; no border for portrait icons
 	local container = iconSlotContainer:New(unitFrame, 1, 0, 0, nil, true, "Portraits")
 
@@ -282,12 +282,12 @@ end
 ---Adds a finished container to the render set. Kept separate from CreateContainer so the attach
 ---functions can apply their per-addon frame level and slot adjustments first.
 ---@param container IconSlotContainer
-function D:AddContainer(container)
+function M:AddContainer(container)
 	containers[#containers + 1] = container
 end
 
 ---@return IconSlotContainer[]
-function D:GetContainers()
+function M:GetContainers()
 	local result = {}
 	for _, container in pairs(containers) do
 		result[#result + 1] = container
@@ -300,7 +300,7 @@ end
 ---to clear it.
 ---@param unit string
 ---@param container IconSlotContainer
-function D:UpdateKickIcon(unit, container)
+function M:UpdateKickIcon(unit, container)
 	if suspended then
 		return
 	end
@@ -325,7 +325,7 @@ function D:UpdateKickIcon(unit, container)
 		if remaining > 0 then
 			container.KickTimer = C_Timer.NewTimer(remaining + 0.05, function()
 				container.KickTimer = nil
-				D:UpdateKickIcon(unit, container)
+				M:UpdateKickIcon(unit, container)
 			end)
 		end
 	else
@@ -337,7 +337,7 @@ end
 ---@param unit string
 ---@param watcher Watcher
 ---@param container IconSlotContainer
-function D:OnAuraInfo(unit, watcher, container)
+function M:OnAuraInfo(unit, watcher, container)
 	if suspended then
 		return
 	end
@@ -406,7 +406,7 @@ end
 ---12.1 path: re-reads every aura on the containers tracking a unit, for when the token's occupant
 ---changes rather than its auras.
 ---@param unit string
-function D:RefreshUnitAuras(unit)
+function M:RefreshUnitAuras(unit)
 	for _, container in pairs(containers) do
 		if container.AuraUnit == unit and container.AuraDisplay then
 			for _, display in ipairs(container.AuraDisplay.Displays) do
@@ -416,7 +416,7 @@ function D:RefreshUnitAuras(unit)
 	end
 end
 
-function D:RefreshTestIcons()
+function M:RefreshTestIcons()
 	local spellId = testSpell.SpellId
 	local tex = C_Spell.GetSpellTexture(spellId)
 	local now = GetTime()
@@ -433,23 +433,23 @@ function D:RefreshTestIcons()
 	end
 end
 
-function D:ResetAllSlots()
+function M:ResetAllSlots()
 	for _, container in pairs(containers) do
 		container:ResetAllSlots()
 	end
 end
 
 ---@param value boolean
-function D:SetSuspended(value)
+function M:SetSuspended(value)
 	suspended = value
 end
 
 ---@param active boolean
-function D:SetTestMode(active)
+function M:SetTestMode(active)
 	testModeActive = active
 end
 
-function D:Teardown()
+function M:Teardown()
 	for _, container in pairs(containers) do
 		container:ResetAllSlots()
 		if container.AuraDisplay then
@@ -461,7 +461,7 @@ function D:Teardown()
 	end
 end
 
-function D:EnsureFrames()
+function M:EnsureFrames()
 	for _, container in pairs(containers) do
 		if container.AuraDisplay then
 			for _, display in ipairs(container.AuraDisplay.Displays) do
@@ -472,7 +472,7 @@ function D:EnsureFrames()
 	end
 end
 
-function D:ApplyOptions()
+function M:ApplyOptions()
 	if not USE_AURA_CONTAINERS then
 		return
 	end
@@ -493,7 +493,7 @@ function D:ApplyOptions()
 	end
 end
 
-function D:Init()
+function M:Init()
 	db = mini:GetSavedVars()
 
 	-- One icon, so only the first preview spell is ever shown.

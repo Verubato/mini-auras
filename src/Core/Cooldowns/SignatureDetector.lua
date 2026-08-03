@@ -25,15 +25,15 @@ local EC_MAX_DURATION       = 5    -- reject anything longer (non-EC UNIT_FLAGS 
 local EC_DURATION_TOLERANCE = 0.5
 
 ---@class SignatureDetector
-local SD = {}
-addon.Core.Cooldowns.SignatureDetector = SD
+local M = {}
+addon.Core.Cooldowns.SignatureDetector = M
 
 local methods = {}
 methods.__index = methods
 
 ---Creates a new detector instance.
 ---@param config table  checkTalent (bool), talents (table?), burrowCommit, ecCommit
-function SD:New(config)
+function M:New(config)
 	return setmetatable({
 		checkTalent  = config.checkTalent or false,
 		talents      = config.talents,

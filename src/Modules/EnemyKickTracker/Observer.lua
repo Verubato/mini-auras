@@ -4,8 +4,8 @@ local _, addon = ...
 addon.Modules.EnemyKickTracker = addon.Modules.EnemyKickTracker or {}
 
 ---@class EnemyKickTrackerObserver
-local O = {}
-addon.Modules.EnemyKickTracker.Observer = O
+local M = {}
+addon.Modules.EnemyKickTracker.Observer = M
 
 -- Only the arena team's casts can tell us an enemy kick went out, and an arena team is at most
 -- three. Watching anyone else would count interrupts the bar is not there to show.
@@ -70,26 +70,26 @@ local function OnUnitEvent(unit, _, event, ...)
 end
 
 ---Builds the per-unit event frames. Nothing is registered until Enable.
-function O:Create()
+function M:Create()
 	for _, unit in ipairs(WATCHED_UNITS) do
 		eventFrames[unit] = eventFrames[unit] or CreateFrame("Frame")
 	end
 end
 
 ---@param callback fun()
-function O:RegisterKickCallback(callback)
+function M:RegisterKickCallback(callback)
 	kickCallbacks[#kickCallbacks + 1] = callback
 end
 
 ---Stops firing callbacks without unregistering anything, so test mode can take the bar over and
 ---hand it straight back.
 ---@param value boolean
-function O:SetPaused(value)
+function M:SetPaused(value)
 	paused = value
 end
 
 ---@return boolean changed true only on the transition into watching
-function O:Enable()
+function M:Enable()
 	if watching then
 		return false
 	end
@@ -114,7 +114,7 @@ function O:Enable()
 end
 
 ---@return boolean changed true only on the transition out of watching
-function O:Disable()
+function M:Disable()
 	if not watching then
 		return false
 	end

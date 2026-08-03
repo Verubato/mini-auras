@@ -30,10 +30,6 @@ local M = {}
 addon.Utils.ModuleUtil = M
 addon.Utils.ModuleName = ModuleName
 
-function M:Init()
-	db = addon.Framework:GetSavedVars()
-end
-
 ---Resolves the configured icon size, either as a static pixel value or as a percentage of
 ---the anchor frame's height when Icons.SizeIsPercent is enabled.
 ---Accounts for scale mismatch between the anchor and the container's parent (UIParent), so the
@@ -155,4 +151,8 @@ function M:IsModuleEnabled(moduleName)
 	end
 
 	return settings.Dungeons
+end
+
+function M:Init()
+	db = addon.Framework:GetSavedVars()
 end

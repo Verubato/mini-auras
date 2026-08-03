@@ -22,6 +22,10 @@ local rebuildSeen = {}
 local rebuildTarget
 local rebuildCount = 0
 
+---@class UnitAuraWatcher
+local M = {}
+addon.Core.UnitAuraWatcher = M
+
 local function InitColourCurve()
 	if dispelColorCurve then
 		return
@@ -38,10 +42,6 @@ end
 -- Hoisted sort comparators so RebuildStates doesn't allocate new closures each call.
 local function byInstanceIdForward(a, b) return a.AuraInstanceID < b.AuraInstanceID end
 local function byInstanceIdReverse(a, b) return a.AuraInstanceID > b.AuraInstanceID end
-
----@class UnitAuraWatcher
-local M = {}
-addon.Core.UnitAuraWatcher = M
 
 ---@param watcher Watcher
 local function NotifyCallbacks(watcher)
@@ -124,7 +124,7 @@ local function WatcherFrameOnEvent(frame, event, ...)
 	watcher:OnEvent(event, ...)
 end
 
-local Watcher = {}
+local Watcher = {} -- luaconv: the instance metatable, kept with the methods below it
 Watcher.__index = Watcher
 
 ---@param unit string
@@ -241,7 +241,7 @@ end
 
 -- Which category lists changed during the current ApplyIncremental call (module-level scratch, set
 -- by AddAuraIncremental and the removal loop; safe because UNIT_AURA handling is never reentrant).
-local incTouched = { cc = false, def = false, buff = false }
+local incTouched = { cc = false, def = false, buff = false } -- luaconv: scratch kept next to the collectors that share it
 
 -- Classifies one added aura into the state lists + id-maps exactly as RebuildStates would: the
 -- secret-safe IsCC / IsDefensive gating and the BIG-before-EXTERNAL defensive dedup. Returns true

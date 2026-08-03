@@ -6,8 +6,8 @@ local eventGate = addon.Core.EventGate
 addon.Modules.FriendlyCooldowns = addon.Modules.FriendlyCooldowns or {}
 
 ---@class FriendlyCooldownObserver
-local O = {}
-addon.Modules.FriendlyCooldowns.Observer = O
+local M = {}
+addon.Modules.FriendlyCooldowns.Observer = M
 
 -- entry -> { Watcher, CastEventFrame }
 local watched = {}
@@ -184,7 +184,7 @@ end
 ---The cast event frame is registered BEFORE the watcher is created to preserve handler fire
 ---order (ensuring evidence is recorded before aura-changed callbacks run).
 ---@param entry FcdWatchEntry
-function O:Watch(entry)
+function M:Watch(entry)
 	local castEventFrame = CreateCastEventFrame(entry)
 	RegisterCastEvents(castEventFrame, entry.Unit)
 
@@ -203,7 +203,7 @@ end
 ---Re-watches an entry after entry.Unit has changed (unit token reassignment).
 ---entry.Unit and entry.IsExcludedSelf must be updated before calling.
 ---@param entry FcdWatchEntry
-function O:Rewatch(entry)
+function M:Rewatch(entry)
 	local state = watched[entry]
 	if not state then
 		return
@@ -226,7 +226,7 @@ end
 
 ---Disables watching for an entry without releasing resources (watcher disabled, events cleared).
 ---@param entry FcdWatchEntry
-function O:Disable(entry)
+function M:Disable(entry)
 	local state = watched[entry]
 	if not state then
 		return
@@ -239,7 +239,7 @@ end
 ---Fully stops watching an entry and releases its watcher resources.
 ---Use instead of Disable when the entry will not be re-enabled.
 ---@param entry FcdWatchEntry
-function O:Forget(entry)
+function M:Forget(entry)
 	local state = watched[entry]
 	if not state then
 		return
@@ -252,7 +252,7 @@ end
 
 ---Re-enables watching for an entry after Disable.
 ---@param entry FcdWatchEntry
-function O:Enable(entry)
+function M:Enable(entry)
 	local state = watched[entry]
 	if not state then
 		return
@@ -266,89 +266,89 @@ end
 
 ---Sets whether test mode is active. Watcher callbacks are suppressed during test mode.
 ---@param active boolean
-function O:SetTestMode(active)
+function M:SetTestMode(active)
 	testModeActive = active
 end
 
 ---Registers a callback fired when a watched unit's aura state changes.
 ---fn(entry, watcher, candidateUnits) where candidateUnits is a flat list of all watched unit strings.
 ---@param fn fun(entry: FcdWatchEntry, watcher: Watcher, candidateUnits: string[])
-function O:RegisterAuraChangedCallback(fn)
+function M:RegisterAuraChangedCallback(fn)
 	auraChangedCallbacks[#auraChangedCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a watched unit successfully casts a spell.
 ---@param fn fun(unit: string, spellId: number)
-function O:RegisterCastCallback(fn)
+function M:RegisterCastCallback(fn)
 	castCallbacks[#castCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when any unit's absorb amount changes (shield application).
 ---@param fn fun(unit: string)
-function O:RegisterShieldCallback(fn)
+function M:RegisterShieldCallback(fn)
 	shieldCallbacks[#shieldCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a watched unit's combat/immune flags change.
 ---@param fn fun(unit: string)
-function O:RegisterUnitFlagsCallback(fn)
+function M:RegisterUnitFlagsCallback(fn)
 	unitFlagsCallbacks[#unitFlagsCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a watched unit's pet receives a BIG_DEFENSIVE aura.
 ---fn(unit) where unit is the owner (hunter), not the pet.
 ---@param fn fun(unit: string)
-function O:RegisterPetAuraCallback(fn)
+function M:RegisterPetAuraCallback(fn)
 	petAuraCallbacks[#petAuraCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a HARMFUL aura is added to a watched unit.
 ---@param fn fun(unit: string, updateInfo: table?)
-function O:RegisterDebuffEvidenceCallback(fn)
+function M:RegisterDebuffEvidenceCallback(fn)
 	debuffEvidenceCallbacks[#debuffEvidenceCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a watched unit's model changes (UNIT_MODEL_CHANGED).
 ---@param fn fun(unit: string)
-function O:RegisterModelChangedCallback(fn)
+function M:RegisterModelChangedCallback(fn)
 	modelChangedCallbacks[#modelChangedCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a watched unit's portrait updates (UNIT_PORTRAIT_UPDATE).
 ---@param fn fun(unit: string)
-function O:RegisterPortraitUpdateCallback(fn)
+function M:RegisterPortraitUpdateCallback(fn)
 	portraitUpdateCallbacks[#portraitUpdateCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a watched unit begins channeling a spell (UNIT_SPELLCAST_CHANNEL_START).
 ---@param fn fun(unit: string)
-function O:RegisterChannelStartCallback(fn)
+function M:RegisterChannelStartCallback(fn)
 	channelStartCallbacks[#channelStartCallbacks + 1] = fn
 end
 
 ---Registers a callback fired when a watched unit's channel ends or is interrupted (UNIT_SPELLCAST_CHANNEL_STOP).
 ---@param fn fun(unit: string)
-function O:RegisterChannelStopCallback(fn)
+function M:RegisterChannelStopCallback(fn)
 	channelStopCallbacks[#channelStopCallbacks + 1] = fn
 end
 
----Creates the global absorb-shield frame. Must be called once from M:Init.
+---Enables/disables the absorb-shield evidence event. It fires for every unit's absorb changes
+---(it is a global event, not per-unit), so it stays unregistered while the module is off.
+---@param enabled boolean
+function M:SetAbsorbTrackingEnabled(enabled)
+	if absorbGate then
+		absorbGate:SetActive(enabled)
+	end
+end
+
+---Creates the global absorb-shield frame. Must be called once from the module's Init.
 ---Tracks UNIT_ABSORB_AMOUNT_CHANGED globally (not per-unit) because absorb changes on any unit
 ---are used as concurrent evidence to disambiguate Paladin defensives.
-function O:Init()
+function M:Init()
 	local absorbFrame = CreateFrame("Frame")
 	absorbFrame:SetScript("OnEvent", function(_, _, unit)
 		FireShield(unit)
 	end)
 	-- Registered via SetAbsorbTrackingEnabled while the module is enabled.
 	absorbGate = eventGate:New(absorbFrame, { "UNIT_ABSORB_AMOUNT_CHANGED" })
-end
-
----Enables/disables the absorb-shield evidence event. It fires for every unit's absorb changes
----(it is a global event, not per-unit), so it stays unregistered while the module is off.
----@param enabled boolean
-function O:SetAbsorbTrackingEnabled(enabled)
-	if absorbGate then
-		absorbGate:SetActive(enabled)
-	end
 end

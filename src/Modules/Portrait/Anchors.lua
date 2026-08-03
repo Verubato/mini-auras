@@ -7,8 +7,8 @@ local observer = addon.Modules.Portrait.Observer
 local display  = addon.Modules.Portrait.Display
 
 ---@class PortraitAnchors
-local A = {}
-addon.Modules.Portrait.Anchors = A
+local M = {}
+addon.Modules.Portrait.Anchors = M
 
 -- TEMPORARY dual path: the legacy branch needs a watcher per portrait; on 12.1 the containers
 -- track their own auras and a portrait can be attached without one.
@@ -452,7 +452,7 @@ end
 
 -- Third-party attach functions and the units each one supports. Ordering matters only in that
 -- every addon gets a look at every unit; whichever is actually loaded is the one that attaches.
-local THIRD_PARTY_ATTACH = {
+local THIRD_PARTY_ATTACH = { -- luaconv: references the attach functions above
 	{ Attach = AttachElvUIFrame,        Units = { "player", "target", "focus" } },
 	{ Attach = AttachTPerlFrame,        Units = { "player", "target", "focus" } },
 	{ Attach = AttachUUFFrame,          Units = { "player", "target", "focus", "pet" } },
@@ -461,7 +461,7 @@ local THIRD_PARTY_ATTACH = {
 	{ Attach = AttachEQolFrame,         Units = { "player", "target", "focus", "pet" } },
 }
 
-function A:AttachBlizzardFrames()
+function M:AttachBlizzardFrames()
 	AttachBlizzardFrame("player")
 	AttachBlizzardFrame("target", { "PLAYER_TARGET_CHANGED" })
 	AttachBlizzardFrame("focus", { "PLAYER_FOCUS_CHANGED" })
@@ -469,7 +469,7 @@ function A:AttachBlizzardFrames()
 end
 
 ---Deferred until the world loads, since third-party frames do not exist before then.
-function A:AttachThirdPartyFrames()
+function M:AttachThirdPartyFrames()
 	for _, entry in ipairs(THIRD_PARTY_ATTACH) do
 		for _, unit in ipairs(entry.Units) do
 			entry.Attach(unit)

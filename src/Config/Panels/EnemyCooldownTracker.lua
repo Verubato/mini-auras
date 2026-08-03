@@ -50,6 +50,10 @@ local checkColumnWidth
 ---Collects all unique spell IDs from rules that EnemyCooldowns can track, grouped by class token.
 ---Includes aura-based rules (BigDefensive, ExternalDefensive) and event-signature rules (NoAura).
 ---@return table<string, number[]>  classToken -> ordered list of spell IDs
+---@class EnemyCooldownTrackerConfig
+local M = {}
+config.EnemyCooldownTracker = M
+
 local function CollectSpellsByClass()
 	local classSpells = {}
 	local seen = {}
@@ -493,10 +497,6 @@ local function BuildSettings(parent, options)
 	-- Return the approximate height of all content.
 	return 410
 end
-
----@class EnemyCooldownTrackerConfig
-local M = {}
-config.EnemyCooldownTracker = M
 
 ---@param panel table
 ---@param options table  db.Modules.EnemyCooldownTrackerModule

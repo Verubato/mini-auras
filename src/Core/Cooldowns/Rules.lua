@@ -685,7 +685,7 @@ local function ExcludedByDefaultTalent(rule, specId, classToken)
 end
 
 -- Lazily built set of spell IDs whose rule(s) carry ExcludeFromEnemyTracking.
-local enemyExcludedSpellIds = nil
+local enemyExcludedSpellIds = nil -- luaconv: lazily built cache, kept with its builder
 
 local function BuildEnemyExcludedSet()
 	enemyExcludedSpellIds = {}

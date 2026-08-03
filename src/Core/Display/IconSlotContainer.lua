@@ -28,6 +28,12 @@ local STATIC_GLOW_FIELDS = {
 	["Slot Glow"] = "_SlotGlow",
 }
 
+---@class IconSlotContainer
+local M = {}
+M.__index = M
+
+addon.Core.IconSlotContainer = M
+
 local function UpdateChargeTextFontSize(chargeText, iconSize, fontScale)
 	local font, _, flags = chargeText:GetFont()
 	if font then
@@ -39,12 +45,6 @@ local function NextFrameName(frameType)
 	frameIdCounter = frameIdCounter + 1
 	return "MiniCC_" .. frameType .. "_" .. frameIdCounter
 end
-
----@class IconSlotContainer
-local M = {}
-M.__index = M
-
-addon.Core.IconSlotContainer = M
 
 local function GetDb()
 	if not cachedDb then

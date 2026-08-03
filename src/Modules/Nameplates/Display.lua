@@ -19,8 +19,8 @@ local C_NamePlate = C_NamePlate
 addon.Modules.Nameplates = addon.Modules.Nameplates or {}
 
 ---@class NameplatesDisplay
-local D = {}
-addon.Modules.Nameplates.Display = D
+local M = {}
+addon.Modules.Nameplates.Display = M
 
 -- 12.1 path: each bar gets its own AuraContainer per nameplate token (reparented to the plate
 -- and retargeted with SetUnit as plates come and go) with one group per category; the bar's
@@ -364,13 +364,13 @@ end
 
 -- Context for the in-progress GetImportantBuffs iteration. Passed to the hoisted callback via these
 -- upvalues rather than a per-call closure, since the buff scan runs on the aura hot path.
-local importantIterUnit
+local importantIterUnit -- luaconv: context for the hoisted callback below
 -- Set for friendly units (including duel opponents, who are same-faction): an extra nameplate aura
 -- filter to drop the non-important buffs friendly nameplates list (Blizzard only pre-curates ENEMY
 -- buff lists to the important ones), since we can't evaluate importance ourselves
 -- (C_Spell.IsSpellImportant is a secret value that can't be compared/filtered). nil for enemies,
 -- whose list is already curated.
-local importantIterFriendlyFilter
+local importantIterFriendlyFilter -- luaconv: context for the hoisted callback below
 
 local function CollectImportantBuff(auraInstanceID)
 	if importantSkipScratch[auraInstanceID] then
@@ -630,7 +630,7 @@ end
 
 ---@param data NameplateData
 local function ShowDataTestIcons(data, now)
-	local options = D:GetUnitOptions(data.UnitToken)
+	local options = M:GetUnitOptions(data.UnitToken)
 	for _, bar in ipairs(BARS) do
 		local barOptions = options[bar.Key]
 		if barOptions and barOptions.Enabled and data[bar.DataField] then
@@ -641,20 +641,14 @@ end
 
 -- Public surface
 
-function D:Init()
-	db = mini:GetSavedVars()
-	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> NameplatesModule
-	nmModule = db.Modules.NameplatesModule
-end
-
 ---@return NameplatesModuleOptions?
-function D:GetOptions()
+function M:GetOptions()
 	return nmModule
 end
 
 ---Which faction's bar options apply to a token. Friendly units can also be enemies in a duel,
 ---so the enemy check comes first.
-function D:GetUnitOptions(unitToken)
+function M:GetUnitOptions(unitToken)
 	if units:IsEnemy(unitToken) then
 		return nmModule.Enemy
 	end
@@ -667,7 +661,7 @@ function D:GetUnitOptions(unitToken)
 end
 
 ---@return boolean true when any enabled bar on either faction is showing important buffs
-function D:ImportantNeeded()
+function M:ImportantNeeded()
 	local enemy = nmModule.Enemy
 	local friendly = nmModule.Friendly
 	return (enemy.Bar1.Enabled and enemy.Bar1.ShowImportant)
@@ -678,7 +672,7 @@ function D:ImportantNeeded()
 end
 
 ---@return boolean true when any bar on either faction is switched on
-function D:AnyEnabled()
+function M:AnyEnabled()
 	return nmModule.Friendly.Bar1.Enabled
 		or nmModule.Friendly.Bar2.Enabled
 		or nmModule.Enemy.Bar1.Enabled
@@ -687,23 +681,23 @@ end
 
 ---@param unitToken string
 ---@return NameplateData?
-function D:GetData(unitToken)
+function M:GetData(unitToken)
 	return nameplateAnchors[unitToken]
 end
 
 ---Every tracked token, for the callers that have to sweep them all.
 ---@return table<string, NameplateData>
-function D:GetTrackedPlates()
+function M:GetTrackedPlates()
 	return nameplateAnchors
 end
 
 ---@param value boolean
-function D:SetPaused(value)
+function M:SetPaused(value)
 	paused = value
 end
 
 ---@param value boolean
-function D:SetTestMode(value)
+function M:SetTestMode(value)
 	testModeActive = value
 end
 
@@ -714,7 +708,7 @@ end
 ---@param unitOptions table
 ---@param trackAnyway boolean? track even with no enabled bar, so a duel flip has state to rebuild from
 ---@return NameplateData? data nil when neither bar is enabled for this token
-function D:Track(unitToken, nameplate, unitOptions, trackAnyway)
+function M:Track(unitToken, nameplate, unitOptions, trackAnyway)
 	-- Reuse containers stored on the nameplate; only create if missing
 	local bar1Container, bar2Container =
 		EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
@@ -748,7 +742,7 @@ end
 
 ---Hides a tracked plate's containers, parks its displays and forgets it.
 ---@param unitToken string
-function D:Untrack(unitToken)
+function M:Untrack(unitToken)
 	local data = nameplateAnchors[unitToken]
 	if not data then
 		return
@@ -769,7 +763,7 @@ end
 ---plate goes away AND when tracking stops for other reasons (module/pet options turning off
 ---for an already-tracked token) so displays never linger active outside the pool.
 ---@param unitToken string
-function D:Release(unitToken)
+function M:Release(unitToken)
 	local data = nameplateAnchors[unitToken]
 	if not data then
 		return
@@ -795,7 +789,7 @@ end
 ---the aura displays around it. Schedules a follow-up when the kick expires, since no aura event
 ---will fire to clear it.
 ---@param data NameplateData
-function D:UpdateKick(data)
+function M:UpdateKick(data)
 	if paused or testModeActive then
 		return
 	end
@@ -833,14 +827,14 @@ function D:UpdateKick(data)
 	-- clear at the same moment.
 	data.KickTimer = kickSlot:ScheduleExpiry(kickEntry, data.KickTimer, function()
 		data.KickTimer = nil
-		D:UpdateKick(data)
+		M:UpdateKick(data)
 	end)
 end
 
 ---Legacy path: redraws every enabled bar on a tracked plate from the watcher's aura state.
 ---@param unitToken string
 ---@param watcher Watcher?
-function D:RenderUnit(unitToken, watcher)
+function M:RenderUnit(unitToken, watcher)
 	if paused or not unitToken then
 		return
 	end
@@ -908,11 +902,11 @@ end
 
 ---Draws the test preview on one plate; used when a plate spawns while test mode is on.
 ---@param data NameplateData
-function D:ShowTestIconsFor(data)
+function M:ShowTestIconsFor(data)
 	ShowDataTestIcons(data, GetTime())
 end
 
-function D:ShowTestIcons()
+function M:ShowTestIcons()
 	local now = GetTime()
 	for _, data in pairs(nameplateAnchors) do
 		ShowDataTestIcons(data, now)
@@ -920,7 +914,7 @@ function D:ShowTestIcons()
 end
 
 ---@param unitToken string
-function D:ClearPlate(unitToken)
+function M:ClearPlate(unitToken)
 	local data = nameplateAnchors[unitToken]
 	if not data then
 		return
@@ -933,13 +927,13 @@ function D:ClearPlate(unitToken)
 	end
 end
 
-function D:ClearAll()
+function M:ClearAll()
 	for unitToken in pairs(nameplateAnchors) do
 		self:ClearPlate(unitToken)
 	end
 end
 
-function D:RefreshAnchorsAndSizes()
+function M:RefreshAnchorsAndSizes()
 	local ignoreParentScale = not nmModule.ScaleWithNameplate
 	for _, data in pairs(nameplateAnchors) do
 		if data.Nameplate and data.UnitToken then
@@ -986,7 +980,7 @@ function D:RefreshAnchorsAndSizes()
 	end
 end
 
-function D:Teardown()
+function M:Teardown()
 	for unitToken, data in pairs(nameplateAnchors) do
 		self:ClearPlate(unitToken)
 		if data.Bar1Display then
@@ -998,6 +992,12 @@ function D:Teardown()
 			data.Bar2Display:Hide()
 		end
 	end
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
+	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> NameplatesModule
+	nmModule = db.Modules.NameplatesModule
 end
 
 ---@class NameplateData

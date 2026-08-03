@@ -19,8 +19,8 @@ local sound = addon.Modules.HealerCrowdControl.Sound
 addon.Modules.HealerCrowdControl = addon.Modules.HealerCrowdControl or {}
 
 ---@class HealerCrowdControlDisplay
-local D = {}
-addon.Modules.HealerCrowdControl.Display = D
+local M = {}
+addon.Modules.HealerCrowdControl.Display = M
 
 -- 12.1 path: healer CC icons render through one AuraContainer per healer. The warning text
 -- cannot work there (it requires knowing whether a CC aura is present, which 12.1 makes
@@ -499,7 +499,7 @@ end
 -- Public surface
 
 ---@return HealerCCModuleOptions?
-function D:GetOptions()
+function M:GetOptions()
 	-- The anchor is built in Init; without it there is nothing to configure.
 	if not db or not healerAnchor then
 		return nil
@@ -509,55 +509,55 @@ function D:GetOptions()
 end
 
 ---@return boolean true once the anchor exists
-function D:HasAnchor()
+function M:HasAnchor()
 	return healerAnchor ~= nil
 end
 
 ---@param value boolean
-function D:SetPaused(value)
+function M:SetPaused(value)
 	paused = value
 end
 
 ---@param value boolean
-function D:SetTestMode(value)
+function M:SetTestMode(value)
 	testModeActive = value
 end
 
-function D:Teardown()
+function M:Teardown()
 	Teardown()
 end
 
-function D:EnsureFrames()
+function M:EnsureFrames()
 	EnsureFrames()
 end
 
 ---@param options HealerCCModuleOptions
-function D:ApplyOptions(options)
+function M:ApplyOptions(options)
 	ApplyOptions(options)
 end
 
-function D:RefreshTestFrame()
+function M:RefreshTestFrame()
 	RefreshTestFrame()
 end
 
-function D:OnAuraStateUpdated()
+function M:OnAuraStateUpdated()
 	OnAuraStateUpdated()
 end
 
-function D:ResetIcons()
+function M:ResetIcons()
 	if iconsContainer then
 		iconsContainer:ResetAllSlots()
 	end
 end
 
-function D:ShowAnchor()
+function M:ShowAnchor()
 	healerAnchor:Show()
 end
 
 ---Visibility is left to Refresh: on 12.1 the anchor has to stay shown while the module is
 ---active, so hiding it here would blank the live display until the next addon-wide Refresh.
 ---@param active boolean
-function D:SetAnchorInteractive(active)
+function M:SetAnchorInteractive(active)
 	if not healerAnchor then
 		return
 	end
@@ -570,7 +570,7 @@ function D:SetAnchorInteractive(active)
 	end
 end
 
-function D:Init()
+function M:Init()
 	db = mini:GetSavedVars()
 
 	testSpells = testSpellData.CrowdControl

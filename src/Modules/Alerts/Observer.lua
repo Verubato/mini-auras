@@ -5,8 +5,8 @@ local unitWatcher = addon.Core.UnitAuraWatcher
 addon.Modules.Alerts = addon.Modules.Alerts or {}
 
 ---@class AlertsObserver
-local O = {}
-addon.Modules.Alerts.Observer = O
+local M = {}
+addon.Modules.Alerts.Observer = M
 
 -- Legacy path only: on 12.1 every enemy plate gets its own aura container and no watcher exists,
 -- which leaves this table empty and every function here a no-op.
@@ -19,13 +19,13 @@ local hookedAuraFrames = {}
 
 ---The live watcher set. The render path walks it directly rather than copying.
 ---@return table<string, Watcher>
-function O:GetWatchers()
+function M:GetWatchers()
 	return nameplateWatchers
 end
 
 ---@param unitToken string
 ---@return Watcher?
-function O:Get(unitToken)
+function M:Get(unitToken)
 	return nameplateWatchers[unitToken]
 end
 
@@ -33,7 +33,7 @@ end
 ---from Blizzard's own nameplate buff list.
 ---@param unitToken string
 ---@param onChanged fun()
-function O:Create(unitToken, onChanged)
+function M:Create(unitToken, onChanged)
 	self:Dispose(unitToken)
 
 	---@type AuraTypeFilter
@@ -51,7 +51,7 @@ end
 
 ---@param unitToken string
 ---@return boolean disposed true when there was one to dispose
-function O:Dispose(unitToken)
+function M:Dispose(unitToken)
 	local watcher = nameplateWatchers[unitToken]
 	if not watcher then
 		return false
@@ -62,20 +62,20 @@ function O:Dispose(unitToken)
 	return true
 end
 
-function O:DisposeAll()
+function M:DisposeAll()
 	for unitToken, watcher in pairs(nameplateWatchers) do
 		watcher:Dispose()
 		nameplateWatchers[unitToken] = nil
 	end
 end
 
-function O:DisableAll()
+function M:DisableAll()
 	for _, watcher in pairs(nameplateWatchers) do
 		watcher:Disable()
 	end
 end
 
-function O:ClearAllState()
+function M:ClearAllState()
 	for _, watcher in pairs(nameplateWatchers) do
 		watcher:ClearState(true)
 	end
@@ -83,7 +83,7 @@ end
 
 ---Drops the watchers for tokens that are no longer active.
 ---@param activeTokens table<string, boolean>
-function O:PruneTo(activeTokens)
+function M:PruneTo(activeTokens)
 	for unitToken, watcher in pairs(nameplateWatchers) do
 		if not activeTokens[unitToken] then
 			watcher:Dispose()
@@ -98,7 +98,7 @@ end
 ---nothing important-related is enabled. Legacy path only.
 ---@param unitToken string
 ---@param onRefresh fun()
-function O:HookAuraFrame(unitToken, onRefresh)
+function M:HookAuraFrame(unitToken, onRefresh)
 	local nameplate = C_NamePlate.GetNamePlateForUnit(unitToken)
 	local uf = nameplate and nameplate.UnitFrame
 	local af = uf and uf.AurasFrame

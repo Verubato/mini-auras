@@ -18,8 +18,8 @@ local sound = addon.Modules.Alerts.Sound
 addon.Modules.Alerts = addon.Modules.Alerts or {}
 
 ---@class AlertsDisplay
-local D = {}
-addon.Modules.Alerts.Display = D
+local M = {}
+addon.Modules.Alerts.Display = M
 
 -- 12.1 path: the alert bars become rows of per-nameplate AuraContainers chained off the movable
 -- bar frames. The bar can't stay a single aggregated list there because a container tracks
@@ -673,47 +673,43 @@ end
 
 -- Public surface
 
-function D:Init()
-	db = mini:GetSavedVars()
-end
-
 ---@return IconSlotContainer? the main bar; nil until the frames are built
-function D:GetContainer()
+function M:GetContainer()
 	return container
 end
 
 ---The tokens the 12.1 path is currently drawing; the sound registrations follow this set.
 ---@return table<string, table>
-function D:GetActiveTokens()
+function M:GetActiveTokens()
 	return nameplateDisplays
 end
 
 ---@param value boolean
-function D:SetPaused(value)
+function M:SetPaused(value)
 	paused = value
 end
 
 ---@param value boolean
-function D:SetTestMode(value)
+function M:SetTestMode(value)
 	testModeActive = value
 end
 
 ---@param value boolean
-function D:SetInPrepRoom(value)
+function M:SetInPrepRoom(value)
 	inPrepRoom = value
 end
 
 ---@return boolean
-function D:IsInPrepRoom()
+function M:IsInPrepRoom()
 	return inPrepRoom
 end
 
 ---@return string the effective grow direction, with CENTER folded to RIGHT on 12.1
-function D:GetGrow()
+function M:GetGrow()
 	return GetGrow()
 end
 
-function D:EnsureNameplateDisplay(unitToken)
+function M:EnsureNameplateDisplay(unitToken)
 	return EnsureNameplateDisplay(unitToken)
 end
 
@@ -721,7 +717,7 @@ end
 -- displayPairsByToken for the token's return; only the active map loses it. Deliberately leaves
 -- the token's sound registrations warm (see the sound module).
 ---@param unitToken string
-function D:ReleaseNameplateDisplay(unitToken)
+function M:ReleaseNameplateDisplay(unitToken)
 	local entry = nameplateDisplays[unitToken]
 	if entry then
 		nameplateDisplays[unitToken] = nil
@@ -731,7 +727,7 @@ end
 
 -- Plate tracking is stopping entirely (module off, or a zone where alerts don't run), so the
 -- warm sound registrations go too.
-function D:ReleaseAllNameplateDisplays()
+function M:ReleaseAllNameplateDisplays()
 	sound:RemoveAllTokens()
 	for unitToken in pairs(nameplateDisplays) do
 		self:ReleaseNameplateDisplay(unitToken)
@@ -741,18 +737,18 @@ end
 ---Configures the pair for one token and re-chains the row. Used on plate add, where styling
 ---every pooled pair would add up in busy fights.
 ---@param unitToken string
-function D:ApplyOneAndChain(unitToken)
+function M:ApplyOneAndChain(unitToken)
 	local entry = EnsureNameplateDisplay(unitToken)
 	ApplyNameplateDisplayOptions(entry, db.Modules.AlertsModule, GetAlertBarsShown())
 	ChainAlertDisplays()
 end
 
-function D:ChainDisplays()
+function M:ChainDisplays()
 	ChainAlertDisplays()
 end
 
 -- 12.1 path: applies options to every pooled display pair and re-chains the rows.
-function D:RefreshNameplateDisplays()
+function M:RefreshNameplateDisplays()
 	local options = db.Modules.AlertsModule
 	local showBars = GetAlertBarsShown()
 
@@ -767,7 +763,7 @@ end
 
 ---Reconciles the active display set with the tokens that should be drawn.
 ---@param activeTokens table<string, boolean>
-function D:SyncActiveTokens(activeTokens)
+function M:SyncActiveTokens(activeTokens)
 	for unitToken in pairs(nameplateDisplays) do
 		if not activeTokens[unitToken] then
 			self:ReleaseNameplateDisplay(unitToken)
@@ -782,7 +778,7 @@ end
 ---Legacy path: redraws both bars from every active enemy watcher, and fires the sound/TTS
 ---transitions the icons are derived from.
 ---@param watchers table<string, Watcher>
-function D:Render(watchers)
+function M:Render(watchers)
 	-- 12.1: the container path renders everything and no watchers feed this; skip the wasted
 	-- scratch-table wipes and bar resets it would otherwise do on every scheduled update.
 	if USE_AURA_CONTAINERS then
@@ -925,7 +921,7 @@ end
 
 ---Blanks both bars, leaving the alert-transition state alone: the auras that were up before
 ---test mode are not new, and forgetting that would fire a sound for every one of them.
-function D:ClearBars()
+function M:ClearBars()
 	if container then
 		container:ResetAllSlots()
 	end
@@ -936,7 +932,7 @@ end
 
 ---Blanks both bars AND forgets the alert-transition state, for the prep room and for teardown -
 ---both of which end with nothing tracked, so the next aura seen genuinely is new.
-function D:ResetBars()
+function M:ResetBars()
 	self:ClearBars()
 	hadDefensiveAlerts = false
 	hadImportantAlerts = false
@@ -944,7 +940,7 @@ function D:ResetBars()
 	previousImportantAuras = {}
 end
 
-function D:RefreshTestAlerts()
+function M:RefreshTestAlerts()
 	if not db.Modules.AlertsModule.Icons.Enabled then
 		container:ResetAllSlots()
 		if importantContainer then
@@ -1045,7 +1041,7 @@ function D:RefreshTestAlerts()
 end
 
 ---@param options AlertsModuleOptions
-function D:ApplyBarOptions(options)
+function M:ApplyBarOptions(options)
 	local grow = GetGrow()
 
 	NormalizeBarAnchor(container.Frame, options, grow)
@@ -1107,7 +1103,7 @@ function D:ApplyBarOptions(options)
 end
 
 ---@param active boolean
-function D:SetAnchorInteractive(active)
+function M:SetAnchorInteractive(active)
 	if not container then
 		return
 	end
@@ -1151,7 +1147,7 @@ local function SetUpBarDragging(bar, anchorOptions)
 	end)
 end
 
-function D:CreateFrames()
+function M:CreateFrames()
 	local options = db.Modules.AlertsModule
 	local count = options.Icons.MaxIcons or 8
 	local size = options.Icons.Size
@@ -1169,4 +1165,8 @@ function D:CreateFrames()
 	else
 		importantContainer.Frame:Hide()
 	end
+end
+
+function M:Init()
+	db = mini:GetSavedVars()
 end

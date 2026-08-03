@@ -920,6 +920,19 @@ function M:RefreshDisplays()
 	end
 end
 
+---Signature: function(unit, spellId, spellType) where spellType is "Defensive"
+---@param fn function
+function M:RegisterPredictedCallback(fn)
+	predictedCallbacks[#predictedCallbacks + 1] = fn
+end
+
+---Registers a callback invoked when an aura ends and a cooldown rule is committed.
+---Signature: function(unit, spellId, spellType) where spellType is "Defensive"
+---@param fn function
+function M:RegisterMatchedCallback(fn)
+	matchedCallbacks[#matchedCallbacks + 1] = fn
+end
+
 function M:Init()
 	-- Party cooldown tracking is dead on 12.1: it infers cooldown usage from aura evidence
 	-- (UnitAuraWatcher), and 12.1 removes addon access to aura data entirely. Skip all setup
@@ -936,19 +949,6 @@ function M:Init()
 	CreateEvents()
 	InstallHooks()
 	ApplyInitialState()
-end
-
----Signature: function(unit, spellId, spellType) where spellType is "Defensive"
----@param fn function
-function M:RegisterPredictedCallback(fn)
-	predictedCallbacks[#predictedCallbacks + 1] = fn
-end
-
----Registers a callback invoked when an aura ends and a cooldown rule is committed.
----Signature: function(unit, spellId, spellType) where spellType is "Defensive"
----@param fn function
-function M:RegisterMatchedCallback(fn)
-	matchedCallbacks[#matchedCallbacks + 1] = fn
 end
 
 ---@class FriendlyCooldownTrackerModule

@@ -289,7 +289,7 @@ end
 -- No talent checks on the enemy path: talent data is unavailable for arena opponents.
 -- Burrow never commits here because its rule is flagged ExcludeFromEnemyTracking (see
 -- CommitCooldown's guard); it remains here only so the detector's shared state stays consistent.
-local sd = SignatureDetector:New({
+local sd = SignatureDetector:New({ -- luaconv: its callbacks call functions defined above
 	checkTalent  = false,
 	burrowCommit = function(unit, now, castTime)
 		local entry = watchEntries[unit]

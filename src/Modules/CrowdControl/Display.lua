@@ -18,8 +18,8 @@ local wowEx = addon.Utils.WoWEx
 addon.Modules.CrowdControl = addon.Modules.CrowdControl or {}
 
 ---@class CrowdControlDisplay
-local D = {}
-addon.Modules.CrowdControl.Display = D
+local M = {}
+addon.Modules.CrowdControl.Display = M
 
 -- 12.1 path: CC auras render through an AuraContainer per anchor; the IconSlotContainer is kept
 -- for the kick icon and test-mode icons only (neither reads aura data). TEMPORARY dual path:
@@ -177,7 +177,7 @@ end
 -- TEMPORARY: when the legacy path goes, this alias goes with it and the callers just call
 -- UpdateKickIcon.
 ---@type fun(entry: CrowdControlWatchEntry)
-local RenderEntry = USE_AURA_CONTAINERS and UpdateKickIcon or UpdateWatcherAuras
+local RenderEntry = USE_AURA_CONTAINERS and UpdateKickIcon or UpdateWatcherAuras -- luaconv: aliases the two renderers above
 
 ---@param anchor table
 ---@param unit string?
@@ -623,72 +623,72 @@ end
 -- Public surface
 
 ---@return CrowdControlInstanceOptions?
-function D:GetOptions()
+function M:GetOptions()
 	return db and GetOptions()
 end
 
 ---@param value boolean
-function D:SetPaused(value)
+function M:SetPaused(value)
 	paused = value
 end
 
 ---@param value boolean
-function D:SetTestMode(value)
+function M:SetTestMode(value)
 	testModeActive = value
 end
 
 ---@param anchor table
 ---@param unit string?
-function D:EnsureWatcher(anchor, unit)
+function M:EnsureWatcher(anchor, unit)
 	return EnsureWatcher(anchor, unit)
 end
 
-function D:EnsureWatchers()
+function M:EnsureWatchers()
 	EnsureWatchers()
 end
 
-function D:Teardown()
+function M:Teardown()
 	Teardown()
 end
 
-function D:EnsureFrames()
+function M:EnsureFrames()
 	EnsureFrames()
 end
 
 ---@param options CrowdControlInstanceOptions
-function D:ApplyOptions(options)
+function M:ApplyOptions(options)
 	ApplyOptions(options)
 end
 
-function D:RefreshTestIcons()
+function M:RefreshTestIcons()
 	RefreshTestIcons()
 end
 
 ---Blanks and hides every entry's kick/test container, for the test-mode handover.
-function D:ResetAllContainers()
+function M:ResetAllContainers()
 	anchoredIcons:ResetContainers(watchers)
 end
 
 ---12.1 path: redraws the kick icons a test-mode reset wiped.
-function D:RefreshKickIcons()
+function M:RefreshKickIcons()
 	for _, entry in pairs(watchers) do
 		UpdateKickIcon(entry)
 	end
 end
 
-function D:HideAll()
+function M:HideAll()
 	anchoredIcons:HideAll(watchers)
 end
 
-function D:OnCufUpdateVisible(frame)
+function M:OnCufUpdateVisible(frame)
 	OnCufUpdateVisible(frame)
 end
 
-function D:OnCufSetUnit(frame, unit)
+function M:OnCufSetUnit(frame, unit)
 	OnCufSetUnit(frame, unit)
 end
 
-function D:Init()
+function M:Init()
 	db = mini:GetSavedVars()
 
 	testSpells = testSpellData.CrowdControl

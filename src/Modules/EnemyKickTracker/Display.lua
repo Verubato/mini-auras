@@ -8,8 +8,8 @@ local moduleUtil = addon.Utils.ModuleUtil
 addon.Modules.EnemyKickTracker = addon.Modules.EnemyKickTracker or {}
 
 ---@class EnemyKickTrackerDisplay
-local D = {}
-addon.Modules.EnemyKickTracker.Display = D
+local M = {}
+addon.Modules.EnemyKickTracker.Display = M
 
 ---@type Db
 local db
@@ -130,7 +130,7 @@ local function CreateFrames()
 	kickBar.Anchor = container.Frame
 end
 
-function D:EnsureFrames()
+function M:EnsureFrames()
 	if kickBar.Container then
 		return
 	end
@@ -139,7 +139,7 @@ function D:EnsureFrames()
 end
 
 ---@param options EnemyKickTrackerModuleOptions
-function D:ApplyOptions(options)
+function M:ApplyOptions(options)
 	local frame = kickBar.Anchor
 
 	if frame then
@@ -157,11 +157,11 @@ end
 
 ---@param duration number
 ---@param icon string|number
-function D:AddKick(duration, icon)
+function M:AddKick(duration, icon)
 	AddIcon(duration, icon)
 end
 
-function D:Clear()
+function M:Clear()
 	CancelTimers()
 
 	if kickBar.Container then
@@ -171,13 +171,13 @@ function D:Clear()
 	UpdateVisibility()
 end
 
-function D:Show()
+function M:Show()
 	if kickBar.Anchor then
 		kickBar.Anchor:Show()
 	end
 end
 
-function D:Hide()
+function M:Hide()
 	if kickBar.Anchor then
 		kickBar.Anchor:Hide()
 	end
@@ -185,7 +185,7 @@ end
 
 ---Puts the bar under the mouse so it can be dragged, and keeps it on screen while it is empty.
 ---@param active boolean
-function D:SetAnchorInteractive(active)
+function M:SetAnchorInteractive(active)
 	local anchor = kickBar.Anchor
 
 	if not anchor then
@@ -198,13 +198,13 @@ function D:SetAnchorInteractive(active)
 end
 
 ---@param active boolean
-function D:SetTestMode(active)
+function M:SetTestMode(active)
 	testModeActive = active
 end
 
 ---Replaces whatever is on the bar with a fixed set of icons that never expire.
 ---@param entries { Duration: number, Icon: string|number }[]
-function D:ShowTestKicks(entries)
+function M:ShowTestKicks(entries)
 	CancelTimers()
 
 	for _, entry in ipairs(entries) do
@@ -218,7 +218,7 @@ function D:ShowTestKicks(entries)
 	end
 end
 
-function D:Init()
+function M:Init()
 	db = mini:GetSavedVars()
 
 	CreateFrames()

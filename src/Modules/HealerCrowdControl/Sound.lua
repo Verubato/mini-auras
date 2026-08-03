@@ -8,8 +8,8 @@ local ModuleName = addon.Utils.ModuleName
 addon.Modules.HealerCrowdControl = addon.Modules.HealerCrowdControl or {}
 
 ---@class HealerCrowdControlSound
-local S = {}
-addon.Modules.HealerCrowdControl.Sound = S
+local M = {}
+addon.Modules.HealerCrowdControl.Sound = M
 
 -- 12.1 path: the sound survives via C_UnitAuras.AddAuraSound - the ENGINE plays a sound when a
 -- known CC aura lands on a registered healer, without the addon ever reading aura state.
@@ -137,27 +137,27 @@ end
 -- Public surface
 
 ---Legacy path: one sound per no-CC-to-CC transition.
-function S:Play()
+function M:Play()
 	PlaySound()
 end
 
 ---Plays the configured file directly, ignoring the path gating. Used by the config preview,
 ---which has to demo the file even on 12.1 where the live sound is engine-side.
 ---@param options HealerCCModuleOptions
-function S:PlayPreview(options)
+function M:PlayPreview(options)
 	PlaySoundFile(addon.Config.SoundLocation .. (options.Sound.File or "Sonar.ogg"), options.Sound.Channel or "Master")
 end
 
 ---12.1 path: reconciles the engine-side CC sounds against the active healer set.
 ---@param activePool table<string, HealerWatchEntry>
-function S:Refresh(activePool)
+function M:Refresh(activePool)
 	RegisterAuraSounds(activePool)
 end
 
-function S:Clear()
+function M:Clear()
 	ClearAuraSounds()
 end
 
-function S:Init()
+function M:Init()
 	db = mini:GetSavedVars()
 end

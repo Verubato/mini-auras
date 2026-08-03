@@ -264,6 +264,9 @@ function M:UnregisterOnProfileChanged(key)
 	onProfileChangedCallbacks[key] = nil
 end
 
+---Part of the module contract; profile state is event-driven and needs nothing on a refresh.
+function M:Refresh() end
+
 function M:Init()
 	migrator = addon.Config.Migrator
 	db = mini:GetSavedVars()
@@ -285,6 +288,4 @@ function M:Init()
 	eventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 end
-
-function M:Refresh() end
 
