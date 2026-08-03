@@ -38,8 +38,9 @@ env.healers.party2 = true
 -- initialised; the event frame each one registers is captured before the next load so the plate
 -- events can be driven per module.
 local MODULES = {
-	{ Name = "CrowdControlModule", Key = "CCModule", Files = { "CrowdControlModule.lua" } },
-	{ Name = "AurasModule", Key = "AurasModule", Files = { "AurasModule.lua" } },
+	{ Name = "CrowdControlModule", Key = "CCModule",
+		Files = { "CrowdControl/Display.lua", "CrowdControl/Module.lua" } },
+	{ Name = "AurasModule", Key = "AurasModule", Files = { "Auras/Display.lua", "Auras/Module.lua" } },
 	{ Name = "HealerCrowdControlModule", Key = "HealerCCModule", Files = { "HealerCrowdControlModule.lua" } },
 	{ Name = "PrecogModule", Key = "PrecogModule", Files = { "PrecogModule.lua" } },
 	{ Name = "PortraitModule", Key = "PortraitModule",

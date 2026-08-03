@@ -20,11 +20,13 @@ env.setModuleEnabled("AurasModule", true)
 local ccFrame = env.addUnitFrame("party1", "CUF_CC")
 local fiFrame = env.addUnitFrame("party2", "CUF_FI")
 
-env.loadModule("src/Modules/CrowdControlModule.lua")
+env.loadModule("src/Modules/CrowdControl/Display.lua")
+env.loadModule("src/Modules/CrowdControl/Module.lua")
 local crowdControl = env.addon.Modules.CrowdControlModule
 crowdControl:Init()
 
-env.loadModule("src/Modules/AurasModule.lua")
+env.loadModule("src/Modules/Auras/Display.lua")
+env.loadModule("src/Modules/Auras/Module.lua")
 local aurasModule = env.addon.Modules.AurasModule
 aurasModule:Init()
 

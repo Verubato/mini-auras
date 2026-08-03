@@ -11,22 +11,26 @@ local growAnchors = addon.Core.GrowAnchors
 local kickSlot = addon.Core.KickSlot
 local unitAuraWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
-local eventGate = addon.Core.EventGate
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local wowEx = addon.Utils.WoWEx
+
+addon.Modules.CrowdControl = addon.Modules.CrowdControl or {}
+
+---@class CrowdControlDisplay
+local D = {}
+addon.Modules.CrowdControl.Display = D
+
 -- 12.1 path: CC auras render through an AuraContainer per anchor; the IconSlotContainer is kept
 -- for the kick icon and test-mode icons only (neither reads aura data). TEMPORARY dual path:
 -- remove the watcher branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
----@type EventGate?
-local rosterGate
----@type table?
-local eventsFrame
 local paused = false
 local testModeActive = false
 ---@type Db
 local db
+-- Anchor frame -> the container, display and watcher drawn on it. Owned here: the module asks
+-- for whole-set operations rather than reaching into it.
 ---@type table<table, CrowdControlWatchEntry>
 local watchers = {}
 ---@type TestSpell[]
@@ -40,11 +44,6 @@ local kickSlotScratch = {}
 local function GetOptions()
 	return instanceOptions:IsRaid() and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
 end
-
----@class CrowdControlModule : IModule
-local M = {}
-
-addon.Modules.CrowdControlModule = M
 
 ---@param entry CrowdControlWatchEntry
 local function UpdateWatcherAuras(entry)
@@ -494,28 +493,6 @@ local function OnCufSetUnit(frame, unit)
 	EnsureWatcher(frame, unit)
 end
 
-local function OnFrameSortSorted()
-	M:Refresh()
-end
-
-local function OnEvent(_, event)
-	if event == "GROUP_ROSTER_UPDATE" then
-		-- wait for frame addons (danders/grid) to update
-		C_Timer.After(0, function()
-			M:Refresh()
-		end)
-	elseif event == "UNIT_PET" then
-		-- A pet was summoned/dismissed; refresh so the opt-in pet unit frame containers show/hide
-		-- with it. Only relevant when IncludePetFrame is enabled, so skip the work otherwise.
-		local petOptions = db.Modules.PetCCModule
-		if petOptions and petOptions.IncludePetFrame and moduleUtil:IsModuleEnabled(moduleName.PetCC) then
-			C_Timer.After(0, function()
-				M:Refresh()
-			end)
-		end
-	end
-end
-
 local function RefreshTestIcons()
 	local options = GetOptions()
 
@@ -590,28 +567,6 @@ local function RefreshTestIcons()
 	end
 end
 
-local function Pause()
-	paused = true
-end
-
-local function Resume()
-	paused = false
-end
-
--- Lifecycle
-
----@return boolean
-local function IsEnabled()
-	return moduleUtil:IsModuleEnabled(moduleName.CrowdControl) or moduleUtil:IsModuleEnabled(moduleName.PetCC)
-end
-
----@param active boolean
-local function SetEventsActive(active)
-	-- Events stay unregistered while both features are off; the addon-wide Refresh
-	-- (config, world change, raid flip) re-runs this gate.
-	rosterGate:SetActive(active)
-end
-
 local function Teardown()
 	for _, entry in pairs(watchers) do
 		if entry.Watcher then
@@ -627,7 +582,6 @@ local function Teardown()
 		end
 	end
 end
-
 -- Brings every entry's watcher/display back in line with its feature toggle, then discovers
 -- any unit frames that have appeared since the last refresh.
 local function EnsureFrames()
@@ -648,7 +602,6 @@ local function EnsureFrames()
 
 	EnsureWatchers()
 end
-
 ---Per-entry enabled state and options: pet entries follow the PetCC toggle (plus the
 ---IncludePetFrame opt-in for standalone pet frames), everything else follows the CC toggle.
 ---@param entry CrowdControlWatchEntry
@@ -755,95 +708,66 @@ local function ApplyOptions(options)
 	end
 end
 
--- Live auras are pushed in by the watchers/containers, so only the fake ones rebuild here.
-local function UpdateContent()
-	if testModeActive then
-		RefreshTestIcons()
+-- Public surface
+
+---@return CrowdControlInstanceOptions?
+function D:GetOptions()
+	return db and GetOptions()
+end
+
+---@param value boolean
+function D:SetPaused(value)
+	paused = value
+end
+
+---@param value boolean
+function D:SetTestMode(value)
+	testModeActive = value
+end
+
+---@param anchor table
+---@param unit string?
+function D:EnsureWatcher(anchor, unit)
+	return EnsureWatcher(anchor, unit)
+end
+
+function D:EnsureWatchers()
+	EnsureWatchers()
+end
+
+function D:Teardown()
+	Teardown()
+end
+
+function D:EnsureFrames()
+	EnsureFrames()
+end
+
+---@param options CrowdControlInstanceOptions
+function D:ApplyOptions(options)
+	ApplyOptions(options)
+end
+
+function D:RefreshTestIcons()
+	RefreshTestIcons()
+end
+
+---Blanks and hides every entry's kick/test container, for the test-mode handover.
+function D:ResetAllContainers()
+	for _, entry in pairs(watchers) do
+		entry.Container:ResetAllSlots()
+		entry.Container.Frame:Hide()
 	end
 end
 
----@param active boolean
-local function SetTestMode(active)
-	testModeActive = active
-
-	if active then
-		Pause()
-	else
-		for _, entry in pairs(watchers) do
-			entry.Container:ResetAllSlots()
-			entry.Container.Frame:Hide()
-		end
-		Resume()
-	end
-
-	M:Refresh()
-
-	-- 12.1: repopulate the kick icons the test-mode reset wiped.
-	if not active and USE_AURA_CONTAINERS then
-		for _, entry in pairs(watchers) do
-			UpdateKickIcon(entry)
-		end
+---12.1 path: redraws the kick icons a test-mode reset wiped.
+function D:RefreshKickIcons()
+	for _, entry in pairs(watchers) do
+		UpdateKickIcon(entry)
 	end
 end
 
-local function CreateTestData()
-	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
-	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
-	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
-	testSpells = { kidneyShot, fear, hex }
-end
-
-local function CreateEvents()
-	eventsFrame = CreateFrame("Frame")
-	eventsFrame:SetScript("OnEvent", OnEvent)
-	-- Registered by the Refresh gate while either feature is on. UNIT_PET tracks the player's
-	-- pet being summoned/dismissed so the opt-in pet unit frame containers follow it,
-	-- regardless of which unit-frame addon owns the pet frame.
-	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE", "UNIT_PET" })
-end
-
-local function InstallHooks()
-	if not wowEx:IsDandersEnabled() then
-		if CompactUnitFrame_SetUnit then
-			hooksecurefunc("CompactUnitFrame_SetUnit", OnCufSetUnit)
-		end
-
-		if CompactUnitFrame_UpdateVisible then
-			hooksecurefunc("CompactUnitFrame_UpdateVisible", OnCufUpdateVisible)
-		end
-	end
-
-	local fs = FrameSortApi and FrameSortApi.v3
-	if fs and fs.Sorting and fs.Sorting.RegisterPostSortCallback then
-		fs.Sorting:RegisterPostSortCallback(OnFrameSortSorted)
-	end
-
-	if DandersFrames and DandersFrames.RegisterCallback then
-		DandersFrames.RegisterCallback(eventsFrame, "OnFramesSorted", function()
-			M:Refresh()
-		end)
-	end
-
-	frames:HookCellSpotlightVisibility(function()
-		if IsEnabled() then
-			EnsureWatchers()
-		end
-	end)
-
-	frames:HookNDuiVisibility(function()
-		if IsEnabled() then
-			EnsureWatchers()
-		end
-	end)
-end
-
-local function ApplyInitialState()
-	if moduleUtil:IsModuleEnabled(moduleName.CrowdControl) then
-		EnsureWatchers()
-	end
-end
-
-function M:Hide()
+function D:HideAll()
 	for _, entry in pairs(watchers) do
 		entry.Container.Frame:Hide()
 		if entry.Display then
@@ -852,42 +776,21 @@ function M:Hide()
 	end
 end
 
-function M:StartTesting()
-	SetTestMode(true)
+function D:OnCufUpdateVisible(frame)
+	OnCufUpdateVisible(frame)
 end
 
-function M:StopTesting()
-	SetTestMode(false)
+function D:OnCufSetUnit(frame, unit)
+	OnCufSetUnit(frame, unit)
 end
 
-function M:Refresh()
-	local options = GetOptions()
-
-	if not options then
-		return
-	end
-
-	local isEnabled = IsEnabled()
-
-	SetEventsActive(isEnabled)
-
-	if not isEnabled then
-		Teardown()
-		return
-	end
-
-	EnsureFrames()
-	ApplyOptions(options)
-	UpdateContent(options)
-end
-
-function M:Init()
+function D:Init()
 	db = mini:GetSavedVars()
 
-	CreateTestData()
-	CreateEvents()
-	InstallHooks()
-	ApplyInitialState()
+	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
+	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
+	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
+	testSpells = { kidneyShot, fear, hex }
 end
 
 ---@class CrowdControlWatchEntry

@@ -228,6 +228,14 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Display EnemyCooldownDisplay
 ---@field Module EnemyCooldownTrackerModule
 
+---@class Auras
+---@field Display AurasDisplay
+---@field Module AurasModule
+
+---@class CrowdControl
+---@field Display CrowdControlDisplay
+---@field Module CrowdControlModule
+
 ---@class Alerts
 ---@field Sound AlertsSound
 ---@field Observer AlertsObserver
@@ -266,6 +274,8 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field EnemyCooldowns EnemyCooldowns
 ---@field EnemyKickTracker EnemyKickTracker
 ---@field Alerts Alerts
+---@field Auras Auras
+---@field CrowdControl CrowdControl
 ---@field Nameplates Nameplates
 ---@field Portrait Portrait
 

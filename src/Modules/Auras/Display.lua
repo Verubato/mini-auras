@@ -16,20 +16,23 @@ local moduleName = addon.Utils.ModuleName
 local slotDistribution = addon.Utils.SlotDistribution
 local wowEx = addon.Utils.WoWEx
 local kickTracker = addon.Core.KickTracker
-local eventGate = addon.Core.EventGate
-local duelPoller = addon.Core.DuelPoller
+
+addon.Modules.Auras = addon.Modules.Auras or {}
+
+---@class AurasDisplay
+local D = {}
+addon.Modules.Auras.Display = D
+
 -- 12.1 path: CC + defensive auras render through an AuraContainer per anchor (one group per
 -- category); the IconSlotContainer is kept for the kick icon and test mode. Unlike the legacy
 -- path there is no dynamic slot split between categories (aura counts are unreadable), so each
 -- enabled category gets the full MaxIcons budget. TEMPORARY dual path: remove the watcher
 -- branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
----@type EventGate?
-local rosterGate
----@type table?
-local eventsFrame
 local paused = false
 local testModeActive = false
+-- Anchor frame -> the container, display and watcher drawn on it. Owned here: the module asks
+-- for whole-set operations rather than reaching into it.
 ---@type table<table, AurasWatchEntry>
 local watchers = {}
 ---@type TestSpell[]
@@ -41,6 +44,7 @@ local db
 -- 12.1 scratch: the kick slot options are rebuilt on every kick event, and SetSlot reads them
 -- synchronously and keeps nothing. (The display style uses the wrapper's shared scratch.)
 local kickSlotScratch = {}
+
 
 -- Helpful auras are filtered by spell id alone rather than by Blizzard's category flags. That is
 -- only possible here because the gate on spell-id filters is UnitCanAssist, and this module
@@ -135,11 +139,6 @@ local function GetOptions()
 	end
 	return instanceOptions:IsRaid() and m.Raid or m.Default
 end
-
----@class AurasModule : IModule
-local M = {}
-
-addon.Modules.AurasModule = M
 
 ---@param entry AurasWatchEntry
 local function UpdateWatcherAuras(entry)
@@ -503,18 +502,6 @@ local function OnCufSetUnit(frame, unit)
 	EnsureWatcher(frame, unit)
 end
 
-local function OnFrameSortSorted()
-	M:Refresh()
-end
-
-local function OnEvent(_, event)
-	if event == "GROUP_ROSTER_UPDATE" then
-		C_Timer.After(0, function()
-			M:Refresh()
-		end)
-	end
-end
-
 local function RefreshTestIcons()
 	local options = GetOptions()
 
@@ -611,28 +598,6 @@ local function RefreshTestIcons()
 	end
 end
 
-local function Pause()
-	paused = true
-end
-
-local function Resume()
-	paused = false
-end
-
--- Lifecycle
-
----@return boolean
-local function IsEnabled()
-	return moduleUtil:IsModuleEnabled(moduleName.Auras)
-end
-
----@param active boolean
-local function SetEventsActive(active)
-	-- Events stay unregistered while disabled; the addon-wide Refresh (config, world
-	-- change, raid flip) re-runs this gate.
-	rosterGate:SetActive(active)
-end
-
 local function Teardown()
 	for _, entry in pairs(watchers) do
 		if entry.Watcher then
@@ -666,7 +631,7 @@ local function EnsureFrames()
 	EnsureWatchers()
 end
 
----@param entry AurasWatchEntry
+
 ---@param anchor table
 ---@param options AurasInstanceOptions
 local function ApplyEntryOptions(entry, anchor, options)
@@ -738,38 +703,76 @@ local function ApplyOptions(options)
 	end
 end
 
--- Live auras are pushed in by the watchers/containers, so only the fake ones rebuild here.
-local function UpdateContent()
-	if testModeActive then
-		RefreshTestIcons()
+-- Public surface
+
+---@return AurasInstanceOptions?
+function D:GetOptions()
+	return db and GetOptions()
+end
+
+---@param value boolean
+function D:SetPaused(value)
+	paused = value
+end
+
+---@param value boolean
+function D:SetTestMode(value)
+	testModeActive = value
+end
+
+---@param anchor table
+---@param unit string?
+function D:EnsureWatcher(anchor, unit)
+	return EnsureWatcher(anchor, unit)
+end
+
+function D:EnsureWatchers()
+	EnsureWatchers()
+end
+
+function D:Teardown()
+	Teardown()
+end
+
+function D:EnsureFrames()
+	EnsureFrames()
+end
+
+---@param options AurasInstanceOptions
+function D:ApplyOptions(options)
+	ApplyOptions(options)
+end
+
+function D:RefreshTestIcons()
+	RefreshTestIcons()
+end
+
+---Blanks and hides every entry's kick/test container, for the test-mode handover.
+function D:ResetAllContainers()
+	for _, entry in pairs(watchers) do
+		entry.Container:ResetAllSlots()
+		entry.Container.Frame:Hide()
 	end
 end
 
----@param active boolean
-local function SetTestMode(active)
-	testModeActive = active
-
-	if active then
-		Pause()
-	else
-		for _, entry in pairs(watchers) do
-			entry.Container:ResetAllSlots()
-			entry.Container.Frame:Hide()
-		end
-		Resume()
-	end
-
-	M:Refresh()
-
-	-- 12.1: repopulate the kick icons the test-mode reset wiped.
-	if not active and USE_AURA_CONTAINERS then
-		for _, entry in pairs(watchers) do
-			UpdateKickIcon(entry)
-		end
+---12.1 path: redraws the kick icons a test-mode reset wiped.
+function D:RefreshKickIcons()
+	for _, entry in pairs(watchers) do
+		UpdateKickIcon(entry)
 	end
 end
 
-local function CreateTestData()
+function D:OnCufUpdateVisible(frame)
+	OnCufUpdateVisible(frame)
+end
+
+function D:OnCufSetUnit(frame, unit)
+	OnCufSetUnit(frame, unit)
+end
+
+function D:Init()
+	db = mini:GetSavedVars()
+
 	local painSupp = { SpellId = 33206 }
 	local blessingOfProtection = { SpellId = 1022 }
 	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
@@ -777,101 +780,6 @@ local function CreateTestData()
 	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
 	testDefensiveSpells = { painSupp, blessingOfProtection }
 	testCcSpells = { kidneyShot, fear, hex }
-end
-
-local function CreateEvents()
-	eventsFrame = CreateFrame("Frame")
-	eventsFrame:SetScript("OnEvent", OnEvent)
-	-- Registered by the Refresh gate while the module is enabled.
-	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE" })
-
-	-- A duel flips a party member to hostile with no event of its own, and that decides whether
-	-- the spell-id filter applies at all, so the budgets have to be recomputed when it happens.
-	-- Registered for the module's lifetime; the predicate below gates it.
-	duelPoller:Register(function()
-		return moduleUtil:IsModuleEnabled(moduleName.Auras)
-	end, function()
-		M:Refresh()
-	end)
-end
-
-local function InstallHooks()
-	if not wowEx:IsDandersEnabled() then
-		if CompactUnitFrame_SetUnit then
-			hooksecurefunc("CompactUnitFrame_SetUnit", OnCufSetUnit)
-		end
-
-		if CompactUnitFrame_UpdateVisible then
-			hooksecurefunc("CompactUnitFrame_UpdateVisible", OnCufUpdateVisible)
-		end
-	end
-
-	local fs = FrameSortApi and FrameSortApi.v3
-	if fs and fs.Sorting and fs.Sorting.RegisterPostSortCallback then
-		fs.Sorting:RegisterPostSortCallback(OnFrameSortSorted)
-	end
-
-	if DandersFrames and DandersFrames.RegisterCallback then
-		DandersFrames.RegisterCallback(eventsFrame, "OnFramesSorted", function()
-			M:Refresh()
-		end)
-	end
-
-	frames:HookCellSpotlightVisibility(function()
-		if IsEnabled() then
-			EnsureWatchers()
-		end
-	end)
-
-	frames:HookNDuiVisibility(function()
-		if IsEnabled() then
-			EnsureWatchers()
-		end
-	end)
-end
-
-local function ApplyInitialState()
-	if IsEnabled() then
-		EnsureWatchers()
-	end
-end
-
-function M:StartTesting()
-	SetTestMode(true)
-end
-
-function M:StopTesting()
-	SetTestMode(false)
-end
-
-function M:Refresh()
-	local options = GetOptions()
-
-	if not options then
-		return
-	end
-
-	local isEnabled = IsEnabled()
-
-	SetEventsActive(isEnabled)
-
-	if not isEnabled then
-		Teardown()
-		return
-	end
-
-	EnsureFrames()
-	ApplyOptions(options)
-	UpdateContent(options)
-end
-
-function M:Init()
-	db = mini:GetSavedVars()
-
-	CreateTestData()
-	CreateEvents()
-	InstallHooks()
-	ApplyInitialState()
 end
 
 ---@class AurasWatchEntry
@@ -888,8 +796,3 @@ end
 ---@field ShowImportant boolean 12.1 only: Blizzard-flagged important buffs.
 ---@field ShowCC boolean
 
----@class AurasModule
----@field Init fun(self: AurasModule)
----@field Refresh fun(self: AurasModule)
----@field StartTesting fun(self: AurasModule)
----@field StopTesting fun(self: AurasModule)

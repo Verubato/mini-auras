@@ -76,7 +76,8 @@ Core\Cooldowns\Rules.lua
 Core\Cooldowns\SignatureDetector.lua
 Core\Cooldowns\Brain.lua
 
-Modules\CrowdControlModule.lua
+Modules\CrowdControl\Display.lua
+Modules\CrowdControl\Module.lua
 Modules\HealerCrowdControlModule.lua
 Modules\Portrait\Observer.lua
 Modules\Portrait\Display.lua
@@ -92,7 +93,8 @@ Modules\Nameplates\Module.lua
 Modules\EnemyKickTracker\Observer.lua
 Modules\EnemyKickTracker\Display.lua
 Modules\EnemyKickTracker\Module.lua
-Modules\AurasModule.lua
+Modules\Auras\Display.lua
+Modules\Auras\Module.lua
 Modules\PrecogModule.lua
 Modules\TrinketsModule.lua
 Modules\FriendlyCooldowns\Observer.lua
