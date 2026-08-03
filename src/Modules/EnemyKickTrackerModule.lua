@@ -41,9 +41,9 @@ local worldEventsFrame
 local playerSpecEventsFrame
 local minKickCooldown = 15
 
----@class KickTimerModule : IModule
+---@class EnemyKickTrackerModule : IModule
 local M = {}
-addon.Modules.KickTimerModule = M
+addon.Modules.EnemyKickTrackerModule = M
 
 local function IsArena()
 	local inInstance, instanceType = IsInInstance()
@@ -64,7 +64,7 @@ local function GetPlayerSpecId()
 end
 
 local function CreateFrames()
-	local options = db.Modules.KickTimerModule
+	local options = db.Modules.EnemyKickTrackerModule
 	local iconOptions = options.Icons
 	local size = tonumber(iconOptions.Size) or 50
 	local spacing = options.IconSpacing or 2
@@ -94,7 +94,7 @@ local function CreateFrames()
 	kickBar.Anchor = container.Frame
 end
 
----@param options KickTimerModuleOptions
+---@param options EnemyKickTrackerModuleOptions
 local function ApplyStyle(options)
 	if not kickBar.Container then
 		return
@@ -134,7 +134,7 @@ local function ClearIcons()
 	UpdateKickBarVisibility()
 end
 
----@param options KickTimerModuleOptions
+---@param options EnemyKickTrackerModuleOptions
 local function ApplyLayout(options)
 	local frame = kickBar.Anchor
 
@@ -168,7 +168,7 @@ local function CreateKickEntry(duration, icon)
 	end
 
 	local key = math.random()
-	local iconOptions = db.Modules.KickTimerModule.Icons
+	local iconOptions = db.Modules.EnemyKickTrackerModule.Icons
 
 	kickBar.Container:SetSlot(slotIndex, {
 		Texture = icon,
@@ -391,9 +391,9 @@ end
 
 -- Lifecycle
 
----@return KickTimerModuleOptions?
+---@return EnemyKickTrackerModuleOptions?
 local function GetOptions()
-	return db and db.Modules.KickTimerModule
+	return db and db.Modules.EnemyKickTrackerModule
 end
 
 ---@return boolean
@@ -419,7 +419,7 @@ local function EnsureFrames()
 	CreateFrames()
 end
 
----@param options KickTimerModuleOptions
+---@param options EnemyKickTrackerModuleOptions
 local function ApplyOptions(options)
 	ApplyLayout(options)
 	ApplyStyle(options)
@@ -487,7 +487,7 @@ local function ApplyInitialState()
 	M:Refresh()
 end
 
----@param options KickTimerModuleOptions
+---@param options EnemyKickTrackerModuleOptions
 function M:IsEnabledForPlayer(options)
 	if not options or not options.Enabled then
 		return false

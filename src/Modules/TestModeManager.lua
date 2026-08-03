@@ -8,7 +8,7 @@ local TEST_MODULES = {
 	addon.Modules.PortraitModule,
 	addon.Modules.AlertsModule,
 	addon.Modules.NameplatesModule,
-	addon.Modules.KickTimerModule,
+	addon.Modules.EnemyKickTrackerModule,
 	addon.Modules.FriendlyIndicatorModule,
 	addon.Modules.PrecogModule,
 	addon.Modules.TrinketsModule,

@@ -361,3 +361,33 @@ function M:UpgradeToVersion58(vars)
 	vars.Version = 58
 	return true
 end
+
+function M:UpgradeToVersion59(vars)
+	if vars.Version ~= 58 then return false end
+
+	-- KickTimerModule became EnemyKickTrackerModule when the ally kick tracker arrived and the
+	-- two needed telling apart. Carry the saved settings across rather than letting CleanTable
+	-- drop them as an unknown key.
+	local function MoveOptions(modules)
+		if not modules or not modules.KickTimerModule then
+			return
+		end
+
+		if modules.EnemyKickTrackerModule == nil then
+			modules.EnemyKickTrackerModule = modules.KickTimerModule
+		end
+
+		modules.KickTimerModule = nil
+	end
+
+	MoveOptions(vars.Modules)
+
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			MoveOptions(profile.Modules)
+		end
+	end
+
+	vars.Version = 59
+	return true
+end

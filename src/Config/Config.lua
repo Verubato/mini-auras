@@ -260,11 +260,11 @@ function M:Init()
 			end,
 		},
 		{
-			Key = "KickTimer",
+			Key = "EnemyKickTracker",
 			Title = L["Enemy Kicks_Short"] or L["Enemy Kicks"],
 			Icon = "Interface\\Icons\\Ability_Kick",
 			Build = function(content)
-				M.KickTimer:Build(content)
+				M.EnemyKickTracker:Build(content)
 			end,
 		},
 		{
@@ -430,7 +430,7 @@ end
 ---@field Healer HealerCrowdControlConfig
 ---@field Alerts AlertsConfig
 ---@field Nameplates NameplatesConfig
----@field KickTimer KickTimerConfig
+---@field EnemyKickTracker EnemyKickTrackerConfig
 ---@field Precog PrecogConfig
 ---@field OtherAddons OtherAddonsConfig
 ---@field FriendlyIndicator FriendlyIndicatorConfig

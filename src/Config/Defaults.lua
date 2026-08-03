@@ -6,7 +6,7 @@ local _, addon = ...
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 58,
+	Version = 59,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -366,8 +366,8 @@ local dbDefaults = {
 				},
 			},
 		},
-		---@class KickTimerModuleOptions
-		KickTimerModule = {
+		---@class EnemyKickTrackerModuleOptions
+		EnemyKickTrackerModule = {
 			Enabled = {
 				Always = false,
 				Caster = true,

@@ -5,10 +5,10 @@ local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local config = addon.Config
 
----@class KickTimerConfig
+---@class EnemyKickTrackerConfig
 local M = {}
 
-config.KickTimer = M
+config.EnemyKickTracker = M
 
 function M:Build(panel)
 	local db = mini:GetSavedVars()
@@ -38,10 +38,10 @@ function M:Build(panel)
 		LabelText = L["Healer"],
 		Tooltip = L["Whether to enable or disable this module if you are a healer."],
 		GetValue = function()
-			return db.Modules.KickTimerModule.Enabled.Healer
+			return db.Modules.EnemyKickTrackerModule.Enabled.Healer
 		end,
 		SetValue = function(value)
-			db.Modules.KickTimerModule.Enabled.Healer = value
+			db.Modules.EnemyKickTrackerModule.Enabled.Healer = value
 			config:Apply()
 		end,
 	})
@@ -53,10 +53,10 @@ function M:Build(panel)
 		LabelText = L["Caster"],
 		Tooltip = L["Whether to enable or disable this module if you are a caster."],
 		GetValue = function()
-			return db.Modules.KickTimerModule.Enabled.Caster
+			return db.Modules.EnemyKickTrackerModule.Enabled.Caster
 		end,
 		SetValue = function(value)
-			db.Modules.KickTimerModule.Enabled.Caster = value
+			db.Modules.EnemyKickTrackerModule.Enabled.Caster = value
 			config:Apply()
 		end,
 	})
@@ -69,10 +69,10 @@ function M:Build(panel)
 		LabelText = L["Any"],
 		Tooltip = L["Whether to enable or disable this module regardless of what spec you are."],
 		GetValue = function()
-			return db.Modules.KickTimerModule.Enabled.Always
+			return db.Modules.EnemyKickTrackerModule.Enabled.Always
 		end,
 		SetValue = function(value)
-			db.Modules.KickTimerModule.Enabled.Always = value
+			db.Modules.EnemyKickTrackerModule.Enabled.Always = value
 			config:Apply()
 		end,
 	})
@@ -84,12 +84,12 @@ function M:Build(panel)
 		Parent = panel,
 		LabelText = L["Icon Size"],
 		GetValue = function()
-			return db.Modules.KickTimerModule.Icons.Size
+			return db.Modules.EnemyKickTrackerModule.Icons.Size
 		end,
 		SetValue = function(value)
 			local newValue = mini:ClampInt(value, 20, 120, 50)
-			if db.Modules.KickTimerModule.Icons.Size ~= newValue then
-				db.Modules.KickTimerModule.Icons.Size = newValue
+			if db.Modules.EnemyKickTrackerModule.Icons.Size ~= newValue then
+				db.Modules.EnemyKickTrackerModule.Icons.Size = newValue
 				config:Apply()
 			end
 		end,
@@ -114,12 +114,12 @@ function M:Build(panel)
 		Parent = panel,
 		LabelText = L["Icon Padding"],
 		GetValue = function()
-			return db.Modules.KickTimerModule.IconSpacing or 2
+			return db.Modules.EnemyKickTrackerModule.IconSpacing or 2
 		end,
 		SetValue = function(value)
 			local newValue = mini:ClampInt(value, 0, 20, 2)
-			if db.Modules.KickTimerModule.IconSpacing ~= newValue then
-				db.Modules.KickTimerModule.IconSpacing = newValue
+			if db.Modules.EnemyKickTrackerModule.IconSpacing ~= newValue then
+				db.Modules.EnemyKickTrackerModule.IconSpacing = newValue
 				config:Apply()
 			end
 		end,
@@ -138,11 +138,11 @@ function M:Build(panel)
 		Tooltip = L["Change the colour of the icon's glow and border."],
 		HasOpacity = false,
 		GetValue = function()
-			local color = db.Modules.KickTimerModule.Icons.Color
+			local color = db.Modules.EnemyKickTrackerModule.Icons.Color
 			return color.R, color.G, color.B, color.A
 		end,
 		SetValue = function(r, g, b, a)
-			local color = db.Modules.KickTimerModule.Icons.Color
+			local color = db.Modules.EnemyKickTrackerModule.Icons.Color
 			color.R, color.G, color.B, color.A = r, g, b, a
 			config:Apply()
 		end,
@@ -153,10 +153,10 @@ function M:Build(panel)
 		LabelText = L["Show border"],
 		Tooltip = L["Draw a border around the icons."],
 		GetValue = function()
-			return db.Modules.KickTimerModule.Icons.Border
+			return db.Modules.EnemyKickTrackerModule.Icons.Border
 		end,
 		SetValue = function(value)
-			db.Modules.KickTimerModule.Icons.Border = value
+			db.Modules.EnemyKickTrackerModule.Icons.Border = value
 			config:Apply()
 		end,
 	})

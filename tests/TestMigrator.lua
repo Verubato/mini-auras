@@ -72,7 +72,7 @@ assert(type(LATEST_VERSION) == "number" and LATEST_VERSION >= 55, "sane latest v
 
 local expectedModules = {
 	"CCModule", "PetCCModule", "HealerCCModule", "PortraitModule", "AlertsModule",
-	"NameplatesModule", "KickTimerModule", "TrinketsModule", "FriendlyIndicatorModule",
+	"NameplatesModule", "EnemyKickTrackerModule", "TrinketsModule", "FriendlyIndicatorModule",
 	"PrecogModule", "FriendlyCooldownTrackerModule", "EnemyCooldownTrackerModule",
 }
 
@@ -260,7 +260,7 @@ fw.describe("Migrator - full chain from a v37-era db preserves settings", functi
 		assert(enemy.Bar1.Icons.Spacing == 5 and enemy.Bar2.Icons.Spacing == 5, "nameplate bar padding seeded")
 		assert(cc.Default.IconSpacing == 5 and cc.Raid.IconSpacing == 5, "CC padding seeded")
 		assert(db.Modules.HealerCCModule.IconSpacing == 5, "healer padding seeded")
-		assert(db.Modules.KickTimerModule.IconSpacing == 5, "kick timer padding seeded")
+		assert(db.Modules.EnemyKickTrackerModule.IconSpacing == 5, "kick timer padding seeded")
 	end)
 end)
 
@@ -564,6 +564,20 @@ fw.describe("Migrator - individual migrations", function()
 		assert(migrator:UpgradeToVersion58(vars) == true)
 		assert(vars.Modules.PrecogModule == current, "the newer key wins")
 		assert(vars.Modules.PrecogGuesserModule == nil, "the stale one is cleared either way")
+	end)
+
+	fw.it("v59 moves the kick timer settings onto the renamed module key", function()
+		local kept = { Enabled = { Caster = true }, Icons = { Size = 44 } }
+		local vars = {
+			Version = 58,
+			Modules = { KickTimerModule = kept },
+			Profiles = { Other = { Modules = { KickTimerModule = { Icons = { Size = 20 } } } } },
+		}
+
+		assert(migrator:UpgradeToVersion59(vars) == true)
+		assert(vars.Modules.EnemyKickTrackerModule == kept, "the saved table moves across intact")
+		assert(vars.Modules.KickTimerModule == nil, "and the old key is gone")
+		assert(vars.Profiles.Other.Modules.EnemyKickTrackerModule.Icons.Size == 20, "profiles move too")
 	end)
 
 	fw.it("v57 leaves kicks alone when the CC module is disabled everywhere", function()

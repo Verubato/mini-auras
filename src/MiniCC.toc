@@ -76,7 +76,7 @@ Modules\HealerCrowdControlModule.lua
 Modules\PortraitModule.lua
 Modules\AlertsModule.lua
 Modules\NameplatesModule.lua
-Modules\KickTimerModule.lua
+Modules\EnemyKickTrackerModule.lua
 Modules\FriendlyIndicatorModule.lua
 Modules\PrecogModule.lua
 Modules\TrinketsModule.lua
@@ -108,7 +108,7 @@ Config\CrowdControl.lua
 Config\Healer.lua
 Config\Alerts.lua
 Config\Nameplates.lua
-Config\KickTimer.lua
+Config\EnemyKickTracker.lua
 Config\Precog.lua
 Config\FriendlyIndicator.lua
 Config\FriendlyCooldownTracker.lua

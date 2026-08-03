@@ -19,7 +19,7 @@ local modules = {
 	addon.Modules.PortraitModule,
 	addon.Modules.AlertsModule,
 	addon.Modules.NameplatesModule,
-	addon.Modules.KickTimerModule,
+	addon.Modules.EnemyKickTrackerModule,
 	addon.Modules.FriendlyIndicatorModule,
 	addon.Modules.PrecogModule,
 	addon.Modules.TrinketsModule,
@@ -231,7 +231,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field PortraitModule PortraitModule
 ---@field HealerCrowdControlModule HealerCrowdControlModule
 ---@field NameplatesModule NameplatesModule
----@field KickTimerModule KickTimerModule
+---@field EnemyKickTrackerModule EnemyKickTrackerModule
 ---@field AlertsModule AlertsModule
 ---@field CrowdControlModule CrowdControlModule
 ---@field FriendlyIndicatorModule FriendlyIndicatorModule
