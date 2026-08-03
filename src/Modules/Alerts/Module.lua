@@ -244,7 +244,7 @@ local function SetTestMode(active)
 	if active then
 		SetPaused(true)
 	else
-		display:ResetBars()
+		display:ClearBars()
 		SetPaused(false)
 		ScheduleAuraDataUpdate()
 	end

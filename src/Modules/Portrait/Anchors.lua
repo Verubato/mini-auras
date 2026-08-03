@@ -42,8 +42,9 @@ end
 ---rather than sitting in the container's own laid-out rect.
 ---@param container IconSlotContainer
 ---@param portrait table
----@param inset number
-local function StretchSlotsOverPortrait(container, portrait, inset)
+---@param min number crop coordinate for the left/top edge
+---@param max number crop coordinate for the right/bottom edge
+local function StretchSlotsOverPortrait(container, portrait, min, max)
 	local originalSetSlot = container.SetSlot
 	container.SetSlot = function(self, slotIndex, options)
 		originalSetSlot(self, slotIndex, options)
@@ -52,7 +53,7 @@ local function StretchSlotsOverPortrait(container, portrait, inset)
 			slot.Frame:SetAllPoints(portrait)
 			slot.Container.Frame:SetAllPoints(portrait)
 			slot.Container.Icon:SetAllPoints(portrait)
-			slot.Container.Icon:SetTexCoord(inset, 1 - inset, inset, 1 - inset)
+			slot.Container.Icon:SetTexCoord(min, max, min, max)
 			slot.Container.Cooldown:SetAllPoints(portrait)
 		end
 	end
@@ -360,7 +361,7 @@ local function AttachUUFFrame(unit)
 		or 0
 	container.Frame:SetFrameLevel(portraitLevel + 1)
 
-	StretchSlotsOverPortrait(container, uufPortrait, 0.07)
+	StretchSlotsOverPortrait(container, uufPortrait, 0.07, 0.93)
 
 	RegisterUnitUpdate(unit, watcher, container)
 	display:AddContainer(container)
@@ -387,7 +388,7 @@ local function AttachMSUFFrame(unit)
 		or 0
 	container.Frame:SetFrameLevel(portraitLevel + 10)
 
-	StretchSlotsOverPortrait(container, msufPortrait, 0.07)
+	StretchSlotsOverPortrait(container, msufPortrait, 0.07, 0.93)
 
 	RegisterUnitUpdate(unit, watcher, container)
 	display:AddContainer(container)
@@ -416,7 +417,7 @@ local function AttachEllesmereUIFrame(unit)
 
 	-- EllesmereUI insets its portrait texture with SetTexCoord(0.15, 0.85). Match that on our
 	-- overlay so the CC icon visually fills the same area as the portrait beneath it.
-	StretchSlotsOverPortrait(container, euiPortrait, 0.15)
+	StretchSlotsOverPortrait(container, euiPortrait, 0.15, 0.85)
 
 	RegisterUnitUpdate(unit, watcher, container)
 	display:AddContainer(container)
@@ -443,7 +444,7 @@ local function AttachEQolFrame(unit)
 		or 0
 	container.Frame:SetFrameLevel(portraitLevel + 10)
 
-	StretchSlotsOverPortrait(container, eqolPortrait, 0.07)
+	StretchSlotsOverPortrait(container, eqolPortrait, 0.07, 0.93)
 
 	RegisterUnitUpdate(unit, watcher, container)
 	display:AddContainer(container)

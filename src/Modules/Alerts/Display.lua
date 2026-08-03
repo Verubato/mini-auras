@@ -922,14 +922,21 @@ function D:Render(watchers)
 	end
 end
 
----Blanks both bars and forgets the alert-transition state, for the prep room and for teardown.
-function D:ResetBars()
+---Blanks both bars, leaving the alert-transition state alone: the auras that were up before
+---test mode are not new, and forgetting that would fire a sound for every one of them.
+function D:ClearBars()
 	if container then
 		container:ResetAllSlots()
 	end
 	if importantContainer then
 		importantContainer:ResetAllSlots()
 	end
+end
+
+---Blanks both bars AND forgets the alert-transition state, for the prep room and for teardown -
+---both of which end with nothing tracked, so the next aura seen genuinely is new.
+function D:ResetBars()
+	self:ClearBars()
 	hadDefensiveAlerts = false
 	hadImportantAlerts = false
 	previousDefensiveAuras = {}
