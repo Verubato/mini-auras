@@ -223,8 +223,8 @@ L:RegisterLocale("koKR", {
 	["Text Size"] = "텍스트 크기",
 
 	-- Kick Timer tab
-	["Kick timer"] = "차단 타이머",
-	["Kick timer_Short"] = "차단",
+	["Enemy Kicks"] = "적 차단",
+	["Enemy Kicks_Short"] = "적 차단",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "해제 유형에 따라 발광/테두리 색상을 변경합니다 (예: 마법은 파란색, 물리는 빨간색).",

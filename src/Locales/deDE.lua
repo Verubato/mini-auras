@@ -223,8 +223,8 @@ L:RegisterLocale("deDE", {
 	["Text Size"] = "Textgröße",
 
 	-- Kick Timer tab
-	["Kick timer"] = "Unterbrechungs-Timer",
-	["Kick timer_Short"] = "Unterbr.",
+	["Enemy Kicks"] = "Gegnerische Unterbrechungen",
+	["Enemy Kicks_Short"] = "Gegn. Unterbr.",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Ändere die Farbe des Leuchtens/Rahmens basierend auf dem Banntyp (z.B. blau für Magie, rot für physisch).",

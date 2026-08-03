@@ -261,7 +261,7 @@ function M:Init()
 		},
 		{
 			Key = "KickTimer",
-			Title = L["Kick timer_Short"] or L["Kick timer"],
+			Title = L["Enemy Kicks_Short"] or L["Enemy Kicks"],
 			Icon = "Interface\\Icons\\Ability_Kick",
 			Build = function(content)
 				M.KickTimer:Build(content)

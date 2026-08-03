@@ -224,8 +224,8 @@ L:RegisterLocale("esMX", {
 	["Text Size"] = "Tamaño de texto",
 
 	-- Kick Timer tab
-	["Kick timer"] = "Temporizador de interrupción",
-	["Kick timer_Short"] = "Interrup.",
+	["Enemy Kicks"] = "Interrupciones enemigas",
+	["Enemy Kicks_Short"] = "Interr. enemigas",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Cambia el color del brillo/borde según el tipo de disipación (ej. azul para magia, rojo para físico).",

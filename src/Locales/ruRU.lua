@@ -224,8 +224,8 @@ L:RegisterLocale("ruRU", {
 	["Text Size"] = "Размер текста",
 
 	-- Kick Timer tab
-	["Kick timer"] = "Таймер прерывания",
-	["Kick timer_Short"] = "Прерыв.",
+	["Enemy Kicks"] = "Прерывания врагов",
+	["Enemy Kicks_Short"] = "Прерыв. врагов",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Изменить цвет свечения/границы в зависимости от типа рассеивания (напр. синий для магии, красный для физического).",

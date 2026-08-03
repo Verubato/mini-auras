@@ -224,8 +224,8 @@ L:RegisterLocale("zhTW", {
 	["Text Size"] = "文字大小",
 
 	-- Kick Timer tab
-	["Kick timer"] = "斷法計時器",
-	["Kick timer_Short"] = "打斷",
+	["Enemy Kicks"] = "敵方打斷",
+	["Enemy Kicks_Short"] = "敵方打斷",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "根據驅散類型更改發光/邊框的顏色（例如，魔法為藍色，物理為紅色）。",

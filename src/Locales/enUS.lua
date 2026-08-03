@@ -226,8 +226,8 @@ L:SetDefaultStrings({
 
 	-- Kick Timer tab
 	["As of 12.0.5, the caster of an interrupt can no longer be identified. This module now just displays a generic icon using the shortest known enemy kick cooldown."] = "As of 12.0.5, the caster of an interrupt can no longer be identified. This module now just displays a generic icon using the shortest known enemy kick cooldown.",
-	["Kick timer"] = "Kick timer",
-	["Kick timer_Short"] = "Kick Timer",
+	["Enemy Kicks"] = "Enemy Kicks",
+	["Enemy Kicks_Short"] = "Enemy Kicks",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical).",

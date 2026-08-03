@@ -224,8 +224,8 @@ L:RegisterLocale("frFR", {
 
 	-- Kick Timer tab
 	["As of 12.0.5, the caster of an interrupt can no longer be identified. This module now just displays a generic icon using the shortest known enemy kick cooldown."] = "Depuis la 12.0.5, l'auteur d'une interruption ne peut plus être identifié. Ce module affiche désormais une icône générique basée sur le CD de kick ennemi le plus court.",
-	["Kick timer"] = "Chrono de kick",
-	["Kick timer_Short"] = "Kicks",
+	["Enemy Kicks"] = "Interruptions ennemies",
+	["Enemy Kicks_Short"] = "Interr. ennemies",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Colore la lueur/bordure selon le type de dissipation (ex. bleu pour magie, rouge pour physique).",

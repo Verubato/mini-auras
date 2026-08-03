@@ -223,8 +223,8 @@ L:RegisterLocale("itIT", {
 	["Text Size"] = "Dimensione testo",
 
 	-- Kick Timer tab
-	["Kick timer"] = "Timer interruzione",
-	["Kick timer_Short"] = "Interr.",
+	["Enemy Kicks"] = "Interruzioni nemiche",
+	["Enemy Kicks_Short"] = "Interr. nemiche",
 
 	-- Nameplates tab
 	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Cambia il colore del bagliore/bordo in base al tipo di dissipazione (ad es. blu per magia, rosso per fisico).",
