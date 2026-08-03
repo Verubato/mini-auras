@@ -233,6 +233,12 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Display EnemyKickTrackerDisplay
 ---@field Module EnemyKickTrackerModule
 
+---@class Portrait
+---@field Observer PortraitObserver
+---@field Display PortraitDisplay
+---@field Anchors PortraitAnchors
+---@field Module PortraitModule
+
 ---@class Modules
 ---@field TestModeManager TestModeManager
 ---@field PortraitModule PortraitModule
@@ -248,6 +254,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field FriendlyCooldowns FriendlyCooldowns
 ---@field EnemyCooldowns EnemyCooldowns
 ---@field EnemyKickTracker EnemyKickTracker
+---@field Portrait Portrait
 
 ---@class IModule
 ---@field Init fun(self: IModule) Initialises the module to be ready for use.

@@ -78,7 +78,10 @@ Core\Cooldowns\Brain.lua
 
 Modules\CrowdControlModule.lua
 Modules\HealerCrowdControlModule.lua
-Modules\PortraitModule.lua
+Modules\Portrait\Observer.lua
+Modules\Portrait\Display.lua
+Modules\Portrait\Anchors.lua
+Modules\Portrait\Module.lua
 Modules\AlertsModule.lua
 Modules\NameplatesModule.lua
 Modules\EnemyKickTracker\Observer.lua

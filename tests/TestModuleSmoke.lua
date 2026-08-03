@@ -38,19 +38,22 @@ env.healers.party2 = true
 -- initialised; the event frame each one registers is captured before the next load so the plate
 -- events can be driven per module.
 local MODULES = {
-	{ Name = "CrowdControlModule", Key = "CCModule" },
-	{ Name = "AurasModule", Key = "AurasModule" },
-	{ Name = "HealerCrowdControlModule", Key = "HealerCCModule" },
-	{ Name = "PrecogModule", Key = "PrecogModule" },
-	{ Name = "PortraitModule", Key = "PortraitModule" },
-	{ Name = "NameplatesModule", Key = "NameplatesModule" },
-	{ Name = "AlertsModule", Key = "AlertsModule" },
+	{ Name = "CrowdControlModule", Key = "CCModule", Files = { "CrowdControlModule.lua" } },
+	{ Name = "AurasModule", Key = "AurasModule", Files = { "AurasModule.lua" } },
+	{ Name = "HealerCrowdControlModule", Key = "HealerCCModule", Files = { "HealerCrowdControlModule.lua" } },
+	{ Name = "PrecogModule", Key = "PrecogModule", Files = { "PrecogModule.lua" } },
+	{ Name = "PortraitModule", Key = "PortraitModule",
+		Files = { "Portrait/Observer.lua", "Portrait/Display.lua", "Portrait/Anchors.lua", "Portrait/Module.lua" } },
+	{ Name = "NameplatesModule", Key = "NameplatesModule", Files = { "NameplatesModule.lua" } },
+	{ Name = "AlertsModule", Key = "AlertsModule", Files = { "AlertsModule.lua" } },
 }
 
 local modules = {}
 for _, spec in ipairs(MODULES) do
 	env.setModuleEnabled(spec.Key, true)
-	env.loadModule("src/Modules/" .. spec.Name .. ".lua")
+	for _, file in ipairs(spec.Files) do
+		env.loadModule("src/Modules/" .. file)
+	end
 	local module = assert(env.addon.Modules[spec.Name], "module " .. spec.Name .. " did not register")
 	module:Init()
 	modules[#modules + 1] = { Name = spec.Name, Key = spec.Key, Module = module }

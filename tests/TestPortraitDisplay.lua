@@ -35,7 +35,10 @@ for _, spec in ipairs({
 	_G[spec.Global] = frame
 end
 
-env.loadModule("src/Modules/PortraitModule.lua")
+env.loadModule("src/Modules/Portrait/Observer.lua")
+env.loadModule("src/Modules/Portrait/Display.lua")
+env.loadModule("src/Modules/Portrait/Anchors.lua")
+env.loadModule("src/Modules/Portrait/Module.lua")
 local module = env.addon.Modules.PortraitModule
 module:Init()
 
