@@ -5,7 +5,14 @@
 --
 -- Requirements: Lua 5.1 or later.
 
-package.path = "tests/Helpers/?.lua;tests/?.lua;" .. package.path
+-- The shared harness (test framework, WoW mock, TOC loader) lives in the build submodule, so
+-- a fresh clone needs `git submodule update --init` first.
+package.path = "build/Lua/?.lua;tests/Helpers/?.lua;tests/?.lua;" .. package.path
+
+-- Required up front, before any test file has put an addon global into _G: the mock snapshots
+-- the globals that exist when it loads and treats everything added afterwards as an addon's,
+-- clearing it whenever it installs a fresh client.
+require("WowMock")
 
 io.write("MiniCC - unit tests\n")
 io.write("======================================\n")
@@ -47,6 +54,10 @@ local testFiles = {
     "tests/Modules/TestAlertsBars.lua",
     "tests/Modules/TestPortraitDisplay.lua",
     "tests/Modules/TestUnitFrameRetarget.lua",
+
+    -- Whole addon, loaded from the TOC into the shared mocked client. Last, because the shared
+    -- mock replaces the WoW globals the narrower helpers above install.
+    "tests/TestSmoke.lua",
 }
 
 local loadErrors = {}
