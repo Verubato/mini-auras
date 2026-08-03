@@ -42,8 +42,13 @@ local SILENT_ALERT_SPELL_IDS = {
 	[8178] = true, -- Grounding Totem
 }
 
-local IMPORTANT_GLOW_COLOR = { 1, 0.2, 0.2, r = 1, g = 0.2, b = 0.2, a = 1 }
-local DEFENSIVE_GLOW_COLOR = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
+local DEFAULT_IMPORTANT_GLOW_COLOR = { R = 1, G = 0.2, B = 0.2 }
+local DEFAULT_DEFENSIVE_GLOW_COLOR = { R = 0.2, G = 1, B = 0.2 }
+-- Refilled from the options rather than reallocated, since the 12.1 groups hold onto these
+-- tables. Both shapes are needed: the array part is what AuraContainerDisplay reads, the r/g/b
+-- keys are what the legacy IconSlotContainer takes for the test icons.
+local importantGlowColor = { 1, 0.2, 0.2, r = 1, g = 0.2, b = 0.2, a = 1 }
+local defensiveGlowColor = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
 local testModeActive = false
 local paused = false
 local inPrepRoom = false
@@ -571,18 +576,35 @@ local function ScheduleAuraDataUpdate()
 	end)
 end
 
----The per-category glow tints in force, or nil when the option is off. 12.1 only: the legacy
----live path colours by class instead, and the option is hidden there.
+---Copies a configured colour into one of the tint tables, in both shapes the render paths read.
+---@param target table
+---@param color table? the saved {R, G, B} option
+---@param default table
+---@return table target
+local function FillGlowColor(target, color, default)
+	local r = (color and color.R) or default.R
+	local g = (color and color.G) or default.G
+	local b = (color and color.B) or default.B
+
+	target[1], target[2], target[3] = r, g, b
+	target.r, target.g, target.b = r, g, b
+
+	return target
+end
+
+---The per-category glow tints in force, or nil when the glow itself is off. 12.1 only: the
+---legacy live path colours by class instead, and the pickers are hidden there.
 ---@return table? importantColor
 ---@return table? defensiveColor
 local function AlertGlowColors()
 	local icons = db and db.Modules.AlertsModule.Icons
 
-	if not (USE_AURA_CONTAINERS and icons and icons.Glow and icons.GlowColorByCategory) then
+	if not (USE_AURA_CONTAINERS and icons and icons.Glow) then
 		return nil, nil
 	end
 
-	return IMPORTANT_GLOW_COLOR, DEFENSIVE_GLOW_COLOR
+	return FillGlowColor(importantGlowColor, icons.ImportantColor, DEFAULT_IMPORTANT_GLOW_COLOR),
+		FillGlowColor(defensiveGlowColor, icons.DefensiveColor, DEFAULT_DEFENSIVE_GLOW_COLOR)
 end
 
 local function RefreshTestAlerts()
@@ -1119,13 +1141,16 @@ end
 local function AlertPairSignature()
 	local options = db and db.Modules.AlertsModule
 	local icons = options and options.Icons
+	-- The tints are baked into each group at creation, so a picker change has to rebuild.
+	local importantColor, defensiveColor = AlertGlowColors()
 
 	return auraContainerDisplay:GetStyleSignature(
 		AlertStyle(),
 		(icons and icons.Size) or DEFAULT_PAIR_SIZE,
 		(options and options.IconSpacing) or DEFAULT_PAIR_SPACING
 	) .. ":" .. tostring(icons and icons.MaxIcons)
-		.. ":" .. tostring(icons and icons.GlowColorByCategory)
+		.. ":" .. (importantColor and table.concat(importantColor, ",", 1, 3) or "-")
+		.. ":" .. (defensiveColor and table.concat(defensiveColor, ",", 1, 3) or "-")
 end
 
 -- 12.1 path: parks a display pair (both displays stay parented to UIParent).

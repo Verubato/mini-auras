@@ -240,8 +240,9 @@ local dbDefaults = {
 				Enabled = true,
 				Size = 50,
 				Glow = true,
-				-- Tint the glow by category: red for important enemy buffs, green for defensives.
-				GlowColorByCategory = false,
+				-- Per-category glow tints (12.1 only; the legacy path colours by class instead).
+				ImportantColor = { R = 1, G = 0.2, B = 0.2, A = 1 },
+				DefensiveColor = { R = 0.2, G = 1, B = 0.2, A = 1 },
 				ReverseCooldown = true,
 				ColorByClass = true,
 				MaxIcons = 8,

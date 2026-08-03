@@ -69,26 +69,53 @@ local function BuildSettingsTab(parent, options)
 	glowChk:SetPoint("TOPLEFT", iconsEnabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	-- 12.1 draws these icons through AuraContainers, where the unit's identity - and so
-	-- UnitClass - is secret, so the glow/border can't be class coloured. Colouring by category
-	-- is what it can do instead, since each category is its own aura group. Only one of the two
-	-- is ever offered, and both sit in the same column.
-	local glowColorChk
+	-- UnitClass - is secret, so the glow/border can't be class coloured. Each category is its own
+	-- aura group there, so a tint per category is what it can do instead. Only one of the two
+	-- schemes is ever offered, and both start in the same column as the glow checkbox.
+	local nextGlowColumn = 1
 
 	if USE_AURA_CONTAINERS then
-		glowColorChk = mini:Checkbox({
+		---Places a swatch in the next free column of the glow row, centred on the checkboxes.
+		local function PlaceSwatch(swatch)
+			swatch:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * nextGlowColumn, 0)
+			swatch:SetPoint("TOP", glowChk, "TOP", 0,
+				-math.floor((glowChk:GetHeight() - swatch:GetHeight()) / 2))
+			nextGlowColumn = nextGlowColumn + 1
+		end
+
+		PlaceSwatch(mini:ColorSwatch({
 			Parent = parent,
-			LabelText = L["Colour by category"],
-			Tooltip = L["Color the glow red for important enemy buffs and green for defensives."],
+			LabelText = L["Important"],
+			Tooltip = L["Change the colour of the glow on important enemy spells."],
+			HasOpacity = false,
 			GetValue = function()
-				return options.Icons.GlowColorByCategory
+				local color = options.Icons.ImportantColor
+				return color.R, color.G, color.B, color.A
 			end,
-			SetValue = function(value)
-				options.Icons.GlowColorByCategory = value
+			SetValue = function(r, g, b, a)
+				local color = options.Icons.ImportantColor
+				color.R, color.G, color.B, color.A = r, g, b, a
 				config:Apply()
 			end,
-		})
+		}))
+
+		PlaceSwatch(mini:ColorSwatch({
+			Parent = parent,
+			LabelText = L["Defensive"],
+			Tooltip = L["Change the colour of the glow on defensive spells."],
+			HasOpacity = false,
+			GetValue = function()
+				local color = options.Icons.DefensiveColor
+				return color.R, color.G, color.B, color.A
+			end,
+			SetValue = function(r, g, b, a)
+				local color = options.Icons.DefensiveColor
+				color.R, color.G, color.B, color.A = r, g, b, a
+				config:Apply()
+			end,
+		}))
 	else
-		glowColorChk = mini:Checkbox({
+		local colorByClassChk = mini:Checkbox({
 			Parent = parent,
 			LabelText = L["Color by class"],
 			Tooltip = L["Color the glow/border by the enemy's class color."],
@@ -100,10 +127,11 @@ local function BuildSettingsTab(parent, options)
 				config:Apply()
 			end,
 		})
-	end
 
-	glowColorChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
-	glowColorChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+		colorByClassChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * nextGlowColumn, 0)
+		colorByClassChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+		nextGlowColumn = nextGlowColumn + 1
+	end
 
 	local reverseChk = mini:Checkbox({
 		Parent = parent,
@@ -118,7 +146,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
+	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * nextGlowColumn, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local showTooltipsChk = mini:Checkbox({
