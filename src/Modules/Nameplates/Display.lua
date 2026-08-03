@@ -4,21 +4,23 @@ local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
 local units = addon.Utils.Units
 local auras = addon.Utils.Auras
-local unitWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
 local growAnchors = addon.Core.GrowAnchors
 local kickSlot = addon.Core.KickSlot
-local eventGate = addon.Core.EventGate
-local duelPoller = addon.Core.DuelPoller
-local moduleUtil = addon.Utils.ModuleUtil
-local moduleName = addon.Utils.ModuleName
 local slotDistribution = addon.Utils.SlotDistribution
 local mathMin = math.min
 local GetTime = GetTime
 local C_NamePlate = C_NamePlate
+
+addon.Modules.Nameplates = addon.Modules.Nameplates or {}
+
+---@class NameplatesDisplay
+local D = {}
+addon.Modules.Nameplates.Display = D
+
 -- 12.1 path: each bar gets its own AuraContainer per nameplate token (reparented to the plate
 -- and retargeted with SetUnit as plates come and go) with one group per category; the bar's
 -- IconSlotContainer is kept for the kick icon and test icons. The
@@ -28,24 +30,15 @@ local C_NamePlate = C_NamePlate
 -- category colours (ColorByCategory maps to dispel-type colouring). TEMPORARY dual path:
 -- remove the watcher branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
-local testModeActive = false
-local paused = false
----@type EventGate?
-local plateGate
+
 ---@type Db
 local db
 ---@type table
 local nmModule
+local testModeActive = false
+local paused = false
 ---@type table<string, NameplateData>
 local nameplateAnchors = {}
----@type table<string, Watcher>
-local watchers = {}
--- Duel detection: no event fires when a friendly unit turns attackable at duel start (or back
--- at duel end), so the shared DuelPoller re-registers plates whose enemy status flips
--- (GetUnitOptions switches between Friendly and Enemy for the same token). Baselines are
--- seeded on plate add and cleared on plate remove.
----@type DuelPollerSubscriber
-local duelSub
 
 local TEST_CC_NAMEPLATE_SPELL_IDS = {
 	408, -- kidney shot
@@ -75,21 +68,6 @@ local TEST_CC_DISPEL_COLORS = {
 local DEFENSIVE_COLOR = { r = 0.0, g = 0.8, b = 0.0 } -- Green
 local IMPORTANT_COLOR = { r = 0.9, g = 0.1, b = 0.1 } -- Red
 
-local previousFriendlyEnabled = {
-	Bar1 = false,
-	Bar2 = false,
-}
-local previousEnemyEnabled = {
-	Bar1 = false,
-	Bar2 = false,
-}
-local previousPetEnabled = {
-	Friendly = false,
-	Enemy = false,
-}
-local previousModuleEnabled = { Always = false, Arena = false, BattleGrounds = false, PvE = false }
-local previousImportantNeeded = false
-
 -- Reusable scratch table for SetSlot calls.
 -- This avoids creating a new table on every aura update for every nameplate slot,
 -- which significantly reduces garbage collection pressure.
@@ -100,14 +78,9 @@ local EMPTY = {}
 
 local importantDisplayScratch = {}
 local importantEntryPool = {}
-local hookedAuraFrames = {}
 -- AuraInstanceIDs already shown as defensives this update, excluded from the important set so a
--- both-important-and-defensive aura isn't drawn twice. Rebuilt per unit in OnAuraDataChanged.
+-- both-important-and-defensive aura isn't drawn twice. Rebuilt per unit in RenderUnit.
 local importantSkipScratch = {}
-
----@class NameplatesModule : IModule
-local M = {}
-addon.Modules.NameplatesModule = M
 
 local NAMEPLATE_BAR1_KEY = addonName .. "_Bar1Container"
 local NAMEPLATE_BAR2_KEY = addonName .. "_Bar2Container"
@@ -148,30 +121,6 @@ local DEFAULT_BAR_ICONS = 5
 local DEFAULT_BAR_SIZE = 35
 local DEFAULT_BAR_SPACING = 2
 
-local function ImportantNeeded()
-	local enemy = nmModule.Enemy
-	local friendly = nmModule.Friendly
-	return (enemy.Bar1.Enabled and enemy.Bar1.ShowImportant)
-		or (enemy.Bar2.Enabled and enemy.Bar2.ShowImportant)
-		or (friendly.Bar1.Enabled and friendly.Bar1.ShowImportant)
-		or (friendly.Bar2.Enabled and friendly.Bar2.ShowImportant)
-		or false
-end
-
-local function GetCCSortOptions()
-	if db.CCNativeOrder then
-		return Enum.UnitAuraSortRule.Default, Enum.UnitAuraSortDirection.Normal
-	end
-	return Enum.UnitAuraSortRule.Unsorted, Enum.UnitAuraSortDirection.Reverse
-end
-
----@return string point
----@return string relativeToPoint
-local function GetAnchorPoint(unitToken, containerType)
-	local config = M:GetUnitOptions(unitToken)
-	return growAnchors:GetAnchor(config[containerType].Grow)
-end
-
 ---@param container IconSlotContainer?
 local function HideAndReset(container)
 	if not container then
@@ -181,12 +130,6 @@ local function HideAndReset(container)
 	container.Frame:Hide()
 end
 
----@param container IconSlotContainer
----@param nameplate table
----@param anchorPoint string
----@param relativeToPoint string
----@param offsetX number
----@param offsetY number
 ---Returns the effective anchor frame for a nameplate.
 ---For ThreatPlates, anchors to TPFrame (or its GetAnchor result) so that
 ---icons scale and move with TP's target-highlight scaling, not the raw base frame.
@@ -355,31 +298,6 @@ local function EnsureBarDisplay(data, bar, barOptions)
 	return display
 end
 
----12.1 path: releases a tracked plate's pooled displays (and its kick timer). Used when the
----plate goes away AND when tracking stops for other reasons (module/pet options turning off
----for an already-tracked token) so displays never linger active outside the pool.
----@param data NameplateData?
-local function ReleaseDataDisplays(data)
-	if not data then
-		return
-	end
-
-	if data.KickTimer then
-		data.KickTimer:Cancel()
-		data.KickTimer = nil
-	end
-	-- Parked, not discarded: the cache keeps them for when this token comes back, since a
-	-- rebuild per plate spawn would grow frames forever.
-	if data.Bar1Display then
-		ResetBarDisplay(data.Bar1Display)
-		data.Bar1Display = nil
-	end
-	if data.Bar2Display then
-		ResetBarDisplay(data.Bar2Display)
-		data.Bar2Display = nil
-	end
-end
-
 ---12.1 path: acquires/reconfigures displays for every enabled bar on a tracked plate and
 ---releases displays of bars that are now disabled.
 ---@param data NameplateData
@@ -415,7 +333,7 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 			local maxIcons = barOptions.Icons.MaxIcons or 5
 			local offsetX = barOptions.Offset.X or 0
 			local offsetY = barOptions.Offset.Y or 0
-			local anchorPoint, relativeToPoint = GetAnchorPoint(unitToken, bar.Key)
+			local anchorPoint, relativeToPoint = growAnchors:GetAnchor(barOptions.Grow)
 
 			local container = nameplate[bar.ContainerKey]
 			if not container then
@@ -445,52 +363,6 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 	end
 
 	return bar1Container, bar2Container
-end
-
----12.1 path: renders the kick icon into each ShowCC bar's kick container (slot 1) and re-anchors
----the aura displays around it. Schedules a follow-up when the kick expires, since no aura event
----will fire to clear it.
----@param data NameplateData
-local function UpdateNameplateKick(data)
-	if paused or testModeActive then
-		return
-	end
-
-	local unitOptions = M:GetUnitOptions(data.UnitToken)
-	local kickEntry = kickTracker:GetKick(data.UnitToken)
-
-	for _, bar in ipairs(BARS) do
-		local barOptions = unitOptions[bar.Key]
-		local container = data[bar.DataField]
-		if barOptions and barOptions.Enabled and container then
-			if barOptions.ShowCC and kickEntry then
-				layerScratch.Texture = kickEntry.Texture
-				layerScratch.DurationObject = kickEntry.DurationObject
-				layerScratch.Alpha = true
-				layerScratch.Glow = barOptions.Icons.Glow
-				layerScratch.ReverseCooldown = barOptions.Icons.ReverseCooldown
-				layerScratch.ShowMilliseconds = barOptions.Icons.ShowMilliseconds
-				layerScratch.FontScale = db.FontScale
-				layerScratch.Color = barOptions.Icons.ColorByCategory and kickEntry.Color or nil
-				layerScratch.SpellId = nil
-				container:SetSlot(1, layerScratch)
-			else
-				container:SetSlotUnused(1)
-			end
-
-			local display = data[bar.DisplayField]
-			if display then
-				AnchorBarDisplay(display, container, data.Nameplate, barOptions, barOptions.ShowCC and kickEntry ~= nil)
-			end
-		end
-	end
-
-	-- One timer for the plate: the icon is written into every enabled bar above, but they all
-	-- clear at the same moment.
-	data.KickTimer = kickSlot:ScheduleExpiry(kickEntry, data.KickTimer, function()
-		data.KickTimer = nil
-		UpdateNameplateKick(data)
-	end)
 end
 
 local function GetNameplateBuffList(nameplate)
@@ -680,73 +552,6 @@ local function ApplyBarToNameplate(container, barOptions, watcher, data)
 	end
 end
 
-local function OnAuraDataChanged(unitToken)
-	if paused or not unitToken then
-		return
-	end
-
-	local data = nameplateAnchors[unitToken]
-	if not data then
-		return
-	end
-
-	local watcher = watchers[unitToken]
-	if not watcher then
-		return
-	end
-
-	-- Fetch once and pass down to avoid each Apply function re-traversing the db path
-	local unitOptions = M:GetUnitOptions(unitToken)
-
-	-- BUGFIX (duels): If GetUnitOptions() switches between Friendly and Enemy for the
-	-- same unitToken (e.g. duel starts), the cached container references may be nil
-	-- for the now-active options. Rebuild lazily so aura data isn't silently dropped.
-	local needRebuild = false
-	for _, bar in ipairs(BARS) do
-		local barOptions = unitOptions[bar.Key]
-		if barOptions and barOptions.Enabled and not data[bar.DataField] then
-			needRebuild = true
-		end
-	end
-
-	if needRebuild then
-		local nameplate = data.Nameplate or C_NamePlate.GetNamePlateForUnit(unitToken)
-		if nameplate then
-			local bar1Container, bar2Container =
-				EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
-			data.Bar1Container = bar1Container
-			data.Bar2Container = bar2Container
-		end
-	end
-
-	-- Dedup: an aura can be both a defensive and an "important" buff. When any enabled bar shows
-	-- defensives, exclude those auras (by AuraInstanceID) from the important set on every bar so the
-	-- same icon isn't drawn twice (defensives win - they carry the real category/duration tracking).
-	wipe(importantSkipScratch)
-	local anyDefensives, anyImportant = false, false
-	for _, bar in ipairs(BARS) do
-		local barOptions = unitOptions[bar.Key]
-		if barOptions and barOptions.Enabled then
-			anyDefensives = anyDefensives or barOptions.ShowDefensives
-			anyImportant = anyImportant or barOptions.ShowImportant
-		end
-	end
-	if anyDefensives and anyImportant then
-		for _, d in ipairs(watcher:GetDefensiveState()) do
-			if d.AuraInstanceID then
-				importantSkipScratch[d.AuraInstanceID] = true
-			end
-		end
-	end
-
-	for _, bar in ipairs(BARS) do
-		local barOptions = unitOptions[bar.Key]
-		if barOptions and barOptions.Enabled then
-			ApplyBarToNameplate(data[bar.DataField], barOptions, watcher, data)
-		end
-	end
-end
-
 ---Shows test icons for one bar: CC test spells when the bar has ShowCC, defensive test spells
 ---when it has ShowDefensives, using the same CC-priority slot distribution as the live path.
 local function ShowBarTestIcons(container, barOptions, now)
@@ -835,111 +640,99 @@ local function ShowBarTestIcons(container, barOptions, now)
 	end
 end
 
-local function OnNamePlateRemoved(unitToken)
-	-- Clear before the early return: friendly plates have a poll baseline but no anchor data.
-	duelSub:Clear(unitToken)
-
-	local data = nameplateAnchors[unitToken]
-	if not data then
-		return
-	end
-
-	HideAndReset(data.Bar1Container)
-	HideAndReset(data.Bar2Container)
-
-	-- 12.1: park this plate's displays; the per-token cache keeps them for its return.
-	if USE_AURA_CONTAINERS then
-		ReleaseDataDisplays(data)
-	end
-
-	-- Dispose of watcher
-	if watchers[unitToken] then
-		watchers[unitToken]:Dispose()
-		watchers[unitToken] = nil
-	end
-
-	kickTracker:Unwatch(unitToken)
-
-	-- Remove all data for this unit token
-	nameplateAnchors[unitToken] = nil
-end
-
-local function HookNameplateAuraFrame(nameplate)
-	local uf = nameplate and nameplate.UnitFrame
-	local af = uf and uf.AurasFrame
-	if af and af.RefreshAuras and not hookedAuraFrames[af] then
-		hookedAuraFrames[af] = true
-		hooksecurefunc(af, "RefreshAuras", function(self)
-			if self.IsForbidden and self:IsForbidden() then
-				return
-			end
-			local parent = self:GetParent()
-			local u = parent and parent.unit
-			if u and ImportantNeeded() and nameplateAnchors[u] and watchers[u] then
-				OnAuraDataChanged(u)
-			end
-		end)
+---@param data NameplateData
+local function ShowDataTestIcons(data, now)
+	local options = D:GetUnitOptions(data.UnitToken)
+	for _, bar in ipairs(BARS) do
+		local barOptions = options[bar.Key]
+		if barOptions and barOptions.Enabled and data[bar.DataField] then
+			ShowBarTestIcons(data[bar.DataField], barOptions, now)
+		end
 	end
 end
 
-local function OnNamePlateAdded(unitToken)
-	local nameplate = C_NamePlate.GetNamePlateForUnit(unitToken)
-	if not nameplate then
-		return
+-- Public surface
+
+function D:Init()
+	db = mini:GetSavedVars()
+	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> NameplatesModule
+	nmModule = db.Modules.NameplatesModule
+end
+
+---@return NameplatesModuleOptions?
+function D:GetOptions()
+	return nmModule
+end
+
+---Which faction's bar options apply to a token. Friendly units can also be enemies in a duel,
+---so the enemy check comes first.
+function D:GetUnitOptions(unitToken)
+	if units:IsEnemy(unitToken) then
+		return nmModule.Enemy
 	end
 
-	-- Baseline for the duel poll, kept fresh on every (re)registration. RebuildContainers routes
-	-- through here too, so plates that existed before Init/enable are also seeded.
-	duelSub:Seed(unitToken)
-
-	-- Legacy only: the hook feeds watcher-driven re-renders. On 12.1 the containers track
-	-- their unit themselves and the hook body would no-op against the empty watcher table,
-	-- so installing it just bills us for a dead closure on every Blizzard aura refresh.
-	if not USE_AURA_CONTAINERS then
-		HookNameplateAuraFrame(nameplate)
+	if units:IsFriend(unitToken) then
+		return nmModule.Friendly
 	end
 
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
-	if not moduleEnabled then
-		-- 12.1: an already-tracked token may still hold pooled displays from before the
-		-- module/option flip; release them instead of leaving them tracking until the
-		-- plate despawns.
-		if USE_AURA_CONTAINERS then
-			ReleaseDataDisplays(nameplateAnchors[unitToken])
-		end
-		return
-	end
+	return nmModule.Enemy
+end
 
-	-- Check if we should ignore pets
-	local unitOptions = M:GetUnitOptions(unitToken)
-	if unitOptions.IgnorePets and units:IsPetOrMinion(unitToken) then
-		if USE_AURA_CONTAINERS then
-			ReleaseDataDisplays(nameplateAnchors[unitToken])
-		end
-		return
-	end
+---@return boolean true when any enabled bar on either faction is showing important buffs
+function D:ImportantNeeded()
+	local enemy = nmModule.Enemy
+	local friendly = nmModule.Friendly
+	return (enemy.Bar1.Enabled and enemy.Bar1.ShowImportant)
+		or (enemy.Bar2.Enabled and enemy.Bar2.ShowImportant)
+		or (friendly.Bar1.Enabled and friendly.Bar1.ShowImportant)
+		or (friendly.Bar2.Enabled and friendly.Bar2.ShowImportant)
+		or false
+end
 
+---@return boolean true when any bar on either faction is switched on
+function D:AnyEnabled()
+	return nmModule.Friendly.Bar1.Enabled
+		or nmModule.Friendly.Bar2.Enabled
+		or nmModule.Enemy.Bar1.Enabled
+		or nmModule.Enemy.Bar2.Enabled
+end
+
+---@param unitToken string
+---@return NameplateData?
+function D:GetData(unitToken)
+	return nameplateAnchors[unitToken]
+end
+
+---Every tracked token, for the callers that have to sweep them all.
+---@return table<string, NameplateData>
+function D:GetTrackedPlates()
+	return nameplateAnchors
+end
+
+---@param value boolean
+function D:SetPaused(value)
+	paused = value
+end
+
+---@param value boolean
+function D:SetTestMode(value)
+	testModeActive = value
+end
+
+---Builds (or refreshes) everything a tracked plate draws with: the per-bar kick containers, and
+---on 12.1 the aura displays and kick icon.
+---@param unitToken string
+---@param nameplate table
+---@param unitOptions table
+---@param trackAnyway boolean? track even with no enabled bar, so a duel flip has state to rebuild from
+---@return NameplateData? data nil when neither bar is enabled for this token
+function D:Track(unitToken, nameplate, unitOptions, trackAnyway)
 	-- Reuse containers stored on the nameplate; only create if missing
 	local bar1Container, bar2Container =
 		EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 
-	-- BUGFIX (duels): Previously this returned early if no containers were created for
-	-- the current options table (e.g. friendly player with Friendly.* all disabled).
-	-- That meant `nameplateAnchors[unitToken]` and `watchers[unitToken]` were never
-	-- populated, so when the unit later became a duel opponent and GetUnitOptions()
-	-- started returning Enemy options, there was no watcher listening to UNIT_AURA and
-	-- OnAuraDataChanged would never fire to rebuild containers.
-	-- We now also create data+watcher if the *opposite* faction has any mode enabled,
-	-- but only in the open world where duels can occur - inside instances this overhead
-	-- is unnecessary since friendly units can never become duel opponents there.
-	local inInstance = IsInInstance()
-	local oppositeOptions = units:IsEnemy(unitToken) and nmModule.Friendly or nmModule.Enemy
-	local anyEnabledOpposite = not inInstance
-		and ((oppositeOptions.Bar1 and oppositeOptions.Bar1.Enabled)
-			or (oppositeOptions.Bar2 and oppositeOptions.Bar2.Enabled))
-
-	if not bar1Container and not bar2Container and not anyEnabledOpposite then
-		return
+	if not bar1Container and not bar2Container and not trackAnyway then
+		return nil
 	end
 
 	-- Create / update nameplate data. Displays live in the per-token cache rather than on this
@@ -962,60 +755,184 @@ local function OnNamePlateAdded(unitToken)
 		EnsureBarDisplays(data, unitOptions)
 	end
 
-	if not USE_AURA_CONTAINERS then
-		-- Create new watcher
-		if watchers[unitToken] then
-			watchers[unitToken]:Dispose()
-		end
+	return data
+end
 
-		-- Important buffs are read straight from Blizzard's nameplate buff list (see GetImportantBuffs),
-		-- so the watcher only tracks CC + defensives. We always track both (rather than narrowing to the
-		-- bars' current ShowCC/ShowDefensives) so a duel faction flip can't leave the watcher querying the
-		-- wrong aura types. Stated explicitly so we don't silently inherit any future change to the "all"
-		-- default (e.g. if it ever started including buffs, which we don't want here).
-		local sortRule, sortDirection = GetCCSortOptions()
-		watchers[unitToken] = unitWatcher:New(unitToken, nil, { CC = true, Defensives = true }, sortRule, sortDirection)
-		watchers[unitToken]:RegisterCallback(function()
-			OnAuraDataChanged(unitToken)
-		end)
+---Hides a tracked plate's containers, parks its displays and forgets it.
+---@param unitToken string
+function D:Untrack(unitToken)
+	local data = nameplateAnchors[unitToken]
+	if not data then
+		return
 	end
 
-	kickTracker:Watch(unitToken)
-	kickTracker:Subscribe(unitToken, function()
-		if USE_AURA_CONTAINERS then
-			UpdateNameplateKick(data)
-		else
-			OnAuraDataChanged(unitToken)
-		end
-	end)
+	HideAndReset(data.Bar1Container)
+	HideAndReset(data.Bar2Container)
 
+	-- 12.1: park this plate's displays; the per-token cache keeps them for its return.
 	if USE_AURA_CONTAINERS then
-		UpdateNameplateKick(data)
+		self:Release(unitToken)
 	end
 
-	-- Initial update
-	if testModeActive then
-		-- In test mode, show test icons for this specific nameplate
-		local now = GetTime()
+	nameplateAnchors[unitToken] = nil
+end
 
-		for _, bar in ipairs(BARS) do
-			local barOptions = unitOptions[bar.Key]
-			if barOptions and barOptions.Enabled and data[bar.DataField] then
-				ShowBarTestIcons(data[bar.DataField], barOptions, now)
+---12.1 path: releases a tracked plate's pooled displays (and its kick timer). Used when the
+---plate goes away AND when tracking stops for other reasons (module/pet options turning off
+---for an already-tracked token) so displays never linger active outside the pool.
+---@param unitToken string
+function D:Release(unitToken)
+	local data = nameplateAnchors[unitToken]
+	if not data then
+		return
+	end
+
+	if data.KickTimer then
+		data.KickTimer:Cancel()
+		data.KickTimer = nil
+	end
+	-- Parked, not discarded: the cache keeps them for when this token comes back, since a
+	-- rebuild per plate spawn would grow frames forever.
+	if data.Bar1Display then
+		ResetBarDisplay(data.Bar1Display)
+		data.Bar1Display = nil
+	end
+	if data.Bar2Display then
+		ResetBarDisplay(data.Bar2Display)
+		data.Bar2Display = nil
+	end
+end
+
+---12.1 path: renders the kick icon into each ShowCC bar's kick container (slot 1) and re-anchors
+---the aura displays around it. Schedules a follow-up when the kick expires, since no aura event
+---will fire to clear it.
+---@param data NameplateData
+function D:UpdateKick(data)
+	if paused or testModeActive then
+		return
+	end
+
+	local unitOptions = self:GetUnitOptions(data.UnitToken)
+	local kickEntry = kickTracker:GetKick(data.UnitToken)
+
+	for _, bar in ipairs(BARS) do
+		local barOptions = unitOptions[bar.Key]
+		local container = data[bar.DataField]
+		if barOptions and barOptions.Enabled and container then
+			if barOptions.ShowCC and kickEntry then
+				layerScratch.Texture = kickEntry.Texture
+				layerScratch.DurationObject = kickEntry.DurationObject
+				layerScratch.Alpha = true
+				layerScratch.Glow = barOptions.Icons.Glow
+				layerScratch.ReverseCooldown = barOptions.Icons.ReverseCooldown
+				layerScratch.ShowMilliseconds = barOptions.Icons.ShowMilliseconds
+				layerScratch.FontScale = db.FontScale
+				layerScratch.Color = barOptions.Icons.ColorByCategory and kickEntry.Color or nil
+				layerScratch.SpellId = nil
+				container:SetSlot(1, layerScratch)
+			else
+				container:SetSlotUnused(1)
+			end
+
+			local display = data[bar.DisplayField]
+			if display then
+				AnchorBarDisplay(display, container, data.Nameplate, barOptions, barOptions.ShowCC and kickEntry ~= nil)
 			end
 		end
 	end
+
+	-- One timer for the plate: the icon is written into every enabled bar above, but they all
+	-- clear at the same moment.
+	data.KickTimer = kickSlot:ScheduleExpiry(kickEntry, data.KickTimer, function()
+		data.KickTimer = nil
+		D:UpdateKick(data)
+	end)
 end
 
--- Rebuilds a plate whose enemy status flipped: GetUnitOptions starts returning the other
--- faction's options, so the bars are rebuilt (12.1: displays re-acquired with the new faction's
--- budgets; legacy: containers rebuilt and the watcher re-rendered).
-local function OnDuelFactionFlip(unitToken)
-	OnNamePlateAdded(unitToken)
-	OnAuraDataChanged(unitToken)
+---Legacy path: redraws every enabled bar on a tracked plate from the watcher's aura state.
+---@param unitToken string
+---@param watcher Watcher?
+function D:RenderUnit(unitToken, watcher)
+	if paused or not unitToken then
+		return
+	end
+
+	local data = nameplateAnchors[unitToken]
+	if not data then
+		return
+	end
+
+	if not watcher then
+		return
+	end
+
+	-- Fetch once and pass down to avoid each Apply function re-traversing the db path
+	local unitOptions = self:GetUnitOptions(unitToken)
+
+	-- BUGFIX (duels): If GetUnitOptions() switches between Friendly and Enemy for the
+	-- same unitToken (e.g. duel starts), the cached container references may be nil
+	-- for the now-active options. Rebuild lazily so aura data isn't silently dropped.
+	local needRebuild = false
+	for _, bar in ipairs(BARS) do
+		local barOptions = unitOptions[bar.Key]
+		if barOptions and barOptions.Enabled and not data[bar.DataField] then
+			needRebuild = true
+		end
+	end
+
+	if needRebuild then
+		local nameplate = data.Nameplate or C_NamePlate.GetNamePlateForUnit(unitToken)
+		if nameplate then
+			local bar1Container, bar2Container =
+				EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
+			data.Bar1Container = bar1Container
+			data.Bar2Container = bar2Container
+		end
+	end
+
+	-- Dedup: an aura can be both a defensive and an "important" buff. When any enabled bar shows
+	-- defensives, exclude those auras (by AuraInstanceID) from the important set on every bar so the
+	-- same icon isn't drawn twice (defensives win - they carry the real category/duration tracking).
+	wipe(importantSkipScratch)
+	local anyDefensives, anyImportant = false, false
+	for _, bar in ipairs(BARS) do
+		local barOptions = unitOptions[bar.Key]
+		if barOptions and barOptions.Enabled then
+			anyDefensives = anyDefensives or barOptions.ShowDefensives
+			anyImportant = anyImportant or barOptions.ShowImportant
+		end
+	end
+	if anyDefensives and anyImportant then
+		for _, d in ipairs(watcher:GetDefensiveState()) do
+			if d.AuraInstanceID then
+				importantSkipScratch[d.AuraInstanceID] = true
+			end
+		end
+	end
+
+	for _, bar in ipairs(BARS) do
+		local barOptions = unitOptions[bar.Key]
+		if barOptions and barOptions.Enabled then
+			ApplyBarToNameplate(data[bar.DataField], barOptions, watcher, data)
+		end
+	end
 end
 
-local function ClearNameplate(unitToken)
+---Draws the test preview on one plate; used when a plate spawns while test mode is on.
+---@param data NameplateData
+function D:ShowTestIconsFor(data)
+	ShowDataTestIcons(data, GetTime())
+end
+
+function D:ShowTestIcons()
+	local now = GetTime()
+	for _, data in pairs(nameplateAnchors) do
+		ShowDataTestIcons(data, now)
+	end
+end
+
+---@param unitToken string
+function D:ClearPlate(unitToken)
 	local data = nameplateAnchors[unitToken]
 	if not data then
 		return
@@ -1028,87 +945,17 @@ local function ClearNameplate(unitToken)
 	end
 end
 
-local function RebuildContainers()
-	if not moduleUtil:IsModuleEnabled(moduleName.Nameplates) then
-		return
-	end
-
-	local count = 0
-	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
-		local unitToken = nameplate.unitToken
-
-		if unitToken then
-			OnNamePlateAdded(unitToken)
-			count = count + 1
-		end
+function D:ClearAll()
+	for unitToken in pairs(nameplateAnchors) do
+		self:ClearPlate(unitToken)
 	end
 end
 
-local function AnyEnabled()
-	return nmModule.Friendly.Bar1.Enabled
-		or nmModule.Friendly.Bar2.Enabled
-		or nmModule.Enemy.Bar1.Enabled
-		or nmModule.Enemy.Bar2.Enabled
-end
-
-local function CacheEnabledModes()
-	local enemy = nmModule.Enemy
-	local friendly = nmModule.Friendly
-	local enabled = nmModule.Enabled
-
-	previousEnemyEnabled.Bar1 = enemy.Bar1.Enabled
-	previousEnemyEnabled.Bar2 = enemy.Bar2.Enabled
-
-	previousFriendlyEnabled.Bar1 = friendly.Bar1.Enabled
-	previousFriendlyEnabled.Bar2 = friendly.Bar2.Enabled
-
-	previousPetEnabled.Friendly = friendly.IgnorePets
-	previousPetEnabled.Enemy = enemy.IgnorePets
-
-	previousModuleEnabled.Always = enabled.Always
-	previousModuleEnabled.Arena = enabled.Arena
-	previousModuleEnabled.BattleGrounds = enabled.BattleGrounds
-	previousModuleEnabled.PvE = enabled.PvE
-
-	previousImportantNeeded = ImportantNeeded()
-end
-
-local function HaveModesChanged()
-	local enemy = nmModule.Enemy
-	local friendly = nmModule.Friendly
-	local enabled = nmModule.Enabled
-
-	return previousEnemyEnabled.Bar1 ~= enemy.Bar1.Enabled
-		or previousEnemyEnabled.Bar2 ~= enemy.Bar2.Enabled
-		or previousFriendlyEnabled.Bar1 ~= friendly.Bar1.Enabled
-		or previousFriendlyEnabled.Bar2 ~= friendly.Bar2.Enabled
-		or previousPetEnabled.Friendly ~= friendly.IgnorePets
-		or previousPetEnabled.Enemy ~= enemy.IgnorePets
-		or previousModuleEnabled.Always ~= enabled.Always
-		or previousModuleEnabled.Arena ~= enabled.Arena
-		or previousModuleEnabled.BattleGrounds ~= enabled.BattleGrounds
-		or previousModuleEnabled.PvE ~= enabled.PvE
-		or previousImportantNeeded ~= ImportantNeeded()
-end
-
-local function ShowTestIcons()
-	local now = GetTime()
-	for _, data in pairs(nameplateAnchors) do
-		local options = M:GetUnitOptions(data.UnitToken)
-		for _, bar in ipairs(BARS) do
-			local barOptions = options[bar.Key]
-			if barOptions and barOptions.Enabled and data[bar.DataField] then
-				ShowBarTestIcons(data[bar.DataField], barOptions, now)
-			end
-		end
-	end
-end
-
-local function RefreshAnchorsAndSizes()
+function D:RefreshAnchorsAndSizes()
 	local ignoreParentScale = not nmModule.ScaleWithNameplate
 	for _, data in pairs(nameplateAnchors) do
 		if data.Nameplate and data.UnitToken then
-			local unitOptions = M:GetUnitOptions(data.UnitToken)
+			local unitOptions = self:GetUnitOptions(data.UnitToken)
 			local anchorFrame = GetNameplateAnchorFrame(data.Nameplate)
 
 			-- Both bars are independent; reposition each that exists.
@@ -1151,73 +998,9 @@ local function RefreshAnchorsAndSizes()
 	end
 end
 
-local function ClearAll()
-	-- Clean up all existing nameplates
-	for unitToken, _ in pairs(nameplateAnchors) do
-		ClearNameplate(unitToken)
-	end
-end
-
-local function Pause()
-	paused = true
-end
-
-local function Resume()
-	paused = false
-end
-
-local function ApplyBlizzardNameplateSettings()
-	local configureEnabled = db.ConfigureBlizzardNameplates
-	if configureEnabled == nil then
-		configureEnabled = true
-	end
-
-	local anyEnemyEnabled = nmModule.Enemy.Bar1.Enabled
-		or nmModule.Enemy.Bar2.Enabled
-
-	local anyFriendlyEnabled = nmModule.Friendly.Bar1.Enabled
-		or nmModule.Friendly.Bar2.Enabled
-
-	if configureEnabled and anyEnemyEnabled then
-		C_CVar.SetCVarBitfield("nameplateEnemyPlayerAuraDisplay", Enum.NamePlateEnemyPlayerAuraDisplay.LossOfControl, false)
-		C_CVar.SetCVarBitfield("nameplateEnemyNpcAuraDisplay", Enum.NamePlateEnemyNpcAuraDisplay.CrowdControl, false)
-	end
-
-	if configureEnabled and anyFriendlyEnabled then
-		C_CVar.SetCVarBitfield("nameplateFriendlyPlayerAuraDisplay", Enum.NamePlateFriendlyPlayerAuraDisplay.LossOfControl, false)
-	end
-end
-
--- Lifecycle
-
----@return NameplatesModuleOptions?
-local function GetOptions()
-	-- Cached in Init off db.Modules.NameplatesModule.
-	return nmModule
-end
-
----@return boolean
-local function IsEnabled()
-	return moduleUtil:IsModuleEnabled(moduleName.Nameplates) and AnyEnabled()
-end
-
----@param active boolean
-local function SetEventsActive(active)
-	-- While inactive no state tracks nameplates, so the plate events can be unregistered
-	-- entirely; reactivation rebuilds from the live plate list. The addon-wide Refresh
-	-- (config, world change, raid flip) re-runs this gate.
-	plateGate:SetActive(active)
-end
-
-local function Teardown()
-	for _, watcher in pairs(watchers) do
-		if watcher then
-			watcher:Disable()
-		end
-	end
-
+function D:Teardown()
 	for unitToken, data in pairs(nameplateAnchors) do
-		ClearNameplate(unitToken)
+		self:ClearPlate(unitToken)
 		if data.Bar1Display then
 			data.Bar1Display:SetEnabled(false)
 			data.Bar1Display:Hide()
@@ -1227,172 +1010,6 @@ local function Teardown()
 			data.Bar2Display:Hide()
 		end
 	end
-
-	CacheEnabledModes()
-end
-
-local function EnsureFrames()
-	ApplyBlizzardNameplateSettings()
-
-	for _, watcher in pairs(watchers) do
-		if watcher then
-			watcher:Enable()
-		end
-	end
-
-	-- if the user has enabled/disabled a mode, rebuild the containers
-	if HaveModesChanged() then
-		RebuildContainers()
-	end
-
-	CacheEnabledModes()
-end
-
----@param options NameplatesModuleOptions
-local function ApplyOptions(options)
-	RefreshAnchorsAndSizes()
-
-	local sortRule, sortDirection = GetCCSortOptions()
-	for _, watcher in pairs(watchers) do
-		watcher:SetSort(sortRule, sortDirection)
-	end
-end
-
----@param options NameplatesModuleOptions
-local function UpdateContent(options)
-	if testModeActive then
-		ShowTestIcons()
-		return
-	end
-
-	-- 12.1: the containers render themselves and no watchers exist, so OnAuraDataChanged would
-	-- bail on the watcher lookup for every tracked plate. RefreshAnchorsAndSizes (via ApplyOptions)
-	-- has already re-applied the bar options to the displays.
-	if USE_AURA_CONTAINERS then
-		return
-	end
-
-	-- Re-render every tracked nameplate so per-bar option changes (Show CC / Defensives /
-	-- Important, colours, glow, tooltips, etc.) apply immediately instead of waiting for the next
-	-- aura event. HaveModesChanged only catches enabled/mode toggles, and SetSort no-ops when the
-	-- sort is unchanged, so neither re-applies the bars on their own.
-	for unitToken in pairs(nameplateAnchors) do
-		OnAuraDataChanged(unitToken)
-	end
-end
-
----@param active boolean
-local function SetTestMode(active)
-	testModeActive = active
-
-	if active then
-		Pause()
-	else
-		ClearAll()
-		Resume()
-	end
-
-	M:Refresh()
-
-	if not active then
-		-- Repopulate from live aura data; the test icons overwrote whatever the plates had.
-		for _, watcher in pairs(watchers) do
-			watcher:ForceFullUpdate()
-		end
-	end
-end
-
-local function CreateEvents()
-	local eventsFrame = CreateFrame("Frame")
-	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
-		if event == "NAME_PLATE_UNIT_ADDED" then
-			OnNamePlateAdded(unitToken)
-			-- refresh their aura information
-			-- important to do it here an not inside of OnNamePlateAdded because that is also called by Refresh
-			-- which would cause a significant performance impact
-			OnAuraDataChanged(unitToken)
-		elseif event == "NAME_PLATE_UNIT_REMOVED" then
-			OnNamePlateRemoved(unitToken)
-		end
-	end)
-
-	plateGate = eventGate:New(eventsFrame, {
-		"NAME_PLATE_UNIT_ADDED",
-		"NAME_PLATE_UNIT_REMOVED",
-		"PLAYER_TARGET_CHANGED",
-	}, {
-		-- Plates that spawned while inactive were never tracked.
-		OnActivate = RebuildContainers,
-		-- Release tracked plates now - the removal events that normally clean them up are
-		-- no longer registered.
-		OnDeactivate = function()
-			for unitToken in pairs(nameplateAnchors) do
-				OnNamePlateRemoved(unitToken)
-			end
-		end,
-	})
-
-	duelSub = duelPoller:Register(function()
-		return moduleUtil:IsModuleEnabled(moduleName.Nameplates)
-	end, OnDuelFactionFlip)
-end
-
-local function ApplyInitialState()
-	-- Registers the plate events and initializes existing nameplates when active.
-	SetEventsActive(IsEnabled())
-
-	CacheEnabledModes()
-end
-
-function M:GetUnitOptions(unitToken)
-	if units:IsEnemy(unitToken) then
-		-- friendly units can also be enemies in a duel
-		return nmModule.Enemy
-	end
-
-	if units:IsFriend(unitToken) then
-		return nmModule.Friendly
-	end
-
-	return nmModule.Enemy
-end
-
-function M:StartTesting()
-	SetTestMode(true)
-end
-
-function M:StopTesting()
-	SetTestMode(false)
-end
-
-function M:Refresh()
-	local options = GetOptions()
-
-	if not options then
-		return
-	end
-
-	local isEnabled = IsEnabled()
-
-	SetEventsActive(isEnabled)
-
-	if not isEnabled then
-		Teardown()
-		return
-	end
-
-	EnsureFrames()
-	ApplyOptions(options)
-	UpdateContent(options)
-end
-
-function M:Init()
-	db = mini:GetSavedVars()
-	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> NameplatesModule
-	nmModule = db.Modules.NameplatesModule
-
-	CreateEvents()
-	ApplyInitialState()
 end
 
 ---@class NameplateData

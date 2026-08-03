@@ -233,6 +233,11 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Display EnemyKickTrackerDisplay
 ---@field Module EnemyKickTrackerModule
 
+---@class Nameplates
+---@field Observer NameplatesObserver
+---@field Display NameplatesDisplay
+---@field Module NameplatesModule
+
 ---@class Portrait
 ---@field Observer PortraitObserver
 ---@field Display PortraitDisplay
@@ -254,6 +259,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field FriendlyCooldowns FriendlyCooldowns
 ---@field EnemyCooldowns EnemyCooldowns
 ---@field EnemyKickTracker EnemyKickTracker
+---@field Nameplates Nameplates
 ---@field Portrait Portrait
 
 ---@class IModule

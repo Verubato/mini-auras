@@ -44,7 +44,8 @@ local MODULES = {
 	{ Name = "PrecogModule", Key = "PrecogModule", Files = { "PrecogModule.lua" } },
 	{ Name = "PortraitModule", Key = "PortraitModule",
 		Files = { "Portrait/Observer.lua", "Portrait/Display.lua", "Portrait/Anchors.lua", "Portrait/Module.lua" } },
-	{ Name = "NameplatesModule", Key = "NameplatesModule", Files = { "NameplatesModule.lua" } },
+	{ Name = "NameplatesModule", Key = "NameplatesModule",
+		Files = { "Nameplates/Observer.lua", "Nameplates/Display.lua", "Nameplates/Module.lua" } },
 	{ Name = "AlertsModule", Key = "AlertsModule", Files = { "AlertsModule.lua" } },
 }
 
