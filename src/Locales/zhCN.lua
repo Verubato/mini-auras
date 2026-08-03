@@ -28,6 +28,7 @@ L:RegisterLocale("zhCN", {
 	["Shows enemy kick cooldowns in arena."] = "在竞技场中显示敌方打断冷却时间。",
 	["Enable if you are:"] = "如果您是以下角色则启用：",
 	["Enable in"] = "启用于",
+	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "当你获得预知或湮灭披风时，在屏幕上显示一个图标。",
 	["Specify which spells are shown on raid frames."] = "指定在团队框体上显示哪些法术。",
 	["Remove"] = "移除",
 	["Custom"] = "自定义",

@@ -142,8 +142,8 @@ fw.describe("12.1 smoke - full lifecycle across every container module", functio
 end)
 
 fw.describe("12.1 smoke - per-module container shape", function()
-	fw.it("precognition asks the engine for the short-duration important window", function()
-		-- The maxDuration candidate filter IS the guess on 12.1; without it the display shows
+	fw.it("precognition asks the engine for its two spells by id", function()
+		-- The spell-id candidate filter IS the guess on 12.1; without it the display shows
 		-- every important buff the player has.
 		local precogGroup
 		for _, container in ipairs(auraContainers()) do
@@ -157,8 +157,12 @@ fw.describe("12.1 smoke - per-module container shape", function()
 		assert(precogGroup.filterString == auraFilters.Filter.ImportantOnly,
 			"unpartitioned importants, got " .. tostring(precogGroup.filterString))
 		local filters = assert(precogGroup.options.candidateFilters, "candidate filters were passed through")
-		assert(filters.maxDuration and filters.maxDuration > 0 and filters.maxDuration < 5,
-			"a precog-length upper bound, got " .. tostring(filters.maxDuration))
+		-- Matched by id rather than by an upper bound on duration, which also let through any
+		-- other short important self buff.
+		assert(filters.includeSpellIDs, "a spell-id filter")
+		assert(filters.includeSpellIDs[377362], "precognition")
+		assert(filters.includeSpellIDs[378464], "nullifying shroud")
+		assert(filters.maxDuration == nil, "no duration bound left")
 	end)
 
 	fw.it("every group on every container uses a filter from the shared set", function()

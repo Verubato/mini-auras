@@ -17,14 +17,12 @@ function M:Build(panel)
 	local columnWidth = mini:ColumnWidth(columns, 0, 0)
 	-- Shared 5-column checkbox grid so checkbox rows align across pages.
 	local checkColumnWidth = mini:ColumnWidth(5, 0, 0)
-	-- TEMPORARY dual path: on 12.1 the module filters by aura max duration (<= 4.1s) via
-	-- CandidateFilters; the legacy text describes the 12.0.7 buff-scan heuristic.
+	-- TEMPORARY dual path: on 12.1 the module matches the two spell ids outright; the legacy
+	-- text describes the 12.0.7 buff-scan heuristic, which cannot read a spell id at all.
 	local descriptionLines
 	if addon.Utils.WoWEx:UseAuraContainers() then
 		descriptionLines = {
-			L["It works by showing any 'important' buff with a maximum duration of 4.1 seconds or less (precognition is a 4 second buff)."],
-			L["So if a unit happens to have some other short important buff then that icon would also show, sorry."],
-			L["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."],
+			L["Shows an icon on your screen when you get Precognition or Nullifying Shroud."],
 		}
 	else
 		descriptionLines = {

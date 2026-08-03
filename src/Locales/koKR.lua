@@ -28,6 +28,7 @@ L:RegisterLocale("koKR", {
 	["Shows enemy kick cooldowns in arena."] = "투기장에서 적의 차단 쿨다운을 표시합니다.",
 	["Enable if you are:"] = "다음인 경우 활성화:",
 	["Enable in"] = "활성화 위치",
+	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "예지 또는 무효화의 장막을 받으면 화면에 아이콘을 표시합니다.",
 	["Specify which spells are shown on raid frames."] = "공격대 프레임에 표시할 주문을 지정합니다.",
 	["Remove"] = "제거",
 	["Custom"] = "사용자 지정",

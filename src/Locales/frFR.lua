@@ -28,6 +28,7 @@ L:RegisterLocale("frFR", {
 	["Shows enemy kick cooldowns in arena."] = "Affiche les CDs de kick ennemis en arène.",
 	["Enable if you are:"] = "Activer si vous êtes :",
 	["Enable in"] = "Activer en",
+	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "Affiche une icône à l'écran lorsque vous recevez Précognition ou Suaire annihilant.",
 	["Specify which spells are shown on raid frames."] = "Indique quels sorts sont affichés sur les cadres de raid.",
 	["Remove"] = "Supprimer",
 	["Custom"] = "Personnalisés",

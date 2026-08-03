@@ -28,6 +28,7 @@ L:RegisterLocale("deDE", {
 	["Shows enemy kick cooldowns in arena."] = "Zeigt gegnerische Kick-Cooldowns in der Arena.",
 	["Enable if you are:"] = "Aktivieren, wenn du bist:",
 	["Enable in"] = "Aktivieren in",
+	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "Zeigt ein Symbol auf dem Bildschirm, wenn du Präkognition oder Nichtenden Schleier erhältst.",
 	["Specify which spells are shown on raid frames."] = "Legt fest, welche Zauber auf Schlachtzugsrahmen angezeigt werden.",
 	["Remove"] = "Entfernen",
 	["Custom"] = "Eigene",

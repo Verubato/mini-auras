@@ -8,12 +8,18 @@ local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
--- 12.1 path: the whole guess ("~4 second IMPORTANT self buff") maps directly onto an
--- AuraContainer group: HELPFUL|IMPORTANT filter + a maxDuration candidate filter. The secret
--- curve/EvaluateColorValueFromBoolean dance is only needed on the legacy path. The
--- IconSlotContainer is kept for test mode. TEMPORARY dual path: remove the legacy branch once
--- 12.1 is live everywhere.
+-- 12.1 path: the guess maps onto an AuraContainer group filtered to the two spells outright.
+-- The secret curve/EvaluateColorValueFromBoolean dance is only needed on the legacy path, which
+-- cannot read a spell id at all. The IconSlotContainer is kept for test mode. TEMPORARY dual
+-- path: remove the legacy branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
+
+-- The precog window shows exactly these. Kept here rather than in Core/AuraFilters because no
+-- other display wants them on their own, and they are a fixed pair rather than a category.
+local PRECOG_SPELL_IDS = {
+	[377362] = true, -- Precognition
+	[378464] = true, -- Nullifying Shroud
+}
 local testModeActive = false
 local paused = false
 local classHasPrecog
@@ -313,19 +319,16 @@ local function CreateFrames()
 		return
 	end
 
-	-- 12.1: IMPORTANT + a short maxDuration expresses "precog-length important self buff"
-	-- natively. maxDuration 4.1 covers both the 4s precog window and the Evoker's 3s
-	-- Nullifying Shroud (it is an upper bound, not an exact match like the legacy curve,
-	-- so other sub-4s important buffs would also show - acceptably rare).
-	-- The spell-ID map is the out-of-range garbage-buff workaround shared by every category
-	-- display (see Core/AuraFilters); it has to be spliced in here rather than reused from
-	-- AuraFilters.CandidateFilters because this group needs maxDuration alongside it.
+	-- 12.1: the two abilities this display exists for, matched by id. It used to approximate
+	-- them with maxDuration 4.1, which was an upper bound rather than a match - any other
+	-- sub-4s important self buff came through it too. The buff is on the player, who is always
+	-- assistable, so the spell-id filter is never skipped here (see Core/AuraFilters).
 	display = auraContainerDisplay:New(anchor, "player", {
 		{
 			Key = "precog",
 			FilterString = auraFilters.Filter.ImportantOnly,
 			MaxIcons = 1,
-			CandidateFilters = { maxDuration = 4.1, includeSpellIDs = auraFilters.SpellIds.ImportantOnly },
+			CandidateFilters = { includeSpellIDs = PRECOG_SPELL_IDS },
 		},
 	}, iconSize, 2, "Precognition")
 	display.Frame:SetPoint("CENTER", anchor, "CENTER", 0, 0)
@@ -339,7 +342,7 @@ local function CreateEvents()
 
 	-- Step curve mapping an aura's total duration to an alpha: 1 only at the precog window
 	-- (~4s, plus ~3s for Preservation Evoker's Nullifying Shroud), 0 everywhere else.
-	-- Legacy path only; the 12.1 container expresses the window via a maxDuration filter.
+	-- Legacy path only; the 12.1 container matches the two spell ids outright.
 	precogCurve = C_CurveUtil.CreateCurve()
 	precogCurve:SetType(Enum.LuaCurveType.Step)
 	precogCurve:AddPoint(0, 0)

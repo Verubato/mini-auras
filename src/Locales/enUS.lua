@@ -29,6 +29,7 @@ L:SetDefaultStrings({
 	["Shows enemy kick cooldowns in arena."] = "Shows enemy kick cooldowns in arena.",
 	["Enable if you are:"] = "Enable if you are:",
 	["Enable in"] = "Enable in",
+	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "Shows an icon on your screen when you get Precognition or Nullifying Shroud.",
 	["Specify which spells are shown on raid frames."] = "Specify which spells are shown on raid frames.",
 	["Remove"] = "Remove",
 	["Custom"] = "Custom",

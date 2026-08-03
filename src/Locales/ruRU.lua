@@ -28,6 +28,7 @@ L:RegisterLocale("ruRU", {
 	["Shows enemy kick cooldowns in arena."] = "Показывает перезарядку прерываний врагов на арене.",
 	["Enable if you are:"] = "Включить, если вы:",
 	["Enable in"] = "Включить в",
+	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "Показывает значок на экране, когда вы получаете «Предвидение» или «Аннулирующий покров».",
 	["Specify which spells are shown on raid frames."] = "Определяет, какие заклинания отображаются на рамках рейда.",
 	["Remove"] = "Удалить",
 	["Custom"] = "Свои",

@@ -28,6 +28,7 @@ L:RegisterLocale("ptBR", {
 	["Shows enemy kick cooldowns in arena."] = "Mostra os tempos de recarga de interrupção inimigos na arena.",
 	["Enable if you are:"] = "Ativar se você for:",
 	["Enable in"] = "Ativar em",
+	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "Mostra um ícone na tela quando você recebe Precognição ou Sudário Anulador.",
 	["Specify which spells are shown on raid frames."] = "Especifica quais magias são exibidas nos quadros de raide.",
 	["Remove"] = "Remover",
 	["Custom"] = "Personalizados",
