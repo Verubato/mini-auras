@@ -36,7 +36,9 @@ env.addon.Modules.NameplatesModule:Init()
 local nameplatesEvents = acm.lastFrameForEvent("NAME_PLATE_UNIT_ADDED")
 assert(nameplatesEvents and nameplatesEvents ~= alertsEvents, "nameplates event frame")
 
-env.loadModule("src/Modules/HealerCrowdControlModule.lua")
+env.loadModule("src/Modules/HealerCrowdControl/Sound.lua")
+env.loadModule("src/Modules/HealerCrowdControl/Display.lua")
+env.loadModule("src/Modules/HealerCrowdControl/Module.lua")
 
 local function countAuraSoundSpells()
 	local n = 0

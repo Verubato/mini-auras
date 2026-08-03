@@ -78,7 +78,9 @@ Core\Cooldowns\Brain.lua
 
 Modules\CrowdControl\Display.lua
 Modules\CrowdControl\Module.lua
-Modules\HealerCrowdControlModule.lua
+Modules\HealerCrowdControl\Sound.lua
+Modules\HealerCrowdControl\Display.lua
+Modules\HealerCrowdControl\Module.lua
 Modules\Portrait\Observer.lua
 Modules\Portrait\Display.lua
 Modules\Portrait\Anchors.lua

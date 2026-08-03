@@ -10,14 +10,20 @@ local unitWatcher = addon.Core.UnitAuraWatcher
 local units = addon.Utils.Units
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
-local eventGate = addon.Core.EventGate
 local rc = LibStub("LibRangeCheck-3.0")
+
+-- Loaded before this file in TOC order.
+local sound = addon.Modules.HealerCrowdControl.Sound
+
+addon.Modules.HealerCrowdControl = addon.Modules.HealerCrowdControl or {}
+
+---@class HealerCrowdControlDisplay
+local D = {}
+addon.Modules.HealerCrowdControl.Display = D
+
 -- 12.1 path: healer CC icons render through one AuraContainer per healer. The warning text
 -- cannot work there (it requires knowing whether a CC aura is present, which 12.1 makes
--- secret). The sound survives via C_UnitAuras.AddAuraSound: the ENGINE plays a sound when a
--- known CC aura lands on a registered healer, without the addon ever reading aura state -
--- registrations are per (unit, spellId), fed from the generated Core/AuraCategoryIds CC list.
--- The IconSlotContainer is kept for test mode.
+-- secret). The IconSlotContainer is kept for test mode.
 --
 -- The battleground 40-yard range gate (IsInRange, below) is also dropped on 12.1: it works by
 -- skipping healers when rendering, and rendering is the engine's job there. In a battleground
@@ -27,25 +33,10 @@ local rc = LibStub("LibRangeCheck-3.0")
 -- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local paused = false
--- 12.1 path: AddAuraSound handles keyed by healer unit, so a healer joining or leaving only
--- re-registers that unit. The CC spell list is ~1k entries, so a full teardown/rebuild of every
--- healer on each roster change was ~1k API calls per healer for no reason.
----@type table<string, number[]>
-local registeredAuraSoundsByUnit = {}
--- Freed handle lists, reused by the next registration instead of allocating a fresh ~1k-entry
--- table per healer.
-local auraSoundIdListPool = {}
--- Reused UnitAuraSoundInfo table for registrations.
-local auraSoundInfoScratch = { unitToken = nil, spellID = nil, soundFileName = nil, outputChannel = nil }
+local testModeActive = false
 -- 12.1 path: sorted healer-unit scratch so the display chain has a stable order (pairs order
 -- would let the healer rows swap places between refreshes).
 local healerOrderScratch = {}
--- The sound settings the current registrations were made with; when these change every healer is
--- re-registered (the unit set is handled incrementally).
-local auraSoundSignature = nil
-local testModeActive = false
-local previousTestSoundEnabled = false
-local soundFile
 
 ---@type Db
 local db
@@ -56,19 +47,15 @@ local healerAnchor
 ---@type IconSlotContainer
 local iconsContainer
 
+-- Healers currently drawn, and the entries parked for reuse. Owned here; the module asks for
+-- whole-set operations rather than reaching into them.
 ---@type table<string, HealerWatchEntry>
 local activePool = {}
 ---@type table<string, HealerWatchEntry>
 local discardPool = {}
----@type EventGate?
-local rosterGate
 
 ---@type TestSpell[]
 local testSpells = {}
-
----@class HealerCrowdControlModule : IModule
-local M = {}
-addon.Modules.HealerCrowdControlModule = M
 
 local function IsInBattleground()
 	local inInstance, instanceType = IsInInstance()
@@ -78,18 +65,6 @@ end
 local function IsInRange(unit)
 	local _, maxRange = rc:GetRange(unit)
 	return maxRange ~= nil and maxRange <= 40
-end
-
-local function PlaySound()
-	-- 12.1: sounds play engine-side via the AddAuraSound registrations (see RegisterAuraSounds);
-	-- this legacy transition-based path must not double up.
-	if USE_AURA_CONTAINERS then
-		return
-	end
-
-	local soundFileName = db.Modules.HealerCCModule.Sound.File or "Sonar.ogg"
-	soundFile = addon.Config.MediaLocation .. soundFileName
-	PlaySoundFile(soundFile, db.Modules.HealerCCModule.Sound.Channel or "Master")
 end
 
 local function UpdateAnchorSize()
@@ -113,94 +88,6 @@ local function UpdateAnchorSize()
 	local height = iconSize + stringHeight
 
 	healerAnchor:SetSize(width, height)
-end
-
----12.1 path: removes one healer's registered aura sounds.
----@param unit string
-local function RemoveUnitAuraSounds(unit)
-	local ids = registeredAuraSoundsByUnit[unit]
-	if not ids then
-		return
-	end
-
-	for i = #ids, 1, -1 do
-		C_UnitAuras.RemoveAuraSound(ids[i])
-		ids[i] = nil
-	end
-	registeredAuraSoundsByUnit[unit] = nil
-	-- Now empty; hand it back for the next healer instead of garbaging a ~1k-entry table.
-	auraSoundIdListPool[#auraSoundIdListPool + 1] = ids
-end
-
----12.1 path: removes every registered aura sound.
-local function ClearAuraSounds()
-	for unit in pairs(registeredAuraSoundsByUnit) do
-		RemoveUnitAuraSounds(unit)
-	end
-	auraSoundSignature = nil
-end
-
----12.1 path: registers an engine-side sound for every known player CC spell on one healer.
----No-op when the unit is already registered - that is what keeps roster churn cheap.
----@param unit string
----@param soundFilePath string
----@param channel string
-local function RegisterUnitAuraSounds(unit, soundFilePath, channel)
-	if registeredAuraSoundsByUnit[unit] then
-		return
-	end
-
-	local ids = table.remove(auraSoundIdListPool) or {}
-	local info = auraSoundInfoScratch
-	info.unitToken = unit
-	info.soundFileName = soundFilePath
-	info.outputChannel = channel
-
-	for spellId in pairs(addon.Core.AuraCategoryIds.CC) do
-		info.spellID = spellId
-		local soundId = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
-		if soundId then
-			ids[#ids + 1] = soundId
-		end
-	end
-
-	registeredAuraSoundsByUnit[unit] = ids
-end
-
----12.1 path: reconciles the engine-side CC sounds against the active healer set. The CC list is
----~1k spells, so this is strictly incremental: only healers that joined get registered and only
----those that left get removed. A change to the sound file/channel itself invalidates everything.
-local function RegisterAuraSounds()
-	local options = db.Modules.HealerCCModule
-	local enabled = options.Sound.Enabled
-		and moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl)
-		and next(activePool) ~= nil
-
-	if not enabled then
-		ClearAuraSounds()
-		return
-	end
-
-	local soundFilePath = addon.Config.MediaLocation .. (options.Sound.File or "Sonar.ogg")
-	local channel = options.Sound.Channel or "Master"
-
-	-- The sound itself is baked into each registration, so changing it means re-registering
-	-- everyone; the healer set alone never does.
-	local signature = soundFilePath .. "|" .. channel
-	if signature ~= auraSoundSignature then
-		ClearAuraSounds()
-		auraSoundSignature = signature
-	end
-
-	for unit in pairs(registeredAuraSoundsByUnit) do
-		if not activePool[unit] then
-			RemoveUnitAuraSounds(unit)
-		end
-	end
-
-	for unit in pairs(activePool) do
-		RegisterUnitAuraSounds(unit, soundFilePath, channel)
-	end
 end
 
 ---12.1 path: lays the per-healer aura containers out in a chain under the anchor. Chaining
@@ -326,7 +213,7 @@ local function OnAuraStateUpdated()
 		healerAnchor:Show()
 
 		if soundEnabled then
-			PlaySound()
+			sound:Play()
 		end
 	else
 		healerAnchor:Hide()
@@ -363,7 +250,7 @@ local function Teardown()
 	end
 
 	if USE_AURA_CONTAINERS then
-		ClearAuraSounds()
+		sound:Clear()
 	end
 
 	paused = true
@@ -456,7 +343,7 @@ local function RefreshHealers()
 
 	if USE_AURA_CONTAINERS then
 		RefreshHealerDisplays()
-		RegisterAuraSounds()
+		sound:Refresh(activePool)
 		-- The anchor is the fixed positioning frame for the healer displays; with aura presence
 		-- unreadable, it stays shown while the module is active and the icons come and go inside.
 		if next(activePool) ~= nil and db.Modules.HealerCCModule.Icons.Enabled ~= false then
@@ -514,50 +401,6 @@ local function RefreshTestFrame()
 	UpdateAnchorSize()
 end
 
-local function OnEvent(_, event)
-	if event == "GROUP_ROSTER_UPDATE" then
-		C_Timer.After(0, function()
-			M:Refresh()
-		end)
-	end
-end
-
-local function Pause()
-	paused = true
-end
-
-local function Resume()
-	paused = false
-	OnAuraStateUpdated()
-end
-
--- Lifecycle
-
----@return HealerCCModuleOptions?
-local function GetOptions()
-	-- The anchor is built in Init; without it there is nothing to configure.
-	if not db or not healerAnchor then
-		return nil
-	end
-
-	return db.Modules.HealerCCModule
-end
-
----@return boolean
-local function IsEnabled()
-	return moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl)
-end
-
----@param active boolean
-local function SetEventsActive(active)
-	-- Events stay unregistered while disabled; the addon-wide Refresh re-runs this gate.
-	-- Keyed on the module toggle alone rather than on the player's own spec: a respec fires
-	-- no world or raid event, so the roster event has to stay registered to wake this up.
-	if rosterGate then
-		rosterGate:SetActive(active)
-	end
-end
-
 local function EnsureFrames()
 	if testModeActive then
 		-- 12.1: test icons render through the IconSlotContainer; hide the live aura displays
@@ -581,7 +424,7 @@ local function EnsureFrames()
 	RefreshHealers()
 end
 
----@param options HealerCCModuleOptions
+
 local function ApplyOptions(options)
 	healerAnchor:ClearAllPoints()
 	healerAnchor:SetPoint(
@@ -604,71 +447,6 @@ local function ApplyOptions(options)
 	else
 		healerAnchor.HealerWarning:Hide()
 	end
-end
-
----Live icons are driven by the watchers/containers; only the fake ones rebuild here.
----@param options HealerCCModuleOptions
-local function UpdateContent(options)
-	if not testModeActive then
-		return
-	end
-
-	healerAnchor:Show()
-	RefreshTestFrame()
-
-	if previousTestSoundEnabled ~= options.Sound.Enabled and options.Sound.Enabled then
-		if USE_AURA_CONTAINERS then
-			-- The transition-based PlaySound is disabled on 12.1 (engine-side AddAuraSound
-			-- covers live auras), but the config preview still needs to demo the file.
-			PlaySoundFile(addon.Config.MediaLocation .. (options.Sound.File or "Sonar.ogg"), options.Sound.Channel or "Master")
-		else
-			PlaySound()
-		end
-	end
-
-	previousTestSoundEnabled = options.Sound.Enabled
-end
-
----Visibility is left to Refresh: on 12.1 the anchor has to stay shown while the module is
----active, so hiding it here would blank the live display until the next addon-wide Refresh.
----@param active boolean
-local function SetAnchorInteractive(active)
-	if not healerAnchor then
-		return
-	end
-
-	healerAnchor:EnableMouse(active)
-	healerAnchor:SetMovable(active)
-
-	if active then
-		healerAnchor:Show()
-	end
-end
-
----@param active boolean
-local function SetTestMode(active)
-	testModeActive = active
-
-	if active then
-		Pause()
-	else
-		if iconsContainer then
-			iconsContainer:ResetAllSlots()
-		end
-		Resume()
-	end
-
-	M:Refresh()
-	SetAnchorInteractive(active)
-end
-
-local function CreateTestData()
-	previousTestSoundEnabled = db.Modules.HealerCCModule.Sound.Enabled
-
-	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
-	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
-	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
-	testSpells = { kidneyShot, fear, hex }
 end
 
 local function CreateFrames()
@@ -717,53 +495,89 @@ local function CreateFrames()
 	iconsContainer.Frame:Show()
 end
 
-local function CreateEvents()
-	local eventsFrame = CreateFrame("Frame")
-	eventsFrame:SetScript("OnEvent", OnEvent)
-	-- Registered by the Refresh gate while the module is enabled.
-	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE" })
-end
+-- Public surface
 
-local function ApplyInitialState()
-	M:Refresh()
-end
-
-function M:StartTesting()
-	SetTestMode(true)
-end
-
-function M:StopTesting()
-	SetTestMode(false)
-end
-
-function M:Refresh()
-	local options = GetOptions()
-
-	if not options then
-		return
+---@return HealerCCModuleOptions?
+function D:GetOptions()
+	-- The anchor is built in Init; without it there is nothing to configure.
+	if not db or not healerAnchor then
+		return nil
 	end
 
-	local isEnabled = IsEnabled()
+	return db.Modules.HealerCCModule
+end
 
-	SetEventsActive(isEnabled)
+---@return boolean true once the anchor exists
+function D:HasAnchor()
+	return healerAnchor ~= nil
+end
 
-	if not isEnabled then
-		Teardown()
-		return
-	end
+---@param value boolean
+function D:SetPaused(value)
+	paused = value
+end
 
+---@param value boolean
+function D:SetTestMode(value)
+	testModeActive = value
+end
+
+function D:Teardown()
+	Teardown()
+end
+
+function D:EnsureFrames()
 	EnsureFrames()
-	ApplyOptions(options)
-	UpdateContent(options)
 end
 
-function M:Init()
+---@param options HealerCCModuleOptions
+function D:ApplyOptions(options)
+	ApplyOptions(options)
+end
+
+function D:RefreshTestFrame()
+	RefreshTestFrame()
+end
+
+function D:OnAuraStateUpdated()
+	OnAuraStateUpdated()
+end
+
+function D:ResetIcons()
+	if iconsContainer then
+		iconsContainer:ResetAllSlots()
+	end
+end
+
+function D:ShowAnchor()
+	healerAnchor:Show()
+end
+
+---Visibility is left to Refresh: on 12.1 the anchor has to stay shown while the module is
+---active, so hiding it here would blank the live display until the next addon-wide Refresh.
+---@param active boolean
+function D:SetAnchorInteractive(active)
+	if not healerAnchor then
+		return
+	end
+
+	healerAnchor:EnableMouse(active)
+	healerAnchor:SetMovable(active)
+
+	if active then
+		healerAnchor:Show()
+	end
+end
+
+function D:Init()
 	db = mini:GetSavedVars()
 
-	CreateTestData()
+	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
+	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
+	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
+	testSpells = { kidneyShot, fear, hex }
+
 	CreateFrames()
-	CreateEvents()
-	ApplyInitialState()
 end
 
 ---@class HealerWatchEntry

@@ -247,6 +247,11 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Display EnemyKickTrackerDisplay
 ---@field Module EnemyKickTrackerModule
 
+---@class HealerCrowdControl
+---@field Sound HealerCrowdControlSound
+---@field Display HealerCrowdControlDisplay
+---@field Module HealerCrowdControlModule
+
 ---@class Nameplates
 ---@field Observer NameplatesObserver
 ---@field Display NameplatesDisplay
@@ -276,6 +281,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Alerts Alerts
 ---@field Auras Auras
 ---@field CrowdControl CrowdControl
+---@field HealerCrowdControl HealerCrowdControl
 ---@field Nameplates Nameplates
 ---@field Portrait Portrait
 
