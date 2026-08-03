@@ -182,7 +182,7 @@ function M.build()
 	loadFile("src/Utils/ModuleUtil.lua")
 	addon.Utils.ModuleUtil:Init()
 	loadFile("src/Utils/SlotDistribution.lua")
-	loadFile("src/Core/AuraCategoryIds.lua")
+	loadFile("src/Core/Auras/AuraCategoryIds.lua")
 
 	-- Cross-module stubs
 
@@ -315,15 +315,15 @@ function M.build()
 		end,
 	}
 
-	loadFile("src/Core/KickData.lua")
+	loadFile("src/Core/Kicks/KickData.lua")
 	loadFile("src/Core/EventGate.lua")
-	loadFile("src/Core/Pool.lua")
-	loadFile("src/Core/GrowAnchors.lua")
-	loadFile("src/Core/AuraFilters.lua")
+	loadFile("src/Core/Display/Pool.lua")
+	loadFile("src/Core/Display/GrowAnchors.lua")
+	loadFile("src/Core/Auras/AuraFilters.lua")
 	loadFile("src/Core/DuelPoller.lua")
-	loadFile("src/Core/IconSlotContainer.lua")
-	loadFile("src/Core/KickSlot.lua")
-	loadFile("src/Core/AuraContainerDisplay.lua")
+	loadFile("src/Core/Display/IconSlotContainer.lua")
+	loadFile("src/Core/Kicks/KickSlot.lua")
+	loadFile("src/Core/Auras/AuraContainerDisplay.lua")
 
 	env.loadModule = function(path)
 		loadFile(path)

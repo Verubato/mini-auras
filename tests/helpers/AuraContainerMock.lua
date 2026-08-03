@@ -602,13 +602,13 @@ function M.loadDisplay()
 	}
 
 	for _, path in ipairs({
-		"src/Core/Pool.lua",
-		"src/Core/GrowAnchors.lua",
+		"src/Core/Display/Pool.lua",
+		"src/Core/Display/GrowAnchors.lua",
 		-- Must precede AuraFilters: its spell-ID maps are built from these lists at load.
-		"src/Core/AuraCategoryIds.lua",
-		"src/Core/AuraFilters.lua",
-		"src/Core/KickSlot.lua",
-		"src/Core/AuraContainerDisplay.lua",
+		"src/Core/Auras/AuraCategoryIds.lua",
+		"src/Core/Auras/AuraFilters.lua",
+		"src/Core/Kicks/KickSlot.lua",
+		"src/Core/Auras/AuraContainerDisplay.lua",
 	}) do
 		assert(loadfile(path))("MiniCC", addon)
 	end

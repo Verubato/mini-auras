@@ -202,7 +202,7 @@ end)
 -- AuraCategoryIds sanity
 
 fw.describe("AuraCategoryIds", function()
-	local data = loadModule("src/Core/AuraCategoryIds.lua", newAddon({})).Core.AuraCategoryIds
+	local data = loadModule("src/Core/Auras/AuraCategoryIds.lua", newAddon({})).Core.AuraCategoryIds
 
 	local function count(t)
 		local n = 0

@@ -43,8 +43,8 @@ local addon = {
 	Config = {},
 }
 
-assert(loadfile("src/Core/KickData.lua"))("MiniCC", addon)
-assert(loadfile("src/Core/KickTracker.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Kicks/KickData.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Kicks/KickTracker.lua"))("MiniCC", addon)
 
 local kickTracker = addon.Core.KickTracker
 
