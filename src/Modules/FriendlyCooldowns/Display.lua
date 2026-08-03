@@ -9,8 +9,8 @@ local units = addon.Utils.Units
 local moduleUtil = addon.Utils.ModuleUtil
 
 -- Loaded before this file in TOC order.
-local fcdTalents = addon.Modules.Cooldowns.Talents
-local rules = addon.Modules.Cooldowns.Rules
+local fcdTalents = addon.Core.Cooldowns.Talents
+local rules = addon.Core.Cooldowns.Rules
 
 addon.Modules.FriendlyCooldowns = addon.Modules.FriendlyCooldowns or {}
 

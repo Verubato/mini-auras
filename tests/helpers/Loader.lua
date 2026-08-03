@@ -2,7 +2,7 @@
 -- Returns a singleton: call loader.get() from any test file to access the loaded modules.
 --
 -- Returned table fields:
---   .brain    CooldownBrain  (addon.Modules.Cooldowns.Brain)
+--   .brain    CooldownBrain  (addon.Core.Cooldowns.Brain)
 --   .observer mock Observer with ._fire* helpers
 --   .talents  mock Talents with ._set* helpers
 --   .rules    loaded CooldownRules table
@@ -186,8 +186,9 @@ function M.get()
 	if _cache then return _cache end
 
 	local addon = {
-		Modules = { Cooldowns = {} },
+		Modules = {},
 		Core = {
+			Cooldowns = {},
 			UnitAuraWatcher = {
 				New = function(self, unit, filter, types)
 					return {
@@ -215,19 +216,19 @@ function M.get()
 
 	local talents  = makeTalents()
 	local observer = makeObserver()
-	addon.Modules.Cooldowns.Talents  = talents
-	addon.Modules.Cooldowns.Observer = observer
+	addon.Core.Cooldowns.Talents  = talents
+	addon.Core.Cooldowns.Observer = observer
 
 	-- Rules is a pure data file - load it for real.
-	loadModule("src/Modules/Cooldowns/Rules.lua", addon)
+	loadModule("src/Core/Cooldowns/Rules.lua", addon)
 
-	loadModule("src/Modules/Cooldowns/SignatureDetector.lua", addon)
+	loadModule("src/Core/Cooldowns/SignatureDetector.lua", addon)
 
 	-- Brain registers its observer callbacks via RegisterWithObserver.
-	loadModule("src/Modules/Cooldowns/Brain.lua", addon)
+	loadModule("src/Core/Cooldowns/Brain.lua", addon)
 
-	local brain = addon.Modules.Cooldowns.Brain
-	local rules = addon.Modules.Cooldowns.Rules
+	local brain = addon.Core.Cooldowns.Brain
+	local rules = addon.Core.Cooldowns.Rules
 
 	brain:RegisterWithObserver(observer)
 

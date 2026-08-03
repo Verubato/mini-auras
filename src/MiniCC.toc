@@ -70,6 +70,11 @@ Core\Frames\GW2UI.lua
 Core\Frames\MSUF.lua
 Core\TrinketsTracker.lua
 Core\ProfileManager.lua
+Core\Cooldowns\PvPTalentSync.lua
+Core\Cooldowns\Talents.lua
+Core\Cooldowns\Rules.lua
+Core\Cooldowns\SignatureDetector.lua
+Core\Cooldowns\Brain.lua
 
 Modules\CrowdControlModule.lua
 Modules\HealerCrowdControlModule.lua
@@ -80,12 +85,7 @@ Modules\EnemyKickTrackerModule.lua
 Modules\AurasModule.lua
 Modules\PrecogModule.lua
 Modules\TrinketsModule.lua
-Modules\Cooldowns\PvPTalentSync.lua
-Modules\Cooldowns\Talents.lua
-Modules\Cooldowns\Rules.lua
-Modules\Cooldowns\SignatureDetector.lua
 Modules\FriendlyCooldowns\Observer.lua
-Modules\Cooldowns\Brain.lua
 Modules\FriendlyCooldowns\Display.lua
 Modules\FriendlyCooldowns\Module.lua
 Modules\EnemyCooldowns\Observer.lua

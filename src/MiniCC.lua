@@ -23,7 +23,7 @@ local modules = {
 	addon.Modules.AurasModule,
 	addon.Modules.PrecogModule,
 	addon.Modules.TrinketsModule,
-	addon.Modules.Cooldowns.Talents,
+	addon.Core.Cooldowns.Talents,
 	addon.Core.TrinketsTracker,
 	addon.Modules.FriendlyCooldownTrackerModule,
 	addon.Modules.EnemyCooldownTrackerModule,
@@ -209,11 +209,13 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field AuraCategoryIds AuraCategoryIds
 ---@field InstanceOptions InstanceOptions
 ---@field TrinketsTracker TrinketsTracker
+---@field Cooldowns Cooldowns
 
 ---@class Cooldowns
 ---@field PvPTalentSync PvPTalentSync
 ---@field Talents CooldownTalents
 ---@field Rules CooldownRules
+---@field SignatureDetector SignatureDetector
 ---@field Brain CooldownBrain
 
 ---@class FriendlyCooldowns
@@ -238,7 +240,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field PrecogModule PrecogModule
 ---@field FriendlyCooldownTrackerModule FriendlyCooldownTrackerModule
 ---@field EnemyCooldownTrackerModule EnemyCooldownTrackerModule
----@field Cooldowns Cooldowns
 ---@field FriendlyCooldowns FriendlyCooldowns
 ---@field EnemyCooldowns EnemyCooldowns
 

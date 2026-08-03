@@ -2,15 +2,15 @@
 local _, addon = ...
 
 -- Loaded before this file in TOC order.
-local rules = addon.Modules.Cooldowns.Rules
-local fcdTalents = addon.Modules.Cooldowns.Talents
-local SignatureDetector = addon.Modules.Cooldowns.SignatureDetector
+local rules = addon.Core.Cooldowns.Rules
+local fcdTalents = addon.Core.Cooldowns.Talents
+local SignatureDetector = addon.Core.Cooldowns.SignatureDetector
 
-addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
+addon.Core.Cooldowns = addon.Core.Cooldowns or {}
 
 ---@class CooldownBrain
 local B = {}
-addon.Modules.Cooldowns.Brain = B
+addon.Core.Cooldowns.Brain = B
 
 -- Seconds of timing tolerance when matching a measured buff duration to a rule.
 -- Covers frame-rate jitter, network latency, and slight timestamp rounding.

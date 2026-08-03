@@ -1,7 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 
-addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
+addon.Core.Cooldowns = addon.Core.Cooldowns or {}
 
 -- All signature events must arrive within this window of each other to count as one batch.
 local CORRELATION_WINDOW  = 0.5
@@ -26,7 +26,7 @@ local EC_DURATION_TOLERANCE = 0.5
 
 ---@class SignatureDetector
 local SD = {}
-addon.Modules.Cooldowns.SignatureDetector = SD
+addon.Core.Cooldowns.SignatureDetector = SD
 
 local methods = {}
 methods.__index = methods

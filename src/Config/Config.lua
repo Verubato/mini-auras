@@ -400,7 +400,7 @@ function M:Init()
 		end
 
 		if msg == "debug" then
-			local on = addon.Modules.Cooldowns.Brain:ToggleDebug()
+			local on = addon.Core.Cooldowns.Brain:ToggleDebug()
 			mini:Notify(on and "Cooldown debug logging ON" or "Cooldown debug logging OFF")
 			return
 		end

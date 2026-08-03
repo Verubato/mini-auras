@@ -4,11 +4,11 @@ local mini = addon.Framework
 local inspectorFacade = addon.Core.InspectorFacade
 local wowEx = addon.Utils.WoWEx
 
-addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
+addon.Core.Cooldowns = addon.Core.Cooldowns or {}
 
 ---@class CooldownTalents
 local M = {}
-addon.Modules.Cooldowns.Talents = M
+addon.Core.Cooldowns.Talents = M
 
 -- playerName -> talentRanks (spellId -> rank purchased)
 local unitTalentRanks = {}
@@ -1020,7 +1020,7 @@ function M:Init()
 	frame:RegisterEvent("PLAYER_LOGIN")
 
 	-- Receive PvP talent data from group members via PvPTalentSync.
-	addon.Modules.Cooldowns.PvPTalentSync:RegisterCallback(function(playerName, pvpTalentIds)
+	addon.Core.Cooldowns.PvPTalentSync:RegisterCallback(function(playerName, pvpTalentIds)
 		local name = playerName:match("^([^%-]+)") or playerName
 		if pvpTalentIds then
 			local ids = {}

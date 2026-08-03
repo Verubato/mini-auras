@@ -2,8 +2,8 @@
 local _, addon = ...
 local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
-local rules = addon.Modules.Cooldowns.Rules
-local fcdTalents = addon.Modules.Cooldowns.Talents
+local rules = addon.Core.Cooldowns.Rules
+local fcdTalents = addon.Core.Cooldowns.Talents
 
 addon.Modules.EnemyCooldowns = addon.Modules.EnemyCooldowns or {}
 

@@ -1,7 +1,7 @@
 --@type string, Addon
 local _, addon = ...
 
-addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
+addon.Core.Cooldowns = addon.Core.Cooldowns or {}
 
 -- Rules keyed first by spec ID (more precise), then by class token (fallback).
 -- Each rule carries flags for which aura type(s) it can match:
@@ -673,7 +673,7 @@ local trackableSpellIdCache = {}
 local function ExcludedByDefaultTalent(rule, specId, classToken)
 	local excl = rule.ExcludeIfTalent
 	if not excl then return false end
-	local talents = addon.Modules.Cooldowns.Talents
+	local talents = addon.Core.Cooldowns.Talents
 	if not (talents and talents.IsDefaultTalent) then return false end
 	if type(excl) == "table" then
 		for _, id in ipairs(excl) do
@@ -700,7 +700,7 @@ local function BuildEnemyExcludedSet()
 	for _, ruleList in pairs(rules.ByClass) do scan(ruleList) end
 end
 
-addon.Modules.Cooldowns.Rules = rules
+addon.Core.Cooldowns.Rules = rules
 
 ---Returns the type of a spell.  Every tracked cooldown is now a defensive
 ---(BigDefensive or ExternalDefensive), so this always returns "Defensive".

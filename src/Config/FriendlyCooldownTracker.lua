@@ -7,7 +7,7 @@ local horizontalSpacing = mini.HorizontalSpacing
 local config = addon.Config
 
 -- Loaded before this file in TOC order (via Config.lua which runs after all Modules).
-local rules = addon.Modules.Cooldowns.Rules
+local rules = addon.Core.Cooldowns.Rules
 local fcdDisplay = addon.Modules.FriendlyCooldowns.Display
 local fcdModule = addon.Modules.FriendlyCooldowns.Module
 

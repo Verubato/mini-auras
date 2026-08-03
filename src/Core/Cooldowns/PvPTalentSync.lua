@@ -1,11 +1,11 @@
 ---@type string, Addon
 local _, addon = ...
 
-addon.Modules.Cooldowns = addon.Modules.Cooldowns or {}
+addon.Core.Cooldowns = addon.Core.Cooldowns or {}
 
 ---@class PvPTalentSync
 local M = {}
-addon.Modules.Cooldowns.PvPTalentSync = M
+addon.Core.Cooldowns.PvPTalentSync = M
 addon.Utils.PvPTalentSync = M -- backward compat
 
 local wowEx = addon.Utils.WoWEx

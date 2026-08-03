@@ -12,11 +12,11 @@ local trinketsTracker = addon.Core.TrinketsTracker
 local instanceOptions = addon.Core.InstanceOptions
 
 -- Loaded before this file in TOC order.
-local fcdTalents = addon.Modules.Cooldowns.Talents
+local fcdTalents = addon.Core.Cooldowns.Talents
 local observer = addon.Modules.FriendlyCooldowns.Observer
-local brain = addon.Modules.Cooldowns.Brain
+local brain = addon.Core.Cooldowns.Brain
 local display = addon.Modules.FriendlyCooldowns.Display
-local rules = addon.Modules.Cooldowns.Rules
+local rules = addon.Core.Cooldowns.Rules
 
 ---@class FriendlyCooldownTrackerModule : IModule
 local M = {}

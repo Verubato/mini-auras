@@ -7,7 +7,7 @@ local horizontalSpacing = mini.HorizontalSpacing
 local config = addon.Config
 
 local ecdModule = addon.Modules.EnemyCooldowns.Module
-local rules = addon.Modules.Cooldowns.Rules
+local rules = addon.Core.Cooldowns.Rules
 
 local GROW_OPTIONS = { "LEFT", "RIGHT", "CENTER" }
 local DISPLAY_MODE_OPTIONS = { "ArenaFrames", "Linear" }

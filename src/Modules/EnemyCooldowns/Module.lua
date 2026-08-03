@@ -8,10 +8,10 @@ local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 
 -- Loaded before this file in TOC order.
-local rules      = addon.Modules.Cooldowns.Rules
-local fcdTalents = addon.Modules.Cooldowns.Talents
-local fcdBrain   = addon.Modules.Cooldowns.Brain
-local SignatureDetector = addon.Modules.Cooldowns.SignatureDetector
+local rules      = addon.Core.Cooldowns.Rules
+local fcdTalents = addon.Core.Cooldowns.Talents
+local fcdBrain   = addon.Core.Cooldowns.Brain
+local SignatureDetector = addon.Core.Cooldowns.SignatureDetector
 local observer   = addon.Modules.EnemyCooldowns.Observer
 local display    = addon.Modules.EnemyCooldowns.Display
 
