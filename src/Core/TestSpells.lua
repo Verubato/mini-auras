@@ -5,13 +5,18 @@ local _, addon = ...
 local M = {}
 addon.Core.TestSpells = M
 
--- Preview spells for test mode. Four modules were each declaring their own copy of the same
--- three crowd control entries, so they live here once instead.
+-- Every spell test mode previews, in one place. Four modules were declaring their own copy of
+-- the same three crowd control entries; the rest were each hiding a list somewhere in the middle
+-- of a render function. Which spells the preview shows is a question you should be able to answer
+-- without reading any of them.
 --
--- READ-ONLY: every consumer shares these tables. Modules that need a different preview (the
--- nameplate bars demo the slot distribution across three categories, the alert bars carry a
--- class per spell for the class-colour preview) keep their own lists rather than bending these.
+-- READ-ONLY: consumers share these tables. The per-entry fields are part of what the preview
+-- shows, so they live with the spell rather than in the module: StartOffset and Cooldown drive
+-- the fake swipe, Class drives the alerts class-colour preview, DispelColor the border tint.
 
+-- Shared sets
+
+---Crowd control, used by the unit frame, healer and portrait previews.
 ---@type TestSpell[]
 M.CrowdControl = {
 	{ SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR },     -- Kidney Shot
@@ -19,8 +24,86 @@ M.CrowdControl = {
 	{ SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }, -- Hex
 }
 
+---Defensives, used by the auras preview.
 ---@type TestSpell[]
 M.Defensive = {
 	{ SpellId = 33206 }, -- Pain Suppression
 	{ SpellId = 1022 },  -- Blessing of Protection
+}
+
+-- Per-module sets
+
+---The nameplate bars preview two of each category to demo the slot distribution between them,
+---so they take their own shorter lists rather than the shared ones.
+M.Nameplates = {
+	CrowdControl = {
+		408,  -- Kidney Shot
+		5782, -- Fear
+	},
+	Defensive = {
+		104773, -- Unending Resolve
+		1022,   -- Blessing of Protection
+	},
+	Important = {
+		31884,  -- Avenging Wrath
+		121471, -- Shadow Blades
+	},
+	---Border tints for the CC ids above, keyed by spell id (the bars look them up by id, not
+	---position, because the three categories share one slot run).
+	DispelColors = {
+		[408] = DEBUFF_TYPE_NONE_COLOR,
+		[5782] = DEBUFF_TYPE_MAGIC_COLOR,
+	},
+}
+
+---The alert bars carry a class per defensive so the legacy class-colour preview has something
+---to colour; the real 12.1 bars can't class colour (UnitClass is secret there).
+M.Alerts = {
+	Defensive = {
+		{ SpellId = 47788, Class = "PRIEST" },   -- Guardian Spirit
+		{ SpellId = 45438, Class = "MAGE" },     -- Ice Block
+		{ SpellId = 104773, Class = "WARLOCK" }, -- Unending Resolve
+	},
+	Important = {
+		190319, -- Combustion
+		121471, -- Shadow Blades
+		377362, -- Precognition
+	},
+}
+
+---The cooldown trackers preview a running swipe, so each entry carries when it started and how
+---long it lasts. Predictive entries show the glow and buff countdown before the cooldown commits.
+M.FriendlyCooldowns = {
+	Committed = {
+		{ SpellId = 642,   StartOffset = 60,  Cooldown = 300 }, -- Divine Shield
+		{ SpellId = 33206, StartOffset = 30,  Cooldown = 180 }, -- Pain Suppression
+		{ SpellId = 45438, StartOffset = 120, Cooldown = 240 }, -- Ice Block
+	},
+	Predictive = {
+		{ SpellId = 288613, StartOffset = 5, BuffDuration = 17 }, -- Trueshot (MM Hunter)
+		{ SpellId = 190319, StartOffset = 3, BuffDuration = 15 }, -- Combustion (Fire Mage)
+	},
+}
+
+---Inactive entries preview the faded always-show state when that option is enabled.
+M.EnemyCooldowns = {
+	{ SpellId = 45438,   StartOffset = 30, Cooldown = 240 }, -- Ice Block        (defensive)
+	{ SpellId = 642,     StartOffset = 15, Cooldown = 300, Inactive = true }, -- Divine Shield (defensive)
+	{ SpellId = 31224,   StartOffset = 10, Cooldown = 60  }, -- Cloak of Shadows (defensive)
+	{ SpellId = 48792,   StartOffset = 45, Cooldown = 180, Inactive = true }, -- Icebound Fortitude (defensive)
+	{ SpellId = 47585,   StartOffset = 5,  Cooldown = 120 }, -- Dispersion       (defensive)
+	{ SpellId = 22812,   StartOffset = 20, Cooldown = 60  }, -- Barkskin         (defensive)
+	{ SpellId = 871,     StartOffset = 60, Cooldown = 240, Inactive = true }, -- Shield Wall (defensive)
+	{ SpellId = 33206,   StartOffset = 8,  Cooldown = 120 }, -- Pain Suppression (external defensive)
+}
+
+---@type TestSpell
+M.Precog = { SpellId = 377360 } -- Precognition
+
+---Specs whose interrupt cooldowns the enemy kick bar previews - a spell list by proxy, since the
+---bar draws one icon per spec's kick.
+M.KickSpecIds = {
+	62,  -- Arcane Mage
+	254, -- Marksmanship Hunter
+	259, -- Assassination Rogue
 }

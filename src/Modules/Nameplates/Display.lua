@@ -11,6 +11,7 @@ local auraFilters = addon.Core.AuraFilters
 local growAnchors = addon.Core.GrowAnchors
 local kickSlot = addon.Core.KickSlot
 local slotDistribution = addon.Utils.SlotDistribution
+local testSpellData = addon.Core.TestSpells
 local mathMin = math.min
 local GetTime = GetTime
 local C_NamePlate = C_NamePlate
@@ -40,29 +41,16 @@ local paused = false
 ---@type table<string, NameplateData>
 local nameplateAnchors = {}
 
-local TEST_CC_NAMEPLATE_SPELL_IDS = {
-	408, -- kidney shot
-	5782, -- fear
-}
-local TEST_DEFENSIVE_NAMEPLATE_SPELL_IDS = {
-	104773, -- warlock wall
-	1022, -- bop
-}
-local TEST_IMPORTANT_NAMEPLATE_SPELL_IDS = {
-	31884, -- avenging wrath
-	121471, -- shadow blades
-}
+local TEST_CC_NAMEPLATE_SPELL_IDS = testSpellData.Nameplates.CrowdControl
+local TEST_DEFENSIVE_NAMEPLATE_SPELL_IDS = testSpellData.Nameplates.Defensive
+local TEST_IMPORTANT_NAMEPLATE_SPELL_IDS = testSpellData.Nameplates.Important
 -- Pre-computed lengths; these lists never change at runtime so recalculating
 -- #list on every test-mode call is pure waste.
 local TEST_CC_COUNT = #TEST_CC_NAMEPLATE_SPELL_IDS
 local TEST_DEFENSIVE_COUNT = #TEST_DEFENSIVE_NAMEPLATE_SPELL_IDS
 local TEST_IMPORTANT_COUNT = #TEST_IMPORTANT_NAMEPLATE_SPELL_IDS
 
--- Test spell dispel colors for CC spells
-local TEST_CC_DISPEL_COLORS = {
-	[408] = DEBUFF_TYPE_NONE_COLOR, -- kidney shot
-	[5782] = DEBUFF_TYPE_MAGIC_COLOR, -- fear
-}
+local TEST_CC_DISPEL_COLORS = testSpellData.Nameplates.DispelColors
 
 -- Category colors
 local DEFENSIVE_COLOR = { r = 0.0, g = 0.8, b = 0.0 } -- Green

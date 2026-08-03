@@ -11,6 +11,7 @@ local moduleUtil = addon.Utils.ModuleUtil
 -- Loaded before this file in TOC order.
 local fcdTalents = addon.Core.Cooldowns.Talents
 local rules = addon.Core.Cooldowns.Rules
+local testSpellData = addon.Core.TestSpells
 
 addon.Modules.FriendlyCooldowns = addon.Modules.FriendlyCooldowns or {}
 
@@ -160,12 +161,7 @@ local function BuildTestSlots(showTrinket, showTooltips, iconOptions, predictive
 			FontScale = db.FontScale,
 		}
 	end
-	local testSpells = {
-		{ SpellId = 642,   StartOffset = 60,  Cooldown = 300 }, -- Divine Shield
-		{ SpellId = 33206, StartOffset = 30,  Cooldown = 180 }, -- Pain Suppression
-		{ SpellId = 45438, StartOffset = 120, Cooldown = 240 }, -- Ice Block
-	}
-	for _, t in ipairs(testSpells) do
+	for _, t in ipairs(testSpellData.FriendlyCooldowns.Committed) do
 		local texture = GetSpellIcon(t.SpellId)
 		if texture then
 			slots[#slots + 1] = {
@@ -181,11 +177,7 @@ local function BuildTestSlots(showTrinket, showTooltips, iconOptions, predictive
 	end
 	-- Predictive test spells: buff is active, cooldown not yet committed.
 	-- Shows the glow + buff countdown behaviour before the CD swipe starts.
-	local testPredictiveSpells = {
-		{ SpellId = 288613, StartOffset = 5, BuffDuration = 17 }, -- Trueshot (MM Hunter)
-		{ SpellId = 190319, StartOffset = 3, BuffDuration = 15 }, -- Combustion (Fire Mage)
-	}
-	for _, t in ipairs(testPredictiveSpells) do
+	for _, t in ipairs(testSpellData.FriendlyCooldowns.Predictive) do
 		local texture = GetSpellIcon(t.SpellId)
 		if texture then
 			slots[#slots + 1] = {

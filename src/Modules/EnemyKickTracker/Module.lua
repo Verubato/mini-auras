@@ -4,6 +4,7 @@ local mini = addon.Framework
 local eventGate = addon.Core.EventGate
 local inspectorFacade = addon.Core.InspectorFacade
 local kickData = addon.Core.KickData
+local testSpellData = addon.Core.TestSpells
 
 -- Loaded before this file in TOC order.
 local observer = addon.Modules.EnemyKickTracker.Observer
@@ -21,8 +22,7 @@ local testModeActive = false
 -- fallback icon (rogue Kick)
 local KICK_ICON = C_Spell.GetSpellTexture(1766)
 
--- Specs previewed in test mode: mage, hunter, rogue.
-local TEST_SPEC_IDS = { 62, 254, 259 }
+local TEST_SPEC_IDS = testSpellData.KickSpecIds
 -- Rebuilt on every preview; the display reads it synchronously and keeps nothing.
 local testEntriesScratch = {}
 

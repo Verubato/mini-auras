@@ -8,6 +8,7 @@ local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
+local testSpellData = addon.Core.TestSpells
 -- 12.1 path: the guess maps onto an AuraContainer group filtered to the two spells outright.
 -- The secret curve/EvaluateColorValueFromBoolean dance is only needed on the legacy path, which
 -- cannot read a spell id at all. The IconSlotContainer is kept for test mode. TEMPORARY dual
@@ -285,7 +286,7 @@ local function CreateTestData()
 		HUNTER = true,
 	})[UnitClassBase("player")]
 
-	testSpell = { SpellId = 377360 }
+	testSpell = testSpellData.Precog
 end
 
 local function CreateFrames()

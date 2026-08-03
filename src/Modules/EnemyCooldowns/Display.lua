@@ -4,6 +4,7 @@ local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
 local rules = addon.Core.Cooldowns.Rules
 local fcdTalents = addon.Core.Cooldowns.Talents
+local testSpellData = addon.Core.TestSpells
 
 addon.Modules.EnemyCooldowns = addon.Modules.EnemyCooldowns or {}
 
@@ -24,16 +25,7 @@ local slotTablePool = {}
 
 -- Test-mode preview cooldowns.
 -- Inactive=true entries preview the always-show faded state when that option is enabled.
-local TEST_SPELLS = {
-	{ SpellId = 45438,   StartOffset = 30, Cooldown = 240 }, -- Ice Block        (defensive)
-	{ SpellId = 642,     StartOffset = 15, Cooldown = 300, Inactive = true }, -- Divine Shield (defensive)
-	{ SpellId = 31224,   StartOffset = 10, Cooldown = 60  }, -- Cloak of Shadows (defensive)
-	{ SpellId = 48792,   StartOffset = 45, Cooldown = 180, Inactive = true }, -- Icebound Fortitude (defensive)
-	{ SpellId = 47585,   StartOffset = 5,  Cooldown = 120 }, -- Dispersion       (defensive)
-	{ SpellId = 22812,   StartOffset = 20, Cooldown = 60  }, -- Barkskin         (defensive)
-	{ SpellId = 871,     StartOffset = 60, Cooldown = 240, Inactive = true }, -- Shield Wall (defensive)
-	{ SpellId = 33206,   StartOffset = 8,  Cooldown = 120 }, -- Pain Suppression (external defensive)
-}
+local TEST_SPELLS = testSpellData.EnemyCooldowns
 
 ---Returns true when a committed cooldown entry is currently counting down.
 ---Multi-charge entries are active while any charge is recharging; single-charge entries are

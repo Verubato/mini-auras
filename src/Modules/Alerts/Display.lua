@@ -10,6 +10,7 @@ local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local units = addon.Utils.Units
 local auras = addon.Utils.Auras
+local testSpellData = addon.Core.TestSpells
 
 -- Loaded before this file in TOC order.
 local sound = addon.Modules.Alerts.Sound
@@ -954,12 +955,6 @@ function D:RefreshTestAlerts()
 
 	local includeDefensives = db.Modules.AlertsModule.IncludeDefensives
 
-	local testDefensiveSpells = {
-		{ spellId = 47788, class = "PRIEST" }, -- Guardian Spirit
-		{ spellId = 45438, class = "MAGE" }, -- Ice Block
-		{ spellId = 104773, class = "WARLOCK" }, -- Unending Resolve
-	}
-
 	local now = GetTime()
 	-- Test icons render through the legacy IconSlotContainer, which CAN class colour - but the
 	-- real 12.1 bars can't (UnitClass is secret there, and the option is hidden in the config).
@@ -975,12 +970,12 @@ function D:RefreshTestAlerts()
 	local defSlot = 0
 	if includeDefensives then
 		local stepIndex = 0
-		for _, entry in ipairs(testDefensiveSpells) do
-			local tex = C_Spell.GetSpellTexture(entry.spellId)
+		for _, entry in ipairs(testSpellData.Alerts.Defensive) do
+			local tex = C_Spell.GetSpellTexture(entry.SpellId)
 			if tex and defSlot < container.Count then
 				local glowColor = defensiveTestColor
-				if colorByClass and entry.class then
-					local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.class]
+				if colorByClass and entry.Class then
+					local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.Class]
 					if classColor then
 						glowColor = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1 }
 					end
@@ -995,7 +990,7 @@ function D:RefreshTestAlerts()
 					ReverseCooldown = db.Modules.AlertsModule.Icons.ReverseCooldown,
 					Color = glowColor,
 					FontScale = db.FontScale,
-					SpellId = showTooltips and entry.spellId or nil,
+					SpellId = showTooltips and entry.SpellId or nil,
 				})
 				stepIndex = stepIndex + 1
 			end
@@ -1008,7 +1003,7 @@ function D:RefreshTestAlerts()
 	local impTarget = (splitBars and importantContainer) or container
 	local impSlot = splitBars and 0 or defSlot
 	if importantEnabled and impTarget then
-		local testImportantSpellIds = { 190319, 121471, 377362 } -- Combustion, Shadow Blades, precog
+		local testImportantSpellIds = testSpellData.Alerts.Important
 		for i = 1, #testImportantSpellIds do
 			if impSlot >= impTarget.Count then
 				break
