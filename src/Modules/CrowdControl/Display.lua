@@ -7,10 +7,9 @@ local units = addon.Utils.Units
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
-local growAnchors = addon.Core.GrowAnchors
-local kickSlot = addon.Core.KickSlot
 local unitAuraWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
+local anchoredIcons = addon.Core.AnchoredIcons
 local testSpellData = addon.Core.TestSpells
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
@@ -38,9 +37,6 @@ local watchers = {}
 local testSpells = {}
 -- Reused buffer for GetPetUnitFrames so discovery doesn't allocate each refresh.
 local petUnitFrameScratch = {}
--- 12.1 scratch: the kick slot options are rebuilt on every kick event, and SetSlot reads them
--- synchronously and keeps nothing. (The display style uses the wrapper's shared scratch.)
-local kickSlotScratch = {}
 
 local function GetOptions()
 	return instanceOptions:IsRaid() and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
@@ -145,30 +141,13 @@ end
 ---@param entry CrowdControlWatchEntry
 ---@param anchor table
 ---@param options table
+---A pet never shows a kick icon, so its aura display never has to chain past one.
+---@param entry CrowdControlWatchEntry
+---@param anchor table
+---@param options table
 local function AnchorAuraDisplay(entry, anchor, options)
-	local display = entry.Display
-	if not display then
-		return
-	end
-
-	local frame = display.Frame
-	if frame:GetParent() ~= anchor then
-		frame:SetParent(anchor)
-	end
-	frame:SetIgnoreParentAlpha(db.FadeWithParent == false)
-	frame:SetFrameStrata(frames:GetNextStrata(anchor:GetFrameStrata()))
-	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
-
 	local kickActive = not units:IsPetOrMinion(entry.Unit) and kickTracker:GetKick(entry.Unit) ~= nil
-	display:AnchorAfterKick(
-		entry.Container.Frame,
-		anchor,
-		options.Grow or "CENTER",
-		options.IconSpacing or 2,
-		options.Offset.X,
-		options.Offset.Y,
-		kickActive
-	)
+	anchoredIcons:AnchorAuraDisplay(entry, anchor, options, kickActive)
 end
 
 ---12.1 path: renders the kick icon into the entry's IconSlotContainer (slot 1) and re-anchors the
@@ -185,25 +164,11 @@ local function UpdateKickIcon(entry)
 	end
 
 	local kickEntry = not isPet and kickTracker:GetKick(entry.Unit) or nil
-	local slotOptions = nil
-	if kickEntry then
-		slotOptions = kickSlotScratch
-		slotOptions.Texture = kickEntry.Texture
-		slotOptions.DurationObject = kickEntry.DurationObject
-		slotOptions.Alpha = true
-		slotOptions.ReverseCooldown = options.Icons.ReverseCooldown
-		slotOptions.ShowMilliseconds = options.Icons.ShowMilliseconds
-		slotOptions.Glow = options.Icons.Glow
-		slotOptions.Color = options.Icons.ColorByDispelType and kickEntry.Color or nil
-		slotOptions.FontScale = db.FontScale
-	end
 
-	entry.KickTimer = kickSlot:Render(entry.Container, kickEntry, slotOptions, entry.KickTimer, function()
+	anchoredIcons:RenderKickIcon(entry, options, kickEntry, function()
 		entry.KickTimer = nil
 		UpdateKickIcon(entry)
 	end)
-
-	AnchorAuraDisplay(entry, entry.Anchor, options)
 end
 
 -- Which renderer a live aura update goes through. Bound once at load rather than branching on
@@ -213,36 +178,6 @@ end
 -- UpdateKickIcon.
 ---@type fun(entry: CrowdControlWatchEntry)
 local RenderEntry = USE_AURA_CONTAINERS and UpdateKickIcon or UpdateWatcherAuras
-
----@param header IconSlotContainer
----@param anchor table
----@param options CrowdControlInstanceOptions|PetCrowdControlModuleOptions
-local function AnchorContainer(header, anchor, options)
-	if not options then
-		return
-	end
-
-	local frame = header.Frame
-	-- Parent to the anchor so the icons inherit its alpha and fade with the unit frame
-	-- (e.g. when the unit goes out of range). Honour the FadeWithParent option: when disabled,
-	-- ignore the parent's alpha so the icons stay fully opaque.
-	if frame:GetParent() ~= anchor then
-		frame:SetParent(anchor)
-	end
-	frame:SetIgnoreParentAlpha(db.FadeWithParent == false)
-	frame:ClearAllPoints()
-	frame:SetAlpha(1)
-	-- plexus frames sit at a MEDIUM frame strata, so we need to be above it
-	-- that's the only reason we need this strata code, Blizzard and all other addons don't require this
-	frame:SetFrameStrata(frames:GetNextStrata(anchor:GetFrameStrata()))
-	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
-
-	local anchorPoint, relativeToPoint = growAnchors:GetAnchor(options.Grow)
-	header:SetGrowDown(options.Grow == "DOWN")
-	header:SetGrowUp(options.Grow == "UP")
-	header:SetColumns(nil)
-	frame:SetPoint(anchorPoint, anchor, relativeToPoint, options.Offset.X, options.Offset.Y)
-end
 
 ---@param anchor table
 ---@param unit string?
@@ -358,7 +293,7 @@ local function EnsureWatcher(anchor, unit)
 	end
 
 	RenderEntry(entry)
-	AnchorContainer(entry.Container, anchor, options)
+	anchoredIcons:AnchorContainer(entry.Container, anchor, options)
 
 	if entry.Display then
 		AnchorAuraDisplay(entry, anchor, options)
@@ -562,7 +497,7 @@ local function RefreshTestIcons()
 				container:SetSlotUnused(i)
 			end
 
-			AnchorContainer(container, anchor, entryOptions)
+			anchoredIcons:AnchorContainer(container, anchor, entryOptions)
 			frames:ShowHideFrame(container.Frame, anchor, true, isPet and false or entryOptions.ExcludePlayer)
 		end
 	end
@@ -570,17 +505,7 @@ end
 
 local function Teardown()
 	for _, entry in pairs(watchers) do
-		if entry.Watcher then
-			entry.Watcher:Disable()
-		end
-		if entry.Display then
-			entry.Display:SetEnabled(false)
-			entry.Display:Hide()
-		end
-		if entry.Container then
-			entry.Container:ResetAllSlots()
-			entry.Container.Frame:Hide()
-		end
+		anchoredIcons:TeardownEntry(entry)
 	end
 end
 -- Brings every entry's watcher/display back in line with its feature toggle, then discovers
@@ -629,20 +554,6 @@ local function GetEntryState(entry, options, moduleEnabled, petEnabled)
 	return entryEnabled, petOptions, true
 end
 
----This entry's feature is toggled off - hide and disable it.
----@param entry CrowdControlWatchEntry
-local function TeardownEntry(entry)
-	if entry.Watcher then
-		entry.Watcher:Disable()
-	end
-	if entry.Display then
-		entry.Display:SetEnabled(false)
-		entry.Display:Hide()
-	end
-	entry.Container:ResetAllSlots()
-	entry.Container.Frame:Hide()
-end
-
 ---@param entry CrowdControlWatchEntry
 ---@param anchor table
 ---@param entryOptions CrowdControlInstanceOptions|PetCrowdControlModuleOptions
@@ -676,7 +587,7 @@ local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 		RenderEntry(entry)
 	end
 
-	AnchorContainer(entry.Container, anchor, entryOptions)
+	anchoredIcons:AnchorContainer(entry.Container, anchor, entryOptions)
 	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, isPet and false or entryOptions.ExcludePlayer)
 
 	if not entry.Display then
@@ -702,7 +613,7 @@ local function ApplyOptions(options)
 		local entryEnabled, entryOptions, isPet = GetEntryState(entry, options, moduleEnabled, petEnabled)
 
 		if not entryEnabled or not entryOptions then
-			TeardownEntry(entry)
+			anchoredIcons:TeardownEntry(entry)
 		else
 			ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 		end
@@ -755,10 +666,7 @@ end
 
 ---Blanks and hides every entry's kick/test container, for the test-mode handover.
 function D:ResetAllContainers()
-	for _, entry in pairs(watchers) do
-		entry.Container:ResetAllSlots()
-		entry.Container.Frame:Hide()
-	end
+	anchoredIcons:ResetContainers(watchers)
 end
 
 ---12.1 path: redraws the kick icons a test-mode reset wiped.
@@ -769,12 +677,7 @@ function D:RefreshKickIcons()
 end
 
 function D:HideAll()
-	for _, entry in pairs(watchers) do
-		entry.Container.Frame:Hide()
-		if entry.Display then
-			entry.Display:Hide()
-		end
-	end
+	anchoredIcons:HideAll(watchers)
 end
 
 function D:OnCufUpdateVisible(frame)

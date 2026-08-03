@@ -126,6 +126,7 @@ local function OnAddonLoaded()
 	frames:Init()
 	addon.Utils.ModuleUtil:Init()
 	addon.Core.ProfileManager:Init()
+	addon.Core.AnchoredIcons:Init()
 
 	for _, module in ipairs(modules) do
 		module:Init()
@@ -211,6 +212,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field TrinketsTracker TrinketsTracker
 ---@field TestModeManager TestModeManager
 ---@field TestSpells TestSpells
+---@field AnchoredIcons AnchoredIcons
 ---@field Cooldowns Cooldowns
 
 ---@class Cooldowns

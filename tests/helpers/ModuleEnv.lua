@@ -324,6 +324,8 @@ function M.build()
 	loadFile("src/Core/DuelPoller.lua")
 	loadFile("src/Core/Display/IconSlotContainer.lua")
 	loadFile("src/Core/Kicks/KickSlot.lua")
+	loadFile("src/Core/Display/AnchoredIcons.lua")
+	addon.Core.AnchoredIcons:Init()
 	loadFile("src/Core/Auras/AuraContainerDisplay.lua")
 
 	env.loadModule = function(path)

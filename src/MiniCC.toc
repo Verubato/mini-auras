@@ -73,6 +73,7 @@ Core\Frames\Buzzard.lua
 Core\Frames\NDui.lua
 Core\Frames\GW2UI.lua
 Core\Frames\MSUF.lua
+Core\Display\AnchoredIcons.lua
 Core\TrinketsTracker.lua
 Core\ProfileManager.lua
 Core\TestSpells.lua

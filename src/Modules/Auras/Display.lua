@@ -8,14 +8,13 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
 local auraCategoryIds = addon.Core.AuraCategoryIds
-local growAnchors = addon.Core.GrowAnchors
-local kickSlot = addon.Core.KickSlot
 local UnitAuraWatcher = addon.Core.UnitAuraWatcher
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local slotDistribution = addon.Utils.SlotDistribution
 local wowEx = addon.Utils.WoWEx
 local kickTracker = addon.Core.KickTracker
+local anchoredIcons = addon.Core.AnchoredIcons
 local testSpellData = addon.Core.TestSpells
 
 addon.Modules.Auras = addon.Modules.Auras or {}
@@ -42,9 +41,6 @@ local testDefensiveSpells = {}
 local testCcSpells = {}
 ---@type Db
 local db
--- 12.1 scratch: the kick slot options are rebuilt on every kick event, and SetSlot reads them
--- synchronously and keeps nothing. (The display style uses the wrapper's shared scratch.)
-local kickSlotScratch = {}
 
 
 -- Helpful auras are filtered by spell id alone rather than by Blizzard's category flags. That is
@@ -251,30 +247,13 @@ end
 ---@param entry AurasWatchEntry
 ---@param anchor table
 ---@param options table
+---With kicks switched off the display has no kick icon to chain past.
+---@param entry AurasWatchEntry
+---@param anchor table
+---@param options AurasInstanceOptions
 local function AnchorAuraDisplay(entry, anchor, options)
-	local display = entry.Display
-	if not display then
-		return
-	end
-
-	local frame = display.Frame
-	if frame:GetParent() ~= anchor then
-		frame:SetParent(anchor)
-	end
-	frame:SetIgnoreParentAlpha(db.FadeWithParent == false)
-	frame:SetFrameStrata(frames:GetNextStrata(anchor:GetFrameStrata()))
-	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
-
 	local kickActive = options.ShowKicks ~= false and kickTracker:GetKick(entry.Unit) ~= nil
-	display:AnchorAfterKick(
-		entry.Container.Frame,
-		anchor,
-		options.Grow or "CENTER",
-		options.IconSpacing or 2,
-		options.Offset.X,
-		options.Offset.Y,
-		kickActive
-	)
+	anchoredIcons:AnchorAuraDisplay(entry, anchor, options, kickActive)
 end
 
 ---12.1 path: renders the kick icon into the entry's IconSlotContainer (slot 1) and re-anchors
@@ -291,24 +270,11 @@ local function UpdateKickIcon(entry)
 	end
 
 	local kickEntry = options.ShowKicks ~= false and kickTracker:GetKick(entry.Unit) or nil
-	local slotOptions = nil
-	if kickEntry then
-		slotOptions = kickSlotScratch
-		slotOptions.Texture = kickEntry.Texture
-		slotOptions.DurationObject = kickEntry.DurationObject
-		slotOptions.Color = options.Icons.ColorByDispelType and kickEntry.Color or nil
-		slotOptions.Alpha = true
-		slotOptions.ReverseCooldown = options.Icons.ReverseCooldown
-		slotOptions.Glow = options.Icons.Glow
-		slotOptions.FontScale = db.FontScale
-	end
 
-	entry.KickTimer = kickSlot:Render(entry.Container, kickEntry, slotOptions, entry.KickTimer, function()
+	anchoredIcons:RenderKickIcon(entry, options, kickEntry, function()
 		entry.KickTimer = nil
 		UpdateKickIcon(entry)
 	end)
-
-	AnchorAuraDisplay(entry, entry.Anchor, options)
 end
 
 -- Which renderer a live aura update goes through. Bound once at load rather than branching on
@@ -318,35 +284,6 @@ end
 -- UpdateKickIcon.
 ---@type fun(entry: AurasWatchEntry)
 local RenderEntry = USE_AURA_CONTAINERS and UpdateKickIcon or UpdateWatcherAuras
-
----@param header IconSlotContainer
----@param anchor table
----@param options AurasInstanceOptions
-local function AnchorContainer(header, anchor, options)
-	if not options then
-		return
-	end
-
-	local frame = header.Frame
-	-- Parent to the anchor so the icons inherit its alpha and fade with the unit frame
-	-- (e.g. when the unit goes out of range). Honour the FadeWithParent option: when disabled,
-	-- ignore the parent's alpha so the icons stay fully opaque.
-	if frame:GetParent() ~= anchor then
-		frame:SetParent(anchor)
-	end
-	frame:SetIgnoreParentAlpha(db.FadeWithParent == false)
-	frame:ClearAllPoints()
-	frame:SetAlpha(1)
-	frame:SetFrameStrata(frames:GetNextStrata(anchor:GetFrameStrata()))
-	frame:SetFrameLevel(anchor:GetFrameLevel() + 1)
-
-	local anchorPoint, relativeToPoint = growAnchors:GetAnchor(options.Grow)
-
-	header:SetGrowDown(options.Grow == "DOWN")
-	header:SetGrowUp(options.Grow == "UP")
-	header:SetColumns(nil)
-	frame:SetPoint(anchorPoint, anchor, relativeToPoint, options.Offset.X, options.Offset.Y)
-end
 
 ---@param anchor table
 ---@param unit string?
@@ -445,7 +382,7 @@ local function EnsureWatcher(anchor, unit)
 	end
 
 	RenderEntry(entry)
-	AnchorContainer(entry.Container, anchor, options)
+	anchoredIcons:AnchorContainer(entry.Container, anchor, options)
 
 	if entry.Display then
 		AnchorAuraDisplay(entry, anchor, options)
@@ -594,26 +531,14 @@ local function RefreshTestIcons()
 			container:SetSlotUnused(i)
 		end
 
-		AnchorContainer(container, entry.Anchor, options)
+		anchoredIcons:AnchorContainer(container, entry.Anchor, options)
 		frames:ShowHideFrame(container.Frame, entry.Anchor, true, options.ExcludePlayer)
 	end
 end
 
 local function Teardown()
 	for _, entry in pairs(watchers) do
-		if entry.Watcher then
-			entry.Watcher:Disable()
-		end
-
-		if entry.Display then
-			entry.Display:SetEnabled(false)
-			entry.Display:Hide()
-		end
-
-		if entry.Container then
-			entry.Container:ResetAllSlots()
-			entry.Container.Frame:Hide()
-		end
+		anchoredIcons:TeardownEntry(entry)
 	end
 end
 
@@ -680,7 +605,7 @@ local function ApplyEntryOptions(entry, anchor, options)
 		RenderEntry(entry)
 	end
 
-	AnchorContainer(container, anchor, options)
+	anchoredIcons:AnchorContainer(container, anchor, options)
 	frames:ShowHideFrame(container.Frame, anchor, testModeActive, options.ExcludePlayer)
 
 	if not entry.Display then
@@ -750,10 +675,7 @@ end
 
 ---Blanks and hides every entry's kick/test container, for the test-mode handover.
 function D:ResetAllContainers()
-	for _, entry in pairs(watchers) do
-		entry.Container:ResetAllSlots()
-		entry.Container.Frame:Hide()
-	end
+	anchoredIcons:ResetContainers(watchers)
 end
 
 ---12.1 path: redraws the kick icons a test-mode reset wiped.
