@@ -210,6 +210,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field InstanceOptions InstanceOptions
 ---@field TrinketsTracker TrinketsTracker
 ---@field TestModeManager TestModeManager
+---@field TestSpells TestSpells
 ---@field Cooldowns Cooldowns
 
 ---@class Cooldowns

@@ -7,6 +7,7 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
 local unitWatcher = addon.Core.UnitAuraWatcher
+local testSpellData = addon.Core.TestSpells
 local units = addon.Utils.Units
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
@@ -572,10 +573,7 @@ end
 function D:Init()
 	db = mini:GetSavedVars()
 
-	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
-	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
-	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
-	testSpells = { kidneyShot, fear, hex }
+	testSpells = testSpellData.CrowdControl
 
 	CreateFrames()
 end

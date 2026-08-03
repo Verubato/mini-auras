@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
 local kickTracker = addon.Core.KickTracker
+local testSpellData = addon.Core.TestSpells
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
@@ -40,8 +41,8 @@ local testModeActive = false
 local suspended = true
 ---@type IconSlotContainer[]
 local containers = {}
----@type TestSpell[]
-local testSpells = {}
+---@type TestSpell?
+local testSpell
 
 -- Priority stack for the portrait icon, LOWEST first: a higher-priority display simply covers
 -- the ones below it, and an empty one hides its button secretly. The filters are the shared
@@ -416,7 +417,7 @@ function D:RefreshUnitAuras(unit)
 end
 
 function D:RefreshTestIcons()
-	local spellId = testSpells[1].SpellId
+	local spellId = testSpell.SpellId
 	local tex = C_Spell.GetSpellTexture(spellId)
 	local now = GetTime()
 
@@ -495,6 +496,6 @@ end
 function D:Init()
 	db = mini:GetSavedVars()
 
-	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
-	testSpells = { kidneyShot }
+	-- One icon, so only the first preview spell is ever shown.
+	testSpell = testSpellData.CrowdControl[1]
 end

@@ -11,6 +11,7 @@ local growAnchors = addon.Core.GrowAnchors
 local kickSlot = addon.Core.KickSlot
 local unitAuraWatcher = addon.Core.UnitAuraWatcher
 local kickTracker = addon.Core.KickTracker
+local testSpellData = addon.Core.TestSpells
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local wowEx = addon.Utils.WoWEx
@@ -787,10 +788,7 @@ end
 function D:Init()
 	db = mini:GetSavedVars()
 
-	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
-	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
-	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
-	testSpells = { kidneyShot, fear, hex }
+	testSpells = testSpellData.CrowdControl
 end
 
 ---@class CrowdControlWatchEntry

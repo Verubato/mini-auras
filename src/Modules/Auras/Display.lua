@@ -16,6 +16,7 @@ local moduleName = addon.Utils.ModuleName
 local slotDistribution = addon.Utils.SlotDistribution
 local wowEx = addon.Utils.WoWEx
 local kickTracker = addon.Core.KickTracker
+local testSpellData = addon.Core.TestSpells
 
 addon.Modules.Auras = addon.Modules.Auras or {}
 
@@ -773,13 +774,8 @@ end
 function D:Init()
 	db = mini:GetSavedVars()
 
-	local painSupp = { SpellId = 33206 }
-	local blessingOfProtection = { SpellId = 1022 }
-	local kidneyShot = { SpellId = 408, DispelColor = DEBUFF_TYPE_NONE_COLOR }
-	local fear = { SpellId = 5782, DispelColor = DEBUFF_TYPE_MAGIC_COLOR }
-	local hex = { SpellId = 254412, DispelColor = DEBUFF_TYPE_CURSE_COLOR }
-	testDefensiveSpells = { painSupp, blessingOfProtection }
-	testCcSpells = { kidneyShot, fear, hex }
+	testDefensiveSpells = testSpellData.Defensive
+	testCcSpells = testSpellData.CrowdControl
 end
 
 ---@class AurasWatchEntry

@@ -75,6 +75,7 @@ Core\Frames\GW2UI.lua
 Core\Frames\MSUF.lua
 Core\TrinketsTracker.lua
 Core\ProfileManager.lua
+Core\TestSpells.lua
 Core\TestModeManager.lua
 Core\Cooldowns\PvPTalentSync.lua
 Core\Cooldowns\Talents.lua
