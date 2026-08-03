@@ -250,7 +250,7 @@ function M:Build(panel, options)
 			if value then
 				-- Play the sound when enabled
 				local soundFileName = options.Sound.File or "Sonar.ogg"
-				local soundFile = config.MediaLocation .. soundFileName
+				local soundFile = config.SoundLocation .. soundFileName
 				PlaySoundFile(soundFile, options.Sound.Channel or "Master")
 			end
 			config:Apply()
@@ -268,7 +268,7 @@ function M:Build(panel, options)
 		SetValue = function(value)
 			options.Sound.File = value
 			-- Play the selected sound
-			local soundFile = config.MediaLocation .. value
+			local soundFile = config.SoundLocation .. value
 			PlaySoundFile(soundFile, options.Sound.Channel or "Master")
 			config:Apply()
 		end,

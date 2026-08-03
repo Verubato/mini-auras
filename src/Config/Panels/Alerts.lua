@@ -312,7 +312,7 @@ local function BuildSoundsTab(parent, options)
 			options.Sound.Important.Enabled = value
 			if value then
 				local soundFileName = options.Sound.Important.File or "AirHorn.ogg"
-				local soundFile = config.MediaLocation .. soundFileName
+				local soundFile = config.SoundLocation .. soundFileName
 				PlaySoundFile(soundFile, options.Sound.Important.Channel or "Master")
 			end
 			config:Apply()
@@ -329,7 +329,7 @@ local function BuildSoundsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.Sound.Important.File = value
-			local soundFile = config.MediaLocation .. value
+			local soundFile = config.SoundLocation .. value
 			PlaySoundFile(soundFile, options.Sound.Important.Channel or "Master")
 			config:Apply()
 		end,
@@ -354,7 +354,7 @@ local function BuildSoundsTab(parent, options)
 			options.Sound.Defensive.Enabled = value
 			if value then
 				local soundFileName = options.Sound.Defensive.File or "AlertToastWarm.ogg"
-				local soundFile = config.MediaLocation .. soundFileName
+				local soundFile = config.SoundLocation .. soundFileName
 				PlaySoundFile(soundFile, options.Sound.Defensive.Channel or "Master")
 			end
 			config:Apply()
@@ -372,7 +372,7 @@ local function BuildSoundsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.Sound.Defensive.File = value
-			local soundFile = config.MediaLocation .. value
+			local soundFile = config.SoundLocation .. value
 			PlaySoundFile(soundFile, options.Sound.Defensive.Channel or "Master")
 			config:Apply()
 		end,

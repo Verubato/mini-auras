@@ -153,7 +153,7 @@ function M.build()
 		Utils = {},
 		Core = {},
 		Modules = {},
-		Config = { MediaLocation = "Interface\\AddOns\\MiniCC\\Media\\" },
+		Config = { SoundLocation = "Interface\\AddOns\\MiniCC\\Sounds\\" },
 		L = setmetatable({}, {
 			__index = function(_, key)
 				return key

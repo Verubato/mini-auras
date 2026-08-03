@@ -8,7 +8,7 @@ local trinketsTracker = addon.Core.TrinketsTracker
 local db
 local M = addon.Config
 
-M.MediaLocation = "Interface\\AddOns\\" .. addonName .. "\\Media\\"
+M.SoundLocation = "Interface\\AddOns\\" .. addonName .. "\\Sounds\\"
 
 M.SoundFiles = {
 	"AirHorn.ogg",
@@ -421,7 +421,7 @@ end
 ---@field Init fun(self: table)
 ---@field Apply fun(self: table)
 ---@field SoundFiles string[]
----@field MediaLocation string
+---@field SoundLocation string
 ---@field Migrator DbMigrator
 ---@field TabController TabReturn
 ---@field General GeneralConfig
