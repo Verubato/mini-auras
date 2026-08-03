@@ -3,6 +3,7 @@ local addonName, addon = ...
 local dbMigrator = addon.Config.Migrator
 local mini = addon.Framework
 local L = addon.L
+local trinketsTracker = addon.Core.TrinketsTracker
 ---@type Db
 local db
 local M = addon.Config
@@ -204,7 +205,7 @@ function M:Init()
 		{
 			Key = "Indicator",
 			Title = L["Auras"],
-			Icon = "Interface\\Icons\\Spell_Holy_PowerWordShield",
+			Icon = "Interface\\Icons\\Spell_Fire_SealOfFire",
 			Build = function(content)
 				M.FriendlyIndicator:Build(content, db.Modules.FriendlyIndicatorModule.Default, db.Modules.FriendlyIndicatorModule.Raid)
 			end,
@@ -229,7 +230,7 @@ function M:Init()
 		{
 			Key = "Alerts",
 			Title = L["Alerts"],
-			Icon = "Interface\\Icons\\Ability_Warrior_BattleShout",
+			Icon = "Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew",
 			Build = function(content)
 				M.Alerts:Build(content, db.Modules.AlertsModule)
 			end,
@@ -237,7 +238,7 @@ function M:Init()
 		{
 			Key = "Healer",
 			Title = L["Healer"],
-			Icon = "Interface\\Icons\\Spell_Holy_FlashHeal",
+			Icon = "Interface\\Icons\\Spell_Holy_PowerWordShield",
 			Build = function(content)
 				M.Healer:Build(content, db.Modules.HealerCCModule)
 			end,
@@ -245,7 +246,7 @@ function M:Init()
 		{
 			Key = "Nameplates",
 			Title = L["Nameplates_Short"] or L["Nameplates"],
-			Icon = "Interface\\Icons\\Ability_Hunter_SniperShot",
+			Icon = "Interface\\TargetingFrame\\UI-StatusBar",
 			Build = function(content)
 				M.Nameplates:Build(content, db.Modules.NameplatesModule)
 			end,
@@ -253,7 +254,7 @@ function M:Init()
 		{
 			Key = "Portraits",
 			Title = L["Portraits_Short"] or L["Portraits"],
-			Icon = "Interface\\Icons\\INV_Misc_Head_Human_01",
+			Icon = "Interface\\Icons\\Achievement_Character_Human_Male",
 			Build = function(content)
 				M.Portraits:Build(content)
 			end,
@@ -269,7 +270,8 @@ function M:Init()
 		{
 			Key = "Precog",
 			Title = L["Precognition"],
-			Icon = "Interface\\Icons\\Spell_Holy_MindVision",
+			-- The spell's own icon, resolved rather than guessed at from the art names.
+			Icon = C_Spell.GetSpellTexture(377362),
 			Build = function(content)
 				M.PrecogGuesser:Build(content)
 			end,
@@ -311,7 +313,8 @@ function M:Init()
 				tabs[i] = {
 					Key = "Trinkets",
 					Title = L["Party Trinkets_Short"] or L["Party Trinkets"],
-					Icon = "Interface\\Icons\\INV_Jewelry_TrinketPVP_01",
+					-- The icon the module itself renders, not the old jewellery art.
+					Icon = trinketsTracker:GetDefaultIcon(),
 					Build = function(content)
 						M.Trinkets:Build(content)
 					end,
@@ -344,6 +347,14 @@ function M:Init()
 	})
 
 	M.TabController = tabController
+
+	-- The nameplates tab uses a health-bar texture rather than a spell icon. That art ships white
+	-- so whatever draws it can tint it, so it has to be coloured here or it renders as a pale
+	-- block.
+	local nameplatesTab = tabController:GetTabButton("Nameplates")
+	if nameplatesTab and nameplatesTab.Icon then
+		nameplatesTab.Icon:SetVertexColor(0.15, 0.75, 0.15, 1)
+	end
 
 	StaticPopupDialogs["MINICC_RELOAD_CONFIRM"] = {
 		text = L["Language changed. Reload UI now?"],

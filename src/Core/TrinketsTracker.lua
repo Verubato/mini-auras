@@ -28,6 +28,12 @@ end
 ---Returns the default trinket icon texture.
 ---@return string
 function M:GetDefaultIcon()
+	-- Resolved on demand as well as in Init: the config panel builds its tab strip before the
+	-- modules initialise, so an early caller would otherwise be stuck with the question mark.
+	if not defaultIcon then
+		defaultIcon = C_Spell.GetSpellTexture(DEFAULT_SPELL_ID)
+	end
+
 	return defaultIcon or "Interface\\Icons\\INV_Misc_QuestionMark"
 end
 
