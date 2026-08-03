@@ -7,10 +7,13 @@ local trinketsTracker = addon.Core.TrinketsTracker
 local iconSlotContainer = addon.Core.IconSlotContainer
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
--- 12.1 only: on older clients the friendly cooldown tracker renders the trinket slot
--- itself; this standalone module replaces that surviving slice on 12.1 (trinket data is
--- C_PvP-based, not aura-based, so it survives the aura lockdown).
-local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
+
+addon.Modules.Trinkets = addon.Modules.Trinkets or {}
+
+---@class TrinketsDisplay
+local D = {}
+addon.Modules.Trinkets.Display = D
+
 -- track self + party for test mode; arena is a raid, so also raid units
 local TRACKED_UNITS = {
 	"player",
@@ -21,20 +24,15 @@ local TRACKED_UNITS = {
 	"raid2",
 	"raid3",
 }
-local eventFrame
-local enabled = false
-local paused = false
 local testModeActive = false
+-- Anchor frame -> its trinket slot. Owned here: the module asks for whole-set operations
+-- rather than reaching into it.
 ---@type { [table]: TrinketWatcher }
 local watchers = {}
 ---@type Db
 local db
 ---@type TrinketsModuleOptions
 local options
-
----@class TrinketsModule : IModule
-local M = {}
-addon.Modules.TrinketsModule = M
 
 local function IsInArena()
 	local inInstance, instanceType = IsInInstance()
@@ -202,38 +200,6 @@ local function UpdateVisibility()
 	end
 end
 
-local function OnEvent(_, event)
-	if paused then
-		-- While paused, we still allow anchor rebuild + visibility so people can position frames
-		RebuildAnchors()
-		UpdateVisibility()
-		return
-	end
-
-	if event == "PLAYER_ENTERING_WORLD" then
-		M:Refresh()
-	elseif event == "GROUP_ROSTER_UPDATE" then
-		-- for some reason it doesn't work right away
-		C_Timer.After(0, function()
-			M:Refresh()
-		end)
-	end
-end
-
--- Trinket cooldown data changes arrive via TrinketsTracker (arena cooldown updates and
--- match-state transitions); this module only re-renders the affected slot.
-local function OnTrinketDataChanged(unit)
-	if not enabled or paused then
-		return
-	end
-
-	if unit then
-		RefreshUnit(unit)
-	else
-		RefreshAll()
-	end
-end
-
 local function RefreshTestTrinkets()
 	local now = GetTime()
 
@@ -262,71 +228,31 @@ local function RefreshTestTrinkets()
 	end
 end
 
-local function Pause()
-	paused = true
-end
+-- Public surface
 
-local function Resume()
-	paused = false
-end
-
--- Lifecycle
-
----Trinket tracking reads the 12.1 trinket API and has no legacy equivalent.
----@return boolean
-local function IsSupported()
-	return USE_AURA_CONTAINERS
-end
-
----@return TrinketsModuleOptions?
-local function GetOptions()
-	if not IsSupported() then
-		return nil
-	end
-
+---@return TrinketsModuleOptions? nil until Init has read the saved variables
+function D:GetOptions()
 	return options
 end
 
----@return boolean
-local function IsEnabled()
-	return moduleUtil:IsModuleEnabled(moduleName.Trinkets)
+---@param value boolean
+function D:SetTestMode(value)
+	testModeActive = value
 end
 
----Edge-triggered: the roster/world events are the module's only event source, so they are
----created on wake and torn down on sleep.
----@param active boolean
-local function SetEventsActive(active)
-	if active == enabled then
-		return
-	end
-
-	enabled = active
-	paused = not active
-
-	if active then
-		eventFrame = CreateFrame("Frame")
-		eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-		eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-		eventFrame:SetScript("OnEvent", OnEvent)
-	elseif eventFrame then
-		eventFrame:UnregisterAllEvents()
-		eventFrame:SetScript("OnEvent", nil)
-		eventFrame = nil
-	end
+---Rebuilds the anchor set from the currently visible unit frames.
+function D:EnsureFrames()
+	RebuildAnchors()
 end
 
-local function Teardown()
+function D:Teardown()
 	for anchorFrame in pairs(watchers) do
 		DestroyWatcher(anchorFrame)
 	end
 end
 
-local function EnsureFrames()
-	RebuildAnchors()
-end
-
 ---@param moduleOptions TrinketsModuleOptions
-local function ApplyOptions(moduleOptions)
+function D:ApplyOptions(moduleOptions)
 	UpdateVisibility()
 
 	local size = tonumber(moduleOptions.Icons.Size) or 32
@@ -338,7 +264,8 @@ local function ApplyOptions(moduleOptions)
 	end
 end
 
-local function UpdateContent()
+---Live cooldowns in an arena, the staggered fake ones in test mode, nothing elsewhere.
+function D:UpdateContent()
 	if IsInArena() then
 		RefreshAll()
 	elseif testModeActive then
@@ -346,71 +273,31 @@ local function UpdateContent()
 	end
 end
 
----@param active boolean
-local function SetTestMode(active)
-	if not IsSupported() then
-		return
-	end
-
-	testModeActive = active
-
-	if active then
-		Pause()
+---Re-renders one unit's slot, or every slot when no unit is given.
+---@param unit string?
+function D:Render(unit)
+	if unit then
+		RefreshUnit(unit)
 	else
-		ClearAll()
-		Resume()
+		RefreshAll()
 	end
-
-	M:Refresh()
 end
 
-local function InstallHooks()
-	trinketsTracker:RegisterCallback(OnTrinketDataChanged)
+---Blanks every slot back to the default icon.
+function D:ClearAll()
+	ClearAll()
 end
 
-local function ApplyInitialState()
-	M:Refresh()
+---Anchor discovery and visibility only, for the paused case: the frames still have to follow
+---the unit frames around so they can be positioned while the module is asleep.
+function D:RefreshAnchorsOnly()
+	RebuildAnchors()
+	UpdateVisibility()
 end
 
-function M:StartTesting()
-	SetTestMode(true)
-end
-
-function M:StopTesting()
-	SetTestMode(false)
-end
-
-function M:Refresh()
-	local moduleOptions = GetOptions()
-
-	if not moduleOptions then
-		return
-	end
-
-	local isEnabled = IsEnabled()
-
-	SetEventsActive(isEnabled)
-
-	if not isEnabled then
-		Teardown()
-		return
-	end
-
-	EnsureFrames()
-	ApplyOptions(moduleOptions)
-	UpdateContent()
-end
-
-function M:Init()
-	if not IsSupported() then
-		return
-	end
-
+function D:Init()
 	db = mini:GetSavedVars()
 	options = db.Modules.TrinketsModule
-
-	InstallHooks()
-	ApplyInitialState()
 end
 
 ---@class TrinketWatcher

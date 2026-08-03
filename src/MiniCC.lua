@@ -252,6 +252,10 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Display HealerCrowdControlDisplay
 ---@field Module HealerCrowdControlModule
 
+---@class Trinkets
+---@field Display TrinketsDisplay
+---@field Module TrinketsModule
+
 ---@class Nameplates
 ---@field Observer NameplatesObserver
 ---@field Display NameplatesDisplay
@@ -282,6 +286,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Auras Auras
 ---@field CrowdControl CrowdControl
 ---@field HealerCrowdControl HealerCrowdControl
+---@field Trinkets Trinkets
 ---@field Nameplates Nameplates
 ---@field Portrait Portrait
 
