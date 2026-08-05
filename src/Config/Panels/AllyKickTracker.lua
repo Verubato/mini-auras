@@ -23,7 +23,7 @@ function M:Build(panel, options)
 
 	local description = mini:TextLine({
 		Parent = panel,
-		Text = L["Lists interrupts as they land, showing who kicked and what they kicked."],
+		Text = L["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read - every row simply lasts 15 seconds instead."],
 	})
 
 	description:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)

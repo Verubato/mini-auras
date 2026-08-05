@@ -313,7 +313,7 @@ L:RegisterLocale("koKR", {
 	["Hide out of combat"] = "전투 중이 아닐 때 숨기기",
 	["Only show the bars while you are in combat."] = "전투 중일 때만 막대를 표시합니다.",
 	["Bar Texture"] = "막대 텍스처",
-	["Lists interrupts as they land, showing who kicked and what they kicked."] = "차단이 발생할 때마다 누가 무엇을 차단했는지 목록으로 표시합니다.",
+	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read - every row simply lasts 15 seconds instead."] = "최근 차단 기록을 최신순으로 표시합니다. 신화+에서는 블리자드가 차단한 사람을 숨기기 때문에 재사용 대기시간을 읽을 수 없어, 각 줄은 그냥 15초 동안만 표시됩니다.",
 	["Ready"] = "준비됨",
 	["Show self"] = "자신 표시",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "자신의 차단 주문을 맨 위에 고정하고 준비될 때까지 시간을 표시합니다.",

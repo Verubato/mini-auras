@@ -313,7 +313,7 @@ L:RegisterLocale("deDE", {
 	["Hide out of combat"] = "Außerhalb des Kampfes ausblenden",
 	["Only show the bars while you are in combat."] = "Zeigt die Leisten nur, während du im Kampf bist.",
 	["Bar Texture"] = "Leistentextur",
-	["Lists interrupts as they land, showing who kicked and what they kicked."] = "Listet Unterbrechungen auf, sobald sie geschehen, mit wer und was unterbrochen wurde.",
+	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read - every row simply lasts 15 seconds instead."] = "Zeigt einen Verlauf der letzten Unterbrechungen, neueste zuerst. In Mythisch+ verbirgt Blizzard, wer unterbrochen hat, daher ist deren Abklingzeit nicht auslesbar - jede Zeile bleibt stattdessen einfach 15 Sekunden stehen.",
 	["Ready"] = "Bereit",
 	["Show self"] = "Selbst anzeigen",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Behaelt oben eine Leiste fuer die eigene Unterbrechung, die bis zur Bereitschaft herunterzaehlt.",

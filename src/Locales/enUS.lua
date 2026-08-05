@@ -315,7 +315,7 @@ L:SetDefaultStrings({
 	["Hide out of combat"] = "Hide out of combat",
 	["Only show the bars while you are in combat."] = "Only show the bars while you are in combat.",
 	["Bar Texture"] = "Bar Texture",
-	["Lists interrupts as they land, showing who kicked and what they kicked."] = "Lists interrupts as they land, showing who kicked and what they kicked.",
+	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read - every row simply lasts 15 seconds instead."] = "Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read - every row simply lasts 15 seconds instead.",
 	["Ready"] = "Ready",
 	["Show self"] = "Show self",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Keep a bar at the top for your own interrupt, counting down to when it is ready.",

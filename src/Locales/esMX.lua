@@ -314,7 +314,7 @@ L:RegisterLocale("esMX", {
 	["Hide out of combat"] = "Ocultar fuera de combate",
 	["Only show the bars while you are in combat."] = "Solo muestra las barras mientras estás en combate.",
 	["Bar Texture"] = "Textura de barra",
-	["Lists interrupts as they land, showing who kicked and what they kicked."] = "Muestra las interrupciones segun ocurren, con quien interrumpio y que.",
+	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read - every row simply lasts 15 seconds instead."] = "Muestra un historial de las interrupciones recientes, la más nueva primero. En Mítica+ Blizzard oculta quién interrumpió, así que no se puede leer su reutilización: cada fila dura simplemente 15 segundos.",
 	["Ready"] = "Listo",
 	["Show self"] = "Mostrarse a sí mismo",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Mantiene una barra arriba para tu propia interrupcion, con la cuenta atras hasta que este lista.",
