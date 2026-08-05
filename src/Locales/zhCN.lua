@@ -316,5 +316,5 @@ L:RegisterLocale("zhCN", {
 	["Ready"] = "就绪",
 	["Show self"] = "显示自己",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "在顶部固定一条自己打断的进度条，倒计时至就绪。",
-	["Play a sound when you get Precognition or Nullifying Shroud."] = "当你获得预知或消除披风时播放声音。",
+	["Play a sound when you get Precognition."] = "当你获得预知时播放声音。",
 })

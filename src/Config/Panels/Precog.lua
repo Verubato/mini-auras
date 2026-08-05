@@ -126,7 +126,7 @@ function M:Build(panel)
 		soundChk = mini:Checkbox({
 			Parent = panel,
 			LabelText = L["Sound"],
-			Tooltip = L["Play a sound when you get Precognition or Nullifying Shroud."],
+			Tooltip = L["Play a sound when you get Precognition."],
 			GetValue = function()
 				return db.Modules.PrecogModule.Sound.Enabled
 			end,

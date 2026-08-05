@@ -315,5 +315,5 @@ L:RegisterLocale("koKR", {
 	["Ready"] = "준비됨",
 	["Show self"] = "자신 표시",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "자신의 차단 주문을 맨 위에 고정하고 준비될 때까지 시간을 표시합니다.",
-	["Play a sound when you get Precognition or Nullifying Shroud."] = "예지 또는 무효화의 장막을 얻었을 때 소리를 재생합니다.",
+	["Play a sound when you get Precognition."] = "예지를 얻었을 때 소리를 재생합니다.",
 })

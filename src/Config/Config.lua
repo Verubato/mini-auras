@@ -15,6 +15,7 @@ M.SoundFiles = {
 	"AlertToastWarm.ogg",
 	"BubblePop.ogg",
 	"CinematicHit.ogg",
+	"ElectricalSpark.ogg",
 	"Error.ogg",
 	"Notification18.ogg",
 	"Notification38.ogg",

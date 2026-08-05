@@ -317,7 +317,7 @@ L:SetDefaultStrings({
 	["Ready"] = "Ready",
 	["Show self"] = "Show self",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Keep a bar at the top for your own interrupt, counting down to when it is ready.",
-	["Play a sound when you get Precognition or Nullifying Shroud."] = "Play a sound when you get Precognition or Nullifying Shroud.",
+	["Play a sound when you get Precognition."] = "Play a sound when you get Precognition.",
 })
 
 L:RegisterLocale("enUS", {})

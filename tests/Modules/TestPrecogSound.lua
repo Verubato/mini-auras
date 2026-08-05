@@ -21,10 +21,11 @@ local sound = addon.Modules.Precog.Sound
 
 sound:Init()
 
+-- Precognition only, which is what the module hands over. Nullifying Shroud is the Evoker's own
+-- cooldown, so its owner already knows it landed.
 ---@type table<number, boolean>
 local SPELL_IDS = {
 	[PRECOGNITION] = true,
-	[NULLIFYING_SHROUD] = true,
 }
 
 ---The registrations currently held by the engine, keyed by the spell they fire on.
@@ -51,11 +52,11 @@ end
 fw.describe("Precog sound - registration", function()
 	fw.before_each(Reset)
 
-	fw.it("registers both precog spells on the added trigger", function()
+	fw.it("registers precognition on the added trigger", function()
 		local live = LiveRegistrations()
 
 		assert(live[PRECOGNITION], "Precognition is registered")
-		assert(live[NULLIFYING_SHROUD], "so is Nullifying Shroud")
+		assert(not live[NULLIFYING_SHROUD], "Nullifying Shroud deliberately is not")
 
 		for _, registration in pairs(live) do
 			assert(registration.Trigger == Enum.UnitAuraSoundTrigger.Added,

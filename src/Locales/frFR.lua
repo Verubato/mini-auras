@@ -313,5 +313,5 @@ L:RegisterLocale("frFR", {
 	["Ready"] = "Pret",
 	["Show self"] = "S'afficher",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Garde une barre en haut pour votre propre interruption, avec le compte a rebours jusqu'a sa disponibilite.",
-	["Play a sound when you get Precognition or Nullifying Shroud."] = "Joue un son lorsque vous obtenez Précognition ou Suaire annihilant.",
+	["Play a sound when you get Precognition."] = "Joue un son lorsque vous obtenez Précognition.",
 })
