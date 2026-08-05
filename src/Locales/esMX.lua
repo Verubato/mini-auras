@@ -316,6 +316,6 @@ L:RegisterLocale("esMX", {
 	["Bar Texture"] = "Textura de barra",
 	["Lists interrupts as they land, showing who kicked and what they kicked."] = "Muestra las interrupciones segun ocurren, con quien interrumpio y que.",
 	["Ready"] = "Listo",
-	["Show your own interrupt"] = "Mostrar tu propia interrupcion",
+	["Show self"] = "Mostrarse a sí mismo",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Mantiene una barra arriba para tu propia interrupcion, con la cuenta atras hasta que este lista.",
 })

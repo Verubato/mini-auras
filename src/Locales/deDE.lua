@@ -315,6 +315,6 @@ L:RegisterLocale("deDE", {
 	["Bar Texture"] = "Leistentextur",
 	["Lists interrupts as they land, showing who kicked and what they kicked."] = "Listet Unterbrechungen auf, sobald sie geschehen, mit wer und was unterbrochen wurde.",
 	["Ready"] = "Bereit",
-	["Show your own interrupt"] = "Eigene Unterbrechung anzeigen",
+	["Show self"] = "Selbst anzeigen",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Behaelt oben eine Leiste fuer die eigene Unterbrechung, die bis zur Bereitschaft herunterzaehlt.",
 })

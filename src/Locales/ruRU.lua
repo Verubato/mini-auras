@@ -316,6 +316,6 @@ L:RegisterLocale("ruRU", {
 	["Bar Texture"] = "Текстура полосы",
 	["Lists interrupts as they land, showing who kicked and what they kicked."] = "Показывает прерывания по мере их появления: кто прервал и что именно.",
 	["Ready"] = "Готово",
-	["Show your own interrupt"] = "Показывать своё прерывание",
+	["Show self"] = "Показывать себя",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Закрепляет сверху полосу вашего прерывания с отсчётом до готовности.",
 })

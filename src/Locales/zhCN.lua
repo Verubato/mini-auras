@@ -316,6 +316,6 @@ L:RegisterLocale("zhCN", {
 	["Bar Texture"] = "状态条材质",
 	["Lists interrupts as they land, showing who kicked and what they kicked."] = "按发生顺序列出打断，显示谁打断了什么。",
 	["Ready"] = "就绪",
-	["Show your own interrupt"] = "显示自己的打断",
+	["Show self"] = "显示自己",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "在顶部固定一条自己打断的进度条，倒计时至就绪。",
 })

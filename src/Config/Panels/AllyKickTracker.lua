@@ -98,7 +98,7 @@ function M:Build(panel, options)
 
 	local ownChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["Show your own interrupt"],
+		LabelText = L["Show self"],
 		Tooltip = L["Keep a bar at the top for your own interrupt, counting down to when it is ready."],
 		GetValue = function()
 			return options.ShowOwnCooldown
