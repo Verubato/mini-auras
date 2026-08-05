@@ -8,29 +8,6 @@ local trinketsTracker = addon.Core.TrinketsTracker
 local db
 local M = addon.Config
 
-M.SoundLocation = "Interface\\AddOns\\" .. addonName .. "\\Sounds\\"
-
-M.SoundFiles = {
-	"AirHorn.ogg",
-	"AlertToastWarm.ogg",
-	"BubblePop.ogg",
-	"CinematicHit.ogg",
-	"ElectricalSpark.ogg",
-	"Error.ogg",
-	"Notification18.ogg",
-	"Notification38.ogg",
-	"Sonar.ogg",
-	"SuddenShock.ogg",
-	"WatchOut.ogg",
-	"WhooshSwing.ogg",
-}
-
-local LOCALE = GetLocale()
-
-if LOCALE == "zhCN" or LOCALE == "zhTW" then
-	table.insert(M.SoundFiles, "XiaYike.ogg")
-end
-
 -- Blizzard settings panel splash. The accent matches the standalone window title, but the
 -- framework palette is private to the GUI widgets so the value is repeated here.
 local PANEL_ACCENT = { r = 0.90, g = 0.20, b = 0.20 }
@@ -430,8 +407,6 @@ end
 ---@class Config
 ---@field Init fun(self: table)
 ---@field Apply fun(self: table)
----@field SoundFiles string[]
----@field SoundLocation string
 ---@field Migrator DbMigrator
 ---@field TabController TabReturn
 ---@field General GeneralConfig

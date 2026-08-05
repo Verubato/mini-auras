@@ -8,6 +8,7 @@ local COLUMNS = 4
 local columnWidth
 local enabledColumnWidth
 local config = addon.Config
+local sounds = addon.Core.Sounds
 
 ---@class HealerCrowdControlConfig
 local M = {}
@@ -249,9 +250,7 @@ function M:Build(panel, options)
 			options.Sound.Enabled = value
 			if value then
 				-- Play the sound when enabled
-				local soundFileName = options.Sound.File or "Sonar.ogg"
-				local soundFile = config.SoundLocation .. soundFileName
-				PlaySoundFile(soundFile, options.Sound.Channel or "Master")
+				PlaySoundFile(sounds:Resolve(options.Sound.File), options.Sound.Channel or "Master")
 			end
 			config:Apply()
 		end,
@@ -259,21 +258,20 @@ function M:Build(panel, options)
 
 	soundChk:SetPoint("TOPLEFT", useAuraContainers and showIconsChk or showTooltipsChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
+	-- The dropdown reads this table each time it opens, and the media list is refilled in place, so
+	-- a sound registered by an addon that loaded after this page was built still shows up.
+	local soundItems = sounds:GetNames()
+
 	local soundFileDropdown, soundFileModernDdl = mini:Dropdown({
 		Parent = panel,
-		Items = config.SoundFiles,
+		Items = soundItems,
 		GetValue = function()
-			return options.Sound.File or "Sonar.ogg"
+			return sounds:Normalise(options.Sound.File)
 		end,
 		SetValue = function(value)
 			options.Sound.File = value
-			-- Play the selected sound
-			local soundFile = config.SoundLocation .. value
-			PlaySoundFile(soundFile, options.Sound.Channel or "Master")
+			PlaySoundFile(sounds:Resolve(value), options.Sound.Channel or "Master")
 			config:Apply()
-		end,
-		GetText = function(value)
-			return value:gsub("%.ogg$", "")
 		end,
 	})
 
@@ -283,6 +281,17 @@ function M:Build(panel, options)
 		enabledColumnWidth + (soundFileModernDdl and 0 or -16), 0)
 	soundFileDropdown:SetPoint("TOP", soundChk, "TOP", 0, -4)
 	soundFileDropdown:SetWidth(200)
+
+	local function RefreshSounds()
+		sounds:GetNames()
+
+		if soundFileDropdown.MiniRefresh then
+			soundFileDropdown:MiniRefresh()
+		end
+	end
+
+	sounds:OnChanged(RefreshSounds)
+	panel:HookScript("OnShow", RefreshSounds)
 
 	local slidersAnchor = soundChk
 

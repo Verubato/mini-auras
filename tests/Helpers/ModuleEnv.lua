@@ -220,6 +220,9 @@ function M.build()
 		end
 		return nil
 	end
+	_G.GetLocale = _G.GetLocale or function()
+		return "enUS"
+	end
 	_G.MiniCCDB = nil
 
 	-- Real core files
@@ -244,6 +247,9 @@ function M.build()
 	local addonFiles = require("AddonFiles")
 	addonFiles.load(addonFiles.framework, addon)
 	loadFile("src/Core/ProfileManager.lua")
+	-- The real resolver: with no LibSharedMedia in the mock it falls back to the bundled files,
+	-- which is the path a client without a media addon takes anyway.
+	loadFile("src/Core/Sounds.lua")
 	addonFiles.load(addonFiles.migrator, addon)
 	env.db = addon.Config.Migrator:GetAndUpgradeDb()
 

@@ -215,6 +215,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field TestSpells TestSpells
 ---@field AnchoredIcons AnchoredIcons
 ---@field BarTextures BarTextures
+---@field Sounds Sounds
 ---@field Cooldowns Cooldowns
 
 ---@class Cooldowns

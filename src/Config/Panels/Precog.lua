@@ -5,6 +5,7 @@ local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local config = addon.Config
+local sounds = addon.Core.Sounds
 
 ---@class PrecogConfig
 local M = {}
@@ -171,21 +172,34 @@ function M:Build(panel)
 		soundLabel:SetText(L["Sound"])
 		soundLabel:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 3)
 
+		-- The dropdown reads this table each time it opens, and the media list is refilled in
+		-- place, so a sound registered by an addon that loaded after this page was built still
+		-- shows up.
+		local soundItems = sounds:GetNames()
+
 		local soundFileDropdown, isModernDropdown = mini:Dropdown({
 			Parent = panel,
-			Items = config.SoundFiles,
+			Items = soundItems,
 			GetValue = function()
-				return db.Modules.PrecogModule.Sound.File or "ElectricalSpark.ogg"
+				return sounds:Normalise(db.Modules.PrecogModule.Sound.File)
 			end,
 			SetValue = function(value)
 				db.Modules.PrecogModule.Sound.File = value
 				addon.Modules.Precog.Sound:PlayPreview(db.Modules.PrecogModule)
 				config:Apply()
 			end,
-			GetText = function(value)
-				return value:gsub("%.ogg$", "")
-			end,
 		})
+
+		local function RefreshSounds()
+			sounds:GetNames()
+
+			if soundFileDropdown.MiniRefresh then
+				soundFileDropdown:MiniRefresh()
+			end
+		end
+
+		sounds:OnChanged(RefreshSounds)
+		panel:HookScript("OnShow", RefreshSounds)
 
 		soundFileDropdown:SetPoint("TOPLEFT", soundLabel, "BOTTOMLEFT", isModernDropdown and 0 or -16, -8)
 		soundFileDropdown:SetWidth(160)

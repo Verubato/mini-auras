@@ -9,6 +9,7 @@ local COLUMNS = 4
 local columnWidth
 local enabledColumnWidth
 local config = addon.Config
+local sounds = addon.Core.Sounds
 -- TEMPORARY (12.1): CENTER growth needs a readable row width to center on the anchor, which
 -- the 12.1 chained displays don't have, so only LEFT/RIGHT are offered there.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
@@ -311,9 +312,7 @@ local function BuildSoundsTab(parent, options)
 		SetValue = function(value)
 			options.Sound.Important.Enabled = value
 			if value then
-				local soundFileName = options.Sound.Important.File or "AirHorn.ogg"
-				local soundFile = config.SoundLocation .. soundFileName
-				PlaySoundFile(soundFile, options.Sound.Important.Channel or "Master")
+				PlaySoundFile(sounds:Resolve(options.Sound.Important.File), options.Sound.Important.Channel or "Master")
 			end
 			config:Apply()
 		end,
@@ -321,20 +320,20 @@ local function BuildSoundsTab(parent, options)
 
 	soundImportantChk:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -verticalSpacing)
 
+	-- Both dropdowns read this table each time they open, and the media list is refilled in place,
+	-- so a sound registered by an addon that loaded after this page was built still shows up.
+	local soundItems = sounds:GetNames()
+
 	local soundImportantDropdown = mini:Dropdown({
 		Parent = parent,
-		Items = config.SoundFiles,
+		Items = soundItems,
 		GetValue = function()
-			return options.Sound.Important.File
+			return sounds:Normalise(options.Sound.Important.File)
 		end,
 		SetValue = function(value)
 			options.Sound.Important.File = value
-			local soundFile = config.SoundLocation .. value
-			PlaySoundFile(soundFile, options.Sound.Important.Channel or "Master")
+			PlaySoundFile(sounds:Resolve(value), options.Sound.Important.Channel or "Master")
 			config:Apply()
-		end,
-		GetText = function(value)
-			return value:gsub("%.ogg$", "")
 		end,
 	})
 
@@ -353,9 +352,7 @@ local function BuildSoundsTab(parent, options)
 		SetValue = function(value)
 			options.Sound.Defensive.Enabled = value
 			if value then
-				local soundFileName = options.Sound.Defensive.File or "AlertToastWarm.ogg"
-				local soundFile = config.SoundLocation .. soundFileName
-				PlaySoundFile(soundFile, options.Sound.Defensive.Channel or "Master")
+				PlaySoundFile(sounds:Resolve(options.Sound.Defensive.File), options.Sound.Defensive.Channel or "Master")
 			end
 			config:Apply()
 		end,
@@ -366,24 +363,35 @@ local function BuildSoundsTab(parent, options)
 
 	local soundDefensiveDropdown = mini:Dropdown({
 		Parent = parent,
-		Items = config.SoundFiles,
+		Items = soundItems,
 		GetValue = function()
-			return options.Sound.Defensive.File
+			return sounds:Normalise(options.Sound.Defensive.File)
 		end,
 		SetValue = function(value)
 			options.Sound.Defensive.File = value
-			local soundFile = config.SoundLocation .. value
-			PlaySoundFile(soundFile, options.Sound.Defensive.Channel or "Master")
+			PlaySoundFile(sounds:Resolve(value), options.Sound.Defensive.Channel or "Master")
 			config:Apply()
-		end,
-		GetText = function(value)
-			return value:gsub("%.ogg$", "")
 		end,
 	})
 
 	soundDefensiveDropdown:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
 	soundDefensiveDropdown:SetPoint("TOP", soundDefensiveChk, "TOP", 0, -4)
 	soundDefensiveDropdown:SetWidth(200)
+
+	local function RefreshSounds()
+		sounds:GetNames()
+
+		if soundImportantDropdown.MiniRefresh then
+			soundImportantDropdown:MiniRefresh()
+		end
+
+		if soundDefensiveDropdown.MiniRefresh then
+			soundDefensiveDropdown:MiniRefresh()
+		end
+	end
+
+	sounds:OnChanged(RefreshSounds)
+	parent:HookScript("OnShow", RefreshSounds)
 end
 
 ---@param parent table

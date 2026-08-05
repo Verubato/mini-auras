@@ -41,7 +41,7 @@ end
 ---@return string file
 ---@return string channel
 local function ResolveSound(options)
-	return addon.Config.SoundLocation .. (options.Sound.File or DEFAULT_SOUND),
+	return addon.Core.Sounds:Resolve(options.Sound.File or DEFAULT_SOUND),
 		options.Sound.Channel or "Master"
 end
 

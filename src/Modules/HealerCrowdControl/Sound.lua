@@ -41,8 +41,7 @@ local function PlaySound()
 		return
 	end
 
-	local soundFileName = db.Modules.HealerCCModule.Sound.File or "Sonar.ogg"
-	soundFile = addon.Config.SoundLocation .. soundFileName
+	soundFile = addon.Core.Sounds:Resolve(db.Modules.HealerCCModule.Sound.File)
 	PlaySoundFile(soundFile, db.Modules.HealerCCModule.Sound.Channel or "Master")
 end
 
@@ -112,7 +111,7 @@ local function RegisterAuraSounds(activePool)
 		return
 	end
 
-	local soundFilePath = addon.Config.SoundLocation .. (options.Sound.File or "Sonar.ogg")
+	local soundFilePath = addon.Core.Sounds:Resolve(options.Sound.File)
 	local channel = options.Sound.Channel or "Master"
 
 	-- The sound itself is baked into each registration, so changing it means re-registering
@@ -145,7 +144,7 @@ end
 ---which has to demo the file even on 12.1 where the live sound is engine-side.
 ---@param options HealerCCModuleOptions
 function M:PlayPreview(options)
-	PlaySoundFile(addon.Config.SoundLocation .. (options.Sound.File or "Sonar.ogg"), options.Sound.Channel or "Master")
+	PlaySoundFile(addon.Core.Sounds:Resolve(options.Sound.File), options.Sound.Channel or "Master")
 end
 
 ---12.1 path: reconciles the engine-side CC sounds against the active healer set.

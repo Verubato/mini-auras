@@ -95,7 +95,7 @@ end
 ---@param config table Sound options (File/Channel).
 ---@param fallbackFile string
 local function RegisterAlertSoundList(ids, info, list, config, fallbackFile)
-	info.soundFileName = addon.Config.SoundLocation .. (config.File or fallbackFile)
+	info.soundFileName = addon.Core.Sounds:Resolve(config.File or fallbackFile)
 	info.outputChannel = config.Channel or "Master"
 
 	for spellId in pairs(list) do
@@ -135,8 +135,7 @@ function M:PlaySound(spellType)
 		return
 	end
 
-	local soundFileName = soundConfig.File or "Sonar.ogg"
-	soundFile = addon.Config.SoundLocation .. soundFileName
+	soundFile = addon.Core.Sounds:Resolve(soundConfig.File)
 	PlaySoundFile(soundFile, soundConfig.Channel or "Master")
 end
 

@@ -79,6 +79,7 @@ Core\Frames\MSUF.lua
 Core\Display\AnchoredIcons.lua
 Core\TrinketsTracker.lua
 Core\ProfileManager.lua
+Core\Sounds.lua
 Core\TestSpells.lua
 Core\TestModeManager.lua
 Core\Cooldowns\PvPTalentSync.lua

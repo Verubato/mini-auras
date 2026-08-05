@@ -40,6 +40,7 @@ local testFiles = {
     "tests/Core/TestAuraContainerDisplay.lua",
     "tests/Core/TestKickTracker.lua",
     "tests/Core/TestBarTextures.lua",
+    "tests/Core/TestSounds.lua",
 
     -- Utils.
     "tests/Utils/TestUtils.lua",

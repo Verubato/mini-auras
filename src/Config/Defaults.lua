@@ -129,7 +129,7 @@ local dbDefaults = {
 			Sound = {
 				Enabled = true,
 				Channel = "Master",
-				File = "Sonar.ogg",
+				File = "Sonar",
 			},
 
 			Point = "CENTER",
@@ -214,12 +214,12 @@ local dbDefaults = {
 				Important = {
 					Enabled = false,
 					Channel = "Master",
-					File = "AirHorn.ogg",
+					File = "AirHorn",
 				},
 				Defensive = {
 					Enabled = false,
 					Channel = "Master",
-					File = "AlertToastWarm.ogg",
+					File = "AlertToastWarm",
 				},
 			},
 
@@ -645,7 +645,7 @@ local dbDefaults = {
 			Sound = {
 				Enabled = false,
 				Channel = "Master",
-				File = "ElectricalSpark.ogg",
+				File = "ElectricalSpark",
 			},
 
 			Point = "CENTER",
