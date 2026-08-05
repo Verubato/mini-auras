@@ -23,6 +23,7 @@ local modules = {
 	addon.Modules.AurasModule,
 	addon.Modules.PrecogModule,
 	addon.Modules.TrinketsModule,
+	addon.Modules.AllyKickTrackerModule,
 	addon.Core.Cooldowns.Talents,
 	addon.Core.TrinketsTracker,
 	addon.Modules.FriendlyCooldownTrackerModule,
@@ -213,6 +214,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field TestModeManager TestModeManager
 ---@field TestSpells TestSpells
 ---@field AnchoredIcons AnchoredIcons
+---@field BarTextures BarTextures
 ---@field Cooldowns Cooldowns
 
 ---@class Cooldowns
@@ -274,11 +276,17 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Anchors PortraitAnchors
 ---@field Module PortraitModule
 
+---@class AllyKicks
+---@field Tracker AllyKickTracker
+---@field Display AllyKickDisplay
+---@field Module AllyKickTrackerModule
+
 ---@class Modules
 ---@field PortraitModule PortraitModule
 ---@field HealerCrowdControlModule HealerCrowdControlModule
 ---@field NameplatesModule NameplatesModule
 ---@field EnemyKickTrackerModule EnemyKickTrackerModule
+---@field AllyKickTrackerModule AllyKickTrackerModule
 ---@field AlertsModule AlertsModule
 ---@field CrowdControlModule CrowdControlModule
 ---@field AurasModule AurasModule
@@ -288,6 +296,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field FriendlyCooldowns FriendlyCooldowns
 ---@field EnemyCooldowns EnemyCooldowns
 ---@field EnemyKickTracker EnemyKickTracker
+---@field AllyKicks AllyKicks
 ---@field Alerts Alerts
 ---@field Auras Auras
 ---@field CrowdControl CrowdControl

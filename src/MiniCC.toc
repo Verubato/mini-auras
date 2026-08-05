@@ -9,6 +9,8 @@
 ## X-Curse-Project-ID: 1439482
 
 Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibSharedMedia-3.0\LibSharedMedia-3.0.lua
 Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.xml
 Libs\LibRangeCheck-3.0\LibRangeCheck-3.0.lua
 Libs\LibSpecialization\LibSpecialization.lua
@@ -43,6 +45,7 @@ Core\DuelPoller.lua
 Core\Display\Pool.lua
 Core\Display\GrowAnchors.lua
 Core\Display\IconSlotContainer.lua
+Core\Display\BarTextures.lua
 
 Core\Auras\AuraCategoryIds.lua
 Core\Auras\AuraFilters.lua
@@ -103,6 +106,9 @@ Modules\Nameplates\Module.lua
 Modules\EnemyKickTracker\Observer.lua
 Modules\EnemyKickTracker\Display.lua
 Modules\EnemyKickTracker\Module.lua
+Modules\AllyKicks\Tracker.lua
+Modules\AllyKicks\Display.lua
+Modules\AllyKicks\Module.lua
 Modules\Auras\Display.lua
 Modules\Auras\Module.lua
 Modules\Precog\Module.lua
@@ -131,6 +137,7 @@ Config\Panels\Healer.lua
 Config\Panels\Alerts.lua
 Config\Panels\Nameplates.lua
 Config\Panels\EnemyKickTracker.lua
+Config\Panels\AllyKickTracker.lua
 Config\Panels\Precog.lua
 Config\Panels\Auras.lua
 Config\Panels\FriendlyCooldownTracker.lua

@@ -17,6 +17,7 @@ local ModuleName = {
 	Alerts = "AlertsModule",
 	Nameplates = "NameplatesModule",
 	EnemyKickTracker = "EnemyKickTrackerModule",
+	AllyKickTracker = "AllyKickTrackerModule",
 	Trinkets = "TrinketsModule",
 	Auras = "AurasModule",
 	Precog = "PrecogModule",

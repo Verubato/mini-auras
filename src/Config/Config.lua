@@ -268,6 +268,15 @@ function M:Init()
 			end,
 		},
 		{
+			Key = "AllyKickTracker",
+			Title = L["Ally Kicks_Short"] or L["Ally Kicks"],
+			-- Mind Freeze, so the tab reads as a different feature to the kick timer's own icon.
+			Icon = C_Spell.GetSpellTexture(47528),
+			Build = function(content)
+				M.AllyKickTracker:Build(content, db.Modules.AllyKickTrackerModule)
+			end,
+		},
+		{
 			Key = "Precog",
 			Title = L["Precognition"],
 			-- The spell's own icon, resolved rather than guessed at from the art names.
@@ -399,6 +408,17 @@ function M:Init()
 			return
 		end
 
+		if msg == "kicks" then
+			addon.Modules.AllyKickTrackerModule:Diagnose()
+			return
+		end
+
+		if msg == "kicks debug" then
+			local on = addon.Modules.AllyKickTrackerModule:ToggleDebug()
+			mini:Notify(on and "Ally kick logging ON" or "Ally kick logging OFF")
+			return
+		end
+
 		if msg == "debug" then
 			local on = addon.Core.Cooldowns.Brain:ToggleDebug()
 			mini:Notify(on and "Cooldown debug logging ON" or "Cooldown debug logging OFF")
@@ -431,6 +451,7 @@ end
 ---@field Alerts AlertsConfig
 ---@field Nameplates NameplatesConfig
 ---@field EnemyKickTracker EnemyKickTrackerConfig
+---@field AllyKickTracker AllyKickTrackerConfig
 ---@field Precog PrecogConfig
 ---@field OtherAddons OtherAddonsConfig
 ---@field Auras AurasConfig

@@ -39,6 +39,7 @@ local testFiles = {
     "tests/Core/TestAuraWatcher.lua",
     "tests/Core/TestAuraContainerDisplay.lua",
     "tests/Core/TestKickTracker.lua",
+    "tests/Core/TestBarTextures.lua",
 
     -- Utils.
     "tests/Utils/TestUtils.lua",
@@ -49,6 +50,7 @@ local testFiles = {
 
     -- Modules, driven end to end against the mocked 12.1 environment.
     "tests/Modules/TestEnemyKickTracker.lua",
+    "tests/Modules/TestAllyKicks.lua",
     "tests/Modules/TestModuleLifecycle.lua",
     "tests/Modules/TestModuleSmoke.lua",
     "tests/Modules/TestAlertsBars.lua",

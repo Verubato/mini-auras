@@ -12,6 +12,7 @@ local MODULE_NAMES = {
 	"AlertsModule",
 	"NameplatesModule",
 	"EnemyKickTrackerModule",
+	"AllyKickTrackerModule",
 	"AurasModule",
 	"PrecogModule",
 	"TrinketsModule",

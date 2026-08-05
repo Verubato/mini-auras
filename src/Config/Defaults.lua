@@ -394,6 +394,52 @@ local dbDefaults = {
 				Color = { R = 1, G = 1, B = 1, A = 1 },
 			},
 		},
+		---@class AllyKickTrackerModuleOptions
+		AllyKickTrackerModule = {
+			-- Dungeons only out of the box: that is where interrupt rotations are coordinated.
+			-- Everywhere else the bars are opt-in rather than another thing on a busy screen.
+			Enabled = {
+				Always = false,
+				World = false,
+				Arena = false,
+				BattleGrounds = false,
+				Dungeons = true,
+				Raid = false,
+			},
+
+			-- Up and left of centre, clear of the unit frames and the middle of the screen.
+			Point = "CENTER",
+			RelativeTo = "UIParent",
+			RelativePoint = "CENTER",
+			Offset = {
+				X = -620,
+				Y = 160,
+			},
+
+			Grow = "DOWN",
+			BarSpacing = 2,
+			-- Unlocked by default: the bars are their own preview, so they are dragged into
+			-- place and then locked out of the way of the mouse.
+			Locked = false,
+			-- More bars than a five-man can produce, so a raid group still shows a useful few
+			-- rather than a wall of them.
+			MaxBars = 5,
+			SortByReadiness = true,
+			HideWhenReady = false,
+			HideOutOfCombat = false,
+			ExcludePlayer = false,
+
+			Bars = {
+				Width = 260,
+				Height = 35,
+				-- Display name rather than a path, so a LibSharedMedia texture survives the
+				-- library being reinstalled elsewhere.
+				Texture = "Blizzard Raid Bar",
+				ShowIcon = true,
+				-- Which mob the interrupt landed on, when it is marked.
+				ShowRaidTarget = true,
+			},
+		},
 		-- Used by the standalone Party Trinkets module (12.1+); on older clients the friendly
 		-- cooldown tracker renders the trinket slot instead.
 		---@class TrinketsModuleOptions

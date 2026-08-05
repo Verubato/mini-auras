@@ -23,8 +23,19 @@ function M.build()
 		pets = {},
 		healers = {},
 		plates = {},
+		-- Group member tokens handed back by Units:FriendlyUnits(), i.e. the roster.
+		friendlyUnits = {},
 		inInstance = false,
 		instanceType = "none",
+		-- Drives UnitAffectingCombat; the combat events themselves are fired by the tests.
+		inCombat = false,
+		-- Raid target index per unit, read when an interrupt lands.
+		raidTargets = {},
+		-- GUID -> unit token, which is how an interrupt event names its interrupter.
+		unitTokens = {},
+		-- Overrides for spell name / base spell lookups, used by the secret-ID identification.
+		spellNames = {},
+		baseSpells = {},
 		-- AddAuraSound accounting.
 		auraSoundAdds = 0,
 		auraSoundRemoves = 0,
@@ -50,6 +61,19 @@ function M.build()
 	_G.hooksecurefunc = function() end
 	_G.InCombatLockdown = function()
 		return false
+	end
+	_G.UnitAffectingCombat = function()
+		return env.inCombat == true
+	end
+	-- Raid markers: the index a unit carries, and the helper that paints one onto a texture.
+	_G.GetRaidTargetIndex = function(unit)
+		return env.raidTargets[unit]
+	end
+	_G.SetRaidTargetIconTexture = function(texture, index)
+		texture._marker = index
+	end
+	_G.UnitTokenFromGUID = function(guid)
+		return env.unitTokens[guid]
 	end
 	_G.IsInInstance = function()
 		return env.inInstance, env.instanceType
@@ -106,6 +130,14 @@ function M.build()
 	_G.C_Spell.GetSpellTexture = function(spellId)
 		return "tex:" .. tostring(spellId)
 	end
+	-- Names are how a cast whose spell ID arrived secret still gets identified; the test env
+	-- keeps them mechanical so a test can build the same string the tracker will look up.
+	_G.C_Spell.GetSpellName = function(spellId)
+		return env.spellNames[spellId] or ("spell:" .. tostring(spellId))
+	end
+	_G.C_Spell.GetBaseSpell = function(spellId)
+		return env.baseSpells[spellId]
+	end
 	_G.Enum = _G.Enum or {}
 	_G.Enum.PvPMatchState = { StartUp = 0 }
 	_G.Enum.NamePlateEnemyPlayerAuraDisplay = { LossOfControl = 1 }
@@ -115,6 +147,13 @@ function M.build()
 	_G.Enum.UnitAuraSortRule = { Default = 0, Unsorted = 1 }
 	_G.Enum.UnitAuraSortDirection = { Normal = 0, Reverse = 1 }
 	_G.DEBUFF_TYPE_NONE_COLOR = { r = 0.8, g = 0, b = 0 }
+	_G.RAID_CLASS_COLORS = {
+		MAGE = { r = 0.41, g = 0.8, b = 0.94 },
+		ROGUE = { r = 1, g = 0.96, b = 0.41 },
+		SHAMAN = { r = 0, g = 0.44, b = 0.87 },
+		PRIEST = { r = 1, g = 1, b = 1 },
+		WARLOCK = { r = 0.58, g = 0.51, b = 0.79 },
+	}
 	_G.C_NamePlate = {
 		GetNamePlates = function()
 			local list = {}
@@ -195,6 +234,9 @@ function M.build()
 		end,
 	}
 	addon.Utils.Units = {
+		FriendlyUnits = function()
+			return env.friendlyUnits
+		end,
 		IsEnemy = function(_, unit)
 			return env.enemies[unit] == true
 		end,

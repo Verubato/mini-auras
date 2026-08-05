@@ -127,7 +127,7 @@ local function NewRegion(parent, regionType)
 		"AddMaskTexture", "SetVertexColor", "SetBlendMode", "SetDesaturated", "SetScale",
 		"SetAtlas",
 		"SetText", "SetFont", "SetTextColor", "SetShadowColor", "SetShadowOffset",
-		"SetJustifyH", "SetDrawLayer",
+		"SetJustifyH", "SetDrawLayer", "SetColorTexture", "SetSize", "SetWordWrap",
 	}) do
 		record(name)
 	end
@@ -144,6 +144,9 @@ local function NewRegion(parent, regionType)
 
 	function region:Show()
 		region._shown = true
+	end
+	function region:SetShown(shown)
+		region._shown = shown and true or false
 	end
 	function region:Hide()
 		region._shown = false
@@ -176,6 +179,9 @@ function M.NewFrame(frameType, name, parent, template)
 	}
 
 	frame._events = {}
+	-- Both tokens a unit-filtered registration covers, which is how a pet-cast interrupt
+	-- reaches its owner's entry.
+	frame._eventUnits = {}
 
 	function frame:SetScript(event, fn)
 		frame._scripts[event] = fn
@@ -191,14 +197,16 @@ function M.NewFrame(frameType, name, parent, template)
 	function frame:RegisterEvent(event)
 		frame._events[event] = true
 	end
-	function frame:RegisterUnitEvent(event, unit)
+	function frame:RegisterUnitEvent(event, unit, otherUnit)
 		frame._events[event] = unit or true
+		frame._eventUnits[event] = { unit, otherUnit }
 	end
 	function frame:UnregisterEvent(event)
 		frame._events[event] = nil
 	end
 	function frame:UnregisterAllEvents()
 		frame._events = {}
+		frame._eventUnits = {}
 	end
 
 	function frame:Show()
@@ -303,9 +311,11 @@ function M.NewFrame(frameType, name, parent, template)
 	function frame:SetAlphaFromBoolean() end
 	function frame:HookScript() end
 	function frame:RegisterForDrag() end
-	function frame:SetMovable() end
+	function frame:SetMovable(movable)
+		frame._movable = movable and true or false
+	end
 	function frame:IsMovable()
-		return false
+		return frame._movable == true
 	end
 	function frame:SetClampedToScreen() end
 	function frame:SetDontSavePosition() end
@@ -338,11 +348,39 @@ function M.NewFrame(frameType, name, parent, template)
 	function frame:SetDrawLayer() end
 	function frame:AddMaskTexture() end
 	function frame:SetTexCoord() end
+	-- Font strings are kept in creation order too, so a test can read the text a widget put on
+	-- each of them (a status bar's name and countdown, for instance).
+	frame._createdFontStrings = {}
+
 	function frame:CreateFontString()
-		return NewRegion(frame, "FontString")
+		local fontString = NewRegion(frame, "FontString")
+		frame._createdFontStrings[#frame._createdFontStrings + 1] = fontString
+		return fontString
 	end
 	function frame:CreateAnimationGroup()
 		return NewAnimationGroup(frame)
+	end
+
+	-- StatusBar widget surface
+	if frameType == "StatusBar" then
+		frame._value = 0
+		frame._minValue, frame._maxValue = 0, 1
+
+		function frame:SetStatusBarTexture(texture)
+			frame._statusBarTexture = texture
+		end
+		function frame:SetStatusBarColor(r, g, b)
+			frame._color = { r, g, b }
+		end
+		function frame:SetMinMaxValues(min, max)
+			frame._minValue, frame._maxValue = min, max
+		end
+		function frame:SetValue(value)
+			frame._value = value
+		end
+		function frame:GetValue()
+			return frame._value
+		end
 	end
 
 	-- Cooldown widget surface (CooldownFrameTemplate)

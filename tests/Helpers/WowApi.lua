@@ -162,9 +162,11 @@ function M.setAuraFiltered(unit, id, filter, filtered)
 	_auraFiltered[key] = filtered ~= false and filtered ~= nil
 end
 
----Mark a Lua value as a secret (issecretvalue returns true for it).
+---Mark a Lua value as a secret (issecretvalue returns true for it) and hand it back, so it can
+---be marked inline where it is used.
 function M.markSecret(v)
 	_secretValues[v] = true
+	return v
 end
 
 ---Set the TOC build number returned by GetBuildInfo (4th return value).
