@@ -314,7 +314,7 @@ L:RegisterLocale("zhCN", {
 	["Hide out of combat"] = "脱离战斗时隐藏",
 	["Only show the bars while you are in combat."] = "仅在战斗中显示状态条。",
 	["Bar Texture"] = "状态条材质",
-	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read - every row simply lasts 15 seconds instead."] = "显示最近的打断记录，最新的在最前。史诗钥石中暴雪隐藏了打断者，因此无法读取其冷却时间 - 每一行只是固定显示 15 秒。",
+	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read. Every row simply lasts 15 seconds instead."] = "显示最近的打断记录，最新的在最前。史诗钥石中暴雪隐藏了打断者，因此无法读取其冷却时间。每一行只是固定显示 15 秒。",
 	["Ready"] = "就绪",
 	["Show self"] = "显示自己",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "在顶部固定一条自己打断的进度条，倒计时至就绪。",

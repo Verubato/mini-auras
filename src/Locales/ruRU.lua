@@ -314,7 +314,7 @@ L:RegisterLocale("ruRU", {
 	["Hide out of combat"] = "Скрывать вне боя",
 	["Only show the bars while you are in combat."] = "Показывать полосы только пока вы в бою.",
 	["Bar Texture"] = "Текстура полосы",
-	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read - every row simply lasts 15 seconds instead."] = "Показывает историю недавних прерываний, новые сверху. В эпохальном+ Blizzard скрывает, кто прервал, поэтому перезарядку не прочитать - каждая строка просто держится 15 секунд.",
+	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read. Every row simply lasts 15 seconds instead."] = "Показывает историю недавних прерываний, новые сверху. В эпохальном+ Blizzard скрывает, кто прервал, поэтому перезарядку не прочитать. Каждая строка просто держится 15 секунд.",
 	["Ready"] = "Готово",
 	["Show self"] = "Показывать себя",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Закрепляет сверху полосу вашего прерывания с отсчётом до готовности.",

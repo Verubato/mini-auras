@@ -312,7 +312,7 @@ L:RegisterLocale("ptBR", {
 	["Hide out of combat"] = "Ocultar fora de combate",
 	["Only show the bars while you are in combat."] = "Só mostra as barras enquanto você está em combate.",
 	["Bar Texture"] = "Textura da barra",
-	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read - every row simply lasts 15 seconds instead."] = "Mostra um histórico das interrupções recentes, a mais nova primeiro. No Mítica+ a Blizzard oculta quem interrompeu, então a recarga não pode ser lida - cada linha simplesmente dura 15 segundos.",
+	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read. Every row simply lasts 15 seconds instead."] = "Mostra um histórico das interrupções recentes, a mais nova primeiro. No Mítica+ a Blizzard oculta quem interrompeu, então a recarga não pode ser lida. Cada linha simplesmente dura 15 segundos.",
 	["Ready"] = "Pronto",
 	["Show self"] = "Mostrar a si mesmo",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Mantem uma barra no topo para sua propria interrupcao, com a contagem ate ficar pronta.",
