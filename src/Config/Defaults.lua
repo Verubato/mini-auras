@@ -397,7 +397,7 @@ local dbDefaults = {
 		---@class AllyKickTrackerModuleOptions
 		AllyKickTrackerModule = {
 			-- Dungeons only out of the box: that is where interrupt rotations are coordinated.
-			-- Everywhere else the bars are opt-in rather than another thing on a busy screen.
+			-- Everywhere else the list is opt-in rather than another thing on a busy screen.
 			Enabled = {
 				Always = false,
 				World = false,
@@ -418,16 +418,15 @@ local dbDefaults = {
 
 			Grow = "DOWN",
 			BarSpacing = 2,
-			-- Unlocked by default: the bars are their own preview, so they are dragged into
+			-- Unlocked by default: the rows are their own preview, so they are dragged into
 			-- place and then locked out of the way of the mouse.
 			Locked = false,
-			-- More bars than a five-man can produce, so a raid group still shows a useful few
-			-- rather than a wall of them.
+			-- Enough to read a pull's worth of interrupts without becoming a wall of them.
 			MaxBars = 5,
-			SortByReadiness = true,
-			HideWhenReady = false,
+			-- How long a row stays. The kicker cannot be identified, so their real cooldown is
+			-- unknowable; this is a display lifetime and nothing more.
+			RecordDuration = 15,
 			HideOutOfCombat = false,
-			ExcludePlayer = false,
 
 			Bars = {
 				Width = 260,

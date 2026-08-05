@@ -1,25 +1,21 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
-local L = addon.L
 local eventGate = addon.Core.EventGate
-local inspector = addon.Core.Inspector
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local barTextures = addon.Core.BarTextures
 
 -- Loaded before this file in TOC order.
-local tracker = addon.Modules.AllyKicks.Tracker
+local observer = addon.Modules.AllyKicks.Observer
 local display = addon.Modules.AllyKicks.Display
 
--- Repaint rate while something is counting down. The loop only runs then: with every interrupt
--- ready there is nothing to animate, so it stops and a cast starts it again.
+-- Repaint rate while a row is counting down. The loop only runs then: with the list empty there
+-- is nothing to animate, so it stops and the next interrupt starts it again.
 local TICK_INTERVAL = 0.05
 local MODULE_EVENTS = {
-	"GROUP_ROSTER_UPDATE",
 	"PLAYER_ENTERING_WORLD",
-	"PLAYER_SPECIALIZATION_CHANGED",
-	-- A key starts without a zone change, and every interrupt is up when it does.
+	-- A key starts without a zone change, and the pull before it is not worth carrying in.
 	"CHALLENGE_MODE_START",
 	-- Only used by the out-of-combat option, but registered either way: the option can be
 	-- switched on mid-fight, and the gate is where registrations belong.
@@ -27,12 +23,13 @@ local MODULE_EVENTS = {
 	"PLAYER_REGEN_ENABLED",
 }
 
--- Test-mode roster: one ready, one mid-cooldown and one just pressed, so every visual state is
--- on screen at once while the bar is being positioned.
-local TEST_ENTRIES = {
-	{ Unit = "player", Class = "SHAMAN", SpellId = 57994, Cooldown = 12, Elapsed = 0 },
-	{ Unit = "party1", Class = "MAGE", SpellId = 2139, Cooldown = 20, Elapsed = 12 },
-	{ Unit = "party2", Class = "ROGUE", SpellId = 1766, Cooldown = 15, Elapsed = 15 },
+-- Test-mode rows: one fresh, one halfway and one nearly gone, so the whole range is on screen at
+-- once while the list is being positioned. Real rows carry secret values; these are plain, which
+-- is the point - the preview has to be readable.
+local TEST_RECORDS = {
+	{ Unit = "player", Class = "SHAMAN", SpellId = 57994, Elapsed = 0 },
+	{ Unit = "party1", Class = "MAGE", SpellId = 2139, Elapsed = 6, Marker = 1 },
+	{ Unit = "party2", Class = "ROGUE", SpellId = 1766, Elapsed = 12, Marker = 8 },
 }
 
 ---@type Db
@@ -48,16 +45,16 @@ local timeSinceTick = 0
 local inCombat = false
 local enabled = false
 local testModeActive = false
--- The order currently on screen, and the scratch the next order is built into. Kept apart so a
--- tick that produces the same order costs no re-layout.
----@type AllyKickEntry[]
+-- The rows currently on screen, and the scratch the next set is built into. Kept apart so a tick
+-- that produces the same set costs no re-layout.
+---@type AllyKickRecord[]
 local shownOrder = {}
----@type AllyKickEntry[]
+---@type AllyKickRecord[]
 local orderScratch = {}
 -- Rewritten on every apply; the display copies the fields out and keeps nothing.
 local displayOptionsScratch = {}
----@type AllyKickEntry[]
-local testEntries = {}
+---@type AllyKickRecord[]
+local testRecords = {}
 
 ---@class AllyKickTrackerModule : IModule
 local M = {}
@@ -74,60 +71,28 @@ local function IsEnabled()
 	return moduleUtil:IsModuleEnabled(moduleName.AllyKickTracker)
 end
 
----The moment a member's interrupt comes back, or 0 while it is ready.
----@param entry AllyKickEntry
----@return number
-local function ReadyAt(entry)
-	if entry.StartTime <= 0 then
-		return 0
-	end
-
-	return entry.StartTime + (entry.Duration or entry.Cooldown)
-end
-
----Readiness first, then whoever comes back soonest. The unit token breaks ties so members who
----are all ready hold a stable order instead of swapping places on every sort.
----@param a AllyKickEntry
----@param b AllyKickEntry
----@return boolean
-local function ByReadiness(a, b)
-	local readyA, readyB = ReadyAt(a), ReadyAt(b)
-
-	if readyA ~= readyB then
-		return readyA < readyB
-	end
-
-	return a.Unit < b.Unit
-end
-
+---Newest first, capped at the configured height. The observer appends, so walking it backwards is
+---the whole sort - rows never reorder once recorded.
 ---@param options AllyKickTrackerModuleOptions
----@return AllyKickEntry[]
+---@return AllyKickRecord[]
 local function BuildOrder(options)
-	local source = testModeActive and testEntries or tracker:GetEntries()
-	-- Test mode shows every state at once, so its preview ignores the filter.
-	local hideReady = options.HideWhenReady and not testModeActive
-	local now = GetTime()
+	local source = testModeActive and testRecords or observer:GetRecords()
+	local limit = options.MaxBars or 5
 
 	wipe(orderScratch)
 
-	for _, entry in ipairs(source) do
-		if not (hideReady and ReadyAt(entry) <= now) then
-			orderScratch[#orderScratch + 1] = entry
+	for index = #source, 1, -1 do
+		if #orderScratch >= limit then
+			break
 		end
-	end
 
-	if options.SortByReadiness then
-		table.sort(orderScratch, ByReadiness)
-	end
-
-	for index = #orderScratch, (options.MaxBars or 5) + 1, -1 do
-		orderScratch[index] = nil
+		orderScratch[#orderScratch + 1] = source[index]
 	end
 
 	return orderScratch
 end
 
----@param ordered AllyKickEntry[]
+---@param ordered AllyKickRecord[]
 ---@return boolean
 local function OrderChanged(ordered)
 	if #ordered ~= #shownOrder then
@@ -143,41 +108,13 @@ local function OrderChanged(ordered)
 	return false
 end
 
----True when a bar on screen has come off cooldown, which only matters while ready bars are
----being filtered out - it means the list itself is stale rather than just its numbers.
----@return boolean
-local function AnyShownReady()
-	local now = GetTime()
-
-	for index = 1, #shownOrder do
-		if ReadyAt(shownOrder[index]) <= now then
-			return true
-		end
-	end
-
-	return false
-end
-
----@return boolean
-local function AnyOnCooldown()
-	local now = GetTime()
-
-	for index = 1, #shownOrder do
-		if ReadyAt(shownOrder[index]) > now then
-			return true
-		end
-	end
-
-	return false
-end
-
 ---@param options AllyKickTrackerModuleOptions
 local function UpdateVisibility(options)
 	if not instance then
 		return
 	end
 
-	-- Test mode keeps the bar up regardless: it is what the user drags to position it.
+	-- Test mode keeps the list up regardless: it is what the user drags to position it.
 	local show = testModeActive or #shownOrder > 0
 
 	if show and not testModeActive and options.HideOutOfCombat and not inCombat then
@@ -187,9 +124,8 @@ local function UpdateVisibility(options)
 	instance.Frame:SetShown(show)
 end
 
----Re-sorts the entries and hands them to the display, but only re-lays-out the bars when the
----order actually moved.
-local function ApplyEntries()
+---Hands the current rows to the display, but only re-lays-out when the set actually moved.
+local function ApplyRecords()
 	local options = GetOptions()
 
 	if not instance or not options then
@@ -205,7 +141,7 @@ local function ApplyEntries()
 			shownOrder[index] = ordered[index]
 		end
 
-		instance:SetEntries(shownOrder)
+		instance:SetRecords(shownOrder)
 	else
 		instance:Update()
 	end
@@ -231,41 +167,27 @@ local function OnTick(_, elapsed)
 
 	timeSinceTick = 0
 
-	local options = GetOptions()
+	-- Test rows are the module's own and never expire, so the preview stays put while the list is
+	-- being dragged into place.
+	if not testModeActive and observer:Prune(GetTime()) then
+		ApplyRecords()
 
-	if options and options.HideWhenReady and AnyShownReady() then
-		-- A bar whose cooldown just ended has to leave the list, not merely stop counting down.
-		ApplyEntries()
-	end
-
-	if not instance.Frame:IsShown() then
-		-- Nothing on screen to repaint, but the loop still has to notice the last expiry.
-		if AnyOnCooldown() then
+		if #shownOrder == 0 then
+			StopTicking()
 			return
 		end
 
-		StopTicking()
 		return
 	end
 
-	-- Only the fills and countdowns move here. The order cannot: it is sorted on an absolute
-	-- ready-at time, so nothing but a cast or a roster change can reshuffle it, and both of
-	-- those re-sort on their own. Re-sorting per tick would be pure waste.
+	if not instance.Frame:IsShown() then
+		return
+	end
+
 	instance:Update()
-
-	if AnyOnCooldown() then
-		return
-	end
-
-	-- Everything is back up, so there is nothing left to animate until the next cast.
-	if options then
-		UpdateVisibility(options)
-	end
-
-	StopTicking()
 end
 
----Starts the repaint loop, which then runs until nothing is counting down.
+---Starts the repaint loop, which then runs until the last row has expired.
 local function StartTicking()
 	if ticking or not enabled then
 		return
@@ -276,36 +198,15 @@ local function StartTicking()
 	tickFrame:SetScript("OnUpdate", OnTick)
 end
 
-local function OnCooldownStarted()
-	ApplyEntries()
+local function OnInterruptRecorded()
+	ApplyRecords()
 	StartTicking()
 end
 
-local function OnRosterDataChanged()
-	ApplyEntries()
-
-	if AnyOnCooldown() then
-		StartTicking()
-	end
-end
-
----@param options AllyKickTrackerModuleOptions
-local function UpdateRoster(options)
-	if testModeActive then
-		return
-	end
-
-	tracker:Rebuild(not options.ExcludePlayer)
-end
-
-local function OnEvent(_, event, unit)
+local function OnEvent(_, event)
 	local options = GetOptions()
 
 	if not options then
-		return
-	end
-
-	if event == "PLAYER_SPECIALIZATION_CHANGED" and unit ~= "player" then
 		return
 	end
 
@@ -315,47 +216,29 @@ local function OnEvent(_, event, unit)
 		return
 	end
 
-	if event == "PLAYER_ENTERING_WORLD" or event == "CHALLENGE_MODE_START" then
-		-- Cooldowns do not survive either in any way worth showing: an arena, a fresh dungeon
-		-- or a key pull all start with everything up.
-		tracker:ClearCooldowns()
-	end
-
-	UpdateRoster(options)
-end
-
----Fires when a member's spec is resolved after the fact, which can change both whether they
----have an interrupt at all and which one it is.
-local function OnSpecResolved()
-	if not enabled or testModeActive then
-		return
-	end
-
-	local options = GetOptions()
-
-	if options then
-		UpdateRoster(options)
-	end
+	-- An arena, a fresh dungeon or a key pull all start over; the kicks from before it are not
+	-- worth carrying across.
+	observer:Clear()
+	ApplyRecords()
 end
 
 -- Test mode
 
-local function BuildTestEntries()
+local function BuildTestRecords()
 	local now = GetTime()
 
-	wipe(testEntries)
+	wipe(testRecords)
 
-	for index, spec in ipairs(TEST_ENTRIES) do
-		testEntries[index] = {
-			Unit = spec.Unit,
-			PetUnit = spec.Unit .. "pet",
+	for index, spec in ipairs(TEST_RECORDS) do
+		testRecords[index] = {
 			Name = UnitName(spec.Unit) or spec.Unit,
 			Class = spec.Class,
-			SpellId = spec.SpellId,
-			Texture = C_Spell.GetSpellTexture(spec.SpellId),
-			Cooldown = spec.Cooldown,
-			-- Elapsed == Cooldown means it just came off cooldown, i.e. the ready state.
-			StartTime = spec.Elapsed < spec.Cooldown and (now - spec.Elapsed) or 0,
+			Icon = C_Spell.GetSpellTexture(spec.SpellId),
+			Marker = spec.Marker,
+			-- Far enough out that the preview never expires while it is being positioned; the
+			-- countdown still reads as a row partway through its life.
+			ExpireAt = now + (60 - spec.Elapsed),
+			Duration = 60,
 		}
 	end
 end
@@ -367,7 +250,7 @@ local function EnsureFrames()
 		return
 	end
 
-	instance = display:New(UIParent, L["Ready"])
+	instance = display:New(UIParent)
 
 	local frame = instance.Frame
 	frame:RegisterForDrag("LeftButton")
@@ -422,7 +305,7 @@ local function ApplyStyle(options)
 end
 
 ---Draggable whenever it is on screen and unlocked, rather than only while test mode is up: the
----bars are their own preview, so there is nothing to switch on before moving them. Locking hands
+---rows are their own preview, so there is nothing to switch on before moving them. Locking hands
 ---the mouse back to whatever sits underneath.
 ---@param options AllyKickTrackerModuleOptions
 local function ApplyInteractivity(options)
@@ -441,6 +324,7 @@ local function ApplyOptions(options)
 	ApplyLayout(options)
 	ApplyStyle(options)
 	ApplyInteractivity(options)
+	observer:SetRecordDuration(options.RecordDuration or 15)
 end
 
 ---@param active boolean
@@ -450,9 +334,9 @@ local function SetEventsActive(active)
 	end
 
 	if active then
-		tracker:Start()
+		observer:Start()
 	else
-		tracker:Stop()
+		observer:Stop()
 	end
 end
 
@@ -461,7 +345,7 @@ local function Teardown()
 	wipe(shownOrder)
 
 	if instance then
-		instance:SetEntries(shownOrder)
+		instance:SetRecords(shownOrder)
 		instance.Frame:Hide()
 	end
 end
@@ -471,9 +355,9 @@ local function SetTestMode(active)
 	testModeActive = active
 
 	if active then
-		BuildTestEntries()
+		BuildTestRecords()
 	else
-		wipe(testEntries)
+		wipe(testRecords)
 	end
 
 	M:Refresh()
@@ -490,20 +374,7 @@ local function CreateEvents()
 
 	tickFrame = CreateFrame("Frame", nil, UIParent)
 
-	tracker:SetRosterCallback(OnRosterDataChanged)
-	tracker:SetCooldownCallback(OnCooldownStarted)
-
-	-- Party specs arrive asynchronously, and a member's spec decides both whether they have an
-	-- interrupt and which one, so the roster is rebuilt whenever one lands. FrameSort's
-	-- inspector is preferred when it is present, exactly as the cooldown tracker does it.
-	local frameSort = FrameSortApi and FrameSortApi.v3
-
-	if frameSort and frameSort.Inspector then
-		frameSort.Inspector:RegisterCallback(OnSpecResolved)
-	else
-		inspector:Init()
-		inspector:RegisterCallback(OnSpecResolved)
-	end
+	observer:SetRecordCallback(OnInterruptRecorded)
 end
 
 local function ApplyInitialState()
@@ -537,22 +408,21 @@ function M:Refresh()
 
 	EnsureFrames()
 	ApplyOptions(options)
-	UpdateRoster(options)
-	ApplyEntries()
+	ApplyRecords()
 
-	if AnyOnCooldown() or testModeActive then
+	if #shownOrder > 0 or testModeActive then
 		StartTicking()
 	end
 end
 
----Toggles the tracker's cast log, which reports every spell a tracked member casts.
+---Toggles the observer's interrupt log, which reports every kick it records.
 ---@return boolean on
 function M:ToggleDebug()
-	return tracker:SetDebugging(not tracker:IsDebugging())
+	return observer:SetDebugging(not observer:IsDebugging())
 end
 
----Prints why the bars are (or are not) doing what they should: the gate, the roster, and what
----each tracked member's interrupt is currently doing.
+---Prints why the list is (or is not) doing what it should: the gate, the watcher, and what is
+---currently on screen.
 function M:Diagnose()
 	local options = GetOptions()
 
@@ -565,7 +435,7 @@ function M:Diagnose()
 
 	mini:Notify("[Kicks] enabled=%s (zone=%s, raid=%s), watching=%s, test=%s, ticking=%s",
 		tostring(IsEnabled()), inInstance and instanceType or "world", tostring(IsInRaid()),
-		tostring(tracker:IsWatching()), tostring(testModeActive), tostring(ticking))
+		tostring(observer:IsWatching()), tostring(testModeActive), tostring(ticking))
 
 	local enables = {}
 
@@ -575,26 +445,22 @@ function M:Diagnose()
 
 	mini:Notify("[Kicks] " .. table.concat(enables, " "))
 
-	local entries = tracker:GetEntries()
-	local watched = tracker:GetWatchedUnits()
+	local records = observer:GetRecords()
 
-	mini:Notify("[Kicks] %d tracked, %d bars shown, frame %s", #entries, #shownOrder,
-		instance and (instance.Frame:IsShown() and "shown" or "hidden") or "not built")
-	mini:Notify("[Kicks] watching %d: %s", #watched,
-		#watched > 0 and table.concat(watched, ", ") or "nobody")
+	mini:Notify("[Kicks] %d recorded, %d rows shown, frame %s, rows last %ss", #records, #shownOrder,
+		instance and (instance.Frame:IsShown() and "shown" or "hidden") or "not built",
+		tostring(options.RecordDuration or 15))
 
+	-- The kicker's name is a secret value inside an instance, so it can be drawn but not printed.
+	-- Only how long each row has left says anything readable here.
 	local now = GetTime()
 
-	for _, entry in ipairs(entries) do
-		local remaining = ReadyAt(entry) - now
-
-		mini:Notify("[Kicks]   %s spell=%s cd=%ss %s", entry.Name, tostring(entry.SpellId),
-			tostring(entry.Duration or entry.Cooldown),
-			remaining > 0 and string.format("%.1fs left", remaining) or "ready")
+	for index = #records, 1, -1 do
+		mini:Notify("[Kicks]   row %d: %.1fs left", #records - index + 1, records[index].ExpireAt - now)
 	end
 
-	if #entries == 0 then
-		mini:Notify("[Kicks] nobody tracked - no group member's spec resolves to an interrupt")
+	if #records == 0 then
+		mini:Notify("[Kicks] nothing recorded yet - no interrupt has landed on a watched nameplate")
 	end
 end
 

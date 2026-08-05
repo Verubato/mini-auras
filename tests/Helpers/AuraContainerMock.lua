@@ -126,6 +126,9 @@ local function NewRegion(parent, regionType)
 		"SetAllPoints", "SetPoint", "ClearAllPoints", "SetTexture", "SetTexCoord",
 		"AddMaskTexture", "SetVertexColor", "SetBlendMode", "SetDesaturated", "SetScale",
 		"SetAtlas",
+		-- Takes a sprite index straight to the C side, so it is the only way to paint a raid
+		-- marker whose index is secret.
+		"SetSpriteSheetCell",
 		"SetText", "SetFont", "SetTextColor", "SetShadowColor", "SetShadowOffset",
 		"SetJustifyH", "SetDrawLayer", "SetColorTexture", "SetSize", "SetWordWrap",
 	}) do

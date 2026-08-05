@@ -277,7 +277,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Module PortraitModule
 
 ---@class AllyKicks
----@field Tracker AllyKickTracker
+---@field Observer AllyKickObserver
 ---@field Display AllyKickDisplay
 ---@field Module AllyKickTrackerModule
 

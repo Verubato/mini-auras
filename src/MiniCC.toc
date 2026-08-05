@@ -106,7 +106,7 @@ Modules\Nameplates\Module.lua
 Modules\EnemyKickTracker\Observer.lua
 Modules\EnemyKickTracker\Display.lua
 Modules\EnemyKickTracker\Module.lua
-Modules\AllyKicks\Tracker.lua
+Modules\AllyKicks\Observer.lua
 Modules\AllyKicks\Display.lua
 Modules\AllyKicks\Module.lua
 Modules\Auras\Display.lua

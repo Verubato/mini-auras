@@ -23,7 +23,7 @@ function M:Build(panel, options)
 
 	local description = mini:TextLine({
 		Parent = panel,
-		Text = L["Shows which group members can interrupt and who is on cooldown."],
+		Text = L["Lists interrupts as they land, showing who kicked and what they kicked."],
 	})
 
 	description:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
@@ -81,69 +81,6 @@ function M:Build(panel, options)
 	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
 	settingsDivider:SetPoint("TOP", enabledWorld, "BOTTOM", 0, -verticalSpacing)
 
-	local excludePlayerChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Exclude self"],
-		Tooltip = L["Excludes yourself from being tracked."],
-		GetValue = function()
-			return options.ExcludePlayer
-		end,
-		SetValue = function(value)
-			options.ExcludePlayer = value
-			config:Apply()
-		end,
-	})
-
-	excludePlayerChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local sortChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Sort by readiness"],
-		Tooltip = L["Show ready interrupts first, then whoever comes off cooldown soonest."],
-		GetValue = function()
-			return options.SortByReadiness
-		end,
-		SetValue = function(value)
-			options.SortByReadiness = value
-			config:Apply()
-		end,
-	})
-
-	sortChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	sortChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
-
-	local hideWhenReadyChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Hide when ready"],
-		Tooltip = L["Hide each bar while that member's interrupt is ready, leaving only the ones on cooldown."],
-		GetValue = function()
-			return options.HideWhenReady
-		end,
-		SetValue = function(value)
-			options.HideWhenReady = value
-			config:Apply()
-		end,
-	})
-
-	hideWhenReadyChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	hideWhenReadyChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
-
-	local showIconChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Show icon"],
-		Tooltip = L["Show the interrupt's spell icon next to each bar."],
-		GetValue = function()
-			return options.Bars.ShowIcon
-		end,
-		SetValue = function(value)
-			options.Bars.ShowIcon = value
-			config:Apply()
-		end,
-	})
-
-	showIconChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	showIconChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
-
 	local lockedChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Lock position"],
@@ -157,23 +94,23 @@ function M:Build(panel, options)
 		end,
 	})
 
-	lockedChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	lockedChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	local hideOutOfCombatChk = mini:Checkbox({
+	local showIconChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["Hide out of combat"],
-		Tooltip = L["Only show the bars while you are in combat."],
+		LabelText = L["Show icon"],
+		Tooltip = L["Show the icon of the spell that was interrupted."],
 		GetValue = function()
-			return options.HideOutOfCombat
+			return options.Bars.ShowIcon
 		end,
 		SetValue = function(value)
-			options.HideOutOfCombat = value
+			options.Bars.ShowIcon = value
 			config:Apply()
 		end,
 	})
 
-	hideOutOfCombatChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	hideOutOfCombatChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
+	showIconChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	showIconChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
 
 	local raidTargetChk = mini:Checkbox({
 		Parent = panel,
@@ -190,6 +127,22 @@ function M:Build(panel, options)
 
 	raidTargetChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	raidTargetChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
+
+	local hideOutOfCombatChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Hide out of combat"],
+		Tooltip = L["Only show the bars while you are in combat."],
+		GetValue = function()
+			return options.HideOutOfCombat
+		end,
+		SetValue = function(value)
+			options.HideOutOfCombat = value
+			config:Apply()
+		end,
+	})
+
+	hideOutOfCombatChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
+	hideOutOfCombatChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
 
 	local growLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	growLabel:SetText(L["Grow"])
@@ -296,6 +249,9 @@ function M:Build(panel, options)
 	local maxBarsSlider = GeometrySlider(options, "MaxBars", L["Max Bars"], 1, 10, 5)
 	maxBarsSlider.Slider:SetPoint("LEFT", spacingSlider.Slider, "RIGHT", horizontalSpacing, 0)
 	maxBarsSlider.Slider:SetPoint("TOP", spacingSlider.Slider, "TOP", 0, 0)
+
+	local durationSlider = GeometrySlider(options, "RecordDuration", L["Show For"], 3, 60, 15)
+	durationSlider.Slider:SetPoint("TOPLEFT", spacingSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	M.Panel = panel
 end

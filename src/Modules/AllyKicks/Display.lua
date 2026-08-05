@@ -18,8 +18,12 @@ local ICON_TRIM = 0.08
 -- Below this the countdown reads better with a decimal, above it whole seconds are enough - the
 -- same threshold the icon cooldowns use for their own millisecond text.
 local MILLISECONDS_THRESHOLD = 3
+-- The raid marker sheet is 4x4, indexed the same way the raid target indices run.
+local MARKER_TEXTURE = "Interface\\TargetingFrame\\UI-RaidTargetingIcons"
+local MARKER_SHEET_COLUMNS = 4
+local MARKER_SHEET_ROWS = 4
 
--- Fill colour for a member whose class is unknown, or when class colouring is switched off.
+-- Fill colour for a kicker whose class did not resolve, or when class colouring is off.
 local NEUTRAL_FILL = { 0.35, 0.45, 0.6 }
 
 ---@class AllyKickDisplay
@@ -36,6 +40,57 @@ local function CountdownText(seconds)
 	return tostring(math.ceil(seconds))
 end
 
+---The kicker's class colour. The class token is secret inside an instance, where indexing
+---RAID_CLASS_COLORS with it would throw - a table cannot be keyed by a secret - so the colour
+---comes from the API call, which takes one. The colour handed back is itself secret, which the
+---status bar's setter accepts and arithmetic on it does not.
+---@param class string?
+---@return table?
+local function ClassColor(class)
+	if class == nil then
+		return nil
+	end
+
+	if C_ClassColor and C_ClassColor.GetClassColor then
+		return C_ClassColor.GetClassColor(class)
+	end
+
+	-- Nothing but an old client gets here, where the token is never secret to begin with.
+	if issecretvalue(class) then
+		return nil
+	end
+
+	return RAID_CLASS_COLORS and RAID_CLASS_COLORS[class] or nil
+end
+
+---Paints a raid marker onto a texture. The index is secret inside an instance, and the FrameXML
+---helper works out its tex coords arithmetically, which throws on one. The sprite-sheet setter
+---hands the index straight to the C side instead, so it is preferred wherever the client has it.
+---@param texture table
+---@param index number?
+---@return boolean painted
+local function PaintMarker(texture, index)
+	if index == nil then
+		return false
+	end
+
+	if texture.SetSpriteSheetCell then
+		texture:SetTexture(MARKER_TEXTURE)
+		texture:SetSpriteSheetCell(index, MARKER_SHEET_COLUMNS, MARKER_SHEET_ROWS)
+
+		return true
+	end
+
+	-- Nothing but an old client gets here, where the index is never secret to begin with.
+	if issecretvalue(index) then
+		return false
+	end
+
+	SetRaidTargetIconTexture(texture, index)
+
+	return true
+end
+
 ---@param bar AllyKickBar
 ---@param options AllyKickDisplayOptions
 local function LayoutBar(bar, options)
@@ -44,10 +99,10 @@ local function LayoutBar(bar, options)
 	local iconSize = options.ShowIcon and height or 0
 	-- Flush against the fill: the icon reads as the bar's own head rather than a separate thing.
 	local iconWidth = iconSize
-	-- The marker keeps its column whether or not this particular bar has one to show, so one
-	-- appearing mid-cooldown never shoves everything else sideways. It leads the row rather than
-	-- sitting between the icon and the bar, so an empty column falls outside the pair and the
-	-- spell icon stays flush against the fill it belongs to.
+	-- The marker keeps its column whether or not this particular row has one to show, so one
+	-- appearing never shoves everything else sideways. It leads the row rather than sitting
+	-- between the icon and the bar, so an empty column falls outside the pair and the spell icon
+	-- stays flush against the fill it belongs to.
 	local markerSize = options.ShowRaidTarget and height or 0
 	local markerWidth = markerSize > 0 and (markerSize + padding) or 0
 
@@ -67,8 +122,6 @@ local function LayoutBar(bar, options)
 	bar.Bar:SetPoint("TOPLEFT", bar.Frame, "TOPLEFT", markerWidth + iconWidth, 0)
 	bar.Bar:SetPoint("BOTTOMRIGHT", bar.Frame, "BOTTOMRIGHT", 0, 0)
 	bar.Bar:SetStatusBarTexture(options.FillTexture)
-	-- SetStatusBarTexture replaces the texture object, so the fill colour goes with it.
-	wipe(bar.Applied)
 
 	local nameSize = math.max(6, math.floor(height * NAME_FONT_COEFFICIENT))
 
@@ -144,7 +197,7 @@ local function Arrange(instance, barCount)
 	local options = instance.Options
 	local step = options.Height + options.Spacing
 	-- Stacking up hangs the list off its bottom edge and steps positive, down off the top edge
-	-- and steps negative, so the anchor stays put whichever way the bars run.
+	-- and steps negative, so the anchor stays put whichever way the rows run.
 	local upward = options.Grow == "UP"
 	local edge = upward and "BOTTOMLEFT" or "TOPLEFT"
 	local direction = upward and 1 or -1
@@ -161,88 +214,63 @@ local function Arrange(instance, barCount)
 	instance.Frame:SetSize(options.Width, height)
 end
 
----Repaints one bar. This runs for every bar on every tick of the refresh loop, so each widget
----call is guarded by a comparison first: only the fill and the countdown text actually move
----while a cooldown runs, and a redundant SetText re-lays-out the font string for nothing.
+---Paints everything about a row that does not move: the kicker's name and class colour, the
+---interrupted spell's icon and the mob's marker. All four can be secret, so this runs once when
+---the row is assigned rather than on every tick - the repaint loop compares what it last pushed
+---to a widget, and comparing a secret is exactly what is not allowed.
 ---@param instance AllyKickDisplayInstance
 ---@param bar AllyKickBar
----@param entry AllyKickEntry
----@param now number
-local function RenderBar(instance, bar, entry, now)
+---@param record AllyKickRecord
+local function PaintRecord(instance, bar, record)
 	local options = instance.Options
-	local applied = bar.Applied
-	local duration = entry.Duration or entry.Cooldown
-	local remaining = entry.StartTime > 0 and (entry.StartTime + duration - now) or 0
 
-	if applied.Texture ~= entry.Texture then
-		bar.Icon:SetTexture(entry.Texture)
-		applied.Texture = entry.Texture
+	bar.Icon:SetTexture(record.Icon)
+	bar.Name:SetText(record.Name)
+
+	local painted = options.ShowRaidTarget and PaintMarker(bar.Marker, record.Marker)
+
+	bar.Marker:SetShown(painted and true or false)
+
+	local color = ClassColor(record.Class)
+
+	if color then
+		bar.Bar:SetStatusBarColor(color.r, color.g, color.b)
+	else
+		bar.Bar:SetStatusBarColor(NEUTRAL_FILL[1], NEUTRAL_FILL[2], NEUTRAL_FILL[3])
 	end
 
-	if applied.Name ~= entry.Name then
-		bar.Name:SetText(entry.Name)
-		applied.Name = entry.Name
+	wipe(bar.Applied)
+end
+
+---Repaints the part of a row that does move. Both numbers here are the display's own, so unlike
+---everything in PaintRecord they can be compared freely.
+---@param bar AllyKickBar
+---@param record AllyKickRecord
+---@param now number
+local function RenderTimer(bar, record, now)
+	local remaining = record.ExpireAt - now
+
+	if remaining < 0 then
+		remaining = 0
 	end
 
-	-- The marker only means anything while the cooldown it was captured with is running.
-	local marker = options.ShowRaidTarget and remaining > 0 and entry.Marker or false
+	bar.Bar:SetValue(remaining / record.Duration)
 
-	if applied.Marker ~= marker then
-		if marker then
-			SetRaidTargetIconTexture(bar.Marker, marker)
-		end
-
-		bar.Marker:SetShown(marker and true or false)
-		applied.Marker = marker
-	end
-
-	-- The class colour is the whole point of the fill; the neutral one is only for a member
-	-- whose class could not be read, which 12.1 makes possible inside a match.
-	local classColor = entry.Class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.Class] or nil
-	-- Full strength in both states. How much of the bar is left, and the number on it, are what
-	-- say whether the interrupt is up; nothing is dimmed, desaturated or faded to repeat it.
-	local ready = remaining <= 0
-	local fillR = classColor and classColor.r or NEUTRAL_FILL[1]
-	local fillG = classColor and classColor.g or NEUTRAL_FILL[2]
-	local fillB = classColor and classColor.b or NEUTRAL_FILL[3]
-
-	if applied.FillR ~= fillR or applied.FillG ~= fillG or applied.FillB ~= fillB then
-		bar.Bar:SetStatusBarColor(fillR, fillG, fillB)
-		applied.FillR, applied.FillG, applied.FillB = fillR, fillG, fillB
-	end
-
-	if ready then
-		-- A ready bar is completely static, so it is painted once and then left alone.
-		if applied.Ready ~= true then
-			bar.Bar:SetValue(1)
-			bar.Time:SetText(instance.ReadyLabel)
-			applied.Ready = true
-			applied.Countdown = false
-		end
-
-		return
-	end
-
-	applied.Ready = false
-
-	bar.Bar:SetValue(remaining / duration)
-
-	-- The text is compared as the number it will render as, not as the string: whole seconds
-	-- above the threshold and tenths below it. That way the string is only ever built on the
-	-- ticks where it actually changes, which is once a second for most of a cooldown.
+	-- The text is compared as the number it will render as, not as the string: whole seconds above
+	-- the threshold and tenths below it. That way the string is only built on the ticks where it
+	-- actually changes, which is once a second for most of a row's life.
 	local countdown = remaining < MILLISECONDS_THRESHOLD and math.floor(remaining * 10) or math.ceil(remaining)
 
-	if applied.Countdown ~= countdown then
+	if bar.Applied.Countdown ~= countdown then
 		bar.Time:SetText(CountdownText(remaining))
-		applied.Countdown = countdown
+		bar.Applied.Countdown = countdown
 	end
 end
 
----Creates a bar list. The instance owns its frame; the caller positions and shows it.
+---Creates a row list. The instance owns its frame; the caller positions and shows it.
 ---@param parent table
----@param readyLabel string
 ---@return AllyKickDisplayInstance
-function M:New(parent, readyLabel)
+function M:New(parent)
 	local frame = CreateFrame("Frame", nil, parent)
 	frame:SetClampedToScreen(true)
 	frame:SetSize(1, 1)
@@ -251,9 +279,8 @@ function M:New(parent, readyLabel)
 	local instance = {
 		Frame = frame,
 		Bars = {},
-		Entries = {},
+		Records = {},
 		BarCount = 0,
-		ReadyLabel = readyLabel,
 		Options = {
 			Width = 260,
 			Height = 35,
@@ -274,26 +301,25 @@ function M:SetOptions(options)
 		self.Options[key] = value
 	end
 
-	-- Colours and alpha come from the options, so what each bar last applied is now unknown.
-	for index = 1, #self.Bars do
-		wipe(self.Bars[index].Applied)
-	end
-
 	for index = 1, self.BarCount do
 		LayoutBar(self.Bars[index], self.Options)
+		-- Geometry and the fill texture both reset what the row was showing, so its record is
+		-- painted back on rather than left half-applied.
+		PaintRecord(self, self.Bars[index], self.Records[index])
 	end
 
 	Arrange(self, self.BarCount)
+	self:Update()
 end
 
----Assigns entries to bars. Entries are rendered in the order given, so any sorting is the
----caller's to do.
----@param entries AllyKickEntry[]
-function M:SetEntries(entries)
+---Assigns records to rows. They are rendered in the order given, so any sorting is the caller's
+---to do.
+---@param records AllyKickRecord[]
+function M:SetRecords(records)
 	local previousCount = self.BarCount
 
-	self.Entries = entries
-	self.BarCount = #entries
+	self.Records = records
+	self.BarCount = #records
 
 	for index = 1, self.BarCount do
 		local bar = GetBar(self, index)
@@ -302,6 +328,9 @@ function M:SetEntries(entries)
 			LayoutBar(bar, self.Options)
 		end
 
+		-- Which record sits on which row moves as rows expire, so every one is repainted rather
+		-- than only the newly built ones.
+		PaintRecord(self, bar, records[index])
 		bar.Frame:Show()
 	end
 
@@ -313,12 +342,12 @@ function M:SetEntries(entries)
 	self:Update()
 end
 
----Repaints every bar from its entry's current cooldown state.
+---Repaints every row's countdown.
 function M:Update()
 	local now = GetTime()
 
 	for index = 1, self.BarCount do
-		RenderBar(self, self.Bars[index], self.Entries[index], now)
+		RenderTimer(self.Bars[index], self.Records[index], now)
 	end
 end
 
@@ -329,24 +358,23 @@ end
 ---@field Bar table
 ---@field Name table
 ---@field Time table
----@field Applied table  what was last pushed to the widgets, so a repaint only touches changes
+---@field Applied table  the countdown last pushed to the widget, so a repaint only touches changes
 
 ---@class AllyKickDisplayOptions
 ---@field Width number
 ---@field Height number
----@field Spacing number  pixels between one bar and the next
+---@field Spacing number  pixels between one row and the next
 ---@field Grow string  "DOWN" or "UP"
 ---@field FillTexture string  texture path for the bar fill
 ---@field ShowIcon boolean
----@field ShowRaidTarget boolean  reserve a column for the interrupted target's raid marker
+---@field ShowRaidTarget boolean  reserve a column for the interrupted mob's raid marker
 
 ---@class AllyKickDisplayInstance
 ---@field Frame table
 ---@field Bars AllyKickBar[]
----@field Entries AllyKickEntry[]
+---@field Records AllyKickRecord[]
 ---@field BarCount number
----@field ReadyLabel string
 ---@field Options AllyKickDisplayOptions
 ---@field SetOptions fun(self: AllyKickDisplayInstance, options: table)
----@field SetEntries fun(self: AllyKickDisplayInstance, entries: AllyKickEntry[])
+---@field SetRecords fun(self: AllyKickDisplayInstance, records: AllyKickRecord[])
 ---@field Update fun(self: AllyKickDisplayInstance)

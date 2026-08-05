@@ -31,10 +31,11 @@ function M.build()
 		inCombat = false,
 		-- Raid target index per unit, read when an interrupt lands.
 		raidTargets = {},
-		-- GUID -> unit token, and GUID -> player name: the two ways an interrupt event's
-		-- interrupter can be resolved, and the client answers only one of them in some contexts.
+		-- What an interrupter's GUID resolves to. Inside an instance the client answers the name
+		-- and class with secret values and the token with nothing at all.
 		unitTokens = {},
 		unitNames = {},
+		unitClasses = {},
 		-- Overrides for spell name / base spell lookups, used by the secret-ID identification.
 		spellNames = {},
 		baseSpells = {},
@@ -80,6 +81,24 @@ function M.build()
 	_G.UnitNameFromGUID = function(guid)
 		return env.unitNames[guid]
 	end
+	-- Returns the localised name first and the class token second, as the client does.
+	_G.UnitClassFromGUID = function(guid)
+		local class = env.unitClasses[guid]
+
+		return class, class
+	end
+	-- The secret-safe way to a class colour: a function call takes a secret token, where indexing
+	-- RAID_CLASS_COLORS with one would throw. The colour object it hands back is an ordinary
+	-- table whose components are secret, so they can be given to a setter but never read.
+	_G.C_ClassColor = {
+		GetClassColor = function(token)
+			if issecretvalue(token) then
+				return { r = wow.markSecret({}), g = wow.markSecret({}), b = wow.markSecret({}) }
+			end
+
+			return _G.RAID_CLASS_COLORS[token]
+		end,
+	}
 	_G.IsInInstance = function()
 		return env.inInstance, env.instanceType
 	end

@@ -306,16 +306,11 @@ L:SetDefaultStrings({
 	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them.",
 	["Ally Kicks"] = "Ally Kicks",
 	["Ally Kicks_Short"] = "Ally Kicks",
-	["Shows which group members can interrupt and who is on cooldown."] = "Shows which group members can interrupt and who is on cooldown.",
-	["Sort by readiness"] = "Sort by readiness",
-	["Show ready interrupts first, then whoever comes off cooldown soonest."] = "Show ready interrupts first, then whoever comes off cooldown soonest.",
 	["Show icon"] = "Show icon",
-	["Show the interrupt's spell icon next to each bar."] = "Show the interrupt's spell icon next to each bar.",
 	["Bar Width"] = "Bar Width",
 	["Bar Height"] = "Bar Height",
 	["Bar Padding"] = "Bar Padding",
 	["Max Bars"] = "Max Bars",
-	["Ready"] = "Ready",
 	["Lock position"] = "Lock position",
 	["Stop the bars from being dragged, and let the mouse through them."] = "Stop the bars from being dragged, and let the mouse through them.",
 	["Hide out of combat"] = "Hide out of combat",
@@ -323,8 +318,9 @@ L:SetDefaultStrings({
 	["Show raid marker"] = "Show raid marker",
 	["Show the raid marker of the enemy whose cast was interrupted."] = "Show the raid marker of the enemy whose cast was interrupted.",
 	["Bar Texture"] = "Bar Texture",
-	["Hide when ready"] = "Hide when ready",
-	["Hide each bar while that member's interrupt is ready, leaving only the ones on cooldown."] = "Hide each bar while that member's interrupt is ready, leaving only the ones on cooldown.",
+	["Lists interrupts as they land, showing who kicked and what they kicked."] = "Lists interrupts as they land, showing who kicked and what they kicked.",
+	["Show the icon of the spell that was interrupted."] = "Show the icon of the spell that was interrupted.",
+	["Show For"] = "Show For",
 })
 
 L:RegisterLocale("enUS", {})
