@@ -314,7 +314,6 @@ L:RegisterLocale("koKR", {
 	["Bar Padding"] = "막대 간격",
 	["Max Bars"] = "최대 막대 수",
 	["Ready"] = "준비됨",
-	["Cooldown"] = "재사용 대기시간",
 	["Lock position"] = "위치 잠금",
 	["Stop the bars from being dragged, and let the mouse through them."] = "막대를 드래그할 수 없게 하고 클릭이 통과하도록 합니다.",
 	["Hide out of combat"] = "전투 중이 아닐 때 숨기기",

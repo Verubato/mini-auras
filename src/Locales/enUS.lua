@@ -316,7 +316,6 @@ L:SetDefaultStrings({
 	["Bar Padding"] = "Bar Padding",
 	["Max Bars"] = "Max Bars",
 	["Ready"] = "Ready",
-	["Cooldown"] = "Cooldown",
 	["Lock position"] = "Lock position",
 	["Stop the bars from being dragged, and let the mouse through them."] = "Stop the bars from being dragged, and let the mouse through them.",
 	["Hide out of combat"] = "Hide out of combat",

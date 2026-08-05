@@ -315,7 +315,6 @@ L:RegisterLocale("zhCN", {
 	["Bar Padding"] = "状态条间距",
 	["Max Bars"] = "最大状态条数",
 	["Ready"] = "就绪",
-	["Cooldown"] = "冷却",
 	["Lock position"] = "锁定位置",
 	["Stop the bars from being dragged, and let the mouse through them."] = "禁止拖动状态条，并让点击穿透。",
 	["Hide out of combat"] = "脱离战斗时隐藏",

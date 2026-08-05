@@ -312,7 +312,6 @@ L:RegisterLocale("itIT", {
 	["Bar Padding"] = "Spaziatura barre",
 	["Max Bars"] = "Barre massime",
 	["Ready"] = "Pronta",
-	["Cooldown"] = "Recupero",
 	["Lock position"] = "Blocca posizione",
 	["Stop the bars from being dragged, and let the mouse through them."] = "Impedisce di trascinare le barre e lascia passare i clic.",
 	["Hide out of combat"] = "Nascondi fuori dal combattimento",

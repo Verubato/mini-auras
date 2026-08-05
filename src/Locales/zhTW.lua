@@ -315,7 +315,6 @@ L:RegisterLocale("zhTW", {
 	["Bar Padding"] = "狀態條間距",
 	["Max Bars"] = "最大狀態條數",
 	["Ready"] = "就緒",
-	["Cooldown"] = "冷卻",
 	["Lock position"] = "鎖定位置",
 	["Stop the bars from being dragged, and let the mouse through them."] = "禁止拖曳狀態條，並讓點擊穿透。",
 	["Hide out of combat"] = "脫離戰鬥時隱藏",

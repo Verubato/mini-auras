@@ -313,7 +313,6 @@ L:RegisterLocale("ptBR", {
 	["Bar Padding"] = "Espaçamento das barras",
 	["Max Bars"] = "Máximo de barras",
 	["Ready"] = "Pronta",
-	["Cooldown"] = "Recarga",
 	["Lock position"] = "Travar posição",
 	["Stop the bars from being dragged, and let the mouse through them."] = "Impede arrastar as barras e deixa os cliques passarem.",
 	["Hide out of combat"] = "Ocultar fora de combate",

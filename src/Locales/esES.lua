@@ -314,7 +314,6 @@ L:RegisterLocale("esES", {
 	["Bar Padding"] = "Separación de barras",
 	["Max Bars"] = "Barras máximas",
 	["Ready"] = "Lista",
-	["Cooldown"] = "Reutilización",
 	["Lock position"] = "Bloquear posición",
 	["Stop the bars from being dragged, and let the mouse through them."] = "Impide arrastrar las barras y deja pasar los clics.",
 	["Hide out of combat"] = "Ocultar fuera de combate",

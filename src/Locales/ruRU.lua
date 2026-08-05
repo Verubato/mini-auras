@@ -315,7 +315,6 @@ L:RegisterLocale("ruRU", {
 	["Bar Padding"] = "Отступ между полосами",
 	["Max Bars"] = "Максимум полос",
 	["Ready"] = "Готово",
-	["Cooldown"] = "Перезарядка",
 	["Lock position"] = "Закрепить положение",
 	["Stop the bars from being dragged, and let the mouse through them."] = "Запрещает перетаскивать полосы и пропускает щелчки сквозь них.",
 	["Hide out of combat"] = "Скрывать вне боя",

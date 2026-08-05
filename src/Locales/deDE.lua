@@ -314,7 +314,6 @@ L:RegisterLocale("deDE", {
 	["Bar Padding"] = "Leistenabstand",
 	["Max Bars"] = "Max. Leisten",
 	["Ready"] = "Bereit",
-	["Cooldown"] = "Cooldown",
 	["Lock position"] = "Position sperren",
 	["Stop the bars from being dragged, and let the mouse through them."] = "Verhindert das Ziehen der Leisten und lässt Klicks hindurch.",
 	["Hide out of combat"] = "Außerhalb des Kampfes ausblenden",
