@@ -317,4 +317,5 @@ L:RegisterLocale("deDE", {
 	["Ready"] = "Bereit",
 	["Show self"] = "Selbst anzeigen",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Behaelt oben eine Leiste fuer die eigene Unterbrechung, die bis zur Bereitschaft herunterzaehlt.",
+	["Play a sound when you get Precognition or Nullifying Shroud."] = "Spielt einen Ton ab, wenn du Präkognition oder Auslöschende Hülle erhältst.",
 })

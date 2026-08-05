@@ -116,6 +116,35 @@ function M:Build(panel)
 		-math.floor((enabled:GetHeight() - colorSwatch:GetHeight()) / 2))
 	colorSwatch:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 3, 0)
 
+	-- The sound is played engine-side on 12.1 by C_UnitAuras.AddAuraSound, registered against the
+	-- two spell ids. The legacy path cannot tell precog from any other short important self-buff,
+	-- so it has no sound to offer and the option is hidden there.
+	local useAuraContainers = addon.Utils.WoWEx:UseAuraContainers()
+	local soundChk
+
+	if useAuraContainers then
+		soundChk = mini:Checkbox({
+			Parent = panel,
+			LabelText = L["Sound"],
+			Tooltip = L["Play a sound when you get Precognition or Nullifying Shroud."],
+			GetValue = function()
+				return db.Modules.PrecogModule.Sound.Enabled
+			end,
+			SetValue = function(value)
+				db.Modules.PrecogModule.Sound.Enabled = value
+
+				if value then
+					addon.Modules.Precog.Sound:PlayPreview(db.Modules.PrecogModule)
+				end
+
+				config:Apply()
+			end,
+		})
+
+		soundChk:SetPoint("TOP", enabled, "TOP", 0, 0)
+		soundChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 4, 0)
+	end
+
 	local iconSizeSlider = mini:Slider({
 		Parent = panel,
 		LabelText = L["Icon Size"],
@@ -136,6 +165,31 @@ function M:Build(panel)
 	})
 
 	iconSizeSlider.Slider:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+
+	if soundChk then
+		local soundLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+		soundLabel:SetText(L["Sound"])
+		soundLabel:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 3)
+
+		local soundFileDropdown, isModernDropdown = mini:Dropdown({
+			Parent = panel,
+			Items = config.SoundFiles,
+			GetValue = function()
+				return db.Modules.PrecogModule.Sound.File or "ElectricalSpark.ogg"
+			end,
+			SetValue = function(value)
+				db.Modules.PrecogModule.Sound.File = value
+				addon.Modules.Precog.Sound:PlayPreview(db.Modules.PrecogModule)
+				config:Apply()
+			end,
+			GetText = function(value)
+				return value:gsub("%.ogg$", "")
+			end,
+		})
+
+		soundFileDropdown:SetPoint("TOPLEFT", soundLabel, "BOTTOMLEFT", isModernDropdown and 0 or -16, -8)
+		soundFileDropdown:SetWidth(160)
+	end
 
 	M.Panel = panel
 end

@@ -16,11 +16,13 @@ local testSpellData = addon.Core.TestSpells
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
 -- The precog window shows exactly these. Kept here rather than in Core/AuraFilters because no
--- other display wants them on their own, and they are a fixed pair rather than a category.
+-- other display wants them on their own, and they are a fixed pair rather than a category. The
+-- sound registrations take the same list, handed over rather than reached for.
 local PRECOG_SPELL_IDS = {
 	[377362] = true, -- Precognition
 	[378464] = true, -- Nullifying Shroud
 }
+local sound = addon.Modules.Precog.Sound
 local testModeActive = false
 local paused = false
 local classHasPrecog
@@ -179,6 +181,9 @@ local function Teardown()
 		display:SetEnabled(false)
 	end
 
+	-- The engine keeps playing a registered sound whether or not anything of ours is on screen,
+	-- so a disabled module has to hand the registrations back rather than just hide.
+	sound:Clear()
 	anchor:Hide()
 end
 
@@ -404,11 +409,13 @@ function M:Refresh()
 	EnsureFrames()
 	ApplyOptions(options)
 	UpdateContent(options)
+	sound:Refresh(PRECOG_SPELL_IDS)
 end
 
 function M:Init()
 	db = mini:GetSavedVars()
 
+	sound:Init()
 	CreateTestData()
 	CreateFrames()
 	CreateEvents()

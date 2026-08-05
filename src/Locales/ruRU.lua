@@ -318,4 +318,5 @@ L:RegisterLocale("ruRU", {
 	["Ready"] = "Готово",
 	["Show self"] = "Показывать себя",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Закрепляет сверху полосу вашего прерывания с отсчётом до готовности.",
+	["Play a sound when you get Precognition or Nullifying Shroud."] = "Проигрывает звук, когда вы получаете Предвидение или Нейтрализующий покров.",
 })

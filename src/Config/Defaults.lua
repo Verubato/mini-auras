@@ -641,6 +641,14 @@ local dbDefaults = {
 				Always = true,
 			},
 
+			-- Off by default: precog is already a hard-to-miss icon in the middle of the screen,
+			-- so the sound is for people who want it rather than another noise by default.
+			Sound = {
+				Enabled = false,
+				Channel = "Master",
+				File = "ElectricalSpark.ogg",
+			},
+
 			Point = "CENTER",
 			RelativeTo = "UIParent",
 			RelativePoint = "CENTER",

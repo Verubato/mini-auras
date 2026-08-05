@@ -259,6 +259,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Module HealerCrowdControlModule
 
 ---@class Precog
+---@field Sound PrecogSound
 ---@field Module PrecogModule
 
 ---@class Trinkets

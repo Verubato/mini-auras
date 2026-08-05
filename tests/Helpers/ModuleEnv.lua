@@ -39,9 +39,11 @@ function M.build()
 		-- Overrides for spell name / base spell lookups, used by the secret-ID identification.
 		spellNames = {},
 		baseSpells = {},
-		-- AddAuraSound accounting.
+		-- AddAuraSound accounting, plus the live registrations by handle so a test can see which
+		-- spells were handed to the engine and on which trigger.
 		auraSoundAdds = 0,
 		auraSoundRemoves = 0,
+		auraSounds = {},
 		kicks = {},
 		-- Unit frames handed to the modules that anchor to raid frames (CC, Auras).
 		unitFrames = {},
@@ -191,12 +193,22 @@ function M.build()
 		end,
 	}
 	_G.C_UnitAuras = _G.C_UnitAuras or {}
-	_G.C_UnitAuras.AddAuraSound = function()
+	_G.C_UnitAuras.AddAuraSound = function(trigger, info)
 		env.auraSoundAdds = env.auraSoundAdds + 1
+		-- Copied field by field: callers reuse one scratch table across a registration loop, so
+		-- keeping the reference would leave every entry showing the last spell id.
+		env.auraSounds[env.auraSoundAdds] = {
+			Trigger = trigger,
+			Unit = info and info.unitToken,
+			SpellId = info and info.spellID,
+			File = info and info.soundFileName,
+			Channel = info and info.outputChannel,
+		}
 		return env.auraSoundAdds
 	end
-	_G.C_UnitAuras.RemoveAuraSound = function()
+	_G.C_UnitAuras.RemoveAuraSound = function(handle)
 		env.auraSoundRemoves = env.auraSoundRemoves + 1
+		env.auraSounds[handle] = nil
 	end
 	_G.LibStub = function(name)
 		if name == "LibRangeCheck-3.0" then

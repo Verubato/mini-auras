@@ -111,6 +111,7 @@ Modules\AllyKicks\Display.lua
 Modules\AllyKicks\Module.lua
 Modules\Auras\Display.lua
 Modules\Auras\Module.lua
+Modules\Precog\Sound.lua
 Modules\Precog\Module.lua
 Modules\Trinkets\Display.lua
 Modules\Trinkets\Module.lua
