@@ -317,5 +317,7 @@ L:RegisterLocale("ptBR", {
 	["Bar Texture"] = "Textura da barra",
 	["Lists interrupts as they land, showing who kicked and what they kicked."] = "Lista as interrupcoes conforme acontecem, mostrando quem interrompeu e o que.",
 	["Show the icon of the spell that was interrupted."] = "Mostra o icone da magia que foi interrompida.",
-	["Show For"] = "Mostrar por",
+	["Ready"] = "Pronto",
+	["Show your own interrupt"] = "Mostrar sua propria interrupcao",
+	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Mantem uma barra no topo para sua propria interrupcao, com a contagem ate ficar pronta.",
 })

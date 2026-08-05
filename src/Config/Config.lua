@@ -408,17 +408,6 @@ function M:Init()
 			return
 		end
 
-		if msg == "kicks" then
-			addon.Modules.AllyKickTrackerModule:Diagnose()
-			return
-		end
-
-		if msg == "kicks debug" then
-			local on = addon.Modules.AllyKickTrackerModule:ToggleDebug()
-			mini:Notify(on and "Ally kick logging ON" or "Ally kick logging OFF")
-			return
-		end
-
 		if msg == "debug" then
 			local on = addon.Core.Cooldowns.Brain:ToggleDebug()
 			mini:Notify(on and "Cooldown debug logging ON" or "Cooldown debug logging OFF")

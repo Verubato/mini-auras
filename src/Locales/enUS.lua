@@ -320,7 +320,9 @@ L:SetDefaultStrings({
 	["Bar Texture"] = "Bar Texture",
 	["Lists interrupts as they land, showing who kicked and what they kicked."] = "Lists interrupts as they land, showing who kicked and what they kicked.",
 	["Show the icon of the spell that was interrupted."] = "Show the icon of the spell that was interrupted.",
-	["Show For"] = "Show For",
+	["Ready"] = "Ready",
+	["Show your own interrupt"] = "Show your own interrupt",
+	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Keep a bar at the top for your own interrupt, counting down to when it is ready.",
 })
 
 L:RegisterLocale("enUS", {})

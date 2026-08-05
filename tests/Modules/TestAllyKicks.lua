@@ -20,9 +20,13 @@ local db = env.db
 local addon = env.addon
 local options = db.Modules.AllyKickTrackerModule
 
+-- The spec the player resolves to, which decides whether they get an own row and which interrupt
+-- it shows. Unresolved by default, so most of the file exercises the history rows alone.
+local playerSpec
+
 addon.Core.InspectorFacade = {
 	GetUnitSpecId = function()
-		return nil
+		return playerSpec
 	end,
 }
 addon.Core.Inspector = {
@@ -43,9 +47,14 @@ env.loadModule("src/Modules/AllyKicks/Module.lua")
 local module = addon.Modules.AllyKickTrackerModule
 local observer = addon.Modules.AllyKicks.Observer
 
+-- Mirrors the observer's own constant, which is no longer an option.
+local RECORD_DURATION = 15
+local WIND_SHEAR = 57994
+local ELEMENTAL_SHAMAN = 262
+
 env.setModuleEnabled("AllyKickTrackerModule", true)
 options.MaxBars = 5
-options.RecordDuration = 15
+options.ShowOwnCooldown = false
 options.HideOutOfCombat = false
 
 module:Init()
@@ -145,8 +154,28 @@ local function Advance(seconds)
 	end
 end
 
+---The observer's own-cast watcher, which listens to the player and their pet only.
+---@return table
+local function CastFrame()
+	for _, frame in ipairs(acm.frames) do
+		local units = frame._eventUnits and frame._eventUnits.UNIT_SPELLCAST_SUCCEEDED
+
+		if units and units[1] == "player" then
+			return frame
+		end
+	end
+
+	error("no own-cast watcher")
+end
+
+---@param spellId number
+local function Cast(spellId)
+	CastFrame():TriggerEvent("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-1", spellId)
+end
+
 local function Reset()
 	wow.setTime(1000)
+	playerSpec = nil
 	wipe(env.enemies)
 	wipe(env.raidTargets)
 	wipe(env.unitNames)
@@ -154,7 +183,9 @@ local function Reset()
 	env.enemies.nameplate1 = true
 	env.enemies.nameplate2 = true
 	options.MaxBars = 5
-	options.RecordDuration = 15
+	-- Off by default here so the history rows are the only thing under test; the own row
+	-- has its own block below.
+	options.ShowOwnCooldown = false
 	options.HideOutOfCombat = false
 	env.setModuleEnabled("AllyKickTrackerModule", true)
 	observer:Clear()
@@ -338,7 +369,7 @@ fw.describe("AllyKicks - the list", function()
 		Interrupted("nameplate1")
 		assert(#VisibleBars() == 1, "on screen")
 
-		Advance(options.RecordDuration + 1)
+		Advance(RECORD_DURATION + 1)
 
 		assert(#VisibleBars() == 0, "gone once it expired")
 		assert(not root:IsShown(), "and the list goes with it")
@@ -353,16 +384,6 @@ fw.describe("AllyKicks - the list", function()
 
 		local names = RowNames()
 		assert(#names == 1 and names[1] == "Newer", "only the expired row leaves")
-	end)
-
-	fw.it("honours the configured lifetime", function()
-		options.RecordDuration = 5
-		module:Refresh()
-
-		Interrupted("nameplate1")
-		Advance(6)
-
-		assert(#VisibleBars() == 0, "a shorter lifetime drops the row sooner")
 	end)
 
 	fw.it("hides the rows out of combat when asked to", function()
@@ -402,6 +423,107 @@ fw.describe("AllyKicks - the list", function()
 	end)
 end)
 
+fw.describe("AllyKicks - the player's own row", function()
+	fw.before_each(function()
+		Reset()
+		-- The player's own spec, class, interrupt and cooldown are all readable; theirs is the one
+		-- row the client will actually answer for.
+		playerSpec = ELEMENTAL_SHAMAN
+		wow.setUnitClass("player", "SHAMAN")
+		options.ShowOwnCooldown = true
+		_G.C_Spell.GetSpellCooldown = nil
+		module:Refresh()
+	end)
+
+	fw.it("shows a ready row before anything has happened", function()
+		local bars = VisibleBars()
+		assert(#bars == 1, "the own row is up from the start, got " .. #bars)
+
+		local time = bars[1]._createdFontStrings[2]
+		assert(time._lastArgs.SetText[1] == "Ready", "and it reads as ready")
+	end)
+
+	fw.it("counts down from the player's own cast", function()
+		Cast(WIND_SHEAR)
+
+		local time = VisibleBars()[1]._createdFontStrings[2]
+		assert(time._lastArgs.SetText[1] == "12", "Wind Shear's 12s for Elemental")
+	end)
+
+	fw.it("uses the client's exact cooldown when it is readable", function()
+		_G.C_Spell.GetSpellCooldown = function()
+			return { startTime = 1000, duration = 9, isEnabled = true }
+		end
+
+		Cast(WIND_SHEAR)
+
+		local time = VisibleBars()[1]._createdFontStrings[2]
+		assert(time._lastArgs.SetText[1] == "9", "the real, talent-aware duration wins")
+	end)
+
+	fw.it("falls back to the spec cooldown when the client returns secrets", function()
+		-- 12.1 hands these back as secret numbers: readable, but comparing or adding to one is an
+		-- error that would take the cast handler down with it.
+		_G.C_Spell.GetSpellCooldown = function()
+			return {
+				startTime = wow.markSecret({}),
+				duration = wow.markSecret({}),
+				isEnabled = true,
+			}
+		end
+
+		Cast(WIND_SHEAR)
+
+		local time = VisibleBars()[1]._createdFontStrings[2]
+		assert(time._lastArgs.SetText[1] == "12", "the cooldown still runs, on the spec's number")
+	end)
+
+	fw.it("goes back to ready once the cooldown ends", function()
+		Cast(WIND_SHEAR)
+		Advance(13)
+
+		local bars = VisibleBars()
+		assert(#bars == 1, "the row stays put rather than expiring like a history one")
+
+		local time = bars[1]._createdFontStrings[2]
+		assert(time._lastArgs.SetText[1] == "Ready", "and reads as ready again")
+	end)
+
+	fw.it("sits above the interrupts that were recorded", function()
+		Interrupted("nameplate1", { Guid = "guid-a", Name = "Someone" })
+
+		local names = RowNames()
+		assert(#names == 2, "own row plus the one recorded, got " .. #names)
+		assert(names[1] == "player", "the player leads, got " .. tostring(names[1]))
+		assert(names[2] == "Someone", "then the history, got " .. tostring(names[2]))
+	end)
+
+	fw.it("is left out when the option is off", function()
+		options.ShowOwnCooldown = false
+		module:Refresh()
+
+		assert(#VisibleBars() == 0, "nothing recorded and no own row, so nothing on screen")
+	end)
+
+	fw.it("shows nothing for a spec with no interrupt", function()
+		-- Holy Priest. A resolved spec with no interrupt is authoritative rather than guessed at.
+		playerSpec = 257
+		wow.setUnitClass("player", "PRIEST")
+		module:Refresh()
+
+		assert(#VisibleBars() == 0, "a healer has no interrupt to count down")
+	end)
+
+	fw.it("stops the repaint loop once it is ready again", function()
+		Cast(WIND_SHEAR)
+		assert(TickFrame(), "counting down, so the loop runs")
+
+		Advance(13)
+
+		assert(not TickFrame(), "a static ready row needs no repainting")
+	end)
+end)
+
 fw.describe("AllyKicks - test mode", function()
 	fw.before_each(function()
 		Reset()
@@ -430,25 +552,5 @@ fw.describe("AllyKicks - test mode", function()
 		module:StopTesting()
 
 		assert(#VisibleBars() == 0, "nothing recorded, so nothing shown")
-	end)
-end)
-
-fw.describe("AllyKicks - reporting", function()
-	fw.before_each(Reset)
-
-	fw.it("diagnoses without reading anything it may not", function()
-		-- Diagnose prints a summary; with a secret name in the list, formatting one into the
-		-- output would throw. It must report the timings only.
-		Interrupted("nameplate1")
-
-		wipe(env.notifications)
-		module:Diagnose()
-
-		assert(#env.notifications > 0, "it said something")
-	end)
-
-	fw.it("toggles the interrupt log", function()
-		assert(module:ToggleDebug() == true, "on")
-		assert(module:ToggleDebug() == false, "and off again")
 	end)
 end)

@@ -318,5 +318,7 @@ L:RegisterLocale("koKR", {
 	["Bar Texture"] = "막대 텍스처",
 	["Lists interrupts as they land, showing who kicked and what they kicked."] = "차단이 발생할 때마다 누가 무엇을 차단했는지 목록으로 표시합니다.",
 	["Show the icon of the spell that was interrupted."] = "차단된 주문의 아이콘을 표시합니다.",
-	["Show For"] = "표시 시간",
+	["Ready"] = "준비됨",
+	["Show your own interrupt"] = "자신의 차단 표시",
+	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "자신의 차단 주문을 맨 위에 고정하고 준비될 때까지 시간을 표시합니다.",
 })

@@ -319,5 +319,7 @@ L:RegisterLocale("ruRU", {
 	["Bar Texture"] = "Текстура полосы",
 	["Lists interrupts as they land, showing who kicked and what they kicked."] = "Показывает прерывания по мере их появления: кто прервал и что именно.",
 	["Show the icon of the spell that was interrupted."] = "Показывать значок прерванного заклинания.",
-	["Show For"] = "Показывать в течение",
+	["Ready"] = "Готово",
+	["Show your own interrupt"] = "Показывать своё прерывание",
+	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Закрепляет сверху полосу вашего прерывания с отсчётом до готовности.",
 })

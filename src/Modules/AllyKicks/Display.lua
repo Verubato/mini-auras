@@ -244,14 +244,23 @@ end
 
 ---Repaints the part of a row that does move. Both numbers here are the display's own, so unlike
 ---everything in PaintRecord they can be compared freely.
+---@param instance AllyKickDisplayInstance
 ---@param bar AllyKickBar
 ---@param record AllyKickRecord
 ---@param now number
-local function RenderTimer(bar, record, now)
+local function RenderTimer(instance, bar, record, now)
 	local remaining = record.ExpireAt - now
 
-	if remaining < 0 then
-		remaining = 0
+	if remaining <= 0 then
+		-- Only the player's own row gets here: a history row leaves the list the moment it
+		-- expires. A ready row is completely static, so it is painted once and then left alone.
+		if bar.Applied.Countdown ~= false then
+			bar.Bar:SetValue(1)
+			bar.Time:SetText(instance.ReadyLabel)
+			bar.Applied.Countdown = false
+		end
+
+		return
 	end
 
 	bar.Bar:SetValue(remaining / record.Duration)
@@ -269,8 +278,9 @@ end
 
 ---Creates a row list. The instance owns its frame; the caller positions and shows it.
 ---@param parent table
+---@param readyLabel string  shown instead of a countdown once the player's own interrupt is up
 ---@return AllyKickDisplayInstance
-function M:New(parent)
+function M:New(parent, readyLabel)
 	local frame = CreateFrame("Frame", nil, parent)
 	frame:SetClampedToScreen(true)
 	frame:SetSize(1, 1)
@@ -281,6 +291,7 @@ function M:New(parent)
 		Bars = {},
 		Records = {},
 		BarCount = 0,
+		ReadyLabel = readyLabel,
 		Options = {
 			Width = 260,
 			Height = 35,
@@ -347,7 +358,7 @@ function M:Update()
 	local now = GetTime()
 
 	for index = 1, self.BarCount do
-		RenderTimer(self.Bars[index], self.Records[index], now)
+		RenderTimer(self, self.Bars[index], self.Records[index], now)
 	end
 end
 
@@ -374,6 +385,7 @@ end
 ---@field Bars AllyKickBar[]
 ---@field Records AllyKickRecord[]
 ---@field BarCount number
+---@field ReadyLabel string
 ---@field Options AllyKickDisplayOptions
 ---@field SetOptions fun(self: AllyKickDisplayInstance, options: table)
 ---@field SetRecords fun(self: AllyKickDisplayInstance, records: AllyKickRecord[])

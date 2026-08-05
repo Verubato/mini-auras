@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local L = addon.L
 local eventGate = addon.Core.EventGate
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
@@ -17,6 +18,9 @@ local MODULE_EVENTS = {
 	"PLAYER_ENTERING_WORLD",
 	-- A key starts without a zone change, and the pull before it is not worth carrying in.
 	"CHALLENGE_MODE_START",
+	-- The player's spec decides both whether they have an interrupt and which one, and it arrives
+	-- after login as well as changing on demand.
+	"PLAYER_SPECIALIZATION_CHANGED",
 	-- Only used by the out-of-combat option, but registered either way: the option can be
 	-- switched on mid-fight, and the gate is where registrations belong.
 	"PLAYER_REGEN_DISABLED",
@@ -71,8 +75,9 @@ local function IsEnabled()
 	return moduleUtil:IsModuleEnabled(moduleName.AllyKickTracker)
 end
 
----Newest first, capped at the configured height. The observer appends, so walking it backwards is
----the whole sort - rows never reorder once recorded.
+---The player's own row first when they asked for it, then the interrupts seen, newest first, up to
+---the configured height. The observer appends, so walking it backwards is the whole sort - rows
+---never reorder once recorded.
 ---@param options AllyKickTrackerModuleOptions
 ---@return AllyKickRecord[]
 local function BuildOrder(options)
@@ -80,6 +85,17 @@ local function BuildOrder(options)
 	local limit = options.MaxBars or 5
 
 	wipe(orderScratch)
+
+	-- Pinned above the history rather than mixed into it: it answers "can I kick right now",
+	-- which is a different question from "who kicked what", and it is the only row whose answer
+	-- the client will actually tell us.
+	if options.ShowOwnCooldown and not testModeActive then
+		local own = observer:GetOwnRecord()
+
+		if own then
+			orderScratch[1] = own
+		end
+	end
 
 	for index = #source, 1, -1 do
 		if #orderScratch >= limit then
@@ -90,6 +106,21 @@ local function BuildOrder(options)
 	end
 
 	return orderScratch
+end
+
+---True while a row on screen is still counting down, which is the only reason to keep the repaint
+---loop running. The player's own row sits there ready without needing one.
+---@return boolean
+local function AnyCountingDown()
+	local now = GetTime()
+
+	for index = 1, #shownOrder do
+		if shownOrder[index].ExpireAt > now then
+			return true
+		end
+	end
+
+	return false
 end
 
 ---@param ordered AllyKickRecord[]
@@ -171,20 +202,14 @@ local function OnTick(_, elapsed)
 	-- being dragged into place.
 	if not testModeActive and observer:Prune(GetTime()) then
 		ApplyRecords()
-
-		if #shownOrder == 0 then
-			StopTicking()
-			return
-		end
-
-		return
+	elseif instance.Frame:IsShown() then
+		instance:Update()
 	end
 
-	if not instance.Frame:IsShown() then
-		return
+	-- The player's own row stays on screen once it is ready, but a static row needs no repainting.
+	if not testModeActive and not AnyCountingDown() then
+		StopTicking()
 	end
-
-	instance:Update()
 end
 
 ---Starts the repaint loop, which then runs until the last row has expired.
@@ -203,7 +228,7 @@ local function OnInterruptRecorded()
 	StartTicking()
 end
 
-local function OnEvent(_, event)
+local function OnEvent(_, event, unit)
 	local options = GetOptions()
 
 	if not options then
@@ -216,9 +241,20 @@ local function OnEvent(_, event)
 		return
 	end
 
+	if event == "PLAYER_SPECIALIZATION_CHANGED" then
+		if unit ~= "player" then
+			return
+		end
+
+		observer:RefreshOwn()
+		ApplyRecords()
+		return
+	end
+
 	-- An arena, a fresh dungeon or a key pull all start over; the kicks from before it are not
 	-- worth carrying across.
 	observer:Clear()
+	observer:RefreshOwn()
 	ApplyRecords()
 end
 
@@ -250,7 +286,7 @@ local function EnsureFrames()
 		return
 	end
 
-	instance = display:New(UIParent)
+	instance = display:New(UIParent, L["Ready"])
 
 	local frame = instance.Frame
 	frame:RegisterForDrag("LeftButton")
@@ -324,7 +360,6 @@ local function ApplyOptions(options)
 	ApplyLayout(options)
 	ApplyStyle(options)
 	ApplyInteractivity(options)
-	observer:SetRecordDuration(options.RecordDuration or 15)
 end
 
 ---@param active boolean
@@ -408,59 +443,11 @@ function M:Refresh()
 
 	EnsureFrames()
 	ApplyOptions(options)
+	observer:RefreshOwn()
 	ApplyRecords()
 
-	if #shownOrder > 0 or testModeActive then
+	if AnyCountingDown() or testModeActive then
 		StartTicking()
-	end
-end
-
----Toggles the observer's interrupt log, which reports every kick it records.
----@return boolean on
-function M:ToggleDebug()
-	return observer:SetDebugging(not observer:IsDebugging())
-end
-
----Prints why the list is (or is not) doing what it should: the gate, the watcher, and what is
----currently on screen.
-function M:Diagnose()
-	local options = GetOptions()
-
-	if not options then
-		mini:Notify("[Kicks] no options - the module never initialised")
-		return
-	end
-
-	local inInstance, instanceType = IsInInstance()
-
-	mini:Notify("[Kicks] enabled=%s (zone=%s, raid=%s), watching=%s, test=%s, ticking=%s",
-		tostring(IsEnabled()), inInstance and instanceType or "world", tostring(IsInRaid()),
-		tostring(observer:IsWatching()), tostring(testModeActive), tostring(ticking))
-
-	local enables = {}
-
-	for _, key in ipairs({ "Always", "World", "Arena", "BattleGrounds", "Dungeons", "Raid" }) do
-		enables[#enables + 1] = key .. "=" .. tostring(options.Enabled[key])
-	end
-
-	mini:Notify("[Kicks] " .. table.concat(enables, " "))
-
-	local records = observer:GetRecords()
-
-	mini:Notify("[Kicks] %d recorded, %d rows shown, frame %s, rows last %ss", #records, #shownOrder,
-		instance and (instance.Frame:IsShown() and "shown" or "hidden") or "not built",
-		tostring(options.RecordDuration or 15))
-
-	-- The kicker's name is a secret value inside an instance, so it can be drawn but not printed.
-	-- Only how long each row has left says anything readable here.
-	local now = GetTime()
-
-	for index = #records, 1, -1 do
-		mini:Notify("[Kicks]   row %d: %.1fs left", #records - index + 1, records[index].ExpireAt - now)
-	end
-
-	if #records == 0 then
-		mini:Notify("[Kicks] nothing recorded yet - no interrupt has landed on a watched nameplate")
 	end
 end
 

@@ -96,6 +96,22 @@ function M:Build(panel, options)
 
 	lockedChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
+	local ownChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show your own interrupt"],
+		Tooltip = L["Keep a bar at the top for your own interrupt, counting down to when it is ready."],
+		GetValue = function()
+			return options.ShowOwnCooldown
+		end,
+		SetValue = function(value)
+			options.ShowOwnCooldown = value
+			config:Apply()
+		end,
+	})
+
+	ownChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	ownChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
+
 	local showIconChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Show icon"],
@@ -109,7 +125,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	showIconChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
+	showIconChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
 	showIconChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
 
 	local raidTargetChk = mini:Checkbox({
@@ -125,7 +141,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	raidTargetChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	raidTargetChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
 	raidTargetChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
 
 	local hideOutOfCombatChk = mini:Checkbox({
@@ -141,12 +157,11 @@ function M:Build(panel, options)
 		end,
 	})
 
-	hideOutOfCombatChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	hideOutOfCombatChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
+	hideOutOfCombatChk:SetPoint("TOPLEFT", lockedChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local growLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	growLabel:SetText(L["Grow"])
-	growLabel:SetPoint("TOPLEFT", lockedChk, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	growLabel:SetPoint("TOPLEFT", hideOutOfCombatChk, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	local growDropdown, isModernDropdown = mini:Dropdown({
 		Parent = panel,
@@ -249,9 +264,6 @@ function M:Build(panel, options)
 	local maxBarsSlider = GeometrySlider(options, "MaxBars", L["Max Bars"], 1, 10, 5)
 	maxBarsSlider.Slider:SetPoint("LEFT", spacingSlider.Slider, "RIGHT", horizontalSpacing, 0)
 	maxBarsSlider.Slider:SetPoint("TOP", spacingSlider.Slider, "TOP", 0, 0)
-
-	local durationSlider = GeometrySlider(options, "RecordDuration", L["Show For"], 3, 60, 15)
-	durationSlider.Slider:SetPoint("TOPLEFT", spacingSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	M.Panel = panel
 end

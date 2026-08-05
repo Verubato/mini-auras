@@ -423,9 +423,9 @@ local dbDefaults = {
 			Locked = false,
 			-- Enough to read a pull's worth of interrupts without becoming a wall of them.
 			MaxBars = 5,
-			-- How long a row stays. The kicker cannot be identified, so their real cooldown is
-			-- unknowable; this is a display lifetime and nothing more.
-			RecordDuration = 15,
+			-- Your own interrupt pinned above the list, counting down to ready. Only your own
+			-- cooldown can be read, so this is the one row that answers "can I kick now".
+			ShowOwnCooldown = true,
 			HideOutOfCombat = false,
 
 			Bars = {
