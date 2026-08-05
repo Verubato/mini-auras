@@ -55,7 +55,6 @@ local ELEMENTAL_SHAMAN = 262
 env.setModuleEnabled("AllyKickTrackerModule", true)
 options.MaxBars = 5
 options.ShowOwnCooldown = false
-options.HideOutOfCombat = false
 
 module:Init()
 
@@ -70,7 +69,7 @@ end
 assert(root, "the row list has a draggable anchor")
 
 -- The module's own event frame, which is what combat state arrives on.
-local moduleEvents = assert(acm.lastFrameForEvent("PLAYER_REGEN_DISABLED"), "module event frame")
+local moduleEvents = assert(acm.lastFrameForEvent("PLAYER_ENTERING_WORLD"), "module event frame")
 
 ---The observer's watcher, which listens for any unit's cast being cut short.
 ---@return table
@@ -186,7 +185,6 @@ local function Reset()
 	-- Off by default here so the history rows are the only thing under test; the own row
 	-- has its own block below.
 	options.ShowOwnCooldown = false
-	options.HideOutOfCombat = false
 	env.setModuleEnabled("AllyKickTrackerModule", true)
 	observer:Clear()
 	module:Refresh()
@@ -384,17 +382,6 @@ fw.describe("AllyKicks - the list", function()
 
 		local names = RowNames()
 		assert(#names == 1 and names[1] == "Newer", "only the expired row leaves")
-	end)
-
-	fw.it("hides the rows out of combat when asked to", function()
-		Interrupted("nameplate1")
-		options.HideOutOfCombat = true
-
-		moduleEvents:TriggerEvent("PLAYER_REGEN_ENABLED")
-		assert(not root:IsShown(), "out of combat, so nothing on screen")
-
-		moduleEvents:TriggerEvent("PLAYER_REGEN_DISABLED")
-		assert(root:IsShown(), "combat brings them back")
 	end)
 
 	fw.it("hides everything while the module is disabled", function()

@@ -21,10 +21,6 @@ local MODULE_EVENTS = {
 	-- The player's spec decides both whether they have an interrupt and which one, and it arrives
 	-- after login as well as changing on demand.
 	"PLAYER_SPECIALIZATION_CHANGED",
-	-- Only used by the out-of-combat option, but registered either way: the option can be
-	-- switched on mid-fight, and the gate is where registrations belong.
-	"PLAYER_REGEN_DISABLED",
-	"PLAYER_REGEN_ENABLED",
 }
 
 -- Test-mode rows: one fresh, one halfway and one nearly gone, so the whole range is on screen at
@@ -46,7 +42,6 @@ local eventsFrame
 local tickFrame
 local ticking = false
 local timeSinceTick = 0
-local inCombat = false
 local enabled = false
 local testModeActive = false
 -- The rows currently on screen, and the scratch the next set is built into. Kept apart so a tick
@@ -139,20 +134,13 @@ local function OrderChanged(ordered)
 	return false
 end
 
----@param options AllyKickTrackerModuleOptions
-local function UpdateVisibility(options)
+local function UpdateVisibility()
 	if not instance then
 		return
 	end
 
 	-- Test mode keeps the list up regardless: it is what the user drags to position it.
-	local show = testModeActive or #shownOrder > 0
-
-	if show and not testModeActive and options.HideOutOfCombat and not inCombat then
-		show = false
-	end
-
-	instance.Frame:SetShown(show)
+	instance.Frame:SetShown(testModeActive or #shownOrder > 0)
 end
 
 ---Hands the current rows to the display, but only re-lays-out when the set actually moved.
@@ -177,7 +165,7 @@ local function ApplyRecords()
 		instance:Update()
 	end
 
-	UpdateVisibility(options)
+	UpdateVisibility()
 end
 
 local function StopTicking()
@@ -232,12 +220,6 @@ local function OnEvent(_, event, unit)
 	local options = GetOptions()
 
 	if not options then
-		return
-	end
-
-	if event == "PLAYER_REGEN_DISABLED" or event == "PLAYER_REGEN_ENABLED" then
-		inCombat = event == "PLAYER_REGEN_DISABLED"
-		UpdateVisibility(options)
 		return
 	end
 
@@ -451,7 +433,6 @@ end
 
 function M:Init()
 	db = mini:GetSavedVars()
-	inCombat = UnitAffectingCombat("player") == true
 
 	CreateEvents()
 	ApplyInitialState()

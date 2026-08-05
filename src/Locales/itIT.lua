@@ -308,8 +308,6 @@ L:RegisterLocale("itIT", {
 	["Max Bars"] = "Barre massime",
 	["Lock position"] = "Blocca posizione",
 	["Stop the bars from being dragged, and let the mouse through them."] = "Impedisce di trascinare le barre e lascia passare i clic.",
-	["Hide out of combat"] = "Nascondi fuori dal combattimento",
-	["Only show the bars while you are in combat."] = "Mostra le barre solo mentre sei in combattimento.",
 	["Bar Texture"] = "Texture barra",
 	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read. Every row simply lasts 15 seconds instead."] = "Mostra la cronologia delle interruzioni recenti, la più recente per prima. In Mitica+ Blizzard nasconde chi ha interrotto, quindi il suo recupero non è leggibile. Ogni riga dura semplicemente 15 secondi.",
 	["Ready"] = "Pronto",

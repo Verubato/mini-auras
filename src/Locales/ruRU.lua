@@ -311,8 +311,6 @@ L:RegisterLocale("ruRU", {
 	["Max Bars"] = "Максимум полос",
 	["Lock position"] = "Закрепить положение",
 	["Stop the bars from being dragged, and let the mouse through them."] = "Запрещает перетаскивать полосы и пропускает щелчки сквозь них.",
-	["Hide out of combat"] = "Скрывать вне боя",
-	["Only show the bars while you are in combat."] = "Показывать полосы только пока вы в бою.",
 	["Bar Texture"] = "Текстура полосы",
 	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read. Every row simply lasts 15 seconds instead."] = "Показывает историю недавних прерываний, новые сверху. В эпохальном+ Blizzard скрывает, кто прервал, поэтому перезарядку не прочитать. Каждая строка просто держится 15 секунд.",
 	["Ready"] = "Готово",

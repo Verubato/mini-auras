@@ -310,8 +310,6 @@ L:RegisterLocale("koKR", {
 	["Max Bars"] = "최대 막대 수",
 	["Lock position"] = "위치 잠금",
 	["Stop the bars from being dragged, and let the mouse through them."] = "막대를 드래그할 수 없게 하고 클릭이 통과하도록 합니다.",
-	["Hide out of combat"] = "전투 중이 아닐 때 숨기기",
-	["Only show the bars while you are in combat."] = "전투 중일 때만 막대를 표시합니다.",
 	["Bar Texture"] = "막대 텍스처",
 	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read. Every row simply lasts 15 seconds instead."] = "최근 차단 기록을 최신순으로 표시합니다. 신화+에서는 블리자드가 차단한 사람을 숨기기 때문에 재사용 대기시간을 읽을 수 없습니다. 각 줄은 그냥 15초 동안만 표시됩니다.",
 	["Ready"] = "준비됨",

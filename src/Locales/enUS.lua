@@ -312,8 +312,6 @@ L:SetDefaultStrings({
 	["Max Bars"] = "Max Bars",
 	["Lock position"] = "Lock position",
 	["Stop the bars from being dragged, and let the mouse through them."] = "Stop the bars from being dragged, and let the mouse through them.",
-	["Hide out of combat"] = "Hide out of combat",
-	["Only show the bars while you are in combat."] = "Only show the bars while you are in combat.",
 	["Bar Texture"] = "Bar Texture",
 	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read. Every row simply lasts 15 seconds instead."] = "Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read. Every row simply lasts 15 seconds instead.",
 	["Ready"] = "Ready",

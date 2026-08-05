@@ -310,8 +310,6 @@ L:RegisterLocale("deDE", {
 	["Max Bars"] = "Max. Leisten",
 	["Lock position"] = "Position sperren",
 	["Stop the bars from being dragged, and let the mouse through them."] = "Verhindert das Ziehen der Leisten und lässt Klicks hindurch.",
-	["Hide out of combat"] = "Außerhalb des Kampfes ausblenden",
-	["Only show the bars while you are in combat."] = "Zeigt die Leisten nur, während du im Kampf bist.",
 	["Bar Texture"] = "Leistentextur",
 	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read. Every row simply lasts 15 seconds instead."] = "Zeigt einen Verlauf der letzten Unterbrechungen, neueste zuerst. In Mythisch+ verbirgt Blizzard, wer unterbrochen hat, daher ist deren Abklingzeit nicht auslesbar. Jede Zeile bleibt stattdessen einfach 15 Sekunden stehen.",
 	["Ready"] = "Bereit",

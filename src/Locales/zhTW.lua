@@ -311,8 +311,6 @@ L:RegisterLocale("zhTW", {
 	["Max Bars"] = "最大狀態條數",
 	["Lock position"] = "鎖定位置",
 	["Stop the bars from being dragged, and let the mouse through them."] = "禁止拖曳狀態條，並讓點擊穿透。",
-	["Hide out of combat"] = "脫離戰鬥時隱藏",
-	["Only show the bars while you are in combat."] = "僅在戰鬥中顯示狀態條。",
 	["Bar Texture"] = "狀態條材質",
 	["Shows a history of recent interrupts, newest first. Blizzard hides who kicked inside Mythic+, so their cooldown cannot be read. Every row simply lasts 15 seconds instead."] = "顯示最近的打斷紀錄，最新的在最前。傳奇鑰石中暴雪隱藏了打斷者，因此無法讀取其冷卻時間。每一行只是固定顯示 15 秒。",
 	["Ready"] = "就緒",

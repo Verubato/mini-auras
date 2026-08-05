@@ -426,7 +426,6 @@ local dbDefaults = {
 			-- Your own interrupt pinned above the list, counting down to ready. Only your own
 			-- cooldown can be read, so this is the one row that answers "can I kick now".
 			ShowOwnCooldown = true,
-			HideOutOfCombat = false,
 
 			Bars = {
 				Width = 260,

@@ -112,22 +112,6 @@ function M:Build(panel, options)
 	ownChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	ownChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
 
-	local hideOutOfCombatChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Hide out of combat"],
-		Tooltip = L["Only show the bars while you are in combat."],
-		GetValue = function()
-			return options.HideOutOfCombat
-		end,
-		SetValue = function(value)
-			options.HideOutOfCombat = value
-			config:Apply()
-		end,
-	})
-
-	hideOutOfCombatChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	hideOutOfCombatChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
-
 	local growLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	growLabel:SetText(L["Grow"])
 	growLabel:SetPoint("TOPLEFT", lockedChk, "BOTTOMLEFT", 0, -verticalSpacing * 2)
