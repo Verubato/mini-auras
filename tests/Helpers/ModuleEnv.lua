@@ -31,8 +31,10 @@ function M.build()
 		inCombat = false,
 		-- Raid target index per unit, read when an interrupt lands.
 		raidTargets = {},
-		-- GUID -> unit token, which is how an interrupt event names its interrupter.
+		-- GUID -> unit token, and GUID -> player name: the two ways an interrupt event's
+		-- interrupter can be resolved, and the client answers only one of them in some contexts.
 		unitTokens = {},
+		unitNames = {},
 		-- Overrides for spell name / base spell lookups, used by the secret-ID identification.
 		spellNames = {},
 		baseSpells = {},
@@ -74,6 +76,9 @@ function M.build()
 	end
 	_G.UnitTokenFromGUID = function(guid)
 		return env.unitTokens[guid]
+	end
+	_G.UnitNameFromGUID = function(guid)
+		return env.unitNames[guid]
 	end
 	_G.IsInInstance = function()
 		return env.inInstance, env.instanceType

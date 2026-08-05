@@ -128,15 +128,30 @@ local function PetUnitFor(unit)
 	return "pet"
 end
 
----Group member names are secret in some 12.1 contexts, where they can be handed to secure
----setters but never read or compared. A label is built from the unit token instead so the bar
----still identifies who it belongs to.
+---The name a unit is going by, or nil where the client will not say. Group member names are
+---secret in some 12.1 contexts, where they can be handed to secure setters but never read or
+---compared. Read fresh each time rather than cached with the roster: a member who joined a moment
+---ago, and a pet summoned since, both read as nameless at rebuild time and only settle later.
+---@param unit string
+---@return string?
+local function ReadableName(unit)
+	local name = UnitName(unit)
+
+	if name == nil or issecretvalue(name) then
+		return nil
+	end
+
+	return name
+end
+
+---A label for a member's bar, falling back to their group slot where the name cannot be read, so
+---the bar still identifies who it belongs to.
 ---@param unit string
 ---@return string
 local function MemberLabel(unit)
-	local name = UnitName(unit)
+	local name = ReadableName(unit)
 
-	if name and not issecretvalue(name) then
+	if name then
 		return name
 	end
 
@@ -348,21 +363,48 @@ local function IsReady(owner)
 	return GetTime() >= entry.StartTime + (entry.Duration or entry.Cooldown)
 end
 
+---The watched member an interrupter's GUID belongs to. The name is asked for first: the client
+---will name a group member whose GUID it refuses to turn into a unit token, which is why asking
+---for the token alone left every ally's kick unattributed. Both calls are wrapped, because a
+---secret GUID is only good for handing to a secure API and these two are not that; and a reply
+---that comes back secret is dropped rather than compared, since comparing one aborts the handler.
+---@param guid string  possibly secret
+---@return string? owner
+local function OwnerFromGuid(guid)
+	if UnitNameFromGUID then
+		local ok, name = pcall(UnitNameFromGUID, guid)
+
+		if ok and name ~= nil and not issecretvalue(name) then
+			-- Every watched token, pets included, so a Spell Lock finds the warlock who owns it.
+			for token, owner in pairs(ownerByToken) do
+				if ReadableName(token) == name then
+					return owner
+				end
+			end
+		end
+	end
+
+	if UnitTokenFromGUID then
+		local ok, token = pcall(UnitTokenFromGUID, guid)
+
+		if ok and token ~= nil and not issecretvalue(token) then
+			return ownerByToken[token]
+		end
+	end
+
+	return nil
+end
+
 ---Names the member who cut a cast short. The event's own interrupter field is the direct answer
----where the client gives one - the GUID may be secret, but the unit token it resolves to is not.
----Failing that, a member seen casting in the same instant is the only one it can have been; that
----is the whole use of a cast whose spell ID we were not allowed to read.
+---where the client gives one. Failing that, a member seen casting in the same instant is the only
+---one it can have been; that is the whole use of a cast whose spell ID we were not allowed to read.
 ---@param interruptedBy string?  GUID of the interrupter, possibly secret
 ---@return string? owner
 local function ResolveInterrupter(interruptedBy)
-	local token = interruptedBy and UnitTokenFromGUID and UnitTokenFromGUID(interruptedBy)
+	local owner = interruptedBy and OwnerFromGuid(interruptedBy)
 
-	if token and not issecretvalue(token) then
-		local owner = ownerByToken[token]
-
-		if owner then
-			return owner
-		end
+	if owner then
+		return owner
 	end
 
 	-- Everything below this point is a guess, and there is nothing to guess at once a cooldown
@@ -405,6 +447,27 @@ local function ResolveInterrupter(interruptedBy)
 	return nil
 end
 
+---How one of the two GUID lookups answered, for the log. Which of them gave a plain reply, and
+---which came back secret, is the first thing to know when nothing is being attributed.
+---@param guid string
+---@param resolver (fun(guid: string): string?)?
+---@return string
+local function DescribeLookup(guid, resolver)
+	if not resolver then
+		return "missing"
+	end
+
+	local ok, value = pcall(resolver, guid)
+
+	if not ok then
+		return "error"
+	elseif value == nil then
+		return "nil"
+	end
+
+	return issecretvalue(value) and "secret" or tostring(value)
+end
+
 ---@param event string
 ---@param unit string  the unit whose cast was cut short
 ---@param interruptedBy string?  GUID of whoever interrupted it
@@ -426,11 +489,10 @@ local function OnTargetInterrupted(event, unit, interruptedBy)
 	-- Each route fails differently - no GUID at all, or one naming nobody we can read - and
 	-- which it is decides what could be done about it.
 	if debugEnabled then
-		local token = UnitTokenFromGUID and UnitTokenFromGUID(interruptedBy)
-
-		DebugLog("%s on %s: by=%s token=%s -> %s", event:gsub("UNIT_SPELLCAST_", ""),
+		DebugLog("%s on %s: by=%s name=%s token=%s -> %s", event:gsub("UNIT_SPELLCAST_", ""),
 			tostring(unit), issecretvalue(interruptedBy) and "secret" or "present",
-			(token and not issecretvalue(token)) and token or (token and "secret" or "nil"),
+			DescribeLookup(interruptedBy, UnitNameFromGUID),
+			DescribeLookup(interruptedBy, UnitTokenFromGUID),
 			owner or "UNATTRIBUTED")
 	end
 

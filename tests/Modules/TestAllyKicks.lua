@@ -357,6 +357,7 @@ fw.describe("AllyKicks - secret spell ids", function()
 		playerAliases = { player = true }
 		wipe(env.enemies)
 		wipe(env.unitTokens)
+		wipe(env.unitNames)
 		env.enemies.nameplate1 = true
 		SetRoster({
 			{ Unit = "player", Class = "SHAMAN", Spec = SPEC.ElementalShaman },
@@ -379,6 +380,50 @@ fw.describe("AllyKicks - secret spell ids", function()
 		local entry = EntryFor("party1")
 		assert(entry.StartTime == 1000, "the interrupter is read straight off the event")
 		assert((entry.Duration or entry.Cooldown) == 20, "with their spec's cooldown")
+	end)
+
+	-- Each of these puts two allies on the roster so elimination cannot decide between them. The
+	-- credit landing on one of them is then the GUID lookup's doing and nothing else.
+	fw.it("starts the cooldown when the interrupter's guid only resolves to a name", function()
+		-- The client names a group member whose GUID it will not turn into a unit token, so the
+		-- name is the only route to the bar. Asking for the token alone left every ally's kick
+		-- unattributed, which is what this covers.
+		TwoAllies()
+		env.unitNames["guid-mage"] = "party1"
+
+		Interrupted("nameplate1", "guid-mage")
+
+		local entry = EntryFor("party1")
+		assert(entry.StartTime == 1000, "the name is enough to say whose kick it was")
+		assert((entry.Duration or entry.Cooldown) == 20, "with their spec's cooldown")
+		assert(EntryFor("party2").StartTime == 0, "and the other ally is left alone")
+	end)
+
+	fw.it("falls back to the token when the name comes back secret", function()
+		TwoAllies()
+		env.unitNames["guid-mage"] = wow.markSecret({})
+		env.unitTokens["guid-mage"] = "party1"
+
+		Interrupted("nameplate1", "guid-mage")
+
+		assert(EntryFor("party1").StartTime == 1000, "a secret name is dropped, not compared")
+		assert(EntryFor("party2").StartTime == 0, "and the other ally is left alone")
+	end)
+
+	fw.it("credits the owner when the interrupter is their pet", function()
+		SetRoster({
+			{ Unit = "player", Class = "SHAMAN", Spec = SPEC.ElementalShaman },
+			{ Unit = "party1", Class = "WARLOCK", Spec = SPEC.Affliction },
+			{ Unit = "party2", Class = "ROGUE", Spec = SPEC.Assassination },
+		})
+		ClearCooldowns()
+		-- Spell Lock is cast by the felhunter, so the GUID on the event is the pet's.
+		env.unitNames["guid-pet"] = "partypet1"
+
+		Interrupted("nameplate1", "guid-pet")
+
+		assert(EntryFor("party1").StartTime == 1000, "the pet's kick is the warlock's kick")
+		assert(EntryFor("party2").StartTime == 0, "and the other ally is left alone")
 	end)
 
 	fw.it("falls back to elimination when the guid names nobody", function()
