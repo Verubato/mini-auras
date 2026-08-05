@@ -96,30 +96,26 @@ end
 local function LayoutBar(bar, options)
 	local height = options.Height
 	local padding = math.max(1, math.floor(height * ICON_PADDING_FACTOR))
-	local iconSize = options.ShowIcon and height or 0
-	-- Flush against the fill: the icon reads as the bar's own head rather than a separate thing.
-	local iconWidth = iconSize
 	-- The marker keeps its column whether or not this particular row has one to show, so one
 	-- appearing never shoves everything else sideways. It leads the row rather than sitting
 	-- between the icon and the bar, so an empty column falls outside the pair and the spell icon
 	-- stays flush against the fill it belongs to.
-	local markerSize = options.ShowRaidTarget and height or 0
-	local markerWidth = markerSize > 0 and (markerSize + padding) or 0
+	local markerWidth = height + padding
 
 	bar.Frame:SetSize(options.Width, height)
 
 	bar.Marker:ClearAllPoints()
 	bar.Marker:SetPoint("TOPLEFT", bar.Frame, "TOPLEFT", 0, 0)
-	bar.Marker:SetSize(markerSize, markerSize)
+	bar.Marker:SetSize(height, height)
 
+	-- Flush against the fill: the icon reads as the bar's own head rather than a separate thing.
 	bar.Icon:ClearAllPoints()
 	bar.Icon:SetPoint("TOPLEFT", bar.Frame, "TOPLEFT", markerWidth, 0)
-	bar.Icon:SetShown(options.ShowIcon)
-	bar.Icon:SetSize(iconSize, iconSize)
+	bar.Icon:SetSize(height, height)
 	bar.Icon:SetTexCoord(ICON_TRIM, 1 - ICON_TRIM, ICON_TRIM, 1 - ICON_TRIM)
 
 	bar.Bar:ClearAllPoints()
-	bar.Bar:SetPoint("TOPLEFT", bar.Frame, "TOPLEFT", markerWidth + iconWidth, 0)
+	bar.Bar:SetPoint("TOPLEFT", bar.Frame, "TOPLEFT", markerWidth + height, 0)
 	bar.Bar:SetPoint("BOTTOMRIGHT", bar.Frame, "BOTTOMRIGHT", 0, 0)
 	bar.Bar:SetStatusBarTexture(options.FillTexture)
 
@@ -221,15 +217,11 @@ end
 ---@param instance AllyKickDisplayInstance
 ---@param bar AllyKickBar
 ---@param record AllyKickRecord
-local function PaintRecord(instance, bar, record)
-	local options = instance.Options
-
+local function PaintRecord(bar, record)
 	bar.Icon:SetTexture(record.Icon)
 	bar.Name:SetText(record.Name)
 
-	local painted = options.ShowRaidTarget and PaintMarker(bar.Marker, record.Marker)
-
-	bar.Marker:SetShown(painted and true or false)
+	bar.Marker:SetShown(PaintMarker(bar.Marker, record.Marker))
 
 	local color = ClassColor(record.Class)
 
@@ -298,8 +290,6 @@ function M:New(parent, readyLabel)
 			Spacing = 2,
 			Grow = "DOWN",
 			FillTexture = "Interface\\TargetingFrame\\UI-StatusBar",
-			ShowIcon = true,
-			ShowRaidTarget = true,
 		},
 	}
 
@@ -316,7 +306,7 @@ function M:SetOptions(options)
 		LayoutBar(self.Bars[index], self.Options)
 		-- Geometry and the fill texture both reset what the row was showing, so its record is
 		-- painted back on rather than left half-applied.
-		PaintRecord(self, self.Bars[index], self.Records[index])
+		PaintRecord(self.Bars[index], self.Records[index])
 	end
 
 	Arrange(self, self.BarCount)
@@ -341,7 +331,7 @@ function M:SetRecords(records)
 
 		-- Which record sits on which row moves as rows expire, so every one is repainted rather
 		-- than only the newly built ones.
-		PaintRecord(self, bar, records[index])
+		PaintRecord(bar, records[index])
 		bar.Frame:Show()
 	end
 
@@ -377,8 +367,6 @@ end
 ---@field Spacing number  pixels between one row and the next
 ---@field Grow string  "DOWN" or "UP"
 ---@field FillTexture string  texture path for the bar fill
----@field ShowIcon boolean
----@field ShowRaidTarget boolean  reserve a column for the interrupted mob's raid marker
 
 ---@class AllyKickDisplayInstance
 ---@field Frame table

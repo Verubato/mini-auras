@@ -112,38 +112,6 @@ function M:Build(panel, options)
 	ownChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	ownChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
 
-	local showIconChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Show icon"],
-		Tooltip = L["Show the icon of the spell that was interrupted."],
-		GetValue = function()
-			return options.Bars.ShowIcon
-		end,
-		SetValue = function(value)
-			options.Bars.ShowIcon = value
-			config:Apply()
-		end,
-	})
-
-	showIconChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
-	showIconChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
-
-	local raidTargetChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Show raid marker"],
-		Tooltip = L["Show the raid marker of the enemy whose cast was interrupted."],
-		GetValue = function()
-			return options.Bars.ShowRaidTarget
-		end,
-		SetValue = function(value)
-			options.Bars.ShowRaidTarget = value
-			config:Apply()
-		end,
-	})
-
-	raidTargetChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 3, 0)
-	raidTargetChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
-
 	local hideOutOfCombatChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Hide out of combat"],
@@ -157,11 +125,12 @@ function M:Build(panel, options)
 		end,
 	})
 
-	hideOutOfCombatChk:SetPoint("TOPLEFT", lockedChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	hideOutOfCombatChk:SetPoint("LEFT", panel, "LEFT", columnWidth * 2, 0)
+	hideOutOfCombatChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
 
 	local growLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	growLabel:SetText(L["Grow"])
-	growLabel:SetPoint("TOPLEFT", hideOutOfCombatChk, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	growLabel:SetPoint("TOPLEFT", lockedChk, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	local growDropdown, isModernDropdown = mini:Dropdown({
 		Parent = panel,

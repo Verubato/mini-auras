@@ -434,9 +434,6 @@ local dbDefaults = {
 				-- Display name rather than a path, so a LibSharedMedia texture survives the
 				-- library being reinstalled elsewhere.
 				Texture = "Blizzard Raid Bar",
-				ShowIcon = true,
-				-- Which mob the interrupt landed on, when it is marked.
-				ShowRaidTarget = true,
 			},
 		},
 		-- Used by the standalone Party Trinkets module (12.1+); on older clients the friendly

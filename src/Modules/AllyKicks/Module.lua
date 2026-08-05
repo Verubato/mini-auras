@@ -334,8 +334,6 @@ local function ApplyStyle(options)
 	scratch.Spacing = options.BarSpacing
 	scratch.Grow = options.Grow
 	scratch.FillTexture = barTextures:Resolve(bars.Texture)
-	scratch.ShowIcon = bars.ShowIcon
-	scratch.ShowRaidTarget = bars.ShowRaidTarget
 
 	instance:SetOptions(scratch)
 end
