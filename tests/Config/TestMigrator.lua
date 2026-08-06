@@ -628,6 +628,33 @@ fw.describe("Migrator - individual migrations", function()
 	end)
 end)
 
+fw.describe("Migrator - opaque user data", function()
+	-- Custom aura groups are authored entirely by the user, so the schema ships an empty array to
+	-- compare them against - which is exactly the shape CleanTable strips everything out of.
+	fw.it("keeps custom aura groups through the final CleanTable", function()
+		_G.MiniCCDB = nil
+
+		local db = migrator:GetAndUpgradeDb()
+
+		db.Modules.CustomAurasModule.Groups[1] = {
+			Id = "g1",
+			Name = "Ice Block",
+			Spells = { 45438 },
+			Icons = { Size = 55 },
+		}
+		db.Modules.CustomAurasModule.NextId = 2
+
+		-- A soft reset runs the same save/clean/restore the upgrade path finishes with.
+		local cleaned = migrator:SoftReset()
+		local groups = cleaned.Modules.CustomAurasModule.Groups
+
+		assert(groups[1], "the group survives")
+		assert(groups[1].Name == "Ice Block", "with its name")
+		assert(groups[1].Spells[1] == 45438, "and its spell list")
+		assert(groups[1].Icons.Size == 55, "and its geometry")
+	end)
+end)
+
 fw.describe("Migrator - defaults helpers", function()
 	fw.it("GetModuleDefaults returns isolated deep copies", function()
 		local first = migrator:GetModuleDefaults()

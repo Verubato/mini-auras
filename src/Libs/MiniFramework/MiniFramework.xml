@@ -34,6 +34,7 @@
   <Script file="GUI\Slider.lua"/>
   <Script file="GUI\List.lua"/>
   <Script file="GUI\Tabs.lua"/>
+  <Script file="GUI\TabStrip.lua"/>
   <Script file="GUI\TabNavigation.lua"/>
   <Script file="GUI\Dialog.lua"/>
   <Script file="GUI\StandaloneWindow.lua"/>

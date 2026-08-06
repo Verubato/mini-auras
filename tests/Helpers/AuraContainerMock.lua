@@ -131,6 +131,7 @@ local function NewRegion(parent, regionType)
 		"SetSpriteSheetCell",
 		"SetText", "SetFont", "SetTextColor", "SetShadowColor", "SetShadowOffset",
 		"SetJustifyH", "SetDrawLayer", "SetColorTexture", "SetSize", "SetWordWrap",
+		"SetAlpha",
 	}) do
 		record(name)
 	end
@@ -458,6 +459,9 @@ local function NewAuraContainer(name, parent, template)
 			filterString = filterString,
 			options = options,
 			maxFrameCount = options.maxFrameCount,
+			-- Kept because the live client allocates a group's buttons from the count it was
+			-- created with; raising the count afterwards does not conjure more.
+			maxFrameCountAtCreation = options.maxFrameCount,
 			layout = options.layout,
 			buttons = {},
 		}
@@ -497,6 +501,14 @@ local function NewAuraContainer(name, parent, template)
 	function container:SetAuraGroupLayout(groupKey, layout)
 		local group = assert(container._groups[groupKey], "no group " .. tostring(groupKey))
 		group.layout = layout
+	end
+	function container:SetAuraGroupFilterString(groupKey, filterString)
+		local group = assert(container._groups[groupKey], "no group " .. tostring(groupKey))
+		group.filterString = filterString
+	end
+	function container:SetAuraGroupSortMethod(groupKey, method, direction)
+		local group = assert(container._groups[groupKey], "no group " .. tostring(groupKey))
+		group.sortMethod, group.sortDirection = method, direction
 	end
 
 	function container:SetFlowLayoutAxis(axis)
@@ -624,6 +636,7 @@ function M.loadDisplay()
 		Utils = {
 			FontUtil = {
 				UpdateCooldownFontSize = function() end,
+				UpdateStackFontSize = function() end,
 			},
 			WoWEx = {
 				IsAuraStylingRestricted = function()

@@ -41,6 +41,7 @@ local testFiles = {
     "tests/Core/TestKickTracker.lua",
     "tests/Core/TestBarTextures.lua",
     "tests/Core/TestSounds.lua",
+    "tests/Core/TestSpellSearch.lua",
 
     -- Utils.
     "tests/Utils/TestUtils.lua",
@@ -58,6 +59,10 @@ local testFiles = {
     "tests/Modules/TestAlertsBars.lua",
     "tests/Modules/TestPortraitDisplay.lua",
     "tests/Modules/TestUnitFrameRetarget.lua",
+    "tests/Modules/TestCustomAuras.lua",
+
+    -- Config pages that need the whole addon loaded.
+    "tests/Config/TestCustomAurasPanel.lua",
 
     -- Whole addon, loaded from the TOC into the shared mocked client. Last, because the shared
     -- mock replaces the WoW globals the narrower helpers above install.

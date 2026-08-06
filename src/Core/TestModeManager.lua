@@ -14,6 +14,7 @@ local MODULE_NAMES = {
 	"EnemyKickTrackerModule",
 	"AllyKickTrackerModule",
 	"RaidFrameAurasModule",
+	"CustomAurasModule",
 	"PrecogModule",
 	"TrinketsModule",
 	"FriendlyCooldownTrackerModule",

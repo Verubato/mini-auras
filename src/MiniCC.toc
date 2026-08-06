@@ -49,6 +49,8 @@ Core\Display\BarTextures.lua
 
 Core\Auras\AuraCategoryIds.lua
 Core\Auras\AuraFilters.lua
+Core\Auras\SpellNameIndex.lua
+Core\Auras\SpellSearch.lua
 Core\Auras\AuraContainerDisplay.lua
 Core\Auras\UnitAuraWatcher.lua
 
@@ -112,6 +114,11 @@ Modules\AllyKicks\Display.lua
 Modules\AllyKicks\Module.lua
 Modules\RaidFrameAuras\Display.lua
 Modules\RaidFrameAuras\Module.lua
+Modules\CustomAuras\Groups.lua
+Modules\CustomAuras\Sound.lua
+Modules\CustomAuras\Recorder.lua
+Modules\CustomAuras\Display.lua
+Modules\CustomAuras\Module.lua
 Modules\Precog\Sound.lua
 Modules\Precog\Module.lua
 Modules\Trinkets\Display.lua
@@ -142,6 +149,8 @@ Config\Panels\EnemyKickTracker.lua
 Config\Panels\AllyKickTracker.lua
 Config\Panels\Precog.lua
 Config\Panels\RaidFrameAuras.lua
+Config\Panels\IconSelector.lua
+Config\Panels\CustomAuras.lua
 Config\Panels\FriendlyCooldownTracker.lua
 Config\Panels\EnemyCooldownTracker.lua
 Config\Panels\Trinkets.lua

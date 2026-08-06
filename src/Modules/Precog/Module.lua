@@ -164,6 +164,12 @@ end
 
 ---@return boolean
 local function IsEnabled()
+	-- Superseded on 12.1 by the custom aura groups a profile now starts with, which track the
+	-- same two spells and can be edited. TEMPORARY: remove the module with the legacy path.
+	if USE_AURA_CONTAINERS then
+		return false
+	end
+
 	return moduleUtil:IsModuleEnabled(moduleName.Precog) and classHasPrecog == true
 end
 
@@ -419,6 +425,10 @@ function M:Refresh()
 end
 
 function M:Init()
+	if USE_AURA_CONTAINERS then
+		return
+	end
+
 	db = mini:GetSavedVars()
 
 	sound:Init()

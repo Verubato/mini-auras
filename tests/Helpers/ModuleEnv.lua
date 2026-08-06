@@ -36,6 +36,8 @@ function M.build()
 		unitTokens = {},
 		unitNames = {},
 		unitClasses = {},
+		-- What UnitClassBase("player") answers, for the class conditions.
+		playerClass = "MAGE",
 		-- Overrides for spell name / base spell lookups, used by the secret-ID identification.
 		spellNames = {},
 		baseSpells = {},
@@ -82,6 +84,11 @@ function M.build()
 	end
 	_G.UnitNameFromGUID = function(guid)
 		return env.unitNames[guid]
+	end
+	-- Only the player is modelled: the class conditions on custom aura groups are about who the
+	-- user is playing, and nothing else in the addon asks a token for its base class.
+	_G.UnitClassBase = function(unit)
+		return unit == "player" and env.playerClass or nil
 	end
 	-- Returns the localised name first and the class token second, as the client does.
 	_G.UnitClassFromGUID = function(guid)
@@ -269,6 +276,7 @@ function M.build()
 
 	addon.Utils.FontUtil = {
 		UpdateCooldownFontSize = function() end,
+		UpdateStackFontSize = function() end,
 	}
 	addon.Utils.Auras = {
 		IsPurgeableNonDefensive = function()

@@ -14,9 +14,22 @@ local _auraFiltered  = {}   -- "unit:id:filter" -> bool  (true = filtered out = 
 local _secretValues  = {}   -- value -> bool (treated as secret)
 local _unitExists    = {}   -- unit -> bool
 local _unitGuids     = {}   -- unit -> guid string override
+local _roles         = {}   -- unit -> "TANK" | "HEALER" | "DAMAGER"
+local _inRaid        = false
 
 function M.setup()
 	-- Build info
+	-- Blizzard's own deep copy, which addons use rather than writing their own.
+	_G.CopyTable = function(source)
+		local out = {}
+
+		for key, value in pairs(source) do
+			out[key] = type(value) == "table" and _G.CopyTable(value) or value
+		end
+
+		return out
+	end
+
 	-- Returns the current fake build number as the 4th return value (the one
 	-- Brain.lua reads via  select(4, GetBuildInfo()) >= 120005).
 	_G.GetBuildInfo = function()
@@ -56,6 +69,20 @@ function M.setup()
 
 	-- UnitIsUnit: simple string equality (sufficient for tests).
 	_G.UnitIsUnit = function(a, b) return a == b end
+
+	-- Group and roles. A unit counts as grouped once it has been given a role, which is the
+	-- only thing anything here asks about a roster.
+	_G.IsInGroup = function()
+		return next(_roles) ~= nil
+	end
+
+	_G.IsInRaid = function()
+		return _inRaid
+	end
+
+	_G.UnitGroupRolesAssigned = function(unit)
+		return _roles[unit] or "NONE"
+	end
 
 	-- UnitGUID: returns an override if set, otherwise the unit string itself.
 	-- Each unit is unique by default; use M.setUnitGUID to alias two units to
@@ -186,6 +213,30 @@ end
 ---simulate a single player appearing under multiple IDs (e.g. "raid2"/"party1").
 function M.setUnitGUID(unit, guid)
 	_unitGuids[unit] = guid
+end
+
+---Puts a unit in the group with a role. The unit is made to exist too, since a roster entry
+---that UnitExists denies is not a state the client can be in.
+---@param unit string
+---@param role string? "TANK", "HEALER", "DAMAGER", or nil to remove them.
+function M.setRole(unit, role)
+	_roles[unit] = role
+
+	M.setUnitExists(unit, role ~= nil)
+end
+
+---@param inRaid boolean
+function M.setInRaid(inRaid)
+	_inRaid = inRaid
+end
+
+function M.clearRoles()
+	for unit in pairs(_roles) do
+		M.setUnitExists(unit, false)
+	end
+
+	_roles = {}
+	_inRaid = false
 end
 
 ---Set the instance type returned by IsInInstance().

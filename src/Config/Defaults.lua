@@ -536,6 +536,19 @@ local dbDefaults = {
 				ShowTooltips = false,
 			},
 		},
+		---@class CustomAurasModuleOptions
+		---@field Groups CustomAuraGroup[] User-authored groups. Opaque to CleanTable, which would otherwise strip every entry against the empty template - see Config/Migrator.
+		CustomAurasModule = {
+			-- No module-wide Enabled table: each group carries its own switch.
+			-- Everything here is authored by the user, so there is nothing sensible to ship.
+			Groups = {},
+			-- Ids handed out to new groups. A counter rather than the array length: deleting a
+			-- group must never let the next one reuse a retired id.
+			NextId = 1,
+			-- Set once the starter groups have been created, so deleting them is permanent and
+			-- an install updating from a version without them still gets them.
+			SeededDefaults = false,
+		},
 		---@class FriendlyCooldownTrackerModuleOptions
 		---@field DisabledSpells table<number, boolean> SpellIds excluded from the static-ability display; keyed by SpellId, value true. Treated as an opaque user hash - CleanTable must not recurse into it.
 		FriendlyCooldownTrackerModule = {

@@ -173,20 +173,20 @@ function M:Init()
 			end,
 		},
 		{
-			Key = "CC",
-			Title = L["CC"],
-			Icon = "Interface\\Icons\\Spell_Nature_Polymorph",
-			Build = function(content)
-				M.CrowdControl:Build(content, db.Modules.CCModule.Default, db.Modules.CCModule.Raid)
-			end,
-		},
-		{
 			Key = "RaidFrameAuras",
 			Title = L["Raid Frame Auras_Short"] or L["Raid Frame Auras"],
 			Icon = "Interface\\Icons\\Spell_Fire_SealOfFire",
 			Build = function(content)
 				local m = db.Modules.RaidFrameAurasModule
 				M.RaidFrameAuras:Build(content, m.Default, m.Raid)
+			end,
+		},
+		{
+			Key = "CC",
+			Title = L["CC"],
+			Icon = "Interface\\Icons\\Spell_Nature_Polymorph",
+			Build = function(content)
+				M.CrowdControl:Build(content, db.Modules.CCModule.Default, db.Modules.CCModule.Raid)
 			end,
 		},
 		{
@@ -296,9 +296,21 @@ function M:Init()
 	-- is C_PvP-based, not aura-based, so it survives the lockdown).
 	-- TEMPORARY: remove with the modules once 12.1 is live.
 	if addon.Utils.WoWEx:UseAuraContainers() then
+		-- Precognition joins the cooldown trackers: the starter custom aura groups track the
+		-- same two spells, so the module is switched off there and its tab has nothing to set.
 		for i = #tabs, 1, -1 do
-			if tabs[i].Key == "FriendlyCooldowns" then
-				tabs[i] = {
+			local key = tabs[i].Key
+
+			if key == "FriendlyCooldowns" or key == "EnemyCooldowns" or key == "Precog" then
+				table.remove(tabs, i)
+			end
+		end
+
+		-- Party trinkets read C_PvP rather than aura data, so the feature survives the lockdown
+		-- that took the cooldown trackers. It sits with the other party tools.
+		for i = 1, #tabs do
+			if tabs[i].Key == "AllyKickTracker" then
+				table.insert(tabs, i + 1, {
 					Key = "Trinkets",
 					Title = L["Party Trinkets_Short"] or L["Party Trinkets"],
 					-- The icon the module itself renders, not the old jewellery art.
@@ -306,11 +318,21 @@ function M:Init()
 					Build = function(content)
 						M.Trinkets:Build(content)
 					end,
-				}
-			elseif tabs[i].Key == "EnemyCooldowns" then
-				table.remove(tabs, i)
+				})
+				break
 			end
 		end
+
+		-- Custom auras are 12.1-only: the whole feature is aura filtering, which the older client
+		-- has no equivalent for. Straight after Home, because it is the one users build with.
+		table.insert(tabs, 2, {
+			Key = "CustomAuras",
+			Title = L["Custom Auras_Short"] or L["Custom Auras"],
+			Icon = "Interface\\Icons\\INV_Misc_Gem_Variety_01",
+			Build = function(content)
+				M.CustomAuras:Build(content)
+			end,
+		})
 	end
 
 	local contentPadding = 12
@@ -421,6 +443,7 @@ end
 ---@field Precog PrecogConfig
 ---@field OtherAddons OtherAddonsConfig
 ---@field RaidFrameAuras RaidFrameAurasConfig
+---@field CustomAuras CustomAurasConfig
 ---@field FriendlyCooldownTracker FriendlyCooldownTrackerConfig
 ---@field EnemyCooldownTracker EnemyCooldownTrackerConfig
 ---@field Miscellaneous MiscellaneousConfig

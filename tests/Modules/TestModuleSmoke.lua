@@ -149,27 +149,12 @@ fw.describe("12.1 smoke - full lifecycle across every container module", functio
 end)
 
 fw.describe("12.1 smoke - per-module container shape", function()
-	fw.it("precognition asks the engine for its two spells by id", function()
-		-- The spell-id candidate filter IS the guess on 12.1; without it the display shows
-		-- every important buff the player has.
-		local precogGroup
+	fw.it("precognition builds nothing, having been superseded by the custom aura groups", function()
+		-- The starter custom aura groups track the same two spells and can be edited, so the
+		-- module is switched off on 12.1 rather than drawing a second copy of them.
 		for _, container in ipairs(auraContainers()) do
-			if container._groups.precog then
-				precogGroup = container._groups.precog
-			end
+			assert(container._groups.precog == nil, "no precognition group on any container")
 		end
-
-		local auraFilters = env.addon.Core.AuraFilters
-		assert(precogGroup, "the precognition display exists")
-		assert(precogGroup.filterString == auraFilters.Filter.ImportantOnly,
-			"unpartitioned importants, got " .. tostring(precogGroup.filterString))
-		local filters = assert(precogGroup.options.candidateFilters, "candidate filters were passed through")
-		-- Matched by id rather than by an upper bound on duration, which also let through any
-		-- other short important self buff.
-		assert(filters.includeSpellIDs, "a spell-id filter")
-		assert(filters.includeSpellIDs[377362], "precognition")
-		assert(filters.includeSpellIDs[378464], "nullifying shroud")
-		assert(filters.maxDuration == nil, "no duration bound left")
 	end)
 
 	fw.it("every group on every container uses a filter from the shared set", function()

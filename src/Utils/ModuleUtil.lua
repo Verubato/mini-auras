@@ -122,6 +122,7 @@ function M:IsModuleEnabled(moduleName)
 	end
 
 	local settings = db.Modules[moduleName].Enabled
+
 	if not settings then
 		return true
 	end

@@ -1,0 +1,1204 @@
+-- The custom aura module. The rule the whole design hangs off is that 12.1 only honours a
+-- spell-id filter for helpful auras on assistable units and harmful auras on the rest, and
+-- silently drops it otherwise - so the sharp end of these tests is the icon budget: a group
+-- pointed at the wrong side of that rule must be budgeted to ZERO, never left running on a bare
+-- HELPFUL/HARMFUL token that would match every aura on the unit.
+
+local fw = require("Framework")
+local moduleEnv = require("ModuleEnv")
+local acm = require("AuraContainerMock")
+
+local env = moduleEnv.build()
+local addon = env.addon
+
+env.loadModule("src/Core/Auras/SpellSearch.lua")
+env.loadModule("src/Modules/CustomAuras/Groups.lua")
+env.loadModule("src/Modules/CustomAuras/Sound.lua")
+env.loadModule("src/Modules/CustomAuras/Recorder.lua")
+env.loadModule("src/Modules/CustomAuras/Display.lua")
+env.loadModule("src/Modules/CustomAuras/Module.lua")
+
+local groups = addon.Modules.CustomAuras.Groups
+local display = addon.Modules.CustomAuras.Display
+local recorder = addon.Modules.CustomAuras.Recorder
+local module = addon.Modules.CustomAurasModule
+local db = env.db
+local options = db.Modules.CustomAurasModule
+
+-- Everything below authors its own groups, so the starter ones are switched off before Init:
+-- they would otherwise be built against fixture spell names that are not installed yet, and
+-- every "the container for the player" lookup would find one of them instead.
+options.SeededDefaults = true
+
+module:Init()
+
+local ICE_BLOCK = 45438
+local POLYMORPH = 118
+-- Four ids the generated data really does carry for one ability. The mock names spells after
+-- their id by default, so the shared name has to be installed before anything builds the search
+-- index, or nothing would ever look like a variant of anything.
+local TORRENT_IDS = { 33390, 36022, 47779, 222783 }
+
+for _, spellId in ipairs(TORRENT_IDS) do
+	env.spellNames[spellId] = "Arcane Torrent"
+end
+
+---Adds a group with the given overrides applied on top of the defaults.
+---@param overrides table
+---@return CustomAuraGroup
+local function AddGroup(overrides)
+	local group = groups:NewGroup(options, "Test")
+
+	for key, value in pairs(overrides) do
+		group[key] = value
+	end
+
+	groups:Normalise(group)
+	options.Groups[#options.Groups + 1] = group
+
+	return group
+end
+
+local function ClearGroups()
+	for index = #options.Groups, 1, -1 do
+		options.Groups[index] = nil
+	end
+
+	module:Refresh()
+end
+
+---The mock AuraContainer currently tracking a unit token, or nil.
+---@param token string
+---@return table?
+local function ContainerFor(token)
+	local list = env.containersForUnit(token)
+
+	return list[1]
+end
+
+---@param container table
+---@param key string
+---@return number
+local function Budget(container, key)
+	local group = container._groups[key]
+
+	return group and group.maxFrameCount or -1
+end
+
+fw.describe("CustomAuras - group defaults", function()
+	fw.it("fills in everything a bare group is missing", function()
+		local group = groups:Normalise({})
+
+		assert(group.AuraType == "HELPFUL", "buffs are the default")
+		assert(group.Anchor == "SCREEN", "screen anchored by default")
+		assert(group.Unit == "player", "pointed at the player by default")
+		assert(type(group.Spells) == "table" and #group.Spells == 0, "no spells yet")
+		assert(group.Icons.Size > 0, "an icon size")
+		assert(group.Icons.ReverseCooldown, "the swipe fills up, which reads as time running out")
+		assert(group.Enabled, "switched on")
+		assert(group.Position.Y > 0, "placed above the middle of the screen, not on top of it")
+	end)
+
+	fw.it("leaves a group dragged to the exact centre where it was put", function()
+		local group = groups:Normalise({ Position = { X = 0, Y = 0 } })
+
+		assert(group.Position.Y == 0, "a real zero is a position, not a missing value")
+	end)
+
+	fw.it("clamps values a hand-edited or imported group got wrong", function()
+		local group = groups:Normalise({
+			Icons = { Size = -5, Spacing = 1e6 },
+			Grow = "SIDEWAYS",
+			Unit = "vehicle",
+			AuraType = "SOMETHING",
+		})
+
+		assert(group.Icons.Size >= groups.MinIconSize, "the icon size is floored")
+		assert(group.Icons.Spacing <= 50, "the spacing is capped")
+		assert(group.Grow == "CENTER", "an unknown grow direction falls back")
+		assert(group.Unit == "player", "an unsupported unit falls back")
+		assert(group.AuraType == "HELPFUL", "an unknown aura type falls back")
+	end)
+
+	fw.it("drops duplicate and nonsense spell ids", function()
+		local group = groups:Normalise({ Spells = { POLYMORPH, POLYMORPH, "x", -3, 0, 1.5 } })
+
+		assert(#group.Spells == 1 and group.Spells[1] == POLYMORPH, "one valid id survives")
+	end)
+
+	fw.it("caps how many spells one group can hold", function()
+		local many = {}
+
+		for index = 1, groups.MaxSpells + 50 do
+			many[index] = index
+		end
+
+		assert(#groups:Normalise({ Spells = many }).Spells == groups.MaxSpells,
+			"an oversized import is truncated rather than accepted")
+	end)
+
+	fw.it("hands out an id no later group can reuse", function()
+		local before = options.NextId
+		local first = groups:NewGroup(options)
+		local second = groups:NewGroup(options)
+
+		assert(first.Id ~= second.Id, "ids are unique")
+		assert(options.NextId > before + 1, "the counter moves past both")
+	end)
+end)
+
+fw.describe("CustomAuras - the groups a profile starts with", function()
+	---A profile that has never been seeded, standing alone so the module's own options are
+	---left exactly as the rest of this file expects them.
+	---@return table
+	local function FreshOptions()
+		return { Groups = {}, NextId = 1 }
+	end
+
+	fw.it("creates the starter groups once", function()
+		local fresh = FreshOptions()
+
+		assert(groups:SeedDefaults(fresh), "the first run seeds")
+		assert(#fresh.Groups == 3, "three of them")
+		assert(not groups:SeedDefaults(fresh), "and the second run does nothing")
+		assert(#fresh.Groups == 3, "so they are not doubled up")
+	end)
+
+	fw.it("never brings back one that was deleted", function()
+		local fresh = FreshOptions()
+
+		groups:SeedDefaults(fresh)
+
+		for index = #fresh.Groups, 1, -1 do
+			fresh.Groups[index] = nil
+		end
+
+		groups:SeedDefaults(fresh)
+
+		assert(#fresh.Groups == 0, "the flag outlives the groups themselves")
+	end)
+
+	fw.it("tracks one self-buff each, glowing and bordered", function()
+		local fresh = FreshOptions()
+
+		groups:SeedDefaults(fresh)
+
+		for _, group in ipairs(fresh.Groups) do
+			assert(group.Unit == "player", group.Name .. " watches you")
+			assert(group.AuraType == "HELPFUL", group.Name .. " is a buff")
+			assert(#group.Spells == 1, group.Name .. " tracks one spell")
+			assert(group.Icons.Glow and group.Icons.Border, group.Name .. " glows and has a border")
+			assert(group.Icon == "", group.Name .. " borrows its spell's icon")
+		end
+	end)
+
+	fw.it("lays them out in a row near the top of the screen", function()
+		local fresh = FreshOptions()
+		local seen = {}
+
+		groups:SeedDefaults(fresh)
+
+		for _, group in ipairs(fresh.Groups) do
+			assert(group.Position.Y > 0, "above the middle of the screen")
+			assert(not seen[group.Position.X], "and each one beside the last, not on top of it")
+			seen[group.Position.X] = true
+		end
+	end)
+
+	fw.it("gives two of them a sound on the applied trigger", function()
+		local fresh = FreshOptions()
+		local withSound = 0
+
+		groups:SeedDefaults(fresh)
+
+		for _, group in ipairs(fresh.Groups) do
+			if group.Sound.Applied ~= groups.NoSound then
+				withSound = withSound + 1
+			end
+
+			assert(group.Sound.Removed == groups.NoSound, "and nothing on the other triggers")
+			assert(group.Sound.Stacks == groups.NoSound, "either of them")
+		end
+
+		assert(withSound == 2, "Precognition and Power Infusion, but not Shroud")
+	end)
+
+	fw.it("hands out ids no later group can reuse", function()
+		local fresh = FreshOptions()
+
+		groups:SeedDefaults(fresh)
+
+		assert(fresh.NextId > 3, "the counter moved past all three")
+		assert(groups:NewGroup(fresh).Id ~= fresh.Groups[1].Id, "so a new group is not a collision")
+	end)
+end)
+
+fw.describe("CustomAuras - duplicating a group", function()
+	fw.it("copies everything but the id and the name", function()
+		ClearGroups()
+
+		local original = AddGroup({ Unit = "targetenemy", Spells = { POLYMORPH }, MaxIcons = 7 })
+		local copy = groups:Duplicate(options, original.Id, "Copy")
+
+		assert(copy, "the copy was made")
+		assert(copy.Id ~= original.Id, "with an id of its own")
+		assert(copy.Name == "Copy", "and the name it was given")
+		assert(copy.Unit == original.Unit, "the unit came across")
+		assert(copy.MaxIcons == 7, "and the settings")
+		assert(copy.Spells[1] == POLYMORPH, "and the spells")
+	end)
+
+	fw.it("deep copies, so editing the copy leaves the original alone", function()
+		ClearGroups()
+
+		local original = AddGroup({ Spells = { POLYMORPH } })
+		local copy = groups:Duplicate(options, original.Id, "Copy")
+
+		copy.Spells[1] = ICE_BLOCK
+		copy.Icons.Size = 99
+
+		assert(original.Spells[1] == POLYMORPH, "the original's spells are its own")
+		assert(original.Icons.Size ~= 99, "and so are its icons")
+	end)
+
+	fw.it("puts the copy straight after the group it came from", function()
+		ClearGroups()
+
+		local first = AddGroup({ Name = "A" })
+		AddGroup({ Name = "B" })
+
+		groups:Duplicate(options, first.Id, "A copy")
+
+		assert(options.Groups[2].Name == "A copy", "next to its original, not at the end")
+	end)
+
+	fw.it("does nothing for an id that is not in the list", function()
+		ClearGroups()
+		AddGroup({ Name = "A" })
+
+		assert(groups:Duplicate(options, "nope", "Copy") == nil, "an unknown id is refused")
+		assert(#options.Groups == 1, "and nothing was added")
+	end)
+end)
+
+fw.describe("CustomAuras - reordering", function()
+	---@return CustomAuraGroup[]
+	local function ThreeGroups()
+		ClearGroups()
+
+		return { AddGroup({ Name = "A" }), AddGroup({ Name = "B" }), AddGroup({ Name = "C" }) }
+	end
+
+	---@return string
+	local function Order()
+		local names = {}
+
+		for _, group in ipairs(options.Groups) do
+			names[#names + 1] = group.Name
+		end
+
+		return table.concat(names, "")
+	end
+
+	fw.it("moves a group down to another's place", function()
+		local made = ThreeGroups()
+
+		assert(groups:Move(options, made[1].Id, made[3].Id), "the move happened")
+		assert(Order() == "BCA", "A landed where C was, got " .. Order())
+	end)
+
+	fw.it("moves a group up to another's place", function()
+		local made = ThreeGroups()
+
+		assert(groups:Move(options, made[3].Id, made[1].Id), "the move happened")
+		assert(Order() == "CAB", "C landed at the front, got " .. Order())
+	end)
+
+	fw.it("does nothing when the source and target are the same", function()
+		local made = ThreeGroups()
+
+		assert(not groups:Move(options, made[2].Id, made[2].Id), "nothing to do")
+		assert(Order() == "ABC", "the order is untouched")
+	end)
+
+	fw.it("does nothing for an id that is not in the list", function()
+		local made = ThreeGroups()
+
+		assert(not groups:Move(options, made[1].Id, "nope"), "an unknown target is refused")
+		assert(Order() == "ABC", "the order is untouched")
+	end)
+end)
+
+fw.describe("CustomAuras - group icons", function()
+	fw.it("borrows the first tracked spell's icon when none was chosen", function()
+		local group = groups:Normalise({ Spells = { ICE_BLOCK } })
+
+		assert(group.Icon == "", "a new group has no icon of its own")
+		assert(groups:GetIcon(group) == C_Spell.GetSpellTexture(ICE_BLOCK),
+			"so the grid shows the thing it tracks")
+	end)
+
+	fw.it("keeps borrowing from the first spell added, whatever its id", function()
+		-- POLYMORPH is the lower id, so anything that sorted the list would hand the icon to it.
+		local group = groups:Normalise({ Spells = { ICE_BLOCK, POLYMORPH } })
+
+		assert(group.Spells[1] == ICE_BLOCK, "the order spells were added in is the order kept")
+		assert(groups:GetIcon(group) == C_Spell.GetSpellTexture(ICE_BLOCK),
+			"so adding a second spell does not move the icon")
+	end)
+
+	fw.it("prefers the icon the user picked", function()
+		local chosen = [[Interface\Icons\Chosen]]
+		local group = groups:Normalise({ Spells = { ICE_BLOCK }, Icon = chosen })
+
+		assert(groups:GetIcon(group) == chosen, "the choice wins")
+	end)
+
+	fw.it("treats the question mark as no icon at all", function()
+		-- Picking it out of the browser has to mean the same as never picking one, or a spell
+		-- added afterwards could never supply the icon.
+		local group = groups:Normalise({
+			Icon = [[Interface\Icons\INV_Misc_QuestionMark]],
+			Spells = { ICE_BLOCK },
+		})
+
+		assert(group.Icon == "", "the question mark is stored as no choice")
+		assert(groups:GetIcon(group) == C_Spell.GetSpellTexture(ICE_BLOCK), "so the spell wins")
+	end)
+
+	fw.it("recognises the question mark by file id too", function()
+		local questionMark = 134400
+
+		_G.GetFileIDFromPath = function()
+			return questionMark
+		end
+
+		local group = groups:Normalise({ Icon = questionMark, Spells = { ICE_BLOCK } })
+
+		_G.GetFileIDFromPath = nil
+
+		assert(group.Icon == "", "the browser hands back ids, not paths")
+	end)
+
+	fw.it("keeps a chosen file id as a number", function()
+		-- SetTexture will not take the digits as a string.
+		local group = groups:Normalise({ Icon = 556000 })
+
+		assert(group.Icon == 556000, "a file id survives normalisation intact")
+	end)
+
+	fw.it("falls back to a question mark with nothing to borrow from", function()
+		local icon = groups:GetIcon(groups:Normalise({}))
+
+		assert(type(icon) == "string" and icon:find("QuestionMark"), "an empty group still has a tile")
+	end)
+end)
+
+fw.describe("CustomAuras - what a group is allowed to track", function()
+	fw.it("refuses debuffs on units that are always friendly", function()
+		assert(not groups:SupportsAuraType("player", "HARMFUL"), "not on yourself")
+		assert(not groups:SupportsAuraType("pet", "HARMFUL"), "not on your pet")
+		assert(groups:SupportsAuraType("player", "HELPFUL"), "buffs on yourself are fine")
+		assert(groups:SupportsAuraType("targetenemy", "HARMFUL"), "debuffs on an enemy target are fine")
+	end)
+
+	-- The reaction is part of the unit choice, so each side offers the one aura type it can carry
+	-- rather than letting a group be pointed at a combination that could never show anything.
+	fw.it("offers one aura type per side of a split unit", function()
+		assert(groups:SupportsAuraType("targetfriendly", "HELPFUL"), "buffs on a friendly target")
+		assert(not groups:SupportsAuraType("targetfriendly", "HARMFUL"), "but not debuffs")
+		assert(groups:SupportsAuraType("targetenemy", "HARMFUL"), "debuffs on an enemy target")
+		assert(not groups:SupportsAuraType("targetenemy", "HELPFUL"), "but not buffs")
+		assert(groups:SupportsAuraType("nameplatefriendly", "HELPFUL"), "and the same for plates")
+		assert(not groups:SupportsAuraType("nameplatefriendly", "HARMFUL"), "either way round")
+		assert(groups:SupportsAuraType("nameplateenemy", "HARMFUL"), "enemy plates carry debuffs")
+		assert(not groups:SupportsAuraType("nameplateenemy", "HELPFUL"), "and not buffs")
+	end)
+
+	fw.it("corrects an aura type the chosen side cannot carry", function()
+		local group = groups:Normalise({ Unit = "targetenemy", AuraType = "HELPFUL" })
+
+		assert(group.AuraType == "HARMFUL", "an enemy target group is a debuff group")
+	end)
+
+	fw.it("keeps the split even for a group tracking by filter", function()
+		-- Filter mode escapes the engine's spell id rule, but not the user's own choice of side.
+		assert(not groups:SupportsAuraType("targetfriendly", "HARMFUL", groups.TrackingMode.Filters),
+			"a friendly target group stays a buff group")
+	end)
+
+	fw.it("reports a group configured into an impossible state", function()
+		local group = groups:Normalise({ Unit = "player", AuraType = "HARMFUL", Spells = { POLYMORPH } })
+		local ok, reason = groups:Supports(group)
+
+		assert(not ok and reason == "HARMFUL_ON_FRIENDLY", "the reason names the problem")
+	end)
+
+	fw.it("refuses a group with nothing to track, without a message about it", function()
+		local ok, reason = groups:Supports(groups:Normalise({}))
+
+		assert(not ok, "an empty group can never show anything")
+		assert(reason == nil, "and needs no explaining - the spell list beside it is empty")
+	end)
+
+	fw.it("treats either nameplate side as the nameplate anchor", function()
+		assert(groups:Normalise({ Unit = "nameplateenemy" }).Anchor == "NAMEPLATE", "enemy plates")
+		assert(groups:Normalise({ Unit = "nameplatefriendly" }).Anchor == "NAMEPLATE", "and friendly")
+		assert(groups:IsNameplateUnit("nameplateenemy"), "the display asks this way")
+		assert(not groups:IsNameplateUnit("targetenemy"), "and a target is not a plate")
+	end)
+
+	fw.it("lets a nameplate group be pointed back at a unit", function()
+		-- Normalise runs after every edit, so anything that re-derived the unit from the stored
+		-- anchor would undo the change the instant it was made.
+		local group = groups:Normalise({ Unit = "nameplateenemy", Spells = { POLYMORPH } })
+
+		group.Unit = "targetenemy"
+		groups:Normalise(group)
+
+		assert(group.Unit == "targetenemy", "the unit that was just chosen sticks")
+		assert(group.Anchor == "SCREEN", "and the anchor follows it back")
+	end)
+
+	fw.it("hands back the real token behind a choice", function()
+		assert(groups:GetToken(groups:Normalise({ Unit = "targetenemy" })) == "target",
+			"both target sides watch the target")
+		assert(groups:GetToken(groups:Normalise({ Unit = "player" })) == "player", "self is the player")
+		assert(groups:GetToken(groups:Normalise({ Unit = "nameplateenemy" })) == nil,
+			"a plate group has no single token")
+	end)
+
+	fw.it("falls back to the player for a unit it does not offer", function()
+		assert(groups:Normalise({ Unit = "raid7" }).Unit == "player", "unknown units are refused")
+	end)
+
+	fw.it("warns that a split unit only shows on its own side", function()
+		assert(groups:GetWarning(groups:Normalise({ Unit = "targetfriendly" }))
+			== "HELPFUL_FRIENDLY_ONLY", "a friendly target has to actually be friendly")
+		assert(groups:GetWarning(groups:Normalise({ Unit = "targetenemy" }))
+			== "HARMFUL_HOSTILE_ONLY", "and an enemy target hostile")
+		assert(groups:GetWarning(groups:Normalise({ Unit = "player" })) == nil,
+			"you are always there, so there is nothing to say")
+	end)
+end)
+
+fw.describe("CustomAuras - units saved before the split", function()
+	-- Target, focus and the target's target were one choice each with a separate aura type. The
+	-- type it already had decides which side it becomes, so the group keeps showing what it showed.
+	fw.it("sends an old target group to the side matching its aura type", function()
+		assert(groups:Normalise({ Unit = "target", AuraType = "HELPFUL" }).Unit == "targetfriendly",
+			"a buff group becomes a friendly target group")
+		assert(groups:Normalise({ Unit = "target", AuraType = "HARMFUL" }).Unit == "targetenemy",
+			"and a debuff group an enemy target group")
+	end)
+
+	fw.it("does the same for old nameplate groups", function()
+		assert(groups:Normalise({ Unit = "nameplate", AuraType = "HARMFUL" }).Unit == "nameplateenemy",
+			"debuffs on plates are the common case")
+		assert(groups:Normalise({ Unit = "nameplate", AuraType = "HELPFUL" }).Unit
+			== "nameplatefriendly", "and buffs go to the friendly side")
+	end)
+
+	fw.it("moves the two removed units onto the target", function()
+		-- Focus and the target's target are gone. Pointing them at the target keeps the group
+		-- working on something rather than silently disabling it.
+		assert(groups:Normalise({ Unit = "focus", AuraType = "HARMFUL" }).Unit == "targetenemy",
+			"focus becomes the target")
+		assert(groups:Normalise({ Unit = "targettarget" }).Unit == "targetfriendly",
+			"and so does the target's target")
+	end)
+end)
+
+fw.describe("CustomAuras - units that follow a role", function()
+	local wow = require("WowApi")
+
+	---Puts a roster in place, in the order the tokens are given.
+	---@param roster table[] { unit, role } pairs.
+	local function Roster(roster)
+		wow.clearRoles()
+		env.friendlyUnits = {}
+
+		for _, entry in ipairs(roster) do
+			env.friendlyUnits[#env.friendlyUnits + 1] = entry[1]
+			wow.setRole(entry[1], entry[2])
+		end
+	end
+
+	---@param unit string
+	---@return CustomAuraGroup
+	local function Group(unit)
+		return groups:Normalise({ Unit = unit })
+	end
+
+	fw.it("follows whoever holds the healer role", function()
+		Roster({ { "player", "DAMAGER" }, { "party1", "DAMAGER" }, { "party2", "HEALER" } })
+
+		assert(groups:GetToken(Group("healer")) == "party2", "the one healer in the group")
+	end)
+
+	fw.it("takes the first healer in roster order when there are two", function()
+		Roster({ { "player", "DAMAGER" }, { "party1", "HEALER" }, { "party3", "HEALER" } })
+
+		-- Roster order, not the order the roles were assigned in: with two there is no better
+		-- answer than a stable one.
+		assert(groups:GetToken(Group("healer")) == "party1", "the earlier token wins")
+	end)
+
+	fw.it("finds you when you are the healer", function()
+		Roster({ { "player", "HEALER" }, { "party1", "DAMAGER" } })
+
+		assert(groups:GetToken(Group("healer")) == "player", "the player is in the roster too")
+	end)
+
+	fw.it("skips you for other dps, which is the whole point of it", function()
+		Roster({ { "player", "DAMAGER" }, { "party2", "DAMAGER" } })
+
+		assert(groups:GetToken(Group("otherdps")) == "party2", "the other one, not you")
+	end)
+
+	fw.it("has no token when the group cannot fill the role", function()
+		Roster({ { "player", "DAMAGER" } })
+
+		assert(groups:GetToken(Group("healer")) == nil, "no healer in the group")
+		assert(groups:GetToken(Group("otherdps")) == nil, "and nobody else to be the other dps")
+	end)
+
+	fw.it("shows nothing while the role is unfilled rather than everything", function()
+		Roster({ { "player", "DAMAGER" } })
+		ClearGroups()
+
+		local group = AddGroup({ Unit = "healer", Spells = { ICE_BLOCK } })
+
+		module:Refresh()
+
+		-- The container has to watch something, so it watches a token that does not exist and
+		-- is budgeted to zero. A bare HELPFUL filter on a real unit would match every buff.
+		local entry = display:GetStates()[group.Id].Screen
+
+		assert(entry, "the group still has a display")
+		assert(Budget(entry.Display.Frame, "helpful") == 0, "but no icons without a healer")
+	end)
+
+	fw.it("carries buffs only, being a friendly unit either way", function()
+		assert(groups:SupportsAuraType("healer", "HELPFUL"), "buffs on the healer")
+		assert(not groups:SupportsAuraType("healer", "HARMFUL"), "and not debuffs")
+		assert(groups:SupportsAuraType("otherdps", "HELPFUL"), "same for the other dps")
+		assert(not groups:SupportsAuraType("otherdps", "HARMFUL"), "either way")
+	end)
+
+	fw.it("is a screen anchored group, not a nameplate one", function()
+		assert(Group("healer").Anchor == "SCREEN", "the healer has one place on screen")
+		assert(not groups:IsNameplateUnit("otherdps"), "and so does the other dps")
+	end)
+end)
+
+fw.describe("CustomAuras - spell filters", function()
+	fw.it("expands each tracked id to every variant of the ability", function()
+		local group = groups:Normalise({ Spells = { TORRENT_IDS[1] } })
+		local filters = groups:BuildFilters(group)
+		local count = 0
+
+		for _ in pairs(filters.includeSpellIDs) do
+			count = count + 1
+		end
+
+		assert(filters.includeSpellIDs[TORRENT_IDS[1]], "the id that was asked for")
+		assert(count > 1, "and the other ids the same ability is known by")
+	end)
+
+	fw.it("changes its signature when the tracked set moves", function()
+		local group = groups:Normalise({ Spells = { POLYMORPH } })
+		local before = groups:GetFilterSignature(group)
+
+		group.Spells[#group.Spells + 1] = ICE_BLOCK
+
+		assert(groups:GetFilterSignature(group) ~= before, "adding a spell is a change")
+
+		group.AuraType = "HARMFUL"
+
+		assert(groups:GetFilterSignature(group) ~= before, "so is flipping the aura type")
+	end)
+end)
+
+fw.describe("CustomAuras - screen anchored displays", function()
+	fw.it("builds one container carrying both an aura-type group", function()
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		local container = ContainerFor("player")
+
+		assert(container, "a container tracks the player")
+		assert(container._groups.helpful, "with a helpful group")
+		assert(container._groups.harmful, "and a harmful one, so the type can be switched")
+	end)
+
+	fw.it("creates its groups with buttons to give, not at zero", function()
+		-- Containers allocate a group's buttons from the count it was created with. A group
+		-- created empty has none when its budget is raised later, which is why harmful groups
+		-- showed nothing: they are the side that starts unbudgeted, because there is rarely a
+		-- hostile target at the moment the container is built.
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		local container = ContainerFor("player")
+
+		assert(container._groups.harmful.maxFrameCountAtCreation > 0,
+			"the harmful group was built with buttons")
+		assert(container._groups.helpful.maxFrameCountAtCreation > 0,
+			"and so was the helpful one")
+	end)
+
+	fw.it("budgets only the side the assist check allows", function()
+		ClearGroups()
+		local group = AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		local container = ContainerFor("player")
+
+		assert(Budget(container, "helpful") == groups.MaxIcons, "the helpful group gets the budget")
+		assert(Budget(container, "harmful") == 0, "the harmful group gets none")
+
+		-- The player is always assistable, so a harmful group here can never be honoured.
+		group.AuraType = "HARMFUL"
+		module:Refresh()
+
+		assert(Budget(container, "helpful") == 0, "and neither side runs once it is impossible")
+		assert(Budget(container, "harmful") == 0, "the unfiltered token never gets a budget")
+	end)
+
+	fw.it("drops the budget to zero when the unit turns hostile", function()
+		ClearGroups()
+		AddGroup({ Unit = "targetfriendly", Spells = { ICE_BLOCK } })
+		env.enemies.target = nil
+		module:Refresh()
+
+		local container = ContainerFor("target")
+
+		assert(Budget(container, "helpful") == groups.MaxIcons, "a friendly target can be filtered by id")
+
+		env.enemies.target = true
+		display:OnUnitChanged("target")
+
+		assert(Budget(container, "helpful") == 0,
+			"a hostile target cannot, so nothing is shown rather than everything")
+
+		env.enemies.target = nil
+	end)
+
+	fw.it("budgets a harmful group only while the unit is hostile", function()
+		ClearGroups()
+		AddGroup({ Unit = "targetenemy", Spells = { POLYMORPH } })
+		env.enemies.target = true
+		module:Refresh()
+
+		local container = ContainerFor("target")
+
+		assert(Budget(container, "harmful") == groups.MaxIcons, "a hostile target can be filtered by id")
+
+		env.enemies.target = nil
+		display:OnUnitChanged("target")
+
+		assert(Budget(container, "harmful") == 0, "a friendly one cannot")
+	end)
+
+	fw.it("shows nothing for a group with no spells", function()
+		ClearGroups()
+		AddGroup({ Unit = "focus", Spells = {} })
+		module:Refresh()
+
+		local container = ContainerFor("focus")
+
+		assert(container == nil or Budget(container, "helpful") == 0,
+			"an empty group never gets a budget")
+	end)
+
+	fw.it("reuses the same container across refreshes", function()
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		local before = env.auraContainerCount()
+
+		module:Refresh()
+		module:Refresh()
+
+		assert(env.auraContainerCount() == before, "a refresh must not build frames")
+	end)
+end)
+
+fw.describe("CustomAuras - options page preview", function()
+	fw.it("draws a selected group that its own conditions would otherwise hide", function()
+		ClearGroups()
+
+		local group = AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Enabled = false })
+
+		module:Refresh()
+
+		assert(ContainerFor("player") == nil or Budget(ContainerFor("player"), "helpful") == 0,
+			"a switched-off group shows nothing")
+
+		display:SetPreviewGroup(group.Id)
+
+		local container = ContainerFor("player")
+
+		assert(container, "selecting it in the options builds its display")
+		assert(Budget(container, "helpful") == 0,
+			"but the container stays empty - the preview icons are stand-ins, not live auras")
+
+		display:SetPreviewGroup(nil)
+	end)
+
+	fw.it("skips a group with nothing to draw", function()
+		-- The stand-in icons ARE the drag handle now that the anchor has no backdrop, so a group
+		-- with no spells yet would be an invisible frame sitting over whatever is behind it.
+		ClearGroups()
+
+		local group = AddGroup({ Unit = "player" })
+
+		display:SetPreviewGroup(group.Id)
+
+		-- Parked containers keep the unit they last watched, so the state is what to look at.
+		assert(display:GetStates()[group.Id].Screen == nil, "an empty group is not previewed")
+
+		display:SetPreviewGroup(nil)
+	end)
+
+	fw.it("previews a filter group, which needs no spells to be worth drawing", function()
+		ClearGroups()
+
+		local group = AddGroup({ Unit = "player", TrackingMode = groups.TrackingMode.Filters })
+
+		display:SetPreviewGroup(group.Id)
+
+		assert(display:GetStates()[group.Id].Screen, "the aura type alone is already a working filter")
+
+		display:SetPreviewGroup(nil)
+	end)
+
+	fw.it("keeps the live budget for a group that is allowed to run", function()
+		ClearGroups()
+
+		local group = AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+
+		display:SetPreviewGroup(group.Id)
+
+		local container = ContainerFor("player")
+
+		assert(Budget(container, "helpful") == groups.MaxIcons, "an allowed group keeps its icon budget")
+
+		display:SetPreviewGroup(nil)
+	end)
+
+	fw.it("parks the preview again once the options page lets go", function()
+		ClearGroups()
+
+		local group = AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Enabled = false })
+
+		display:SetPreviewGroup(group.Id)
+		assert(ContainerFor("player"), "a disabled group can still be positioned")
+
+		display:SetPreviewGroup(nil)
+
+		local container = ContainerFor("player")
+
+		assert(container == nil or container._enabled == false, "and stops tracking afterwards")
+	end)
+
+end)
+
+fw.describe("CustomAuras - nameplate anchored displays", function()
+	fw.it("takes a display per plate and gives it back when the plate goes", function()
+		ClearGroups()
+		AddGroup({ Unit = "nameplate", AuraType = "HARMFUL", Spells = { POLYMORPH } })
+
+		env.addPlate("nameplate1")
+		env.enemies.nameplate1 = true
+		module:Refresh()
+
+		local container = ContainerFor("nameplate1")
+
+		assert(container, "the plate has a container")
+		assert(Budget(container, "harmful") > 0, "budgeted, because the plate is hostile")
+
+		local created = env.auraContainerCount()
+
+		display:OnNamePlateRemoved("nameplate1")
+		env.plates.nameplate1 = nil
+		display:OnNamePlateAdded("nameplate2")
+
+		assert(env.auraContainerCount() == created,
+			"a recycled plate reuses the parked display rather than building another")
+	end)
+
+end)
+
+fw.describe("CustomAuras - tracking by filter", function()
+	-- Spell ids are the only thing 12.1's assist rule touches. A filter string and the flag
+	-- filters are honoured on any unit, so a filter group escapes every limit the spell path has.
+	fw.it("puts the aura type and nothing else in the string by default", function()
+		local group = groups:Normalise({ Spells = { ICE_BLOCK } })
+
+		assert(groups:BuildFilterString(group) == "HELPFUL", "a plain group is a bare token")
+	end)
+
+	fw.it("appends the components a filter group requires and forbids", function()
+		local group = groups:Normalise({
+			AuraType = "HARMFUL",
+			TrackingMode = groups.TrackingMode.Filters,
+			Filters = { DISPELLABLE = "REQUIRE", CROWD_CONTROL = "FORBID" },
+		})
+		local filterString = groups:BuildFilterString(group)
+
+		assert(filterString:find("HARMFUL", 1, true), "the aura type leads")
+		assert(filterString:find("|DISPELLABLE", 1, true), "a required component is a bare token")
+		assert(filterString:find("|!CROWD_CONTROL", 1, true), "a forbidden one is negated")
+	end)
+
+	fw.it("ignores components while the group tracks spell ids", function()
+		local group = groups:Normalise({
+			Spells = { ICE_BLOCK },
+			Filters = { DISPELLABLE = "REQUIRE" },
+		})
+
+		assert(groups:BuildFilterString(group) == "HELPFUL",
+			"a spell group's string stays bare, or the ids would be narrowed twice")
+	end)
+
+	fw.it("turns the caster choice into the PLAYER component either way round", function()
+		local mine = groups:Normalise({ Caster = groups.Caster.Mine })
+		local others = groups:Normalise({ Caster = groups.Caster.Others })
+
+		assert(groups:BuildFilterString(mine) == "HELPFUL|PLAYER", "mine requires it")
+		assert(groups:BuildFilterString(others) == "HELPFUL|!PLAYER", "anyone else negates it")
+	end)
+
+	fw.it("changes signature on the mode itself, not just what it builds", function()
+		-- With no components chosen, both modes build the same bare filter string. Only the
+		-- mode says whether an includeSpellIDs map is sent at all, so the display has to be
+		-- told, or switching back to a spell list leaves the container filtering on nothing.
+		local group = groups:Normalise({ Spells = { ICE_BLOCK } })
+		local bySpells = groups:GetFilterSignature(group)
+
+		group.TrackingMode = groups.TrackingMode.Filters
+		groups:Normalise(group)
+
+		assert(groups:BuildFilterString(group) == "HELPFUL", "the string really is unchanged")
+		assert(groups:GetFilterSignature(group) ~= bySpells, "but the signature moved anyway")
+	end)
+
+	fw.it("names no spell ids, so the engine never drops the filter", function()
+		local group = groups:Normalise({
+			TrackingMode = groups.TrackingMode.Filters,
+			Spells = { ICE_BLOCK },
+		})
+
+		assert(groups:BuildFilters(group).includeSpellIDs == nil,
+			"a leftover spell list from before the switch is not sent")
+	end)
+
+	fw.it("lets a debuff group sit on the player, which spell ids never can", function()
+		local byId = groups:Normalise({ Unit = "player", AuraType = "HARMFUL", Spells = { ICE_BLOCK } })
+		local byFilter = groups:Normalise({
+			Unit = "player",
+			AuraType = "HARMFUL",
+			TrackingMode = groups.TrackingMode.Filters,
+		})
+
+		assert(not groups:Supports(byId), "spell ids cannot filter a debuff on a friendly unit")
+		assert(groups:Supports(byFilter), "a filter string can")
+		assert(groups:CanFilterUnit(byFilter, "player"), "and the display budgets it")
+	end)
+
+	fw.it("needs no spells to be worth showing", function()
+		local group = groups:Normalise({ TrackingMode = groups.TrackingMode.Filters })
+
+		assert(groups:Supports(group), "the aura type alone is already a working filter")
+	end)
+
+	fw.it("keeps the caveat about the unit's side, which the mode has no say in", function()
+		-- The engine's assist rule is a spell id rule, but the group's own choice of side is
+		-- not: an enemy target group still shows nothing while the target is friendly.
+		local group = groups:Normalise({
+			Unit = "targetenemy",
+			TrackingMode = groups.TrackingMode.Filters,
+		})
+
+		assert(groups:GetWarning(group) == "HARMFUL_HOSTILE_ONLY", "the caveat is about the unit")
+	end)
+end)
+
+fw.describe("CustomAuras - candidate filters", function()
+	fw.it("sends a required flag as true and a forbidden one as false", function()
+		local group = groups:Normalise({
+			Spells = { ICE_BLOCK },
+			Candidates = { isBossAura = "REQUIRE", isStealable = "FORBID" },
+		})
+		local filters = groups:BuildFilters(group)
+
+		assert(filters.isBossAura == true, "required means the flag must be set")
+		assert(filters.isStealable == false, "forbidden means it must not be")
+		assert(filters.isPriorityAura == nil, "an untouched flag is absent, not false")
+	end)
+
+	fw.it("applies the flags whichever way the group tracks", function()
+		local group = groups:Normalise({
+			TrackingMode = groups.TrackingMode.Filters,
+			Candidates = { isFromPlayerOrPlayerPet = "REQUIRE" },
+		})
+
+		assert(groups:BuildFilters(group).isFromPlayerOrPlayerPet == true,
+			"flags are not part of the spell id rule")
+	end)
+
+	fw.it("keeps only the states and keys the engine knows", function()
+		local group = groups:Normalise({
+			Candidates = { isBossAura = "REQUIRE", nonsense = "REQUIRE", isStealable = "MAYBE" },
+		})
+
+		assert(group.Candidates.isBossAura == "REQUIRE", "a known key survives")
+		assert(group.Candidates.nonsense == nil, "an invented one does not")
+		assert(group.Candidates.isStealable == nil, "nor does an invented state")
+	end)
+
+	fw.it("moves its signature when any of it changes", function()
+		local group = groups:Normalise({ Spells = { ICE_BLOCK } })
+		local before = groups:GetFilterSignature(group)
+
+		group.Candidates.isBossAura = "REQUIRE"
+
+		local withFlag = groups:GetFilterSignature(group)
+
+		assert(withFlag ~= before, "a flag reaches the engine")
+
+		group.Sort = groups.Sort.Longest
+
+		assert(groups:GetFilterSignature(group) ~= withFlag, "and so does the order")
+	end)
+end)
+
+fw.describe("CustomAuras - icon order", function()
+	fw.it("sorts on aura instance id by default, which is oldest first", function()
+		local method = groups:GetSortMethod(groups:Normalise({}))
+
+		assert(method == AuraContainerSortMethod.AuraInstanceIDOnly, "instance id order")
+	end)
+
+	fw.it("sorts on expiry the other way round for longest and shortest", function()
+		local longest, longestDirection =
+			groups:GetSortMethod(groups:Normalise({ Sort = groups.Sort.Longest }))
+		local shortest, shortestDirection =
+			groups:GetSortMethod(groups:Normalise({ Sort = groups.Sort.Shortest }))
+
+		assert(longest == AuraContainerSortMethod.ExpirationOnly, "longest sorts on expiry")
+		assert(shortest == AuraContainerSortMethod.ExpirationOnly, "so does shortest")
+		assert(longestDirection ~= shortestDirection, "in opposite directions")
+	end)
+
+	fw.it("hands the sort to both sides of the container", function()
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Sort = groups.Sort.Shortest })
+		module:Refresh()
+
+		local container = ContainerFor("player")
+
+		assert(container._groups.helpful.sortMethod == AuraContainerSortMethod.ExpirationOnly,
+			"the budgeted side sorts as asked")
+		assert(container._groups.harmful.sortMethod == AuraContainerSortMethod.ExpirationOnly,
+			"and so does the one waiting to be switched to")
+	end)
+
+	fw.it("hands the filter string to the side the group is on", function()
+		ClearGroups()
+		AddGroup({
+			Unit = "player",
+			TrackingMode = groups.TrackingMode.Filters,
+			Filters = { DISPELLABLE = "REQUIRE" },
+		})
+		module:Refresh()
+
+		local container = ContainerFor("player")
+
+		assert(container._groups.helpful.filterString == "HELPFUL|DISPELLABLE",
+			"the helpful side carries the built string")
+	end)
+end)
+
+fw.describe("CustomAuras - sounds", function()
+	fw.it("registers one sound per tracked spell variant on the group's unit", function()
+		ClearGroups()
+		addon.Modules.CustomAuras.Sound:Clear()
+
+		local before = env.auraSoundAdds
+
+		AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		assert(env.auraSoundAdds > before, "the engine was asked to play something")
+
+		local last = env.auraSounds[env.auraSoundAdds]
+
+		assert(last.Unit == "player", "on the group's unit")
+		assert(last.Trigger == Enum.UnitAuraSoundTrigger.Added, "on the applied trigger")
+	end)
+
+	fw.it("carries a group's Sound.File over to the applied trigger", function()
+		-- What the single-sound version of the feature saved. Normalise moves it rather than
+		-- leaving the group silent after an update.
+		local group = groups:NewGroup(options, "Old")
+
+		group.Sound = { File = "Sonar", Channel = "Master" }
+		groups:Normalise(group)
+
+		assert(group.Sound.Applied == "Sonar", "the old file became the applied sound")
+		assert(group.Sound.File == nil, "and the old key is gone")
+	end)
+
+	fw.it("registers each configured trigger separately", function()
+		ClearGroups()
+		addon.Modules.CustomAuras.Sound:Clear()
+
+		AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Sound = { Applied = "Sonar", Stacks = "Sonar", Removed = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		local seen = {}
+
+		for _, entry in pairs(env.auraSounds) do
+			seen[entry.Trigger] = true
+		end
+
+		assert(seen[Enum.UnitAuraSoundTrigger.Added], "applied is registered")
+		assert(seen[Enum.UnitAuraSoundTrigger.ApplicationsIncreased], "gaining a stack is registered")
+		assert(seen[Enum.UnitAuraSoundTrigger.Removed], "removed is registered")
+	end)
+
+	fw.it("leaves the triggers that have no sound alone", function()
+		ClearGroups()
+		addon.Modules.CustomAuras.Sound:Clear()
+
+		AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Sound = { Removed = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		for _, entry in pairs(env.auraSounds) do
+			assert(entry.Trigger == Enum.UnitAuraSoundTrigger.Removed,
+				"only the removed trigger was registered")
+		end
+	end)
+
+	fw.it("does not re-register when nothing about the sound changed", function()
+		module:Refresh()
+
+		local after = env.auraSoundAdds
+
+		module:Refresh()
+
+		assert(env.auraSoundAdds == after, "a repeat refresh is free")
+	end)
+
+	fw.it("hands the registrations back when every sound is set to none", function()
+		for _, trigger in ipairs(groups.SoundTriggers) do
+			options.Groups[1].Sound[trigger] = groups.NoSound
+		end
+
+		module:Refresh()
+
+		local after = env.auraSoundAdds
+
+		module:Refresh()
+
+		assert(env.auraSoundAdds == after, "and stays quiet afterwards")
+	end)
+end)
+
+fw.describe("CustomAuras - cast recorder", function()
+	fw.it("records nothing until it is started", function()
+		recorder:Clear()
+		recorder:Stop()
+
+		local frame = acm.lastFrameWithScript("OnEvent")
+
+		assert(#recorder:GetEntries() == 0, "an idle recorder holds nothing")
+		assert(frame, "the recorder built an event frame")
+	end)
+
+	fw.it("captures the player's casts, newest first, counting repeats", function()
+		recorder:Clear()
+		recorder:Start()
+
+		local frame = acm.lastFrameForEvent("UNIT_SPELLCAST_SUCCEEDED")
+
+		assert(frame, "recording registered the cast event")
+
+		frame:GetScript("OnEvent")(frame, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast1", POLYMORPH)
+		frame:GetScript("OnEvent")(frame, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast2", ICE_BLOCK)
+		frame:GetScript("OnEvent")(frame, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast3", POLYMORPH)
+
+		local entries = recorder:GetEntries()
+
+		assert(#entries == 2, "a repeat is counted, not listed twice")
+		assert(entries[1].SpellId == POLYMORPH, "the most recent cast leads")
+		assert(entries[1].Count == 2, "with its count")
+
+		recorder:Stop()
+	end)
+
+	fw.it("stops capturing once stopped", function()
+		recorder:Clear()
+		recorder:Start()
+
+		local frame = acm.lastFrameForEvent("UNIT_SPELLCAST_SUCCEEDED")
+
+		recorder:Stop()
+		frame:GetScript("OnEvent")(frame, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast4", ICE_BLOCK)
+
+		assert(#recorder:GetEntries() == 0, "nothing is recorded after stopping")
+	end)
+end)
+
+fw.describe("CustomAuras - module gating", function()
+	fw.it("tears everything down once the last group is gone", function()
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		ClearGroups()
+
+		local container = ContainerFor("player")
+
+		assert(container == nil or container._enabled == false, "the container stops tracking")
+	end)
+
+	fw.it("stops tracking a group that is switched off", function()
+		ClearGroups()
+
+		local group = AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+
+		module:Refresh()
+		assert(Budget(ContainerFor("player"), "helpful") == groups.MaxIcons, "an enabled group tracks")
+
+		group.Enabled = false
+		module:Refresh()
+
+		local container = ContainerFor("player")
+
+		assert(container == nil or container._enabled == false, "and a disabled one does not")
+	end)
+
+	fw.it("reports nothing through Notify", function()
+		assert(#env.notifications == 0,
+			"unexpected warnings: " .. table.concat(env.notifications, " | "))
+	end)
+end)

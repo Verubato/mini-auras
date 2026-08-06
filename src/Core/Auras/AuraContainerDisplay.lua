@@ -249,6 +249,7 @@ local function StoreStyle(instance, style)
 	local colorR, colorG, colorB = color and color[1], color and color[2], color and color[3]
 
 	if stored.Border == style.Border
+		and stored.Stacks == style.Stacks
 		and stored.ReverseCooldown == style.ReverseCooldown
 		and stored.ShowMilliseconds == style.ShowMilliseconds
 		and stored.ColorByDispelType == style.ColorByDispelType
@@ -267,6 +268,7 @@ local function StoreStyle(instance, style)
 	end
 
 	stored.Border = style.Border
+	stored.Stacks = style.Stacks
 	stored.ReverseCooldown = style.ReverseCooldown
 	stored.ShowMilliseconds = style.ShowMilliseconds
 	stored.ColorByDispelType = style.ColorByDispelType
@@ -424,6 +426,15 @@ local function StyleButton(instance, button)
 	cd.FontScale = style.FontScale or 1.0
 	fontUtil:UpdateCooldownFontSize(cd, instance.Size, nil, cd.FontScale)
 
+	-- Alpha rather than Show/Hide, and never unregistered: the engine owns this font string's
+	-- text and shown state, so the only part of it left to us is how visible it is.
+	local stacks = widgets.Stacks
+
+	if stacks then
+		stacks:SetAlpha(style.Stacks and 1 or 0)
+		fontUtil:UpdateStackFontSize(stacks, instance.Size, style.FontScale or 1.0)
+	end
+
 	if widgets.Border or widgets.Glow then
 		ApplyDispelTextures(instance, button, widgets)
 	end
@@ -513,10 +524,18 @@ local function InitializeButton(instance, button, glowColor)
 		glow:Hide()
 	end
 
+	-- The engine writes the count and decides when it is on screen, both of which are secret. We
+	-- only get to place it and say how big it is, so it is registered once and never taken back.
+	local stacks = button:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+	stacks:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -1, 1)
+	stacks:SetJustifyH("RIGHT")
+	button:SetApplicationCount(stacks)
+
 	button:SetTooltipAnchorPoint("ANCHOR_RIGHT")
 
 	instance.ButtonWidgets[button] = {
 		Cooldown = cd,
+		Stacks = stacks,
 		Border = border,
 		DispelSignature = nil,
 		Glow = glow,
@@ -799,6 +818,31 @@ function M:SetMaxIcons(groupKey, maxIcons)
 	self.Frame:SetAuraGroupMaxFrameCount(groupKey, maxIcons)
 end
 
+---Swaps a group's filter string. Supported at runtime by the engine, which re-parses on the
+---next refresh, so a tracking change re-filters in place rather than rebuilding the display.
+---@param groupKey string
+---@param filterString string
+function M:SetFilterString(groupKey, filterString)
+	if not self.Frame:HasAuraGroup(groupKey) then
+		Warn("SetFilterString: no group " .. tostring(groupKey))
+		return
+	end
+
+	self.Frame:SetAuraGroupFilterString(groupKey, filterString)
+end
+
+---@param groupKey string
+---@param method number An AuraContainerSortMethod value.
+---@param direction number An AuraContainerSortDirection value.
+function M:SetSortMethod(groupKey, method, direction)
+	if not self.Frame:HasAuraGroup(groupKey) then
+		Warn("SetSortMethod: no group " .. tostring(groupKey))
+		return
+	end
+
+	self.Frame:SetAuraGroupSortMethod(groupKey, method, direction)
+end
+
 ---@param grow string "LEFT"|"RIGHT"|"CENTER"|"UP"|"DOWN"
 function M:SetGrow(grow)
 	if self.Grow == grow then
@@ -851,6 +895,7 @@ function M:GetStyleSignature(style, size, spacing)
 		tostring(style.ShowTooltips),
 		tostring(style.GlowColor and table.concat(style.GlowColor, ",")),
 		tostring(style.Border),
+		tostring(style.Stacks),
 		tostring(db and db.DisableSwipe),
 		tostring(db and db.MillisecondsThreshold),
 		GetGlowStyleName(),
@@ -939,6 +984,7 @@ end
 ---@field Glow boolean?
 ---@field FontScale number?
 ---@field ShowTooltips boolean?
+---@field Stacks boolean? Show the engine-written application count in the icon's corner.
 ---Resolved from the global db by StoreStyle; callers never set these.
 ---@field DisableSwipe boolean?
 ---@field MillisecondsThreshold number?

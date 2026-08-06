@@ -32,6 +32,10 @@ local function SaveOpaqueCaches(vars)
 	saved._RaidFrameAurasDisabledSpells = raidFrameAurasSpells and mini:CopyValueOrTable(raidFrameAurasSpells.Disabled) or {}
 	saved._RaidFrameAurasCustomSpells = raidFrameAurasSpells and mini:CopyValueOrTable(raidFrameAurasSpells.Custom) or {}
 	saved._RaidFrameAurasEnabledSpells = raidFrameAurasSpells and mini:CopyValueOrTable(raidFrameAurasSpells.Enabled) or {}
+	-- Custom aura groups are authored entirely by the user, so the schema has nothing to compare
+	-- them against and CleanTable would strip every one of them.
+	local customAuras = vars.Modules and vars.Modules.CustomAurasModule
+	saved._CustomAuraGroups = customAuras and mini:CopyValueOrTable(customAuras.Groups) or {}
 	return saved
 end
 
@@ -53,6 +57,10 @@ local function RestoreOpaqueCaches(vars, saved)
 		raidFrameAurasModule.Spells.Disabled = saved._RaidFrameAurasDisabledSpells or {}
 		raidFrameAurasModule.Spells.Custom = saved._RaidFrameAurasCustomSpells or {}
 		raidFrameAurasModule.Spells.Enabled = saved._RaidFrameAurasEnabledSpells or {}
+	end
+	local customAuras = vars.Modules and vars.Modules.CustomAurasModule
+	if customAuras then
+		customAuras.Groups = saved._CustomAuraGroups or {}
 	end
 end
 
