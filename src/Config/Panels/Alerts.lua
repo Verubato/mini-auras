@@ -9,6 +9,7 @@ local COLUMNS = 4
 local columnWidth
 local enabledColumnWidth
 local config = addon.Config
+local helpers = addon.Config.PanelHelpers
 local sounds = addon.Core.Sounds
 -- TEMPORARY (12.1): CENTER growth needs a readable row width to center on the anchor, which
 -- the 12.1 chained displays don't have, so only LEFT/RIGHT are offered there.
@@ -182,73 +183,49 @@ local function BuildSettingsTab(parent, options)
 	splitBarsChk:SetPoint("TOP", iconsEnabledChk, "TOP", 0, 0)
 	splitBarsChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
 
-	local iconSize = mini:Slider({
+	local sliderWidth = columnWidth * 2 - horizontalSpacing
+
+	local iconSize = helpers:BuildClampedSlider({
 		Parent = parent,
+		LabelText = L["Icon Size"],
 		Min = 10,
 		Max = 100,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Icon Size"],
-		GetValue = function()
-			return options.Icons.Size
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 10, 100, 32)
-			if options.Icons.Size ~= newValue then
-				options.Icons.Size = newValue
-				config:Apply()
-			end
-		end,
+		Default = 32,
+		Width = sliderWidth,
+		Target = options.Icons,
+		Key = "Size",
 	})
 
 	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
-	local maxIcons = mini:Slider({
+	local maxIcons = helpers:BuildClampedSlider({
 		Parent = parent,
+		LabelText = L["Max Icons"],
 		Min = 1,
 		Max = 10,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Max Icons"],
-		GetValue = function()
-			return options.Icons.MaxIcons
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 1, 10, 8)
-			if options.Icons.MaxIcons ~= newValue then
-				options.Icons.MaxIcons = newValue
-				config:Apply()
-			end
-		end,
+		Default = 8,
+		Width = sliderWidth,
+		Target = options.Icons,
+		Key = "MaxIcons",
 	})
 
 	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
 
-	local iconSpacing = mini:Slider({
+	local iconSpacing = helpers:BuildClampedSlider({
 		Parent = parent,
+		LabelText = L["Icon Padding"],
 		Min = 0,
 		Max = 20,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Icon Padding"],
-		GetValue = function()
-			return options.IconSpacing or 2
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 0, 20, 2)
-			if options.IconSpacing ~= newValue then
-				options.IconSpacing = newValue
-				config:Apply()
-			end
-		end,
+		Default = 2,
+		Fallback = 2,
+		Width = sliderWidth,
+		Target = options,
+		Key = "IconSpacing",
 	})
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
-	local growLbl = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-	growLbl:SetText(L["Grow"])
-
-	local growDdl, modernDdl = mini:Dropdown({
+	local growDdl = helpers:BuildGrowDropdown({
 		Parent = parent,
 		Items = GROW_OPTIONS,
 		GetValue = function()
@@ -261,16 +238,11 @@ local function BuildSettingsTab(parent, options)
 			end
 			return grow
 		end,
-		SetValue = function(value)
-			if options.Grow ~= value then
-				options.Grow = value
-				config:Apply()
-			end
-		end,
+		Target = options,
+		Key = "Grow",
 	})
 
-	growLbl:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 2)
-	growDdl:SetPoint("TOPLEFT", growLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
+	growDdl.Label:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 2)
 
 	local importantBarChk = mini:Checkbox({
 		Parent = parent,
@@ -301,7 +273,6 @@ local function BuildSoundsTab(parent, options)
 	})
 	intro:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
 
-	-- Important Spells Sound
 	local soundImportantChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Important Spells"],
@@ -320,13 +291,11 @@ local function BuildSoundsTab(parent, options)
 
 	soundImportantChk:SetPoint("TOPLEFT", intro, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	-- Both dropdowns read this table each time they open, and the media list is refilled in place,
-	-- so a sound registered by an addon that loaded after this page was built still shows up.
-	local soundItems = sounds:GetNames()
-
-	local soundImportantDropdown = mini:Dropdown({
+	local soundImportantDropdown = helpers:BuildMediaDropdown({
 		Parent = parent,
-		Items = soundItems,
+		RefreshOn = parent,
+		Media = sounds,
+		Width = 200,
 		GetValue = function()
 			return sounds:Normalise(options.Sound.Important.File)
 		end,
@@ -339,9 +308,7 @@ local function BuildSoundsTab(parent, options)
 
 	soundImportantDropdown:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
 	soundImportantDropdown:SetPoint("TOP", soundImportantChk, "TOP", 0, -4)
-	soundImportantDropdown:SetWidth(200)
 
-	-- Defensive Spells Sound
 	local soundDefensiveChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Defensive Spells"],
@@ -361,9 +328,11 @@ local function BuildSoundsTab(parent, options)
 	soundDefensiveChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
 	soundDefensiveChk:SetPoint("TOP", soundImportantChk, "TOP", 0, 0)
 
-	local soundDefensiveDropdown = mini:Dropdown({
+	local soundDefensiveDropdown = helpers:BuildMediaDropdown({
 		Parent = parent,
-		Items = soundItems,
+		RefreshOn = parent,
+		Media = sounds,
+		Width = 200,
 		GetValue = function()
 			return sounds:Normalise(options.Sound.Defensive.File)
 		end,
@@ -376,22 +345,6 @@ local function BuildSoundsTab(parent, options)
 
 	soundDefensiveDropdown:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
 	soundDefensiveDropdown:SetPoint("TOP", soundDefensiveChk, "TOP", 0, -4)
-	soundDefensiveDropdown:SetWidth(200)
-
-	local function RefreshSounds()
-		sounds:GetNames()
-
-		if soundImportantDropdown.MiniRefresh then
-			soundImportantDropdown:MiniRefresh()
-		end
-
-		if soundDefensiveDropdown.MiniRefresh then
-			soundDefensiveDropdown:MiniRefresh()
-		end
-	end
-
-	sounds:OnChanged(RefreshSounds)
-	parent:HookScript("OnShow", RefreshSounds)
 end
 
 ---@param parent table
@@ -598,84 +551,7 @@ function M:Build(panel, options)
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
-	local enabledEverywhere = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["World"],
-		Tooltip = L["Enable this module in the open world."],
-		GetValue = function()
-			return db.Modules.AlertsModule.Enabled.World
-		end,
-		SetValue = function(value)
-			db.Modules.AlertsModule.Enabled.World = value
-			config:Apply()
-		end,
-	})
-
-	enabledEverywhere:SetPoint("TOPLEFT", enabledDivider, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local enabledArena = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Arena"],
-		Tooltip = L["Enable this module in arena."],
-		GetValue = function()
-			return db.Modules.AlertsModule.Enabled.Arena
-		end,
-		SetValue = function(value)
-			db.Modules.AlertsModule.Enabled.Arena = value
-			config:Apply()
-		end,
-	})
-
-	enabledArena:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth, 0)
-	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledBattleGrounds = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Battlegrounds"],
-		Tooltip = L["Enable this module in battlegrounds."],
-		GetValue = function()
-			return db.Modules.AlertsModule.Enabled.BattleGrounds
-		end,
-		SetValue = function(value)
-			db.Modules.AlertsModule.Enabled.BattleGrounds = value
-			config:Apply()
-		end,
-	})
-
-	enabledBattleGrounds:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 2, 0)
-	enabledBattleGrounds:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledDungeons = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Dungeons"],
-		Tooltip = L["Enable this module in dungeons."],
-		GetValue = function()
-			return db.Modules.AlertsModule.Enabled.Dungeons
-		end,
-		SetValue = function(value)
-			db.Modules.AlertsModule.Enabled.Dungeons = value
-			config:Apply()
-		end,
-	})
-
-	enabledDungeons:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 3, 0)
-	enabledDungeons:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledRaid = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Raid"],
-		Tooltip = L["Enable this module in raids."],
-		GetValue = function()
-			return db.Modules.AlertsModule.Enabled.Raid
-		end,
-		SetValue = function(value)
-			db.Modules.AlertsModule.Enabled.Raid = value
-			config:Apply()
-		end,
-	})
-
-	enabledRaid:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 4, 0)
-	enabledRaid:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.AlertsModule.Enabled)
 
 	local subPanelHeight = 320
 	local tabContainer = CreateFrame("Frame", nil, panel)

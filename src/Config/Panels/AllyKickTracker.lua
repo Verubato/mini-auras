@@ -5,8 +5,8 @@ local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local config = addon.Config
+local helpers = addon.Config.PanelHelpers
 local barTextures = addon.Core.BarTextures
-local COLUMNS = 5
 local GROW_OPTIONS = { "DOWN", "UP" }
 
 ---@class AllyKickTrackerConfig
@@ -18,7 +18,7 @@ config.AllyKickTracker = M
 ---@param options AllyKickTrackerModuleOptions
 function M:Build(panel, options)
 	-- Shared 5-column checkbox grid so checkbox rows line up with the other pages.
-	local columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
+	local columnWidth = mini:ColumnWidth(5, 0, 0)
 	local sliderWidth = mini:ColumnWidth(4, 0, 0) * 2 - horizontalSpacing
 
 	local description = mini:TextLine({
@@ -36,42 +36,7 @@ function M:Build(panel, options)
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
 	enabledDivider:SetPoint("TOP", description, "BOTTOM", 0, -verticalSpacing)
 
-	---Builds one of the per-context enable checkboxes, all of which sit on a single row.
-	---@param key string
-	---@param label string
-	---@param tooltip string
-	---@param column number
-	---@param anchor table?
-	---@return table
-	local function EnabledCheckbox(key, label, tooltip, column, anchor)
-		local checkbox = mini:Checkbox({
-			Parent = panel,
-			LabelText = label,
-			Tooltip = tooltip,
-			GetValue = function()
-				return options.Enabled[key]
-			end,
-			SetValue = function(value)
-				options.Enabled[key] = value
-				config:Apply()
-			end,
-		})
-
-		if anchor then
-			checkbox:SetPoint("LEFT", panel, "LEFT", columnWidth * column, 0)
-			checkbox:SetPoint("TOP", anchor, "TOP", 0, 0)
-		else
-			checkbox:SetPoint("TOPLEFT", enabledDivider, "BOTTOMLEFT", 0, -verticalSpacing)
-		end
-
-		return checkbox
-	end
-
-	local enabledWorld = EnabledCheckbox("World", L["World"], L["Enable this module in the open world."], 0)
-	EnabledCheckbox("Arena", L["Arena"], L["Enable this module in arena."], 1, enabledWorld)
-	EnabledCheckbox("BattleGrounds", L["Battlegrounds"], L["Enable this module in battlegrounds."], 2, enabledWorld)
-	EnabledCheckbox("Dungeons", L["Dungeons"], L["Enable this module in dungeons."], 3, enabledWorld)
-	EnabledCheckbox("Raid", L["Raid"], L["Enable this module in raids."], 4, enabledWorld)
+	local enabledWorld = helpers:BuildEnableRow(panel, enabledDivider, options.Enabled)
 
 	local settingsDivider = mini:Divider({
 		Parent = panel,
@@ -112,38 +77,28 @@ function M:Build(panel, options)
 	ownChk:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
 	ownChk:SetPoint("TOP", lockedChk, "TOP", 0, 0)
 
-	local growLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-	growLabel:SetText(L["Grow"])
-	growLabel:SetPoint("TOPLEFT", lockedChk, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-
-	local growDropdown, isModernDropdown = mini:Dropdown({
+	local growDropdown = helpers:BuildGrowDropdown({
 		Parent = panel,
 		Items = GROW_OPTIONS,
 		GetValue = function()
 			return options.Grow == "UP" and "UP" or "DOWN"
 		end,
-		SetValue = function(value)
-			if options.Grow ~= value then
-				options.Grow = value
-				config:Apply()
-			end
-		end,
+		Target = options,
+		Key = "Grow",
 	})
 
-	growDropdown:SetPoint("TOPLEFT", growLabel, "BOTTOMLEFT", isModernDropdown and 0 or -16, -8)
+	growDropdown.Label:SetPoint("TOPLEFT", lockedChk, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	local textureLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	textureLabel:SetText(L["Bar Texture"])
 	textureLabel:SetPoint("LEFT", panel, "LEFT", columnWidth, 0)
-	textureLabel:SetPoint("TOP", growLabel, "TOP", 0, 0)
+	textureLabel:SetPoint("TOP", growDropdown.Label, "TOP", 0, 0)
 
-	-- The dropdown reads this table each time it opens, and the media list is refilled in place,
-	-- so a texture registered by an addon that loaded after this page was built still shows up.
-	local textureItems = barTextures:GetNames()
-
-	local textureDropdown = mini:Dropdown({
+	local textureDropdown, isModernDropdown = helpers:BuildMediaDropdown({
 		Parent = panel,
-		Items = textureItems,
+		RefreshOn = panel,
+		Media = barTextures,
+		Width = 160,
 		GetValue = function()
 			return options.Bars.Texture or barTextures:GetDefaultName()
 		end,
@@ -159,62 +114,60 @@ function M:Build(panel, options)
 		end,
 	})
 
-	local function RefreshTextures()
-		barTextures:GetNames()
-
-		if textureDropdown.MiniRefresh then
-			textureDropdown:MiniRefresh()
-		end
-	end
-
-	barTextures:OnChanged(RefreshTextures)
-	panel:HookScript("OnShow", RefreshTextures)
-
 	textureDropdown:SetPoint("LEFT", panel, "LEFT", columnWidth + (isModernDropdown and 0 or -16), 0)
 	textureDropdown:SetPoint("TOP", growDropdown, "TOP", 0, 0)
-	textureDropdown:SetWidth(160)
 
-	---Builds one of the geometry sliders; they all clamp, compare and re-apply the same way.
-	---@param target table  the options table holding the value
-	---@param key string
-	---@param label string
-	---@param min number
-	---@param max number
-	---@param fallback number
-	---@return table
-	local function GeometrySlider(target, key, label, min, max, fallback)
-		return mini:Slider({
-			Parent = panel,
-			LabelText = label,
-			Width = sliderWidth,
-			Min = min,
-			Max = max,
-			Step = 1,
-			GetValue = function()
-				return target[key] or fallback
-			end,
-			SetValue = function(value)
-				local newValue = mini:ClampInt(value, min, max, fallback)
-
-				if target[key] ~= newValue then
-					target[key] = newValue
-					config:Apply()
-				end
-			end,
-		})
-	end
-
-	local widthSlider = GeometrySlider(options.Bars, "Width", L["Bar Width"], 60, 400, 260)
+	local widthSlider = helpers:BuildClampedSlider({
+		Parent = panel,
+		LabelText = L["Bar Width"],
+		Min = 60,
+		Max = 400,
+		Default = 260,
+		Fallback = 260,
+		Width = sliderWidth,
+		Target = options.Bars,
+		Key = "Width",
+	})
 	widthSlider.Slider:SetPoint("TOPLEFT", growDropdown, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
-	local heightSlider = GeometrySlider(options.Bars, "Height", L["Bar Height"], 8, 60, 35)
+	local heightSlider = helpers:BuildClampedSlider({
+		Parent = panel,
+		LabelText = L["Bar Height"],
+		Min = 8,
+		Max = 60,
+		Default = 35,
+		Fallback = 35,
+		Width = sliderWidth,
+		Target = options.Bars,
+		Key = "Height",
+	})
 	heightSlider.Slider:SetPoint("LEFT", widthSlider.Slider, "RIGHT", horizontalSpacing, 0)
 	heightSlider.Slider:SetPoint("TOP", widthSlider.Slider, "TOP", 0, 0)
 
-	local spacingSlider = GeometrySlider(options, "BarSpacing", L["Bar Padding"], 0, 20, 2)
+	local spacingSlider = helpers:BuildClampedSlider({
+		Parent = panel,
+		LabelText = L["Bar Padding"],
+		Min = 0,
+		Max = 20,
+		Default = 2,
+		Fallback = 2,
+		Width = sliderWidth,
+		Target = options,
+		Key = "BarSpacing",
+	})
 	spacingSlider.Slider:SetPoint("TOPLEFT", widthSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
-	local maxBarsSlider = GeometrySlider(options, "MaxBars", L["Max Bars"], 1, 10, 5)
+	local maxBarsSlider = helpers:BuildClampedSlider({
+		Parent = panel,
+		LabelText = L["Max Bars"],
+		Min = 1,
+		Max = 10,
+		Default = 5,
+		Fallback = 5,
+		Width = sliderWidth,
+		Target = options,
+		Key = "MaxBars",
+	})
 	maxBarsSlider.Slider:SetPoint("LEFT", spacingSlider.Slider, "RIGHT", horizontalSpacing, 0)
 	maxBarsSlider.Slider:SetPoint("TOP", spacingSlider.Slider, "TOP", 0, 0)
 

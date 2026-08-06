@@ -16,96 +16,18 @@ local COLUMNS = 4
 local columnWidth
 local enabledColumnWidth
 local config = addon.Config
+local helpers = addon.Config.PanelHelpers
 
 ---@class CrowdControlConfig
 local M = {}
 
 config.CrowdControl = M
 
----@param parent table
----@param options CrowdControlInstanceOptions|PetCrowdControlModuleOptions
--- Builds the "Grow" dropdown (label + dropdown) anchored below `anchorFrame`, returning the dropdown so
--- the first slider can sit directly beneath it. Kept above the sliders so all sliders group together.
-local function BuildGrowDropdown(parent, options, anchorFrame)
-	local growDdlLbl = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-	growDdlLbl:SetText(L["Grow"])
-
-	local growDdl, modernDdl = mini:Dropdown({
-		Parent = parent,
-		Items = GROW_OPTIONS,
-		GetValue = function()
-			return options.Grow
-		end,
-		SetValue = function(value)
-			if options.Grow ~= value then
-				options.Grow = value
-				config:Apply()
-			end
-		end,
-	})
-
-	growDdl:SetWidth(DROPDOWN_WIDTH)
-	growDdlLbl:SetPoint("TOPLEFT", anchorFrame, "BOTTOMLEFT", 4, -verticalSpacing * 2)
-	growDdl:SetPoint("TOPLEFT", growDdlLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
-
-	return growDdl
-end
-
-local function BuildAnchorSettings(parent, options)
-	local panel = CreateFrame("Frame", nil, parent)
-
-	local containerX = mini:Slider({
-		Parent = panel,
-		Min = -250,
-		Max = 250,
-		Step = 1,
-		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = L["Offset X"],
-		GetValue = function()
-			return options.Offset.X
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, -250, 250, 0)
-			if options.Offset.X ~= newValue then
-				options.Offset.X = newValue
-				config:Apply()
-			end
-		end,
-	})
-
-	containerX.Slider:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
-
-	local containerY = mini:Slider({
-		Parent = panel,
-		Min = -250,
-		Max = 250,
-		Step = 1,
-		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = L["Offset Y"],
-		GetValue = function()
-			return options.Offset.Y
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, -250, 250, 0)
-			if options.Offset.Y ~= newValue then
-				options.Offset.Y = newValue
-				config:Apply()
-			end
-		end,
-	})
-
-	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
-
-	panel:SetHeight(containerX.Slider:GetHeight() + verticalSpacing * 2)
-
-	return panel
-end
-
 ---@param panel table
 ---@param options CrowdControlInstanceOptions
 local function BuildInstance(panel, options)
 	local parent = CreateFrame("Frame", nil, panel)
-	local anchorPanel = BuildAnchorSettings(parent, options)
+	local sliderWidth = columnWidth * 2 - horizontalSpacing
 
 	local excludePlayerChk = mini:Checkbox({
 		Parent = parent,
@@ -201,127 +123,64 @@ local function BuildInstance(panel, options)
 
 	showMillisChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	local refreshSizeMode
-	local relativeSizeChk = mini:Checkbox({
+	local size = helpers:BuildSizeControls({
 		Parent = parent,
-		LabelText = L["Relative size"],
-		Tooltip = L["Sizes the icon as a percentage of the unit frame's height instead of in pixels."],
-		GetValue = function()
-			return options.Icons.SizeIsPercent == true
-		end,
-		SetValue = function(value)
-			options.Icons.SizeIsPercent = value
-			refreshSizeMode()
-			config:Apply()
-		end,
+		Icons = options.Icons,
+		PixelDefault = 32,
+		PercentDefault = 80,
+		Width = sliderWidth,
 	})
 
-	relativeSizeChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
-	relativeSizeChk:SetPoint("TOP", showMillisChk, "TOP", 0, 0)
+	size.Checkbox:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
+	size.Checkbox:SetPoint("TOP", showMillisChk, "TOP", 0, 0)
 
-	local growDdl = BuildGrowDropdown(parent, options, showMillisChk)
-
-	local iconSize = mini:Slider({
+	local growDdl = helpers:BuildGrowDropdown({
 		Parent = parent,
-		Min = 10,
-		Max = 100,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Icon Size"],
-		GetValue = function()
-			return options.Icons.Size
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 10, 100, 32)
-			if options.Icons.Size ~= newValue then
-				options.Icons.Size = newValue
-				config:Apply()
-			end
-		end,
+		Items = GROW_OPTIONS,
+		Target = options,
+		Key = "Grow",
+		Width = DROPDOWN_WIDTH,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	growDdl.Label:SetPoint("TOPLEFT", showMillisChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
-	local iconSizePct = mini:Slider({
+	size.Pixel.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
+	local maxIcons = helpers:BuildClampedSlider({
 		Parent = parent,
-		Min = 25,
-		Max = 100,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Icon Size (%)"],
-		GetValue = function()
-			return options.Icons.SizePercent or 80
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 25, 100, 80)
-			if options.Icons.SizePercent ~= newValue then
-				options.Icons.SizePercent = newValue
-				config:Apply()
-			end
-		end,
-	})
-
-	iconSizePct.Slider:SetPoint("TOPLEFT", iconSize.Slider, "TOPLEFT", 0, 0)
-
-	refreshSizeMode = function()
-		local isPercent = options.Icons.SizeIsPercent == true
-		iconSize.Slider:SetShown(not isPercent)
-		iconSize.Label:SetShown(not isPercent)
-		iconSize.EditBox:SetShown(not isPercent)
-		iconSizePct.Slider:SetShown(isPercent)
-		iconSizePct.Label:SetShown(isPercent)
-		iconSizePct.EditBox:SetShown(isPercent)
-	end
-	refreshSizeMode()
-
-	local maxIcons = mini:Slider({
-		Parent = parent,
+		LabelText = L["Max Icons"],
 		Min = 1,
 		Max = 5,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Max Icons"],
-		GetValue = function()
-			return options.Icons.Count or 5
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 1, 5, 3)
-			if options.Icons.Count ~= newValue then
-				options.Icons.Count = newValue
-				config:Apply()
-			end
-		end,
+		Default = 3,
+		Fallback = 5,
+		Width = sliderWidth,
+		Target = options.Icons,
+		Key = "Count",
 	})
 
-	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
+	maxIcons.Slider:SetPoint("LEFT", size.Pixel.Slider, "RIGHT", horizontalSpacing, 0)
 
-	local iconSpacing = mini:Slider({
+	local iconSpacing = helpers:BuildClampedSlider({
 		Parent = parent,
+		LabelText = L["Icon Padding"],
 		Min = 0,
 		Max = 20,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Icon Padding"],
-		GetValue = function()
-			return options.IconSpacing or 2
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 0, 20, 2)
-			if options.IconSpacing ~= newValue then
-				options.IconSpacing = newValue
-				config:Apply()
-			end
-		end,
+		Default = 2,
+		Fallback = 2,
+		Width = sliderWidth,
+		Target = options,
+		Key = "IconSpacing",
 	})
 
-	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	iconSpacing.Slider:SetPoint("TOPLEFT", size.Pixel.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
-	anchorPanel:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-	anchorPanel:SetPoint("TOPRIGHT", iconSpacing.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
+	local offsetX = helpers:BuildOffsetSliders({
+		Parent = parent,
+		Offset = options.Offset,
+		Width = sliderWidth,
+	})
 
-	parent.OnMiniRefresh = function()
-		anchorPanel:MiniRefresh()
-	end
+	offsetX.Slider:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	return parent
 end
@@ -330,86 +189,15 @@ end
 ---@param options PetCrowdControlModuleOptions
 local function BuildPetInstance(panel, options)
 	local parent = CreateFrame("Frame", nil, panel)
-	local anchorPanel = BuildAnchorSettings(parent, options)
+	local sliderWidth = columnWidth * 2 - horizontalSpacing
 
-	local petEnabledEverywhere = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["World"],
-		Tooltip = L["Enable pet frame CC in the open world."],
-		GetValue = function()
-			return options.Enabled.World
-		end,
-		SetValue = function(value)
-			options.Enabled.World = value
-			config:Apply()
-		end,
+	local petEnabledEverywhere = helpers:BuildEnableRow(parent, nil, options.Enabled, {
+		World = L["Enable pet frame CC in the open world."],
+		Arena = L["Enable pet frame CC in arena."],
+		BattleGrounds = L["Enable pet frame CC in battlegrounds."],
+		Dungeons = L["Enable pet frame CC in dungeons."],
+		Raid = L["Enable pet frame CC in raids."],
 	})
-
-	petEnabledEverywhere:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
-
-	local petEnabledArena = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Arena"],
-		Tooltip = L["Enable pet frame CC in arena."],
-		GetValue = function()
-			return options.Enabled.Arena
-		end,
-		SetValue = function(value)
-			options.Enabled.Arena = value
-			config:Apply()
-		end,
-	})
-
-	petEnabledArena:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
-	petEnabledArena:SetPoint("TOP", petEnabledEverywhere, "TOP", 0, 0)
-
-	local petEnabledBattleGrounds = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Battlegrounds"],
-		Tooltip = L["Enable pet frame CC in battlegrounds."],
-		GetValue = function()
-			return options.Enabled.BattleGrounds
-		end,
-		SetValue = function(value)
-			options.Enabled.BattleGrounds = value
-			config:Apply()
-		end,
-	})
-
-	petEnabledBattleGrounds:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
-	petEnabledBattleGrounds:SetPoint("TOP", petEnabledEverywhere, "TOP", 0, 0)
-
-	local petEnabledDungeons = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Dungeons"],
-		Tooltip = L["Enable pet frame CC in dungeons."],
-		GetValue = function()
-			return options.Enabled.Dungeons
-		end,
-		SetValue = function(value)
-			options.Enabled.Dungeons = value
-			config:Apply()
-		end,
-	})
-
-	petEnabledDungeons:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
-	petEnabledDungeons:SetPoint("TOP", petEnabledEverywhere, "TOP", 0, 0)
-
-	local petEnabledRaid = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Raid"],
-		Tooltip = L["Enable pet frame CC in raids."],
-		GetValue = function()
-			return options.Enabled.Raid
-		end,
-		SetValue = function(value)
-			options.Enabled.Raid = value
-			config:Apply()
-		end,
-	})
-
-	petEnabledRaid:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
-	petEnabledRaid:SetPoint("TOP", petEnabledEverywhere, "TOP", 0, 0)
 
 	local glowChk = mini:Checkbox({
 		Parent = parent,
@@ -474,23 +262,16 @@ local function BuildPetInstance(panel, options)
 	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
 	showTooltipsChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
-	local refreshSizeMode
-	local relativeSizeChk = mini:Checkbox({
+	local size = helpers:BuildSizeControls({
 		Parent = parent,
-		LabelText = L["Relative size"],
-		Tooltip = L["Sizes the icon as a percentage of the unit frame's height instead of in pixels."],
-		GetValue = function()
-			return options.Icons.SizeIsPercent == true
-		end,
-		SetValue = function(value)
-			options.Icons.SizeIsPercent = value
-			refreshSizeMode()
-			config:Apply()
-		end,
+		Icons = options.Icons,
+		PixelDefault = 24,
+		PercentDefault = 50,
+		Width = sliderWidth,
 	})
 
-	relativeSizeChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
-	relativeSizeChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+	size.Checkbox:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
+	size.Checkbox:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local includePetFrameChk = mini:Checkbox({
 		Parent = parent,
@@ -507,109 +288,53 @@ local function BuildPetInstance(panel, options)
 
 	includePetFrameChk:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	local growDdl = BuildGrowDropdown(parent, options, includePetFrameChk)
-
-	local iconSize = mini:Slider({
+	local growDdl = helpers:BuildGrowDropdown({
 		Parent = parent,
-		Min = 10,
-		Max = 100,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Icon Size"],
-		GetValue = function()
-			return options.Icons.Size
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 10, 100, 24)
-			if options.Icons.Size ~= newValue then
-				options.Icons.Size = newValue
-				config:Apply()
-			end
-		end,
+		Items = GROW_OPTIONS,
+		Target = options,
+		Key = "Grow",
+		Width = DROPDOWN_WIDTH,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	growDdl.Label:SetPoint("TOPLEFT", includePetFrameChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
-	local iconSizePct = mini:Slider({
+	size.Pixel.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
+	local maxIcons = helpers:BuildClampedSlider({
 		Parent = parent,
-		Min = 25,
-		Max = 100,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Icon Size (%)"],
-		GetValue = function()
-			return options.Icons.SizePercent or 50
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 25, 100, 50)
-			if options.Icons.SizePercent ~= newValue then
-				options.Icons.SizePercent = newValue
-				config:Apply()
-			end
-		end,
-	})
-
-	iconSizePct.Slider:SetPoint("TOPLEFT", iconSize.Slider, "TOPLEFT", 0, 0)
-
-	refreshSizeMode = function()
-		local isPercent = options.Icons.SizeIsPercent == true
-		iconSize.Slider:SetShown(not isPercent)
-		iconSize.Label:SetShown(not isPercent)
-		iconSize.EditBox:SetShown(not isPercent)
-		iconSizePct.Slider:SetShown(isPercent)
-		iconSizePct.Label:SetShown(isPercent)
-		iconSizePct.EditBox:SetShown(isPercent)
-	end
-	refreshSizeMode()
-
-	local maxIcons = mini:Slider({
-		Parent = parent,
+		LabelText = L["Max Icons"],
 		Min = 1,
 		Max = 5,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Max Icons"],
-		GetValue = function()
-			return options.Icons.Count or 3
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 1, 5, 3)
-			if options.Icons.Count ~= newValue then
-				options.Icons.Count = newValue
-				config:Apply()
-			end
-		end,
+		Default = 3,
+		Fallback = 3,
+		Width = sliderWidth,
+		Target = options.Icons,
+		Key = "Count",
 	})
 
-	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
+	maxIcons.Slider:SetPoint("LEFT", size.Pixel.Slider, "RIGHT", horizontalSpacing, 0)
 
-	local iconSpacing = mini:Slider({
+	local iconSpacing = helpers:BuildClampedSlider({
 		Parent = parent,
+		LabelText = L["Icon Padding"],
 		Min = 0,
 		Max = 20,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Icon Padding"],
-		GetValue = function()
-			return options.IconSpacing or 2
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 0, 20, 2)
-			if options.IconSpacing ~= newValue then
-				options.IconSpacing = newValue
-				config:Apply()
-			end
-		end,
+		Default = 2,
+		Fallback = 2,
+		Width = sliderWidth,
+		Target = options,
+		Key = "IconSpacing",
 	})
 
-	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	iconSpacing.Slider:SetPoint("TOPLEFT", size.Pixel.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
-	anchorPanel:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-	anchorPanel:SetPoint("TOPRIGHT", iconSpacing.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
+	local offsetX = helpers:BuildOffsetSliders({
+		Parent = parent,
+		Offset = options.Offset,
+		Width = sliderWidth,
+	})
 
-	parent.OnMiniRefresh = function()
-		anchorPanel:MiniRefresh()
-	end
+	offsetX.Slider:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	return parent
 end
@@ -641,84 +366,7 @@ function M:Build(panel, default, raid)
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
-	local enabledEverywhere = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["World"],
-		Tooltip = L["Enable this module in the open world."],
-		GetValue = function()
-			return db.Modules.CCModule.Enabled.World
-		end,
-		SetValue = function(value)
-			db.Modules.CCModule.Enabled.World = value
-			config:Apply()
-		end,
-	})
-
-	enabledEverywhere:SetPoint("TOPLEFT", enabledDivider, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local enabledArena = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Arena"],
-		Tooltip = L["Enable this module in arena."],
-		GetValue = function()
-			return db.Modules.CCModule.Enabled.Arena
-		end,
-		SetValue = function(value)
-			db.Modules.CCModule.Enabled.Arena = value
-			config:Apply()
-		end,
-	})
-
-	enabledArena:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth, 0)
-	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledBattleGrounds = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Battlegrounds"],
-		Tooltip = L["Enable this module in battlegrounds."],
-		GetValue = function()
-			return db.Modules.CCModule.Enabled.BattleGrounds
-		end,
-		SetValue = function(value)
-			db.Modules.CCModule.Enabled.BattleGrounds = value
-			config:Apply()
-		end,
-	})
-
-	enabledBattleGrounds:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 2, 0)
-	enabledBattleGrounds:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledDungeons = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Dungeons"],
-		Tooltip = L["Enable this module in dungeons."],
-		GetValue = function()
-			return db.Modules.CCModule.Enabled.Dungeons
-		end,
-		SetValue = function(value)
-			db.Modules.CCModule.Enabled.Dungeons = value
-			config:Apply()
-		end,
-	})
-
-	enabledDungeons:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 3, 0)
-	enabledDungeons:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledRaid = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Raid"],
-		Tooltip = L["Enable this module in raids."],
-		GetValue = function()
-			return db.Modules.CCModule.Enabled.Raid
-		end,
-		SetValue = function(value)
-			db.Modules.CCModule.Enabled.Raid = value
-			config:Apply()
-		end,
-	})
-
-	enabledRaid:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 4, 0)
-	enabledRaid:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.CCModule.Enabled)
 
 	local subPanelHeight = 340
 	local tabContainer = CreateFrame("Frame", nil, panel)

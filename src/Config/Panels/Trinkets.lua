@@ -5,6 +5,7 @@ local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local config = addon.Config
+local helpers = addon.Config.PanelHelpers
 
 ---@class TrinketsConfig
 local M = {}
@@ -92,68 +93,27 @@ function M:Build(panel)
 	colorSwatch:SetPoint("TOP", borderChk, "TOP", 0,
 		-math.floor((borderChk:GetHeight() - colorSwatch:GetHeight()) / 2))
 
-	local iconSizeSlider = mini:Slider({
+	local iconSizeSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Icon Size"],
-		GetValue = function()
-			return db.Modules.TrinketsModule.Icons.Size
-		end,
-		SetValue = function(value)
-			local newValue = mini:ClampInt(value, 10, 100, 40)
-			if db.Modules.TrinketsModule.Icons.Size ~= newValue then
-				db.Modules.TrinketsModule.Icons.Size = newValue
-				config:Apply()
-			end
-		end,
-		Width = columns * columnWidth - horizontalSpacing,
 		Min = 10,
 		Max = 100,
-		Step = 1,
+		Default = 40,
+		Width = columns * columnWidth - horizontalSpacing,
+		Target = db.Modules.TrinketsModule.Icons,
+		Key = "Size",
 	})
 
 	iconSizeSlider.Slider:SetPoint("TOPLEFT", borderChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
-	local offsetXSlider = mini:Slider({
+	local offsetXSlider = helpers:BuildOffsetSliders({
 		Parent = panel,
-		LabelText = L["Offset X"],
-		GetValue = function()
-			return db.Modules.TrinketsModule.Offset.X
-		end,
-		SetValue = function(value)
-			local newValue = mini:ClampInt(value, -200, 200, 0)
-			if db.Modules.TrinketsModule.Offset.X ~= newValue then
-				db.Modules.TrinketsModule.Offset.X = newValue
-				config:Apply()
-			end
-		end,
+		Offset = db.Modules.TrinketsModule.Offset,
 		Width = (columns / 2) * columnWidth - horizontalSpacing,
-		Min = -200,
-		Max = 200,
-		Step = 1,
+		Range = 200,
 	})
 
 	offsetXSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
-
-	local offsetYSlider = mini:Slider({
-		Parent = panel,
-		LabelText = L["Offset Y"],
-		GetValue = function()
-			return db.Modules.TrinketsModule.Offset.Y
-		end,
-		SetValue = function(value)
-			local newValue = mini:ClampInt(value, -200, 200, 0)
-			if db.Modules.TrinketsModule.Offset.Y ~= newValue then
-				db.Modules.TrinketsModule.Offset.Y = newValue
-				config:Apply()
-			end
-		end,
-		Width = (columns / 2) * columnWidth - horizontalSpacing,
-		Min = -200,
-		Max = 200,
-		Step = 1,
-	})
-
-	offsetYSlider.Slider:SetPoint("LEFT", offsetXSlider.Slider, "RIGHT", horizontalSpacing, 0)
 
 	local lines = mini:TextBlock({
 		Parent = panel,

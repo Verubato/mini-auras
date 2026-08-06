@@ -5,6 +5,7 @@ local L = addon.L
 local wowEx = addon.Utils.WoWEx
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
+local helpers = addon.Config.PanelHelpers
 ---@class MiscellaneousConfig
 local M = {}
 addon.Config.Miscellaneous = M
@@ -17,7 +18,6 @@ function M:Build(panel)
 	-- this page sit two grid columns apart so they never overlap.
 	local checkColumnWidth = mini:ColumnWidth(5, 0, 0)
 
-	-- General: client-level settings
 	local generalDivider = mini:Divider({
 		Parent = panel,
 		Text = L["General"],
@@ -71,7 +71,6 @@ function M:Build(panel)
 	languageDropdown:SetPoint("TOPLEFT", languageLabel, "BOTTOMLEFT", 0, -4)
 	languageDropdown:SetWidth(columnWidth)
 
-	-- Icons: appearance of every icon MiniAuras draws
 	local iconsDivider = mini:Divider({
 		Parent = panel,
 		Text = L["Icons"],
@@ -180,50 +179,37 @@ function M:Build(panel)
 
 	local slidersAnchor = glowNote
 
-	local fontScaleSlider = mini:Slider({
+	local fontScaleSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Font Scale"],
 		Min = 0.5,
 		Max = 1.5,
 		Step = 0.05,
-		GetValue = function()
-			return db.FontScale or 1.0
-		end,
-		SetValue = function(value)
-			local newValue = mini:ClampFloat(value, 0.5, 1.5, 1.0)
-			if db.FontScale ~= newValue then
-				db.FontScale = newValue
-				addon:Refresh()
-			end
-		end,
+		Default = 1.0,
+		Fallback = 1.0,
+		Float = true,
 		Width = columnWidth - horizontalSpacing,
+		Target = db,
+		Key = "FontScale",
 	})
 
 	fontScaleSlider.Slider:SetPoint("TOPLEFT", slidersAnchor, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
-	local millisThresholdSlider = mini:Slider({
+	local millisThresholdSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Milliseconds Threshold"],
 		Min = 1,
 		Max = 6,
-		Step = 1,
-		GetValue = function()
-			return db.MillisecondsThreshold or 5
-		end,
-		SetValue = function(value)
-			local newValue = mini:ClampInt(value, 1, 6, 5)
-			if db.MillisecondsThreshold ~= newValue then
-				db.MillisecondsThreshold = newValue
-				addon:Refresh()
-			end
-		end,
+		Default = 5,
+		Fallback = 5,
 		Width = columnWidth - horizontalSpacing,
+		Target = db,
+		Key = "MillisecondsThreshold",
 	})
 
 	millisThresholdSlider.Slider:SetPoint("LEFT", fontScaleSlider.Slider, "RIGHT", horizontalSpacing, 0)
 	millisThresholdSlider.Slider:SetPoint("TOP", fontScaleSlider.Slider, "TOP", 0, 0)
 
-	-- Behaviour: how the CC displays interact with the rest of the UI
 	local behaviourDivider = mini:Divider({
 		Parent = panel,
 		Text = L["Behaviour"],

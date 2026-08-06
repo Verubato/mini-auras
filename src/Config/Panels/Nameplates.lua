@@ -12,8 +12,8 @@ local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local COLUMNS = 4
 local columnWidth
-local enabledColumnWidth
 local config = addon.Config
+local helpers = addon.Config.PanelHelpers
 
 ---@class NameplatesConfig
 local M = {}
@@ -22,19 +22,18 @@ config.Nameplates = M
 
 ---@param parent table Tab content frame
 ---@param options NameplateSpellTypeOptions
----@param sectionType string Bar key: "Bar1" or "Bar2"
-local function BuildSpellTypeSettings(parent, options, sectionType)
+local function BuildSpellTypeSettings(parent, options)
 	local container = CreateFrame("Frame", nil, parent)
 
 	container:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
 	container:SetPoint("RIGHT", parent, "RIGHT", 0, 0)
 
 	local topColWidth = mini:ColumnWidth(5, 0, 0)
+	local sliderWidth = columnWidth * 2 - horizontalSpacing
 
 	-- Each bar can show CC and/or defensives, so the colour tooltip covers both.
 	local colorTooltip = L["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."]
 
-	-- Row 1: Enabled, Show CC, Show Defensives, Show tooltips
 	local enabledChk = mini:Checkbox({
 		Parent = container,
 		LabelText = L["Enabled"],
@@ -97,7 +96,6 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 	showImportantChk:SetPoint("LEFT", parent, "LEFT", topColWidth * 3, 0)
 	showImportantChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
-	-- Row 2: Glow, Reverse, Spell colours, Milliseconds
 	local glowChk = mini:Checkbox({
 		Parent = container,
 		LabelText = L["Glow icons"],
@@ -161,7 +159,6 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", topColWidth * 4, 0)
 	showTooltipsChk:SetPoint("TOP", enabledChk, "TOP", 0, 0)
 
-	-- Milliseconds (applies to CC icons shown in this bar)
 	local showMillisChk = mini:Checkbox({
 		Parent = container,
 		LabelText = L["Milliseconds"],
@@ -178,140 +175,64 @@ local function BuildSpellTypeSettings(parent, options, sectionType)
 	showMillisChk:SetPoint("LEFT", parent, "LEFT", topColWidth * 3, 0)
 	showMillisChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
-	local iconSize = mini:Slider({
+	local iconSize = helpers:BuildClampedSlider({
 		Parent = container,
+		LabelText = L["Icon Size"],
 		Min = 10,
 		Max = 60,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Icon Size"],
-		GetValue = function()
-			return options.Icons.Size
-		end,
-		SetValue = function(v)
-			local new = mini:ClampInt(v, 10, 60, 32)
-
-			if new ~= options.Icons.Size then
-				options.Icons.Size = new
-				config:Apply()
-			end
-		end,
+		Default = 32,
+		Width = sliderWidth,
+		Target = options.Icons,
+		Key = "Size",
 	})
 
 	-- Each bar can hold up to 8 icons.
-	local maxIconsMax = 8
-	local maxIconsDefault = 6
-
-	local maxIcons = mini:Slider({
+	local maxIcons = helpers:BuildClampedSlider({
 		Parent = container,
-		Min = 1,
-		Max = maxIconsMax,
-		Step = 1,
-		Width = columnWidth * 2 - horizontalSpacing,
 		LabelText = L["Max Icons"],
-		GetValue = function()
-			return options.Icons.MaxIcons
-		end,
-		SetValue = function(v)
-			local new = mini:ClampInt(v, 1, maxIconsMax, maxIconsDefault)
-
-			if new ~= options.Icons.MaxIcons then
-				options.Icons.MaxIcons = new
-				config:Apply()
-			end
-		end,
+		Min = 1,
+		Max = 8,
+		Default = 6,
+		Width = sliderWidth,
+		Target = options.Icons,
+		Key = "MaxIcons",
 	})
 
 	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
 
-	local growDdlLbl = container:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-	growDdlLbl:SetText(L["Grow"])
-
-	local growDdl, modernDdl = mini:Dropdown({
+	local growDdl = helpers:BuildGrowDropdown({
 		Parent = container,
 		Items = GROW_OPTIONS,
-		GetValue = function()
-			return options.Grow
-		end,
-		SetValue = function(value)
-			if options.Grow ~= value then
-				options.Grow = value
-				config:Apply()
-			end
-		end,
+		Target = options,
+		Key = "Grow",
+		Width = DROPDOWN_WIDTH,
 	})
 
-	growDdl:SetWidth(DROPDOWN_WIDTH)
-	growDdlLbl:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing)
-	growDdl:SetPoint("TOPLEFT", growDdlLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
+	growDdl.Label:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing)
 
 	iconSize.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
-	local iconSpacing = mini:Slider({
+	local iconSpacing = helpers:BuildClampedSlider({
 		Parent = container,
+		LabelText = L["Icon Padding"],
 		Min = 0,
 		Max = 20,
-		Step = 1,
-		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = L["Icon Padding"],
-		GetValue = function()
-			return options.Icons.Spacing or 2
-		end,
-		SetValue = function(v)
-			local new = mini:ClampInt(v, 0, 20, 2)
-
-			if new ~= options.Icons.Spacing then
-				options.Icons.Spacing = new
-				config:Apply()
-			end
-		end,
+		Default = 2,
+		Fallback = 2,
+		Width = sliderWidth,
+		Target = options.Icons,
+		Key = "Spacing",
 	})
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
-	local containerX = mini:Slider({
+	local offsetX = helpers:BuildOffsetSliders({
 		Parent = container,
-		Min = -250,
-		Max = 250,
-		Step = 1,
-		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = L["Offset X"],
-		GetValue = function()
-			return options.Offset.X
-		end,
-		SetValue = function(v)
-			local new = mini:ClampInt(v, -250, 250, 0)
-
-			if new ~= options.Offset.X then
-				options.Offset.X = new
-				config:Apply()
-			end
-		end,
+		Offset = options.Offset,
+		Width = sliderWidth,
 	})
 
-	containerX.Slider:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-
-	local containerY = mini:Slider({
-		Parent = container,
-		Min = -250,
-		Max = 250,
-		Step = 1,
-		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = L["Offset Y"],
-		GetValue = function()
-			return options.Offset.Y
-		end,
-		SetValue = function(v)
-			local new = mini:ClampInt(v, -250, 250, 0)
-
-			if new ~= options.Offset.Y then
-				options.Offset.Y = new
-				config:Apply()
-			end
-		end,
-	})
-
-	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
+	offsetX.Slider:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 end
 
 ---@param parent table
@@ -385,7 +306,6 @@ end
 ---@param options NameplateModuleOptions
 function M:Build(parent, options)
 	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
-	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
 	local db = mini:GetSavedVars()
 
 	local lines = mini:TextBlock({
@@ -405,84 +325,8 @@ function M:Build(parent, options)
 	enabledDivider:SetPoint("RIGHT", parent, "RIGHT")
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
-	local enabledEverywhere = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["World"],
-		Tooltip = L["Enable this module in the open world."],
-		GetValue = function()
-			return db.Modules.NameplatesModule.Enabled.World
-		end,
-		SetValue = function(value)
-			db.Modules.NameplatesModule.Enabled.World = value
-			config:Apply()
-		end,
-	})
-
-	enabledEverywhere:SetPoint("TOPLEFT", enabledDivider, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local enabledArena = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Arena"],
-		Tooltip = L["Enable this module in arena."],
-		GetValue = function()
-			return db.Modules.NameplatesModule.Enabled.Arena
-		end,
-		SetValue = function(value)
-			db.Modules.NameplatesModule.Enabled.Arena = value
-			config:Apply()
-		end,
-	})
-
-	enabledArena:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
-	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledBattleGrounds = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Battlegrounds"],
-		Tooltip = L["Enable this module in battlegrounds."],
-		GetValue = function()
-			return db.Modules.NameplatesModule.Enabled.BattleGrounds
-		end,
-		SetValue = function(value)
-			db.Modules.NameplatesModule.Enabled.BattleGrounds = value
-			config:Apply()
-		end,
-	})
-
-	enabledBattleGrounds:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
-	enabledBattleGrounds:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledDungeons = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Dungeons"],
-		Tooltip = L["Enable this module in dungeons."],
-		GetValue = function()
-			return db.Modules.NameplatesModule.Enabled.Dungeons
-		end,
-		SetValue = function(value)
-			db.Modules.NameplatesModule.Enabled.Dungeons = value
-			config:Apply()
-		end,
-	})
-
-	enabledDungeons:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
-	enabledDungeons:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledRaid = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Raid"],
-		Tooltip = L["Enable this module in raids."],
-		GetValue = function()
-			return db.Modules.NameplatesModule.Enabled.Raid
-		end,
-		SetValue = function(value)
-			db.Modules.NameplatesModule.Enabled.Raid = value
-			config:Apply()
-		end,
-	})
-
-	enabledRaid:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
-	enabledRaid:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+	local enabledEverywhere = helpers:BuildEnableRow(parent, enabledDivider,
+		db.Modules.NameplatesModule.Enabled)
 
 	local subPanelHeight = 285
 
@@ -507,9 +351,8 @@ function M:Build(parent, options)
 	})
 
 	BuildSettingsTab(tabCtrl:GetContent("settings"), options)
-	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar1"),     options.Enemy.Bar1,     "Bar1")
-	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar2"),     options.Enemy.Bar2,     "Bar2")
-	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyBar1"),  options.Friendly.Bar1,  "Bar1")
-	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyBar2"),  options.Friendly.Bar2,  "Bar2")
-
+	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar1"),     options.Enemy.Bar1)
+	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar2"),     options.Enemy.Bar2)
+	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyBar1"),  options.Friendly.Bar1)
+	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyBar2"),  options.Friendly.Bar2)
 end

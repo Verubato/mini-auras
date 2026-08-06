@@ -4,6 +4,7 @@ local mini = addon.Framework
 local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local config = addon.Config
+local helpers = addon.Config.PanelHelpers
 
 ---@class EnemyKickTrackerConfig
 local M = {}
@@ -80,23 +81,15 @@ function M:Build(panel)
 	allEnabled:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
 	allEnabled:SetPoint("TOP", healerEnabled, "TOP", 0, 0)
 
-	local iconSizeSlider = mini:Slider({
+	local iconSizeSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Icon Size"],
-		GetValue = function()
-			return db.Modules.EnemyKickTrackerModule.Icons.Size
-		end,
-		SetValue = function(value)
-			local newValue = mini:ClampInt(value, 20, 120, 50)
-			if db.Modules.EnemyKickTrackerModule.Icons.Size ~= newValue then
-				db.Modules.EnemyKickTrackerModule.Icons.Size = newValue
-				config:Apply()
-			end
-		end,
-		Width = sliderWidth,
 		Min = 20,
 		Max = 120,
-		Step = 1,
+		Default = 50,
+		Width = sliderWidth,
+		Target = db.Modules.EnemyKickTrackerModule.Icons,
+		Key = "Size",
 	})
 
 	local settingsDivider = mini:Divider({
@@ -110,23 +103,16 @@ function M:Build(panel)
 	iconSizeSlider.Slider:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
 
-	local iconSpacingSlider = mini:Slider({
+	local iconSpacingSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Icon Padding"],
-		GetValue = function()
-			return db.Modules.EnemyKickTrackerModule.IconSpacing or 2
-		end,
-		SetValue = function(value)
-			local newValue = mini:ClampInt(value, 0, 20, 2)
-			if db.Modules.EnemyKickTrackerModule.IconSpacing ~= newValue then
-				db.Modules.EnemyKickTrackerModule.IconSpacing = newValue
-				config:Apply()
-			end
-		end,
-		Width = sliderWidth,
 		Min = 0,
 		Max = 20,
-		Step = 1,
+		Default = 2,
+		Fallback = 2,
+		Width = sliderWidth,
+		Target = db.Modules.EnemyKickTrackerModule,
+		Key = "IconSpacing",
 	})
 
 	iconSpacingSlider.Slider:SetPoint("LEFT", iconSizeSlider.Slider, "RIGHT", horizontalSpacing, 0)

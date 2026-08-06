@@ -16,6 +16,7 @@ local COLUMNS = 4
 local columnWidth
 local enabledColumnWidth
 local config = addon.Config
+local helpers = addon.Config.PanelHelpers
 local wowEx = addon.Utils.WoWEx
 local auraCategoryIds = addon.Core.AuraCategoryIds
 -- Sidebar sections. Derived from AuraCategoryIds and the user's own additions and nothing else,
@@ -36,90 +37,11 @@ local M = {}
 
 config.RaidFrameAuras = M
 
----@param parent table
----@param options RaidFrameAurasInstanceOptions
--- Builds the "Grow" dropdown (label + dropdown) anchored below `anchorFrame`, returning the dropdown so
--- the first slider can sit directly beneath it. Kept above the sliders so all sliders group together.
-local function BuildGrowDropdown(parent, options, anchorFrame)
-	local growDdlLbl = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-	growDdlLbl:SetText(L["Grow"])
-
-	local growDdl, modernDdl = mini:Dropdown({
-		Parent = parent,
-		Items = GROW_OPTIONS,
-		GetValue = function()
-			return options.Grow
-		end,
-		SetValue = function(value)
-			if options.Grow ~= value then
-				options.Grow = value
-				config:Apply()
-			end
-		end,
-	})
-
-	growDdl:SetWidth(DROPDOWN_WIDTH)
-	growDdlLbl:SetPoint("TOPLEFT", anchorFrame, "BOTTOMLEFT", 4, -verticalSpacing * 2)
-	growDdl:SetPoint("TOPLEFT", growDdlLbl, "BOTTOMLEFT", modernDdl and 0 or -16, -8)
-
-	return growDdl
-end
-
-local function BuildAnchorSettings(parent, options)
-	local panel = CreateFrame("Frame", nil, parent)
-
-	local containerX = mini:Slider({
-		Parent = panel,
-		Min = -250,
-		Max = 250,
-		Step = 1,
-		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = L["Offset X"],
-		GetValue = function()
-			return options.Offset.X
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, -250, 250, 0)
-			if options.Offset.X ~= newValue then
-				options.Offset.X = newValue
-				config:Apply()
-			end
-		end,
-	})
-
-	containerX.Slider:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
-
-	local containerY = mini:Slider({
-		Parent = panel,
-		Min = -250,
-		Max = 250,
-		Step = 1,
-		Width = columnWidth * 2 - horizontalSpacing,
-		LabelText = L["Offset Y"],
-		GetValue = function()
-			return options.Offset.Y
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, -250, 250, 0)
-			if options.Offset.Y ~= newValue then
-				options.Offset.Y = newValue
-				config:Apply()
-			end
-		end,
-	})
-
-	containerY.Slider:SetPoint("LEFT", containerX.Slider, "RIGHT", horizontalSpacing, 0)
-
-	panel:SetHeight(containerX.Slider:GetHeight() + verticalSpacing * 2)
-
-	return panel
-end
-
 ---@param panel table
 ---@param options RaidFrameAurasInstanceOptions
 local function BuildInstance(panel, options)
 	local parent = CreateFrame("Frame", nil, panel)
-	local anchorPanel = BuildAnchorSettings(parent, options)
+	local sliderWidth = columnWidth * 2 - horizontalSpacing
 
 	local excludePlayerChk = mini:Checkbox({
 		Parent = parent,
@@ -188,7 +110,7 @@ local function BuildInstance(panel, options)
 	-- leads the second row and shifts the other category toggles right one column.
 	local catOffset = 0
 	local showImportantChk
-	if addon.Utils.WoWEx:UseAuraContainers() then
+	if wowEx:UseAuraContainers() then
 		catOffset = 1
 		showImportantChk = mini:Checkbox({
 			Parent = parent,
@@ -270,137 +192,67 @@ local function BuildInstance(panel, options)
 	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
 	showTooltipsChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
 
-	local refreshSizeMode
-	local relativeSizeChk = mini:Checkbox({
+	local size = helpers:BuildSizeControls({
 		Parent = parent,
-		LabelText = L["Relative size"],
-		Tooltip = L["Sizes the icon as a percentage of the unit frame's height instead of in pixels."],
-		GetValue = function()
-			return options.Icons.SizeIsPercent == true
-		end,
-		SetValue = function(value)
-			options.Icons.SizeIsPercent = value
-			refreshSizeMode()
-			config:Apply()
-		end,
+		Icons = options.Icons,
+		PixelDefault = 32,
+		PercentDefault = 75,
+		Width = sliderWidth,
 	})
 
-	relativeSizeChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * (3 + catOffset), 0)
-	relativeSizeChk:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
+	size.Checkbox:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * (3 + catOffset), 0)
+	size.Checkbox:SetPoint("TOP", showDefensivesChk, "TOP", 0, 0)
 
-	local growDdl = BuildGrowDropdown(parent, options, showImportantChk or showDefensivesChk)
-
-	local iconSize = mini:Slider({
+	local growDdl = helpers:BuildGrowDropdown({
 		Parent = parent,
-		Min = 10,
-		Max = 100,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Icon Size"],
-		GetValue = function()
-			return options.Icons.Size
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 10, 100, 32)
-			if options.Icons.Size ~= newValue then
-				options.Icons.Size = newValue
-				config:Apply()
-			end
-		end,
+		Items = GROW_OPTIONS,
+		Target = options,
+		Key = "Grow",
+		Width = DROPDOWN_WIDTH,
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+	growDdl.Label:SetPoint("TOPLEFT", showImportantChk or showDefensivesChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
-	local iconSizePct = mini:Slider({
+	size.Pixel.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
+
+	local maxIcons = helpers:BuildClampedSlider({
 		Parent = parent,
-		Min = 25,
-		Max = 100,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Icon Size (%)"],
-		GetValue = function()
-			return options.Icons.SizePercent or 75
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 25, 100, 75)
-			if options.Icons.SizePercent ~= newValue then
-				options.Icons.SizePercent = newValue
-				config:Apply()
-			end
-		end,
-	})
-
-	iconSizePct.Slider:SetPoint("TOPLEFT", iconSize.Slider, "TOPLEFT", 0, 0)
-
-	refreshSizeMode = function()
-		local isPercent = options.Icons.SizeIsPercent == true
-		iconSize.Slider:SetShown(not isPercent)
-		iconSize.Label:SetShown(not isPercent)
-		iconSize.EditBox:SetShown(not isPercent)
-		iconSizePct.Slider:SetShown(isPercent)
-		iconSizePct.Label:SetShown(isPercent)
-		iconSizePct.EditBox:SetShown(isPercent)
-	end
-	refreshSizeMode()
-
-	local maxIcons = mini:Slider({
-		Parent = parent,
+		LabelText = L["Max Icons"],
 		Min = 1,
 		Max = 5,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Max Icons"],
-		GetValue = function()
-			return options.Icons.MaxIcons
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 1, 5, 1)
-			if options.Icons.MaxIcons ~= newValue then
-				options.Icons.MaxIcons = newValue
-				config:Apply()
-			end
-		end,
+		Default = 1,
+		Width = sliderWidth,
+		Target = options.Icons,
+		Key = "MaxIcons",
 	})
 
-	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
+	maxIcons.Slider:SetPoint("LEFT", size.Pixel.Slider, "RIGHT", horizontalSpacing, 0)
 
-	local iconSpacing = mini:Slider({
+	local iconSpacing = helpers:BuildClampedSlider({
 		Parent = parent,
+		LabelText = L["Icon Padding"],
 		Min = 0,
 		Max = 20,
-		Width = columnWidth * 2 - horizontalSpacing,
-		Step = 1,
-		LabelText = L["Icon Padding"],
-		GetValue = function()
-			return options.IconSpacing or 2
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 0, 20, 2)
-			if options.IconSpacing ~= newValue then
-				options.IconSpacing = newValue
-				config:Apply()
-			end
-		end,
+		Default = 2,
+		Fallback = 2,
+		Width = sliderWidth,
+		Target = options,
+		Key = "IconSpacing",
 	})
 
-	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
+	iconSpacing.Slider:SetPoint("TOPLEFT", size.Pixel.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
-	anchorPanel:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
-	anchorPanel:SetPoint("TOPRIGHT", iconSpacing.Slider, "BOTTOMRIGHT", 0, -verticalSpacing * 2)
+	local offsetX = helpers:BuildOffsetSliders({
+		Parent = parent,
+		Offset = options.Offset,
+		Width = sliderWidth,
+	})
 
-	parent.OnMiniRefresh = function()
-		anchorPanel:MiniRefresh()
-	end
+	offsetX.Slider:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	return parent
 end
 
----@param panel table
----@param default RaidFrameAurasInstanceOptions
----@param raid RaidFrameAurasInstanceOptions
----Every helpful spell currently tracked. The curated lists are the starting point and the db
----only holds the differences, so this recombines them each time the tab is shown.
----@return number[]
 ---Trims a spell name that would run past its column. The budget is what fits beside the id and
 ---the remove icon at the column width above - the longest ability names ("Incarnation: Avatar of
 ---Ashamane") are half again too long for it. The icon's tooltip still gives the full name.
@@ -653,54 +505,22 @@ local function BuildSpells(parent)
 
 				local texture = C_Spell.GetSpellTexture(spellId)
 				if texture then
-					local iconButton = CreateFrame("Button", nil, panel)
-					iconButton:SetSize(iconSize, iconSize)
+					local iconButton = helpers:CreateSpellIcon(panel, iconSize)
+					iconButton.SpellId = spellId
+					iconButton.Icon:SetTexture(texture)
 					iconButton:SetPoint("RIGHT", chk, "LEFT", -2, 0)
-					iconButton:SetScript("OnEnter", function(self)
-						GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-						GameTooltip:SetSpellByID(spellId)
-						GameTooltip:Show()
-					end)
-					iconButton:SetScript("OnLeave", function()
-						GameTooltip:Hide()
-					end)
-
-					local icon = iconButton:CreateTexture(nil, "ARTWORK")
-					icon:SetAllPoints()
-					icon:SetTexture(texture)
-					icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 				end
 
 				if group.Key == CUSTOM_GROUP_KEY then
 					-- An icon rather than a labelled button: a word of text costs more width than
 					-- the spell name it sits beside.
-					local remove = CreateFrame("Button", nil, panel)
-					remove:SetSize(iconSize, iconSize)
-					remove:SetPoint("TOPLEFT", panel, "TOPLEFT", columnX + 250, rowY - 4)
-
-					local removeIcon = remove:CreateTexture(nil, "ARTWORK")
-					removeIcon:SetAllPoints()
-					removeIcon:SetTexture("Interface\\Buttons\\UI-GroupLoot-Pass-Up")
-
-					local removeHighlight = remove:CreateTexture(nil, "HIGHLIGHT")
-					removeHighlight:SetAllPoints()
-					removeHighlight:SetTexture("Interface\\Buttons\\UI-GroupLoot-Pass-Highlight")
-
-					remove:SetScript("OnEnter", function(self)
-						GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-						GameTooltip:SetText(REMOVE or L["Remove"], 1, 0.82, 0)
-						GameTooltip:Show()
-					end)
-					remove:SetScript("OnLeave", function()
-						GameTooltip:Hide()
-					end)
-
-					remove:SetScript("OnClick", function()
+					local remove = helpers:CreateRemoveButton(panel, function()
 						overrides.Custom[spellId] = nil
 						overrides.Disabled[spellId] = nil
 						config:Apply()
 						Populate()
 					end)
+					remove:SetPoint("TOPLEFT", panel, "TOPLEFT", columnX + 250, rowY - 4)
 				end
 
 				-- Fill left to right, dropping a row once the last column is used.
@@ -765,6 +585,9 @@ local function BuildSpells(parent)
 	Populate()
 end
 
+---@param panel table
+---@param default RaidFrameAurasInstanceOptions
+---@param raid RaidFrameAurasInstanceOptions
 function M:Build(panel, default, raid)
 	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
 	-- Shared 5-column checkbox grid: the Enable-in row and settings checkbox rows all sit on
@@ -789,84 +612,8 @@ function M:Build(panel, default, raid)
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
-	local enabledEverywhere = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["World"],
-		Tooltip = L["Enable this module in the open world."],
-		GetValue = function()
-			return db.Modules.RaidFrameAurasModule.Enabled.World
-		end,
-		SetValue = function(value)
-			db.Modules.RaidFrameAurasModule.Enabled.World = value
-			config:Apply()
-		end,
-	})
-
-	enabledEverywhere:SetPoint("TOPLEFT", enabledDivider, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local enabledArena = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Arena"],
-		Tooltip = L["Enable this module in arena."],
-		GetValue = function()
-			return db.Modules.RaidFrameAurasModule.Enabled.Arena
-		end,
-		SetValue = function(value)
-			db.Modules.RaidFrameAurasModule.Enabled.Arena = value
-			config:Apply()
-		end,
-	})
-
-	enabledArena:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth, 0)
-	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledBattleGrounds = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Battlegrounds"],
-		Tooltip = L["Enable this module in battlegrounds."],
-		GetValue = function()
-			return db.Modules.RaidFrameAurasModule.Enabled.BattleGrounds
-		end,
-		SetValue = function(value)
-			db.Modules.RaidFrameAurasModule.Enabled.BattleGrounds = value
-			config:Apply()
-		end,
-	})
-
-	enabledBattleGrounds:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 2, 0)
-	enabledBattleGrounds:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledDungeons = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Dungeons"],
-		Tooltip = L["Enable this module in dungeons."],
-		GetValue = function()
-			return db.Modules.RaidFrameAurasModule.Enabled.Dungeons
-		end,
-		SetValue = function(value)
-			db.Modules.RaidFrameAurasModule.Enabled.Dungeons = value
-			config:Apply()
-		end,
-	})
-
-	enabledDungeons:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 3, 0)
-	enabledDungeons:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledRaid = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Raid"],
-		Tooltip = L["Enable this module in raids."],
-		GetValue = function()
-			return db.Modules.RaidFrameAurasModule.Enabled.Raid
-		end,
-		SetValue = function(value)
-			db.Modules.RaidFrameAurasModule.Enabled.Raid = value
-			config:Apply()
-		end,
-	})
-
-	enabledRaid:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 4, 0)
-	enabledRaid:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider,
+		db.Modules.RaidFrameAurasModule.Enabled)
 
 	local subPanelHeight = 430
 	local tabContainer = CreateFrame("Frame", nil, panel)

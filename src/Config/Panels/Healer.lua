@@ -8,6 +8,7 @@ local COLUMNS = 4
 local columnWidth
 local enabledColumnWidth
 local config = addon.Config
+local helpers = addon.Config.PanelHelpers
 local sounds = addon.Core.Sounds
 
 ---@class HealerCrowdControlConfig
@@ -47,84 +48,7 @@ function M:Build(panel, options)
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
-	local enabledEverywhere = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["World"],
-		Tooltip = L["Enable this module in the open world."],
-		GetValue = function()
-			return db.Modules.HealerCCModule.Enabled.World
-		end,
-		SetValue = function(value)
-			db.Modules.HealerCCModule.Enabled.World = value
-			config:Apply()
-		end,
-	})
-
-	enabledEverywhere:SetPoint("TOPLEFT", enabledDivider, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local enabledArena = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Arena"],
-		Tooltip = L["Enable this module in arena."],
-		GetValue = function()
-			return db.Modules.HealerCCModule.Enabled.Arena
-		end,
-		SetValue = function(value)
-			db.Modules.HealerCCModule.Enabled.Arena = value
-			config:Apply()
-		end,
-	})
-
-	enabledArena:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth, 0)
-	enabledArena:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledBattleGrounds = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Battlegrounds"],
-		Tooltip = L["Enable this module in battlegrounds."],
-		GetValue = function()
-			return db.Modules.HealerCCModule.Enabled.BattleGrounds
-		end,
-		SetValue = function(value)
-			db.Modules.HealerCCModule.Enabled.BattleGrounds = value
-			config:Apply()
-		end,
-	})
-
-	enabledBattleGrounds:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 2, 0)
-	enabledBattleGrounds:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledDungeons = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Dungeons"],
-		Tooltip = L["Enable this module in dungeons."],
-		GetValue = function()
-			return db.Modules.HealerCCModule.Enabled.Dungeons
-		end,
-		SetValue = function(value)
-			db.Modules.HealerCCModule.Enabled.Dungeons = value
-			config:Apply()
-		end,
-	})
-
-	enabledDungeons:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 3, 0)
-	enabledDungeons:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
-
-	local enabledRaid = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Raid"],
-		Tooltip = L["Enable this module in raids."],
-		GetValue = function()
-			return db.Modules.HealerCCModule.Enabled.Raid
-		end,
-		SetValue = function(value)
-			db.Modules.HealerCCModule.Enabled.Raid = value
-			config:Apply()
-		end,
-	})
-
-	enabledRaid:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 4, 0)
-	enabledRaid:SetPoint("TOP", enabledEverywhere, "TOP", 0, 0)
+	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.HealerCCModule.Enabled)
 
 	local settingsDivider = mini:Divider({
 		Parent = panel,
@@ -258,13 +182,11 @@ function M:Build(panel, options)
 
 	soundChk:SetPoint("TOPLEFT", useAuraContainers and showIconsChk or showTooltipsChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	-- The dropdown reads this table each time it opens, and the media list is refilled in place, so
-	-- a sound registered by an addon that loaded after this page was built still shows up.
-	local soundItems = sounds:GetNames()
-
-	local soundFileDropdown, soundFileModernDdl = mini:Dropdown({
+	local soundFileDropdown, soundFileModernDdl = helpers:BuildMediaDropdown({
 		Parent = panel,
-		Items = soundItems,
+		RefreshOn = panel,
+		Media = sounds,
+		Width = 200,
 		GetValue = function()
 			return sounds:Normalise(options.Sound.File)
 		end,
@@ -280,40 +202,20 @@ function M:Build(panel, options)
 	soundFileDropdown:SetPoint("LEFT", panel, "LEFT",
 		enabledColumnWidth + (soundFileModernDdl and 0 or -16), 0)
 	soundFileDropdown:SetPoint("TOP", soundChk, "TOP", 0, -4)
-	soundFileDropdown:SetWidth(200)
-
-	local function RefreshSounds()
-		sounds:GetNames()
-
-		if soundFileDropdown.MiniRefresh then
-			soundFileDropdown:MiniRefresh()
-		end
-	end
-
-	sounds:OnChanged(RefreshSounds)
-	panel:HookScript("OnShow", RefreshSounds)
 
 	local slidersAnchor = soundChk
 
 	local sliderWidth = (columnWidth * 2) - horizontalSpacing
 
-	local iconSize = mini:Slider({
+	local iconSize = helpers:BuildClampedSlider({
 		Parent = panel,
+		LabelText = L["Icon Size"],
 		Min = 10,
 		Max = 100,
+		Default = 50,
 		Width = sliderWidth,
-		Step = 1,
-		LabelText = L["Icon Size"],
-		GetValue = function()
-			return options.Icons.Size
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 10, 100, 50)
-			if options.Icons.Size ~= newValue then
-				options.Icons.Size = newValue
-				config:Apply()
-			end
-		end,
+		Target = options.Icons,
+		Key = "Size",
 	})
 
 	iconSize.Slider:SetPoint("TOPLEFT", slidersAnchor, "BOTTOMLEFT", 4, -verticalSpacing * 3)
@@ -342,23 +244,16 @@ function M:Build(panel, options)
 		fontSize.Slider:SetPoint("TOP", iconSize.Slider, "TOP", 0, 0)
 	end
 
-	local iconSpacing = mini:Slider({
+	local iconSpacing = helpers:BuildClampedSlider({
 		Parent = panel,
+		LabelText = L["Icon Padding"],
 		Min = 0,
 		Max = 20,
+		Default = 2,
+		Fallback = 2,
 		Width = sliderWidth,
-		Step = 1,
-		LabelText = L["Icon Padding"],
-		GetValue = function()
-			return options.IconSpacing or 2
-		end,
-		SetValue = function(v)
-			local newValue = mini:ClampInt(v, 0, 20, 2)
-			if options.IconSpacing ~= newValue then
-				options.IconSpacing = newValue
-				config:Apply()
-			end
-		end,
+		Target = options,
+		Key = "IconSpacing",
 	})
 
 	-- 12.1 has no Text Size slider, so Icon Padding takes its place beside Icon Size;

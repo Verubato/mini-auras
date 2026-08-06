@@ -143,6 +143,7 @@ Config\Migrations\V13.lua
 Config\Migrations\V19.lua
 Config\Migrations\V41.lua
 Config\Config.lua
+Config\PanelHelpers.lua
 Config\Panels\General.lua
 Config\Panels\Portraits.lua
 Config\Panels\CrowdControl.lua
