@@ -195,7 +195,7 @@ function M:Init()
 			Icon = "Interface\\Icons\\Spell_Holy_GuardianSpirit",
 			Build = function(content)
 				local m = db.Modules.FriendlyCooldownTrackerModule
-			M.FriendlyCooldownTracker:Build(content, m.Default, m.Raid)
+				M.FriendlyCooldownTracker:Build(content, m.Default, m.Raid)
 			end,
 		},
 		{
@@ -412,7 +412,9 @@ function M:Init()
 			return
 		end
 
-		if msg == "debug" then
+		-- TEMPORARY: the cooldown Brain only exists on the legacy path; delete this branch
+		-- with the 12.0 path.
+		if msg == "debug" and not addon.Utils.WoWEx:UseAuraContainers() then
 			local on = addon.Core.Cooldowns.Brain:ToggleDebug()
 			mini:Notify(on and "Cooldown debug logging ON" or "Cooldown debug logging OFF")
 			return

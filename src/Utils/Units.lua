@@ -126,11 +126,6 @@ function M:IsCharmed(unitToken)
 	return result and true or false
 end
 
----Returns true if the unit token is a compound/derived unit (e.g. "raid1target", "boss1target"),
----meaning it's relative to another unit rather than a first-class unit token.
----Plain tokens like "target" and "focus" are NOT considered compound.
----@param unitToken string
----@return boolean
 ---Returns true only if the local player can, right now, attack the unit. A secret-value result
 ---(possible on 12.0.5+) is treated as "can attack" so a real enemy is never accidentally dropped.
 ---Used to detect units we control: you can't attack a unit you mind-control, while real enemies and
@@ -145,6 +140,11 @@ function M:CanAttack(unitToken)
 	return result and true or false
 end
 
+---Returns true if the unit token is a compound/derived unit (e.g. "raid1target", "boss1target"),
+---meaning it's relative to another unit rather than a first-class unit token.
+---Plain tokens like "target" and "focus" are NOT considered compound.
+---@param unitToken string
+---@return boolean
 function M:IsCompoundUnit(unitToken)
 	if unitToken == "target" then
 		return false

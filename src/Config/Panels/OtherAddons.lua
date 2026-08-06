@@ -119,8 +119,13 @@ function M:Build(panel)
 
 	local styleAddons = {
 		{ Name = "MiniCE",  Desc = "Customize the cooldown timers." },
-		{ Name = "Masque",  Desc = "Powerful icon skinning tool."   },
 	}
+
+	-- TEMPORARY: Masque cannot skin the 12.1 AuraButtons, so it is only offered on the legacy
+	-- path; drop the gate (and the card) with the 12.0 path unless Masque support returns.
+	if not addon.Utils.WoWEx:UseAuraContainers() then
+		styleAddons[#styleAddons + 1] = { Name = "Masque", Desc = "Powerful icon skinning tool." }
+	end
 
 	BuildGrid(panel, styleSubtitle, styleAddons, cardWidth)
 end

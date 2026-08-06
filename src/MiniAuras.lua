@@ -35,55 +35,30 @@ local eventsFrame
 local db
 local lastIsInRaid = false
 
+-- Which instance flavour the next test session previews; the raid/default sub-tabs flip it.
+addon.CurrentTestIsRaid = false
+
+-- Migrations queue their release notes into db.WhatsNew; this shows and clears them once.
 local function NotifyChanges()
 	if db.NotifiedChanges then
 		return
 	end
 
-	local title = L["MiniAuras - What's New?"]
 	db.NotifiedChanges = true
 
-	if db.Version == 6 then
-		mini:ShowDialog({
-			Title = title,
-			Text = table.concat(db.WhatsNew, "\n"),
-		})
-	elseif db.Version == 7 then
-		mini:ShowDialog({
-			Title = title,
-			Text = table.concat({
-				"- CC icons in player/target/focus portraits (beta only).",
-				"- New option to colour the glow based on the dispel type.",
-			}, "\n"),
-		})
-	elseif db.Version == 8 then
-		mini:ShowDialog({
-			Title = title,
-			Text = table.concat({
-				"- Portrait icons now supported in prepatch (was beta only).",
-				"- Included important spells (defensives/offensives) in portrait icons, not just CC.",
-			}, "\n"),
-		})
-	elseif db.Version == 9 then
-		mini:ShowDialog({
-			Title = title,
-			Text = "- New spell alerts bar that shows enemy cooldowns.",
-		})
-	elseif db.Version >= 10 then
-		local whatsNew = db.WhatsNew
+	local whatsNew = db.WhatsNew
 
-		if not whatsNew then
-			return
-		end
+	if not whatsNew then
+		return
+	end
 
-		local text = table.concat(whatsNew, "\n")
+	local text = table.concat(whatsNew, "\n")
 
-		if text and text ~= "" then
-			mini:ShowDialog({
-				Title = title,
-				Text = text,
-			})
-		end
+	if text ~= "" then
+		mini:ShowDialog({
+			Title = L["MiniAuras - What's New?"],
+			Text = text,
+		})
 	end
 
 	db.WhatsNew = {}
@@ -159,8 +134,6 @@ function addon:Refresh()
 end
 
 ---@param isRaid boolean?
-addon.CurrentTestIsRaid = false
-
 function addon:ToggleTest(isRaid)
 	if testModeManager:IsActive() then
 		testModeManager:StopTesting()

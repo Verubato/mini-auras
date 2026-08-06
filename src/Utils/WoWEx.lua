@@ -38,13 +38,14 @@ function M:IsAuraStylingRestricted()
 end
 
 function M:IsAddOnEnabled(addonName)
-    return C_AddOns.GetAddOnEnableState(addonName, UnitName("player")) == 2
+	return C_AddOns.GetAddOnEnableState(addonName, UnitName("player")) == 2
 end
 
 function M:IsDandersEnabled()
-    return M:IsAddOnEnabled("DandersFrames")
+	return M:IsAddOnEnabled("DandersFrames")
 end
 
+-- TEMPORARY: only the 12.0 TTS alerts call this; it goes with the legacy path.
 -- Resolves the TTS voice ID to use, validating storedID against available voices.
 -- If storedID is valid it is returned as-is; if the voice list is available but
 -- storedID is absent or unrecognised the first available voice is returned;
@@ -52,18 +53,18 @@ end
 ---@param storedID number?
 ---@return number
 function M:ResolveVoiceID(storedID)
-    local voices = C_VoiceChat and C_VoiceChat.GetTtsVoices and C_VoiceChat.GetTtsVoices() or nil
-    if voices and #voices > 0 then
-        if storedID ~= nil then
-            for _, v in ipairs(voices) do
-                if v.voiceID == storedID then
-                    return storedID
-                end
-            end
-        end
-        return voices[1].voiceID
-    end
-    return storedID or C_TTSSettings.GetVoiceOptionID(0)
+	local voices = C_VoiceChat and C_VoiceChat.GetTtsVoices and C_VoiceChat.GetTtsVoices() or nil
+	if voices and #voices > 0 then
+		if storedID ~= nil then
+			for _, v in ipairs(voices) do
+				if v.voiceID == storedID then
+					return storedID
+				end
+			end
+		end
+		return voices[1].voiceID
+	end
+	return storedID or C_TTSSettings.GetVoiceOptionID(0)
 end
 
 ---Creates and populates a DurationObject from a start time and duration.
@@ -72,7 +73,7 @@ end
 ---@param modRate number?   Optional haste modifier (defaults to 1.0)
 ---@return table DurationObject
 function M:CreateDuration(startTime, duration, modRate)
-    local d = C_DurationUtil.CreateDuration()
-    d:SetTimeFromStart(startTime, duration, modRate)
-    return d
+	local d = C_DurationUtil.CreateDuration()
+	d:SetTimeFromStart(startTime, duration, modRate)
+	return d
 end

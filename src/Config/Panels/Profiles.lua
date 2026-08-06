@@ -252,7 +252,6 @@ end
 function M:Build(panel)
 	local db = mini:GetSavedVars()
 
-	-- ── Active profile ─────────────────────────────────────────────────
 	local activeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	activeLabel:SetText(L["Active Profile"])
 	activeLabel:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
@@ -378,7 +377,6 @@ function M:Build(panel)
 		ShowProfileIOWindow()
 	end)
 
-	-- ── Auto-switch section ────────────────────────────────────────────
 	-- Spacer anchored below the second button row so the divider always
 	-- has a clean anchor regardless of dropdown height differences.
 	local spacer = CreateFrame("Frame", nil, panel)

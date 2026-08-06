@@ -14,16 +14,16 @@ local _, addon = ...
 -- itself would build a screen's worth of objects for a module the user has switched off. Call
 -- Prewarm from the module's enable path instead (it is idempotent and cheap to repeat).
 
+-- How many items each pre-creation tick builds, and how often ticks run. Two per tenth of a
+-- second fills a 40-item pool in ~2s without a visible hitch.
+local ITEMS_PER_TICK = 2
+local TICK_INTERVAL = 0.1
+
 ---@class Pool
 local M = {}
 M.__index = M
 
 addon.Core.Pool = M
-
--- How many items each pre-creation tick builds, and how often ticks run. Two per tenth of a
--- second fills a 40-item pool in ~2s without a visible hitch.
-local ITEMS_PER_TICK = 2
-local TICK_INTERVAL = 0.1
 
 ---@param createFn fun(...): table Builds one item, from whatever Acquire was given.
 ---@param resetFn fun(item: table) Parks an item (disable, hide, unanchor).

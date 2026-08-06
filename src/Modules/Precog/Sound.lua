@@ -12,6 +12,11 @@ addon.Modules.Precog = addon.Modules.Precog or {}
 -- secret values to secure setters. Registrations are per (unit, spellId) on the Added trigger.
 -- The legacy path has no equivalent, so it stays silent - it cannot tell precog from any other
 -- short important self-buff either.
+--
+-- TEMPORARY: this registration machinery is unreachable on BOTH eras. On 12.1 PrecogModule:Init
+-- early-returns (the starter custom aura groups supersede the module), so Init/Refresh never run
+-- and db stays nil; on 12.0 the USE_AURA_CONTAINERS guard below blocks it. Deliberately not
+-- migrated onto Core/AuraSounds: the whole file dies with the module in the 12.0 removal.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local DEFAULT_SOUND = "ElectricalSpark.ogg"
 

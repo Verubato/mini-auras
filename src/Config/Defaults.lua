@@ -3,6 +3,8 @@ local _, addon = ...
 
 ---@class Db
 ---@field SpecCache table<string, {SpecId: number?, LastSeen: number?, LastAttempt: number?}>
+---TEMPORARY: TalentCache and PvPTalentCache are written only by the legacy cooldown trackers'
+---talent sync; both fields die with the 12.0 path.
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
@@ -15,6 +17,8 @@ local dbDefaults = {
 	GlowType = "Slot Glow",
 	FontScale = 1.0,
 	ConfigureBlizzardNameplates = true,
+	-- TEMPORARY: feeds only the legacy watcher sort (12.1 sorts inside the AuraContainer);
+	-- dies with the 12.0 path, together with its ProfileManager PayloadKeys entry.
 	CCNativeOrder = false,
 	DisableSwipe = false,
 	FadeWithParent = true,
@@ -150,6 +154,8 @@ local dbDefaults = {
 				ColorByDispelType = true,
 			},
 
+			-- TEMPORARY: Font and ShowWarningText only feed the legacy warning text (12.1 cannot
+			-- know a healer is CC'd); both die with the 12.0 path.
 			Font = {
 				File = "Fonts\\FRIZQT__.TTF",
 				Size = 32,
@@ -227,6 +233,8 @@ local dbDefaults = {
 				},
 			},
 
+			-- TEMPORARY: TTS reads the aura's spell name, which is secret on 12.1; the whole
+			-- subtree dies with the 12.0 path.
 			TTS = {
 				Volume = 100,
 				VoiceID = 0,
@@ -248,6 +256,8 @@ local dbDefaults = {
 				ImportantColor = { R = 1, G = 0.2, B = 0.2, A = 1 },
 				DefensiveColor = { R = 0.2, G = 1, B = 0.2, A = 1 },
 				ReverseCooldown = true,
+				-- TEMPORARY: class colouring needs UnitClass, which is secret on 12.1; dies with
+				-- the 12.0 path (the per-category colours above replace it).
 				ColorByClass = true,
 				MaxIcons = 8,
 			},
@@ -473,7 +483,7 @@ local dbDefaults = {
 				File = "GameFontHighlightSmall",
 			},
 		},
-		---@class RaidFrameRaidFrameAurasModuleOptions
+		---@class RaidFrameAurasModuleOptions
 		RaidFrameAurasModule = {
 			-- Helpful auras here are chosen by spell id rather than by Blizzard's category
 			-- flags, so anything can be tracked - including spells the game never flags. Stored
@@ -553,6 +563,8 @@ local dbDefaults = {
 			-- an install updating from a version without them still gets them.
 			SeededDefaults = false,
 		},
+		-- TEMPORARY: the friendly cooldown tracker infers cooldowns from aura data, which 12.1
+		-- cannot read; the whole table dies with the 12.0 path.
 		---@class FriendlyCooldownTrackerModuleOptions
 		---@field DisabledSpells table<number, boolean> SpellIds excluded from the static-ability display; keyed by SpellId, value true. Treated as an opaque user hash - CleanTable must not recurse into it.
 		FriendlyCooldownTrackerModule = {
@@ -610,6 +622,8 @@ local dbDefaults = {
 			},
 		},
 
+		-- TEMPORARY: the enemy cooldown tracker infers cooldowns from aura data, which 12.1
+		-- cannot read; the whole table dies with the 12.0 path.
 		---@class EnemyCooldownTrackerModuleOptions
 		---@field DisabledSpells table<number, boolean> SpellIds excluded from the display; keyed by SpellId, value true. Treated as an opaque user hash - CleanTable must not recurse into it.
 		EnemyCooldownTrackerModule = {
@@ -651,6 +665,8 @@ local dbDefaults = {
 			},
 		},
 
+		-- TEMPORARY: the precog module is superseded on 12.1 by the starter custom aura groups
+		-- tracking the same two spells; the whole table dies with the 12.0 path.
 		---@class PrecogModuleOptions
 		PrecogModule = {
 			Enabled = {
