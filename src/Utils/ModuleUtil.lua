@@ -155,6 +155,60 @@ function M:IsModuleEnabled(moduleName)
 	return settings.Dungeons
 end
 
+---Makes a frame draggable and persists where it lands. Wires the drag scripts and clamps the
+---frame to the screen; whether dragging is currently allowed stays with the caller via
+---EnableMouse/SetMovable (modules gate those on test mode).
+---
+---The saved shape is the module-options one: Point, RelativePoint, RelativeTo (frame name,
+---"UIParent" fallback) and Offset.X/Y. Two shape variations are honoured rather than forced:
+---RelativeTo is only written when the table already carries the key, and a table without an
+---Offset sub-table gets X/Y written directly (the custom aura groups' {Point, RelativePoint,
+---X, Y} position shape).
+---
+---Pass a function for position when the options table can be replaced under the frame (profile
+---switches); it runs on every drop and may return nil to skip saving.
+---@param frame table
+---@param position table|fun(): table? The saved-position table, or a function returning it.
+---@param onMoved fun(frame: table, position: table?)? Runs after each save, e.g. to re-normalise
+---the anchor or re-lay-out dependents.
+function M:MakeMovable(frame, position, onMoved)
+	frame:SetClampedToScreen(true)
+	frame:RegisterForDrag("LeftButton")
+	frame:SetScript("OnDragStart", frame.StartMoving)
+	frame:SetScript("OnDragStop", function(frameSelf)
+		frameSelf:StopMovingOrSizing()
+
+		local target = position
+
+		if type(target) == "function" then
+			target = target()
+		end
+
+		if target then
+			local point, relativeTo, relativePoint, x, y = frameSelf:GetPoint()
+
+			target.Point = point
+			target.RelativePoint = relativePoint
+
+			if target.RelativeTo ~= nil then
+				target.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
+			end
+
+			if target.Offset then
+				target.Offset.X = x
+				target.Offset.Y = y
+			else
+				target.X = x
+				target.Y = y
+			end
+		end
+
+		if onMoved then
+			onMoved(frameSelf, target)
+		end
+	end)
+end
+
 function M:Init()
 	db = addon.Framework:GetSavedVars()
 end
