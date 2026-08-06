@@ -8,9 +8,11 @@ local ui = addon.Config.CustomAurasUI
 local SUGGESTION_ROWS = 8
 local SUGGESTION_ROW_HEIGHT = 24
 local PICKER_WIDTH = 220
+local PICKER_HEIGHT = 22
 
--- Exposed so the trigger tab can line the Record button up beside the picker.
+-- Exposed so the trigger tab can line the Record button up beside the picker and size its row.
 ui.PickerWidth = PICKER_WIDTH
+ui.PickerHeight = PICKER_HEIGHT
 
 ---An edit box that suggests spells as you type; picking one hands its id to box.OnAccept.
 ---@param parent table
@@ -18,7 +20,7 @@ ui.PickerWidth = PICKER_WIDTH
 function ui.CreateSpellPicker(parent)
 	local box = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
 	mini:FlattenEditBox(box)
-	box:SetSize(PICKER_WIDTH, 22)
+	box:SetSize(PICKER_WIDTH, PICKER_HEIGHT)
 	box:SetAutoFocus(false)
 	-- Per picker, NOT shared: the rows are children of this picker's own popup, so a second
 	-- picker reusing them would show its suggestions inside the first one's popup.

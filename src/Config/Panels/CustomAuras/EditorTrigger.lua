@@ -83,10 +83,13 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 	local spellColumn = mini:ColumnWidth(SPELL_COLUMNS, 0, 0)
 	-- The Record button, sitting just past the spell picker it belongs with.
 	local recordButtonX = ui.PickerWidth + 22
+	-- The label, its 4px gap, then the box. Not DropdownRowHeight: the picker is shorter than a
+	-- dropdown, and the slack would sit between the box and the spell list below it.
+	local pickerRowHeight = ui.LabelHeight + 4 + ui.PickerHeight
 
 	local trackingControlsRow = ctx.NewRow(triggerPanel, ui.DropdownRowHeight)
 	-- Only one of these two is ever on screen: a spell list, or a set of filter components.
-	local pickerRow = ctx.NewRow(triggerPanel, ui.DropdownRowHeight, 4)
+	local pickerRow = ctx.NewRow(triggerPanel, pickerRowHeight, 4)
 	local componentsRow = ctx.NewRow(triggerPanel, 1, 4)
 	-- Collapsed to nothing until Record is running; RefreshRecorded gives it a height.
 	local recordRow = ctx.NewRow(triggerPanel, 1, 0)
@@ -316,6 +319,7 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 		recordRow:SetHeight(recording
 			and ui.LabelHeight + math.max(1, math.ceil(shown / RECORD_COLUMNS)) * SPELL_ROW_HEIGHT
 			or 1)
+		ctx.SetRowGap(recordRow, recording and 4 or 0)
 
 		ctx.UpdateEditorHeight()
 	end
@@ -397,8 +401,9 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 		pickerLabel:SetShown(bySpells)
 		picker:SetShown(bySpells)
 		recordBtn:SetShown(bySpells)
-		pickerRow:SetHeight(bySpells and ui.DropdownRowHeight or 1)
+		pickerRow:SetHeight(bySpells and pickerRowHeight or 1)
 		componentsRow:SetHeight(bySpells and 1 or componentsHeight)
+		ctx.SetRowGap(componentsRow, bySpells and 0 or 4)
 
 		if bySpells then
 			RefreshSpellList(triggerPanel, spellsRow, spellRows)
@@ -424,15 +429,19 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 		local problemText = ProblemText(reason)
 		local warningText = WarningText(warning)
 
+		-- Kept in a local rather than read back afterwards: GetText hands back nil for an empty
+		-- font string on the live client, which held the blank message row open under the picker.
+		local text
+
 		if not supported and problemText then
-			problem:SetText("|cffff4040" .. problemText .. "|r")
+			text = "|cffff4040" .. problemText .. "|r"
 		elseif supported and warningText then
-			problem:SetText("|cffffd100" .. warningText .. "|r")
-		else
-			problem:SetText("")
+			text = "|cffffd100" .. warningText .. "|r"
 		end
 
-		messageRow:SetHeight(problem:GetText() ~= "" and MESSAGE_ROW_HEIGHT or 1)
+		problem:SetText(text or "")
+		messageRow:SetHeight(text and MESSAGE_ROW_HEIGHT or 1)
+		ctx.SetRowGap(messageRow, text and 4 or 0)
 
 		RefreshTypeItems()
 

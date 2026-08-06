@@ -51,6 +51,29 @@ function ui.BuildEditor(editor)
 		return row
 	end
 
+	---Changes the space above a row after the fact. A row that collapses hands its gap back too,
+	---so the rows around it close up instead of leaving a blank band where it was.
+	---@param row table
+	---@param gap number
+	local function SetRowGap(row, gap)
+		for _, chain in pairs(chains) do
+			for index, entry in ipairs(chain.Rows) do
+				if entry.Frame == row then
+					if entry.Gap ~= gap then
+						entry.Gap = gap
+
+						local previous = index > 1 and chain.Rows[index - 1].Frame
+
+						row:SetPoint("TOP", previous or row:GetParent(),
+							previous and "BOTTOM" or "TOP", 0, -gap)
+					end
+
+					return
+				end
+			end
+		end
+	end
+
 	---@param owner table
 	---@return number
 	local function ChainHeight(owner)
@@ -318,6 +341,7 @@ function ui.BuildEditor(editor)
 	local ctx = {
 		Editor = editor,
 		NewRow = NewRow,
+		SetRowGap = SetRowGap,
 		Dropdown = Dropdown,
 		UpdateEditorHeight = UpdateEditorHeight,
 		TriggerPanel = triggerPanel,
@@ -376,6 +400,7 @@ end
 ---@class CustomAurasEditorContext
 ---@field Editor table
 ---@field NewRow fun(owner: table, height: number, gap: number?): table
+---@field SetRowGap fun(row: table, gap: number)
 ---@field Dropdown fun(labelText: string, options: table, row: table, x: number): table
 ---@field UpdateEditorHeight fun()
 ---@field TriggerPanel table
