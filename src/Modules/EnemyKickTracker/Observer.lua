@@ -1,5 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
+local kickEvents = addon.Core.KickEvents
 
 addon.Modules.EnemyKickTracker = addon.Modules.EnemyKickTracker or {}
 
@@ -39,34 +40,22 @@ local function OnUnitEvent(unit, _, event, ...)
 		return
 	end
 
-	if event == "UNIT_SPELLCAST_START" or event == "UNIT_SPELLCAST_CHANNEL_START" or event == "UNIT_SPELLCAST_EMPOWER_START" then
+	if kickEvents:IsStart(event) then
 		kickedByUnits[unit] = false
-	elseif event == "UNIT_SPELLCAST_INTERRUPTED" or event == "UNIT_SPELLCAST_CHANNEL_STOP" then
-		if kickedByUnits[unit] then
-			return
-		end
-
-		local kickedBy = select(4, ...)
-		if not kickedBy then
-			return
-		end
-
-		kickedByUnits[unit] = true
-		FireKicked()
-	elseif event == "UNIT_SPELLCAST_EMPOWER_STOP" then
-		if kickedByUnits[unit] then
-			return
-		end
-
-		-- interruptedBy is arg 5 (arg 4 is "complete")
-		local kickedBy = select(5, ...)
-		if not kickedBy then
-			return
-		end
-
-		kickedByUnits[unit] = true
-		FireKicked()
+		return
 	end
+
+	if kickedByUnits[unit] then
+		return
+	end
+
+	local kickedBy = kickEvents:GetInterrupter(event, ...)
+	if not kickedBy then
+		return
+	end
+
+	kickedByUnits[unit] = true
+	FireKicked()
 end
 
 ---Builds the per-unit event frames. Nothing is registered until Enable.
@@ -97,12 +86,12 @@ function M:Enable()
 	for _, unit in ipairs(WATCHED_UNITS) do
 		local frame = eventFrames[unit]
 		if frame then
-			frame:RegisterUnitEvent("UNIT_SPELLCAST_START", unit)
-			frame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", unit)
-			frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unit)
-			frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unit)
-			frame:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_START", unit)
-			frame:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_STOP", unit)
+			for _, event in ipairs(kickEvents.StartEvents) do
+				frame:RegisterUnitEvent(event, unit)
+			end
+			for _, event in ipairs(kickEvents.StopEvents) do
+				frame:RegisterUnitEvent(event, unit)
+			end
 			frame:SetScript("OnEvent", function(...)
 				OnUnitEvent(unit, ...)
 			end)
@@ -122,12 +111,12 @@ function M:Disable()
 	for _, unit in ipairs(WATCHED_UNITS) do
 		local frame = eventFrames[unit]
 		if frame then
-			frame:UnregisterEvent("UNIT_SPELLCAST_START")
-			frame:UnregisterEvent("UNIT_SPELLCAST_INTERRUPTED")
-			frame:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_START")
-			frame:UnregisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
-			frame:UnregisterEvent("UNIT_SPELLCAST_EMPOWER_START")
-			frame:UnregisterEvent("UNIT_SPELLCAST_EMPOWER_STOP")
+			for _, event in ipairs(kickEvents.StartEvents) do
+				frame:UnregisterEvent(event)
+			end
+			for _, event in ipairs(kickEvents.StopEvents) do
+				frame:UnregisterEvent(event)
+			end
 			frame:SetScript("OnEvent", nil)
 		end
 		kickedByUnits[unit] = nil

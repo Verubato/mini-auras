@@ -2,6 +2,7 @@
 local _, addon = ...
 local wowEx = addon.Utils.WoWEx
 local kickData = addon.Core.KickData
+local kickEvents = addon.Core.KickEvents
 local GetTimePreciseSec = GetTimePreciseSec
 
 local KICK_ICON = C_Spell.GetSpellTexture(1766) -- fallback: rogue Kick
@@ -133,22 +134,14 @@ local function OnUnitEvent(unitToken, event, ...)
 		return
 	end
 
-	if event == "UNIT_SPELLCAST_START"
-		or event == "UNIT_SPELLCAST_CHANNEL_START"
-		or event == "UNIT_SPELLCAST_EMPOWER_START"
-	then
+	if kickEvents:IsStart(event) then
 		data.Kicked = false
-	elseif event == "UNIT_SPELLCAST_INTERRUPTED" or event == "UNIT_SPELLCAST_CHANNEL_STOP" then
-		local kickedBy = select(4, ...)
-		if kickedBy then
-			OnInterrupted(unitToken)
-		end
-	elseif event == "UNIT_SPELLCAST_EMPOWER_STOP" then
-		-- interruptedBy is arg 5 (arg 4 is "complete")
-		local kickedBy = select(5, ...)
-		if kickedBy then
-			OnInterrupted(unitToken)
-		end
+		return
+	end
+
+	local kickedBy = kickEvents:GetInterrupter(event, ...)
+	if kickedBy then
+		OnInterrupted(unitToken)
 	end
 end
 
@@ -216,12 +209,12 @@ function M:Watch(unitToken, resetEvents)
 	end
 
 	local frame = data.EventFrame
-	frame:RegisterUnitEvent("UNIT_SPELLCAST_START", unitToken)
-	frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_START", unitToken)
-	frame:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_START", unitToken)
-	frame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", unitToken)
-	frame:RegisterUnitEvent("UNIT_SPELLCAST_CHANNEL_STOP", unitToken)
-	frame:RegisterUnitEvent("UNIT_SPELLCAST_EMPOWER_STOP", unitToken)
+	for _, event in ipairs(kickEvents.StartEvents) do
+		frame:RegisterUnitEvent(event, unitToken)
+	end
+	for _, event in ipairs(kickEvents.StopEvents) do
+		frame:RegisterUnitEvent(event, unitToken)
+	end
 
 	for event in pairs(resetSet) do
 		frame:RegisterEvent(event)

@@ -44,6 +44,7 @@ local addon = {
 }
 
 assert(loadfile("src/Core/Kicks/KickData.lua"))("MiniAuras", addon)
+assert(loadfile("src/Core/Kicks/KickEvents.lua"))("MiniAuras", addon)
 assert(loadfile("src/Core/Kicks/KickTracker.lua"))("MiniAuras", addon)
 
 local kickTracker = addon.Core.KickTracker

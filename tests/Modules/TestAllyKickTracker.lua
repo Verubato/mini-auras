@@ -228,6 +228,22 @@ fw.describe("AllyKickTracker - recording", function()
 		assert(#observer:GetRecords() == 0, "target is a repeat of the nameplate event")
 	end)
 
+	fw.it("records a kick that cut an empowered cast short", function()
+		-- Empower stop events carry a "complete" flag before the interrupter, so the interrupter
+		-- sits one argument later than on the other stop events.
+		InterruptFrame():TriggerEvent("UNIT_SPELLCAST_EMPOWER_STOP",
+			"nameplate1", "cast-1", wow.markSecret({}), false, wow.markSecret({}))
+
+		assert(#observer:GetRecords() == 1, "an empowered cast being kicked is a kick")
+	end)
+
+	fw.it("ignores an empowered cast that simply ended", function()
+		InterruptFrame():TriggerEvent("UNIT_SPELLCAST_EMPOWER_STOP",
+			"nameplate1", "cast-1", wow.markSecret({}), true, nil)
+
+		assert(#observer:GetRecords() == 0, "no interrupter, so nothing happened")
+	end)
+
 	fw.it("collapses the repeats of one kick into a single row", function()
 		Interrupted("nameplate1")
 		Interrupted("nameplate1")

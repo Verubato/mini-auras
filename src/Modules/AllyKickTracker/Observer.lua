@@ -1,14 +1,12 @@
 ---@type string, Addon
 local _, addon = ...
 local kickData = addon.Core.KickData
+local kickEvents = addon.Core.KickEvents
 local inspectorFacade = addon.Core.InspectorFacade
 local unitUtil = addon.Utils.Units
 
 addon.Modules.AllyKickTracker = addon.Modules.AllyKickTracker or {}
 
--- The two halves of a cast ending early. Neither names the interrupter in anything we are allowed
--- to read, but the GUID they carry still resolves to a name the client will let us draw.
-local INTERRUPT_EVENTS = { "UNIT_SPELLCAST_INTERRUPTED", "UNIT_SPELLCAST_CHANNEL_STOP" }
 -- Our own casts, which unlike anybody else's arrive with a spell ID we are allowed to read. That
 -- is the whole reason the player can have a readiness bar when nobody else can.
 local CAST_EVENT = "UNIT_SPELLCAST_SUCCEEDED"
@@ -80,18 +78,12 @@ for _, spellId in ipairs(WARLOCK_SPELL_LOCK_IDS) do
 	FALLBACK_COOLDOWNS[spellId] = FALLBACK_COOLDOWNS[WARLOCK_PET_SPELL_ID]
 end
 
----@param event string
+---Nothing here names the interrupter in anything we are allowed to read, but the GUID the stop
+---events carry still resolves to a name the client will let us draw.
 ---@param unit string  the unit whose cast was cut short
 ---@param interruptedSpellId number?  secret when the spell is an enemy's
----@param interruptedBy string?  GUID of the interrupter, secret inside an instance
-local function OnInterrupted(event, unit, interruptedSpellId, interruptedBy)
-	-- Both events also fire for a cast that merely ended - a channel running its course, a cast
-	-- its owner cancelled - and those arrive constantly in a dungeon. The interrupter field is
-	-- what separates a real kick from one of those; it is tested for nil, never read.
-	if interruptedBy == nil then
-		return
-	end
-
+---@param interruptedBy string  GUID of the interrupter, secret inside an instance
+local function OnInterrupted(unit, interruptedSpellId, interruptedBy)
 	if not unit or not unit:find(NAMEPLATE_PREFIX) then
 		return
 	end
@@ -228,12 +220,21 @@ end
 local function SetInterruptWatchActive(active)
 	if not interruptFrame then
 		interruptFrame = CreateFrame("Frame")
-		interruptFrame:SetScript("OnEvent", function(_, event, unit, _, spellId, interruptedBy)
-			OnInterrupted(event, unit, spellId, interruptedBy)
+		interruptFrame:SetScript("OnEvent", function(_, event, ...)
+			-- The stop events also fire for a cast that merely ended - a channel running its
+			-- course, a cast its owner cancelled - and those arrive constantly in a dungeon. The
+			-- interrupter is what separates a real kick; it is tested for nil, never read.
+			local interruptedBy, interruptedSpellId = kickEvents:GetInterrupter(event, ...)
+			if interruptedBy == nil then
+				return
+			end
+
+			local unit = ...
+			OnInterrupted(unit, interruptedSpellId, interruptedBy)
 		end)
 	end
 
-	for _, event in ipairs(INTERRUPT_EVENTS) do
+	for _, event in ipairs(kickEvents.StopEvents) do
 		if active then
 			interruptFrame:RegisterEvent(event)
 		else
@@ -257,8 +258,6 @@ local function SetOwnCastWatchActive(active)
 		castFrame:UnregisterEvent(CAST_EVENT)
 	end
 end
-
--- Public
 
 ---Registers a function to call whenever an interrupt is recorded or the player's own goes on
 ---cooldown, which is what a consumer wakes its refresh loop on.

@@ -58,6 +58,7 @@ Core\Auras\UnitAuraWatcher.lua
 
 Core\Kicks\KickSlot.lua
 Core\Kicks\KickData.lua
+Core\Kicks\KickEvents.lua
 Core\Kicks\KickTracker.lua
 
 Core\Inspect\Inspector.lua

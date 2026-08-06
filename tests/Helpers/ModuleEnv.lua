@@ -414,6 +414,7 @@ function M.build()
 	}
 
 	loadFile("src/Core/Kicks/KickData.lua")
+	loadFile("src/Core/Kicks/KickEvents.lua")
 	loadFile("src/Core/TestSpells.lua")
 	loadFile("src/Core/EventGate.lua")
 	loadFile("src/Core/Display/Pool.lua")
