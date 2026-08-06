@@ -49,7 +49,7 @@ L:RegisterLocale("zhTW", {
 	["Behaviour"] = "行為",
 	["Glow Type"] = "發光類型",
 	["A separate region for showing enemy defensive spells."] = "用於顯示敵方防禦法術的獨立區域。",
-	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "在隊伍/團隊框架上將控制和防禦光環顯示為一組圖示。",
+	["Shows auras on party/raid frames."] = "在隊伍/團隊框架上顯示光環。",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "在玩家/目標/焦點頭像上顯示控制、防禦和其他重要法術。",
 	["Grow"] = "增長",
 	["Icon Padding"] = "圖示間距",
@@ -181,7 +181,7 @@ L:RegisterLocale("zhTW", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "團隊框架光環",
-	["Raid Frame Auras_Short"] = "框架光環",
+	["Raid Frame Auras_Short"] = "團隊框架",
 	["Defensive"] = "防禦",
 	["Exclude yourself from showing trinket icons."] = "將自己從顯示飾品圖示中排除。",
 	["Show CC"] = "顯示CC",

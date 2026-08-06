@@ -49,7 +49,7 @@ L:RegisterLocale("ptBR", {
 	["Behaviour"] = "Comportamento",
 	["Glow Type"] = "Tipo de brilho",
 	["A separate region for showing enemy defensive spells."] = "Uma região separada para mostrar feitiços defensivos inimigos.",
-	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "Mostra auras de controle e defensivas como um conjunto de ícones nos quadros de grupo/raide.",
+	["Shows auras on party/raid frames."] = "Mostra auras nos quadros de grupo/raide.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Mostra CC, defensivos e outros feitiços importantes nos retratos do jogador/alvo/foco.",
 	["Grow"] = "Crescer",
 	["Icon Padding"] = "Espaçamento de ícone",
@@ -181,7 +181,7 @@ L:RegisterLocale("ptBR", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Auras dos quadros de raide",
-	["Raid Frame Auras_Short"] = "Auras de quadros",
+	["Raid Frame Auras_Short"] = "Quadros de raide",
 	["Defensive"] = "Defensivo",
 	["Exclude yourself from showing trinket icons."] = "Exclua-se de mostrar ícones de berloques.",
 	["Show CC"] = "Mostrar CC",

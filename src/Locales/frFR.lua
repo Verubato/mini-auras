@@ -49,7 +49,7 @@ L:RegisterLocale("frFR", {
 	["Behaviour"] = "Comportement",
 	["Glow Type"] = "Type de lueur",
 	["A separate region for showing enemy defensive spells."] = "Une zone séparée pour afficher les sorts défensifs ennemis.",
-	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "Affiche les auras de contrôle et défensives comme un ensemble d'icônes sur les cadres de groupe/raid.",
+	["Shows auras on party/raid frames."] = "Affiche les auras sur les cadres de groupe et de raid.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Affiche les contrôles, défensifs et autres sorts importants sur les portraits du joueur/de la cible/du focus.",
 	["Grow"] = "Direction",
 	["Icon Padding"] = "Espacement des icônes",
@@ -181,7 +181,7 @@ L:RegisterLocale("frFR", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Auras des cadres de raid",
-	["Raid Frame Auras_Short"] = "Auras de cadres",
+	["Raid Frame Auras_Short"] = "Cadres de raid",
 	["Defensive"] = "Défensif",
 	["Exclude yourself from showing trinket icons."] = "Ne pas afficher les icônes de trinket sur vous-même.",
 	["Show CC"] = "Afficher les CC",

@@ -49,7 +49,7 @@ L:RegisterLocale("koKR", {
 	["Behaviour"] = "동작",
 	["Glow Type"] = "발광 유형",
 	["A separate region for showing enemy defensive spells."] = "적 방어 주문을 표시하는 별도의 영역입니다.",
-	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "파티/공격대 창에 군중 제어와 방어 오라를 하나의 아이콘 세트로 표시합니다.",
+	["Shows auras on party/raid frames."] = "파티/공격대 프레임에 효과를 표시합니다.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "플레이어/대상/주시 대상 초상화에 군중 제어, 방어기 및 기타 중요 주문을 표시합니다.",
 	["Grow"] = "성장",
 	["Icon Padding"] = "아이콘 여백",
@@ -181,7 +181,7 @@ L:RegisterLocale("koKR", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "공격대 프레임 오라",
-	["Raid Frame Auras_Short"] = "프레임 오라",
+	["Raid Frame Auras_Short"] = "공격대 프레임",
 	["Defensive"] = "방어",
 	["Exclude yourself from showing trinket icons."] = "장신구 아이콘 표시에서 자신을 제외합니다.",
 	["Show CC"] = "CC 표시",

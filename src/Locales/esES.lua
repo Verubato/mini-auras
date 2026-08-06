@@ -49,7 +49,7 @@ L:RegisterLocale("esES", {
 	["Behaviour"] = "Comportamiento",
 	["Glow Type"] = "Tipo de brillo",
 	["A separate region for showing enemy defensive spells."] = "Una región separada para mostrar hechizos defensivos enemigos.",
-	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "Muestra auras de control y defensivas como un conjunto de iconos en los marcos de grupo/banda.",
+	["Shows auras on party/raid frames."] = "Muestra auras en los marcos de grupo y banda.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Muestra control, defensivos y otros hechizos importantes en los retratos de jugador/objetivo/foco.",
 	["Grow"] = "Crecer",
 	["Icon Padding"] = "Relleno de icono",
@@ -181,7 +181,7 @@ L:RegisterLocale("esES", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Auras de marcos de banda",
-	["Raid Frame Auras_Short"] = "Auras de marcos",
+	["Raid Frame Auras_Short"] = "Marcos de banda",
 	["Defensive"] = "Defensivo",
 	["Exclude yourself from showing trinket icons."] = "Exclúyete de mostrar iconos de abalorios.",
 	["Show CC"] = "Mostrar CC",

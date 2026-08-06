@@ -49,7 +49,7 @@ L:RegisterLocale("deDE", {
 	["Behaviour"] = "Verhalten",
 	["Glow Type"] = "Leuchttyp",
 	["A separate region for showing enemy defensive spells."] = "Ein separater Bereich zur Anzeige gegnerischer Defensivzauber.",
-	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "Zeigt CC- und Defensivauren als eine Symbolgruppe auf Gruppen-/Schlachtzugsfenstern.",
+	["Shows auras on party/raid frames."] = "Zeigt Auren auf Gruppen- und Schlachtzugsfenstern.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Zeigt CC, Defensivzauber und andere wichtige Zauber auf den Porträts von Spieler/Ziel/Fokus.",
 	["Grow"] = "Wachsen",
 	["Icon Padding"] = "Symbol-Abstand",
@@ -181,7 +181,7 @@ L:RegisterLocale("deDE", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Schlachtzugsrahmen-Auren",
-	["Raid Frame Auras_Short"] = "Rahmen-Auren",
+	["Raid Frame Auras_Short"] = "Schlachtzugsfenster",
 	["Defensive"] = "Defensiv",
 	["Exclude yourself from showing trinket icons."] = "Schließe dich selbst vom Anzeigen von Schmuckstück-Symbolen aus.",
 	["Show CC"] = "CC anzeigen",

@@ -49,7 +49,7 @@ L:RegisterLocale("itIT", {
 	["Behaviour"] = "Comportamento",
 	["Glow Type"] = "Tipo di bagliore",
 	["A separate region for showing enemy defensive spells."] = "Un'area separata per mostrare gli incantesimi difensivi nemici.",
-	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "Mostra le aure di controllo e difensive come un unico set di icone sui riquadri di gruppo/incursione.",
+	["Shows auras on party/raid frames."] = "Mostra le aure sui riquadri di gruppo e incursione.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Mostra CC, difensive e altri incantesimi importanti sui ritratti di giocatore/bersaglio/focus.",
 	["Grow"] = "Cresci",
 	["Icon Padding"] = "Spaziatura icona",
@@ -181,7 +181,7 @@ L:RegisterLocale("itIT", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Aure dei riquadri",
-	["Raid Frame Auras_Short"] = "Aure riquadri",
+	["Raid Frame Auras_Short"] = "Riquadri incursione",
 	["Defensive"] = "Difensivo",
 	["Exclude yourself from showing trinket icons."] = "Escluditi dalla visualizzazione delle icone dei monili.",
 	["Show CC"] = "Mostra CC",

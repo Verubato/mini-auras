@@ -775,7 +775,7 @@ function M:Build(panel, default, raid)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			L["Shows CC and defensive auras as one set of icons on party/raid frames."],
+			L["Shows auras on party/raid frames."],
 		},
 	})
 

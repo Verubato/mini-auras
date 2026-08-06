@@ -49,7 +49,7 @@ L:RegisterLocale("ruRU", {
 	["Behaviour"] = "Поведение",
 	["Glow Type"] = "Тип свечения",
 	["A separate region for showing enemy defensive spells."] = "Отдельная область для отображения защитных заклинаний противника.",
-	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "Показывает ауры контроля и защиты одним набором иконок на рамках группы/рейда.",
+	["Shows auras on party/raid frames."] = "Показывает эффекты на рамках группы и рейда.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Показывает контроль, защитные и другие важные заклинания на портретах игрока/цели/фокуса.",
 	["Grow"] = "Рост",
 	["Icon Padding"] = "Отступ иконки",
@@ -181,7 +181,7 @@ L:RegisterLocale("ruRU", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Ауры рамок рейда",
-	["Raid Frame Auras_Short"] = "Ауры рамок",
+	["Raid Frame Auras_Short"] = "Рамки рейда",
 	["Defensive"] = "Защитное",
 	["Exclude yourself from showing trinket icons."] = "Исключить себя из отображения иконок аксессуаров.",
 	["Show CC"] = "Показать контроль",

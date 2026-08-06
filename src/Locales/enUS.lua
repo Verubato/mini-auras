@@ -50,7 +50,7 @@ L:SetDefaultStrings({
 	["Behaviour"] = "Behaviour",
 	["Glow Type"] = "Glow Type",
 	["A separate region for showing enemy defensive spells."] = "A separate region for showing enemy defensive spells.",
-	["Shows CC and defensive auras as one set of icons on party/raid frames."] = "Shows CC and defensive auras as one set of icons on party/raid frames.",
+	["Shows auras on party/raid frames."] = "Shows auras on party/raid frames.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Shows CC, defensives, and other important spells on the player/target/focus portraits.",
 	["Grow"] = "Grow",
 	["Icon Padding"] = "Icon Padding",
@@ -182,7 +182,7 @@ L:SetDefaultStrings({
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Raid Frame Auras",
-	["Raid Frame Auras_Short"] = "Frame Auras",
+	["Raid Frame Auras_Short"] = "Raid Frames",
 	["Defensive"] = "Defensive",
 	["Exclude yourself from showing trinket icons."] = "Exclude yourself from showing trinket icons.",
 	["Show CC"] = "Show CC",
