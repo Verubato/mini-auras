@@ -43,6 +43,22 @@ local function GetOptions()
 end
 
 ---@param entry CrowdControlWatchEntry
+---The look a CC display is built with and restyled to.
+---@param entryOptions table
+---@return AuraDisplayStyle
+local function BuildStyle(entryOptions)
+	local style = auraContainerDisplay:GetStyleScratch()
+
+	style.ReverseCooldown = entryOptions.Icons.ReverseCooldown
+	style.ShowMilliseconds = entryOptions.Icons.ShowMilliseconds
+	style.ColorByDispelType = entryOptions.Icons.ColorByDispelType
+	style.Glow = entryOptions.Icons.Glow
+	style.FontScale = db.FontScale
+	style.ShowTooltips = entryOptions.ShowTooltips ~= false
+
+	return style
+end
+
 local function UpdateWatcherAuras(entry)
 	if not entry or not entry.Watcher or not entry.Container then
 		return
@@ -243,7 +259,10 @@ local function EnsureWatcher(anchor, unit)
 					CandidateFilters = auraFilters.CandidateFilters.CrowdControl,
 					MaxIcons = count,
 				},
-			}, size, spacing, "CC")
+			}, size, spacing, "CC",
+				-- Seeded rather than left to the restyle below: a unit's display is built the
+				-- moment it turns up, and one built mid-arena can never be restyled.
+				{ Style = BuildStyle(options) })
 		else
 			entry.Watcher = unitAuraWatcher:New(unit, nil, { CC = true })
 			entry.Watcher:RegisterCallback(function()
@@ -571,14 +590,7 @@ local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 		entry.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, iconCount)
 		entry.Display:SetSpacing(entryOptions.IconSpacing or 2)
 
-		local style = auraContainerDisplay:GetStyleScratch()
-		style.ReverseCooldown = entryOptions.Icons.ReverseCooldown
-		style.ShowMilliseconds = entryOptions.Icons.ShowMilliseconds
-		style.ColorByDispelType = entryOptions.Icons.ColorByDispelType
-		style.Glow = entryOptions.Icons.Glow
-		style.FontScale = db.FontScale
-		style.ShowTooltips = entryOptions.ShowTooltips ~= false
-		entry.Display:SetStyle(style)
+		entry.Display:SetStyle(BuildStyle(entryOptions))
 
 		entry.Display:SetEnabled(true)
 	end

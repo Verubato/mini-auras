@@ -119,11 +119,11 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 			IconMask = mask,
 			-- Portrait icons carry no dispel border and no glow.
 			Minimal = true,
+			-- Seeded rather than styled afterwards. A portrait display is built the moment its
+			-- unit frame turns up, and a restyle is refused for as long as auras are secret, so
+			-- one created mid-arena would keep the unstyled look, mouse input and all.
+			Style = BuildPortraitStyle(),
 		})
-
-		-- Style now rather than waiting for the first ApplyOptions, so the buttons never spend a
-		-- moment with mouse input enabled over the portrait.
-		display:SetStyle(BuildPortraitStyle())
 
 		local frame = display.Frame
 		frame:SetAllPoints(kickFrame)

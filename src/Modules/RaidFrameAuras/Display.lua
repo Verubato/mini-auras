@@ -138,6 +138,21 @@ local function GetOptions()
 end
 
 ---@param entry RaidFrameAurasWatchEntry
+---The look a display is built with and restyled to.
+---@param entryOptions table
+---@return AuraDisplayStyle
+local function BuildStyle(entryOptions)
+	local style = auraContainerDisplay:GetStyleScratch()
+
+	style.ReverseCooldown = entryOptions.Icons.ReverseCooldown
+	style.ColorByDispelType = entryOptions.Icons.ColorByDispelType
+	style.Glow = entryOptions.Icons.Glow
+	style.FontScale = db.FontScale
+	style.ShowTooltips = entryOptions.ShowTooltips ~= false
+
+	return style
+end
+
 local function UpdateWatcherAuras(entry)
 	if not entry or not entry.Watcher or not entry.Container then
 		return
@@ -337,7 +352,10 @@ local function EnsureWatcher(anchor, unit)
 				BuildGroups(maxIcons),
 				size,
 				spacing,
-				"Friendly Indicators"
+				"Friendly Indicators",
+				-- Seeded rather than left to the restyle below: a unit's display is built the
+				-- moment it turns up, and one built mid-arena can never be restyled.
+				{ Style = BuildStyle(options) }
 			)
 		else
 			entry.Watcher = UnitAuraWatcher:New(unit, nil, { Defensives = true, CC = true })
@@ -590,13 +608,7 @@ local function ApplyEntryOptions(entry, anchor, options)
 		-- filters handed over at creation are still current.
 		entry.Display:SetCandidateFilters(HELPFUL_GROUP_KEY, GetHelpfulFilters())
 
-		local style = auraContainerDisplay:GetStyleScratch()
-		style.ReverseCooldown = options.Icons.ReverseCooldown
-		style.ColorByDispelType = options.Icons.ColorByDispelType
-		style.Glow = options.Icons.Glow
-		style.FontScale = db.FontScale
-		style.ShowTooltips = options.ShowTooltips ~= false
-		entry.Display:SetStyle(style)
+		entry.Display:SetStyle(BuildStyle(options))
 
 		entry.Display:SetEnabled(true)
 	end

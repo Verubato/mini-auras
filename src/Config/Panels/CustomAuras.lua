@@ -1049,13 +1049,6 @@ function M:Build(panel)
 			selectedId = nil
 		end
 
-		-- Deliberately no fallback to the first group: the page opens with nothing selected and
-		-- clicking the empty space in the grid puts the editor away again.
-		local selected = selectedId ~= nil
-
-		editorDivider:SetShown(selected)
-		editor:SetShown(selected)
-
 		BuildAddTile()
 
 		for index, group in ipairs(options.Groups) do
@@ -1070,6 +1063,8 @@ function M:Build(panel)
 
 		listAnchor:SetHeight(math.max(TILE_SIZE, lines * TILE_PITCH))
 
+		-- Deliberately no fallback to the first group: the page opens with nothing selected and
+		-- clicking the empty space in the grid puts the editor away again.
 		local selected = Current()
 
 		editorDivider:SetShown(selected ~= nil)
