@@ -120,6 +120,21 @@ local function LayoutHealerDisplays()
 	end
 end
 
+---The look every healer display is built with and restyled to.
+---@param options table
+---@return AuraDisplayStyle
+local function BuildStyle(options)
+	local style = auraContainerDisplay:GetStyleScratch()
+
+	style.ReverseCooldown = options.Icons.ReverseCooldown
+	style.ColorByDispelType = options.Icons.ColorByDispelType
+	style.Glow = options.Icons.Glow
+	style.FontScale = db.FontScale
+	style.ShowTooltips = options.ShowTooltips ~= false
+
+	return style
+end
+
 ---12.1 path: applies size/style options to every healer display.
 local function RefreshHealerDisplays()
 	local options = db.Modules.HealerCCModule
@@ -130,14 +145,7 @@ local function RefreshHealerDisplays()
 		if display then
 			display:SetIconSize(iconSize)
 			display:SetSpacing(options.IconSpacing or 2)
-
-			local style = auraContainerDisplay:GetStyleScratch()
-			style.ReverseCooldown = options.Icons.ReverseCooldown
-			style.ColorByDispelType = options.Icons.ColorByDispelType
-			style.Glow = options.Icons.Glow
-			style.FontScale = db.FontScale
-			style.ShowTooltips = options.ShowTooltips ~= false
-			display:SetStyle(style)
+			display:SetStyle(BuildStyle(options))
 			display:SetEnabled(options.Icons.Enabled ~= false)
 			display:SetShown(options.Icons.Enabled ~= false and not testModeActive)
 		end
@@ -325,7 +333,12 @@ local function RefreshHealers()
 					},
 					tonumber(options.Icons.Size) or 32,
 					options.IconSpacing or 2,
-					"Healer CC"
+					"Healer CC",
+					-- Seeded at creation, not left to the restyle below. A healer display is
+					-- built the moment a healer turns up, which in an arena is mid-match while
+					-- auras are secret and every button setter is refused. Its buttons would
+					-- then keep the unstyled look, no glow and no border, for the whole game.
+					{ Style = BuildStyle(options) }
 				),
 			}
 			activePool[healer] = item
