@@ -69,7 +69,7 @@ L:RegisterLocale("ruRU", {
 	["Reverses the direction of the cooldown swipe animation."] = "Изменяет направление анимации смахивания перезарядки.",
 	["Settings"] = "Настройки",
 	["Open Settings"] = "Открыть настройки",
-	["Use /miniauras, /ma, or /cc to open the MiniAuras config window."] = "Используйте /miniauras, /ma или /cc, чтобы открыть окно настроек MiniAuras.",
+	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "Используйте /miniauras, /minia или /cc, чтобы открыть окно настроек MiniAuras.",
 	["Show a glow around the icons."] = "Показывать свечение вокруг иконок.",
 	["Test"] = "Тест",
 	["Whether to enable or disable this module if you are a caster."] = "Включить или отключить этот модуль, если вы заклинатель.",

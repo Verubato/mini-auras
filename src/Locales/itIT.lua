@@ -69,7 +69,7 @@ L:RegisterLocale("itIT", {
 	["Reverses the direction of the cooldown swipe animation."] = "Inverte la direzione dell'animazione di scorrimento della ricarica.",
 	["Settings"] = "Impostazioni",
 	["Open Settings"] = "Apri impostazioni",
-	["Use /miniauras, /ma, or /cc to open the MiniAuras config window."] = "Usa /miniauras, /ma o /cc per aprire la finestra di configurazione di MiniAuras.",
+	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "Usa /miniauras, /minia o /cc per aprire la finestra di configurazione di MiniAuras.",
 	["Show a glow around the icons."] = "Mostra un bagliore attorno alle icone.",
 	["Test"] = "Test",
 	["Whether to enable or disable this module if you are a caster."] = "Se abilitare o disabilitare questo modulo se sei un incantatore.",

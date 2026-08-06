@@ -69,7 +69,7 @@ L:RegisterLocale("koKR", {
 	["Reverses the direction of the cooldown swipe animation."] = "재사용 대기시간 스와이프 애니메이션의 방향을 반대로 합니다.",
 	["Settings"] = "설정",
 	["Open Settings"] = "설정 열기",
-	["Use /miniauras, /ma, or /cc to open the MiniAuras config window."] = "/miniauras, /ma 또는 /cc를 사용하여 MiniAuras 설정 창을 엽니다.",
+	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "/miniauras, /minia 또는 /cc를 사용하여 MiniAuras 설정 창을 엽니다.",
 	["Show a glow around the icons."] = "아이콘 주위에 발광을 표시합니다.",
 	["Test"] = "테스트",
 	["Whether to enable or disable this module if you are a caster."] = "시전자인 경우 이 모듈을 활성화 또는 비활성화합니다.",

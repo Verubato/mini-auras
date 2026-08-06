@@ -70,7 +70,7 @@ L:RegisterLocale("esMX", {
 	["Reverses the direction of the cooldown swipe animation."] = "Invierte la dirección de la animación de barrido del tiempo de reutilización.",
 	["Settings"] = "Configuración",
 	["Open Settings"] = "Abrir configuración",
-	["Use /miniauras, /ma, or /cc to open the MiniAuras config window."] = "Usa /miniauras, /ma o /cc para abrir la ventana de configuración de MiniAuras.",
+	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "Usa /miniauras, /minia o /cc para abrir la ventana de configuración de MiniAuras.",
 	["Show a glow around the icons."] = "Muestra un brillo alrededor de los iconos.",
 	["Test"] = "Probar",
 	["Whether to enable or disable this module if you are a caster."] = "Si habilitar o deshabilitar este módulo si eres un lanzador de hechizos.",

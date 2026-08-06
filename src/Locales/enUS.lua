@@ -70,7 +70,7 @@ L:SetDefaultStrings({
 	["Reverses the direction of the cooldown swipe animation."] = "Reverses the direction of the cooldown swipe animation.",
 	["Settings"] = "Settings",
 	["Open Settings"] = "Open Settings",
-	["Use /miniauras, /ma, or /cc to open the MiniAuras config window."] = "Use /miniauras, /ma, or /cc to open the MiniAuras config window.",
+	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "Use /miniauras, /minia, or /cc to open the MiniAuras config window.",
 	["Show a glow around the icons."] = "Show a glow around the icons.",
 	["Test"] = "Test",
 	["Whether to enable or disable this module if you are a caster."] = "Whether to enable or disable this module if you are a caster.",

@@ -69,7 +69,7 @@ L:RegisterLocale("zhTW", {
 	["Reverses the direction of the cooldown swipe animation."] = "反轉冷卻時間滑動動畫的方向。",
 	["Settings"] = "設定",
 	["Open Settings"] = "開啟設定",
-	["Use /miniauras, /ma, or /cc to open the MiniAuras config window."] = "使用 /miniauras、/ma 或 /cc 開啟 MiniAuras 設定視窗。",
+	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "使用 /miniauras、/minia 或 /cc 開啟 MiniAuras 設定視窗。",
 	["Show a glow around the icons."] = "在圖示周圍顯示發光。",
 	["Test"] = "測試",
 	["Whether to enable or disable this module if you are a caster."] = "如果您是施法者，是否啟用或停用此模組。",

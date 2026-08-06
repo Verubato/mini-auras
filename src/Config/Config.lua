@@ -66,7 +66,7 @@ local function BuildRedirectPanel(panel, version)
 	message:SetPoint("TOP", ruleRight, "BOTTOMLEFT", 0, -18)
 	message:SetWidth(PANEL_TEXT_WIDTH)
 	message:SetJustifyH("CENTER")
-	message:SetText(L["Use /miniauras, /ma, or /cc to open the MiniAuras config window."])
+	message:SetText(L["Use /miniauras, /minia, or /cc to open the MiniAuras config window."])
 
 	local button = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 	button:SetSize(240, 32)
@@ -398,7 +398,8 @@ function M:Init()
 	}
 
 	SLASH_MINIAURAS1 = "/miniauras"
-	SLASH_MINIAURAS2 = "/ma"
+	-- Not /minia: Blizzard's main assist command owns that and wins the parse, so it never reaches us.
+	SLASH_MINIAURAS2 = "/minia"
 	-- The MiniCC-era aliases stay registered; people have them in macros and muscle memory.
 	SLASH_MINIAURAS3 = "/minicc"
 	SLASH_MINIAURAS4 = "/mcc"

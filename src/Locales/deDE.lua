@@ -69,7 +69,7 @@ L:RegisterLocale("deDE", {
 	["Reverses the direction of the cooldown swipe animation."] = "Kehrt die Richtung der Abklingzeit-Wischanimation um.",
 	["Settings"] = "Einstellungen",
 	["Open Settings"] = "Einstellungen öffnen",
-	["Use /miniauras, /ma, or /cc to open the MiniAuras config window."] = "Verwende /miniauras, /ma oder /cc, um das MiniAuras-Einstellungsfenster zu öffnen.",
+	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "Verwende /miniauras, /minia oder /cc, um das MiniAuras-Einstellungsfenster zu öffnen.",
 	["Show a glow around the icons."] = "Zeige ein Leuchten um die Symbole.",
 	["Test"] = "Testen",
 	["Whether to enable or disable this module if you are a caster."] = "Ob dieses Modul aktiviert oder deaktiviert werden soll, wenn du ein Zauberwirker bist.",
