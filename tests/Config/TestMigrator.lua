@@ -610,6 +610,67 @@ fw.describe("Migrator - individual migrations", function()
 		assert(vars.Profiles.Other.Modules.RaidFrameAurasModule.Default.ShowCC == true, "profiles move too")
 	end)
 
+	fw.it("v62 pre-seeds the starter custom aura groups from the precog settings", function()
+		local vars = {
+			Version = 61,
+			Modules = {
+				PrecogModule = {
+					Enabled = { Always = true },
+					Sound = { Enabled = true, Channel = "SFX", File = "ElectricalSpark" },
+					Point = "TOP",
+					RelativeTo = "UIParent",
+					RelativePoint = "TOP",
+					Offset = { X = 12, Y = -80 },
+					Icons = { Size = 44, Glow = false, Border = true, ReverseCooldown = false, Color = { R = 0.2, G = 0.4, B = 0.6, A = 1 } },
+				},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion62(vars) == true)
+		local customAuras = vars.Modules.CustomAurasModule
+		assert(customAuras.SeededDefaults == true and customAuras.NextId == 4, "seeding stood down")
+
+		local precogGroup, shroud, pi = customAuras.Groups[1], customAuras.Groups[2], customAuras.Groups[3]
+		assert(precogGroup.Spells[1] == 377362 and shroud.Spells[1] == 378464 and pi.Spells[1] == 10060)
+		-- Position and icon settings land on both precog-era groups.
+		for _, group in ipairs({ precogGroup, shroud }) do
+			assert(group.Position.Point == "TOP" and group.Position.X == 12 and group.Position.Y == -80, "position carried")
+			assert(group.Icons.Size == 44 and group.Icons.Glow == false and group.Icons.Border == true, "icon settings carried")
+			assert(group.Icons.ReverseCooldown == false and group.Icons.Color.B == 0.6, "cooldown and color carried")
+			assert(group.Enabled == true, "enabled carried")
+		end
+		-- The module only ever sounded for precog.
+		assert(precogGroup.Sound.Applied == "ElectricalSpark" and precogGroup.Sound.Channel == "SFX", "sound carried")
+		assert(shroud.Sound == nil, "shroud stays silent")
+		-- PI has no precog history, so it keeps the designed spot.
+		assert(pi.Position.X == 0 and pi.Position.Y == 300 and pi.Sound.Applied == "BubblePop")
+	end)
+
+	fw.it("v62 seeds disabled groups from a disabled precog and skips already-seeded profiles", function()
+		local vars = {
+			Version = 61,
+			Modules = {
+				PrecogModule = { Enabled = { Always = false }, Sound = { Enabled = false } },
+			},
+			Profiles = {
+				Seeded = { Modules = { CustomAurasModule = { SeededDefaults = true, NextId = 7, Groups = {} } } },
+				Fresh = { Modules = {} },
+			},
+		}
+
+		assert(migrator:UpgradeToVersion62(vars) == true)
+		local groups = vars.Modules.CustomAurasModule.Groups
+		assert(groups[1].Enabled == false and groups[2].Enabled == false, "precog off carries as disabled groups")
+		assert(groups[3].Enabled == nil, "PI is untouched by the precog switch")
+		assert(groups[1].Sound == nil, "disabled sound does not carry")
+
+		local seeded = vars.Profiles.Seeded.Modules.CustomAurasModule
+		assert(seeded.NextId == 7 and seeded.Groups[1] == nil, "seeded profile left alone")
+		-- A profile that predates the precog module still seeds, at the precog defaults.
+		local fresh = vars.Profiles.Fresh.Modules.CustomAurasModule
+		assert(fresh.SeededDefaults == true and fresh.Groups[1].Position.Y == 70, "ancient profile gets precog defaults")
+	end)
+
 	fw.it("v57 leaves kicks alone when the CC module is disabled everywhere", function()
 		local vars = {
 			Version = 56,

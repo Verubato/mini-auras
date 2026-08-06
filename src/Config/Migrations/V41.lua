@@ -450,3 +450,94 @@ function M:UpgradeToVersion61(vars)
 	vars.Version = 61
 	return true
 end
+
+function M:UpgradeToVersion62(vars)
+	if vars.Version ~= 61 then return false end
+
+	-- On 12.1 the precog module is superseded by starter custom aura groups tracking the same
+	-- two spells, but seeding at module load cannot tell an upgrader from a fresh install, so
+	-- the user's precog position/icon/sound settings would be lost. Build the starter groups
+	-- here instead, carrying those settings onto the Precognition and Shroud groups, and mark
+	-- the profile seeded so SeedDefaults stands down. Normalise fills anything left out.
+	local function SeedFromPrecog(modules)
+		if not modules then
+			return
+		end
+
+		local customAuras = modules.CustomAurasModule
+
+		-- A profile that already seeded, or authored groups of its own, keeps what it has.
+		if customAuras and (customAuras.SeededDefaults or (customAuras.Groups and customAuras.Groups[1])) then
+			return
+		end
+
+		local precog = modules.PrecogModule or {}
+		local icons = precog.Icons or {}
+		local color = icons.Color or {}
+		local offset = precog.Offset or {}
+		local sound = precog.Sound or {}
+
+		-- The module's single on/off switch, stored as an Enabled zone table.
+		local enabled = false
+		for _, on in pairs(precog.Enabled or { Always = true }) do
+			if on then
+				enabled = true
+			end
+		end
+
+		-- Both spells shared one single-icon container, so both groups sit on its anchor.
+		-- Fallbacks are the precog defaults, for a db old enough to predate the module.
+		local function PrecogGroup(id, name, spellId, soundFile)
+			return {
+				Id = id,
+				Name = name,
+				Enabled = enabled,
+				Spells = { spellId },
+				Position = {
+					Point = precog.Point or "CENTER",
+					RelativePoint = precog.RelativePoint or "CENTER",
+					X = offset.X or 0,
+					Y = offset.Y or 70,
+				},
+				Icons = {
+					Size = icons.Size or 70,
+					Glow = icons.Glow ~= false,
+					Border = icons.Border ~= false,
+					ReverseCooldown = icons.ReverseCooldown ~= false,
+					Color = { R = color.R or 1, G = color.G or 1, B = color.B or 1, A = color.A or 1 },
+				},
+				Sound = soundFile and { Applied = soundFile, Channel = sound.Channel } or nil,
+			}
+		end
+
+		modules.CustomAurasModule = {
+			Groups = {
+				-- The module only ever sounded for precog, never shroud.
+				PrecogGroup("g1", "Precognition", 377362, sound.Enabled and sound.File or nil),
+				PrecogGroup("g2", "Shroud", 378464, nil),
+				-- PI is a new starter with no precog history; it keeps the designed spot.
+				{
+					Id = "g3",
+					Name = "PI",
+					Spells = { 10060 },
+					Position = { X = 0, Y = 300 },
+					Icons = { Glow = true, Border = true },
+					Sound = { Applied = "BubblePop" },
+				},
+			},
+			NextId = 4,
+			SeededDefaults = true,
+		}
+	end
+
+	SeedFromPrecog(vars.Modules)
+
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			SeedFromPrecog(profile.Modules)
+		end
+	end
+
+	vars.Version = 62
+	return true
+end
