@@ -8,8 +8,8 @@ local moduleName = addon.Utils.ModuleName
 local barTextures = addon.Core.BarTextures
 
 -- Loaded before this file in TOC order.
-local observer = addon.Modules.AllyKicks.Observer
-local display = addon.Modules.AllyKicks.Display
+local observer = addon.Modules.AllyKickTracker.Observer
+local display = addon.Modules.AllyKickTracker.Display
 
 -- Repaint rate while a row is counting down. The loop only runs then: with the list empty there
 -- is nothing to animate, so it stops and the next interrupt starts it again.
@@ -57,7 +57,7 @@ local testRecords = {}
 
 ---@class AllyKickTrackerModule : IModule
 local M = {}
-addon.Modules.AllyKicks.Module = M
+addon.Modules.AllyKickTracker.Module = M
 addon.Modules.AllyKickTrackerModule = M
 
 ---@return AllyKickTrackerModuleOptions?

@@ -286,7 +286,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Anchors PortraitAnchors
 ---@field Module PortraitModule
 
----@class AllyKicks
+---@class AllyKickTracker
 ---@field Observer AllyKickObserver
 ---@field Display AllyKickDisplay
 ---@field Module AllyKickTrackerModule
@@ -307,7 +307,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field FriendlyCooldowns FriendlyCooldowns
 ---@field EnemyCooldowns EnemyCooldowns
 ---@field EnemyKickTracker EnemyKickTracker
----@field AllyKicks AllyKicks
+---@field AllyKickTracker AllyKickTracker
 ---@field Alerts Alerts
 ---@field RaidFrameAuras RaidFrameAuras
 ---@field CustomAuras CustomAuras

@@ -1,7 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 
-addon.Modules.AllyKicks = addon.Modules.AllyKicks or {}
+addon.Modules.AllyKickTracker = addon.Modules.AllyKickTracker or {}
 
 local FONT_FILE = "Fonts\\FRIZQT__.TTF"
 local FONT_FLAGS = "OUTLINE"
@@ -28,7 +28,7 @@ local NEUTRAL_FILL = { 0.35, 0.45, 0.6 }
 
 ---@class AllyKickDisplay
 local M = {}
-addon.Modules.AllyKicks.Display = M
+addon.Modules.AllyKickTracker.Display = M
 
 ---@param seconds number
 ---@return string

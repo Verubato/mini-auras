@@ -40,12 +40,12 @@ end
 
 env.loadModule("src/Core/Kicks/KickData.lua")
 env.loadModule("src/Core/Display/BarTextures.lua")
-env.loadModule("src/Modules/AllyKicks/Observer.lua")
-env.loadModule("src/Modules/AllyKicks/Display.lua")
-env.loadModule("src/Modules/AllyKicks/Module.lua")
+env.loadModule("src/Modules/AllyKickTracker/Observer.lua")
+env.loadModule("src/Modules/AllyKickTracker/Display.lua")
+env.loadModule("src/Modules/AllyKickTracker/Module.lua")
 
 local module = addon.Modules.AllyKickTrackerModule
-local observer = addon.Modules.AllyKicks.Observer
+local observer = addon.Modules.AllyKickTracker.Observer
 
 -- Mirrors the observer's own constant, which is no longer an option.
 local RECORD_DURATION = 15
@@ -190,7 +190,7 @@ local function Reset()
 	module:Refresh()
 end
 
-fw.describe("AllyKicks - recording", function()
+fw.describe("AllyKickTracker - recording", function()
 	fw.before_each(Reset)
 
 	fw.it("records an interrupt whose every field is secret", function()
@@ -262,7 +262,7 @@ fw.describe("AllyKicks - recording", function()
 	end)
 end)
 
-fw.describe("AllyKicks - drawing a secret kicker", function()
+fw.describe("AllyKickTracker - drawing a secret kicker", function()
 	fw.before_each(Reset)
 
 	fw.it("draws the name it is not allowed to read", function()
@@ -338,7 +338,7 @@ fw.describe("AllyKicks - drawing a secret kicker", function()
 	end)
 end)
 
-fw.describe("AllyKicks - the list", function()
+fw.describe("AllyKickTracker - the list", function()
 	fw.before_each(Reset)
 
 	fw.it("puts the newest interrupt at the top", function()
@@ -410,7 +410,7 @@ fw.describe("AllyKicks - the list", function()
 	end)
 end)
 
-fw.describe("AllyKicks - the player's own row", function()
+fw.describe("AllyKickTracker - the player's own row", function()
 	fw.before_each(function()
 		Reset()
 		-- The player's own spec, class, interrupt and cooldown are all readable; theirs is the one
@@ -511,7 +511,7 @@ fw.describe("AllyKicks - the player's own row", function()
 	end)
 end)
 
-fw.describe("AllyKicks - test mode", function()
+fw.describe("AllyKickTracker - test mode", function()
 	fw.before_each(function()
 		Reset()
 		module:StopTesting()

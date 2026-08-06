@@ -4,7 +4,7 @@ local kickData = addon.Core.KickData
 local inspectorFacade = addon.Core.InspectorFacade
 local unitUtil = addon.Utils.Units
 
-addon.Modules.AllyKicks = addon.Modules.AllyKicks or {}
+addon.Modules.AllyKickTracker = addon.Modules.AllyKickTracker or {}
 
 -- The two halves of a cast ending early. Neither names the interrupter in anything we are allowed
 -- to read, but the GUID they carry still resolves to a name the client will let us draw.
@@ -64,7 +64,7 @@ local recordCallback
 
 ---@class AllyKickObserver
 local M = {}
-addon.Modules.AllyKicks.Observer = M
+addon.Modules.AllyKickTracker.Observer = M
 
 for _, specData in pairs(kickData.SpecData) do
 	local spellId, cooldown = specData.SpellId, specData.KickCd
