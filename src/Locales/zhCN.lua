@@ -23,6 +23,7 @@ L:RegisterLocale("zhCN", {
 	["World"] = "开放世界",
 	["Caster"] = "施法者",
 	["Healer"] = "治疗者",
+	["Tank"] = "坦克",
 	["Shows enemy kick cooldowns in arena."] = "在竞技场中显示敌方打断冷却时间。",
 	["Enable if you are:"] = "如果您是以下角色则启用：",
 	["Enable in"] = "启用于",

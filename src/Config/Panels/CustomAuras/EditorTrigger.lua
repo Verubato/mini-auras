@@ -53,6 +53,8 @@ local function UnitLabel(unit)
 		return L["Self"]
 	elseif unit == "pet" then
 		return L["My Pet"]
+	elseif unit == "tank" then
+		return L["Tank"]
 	elseif unit == "healer" then
 		return L["Healer"]
 	elseif unit == "otherdps" then

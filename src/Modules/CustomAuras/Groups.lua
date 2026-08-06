@@ -74,6 +74,7 @@ local SORT_SHORTEST = "SHORTEST"
 -- a hostile target would sit there showing nothing with nothing on screen to explain why.
 local SELF_UNIT = "player"
 local PET_UNIT = "pet"
+local TANK_UNIT = "tank"
 local HEALER_UNIT = "healer"
 local OTHER_DPS_UNIT = "otherdps"
 local TARGET_FRIENDLY = "targetfriendly"
@@ -87,6 +88,7 @@ local UNIT_INFO = {
 	[SELF_UNIT] = { Token = "player", Helpful = true, Harmful = true },
 	[PET_UNIT] = { Token = "pet", Helpful = true, Harmful = true },
 	-- Resolved per refresh rather than fixed: whoever is holding the role right now.
+	[TANK_UNIT] = { Role = "TANK", Friendly = true, Helpful = true },
 	[HEALER_UNIT] = { Role = "HEALER", Friendly = true, Helpful = true },
 	[OTHER_DPS_UNIT] = { Role = "DAMAGER", SkipSelf = true, Friendly = true, Helpful = true },
 	[TARGET_FRIENDLY] = { Token = "target", Friendly = true, Helpful = true },
@@ -115,7 +117,7 @@ local FALLBACK_ICON = [[Interface\Icons\INV_Misc_QuestionMark]]
 local fallbackFileId
 -- Party and arena tokens are left out: no stable frame, and the raid frame module covers them.
 local UNITS = {
-	SELF_UNIT, PET_UNIT, HEALER_UNIT, OTHER_DPS_UNIT,
+	SELF_UNIT, PET_UNIT, TANK_UNIT, HEALER_UNIT, OTHER_DPS_UNIT,
 	TARGET_FRIENDLY, TARGET_ENEMY, NAMEPLATE_FRIENDLY, NAMEPLATE_ENEMY,
 }
 -- Units that are always assistable, so a harmful group on them could never filter by spell id.

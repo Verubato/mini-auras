@@ -23,6 +23,7 @@ L:RegisterLocale("deDE", {
 	["World"] = "Offene Welt",
 	["Caster"] = "Zauberwirker",
 	["Healer"] = "Heiler",
+	["Tank"] = "Tank",
 	["Shows enemy kick cooldowns in arena."] = "Zeigt gegnerische Kick-Cooldowns in der Arena.",
 	["Enable if you are:"] = "Aktivieren, wenn du bist:",
 	["Enable in"] = "Aktivieren in",

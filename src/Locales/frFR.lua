@@ -23,6 +23,7 @@ L:RegisterLocale("frFR", {
 	["World"] = "Monde ouvert",
 	["Caster"] = "Lanceur de sorts",
 	["Healer"] = "Soigneur",
+	["Tank"] = "Tank",
 	["Shows enemy kick cooldowns in arena."] = "Affiche les CDs de kick ennemis en arène.",
 	["Enable if you are:"] = "Activer si vous êtes :",
 	["Enable in"] = "Activer en",

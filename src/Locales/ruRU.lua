@@ -23,6 +23,7 @@ L:RegisterLocale("ruRU", {
 	["World"] = "Открытый мир",
 	["Caster"] = "Заклинатель",
 	["Healer"] = "Целитель",
+	["Tank"] = "Танк",
 	["Shows enemy kick cooldowns in arena."] = "Показывает перезарядку прерываний врагов на арене.",
 	["Enable if you are:"] = "Включить, если вы:",
 	["Enable in"] = "Включить в",

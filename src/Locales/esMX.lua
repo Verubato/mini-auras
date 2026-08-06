@@ -24,6 +24,7 @@ L:RegisterLocale("esMX", {
 	["World"] = "Mundo abierto",
 	["Caster"] = "Lanzador de hechizos",
 	["Healer"] = "Sanador",
+	["Tank"] = "Tanque",
 	["Shows enemy kick cooldowns in arena."] = "Muestra los tiempos de reutilización de interrupción enemigos en arena.",
 	["Enable if you are:"] = "Habilitar si eres:",
 	["Enable in"] = "Habilitar en",

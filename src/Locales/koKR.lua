@@ -23,6 +23,7 @@ L:RegisterLocale("koKR", {
 	["World"] = "야외",
 	["Caster"] = "시전자",
 	["Healer"] = "치유사",
+	["Tank"] = "탱커",
 	["Shows enemy kick cooldowns in arena."] = "투기장에서 적의 차단 쿨다운을 표시합니다.",
 	["Enable if you are:"] = "다음인 경우 활성화:",
 	["Enable in"] = "활성화 위치",

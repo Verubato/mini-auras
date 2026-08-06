@@ -23,6 +23,7 @@ L:RegisterLocale("ptBR", {
 	["World"] = "Mundo aberto",
 	["Caster"] = "Conjurador",
 	["Healer"] = "Curandeiro",
+	["Tank"] = "Tanque",
 	["Shows enemy kick cooldowns in arena."] = "Mostra os tempos de recarga de interrupção inimigos na arena.",
 	["Enable if you are:"] = "Ativar se você for:",
 	["Enable in"] = "Ativar em",

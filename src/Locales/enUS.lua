@@ -24,6 +24,7 @@ L:SetDefaultStrings({
 	["World"] = "World",
 	["Caster"] = "Caster",
 	["Healer"] = "Healer",
+	["Tank"] = "Tank",
 	["Shows enemy kick cooldowns in arena."] = "Shows enemy kick cooldowns in arena.",
 	["Enable if you are:"] = "Enable if you are:",
 	["Enable in"] = "Enable in",
