@@ -421,3 +421,32 @@ function M:UpgradeToVersion60(vars)
 	vars.Version = 60
 	return true
 end
+
+function M:UpgradeToVersion61(vars)
+	if vars.Version ~= 60 then return false end
+
+	-- AurasModule became RaidFrameAurasModule to leave the "Auras" name free for the custom
+	-- aura module. Carry the saved settings across rather than letting CleanTable drop them.
+	local function MoveOptions(modules)
+		if not modules or not modules.AurasModule then
+			return
+		end
+
+		if modules.RaidFrameAurasModule == nil then
+			modules.RaidFrameAurasModule = modules.AurasModule
+		end
+
+		modules.AurasModule = nil
+	end
+
+	MoveOptions(vars.Modules)
+
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			MoveOptions(profile.Modules)
+		end
+	end
+
+	vars.Version = 61
+	return true
+end

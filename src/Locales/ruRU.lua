@@ -175,7 +175,8 @@ L:RegisterLocale("ruRU", {
 	["Shows CC icons on party/raid frames."] = "Показывает иконки контроля на рамках группы/рейда.",
 
 	-- Indicator tab
-	["Auras"] = "Ауры",
+	["Raid Frame Auras"] = "Ауры рамок рейда",
+	["Raid Frame Auras_Short"] = "Ауры рамок",
 	["Defensive"] = "Защитное",
 	["Exclude yourself from showing trinket icons."] = "Исключить себя из отображения иконок аксессуаров.",
 	["Show CC"] = "Показать контроль",

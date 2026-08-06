@@ -27,11 +27,11 @@ local function SaveOpaqueCaches(vars)
 	saved._EcdDisabledSpells = ecdModule and mini:CopyValueOrTable(ecdModule.DisabledSpells) or {}
 	-- Same shape again: the auras module's tracked-spell deltas are spellId -> true hashes
 	-- against an empty schema, so they would be cleaned away too.
-	local aurasSpells = vars.Modules and vars.Modules.AurasModule
-		and vars.Modules.AurasModule.Spells
-	saved._AurasDisabledSpells = aurasSpells and mini:CopyValueOrTable(aurasSpells.Disabled) or {}
-	saved._AurasCustomSpells = aurasSpells and mini:CopyValueOrTable(aurasSpells.Custom) or {}
-	saved._AurasEnabledSpells = aurasSpells and mini:CopyValueOrTable(aurasSpells.Enabled) or {}
+	local raidFrameAurasSpells = vars.Modules and vars.Modules.RaidFrameAurasModule
+		and vars.Modules.RaidFrameAurasModule.Spells
+	saved._RaidFrameAurasDisabledSpells = raidFrameAurasSpells and mini:CopyValueOrTable(raidFrameAurasSpells.Disabled) or {}
+	saved._RaidFrameAurasCustomSpells = raidFrameAurasSpells and mini:CopyValueOrTable(raidFrameAurasSpells.Custom) or {}
+	saved._RaidFrameAurasEnabledSpells = raidFrameAurasSpells and mini:CopyValueOrTable(raidFrameAurasSpells.Enabled) or {}
 	return saved
 end
 
@@ -47,12 +47,12 @@ local function RestoreOpaqueCaches(vars, saved)
 	if ecdModule then
 		ecdModule.DisabledSpells = saved._EcdDisabledSpells or {}
 	end
-	local aurasModule = vars.Modules and vars.Modules.AurasModule
-	if aurasModule then
-		aurasModule.Spells = aurasModule.Spells or {}
-		aurasModule.Spells.Disabled = saved._AurasDisabledSpells or {}
-		aurasModule.Spells.Custom = saved._AurasCustomSpells or {}
-		aurasModule.Spells.Enabled = saved._AurasEnabledSpells or {}
+	local raidFrameAurasModule = vars.Modules and vars.Modules.RaidFrameAurasModule
+	if raidFrameAurasModule then
+		raidFrameAurasModule.Spells = raidFrameAurasModule.Spells or {}
+		raidFrameAurasModule.Spells.Disabled = saved._RaidFrameAurasDisabledSpells or {}
+		raidFrameAurasModule.Spells.Custom = saved._RaidFrameAurasCustomSpells or {}
+		raidFrameAurasModule.Spells.Enabled = saved._RaidFrameAurasEnabledSpells or {}
 	end
 end
 

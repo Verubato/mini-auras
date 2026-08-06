@@ -40,7 +40,7 @@ env.healers.party2 = true
 local MODULES = {
 	{ Name = "CrowdControlModule", Key = "CCModule",
 		Files = { "CrowdControl/Display.lua", "CrowdControl/Module.lua" } },
-	{ Name = "AurasModule", Key = "AurasModule", Files = { "Auras/Display.lua", "Auras/Module.lua" } },
+	{ Name = "RaidFrameAurasModule", Key = "RaidFrameAurasModule", Files = { "RaidFrameAuras/Display.lua", "RaidFrameAuras/Module.lua" } },
 	{ Name = "HealerCrowdControlModule", Key = "HealerCCModule",
 		Files = { "HealerCrowdControl/Sound.lua", "HealerCrowdControl/Display.lua", "HealerCrowdControl/Module.lua" } },
 	{ Name = "PrecogModule", Key = "PrecogModule", Files = { "Precog/Sound.lua", "Precog/Module.lua" } },

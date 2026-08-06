@@ -6,7 +6,7 @@ local _, addon = ...
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 60,
+	Version = 61,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -469,8 +469,8 @@ local dbDefaults = {
 				File = "GameFontHighlightSmall",
 			},
 		},
-		---@class AurasModuleOptions
-		AurasModule = {
+		---@class RaidFrameRaidFrameAurasModuleOptions
+		RaidFrameAurasModule = {
 			-- Helpful auras here are chosen by spell id rather than by Blizzard's category
 			-- flags, so anything can be tracked - including spells the game never flags. Stored
 			-- as deltas against the curated lists rather than a copy of them, so the saved
@@ -492,7 +492,7 @@ local dbDefaults = {
 				Raid = false,
 			},
 
-			---@class AurasInstanceOptions
+			---@class RaidFrameAurasInstanceOptions
 			Default = {
 				ExcludePlayer = false,
 				ShowDefensives = true,
@@ -514,7 +514,7 @@ local dbDefaults = {
 				ShowTooltips = false,
 			},
 
-			---@type AurasInstanceOptions
+			---@type RaidFrameAurasInstanceOptions
 			Raid = {
 				ExcludePlayer = false,
 				ShowDefensives = true,

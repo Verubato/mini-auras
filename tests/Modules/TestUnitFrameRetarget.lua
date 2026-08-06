@@ -15,7 +15,7 @@ local db = env.db
 local auraFilters = env.addon.Core.AuraFilters
 
 env.setModuleEnabled("CCModule", true)
-env.setModuleEnabled("AurasModule", true)
+env.setModuleEnabled("RaidFrameAurasModule", true)
 
 local ccFrame = env.addUnitFrame("party1", "CUF_CC")
 local fiFrame = env.addUnitFrame("party2", "CUF_FI")
@@ -25,10 +25,10 @@ env.loadModule("src/Modules/CrowdControl/Module.lua")
 local crowdControl = env.addon.Modules.CrowdControlModule
 crowdControl:Init()
 
-env.loadModule("src/Modules/Auras/Display.lua")
-env.loadModule("src/Modules/Auras/Module.lua")
-local aurasModule = env.addon.Modules.AurasModule
-aurasModule:Init()
+env.loadModule("src/Modules/RaidFrameAuras/Display.lua")
+env.loadModule("src/Modules/RaidFrameAuras/Module.lua")
+local raidFrameAurasModule = env.addon.Modules.RaidFrameAurasModule
+raidFrameAurasModule:Init()
 
 ---The display a module built for a given anchor, identified by its group signature: crowd control
 ---displays carry a single cc group, auras displays carry a cc group plus one
@@ -104,15 +104,15 @@ fw.describe("CrowdControlModule 12.1 - unit frame anchors", function()
 	end)
 end)
 
-fw.describe("AurasModule 12.1 - unit frame anchors", function()
+fw.describe("RaidFrameAurasModule 12.1 - unit frame anchors", function()
 	fw.it("budgets the four categories from the per-instance toggles", function()
 		-- After a Refresh, not straight off Init: the module's ApplyInitialState only builds the
 		-- entries (ApplyOptions runs on the addon-wide Refresh that follows), so a display created
 		-- outside a refresh carries the full per-category budget until the next one.
-		aurasModule:Refresh()
+		raidFrameAurasModule:Refresh()
 
 		local display = assert(fiDisplay("party2"), "no display for the anchor's unit")
-		local options = db.Modules.AurasModule.Default
+		local options = db.Modules.RaidFrameAurasModule.Default
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 
 		-- One helpful group now covers both categories, so either toggle keeps it budgeted.
@@ -131,9 +131,9 @@ fw.describe("AurasModule 12.1 - unit frame anchors", function()
 
 	fw.it("a category toggle re-budgets only that category", function()
 		local display = fiDisplay("party2")
-		local options = db.Modules.AurasModule.Default
+		local options = db.Modules.RaidFrameAurasModule.Default
 		options.ShowCC = true
-		aurasModule:Refresh()
+		raidFrameAurasModule:Refresh()
 
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 		assert(display._groups[auraFilters.GroupKey.CrowdControl].maxFrameCount == maxIcons, "cc on")
@@ -141,13 +141,13 @@ fw.describe("AurasModule 12.1 - unit frame anchors", function()
 		-- Both helpful toggles have to go off before the one helpful group is unbudgeted.
 		options.ShowDefensives = false
 		options.ShowImportant = false
-		aurasModule:Refresh()
+		raidFrameAurasModule:Refresh()
 		assert(display._groups.helpful.maxFrameCount == 0, "helpful off")
 		assert(display._groups[auraFilters.GroupKey.CrowdControl].maxFrameCount == maxIcons, "cc untouched")
 
 		options.ShowImportant = true
 		options.ShowDefensives = true
-		aurasModule:Refresh()
+		raidFrameAurasModule:Refresh()
 	end)
 
 	fw.it("re-pointing the anchor moves the display and the kick subscription", function()
@@ -156,7 +156,7 @@ fw.describe("AurasModule 12.1 - unit frame anchors", function()
 		local kickMark = #env.kickCalls
 
 		fiFrame.unit = "party5"
-		aurasModule:Refresh()
+		raidFrameAurasModule:Refresh()
 
 		assert(display:GetUnit() == "party5", "the same container now tracks the new unit")
 		assert(fiDisplay("party5") == display, "no second display was created")
@@ -170,7 +170,7 @@ fw.describe("AurasModule 12.1 - unit frame anchors", function()
 		-- The budgets live on the group specs, which the display keeps; a re-point that rebuilt
 		-- them from defaults would quietly turn categories back on.
 		local display = fiDisplay("party5")
-		local options = db.Modules.AurasModule.Default
+		local options = db.Modules.RaidFrameAurasModule.Default
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 
 		assert(display._groups[auraFilters.GroupKey.CrowdControl].maxFrameCount ==

@@ -89,25 +89,25 @@ fw.describe("ProfileManager - switching", function()
 		-- These are spellId -> true hashes against an empty default schema, the same shape that
 		-- CleanTable strips on a soft reset. Profiles copy them wholesale instead, so a custom
 		-- spell added under one profile must not leak into another.
-		local spells = db.Modules.AurasModule.Spells
+		local spells = db.Modules.RaidFrameAurasModule.Spells
 		spells.Custom[123456] = true
 		spells.Enabled[235313] = true
 		spells.Disabled[45438] = true
 
 		profileManager:CreateProfile("Spells", nil)
 		profileManager:SwitchProfile("Spells")
-		db.Modules.AurasModule.Spells.Custom[123456] = nil
+		db.Modules.RaidFrameAurasModule.Spells.Custom[123456] = nil
 
 		profileManager:SwitchProfile("Default")
-		assert(db.Modules.AurasModule.Spells.Custom[123456],
+		assert(db.Modules.RaidFrameAurasModule.Spells.Custom[123456],
 			"the custom id came back with its own profile")
-		assert(db.Modules.AurasModule.Spells.Disabled[45438],
+		assert(db.Modules.RaidFrameAurasModule.Spells.Disabled[45438],
 			"and so did the disabled one")
-		assert(db.Modules.AurasModule.Spells.Enabled[235313],
+		assert(db.Modules.RaidFrameAurasModule.Spells.Enabled[235313],
 			"and the opt-in for an off-by-default spell")
 
 		profileManager:SwitchProfile("Spells")
-		assert(not db.Modules.AurasModule.Spells.Custom[123456],
+		assert(not db.Modules.RaidFrameAurasModule.Spells.Custom[123456],
 			"the other profile kept its own removal")
 
 		profileManager:SwitchProfile("Default")

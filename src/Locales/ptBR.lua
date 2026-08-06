@@ -175,7 +175,8 @@ L:RegisterLocale("ptBR", {
 	["Shows CC icons on party/raid frames."] = "Mostra ícones de controle em quadros de grupo/raide.",
 
 	-- Indicator tab
-	["Auras"] = "Auras",
+	["Raid Frame Auras"] = "Auras dos quadros de raide",
+	["Raid Frame Auras_Short"] = "Auras de quadros",
 	["Defensive"] = "Defensivo",
 	["Exclude yourself from showing trinket icons."] = "Exclua-se de mostrar ícones de berloques.",
 	["Show CC"] = "Mostrar CC",

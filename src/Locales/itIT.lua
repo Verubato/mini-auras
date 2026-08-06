@@ -175,7 +175,8 @@ L:RegisterLocale("itIT", {
 	["Shows CC icons on party/raid frames."] = "Mostra icone di controllo sui riquadri del gruppo/incursione.",
 
 	-- Indicator tab
-	["Auras"] = "Aure",
+	["Raid Frame Auras"] = "Aure dei riquadri",
+	["Raid Frame Auras_Short"] = "Aure riquadri",
 	["Defensive"] = "Difensivo",
 	["Exclude yourself from showing trinket icons."] = "Escluditi dalla visualizzazione delle icone dei monili.",
 	["Show CC"] = "Mostra CC",

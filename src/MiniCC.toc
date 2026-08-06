@@ -110,8 +110,8 @@ Modules\EnemyKickTracker\Module.lua
 Modules\AllyKicks\Observer.lua
 Modules\AllyKicks\Display.lua
 Modules\AllyKicks\Module.lua
-Modules\Auras\Display.lua
-Modules\Auras\Module.lua
+Modules\RaidFrameAuras\Display.lua
+Modules\RaidFrameAuras\Module.lua
 Modules\Precog\Sound.lua
 Modules\Precog\Module.lua
 Modules\Trinkets\Display.lua
@@ -141,7 +141,7 @@ Config\Panels\Nameplates.lua
 Config\Panels\EnemyKickTracker.lua
 Config\Panels\AllyKickTracker.lua
 Config\Panels\Precog.lua
-Config\Panels\Auras.lua
+Config\Panels\RaidFrameAuras.lua
 Config\Panels\FriendlyCooldownTracker.lua
 Config\Panels\EnemyCooldownTracker.lua
 Config\Panels\Trinkets.lua

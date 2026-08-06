@@ -176,7 +176,8 @@ L:SetDefaultStrings({
 	["Shows CC icons on party/raid frames."] = "Shows CC icons on party/raid frames.",
 
 	-- Indicator tab
-	["Auras"] = "Auras",
+	["Raid Frame Auras"] = "Raid Frame Auras",
+	["Raid Frame Auras_Short"] = "Frame Auras",
 	["Defensive"] = "Defensive",
 	["Exclude yourself from showing trinket icons."] = "Exclude yourself from showing trinket icons.",
 	["Show CC"] = "Show CC",

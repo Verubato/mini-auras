@@ -181,11 +181,12 @@ function M:Init()
 			end,
 		},
 		{
-			Key = "Auras",
-			Title = L["Auras"],
+			Key = "RaidFrameAuras",
+			Title = L["Raid Frame Auras_Short"] or L["Raid Frame Auras"],
 			Icon = "Interface\\Icons\\Spell_Fire_SealOfFire",
 			Build = function(content)
-				M.Auras:Build(content, db.Modules.AurasModule.Default, db.Modules.AurasModule.Raid)
+				local m = db.Modules.RaidFrameAurasModule
+				M.RaidFrameAuras:Build(content, m.Default, m.Raid)
 			end,
 		},
 		{
@@ -419,7 +420,7 @@ end
 ---@field AllyKickTracker AllyKickTrackerConfig
 ---@field Precog PrecogConfig
 ---@field OtherAddons OtherAddonsConfig
----@field Auras AurasConfig
+---@field RaidFrameAuras RaidFrameAurasConfig
 ---@field FriendlyCooldownTracker FriendlyCooldownTrackerConfig
 ---@field EnemyCooldownTracker EnemyCooldownTrackerConfig
 ---@field Miscellaneous MiscellaneousConfig

@@ -8,12 +8,12 @@ local eventGate = addon.Core.EventGate
 local duelPoller = addon.Core.DuelPoller
 
 -- Loaded before this file in TOC order.
-local display = addon.Modules.Auras.Display
+local display = addon.Modules.RaidFrameAuras.Display
 
----@class AurasModule : IModule
+---@class RaidFrameAurasModule : IModule
 local M = {}
-addon.Modules.Auras.Module = M
-addon.Modules.AurasModule = M
+addon.Modules.RaidFrameAuras.Module = M
+addon.Modules.RaidFrameAurasModule = M
 
 -- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
@@ -40,7 +40,7 @@ end
 
 ---@return boolean
 local function IsEnabled()
-	return moduleUtil:IsModuleEnabled(moduleName.Auras)
+	return moduleUtil:IsModuleEnabled(moduleName.RaidFrameAuras)
 end
 
 ---@param active boolean
@@ -87,7 +87,7 @@ local function CreateEvents()
 	-- the spell-id filter applies at all, so the budgets have to be recomputed when it happens.
 	-- Registered for the module's lifetime; the predicate below gates it.
 	duelPoller:Register(function()
-		return moduleUtil:IsModuleEnabled(moduleName.Auras)
+		return moduleUtil:IsModuleEnabled(moduleName.RaidFrameAuras)
 	end, function()
 		M:Refresh()
 	end)
@@ -174,9 +174,9 @@ function M:Init()
 	ApplyInitialState()
 end
 
----@class AurasModule
----@field Init fun(self: AurasModule)
----@field Refresh fun(self: AurasModule)
----@field StartTesting fun(self: AurasModule)
----@field StopTesting fun(self: AurasModule)
+---@class RaidFrameAurasModule
+---@field Init fun(self: RaidFrameAurasModule)
+---@field Refresh fun(self: RaidFrameAurasModule)
+---@field StartTesting fun(self: RaidFrameAurasModule)
+---@field StopTesting fun(self: RaidFrameAurasModule)
 

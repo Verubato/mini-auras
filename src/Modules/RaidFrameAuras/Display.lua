@@ -17,11 +17,11 @@ local kickTracker = addon.Core.KickTracker
 local anchoredIcons = addon.Core.AnchoredIcons
 local testSpellData = addon.Core.TestSpells
 
-addon.Modules.Auras = addon.Modules.Auras or {}
+addon.Modules.RaidFrameAuras = addon.Modules.RaidFrameAuras or {}
 
----@class AurasDisplay
+---@class RaidFrameAurasDisplay
 local M = {}
-addon.Modules.Auras.Display = M
+addon.Modules.RaidFrameAuras.Display = M
 
 -- 12.1 path: CC + defensive auras render through an AuraContainer per anchor (one group per
 -- category); the IconSlotContainer is kept for the kick icon and test mode. Unlike the legacy
@@ -33,7 +33,7 @@ local paused = false
 local testModeActive = false
 -- Anchor frame -> the container, display and watcher drawn on it. Owned here: the module asks
 -- for whole-set operations rather than reaching into it.
----@type table<table, AurasWatchEntry>
+---@type table<table, RaidFrameAurasWatchEntry>
 local watchers = {}
 ---@type TestSpell[]
 local testDefensiveSpells = {}
@@ -65,7 +65,7 @@ local helpfulFilters = { includeSpellIDs = {} }
 ---user switched off, plus anything they added by hand.
 ---@return table filters
 local function GetHelpfulFilters()
-	local overrides = db.Modules.AurasModule.Spells
+	local overrides = db.Modules.RaidFrameAurasModule.Spells
 	local disabled = (overrides and overrides.Disabled) or EMPTY_TABLE
 	local ids = {}
 
@@ -130,14 +130,14 @@ local function BuildGroups(maxIcons)
 end
 
 local function GetOptions()
-	local m = db.Modules.AurasModule
+	local m = db.Modules.RaidFrameAurasModule
 	if not m then
 		return nil
 	end
 	return instanceOptions:IsRaid() and m.Raid or m.Default
 end
 
----@param entry AurasWatchEntry
+---@param entry RaidFrameAurasWatchEntry
 local function UpdateWatcherAuras(entry)
 	if not entry or not entry.Watcher or not entry.Container then
 		return
@@ -159,7 +159,7 @@ local function UpdateWatcherAuras(entry)
 	end
 
 	local options = GetOptions()
-	if not options or not moduleUtil:IsModuleEnabled(moduleName.Auras) then
+	if not options or not moduleUtil:IsModuleEnabled(moduleName.RaidFrameAuras) then
 		return
 	end
 
@@ -244,13 +244,13 @@ end
 
 ---12.1 path: positions the aura display on its anchor, chaining after the kick container while
 ---a kick icon is showing (the kick occupied slot 1 in the legacy layout).
----@param entry AurasWatchEntry
+---@param entry RaidFrameAurasWatchEntry
 ---@param anchor table
 ---@param options table
 ---With kicks switched off the display has no kick icon to chain past.
----@param entry AurasWatchEntry
+---@param entry RaidFrameAurasWatchEntry
 ---@param anchor table
----@param options AurasInstanceOptions
+---@param options RaidFrameAurasInstanceOptions
 local function AnchorAuraDisplay(entry, anchor, options)
 	local kickActive = options.ShowKicks ~= false and kickTracker:GetKick(entry.Unit) ~= nil
 	anchoredIcons:AnchorAuraDisplay(entry, anchor, options, kickActive)
@@ -258,14 +258,14 @@ end
 
 ---12.1 path: renders the kick icon into the entry's IconSlotContainer (slot 1) and re-anchors
 ---the aura display around it.
----@param entry AurasWatchEntry
+---@param entry RaidFrameAurasWatchEntry
 local function UpdateKickIcon(entry)
 	if not entry or not entry.Container or paused or testModeActive then
 		return
 	end
 
 	local options = GetOptions()
-	if not options or not moduleUtil:IsModuleEnabled(moduleName.Auras) then
+	if not options or not moduleUtil:IsModuleEnabled(moduleName.RaidFrameAuras) then
 		return
 	end
 
@@ -282,7 +282,7 @@ end
 -- container-driven and only the kick slot needs pushing, on 12.0 the watcher redraws everything.
 -- TEMPORARY: when the legacy path goes, this alias goes with it and the callers just call
 -- UpdateKickIcon.
----@type fun(entry: AurasWatchEntry)
+---@type fun(entry: RaidFrameAurasWatchEntry)
 local RenderEntry = USE_AURA_CONTAINERS and UpdateKickIcon or UpdateWatcherAuras -- luaconv: aliases the two renderers above
 
 ---@param anchor table
@@ -559,7 +559,7 @@ end
 
 
 ---@param anchor table
----@param options AurasInstanceOptions
+---@param options RaidFrameAurasInstanceOptions
 local function ApplyEntryOptions(entry, anchor, options)
 	local container = entry.Container
 	local iconSize = moduleUtil:GetIconSize(options.Icons, anchor, 32, 75)
@@ -622,7 +622,7 @@ local function ApplyEntryOptions(entry, anchor, options)
 	end
 end
 
----@param options AurasInstanceOptions
+---@param options RaidFrameAurasInstanceOptions
 local function ApplyOptions(options)
 	for anchor, entry in pairs(watchers) do
 		ApplyEntryOptions(entry, anchor, options)
@@ -631,7 +631,7 @@ end
 
 -- Public surface
 
----@return AurasInstanceOptions?
+---@return RaidFrameAurasInstanceOptions?
 function M:GetOptions()
 	return db and GetOptions()
 end
@@ -664,7 +664,7 @@ function M:EnsureFrames()
 	EnsureFrames()
 end
 
----@param options AurasInstanceOptions
+---@param options RaidFrameAurasInstanceOptions
 function M:ApplyOptions(options)
 	ApplyOptions(options)
 end
@@ -700,7 +700,7 @@ function M:Init()
 	testCcSpells = testSpellData.CrowdControl
 end
 
----@class AurasWatchEntry
+---@class RaidFrameAurasWatchEntry
 ---@field Container IconSlotContainer On 12.1 this only renders the kick icon and test icons.
 ---@field Watcher Watcher? Legacy path only (nil on 12.1).
 ---@field Display AuraContainerDisplay? 12.1 path only: CC/defensive auras render through this.
@@ -709,7 +709,7 @@ end
 ---@field Unit string
 ---@field KickKey number
 
----@class AurasModuleOptions
+---@class RaidFrameRaidFrameAurasModuleOptions
 ---@field ShowDefensives boolean
 ---@field ShowImportant boolean 12.1 only: Blizzard-flagged important buffs.
 ---@field ShowCC boolean

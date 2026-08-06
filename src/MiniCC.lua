@@ -20,7 +20,7 @@ local modules = {
 	addon.Modules.AlertsModule,
 	addon.Modules.NameplatesModule,
 	addon.Modules.EnemyKickTrackerModule,
-	addon.Modules.AurasModule,
+	addon.Modules.RaidFrameAurasModule,
 	addon.Modules.PrecogModule,
 	addon.Modules.TrinketsModule,
 	addon.Modules.AllyKickTrackerModule,
@@ -235,9 +235,9 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Display EnemyCooldownDisplay
 ---@field Module EnemyCooldownTrackerModule
 
----@class Auras
----@field Display AurasDisplay
----@field Module AurasModule
+---@class RaidFrameAuras
+---@field Display RaidFrameAurasDisplay
+---@field Module RaidFrameAurasModule
 
 ---@class CrowdControl
 ---@field Display CrowdControlDisplay
@@ -291,7 +291,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field AllyKickTrackerModule AllyKickTrackerModule
 ---@field AlertsModule AlertsModule
 ---@field CrowdControlModule CrowdControlModule
----@field AurasModule AurasModule
+---@field RaidFrameAurasModule RaidFrameAurasModule
 ---@field PrecogModule PrecogModule
 ---@field FriendlyCooldownTrackerModule FriendlyCooldownTrackerModule
 ---@field EnemyCooldownTrackerModule EnemyCooldownTrackerModule
@@ -300,7 +300,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field EnemyKickTracker EnemyKickTracker
 ---@field AllyKicks AllyKicks
 ---@field Alerts Alerts
----@field Auras Auras
+---@field RaidFrameAuras RaidFrameAuras
 ---@field CrowdControl CrowdControl
 ---@field HealerCrowdControl HealerCrowdControl
 ---@field Precog Precog
