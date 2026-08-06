@@ -107,6 +107,42 @@ fw.describe("AlertsModule 12.1 - bar anchor normalization", function()
 		assert(alerts.Offset.Y == 415, "vertical centre unchanged")
 	end)
 
+	fw.it("places the bar from its saved anchor before measuring it", function()
+		-- Normalization reads the frame's rect, so it has to run AFTER the frame has been moved
+		-- to where the options say. Running it first converted whatever the bar happened to be
+		-- showing, which on 12.1 silently undid a reset to defaults: CENTER growth reports as
+		-- RIGHT, so the pin point never matches the restored CENTER and the old position was
+		-- measured straight back over it.
+		placeMainBar()
+		alerts.Grow = "CENTER"
+		module:Refresh()
+
+		-- What resetting the profile does to the stored anchor.
+		alerts.Point = "CENTER"
+		alerts.RelativePoint = "TOP"
+		alerts.RelativeTo = "UIParent"
+		alerts.Offset.X = 0
+		alerts.Offset.Y = -100
+
+		local placements = {}
+		local realSetPoint = mainBar.SetPoint
+
+		mainBar.SetPoint = function(self, point, relativeTo, relativePoint, x, y)
+			placements[#placements + 1] = { Point = point, X = x, Y = y }
+			return realSetPoint(self, point, relativeTo, relativePoint, x, y)
+		end
+
+		module:Refresh()
+		mainBar.SetPoint = realSetPoint
+
+		local first = placements[1]
+
+		assert(first, "the bar was placed")
+		assert(first.Point == "CENTER" and first.X == 0 and first.Y == -100,
+			"placed at the restored default first, got " .. tostring(first.Point) ..
+			" " .. tostring(first.X) .. "," .. tostring(first.Y))
+	end)
+
 	fw.it("does not re-save on later refreshes with the same Grow", function()
 		-- Normalization exists to survive a Grow change, not to track the frame: re-saving on
 		-- every refresh would let a transient layout (or a bar the user is mid-drag on) become

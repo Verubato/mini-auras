@@ -355,21 +355,53 @@ end
 -- frame at its current on-screen position (changing Grow never visibly moves the bar). Rect
 -- values are in the frame's own scale, which is also the scale SetPoint offsets use, so no
 -- conversion is needed even though the bars ignore parent scale.
+---@return boolean rewritten True when the saved anchor was changed and must be re-applied.
 local function NormalizeBarAnchor(frame, anchorOptions, grow)
 	local point = growAnchors:GetPinPoint(grow)
 	if anchorOptions.Point == point then
-		return
+		return false
 	end
 	local left, right = frame:GetLeft(), frame:GetRight()
 	local centerX, centerY = frame:GetCenter()
 	if not left or not right or not centerY then
-		return
+		return false
 	end
 	anchorOptions.Point = point
 	anchorOptions.RelativeTo = "UIParent"
 	anchorOptions.RelativePoint = "BOTTOMLEFT"
 	anchorOptions.Offset.X = (point == "RIGHT" and right) or (point == "LEFT" and left) or centerX
 	anchorOptions.Offset.Y = centerY
+
+	return true
+end
+
+---Places a bar from its saved anchor, then rewrites that anchor to the pinned edge its grow
+---direction wants and places it again if anything moved.
+---
+---The order matters. Normalising reads the frame's rect, so doing it first converts wherever
+---the frame happens to be sitting rather than where the options say it belongs. That is how a
+---reset to defaults used to undo itself: 12.1 reports CENTER growth as RIGHT, so the pin point
+---never matches the restored CENTER and the pre-reset position was measured straight back in.
+---@param frame table
+---@param anchorOptions table
+---@param grow string
+local function PlaceBar(frame, anchorOptions, grow)
+	local function Place()
+		frame:ClearAllPoints()
+		frame:SetPoint(
+			anchorOptions.Point,
+			_G[anchorOptions.RelativeTo] or UIParent,
+			anchorOptions.RelativePoint,
+			anchorOptions.Offset.X,
+			anchorOptions.Offset.Y
+		)
+	end
+
+	Place()
+
+	if NormalizeBarAnchor(frame, anchorOptions, grow) then
+		Place()
+	end
 end
 
 -- Saves a bar's position after a drag, normalized to the grow-appropriate pinned edge.
@@ -1044,16 +1076,7 @@ end
 function M:ApplyBarOptions(options)
 	local grow = GetGrow()
 
-	NormalizeBarAnchor(container.Frame, options, grow)
-
-	container.Frame:ClearAllPoints()
-	container.Frame:SetPoint(
-		options.Point,
-		_G[options.RelativeTo] or UIParent,
-		options.RelativePoint,
-		options.Offset.X,
-		options.Offset.Y
-	)
+	PlaceBar(container.Frame, options, grow)
 
 	container:SetIconSize(options.Icons.Size)
 	container:SetSpacing(options.IconSpacing or 2)
@@ -1071,18 +1094,19 @@ function M:ApplyBarOptions(options)
 	local importantVisible = importantOptions and importantOptions.Enabled and options.SplitBars
 	local impAnchor = importantOptions or options
 
-	if impAnchor ~= options then
-		NormalizeBarAnchor(importantContainer.Frame, impAnchor, grow)
+	-- Shared anchor: the main bar has already normalised it, so only place the frame.
+	if impAnchor == options then
+		importantContainer.Frame:ClearAllPoints()
+		importantContainer.Frame:SetPoint(
+			impAnchor.Point,
+			_G[impAnchor.RelativeTo] or UIParent,
+			impAnchor.RelativePoint,
+			impAnchor.Offset.X,
+			impAnchor.Offset.Y
+		)
+	else
+		PlaceBar(importantContainer.Frame, impAnchor, grow)
 	end
-
-	importantContainer.Frame:ClearAllPoints()
-	importantContainer.Frame:SetPoint(
-		impAnchor.Point,
-		_G[impAnchor.RelativeTo] or UIParent,
-		impAnchor.RelativePoint,
-		impAnchor.Offset.X,
-		impAnchor.Offset.Y
-	)
 
 	importantContainer:SetIconSize(options.Icons.Size)
 	importantContainer:SetSpacing(options.IconSpacing or 2)
