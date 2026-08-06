@@ -39,14 +39,14 @@ local function PushSuspension()
 	observer:SetSuspended(suspended)
 end
 
+-- TEMPORARY: feeds observer:SetSort, which only reaches the legacy watchers, so the CCNativeOrder
+-- option is a no-op for portraits on 12.1; both die with the 12.0 path.
 local function GetCCSortOptions()
 	if db.CCNativeOrder then
 		return Enum.UnitAuraSortRule.Default, Enum.UnitAuraSortDirection.Normal
 	end
 	return Enum.UnitAuraSortRule.Unsorted, Enum.UnitAuraSortDirection.Reverse
 end
-
--- Lifecycle
 
 ---@return PortraitModuleOptions?
 local function GetOptions()

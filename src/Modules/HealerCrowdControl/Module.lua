@@ -33,8 +33,6 @@ local function OnEvent(_, event)
 	end
 end
 
--- Lifecycle
-
 ---@return boolean
 local function IsEnabled()
 	return moduleUtil:IsModuleEnabled(ModuleName.HealerCrowdControl)

@@ -5,6 +5,7 @@ local wowEx = addon.Utils.WoWEx
 local growAnchors = addon.Core.GrowAnchors
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local testSpellData = addon.Core.TestSpells
 local moduleUtil = addon.Utils.ModuleUtil
 local pool = addon.Core.Pool
 local spellSearch = addon.Core.SpellSearch
@@ -69,17 +70,14 @@ addon.Modules.CustomAuras.Display = M
 ---@return AuraDisplayStyle
 local function BuildStyle(group)
 	local icons = group.Icons
-	local style = auraContainerDisplay:GetStyleScratch()
+	local style = auraContainerDisplay:BuildStandardStyle(icons)
 
-	style.ReverseCooldown = icons.ReverseCooldown
-	style.Glow = icons.Glow
 	style.Border = icons.Border
 	style.GlowColor = moduleUtil:GetIconColorRGB(icons)
 	style.ShowTooltips = icons.ShowTooltips
 	-- Always on: a stack count is only ever drawn when there is one to draw, so there is
 	-- nothing to turn off and nothing to explain in the options.
 	style.Stacks = true
-	style.FontScale = db.FontScale
 
 	return style
 end
@@ -233,40 +231,36 @@ local function RenderTestIcons(state, entry)
 	local group = state.Group
 	local container = entry.Test
 	local color = moduleUtil:GetIconColor(group.Icons)
-	local now = GetTime()
-	local slot = 0
+	local nextSlot
 
-	local function Fill(texture, spellId)
-		slot = slot + 1
-		container:SetSlot(slot, {
-			Texture = texture,
-			DurationObject = wowEx:CreateDuration(now, 15),
-			Alpha = true,
+	if groups:TracksSpells(group) then
+		nextSlot = testSpellData:FillContainer(container, group.Spells, 1, {
 			ReverseCooldown = group.Icons.ReverseCooldown,
 			Glow = group.Icons.Glow,
 			Color = color,
 			FontScale = db.FontScale,
-			SpellId = group.Icons.ShowTooltips and spellId or nil,
+			ShowTooltips = group.Icons.ShowTooltips,
 		})
-	end
-
-	if groups:TracksSpells(group) then
-		for _, spellId in ipairs(group.Spells) do
-			local texture = slot < container.Count and C_Spell.GetSpellTexture(spellId)
-
-			if texture then
-				Fill(texture, spellId)
-			end
-		end
 	else
 		local texture = groups:GetIcon(group)
+		local now = GetTime()
 
-		for _ = 1, container.Count do
-			Fill(texture, nil)
+		for slot = 1, container.Count do
+			container:SetSlot(slot, {
+				Texture = texture,
+				DurationObject = wowEx:CreateDuration(now, 15),
+				Alpha = true,
+				ReverseCooldown = group.Icons.ReverseCooldown,
+				Glow = group.Icons.Glow,
+				Color = color,
+				FontScale = db.FontScale,
+			})
 		end
+
+		nextSlot = container.Count + 1
 	end
 
-	for index = slot + 1, container.Count do
+	for index = nextSlot, container.Count do
 		container:SetSlotUnused(index)
 	end
 end
@@ -288,35 +282,19 @@ local function UpdateAnchorSize(state)
 end
 
 ---@param state CustomAuraGroupState
-local function SaveAnchorPosition(state)
-	local anchor = state.Anchor
-	local point, _, relativePoint, x, y = anchor:GetPoint()
-	local position = state.Group.Position
-
-	position.Point = point or "CENTER"
-	position.RelativePoint = relativePoint or "CENTER"
-	position.X = x or 0
-	position.Y = y or 0
-end
-
----@param state CustomAuraGroupState
 local function EnsureAnchor(state)
 	if state.Anchor then
 		return state.Anchor
 	end
 
 	local anchor = CreateFrame("Frame", addonName .. "CustomAura" .. state.Group.Id, UIParent)
-	anchor:SetClampedToScreen(true)
 	anchor:SetIgnoreParentScale(true)
 	anchor:EnableMouse(false)
 	anchor:SetMovable(false)
-	anchor:RegisterForDrag("LeftButton")
-	anchor:SetScript("OnDragStart", function(self)
-		self:StartMoving()
-	end)
-	anchor:SetScript("OnDragStop", function(self)
-		self:StopMovingOrSizing()
-		SaveAnchorPosition(state)
+	-- A function rather than the table: an import or profile switch replaces the group wholesale,
+	-- and EnsureState re-points state.Group at the live one.
+	moduleUtil:MakeMovable(anchor, function()
+		return state.Group.Position
 	end)
 
 	state.Anchor = anchor

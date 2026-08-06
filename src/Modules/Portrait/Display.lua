@@ -3,10 +3,12 @@ local _, addon = ...
 local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
 local kickTracker = addon.Core.KickTracker
+local kickSlot = addon.Core.KickSlot
 local testSpellData = addon.Core.TestSpells
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
+-- TEMPORARY: units and auras only serve GetFirstImportantBuff; both die with the 12.0 path.
 local units = addon.Utils.Units
 local auras = addon.Utils.Auras
 
@@ -33,6 +35,12 @@ addon.Modules.Portrait.Display = M
 -- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
+-- Priority stack for the portrait icon, LOWEST first: a higher-priority display simply covers
+-- the ones below it, and an empty one hides its button secretly. The filters are the shared
+-- partitioned ones, so an aura that qualifies for several categories only ever lands in the
+-- highest of them.
+local PORTRAIT_CATEGORIES = { "Important", "ExternalDefensive", "BigDefensive", "CrowdControl" }
+
 ---@type Db
 local db
 local testModeActive = false
@@ -43,18 +51,6 @@ local suspended = true
 local containers = {}
 ---@type TestSpell?
 local testSpell
-
--- Priority stack for the portrait icon, LOWEST first: a higher-priority display simply covers
--- the ones below it, and an empty one hides its button secretly. The filters are the shared
--- partitioned ones, so an aura that qualifies for several categories only ever lands in the
--- highest of them.
-local PORTRAIT_CATEGORIES = {
-	{ Key = "important", Filter = "Important" },
-	{ Key = "extdef", Filter = "ExternalDefensive" },
-	{ Key = "bigdef", Filter = "BigDefensive" },
-	{ Key = "cc", Filter = "CrowdControl" },
-}
-
 -- 12.1 scratch: kick slot options, rebuilt on every kick event and expiry timer. SetSlot reads
 -- it synchronously and keeps nothing.
 local kickSlotScratch = {}
@@ -68,9 +64,9 @@ end
 ---straight to SetStyle.
 ---@return AuraDisplayStyle
 local function BuildPortraitStyle()
-	local style = auraContainerDisplay:GetStyleScratch()
+	-- No Icons options table here: the cooldown direction lives on the module options root.
+	local style = auraContainerDisplay:BuildStandardStyle(nil)
 	style.ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown or false
-	style.FontScale = db.FontScale
 	style.ShowTooltips = false
 
 	return style
@@ -106,14 +102,10 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 
 	for index, category in ipairs(PORTRAIT_CATEGORIES) do
 		local display = auraContainerDisplay:New(kickFrame, unit, {
-			{
-				Key = category.Key,
-				FilterString = auraFilters.Filter[category.Filter],
-				CandidateFilters = auraFilters.CandidateFilters[category.Filter],
-				MaxIcons = 1,
+			auraFilters:GroupSpec(category, 1, {
 				-- Reverse instance-id order = newest aura first, matching the legacy Reverse sort.
 				SortDirection = AuraContainerSortDirection.Reverse,
-			},
+			}),
 		}, iconSize, 0, "Portraits", {
 			IconTexCoord = texCoord,
 			IconMask = mask,
@@ -138,6 +130,7 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 	return { Displays = displays }
 end
 
+-- TEMPORARY: only serves the legacy OnAuraInfo render; dies with the 12.0 path.
 -- Returns the aura data for the unit's first important nameplate buff, or nil. These come from
 -- Blizzard's own nameplate buff list, so the unit needs a visible nameplate (e.g. an enemy target
 -- in range); the player's own portrait only shows one if self-nameplates are enabled. Friendly
@@ -305,35 +298,27 @@ function M:UpdateKickIcon(unit, container)
 		return
 	end
 
-	if container.KickTimer then
-		container.KickTimer:Cancel()
-		container.KickTimer = nil
-	end
-
 	local kickEntry = kickTracker:GetKick(unit)
+	local slotOptions
+
 	if kickEntry then
-		local slotOptions = kickSlotScratch
+		slotOptions = kickSlotScratch
 		slotOptions.Texture = kickEntry.Texture
 		slotOptions.DurationObject = kickEntry.DurationObject
 		slotOptions.Alpha = true
 		slotOptions.ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown
 		slotOptions.FontScale = db.FontScale
 		slotOptions.Color = kickEntry.Color
-		container:SetSlot(1, slotOptions)
-
-		local remaining = (kickEntry.StartTime or 0) + (kickEntry.Duration or 0) - GetTime()
-		if remaining > 0 then
-			container.KickTimer = C_Timer.NewTimer(remaining + 0.05, function()
-				container.KickTimer = nil
-				M:UpdateKickIcon(unit, container)
-			end)
-		end
-	else
-		container:SetSlotUnused(1)
 	end
+
+	container.KickTimer = kickSlot:Render(container, kickEntry, slotOptions, container.KickTimer, function()
+		container.KickTimer = nil
+		M:UpdateKickIcon(unit, container)
+	end)
 end
 
----Legacy path: the whole portrait is drawn here, in strict priority order.
+---TEMPORARY: legacy 12.0 renderer; the whole portrait is drawn here, in strict priority order.
+---Dies with the watcher path.
 ---@param unit string
 ---@param watcher Watcher
 ---@param container IconSlotContainer

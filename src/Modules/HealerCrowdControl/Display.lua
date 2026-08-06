@@ -58,6 +58,8 @@ local discardPool = {}
 ---@type TestSpell[]
 local testSpells = {}
 
+-- TEMPORARY: both only serve the legacy renderer's battleground range gate (see the header
+-- comment); they and the LibRangeCheck import die with the 12.0 path.
 local function IsInBattleground()
 	local inInstance, instanceType = IsInInstance()
 	return inInstance and instanceType == "pvp"
@@ -124,12 +126,8 @@ end
 ---@param options table
 ---@return AuraDisplayStyle
 local function BuildStyle(options)
-	local style = auraContainerDisplay:GetStyleScratch()
+	local style = auraContainerDisplay:BuildStandardStyle(options.Icons)
 
-	style.ReverseCooldown = options.Icons.ReverseCooldown
-	style.ColorByDispelType = options.Icons.ColorByDispelType
-	style.Glow = options.Icons.Glow
-	style.FontScale = db.FontScale
 	style.ShowTooltips = options.ShowTooltips ~= false
 
 	return style
@@ -229,26 +227,24 @@ local function OnAuraStateUpdated()
 	end
 end
 
-local function Teardown()
-	local toDiscard = {}
-	for unit in pairs(activePool) do
-		toDiscard[#toDiscard + 1] = unit
-	end
-
-	for _, unit in ipairs(toDiscard) do
-		local item = activePool[unit]
-		if item then
-			if item.Watcher then
-				item.Watcher:Disable()
-			end
-			if item.Display then
-				item.Display:SetEnabled(false)
-				item.Display:Hide()
-			end
-			discardPool[unit] = item
-			activePool[unit] = nil
+---Parks every active healer entry in the discard pool, disabling its watcher and display.
+---Clearing a key mid-traversal is legal in Lua (only additions are not), so no staging list.
+local function DiscardActiveEntries()
+	for unit, item in pairs(activePool) do
+		if item.Watcher then
+			item.Watcher:Disable()
 		end
+		if item.Display then
+			item.Display:SetEnabled(false)
+			item.Display:Hide()
+		end
+		discardPool[unit] = item
+		activePool[unit] = nil
 	end
+end
+
+local function Teardown()
+	DiscardActiveEntries()
 
 	if iconsContainer then
 		iconsContainer:ResetAllSlots()
@@ -278,26 +274,9 @@ local function EnableWatchers()
 end
 
 local function RefreshHealers()
-	-- Remove all active healers from the pool to avoid duplicates
-	local toDiscard = {}
-	for unit in pairs(activePool) do
-		toDiscard[#toDiscard + 1] = unit
-	end
-
-	for _, unit in ipairs(toDiscard) do
-		local item = activePool[unit]
-		if item then
-			if item.Watcher then
-				item.Watcher:Disable()
-			end
-			if item.Display then
-				item.Display:SetEnabled(false)
-				item.Display:Hide()
-			end
-			discardPool[unit] = item
-			activePool[unit] = nil
-		end
-	end
+	-- Everyone goes back to the discard pool first, so a healer that stayed is re-acquired
+	-- rather than duplicated.
+	DiscardActiveEntries()
 
 	local healers = units:FindHealers()
 
@@ -323,14 +302,7 @@ local function RefreshHealers()
 				Display = auraContainerDisplay:New(
 					healerAnchor,
 					healer,
-					{
-						{
-							Key = auraFilters.GroupKey.CrowdControl,
-							FilterString = auraFilters.Filter.CrowdControl,
-							CandidateFilters = auraFilters.CandidateFilters.CrowdControl,
-							MaxIcons = 5,
-						},
-					},
+					{ auraFilters:GroupSpec("CrowdControl", 5) },
 					tonumber(options.Icons.Size) or 32,
 					options.IconSpacing or 2,
 					"Healer CC",
@@ -379,35 +351,22 @@ local function RefreshTestFrame()
 	end
 
 	local size = tonumber(options.Icons.Size) or 32
-	local now = GetTime()
 
 	iconsContainer:SetIconSize(size)
 
 	if not options.Icons.Enabled then
 		iconsContainer:ResetAllSlots()
 	else
-		for i, spell in ipairs(testSpells) do
-			local texture = C_Spell.GetSpellTexture(spell.SpellId)
+		local nextSlot = testSpellData:FillContainer(iconsContainer, testSpells, 1, {
+			ReverseCooldown = options.Icons.ReverseCooldown,
+			Glow = options.Icons.Glow,
+			ColorByDispelType = options.Icons.ColorByDispelType,
+			FontScale = db.FontScale,
+			ShowTooltips = options.ShowTooltips ~= false,
+			Stagger = true,
+		})
 
-			if texture then
-				local duration = 15 + (i - 1) * 3
-				local startTime = now - (i - 1) * 0.5
-
-				iconsContainer:SetSlot(i, {
-					Texture = texture,
-					DurationObject = wowEx:CreateDuration(startTime, duration),
-					Alpha = true,
-					ReverseCooldown = options.Icons.ReverseCooldown,
-					Glow = options.Icons.Glow,
-					Color = options.Icons.ColorByDispelType and spell.DispelColor,
-					FontScale = db.FontScale,
-					SpellId = options.ShowTooltips ~= false and spell.SpellId or nil,
-				})
-			end
-		end
-
-		-- Clear any unused slots beyond the test spell count
-		for i = #testSpells + 1, iconsContainer.Count do
+		for i = nextSlot, iconsContainer.Count do
 			iconsContainer:SetSlotUnused(i)
 		end
 	end
@@ -438,7 +397,7 @@ local function EnsureFrames()
 	RefreshHealers()
 end
 
-
+---@param options HealerCCModuleOptions
 local function ApplyOptions(options)
 	healerAnchor:ClearAllPoints()
 	healerAnchor:SetPoint(
@@ -470,21 +429,10 @@ local function CreateFrames()
 	healerAnchor:Hide()
 	healerAnchor:EnableMouse(false)
 	healerAnchor:SetMovable(false)
-	healerAnchor:SetClampedToScreen(true)
-	healerAnchor:RegisterForDrag("LeftButton")
 	healerAnchor:SetIgnoreParentScale(true)
-	healerAnchor:SetScript("OnDragStart", function(anchorSelf)
-		anchorSelf:StartMoving()
-	end)
-	healerAnchor:SetScript("OnDragStop", function(anchorSelf)
-		anchorSelf:StopMovingOrSizing()
-
-		local point, relativeTo, relativePoint, x, y = anchorSelf:GetPoint()
-		db.Modules.HealerCCModule.Point = point
-		db.Modules.HealerCCModule.RelativePoint = relativePoint
-		db.Modules.HealerCCModule.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
-		db.Modules.HealerCCModule.Offset.X = x
-		db.Modules.HealerCCModule.Offset.Y = y
+	-- A function rather than the table: a profile switch replaces the options wholesale.
+	moduleUtil:MakeMovable(healerAnchor, function()
+		return db.Modules.HealerCCModule
 	end)
 
 	local text = healerAnchor:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
@@ -509,8 +457,6 @@ local function CreateFrames()
 	iconsContainer.Frame:Show()
 end
 
--- Public surface
-
 ---@return HealerCCModuleOptions?
 function M:GetOptions()
 	-- The anchor is built in Init; without it there is nothing to configure.
@@ -519,11 +465,6 @@ function M:GetOptions()
 	end
 
 	return db.Modules.HealerCCModule
-end
-
----@return boolean true once the anchor exists
-function M:HasAnchor()
-	return healerAnchor ~= nil
 end
 
 ---@param value boolean
