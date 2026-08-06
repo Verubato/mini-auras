@@ -155,6 +155,15 @@ Config\Panels\AllyKickTracker.lua
 Config\Panels\Precog.lua
 Config\Panels\RaidFrameAuras.lua
 Config\Panels\IconSelector.lua
+Config\Panels\CustomAuras\Shared.lua
+Config\Panels\CustomAuras\ImportExport.lua
+Config\Panels\CustomAuras\SpellPicker.lua
+Config\Panels\CustomAuras\GroupGrid.lua
+Config\Panels\CustomAuras\EditorFilters.lua
+Config\Panels\CustomAuras\EditorSounds.lua
+Config\Panels\CustomAuras\EditorAppearance.lua
+Config\Panels\CustomAuras\EditorTrigger.lua
+Config\Panels\CustomAuras\Editor.lua
 Config\Panels\CustomAuras.lua
 Config\Panels\FriendlyCooldownTracker.lua
 Config\Panels\EnemyCooldownTracker.lua
