@@ -7,6 +7,7 @@ local frames = addon.Core.Frames
 local config = addon.Config
 local migrator = addon.Config.Migrator
 local testModeManager = addon.Core.TestModeManager
+local legacyAddon = addon.Core.LegacyAddon
 -- Every module Inits and Refreshes on every client; none of them are conditionally listed here.
 -- Client support is each module's own decision, made once at file load from
 -- WoWEx:UseAuraContainers() and enforced by early-returning from Init/Refresh/StartTesting. So a
@@ -107,6 +108,9 @@ local function OnEvent(_, event)
 	elseif event == "PLAYER_ENTERING_WORLD" then
 		lastIsInRaid = IsInRaid()
 		NotifyChanges()
+		-- After NotifyChanges, because both share one dialog frame and the conflict is the more
+		-- urgent of the two.
+		legacyAddon:WarnIfConflicting()
 		addon:Refresh()
 	elseif event == "GROUP_ROSTER_UPDATE" then
 		-- Modules unregister their events entirely while disabled, and IsModuleEnabled depends
@@ -213,6 +217,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field EventGate EventGate
 ---@field AuraCategoryIds AuraCategoryIds
 ---@field InstanceOptions InstanceOptions
+---@field LegacyAddon LegacyAddon
 ---@field TrinketsTracker TrinketsTracker
 ---@field TestModeManager TestModeManager
 ---@field TestSpells TestSpells

@@ -300,6 +300,9 @@ L:RegisterLocale("deDE", {
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Freundliches Abklingzeit-Schätzmodul hinzugefügt. Du kannst jetzt die Abklingzeiten deiner Teammitglieder einigermaßen verfolgen!",
 	[" - Added enemy cooldown tracking module."] = " - Feindliches Abklingzeit-Verfolgungsmodul hinzugefügt.",
 	["MiniAuras - What's New?"] = "MiniAuras - Was gibt es Neues?",
+	["MiniAuras - Addon Conflict"] = "MiniAuras - Addon-Konflikt",
+	["The old MiniCC addon is still installed and running alongside MiniAuras, so every icon is being drawn twice.\n\nYour MiniCC settings have already been copied across. Delete the MiniCC folder from your AddOns folder, then reload."] = "Das alte Addon MiniCC ist weiterhin installiert und läuft parallel zu MiniAuras, sodass jedes Symbol doppelt angezeigt wird.\n\nDeine MiniCC-Einstellungen wurden bereits übernommen. Lösche den Ordner MiniCC aus deinem AddOns-Ordner und lade die Benutzeroberfläche neu.",
+	["The old MiniCC addon is still running alongside MiniAuras. Delete the MiniCC folder from your AddOns folder, then reload."] = "Das alte Addon MiniCC läuft weiterhin parallel zu MiniAuras. Lösche den Ordner MiniCC aus deinem AddOns-Ordner und lade die Benutzeroberfläche neu.",
 
 	-- Language option
 	["Language override"] = "Sprache überschreiben",

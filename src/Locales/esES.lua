@@ -300,6 +300,9 @@ L:RegisterLocale("esES", {
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Añadido el módulo de estimación de tiempos de reutilización aliados. ¡Ahora puedes seguir aproximadamente los tiempos de reutilización de tus compañeros de equipo!",
 	[" - Added enemy cooldown tracking module."] = " - Módulo de seguimiento de tiempos de reutilización de enemigos añadido.",
 	["MiniAuras - What's New?"] = "MiniAuras - ¿Qué hay de nuevo?",
+	["MiniAuras - Addon Conflict"] = "MiniAuras - Conflicto de addons",
+	["The old MiniCC addon is still installed and running alongside MiniAuras, so every icon is being drawn twice.\n\nYour MiniCC settings have already been copied across. Delete the MiniCC folder from your AddOns folder, then reload."] = "El antiguo addon MiniCC sigue instalado y ejecutándose junto a MiniAuras, por lo que cada icono se muestra dos veces.\n\nTu configuración de MiniCC ya se ha copiado. Elimina la carpeta MiniCC de tu carpeta AddOns y recarga la interfaz.",
+	["The old MiniCC addon is still running alongside MiniAuras. Delete the MiniCC folder from your AddOns folder, then reload."] = "El antiguo addon MiniCC sigue ejecutándose junto a MiniAuras. Elimina la carpeta MiniCC de tu carpeta AddOns y recarga la interfaz.",
 
 	-- Language option
 	["Language override"] = "Idioma del addon",

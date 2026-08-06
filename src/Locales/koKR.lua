@@ -300,6 +300,9 @@ L:RegisterLocale("koKR", {
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - 아군 쿨다운 추측 모듈이 추가되었습니다. 이제 팀원들의 쿨다운을 어느 정도 추적할 수 있습니다!",
 	[" - Added enemy cooldown tracking module."] = " - 적 쿨다운 추적 모듈이 추가되었습니다.",
 	["MiniAuras - What's New?"] = "MiniAuras - 새로운 소식?",
+	["MiniAuras - Addon Conflict"] = "MiniAuras - 애드온 충돌",
+	["The old MiniCC addon is still installed and running alongside MiniAuras, so every icon is being drawn twice.\n\nYour MiniCC settings have already been copied across. Delete the MiniCC folder from your AddOns folder, then reload."] = "이전 애드온 MiniCC가 여전히 설치되어 MiniAuras와 함께 실행 중이라 모든 아이콘이 두 번 표시됩니다.\n\nMiniCC 설정은 이미 복사되었습니다. AddOns 폴더에서 MiniCC 폴더를 삭제한 뒤 UI를 다시 불러오세요.",
+	["The old MiniCC addon is still running alongside MiniAuras. Delete the MiniCC folder from your AddOns folder, then reload."] = "이전 애드온 MiniCC가 MiniAuras와 함께 실행 중입니다. AddOns 폴더에서 MiniCC 폴더를 삭제한 뒤 UI를 다시 불러오세요.",
 
 	-- Language option
 	["Language override"] = "언어 변경",

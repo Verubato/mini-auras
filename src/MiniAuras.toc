@@ -41,6 +41,7 @@ Utils\WoWEx.lua
 Core\InstanceOptions.lua
 Core\EventGate.lua
 Core\DuelPoller.lua
+Core\LegacyAddon.lua
 
 Core\Display\Pool.lua
 Core\Display\GrowAnchors.lua

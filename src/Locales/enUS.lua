@@ -302,6 +302,9 @@ L:SetDefaultStrings({
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!",
 	[" - Added enemy cooldown tracking module."] = " - Added enemy cooldown tracking module.",
 	["MiniAuras - What's New?"] = "MiniAuras - What's New?",
+	["MiniAuras - Addon Conflict"] = "MiniAuras - Addon Conflict",
+	["The old MiniCC addon is still installed and running alongside MiniAuras, so every icon is being drawn twice.\n\nYour MiniCC settings have already been copied across. Delete the MiniCC folder from your AddOns folder, then reload."] = "The old MiniCC addon is still installed and running alongside MiniAuras, so every icon is being drawn twice.\n\nYour MiniCC settings have already been copied across. Delete the MiniCC folder from your AddOns folder, then reload.",
+	["The old MiniCC addon is still running alongside MiniAuras. Delete the MiniCC folder from your AddOns folder, then reload."] = "The old MiniCC addon is still running alongside MiniAuras. Delete the MiniCC folder from your AddOns folder, then reload.",
 
 	-- Language option
 	["Language override"] = "Language override",

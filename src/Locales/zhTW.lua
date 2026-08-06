@@ -301,6 +301,9 @@ L:RegisterLocale("zhTW", {
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - 新增了友方冷卻時間猜測模組。現在你可以大致追蹤隊友的冷卻時間！",
 	[" - Added enemy cooldown tracking module."] = " - 新增敵人冷卻追蹤模組。",
 	["MiniAuras - What's New?"] = "MiniAuras - 有什麼新鮮事？",
+	["MiniAuras - Addon Conflict"] = "MiniAuras - 插件衝突",
+	["The old MiniCC addon is still installed and running alongside MiniAuras, so every icon is being drawn twice.\n\nYour MiniCC settings have already been copied across. Delete the MiniCC folder from your AddOns folder, then reload."] = "舊插件 MiniCC 仍然安裝並與 MiniAuras 同時執行，因此每個圖示都會顯示兩次。\n\n你的 MiniCC 設定已經複製過來了。請從 AddOns 資料夾中刪除 MiniCC 資料夾，然後重新載入介面。",
+	["The old MiniCC addon is still running alongside MiniAuras. Delete the MiniCC folder from your AddOns folder, then reload."] = "舊插件 MiniCC 仍在與 MiniAuras 同時執行。請從 AddOns 資料夾中刪除 MiniCC 資料夾，然後重新載入介面。",
 
 	-- Language option
 	["Language override"] = "語言覆蓋",

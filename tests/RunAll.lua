@@ -42,6 +42,7 @@ local testFiles = {
     "tests/Core/TestBarTextures.lua",
     "tests/Core/TestSounds.lua",
     "tests/Core/TestSpellSearch.lua",
+    "tests/Core/TestLegacyAddon.lua",
 
     -- Utils.
     "tests/Utils/TestUtils.lua",

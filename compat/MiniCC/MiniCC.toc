@@ -4,6 +4,7 @@
 ## Author: Verz
 ## Version: 5.0.0a-9
 ## SavedVariables: MiniCCDB
+## X-MiniAuras-Bridge: 1
 ## IconTexture: Interface\AddOns\MiniAuras\Icon.blp
 ## X-Curse-Project-ID: 1439482
 
