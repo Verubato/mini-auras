@@ -447,6 +447,36 @@ fw.describe("Pool", function()
 		return pool, function() return created end, function() return resets end
 	end
 
+	-- The one moment a caller can influence how an item is built, which matters for anything
+	-- baked in at creation and refused afterwards: an aura button's whole look, for instance.
+	fw.it("hands Acquire's arguments to the create function", function()
+		local seen
+		local pool = objectPool:New(function(...)
+			seen = { ... }
+			return {}
+		end, function() end, 0)
+
+		pool:Acquire("style", 7)
+
+		assert(seen and seen[1] == "style" and seen[2] == 7,
+			"the create function was given what Acquire was given")
+	end)
+
+	fw.it("does not pass them to an item that came off the free list", function()
+		-- A pooled item was built before the caller existed, so there is nothing to pass on:
+		-- a caller that needs its own settings has to apply them after acquiring.
+		local calls = 0
+		local pool = objectPool:New(function()
+			calls = calls + 1
+			return {}
+		end, function() end, 0)
+
+		pool:Release(pool:Acquire("first"))
+		pool:Acquire("second")
+
+		assert(calls == 1, "the second acquire reused rather than built, got " .. calls)
+	end)
+
 	fw.it("does not pre-create until Prewarm is called", function()
 		local _, created = newCountingPool(5)
 		acm.tickAll(10)

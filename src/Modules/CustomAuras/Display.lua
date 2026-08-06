@@ -94,8 +94,13 @@ end
 ---allocate their buttons up front, so a group created empty has none to give back when its
 ---budget is raised later. ConfigureDisplay drops the wrong-sided one to zero straight after,
 ---and the container starts on unit "none", disabled and hidden, so nothing can show before it.
+---
+---The style is the acquiring group's, because a button's look is baked in here and a restyle
+---is refused for as long as auras are secret. A pooled entry handed to a DIFFERENT group later
+---still needs one, so this makes an entry's first use right rather than every use.
+---@param style AuraDisplayStyle?
 ---@return CustomAuraDisplayEntry
-local function CreateEntry()
+local function CreateEntry(style)
 	local display = auraContainerDisplay:New(UIParent, NO_UNIT, {
 		{
 			Key = HELPFUL_KEY,
@@ -109,7 +114,7 @@ local function CreateEntry()
 			MaxIcons = groups.MaxIcons,
 			CandidateFilters = EMPTY_FILTERS,
 		},
-	}, DEFAULT_SIZE, DEFAULT_SPACING, MODULE_TAG)
+	}, DEFAULT_SIZE, DEFAULT_SPACING, MODULE_TAG, { Style = style })
 
 	return { Display = display }
 end
@@ -394,7 +399,7 @@ end
 ---@return CustomAuraDisplayEntry
 local function EnsureScreenEntry(state)
 	if not state.Screen then
-		state.Screen = displayPool:Acquire()
+		state.Screen = displayPool:Acquire(BuildStyle(state.Group))
 	end
 
 	return state.Screen
@@ -527,7 +532,7 @@ local function RefreshPlateGroup(state, token)
 	local entry = state.Plates[token]
 
 	if not entry then
-		entry = displayPool:Acquire()
+		entry = displayPool:Acquire(BuildStyle(state.Group))
 		state.Plates[token] = entry
 	end
 

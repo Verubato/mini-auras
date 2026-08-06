@@ -25,7 +25,7 @@ addon.Core.Pool = M
 local ITEMS_PER_TICK = 2
 local TICK_INTERVAL = 0.1
 
----@param createFn fun(): table Builds one item.
+---@param createFn fun(...): table Builds one item, from whatever Acquire was given.
 ---@param resetFn fun(item: table) Parks an item (disable, hide, unanchor).
 ---@param preallocateCount number Initial pre-creation target.
 ---@return Pool
@@ -41,12 +41,16 @@ function M:New(createFn, resetFn, preallocateCount)
 	return instance
 end
 
+---Arguments are forwarded to createFn, and only reach it when the pool is empty and an item
+---has to be built on the spot. That is the one moment a caller can influence how an item is
+---made, which matters for anything that cannot be changed afterwards.
+---@param ... any Passed to createFn.
 ---@return table item
-function M:Acquire()
+function M:Acquire(...)
 	local item = table.remove(self.Free)
 
 	if not item then
-		item = self.Create()
+		item = self.Create(...)
 	end
 
 	return item
