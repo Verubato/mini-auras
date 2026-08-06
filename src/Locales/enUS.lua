@@ -366,7 +366,7 @@ L:SetDefaultStrings({
 	["Choose an Icon"] = "Choose an Icon",
 	["%d icons"] = "%d icons",
 	["%s copy"] = "%s copy",
-	["Tracking"] = "Tracking",
+	["Type"] = "Type",
 	["Stealable"] = "Stealable",
 	["Spell IDs"] = "Spell IDs",
 	["Shortest remaining first"] = "Shortest remaining first",

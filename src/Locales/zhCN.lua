@@ -365,7 +365,7 @@ L:RegisterLocale("zhCN", {
 	["Choose an Icon"] = "选择图标",
 	["%d icons"] = "%d 个图标",
 	["%s copy"] = "%s 副本",
-	["Tracking"] = "追踪方式",
+	["Type"] = "类型",
 	["Stealable"] = "可偷取",
 	["Spell IDs"] = "法术 ID",
 	["Shortest remaining first"] = "剩余时间短的优先",

@@ -365,7 +365,7 @@ L:RegisterLocale("zhTW", {
 	["Choose an Icon"] = "選擇圖示",
 	["%d icons"] = "%d 個圖示",
 	["%s copy"] = "%s 複本",
-	["Tracking"] = "追蹤方式",
+	["Type"] = "類型",
 	["Stealable"] = "可偷取",
 	["Spell IDs"] = "法術 ID",
 	["Shortest remaining first"] = "剩餘時間短的優先",

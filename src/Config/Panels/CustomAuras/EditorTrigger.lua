@@ -159,7 +159,7 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 		end,
 	}, trackingControlsRow, ui.DropdownColumn * 2)
 
-	ctx.Dropdown(L["Tracking"], {
+	ctx.Dropdown(L["Type"], {
 		Items = TRACKING_MODES,
 		GetText = function(value)
 			return value == groups.TrackingMode.Filters and L["Aura filters"] or L["Spell IDs"]

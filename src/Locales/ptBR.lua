@@ -363,7 +363,7 @@ L:RegisterLocale("ptBR", {
 	["Choose an Icon"] = "Escolher um ícone",
 	["%d icons"] = "%d ícones",
 	["%s copy"] = "%s cópia",
-	["Tracking"] = "Rastreamento",
+	["Type"] = "Tipo",
 	["Stealable"] = "Roubável",
 	["Spell IDs"] = "IDs de magia",
 	["Shortest remaining first"] = "Menor duração restante primeiro",

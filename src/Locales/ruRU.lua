@@ -365,7 +365,7 @@ L:RegisterLocale("ruRU", {
 	["Choose an Icon"] = "Выбор значка",
 	["%d icons"] = "значков: %d",
 	["%s copy"] = "%s копия",
-	["Tracking"] = "Отслеживание",
+	["Type"] = "Тип",
 	["Stealable"] = "Можно похитить",
 	["Spell IDs"] = "ID заклинаний",
 	["Shortest remaining first"] = "Сначала с меньшим временем",

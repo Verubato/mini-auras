@@ -365,7 +365,7 @@ L:RegisterLocale("esMX", {
 	["Choose an Icon"] = "Elegir un icono",
 	["%d icons"] = "%d iconos",
 	["%s copy"] = "%s copia",
-	["Tracking"] = "Seguimiento",
+	["Type"] = "Tipo",
 	["Stealable"] = "Robable",
 	["Spell IDs"] = "IDs de hechizo",
 	["Shortest remaining first"] = "Menor duración restante primero",

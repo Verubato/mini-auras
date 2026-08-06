@@ -85,6 +85,16 @@ function ui.BuildEditor(editor)
 	tabStrip.Frame:SetPoint("TOPLEFT", nameRow, "BOTTOMLEFT", 0, -ROW_GAP)
 	tabStrip.Frame:SetPoint("RIGHT", editor, "RIGHT", 0, 0)
 
+	-- Engine-side sounds register per spell id, which a filter group does not have, so the
+	-- sounds tab is put away for one. Last in the strip, so hiding it leaves no gap.
+	local soundsTabButton
+
+	for _, button in ipairs(tabStrip.Buttons) do
+		if button.Key == "sounds" then
+			soundsTabButton = button
+		end
+	end
+
 	---All tabs hang off the same point; only one is ever shown.
 	---@return table
 	local function CreateTabPanel()
@@ -332,6 +342,14 @@ function ui.BuildEditor(editor)
 		-- group saved by an older version reaches here with none of its newer tables. Everything
 		-- below indexes those directly, so fill them in first rather than nil-guarding each read.
 		groups:Normalise(group)
+
+		local hasSounds = groups:TracksSpells(group)
+
+		soundsTabButton:SetShown(hasSounds)
+
+		if not hasSounds and tabStrip.GetSelected() == "sounds" then
+			tabStrip:Select("trigger")
+		end
 
 		refreshTriggerState(group)
 

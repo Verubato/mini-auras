@@ -364,7 +364,7 @@ L:RegisterLocale("deDE", {
 	["Choose an Icon"] = "Symbol wählen",
 	["%d icons"] = "%d Symbole",
 	["%s copy"] = "%s Kopie",
-	["Tracking"] = "Erfassung",
+	["Type"] = "Typ",
 	["Stealable"] = "Stehlbar",
 	["Spell IDs"] = "Zauber-IDs",
 	["Shortest remaining first"] = "Kürzeste Restdauer zuerst",

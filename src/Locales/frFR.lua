@@ -362,7 +362,7 @@ L:RegisterLocale("frFR", {
 	["Choose an Icon"] = "Choisir une icône",
 	["%d icons"] = "%d icônes",
 	["%s copy"] = "%s copie",
-	["Tracking"] = "Suivi",
+	["Type"] = "Type",
 	["Stealable"] = "Volable",
 	["Spell IDs"] = "ID de sort",
 	["Shortest remaining first"] = "Durée restante la plus courte d'abord",

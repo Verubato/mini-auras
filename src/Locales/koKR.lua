@@ -364,7 +364,7 @@ L:RegisterLocale("koKR", {
 	["Choose an Icon"] = "아이콘 선택",
 	["%d icons"] = "아이콘 %d개",
 	["%s copy"] = "%s 사본",
-	["Tracking"] = "추적",
+	["Type"] = "유형",
 	["Stealable"] = "훔칠 수 있음",
 	["Spell IDs"] = "주문 ID",
 	["Shortest remaining first"] = "남은 시간 짧은 순",

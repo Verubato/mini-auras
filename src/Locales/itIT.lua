@@ -362,7 +362,7 @@ L:RegisterLocale("itIT", {
 	["Choose an Icon"] = "Scegli un'icona",
 	["%d icons"] = "%d icone",
 	["%s copy"] = "%s copia",
-	["Tracking"] = "Tracciamento",
+	["Type"] = "Tipo",
 	["Stealable"] = "Rubabile",
 	["Spell IDs"] = "ID incantesimo",
 	["Shortest remaining first"] = "Durata rimanente più breve prima",
