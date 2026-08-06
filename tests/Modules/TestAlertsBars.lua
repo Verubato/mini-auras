@@ -117,12 +117,14 @@ fw.describe("AlertsModule 12.1 - bar anchor normalization", function()
 		alerts.Grow = "CENTER"
 		module:Refresh()
 
-		-- What resetting the profile does to the stored anchor.
+		-- A restored anchor, the way resetting the profile replaces one. The values are a
+		-- stand-in rather than the shipped defaults: what matters is that the bar is placed
+		-- from them before anything measures it.
 		alerts.Point = "CENTER"
 		alerts.RelativePoint = "TOP"
 		alerts.RelativeTo = "UIParent"
 		alerts.Offset.X = 0
-		alerts.Offset.Y = -100
+		alerts.Offset.Y = -145
 
 		local placements = {}
 		local realSetPoint = mainBar.SetPoint
@@ -138,7 +140,7 @@ fw.describe("AlertsModule 12.1 - bar anchor normalization", function()
 		local first = placements[1]
 
 		assert(first, "the bar was placed")
-		assert(first.Point == "CENTER" and first.X == 0 and first.Y == -100,
+		assert(first.Point == "CENTER" and first.X == 0 and first.Y == -145,
 			"placed at the restored default first, got " .. tostring(first.Point) ..
 			" " .. tostring(first.X) .. "," .. tostring(first.Y))
 	end)
