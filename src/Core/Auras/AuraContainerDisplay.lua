@@ -1,47 +1,30 @@
 ---@type string, Addon
-local addonName, addon = ...
+local _, addon = ...
 local fontUtil = addon.Utils.FontUtil
 local wowEx = addon.Utils.WoWEx
 local growAnchors = addon.Core.GrowAnchors
+local glowStyles = addon.Core.GlowStyles
 
--- Glow styles available here. LibCustomGlow can't attach to AuraButtons (it re-parents pooled
--- frames onto the target, and 12.1 disallows SetParent onto AuraButtons), so only the two
--- texture-based styles from IconSlotContainer are offered; anything else falls back to the
--- flipbook. PaddingFactor is a multiple of the icon size, matching ApplyStaticGlowPadding.
-local GLOW_STYLES = {
-	["Rotation Assist (Anti-clockwise)"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhiteAntiClockwise.tga",
-		BlendMode = "BLEND",
-		Desaturated = true,
-		PaddingFactor = 1 / 4,
-		Animated = true,
-	},
-	["Rotation Assist (Clockwise)"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhiteClockwise.tga",
-		BlendMode = "BLEND",
-		Desaturated = true,
-		PaddingFactor = 1 / 4,
-		Animated = true,
-	},
-	-- Atlas rather than a bundled file: this one ships with the client.
-	["Ants (Anti-Clockwise)"] = {
-		Atlas = "RotationHelper_Ants_Flipbook",
-		BlendMode = "BLEND",
-		Desaturated = true,
-		PaddingFactor = 1 / 4,
-		Animated = true,
-	},
-	["Slot Glow"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\SlotGlow.tga",
-		BlendMode = "BLEND",
-		Desaturated = false,
-		PaddingFactor = 1 / 5,
-		Animated = false,
-	},
+-- Only the texture-based styles from the shared catalog (Core/Display/GlowStyles) render here:
+-- LibCustomGlow can't attach to AuraButtons (it re-parents pooled frames onto the target, and
+-- 12.1 disallows SetParent onto AuraButtons). Anything else configured falls back to this.
+local DEFAULT_GLOW_STYLE = glowStyles.DefaultName
+
+-- The style fields StoreStyle copies verbatim from a caller's table. Drives the compare and the
+-- copy in StoreStyle, the clear in GetStyleScratch and the concat in GetStyleSignature, so a new
+-- field lands in all four at once - listing it in only three lets a stale value leak from one
+-- module's scratch into another's. GlowColor and the db-resolved fields (swipe, countdown
+-- threshold, glow style name) are special-cased where they are used.
+local STYLE_FIELDS = {
+	"Border",
+	"Stacks",
+	"ReverseCooldown",
+	"ShowMilliseconds",
+	"ColorByDispelType",
+	"Glow",
+	"FontScale",
+	"ShowTooltips",
 }
-
-
-local DEFAULT_GLOW_STYLE = "Slot Glow"
 
 -- How often the deferred restyle retry runs while any display is stale (see RestyleButtons).
 local RESTYLE_RETRY_INTERVAL = 1
@@ -54,6 +37,8 @@ local EMPTY_OPTIONS = {}
 -- can only ever set the fields it cares about and can never inherit a value from whoever used it
 -- last (which is exactly the bug a per-module scratch table invites).
 local styleScratch = {}
+-- Reused by GetStyleSignature; concatenated with an explicit range, so no trimming is needed.
+local signatureScratch = {}
 
 local cachedDb = nil
 local frameIdCounter = 0
@@ -97,13 +82,28 @@ local function Warn(message, ...)
 	addon.Framework:Notify(message, ...)
 end
 
+---Warns and reports whether the display carries the given aura group. Group budgets and filters
+---are the per-category switches, so a mistyped key would silently disable a whole category -
+---hence a loud warning rather than a quiet return.
+---@param instance AuraContainerDisplay
+---@param groupKey string
+---@param label string The calling setter's name, for the warning.
+---@return boolean
+local function RequireGroup(instance, groupKey, label)
+	if instance.Frame:HasAuraGroup(groupKey) then
+		return true
+	end
+
+	Warn("%s: no aura group '%s' on this display.", label, tostring(groupKey))
+
+	return false
+end
+
 local function NextFrameName(frameType)
 	frameIdCounter = frameIdCounter + 1
 	return "MiniAuras_AC_" .. frameType .. "_" .. frameIdCounter
 end
 
--- Deferred restyling
---
 -- Button styling is impossible while auras are secret, which covers combat but also whole
 -- encounters / M+ runs / PvP matches out of combat. RestyleButtons therefore records that the
 -- buttons are stale and returns. Something has to come back for that later: pooled displays are
@@ -166,8 +166,6 @@ local function SetRestylePending(instance, pending)
 	end
 end
 
--- Edit Mode preview suppression.
---
 -- Blizzard force-feeds every AuraContainer a fake data provider while Edit Mode is open, so
 -- our containers fill up with placeholder auras ("Poison 1", "Buff 1", ... with random spellbook
 -- icons) that have nothing to do with the tracked unit. There is no opt-out: the container
@@ -230,7 +228,7 @@ local function GetGlowStyleName()
 	local db = GetDb()
 	local name = db and db.GlowType
 
-	return (name and GLOW_STYLES[name]) and name or DEFAULT_GLOW_STYLE
+	return (name and glowStyles.Specs[name]) and name or DEFAULT_GLOW_STYLE
 end
 
 ---Copies a style into the instance's own persistent style table, resolving the global db values
@@ -248,33 +246,31 @@ local function StoreStyle(instance, style)
 	local color = style.GlowColor
 	local colorR, colorG, colorB = color and color[1], color and color[2], color and color[3]
 
-	if stored.Border == style.Border
-		and stored.Stacks == style.Stacks
-		and stored.ReverseCooldown == style.ReverseCooldown
-		and stored.ShowMilliseconds == style.ShowMilliseconds
-		and stored.ColorByDispelType == style.ColorByDispelType
-		and stored.Glow == style.Glow
-		and stored.FontScale == style.FontScale
-		and stored.ShowTooltips == style.ShowTooltips
-		and stored.DisableSwipe == disableSwipe
-		and stored.MillisecondsThreshold == millisecondsThreshold
-		and stored.GlowStyleName == glowStyleName
-		and stored.GlowColorR == colorR
-		and stored.GlowColorG == colorG
-		and stored.GlowColorB == colorB
-		and stored.Populated
-	then
+	local changed = not stored.Populated
+		or stored.DisableSwipe ~= disableSwipe
+		or stored.MillisecondsThreshold ~= millisecondsThreshold
+		or stored.GlowStyleName ~= glowStyleName
+		or stored.GlowColorR ~= colorR
+		or stored.GlowColorG ~= colorG
+		or stored.GlowColorB ~= colorB
+
+	if not changed then
+		for _, field in ipairs(STYLE_FIELDS) do
+			if stored[field] ~= style[field] then
+				changed = true
+				break
+			end
+		end
+	end
+
+	if not changed then
 		return false
 	end
 
-	stored.Border = style.Border
-	stored.Stacks = style.Stacks
-	stored.ReverseCooldown = style.ReverseCooldown
-	stored.ShowMilliseconds = style.ShowMilliseconds
-	stored.ColorByDispelType = style.ColorByDispelType
-	stored.Glow = style.Glow
-	stored.FontScale = style.FontScale
-	stored.ShowTooltips = style.ShowTooltips
+	for _, field in ipairs(STYLE_FIELDS) do
+		stored[field] = style[field]
+	end
+
 	stored.DisableSwipe = disableSwipe
 	stored.MillisecondsThreshold = millisecondsThreshold
 	stored.GlowStyleName = glowStyleName
@@ -286,35 +282,19 @@ local function StoreStyle(instance, style)
 	return true
 end
 
----Applies a glow style's asset and geometry to a button's glow frame. Only touches the texture
----when the style actually changed - this runs per button on every restyle.
+---Applies a glow style's asset and geometry to a button's glow frame. Only re-skins when the
+---style actually changed - this runs per button on every restyle.
 ---@param widgets table
 ---@param button table
 ---@param styleName string
 ---@param size number
 local function ApplyGlowStyle(widgets, button, styleName, size)
 	local glow = widgets.Glow
-	local spec = GLOW_STYLES[styleName]
+	local spec = glowStyles.Specs[styleName]
 
 	if widgets.GlowStyle ~= styleName then
 		widgets.GlowStyle = styleName
-
-		-- Stop before re-skinning: the flipbook drives tex coords, so a running animation
-		-- would fight the reset below (and Stop may restore its own pre-animation coords).
-		glow.Anim:Stop()
-
-		if spec.Atlas then
-			glow.Texture:SetAtlas(spec.Atlas)
-		else
-			glow.Texture:SetTexture(spec.Texture)
-		end
-		glow.Texture:SetBlendMode(spec.BlendMode)
-		glow.Texture:SetDesaturated(spec.Desaturated)
-		-- The flipbook leaves the coords on its last cell; reset them so a static asset
-		-- isn't rendered as a 1/30th crop of itself.
-		if not spec.Animated then
-			glow.Texture:SetTexCoord(0, 1, 0, 1)
-		end
+		glowStyles:ApplySpec(glow, spec)
 	end
 
 	local padding = size * spec.PaddingFactor
@@ -505,22 +485,10 @@ local function InitializeButton(instance, button, glowColor)
 		border:Hide()
 
 		-- Glow overlay, created up-front as a direct child (creation is allowed on AuraButtons;
-		-- re-parenting is not). The asset is left unset: StyleButton applies whichever style from
-		-- GLOW_STYLES is configured, and the flipbook animation is built here either way so a
+		-- re-parenting is not). The asset is left unset: StyleButton applies whichever catalog
+		-- style is configured, and BuildGlowFrame includes the (stopped) flipbook animation so a
 		-- later switch to an animated style doesn't have to touch the button.
-		glow = CreateFrame("Frame", NextFrameName("Glow"), button)
-		glow:SetFrameLevel(button:GetFrameLevel() + 5)
-		glow.Texture = glow:CreateTexture(nil, "OVERLAY")
-		glow.Texture:SetAllPoints()
-		glow.Anim = glow:CreateAnimationGroup()
-		glow.Anim:SetLooping("REPEAT")
-		local flip = glow.Anim:CreateAnimation("FlipBook")
-		flip:SetChildKey("Texture")
-		flip:SetFlipBookRows(6)
-		flip:SetFlipBookColumns(5)
-		flip:SetFlipBookFrames(30)
-		flip:SetDuration(1.0)
-		-- Deliberately NOT played here: StyleButton starts/stops it with the glow style.
+		glow = glowStyles:BuildGlowFrame(button, NextFrameName("Glow"))
 		glow:Hide()
 	end
 
@@ -784,8 +752,7 @@ end
 ---@param groupKey string
 ---@param filters table
 function M:SetCandidateFilters(groupKey, filters)
-	if not self.Frame:HasAuraGroup(groupKey) then
-		Warn("SetCandidateFilters: no group " .. tostring(groupKey))
+	if not RequireGroup(self, groupKey, "SetCandidateFilters") then
 		return
 	end
 
@@ -823,8 +790,7 @@ end
 ---@param groupKey string
 ---@param filterString string
 function M:SetFilterString(groupKey, filterString)
-	if not self.Frame:HasAuraGroup(groupKey) then
-		Warn("SetFilterString: no group " .. tostring(groupKey))
+	if not RequireGroup(self, groupKey, "SetFilterString") then
 		return
 	end
 
@@ -835,8 +801,7 @@ end
 ---@param method number An AuraContainerSortMethod value.
 ---@param direction number An AuraContainerSortDirection value.
 function M:SetSortMethod(groupKey, method, direction)
-	if not self.Frame:HasAuraGroup(groupKey) then
-		Warn("SetSortMethod: no group " .. tostring(groupKey))
+	if not RequireGroup(self, groupKey, "SetSortMethod") then
 		return
 	end
 
@@ -859,16 +824,35 @@ end
 ---to set from whoever styled a display last.
 ---@return AuraDisplayStyle
 function M:GetStyleScratch()
-	styleScratch.ReverseCooldown = nil
-	styleScratch.ShowMilliseconds = nil
-	styleScratch.ColorByDispelType = nil
-	styleScratch.Glow = nil
-	styleScratch.FontScale = nil
-	styleScratch.ShowTooltips = nil
+	for _, field in ipairs(STYLE_FIELDS) do
+		styleScratch[field] = nil
+	end
 	styleScratch.GlowColor = nil
-	styleScratch.Border = nil
 
 	return styleScratch
+end
+
+---Fills the shared style scratch with the fields every module resolves the same way:
+---ReverseCooldown, ShowMilliseconds, ColorByDispelType and Glow are read off the module's Icons
+---options sub-table, and FontScale comes from the global db. Returns the same scratch as
+---GetStyleScratch with every other field cleared, so append any extras (ShowTooltips, GlowColor,
+---Stacks, Border, ...) before handing it to New/SetStyle/ApplyConfig - and never retain it.
+---@param iconOptions table? A module's Icons options table; nil leaves the four fields unset.
+---@return AuraDisplayStyle
+function M:BuildStandardStyle(iconOptions)
+	local style = self:GetStyleScratch()
+
+	if iconOptions then
+		style.ReverseCooldown = iconOptions.ReverseCooldown
+		style.ShowMilliseconds = iconOptions.ShowMilliseconds
+		style.ColorByDispelType = iconOptions.ColorByDispelType
+		style.Glow = iconOptions.Glow
+	end
+
+	local db = GetDb()
+	style.FontScale = db and db.FontScale
+
+	return style
 end
 
 ---Everything StyleButton bakes into a button, as a comparable string. Callers cache displays by
@@ -883,23 +867,23 @@ end
 ---@return string
 function M:GetStyleSignature(style, size, spacing)
 	local db = GetDb()
+	local parts = signatureScratch
 
-	return table.concat({
-		tostring(size),
-		tostring(spacing),
-		tostring(style.ReverseCooldown),
-		tostring(style.ShowMilliseconds),
-		tostring(style.ColorByDispelType),
-		tostring(style.Glow),
-		tostring(style.FontScale),
-		tostring(style.ShowTooltips),
-		tostring(style.GlowColor and table.concat(style.GlowColor, ",")),
-		tostring(style.Border),
-		tostring(style.Stacks),
-		tostring(db and db.DisableSwipe),
-		tostring(db and db.MillisecondsThreshold),
-		GetGlowStyleName(),
-	}, ":")
+	parts[1] = tostring(size)
+	parts[2] = tostring(spacing)
+
+	local n = 2
+	for _, field in ipairs(STYLE_FIELDS) do
+		n = n + 1
+		parts[n] = tostring(style[field])
+	end
+
+	parts[n + 1] = tostring(style.GlowColor and table.concat(style.GlowColor, ","))
+	parts[n + 2] = tostring(db and db.DisableSwipe)
+	parts[n + 3] = tostring(db and db.MillisecondsThreshold)
+	parts[n + 4] = GetGlowStyleName()
+
+	return table.concat(parts, ":", 1, n + 4)
 end
 
 ---Stores the per-button style and applies it to existing buttons when possible. Skipped

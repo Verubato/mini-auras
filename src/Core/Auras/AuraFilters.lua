@@ -46,6 +46,17 @@ local auraCategoryIds = addon.Core.AuraCategoryIds
 -- booleans (isStealable, isBossAura, nameplateShowPersonal, maxDuration, ...). Precognition uses
 -- the maxDuration one for exactly this reason.
 
+-- Spell-ID maps per category, keyed to match M.Filter so a caller holding a filter name can look
+-- up both. The generated Defensive list is not split into big/external - it does not have to be,
+-- because the filter strings still partition those two groups, so an aura is never drawn twice.
+local spellIds = {
+	CrowdControl = auraCategoryIds.CC,
+	BigDefensive = auraCategoryIds.Defensive,
+	ExternalDefensive = auraCategoryIds.Defensive,
+	Important = auraCategoryIds.Important,
+	ImportantOnly = auraCategoryIds.Important,
+}
+
 ---@class AuraFilters
 local M = {}
 
@@ -58,32 +69,24 @@ M.Filter = {
 	-- Excludes both defensive categories so a defensive that is also flagged important is only
 	-- ever drawn once (on whichever display shows defensives).
 	Important = "HELPFUL|IMPORTANT|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE",
-	-- Unpartitioned importants, for displays that show nothing else (precognition).
+	-- Unpartitioned importants. TEMPORARY: the only consumer is the Precog module's 12.1 branch,
+	-- which is unreachable (Precog's Init early-returns there); delete this and the matching
+	-- spellIds/CandidateFilters entries together with the 12.0 path.
 	ImportantOnly = "HELPFUL|IMPORTANT",
-}
-
--- Spell-ID maps per category, keyed to match M.Filter so a caller holding a filter name can look
--- up both. The generated Defensive list is not split into big/external - it does not have to be,
--- because the filter strings still partition those two groups, so an aura is never drawn twice.
-M.SpellIds = {
-	CrowdControl = auraCategoryIds.CC,
-	BigDefensive = auraCategoryIds.Defensive,
-	ExternalDefensive = auraCategoryIds.Defensive,
-	Important = auraCategoryIds.Important,
-	ImportantOnly = auraCategoryIds.Important,
 }
 
 -- Ready-made candidateFilters tables, keyed to match M.Filter, so a group spec can point straight
 -- at one instead of allocating a wrapper per display (the nameplate and alert pools build these
 -- by the dozen). Shared and read-only: the engine keeps the reference it is handed and nothing
 -- here mutates it. Displays needing extra candidate filters (precognition's maxDuration) build
--- their own table from M.SpellIds instead.
+-- their own table instead.
 M.CandidateFilters = {
-	CrowdControl = { includeSpellIDs = M.SpellIds.CrowdControl },
-	BigDefensive = { includeSpellIDs = M.SpellIds.BigDefensive },
-	ExternalDefensive = { includeSpellIDs = M.SpellIds.ExternalDefensive },
-	Important = { includeSpellIDs = M.SpellIds.Important },
-	ImportantOnly = { includeSpellIDs = M.SpellIds.ImportantOnly },
+	CrowdControl = { includeSpellIDs = spellIds.CrowdControl },
+	BigDefensive = { includeSpellIDs = spellIds.BigDefensive },
+	ExternalDefensive = { includeSpellIDs = spellIds.ExternalDefensive },
+	Important = { includeSpellIDs = spellIds.Important },
+	-- TEMPORARY: see M.Filter.ImportantOnly.
+	ImportantOnly = { includeSpellIDs = spellIds.ImportantOnly },
 }
 
 -- Group keys. Always reference these rather than writing the string inline: SetMaxIcons is the
@@ -95,6 +98,39 @@ M.GroupKey = {
 	Important = "important",
 }
 
+---One standard-category group spec in the shape AuraContainerDisplay's New takes. Returns a
+---fresh table: New keeps the list it is given for the display's lifetime, so specs must never
+---be shared between displays.
+---@param categoryKey string "CrowdControl"|"BigDefensive"|"ExternalDefensive"|"Important".
+---@param maxIcons number? Icon budget for the group (New defaults a nil budget to 3).
+---@param extra table? Further AuraDisplayGroupSpec fields (SortDirection, GlowColor, ...) copied
+---onto the spec; entries may also override the category defaults.
+---@return AuraDisplayGroupSpec
+function M:GroupSpec(categoryKey, maxIcons, extra)
+	local key = M.GroupKey[categoryKey]
+
+	if not key then
+		-- A typo here would build a display with a dead group that the per-category budget
+		-- setters then silently miss; fail at the source instead.
+		error("GroupSpec: unknown aura category '" .. tostring(categoryKey) .. "'")
+	end
+
+	local spec = {
+		Key = key,
+		FilterString = M.Filter[categoryKey],
+		CandidateFilters = M.CandidateFilters[categoryKey],
+		MaxIcons = maxIcons,
+	}
+
+	if extra then
+		for field, value in pairs(extra) do
+			spec[field] = value
+		end
+	end
+
+	return spec
+end
+
 ---Builds the standard four-category group spec list for a display, in priority order.
 ---Returns a fresh table: `New` keeps the list for the display's lifetime, so it must not be
 ---shared between displays.
@@ -102,30 +138,10 @@ M.GroupKey = {
 ---@return AuraDisplayGroupSpec[]
 function M:BuildCategoryGroups(maxIcons)
 	return {
-		{
-			Key = M.GroupKey.CrowdControl,
-			FilterString = M.Filter.CrowdControl,
-			CandidateFilters = M.CandidateFilters.CrowdControl,
-			MaxIcons = maxIcons,
-		},
-		{
-			Key = M.GroupKey.BigDefensive,
-			FilterString = M.Filter.BigDefensive,
-			CandidateFilters = M.CandidateFilters.BigDefensive,
-			MaxIcons = maxIcons,
-		},
-		{
-			Key = M.GroupKey.ExternalDefensive,
-			FilterString = M.Filter.ExternalDefensive,
-			CandidateFilters = M.CandidateFilters.ExternalDefensive,
-			MaxIcons = maxIcons,
-		},
-		{
-			Key = M.GroupKey.Important,
-			FilterString = M.Filter.Important,
-			CandidateFilters = M.CandidateFilters.Important,
-			MaxIcons = maxIcons,
-		},
+		self:GroupSpec("CrowdControl", maxIcons),
+		self:GroupSpec("BigDefensive", maxIcons),
+		self:GroupSpec("ExternalDefensive", maxIcons),
+		self:GroupSpec("Important", maxIcons),
 	}
 end
 
