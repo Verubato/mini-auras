@@ -27,7 +27,7 @@ M.migrator = {
 
 function M.load(files, addon)
 	for _, path in ipairs(files) do
-		assert(loadfile(path))("MiniCC", addon)
+		assert(loadfile(path))("MiniAuras", addon)
 	end
 end
 

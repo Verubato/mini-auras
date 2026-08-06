@@ -6,7 +6,7 @@ local auraCategoryIds = addon.Core.AuraCategoryIds
 -- Deduped by NAME: the generated data carries every id variant of an ability, and four identical
 -- rows help nobody. GetVariants hands the dropped ones back.
 --
--- Two sources feed it. The curated category lists are the abilities MiniCC knows something about,
+-- Two sources feed it. The curated category lists are the abilities MiniAuras knows something about,
 -- and SpellNameIndex is a generated map of every aura name a player can reach. The index is what
 -- bridges a cast id to the aura id it applies, which is the only id a filter ever matches.
 

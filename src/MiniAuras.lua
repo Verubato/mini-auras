@@ -39,7 +39,7 @@ local function NotifyChanges()
 		return
 	end
 
-	local title = L["MiniCC - What's New?"]
+	local title = L["MiniAuras - What's New?"]
 	db.NotifiedChanges = true
 
 	if db.Version == 6 then
@@ -121,7 +121,9 @@ local function OnEvent(_, event)
 end
 
 local function OnAddonLoaded()
-	local savedVars = MiniCCDB
+	-- MiniCCDB is the pre-rename table, still on disk until the migration in Config:Init copies
+	-- it across. Read here too so the very first login after the rename keeps the user's language.
+	local savedVars = MiniAurasDB or MiniCCDB
 	L:ApplyLocale(savedVars and savedVars.LocaleOverride or GetLocale())
 
 	config:Init()

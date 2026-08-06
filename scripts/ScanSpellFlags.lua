@@ -2,16 +2,16 @@
 -- CrowdControl / Important, for regenerating src/Core/AuraCategoryIds.lua.
 --
 -- Usage:
---   1. Temporarily add to src/MiniCC.toc:  ScanSpellFlags.lua  (copy this file into src/)
---      and extend the saved variables line: ## SavedVariables: MiniCCDB, MiniCCSpellScan
---   2. In game: /miniccscan, then /reload to flush the results to disk.
+--   1. Temporarily add to src/MiniAuras.toc:  ScanSpellFlags.lua  (copy this file into src/)
+--      and extend the saved variables line: ## SavedVariables: MiniAurasDB, MiniAurasSpellScan
+--   2. In game: /miniaurasscan, then /reload to flush the results to disk.
 --   3. Run scripts/GenerateAuraCategoryIds.lua on the resulting
---      WTF\Account\<ACCOUNT>\SavedVariables\MiniCC.lua (see that file's header).
+--      WTF\Account\<ACCOUNT>\SavedVariables\MiniAuras.lua (see that file's header).
 --   4. Revert the TOC changes.
 --
 -- Run OUT of combat in the open world - the flags can be secret in combat/instanced content,
 -- and secret results can't be collected. The scan takes ~30-60 seconds; progress prints to
--- chat. Results are written to the MiniCCSpellScan saved variable (the copy window only shows
+-- chat. Results are written to the MiniAurasSpellScan saved variable (the copy window only shows
 -- a summary - the full lists are too big for an edit box).
 --
 -- If the "secret" counts are non-zero, Blizzard has made the flags unreadable in this client
@@ -25,7 +25,7 @@ local scanner = CreateFrame("Frame")
 local scanning = false
 
 local function ShowCopyWindow(text)
-	local win = CreateFrame("Frame", "MiniCCSpellScanWindow", UIParent, "BasicFrameTemplateWithInset")
+	local win = CreateFrame("Frame", "MiniAurasSpellScanWindow", UIParent, "BasicFrameTemplateWithInset")
 	win:SetSize(700, 500)
 	win:SetPoint("CENTER")
 	win:SetMovable(true)
@@ -35,7 +35,7 @@ local function ShowCopyWindow(text)
 	win:SetScript("OnDragStop", win.StopMovingOrSizing)
 	win:SetFrameStrata("DIALOG")
 	if win.TitleText then
-		win.TitleText:SetText("MiniCC spell scan")
+		win.TitleText:SetText("MiniAuras spell scan")
 	end
 
 	local scroll = CreateFrame("ScrollFrame", nil, win, "UIPanelScrollFrameTemplate")
@@ -68,7 +68,7 @@ end
 
 local function StartScan()
 	if scanning then
-		print("MiniCC spell scan already running.")
+		print("MiniAuras spell scan already running.")
 		return
 	end
 	scanning = true
@@ -81,11 +81,11 @@ local function StartScan()
 	local function Finish()
 		scanner:SetScript("OnUpdate", nil)
 		scanning = false
-		print(("MiniCC scan complete: %d CC spells (%d secret), %d Important spells (%d secret)"):format(#cc, ccSecret, #imp, impSecret))
+		print(("MiniAuras scan complete: %d CC spells (%d secret), %d Important spells (%d secret)"):format(#cc, ccSecret, #imp, impSecret))
 
 		-- Full results go to the saved variable (they're far too large for chat or an edit box);
-		-- /reload to flush them to WTF\...\SavedVariables\MiniCC.lua.
-		MiniCCSpellScan = {
+		-- /reload to flush them to WTF\...\SavedVariables\MiniAuras.lua.
+		MiniAurasSpellScan = {
 			BuildVersion = select(4, GetBuildInfo()),
 			CC = {},
 			Important = {},
@@ -93,17 +93,17 @@ local function StartScan()
 			ImportantSecretCount = impSecret,
 		}
 		for _, entry in ipairs(cc) do
-			MiniCCSpellScan.CC[entry.id] = entry.name or true
+			MiniAurasSpellScan.CC[entry.id] = entry.name or true
 		end
 		for _, entry in ipairs(imp) do
-			MiniCCSpellScan.Important[entry.id] = entry.name or true
+			MiniAurasSpellScan.Important[entry.id] = entry.name or true
 		end
-		print("MiniCC scan: results stored in the MiniCCSpellScan saved variable - /reload to write them to disk.")
+		print("MiniAuras scan: results stored in the MiniAurasSpellScan saved variable - /reload to write them to disk.")
 
 		-- The important list is usually small enough to eyeball; show it plus a summary.
 		local out = {
 			("-- Scan of build %s: %d CC (%d secret), %d Important (%d secret)."):format(tostring(select(4, GetBuildInfo())), #cc, ccSecret, #imp, impSecret),
-			"-- Full lists saved to the MiniCCSpellScan saved variable; /reload to flush to disk.",
+			"-- Full lists saved to the MiniAurasSpellScan saved variable; /reload to flush to disk.",
 			"",
 		}
 		AppendList(out, "importantSpellIds", imp, impSecret)
@@ -134,7 +134,7 @@ local function StartScan()
 
 		if currentId - lastProgress >= 100000 then
 			lastProgress = currentId
-			print(("MiniCC scan: %dk/%dk (CC %d, Important %d)"):format(currentId / 1000, MAX_ID / 1000, #cc, #imp))
+			print(("MiniAuras scan: %dk/%dk (CC %d, Important %d)"):format(currentId / 1000, MAX_ID / 1000, #cc, #imp))
 		end
 
 		if currentId >= MAX_ID then
@@ -142,8 +142,8 @@ local function StartScan()
 		end
 	end)
 
-	print("MiniCC spell scan started...")
+	print("MiniAuras spell scan started...")
 end
 
-SLASH_MINICCSCAN1 = "/miniccscan"
-SlashCmdList.MINICCSCAN = StartScan
+SLASH_MINIAURASSCAN1 = "/miniaurasscan"
+SlashCmdList.MINIAURASSCAN = StartScan

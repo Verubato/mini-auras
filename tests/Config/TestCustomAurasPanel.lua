@@ -14,9 +14,9 @@ local WowMock = require("WowMock")
 ---@return table addon
 ---@return table group
 local function LoadWithGroup(spells)
-	_G.MiniCCDB = nil
+	_G.MiniAurasDB = nil
 
-	local context = harness.Run("MiniCC", {})
+	local context = harness.Run("MiniAuras", {})
 	local addon = context.Addon
 	local db = addon.Framework:GetSavedVars()
 	local groups = addon.Modules.CustomAuras.Groups
@@ -389,7 +389,7 @@ fw.describe("Custom auras page - selecting and deselecting", function()
 
 		ShowPage(addon, group)
 
-		local background = _G["MiniCCCustomAuraGrid"]
+		local background = _G["MiniAurasCustomAuraGrid"]
 
 		fw.not_nil(background, "the grid takes the clicks its tiles do not")
 		background:GetScript("OnClick")(background)

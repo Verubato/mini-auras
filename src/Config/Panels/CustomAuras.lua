@@ -19,7 +19,9 @@ local verticalSpacing = mini.VerticalSpacing
 
 -- Every exported string starts with this, so an import can reject a profile string or a bad
 -- paste before decoding. The trailing number is the payload schema, checked separately.
-local IMPORT_PREFIX = "!MiniCCAuras:1!"
+local IMPORT_PREFIX = "!MiniAuras:Auras:1!"
+-- Strings handed out under the old addon name. Same payload, only the prefix differs.
+local MINICC_PREFIX = "!MiniCCAuras:1!"
 local SCHEMA_VERSION = 1
 local ICON_SIZE = 18
 local SUGGESTION_ROWS = 8
@@ -310,11 +312,16 @@ end
 local function Decode(text)
 	text = text:gsub("%s+", "")
 
-	if text:sub(1, #IMPORT_PREFIX) ~= IMPORT_PREFIX then
-		return nil, L["That is not a MiniCC aura string."]
+	local prefix
+	if text:sub(1, #IMPORT_PREFIX) == IMPORT_PREFIX then
+		prefix = IMPORT_PREFIX
+	elseif text:sub(1, #MINICC_PREFIX) == MINICC_PREFIX then
+		prefix = MINICC_PREFIX
+	else
+		return nil, L["That is not a MiniAuras aura string."]
 	end
 
-	local decoded = C_EncodingUtil.DecodeBase64(text:sub(#IMPORT_PREFIX + 1))
+	local decoded = C_EncodingUtil.DecodeBase64(text:sub(#prefix + 1))
 
 	if not decoded or decoded == "" then
 		return nil, L["Failed to decode the aura string."]
@@ -328,7 +335,7 @@ local function Decode(text)
 
 	-- A string from a newer version is refused rather than half-read.
 	if (tonumber(payload.V) or 0) > SCHEMA_VERSION then
-		return nil, L["That aura string was made by a newer version of MiniCC."]
+		return nil, L["That aura string was made by a newer version of MiniAuras."]
 	end
 
 	return payload.Groups
@@ -1353,7 +1360,7 @@ function M:BuildEditor(editor)
 
 			local groupId = group.Id
 
-			StaticPopup_Show("MINICC_CONFIRM",
+			StaticPopup_Show("MINIAURAS_CONFIRM",
 				string.format(L['Delete the aura group "%s"?'],
 					group.Name ~= "" and group.Name or L["Custom"]), nil, {
 					OnYes = function()

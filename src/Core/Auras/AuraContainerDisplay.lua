@@ -99,7 +99,7 @@ end
 
 local function NextFrameName(frameType)
 	frameIdCounter = frameIdCounter + 1
-	return "MiniCC_AC_" .. frameType .. "_" .. frameIdCounter
+	return "MiniAuras_AC_" .. frameType .. "_" .. frameIdCounter
 end
 
 -- Deferred restyling

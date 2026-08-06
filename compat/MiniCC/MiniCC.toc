@@ -1,0 +1,10 @@
+## Interface: 120100, 120007
+## Title: MiniCC |cff808080(settings bridge for MiniAuras)|r
+## Notes: Loads the old MiniCC settings file so MiniAuras can import it. Does nothing else.
+## Author: Verz
+## Version: 5.0.0a-9
+## SavedVariables: MiniCCDB
+## IconTexture: Interface\AddOns\MiniAuras\Icon.blp
+## X-Curse-Project-ID: 1439482
+
+Bridge.lua

@@ -6,4 +6,4 @@
 
 local smoke = require("SmokeTest")
 
-smoke.Run("MiniCC")
+smoke.Run("MiniAuras")

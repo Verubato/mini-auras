@@ -32,7 +32,7 @@ end
 _G.GetSpecializationInfo = function()
 	return currentSpecId
 end
-_G.MiniCCDB = nil
+_G.MiniAurasDB = nil
 
 local refreshCount = 0
 local addon = {
@@ -53,7 +53,7 @@ local addon = {
 local addonFiles = require("AddonFiles")
 addonFiles.load(addonFiles.framework, addon)
 
-assert(loadfile("src/Core/ProfileManager.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/ProfileManager.lua"))("MiniAuras", addon)
 addonFiles.load(addonFiles.migrator, addon)
 
 local profileManager = addon.Core.ProfileManager
@@ -66,12 +66,12 @@ assert(specEvents, "profile manager event frame")
 
 fw.describe("ProfileManager - payload invariants", function()
 	fw.it("every payload key exists in the default schema (FillDefaults can heal it)", function()
-		_G.MiniCCDB = nil
+		_G.MiniAurasDB = nil
 		local fresh = migrator:GetAndUpgradeDb()
 		for _, key in ipairs(profileManager.PayloadKeys) do
 			assert(fresh[key] ~= nil, "payload key missing from dbDefaults: " .. key)
 		end
-		_G.MiniCCDB = db -- restore the live db for the remaining tests
+		_G.MiniAurasDB = db -- restore the live db for the remaining tests
 	end)
 
 	fw.it("Init seeded a complete Default profile", function()

@@ -230,7 +230,7 @@ function M.build()
 	_G.GetLocale = _G.GetLocale or function()
 		return "enUS"
 	end
-	_G.MiniCCDB = nil
+	_G.MiniAurasDB = nil
 
 	-- Real core files
 
@@ -238,7 +238,7 @@ function M.build()
 		Utils = {},
 		Core = {},
 		Modules = {},
-		Config = { SoundLocation = "Interface\\AddOns\\MiniCC\\Sounds\\" },
+		Config = { SoundLocation = "Interface\\AddOns\\MiniAuras\\Sounds\\" },
 		L = setmetatable({}, {
 			__index = function(_, key)
 				return key
@@ -248,7 +248,7 @@ function M.build()
 	env.addon = addon
 
 	local function loadFile(path)
-		assert(loadfile(path))("MiniCC", addon)
+		assert(loadfile(path))("MiniAuras", addon)
 	end
 
 	local addonFiles = require("AddonFiles")

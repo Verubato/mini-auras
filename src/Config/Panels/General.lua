@@ -11,11 +11,11 @@ addon.Config.General = M
 function M:Build(panel)
 	local contentWidth = mini.ContentWidth
 
-	-- "MiniCC" splash title
+	-- "MiniAuras" splash title
 	local titleFont = GameFontNormalHuge:GetFont()
 	local titleText = panel:CreateFontString(nil, "ARTWORK")
 	titleText:SetFont(titleFont, 30)
-	titleText:SetText("MiniCC")
+	titleText:SetText("MiniAuras")
 	titleText:SetTextColor(0.9, 0.2, 0.2, 1)
 	titleText:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 	titleText:SetWidth(contentWidth)

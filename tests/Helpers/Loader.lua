@@ -176,7 +176,7 @@ local function loadModule(path, addonTable)
 	if not fn then
 		error("loader: failed to open " .. path .. ": " .. tostring(err))
 	end
-	fn("MiniCC", addonTable)
+	fn("MiniAuras", addonTable)
 end
 
 local _cache = nil

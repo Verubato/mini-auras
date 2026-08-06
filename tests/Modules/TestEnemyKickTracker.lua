@@ -44,7 +44,7 @@ end
 local function usedSlots()
 	local count = 0
 	for _, frame in ipairs(acm.frames) do
-		if frame._name and frame._name:match("^MiniCC_Slot_") and frame:IsShown() then
+		if frame._name and frame._name:match("^MiniAuras_Slot_") and frame:IsShown() then
 			count = count + 1
 		end
 	end

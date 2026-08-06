@@ -7,7 +7,7 @@ local GUI = M.GUI
 local gradientTier
 
 -- Widgets here target every flavor the Mini addons ship to, down to Wrath-era clients. The
--- shims below cover the APIs MiniCC's styling leans on that arrived after those clients.
+-- shims below cover the APIs the widget styling leans on that arrived after those clients.
 
 -- Pixel-snapping helpers (PixelUtil arrived in 8.0). The fallback ignores snapping, which costs
 -- a fraction of a pixel of crispness on 1px rules and is otherwise invisible. Deliberately not

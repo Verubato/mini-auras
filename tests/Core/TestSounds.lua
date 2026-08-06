@@ -10,7 +10,7 @@ local moduleEnv = require("ModuleEnv")
 local env = moduleEnv.build()
 local sounds = env.addon.Core.Sounds
 
-local SOUND_LOCATION = "Interface\\AddOns\\MiniCC\\Sounds\\"
+local SOUND_LOCATION = "Interface\\AddOns\\MiniAuras\\Sounds\\"
 
 ---@param list string[]
 ---@param value string
@@ -26,7 +26,7 @@ local function Contains(list, value)
 end
 
 fw.describe("Sounds - the list", function()
-    fw.it("offers MiniCC's own sounds by name rather than file", function()
+    fw.it("offers MiniAuras's own sounds by name rather than file", function()
         local names = sounds:GetNames()
 
         assert(Contains(names, "Sonar"), "the bundled sounds are listed")

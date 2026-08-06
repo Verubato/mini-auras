@@ -664,7 +664,7 @@ function M.loadDisplay()
 		"src/Core/Kicks/KickSlot.lua",
 		"src/Core/Auras/AuraContainerDisplay.lua",
 	}) do
-		assert(loadfile(path))("MiniCC", addon)
+		assert(loadfile(path))("MiniAuras", addon)
 	end
 
 	return addon.Core.AuraContainerDisplay, addon, mockDb

@@ -64,14 +64,14 @@ function M:Build(panel)
 				return
 			end
 			db.LocaleOverride = newKey
-			StaticPopup_Show("MINICC_RELOAD_CONFIRM")
+			StaticPopup_Show("MINIAURAS_RELOAD_CONFIRM")
 		end,
 	})
 
 	languageDropdown:SetPoint("TOPLEFT", languageLabel, "BOTTOMLEFT", 0, -4)
 	languageDropdown:SetWidth(columnWidth)
 
-	-- Icons: appearance of every icon MiniCC draws
+	-- Icons: appearance of every icon MiniAuras draws
 	local iconsDivider = mini:Divider({
 		Parent = panel,
 		Text = L["Icons"],
@@ -235,7 +235,7 @@ function M:Build(panel)
 	local configureBlizzardNameplatesChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Configure Blizzard Nameplates"],
-		Tooltip = L["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."],
+		Tooltip = L["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."],
 		GetValue = function()
 			if db.ConfigureBlizzardNameplates == nil then
 				return true
@@ -258,7 +258,7 @@ function M:Build(panel)
 		local ccNativeOrderChk = mini:Checkbox({
 			Parent = panel,
 			LabelText = L["CC Native Order"],
-			Tooltip = L["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."],
+			Tooltip = L["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."],
 			GetValue = function()
 				return db.CCNativeOrder or false
 			end,

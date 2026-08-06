@@ -1,11 +1,11 @@
 -- Generates the curated player-PvP spell lists for src/Core/AuraCategoryIds.lua from a
--- MiniCCSpellScan saved variable (produced in game by scripts/ScanSpellFlags.lua - see its
+-- MiniAurasSpellScan saved variable (produced in game by scripts/ScanSpellFlags.lua - see its
 -- header for the full pipeline).
 --
 -- Usage (Lua 5.1, from the repo root):
---   lua scripts/GenerateAuraCategoryIds.lua <path-to-SavedVariables-MiniCC.lua> report
+--   lua scripts/GenerateAuraCategoryIds.lua <path-to-SavedVariables-MiniAuras.lua> report
 --     - shows match counts, curated names with no matches, and unmatched candidates to review
---   lua scripts/GenerateAuraCategoryIds.lua <path-to-SavedVariables-MiniCC.lua> generate
+--   lua scripts/GenerateAuraCategoryIds.lua <path-to-SavedVariables-MiniAuras.lua> generate
 --     - prints the table body; paste it into src/Core/AuraCategoryIds.lua between the braces
 --
 -- Matching is by exact spell name WITHIN the flagged sets, so every spell-ID variant of a
@@ -21,7 +21,7 @@
 local scanPath = arg[1]
 local mode = arg[2] or "report"
 dofile(scanPath)
-assert(MiniCCSpellScan, "MiniCCSpellScan not found")
+assert(MiniAurasSpellScan, "MiniAurasSpellScan not found")
 
 -- Player PvP crowd control ability names (DR-category families + racials + pet abilities).
 local ccNames = {
@@ -145,9 +145,9 @@ local function filter(source, names, category)
 	return matched, byName
 end
 
-local ccMatched, ccByName = filter(MiniCCSpellScan.CC, ccNames, "CC")
-local impMatched, impByName = filter(MiniCCSpellScan.Important, importantNames, "Important")
-local defMatched, defByName = filter(MiniCCSpellScan.Important, defensiveNames, "Defensive")
+local ccMatched, ccByName = filter(MiniAurasSpellScan.CC, ccNames, "CC")
+local impMatched, impByName = filter(MiniAurasSpellScan.Important, importantNames, "Important")
+local defMatched, defByName = filter(MiniAurasSpellScan.Important, defensiveNames, "Defensive")
 
 if mode == "report" then
 	print(("CC matched: %d ids"):format(#ccMatched))
@@ -178,7 +178,7 @@ if mode == "report" then
 	-- MAX_ID - a lower cutoff hid the Midnight-era spell IDs (>1.2M, e.g. Zenith) entirely.
 	print("\nUnmatched Important names (candidates to add):")
 	local seen = {}
-	for id, name in pairs(MiniCCSpellScan.Important) do
+	for id, name in pairs(MiniAurasSpellScan.Important) do
 		if type(name) == "string" and id < 1400000 and not importantNames[name] and not defensiveNames[name] and not seen[name] then
 			seen[name] = true
 			print(("  [%d] %s"):format(id, name))

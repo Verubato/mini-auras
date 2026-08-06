@@ -16,7 +16,7 @@ local PALETTE_KEYS = {
 	TitleText = true,
 }
 
--- Config-UI palette: one crimson accent (the MiniCC logo red) plus warm neutrals. Plain
+-- Config-UI palette: one crimson accent plus warm neutrals. Plain
 -- tables at file scope; ColorMixins are created lazily because CreateColor only exists in
 -- the real client. Override with M:SetPalette to rebrand.
 GUI.Accent = { r = 0.78, g = 0.20, b = 0.24 }

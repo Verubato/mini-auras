@@ -69,7 +69,7 @@ function M:AddSubCategory(parentCategory, panel)
 end
 
 ---Registers slash commands that open the settings panel.
----@param commands string[]? extra aliases, e.g. { "/minicc", "/mcc" }
+---@param commands string[]? extra aliases, e.g. { "/myaddon", "/ma" }
 function M:RegisterSlashCommand(category, panel, commands)
 	if not category then
 		error("RegisterSlashCommand - category must not be nil.")

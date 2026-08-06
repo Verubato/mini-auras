@@ -68,7 +68,7 @@ L:RegisterLocale("itIT", {
 	["Reverses the direction of the cooldown swipe animation."] = "Inverte la direzione dell'animazione di scorrimento della ricarica.",
 	["Settings"] = "Impostazioni",
 	["Open Settings"] = "Apri impostazioni",
-	["Use /minicc, /mcc, or /cc to open the MiniCC config window."] = "Usa /minicc, /mcc o /cc per aprire la finestra di configurazione di MiniCC.",
+	["Use /miniauras, /ma, or /cc to open the MiniAuras config window."] = "Usa /miniauras, /ma o /cc per aprire la finestra di configurazione di MiniAuras.",
 	["Show a glow around the icons."] = "Mostra un bagliore attorno alle icone.",
 	["Test"] = "Test",
 	["Whether to enable or disable this module if you are a caster."] = "Se abilitare o disabilitare questo modulo se sei un incantatore.",
@@ -130,7 +130,7 @@ L:RegisterLocale("itIT", {
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "Dalla patch 12.0.7 di Blizzard, le seguenti funzioni non sono più possibili:\n- Mostrare gli offensivi negli avvisi.\n- Mostrare gli offensivi sulle targhette.\n- Mostrare gli offensivi sui ritratti.\n- Mostrare gli offensivi sui riquadri gruppo/incursione.\n- Tracciare i tempi di recupero offensivi.\n- Mostrare Precognizione e Sudario annullante.\n- Avviso sonoro per gli incantesimi importanti.\n- Sintesi vocale degli incantesimi importanti.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "Buone notizie dopo le restrizioni della 12.0.7:\n- Il modulo Precognizione/Sudario annullante è tornato.\n- Il modulo avvisi ora può mostrare 1 icona importante/offensiva per avversario nell'arena.\n\nQueste funzioni non funzioneranno bene come prima, ma è meglio di niente.",
 	["CC Native Order"] = "Ordine CC nativo",
-	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Invece di mostrare l'ultimo CC applicato (comportamento MiniCC), usa la priorità CC predefinita di Blizzard che di solito mostra il primo CC applicato (con alcune eccezioni).",
+	["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Invece di mostrare l'ultimo CC applicato (comportamento MiniAuras), usa la priorità CC predefinita di Blizzard che di solito mostra il primo CC applicato (con alcune eccezioni).",
 	["The others seem to use a non-trivial amount of CPU."] = "Gli altri sembrano usare una quantità considerevole di CPU.",
 	["The Proc Glow uses the least CPU."] = "Il bagliore proc usa meno CPU.",
 	["The Slot Glow is static and uses the least CPU."] = "Il bagliore slot è statico e usa meno CPU.",
@@ -284,12 +284,12 @@ L:RegisterLocale("itIT", {
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "Altri Mini Addon",
-	["Other addons to customize MiniCC further:"] = "Altri addon per personalizzare le icone di MiniCC:",
+	["Other addons to customize MiniAuras further:"] = "Altri addon per personalizzare le icone di MiniAuras:",
 	["My other addons to enhance your gaming experience:"] = "Altri mini addon per migliorare la tua esperienza PvP:",
 	["Other Mini Addons_Short"] = "Altri",
 	["Miscellaneous_Short"] = "Varie",
 	["Configure Blizzard Nameplates"] = "Configura i segnaposto di Blizzard",
-	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."] = "Disabilita CC e BigDebuffs sulle barre dei nomi di Blizzard quando si usano le barre dei nomi di MiniCC.",
+	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "Disabilita CC e BigDebuffs sulle barre dei nomi di Blizzard quando si usano le barre dei nomi di MiniAuras.",
 
 	-- What's New
 	[" - Added CC icons on pet party/raid frames (disabled by default)."] = " - Aggiunte icone CC sui frame di gruppo/incursione degli animali da compagnia (disabilitato per impostazione predefinita).",
@@ -297,7 +297,7 @@ L:RegisterLocale("itIT", {
 	[" - Added profile import/export feature."] = " - Aggiunta la funzione di importazione/esportazione del profilo.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - Aggiunto il modulo di stima dei tempi di recupero alleati. Ora puoi seguire approssimativamente i tempi di recupero dei tuoi compagni di squadra!",
 	[" - Added enemy cooldown tracking module."] = " - Modulo di tracciamento dei tempi di recupero nemici aggiunto.",
-	["MiniCC - What's New?"] = "MiniCC - Novità?",
+	["MiniAuras - What's New?"] = "MiniAuras - Novità?",
 
 	-- Language option
 	["Language override"] = "Lingua dell'addon",
@@ -305,7 +305,7 @@ L:RegisterLocale("itIT", {
 	["Language changed. Reload UI now?"] = "Lingua cambiata. Ricaricare l'interfaccia adesso?",
 	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon.",
 	["Limitations:"] = "Limitations:",
-	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them.",
+	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniAuras.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniAuras.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them.",
 	["Ally Kicks"] = "Interruzioni alleate",
 	["Ally Kicks_Short"] = "Interr. alleate",
 	["Bar Width"] = "Larghezza barra",
@@ -341,10 +341,10 @@ L:RegisterLocale("itIT", {
 	["Export"] = "Esporta",
 	["Export All"] = "Esporta tutto",
 	["Import/Export Auras"] = "Importa/Esporta aure",
-	["That is not a MiniCC aura string."] = "Questa non è una stringa di aure di MiniCC.",
+	["That is not a MiniAuras aura string."] = "Questa non è una stringa di aure di MiniAuras.",
 	["Failed to decode the aura string."] = "Impossibile decodificare la stringa di aure.",
 	["The aura string is corrupted."] = "La stringa di aure è corrotta.",
-	["That aura string was made by a newer version of MiniCC."] = "Quella stringa di aure proviene da una versione più recente di MiniCC.",
+	["That aura string was made by a newer version of MiniAuras."] = "Quella stringa di aure proviene da una versione più recente di MiniAuras.",
 	["Imported %d aura group(s)."] = "Importati %d gruppi di aure.",
 	["A group can hold at most %d spells."] = "Un gruppo può contenere al massimo %d incantesimi.",
 	["Debuffs cannot be tracked on yourself or your pet."] = "Le penalità non possono essere tracciate su te stesso o sul tuo famiglio.",

@@ -1,11 +1,11 @@
 ---@type string, Addon
 local addonName, addon = ...
 
--- Where MiniCC's own sound files live. Kept here rather than read from Config because Core loads
+-- Where MiniAuras's own sound files live. Kept here rather than read from Config because Core loads
 -- first, and the built-ins are registered with LibSharedMedia at load so they are in the list
 -- before any panel asks for it.
 local SOUND_LOCATION = "Interface\\AddOns\\" .. addonName .. "\\Sounds\\"
--- MiniCC's own sounds, by the name they are offered under. The file name without its extension,
+-- MiniAuras's own sounds, by the name they are offered under. The file name without its extension,
 -- so the dropdown reads as a name rather than a path. Registered with LibSharedMedia, which folds
 -- them into one list with everything else registered there and lets other addons use them too.
 local BUILT_IN = {
@@ -47,7 +47,7 @@ local function SharedMedia()
 	return LibStub and LibStub("LibSharedMedia-3.0", true)
 end
 
----Hands MiniCC's own files to the media library, once. Doing it lazily rather than at file scope
+---Hands MiniAuras's own files to the media library, once. Doing it lazily rather than at file scope
 ---keeps the order robust: LibStub is loaded before Core, but a failed library is not worth an
 ---error at load when the addon works fine without one.
 local function EnsureBuiltInsRegistered()
@@ -120,7 +120,7 @@ end
 
 -- Public
 
----The sound names to offer, sorted, with MiniCC's own always present.
+---The sound names to offer, sorted, with MiniAuras's own always present.
 ---@return string[]
 function M:GetNames()
 	EnsureBuiltInsRegistered()

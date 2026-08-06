@@ -44,7 +44,7 @@ _G.wipe = _G.wipe or function(t)
 end
 
 local addon = { Core = {} }
-assert(loadfile("src/Core/Display/BarTextures.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Display/BarTextures.lua"))("MiniAuras", addon)
 local barTextures = addon.Core.BarTextures
 
 local BUILT_IN_COUNT = 4

@@ -44,18 +44,18 @@ function M:UpdateCooldownFontSize(cd, iconSize, coefficient, fontScale)
 	local fontSize = math.max(1, math.floor(iconSize * coefficient * fontScale))
 
 	-- Scan once, cache result on the cooldown frame
-	if not cd.MiniCCFontString then
+	if not cd.MiniAurasFontString then
 		local numRegions = cd:GetNumRegions()
 		for i = 1, numRegions do
 			local region = select(i, cd:GetRegions())
 			if region and region:GetObjectType() == "FontString" then
-				cd.MiniCCFontString = region
+				cd.MiniAurasFontString = region
 				break
 			end
 		end
 	end
 
-	local region = cd.MiniCCFontString
+	local region = cd.MiniAurasFontString
 	if region then
 		local font, _, flags = region:GetFont()
 		if font then

@@ -904,7 +904,7 @@ function M:UnitHasTalent(unit, talentSpellId, callerSpecId)
 		end
 		-- No real talent data - check class/spec defaults.
 		-- Prefer the caller-supplied spec ID (from Inspector) over our stored one,
-		-- since non-MiniCC players won't have an entry in unitTalentSpecId.
+		-- since non-MiniAuras players won't have an entry in unitTalentSpecId.
 		if talentRanks == nil then
 			local _, classToken = UnitClass(unit)
 			local specId = unitTalentSpecId[playerName] or callerSpecId

@@ -43,7 +43,7 @@ end
 
 local function NextFrameName(frameType)
 	frameIdCounter = frameIdCounter + 1
-	return "MiniCC_" .. frameType .. "_" .. frameIdCounter
+	return "MiniAuras_" .. frameType .. "_" .. frameIdCounter
 end
 
 local function GetDb()

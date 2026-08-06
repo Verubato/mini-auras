@@ -113,7 +113,7 @@ function M:Build(panel)
 
 	local styleSubtitle = mini:TextLine({
 		Parent = panel,
-		Text   = L["Other addons to customize MiniCC further:"],
+		Text   = L["Other addons to customize MiniAuras further:"],
 	})
 	styleSubtitle:SetPoint("TOPLEFT", url.EditBox, "BOTTOMLEFT", -4, -verticalSpacing)
 

@@ -7,7 +7,7 @@ wow.setup()
 
 local function loadModule(path, addon)
 	local fn = assert(loadfile(path))
-	fn("MiniCC", addon)
+	fn("MiniAuras", addon)
 	return addon
 end
 

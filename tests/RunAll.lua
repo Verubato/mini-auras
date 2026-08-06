@@ -1,4 +1,4 @@
--- Entry point for the MiniCC test suite.
+-- Entry point for the MiniAuras test suite.
 -- Run from the repository root:
 --
 --   lua tests/RunAll.lua
@@ -14,7 +14,7 @@ package.path = "build/Lua/?.lua;tests/Helpers/?.lua;tests/?.lua;" .. package.pat
 -- clearing it whenever it installs a fresh client.
 require("WowMock")
 
-io.write("MiniCC - unit tests\n")
+io.write("MiniAuras - unit tests\n")
 io.write("======================================\n")
 
 local testFiles = {

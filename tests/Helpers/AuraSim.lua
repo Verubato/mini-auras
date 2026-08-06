@@ -139,7 +139,7 @@ wow.setup()
 installGlobals()
 
 local addon = { Core = {} }
-assert(loadfile("src/Core/Auras/UnitAuraWatcher.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/Auras/UnitAuraWatcher.lua"))("MiniAuras", addon)
 M.watcher = addon.Core.UnitAuraWatcher
 
 function M.reset()

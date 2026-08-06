@@ -64,9 +64,24 @@ local function RestoreOpaqueCaches(vars, saved)
 	end
 end
 
+---Seeds MiniAurasDB from the MiniCC-era saved variable the first time the renamed addon runs.
+---MiniCCDB is loaded by the stub MiniCC folder we still ship, which the toc lists as an
+---optional dependency so it loads first. The old table is copied rather than adopted, so
+---rolling back to MiniCC leaves the user's old settings intact.
+---TEMPORARY: goes away with the stub folder once MiniCCDB is dropped.
+local function AdoptLegacyDb()
+	if MiniAurasDB ~= nil or type(MiniCCDB) ~= "table" then
+		return
+	end
+
+	MiniAurasDB = mini:CopyTable(MiniCCDB)
+end
+
 ---@return Db
 function M:GetAndUpgradeDb()
-	local isFirstTimeSetup = MiniCCDB == nil
+	AdoptLegacyDb()
+
+	local isFirstTimeSetup = MiniAurasDB == nil
 
 	if isFirstTimeSetup then
 		return mini:GetSavedVars(dbDefaults)

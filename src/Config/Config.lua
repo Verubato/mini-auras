@@ -66,7 +66,7 @@ local function BuildRedirectPanel(panel, version)
 	message:SetPoint("TOP", ruleRight, "BOTTOMLEFT", 0, -18)
 	message:SetWidth(PANEL_TEXT_WIDTH)
 	message:SetJustifyH("CENTER")
-	message:SetText(L["Use /minicc, /mcc, or /cc to open the MiniCC config window."])
+	message:SetText(L["Use /miniauras, /ma, or /cc to open the MiniAuras config window."])
 
 	local button = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 	button:SetSize(240, 32)
@@ -87,7 +87,7 @@ local function BuildRedirectPanel(panel, version)
 			end
 
 			if InCombatLockdown() then
-				mini:RunWhenCombatEnds(HideSettings, "MiniCC_HideSettingsPanel")
+				mini:RunWhenCombatEnds(HideSettings, "MiniAuras_HideSettingsPanel")
 			else
 				HideSettings()
 			end
@@ -104,7 +104,7 @@ end
 function M:Init()
 	db = dbMigrator:GetAndUpgradeDb()
 
-	-- MiniCC is the one addon that runs its own window rather than a Blizzard panel, so it
+	-- MiniAuras is the one addon that runs its own window rather than a Blizzard panel, so it
 	-- takes the accented restyle. Must come before any widget is built.
 	mini:SetCustomStyling(true)
 
@@ -366,7 +366,7 @@ function M:Init()
 		nameplatesTab.Icon:SetVertexColor(0.15, 0.75, 0.15, 1)
 	end
 
-	StaticPopupDialogs["MINICC_RELOAD_CONFIRM"] = {
+	StaticPopupDialogs["MINIAURAS_RELOAD_CONFIRM"] = {
 		text = L["Language changed. Reload UI now?"],
 		button1 = YES,
 		button2 = NO,
@@ -378,7 +378,7 @@ function M:Init()
 		hideOnEscape = true,
 	}
 
-	StaticPopupDialogs["MINICC_CONFIRM"] = {
+	StaticPopupDialogs["MINIAURAS_CONFIRM"] = {
 		text = "%s",
 		button1 = YES,
 		button2 = NO,
@@ -397,11 +397,14 @@ function M:Init()
 		hideOnEscape = true,
 	}
 
-	SLASH_MINICC1 = "/minicc"
-	SLASH_MINICC2 = "/mcc"
-	SLASH_MINICC3 = "/cc"
+	SLASH_MINIAURAS1 = "/miniauras"
+	SLASH_MINIAURAS2 = "/ma"
+	-- The MiniCC-era aliases stay registered; people have them in macros and muscle memory.
+	SLASH_MINIAURAS3 = "/minicc"
+	SLASH_MINIAURAS4 = "/mcc"
+	SLASH_MINIAURAS5 = "/cc"
 
-	SlashCmdList.MINICC = function(msg)
+	SlashCmdList.MINIAURAS = function(msg)
 		msg = msg and msg:lower():match("^%s*(.-)%s*$") or ""
 
 		if msg == "test" then

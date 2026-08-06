@@ -3,7 +3,7 @@ local _, addon = ...
 
 -- The addon's central spell-ID list: every tracked spell, grouped by aura category.
 --
--- GENERATED DATA - do not hand-edit. Produced from an in-game /miniccscan (build 120100, PTR)
+-- GENERATED DATA - do not hand-edit. Produced from an in-game /miniaurasscan (build 120100, PTR)
 -- filtered offline to player-PvP ability names; every spell-ID variant of each named ability
 -- is included. Regenerate with scripts/ScanSpellFlags.lua + scripts/GenerateAuraCategoryIds.lua
 -- (see their headers). Two consumers on 12.1: C_UnitAuras.AddAuraSound registrations (aura

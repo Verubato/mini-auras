@@ -1,0 +1,5 @@
+-- MiniAuras used to be called MiniCC. WoW only reads WTF\...\SavedVariables\MiniCC.lua for
+-- an addon folder literally named MiniCC, so this folder exists purely to put MiniCCDB back into
+-- the global namespace. MiniAuras lists it under OptionalDeps, which loads it first, and copies
+-- the table on its first run. Nothing here touches the data; the old file stays as a fallback.
+-- TEMPORARY: this whole folder goes away in the release that drops MiniCCDB.

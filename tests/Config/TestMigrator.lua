@@ -24,7 +24,7 @@ local addon = {
 local addonFiles = require("AddonFiles")
 addonFiles.load(addonFiles.framework, addon)
 -- ProfileManager before Migrator: UpgradeToVersion37 snapshots profiles via its PayloadKeys.
-assert(loadfile("src/Core/ProfileManager.lua"))("MiniCC", addon)
+assert(loadfile("src/Core/ProfileManager.lua"))("MiniAuras", addon)
 addonFiles.load(addonFiles.migrator, addon)
 
 local migrator = addon.Config.Migrator
@@ -66,7 +66,7 @@ local function deepCopy(t)
 end
 
 -- The current schema version, discovered from a fresh install rather than hardcoded.
-_G.MiniCCDB = nil
+_G.MiniAurasDB = nil
 local LATEST_VERSION = migrator:GetAndUpgradeDb().Version
 assert(type(LATEST_VERSION) == "number" and LATEST_VERSION >= 55, "sane latest version")
 
@@ -78,7 +78,7 @@ local expectedModules = {
 
 fw.describe("Migrator - fresh install", function()
 	fw.before_each(function()
-		_G.MiniCCDB = nil
+		_G.MiniAurasDB = nil
 	end)
 
 	fw.it("produces the full current-version schema", function()
@@ -108,7 +108,7 @@ fw.describe("Migrator - arbitrary input safety", function()
 
 	for label, fixture in pairs(fixtures) do
 		fw.it("recovers to a valid current db from " .. label, function()
-			_G.MiniCCDB = deepCopy(fixture)
+			_G.MiniAurasDB = deepCopy(fixture)
 			local db = migrator:GetAndUpgradeDb()
 			assert(db.Version == LATEST_VERSION, label .. ": version healed")
 			assert(type(db.Modules) == "table" and db.Modules.CCModule, label .. ": modules present")
@@ -117,7 +117,7 @@ fw.describe("Migrator - arbitrary input safety", function()
 	end
 
 	fw.it("a db from a NEWER version soft-resets but keeps recognized settings", function()
-		_G.MiniCCDB = { Version = LATEST_VERSION + 100, FontScale = 1.4, Garbage = "x" }
+		_G.MiniAurasDB = { Version = LATEST_VERSION + 100, FontScale = 1.4, Garbage = "x" }
 		local db = migrator:GetAndUpgradeDb()
 		assert(db.Version == LATEST_VERSION, "version reset to current")
 		assert(db.FontScale == 1.4, "recognized custom value preserved")
@@ -137,7 +137,7 @@ fw.describe("Migrator - full chain from a v1-era db", function()
 	fw.it("walks an ancient realistic db through every version to a valid current db", function()
 		-- A pre-versioning db as UpgradeToVersion1 expects (no Version key), with the fields
 		-- that era actually had, some customized.
-		_G.MiniCCDB = {
+		_G.MiniAurasDB = {
 			SimpleMode = { Enabled = true, Offset = { X = 7, Y = 3 } },
 			AdvancedMode = { Enabled = false, Point = "TOPLEFT", RelativePoint = "TOPRIGHT", Offset = { X = 2, Y = 0 } },
 			Icons = { Size = 64, Padding = { X = 2, Y = 0 } },
@@ -173,7 +173,7 @@ fw.describe("Migrator - full chain from a v37-era db preserves settings", functi
 	-- enough that user customizations at current-schema paths must survive to the latest
 	-- version (the v23 CleanTable-vs-current-defaults reset only affects older dbs).
 	fw.it("carries customized values through every remaining migration", function()
-		_G.MiniCCDB = {
+		_G.MiniAurasDB = {
 			Version = 37,
 			WhatsNew = {},
 			NotifiedChanges = true,
@@ -632,7 +632,7 @@ fw.describe("Migrator - opaque user data", function()
 	-- Custom aura groups are authored entirely by the user, so the schema ships an empty array to
 	-- compare them against - which is exactly the shape CleanTable strips everything out of.
 	fw.it("keeps custom aura groups through the final CleanTable", function()
-		_G.MiniCCDB = nil
+		_G.MiniAurasDB = nil
 
 		local db = migrator:GetAndUpgradeDb()
 
@@ -655,6 +655,48 @@ fw.describe("Migrator - opaque user data", function()
 	end)
 end)
 
+fw.describe("Migrator - adopting the MiniCC saved variable", function()
+	fw.before_each(function()
+		_G.MiniAurasDB = nil
+		_G.MiniCCDB = nil
+	end)
+
+	fw.it("carries the old settings over on the first run under the new name", function()
+		_G.MiniCCDB = { Version = LATEST_VERSION, FontScale = 1.35 }
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(db.FontScale == 1.35, "the old value came across")
+		assert(db.Version == LATEST_VERSION, "and lands on the current schema")
+	end)
+
+	fw.it("copies rather than adopts, so a rollback still finds the old table", function()
+		_G.MiniCCDB = { Version = LATEST_VERSION, FontScale = 1.35 }
+
+		local db = migrator:GetAndUpgradeDb()
+		db.FontScale = 1.6
+
+		assert(_G.MiniCCDB.FontScale == 1.35, "the old table is untouched")
+		assert(_G.MiniAurasDB ~= _G.MiniCCDB, "and is a separate table")
+	end)
+
+	fw.it("leaves an existing MiniAurasDB alone", function()
+		_G.MiniAurasDB = { Version = LATEST_VERSION, FontScale = 1.1 }
+		_G.MiniCCDB = { Version = LATEST_VERSION, FontScale = 1.35 }
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(db.FontScale == 1.1, "the new table wins once it exists")
+	end)
+
+	fw.it("still produces a fresh install when there is nothing to adopt", function()
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(db.Version == LATEST_VERSION)
+		assert(type(db.Modules.CCModule) == "table")
+	end)
+end)
+
 fw.describe("Migrator - defaults helpers", function()
 	fw.it("GetModuleDefaults returns isolated deep copies", function()
 		local first = migrator:GetModuleDefaults()
@@ -664,7 +706,7 @@ fw.describe("Migrator - defaults helpers", function()
 	end)
 
 	fw.it("FillDefaults adds missing keys without overwriting existing values", function()
-		_G.MiniCCDB = nil
+		_G.MiniAurasDB = nil
 		local db = migrator:GetAndUpgradeDb()
 		db.FontScale = 1.25
 		db.Modules.CCModule.Default.Icons.Size = 48

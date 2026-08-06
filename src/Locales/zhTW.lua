@@ -68,7 +68,7 @@ L:RegisterLocale("zhTW", {
 	["Reverses the direction of the cooldown swipe animation."] = "反轉冷卻時間滑動動畫的方向。",
 	["Settings"] = "設定",
 	["Open Settings"] = "開啟設定",
-	["Use /minicc, /mcc, or /cc to open the MiniCC config window."] = "使用 /minicc、/mcc 或 /cc 開啟 MiniCC 設定視窗。",
+	["Use /miniauras, /ma, or /cc to open the MiniAuras config window."] = "使用 /miniauras、/ma 或 /cc 開啟 MiniAuras 設定視窗。",
 	["Show a glow around the icons."] = "在圖示周圍顯示發光。",
 	["Test"] = "測試",
 	["Whether to enable or disable this module if you are a caster."] = "如果您是施法者，是否啟用或停用此模組。",
@@ -130,7 +130,7 @@ L:RegisterLocale("zhTW", {
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "自暴雪 12.0.7 改版起，以下功能無法再使用：\n- 在警報中顯示進攻技能。\n- 在名條上顯示進攻技能。\n- 在頭像上顯示進攻技能。\n- 在隊伍/團隊框架上顯示進攻技能。\n- 追蹤進攻冷卻。\n- 顯示預知和虛無披風。\n- 重要技能的聲音提示。\n- 重要技能的語音播報。",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "12.0.7 限制之後的一些好消息：\n- 預知/虛無披風模組回歸了。\n- 現在警報模組可以為每個競技場對手顯示 1 個重要/進攻圖示。\n\n這些功能不會像以前那樣好用，但聊勝於無。",
 	["CC Native Order"] = "CC原生順序",
-	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "不顯示最新應用的控制效果（MiniCC行為），而是使用暴雪預設的CC優先級，通常顯示最先應用的控制效果（有少數例外）。",
+	["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "不顯示最新應用的控制效果（MiniAuras行為），而是使用暴雪預設的CC優先級，通常顯示最先應用的控制效果（有少數例外）。",
 	["The others seem to use a non-trivial amount of CPU."] = "其他的似乎使用了大量的CPU。",
 	["The Proc Glow uses the least CPU."] = "觸發發光使用最少的CPU。",
 	["The Slot Glow is static and uses the least CPU."] = "槽位發光是靜態的，使用最少的CPU。",
@@ -285,12 +285,12 @@ L:RegisterLocale("zhTW", {
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "其他Mini插件",
-	["Other addons to customize MiniCC further:"] = "用於美化MiniCC圖示的其他插件：",
+	["Other addons to customize MiniAuras further:"] = "用於美化MiniAuras圖示的其他插件：",
 	["My other addons to enhance your gaming experience:"] = "增強您PvP體驗的其他mini插件：",
 	["Other Mini Addons_Short"] = "其他",
 	["Miscellaneous_Short"] = "雜項",
 	["Configure Blizzard Nameplates"] = "設定暴雪姓名板",
-	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."] = "使用MiniCC姓名板時，在暴雪姓名板上停用CC和BigDebuffs。",
+	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "使用MiniAuras姓名板時，在暴雪姓名板上停用CC和BigDebuffs。",
 
 	-- General home screen
 
@@ -300,7 +300,7 @@ L:RegisterLocale("zhTW", {
 	[" - Added profile import/export feature."] = " - 新增了設定檔匯入/匯出功能。",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - 新增了友方冷卻時間猜測模組。現在你可以大致追蹤隊友的冷卻時間！",
 	[" - Added enemy cooldown tracking module."] = " - 新增敵人冷卻追蹤模組。",
-	["MiniCC - What's New?"] = "MiniCC - 有什麼新鮮事？",
+	["MiniAuras - What's New?"] = "MiniAuras - 有什麼新鮮事？",
 
 	-- Language option
 	["Language override"] = "語言覆蓋",
@@ -308,7 +308,7 @@ L:RegisterLocale("zhTW", {
 	["Language changed. Reload UI now?"] = "語言已變更。立即重新載入介面嗎？",
 	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon.",
 	["Limitations:"] = "Limitations:",
-	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them.",
+	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniAuras.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniAuras.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them.",
 	["Ally Kicks"] = "友方打斷",
 	["Ally Kicks_Short"] = "友方打斷",
 	["Bar Width"] = "狀態條寬度",
@@ -344,10 +344,10 @@ L:RegisterLocale("zhTW", {
 	["Export"] = "匯出",
 	["Export All"] = "匯出全部",
 	["Import/Export Auras"] = "匯入/匯出光環",
-	["That is not a MiniCC aura string."] = "這不是 MiniCC 光環字串。",
+	["That is not a MiniAuras aura string."] = "這不是 MiniAuras 光環字串。",
 	["Failed to decode the aura string."] = "無法解碼光環字串。",
 	["The aura string is corrupted."] = "光環字串已損壞。",
-	["That aura string was made by a newer version of MiniCC."] = "該光環字串由更新版本的 MiniCC 產生。",
+	["That aura string was made by a newer version of MiniAuras."] = "該光環字串由更新版本的 MiniAuras 產生。",
 	["Imported %d aura group(s)."] = "已匯入 %d 個光環群組。",
 	["A group can hold at most %d spells."] = "一個群組最多包含 %d 個法術。",
 	["Debuffs cannot be tracked on yourself or your pet."] = "無法在你自己或寵物身上追蹤減益。",

@@ -38,7 +38,7 @@ local DEFAULT_COOLDOWN = 15
 local WARLOCK_PET_SPELL_ID = 132409
 local WARLOCK_SPELL_LOCK_IDS = { 132409, 119910, 19647 }
 
--- Every interrupt MiniCC knows about, so the player's cast is recognised even before their spec is.
+-- Every interrupt MiniAuras knows about, so the player's cast is recognised even before their spec is.
 ---@type table<number, boolean>
 local INTERRUPT_SPELL_IDS = {}
 -- The cooldown to assume while the spec is unknown. Specs that share an interrupt do not always

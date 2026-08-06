@@ -68,7 +68,7 @@ L:RegisterLocale("koKR", {
 	["Reverses the direction of the cooldown swipe animation."] = "재사용 대기시간 스와이프 애니메이션의 방향을 반대로 합니다.",
 	["Settings"] = "설정",
 	["Open Settings"] = "설정 열기",
-	["Use /minicc, /mcc, or /cc to open the MiniCC config window."] = "/minicc, /mcc 또는 /cc를 사용하여 MiniCC 설정 창을 엽니다.",
+	["Use /miniauras, /ma, or /cc to open the MiniAuras config window."] = "/miniauras, /ma 또는 /cc를 사용하여 MiniAuras 설정 창을 엽니다.",
 	["Show a glow around the icons."] = "아이콘 주위에 발광을 표시합니다.",
 	["Test"] = "테스트",
 	["Whether to enable or disable this module if you are a caster."] = "시전자인 경우 이 모듈을 활성화 또는 비활성화합니다.",
@@ -130,7 +130,7 @@ L:RegisterLocale("koKR", {
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "블리자드 12.0.7 패치부터 다음 기능을 더 이상 사용할 수 없습니다:\n- 알림에 공격기 표시.\n- 이름표에 공격기 표시.\n- 초상화에 공격기 표시.\n- 파티/공격대 프레임에 공격기 표시.\n- 공격 재사용 대기시간 추적.\n- 예지와 무효화의 장막 표시.\n- 중요 주문 소리 알림.\n- 중요 주문 음성 안내.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "12.0.7 제한 이후의 반가운 소식:\n- 예지/무효화의 장막 모듈이 돌아왔습니다.\n- 이제 알림 모듈이 투기장 상대별로 중요/공격 아이콘을 1개 표시할 수 있습니다.\n\n이 기능들은 예전만큼 잘 작동하지는 않지만, 없는 것보다는 낫습니다.",
 	["CC Native Order"] = "CC 기본 순서",
-	["Instead of showing the latest CC applied (MiniCC behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "마지막으로 적용된 CC를 표시하는 대신(MiniCC 방식), 일반적으로 처음 적용된 CC를 표시하는 블리자드의 기본 CC 우선순위를 사용합니다(일부 예외 있음).",
+	["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "마지막으로 적용된 CC를 표시하는 대신(MiniAuras 방식), 일반적으로 처음 적용된 CC를 표시하는 블리자드의 기본 CC 우선순위를 사용합니다(일부 예외 있음).",
 	["The others seem to use a non-trivial amount of CPU."] = "다른 것들은 상당한 CPU를 사용하는 것 같습니다.",
 	["The Proc Glow uses the least CPU."] = "프록 발광은 CPU를 가장 적게 사용합니다.",
 	["The Slot Glow is static and uses the least CPU."] = "슬롯 발광은 정적이며 CPU를 가장 적게 사용합니다.",
@@ -284,12 +284,12 @@ L:RegisterLocale("koKR", {
 
 	-- Other Addons tab
 	["Other Mini Addons"] = "기타 Mini 애드온",
-	["Other addons to customize MiniCC further:"] = "MiniCC 아이콘을 꾸미는 다른 애드온:",
+	["Other addons to customize MiniAuras further:"] = "MiniAuras 아이콘을 꾸미는 다른 애드온:",
 	["My other addons to enhance your gaming experience:"] = "PvP 경험을 향상시키는 다른 mini 애드온:",
 	["Other Mini Addons_Short"] = "기타",
 	["Miscellaneous_Short"] = "기타 설정",
 	["Configure Blizzard Nameplates"] = "블리자드 네임플레이트 설정",
-	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniCC nameplates."] = "MiniCC 이름표 사용 시 블리자드 이름표의 CC와 BigDebuffs를 비활성화합니다.",
+	["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."] = "MiniAuras 이름표 사용 시 블리자드 이름표의 CC와 BigDebuffs를 비활성화합니다.",
 
 	-- General home screen
 
@@ -299,7 +299,7 @@ L:RegisterLocale("koKR", {
 	[" - Added profile import/export feature."] = " - 프로필 가져오기/내보내기 기능이 추가되었습니다.",
 	[" - Added friendly cooldown guessing module. You can now somewhat track your team mates cooldowns!"] = " - 아군 쿨다운 추측 모듈이 추가되었습니다. 이제 팀원들의 쿨다운을 어느 정도 추적할 수 있습니다!",
 	[" - Added enemy cooldown tracking module."] = " - 적 쿨다운 추적 모듈이 추가되었습니다.",
-	["MiniCC - What's New?"] = "MiniCC - 새로운 소식?",
+	["MiniAuras - What's New?"] = "MiniAuras - 새로운 소식?",
 
 	-- Language option
 	["Language override"] = "언어 변경",
@@ -307,7 +307,7 @@ L:RegisterLocale("koKR", {
 	["Language changed. Reload UI now?"] = "언어가 변경되었습니다. 지금 UI를 새로고침하시겠습니까?",
 	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon.",
 	["Limitations:"] = "Limitations:",
-	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniCC.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them.",
+	["With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniAuras.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them."] = "With the new Blizzard restrictions in 12.0.5, this is what has changed in MiniAuras.\n\nThe good news:\n* Cooldown tracking still works mostly fine in arena and dungeons.\n* Added support for multiple spell charges (e.g. 2x Pain Suppression, 2x Blur) for both friendly and enemy CDs.\n\nThe bad news:\n* Friendly externals no longer track in Raids and Battlegrounds.\n* Predictive glows are less reliable.\n* PvP kick tracking can no longer identify the kicker. Now just displays a generic icon using the shortest known enemy kick cooldown.\n\nWe've put a lot of work into this update, but there may still be issues. \nPlease report any bugs you find in our Discord so we can address them.",
 	["Ally Kicks"] = "아군 차단",
 	["Ally Kicks_Short"] = "아군 차단",
 	["Bar Width"] = "막대 너비",
@@ -343,10 +343,10 @@ L:RegisterLocale("koKR", {
 	["Export"] = "내보내기",
 	["Export All"] = "모두 내보내기",
 	["Import/Export Auras"] = "오라 가져오기/내보내기",
-	["That is not a MiniCC aura string."] = "MiniCC 오라 문자열이 아닙니다.",
+	["That is not a MiniAuras aura string."] = "MiniAuras 오라 문자열이 아닙니다.",
 	["Failed to decode the aura string."] = "오라 문자열을 해독하지 못했습니다.",
 	["The aura string is corrupted."] = "오라 문자열이 손상되었습니다.",
-	["That aura string was made by a newer version of MiniCC."] = "이 오라 문자열은 더 새로운 버전의 MiniCC에서 만들어졌습니다.",
+	["That aura string was made by a newer version of MiniAuras."] = "이 오라 문자열은 더 새로운 버전의 MiniAuras에서 만들어졌습니다.",
 	["Imported %d aura group(s)."] = "오라 그룹 %d개를 가져왔습니다.",
 	["A group can hold at most %d spells."] = "한 그룹에는 최대 %d개의 주문만 담을 수 있습니다.",
 	["Debuffs cannot be tracked on yourself or your pet."] = "자신이나 소환수에게는 디버프를 추적할 수 없습니다.",

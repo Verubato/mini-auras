@@ -12,8 +12,11 @@ local NONE_LABEL = "(none)"
 local ROW_HEIGHT = 28
 local SPEC_COL_W = 160
 
-local PROFILE_PREFIX    = "!MiniCC:2!"
-local LEGACY_PREFIX     = "!MiniCC!"
+local PROFILE_PREFIX    = "!MiniAuras:2!"
+-- Strings handed out under the old addon name. Same payload as PROFILE_PREFIX, so only the
+-- prefix differs; "!MiniCC!" is older still and carries the whole saved-vars table.
+local MINICC_PREFIX     = "!MiniCC:2!"
+local MINICC_V1_PREFIX  = "!MiniCC!"
 local profileIOWindow
 
 local function ExportCurrentProfile()
@@ -31,8 +34,10 @@ local function ImportAsProfile(str, name)
 	local isLegacy = false
 	if str:sub(1, #PROFILE_PREFIX) == PROFILE_PREFIX then
 		encoded = str:sub(#PROFILE_PREFIX + 1)
-	elseif str:sub(1, #LEGACY_PREFIX) == LEGACY_PREFIX then
-		encoded = str:sub(#LEGACY_PREFIX + 1)
+	elseif str:sub(1, #MINICC_PREFIX) == MINICC_PREFIX then
+		encoded = str:sub(#MINICC_PREFIX + 1)
+	elseif str:sub(1, #MINICC_V1_PREFIX) == MINICC_V1_PREFIX then
+		encoded = str:sub(#MINICC_V1_PREFIX + 1)
 		isLegacy = true
 	else
 		return false, L["Invalid profile string."]
@@ -72,7 +77,7 @@ local function GetOrCreateProfileIOWindow()
 		return profileIOWindow
 	end
 
-	local win = CreateFrame("Frame", "MiniCCProfileIOWindow", UIParent, "BackdropTemplate")
+	local win = CreateFrame("Frame", "MiniAurasProfileIOWindow", UIParent, "BackdropTemplate")
 	win:SetSize(500, 310)
 	win:SetFrameStrata("DIALOG")
 	win:SetClampedToScreen(true)
@@ -205,7 +210,7 @@ local function ShowProfileIOWindow()
 	win:Show()
 end
 
-StaticPopupDialogs["MINICC_PROFILE_NAME"] = {
+StaticPopupDialogs["MINIAURAS_PROFILE_NAME"] = {
 	text = "%s",
 	button1 = OKAY,
 	button2 = CANCEL,
@@ -286,7 +291,7 @@ function M:Build(panel)
 	deleteBtn:SetPoint("TOP", cloneBtn, "TOP")
 
 	newBtn:SetScript("OnClick", function()
-		StaticPopup_Show("MINICC_PROFILE_NAME", L["New Profile"], nil, {
+		StaticPopup_Show("MINIAURAS_PROFILE_NAME", L["New Profile"], nil, {
 			Default = "",
 			OnAccept = function(name)
 				if db.Profiles and db.Profiles[name] then
@@ -302,7 +307,7 @@ function M:Build(panel)
 
 	cloneBtn:SetScript("OnClick", function()
 		local current = profileManager:GetActiveProfile()
-		StaticPopup_Show("MINICC_PROFILE_NAME", L["Clone Profile"], nil, {
+		StaticPopup_Show("MINIAURAS_PROFILE_NAME", L["Clone Profile"], nil, {
 			Default = current .. " (2)",
 			OnAccept = function(name)
 				if db.Profiles and db.Profiles[name] then
@@ -318,7 +323,7 @@ function M:Build(panel)
 
 	renameBtn:SetScript("OnClick", function()
 		local current = profileManager:GetActiveProfile()
-		StaticPopup_Show("MINICC_PROFILE_NAME", L["Rename Profile"], nil, {
+		StaticPopup_Show("MINIAURAS_PROFILE_NAME", L["Rename Profile"], nil, {
 			Default = current,
 			OnAccept = function(newName)
 				if newName == current then return end
@@ -337,7 +342,7 @@ function M:Build(panel)
 			return
 		end
 		local current = profileManager:GetActiveProfile()
-		StaticPopup_Show("MINICC_CONFIRM",
+		StaticPopup_Show("MINIAURAS_CONFIRM",
 			string.format(L['Delete profile "%s"?'], current), nil, {
 				OnYes = function()
 					profileManager:DeleteProfile(current)
@@ -349,7 +354,7 @@ function M:Build(panel)
 	resetBtn:SetPoint("TOPLEFT", newBtn, "BOTTOMLEFT", 0, -4)
 	resetBtn:SetScript("OnClick", function()
 		local current = profileManager:GetActiveProfile()
-		StaticPopup_Show("MINICC_CONFIRM",
+		StaticPopup_Show("MINIAURAS_CONFIRM",
 			string.format(L['Reset profile "%s" to defaults?'], current), nil, {
 				OnYes = function()
 					profileManager:ResetCurrentProfileToDefaults()
