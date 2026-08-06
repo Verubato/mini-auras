@@ -658,6 +658,8 @@ function M.loadDisplay()
 	for _, path in ipairs({
 		"src/Core/Display/Pool.lua",
 		"src/Core/Display/GrowAnchors.lua",
+		-- Must precede AuraContainerDisplay: the glow catalog is read at its load.
+		"src/Core/Display/GlowStyles.lua",
 		-- Must precede AuraFilters: its spell-ID maps are built from these lists at load.
 		"src/Core/Auras/AuraCategoryIds.lua",
 		"src/Core/Auras/AuraFilters.lua",

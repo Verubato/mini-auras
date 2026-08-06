@@ -1,15 +1,25 @@
 ---@type string, Addon
-local addonName, addon = ...
+local _, addon = ...
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", true)
 local Masque = LibStub and LibStub("Masque", true)
--- Debounce table keyed by group object: one deferred ReSkin per group per frame
-local masqueReskinPending = {}
 local fontUtil = addon.Utils.FontUtil
-local cachedDb = nil
+local glowStyles = addon.Core.GlowStyles
+
 -- Hoisted out of UpdateGlow: that runs per slot on every icon update, and the value never
 -- changes for the life of the session.
 local USE_AURA_CONTAINERS = addon.Utils.WoWEx:UseAuraContainers()
 
+-- Style name -> the field its built frame is cached under on a parent, so a frame is never
+-- built twice per layer. Membership doubles as "this style is texture-based": the shared
+-- catalog holds exactly the styles that render without LibCustomGlow.
+local STATIC_GLOW_FIELDS = {}
+for name in pairs(glowStyles.Specs) do
+	STATIC_GLOW_FIELDS[name] = "_StaticGlow_" .. name
+end
+
+-- Debounce table keyed by group object: one deferred ReSkin per group per frame
+local masqueReskinPending = {}
+local cachedDb = nil
 -- Reused across Layout() calls to avoid a table allocation on the hot path
 local layoutScratch = {}
 -- Reused by UpdateGlow() to avoid allocating glow option tables on every call.
@@ -17,16 +27,6 @@ local layoutScratch = {}
 local glowOptionsScratch = { startAnim = false }
 local glowColorScratch = { 0, 0, 0, 0 }
 local frameIdCounter = 0
-
--- Static texture-based glow types share the same layout pattern: an OVERLAY texture
--- on a child frame sized proportionally to the icon. The field on the parent is the
--- cache key so we never build the frame twice per layer.
-local STATIC_GLOW_FIELDS = {
-	["Rotation Assist (Anti-clockwise)"] = "_FlipbookGlow",
-	["Rotation Assist (Clockwise)"] = "_RotationAssistCWGlow",
-	["Ants (Anti-Clockwise)"] = "_AntsGlow",
-	["Slot Glow"] = "_SlotGlow",
-}
 
 ---@class IconSlotContainer
 local M = {}
@@ -186,126 +186,49 @@ local function ApplyStaticGlowPadding(glowFrame, parent)
 	glowFrame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", padding, -padding)
 end
 
-local function CreateStaticGlowFrame(parent, field, name, paddingFactor)
-	local cg = CreateFrame("Frame", NextFrameName(name), parent)
-	cg:SetFrameLevel(parent:GetFrameLevel() + 5)
-	cg.PaddingFactor = paddingFactor
+-- Hook once per parent (idempotent via the marker flag); the hook resizes whichever static
+-- glows live on this parent so all glow types stay proportional.
+local function EnsureStaticGlowResizeHook(parent)
+	if parent._StaticGlowResizeHooked then
+		return
+	end
 
-	cg.Texture = cg:CreateTexture(nil, "OVERLAY")
-	cg.Texture:SetAllPoints()
-
-	-- Hook once per parent (idempotent via the marker flag); the hook resizes whichever
-	-- static glow currently lives on this parent so all glow types stay proportional.
-	if not parent._StaticGlowResizeHooked then
-		parent._StaticGlowResizeHooked = true
-		parent:HookScript("OnSizeChanged", function(self)
-			for _, fieldName in pairs(STATIC_GLOW_FIELDS) do
-				local g = self[fieldName]
-				if g then
-					ApplyStaticGlowPadding(g, self)
-				end
+	parent._StaticGlowResizeHooked = true
+	parent:HookScript("OnSizeChanged", function(self)
+		for _, fieldName in pairs(STATIC_GLOW_FIELDS) do
+			local g = self[fieldName]
+			if g then
+				ApplyStaticGlowPadding(g, self)
 			end
-		end)
-	end
-
-	ApplyStaticGlowPadding(cg, parent)
-	cg:Hide()
-	parent[field] = cg
-	return cg
-end
-
-local function EnsureFlipbookGlow(parent)
-	if parent._FlipbookGlow then
-		return parent._FlipbookGlow
-	end
-
-	local cg = CreateStaticGlowFrame(parent, "_FlipbookGlow", "FlipbookGlow", 1 / 4)
-	cg.Texture:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhiteAntiClockwise.tga")
-	cg.Texture:SetDesaturated(true)
-	cg.Texture:SetBlendMode("BLEND")
-
-	cg.Anim = cg:CreateAnimationGroup()
-	cg.Anim:SetLooping("REPEAT")
-	local flip = cg.Anim:CreateAnimation("FlipBook")
-	flip:SetChildKey("Texture")
-	flip:SetFlipBookRows(6)
-	flip:SetFlipBookColumns(5)
-	flip:SetFlipBookFrames(30)
-	flip:SetDuration(1.0)
-	cg.Anim:Play()
-
-	return cg
-end
-
-local function EnsureSlotGlow(parent)
-	if parent._SlotGlow then
-		return parent._SlotGlow
-	end
-
-	-- atlas needs to extend well past the icon edges for the glow halo to read correctly.
-	local cg = CreateStaticGlowFrame(parent, "_SlotGlow", "SlotGlow", 1 / 5)
-	cg.Texture:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Textures\\SlotGlow.tga")
-	cg.Texture:SetDesaturated(true)
-	return cg
-end
-
-local function EnsureRotationAssistCWGlow(parent)
-	if parent._RotationAssistCWGlow then
-		return parent._RotationAssistCWGlow
-	end
-
-	local cg = CreateStaticGlowFrame(parent, "_RotationAssistCWGlow", "RotationAssistCWGlow", 1 / 4)
-	cg.Texture:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhiteClockwise.tga")
-	cg.Texture:SetDesaturated(true)
-	cg.Texture:SetBlendMode("BLEND")
-
-	cg.Anim = cg:CreateAnimationGroup()
-	cg.Anim:SetLooping("REPEAT")
-	local flip = cg.Anim:CreateAnimation("FlipBook")
-	flip:SetChildKey("Texture")
-	flip:SetFlipBookRows(6)
-	flip:SetFlipBookColumns(5)
-	flip:SetFlipBookFrames(30)
-	flip:SetDuration(1.0)
-	cg.Anim:Play()
-
-	return cg
-end
-
--- Ships with the client as an atlas, so there is no bundled file for this one.
-local function EnsureAntsGlow(parent)
-	if parent._AntsGlow then
-		return parent._AntsGlow
-	end
-
-	local cg = CreateStaticGlowFrame(parent, "_AntsGlow", "AntsGlow", 1 / 4)
-	cg.Texture:SetAtlas("RotationHelper_Ants_Flipbook")
-	cg.Texture:SetDesaturated(true)
-	cg.Texture:SetBlendMode("BLEND")
-
-	cg.Anim = cg:CreateAnimationGroup()
-	cg.Anim:SetLooping("REPEAT")
-	local flip = cg.Anim:CreateAnimation("FlipBook")
-	flip:SetChildKey("Texture")
-	flip:SetFlipBookRows(6)
-	flip:SetFlipBookColumns(5)
-	flip:SetFlipBookFrames(30)
-	flip:SetDuration(1.0)
-	cg.Anim:Play()
-
-	return cg
+		end
+	end)
 end
 
 local function GetOrCreateStaticGlow(parent, glowType)
-	if glowType == "Rotation Assist (Clockwise)" then
-		return EnsureRotationAssistCWGlow(parent)
-	elseif glowType == "Ants (Anti-Clockwise)" then
-		return EnsureAntsGlow(parent)
-	elseif glowType == "Rotation Assist (Anti-clockwise)" then
-		return EnsureFlipbookGlow(parent)
-	elseif glowType == "Slot Glow" then
-		return EnsureSlotGlow(parent)
+	local field = STATIC_GLOW_FIELDS[glowType]
+
+	if not field then
+		return nil
 	end
+
+	local cg = parent[field]
+
+	if not cg then
+		local spec = glowStyles.Specs[glowType]
+		cg = glowStyles:BuildGlowFrame(parent, NextFrameName("StaticGlow"))
+		glowStyles:ApplySpec(cg, spec)
+		cg:Hide()
+		parent[field] = cg
+
+		EnsureStaticGlowResizeHook(parent)
+		ApplyStaticGlowPadding(cg, parent)
+
+		if spec.Animated then
+			cg.Anim:Play()
+		end
+	end
+
+	return cg
 end
 
 local function HideStaticGlowsExcept(parent, exceptType)
@@ -515,9 +438,6 @@ function M:New(parent, count, size, spacing, groupName, noBorder, moduleName)
 
 	instance.Frame = CreateFrame("Frame", NextFrameName("Container"), parent)
 	instance.Frame:SetIgnoreParentScale(true)
-	-- Inherit the parent's alpha so icons fade with the unit frame they're anchored under
-	-- (e.g. dimming when the unit is out of range). Modules that track a unit frame parent the
-	-- container to it; standalone bars parent to UIParent (alpha 1) and are unaffected.
 	instance.Slots = {}
 	instance.Count = 0
 	instance.Size = size
