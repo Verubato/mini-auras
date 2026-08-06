@@ -192,6 +192,18 @@ fw.describe("CustomAuras - the groups a profile starts with", function()
 		end
 	end)
 
+	fw.it("tints each starter group to match its spell", function()
+		local fresh = FreshOptions()
+
+		groups:SeedDefaults(fresh)
+
+		local precog, shroud, pi = fresh.Groups[1], fresh.Groups[2], fresh.Groups[3]
+
+		assert(precog.Icons.Color.R == 1 and precog.Icons.Color.G == 1 and precog.Icons.Color.B == 1, "white precog")
+		assert(pi.Icons.Color.R == 1 and pi.Icons.Color.G == 0.82 and pi.Icons.Color.B == 0, "gold PI")
+		assert(shroud.Icons.Color.R == 0.64 and shroud.Icons.Color.B == 0.93, "purple shroud")
+	end)
+
 	fw.it("lays them out in a row near the top of the screen", function()
 		local fresh = FreshOptions()
 		local seen = {}

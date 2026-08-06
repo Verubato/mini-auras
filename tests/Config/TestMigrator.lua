@@ -663,6 +663,9 @@ fw.describe("Migrator - individual migrations", function()
 		assert(groups[1].Enabled == false and groups[2].Enabled == false, "precog off carries as disabled groups")
 		assert(groups[3].Enabled == nil, "PI is untouched by the precog switch")
 		assert(groups[1].Sound == nil, "disabled sound does not carry")
+		-- The precog colour was left at its default white, so the designed tints land instead.
+		assert(groups[1].Icons.Color.G == 1 and groups[3].Icons.Color.G == 0.82, "white precog, gold PI")
+		assert(groups[2].Icons.Color.R == 0.64 and groups[2].Icons.Color.B == 0.93, "purple shroud")
 
 		local seeded = vars.Profiles.Seeded.Modules.CustomAurasModule
 		assert(seeded.NextId == 7 and seeded.Groups[1] == nil, "seeded profile left alone")

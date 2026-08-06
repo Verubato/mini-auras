@@ -124,11 +124,12 @@ local UNITS = {
 local ALWAYS_FRIENDLY = { [SELF_UNIT] = true, [PET_UNIT] = true }
 
 -- What a profile starts with: the three self-buffs worth knowing the instant they land. Each
--- tracks one spell and leaves Icon empty, which borrows that spell's own icon.
+-- tracks one spell and leaves Icon empty, which borrows that spell's own icon. A Color tints
+-- the border/glow after the spell's own art; without one the group keeps the default white.
 local DEFAULT_GROUPS = {
 	{ Name = "Precognition", SpellId = 377362, Sound = "ElectricalSpark" },
-	{ Name = "Shroud", SpellId = 378464 },
-	{ Name = "PI", SpellId = 10060, Sound = "BubblePop" },
+	{ Name = "Shroud", SpellId = 378464, Color = { R = 0.64, G = 0.21, B = 0.93 } },
+	{ Name = "PI", SpellId = 10060, Sound = "BubblePop", Color = { R = 1, G = 0.82, B = 0 } },
 }
 -- Where they land: a row near the top of the screen, clear of the unit frames and cast bar.
 local DEFAULT_ROW_Y = 300
@@ -360,6 +361,13 @@ function M:SeedDefaults(options)
 		group.Spells = { template.SpellId }
 		group.Icons.Glow = true
 		group.Icons.Border = true
+
+		if template.Color then
+			group.Icons.Color.R = template.Color.R
+			group.Icons.Color.G = template.Color.G
+			group.Icons.Color.B = template.Color.B
+		end
+
 		group.Sound.Applied = template.Sound or NO_SOUND
 		group.Position.X = first + (index - 1) * DEFAULT_ROW_SPACING
 		group.Position.Y = DEFAULT_ROW_Y

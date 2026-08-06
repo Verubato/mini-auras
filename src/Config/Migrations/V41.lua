@@ -477,6 +477,11 @@ function M:UpgradeToVersion62(vars)
 		local offset = precog.Offset or {}
 		local sound = precog.Sound or {}
 
+		-- White is the precog default, so it reads as "never picked one": those installs get the
+		-- designed per-spell tints; an actual choice is carried onto both groups.
+		local r, g, b, a = color.R or 1, color.G or 1, color.B or 1, color.A or 1
+		local pickedColor = not (r == 1 and g == 1 and b == 1 and a == 1)
+
 		-- The module's single on/off switch, stored as an Enabled zone table.
 		local enabled = false
 		for _, on in pairs(precog.Enabled or { Always = true }) do
@@ -487,7 +492,7 @@ function M:UpgradeToVersion62(vars)
 
 		-- Both spells shared one single-icon container, so both groups sit on its anchor.
 		-- Fallbacks are the precog defaults, for a db old enough to predate the module.
-		local function PrecogGroup(id, name, spellId, soundFile)
+		local function PrecogGroup(id, name, spellId, soundFile, tint)
 			return {
 				Id = id,
 				Name = name,
@@ -504,7 +509,8 @@ function M:UpgradeToVersion62(vars)
 					Glow = icons.Glow ~= false,
 					Border = icons.Border ~= false,
 					ReverseCooldown = icons.ReverseCooldown ~= false,
-					Color = { R = color.R or 1, G = color.G or 1, B = color.B or 1, A = color.A or 1 },
+					Color = pickedColor and { R = r, G = g, B = b, A = a }
+						or { R = tint.R, G = tint.G, B = tint.B, A = 1 },
 				},
 				Sound = soundFile and { Applied = soundFile, Channel = sound.Channel } or nil,
 			}
@@ -512,16 +518,18 @@ function M:UpgradeToVersion62(vars)
 
 		modules.CustomAurasModule = {
 			Groups = {
-				-- The module only ever sounded for precog, never shroud.
-				PrecogGroup("g1", "Precognition", 377362, sound.Enabled and sound.File or nil),
-				PrecogGroup("g2", "Shroud", 378464, nil),
-				-- PI is a new starter with no precog history; it keeps the designed spot.
+				-- The module only ever sounded for precog, never shroud. Precog keeps the default
+				-- white tint, so its designed colour and its carried colour are the same thing.
+				PrecogGroup("g1", "Precognition", 377362, sound.Enabled and sound.File or nil,
+					{ R = 1, G = 1, B = 1 }),
+				PrecogGroup("g2", "Shroud", 378464, nil, { R = 0.64, G = 0.21, B = 0.93 }),
+				-- PI is a new starter with no precog history; it keeps the designed spot and tint.
 				{
 					Id = "g3",
 					Name = "PI",
 					Spells = { 10060 },
 					Position = { X = 0, Y = 300 },
-					Icons = { Glow = true, Border = true },
+					Icons = { Glow = true, Border = true, Color = { R = 1, G = 0.82, B = 0, A = 1 } },
 					Sound = { Applied = "BubblePop" },
 				},
 			},
