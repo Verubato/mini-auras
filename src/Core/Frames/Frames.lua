@@ -145,6 +145,37 @@ function M:ShowHideDisplay(display, anchor, excludePlayer)
 	end
 end
 
+---Installs the unit-frame integration hooks shared by the raid-frame icon modules: the
+---CompactUnitFrame set-unit/visibility hooks (skipped when DandersFrames replaces the CUFs),
+---the FrameSort and DandersFrames post-sort callbacks, and the Cell spotlight / NDui visibility
+---hooks. Install once per module at Init; none of these can be taken back off, so the callbacks
+---must gate themselves on the module's enabled state.
+---@param owner table Frame handed to DandersFrames.RegisterCallback as the callback owner.
+---@param hooks { OnSetUnit: fun(frame: table, unit: string), OnUpdateVisible: fun(frame: table), OnSorted: fun(), OnVisibilityChanged: fun() }
+function M:InstallUnitFrameHooks(owner, hooks)
+	if not wowEx:IsDandersEnabled() then
+		if CompactUnitFrame_SetUnit then
+			hooksecurefunc("CompactUnitFrame_SetUnit", hooks.OnSetUnit)
+		end
+
+		if CompactUnitFrame_UpdateVisible then
+			hooksecurefunc("CompactUnitFrame_UpdateVisible", hooks.OnUpdateVisible)
+		end
+	end
+
+	local fs = FrameSortApi and FrameSortApi.v3
+	if fs and fs.Sorting and fs.Sorting.RegisterPostSortCallback then
+		fs.Sorting:RegisterPostSortCallback(hooks.OnSorted)
+	end
+
+	if DandersFrames and DandersFrames.RegisterCallback then
+		DandersFrames.RegisterCallback(owner, "OnFramesSorted", hooks.OnSorted)
+	end
+
+	M:HookCellSpotlightVisibility(hooks.OnVisibilityChanged)
+	M:HookNDuiVisibility(hooks.OnVisibilityChanged)
+end
+
 function M:Init()
 	if initialised then
 		return

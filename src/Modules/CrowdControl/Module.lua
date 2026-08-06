@@ -48,8 +48,6 @@ local function OnEvent(_, event)
 	end
 end
 
--- Lifecycle
-
 ---@return boolean
 local function IsEnabled()
 	return moduleUtil:IsModuleEnabled(moduleName.CrowdControl) or moduleUtil:IsModuleEnabled(moduleName.PetCC)
@@ -99,52 +97,26 @@ local function CreateEvents()
 end
 
 local function InstallHooks()
-	if not wowEx:IsDandersEnabled() then
-		if CompactUnitFrame_SetUnit then
-			hooksecurefunc("CompactUnitFrame_SetUnit", function(frame, unit)
-				display:OnCufSetUnit(frame, unit)
-			end)
-		end
-
-		if CompactUnitFrame_UpdateVisible then
-			hooksecurefunc("CompactUnitFrame_UpdateVisible", function(frame)
-				display:OnCufUpdateVisible(frame)
-			end)
-		end
-	end
-
-	local fs = FrameSortApi and FrameSortApi.v3
-	if fs and fs.Sorting and fs.Sorting.RegisterPostSortCallback then
-		fs.Sorting:RegisterPostSortCallback(OnFrameSortSorted)
-	end
-
-	if DandersFrames and DandersFrames.RegisterCallback then
-		DandersFrames.RegisterCallback(eventsFrame, "OnFramesSorted", function()
-			M:Refresh()
-		end)
-	end
-
-	frames:HookCellSpotlightVisibility(function()
-		if IsEnabled() then
-			display:EnsureWatchers()
-		end
-	end)
-
-	frames:HookNDuiVisibility(function()
-		if IsEnabled() then
-			display:EnsureWatchers()
-		end
-	end)
+	frames:InstallUnitFrameHooks(eventsFrame, {
+		OnSetUnit = function(frame, unit)
+			display:OnCufSetUnit(frame, unit)
+		end,
+		OnUpdateVisible = function(frame)
+			display:OnCufUpdateVisible(frame)
+		end,
+		OnSorted = OnFrameSortSorted,
+		OnVisibilityChanged = function()
+			if IsEnabled() then
+				display:EnsureWatchers()
+			end
+		end,
+	})
 end
 
 local function ApplyInitialState()
 	if moduleUtil:IsModuleEnabled(moduleName.CrowdControl) then
 		display:EnsureWatchers()
 	end
-end
-
-function M:Hide()
-	display:HideAll()
 end
 
 function M:StartTesting()

@@ -138,14 +138,62 @@ function M:ResetContainers(entries)
 	end
 end
 
----Hides every entry's container and display, leaving them enabled.
----@param entries table<table, table>
-function M:HideAll(entries)
-	for _, entry in pairs(entries) do
-		entry.Container.Frame:Hide()
-		if entry.Display then
-			entry.Display:Hide()
+---Applies a module's per-instance options to one entry: sizes the kick/test container, pushes
+---geometry, style and per-group budgets to the aura display (one ApplyConfig restyle rather than
+---a setter per property), re-renders and re-anchors, and resolves the test-mode handover that
+---swaps the live display for the test container.
+---@param entry table Entry carrying Container, Anchor, Unit and (12.1) Display.
+---@param anchor table
+---@param options table Module per-instance options (Grow, Offset, IconSpacing).
+---@param iconSize number
+---@param slotCount number Kick/test container slot count.
+---@param style AuraDisplayStyle? Style for the display; may be the shared scratch.
+---@param budgets table<string, number>? Group key -> icon budget; modules zero a group to
+---switch its category off.
+---@param testModeActive boolean
+---@param excludePlayer boolean? Resolved by the module (pets never exclude the player).
+---@param kickActive boolean Whether a kick icon currently occupies the container.
+---@param render fun(entry: table)? Live re-render, skipped in test mode.
+function M:ApplyEntryOptions(entry, anchor, options, iconSize, slotCount, style, budgets,
+	testModeActive, excludePlayer, kickActive, render)
+	local container = entry.Container
+	local spacing = options.IconSpacing or 2
+	local display = entry.Display
+
+	container:SetIconSize(iconSize)
+	container:SetCount(slotCount)
+	container:SetSpacing(spacing)
+
+	if display then
+		display:ApplyConfig(iconSize, spacing, style)
+
+		if budgets then
+			for groupKey, maxIcons in pairs(budgets) do
+				display:SetMaxIcons(groupKey, maxIcons)
+			end
 		end
+
+		display:SetEnabled(true)
+	end
+
+	if not testModeActive and render then
+		render(entry)
+	end
+
+	self:AnchorContainer(container, anchor, options)
+	frames:ShowHideFrame(container.Frame, anchor, testModeActive, excludePlayer)
+
+	if not display then
+		return
+	end
+
+	if testModeActive then
+		-- Test icons render through the IconSlotContainer; hide the live aura display so real
+		-- and fake icons don't mix.
+		display:Hide()
+	else
+		self:AnchorAuraDisplay(entry, anchor, options, kickActive)
+		frames:ShowHideDisplay(display, anchor, excludePlayer)
 	end
 end
 

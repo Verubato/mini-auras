@@ -343,6 +343,11 @@ function M.build()
 		end,
 		HookCellSpotlightVisibility = function() end,
 		HookNDuiVisibility = function() end,
+		-- Mirrors the real helper's surface. The CUF/FrameSort/Danders globals do not exist in
+		-- this environment, so it only records the callbacks for tests that want to fire them.
+		InstallUnitFrameHooks = function(_, _, hooks)
+			env.unitFrameHooks = hooks
+		end,
 	}
 	-- Kick tracking is recorded rather than simulated: modules that re-target a container to a
 	-- different unit have to move their kick subscription with it, and nothing else would show

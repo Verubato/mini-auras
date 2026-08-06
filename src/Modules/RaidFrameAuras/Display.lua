@@ -41,7 +41,8 @@ local testDefensiveSpells = {}
 local testCcSpells = {}
 ---@type Db
 local db
-
+-- Reused per-group icon budget map handed to ApplyEntryOptions.
+local budgetScratch = {}
 
 -- Helpful auras are filtered by spell id alone rather than by Blizzard's category flags. That is
 -- only possible here because the gate on spell-id filters is UnitCanAssist, and this module
@@ -114,12 +115,9 @@ end
 ---@return table[]
 local function BuildGroups(maxIcons)
 	return {
-		{
-			Key = auraFilters.GroupKey.CrowdControl,
-			FilterString = auraFilters.Filter.CrowdControl,
-			CandidateFilters = auraFilters.CandidateFilters.CrowdControl,
-			MaxIcons = maxIcons,
-		},
+		auraFilters:GroupSpec("CrowdControl", maxIcons),
+		-- Not a standard category: the helpful side filters by the user-curated spell id list
+		-- rather than Blizzard's category tokens (see the header comment above).
 		{
 			Key = HELPFUL_GROUP_KEY,
 			FilterString = HELPFUL_FILTER,
@@ -137,22 +135,18 @@ local function GetOptions()
 	return instanceOptions:IsRaid() and m.Raid or m.Default
 end
 
----@param entry RaidFrameAurasWatchEntry
 ---The look a display is built with and restyled to.
 ---@param entryOptions table
 ---@return AuraDisplayStyle
 local function BuildStyle(entryOptions)
-	local style = auraContainerDisplay:GetStyleScratch()
+	local style = auraContainerDisplay:BuildStandardStyle(entryOptions.Icons)
 
-	style.ReverseCooldown = entryOptions.Icons.ReverseCooldown
-	style.ColorByDispelType = entryOptions.Icons.ColorByDispelType
-	style.Glow = entryOptions.Icons.Glow
-	style.FontScale = db.FontScale
 	style.ShowTooltips = entryOptions.ShowTooltips ~= false
 
 	return style
 end
 
+-- TEMPORARY: legacy 12.0 renderer; dies with the watcher path.
 local function UpdateWatcherAuras(entry)
 	if not entry or not entry.Watcher or not entry.Container then
 		return
@@ -257,18 +251,22 @@ local function UpdateWatcherAuras(entry)
 	end
 end
 
+---Whether a kick icon currently occupies the entry's container. With kicks switched off the
+---display has no kick icon to chain past.
+---@param entry RaidFrameAurasWatchEntry
+---@param options RaidFrameAurasInstanceOptions
+---@return boolean
+local function IsKickActive(entry, options)
+	return options.ShowKicks ~= false and kickTracker:GetKick(entry.Unit) ~= nil
+end
+
 ---12.1 path: positions the aura display on its anchor, chaining after the kick container while
 ---a kick icon is showing (the kick occupied slot 1 in the legacy layout).
 ---@param entry RaidFrameAurasWatchEntry
 ---@param anchor table
----@param options table
----With kicks switched off the display has no kick icon to chain past.
----@param entry RaidFrameAurasWatchEntry
----@param anchor table
 ---@param options RaidFrameAurasInstanceOptions
 local function AnchorAuraDisplay(entry, anchor, options)
-	local kickActive = options.ShowKicks ~= false and kickTracker:GetKick(entry.Unit) ~= nil
-	anchoredIcons:AnchorAuraDisplay(entry, anchor, options, kickActive)
+	anchoredIcons:AnchorAuraDisplay(entry, anchor, options, IsKickActive(entry, options))
 end
 
 ---12.1 path: renders the kick icon into the entry's IconSlotContainer (slot 1) and re-anchors
@@ -504,46 +502,22 @@ local function RefreshTestIcons()
 		local ccSlots, defensiveSlots =
 			slotDistribution.Calculate(remainingSlots, ccCount, defensiveCount, 0)
 
-		for i = 1, ccSlots do
-			if slotIndex > container.Count then
-				break
-			end
-			local spell = testCcSpells[i]
-			local texture = C_Spell.GetSpellTexture(spell.SpellId)
-			if texture then
-				container:SetSlot(slotIndex, {
-					Texture = texture,
-					DurationObject = wowEx:CreateDuration(now, 15),
-					Alpha = true,
-					ReverseCooldown = iconsReverse,
-					Glow = iconsGlow,
-					Color = colorByDispelType and spell.DispelColor,
-					FontScale = db.FontScale,
-					SpellId = showTooltips and spell.SpellId or nil,
-				})
-				slotIndex = slotIndex + 1
-			end
-		end
+		slotIndex = testSpellData:FillContainer(container, testCcSpells, slotIndex, {
+			ReverseCooldown = iconsReverse,
+			Glow = iconsGlow,
+			ColorByDispelType = colorByDispelType,
+			FontScale = db.FontScale,
+			ShowTooltips = showTooltips,
+			Count = ccSlots,
+		})
 
-		for i = 1, defensiveSlots do
-			if slotIndex > container.Count then
-				break
-			end
-			local spell = testDefensiveSpells[i]
-			local texture = C_Spell.GetSpellTexture(spell.SpellId)
-			if texture then
-				container:SetSlot(slotIndex, {
-					Texture = texture,
-					DurationObject = wowEx:CreateDuration(now, 15),
-					Alpha = true,
-					ReverseCooldown = iconsReverse,
-					Glow = iconsGlow,
-					FontScale = db.FontScale,
-					SpellId = showTooltips and spell.SpellId or nil,
-				})
-				slotIndex = slotIndex + 1
-			end
-		end
+		slotIndex = testSpellData:FillContainer(container, testDefensiveSpells, slotIndex, {
+			ReverseCooldown = iconsReverse,
+			Glow = iconsGlow,
+			FontScale = db.FontScale,
+			ShowTooltips = showTooltips,
+			Count = defensiveSlots,
+		})
 
 		for i = slotIndex, container.Count do
 			container:SetSlotUnused(i)
@@ -575,25 +549,20 @@ local function EnsureFrames()
 	EnsureWatchers()
 end
 
-
+---@param entry RaidFrameAurasWatchEntry
 ---@param anchor table
 ---@param options RaidFrameAurasInstanceOptions
 local function ApplyEntryOptions(entry, anchor, options)
-	local container = entry.Container
 	local iconSize = moduleUtil:GetIconSize(options.Icons, anchor, 32, 75)
 	local maxIcons = tonumber(options.Icons.MaxIcons) or 1
-
-	container:SetIconSize(iconSize)
-	container:SetSpacing(options.IconSpacing or 2)
-	container:SetCount(maxIcons)
+	local style
 
 	if entry.Display then
-		entry.Display:SetIconSize(iconSize)
-		entry.Display:SetSpacing(options.IconSpacing or 2)
-		-- Category toggles map to a zero icon budget for the disabled group.
-		entry.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, options.ShowCC and maxIcons or 0)
-		-- One group now covers both categories, so either toggle keeps it visible. They no
-		-- longer select BETWEEN categories - the Spells tab does that.
+		style = BuildStyle(options)
+
+		-- Category toggles map to a zero icon budget for the disabled group. One helpful group
+		-- covers both remaining categories, so either toggle keeps it visible; they no longer
+		-- select BETWEEN categories - the Spells tab does that.
 		local showHelpful = options.ShowDefensives or options.ShowImportant
 		-- Spell-id filters are gated on UnitCanAssist, so the moment a party member becomes a
 		-- duel opponent the engine drops includeSpellIDs and the bare HELPFUL token matches
@@ -603,35 +572,27 @@ local function ApplyEntryOptions(entry, anchor, options)
 			showHelpful = false
 		end
 
-		entry.Display:SetMaxIcons(HELPFUL_GROUP_KEY, showHelpful and maxIcons or 0)
+		budgetScratch[auraFilters.GroupKey.CrowdControl] = options.ShowCC and maxIcons or 0
+		budgetScratch[HELPFUL_GROUP_KEY] = showHelpful and maxIcons or 0
+
 		-- The tracked set is editable at runtime, so re-publish it rather than assuming the
 		-- filters handed over at creation are still current.
 		entry.Display:SetCandidateFilters(HELPFUL_GROUP_KEY, GetHelpfulFilters())
-
-		entry.Display:SetStyle(BuildStyle(options))
-
-		entry.Display:SetEnabled(true)
 	end
 
-	if not testModeActive then
-		RenderEntry(entry)
-	end
-
-	anchoredIcons:AnchorContainer(container, anchor, options)
-	frames:ShowHideFrame(container.Frame, anchor, testModeActive, options.ExcludePlayer)
-
-	if not entry.Display then
-		return
-	end
-
-	if testModeActive then
-		-- Test icons render through the IconSlotContainer; hide the live aura display
-		-- so real and fake icons don't mix.
-		entry.Display:Hide()
-	else
-		AnchorAuraDisplay(entry, anchor, options)
-		frames:ShowHideDisplay(entry.Display, anchor, options.ExcludePlayer)
-	end
+	anchoredIcons:ApplyEntryOptions(
+		entry,
+		anchor,
+		options,
+		iconSize,
+		maxIcons,
+		style,
+		budgetScratch,
+		testModeActive,
+		options.ExcludePlayer,
+		IsKickActive(entry, options),
+		RenderEntry
+	)
 end
 
 ---@param options RaidFrameAurasInstanceOptions
@@ -640,8 +601,6 @@ local function ApplyOptions(options)
 		ApplyEntryOptions(entry, anchor, options)
 	end
 end
-
--- Public surface
 
 ---@return RaidFrameAurasInstanceOptions?
 function M:GetOptions()
@@ -656,12 +615,6 @@ end
 ---@param value boolean
 function M:SetTestMode(value)
 	testModeActive = value
-end
-
----@param anchor table
----@param unit string?
-function M:EnsureWatcher(anchor, unit)
-	return EnsureWatcher(anchor, unit)
 end
 
 function M:EnsureWatchers()
@@ -721,7 +674,7 @@ end
 ---@field Unit string
 ---@field KickKey number
 
----@class RaidFrameRaidFrameAurasModuleOptions
+---@class RaidFrameAurasModuleOptions
 ---@field ShowDefensives boolean
 ---@field ShowImportant boolean 12.1 only: Blizzard-flagged important buffs.
 ---@field ShowCC boolean

@@ -1,5 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
+local wowEx = addon.Utils.WoWEx
 
 ---@class TestSpells
 local M = {}
@@ -107,3 +108,63 @@ M.KickSpecIds = {
 	254, -- Marksmanship Hunter
 	259, -- Assassination Rogue
 }
+
+---Fills a container's slots with fake running-cooldown icons for the given test spells and
+---returns the next free slot, so a second category (or a trailing SetSlotUnused sweep) can pick
+---up where it stopped. This is the one preview renderer: every module draws the same row of fake
+---icons and differed only in which spells, where the row starts and how the icons are styled.
+---A spell whose texture cannot be resolved is skipped without leaving a gap.
+---@param container IconSlotContainer
+---@param spells table[]|number[] TestSpell entries, or bare spell ids.
+---@param startSlot number First slot to write (after a kick icon, for the modules that show one).
+---@param options table Styling and limits:
+--- ReverseCooldown/Glow/FontScale passed through to SetSlot;
+--- Color tints every icon; ColorByDispelType tints each with its spell's DispelColor instead;
+--- ShowTooltips attaches each spell id;
+--- Count caps how many spells are drawn (default all);
+--- Stagger staggers durations and start times so the swipes visibly differ (default a flat 15s).
+---@return number nextSlot
+function M:FillContainer(container, spells, startSlot, options)
+	local now = GetTime()
+	local slot = startSlot
+	local count = math.min(options.Count or #spells, #spells)
+
+	for i = 1, count do
+		if slot > container.Count then
+			break
+		end
+
+		local spell = spells[i]
+		local spellId = type(spell) == "table" and spell.SpellId or spell
+		local texture = C_Spell.GetSpellTexture(spellId)
+
+		if texture then
+			local duration = 15
+			local startTime = now
+
+			if options.Stagger then
+				duration = 15 + (i - 1) * 3
+				startTime = now - (i - 1) * 0.5
+			end
+
+			local color = options.Color
+			if not color and options.ColorByDispelType and type(spell) == "table" then
+				color = spell.DispelColor
+			end
+
+			container:SetSlot(slot, {
+				Texture = texture,
+				DurationObject = wowEx:CreateDuration(startTime, duration),
+				Alpha = true,
+				ReverseCooldown = options.ReverseCooldown,
+				Glow = options.Glow,
+				Color = color,
+				FontScale = options.FontScale,
+				SpellId = options.ShowTooltips and spellId or nil,
+			})
+			slot = slot + 1
+		end
+	end
+
+	return slot
+end

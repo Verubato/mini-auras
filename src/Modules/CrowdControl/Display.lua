@@ -37,28 +37,25 @@ local watchers = {}
 local testSpells = {}
 -- Reused buffer for GetPetUnitFrames so discovery doesn't allocate each refresh.
 local petUnitFrameScratch = {}
+-- Reused per-group icon budget map handed to ApplyEntryOptions.
+local budgetScratch = {}
 
 local function GetOptions()
 	return instanceOptions:IsRaid() and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
 end
 
----@param entry CrowdControlWatchEntry
 ---The look a CC display is built with and restyled to.
 ---@param entryOptions table
 ---@return AuraDisplayStyle
 local function BuildStyle(entryOptions)
-	local style = auraContainerDisplay:GetStyleScratch()
+	local style = auraContainerDisplay:BuildStandardStyle(entryOptions.Icons)
 
-	style.ReverseCooldown = entryOptions.Icons.ReverseCooldown
-	style.ShowMilliseconds = entryOptions.Icons.ShowMilliseconds
-	style.ColorByDispelType = entryOptions.Icons.ColorByDispelType
-	style.Glow = entryOptions.Icons.Glow
-	style.FontScale = db.FontScale
 	style.ShowTooltips = entryOptions.ShowTooltips ~= false
 
 	return style
 end
 
+-- TEMPORARY: legacy 12.0 renderer; dies with the watcher path.
 local function UpdateWatcherAuras(entry)
 	if not entry or not entry.Watcher or not entry.Container then
 		return
@@ -152,18 +149,21 @@ local function GetEntryOptions(entry)
 	return GetOptions(), isPet
 end
 
+---Whether a kick icon currently occupies the entry's container. A pet never shows one, so its
+---aura display never has to chain past it.
+---@param entry CrowdControlWatchEntry
+---@return boolean
+local function IsKickActive(entry)
+	return not units:IsPetOrMinion(entry.Unit) and kickTracker:GetKick(entry.Unit) ~= nil
+end
+
 ---12.1 path: positions the aura display on its anchor, chaining after the kick container while
 ---a kick icon is showing (the kick occupied slot 1 in the legacy layout).
 ---@param entry CrowdControlWatchEntry
 ---@param anchor table
 ---@param options table
----A pet never shows a kick icon, so its aura display never has to chain past one.
----@param entry CrowdControlWatchEntry
----@param anchor table
----@param options table
 local function AnchorAuraDisplay(entry, anchor, options)
-	local kickActive = not units:IsPetOrMinion(entry.Unit) and kickTracker:GetKick(entry.Unit) ~= nil
-	anchoredIcons:AnchorAuraDisplay(entry, anchor, options, kickActive)
+	anchoredIcons:AnchorAuraDisplay(entry, anchor, options, IsKickActive(entry))
 end
 
 ---12.1 path: renders the kick icon into the entry's IconSlotContainer (slot 1) and re-anchors the
@@ -253,12 +253,7 @@ local function EnsureWatcher(anchor, unit)
 
 		if USE_AURA_CONTAINERS then
 			entry.Display = auraContainerDisplay:New(UIParent, unit, {
-				{
-					Key = auraFilters.GroupKey.CrowdControl,
-					FilterString = auraFilters.Filter.CrowdControl,
-					CandidateFilters = auraFilters.CandidateFilters.CrowdControl,
-					MaxIcons = count,
-				},
+				auraFilters:GroupSpec("CrowdControl", count),
 			}, size, spacing, "CC",
 				-- Seeded rather than left to the restyle below: a unit's display is built the
 				-- moment it turns up, and one built mid-arena can never be restyled.
@@ -485,34 +480,16 @@ local function RefreshTestIcons()
 					})
 				or options
 			local container = entry.Container
-			local now = GetTime()
+			local nextSlot = testSpellData:FillContainer(container, testSpells, 1, {
+				ReverseCooldown = entryOptions.Icons.ReverseCooldown,
+				Glow = entryOptions.Icons.Glow,
+				ColorByDispelType = entryOptions.Icons.ColorByDispelType,
+				FontScale = db.FontScale,
+				ShowTooltips = entryOptions.ShowTooltips ~= false,
+				Stagger = true,
+			})
 
-			for i, spell in ipairs(testSpells) do
-				if i > container.Count then
-					break
-				end
-
-				local texture = C_Spell.GetSpellTexture(spell.SpellId)
-
-				if texture then
-					local duration = 15 + (i - 1) * 3
-					local startTime = now - (i - 1) * 0.5
-
-					local showTooltips = entryOptions.ShowTooltips ~= false
-					container:SetSlot(i, {
-						Texture = texture,
-						DurationObject = wowEx:CreateDuration(startTime, duration),
-						Alpha = true,
-						ReverseCooldown = entryOptions.Icons.ReverseCooldown,
-						Glow = entryOptions.Icons.Glow,
-						Color = entryOptions.Icons.ColorByDispelType and spell.DispelColor,
-						FontScale = db.FontScale,
-						SpellId = showTooltips and spell.SpellId or nil,
-					})
-				end
-			end
-
-			for i = #testSpells + 1, container.Count do
+			for i = nextSlot, container.Count do
 				container:SetSlotUnused(i)
 			end
 
@@ -527,6 +504,7 @@ local function Teardown()
 		anchoredIcons:TeardownEntry(entry)
 	end
 end
+
 -- Brings every entry's watcher/display back in line with its feature toggle, then discovers
 -- any unit frames that have appeared since the last refresh.
 local function EnsureFrames()
@@ -581,39 +559,21 @@ local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 	local iconSize = moduleUtil:GetIconSize(entryOptions.Icons, anchor, isPet and 24 or 32, isPet and 50 or 80)
 	local iconCount = entryOptions.Icons.Count or 5
 
-	entry.Container:SetIconSize(iconSize)
-	entry.Container:SetCount(iconCount)
-	entry.Container:SetSpacing(entryOptions.IconSpacing or 2)
+	budgetScratch[auraFilters.GroupKey.CrowdControl] = iconCount
 
-	if entry.Display then
-		entry.Display:SetIconSize(iconSize)
-		entry.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, iconCount)
-		entry.Display:SetSpacing(entryOptions.IconSpacing or 2)
-
-		entry.Display:SetStyle(BuildStyle(entryOptions))
-
-		entry.Display:SetEnabled(true)
-	end
-
-	if not testModeActive then
-		RenderEntry(entry)
-	end
-
-	anchoredIcons:AnchorContainer(entry.Container, anchor, entryOptions)
-	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, isPet and false or entryOptions.ExcludePlayer)
-
-	if not entry.Display then
-		return
-	end
-
-	if testModeActive then
-		-- Test icons render through the IconSlotContainer; hide the live aura display
-		-- so real and fake icons don't mix.
-		entry.Display:Hide()
-	else
-		AnchorAuraDisplay(entry, anchor, entryOptions)
-		frames:ShowHideDisplay(entry.Display, anchor, isPet and false or entryOptions.ExcludePlayer)
-	end
+	anchoredIcons:ApplyEntryOptions(
+		entry,
+		anchor,
+		entryOptions,
+		iconSize,
+		iconCount,
+		entry.Display and BuildStyle(entryOptions) or nil,
+		budgetScratch,
+		testModeActive,
+		isPet and false or entryOptions.ExcludePlayer,
+		IsKickActive(entry),
+		RenderEntry
+	)
 end
 
 ---@param options CrowdControlInstanceOptions
@@ -632,8 +592,6 @@ local function ApplyOptions(options)
 	end
 end
 
--- Public surface
-
 ---@return CrowdControlInstanceOptions?
 function M:GetOptions()
 	return db and GetOptions()
@@ -647,12 +605,6 @@ end
 ---@param value boolean
 function M:SetTestMode(value)
 	testModeActive = value
-end
-
----@param anchor table
----@param unit string?
-function M:EnsureWatcher(anchor, unit)
-	return EnsureWatcher(anchor, unit)
 end
 
 function M:EnsureWatchers()
@@ -688,10 +640,6 @@ function M:RefreshKickIcons()
 	end
 end
 
-function M:HideAll()
-	anchoredIcons:HideAll(watchers)
-end
-
 function M:OnCufUpdateVisible(frame)
 	OnCufUpdateVisible(frame)
 end
@@ -711,6 +659,7 @@ end
 ---@field Watcher Watcher? Legacy path only (nil on 12.1).
 ---@field Display AuraContainerDisplay? 12.1 path only: CC auras render through this.
 ---@field KickTimer table? 12.1 path only: timer that clears the kick icon on expiry.
+---@field KickKey number Kick tracker subscription key for the entry's unit (0 for pets, which never subscribe).
 ---@field Anchor table
 ---@field Unit string
 ---@field IsPetUnitFrame boolean? True when the anchor is a standalone player pet unit frame (opt-in via IncludePetFrame).
