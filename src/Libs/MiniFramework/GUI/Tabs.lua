@@ -305,17 +305,28 @@ function M:CreateTabs(options)
 			GUI.SetSolid(thumb, 0.55, 0.55, 0.55, 0.85)
 			scrollBar:SetThumbTexture(thumb)
 
+			-- A vertical slider puts its MINIMUM at the bottom, while scroll offset grows
+			-- downwards, so the two run opposite ways. Everything below converts between them
+			-- rather than letting a drag down scroll the content up.
+			local maxScroll = 0
+
+			---@param scroll number
+			---@return number
+			local function ScrollToValue(scroll)
+				return maxScroll - math.min(math.max(scroll, 0), maxScroll)
+			end
+
 			local function UpdateScrollBar()
 				local frameH = scrollFrame:GetHeight()
 				local childH = scrollChild:GetHeight()
 				if frameH == 0 then
 					return
 				end
-				local maxScroll = math.max(0, childH - frameH)
+				maxScroll = math.max(0, childH - frameH)
 				if maxScroll > 0.5 then
 					scrollBar:Show()
 					scrollBar:SetMinMaxValues(0, maxScroll)
-					scrollBar:SetValue(math.min(scrollFrame:GetVerticalScroll(), maxScroll))
+					scrollBar:SetValue(ScrollToValue(scrollFrame:GetVerticalScroll()))
 					thumb:SetHeight(math.max(20, scrollBar:GetHeight() * (frameH / childH)))
 				else
 					scrollBar:Hide()
@@ -323,7 +334,7 @@ function M:CreateTabs(options)
 			end
 
 			scrollBar:SetScript("OnValueChanged", function(_, val)
-				scrollFrame:SetVerticalScroll(val)
+				scrollFrame:SetVerticalScroll(maxScroll - val)
 			end)
 
 			scrollFrame:SetScript("OnScrollRangeChanged", function()
@@ -331,7 +342,7 @@ function M:CreateTabs(options)
 			end)
 
 			scrollFrame:HookScript("OnMouseWheel", function()
-				scrollBar:SetValue(scrollFrame:GetVerticalScroll())
+				scrollBar:SetValue(ScrollToValue(scrollFrame:GetVerticalScroll()))
 			end)
 
 			scrollBar:Hide()
