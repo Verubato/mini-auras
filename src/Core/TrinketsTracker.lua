@@ -59,6 +59,10 @@ function M:Init()
 	defaultIcon = C_Spell.GetSpellTexture(DEFAULT_SPELL_ID)
 
 	-- Events are registered by Refresh, and only inside arenas.
+	-- Roster changes are deliberately not handled here: both consumers (the Trinkets module and
+	-- the legacy friendly cooldown tracker) already run their own full refresh on
+	-- GROUP_ROSTER_UPDATE, which re-reads trinket data anyway, so a tracker-side fire only
+	-- doubled the work.
 	local eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", function(_, event, ...)
 		if event == "PVP_MATCH_STATE_CHANGED" then
@@ -69,15 +73,12 @@ function M:Init()
 		elseif event == "ARENA_COOLDOWNS_UPDATE" then
 			local unit = ...
 			FireCallbacks((unit and unit ~= "") and unit or nil)
-		elseif event == "GROUP_ROSTER_UPDATE" then
-			FireCallbacks(nil)
 		end
 	end)
 
 	arenaGate = eventGate:New(eventsFrame, {
 		"ARENA_COOLDOWNS_UPDATE",
 		"PVP_MATCH_STATE_CHANGED",
-		"GROUP_ROSTER_UPDATE",
 	}, {
 		-- Replaces the PLAYER_ENTERING_WORLD fire the tracker no longer listens for.
 		OnActivate = function()

@@ -29,6 +29,11 @@ local testModeActive = false
 -- rather than reaching into it.
 ---@type { [table]: TrinketWatcher }
 local watchers = {}
+-- Anchor frame -> its container, kept for the session: WoW frames can never be freed, so a
+-- released anchor's container is parked (hidden, unanchored) and reused when the anchor returns
+-- instead of building a replacement per roster flip.
+---@type { [table]: IconSlotContainer }
+local containersByAnchor = {}
 ---@type Db
 local db
 ---@type TrinketsModuleOptions
@@ -92,8 +97,11 @@ local function EnsureWatcher(anchorFrame, unit)
 		return watcher
 	end
 
-	local size = tonumber(options.Icons.Size) or 32
-	local container = iconSlotContainer:New(UIParent, 1, size, 2, "Trinkets")
+	local container = containersByAnchor[anchorFrame]
+	if not container then
+		container = iconSlotContainer:New(UIParent, 1, tonumber(options.Icons.Size) or 32, 2, "Trinkets")
+		containersByAnchor[anchorFrame] = container
+	end
 
 	watcher = {
 		Anchor = anchorFrame,
@@ -105,7 +113,8 @@ local function EnsureWatcher(anchorFrame, unit)
 	return watcher
 end
 
-local function DestroyWatcher(anchorFrame)
+---Parks the anchor's container rather than discarding it (see containersByAnchor).
+local function ReleaseWatcher(anchorFrame)
 	local watcher = watchers[anchorFrame]
 	if not watcher then
 		return
@@ -114,7 +123,7 @@ local function DestroyWatcher(anchorFrame)
 	if watcher.Container then
 		watcher.Container:ResetAllSlots()
 		watcher.Container.Frame:Hide()
-		watcher.Container.Frame:SetParent(nil)
+		watcher.Container.Frame:ClearAllPoints()
 	end
 
 	watchers[anchorFrame] = nil
@@ -137,7 +146,7 @@ local function RebuildAnchors()
 
 	for anchorFrame in pairs(watchers) do
 		if not seen[anchorFrame] then
-			DestroyWatcher(anchorFrame)
+			ReleaseWatcher(anchorFrame)
 		end
 	end
 end
@@ -228,8 +237,6 @@ local function RefreshTestTrinkets()
 	end
 end
 
--- Public surface
-
 ---@return TrinketsModuleOptions? nil until Init has read the saved variables
 function M:GetOptions()
 	return options
@@ -247,15 +254,14 @@ end
 
 function M:Teardown()
 	for anchorFrame in pairs(watchers) do
-		DestroyWatcher(anchorFrame)
+		ReleaseWatcher(anchorFrame)
 	end
 end
 
----@param moduleOptions TrinketsModuleOptions
-function M:ApplyOptions(moduleOptions)
+function M:ApplyOptions()
 	UpdateVisibility()
 
-	local size = tonumber(moduleOptions.Icons.Size) or 32
+	local size = tonumber(options.Icons.Size) or 32
 
 	for _, watcher in pairs(watchers) do
 		if watcher.Container then

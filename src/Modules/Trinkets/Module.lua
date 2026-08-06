@@ -49,8 +49,6 @@ local function OnTrinketDataChanged(unit)
 	display:Render(unit)
 end
 
--- Lifecycle
-
 ---Trinket tracking reads the 12.1 trinket API and has no legacy equivalent.
 ---@return boolean
 local function IsSupported()
@@ -145,7 +143,7 @@ function M:Refresh()
 	end
 
 	display:EnsureFrames()
-	display:ApplyOptions(moduleOptions)
+	display:ApplyOptions()
 	display:UpdateContent()
 end
 
