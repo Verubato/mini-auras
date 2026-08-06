@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
+local auraSounds = addon.Core.AuraSounds
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 
@@ -53,24 +54,19 @@ local IMPORTANT_TTS_SUPPRESSED_CLASSES = {
 }
 local SHADOW_PRIEST_SPEC_ID = 258
 
--- 12.1 path: engine-side alert sounds via C_UnitAuras.AddAuraSound (the aura transitions the
--- legacy sound reacted to are secret there, but the engine can play sounds on them for us -
--- same pattern as HealerCrowdControlModule). Registrations are per (enemy nameplate token,
--- spellId), fed from the generated Core/AuraCategoryIds Important/Defensive lists.
--- token -> array of auraSoundIDs for that token. Registrations are kept warm across plate
--- despawns: a token's registration set is identical no matter which enemy holds it, so tearing
--- down and re-adding ~120 sounds per plate churn would be pure API traffic. They are removed
--- only when the token reappears as a non-enemy, the sound settings change, or plate tracking
--- stops entirely.
+-- 12.1 path: engine-side alert sounds via Core/AuraSounds (the aura transitions the legacy
+-- sound reacted to are secret there, but the engine can play sounds on them for us - same
+-- pattern as HealerCrowdControlModule). Registrations are per (enemy nameplate token, spellId),
+-- fed from the generated Core/AuraCategoryIds Important/Defensive lists.
+-- token -> pooled list of sound handles for that token. Registrations are kept warm across
+-- plate despawns: a token's registration set is identical no matter which enemy holds it, so
+-- tearing down and re-adding ~120 sounds per plate churn would be pure API traffic. They are
+-- removed only when the token reappears as a non-enemy, the sound settings change, or plate
+-- tracking stops entirely.
 local alertSoundsByToken = {}
 -- Signature of the sound settings the current registrations were made with; when it changes
 -- every active token is re-registered.
 local alertSoundSettingsSignature = nil
--- Reused UnitAuraSoundInfo table for registrations.
-local alertSoundInfoScratch = { unitToken = nil, spellID = nil, soundFileName = nil, outputChannel = nil }
--- Freed id lists from RemoveToken, reused by the next registration instead of allocating a fresh
--- ~116-entry table per nameplate.
-local alertSoundIdListPool = {}
 
 -- True when the player's class/spec should never announce important buffs over TTS (see the comment
 -- on IMPORTANT_TTS_SUPPRESSED_CLASSES).
@@ -86,27 +82,23 @@ local function ImportantTTSSuppressedForPlayer()
 	return false
 end
 
--- Registers one spell list's sounds against the token already set on `info`, appending the
--- returned ids to `ids`. Hoisted out of RegisterToken so the per-nameplate path doesn't build a
--- closure each time.
----@param ids number[]
----@param info table The shared UnitAuraSoundInfo scratch, with unitToken already set.
+-- Registers one spell list's sounds for a token, appending to `ids` (nil starts a new pooled
+-- list). Hoisted out of RegisterToken so the per-nameplate path doesn't build a closure.
+---@param ids number[]?
+---@param unitToken string
 ---@param list table<number, boolean> Spell ids to register.
 ---@param config table Sound options (File/Channel).
 ---@param fallbackFile string
-local function RegisterAlertSoundList(ids, info, list, config, fallbackFile)
-	info.soundFileName = addon.Core.Sounds:Resolve(config.File or fallbackFile)
-	info.outputChannel = config.Channel or "Master"
-
-	for spellId in pairs(list) do
-		if not SILENT_ALERT_SPELL_IDS[spellId] then
-			info.spellID = spellId
-			local soundId = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
-			if soundId then
-				ids[#ids + 1] = soundId
-			end
-		end
-	end
+---@return number[] ids
+local function RegisterAlertSoundList(ids, unitToken, list, config, fallbackFile)
+	return auraSounds:RegisterSet(
+		ids,
+		unitToken,
+		list,
+		addon.Core.Sounds:Resolve(config.File or fallbackFile),
+		config.Channel or "Master",
+		SILENT_ALERT_SPELL_IDS
+	)
 end
 
 ---@param value boolean
@@ -212,15 +204,13 @@ function M:RegisterToken(unitToken)
 		return
 	end
 
-	local ids = table.remove(alertSoundIdListPool) or {}
-	local info = alertSoundInfoScratch
-	info.unitToken = unitToken
-
+	-- nil until the first list registers; RegisterSet then hands out a pooled handle list.
+	local ids = nil
 	if importantEnabled then
-		RegisterAlertSoundList(ids, info, addon.Core.AuraCategoryIds.Important, sound.Important, "AirHorn.ogg")
+		ids = RegisterAlertSoundList(ids, unitToken, addon.Core.AuraCategoryIds.Important, sound.Important, "AirHorn.ogg")
 	end
 	if defensiveEnabled then
-		RegisterAlertSoundList(ids, info, addon.Core.AuraCategoryIds.Defensive, sound.Defensive, "AlertToastWarm.ogg")
+		ids = RegisterAlertSoundList(ids, unitToken, addon.Core.AuraCategoryIds.Defensive, sound.Defensive, "AlertToastWarm.ogg")
 	end
 
 	alertSoundsByToken[unitToken] = ids
@@ -233,13 +223,8 @@ function M:RemoveToken(unitToken)
 	if not ids then
 		return
 	end
-	for i = #ids, 1, -1 do
-		C_UnitAuras.RemoveAuraSound(ids[i])
-		ids[i] = nil
-	end
 	alertSoundsByToken[unitToken] = nil
-	-- Now empty; hand it back for the next token instead of garbaging a ~116-entry table.
-	alertSoundIdListPool[#alertSoundIdListPool + 1] = ids
+	auraSounds:RemoveSet(ids)
 end
 
 function M:RemoveAllTokens()
@@ -263,13 +248,15 @@ function M:Refresh(activeTokens)
 	local active = (importantEnabled or defensiveEnabled)
 		and moduleUtil:IsModuleEnabled(moduleName.Alerts)
 		and not paused
-	local signature = tostring(active)
-		.. "|" .. tostring(importantEnabled)
-		.. "|" .. tostring(sound.Important and sound.Important.File)
-		.. "|" .. tostring(sound.Important and sound.Important.Channel)
-		.. "|" .. tostring(defensiveEnabled)
-		.. "|" .. tostring(sound.Defensive and sound.Defensive.File)
-		.. "|" .. tostring(sound.Defensive and sound.Defensive.Channel)
+	local signature = auraSounds:Signature(
+		active,
+		importantEnabled,
+		sound.Important and sound.Important.File,
+		sound.Important and sound.Important.Channel,
+		defensiveEnabled,
+		sound.Defensive and sound.Defensive.File,
+		sound.Defensive and sound.Defensive.Channel
+	)
 	if signature == alertSoundSettingsSignature then
 		return
 	end

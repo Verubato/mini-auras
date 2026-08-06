@@ -257,6 +257,7 @@ function M.build()
 	-- The real resolver: with no LibSharedMedia in the mock it falls back to the bundled files,
 	-- which is the path a client without a media addon takes anyway.
 	loadFile("src/Core/Sounds.lua")
+	loadFile("src/Core/AuraSounds.lua")
 	addonFiles.load(addonFiles.migrator, addon)
 	env.db = addon.Config.Migrator:GetAndUpgradeDb()
 

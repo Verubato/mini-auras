@@ -1,0 +1,84 @@
+---@type string, Addon
+local _, addon = ...
+
+-- Shared plumbing for engine-side aura sounds (C_UnitAuras.AddAuraSound): on 12.1 the addon
+-- cannot see auras appear, but the engine can play a sound when a registered spell lands on a
+-- registered unit. Consumers keep their own policy (which units, when to reconcile); this owns
+-- the mechanics they all repeat: the reused UnitAuraSoundInfo table, the handle lists, and the
+-- pool that recycles them (a list can run to ~1k entries per unit, so garbaging one per roster
+-- change adds up).
+
+---@class AuraSounds
+local M = {}
+
+addon.Core.AuraSounds = M
+
+-- Reused UnitAuraSoundInfo for registrations; AddAuraSound reads it synchronously.
+local infoScratch = { unitToken = nil, spellID = nil, soundFileName = nil, outputChannel = nil }
+-- Freed handle lists, reused by the next registration instead of allocating a fresh one.
+local idListPool = {}
+-- Reused by Signature; concatenated with an explicit range, so no trimming is needed.
+local signatureScratch = {}
+
+---Registers an Added-trigger sound on one unit for every spell id in the set, appending the
+---handles to `ids`. Pass nil to start a new (pooled) list, or a previous return value to
+---register a second set under the same key.
+---@param ids number[]?
+---@param unitToken string
+---@param spellIds table<number, boolean>
+---@param soundFile string resolved sound file path
+---@param channel string
+---@param excludedSpellIds table<number, boolean>? spells to skip
+---@return number[] ids
+function M:RegisterSet(ids, unitToken, spellIds, soundFile, channel, excludedSpellIds)
+	ids = ids or table.remove(idListPool) or {}
+
+	local info = infoScratch
+	info.unitToken = unitToken
+	info.soundFileName = soundFile
+	info.outputChannel = channel
+
+	for spellId in pairs(spellIds) do
+		if not (excludedSpellIds and excludedSpellIds[spellId]) then
+			info.spellID = spellId
+
+			local handle = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
+
+			if handle then
+				ids[#ids + 1] = handle
+			end
+		end
+	end
+
+	return ids
+end
+
+---Removes every registration in the list and hands the now-empty list back to the pool.
+---Callers must drop their reference; the next RegisterSet may reuse the table.
+---@param ids number[]?
+function M:RemoveSet(ids)
+	if not ids then
+		return
+	end
+
+	for i = #ids, 1, -1 do
+		C_UnitAuras.RemoveAuraSound(ids[i])
+		ids[i] = nil
+	end
+
+	idListPool[#idListPool + 1] = ids
+end
+
+---Joins the values a consumer's registrations were built from into a comparable string, so a
+---settings change (and only a settings change) invalidates them.
+---@param ... any
+---@return string
+function M:Signature(...)
+	local count = select("#", ...)
+
+	for i = 1, count do
+		signatureScratch[i] = tostring((select(i, ...)))
+	end
+
+	return table.concat(signatureScratch, "|", 1, count)
+end

@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
+local auraSounds = addon.Core.AuraSounds
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
 
@@ -11,25 +12,21 @@ addon.Modules.HealerCrowdControl = addon.Modules.HealerCrowdControl or {}
 local M = {}
 addon.Modules.HealerCrowdControl.Sound = M
 
--- 12.1 path: the sound survives via C_UnitAuras.AddAuraSound - the ENGINE plays a sound when a
--- known CC aura lands on a registered healer, without the addon ever reading aura state.
--- Registrations are per (unit, spellId), fed from the generated Core/AuraCategoryIds CC list.
+-- 12.1 path: the sound survives via engine-side registrations (Core/AuraSounds) - the ENGINE
+-- plays a sound when a known CC aura lands on a registered healer, without the addon ever
+-- reading aura state. Registrations are per (unit, spellId), fed from the generated
+-- Core/AuraCategoryIds CC list.
 -- TEMPORARY dual path: remove the transition-driven branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
 ---@type Db
 local db
 local soundFile
--- 12.1 path: AddAuraSound handles keyed by healer unit, so a healer joining or leaving only
+-- 12.1 path: sound handles keyed by healer unit, so a healer joining or leaving only
 -- re-registers that unit. The CC spell list is ~1k entries, so a full teardown/rebuild of every
 -- healer on each roster change was ~1k API calls per healer for no reason.
 ---@type table<string, number[]>
 local registeredAuraSoundsByUnit = {}
--- Freed handle lists, reused by the next registration instead of allocating a fresh ~1k-entry
--- table per healer.
-local auraSoundIdListPool = {}
--- Reused UnitAuraSoundInfo table for registrations.
-local auraSoundInfoScratch = { unitToken = nil, spellID = nil, soundFileName = nil, outputChannel = nil }
 -- The sound settings the current registrations were made with; when these change every healer is
 -- re-registered (the unit set is handled incrementally).
 local auraSoundSignature = nil
@@ -53,13 +50,8 @@ local function RemoveUnitAuraSounds(unit)
 		return
 	end
 
-	for i = #ids, 1, -1 do
-		C_UnitAuras.RemoveAuraSound(ids[i])
-		ids[i] = nil
-	end
 	registeredAuraSoundsByUnit[unit] = nil
-	-- Now empty; hand it back for the next healer instead of garbaging a ~1k-entry table.
-	auraSoundIdListPool[#auraSoundIdListPool + 1] = ids
+	auraSounds:RemoveSet(ids)
 end
 
 ---12.1 path: removes every registered aura sound.
@@ -80,21 +72,8 @@ local function RegisterUnitAuraSounds(unit, soundFilePath, channel)
 		return
 	end
 
-	local ids = table.remove(auraSoundIdListPool) or {}
-	local info = auraSoundInfoScratch
-	info.unitToken = unit
-	info.soundFileName = soundFilePath
-	info.outputChannel = channel
-
-	for spellId in pairs(addon.Core.AuraCategoryIds.CC) do
-		info.spellID = spellId
-		local soundId = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
-		if soundId then
-			ids[#ids + 1] = soundId
-		end
-	end
-
-	registeredAuraSoundsByUnit[unit] = ids
+	registeredAuraSoundsByUnit[unit] =
+		auraSounds:RegisterSet(nil, unit, addon.Core.AuraCategoryIds.CC, soundFilePath, channel)
 end
 
 ---12.1 path: reconciles the engine-side CC sounds against the active healer set. The CC list is
@@ -116,7 +95,7 @@ local function RegisterAuraSounds(activePool)
 
 	-- The sound itself is baked into each registration, so changing it means re-registering
 	-- everyone; the healer set alone never does.
-	local signature = soundFilePath .. "|" .. channel
+	local signature = auraSounds:Signature(soundFilePath, channel)
 	if signature ~= auraSoundSignature then
 		ClearAuraSounds()
 		auraSoundSignature = signature
@@ -132,8 +111,6 @@ local function RegisterAuraSounds(activePool)
 		RegisterUnitAuraSounds(unit, soundFilePath, channel)
 	end
 end
-
--- Public surface
 
 ---Legacy path: one sound per no-CC-to-CC transition.
 function M:Play()
