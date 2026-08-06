@@ -106,22 +106,11 @@ local function CreateFrames()
 	-- "Kick Timer" is the module's old name, kept because it is the Masque group name (and the
 	-- public MiniCCModule frame tag); renaming it would orphan skins users already assigned.
 	local container = iconSlotContainer:New(UIParent, kickBar.MaxSlots, size, spacing, "Kick Timer", nil, "Kick Timer")
-	container.Frame:SetClampedToScreen(true)
+	-- Dragging is armed here but only enabled in test mode (SetAnchorInteractive).
 	container.Frame:SetMovable(false)
 	container.Frame:EnableMouse(false)
 	container.Frame:SetDontSavePosition(true)
-	container.Frame:RegisterForDrag("LeftButton")
-	container.Frame:SetScript("OnDragStart", container.Frame.StartMoving)
-	container.Frame:SetScript("OnDragStop", function(frameSelf)
-		frameSelf:StopMovingOrSizing()
-
-		local point, movedRelativeTo, relativePoint, x, y = frameSelf:GetPoint()
-		options.Point = point
-		options.RelativePoint = relativePoint
-		options.RelativeTo = (movedRelativeTo and movedRelativeTo:GetName()) or "UIParent"
-		options.Offset.X = x
-		options.Offset.Y = y
-	end)
+	moduleUtil:MakeMovable(container.Frame, options)
 
 	local relativeTo = _G[options.RelativeTo] or UIParent
 	container.Frame:SetPoint(options.Point, relativeTo, options.RelativePoint, options.Offset.X, options.Offset.Y)

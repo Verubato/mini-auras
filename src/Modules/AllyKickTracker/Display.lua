@@ -214,7 +214,6 @@ end
 ---interrupted spell's icon and the mob's marker. All four can be secret, so this runs once when
 ---the row is assigned rather than on every tick - the repaint loop compares what it last pushed
 ---to a widget, and comparing a secret is exactly what is not allowed.
----@param instance AllyKickDisplayInstance
 ---@param bar AllyKickBar
 ---@param record AllyKickRecord
 local function PaintRecord(bar, record)

@@ -77,6 +77,10 @@ local importantSkipScratch = {}
 local colorScratch = { r = 0, g = 0, b = 0, a = 1 }
 -- Reused list of the active enemy watchers for the current mode, rebuilt each update.
 local activeWatchersScratch = {}
+-- Scratch for the test-mode SetSlot calls, plus the per-call invariants PlaceTestIcon reads
+-- (hoisted so the test refresh doesn't build a closure per icon).
+local testSlotScratch = {}
+local testIconCtx = { Now = 0, Glow = false, Reverse = false, ShowTooltips = true }
 
 -- Per-iteration context for the hoisted PlaceImportantBuff callback (avoids a per-call closure on
 -- the aura hot path). The constant-per-frame fields are set in Render; the per-unit fields
@@ -404,15 +408,27 @@ local function PlaceBar(frame, anchorOptions, grow)
 	end
 end
 
--- Saves a bar's position after a drag, normalized to the grow-appropriate pinned edge.
-local function SaveDraggedPosition(frame, anchorOptions)
-	local point, relativeTo, relativePoint, x, y = frame:GetPoint()
-	anchorOptions.Point = point
-	anchorOptions.RelativePoint = relativePoint
-	anchorOptions.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
-	anchorOptions.Offset.X = x
-	anchorOptions.Offset.Y = y
-	NormalizeBarAnchor(frame, anchorOptions, GetGrow())
+---Initial placement and drag persistence for one movable alert bar. Dragging is armed here but
+---only enabled in test mode (SetAnchorInteractive); each drop is re-pinned to the grow edge so
+---the saved anchor matches how the row extends.
+---@param bar IconSlotContainer
+---@param anchorOptions table
+local function SetUpBarDragging(bar, anchorOptions)
+	local relativeTo = _G[anchorOptions.RelativeTo] or UIParent
+
+	bar.Frame:SetPoint(
+		anchorOptions.Point,
+		relativeTo,
+		anchorOptions.RelativePoint,
+		anchorOptions.Offset.X,
+		anchorOptions.Offset.Y
+	)
+	bar.Frame:SetFrameLevel((relativeTo:GetFrameLevel() or 0) + 5)
+	bar.Frame:EnableMouse(false)
+	bar.Frame:SetMovable(false)
+	moduleUtil:MakeMovable(bar.Frame, anchorOptions, function(frame, position)
+		NormalizeBarAnchor(frame, position, GetGrow())
+	end)
 end
 
 -- 12.1 path: re-anchors the active per-nameplate displays into rows. Defensive displays chain
@@ -481,6 +497,15 @@ local function GetAlertBarsShown()
 		and not testModeActive
 end
 
+---Fills the shared style scratch from the alert options.
+---@return AuraDisplayStyle
+local function AlertStyle()
+	local options = db and db.Modules.AlertsModule
+	local style = auraContainerDisplay:BuildStandardStyle(options and options.Icons)
+	style.ShowTooltips = not options or options.ShowTooltips ~= false
+	return style
+end
+
 -- 12.1 path: applies options (size, style, per-category budgets, visibility) to ONE pooled
 -- display pair. Deviations from the legacy bar, forced by aura data being unreadable: no
 -- class-colored glow/border, and MaxIcons caps each unit's icons rather than the whole bar.
@@ -492,36 +517,27 @@ local function ApplyNameplateDisplayOptions(entry, options, showBars)
 	local maxIcons = options.Icons.MaxIcons or 8
 	local size = options.Icons.Size
 	local spacing = options.IconSpacing or 2
-	local showTooltips = options.ShowTooltips ~= false
 	local grow = GetGrow()
 
 	-- Important renders on whichever display the current mode uses; the other is budgeted to 0.
 	local importantOnDef = importantEnabled and not splitBars
 	local importantOnImp = importantEnabled and splitBars
 
+	-- Both displays take the same style; fill the scratch once and hand it to each (ApplyConfig
+	-- copies it field by field, and one call restyles all three values in a single pass).
+	local style = AlertStyle()
+
 	entry.Def:SetGrow(grow)
-	entry.Def:SetIconSize(size)
-	entry.Def:SetSpacing(spacing)
+	entry.Def:ApplyConfig(size, spacing, style)
 	entry.Def:SetMaxIcons(auraFilters.GroupKey.BigDefensive, includeDefensives and maxIcons or 0)
 	entry.Def:SetMaxIcons(auraFilters.GroupKey.ExternalDefensive, includeDefensives and maxIcons or 0)
 	entry.Def:SetMaxIcons(auraFilters.GroupKey.Important, importantOnDef and maxIcons or 0)
-
-	-- Both displays take the same style; fill the scratch once and hand it to each.
-	local style = auraContainerDisplay:GetStyleScratch()
-	style.ReverseCooldown = options.Icons.ReverseCooldown
-	style.Glow = options.Icons.Glow
-	style.FontScale = db.FontScale
-	style.ShowTooltips = showTooltips
-
-	entry.Def:SetStyle(style)
 	entry.Def:SetEnabled(showBars == true)
 	entry.Def:SetShown(showBars == true)
 
 	entry.Imp:SetGrow(grow)
-	entry.Imp:SetIconSize(size)
-	entry.Imp:SetSpacing(spacing)
+	entry.Imp:ApplyConfig(size, spacing, style)
 	entry.Imp:SetMaxIcons(auraFilters.GroupKey.Important, importantOnImp and maxIcons or 0)
-	entry.Imp:SetStyle(style)
 	local impShown = showBars and importantOnImp
 	entry.Imp:SetEnabled(impShown == true)
 	entry.Imp:SetShown(impShown == true)
@@ -541,19 +557,6 @@ end
 -- left a hole before the important icons; groups inside a single container flow tight instead.
 -- A display's group list is fixed for its lifetime (see New), so both groups always exist and
 -- the mode is chosen purely by budgeting one of them to 0 - no container churn on toggle.
----Fills the shared style scratch from the alert options.
----@return AuraDisplayStyle
-local function AlertStyle()
-	local options = db and db.Modules.AlertsModule
-	local icons = options and options.Icons
-	local style = auraContainerDisplay:GetStyleScratch()
-	style.ReverseCooldown = icons and icons.ReverseCooldown
-	style.Glow = icons and icons.Glow
-	style.FontScale = db and db.FontScale
-	style.ShowTooltips = not options or options.ShowTooltips ~= false
-	return style
-end
-
 local function CreateAlertDisplayPair()
 	-- Build at the CONFIGURED size, not a placeholder. A button takes its size in
 	-- initializeFrame, which the frame pool runs once when it creates the button and never
@@ -703,7 +706,38 @@ local function RebuildStaleDisplayPairs()
 	end
 end
 
--- Public surface
+---Places one synthetic alert icon, reading the per-call invariants from testIconCtx. Returns the
+---advanced slot cursor, unchanged when the bar is full or the texture is missing.
+---@param target IconSlotContainer
+---@param slot number
+---@param spellId number
+---@param glowColor table?
+---@param elapsed number seconds already run off the synthetic duration
+---@param duration number
+---@return number slot
+local function PlaceTestIcon(target, slot, spellId, glowColor, elapsed, duration)
+	if slot >= target.Count then
+		return slot
+	end
+
+	local tex = C_Spell.GetSpellTexture(spellId)
+	if not tex then
+		return slot
+	end
+
+	slot = slot + 1
+	testSlotScratch.Texture = tex
+	testSlotScratch.DurationObject = wowEx:CreateDuration(testIconCtx.Now - elapsed, duration)
+	testSlotScratch.Alpha = true
+	testSlotScratch.Glow = testIconCtx.Glow
+	testSlotScratch.ReverseCooldown = testIconCtx.Reverse
+	testSlotScratch.Color = glowColor
+	testSlotScratch.FontScale = db.FontScale
+	testSlotScratch.SpellId = testIconCtx.ShowTooltips and spellId or nil
+	target:SetSlot(slot, testSlotScratch)
+
+	return slot
+end
 
 ---@return IconSlotContainer? the main bar; nil until the frames are built
 function M:GetContainer()
@@ -729,20 +763,6 @@ end
 ---@param value boolean
 function M:SetInPrepRoom(value)
 	inPrepRoom = value
-end
-
----@return boolean
-function M:IsInPrepRoom()
-	return inPrepRoom
-end
-
----@return string the effective grow direction, with CENTER folded to RIGHT on 12.1
-function M:GetGrow()
-	return GetGrow()
-end
-
-function M:EnsureNameplateDisplay(unitToken)
-	return EnsureNameplateDisplay(unitToken)
 end
 
 -- 12.1 path: parks a token's display pair when its plate goes away. The pair stays in
@@ -983,7 +1003,6 @@ function M:RefreshTestAlerts()
 
 	local includeDefensives = db.Modules.AlertsModule.IncludeDefensives
 
-	local now = GetTime()
 	-- Test icons render through the legacy IconSlotContainer, which CAN class colour - but the
 	-- real 12.1 bars can't (UnitClass is secret there, and the option is hidden in the config).
 	-- Colouring only the preview would advertise something the live display never does.
@@ -991,35 +1010,29 @@ function M:RefreshTestAlerts()
 	-- Category tints, on the other hand, are exactly what the live 12.1 bars do, so the preview
 	-- has to show them.
 	local importantTestColor, defensiveTestColor = AlertGlowColors()
-	local iconsGlow = db.Modules.AlertsModule.Icons.Glow
-	local showTooltips = db.Modules.AlertsModule.ShowTooltips ~= false
 
-	-- Defensives bar test icons
+	testIconCtx.Now = GetTime()
+	testIconCtx.Glow = db.Modules.AlertsModule.Icons.Glow
+	testIconCtx.Reverse = db.Modules.AlertsModule.Icons.ReverseCooldown
+	testIconCtx.ShowTooltips = db.Modules.AlertsModule.ShowTooltips ~= false
+
+	-- Defensives bar test icons. The stagger step only advances when an icon actually landed, so
+	-- a missing texture doesn't leave a hole in the timing spread.
 	local defSlot = 0
 	if includeDefensives then
 		local stepIndex = 0
 		for _, entry in ipairs(testSpellData.Alerts.Defensive) do
-			local tex = C_Spell.GetSpellTexture(entry.SpellId)
-			if tex and defSlot < container.Count then
-				local glowColor = defensiveTestColor
-				if colorByClass and entry.Class then
-					local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.Class]
-					if classColor then
-						glowColor = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1 }
-					end
+			local glowColor = defensiveTestColor
+			if colorByClass and entry.Class then
+				local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.Class]
+				if classColor then
+					glowColor = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1 }
 				end
+			end
 
-				defSlot = defSlot + 1
-				container:SetSlot(defSlot, {
-					Texture = tex,
-					DurationObject = wowEx:CreateDuration(now - stepIndex * 1.25, 12 + stepIndex * 3),
-					Alpha = true,
-					Glow = iconsGlow,
-					ReverseCooldown = db.Modules.AlertsModule.Icons.ReverseCooldown,
-					Color = glowColor,
-					FontScale = db.FontScale,
-					SpellId = showTooltips and entry.SpellId or nil,
-				})
+			local placed = PlaceTestIcon(container, defSlot, entry.SpellId, glowColor, stepIndex * 1.25, 12 + stepIndex * 3)
+			if placed ~= defSlot then
+				defSlot = placed
 				stepIndex = stepIndex + 1
 			end
 		end
@@ -1033,24 +1046,7 @@ function M:RefreshTestAlerts()
 	if importantEnabled and impTarget then
 		local testImportantSpellIds = testSpellData.Alerts.Important
 		for i = 1, #testImportantSpellIds do
-			if impSlot >= impTarget.Count then
-				break
-			end
-			local spellId = testImportantSpellIds[i]
-			local tex = C_Spell.GetSpellTexture(spellId)
-			if tex then
-				impSlot = impSlot + 1
-				impTarget:SetSlot(impSlot, {
-					Texture = tex,
-					DurationObject = wowEx:CreateDuration(now - (i - 1) * 1.25, 15 + (i - 1) * 3),
-					Alpha = true,
-					Glow = iconsGlow,
-					ReverseCooldown = db.Modules.AlertsModule.Icons.ReverseCooldown,
-					Color = importantTestColor,
-					FontScale = db.FontScale,
-					SpellId = showTooltips and spellId or nil,
-				})
-			end
+			impSlot = PlaceTestIcon(impTarget, impSlot, testImportantSpellIds[i], importantTestColor, (i - 1) * 1.25, 15 + (i - 1) * 3)
 		end
 	end
 
@@ -1143,32 +1139,6 @@ function M:SetAnchorInteractive(active)
 	local moveable = active and importantContainer.Frame:IsShown()
 	importantContainer.Frame:EnableMouse(moveable)
 	importantContainer.Frame:SetMovable(moveable)
-end
-
----@param bar IconSlotContainer
----@param anchorOptions table
-local function SetUpBarDragging(bar, anchorOptions)
-	local relativeTo = _G[anchorOptions.RelativeTo] or UIParent
-
-	bar.Frame:SetPoint(
-		anchorOptions.Point,
-		relativeTo,
-		anchorOptions.RelativePoint,
-		anchorOptions.Offset.X,
-		anchorOptions.Offset.Y
-	)
-	bar.Frame:SetFrameLevel((relativeTo:GetFrameLevel() or 0) + 5)
-	bar.Frame:EnableMouse(false)
-	bar.Frame:SetMovable(false)
-	bar.Frame:SetClampedToScreen(true)
-	bar.Frame:RegisterForDrag("LeftButton")
-	bar.Frame:SetScript("OnDragStart", function(anchorSelf)
-		anchorSelf:StartMoving()
-	end)
-	bar.Frame:SetScript("OnDragStop", function(anchorSelf)
-		anchorSelf:StopMovingOrSizing()
-		SaveDraggedPosition(anchorSelf, anchorOptions)
-	end)
 end
 
 function M:CreateFrames()

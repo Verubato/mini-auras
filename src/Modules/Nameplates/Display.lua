@@ -56,6 +56,16 @@ local TEST_CC_DISPEL_COLORS = testSpellData.Nameplates.DispelColors
 local DEFENSIVE_COLOR = { r = 0.0, g = 0.8, b = 0.0 } -- Green
 local IMPORTANT_COLOR = { r = 0.9, g = 0.1, b = 0.1 } -- Red
 
+-- Per-category test data driving ShowBarTestIcons: the bar option that shows the category, its
+-- spell list and precomputed length, and the glow colour (per spell for CC, fixed otherwise).
+local TEST_BAR_CATEGORIES = {
+	{ Show = "ShowCC", Ids = TEST_CC_NAMEPLATE_SPELL_IDS, Count = TEST_CC_COUNT, Colors = TEST_CC_DISPEL_COLORS },
+	{ Show = "ShowDefensives", Ids = TEST_DEFENSIVE_NAMEPLATE_SPELL_IDS, Count = TEST_DEFENSIVE_COUNT, Color = DEFENSIVE_COLOR },
+	{ Show = "ShowImportant", Ids = TEST_IMPORTANT_NAMEPLATE_SPELL_IDS, Count = TEST_IMPORTANT_COUNT, Color = IMPORTANT_COLOR },
+}
+-- Reused per-call slot budgets, parallel to TEST_BAR_CATEGORIES.
+local testBudgetScratch = {}
+
 -- Reusable scratch table for SetSlot calls.
 -- This avoids creating a new table on every aura update for every nameplate slot,
 -- which significantly reduces garbage collection pressure.
@@ -146,15 +156,28 @@ local function GetNameplateAnchorFrame(nameplate)
 	return nameplate
 end
 
-local function SetupContainerFrame(container, nameplate, anchorPoint, relativeToPoint, offsetX, offsetY)
+---Applies a bar's full geometry to its container: anchor on the plate, frame level, scale
+---behaviour, slot count/size/spacing and grow direction. The single path both the plate-add
+---build and the options refresh take, so the two can never diverge.
+local function ApplyContainerLayout(container, nameplate, barOptions)
 	local anchorFrame = GetNameplateAnchorFrame(nameplate)
+	local anchorPoint, relativeToPoint = growAnchors:GetAnchor(barOptions.Grow)
 	local frame = container.Frame
+
 	frame:ClearAllPoints()
-	frame:SetPoint(anchorPoint, anchorFrame, relativeToPoint, offsetX, offsetY)
+	frame:SetPoint(anchorPoint, anchorFrame, relativeToPoint, barOptions.Offset.X or 0, barOptions.Offset.Y or 0)
 	frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
 	frame:EnableMouse(false)
 	frame:SetIgnoreParentScale(not nmModule.ScaleWithNameplate)
-	frame:Show()
+
+	container:SetIconSize(barOptions.Icons.Size or 35)
+	container:SetCount(barOptions.Icons.MaxIcons or 5)
+	container:SetSpacing(barOptions.Icons.Spacing or 2)
+	container:SetGrowDown(barOptions.Grow == "DOWN")
+	-- Grow LEFT mirrors the slots so slot 1 (highest priority - e.g. the important buffs
+	-- Blizzard sorts to the front) sits at the rightmost icon, nearest the nameplate. RIGHT and
+	-- DOWN already place slot 1 nearest the anchor.
+	container:SetRows(nil, "CENTER", barOptions.Grow == "LEFT")
 end
 
 ---12.1 path: positions a bar's aura display, chaining after the bar's kick container while a
@@ -210,13 +233,10 @@ end
 ---Fills the shared style scratch from a bar's options.
 ---@return AuraDisplayStyle
 local function BarStyle(barOptions)
-	local style = auraContainerDisplay:GetStyleScratch()
-	style.ReverseCooldown = barOptions.Icons.ReverseCooldown
-	style.ShowMilliseconds = barOptions.Icons.ShowMilliseconds
-	-- Category colours can't be applied per group; dispel-type colouring is the nearest fit.
+	local style = auraContainerDisplay:BuildStandardStyle(barOptions.Icons)
+	-- Nameplates stores the toggle as ColorByCategory, which the standard reader doesn't know;
+	-- category colours can't be applied per group, so dispel-type colouring is the nearest fit.
 	style.ColorByDispelType = barOptions.Icons.ColorByCategory
-	style.Glow = barOptions.Icons.Glow
-	style.FontScale = db.FontScale
 	style.ShowTooltips = barOptions.ShowTooltips ~= false
 	return style
 end
@@ -317,29 +337,25 @@ local function EnsureContainersForNameplate(nameplate, unitToken, unitOptions)
 	for _, bar in ipairs(BARS) do
 		local barOptions = unitOptions[bar.Key]
 		if barOptions and barOptions.Enabled then
-			local size = barOptions.Icons.Size or 35
-			local maxIcons = barOptions.Icons.MaxIcons or 5
-			local offsetX = barOptions.Offset.X or 0
-			local offsetY = barOptions.Offset.Y or 0
-			local anchorPoint, relativeToPoint = growAnchors:GetAnchor(barOptions.Grow)
-
 			local container = nameplate[bar.ContainerKey]
 			if not container then
-				container = iconSlotContainer:New(nameplate, maxIcons, size, barOptions.Icons.Spacing or 2, "Nameplates", nil, "Nameplates")
+				container = iconSlotContainer:New(
+					nameplate,
+					barOptions.Icons.MaxIcons or 5,
+					barOptions.Icons.Size or 35,
+					barOptions.Icons.Spacing or 2,
+					"Nameplates",
+					nil,
+					"Nameplates"
+				)
 				nameplate[bar.ContainerKey] = container
-			else
-				container:SetIconSize(size)
-				container:SetCount(maxIcons)
 			end
 
-			-- Match the slot layout to the grow direction. Grow LEFT mirrors the slots so slot 1 (highest
-			-- priority - e.g. the important buffs Blizzard sorts to the front) sits at the rightmost icon,
-			-- nearest the nameplate. RIGHT/DOWN already place slot 1 nearest the anchor. This runs on every
-			-- container (re)build, so newly-shown nameplates get it without waiting for a config refresh.
-			container:SetGrowDown(barOptions.Grow == "DOWN")
-			container:SetRows(nil, "CENTER", barOptions.Grow == "LEFT")
+			-- Runs on every container (re)build, so newly-shown nameplates get the current
+			-- geometry without waiting for a config refresh.
+			ApplyContainerLayout(container, nameplate, barOptions)
+			container.Frame:Show()
 
-			SetupContainerFrame(container, nameplate, anchorPoint, relativeToPoint, offsetX, offsetY)
 			if bar.Key == "Bar1" then
 				bar1Container = container
 			else
@@ -540,18 +556,20 @@ local function ApplyBarToNameplate(container, barOptions, watcher, data)
 	end
 end
 
----Shows test icons for one bar: CC test spells when the bar has ShowCC, defensive test spells
----when it has ShowDefensives, using the same CC-priority slot distribution as the live path.
+---Shows test icons for one bar, walking TEST_BAR_CATEGORIES in priority order (CC first) and
+---dividing the slots with the same distribution as the live path.
 local function ShowBarTestIcons(container, barOptions, now)
 	if not container or not barOptions then
 		return
 	end
 
-	local ccCount = barOptions.ShowCC and TEST_CC_COUNT or 0
-	local defensiveCount = barOptions.ShowDefensives and TEST_DEFENSIVE_COUNT or 0
-	local importantCount = barOptions.ShowImportant and TEST_IMPORTANT_COUNT or 0
-	local ccSlots, defensiveSlots, importantSlots =
-		slotDistribution.Calculate(container.Count, ccCount, defensiveCount, importantCount)
+	local budgets = testBudgetScratch
+	budgets[1], budgets[2], budgets[3] = slotDistribution.Calculate(
+		container.Count,
+		barOptions[TEST_BAR_CATEGORIES[1].Show] and TEST_BAR_CATEGORIES[1].Count or 0,
+		barOptions[TEST_BAR_CATEGORIES[2].Show] and TEST_BAR_CATEGORIES[2].Count or 0,
+		barOptions[TEST_BAR_CATEGORIES[3].Show] and TEST_BAR_CATEGORIES[3].Count or 0
+	)
 
 	local iconsGlow = barOptions.Icons.Glow
 	local iconsReverse = barOptions.Icons.ReverseCooldown
@@ -560,65 +578,25 @@ local function ShowBarTestIcons(container, barOptions, now)
 	local fontScale = db.FontScale
 	local slot = 0
 
-	-- CC test spells first (highest priority)
-	for i = 1, ccSlots do
-		if slot >= container.Count then
-			break
-		end
-		slot = slot + 1
-		local spellId = TEST_CC_NAMEPLATE_SPELL_IDS[i]
-		local tex = C_Spell.GetSpellTexture(spellId)
-		if tex then
-			layerScratch.Texture = tex
-			layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
-			layerScratch.Alpha = true
-			layerScratch.Glow = iconsGlow
-			layerScratch.ReverseCooldown = iconsReverse
-			layerScratch.FontScale = fontScale
-			layerScratch.Color = colorByCategory and TEST_CC_DISPEL_COLORS[spellId] or nil
-			layerScratch.SpellId = showTooltips and spellId or nil
-			container:SetSlot(slot, layerScratch)
-		end
-	end
-
-	-- Defensive test spells (second priority)
-	for i = 1, defensiveSlots do
-		if slot >= container.Count then
-			break
-		end
-		slot = slot + 1
-		local spellId = TEST_DEFENSIVE_NAMEPLATE_SPELL_IDS[i]
-		local tex = C_Spell.GetSpellTexture(spellId)
-		if tex then
-			layerScratch.Texture = tex
-			layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
-			layerScratch.Alpha = true
-			layerScratch.Glow = iconsGlow
-			layerScratch.ReverseCooldown = iconsReverse
-			layerScratch.FontScale = fontScale
-			layerScratch.Color = colorByCategory and DEFENSIVE_COLOR or nil
-			layerScratch.SpellId = showTooltips and spellId or nil
-			container:SetSlot(slot, layerScratch)
-		end
-	end
-
-	for i = 1, importantSlots do
-		if slot >= container.Count then
-			break
-		end
-		slot = slot + 1
-		local spellId = TEST_IMPORTANT_NAMEPLATE_SPELL_IDS[i]
-		local tex = C_Spell.GetSpellTexture(spellId)
-		if tex then
-			layerScratch.Texture = tex
-			layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
-			layerScratch.Alpha = true
-			layerScratch.Glow = iconsGlow
-			layerScratch.ReverseCooldown = iconsReverse
-			layerScratch.FontScale = fontScale
-			layerScratch.Color = colorByCategory and IMPORTANT_COLOR or nil
-			layerScratch.SpellId = showTooltips and spellId or nil
-			container:SetSlot(slot, layerScratch)
+	for index, category in ipairs(TEST_BAR_CATEGORIES) do
+		for i = 1, budgets[index] do
+			if slot >= container.Count then
+				break
+			end
+			slot = slot + 1
+			local spellId = category.Ids[i]
+			local tex = C_Spell.GetSpellTexture(spellId)
+			if tex then
+				layerScratch.Texture = tex
+				layerScratch.DurationObject = wowEx:CreateDuration(now - (i - 1) * 0.5, 15 + (i - 1) * 3)
+				layerScratch.Alpha = true
+				layerScratch.Glow = iconsGlow
+				layerScratch.ReverseCooldown = iconsReverse
+				layerScratch.FontScale = fontScale
+				layerScratch.Color = colorByCategory and (category.Colors and category.Colors[spellId] or category.Color) or nil
+				layerScratch.SpellId = showTooltips and spellId or nil
+				container:SetSlot(slot, layerScratch)
+			end
 		end
 	end
 
@@ -637,13 +615,6 @@ local function ShowDataTestIcons(data, now)
 			ShowBarTestIcons(data[bar.DataField], barOptions, now)
 		end
 	end
-end
-
--- Public surface
-
----@return NameplatesModuleOptions?
-function M:GetOptions()
-	return nmModule
 end
 
 ---Which faction's bar options apply to a token. Friendly units can also be enemies in a duel,
@@ -938,33 +909,14 @@ function M:RefreshAnchorsAndSizes()
 	for _, data in pairs(nameplateAnchors) do
 		if data.Nameplate and data.UnitToken then
 			local unitOptions = self:GetUnitOptions(data.UnitToken)
-			local anchorFrame = GetNameplateAnchorFrame(data.Nameplate)
 
 			-- Both bars are independent; reposition each that exists.
 			for _, bar in ipairs(BARS) do
 				local container = data[bar.DataField]
 				local barOptions = unitOptions[bar.Key]
 				if container then
-					container.Frame:ClearAllPoints()
-
 					if barOptions and barOptions.Enabled then
-						local anchorPoint, relativeToPoint = growAnchors:GetAnchor(barOptions.Grow)
-						container.Frame:SetPoint(
-							anchorPoint,
-							anchorFrame,
-							relativeToPoint,
-							barOptions.Offset.X,
-							barOptions.Offset.Y
-						)
-						container:SetGrowDown(barOptions.Grow == "DOWN")
-						-- Grow LEFT mirrors the slot order so slot 1 (highest priority - e.g. the important
-						-- buffs Blizzard sorts to the front) sits at the rightmost icon, nearest the nameplate.
-						-- RIGHT and DOWN already place slot 1 nearest the anchor.
-						container:SetRows(nil, "CENTER", barOptions.Grow == "LEFT")
-						container:SetIconSize(barOptions.Icons.Size)
-						container:SetSpacing(barOptions.Icons.Spacing or 2)
-						container:SetCount(barOptions.Icons.MaxIcons)
-						container.Frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
+						ApplyContainerLayout(container, data.Nameplate, barOptions)
 
 						-- 12.1: re-apply option changes to the bar's aura display too.
 						if USE_AURA_CONTAINERS then
@@ -972,8 +924,10 @@ function M:RefreshAnchorsAndSizes()
 							local kickActive = barOptions.ShowCC and kickTracker:GetKick(data.UnitToken) ~= nil
 							AnchorBarDisplay(display, container, data.Nameplate, barOptions, kickActive)
 						end
+					else
+						container.Frame:ClearAllPoints()
+						container.Frame:SetIgnoreParentScale(ignoreParentScale)
 					end
-					container.Frame:SetIgnoreParentScale(ignoreParentScale)
 				end
 			end
 		end

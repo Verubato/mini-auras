@@ -162,8 +162,6 @@ local function RebuildNameplateWatchers()
 	end
 end
 
--- Lifecycle
-
 ---@return AlertsModuleOptions?
 local function GetOptions()
 	-- The bars are built in Init; without them there is nothing to configure.
@@ -216,12 +214,22 @@ local function EnsureFrames()
 		ClearNamePlateWatchers()
 	end
 
-	ScheduleAuraDataUpdate()
+	-- TEMPORARY: legacy-only re-render. On 12.1 the containers render themselves and the
+	-- scheduled Render call no-ops; dies with the 12.0 path.
+	if not USE_AURA_CONTAINERS then
+		ScheduleAuraDataUpdate()
+	end
 end
 
 ---@param options AlertsModuleOptions
 local function ApplyOptions(options)
-	sound:ApplyTTSOptions(options)
+	-- TEMPORARY: TTS is legacy-only (it needs the spell name at the moment an aura appears,
+	-- which is secret on 12.1), so skip the voice/volume cache work there; dies with the 12.0
+	-- path.
+	if not USE_AURA_CONTAINERS then
+		sound:ApplyTTSOptions(options)
+	end
+
 	display:ApplyBarOptions(options)
 end
 
@@ -246,7 +254,11 @@ local function SetTestMode(active)
 	else
 		display:ClearBars()
 		SetPaused(false)
-		ScheduleAuraDataUpdate()
+		-- TEMPORARY: legacy-only repopulation from the watchers; the 12.1 containers refresh
+		-- themselves when unpaused. Dies with the 12.0 path.
+		if not USE_AURA_CONTAINERS then
+			ScheduleAuraDataUpdate()
+		end
 	end
 
 	M:Refresh()
@@ -277,7 +289,11 @@ local function CreateEvents()
 	-- ZONE_CHANGED_NEW_AREA drive that gate so they stay always-registered.
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
 	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-	eventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+	-- TEMPORARY: the player's spec only matters to the legacy TTS suppression cache, which is
+	-- dead on 12.1 along with TTS itself. Dies with the 12.0 path.
+	if not USE_AURA_CONTAINERS then
+		eventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+	end
 	plateGate = eventGate:New(eventsFrame, { "NAME_PLATE_UNIT_ADDED", "NAME_PLATE_UNIT_REMOVED" }, {
 		-- Plate events maintain the duel baselines; drop them so reactivation reseeds
 		-- via RebuildNameplateWatchers instead of trusting stale tokens.

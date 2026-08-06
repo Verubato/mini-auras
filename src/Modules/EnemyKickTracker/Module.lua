@@ -124,8 +124,6 @@ local function ShowTestIcons()
 	display:ShowTestKicks(testEntriesScratch)
 end
 
--- Lifecycle
-
 ---@return EnemyKickTrackerModuleOptions?
 local function GetOptions()
 	return db and db.Modules.EnemyKickTrackerModule

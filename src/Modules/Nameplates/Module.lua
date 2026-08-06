@@ -247,8 +247,6 @@ local function ApplyBlizzardNameplateSettings()
 	end
 end
 
--- Lifecycle
-
 ---@return NameplatesModuleOptions?
 local function GetOptions()
 	-- Cached in Init off db.Modules.NameplatesModule.
@@ -352,7 +350,6 @@ local function CreateEvents()
 	plateGate = eventGate:New(eventsFrame, {
 		"NAME_PLATE_UNIT_ADDED",
 		"NAME_PLATE_UNIT_REMOVED",
-		"PLAYER_TARGET_CHANGED",
 	}, {
 		-- Plates that spawned while inactive were never tracked.
 		OnActivate = RebuildContainers,
@@ -375,11 +372,6 @@ local function ApplyInitialState()
 	SetEventsActive(IsEnabled())
 
 	CacheEnabledModes()
-end
-
----Which faction's bar options apply to a token; friendly units can also be enemies in a duel.
-function M:GetUnitOptions(unitToken)
-	return display:GetUnitOptions(unitToken)
 end
 
 function M:StartTesting()

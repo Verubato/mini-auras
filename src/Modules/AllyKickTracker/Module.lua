@@ -240,8 +240,6 @@ local function OnEvent(_, event, unit)
 	ApplyRecords()
 end
 
--- Test mode
-
 local function BuildTestRecords()
 	local now = GetTime()
 
@@ -261,8 +259,6 @@ local function BuildTestRecords()
 	end
 end
 
--- Lifecycle
-
 local function EnsureFrames()
 	if instance then
 		return
@@ -270,25 +266,9 @@ local function EnsureFrames()
 
 	instance = display:New(UIParent, L["Ready"])
 
-	local frame = instance.Frame
-	frame:RegisterForDrag("LeftButton")
-	frame:SetScript("OnDragStart", frame.StartMoving)
-	frame:SetScript("OnDragStop", function(frameSelf)
-		frameSelf:StopMovingOrSizing()
-
-		local options = GetOptions()
-
-		if not options then
-			return
-		end
-
-		local point, movedRelativeTo, relativePoint, x, y = frameSelf:GetPoint()
-		options.Point = point
-		options.RelativePoint = relativePoint
-		options.RelativeTo = (movedRelativeTo and movedRelativeTo:GetName()) or "UIParent"
-		options.Offset.X = x
-		options.Offset.Y = y
-	end)
+	-- Function-form position: a profile switch replaces the options table, so it has to be
+	-- re-read on every drop.
+	moduleUtil:MakeMovable(instance.Frame, GetOptions)
 end
 
 ---@param options AllyKickTrackerModuleOptions
