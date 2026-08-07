@@ -81,7 +81,7 @@ function M:Build(panel)
 
 	local disableSwipeChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["Disable Swipe Animation"],
+		LabelText = L["Disable Swipe"],
 		Tooltip = L["Disables the cooldown swipe (pie chart) animation on all icons. The countdown timer text will still be shown."],
 		GetValue = function()
 			return db.DisableSwipe or false
@@ -96,7 +96,7 @@ function M:Build(panel)
 
 	local fadeWithParentChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["Fade With Parent Frame"],
+		LabelText = L["Fade With Parent"],
 		Tooltip = L["Fades the icons along with the unit frame they're attached to, e.g. dimming when the unit is out of range."],
 		GetValue = function()
 			if db.FadeWithParent == nil then
@@ -123,7 +123,7 @@ function M:Build(panel)
 	if useAuraContainers then
 		local colorCountdownChk = mini:Checkbox({
 			Parent = panel,
-			LabelText = L["Colour Countdown By Time"],
+			LabelText = L["Colour Countdown"],
 			Tooltip = L["Colours the countdown timer text by the time remaining, from white through gold and orange to red as it runs out."],
 			GetValue = function()
 				return db.ColorCountdownByTime or false
