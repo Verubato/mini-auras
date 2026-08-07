@@ -12,9 +12,10 @@ local NONE_LABEL = "(none)"
 local ROW_HEIGHT = 28
 local SPEC_COL_W = 160
 
+-- The payload is deflated CBOR, then Base64.
 local PROFILE_PREFIX    = "!MiniAuras:2!"
--- Strings handed out under the old addon name. Same payload as PROFILE_PREFIX, so only the
--- prefix differs; "!MiniCC!" is older still and carries the whole saved-vars table.
+-- Strings handed out under the old addon name. Same payload but not compressed;
+-- "!MiniCC!" is older still and carries the whole saved-vars table.
 local MINICC_PREFIX     = "!MiniCC:2!"
 local MINICC_V1_PREFIX  = "!MiniCC!"
 local profileIOWindow
@@ -25,15 +26,18 @@ local function ExportCurrentProfile()
 	local profileData = db.Profiles and db.Profiles[db.ActiveProfile]
 	if not profileData then return "" end
 	local serialized = C_EncodingUtil.SerializeCBOR(profileData)
-	local encoded = C_EncodingUtil.EncodeBase64(serialized)
-	return PROFILE_PREFIX .. encoded
+	local compressed = C_EncodingUtil.CompressString(serialized,
+		Enum.CompressionMethod.Deflate, Enum.CompressionLevel.OptimizeForSize)
+	return PROFILE_PREFIX .. C_EncodingUtil.EncodeBase64(compressed)
 end
 
 local function ImportAsProfile(str, name)
 	local encoded
 	local isLegacy = false
+	local compressed = false
 	if str:sub(1, #PROFILE_PREFIX) == PROFILE_PREFIX then
 		encoded = str:sub(#PROFILE_PREFIX + 1)
+		compressed = true
 	elseif str:sub(1, #MINICC_PREFIX) == MINICC_PREFIX then
 		encoded = str:sub(#MINICC_PREFIX + 1)
 	elseif str:sub(1, #MINICC_V1_PREFIX) == MINICC_V1_PREFIX then
@@ -46,6 +50,18 @@ local function ImportAsProfile(str, name)
 	local decoded = C_EncodingUtil.DecodeBase64(encoded)
 	if not decoded or decoded == "" then
 		return false, L["Failed to decode profile string."]
+	end
+
+	if compressed then
+		local inflated
+		local ok, result = pcall(C_EncodingUtil.DecompressString, decoded, Enum.CompressionMethod.Deflate)
+		if ok then inflated = result end
+
+		if not inflated or inflated == "" then
+			return false, L["Profile string is corrupted."]
+		end
+
+		decoded = inflated
 	end
 	local ok, data = pcall(C_EncodingUtil.DeserializeCBOR, decoded)
 	if not ok or type(data) ~= "table" then

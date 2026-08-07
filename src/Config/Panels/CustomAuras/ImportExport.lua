@@ -5,9 +5,10 @@ local L = addon.L
 local groups = addon.Modules.CustomAuras.Groups
 local ui = addon.Config.CustomAurasUI
 -- Every exported string starts with this, so an import can reject a profile string or a bad
--- paste before decoding. The trailing number is the payload schema, checked separately.
+-- paste before decoding. The payload is deflated CBOR, then Base64. The trailing number is
+-- the payload schema, checked separately.
 local IMPORT_PREFIX = "!MiniAuras:Auras:1!"
--- Strings handed out under the old addon name. Same payload, only the prefix differs.
+-- Strings handed out under the old addon name. Same payload but not compressed.
 local MINICC_PREFIX = "!MiniCCAuras:1!"
 local SCHEMA_VERSION = 1
 
@@ -17,8 +18,12 @@ local importWindow
 ---@return string
 local function Encode(list)
 	local payload = { V = SCHEMA_VERSION, Groups = list }
+	local compressed = C_EncodingUtil.CompressString(
+		C_EncodingUtil.SerializeCBOR(payload),
+		Enum.CompressionMethod.Deflate,
+		Enum.CompressionLevel.OptimizeForSize)
 
-	return IMPORT_PREFIX .. C_EncodingUtil.EncodeBase64(C_EncodingUtil.SerializeCBOR(payload))
+	return IMPORT_PREFIX .. C_EncodingUtil.EncodeBase64(compressed)
 end
 
 ---@param text string
@@ -28,8 +33,10 @@ local function Decode(text)
 	text = text:gsub("%s+", "")
 
 	local prefix
+	local compressed = false
 	if text:sub(1, #IMPORT_PREFIX) == IMPORT_PREFIX then
 		prefix = IMPORT_PREFIX
+		compressed = true
 	elseif text:sub(1, #MINICC_PREFIX) == MINICC_PREFIX then
 		prefix = MINICC_PREFIX
 	else
@@ -40,6 +47,18 @@ local function Decode(text)
 
 	if not decoded or decoded == "" then
 		return nil, L["Failed to decode the aura string."]
+	end
+
+	if compressed then
+		local inflated
+		local ok, result = pcall(C_EncodingUtil.DecompressString, decoded, Enum.CompressionMethod.Deflate)
+		if ok then inflated = result end
+
+		if not inflated or inflated == "" then
+			return nil, L["The aura string is corrupted."]
+		end
+
+		decoded = inflated
 	end
 
 	local ok, payload = pcall(C_EncodingUtil.DeserializeCBOR, decoded)
