@@ -46,7 +46,7 @@ L:RegisterLocale("zhTW", {
 	["Enable this module in raids."] = "在地城和M+中啟用此模組。",
 	["Exclude self"] = "排除自己",
 	["Glow icons"] = "圖示發光",
-	["Pandemic highlight"] = "刷新視窗高亮",
+	["Pandemic"] = "刷新視窗",
 	["Highlight an aura during its refresh window, where re-casting adds the remaining time on top. The game decides the window per spell, and only your own re-castable effects have one."] = "在光環的刷新視窗內高亮顯示，此時重新施放會累加剩餘時間。視窗由遊戲依法術決定，只有你自己可刷新的效果才有。",
 	["Colour Countdown"] = "倒數計時著色",
 	["Colours the countdown timer text by the time remaining, from white through gold and orange to red as it runs out."] = "根據剩餘時間為倒數計時文字著色，從白色經金色、橘色漸變為紅色。",

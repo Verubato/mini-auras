@@ -69,7 +69,6 @@ function ui.BuildAppearanceTab(ctx)
 		end,
 	}, settingsControlsRow, 0)
 
-	-- Column 2 is the colour swatch, beside the two things it tints.
 	local checkboxes = {
 		{
 			Column = 0,
@@ -84,21 +83,20 @@ function ui.BuildAppearanceTab(ctx)
 			Set = function(group, value) group.Icons.Border = value end,
 		},
 		{
-			Column = 3,
+			Column = 2,
 			Label = L["Reverse swipe"], Tooltip = L["Reverses the direction of the cooldown swipe animation."],
 			Get = function(group) return group.Icons.ReverseCooldown end,
 			Set = function(group, value) group.Icons.ReverseCooldown = value end,
 		},
 		{
-			Column = 4,
+			Column = 3,
 			Label = L["Show tooltips"], Tooltip = L["Shows a spell tooltip when hovering over an icon."],
 			Get = function(group) return group.Icons.ShowTooltips end,
 			Set = function(group, value) group.Icons.ShowTooltips = value end,
 		},
 		{
-			Column = 0,
-			Row = checkRow2,
-			Label = L["Pandemic highlight"],
+			Column = 4,
+			Label = L["Pandemic"],
 			Tooltip = L["Highlight an aura during its refresh window, where re-casting adds the remaining time on top. The game decides the window per spell, and only your own re-castable effects have one."],
 			Get = function(group) return group.Icons.Pandemic end,
 			Set = function(group, value) group.Icons.Pandemic = value end,
@@ -123,7 +121,7 @@ function ui.BuildAppearanceTab(ctx)
 				end
 			end,
 		})
-		check:SetPoint("TOPLEFT", spec.Row or checkRow, "TOPLEFT", checkColumn * spec.Column, 0)
+		check:SetPoint("TOPLEFT", checkRow, "TOPLEFT", checkColumn * spec.Column, 0)
 	end
 
 	local swatch = mini:ColorSwatch({
@@ -147,7 +145,7 @@ function ui.BuildAppearanceTab(ctx)
 		end,
 	})
 	-- Centred: the swatch is shorter than a checkbox and would otherwise sit high.
-	swatch:SetPoint("TOPLEFT", checkRow, "TOPLEFT", checkColumn * 2,
+	swatch:SetPoint("TOPLEFT", checkRow2, "TOPLEFT", 0,
 		-math.floor((CHECK_ROW_HEIGHT - swatch:GetHeight()) / 2))
 
 	---@param label string

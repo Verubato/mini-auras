@@ -46,7 +46,7 @@ L:RegisterLocale("deDE", {
 	["Enable this module in raids."] = "Aktiviere dieses Modul in Dungeons und M+.",
 	["Exclude self"] = "Selbst ausschließen",
 	["Glow icons"] = "Symbole leuchten",
-	["Pandemic highlight"] = "Pandemie-Hervorhebung",
+	["Pandemic"] = "Pandemie",
 	["Highlight an aura during its refresh window, where re-casting adds the remaining time on top. The game decides the window per spell, and only your own re-castable effects have one."] = "Hebt eine Aura während ihres Auffrischfensters hervor, in dem erneutes Wirken die Restzeit oben drauf addiert. Das Spiel bestimmt das Fenster pro Zauber, und nur eigene, auffrischbare Effekte haben eines.",
 	["Colour Countdown"] = "Countdown färben",
 	["Colours the countdown timer text by the time remaining, from white through gold and orange to red as it runs out."] = "Färbt den Countdown-Text nach verbleibender Zeit, von Weiß über Gold und Orange bis Rot, wenn sie abläuft.",
