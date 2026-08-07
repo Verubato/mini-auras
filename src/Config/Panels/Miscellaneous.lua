@@ -16,7 +16,9 @@ function M:Build(panel)
 	local columnWidth = mini:ColumnWidth(columns, 0, 0)
 	-- Shared 5-column checkbox grid so checkbox rows align across pages. The long labels on
 	-- this page sit two grid columns apart so they never overlap.
-	local checkColumnWidth = mini:ColumnWidth(5, 0, 0)
+	-- Four columns rather than five: the three icon toggles sit in consecutive columns, and a
+	-- fifth of the panel is too narrow for the longest translated label.
+	local checkColumnWidth = mini:ColumnWidth(4, 0, 0)
 
 	local generalDivider = mini:Divider({
 		Parent = panel,
@@ -110,7 +112,7 @@ function M:Build(panel)
 		end,
 	})
 
-	fadeWithParentChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+	fadeWithParentChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
 	fadeWithParentChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
 
 	-- Glow Type: on 12.1 aura icons render as AuraButtons, which LibCustomGlow can't attach to,
@@ -134,7 +136,7 @@ function M:Build(panel)
 			end,
 		})
 
-		colorCountdownChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 4, 0)
+		colorCountdownChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
 		colorCountdownChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
 	end
 
