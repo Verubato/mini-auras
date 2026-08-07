@@ -98,7 +98,8 @@ function M:Build(panel, options)
 		Parent = panel,
 		RefreshOn = panel,
 		Media = barTextures,
-		Width = 160,
+		-- Two columns: texture names are long and the row has nothing to its right.
+		Width = columnWidth * 2,
 		GetValue = function()
 			return options.Bars.Texture or barTextures:GetDefaultName()
 		end,
