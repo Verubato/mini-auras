@@ -174,11 +174,12 @@ L:RegisterLocale("ptBR", {
 	["Show on pet unit frame"] = "Mostrar no painel de pet",
 	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "Mostra também ícones de controle ao lado do painel de unidade do seu próprio pet (Blizzard ou addons de painéis compatíveis), além dos painéis de pet de grupo/raide.",
 	["Exclude yourself from showing CC icons."] = "Exclua-se de mostrar ícones de controle.",
-	["Pet Frames"] = "Painéis de pet",
+	["Pet CC"] = "Controle de pets",
 	["Raids/Battlegrounds"] = "Raides/Campos de batalha",
 	["World/Arena/Dungeons"] = "Mundo/Arena/Masmorras",
 	["Show a glow around the CC icons."] = "Mostra um brilho ao redor dos ícones de controle.",
 	["Shows CC icons on party/raid frames."] = "Mostra ícones de controle em quadros de grupo/raide.",
+	["Shows CC icons on party/raid pet frames."] = "Mostra ícones de controle em painéis de pet de grupo/raide.",
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Auras dos quadros de raide",

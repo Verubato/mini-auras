@@ -174,11 +174,12 @@ L:RegisterLocale("frFR", {
 	["Show on pet unit frame"] = "Afficher sur le cadre du familier",
 	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "Affiche également des icônes de CC à côté du cadre d'unité de votre propre familier (Blizzard ou addons de cadres compatibles), en plus des cadres de familier de groupe/raid.",
 	["Exclude yourself from showing CC icons."] = "Ne pas afficher les icônes de CC sur vous-même.",
-	["Pet Frames"] = "Cadres des familiers",
+	["Pet CC"] = "CC des familiers",
 	["Raids/Battlegrounds"] = "Raids/BG",
 	["World/Arena/Dungeons"] = "Monde/Arène/Donjons",
 	["Show a glow around the CC icons."] = "Affiche une lueur autour des icônes de CC.",
 	["Shows CC icons on party/raid frames."] = "Affiche les icônes de CC sur les cadres de groupe/raid.",
+	["Shows CC icons on party/raid pet frames."] = "Affiche les icônes de CC sur les cadres des familiers de groupe/raid.",
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Auras des cadres de raid",

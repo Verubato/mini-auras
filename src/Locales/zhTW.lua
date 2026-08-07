@@ -174,11 +174,12 @@ L:RegisterLocale("zhTW", {
 	["Show on pet unit frame"] = "在寵物單位框架上顯示",
 	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "除隊伍/團隊寵物框架外，同時在你自己寵物的單位框架（暴雪或支援的單位框架插件）旁顯示控制圖示。",
 	["Exclude yourself from showing CC icons."] = "將自己從顯示控制圖示中排除。",
-	["Pet Frames"] = "寵物框架",
+	["Pet CC"] = "寵物控制",
 	["Raids/Battlegrounds"] = "團隊/戰場",
 	["World/Arena/Dungeons"] = "世界/競技場/地城",
 	["Show a glow around the CC icons."] = "在控制圖示周圍顯示發光。",
 	["Shows CC icons on party/raid frames."] = "在隊伍/團隊框架上顯示控制圖示。",
+	["Shows CC icons on party/raid pet frames."] = "在隊伍/團隊寵物框架上顯示控制圖示。",
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "團隊框架光環",

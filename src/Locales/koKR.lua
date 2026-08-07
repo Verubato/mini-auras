@@ -174,11 +174,12 @@ L:RegisterLocale("koKR", {
 	["Show on pet unit frame"] = "펫 유닛 프레임에 표시",
 	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "파티/공격대 펫 프레임에 더해, 자신의 펫 유닛 프레임(Blizzard 또는 지원되는 유닛 프레임 애드온) 옆에도 군중 제어 아이콘을 표시합니다.",
 	["Exclude yourself from showing CC icons."] = "군중 제어 아이콘 표시에서 자신을 제외합니다.",
-	["Pet Frames"] = "펫 프레임",
+	["Pet CC"] = "펫 군중 제어",
 	["Raids/Battlegrounds"] = "공격대/전장",
 	["World/Arena/Dungeons"] = "야외/투기장/던전",
 	["Show a glow around the CC icons."] = "군중 제어 아이콘 주위에 발광을 표시합니다.",
 	["Shows CC icons on party/raid frames."] = "파티/공격대 프레임에 군중 제어 아이콘을 표시합니다.",
+	["Shows CC icons on party/raid pet frames."] = "파티/공격대 펫 프레임에 군중 제어 아이콘을 표시합니다.",
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "공격대 프레임 오라",

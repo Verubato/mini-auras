@@ -174,11 +174,12 @@ L:RegisterLocale("deDE", {
 	["Show on pet unit frame"] = "Am Begleiterrahmen anzeigen",
 	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "Zeige Massenkontroll-Symbole auch neben dem Einheitenrahmen deines eigenen Begleiters (Blizzard oder unterstützte Einheitenrahmen-Addons), zusätzlich zu den Gruppen-/Schlachtzugs-Begleiterrahmen.",
 	["Exclude yourself from showing CC icons."] = "Schließe dich selbst vom Anzeigen von Massenkontroll-Symbolen aus.",
-	["Pet Frames"] = "Begleiterrahmen",
+	["Pet CC"] = "Begleiter-CC",
 	["Raids/Battlegrounds"] = "Raids/Schlachtfelder",
 	["World/Arena/Dungeons"] = "Welt/Arena/Dungeons",
 	["Show a glow around the CC icons."] = "Zeige ein Leuchten um die Massenkontroll-Symbole.",
 	["Shows CC icons on party/raid frames."] = "Zeigt Massenkontroll-Symbole auf Gruppen-/Schlachtzugs-Rahmen.",
+	["Shows CC icons on party/raid pet frames."] = "Zeigt Massenkontroll-Symbole auf Gruppen-/Schlachtzugs-Begleiterrahmen.",
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Schlachtzugsrahmen-Auren",

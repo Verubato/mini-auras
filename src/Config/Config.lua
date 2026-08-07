@@ -190,6 +190,15 @@ function M:Init()
 			end,
 		},
 		{
+			Key = "PetCC",
+			Title = L["Pet CC"],
+			-- The stable's wolf pet family icon, so the tab reads as "pets" at sidebar size.
+			Icon = "Interface\\Icons\\Ability_Hunter_Pet_Wolf",
+			Build = function(content)
+				M.PetCrowdControl:Build(content)
+			end,
+		},
+		{
 			Key = "FriendlyCooldowns",
 			Title = L["Friendly Cooldowns_Short"] or L["Friendly Cooldowns"],
 			Icon = "Interface\\Icons\\Spell_Holy_GuardianSpirit",
@@ -441,6 +450,7 @@ end
 ---@field General GeneralConfig
 ---@field Portraits PortraitsConfig
 ---@field CrowdControl CrowdControlConfig
+---@field PetCrowdControl PetCrowdControlConfig
 ---@field Healer HealerCrowdControlConfig
 ---@field Alerts AlertsConfig
 ---@field Nameplates NameplatesConfig

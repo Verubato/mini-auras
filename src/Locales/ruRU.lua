@@ -174,11 +174,12 @@ L:RegisterLocale("ruRU", {
 	["Show on pet unit frame"] = "Показывать на рамке питомца",
 	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "Также показывать иконки контроля рядом с рамкой вашего собственного питомца (Blizzard или поддерживаемые аддоны рамок), в дополнение к рамкам питомцев группы/рейда.",
 	["Exclude yourself from showing CC icons."] = "Исключить себя из отображения иконок контроля.",
-	["Pet Frames"] = "Рамки питомцев",
+	["Pet CC"] = "Контроль питомцев",
 	["Raids/Battlegrounds"] = "Рейды/Поля боя",
 	["World/Arena/Dungeons"] = "Мир/Арена/Подземелья",
 	["Show a glow around the CC icons."] = "Показывать свечение вокруг иконок контроля.",
 	["Shows CC icons on party/raid frames."] = "Показывает иконки контроля на рамках группы/рейда.",
+	["Shows CC icons on party/raid pet frames."] = "Показывает иконки контроля на рамках питомцев группы/рейда.",
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Ауры рамок рейда",

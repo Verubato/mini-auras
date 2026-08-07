@@ -175,11 +175,12 @@ L:SetDefaultStrings({
 	["Show on pet unit frame"] = "Show on pet unit frame",
 	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames.",
 	["Exclude yourself from showing CC icons."] = "Exclude yourself from showing CC icons.",
-	["Pet Frames"] = "Pet Frames",
+	["Pet CC"] = "Pet CC",
 	["Raids/Battlegrounds"] = "Raids/Battlegrounds",
 	["World/Arena/Dungeons"] = "World/Arena/Dungeons",
 	["Show a glow around the CC icons."] = "Show a glow around the CC icons.",
 	["Shows CC icons on party/raid frames."] = "Shows CC icons on party/raid frames.",
+	["Shows CC icons on party/raid pet frames."] = "Shows CC icons on party/raid pet frames.",
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Raid Frame Auras",

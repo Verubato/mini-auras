@@ -74,9 +74,11 @@ local function OnEvent(_, event)
 		if migrator:RunDeferredMigrations(db) then
 			local tabController = addon.Config.TabController
 			if tabController then
-				local ccPanel = tabController:GetContent("CC")
-				if ccPanel and ccPanel.MiniRefresh then
-					ccPanel:MiniRefresh()
+				for _, key in ipairs({ "CC", "PetCC" }) do
+					local ccPanel = tabController:GetContent(key)
+					if ccPanel and ccPanel.MiniRefresh then
+						ccPanel:MiniRefresh()
+					end
 				end
 			end
 		end

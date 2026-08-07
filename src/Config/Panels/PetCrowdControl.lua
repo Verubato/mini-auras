@@ -13,36 +13,39 @@ local GROW_OPTIONS = {
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local COLUMNS = 4
+-- The CC sub-panel height plus the Settings divider this page adds above the controls.
+local SUB_PANEL_HEIGHT = 380
 local columnWidth
 local enabledColumnWidth
 local config = addon.Config
 local helpers = addon.Config.PanelHelpers
 
----@class CrowdControlConfig
+---@class PetCrowdControlConfig
 local M = {}
 
-config.CrowdControl = M
+config.PetCrowdControl = M
 
 ---@param panel table
----@param options CrowdControlInstanceOptions
-local function BuildInstance(panel, options)
+---@param options PetCrowdControlModuleOptions
+local function BuildPetInstance(panel, options)
 	local parent = CreateFrame("Frame", nil, panel)
 	local sliderWidth = columnWidth * 2 - horizontalSpacing
 
-	local excludePlayerChk = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Exclude self"],
-		Tooltip = L["Exclude yourself from showing CC icons."],
-		GetValue = function()
-			return options.ExcludePlayer
-		end,
-		SetValue = function(value)
-			options.ExcludePlayer = value
-			addon:Refresh()
-		end,
+	local petEnabledEverywhere = helpers:BuildEnableRow(parent, nil, options.Enabled, {
+		World = L["Enable pet frame CC in the open world."],
+		Arena = L["Enable pet frame CC in arena."],
+		BattleGrounds = L["Enable pet frame CC in battlegrounds."],
+		Dungeons = L["Enable pet frame CC in dungeons."],
+		Raid = L["Enable pet frame CC in raids."],
 	})
 
-	excludePlayerChk:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+	local settingsDivider = mini:Divider({
+		Parent = parent,
+		Text = L["Settings"],
+	})
+	settingsDivider:SetPoint("LEFT", parent, "LEFT")
+	settingsDivider:SetPoint("RIGHT", parent, "RIGHT")
+	settingsDivider:SetPoint("TOP", petEnabledEverywhere, "BOTTOM", 0, -verticalSpacing)
 
 	local glowChk = mini:Checkbox({
 		Parent = parent,
@@ -57,8 +60,7 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	glowChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
-	glowChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
+	glowChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local dispelColoursChk = mini:Checkbox({
 		Parent = parent,
@@ -73,8 +75,8 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
-	dispelColoursChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
+	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
+	dispelColoursChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local reverseChk = mini:Checkbox({
 		Parent = parent,
@@ -89,8 +91,8 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
-	reverseChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
+	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
+	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local showTooltipsChk = mini:Checkbox({
 		Parent = parent,
@@ -105,34 +107,34 @@ local function BuildInstance(panel, options)
 		end,
 	})
 
-	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
-	showTooltipsChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
-
-	local showMillisChk = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Milliseconds"],
-		Tooltip = L["Show decimal milliseconds on the cooldown timer when below the configured threshold."],
-		GetValue = function()
-			return options.Icons.ShowMilliseconds == true
-		end,
-		SetValue = function(value)
-			options.Icons.ShowMilliseconds = value
-			config:Apply()
-		end,
-	})
-
-	showMillisChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	showTooltipsChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
+	showTooltipsChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local size = helpers:BuildSizeControls({
 		Parent = parent,
 		Icons = options.Icons,
-		PixelDefault = 32,
-		PercentDefault = 80,
+		PixelDefault = 24,
+		PercentDefault = 50,
 		Width = sliderWidth,
 	})
 
-	size.Checkbox:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
-	size.Checkbox:SetPoint("TOP", showMillisChk, "TOP", 0, 0)
+	size.Checkbox:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 4, 0)
+	size.Checkbox:SetPoint("TOP", glowChk, "TOP", 0, 0)
+
+	local includePetFrameChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Show on pet unit frame"],
+		Tooltip = L["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."],
+		GetValue = function()
+			return options.IncludePetFrame == true
+		end,
+		SetValue = function(value)
+			options.IncludePetFrame = value
+			config:Apply()
+		end,
+	})
+
+	includePetFrameChk:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local growDdl = helpers:BuildGrowDropdown({
 		Parent = parent,
@@ -142,7 +144,7 @@ local function BuildInstance(panel, options)
 		Width = DROPDOWN_WIDTH,
 	})
 
-	growDdl.Label:SetPoint("TOPLEFT", showMillisChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
+	growDdl.Label:SetPoint("TOPLEFT", includePetFrameChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
 	size.Pixel.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
@@ -152,7 +154,7 @@ local function BuildInstance(panel, options)
 		Min = 1,
 		Max = 5,
 		Default = 3,
-		Fallback = 5,
+		Fallback = 3,
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "Count",
@@ -186,9 +188,7 @@ local function BuildInstance(panel, options)
 end
 
 ---@param panel table
----@param default CrowdControlInstanceOptions
----@param raid CrowdControlInstanceOptions
-function M:Build(panel, default, raid)
+function M:Build(panel)
 	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
 	-- Shared 5-column checkbox grid: the Enable-in row and settings checkbox rows all sit on
 	-- the same vertical lines.
@@ -198,7 +198,7 @@ function M:Build(panel, default, raid)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			L["Shows CC icons on party/raid frames."],
+			L["Shows CC icons on party/raid pet frames."],
 		},
 	})
 
@@ -212,51 +212,13 @@ function M:Build(panel, default, raid)
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
-	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.CCModule.Enabled)
+	local petPanel = BuildPetInstance(panel, db.Modules.PetCCModule)
+	petPanel:SetPoint("TOPLEFT", enabledDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+	petPanel:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, 0)
+	petPanel:SetHeight(SUB_PANEL_HEIGHT)
 
-	local subPanelHeight = 340
-	local tabContainer = CreateFrame("Frame", nil, panel)
-	tabContainer:SetPoint("TOPLEFT",  enabledEverywhere, "BOTTOMLEFT",  0, -verticalSpacing)
-	tabContainer:SetPoint("TOPRIGHT", panel,             "TOPRIGHT",    0, 0)
-	tabContainer:SetHeight(subPanelHeight + 34)
-
-	local tabIsRaid = { default = false, raid = true }
-
-	local tabCtrl = mini:CreateTabs({
-		Parent = tabContainer,
-		TabHeight = 28,
-		StripHeight = 34,
-		TabFitToParent = true,
-		ContentInsets = { Top = verticalSpacing },
-		Tabs = {
-			{ Key = "default", Title = L["World/Arena/Dungeons"] },
-			{ Key = "raid",    Title = L["Raids/Battlegrounds"] },
-		},
-		OnTabChanged = function(key)
-			local isRaid = tabIsRaid[key]
-			if isRaid ~= nil then
-				addon.CurrentTestIsRaid = isRaid
-				if addon:IsTestActive() then
-					addon:TestWithOptions(isRaid)
-				end
-			end
-		end,
-	})
-
-	local defaultContent = tabCtrl:GetContent("default")
-	local defaultPanel = BuildInstance(defaultContent, default)
-	defaultPanel:SetPoint("TOPLEFT",  defaultContent, "TOPLEFT",  0, 0)
-	defaultPanel:SetPoint("TOPRIGHT", defaultContent, "TOPRIGHT", 0, 0)
-	defaultPanel:SetHeight(subPanelHeight)
-
-	local raidContent = tabCtrl:GetContent("raid")
-	local raidPanel = BuildInstance(raidContent, raid)
-	raidPanel:SetPoint("TOPLEFT",  raidContent, "TOPLEFT",  0, 0)
-	raidPanel:SetPoint("TOPRIGHT", raidContent, "TOPRIGHT", 0, 0)
-	raidPanel:SetHeight(subPanelHeight)
-
-	panel.OnMiniRefresh = function()
-		defaultPanel:MiniRefresh()
-		raidPanel:MiniRefresh()
+	-- The controls all live on the inner instance frame, so the page forwards its refresh.
+	panel.MiniRefresh = function()
+		petPanel:MiniRefresh()
 	end
 end

@@ -175,11 +175,12 @@ L:RegisterLocale("esMX", {
 	["Show on pet unit frame"] = "Mostrar en el marco de mascota",
 	["Also show a CC icon container next to your own pet's unit frame (Blizzard or supported unit-frame addons), in addition to the party/raid pet frames."] = "Muestra también iconos de control junto al marco de unidad de tu propia mascota (Blizzard o addons de marcos compatibles), además de en los marcos de mascota de grupo/banda.",
 	["Exclude yourself from showing CC icons."] = "Exclúyete de mostrar iconos de control.",
-	["Pet Frames"] = "Marcos de mascota",
+	["Pet CC"] = "Control de mascotas",
 	["Raids/Battlegrounds"] = "Bandas/Campos de batalla",
 	["World/Arena/Dungeons"] = "Mundo/Arena/Mazmorras",
 	["Show a glow around the CC icons."] = "Muestra un brillo alrededor de los iconos de control.",
 	["Shows CC icons on party/raid frames."] = "Muestra iconos de control en marcos de grupo/banda.",
+	["Shows CC icons on party/raid pet frames."] = "Muestra iconos de control en marcos de mascota de grupo/banda.",
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Auras de marcos de banda",

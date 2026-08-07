@@ -147,6 +147,7 @@ Config\PanelHelpers.lua
 Config\Panels\General.lua
 Config\Panels\Portraits.lua
 Config\Panels\CrowdControl.lua
+Config\Panels\PetCrowdControl.lua
 Config\Panels\Healer.lua
 Config\Panels\Alerts.lua
 Config\Panels\Nameplates.lua
