@@ -47,6 +47,8 @@ local editModePreviewActive = false
 local displayEventsFrame = nil
 local pendingRestyleCount = 0
 local restyleTicker = nil
+local pendingBounceCount = 0
+local bounceFlushScheduled = false
 
 -- 12.1 AuraContainer-backed icon display. One instance wraps a CreateFrame("AuraContainer")
 -- with one or more aura groups and styles the container-created AuraButtons to match the legacy
@@ -166,6 +168,52 @@ local function SetRestylePending(instance, pending)
 	end
 end
 
+-- Changes pushed from addon context (SetUnit, budgets, filters, sort) set the container's dirty
+-- flags but cannot arm the secure-side processor that consumes them, so they sit parked until the
+-- unit's next aura event - a retargeted container keeps showing the old unit's auras, a budget
+-- flip lands late, and UpdateAllAuras is just another mark. Hiding and showing the container is
+-- the one addon-side action that re-arms it: the intrinsic OnShow runs in secure context and
+-- issues a full refresh. The bounce is invisible (no render between the two calls) and coalesced
+-- to one per display per frame, because a configure pass calls several setters in a row. In
+-- combat the flags are left parked instead: aura events are frequent enough there to settle
+-- them, and the pending bounce is flushed on the regen event either way.
+
+local function FlushPendingBounces()
+	bounceFlushScheduled = false
+
+	if pendingBounceCount == 0 or InCombatLockdown() then
+		return
+	end
+
+	pendingBounceCount = 0
+
+	for _, instance in ipairs(liveDisplays) do
+		if instance.BouncePending then
+			instance.BouncePending = false
+			local frame = instance.Frame
+
+			-- A hidden frame needs no bounce: the OnShow on its way back arms the processor.
+			if frame:IsShown() then
+				frame:Hide()
+				frame:Show()
+			end
+		end
+	end
+end
+
+---@param instance AuraContainerDisplay
+local function MarkBouncePending(instance)
+	if not instance.BouncePending then
+		instance.BouncePending = true
+		pendingBounceCount = pendingBounceCount + 1
+	end
+
+	if not bounceFlushScheduled then
+		bounceFlushScheduled = true
+		C_Timer.After(0, FlushPendingBounces)
+	end
+end
+
 -- Blizzard force-feeds every AuraContainer a fake data provider while Edit Mode is open, so
 -- our containers fill up with placeholder auras ("Poison 1", "Buff 1", ... with random spellbook
 -- icons) that have nothing to do with the tracked unit. There is no opt-out: the container
@@ -218,6 +266,7 @@ local function EnsureDisplayEvents()
 			OnAuraDataProviderSwitch(useRealDataProvider)
 		else
 			FlushPendingRestyles()
+			FlushPendingBounces()
 		end
 	end)
 end
@@ -638,12 +687,21 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 		})
 	end
 
+	-- The frame was shown before its groups existed, so the arming OnShow has already fired;
+	-- bounce once so the initial parse doesn't wait for the unit's first aura event.
+	MarkBouncePending(instance)
+
 	return instance
 end
 
 ---@param unit string
 function M:SetUnit(unit)
+	if self.Frame:GetUnit() == unit then
+		return
+	end
+
 	self.Frame:SetUnit(unit)
+	MarkBouncePending(self)
 end
 
 ---@return string
@@ -654,7 +712,18 @@ end
 ---Enables or disables aura tracking (disabled containers unregister their events).
 ---@param enabled boolean
 function M:SetEnabled(enabled)
+	enabled = enabled == true
+
+	if self.Enabled == enabled then
+		return
+	end
+
+	self.Enabled = enabled
 	self.Frame:SetEnabled(enabled)
+
+	if enabled then
+		MarkBouncePending(self)
+	end
 end
 
 ---Shows or hides the display. Always use this instead of touching Frame:SetShown directly, so
@@ -760,6 +829,7 @@ function M:SetCandidateFilters(groupKey, filters)
 	end
 
 	self.Frame:SetAuraGroupCandidateFilters(groupKey, filters)
+	MarkBouncePending(self)
 end
 
 ---Sets a group's icon budget. A value of 0 hides the group entirely (used for per-category
@@ -786,6 +856,7 @@ function M:SetMaxIcons(groupKey, maxIcons)
 
 	group.MaxIcons = maxIcons
 	self.Frame:SetAuraGroupMaxFrameCount(groupKey, maxIcons)
+	MarkBouncePending(self)
 end
 
 ---Swaps a group's filter string. Supported at runtime by the engine, which re-parses on the
@@ -798,6 +869,7 @@ function M:SetFilterString(groupKey, filterString)
 	end
 
 	self.Frame:SetAuraGroupFilterString(groupKey, filterString)
+	MarkBouncePending(self)
 end
 
 ---@param groupKey string
@@ -809,6 +881,7 @@ function M:SetSortMethod(groupKey, method, direction)
 	end
 
 	self.Frame:SetAuraGroupSortMethod(groupKey, method, direction)
+	MarkBouncePending(self)
 end
 
 ---@param grow string "LEFT"|"RIGHT"|"CENTER"|"UP"|"DOWN"
