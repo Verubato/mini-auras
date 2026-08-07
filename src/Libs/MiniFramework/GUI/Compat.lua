@@ -80,9 +80,9 @@ local function ResolveGradientTier(texture)
 	return 0
 end
 
-local function SetGradient(texture, orientation, r1, g1, b1, a1, r2, g2, b2, a2)
-	GUI.SetSolid(texture, 1, 1, 1, 1)
-
+---Writes gradient vertex colors without touching the texture's image, so it also works on a
+---shaped texture file (the toggle pill), not just a solid fill.
+local function ApplyGradient(texture, orientation, r1, g1, b1, a1, r2, g2, b2, a2)
 	if not gradientTier then
 		gradientTier = ResolveGradientTier(texture)
 	end
@@ -93,8 +93,13 @@ local function SetGradient(texture, orientation, r1, g1, b1, a1, r2, g2, b2, a2)
 		texture:SetGradientAlpha(orientation, r1, g1, b1, a1, r2, g2, b2, a2)
 	else
 		-- No gradient support at all - average the two stops so the element stays visible.
-		GUI.SetSolid(texture, (r1 + r2) / 2, (g1 + g2) / 2, (b1 + b2) / 2, (a1 + a2) / 2)
+		texture:SetVertexColor((r1 + r2) / 2, (g1 + g2) / 2, (b1 + b2) / 2, (a1 + a2) / 2)
 	end
+end
+
+local function SetGradient(texture, orientation, r1, g1, b1, a1, r2, g2, b2, a2)
+	GUI.SetSolid(texture, 1, 1, 1, 1)
+	ApplyGradient(texture, orientation, r1, g1, b1, a1, r2, g2, b2, a2)
 end
 
 ---Turns a texture into a horizontal gradient (first color left, second right).
@@ -105,6 +110,11 @@ end
 ---Turns a texture into a vertical gradient (first color bottom, second top).
 function GUI.SetGradientV(texture, r1, g1, b1, a1, r2, g2, b2, a2)
 	SetGradient(texture, "VERTICAL", r1, g1, b1, a1, r2, g2, b2, a2)
+end
+
+---Tints a texture's existing image with a horizontal gradient, keeping the image's shape.
+function GUI.TintGradientH(texture, r1, g1, b1, a1, r2, g2, b2, a2)
+	ApplyGradient(texture, "HORIZONTAL", r1, g1, b1, a1, r2, g2, b2, a2)
 end
 
 ---Returns the label font string of a UICheckButtonTemplate. Retail exposes .Text, older
