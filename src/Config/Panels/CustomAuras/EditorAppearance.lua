@@ -148,6 +148,29 @@ function ui.BuildAppearanceTab(ctx)
 	swatch:SetPoint("TOPLEFT", checkRow2, "TOPLEFT", 0,
 		-math.floor((CHECK_ROW_HEIGHT - swatch:GetHeight()) / 2))
 
+	local pandemicSwatch = mini:ColorSwatch({
+		Parent = appearancePanel,
+		LabelText = L["Pandemic colour"],
+		Tooltip = L["Change the colour of the pandemic ring."],
+		HasOpacity = false,
+		GetValue = function()
+			local group = ui.Current()
+			local color = group and group.Icons.PandemicColor or {}
+			return color.R or 1, color.G or 0.6, color.B or 0.1, 1
+		end,
+		SetValue = function(r, g, b)
+			local group = ui.Current()
+
+			if group then
+				local color = group.Icons.PandemicColor
+				color.R, color.G, color.B = r, g, b
+				ui.Apply()
+			end
+		end,
+	})
+	pandemicSwatch:SetPoint("TOPLEFT", checkRow2, "TOPLEFT", checkColumn,
+		-math.floor((CHECK_ROW_HEIGHT - pandemicSwatch:GetHeight()) / 2))
+
 	---@param label string
 	---@param minimum number
 	---@param maximum number

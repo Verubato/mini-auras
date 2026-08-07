@@ -780,6 +780,13 @@ fw.describe("AuraContainerDisplay - per-display button options", function()
 
 		instance:SetStyle({ Pandemic = true })
 		assert(widgets.Pandemic.Ring._lastArgs.SetAlpha[1] == 1, "the style toggle reveals the ring")
+
+		local tint = widgets.Pandemic.Ring._lastArgs.SetVertexColor
+		assert(tint[1] == 1 and tint[2] == 0.6 and tint[3] == 0.1, "unset colour keeps the amber")
+
+		instance:SetStyle({ Pandemic = true, PandemicColor = { 0.2, 0.4, 0.8 } })
+		tint = widgets.Pandemic.Ring._lastArgs.SetVertexColor
+		assert(tint[1] == 0.2 and tint[2] == 0.4 and tint[3] == 0.8, "the style colour tints the ring")
 	end)
 
 	fw.it("a display without the Pandemic option registers no regions", function()

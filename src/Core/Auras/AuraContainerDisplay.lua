@@ -372,6 +372,10 @@ local function StoreStyle(instance, style)
 	local glowStyleName = GetGlowStyleName()
 	local color = style.GlowColor
 	local colorR, colorG, colorB = color and color[1], color and color[2], color and color[3]
+	local pandemic = style.PandemicColor
+	local pandemicR = pandemic and pandemic[1]
+	local pandemicG = pandemic and pandemic[2]
+	local pandemicB = pandemic and pandemic[3]
 
 	local changed = not stored.Populated
 		or stored.DisableSwipe ~= disableSwipe
@@ -381,6 +385,9 @@ local function StoreStyle(instance, style)
 		or stored.GlowColorR ~= colorR
 		or stored.GlowColorG ~= colorG
 		or stored.GlowColorB ~= colorB
+		or stored.PandemicColorR ~= pandemicR
+		or stored.PandemicColorG ~= pandemicG
+		or stored.PandemicColorB ~= pandemicB
 
 	if not changed then
 		for _, field in ipairs(STYLE_FIELDS) do
@@ -406,6 +413,9 @@ local function StoreStyle(instance, style)
 	stored.GlowColorR = colorR
 	stored.GlowColorG = colorG
 	stored.GlowColorB = colorB
+	stored.PandemicColorR = pandemicR
+	stored.PandemicColorG = pandemicG
+	stored.PandemicColorB = pandemicB
 	stored.Populated = true
 
 	return true
@@ -580,6 +590,12 @@ local function StyleButton(instance, button)
 	local pandemic = widgets.Pandemic
 	if pandemic then
 		pandemic.Ring:SetAlpha(style.Pandemic and 1 or 0)
+		pandemic.Ring:SetVertexColor(
+			style.PandemicColorR or PANDEMIC_COLOR[1],
+			style.PandemicColorG or PANDEMIC_COLOR[2],
+			style.PandemicColorB or PANDEMIC_COLOR[3],
+			1
+		)
 	end
 
 	-- Tooltips (and click-to-cancel, which we never register) require mouse input.
@@ -1058,6 +1074,7 @@ function M:GetStyleScratch()
 		styleScratch[field] = nil
 	end
 	styleScratch.GlowColor = nil
+	styleScratch.PandemicColor = nil
 
 	return styleScratch
 end
@@ -1113,8 +1130,9 @@ function M:GetStyleSignature(style, size, spacing)
 	parts[n + 3] = tostring(db and db.MillisecondsThreshold)
 	parts[n + 4] = GetGlowStyleName()
 	parts[n + 5] = tostring(db and db.ColorCountdownByTime)
+	parts[n + 6] = tostring(style.PandemicColor and table.concat(style.PandemicColor, ","))
 
-	return table.concat(parts, ":", 1, n + 5)
+	return table.concat(parts, ":", 1, n + 6)
 end
 
 ---Stores the per-button style and applies it to existing buttons when possible. Skipped
@@ -1202,6 +1220,8 @@ end
 ---@field Stacks boolean? Show the engine-written application count in the icon's corner.
 ---@field Pandemic boolean? Reveal the engine-driven refresh-window ring. Only displays created
 ---with the Pandemic option carry the regions; elsewhere this field is inert.
+---@field PandemicColor number[]? {r, g, b} tint for the pandemic ring; unset keeps the built-in
+---amber. Copied component-wise like GlowColor, so callers may pass a reused scratch.
 ---Resolved from the global db by StoreStyle; callers never set these.
 ---@field DisableSwipe boolean?
 ---@field MillisecondsThreshold number?

@@ -48,6 +48,8 @@ L:SetDefaultStrings({
 	["Exclude self"] = "Exclude self",
 	["Glow icons"] = "Glow icons",
 	["Pandemic"] = "Pandemic",
+	["Pandemic colour"] = "Pandemic colour",
+	["Change the colour of the pandemic ring."] = "Change the colour of the pandemic ring.",
 	["Highlight an aura during its refresh window, where re-casting adds the remaining time on top. The game decides the window per spell, and only your own re-castable effects have one."] = "Highlight an aura during its refresh window, where re-casting adds the remaining time on top. The game decides the window per spell, and only your own re-castable effects have one.",
 	["Colour Countdown"] = "Colour Countdown",
 	["Colours the countdown timer text by the time remaining, from white through gold and orange to red as it runs out."] = "Colours the countdown timer text by the time remaining, from white through gold and orange to red as it runs out.",

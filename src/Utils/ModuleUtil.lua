@@ -7,6 +7,8 @@ local iconColorScratch = {}
 -- Stand-in when a border is on but no colour has been picked; white draws the plain border.
 local EMPTY_COLOR = {}
 local iconColorRgbScratch = {}
+-- Its own scratch, so a style can carry this and GetIconColorRGB's result at the same time.
+local colorRgbScratch = {}
 
 ---@class ModuleName
 local ModuleName = {
@@ -112,6 +114,22 @@ function M:GetIconColorRGB(iconOptions)
 	iconColorRgbScratch[3] = configured.B or 1
 
 	return iconColorRgbScratch
+end
+
+---As GetIconColorRGB, for a {R, G, B} colour table directly rather than the Icons sub-table.
+---Hands back its own shared scratch that the consumer copies out of.
+---@param configured table? A colour table with R/G/B fields.
+---@return number[]? color
+function M:GetColorRGB(configured)
+	if not configured then
+		return nil
+	end
+
+	colorRgbScratch[1] = configured.R or 1
+	colorRgbScratch[2] = configured.G or 1
+	colorRgbScratch[3] = configured.B or 1
+
+	return colorRgbScratch
 end
 
 ---@param moduleName string The module key (e.g., "AlertsModule", "CcModule")

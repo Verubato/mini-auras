@@ -76,6 +76,7 @@ local function BuildStyle(group)
 	style.GlowColor = moduleUtil:GetIconColorRGB(icons)
 	style.ShowTooltips = icons.ShowTooltips
 	style.Pandemic = icons.Pandemic
+	style.PandemicColor = moduleUtil:GetColorRGB(icons.PandemicColor)
 	-- Always on: a stack count is only ever drawn when there is one to draw, so there is
 	-- nothing to turn off and nothing to explain in the options.
 	style.Stacks = true

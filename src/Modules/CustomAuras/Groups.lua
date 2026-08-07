@@ -317,6 +317,11 @@ function M:Normalise(group)
 	icons.Color.G = tonumber(icons.Color.G) or 1
 	icons.Color.B = tonumber(icons.Color.B) or 1
 	icons.Color.A = tonumber(icons.Color.A) or 1
+	-- Amber by default, matching the built-in ring tint.
+	icons.PandemicColor = icons.PandemicColor or {}
+	icons.PandemicColor.R = tonumber(icons.PandemicColor.R) or 1
+	icons.PandemicColor.G = tonumber(icons.PandemicColor.G) or 0.6
+	icons.PandemicColor.B = tonumber(icons.PandemicColor.B) or 0.1
 
 	-- An empty file name is "no sound", which the picker offers as its first entry. One file per
 	-- trigger, sharing a channel; File is what the single-sound version of this called Applied.
@@ -763,7 +768,7 @@ end
 ---@field Position { Point: string, RelativePoint: string, X: number, Y: number } Screen anchor only.
 ---@field Offset { X: number, Y: number } Nameplate anchor only.
 ---@field Grow string
----@field Icons { Size: number, Spacing: number, Glow: boolean, Border: boolean, Pandemic: boolean, ReverseCooldown: boolean, ShowTooltips: boolean, Color: table }
+---@field Icons { Size: number, Spacing: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, ShowTooltips: boolean, Color: table }
 ---@field Sound { Applied: string, Removed: string, Stacks: string, Channel: string } Empty means silent.
 ---@field TrackingMode string "SPELLS" narrows to a spell list, "FILTERS" to a filter string.
 ---@field Filters table<string, string> Filter component to "REQUIRE"|"FORBID". Filter mode only.

@@ -47,6 +47,8 @@ L:RegisterLocale("ptBR", {
 	["Exclude self"] = "Excluir a si mesmo",
 	["Glow icons"] = "Ícones brilhantes",
 	["Pandemic"] = "Pandemia",
+	["Pandemic colour"] = "Cor de pandemia",
+	["Change the colour of the pandemic ring."] = "Altera a cor do anel de pandemia.",
 	["Highlight an aura during its refresh window, where re-casting adds the remaining time on top. The game decides the window per spell, and only your own re-castable effects have one."] = "Destaca uma aura durante sua janela de renovação, em que relançá-la soma o tempo restante. O jogo decide a janela por feitiço, e apenas seus próprios efeitos renováveis têm uma.",
 	["Colour Countdown"] = "Colorir contagem",
 	["Colours the countdown timer text by the time remaining, from white through gold and orange to red as it runs out."] = "Colore o texto da contagem regressiva pelo tempo restante, do branco ao dourado, laranja e vermelho conforme se esgota.",
