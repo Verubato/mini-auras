@@ -369,10 +369,11 @@ function M:Init()
 
 	-- The nameplates tab uses a health-bar texture rather than a spell icon. That art ships white
 	-- so whatever draws it can tint it, so it has to be coloured here or it renders as a pale
-	-- block.
+	-- block. Tinted with the config UI's own accent so it sits with the controls around it.
 	local nameplatesTab = tabController:GetTabButton("Nameplates")
 	if nameplatesTab and nameplatesTab.Icon then
-		nameplatesTab.Icon:SetVertexColor(0.15, 0.75, 0.15, 1)
+		local accent = mini.GUI.Accent
+		nameplatesTab.Icon:SetVertexColor(accent.r, accent.g, accent.b, 1)
 	end
 
 	StaticPopupDialogs["MINIAURAS_RELOAD_CONFIRM"] = {
