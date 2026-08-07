@@ -43,6 +43,8 @@ local COUNTDOWN_COLOR_STOPS = {
 }
 ---@type table?
 local countdownCurve
+---@type table?
+local countdownFormatter
 
 -- How often the deferred restyle retry runs while any display is stale (see RestyleButtons).
 local RESTYLE_RETRY_INTERVAL = 1
@@ -289,16 +291,43 @@ local function EnsureDisplayEvents()
 	end)
 end
 
----True when the client supports colour curves on duration-text bindings. Probes the options
----processor rather than the curve API alone: builds that predate it accept the options table
----and silently drop the colour, which would leave the swap-in fontstring plain white.
+---True when the client supports colour curves and formatters on duration-text bindings. Probes
+---the options processor rather than the curve API alone: builds that predate it accept the
+---options table and silently drop the colour, which would leave the swap-in fontstring plain
+---white.
 ---@return boolean
 local function HasCountdownColorCurves()
 	return C_AuraContainerUtil ~= nil
 		and C_AuraContainerUtil.ProcessCustomAuraButtonDurationTextOptions ~= nil
 		and C_CurveUtil ~= nil
 		and C_CurveUtil.CreateColorCurve ~= nil
+		and C_StringUtil ~= nil
+		and C_StringUtil.CreateNumericRuleFormatter ~= nil
 		and Enum.DurationTextBindingProperty ~= nil
+		and Enum.NumericRuleFormatRounding ~= nil
+end
+
+---Bare-number remaining time ("45" -> "2m" -> "1h"), matching the cooldown countdown the
+---coloured text replaces. A rule formatter because the engine's default renders a unit suffix
+---("45s") and SecondsFormatter cannot drop it - its abbreviation enum spells the unit out or
+---shortens it, never omits it. The promotion thresholds are the game's own (1 + 1.5x the unit),
+---and the quotients round up to match Blizzard's frames (2m32s reads "3m"). Built once; the
+---engine keeps the reference.
+---@return table
+local function GetCountdownFormatter()
+	if not countdownFormatter then
+		local down = Enum.NumericRuleFormatRounding.Down
+		local up = Enum.NumericRuleFormatRounding.Up
+		local fmt = C_StringUtil.CreateNumericRuleFormatter()
+		fmt:AddBreakpoint({ threshold = 0, step = 1, rounding = down, min = 1, format = "%d" })
+		fmt:AddBreakpoint({ threshold = 91, step = 1, rounding = down, min = 1, format = "%dm",
+			components = { { div = 60, rounding = up } } })
+		fmt:AddBreakpoint({ threshold = 5401, step = 1, rounding = down, min = 1, format = "%dh",
+			components = { { div = 3600, rounding = up } } })
+		countdownFormatter = fmt
+	end
+
+	return countdownFormatter
 end
 
 ---The shared colour curve every countdown fontstring binds. Built once; the engine keeps the
@@ -599,6 +628,7 @@ local function InitializeButton(instance, button, glowColor)
 		-- Named fields, not positional: the options validator walks [textColor][curve] and
 		-- [textColor][property], and a positional pair errors per button at AddAuraGroup time.
 		button:SetDurationText(durationText, {
+			textFormatter = GetCountdownFormatter(),
 			textColor = {
 				curve = GetCountdownCurve(),
 				property = Enum.DurationTextBindingProperty.RemainingDuration,

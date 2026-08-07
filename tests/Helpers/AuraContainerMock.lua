@@ -659,6 +659,16 @@ function M.setup()
 	_G.C_AuraContainerUtil.ProcessCustomAuraButtonDurationTextOptions =
 		_G.C_AuraContainerUtil.ProcessCustomAuraButtonDurationTextOptions
 		or function(options) return options end
+	_G.Enum.NumericRuleFormatRounding = _G.Enum.NumericRuleFormatRounding or { Down = 0, Up = 1 }
+	_G.C_StringUtil = _G.C_StringUtil or {}
+	_G.C_StringUtil.CreateNumericRuleFormatter = _G.C_StringUtil.CreateNumericRuleFormatter
+		or function()
+			local fmt = { breakpoints = {} }
+			function fmt:AddBreakpoint(breakpoint)
+				fmt.breakpoints[#fmt.breakpoints + 1] = breakpoint
+			end
+			return fmt
+		end
 	_G.C_CurveUtil = _G.C_CurveUtil or {}
 	_G.C_CurveUtil.CreateColorCurve = _G.C_CurveUtil.CreateColorCurve or function()
 		local curve = { points = {} }
