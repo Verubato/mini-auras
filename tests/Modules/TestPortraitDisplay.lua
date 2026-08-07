@@ -2,7 +2,9 @@
 --
 -- A portrait shows ONE icon but cannot ask which aura wins (aura presence is secret), so it gets
 -- four single-icon containers stacked by frame level and lets the higher-priority one cover the
--- rest. Two things about that arrangement have already broken once and are invisible when they do:
+-- rest. The levels must be DISTINCT: same-level siblings draw in an arbitrary order, which sank
+-- the creation-order variant. Two things about the arrangement have already broken once and are
+-- invisible when they do:
 --
 --   * Frame levels. The first PTR build put the stack BELOW the kick frame, which put it behind
 --     TargetFrame's own textures - no errors, just no icons. The order is asserted here.
@@ -112,25 +114,25 @@ fw.describe("PortraitModule 12.1 - the four-category stack", function()
 end)
 
 fw.describe("PortraitModule 12.1 - frame level stacking", function()
-	fw.it("stacks the displays UP from the kick frame, kick slot on top", function()
-		-- Everything below the kick frame renders behind the unit frame's own portrait texture;
-		-- that is what made the first PTR build show nothing on TargetFrame.
+	fw.it("stacks the displays UP from unitFrame+1, kick slot on top", function()
+		-- Buttons render at the display's own level, so the lowest display must clear the unit
+		-- frame itself: at the unit frame's level its ring art covers every icon, and below it
+		-- the portrait texture hides them (the first PTR build's bug). The levels must also be
+		-- strictly ascending - same-level siblings draw in an arbitrary order.
 		for _, unit in ipairs({ "player", "target", "focus", "pet" }) do
 			local displays, container = displaysFor(unit)
-			local base = container.Frame:GetFrameLevel()
+			local previous = container.Frame:GetFrameLevel() + 1
 
-			local previous = base
 			for index, display in ipairs(displays) do
 				local level = display.Frame:GetFrameLevel()
-				assert(level > base, unit .. ": display " .. index .. " must sit above the kick frame")
-				assert(level > previous or index == 1, unit .. ": priority order is strictly ascending")
+				assert(level > previous,
+					unit .. ": display " .. index .. " must sit above level " .. previous)
 				previous = level
 			end
 
-			local top = displays[#displays].Frame:GetFrameLevel()
 			local slot = container.Slots[1].Frame:GetFrameLevel()
-			assert(slot > top,
-				unit .. ": the kick slot must cover every aura icon, got " .. slot .. " vs " .. top)
+			assert(slot > previous,
+				unit .. ": the kick slot must cover every aura icon, got " .. slot .. " vs " .. previous)
 		end
 	end)
 

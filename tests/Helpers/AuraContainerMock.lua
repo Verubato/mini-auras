@@ -299,7 +299,17 @@ function M.NewFrame(frameType, name, parent, template)
 		return frame._rect.left + frame._rect.width / 2, frame._rect.bottom + frame._rect.height / 2
 	end
 	function frame:SetFrameLevel(level)
+		-- The client shifts a frame's children with it so relative levels hold; the pet
+		-- portrait path depends on that when Anchors lowers the container after creation.
+		local delta = level - (frame._level or 0)
 		frame._level = level
+		if delta ~= 0 then
+			for _, other in ipairs(M.frames) do
+				if other._parent == frame then
+					other:SetFrameLevel((other._level or 0) + delta)
+				end
+			end
+		end
 	end
 	function frame:GetFrameLevel()
 		return frame._level

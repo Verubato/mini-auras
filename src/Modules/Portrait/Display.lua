@@ -24,6 +24,8 @@ addon.Modules.Portrait.Display = M
 -- priority becomes frame levels: kick (IconSlotContainer, topmost) > cc > big > external >
 -- important. A higher-priority container's button simply covers the ones below it, and a
 -- container with no matching aura hides its own button secretly, revealing the next one down.
+-- The distinct levels are load-bearing: same-level siblings draw in an ARBITRARY order (verified
+-- live 2026-08-07, WoW picked a random winner), so priority cannot ride on creation order.
 -- The Blizzard nameplate buffList scan for important buffs is replaced by the HELPFUL|IMPORTANT
 -- container.
 --
@@ -87,17 +89,21 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 	-- single-icon groups are the same thing ("slots" are documented as groups with
 	-- maxFrameCount 1) built on the verified-working group API.
 	--
-	-- Levels stack UP from the kick frame: the kick frame sits at unitFrame-1, so anything
-	-- below it renders BEHIND the unit frame's own portrait texture (diagnosed on PTR:
-	-- TargetFrame is level 500 and displays at 494-497 were invisible under it, while
-	-- PlayerFrame at level 1 with displays at 1-4 happened to work). Displays are children
-	-- of the kick frame so per-addon level adjustments shift the whole stack together.
+	-- Levels stack UP from unitFrame+1 (the kick frame is at unitFrame-1, baseLevel two above
+	-- it). The buttons render at the display's OWN level, so the lowest display must clear
+	-- the unit frame itself: at the unit frame's level the frame's ring art covers every icon
+	-- (ARTWORK beats our BACKGROUND icons within a level), and below it the portrait texture
+	-- hides them entirely (PTR: TargetFrame at 500 hid displays at 494-497). Distinct levels
+	-- are the only reliable priority - same-level siblings draw in an arbitrary order - so
+	-- the top category unavoidably sits at unitFrame+4, covering art the legacy path drew
+	-- under. Displays are children of the kick frame so per-addon level adjustments shift
+	-- the whole stack together.
 	--
 	-- These go through AuraContainerDisplay like every other container in the addon: it owns
 	-- the Edit Mode placeholder-aura suppression (a hand-rolled container would happily show
 	-- Blizzard's fake auras over the portrait) and the deferred restyling that re-applies
 	-- option changes made while aura styling was restricted.
-	local baseLevel = (kickFrame:GetFrameLevel() or 0) + 1
+	local baseLevel = (kickFrame:GetFrameLevel() or 0) + 2
 	local displays = {}
 
 	for index, category in ipairs(PORTRAIT_CATEGORIES) do
@@ -256,13 +262,15 @@ function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask)
 	container:SetIconSize(size)
 
 	if USE_AURA_CONTAINERS and unit then
-		-- Lift the kick slot above the whole aura display stack (displays at kick+1..+4,
-		-- buttons one higher) so an active kick lockout covers any aura icon. The slot frame
-		-- is a child of the kick frame, so later per-addon level adjustments shift everything
-		-- together and the ordering holds.
+		-- Lift the kick slot above the whole aura display stack (displays at kick+2..+5,
+		-- buttons at the display's own level) so an active kick lockout covers any aura icon.
+		-- +6 leaves one level of margin in case a future build moves the buttons one above
+		-- their container; the icon layer renders at slot+1. The slot frame is a child of the
+		-- kick frame, so later per-addon level adjustments shift everything together and the
+		-- ordering holds.
 		local slot = container.Slots[1]
 		if slot and slot.Frame then
-			slot.Frame:SetFrameLevel(container.Frame:GetFrameLevel() + 7)
+			slot.Frame:SetFrameLevel(container.Frame:GetFrameLevel() + 6)
 		end
 
 		container.AuraDisplay = CreatePortraitAuraDisplay(container.Frame, unit, texCoord, mask, size)
