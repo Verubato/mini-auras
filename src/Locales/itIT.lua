@@ -334,7 +334,7 @@ L:RegisterLocale("itIT", {
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Aure personalizzate",
-	["Custom Auras_Short"] = "Aure pers.",
+	["Custom Auras_Short"] = "Aure",
 	["Create your own custom mini weak auras."] = "Crea le tue mini weak aura personalizzate.",
 	["New Group"] = "Nuovo gruppo",
 	["Aura %d"] = "Aura %d",

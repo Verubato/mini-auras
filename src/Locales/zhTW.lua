@@ -337,7 +337,7 @@ L:RegisterLocale("zhTW", {
 
 	-- Custom Auras tab
 	["Custom Auras"] = "自訂光環",
-	["Custom Auras_Short"] = "自訂光環",
+	["Custom Auras_Short"] = "光環",
 	["Create your own custom mini weak auras."] = "建立你自己的迷你 WeakAuras。",
 	["New Group"] = "新增群組",
 	["Aura %d"] = "光環 %d",

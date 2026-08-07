@@ -337,7 +337,7 @@ L:RegisterLocale("ruRU", {
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Свои ауры",
-	["Custom Auras_Short"] = "Свои ауры",
+	["Custom Auras_Short"] = "Ауры",
 	["Create your own custom mini weak auras."] = "Создайте свои собственные мини weak auras.",
 	["New Group"] = "Новая группа",
 	["Aura %d"] = "Аура %d",

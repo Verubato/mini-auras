@@ -335,7 +335,7 @@ L:RegisterLocale("ptBR", {
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Auras personalizadas",
-	["Custom Auras_Short"] = "Auras pers.",
+	["Custom Auras_Short"] = "Auras",
 	["Create your own custom mini weak auras."] = "Crie suas próprias mini weak auras.",
 	["New Group"] = "Novo grupo",
 	["Aura %d"] = "Aura %d",

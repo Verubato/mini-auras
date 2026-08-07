@@ -338,7 +338,7 @@ L:SetDefaultStrings({
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Custom Auras",
-	["Custom Auras_Short"] = "Custom Auras",
+	["Custom Auras_Short"] = "Auras",
 	["Create your own custom mini weak auras."] = "Create your own custom mini weak auras.",
 	["New Group"] = "New Group",
 	["Aura %d"] = "Aura %d",

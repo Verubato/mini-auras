@@ -336,7 +336,7 @@ L:RegisterLocale("koKR", {
 
 	-- Custom Auras tab
 	["Custom Auras"] = "사용자 오라",
-	["Custom Auras_Short"] = "사용자 오라",
+	["Custom Auras_Short"] = "오라",
 	["Create your own custom mini weak auras."] = "나만의 미니 위크오라를 만드세요.",
 	["New Group"] = "새 그룹",
 	["Aura %d"] = "오라 %d",

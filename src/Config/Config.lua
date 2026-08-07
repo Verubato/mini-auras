@@ -337,7 +337,7 @@ function M:Init()
 		table.insert(tabs, 2, {
 			Key = "CustomAuras",
 			Title = L["Custom Auras_Short"] or L["Custom Auras"],
-			Icon = "Interface\\Icons\\INV_Misc_Gem_Variety_01",
+			Icon = "Interface\\Icons\\Spell_Holy_WordFortitude",
 			Build = function(content)
 				M.CustomAuras:Build(content)
 			end,
