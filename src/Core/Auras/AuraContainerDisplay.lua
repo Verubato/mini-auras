@@ -494,6 +494,9 @@ local function InitializeButton(instance, button, glowColor)
 
 	-- The engine writes the count and decides when it is on screen, both of which are secret. We
 	-- only get to place it and say how big it is, so it is registered once and never taken back.
+	-- Never pass an options table with a formatter here: the engine calls FormatNumber(count) in
+	-- Lua with the secret count, and the throw lands inside the container's dirty-flag processing,
+	-- which stops re-arming and leaves the container frozen for the session.
 	local stacks = button:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 	stacks:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -1, 1)
 	stacks:SetJustifyH("RIGHT")
