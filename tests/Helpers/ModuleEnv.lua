@@ -173,7 +173,7 @@ function M.build()
 	end
 	_G.Enum = _G.Enum or {}
 	_G.Enum.PvPMatchState = { StartUp = 0 }
-	_G.Enum.NamePlateEnemyPlayerAuraDisplay = { LossOfControl = 1 }
+	_G.Enum.NamePlateEnemyPlayerAuraDisplay = { None = 0, Buffs = 1, Debuffs = 2, LossOfControl = 3 }
 	_G.Enum.NamePlateEnemyNpcAuraDisplay = { CrowdControl = 1 }
 	_G.Enum.NamePlateFriendlyPlayerAuraDisplay = { LossOfControl = 1 }
 	_G.Enum.UnitAuraSoundTrigger = { Added = 0, ApplicationsIncreased = 1, Removed = 2 }
