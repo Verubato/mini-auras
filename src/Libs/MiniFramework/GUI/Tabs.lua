@@ -161,8 +161,21 @@ function M:CreateTabs(options)
 
 	controller.Tabs = tabs
 
+	-- A def of { Separator = true } draws a grouping line before the NEXT tab instead of a
+	-- button. Filtered out here so the button loop, the key index and the content list only
+	-- ever see real tabs; horizontal strips ignore separators entirely.
+	local defs = {}
+	local separatorBefore = {}
+	for _, def in ipairs(options.Tabs) do
+		if def.Separator then
+			separatorBefore[#defs + 1] = true
+		else
+			defs[#defs + 1] = def
+		end
+	end
+
 	local prev
-	for i, def in ipairs(options.Tabs) do
+	for i, def in ipairs(defs) do
 		assert(def.Key and def.Key ~= "", "CreateTabs: each tab needs Key")
 		assert(not keyToIndex[def.Key], "CreateTabs: duplicate Key: " .. def.Key)
 
@@ -234,6 +247,16 @@ function M:CreateTabs(options)
 			if not prev then
 				btn:SetPoint("TOPLEFT", strip, "TOPLEFT", 0, 0)
 				btn:SetPoint("TOPRIGHT", strip, "TOPRIGHT", 0, 0)
+			elseif separatorBefore[i] then
+				-- Inset from both edges so it reads as a grouping line, not a border. The
+				-- button undoes the inset to get back to the strip's full width.
+				local line = strip:CreateTexture(nil, "OVERLAY")
+				pixel.SetHeight(line, 1)
+				GUI.SetSolid(line, 1, 1, 1, 0.10)
+				line:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 8, -tabSpacing - 4)
+				line:SetPoint("TOPRIGHT", prev, "BOTTOMRIGHT", -8, -tabSpacing - 4)
+				btn:SetPoint("TOPLEFT", line, "BOTTOMLEFT", -8, -tabSpacing - 4)
+				btn:SetPoint("TOPRIGHT", line, "BOTTOMRIGHT", 8, -tabSpacing - 4)
 			else
 				btn:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, -tabSpacing)
 				btn:SetPoint("TOPRIGHT", prev, "BOTTOMRIGHT", 0, -tabSpacing)

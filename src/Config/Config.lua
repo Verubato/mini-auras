@@ -273,6 +273,8 @@ function M:Init()
 				M.Precog:Build(content)
 			end,
 		},
+		-- The tabs above are the display features; below sit the addon-wide pages.
+		{ Separator = true },
 		{
 			Key = "Miscellaneous",
 			Title = L["Miscellaneous_Short"] or L["Miscellaneous"],
