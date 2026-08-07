@@ -435,6 +435,19 @@ local function NewAuraButton(container, groupKey)
 		end
 	end
 
+	-- Validates like the live client: the duration-text options walk NAMED fields, and a
+	-- positional {curve, property} pair errored per button at AddAuraGroup time on the PTR.
+	local countedSetDurationText = button.SetDurationText
+	function button:SetDurationText(fontString, options)
+		if options and options.textColor then
+			assert(options.textColor.curve ~= nil,
+				"SetDurationText: textColor.curve must be a named field")
+			assert(options.textColor.property ~= nil,
+				"SetDurationText: textColor.property must be a named field")
+		end
+		countedSetDurationText(self, fontString, options)
+	end
+
 	GuardRestricted(button)
 	return button
 end

@@ -596,8 +596,13 @@ local function InitializeButton(instance, button, glowColor)
 	if HasCountdownColorCurves() then
 		durationText = button:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 		durationText:SetPoint("CENTER", button, "CENTER", 0, 0)
+		-- Named fields, not positional: the options validator walks [textColor][curve] and
+		-- [textColor][property], and a positional pair errors per button at AddAuraGroup time.
 		button:SetDurationText(durationText, {
-			textColor = { GetCountdownCurve(), Enum.DurationTextBindingProperty.RemainingDuration },
+			textColor = {
+				curve = GetCountdownCurve(),
+				property = Enum.DurationTextBindingProperty.RemainingDuration,
+			},
 		})
 	end
 
