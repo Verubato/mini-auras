@@ -85,18 +85,50 @@ function M:Slider(options)
 		pixel.SetHeight(track, 4)
 		track:SetPoint("LEFT", slider, "LEFT", 0, 0)
 		track:SetPoint("RIGHT", slider, "RIGHT", 0, 0)
-		GUI.SetSolid(track, 0.17, 0.15, 0.15, 1)
+		GUI.SetSolid(track, GUI.FieldIdle.r, GUI.FieldIdle.g, GUI.FieldIdle.b, 1)
 
-		slider:SetThumbTexture("Interface\\Buttons\\WHITE8X8")
+		-- The toggle's circle knob as the thumb, so the two controls read as siblings.
+		slider:SetThumbTexture(GUI.KnobTexture)
 		local thumb = slider:GetThumbTexture()
-		thumb:SetSize(10, 16)
-		thumb:SetVertexColor(0.91, 0.89, 0.85, 1)
+		thumb:SetSize(14, 14)
+		GUI.CropIcon(thumb)
+		thumb:SetVertexColor(GUI.KnobIdle.r, GUI.KnobIdle.g, GUI.KnobIdle.b, 1)
 
 		local fill = slider:CreateTexture(nil, "BACKGROUND", nil, 1)
 		pixel.SetHeight(fill, 4)
 		fill:SetPoint("LEFT", track, "LEFT", 0, 0)
 		fill:SetPoint("RIGHT", thumb, "CENTER", 0, 0)
 		GUI.SetGradientH(fill, accent.r * 0.6, accent.g * 0.6, accent.b * 0.6, 1, accent.r, accent.g, accent.b, 1)
+
+		slider:HookScript("OnEnter", function()
+			thumb:SetVertexColor(GUI.KnobHover.r, GUI.KnobHover.g, GUI.KnobHover.b, 1)
+		end)
+
+		slider:HookScript("OnLeave", function()
+			thumb:SetVertexColor(GUI.KnobIdle.r, GUI.KnobIdle.g, GUI.KnobIdle.b, 1)
+		end)
+
+		-- Same treatment as a disabled toggle: heavy dim and the accent swapped for grey. The
+		-- box and label are children of the slider, so the alpha covers them too.
+		slider:HookScript("OnDisable", function()
+			slider:SetAlpha(GUI.DisabledAlpha)
+			GUI.SetGradientH(
+				fill,
+				GUI.FillDisabled.r * 0.6,
+				GUI.FillDisabled.g * 0.6,
+				GUI.FillDisabled.b * 0.6,
+				1,
+				GUI.FillDisabled.r,
+				GUI.FillDisabled.g,
+				GUI.FillDisabled.b,
+				1
+			)
+		end)
+
+		slider:HookScript("OnEnable", function()
+			slider:SetAlpha(1)
+			GUI.SetGradientH(fill, accent.r * 0.6, accent.g * 0.6, accent.b * 0.6, 1, accent.r, accent.g, accent.b, 1)
+		end)
 	end
 
 	local low = _G[slider:GetName() .. "Low"]
@@ -117,7 +149,19 @@ function M:Slider(options)
 	local box = CreateFrame("EditBox", nil, slider, "InputBoxTemplate")
 
 	if styled then
-		M:FlattenEditBox(box)
+		-- A pill chip instead of the flat field, matching the toggle's geometry.
+		if box.Left then
+			box.Left:Hide()
+		end
+		if box.Middle then
+			box.Middle:Hide()
+		end
+		if box.Right then
+			box.Right:Hide()
+		end
+
+		local chip = GUI.PillField(box, 20, "BACKGROUND")
+		chip:SetColor(GUI.FieldIdle.r, GUI.FieldIdle.g, GUI.FieldIdle.b, 1)
 	end
 
 	if not hasFloat then

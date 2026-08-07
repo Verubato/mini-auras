@@ -1,4 +1,4 @@
-local addonName, addon = ...
+local _, addon = ...
 local M = addon.Framework
 local GUI = M.GUI
 local L = M.L
@@ -10,27 +10,10 @@ local KNOB_SIZE = 14
 local KNOB_MIN = 2
 local KNOB_TRAVEL = TRACK_WIDTH - KNOB_SIZE - KNOB_MIN * 2
 local SLIDE_SECONDS = 0.15
--- White shapes tinted with vertex colors; the client can only draw rectangles itself. The
--- path assumes the prescribed embed location, Libs\MiniFramework inside the addon.
-local MEDIA_PATH = "Interface\\AddOns\\" .. addonName .. "\\Libs\\MiniFramework\\Media\\"
-local PILL_TEXTURE = MEDIA_PATH .. "TogglePill.tga"
-local KNOB_TEXTURE = MEDIA_PATH .. "ToggleKnob.tga"
--- Both textures keep a one-texel transparent margin so bilinear sampling can't bleed across
--- the border; cropping it keeps the drawn shape exactly the region's size.
-local PILL_CROP = 1 / 64
-local KNOB_CROP = 1 / 32
 local LABEL_GAP = 6
 -- Numeric sound kit ids arrived in 7.3; older clients take the sound name.
 local SOUND_ON = SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or "igMainMenuOptionCheckBoxOn"
 local SOUND_OFF = SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF or "igMainMenuOptionCheckBoxOff"
-local KNOB_IDLE = { r = 0.91, g = 0.89, b = 0.85 }
-local KNOB_HOVER = { r = 1, g = 1, b = 1 }
-local TRACK_OFF = { r = 0.17, g = 0.15, b = 0.15 }
-local TRACK_HOVER = { r = 0.26, g = 0.23, b = 0.22 }
--- A disabled toggle drops the accent entirely: grey fill plus a heavy dim, so an on-but-locked
--- switch can't be mistaken for one that is live.
-local FILL_DISABLED = { r = 0.40, g = 0.38, b = 0.36 }
-local DISABLED_ALPHA = 0.3
 
 local function ShowTooltip(checkbox, options)
 	GameTooltip:SetOwner(checkbox, "ANCHOR_RIGHT")
@@ -118,8 +101,8 @@ local function OnToggleClick(toggle)
 end
 
 local function OnToggleEnter(toggle)
-	toggle.Track:SetVertexColor(TRACK_HOVER.r, TRACK_HOVER.g, TRACK_HOVER.b, 1)
-	toggle.Knob:SetVertexColor(KNOB_HOVER.r, KNOB_HOVER.g, KNOB_HOVER.b, 1)
+	toggle.Track:SetVertexColor(GUI.FieldHover.r, GUI.FieldHover.g, GUI.FieldHover.b, 1)
+	toggle.Knob:SetVertexColor(GUI.KnobHover.r, GUI.KnobHover.g, GUI.KnobHover.b, 1)
 
 	if toggle.__options.Tooltip then
 		ShowTooltip(toggle, toggle.__options)
@@ -127,14 +110,16 @@ local function OnToggleEnter(toggle)
 end
 
 local function OnToggleLeave(toggle)
-	toggle.Track:SetVertexColor(TRACK_OFF.r, TRACK_OFF.g, TRACK_OFF.b, 1)
-	toggle.Knob:SetVertexColor(KNOB_IDLE.r, KNOB_IDLE.g, KNOB_IDLE.b, 1)
+	toggle.Track:SetVertexColor(GUI.FieldIdle.r, GUI.FieldIdle.g, GUI.FieldIdle.b, 1)
+	toggle.Knob:SetVertexColor(GUI.KnobIdle.r, GUI.KnobIdle.g, GUI.KnobIdle.b, 1)
 	GameTooltip:Hide()
 end
 
+-- A disabled toggle drops the accent entirely: grey fill plus a heavy dim, so an on-but-locked
+-- switch can't be mistaken for one that is live.
 local function OnToggleDisable(toggle)
-	toggle.__fillColor = FILL_DISABLED
-	toggle:SetAlpha(DISABLED_ALPHA)
+	toggle.__fillColor = GUI.FillDisabled
+	toggle:SetAlpha(GUI.DisabledAlpha)
 	ApplyFill(toggle, toggle.__progress)
 end
 
@@ -158,24 +143,24 @@ local function BuildToggle(options)
 	local track = toggle:CreateTexture(nil, "BACKGROUND")
 	pixel.SetSize(track, TRACK_WIDTH, TRACK_HEIGHT)
 	track:SetPoint("LEFT", toggle, "LEFT", 0, 0)
-	track:SetTexture(PILL_TEXTURE)
-	track:SetTexCoord(PILL_CROP, 1 - PILL_CROP, PILL_CROP, 1 - PILL_CROP)
-	track:SetVertexColor(TRACK_OFF.r, TRACK_OFF.g, TRACK_OFF.b, 1)
+	track:SetTexture(GUI.PillTexture)
+	GUI.CropPill(track)
+	track:SetVertexColor(GUI.FieldIdle.r, GUI.FieldIdle.g, GUI.FieldIdle.b, 1)
 	toggle.Track = track
 
 	-- The on state: the same pill tinted with the accent gradient, faded in by the slide.
 	local fill = toggle:CreateTexture(nil, "BACKGROUND", nil, 1)
 	fill:SetAllPoints(track)
-	fill:SetTexture(PILL_TEXTURE)
-	fill:SetTexCoord(PILL_CROP, 1 - PILL_CROP, PILL_CROP, 1 - PILL_CROP)
+	fill:SetTexture(GUI.PillTexture)
+	GUI.CropPill(fill)
 	toggle.Fill = fill
 	toggle.__fillColor = GUI.Accent
 
 	local knob = toggle:CreateTexture(nil, "ARTWORK")
 	pixel.SetSize(knob, KNOB_SIZE, KNOB_SIZE)
-	knob:SetTexture(KNOB_TEXTURE)
-	knob:SetTexCoord(KNOB_CROP, 1 - KNOB_CROP, KNOB_CROP, 1 - KNOB_CROP)
-	knob:SetVertexColor(KNOB_IDLE.r, KNOB_IDLE.g, KNOB_IDLE.b, 1)
+	knob:SetTexture(GUI.KnobTexture)
+	GUI.CropIcon(knob)
+	knob:SetVertexColor(GUI.KnobIdle.r, GUI.KnobIdle.g, GUI.KnobIdle.b, 1)
 	toggle.Knob = knob
 
 	local label = toggle:CreateFontString(nil, "ARTWORK", "GameFontNormal")

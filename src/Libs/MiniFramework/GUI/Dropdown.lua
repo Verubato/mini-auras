@@ -11,6 +11,10 @@ local GRID_THRESHOLD = 10
 local DEFAULT_MAX_ROWS = 20
 -- Approximate height of one menu row, used to turn a row budget into a pixel extent.
 local ROW_EXTENT = 20
+-- The face height, matching the toggle track and the slider's value chip.
+local FIELD_HEIGHT = 20
+local CHEVRON_SIZE = 12
+local CHEVRON_INSET = 7
 
 ---Reserves a globally unique frame name. Dropdown templates misbehave when unnamed, and
 ---the name must be addon-scoped or two Mini addons loaded together collide on the global.
@@ -53,6 +57,73 @@ local function ApplyMenuLayout(rootDescription, count, columns, maxRows)
 	if rootDescription.SetScrollMode and math.ceil(count / effective) > maxRows then
 		rootDescription:SetScrollMode(maxRows * ROW_EXTENT)
 	end
+end
+
+---Swaps the retail template's parchment face for the shared soft-cornered chrome: dark
+---rounded field with a 1px border, white text, chevron arrow, the common hover tint. Only
+---the closed button restyles; the open menu stays stock on purpose, being Blizzard-owned
+---internals across three implementations. The legacy and LibUIDropDownMenu paths keep stock
+---art entirely: no styled consumer ships to the clients that use them, and restyling their
+---composite art untested is all risk.
+local function StyleModernFace(dd)
+	if dd.Background then
+		dd.Background:Hide()
+	end
+
+	-- The template's own hover art; the field tint below replaces it.
+	local highlight = dd.GetHighlightTexture and dd:GetHighlightTexture()
+
+	if highlight then
+		highlight:SetAlpha(0)
+	end
+
+	local field = GUI.RoundedField(dd, FIELD_HEIGHT, "BACKGROUND")
+	field.Fill:SetColor(GUI.FieldIdle.r, GUI.FieldIdle.g, GUI.FieldIdle.b, 1)
+	field.Border:SetColor(GUI.LineIdle.r, GUI.LineIdle.g, GUI.LineIdle.b, 1)
+	dd.Field = field
+
+	-- The template's arrow can't be retextured: its mixin re-stamps the stock atlas on every
+	-- button state change (hover, press). Blank it for good and draw our own chevron, which
+	-- the mixin never touches. Alpha 0 rather than Hide, because the mixin also re-Shows it.
+	if dd.Arrow then
+		dd.Arrow:SetAlpha(0)
+	end
+
+	local chevron = dd:CreateTexture(nil, "ARTWORK")
+	chevron:SetTexture(GUI.ChevronTexture)
+	GUI.CropIcon(chevron)
+	chevron:SetSize(CHEVRON_SIZE, CHEVRON_SIZE)
+	chevron:SetPoint("RIGHT", dd, "RIGHT", -CHEVRON_INSET, 0)
+	chevron:SetVertexColor(GUI.KnobIdle.r, GUI.KnobIdle.g, GUI.KnobIdle.b, 1)
+	dd.Chevron = chevron
+
+	local text = dd.GetFontString and dd:GetFontString()
+
+	if text then
+		text:SetTextColor(1, 1, 1, 1)
+	end
+
+	-- Hooked, not set: the template's mixin owns these scripts. The text color is re-asserted
+	-- because state changes can swap the font object, which resets it.
+	dd:HookScript("OnEnter", function()
+		field.Fill:SetColor(GUI.FieldHover.r, GUI.FieldHover.g, GUI.FieldHover.b, 1)
+		field.Border:SetColor(GUI.LineHover.r, GUI.LineHover.g, GUI.LineHover.b, 1)
+		chevron:SetVertexColor(GUI.KnobHover.r, GUI.KnobHover.g, GUI.KnobHover.b, 1)
+
+		if text then
+			text:SetTextColor(1, 1, 1, 1)
+		end
+	end)
+
+	dd:HookScript("OnLeave", function()
+		field.Fill:SetColor(GUI.FieldIdle.r, GUI.FieldIdle.g, GUI.FieldIdle.b, 1)
+		field.Border:SetColor(GUI.LineIdle.r, GUI.LineIdle.g, GUI.LineIdle.b, 1)
+		chevron:SetVertexColor(GUI.KnobIdle.r, GUI.KnobIdle.g, GUI.KnobIdle.b, 1)
+
+		if text then
+			text:SetTextColor(1, 1, 1, 1)
+		end
+	end)
 end
 
 ---Creates a dropdown menu using the specified options.
@@ -125,6 +196,10 @@ function M:Dropdown(options)
 		function dd.MiniRefresh(ddSelf)
 			ddSelf:Update()
 			ddSelf:SetText(GetText(options.GetValue()))
+		end
+
+		if GUI.IsStyled(options) then
+			StyleModernFace(dd)
 		end
 
 		return Attach(dd, true, dd.SetWidth)
