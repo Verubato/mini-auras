@@ -73,10 +73,27 @@ local function BuildSettingsTab(parent, options)
 	-- 12.1 draws these icons through AuraContainers, where the unit's identity - and so
 	-- UnitClass - is secret, so the glow/border can't be class coloured. Each category is its own
 	-- aura group there, so a tint per category is what it can do instead. Only one of the two
-	-- schemes is ever offered, and both start in the same column as the glow checkbox.
+	-- schemes is ever offered, filling the glow row left to right.
 	local nextGlowColumn = 1
 
+	local reverseChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Reverse swipe"],
+		Tooltip = L["Reverses the direction of the cooldown swipe animation."],
+		GetValue = function()
+			return options.Icons.ReverseCooldown
+		end,
+		SetValue = function(value)
+			options.Icons.ReverseCooldown = value
+			config:Apply()
+		end,
+	})
+
+	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+
 	if USE_AURA_CONTAINERS then
+		reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * nextGlowColumn, 0)
+		nextGlowColumn = nextGlowColumn + 1
 		---Places a swatch in the next free column of the glow row, centred on the checkboxes.
 		local function PlaceSwatch(swatch)
 			swatch:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * nextGlowColumn, 0)
@@ -133,23 +150,9 @@ local function BuildSettingsTab(parent, options)
 		colorByClassChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * nextGlowColumn, 0)
 		colorByClassChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 		nextGlowColumn = nextGlowColumn + 1
+
+		reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * nextGlowColumn, 0)
 	end
-
-	local reverseChk = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Reverse swipe"],
-		Tooltip = L["Reverses the direction of the cooldown swipe animation."],
-		GetValue = function()
-			return options.Icons.ReverseCooldown
-		end,
-		SetValue = function(value)
-			options.Icons.ReverseCooldown = value
-			config:Apply()
-		end,
-	})
-
-	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * nextGlowColumn, 0)
-	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local showTooltipsChk = mini:Checkbox({
 		Parent = parent,
