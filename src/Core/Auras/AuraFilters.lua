@@ -61,6 +61,11 @@ local spellIds = {
 	ImportantOnly = auraCategoryIds.Important,
 }
 
+-- Memoised canonical spellings; the addon only ever produces a handful of distinct strings.
+local canonicalCache = {}
+-- "!", the negation prefix in filter strings.
+local NEGATION_BYTE = string.byte("!")
+
 ---@class AuraFilters
 local M = {}
 
@@ -101,6 +106,54 @@ M.GroupKey = {
 	ExternalDefensive = "extdef",
 	Important = "important",
 }
+
+---One canonical spelling per filter, for handing to the engine. The engine batches per-unit
+---parse work by the literal text of each filter string and treats reordered spellings as
+---different filters, so every distinct spelling of the same filter pays its own full scan of
+---the unit's auras. Sorting the tokens collapses equivalent spellings onto one shared pass.
+---Tokens sort by their bare name with a negation placed after the token it negates, and
+---duplicates drop out. AuraContainerDisplay applies this to every string it hands over, so
+---callers never need to.
+---@param filterString string
+---@return string
+function M:Canonical(filterString)
+	if type(filterString) ~= "string" then
+		return filterString
+	end
+
+	local cached = canonicalCache[filterString]
+
+	if cached then
+		return cached
+	end
+
+	local tokens, seen = {}, {}
+
+	for token in filterString:gmatch("[^|%s]+") do
+		if not seen[token] then
+			seen[token] = true
+			tokens[#tokens + 1] = token
+		end
+	end
+
+	table.sort(tokens, function(a, b)
+		local aBare = a:gsub("^!", "")
+		local bBare = b:gsub("^!", "")
+
+		if aBare ~= bBare then
+			return aBare < bBare
+		end
+
+		-- The bare token leads its own negation. Both conditions, so comparing a token with
+		-- itself is false - table.sort misorders unrelated tokens on a non-strict comparator.
+		return a:byte(1) ~= NEGATION_BYTE and b:byte(1) == NEGATION_BYTE
+	end)
+
+	local canonical = table.concat(tokens, "|")
+	canonicalCache[filterString] = canonical
+
+	return canonical
+end
 
 ---One standard-category group spec in the shape AuraContainerDisplay's New takes. Returns a
 ---fresh table: New keeps the list it is given for the display's lifetime, so specs must never

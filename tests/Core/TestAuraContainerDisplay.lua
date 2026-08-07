@@ -993,3 +993,30 @@ fw.describe("AuraFilters - category partitioning", function()
 		assert(groups[auraFilters.GroupKey.Important].maxFrameCount == 0, "important off")
 	end)
 end)
+
+fw.describe("AuraFilters - canonical filter strings", function()
+	fw.before_each(acm.reset)
+
+	fw.it("collapses reordered spellings onto one", function()
+		assert(auraFilters:Canonical("HELPFUL|PLAYER") == auraFilters:Canonical("PLAYER|HELPFUL"),
+			"token order must not matter")
+		assert(auraFilters:Canonical("PLAYER|HELPFUL") == "HELPFUL|PLAYER", "sorted spelling wins")
+	end)
+
+	fw.it("sorts a negation by the token it negates and drops duplicates", function()
+		assert(auraFilters:Canonical("HELPFUL|IMPORTANT|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE")
+			== "!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE|HELPFUL|IMPORTANT", "negations sort by bare name")
+		assert(auraFilters:Canonical("HELPFUL|HELPFUL|PLAYER") == "HELPFUL|PLAYER", "duplicates drop out")
+	end)
+
+	fw.it("groups are created with the canonical spelling", function()
+		local instance = newInstance()
+
+		assert(instance.Frame._groups.cc.filterString == "CROWD_CONTROL|HARMFUL",
+			"the engine sees the sorted spelling, whatever the caller wrote")
+
+		instance:SetFilterString("cc", "HARMFUL|CROWD_CONTROL")
+		assert(instance.Frame._groups.cc.filterString == "CROWD_CONTROL|HARMFUL",
+			"the live setter canonicalises too")
+	end)
+end)

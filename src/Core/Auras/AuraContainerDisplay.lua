@@ -4,6 +4,7 @@ local fontUtil = addon.Utils.FontUtil
 local wowEx = addon.Utils.WoWEx
 local growAnchors = addon.Core.GrowAnchors
 local glowStyles = addon.Core.GlowStyles
+local auraFilters = addon.Core.AuraFilters
 
 -- Only the texture-based styles from the shared catalog (Core/Display/GlowStyles) render here:
 -- LibCustomGlow can't attach to AuraButtons (it re-parents pooled frames onto the target, and
@@ -782,7 +783,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 		-- Captured per group: initializeFrame is the only place a button can be styled, so a
 		-- group's category glow tint has to be closed over here rather than looked up later.
 		local glowColor = group.GlowColor
-		frame:AddAuraGroup(group.Key, group.FilterString, {
+		frame:AddAuraGroup(group.Key, auraFilters:Canonical(group.FilterString), {
 			maxFrameCount = group.MaxIcons or 3,
 			candidateFilters = group.CandidateFilters,
 			-- Aura instance IDs increase monotonically as auras are applied, so sorting on them
@@ -986,7 +987,7 @@ function M:SetFilterString(groupKey, filterString)
 		return
 	end
 
-	self.Frame:SetAuraGroupFilterString(groupKey, filterString)
+	self.Frame:SetAuraGroupFilterString(groupKey, auraFilters:Canonical(filterString))
 	MarkBouncePending(self)
 end
 

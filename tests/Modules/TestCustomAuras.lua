@@ -1081,7 +1081,8 @@ fw.describe("CustomAuras - icon order", function()
 
 		local container = ContainerFor("player")
 
-		assert(container._groups.helpful.filterString == "HELPFUL|DISPELLABLE",
+		-- Canonical (token-sorted) spelling: the display canonicalises every string it hands over.
+		assert(container._groups.helpful.filterString == "DISPELLABLE|HELPFUL",
 			"the helpful side carries the built string")
 	end)
 end)

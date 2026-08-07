@@ -162,8 +162,10 @@ fw.describe("12.1 smoke - per-module container shape", function()
 		-- categories from overlapping only work if every module takes them from one place.
 		local auraFilters = env.addon.Core.AuraFilters
 		local known = {}
+		-- The engine is handed the canonical (token-sorted) spelling, so that is what the mock
+		-- containers hold.
 		for _, filterString in pairs(auraFilters.Filter) do
-			known[filterString] = true
+			known[auraFilters:Canonical(filterString)] = true
 		end
 		-- The auras module filters helpful auras by spell id alone, so its group carries a
 		-- bare token by design rather than one of the shared category strings.
