@@ -766,6 +766,65 @@ fw.describe("AuraContainerDisplay - per-display button options", function()
 		local widgets = select(2, next(instance.ButtonWidgets))
 		assert(widgets.Border and widgets.Glow, "default displays keep the full chrome")
 	end)
+
+	fw.it("Pandemic registers a refresh-window region on every button", function()
+		local instance = newOptionInstance({ Pandemic = true })
+		local button = instance.Buttons[1]
+		local widgets = instance.ButtonWidgets[button]
+
+		assert(button._calls.AddPandemicRegion == 1, "one region registered per button")
+		assert(widgets.Pandemic and widgets.Pandemic.Ring, "the holder carries the ring texture")
+		-- Off by default: the engine decides when the holder shows, but the ring only draws for
+		-- a group that turned the reveal on.
+		assert(widgets.Pandemic.Ring._lastArgs.SetAlpha[1] == 0, "ring starts hidden")
+
+		instance:SetStyle({ Pandemic = true })
+		assert(widgets.Pandemic.Ring._lastArgs.SetAlpha[1] == 1, "the style toggle reveals the ring")
+	end)
+
+	fw.it("a display without the Pandemic option registers no regions", function()
+		local instance = newOptionInstance()
+		local button = instance.Buttons[1]
+		local widgets = instance.ButtonWidgets[button]
+
+		assert((button._calls.AddPandemicRegion or 0) == 0, "no region registered")
+		assert(widgets.Pandemic == nil, "no holder created")
+	end)
+end)
+
+fw.describe("AuraContainerDisplay - countdown colour by time", function()
+	fw.before_each(function()
+		acm.reset()
+		mockDb.ColorCountdownByTime = nil
+	end)
+
+	fw.it("binds the curve-coloured fontstring once per button", function()
+		local instance = newInstance()
+		local button = instance.Buttons[1]
+		local widgets = instance.ButtonWidgets[button]
+
+		assert(button._calls.SetDurationText == 1, "duration text bound at creation")
+		assert(widgets.DurationText, "the fontstring is kept on the widgets")
+		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 0, "hidden while the setting is off")
+	end)
+
+	fw.it("the global setting swaps the countdown to the coloured text", function()
+		local instance = newInstance()
+		local button = instance.Buttons[1]
+		local widgets = instance.ButtonWidgets[button]
+		local hideCalls = widgets.Cooldown._calls.SetHideCountdownNumbers or 0
+
+		mockDb.ColorCountdownByTime = true
+		instance:SetStyle({})
+
+		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 1, "coloured text revealed")
+		assert((widgets.Cooldown._calls.SetHideCountdownNumbers or 0) > hideCalls,
+			"the cooldown's own numbers were re-driven")
+
+		mockDb.ColorCountdownByTime = nil
+		instance:SetStyle({})
+		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 0, "and hides again when turned off")
+	end)
 end)
 
 fw.describe("AuraContainerDisplay - Edit Mode preview suppression", function()

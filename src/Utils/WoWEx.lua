@@ -23,6 +23,17 @@ function M:UseAuraContainers()
 	return M.IsAuraContainerEra
 end
 
+---True when the client can drive pandemic (refresh-window) regions on aura buttons. Probes the
+---C_UnitAuras functions the engine computes the window from rather than the button mixin, which
+---lives in the secure environment and is not a readable global.
+---@return boolean
+function M:HasPandemicRegions()
+	return M.IsAuraContainerEra
+		and C_UnitAuras ~= nil
+		and C_UnitAuras.GetRefreshExtendedDuration ~= nil
+		and C_UnitAuras.GetAuraBaseDuration ~= nil
+end
+
 ---True while AuraButton styling is blocked: button APIs Lua-error from addon code whenever
 ---auras are secret, which covers combat but ALSO out-of-combat moments inside M+/encounters/
 ---PvP matches - so InCombatLockdown alone is not a sufficient guard.

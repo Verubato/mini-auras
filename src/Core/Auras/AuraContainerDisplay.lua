@@ -24,7 +24,24 @@ local STYLE_FIELDS = {
 	"Glow",
 	"FontScale",
 	"ShowTooltips",
+	"Pandemic",
 }
+
+-- Ring tint for the pandemic (refresh-window) reveal. Fixed rather than the group's colour so
+-- the cue reads the same on every display.
+local PANDEMIC_COLOR = { 1, 0.6, 0.1 }
+
+-- Colour-by-time stops for the countdown text: {seconds remaining, r, g, b}. The engine
+-- evaluates the curve against the secret remaining time and writes the fontstring's colour
+-- itself; nothing here reads the clock. Linear blending between stops, flat outside them.
+local COUNTDOWN_COLOR_STOPS = {
+	{ 0, 0.97, 0.33, 0.33 },
+	{ 3, 1.0, 0.6, 0.22 },
+	{ 5, 1.0, 0.82, 0.24 },
+	{ 10, 1.0, 1.0, 1.0 },
+}
+---@type table?
+local countdownCurve
 
 -- How often the deferred restyle retry runs while any display is stale (see RestyleButtons).
 local RESTYLE_RETRY_INTERVAL = 1
@@ -271,6 +288,36 @@ local function EnsureDisplayEvents()
 	end)
 end
 
+---True when the client supports colour curves on duration-text bindings. Probes the options
+---processor rather than the curve API alone: builds that predate it accept the options table
+---and silently drop the colour, which would leave the swap-in fontstring plain white.
+---@return boolean
+local function HasCountdownColorCurves()
+	return C_AuraContainerUtil ~= nil
+		and C_AuraContainerUtil.ProcessCustomAuraButtonDurationTextOptions ~= nil
+		and C_CurveUtil ~= nil
+		and C_CurveUtil.CreateColorCurve ~= nil
+		and Enum.DurationTextBindingProperty ~= nil
+end
+
+---The shared colour curve every countdown fontstring binds. Built once; the engine keeps the
+---reference and curves are never mutated after creation.
+---@return table
+local function GetCountdownCurve()
+	if not countdownCurve then
+		local curve = C_CurveUtil.CreateColorCurve()
+		curve:SetType(Enum.LuaCurveType.Linear)
+		-- Highest threshold first: the curve API expects points added in descending x order.
+		for i = #COUNTDOWN_COLOR_STOPS, 1, -1 do
+			local stop = COUNTDOWN_COLOR_STOPS[i]
+			curve:AddPoint(stop[1], CreateColor(stop[2], stop[3], stop[4]))
+		end
+		countdownCurve = curve
+	end
+
+	return countdownCurve
+end
+
 ---Resolves the configured glow type to one this display can actually render.
 ---@return string
 local function GetGlowStyleName()
@@ -291,6 +338,7 @@ local function StoreStyle(instance, style)
 	local stored = instance.Style
 	local disableSwipe = (db and db.DisableSwipe) or false
 	local millisecondsThreshold = db and db.MillisecondsThreshold
+	local colorCountdown = (db and db.ColorCountdownByTime) or false
 	local glowStyleName = GetGlowStyleName()
 	local color = style.GlowColor
 	local colorR, colorG, colorB = color and color[1], color and color[2], color and color[3]
@@ -298,6 +346,7 @@ local function StoreStyle(instance, style)
 	local changed = not stored.Populated
 		or stored.DisableSwipe ~= disableSwipe
 		or stored.MillisecondsThreshold ~= millisecondsThreshold
+		or stored.ColorCountdownByTime ~= colorCountdown
 		or stored.GlowStyleName ~= glowStyleName
 		or stored.GlowColorR ~= colorR
 		or stored.GlowColorG ~= colorG
@@ -322,6 +371,7 @@ local function StoreStyle(instance, style)
 
 	stored.DisableSwipe = disableSwipe
 	stored.MillisecondsThreshold = millisecondsThreshold
+	stored.ColorCountdownByTime = colorCountdown
 	stored.GlowStyleName = glowStyleName
 	stored.GlowColorR = colorR
 	stored.GlowColorG = colorG
@@ -455,6 +505,16 @@ local function StyleButton(instance, button)
 	cd.FontScale = style.FontScale or 1.0
 	fontUtil:UpdateCooldownFontSize(cd, instance.Size, nil, cd.FontScale)
 
+	-- Colour-by-time swaps the cooldown's own countdown for the curve-bound fontstring. The
+	-- engine writes that fontstring either way, so the off state is alpha rather than unbinding.
+	local durationText = widgets.DurationText
+	local colorCountdown = style.ColorCountdownByTime == true and durationText ~= nil
+	cd:SetHideCountdownNumbers(colorCountdown)
+	if durationText then
+		durationText:SetAlpha(colorCountdown and 1 or 0)
+		fontUtil:UpdateFontSize(durationText, instance.Size, 0.4, cd.FontScale)
+	end
+
 	-- Alpha rather than Show/Hide, and never unregistered: the engine owns this font string's
 	-- text and shown state, so the only part of it left to us is how visible it is.
 	local stacks = widgets.Stacks
@@ -483,6 +543,13 @@ local function StyleButton(instance, button)
 			glow:Hide()
 			glow.Anim:Stop()
 		end
+	end
+
+	-- The engine owns the pandemic holder's visibility (shown only inside the refresh window);
+	-- the per-group toggle is ours and rides the ring's alpha instead.
+	local pandemic = widgets.Pandemic
+	if pandemic then
+		pandemic.Ring:SetAlpha(style.Pandemic and 1 or 0)
 	end
 
 	-- Tooltips (and click-to-cancel, which we never register) require mouse input.
@@ -520,6 +587,19 @@ local function InitializeButton(instance, button, glowColor)
 	end
 	button:SetDurationCooldown(cd)
 
+	-- Colour-by-time countdown: a fontstring bound as native duration text carrying a colour
+	-- curve the engine evaluates against the secret remaining time. Always bound where the
+	-- client supports it (bindings are creation-frozen); the global toggle swaps between this
+	-- and the cooldown's own countdown at restyle time.
+	local durationText
+	if HasCountdownColorCurves() then
+		durationText = button:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+		durationText:SetPoint("CENTER", button, "CENTER", 0, 0)
+		button:SetDurationText(durationText, {
+			textColor = { GetCountdownCurve(), Enum.DurationTextBindingProperty.RemainingDuration },
+		})
+	end
+
 	local border, glow
 
 	if not instance.Minimal then
@@ -539,6 +619,31 @@ local function InitializeButton(instance, button, glowColor)
 		-- later switch to an animated style doesn't have to touch the button.
 		glow = glowStyles:BuildGlowFrame(button, NextFrameName("Glow"))
 		glow:Hide()
+	end
+
+	-- Pandemic reveal: the engine computes each aura's refresh window (the tail where re-casting
+	-- carries the remainder over) and drives the registered region's visibility itself - the
+	-- window's bounds are secret, so nothing here may read them. A holder frame is registered
+	-- rather than the ring texture, because registration hands the object's shown state to the
+	-- engine and it must be something this addon never shows or hides; the ring inside stays
+	-- ours, and the per-group toggle rides its alpha (StyleButton). No animation on purpose: a
+	-- looping animation costs CPU every frame across every pre-created button.
+	local pandemic
+	if instance.PandemicRegions and button.AddPandemicRegion then
+		pandemic = CreateFrame("Frame", NextFrameName("Pandemic"), button)
+		pandemic:SetFrameLevel(button:GetFrameLevel() + 6)
+		-- One pixel outside the dispel border's ring, so both read when they overlap.
+		pandemic:SetPoint("TOPLEFT", button, "TOPLEFT", -2, 2)
+		pandemic:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 2, -2)
+
+		local ring = pandemic:CreateTexture(nil, "OVERLAY")
+		ring:SetAllPoints(pandemic)
+		ring:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
+		ring:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
+		ring:SetVertexColor(PANDEMIC_COLOR[1], PANDEMIC_COLOR[2], PANDEMIC_COLOR[3], 1)
+		pandemic.Ring = ring
+
+		button:AddPandemicRegion(pandemic)
 	end
 
 	-- The engine writes the count and decides when it is on screen, both of which are secret. We
@@ -561,6 +666,8 @@ local function InitializeButton(instance, button, glowColor)
 		Glow = glow,
 		GlowStyle = nil,
 		GlowColor = glowColor,
+		Pandemic = pandemic,
+		DurationText = durationText,
 	}
 	instance.Buttons[#instance.Buttons + 1] = button
 
@@ -642,6 +749,10 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	instance.IconTexCoord = options.IconTexCoord
 	instance.IconMask = options.IconMask
 	instance.Minimal = options.Minimal == true
+	-- Resolved at creation: regions can only be added to a button in initializeFrame, so a
+	-- display that skipped them can never grow them later (pooled displays included - opt in
+	-- whenever any consumer of the pool might want the reveal).
+	instance.PandemicRegions = options.Pandemic == true and wowEx:HasPandemicRegions()
 
 	-- Seed the style BEFORE any button exists, so initializeFrame styles them correctly first
 	-- time. Everything StyleButton applies - size, swipe, countdown, glow, dispel textures - is
@@ -965,8 +1076,9 @@ function M:GetStyleSignature(style, size, spacing)
 	parts[n + 2] = tostring(db and db.DisableSwipe)
 	parts[n + 3] = tostring(db and db.MillisecondsThreshold)
 	parts[n + 4] = GetGlowStyleName()
+	parts[n + 5] = tostring(db and db.ColorCountdownByTime)
 
-	return table.concat(parts, ":", 1, n + 4)
+	return table.concat(parts, ":", 1, n + 5)
 end
 
 ---Stores the per-button style and applies it to existing buttons when possible. Skipped
@@ -1052,9 +1164,12 @@ end
 ---@field FontScale number?
 ---@field ShowTooltips boolean?
 ---@field Stacks boolean? Show the engine-written application count in the icon's corner.
+---@field Pandemic boolean? Reveal the engine-driven refresh-window ring. Only displays created
+---with the Pandemic option carry the regions; elsewhere this field is inert.
 ---Resolved from the global db by StoreStyle; callers never set these.
 ---@field DisableSwipe boolean?
 ---@field MillisecondsThreshold number?
+---@field ColorCountdownByTime boolean? Swap the cooldown countdown for the curve-coloured text.
 ---@field GlowStyleName string?
 ---@field Border boolean? Draw the plain (non dispel-coloured) border, tinted with GlowColor.
 ---@field GlowColor number[]? {r, g, b} tint for every glow on the display. A group's own
@@ -1074,6 +1189,9 @@ end
 ---@field IconTexCoord number[]? {left, right, top, bottom} crop applied to every icon.
 ---@field IconMask table? MaskTexture applied to every icon, and to the cooldown swipe.
 ---@field Minimal boolean? Skip the dispel border and the glow frame (portrait icons want neither).
+---@field Pandemic boolean? Create and register a refresh-window region on every button. Must be
+---decided at creation (regions can only be added in initializeFrame); the Style.Pandemic toggle
+---then shows or hides the reveal per restyle.
 ---@field Style AuraDisplayStyle? Style to build the buttons with. Pass it whenever the display
 ---may be created while auras are secret - a later SetStyle cannot reach the buttons there.
 

@@ -118,6 +118,26 @@ function M:Build(panel)
 	-- the full list once the legacy path is retired.
 	local useAuraContainers = addon.Utils.WoWEx:UseAuraContainers()
 
+	-- 12.1 only: the colour rides a curve on the native duration text, which the legacy path
+	-- has no equivalent for.
+	if useAuraContainers then
+		local colorCountdownChk = mini:Checkbox({
+			Parent = panel,
+			LabelText = L["Colour Countdown By Time"],
+			Tooltip = L["Colours the countdown timer text by the time remaining, from white through gold and orange to red as it runs out."],
+			GetValue = function()
+				return db.ColorCountdownByTime or false
+			end,
+			SetValue = function(value)
+				db.ColorCountdownByTime = value
+				addon:Refresh()
+			end,
+		})
+
+		colorCountdownChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 4, 0)
+		colorCountdownChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
+	end
+
 	local glowItems = useAuraContainers and {
 		"Rotation Assist (Clockwise)",
 		"Rotation Assist (Anti-clockwise)",

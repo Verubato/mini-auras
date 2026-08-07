@@ -307,6 +307,7 @@ function M:Normalise(group)
 	icons.Spacing = Clamped(icons.Spacing, DEFAULT_SPACING, 0, 50)
 	icons.Glow = icons.Glow == true
 	icons.Border = icons.Border == true
+	icons.Pandemic = icons.Pandemic == true
 	-- On unless it was turned off: the swipe filling up reads as time running out, which is what
 	-- these icons are for. A group saved before this carries the field either way.
 	icons.ReverseCooldown = icons.ReverseCooldown ~= false
@@ -762,7 +763,7 @@ end
 ---@field Position { Point: string, RelativePoint: string, X: number, Y: number } Screen anchor only.
 ---@field Offset { X: number, Y: number } Nameplate anchor only.
 ---@field Grow string
----@field Icons { Size: number, Spacing: number, Glow: boolean, Border: boolean, ReverseCooldown: boolean, ShowTooltips: boolean, Color: table }
+---@field Icons { Size: number, Spacing: number, Glow: boolean, Border: boolean, Pandemic: boolean, ReverseCooldown: boolean, ShowTooltips: boolean, Color: table }
 ---@field Sound { Applied: string, Removed: string, Stacks: string, Channel: string } Empty means silent.
 ---@field TrackingMode string "SPELLS" narrows to a spell list, "FILTERS" to a filter string.
 ---@field Filters table<string, string> Filter component to "REQUIRE"|"FORBID". Filter mode only.

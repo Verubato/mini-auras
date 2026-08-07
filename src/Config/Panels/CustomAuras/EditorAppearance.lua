@@ -24,6 +24,7 @@ function ui.BuildAppearanceTab(ctx)
 	local sliderWidth = ui.DropdownColumn * 2 - SLIDER_GAP / 2
 
 	local checkRow = ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, 4)
+	local checkRow2 = ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, 4)
 	local settingsControlsRow = ctx.NewRow(appearancePanel, ui.DropdownRowHeight)
 	local sliderRow = ctx.NewRow(appearancePanel, SLIDER_ROW_HEIGHT)
 
@@ -94,6 +95,14 @@ function ui.BuildAppearanceTab(ctx)
 			Get = function(group) return group.Icons.ShowTooltips end,
 			Set = function(group, value) group.Icons.ShowTooltips = value end,
 		},
+		{
+			Column = 0,
+			Row = checkRow2,
+			Label = L["Pandemic highlight"],
+			Tooltip = L["Highlight an aura during its refresh window, where re-casting adds the remaining time on top. The game decides the window per spell, and only your own re-castable effects have one."],
+			Get = function(group) return group.Icons.Pandemic end,
+			Set = function(group, value) group.Icons.Pandemic = value end,
+		},
 	}
 
 	for _, spec in ipairs(checkboxes) do
@@ -114,7 +123,7 @@ function ui.BuildAppearanceTab(ctx)
 				end
 			end,
 		})
-		check:SetPoint("TOPLEFT", checkRow, "TOPLEFT", checkColumn * spec.Column, 0)
+		check:SetPoint("TOPLEFT", spec.Row or checkRow, "TOPLEFT", checkColumn * spec.Column, 0)
 	end
 
 	local swatch = mini:ColorSwatch({

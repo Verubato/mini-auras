@@ -281,6 +281,7 @@ function M.build()
 	addon.Utils.FontUtil = {
 		UpdateCooldownFontSize = function() end,
 		UpdateStackFontSize = function() end,
+		UpdateFontSize = function() end,
 	}
 	addon.Utils.Auras = {
 		IsPurgeableNonDefensive = function()

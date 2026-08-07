@@ -75,6 +75,7 @@ local function BuildStyle(group)
 	style.Border = icons.Border
 	style.GlowColor = moduleUtil:GetIconColorRGB(icons)
 	style.ShowTooltips = icons.ShowTooltips
+	style.Pandemic = icons.Pandemic
 	-- Always on: a stack count is only ever drawn when there is one to draw, so there is
 	-- nothing to turn off and nothing to explain in the options.
 	style.Stacks = true
@@ -112,7 +113,9 @@ local function CreateEntry(style)
 			MaxIcons = groups.MaxIcons,
 			CandidateFilters = EMPTY_FILTERS,
 		},
-	}, DEFAULT_SIZE, DEFAULT_SPACING, MODULE_TAG, { Style = style })
+		-- Every pooled entry carries pandemic regions: they can only be created with the buttons,
+		-- and any group the pool later hands this entry to may have the reveal turned on.
+	}, DEFAULT_SIZE, DEFAULT_SPACING, MODULE_TAG, { Style = style, Pandemic = true })
 
 	return { Display = display }
 end

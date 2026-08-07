@@ -21,6 +21,7 @@ local dbDefaults = {
 	-- dies with the 12.0 path, together with its ProfileManager PayloadKeys entry.
 	CCNativeOrder = false,
 	DisableSwipe = false,
+	ColorCountdownByTime = true,
 	FadeWithParent = true,
 	MillisecondsThreshold = 5,
 	LocaleOverride = false,

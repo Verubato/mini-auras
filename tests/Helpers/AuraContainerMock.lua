@@ -428,6 +428,7 @@ local function NewAuraButton(container, groupKey)
 		"SetIcon", "SetDurationCooldown", "SetApplicationCount", "SetSpellName",
 		"AddDispelTypeTexture", "ClearDispelTypeTextures", "SetDispelTypeText",
 		"SetTooltipAnchorPoint", "SetHideTooltipInCombat", "SetCancelAuraButtons",
+		"SetDurationText", "AddPandemicRegion",
 	}) do
 		button[methodName] = function(_, ...)
 			button._calls[methodName] = (button._calls[methodName] or 0) + 1
@@ -631,6 +632,34 @@ function M.setup()
 	_G.Enum = _G.Enum or {}
 	_G.Enum.CustomAuraButtonDispelTypeTextureStyle = _G.Enum.CustomAuraButtonDispelTypeTextureStyle
 		or { Border = 0, BorderWithIcon = 1, Icon = 2, PreserveAsset = 3, CustomAsset = 4 }
+	_G.Enum.LuaCurveType = _G.Enum.LuaCurveType or { Linear = 0, Step = 1 }
+	_G.Enum.DurationTextBindingProperty = _G.Enum.DurationTextBindingProperty
+		or { RemainingDuration = 0, RemainingPercent = 1 }
+	-- Pandemic capability: the display wrapper probes these before registering regions.
+	_G.C_UnitAuras = _G.C_UnitAuras or {}
+	_G.C_UnitAuras.GetRefreshExtendedDuration = _G.C_UnitAuras.GetRefreshExtendedDuration
+		or function() return 0 end
+	_G.C_UnitAuras.GetAuraBaseDuration = _G.C_UnitAuras.GetAuraBaseDuration
+		or function() return 0 end
+	-- Duration-text colour curves: probed the same way before binding the countdown fontstring.
+	_G.C_AuraContainerUtil = _G.C_AuraContainerUtil or {}
+	_G.C_AuraContainerUtil.ProcessCustomAuraButtonDurationTextOptions =
+		_G.C_AuraContainerUtil.ProcessCustomAuraButtonDurationTextOptions
+		or function(options) return options end
+	_G.C_CurveUtil = _G.C_CurveUtil or {}
+	_G.C_CurveUtil.CreateColorCurve = _G.C_CurveUtil.CreateColorCurve or function()
+		local curve = { points = {} }
+		function curve:SetType(curveType)
+			curve.curveType = curveType
+		end
+		function curve:AddPoint(x, color)
+			curve.points[#curve.points + 1] = { x = x, color = color }
+		end
+		return curve
+	end
+	_G.CreateColor = _G.CreateColor or function(r, g, b, a)
+		return { r = r, g = g, b = b, a = a }
+	end
 	_G.AnchorUtil = _G.AnchorUtil or {
 		FlowLayoutAxis = { Horizontal = 0, Vertical = 1 },
 		FlowDirection = { Left = 0, Right = 1, Up = 2, Down = 3 },
@@ -655,10 +684,14 @@ function M.loadDisplay()
 			FontUtil = {
 				UpdateCooldownFontSize = function() end,
 				UpdateStackFontSize = function() end,
+				UpdateFontSize = function() end,
 			},
 			WoWEx = {
 				IsAuraStylingRestricted = function()
 					return M.restricted
+				end,
+				HasPandemicRegions = function()
+					return true
 				end,
 			},
 		},
