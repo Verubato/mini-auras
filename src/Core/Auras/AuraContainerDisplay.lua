@@ -709,6 +709,13 @@ function M:GetUnit()
 	return self.Frame:GetUnit()
 end
 
+---Forces a re-parse of the tracked unit's auras, for when the token's occupant changes rather
+---than the token (a target or focus swap). Calling UpdateAllAuras from addon context is not
+---enough: it only marks the dirty flags nothing is armed to consume - see the bounce machinery.
+function M:RequestRefresh()
+	MarkBouncePending(self)
+end
+
 ---Enables or disables aura tracking (disabled containers unregister their events).
 ---@param enabled boolean
 function M:SetEnabled(enabled)

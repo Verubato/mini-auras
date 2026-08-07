@@ -463,6 +463,14 @@ local function NewAuraContainer(name, parent, template)
 		container._calls.UpdateAllAuras = (container._calls.UpdateAllAuras or 0) + 1
 	end
 
+	-- Counted so tests can observe the hide/show bounce the display wrapper uses to arm the
+	-- engine's dirty processing.
+	local baseShow = container.Show
+	function container:Show()
+		container._calls.Show = (container._calls.Show or 0) + 1
+		baseShow(container)
+	end
+
 	function container:AddAuraGroup(groupKey, filterString, options)
 		assert(container._groups[groupKey] == nil, "aura group already exists: " .. tostring(groupKey))
 		local group = {

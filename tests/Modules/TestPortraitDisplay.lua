@@ -168,11 +168,13 @@ fw.describe("PortraitModule 12.1 - wrapper-managed containers", function()
 
 	fw.it("a target swap refreshes only that unit's stack", function()
 		-- Containers watch their unit token, not who currently occupies it; nothing refreshes
-		-- them when the target changes unless the module asks.
+		-- them when the target changes unless the module asks. The refresh is the hide/show
+		-- bounce (an addon-context UpdateAllAuras only marks flags nothing is armed to consume),
+		-- so a bounce shows up as one extra Show call per display.
 		local function refreshCount(unit)
 			local total = 0
 			for _, display in ipairs(displaysFor(unit)) do
-				total = total + (display.Frame._calls.UpdateAllAuras or 0)
+				total = total + (display.Frame._calls.Show or 0)
 			end
 			return total
 		end

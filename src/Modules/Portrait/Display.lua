@@ -403,7 +403,7 @@ function M:RefreshUnitAuras(unit)
 	for _, container in pairs(containers) do
 		if container.AuraUnit == unit and container.AuraDisplay then
 			for _, display in ipairs(container.AuraDisplay.Displays) do
-				display.Frame:UpdateAllAuras()
+				display:RequestRefresh()
 			end
 		end
 	end

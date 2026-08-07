@@ -284,6 +284,20 @@ local function RefreshHealers()
 	for _, healer in ipairs(healers) do
 		local item = discardPool[healer]
 
+		-- Container entries are interchangeable: same groups, retargeted by SetUnit. Taking any
+		-- parked one caps the display count at the largest healer set seen at once, where the
+		-- same-token match alone builds a new display for every token that ever held a healer
+		-- (containers can never be freed). Legacy entries carry a unit-bound watcher and only
+		-- fit their own token, so they keep the strict match.
+		if not item and USE_AURA_CONTAINERS then
+			local token, parked = next(discardPool)
+
+			if parked then
+				item = parked
+				discardPool[token] = nil
+			end
+		end
+
 		if item then
 			if item.Watcher then
 				item.Watcher:Enable()

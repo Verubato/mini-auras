@@ -140,8 +140,8 @@ local function CreateEvents()
 	end
 
 	-- 12.1: containers track their unit token but don't refresh when the token's occupant
-	-- changes (the legacy watchers registered these events themselves); Blizzard's container
-	-- mixin exposes UpdateAllAuras for exactly this.
+	-- changes (the legacy watchers registered these events themselves); the display's
+	-- RequestRefresh forces the re-parse.
 	if USE_AURA_CONTAINERS then
 		local unitChangeEvents = CreateFrame("Frame")
 		unitChangeEvents:SetScript("OnEvent", function(_, event)

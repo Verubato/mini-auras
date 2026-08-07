@@ -751,7 +751,7 @@ function M:OnUnitChanged(unit)
 		if group.Anchor == groups.Anchor.Screen and groups:GetToken(group) == unit
 			and state.Screen then
 			ConfigureDisplay(state, state.Screen, unit)
-			state.Screen.Display.Frame:UpdateAllAuras()
+			state.Screen.Display:RequestRefresh()
 		end
 	end
 end
