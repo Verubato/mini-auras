@@ -164,6 +164,7 @@ function M:Init()
 
 	-- Sidebar icons: desaturated by CreateTabs until the tab is selected.
 	local tabs = {
+		{ Heading = L["General"] },
 		{
 			Key = "General",
 			Title = L["Home"],
@@ -172,7 +173,6 @@ function M:Init()
 				M.General:Build(content)
 			end,
 		},
-		{ Heading = L["General"] },
 		{
 			Key = "RaidFrameAuras",
 			Title = L["Raid Frame Auras_Short"] or L["Raid Frame Auras"],

@@ -177,6 +177,42 @@ function M:CreateTabs(options)
 		end
 	end
 
+	-- Height the separators and headings add over plain button-to-button spacing, so
+	-- TabFitToParent can hand out only what is actually left for the buttons.
+	local decorationHeight = 0
+
+	---Builds a section heading: the panel divider's gold label at strip size, with the tail
+	---fading out toward the right edge. Anchored below anchorTo, or to the strip top for a
+	---heading that opens the list. Returns the frame the next button anchors to.
+	local function CreateHeading(title, anchorTo)
+		local head = CreateFrame("Frame", nil, strip)
+		head:SetHeight(18)
+
+		if anchorTo then
+			head:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", 0, -tabSpacing - 4)
+			head:SetPoint("TOPRIGHT", anchorTo, "BOTTOMRIGHT", 0, -tabSpacing - 4)
+			decorationHeight = decorationHeight + 24
+		else
+			head:SetPoint("TOPLEFT", strip, "TOPLEFT", 0, 0)
+			head:SetPoint("TOPRIGHT", strip, "TOPRIGHT", 0, 0)
+			decorationHeight = decorationHeight + 20
+		end
+
+		local label = head:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+		label:SetText(tostring(title):upper())
+		label:SetTextColor(dividerGold.r, dividerGold.g, dividerGold.b, 1)
+		label:SetPoint("BOTTOMLEFT", head, "BOTTOMLEFT", 10, 2)
+
+		local tail = head:CreateTexture(nil, "OVERLAY")
+		pixel.SetHeight(tail, 1)
+		GUI.SetGradientH(tail, dividerLine.r, dividerLine.g, dividerLine.b, 0.6,
+			dividerLine.r, dividerLine.g, dividerLine.b, 0)
+		pixel.SetPoint(tail, "LEFT", label, "RIGHT", 8, -1)
+		pixel.SetPoint(tail, "RIGHT", head, "RIGHT", -8, -1)
+
+		return head
+	end
+
 	local prev
 	for i, def in ipairs(defs) do
 		assert(def.Key and def.Key ~= "", "CreateTabs: each tab needs Key")
@@ -247,10 +283,16 @@ function M:CreateTabs(options)
 				btn.Text:SetPoint("LEFT", btn, "LEFT", 12, 0)
 			end
 
-			if not prev then
+			local heading = type(separatorBefore[i]) == "string" and separatorBefore[i] or nil
+
+			if heading then
+				local head = CreateHeading(heading, prev)
+				btn:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 0, -2)
+				btn:SetPoint("TOPRIGHT", head, "BOTTOMRIGHT", 0, -2)
+			elseif not prev then
 				btn:SetPoint("TOPLEFT", strip, "TOPLEFT", 0, 0)
 				btn:SetPoint("TOPRIGHT", strip, "TOPRIGHT", 0, 0)
-			elseif separatorBefore[i] == true then
+			elseif separatorBefore[i] then
 				-- Inset from both edges so it reads as a grouping line, not a border. The
 				-- button undoes the inset to get back to the strip's full width.
 				local line = strip:CreateTexture(nil, "OVERLAY")
@@ -260,28 +302,7 @@ function M:CreateTabs(options)
 				line:SetPoint("TOPRIGHT", prev, "BOTTOMRIGHT", -8, -tabSpacing - 4)
 				btn:SetPoint("TOPLEFT", line, "BOTTOMLEFT", -8, -tabSpacing - 4)
 				btn:SetPoint("TOPRIGHT", line, "BOTTOMRIGHT", 8, -tabSpacing - 4)
-			elseif separatorBefore[i] then
-				-- Section heading: the panel divider's gold label at strip size, with the tail
-				-- fading out toward the right edge instead of a centred pair of rules.
-				local head = CreateFrame("Frame", nil, strip)
-				head:SetHeight(18)
-				head:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, -tabSpacing - 4)
-				head:SetPoint("TOPRIGHT", prev, "BOTTOMRIGHT", 0, -tabSpacing - 4)
-
-				local label = head:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-				label:SetText(tostring(separatorBefore[i]):upper())
-				label:SetTextColor(dividerGold.r, dividerGold.g, dividerGold.b, 1)
-				label:SetPoint("BOTTOMLEFT", head, "BOTTOMLEFT", 10, 2)
-
-				local tail = head:CreateTexture(nil, "OVERLAY")
-				pixel.SetHeight(tail, 1)
-				GUI.SetGradientH(tail, dividerLine.r, dividerLine.g, dividerLine.b, 0.6,
-					dividerLine.r, dividerLine.g, dividerLine.b, 0)
-				pixel.SetPoint(tail, "LEFT", label, "RIGHT", 8, -1)
-				pixel.SetPoint(tail, "RIGHT", head, "RIGHT", -8, -1)
-
-				btn:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 0, -2)
-				btn:SetPoint("TOPRIGHT", head, "BOTTOMRIGHT", 0, -2)
+				decorationHeight = decorationHeight + tabSpacing + 9
 			else
 				btn:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, -tabSpacing)
 				btn:SetPoint("TOPRIGHT", prev, "BOTTOMRIGHT", 0, -tabSpacing)
@@ -479,7 +500,7 @@ function M:CreateTabs(options)
 				if h == 0 or #tabs == 0 then
 					return
 				end
-				local btnH = math.floor((h - tabSpacing * (#tabs - 1)) / #tabs)
+				local btnH = math.floor((h - decorationHeight - tabSpacing * (#tabs - 1)) / #tabs)
 				for _, tab in ipairs(tabs) do
 					tab.Button:SetHeight(math.max(16, btnH))
 				end
