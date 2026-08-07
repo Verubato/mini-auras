@@ -15,6 +15,8 @@ function M:CreateTabs(options)
 	local tabTextHover = GUI.TabTextHover
 	local tabTextSelected = GUI.TabTextSelected
 	local tabTextBright = GUI.TabTextBright
+	local dividerGold = GUI.DividerGold
+	local dividerLine = GUI.DividerLine
 
 	local parent = options.Parent
 	local vertical = options.Vertical
@@ -162,13 +164,14 @@ function M:CreateTabs(options)
 	controller.Tabs = tabs
 
 	-- A def of { Separator = true } draws a grouping line before the NEXT tab instead of a
-	-- button. Filtered out here so the button loop, the key index and the content list only
-	-- ever see real tabs; horizontal strips ignore separators entirely.
+	-- button, and { Heading = "Title" } draws a gold section label in the panel-divider style.
+	-- Filtered out here so the button loop, the key index and the content list only ever see
+	-- real tabs; horizontal strips ignore both entirely.
 	local defs = {}
 	local separatorBefore = {}
 	for _, def in ipairs(options.Tabs) do
-		if def.Separator then
-			separatorBefore[#defs + 1] = true
+		if def.Separator or def.Heading then
+			separatorBefore[#defs + 1] = def.Heading or true
 		else
 			defs[#defs + 1] = def
 		end
@@ -247,7 +250,7 @@ function M:CreateTabs(options)
 			if not prev then
 				btn:SetPoint("TOPLEFT", strip, "TOPLEFT", 0, 0)
 				btn:SetPoint("TOPRIGHT", strip, "TOPRIGHT", 0, 0)
-			elseif separatorBefore[i] then
+			elseif separatorBefore[i] == true then
 				-- Inset from both edges so it reads as a grouping line, not a border. The
 				-- button undoes the inset to get back to the strip's full width.
 				local line = strip:CreateTexture(nil, "OVERLAY")
@@ -257,6 +260,28 @@ function M:CreateTabs(options)
 				line:SetPoint("TOPRIGHT", prev, "BOTTOMRIGHT", -8, -tabSpacing - 4)
 				btn:SetPoint("TOPLEFT", line, "BOTTOMLEFT", -8, -tabSpacing - 4)
 				btn:SetPoint("TOPRIGHT", line, "BOTTOMRIGHT", 8, -tabSpacing - 4)
+			elseif separatorBefore[i] then
+				-- Section heading: the panel divider's gold label at strip size, with the tail
+				-- fading out toward the right edge instead of a centred pair of rules.
+				local head = CreateFrame("Frame", nil, strip)
+				head:SetHeight(18)
+				head:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, -tabSpacing - 4)
+				head:SetPoint("TOPRIGHT", prev, "BOTTOMRIGHT", 0, -tabSpacing - 4)
+
+				local label = head:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+				label:SetText(tostring(separatorBefore[i]):upper())
+				label:SetTextColor(dividerGold.r, dividerGold.g, dividerGold.b, 1)
+				label:SetPoint("BOTTOMLEFT", head, "BOTTOMLEFT", 10, 2)
+
+				local tail = head:CreateTexture(nil, "OVERLAY")
+				pixel.SetHeight(tail, 1)
+				GUI.SetGradientH(tail, dividerLine.r, dividerLine.g, dividerLine.b, 0.6,
+					dividerLine.r, dividerLine.g, dividerLine.b, 0)
+				pixel.SetPoint(tail, "LEFT", label, "RIGHT", 8, -1)
+				pixel.SetPoint(tail, "RIGHT", head, "RIGHT", -8, -1)
+
+				btn:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 0, -2)
+				btn:SetPoint("TOPRIGHT", head, "BOTTOMRIGHT", 0, -2)
 			else
 				btn:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, -tabSpacing)
 				btn:SetPoint("TOPRIGHT", prev, "BOTTOMRIGHT", 0, -tabSpacing)

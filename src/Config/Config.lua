@@ -172,6 +172,7 @@ function M:Init()
 				M.General:Build(content)
 			end,
 		},
+		{ Heading = L["General"] },
 		{
 			Key = "RaidFrameAuras",
 			Title = L["Raid Frame Auras_Short"] or L["Raid Frame Auras"],
@@ -182,53 +183,11 @@ function M:Init()
 			end,
 		},
 		{
-			Key = "CC",
-			Title = L["CC"],
-			Icon = "Interface\\Icons\\Spell_Nature_Polymorph",
-			Build = function(content)
-				M.CrowdControl:Build(content, db.Modules.CCModule.Default, db.Modules.CCModule.Raid)
-			end,
-		},
-		{
-			Key = "PetCC",
-			Title = L["Pet CC"],
-			-- The stable's wolf pet family icon, so the tab reads as "pets" at sidebar size.
-			Icon = "Interface\\Icons\\Ability_Hunter_Pet_Wolf",
-			Build = function(content)
-				M.PetCrowdControl:Build(content)
-			end,
-		},
-		{
-			Key = "FriendlyCooldowns",
-			Title = L["Friendly Cooldowns_Short"] or L["Friendly Cooldowns"],
-			Icon = "Interface\\Icons\\Spell_Holy_GuardianSpirit",
-			Build = function(content)
-				local m = db.Modules.FriendlyCooldownTrackerModule
-				M.FriendlyCooldownTracker:Build(content, m.Default, m.Raid)
-			end,
-		},
-		{
-			Key = "EnemyCooldowns",
-			Title = L["Enemy Cooldowns_Short"] or L["Enemy Cooldowns"],
-			Icon = "Interface\\Icons\\Ability_CriticalStrike",
-			Build = function(content)
-				M.EnemyCooldownTracker:Build(content, db.Modules.EnemyCooldownTrackerModule)
-			end,
-		},
-		{
 			Key = "Alerts",
 			Title = L["Alerts"],
 			Icon = "Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew",
 			Build = function(content)
 				M.Alerts:Build(content, db.Modules.AlertsModule)
-			end,
-		},
-		{
-			Key = "Healer",
-			Title = L["Healer"],
-			Icon = "Interface\\Icons\\Spell_Holy_PowerWordShield",
-			Build = function(content)
-				M.Healer:Build(content, db.Modules.HealerCCModule)
 			end,
 		},
 		{
@@ -247,21 +206,23 @@ function M:Init()
 				M.Portraits:Build(content)
 			end,
 		},
+		-- TEMPORARY 12.0 leftovers: all three are removed on 12.1 below, so they park at the
+		-- end of the General group rather than earning a heading of their own.
 		{
-			Key = "EnemyKickTracker",
-			Title = L["Enemy Kicks_Short"] or L["Enemy Kicks"],
-			Icon = "Interface\\Icons\\Ability_Kick",
+			Key = "FriendlyCooldowns",
+			Title = L["Friendly Cooldowns_Short"] or L["Friendly Cooldowns"],
+			Icon = "Interface\\Icons\\Spell_Holy_GuardianSpirit",
 			Build = function(content)
-				M.EnemyKickTracker:Build(content)
+				local m = db.Modules.FriendlyCooldownTrackerModule
+				M.FriendlyCooldownTracker:Build(content, m.Default, m.Raid)
 			end,
 		},
 		{
-			Key = "AllyKickTracker",
-			Title = L["Ally Kicks_Short"] or L["Ally Kicks"],
-			-- Mind Freeze, so the tab reads as a different feature to the kick timer's own icon.
-			Icon = C_Spell.GetSpellTexture(47528),
+			Key = "EnemyCooldowns",
+			Title = L["Enemy Cooldowns_Short"] or L["Enemy Cooldowns"],
+			Icon = "Interface\\Icons\\Ability_CriticalStrike",
 			Build = function(content)
-				M.AllyKickTracker:Build(content, db.Modules.AllyKickTrackerModule)
+				M.EnemyCooldownTracker:Build(content, db.Modules.EnemyCooldownTrackerModule)
 			end,
 		},
 		{
@@ -273,8 +234,51 @@ function M:Init()
 				M.Precog:Build(content)
 			end,
 		},
-		-- The tabs above are the display features; below sit the addon-wide pages.
-		{ Separator = true },
+		{ Heading = L["Crowd Control"] },
+		{
+			Key = "CC",
+			Title = L["CC"],
+			Icon = "Interface\\Icons\\Spell_Nature_Polymorph",
+			Build = function(content)
+				M.CrowdControl:Build(content, db.Modules.CCModule.Default, db.Modules.CCModule.Raid)
+			end,
+		},
+		{
+			Key = "PetCC",
+			Title = L["Pet CC"],
+			-- The stable's wolf pet family icon, so the tab reads as "pets" at sidebar size.
+			Icon = "Interface\\Icons\\Ability_Hunter_Pet_Wolf",
+			Build = function(content)
+				M.PetCrowdControl:Build(content)
+			end,
+		},
+		{
+			Key = "Healer",
+			Title = L["Healer"],
+			Icon = "Interface\\Icons\\Spell_Holy_PowerWordShield",
+			Build = function(content)
+				M.Healer:Build(content, db.Modules.HealerCCModule)
+			end,
+		},
+		{ Heading = L["Kicks"] },
+		{
+			Key = "AllyKickTracker",
+			Title = L["Ally Kicks_Short"] or L["Ally Kicks"],
+			-- Mind Freeze, so the tab reads as a different feature to the kick timer's own icon.
+			Icon = C_Spell.GetSpellTexture(47528),
+			Build = function(content)
+				M.AllyKickTracker:Build(content, db.Modules.AllyKickTrackerModule)
+			end,
+		},
+		{
+			Key = "EnemyKickTracker",
+			Title = L["Enemy Kicks_Short"] or L["Enemy Kicks"],
+			Icon = "Interface\\Icons\\Ability_Kick",
+			Build = function(content)
+				M.EnemyKickTracker:Build(content)
+			end,
+		},
+		{ Heading = L["Other"] },
 		{
 			Key = "Miscellaneous",
 			Title = L["Miscellaneous_Short"] or L["Miscellaneous"],
@@ -318,9 +322,9 @@ function M:Init()
 		end
 
 		-- Party trinkets read C_PvP rather than aura data, so the feature survives the lockdown
-		-- that took the cooldown trackers. It sits with the other party tools.
+		-- that took the cooldown trackers. It closes the Crowd Control group.
 		for i = 1, #tabs do
-			if tabs[i].Key == "AllyKickTracker" then
+			if tabs[i].Key == "Healer" then
 				table.insert(tabs, i + 1, {
 					Key = "Trinkets",
 					Title = L["Party Trinkets_Short"] or L["Party Trinkets"],
@@ -335,15 +339,21 @@ function M:Init()
 		end
 
 		-- Custom auras are 12.1-only: the whole feature is aura filtering, which the older client
-		-- has no equivalent for. Straight after Home, because it is the one users build with.
-		table.insert(tabs, 2, {
-			Key = "CustomAuras",
-			Title = L["Custom Auras_Short"] or L["Custom Auras"],
-			Icon = "Interface\\Icons\\Spell_Holy_WordFortitude",
-			Build = function(content)
-				M.CustomAuras:Build(content)
-			end,
-		})
+		-- has no equivalent for. First in the General group, because it is the one users build
+		-- with. Inserted by key rather than index: the heading entries make positions unstable.
+		for i = 1, #tabs do
+			if tabs[i].Key == "RaidFrameAuras" then
+				table.insert(tabs, i, {
+					Key = "CustomAuras",
+					Title = L["Custom Auras_Short"] or L["Custom Auras"],
+					Icon = "Interface\\Icons\\Spell_Holy_WordFortitude",
+					Build = function(content)
+						M.CustomAuras:Build(content)
+					end,
+				})
+				break
+			end
+		end
 	end
 
 	local contentPadding = 12
