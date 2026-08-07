@@ -42,9 +42,13 @@ local auraCategoryIds = addon.Core.AuraCategoryIds
 -- paths where the gate DOES apply the maps, category members with no player PvP ability behind
 -- them (mob and boss CC, PvE-only important buffs) stop showing.
 --
--- Other candidate filters are NOT identity-gated and are always safe: dispel types and the
--- booleans (isStealable, isBossAura, nameplateShowPersonal, maxDuration, ...). Precognition uses
--- the maxDuration one for exactly this reason.
+-- Other candidate filters are NOT identity-gated: dispel types and the booleans (isStealable,
+-- isBossAura, nameplateShowPersonal, maxDuration, ...). Precognition uses the maxDuration one for
+-- exactly this reason. One of them still has a gate of its own: isFromPlayerOrPlayerPet needs the
+-- engine to attribute the aura's caster, which it cannot do for a group member outside the
+-- player's visible world (another instance or phase) - UnitCanAssist stays true there, and the
+-- unevaluable check is skipped the same silent way. The PLAYER filter-string token shares that
+-- failure. Displays using either must also gate on UnitIsVisible (see CustomAuras CanFilterUnit).
 
 -- Spell-ID maps per category, keyed to match M.Filter so a caller holding a filter name can look
 -- up both. The generated Defensive list is not split into big/external - it does not have to be,

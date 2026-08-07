@@ -13,7 +13,8 @@ local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
 -- Assist state decides both which side of a container may show icons and whether a unit is on
 -- the side the group asked for, so every token swap re-budgets. UNIT_FACTION covers a duel or a
--- mind control, which flip it without the token moving.
+-- mind control, which flip it without the token moving. UNIT_PHASE covers a member leaving or
+-- re-entering the visible world, which decides whether a caster filter can work at all.
 local UNIT_EVENTS = {
 	PLAYER_TARGET_CHANGED = "target",
 }
@@ -72,7 +73,7 @@ local function OnEvent(_, event, arg1)
 		display:OnNamePlateRemoved(arg1)
 	elseif event == "UNIT_PET" then
 		display:OnUnitChanged("pet")
-	elseif event == "UNIT_FACTION" then
+	elseif event == "UNIT_FACTION" or event == "UNIT_PHASE" then
 		display:OnUnitChanged(arg1)
 	end
 end
@@ -90,6 +91,7 @@ local function CreateEvents()
 		"PLAYER_ROLES_ASSIGNED",
 		"UNIT_PET",
 		"UNIT_FACTION",
+		"UNIT_PHASE",
 	})
 end
 

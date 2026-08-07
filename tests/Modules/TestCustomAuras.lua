@@ -715,6 +715,55 @@ fw.describe("CustomAuras - screen anchored displays", function()
 		assert(Budget(container, "harmful") == 0, "a friendly one cannot")
 	end)
 
+	fw.it("budgets a caster filter to zero while the unit is out of the visible world", function()
+		ClearGroups()
+		AddGroup({ Unit = "targetfriendly", Spells = { ICE_BLOCK }, Caster = groups.Caster.Mine })
+		env.enemies.target = nil
+		module:Refresh()
+
+		local container = ContainerFor("target")
+
+		assert(Budget(container, "helpful") == groups.MaxIcons,
+			"a visible unit can be filtered by caster")
+
+		-- The engine cannot attribute casters on a member in another instance or phase, and a
+		-- check it cannot evaluate is skipped rather than failed - the group would show the aura
+		-- from everyone.
+		env.phased.target = true
+		display:OnUnitChanged("target")
+
+		assert(Budget(container, "helpful") == 0,
+			"an unattributable unit shows nothing rather than everyone's copies")
+
+		env.phased.target = nil
+		display:OnUnitChanged("target")
+
+		assert(Budget(container, "helpful") == groups.MaxIcons,
+			"and the budget comes back when they return")
+	end)
+
+	fw.it("gates the from-my-side flag on visibility the same way", function()
+		ClearGroups()
+		AddGroup({
+			Unit = "targetfriendly",
+			TrackingMode = groups.TrackingMode.Filters,
+			Candidates = { isFromPlayerOrPlayerPet = "REQUIRE" },
+		})
+		env.enemies.target = nil
+		env.phased.target = true
+		module:Refresh()
+
+		local container = ContainerFor("target")
+
+		assert(Budget(container, "helpful") == 0, "the flag needs an attributable caster too")
+
+		env.phased.target = nil
+		display:OnUnitChanged("target")
+
+		assert(Budget(container, "helpful") == groups.MaxIcons,
+			"and runs again once the unit is visible")
+	end)
+
 	fw.it("shows nothing for a group with no spells", function()
 		ClearGroups()
 		AddGroup({ Unit = "focus", Spells = {} })

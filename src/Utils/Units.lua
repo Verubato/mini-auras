@@ -140,6 +140,31 @@ function M:CanAttack(unitToken)
 	return result and true or false
 end
 
+---Returns true only if the local player can, right now, assist the unit. A secret-value result
+---is treated as "can assist" so a display gated on it errs toward showing. This is the same
+---question the engine asks when deciding whether a helpful spell-id filter applies.
+---@param unitToken string
+---@return boolean
+function M:CanAssist(unitToken)
+	local result = UnitCanAssist("player", unitToken)
+	if issecretvalue(result) then
+		return true
+	end
+	return result and true or false
+end
+
+---Returns true only if the unit is in the player's visible world (same instance and phase).
+---A secret-value result is treated as "visible" so a display gated on it errs toward showing.
+---@param unitToken string
+---@return boolean
+function M:IsVisible(unitToken)
+	local result = UnitIsVisible(unitToken)
+	if issecretvalue(result) then
+		return true
+	end
+	return result and true or false
+end
+
 ---Returns true if the unit token is a compound/derived unit (e.g. "raid1target", "boss1target"),
 ---meaning it's relative to another unit rather than a first-class unit token.
 ---Plain tokens like "target" and "focus" are NOT considered compound.

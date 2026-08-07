@@ -22,6 +22,9 @@ function M.build()
 		enemies = {},
 		pets = {},
 		healers = {},
+		-- Units outside the player's visible world (another instance or phase); caster filters
+		-- cannot work on these.
+		phased = {},
 		plates = {},
 		-- Group member tokens handed back by Units:FriendlyUnits(), i.e. the roster.
 		friendlyUnits = {},
@@ -305,6 +308,12 @@ function M.build()
 		end,
 		CanAttack = function(_, unit)
 			return env.enemies[unit] == true
+		end,
+		CanAssist = function(_, unit)
+			return env.enemies[unit] ~= true
+		end,
+		IsVisible = function(_, unit)
+			return env.phased[unit] ~= true
 		end,
 		SameUnit = function(_, a, b)
 			return a == b

@@ -13,7 +13,10 @@ local units = addon.Utils.Units
 --
 -- That rule covers SPELL ids only. A filter string and every other candidate filter are applied
 -- whatever the unit's reaction, so a group tracking by filter is free of all of it: debuffs on
--- yourself are perfectly trackable that way, they just cannot be narrowed to a spell id.
+-- yourself are perfectly trackable that way, they just cannot be narrowed to a spell id. The one
+-- exception is the caster filters: the engine cannot attribute casters on a unit outside the
+-- player's visible world, and a check it cannot evaluate is skipped rather than failed, so the
+-- group would show the aura from everyone. CanFilterUnit budgets those to zero.
 --
 -- Class and spec conditions are deliberately absent; profiles already switch on specialisation.
 
@@ -52,8 +55,9 @@ local FILTER_COMPONENTS = {
 	"PLAYER", "RAID", "DISPELLABLE", "RAID_PLAYER_DISPELLABLE", "CANCELABLE",
 	"CROWD_CONTROL", "IMPORTANT", "BIG_DEFENSIVE", "EXTERNAL_DEFENSIVE",
 }
--- Candidate filters that are a plain boolean on the aura. Everything here is applied whatever the
--- unit's reaction, unlike the spell id map.
+-- Candidate filters that are a plain boolean on the aura. Applied whatever the unit's reaction,
+-- unlike the spell id map, though isFromPlayerOrPlayerPet still needs an attributable caster
+-- (see CanFilterUnit).
 local CANDIDATE_FLAGS = {
 	"isFromPlayerOrPlayerPet", "isBossAura", "isStealable", "isPriorityAura", "canApplyAura",
 }
@@ -509,7 +513,7 @@ function M:MatchesReaction(unit, token)
 		return true
 	end
 
-	return (UnitCanAssist("player", token) == true) == info.Friendly
+	return units:CanAssist(token) == info.Friendly
 end
 
 ---Which aura types a unit choice can carry. A split unit allows one; self and pet allow both,
@@ -575,8 +579,32 @@ function M:GetWarning(group)
 	return info.Friendly and "HELPFUL_FRIENDLY_ONLY" or "HARMFUL_HOSTILE_ONLY"
 end
 
----Whether the engine will honour this group's spell-id filter for the unit it is on right now.
----False means the display must budget it to zero, or the bare token matches every aura there.
+---Whether the group's filters care who cast the aura: the caster choice, the PLAYER component,
+---or the from-my-side flag.
+---@param group CustomAuraGroup
+---@return boolean
+local function DependsOnCaster(group)
+	if group.Caster ~= CASTER_ANY then
+		return true
+	end
+
+	local flag = group.Candidates["isFromPlayerOrPlayerPet"]
+
+	if flag == REQUIRE or flag == FORBID then
+		return true
+	end
+
+	if M:TracksSpells(group) then
+		return false
+	end
+
+	local component = group.Filters["PLAYER"]
+
+	return component == REQUIRE or component == FORBID
+end
+
+---Whether the engine will honour this group's filters for the unit it is on right now. False
+---means the display must budget it to zero, or the container matches auras the group excludes.
 ---@param group CustomAuraGroup
 ---@param unit string
 ---@return boolean
@@ -590,13 +618,21 @@ function M:CanFilterUnit(group, unit)
 		return false
 	end
 
+	-- Caster filters need the engine to attribute each aura's caster, which it cannot do for a
+	-- group member outside the player's visible world (another instance or phase). A check it
+	-- cannot evaluate is skipped rather than failed, so the group would show the aura from
+	-- everyone; budget it to zero until the unit is back.
+	if DependsOnCaster(group) and not units:IsVisible(unit) then
+		return false
+	end
+
 	-- A filter string and the flag filters are honoured whatever the unit is, so there is nothing
 	-- left to gate: the group shows on every unit it is pointed at.
 	if not M:TracksSpells(group) then
 		return true
 	end
 
-	local assistable = UnitCanAssist("player", unit) == true
+	local assistable = units:CanAssist(unit)
 
 	if group.AuraType == HELPFUL then
 		return assistable

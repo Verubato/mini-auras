@@ -568,7 +568,7 @@ local function ApplyEntryOptions(entry, anchor, options)
 		-- duel opponent the engine drops includeSpellIDs and the bare HELPFUL token matches
 		-- every buff they have. Nothing can narrow it back, so the group is budgeted to zero
 		-- until they are assistable again.
-		if not UnitCanAssist("player", entry.Unit) then
+		if not units:CanAssist(entry.Unit) then
 			showHelpful = false
 		end
 
