@@ -380,33 +380,23 @@ local function NormalizeBarAnchor(frame, anchorOptions, grow)
 	return true
 end
 
----Places a bar from its saved anchor, then rewrites that anchor to the pinned edge its grow
----direction wants and places it again if anything moved.
----
----The order matters. Normalising reads the frame's rect, so doing it first converts wherever
----the frame happens to be sitting rather than where the options say it belongs. That is how a
----reset to defaults used to undo itself: 12.1 reports CENTER growth as RIGHT, so the pin point
----never matches the restored CENTER and the pre-reset position was measured straight back in.
+---Places a bar from its saved anchor, verbatim. Deliberately no pin rewrite here: converting
+---the anchor to the grow edge needs the frame's rect, and outside test mode that rect does not
+---match what the bar renders (stale layout, empty row), so every rewrite from this path has
+---corrupted freshly reset options one way or another - first re-measuring the dragged position
+---back in, then pinning against an unrendered row. A CENTER or TOP anchor works as-is for any
+---grow direction; only a drag drop re-pins (SetUpBarDragging), where the rect is real.
 ---@param frame table
 ---@param anchorOptions table
----@param grow string
-local function PlaceBar(frame, anchorOptions, grow)
-	local function Place()
-		frame:ClearAllPoints()
-		frame:SetPoint(
-			anchorOptions.Point,
-			_G[anchorOptions.RelativeTo] or UIParent,
-			anchorOptions.RelativePoint,
-			anchorOptions.Offset.X,
-			anchorOptions.Offset.Y
-		)
-	end
-
-	Place()
-
-	if NormalizeBarAnchor(frame, anchorOptions, grow) then
-		Place()
-	end
+local function PlaceBar(frame, anchorOptions)
+	frame:ClearAllPoints()
+	frame:SetPoint(
+		anchorOptions.Point,
+		_G[anchorOptions.RelativeTo] or UIParent,
+		anchorOptions.RelativePoint,
+		anchorOptions.Offset.X,
+		anchorOptions.Offset.Y
+	)
 end
 
 ---Initial placement and drag persistence for one movable alert bar. Dragging is armed here but
@@ -1073,7 +1063,7 @@ end
 function M:ApplyBarOptions(options)
 	local grow = GetGrow()
 
-	PlaceBar(container.Frame, options, grow)
+	PlaceBar(container.Frame, options)
 
 	container:SetIconSize(options.Icons.Size)
 	container:SetSpacing(options.IconSpacing or 2)
@@ -1102,7 +1092,7 @@ function M:ApplyBarOptions(options)
 			impAnchor.Offset.Y
 		)
 	else
-		PlaceBar(importantContainer.Frame, impAnchor, grow)
+		PlaceBar(importantContainer.Frame, impAnchor)
 	end
 
 	importantContainer:SetIconSize(options.Icons.Size)

@@ -1,8 +1,10 @@
 -- Alerts module, 12.1 container path: the parts of the bars that are geometry and gating rather
 -- than aura data. Three areas, each a silent-failure class:
 --
---   * The saved anchor is rewritten to the edge the row grows FROM whenever Grow changes, so the
---     bar never moves on screen when the user flips the direction.
+--   * Saved bar anchors are applied verbatim on refresh; only a drag drop rewrites one, pinned
+--     to the edge the row grows from. Anything that converts an anchor from the frame's rect
+--     outside a drag has corrupted a profile reset, because the rect only matches the rendered
+--     row while test icons are actually up.
 --   * The prep room hides every display, and only the match-state event brings them back - a
 --     mistake here means no alerts for the whole arena.
 --   * Split mode gives importants their own bar and container; combined mode renders them as a
@@ -80,75 +82,60 @@ local function removePlate(token)
 	env.enemies[token] = nil
 end
 
-fw.describe("AlertsModule 12.1 - bar anchor normalization", function()
-	fw.it("pins the edge the row grows from, taken from the bar's live position", function()
-		-- Default Grow is CENTER, which behaves as RIGHT on 12.1: the row extends rightwards,
-		-- so its LEFT edge is what has to stay put.
+fw.describe("AlertsModule 12.1 - bar anchor handling", function()
+	fw.it("a refresh applies the saved anchor verbatim and never rewrites it", function()
+		-- Converting the anchor from the frame's rect on a refresh caused two reset bugs in a
+		-- row: the rect only matches the rendered row while test icons are up, so outside test
+		-- mode the conversion measured stale or empty geometry into freshly restored options
+		-- (first resurrecting the dragged position, then shifting the bar half a row across).
 		placeMainBar()
 		alerts.Grow = "CENTER"
 		module:Refresh()
 
-		assert(alerts.Point == "LEFT", "grow RIGHT pins the LEFT edge, got " .. tostring(alerts.Point))
-		assert(alerts.RelativeTo == "UIParent" and alerts.RelativePoint == "BOTTOMLEFT",
-			"re-anchored against the screen so the saved offsets are absolute")
-		assert(alerts.Offset.X == RECT.left, "offset X is the live left edge, got " .. tostring(alerts.Offset.X))
-		assert(alerts.Offset.Y == 415, "offset Y is the live vertical centre, got " .. tostring(alerts.Offset.Y))
+		assert(alerts.Point == "CENTER" and alerts.RelativePoint == "TOP",
+			"the shipped anchor survives a refresh untouched, got " .. tostring(alerts.Point))
+		assert(alerts.Offset.X == 0 and alerts.Offset.Y == -145, "offsets untouched")
 	end)
 
-	fw.it("flipping Grow re-pins the opposite edge without moving the bar", function()
+	fw.it("flipping Grow leaves the saved anchor alone", function()
+		-- The anchor pins the bar frame, not the row: growth direction only changes which way
+		-- the rendered row extends, so there is nothing to rewrite.
 		placeMainBar()
 		alerts.Grow = "LEFT"
 		module:Refresh()
 
-		assert(alerts.Point == "RIGHT", "grow LEFT pins the RIGHT edge")
-		-- Anchoring the bar's RIGHT edge at 500 leaves it exactly where it is now (300..500);
-		-- taking the old LEFT offset would have shifted it a full bar width across the screen.
-		assert(alerts.Offset.X == RECT.left + RECT.width, "offset X is the live right edge, got " .. tostring(alerts.Offset.X))
-		assert(alerts.Offset.Y == 415, "vertical centre unchanged")
+		assert(alerts.Point == "CENTER" and alerts.Offset.X == 0, "no rewrite on a Grow change")
+		alerts.Grow = "CENTER"
 	end)
 
-	fw.it("places the bar from its saved anchor before measuring it", function()
-		-- Normalization reads the frame's rect, so it has to run AFTER the frame has been moved
-		-- to where the options say. Running it first converted whatever the bar happened to be
-		-- showing, which on 12.1 silently undid a reset to defaults: CENTER growth reports as
-		-- RIGHT, so the pin point never matches the restored CENTER and the old position was
-		-- measured straight back over it.
+	fw.it("a reset outside test mode places the bar at the restored anchor", function()
+		-- A dragged anchor, then a reset to defaults while the bar is not rendering: the rect
+		-- still shows the dragged position, and the restored values must win anyway.
 		placeMainBar()
-		alerts.Grow = "CENTER"
+		alerts.Point = "LEFT"
+		alerts.RelativePoint = "BOTTOMLEFT"
+		alerts.RelativeTo = "UIParent"
+		alerts.Offset.X = RECT.left
+		alerts.Offset.Y = 415
 		module:Refresh()
 
-		-- A restored anchor, the way resetting the profile replaces one. The values are a
-		-- stand-in rather than the shipped defaults: what matters is that the bar is placed
-		-- from them before anything measures it.
 		alerts.Point = "CENTER"
 		alerts.RelativePoint = "TOP"
-		alerts.RelativeTo = "UIParent"
 		alerts.Offset.X = 0
 		alerts.Offset.Y = -145
-
-		local placements = {}
-		local realSetPoint = mainBar.SetPoint
-
-		mainBar.SetPoint = function(self, point, relativeTo, relativePoint, x, y)
-			placements[#placements + 1] = { Point = point, X = x, Y = y }
-			return realSetPoint(self, point, relativeTo, relativePoint, x, y)
-		end
-
 		module:Refresh()
-		mainBar.SetPoint = realSetPoint
 
-		local first = placements[1]
-
-		assert(first, "the bar was placed")
-		assert(first.Point == "CENTER" and first.X == 0 and first.Y == -145,
-			"placed at the restored default first, got " .. tostring(first.Point) ..
-			" " .. tostring(first.X) .. "," .. tostring(first.Y))
+		local point, _, relativePoint, x, y = mainBar:GetPoint(1)
+		assert(point == "CENTER" and relativePoint == "TOP" and x == 0 and y == -145,
+			"placed at the restored default, got " .. tostring(point) ..
+			" " .. tostring(x) .. "," .. tostring(y))
+		assert(alerts.Point == "CENTER" and alerts.Offset.X == 0 and alerts.Offset.Y == -145,
+			"and the restored options were not measured over")
 	end)
 
-	fw.it("does not re-save on later refreshes with the same Grow", function()
-		-- Normalization exists to survive a Grow change, not to track the frame: re-saving on
-		-- every refresh would let a transient layout (or a bar the user is mid-drag on) become
-		-- the stored position.
+	fw.it("does not re-save on later refreshes", function()
+		-- Re-saving on a refresh would let a transient layout (or a bar the user is mid-drag
+		-- on) become the stored position.
 		placeMainBar()
 		module:Refresh()
 		local savedX = alerts.Offset.X
@@ -156,7 +143,7 @@ fw.describe("AlertsModule 12.1 - bar anchor normalization", function()
 		mainBar:SetMockRect(900, 100, RECT.width, RECT.height)
 		module:Refresh()
 
-		assert(alerts.Offset.X == savedX, "an unchanged Grow must leave the saved anchor alone")
+		assert(alerts.Offset.X == savedX, "a refresh must leave the saved anchor alone")
 	end)
 
 	fw.it("a drag saves the dropped position normalized to the grow edge", function()
