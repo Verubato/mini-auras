@@ -111,21 +111,21 @@ function M:Build(panel)
 	})
 	url.EditBox:SetPoint("TOPLEFT", lastMainRowFirst, "BOTTOMLEFT", 4, -verticalSpacing)
 
-	local styleSubtitle = mini:TextLine({
-		Parent = panel,
-		Text   = L["Other addons to customize MiniAuras further:"],
-	})
-	styleSubtitle:SetPoint("TOPLEFT", url.EditBox, "BOTTOMLEFT", -4, -verticalSpacing)
-
-	local styleAddons = {
-		{ Name = "MiniCE",  Desc = "Customize the cooldown timers." },
-	}
-
-	-- TEMPORARY: Masque cannot skin the 12.1 AuraButtons, so it is only offered on the legacy
-	-- path; drop the gate (and the card) with the 12.0 path unless Masque support returns.
+	-- TEMPORARY: neither styling addon works with the 12.1 AuraButtons (Masque cannot skin
+	-- them, MiniCE cannot restyle their countdown text), so the whole section is only offered
+	-- on the legacy path; drop the gate with the 12.0 path unless support returns.
 	if not addon.Utils.WoWEx:UseAuraContainers() then
-		styleAddons[#styleAddons + 1] = { Name = "Masque", Desc = "Powerful icon skinning tool." }
-	end
+		local styleSubtitle = mini:TextLine({
+			Parent = panel,
+			Text   = L["Other addons to customize MiniAuras further:"],
+		})
+		styleSubtitle:SetPoint("TOPLEFT", url.EditBox, "BOTTOMLEFT", -4, -verticalSpacing)
 
-	BuildGrid(panel, styleSubtitle, styleAddons, cardWidth)
+		local styleAddons = {
+			{ Name = "MiniCE", Desc = "Customize the cooldown timers." },
+			{ Name = "Masque", Desc = "Powerful icon skinning tool." },
+		}
+
+		BuildGrid(panel, styleSubtitle, styleAddons, cardWidth)
+	end
 end
