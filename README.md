@@ -33,10 +33,6 @@ Any feedback is more than welcome.
 
 ![MiniAuras screenshot](https://media.forgecdn.net/attachments/1510/371/screenshot-healer-cc-png.png)
 
-![MiniAuras screenshot](https://media.forgecdn.net/attachments/1608/989/screenshot-cds-druid-png.png)
-
-![MiniAuras screenshot](https://media.forgecdn.net/attachments/1608/990/screenshot-cds-paladin-png.png)
-
 ## Download
 
 Available on [CurseForge](https://www.curseforge.com/wow/addons/minicc).
