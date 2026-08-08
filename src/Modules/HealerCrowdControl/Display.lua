@@ -532,6 +532,7 @@ function M:SetAnchorInteractive(active)
 
 	healerAnchor:EnableMouse(active)
 	healerAnchor:SetMovable(active)
+	moduleUtil:SetTestLabel(healerAnchor, active and L["Healer"] or nil)
 
 	if active then
 		healerAnchor:Show()

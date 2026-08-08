@@ -722,6 +722,9 @@ function M:SetAnchorInteractive(state)
 
 	anchor:EnableMouse(previewing)
 	anchor:SetMovable(previewing)
+	-- The group's own name rather than the module's: every group is its own draggable, and a
+	-- screen full of identical "Personal Auras" captions would tell them apart no better.
+	moduleUtil:SetTestLabel(anchor, previewing and state.Group.Name or nil)
 end
 
 ---@param token string

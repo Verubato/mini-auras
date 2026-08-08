@@ -227,6 +227,28 @@ function M:MakeMovable(frame, position, onMoved)
 	end)
 end
 
+---Shows or hides a caption above a draggable frame, so with every module's test icons on
+---screen at once the one being grabbed can be told apart. Created on first show and reused;
+---pass nil to hide.
+---@param frame table
+---@param text string?
+function M:SetTestLabel(frame, text)
+	local label = frame.MiniAurasTestLabel
+
+	if text then
+		if not label then
+			label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+			label:SetPoint("BOTTOM", frame, "TOP", 0, 4)
+			frame.MiniAurasTestLabel = label
+		end
+
+		label:SetText(text)
+		label:Show()
+	elseif label then
+		label:Hide()
+	end
+end
+
 function M:Init()
 	db = addon.Framework:GetSavedVars()
 end

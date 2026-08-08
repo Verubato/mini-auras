@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local L = addon.L
 local wowEx = addon.Utils.WoWEx
 local iconSlotContainer = addon.Core.IconSlotContainer
 local moduleUtil = addon.Utils.ModuleUtil
@@ -184,6 +185,7 @@ function M:SetAnchorInteractive(active)
 	anchor:SetMovable(active)
 	anchor:EnableMouse(active)
 	anchor:SetShown(active)
+	moduleUtil:SetTestLabel(anchor, active and (L["Enemy Kicks_Short"] or L["Enemy Kicks"]) or nil)
 end
 
 ---@param active boolean

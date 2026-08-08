@@ -349,6 +349,12 @@ end
 local function SetTestMode(active)
 	testModeActive = active
 
+	-- The rows are draggable outside test mode too (whenever unlocked), so the caption is the
+	-- only part of the drag affordance tied to testing.
+	if instance then
+		moduleUtil:SetTestLabel(instance.Frame, active and (L["Ally Kicks_Short"] or L["Ally Kicks"]) or nil)
+	end
+
 	if active then
 		BuildTestRecords()
 	else

@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local L = addon.L
 local wowEx = addon.Utils.WoWEx
 local iconSlotContainer = addon.Core.IconSlotContainer
 local eventGate = addon.Core.EventGate
@@ -721,6 +722,7 @@ local function ApplyDragState(options)
 	frame:SetMovable(canDrag)
 	frame:SetClampedToScreen(canDrag)
 	frame:EnableMouse(canDrag)
+	moduleUtil:SetTestLabel(frame, canDrag and (L["Enemy Cooldowns_Short"] or L["Enemy Cooldowns"]) or nil)
 end
 
 ---@param options EnemyCooldownTrackerModuleOptions

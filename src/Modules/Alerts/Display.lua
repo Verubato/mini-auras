@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local L = addon.L
 local wowEx = addon.Utils.WoWEx
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
@@ -1114,11 +1115,13 @@ function M:ApplyBarOptions(options)
 		-- Only draggable while the test bars are up; this runs with the module enabled.
 		importantContainer.Frame:EnableMouse(testModeActive)
 		importantContainer.Frame:SetMovable(testModeActive)
+		moduleUtil:SetTestLabel(importantContainer.Frame, testModeActive and L["Important Spells"] or nil)
 	else
 		importantContainer:ResetAllSlots()
 		importantContainer.Frame:Hide()
 		importantContainer.Frame:EnableMouse(false)
 		importantContainer.Frame:SetMovable(false)
+		moduleUtil:SetTestLabel(importantContainer.Frame, nil)
 	end
 end
 
@@ -1130,6 +1133,7 @@ function M:SetAnchorInteractive(active)
 
 	container.Frame:EnableMouse(active)
 	container.Frame:SetMovable(active)
+	moduleUtil:SetTestLabel(container.Frame, active and L["Alerts"] or nil)
 
 	if not importantContainer then
 		return
@@ -1139,6 +1143,7 @@ function M:SetAnchorInteractive(active)
 	local moveable = active and importantContainer.Frame:IsShown()
 	importantContainer.Frame:EnableMouse(moveable)
 	importantContainer.Frame:SetMovable(moveable)
+	moduleUtil:SetTestLabel(importantContainer.Frame, moveable and L["Important Spells"] or nil)
 end
 
 function M:CreateFrames()

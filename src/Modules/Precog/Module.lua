@@ -1,6 +1,7 @@
 ---@type string, Addon
 local addonName, addon = ...
 local mini = addon.Framework
+local L = addon.L
 local wowEx = addon.Utils.WoWEx
 local unitWatcher = addon.Core.UnitAuraWatcher
 local iconSlotContainer = addon.Core.IconSlotContainer
@@ -271,6 +272,7 @@ local function SetAnchorInteractive(active)
 
 	anchor:EnableMouse(active)
 	anchor:SetMovable(active)
+	moduleUtil:SetTestLabel(anchor, active and L["Precognition"] or nil)
 
 	if active then
 		anchor:Show()
