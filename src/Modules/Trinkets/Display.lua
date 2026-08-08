@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local L = addon.L
 local wowEx = addon.Utils.WoWEx
 local frames = addon.Core.Frames
 local trinketsTracker = addon.Core.TrinketsTracker
@@ -199,6 +200,10 @@ local function UpdateVisibility()
 				elseif anchor:IsVisible() then
 					watcher.Container.Frame:SetAlpha(1)
 					watcher.Container.Frame:Show()
+					if testModeActive then
+						moduleUtil:SetTestLabel(watcher.Container.Frame,
+							L["Party Trinkets_Short"] or L["Party Trinkets"])
+					end
 				else
 					watcher.Container.Frame:Hide()
 				end

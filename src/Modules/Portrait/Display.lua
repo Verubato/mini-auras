@@ -1,7 +1,9 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local L = addon.L
 local wowEx = addon.Utils.WoWEx
+local moduleUtil = addon.Utils.ModuleUtil
 local kickTracker = addon.Core.KickTracker
 local kickSlot = addon.Core.KickSlot
 local testSpellData = addon.Core.TestSpells
@@ -415,6 +417,7 @@ function M:RefreshTestIcons()
 	local now = GetTime()
 
 	for _, container in pairs(containers) do
+		moduleUtil:SetTestLabel(container.Frame, L["Portraits_Short"] or L["Portraits"])
 		container:SetSlot(1, {
 			Texture = tex,
 			DurationObject = wowEx:CreateDuration(now, 15),

@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local L = addon.L
 local instanceOptions = addon.Core.InstanceOptions
 local frames = addon.Core.Frames
 local units = addon.Utils.Units
@@ -315,6 +316,10 @@ local function EnsureWatcher(anchor, unit)
 	end
 
 	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, isPet and false or options.ExcludePlayer)
+
+	if testModeActive then
+		moduleUtil:SetTestLabel(entry.Container.Frame, isPet and L["Pet CC"] or L["CC"])
+	end
 
 	return entry
 end

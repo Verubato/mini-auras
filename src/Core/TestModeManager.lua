@@ -2,6 +2,7 @@
 local _, addon = ...
 local frames = addon.Core.Frames
 local instanceOptions = addon.Core.InstanceOptions
+local moduleUtil = addon.Utils.ModuleUtil
 -- Filled in Init rather than at file scope: capturing the module tables here would tie this
 -- file's TOC position to being after every module, and a miss would land as a silent nil in
 -- the list rather than an error. Init runs after every module's, so the names all resolve.
@@ -52,6 +53,10 @@ function M:StopTesting()
 	for _, module in ipairs(testModules) do
 		module:StopTesting()
 	end
+
+	-- One sweep instead of per-module clears: display modules only show captions on their test
+	-- paths, and everything they showed goes away here.
+	moduleUtil:HideAllTestLabels()
 
 	active = false
 end

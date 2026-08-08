@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local L = addon.L
 local wowEx = addon.Utils.WoWEx
 local trinketsTracker = addon.Core.TrinketsTracker
 local instanceOptions = addon.Core.InstanceOptions
@@ -307,6 +308,7 @@ local function UpdateDisplay(entry)
 	local predictiveGlow = anchorOptions.Predictive ~= false
 
 	if testModeActive then
+		moduleUtil:SetTestLabel(container.Frame, L["Friendly Cooldowns_Short"] or L["Friendly Cooldowns"])
 		local testSlots = BuildTestSlots(showTrinket, showTooltips, iconOptions, predictiveGlow)
 		local usedCount = math.min(#testSlots, container.Count)
 		for i = 1, usedCount do

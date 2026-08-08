@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local L = addon.L
 local instanceOptions = addon.Core.InstanceOptions
 local frames = addon.Core.Frames
 local units = addon.Utils.Units
@@ -406,6 +407,10 @@ local function EnsureWatcher(anchor, unit)
 	end
 
 	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, options.ExcludePlayer)
+
+	if testModeActive then
+		moduleUtil:SetTestLabel(entry.Container.Frame, L["Raid Frame Auras_Short"] or L["Raid Frame Auras"])
+	end
 
 	return entry
 end

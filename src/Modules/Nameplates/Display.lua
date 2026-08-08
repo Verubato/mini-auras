@@ -1,7 +1,9 @@
 ---@type string, Addon
 local addonName, addon = ...
 local mini = addon.Framework
+local L = addon.L
 local wowEx = addon.Utils.WoWEx
+local moduleUtil = addon.Utils.ModuleUtil
 local units = addon.Utils.Units
 local auras = addon.Utils.Auras
 local kickTracker = addon.Core.KickTracker
@@ -51,6 +53,12 @@ local TEST_DEFENSIVE_COUNT = #TEST_DEFENSIVE_NAMEPLATE_SPELL_IDS
 local TEST_IMPORTANT_COUNT = #TEST_IMPORTANT_NAMEPLATE_SPELL_IDS
 
 local TEST_CC_DISPEL_COLORS = testSpellData.Nameplates.DispelColors
+
+-- Caption locale keys for the test-mode bar labels, matching the config tab titles.
+local TEST_BAR_LABELS = {
+	Enemy = { Bar1 = "Enemy - Bar 1", Bar2 = "Enemy - Bar 2" },
+	Friendly = { Bar1 = "Friendly - Bar 1", Bar2 = "Friendly - Bar 2" },
+}
 
 -- Category colors
 local DEFENSIVE_COLOR = { r = 0.0, g = 0.8, b = 0.0 } -- Green
@@ -609,10 +617,12 @@ end
 ---@param data NameplateData
 local function ShowDataTestIcons(data, now)
 	local options = M:GetUnitOptions(data.UnitToken)
+	local barLabels = options == nmModule.Enemy and TEST_BAR_LABELS.Enemy or TEST_BAR_LABELS.Friendly
 	for _, bar in ipairs(BARS) do
 		local barOptions = options[bar.Key]
 		if barOptions and barOptions.Enabled and data[bar.DataField] then
 			ShowBarTestIcons(data[bar.DataField], barOptions, now)
+			moduleUtil:SetTestLabel(data[bar.DataField].Frame, L[barLabels[bar.Key]])
 		end
 	end
 end

@@ -9,6 +9,8 @@ local EMPTY_COLOR = {}
 local iconColorRgbScratch = {}
 -- Its own scratch, so a style can carry this and GetIconColorRGB's result at the same time.
 local colorRgbScratch = {}
+-- Every test-mode caption ever created, so HideAllTestLabels can sweep them on test stop.
+local testLabels = {}
 
 ---@class ModuleName
 local ModuleName = {
@@ -227,9 +229,10 @@ function M:MakeMovable(frame, position, onMoved)
 	end)
 end
 
----Shows or hides a caption above a draggable frame, so with every module's test icons on
----screen at once the one being grabbed can be told apart. Created on first show and reused;
----pass nil to hide.
+---Shows or hides a caption above a test-mode frame, so with every module's test icons on
+---screen at once each container can be told apart. Created on first show and reused; pass nil
+---to hide. Every label ever shown is also registered, so TestModeManager can sweep them all
+---away with HideAllTestLabels - display modules only have to SHOW labels on their test paths.
 ---@param frame table
 ---@param text string?
 function M:SetTestLabel(frame, text)
@@ -240,11 +243,19 @@ function M:SetTestLabel(frame, text)
 			label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 			label:SetPoint("BOTTOM", frame, "TOP", 0, 4)
 			frame.MiniAurasTestLabel = label
+			testLabels[#testLabels + 1] = label
 		end
 
 		label:SetText(text)
 		label:Show()
 	elseif label then
+		label:Hide()
+	end
+end
+
+---Hides every test caption ever shown; the single teardown TestModeManager runs on stop.
+function M:HideAllTestLabels()
+	for _, label in ipairs(testLabels) do
 		label:Hide()
 	end
 end
