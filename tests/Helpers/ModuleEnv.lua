@@ -349,6 +349,9 @@ function M.build()
 		GetAll = function()
 			return env.unitFrames
 		end,
+		-- This environment has no pet stand-in, so modules asking for it get "none exists"
+		-- rather than a missing method.
+		GetTestPetFrame = function() end,
 		IsFriendlyCuf = function()
 			return false
 		end,

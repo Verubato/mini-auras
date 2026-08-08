@@ -44,6 +44,11 @@ function M:StopTesting()
 		end
 	end
 
+	local testPetFrame = frames:GetTestPetFrame()
+	if testPetFrame then
+		testPetFrame:Hide()
+	end
+
 	local testFramesContainer = frames:GetTestFrameContainer()
 	if testFramesContainer then
 		testFramesContainer:Hide()
@@ -89,6 +94,11 @@ function M:StartTesting(isRaid)
 			for _, frame in ipairs(testPartyFrames) do
 				frame:Show()
 			end
+		end
+
+		local testPetFrame = frames:GetTestPetFrame()
+		if testPetFrame then
+			testPetFrame:Show()
 		end
 
 		local testFramesContainer = frames:GetTestFrameContainer()

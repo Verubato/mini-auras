@@ -372,6 +372,14 @@ local function EnsureWatchers()
 			end
 		end
 
+		-- Solo testing has no compact pet frames to borrow, so the fake pet frame stands in.
+		if testModeActive then
+			local testPet = frames:GetTestPetFrame()
+			if testPet then
+				EnsureWatcher(testPet)
+			end
+		end
+
 		-- The player's own pet unit frame is opt-in via IncludePetFrame. Supports the Blizzard pet
 		-- frame and the standalone pet frames of other unit-frame addons (ElvUI, UUF, MSUF, etc.).
 		local petOptions = db.Modules.PetCCModule
