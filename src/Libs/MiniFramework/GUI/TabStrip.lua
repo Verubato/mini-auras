@@ -25,7 +25,6 @@ function M:TabStrip(options)
 		error("TabStrip - invalid options.")
 	end
 
-	local pixel = GUI.Pixel
 	local accent = GUI.Accent
 	local idle = GUI.TabTextIdle
 	local hover = GUI.TabTextHover
@@ -39,8 +38,10 @@ function M:TabStrip(options)
 
 	-- Runs the full width under every button, so a selected tab's accent reads as a break in the
 	-- line rather than a stray underline.
+	-- Plain SetHeight, not PixelUtil: this strip sits inside a scroll child, whose fractional
+	-- physical alignment can drop a one-physical-pixel texture between pixels entirely.
 	local baseline = strip:CreateTexture(nil, "ARTWORK")
-	pixel.SetHeight(baseline, 1)
+	baseline:SetHeight(1)
 	baseline:SetPoint("BOTTOMLEFT", strip, "BOTTOMLEFT", 0, 0)
 	baseline:SetPoint("BOTTOMRIGHT", strip, "BOTTOMRIGHT", 0, 0)
 	GUI.SetSolid(baseline, 1, 1, 1, BASELINE_ALPHA)
@@ -94,7 +95,7 @@ function M:TabStrip(options)
 		GUI.SetSolid(highlight, 1, 1, 1, HIGHLIGHT_ALPHA)
 
 		button.Underline = button:CreateTexture(nil, "OVERLAY")
-		pixel.SetHeight(button.Underline, UNDERLINE_HEIGHT)
+		button.Underline:SetHeight(UNDERLINE_HEIGHT)
 		button.Underline:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", 0, 0)
 		button.Underline:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0, 0)
 		GUI.SetSolid(button.Underline, accent.r, accent.g, accent.b, 1)
