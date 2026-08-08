@@ -16,10 +16,18 @@ local ICON_SIZE   = 40
 local CARD_PAD    = 10
 local CARD_HEIGHT = 68
 
+local CARD_BG           = { 0.08, 0.08, 0.10, 0.6 }
+local CARD_BG_HOVER     = { 0.13, 0.13, 0.17, 0.9 }
+local CARD_BORDER       = { 0.25, 0.25, 0.30, 0.8 }
+local CARD_BORDER_HOVER = { 0.42, 0.42, 0.50, 1 }
+
+local PROJECTS_URL = "https://verzaddons.com"
+local CURSE_BASE = "https://www.curseforge.com/wow/addons/"
+
 local addonName = (select(1, ...))
 local ICON_BASE  = "Interface\\AddOns\\" .. addonName .. "\\Icons\\Addons\\"
 
-local function BuildAddonCard(parent, name, description, cardWidth, icon)
+local function BuildAddonCard(parent, def, cardWidth, onClick)
 	local card = CreateFrame("Frame", nil, parent, "BackdropTemplate")
 	card:SetSize(cardWidth, CARD_HEIGHT)
 	card:SetBackdrop({
@@ -27,36 +35,53 @@ local function BuildAddonCard(parent, name, description, cardWidth, icon)
 		edgeFile = "Interface\\Buttons\\WHITE8X8",
 		edgeSize = 1,
 	})
-	card:SetBackdropColor(0.08, 0.08, 0.10, 0.6)
-	card:SetBackdropBorderColor(0.25, 0.25, 0.30, 0.8)
+	card:SetBackdropColor(unpack(CARD_BG))
+	card:SetBackdropBorderColor(unpack(CARD_BORDER))
 
 	local iconTex = card:CreateTexture(nil, "ARTWORK")
 	iconTex:SetSize(ICON_SIZE, ICON_SIZE)
 	iconTex:SetPoint("LEFT", card, "LEFT", CARD_PAD, 0)
-	iconTex:SetTexture(ICON_BASE .. icon)
+	iconTex:SetTexture(ICON_BASE .. def.Name)
 
 	local nameLabel = card:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 	nameLabel:SetPoint("LEFT",  iconTex, "RIGHT", CARD_PAD,  8)
 	nameLabel:SetPoint("RIGHT", card,    "RIGHT", -CARD_PAD, 0)
 	nameLabel:SetJustifyH("LEFT")
-	nameLabel:SetText(name)
+	nameLabel:SetText(def.Name)
 
 	local descLabel = card:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
 	descLabel:SetPoint("TOPLEFT", nameLabel, "BOTTOMLEFT", 0, -3)
 	descLabel:SetPoint("RIGHT",   card,      "RIGHT", -CARD_PAD, 0)
 	descLabel:SetJustifyH("LEFT")
-	descLabel:SetText(description)
+	descLabel:SetText(L[def.Desc])
 	descLabel:SetTextColor(0.72, 0.72, 0.72, 1)
+
+	-- Most cards link to a CurseForge project named after the addon; third-party projects
+	-- (MiniCE) carry an explicit Url where the slug differs.
+	local url = def.Url or (CURSE_BASE .. def.Name:lower())
+
+	card:EnableMouse(true)
+	card:SetScript("OnEnter", function()
+		card:SetBackdropColor(unpack(CARD_BG_HOVER))
+		card:SetBackdropBorderColor(unpack(CARD_BORDER_HOVER))
+	end)
+	card:SetScript("OnLeave", function()
+		card:SetBackdropColor(unpack(CARD_BG))
+		card:SetBackdropBorderColor(unpack(CARD_BORDER))
+	end)
+	card:SetScript("OnMouseUp", function()
+		onClick(url)
+	end)
 
 	return card
 end
 
-local function BuildGrid(panel, anchorFrame, addonDefs, cardWidth)
+local function BuildGrid(panel, anchorFrame, addonDefs, cardWidth, onClick)
 	local firstInRow, prev
 
 	for i, def in ipairs(addonDefs) do
 		local col  = (i - 1) % COLS
-		local card = BuildAddonCard(panel, def.Name, L[def.Desc], cardWidth, def.Name)
+		local card = BuildAddonCard(panel, def, cardWidth, onClick)
 
 		if i == 1 then
 			card:SetPoint("TOPLEFT", anchorFrame, "BOTTOMLEFT", 0, -verticalSpacing)
@@ -83,6 +108,18 @@ function M:Build(panel)
 	})
 	subtitle:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
+	-- The box shows the last clicked card's link (the addon hub by default). Focusing and
+	-- highlighting it is the closest WoW gets to a clipboard copy: the user hits Ctrl+C.
+	local currentUrl = PROJECTS_URL
+	local url
+
+	local function ShowUrl(link)
+		currentUrl = link
+		url.EditBox:MiniRefresh()
+		url.EditBox:SetFocus()
+		url.EditBox:HighlightText()
+	end
+
 	local mainAddons = {
 		{ Name = "FrameSort",           Desc = "Sorts party/raid/arena frames and places you at the top/middle/bottom."    },
 		{ Name = "MiniMarkers",         Desc = "Shows markers above your team mates."                                      },
@@ -98,18 +135,20 @@ function M:Build(panel)
 		{ Name = "MiniFader",           Desc = "Fades out certain frames including bags, micro menu, and quest tracker."   },
 	}
 
-	local lastMainRowFirst = BuildGrid(panel, subtitle, mainAddons, cardWidth)
+	local lastMainRowFirst = BuildGrid(panel, subtitle, mainAddons, cardWidth, ShowUrl)
 
-	local url = mini:EditBox({
+	url = mini:EditBox({
 		Parent   = panel,
 		Width    = 400,
 		LabelText = "",
 		GetValue = function()
-			return "https://www.curseforge.com/members/verz/projects"
+			return currentUrl
 		end,
 		SetValue = function(_) end,
 	})
-	url.EditBox:SetPoint("TOPLEFT", lastMainRowFirst, "BOTTOMLEFT", 4, -verticalSpacing)
+	-- The styled field draws 6px outside the box's own left edge; anchor inside that so it
+	-- lines up with the cards instead of clipping at the panel edge.
+	url.EditBox:SetPoint("TOPLEFT", lastMainRowFirst, "BOTTOMLEFT", 6, -verticalSpacing)
 
 	-- TEMPORARY: neither styling addon works with the 12.1 AuraButtons (Masque cannot skin
 	-- them, MiniCE cannot restyle their countdown text), so the whole section is only offered
@@ -119,13 +158,13 @@ function M:Build(panel)
 			Parent = panel,
 			Text   = L["Other addons to customize MiniAuras further:"],
 		})
-		styleSubtitle:SetPoint("TOPLEFT", url.EditBox, "BOTTOMLEFT", -4, -verticalSpacing)
+		styleSubtitle:SetPoint("TOPLEFT", url.EditBox, "BOTTOMLEFT", -6, -verticalSpacing)
 
 		local styleAddons = {
-			{ Name = "MiniCE", Desc = "Customize the cooldown timers." },
+			{ Name = "MiniCE", Desc = "Customize the cooldown timers.", Url = CURSE_BASE .. "minice-cooldown-styler" },
 			{ Name = "Masque", Desc = "Powerful icon skinning tool." },
 		}
 
-		BuildGrid(panel, styleSubtitle, styleAddons, cardWidth)
+		BuildGrid(panel, styleSubtitle, styleAddons, cardWidth, ShowUrl)
 	end
 end
