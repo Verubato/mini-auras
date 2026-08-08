@@ -633,13 +633,20 @@ local function InitializeButton(instance, button, glowColor)
 	end
 	button:SetDurationCooldown(cd)
 
+	-- Text sits on its own child frame levelled above the cooldown: fontstrings created on the
+	-- button itself are parent regions, which child frames like the swipe always cover. Still a
+	-- descendant of the button, so duration/stack registration stays valid.
+	local textOverlay = CreateFrame("Frame", nil, button)
+	textOverlay:SetAllPoints(button)
+	textOverlay:SetFrameLevel(button:GetFrameLevel() + 5)
+
 	-- Colour-by-time countdown: a fontstring bound as native duration text carrying a colour
 	-- curve the engine evaluates against the secret remaining time. Always bound where the
 	-- client supports it (bindings are creation-frozen); the global toggle swaps between this
 	-- and the cooldown's own countdown at restyle time.
 	local durationText
 	if HasCountdownColorCurves() then
-		durationText = button:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+		durationText = textOverlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 		durationText:SetPoint("CENTER", button, "CENTER", 0, 0)
 		-- Named fields, not positional: the options validator walks [textColor][curve] and
 		-- [textColor][property], and a positional pair errors per button at AddAuraGroup time.
@@ -703,7 +710,7 @@ local function InitializeButton(instance, button, glowColor)
 	-- Never pass an options table with a formatter here: the engine calls FormatNumber(count) in
 	-- Lua with the secret count, and the throw lands inside the container's dirty-flag processing,
 	-- which stops re-arming and leaves the container frozen for the session.
-	local stacks = button:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+	local stacks = textOverlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 	stacks:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -1, 1)
 	stacks:SetJustifyH("RIGHT")
 	button:SetApplicationCount(stacks)
