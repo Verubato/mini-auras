@@ -3,11 +3,12 @@ local _, addon = ...
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", true)
 local Masque = LibStub and LibStub("Masque", true)
 local fontUtil = addon.Utils.FontUtil
+local wowEx = addon.Utils.WoWEx
 local glowStyles = addon.Core.GlowStyles
 
 -- Hoisted out of UpdateGlow: that runs per slot on every icon update, and the value never
 -- changes for the life of the session.
-local USE_AURA_CONTAINERS = addon.Utils.WoWEx:UseAuraContainers()
+local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
 -- Style name -> the field its built frame is cached under on a parent, so a frame is never
 -- built twice per layer. Membership doubles as "this style is texture-based": the shared
@@ -27,6 +28,11 @@ local layoutScratch = {}
 local glowOptionsScratch = { startAnim = false }
 local glowColorScratch = { 0, 0, 0, 0 }
 local frameIdCounter = 0
+-- Cooldowns whose countdown text is being coloured by remaining time, mapped to their expiry.
+-- Only cooldowns with an addon-known expiry ever land here (see WoWEx.GetDurationExpiry), so
+-- secret aura durations are never read. One shared ticker serves every container.
+local coloredCooldowns = {}
+local colorTicker
 
 ---@class IconSlotContainer
 local M = {}
@@ -52,6 +58,102 @@ local function GetDb()
 	end
 
 	return cachedDb
+end
+
+---The cooldown's own countdown fontstring, scanned once and cached under the same field
+---FontUtil uses, so whichever side looks first pays for the scan.
+local function GetCooldownText(cd)
+	if not cd.MiniAurasFontString then
+		for i = 1, cd:GetNumRegions() do
+			local region = select(i, cd:GetRegions())
+			if region and region:GetObjectType() == "FontString" then
+				cd.MiniAurasFontString = region
+				break
+			end
+		end
+	end
+
+	return cd.MiniAurasFontString
+end
+
+---Colour bands by remaining seconds; must match COUNTDOWN_COLOR_STOPS in AuraContainerDisplay
+---so these icons show exactly what the curve-bound 12.1 aura icons show.
+local function ApplyCountdownColor(cd, remaining)
+	local band = (remaining < 5 and 1) or (remaining < 60 and 2) or 3
+
+	if cd.MiniAurasColorBand == band then
+		return
+	end
+
+	local text = GetCooldownText(cd)
+
+	if not text then
+		return
+	end
+
+	cd.MiniAurasColorBand = band
+
+	if band == 1 then
+		text:SetTextColor(1, 0.102, 0.102)
+	elseif band == 2 then
+		text:SetTextColor(1, 1, 0.102)
+	else
+		text:SetTextColor(1, 1, 1)
+	end
+end
+
+local function ResetCountdownColor(cd)
+	coloredCooldowns[cd] = nil
+
+	if cd.MiniAurasColorBand then
+		cd.MiniAurasColorBand = nil
+		local text = GetCooldownText(cd)
+		if text then
+			text:SetTextColor(1, 1, 1)
+		end
+	end
+end
+
+local function OnColorTick()
+	local db = GetDb()
+	local colorOn = db and db.ColorCountdownByTime
+	local now = GetTime()
+	local any = false
+
+	for cd, expiry in pairs(coloredCooldowns) do
+		if not colorOn or expiry - now <= 0 then
+			ResetCountdownColor(cd)
+		else
+			ApplyCountdownColor(cd, expiry - now)
+			any = true
+		end
+	end
+
+	if not any and colorTicker then
+		colorTicker:Cancel()
+		colorTicker = nil
+	end
+end
+
+---Starts colouring a cooldown's countdown by its remaining time, when the global setting is
+---on and the duration's expiry is addon-known; otherwise makes sure any old colour is gone.
+local function RegisterCountdownColor(cd, durationObject)
+	local db = GetDb()
+	local expiry = db and db.ColorCountdownByTime and wowEx:GetDurationExpiry(durationObject)
+	local remaining = expiry and expiry - GetTime()
+
+	if not remaining or remaining <= 0 then
+		ResetCountdownColor(cd)
+		return
+	end
+
+	coloredCooldowns[cd] = expiry
+	ApplyCountdownColor(cd, remaining)
+
+	if not colorTicker then
+		-- Bands only change at the 60s and 5s edges, so a coarse tick is plenty.
+		colorTicker = C_Timer.NewTicker(0.5, OnColorTick)
+	end
 end
 
 local function ScheduleMasqueReSkin(group)
@@ -281,6 +383,7 @@ local function ClearLayerData(layer, glowFrame)
 	end
 	layer.Icon:SetTexture(nil)
 	layer.Cooldown:Clear()
+	ResetCountdownColor(layer.Cooldown)
 	if layer.Border then
 		-- Hide the coloured border too; otherwise a cleared layer that had a border (e.g. a stacked
 		-- important layer with Color set) leaves the border visible around an empty icon.
@@ -906,9 +1009,11 @@ function M:SetSlot(slotIndex, options)
 	if options.DurationObject then
 		layer.Cooldown:SetCooldownFromDurationObject(options.DurationObject)
 		layer.Cooldown:SetDrawSwipe(not (db and db.DisableSwipe))
+		RegisterCountdownColor(layer.Cooldown, options.DurationObject)
 	else
 		layer.Cooldown:Clear()
 		layer.Cooldown:SetDrawSwipe(false)
+		ResetCountdownColor(layer.Cooldown)
 	end
 	-- Query IsShown() AFTER setting the cooldown - the frame hides itself when the
 	-- duration is zero or expired, so this is the authoritative "on cooldown" check.

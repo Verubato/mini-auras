@@ -136,6 +136,9 @@ local function NewRegion(parent, regionType)
 		record(name)
 	end
 
+	function region:GetObjectType()
+		return region._type
+	end
 	function region:GetFont()
 		return "MockFont", 10, ""
 	end
@@ -370,6 +373,21 @@ function M.NewFrame(frameType, name, parent, template)
 		local fontString = NewRegion(frame, "FontString")
 		frame._createdFontStrings[#frame._createdFontStrings + 1] = fontString
 		return fontString
+	end
+	-- Region enumeration mirrors creation order: textures first, then font strings. Mock
+	-- template frames create no regions of their own, so a fresh Cooldown reports zero.
+	function frame:GetNumRegions()
+		return #frame._createdTextures + #frame._createdFontStrings
+	end
+	function frame:GetRegions()
+		local regions = {}
+		for _, texture in ipairs(frame._createdTextures) do
+			regions[#regions + 1] = texture
+		end
+		for _, fontString in ipairs(frame._createdFontStrings) do
+			regions[#regions + 1] = fontString
+		end
+		return unpack(regions)
 	end
 	function frame:CreateAnimationGroup()
 		return NewAnimationGroup(frame)

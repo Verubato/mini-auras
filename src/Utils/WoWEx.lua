@@ -18,6 +18,12 @@ addon.Utils.WoWEx = M
 local INTERFACE_VERSION = select(4, GetBuildInfo())
 M.IsAuraContainerEra = INTERFACE_VERSION >= 120100
 
+-- Expiry times for duration objects built by CreateDuration, keyed weakly so expired objects
+-- can collect. Duration objects are otherwise write-only to addon code; this is how displays
+-- colour a countdown whose times the addon itself supplied (test icons, kick timers) while
+-- engine-made secret objects stay untouched.
+local durationExpiries = setmetatable({}, { __mode = "k" })
+
 ---@return boolean
 function M:UseAuraContainers()
 	return M.IsAuraContainerEra
@@ -86,5 +92,17 @@ end
 function M:CreateDuration(startTime, duration, modRate)
 	local d = C_DurationUtil.CreateDuration()
 	d:SetTimeFromStart(startTime, duration, modRate)
+	-- A haste modifier changes the real remaining time in ways this plain sum cannot track.
+	if not modRate or modRate == 1 then
+		durationExpiries[d] = startTime + duration
+	end
 	return d
+end
+
+---Expiry (GetTime clock) for a duration object built by CreateDuration; nil for foreign or
+---haste-modified objects, whose remaining time the addon cannot know.
+---@param durationObject table?
+---@return number?
+function M:GetDurationExpiry(durationObject)
+	return durationObject and durationExpiries[durationObject] or nil
 end
