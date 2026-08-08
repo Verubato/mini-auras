@@ -20,17 +20,9 @@ function M:Build(panel)
 	-- fifth of the panel is too narrow for the longest translated label.
 	local checkColumnWidth = mini:ColumnWidth(4, 0, 0)
 
-	local generalDivider = mini:Divider({
-		Parent = panel,
-		Text = L["General"],
-	})
-	generalDivider:SetPoint("LEFT", panel, "LEFT")
-	generalDivider:SetPoint("RIGHT", panel, "RIGHT")
-	generalDivider:SetPoint("TOP", panel, "TOP", 0, 0)
-
 	local languageLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	languageLabel:SetText(L["Language override"])
-	languageLabel:SetPoint("TOPLEFT", generalDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+	languageLabel:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -4)
 
 	local availableLocales = L:GetAvailableLocales()
 	local autoLabel = L["Auto (client language)"] .. " (" .. L:GetDisplayName(GetLocale()) .. ")"
