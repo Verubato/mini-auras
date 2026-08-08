@@ -380,6 +380,11 @@ function M:CreateTabs(options)
 				headerOffset = 30 + 10
 			end
 
+			-- The one scroll range the wheel and the scrollbar both clamp against. The engine's
+			-- GetVerticalScrollRange lags behind scroll-child resizes, so trusting it would let
+			-- the wheel scroll a page whose scrollbar is hidden.
+			local maxScroll = 0
+
 			local scrollFrame = CreateFrame("ScrollFrame", nil, scrollContainer)
 			scrollFrame:SetPoint("TOPLEFT", scrollContainer, "TOPLEFT", 0, -headerOffset)
 			scrollFrame:SetPoint("BOTTOMRIGHT", scrollContainer, "BOTTOMRIGHT", -14, 0)
@@ -387,7 +392,6 @@ function M:CreateTabs(options)
 			scrollFrame:SetScript("OnMouseWheel", function(sf, delta)
 				local step = 40
 				local cur = sf:GetVerticalScroll()
-				local maxScroll = sf:GetVerticalScrollRange()
 				sf:SetVerticalScroll(delta > 0 and math.max(cur - step, 0) or math.min(cur + step, maxScroll))
 			end)
 
@@ -419,7 +423,6 @@ function M:CreateTabs(options)
 			-- A vertical slider puts its MINIMUM at the bottom, while scroll offset grows
 			-- downwards, so the two run opposite ways. Everything below converts between them
 			-- rather than letting a drag down scroll the content up.
-			local maxScroll = 0
 
 			---@param scroll number
 			---@return number
@@ -441,6 +444,7 @@ function M:CreateTabs(options)
 					thumb:SetHeight(math.max(20, scrollBar:GetHeight() * (frameH / childH)))
 				else
 					scrollBar:Hide()
+					scrollFrame:SetVerticalScroll(0)
 				end
 			end
 
