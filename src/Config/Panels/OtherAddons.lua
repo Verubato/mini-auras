@@ -27,7 +27,79 @@ local CURSE_BASE = "https://www.curseforge.com/wow/addons/"
 local addonName = (select(1, ...))
 local ICON_BASE  = "Interface\\AddOns\\" .. addonName .. "\\Icons\\Addons\\"
 
-local function BuildAddonCard(parent, def, cardWidth, onClick)
+local urlWindow
+
+---Shows the small copy popup for a card's link: the box is focused with the link highlighted,
+---so Ctrl+C is the only step left (WoW has no clipboard API to copy directly).
+local function ShowUrlPopup(name, url)
+	if not urlWindow then
+		local win = CreateFrame("Frame", addonName .. "AddonUrlWindow", UIParent, "BackdropTemplate")
+		win:SetSize(460, 116)
+		win:SetFrameStrata("FULLSCREEN_DIALOG")
+		win:SetClampedToScreen(true)
+		win:EnableMouse(true)
+		win:Hide()
+		win:SetBackdrop({
+			bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+			edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+			tile = true, tileSize = 16, edgeSize = 16,
+			insets = { left = 4, right = 4, top = 4, bottom = 4 },
+		})
+		win:SetBackdropColor(0, 0, 0, 0.9)
+
+		local title = win:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+		title:SetPoint("TOP", win, "TOP", 0, -12)
+		title:SetTextColor(1, 0.82, 0)
+
+		local box = CreateFrame("EditBox", nil, win, "InputBoxTemplate")
+		mini:FlattenEditBox(box)
+		box:SetHeight(28)
+		box:SetWidth(460 - 32)
+		box:SetPoint("TOPLEFT", win, "TOPLEFT", 16, -42)
+		box:SetAutoFocus(false)
+		-- Copy-only: any edit snaps the text back to the link, so Ctrl+C always grabs the
+		-- real thing no matter what was typed over it.
+		box:SetScript("OnTextChanged", function(boxSelf, userInput)
+			if userInput then
+				boxSelf:SetText(win.Url or "")
+				boxSelf:HighlightText()
+			end
+		end)
+		box:SetScript("OnEditFocusGained", function(boxSelf)
+			boxSelf:HighlightText()
+		end)
+		box:SetScript("OnEscapePressed", function()
+			win:Hide()
+		end)
+		box:SetScript("OnEnterPressed", function()
+			win:Hide()
+		end)
+
+		local closeBtn = mini:Button({
+			Parent = win,
+			Text = CLOSE,
+			Width = 80,
+			OnClick = function()
+				win:Hide()
+			end,
+		})
+		closeBtn:SetPoint("TOPRIGHT", box, "BOTTOMRIGHT", 0, -10)
+
+		win.Title = title
+		win.Box = box
+		urlWindow = win
+	end
+
+	urlWindow.Title:SetText(name)
+	urlWindow.Url = url
+	urlWindow.Box:SetText(url)
+	urlWindow:ClearAllPoints()
+	urlWindow:SetPoint("CENTER", UIParent, "CENTER")
+	urlWindow:Show()
+	urlWindow.Box:SetFocus()
+end
+
+local function BuildAddonCard(parent, def, cardWidth)
 	local card = CreateFrame("Frame", nil, parent, "BackdropTemplate")
 	card:SetSize(cardWidth, CARD_HEIGHT)
 	card:SetBackdrop({
@@ -70,18 +142,18 @@ local function BuildAddonCard(parent, def, cardWidth, onClick)
 		card:SetBackdropBorderColor(unpack(CARD_BORDER))
 	end)
 	card:SetScript("OnMouseUp", function()
-		onClick(url)
+		ShowUrlPopup(def.Name, url)
 	end)
 
 	return card
 end
 
-local function BuildGrid(panel, anchorFrame, addonDefs, cardWidth, onClick)
+local function BuildGrid(panel, anchorFrame, addonDefs, cardWidth)
 	local firstInRow, prev
 
 	for i, def in ipairs(addonDefs) do
 		local col  = (i - 1) % COLS
-		local card = BuildAddonCard(panel, def, cardWidth, onClick)
+		local card = BuildAddonCard(panel, def, cardWidth)
 
 		if i == 1 then
 			card:SetPoint("TOPLEFT", anchorFrame, "BOTTOMLEFT", 0, -verticalSpacing)
@@ -108,18 +180,6 @@ function M:Build(panel)
 	})
 	subtitle:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
 
-	-- The box shows the last clicked card's link (the addon hub by default). Focusing and
-	-- highlighting it is the closest WoW gets to a clipboard copy: the user hits Ctrl+C.
-	local currentUrl = PROJECTS_URL
-	local url
-
-	local function ShowUrl(link)
-		currentUrl = link
-		url.EditBox:MiniRefresh()
-		url.EditBox:SetFocus()
-		url.EditBox:HighlightText()
-	end
-
 	local mainAddons = {
 		{ Name = "FrameSort",           Desc = "Sorts party/raid/arena frames and places you at the top/middle/bottom."    },
 		{ Name = "MiniMarkers",         Desc = "Shows markers above your team mates."                                      },
@@ -135,14 +195,14 @@ function M:Build(panel)
 		{ Name = "MiniFader",           Desc = "Fades out certain frames including bags, micro menu, and quest tracker."   },
 	}
 
-	local lastMainRowFirst = BuildGrid(panel, subtitle, mainAddons, cardWidth, ShowUrl)
+	local lastMainRowFirst = BuildGrid(panel, subtitle, mainAddons, cardWidth)
 
-	url = mini:EditBox({
+	local url = mini:EditBox({
 		Parent   = panel,
 		Width    = 400,
 		LabelText = "",
 		GetValue = function()
-			return currentUrl
+			return PROJECTS_URL
 		end,
 		SetValue = function(_) end,
 	})
@@ -165,6 +225,6 @@ function M:Build(panel)
 			{ Name = "Masque", Desc = "Powerful icon skinning tool." },
 		}
 
-		BuildGrid(panel, styleSubtitle, styleAddons, cardWidth, ShowUrl)
+		BuildGrid(panel, styleSubtitle, styleAddons, cardWidth)
 	end
 end
