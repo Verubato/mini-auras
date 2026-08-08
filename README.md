@@ -2,6 +2,7 @@
 
 Features:
 
+- Create custom mini weak aura icon alerts with sound.
 - Displays enemy CC on party/raid frames.
 - Active cooldowns shown on party/raid frames.
 - Show important and defensives on nameplates.
