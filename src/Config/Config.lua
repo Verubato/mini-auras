@@ -212,7 +212,10 @@ function M:Init()
 	-- rather than inside Content's padding; pages keep their old position via ContentInsets.
 	local tabsPanel = CreateFrame("Frame", nil, window)
 	tabsPanel:SetPoint("TOPLEFT", window.TitleBar, "BOTTOMLEFT", 0, -1)
-	tabsPanel:SetPoint("BOTTOMRIGHT", window.Content, "BOTTOMRIGHT", 0, 0)
+	-- Anchored to the window rather than window.Content so the nav strip and pages run flush
+	-- to the bottom border, like the strip already does at the top and left. The x inset keeps
+	-- the Content frame's right padding (ContentPadding 12 + 1px border); y 1 clears the border.
+	tabsPanel:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -13, 1)
 
 	-- Sidebar icons: the addon's own art under Icons\Nav, one per tab key.
 	local tabs = {
