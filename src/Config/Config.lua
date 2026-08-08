@@ -423,8 +423,6 @@ function M:Init()
 		StripWidth = tabStripWidth,
 		HorizontalPadding = tabHorizontalPadding,
 		PageHeader = true,
-		-- Space under the last tab for the community links footer below.
-		FooterReserve = 24,
 		Tabs = tabs,
 	})
 
@@ -436,46 +434,6 @@ function M:Init()
 	local nameplatesTab = tabController:GetTabButton("Nameplates")
 	if nameplatesTab and nameplatesTab.Icon then
 		nameplatesTab.Icon:SetVertexColor(accent.r, accent.g, accent.b, 1)
-	end
-
-	-- Community links in the strip space FooterReserve held back under the last tab. Clicking
-	-- one opens a copy dialog: the game cannot open a browser, so a selectable box is the
-	-- whole feature.
-	local strip = tabController.Strip
-	if strip then
-		local function FooterLink(text, url)
-			local link = CreateFrame("Button", nil, strip)
-			link:SetHeight(16)
-
-			local label = link:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-			label:SetPoint("LEFT", link, "LEFT", 0, 0)
-			label:SetText(text)
-			label:SetTextColor(0.50, 0.47, 0.44, 1)
-			link:SetWidth(label:GetStringWidth() + 2)
-
-			link:SetScript("OnEnter", function()
-				label:SetTextColor(0.91, 0.89, 0.85, 1)
-			end)
-			link:SetScript("OnLeave", function()
-				label:SetTextColor(0.50, 0.47, 0.44, 1)
-			end)
-			link:SetScript("OnClick", function()
-				StaticPopup_Show("MINIAURAS_COPY_URL", nil, nil, url)
-			end)
-
-			return link
-		end
-
-		local discordLink = FooterLink(L["Discord"], "https://discord.gg/UruPTPHHxK")
-		discordLink:SetPoint("BOTTOMLEFT", strip, "BOTTOMLEFT", 10, 4)
-
-		local dot = strip:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-		dot:SetText("·")
-		dot:SetTextColor(0.35, 0.33, 0.31, 1)
-		dot:SetPoint("LEFT", discordLink, "RIGHT", 5, 0)
-
-		local curseLink = FooterLink(L["CurseForge"], "https://www.curseforge.com/wow/addons/minicc")
-		curseLink:SetPoint("LEFT", dot, "RIGHT", 5, 0)
 	end
 
 	StaticPopupDialogs["MINIAURAS_RELOAD_CONFIRM"] = {
@@ -503,29 +461,6 @@ function M:Init()
 			if data and data.OnNo then
 				data.OnNo()
 			end
-		end,
-		timeout = 0,
-		whileDead = true,
-		hideOnEscape = true,
-	}
-
-	StaticPopupDialogs["MINIAURAS_COPY_URL"] = {
-		text = L["Press Ctrl+C to copy the link."],
-		button1 = CLOSE,
-		hasEditBox = true,
-		editBoxWidth = 280,
-		OnShow = function(dialog, data)
-			-- Field name spans client versions: retail keeps it on the dialog, older builds
-			-- only as a named global.
-			local box = dialog.editBox or _G[dialog:GetName() .. "EditBox"]
-			if box then
-				box:SetText(data or "")
-				box:HighlightText()
-				box:SetFocus()
-			end
-		end,
-		EditBoxOnEscapePressed = function(box)
-			box:GetParent():Hide()
 		end,
 		timeout = 0,
 		whileDead = true,

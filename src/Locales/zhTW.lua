@@ -115,8 +115,6 @@ L:RegisterLocale("zhTW", {
 	-- General tab
 	["Discord"] = "Discord",
 	["Testing..."] = "測試中...",
-	["CurseForge"] = "CurseForge",
-	["Press Ctrl+C to copy the link."] = "按 Ctrl+C 複製連結。",
 	["No groups yet. Click + to track your first buff."] = "還沒有群組。點擊 + 追蹤你的第一個增益。",
 	["Export Profile"] = "匯出設定檔",
 	["Font Scale"] = "字體縮放",

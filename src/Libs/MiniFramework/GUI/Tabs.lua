@@ -364,8 +364,10 @@ function M:CreateTabs(options)
 				else
 					headerTitle:SetPoint("LEFT", header, "LEFT", 0, 2)
 				end
+				-- The section dividers' muted gold, so the page title and the dividers under it
+				-- read as one family.
 				headerTitle:SetText(def.Title)
-				headerTitle:SetTextColor(tabTextHover.r, tabTextHover.g, tabTextHover.b, 1)
+				headerTitle:SetTextColor(dividerGold.r, dividerGold.g, dividerGold.b, 1)
 
 				local rule = header:CreateTexture(nil, "ARTWORK")
 				pixel.SetHeight(rule, 1)

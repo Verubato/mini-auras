@@ -206,9 +206,13 @@ function M:CreateStandaloneWindow(options)
 	-- Optional subtitle / version beside the title, set in a small chip so it reads as a
 	-- deliberate badge rather than debug output trailing the logo.
 	if options.Subtitle then
+		local pixel = GUI.Pixel
+
+		-- Pixel-snapped size and anchor: a 1px backdrop edge on a fractionally-placed frame
+		-- renders thicker on one side than the other.
 		local chip = CreateFrame("Frame", nil, titleBar, GUI.BackdropTemplate)
-		chip:SetHeight(18)
-		chip:SetPoint("LEFT", titleText, "RIGHT", 10, 0)
+		pixel.SetHeight(chip, 18)
+		pixel.SetPoint(chip, "LEFT", titleText, "RIGHT", 10, 0)
 		GUI.ApplyBackdrop(chip, BACKDROP, 1, 1, 1, 0.05, 1, 1, 1, 0.14)
 
 		local subtitleText = chip:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -218,7 +222,7 @@ function M:CreateStandaloneWindow(options)
 
 		local textWidth = subtitleText.GetUnboundedStringWidth and subtitleText:GetUnboundedStringWidth()
 			or subtitleText:GetStringWidth() or 40
-		chip:SetWidth(math.ceil(textWidth) + 16)
+		pixel.SetWidth(chip, math.ceil(textWidth) + 16)
 
 		window.SubtitleText = subtitleText
 	end

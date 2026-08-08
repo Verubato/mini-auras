@@ -115,8 +115,6 @@ L:RegisterLocale("koKR", {
 	-- General tab
 	["Discord"] = "Discord",
 	["Testing..."] = "테스트 중...",
-	["CurseForge"] = "CurseForge",
-	["Press Ctrl+C to copy the link."] = "Ctrl+C를 눌러 링크를 복사하세요.",
 	["No groups yet. Click + to track your first buff."] = "아직 그룹이 없습니다. +를 눌러 첫 버프를 추적하세요.",
 	["Export Profile"] = "프로필 내보내기",
 	["Font Scale"] = "글꼴 크기",
