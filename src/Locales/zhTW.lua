@@ -51,7 +51,7 @@ L:RegisterLocale("zhTW", {
 	["Change the colour of the pandemic ring."] = "更改刷新視窗指示環的顏色。",
 	["Highlight an aura during its refresh window, where re-casting adds the remaining time on top. The game decides the window per spell, and only your own re-castable effects have one."] = "在光環的刷新視窗內高亮顯示，此時重新施放會累加剩餘時間。視窗由遊戲依法術決定，只有你自己可刷新的效果才有。",
 	["Colour Countdown"] = "倒數計時著色",
-	["Colours the countdown timer text by the time remaining, from white through gold and orange to red as it runs out."] = "根據剩餘時間為倒數計時文字著色，從白色經金色、橘色漸變為紅色。",
+	["Colours the countdown timer text by the time remaining: white above a minute, yellow under a minute, and red in the last five seconds."] = "根據剩餘時間為倒數文字著色：超過一分鐘為白色，不足一分鐘為黃色，最後五秒為紅色。",
 	["Icons"] = "圖示",
 	["Behaviour"] = "行為",
 	["Glow Type"] = "發光類型",

@@ -135,7 +135,7 @@ function M:Build(panel)
 		local colorCountdownChk = mini:Checkbox({
 			Parent = panel,
 			LabelText = L["Colour Countdown"],
-			Tooltip = L["Colours the countdown timer text by the time remaining, from white through gold and orange to red as it runs out."],
+			Tooltip = L["Colours the countdown timer text by the time remaining: white above a minute, yellow under a minute, and red in the last five seconds."],
 			GetValue = function()
 				return db.ColorCountdownByTime or false
 			end,

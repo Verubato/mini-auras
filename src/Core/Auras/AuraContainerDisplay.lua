@@ -34,12 +34,15 @@ local PANDEMIC_COLOR = { 1, 0.6, 0.1 }
 
 -- Colour-by-time stops for the countdown text: {seconds remaining, r, g, b}. The engine
 -- evaluates the curve against the secret remaining time and writes the fontstring's colour
--- itself; nothing here reads the clock. Linear blending between stops, flat outside them.
+-- itself; nothing here reads the clock. OmniCC's classic bands (red under 5s, yellow to the
+-- minute, white above) rather than a gradient: each near-coincident stop pair fakes a hard
+-- edge on the linear curve, so the 0.05s blend windows are never visible.
 local COUNTDOWN_COLOR_STOPS = {
-	{ 0, 0.97, 0.33, 0.33 },
-	{ 3, 1.0, 0.6, 0.22 },
-	{ 5, 1.0, 0.82, 0.24 },
-	{ 10, 1.0, 1.0, 1.0 },
+	{ 0, 1, 0.102, 0.102 },
+	{ 5, 1, 0.102, 0.102 },
+	{ 5.05, 1, 1, 0.102 },
+	{ 60, 1, 1, 0.102 },
+	{ 60.05, 1, 1, 1 },
 }
 ---@type table?
 local countdownCurve

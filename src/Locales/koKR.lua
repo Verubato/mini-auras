@@ -51,7 +51,7 @@ L:RegisterLocale("koKR", {
 	["Change the colour of the pandemic ring."] = "판데믹 링의 색상을 변경합니다.",
 	["Highlight an aura during its refresh window, where re-casting adds the remaining time on top. The game decides the window per spell, and only your own re-castable effects have one."] = "재시전 시 남은 시간이 더해지는 갱신 구간 동안 오라를 강조합니다. 구간은 주문마다 게임이 정하며, 직접 갱신할 수 있는 자신의 효과에만 있습니다.",
 	["Colour Countdown"] = "카운트다운 색상",
-	["Colours the countdown timer text by the time remaining, from white through gold and orange to red as it runs out."] = "남은 시간에 따라 카운트다운 문자를 흰색에서 금색, 주황색, 빨간색 순으로 칠합니다.",
+	["Colours the countdown timer text by the time remaining: white above a minute, yellow under a minute, and red in the last five seconds."] = "남은 시간에 따라 카운트다운 텍스트에 색을 입힙니다: 1분 이상은 흰색, 1분 미만은 노란색, 마지막 5초는 빨간색입니다.",
 	["Icons"] = "아이콘",
 	["Behaviour"] = "동작",
 	["Glow Type"] = "발광 유형",

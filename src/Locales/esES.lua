@@ -51,7 +51,7 @@ L:RegisterLocale("esES", {
 	["Change the colour of the pandemic ring."] = "Cambia el color del anillo de pandemia.",
 	["Highlight an aura during its refresh window, where re-casting adds the remaining time on top. The game decides the window per spell, and only your own re-castable effects have one."] = "Resalta un aura durante su ventana de refresco, en la que volver a lanzarla suma el tiempo restante. El juego decide la ventana por hechizo, y solo tus propios efectos renovables tienen una.",
 	["Colour Countdown"] = "Colorear cuenta atrás",
-	["Colours the countdown timer text by the time remaining, from white through gold and orange to red as it runs out."] = "Colorea el texto de la cuenta atrás según el tiempo restante, de blanco a dorado, naranja y rojo a medida que se agota.",
+	["Colours the countdown timer text by the time remaining: white above a minute, yellow under a minute, and red in the last five seconds."] = "Colorea el texto del temporizador según el tiempo restante: blanco por encima de un minuto, amarillo por debajo de un minuto y rojo en los últimos cinco segundos.",
 	["Icons"] = "Iconos",
 	["Behaviour"] = "Comportamiento",
 	["Glow Type"] = "Tipo de brillo",

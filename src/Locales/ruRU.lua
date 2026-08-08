@@ -51,7 +51,7 @@ L:RegisterLocale("ruRU", {
 	["Change the colour of the pandemic ring."] = "Меняет цвет кольца пандемии.",
 	["Highlight an aura during its refresh window, where re-casting adds the remaining time on top. The game decides the window per spell, and only your own re-castable effects have one."] = "Подсвечивает ауру в окне обновления, когда повторное применение добавляет оставшееся время. Игра сама определяет окно для каждого заклинания, и оно есть только у ваших собственных обновляемых эффектов.",
 	["Colour Countdown"] = "Красить отсчёт",
-	["Colours the countdown timer text by the time remaining, from white through gold and orange to red as it runs out."] = "Красит текст отсчёта по оставшемуся времени: от белого через золотой и оранжевый к красному по мере истечения.",
+	["Colours the countdown timer text by the time remaining: white above a minute, yellow under a minute, and red in the last five seconds."] = "Окрашивает текст отсчёта по оставшемуся времени: белый больше минуты, жёлтый меньше минуты и красный в последние пять секунд.",
 	["Icons"] = "Иконки",
 	["Behaviour"] = "Поведение",
 	["Glow Type"] = "Тип свечения",
