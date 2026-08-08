@@ -195,7 +195,7 @@ L:RegisterLocale("ruRU", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Ауры рамок рейда",
-	["Raid Frame Auras_Short"] = "Рамки рейда",
+	["Raid Frame Auras_Short"] = "Ауры группы",
 	["Defensive"] = "Защитное",
 	["Exclude yourself from showing trinket icons."] = "Исключить себя из отображения иконок аксессуаров.",
 	["Show CC"] = "Показать контроль",
@@ -345,7 +345,7 @@ L:RegisterLocale("ruRU", {
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Свои ауры",
-	["Custom Auras_Short"] = "Ауры",
+	["Custom Auras_Short"] = "Личные ауры",
 	["Create your own custom mini weak auras."] = "Создайте свои собственные мини weak auras.",
 	["New Group"] = "Новая группа",
 	["Aura %d"] = "Аура %d",

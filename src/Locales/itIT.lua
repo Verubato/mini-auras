@@ -195,7 +195,7 @@ L:RegisterLocale("itIT", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Aure dei riquadri",
-	["Raid Frame Auras_Short"] = "Riquadri incursione",
+	["Raid Frame Auras_Short"] = "Aure di gruppo",
 	["Defensive"] = "Difensivo",
 	["Exclude yourself from showing trinket icons."] = "Escluditi dalla visualizzazione delle icone dei monili.",
 	["Show CC"] = "Mostra CC",
@@ -342,7 +342,7 @@ L:RegisterLocale("itIT", {
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Aure personalizzate",
-	["Custom Auras_Short"] = "Aure",
+	["Custom Auras_Short"] = "Aure personali",
 	["Create your own custom mini weak auras."] = "Crea le tue mini weak aura personalizzate.",
 	["New Group"] = "Nuovo gruppo",
 	["Aura %d"] = "Aura %d",

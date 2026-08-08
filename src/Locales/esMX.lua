@@ -196,7 +196,7 @@ L:RegisterLocale("esMX", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Auras de marcos de banda",
-	["Raid Frame Auras_Short"] = "Marcos de banda",
+	["Raid Frame Auras_Short"] = "Auras de grupo",
 	["Defensive"] = "Defensivo",
 	["Exclude yourself from showing trinket icons."] = "Exclúyete de mostrar iconos de abalorios.",
 	["Show CC"] = "Mostrar CC",
@@ -345,7 +345,7 @@ L:RegisterLocale("esMX", {
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Auras personalizadas",
-	["Custom Auras_Short"] = "Auras",
+	["Custom Auras_Short"] = "Auras personales",
 	["Create your own custom mini weak auras."] = "Crea tus propias mini weak auras.",
 	["New Group"] = "Nuevo grupo",
 	["Aura %d"] = "Aura %d",

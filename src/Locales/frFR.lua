@@ -195,7 +195,7 @@ L:RegisterLocale("frFR", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Auras des cadres de raid",
-	["Raid Frame Auras_Short"] = "Cadres de raid",
+	["Raid Frame Auras_Short"] = "Auras de groupe",
 	["Defensive"] = "Défensif",
 	["Exclude yourself from showing trinket icons."] = "Ne pas afficher les icônes de trinket sur vous-même.",
 	["Show CC"] = "Afficher les CC",
@@ -342,7 +342,7 @@ L:RegisterLocale("frFR", {
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Auras personnalisées",
-	["Custom Auras_Short"] = "Auras",
+	["Custom Auras_Short"] = "Auras personnelles",
 	["Create your own custom mini weak auras."] = "Créez vos propres mini weak auras.",
 	["New Group"] = "Nouveau groupe",
 	["Aura %d"] = "Aura %d",

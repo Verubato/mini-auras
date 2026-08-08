@@ -195,7 +195,7 @@ L:RegisterLocale("ptBR", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Auras dos quadros de raide",
-	["Raid Frame Auras_Short"] = "Quadros de raide",
+	["Raid Frame Auras_Short"] = "Auras de grupo",
 	["Defensive"] = "Defensivo",
 	["Exclude yourself from showing trinket icons."] = "Exclua-se de mostrar ícones de berloques.",
 	["Show CC"] = "Mostrar CC",
@@ -343,7 +343,7 @@ L:RegisterLocale("ptBR", {
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Auras personalizadas",
-	["Custom Auras_Short"] = "Auras",
+	["Custom Auras_Short"] = "Auras pessoais",
 	["Create your own custom mini weak auras."] = "Crie suas próprias mini weak auras.",
 	["New Group"] = "Novo grupo",
 	["Aura %d"] = "Aura %d",

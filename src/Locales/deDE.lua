@@ -195,7 +195,7 @@ L:RegisterLocale("deDE", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Schlachtzugsrahmen-Auren",
-	["Raid Frame Auras_Short"] = "Schlachtzugsfenster",
+	["Raid Frame Auras_Short"] = "Gruppenauren",
 	["Defensive"] = "Defensiv",
 	["Exclude yourself from showing trinket icons."] = "Schließe dich selbst vom Anzeigen von Schmuckstück-Symbolen aus.",
 	["Show CC"] = "CC anzeigen",
@@ -344,7 +344,7 @@ L:RegisterLocale("deDE", {
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Eigene Auren",
-	["Custom Auras_Short"] = "Auren",
+	["Custom Auras_Short"] = "Eigene Auren",
 	["Create your own custom mini weak auras."] = "Erstelle deine eigenen kleinen Weak Auras.",
 	["New Group"] = "Neue Gruppe",
 	["Aura %d"] = "Aura %d",

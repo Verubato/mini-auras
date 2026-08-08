@@ -195,7 +195,7 @@ L:RegisterLocale("koKR", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "공격대 프레임 오라",
-	["Raid Frame Auras_Short"] = "공격대 프레임",
+	["Raid Frame Auras_Short"] = "그룹 오라",
 	["Defensive"] = "방어",
 	["Exclude yourself from showing trinket icons."] = "장신구 아이콘 표시에서 자신을 제외합니다.",
 	["Show CC"] = "CC 표시",
@@ -344,7 +344,7 @@ L:RegisterLocale("koKR", {
 
 	-- Custom Auras tab
 	["Custom Auras"] = "사용자 오라",
-	["Custom Auras_Short"] = "오라",
+	["Custom Auras_Short"] = "개인 오라",
 	["Create your own custom mini weak auras."] = "나만의 미니 위크오라를 만드세요.",
 	["New Group"] = "새 그룹",
 	["Aura %d"] = "오라 %d",

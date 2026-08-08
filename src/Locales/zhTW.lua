@@ -195,7 +195,7 @@ L:RegisterLocale("zhTW", {
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "團隊框架光環",
-	["Raid Frame Auras_Short"] = "團隊框架",
+	["Raid Frame Auras_Short"] = "團體光環",
 	["Defensive"] = "防禦",
 	["Exclude yourself from showing trinket icons."] = "將自己從顯示飾品圖示中排除。",
 	["Show CC"] = "顯示CC",
@@ -345,7 +345,7 @@ L:RegisterLocale("zhTW", {
 
 	-- Custom Auras tab
 	["Custom Auras"] = "自訂光環",
-	["Custom Auras_Short"] = "光環",
+	["Custom Auras_Short"] = "個人光環",
 	["Create your own custom mini weak auras."] = "建立你自己的迷你 WeakAuras。",
 	["New Group"] = "新增群組",
 	["Aura %d"] = "光環 %d",

@@ -196,7 +196,7 @@ L:SetDefaultStrings({
 
 	-- Indicator tab
 	["Raid Frame Auras"] = "Raid Frame Auras",
-	["Raid Frame Auras_Short"] = "Raid Frames",
+	["Raid Frame Auras_Short"] = "Group Auras",
 	["Defensive"] = "Defensive",
 	["Exclude yourself from showing trinket icons."] = "Exclude yourself from showing trinket icons.",
 	["Show CC"] = "Show CC",
@@ -346,7 +346,7 @@ L:SetDefaultStrings({
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Custom Auras",
-	["Custom Auras_Short"] = "Auras",
+	["Custom Auras_Short"] = "Personal Auras",
 	["Create your own custom mini weak auras."] = "Create your own custom mini weak auras.",
 	["New Group"] = "New Group",
 	["Aura %d"] = "Aura %d",
