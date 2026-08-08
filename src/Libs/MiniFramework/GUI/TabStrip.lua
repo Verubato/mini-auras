@@ -36,12 +36,22 @@ function M:TabStrip(options)
 	local strip = CreateFrame("Frame", nil, options.Parent)
 	strip:SetHeight(height)
 
+	-- Textures snap to the pixel grid by default, and a one-pixel line at a fractional offset
+	-- (this strip sits inside a scroll child) can snap onto a zero-coverage row and vanish.
+	local function Unsnap(texture)
+		if texture.SetSnapToPixelGrid then
+			texture:SetSnapToPixelGrid(false)
+			texture:SetTexelSnappingBias(0)
+		end
+	end
+
 	-- Runs the full width under every button, so a selected tab's accent reads as a break in the
 	-- line rather than a stray underline.
 	-- Plain SetHeight, not PixelUtil: this strip sits inside a scroll child, whose fractional
 	-- physical alignment can drop a one-physical-pixel texture between pixels entirely.
 	local baseline = strip:CreateTexture(nil, "ARTWORK")
 	baseline:SetHeight(1)
+	Unsnap(baseline)
 	baseline:SetPoint("BOTTOMLEFT", strip, "BOTTOMLEFT", 0, 0)
 	baseline:SetPoint("BOTTOMRIGHT", strip, "BOTTOMRIGHT", 0, 0)
 	GUI.SetSolid(baseline, 1, 1, 1, BASELINE_ALPHA)
@@ -96,6 +106,7 @@ function M:TabStrip(options)
 
 		button.Underline = button:CreateTexture(nil, "OVERLAY")
 		button.Underline:SetHeight(UNDERLINE_HEIGHT)
+		Unsnap(button.Underline)
 		button.Underline:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", 0, 0)
 		button.Underline:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0, 0)
 		GUI.SetSolid(button.Underline, accent.r, accent.g, accent.b, 1)
