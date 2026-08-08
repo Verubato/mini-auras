@@ -1069,6 +1069,7 @@ addon.Core.AuraCategoryIds = {
 
 	Unflagged = {
 		[228050] = true, -- Guardian of the Forgotten Queen
+		[325174] = true, -- Spirit Link
 		[378078] = true, -- Spiritwalker's Aegis
 		[79206] = true, -- Spiritwalker's Grace
 		[389422] = true, -- Invoke Yu'lon, the Jade Serpent
@@ -1236,6 +1237,7 @@ addon.Core.AuraCategoryIds = {
 		[121471] = "ROGUE", -- Shadow Blades
 		[185422] = "ROGUE", -- Shadow Dance
 		-- Shaman
+		[325174] = "SHAMAN", -- Spirit Link
 		[378078] = "SHAMAN", -- Spiritwalker's Aegis
 		[79206] = "SHAMAN", -- Spiritwalker's Grace
 		[409293] = "SHAMAN", -- Burrow
