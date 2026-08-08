@@ -220,7 +220,7 @@ local function BuildInstance(panel, options)
 		LabelText = L["Max Icons"],
 		Min = 1,
 		Max = 5,
-		Default = 1,
+		Default = 3,
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "MaxIcons",
