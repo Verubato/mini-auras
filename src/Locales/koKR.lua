@@ -320,6 +320,8 @@ L:RegisterLocale("koKR", {
 
 	-- Language option
 	["Language override"] = "언어 변경",
+	["Language"] = "언어",
+	["Miscellaneous settings that affect the entire addon."] = "애드온 전체에 적용되는 기타 설정입니다.",
 	["Auto (client language)"] = "자동 (클라이언트 언어)",
 	["Language changed. Reload UI now?"] = "언어가 변경되었습니다. 지금 UI를 새로고침하시겠습니까?",
 	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon.",

@@ -321,6 +321,8 @@ L:RegisterLocale("zhTW", {
 
 	-- Language option
 	["Language override"] = "語言覆蓋",
+	["Language"] = "語言",
+	["Miscellaneous settings that affect the entire addon."] = "影響整個插件的雜項設定。",
 	["Auto (client language)"] = "自動（客戶端語言）",
 	["Language changed. Reload UI now?"] = "語言已變更。立即重新載入介面嗎？",
 	["HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon."] = "HEADS UP: Blizzard is making changes in patch 12.0.5 (April 21st) that will severely reduce the accuracy of friendly CD tracking, kill cooldown glow on press, and completely remove PvP enemy kick tracking. So please be aware that tracking will lose accuracy soon.",
