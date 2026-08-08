@@ -267,6 +267,8 @@ function ui.BuildGrid(panel, anchor, deps)
 		end)
 	end
 
+	local emptyHint
+
 	function ui.Populate()
 		local options = ui.Options()
 
@@ -281,6 +283,15 @@ function ui.BuildGrid(panel, anchor, deps)
 		end
 
 		BuildAddTile()
+
+		-- Beside the + tile, so an empty grid reads as an invitation rather than a bug.
+		if not emptyHint then
+			emptyHint = listAnchor:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+			emptyHint:SetText(L["No groups yet. Click + to track your first buff."])
+			emptyHint:SetTextColor(0.55, 0.52, 0.48, 1)
+			emptyHint:SetPoint("LEFT", TileAt(1), "RIGHT", 12, 0)
+		end
+		emptyHint:SetShown(#options.Groups == 0)
 
 		for index, group in ipairs(options.Groups) do
 			BuildGroupTile(group, index)

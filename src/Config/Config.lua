@@ -159,6 +159,54 @@ function M:Init()
 	})
 	testBtn:SetPoint("RIGHT", window.CloseButton, "LEFT", -8, 0)
 
+	-- While test mode is live the button fills with a pulsing accent wash and says so, so the
+	-- fake icons on screen always have a visible explanation. The wash is a separate texture:
+	-- the button's own backdrop is driven by its hover scripts and can't be animated.
+	local accent = mini.GUI.Accent
+	local testWash = testBtn:CreateTexture(nil, "OVERLAY")
+	testWash:SetPoint("TOPLEFT", testBtn, "TOPLEFT", 1, -1)
+	testWash:SetPoint("BOTTOMRIGHT", testBtn, "BOTTOMRIGHT", -1, 1)
+	mini.GUI.SetSolid(testWash, accent.r, accent.g, accent.b, 0.35)
+	testWash:Hide()
+
+	local testPulse = testWash:CreateAnimationGroup()
+	testPulse:SetLooping("BOUNCE")
+	local pulseAlpha = testPulse:CreateAnimation("Alpha")
+	pulseAlpha:SetFromAlpha(1)
+	pulseAlpha:SetToAlpha(0.25)
+	pulseAlpha:SetDuration(0.8)
+
+	local function UpdateTestButton()
+		local active = addon:IsTestActive()
+
+		testBtn:SetText(active and L["Testing..."] or L["Test"])
+		testWash:SetShown(active)
+
+		if active then
+			testPulse:Play()
+		else
+			testPulse:Stop()
+		end
+	end
+
+	-- Test mode is toggled from several places (this button, the panels' own test toggles,
+	-- slash commands), so track the manager itself rather than the button click.
+	local testManager = addon.Core.TestModeManager
+	local originalStart = testManager.StartTesting
+	local originalStop = testManager.StopTesting
+
+	function testManager.StartTesting(manager, ...)
+		originalStart(manager, ...)
+		UpdateTestButton()
+	end
+
+	function testManager.StopTesting(manager, ...)
+		originalStop(manager, ...)
+		UpdateTestButton()
+	end
+
+	window:HookScript("OnShow", UpdateTestButton)
+
 	-- Tabs fill the content area of the window
 	local tabsPanel = window.Content
 
@@ -374,6 +422,9 @@ function M:Init()
 		Vertical = true,
 		StripWidth = tabStripWidth,
 		HorizontalPadding = tabHorizontalPadding,
+		PageHeader = true,
+		-- Space under the last tab for the community links footer below.
+		FooterReserve = 24,
 		Tabs = tabs,
 	})
 
@@ -384,8 +435,47 @@ function M:Init()
 	-- block. Tinted with the config UI's own accent so it sits with the controls around it.
 	local nameplatesTab = tabController:GetTabButton("Nameplates")
 	if nameplatesTab and nameplatesTab.Icon then
-		local accent = mini.GUI.Accent
 		nameplatesTab.Icon:SetVertexColor(accent.r, accent.g, accent.b, 1)
+	end
+
+	-- Community links in the strip space FooterReserve held back under the last tab. Clicking
+	-- one opens a copy dialog: the game cannot open a browser, so a selectable box is the
+	-- whole feature.
+	local strip = tabController.Strip
+	if strip then
+		local function FooterLink(text, url)
+			local link = CreateFrame("Button", nil, strip)
+			link:SetHeight(16)
+
+			local label = link:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+			label:SetPoint("LEFT", link, "LEFT", 0, 0)
+			label:SetText(text)
+			label:SetTextColor(0.50, 0.47, 0.44, 1)
+			link:SetWidth(label:GetStringWidth() + 2)
+
+			link:SetScript("OnEnter", function()
+				label:SetTextColor(0.91, 0.89, 0.85, 1)
+			end)
+			link:SetScript("OnLeave", function()
+				label:SetTextColor(0.50, 0.47, 0.44, 1)
+			end)
+			link:SetScript("OnClick", function()
+				StaticPopup_Show("MINIAURAS_COPY_URL", nil, nil, url)
+			end)
+
+			return link
+		end
+
+		local discordLink = FooterLink(L["Discord"], "https://discord.gg/UruPTPHHxK")
+		discordLink:SetPoint("BOTTOMLEFT", strip, "BOTTOMLEFT", 10, 4)
+
+		local dot = strip:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+		dot:SetText("·")
+		dot:SetTextColor(0.35, 0.33, 0.31, 1)
+		dot:SetPoint("LEFT", discordLink, "RIGHT", 5, 0)
+
+		local curseLink = FooterLink(L["CurseForge"], "https://www.curseforge.com/wow/addons/minicc")
+		curseLink:SetPoint("LEFT", dot, "RIGHT", 5, 0)
 	end
 
 	StaticPopupDialogs["MINIAURAS_RELOAD_CONFIRM"] = {
@@ -413,6 +503,29 @@ function M:Init()
 			if data and data.OnNo then
 				data.OnNo()
 			end
+		end,
+		timeout = 0,
+		whileDead = true,
+		hideOnEscape = true,
+	}
+
+	StaticPopupDialogs["MINIAURAS_COPY_URL"] = {
+		text = L["Press Ctrl+C to copy the link."],
+		button1 = CLOSE,
+		hasEditBox = true,
+		editBoxWidth = 280,
+		OnShow = function(dialog, data)
+			-- Field name spans client versions: retail keeps it on the dialog, older builds
+			-- only as a named global.
+			local box = dialog.editBox or _G[dialog:GetName() .. "EditBox"]
+			if box then
+				box:SetText(data or "")
+				box:HighlightText()
+				box:SetFocus()
+			end
+		end,
+		EditBoxOnEscapePressed = function(box)
+			box:GetParent():Hide()
 		end,
 		timeout = 0,
 		whileDead = true,

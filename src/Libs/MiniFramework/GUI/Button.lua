@@ -68,8 +68,15 @@ function M:Button(options)
 		end
 
 		if hasBackdrop then
-			btn:SetBackdropColor(accent.r, accent.g, accent.b, 0.22)
-			btn:SetBackdropBorderColor(accentHi.r, accentHi.g, accentHi.b, 0.9)
+			if options.Danger then
+				-- Destructive actions announce themselves at the moment of commitment: a solid
+				-- red fill on hover, where every other button takes the faint accent wash.
+				btn:SetBackdropColor(0.55, 0.10, 0.10, 0.90)
+				btn:SetBackdropBorderColor(0.95, 0.30, 0.30, 1)
+			else
+				btn:SetBackdropColor(accent.r, accent.g, accent.b, 0.22)
+				btn:SetBackdropBorderColor(accentHi.r, accentHi.g, accentHi.b, 0.9)
+			end
 		end
 
 		local fs = btn:GetFontString()
@@ -94,4 +101,5 @@ end
 ---@field Width number?
 ---@field Height number?
 ---@field CustomStyling boolean? Override the framework-wide styling default for this button
+---@field Danger boolean? Destructive action: hover fills solid red instead of the accent wash.
 ---@field OnClick fun()?

@@ -114,6 +114,10 @@ L:RegisterLocale("zhCN", {
 
 	-- General tab
 	["Discord"] = "Discord",
+	["Testing..."] = "测试中...",
+	["CurseForge"] = "CurseForge",
+	["Press Ctrl+C to copy the link."] = "按 Ctrl+C 复制链接。",
+	["No groups yet. Click + to track your first buff."] = "还没有组。点击 + 追踪你的第一个增益。",
 	["Export Profile"] = "导出配置",
 	["Font Scale"] = "字体缩放",
 	["General"] = "常规",

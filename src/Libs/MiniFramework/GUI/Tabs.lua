@@ -162,6 +162,8 @@ function M:CreateTabs(options)
 	end
 
 	controller.Tabs = tabs
+	-- The strip frame itself, so callers can hang a footer in space held back by FooterReserve.
+	controller.Strip = strip
 
 	-- A def of { Separator = true } draws a grouping line before the NEXT tab instead of a
 	-- button, and { Heading = "Title" } draws a gold section label in the panel-divider style.
@@ -338,8 +340,44 @@ function M:CreateTabs(options)
 			local scrollContainer = CreateFrame("Frame", nil, body)
 			scrollContainer:SetAllPoints(body)
 
+			-- Fixed page header above the scroll area: the tab's icon and title anchor the page
+			-- and never scroll away with it. The panel's own content flows underneath.
+			local headerOffset = 0
+			if options.PageHeader and def.Title then
+				local header = CreateFrame("Frame", nil, scrollContainer)
+				header:SetHeight(30)
+				header:SetPoint("TOPLEFT", scrollContainer, "TOPLEFT", 0, 0)
+				header:SetPoint("TOPRIGHT", scrollContainer, "TOPRIGHT", -14, 0)
+
+				local headerIcon
+				if def.Icon then
+					headerIcon = header:CreateTexture(nil, "ARTWORK")
+					headerIcon:SetSize(20, 20)
+					headerIcon:SetPoint("LEFT", header, "LEFT", 0, 2)
+					headerIcon:SetTexture(def.Icon)
+					headerIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+				end
+
+				local headerTitle = header:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+				if headerIcon then
+					headerTitle:SetPoint("LEFT", headerIcon, "RIGHT", 8, 0)
+				else
+					headerTitle:SetPoint("LEFT", header, "LEFT", 0, 2)
+				end
+				headerTitle:SetText(def.Title)
+				headerTitle:SetTextColor(tabTextHover.r, tabTextHover.g, tabTextHover.b, 1)
+
+				local rule = header:CreateTexture(nil, "ARTWORK")
+				pixel.SetHeight(rule, 1)
+				GUI.SetSolid(rule, 1, 1, 1, 0.08)
+				rule:SetPoint("BOTTOMLEFT", header, "BOTTOMLEFT", 0, 0)
+				rule:SetPoint("BOTTOMRIGHT", header, "BOTTOMRIGHT", 0, 0)
+
+				headerOffset = 30 + 10
+			end
+
 			local scrollFrame = CreateFrame("ScrollFrame", nil, scrollContainer)
-			scrollFrame:SetPoint("TOPLEFT", scrollContainer, "TOPLEFT", 0, 0)
+			scrollFrame:SetPoint("TOPLEFT", scrollContainer, "TOPLEFT", 0, -headerOffset)
 			scrollFrame:SetPoint("BOTTOMRIGHT", scrollContainer, "BOTTOMRIGHT", -14, 0)
 			scrollFrame:EnableMouseWheel(true)
 			scrollFrame:SetScript("OnMouseWheel", function(sf, delta)
@@ -500,7 +538,8 @@ function M:CreateTabs(options)
 				if h == 0 or #tabs == 0 then
 					return
 				end
-				local btnH = math.floor((h - decorationHeight - tabSpacing * (#tabs - 1)) / #tabs)
+				local reserved = decorationHeight + (options.FooterReserve or 0)
+				local btnH = math.floor((h - reserved - tabSpacing * (#tabs - 1)) / #tabs)
 				for _, tab in ipairs(tabs) do
 					tab.Button:SetHeight(math.max(16, btnH))
 				end
@@ -560,6 +599,8 @@ end
 ---@field ScrollContentHeight? number  Height of the scroll child (default 1400)
 ---@field ScrollContentWidth? number   Explicit width of the scroll child (default 800)
 ---@field TabFitToParent? boolean  Distribute tab buttons evenly across the strip width
+---@field PageHeader? boolean  ScrollBody only: fixed icon + title band above each page's scroll area
+---@field FooterReserve? number  Vertical strips only: height held back from TabFitToParent for a caller footer
 
 ---@class TabReturn
 ---@field Select fun(keyOrIndex: string|number)

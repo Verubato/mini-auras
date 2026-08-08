@@ -114,6 +114,10 @@ L:RegisterLocale("ruRU", {
 
 	-- General tab
 	["Discord"] = "Discord",
+	["Testing..."] = "Тест...",
+	["CurseForge"] = "CurseForge",
+	["Press Ctrl+C to copy the link."] = "Нажмите Ctrl+C, чтобы скопировать ссылку.",
+	["No groups yet. Click + to track your first buff."] = "Групп пока нет. Нажмите +, чтобы отслеживать первый бафф.",
 	["Export Profile"] = "Экспорт профиля",
 	["Font Scale"] = "Масштаб шрифта",
 	["General"] = "Общие",

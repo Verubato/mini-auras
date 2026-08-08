@@ -279,6 +279,7 @@ function ui.BuildEditor(editor)
 		Parent = editor,
 		Text = L["Delete"],
 		Width = 90,
+		Danger = true,
 		OnClick = function()
 			local group = ui.Current()
 

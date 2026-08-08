@@ -257,11 +257,12 @@ StaticPopupDialogs["MINIAURAS_PROFILE_NAME"] = {
 	hideOnEscape = true,
 }
 
-local function MakeButton(parent, text, width)
+local function MakeButton(parent, text, width, danger)
 	return mini:Button({
 		Parent = parent,
 		Text = text,
 		Width = width or 80,
+		Danger = danger,
 	})
 end
 
@@ -301,7 +302,7 @@ function M:Build(panel)
 	cloneBtn:SetPoint("LEFT", renameBtn, "RIGHT", 4, 0)
 	cloneBtn:SetPoint("TOP", renameBtn, "TOP")
 
-	local deleteBtn = MakeButton(panel, L["Delete"], 70)
+	local deleteBtn = MakeButton(panel, L["Delete"], 70, true)
 	deleteBtn:SetPoint("LEFT", cloneBtn, "RIGHT", 4, 0)
 	deleteBtn:SetPoint("TOP", cloneBtn, "TOP")
 

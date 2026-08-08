@@ -203,12 +203,23 @@ function M:CreateStandaloneWindow(options)
 	titleText:SetText(options.Title or "")
 	titleText:SetTextColor(titleColor.r, titleColor.g, titleColor.b, 1)
 
-	-- Optional subtitle / version beside title
+	-- Optional subtitle / version beside the title, set in a small chip so it reads as a
+	-- deliberate badge rather than debug output trailing the logo.
 	if options.Subtitle then
-		local subtitleText = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-		subtitleText:SetPoint("LEFT", titleText, "RIGHT", 8, -1)
+		local chip = CreateFrame("Frame", nil, titleBar, GUI.BackdropTemplate)
+		chip:SetHeight(18)
+		chip:SetPoint("LEFT", titleText, "RIGHT", 10, 0)
+		GUI.ApplyBackdrop(chip, BACKDROP, 1, 1, 1, 0.05, 1, 1, 1, 0.14)
+
+		local subtitleText = chip:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+		subtitleText:SetPoint("CENTER", chip, "CENTER", 0, 0)
 		subtitleText:SetText(options.Subtitle)
-		subtitleText:SetTextColor(0.80, 0.80, 0.80, 1)
+		subtitleText:SetTextColor(0.72, 0.70, 0.66, 1)
+
+		local textWidth = subtitleText.GetUnboundedStringWidth and subtitleText:GetUnboundedStringWidth()
+			or subtitleText:GetStringWidth() or 40
+		chip:SetWidth(math.ceil(textWidth) + 16)
+
 		window.SubtitleText = subtitleText
 	end
 

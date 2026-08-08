@@ -115,6 +115,10 @@ L:SetDefaultStrings({
 
 	-- General tab
 	["Discord"] = "Discord",
+	["Testing..."] = "Testing...",
+	["CurseForge"] = "CurseForge",
+	["Press Ctrl+C to copy the link."] = "Press Ctrl+C to copy the link.",
+	["No groups yet. Click + to track your first buff."] = "No groups yet. Click + to track your first buff.",
 	["Export Profile"] = "Export Profile",
 	["Font Scale"] = "Font Scale",
 	["General"] = "General",
