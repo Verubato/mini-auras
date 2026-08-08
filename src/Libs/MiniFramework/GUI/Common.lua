@@ -144,6 +144,21 @@ function GUI.IsStyled(options)
 	return M.CustomStyling and true or false
 end
 
+---Refreshes any registered panels nested below a frame: sub-tab contents and section frames
+---collect their own MiniControls, so a top-level MiniRefresh would otherwise stop at its own
+---direct controls and leave nested sections stale (profile resets showed old values on tabbed
+---panels). Frames that carry both MiniRefresh and MiniControls are panels and refresh
+---themselves; plain controls carry only MiniRefresh and are covered by their panel's own list.
+local function RefreshChildPanels(frame)
+	for _, child in ipairs({ frame:GetChildren() }) do
+		if child.MiniRefresh and child.MiniControls then
+			child:MiniRefresh()
+		else
+			RefreshChildPanels(child)
+		end
+	end
+end
+
 function GUI.AddControlForRefresh(panel, control)
 	-- store controls for refresh behaviour
 	panel.MiniControls = panel.MiniControls or {}
@@ -159,6 +174,8 @@ function GUI.AddControlForRefresh(panel, control)
 				c:MiniRefresh()
 			end
 		end
+
+		RefreshChildPanels(panelSelf)
 
 		if panel.OnMiniRefresh then
 			panel:OnMiniRefresh()
