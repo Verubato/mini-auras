@@ -100,7 +100,7 @@ local dbDefaults = {
 			-- in addition to the party/raid pet frames.
 			IncludePetFrame = false,
 
-			Grow = "CENTER",
+			Grow = "RIGHT",
 			Offset = {
 				X = 0,
 				Y = 0,
