@@ -52,6 +52,7 @@ function M:Build(panel)
 		Parent = panel,
 		Lines = {
 			L["Create your own custom mini weak auras."],
+			L["You can configure buffs on allies and debuffs on enemies."],
 		},
 	})
 

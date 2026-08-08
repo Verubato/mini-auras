@@ -347,6 +347,7 @@ L:RegisterLocale("zhCN", {
 	["Custom Auras"] = "自定义光环",
 	["Custom Auras_Short"] = "个人光环",
 	["Create your own custom mini weak auras."] = "创建你自己的迷你 WeakAuras。",
+	["You can configure buffs on allies and debuffs on enemies."] = "你可以配置友方的增益和敌方的减益。",
 	["New Group"] = "新建组",
 	["Aura %d"] = "光环 %d",
 	["Name"] = "名称",

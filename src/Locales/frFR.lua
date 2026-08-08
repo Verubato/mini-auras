@@ -344,6 +344,7 @@ L:RegisterLocale("frFR", {
 	["Custom Auras"] = "Auras personnalisées",
 	["Custom Auras_Short"] = "Auras personnelles",
 	["Create your own custom mini weak auras."] = "Créez vos propres mini weak auras.",
+	["You can configure buffs on allies and debuffs on enemies."] = "Vous pouvez configurer des améliorations sur les alliés et des affaiblissements sur les ennemis.",
 	["New Group"] = "Nouveau groupe",
 	["Aura %d"] = "Aura %d",
 	["Name"] = "Nom",

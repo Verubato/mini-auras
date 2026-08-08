@@ -347,6 +347,7 @@ L:RegisterLocale("ruRU", {
 	["Custom Auras"] = "Свои ауры",
 	["Custom Auras_Short"] = "Личные ауры",
 	["Create your own custom mini weak auras."] = "Создайте свои собственные мини weak auras.",
+	["You can configure buffs on allies and debuffs on enemies."] = "Вы можете настроить баффы на союзниках и дебаффы на противниках.",
 	["New Group"] = "Новая группа",
 	["Aura %d"] = "Аура %d",
 	["Name"] = "Название",

@@ -348,6 +348,7 @@ L:SetDefaultStrings({
 	["Custom Auras"] = "Custom Auras",
 	["Custom Auras_Short"] = "Personal Auras",
 	["Create your own custom mini weak auras."] = "Create your own custom mini weak auras.",
+	["You can configure buffs on allies and debuffs on enemies."] = "You can configure buffs on allies and debuffs on enemies.",
 	["New Group"] = "New Group",
 	["Aura %d"] = "Aura %d",
 	["Name"] = "Name",
