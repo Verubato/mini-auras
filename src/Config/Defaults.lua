@@ -203,7 +203,7 @@ local dbDefaults = {
 			-- only 16 below the custom auras and the two rows of icons overlapped.
 			Offset = {
 				X = 0,
-				Y = -145,
+				Y = -150,
 			},
 
 			-- Dedicated, separately-movable bar for important enemy buffs (e.g. offensive cooldowns,

@@ -90,11 +90,12 @@ fw.describe("AlertsModule 12.1 - bar anchor handling", function()
 		-- (first resurrecting the dragged position, then shifting the bar half a row across).
 		placeMainBar()
 		alerts.Grow = "CENTER"
+		local shippedY = alerts.Offset.Y
 		module:Refresh()
 
 		assert(alerts.Point == "CENTER" and alerts.RelativePoint == "TOP",
 			"the shipped anchor survives a refresh untouched, got " .. tostring(alerts.Point))
-		assert(alerts.Offset.X == 0 and alerts.Offset.Y == -145, "offsets untouched")
+		assert(alerts.Offset.X == 0 and alerts.Offset.Y == shippedY, "offsets untouched")
 	end)
 
 	fw.it("flipping Grow leaves the saved anchor alone", function()
