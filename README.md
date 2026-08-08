@@ -21,17 +21,17 @@ Any feedback is more than welcome.
 
 ## Screenshots
 
-![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/ScreenshotTestFrames.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/TestFrames.png)
 
-![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/ScreenshotSettingsAlerts.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/SettingsAlerts.png)
 
-![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/ScreenshotPortraits.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/Portraits.png)
 
-![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/ScreenshotKicks.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/Kicks.png)
 
-![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/ScreenshotNameplates.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/Nameplates.png)
 
-![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/ScreenshotHealerCc.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/HealerCc.png)
 
 ## Download
 
