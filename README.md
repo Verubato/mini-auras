@@ -29,6 +29,8 @@ Any feedback is more than welcome.
 
 ![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/Kicks.png)
 
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/AllyKicks.png)
+
 ![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/Nameplates.png)
 
 ![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/HealerCc.png)
