@@ -142,7 +142,7 @@ local dbDefaults = {
 			RelativeTo = "UIParent",
 			Offset = {
 				X = 0,
-				Y = -200,
+				Y = -220,
 			},
 
 			IconSpacing = 2,
@@ -198,9 +198,9 @@ local dbDefaults = {
 			RelativeTo = "UIParent",
 
 			-- Sits between the starter custom aura row and the healer CC icons. Those two are
-			-- 84 and 200 below the top of a 768 tall UIParent (the custom auras anchor from the
-			-- centre, so 384 + 300), and this is the midpoint. At the old -100 the bar was only
-			-- 16 below the custom auras and the two rows of icons overlapped.
+			-- 84 and 220 below the top of a 768 tall UIParent (the custom auras anchor from the
+			-- centre, so 384 + 300), and this sits between them. At the old -100 the bar was
+			-- only 16 below the custom auras and the two rows of icons overlapped.
 			Offset = {
 				X = 0,
 				Y = -145,
