@@ -3,10 +3,11 @@ local addonName, addon = ...
 local dbMigrator = addon.Config.Migrator
 local mini = addon.Framework
 local L = addon.L
-local trinketsTracker = addon.Core.TrinketsTracker
 ---@type Db
 local db
 local M = addon.Config
+
+local NAV_ICON_BASE = "Interface\\AddOns\\" .. addonName .. "\\Icons\\Nav\\"
 
 -- Blizzard settings panel splash. The accent matches the standalone window title, but the
 -- framework palette is private to the GUI widgets so the value is repeated here.
@@ -210,13 +211,13 @@ function M:Init()
 	-- Tabs fill the content area of the window
 	local tabsPanel = window.Content
 
-	-- Sidebar icons: desaturated by CreateTabs until the tab is selected.
+	-- Sidebar icons: the addon's own art under Icons\Nav, one per tab key.
 	local tabs = {
 		{ Heading = L["General"] },
 		{
 			Key = "General",
 			Title = L["Home"],
-			Icon = "Interface\\Icons\\INV_Misc_Rune_01",
+			Icon = NAV_ICON_BASE .. "General.png",
 			-- The home page carries its own branding; a "Home" band above it is noise.
 			PageHeader = false,
 			Build = function(content)
@@ -226,7 +227,7 @@ function M:Init()
 		{
 			Key = "RaidFrameAuras",
 			Title = L["Raid Frame Auras_Short"] or L["Raid Frame Auras"],
-			Icon = "Interface\\Icons\\Spell_Fire_SealOfFire",
+			Icon = NAV_ICON_BASE .. "RaidFrameAuras.png",
 			Build = function(content)
 				local m = db.Modules.RaidFrameAurasModule
 				M.RaidFrameAuras:Build(content, m.Default, m.Raid)
@@ -235,7 +236,7 @@ function M:Init()
 		{
 			Key = "Alerts",
 			Title = L["Alerts"],
-			Icon = "Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew",
+			Icon = NAV_ICON_BASE .. "Alerts.png",
 			Build = function(content)
 				M.Alerts:Build(content, db.Modules.AlertsModule)
 			end,
@@ -243,7 +244,7 @@ function M:Init()
 		{
 			Key = "Nameplates",
 			Title = L["Nameplates_Short"] or L["Nameplates"],
-			Icon = "Interface\\TargetingFrame\\UI-StatusBar",
+			Icon = NAV_ICON_BASE .. "Nameplates.png",
 			Build = function(content)
 				M.Nameplates:Build(content, db.Modules.NameplatesModule)
 			end,
@@ -251,7 +252,7 @@ function M:Init()
 		{
 			Key = "Portraits",
 			Title = L["Portraits_Short"] or L["Portraits"],
-			Icon = "Interface\\Icons\\Achievement_Character_Human_Male",
+			Icon = NAV_ICON_BASE .. "Portraits.png",
 			Build = function(content)
 				M.Portraits:Build(content)
 			end,
@@ -261,7 +262,7 @@ function M:Init()
 		{
 			Key = "FriendlyCooldowns",
 			Title = L["Friendly Cooldowns_Short"] or L["Friendly Cooldowns"],
-			Icon = "Interface\\Icons\\Spell_Holy_GuardianSpirit",
+			Icon = NAV_ICON_BASE .. "FriendlyCooldowns.png",
 			Build = function(content)
 				local m = db.Modules.FriendlyCooldownTrackerModule
 				M.FriendlyCooldownTracker:Build(content, m.Default, m.Raid)
@@ -270,7 +271,7 @@ function M:Init()
 		{
 			Key = "EnemyCooldowns",
 			Title = L["Enemy Cooldowns_Short"] or L["Enemy Cooldowns"],
-			Icon = "Interface\\Icons\\Ability_CriticalStrike",
+			Icon = NAV_ICON_BASE .. "EnemyCooldowns.png",
 			Build = function(content)
 				M.EnemyCooldownTracker:Build(content, db.Modules.EnemyCooldownTrackerModule)
 			end,
@@ -278,8 +279,7 @@ function M:Init()
 		{
 			Key = "Precog",
 			Title = L["Precognition"],
-			-- The spell's own icon, resolved rather than guessed at from the art names.
-			Icon = C_Spell.GetSpellTexture(377362),
+			Icon = NAV_ICON_BASE .. "Precog.png",
 			Build = function(content)
 				M.Precog:Build(content)
 			end,
@@ -288,7 +288,7 @@ function M:Init()
 		{
 			Key = "CC",
 			Title = L["CC"],
-			Icon = "Interface\\Icons\\Spell_Nature_Polymorph",
+			Icon = NAV_ICON_BASE .. "CC.png",
 			Build = function(content)
 				M.CrowdControl:Build(content, db.Modules.CCModule.Default, db.Modules.CCModule.Raid)
 			end,
@@ -296,8 +296,7 @@ function M:Init()
 		{
 			Key = "PetCC",
 			Title = L["Pet CC"],
-			-- The stable's wolf pet family icon, so the tab reads as "pets" at sidebar size.
-			Icon = "Interface\\Icons\\Ability_Hunter_Pet_Wolf",
+			Icon = NAV_ICON_BASE .. "PetCC.png",
 			Build = function(content)
 				M.PetCrowdControl:Build(content)
 			end,
@@ -305,7 +304,7 @@ function M:Init()
 		{
 			Key = "Healer",
 			Title = L["Healer"],
-			Icon = "Interface\\Icons\\Spell_Holy_PowerWordShield",
+			Icon = NAV_ICON_BASE .. "Healer.png",
 			Build = function(content)
 				M.Healer:Build(content, db.Modules.HealerCCModule)
 			end,
@@ -314,8 +313,7 @@ function M:Init()
 		{
 			Key = "AllyKickTracker",
 			Title = L["Ally Kicks_Short"] or L["Ally Kicks"],
-			-- Mind Freeze, so the tab reads as a different feature to the kick timer's own icon.
-			Icon = C_Spell.GetSpellTexture(47528),
+			Icon = NAV_ICON_BASE .. "AllyKickTracker.png",
 			Build = function(content)
 				M.AllyKickTracker:Build(content, db.Modules.AllyKickTrackerModule)
 			end,
@@ -323,7 +321,7 @@ function M:Init()
 		{
 			Key = "EnemyKickTracker",
 			Title = L["Enemy Kicks_Short"] or L["Enemy Kicks"],
-			Icon = "Interface\\Icons\\Ability_Kick",
+			Icon = NAV_ICON_BASE .. "EnemyKickTracker.png",
 			Build = function(content)
 				M.EnemyKickTracker:Build(content)
 			end,
@@ -332,7 +330,7 @@ function M:Init()
 		{
 			Key = "Miscellaneous",
 			Title = L["Miscellaneous_Short"] or L["Miscellaneous"],
-			Icon = "Interface\\Icons\\Trade_Engineering",
+			Icon = NAV_ICON_BASE .. "Miscellaneous.png",
 			Build = function(content)
 				M.Miscellaneous:Build(content)
 			end,
@@ -340,7 +338,7 @@ function M:Init()
 		{
 			Key = "Profiles",
 			Title = L["Profiles"],
-			Icon = "Interface\\Icons\\INV_Misc_Note_01",
+			Icon = NAV_ICON_BASE .. "Profiles.png",
 			Build = function(content)
 				M.Profiles:Build(content)
 			end,
@@ -348,7 +346,7 @@ function M:Init()
 		{
 			Key = "OtherAddons",
 			Title = L["Other Mini Addons_Short"] or L["Other Mini Addons"],
-			Icon = "Interface\\Icons\\INV_Misc_Bag_08",
+			Icon = NAV_ICON_BASE .. "OtherAddons.png",
 			Build = function(content)
 				M.OtherAddons:Build(content)
 			end,
@@ -378,8 +376,7 @@ function M:Init()
 				table.insert(tabs, i + 1, {
 					Key = "Trinkets",
 					Title = L["Party Trinkets_Short"] or L["Party Trinkets"],
-					-- The icon the module itself renders, not the old jewellery art.
-					Icon = trinketsTracker:GetDefaultIcon(),
+					Icon = NAV_ICON_BASE .. "Trinkets.png",
 					Build = function(content)
 						M.Trinkets:Build(content)
 					end,
@@ -396,7 +393,7 @@ function M:Init()
 				table.insert(tabs, i, {
 					Key = "CustomAuras",
 					Title = L["Custom Auras_Short"] or L["Custom Auras"],
-					Icon = "Interface\\Icons\\Spell_Holy_WordFortitude",
+					Icon = NAV_ICON_BASE .. "CustomAuras.png",
 					Build = function(content)
 						M.CustomAuras:Build(content)
 					end,
