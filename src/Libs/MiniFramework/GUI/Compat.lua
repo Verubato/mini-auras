@@ -41,6 +41,37 @@ function GUI.SetSolid(texture, r, g, b, a)
 	end
 end
 
+---Disables pixel-grid snapping on a texture. A one-pixel line at a fractional offset (anything
+---inside a scroll child, or anchored to text with a fractional width) can snap onto a
+---zero-coverage row and vanish, or snap each edge differently and render unevenly. No-op on
+---clients without the API.
+function GUI.Unsnap(texture)
+	if texture.SetSnapToPixelGrid then
+		texture:SetSnapToPixelGrid(false)
+		texture:SetTexelSnappingBias(0)
+	end
+end
+
+---Draws a one-pixel border as four unsnapped hairlines. For small chrome anchored at fractional
+---positions, where BackdropTemplate's edge slices snap per piece and come out uneven.
+function GUI.HairlineBorder(frame, r, g, b, a)
+	for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+		local line = frame:CreateTexture(nil, "BORDER")
+		GUI.SetSolid(line, r, g, b, a)
+		GUI.Unsnap(line)
+
+		if side == "TOP" or side == "BOTTOM" then
+			line:SetHeight(1)
+			line:SetPoint(side .. "LEFT", frame, side .. "LEFT", 0, 0)
+			line:SetPoint(side .. "RIGHT", frame, side .. "RIGHT", 0, 0)
+		else
+			line:SetWidth(1)
+			line:SetPoint("TOP" .. side, frame, "TOP" .. side, 0, 0)
+			line:SetPoint("BOTTOM" .. side, frame, "BOTTOM" .. side, 0, 0)
+		end
+	end
+end
+
 ---Applies a backdrop, silently doing nothing on clients without the Backdrop mixin.
 ---@return boolean applied
 function GUI.ApplyBackdrop(frame, backdrop, r, g, b, a, br, bg, bb, ba)

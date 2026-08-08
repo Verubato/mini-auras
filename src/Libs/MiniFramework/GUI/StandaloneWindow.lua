@@ -206,14 +206,19 @@ function M:CreateStandaloneWindow(options)
 	-- Optional subtitle / version beside the title, set in a small chip so it reads as a
 	-- deliberate badge rather than debug output trailing the logo.
 	if options.Subtitle then
-		local pixel = GUI.Pixel
+		-- Hand-drawn fill and hairline border rather than a backdrop: the chip is anchored to
+		-- the title text's fractional width, and backdrop edge slices snap per piece there,
+		-- rendering thicker on one side than another.
+		local chip = CreateFrame("Frame", nil, titleBar)
+		chip:SetHeight(18)
+		chip:SetPoint("LEFT", titleText, "RIGHT", 10, 0)
 
-		-- Pixel-snapped size and anchor: a 1px backdrop edge on a fractionally-placed frame
-		-- renders thicker on one side than the other.
-		local chip = CreateFrame("Frame", nil, titleBar, GUI.BackdropTemplate)
-		pixel.SetHeight(chip, 18)
-		pixel.SetPoint(chip, "LEFT", titleText, "RIGHT", 10, 0)
-		GUI.ApplyBackdrop(chip, BACKDROP, 1, 1, 1, 0.05, 1, 1, 1, 0.14)
+		local fill = chip:CreateTexture(nil, "BACKGROUND")
+		fill:SetAllPoints(chip)
+		GUI.SetSolid(fill, 1, 1, 1, 0.05)
+		GUI.Unsnap(fill)
+
+		GUI.HairlineBorder(chip, 1, 1, 1, 0.14)
 
 		local subtitleText = chip:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 		subtitleText:SetPoint("CENTER", chip, "CENTER", 0, 0)
@@ -222,7 +227,7 @@ function M:CreateStandaloneWindow(options)
 
 		local textWidth = subtitleText.GetUnboundedStringWidth and subtitleText:GetUnboundedStringWidth()
 			or subtitleText:GetStringWidth() or 40
-		pixel.SetWidth(chip, math.ceil(textWidth) + 16)
+		chip:SetWidth(math.ceil(textWidth) + 16)
 
 		window.SubtitleText = subtitleText
 	end
