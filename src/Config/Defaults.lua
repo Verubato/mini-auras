@@ -213,9 +213,11 @@ local dbDefaults = {
 				Point = "CENTER",
 				RelativePoint = "TOP",
 				RelativeTo = "UIParent",
+				-- Below the healer CC icons (centred at 220 with 50px icons, so reaching ~245):
+				-- at the old -220 an enabled split bar sat exactly on top of them.
 				Offset = {
 					X = 0,
-					Y = -220,
+					Y = -280,
 				},
 			},
 
