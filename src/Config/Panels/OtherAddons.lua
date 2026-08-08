@@ -17,7 +17,7 @@ local CARD_PAD    = 10
 local CARD_HEIGHT = 68
 
 local addonName = (select(1, ...))
-local ICON_BASE  = "Interface\\AddOns\\" .. addonName .. "\\Icons\\"
+local ICON_BASE  = "Interface\\AddOns\\" .. addonName .. "\\Icons\\Addons\\"
 
 local function BuildAddonCard(parent, name, description, cardWidth, icon)
 	local card = CreateFrame("Frame", nil, parent, "BackdropTemplate")
