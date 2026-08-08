@@ -84,7 +84,7 @@ function ui.AddSpellToCurrent(spellId)
 	end
 
 	if #list >= groups.MaxSpells then
-		mini:Notify(string.format(L["A group can hold at most %d spells."], groups.MaxSpells))
+		mini:NotifyWithPrefix(string.format(L["A group can hold at most %d spells."], groups.MaxSpells))
 		return
 	end
 

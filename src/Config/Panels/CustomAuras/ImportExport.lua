@@ -179,7 +179,7 @@ local function GetOrCreateImportWindow()
 		OnClick = function()
 			local ok, message = ImportGroups(importBox:GetText())
 
-			mini:Notify(message)
+			mini:NotifyWithPrefix(message)
 
 			if ok then
 				importBox:SetText("")

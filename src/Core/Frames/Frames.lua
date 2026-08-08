@@ -24,7 +24,7 @@ function M:CustomFrames(visibleOnly)
 		local frame = _G[anchor]
 
 		if not frame then
-			mini:Notify("Bad anchor%d: '%s'.", i, anchor)
+			mini:NotifyWithPrefix("Bad anchor%d: '%s'.", i, anchor)
 		elseif frame:IsVisible() or not visibleOnly then
 			frames[#frames + 1] = frame
 		end

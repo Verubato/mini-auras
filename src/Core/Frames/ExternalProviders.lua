@@ -28,7 +28,7 @@ function M:RegisterProvider(provider)
 			addon:Refresh()
 		end)
 		if not ok then
-			mini:Notify("Frame provider '%s' RegisterRefreshFrames failed: %s", provider.Name, tostring(err))
+			mini:NotifyWithPrefix("Frame provider '%s' RegisterRefreshFrames failed: %s", provider.Name, tostring(err))
 		end
 	end
 end

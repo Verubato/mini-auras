@@ -42,5 +42,5 @@ function M:WarnIfConflicting()
 		Width = 460,
 	})
 
-	mini:Notify(L["The old MiniCC addon is still running alongside MiniAuras. Delete the MiniCC folder from your AddOns folder, then reload."])
+	mini:NotifyWithPrefix(L["The old MiniCC addon is still running alongside MiniAuras. Delete the MiniCC folder from your AddOns folder, then reload."])
 end

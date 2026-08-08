@@ -486,7 +486,7 @@ function M:Init()
 		-- with the 12.0 path.
 		if msg == "debug" and not addon.Utils.WoWEx:UseAuraContainers() then
 			local on = addon.Core.Cooldowns.Brain:ToggleDebug()
-			mini:Notify(on and "Cooldown debug logging ON" or "Cooldown debug logging OFF")
+			mini:NotifyWithPrefix(on and "Cooldown debug logging ON" or "Cooldown debug logging OFF")
 			return
 		end
 

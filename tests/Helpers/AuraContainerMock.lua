@@ -750,6 +750,9 @@ function M.loadDisplay()
 			Notify = function(_, message, ...)
 				M.notifications[#M.notifications + 1] = string.format(message, ...)
 			end,
+			NotifyWithPrefix = function(_, message, ...)
+				M.notifications[#M.notifications + 1] = string.format(message, ...)
+			end,
 		},
 	}
 

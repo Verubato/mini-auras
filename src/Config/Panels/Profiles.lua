@@ -184,20 +184,20 @@ local function GetOrCreateProfileIOWindow()
 		local str = importBox:GetText():gsub("%s+", "")
 		local name = nameBox:GetText():match("^%s*(.-)%s*$")
 		if str == "" then
-			mini:Notify(L["Please paste a profile string to import."])
+			mini:NotifyWithPrefix(L["Please paste a profile string to import."])
 			return
 		end
 		if name == "" then
-			mini:Notify(L["Please enter a profile name."])
+			mini:NotifyWithPrefix(L["Please enter a profile name."])
 			return
 		end
 		local ok, err = ImportAsProfile(str, name)
 		if not ok then
-			mini:Notify(err)
+			mini:NotifyWithPrefix(err)
 			return
 		end
 		profileManager:SwitchProfile(name)
-		mini:Notify(L["Profile imported successfully."])
+		mini:NotifyWithPrefix(L["Profile imported successfully."])
 		win:Hide()
 	end)
 
@@ -311,7 +311,7 @@ function M:Build(panel)
 			Default = "",
 			OnAccept = function(name)
 				if db.Profiles and db.Profiles[name] then
-					mini:Notify(L['A profile named "%s" already exists.'], name)
+					mini:NotifyWithPrefix(L['A profile named "%s" already exists.'], name)
 					return
 				end
 				profileManager:SaveCurrentProfile()
@@ -327,7 +327,7 @@ function M:Build(panel)
 			Default = current .. " (2)",
 			OnAccept = function(name)
 				if db.Profiles and db.Profiles[name] then
-					mini:Notify(L['A profile named "%s" already exists.'], name)
+					mini:NotifyWithPrefix(L['A profile named "%s" already exists.'], name)
 					return
 				end
 				profileManager:SaveCurrentProfile()
@@ -344,7 +344,7 @@ function M:Build(panel)
 			OnAccept = function(newName)
 				if newName == current then return end
 				if db.Profiles and db.Profiles[newName] then
-					mini:Notify(L['A profile named "%s" already exists.'], newName)
+					mini:NotifyWithPrefix(L['A profile named "%s" already exists.'], newName)
 					return
 				end
 				profileManager:RenameProfile(current, newName)
@@ -354,7 +354,7 @@ function M:Build(panel)
 
 	deleteBtn:SetScript("OnClick", function()
 		if #profileManager:GetProfileNames() <= 1 then
-			mini:Notify(L["Cannot delete the last profile."])
+			mini:NotifyWithPrefix(L["Cannot delete the last profile."])
 			return
 		end
 		local current = profileManager:GetActiveProfile()
@@ -382,7 +382,7 @@ function M:Build(panel)
 						end
 					end
 					addon:Refresh()
-					mini:Notify(L["Profile reset to defaults."])
+					mini:NotifyWithPrefix(L["Profile reset to defaults."])
 				end,
 			})
 	end)

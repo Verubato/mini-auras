@@ -268,6 +268,7 @@ function M.build()
 	addon.Framework.Notify = function(_, message, ...)
 		env.notifications[#env.notifications + 1] = string.format(message, ...)
 	end
+	addon.Framework.NotifyWithPrefix = addon.Framework.Notify
 
 	loadFile("src/Utils/WoWEx.lua")
 	assert(addon.Utils.WoWEx:UseAuraContainers(), "env must be in 12.1 mode")

@@ -106,7 +106,7 @@ local function GetDb()
 end
 
 local function Warn(message, ...)
-	addon.Framework:Notify(message, ...)
+	addon.Framework:NotifyWithPrefix(message, ...)
 end
 
 ---Warns and reports whether the display carries the given aura group. Group budgets and filters

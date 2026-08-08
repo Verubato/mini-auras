@@ -38,6 +38,9 @@ local lastIsInRaid = false
 -- Which instance flavour the next test session previews; the raid/default sub-tabs flip it.
 addon.CurrentTestIsRaid = false
 
+-- Chat prefix in the config UI's crimson accent (GUI.Accent) rather than the framework gold.
+mini.NotifyColor = "c7333d"
+
 -- Migrations queue their release notes into db.WhatsNew; this shows and clears them once.
 local function NotifyChanges()
 	if db.NotifiedChanges then
