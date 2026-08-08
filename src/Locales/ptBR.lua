@@ -130,6 +130,7 @@ L:RegisterLocale("ptBR", {
 	["Miscellaneous"] = "Diverso",
 	["Reset"] = "Redefinir",
 	["Mini addon, massive awareness."] = "Addon pequeno, grande percepção.",
+	["By |cffff8c00Verz|r"] = "Por |cffff8c00Verz|r",
 	["Show Defensives"] = "Exibir defensivos",
 	["Show Important"] = "Exibir importantes",
 	["Show crowd control spells in this bar."] = "Exibe magias de controle nesta barra.",

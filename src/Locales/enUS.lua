@@ -131,6 +131,7 @@ L:SetDefaultStrings({
 	["Miscellaneous"] = "Miscellaneous",
 	["Reset"] = "Reset",
 	["Mini addon, massive awareness."] = "Mini addon, massive awareness.",
+	["By |cffff8c00Verz|r"] = "By |cffff8c00Verz|r",
 	["Show Defensives"] = "Show Defensives",
 	["Show Important"] = "Show Important",
 	["Show crowd control spells in this bar."] = "Show crowd control spells in this bar.",

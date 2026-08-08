@@ -130,6 +130,7 @@ L:RegisterLocale("koKR", {
 	["Miscellaneous"] = "기타",
 	["Reset"] = "재설정",
 	["Mini addon, massive awareness."] = "작은 애드온, 강력한 인식.",
+	["By |cffff8c00Verz|r"] = "제작: |cffff8c00Verz|r",
 	["Show Defensives"] = "방어 표시",
 	["Show Important"] = "중요 표시",
 	["Show crowd control spells in this bar."] = "이 막대에 군중 제어 주문을 표시합니다.",

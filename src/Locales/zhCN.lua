@@ -130,6 +130,7 @@ L:RegisterLocale("zhCN", {
 	["Miscellaneous"] = "杂项",
 	["Reset"] = "重置",
 	["Mini addon, massive awareness."] = "小插件，超凡感知。",
+	["By |cffff8c00Verz|r"] = "作者：|cffff8c00Verz|r",
 	["Show Defensives"] = "显示防御",
 	["Show Important"] = "显示重要",
 	["Show crowd control spells in this bar."] = "在此栏中显示控制技能。",

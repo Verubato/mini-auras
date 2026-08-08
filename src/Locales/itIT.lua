@@ -130,6 +130,7 @@ L:RegisterLocale("itIT", {
 	["Miscellaneous"] = "Varie",
 	["Reset"] = "Ripristina",
 	["Mini addon, massive awareness."] = "Addon piccolo, grande consapevolezza.",
+	["By |cffff8c00Verz|r"] = "Di |cffff8c00Verz|r",
 	["Show Defensives"] = "Mostra difensivi",
 	["Show Important"] = "Mostra importanti",
 	["Show crowd control spells in this bar."] = "Mostra gli incantesimi di controllo in questa barra.",

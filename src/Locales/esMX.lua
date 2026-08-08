@@ -131,6 +131,7 @@ L:RegisterLocale("esMX", {
 	["Miscellaneous"] = "Varios",
 	["Reset"] = "Restablecer",
 	["Mini addon, massive awareness."] = "Addon pequeño, gran consciencia.",
+	["By |cffff8c00Verz|r"] = "Por |cffff8c00Verz|r",
 	["Show Defensives"] = "Mostrar defensivos",
 	["Show Important"] = "Mostrar importantes",
 	["Show crowd control spells in this bar."] = "Muestra hechizos de control en esta barra.",

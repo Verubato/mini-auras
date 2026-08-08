@@ -130,6 +130,7 @@ L:RegisterLocale("ruRU", {
 	["Miscellaneous"] = "Прочее",
 	["Reset"] = "Сброс",
 	["Mini addon, massive awareness."] = "Маленький аддон, полное осознание.",
+	["By |cffff8c00Verz|r"] = "Автор: |cffff8c00Verz|r",
 	["Show Defensives"] = "Показывать защитные",
 	["Show Important"] = "Показывать важные",
 	["Show crowd control spells in this bar."] = "Показывать заклинания контроля на этой панели.",

@@ -27,6 +27,15 @@ function M:Build(panel)
 	subtitleText:SetWidth(contentWidth)
 	subtitleText:SetJustifyH("CENTER")
 
+	-- The name carries its own dark-orange colour escape inside the localized string, so
+	-- translations can place it wherever their word order needs.
+	local creditText = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+	creditText:SetText(L["By |cffff8c00Verz|r"])
+	creditText:SetTextColor(0.55, 0.52, 0.48, 1)
+	creditText:SetPoint("TOPLEFT", subtitleText, "BOTTOMLEFT", 0, -4)
+	creditText:SetWidth(contentWidth)
+	creditText:SetJustifyH("CENTER")
+
 	-- News sits directly under the title (first content block) inside a crimson callout card,
 	-- so it reads as a warning rather than body text; Discord moves below it.
 	local newsDivider = mini:Divider({
