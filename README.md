@@ -21,17 +21,17 @@ Any feedback is more than welcome.
 
 ## Screenshots
 
-![MiniAuras screenshot](https://media.forgecdn.net/attachments/1533/408/screenshot-1-png.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/ScreenshotTestFrames.png)
 
-![MiniAuras screenshot](https://media.forgecdn.net/attachments/1533/411/screenshot-settings-alerts-png.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/ScreenshotSettingsAlerts.png)
 
-![MiniAuras screenshot](https://media.forgecdn.net/attachments/1510/373/screenshot-portraits-png.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/ScreenshotPortraits.png)
 
-![MiniAuras screenshot](https://media.forgecdn.net/attachments/1533/409/screenshot-kicks-png.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/ScreenshotKicks.png)
 
-![MiniAuras screenshot](https://media.forgecdn.net/attachments/1533/410/screenshot-nameplates-png.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/ScreenshotNameplates.png)
 
-![MiniAuras screenshot](https://media.forgecdn.net/attachments/1510/371/screenshot-healer-cc-png.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/ScreenshotHealerCc.png)
 
 ## Download
 
