@@ -369,15 +369,6 @@ function M:CreateTabs(options)
 				headerTitle:SetText(def.Title)
 				headerTitle:SetTextColor(dividerGold.r, dividerGold.g, dividerGold.b, 1)
 
-				-- The sidebar section headings' rule, at page size: divider gold-brown fading
-				-- out to the right rather than a flat grey run.
-				local rule = header:CreateTexture(nil, "ARTWORK")
-				pixel.SetHeight(rule, 1)
-				GUI.SetGradientH(rule, dividerLine.r, dividerLine.g, dividerLine.b, 0.6,
-					dividerLine.r, dividerLine.g, dividerLine.b, 0)
-				rule:SetPoint("BOTTOMLEFT", header, "BOTTOMLEFT", 0, 0)
-				rule:SetPoint("BOTTOMRIGHT", header, "BOTTOMRIGHT", 0, 0)
-
 				headerOffset = 30 + 10
 			end
 
