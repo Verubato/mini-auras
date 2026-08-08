@@ -8,25 +8,6 @@ addon.Utils.FontUtil = M
 -- Stack counts sit in a corner and share the icon with the countdown, so they run smaller.
 local STACK_COEFFICIENT = 0.3
 
---- Updates a stack count's font size based on icon size
---- @param fontString table The font string showing the count
---- @param iconSize number The size of the icon
---- @param fontScale? number Optional font scale multiplier (default: 1.0)
-function M:UpdateStackFontSize(fontString, iconSize, fontScale)
-	if not fontString or not iconSize then
-		return
-	end
-
-	local font, _, flags = fontString:GetFont()
-
-	if not font then
-		return
-	end
-
-	-- SetFont errors on height <= 0, and a not-yet-laid-out icon can floor to zero.
-	fontString:SetFont(font, math.max(1, math.floor(iconSize * STACK_COEFFICIENT * (fontScale or 1.0))), flags)
-end
-
 --- Updates any font string's size from the icon size, keeping its font face and flags.
 --- @param fontString table
 --- @param iconSize number
@@ -46,6 +27,14 @@ function M:UpdateFontSize(fontString, iconSize, coefficient, fontScale)
 	-- SetFont errors on height <= 0, and a not-yet-laid-out icon can floor to zero.
 	local fontSize = math.max(1, math.floor(iconSize * (coefficient or 0.4) * (fontScale or 1.0)))
 	fontString:SetFont(font, fontSize, flags)
+end
+
+--- Updates a stack count's font size based on icon size
+--- @param fontString table The font string showing the count
+--- @param iconSize number The size of the icon
+--- @param fontScale? number Optional font scale multiplier (default: 1.0)
+function M:UpdateStackFontSize(fontString, iconSize, fontScale)
+	M:UpdateFontSize(fontString, iconSize, STACK_COEFFICIENT, fontScale)
 end
 
 --- Updates the cooldown frame's countdown text font size based on icon size

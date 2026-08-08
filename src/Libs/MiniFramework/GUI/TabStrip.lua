@@ -38,8 +38,6 @@ function M:TabStrip(options)
 
 	-- Runs the full width under every button, so a selected tab's accent reads as a break in the
 	-- line rather than a stray underline.
-	-- Plain SetHeight, not PixelUtil: this strip sits inside a scroll child, whose fractional
-	-- physical alignment can drop a one-physical-pixel texture between pixels entirely.
 	-- Unsnapped: this strip sits inside a scroll child, whose fractional alignment can snap a
 	-- one-pixel line onto a zero-coverage row (see GUI.Unsnap).
 	local baseline = strip:CreateTexture(nil, "ARTWORK")

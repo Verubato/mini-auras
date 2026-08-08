@@ -203,8 +203,6 @@ function M:CreateStandaloneWindow(options)
 	titleText:SetText(options.Title or "")
 	titleText:SetTextColor(titleColor.r, titleColor.g, titleColor.b, 1)
 
-	-- Optional subtitle / version beside the title, set in a small chip so it reads as a
-	-- deliberate badge rather than debug output trailing the logo.
 	-- Optional subtitle / version beside the title: a size smaller and dimmer than the
 	-- logotype, baseline-aligned, so it reads as a quiet annotation rather than debug output.
 	if options.Subtitle then
