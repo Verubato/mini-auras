@@ -31,6 +31,9 @@ function M:CreateTabs(options)
 	local parent = options.Parent
 	local vertical = options.Vertical
 	local tabHeight = options.TabHeight or 22
+	-- Nav icon edge; a size above the row height simply overflows it, which reads fine for
+	-- the round addon art.
+	local tabIconSize = options.TabIconSize or 20
 	local tabMinWidth = options.TabMinWidth or 80
 	-- Vertical rows are flat (no boxes), so they sit nearly flush.
 	local tabSpacing = options.TabSpacing or (vertical and 2 or 6)
@@ -286,7 +289,7 @@ function M:CreateTabs(options)
 			-- selection is carried by the wash and edge bar alone.
 			if def.Icon then
 				btn.Icon = btn:CreateTexture(nil, "ARTWORK")
-				btn.Icon:SetSize(20, 20)
+				btn.Icon:SetSize(tabIconSize, tabIconSize)
 				btn.Icon:SetPoint("LEFT", btn, "LEFT", 8, 0)
 				SetTabIcon(btn.Icon, def.Icon)
 				btn.Text:SetPoint("LEFT", btn.Icon, "RIGHT", 8, 0)
@@ -361,7 +364,7 @@ function M:CreateTabs(options)
 				local headerIcon
 				if def.Icon then
 					headerIcon = header:CreateTexture(nil, "ARTWORK")
-					headerIcon:SetSize(20, 20)
+					headerIcon:SetSize(26, 26)
 					headerIcon:SetPoint("LEFT", header, "LEFT", 0, 2)
 					SetTabIcon(headerIcon, def.Icon)
 				end
@@ -604,6 +607,7 @@ end
 ---@field InitialKey? string
 ---@field Vertical? boolean  Render the strip as a left sidebar instead of a horizontal bar
 ---@field TabHeight? number
+---@field TabIconSize? number  Vertical nav icon size, default 20
 ---@field TabMinWidth? number
 ---@field TabSpacing? number
 ---@field StripHeight? number  Height of a horizontal strip
