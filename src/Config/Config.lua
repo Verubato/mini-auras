@@ -217,6 +217,8 @@ function M:Init()
 			Key = "General",
 			Title = L["Home"],
 			Icon = "Interface\\Icons\\INV_Misc_Rune_01",
+			-- The home page carries its own branding; a "Home" band above it is noise.
+			PageHeader = false,
 			Build = function(content)
 				M.General:Build(content)
 			end,

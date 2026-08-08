@@ -343,7 +343,7 @@ function M:CreateTabs(options)
 			-- Fixed page header above the scroll area: the tab's icon and title anchor the page
 			-- and never scroll away with it. The panel's own content flows underneath.
 			local headerOffset = 0
-			if options.PageHeader and def.Title then
+			if options.PageHeader and def.Title and def.PageHeader ~= false then
 				local header = CreateFrame("Frame", nil, scrollContainer)
 				header:SetHeight(30)
 				header:SetPoint("TOPLEFT", scrollContainer, "TOPLEFT", 0, 0)
@@ -601,7 +601,7 @@ end
 ---@field ScrollContentHeight? number  Height of the scroll child (default 1400)
 ---@field ScrollContentWidth? number   Explicit width of the scroll child (default 800)
 ---@field TabFitToParent? boolean  Distribute tab buttons evenly across the strip width
----@field PageHeader? boolean  ScrollBody only: fixed icon + title band above each page's scroll area
+---@field PageHeader? boolean  ScrollBody only: fixed icon + title band above each page's scroll area. A tab def may opt out with PageHeader = false.
 ---@field FooterReserve? number  Vertical strips only: height held back from TabFitToParent for a caller footer
 
 ---@class TabReturn
