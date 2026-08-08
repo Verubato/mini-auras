@@ -615,7 +615,9 @@ function M:Build(panel, default, raid)
 	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider,
 		db.Modules.RaidFrameAurasModule.Enabled)
 
-	local subPanelHeight = 430
+	-- Sized so the whole page sits inside the window's scroll viewport: the instance panels'
+	-- controls end well above this, and anything taller leaves a scrollbar into blank space.
+	local subPanelHeight = 420
 	local tabContainer = CreateFrame("Frame", nil, panel)
 	tabContainer:SetPoint("TOPLEFT",  enabledEverywhere, "BOTTOMLEFT",  0, -verticalSpacing)
 	tabContainer:SetPoint("TOPRIGHT", panel,             "TOPRIGHT",    0, 0)

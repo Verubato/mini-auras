@@ -475,8 +475,16 @@ function M:CreateTabs(options)
 							minBottom = b
 						end
 					end
-					local needed = math.ceil(top - minBottom) + 20
-					scrollChild:SetHeight(math.max(needed, scrollFrame:GetHeight()))
+					local contentHeight = math.ceil(top - minBottom)
+					local frameHeight = scrollFrame:GetHeight()
+
+					-- Bottom margin only when the page scrolls anyway; adding it to a page
+					-- that fits would itself create the scrollbar.
+					if contentHeight > frameHeight then
+						scrollChild:SetHeight(contentHeight + 20)
+					else
+						scrollChild:SetHeight(frameHeight)
+					end
 					UpdateScrollBar()
 				end)
 			end
