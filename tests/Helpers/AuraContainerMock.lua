@@ -412,6 +412,11 @@ function M.NewFrame(frameType, name, parent, template)
 			return "MockFont", 10, ""
 		end
 		frame.SetFont = function() end
+		-- Kept apart from the counters: tests assert on which formatter (or nil) was installed.
+		frame.SetCountdownFormatter = function(_, formatter)
+			frame._calls.SetCountdownFormatter = (frame._calls.SetCountdownFormatter or 0) + 1
+			frame._countdownFormatter = formatter
+		end
 	end
 
 	return frame

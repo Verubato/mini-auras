@@ -832,6 +832,65 @@ fw.describe("AuraContainerDisplay - countdown colour by time", function()
 		instance:SetStyle({})
 		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 0, "and hides again when turned off")
 	end)
+
+	fw.it("the milliseconds toggle installs a fractions formatter on the cooldown", function()
+		local instance = newInstance()
+		local button = instance.Buttons[1]
+		local cd = instance.ButtonWidgets[button].Cooldown
+		assert(cd._countdownFormatter == nil, "no formatter while the toggle is off")
+
+		instance:SetStyle({ ShowMilliseconds = true })
+		local breakpoints = cd._countdownFormatter.breakpoints
+		assert(breakpoints[1].format == "%.1f" and breakpoints[1].threshold == 0, "tenths below the threshold")
+		assert(breakpoints[2].format == "%d" and breakpoints[2].threshold == 3,
+			"whole seconds from the db threshold up")
+
+		instance:SetStyle({})
+		assert(cd._countdownFormatter == nil, "turning it off removes the formatter")
+	end)
+
+	fw.it("milliseconds win over the coloured text", function()
+		local instance = newInstance()
+		local button = instance.Buttons[1]
+		local widgets = instance.ButtonWidgets[button]
+
+		mockDb.ColorCountdownByTime = true
+		instance:SetStyle({ ShowMilliseconds = true })
+		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 0,
+			"coloured text stays hidden; fractions only render on the cooldown's own countdown")
+		assert(button._calls.SetDurationText == 1, "the binding is never re-bound")
+
+		instance:SetStyle({})
+		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 1, "coloured text returns without the toggle")
+	end)
+
+	fw.it("a deferred restyle applies a milliseconds change once the restriction lifts", function()
+		local instance = newInstance()
+		local button = instance.Buttons[1]
+		local cd = instance.ButtonWidgets[button].Cooldown
+
+		acm.restricted = true
+		instance:SetStyle({ ShowMilliseconds = true })
+		assert(cd._countdownFormatter == nil, "no styling while buttons are forbidden")
+
+		acm.restricted = false
+		displayEvents:TriggerEvent("PLAYER_REGEN_ENABLED")
+		assert(cd._countdownFormatter ~= nil, "formatter installed when the deferred restyle runs")
+	end)
+
+	fw.it("the coloured text copies the cooldown countdown's font face", function()
+		local instance = newInstance()
+		local button = instance.Buttons[1]
+		local widgets = instance.ButtonWidgets[button]
+
+		widgets.Cooldown.MiniAurasFontString = widgets.Cooldown:CreateFontString()
+		mockDb.ColorCountdownByTime = true
+		instance:SetStyle({})
+
+		local args = widgets.DurationText._lastArgs.SetFont
+		assert(args and args[1] == "MockFont" and args[2] == 10 and args[3] == "",
+			"face, size and flags taken from the countdown fontstring")
+	end)
 end)
 
 fw.describe("AuraContainerDisplay - Edit Mode preview suppression", function()
