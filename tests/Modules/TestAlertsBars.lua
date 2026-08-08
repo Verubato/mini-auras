@@ -90,22 +90,23 @@ fw.describe("AlertsModule 12.1 - bar anchor handling", function()
 		-- (first resurrecting the dragged position, then shifting the bar half a row across).
 		placeMainBar()
 		alerts.Grow = "CENTER"
-		local shippedY = alerts.Offset.Y
+		local shippedX, shippedY = alerts.Offset.X, alerts.Offset.Y
 		module:Refresh()
 
 		assert(alerts.Point == "CENTER" and alerts.RelativePoint == "TOP",
 			"the shipped anchor survives a refresh untouched, got " .. tostring(alerts.Point))
-		assert(alerts.Offset.X == 0 and alerts.Offset.Y == shippedY, "offsets untouched")
+		assert(alerts.Offset.X == shippedX and alerts.Offset.Y == shippedY, "offsets untouched")
 	end)
 
 	fw.it("flipping Grow leaves the saved anchor alone", function()
 		-- The anchor pins the bar frame, not the row: growth direction only changes which way
 		-- the rendered row extends, so there is nothing to rewrite.
 		placeMainBar()
+		local shippedX = alerts.Offset.X
 		alerts.Grow = "LEFT"
 		module:Refresh()
 
-		assert(alerts.Point == "CENTER" and alerts.Offset.X == 0, "no rewrite on a Grow change")
+		assert(alerts.Point == "CENTER" and alerts.Offset.X == shippedX, "no rewrite on a Grow change")
 		alerts.Grow = "CENTER"
 	end)
 
@@ -173,6 +174,39 @@ fw.describe("AlertsModule 12.1 - bar anchor handling", function()
 
 		assert(alerts.Offset.X == 111 and alerts.Offset.Y == 222,
 			"no rewrite needed, so the dragged offsets stand")
+	end)
+
+	fw.it("split mode places the defensives bar from its own anchor", function()
+		placeMainBar()
+		alerts.SplitBars = true
+		module:Refresh()
+
+		local point, _, _, x = mainBar:GetPoint(1)
+		assert(point == alerts.Defensives.Point and x == alerts.Defensives.Offset.X,
+			"split places from the Defensives anchor, got " .. tostring(x))
+
+		alerts.SplitBars = false
+		module:Refresh()
+		local _, _, _, combinedX = mainBar:GetPoint(1)
+		assert(combinedX == alerts.Offset.X, "combined returns to the module anchor")
+	end)
+
+	fw.it("a drag in split mode saves to the defensives anchor", function()
+		placeMainBar()
+		alerts.SplitBars = true
+		module:Refresh()
+
+		local combinedX = alerts.Offset.X
+		mainBar:ClearAllPoints()
+		mainBar:SetPoint("LEFT", _G.UIParent, "BOTTOMLEFT", 111, 222)
+		mainBar._scripts.OnDragStop(mainBar)
+
+		assert(alerts.Defensives.Offset.X == 111 and alerts.Defensives.Offset.Y == 222,
+			"the drop lands on the Defensives anchor")
+		assert(alerts.Offset.X == combinedX, "the combined anchor is untouched")
+
+		alerts.SplitBars = false
+		module:Refresh()
 	end)
 end)
 

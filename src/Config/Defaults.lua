@@ -8,7 +8,7 @@ local _, addon = ...
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 62,
+	Version = 63,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -201,9 +201,24 @@ local dbDefaults = {
 			-- 84 and 220 below the top of a 768 tall UIParent (the custom auras anchor from the
 			-- centre, so 384 + 300), and this sits between them. At the old -100 the bar was
 			-- only 16 below the custom auras and the two rows of icons overlapped.
+			-- This anchor is the COMBINED bar's home; no X on purpose, the single bar belongs
+			-- in the middle. Split mode uses the Defensives and Important anchors instead.
 			Offset = {
 				X = 0,
 				Y = -150,
+			},
+
+			-- Split-mode anchor for the defensives bar, mirroring the important bar either
+			-- side of a centre gap. Existing installs seed this from the main anchor instead
+			-- (Migrations V63), so an already-running split layout does not move.
+			Defensives = {
+				Point = "CENTER",
+				RelativePoint = "TOP",
+				RelativeTo = "UIParent",
+				Offset = {
+					X = -220,
+					Y = -150,
+				},
 			},
 
 			-- Dedicated, separately-movable bar for important enemy buffs (e.g. offensive cooldowns,
@@ -213,11 +228,11 @@ local dbDefaults = {
 				Point = "CENTER",
 				RelativePoint = "TOP",
 				RelativeTo = "UIParent",
-				-- Below the healer CC icons (centred at 220 with 50px icons, so reaching ~245):
-				-- at the old -220 an enabled split bar sat exactly on top of them.
+				-- Split mode only: same row as the defensives bar, mirrored right of the centre
+				-- gap. At the old -220 an enabled split bar sat on top of the healer CC icons.
 				Offset = {
-					X = 0,
-					Y = -280,
+					X = 220,
+					Y = -150,
 				},
 			},
 

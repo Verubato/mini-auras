@@ -549,3 +549,40 @@ function M:UpgradeToVersion62(vars)
 	vars.Version = 62
 	return true
 end
+
+function M:UpgradeToVersion63(vars)
+	if vars.Version ~= 62 then return false end
+
+	-- The split-mode defensives bar gained its own anchor (AlertsModule.Defensives); fresh
+	-- installs ship it mirrored beside the important bar. Existing installs seed it from the
+	-- main bar's anchor instead, so a split layout someone already positioned does not move.
+	local function SeedDefensives(modules)
+		local alerts = modules and modules.AlertsModule
+
+		if not alerts or alerts.Defensives ~= nil then
+			return
+		end
+
+		local offset = alerts.Offset or {}
+		alerts.Defensives = {
+			Point = alerts.Point or "CENTER",
+			RelativePoint = alerts.RelativePoint or "TOP",
+			RelativeTo = alerts.RelativeTo or "UIParent",
+			Offset = {
+				X = offset.X or 0,
+				Y = offset.Y or -150,
+			},
+		}
+	end
+
+	SeedDefensives(vars.Modules)
+
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			SeedDefensives(profile.Modules)
+		end
+	end
+
+	vars.Version = 63
+	return true
+end

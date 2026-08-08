@@ -403,8 +403,11 @@ end
 ---only enabled in test mode (SetAnchorInteractive); each drop is re-pinned to the grow edge so
 ---the saved anchor matches how the row extends.
 ---@param bar IconSlotContainer
----@param anchorOptions table
-local function SetUpBarDragging(bar, anchorOptions)
+---@param anchorOptions table Initial placement.
+---@param saveTarget (table|fun(): table?)? Where drops save; anchorOptions when omitted. A
+---function when the destination depends on runtime state (the main bar writes the Defensives
+---anchor in split mode and the module anchor in combined).
+local function SetUpBarDragging(bar, anchorOptions, saveTarget)
 	local relativeTo = _G[anchorOptions.RelativeTo] or UIParent
 
 	bar.Frame:SetPoint(
@@ -417,8 +420,10 @@ local function SetUpBarDragging(bar, anchorOptions)
 	bar.Frame:SetFrameLevel((relativeTo:GetFrameLevel() or 0) + 5)
 	bar.Frame:EnableMouse(false)
 	bar.Frame:SetMovable(false)
-	moduleUtil:MakeMovable(bar.Frame, anchorOptions, function(frame, position)
-		NormalizeBarAnchor(frame, position, GetGrow())
+	moduleUtil:MakeMovable(bar.Frame, saveTarget or anchorOptions, function(frame, position)
+		if position then
+			NormalizeBarAnchor(frame, position, GetGrow())
+		end
 	end)
 end
 
@@ -1063,7 +1068,9 @@ end
 function M:ApplyBarOptions(options)
 	local grow = GetGrow()
 
-	PlaceBar(container.Frame, options)
+	-- Combined mode keeps the single bar on the module anchor (centred by default); split mode
+	-- moves the defensives onto their own anchor, mirrored against the important bar's.
+	PlaceBar(container.Frame, (options.SplitBars and options.Defensives) or options)
 
 	container:SetIconSize(options.Icons.Size)
 	container:SetSpacing(options.IconSpacing or 2)
@@ -1142,7 +1149,10 @@ function M:CreateFrames()
 	local size = options.Icons.Size
 
 	container = iconSlotContainer:New(UIParent, count, size, options.IconSpacing or 2, "Alerts", nil, "Alerts")
-	SetUpBarDragging(container, options)
+	SetUpBarDragging(container, options, function()
+		local alertOptions = db.Modules.AlertsModule
+		return (alertOptions.SplitBars and alertOptions.Defensives) or alertOptions
+	end)
 	container.Frame:Show()
 
 	-- Dedicated important-buff bar (split mode); sized to MaxIcons (Refresh keeps it in sync).

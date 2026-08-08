@@ -674,6 +674,33 @@ fw.describe("Migrator - individual migrations", function()
 		assert(fresh.SeededDefaults == true and fresh.Groups[1].Position.Y == 70, "ancient profile gets precog defaults")
 	end)
 
+	fw.it("v63 seeds the split defensives anchor from the main alerts anchor", function()
+		local vars = {
+			Version = 62,
+			Modules = {
+				AlertsModule = {
+					Point = "LEFT",
+					RelativePoint = "BOTTOMLEFT",
+					RelativeTo = "UIParent",
+					Offset = { X = 33, Y = -77 },
+				},
+			},
+			Profiles = {
+				Seeded = { Modules = { AlertsModule = { Defensives = { Offset = { X = 1, Y = 2 } } } } },
+				Fresh = { Modules = { AlertsModule = { Offset = { X = 5, Y = -9 } } } },
+			},
+		}
+
+		assert(migrator:UpgradeToVersion63(vars) == true)
+		local defensives = vars.Modules.AlertsModule.Defensives
+		assert(defensives.Point == "LEFT" and defensives.RelativePoint == "BOTTOMLEFT", "anchor point carried")
+		assert(defensives.Offset.X == 33 and defensives.Offset.Y == -77,
+			"an already-positioned split layout does not move")
+		assert(vars.Profiles.Seeded.Modules.AlertsModule.Defensives.Offset.X == 1, "an existing anchor is kept")
+		assert(vars.Profiles.Fresh.Modules.AlertsModule.Defensives.Offset.X == 5, "profiles seed too")
+		assert(vars.Version == 63)
+	end)
+
 	fw.it("v57 leaves kicks alone when the CC module is disabled everywhere", function()
 		local vars = {
 			Version = 56,
