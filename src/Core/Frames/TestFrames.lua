@@ -1,7 +1,7 @@
 local addonName, addon = ...
 local M = addon.Core.Frames
 local MAX_TEST_FRAMES = 3
-local PET_FRAME_WIDTH, PET_FRAME_HEIGHT = 110, 40
+local PET_FRAME_WIDTH, PET_FRAME_HEIGHT = 144, 40
 local testPartyFrames = {}
 -- Kept out of testPartyFrames on purpose: that list feeds GetAll's party anchors, and the
 -- party modules must never attach their displays to a pet frame.
