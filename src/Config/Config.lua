@@ -208,8 +208,11 @@ function M:Init()
 
 	window:HookScript("OnShow", UpdateTestButton)
 
-	-- Tabs fill the content area of the window
-	local tabsPanel = window.Content
+	-- The nav strip sits flush with the window's left edge and the title bar's accent line,
+	-- rather than inside Content's padding; pages keep their old position via ContentInsets.
+	local tabsPanel = CreateFrame("Frame", nil, window)
+	tabsPanel:SetPoint("TOPLEFT", window.TitleBar, "BOTTOMLEFT", 0, -1)
+	tabsPanel:SetPoint("BOTTOMRIGHT", window.Content, "BOTTOMRIGHT", 0, 0)
 
 	-- Sidebar icons: the addon's own art under Icons\Nav, one per tab key.
 	local tabs = {
@@ -405,7 +408,7 @@ function M:Init()
 
 	local contentPadding = 12
 	local windowInset = 2 + contentPadding * 2 + 14 -- border (2), padding (24), scrollbar (14)
-	local tabStripWidth = 130
+	local tabStripWidth = 135
 	local tabHorizontalPadding = 12
 	local contentWidth = windowWidth - windowInset - tabStripWidth - tabHorizontalPadding
 	mini.ContentWidth = contentWidth
@@ -416,11 +419,15 @@ function M:Init()
 		InitialKey = "General",
 		ScrollBody = true,
 		ScrollContentWidth = contentWidth,
-		ContentInsets = { Top = 4 },
+		-- Restores the content padding the flush tabsPanel no longer provides, so pages sit
+		-- exactly where they did when the tabs were parented to window.Content.
+		ContentInsets = { Top = 4 + contentPadding + 1 },
 		TabFitToParent = true,
 		Vertical = true,
-		StripWidth = tabStripWidth,
+		-- The strip absorbs the left content padding the flush panel reclaimed.
+		StripWidth = tabStripWidth + contentPadding,
 		HorizontalPadding = tabHorizontalPadding,
+		TabIconSize = 24,
 		PageHeader = true,
 		Tabs = tabs,
 	})
