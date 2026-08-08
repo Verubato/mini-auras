@@ -209,9 +209,18 @@ function M:CreateStandaloneWindow(options)
 	-- logotype, baseline-aligned, so it reads as a quiet annotation rather than debug output.
 	if options.Subtitle then
 		local subtitleText = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-		subtitleText:SetPoint("BOTTOMLEFT", titleText, "BOTTOMRIGHT", 8, 1)
 		subtitleText:SetText(options.Subtitle)
 		subtitleText:SetTextColor(0.55, 0.52, 0.48, 1)
+
+		-- Bottom-anchoring two font sizes leaves the smaller text sitting low: a fontstring's
+		-- bottom is baseline minus descent, and the larger font descends further. Lift by the
+		-- descent difference (Friz Quadrata descends roughly a quarter of its size) so the two
+		-- BASELINES line up instead of the frame edges.
+		local _, titleSize = titleText:GetFont()
+		local _, subtitleSize = subtitleText:GetFont()
+		local lift = math.floor(((titleSize or 16) - (subtitleSize or 10)) * 0.25 + 0.5)
+		subtitleText:SetPoint("BOTTOMLEFT", titleText, "BOTTOMRIGHT", 8, lift)
+
 		window.SubtitleText = subtitleText
 	end
 
