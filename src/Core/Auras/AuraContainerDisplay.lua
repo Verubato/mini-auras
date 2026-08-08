@@ -317,8 +317,8 @@ end
 ---("45s") and SecondsFormatter cannot drop it - its abbreviation enum spells the unit out or
 ---shortens it, never omits it. The promotion thresholds are the game's own (1 + 1.5x the unit),
 ---and the quotients round up to match Blizzard's frames (2m32s reads "3m"). A non-zero
----msThreshold adds a tenths band below it ("4.3"); that breakpoint carries no min/rounding on
----purpose, matching the shape Platynator has verified in-game.
+---msThreshold adds a tenths band below it ("4.3"); that breakpoint deliberately carries no
+---min/rounding fields - with them present the engine rendered no fractions at all.
 ---@param msThreshold number Seconds below which tenths show; 0 for whole seconds only.
 ---@return table
 local function GetCountdownFormatter(msThreshold)
@@ -361,20 +361,21 @@ local function GetCountdownCurve()
 	return countdownCurve
 end
 
----Binds the coloured countdown fontstring, always with the whole-seconds formatter: the
----duration-text binding never renders fractions (PTR-tested 2026-08-09), so milliseconds mode
----switches to the cooldown's own countdown instead of re-binding. Named fields, not positional:
----the options validator walks [textColor][curve] and [textColor][property], and a positional
----pair errors per button at AddAuraGroup time.
+---Binds (or re-binds) the countdown fontstring. The engine retains the button's duration-text
+---binding across calls, so this is how the formatter and colour curve are swapped at restyle
+---time. Named fields, not positional: the options validator walks [textColor][curve] and
+---[textColor][property], and a positional pair errors per button at AddAuraGroup time.
 ---@param button table
 ---@param durationText table
-local function BindDurationText(button, durationText)
+---@param msThreshold number Seconds below which tenths show; 0 for whole seconds only.
+---@param colorByTime boolean? Carry the colour-by-time curve; default colouring otherwise.
+local function BindDurationText(button, durationText, msThreshold, colorByTime)
 	button:SetDurationText(durationText, {
-		textFormatter = GetCountdownFormatter(0),
-		textColor = {
+		textFormatter = GetCountdownFormatter(msThreshold),
+		textColor = colorByTime and {
 			curve = GetCountdownCurve(),
 			property = Enum.DurationTextBindingProperty.RemainingDuration,
-		},
+		} or nil,
 	})
 end
 
@@ -570,27 +571,33 @@ local function StyleButton(instance, button)
 	cd:SetReverse(style.ReverseCooldown or false)
 	cd:SetDrawSwipe(not style.DisableSwipe)
 
-	-- Cooldowns driven by duration objects ignore SetCountdownMillisecondsThreshold; on 12.1
-	-- fractions come from a countdown formatter instead (Platynator-verified). The threshold
-	-- call stays for clients that predate the formatter API.
+	-- SetCountdownMillisecondsThreshold only works on legacy clock-driven cooldowns; it no-ops
+	-- for 12.1 duration objects, where fractions render through the duration-text binding
+	-- below. (The cooldown's own SetCountdownFormatter does not work there either.)
 	local msThreshold = (style.ShowMilliseconds and (style.MillisecondsThreshold or 5)) or 0
-	if cd.SetCountdownFormatter then
-		cd:SetCountdownFormatter(msThreshold > 0 and GetCountdownFormatter(msThreshold) or nil)
-	elseif cd.SetCountdownMillisecondsThreshold then
+	if cd.SetCountdownMillisecondsThreshold then
 		cd:SetCountdownMillisecondsThreshold(msThreshold)
 	end
 	cd.FontScale = style.FontScale or 1.0
 	fontUtil:UpdateCooldownFontSize(cd, instance.Size, nil, cd.FontScale)
 
-	-- Colour-by-time swaps the cooldown's own countdown for the curve-bound fontstring. The
-	-- engine writes that fontstring either way, so the off state is alpha rather than unbinding.
-	-- Milliseconds win over the coloured text: fractions only render on the cooldown's own
-	-- countdown, never through the duration-text binding.
+	-- The bound fontstring stands in for the cooldown's own countdown whenever it can do
+	-- something the native text cannot: the colour-by-time curve, sub-second fractions, or
+	-- both. The engine writes the fontstring either way, so the off state is alpha rather
+	-- than unbinding.
 	local durationText = widgets.DurationText
-	local colorCountdown = style.ColorCountdownByTime == true and durationText ~= nil and msThreshold == 0
-	cd:SetHideCountdownNumbers(colorCountdown)
+	local colorCountdown = style.ColorCountdownByTime == true and durationText ~= nil
+	local useDurationText = colorCountdown or (durationText ~= nil and msThreshold > 0)
+	cd:SetHideCountdownNumbers(useDurationText)
 	if durationText then
-		durationText:SetAlpha(colorCountdown and 1 or 0)
+		-- The formatter and colour curve live inside the binding, so a change re-binds. Only
+		-- on change: each SetDurationText runs the engine's options processing per button.
+		local bindSignature = msThreshold .. (colorCountdown and "|c" or "")
+		if widgets.DurationTextBind ~= bindSignature then
+			widgets.DurationTextBind = bindSignature
+			BindDurationText(button, durationText, msThreshold, colorCountdown)
+		end
+		durationText:SetAlpha(useDurationText and 1 or 0)
 		-- Stand-in for the cooldown's own countdown, so it borrows that fontstring's face and
 		-- size wholesale (UpdateCooldownFontSize above just sized it with the same coefficient
 		-- and scale). Without a face to copy, fall back to sizing the template font.
@@ -699,7 +706,7 @@ local function InitializeButton(instance, button, glowColor)
 	if HasCountdownColorCurves() then
 		durationText = textOverlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 		durationText:SetPoint("CENTER", button, "CENTER", 0, 0)
-		BindDurationText(button, durationText)
+		BindDurationText(button, durationText, 0, false)
 	end
 
 	local border, glow
@@ -770,6 +777,7 @@ local function InitializeButton(instance, button, glowColor)
 		GlowColor = glowColor,
 		Pandemic = pandemic,
 		DurationText = durationText,
+		DurationTextBind = durationText and "0" or nil,
 	}
 	instance.Buttons[#instance.Buttons + 1] = button
 

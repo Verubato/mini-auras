@@ -450,6 +450,7 @@ local function NewAuraButton(container, groupKey)
 			assert(options.textColor.property ~= nil,
 				"SetDurationText: textColor.property must be a named field")
 		end
+		button._durationTextOptions = options
 		countedSetDurationText(self, fontString, options)
 	end
 

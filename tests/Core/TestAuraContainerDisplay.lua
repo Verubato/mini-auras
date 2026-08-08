@@ -833,49 +833,60 @@ fw.describe("AuraContainerDisplay - countdown colour by time", function()
 		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 0, "and hides again when turned off")
 	end)
 
-	fw.it("the milliseconds toggle installs a fractions formatter on the cooldown", function()
-		local instance = newInstance()
-		local button = instance.Buttons[1]
-		local cd = instance.ButtonWidgets[button].Cooldown
-		assert(cd._countdownFormatter == nil, "no formatter while the toggle is off")
-
-		instance:SetStyle({ ShowMilliseconds = true })
-		local breakpoints = cd._countdownFormatter.breakpoints
-		assert(breakpoints[1].format == "%.1f" and breakpoints[1].threshold == 0, "tenths below the threshold")
-		assert(breakpoints[2].format == "%d" and breakpoints[2].threshold == 3,
-			"whole seconds from the db threshold up")
-
-		instance:SetStyle({})
-		assert(cd._countdownFormatter == nil, "turning it off removes the formatter")
-	end)
-
-	fw.it("milliseconds win over the coloured text", function()
+	fw.it("the milliseconds toggle re-binds the text with a fractions formatter", function()
+		-- Fractions can only render through the duration-text binding: the cooldown's own
+		-- SetCountdownFormatter and SetCountdownMillisecondsThreshold both no-op for 12.1
+		-- duration objects.
 		local instance = newInstance()
 		local button = instance.Buttons[1]
 		local widgets = instance.ButtonWidgets[button]
+		assert(button._calls.SetDurationText == 1, "bound once at creation")
+
+		instance:SetStyle({ ShowMilliseconds = true })
+		assert(button._calls.SetDurationText == 2, "the toggle re-binds")
+		local breakpoints = button._durationTextOptions.textFormatter.breakpoints
+		assert(breakpoints[1].format == "%.1f" and breakpoints[1].threshold == 0, "tenths below the threshold")
+		assert(breakpoints[2].format == "%d" and breakpoints[2].threshold == 3,
+			"whole seconds from the db threshold up")
+		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 1,
+			"the bound text shows even without colour-by-time; nothing else can draw fractions")
+
+		instance:SetStyle({ ShowMilliseconds = true })
+		assert(button._calls.SetDurationText == 2, "an unchanged style does not re-bind")
+
+		instance:SetStyle({})
+		assert(button._calls.SetDurationText == 3, "turning it off re-binds the plain formatter")
+		assert(button._durationTextOptions.textFormatter.breakpoints[1].format == "%d", "back to whole seconds")
+		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 0, "and the text hides again")
+	end)
+
+	fw.it("milliseconds and colour-by-time combine in one binding", function()
+		local instance = newInstance()
+		local button = instance.Buttons[1]
 
 		mockDb.ColorCountdownByTime = true
 		instance:SetStyle({ ShowMilliseconds = true })
-		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 0,
-			"coloured text stays hidden; fractions only render on the cooldown's own countdown")
-		assert(button._calls.SetDurationText == 1, "the binding is never re-bound")
+		local options = button._durationTextOptions
+		assert(options.textFormatter.breakpoints[1].format == "%.1f", "fractions formatter carried")
+		assert(options.textColor ~= nil, "colour curve carried alongside it")
 
-		instance:SetStyle({})
-		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 1, "coloured text returns without the toggle")
+		mockDb.ColorCountdownByTime = nil
+		instance:SetStyle({ ShowMilliseconds = true })
+		assert(button._durationTextOptions.textColor == nil,
+			"dropping colour-by-time re-binds without the curve")
 	end)
 
 	fw.it("a deferred restyle applies a milliseconds change once the restriction lifts", function()
 		local instance = newInstance()
 		local button = instance.Buttons[1]
-		local cd = instance.ButtonWidgets[button].Cooldown
 
 		acm.restricted = true
 		instance:SetStyle({ ShowMilliseconds = true })
-		assert(cd._countdownFormatter == nil, "no styling while buttons are forbidden")
+		assert(button._calls.SetDurationText == 1, "no re-bind while buttons are forbidden")
 
 		acm.restricted = false
 		displayEvents:TriggerEvent("PLAYER_REGEN_ENABLED")
-		assert(cd._countdownFormatter ~= nil, "formatter installed when the deferred restyle runs")
+		assert(button._calls.SetDurationText == 2, "re-bound when the deferred restyle runs")
 	end)
 
 	fw.it("the coloured text copies the cooldown countdown's font face", function()
