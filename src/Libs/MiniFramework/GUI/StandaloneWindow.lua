@@ -209,6 +209,15 @@ function M:CreateStandaloneWindow(options)
 	-- logotype, baseline-aligned, so it reads as a quiet annotation rather than debug output.
 	if options.Subtitle then
 		local subtitleText = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+
+		-- The title's own face at two thirds the size, so the pair always match whatever font
+		-- the logotype uses.
+		local titleFont, titleSize, titleFlags = titleText:GetFont()
+		local subtitleSize = math.floor((titleSize or 16) * 0.65 + 0.5)
+		if titleFont then
+			subtitleText:SetFont(titleFont, subtitleSize, titleFlags)
+		end
+
 		subtitleText:SetText(options.Subtitle)
 		subtitleText:SetTextColor(0.55, 0.52, 0.48, 1)
 
@@ -216,9 +225,7 @@ function M:CreateStandaloneWindow(options)
 		-- bottom is baseline minus descent, and the larger font descends further. Lift by the
 		-- descent difference (Friz Quadrata descends roughly a quarter of its size) so the two
 		-- BASELINES line up instead of the frame edges.
-		local _, titleSize = titleText:GetFont()
-		local _, subtitleSize = subtitleText:GetFont()
-		local lift = math.floor(((titleSize or 16) - (subtitleSize or 10)) * 0.25 + 0.5)
+		local lift = math.floor(((titleSize or 16) - subtitleSize) * 0.25 + 0.5)
 		subtitleText:SetPoint("BOTTOMLEFT", titleText, "BOTTOMRIGHT", 8, lift)
 
 		window.SubtitleText = subtitleText
