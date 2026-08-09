@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.0.1
+
+Fixed portrait icons being invisible on the 12.0.7 client.
+
 ## 5.0.0
 
 Added support for Blizzard patch 12.1.
