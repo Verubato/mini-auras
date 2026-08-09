@@ -85,7 +85,6 @@ local function SetTestMode(active)
 	end
 
 	M:Refresh()
-	display:SetAnchorInteractive(active)
 end
 
 local function CreateEvents()
@@ -120,12 +119,17 @@ function M:Refresh()
 
 	if not isEnabled then
 		display:Teardown()
+		display:SetAnchorInteractive(false)
 		return
 	end
 
 	display:EnsureFrames()
 	display:ApplyOptions(options)
 	UpdateContent(options)
+
+	-- Owned here rather than by the test-mode toggle, so flipping the module switch while a
+	-- test is running shows or hides the drag anchor and its caption with it.
+	display:SetAnchorInteractive(testModeActive)
 end
 
 function M:Init()

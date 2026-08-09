@@ -184,8 +184,16 @@ function M:SetAnchorInteractive(active)
 
 	anchor:SetMovable(active)
 	anchor:EnableMouse(active)
-	anchor:SetShown(active)
 	moduleUtil:SetTestLabel(anchor, active and (L["Enemy Kicks_Short"] or L["Enemy Kicks"]) or nil)
+
+	-- The anchor is the live bar's own frame, so only force it visible for dragging; going
+	-- interactive-off hands visibility back to the used-slot rule rather than hiding a bar
+	-- that may be mid-kick.
+	if active then
+		anchor:Show()
+	else
+		UpdateVisibility()
+	end
 end
 
 ---@param active boolean

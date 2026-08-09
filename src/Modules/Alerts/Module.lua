@@ -262,7 +262,6 @@ local function SetTestMode(active)
 	end
 
 	M:Refresh()
-	display:SetAnchorInteractive(active)
 end
 
 ---Legacy path: the nameplate aura-refresh hook only matters while something important-related
@@ -356,12 +355,18 @@ function M:Refresh()
 
 	if not isEnabled then
 		Teardown()
+		display:SetAnchorInteractive(false)
 		return
 	end
 
 	EnsureFrames()
 	ApplyOptions(options)
 	UpdateContent()
+
+	-- Owned here rather than by the test-mode toggle, so flipping the module switch while a
+	-- test is running shows or hides the drag anchors and their captions with it, and the
+	-- important bar's draggability tracks the split-mode state ApplyOptions just settled.
+	display:SetAnchorInteractive(testModeActive)
 end
 
 function M:Init()

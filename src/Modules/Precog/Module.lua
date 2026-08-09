@@ -293,7 +293,6 @@ local function SetTestMode(active)
 	end
 
 	M:Refresh()
-	SetAnchorInteractive(active)
 end
 
 local function CreateTestData()
@@ -417,6 +416,7 @@ function M:Refresh()
 
 	if not isEnabled then
 		Teardown()
+		SetAnchorInteractive(false)
 		return
 	end
 
@@ -424,6 +424,10 @@ function M:Refresh()
 	ApplyOptions(options)
 	UpdateContent(options)
 	sound:Refresh(SOUND_SPELL_IDS)
+
+	-- Owned here rather than by the test-mode toggle, so flipping the module switch while a
+	-- test is running shows or hides the drag anchor and its caption with it.
+	SetAnchorInteractive(testModeActive)
 end
 
 function M:Init()
