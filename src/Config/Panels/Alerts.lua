@@ -188,6 +188,25 @@ local function BuildSettingsTab(parent, options)
 
 	local sliderWidth = columnWidth * 2 - horizontalSpacing
 
+	local growDdl = helpers:BuildGrowDropdown({
+		Parent = parent,
+		Items = GROW_OPTIONS,
+		GetValue = function()
+			local grow = options.Grow
+			if grow ~= "LEFT" and grow ~= "RIGHT" then
+				grow = "CENTER"
+			end
+			if USE_AURA_CONTAINERS and grow == "CENTER" then
+				return "RIGHT"
+			end
+			return grow
+		end,
+		Target = options,
+		Key = "Grow",
+	})
+
+	growDdl.Label:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
+
 	local iconSize = helpers:BuildClampedSlider({
 		Parent = parent,
 		LabelText = L["Icon Size"],
@@ -199,7 +218,7 @@ local function BuildSettingsTab(parent, options)
 		Key = "Size",
 	})
 
-	iconSize.Slider:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+	iconSize.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	local maxIcons = helpers:BuildClampedSlider({
 		Parent = parent,
@@ -227,25 +246,6 @@ local function BuildSettingsTab(parent, options)
 	})
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
-
-	local growDdl = helpers:BuildGrowDropdown({
-		Parent = parent,
-		Items = GROW_OPTIONS,
-		GetValue = function()
-			local grow = options.Grow
-			if grow ~= "LEFT" and grow ~= "RIGHT" then
-				grow = "CENTER"
-			end
-			if USE_AURA_CONTAINERS and grow == "CENTER" then
-				return "RIGHT"
-			end
-			return grow
-		end,
-		Target = options,
-		Key = "Grow",
-	})
-
-	growDdl.Label:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 2)
 
 	local importantBarChk = mini:Checkbox({
 		Parent = parent,

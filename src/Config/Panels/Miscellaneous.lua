@@ -82,13 +82,61 @@ function M:Build(panel)
 	languageDropdown:SetPoint("TOPLEFT", languageLabel, "BOTTOMLEFT", 0, -4)
 	languageDropdown:SetWidth(columnWidth)
 
+	local behaviourDivider = mini:Divider({
+		Parent = panel,
+		Text = L["Behaviour"],
+	})
+	behaviourDivider:SetPoint("LEFT", panel, "LEFT")
+	behaviourDivider:SetPoint("RIGHT", panel, "RIGHT")
+	behaviourDivider:SetPoint("TOP", languageDropdown, "BOTTOM", 0, -verticalSpacing)
+
+	local configureBlizzardNameplatesChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Configure Blizzard Nameplates"],
+		Tooltip = L["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."],
+		GetValue = function()
+			if db.ConfigureBlizzardNameplates == nil then
+				return true
+			end
+			return db.ConfigureBlizzardNameplates
+		end,
+		SetValue = function(value)
+			db.ConfigureBlizzardNameplates = value
+			addon:Refresh()
+		end,
+	})
+
+	configureBlizzardNameplatesChk:SetPoint("TOPLEFT", behaviourDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	-- 12.1 sorts inside the AuraContainer, and only by aura instance id - every other sort rule
+	-- keys off data the addon cannot read there. The option fed the legacy UnitAuraWatcher's sort,
+	-- and no watcher exists on that path, so the toggle does nothing. Hidden rather than left as a
+	-- control with no effect.
+	if not wowEx:UseAuraContainers() then
+		local ccNativeOrderChk = mini:Checkbox({
+			Parent = panel,
+			LabelText = L["CC Native Order"],
+			Tooltip = L["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."],
+			GetValue = function()
+				return db.CCNativeOrder or false
+			end,
+			SetValue = function(value)
+				db.CCNativeOrder = value
+				addon:Refresh()
+			end,
+		})
+
+		ccNativeOrderChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+		ccNativeOrderChk:SetPoint("TOP", configureBlizzardNameplatesChk, "TOP", 0, 0)
+	end
+
 	local iconsDivider = mini:Divider({
 		Parent = panel,
 		Text = L["Icons"],
 	})
 	iconsDivider:SetPoint("LEFT", panel, "LEFT")
 	iconsDivider:SetPoint("RIGHT", panel, "RIGHT")
-	iconsDivider:SetPoint("TOP", languageDropdown, "BOTTOM", 0, -verticalSpacing)
+	iconsDivider:SetPoint("TOP", configureBlizzardNameplatesChk, "BOTTOM", 0, -verticalSpacing)
 
 	local disableSwipeChk = mini:Checkbox({
 		Parent = panel,
@@ -240,52 +288,4 @@ function M:Build(panel)
 
 	millisThresholdSlider.Slider:SetPoint("LEFT", fontScaleSlider.Slider, "RIGHT", horizontalSpacing, 0)
 	millisThresholdSlider.Slider:SetPoint("TOP", fontScaleSlider.Slider, "TOP", 0, 0)
-
-	local behaviourDivider = mini:Divider({
-		Parent = panel,
-		Text = L["Behaviour"],
-	})
-	behaviourDivider:SetPoint("LEFT", panel, "LEFT")
-	behaviourDivider:SetPoint("RIGHT", panel, "RIGHT")
-	behaviourDivider:SetPoint("TOP", fontScaleSlider.Slider, "BOTTOM", 0, -verticalSpacing * 2)
-
-	local configureBlizzardNameplatesChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Configure Blizzard Nameplates"],
-		Tooltip = L["Disables CC and BigDebuffs on Blizzard nameplates if using MiniAuras nameplates."],
-		GetValue = function()
-			if db.ConfigureBlizzardNameplates == nil then
-				return true
-			end
-			return db.ConfigureBlizzardNameplates
-		end,
-		SetValue = function(value)
-			db.ConfigureBlizzardNameplates = value
-			addon:Refresh()
-		end,
-	})
-
-	configureBlizzardNameplatesChk:SetPoint("TOPLEFT", behaviourDivider, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	-- 12.1 sorts inside the AuraContainer, and only by aura instance id - every other sort rule
-	-- keys off data the addon cannot read there. The option fed the legacy UnitAuraWatcher's sort,
-	-- and no watcher exists on that path, so the toggle does nothing. Hidden rather than left as a
-	-- control with no effect.
-	if not wowEx:UseAuraContainers() then
-		local ccNativeOrderChk = mini:Checkbox({
-			Parent = panel,
-			LabelText = L["CC Native Order"],
-			Tooltip = L["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."],
-			GetValue = function()
-				return db.CCNativeOrder or false
-			end,
-			SetValue = function(value)
-				db.CCNativeOrder = value
-				addon:Refresh()
-			end,
-		})
-
-		ccNativeOrderChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
-		ccNativeOrderChk:SetPoint("TOP", configureBlizzardNameplatesChk, "TOP", 0, 0)
-	end
 end

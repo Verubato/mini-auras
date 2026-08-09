@@ -81,17 +81,6 @@ function M:Build(panel)
 	allEnabled:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
 	allEnabled:SetPoint("TOP", healerEnabled, "TOP", 0, 0)
 
-	local iconSizeSlider = helpers:BuildClampedSlider({
-		Parent = panel,
-		LabelText = L["Icon Size"],
-		Min = 20,
-		Max = 120,
-		Default = 50,
-		Width = sliderWidth,
-		Target = db.Modules.EnemyKickTrackerModule.Icons,
-		Key = "Size",
-	})
-
 	local settingsDivider = mini:Divider({
 		Parent = panel,
 		Text = L["Settings"],
@@ -100,23 +89,20 @@ function M:Build(panel)
 	settingsDivider:SetPoint("RIGHT", panel, "RIGHT")
 	settingsDivider:SetPoint("TOP", healerEnabled, "BOTTOM", 0, -verticalSpacing)
 
-	iconSizeSlider.Slider:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 4, -verticalSpacing * 2)
-
-
-	local iconSpacingSlider = helpers:BuildClampedSlider({
+	local borderChk = mini:Checkbox({
 		Parent = panel,
-		LabelText = L["Icon Padding"],
-		Min = 0,
-		Max = 20,
-		Default = 2,
-		Fallback = 2,
-		Width = sliderWidth,
-		Target = db.Modules.EnemyKickTrackerModule,
-		Key = "IconSpacing",
+		LabelText = L["Show border"],
+		Tooltip = L["Draw a border around the icons."],
+		GetValue = function()
+			return db.Modules.EnemyKickTrackerModule.Icons.Border
+		end,
+		SetValue = function(value)
+			db.Modules.EnemyKickTrackerModule.Icons.Border = value
+			config:Apply()
+		end,
 	})
 
-	iconSpacingSlider.Slider:SetPoint("LEFT", iconSizeSlider.Slider, "RIGHT", horizontalSpacing, 0)
-	iconSpacingSlider.Slider:SetPoint("TOP", iconSizeSlider.Slider, "TOP", 0, 0)
+	borderChk:SetPoint("TOPLEFT", settingsDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local colorSwatch = mini:ColorSwatch({
 		Parent = panel,
@@ -134,24 +120,37 @@ function M:Build(panel)
 		end,
 	})
 
-	local borderChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Show border"],
-		Tooltip = L["Draw a border around the icons."],
-		GetValue = function()
-			return db.Modules.EnemyKickTrackerModule.Icons.Border
-		end,
-		SetValue = function(value)
-			db.Modules.EnemyKickTrackerModule.Icons.Border = value
-			config:Apply()
-		end,
-	})
-
-	-- Its own row under the two sliders; sharing theirs put it behind the padding slider.
-	borderChk:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", -4, -verticalSpacing * 3)
 	colorSwatch:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
 	colorSwatch:SetPoint("TOP", borderChk, "TOP", 0,
 		-math.floor((borderChk:GetHeight() - colorSwatch:GetHeight()) / 2))
+
+	local iconSizeSlider = helpers:BuildClampedSlider({
+		Parent = panel,
+		LabelText = L["Icon Size"],
+		Min = 20,
+		Max = 120,
+		Default = 50,
+		Width = sliderWidth,
+		Target = db.Modules.EnemyKickTrackerModule.Icons,
+		Key = "Size",
+	})
+
+	iconSizeSlider.Slider:SetPoint("TOPLEFT", borderChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
+
+	local iconSpacingSlider = helpers:BuildClampedSlider({
+		Parent = panel,
+		LabelText = L["Icon Padding"],
+		Min = 0,
+		Max = 20,
+		Default = 2,
+		Fallback = 2,
+		Width = sliderWidth,
+		Target = db.Modules.EnemyKickTrackerModule,
+		Key = "IconSpacing",
+	})
+
+	iconSpacingSlider.Slider:SetPoint("LEFT", iconSizeSlider.Slider, "RIGHT", horizontalSpacing, 0)
+	iconSpacingSlider.Slider:SetPoint("TOP", iconSizeSlider.Slider, "TOP", 0, 0)
 
 	M.Panel = panel
 end
