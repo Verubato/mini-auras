@@ -10,7 +10,7 @@ local moduleEnv = require("ModuleEnv")
 local env = moduleEnv.build()
 local sounds = env.addon.Core.Sounds
 
-local SOUND_LOCATION = "Interface\\AddOns\\MiniAuras\\Sounds\\"
+local SOUND_LOCATION = "Interface\\AddOns\\MiniAuras\\Sounds\\Effects\\"
 
 ---@param list string[]
 ---@param value string

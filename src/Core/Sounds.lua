@@ -4,7 +4,7 @@ local addonName, addon = ...
 -- Where MiniAuras's own sound files live. Kept here rather than read from Config because Core loads
 -- first, and the built-ins are registered with LibSharedMedia at load so they are in the list
 -- before any panel asks for it.
-local SOUND_LOCATION = "Interface\\AddOns\\" .. addonName .. "\\Sounds\\"
+local SOUND_LOCATION = "Interface\\AddOns\\" .. addonName .. "\\Sounds\\Effects\\"
 -- MiniAuras's own sounds, by the name they are offered under. The file name without its extension,
 -- so the dropdown reads as a name rather than a path. Registered with LibSharedMedia, which folds
 -- them into one list with everything else registered there and lets other addons use them too.
