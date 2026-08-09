@@ -91,6 +91,7 @@ local function OnEvent(_, event)
 		-- After NotifyChanges, because both share one dialog frame and the conflict is the more
 		-- urgent of the two.
 		legacyAddon:WarnIfConflicting()
+		legacyAddon:OfferMissedImport(db)
 		addon:Refresh()
 	elseif event == "GROUP_ROSTER_UPDATE" then
 		-- Modules unregister their events entirely while disabled, and IsModuleEnabled depends

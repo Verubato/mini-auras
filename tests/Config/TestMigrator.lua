@@ -786,6 +786,22 @@ fw.describe("Migrator - adopting the MiniCC saved variable", function()
 		assert(db.Version == LATEST_VERSION)
 		assert(type(db.Modules.CCModule) == "table")
 	end)
+
+	fw.it("remembers when first-time setup ran without the old table", function()
+		local db = migrator:GetAndUpgradeDb()
+
+		-- Adoption is one-shot, so this flag is the only way a MiniCCDB that surfaces on a
+		-- later login (bridge disabled or out of date on the first one) can still be offered.
+		assert(db.MissedLegacyImport == true, "the miss is recorded")
+	end)
+
+	fw.it("records no miss when the old table was there to adopt", function()
+		_G.MiniCCDB = { Version = LATEST_VERSION, FontScale = 1.35 }
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(db.MissedLegacyImport == false, "adoption happened, nothing was missed")
+	end)
 end)
 
 fw.describe("Migrator - defaults helpers", function()

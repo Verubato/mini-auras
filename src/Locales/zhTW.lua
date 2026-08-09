@@ -318,6 +318,8 @@ L:RegisterLocale("zhTW", {
 	["MiniAuras - Addon Conflict"] = "MiniAuras - 插件衝突",
 	["The old MiniCC addon is still installed and running alongside MiniAuras, so every icon is being drawn twice.\n\nYour MiniCC settings have already been copied across. Delete the MiniCC folder from your AddOns folder, then reload."] = "舊插件 MiniCC 仍然安裝並與 MiniAuras 同時執行，因此每個圖示都會顯示兩次。\n\n你的 MiniCC 設定已經複製過來了。請從 AddOns 資料夾中刪除 MiniCC 資料夾，然後重新載入介面。",
 	["The old MiniCC addon is still running alongside MiniAuras. Delete the MiniCC folder from your AddOns folder, then reload."] = "舊插件 MiniCC 仍在與 MiniAuras 同時執行。請從 AddOns 資料夾中刪除 MiniCC 資料夾，然後重新載入介面。",
+	["Your old MiniCC settings were found, but MiniAuras was first set up without them. Import them now? This replaces your current MiniAuras settings and reloads the UI."] = "找到了你舊的 MiniCC 設定，但 MiniAuras 首次設定時沒有使用它們。現在匯入嗎？這將取代目前的 MiniAuras 設定並重新載入介面。",
+	["The MiniCC addon holding your old settings is installed but did not load. Enable it and 'Load out of date AddOns' on the AddOns list, then reload to import your settings."] = "包含你舊設定的 MiniCC 插件已安裝但未載入。請在插件清單中啟用它並勾選「載入過期插件」，然後重新載入介面以匯入你的設定。",
 
 	-- Language option
 	["Language override"] = "語言覆蓋",

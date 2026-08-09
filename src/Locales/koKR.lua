@@ -317,6 +317,8 @@ L:RegisterLocale("koKR", {
 	["MiniAuras - Addon Conflict"] = "MiniAuras - 애드온 충돌",
 	["The old MiniCC addon is still installed and running alongside MiniAuras, so every icon is being drawn twice.\n\nYour MiniCC settings have already been copied across. Delete the MiniCC folder from your AddOns folder, then reload."] = "이전 애드온 MiniCC가 여전히 설치되어 MiniAuras와 함께 실행 중이라 모든 아이콘이 두 번 표시됩니다.\n\nMiniCC 설정은 이미 복사되었습니다. AddOns 폴더에서 MiniCC 폴더를 삭제한 뒤 UI를 다시 불러오세요.",
 	["The old MiniCC addon is still running alongside MiniAuras. Delete the MiniCC folder from your AddOns folder, then reload."] = "이전 애드온 MiniCC가 MiniAuras와 함께 실행 중입니다. AddOns 폴더에서 MiniCC 폴더를 삭제한 뒤 UI를 다시 불러오세요.",
+	["Your old MiniCC settings were found, but MiniAuras was first set up without them. Import them now? This replaces your current MiniAuras settings and reloads the UI."] = "이전 MiniCC 설정을 찾았지만 MiniAuras는 처음에 그 설정 없이 구성되었습니다. 지금 가져올까요? 현재 MiniAuras 설정을 대체하고 UI를 다시 불러옵니다.",
+	["The MiniCC addon holding your old settings is installed but did not load. Enable it and 'Load out of date AddOns' on the AddOns list, then reload to import your settings."] = "이전 설정이 들어 있는 MiniCC 애드온이 설치되어 있지만 불러와지지 않았습니다. 애드온 목록에서 해당 애드온과 '오래된 애드온 불러오기'를 활성화한 뒤 UI를 다시 불러오면 설정을 가져올 수 있습니다.",
 
 	-- Language option
 	["Language override"] = "언어 변경",

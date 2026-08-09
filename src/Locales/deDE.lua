@@ -317,6 +317,8 @@ L:RegisterLocale("deDE", {
 	["MiniAuras - Addon Conflict"] = "MiniAuras - Addon-Konflikt",
 	["The old MiniCC addon is still installed and running alongside MiniAuras, so every icon is being drawn twice.\n\nYour MiniCC settings have already been copied across. Delete the MiniCC folder from your AddOns folder, then reload."] = "Das alte Addon MiniCC ist weiterhin installiert und läuft parallel zu MiniAuras, sodass jedes Symbol doppelt angezeigt wird.\n\nDeine MiniCC-Einstellungen wurden bereits übernommen. Lösche den Ordner MiniCC aus deinem AddOns-Ordner und lade die Benutzeroberfläche neu.",
 	["The old MiniCC addon is still running alongside MiniAuras. Delete the MiniCC folder from your AddOns folder, then reload."] = "Das alte Addon MiniCC läuft weiterhin parallel zu MiniAuras. Lösche den Ordner MiniCC aus deinem AddOns-Ordner und lade die Benutzeroberfläche neu.",
+	["Your old MiniCC settings were found, but MiniAuras was first set up without them. Import them now? This replaces your current MiniAuras settings and reloads the UI."] = "Deine alten MiniCC-Einstellungen wurden gefunden, aber MiniAuras wurde zuerst ohne sie eingerichtet. Jetzt importieren? Das ersetzt deine aktuellen MiniAuras-Einstellungen und lädt die Benutzeroberfläche neu.",
+	["The MiniCC addon holding your old settings is installed but did not load. Enable it and 'Load out of date AddOns' on the AddOns list, then reload to import your settings."] = "Das Addon MiniCC mit deinen alten Einstellungen ist installiert, wurde aber nicht geladen. Aktiviere es sowie 'Veraltete AddOns laden' in der AddOns-Liste und lade dann die Benutzeroberfläche neu, um deine Einstellungen zu importieren.",
 
 	-- Language option
 	["Language override"] = "Sprache überschreiben",

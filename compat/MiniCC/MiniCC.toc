@@ -2,7 +2,7 @@
 ## Title: MiniCC |cff808080(settings bridge for MiniAuras)|r
 ## Notes: Loads the old MiniCC settings file so MiniAuras can import it. Does nothing else.
 ## Author: Verz
-## Version: 5.0.0a-9
+## Version: 5.0.0a-10
 ## SavedVariables: MiniCCDB
 ## X-MiniAuras-Bridge: 1
 ## IconTexture: Interface\AddOns\MiniAuras\Icon.blp

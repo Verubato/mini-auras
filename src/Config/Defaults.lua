@@ -25,6 +25,9 @@ local dbDefaults = {
 	FadeWithParent = true,
 	MillisecondsThreshold = 5,
 	LocaleOverride = false,
+	-- TEMPORARY: true when first-time setup ran without MiniCCDB, so a legacy table appearing on
+	-- a later login can still be offered for import. Dies with the settings bridge.
+	MissedLegacyImport = false,
 	Modules = {
 		---@class CrowdControlModuleOptions
 		CCModule = {

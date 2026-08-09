@@ -84,7 +84,15 @@ function M:GetAndUpgradeDb()
 	local isFirstTimeSetup = MiniAurasDB == nil
 
 	if isFirstTimeSetup then
-		return mini:GetSavedVars(dbDefaults)
+		local vars = mini:GetSavedVars(dbDefaults)
+
+		-- Reaching first-time setup means AdoptLegacyDb found no MiniCCDB, and the adoption
+		-- above never runs again once MiniAurasDB exists. If the old table was merely not
+		-- loaded (bridge disabled, out of date or missing), it can still surface on a later
+		-- login; this flag is what lets LegacyAddon offer it for import then.
+		vars.MissedLegacyImport = true
+
+		return vars
 	end
 
 	local vars = mini:GetSavedVars()
