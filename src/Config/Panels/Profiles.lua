@@ -12,8 +12,9 @@ local NONE_LABEL = "(none)"
 local ROW_HEIGHT = 28
 local SPEC_COL_W = 160
 
--- The payload is deflated CBOR, then Base64.
-local PROFILE_PREFIX    = "!MiniAuras:2!"
+-- The payload is deflated CBOR, then Base64. Early 5.0 alphas handed out the same payload as
+-- "!MiniAuras:2!" (a number carried over from MiniCC), so a format change bumps to :3, not :2.
+local PROFILE_PREFIX    = "!MiniAuras:1!"
 -- Strings handed out under the old addon name. Same payload but not compressed;
 -- "!MiniCC!" is older still and carries the whole saved-vars table.
 local MINICC_PREFIX     = "!MiniCC:2!"
