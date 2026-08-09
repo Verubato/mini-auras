@@ -278,7 +278,6 @@ function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask)
 		-- their container; the icon layer renders at slot+1. The slot frame is a child of the
 		-- kick frame, so later per-addon level adjustments shift everything together and the
 		-- ordering holds.
-		local slot = container.Slots[1]
 		if slot and slot.Frame then
 			slot.Frame:SetFrameLevel(container.Frame:GetFrameLevel() + 6)
 		end
