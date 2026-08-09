@@ -198,6 +198,19 @@ local function ConfigureDisplay(state, entry, unit)
 	display:SetShown(not IsPreviewing(state))
 end
 
+---Stand-ins a preview actually draws: one per tracked spell for a spells group, the full set for
+---a filter group. The drag areas are sized from this so no invisible grab space extends past the
+---visible icons.
+---@param group CustomAuraGroup
+---@return number
+local function PreviewCount(group)
+	if not groups:TracksSpells(group) then
+		return groups.PreviewIcons
+	end
+
+	return math.max(1, math.min(#group.Spells, groups.PreviewIcons))
+end
+
 ---@param state CustomAuraGroupState
 ---@param entry CustomAuraDisplayEntry
 ---@return IconSlotContainer
@@ -221,7 +234,7 @@ local function EnsureTestContainer(state, entry, parent)
 	entry.Test.Frame:SetParent(parent)
 	entry.Test:SetIconSize(group.Icons.Size)
 	entry.Test:SetSpacing(group.Icons.Spacing)
-	entry.Test:SetCount(groups.PreviewIcons)
+	entry.Test:SetCount(PreviewCount(group))
 
 	return entry.Test
 end
@@ -275,7 +288,7 @@ local function UpdateAnchorSize(state)
 	local size = group.Icons.Size
 	-- Sized to the stand-ins, not the icon cap: the anchor is something to grab while placing
 	-- the group, and one forty icons wide would cover the screen.
-	local count = groups.PreviewIcons
+	local count = PreviewCount(group)
 	local span = math.max(MIN_ANCHOR_SIZE, count * size + (count - 1) * group.Icons.Spacing)
 
 	if group.Grow == "UP" or group.Grow == "DOWN" then
