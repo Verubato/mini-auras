@@ -1,18 +1,23 @@
 # Changelog
 
-## 5.0.0a-10
+## 5.0.0
 
-- New art for the config nav icons.
-- Countdown text now colours by remaining time, matching OmniCC's classic bands.
-- The alerts important and defensive bars can be positioned separately in split mode.
-- Test mode captions each container with its nav menu name and shows a fake pet frame for pet CC.
-- Added Berserker Shout, Rallying Cry, Death Wish and Ultimate Penitence to the tracked spell lists, and removed Dark Ascension.
-- Fixed custom aura groups having invisible draggable space around their preview icons.
-- Fixed profile resets not refreshing controls on tabbed config pages.
+Added support for Blizzard patch 12.1.
 
-## 5.0.0a-1
+What's removed:
 
-12.1 support for the new aura container system.
+- Friendly and enemy cooldown tracking (not possible in 12.1).
+- Text to speech announcements.
+- Masque icon skinning.
+
+What's added/changed:
+
+- New personal auras functionality (think mini weak auras).
+  - When aura added show icon and play sound.
+  - Precognition & Nullifying Shroud module have been merged into this.
+- Ally kick tracker for dungeons/M+.
+- Wider range of spells on raid frames, e.g. Darkness, Spirit Link, Dark Pact, etc.
+- UI overhaul so it looks sexier.
 
 ## 4.6.3
 
