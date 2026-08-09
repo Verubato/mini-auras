@@ -317,7 +317,7 @@ local dbDefaults = {
 						ReverseCooldown = true,
 						ColorByCategory = true,
 						MaxIcons = 5,
-						ShowMilliseconds = false,
+						ShowMilliseconds = true,
 						-- Pixel padding between this bar's icons.
 						Spacing = 2,
 					},
@@ -341,7 +341,7 @@ local dbDefaults = {
 						ReverseCooldown = true,
 						ColorByCategory = true,
 						MaxIcons = 5,
-						ShowMilliseconds = false,
+						ShowMilliseconds = true,
 						Spacing = 2,
 					},
 
@@ -367,7 +367,7 @@ local dbDefaults = {
 						ReverseCooldown = true,
 						ColorByCategory = true,
 						MaxIcons = 5,
-						ShowMilliseconds = false,
+						ShowMilliseconds = true,
 						Spacing = 2,
 					},
 
@@ -390,7 +390,7 @@ local dbDefaults = {
 						ReverseCooldown = true,
 						ColorByCategory = true,
 						MaxIcons = 5,
-						ShowMilliseconds = false,
+						ShowMilliseconds = true,
 						Spacing = 2,
 					},
 
