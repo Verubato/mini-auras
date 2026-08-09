@@ -14,8 +14,6 @@ Features:
 - Supports many frame addons such as ElvUI, Danders Frames, Ellesmere Frames, etc.
 - Available in 10 languages.
 
-More features will be added over time.
-
 Any feedback is more than welcome.
 
 [Discord](https://discord.gg/UruPTPHHxK)
