@@ -136,6 +136,18 @@ fw.describe("PortraitModule 12.1 - frame level stacking", function()
 		end
 	end)
 
+	fw.it("keeps the masked kick slot out of the render-layer flattening", function()
+		-- The portrait mask lives on the unit frame's subtree, and a flattened slot composites
+		-- only its own; the 12.0.7 client renders the masked icon invisible in that state (the
+		-- 5.0.0 blank-portraits bug). The container turns flattening on for every slot, so the
+		-- portrait display must explicitly turn it back off.
+		for _, unit in ipairs({ "player", "target", "focus", "pet" }) do
+			local _, container = displaysFor(unit)
+			assert(container.Slots[1].Frame._flattens == false,
+				unit .. ": the portrait slot must not flatten its render layers")
+		end
+	end)
+
 	fw.it("the highest priority category is the highest layer", function()
 		local displays = displaysFor("target")
 		local ccDisplay = displays[#displays]

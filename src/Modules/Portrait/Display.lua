@@ -235,6 +235,14 @@ function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask)
 	-- Only 1 slot, multiple layers; no border for portrait icons
 	local container = iconSlotContainer:New(unitFrame, 1, 0, 0, nil, true, "Portraits")
 
+	-- Portrait icons are masked, and the mask texture lives on the unit frame's subtree. A
+	-- flattened slot composites only its own subtree, which renders the masked icon invisible
+	-- on the 12.0.7 client. One icon per portrait, so the composite saved nothing here anyway.
+	local slot = container.Slots[1]
+	if slot and slot.Frame then
+		slot.Frame:SetFlattensRenderLayers(false)
+	end
+
 	-- Position the container over the portrait with inset
 	container.Frame:SetPoint("TOPLEFT", portrait, "TOPLEFT", 2, -2)
 	container.Frame:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", -2, 2)
