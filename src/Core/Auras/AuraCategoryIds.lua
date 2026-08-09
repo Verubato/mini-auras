@@ -1113,6 +1113,10 @@ addon.Core.AuraCategoryIds = {
 		[210256] = true, -- Blessing of Sanctuary
 		[31821] = true, -- Aura Mastery
 		[390260] = true, -- Commander of the Dead
+		[384100] = true, -- Berserker Shout
+		[199261] = true, -- Death Wish
+		[97463] = true, -- Rallying Cry
+		[421453] = true, -- Ultimate Penitence
 	},
 
 	-- Spell id -> the class that owns it, for grouping in the options UI only. Never used
@@ -1220,12 +1224,12 @@ addon.Core.AuraCategoryIds = {
 		-- Priest
 		[200183] = "PRIEST", -- Apotheosis
 		[10060] = "PRIEST", -- Power Infusion
-		[391109] = "PRIEST", -- Dark Ascension
 		[19236] = "PRIEST", -- Desperate Prayer
 		[47585] = "PRIEST", -- Dispersion
 		[64843] = "PRIEST", -- Divine Hymn
 		[47788] = "PRIEST", -- Guardian Spirit
 		[33206] = "PRIEST", -- Pain Suppression
+		[421453] = "PRIEST", -- Ultimate Penitence
 		[194249] = "PRIEST", -- Voidform
 		-- Rogue
 		[1966] = "ROGUE", -- Feint
@@ -1256,16 +1260,19 @@ addon.Core.AuraCategoryIds = {
 		[104773] = "WARLOCK", -- Unending Resolve
 		-- Warrior
 		[107574] = "WARRIOR", -- Avatar
+		[384100] = "WARRIOR", -- Berserker Shout
+		[199261] = "WARRIOR", -- Death Wish
 		[118038] = "WARRIOR", -- Die by the Sword
 		[184364] = "WARRIOR", -- Enraged Regeneration
 		[147833] = "WARRIOR", -- Intervene
-		[389722] = "WARRIOR", -- Recklessness
+		[97463] = "WARRIOR", -- Rallying Cry
+		[1719] = "WARRIOR", -- Recklessness
 		[871] = "WARRIOR", -- Shield Wall
 		[23920] = "WARRIOR", -- Spell Reflection
 		-- General
 		[377362] = "GENERAL", -- Precognition
 	},
-	-- Important: specials + offensive cooldowns (45 ids)
+	-- Important: specials + offensive cooldowns (44 ids)
 	Important = {
 		[13750] = true, -- Adrenaline Rush
 		[410358] = true, -- Anti-Magic Shell (Spellwarding)
@@ -1283,7 +1290,6 @@ addon.Core.AuraCategoryIds = {
 		[1044] = true, -- Blessing of Freedom
 		[383410] = true, -- Celestial Alignment
 		[190319] = true, -- Combustion
-		[391109] = true, -- Dark Ascension
 		[360194] = true, -- Deathmark
 		[498] = true, -- Divine Protection
 		[403876] = true, -- Divine Protection
@@ -1302,7 +1308,7 @@ addon.Core.AuraCategoryIds = {
 		[353319] = true, -- Peaceweaver
 		[51271] = true, -- Pillar of Frost
 		[377362] = true, -- Precognition
-		[389722] = true, -- Recklessness
+		[1719] = true, -- Recklessness
 		[121471] = true, -- Shadow Blades
 		[185422] = true, -- Shadow Dance
 		[23920] = true, -- Spell Reflection

@@ -71,7 +71,7 @@ local importantNames = {
 	["Avenging Wrath"] = true, ["Avenging Crusader"] = true, ["Combustion"] = true,
 	["Icy Veins"] = true, ["Ice Form"] = true, ["Arcane Surge"] = true,
 	["Metamorphosis"] = true, ["Void Metamorphosis"] = true, ["Recklessness"] = true, ["Avatar"] = true,
-	["Voidform"] = true, ["Dark Ascension"] = true, ["Celestial Alignment"] = true,
+	["Voidform"] = true, ["Celestial Alignment"] = true,
 	["Incarnation: Chosen of Elune"] = true, ["Incarnation: Avatar of Ashamane"] = true,
 	["Incarnation: Guardian of Ursoc"] = true, ["Incarnation: Tree of Life"] = true,
 	["Berserk"] = true, ["Ascendance"] = true, 
