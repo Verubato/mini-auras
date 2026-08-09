@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.0.0a-10
+
+- New art for the config nav icons.
+- Countdown text now colours by remaining time, matching OmniCC's classic bands.
+- The alerts important and defensive bars can be positioned separately in split mode.
+- Test mode captions each container with its nav menu name and shows a fake pet frame for pet CC.
+- Added Berserker Shout, Rallying Cry, Death Wish and Ultimate Penitence to the tracked spell lists, and removed Dark Ascension.
+- Fixed custom aura groups having invisible draggable space around their preview icons.
+- Fixed profile resets not refreshing controls on tabbed config pages.
+
 ## 5.0.0a-1
 
 12.1 support for the new aura container system.
