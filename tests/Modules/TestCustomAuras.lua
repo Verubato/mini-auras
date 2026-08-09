@@ -1230,6 +1230,42 @@ fw.describe("CustomAuras - cast recorder", function()
 	end)
 end)
 
+fw.describe("CustomAuras - profile switching", function()
+	fw.it("repairs groups a migration wrote with only the fields it cared about", function()
+		ClearGroups()
+
+		local profileManager = addon.Core.ProfileManager
+
+		addon.Refresh = function()
+			module:Refresh()
+		end
+		profileManager:Init()
+		profileManager:CreateProfile("Migrated", nil)
+
+		-- The shape the precog migration leaves in a stored profile: marked seeded, so
+		-- SeedDefaults stands down, with groups holding only the fields it carried over.
+		local snapshot = db.Profiles.Migrated.Modules.CustomAurasModule
+		snapshot.SeededDefaults = true
+		snapshot.NextId = 2
+		snapshot.Groups = { {
+			Id = "g1",
+			Name = "Old",
+			Enabled = true,
+			Spells = { ICE_BLOCK },
+			Position = { X = 0, Y = 70 },
+			Icons = { Size = 70 },
+		} }
+
+		profileManager:SwitchProfile("Migrated")
+
+		local group = options.Groups[1]
+
+		assert(group and group.Filters and group.Candidates, "the switch filled in the missing fields")
+
+		profileManager:SwitchProfile("Default")
+	end)
+end)
+
 fw.describe("CustomAuras - module gating", function()
 	fw.it("tears everything down once the last group is gone", function()
 		ClearGroups()

@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
 local eventGate = addon.Core.EventGate
+local profileManager = addon.Core.ProfileManager
 local groups = addon.Modules.CustomAuras.Groups
 local display = addon.Modules.CustomAuras.Display
 
@@ -168,6 +169,14 @@ function M:Init()
 
 	display:Init()
 	M:NormaliseGroups()
+
+	-- A stored profile can hold groups a migration wrote with only the fields it cared about,
+	-- counting on Normalise for the rest. Switching to one has to fill them in before the
+	-- display reads them.
+	profileManager:RegisterOnProfileChanged("CustomAuras", function()
+		M:NormaliseGroups()
+	end)
+
 	CreateEvents()
 	M:Refresh()
 end
