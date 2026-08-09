@@ -11,6 +11,7 @@ local enabledColumnWidth
 local config = addon.Config
 local helpers = addon.Config.PanelHelpers
 local sounds = addon.Core.Sounds
+local ttsPacks = addon.Core.TtsPacks
 -- TEMPORARY (12.1): CENTER growth needs a readable row width to center on the anchor, which
 -- the 12.1 chained displays don't have, so only LEFT/RIGHT are offered there.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
@@ -362,14 +363,6 @@ local function BuildTtsTab(parent, options)
 
 	ttsIntro:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
 
-	local importantTtsNote = mini:TextBlock({
-		Parent = parent,
-		Lines = {
-			L["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."],
-		},
-	})
-	importantTtsNote:SetPoint("TOPLEFT", ttsIntro, "BOTTOMLEFT", 0, -verticalSpacing)
-
 	local function EnsureTtsOptions()
 		if not options.TTS then
 			options.TTS = { Volume = 100, SpeechRate = 0 }
@@ -378,6 +371,102 @@ local function BuildTtsTab(parent, options)
 			options.TTS.SpeechRate = 0
 		end
 	end
+
+	---Builds one category's announce checkbox; `preview` plays when it is switched on.
+	---@param key string "Important" or "Defensive"
+	---@param labelText string
+	---@param tooltip string
+	---@param preview function
+	local function BuildAnnounceCheckbox(key, labelText, tooltip, preview)
+		return mini:Checkbox({
+			Parent = parent,
+			LabelText = labelText,
+			Tooltip = tooltip,
+			GetValue = function()
+				return options.TTS and options.TTS[key] and options.TTS[key].Enabled or false
+			end,
+			SetValue = function(value)
+				EnsureTtsOptions()
+				if not options.TTS[key] then
+					options.TTS[key] = { Enabled = false }
+				end
+				options.TTS[key].Enabled = value
+
+				if value then
+					preview()
+				end
+
+				config:Apply()
+			end,
+		})
+	end
+
+	if USE_AURA_CONTAINERS then
+		local packNote = mini:TextBlock({
+			Parent = parent,
+			Lines = {
+				L["On this game version, text-to-speech uses pre-recorded voice packs."],
+			},
+		})
+		packNote:SetPoint("TOPLEFT", ttsIntro, "BOTTOMLEFT", 0, -verticalSpacing)
+
+		local packDropdown = mini:Dropdown({
+			Parent = parent,
+			Items = ttsPacks:Names(),
+			GetValue = function()
+				return ttsPacks:Resolve(options.TTS and options.TTS.VoicePack)
+			end,
+			SetValue = function(value)
+				EnsureTtsOptions()
+				options.TTS.VoicePack = value
+				PlaySoundFile(ttsPacks:Path(value) .. "PreviewVoice.ogg", "Master")
+				config:Apply()
+			end,
+			GetText = function(value)
+				return value
+			end,
+		})
+		packDropdown:SetPoint("TOPLEFT", packNote, "BOTTOMLEFT", 0, -verticalSpacing)
+		packDropdown:SetWidth(400)
+
+		---Plays one of the selected pack's preview clips.
+		---@param file string
+		local function PreviewPackClip(file)
+			local pack = ttsPacks:Resolve(options.TTS and options.TTS.VoicePack)
+			PlaySoundFile(ttsPacks:Path(pack) .. file, "Master")
+		end
+
+		local packImportantChk = BuildAnnounceCheckbox(
+			"Important",
+			L["Important"],
+			L["Announce important spell names using text-to-speech when they are cast."],
+			function()
+				PreviewPackClip("PreviewImportant.ogg")
+			end
+		)
+		packImportantChk:SetPoint("TOPLEFT", packDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
+
+		local packDefensiveChk = BuildAnnounceCheckbox(
+			"Defensive",
+			L["Defensive"],
+			L["Announce defensive spell names using text-to-speech when they are cast."],
+			function()
+				PreviewPackClip("PreviewDefensive.ogg")
+			end
+		)
+		packDefensiveChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
+		packDefensiveChk:SetPoint("TOP", packImportantChk, "TOP", 0, 0)
+
+		return
+	end
+
+	local importantTtsNote = mini:TextBlock({
+		Parent = parent,
+		Lines = {
+			L["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."],
+		},
+	})
+	importantTtsNote:SetPoint("TOPLEFT", ttsIntro, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	-- Build voice list from C_VoiceChat.GetTtsVoices()
 	local voiceItems = {}
@@ -425,58 +514,35 @@ local function BuildTtsTab(parent, options)
 	voiceDropdown:SetPoint("TOPLEFT", importantTtsNote, "BOTTOMLEFT", 0, -verticalSpacing)
 	voiceDropdown:SetWidth(400)
 
-	local announceImportantSpellsChk = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Important"],
-		Tooltip = L["Announce important spell names using text-to-speech when they are cast."],
-		GetValue = function()
-			return options.TTS and options.TTS.Important and options.TTS.Important.Enabled or false
-		end,
-		SetValue = function(value)
-			EnsureTtsOptions()
-			if not options.TTS.Important then
-				options.TTS.Important = { Enabled = false }
-			end
-			options.TTS.Important.Enabled = value
+	---Speaks one word in the configured voice, as a preview of the announcement.
+	---@param text string
+	local function SpeakPreview(text)
+		local voiceId = wowEx:ResolveVoiceID(options.TTS and options.TTS.VoiceID)
+		local volume = options.TTS and options.TTS.Volume or 100
+		local speechRate = options.TTS and options.TTS.SpeechRate or 0
 
-			if value then
-				local voiceId = wowEx:ResolveVoiceID(options.TTS and options.TTS.VoiceID)
-				local volume = options.TTS.Volume or 100
-				local speechRate = options.TTS.SpeechRate or 0
+		C_VoiceChat.SpeakText(voiceId, text, speechRate, volume, true)
+	end
 
-				C_VoiceChat.SpeakText(voiceId, L["Important"], speechRate, volume, true)
-			end
-			config:Apply()
-		end,
-	})
+	local announceImportantSpellsChk = BuildAnnounceCheckbox(
+		"Important",
+		L["Important"],
+		L["Announce important spell names using text-to-speech when they are cast."],
+		function()
+			SpeakPreview(L["Important"])
+		end
+	)
 
 	announceImportantSpellsChk:SetPoint("TOPLEFT", voiceDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	local announceDefensiveSpellsChk = mini:Checkbox({
-		Parent = parent,
-		LabelText = L["Defensive"],
-		Tooltip = L["Announce defensive spell names using text-to-speech when they are cast."],
-		GetValue = function()
-			return options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
-		end,
-		SetValue = function(value)
-			EnsureTtsOptions()
-			if not options.TTS.Defensive then
-				options.TTS.Defensive = { Enabled = false }
-			end
-			options.TTS.Defensive.Enabled = value
-
-			if value then
-				local voiceId = wowEx:ResolveVoiceID(options.TTS and options.TTS.VoiceID)
-				local volume = options.TTS.Volume or 100
-				local speechRate = options.TTS.SpeechRate or 0
-
-				C_VoiceChat.SpeakText(voiceId, L["Defensive"], speechRate, volume, true)
-			end
-
-			config:Apply()
-		end,
-	})
+	local announceDefensiveSpellsChk = BuildAnnounceCheckbox(
+		"Defensive",
+		L["Defensive"],
+		L["Announce defensive spell names using text-to-speech when they are cast."],
+		function()
+			SpeakPreview(L["Defensive"])
+		end
+	)
 
 	announceDefensiveSpellsChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
 	announceDefensiveSpellsChk:SetPoint("TOP", announceImportantSpellsChk, "TOP", 0, 0)
@@ -562,16 +628,11 @@ function M:Build(panel, options)
 	tabContainer:SetPoint("TOPRIGHT", panel,             "TOPRIGHT",    0, 0)
 	tabContainer:SetHeight(subPanelHeight + 34)
 
-	-- TTS is dead on 12.1: announcing a spell name requires reading which aura appeared, which
-	-- is secret there (unlike sounds, which the engine can play itself via AddAuraSound), so
-	-- its tab is hidden. TEMPORARY: remove the gate with the legacy path once 12.1 is live.
 	local subTabs = {
 		{ Key = "settings", Title = L["Settings"] },
 		{ Key = "sounds", Title = L["Sound Alerts"] },
+		{ Key = "tts", Title = L["TTS"] },
 	}
-	if not wowEx:UseAuraContainers() then
-		subTabs[#subTabs + 1] = { Key = "tts", Title = L["TTS"] }
-	end
 
 	local tabCtrl = mini:CreateTabs({
 		Parent = tabContainer,

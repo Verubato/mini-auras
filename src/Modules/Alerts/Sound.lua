@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
 local auraSounds = addon.Core.AuraSounds
+local ttsPacks = addon.Core.TtsPacks
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 
@@ -14,8 +15,9 @@ addon.Modules.Alerts.Sound = M
 
 -- Sounds DO work on 12.1, just inverted: the addon can't notice "a new aura appeared", but
 -- C_UnitAuras.AddAuraSound lets the ENGINE play a sound when a named spell lands on a registered
--- unit. See alertSoundsByToken. TTS has no such escape hatch (it needs the spell NAME at the
--- moment it appears) and stays disabled.
+-- unit. See alertSoundsByToken. TTS rides the same mechanism: instead of speaking a name the
+-- addon can no longer read, it ships one baked clip per spell name (Core/Auras/AuraTtsSounds)
+-- and registers each spell id with its own clip, so the engine says the name for us.
 -- TEMPORARY dual path: remove the transition-driven branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
@@ -45,7 +47,8 @@ local cachedTTSImportantEnabled
 -- DH/Mage/Evoker (any spec) and Shadow Priest can purge or steal enemy magic buffs, so enemy
 -- nameplates surface a lot of non-important purgeable buffs. The important alpha hides those visually,
 -- but TTS can't be gated on the secret IsSpellImportant value (branching would taint), so it would
--- announce the garbage. Important TTS is suppressed entirely for these specs.
+-- announce the garbage. Important TTS is suppressed entirely for these specs. Legacy path only:
+-- the 12.1 path registers clips for the curated Important list, so it never announces the garbage.
 local IMPORTANT_TTS_SUPPRESSED_CLASSES = {
 	DEMONHUNTER = true,
 	MAGE = true,
@@ -57,7 +60,8 @@ local SHADOW_PRIEST_SPEC_ID = 258
 -- 12.1 path: engine-side alert sounds via Core/AuraSounds (the aura transitions the legacy
 -- sound reacted to are secret there, but the engine can play sounds on them for us - same
 -- pattern as HealerCrowdControlModule). Registrations are per (enemy nameplate token, spellId),
--- fed from the generated Core/AuraCategoryIds Important/Defensive lists.
+-- fed from the generated Core/AuraCategoryIds Important/Defensive lists, plus the baked TTS
+-- clips when those are on.
 -- token -> pooled list of sound handles for that token. Registrations are kept warm across
 -- plate despawns: a token's registration set is identical no matter which enemy holds it, so
 -- tearing down and re-adding ~120 sounds per plate churn would be pure API traffic. They are
@@ -134,7 +138,8 @@ end
 ---@param spellName string?
 ---@param spellType string "important" or "defensive"
 function M:AnnounceTTS(spellName, spellType)
-	-- 12.1: TTS is disabled - it fires on aura transitions, which are unreadable there.
+	-- 12.1: spoken at runtime from the spell name, which is unreadable there; the baked clips
+	-- registered in RegisterToken replace this.
 	if USE_AURA_CONTAINERS then
 		return
 	end
@@ -198,9 +203,12 @@ function M:RegisterToken(unitToken)
 		return
 	end
 	local sound = db.Modules.AlertsModule.Sound
+	local tts = db.Modules.AlertsModule.TTS
 	local importantEnabled = sound.Important and sound.Important.Enabled
 	local defensiveEnabled = sound.Defensive and sound.Defensive.Enabled
-	if not importantEnabled and not defensiveEnabled then
+	local importantTts = tts and tts.Important and tts.Important.Enabled
+	local defensiveTts = tts and tts.Defensive and tts.Defensive.Enabled
+	if not importantEnabled and not defensiveEnabled and not importantTts and not defensiveTts then
 		return
 	end
 
@@ -211,6 +219,18 @@ function M:RegisterToken(unitToken)
 	end
 	if defensiveEnabled then
 		ids = RegisterAlertSoundList(ids, unitToken, addon.Core.AuraCategoryIds.Defensive, sound.Defensive, "AlertToastWarm.ogg")
+	end
+	-- The silent list is deliberately not applied here: a repeated ding is noise, a spoken name
+	-- still tells you what landed, and the legacy path announced those spells too.
+	if importantTts or defensiveTts then
+		local packPath = ttsPacks:Path(ttsPacks:Resolve(tts and tts.VoicePack))
+
+		if importantTts then
+			ids = auraSounds:RegisterMappedSet(ids, unitToken, addon.Core.AuraTtsSounds.Important, packPath, "Master")
+		end
+		if defensiveTts then
+			ids = auraSounds:RegisterMappedSet(ids, unitToken, addon.Core.AuraTtsSounds.Defensive, packPath, "Master")
+		end
 	end
 
 	alertSoundsByToken[unitToken] = ids
@@ -243,11 +263,19 @@ function M:Refresh(activeTokens)
 		return
 	end
 	local sound = db.Modules.AlertsModule.Sound
+	local tts = db.Modules.AlertsModule.TTS
 	local importantEnabled = (sound.Important and sound.Important.Enabled) or false
 	local defensiveEnabled = (sound.Defensive and sound.Defensive.Enabled) or false
-	local active = (importantEnabled or defensiveEnabled)
+	local importantTts = (tts and tts.Important and tts.Important.Enabled) or false
+	local defensiveTts = (tts and tts.Defensive and tts.Defensive.Enabled) or false
+	local active = (importantEnabled or defensiveEnabled or importantTts or defensiveTts)
 		and moduleUtil:IsModuleEnabled(moduleName.Alerts)
 		and not paused
+	-- Only part of the signature while something plays the clips; the pack is irrelevant otherwise.
+	-- The path goes in alongside the name because an addon registering a pack later changes where
+	-- the same saved name reads its clips from.
+	local voicePack = (importantTts or defensiveTts) and ttsPacks:Resolve(tts and tts.VoicePack) or false
+	local voicePackPath = voicePack and ttsPacks:Path(voicePack) or false
 	local signature = auraSounds:Signature(
 		active,
 		importantEnabled,
@@ -255,7 +283,11 @@ function M:Refresh(activeTokens)
 		sound.Important and sound.Important.Channel,
 		defensiveEnabled,
 		sound.Defensive and sound.Defensive.File,
-		sound.Defensive and sound.Defensive.Channel
+		sound.Defensive and sound.Defensive.Channel,
+		importantTts,
+		defensiveTts,
+		voicePack,
+		voicePackPath
 	)
 	if signature == alertSoundSettingsSignature then
 		return

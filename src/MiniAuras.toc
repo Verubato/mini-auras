@@ -50,6 +50,7 @@ Core\Display\IconSlotContainer.lua
 Core\Display\BarTextures.lua
 
 Core\Auras\AuraCategoryIds.lua
+Core\Auras\AuraTtsSounds.lua
 Core\Auras\AuraFilters.lua
 Core\Auras\SpellNameIndex.lua
 Core\Auras\SpellSearch.lua
@@ -86,6 +87,7 @@ Core\TrinketsTracker.lua
 Core\ProfileManager.lua
 Core\Sounds.lua
 Core\AuraSounds.lua
+Core\TtsPacks.lua
 Core\TestSpells.lua
 Core\TestModeManager.lua
 Core\Cooldowns\PvPTalentSync.lua

@@ -154,6 +154,7 @@ L:RegisterLocale("itIT", {
 	["Announce spell names using text-to-speech when they are cast."] = "Annuncia i nomi degli incantesimi usando la sintesi vocale quando vengono lanciati.",
 	["Defensive Spells"] = "Incantesimi difensivi",
 	["Includes defensives in the alerts."] = "Include abilità difensive negli avvisi.",
+	["On this game version, text-to-speech uses pre-recorded voice packs."] = "In questa versione del gioco, la sintesi vocale usa pacchetti vocali preregistrati.",
 	["Play a sound when a defensive spell is pressed."] = "Riproduci un suono quando viene lanciato un incantesimo difensivo.",
 	["Show alert icons in the alerts region."] = "Mostra le icone di avviso nell'area degli avvisi.",
 	["Show CC icons when healer is CC'd."] = "Mostra le icone CC quando il guaritore è sotto controllo.",

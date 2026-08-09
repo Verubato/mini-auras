@@ -154,6 +154,7 @@ L:RegisterLocale("ruRU", {
 	["Announce spell names using text-to-speech when they are cast."] = "Объявлять названия заклинаний с помощью синтеза речи при их применении.",
 	["Defensive Spells"] = "Защитные заклинания",
 	["Includes defensives in the alerts."] = "Включает защитные способности в оповещения.",
+	["On this game version, text-to-speech uses pre-recorded voice packs."] = "В этой версии игры синтез речи использует заранее записанные голосовые пакеты.",
 	["Play a sound when a defensive spell is pressed."] = "Воспроизводить звук при использовании защитного заклинания.",
 	["Show alert icons in the alerts region."] = "Показывать значки оповещений в области оповещений.",
 	["Show CC icons when healer is CC'd."] = "Показывать иконки контроля, когда целитель под контролем.",

@@ -53,6 +53,35 @@ function M:RegisterSet(ids, unitToken, spellIds, soundFile, channel, excludedSpe
 	return ids
 end
 
+---Registers an Added-trigger sound per spell id with that spell's own file, appending the
+---handles to `ids`; the per-spell variant of RegisterSet for baked TTS clips.
+---@param ids number[]?
+---@param unitToken string
+---@param filesBySpellId table<number, string> spell id -> file name
+---@param basePath string prefix joined onto each file name
+---@param channel string
+---@return number[] ids
+function M:RegisterMappedSet(ids, unitToken, filesBySpellId, basePath, channel)
+	ids = ids or table.remove(idListPool) or {}
+
+	local info = infoScratch
+	info.unitToken = unitToken
+	info.outputChannel = channel
+
+	for spellId, file in pairs(filesBySpellId) do
+		info.spellID = spellId
+		info.soundFileName = basePath .. file
+
+		local handle = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
+
+		if handle then
+			ids[#ids + 1] = handle
+		end
+	end
+
+	return ids
+end
+
 ---Removes every registration in the list and hands the now-empty list back to the pool.
 ---Callers must drop their reference; the next RegisterSet may reuse the table.
 ---@param ids number[]?

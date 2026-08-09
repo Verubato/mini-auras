@@ -154,6 +154,7 @@ L:RegisterLocale("zhCN", {
 	["Announce spell names using text-to-speech when they are cast."] = "施放法术时使用语音合成播报法术名称。",
 	["Defensive Spells"] = "防御法术",
 	["Includes defensives in the alerts."] = "在警报中包括防御技能。",
+	["On this game version, text-to-speech uses pre-recorded voice packs."] = "在此游戏版本中，语音合成使用预录制的语音包。",
 	["Play a sound when a defensive spell is pressed."] = "使用防御法术时播放声音。",
 	["Show alert icons in the alerts region."] = "在警报区域显示警报图标。",
 	["Show CC icons when healer is CC'd."] = "治疗者被控制时显示CC图标。",

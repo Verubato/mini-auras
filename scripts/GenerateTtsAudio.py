@@ -1,0 +1,209 @@
+"""Generates the baked TTS voice packs for the Alerts module's 12.1 path.
+
+Reads the Important/Defensive spell lists from src/Core/Auras/AuraCategoryIds.lua,
+renders one ElevenLabs clip per unique spoken name into src/Sounds/TTS/<pack>/ for
+every voice in VOICES, and emits src/Core/Auras/AuraTtsSounds.lua mapping each
+spell id to its clip file plus the list of available packs.
+
+Run from the repo root with the ELEVENLABS_API_KEY environment variable set:
+    python scripts/GenerateTtsAudio.py [--force]
+
+Existing clips are skipped unless --force is given, so re-runs after a spell-list
+change or a new VOICES entry only render what is missing. Each pack also gets
+PreviewImportant/PreviewDefensive clips (played when a TTS checkbox is enabled)
+and a PreviewVoice clip speaking the pack name (played on voice selection).
+"""
+
+import json
+import os
+import pathlib
+import re
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+
+# Pack name -> ElevenLabs voice id. The pack name is the folder, the dropdown label,
+# and the saved VoicePack value, so treat renames as breaking.
+VOICES = {
+    "David": "FF7KdobWPaiR0vkcALHF",
+    "Grampa Werthers": "MKlLqCItoCkvdhrxgtLv",
+    "Elise": "EST9Ui6982FZPSi7gCHi",
+    "Emma": "56bWURjYFHyYyVf490Dp",
+    "Theo Silk": "UmQN7jS1Ee8B1czsUtQh",
+}
+MODEL_ID = "eleven_multilingual_v2"
+# ElevenLabs cannot emit Vorbis, so clips arrive as MP3 and ffmpeg converts them to the
+# OGG files the addon ships (and the format the pack API asks external packs for).
+OUTPUT_FORMAT = "mp3_44100_128"
+# Voices come back at very different levels (a meditation voice sits ~6 dB under a trailer
+# voice), so every clip is normalised to this mean; a limiter keeps peaks under the ceiling.
+TARGET_MEAN_DB = -19.0
+PEAK_CEILING_DB = -0.5
+# On top of normalisation: soft, low-pitched voices read as quieter than their measured
+# level, so they get an extra perceptual boost (the limiter absorbs what would clip).
+PACK_GAIN_DB = {
+    "Theo Silk": 7.0,
+}
+VOICE_SETTINGS = {"stability": 0.5, "similarity_boost": 0.75}
+
+CATEGORIES = ("Important", "Defensive")
+PREVIEWS = {"PreviewImportant": "Important", "PreviewDefensive": "Defensive"}
+# Spoken by PreviewVoice.mp3 when the pack is picked in the dropdown; packs without an
+# entry speak their own name.
+PREVIEW_VOICE_TEXTS = {
+    "David": "In a world, full of gnomes, one man must punt them all.",
+    "Grampa Werthers": "Blasted kids and their video games.",
+    "Emma": "He was going off like a frog in a sock!",
+    "Elise": "Does anyone else immediately re-open Instagram after closing it?",
+    "Theo Silk": "If you wish to create an apple pie from scratch, you must first invent the universe.",
+}
+
+REPO = pathlib.Path(__file__).resolve().parent.parent
+IDS_LUA = REPO / "src" / "Core" / "Auras" / "AuraCategoryIds.lua"
+OUT_LUA = REPO / "src" / "Core" / "Auras" / "AuraTtsSounds.lua"
+OUT_DIR = REPO / "src" / "Sounds" / "TTS"
+
+
+def parse_categories():
+    """Returns {category: {spell_id: name}} for the categories we voice."""
+    src = IDS_LUA.read_text(encoding="utf-8")
+    sections = re.split(r"^\t(\w+) = \{", src, flags=re.M)
+    result = {}
+    for i in range(1, len(sections), 2):
+        category, body = sections[i], sections[i + 1]
+        if category not in CATEGORIES:
+            continue
+        result[category] = {
+            int(spell_id): name
+            for spell_id, name in re.findall(r"\[(\d+)\] = true, -- (.+)", body)
+        }
+    missing = [c for c in CATEGORIES if c not in result]
+    if missing:
+        sys.exit(f"categories not found in {IDS_LUA.name}: {missing}")
+    return result
+
+
+def spoken_text(name):
+    """The list disambiguates duplicate names with a parenthetical; it is not spoken."""
+    return re.sub(r"\s*\(.*\)$", "", name).strip()
+
+
+def slug(text):
+    """PascalCase file stem: every word capitalised, everything else dropped."""
+    return "".join(w[0].upper() + w[1:] for w in re.findall(r"[A-Za-z0-9]+", text))
+
+
+def render(api_key, voice_id, text, path, boost_db):
+    url = (
+        f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+        f"?output_format={OUTPUT_FORMAT}"
+    )
+    body = json.dumps(
+        {"text": text, "model_id": MODEL_ID, "voice_settings": VOICE_SETTINGS}
+    ).encode()
+    request = urllib.request.Request(
+        url,
+        data=body,
+        headers={"xi-api-key": api_key, "Content-Type": "application/json"},
+    )
+    for attempt in range(5):
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                temp = path.parent / (path.stem + ".tmp.mp3")
+                temp.write_bytes(response.read())
+            convert_to_ogg(temp, path, boost_db)
+            return
+        except urllib.error.HTTPError as error:
+            if error.code in (429, 500, 502, 503) and attempt < 4:
+                time.sleep(2**attempt)
+                continue
+            sys.exit(f"{text}: HTTP {error.code}: {error.read().decode(errors='replace')}")
+
+
+def measure_gain(source):
+    """dB gain that brings the clip's mean volume to TARGET_MEAN_DB."""
+    out = subprocess.run(
+        ["ffmpeg", "-i", str(source), "-af", "volumedetect", "-f", "null", "-"],
+        capture_output=True, text=True,
+    ).stderr
+    mean = float(re.search(r"mean_volume: (-?[\d.]+) dB", out).group(1))
+    return TARGET_MEAN_DB - mean
+
+
+def convert_to_ogg(source, path, boost_db=0.0):
+    gain = measure_gain(source) + boost_db
+    limit = 10 ** (PEAK_CEILING_DB / 20)
+    subprocess.run(
+        ["ffmpeg", "-y", "-loglevel", "error", "-i", str(source),
+         "-af", f"volume={gain:.2f}dB,alimiter=limit={limit:.3f}:level=false",
+         "-c:a", "libvorbis", "-q:a", "4", str(path)],
+        check=True,
+    )
+    source.unlink()
+
+
+def write_lua(categories):
+    lines = [
+        "---@type string, Addon",
+        "local _, addon = ...",
+        "",
+        "-- GENERATED DATA - do not hand-edit. One baked TTS clip per Important/Defensive alert",
+        "-- spell name, rendered once per voice pack. On 12.1 the addon cannot read which aura",
+        "-- appeared, so these clips are registered per spell id via C_UnitAuras.AddAuraSound and",
+        "-- the engine announces the name itself. Values are file names under Sounds/TTS/<pack>/;",
+        "-- Packs lists the shipped voice packs. Regenerate with scripts/GenerateTtsAudio.py after",
+        "-- the AuraCategoryIds lists or the voice list change.",
+        "",
+        "addon.Core.AuraTtsSounds = {",
+        "\tPacks = { " + ", ".join(f'"{name}"' for name in sorted(VOICES)) + " },",
+    ]
+    for category in CATEGORIES:
+        ids = categories[category]
+        lines.append(f"\t{category} = {{")
+        for spell_id in sorted(ids, key=lambda i: (spoken_text(ids[i]), i)):
+            file = slug(spoken_text(ids[spell_id])) + ".ogg"
+            lines.append(f'\t\t[{spell_id}] = "{file}", -- {ids[spell_id]}')
+        lines.append("\t},")
+    lines.append("}")
+    lines.append("")
+    OUT_LUA.write_text("\n".join(lines), encoding="utf-8", newline="\n")
+
+
+def main():
+    api_key = os.environ.get("ELEVENLABS_API_KEY")
+    if not api_key:
+        sys.exit("set ELEVENLABS_API_KEY")
+    force = "--force" in sys.argv
+
+    categories = parse_categories()
+
+    texts = {}
+    for ids in categories.values():
+        for name in ids.values():
+            text = spoken_text(name)
+            texts[slug(text)] = text
+    for file_stem, text in PREVIEWS.items():
+        texts[file_stem] = text
+
+    rendered, reused = 0, 0
+    for pack, voice_id in VOICES.items():
+        pack_dir = OUT_DIR / pack
+        pack_dir.mkdir(parents=True, exist_ok=True)
+        pack_texts = dict(texts, PreviewVoice=PREVIEW_VOICE_TEXTS.get(pack, pack))
+        for file_stem in sorted(pack_texts):
+            path = pack_dir / f"{file_stem}.ogg"
+            if path.exists() and not force:
+                reused += 1
+                continue
+            render(api_key, voice_id, pack_texts[file_stem], path, PACK_GAIN_DB.get(pack, 0.0))
+            rendered += 1
+            print(f"rendered {pack}/{path.name}")
+
+    write_lua(categories)
+    print(f"{rendered} clip(s) rendered, {reused} reused; wrote {OUT_LUA.name}")
+
+
+if __name__ == "__main__":
+    main()

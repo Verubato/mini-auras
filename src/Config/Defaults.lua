@@ -254,11 +254,13 @@ local dbDefaults = {
 				},
 			},
 
-			-- TEMPORARY: TTS reads the aura's spell name, which is secret on 12.1; the whole
-			-- subtree dies with the 12.0 path.
+			-- TEMPORARY: VoiceID/Volume/SpeechRate steer the runtime voice, which needs the
+			-- aura's spell name, and die with the 12.0 path. The Enabled flags and VoicePack
+			-- stay: on 12.1 they turn the baked TTS clips on and pick which pack plays.
 			TTS = {
 				Volume = 100,
 				VoiceID = 0,
+				VoicePack = "David",
 				SpeechRate = 0,
 				-- Important-spell TTS (opt-in, like the defensive TTS).
 				Important = {
