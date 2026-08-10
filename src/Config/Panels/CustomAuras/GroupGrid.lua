@@ -9,6 +9,11 @@ local verticalSpacing = mini.VerticalSpacing
 local TILE_SIZE = ui.TileSize
 local TILE_GAP = 12
 local TILE_PITCH = TILE_SIZE + TILE_GAP
+-- Room above each tile for its name, so the rows run taller than the columns run wide.
+local NAME_HEIGHT = 14
+local TILE_ROW_PITCH = TILE_PITCH + NAME_HEIGHT
+-- Enough to identify a group; the tooltip still carries the full name.
+local NAME_MAX_CHARS = 10
 local TILE_COLUMNS = 11
 local DROP_BAR_WIDTH = 3
 -- How far outside a tile a drop still counts as landing on it. Half a tile covers the gaps in
@@ -22,6 +27,24 @@ local draggedGroupId
 -- the group would land.
 local dragGhost
 local dropBar
+
+---The first few characters of a name, counted in characters rather than bytes so a Chinese
+---name is not cut mid-glyph.
+---@param name string
+---@return string
+local function TruncateName(name)
+	local chars = 0
+
+	for charEnd in name:gmatch("[%z\1-\127\194-\244][\128-\191]*()") do
+		chars = chars + 1
+
+		if chars == NAME_MAX_CHARS then
+			return name:sub(1, charEnd - 1)
+		end
+	end
+
+	return name
+end
 
 ---Builds the tile grid below `anchor` and installs ui.Populate. The grid is one square per
 ---group, plus a leading tile that makes another. The frame under them is clickable so that the
@@ -65,6 +88,15 @@ function ui.BuildGrid(panel, anchor, deps)
 			highlight:SetAllPoints()
 			highlight:SetColorTexture(1, 1, 1, 0.2)
 
+			-- Clamped to the tile pitch with wrapping off, so a long name clips instead of
+			-- running into the neighbour's label.
+			tile.Name = tile:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+			-- Above the selection border, which pokes 2px past the tile's edge.
+			tile.Name:SetPoint("BOTTOM", tile, "TOP", 0, 4)
+			tile.Name:SetWidth(TILE_PITCH - 2)
+			tile.Name:SetWordWrap(false)
+			tile.Name:SetJustifyH("CENTER")
+
 			tile:SetScript("OnLeave", function()
 				GameTooltip:Hide()
 			end)
@@ -77,7 +109,7 @@ function ui.BuildGrid(panel, anchor, deps)
 		tile:ClearAllPoints()
 		tile:SetPoint("TOPLEFT", listAnchor, "TOPLEFT",
 			((index - 1) % TILE_COLUMNS) * TILE_PITCH,
-			-math.floor((index - 1) / TILE_COLUMNS) * TILE_PITCH)
+			-NAME_HEIGHT - math.floor((index - 1) / TILE_COLUMNS) * TILE_ROW_PITCH)
 		tile:Show()
 
 		return tile
@@ -187,6 +219,7 @@ function ui.BuildGrid(panel, anchor, deps)
 		tile:SetScript("OnDragStart", nil)
 		tile:SetScript("OnDragStop", nil)
 		tile.Border:Hide()
+		tile.Name:SetText("")
 		tile.Icon:SetTexture([[Interface\PaperDollInfoFrame\Character-Plus]])
 		tile.Icon:SetDesaturated(false)
 		tile.Icon:SetTexCoord(0, 1, 0, 1)
@@ -216,6 +249,7 @@ function ui.BuildGrid(panel, anchor, deps)
 		tile:SetAlpha(1)
 		tile.Icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 		tile.Icon:SetTexture(groups:GetIcon(group))
+		tile.Name:SetText(TruncateName(group.Name))
 		-- Still in the grid, but reading as inactive.
 		tile.Icon:SetDesaturated(not group.Enabled)
 		tile.Border:SetShown(group.Id == ui.SelectedId)
@@ -303,7 +337,7 @@ function ui.BuildGrid(panel, anchor, deps)
 
 		local lines = math.ceil((#options.Groups + 1) / TILE_COLUMNS)
 
-		listAnchor:SetHeight(math.max(TILE_SIZE, lines * TILE_PITCH))
+		listAnchor:SetHeight(math.max(TILE_SIZE, lines * TILE_ROW_PITCH))
 
 		-- Deliberately no fallback to the first group: the page opens with nothing selected and
 		-- clicking the empty space in the grid puts the editor away again.
