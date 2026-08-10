@@ -1,5 +1,23 @@
 # Changelog
 
+## 5.1.0
+
+Text to speech announcements are back on 12.1, now powered by pre-recorded voice packs.
+
+- Choose from five voices in the alerts TTS options: David, Elise, Emma, Grampa Werthers, and Theo Silk.
+- Other addons can register their own voice packs via the MiniAurasApi.
+- Note: a full client restart (not just a reload) is needed to hear new audio after updating.
+
+Personal auras:
+
+- New "Unit Frames" unit that shows a copy of the group on every party/raid frame, including frames from custom addon frame providers.
+- The cast recorder now stops when the config window is closed.
+
+Fixes:
+
+- The Colour Countdown option is shown on 12.0.7 clients again.
+- The ally kick tracker now renders Cyrillic names correctly.
+
 ## 5.0.1
 
 Fixed portrait icons being invisible on the 12.0.7 client.
