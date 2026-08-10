@@ -12,6 +12,12 @@ local SLIDER_ROW_HEIGHT = SLIDER_HEADROOM + 34
 local SLIDER_GAP = 45
 local SORT_OPTIONS = { "OLDEST", "LONGEST", "SHORTEST" }
 local GROW_OPTIONS = { "LEFT", "RIGHT", "CENTER", "DOWN", "UP" }
+-- A number this short does not need a dropdown's column, but the label does: "Desplazamiento X"
+-- is the longest translation and needs about 110px.
+local OFFSET_COLUMN = 120
+local OFFSET_BOX_WIDTH = 70
+-- Wider than any sane screen, so typing is never the thing that stops a group being placed.
+local OFFSET_LIMIT = 2000
 
 ---Builds the appearance tab. The toggles lead: they are the ones read at a glance, while the
 ---dropdowns and sliders are set once and left alone.
@@ -68,6 +74,56 @@ function ui.BuildAppearanceTab(ctx)
 			end
 		end,
 	}, settingsControlsRow, 0)
+
+	---The pair a drag writes: a screen group keeps a screen position, every other anchor keeps an
+	---offset from the frame it hangs off.
+	---@param group CustomAuraGroup
+	---@return table
+	local function OffsetTarget(group)
+		return group.Anchor == groups.Anchor.Screen and group.Position or group.Offset
+	end
+
+	---@param labelText string
+	---@param axis string "X" or "Y"
+	---@param x number
+	---@return table
+	local function OffsetBox(labelText, axis, x)
+		local box = mini:EditBox({
+			Parent = appearancePanel,
+			LabelText = labelText,
+			Numeric = true,
+			AllowNegatives = true,
+			Width = OFFSET_BOX_WIDTH,
+			GetValue = function()
+				local group = ui.Current()
+				local target = group and OffsetTarget(group)
+
+				-- A drag leaves a fraction behind until it stops, which is not worth showing.
+				return target and math.floor((target[axis] or 0) + 0.5) or 0
+			end,
+			SetValue = function(value)
+				local group = ui.Current()
+
+				if not group then
+					return
+				end
+
+				local target = OffsetTarget(group)
+
+				target[axis] = mini:ClampInt(value, -OFFSET_LIMIT, OFFSET_LIMIT, target[axis])
+				ui.Apply()
+			end,
+		})
+
+		box.Label:SetPoint("TOPLEFT", settingsControlsRow, "TOPLEFT", x, 0)
+		-- InputBoxTemplate draws its field 6px outside its own left edge.
+		box.EditBox:SetPoint("TOPLEFT", box.Label, "BOTTOMLEFT", 6, -4)
+
+		return box
+	end
+
+	OffsetBox(L["Offset X"], "X", ui.DropdownColumn * 2)
+	OffsetBox(L["Offset Y"], "Y", ui.DropdownColumn * 2 + OFFSET_COLUMN)
 
 	local checkboxes = {
 		{

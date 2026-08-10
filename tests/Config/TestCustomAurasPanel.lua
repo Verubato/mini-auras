@@ -107,6 +107,96 @@ local function SliderFor(minimum, maximum)
 	return nil
 end
 
+---The appearance tab's two offset boxes, in the order they were built: X first, then Y. They are
+---the only edit boxes on the page that span exactly this width.
+---@return table? offsetX
+---@return table? offsetY
+local function OffsetBoxes()
+	local found = {}
+
+	for _, frame in ipairs(WowMock.Frames) do
+		if frame:IsObjectType("EditBox") and frame:GetWidth() == 70 then
+			found[#found + 1] = frame
+		end
+	end
+
+	return found[1], found[2]
+end
+
+---@param box table
+---@param text string
+local function TypeInto(box, text)
+	box:SetText(text)
+	box:GetScript("OnEnterPressed")(box)
+end
+
+fw.describe("Custom auras page - typing a group's offset", function()
+	fw.it("shows the screen position of a group anchored to the screen", function()
+		local addon, group = LoadWithGroup({ 45438 })
+
+		group.Position.X = 123
+		group.Position.Y = -45
+
+		ShowPage(addon, group)
+
+		local offsetX, offsetY = OffsetBoxes()
+
+		fw.not_nil(offsetX, "the offset X box exists")
+		fw.not_nil(offsetY, "the offset Y box exists")
+		fw.eq(offsetX:GetText(), "123", "X shows the group's screen position")
+		fw.eq(offsetY:GetText(), "-45", "Y shows it too")
+	end)
+
+	fw.it("writes what was typed back to the screen position", function()
+		local addon, group = LoadWithGroup({ 45438 })
+
+		ShowPage(addon, group)
+
+		local offsetX, offsetY = OffsetBoxes()
+
+		TypeInto(offsetX, "-200")
+		TypeInto(offsetY, "80")
+
+		fw.eq(group.Position.X, -200, "X was written to the group")
+		fw.eq(group.Position.Y, 80, "and so was Y")
+	end)
+
+	-- The same two boxes drive a different pair of fields, because a nameplate group is placed by
+	-- an offset from the plate rather than a point on the screen.
+	fw.it("writes to the frame offset for a group anchored to nameplates", function()
+		local addon, group = LoadWithGroup({ 118 })
+		local groups = addon.Modules.CustomAuras.Groups
+
+		group.Unit = "nameplate"
+		group.AuraType = "HARMFUL"
+		groups:Normalise(group)
+
+		ShowPage(addon, group)
+
+		local offsetX = OffsetBoxes()
+
+		TypeInto(offsetX, "35")
+
+		fw.eq(group.Offset.X, 35, "the plate offset took the value")
+		fw.eq(group.Position.X, 0, "the screen position was left alone")
+	end)
+
+	fw.it("keeps the old value when the text is not a number", function()
+		local addon, group = LoadWithGroup({ 45438 })
+
+		group.Position.X = 60
+
+		ShowPage(addon, group)
+
+		local offsetX = OffsetBoxes()
+
+		TypeInto(offsetX, "-")
+
+		fw.eq(group.Position.X, 60, "garbage does not move the group")
+		fw.eq(offsetX:GetText(), "60", "and the box snaps back to it")
+	end)
+end)
+
 fw.describe("Custom auras page - controls inside a tab", function()
 	-- Every control registers for refresh against its PARENT, so the ones inside a tab are on
 	-- the tab's list, not the editor's. Refreshing only the editor left them showing the values
