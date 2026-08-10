@@ -73,7 +73,10 @@ local function BuildRedirectPanel(panel, version)
 	button:SetSize(240, 32)
 	button:SetPoint("TOP", message, "BOTTOM", 0, -20)
 	button:SetText(L["Open Settings"])
-	SetFontSize(button:GetFontString(), 14)
+	-- 14pt via font objects, not a raw SetFont path: the path drops the per-locale
+	-- glyph fallbacks (Cyrillic boxes), and hover swaps font objects anyway.
+	button:SetNormalFontObject(GameFontNormalMed3)
+	button:SetHighlightFontObject(GameFontHighlightMedium)
 	button:SetScript("OnClick", function()
 		-- Close Blizzard's settings window on the way out: it opened this one, and leaving it
 		-- sitting behind the config window is just a panel the user has to dismiss afterwards.

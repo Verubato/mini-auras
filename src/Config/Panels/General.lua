@@ -65,9 +65,9 @@ function M:Build(panel)
 	newsStripe:SetColorTexture(0.78, 0.20, 0.24, 0.9)
 
 	local newsPadding = 14
-	local newsFontPath = GameFontNormal:GetFont()
-	local newsText = newsCard:CreateFontString(nil, "ARTWORK")
-	newsText:SetFont(newsFontPath, 14)
+	-- A 14pt font object rather than SetFont with a raw file path: the path drops
+	-- Blizzard's per-locale glyph fallbacks and Cyrillic renders as boxes.
+	local newsText = newsCard:CreateFontString(nil, "ARTWORK", "GameFontNormalMed3")
 	newsText:SetTextColor(1, 1, 1, 1)
 	newsText:SetWidth(contentWidth - newsPadding * 2 - 3)
 	newsText:SetJustifyH("LEFT")
