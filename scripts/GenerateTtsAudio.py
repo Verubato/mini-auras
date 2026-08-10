@@ -58,6 +58,7 @@ PACK_GAIN_DB = {
 VOICE_SETTINGS = {"stability": 0.5, "similarity_boost": 0.75}
 
 CATEGORIES = ("Important", "Defensive")
+UNFLAGGED_SECTION = "UnflaggedWithTts"
 PREVIEWS = {"PreviewImportant": "Important", "PreviewDefensive": "Defensive"}
 # Spoken-name tables for voices that announce in another language: a JSON file mapping each
 # unique English ability name to its localized one (see the fetch recipe in the repo history),
@@ -91,20 +92,32 @@ OUT_LUA = REPO / "src" / "Core" / "Auras" / "AuraTtsSounds.lua"
 OUT_DIR = REPO / "src" / "Sounds" / "TTS"
 
 
+def parse_ids(body):
+    return {
+        int(spell_id): name
+        for spell_id, name in re.findall(r"\[(\d+)\] = true, -- (.+)", body)
+    }
+
+
 def parse_categories():
-    """Returns {category: {spell_id: name}} for the categories we voice."""
+    """Returns {category: {spell_id: name}} for the categories we voice. UnflaggedWithTts
+    carries the spells the game does not flag, split by the same category names; its halves
+    are folded into the flagged lists so they announce under the matching toggle."""
     src = IDS_LUA.read_text(encoding="utf-8")
     sections = re.split(r"^\t(\w+) = \{", src, flags=re.M)
     result = {}
+    seen = set()
     for i in range(1, len(sections), 2):
         category, body = sections[i], sections[i + 1]
-        if category not in CATEGORIES:
-            continue
-        result[category] = {
-            int(spell_id): name
-            for spell_id, name in re.findall(r"\[(\d+)\] = true, -- (.+)", body)
-        }
-    missing = [c for c in CATEGORIES if c not in result]
+        if category in CATEGORIES:
+            seen.add(category)
+            result.setdefault(category, {}).update(parse_ids(body))
+        elif category == UNFLAGGED_SECTION:
+            seen.add(category)
+            for sub, sub_body in re.findall(r"^\t\t(\w+) = \{(.*?)^\t\t\}", body, re.M | re.S):
+                if sub in CATEGORIES:
+                    result.setdefault(sub, {}).update(parse_ids(sub_body))
+    missing = [c for c in (*CATEGORIES, UNFLAGGED_SECTION) if c not in seen]
     if missing:
         sys.exit(f"categories not found in {IDS_LUA.name}: {missing}")
     return result

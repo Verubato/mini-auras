@@ -1069,7 +1069,6 @@ addon.Core.AuraCategoryIds = {
 
 	Unflagged = {
 		[228050] = true, -- Guardian of the Forgotten Queen
-		[325174] = true, -- Spirit Link
 		[378078] = true, -- Spiritwalker's Aegis
 		[79206] = true, -- Spiritwalker's Grace
 		[389422] = true, -- Invoke Yu'lon, the Jade Serpent
@@ -1086,37 +1085,49 @@ addon.Core.AuraCategoryIds = {
 		[203819] = true, -- Demon Spikes
 		[61336] = true, -- Survival Instincts
 		[5217] = true, -- Tiger's Fury
-		[117679] = true, -- Incarnation: Tree of Life
 		[108416] = true, -- Dark Pact
 		[442726] = true, -- Malevolence
 		[1276767] = true, -- Tyrant's Oblation
-		[363534] = true, -- Rewind
-		[370960] = true, -- Emerald Communion
-		[374227] = true, -- Zephyr
-		[162264] = true, -- Metamorphosis
 		[209426] = true, -- Darkness
 		[188501] = true, -- Spectral Sight
 		[473909] = true, -- Ancient of Lore
 		[5215] = true, -- Stealth
 		[29166] = true, -- Innervate
-		[740] = true, -- Tranquility
 		[191634] = true, -- Stormkeeper
 		[409293] = true, -- Burrow
 		[10060] = true, -- Power Infusion
 		[200183] = true, -- Apotheosis
 		[1966] = true, -- Feint
 		[1784] = true, -- Stealth
-		[42650] = true, -- Army of the Dead
 		[145629] = true, -- Anti-Magic Zone
 		[81256] = true, -- Dancing Rune Weapon
 		[49039] = true, -- Lichborne
-		[210256] = true, -- Blessing of Sanctuary
 		[31821] = true, -- Aura Mastery
 		[390260] = true, -- Commander of the Dead
 		[384100] = true, -- Berserker Shout
 		[199261] = true, -- Death Wish
 		[97463] = true, -- Rallying Cry
-		[421453] = true, -- Ultimate Penitence
+	},
+
+	-- Unflagged spells that should also be announced: the TTS registrations key on the bare
+	-- spell id, so the missing category flag costs nothing there. Split by which announcement
+	-- toggle covers each spell; scripts/GenerateTtsAudio.py reads both halves alongside the
+	-- flagged lists, and the loop below folds them back into Unflagged for the spell pickers.
+	UnflaggedWithTts = {
+		Important = {
+			[42650] = true, -- Army of the Dead
+			[210256] = true, -- Blessing of Sanctuary
+			[117679] = true, -- Incarnation: Tree of Life
+			[162264] = true, -- Metamorphosis
+		},
+		Defensive = {
+			[370960] = true, -- Emerald Communion
+			[363534] = true, -- Rewind
+			[325174] = true, -- Spirit Link
+			[740] = true, -- Tranquility
+			[421453] = true, -- Ultimate Penitence
+			[374227] = true, -- Zephyr
+		},
 	},
 
 	-- Spell id -> the class that owns it, for grouping in the options UI only. Never used
@@ -1364,6 +1375,13 @@ addon.Core.AuraCategoryIds = {
 		[55233] = true, -- Vampiric Blood
 	},
 }
+
+-- The TTS split is still unflagged: fold it back so Unflagged stays the one searchable superset.
+for _, ids in pairs(addon.Core.AuraCategoryIds.UnflaggedWithTts) do
+	for id in pairs(ids) do
+		addon.Core.AuraCategoryIds.Unflagged[id] = true
+	end
+end
 
 ---@class AuraCategoryIds
 ---@field CC table<number, boolean>
