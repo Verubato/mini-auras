@@ -407,6 +407,7 @@ function M:CreateTabs(options)
 
 			-- Scrollbar, visible only when content overflows
 			local scrollBar = CreateFrame("Slider", nil, scrollContainer, GUI.BackdropTemplate)
+			scrollBar:SetOrientation("VERTICAL")
 			scrollBar:SetWidth(10)
 			scrollBar:SetPoint("TOPRIGHT", scrollContainer, "TOPRIGHT", 0, -2)
 			scrollBar:SetPoint("BOTTOMRIGHT", scrollContainer, "BOTTOMRIGHT", 0, 2)
@@ -423,14 +424,14 @@ function M:CreateTabs(options)
 			GUI.SetSolid(thumb, 0.55, 0.55, 0.55, 0.85)
 			scrollBar:SetThumbTexture(thumb)
 
-			-- A vertical slider puts its MINIMUM at the bottom, while scroll offset grows
-			-- downwards, so the two run opposite ways. Everything below converts between them
-			-- rather than letting a drag down scroll the content up.
+			-- A vertical slider's minimum sits at its TOP, exactly like the scroll offset, so the
+			-- two map onto each other directly; Blizzard's own scrollbars feed SetVerticalScroll
+			-- the raw slider value the same way.
 
 			---@param scroll number
 			---@return number
 			local function ScrollToValue(scroll)
-				return maxScroll - math.min(math.max(scroll, 0), maxScroll)
+				return math.min(math.max(scroll, 0), maxScroll)
 			end
 
 			local function UpdateScrollBar()
@@ -452,7 +453,7 @@ function M:CreateTabs(options)
 			end
 
 			scrollBar:SetScript("OnValueChanged", function(_, val)
-				scrollFrame:SetVerticalScroll(maxScroll - val)
+				scrollFrame:SetVerticalScroll(val)
 			end)
 
 			scrollFrame:SetScript("OnScrollRangeChanged", function()
