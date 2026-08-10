@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.2.0
+
+- New "Arena Frames" unit for personal auras.
+- Added X and Y offset edit boxes for finer control of personal aura positioning.
+- Added Mandarin TTS voices.
+- New API for addons to register their own voice packs.
+
 ## 5.1.0
 
 Text to speech announcements are back on 12.1, now powered by pre-recorded voice packs.
