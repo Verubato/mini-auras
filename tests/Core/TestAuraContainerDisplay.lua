@@ -1040,6 +1040,15 @@ fw.describe("AuraFilters - category partitioning", function()
 			"ImportantOnly matches an important that is also a defensive")
 	end)
 
+	fw.it("disarm partitions against CC by negation, against the rest by its spell-ID map", function()
+		-- Not in the matrix above: the disarm string deliberately matches any non-CC debuff and
+		-- relies on its includeSpellIDs map, which a string-level matrix cannot model.
+		assert(not matches(auraFilters.Filter.Disarm, { Helpful = false, CROWD_CONTROL = true }),
+			"a disarm the game starts flagging as CC must not draw in both groups")
+		assert(matches(auraFilters.Filter.Disarm, { Helpful = false }),
+			"a plain debuff passes the string; the spell-ID map does the narrowing")
+	end)
+
 	fw.it("BuildCategoryGroups hands out a fresh spec list per display", function()
 		-- SetMaxIcons mutates group.MaxIcons in place, so a shared list would make one display's
 		-- category toggle silently re-budget every other display's.
@@ -1059,11 +1068,13 @@ fw.describe("AuraFilters - category partitioning", function()
 		local instance = display:New(_G.UIParent, "target", auraFilters:BuildCategoryGroups(5), 30, 2, "Test")
 		acm.notifications = {}
 
-		auraFilters:ApplyCategoryBudgets(instance, 4, false, true, false)
+		auraFilters:ApplyCategoryBudgets(instance, 4, false, true, false, true)
 
 		assert(#acm.notifications == 0, "every budgeted key exists: " .. table.concat(acm.notifications, "; "))
 		local groups = instance.Frame._groups
 		assert(groups[auraFilters.GroupKey.CrowdControl].maxFrameCount == 0, "cc off")
+		assert(groups[auraFilters.GroupKey.Disarm].maxFrameCount == 4,
+			"disarm has its own switch (callers gate it on assistability, not on ShowCC alone)")
 		assert(groups[auraFilters.GroupKey.BigDefensive].maxFrameCount == 4, "big defensive on")
 		assert(groups[auraFilters.GroupKey.ExternalDefensive].maxFrameCount == 4,
 			"the defensives toggle covers BOTH defensive groups")

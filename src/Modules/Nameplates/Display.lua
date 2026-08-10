@@ -207,7 +207,7 @@ local function AnchorBarDisplay(display, container, nameplate, barOptions, kickA
 	)
 end
 
----12.1 path: builds one pooled bar display with the four standard categories (partitioned by
+---12.1 path: builds one pooled bar display with the standard categories (partitioned by
 ---filter negation, see Core/AuraFilters). Budgets/unit/style are applied per bar on acquisition;
 ---the size is fixed here because the buttons take it at creation and can't be resized in an arena.
 ---@param size number
@@ -300,7 +300,11 @@ local function EnsureBarDisplay(data, bar, barOptions)
 		maxIcons,
 		barOptions.ShowCC,
 		barOptions.ShowDefensives,
-		barOptions.ShowImportant
+		barOptions.ShowImportant,
+		-- Disarm rides the CC toggle, but only where the engine actually applies its spell-ID
+		-- filter: on an assistable unit the identity gate skips the map and the group would
+		-- show every debuff on the plate.
+		barOptions.ShowCC and not units:CanAssist(token)
 	)
 
 	-- No SetStyle here: the style was applied when the display was built, and a signature change

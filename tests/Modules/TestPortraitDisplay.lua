@@ -1,7 +1,7 @@
 -- PortraitModule, 12.1 container path: the layered single-icon stack over a unit frame portrait.
 --
 -- A portrait shows ONE icon but cannot ask which aura wins (aura presence is secret), so it gets
--- four single-icon containers stacked by frame level and lets the higher-priority one cover the
+-- five single-icon containers stacked by frame level and lets the higher-priority one cover the
 -- rest. The levels must be DISTINCT: same-level siblings draw in an arbitrary order, which sank
 -- the creation-order variant. Two things about the arrangement have already broken once and are
 -- invisible when they do:
@@ -63,29 +63,34 @@ local function displaysFor(unit)
 	return assert(container.AuraDisplay, "no aura display stack").Displays, container
 end
 
-fw.describe("PortraitModule 12.1 - the four-category stack", function()
+fw.describe("PortraitModule 12.1 - the five-category stack", function()
 	fw.it("builds one single-icon display per category on every portrait", function()
+		local disarmKey = env.addon.Core.AuraFilters.GroupKey.Disarm
 		for _, unit in ipairs({ "player", "target", "focus", "pet" }) do
 			local displays = displaysFor(unit)
-			assert(#displays == 4, unit .. ": expected 4 displays, got " .. #displays)
+			assert(#displays == 5, unit .. ": expected 5 displays, got " .. #displays)
 
 			for _, display in ipairs(displays) do
 				assert(#display.Groups == 1, "one group per display")
 				local group = display.Groups[1]
-				assert(group.MaxIcons == 1, "a portrait shows exactly one icon per category")
-				assert(display.Frame._groups[group.Key].maxFrameCount == 1, "budget reached the container")
+				-- The disarm layer starts budgeted away: every occupant is assistable in this
+				-- env, and the engine skips the layer's spell-ID filter on assistable units.
+				local budget = group.Key == disarmKey and 0 or 1
+				assert(group.MaxIcons == budget, "a portrait shows exactly one icon per category")
+				assert(display.Frame._groups[group.Key].maxFrameCount == budget, "budget reached the container")
 				assert(display.Frame:GetUnit() == unit, "tracking its own unit")
 			end
 		end
 	end)
 
-	fw.it("covers the four partitioned categories exactly once, lowest priority first", function()
+	fw.it("covers the five partitioned categories exactly once, lowest priority first", function()
 		local displays = displaysFor("target")
 		local auraFilters = env.addon.Core.AuraFilters
 		local expected = {
 			{ Key = auraFilters.GroupKey.Important, Filter = auraFilters.Filter.Important },
 			{ Key = auraFilters.GroupKey.ExternalDefensive, Filter = auraFilters.Filter.ExternalDefensive },
 			{ Key = auraFilters.GroupKey.BigDefensive, Filter = auraFilters.Filter.BigDefensive },
+			{ Key = auraFilters.GroupKey.Disarm, Filter = auraFilters.Filter.Disarm },
 			{ Key = auraFilters.GroupKey.CrowdControl, Filter = auraFilters.Filter.CrowdControl },
 		}
 
@@ -194,8 +199,25 @@ fw.describe("PortraitModule 12.1 - wrapper-managed containers", function()
 		local targetBefore, playerBefore = refreshCount("target"), refreshCount("player")
 		unitChangeEvents:TriggerEvent("PLAYER_TARGET_CHANGED")
 
-		assert(refreshCount("target") == targetBefore + 4, "all four target layers refreshed")
+		assert(refreshCount("target") == targetBefore + 5, "all five target layers refreshed")
 		assert(refreshCount("player") == playerBefore, "the player's stack is untouched")
+	end)
+
+	fw.it("a target swap re-gates the disarm layer on assistability", function()
+		-- The disarm layer's spell-ID filter is skipped by the engine on assistable units, where
+		-- the group would show whatever debuff is newest; the budget is the addon-side gate and
+		-- must follow the occupant's reaction, which only the module can see change.
+		local disarmKey = env.addon.Core.AuraFilters.GroupKey.Disarm
+		local _, container = displaysFor("target")
+		local disarmFrame = container.AuraDisplay.DisarmDisplay.Frame
+
+		env.enemies.target = true
+		unitChangeEvents:TriggerEvent("PLAYER_TARGET_CHANGED")
+		assert(disarmFrame._groups[disarmKey].maxFrameCount == 1, "an enemy occupant opens the layer")
+
+		env.enemies.target = nil
+		unitChangeEvents:TriggerEvent("PLAYER_TARGET_CHANGED")
+		assert(disarmFrame._groups[disarmKey].maxFrameCount == 0, "an assistable occupant closes it again")
 	end)
 end)
 

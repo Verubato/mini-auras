@@ -8,7 +8,8 @@ local auraCategoryIds = addon.Core.AuraCategoryIds
 -- groups on one container render as a single continuous row. Overlap between the categories is
 -- resolved with `!` negation rather than post-hoc dedup (an aura can be flagged both BIG and
 -- EXTERNAL defensive, and importants are frequently defensives too): each aura matches exactly
--- one of the four filters below, in the priority order CC > big > external > important.
+-- one of the filters below, in the priority order CC > disarm > big > external > important
+-- (disarm's own overlap with bare HARMFUL is closed by its spell-ID map, not the string).
 --
 -- These strings are shared by every module that shows the standard categories, which matters
 -- because AddAuraGroup validates the filter string loudly - if a token or a negation turns out
@@ -59,6 +60,15 @@ local spellIds = {
 	ExternalDefensive = auraCategoryIds.Defensive,
 	Important = auraCategoryIds.Important,
 	ImportantOnly = auraCategoryIds.Important,
+	-- Hand-curated, not generated: the game does not flag disarms as CROWD_CONTROL (or anything
+	-- else), so no scan can find them and no filter token can select them - the map below is the
+	-- disarm group's only real filter. That makes the category enemy-only; see M.Filter.Disarm.
+	Disarm = {
+		[207777] = true, -- Dismantle (Rogue)
+		[236077] = true, -- Disarm (Warrior)
+		[233759] = true, -- Grapple Weapon (Monk)
+		[407028] = true, -- Sticky Tar Bomb (Hunter)
+	},
 }
 
 -- Memoised canonical spellings; the addon only ever produces a handful of distinct strings.
@@ -73,6 +83,12 @@ addon.Core.AuraFilters = M
 
 M.Filter = {
 	CrowdControl = "HARMFUL|CROWD_CONTROL",
+	-- Disarms carry no category flag, so the spell-ID map is the only filter that narrows this
+	-- group and the string is just "any non-CC debuff". On an assistable unit the identity gate
+	-- above skips the map and the group would show every debuff the unit has, so callers MUST
+	-- budget it to zero there (units:CanAssist, mirroring the RaidFrameAuras helpful-side gate).
+	-- The negation keeps a disarm out of this group if the game ever starts flagging them as CC.
+	Disarm = "HARMFUL|!CROWD_CONTROL",
 	BigDefensive = "HELPFUL|BIG_DEFENSIVE",
 	ExternalDefensive = "HELPFUL|EXTERNAL_DEFENSIVE|!BIG_DEFENSIVE",
 	-- Excludes both defensive categories so a defensive that is also flagged important is only
@@ -96,12 +112,14 @@ M.CandidateFilters = {
 	Important = { includeSpellIDs = spellIds.Important },
 	-- TEMPORARY: see M.Filter.ImportantOnly.
 	ImportantOnly = { includeSpellIDs = spellIds.ImportantOnly },
+	Disarm = { includeSpellIDs = spellIds.Disarm },
 }
 
 -- Group keys. Always reference these rather than writing the string inline: SetMaxIcons is the
 -- per-category on/off switch, and a typo there would silently disable a whole category.
 M.GroupKey = {
 	CrowdControl = "cc",
+	Disarm = "disarm",
 	BigDefensive = "bigdef",
 	ExternalDefensive = "extdef",
 	Important = "important",
@@ -158,7 +176,7 @@ end
 ---One standard-category group spec in the shape AuraContainerDisplay's New takes. Returns a
 ---fresh table: New keeps the list it is given for the display's lifetime, so specs must never
 ---be shared between displays.
----@param categoryKey string "CrowdControl"|"BigDefensive"|"ExternalDefensive"|"Important".
+---@param categoryKey string "CrowdControl"|"Disarm"|"BigDefensive"|"ExternalDefensive"|"Important".
 ---@param maxIcons number? Icon budget for the group (New defaults a nil budget to 3).
 ---@param extra table? Further AuraDisplayGroupSpec fields (SortDirection, GlowColor, ...) copied
 ---onto the spec; entries may also override the category defaults.
@@ -188,7 +206,8 @@ function M:GroupSpec(categoryKey, maxIcons, extra)
 	return spec
 end
 
----Builds the standard four-category group spec list for a display, in priority order.
+---Builds the standard category group spec list for a display, in priority order (disarm renders
+---directly after the CC icons it belongs with).
 ---Returns a fresh table: `New` keeps the list for the display's lifetime, so it must not be
 ---shared between displays.
 ---@param maxIcons number Initial per-group icon budget (SetMaxIcons re-budgets per category).
@@ -196,20 +215,24 @@ end
 function M:BuildCategoryGroups(maxIcons)
 	return {
 		self:GroupSpec("CrowdControl", maxIcons),
+		self:GroupSpec("Disarm", maxIcons),
 		self:GroupSpec("BigDefensive", maxIcons),
 		self:GroupSpec("ExternalDefensive", maxIcons),
 		self:GroupSpec("Important", maxIcons),
 	}
 end
 
----Applies the per-category toggles to a four-category display. A budget of 0 hides the group.
+---Applies the per-category toggles to a standard-category display. A budget of 0 hides the group.
 ---@param display AuraContainerDisplay
 ---@param maxIcons number Budget for each enabled category.
 ---@param showCC boolean?
 ---@param showDefensives boolean? Covers both the big and external defensive groups.
 ---@param showImportant boolean?
-function M:ApplyCategoryBudgets(display, maxIcons, showCC, showDefensives, showImportant)
+---@param showDisarm boolean? Must be false while the tracked unit is assistable - the disarm
+---group's only real filter is its spell-ID map, which the identity gate skips there.
+function M:ApplyCategoryBudgets(display, maxIcons, showCC, showDefensives, showImportant, showDisarm)
 	display:SetMaxIcons(M.GroupKey.CrowdControl, showCC and maxIcons or 0)
+	display:SetMaxIcons(M.GroupKey.Disarm, showDisarm and maxIcons or 0)
 	display:SetMaxIcons(M.GroupKey.BigDefensive, showDefensives and maxIcons or 0)
 	display:SetMaxIcons(M.GroupKey.ExternalDefensive, showDefensives and maxIcons or 0)
 	display:SetMaxIcons(M.GroupKey.Important, showImportant and maxIcons or 0)

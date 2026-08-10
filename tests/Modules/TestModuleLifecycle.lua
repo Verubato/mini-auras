@@ -243,6 +243,30 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 		local expected = barOptions.Icons.MaxIcons
 		assert(display._groups.cc.maxFrameCount == (barOptions.ShowCC and expected or 0), "cc budget")
 		assert(display._groups.important.maxFrameCount == (barOptions.ShowImportant and expected or 0), "important budget")
+		assert(display._groups.disarm.maxFrameCount == (barOptions.ShowCC and expected or 0),
+			"disarm rides the CC toggle on an enemy plate")
+	end)
+
+	fw.it("a friendly plate's disarm group is budgeted to zero", function()
+		-- The disarm group's only real filter is its spell-ID map, which the engine skips for
+		-- debuffs on assistable units - left budgeted it would show every debuff on the plate.
+		local friendlyBar = db.Modules.NameplatesModule.Friendly.Bar1
+		local enabledBefore, showCcBefore = friendlyBar.Enabled, friendlyBar.ShowCC
+		friendlyBar.Enabled = true
+		friendlyBar.ShowCC = true
+
+		env.addPlate("np_friend")
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_friend")
+
+		local display = env.containersForUnit("np_friend")[1]
+		assert(display, "friendly plate tracked with its bar enabled")
+		assert(display._groups.cc.maxFrameCount > 0, "cc still shows on friendlies")
+		assert(display._groups.disarm.maxFrameCount == 0, "disarm budgeted away on an assistable unit")
+
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_friend")
+		env.plates.np_friend = nil
+		friendlyBar.Enabled = enabledBefore
+		friendlyBar.ShowCC = showCcBefore
 	end)
 
 	fw.it("plate removal releases the display to the pool (parked on UIParent)", function()

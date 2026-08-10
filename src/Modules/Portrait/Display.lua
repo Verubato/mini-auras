@@ -10,8 +10,8 @@ local testSpellData = addon.Core.TestSpells
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
--- TEMPORARY: units and auras only serve GetFirstImportantBuff; both die with the 12.0 path.
 local units = addon.Utils.Units
+-- TEMPORARY: auras only serves GetFirstImportantBuff; it dies with the 12.0 path.
 local auras = addon.Utils.Auras
 
 addon.Modules.Portrait = addon.Modules.Portrait or {}
@@ -21,10 +21,10 @@ local M = {}
 addon.Modules.Portrait.Display = M
 
 -- 12.1 path: a portrait shows ONE icon, but which aura wins has to be decided by the engine
--- (aura presence is secret), so it gets FOUR single-icon containers stacked on top of each other -
--- one per category, cc / big defensive / external defensive / important. The legacy strict
--- priority becomes frame levels: kick (IconSlotContainer, topmost) > cc > big > external >
--- important. A higher-priority container's button simply covers the ones below it, and a
+-- (aura presence is secret), so it gets FIVE single-icon containers stacked on top of each other -
+-- one per category, cc / disarm / big defensive / external defensive / important. The legacy
+-- strict priority becomes frame levels: kick (IconSlotContainer, topmost) > cc > disarm > big >
+-- external > important. A higher-priority container's button simply covers the ones below it, and a
 -- container with no matching aura hides its own button secretly, revealing the next one down.
 -- The distinct levels are load-bearing: same-level siblings draw in an ARBITRARY order (verified
 -- live 2026-08-07, WoW picked a random winner), so priority cannot ride on creation order.
@@ -43,7 +43,7 @@ local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 -- the ones below it, and an empty one hides its button secretly. The filters are the shared
 -- partitioned ones, so an aura that qualifies for several categories only ever lands in the
 -- highest of them.
-local PORTRAIT_CATEGORIES = { "Important", "ExternalDefensive", "BigDefensive", "CrowdControl" }
+local PORTRAIT_CATEGORIES = { "Important", "ExternalDefensive", "BigDefensive", "Disarm", "CrowdControl" }
 
 ---@type Db
 local db
@@ -76,6 +76,15 @@ local function BuildPortraitStyle()
 	return style
 end
 
+---The disarm layer's only real filter is its spell-ID map, which the engine skips for debuffs on
+---assistable units - the layer would then show whatever debuff is newest. Budgeted away while the
+---occupant is assistable, and re-checked whenever the token's occupant changes.
+---@param auraDisplay { DisarmDisplay: AuraContainerDisplay }
+---@param unit string
+local function ApplyDisarmBudget(auraDisplay, unit)
+	auraDisplay.DisarmDisplay:SetMaxIcons(auraFilters.GroupKey.Disarm, units:CanAssist(unit) and 0 or 1)
+end
+
 ---12.1 path: builds the layered single-icon display stack over a portrait. Each display is
 ---parented to the kick container's frame so it follows the per-addon frame level adjustments the
 ---attach functions apply afterwards (child levels shift with the parent).
@@ -84,7 +93,7 @@ end
 ---@param texCoord table? {left, right, top, bottom} icon crop, per unit-frame addon.
 ---@param mask table? MaskTexture for round portraits (Blizzard frames).
 ---@param iconSize number
----@return { Displays: AuraContainerDisplay[] }
+---@return { Displays: AuraContainerDisplay[], DisarmDisplay: AuraContainerDisplay }
 local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSize)
 	-- One single-icon aura GROUP container per category. AuraSlots would be the natural fit,
 	-- but they silently failed to render on the 12.1 PTR and no known addon exercises them -
@@ -107,6 +116,7 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 	-- option changes made while aura styling was restricted.
 	local baseLevel = (kickFrame:GetFrameLevel() or 0) + 2
 	local displays = {}
+	local disarmDisplay
 
 	for index, category in ipairs(PORTRAIT_CATEGORIES) do
 		local display = auraContainerDisplay:New(kickFrame, unit, {
@@ -133,9 +143,16 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 		frame:SetFrameLevel(baseLevel + index - 1)
 
 		displays[#displays + 1] = display
+
+		if category == "Disarm" then
+			disarmDisplay = display
+		end
 	end
 
-	return { Displays = displays }
+	local auraDisplay = { Displays = displays, DisarmDisplay = disarmDisplay }
+	ApplyDisarmBudget(auraDisplay, unit)
+
+	return auraDisplay
 end
 
 -- TEMPORARY: only serves the legacy OnAuraInfo render; dies with the 12.0 path.
@@ -272,14 +289,14 @@ function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask)
 	container:SetIconSize(size)
 
 	if USE_AURA_CONTAINERS and unit then
-		-- Lift the kick slot above the whole aura display stack (displays at kick+2..+5,
+		-- Lift the kick slot above the whole aura display stack (displays at kick+2..+6,
 		-- buttons at the display's own level) so an active kick lockout covers any aura icon.
-		-- +6 leaves one level of margin in case a future build moves the buttons one above
+		-- +7 leaves one level of margin in case a future build moves the buttons one above
 		-- their container; the icon layer renders at slot+1. The slot frame is a child of the
 		-- kick frame, so later per-addon level adjustments shift everything together and the
 		-- ordering holds.
 		if slot and slot.Frame then
-			slot.Frame:SetFrameLevel(container.Frame:GetFrameLevel() + 6)
+			slot.Frame:SetFrameLevel(container.Frame:GetFrameLevel() + 7)
 		end
 
 		container.AuraDisplay = CreatePortraitAuraDisplay(container.Frame, unit, texCoord, mask, size)
@@ -411,6 +428,8 @@ end
 function M:RefreshUnitAuras(unit)
 	for _, container in pairs(containers) do
 		if container.AuraUnit == unit and container.AuraDisplay then
+			-- The token's occupant just changed, so its reaction may have flipped too.
+			ApplyDisarmBudget(container.AuraDisplay, unit)
 			for _, display in ipairs(container.AuraDisplay.Displays) do
 				display:RequestRefresh()
 			end
