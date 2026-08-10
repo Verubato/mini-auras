@@ -327,6 +327,16 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 	-- The recorder runs while the page is elsewhere, so the strip catches up on each capture.
 	recorder:OnChanged(RefreshRecorded)
 
+	-- The hunt is scoped to the open config window; without this, closing it mid-recording
+	-- leaves the cast event firing on every global cooldown for the rest of the session.
+	addon.Config.Window:HookScript("OnHide", function()
+		if recorder:IsRecording() then
+			recorder:Stop()
+			recorder:Clear()
+			RefreshRecorded()
+		end
+	end)
+
 	---Lays out the group's tracked spells as a grid of removable rows.
 	---@param owner table
 	---@param row table
