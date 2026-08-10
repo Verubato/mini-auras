@@ -240,16 +240,16 @@ local dbDefaults = {
 			},
 
 			Sound = {
+				-- One output channel for both alert categories, like the TTS announcements.
+				Channel = "Master",
 				-- Important-spell sound (opt-in, like the defensive sound). Important auras are now
 				-- read reliably from Blizzard's nameplate buff lists.
 				Important = {
 					Enabled = false,
-					Channel = "Master",
 					File = "AirHorn",
 				},
 				Defensive = {
 					Enabled = false,
-					Channel = "Master",
 					File = "AlertToastWarm",
 				},
 			},

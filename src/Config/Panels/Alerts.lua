@@ -295,7 +295,7 @@ local function BuildSoundsTab(parent, options)
 		SetValue = function(value)
 			options.Sound.Important.Enabled = value
 			if value then
-				PlaySoundFile(sounds:Resolve(options.Sound.Important.File), options.Sound.Important.Channel or "Master")
+				PlaySoundFile(sounds:Resolve(options.Sound.Important.File), options.Sound.Channel or "Master")
 			end
 			config:Apply()
 		end,
@@ -313,7 +313,7 @@ local function BuildSoundsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.Sound.Important.File = value
-			PlaySoundFile(sounds:Resolve(value), options.Sound.Important.Channel or "Master")
+			PlaySoundFile(sounds:Resolve(value), options.Sound.Channel or "Master")
 			config:Apply()
 		end,
 	})
@@ -331,7 +331,7 @@ local function BuildSoundsTab(parent, options)
 		SetValue = function(value)
 			options.Sound.Defensive.Enabled = value
 			if value then
-				PlaySoundFile(sounds:Resolve(options.Sound.Defensive.File), options.Sound.Defensive.Channel or "Master")
+				PlaySoundFile(sounds:Resolve(options.Sound.Defensive.File), options.Sound.Channel or "Master")
 			end
 			config:Apply()
 		end,
@@ -350,7 +350,7 @@ local function BuildSoundsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.Sound.Defensive.File = value
-			PlaySoundFile(sounds:Resolve(value), options.Sound.Defensive.Channel or "Master")
+			PlaySoundFile(sounds:Resolve(value), options.Sound.Channel or "Master")
 			config:Apply()
 		end,
 	})
@@ -358,35 +358,26 @@ local function BuildSoundsTab(parent, options)
 	soundDefensiveDropdown:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
 	soundDefensiveDropdown:SetPoint("TOP", soundDefensiveChk, "TOP", 0, -4)
 
-	---Builds one category's output channel picker, previewing that category's sound on the
-	---channel just picked so the choice can be heard.
-	---@param soundConfig table
-	---@return table dropdown
-	local function BuildChannelDropdown(soundConfig)
-		local dropdown = mini:Dropdown({
-			Parent = parent,
-			LabelText = L["Channel"],
-			Width = 200,
-			Items = SOUND_CHANNELS,
-			GetText = ChannelText,
-			GetValue = function()
-				return soundConfig.Channel or "Master"
-			end,
-			SetValue = function(value)
-				soundConfig.Channel = value
-				PlaySoundFile(sounds:Resolve(soundConfig.File), value)
-				config:Apply()
-			end,
-		})
-
-		return dropdown
-	end
-
-	local importantChannelDropdown = BuildChannelDropdown(options.Sound.Important)
-	importantChannelDropdown.Label:SetPoint("TOPLEFT", soundImportantDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local defensiveChannelDropdown = BuildChannelDropdown(options.Sound.Defensive)
-	defensiveChannelDropdown.Label:SetPoint("TOPLEFT", soundDefensiveDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
+	-- One channel for both categories, like the TTS tab: the alerts are one page of sounds, so
+	-- they all come out of the same output. Previews with the important sound, since that is the
+	-- one the channel choice is usually about.
+	local channelDropdown = mini:Dropdown({
+		Parent = parent,
+		LabelText = L["Channel"],
+		Width = 200,
+		Items = SOUND_CHANNELS,
+		GetText = ChannelText,
+		GetValue = function()
+			return options.Sound.Channel or "Master"
+		end,
+		SetValue = function(value)
+			options.Sound.Channel = value
+			PlaySoundFile(sounds:Resolve(options.Sound.Important.File), value)
+			config:Apply()
+		end,
+	})
+	channelDropdown.Label:SetPoint("LEFT", parent, "LEFT", 0, 0)
+	channelDropdown.Label:SetPoint("TOP", soundImportantDropdown, "BOTTOM", 0, -verticalSpacing)
 end
 
 ---@param parent table

@@ -91,16 +91,17 @@ end
 ---@param ids number[]?
 ---@param unitToken string
 ---@param list table<number, boolean> Spell ids to register.
----@param config table Sound options (File/Channel).
+---@param config table Sound options (File).
 ---@param fallbackFile string
+---@param channel string The one output channel both alert categories share.
 ---@return number[] ids
-local function RegisterAlertSoundList(ids, unitToken, list, config, fallbackFile)
+local function RegisterAlertSoundList(ids, unitToken, list, config, fallbackFile, channel)
 	return auraSounds:RegisterSet(
 		ids,
 		unitToken,
 		list,
 		addon.Core.Sounds:Resolve(config.File or fallbackFile),
-		config.Channel or "Master",
+		channel,
 		SILENT_ALERT_SPELL_IDS
 	)
 end
@@ -132,7 +133,7 @@ function M:PlaySound(spellType)
 	end
 
 	soundFile = addon.Core.Sounds:Resolve(soundConfig.File)
-	PlaySoundFile(soundFile, soundConfig.Channel or "Master")
+	PlaySoundFile(soundFile, db.Modules.AlertsModule.Sound.Channel or "Master")
 end
 
 ---@param spellName string?
@@ -214,11 +215,12 @@ function M:RegisterToken(unitToken)
 
 	-- nil until the first list registers; RegisterSet then hands out a pooled handle list.
 	local ids = nil
+	local channel = sound.Channel or "Master"
 	if importantEnabled then
-		ids = RegisterAlertSoundList(ids, unitToken, addon.Core.AuraCategoryIds.Important, sound.Important, "AirHorn.ogg")
+		ids = RegisterAlertSoundList(ids, unitToken, addon.Core.AuraCategoryIds.Important, sound.Important, "AirHorn.ogg", channel)
 	end
 	if defensiveEnabled then
-		ids = RegisterAlertSoundList(ids, unitToken, addon.Core.AuraCategoryIds.Defensive, sound.Defensive, "AlertToastWarm.ogg")
+		ids = RegisterAlertSoundList(ids, unitToken, addon.Core.AuraCategoryIds.Defensive, sound.Defensive, "AlertToastWarm.ogg", channel)
 	end
 	-- The silent list is deliberately not applied here: a repeated ding is noise, a spoken name
 	-- still tells you what landed, and the legacy path announced those spells too.
@@ -285,10 +287,9 @@ function M:Refresh(activeTokens)
 		active,
 		importantEnabled,
 		sound.Important and sound.Important.File,
-		sound.Important and sound.Important.Channel,
 		defensiveEnabled,
 		sound.Defensive and sound.Defensive.File,
-		sound.Defensive and sound.Defensive.Channel,
+		sound.Channel,
 		importantTts,
 		defensiveTts,
 		voicePack,
