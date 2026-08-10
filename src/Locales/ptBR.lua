@@ -372,6 +372,7 @@ L:RegisterLocale("ptBR", {
 	["Imported %d aura group(s)."] = "%d grupo(s) de auras importado(s).",
 	["A group can hold at most %d spells."] = "Um grupo comporta no máximo %d magias.",
 	["Debuffs cannot be tracked on yourself or your pet."] = "Penalidades não podem ser rastreadas em você mesmo ou no seu caçador.",
+	["Debuffs cannot be tracked on group members."] = "Penalidades não podem ser rastreadas em membros do grupo.",
 	["Buffs are only shown while the unit is friendly."] = "Bônus só são mostrados enquanto a unidade for aliada.",
 	["Debuffs are only shown while the unit is hostile."] = "Penalidades só são mostradas enquanto a unidade for hostil.",
 	["Trigger"] = "Gatilho",
@@ -416,5 +417,6 @@ L:RegisterLocale("ptBR", {
 	["Other DPS"] = "Outro DPS",
 	["Self"] = "Você",
 	["Spell ID / name"] = "ID / nome da magia",
+	["Unit Frames"] = "Quadros de unidade",
 	['Delete the aura group "%s"?'] = "Excluir o grupo de auras \"%s\"?",
 })

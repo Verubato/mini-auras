@@ -4,6 +4,7 @@ local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
 local eventGate = addon.Core.EventGate
 local profileManager = addon.Core.ProfileManager
+local frames = addon.Core.Frames
 local groups = addon.Modules.CustomAuras.Groups
 local display = addon.Modules.CustomAuras.Display
 
@@ -32,6 +33,9 @@ local db
 local eventsFrame
 ---@type EventGate?
 local gate
+-- The unit frame hooks cannot be taken back off, so they go on the first time a group actually
+-- hangs off the frames rather than at Init.
+local frameHooksInstalled = false
 
 ---@class CustomAurasModule : IModule
 local M = {}
@@ -96,6 +100,33 @@ local function CreateEvents()
 	})
 end
 
+---Sorting and the frame addons' own visibility switches move whole frames around, so the copies
+---are rebuilt from the current anchor list rather than patched one frame at a time.
+local function OnFramesChanged()
+	if display:HasFrameGroups() then
+		M:Refresh()
+	end
+end
+
+local function InstallFrameHooks()
+	if frameHooksInstalled then
+		return
+	end
+
+	frameHooksInstalled = true
+
+	frames:InstallUnitFrameHooks(eventsFrame, {
+		OnSetUnit = function(frame, unit)
+			display:OnFrameSetUnit(frame, unit)
+		end,
+		OnUpdateVisible = function(frame)
+			display:OnFrameVisibilityChanged(frame)
+		end,
+		OnSorted = OnFramesChanged,
+		OnVisibilityChanged = OnFramesChanged,
+	})
+end
+
 ---@param active boolean
 local function SetTestMode(active)
 	display:SetTestMode(active)
@@ -142,6 +173,10 @@ function M:Refresh()
 	end
 
 	display:Refresh(options, isEnabled)
+
+	if display:HasFrameGroups() then
+		InstallFrameHooks()
+	end
 end
 
 ---Normalises every saved group, and creates the starter ones for a profile that has never had

@@ -373,6 +373,7 @@ L:RegisterLocale("koKR", {
 	["Imported %d aura group(s)."] = "오라 그룹 %d개를 가져왔습니다.",
 	["A group can hold at most %d spells."] = "한 그룹에는 최대 %d개의 주문만 담을 수 있습니다.",
 	["Debuffs cannot be tracked on yourself or your pet."] = "자신이나 소환수에게는 디버프를 추적할 수 없습니다.",
+	["Debuffs cannot be tracked on group members."] = "파티원에게는 디버프를 추적할 수 없습니다.",
 	["Buffs are only shown while the unit is friendly."] = "버프는 대상이 아군일 때만 표시됩니다.",
 	["Debuffs are only shown while the unit is hostile."] = "디버프는 대상이 적군일 때만 표시됩니다.",
 	["Trigger"] = "발동 조건",
@@ -417,5 +418,6 @@ L:RegisterLocale("koKR", {
 	["Other DPS"] = "다른 딜러",
 	["Self"] = "자신",
 	["Spell ID / name"] = "주문 ID / 이름",
+	["Unit Frames"] = "유닛 프레임",
 	['Delete the aura group "%s"?'] = "\"%s\" 오라 그룹을 삭제할까요?",
 })

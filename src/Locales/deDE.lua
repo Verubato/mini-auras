@@ -373,6 +373,7 @@ L:RegisterLocale("deDE", {
 	["Imported %d aura group(s)."] = "%d Aurengruppe(n) importiert.",
 	["A group can hold at most %d spells."] = "Eine Gruppe fasst höchstens %d Zauber.",
 	["Debuffs cannot be tracked on yourself or your pet."] = "Schwächungszauber lassen sich bei dir selbst oder deinem Begleiter nicht verfolgen.",
+	["Debuffs cannot be tracked on group members."] = "Schwächungszauber lassen sich bei Gruppenmitgliedern nicht verfolgen.",
 	["Buffs are only shown while the unit is friendly."] = "Stärkungszauber werden nur angezeigt, solange die Einheit verbündet ist.",
 	["Debuffs are only shown while the unit is hostile."] = "Schwächungszauber werden nur angezeigt, solange die Einheit feindlich ist.",
 	["Trigger"] = "Auslöser",
@@ -417,5 +418,6 @@ L:RegisterLocale("deDE", {
 	["Other DPS"] = "Anderer DD",
 	["Self"] = "Selbst",
 	["Spell ID / name"] = "Zauber-ID / Name",
+	["Unit Frames"] = "Einheitenfenster",
 	['Delete the aura group "%s"?'] = "Aurengruppe \"%s\" löschen?",
 })

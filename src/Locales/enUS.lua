@@ -375,6 +375,7 @@ L:SetDefaultStrings({
 	["Imported %d aura group(s)."] = "Imported %d aura group(s).",
 	["A group can hold at most %d spells."] = "A group can hold at most %d spells.",
 	["Debuffs cannot be tracked on yourself or your pet."] = "Debuffs cannot be tracked on yourself or your pet.",
+	["Debuffs cannot be tracked on group members."] = "Debuffs cannot be tracked on group members.",
 	["Buffs are only shown while the unit is friendly."] = "Buffs are only shown while the unit is friendly.",
 	["Debuffs are only shown while the unit is hostile."] = "Debuffs are only shown while the unit is hostile.",
 	["Trigger"] = "Trigger",
@@ -419,6 +420,7 @@ L:SetDefaultStrings({
 	["Other DPS"] = "Other DPS",
 	["Self"] = "Self",
 	["Spell ID / name"] = "Spell ID / name",
+	["Unit Frames"] = "Unit Frames",
 	['Delete the aura group "%s"?'] = "Delete the aura group \"%s\"?",
 })
 

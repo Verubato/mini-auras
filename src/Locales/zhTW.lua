@@ -374,6 +374,7 @@ L:RegisterLocale("zhTW", {
 	["Imported %d aura group(s)."] = "已匯入 %d 個光環群組。",
 	["A group can hold at most %d spells."] = "一個群組最多包含 %d 個法術。",
 	["Debuffs cannot be tracked on yourself or your pet."] = "無法在你自己或寵物身上追蹤減益。",
+	["Debuffs cannot be tracked on group members."] = "無法在隊伍成員身上追蹤減益。",
 	["Buffs are only shown while the unit is friendly."] = "僅當單位為友方時才顯示增益。",
 	["Debuffs are only shown while the unit is hostile."] = "僅當單位為敵方時才顯示減益。",
 	["Trigger"] = "觸發",
@@ -418,5 +419,6 @@ L:RegisterLocale("zhTW", {
 	["Other DPS"] = "其他輸出",
 	["Self"] = "自己",
 	["Spell ID / name"] = "法術 ID / 名稱",
+	["Unit Frames"] = "單位框架",
 	['Delete the aura group "%s"?'] = "刪除光環群組「%s」？",
 })

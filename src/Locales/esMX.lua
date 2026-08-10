@@ -374,6 +374,7 @@ L:RegisterLocale("esMX", {
 	["Imported %d aura group(s)."] = "%d grupo(s) de auras importado(s).",
 	["A group can hold at most %d spells."] = "Un grupo admite como máximo %d hechizos.",
 	["Debuffs cannot be tracked on yourself or your pet."] = "Los perjuicios no se pueden seguir sobre ti mismo ni sobre tu mascota.",
+	["Debuffs cannot be tracked on group members."] = "Los perjuicios no se pueden seguir sobre los miembros del grupo.",
 	["Buffs are only shown while the unit is friendly."] = "Los beneficios sólo se muestran mientras la unidad sea aliada.",
 	["Debuffs are only shown while the unit is hostile."] = "Los perjuicios sólo se muestran mientras la unidad sea hostil.",
 	["Trigger"] = "Disparador",
@@ -418,5 +419,6 @@ L:RegisterLocale("esMX", {
 	["Other DPS"] = "Otro DPS",
 	["Self"] = "Yo mismo",
 	["Spell ID / name"] = "ID / nombre del hechizo",
+	["Unit Frames"] = "Marcos de unidad",
 	['Delete the aura group "%s"?'] = "¿Eliminar el grupo de auras \"%s\"?",
 })

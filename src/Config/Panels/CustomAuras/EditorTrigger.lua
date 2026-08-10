@@ -25,6 +25,8 @@ local recordedRows = {}
 local function ProblemText(reason)
 	if reason == "HARMFUL_ON_FRIENDLY" then
 		return L["Debuffs cannot be tracked on yourself or your pet."]
+	elseif reason == "HARMFUL_ON_GROUP" then
+		return L["Debuffs cannot be tracked on group members."]
 	end
 
 	return nil
@@ -59,6 +61,8 @@ local function UnitLabel(unit)
 		return L["Healer"]
 	elseif unit == "otherdps" then
 		return L["Other DPS"]
+	elseif unit == "unitframes" then
+		return L["Unit Frames"]
 	elseif unit == "targetfriendly" then
 		return L["Friendly Target"]
 	elseif unit == "targetenemy" then

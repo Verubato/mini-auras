@@ -371,6 +371,7 @@ L:RegisterLocale("itIT", {
 	["Imported %d aura group(s)."] = "Importati %d gruppi di aure.",
 	["A group can hold at most %d spells."] = "Un gruppo può contenere al massimo %d incantesimi.",
 	["Debuffs cannot be tracked on yourself or your pet."] = "Le penalità non possono essere tracciate su te stesso o sul tuo famiglio.",
+	["Debuffs cannot be tracked on group members."] = "Le penalità non possono essere tracciate sui membri del gruppo.",
 	["Buffs are only shown while the unit is friendly."] = "I benefici sono mostrati solo finché l'unità è alleata.",
 	["Debuffs are only shown while the unit is hostile."] = "Le penalità sono mostrate solo finché l'unità è ostile.",
 	["Trigger"] = "Attivazione",
@@ -415,5 +416,6 @@ L:RegisterLocale("itIT", {
 	["Other DPS"] = "Altro DPS",
 	["Self"] = "Me stesso",
 	["Spell ID / name"] = "ID / nome incantesimo",
+	["Unit Frames"] = "Riquadri unità",
 	['Delete the aura group "%s"?'] = "Eliminare il gruppo di aure \"%s\"?",
 })

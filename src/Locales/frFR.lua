@@ -371,6 +371,7 @@ L:RegisterLocale("frFR", {
 	["Imported %d aura group(s)."] = "%d groupe(s) d'auras importé(s).",
 	["A group can hold at most %d spells."] = "Un groupe peut contenir au plus %d sorts.",
 	["Debuffs cannot be tracked on yourself or your pet."] = "Les affaiblissements ne peuvent pas être suivis sur vous-même ou votre familier.",
+	["Debuffs cannot be tracked on group members."] = "Les affaiblissements ne peuvent pas être suivis sur les membres du groupe.",
 	["Buffs are only shown while the unit is friendly."] = "Les améliorations ne s'affichent que si l'unité est alliée.",
 	["Debuffs are only shown while the unit is hostile."] = "Les affaiblissements ne s'affichent que si l'unité est hostile.",
 	["Trigger"] = "Déclencheur",
@@ -415,5 +416,6 @@ L:RegisterLocale("frFR", {
 	["Other DPS"] = "Autre DPS",
 	["Self"] = "Soi-même",
 	["Spell ID / name"] = "ID / nom du sort",
+	["Unit Frames"] = "Cadres d'unité",
 	['Delete the aura group "%s"?'] = "Supprimer le groupe d'auras « %s » ?",
 })

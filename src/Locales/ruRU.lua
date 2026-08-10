@@ -374,6 +374,7 @@ L:RegisterLocale("ruRU", {
 	["Imported %d aura group(s)."] = "Импортировано групп аур: %d.",
 	["A group can hold at most %d spells."] = "В группе может быть не более %d заклинаний.",
 	["Debuffs cannot be tracked on yourself or your pet."] = "Ослабления нельзя отслеживать на себе или своём питомце.",
+	["Debuffs cannot be tracked on group members."] = "Ослабления нельзя отслеживать на участниках группы.",
 	["Buffs are only shown while the unit is friendly."] = "Усиления показываются, только пока цель союзная.",
 	["Debuffs are only shown while the unit is hostile."] = "Ослабления показываются, только пока цель враждебная.",
 	["Trigger"] = "Триггер",
@@ -418,5 +419,6 @@ L:RegisterLocale("ruRU", {
 	["Other DPS"] = "Другой ДД",
 	["Self"] = "Себя",
 	["Spell ID / name"] = "ID / название заклинания",
+	["Unit Frames"] = "Рамки юнитов",
 	['Delete the aura group "%s"?'] = "Удалить группу аур «%s»?",
 })

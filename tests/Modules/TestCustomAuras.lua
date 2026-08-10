@@ -460,6 +460,40 @@ fw.describe("CustomAuras - what a group is allowed to track", function()
 		assert(not groups:IsNameplateUnit("targetenemy"), "and a target is not a plate")
 	end)
 
+	fw.it("treats the unit frames choice as an anchor of its own", function()
+		assert(groups:Normalise({ Unit = "unitframes" }).Anchor == "FRAMES", "one copy per frame")
+		assert(groups:IsFrameUnit("unitframes"), "the display asks this way")
+		assert(not groups:IsFrameUnit("nameplatefriendly"), "and a plate is not a unit frame")
+		assert(not groups:IsNameplateUnit("unitframes"), "either way round")
+		assert(groups:GetToken(groups:Normalise({ Unit = "unitframes" })) == nil,
+			"there is no single token behind it")
+	end)
+
+	fw.it("refuses debuffs on unit frames by spell id, but not by filter", function()
+		-- Group members are always assistable, so the engine drops a spell id map on a debuff.
+		assert(groups:SupportsAuraType("unitframes", "HELPFUL"), "buffs on the group")
+		assert(not groups:SupportsAuraType("unitframes", "HARMFUL"), "debuffs by id are dropped")
+		assert(groups:SupportsAuraType("unitframes", "HARMFUL", groups.TrackingMode.Filters),
+			"a filter string is honoured whatever the unit is")
+	end)
+
+	fw.it("gives a unit frame debuff group a reason of its own", function()
+		local group = groups:Normalise({
+			Unit = "unitframes",
+			AuraType = "HARMFUL",
+			Spells = { POLYMORPH },
+		})
+		local ok, reason = groups:Supports(group)
+
+		assert(not ok and reason == "HARMFUL_ON_GROUP",
+			"the message is about group members, not about your pet")
+	end)
+
+	fw.it("has no side to wait for on the unit frames", function()
+		assert(groups:GetWarning(groups:Normalise({ Unit = "unitframes" })) == nil,
+			"a group frame always holds somebody friendly")
+	end)
+
 	fw.it("lets a nameplate group be pointed back at a unit", function()
 		-- Normalise runs after every edit, so anything that re-derived the unit from the stored
 		-- anchor would undo the change the instant it was made.
@@ -893,6 +927,173 @@ fw.describe("CustomAuras - nameplate anchored displays", function()
 			"a recycled plate reuses the parked display rather than building another")
 	end)
 
+end)
+
+fw.describe("CustomAuras - unit frame anchored displays", function()
+	---Replaces whatever unit frames the last test left with one per token given.
+	---@param unitList string[]
+	---@return table[]
+	local function UnitFrames(unitList)
+		for index = #env.unitFrames, 1, -1 do
+			env.unitFrames[index] = nil
+		end
+
+		local made = {}
+
+		for _, unit in ipairs(unitList) do
+			made[#made + 1] = env.addUnitFrame(unit)
+		end
+
+		return made
+	end
+
+	---@param state table
+	---@return number
+	local function CopyCount(state)
+		local count = 0
+
+		for _ in pairs(state.Frames) do
+			count = count + 1
+		end
+
+		return count
+	end
+
+	fw.it("puts a copy on every unit frame", function()
+		ClearGroups()
+		UnitFrames({ "party1", "party2" })
+		AddGroup({ Unit = "unitframes", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		assert(Budget(ContainerFor("party1"), "helpful") == groups.MaxIcons, "the first frame's member")
+		assert(Budget(ContainerFor("party2"), "helpful") == groups.MaxIcons, "and the second's")
+	end)
+
+	fw.it("hands a copy back when its frame goes, and reuses it for the next one", function()
+		ClearGroups()
+		UnitFrames({ "party1", "party2" })
+
+		local group = AddGroup({ Unit = "unitframes", Spells = { ICE_BLOCK } })
+
+		module:Refresh()
+
+		local created = env.auraContainerCount()
+		local state = display:GetStates()[group.Id]
+
+		-- The frame addon put one away, leaving the other where it was.
+		table.remove(env.unitFrames, 2)
+		module:Refresh()
+
+		assert(CopyCount(state) == 1, "only the frame that is still there keeps one")
+
+		env.addUnitFrame("party3")
+		module:Refresh()
+
+		assert(CopyCount(state) == 2, "the new frame gets one")
+		assert(env.auraContainerCount() == created, "out of the pool, rather than built again")
+	end)
+
+	fw.it("skips a frame holding a pet", function()
+		ClearGroups()
+
+		local made = UnitFrames({ "party1", "partypet1" })
+
+		env.pets.partypet1 = true
+
+		local group = AddGroup({ Unit = "unitframes", Spells = { ICE_BLOCK } })
+
+		module:Refresh()
+		env.pets.partypet1 = nil
+
+		local state = display:GetStates()[group.Id]
+
+		assert(state.Frames[made[1]], "the member's frame has a copy")
+		assert(state.Frames[made[2]] == nil, "the pet's frame does not")
+	end)
+
+	fw.it("drops the copy from a member the player cannot assist", function()
+		ClearGroups()
+
+		local made = UnitFrames({ "party1" })
+		local group = AddGroup({ Unit = "unitframes", Spells = { ICE_BLOCK } })
+
+		module:Refresh()
+
+		local state = display:GetStates()[group.Id]
+
+		assert(state.Frames[made[1]], "a friendly member has a copy")
+
+		-- A mind control flips the token to the other side, and the spell id filter with it.
+		env.enemies.party1 = true
+		module:Refresh()
+		env.enemies.party1 = nil
+
+		assert(state.Frames[made[1]] == nil, "a mind controlled one does not")
+	end)
+
+	fw.it("registers the group's sounds on each member it shows on", function()
+		ClearGroups()
+		addon.Modules.CustomAuras.Sound:Clear()
+		UnitFrames({ "party1", "party2" })
+		AddGroup({
+			Unit = "unitframes",
+			Spells = { ICE_BLOCK },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		local seen = {}
+
+		for _, entry in pairs(env.auraSounds) do
+			seen[entry.Unit] = true
+		end
+
+		assert(seen.party1 and seen.party2, "one registration per member")
+	end)
+
+	fw.it("follows a frame that is pointed at somebody else", function()
+		ClearGroups()
+
+		local made = UnitFrames({ "party1" })
+		local group = AddGroup({ Unit = "unitframes", Spells = { ICE_BLOCK } })
+
+		module:Refresh()
+
+		local hooks = env.unitFrameHooks
+
+		assert(hooks, "the frame hooks went on once a group asked for them")
+
+		-- The real guard is a name test, which the mock frames cannot answer.
+		addon.Core.Frames.IsFriendlyCuf = function()
+			return true
+		end
+		made[1].unit = "party3"
+		hooks.OnSetUnit(made[1], "party3")
+		addon.Core.Frames.IsFriendlyCuf = function()
+			return false
+		end
+
+		assert(display:GetStates()[group.Id].Frames[made[1]].Unit == "party3",
+			"the copy moved with the frame")
+	end)
+
+	fw.it("leaves nothing behind when the group is pointed somewhere else", function()
+		ClearGroups()
+		UnitFrames({ "party1", "party2" })
+
+		local group = AddGroup({ Unit = "unitframes", Spells = { ICE_BLOCK } })
+
+		module:Refresh()
+
+		group.Unit = "player"
+		groups:Normalise(group)
+		module:Refresh()
+
+		assert(CopyCount(display:GetStates()[group.Id]) == 0, "the per-frame copies were released")
+
+		UnitFrames({})
+		ClearGroups()
+	end)
 end)
 
 fw.describe("CustomAuras - tracking by filter", function()

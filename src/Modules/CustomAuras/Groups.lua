@@ -32,6 +32,7 @@ local BY_FILTERS = "FILTERS"
 -- Anchor modes.
 local SCREEN = "SCREEN"
 local NAMEPLATE = "NAMEPLATE"
+local FRAMES = "FRAMES"
 
 local DEFAULT_ICON_SIZE = 40
 local DEFAULT_SPACING = 2
@@ -85,8 +86,10 @@ local TARGET_FRIENDLY = "targetfriendly"
 local TARGET_ENEMY = "targetenemy"
 local NAMEPLATE_FRIENDLY = "nameplatefriendly"
 local NAMEPLATE_ENEMY = "nameplateenemy"
+local UNIT_FRAMES_UNIT = "unitframes"
 
--- Token is the unit the container watches; Plates means one copy per matching nameplate instead.
+-- Token is the unit the container watches; Plates means one copy per matching nameplate instead,
+-- and Frames one copy per party or raid frame.
 -- Friendly is the reaction the unit must have for the group to show at all, nil for either.
 local UNIT_INFO = {
 	[SELF_UNIT] = { Token = "player", Helpful = true, Harmful = true },
@@ -99,6 +102,8 @@ local UNIT_INFO = {
 	[TARGET_ENEMY] = { Token = "target", Friendly = false, Harmful = true },
 	[NAMEPLATE_FRIENDLY] = { Plates = true, Friendly = true, Helpful = true },
 	[NAMEPLATE_ENEMY] = { Plates = true, Friendly = false, Harmful = true },
+	-- Group members are always assistable, so the harmful side is only reachable by filter.
+	[UNIT_FRAMES_UNIT] = { Frames = true, Friendly = true, Helpful = true, Harmful = true },
 }
 
 -- What a unit saved before the split becomes. Focus and the target's target are gone, so they
@@ -119,13 +124,14 @@ local FALLBACK_ICON = [[Interface\Icons\INV_Misc_QuestionMark]]
 -- Resolved on first use, because the browser hands the same icon back as a number.
 ---@type number?
 local fallbackFileId
--- Party and arena tokens are left out: no stable frame, and the raid frame module covers them.
+-- Bare party and arena tokens are left out: they have no stable place on screen, and the unit
+-- frames choice covers the group by hanging a copy off each member's frame instead.
 local UNITS = {
-	SELF_UNIT, PET_UNIT, TANK_UNIT, HEALER_UNIT, OTHER_DPS_UNIT,
+	SELF_UNIT, PET_UNIT, TANK_UNIT, HEALER_UNIT, OTHER_DPS_UNIT, UNIT_FRAMES_UNIT,
 	TARGET_FRIENDLY, TARGET_ENEMY, NAMEPLATE_FRIENDLY, NAMEPLATE_ENEMY,
 }
 -- Units that are always assistable, so a harmful group on them could never filter by spell id.
-local ALWAYS_FRIENDLY = { [SELF_UNIT] = true, [PET_UNIT] = true }
+local ALWAYS_FRIENDLY = { [SELF_UNIT] = true, [PET_UNIT] = true, [UNIT_FRAMES_UNIT] = true }
 
 -- What a profile starts with: the three self-buffs worth knowing the instant they land. Each
 -- tracks one spell and leaves Icon empty, which borrows that spell's own icon. A Color tints
@@ -145,7 +151,7 @@ local M = {}
 addon.Modules.CustomAuras.Groups = M
 
 M.AuraType = { Helpful = HELPFUL, Harmful = HARMFUL }
-M.Anchor = { Screen = SCREEN, Nameplate = NAMEPLATE }
+M.Anchor = { Screen = SCREEN, Nameplate = NAMEPLATE, Frames = FRAMES }
 M.Units = UNITS
 M.NoSound = NO_SOUND
 M.SoundTriggers = SOUND_TRIGGERS
@@ -279,7 +285,7 @@ function M:Normalise(group)
 
 	-- Anchor is derived, never chosen: it is the unit question asked twice.
 	group.Unit = unit
-	group.Anchor = UNIT_INFO[unit].Plates and NAMEPLATE or SCREEN
+	group.Anchor = UNIT_INFO[unit].Plates and NAMEPLATE or UNIT_INFO[unit].Frames and FRAMES or SCREEN
 
 	-- A split unit allows one aura type only, so a group pointed at one takes that type whatever
 	-- it was set to. Nothing else could be shown there anyway.
@@ -294,7 +300,8 @@ function M:Normalise(group)
 	group.Position.X = tonumber(group.Position.X) or 0
 	group.Position.Y = tonumber(group.Position.Y) or DEFAULT_POSITION_Y
 
-	-- Nameplate groups hang off the plate, so they carry an offset rather than a screen point.
+	-- Nameplate and unit frame groups hang off the frame, so they carry an offset rather than a
+	-- screen point.
 	group.Offset = group.Offset or {}
 	group.Offset.X = tonumber(group.Offset.X) or 0
 	group.Offset.Y = tonumber(group.Offset.Y) or 40
@@ -506,6 +513,15 @@ function M:IsNameplateUnit(unit)
 	return info ~= nil and info.Plates == true
 end
 
+---True for the choices that put a copy of the group on every party or raid frame.
+---@param unit string
+---@return boolean
+function M:IsFrameUnit(unit)
+	local info = UNIT_INFO[unit]
+
+	return info ~= nil and info.Frames == true
+end
+
 ---Whether a live unit is on the side the group's choice names. Always true for a choice that
 ---does not name one. Uses the assist check rather than IsFriend, because the question is the
 ---same one the engine asks when it decides whether a spell id filter applies.
@@ -556,9 +572,11 @@ end
 ---@return boolean supported
 ---@return string? reason Key the options page maps to a message.
 function M:Supports(group)
-	if group.Anchor == SCREEN
+	-- Nameplates are excluded because neither side of them is ever always-assistable, so the only
+	-- anchors that can land here are the screen and the unit frames.
+	if group.Anchor ~= NAMEPLATE
 		and not M:SupportsAuraType(group.Unit, group.AuraType, group.TrackingMode) then
-		return false, "HARMFUL_ON_FRIENDLY"
+		return false, group.Anchor == FRAMES and "HARMFUL_ON_GROUP" or "HARMFUL_ON_FRIENDLY"
 	end
 
 	-- No reason given: the empty spell list says it already. A filter group has nothing it must
@@ -578,7 +596,8 @@ function M:GetWarning(group)
 
 	-- Only the split units have a reaction to wait for. Self and pet are always there, and
 	-- whether they can carry the chosen aura type is a hard refusal rather than a caveat.
-	if not info or info.Friendly == nil then
+	-- A unit frame holds a group member, so its side is not something the user is waiting on.
+	if not info or info.Friendly == nil or info.Frames then
 		return nil
 	end
 
@@ -763,10 +782,10 @@ end
 ---@field Enabled boolean
 ---@field Icon string|number Texture or file ID for the options grid; empty borrows the first spell's icon.
 ---@field AuraType string "HELPFUL"|"HARMFUL"
----@field Anchor string "SCREEN"|"NAMEPLATE", derived from Unit.
----@field Unit string A unit token, or "nameplate" for one copy per nameplate.
+---@field Anchor string "SCREEN"|"NAMEPLATE"|"FRAMES", derived from Unit.
+---@field Unit string A unit choice: a token, a role, one copy per nameplate, or one per unit frame.
 ---@field Position { Point: string, RelativePoint: string, X: number, Y: number } Screen anchor only.
----@field Offset { X: number, Y: number } Nameplate anchor only.
+---@field Offset { X: number, Y: number } Nameplate and unit frame anchors only.
 ---@field Grow string
 ---@field Icons { Size: number, Spacing: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, ShowTooltips: boolean, Color: table }
 ---@field Sound { Applied: string, Removed: string, Stacks: string, Channel: string } Empty means silent.

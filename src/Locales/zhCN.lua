@@ -374,6 +374,7 @@ L:RegisterLocale("zhCN", {
 	["Imported %d aura group(s)."] = "已导入 %d 个光环组。",
 	["A group can hold at most %d spells."] = "一个组最多包含 %d 个法术。",
 	["Debuffs cannot be tracked on yourself or your pet."] = "无法在你自己或孠养身上追踪减益。",
+	["Debuffs cannot be tracked on group members."] = "无法在队伍成员身上追踪减益。",
 	["Buffs are only shown while the unit is friendly."] = "仅当单位为友方时才显示增益。",
 	["Debuffs are only shown while the unit is hostile."] = "仅当单位为敌方时才显示减益。",
 	["Trigger"] = "触发",
@@ -418,5 +419,6 @@ L:RegisterLocale("zhCN", {
 	["Other DPS"] = "其他输出",
 	["Self"] = "自己",
 	["Spell ID / name"] = "法术 ID / 名称",
+	["Unit Frames"] = "单位框体",
 	['Delete the aura group "%s"?'] = "删除光环组“%s”？",
 })

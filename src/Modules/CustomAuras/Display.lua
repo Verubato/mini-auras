@@ -7,13 +7,15 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local testSpellData = addon.Core.TestSpells
 local moduleUtil = addon.Utils.ModuleUtil
+local units = addon.Utils.Units
+local frames = addon.Core.Frames
 local pool = addon.Core.Pool
 local spellSearch = addon.Core.SpellSearch
 local groups = addon.Modules.CustomAuras.Groups
 local sound = addon.Modules.CustomAuras.Sound
 
--- One AuraContainer per group, or per group per visible nameplate. Preview icons go through an
--- IconSlotContainer so they need no aura data.
+-- One AuraContainer per group, or per group per visible nameplate or unit frame. Preview icons go
+-- through an IconSlotContainer so they need no aura data.
 --
 -- Every container carries BOTH a helpful and a harmful group, only one ever budgeted above zero.
 -- The engine drops a spell-id filter silently on the wrong-sided one, and the bare token left
@@ -48,8 +50,15 @@ local states = {}
 -- Rebuilt on every refresh and handed to the sound module, which owns the registrations.
 ---@type CustomAuraSoundRequest[]
 local soundRequests = {}
--- Scratch for sorting a group's nameplate tokens while the requests are collected.
-local plateTokens = {}
+-- Scratch for sorting and deduplicating a group's per-copy unit tokens while the requests are
+-- collected.
+local soundTokens = {}
+local soundSeen = {}
+-- Scratch for the unit frames one refresh pass saw, so copies on frames that have gone are
+-- handed back.
+local seenAnchors = {}
+-- Whether any group hangs off the unit frames, so the frame hooks can cost nothing otherwise.
+local anyFrameGroups = false
 local testModeActive = false
 -- The group the options page has selected. Drawn and draggable even when it could not show
 -- anything yet, so one can be positioned while it is still being built.
@@ -133,6 +142,7 @@ local function ParkDisplay(entry)
 	-- Cleared, or the next group to take this entry would skip applying its own geometry.
 	entry.StyleSignature = nil
 	entry.FilterSignature = nil
+	entry.Unit = nil
 
 	if entry.Test then
 		entry.Test:ResetAllSlots()
@@ -329,10 +339,10 @@ local function PositionAnchor(state)
 	UpdateAnchorSize(state)
 end
 
--- StartMoving on a frame parented to a nameplate fights the plate's own repositioning, so a drag
--- tracks the cursor and writes the delta into the group's offset instead.
+-- StartMoving on a frame parented to a nameplate or a unit frame fights that frame's own
+-- repositioning, so a drag tracks the cursor and writes the delta into the group's offset instead.
 
-local function OnPlateDragUpdate(handle)
+local function OnOffsetDragUpdate(handle)
 	local x, y = GetCursorPosition()
 	local group = handle.Group
 
@@ -342,7 +352,7 @@ local function OnPlateDragUpdate(handle)
 	M:AnchorGroup(group.Id)
 end
 
-local function OnPlateDragStart(handle)
+local function OnOffsetDragStart(handle)
 	local x, y = GetCursorPosition()
 
 	dragContext.StartX = x
@@ -350,13 +360,13 @@ local function OnPlateDragStart(handle)
 	dragContext.StartOffsetX = handle.Group.Offset.X
 	dragContext.StartOffsetY = handle.Group.Offset.Y
 	-- The offset lands on the DISPLAY, which ignores its parent's scale, so the cursor delta
-	-- converts through that frame's scale and not the plate's or UIParent's.
+	-- converts through that frame's scale and not the host frame's or UIParent's.
 	dragContext.Scale = handle.DisplayFrame:GetEffectiveScale()
 
-	handle:SetScript("OnUpdate", OnPlateDragUpdate)
+	handle:SetScript("OnUpdate", OnOffsetDragUpdate)
 end
 
-local function OnPlateDragStop(handle)
+local function OnOffsetDragStop(handle)
 	handle:SetScript("OnUpdate", nil)
 
 	local group = handle.Group
@@ -369,23 +379,23 @@ end
 
 ---@param state CustomAuraGroupState
 ---@param entry CustomAuraDisplayEntry
----@param plate table
-local function EnsurePlateHandle(state, entry, plate)
+---@param host table The nameplate or unit frame the copy hangs off.
+local function EnsureDragHandle(state, entry, host)
 	local handle = entry.Handle
 
 	if not handle then
-		handle = CreateFrame("Frame", nil, plate)
+		handle = CreateFrame("Frame", nil, host)
 		handle:SetClampedToScreen(false)
 		handle:RegisterForDrag("LeftButton")
-		handle:SetScript("OnDragStart", OnPlateDragStart)
-		handle:SetScript("OnDragStop", OnPlateDragStop)
+		handle:SetScript("OnDragStart", OnOffsetDragStart)
+		handle:SetScript("OnDragStop", OnOffsetDragStop)
 
 		entry.Handle = handle
 	end
 
 	handle.Group = state.Group
 	handle.DisplayFrame = entry.Display.Frame
-	handle:SetParent(plate)
+	handle:SetParent(host)
 
 	return handle
 end
@@ -421,9 +431,29 @@ local function ReleasePlates(state)
 end
 
 ---@param state CustomAuraGroupState
+---@param anchor table
+local function ReleaseFrameEntry(state, anchor)
+	local entry = state.Frames[anchor]
+
+	if entry then
+		displayPool:Release(entry)
+		state.Frames[anchor] = nil
+	end
+end
+
+---@param state CustomAuraGroupState
+local function ReleaseFrames(state)
+	for anchor, entry in pairs(state.Frames) do
+		displayPool:Release(entry)
+		state.Frames[anchor] = nil
+	end
+end
+
+---@param state CustomAuraGroupState
 local function Park(state)
 	ReleaseScreen(state)
 	ReleasePlates(state)
+	ReleaseFrames(state)
 end
 
 ---@param groupDef CustomAuraGroup
@@ -432,7 +462,7 @@ local function EnsureState(groupDef)
 	local state = states[groupDef.Id]
 
 	if not state then
-		state = { Plates = {} }
+		state = { Plates = {}, Frames = {} }
 		states[groupDef.Id] = state
 	end
 
@@ -485,25 +515,59 @@ end
 ---Split out of the refresh because a drag runs it every frame and must not re-budget.
 ---@param state CustomAuraGroupState
 ---@param entry CustomAuraDisplayEntry
----@param plate table
-local function AnchorPlateEntry(state, entry, plate)
+---@param host table The nameplate or unit frame the copy hangs off.
+local function AnchorEntry(state, entry, host)
 	local group = state.Group
 	local point = growAnchors:GetPinPoint(group.Grow)
-	local level = plate:GetFrameLevel() + 10
+	local level = host:GetFrameLevel() + 10
 	local frame = entry.Display.Frame
 
-	frame:SetParent(plate)
+	frame:SetParent(host)
 	frame:SetFrameLevel(level)
 	frame:ClearAllPoints()
-	frame:SetPoint(point, plate, "CENTER", group.Offset.X, group.Offset.Y)
+	frame:SetPoint(point, host, "CENTER", group.Offset.X, group.Offset.Y)
 
 	if not entry.Test then
 		return
 	end
 
 	entry.Test.Frame:ClearAllPoints()
-	entry.Test.Frame:SetPoint(point, plate, "CENTER", group.Offset.X, group.Offset.Y)
+	entry.Test.Frame:SetPoint(point, host, "CENTER", group.Offset.X, group.Offset.Y)
 	entry.Test.Frame:SetFrameLevel(level)
+end
+
+---Draws or puts away the stand-in icons and the drag handle for one copy.
+---@param state CustomAuraGroupState
+---@param entry CustomAuraDisplayEntry
+---@param host table The nameplate or unit frame the copy hangs off.
+---@return boolean previewing
+local function ApplyPreview(state, entry, host)
+	if not IsPreviewing(state) then
+		if entry.Test then
+			entry.Test:ResetAllSlots()
+			entry.Test.Frame:Hide()
+		end
+
+		if entry.Handle then
+			entry.Handle:EnableMouse(false)
+			entry.Handle:Hide()
+		end
+
+		return false
+	end
+
+	local handle = EnsureDragHandle(state, entry, host)
+
+	entry.Test.Frame:Show()
+	RenderTestIcons(state, entry)
+
+	handle:ClearAllPoints()
+	handle:SetAllPoints(entry.Test.Frame)
+	handle:SetFrameLevel(host:GetFrameLevel() + 20)
+	handle:EnableMouse(true)
+	handle:Show()
+
+	return true
 end
 
 ---@param state CustomAuraGroupState
@@ -535,30 +599,47 @@ local function RefreshPlateGroup(state, token)
 		EnsureTestContainer(state, entry, plate)
 	end
 
-	AnchorPlateEntry(state, entry, plate)
+	AnchorEntry(state, entry, plate)
 	ConfigureDisplay(state, entry, token)
+	ApplyPreview(state, entry, plate)
+end
+
+---One copy per party or raid frame, whichever addon owns it.
+---@param state CustomAuraGroupState
+---@param anchor table
+---@param unit string? The frame's new unit, when a set-unit hook already knows it.
+local function RefreshFrameGroup(state, anchor, unit)
+	unit = unit or anchor.unit or anchor:GetAttribute("unit")
+
+	-- A frame between units, one showing a pet, and one showing a member the player cannot assist
+	-- (a mind control) all hand their container back rather than keeping a parked copy each.
+	if not unit or unit == "" or units:IsCompoundUnit(unit) or units:IsPetOrMinion(unit)
+		or not groups:MatchesReaction(state.Group.Unit, unit) then
+		ReleaseFrameEntry(state, anchor)
+
+		return
+	end
+
+	local entry = state.Frames[anchor]
+
+	if not entry then
+		entry = displayPool:Acquire(BuildStyle(state.Group))
+		state.Frames[anchor] = entry
+	end
+
+	entry.Unit = unit
 
 	if IsPreviewing(state) then
-		local handle = EnsurePlateHandle(state, entry, plate)
+		EnsureTestContainer(state, entry, anchor)
+	end
 
-		entry.Test.Frame:Show()
-		RenderTestIcons(state, entry)
+	AnchorEntry(state, entry, anchor)
+	ConfigureDisplay(state, entry, unit)
 
-		handle:ClearAllPoints()
-		handle:SetAllPoints(entry.Test.Frame)
-		handle:SetFrameLevel(plate:GetFrameLevel() + 20)
-		handle:EnableMouse(true)
-		handle:Show()
-	else
-		if entry.Test then
-			entry.Test:ResetAllSlots()
-			entry.Test.Frame:Hide()
-		end
-
-		if entry.Handle then
-			entry.Handle:EnableMouse(false)
-			entry.Handle:Hide()
-		end
+	-- The copy follows the unit frame's own visibility, except while previewing: a stand-in on a
+	-- frame the addon has parked is still something to position the group with.
+	if not ApplyPreview(state, entry, anchor) then
+		frames:ShowHideDisplay(entry.Display, anchor, false)
 	end
 end
 
@@ -604,15 +685,26 @@ local function CollectSoundRequests(state)
 	end
 
 	-- Sorted: the sound module compares a signature built from this, and pairs order varies.
-	wipe(plateTokens)
+	-- Deduplicated too, because two unit frames can hold the same member.
+	wipe(soundTokens)
+	wipe(soundSeen)
 
-	for token in pairs(state.Plates) do
-		plateTokens[#plateTokens + 1] = token
+	if group.Anchor == groups.Anchor.Frames then
+		for _, entry in pairs(state.Frames) do
+			if entry.Unit and not soundSeen[entry.Unit] then
+				soundSeen[entry.Unit] = true
+				soundTokens[#soundTokens + 1] = entry.Unit
+			end
+		end
+	else
+		for token in pairs(state.Plates) do
+			soundTokens[#soundTokens + 1] = token
+		end
 	end
 
-	table.sort(plateTokens)
+	table.sort(soundTokens)
 
-	for _, token in ipairs(plateTokens) do
+	for _, token in ipairs(soundTokens) do
 		Add(token)
 	end
 end
@@ -638,7 +730,7 @@ function M:HasPreview()
 	return previewGroupId ~= nil
 end
 
----Re-anchors one group's displays, for the nameplate drag.
+---Re-anchors one group's displays, for the nameplate and unit frame drags.
 ---@param groupId string
 function M:AnchorGroup(groupId)
 	local state = states[groupId]
@@ -651,8 +743,12 @@ function M:AnchorGroup(groupId)
 		local plate = C_NamePlate.GetNamePlateForUnit(token)
 
 		if plate then
-			AnchorPlateEntry(state, entry, plate)
+			AnchorEntry(state, entry, plate)
 		end
+	end
+
+	for anchor, entry in pairs(state.Frames) do
+		AnchorEntry(state, entry, anchor)
 	end
 end
 
@@ -663,9 +759,11 @@ function M:Refresh(options, moduleEnabled)
 	wipe(soundRequests)
 
 	local live = {}
+	local frameGroups = false
 
 	for _, groupDef in ipairs(options.Groups) do
 		live[groupDef.Id] = true
+		frameGroups = frameGroups or groupDef.Anchor == groups.Anchor.Frames
 
 		local state = EnsureState(groupDef)
 
@@ -680,13 +778,36 @@ function M:Refresh(options, moduleEnabled)
 			Park(state)
 		elseif groupDef.Anchor == groups.Anchor.Screen then
 			ReleasePlates(state)
+			ReleaseFrames(state)
 			RefreshScreenGroup(state)
+
+			if state.Allowed then
+				CollectSoundRequests(state)
+			end
+		elseif groupDef.Anchor == groups.Anchor.Frames then
+			ReleaseScreen(state)
+			ReleasePlates(state)
+			displayPool:Prewarm(PLATE_PREALLOCATE)
+			wipe(seenAnchors)
+
+			for _, anchor in ipairs(frames:GetAll(true, testModeActive)) do
+				seenAnchors[anchor] = true
+				RefreshFrameGroup(state, anchor)
+			end
+
+			-- A frame the addon has taken away keeps no parked copy of its own.
+			for anchor in pairs(state.Frames) do
+				if not seenAnchors[anchor] then
+					ReleaseFrameEntry(state, anchor)
+				end
+			end
 
 			if state.Allowed then
 				CollectSoundRequests(state)
 			end
 		else
 			ReleaseScreen(state)
+			ReleaseFrames(state)
 			displayPool:Prewarm(PLATE_PREALLOCATE)
 
 			for token in pairs(state.Plates) do
@@ -717,7 +838,15 @@ function M:Refresh(options, moduleEnabled)
 		end
 	end
 
+	anyFrameGroups = frameGroups
+
 	sound:Apply(soundRequests)
+end
+
+---Whether any group hangs off the unit frames, which is what makes the frame hooks worth having.
+---@return boolean
+function M:HasFrameGroups()
+	return anyFrameGroups
 end
 
 ---Only live while previewing; otherwise the anchor eats clicks meant for what is behind it.
@@ -761,6 +890,36 @@ function M:OnNamePlateRemoved(token)
 	end
 end
 
+---A unit frame was pointed at somebody else, so the copy on it follows.
+---@param frame table
+---@param unit string?
+function M:OnFrameSetUnit(frame, unit)
+	if not anyFrameGroups or not frame or not frames:IsFriendlyCuf(frame) then
+		return
+	end
+
+	for _, state in pairs(states) do
+		if state.Group.Anchor == groups.Anchor.Frames and state.Allowed then
+			RefreshFrameGroup(state, frame, unit)
+		end
+	end
+end
+
+---@param frame table
+function M:OnFrameVisibilityChanged(frame)
+	if not anyFrameGroups or not frame or not frames:IsFriendlyCuf(frame) then
+		return
+	end
+
+	for _, state in pairs(states) do
+		local entry = state.Frames[frame]
+
+		if entry then
+			frames:ShowHideDisplay(entry.Display, frame, false)
+		end
+	end
+end
+
 ---The container follows the token itself, but the budget depends on the new unit's assist
 ---state, and containers do not watch target or focus changes.
 ---@param unit string
@@ -781,6 +940,8 @@ function M:Teardown()
 		Park(state)
 	end
 
+	anyFrameGroups = false
+
 	sound:Clear()
 end
 
@@ -797,7 +958,8 @@ end
 ---@class CustomAuraDisplayEntry
 ---@field Display AuraContainerDisplay
 ---@field Test IconSlotContainer?
----@field Handle table? Nameplate drag handle, created on first use in test mode.
+---@field Handle table? Offset drag handle, created on first use in test mode.
+---@field Unit string? The unit a unit frame copy resolved to, for the sound registrations.
 ---@field StyleSignature string?
 ---@field FilterSignature string?
 
@@ -813,3 +975,4 @@ end
 ---@field Anchor table? Screen anchor frame.
 ---@field Screen CustomAuraDisplayEntry?
 ---@field Plates table<string, CustomAuraDisplayEntry>
+---@field Frames table<table, CustomAuraDisplayEntry> Keyed by the unit frame the copy hangs off.
