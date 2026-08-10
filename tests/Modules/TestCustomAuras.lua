@@ -1313,6 +1313,169 @@ fw.describe("CustomAuras - arena frame anchored displays", function()
 	end)
 end)
 
+fw.describe("CustomAuras - stand-in frames while a group is being placed", function()
+	---Empties the real unit frame list, so nothing but the stand-ins can be anchored to.
+	local function NoRealFrames()
+		for index = #env.unitFrames, 1, -1 do
+			env.unitFrames[index] = nil
+		end
+	end
+
+	---The mock treats every token as assistable unless it is listed as an enemy. The live client
+	---answers false for a unit that does not exist, which is what a stand-in frame's token always
+	---is, so the tokens are listed to model that.
+	---@param prefix string
+	---@param absent boolean
+	local function SetTokensAbsent(prefix, absent)
+		for index = 1, 3 do
+			env.enemies[prefix .. index] = absent or nil
+		end
+	end
+
+	---@param copies table
+	---@return number
+	local function Count(copies)
+		local count = 0
+
+		for _ in pairs(copies) do
+			count = count + 1
+		end
+
+		return count
+	end
+
+	local function Reset()
+		ClearGroups()
+		NoRealFrames()
+		SetTokensAbsent("party", false)
+		SetTokensAbsent("arena", false)
+		display:SetPreviewGroup(nil)
+		display:SetTestMode(false)
+		env.testFramesShown = false
+		env.testArenaFramesShown = false
+	end
+
+	fw.it("puts the party stand-ins up for a unit frames group with nothing real on screen", function()
+		Reset()
+		SetTokensAbsent("party", true)
+
+		local group = AddGroup({ Unit = "unitframes", Spells = { ICE_BLOCK } })
+
+		display:SetPreviewGroup(group.Id)
+
+		assert(env.testFramesShown, "the stand-in party frames were asked for")
+		assert(not env.testArenaFramesShown, "and only those - the group is not an arena one")
+
+		-- The reaction check is skipped while previewing, or a stand-in's "party1" (nobody at all)
+		-- would hand the copy straight back and the preview would show nothing.
+		assert(Count(display:GetStates()[group.Id].Frames) == 3, "a copy on each stand-in")
+
+		Reset()
+	end)
+
+	fw.it("puts the arena stand-ins up for an arena group with nothing real on screen", function()
+		Reset()
+		SetTokensAbsent("arena", true)
+
+		local group = AddGroup({ Unit = "arenaframes", Spells = { POLYMORPH } })
+
+		display:SetPreviewGroup(group.Id)
+
+		assert(env.testArenaFramesShown, "the stand-in arena frames were asked for")
+		assert(not env.testFramesShown, "and not the party ones")
+		assert(Count(display:GetStates()[group.Id].Arena) == 3, "a copy on each stand-in")
+
+		Reset()
+	end)
+
+	fw.it("prefers the stand-in over a real arena frame that is not on screen", function()
+		Reset()
+		SetTokensAbsent("arena", true)
+
+		-- The default arena frames exist from login and sit hidden outside an arena; a copy
+		-- anchored to one would be invisible, which is exactly what the stand-ins exist to avoid.
+		local hidden = acm.NewFrame("Frame", "CompactArenaFrameMember1")
+		hidden:Hide()
+		_G.CompactArenaFrame = { memberUnitFrames = { hidden } }
+
+		local group = AddGroup({ Unit = "arenaframes", Spells = { POLYMORPH } })
+
+		display:SetPreviewGroup(group.Id)
+
+		local entry = display:GetStates()[group.Id].Arena[1]
+
+		assert(entry, "the opponent has a copy")
+		assert(entry.Display.Frame:GetParent() == env.testArenaFrames[1],
+			"it hangs off the stand-in, not the hidden default frame")
+
+		-- The offset drag re-anchors every frame through AnchorGroup, which has to resolve the
+		-- same host or the copy tears off its stand-in mid-move.
+		group.Offset.X = 25
+		display:AnchorGroup(group.Id)
+
+		assert(entry.Display.Frame:GetParent() == env.testArenaFrames[1],
+			"a drag keeps the copy on the stand-in")
+
+		local _, _, _, offsetX = entry.Display.Frame:GetPoint(1)
+
+		assert(offsetX == 25, "and applies the new offset")
+
+		_G.CompactArenaFrame = nil
+		Reset()
+	end)
+
+	fw.it("takes them away again and hands the copies back when the preview ends", function()
+		Reset()
+		SetTokensAbsent("party", true)
+
+		local group = AddGroup({ Unit = "unitframes", Spells = { ICE_BLOCK } })
+
+		display:SetPreviewGroup(group.Id)
+		assert(env.testFramesShown, "up while the group is selected")
+
+		display:SetPreviewGroup(nil)
+
+		assert(not env.testFramesShown, "and away once it is not")
+		assert(Count(display:GetStates()[group.Id].Frames) == 0,
+			"the copies on them went back to the pool")
+
+		Reset()
+	end)
+
+	fw.it("leaves them alone with real frames on screen", function()
+		Reset()
+
+		local made = env.addUnitFrame("party1")
+		local group = AddGroup({ Unit = "unitframes", Spells = { ICE_BLOCK } })
+
+		display:SetPreviewGroup(group.Id)
+
+		assert(not env.testFramesShown, "there is something real to position against")
+		assert(display:GetStates()[group.Id].Frames[made], "and the copy went on it")
+
+		Reset()
+	end)
+
+	fw.it("does not fight test mode over them", function()
+		Reset()
+		SetTokensAbsent("party", true)
+
+		local group = AddGroup({ Unit = "unitframes", Spells = { ICE_BLOCK } })
+
+		-- Test mode owns the stand-ins while it runs. A sentinel rather than a boolean: the point
+		-- is that the preview path did not touch the switch either way.
+		display:SetTestMode(true)
+		env.testFramesShown = "owned by test mode"
+		display:SetPreviewGroup(group.Id)
+
+		assert(env.testFramesShown == "owned by test mode", "the preview left the switch alone")
+		assert(Count(display:GetStates()[group.Id].Frames) == 3,
+			"and test mode still anchors copies to the stand-ins")
+
+		Reset()
+	end)
+end)
+
 fw.describe("CustomAuras - tracking by filter", function()
 	-- Spell ids are the only thing 12.1's assist rule touches. A filter string and the flag
 	-- filters are honoured on any unit, so a filter group escapes every limit the spell path has.

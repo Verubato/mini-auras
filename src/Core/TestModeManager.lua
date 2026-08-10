@@ -36,23 +36,8 @@ end
 function M:StopTesting()
 	instanceOptions:SetTestIsRaid(nil)
 
-	-- Hide test party frames
-	local testPartyFrames = frames:GetTestFrames()
-	if testPartyFrames then
-		for _, frame in ipairs(testPartyFrames) do
-			frame:Hide()
-		end
-	end
-
-	local testPetFrame = frames:GetTestPetFrame()
-	if testPetFrame then
-		testPetFrame:Hide()
-	end
-
-	local testFramesContainer = frames:GetTestFrameContainer()
-	if testFramesContainer then
-		testFramesContainer:Hide()
-	end
+	frames:SetTestFramesShown(false)
+	frames:SetTestArenaFramesShown(false)
 
 	-- Stop all module test modes
 	for _, module in ipairs(testModules) do
@@ -76,36 +61,10 @@ function M:StartTesting(isRaid)
 
 	instanceOptions:SetTestIsRaid(isRaid)
 
-	-- Show test party frames if no real frames are visible
-	local realFrames = frames:GetAll(true, false) -- Get only real frames
-	local hasVisibleRealFrames = false
-
-	for _, frame in ipairs(realFrames) do
-		if frame:IsVisible() then
-			hasVisibleRealFrames = true
-			break
-		end
-	end
-
-	if not hasVisibleRealFrames then
-		-- Show test party frames
-		local testPartyFrames = frames:GetTestFrames()
-		if testPartyFrames then
-			for _, frame in ipairs(testPartyFrames) do
-				frame:Show()
-			end
-		end
-
-		local testPetFrame = frames:GetTestPetFrame()
-		if testPetFrame then
-			testPetFrame:Show()
-		end
-
-		local testFramesContainer = frames:GetTestFrameContainer()
-		if testFramesContainer then
-			testFramesContainer:Show()
-		end
-	end
+	-- Stand-ins only where there is nothing real to anchor to, so testing in a group or an arena
+	-- shows the icons where they will actually be.
+	frames:SetTestFramesShown(not frames:HasVisibleFrames())
+	frames:SetTestArenaFramesShown(not frames:HasVisibleArenaFrames())
 
 	for _, module in ipairs(testModules) do
 		module:StartTesting()

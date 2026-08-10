@@ -52,6 +52,12 @@ function M.build()
 		kicks = {},
 		-- Unit frames handed to the modules that anchor to raid frames (CC, Auras).
 		unitFrames = {},
+		-- The addon's own stand-in frames, filled in below. They only reach a module that asks
+		-- GetAll for them, and the two flags record who last asked for them to be on screen.
+		testFrames = {},
+		testArenaFrames = {},
+		testFramesShown = false,
+		testArenaFramesShown = false,
 		-- PvP match state driving the alerts prep-room gate (99 = not in a match).
 		matchState = 99,
 		-- Everything the addon reported through mini:Notify. A module warning here is almost
@@ -347,8 +353,47 @@ function M.build()
 		ShowHideDisplay = function(_, display)
 			display:Show()
 		end,
-		GetAll = function()
-			return env.unitFrames
+		-- The stand-in frames are kept out of the anchor list unless they are asked for, exactly
+		-- as the real helper keeps them out of GetAll.
+		GetAll = function(_, _, includeTestFrames)
+			if not includeTestFrames then
+				return env.unitFrames
+			end
+
+			local list = {}
+
+			for _, frame in ipairs(env.unitFrames) do
+				list[#list + 1] = frame
+			end
+
+			for _, frame in ipairs(env.testFrames) do
+				list[#list + 1] = frame
+			end
+
+			return list
+		end,
+		HasVisibleFrames = function()
+			for _, frame in ipairs(env.unitFrames) do
+				if frame:IsVisible() then
+					return true
+				end
+			end
+
+			return false
+		end,
+		GetTestFrames = function()
+			return env.testFrames
+		end,
+		GetTestArenaFrames = function()
+			return env.testArenaFrames
+		end,
+		-- Recorded rather than acted on: the tests care that the module asked, and which side of
+		-- the test-mode/preview split did the asking.
+		SetTestFramesShown = function(_, shown)
+			env.testFramesShown = shown
+		end,
+		SetTestArenaFramesShown = function(_, shown)
+			env.testArenaFramesShown = shown
 		end,
 		-- This environment has no pet stand-in, so modules asking for it get "none exists"
 		-- rather than a missing method.
@@ -479,6 +524,21 @@ function M.build()
 		end
 		env.unitFrames[#env.unitFrames + 1] = frame
 		return frame
+	end
+
+	-- The three party and three arena stand-ins the addon builds at load. Kept out of unitFrames:
+	-- the real ones are not in GetAll's normal list either.
+	for index = 1, 3 do
+		local party = acm.NewFrame("Frame", "TestFrame" .. index)
+		party.unit = "party" .. index
+		party.GetAttribute = function(_, key)
+			return key == "unit" and party.unit or nil
+		end
+		env.testFrames[index] = party
+
+		local arena = acm.NewFrame("Frame", "TestArenaFrame" .. index)
+		arena.unit = "arena" .. index
+		env.testArenaFrames[index] = arena
 	end
 
 	---Total AuraContainers ever created. Pooled modules must not grow this on plate churn - a

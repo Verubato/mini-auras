@@ -622,10 +622,18 @@ end
 local function RefreshFrameGroup(state, anchor, unit)
 	unit = unit or anchor.unit or anchor:GetAttribute("unit")
 
-	-- A frame between units, one showing a pet, and one showing a member the player cannot assist
-	-- (a mind control) all hand their container back rather than keeping a parked copy each.
-	if not unit or unit == "" or units:IsCompoundUnit(unit) or units:IsPetOrMinion(unit)
-		or not groups:MatchesReaction(state.Group.Unit, unit) then
+	-- A frame between units and one showing a pet hand their container back rather than keeping a
+	-- parked copy each.
+	if not unit or unit == "" or units:IsCompoundUnit(unit) or units:IsPetOrMinion(unit) then
+		ReleaseFrameEntry(state, anchor)
+
+		return
+	end
+
+	-- A member the player cannot assist (a mind control) loses its copy too. Not while previewing:
+	-- a stand-in frame's "party1" is nobody at all, and the group is there to be positioned rather
+	-- than to show auras. CanFilterUnit still budgets the container to zero.
+	if not IsPreviewing(state) and not groups:MatchesReaction(state.Group.Unit, unit) then
 		ReleaseFrameEntry(state, anchor)
 
 		return
@@ -654,15 +662,36 @@ local function RefreshFrameGroup(state, anchor, unit)
 	end
 end
 
+---The frame an arena copy should hang off right now: the real one when it is on screen, else a
+---stand-in while the group is being previewed. Nothing builds the real frames until the arena
+---loads, and the default ones exist from login but sit hidden outside one, so a frame that is
+---not actually visible falls through to a stand-in all the same. Shared by the refresh and the
+---drag re-anchor, which must agree or a drag would tear the copy off its stand-in mid-move.
+---@param state CustomAuraGroupState
+---@param index number
+---@return table?
+local function ResolveArenaFrame(state, index)
+	local frame = frames:GetArenaFrame(index)
+
+	if IsPreviewing(state) and (not frame or not frame:IsVisible()) then
+		local fakes = frames:GetTestArenaFrames()
+
+		frame = (fakes and fakes[index]) or frame
+	end
+
+	return frame
+end
+
 ---One copy per arena enemy frame, whichever addon owns it. The token is fixed per index rather
 ---than read off the frame, so nothing depends on the frame carrying a unit attribute.
 ---@param state CustomAuraGroupState
 ---@param index number
 local function RefreshArenaGroup(state, index)
-	local frame = frames:GetArenaFrame(index)
+	local frame = ResolveArenaFrame(state, index)
 	local token = "arena" .. index
-	-- The frames are usually only built once the arena loads, and an opponent the player can
-	-- assist is under a mind control, which takes the spell id filter with it.
+
+	-- An opponent the player can assist is under a mind control, which takes the spell id filter
+	-- with it. A stand-in's token is nobody, which is not assistable either, so it passes.
 	if not frame or not groups:MatchesReaction(state.Group.Unit, token) then
 		local existing = state.Arena[index]
 
@@ -763,6 +792,38 @@ local function CollectSoundRequests(state)
 	end
 end
 
+---Puts the stand-in party or arena frames on screen while the group being positioned hangs off
+---frames that are not there, and takes them away again once it is not.
+---Never while test mode runs: it owns the same frames, and driving them from both sides would
+---leave whichever spoke last in charge.
+---@param options CustomAurasModuleOptions
+---@return boolean party
+---@return boolean arena
+local function ShowPreviewFrames(options)
+	if testModeActive then
+		return false, false
+	end
+
+	local anchor
+
+	for _, groupDef in ipairs(options.Groups) do
+		-- The same test the preview itself uses: a group with nothing to draw is not previewed,
+		-- so it has no business putting frames on screen either.
+		if groupDef.Id == previewGroupId and groups:Supports(groupDef) then
+			anchor = groupDef.Anchor
+			break
+		end
+	end
+
+	local party = anchor == groups.Anchor.Frames and not frames:HasVisibleFrames()
+	local arena = anchor == groups.Anchor.Arena and not frames:HasVisibleArenaFrames()
+
+	frames:SetTestFramesShown(party)
+	frames:SetTestArenaFramesShown(arena)
+
+	return party, arena
+end
+
 ---@param value boolean
 function M:SetTestMode(value)
 	testModeActive = value
@@ -806,7 +867,7 @@ function M:AnchorGroup(groupId)
 	end
 
 	for index, entry in pairs(state.Arena) do
-		local frame = frames:GetArenaFrame(index)
+		local frame = ResolveArenaFrame(state, index)
 
 		if frame then
 			AnchorEntry(state, entry, frame)
@@ -822,6 +883,8 @@ function M:Refresh(options, moduleEnabled)
 
 	local live = {}
 	local frameGroups = false
+	-- Ahead of the groups themselves: the copies below anchor to whatever this puts on screen.
+	local previewPartyFrames = ShowPreviewFrames(options)
 
 	for _, groupDef in ipairs(options.Groups) do
 		live[groupDef.Id] = true
@@ -854,7 +917,12 @@ function M:Refresh(options, moduleEnabled)
 			displayPool:Prewarm(PLATE_PREALLOCATE)
 			wipe(seenAnchors)
 
-			for _, anchor in ipairs(frames:GetAll(true, testModeActive)) do
+			-- The stand-ins join the anchor walk only while they are actually up, so a copy is
+			-- never taken out on a frame nobody can see.
+			local includeTestFrames = testModeActive
+				or (previewPartyFrames and groupDef.Id == previewGroupId)
+
+			for _, anchor in ipairs(frames:GetAll(true, includeTestFrames)) do
 				seenAnchors[anchor] = true
 				RefreshFrameGroup(state, anchor)
 			end
@@ -1018,6 +1086,13 @@ function M:Teardown()
 	end
 
 	anyFrameGroups = false
+
+	-- Nothing left to position, so any stand-ins this module put up go away. Test mode owns them
+	-- while it runs, and it tears them down itself.
+	if not testModeActive then
+		frames:SetTestFramesShown(false)
+		frames:SetTestArenaFramesShown(false)
+	end
 
 	sound:Clear()
 end

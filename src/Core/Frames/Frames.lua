@@ -84,6 +84,19 @@ function M:GetAll(visibleOnly, includeTestFrames)
 	return anchors
 end
 
+---Whether any real party or raid frame is on screen right now. What decides whether the stand-in
+---frames are worth putting up: with real frames there, they would only be in the way.
+---@return boolean
+function M:HasVisibleFrames()
+	for _, frame in ipairs(M:GetAll(true, false)) do
+		if frame:IsVisible() then
+			return true
+		end
+	end
+
+	return false
+end
+
 ---Returns the frame strata one level above the given strata, clamped at TOOLTIP.
 ---@param strata string
 ---@return string
