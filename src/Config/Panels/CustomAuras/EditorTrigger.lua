@@ -111,6 +111,8 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 			local group = ui.Current()
 
 			if group then
+				local previousAnchor = group.Anchor
+
 				group.Unit = value
 
 				-- A unit that can never carry a filtered debuff goes back to buffs.
@@ -119,6 +121,14 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 				end
 
 				groups:Normalise(group)
+
+				-- A different anchor kind means the old offset was measured from something else
+				-- entirely, so it goes back to the new kind's default rather than carrying over.
+				if group.Anchor ~= previousAnchor then
+					group.Offset = nil
+					groups:Normalise(group)
+				end
+
 				ui.Populate()
 				ui.Apply()
 			end

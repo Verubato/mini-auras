@@ -301,10 +301,11 @@ function M:Normalise(group)
 	group.Position.Y = tonumber(group.Position.Y) or DEFAULT_POSITION_Y
 
 	-- Nameplate and unit frame groups hang off the frame, so they carry an offset rather than a
-	-- screen point.
+	-- screen point. Plates default to hanging above (the plate itself is the health bar); a unit
+	-- frame copy sits centred on the frame it decorates.
 	group.Offset = group.Offset or {}
 	group.Offset.X = tonumber(group.Offset.X) or 0
-	group.Offset.Y = tonumber(group.Offset.Y) or 40
+	group.Offset.Y = tonumber(group.Offset.Y) or (UNIT_INFO[unit].Frames and 0 or 40)
 
 	group.Grow = addon.Core.GrowAnchors.Anchor[group.Grow] and group.Grow or "CENTER"
 
