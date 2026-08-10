@@ -46,13 +46,13 @@ end
 ---Registers a voice pack for the pre-recorded alert announcements. The name joins the shipped
 ---voices in the alerts TTS dropdown and its clips play the same way.
 ---@param pack MiniAurasVoicePack
----@return boolean registered false when the spec is incomplete or the name is already taken
+---@return boolean registered false when the spec is unusable or the name is already taken
 function v1:RegisterVoicePack(pack)
 	if type(pack) ~= "table" then
 		return false
 	end
 
-	local registered = ttsPacks:Register(pack.Name, pack.Path)
+	local registered = ttsPacks:Register(pack.Name, pack.Path, pack.Locales)
 
 	if registered then
 		-- A pack registered after login only reaches the engine when the alert sound
@@ -81,3 +81,4 @@ MiniCCApi = MiniAurasApi
 ---@class MiniAurasVoicePack
 ---@field Name string Label shown in the voice dropdown and stored in the saved settings, so it must be unique and stable.
 ---@field Path string Base folder holding the pack's clips, e.g. "Interface\\AddOns\\YourAddon\\Sounds\\". It must contain one OGG per clip, named exactly as the files in MiniAuras's own Sounds\\TTS packs (extension included): one per Important and Defensive spell name, plus PreviewVoice.ogg, PreviewImportant.ogg and PreviewDefensive.ogg for the config previews.
+---@field Locales? string[] Client locales the pack is spoken for, matched against GetLocale(), e.g. { "deDE" }. Omit it to offer the pack on every client. The name stays reserved either way, so the same saved value always means the same pack.

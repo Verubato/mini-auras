@@ -24,8 +24,10 @@ import time
 import urllib.error
 import urllib.request
 
-# Pack name -> ElevenLabs voice id. The pack name is the folder, the dropdown label,
-# and the saved VoicePack value, so treat renames as breaking.
+# Pack name -> ElevenLabs voice id, or a dict {"id": ..., "locales": [...]} for a voice
+# that is only worth offering on some clients (the locales are GetLocale() codes such as
+# "deDE", and the addon hides the pack elsewhere). The pack name is the folder, the
+# dropdown label, and the saved VoicePack value, so treat renames as breaking.
 VOICES = {
     "David": "FF7KdobWPaiR0vkcALHF",
     "Grampa Werthers": "MKlLqCItoCkvdhrxgtLv",
@@ -83,6 +85,16 @@ def parse_categories():
     if missing:
         sys.exit(f"categories not found in {IDS_LUA.name}: {missing}")
     return result
+
+
+def pack_voice_id(entry):
+    """A VOICES value is either the voice id on its own or a dict carrying it."""
+    return entry["id"] if isinstance(entry, dict) else entry
+
+
+def pack_locales(entry):
+    """The locales a voice is limited to, or None when it suits every client."""
+    return entry.get("locales") if isinstance(entry, dict) else None
 
 
 def spoken_text(name):
@@ -159,6 +171,18 @@ def write_lua(categories):
         "addon.Core.AuraTtsSounds = {",
         "\tPacks = { " + ", ".join(f'"{name}"' for name in sorted(VOICES)) + " },",
     ]
+    limited = {
+        name: pack_locales(VOICES[name])
+        for name in sorted(VOICES)
+        if pack_locales(VOICES[name])
+    }
+    if limited:
+        lines.append("\t-- Packs only offered on these clients; the rest suit every client.")
+        lines.append("\tPackLocales = {")
+        for name, locales in limited.items():
+            codes = ", ".join(f'"{locale}"' for locale in locales)
+            lines.append(f'\t\t["{name}"] = {{ {codes} }},')
+        lines.append("\t},")
     for category in CATEGORIES:
         ids = categories[category]
         lines.append(f"\t{category} = {{")
@@ -188,7 +212,7 @@ def main():
         texts[file_stem] = text
 
     rendered, reused = 0, 0
-    for pack, voice_id in VOICES.items():
+    for pack, entry in VOICES.items():
         pack_dir = OUT_DIR / pack
         pack_dir.mkdir(parents=True, exist_ok=True)
         pack_texts = dict(texts, PreviewVoice=PREVIEW_VOICE_TEXTS.get(pack, pack))
@@ -197,7 +221,13 @@ def main():
             if path.exists() and not force:
                 reused += 1
                 continue
-            render(api_key, voice_id, pack_texts[file_stem], path, PACK_GAIN_DB.get(pack, 0.0))
+            render(
+                api_key,
+                pack_voice_id(entry),
+                pack_texts[file_stem],
+                path,
+                PACK_GAIN_DB.get(pack, 0.0),
+            )
             rendered += 1
             print(f"rendered {pack}/{path.name}")
 

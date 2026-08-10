@@ -5,11 +5,14 @@
 
 local fw = require("Framework")
 
--- The only WoW global this module touches; no client mock is needed for anything else.
+-- The only WoW globals this module touches; no client mock is needed for anything else.
 _G.wipe = _G.wipe or function(t)
     for k in pairs(t) do
         t[k] = nil
     end
+end
+_G.GetLocale = function()
+    return "enUS"
 end
 
 local addon = { Core = {} }
@@ -19,6 +22,18 @@ local ttsPacks = addon.Core.TtsPacks
 
 -- Stands in for the generated clip data, which this module reads lazily.
 addon.Core.AuraTtsSounds = { Packs = { "David", "Emma" } }
+
+-- A second copy of the module with its own state, so the locale tests can stub a different
+-- shipped list without disturbing the registrations above.
+local localeAddon = { Core = {} }
+assert(loadfile("src/Core/TtsPacks.lua"))("MiniAuras", localeAddon)
+
+local localePacks = localeAddon.Core.TtsPacks
+
+localeAddon.Core.AuraTtsSounds = {
+    Packs = { "Mandarin", "David", "Emma" },
+    PackLocales = { Mandarin = { "zhCN", "zhTW" }, Emma = { "enUS" } },
+}
 
 local SHIPPED_PATH = "Interface\\AddOns\\MiniAuras\\Sounds\\TTS\\"
 
@@ -100,5 +115,48 @@ fw.describe("TtsPacks - resolving a saved name", function()
 
     fw.it("builds shipped paths under the addon's own folder", function()
         assert(ttsPacks:Path("Emma") == SHIPPED_PATH .. "Emma\\", ttsPacks:Path("Emma"))
+    end)
+end)
+
+fw.describe("TtsPacks - packs limited to some locales", function()
+    fw.it("hides a shipped pack this client cannot understand", function()
+        local names = localePacks:Names()
+
+        assert(not Contains(names, "Mandarin"), "the gated pack is not offered")
+        assert(Contains(names, "David"), "an ungated pack still is")
+        assert(Contains(names, "Emma"), "so is one gated to this locale")
+    end)
+
+    fw.it("resolves past a hidden pack to the first one this client has", function()
+        assert(localePacks:Resolve("Mandarin") == "David", "a saved name that is hidden here")
+        assert(localePacks:Resolve("Uninstalled") == "David", "a name nothing owns")
+    end)
+
+    fw.it("takes an external pack for other locales but keeps it out of the way", function()
+        assert(localePacks:Register("Cantonese", "Interface\\AddOns\\Other\\C\\", { "zhTW" }), "registered")
+
+        assert(not Contains(localePacks:Names(), "Cantonese"), "not offered on this client")
+        assert(localePacks:Resolve("Cantonese") == "David", "nor resolvable to itself")
+        assert(
+            not localePacks:Register("Cantonese", "Interface\\AddOns\\Elsewhere\\"),
+            "the name is reserved even while hidden"
+        )
+    end)
+
+    fw.it("offers an external pack that names this locale", function()
+        assert(localePacks:Register("Local", "Interface\\AddOns\\Other\\L\\", { "enUS", "enGB" }), "registered")
+
+        assert(Contains(localePacks:Names(), "Local"), "listed")
+        assert(localePacks:Resolve("Local") == "Local", "and kept as the saved value")
+    end)
+
+    fw.it("refuses a locale list that is not a list of strings", function()
+        assert(not localePacks:Register("Stringly", "Interface\\AddOns\\Other\\S\\", "enUS"), "not a table")
+        assert(not localePacks:Register("Numbered", "Interface\\AddOns\\Other\\N\\", { "enUS", 5 }), "not all strings")
+
+        local names = localePacks:Names()
+
+        assert(not Contains(names, "Stringly"), "nothing was added")
+        assert(not Contains(names, "Numbered"), "nothing was added")
     end)
 end)
