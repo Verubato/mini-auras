@@ -40,7 +40,8 @@ local function UpdatePageHeight(panel)
 		end
 	end
 
-	panel:SetHeight(math.max(1, math.ceil(top - bottom) + 20))
+	-- A small pad only: anything generous here reads as a page that scrolls by one dead row.
+	panel:SetHeight(math.max(1, math.ceil(top - bottom) + 6))
 end
 
 function M:Build(panel)

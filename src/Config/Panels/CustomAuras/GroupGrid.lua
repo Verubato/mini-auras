@@ -337,7 +337,9 @@ function ui.BuildGrid(panel, anchor, deps)
 
 		local lines = math.ceil((#options.Groups + 1) / TILE_COLUMNS)
 
-		listAnchor:SetHeight(math.max(TILE_SIZE, lines * TILE_ROW_PITCH))
+		-- Minus the trailing gap: the divider below brings its own spacing, and an extra row gap
+		-- on top of it is what tips the page into scrolling.
+		listAnchor:SetHeight(math.max(TILE_SIZE, lines * TILE_ROW_PITCH - TILE_GAP))
 
 		-- Deliberately no fallback to the first group: the page opens with nothing selected and
 		-- clicking the empty space in the grid puts the editor away again.
