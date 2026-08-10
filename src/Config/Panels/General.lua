@@ -75,7 +75,7 @@ function M:Build(panel)
 	newsText:SetSpacing(newsSpacing)
 	-- TEMPORARY dual path: drop the 12.0.7 message with the legacy path once 12.1 is live.
 	if addon.Utils.WoWEx:UseAuraContainers() then
-		newsText:SetText(L["In Blizzard's 12.1 patch, addons can no longer process aura information; only display it.\n\nWhat's removed:\n* Friendly and enemy cooldown tracking (not possible in 12.1).\n* Masque icon skinning.\n\nWhat's added/changed:\n* New personal auras functionality (think mini weak auras).\n  - When aura added show icon and play sound.\n  - Precognition & Nullifying Shroud module have been merged into this.\n* Ally kick tracker for dungeons/M+.\n* Wider range of spells on raid frames, e.g. Darkness, Spirit Link, Dark Pact, etc.\n* UI overhaul so it looks sexier."])
+		newsText:SetText(L["In Blizzard's 12.1 patch, addons can no longer process aura information; only display it.\n\nWhat's removed:\n* Friendly and enemy cooldown tracking (not possible in 12.1).\n* Masque icon skinning.\n\nWhat's added/changed:\n* New personal auras functionality (think mini weak auras).\n  - When aura added show icon and play sound.\n  - Precognition & Nullifying Shroud module have been merged into this.\n* Ally kick tracker for dungeons/M+.\n* Wider range of spells on raid frames, e.g. Darkness, Spirit Link, Dark Pact, etc.\n* New custom text-to-speech voices.\n* UI overhaul so it looks sexier."])
 	else
 		newsText:SetText(L["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."])
 	end
