@@ -218,6 +218,27 @@ fw.describe("ProfileManager - lifecycle operations", function()
 		assert(db.ActiveProfile ~= "Doomed", "switched away")
 		assert(db.FontScale ~= 0.77, "remaining profile's payload applied")
 	end)
+
+	fw.it("deleting the ACTIVE profile heals keys the survivor's snapshot predates", function()
+		-- The survivor simulates a profile saved by an older addon version; named to sort
+		-- first so the delete switchover lands on it. The profile-changed callbacks refresh
+		-- the open config panels, so the heal has to happen on this path too - a hole in the
+		-- payload is a nil-index in the first colour swatch a panel rebinds.
+		profileManager:CreateProfile("AOld", nil)
+		db.Profiles.AOld.FadeWithParent = nil
+		db.Profiles.AOld.Modules.AlertsModule.Icons.ImportantColor = nil
+
+		profileManager:CreateProfile("Doomed", nil)
+		profileManager:SwitchProfile("Doomed")
+		profileManager:DeleteProfile("Doomed")
+
+		assert(db.ActiveProfile == "AOld", "switchover landed on the old snapshot")
+		assert(db.FadeWithParent ~= nil, "missing top-level key healed")
+		assert(db.Modules.AlertsModule.Icons.ImportantColor ~= nil, "missing nested key healed")
+
+		profileManager:SwitchProfile("Default")
+		profileManager:DeleteProfile("AOld")
+	end)
 end)
 
 fw.describe("ProfileManager - auto switch", function()

@@ -161,6 +161,9 @@ function M:DeleteProfile(name)
 				end
 			end
 			db.ActiveProfile = remaining[1]
+			-- Heal keys the snapshot predates (same as SwitchProfile), before the callbacks
+			-- refresh the config panels against the new payload.
+			if migrator then migrator:FillDefaults() end
 			FireProfileChanged(remaining[1])
 			addon:Refresh()
 		end
