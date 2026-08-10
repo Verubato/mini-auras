@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.2.1
+
+- Fixed the config scrollbar moving in the opposite direction to the scroll position.
+- Removed the unnecessary scrollbar from the personal auras page.
+
 ## 5.2.0
 
 - New "Arena Frames" unit for personal auras.
