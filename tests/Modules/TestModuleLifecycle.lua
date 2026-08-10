@@ -462,6 +462,76 @@ fw.describe("HealerCrowdControlModule 12.1 - AddAuraSound registration", functio
 	end)
 end)
 
+fw.describe("HealerCrowdControlModule 12.1 - warning-text label containers", function()
+	local healerCC = env.addon.Modules.HealerCrowdControlModule
+
+	-- The label container is the one whose buttons carry a fontstring and no icon texture;
+	-- the icon container's buttons always start with the icon.
+	local function splitContainers(token)
+		local label, icons
+		for _, container in ipairs(env.containersForUnit(token)) do
+			local button = container._buttons[1]
+			if #button._createdTextures == 0 then
+				label = container
+			else
+				icons = container
+			end
+		end
+		return label, icons
+	end
+
+	fw.it("every healer carries an icon container and a label container", function()
+		-- Two healers are active from the sound tests above.
+		for _, token in ipairs({ "party1", "party2" }) do
+			local label, icons = splitContainers(token)
+			assert(icons, "icon container tracks " .. token)
+			assert(label, "label container tracks " .. token)
+			assert(label._enabled, "label container enabled")
+			assert(label._shown, "label container shown")
+		end
+	end)
+
+	fw.it("the label buttons carry the warning text and nothing else", function()
+		local label = splitContainers("party1")
+		for _, button in ipairs(label._buttons) do
+			local text = button._createdFontStrings[1]
+			assert(text, "label button has a fontstring")
+			assert(text._lastArgs.SetText[1] == env.addon.L["Healer in CC!"],
+				"fontstring carries the warning text")
+			assert(#button._createdFontStrings == 1 and #button._createdTextures == 0,
+				"no other regions on a label button")
+		end
+	end)
+
+	fw.it("a text size change restyles the label fontstrings", function()
+		db.Modules.HealerCCModule.Font.Size = 48
+		healerCC:Refresh()
+		local label = splitContainers("party1")
+		local text = label._buttons[1]._createdFontStrings[1]
+		assert(text._lastArgs.SetFont[2] == 48,
+			"expected font size 48, got " .. tostring(text._lastArgs.SetFont[2]))
+	end)
+
+	fw.it("turning the warning text off parks the label containers, on brings them back", function()
+		db.Modules.HealerCCModule.ShowWarningText = false
+		healerCC:Refresh()
+		local label, icons = splitContainers("party1")
+		assert(not label._enabled and not label._shown, "label container parked")
+		assert(icons._enabled and icons._shown, "icon container unaffected")
+
+		db.Modules.HealerCCModule.ShowWarningText = true
+		healerCC:Refresh()
+		label = splitContainers("party1")
+		assert(label._enabled and label._shown, "label container back")
+	end)
+
+	fw.it("a roster refresh reuses the containers rather than growing them", function()
+		local before = env.auraContainerCount()
+		healerCC:Refresh()
+		assert(env.auraContainerCount() == before, "no new containers on an unchanged roster")
+	end)
+end)
+
 fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 	-- Every path that stops tracking a plate has to hand its displays back. A display that
 	-- escapes the pool has no symptom until the pool runs dry and plates start building

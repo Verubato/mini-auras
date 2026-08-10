@@ -26,6 +26,8 @@ local STYLE_FIELDS = {
 	"FontScale",
 	"ShowTooltips",
 	"Pandemic",
+	"LabelFontSize",
+	"LabelFontFlags",
 }
 
 -- Ring tint for the pandemic (refresh-window) reveal. Fixed rather than the group's colour so
@@ -565,6 +567,15 @@ local function StyleButton(instance, button)
 
 	button:SetSize(instance.Size, instance.Size)
 
+	-- Label-only buttons carry a single fontstring and none of the icon chrome below.
+	local label = widgets.Label
+	if label then
+		local face = label:GetFont()
+		label:SetFont(face, style.LabelFontSize or 20, style.LabelFontFlags)
+		button:EnableMouse(false)
+		return
+	end
+
 	-- DisableSwipe/MillisecondsThreshold/GlowStyleName are the global db values StoreStyle
 	-- resolved when the style was set, so this hot loop never re-reads the db per button.
 	local cd = widgets.Cooldown
@@ -784,6 +795,33 @@ local function InitializeButton(instance, button, glowColor)
 	StyleButton(instance, button)
 end
 
+---Builds a text-only button for a display created with the Label option: a fontstring and
+---nothing else, no icon and no registered elements. The engine still shows and hides the button
+---with the aura it matches, so the text appears exactly while a matching aura is present - a
+---warning label whose visibility never needs an aura read. Rendering follows the button's
+---(secret) visibility because the fontstring is its child.
+---@param instance AuraContainerDisplay
+---@param button table
+local function InitializeLabelButton(instance, button)
+	button:SetFlattensRenderLayers(true)
+
+	-- Same face resolution as the legacy warning text: take the template's font so every
+	-- language renders, then restyle to the configured size.
+	local text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+	text:SetPoint("CENTER", button, "CENTER", 0, 0)
+	text:SetText(instance.Label)
+	text:SetTextColor(1, 0.1, 0.1)
+	text:SetShadowColor(0, 0, 0, 1)
+	text:SetShadowOffset(1, -1)
+
+	instance.ButtonWidgets[button] = {
+		Label = text,
+	}
+	instance.Buttons[#instance.Buttons + 1] = button
+
+	StyleButton(instance, button)
+end
+
 ---@param instance AuraContainerDisplay
 local function ApplyFlowLayout(instance)
 	local layout = growAnchors:GetFlow(instance.Grow)
@@ -859,6 +897,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	instance.IconTexCoord = options.IconTexCoord
 	instance.IconMask = options.IconMask
 	instance.Minimal = options.Minimal == true
+	instance.Label = options.Label
 	-- Resolved at creation: regions can only be added to a button in initializeFrame, so a
 	-- display that skipped them can never grow them later (pooled displays included - opt in
 	-- whenever any consumer of the pool might want the reveal).
@@ -887,6 +926,8 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	frame:SetUnit(unit)
 	ApplyFlowLayout(instance)
 
+	local initialize = instance.Label and InitializeLabelButton or InitializeButton
+
 	for _, group in ipairs(groups) do
 		instance.GroupsByKey[group.Key] = group
 		-- Captured per group: initializeFrame is the only place a button can be styled, so a
@@ -902,7 +943,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 			sortMethod = AuraContainerSortMethod.AuraInstanceIDOnly,
 			sortDirection = group.SortDirection or AuraContainerSortDirection.Normal,
 			initializeFrame = function(button)
-				InitializeButton(instance, button, glowColor)
+				initialize(instance, button, glowColor)
 			end,
 			layout = BuildGroupLayout(instance),
 		})
@@ -1288,6 +1329,8 @@ end
 ---@field Border boolean? Draw the plain (non dispel-coloured) border, tinted with GlowColor.
 ---@field GlowColor number[]? {r, g, b} tint for every glow on the display. A group's own
 ---GlowColor overrides it; unset leaves the glow plain white.
+---@field LabelFontSize number? Text size for a Label display's fontstrings (default 20).
+---@field LabelFontFlags string? Font flags ("OUTLINE" etc.) for a Label display's fontstrings.
 ---@field Populated boolean?
 
 ---@class AuraDisplayGroupSpec
@@ -1303,6 +1346,9 @@ end
 ---@field IconTexCoord number[]? {left, right, top, bottom} crop applied to every icon.
 ---@field IconMask table? MaskTexture applied to every icon, and to the cooldown swipe.
 ---@field Minimal boolean? Skip the dispel border and the glow frame (portrait icons want neither).
+---@field Label string? Render every button as this text and nothing else - no icon, cooldown or
+---chrome. The engine shows the button while a matching aura is present, so the text works as a
+---presence-driven warning label with no aura reads. Styled via Style.LabelFontSize/Flags.
 ---@field Pandemic boolean? Create and register a refresh-window region on every button. Must be
 ---decided at creation (regions can only be added in initializeFrame); the Style.Pandemic toggle
 ---then shows or hides the reveal per restyle.
@@ -1325,3 +1371,4 @@ end
 ---@field IconTexCoord number[]?
 ---@field IconMask table?
 ---@field Minimal boolean
+---@field Label string?

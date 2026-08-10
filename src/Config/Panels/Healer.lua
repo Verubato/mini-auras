@@ -24,12 +24,6 @@ function M:Build(panel, options)
 	-- the same vertical lines.
 	enabledColumnWidth = mini:ColumnWidth(5, 0, 0)
 	local db = mini:GetSavedVars()
-	-- 12.1: the warning text (and its Text Size slider) is hidden - it needs the addon to know a
-	-- healer is CC'd, and aura presence is secret there. The SOUND options stay visible: the
-	-- engine plays those itself via AddAuraSound, so that feature survived. Hiding the text also
-	-- frees a column, which is why several controls below are positioned differently per path.
-	-- TEMPORARY: remove the gates with the legacy path once 12.1 is live.
-	local useAuraContainers = addon.Utils.WoWEx:UseAuraContainers()
 
 	local lines = mini:TextBlock({
 		Parent = panel,
@@ -89,23 +83,21 @@ function M:Build(panel, options)
 	glowChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth, 0)
 	glowChk:SetPoint("TOP", showIconsChk, "TOP", 0, 0)
 
-	if not useAuraContainers then
-		local showTextChk = mini:Checkbox({
-			Parent = panel,
-			LabelText = L["Show warning text"],
-			Tooltip = L["Show the 'Healer in CC!' text above the icons."],
-			GetValue = function()
-				return options.ShowWarningText
-			end,
-			SetValue = function(value)
-				options.ShowWarningText = value
-				config:Apply()
-			end,
-		})
+	local showTextChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Show warning text"],
+		Tooltip = L["Show the 'Healer in CC!' text above the icons."],
+		GetValue = function()
+			return options.ShowWarningText
+		end,
+		SetValue = function(value)
+			options.ShowWarningText = value
+			config:Apply()
+		end,
+	})
 
-		showTextChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 2, 0)
-		showTextChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
-	end
+	showTextChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 2, 0)
+	showTextChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local reverseChk = mini:Checkbox({
 		Parent = panel,
@@ -120,7 +112,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	reverseChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * (useAuraContainers and 2 or 3), 0)
+	reverseChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 3, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local dispelColoursChk = mini:Checkbox({
@@ -136,7 +128,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	dispelColoursChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * (useAuraContainers and 3 or 4), 0)
+	dispelColoursChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 4, 0)
 	dispelColoursChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local showTooltipsChk = mini:Checkbox({
@@ -152,14 +144,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	-- 12.1 fits every checkbox on one row (no warning-text option there); legacy wraps
-	-- tooltips onto a second row.
-	if useAuraContainers then
-		showTooltipsChk:SetPoint("LEFT", panel, "LEFT", enabledColumnWidth * 4, 0)
-		showTooltipsChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
-	else
-		showTooltipsChk:SetPoint("TOPLEFT", showIconsChk, "BOTTOMLEFT", 0, -verticalSpacing)
-	end
+	showTooltipsChk:SetPoint("TOPLEFT", showIconsChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	-- On 12.1 the sound plays engine-side via C_UnitAuras.AddAuraSound (registered per healer
 	-- and per known CC spell in the module), so the option works on both paths.
@@ -180,7 +165,7 @@ function M:Build(panel, options)
 		end,
 	})
 
-	soundChk:SetPoint("TOPLEFT", useAuraContainers and showIconsChk or showTooltipsChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	soundChk:SetPoint("TOPLEFT", showTooltipsChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local soundFileDropdown, soundFileModernDdl = helpers:BuildMediaDropdown({
 		Parent = panel,
@@ -220,29 +205,27 @@ function M:Build(panel, options)
 
 	iconSize.Slider:SetPoint("TOPLEFT", slidersAnchor, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
-	if not useAuraContainers then
-		local fontSize = mini:Slider({
-			Parent = panel,
-			Min = 10,
-			Max = 100,
-			Width = sliderWidth,
-			Step = 1,
-			LabelText = L["Text Size"],
-			GetValue = function()
-				return options.Font.Size
-			end,
-			SetValue = function(v)
-				local newValue = mini:ClampInt(v, 10, 100, 32)
-				if options.Font.Size ~= newValue then
-					options.Font.Size = newValue
-					config:Apply()
-				end
-			end,
-		})
+	local fontSize = mini:Slider({
+		Parent = panel,
+		Min = 10,
+		Max = 100,
+		Width = sliderWidth,
+		Step = 1,
+		LabelText = L["Text Size"],
+		GetValue = function()
+			return options.Font.Size
+		end,
+		SetValue = function(v)
+			local newValue = mini:ClampInt(v, 10, 100, 32)
+			if options.Font.Size ~= newValue then
+				options.Font.Size = newValue
+				config:Apply()
+			end
+		end,
+	})
 
-		fontSize.Slider:SetPoint("LEFT", panel, "LEFT", columnWidth * 2 + 4, 0)
-		fontSize.Slider:SetPoint("TOP", iconSize.Slider, "TOP", 0, 0)
-	end
+	fontSize.Slider:SetPoint("LEFT", panel, "LEFT", columnWidth * 2 + 4, 0)
+	fontSize.Slider:SetPoint("TOP", iconSize.Slider, "TOP", 0, 0)
 
 	local iconSpacing = helpers:BuildClampedSlider({
 		Parent = panel,
@@ -256,14 +239,7 @@ function M:Build(panel, options)
 		Key = "IconSpacing",
 	})
 
-	-- 12.1 has no Text Size slider, so Icon Padding takes its place beside Icon Size;
-	-- legacy keeps it on the next row.
-	if useAuraContainers then
-		iconSpacing.Slider:SetPoint("LEFT", panel, "LEFT", columnWidth * 2 + 4, 0)
-		iconSpacing.Slider:SetPoint("TOP", iconSize.Slider, "TOP", 0, 0)
-	else
-		iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
-	end
+	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()

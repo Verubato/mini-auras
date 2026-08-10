@@ -158,8 +158,6 @@ local dbDefaults = {
 				ColorByDispelType = true,
 			},
 
-			-- TEMPORARY: Font and ShowWarningText only feed the legacy warning text (12.1 cannot
-			-- know a healer is CC'd); both die with the 12.0 path.
 			Font = {
 				File = "Fonts\\FRIZQT__.TTF",
 				Size = 32,

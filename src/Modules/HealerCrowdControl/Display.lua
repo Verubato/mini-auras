@@ -22,9 +22,11 @@ addon.Modules.HealerCrowdControl = addon.Modules.HealerCrowdControl or {}
 local M = {}
 addon.Modules.HealerCrowdControl.Display = M
 
--- 12.1 path: healer CC icons render through one AuraContainer per healer. The warning text
--- cannot work there (it requires knowing whether a CC aura is present, which 12.1 makes
--- secret). The IconSlotContainer is kept for test mode.
+-- 12.1 path: healer CC icons render through one AuraContainer per healer, and the warning text
+-- through a second, label-only container per healer (the engine shows the label button while a
+-- CC aura is present, so no aura read is needed). Every healer's label anchors to the same
+-- point: identical overlapping texts read as one label, which acts as an OR across healers.
+-- The IconSlotContainer is kept for test mode.
 --
 -- The battleground 40-yard range gate (IsInRange, below) is also dropped on 12.1: it works by
 -- skipping healers when rendering, and rendering is the engine's job there. In a battleground
@@ -77,11 +79,12 @@ local function UpdateAnchorSize()
 
 	local options = db.Modules.HealerCCModule
 	local iconSize = tonumber(options.Icons.Size) or 32
+	-- The anchor's own fontstring is measured on both paths: on 12.1 the live text renders
+	-- through the label containers, but those carry the same string at the same size, and their
+	-- (possibly secret) frames must never be read.
 	local text = healerAnchor.HealerWarning
 	local stringWidth = text and text:GetStringWidth() or 0
-	-- 12.1: the warning text is disabled (see the header comment) and an AuraContainer's size can
-	-- be secret, so only the icon size feeds the anchor size there.
-	local showText = not USE_AURA_CONTAINERS and options.ShowWarningText
+	local showText = options.ShowWarningText
 	local stringHeight = (showText and text and text:GetStringHeight()) or 0
 	local containerWidth = iconSize
 	if not USE_AURA_CONTAINERS and iconsContainer and iconsContainer.Frame then
@@ -133,10 +136,26 @@ local function BuildStyle(options)
 	return style
 end
 
+---The style for the label-only warning-text displays. The display size doubles as the button
+---size, so the font size is passed to ApplyConfig/New separately as well.
+---@param options table
+---@return AuraDisplayStyle
+local function BuildLabelStyle(options)
+	local style = auraContainerDisplay:GetStyleScratch()
+
+	style.LabelFontSize = tonumber(options.Font.Size) or 32
+	style.LabelFontFlags = options.Font.Flags
+	style.ShowTooltips = false
+
+	return style
+end
+
 ---12.1 path: applies size/style options to every healer display.
 local function RefreshHealerDisplays()
 	local options = db.Modules.HealerCCModule
 	local iconSize = tonumber(options.Icons.Size) or 32
+	local fontSize = tonumber(options.Font.Size) or 32
+	local showText = options.ShowWarningText == true
 
 	for _, item in pairs(activePool) do
 		local display = item.Display
@@ -146,6 +165,13 @@ local function RefreshHealerDisplays()
 			display:SetStyle(BuildStyle(options))
 			display:SetEnabled(options.Icons.Enabled ~= false)
 			display:SetShown(options.Icons.Enabled ~= false and not testModeActive)
+		end
+
+		local label = item.LabelDisplay
+		if label then
+			label:ApplyConfig(fontSize, 0, BuildLabelStyle(options))
+			label:SetEnabled(showText)
+			label:SetShown(showText and not testModeActive)
 		end
 	end
 
@@ -238,6 +264,10 @@ local function DiscardActiveEntries()
 			item.Display:SetEnabled(false)
 			item.Display:Hide()
 		end
+		if item.LabelDisplay then
+			item.LabelDisplay:SetEnabled(false)
+			item.LabelDisplay:Hide()
+		end
 		discardPool[unit] = item
 		activePool[unit] = nil
 	end
@@ -306,6 +336,10 @@ local function RefreshHealers()
 				item.Display:SetUnit(healer)
 				item.Display:SetEnabled(true)
 			end
+			if item.LabelDisplay then
+				-- Enabled/shown state follows the ShowWarningText option in RefreshHealerDisplays.
+				item.LabelDisplay:SetUnit(healer)
+			end
 			item.Unit = healer
 			activePool[healer] = item
 			discardPool[healer] = nil
@@ -327,6 +361,21 @@ local function RefreshHealers()
 					{ Style = BuildStyle(options) }
 				),
 			}
+			-- The warning text: a label-only container on the same CC filter, so the engine
+			-- shows the text exactly while this healer has a CC aura. maxIcons 1 - one aura is
+			-- enough to warrant the label, and more would repeat it.
+			item.LabelDisplay = auraContainerDisplay:New(
+				healerAnchor,
+				healer,
+				{ auraFilters:GroupSpec("CrowdControl", 1) },
+				tonumber(options.Font.Size) or 32,
+				0,
+				"Healer CC",
+				{ Label = L["Healer in CC!"], Style = BuildLabelStyle(options) }
+			)
+			-- Where the legacy warning fontstring sat. Every healer's label lands on this same
+			-- point on purpose - see the header comment.
+			item.LabelDisplay.Frame:SetPoint("TOP", healerAnchor, "TOP", 0, 6)
 			activePool[healer] = item
 		else
 			item = {
@@ -390,11 +439,14 @@ end
 
 local function EnsureFrames()
 	if testModeActive then
-		-- 12.1: test icons render through the IconSlotContainer; hide the live aura displays
-		-- so real and fake icons don't mix.
+		-- 12.1: test icons render through the IconSlotContainer and the test text through the
+		-- anchor's own fontstring; hide the live displays so real and fake don't mix.
 		for _, item in pairs(activePool) do
 			if item.Display then
 				item.Display:Hide()
+			end
+			if item.LabelDisplay then
+				item.LabelDisplay:Hide()
 			end
 		end
 		return
@@ -427,9 +479,9 @@ local function ApplyOptions(options)
 	iconsContainer:SetIconSize(tonumber(options.Icons.Size) or 32)
 	iconsContainer:SetSpacing(options.IconSpacing or 2)
 
-	-- 12.1: the warning text needs to know whether a CC aura is present, which is secret there,
-	-- so it is disabled outright.
-	if options.ShowWarningText and not USE_AURA_CONTAINERS then
+	-- 12.1: the live warning text renders through the per-healer label containers; the anchor's
+	-- own fontstring only serves the legacy path and the test-mode preview.
+	if options.ShowWarningText and (not USE_AURA_CONTAINERS or testModeActive) then
 		healerAnchor.HealerWarning:Show()
 	else
 		healerAnchor.HealerWarning:Hide()
@@ -551,3 +603,4 @@ end
 ---@field Unit string
 ---@field Watcher Watcher? Legacy path only (nil on 12.1).
 ---@field Display AuraContainerDisplay? 12.1 path only.
+---@field LabelDisplay AuraContainerDisplay? 12.1 path only: the label-only warning-text container.
