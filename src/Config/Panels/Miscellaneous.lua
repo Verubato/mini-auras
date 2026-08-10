@@ -177,25 +177,23 @@ function M:Build(panel)
 	-- the full list once the legacy path is retired.
 	local useAuraContainers = addon.Utils.WoWEx:UseAuraContainers()
 
-	-- 12.1 only: the colour rides a curve on the native duration text, which the legacy path
-	-- has no equivalent for.
-	if useAuraContainers then
-		local colorCountdownChk = mini:Checkbox({
-			Parent = panel,
-			LabelText = L["Colour Countdown"],
-			Tooltip = L["Colours the countdown timer text by the time remaining: white above a minute, yellow under a minute, and red in the last five seconds."],
-			GetValue = function()
-				return db.ColorCountdownByTime or false
-			end,
-			SetValue = function(value)
-				db.ColorCountdownByTime = value
-				addon:Refresh()
-			end,
-		})
+	-- On 12.1 the colour rides a curve on the native duration text; the legacy path drives the
+	-- same effect from its own ticker in IconSlotContainer.
+	local colorCountdownChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Colour Countdown"],
+		Tooltip = L["Colours the countdown timer text by the time remaining: white above a minute, yellow under a minute, and red in the last five seconds."],
+		GetValue = function()
+			return db.ColorCountdownByTime or false
+		end,
+		SetValue = function(value)
+			db.ColorCountdownByTime = value
+			addon:Refresh()
+		end,
+	})
 
-		colorCountdownChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
-		colorCountdownChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
-	end
+	colorCountdownChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+	colorCountdownChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
 
 	local glowItems = useAuraContainers and {
 		"Rotation Assist (Clockwise)",
