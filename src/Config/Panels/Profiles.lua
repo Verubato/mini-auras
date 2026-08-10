@@ -388,7 +388,7 @@ function M:Build(panel)
 			})
 	end)
 
-	local importExportBtn = MakeButton(panel, L["Import/Export"], 110)
+	local importExportBtn = MakeButton(panel, L["Import/Export"], 140)
 	importExportBtn:SetPoint("LEFT", resetBtn, "RIGHT", 4, 0)
 	importExportBtn:SetPoint("TOP", resetBtn, "TOP")
 	importExportBtn:SetScript("OnClick", function()

@@ -71,7 +71,8 @@ function M:Build(panel)
 	local ioBtn = mini:Button({
 		Parent = panel,
 		Text = L["Import/Export"],
-		Width = 110,
+		-- 140 rather than 110: "Importar/Exportar" and its Korean sibling clip at 110.
+		Width = 140,
 		OnClick = function()
 			local group = ui.Current()
 
@@ -83,7 +84,7 @@ function M:Build(panel)
 	local exportAllBtn = mini:Button({
 		Parent = panel,
 		Text = L["Export All"],
-		Width = 110,
+		Width = 140,
 		OnClick = function()
 			ui.ShowImportWindow(ui.Options().Groups)
 		end,
