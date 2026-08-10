@@ -3,7 +3,9 @@ local _, addon = ...
 
 addon.Modules.AllyKickTracker = addon.Modules.AllyKickTracker or {}
 
-local FONT_FILE = "Fonts\\FRIZQT__.TTF"
+-- Resolved from the client's own font object on first layout: non-Latin locales substitute a
+-- file that actually has their glyphs, where a hardcoded western Friz Quadrata renders boxes.
+local fontFile
 local FONT_FLAGS = "OUTLINE"
 -- Everything inside a bar is derived from its height, so one slider sizes the whole thing: the
 -- name font is a fraction of it, the countdown is a touch larger again, and the icon column is
@@ -121,8 +123,9 @@ local function LayoutBar(bar, options)
 
 	local nameSize = math.max(6, math.floor(height * NAME_FONT_COEFFICIENT))
 
-	bar.Name:SetFont(FONT_FILE, nameSize, FONT_FLAGS)
-	bar.Time:SetFont(FONT_FILE, math.floor(nameSize * COUNTDOWN_FONT_SCALE), FONT_FLAGS)
+	fontFile = fontFile or (GameFontNormal and GameFontNormal:GetFont()) or "Fonts\\FRIZQT__.TTF"
+	bar.Name:SetFont(fontFile, nameSize, FONT_FLAGS)
+	bar.Time:SetFont(fontFile, math.floor(nameSize * COUNTDOWN_FONT_SCALE), FONT_FLAGS)
 end
 
 ---@param parent table
