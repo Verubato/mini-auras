@@ -408,6 +408,7 @@ L:RegisterLocale("ptBR", {
 	["Applied by me"] = "Aplicada por mim",
 	["Anyone else"] = "Qualquer outro",
 	["Anyone"] = "Qualquer um",
+	["Arena Frames"] = "Quadros de arena",
 	["Duplicate"] = "Duplicar",
 	["Enemy Nameplates"] = "Placas de nome inimigas",
 	["Enemy Target"] = "Alvo inimigo",

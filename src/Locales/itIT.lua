@@ -407,6 +407,7 @@ L:RegisterLocale("itIT", {
 	["Applied by me"] = "Applicata da me",
 	["Anyone else"] = "Chiunque altro",
 	["Anyone"] = "Chiunque",
+	["Arena Frames"] = "Riquadri arena",
 	["Duplicate"] = "Duplica",
 	["Enemy Nameplates"] = "Targhette nemiche",
 	["Enemy Target"] = "Bersaglio nemico",

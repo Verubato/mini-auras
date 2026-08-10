@@ -364,6 +364,9 @@ function M.build()
 			env.unitFrameHooks = hooks
 		end,
 	}
+	-- The real arena frame lookup, loaded onto the stub: it only reads globals, so a test can
+	-- exercise the addon priority order by installing them.
+	loadFile("src/Core/Frames/ArenaFrames.lua")
 	-- Kick tracking is recorded rather than simulated: modules that re-target a container to a
 	-- different unit have to move their kick subscription with it, and nothing else would show
 	-- that they forgot.

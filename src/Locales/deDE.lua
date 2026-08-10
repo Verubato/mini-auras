@@ -409,6 +409,7 @@ L:RegisterLocale("deDE", {
 	["Applied by me"] = "Von mir angewendet",
 	["Anyone else"] = "Alle anderen",
 	["Anyone"] = "Jeder",
+	["Arena Frames"] = "Arenafenster",
 	["Duplicate"] = "Duplizieren",
 	["Enemy Nameplates"] = "Feindliche Namensplaketten",
 	["Enemy Target"] = "Feindliches Ziel",

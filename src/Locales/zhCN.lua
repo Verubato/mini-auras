@@ -410,6 +410,7 @@ L:RegisterLocale("zhCN", {
 	["Applied by me"] = "由我施加",
 	["Anyone else"] = "其他任何人",
 	["Anyone"] = "任何人",
+	["Arena Frames"] = "竞技场框体",
 	["Duplicate"] = "复制",
 	["Enemy Nameplates"] = "敌方姓名板",
 	["Enemy Target"] = "敌方目标",

@@ -411,6 +411,7 @@ L:SetDefaultStrings({
 	["Applied by me"] = "Applied by me",
 	["Anyone else"] = "Anyone else",
 	["Anyone"] = "Anyone",
+	["Arena Frames"] = "Arena Frames",
 	["Duplicate"] = "Duplicate",
 	["Enemy Nameplates"] = "Enemy Nameplates",
 	["Enemy Target"] = "Enemy Target",

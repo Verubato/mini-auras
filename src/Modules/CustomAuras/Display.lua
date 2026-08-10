@@ -14,8 +14,8 @@ local spellSearch = addon.Core.SpellSearch
 local groups = addon.Modules.CustomAuras.Groups
 local sound = addon.Modules.CustomAuras.Sound
 
--- One AuraContainer per group, or per group per visible nameplate or unit frame. Preview icons go
--- through an IconSlotContainer so they need no aura data.
+-- One AuraContainer per group, or per group per visible nameplate, unit frame or arena enemy
+-- frame. Preview icons go through an IconSlotContainer so they need no aura data.
 --
 -- Every container carries BOTH a helpful and a harmful group, only one ever budgeted above zero.
 -- The engine drops a spell-id filter silently on the wrong-sided one, and the bare token left
@@ -32,6 +32,8 @@ local HARMFUL_KEY = "harmful"
 local MODULE_TAG = "Custom Auras"
 -- Ten covers a normal plate count without building forty for a group that may never fire.
 local PLATE_PREALLOCATE = 10
+-- Arena enemy frames are fixed at three, so the copies are walked by index rather than discovered.
+local ARENA_OPPONENTS = 3
 -- Container sizes can be secret, so a draggable anchor's size is guessed from the budget.
 local MIN_ANCHOR_SIZE = 20
 -- Pooled displays start neutral; ConfigureDisplay applies the real geometry on acquisition.
@@ -379,7 +381,7 @@ end
 
 ---@param state CustomAuraGroupState
 ---@param entry CustomAuraDisplayEntry
----@param host table The nameplate or unit frame the copy hangs off.
+---@param host table The nameplate, unit frame or arena frame the copy hangs off.
 local function EnsureDragHandle(state, entry, host)
 	local handle = entry.Handle
 
@@ -450,10 +452,19 @@ local function ReleaseFrames(state)
 end
 
 ---@param state CustomAuraGroupState
+local function ReleaseArena(state)
+	for index, entry in pairs(state.Arena) do
+		displayPool:Release(entry)
+		state.Arena[index] = nil
+	end
+end
+
+---@param state CustomAuraGroupState
 local function Park(state)
 	ReleaseScreen(state)
 	ReleasePlates(state)
 	ReleaseFrames(state)
+	ReleaseArena(state)
 end
 
 ---@param groupDef CustomAuraGroup
@@ -462,7 +473,7 @@ local function EnsureState(groupDef)
 	local state = states[groupDef.Id]
 
 	if not state then
-		state = { Plates = {}, Frames = {} }
+		state = { Plates = {}, Frames = {}, Arena = {} }
 		states[groupDef.Id] = state
 	end
 
@@ -515,7 +526,7 @@ end
 ---Split out of the refresh because a drag runs it every frame and must not re-budget.
 ---@param state CustomAuraGroupState
 ---@param entry CustomAuraDisplayEntry
----@param host table The nameplate or unit frame the copy hangs off.
+---@param host table The nameplate, unit frame or arena frame the copy hangs off.
 local function AnchorEntry(state, entry, host)
 	local group = state.Group
 	local point = growAnchors:GetPinPoint(group.Grow)
@@ -539,7 +550,7 @@ end
 ---Draws or puts away the stand-in icons and the drag handle for one copy.
 ---@param state CustomAuraGroupState
 ---@param entry CustomAuraDisplayEntry
----@param host table The nameplate or unit frame the copy hangs off.
+---@param host table The nameplate, unit frame or arena frame the copy hangs off.
 ---@return boolean previewing
 local function ApplyPreview(state, entry, host)
 	if not IsPreviewing(state) then
@@ -643,6 +654,46 @@ local function RefreshFrameGroup(state, anchor, unit)
 	end
 end
 
+---One copy per arena enemy frame, whichever addon owns it. The token is fixed per index rather
+---than read off the frame, so nothing depends on the frame carrying a unit attribute.
+---@param state CustomAuraGroupState
+---@param index number
+local function RefreshArenaGroup(state, index)
+	local frame = frames:GetArenaFrame(index)
+	local token = "arena" .. index
+	-- The frames are usually only built once the arena loads, and an opponent the player can
+	-- assist is under a mind control, which takes the spell id filter with it.
+	if not frame or not groups:MatchesReaction(state.Group.Unit, token) then
+		local existing = state.Arena[index]
+
+		if existing then
+			displayPool:Release(existing)
+			state.Arena[index] = nil
+		end
+
+		return
+	end
+
+	local entry = state.Arena[index]
+
+	if not entry then
+		entry = displayPool:Acquire(BuildStyle(state.Group))
+		state.Arena[index] = entry
+	end
+
+	entry.Unit = token
+
+	if IsPreviewing(state) then
+		EnsureTestContainer(state, entry, frame)
+	end
+
+	-- No visibility switch of its own: the copy is parented to the arena frame, so it comes and
+	-- goes with it.
+	AnchorEntry(state, entry, frame)
+	ConfigureDisplay(state, entry, token)
+	ApplyPreview(state, entry, frame)
+end
+
 ---@param state CustomAuraGroupState
 local function CollectSoundRequests(state)
 	local group = state.Group
@@ -689,16 +740,19 @@ local function CollectSoundRequests(state)
 	wipe(soundTokens)
 	wipe(soundSeen)
 
-	if group.Anchor == groups.Anchor.Frames then
-		for _, entry in pairs(state.Frames) do
+	if group.Anchor == groups.Anchor.Nameplate then
+		for token in pairs(state.Plates) do
+			soundTokens[#soundTokens + 1] = token
+		end
+	else
+		-- Unit frame and arena copies both carry the token they resolved to.
+		local copies = group.Anchor == groups.Anchor.Arena and state.Arena or state.Frames
+
+		for _, entry in pairs(copies) do
 			if entry.Unit and not soundSeen[entry.Unit] then
 				soundSeen[entry.Unit] = true
 				soundTokens[#soundTokens + 1] = entry.Unit
 			end
-		end
-	else
-		for token in pairs(state.Plates) do
-			soundTokens[#soundTokens + 1] = token
 		end
 	end
 
@@ -750,6 +804,14 @@ function M:AnchorGroup(groupId)
 	for anchor, entry in pairs(state.Frames) do
 		AnchorEntry(state, entry, anchor)
 	end
+
+	for index, entry in pairs(state.Arena) do
+		local frame = frames:GetArenaFrame(index)
+
+		if frame then
+			AnchorEntry(state, entry, frame)
+		end
+	end
 end
 
 ---Builds what is missing, parks what is off, and re-registers the sounds.
@@ -779,6 +841,7 @@ function M:Refresh(options, moduleEnabled)
 		elseif groupDef.Anchor == groups.Anchor.Screen then
 			ReleasePlates(state)
 			ReleaseFrames(state)
+			ReleaseArena(state)
 			RefreshScreenGroup(state)
 
 			if state.Allowed then
@@ -787,6 +850,7 @@ function M:Refresh(options, moduleEnabled)
 		elseif groupDef.Anchor == groups.Anchor.Frames then
 			ReleaseScreen(state)
 			ReleasePlates(state)
+			ReleaseArena(state)
 			displayPool:Prewarm(PLATE_PREALLOCATE)
 			wipe(seenAnchors)
 
@@ -805,9 +869,22 @@ function M:Refresh(options, moduleEnabled)
 			if state.Allowed then
 				CollectSoundRequests(state)
 			end
+		elseif groupDef.Anchor == groups.Anchor.Arena then
+			ReleaseScreen(state)
+			ReleasePlates(state)
+			ReleaseFrames(state)
+
+			for index = 1, ARENA_OPPONENTS do
+				RefreshArenaGroup(state, index)
+			end
+
+			if state.Allowed then
+				CollectSoundRequests(state)
+			end
 		else
 			ReleaseScreen(state)
 			ReleaseFrames(state)
+			ReleaseArena(state)
 			displayPool:Prewarm(PLATE_PREALLOCATE)
 
 			for token in pairs(state.Plates) do
@@ -959,7 +1036,7 @@ end
 ---@field Display AuraContainerDisplay
 ---@field Test IconSlotContainer?
 ---@field Handle table? Offset drag handle, created on first use in test mode.
----@field Unit string? The unit a unit frame copy resolved to, for the sound registrations.
+---@field Unit string? The unit a unit frame or arena frame copy resolved to, for the sounds.
 ---@field StyleSignature string?
 ---@field FilterSignature string?
 
@@ -976,3 +1053,4 @@ end
 ---@field Screen CustomAuraDisplayEntry?
 ---@field Plates table<string, CustomAuraDisplayEntry>
 ---@field Frames table<table, CustomAuraDisplayEntry> Keyed by the unit frame the copy hangs off.
+---@field Arena table<number, CustomAuraDisplayEntry> Keyed by arena opponent index.

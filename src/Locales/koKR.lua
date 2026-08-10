@@ -409,6 +409,7 @@ L:RegisterLocale("koKR", {
 	["Applied by me"] = "내가 적용함",
 	["Anyone else"] = "다른 사람",
 	["Anyone"] = "누구나",
+	["Arena Frames"] = "투기장 프레임",
 	["Duplicate"] = "복제",
 	["Enemy Nameplates"] = "적 이름표",
 	["Enemy Target"] = "적 대상",

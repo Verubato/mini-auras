@@ -5,6 +5,7 @@ local wowEx = addon.Utils.WoWEx
 local rules = addon.Core.Cooldowns.Rules
 local fcdTalents = addon.Core.Cooldowns.Talents
 local testSpellData = addon.Core.TestSpells
+local frames = addon.Core.Frames
 
 addon.Modules.EnemyCooldowns = addon.Modules.EnemyCooldowns or {}
 
@@ -46,24 +47,6 @@ end
 
 local function GetOptions()
 	return db and db.Modules.EnemyCooldownTrackerModule
-end
-
----Returns the arena enemy frame for the given index, checking known frame addons in order:
----sArena Reloaded (sArenaEnemyFrame1/2/3), ElvUI (ElvUF_Arena1/2/3),
----then Blizzard (CompactArenaFrame.memberUnitFrames[index]).
----@param index number
----@return table?
-local function GetArenaEnemyFrame(index)
-	local sArena = _G["sArenaEnemyFrame" .. index]
-	if sArena then
-		return sArena
-	end
-	local elvui = _G["ElvUF_Arena" .. index]
-	if elvui then
-		return elvui
-	end
-	local blizz = CompactArenaFrame and CompactArenaFrame.memberUnitFrames
-	return blizz and blizz[index]
 end
 
 local function GetSlotTable(idx)
@@ -291,7 +274,7 @@ local function AnchorContainerArenaFrames(entry, index)
 		return
 	end
 
-	local arenaFrame = GetArenaEnemyFrame(index)
+	local arenaFrame = frames:GetArenaFrame(index)
 	if not arenaFrame then
 		return
 	end
@@ -376,7 +359,7 @@ end
 ---@param index number
 ---@return table?
 function M:GetArenaEnemyFrame(index)
-	return GetArenaEnemyFrame(index)
+	return frames:GetArenaFrame(index)
 end
 
 ---@param active boolean

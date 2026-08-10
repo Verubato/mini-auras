@@ -21,10 +21,12 @@ local UNIT_EVENTS = {
 	PLAYER_TARGET_CHANGED = "target",
 }
 -- A healer group follows whoever holds the role, so the token itself moves. Nothing short of a
--- full refresh covers that: the container has to be pointed at a different unit.
+-- full refresh covers that: the container has to be pointed at a different unit. An arena
+-- opponent appearing is the same shape of change, and there are only a handful per match.
 local ROSTER_EVENTS = {
 	GROUP_ROSTER_UPDATE = true,
 	PLAYER_ROLES_ASSIGNED = true,
+	ARENA_OPPONENT_UPDATE = true,
 }
 
 ---@type Db
@@ -94,6 +96,7 @@ local function CreateEvents()
 		"PLAYER_TARGET_CHANGED",
 		"GROUP_ROSTER_UPDATE",
 		"PLAYER_ROLES_ASSIGNED",
+		"ARENA_OPPONENT_UPDATE",
 		"UNIT_PET",
 		"UNIT_FACTION",
 		"UNIT_PHASE",

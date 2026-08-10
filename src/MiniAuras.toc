@@ -66,6 +66,7 @@ Core\Inspect\Inspector.lua
 Core\Inspect\InspectorFacade.lua
 
 Core\Frames\Frames.lua
+Core\Frames\ArenaFrames.lua
 Core\Frames\TestFrames.lua
 Core\Frames\ExternalProviders.lua
 Core\Frames\Blizzard.lua

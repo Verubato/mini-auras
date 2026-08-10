@@ -410,6 +410,7 @@ L:RegisterLocale("ruRU", {
 	["Applied by me"] = "Наложено мной",
 	["Anyone else"] = "Любой другой",
 	["Anyone"] = "Любой",
+	["Arena Frames"] = "Рамки арены",
 	["Duplicate"] = "Дублировать",
 	["Enemy Nameplates"] = "Полосы здоровья врагов",
 	["Enemy Target"] = "Вражеская цель",

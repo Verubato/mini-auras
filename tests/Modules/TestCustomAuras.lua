@@ -494,6 +494,46 @@ fw.describe("CustomAuras - what a group is allowed to track", function()
 			"a group frame always holds somebody friendly")
 	end)
 
+	fw.it("treats the arena frames choice as an anchor of its own", function()
+		local group = groups:Normalise({ Unit = "arenaframes" })
+
+		assert(group.Anchor == "ARENA", "one copy per arena enemy frame")
+		assert(group.Offset.Y == 0, "sitting centred on the frame, like a unit frame copy")
+		assert(groups:IsArenaFrameUnit("arenaframes"), "the display asks this way")
+		assert(not groups:IsArenaFrameUnit("unitframes"), "and a party frame is not an arena one")
+		assert(not groups:IsFrameUnit("arenaframes"), "either way round")
+		assert(not groups:IsNameplateUnit("arenaframes"), "nor is it a plate")
+		assert(groups:GetToken(group) == nil, "there is no single token behind it")
+	end)
+
+	fw.it("makes an arena frames group a debuff group whatever it was set to", function()
+		local group = groups:Normalise({ Unit = "arenaframes", AuraType = "HELPFUL" })
+
+		assert(group.AuraType == "HARMFUL", "buffs on an opponent are not on offer")
+	end)
+
+	fw.it("allows debuffs on arena frames in both tracking modes", function()
+		-- The difference from the unit frames: an arena enemy is never assistable, so the engine
+		-- honours a spell id map on a debuff there rather than dropping it.
+		assert(groups:SupportsAuraType("arenaframes", "HARMFUL"), "debuffs by spell id")
+		assert(groups:SupportsAuraType("arenaframes", "HARMFUL", groups.TrackingMode.Filters),
+			"and by filter")
+		assert(not groups:SupportsAuraType("arenaframes", "HELPFUL"), "but never buffs")
+		assert(not groups:SupportsAuraType("arenaframes", "HELPFUL", groups.TrackingMode.Filters),
+			"whichever way it tracks")
+	end)
+
+	fw.it("lets an arena frames group track spell ids without complaint", function()
+		local group = groups:Normalise({ Unit = "arenaframes", Spells = { POLYMORPH } })
+
+		assert(groups:Supports(group), "a spell list on an opponent is the ordinary case")
+	end)
+
+	fw.it("has no side to wait for on the arena frames", function()
+		assert(groups:GetWarning(groups:Normalise({ Unit = "arenaframes" })) == nil,
+			"an arena frame only ever holds an opponent")
+	end)
+
 	fw.it("lets a nameplate group be pointed back at a unit", function()
 		-- Normalise runs after every edit, so anything that re-derived the unit from the stored
 		-- anchor would undo the change the instant it was made.
@@ -1092,6 +1132,183 @@ fw.describe("CustomAuras - unit frame anchored displays", function()
 		assert(CopyCount(display:GetStates()[group.Id]) == 0, "the per-frame copies were released")
 
 		UnitFrames({})
+		ClearGroups()
+	end)
+end)
+
+fw.describe("CustomAuras - arena frame anchored displays", function()
+	-- The frames come from whichever addon owns them, so the finder walks a fixed priority list
+	-- of globals. Every test here installs its own and clears them again.
+	local ARENA_PREFIXES = { "sArenaEnemyFrame", "ElvUF_Arena" }
+	local ARENA_TOKENS = { "arena1", "arena2", "arena3" }
+
+	local function ClearArenaFrames()
+		for _, prefix in ipairs(ARENA_PREFIXES) do
+			for index = 1, 3 do
+				_G[prefix .. index] = nil
+			end
+		end
+
+		_G.CompactArenaFrame = nil
+
+		for _, token in ipairs(ARENA_TOKENS) do
+			env.enemies[token] = nil
+		end
+	end
+
+	---Installs one frame per index under the given addon's global names, and makes the matching
+	---arena tokens hostile so the group's own reaction check passes.
+	---@param prefix string
+	---@param indexes number[]
+	---@return table[] made Keyed by opponent index.
+	local function AddArenaFrames(prefix, indexes)
+		local made = {}
+
+		for _, index in ipairs(indexes) do
+			made[index] = acm.NewFrame("Frame", prefix .. index)
+			_G[prefix .. index] = made[index]
+			env.enemies["arena" .. index] = true
+		end
+
+		return made
+	end
+
+	---@param state table
+	---@return number
+	local function CopyCount(state)
+		local count = 0
+
+		for _ in pairs(state.Arena) do
+			count = count + 1
+		end
+
+		return count
+	end
+
+	fw.it("puts a copy on every arena enemy frame", function()
+		ClearGroups()
+		ClearArenaFrames()
+		AddArenaFrames("sArenaEnemyFrame", { 1, 2, 3 })
+		AddGroup({ Unit = "arenaframes", Spells = { POLYMORPH } })
+		module:Refresh()
+
+		-- Spell ids really are honoured here: an arena enemy is never assistable, which is the one
+		-- thing that lets a debuff group narrow itself by id.
+		assert(Budget(ContainerFor("arena1"), "harmful") == groups.MaxIcons, "the first opponent")
+		assert(Budget(ContainerFor("arena2"), "harmful") == groups.MaxIcons, "the second")
+		assert(Budget(ContainerFor("arena3"), "harmful") == groups.MaxIcons, "and the third")
+
+		ClearArenaFrames()
+		ClearGroups()
+	end)
+
+	fw.it("hangs the copy off the frame the priority list picks first", function()
+		ClearGroups()
+		ClearArenaFrames()
+
+		local blizzard = acm.NewFrame("Frame", "CompactArenaFrameMember1")
+		_G.CompactArenaFrame = { memberUnitFrames = { blizzard } }
+
+		local replacement = AddArenaFrames("sArenaEnemyFrame", { 1 })
+		local group = AddGroup({ Unit = "arenaframes", Spells = { POLYMORPH } })
+
+		module:Refresh()
+
+		local entry = display:GetStates()[group.Id].Arena[1]
+
+		assert(entry, "the opponent has a copy")
+		assert(entry.Display.Frame:GetParent() == replacement[1],
+			"the addon that replaces the Blizzard frames wins, or the copy hangs off a dead frame")
+
+		ClearArenaFrames()
+		ClearGroups()
+	end)
+
+	fw.it("has no copy for an index nothing has built a frame for", function()
+		ClearGroups()
+		ClearArenaFrames()
+		AddArenaFrames("ElvUF_Arena", { 1, 2 })
+
+		local group = AddGroup({ Unit = "arenaframes", Spells = { POLYMORPH } })
+
+		module:Refresh()
+
+		local state = display:GetStates()[group.Id]
+
+		assert(CopyCount(state) == 2, "one per frame that exists")
+		assert(state.Arena[3] == nil, "and none waiting on the third")
+
+		ClearArenaFrames()
+		ClearGroups()
+	end)
+
+	fw.it("drops the copy from an opponent the player can assist", function()
+		ClearGroups()
+		ClearArenaFrames()
+		AddArenaFrames("sArenaEnemyFrame", { 1 })
+
+		local group = AddGroup({ Unit = "arenaframes", Spells = { POLYMORPH } })
+
+		module:Refresh()
+
+		local state = display:GetStates()[group.Id]
+
+		assert(state.Arena[1], "a hostile opponent has a copy")
+
+		-- A mind control flips the token to the player's side, and the spell id filter with it.
+		env.enemies.arena1 = nil
+		module:Refresh()
+
+		assert(state.Arena[1] == nil, "a mind controlled one does not")
+
+		ClearArenaFrames()
+		ClearGroups()
+	end)
+
+	fw.it("registers the group's sounds on each opponent it shows on", function()
+		ClearGroups()
+		ClearArenaFrames()
+		addon.Modules.CustomAuras.Sound:Clear()
+		AddArenaFrames("sArenaEnemyFrame", { 1, 2 })
+		AddGroup({
+			Unit = "arenaframes",
+			Spells = { POLYMORPH },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		local seen = {}
+
+		for _, entry in pairs(env.auraSounds) do
+			seen[entry.Unit] = true
+		end
+
+		assert(seen.arena1 and seen.arena2, "one registration per opponent")
+		assert(not seen.arena3, "and none for the opponent that is not there")
+
+		ClearArenaFrames()
+		ClearGroups()
+	end)
+
+	fw.it("leaves nothing behind when the group is pointed somewhere else", function()
+		ClearGroups()
+		ClearArenaFrames()
+		AddArenaFrames("sArenaEnemyFrame", { 1, 2, 3 })
+
+		local group = AddGroup({ Unit = "arenaframes", Spells = { POLYMORPH } })
+
+		module:Refresh()
+
+		assert(CopyCount(display:GetStates()[group.Id]) == 3, "three copies to give back")
+
+		group.Unit = "player"
+		group.AuraType = "HELPFUL"
+		groups:Normalise(group)
+		module:Refresh()
+
+		assert(CopyCount(display:GetStates()[group.Id]) == 0, "the per-opponent copies were released")
+
+		ClearArenaFrames()
 		ClearGroups()
 	end)
 end)
