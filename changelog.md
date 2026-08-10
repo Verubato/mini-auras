@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.2.2
+
+- Disarms on nameplate bars and portraits working.
+- Various localisation fixes for labels that are too long and wrong fonts.
+
 ## 5.2.1
 
 - Fixed the config scrollbar moving in the opposite direction to the scroll position.
@@ -41,7 +46,6 @@ Added support for Blizzard patch 12.1.
 What's removed:
 
 - Friendly and enemy cooldown tracking (not possible in 12.1).
-- Text to speech announcements.
 - Masque icon skinning.
 
 What's added/changed:
