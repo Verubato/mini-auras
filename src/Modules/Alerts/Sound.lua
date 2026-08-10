@@ -225,11 +225,15 @@ function M:RegisterToken(unitToken)
 	if importantTts or defensiveTts then
 		local packPath = ttsPacks:Path(ttsPacks:Resolve(tts and tts.VoicePack))
 
+		-- One channel for both categories: the TTS tab is a single page, so the announcements
+		-- all come out of the same output.
+		local ttsChannel = (tts and tts.Channel) or "Master"
+
 		if importantTts then
-			ids = auraSounds:RegisterMappedSet(ids, unitToken, addon.Core.AuraTtsSounds.Important, packPath, "Master")
+			ids = auraSounds:RegisterMappedSet(ids, unitToken, addon.Core.AuraTtsSounds.Important, packPath, ttsChannel)
 		end
 		if defensiveTts then
-			ids = auraSounds:RegisterMappedSet(ids, unitToken, addon.Core.AuraTtsSounds.Defensive, packPath, "Master")
+			ids = auraSounds:RegisterMappedSet(ids, unitToken, addon.Core.AuraTtsSounds.Defensive, packPath, ttsChannel)
 		end
 	end
 
@@ -276,6 +280,7 @@ function M:Refresh(activeTokens)
 	-- the same saved name reads its clips from.
 	local voicePack = (importantTts or defensiveTts) and ttsPacks:Resolve(tts and tts.VoicePack) or false
 	local voicePackPath = voicePack and ttsPacks:Path(voicePack) or false
+	local ttsChannel = (importantTts or defensiveTts) and ((tts and tts.Channel) or "Master") or false
 	local signature = auraSounds:Signature(
 		active,
 		importantEnabled,
@@ -287,7 +292,8 @@ function M:Refresh(activeTokens)
 		importantTts,
 		defensiveTts,
 		voicePack,
-		voicePackPath
+		voicePackPath,
+		ttsChannel
 	)
 	if signature == alertSoundSettingsSignature then
 		return

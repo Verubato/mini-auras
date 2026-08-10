@@ -16,11 +16,19 @@ local ttsPacks = addon.Core.TtsPacks
 -- the 12.1 chained displays don't have, so only LEFT/RIGHT are offered there.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local GROW_OPTIONS = USE_AURA_CONTAINERS and { "LEFT", "RIGHT" } or { "LEFT", "RIGHT", "CENTER" }
+local SOUND_CHANNELS = { "Master", "SFX" }
 
 ---@class AlertsConfig
 local M = {}
 
 config.Alerts = M
+
+---Names the output channels from Blizzard's own volume labels, so they need no strings of ours.
+---@param value string
+---@return string
+local function ChannelText(value)
+	return value == "SFX" and (SOUND_VOLUME or "Sound Effects") or (MASTER_VOLUME or "Master")
+end
 
 ---@param parent table
 ---@param options AlertsModuleOptions
@@ -349,6 +357,36 @@ local function BuildSoundsTab(parent, options)
 
 	soundDefensiveDropdown:SetPoint("LEFT", parent, "LEFT", columnWidth * 3, 0)
 	soundDefensiveDropdown:SetPoint("TOP", soundDefensiveChk, "TOP", 0, -4)
+
+	---Builds one category's output channel picker, previewing that category's sound on the
+	---channel just picked so the choice can be heard.
+	---@param soundConfig table
+	---@return table dropdown
+	local function BuildChannelDropdown(soundConfig)
+		local dropdown = mini:Dropdown({
+			Parent = parent,
+			LabelText = L["Channel"],
+			Width = 200,
+			Items = SOUND_CHANNELS,
+			GetText = ChannelText,
+			GetValue = function()
+				return soundConfig.Channel or "Master"
+			end,
+			SetValue = function(value)
+				soundConfig.Channel = value
+				PlaySoundFile(sounds:Resolve(soundConfig.File), value)
+				config:Apply()
+			end,
+		})
+
+		return dropdown
+	end
+
+	local importantChannelDropdown = BuildChannelDropdown(options.Sound.Important)
+	importantChannelDropdown.Label:SetPoint("TOPLEFT", soundImportantDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local defensiveChannelDropdown = BuildChannelDropdown(options.Sound.Defensive)
+	defensiveChannelDropdown.Label:SetPoint("TOPLEFT", soundDefensiveDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
 end
 
 ---@param parent table
@@ -410,6 +448,10 @@ local function BuildTtsTab(parent, options)
 		})
 		packNote:SetPoint("TOPLEFT", ttsIntro, "BOTTOMLEFT", 0, -verticalSpacing)
 
+		local function TtsChannel()
+			return options.TTS and options.TTS.Channel or "Master"
+		end
+
 		local packDropdown = mini:Dropdown({
 			Parent = parent,
 			Items = ttsPacks:Names(),
@@ -419,7 +461,7 @@ local function BuildTtsTab(parent, options)
 			SetValue = function(value)
 				EnsureTtsOptions()
 				options.TTS.VoicePack = value
-				PlaySoundFile(ttsPacks:Path(value) .. "PreviewVoice.ogg", "Master")
+				PlaySoundFile(ttsPacks:Path(value) .. "PreviewVoice.ogg", TtsChannel())
 				config:Apply()
 			end,
 			GetText = function(value)
@@ -429,11 +471,32 @@ local function BuildTtsTab(parent, options)
 		packDropdown:SetPoint("TOPLEFT", packNote, "BOTTOMLEFT", 0, -verticalSpacing)
 		packDropdown:SetWidth(400)
 
+		-- Both categories share this: the engine plays the baked clips, and one page of
+		-- announcements belongs on one output.
+		local channelDropdown = mini:Dropdown({
+			Parent = parent,
+			LabelText = L["Channel"],
+			Width = 200,
+			Items = SOUND_CHANNELS,
+			GetText = ChannelText,
+			GetValue = function()
+				return options.TTS and options.TTS.Channel or "Master"
+			end,
+			SetValue = function(value)
+				EnsureTtsOptions()
+				options.TTS.Channel = value
+				local pack = ttsPacks:Resolve(options.TTS.VoicePack)
+				PlaySoundFile(ttsPacks:Path(pack) .. "PreviewVoice.ogg", value)
+				config:Apply()
+			end,
+		})
+		channelDropdown.Label:SetPoint("TOPLEFT", packDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
+
 		---Plays one of the selected pack's preview clips.
 		---@param file string
 		local function PreviewPackClip(file)
 			local pack = ttsPacks:Resolve(options.TTS and options.TTS.VoicePack)
-			PlaySoundFile(ttsPacks:Path(pack) .. file, "Master")
+			PlaySoundFile(ttsPacks:Path(pack) .. file, TtsChannel())
 		end
 
 		local packImportantChk = BuildAnnounceCheckbox(
@@ -444,7 +507,7 @@ local function BuildTtsTab(parent, options)
 				PreviewPackClip("PreviewImportant.ogg")
 			end
 		)
-		packImportantChk:SetPoint("TOPLEFT", packDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
+		packImportantChk:SetPoint("TOPLEFT", channelDropdown.Label, "BOTTOMLEFT", 0, -verticalSpacing)
 
 		local packDefensiveChk = BuildAnnounceCheckbox(
 			"Defensive",

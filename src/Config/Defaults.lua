@@ -262,6 +262,9 @@ local dbDefaults = {
 				VoiceID = 0,
 				VoicePack = "David",
 				SpeechRate = 0,
+				-- 12.1 only: the engine plays the baked clips, so they need an output channel.
+				-- The runtime voice has no channel of its own.
+				Channel = "Master",
 				-- Important-spell TTS (opt-in, like the defensive TTS).
 				Important = {
 					Enabled = false,
