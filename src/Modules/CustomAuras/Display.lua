@@ -573,6 +573,7 @@ local function ApplyPreview(state, entry, host)
 		if entry.Test then
 			entry.Test:ResetAllSlots()
 			entry.Test.Frame:Hide()
+			moduleUtil:SetTestLabel(entry.Test.Frame, nil)
 		end
 
 		if entry.Handle then
@@ -587,6 +588,9 @@ local function ApplyPreview(state, entry, host)
 
 	entry.Test.Frame:Show()
 	RenderTestIcons(state, entry)
+	-- The same caption the screen anchor carries, so a copy on a frame is just as identifiable
+	-- with every module's test icons on screen at once.
+	moduleUtil:SetTestLabel(entry.Test.Frame, state.Group.Name)
 
 	handle:ClearAllPoints()
 	handle:SetAllPoints(entry.Test.Frame)
