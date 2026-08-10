@@ -67,6 +67,10 @@ local testModeActive = false
 local previewGroupId
 -- Cursor position and starting offset while a nameplate group is being dragged.
 local dragContext = {}
+-- Fired with the group id when a drag finishes writing a position or offset, so the options
+-- page can update the inputs showing the same numbers.
+---@type fun(groupId: string)[]
+local positionChangedCallbacks = {}
 -- One pool for every display, screen or nameplate. Aura containers can never be destroyed, so a
 -- deleted group hands its frames back. Built below, once its create and reset functions exist.
 ---@type Pool
@@ -310,6 +314,15 @@ local function UpdateAnchorSize(state)
 	end
 end
 
+---Tells whoever asked (the options page) that a drag finished writing a group's position, so
+---controls showing the same numbers can catch up.
+---@param groupId string
+local function NotifyPositionChanged(groupId)
+	for _, fn in ipairs(positionChangedCallbacks) do
+		fn(groupId)
+	end
+end
+
 ---@param state CustomAuraGroupState
 local function EnsureAnchor(state)
 	if state.Anchor then
@@ -324,6 +337,8 @@ local function EnsureAnchor(state)
 	-- and EnsureState re-points state.Group at the live one.
 	moduleUtil:MakeMovable(anchor, function()
 		return state.Group.Position
+	end, function()
+		NotifyPositionChanged(state.Group.Id)
 	end)
 
 	state.Anchor = anchor
@@ -377,6 +392,7 @@ local function OnOffsetDragStop(handle)
 	group.Offset.Y = math.floor(group.Offset.Y + 0.5)
 
 	M:AnchorGroup(group.Id)
+	NotifyPositionChanged(group.Id)
 end
 
 ---@param state CustomAuraGroupState
@@ -827,6 +843,13 @@ end
 ---@param value boolean
 function M:SetTestMode(value)
 	testModeActive = value
+end
+
+---Registers a function called with the group id whenever a drag finishes moving a group, so
+---the options page can update the position inputs it shows for it.
+---@param fn fun(groupId: string)
+function M:OnPositionChanged(fn)
+	positionChangedCallbacks[#positionChangedCallbacks + 1] = fn
 end
 
 ---Marks one group as the one the options page is editing. Nil clears it.

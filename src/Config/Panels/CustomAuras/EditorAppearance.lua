@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
 local groups = addon.Modules.CustomAuras.Groups
+local display = addon.Modules.CustomAuras.Display
 local ui = addon.Config.CustomAurasUI
 local CHECK_COLUMNS = 5
 local CHECK_ROW_HEIGHT = 30
@@ -122,8 +123,18 @@ function ui.BuildAppearanceTab(ctx)
 		return box
 	end
 
-	OffsetBox(L["Offset X"], "X", ui.DropdownColumn * 2)
-	OffsetBox(L["Offset Y"], "Y", ui.DropdownColumn * 2 + OFFSET_COLUMN)
+	local offsetXBox = OffsetBox(L["Offset X"], "X", ui.DropdownColumn * 2)
+	local offsetYBox = OffsetBox(L["Offset Y"], "Y", ui.DropdownColumn * 2 + OFFSET_COLUMN)
+
+	-- A drag writes the same fields these boxes edit, so they catch up the moment it ends.
+	display:OnPositionChanged(function(groupId)
+		local group = ui.Current()
+
+		if group and group.Id == groupId then
+			offsetXBox.EditBox:MiniRefresh()
+			offsetYBox.EditBox:MiniRefresh()
+		end
+	end)
 
 	local checkboxes = {
 		{
