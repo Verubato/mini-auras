@@ -1,2 +1,3 @@
 build/*.zip
 scripts/.cache/
+__pycache__/

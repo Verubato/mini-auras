@@ -9,7 +9,13 @@ local _, addon = ...
 -- the AuraCategoryIds lists or the voice list change.
 
 addon.Core.AuraTtsSounds = {
-	Packs = { "David", "Elise", "Emma", "Grampa Werthers", "Theo Silk" },
+	Packs = { "Amy", "Anna Su", "David", "Elise", "Emma", "Grampa Werthers", "Jason Chen", "Theo Silk" },
+	-- Packs only offered on these clients; the rest suit every client.
+	PackLocales = {
+		["Amy"] = { "zhCN", "zhTW" },
+		["Anna Su"] = { "zhCN", "zhTW" },
+		["Jason Chen"] = { "zhCN", "zhTW" },
+	},
 	Important = {
 		[13750] = "AdrenalineRush.ogg", -- Adrenaline Rush
 		[410358] = "AntiMagicShell.ogg", -- Anti-Magic Shell (Spellwarding)
