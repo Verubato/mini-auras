@@ -1198,6 +1198,22 @@ fw.describe("AuraContainerDisplay - bar buttons", function()
 			"and is visible without the millisecond or colour options being on")
 	end)
 
+	fw.it("builds no glow frame, whatever the style asks for", function()
+		-- Every glow in the catalog is art drawn for a square; stretched around a row three times
+		-- as wide as it is tall it reads as a mistake. The editor hides the option to match, so a
+		-- group carrying Glow from its icon days must not resurrect one here.
+		local instance = newBarInstance({ Glow = true })
+		local widgets = select(2, next(instance.ButtonWidgets))
+
+		assert(widgets.Glow == nil, "no glow frame on a bar button")
+
+		local ok, err = pcall(function()
+			instance:SetStyle({ BarWidth = 180, Glow = true, ColorByDispelType = true })
+		end)
+
+		assert(ok, "styling must not assume a glow exists: " .. tostring(err))
+	end)
+
 	fw.it("leaves the pandemic outline hidden until the group asks for it", function()
 		-- Same rule as the icon ring: created hidden, because a bar's reveal is four edges around
 		-- the whole row and is impossible to miss when it should not be there at all.

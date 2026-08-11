@@ -123,7 +123,8 @@ M.KickSpecIds = {
 --- ShowTooltips attaches each spell id;
 --- Count caps how many spells are drawn (default all);
 --- Stagger staggers durations and start times so the swipes visibly differ (default a flat 15s);
---- BarTexture is passed to a BarSlotContainer's fill (ignored by the icon containers).
+--- BarTexture and Border are passed to a BarSlotContainer's fill and outline (the icon
+--- containers ignore both, drawing their border off Color instead).
 ---@return number nextSlot
 function M:FillContainer(container, spells, startSlot, options)
 	local now = GetTime()
@@ -165,6 +166,7 @@ function M:FillContainer(container, spells, startSlot, options)
 				-- Only a bar container draws a name; the icon containers ignore both of these.
 				Name = C_Spell.GetSpellName(spellId),
 				BarTexture = options.BarTexture,
+				Border = options.Border,
 			})
 			slot = slot + 1
 		end

@@ -203,6 +203,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field AnchoredIcons AnchoredIcons
 ---@field BarTextures BarTextures
 ---@field BarSlotContainer BarSlotContainer
+---@field Outline Outline
 ---@field Sounds Sounds
 ---@field Cooldowns Cooldowns
 

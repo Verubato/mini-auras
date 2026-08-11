@@ -5,6 +5,7 @@ local wowEx = addon.Utils.WoWEx
 local growAnchors = addon.Core.GrowAnchors
 local glowStyles = addon.Core.GlowStyles
 local barTextures = addon.Core.BarTextures
+local outline = addon.Core.Outline
 local auraFilters = addon.Core.AuraFilters
 
 -- Only the texture-based styles from the shared catalog (Core/Display/GlowStyles) render here:
@@ -45,9 +46,9 @@ local BAR_NAME_COEFFICIENT = 0.5
 -- stretched to the icon; a bar is too wide for that art, so both are built from flat edges.
 local BAR_BORDER_THICKNESS = 1
 local BAR_PANDEMIC_THICKNESS = 2
-local SOLID_TEXTURE = "Interface\\Buttons\\WHITE8X8"
--- The spent part of a bar. Not pure black: a hair of lift keeps the row readable against a dark
--- background, so an empty bar still shows where it is.
+-- The spent part of a bar: a flat block over the coloured strip. Not pure black, since a hair of
+-- lift keeps an empty bar readable against a dark background.
+local BAR_TRACK_TEXTURE = "Interface\\Buttons\\WHITE8X8"
 local BAR_TRACK_COLOR = { 0.09, 0.09, 0.09 }
 -- Handed to SetDurationBar when the client has no interpolation enum. The setter validates its
 -- options table, so it always gets one.
@@ -756,11 +757,7 @@ local function StyleButton(instance, button)
 		local pandemicG = style.PandemicColorG or PANDEMIC_COLOR[2]
 		local pandemicB = style.PandemicColorB or PANDEMIC_COLOR[3]
 
-		for _, texture in ipairs(pandemic.Textures) do
-			texture:SetShown(reveal)
-			texture:SetAlpha(reveal and 1 or 0)
-			texture:SetVertexColor(pandemicR, pandemicG, pandemicB, 1)
-		end
+		outline:Apply(pandemic.Textures, reveal, pandemicR, pandemicG, pandemicB)
 	end
 
 	-- Tooltips (and click-to-cancel, which we never register) require mouse input.
@@ -849,46 +846,6 @@ local function CreatePandemicHolder(instance, button, inset)
 	pandemic:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", inset, -inset)
 
 	return pandemic
-end
-
----A rectangular outline built from four flat edges, for the shapes the ring asset cannot cover.
----Returned as a list so the dispel-colour registration and the pandemic toggle can treat it the
----same way they treat a single ring texture.
----@param parent table
----@param inset number How far outside the parent the outline sits.
----@param thickness number
----@return table[]
-local function CreateOutline(parent, inset, thickness)
-	local top = parent:CreateTexture(nil, "OVERLAY")
-	top:SetPoint("TOPLEFT", parent, "TOPLEFT", -inset, inset)
-	top:SetPoint("TOPRIGHT", parent, "TOPRIGHT", inset, inset)
-	top:SetHeight(thickness)
-
-	local bottom = parent:CreateTexture(nil, "OVERLAY")
-	bottom:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", -inset, -inset)
-	bottom:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", inset, -inset)
-	bottom:SetHeight(thickness)
-
-	-- Spanning between the horizontal edges rather than the parent, so the four meet at the
-	-- corners whatever the inset is.
-	local left = parent:CreateTexture(nil, "OVERLAY")
-	left:SetPoint("TOPLEFT", top, "BOTTOMLEFT", 0, 0)
-	left:SetPoint("BOTTOMLEFT", bottom, "TOPLEFT", 0, 0)
-	left:SetWidth(thickness)
-
-	local right = parent:CreateTexture(nil, "OVERLAY")
-	right:SetPoint("TOPRIGHT", top, "BOTTOMRIGHT", 0, 0)
-	right:SetPoint("BOTTOMRIGHT", bottom, "TOPRIGHT", 0, 0)
-	right:SetWidth(thickness)
-
-	local edges = { top, bottom, left, right }
-
-	for _, texture in ipairs(edges) do
-		texture:SetTexture(SOLID_TEXTURE)
-		texture:Hide()
-	end
-
-	return edges
 end
 
 ---@param instance AuraContainerDisplay
@@ -1029,7 +986,7 @@ local function InitializeBarButton(instance, button, glowColor)
 	local strip = bar:CreateTexture(nil, "BACKGROUND")
 	strip:SetAllPoints(bar)
 
-	bar:SetStatusBarTexture(SOLID_TEXTURE)
+	bar:SetStatusBarTexture(BAR_TRACK_TEXTURE)
 	bar:SetStatusBarColor(BAR_TRACK_COLOR[1], BAR_TRACK_COLOR[2], BAR_TRACK_COLOR[3], 1)
 
 	if bar.SetReverseFill then
@@ -1057,20 +1014,22 @@ local function InitializeBarButton(instance, button, glowColor)
 	name:SetWordWrap(false)
 	button:SetSpellName(name)
 
-	local borders, glow
+	-- No glow: every style in the catalog is art drawn for a square, and stretching one around a
+	-- row three times as wide as it is tall looks like a mistake. The option is hidden for bars in
+	-- the editor to match, and skipping the frame saves one per button.
+	local borders
 
 	if not instance.Minimal then
 		-- On the text overlay, not the button: the status bar is a child frame and would draw
 		-- over any border built from the button's own regions.
-		borders = CreateOutline(textOverlay, 0, BAR_BORDER_THICKNESS)
-		glow = CreateGlow(button)
+		borders = outline:Create(textOverlay, 0, BAR_BORDER_THICKNESS)
 	end
 
 	local pandemic = CreatePandemicHolder(instance, button, BAR_PANDEMIC_THICKNESS)
 
-	-- CreateOutline leaves the edges hidden, which is the state a group with the reveal off wants.
+	-- The outline comes back hidden, which is the state a group with the reveal off wants.
 	if pandemic then
-		pandemic.Textures = CreateOutline(pandemic, 0, BAR_PANDEMIC_THICKNESS)
+		pandemic.Textures = outline:Create(pandemic, 0, BAR_PANDEMIC_THICKNESS)
 
 		button:AddPandemicRegion(pandemic)
 	end

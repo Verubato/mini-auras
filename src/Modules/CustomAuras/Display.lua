@@ -46,6 +46,8 @@ local DEFAULT_SIZE = 40
 local DEFAULT_SPACING = 2
 -- Read-only stand-in so a pooled display always has a candidate-filter table.
 local EMPTY_FILTERS = { includeSpellIDs = {} }
+-- Scratch for a bar stand-in's fill colour, refilled per slot and never retained.
+local barColorScratch = {}
 
 ---@type Db
 local db
@@ -342,6 +344,21 @@ local function EnsureTestContainer(state, entry, parent)
 	return entry.Test
 end
 
+---A group's configured colour in the shape the slot containers take. Unlike ModuleUtil's icon
+---colour this is never withheld: a bar's fill is coloured whatever the glow and border toggles say.
+---@param group CustomAuraGroup
+---@return table
+local function BarColor(group)
+	local configured = group.Icons.Color
+
+	barColorScratch.r = configured.R or 1
+	barColorScratch.g = configured.G or 1
+	barColorScratch.b = configured.B or 1
+	barColorScratch.a = configured.A or 1
+
+	return barColorScratch
+end
+
 ---One fake icon or bar per tracked spell, so a group can be positioned without waiting for the
 ---aura. A group tracking by filter names no spells, so it borrows its own grid icon for every slot:
 ---the point of the preview is the geometry, and an empty one could not be dragged.
@@ -350,7 +367,12 @@ end
 local function RenderTestIcons(state, entry)
 	local group = state.Group
 	local container = entry.Test
-	local color = moduleUtil:GetIconColor(group.Icons)
+	-- A bar's fill always carries the group's colour, so the stand-in cannot use the icon colour:
+	-- that one is withheld unless a glow or a border asked for it, because for an icon a colour is
+	-- what draws the border in the first place. Reading it through ModuleUtil left the preview
+	-- white while the live bars were coloured.
+	local color = groups:DrawsBars(group) and BarColor(group)
+		or moduleUtil:GetIconColor(group.Icons)
 	local barTexture = group.Icons.BarTexture
 	local nextSlot
 
@@ -362,6 +384,7 @@ local function RenderTestIcons(state, entry)
 			FontScale = db.FontScale,
 			ShowTooltips = group.Icons.ShowTooltips,
 			BarTexture = barTexture,
+			Border = group.Icons.Border,
 		})
 	else
 		local texture = groups:GetIcon(group)
@@ -379,6 +402,7 @@ local function RenderTestIcons(state, entry)
 				-- A filter group has no spell to name, so the group's own name stands in.
 				Name = group.Name,
 				BarTexture = barTexture,
+				Border = group.Icons.Border,
 			})
 		end
 

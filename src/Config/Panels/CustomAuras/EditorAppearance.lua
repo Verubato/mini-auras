@@ -75,41 +75,39 @@ function ui.BuildAppearanceTab(ctx)
 	end)
 
 	-- Bars is set on the ones that only make sense for one shape: a bar has no cooldown swipe to
-	-- reverse, and an icon has no room for a name. Both live in the same column, so the row stays
-	-- five wide either way.
+	-- reverse and no glow worth drawing (the art is built for a square), while an icon has no room
+	-- for a name. Columns are handed out per shape in this order rather than fixed, so whichever
+	-- set is up fills the row from the left with no gap where a hidden one would have been.
 	local checkboxes = {
 		{
-			Column = 0,
+			Bars = false,
 			Label = L["Glow icons"], Tooltip = L["Show a glow around the icons."],
 			Get = function(group) return group.Icons.Glow end,
 			Set = function(group, value) group.Icons.Glow = value end,
 		},
 		{
-			Column = 1,
 			Label = L["Show border"], Tooltip = L["Draw a border around the icons."],
 			Get = function(group) return group.Icons.Border end,
 			Set = function(group, value) group.Icons.Border = value end,
 		},
 		{
-			Column = 2, Bars = false,
+			Bars = false,
 			Label = L["Reverse swipe"], Tooltip = L["Reverses the direction of the cooldown swipe animation."],
 			Get = function(group) return group.Icons.ReverseCooldown end,
 			Set = function(group, value) group.Icons.ReverseCooldown = value end,
 		},
 		{
-			Column = 2, Bars = true,
+			Bars = true,
 			Label = L["Spell name"], Tooltip = L["Show the aura's name inside the bar."],
 			Get = function(group) return group.Icons.SpellName end,
 			Set = function(group, value) group.Icons.SpellName = value end,
 		},
 		{
-			Column = 3,
 			Label = L["Show tooltips"], Tooltip = L["Shows a spell tooltip when hovering over an icon."],
 			Get = function(group) return group.Icons.ShowTooltips end,
 			Set = function(group, value) group.Icons.ShowTooltips = value end,
 		},
 		{
-			Column = 4,
 			Label = L["Pandemic"],
 			Tooltip = L["Highlight an aura during its refresh window, where re-casting adds the remaining time on top. The game decides the window per spell, and only your own re-castable effects have one."],
 			Get = function(group) return group.Icons.Pandemic end,
@@ -135,7 +133,6 @@ function ui.BuildAppearanceTab(ctx)
 				end
 			end,
 		})
-		check:SetPoint("TOPLEFT", checkRow, "TOPLEFT", checkColumn * spec.Column, 0)
 		spec.Control = check
 	end
 
@@ -189,10 +186,17 @@ function ui.BuildAppearanceTab(ctx)
 	---@param group CustomAuraGroup
 	local function RefreshShape(group)
 		local bars = groups:DrawsBars(group)
+		local column = 0
 
 		for _, spec in ipairs(checkboxes) do
-			if spec.Bars ~= nil then
-				spec.Control:SetShown(spec.Bars == bars)
+			local shown = spec.Bars == nil or spec.Bars == bars
+
+			spec.Control:SetShown(shown)
+
+			if shown then
+				spec.Control:ClearAllPoints()
+				spec.Control:SetPoint("TOPLEFT", checkRow, "TOPLEFT", checkColumn * column, 0)
+				column = column + 1
 			end
 		end
 

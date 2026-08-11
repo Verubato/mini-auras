@@ -773,6 +773,7 @@ function M.loadDisplay()
 		"src/Core/Display/GrowAnchors.lua",
 		-- Must precede AuraContainerDisplay: the glow catalog is read at its load.
 		"src/Core/Display/GlowStyles.lua",
+		"src/Core/Display/Outline.lua",
 		-- Must precede AuraFilters: its spell-ID maps are built from these lists at load.
 		"src/Core/Auras/AuraCategoryIds.lua",
 		"src/Core/Auras/AuraFilters.lua",

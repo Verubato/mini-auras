@@ -1930,6 +1930,61 @@ fw.describe("CustomAuras - bars", function()
 		assert(button:GetWidth() == 140, "and the bar width")
 	end)
 
+	fw.it("colours the stand-in bars even with no glow or border", function()
+		-- The icon colour is withheld unless a glow or a border asked for it, because for an icon a
+		-- colour is what draws the border. A bar's fill is coloured regardless, so reading it that
+		-- way left the preview white while the live bars were coloured.
+		ClearGroups()
+
+		local group = AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = "BAR", Glow = false, Border = false },
+		})
+
+		group.Icons.Color.R, group.Icons.Color.G, group.Icons.Color.B = 0.2, 0.4, 0.8
+		module:Refresh()
+		display:SetPreviewGroup(group.Id)
+
+		local entry = display:GetStates()[group.Id].Screen
+		local fill = entry.Test.Slots[1].Bar._color
+
+		assert(fill[1] == 0.2 and fill[2] == 0.4 and fill[3] == 0.8,
+			"the stand-in takes the group colour")
+
+		display:SetPreviewGroup(nil)
+	end)
+
+	fw.it("draws the border on the stand-in bars too", function()
+		-- The icon stand-ins get their border from the colour, which is why the option looked like
+		-- it did nothing in the preview while the live bars drew one.
+		ClearGroups()
+
+		local group = AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = "BAR", Border = true },
+		})
+
+		module:Refresh()
+		display:SetPreviewGroup(group.Id)
+
+		local slot = display:GetStates()[group.Id].Screen.Test.Slots[1]
+
+		for _, edge in ipairs(slot.Border) do
+			assert(edge._shown, "every edge of the stand-in border shows")
+		end
+
+		group.Icons.Border = false
+		module:Refresh()
+
+		for _, edge in ipairs(slot.Border) do
+			assert(edge._shown == false, "and goes away with the option")
+		end
+
+		display:SetPreviewGroup(nil)
+	end)
+
 	fw.it("leaves a group saved before bars existed drawing icons", function()
 		local group = groups:Normalise({ Icons = { Size = 30 } })
 

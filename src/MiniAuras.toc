@@ -46,6 +46,7 @@ Core\LegacyAddon.lua
 Core\Display\Pool.lua
 Core\Display\GrowAnchors.lua
 Core\Display\GlowStyles.lua
+Core\Display\Outline.lua
 Core\Display\IconSlotContainer.lua
 Core\Display\BarTextures.lua
 Core\Display\BarSlotContainer.lua

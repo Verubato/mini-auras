@@ -3,6 +3,7 @@ local _, addon = ...
 local wowEx = addon.Utils.WoWEx
 local fontUtil = addon.Utils.FontUtil
 local barTextures = addon.Core.BarTextures
+local outline = addon.Core.Outline
 
 -- Stand-in bars for previews, shaped like the ones an AuraContainer draws: a square icon leading
 -- a fill, the spell's name inside it and a countdown at the far end. The real bars are engine
@@ -19,6 +20,8 @@ local ICON_TRIM = 0.08
 local TEXT_INSET = 3
 local NAME_COEFFICIENT = 0.5
 local COUNTDOWN_COEFFICIENT = 0.4
+-- Border thickness, matching the live bars.
+local BORDER_THICKNESS = 1
 -- Below this many seconds the countdown shows tenths, like the icon countdowns.
 local MILLISECONDS_THRESHOLD = 5
 -- The spent part of a bar, matching AuraContainerDisplay's live bars.
@@ -90,6 +93,10 @@ local function CreateBar(instance, parent)
 	name:SetJustifyH("LEFT")
 	name:SetWordWrap(false)
 
+	-- Around the icon and the fill together, like the live bars, and hidden until a slot asks
+	-- for it.
+	local border = outline:Create(frame, 0, BORDER_THICKNESS)
+
 	frame:Hide()
 
 	local slot = {
@@ -98,6 +105,7 @@ local function CreateBar(instance, parent)
 		Bar = bar,
 		Name = name,
 		Time = time,
+		Border = border,
 		IsUsed = false,
 	}
 
@@ -140,16 +148,13 @@ local function ApplyLayout(instance)
 		end
 	end
 
-	if used == 0 then
-		instance.Frame:SetSize(width, height)
-	elseif vertical then
-		instance.Frame:SetSize(width, used * height + (used - 1) * spacing)
-	else
-		instance.Frame:SetSize(used * width + (used - 1) * spacing, height)
-	end
-
+	local span = used > 0 and (used * (vertical and height or width) + (used - 1) * spacing)
+		or (vertical and height or width)
+	local totalWidth = vertical and width or span
+	local totalHeight = vertical and span or height
 	local placed = 0
-	local totalWidth, totalHeight = instance.Frame:GetSize()
+
+	instance.Frame:SetSize(totalWidth, totalHeight)
 
 	for index = 1, instance.Count do
 		local slot = instance.Slots[index]
@@ -322,12 +327,27 @@ function M:SetSlot(slotIndex, options)
 	slot.FontScale = options.FontScale
 	slot.Icon:SetTexture(options.Texture)
 	slot.Name:SetText(options.Name or "")
-	slot.Bar:SetStatusBarTexture(barTextures:Resolve(options.BarTexture))
+
+	-- Only on change: a status bar rebuilds its fill from scratch when the texture is swapped, and
+	-- this runs for every slot on every preview render.
+	local texture = barTextures:Resolve(options.BarTexture)
+
+	if slot.BarTexturePath ~= texture then
+		slot.BarTexturePath = texture
+		slot.Bar:SetStatusBarTexture(texture)
+	end
+
+	-- After the texture: a fresh fill comes back untinted.
 	slot.Bar:SetStatusBarColor(
 		color and color.r or 1,
 		color and color.g or 1,
 		color and color.b or 1
 	)
+
+	-- Driven by the option alone, unlike the icon containers, where a border is what a colour
+	-- draws and a running glow suppresses it. A bar has no glow and always carries its colour.
+	outline:Apply(slot.Border, options.Border == true,
+		color and color.r, color and color.g, color and color.b)
 
 	local expiry = options.DurationObject and wowEx:GetDurationExpiry(options.DurationObject)
 
@@ -377,7 +397,8 @@ end
 ---@field Texture string|number Icon texture path or file ID.
 ---@field Name string? Text shown inside the fill.
 ---@field DurationObject table? A WoWEx:CreateDuration object; without one the bar sits full.
----@field Color table? {r, g, b} fill colour.
+---@field Color table? {r, g, b} fill colour, which the border takes too.
+---@field Border boolean? Draw a border around the bar.
 ---@field FontScale number? Multiplier on both text sizes.
 ---@field BarTexture string? Fill texture name, resolved through Core/Display/BarTextures.
 
