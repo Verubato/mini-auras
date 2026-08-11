@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.3.0. Supported interface versions: 120100 (patch 12.1) and 120007 (patch
+Addon version 5.4.0. Supported interface versions: 120100 (patch 12.1) and 120007 (patch
 12.0.7). Author: Verz. Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 ## Names and aliases
@@ -94,8 +94,9 @@ Consequences, exhaustively:
   Precognition and Nullifying Shroud instead, and the module is switched off.
 - **CC Native Order** option under Misc (on 12.1 sorting happens inside the game's aura
   containers and the option would do nothing, so it is hidden).
-- **Masque** icon skinning and the **MiniCE** cooldown styler (their cards on the Other
-  Addons tab only appear on 12.0; neither works with 12.1 AuraButtons).
+- The **MiniCE** cooldown styler (its card on the Other Addons tab only appears on 12.0; on
+  12.1 the game writes the countdown text itself, so there is nothing left to restyle).
+  Masque skinning works on both versions.
 - Alerts **Color by class** option and system-voice TTS with Voice, TTS Volume and TTS
   Speech Rate controls.
 - Alerts **CENTER** grow direction (12.1 offers only LEFT and RIGHT; a saved CENTER renders
@@ -862,9 +863,23 @@ On new releases, migrations can queue release notes which appear once in a
 Sidebar: Other > Other Addons. Cards linking to the author's other addons (clicking shows a
 copyable CurseForge URL): FrameSort, MiniMarkers, MiniOvershields, MiniPressRelease,
 MiniArenaDebuffs, MiniKillingBlow, MiniMeter, MiniQueueTimer, MiniTabTarget,
-MiniCombatNotifier, MiniResourceDisplay, MiniFader, plus https://verzaddons.com. On 12.0 only,
-a second section offers MiniCE (cooldown text styling) and Masque (icon skinning); neither
-works with the 12.1 aura buttons, so the section is hidden there.
+MiniCombatNotifier, MiniResourceDisplay, MiniFader, plus https://verzaddons.com. A second
+section, "Other addons to customize MiniAuras further", offers Masque (icon skinning) on both
+versions, and MiniCE (cooldown text styling) on 12.0 only: on 12.1 the countdown text is
+written by the game, so a cooldown styler has nothing to reach.
+
+### Masque
+
+Icons register under the Masque addon group **MiniCC**, in sub-groups named CC, Healer CC,
+Alerts, Nameplates, Friendly Indicators, Custom Auras and (12.0 only) Precognition. The names
+are the same on both versions, so a skin picked on one carries over to the other.
+
+On 12.1 a skin is applied when an icon is created, so **reload after changing a skin** for it
+to reach icons that already exist. Some displays stay unskinned by design: custom aura groups
+drawn as bars, the round portrait icons (the skin would fight their own mask), and any button
+whose size the game keeps secret, which covers nameplate icons. If Masque itself errors while
+skinning, the display drops skinning for that sub-group for the rest of the session and prints
+one chat warning naming it, rather than losing the icons.
 
 ---
 
@@ -917,7 +932,7 @@ setting group; the open world while in a raid group uses the Raid toggle. Then u
 (`/miniauras test`) to confirm the display exists and is on screen.
 
 **"That setting/tab doesn't exist for me."** Check the game version split. On 12.1 there is
-no Friendly CDs, Enemy CDs or Precognition tab, no CC Native Order, no Masque, no class
+no Friendly CDs, Enemy CDs or Precognition tab, no CC Native Order, no MiniCE card, no class
 colouring or system-voice TTS in Alerts, and no CENTER grow for Alerts. On 12.0 there is no
 Personal Auras (Custom Auras) tab, no Trinkets tab, no Spells sub-tab or Show important on
 Raid Frame Auras, no pandemic option, and no voice packs. The glow type list also differs.
@@ -982,6 +997,11 @@ cooldown.
 (`/miniauras test` or the Test button). Ally Kicks bars are dragged while "Lock position" is
 off. A custom aura group is dragged while it is selected in the editor (or in test mode),
 and can also be positioned exactly with its Offset X/Y boxes.
+
+**"Masque skin didn't apply / only some icons changed."** On 12.1 a skin is applied as each
+icon is created, so reload after picking one. Bars, portrait icons and nameplate icons are
+never skinned (see the Masque section). If a chat warning says Masque could not skin a group,
+that group runs unskinned until the next reload.
 
 **"High CPU usage."** Set Glow Type (Misc) to Slot Glow on 12.1 or Proc Glow on 12.0. The
 animated glow styles keep animating idle icons.
