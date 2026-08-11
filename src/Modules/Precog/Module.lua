@@ -352,7 +352,7 @@ local function CreateFrames()
 			MaxIcons = 1,
 			CandidateFilters = { includeSpellIDs = PRECOG_SPELL_IDS },
 		},
-	}, iconSize, 2, "Precognition")
+	}, iconSize, 2, "Precognition", { MasqueGroup = "Precognition" })
 	display.Frame:SetPoint("CENTER", anchor, "CENTER", 0, 0)
 end
 

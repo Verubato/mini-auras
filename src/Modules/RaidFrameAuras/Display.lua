@@ -354,7 +354,7 @@ local function EnsureWatcher(anchor, unit)
 				"Friendly Indicators",
 				-- Seeded rather than left to the restyle below: a unit's display is built the
 				-- moment it turns up, and one built mid-arena can never be restyled.
-				{ Style = BuildStyle(options) }
+				{ Style = BuildStyle(options), MasqueGroup = "Friendly Indicators" }
 			)
 		else
 			entry.Watcher = UnitAuraWatcher:New(unit, nil, { Defensives = true, CC = true })

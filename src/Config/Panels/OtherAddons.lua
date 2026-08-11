@@ -210,21 +210,22 @@ function M:Build(panel)
 	-- lines up with the cards instead of clipping at the panel edge.
 	url.EditBox:SetPoint("TOPLEFT", lastMainRowFirst, "BOTTOMLEFT", 6, -verticalSpacing)
 
-	-- TEMPORARY: neither styling addon works with the 12.1 AuraButtons (Masque cannot skin
-	-- them, MiniCE cannot restyle their countdown text), so the whole section is only offered
-	-- on the legacy path; drop the gate with the 12.0 path unless support returns.
+	local styleSubtitle = mini:TextLine({
+		Parent = panel,
+		Text   = L["Other addons to customize MiniAuras further:"],
+	})
+	styleSubtitle:SetPoint("TOPLEFT", url.EditBox, "BOTTOMLEFT", -6, -verticalSpacing)
+
+	local styleAddons = {
+		{ Name = "Masque", Desc = "Powerful icon skinning tool." },
+	}
+
+	-- The countdown text on a 12.1 icon is written by the game, so there is nothing left for a
+	-- cooldown styler to reach.
 	if not addon.Utils.WoWEx:UseAuraContainers() then
-		local styleSubtitle = mini:TextLine({
-			Parent = panel,
-			Text   = L["Other addons to customize MiniAuras further:"],
-		})
-		styleSubtitle:SetPoint("TOPLEFT", url.EditBox, "BOTTOMLEFT", -6, -verticalSpacing)
-
-		local styleAddons = {
-			{ Name = "MiniCE", Desc = "Customize the cooldown timers.", Url = CURSE_BASE .. "minice-cooldown-styler" },
-			{ Name = "Masque", Desc = "Powerful icon skinning tool." },
-		}
-
-		BuildGrid(panel, styleSubtitle, styleAddons, cardWidth)
+		table.insert(styleAddons, 1,
+			{ Name = "MiniCE", Desc = "Customize the cooldown timers.", Url = CURSE_BASE .. "minice-cooldown-styler" })
 	end
+
+	BuildGrid(panel, styleSubtitle, styleAddons, cardWidth)
 end

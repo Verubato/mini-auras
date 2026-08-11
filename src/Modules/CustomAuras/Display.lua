@@ -29,8 +29,8 @@ addon.Modules.CustomAuras = addon.Modules.CustomAuras or {}
 -- Group keys on every container. Both always exist; only one is ever budgeted above zero.
 local HELPFUL_KEY = "helpful"
 local HARMFUL_KEY = "harmful"
--- The MiniCCModule tag other addons read off our frames. NOT a Masque group: Masque cannot skin
--- AuraButtons on 12.1, and skinning only the preview icons would make them the odd ones out.
+-- The MiniCCModule tag other addons read off our frames, and the Masque sub-group name for both
+-- the live icons and the preview, so a skin shows in the editor exactly as it will in play.
 local MODULE_TAG = "Custom Auras"
 -- Ten covers a normal plate count without building forty for a group that may never fire.
 local PLATE_PREALLOCATE = 10
@@ -145,7 +145,12 @@ local function CreateEntry(shape, style)
 		},
 		-- Every pooled entry carries pandemic regions: they can only be created with the buttons,
 		-- and any group the pool later hands this entry to may have the reveal turned on.
-	}, DEFAULT_SIZE, DEFAULT_SPACING, MODULE_TAG, { Style = style, Pandemic = true, Bar = bars })
+	}, DEFAULT_SIZE, DEFAULT_SPACING, MODULE_TAG, {
+		Style = style,
+		Pandemic = true,
+		Bar = bars,
+		MasqueGroup = MODULE_TAG,
+	})
 
 	return { Display = display, Shape = shape }
 end
@@ -324,13 +329,12 @@ local function EnsureTestContainer(state, entry, parent)
 	end
 
 	if not entry.Test then
-		-- No Masque group name: see MODULE_TAG.
 		entry.Test = iconSlotContainer:New(
 			parent,
 			groups.PreviewIcons,
 			height,
 			group.Icons.Spacing,
-			nil,
+			MODULE_TAG,
 			nil,
 			MODULE_TAG
 		)

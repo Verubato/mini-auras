@@ -358,7 +358,7 @@ local function RefreshHealers()
 					-- built the moment a healer turns up, which in an arena is mid-match while
 					-- auras are secret and every button setter is refused. Its buttons would
 					-- then keep the unstyled look, no glow and no border, for the whole game.
-					{ Style = BuildStyle(options) }
+					{ Style = BuildStyle(options), MasqueGroup = "Healer CC" }
 				),
 			}
 			-- The warning text: a label-only container on the same CC filter, so the engine

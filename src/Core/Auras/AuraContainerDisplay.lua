@@ -7,11 +7,18 @@ local glowStyles = addon.Core.GlowStyles
 local barTextures = addon.Core.BarTextures
 local outline = addon.Core.Outline
 local auraFilters = addon.Core.AuraFilters
+local masque = LibStub and LibStub("Masque", true)
 
 -- Only the texture-based styles from the shared catalog (Core/Display/GlowStyles) render here:
 -- LibCustomGlow can't attach to AuraButtons (it re-parents pooled frames onto the target, and
 -- 12.1 disallows SetParent onto AuraButtons). Anything else configured falls back to this.
 local DEFAULT_GLOW_STYLE = glowStyles.DefaultName
+
+-- Spell art carries a silver frame baked into the texture. Trimming it off leaves the artwork
+-- reaching the icon's edge, so our own border sits flush and the cooldown swipe covers exactly
+-- the visible square instead of eating into the baked frame.
+local ICON_TRIM = 0.08
+local DEFAULT_ICON_TEX_COORD = { ICON_TRIM, 1 - ICON_TRIM, ICON_TRIM, 1 - ICON_TRIM }
 
 -- The style fields StoreStyle copies verbatim from a caller's table. Drives the compare and the
 -- copy in StoreStyle, the clear in GetStyleScratch and the concat in GetStyleSignature, so a new
@@ -39,7 +46,6 @@ local STYLE_FIELDS = {
 -- The icon leads the bar and is square; the fill starts where it ends, with no gap, so the icon
 -- reads as the bar's head rather than a separate thing (same shape as the kick tracker's rows).
 local DEFAULT_BAR_WIDTH = 150
-local BAR_ICON_TRIM = 0.08
 local BAR_TEXT_INSET = 3
 local BAR_NAME_COEFFICIENT = 0.5
 -- Edge thickness for a bar's border and its pandemic outline. The icon border is a ring asset
@@ -100,6 +106,9 @@ local pendingRestyleCount = 0
 local restyleTicker = nil
 local pendingBounceCount = 0
 local bounceFlushScheduled = false
+-- Masque group names whose skinning has already been reported as failed. Keyed rather than a
+-- single flag, so one module giving up does not silence the report for every other one.
+local masqueWarned = {}
 
 -- 12.1 AuraContainer-backed icon display. One instance wraps a CreateFrame("AuraContainer")
 -- with one or more aura groups and styles the container-created AuraButtons to match the legacy
@@ -743,6 +752,15 @@ local function StyleButton(instance, button)
 			glow:Hide()
 			glow.Anim:Stop()
 		end
+
+		-- Every overlay in the catalog has rounded inner corners, so the icon takes the same shape
+		-- while one is showing. Displays that brought their own mask (the round portraits) keep it,
+		-- and a bar's leading icon is square against the fill by design.
+		local rounded = style.Glow == true and not bar
+		if widgets.CornersRounded ~= rounded and widgets.Icon and not instance.IconMask then
+			widgets.CornersRounded = rounded
+			widgets.CornerMask = glowStyles:SetIconCorners(button, widgets.Icon, cd, widgets.CornerMask, rounded)
+		end
 	end
 
 	-- The engine owns the pandemic holder's visibility (shown only inside the refresh window); the
@@ -848,6 +866,134 @@ local function CreatePandemicHolder(instance, button, inset)
 	return pandemic
 end
 
+local function NoOp() end
+
+---Masque re-parents the icon it is handed to the button that icon already belongs to. The call
+---changes nothing, but SetIcon has since put a ChangeParent restriction on the texture and the
+---refusal takes down whatever created the button - which is the engine, mid-batch. A field on
+---the texture shadows the method for anything calling it from Lua, which is only ever Masque:
+---the engine reaches the texture from the other side. Wrapping the texture instead would not
+---work, because Masque also hands the icon to SetPoint as the anchor for the regions it builds
+---around it, and only a real texture can be one.
+---@param texture table
+local function BlockIconReparent(texture)
+	texture.SetParent = NoOp
+end
+
+---Masque fits its art to the size a button already has, which it reads with GetSize. That value
+---is secret for anything living inside a nameplate, and the arithmetic Masque does on it would
+---abort the whole skin pass, so a button whose size cannot be read plainly is left alone.
+---@param button table
+---@return boolean
+local function CanReadButtonSize(button)
+	local width = button:GetWidth()
+
+	return width ~= nil and not issecretvalue(width)
+end
+
+---Result check for a Masque call. Skinning runs inside the engine's frame-creation callback, so
+---an error thrown by a third party there would abort the whole display rather than just its
+---artwork. The display gives up on skinning instead, and says so once per session.
+---@param instance AuraContainerDisplay
+---@param ok boolean
+---@param err any
+---@return boolean ok
+local function GuardMasque(instance, ok, err)
+	if ok then
+		return true
+	end
+
+	local name = instance.MasqueGroupName or "?"
+
+	instance.MasqueGroup = nil
+
+	if not masqueWarned[name] then
+		masqueWarned[name] = true
+		Warn("Masque could not skin the %s icons, carrying on without them: %s", name, tostring(err))
+	end
+
+	return false
+end
+
+---@param instance AuraContainerDisplay
+---@param groupName string?
+---@return table?
+local function ResolveMasqueGroup(instance, groupName)
+	if not masque or not groupName then
+		return nil
+	end
+
+	-- A skin owns the icon's crop, its mask and the border art, so displays that bring their own
+	-- (the round portrait icons) or that are not icons at all stay off the skinning path.
+	if instance.Bar or instance.Label or instance.IconMask then
+		return nil
+	end
+
+	-- Same addon and sub-group names the legacy containers use, so a skin picked on one path is
+	-- already applied on the other.
+	return masque:Group("MiniCC", groupName)
+end
+
+---Hands one button to Masque. Called from initializeFrame, after the button has been sized and
+---all of its regions registered with the engine.
+---@param instance AuraContainerDisplay
+---@param button table
+---@param widgets table
+local function RegisterMasqueButton(instance, button, widgets)
+	local group = instance.MasqueGroup
+
+	if not group then
+		return
+	end
+
+	-- Reported rather than passed over: the icons come out unskinned either way, and which of the
+	-- two reasons it was matters when working out why.
+	if not CanReadButtonSize(button) then
+		local width = button:GetWidth()
+
+		GuardMasque(instance, false, width == nil and "this button has no size yet"
+			or "this button's size is secret here")
+		return
+	end
+
+	BlockIconReparent(widgets.Icon)
+
+	-- Strict, so only the regions listed here are skinned rather than whatever Masque can find by
+	-- probing the button for names an engine-created one cannot have. Normal is deliberately
+	-- absent: with no entry Masque builds and owns the skin's border texture, which leaves the
+	-- dispel-coloured ring registered with the engine untouched.
+	if not GuardMasque(instance, pcall(group.AddButton, group, button, {
+		Icon = widgets.Icon,
+		Cooldown = widgets.Cooldown,
+		Count = widgets.Stacks,
+	}, "Aura", true)) then
+		return
+	end
+
+	widgets.Masqued = true
+end
+
+---Re-fits the skin after a size change. Only ever called from RestyleButtons, which already
+---holds off until aura styling is allowed - Masque itself has no notion of that, so it must
+---never be left to re-skin on its own schedule.
+---@param instance AuraContainerDisplay
+local function ReSkinMasqueButtons(instance)
+	local group = instance.MasqueGroup
+
+	if not group then
+		return
+	end
+
+	for _, button in ipairs(instance.Buttons) do
+		local widgets = instance.ButtonWidgets[button]
+
+		if widgets and widgets.Masqued and CanReadButtonSize(button)
+			and not GuardMasque(instance, pcall(group.ReSkin, group, button)) then
+			return
+		end
+	end
+end
+
 ---@param instance AuraContainerDisplay
 ---@param button table
 local function InitializeButton(instance, button, glowColor)
@@ -873,6 +1019,7 @@ local function InitializeButton(instance, button, glowColor)
 	cd:SetDrawBling(false)
 	cd:SetHideCountdownNumbers(false)
 	cd:SetSwipeColor(0, 0, 0, 0.8)
+	glowStyles:SquareSwipe(cd)
 	if instance.IconMask then
 		-- Keep the swipe inside the masked (round) icon.
 		cd:SetSwipeTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
@@ -917,8 +1064,6 @@ local function InitializeButton(instance, button, glowColor)
 		-- icon of every group that had the reveal switched off.
 		ring:Hide()
 		pandemic.Textures = { ring }
-
-		button:AddPandemicRegion(pandemic)
 	end
 
 	local stacks = CreateStacks(button, textOverlay)
@@ -926,7 +1071,8 @@ local function InitializeButton(instance, button, glowColor)
 
 	button:SetTooltipAnchorPoint("ANCHOR_RIGHT")
 
-	instance.ButtonWidgets[button] = {
+	local widgets = {
+		Icon = icon,
 		Cooldown = cd,
 		Stacks = stacks,
 		BorderTextures = borders,
@@ -938,9 +1084,19 @@ local function InitializeButton(instance, button, glowColor)
 		DurationText = durationText,
 		DurationTextBind = durationText and "0" or nil,
 	}
+	instance.ButtonWidgets[button] = widgets
 	instance.Buttons[#instance.Buttons + 1] = button
 
 	StyleButton(instance, button)
+	-- After StyleButton, which is what gives the button the size Masque fits the skin to.
+	RegisterMasqueButton(instance, button, widgets)
+
+	-- Handed over only now: the refresh window is secret, and registering a region driven by it
+	-- takes the button's own size with it, which is the one number Masque has to be able to read.
+	-- Building the holder above is free; it is this call that closes the door.
+	if pandemic then
+		button:AddPandemicRegion(pandemic)
+	end
 end
 
 ---Builds a bar button: a square icon leading a status bar the engine drains itself, with the
@@ -966,9 +1122,8 @@ local function InitializeBarButton(instance, button, glowColor)
 	local icon = button:CreateTexture(nil, "BACKGROUND", nil, 1)
 	icon:SetPoint("TOPLEFT", button, "TOPLEFT", 0, 0)
 	icon:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", 0, 0)
-	-- Trimmed rather than shown whole: spell art carries its own border, which reads as a seam
-	-- against the fill.
-	icon:SetTexCoord(BAR_ICON_TRIM, 1 - BAR_ICON_TRIM, BAR_ICON_TRIM, 1 - BAR_ICON_TRIM)
+	-- The baked frame reads as a seam against the fill, so a bar's icon is trimmed like every other.
+	icon:SetTexCoord(ICON_TRIM, 1 - ICON_TRIM, ICON_TRIM, 1 - ICON_TRIM)
 	button:SetIcon(icon)
 
 	local bar = CreateFrame("StatusBar", nil, button)
@@ -1160,7 +1315,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	-- Visibility the owning module last asked for; frames are created shown.
 	instance.DesiredShown = true
 	instance.RestylePending = false
-	instance.IconTexCoord = options.IconTexCoord
+	instance.IconTexCoord = options.IconTexCoord or DEFAULT_ICON_TEX_COORD
 	instance.IconMask = options.IconMask
 	instance.Minimal = options.Minimal == true
 	instance.Label = options.Label
@@ -1171,6 +1326,9 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	-- display that skipped them can never grow them later (pooled displays included - opt in
 	-- whenever any consumer of the pool might want the reveal).
 	instance.PandemicRegions = options.Pandemic == true and wowEx:HasPandemicRegions()
+	-- Kept past the group itself, which GuardMasque clears when skinning is abandoned.
+	instance.MasqueGroupName = options.MasqueGroup
+	instance.MasqueGroup = ResolveMasqueGroup(instance, options.MasqueGroup)
 
 	-- Seed the style BEFORE any button exists, so initializeFrame styles them correctly first
 	-- time. Everything StyleButton applies - size, swipe, countdown, glow, dispel textures - is
@@ -1553,6 +1711,8 @@ function M:RestyleButtons()
 	for _, button in ipairs(self.Buttons) do
 		StyleButton(self, button)
 	end
+
+	ReSkinMasqueButtons(self)
 end
 
 ---Positions this display relative to its anchor, chaining after the kick container while a
@@ -1634,6 +1794,8 @@ end
 ---then shows or hides the reveal per restyle.
 ---@field Style AuraDisplayStyle? Style to build the buttons with. Pass it whenever the display
 ---may be created while auras are secret - a later SetStyle cannot reach the buttons there.
+---@field MasqueGroup string? Masque sub-group name (e.g. "CC", "Alerts"), matching the legacy
+---container's so one skin choice covers both paths. Omit for displays that should not be skinned.
 
 ---@class AuraContainerDisplay
 ---@field Frame table The AuraContainer frame (anchor/show/hide through this).
@@ -1653,3 +1815,5 @@ end
 ---@field Minimal boolean
 ---@field Label string?
 ---@field Bar boolean
+---@field MasqueGroup table?
+---@field MasqueGroupName string?

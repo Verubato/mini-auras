@@ -19,6 +19,15 @@ local addonName, addon = ...
 --   Rows/Columns/Frames/Duration - flipbook geometry, required when Animated is set. Each sheet
 --                   carries its own, since the layouts differ from one asset to the next.
 
+-- Every overlay in the catalog has rounded inner corners, so an icon showing one is masked to the
+-- same shape. A square icon's corners otherwise poke out past the glow, and so does its swipe.
+local ICON_CORNER_MASK = "Interface\\AddOns\\" .. addonName .. "\\Textures\\IconCornerMask.tga"
+
+-- The swipe ignores masks, so its shape comes from its own art. A flat block is the square case:
+-- set explicitly rather than left at the client's default, so squaring an icon back up lands on
+-- the same texture it started with.
+local SQUARE_SWIPE_TEXTURE = "Interface\\Buttons\\WHITE8X8"
+
 ---@class GlowStyles
 local M = {}
 
@@ -30,7 +39,7 @@ M.Specs = {
 		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhiteAntiClockwise.tga",
 		BlendMode = "BLEND",
 		Desaturated = true,
-		PaddingFactor = 1 / 4,
+		PaddingFactor = 1 / 3,
 		Animated = true,
 		Rows = 6,
 		Columns = 5,
@@ -41,7 +50,7 @@ M.Specs = {
 		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhiteClockwise.tga",
 		BlendMode = "BLEND",
 		Desaturated = true,
-		PaddingFactor = 1 / 4,
+		PaddingFactor = 1 / 3,
 		Animated = true,
 		Rows = 6,
 		Columns = 5,
@@ -53,7 +62,7 @@ M.Specs = {
 		Atlas = "RotationHelper_Ants_Flipbook",
 		BlendMode = "BLEND",
 		Desaturated = true,
-		PaddingFactor = 1 / 4,
+		PaddingFactor = 1 / 3,
 		Animated = true,
 		Rows = 6,
 		Columns = 5,
@@ -66,7 +75,7 @@ M.Specs = {
 		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Twins.tga",
 		BlendMode = "BLEND",
 		Desaturated = false,
-		PaddingFactor = 1 / 8,
+		PaddingFactor = 1 / 7,
 		Animated = true,
 		Rows = 6,
 		Columns = 4,
@@ -77,7 +86,7 @@ M.Specs = {
 		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Mirror.tga",
 		BlendMode = "BLEND",
 		Desaturated = false,
-		PaddingFactor = 1 / 8,
+		PaddingFactor = 1 / 7,
 		Animated = true,
 		Rows = 12,
 		Columns = 4,
@@ -88,7 +97,7 @@ M.Specs = {
 		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\TwinMirror.tga",
 		BlendMode = "BLEND",
 		Desaturated = false,
-		PaddingFactor = 1 / 8,
+		PaddingFactor = 1 / 7,
 		Animated = true,
 		Rows = 12,
 		Columns = 4,
@@ -108,7 +117,7 @@ M.Specs = {
 		Atlas = "wowlabs-spell-icon-frame-highlight",
 		BlendMode = "BLEND",
 		Desaturated = true,
-		PaddingFactor = 0.1,
+		PaddingFactor = 0.15,
 		Animated = false,
 	},
 }
@@ -175,4 +184,45 @@ function M:ApplySpec(glowFrame, spec)
 		-- rendered as a crop of itself.
 		glowFrame.Texture:SetTexCoord(0, 1, 0, 1)
 	end
+end
+
+---Squares off a cooldown's swipe. Called when an icon is built, so both shapes come from us and
+---the square one never depends on whatever the client defaults to.
+---@param cooldown table
+function M:SquareSwipe(cooldown)
+	cooldown:SetSwipeTexture(SQUARE_SWIPE_TEXTURE)
+end
+
+---Cuts an icon's corners to the glow art's shape, or squares them back up. Only call on a change:
+---adding the same mask twice stacks it.
+---@param parent table Frame the mask texture is created on.
+---@param icon table
+---@param cooldown table? Takes the matching swipe art when present.
+---@param mask table? The mask from an earlier call, held by the caller.
+---@param rounded boolean
+---@return table? mask To hand back next time.
+function M:SetIconCorners(parent, icon, cooldown, mask, rounded)
+	if rounded and not mask then
+		mask = parent:CreateMaskTexture()
+		-- Clamped rather than wrapped, so the icon outside the mask's rect is cut away instead of
+		-- being smeared with the mask's edge pixels.
+		mask:SetTexture(ICON_CORNER_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+		mask:SetAllPoints(icon)
+	end
+
+	if not mask then
+		return nil
+	end
+
+	if rounded then
+		icon:AddMaskTexture(mask)
+	else
+		icon:RemoveMaskTexture(mask)
+	end
+
+	if cooldown then
+		cooldown:SetSwipeTexture(rounded and ICON_CORNER_MASK or SQUARE_SWIPE_TEXTURE)
+	end
+
+	return mask
 end

@@ -221,7 +221,10 @@ local function CreateBarDisplay(size, spacing, style)
 		size,
 		spacing,
 		"Nameplates",
-		{ Style = style }
+		-- Skinnable because the buttons are built here, while the display is still parked on
+		-- UIParent. Once it moves onto a plate its size reads as secret and the skin can no
+		-- longer be re-fitted, which is why the size is fixed at creation in the first place.
+		{ Style = style, MasqueGroup = "Nameplates" }
 	)
 end
 

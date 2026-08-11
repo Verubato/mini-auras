@@ -10,6 +10,12 @@ local glowStyles = addon.Core.GlowStyles
 -- changes for the life of the session.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
+-- Spell art carries a silver frame baked into the texture. Trimming it off leaves the artwork
+-- reaching the icon's edge, so our own border sits flush and the cooldown swipe covers exactly
+-- the visible square instead of eating into the baked frame. A Masque skin overrides this with
+-- its own crop, which is what we want - the skin owns the icon's shape.
+local ICON_TRIM = 0.08
+
 -- Style name -> the field its built frame is cached under on a parent, so a frame is never
 -- built twice per layer. Membership doubles as "this style is texture-based": the shared
 -- catalog holds exactly the styles that render without LibCustomGlow.
@@ -18,7 +24,7 @@ for name in pairs(glowStyles.Specs) do
 	STATIC_GLOW_FIELDS[name] = "_StaticGlow_" .. name
 end
 
--- Debounce table keyed by group object: one deferred ReSkin per group per frame
+-- Debounce table keyed by container: one deferred ReSkin per container per frame
 local masqueReskinPending = {}
 local cachedDb = nil
 -- Reused across Layout() calls to avoid a table allocation on the hot path
@@ -156,14 +162,30 @@ local function RegisterCountdownColor(cd, durationObject)
 	end
 end
 
-local function ScheduleMasqueReSkin(group)
-	if not group or masqueReskinPending[group] then
+---Re-fits the skin to the container's current icon size, debounced to one pass per container per
+---frame. Scoped to the slots this container owns: a Masque group is shared by every container
+---using the same name, and on 12.1 by the aura displays too, whose buttons must only ever be
+---touched from their own restriction-gated restyle.
+---@param instance IconSlotContainer
+local function ScheduleMasqueReSkin(instance)
+	local group = instance.MasqueGroup
+
+	if not group or masqueReskinPending[instance] then
 		return
 	end
-	masqueReskinPending[group] = true
+
+	masqueReskinPending[instance] = true
 	C_Timer.After(0, function()
-		masqueReskinPending[group] = nil
-		group:ReSkin()
+		masqueReskinPending[instance] = nil
+
+		for i = 1, instance.Count do
+			local slot = instance.Slots[i]
+			local container = slot and slot.Container
+
+			if container then
+				group:ReSkin(container.Frame)
+			end
+		end
 	end)
 end
 
@@ -178,6 +200,7 @@ local function CreateLayer(parentFrame, level, iconSize, noBorder)
 	-- place our icons on the 1st draw layer of background
 	local icon = f:CreateTexture(nil, "BACKGROUND", nil, 1)
 	icon:SetAllPoints()
+	icon:SetTexCoord(ICON_TRIM, 1 - ICON_TRIM, ICON_TRIM, 1 - ICON_TRIM)
 
 	local cd = CreateFrame("Cooldown", NextFrameName("Cooldown"), f, "CooldownFrameTemplate")
 	cd:SetAllPoints()
@@ -185,6 +208,7 @@ local function CreateLayer(parentFrame, level, iconSize, noBorder)
 	cd:SetDrawBling(false)
 	cd:SetHideCountdownNumbers(false)
 	cd:SetSwipeColor(0, 0, 0, 0.8)
+	glowStyles:SquareSwipe(cd)
 	-- When the cooldown expires naturally the frame hides itself via OnCooldownDone without
 	-- any external code calling SetSlot again. Clear desaturation immediately so the icon
 	-- doesn't stay grey until the next UpdateDisplay (e.g. the delayed ARENA_COOLDOWNS_UPDATE).
@@ -408,10 +432,8 @@ local function FillColorScratch(options)
 	end
 end
 
----Updates glow effects on a layer frame
----@param layerFrame table The layer frame to update glow on
----@param options IconLayerOptions Options containing glow settings
-local function UpdateGlow(layerFrame, options)
+---@return string
+local function ResolveGlowType()
 	local db = GetDb()
 	local glowType = (db and db.GlowType) or "Slot Glow"
 
@@ -420,8 +442,17 @@ local function UpdateGlow(layerFrame, options)
 	-- so clamp to the same set to keep all glows visually consistent; the config offers only
 	-- these on 12.1. TEMPORARY: remove with the legacy path once 12.1 is live.
 	if USE_AURA_CONTAINERS and not STATIC_GLOW_FIELDS[glowType] then
-		glowType = "Slot Glow"
+		return "Slot Glow"
 	end
+
+	return glowType
+end
+
+---Updates glow effects on a layer frame
+---@param layerFrame table The layer frame to update glow on
+---@param options IconLayerOptions Options containing glow settings
+local function UpdateGlow(layerFrame, options)
+	local glowType = ResolveGlowType()
 
 	if not options.Glow then
 		StopLCGGlowsExcept(layerFrame, nil)
@@ -521,6 +552,27 @@ local function UpdateGlow(layerFrame, options)
 			end
 		end
 	end
+end
+
+---Rounds a layer's icon off while it wears one of the catalog's overlays, since those all have
+---rounded inner corners. LibCustomGlow's glows trace a rectangle instead, so an icon under one
+---keeps its square corners.
+---@param layer table
+---@param options IconLayerOptions
+local function ApplyIconCorners(layer, options)
+	-- Portrait icons carry a round mask and a swipe to match; leave both alone.
+	if layer.CustomShape then
+		return
+	end
+
+	local rounded = (options.Glow and STATIC_GLOW_FIELDS[ResolveGlowType()]) and true or false
+
+	if layer.CornersRounded == rounded then
+		return
+	end
+
+	layer.CornersRounded = rounded
+	layer.CornerMask = glowStyles:SetIconCorners(layer.Frame, layer.Icon, layer.Cooldown, layer.CornerMask, rounded)
 end
 
 ---Creates a new IconSlotContainer instance
@@ -729,7 +781,7 @@ function M:Layout()
 	end
 
 	-- testing to see if this helps with the weird issue with randomly large Masque borders and icons
-	ScheduleMasqueReSkin(self.MasqueGroup)
+	ScheduleMasqueReSkin(self)
 end
 
 ---Sets the spacing between slots
@@ -876,7 +928,7 @@ function M:SetIconSize(newSize)
 	end
 
 	-- Re-apply the Masque skin at the new size, debounced per group.
-	ScheduleMasqueReSkin(self.MasqueGroup)
+	ScheduleMasqueReSkin(self)
 
 	self:Layout()
 end
@@ -1055,6 +1107,7 @@ function M:SetSlot(slotIndex, options)
 	end
 
 	UpdateGlow(layer.Frame, options)
+	ApplyIconCorners(layer, options)
 end
 
 -- Clears all layers on a slot

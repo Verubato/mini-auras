@@ -258,7 +258,7 @@ local function EnsureWatcher(anchor, unit)
 			}, size, spacing, "CC",
 				-- Seeded rather than left to the restyle below: a unit's display is built the
 				-- moment it turns up, and one built mid-arena can never be restyled.
-				{ Style = BuildStyle(options) })
+				{ Style = BuildStyle(options), MasqueGroup = "CC" })
 		else
 			entry.Watcher = unitAuraWatcher:New(unit, nil, { CC = true })
 			entry.Watcher:RegisterCallback(function()

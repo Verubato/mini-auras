@@ -126,7 +126,7 @@ local function NewRegion(parent, regionType)
 
 	for _, name in ipairs({
 		"SetAllPoints", "SetPoint", "ClearAllPoints", "SetTexture", "SetTexCoord",
-		"AddMaskTexture", "SetVertexColor", "SetBlendMode", "SetDesaturated", "SetScale",
+		"AddMaskTexture", "RemoveMaskTexture", "SetVertexColor", "SetBlendMode", "SetDesaturated", "SetScale",
 		"SetAtlas",
 		-- Takes a sprite index straight to the C side, so it is the only way to paint a raid
 		-- marker whose index is secret.

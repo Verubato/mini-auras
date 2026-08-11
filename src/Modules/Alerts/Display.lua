@@ -600,7 +600,7 @@ local function CreateAlertDisplayPair()
 
 				GlowColor = importantColor,
 			},
-		}, size, spacing, "Alerts", { Style = style }),
+		}, size, spacing, "Alerts", { Style = style, MasqueGroup = "Alerts" }),
 		-- Used in split mode only; hidden and budgeted to 0 when combined.
 		Imp = auraContainerDisplay:New(UIParent, "none", {
 			{
@@ -611,7 +611,7 @@ local function CreateAlertDisplayPair()
 
 				GlowColor = importantColor,
 			},
-		}, size, spacing, "Alerts", { Style = style }),
+		}, size, spacing, "Alerts", { Style = style, MasqueGroup = "Alerts" }),
 	}
 end
 

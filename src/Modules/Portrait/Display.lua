@@ -231,6 +231,10 @@ function M:ApplyMaskToLayer(layer, mask)
 		return
 	end
 
+	-- Keeps the container off this layer's icon shape: a portrait is round already, so it must not
+	-- also pick up the rounded-square corners a glow asks for.
+	layer.CustomShape = true
+
 	if layer.Icon then
 		if mask then
 			AddMask(layer.Icon, mask)
