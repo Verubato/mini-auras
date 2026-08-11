@@ -16,13 +16,8 @@ local addonName, addon = ...
 --   PaddingFactor - how far the overlay extends past the icon, as a multiple of its size.
 --   Animated      - the style runs the looping flipbook. A REPEAT animation costs CPU every
 --                   frame even on hidden frames, so consumers only Play() when this is set.
-
--- Every flipbook sheet shares one geometry: 6x5 cells, 30 frames, one second per loop. Matches
--- the bundled FlipbookWhite* files and the client's RotationHelper ants atlas.
-local FLIPBOOK_ROWS = 6
-local FLIPBOOK_COLUMNS = 5
-local FLIPBOOK_FRAMES = 30
-local FLIPBOOK_DURATION = 1.0
+--   Rows/Columns/Frames/Duration - flipbook geometry, required when Animated is set. Each sheet
+--                   carries its own, since the layouts differ from one asset to the next.
 
 ---@class GlowStyles
 local M = {}
@@ -37,6 +32,10 @@ M.Specs = {
 		Desaturated = true,
 		PaddingFactor = 1 / 4,
 		Animated = true,
+		Rows = 6,
+		Columns = 5,
+		Frames = 30,
+		Duration = 1.0,
 	},
 	["Rotation Assist (Clockwise)"] = {
 		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhiteClockwise.tga",
@@ -44,6 +43,10 @@ M.Specs = {
 		Desaturated = true,
 		PaddingFactor = 1 / 4,
 		Animated = true,
+		Rows = 6,
+		Columns = 5,
+		Frames = 30,
+		Duration = 1.0,
 	},
 	-- Atlas rather than a bundled file: this one ships with the client.
 	["Ants (Anti-Clockwise)"] = {
@@ -52,6 +55,45 @@ M.Specs = {
 		Desaturated = true,
 		PaddingFactor = 1 / 4,
 		Animated = true,
+		Rows = 6,
+		Columns = 5,
+		Frames = 30,
+		Duration = 1.0,
+	},
+	-- The next three keep their own colours, so they are not desaturated and the tint a caller
+	-- passes has no effect on them.
+	["Twins"] = {
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Twins.tga",
+		BlendMode = "BLEND",
+		Desaturated = false,
+		PaddingFactor = 1 / 8,
+		Animated = true,
+		Rows = 6,
+		Columns = 4,
+		Frames = 24,
+		Duration = 0.6,
+	},
+	["Mirror"] = {
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Mirror.tga",
+		BlendMode = "BLEND",
+		Desaturated = false,
+		PaddingFactor = 1 / 8,
+		Animated = true,
+		Rows = 12,
+		Columns = 4,
+		Frames = 48,
+		Duration = 0.8,
+	},
+	["Twins Mirror"] = {
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\TwinMirror.tga",
+		BlendMode = "BLEND",
+		Desaturated = false,
+		PaddingFactor = 1 / 8,
+		Animated = true,
+		Rows = 12,
+		Columns = 4,
+		Frames = 48,
+		Duration = 1.8,
 	},
 	-- The halo needs to extend well past the icon edges to read correctly, hence the larger
 	-- padding share.
@@ -60,6 +102,13 @@ M.Specs = {
 		BlendMode = "BLEND",
 		Desaturated = false,
 		PaddingFactor = 1 / 5,
+		Animated = false,
+	},
+	["Static Pixel Border"] = {
+		Atlas = "wowlabs-spell-icon-frame-highlight",
+		BlendMode = "BLEND",
+		Desaturated = true,
+		PaddingFactor = 0.1,
 		Animated = false,
 	},
 }
@@ -84,12 +133,15 @@ function M:BuildGlowFrame(parent, name)
 	glow.Anim = glow:CreateAnimationGroup()
 	glow.Anim:SetLooping("REPEAT")
 
+	-- A single cell until ApplySpec fills in the chosen sheet's geometry, so the animation is never
+	-- left unconfigured.
 	local flip = glow.Anim:CreateAnimation("FlipBook")
 	flip:SetChildKey("Texture")
-	flip:SetFlipBookRows(FLIPBOOK_ROWS)
-	flip:SetFlipBookColumns(FLIPBOOK_COLUMNS)
-	flip:SetFlipBookFrames(FLIPBOOK_FRAMES)
-	flip:SetDuration(FLIPBOOK_DURATION)
+	flip:SetFlipBookRows(1)
+	flip:SetFlipBookColumns(1)
+	flip:SetFlipBookFrames(1)
+	flip:SetDuration(1.0)
+	glow.FlipAnim = flip
 
 	return glow
 end
@@ -113,9 +165,14 @@ function M:ApplySpec(glowFrame, spec)
 	-- Read back by resize handlers that re-pad an already-built overlay.
 	glowFrame.PaddingFactor = spec.PaddingFactor
 
-	-- The flipbook leaves the coords on its last cell; reset them so a static asset is not
-	-- rendered as a 1/30th crop of itself.
-	if not spec.Animated then
+	if spec.Animated then
+		glowFrame.FlipAnim:SetFlipBookRows(spec.Rows)
+		glowFrame.FlipAnim:SetFlipBookColumns(spec.Columns)
+		glowFrame.FlipAnim:SetFlipBookFrames(spec.Frames)
+		glowFrame.FlipAnim:SetDuration(spec.Duration)
+	else
+		-- The flipbook leaves the coords on its last cell; reset them so a static asset is not
+		-- rendered as a crop of itself.
 		glowFrame.Texture:SetTexCoord(0, 1, 0, 1)
 	end
 end

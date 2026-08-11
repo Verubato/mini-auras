@@ -41,6 +41,7 @@ local testFiles = {
     "tests/Core/TestIconSlotColors.lua",
     "tests/Core/TestKickTracker.lua",
     "tests/Core/TestBarTextures.lua",
+    "tests/Core/TestGlowStyles.lua",
     "tests/Core/TestSounds.lua",
     "tests/Core/TestTtsPacks.lua",
     "tests/Core/TestSpellSearch.lua",

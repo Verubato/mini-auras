@@ -199,13 +199,21 @@ function M:Build(panel)
 		"Rotation Assist (Clockwise)",
 		"Rotation Assist (Anti-clockwise)",
 		"Ants (Anti-Clockwise)",
+		"Twins",
+		"Mirror",
+		"Twins Mirror",
 		"Slot Glow",
+		"Static Pixel Border",
 	} or {
 		"Proc Glow",
 		"Rotation Assist (Anti-clockwise)",
 		"Pixel Glow",
 		"Autocast Shine",
+		"Twins",
+		"Mirror",
+		"Twins Mirror",
 		"Slot Glow",
+		"Static Pixel Border",
 	}
 
 	-- Rotation Assist runs a looping flipbook per AuraButton, and the 12.1 containers pre-create
