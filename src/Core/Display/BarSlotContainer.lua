@@ -93,9 +93,15 @@ local function CreateBar(instance, parent)
 	name:SetJustifyH("LEFT")
 	name:SetWordWrap(false)
 
-	-- Around the icon and the fill together, like the live bars, and hidden until a slot asks
-	-- for it.
-	local border = outline:Create(frame, 0, BORDER_THICKNESS)
+	-- Around the icon and the fill together, like the live bars, and hidden until a slot asks for
+	-- it. On its own frame above the status bar rather than on the slot frame: a child frame draws
+	-- over its parent's regions, so an outline built on the slot showed only where it crossed the
+	-- icon and vanished along the fill.
+	local overlay = CreateFrame("Frame", nil, frame)
+	overlay:SetAllPoints(frame)
+	overlay:SetFrameLevel(bar:GetFrameLevel() + 1)
+
+	local border = outline:Create(overlay, 0, BORDER_THICKNESS)
 
 	frame:Hide()
 
@@ -106,6 +112,7 @@ local function CreateBar(instance, parent)
 		Name = name,
 		Time = time,
 		Border = border,
+		BorderOverlay = overlay,
 		IsUsed = false,
 	}
 
@@ -224,7 +231,7 @@ end
 
 ---@param parent table Frame to attach to.
 ---@param count number How many bars to keep (default 3).
----@param width number Bar width in pixels (default 200).
+---@param width number Bar width in pixels (default 100).
 ---@param height number Bar height in pixels (default 20).
 ---@param spacing number Gap between bars (default 2).
 ---@param moduleName string? MiniCCModule label set on Frame, so other addons can find it.

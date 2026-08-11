@@ -1975,6 +1975,11 @@ fw.describe("CustomAuras - bars", function()
 			assert(edge._shown, "every edge of the stand-in border shows")
 		end
 
+		-- Above the fill, or the outline only survives where it crosses the icon: a status bar is
+		-- a child frame and draws over the regions of whatever it sits on.
+		assert(slot.BorderOverlay:GetFrameLevel() > slot.Bar:GetFrameLevel(),
+			"the border sits above the fill, so it rings the whole bar")
+
 		group.Icons.Border = false
 		module:Refresh()
 
