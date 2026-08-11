@@ -48,6 +48,7 @@ Core\Display\GrowAnchors.lua
 Core\Display\GlowStyles.lua
 Core\Display\IconSlotContainer.lua
 Core\Display\BarTextures.lua
+Core\Display\BarSlotContainer.lua
 
 Core\Auras\AuraCategoryIds.lua
 Core\Auras\AuraTtsSounds.lua
@@ -166,6 +167,7 @@ Config\Panels\CustomAuras\GroupGrid.lua
 Config\Panels\CustomAuras\EditorFilters.lua
 Config\Panels\CustomAuras\EditorSounds.lua
 Config\Panels\CustomAuras\EditorAppearance.lua
+Config\Panels\CustomAuras\EditorLayout.lua
 Config\Panels\CustomAuras\EditorTrigger.lua
 Config\Panels\CustomAuras\Editor.lua
 Config\Panels\CustomAuras.lua

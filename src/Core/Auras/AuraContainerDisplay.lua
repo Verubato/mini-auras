@@ -4,6 +4,7 @@ local fontUtil = addon.Utils.FontUtil
 local wowEx = addon.Utils.WoWEx
 local growAnchors = addon.Core.GrowAnchors
 local glowStyles = addon.Core.GlowStyles
+local barTextures = addon.Core.BarTextures
 local auraFilters = addon.Core.AuraFilters
 
 -- Only the texture-based styles from the shared catalog (Core/Display/GlowStyles) render here:
@@ -28,7 +29,29 @@ local STYLE_FIELDS = {
 	"Pandemic",
 	"LabelFontSize",
 	"LabelFontFlags",
+	"BarWidth",
+	"BarTexture",
+	"SpellName",
 }
+
+-- Geometry for bar buttons, all derived from the bar's height so one size setting drives the row.
+-- The icon leads the bar and is square; the fill starts where it ends, with no gap, so the icon
+-- reads as the bar's head rather than a separate thing (same shape as the kick tracker's rows).
+local DEFAULT_BAR_WIDTH = 100
+local BAR_ICON_TRIM = 0.08
+local BAR_TEXT_INSET = 3
+local BAR_NAME_COEFFICIENT = 0.5
+-- Edge thickness for a bar's border and its pandemic outline. The icon border is a ring asset
+-- stretched to the icon; a bar is too wide for that art, so both are built from flat edges.
+local BAR_BORDER_THICKNESS = 1
+local BAR_PANDEMIC_THICKNESS = 2
+local SOLID_TEXTURE = "Interface\\Buttons\\WHITE8X8"
+-- The spent part of a bar. Not pure black: a hair of lift keeps the row readable against a dark
+-- background, so an empty bar still shows where it is.
+local BAR_TRACK_COLOR = { 0.09, 0.09, 0.09 }
+-- Handed to SetDurationBar when the client has no interpolation enum. The setter validates its
+-- options table, so it always gets one.
+local EMPTY_BAR_OPTIONS = {}
 
 -- Ring tint for the pandemic (refresh-window) reveal. Fixed rather than the group's colour so
 -- the cue reads the same on every display.
@@ -485,6 +508,23 @@ local function ApplyGlowStyle(widgets, button, styleName, size)
 	end
 end
 
+---The tint a button's border, glow and bar fill take. The group's own colour wins over the
+---display-wide one: alerts colour by category, while a single-category display just takes the
+---user's picked colour.
+---@param instance AuraContainerDisplay
+---@param widgets table
+---@return number?, number?, number?
+local function ButtonColor(instance, widgets)
+	local style = instance.Style
+	local color = widgets.GlowColor
+
+	if color then
+		return color[1], color[2], color[3]
+	end
+
+	return style.GlowColorR, style.GlowColorG, style.GlowColorB
+end
+
 ---Registers (or unregisters) the button's dispel-type textures. The engine tints registered
 ---textures by dispel type and drives their per-aura visibility (PreserveAsset style keeps our
 ---asset and only colours it). The border participates when ColorByDispelType is on; the glow's
@@ -492,18 +532,17 @@ end
 ---colour - the legacy paths tinted the glow with the aura's dispel colour, which is unreadable
 ---here, so the engine applies it instead. showWithoutDispelType keeps the glow visible for
 ---physical CC, tinted with the "None" palette colour like legacy.
+---The border is a list rather than one texture because a bar's is built from four flat edges;
+---an icon's is a single ring asset, so its list holds one.
 ---@param instance AuraContainerDisplay
 ---@param button table
 ---@param widgets table
 local function ApplyDispelTextures(instance, button, widgets)
 	local style = instance.Style
-	local wantBorder = style.ColorByDispelType == true and widgets.Border ~= nil
+	local borders = widgets.BorderTextures
+	local wantBorder = style.ColorByDispelType == true and borders ~= nil
 	local wantGlowTint = wantBorder and style.Glow == true and widgets.Glow ~= nil
-	-- The group's own tint wins over the display-wide one: alerts colour by category, while a
-	-- single-category display just takes the user's picked colour.
-	local colorR = widgets.GlowColor and widgets.GlowColor[1] or style.GlowColorR
-	local colorG = widgets.GlowColor and widgets.GlowColor[2] or style.GlowColorG
-	local colorB = widgets.GlowColor and widgets.GlowColor[3] or style.GlowColorB
+	local colorR, colorG, colorB = ButtonColor(instance, widgets)
 	-- The colour rides in the signature so a colour-only change still repaints; without it the
 	-- early return below would swallow it.
 	local dispelSignature = (wantBorder and "b" or "") .. (wantGlowTint and "g" or "")
@@ -518,20 +557,24 @@ local function ApplyDispelTextures(instance, button, widgets)
 	button:ClearDispelTypeTextures()
 
 	if wantBorder then
-		button:AddDispelTypeTexture(widgets.Border, {
-			style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
-			showWhenHarmful = true,
-			showWhenHelpful = true,
-		})
-	elseif widgets.Border then
-		-- Not registered for dispel colouring, so its visibility is ours to drive: draw the
+		for _, texture in ipairs(borders) do
+			button:AddDispelTypeTexture(texture, {
+				style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
+				showWhenHarmful = true,
+				showWhenHelpful = true,
+			})
+		end
+	elseif borders then
+		-- Not registered for dispel colouring, so their visibility is ours to drive: draw the
 		-- plain border only when the module asked for one, tinted with the same colour the glow
 		-- would take.
-		if style.Border then
-			widgets.Border:SetVertexColor(colorR or 1, colorG or 1, colorB or 1, 1)
-			widgets.Border:Show()
-		else
-			widgets.Border:Hide()
+		for _, texture in ipairs(borders) do
+			if style.Border then
+				texture:SetVertexColor(colorR or 1, colorG or 1, colorB or 1, 1)
+				texture:Show()
+			else
+				texture:Hide()
+			end
 		end
 	end
 
@@ -553,6 +596,14 @@ local function ApplyDispelTextures(instance, button, widgets)
 	end
 end
 
+---A bar button's width. Never narrower than its height, so a nonsense saved value still leaves
+---room for the icon rather than collapsing the fill to nothing.
+---@param instance AuraContainerDisplay
+---@return number
+local function BarWidth(instance)
+	return math.max(instance.Size, instance.Style.BarWidth or DEFAULT_BAR_WIDTH)
+end
+
 -- Applies the stored per-button style (size, cooldown settings, border, glow, mouse) to one
 -- button. Safe only while buttons are not forbidden (initializeFrame or out of combat).
 ---@param instance AuraContainerDisplay
@@ -565,7 +616,10 @@ local function StyleButton(instance, button)
 		return
 	end
 
-	button:SetSize(instance.Size, instance.Size)
+	local size = instance.Size
+	local bar = widgets.Bar
+
+	button:SetSize(bar and BarWidth(instance) or size, size)
 
 	-- Label-only buttons carry a single fontstring and none of the icon chrome below.
 	local label = widgets.Label
@@ -576,30 +630,41 @@ local function StyleButton(instance, button)
 		return
 	end
 
-	-- DisableSwipe/MillisecondsThreshold/GlowStyleName are the global db values StoreStyle
-	-- resolved when the style was set, so this hot loop never re-reads the db per button.
-	local cd = widgets.Cooldown
-	cd:SetReverse(style.ReverseCooldown or false)
-	cd:SetDrawSwipe(not style.DisableSwipe)
-
+	local fontScale = style.FontScale or 1.0
 	-- SetCountdownMillisecondsThreshold only works on legacy clock-driven cooldowns; it no-ops
 	-- for 12.1 duration objects, where fractions render through the duration-text binding
 	-- below. (The cooldown's own SetCountdownFormatter does not work there either.)
 	local msThreshold = (style.ShowMilliseconds and (style.MillisecondsThreshold or 5)) or 0
-	if cd.SetCountdownMillisecondsThreshold then
-		cd:SetCountdownMillisecondsThreshold(msThreshold)
+
+	-- DisableSwipe/MillisecondsThreshold/GlowStyleName are the global db values StoreStyle
+	-- resolved when the style was set, so this hot loop never re-reads the db per button.
+	-- Bar buttons have no cooldown widget: the fill is their clock.
+	local cd = widgets.Cooldown
+
+	if cd then
+		cd:SetReverse(style.ReverseCooldown or false)
+		cd:SetDrawSwipe(not style.DisableSwipe)
+
+		if cd.SetCountdownMillisecondsThreshold then
+			cd:SetCountdownMillisecondsThreshold(msThreshold)
+		end
+		cd.FontScale = fontScale
+		fontUtil:UpdateCooldownFontSize(cd, size, nil, fontScale)
 	end
-	cd.FontScale = style.FontScale or 1.0
-	fontUtil:UpdateCooldownFontSize(cd, instance.Size, nil, cd.FontScale)
 
 	-- The bound fontstring stands in for the cooldown's own countdown whenever it can do
 	-- something the native text cannot: the colour-by-time curve, sub-second fractions, or
 	-- both. The engine writes the fontstring either way, so the off state is alpha rather
-	-- than unbinding.
+	-- than unbinding. On a bar it is the only countdown there is, so it always shows.
 	local durationText = widgets.DurationText
 	local colorCountdown = style.ColorCountdownByTime == true and durationText ~= nil
-	local useDurationText = colorCountdown or (durationText ~= nil and msThreshold > 0)
-	cd:SetHideCountdownNumbers(useDurationText)
+	local useDurationText = durationText ~= nil
+		and (bar ~= nil or colorCountdown or msThreshold > 0)
+
+	if cd then
+		cd:SetHideCountdownNumbers(useDurationText)
+	end
+
 	if durationText then
 		-- The formatter and colour curve live inside the binding, so a change re-binds. Only
 		-- on change: each SetDurationText runs the engine's options processing per button.
@@ -612,7 +677,8 @@ local function StyleButton(instance, button)
 		-- Stand-in for the cooldown's own countdown, so it borrows that fontstring's face and
 		-- size wholesale (UpdateCooldownFontSize above just sized it with the same coefficient
 		-- and scale). Without a face to copy, fall back to sizing the template font.
-		local cdText = cd.GetCountdownFontString and cd:GetCountdownFontString() or cd.MiniAurasFontString
+		local cdText = cd and (cd.GetCountdownFontString and cd:GetCountdownFontString()
+			or cd.MiniAurasFontString)
 		local font, fontSize, fontFlags
 		if cdText then
 			font, fontSize, fontFlags = cdText:GetFont()
@@ -620,7 +686,7 @@ local function StyleButton(instance, button)
 		if font then
 			durationText:SetFont(font, fontSize, fontFlags)
 		else
-			fontUtil:UpdateFontSize(durationText, instance.Size, 0.4, cd.FontScale)
+			fontUtil:UpdateFontSize(durationText, size, 0.4, fontScale)
 		end
 	end
 
@@ -630,10 +696,34 @@ local function StyleButton(instance, button)
 
 	if stacks then
 		stacks:SetAlpha(style.Stacks and 1 or 0)
-		fontUtil:UpdateStackFontSize(stacks, instance.Size, style.FontScale or 1.0)
+		fontUtil:UpdateStackFontSize(stacks, size, fontScale)
 	end
 
-	if widgets.Border or widgets.Glow then
+	if bar then
+		local colorR, colorG, colorB = ButtonColor(instance, widgets)
+		local texture = barTextures:Resolve(style.BarTexture)
+		local strip = widgets.Strip
+
+		-- Square and flush against the fill, so one size setting drives the whole row.
+		widgets.Icon:SetWidth(size)
+
+		-- The strip is the remaining time, not the status bar's own fill - see InitializeBarButton
+		-- for why the shape is drawn inside out.
+		if widgets.BarTexturePath ~= texture then
+			widgets.BarTexturePath = texture
+			strip:SetTexture(texture)
+		end
+
+		strip:SetVertexColor(colorR or 1, colorG or 1, colorB or 1, 1)
+
+		-- The engine writes the name and its shown state, so alpha is all that is left to us,
+		-- exactly like the stack count.
+		local name = widgets.Name
+		name:SetAlpha(style.SpellName ~= false and 1 or 0)
+		fontUtil:UpdateFontSize(name, size, BAR_NAME_COEFFICIENT, fontScale)
+	end
+
+	if widgets.BorderTextures or widgets.Glow then
 		ApplyDispelTextures(instance, button, widgets)
 	end
 
@@ -646,7 +736,7 @@ local function StyleButton(instance, button)
 	local glow = widgets.Glow
 	if glow then
 		if style.Glow then
-			ApplyGlowStyle(widgets, button, style.GlowStyleName or DEFAULT_GLOW_STYLE, instance.Size)
+			ApplyGlowStyle(widgets, button, style.GlowStyleName or DEFAULT_GLOW_STYLE, size)
 			glow:Show()
 		else
 			glow:Hide()
@@ -654,21 +744,151 @@ local function StyleButton(instance, button)
 		end
 	end
 
-	-- The engine owns the pandemic holder's visibility (shown only inside the refresh window);
-	-- the per-group toggle is ours and rides the ring's alpha instead.
+	-- The engine owns the pandemic holder's visibility (shown only inside the refresh window); the
+	-- per-group toggle is ours and rides its artwork instead. A list, because a bar's reveal is four
+	-- flat edges where an icon's is one ring. Shown AND alpha'd, not one or the other: the artwork
+	-- is created hidden, so a group with the reveal off can never flash it even if this pass never
+	-- runs (styling is refused outright while auras are secret).
 	local pandemic = widgets.Pandemic
 	if pandemic then
-		pandemic.Ring:SetAlpha(style.Pandemic and 1 or 0)
-		pandemic.Ring:SetVertexColor(
-			style.PandemicColorR or PANDEMIC_COLOR[1],
-			style.PandemicColorG or PANDEMIC_COLOR[2],
-			style.PandemicColorB or PANDEMIC_COLOR[3],
-			1
-		)
+		local reveal = style.Pandemic == true
+		local pandemicR = style.PandemicColorR or PANDEMIC_COLOR[1]
+		local pandemicG = style.PandemicColorG or PANDEMIC_COLOR[2]
+		local pandemicB = style.PandemicColorB or PANDEMIC_COLOR[3]
+
+		for _, texture in ipairs(pandemic.Textures) do
+			texture:SetShown(reveal)
+			texture:SetAlpha(reveal and 1 or 0)
+			texture:SetVertexColor(pandemicR, pandemicG, pandemicB, 1)
+		end
 	end
 
 	-- Tooltips (and click-to-cancel, which we never register) require mouse input.
 	button:EnableMouse(style.ShowTooltips ~= false)
+end
+
+---Text sits on its own child frame levelled above the cooldown: fontstrings created on the
+---button itself are parent regions, which child frames like the swipe always cover. Still a
+---descendant of the button, so duration/stack registration stays valid.
+---@param button table
+---@return table
+local function CreateTextOverlay(button)
+	local overlay = CreateFrame("Frame", nil, button)
+	overlay:SetAllPoints(button)
+	overlay:SetFrameLevel(button:GetFrameLevel() + 5)
+
+	return overlay
+end
+
+---Colour-by-time countdown: a fontstring bound as native duration text carrying a colour curve
+---the engine evaluates against the secret remaining time. Always bound where the client supports
+---it; the global toggle swaps between this and the cooldown's own countdown at restyle time. The
+---caller anchors it, because a bar puts it at the far end of the fill and an icon in the middle.
+---@param button table
+---@param overlay table
+---@return table?
+local function CreateDurationText(button, overlay)
+	if not HasCountdownColorCurves() then
+		return nil
+	end
+
+	local durationText = overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+	BindDurationText(button, durationText, 0, false)
+
+	return durationText
+end
+
+---The engine writes the count and decides when it is on screen, both of which are secret. We
+---only get to place it and say how big it is, so it is registered once and never taken back.
+---Never pass an options table with a formatter here: the engine calls FormatNumber(count) in Lua
+---with the secret count, and the throw lands inside the container's dirty-flag processing, which
+---stops re-arming and leaves the container frozen for the session.
+---@param button table
+---@param overlay table
+---@return table
+local function CreateStacks(button, overlay)
+	local stacks = overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+	stacks:SetJustifyH("RIGHT")
+	button:SetApplicationCount(stacks)
+
+	return stacks
+end
+
+---Glow overlay, created up-front as a direct child (creation is allowed on AuraButtons;
+---re-parenting is not). The asset is left unset: StyleButton applies whichever catalog style is
+---configured, and BuildGlowFrame includes the (stopped) flipbook animation so a later switch to
+---an animated style doesn't have to touch the button.
+---@param button table
+---@return table
+local function CreateGlow(button)
+	local glow = glowStyles:BuildGlowFrame(button, NextFrameName("Glow"))
+	glow:Hide()
+
+	return glow
+end
+
+---Pandemic reveal: the engine computes each aura's refresh window (the tail where re-casting
+---carries the remainder over) and drives the registered region's visibility itself - the window's
+---bounds are secret, so nothing here may read them. A holder frame is registered rather than the
+---artwork, because registration hands the object's shown state to the engine and it must be
+---something this addon never shows or hides; the artwork inside stays ours, and the per-group
+---toggle rides its alpha (StyleButton). No animation on purpose: a looping animation costs CPU
+---every frame across every pre-created button.
+---@param instance AuraContainerDisplay
+---@param button table
+---@param inset number How far outside the button the reveal sits.
+---@return table?
+local function CreatePandemicHolder(instance, button, inset)
+	if not instance.PandemicRegions or not button.AddPandemicRegion then
+		return nil
+	end
+
+	local pandemic = CreateFrame("Frame", NextFrameName("Pandemic"), button)
+	pandemic:SetFrameLevel(button:GetFrameLevel() + 6)
+	pandemic:SetPoint("TOPLEFT", button, "TOPLEFT", -inset, inset)
+	pandemic:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", inset, -inset)
+
+	return pandemic
+end
+
+---A rectangular outline built from four flat edges, for the shapes the ring asset cannot cover.
+---Returned as a list so the dispel-colour registration and the pandemic toggle can treat it the
+---same way they treat a single ring texture.
+---@param parent table
+---@param inset number How far outside the parent the outline sits.
+---@param thickness number
+---@return table[]
+local function CreateOutline(parent, inset, thickness)
+	local top = parent:CreateTexture(nil, "OVERLAY")
+	top:SetPoint("TOPLEFT", parent, "TOPLEFT", -inset, inset)
+	top:SetPoint("TOPRIGHT", parent, "TOPRIGHT", inset, inset)
+	top:SetHeight(thickness)
+
+	local bottom = parent:CreateTexture(nil, "OVERLAY")
+	bottom:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", -inset, -inset)
+	bottom:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", inset, -inset)
+	bottom:SetHeight(thickness)
+
+	-- Spanning between the horizontal edges rather than the parent, so the four meet at the
+	-- corners whatever the inset is.
+	local left = parent:CreateTexture(nil, "OVERLAY")
+	left:SetPoint("TOPLEFT", top, "BOTTOMLEFT", 0, 0)
+	left:SetPoint("BOTTOMLEFT", bottom, "TOPLEFT", 0, 0)
+	left:SetWidth(thickness)
+
+	local right = parent:CreateTexture(nil, "OVERLAY")
+	right:SetPoint("TOPRIGHT", top, "BOTTOMRIGHT", 0, 0)
+	right:SetPoint("BOTTOMRIGHT", bottom, "TOPRIGHT", 0, 0)
+	right:SetWidth(thickness)
+
+	local edges = { top, bottom, left, right }
+
+	for _, texture in ipairs(edges) do
+		texture:SetTexture(SOLID_TEXTURE)
+		texture:Hide()
+	end
+
+	return edges
 end
 
 ---@param instance AuraContainerDisplay
@@ -702,29 +922,18 @@ local function InitializeButton(instance, button, glowColor)
 	end
 	button:SetDurationCooldown(cd)
 
-	-- Text sits on its own child frame levelled above the cooldown: fontstrings created on the
-	-- button itself are parent regions, which child frames like the swipe always cover. Still a
-	-- descendant of the button, so duration/stack registration stays valid.
-	local textOverlay = CreateFrame("Frame", nil, button)
-	textOverlay:SetAllPoints(button)
-	textOverlay:SetFrameLevel(button:GetFrameLevel() + 5)
+	local textOverlay = CreateTextOverlay(button)
+	local durationText = CreateDurationText(button, textOverlay)
 
-	-- Colour-by-time countdown: a fontstring bound as native duration text carrying a colour
-	-- curve the engine evaluates against the secret remaining time. Always bound where the
-	-- client supports it; the global toggle swaps between this and the cooldown's own countdown
-	-- at restyle time.
-	local durationText
-	if HasCountdownColorCurves() then
-		durationText = textOverlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+	if durationText then
 		durationText:SetPoint("CENTER", button, "CENTER", 0, 0)
-		BindDurationText(button, durationText, 0, false)
 	end
 
-	local border, glow
+	local borders, glow
 
 	if not instance.Minimal then
 		-- Border sized 1px past the icon, same asset/coords as the legacy border.
-		border = button:CreateTexture(nil, "OVERLAY")
+		local border = button:CreateTexture(nil, "OVERLAY")
 		border:SetPoint("TOPLEFT", button, "TOPLEFT", -1, 1)
 		border:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 1, -1)
 		border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
@@ -732,56 +941,153 @@ local function InitializeButton(instance, button, glowColor)
 		-- Hidden until registered via AddDispelTypeTexture, which takes over its visibility;
 		-- otherwise it would render (uncoloured) over every aura icon.
 		border:Hide()
+		borders = { border }
 
-		-- Glow overlay, created up-front as a direct child (creation is allowed on AuraButtons;
-		-- re-parenting is not). The asset is left unset: StyleButton applies whichever catalog
-		-- style is configured, and BuildGlowFrame includes the (stopped) flipbook animation so a
-		-- later switch to an animated style doesn't have to touch the button.
-		glow = glowStyles:BuildGlowFrame(button, NextFrameName("Glow"))
-		glow:Hide()
+		glow = CreateGlow(button)
 	end
 
-	-- Pandemic reveal: the engine computes each aura's refresh window (the tail where re-casting
-	-- carries the remainder over) and drives the registered region's visibility itself - the
-	-- window's bounds are secret, so nothing here may read them. A holder frame is registered
-	-- rather than the ring texture, because registration hands the object's shown state to the
-	-- engine and it must be something this addon never shows or hides; the ring inside stays
-	-- ours, and the per-group toggle rides its alpha (StyleButton). No animation on purpose: a
-	-- looping animation costs CPU every frame across every pre-created button.
-	local pandemic
-	if instance.PandemicRegions and button.AddPandemicRegion then
-		pandemic = CreateFrame("Frame", NextFrameName("Pandemic"), button)
-		pandemic:SetFrameLevel(button:GetFrameLevel() + 6)
-		-- One pixel outside the dispel border's ring, so both read when they overlap.
-		pandemic:SetPoint("TOPLEFT", button, "TOPLEFT", -2, 2)
-		pandemic:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 2, -2)
+	-- One pixel outside the dispel border's ring, so both read when they overlap.
+	local pandemic = CreatePandemicHolder(instance, button, 2)
 
+	if pandemic then
 		local ring = pandemic:CreateTexture(nil, "OVERLAY")
 		ring:SetAllPoints(pandemic)
 		ring:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
 		ring:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
 		ring:SetVertexColor(PANDEMIC_COLOR[1], PANDEMIC_COLOR[2], PANDEMIC_COLOR[3], 1)
-		pandemic.Ring = ring
+		-- Hidden until the group's toggle asks for it, like the dispel border. The engine drives
+		-- the HOLDER's visibility, so leaving the ring itself shown put an amber ring on every
+		-- icon of every group that had the reveal switched off.
+		ring:Hide()
+		pandemic.Textures = { ring }
 
 		button:AddPandemicRegion(pandemic)
 	end
 
-	-- The engine writes the count and decides when it is on screen, both of which are secret. We
-	-- only get to place it and say how big it is, so it is registered once and never taken back.
-	-- Never pass an options table with a formatter here: the engine calls FormatNumber(count) in
-	-- Lua with the secret count, and the throw lands inside the container's dirty-flag processing,
-	-- which stops re-arming and leaves the container frozen for the session.
-	local stacks = textOverlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+	local stacks = CreateStacks(button, textOverlay)
 	stacks:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -1, 1)
-	stacks:SetJustifyH("RIGHT")
-	button:SetApplicationCount(stacks)
 
 	button:SetTooltipAnchorPoint("ANCHOR_RIGHT")
 
 	instance.ButtonWidgets[button] = {
 		Cooldown = cd,
 		Stacks = stacks,
-		Border = border,
+		BorderTextures = borders,
+		DispelSignature = nil,
+		Glow = glow,
+		GlowStyle = nil,
+		GlowColor = glowColor,
+		Pandemic = pandemic,
+		DurationText = durationText,
+		DurationTextBind = durationText and "0" or nil,
+	}
+	instance.Buttons[#instance.Buttons + 1] = button
+
+	StyleButton(instance, button)
+end
+
+---Builds a bar button: a square icon leading a status bar the engine drains itself, with the
+---aura's name inside the fill and the countdown at its far end. Nothing here reads a clock - the
+---fill, the name and the count are all engine-written, exactly like the icon button's cooldown
+---swipe. Created for displays made with the Bar option; a client without SetDurationBar falls
+---back to icons in New, so this is only ever reached where the setter exists.
+---@param instance AuraContainerDisplay
+---@param button table
+local function InitializeBarButton(instance, button, glowColor)
+	-- A build without the setter gets icons instead of an empty row. Clearing the flag as well as
+	-- delegating is what puts the layout back to square, since it is read per restyle.
+	if not button.SetDurationBar then
+		instance.Bar = false
+		InitializeButton(instance, button, glowColor)
+
+		return
+	end
+
+	button:SetFlattensRenderLayers(true)
+
+	-- Anchored to the left edge and squared up by StyleButton, which knows the bar's height.
+	local icon = button:CreateTexture(nil, "BACKGROUND", nil, 1)
+	icon:SetPoint("TOPLEFT", button, "TOPLEFT", 0, 0)
+	icon:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", 0, 0)
+	-- Trimmed rather than shown whole: spell art carries its own border, which reads as a seam
+	-- against the fill.
+	icon:SetTexCoord(BAR_ICON_TRIM, 1 - BAR_ICON_TRIM, BAR_ICON_TRIM, 1 - BAR_ICON_TRIM)
+	button:SetIcon(icon)
+
+	local bar = CreateFrame("StatusBar", nil, button)
+	bar:SetPoint("TOPLEFT", icon, "TOPRIGHT", 0, 0)
+	bar:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0, 0)
+	-- The engine owns the value from here on; these are just a sane starting state for the frame
+	-- (and for the moments before the first aura lands).
+	bar:SetMinMaxValues(0, 1)
+	bar:SetValue(0)
+
+	-- The bar is drawn inside out, because the engine's value GROWS as an aura runs out and the
+	-- value itself is secret, so it cannot be flipped. The coloured strip is a plain texture across
+	-- the whole bar, and the engine-driven fill is an opaque dark block eating into it from the
+	-- right - which leaves exactly the remaining time coloured, i.e. a bar that drains.
+	local strip = bar:CreateTexture(nil, "BACKGROUND")
+	strip:SetAllPoints(bar)
+
+	bar:SetStatusBarTexture(SOLID_TEXTURE)
+	bar:SetStatusBarColor(BAR_TRACK_COLOR[1], BAR_TRACK_COLOR[2], BAR_TRACK_COLOR[3], 1)
+
+	if bar.SetReverseFill then
+		bar:SetReverseFill(true)
+	end
+
+	local interpolation = Enum.StatusBarInterpolation and Enum.StatusBarInterpolation.Linear
+	button:SetDurationBar(bar, interpolation and { interpolation = interpolation } or EMPTY_BAR_OPTIONS)
+
+	local textOverlay = CreateTextOverlay(button)
+	local durationText = CreateDurationText(button, textOverlay)
+
+	if durationText then
+		durationText:SetPoint("RIGHT", bar, "RIGHT", -BAR_TEXT_INSET, 0)
+		durationText:SetJustifyH("RIGHT")
+	end
+
+	-- The name gives way to the countdown rather than running underneath it, so a narrow bar
+	-- loses characters off the end instead of overlapping.
+	local name = textOverlay:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	name:SetPoint("LEFT", bar, "LEFT", BAR_TEXT_INSET, 0)
+	name:SetPoint("RIGHT", durationText or bar, durationText and "LEFT" or "RIGHT",
+		-BAR_TEXT_INSET, 0)
+	name:SetJustifyH("LEFT")
+	name:SetWordWrap(false)
+	button:SetSpellName(name)
+
+	local borders, glow
+
+	if not instance.Minimal then
+		-- On the text overlay, not the button: the status bar is a child frame and would draw
+		-- over any border built from the button's own regions.
+		borders = CreateOutline(textOverlay, 0, BAR_BORDER_THICKNESS)
+		glow = CreateGlow(button)
+	end
+
+	local pandemic = CreatePandemicHolder(instance, button, BAR_PANDEMIC_THICKNESS)
+
+	-- CreateOutline leaves the edges hidden, which is the state a group with the reveal off wants.
+	if pandemic then
+		pandemic.Textures = CreateOutline(pandemic, 0, BAR_PANDEMIC_THICKNESS)
+
+		button:AddPandemicRegion(pandemic)
+	end
+
+	-- On the icon rather than the fill: the fill already carries the name and the countdown.
+	local stacks = CreateStacks(button, textOverlay)
+	stacks:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", -1, 1)
+
+	button:SetTooltipAnchorPoint("ANCHOR_RIGHT")
+
+	instance.ButtonWidgets[button] = {
+		Icon = icon,
+		Bar = bar,
+		Strip = strip,
+		Name = name,
+		Stacks = stacks,
+		BorderTextures = borders,
 		DispelSignature = nil,
 		Glow = glow,
 		GlowStyle = nil,
@@ -848,7 +1154,8 @@ local function BuildGroupLayout(instance)
 	layout.lineSpacing = instance.Spacing
 	layout.elementSpacingX = instance.Spacing
 	layout.elementSpacingY = instance.Spacing
-	layout.elementWidth = instance.Size
+	-- Bars are as wide as the style asks and as tall as the size; icons are square.
+	layout.elementWidth = instance.Bar and BarWidth(instance) or instance.Size
 	layout.elementHeight = instance.Size
 
 	return layout
@@ -889,7 +1196,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	instance.Style = {}
 	instance.Layout = {}
 	instance.Buttons = {}
-	-- button -> { Cooldown, Border, DispelSignature, Glow, GlowStyle } for restyling.
+	-- button -> { Cooldown, BorderTextures, DispelSignature, Glow, GlowStyle, Bar, ... } for restyling.
 	instance.ButtonWidgets = {}
 	-- Visibility the owning module last asked for; frames are created shown.
 	instance.DesiredShown = true
@@ -898,6 +1205,9 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	instance.IconMask = options.IconMask
 	instance.Minimal = options.Minimal == true
 	instance.Label = options.Label
+	-- Bar or icon is baked into every button at creation (regions can only be registered in
+	-- initializeFrame), so a display can never change shape - callers pool the two separately.
+	instance.Bar = options.Bar == true
 	-- Resolved at creation: regions can only be added to a button in initializeFrame, so a
 	-- display that skipped them can never grow them later (pooled displays included - opt in
 	-- whenever any consumer of the pool might want the reveal).
@@ -926,7 +1236,9 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	frame:SetUnit(unit)
 	ApplyFlowLayout(instance)
 
-	local initialize = instance.Label and InitializeLabelButton or InitializeButton
+	local initialize = instance.Label and InitializeLabelButton
+		or instance.Bar and InitializeBarButton
+		or InitializeButton
 
 	for _, group in ipairs(groups) do
 		instance.GroupsByKey[group.Key] = group
@@ -1331,6 +1643,11 @@ end
 ---GlowColor overrides it; unset leaves the glow plain white.
 ---@field LabelFontSize number? Text size for a Label display's fontstrings (default 20).
 ---@field LabelFontFlags string? Font flags ("OUTLINE" etc.) for a Label display's fontstrings.
+---Bar displays only; inert on an icon display.
+---@field BarWidth number? Width of each bar in pixels (default 100). The bar's height is the
+---display's size, so one setter covers both shapes.
+---@field BarTexture string? Bar fill texture name, resolved through Core/Display/BarTextures.
+---@field SpellName boolean? Show the engine-written aura name inside the fill (default on).
 ---@field Populated boolean?
 
 ---@class AuraDisplayGroupSpec
@@ -1349,6 +1666,10 @@ end
 ---@field Label string? Render every button as this text and nothing else - no icon, cooldown or
 ---chrome. The engine shows the button while a matching aura is present, so the text works as a
 ---presence-driven warning label with no aura reads. Styled via Style.LabelFontSize/Flags.
+---@field Bar boolean? Render every button as a status bar the engine drains (icon, spell name and
+---countdown inside the fill) instead of a square icon. Decided at creation like Label, so a
+---display can never switch: pool the two shapes separately. Falls back to icons on a client
+---without SetDurationBar.
 ---@field Pandemic boolean? Create and register a refresh-window region on every button. Must be
 ---decided at creation (regions can only be added in initializeFrame); the Style.Pandemic toggle
 ---then shows or hides the reveal per restyle.
@@ -1372,3 +1693,4 @@ end
 ---@field IconMask table?
 ---@field Minimal boolean
 ---@field Label string?
+---@field Bar boolean

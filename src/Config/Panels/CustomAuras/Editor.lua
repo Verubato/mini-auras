@@ -15,7 +15,7 @@ local HEADER_ROW_HEIGHT = ui.TileSize + 4
 
 ---Builds the editor for whichever group is selected. Every control reads ui.Current(), so a
 ---selection change is a refresh rather than a rebuild. The header identifies the group and
----stays put; the rest belongs to one of four tabs, each built by its own file in this folder.
+---stays put; the rest belongs to one of five tabs, each built by its own file in this folder.
 ---@param editor table
 function ui.BuildEditor(editor)
 	---Row chains, keyed by the frame they stack on.
@@ -99,6 +99,7 @@ function ui.BuildEditor(editor)
 			{ Key = "trigger", Title = L["Trigger"] },
 			{ Key = "filters", Title = L["Filters"] },
 			{ Key = "appearance", Title = L["Appearance"] },
+			{ Key = "layout", Title = L["Layout"] },
 			{ Key = "sounds", Title = L["Sounds"] },
 		},
 		OnSelect = function(key)
@@ -134,12 +135,14 @@ function ui.BuildEditor(editor)
 	local triggerPanel = CreateTabPanel()
 	local filtersPanel = CreateTabPanel()
 	local appearancePanel = CreateTabPanel()
+	local layoutPanel = CreateTabPanel()
 	local soundsPanel = CreateTabPanel()
 
 	local panels = {
 		trigger = triggerPanel,
 		filters = filtersPanel,
 		appearance = appearancePanel,
+		layout = layoutPanel,
 		sounds = soundsPanel,
 	}
 
@@ -348,11 +351,13 @@ function ui.BuildEditor(editor)
 		TriggerPanel = triggerPanel,
 		FiltersPanel = filtersPanel,
 		AppearancePanel = appearancePanel,
+		LayoutPanel = layoutPanel,
 		SoundsPanel = soundsPanel,
 	}
 
 	local refreshFlags = ui.BuildFiltersTab(ctx)
-	ui.BuildAppearanceTab(ctx)
+	local refreshAppearance = ui.BuildAppearanceTab(ctx)
+	local refreshLayout = ui.BuildLayoutTab(ctx)
 	ui.BuildSoundsTab(ctx)
 	local refreshTriggerState, refreshTriggerLists = ui.BuildTriggerTab(ctx, refreshFlags)
 
@@ -377,6 +382,8 @@ function ui.BuildEditor(editor)
 		end
 
 		refreshTriggerState(group)
+		refreshAppearance(group)
+		refreshLayout(group)
 
 		iconButton.Icon:SetTexture(groups:GetIcon(group))
 		enabledCheck:SetChecked(group.Enabled)
@@ -385,7 +392,7 @@ function ui.BuildEditor(editor)
 		-- Refreshing only the editor would leave everything inside a tab showing whatever it was
 		-- built with, which is the state before any group existed.
 		for _, owner in ipairs({
-			editor, triggerPanel, filtersPanel, appearancePanel, soundsPanel,
+			editor, triggerPanel, filtersPanel, appearancePanel, layoutPanel, soundsPanel,
 		}) do
 			if owner.MiniRefresh then
 				owner:MiniRefresh()
@@ -407,4 +414,5 @@ end
 ---@field TriggerPanel table
 ---@field FiltersPanel table
 ---@field AppearancePanel table
+---@field LayoutPanel table
 ---@field SoundsPanel table

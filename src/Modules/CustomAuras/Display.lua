@@ -4,6 +4,7 @@ local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
 local growAnchors = addon.Core.GrowAnchors
 local iconSlotContainer = addon.Core.IconSlotContainer
+local barSlotContainer = addon.Core.BarSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local testSpellData = addon.Core.TestSpells
 local moduleUtil = addon.Utils.ModuleUtil
@@ -15,7 +16,8 @@ local groups = addon.Modules.CustomAuras.Groups
 local sound = addon.Modules.CustomAuras.Sound
 
 -- One AuraContainer per group, or per group per visible nameplate, unit frame or arena enemy
--- frame. Preview icons go through an IconSlotContainer so they need no aura data.
+-- frame. Preview stand-ins go through an IconSlotContainer or a BarSlotContainer, whichever shape
+-- the group draws, so they need no aura data.
 --
 -- Every container carries BOTH a helpful and a harmful group, only one ever budgeted above zero.
 -- The engine drops a spell-id filter silently on the wrong-sided one, and the bare token left
@@ -71,10 +73,12 @@ local dragContext = {}
 -- page can update the inputs showing the same numbers.
 ---@type fun(groupId: string)[]
 local positionChangedCallbacks = {}
--- One pool for every display, screen or nameplate. Aura containers can never be destroyed, so a
--- deleted group hands its frames back. Built below, once its create and reset functions exist.
----@type Pool
-local displayPool
+-- One pool per display shape, each covering every anchor. Aura containers can never be destroyed,
+-- so a deleted group hands its frames back; and a button's shape is baked in when it is created,
+-- so an icon display can never be handed to a group drawing bars. Built below, once the create and
+-- reset functions exist.
+---@type table<string, Pool>
+local displayPools
 
 ---@class CustomAurasDisplay
 local M = {}
@@ -88,10 +92,15 @@ local function BuildStyle(group)
 	local style = auraContainerDisplay:BuildStandardStyle(icons)
 
 	style.Border = icons.Border
+	-- The same colour drives the glow, the border and a bar's fill, so one swatch covers a group
+	-- whichever shape it draws.
 	style.GlowColor = moduleUtil:GetIconColorRGB(icons)
 	style.ShowTooltips = icons.ShowTooltips
 	style.Pandemic = icons.Pandemic
 	style.PandemicColor = moduleUtil:GetColorRGB(icons.PandemicColor)
+	style.BarWidth = icons.BarWidth
+	style.BarTexture = icons.BarTexture
+	style.SpellName = icons.SpellName
 	-- Always on: a stack count is only ever drawn when there is one to draw, so there is
 	-- nothing to turn off and nothing to explain in the options.
 	style.Stacks = true
@@ -102,7 +111,8 @@ end
 ---@param group CustomAuraGroup
 ---@return string
 local function StyleSignature(group)
-	return auraContainerDisplay:GetStyleSignature(BuildStyle(group), group.Icons.Size, group.Icons.Spacing)
+	return auraContainerDisplay:GetStyleSignature(BuildStyle(group), groups:GetSize(group),
+		group.Icons.Spacing)
 end
 
 ---Both groups are created at the largest budget a group can ask for, not at zero. Containers
@@ -113,9 +123,11 @@ end
 ---The style is the acquiring group's, because a button's look is baked in here and a restyle
 ---is refused for as long as auras are secret. A pooled entry handed to a DIFFERENT group later
 ---still needs one, so this makes an entry's first use right rather than every use.
+---@param shape string A groups.DisplayStyle value, baked into every button here.
 ---@param style AuraDisplayStyle?
 ---@return CustomAuraDisplayEntry
-local function CreateEntry(style)
+local function CreateEntry(shape, style)
+	local bars = shape == groups.DisplayStyle.Bars
 	local display = auraContainerDisplay:New(UIParent, NO_UNIT, {
 		{
 			Key = HELPFUL_KEY,
@@ -131,9 +143,9 @@ local function CreateEntry(style)
 		},
 		-- Every pooled entry carries pandemic regions: they can only be created with the buttons,
 		-- and any group the pool later hands this entry to may have the reveal turned on.
-	}, DEFAULT_SIZE, DEFAULT_SPACING, MODULE_TAG, { Style = style, Pandemic = true })
+	}, DEFAULT_SIZE, DEFAULT_SPACING, MODULE_TAG, { Style = style, Pandemic = true, Bar = bars })
 
-	return { Display = display }
+	return { Display = display, Shape = shape }
 end
 
 ---@param entry CustomAuraDisplayEntry
@@ -142,6 +154,9 @@ local function ParkDisplay(entry)
 	entry.Display:Hide()
 	entry.Display:SetMaxIcons(HELPFUL_KEY, 0)
 	entry.Display:SetMaxIcons(HARMFUL_KEY, 0)
+	-- Pointed at nobody as well as disabled, so a parked display can never be mistaken for the
+	-- live one on that unit, here or by anything reading our frames.
+	entry.Display:SetUnit(NO_UNIT)
 	entry.Display.Frame:ClearAllPoints()
 	entry.Display.Frame:SetParent(UIParent)
 
@@ -161,7 +176,45 @@ local function ParkDisplay(entry)
 	end
 end
 
-displayPool = pool:New(CreateEntry, ParkDisplay, 0)
+-- A closure per shape rather than one pool taking it as an argument: Prewarm builds entries with
+-- no arguments at all, so a shape passed through Acquire would only reach the on-demand path and
+-- every pre-built bar entry would come out as icons.
+displayPools = {
+	[groups.DisplayStyle.Icons] = pool:New(function(style)
+		return CreateEntry(groups.DisplayStyle.Icons, style)
+	end, ParkDisplay, 0),
+	[groups.DisplayStyle.Bars] = pool:New(function(style)
+		return CreateEntry(groups.DisplayStyle.Bars, style)
+	end, ParkDisplay, 0),
+}
+
+---@param state CustomAuraGroupState
+---@return CustomAuraDisplayEntry
+local function AcquireEntry(state)
+	local group = state.Group
+	local shape = groups:DrawsBars(group) and groups.DisplayStyle.Bars or groups.DisplayStyle.Icons
+
+	return displayPools[shape]:Acquire(BuildStyle(group))
+end
+
+---Hands an entry back to the pool that built it. Always go through this: releasing a bar display
+---into the icon pool would hand it to a group that then draws bars it never asked for, and no
+---restyle can undo it.
+---@param entry CustomAuraDisplayEntry
+local function ReleaseEntry(entry)
+	displayPools[entry.Shape or groups.DisplayStyle.Icons]:Release(entry)
+end
+
+---Pre-builds displays of the shape a group needs. Containers are expensive and cannot be made
+---mid-combat without a hitch, so a group that will want one per nameplate says so up front.
+---@param state CustomAuraGroupState
+---@param count number
+local function PrewarmFor(state, count)
+	local shape = groups:DrawsBars(state.Group) and groups.DisplayStyle.Bars
+		or groups.DisplayStyle.Icons
+
+	displayPools[shape]:Prewarm(count)
+end
 
 ---True while the icons are stand-ins: test mode covers every group, the options page one.
 ---@param state CustomAuraGroupState
@@ -181,7 +234,7 @@ local function ConfigureDisplay(state, entry, unit)
 	local signature = state.StyleSignature
 
 	if entry.StyleSignature ~= signature then
-		display:ApplyConfig(group.Icons.Size, group.Icons.Spacing, BuildStyle(group))
+		display:ApplyConfig(groups:GetSize(group), group.Icons.Spacing, BuildStyle(group))
 		entry.StyleSignature = signature
 	end
 
@@ -227,18 +280,53 @@ local function PreviewCount(group)
 	return math.max(1, math.min(#group.Spells, groups.PreviewIcons))
 end
 
+---A stand-in's footprint: bars are as wide as the group asks and as tall as its size, icons are
+---square.
+---@param group CustomAuraGroup
+---@return number width
+---@return number height
+local function PreviewSize(group)
+	local size = groups:GetSize(group)
+
+	if groups:DrawsBars(group) then
+		return math.max(size, group.Icons.BarWidth), size
+	end
+
+	return size, size
+end
+
+---The stand-in container for one copy, matching the shape the live display draws. Built on first
+---use and kept: an entry only ever comes from the pool of its own shape, so the container it grew
+---is always the right one for whoever holds it next.
 ---@param state CustomAuraGroupState
 ---@param entry CustomAuraDisplayEntry
----@return IconSlotContainer
+---@return IconSlotContainer|BarSlotContainer
 local function EnsureTestContainer(state, entry, parent)
 	local group = state.Group
+	local width, height = PreviewSize(group)
+
+	if groups:DrawsBars(group) then
+		if not entry.Test then
+			entry.Test = barSlotContainer:New(
+				parent, groups.PreviewIcons, width, height, group.Icons.Spacing, MODULE_TAG)
+		end
+
+		-- Entries come from a shared pool, so the parent is routinely somebody else's.
+		entry.Test.Frame:SetParent(parent)
+		entry.Test:SetBarSize(width, height)
+		entry.Test:SetSpacing(group.Icons.Spacing)
+		entry.Test:SetGrow(group.Grow)
+		entry.Test:SetCount(PreviewCount(group))
+
+		return entry.Test
+	end
 
 	if not entry.Test then
 		-- No Masque group name: see MODULE_TAG.
 		entry.Test = iconSlotContainer:New(
 			parent,
 			groups.PreviewIcons,
-			group.Icons.Size,
+			height,
 			group.Icons.Spacing,
 			nil,
 			nil,
@@ -246,17 +334,16 @@ local function EnsureTestContainer(state, entry, parent)
 		)
 	end
 
-	-- Entries come from a shared pool, so the parent is routinely somebody else's.
 	entry.Test.Frame:SetParent(parent)
-	entry.Test:SetIconSize(group.Icons.Size)
+	entry.Test:SetIconSize(height)
 	entry.Test:SetSpacing(group.Icons.Spacing)
 	entry.Test:SetCount(PreviewCount(group))
 
 	return entry.Test
 end
 
----One fake icon per tracked spell, so a group can be positioned without waiting for the aura.
----A group tracking by filter names no spells, so it borrows its own grid icon for every slot:
+---One fake icon or bar per tracked spell, so a group can be positioned without waiting for the
+---aura. A group tracking by filter names no spells, so it borrows its own grid icon for every slot:
 ---the point of the preview is the geometry, and an empty one could not be dragged.
 ---@param state CustomAuraGroupState
 ---@param entry CustomAuraDisplayEntry
@@ -264,6 +351,7 @@ local function RenderTestIcons(state, entry)
 	local group = state.Group
 	local container = entry.Test
 	local color = moduleUtil:GetIconColor(group.Icons)
+	local barTexture = group.Icons.BarTexture
 	local nextSlot
 
 	if groups:TracksSpells(group) then
@@ -273,6 +361,7 @@ local function RenderTestIcons(state, entry)
 			Color = color,
 			FontScale = db.FontScale,
 			ShowTooltips = group.Icons.ShowTooltips,
+			BarTexture = barTexture,
 		})
 	else
 		local texture = groups:GetIcon(group)
@@ -287,6 +376,9 @@ local function RenderTestIcons(state, entry)
 				Glow = group.Icons.Glow,
 				Color = color,
 				FontScale = db.FontScale,
+				-- A filter group has no spell to name, so the group's own name stands in.
+				Name = group.Name,
+				BarTexture = barTexture,
 			})
 		end
 
@@ -301,16 +393,18 @@ end
 ---@param state CustomAuraGroupState
 local function UpdateAnchorSize(state)
 	local group = state.Group
-	local size = group.Icons.Size
+	local width, height = PreviewSize(group)
 	-- Sized to the stand-ins, not the icon cap: the anchor is something to grab while placing
 	-- the group, and one forty icons wide would cover the screen.
 	local count = PreviewCount(group)
-	local span = math.max(MIN_ANCHOR_SIZE, count * size + (count - 1) * group.Icons.Spacing)
+	local spacing = group.Icons.Spacing
 
 	if group.Grow == "UP" or group.Grow == "DOWN" then
-		state.Anchor:SetSize(size, span)
+		state.Anchor:SetSize(math.max(MIN_ANCHOR_SIZE, width),
+			math.max(MIN_ANCHOR_SIZE, count * height + (count - 1) * spacing))
 	else
-		state.Anchor:SetSize(span, size)
+		state.Anchor:SetSize(math.max(MIN_ANCHOR_SIZE, count * width + (count - 1) * spacing),
+			math.max(MIN_ANCHOR_SIZE, height))
 	end
 end
 
@@ -422,7 +516,7 @@ end
 ---@return CustomAuraDisplayEntry
 local function EnsureScreenEntry(state)
 	if not state.Screen then
-		state.Screen = displayPool:Acquire(BuildStyle(state.Group))
+		state.Screen = AcquireEntry(state)
 	end
 
 	return state.Screen
@@ -431,7 +525,7 @@ end
 ---@param state CustomAuraGroupState
 local function ReleaseScreen(state)
 	if state.Screen then
-		displayPool:Release(state.Screen)
+		ReleaseEntry(state.Screen)
 		state.Screen = nil
 	end
 
@@ -443,7 +537,7 @@ end
 ---@param state CustomAuraGroupState
 local function ReleasePlates(state)
 	for token, entry in pairs(state.Plates) do
-		displayPool:Release(entry)
+		ReleaseEntry(entry)
 		state.Plates[token] = nil
 	end
 end
@@ -454,7 +548,7 @@ local function ReleaseFrameEntry(state, anchor)
 	local entry = state.Frames[anchor]
 
 	if entry then
-		displayPool:Release(entry)
+		ReleaseEntry(entry)
 		state.Frames[anchor] = nil
 	end
 end
@@ -462,7 +556,7 @@ end
 ---@param state CustomAuraGroupState
 local function ReleaseFrames(state)
 	for anchor, entry in pairs(state.Frames) do
-		displayPool:Release(entry)
+		ReleaseEntry(entry)
 		state.Frames[anchor] = nil
 	end
 end
@@ -470,7 +564,7 @@ end
 ---@param state CustomAuraGroupState
 local function ReleaseArena(state)
 	for index, entry in pairs(state.Arena) do
-		displayPool:Release(entry)
+		ReleaseEntry(entry)
 		state.Arena[index] = nil
 	end
 end
@@ -496,6 +590,17 @@ local function EnsureState(groupDef)
 	-- An import or profile switch replaces the table wholesale, so re-point at the live one.
 	state.Group = groupDef
 	state.StyleSignature = StyleSignature(groupDef)
+
+	local shape = groups:DrawsBars(groupDef) and groups.DisplayStyle.Bars
+		or groups.DisplayStyle.Icons
+
+	-- Switching between icons and bars is the one appearance change a restyle cannot make: a
+	-- button's shape is baked in when it is created. Hand every copy back (each to the pool that
+	-- built it) and let the refresh below take fresh ones of the new shape.
+	if state.Shape ~= shape then
+		state.Shape = shape
+		Park(state)
+	end
 
 	local filterSignature = groups:GetFilterSignature(groupDef)
 
@@ -612,7 +717,7 @@ local function RefreshPlateGroup(state, token)
 		local existing = state.Plates[token]
 
 		if existing then
-			displayPool:Release(existing)
+			ReleaseEntry(existing)
 			state.Plates[token] = nil
 		end
 
@@ -622,7 +727,7 @@ local function RefreshPlateGroup(state, token)
 	local entry = state.Plates[token]
 
 	if not entry then
-		entry = displayPool:Acquire(BuildStyle(state.Group))
+		entry = AcquireEntry(state)
 		state.Plates[token] = entry
 	end
 
@@ -662,7 +767,7 @@ local function RefreshFrameGroup(state, anchor, unit)
 	local entry = state.Frames[anchor]
 
 	if not entry then
-		entry = displayPool:Acquire(BuildStyle(state.Group))
+		entry = AcquireEntry(state)
 		state.Frames[anchor] = entry
 	end
 
@@ -716,7 +821,7 @@ local function RefreshArenaGroup(state, index)
 		local existing = state.Arena[index]
 
 		if existing then
-			displayPool:Release(existing)
+			ReleaseEntry(existing)
 			state.Arena[index] = nil
 		end
 
@@ -726,7 +831,7 @@ local function RefreshArenaGroup(state, index)
 	local entry = state.Arena[index]
 
 	if not entry then
-		entry = displayPool:Acquire(BuildStyle(state.Group))
+		entry = AcquireEntry(state)
 		state.Arena[index] = entry
 	end
 
@@ -941,7 +1046,7 @@ function M:Refresh(options, moduleEnabled)
 			ReleaseScreen(state)
 			ReleasePlates(state)
 			ReleaseArena(state)
-			displayPool:Prewarm(PLATE_PREALLOCATE)
+			PrewarmFor(state, PLATE_PREALLOCATE)
 			wipe(seenAnchors)
 
 			-- The stand-ins join the anchor walk only while they are actually up, so a copy is
@@ -980,7 +1085,7 @@ function M:Refresh(options, moduleEnabled)
 			ReleaseScreen(state)
 			ReleaseFrames(state)
 			ReleaseArena(state)
-			displayPool:Prewarm(PLATE_PREALLOCATE)
+			PrewarmFor(state, PLATE_PREALLOCATE)
 
 			for token in pairs(state.Plates) do
 				RefreshPlateGroup(state, token)
@@ -1056,7 +1161,7 @@ function M:OnNamePlateRemoved(token)
 		local entry = state.Plates[token]
 
 		if entry then
-			displayPool:Release(entry)
+			ReleaseEntry(entry)
 			state.Plates[token] = nil
 		end
 	end
@@ -1136,7 +1241,8 @@ end
 
 ---@class CustomAuraDisplayEntry
 ---@field Display AuraContainerDisplay
----@field Test IconSlotContainer?
+---@field Shape string Which pool built this entry, and therefore the shape of its buttons.
+---@field Test IconSlotContainer|BarSlotContainer|nil
 ---@field Handle table? Offset drag handle, created on first use in test mode.
 ---@field Unit string? The unit a unit frame or arena frame copy resolved to, for the sounds.
 ---@field StyleSignature string?
@@ -1150,6 +1256,7 @@ end
 ---@field SortDirection number
 ---@field FilterSignature string
 ---@field StyleSignature string
+---@field Shape string The display shape its copies were taken from the pool for.
 ---@field Allowed boolean Whether the group may show live auras right now.
 ---@field Anchor table? Screen anchor frame.
 ---@field Screen CustomAuraDisplayEntry?

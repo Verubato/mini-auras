@@ -1847,6 +1847,96 @@ fw.describe("CustomAuras - profile switching", function()
 	end)
 end)
 
+fw.describe("CustomAuras - bars", function()
+	fw.it("builds bar buttons for a group that asks for them", function()
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Icons = { Display = "BAR" } })
+		module:Refresh()
+
+		local container = ContainerFor("player")
+		local button = container._groups.helpful.buttons[1]
+
+		assert(button._calls.SetDurationBar == 1, "the fill is registered with the engine")
+		assert(button._calls.SetSpellName == 1, "and so is the name")
+	end)
+
+	fw.it("keeps the two shapes in separate pools", function()
+		-- A button's shape is baked in when it is created, so handing a bar group a display that
+		-- was built for icons would leave it drawing icons for the rest of the session.
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		local iconContainer = ContainerFor("player")
+
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Icons = { Display = "BAR" } })
+		module:Refresh()
+
+		local barContainer = ContainerFor("player")
+
+		assert(barContainer ~= iconContainer, "the parked icon display is not reused for bars")
+		assert(barContainer._groups.helpful.buttons[1]._calls.SetDurationBar == 1, "it draws bars")
+	end)
+
+	fw.it("swaps the display when a group switches shape", function()
+		ClearGroups()
+
+		local group = AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+
+		module:Refresh()
+
+		local before = ContainerFor("player")
+
+		group.Icons.Display = "BAR"
+		module:Refresh()
+
+		local after = ContainerFor("player")
+
+		assert(after ~= before, "the icon display is handed back rather than restyled")
+		assert(after._groups.helpful.buttons[1]._calls.SetDurationBar == 1, "and bars take over")
+		assert(Budget(after, "helpful") == groups.MaxIcons, "the new display tracks straight away")
+	end)
+
+	fw.it("normalises the bar settings a group did not set", function()
+		local group = groups:Normalise({ Icons = { Display = "BAR" } })
+
+		assert(group.Icons.BarWidth > 0 and group.Icons.BarHeight > 0, "a width and a height")
+		assert(type(group.Icons.BarTexture) == "string" and group.Icons.BarTexture ~= "", "a texture")
+		assert(group.Icons.SpellName, "the name is on unless it is turned off")
+
+		local clamped = groups:Normalise({
+			Icons = { Display = "BAR", BarWidth = 5000, BarHeight = 5000 },
+		})
+
+		assert(clamped.Icons.BarWidth == groups.MaxBarWidth, "an absurd width is clamped")
+		assert(clamped.Icons.BarHeight == groups.MaxBarHeight, "and so is the height")
+	end)
+
+	fw.it("builds a bar display at the bar height, not the icon size", function()
+		-- The two are separate settings with separate ranges: a bar wants a row of text, an icon
+		-- wants a square, and one number could not sensibly clamp for both.
+		ClearGroups()
+		AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = "BAR", Size = 40, BarHeight = 18, BarWidth = 140 },
+		})
+		module:Refresh()
+
+		local button = ContainerFor("player")._groups.helpful.buttons[1]
+
+		assert(button:GetHeight() == 18, "the bar height sizes the button")
+		assert(button:GetWidth() == 140, "and the bar width")
+	end)
+
+	fw.it("leaves a group saved before bars existed drawing icons", function()
+		local group = groups:Normalise({ Icons = { Size = 30 } })
+
+		assert(group.Icons.Display == groups.DisplayStyle.Icons, "no field means icons")
+	end)
+end)
+
 fw.describe("CustomAuras - module gating", function()
 	fw.it("tears everything down once the last group is gone", function()
 		ClearGroups()

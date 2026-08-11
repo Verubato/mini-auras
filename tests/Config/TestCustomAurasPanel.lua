@@ -612,6 +612,19 @@ fw.describe("Custom auras page - with a group configured", function()
 		ShowPage(addon)
 	end)
 
+	fw.it("lays out both display shapes", function()
+		-- The appearance tab collapses and reinstates a row per shape, so the page has to be
+		-- measurable either way round.
+		local addon, group = LoadWithGroup({ 45438 })
+		local groups = addon.Modules.CustomAuras.Groups
+
+		for _, shape in ipairs({ groups.DisplayStyle.Bars, groups.DisplayStyle.Icons }) do
+			group.Icons.Display = shape
+			groups:Normalise(group)
+			ShowPage(addon)
+		end
+	end)
+
 	fw.it("survives every unit the dropdown offers", function()
 		local addon, group = LoadWithGroup({ 45438 })
 		local groups = addon.Modules.CustomAuras.Groups

@@ -19,6 +19,8 @@ local M = {}
 
 M.restricted = false
 M.batchSize = 10
+-- Button methods to leave off, for the display's older-build fallbacks. Cleared by M.reset.
+M.missingButtonMethods = {}
 
 local FORBIDDEN_ERROR = "Attempt to access forbidden object from code tainted by an AddOn"
 
@@ -131,7 +133,7 @@ local function NewRegion(parent, regionType)
 		"SetSpriteSheetCell",
 		"SetText", "SetFont", "SetTextColor", "SetShadowColor", "SetShadowOffset",
 		"SetJustifyH", "SetDrawLayer", "SetColorTexture", "SetSize", "SetWordWrap",
-		"SetAlpha",
+		"SetAlpha", "SetWidth", "SetHeight",
 	}) do
 		record(name)
 	end
@@ -403,8 +405,11 @@ function M.NewFrame(frameType, name, parent, template)
 		function frame:SetStatusBarTexture(texture)
 			frame._statusBarTexture = texture
 		end
-		function frame:SetStatusBarColor(r, g, b)
-			frame._color = { r, g, b }
+		function frame:SetStatusBarColor(r, g, b, a)
+			frame._color = { r, g, b, a }
+		end
+		function frame:SetReverseFill(reverse)
+			frame._reverseFill = reverse and true or false
 		end
 		function frame:SetMinMaxValues(min, max)
 			frame._minValue, frame._maxValue = min, max
@@ -453,10 +458,14 @@ local function NewAuraButton(container, groupKey)
 		"SetIcon", "SetDurationCooldown", "SetApplicationCount", "SetSpellName",
 		"AddDispelTypeTexture", "ClearDispelTypeTextures", "SetDispelTypeText",
 		"SetTooltipAnchorPoint", "SetHideTooltipInCombat", "SetCancelAuraButtons",
-		"SetDurationText", "AddPandemicRegion",
+		"SetDurationText", "AddPandemicRegion", "SetDurationBar", "SetApplicationBar",
 	}) do
-		button[methodName] = function(_, ...)
-			button._calls[methodName] = (button._calls[methodName] or 0) + 1
+		-- Setting a name to false in M.missingButtonMethods models an older build that never had
+		-- it, which is what the display's feature fallbacks are written against.
+		if M.missingButtonMethods[methodName] ~= true then
+			button[methodName] = function(_, ...)
+				button._calls[methodName] = (button._calls[methodName] or 0) + 1
+			end
 		end
 	end
 
@@ -620,6 +629,7 @@ end
 
 function M.reset()
 	M.restricted = false
+	M.missingButtonMethods = {}
 	tickers = {}
 	timers = {}
 	M.frames = {}
@@ -767,6 +777,8 @@ function M.loadDisplay()
 		"src/Core/Auras/AuraCategoryIds.lua",
 		"src/Core/Auras/AuraFilters.lua",
 		"src/Core/Kicks/KickSlot.lua",
+		-- Must precede AuraContainerDisplay: bar buttons resolve their fill through the catalog.
+		"src/Core/Display/BarTextures.lua",
 		"src/Core/Auras/AuraContainerDisplay.lua",
 	}) do
 		assert(loadfile(path))("MiniAuras", addon)

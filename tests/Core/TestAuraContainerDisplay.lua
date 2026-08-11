@@ -318,15 +318,16 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		local instance = newInstance()
 		instance:SetStyle({ Glow = false })
 		local widgets = select(2, next(instance.ButtonWidgets))
-		assert(widgets.Border._shown == false, "no border by default")
+		local border = widgets.BorderTextures[1]
+		assert(border._shown == false, "no border by default")
 
 		instance:SetStyle({ Border = true, GlowColor = { 1, 0, 0 } })
-		assert(widgets.Border._shown, "shown once asked for")
-		local color = widgets.Border._lastArgs.SetVertexColor
+		assert(border._shown, "shown once asked for")
+		local color = border._lastArgs.SetVertexColor
 		assert(color[1] == 1 and color[2] == 0 and color[3] == 0, "tinted with the style colour")
 
 		instance:SetStyle({ Border = false })
-		assert(widgets.Border._shown == false, "and hidden again")
+		assert(border._shown == false, "and hidden again")
 	end)
 
 	fw.it("tints each group's glow with its own category colour", function()
@@ -742,7 +743,7 @@ fw.describe("AuraContainerDisplay - per-display button options", function()
 		local instance = newOptionInstance({ Minimal = true })
 		local widgets = select(2, next(instance.ButtonWidgets))
 
-		assert(widgets.Border == nil and widgets.Glow == nil, "no border/glow widgets created")
+		assert(widgets.BorderTextures == nil and widgets.Glow == nil, "no border/glow widgets created")
 		-- Styling must not assume they exist.
 		local ok, err = pcall(function()
 			instance:SetStyle({ ColorByDispelType = true, Glow = true })
@@ -764,7 +765,7 @@ fw.describe("AuraContainerDisplay - per-display button options", function()
 	fw.it("a plain display still builds the border and glow", function()
 		local instance = newOptionInstance()
 		local widgets = select(2, next(instance.ButtonWidgets))
-		assert(widgets.Border and widgets.Glow, "default displays keep the full chrome")
+		assert(widgets.BorderTextures and widgets.Glow, "default displays keep the full chrome")
 	end)
 
 	fw.it("Pandemic registers a refresh-window region on every button", function()
@@ -773,19 +774,26 @@ fw.describe("AuraContainerDisplay - per-display button options", function()
 		local widgets = instance.ButtonWidgets[button]
 
 		assert(button._calls.AddPandemicRegion == 1, "one region registered per button")
-		assert(widgets.Pandemic and widgets.Pandemic.Ring, "the holder carries the ring texture")
-		-- Off by default: the engine decides when the holder shows, but the ring only draws for
-		-- a group that turned the reveal on.
-		assert(widgets.Pandemic.Ring._lastArgs.SetAlpha[1] == 0, "ring starts hidden")
+		assert(widgets.Pandemic and widgets.Pandemic.Textures[1], "the holder carries the ring texture")
+		local ring = widgets.Pandemic.Textures[1]
+		-- Off by default: the engine decides when the HOLDER shows, but the ring only draws for a
+		-- group that turned the reveal on. Hidden, not just transparent - alpha alone left an amber
+		-- ring on every icon of every group that had the reveal switched off.
+		assert(ring._shown == false, "ring starts hidden")
+		assert(ring._lastArgs.SetAlpha[1] == 0, "and transparent with it")
 
 		instance:SetStyle({ Pandemic = true })
-		assert(widgets.Pandemic.Ring._lastArgs.SetAlpha[1] == 1, "the style toggle reveals the ring")
+		assert(ring._shown, "the style toggle reveals the ring")
+		assert(ring._lastArgs.SetAlpha[1] == 1, "at full alpha")
 
-		local tint = widgets.Pandemic.Ring._lastArgs.SetVertexColor
+		instance:SetStyle({ Pandemic = false })
+		assert(ring._shown == false, "and puts it away again")
+
+		local tint = ring._lastArgs.SetVertexColor
 		assert(tint[1] == 1 and tint[2] == 0.6 and tint[3] == 0.1, "unset colour keeps the amber")
 
 		instance:SetStyle({ Pandemic = true, PandemicColor = { 0.2, 0.4, 0.8 } })
-		tint = widgets.Pandemic.Ring._lastArgs.SetVertexColor
+		tint = ring._lastArgs.SetVertexColor
 		assert(tint[1] == 0.2 and tint[2] == 0.4 and tint[3] == 0.8, "the style colour tints the ring")
 	end)
 
@@ -1106,5 +1114,120 @@ fw.describe("AuraFilters - canonical filter strings", function()
 		instance:SetFilterString("cc", "HARMFUL|CROWD_CONTROL")
 		assert(instance.Frame._groups.cc.filterString == "CROWD_CONTROL|HARMFUL",
 			"the live setter canonicalises too")
+	end)
+end)
+
+fw.describe("AuraContainerDisplay - bar buttons", function()
+	fw.before_each(acm.reset)
+
+	local function newBarInstance(style)
+		style = style or {}
+		style.BarWidth = style.BarWidth or 180
+
+		return display:New(_G.UIParent, "target", {
+			{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 1 },
+		}, 24, 2, "Test", { Bar = true, Pandemic = true, Style = style })
+	end
+
+	fw.it("registers the fill and the name with the engine instead of a cooldown", function()
+		-- The whole point of the shape: the bar drains and the name is written by the engine, so
+		-- nothing on a bar button needs an aura read any more than an icon does.
+		local instance = newBarInstance()
+		local button = instance.Buttons[1]
+		local widgets = instance.ButtonWidgets[button]
+
+		assert(button._calls.SetDurationBar == 1, "the fill is registered once")
+		-- The engine's value grows towards expiry, so the registered fill is the SPENT part,
+		-- eating into the coloured strip from the right. Without that the bar would fill up.
+		assert(widgets.Bar._reverseFill, "the spent block grows in from the far end")
+		assert(button._calls.SetSpellName == 1, "the name is registered once")
+		assert((button._calls.SetDurationCooldown or 0) == 0, "no cooldown widget on a bar")
+		assert(widgets.Bar and widgets.Name and widgets.Icon, "the widgets are kept for restyling")
+	end)
+
+	fw.it("sizes buttons and the group layout to the bar, not to a square", function()
+		local instance = newBarInstance({ BarWidth = 180 })
+		local button = instance.Buttons[1]
+
+		assert(button:GetWidth() == 180 and button:GetHeight() == 24, "button takes width x height")
+		assert(instance.Frame._groups.cc.layout.elementWidth == 180, "the row is spaced for the width")
+		assert(instance.Frame._groups.cc.layout.elementHeight == 24, "and for the height")
+
+		instance:ApplyConfig(30, 2, { BarWidth = 260 })
+
+		assert(button:GetWidth() == 260 and button:GetHeight() == 30, "a restyle resizes both")
+		assert(instance.Frame._groups.cc.layout.elementWidth == 260, "and republishes the layout")
+	end)
+
+	fw.it("never lets a bar be narrower than it is tall", function()
+		-- The icon leads the fill and is squared to the height, so a nonsense width would leave
+		-- the fill with negative room rather than just a short bar.
+		local instance = newBarInstance({ BarWidth = 4 })
+
+		assert(instance.Buttons[1]:GetWidth() == 24, "clamped up to the height")
+	end)
+
+	fw.it("colours the remaining strip with the style colour and tints the border to match", function()
+		local instance = newBarInstance({ Border = true, GlowColor = { 1, 0, 0 } })
+		local widgets = select(2, next(instance.ButtonWidgets))
+		local color = widgets.Strip._lastArgs.SetVertexColor
+
+		assert(color[1] == 1 and color[2] == 0 and color[3] == 0, "the strip takes the group colour")
+
+		local edge = widgets.BorderTextures[1]
+		assert(edge._shown, "the border shows when asked for")
+		local edgeColor = edge._lastArgs.SetVertexColor
+		assert(edgeColor[1] == 1 and edgeColor[2] == 0, "and takes the same colour")
+	end)
+
+	fw.it("hands every border edge to the engine for dispel colouring", function()
+		-- A bar's border is four flat edges rather than one ring asset, and all four have to be
+		-- registered or the outline would be coloured on some sides only.
+		local instance = newBarInstance({ ColorByDispelType = true })
+		local button = instance.Buttons[1]
+
+		assert(button._calls.AddDispelTypeTexture == 4, "all four edges registered")
+	end)
+
+	fw.it("shows the countdown text, which is the only clock a bar has", function()
+		local instance = newBarInstance()
+		local widgets = select(2, next(instance.ButtonWidgets))
+
+		assert(widgets.DurationText, "the bound duration text exists")
+		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 1,
+			"and is visible without the millisecond or colour options being on")
+	end)
+
+	fw.it("leaves the pandemic outline hidden until the group asks for it", function()
+		-- Same rule as the icon ring: created hidden, because a bar's reveal is four edges around
+		-- the whole row and is impossible to miss when it should not be there at all.
+		local instance = newBarInstance()
+		local widgets = select(2, next(instance.ButtonWidgets))
+		local edges = widgets.Pandemic.Textures
+
+		assert(#edges == 4, "the reveal is built from four edges")
+
+		for _, edge in ipairs(edges) do
+			assert(edge._shown == false, "every edge starts hidden")
+		end
+
+		instance:SetStyle({ BarWidth = 180, Pandemic = true })
+
+		for _, edge in ipairs(edges) do
+			assert(edge._shown, "and every edge shows once the reveal is on")
+		end
+	end)
+
+	fw.it("falls back to icons on a client with no SetDurationBar", function()
+		acm.missingButtonMethods.SetDurationBar = true
+
+		local instance = newBarInstance()
+
+		assert(instance.Bar == false, "the display drops back to the icon shape")
+		assert(instance.Buttons[1]._calls.SetDurationCooldown == 1, "icon buttons are built instead")
+
+		-- Republished on the next restyle, which is when the cleared flag first reaches it.
+		instance:ApplyConfig(26, 2, { BarWidth = 180 })
+		assert(instance.Frame._groups.cc.layout.elementWidth == 26, "and the row is spaced square")
 	end)
 end)

@@ -122,7 +122,8 @@ M.KickSpecIds = {
 --- Color tints every icon; ColorByDispelType tints each with its spell's DispelColor instead;
 --- ShowTooltips attaches each spell id;
 --- Count caps how many spells are drawn (default all);
---- Stagger staggers durations and start times so the swipes visibly differ (default a flat 15s).
+--- Stagger staggers durations and start times so the swipes visibly differ (default a flat 15s);
+--- BarTexture is passed to a BarSlotContainer's fill (ignored by the icon containers).
 ---@return number nextSlot
 function M:FillContainer(container, spells, startSlot, options)
 	local now = GetTime()
@@ -161,6 +162,9 @@ function M:FillContainer(container, spells, startSlot, options)
 				Color = color,
 				FontScale = options.FontScale,
 				SpellId = options.ShowTooltips and spellId or nil,
+				-- Only a bar container draws a name; the icon containers ignore both of these.
+				Name = C_Spell.GetSpellName(spellId),
+				BarTexture = options.BarTexture,
 			})
 			slot = slot + 1
 		end

@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local spellSearch = addon.Core.SpellSearch
+local barTextures = addon.Core.BarTextures
 local units = addon.Utils.Units
 
 -- The shape of a custom aura group, shared by the display, the options page and the import path.
@@ -35,8 +36,23 @@ local NAMEPLATE = "NAMEPLATE"
 local FRAMES = "FRAMES"
 local ARENA = "ARENA"
 
+-- How a group draws its auras: square icons, or bars the engine drains (icon, spell name and
+-- countdown in one row). The choice is baked into a container's buttons at creation, so the
+-- display pools the two shapes separately rather than restyling between them.
+local AS_ICONS = "ICON"
+local AS_BARS = "BAR"
+
 local DEFAULT_ICON_SIZE = 40
 local DEFAULT_SPACING = 2
+-- Bars keep their own width and height rather than borrowing the icon size: a row of text wants a
+-- fraction of an icon's height and several times its width, so sharing one number would leave both
+-- shapes with the wrong range.
+local DEFAULT_BAR_WIDTH = 100
+local MIN_BAR_WIDTH = 40
+local MAX_BAR_WIDTH = 250
+local DEFAULT_BAR_HEIGHT = 20
+local MIN_BAR_HEIGHT = 8
+local MAX_BAR_HEIGHT = 50
 -- Where a new screen-anchored group lands, measured up from the centre of the screen.
 local DEFAULT_POSITION_Y = 220
 local MIN_ICON_SIZE = 10
@@ -171,6 +187,11 @@ M.MaxIcons = MAX_ICONS
 M.PreviewIcons = PREVIEW_ICONS
 M.MinIconSize = MIN_ICON_SIZE
 M.MaxIconSize = MAX_ICON_SIZE
+M.DisplayStyle = { Icons = AS_ICONS, Bars = AS_BARS }
+M.MinBarWidth = MIN_BAR_WIDTH
+M.MaxBarWidth = MAX_BAR_WIDTH
+M.MinBarHeight = MIN_BAR_HEIGHT
+M.MaxBarHeight = MAX_BAR_HEIGHT
 
 ---@param value any
 ---@param fallback number
@@ -321,6 +342,17 @@ function M:Normalise(group)
 	group.Icons = icons
 	icons.Size = Clamped(icons.Size, DEFAULT_ICON_SIZE, MIN_ICON_SIZE, MAX_ICON_SIZE)
 	icons.Spacing = Clamped(icons.Spacing, DEFAULT_SPACING, 0, 50)
+	-- Icons unless the group asked for bars: a group saved before bars existed has no field, and
+	-- changing what those groups look like is not something a version bump gets to do.
+	icons.Display = icons.Display == AS_BARS and AS_BARS or AS_ICONS
+	icons.BarWidth = Clamped(icons.BarWidth, DEFAULT_BAR_WIDTH, MIN_BAR_WIDTH, MAX_BAR_WIDTH)
+	icons.BarHeight = Clamped(icons.BarHeight, DEFAULT_BAR_HEIGHT, MIN_BAR_HEIGHT, MAX_BAR_HEIGHT)
+	-- A name from a media addon that is no longer installed resolves back to the default at draw
+	-- time, so it is kept rather than rewritten here.
+	icons.BarTexture = type(icons.BarTexture) == "string" and icons.BarTexture
+		or barTextures:GetDefaultName()
+	-- The name is most of why a bar is wider than an icon, so it is on unless turned off.
+	icons.SpellName = icons.SpellName ~= false
 	icons.Glow = icons.Glow == true
 	icons.Border = icons.Border == true
 	icons.Pandemic = icons.Pandemic == true
@@ -476,6 +508,21 @@ end
 ---@return boolean
 function M:TracksSpells(group)
 	return group.TrackingMode == BY_SPELLS
+end
+
+---True while a group draws bars rather than square icons.
+---@param group CustomAuraGroup
+---@return boolean
+function M:DrawsBars(group)
+	return group.Icons.Display == AS_BARS
+end
+
+---The size a group's display is built at: a bar's height, or an icon's side. Both shapes size
+---everything else (fonts, the bar's leading icon) from this one number.
+---@param group CustomAuraGroup
+---@return number
+function M:GetSize(group)
+	return M:DrawsBars(group) and group.Icons.BarHeight or group.Icons.Size
 end
 
 ---The first group member holding a role, in roster order. FriendlyUnits leads with the player,
@@ -806,7 +853,7 @@ end
 ---@field Position { Point: string, RelativePoint: string, X: number, Y: number } Screen anchor only.
 ---@field Offset { X: number, Y: number } Nameplate, unit frame and arena frame anchors only.
 ---@field Grow string
----@field Icons { Size: number, Spacing: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, ShowTooltips: boolean, Color: table }
+---@field Icons { Size: number, Spacing: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, ShowTooltips: boolean, Color: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
 ---@field Sound { Applied: string, Removed: string, Stacks: string, Channel: string } Empty means silent.
 ---@field TrackingMode string "SPELLS" narrows to a spell list, "FILTERS" to a filter string.
 ---@field Filters table<string, string> Filter component to "REQUIRE"|"FORBID". Filter mode only.
