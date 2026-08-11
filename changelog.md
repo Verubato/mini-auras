@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.3.0
+
+- Personal auras can now be shown as bars instead of icons.
+- New glows: Twins, Mirror, Twins Mirror, and Static Pixel Border.
+- Ten more spells are announced over TTS, including Tranquility, Spirit Link, Zephyr and Army of the Dead.
+- The "Healer in CC!" text works again on 12.1.
+- The pandemic reveal no longer draws on groups that have it switched off.
+- Balance Druid's Faerie Swarm counts as a disarm.
+
 ## 5.2.2
 
 - Disarms on nameplate bars and portraits working.

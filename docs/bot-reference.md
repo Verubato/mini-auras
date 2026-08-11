@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.2.2. Supported interface versions: 120100 (patch 12.1) and 120007 (patch
+Addon version 5.3.0. Supported interface versions: 120100 (patch 12.1) and 120007 (patch
 12.0.7). Author: Verz. Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 ## Names and aliases
@@ -82,7 +82,9 @@ Consequences, exhaustively:
 - Engine-side aura sounds (C_UnitAuras.AddAuraSound): this is how the healer CC sound, custom
   aura sounds, alert sounds and TTS clips fire on 12.1.
 - Glow Type choices: Rotation Assist (Clockwise), Rotation Assist (Anti-clockwise),
-  Ants (Anti-Clockwise), Slot Glow.
+  Ants (Anti-Clockwise), Twins, Mirror, Twins Mirror, Slot Glow, Static Pixel Border.
+- Custom aura groups drawn as **bars** instead of icons (the game's aura containers drive the
+  fill, and the 12.0 path has no equivalent).
 
 **Exists only on 12.0 (removed on 12.1, config tabs hidden there):**
 
@@ -186,12 +188,15 @@ hover), and a colour rule.
 One glow style for the whole addon, default **Slot Glow**.
 
 - 12.1 choices: Rotation Assist (Clockwise), Rotation Assist (Anti-clockwise),
-  Ants (Anti-Clockwise), Slot Glow. Slot Glow is static and uses the least CPU; the animated
-  ones keep animating icons that show no aura and cost CPU while idle (the 12.1 containers
-  pre-create buttons and the addon cannot gate the animation per icon). A profile saved on
-  12.0 with a 12.0-only glow type renders as Slot Glow on 12.1.
-- 12.0 choices: Proc Glow, Rotation Assist (Anti-clockwise), Pixel Glow, Autocast Shine,
-  Slot Glow. Proc Glow uses the least CPU.
+  Ants (Anti-Clockwise), Twins, Mirror, Twins Mirror, Slot Glow, Static Pixel Border. Slot Glow
+  and Static Pixel Border are static and use the least CPU; the animated ones keep animating
+  icons that show no aura and cost CPU while idle (the 12.1 containers pre-create buttons and
+  the addon cannot gate the animation per icon). A profile saved on 12.0 with a 12.0-only glow
+  type renders as Slot Glow on 12.1.
+- 12.0 choices: Proc Glow, Rotation Assist (Anti-clockwise), Pixel Glow, Autocast Shine, Twins,
+  Mirror, Twins Mirror, Slot Glow, Static Pixel Border. Proc Glow uses the least CPU.
+- Twins, Mirror and Twins Mirror keep their own colours, so the colour swatches do not tint
+  them.
 
 ### Sounds
 
@@ -200,8 +205,10 @@ CinematicHit, ElectricalSpark, Error, NewNotification09, Notification18, Notific
 Sonar, SuddenShock, WatchOut, WhooshSwing. A fifteenth, XiaYike, is offered only on Chinese
 (zhCN/zhTW) clients. All are registered with LibSharedMedia, so any sound another addon
 registers there is also selectable, and other addons can use MiniAuras's sounds. If a saved
-sound comes from a media addon that was uninstalled, it falls back to Sonar. Sound settings
-have an output channel dropdown, Master or Sound Effects (SFX), default Master.
+sound comes from a media addon that was uninstalled, it falls back to Sonar. A media addon that
+loads *after* MiniAuras is waited for instead: the aura stays silent for a second or so rather
+than firing the fallback, then registers with the right file. Sound settings have an output
+channel dropdown, Master or Sound Effects (SFX), default Master.
 
 ### Countdown text
 
@@ -219,8 +226,8 @@ have an output channel dropdown, Master or Sound Effects (SFX), default Master.
 ## Custom Auras / Personal Auras (12.1 only)
 
 Sidebar: General > Personal Auras. Page title "Custom Auras". User-built "mini weak auras":
-icons (with optional sound) for buffs on allies and debuffs on enemies. This is the flagship
-12.1 feature.
+icons or bars (with optional sound) for buffs on allies and debuffs on enemies. This is the
+flagship 12.1 feature.
 
 ### Groups
 
@@ -346,25 +353,43 @@ again.
 
 | Setting | Values / range | Default |
 |---|---|---|
-| Glow icons | on/off | off (starter groups: on) |
+| Display | Icons / Bars | Icons |
+| Bar Texture | any shipped/LibSharedMedia bar texture (bars only) | Blizzard Raid Bar |
+| Glow icons | on/off (icons only) | off (starter groups: on) |
 | Show border | on/off | off (starter groups: on) |
-| Reverse swipe | on/off | on |
+| Reverse swipe | on/off (icons only) | on |
 | Show tooltips | on/off | off |
+| Spell name | on/off (bars only) | on |
 | Pandemic | on/off | off |
-| Colour (glow/border tint) | colour swatch | white |
-| Pandemic colour | colour swatch | amber (1, 0.6, 0.1) |
-| Order | Oldest first / Longest remaining first / Shortest remaining first | Oldest first |
-| Grow | LEFT / RIGHT / CENTER / DOWN / UP | CENTER |
-| Offset X / Offset Y | typed number boxes, clamped to -2000..2000 | screen groups: 0 / 220 above centre; nameplate groups: 0 / 40 above the plate; unit frame and arena frame copies: 0 / 0 |
-| Icon Size | 10-200 | 40 |
-| Icon Padding | 0-50 | 2 |
+| Colour (glow/border tint, or the bar's fill) | colour swatch | white |
+| Pandemic colour | colour swatch | red (1, 0.1, 0.1) |
+
+**Display** decides the shape of the whole group. A **Bars** group draws a horizontal bar per
+aura: the spell icon at the left, the spell name and the countdown inside the fill, and the
+fill draining as the aura runs out. Stacks, dispel colouring and the pandemic reveal work on
+both shapes; the glow does not (the styles are drawn for a square, so the option is hidden for
+bars). The shape is baked into a display when it is built, so switching it swaps the group onto
+a different set of frames, and a switch made while the game is hiding aura data (inside an
+arena) may not show until the match ends.
 
 **Pandemic** highlights an aura during its refresh window (where re-casting adds the
 remaining time on top). The game decides the window per spell, and only your own re-castable
 effects have one.
 
-Dragging the icons on screen writes the same values the Offset X/Y boxes edit, and the boxes
-update when the drag ends.
+### Layout tab
+
+| Setting | Values / range | Default |
+|---|---|---|
+| Order | Oldest first / Longest remaining first / Shortest remaining first | Oldest first |
+| Grow | LEFT / RIGHT / CENTER / DOWN / UP | CENTER |
+| Offset X / Offset Y | typed number boxes, clamped to -2000..2000 | screen groups: 0 / 220 above centre; nameplate groups: 0 / 40 above the plate; unit frame and arena frame copies: 0 / 0 |
+| Icon Size | 10-200 (icons only) | 40 |
+| Bar Height | 8-50 (bars only) | 20 |
+| Bar Width | 40-250 (bars only) | 150 |
+| Icon Padding | 0-50 | 2 |
+
+Dragging the icons or bars on screen writes the same values the Offset X/Y boxes edit, and the
+boxes update when the drag ends.
 
 ### Sounds tab
 
@@ -377,8 +402,9 @@ so they fire even though the addon cannot read the aura.
 ### Limits
 
 - Max 100 spells per group.
-- Max 40 icons shown per group; 3 preview stand-ins while positioning.
-- Icon size 10-200, spacing 0-50, offsets typed up to +/-2000.
+- Max 40 icons or bars shown per group; 3 preview stand-ins while positioning.
+- Icon size 10-200, bar height 8-50, bar width 40-250, spacing 0-50, offsets typed up to
+  +/-2000.
 
 ---
 
