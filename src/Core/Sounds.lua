@@ -171,11 +171,14 @@ function M:Normalise(name)
 	return name
 end
 
----Resolves a saved sound name to a file path, falling back to the default whenever the name came
----from a media addon that is no longer installed.
+---The file a saved name maps to right now, or nil when nothing has registered it yet.
+---Engine-side aura sounds bake the path in at registration, so a caller doing that wants to hear
+---"not yet" rather than take the fallback: media addons register their sounds whenever they happen
+---to load, which is routinely after we have already registered, and a name that resolved to the
+---default then would keep playing the default for the rest of the session.
 ---@param name string?
----@return string
-function M:Resolve(name)
+---@return string? file
+function M:ResolveStrict(name)
 	EnsureBuiltInsRegistered()
 
 	local resolved = self:Normalise(name)
@@ -187,11 +190,16 @@ function M:Resolve(name)
 
 	local file = BuiltInFile(resolved)
 
-	if file then
-		return SOUND_LOCATION .. file
-	end
+	return file and (SOUND_LOCATION .. file) or nil
+end
 
-	return SOUND_LOCATION .. BUILT_IN[DEFAULT_NAME]
+---Resolves a saved sound name to a file path, falling back to the default whenever the name came
+---from a media addon that is no longer installed. For playing something right now, where silence
+---would read as a broken setting; registrations want ResolveStrict.
+---@param name string?
+---@return string
+function M:Resolve(name)
+	return self:ResolveStrict(name) or (SOUND_LOCATION .. BUILT_IN[DEFAULT_NAME])
 end
 
 ---@return string

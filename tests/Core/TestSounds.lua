@@ -77,3 +77,23 @@ fw.describe("Sounds - resolving a saved value", function()
             "a name nothing can resolve still plays something")
     end)
 end)
+
+fw.describe("Sounds - resolving for a registration", function()
+    fw.it("says nothing rather than falling back", function()
+        -- Engine-side aura sounds bake the path in, so a name whose media addon has not loaded yet
+        -- must not quietly become the default: that is what made every configured sound play Sonar
+        -- for the rest of the session.
+        assert(sounds:ResolveStrict("SomeUninstalledMedia") == nil,
+            "an unresolvable name is reported as missing")
+    end)
+
+    fw.it("resolves the names it can", function()
+        assert(sounds:ResolveStrict("Sonar") == SOUND_LOCATION .. "Sonar.ogg", "the bundled path")
+        assert(sounds:ResolveStrict("Sonar.ogg") == SOUND_LOCATION .. "Sonar.ogg", "a legacy value")
+    end)
+
+    fw.it("still gives the playback resolver something to play", function()
+        assert(sounds:Resolve("SomeUninstalledMedia") == SOUND_LOCATION .. "Sonar.ogg",
+            "silence would read as a broken setting when previewing")
+    end)
+end)

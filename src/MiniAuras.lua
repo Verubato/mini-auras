@@ -31,15 +31,37 @@ local modules = {
 	addon.Modules.FriendlyCooldownTrackerModule,
 	addon.Modules.EnemyCooldownTrackerModule,
 }
+-- How long a burst of media registrations is allowed to settle before re-resolving. A media pack
+-- registers one entry at a time, so this coalesces a hundred callbacks into one refresh.
+local MEDIA_REFRESH_DELAY = 1
+
 local eventsFrame
 local db
 local lastIsInRaid = false
+local mediaRefreshQueued = false
 
 -- Which instance flavour the next test session previews; the raid/default sub-tabs flip it.
 addon.CurrentTestIsRaid = false
 
 -- Chat prefix in the config UI's crimson accent (GUI.Accent) rather than the framework gold.
 mini.NotifyColor = "c7333d"
+
+-- A name from a media addon resolves to nothing until that addon has loaded, which is routinely
+-- after our first pass: engine-side aura sounds bake in the file they were registered with, and a
+-- bar keeps whichever fill it was last given. Both compare resolved paths, so one refresh once the
+-- list has grown picks up everything that was missing.
+local function QueueMediaRefresh()
+	if mediaRefreshQueued then
+		return
+	end
+
+	mediaRefreshQueued = true
+
+	C_Timer.After(MEDIA_REFRESH_DELAY, function()
+		mediaRefreshQueued = false
+		addon:Refresh()
+	end)
+end
 
 -- Migrations queue their release notes into db.WhatsNew; this shows and clears them once.
 local function NotifyChanges()
@@ -122,6 +144,8 @@ local function OnAddonLoaded()
 	end
 
 	testModeManager:Init()
+	addon.Core.Sounds:OnChanged(QueueMediaRefresh)
+	addon.Core.BarTextures:OnChanged(QueueMediaRefresh)
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)

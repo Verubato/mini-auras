@@ -5,6 +5,11 @@ local sounds = addon.Core.Sounds
 -- The engine plays the sound, because the addon is never told an aura landed. Registrations bake
 -- in the file, so any change means handing them all back; hence the signature check in Apply.
 --
+-- That signature is built from the RESOLVED path, not the saved name. A name from a media addon
+-- resolves to nothing until that addon has loaded and registered it, which routinely happens after
+-- our first pass - so the same name has to be able to produce a different signature later, or the
+-- retry would find nothing to do and the sound would stay wrong for the session.
+--
 -- They keep firing whether or not anything of ours is on screen, so a disabled group must Clear.
 
 addon.Modules.CustomAuras = addon.Modules.CustomAuras or {}
@@ -27,6 +32,10 @@ local soundHandles = {}
 local registeredSignature
 local signatureParts = {}
 local truncated = false
+-- Resolved path per request, filled at the top of Apply and read by both the signature and the
+-- registration loop, so a request is only resolved once per pass. Parallel to the requests array.
+---@type table<number, string?>
+local resolvedFiles = {}
 
 ---@class CustomAurasSound
 local M = {}
@@ -48,10 +57,12 @@ end
 local function Signature(requests)
 	wipe(signatureParts)
 
-	for _, request in ipairs(requests) do
+	for index, request in ipairs(requests) do
 		signatureParts[#signatureParts + 1] = request.Unit
 		signatureParts[#signatureParts + 1] = request.Trigger
-		signatureParts[#signatureParts + 1] = request.File
+		-- The path rather than the name, so a sound that could not be resolved on an earlier pass
+		-- re-registers once its media addon shows up.
+		signatureParts[#signatureParts + 1] = resolvedFiles[index] or "?"
 		signatureParts[#signatureParts + 1] = request.Channel
 		signatureParts[#signatureParts + 1] = table.concat(request.SpellIds, ",")
 	end
@@ -63,6 +74,12 @@ end
 ---(unit, sound) pairing over however many spell ids that group tracks.
 ---@param requests CustomAuraSoundRequest[]
 function M:Apply(requests)
+	wipe(resolvedFiles)
+
+	for index, request in ipairs(requests) do
+		resolvedFiles[index] = sounds:ResolveStrict(request.File)
+	end
+
 	local signature = Signature(requests)
 
 	if signature == registeredSignature then
@@ -73,14 +90,18 @@ function M:Apply(requests)
 
 	local info = {}
 
-	for _, request in ipairs(requests) do
+	for index, request in ipairs(requests) do
 		local trigger = TRIGGERS[request.Trigger]
+		-- Nothing has registered this name yet, so the group stays silent rather than being given
+		-- the fallback sound: a wrong noise is worse than a second of quiet, and the retry picks
+		-- it up as soon as the media addon lands.
+		local file = resolvedFiles[index]
 
 		info.unitToken = request.Unit
-		info.soundFileName = sounds:Resolve(request.File)
+		info.soundFileName = file
 		info.outputChannel = request.Channel
 
-		for _, spellId in ipairs(trigger and request.SpellIds or EMPTY) do
+		for _, spellId in ipairs(file and trigger and request.SpellIds or EMPTY) do
 			if #soundHandles >= MAX_REGISTRATIONS then
 				truncated = true
 				break

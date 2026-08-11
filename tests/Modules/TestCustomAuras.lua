@@ -1766,6 +1766,72 @@ fw.describe("CustomAuras - sounds", function()
 	end)
 end)
 
+fw.describe("CustomAuras - sounds from media addons", function()
+	-- A media addon registers its sounds whenever it happens to load, which is routinely after our
+	-- first registration pass. The engine bakes the file into the registration, so resolving to the
+	-- fallback then meant every configured sound played the default for the rest of the session.
+	local PACK_SOUND = "SomePackSound"
+	local PACK_PATH = "Interface/AddOns/SomePack/Whoosh.ogg"
+
+	---Installs a LibSharedMedia stand-in holding exactly the sounds given.
+	---@param registered table<string, string>
+	local function InstallMedia(registered)
+		_G.LibStub = function(name)
+			if name ~= "LibSharedMedia-3.0" then
+				return nil
+			end
+
+			return {
+				Register = function(_, _, key, path)
+					registered[key] = path
+				end,
+				IsValid = function(_, _, key)
+					return registered[key] ~= nil
+				end,
+				Fetch = function(_, _, key)
+					return registered[key]
+				end,
+				List = function()
+					local list = {}
+					for key in pairs(registered) do
+						list[#list + 1] = key
+					end
+					return list
+				end,
+				RegisterCallback = function() end,
+			}
+		end
+	end
+
+	fw.it("stays silent until the sound exists, then registers the real file", function()
+		ClearGroups()
+		env.auraSoundAdds = 0
+
+		local group = AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+
+		group.Sound.Applied = PACK_SOUND
+		module:Refresh()
+
+		assert(env.auraSoundAdds == 0,
+			"a sound nothing can resolve registers nothing, rather than the fallback")
+
+		-- The pack loads and registers its sounds; the next refresh must notice.
+		local registered = { [PACK_SOUND] = PACK_PATH }
+
+		InstallMedia(registered)
+		module:Refresh()
+
+		assert(env.auraSoundAdds > 0, "the registration lands once the sound is there")
+
+		local last = env.auraSounds[env.auraSoundAdds]
+
+		assert(last.File == PACK_PATH, "and carries the pack's own file, not the fallback")
+
+		_G.LibStub = nil
+		ClearGroups()
+	end)
+end)
+
 fw.describe("CustomAuras - cast recorder", function()
 	fw.it("records nothing until it is started", function()
 		recorder:Clear()
