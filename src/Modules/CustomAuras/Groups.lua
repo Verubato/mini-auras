@@ -46,7 +46,7 @@ local DEFAULT_SPACING = 2
 -- Bars keep their own width and height rather than borrowing the icon size: a row of text wants a
 -- fraction of an icon's height and several times its width, so sharing one number would leave both
 -- shapes with the wrong range.
-local DEFAULT_BAR_WIDTH = 100
+local DEFAULT_BAR_WIDTH = 150
 local MIN_BAR_WIDTH = 40
 local MAX_BAR_WIDTH = 250
 local DEFAULT_BAR_HEIGHT = 20

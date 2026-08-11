@@ -38,7 +38,7 @@ local STYLE_FIELDS = {
 -- Geometry for bar buttons, all derived from the bar's height so one size setting drives the row.
 -- The icon leads the bar and is square; the fill starts where it ends, with no gap, so the icon
 -- reads as the bar's head rather than a separate thing (same shape as the kick tracker's rows).
-local DEFAULT_BAR_WIDTH = 100
+local DEFAULT_BAR_WIDTH = 150
 local BAR_ICON_TRIM = 0.08
 local BAR_TEXT_INSET = 3
 local BAR_NAME_COEFFICIENT = 0.5
@@ -1603,7 +1603,7 @@ end
 ---@field LabelFontSize number? Text size for a Label display's fontstrings (default 20).
 ---@field LabelFontFlags string? Font flags ("OUTLINE" etc.) for a Label display's fontstrings.
 ---Bar displays only; inert on an icon display.
----@field BarWidth number? Width of each bar in pixels (default 100). The bar's height is the
+---@field BarWidth number? Width of each bar in pixels (default 150). The bar's height is the
 ---display's size, so one setter covers both shapes.
 ---@field BarTexture string? Bar fill texture name, resolved through Core/Display/BarTextures.
 ---@field SpellName boolean? Show the engine-written aura name inside the fill (default on).

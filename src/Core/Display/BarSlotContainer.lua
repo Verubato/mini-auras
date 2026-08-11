@@ -26,7 +26,7 @@ local BORDER_THICKNESS = 1
 local MILLISECONDS_THRESHOLD = 5
 -- The spent part of a bar, matching AuraContainerDisplay's live bars.
 local TRACK_COLOR = { 0.09, 0.09, 0.09 }
-local DEFAULT_WIDTH = 100
+local DEFAULT_WIDTH = 150
 local DEFAULT_HEIGHT = 20
 local DEFAULT_SPACING = 2
 -- Fill drained by the preview's own clock, so it refreshes on a timer rather than per frame.
