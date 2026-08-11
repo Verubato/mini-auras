@@ -536,7 +536,7 @@ local dbDefaults = {
 				ShowDefensives = true,
 				ShowImportant = true,
 				ShowCC = false,
-				ShowKicks = true,
+				ShowKicks = false,
 				Offset = { X = 0, Y = 0 },
 				Grow = "CENTER",
 				IconSpacing = 2,

@@ -184,7 +184,7 @@ local function UpdateWatcherAuras(entry)
 	-- Get aura states
 	local ccState = entry.Watcher:GetCcState()
 	local defensiveState = entry.Watcher:GetDefensiveState()
-	local kickEntry = options.ShowKicks ~= false and kickTracker:GetKick(entry.Unit) or nil
+	local kickEntry = options.ShowKicks and kickTracker:GetKick(entry.Unit) or nil
 
 	local ccCount = options.ShowCC and #ccState or 0
 	local defensiveCount = options.ShowDefensives and #defensiveState or 0
@@ -258,7 +258,7 @@ end
 ---@param options RaidFrameAurasInstanceOptions
 ---@return boolean
 local function IsKickActive(entry, options)
-	return options.ShowKicks ~= false and kickTracker:GetKick(entry.Unit) ~= nil
+	return options.ShowKicks and kickTracker:GetKick(entry.Unit) ~= nil
 end
 
 ---12.1 path: positions the aura display on its anchor, chaining after the kick container while
@@ -283,7 +283,7 @@ local function UpdateKickIcon(entry)
 		return
 	end
 
-	local kickEntry = options.ShowKicks ~= false and kickTracker:GetKick(entry.Unit) or nil
+	local kickEntry = options.ShowKicks and kickTracker:GetKick(entry.Unit) or nil
 
 	anchoredIcons:RenderKickIcon(entry, options, kickEntry, function()
 		entry.KickTimer = nil
@@ -478,7 +478,7 @@ local function RefreshTestIcons()
 
 	local ccCount = options.ShowCC and #testCcSpells or 0
 	local defensiveCount = options.ShowDefensives and #testDefensiveSpells or 0
-	local showKicks = options.ShowKicks ~= false
+	local showKicks = options.ShowKicks
 
 	for _, entry in ipairs(orderedEntries) do
 		local container = entry.Container

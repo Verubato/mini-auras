@@ -165,7 +165,7 @@ local function BuildInstance(panel, options)
 		LabelText = L["Show interrupts"],
 		Tooltip = L["Show an icon when a friendly unit gets interrupted."],
 		GetValue = function()
-			return options.ShowKicks ~= false
+			return options.ShowKicks
 		end,
 		SetValue = function(value)
 			options.ShowKicks = value
