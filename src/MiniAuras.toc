@@ -2,7 +2,7 @@
 ## Title: MiniAuras
 ## Notes: Shows CC and important spells on frames/nameplates/alerts in PvP.
 ## Author: Verz
-## Version: 5.3.0
+## Version: 5.4.0
 ## SavedVariables: MiniAurasDB
 ## OptionalDeps: MiniCC, ElvUI, Grid2, DandersFrames, FrameSort, Masque, TPerl, TidyPlates_ThreatPlates, VuhDo, BuzzardFrames, NDui, EllesmereUIUnitFrames
 ## IconTexture: Interface\AddOns\MiniAuras\Icon.blp

@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.4.0
+
+- Masque icon skinning works again on 12.1. Reload after changing a skin.
+- Glows and the cooldown swipe now follow the icon's edges cleanly.
+
 ## 5.3.0
 
 - Personal auras can now be shown as bars instead of icons.
