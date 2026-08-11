@@ -2,7 +2,6 @@
 local _, addon = ...
 local mini = addon.Framework
 local spellSearch = addon.Core.SpellSearch
-local barTextures = addon.Core.BarTextures
 local units = addon.Utils.Units
 
 -- The shape of a custom aura group, shared by the display, the options page and the import path.
@@ -53,6 +52,9 @@ local MAX_BAR_WIDTH = 250
 local DEFAULT_BAR_HEIGHT = 20
 local MIN_BAR_HEIGHT = 8
 local MAX_BAR_HEIGHT = 50
+-- Named rather than taken from BarTextures' own default, which is the plain Blizzard bar: this is
+-- the same fill the kick tracker's bars ship with, so the two look like one addon out of the box.
+local DEFAULT_BAR_TEXTURE = "Blizzard Raid Bar"
 -- Where a new screen-anchored group lands, measured up from the centre of the screen.
 local DEFAULT_POSITION_Y = 220
 local MIN_ICON_SIZE = 10
@@ -192,6 +194,7 @@ M.MinBarWidth = MIN_BAR_WIDTH
 M.MaxBarWidth = MAX_BAR_WIDTH
 M.MinBarHeight = MIN_BAR_HEIGHT
 M.MaxBarHeight = MAX_BAR_HEIGHT
+M.DefaultBarTexture = DEFAULT_BAR_TEXTURE
 
 ---@param value any
 ---@param fallback number
@@ -350,7 +353,7 @@ function M:Normalise(group)
 	-- A name from a media addon that is no longer installed resolves back to the default at draw
 	-- time, so it is kept rather than rewritten here.
 	icons.BarTexture = type(icons.BarTexture) == "string" and icons.BarTexture
-		or barTextures:GetDefaultName()
+		or DEFAULT_BAR_TEXTURE
 	-- The name is most of why a bar is wider than an icon, so it is on unless turned off.
 	icons.SpellName = icons.SpellName ~= false
 	icons.Glow = icons.Glow == true
@@ -365,10 +368,10 @@ function M:Normalise(group)
 	icons.Color.G = tonumber(icons.Color.G) or 1
 	icons.Color.B = tonumber(icons.Color.B) or 1
 	icons.Color.A = tonumber(icons.Color.A) or 1
-	-- Amber by default, matching the built-in ring tint.
+	-- Red by default, matching the built-in ring tint.
 	icons.PandemicColor = icons.PandemicColor or {}
 	icons.PandemicColor.R = tonumber(icons.PandemicColor.R) or 1
-	icons.PandemicColor.G = tonumber(icons.PandemicColor.G) or 0.6
+	icons.PandemicColor.G = tonumber(icons.PandemicColor.G) or 0.1
 	icons.PandemicColor.B = tonumber(icons.PandemicColor.B) or 0.1
 
 	-- An empty file name is "no sound", which the picker offers as its first entry. One file per

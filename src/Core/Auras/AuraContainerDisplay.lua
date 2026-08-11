@@ -56,7 +56,7 @@ local EMPTY_BAR_OPTIONS = {}
 
 -- Ring tint for the pandemic (refresh-window) reveal. Fixed rather than the group's colour so
 -- the cue reads the same on every display.
-local PANDEMIC_COLOR = { 1, 0.6, 0.1 }
+local PANDEMIC_COLOR = { 1, 0.1, 0.1 }
 
 -- Colour-by-time stops for the countdown text: {seconds remaining, r, g, b}. The engine
 -- evaluates the curve against the secret remaining time and writes the fontstring's colour

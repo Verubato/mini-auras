@@ -1898,11 +1898,19 @@ fw.describe("CustomAuras - bars", function()
 		assert(Budget(after, "helpful") == groups.MaxIcons, "the new display tracks straight away")
 	end)
 
+	fw.it("defaults the pandemic reveal to red", function()
+		local group = groups:Normalise({})
+		local color = group.Icons.PandemicColor
+
+		assert(color.R == 1 and color.G == 0.1 and color.B == 0.1, "red, not the old amber")
+	end)
+
 	fw.it("normalises the bar settings a group did not set", function()
 		local group = groups:Normalise({ Icons = { Display = "BAR" } })
 
 		assert(group.Icons.BarWidth > 0 and group.Icons.BarHeight > 0, "a width and a height")
-		assert(type(group.Icons.BarTexture) == "string" and group.Icons.BarTexture ~= "", "a texture")
+		assert(group.Icons.BarTexture == groups.DefaultBarTexture,
+			"the raid bar fill, matching the kick tracker's bars")
 		assert(group.Icons.SpellName, "the name is on unless it is turned off")
 
 		local clamped = groups:Normalise({

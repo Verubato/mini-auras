@@ -586,3 +586,38 @@ function M:UpgradeToVersion63(vars)
 	vars.Version = 63
 	return true
 end
+
+function M:UpgradeToVersion64(vars)
+	if vars.Version ~= 63 then return false end
+
+	-- The pandemic reveal's default tint went from amber to red, and a bar group's fill from the
+	-- plain Blizzard bar to the raid one. Only groups still carrying the exact old defaults follow:
+	-- anyone who picked those on purpose keeps them.
+	local function Recolour(modules)
+		local groups = modules and modules.CustomAurasModule and modules.CustomAurasModule.Groups
+
+		for _, group in ipairs(groups or {}) do
+			local icons = group.Icons
+			local color = icons and icons.PandemicColor
+
+			if color and color.R == 1 and color.G == 0.6 and color.B == 0.1 then
+				color.G, color.B = 0.1, 0.1
+			end
+
+			if icons and icons.BarTexture == "Blizzard" then
+				icons.BarTexture = "Blizzard Raid Bar"
+			end
+		end
+	end
+
+	Recolour(vars.Modules)
+
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			Recolour(profile.Modules)
+		end
+	end
+
+	vars.Version = 64
+	return true
+end

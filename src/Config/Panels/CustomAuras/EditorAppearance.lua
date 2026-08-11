@@ -48,7 +48,7 @@ function ui.BuildAppearanceTab(ctx)
 		Items = barTextures:GetNames(),
 		GetValue = function()
 			local group = ui.Current()
-			return group and group.Icons.BarTexture or barTextures:GetDefaultName()
+			return group and group.Icons.BarTexture or groups.DefaultBarTexture
 		end,
 		SetValue = function(value)
 			local group = ui.Current()
@@ -168,7 +168,7 @@ function ui.BuildAppearanceTab(ctx)
 		GetValue = function()
 			local group = ui.Current()
 			local color = group and group.Icons.PandemicColor or {}
-			return color.R or 1, color.G or 0.6, color.B or 0.1, 1
+			return color.R or 1, color.G or 0.1, color.B or 0.1, 1
 		end,
 		SetValue = function(r, g, b)
 			local group = ui.Current()

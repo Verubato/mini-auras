@@ -487,8 +487,8 @@ function M.build()
 	loadFile("src/Core/Auras/AuraFilters.lua")
 	loadFile("src/Core/DuelPoller.lua")
 	loadFile("src/Core/Display/IconSlotContainer.lua")
-	-- Must precede AuraContainerDisplay, BarSlotContainer and the custom aura group schema: all
-	-- three resolve the bar texture catalog at load.
+	-- Must precede AuraContainerDisplay and BarSlotContainer: both resolve bar fills through the
+	-- texture catalog.
 	loadFile("src/Core/Display/BarTextures.lua")
 	loadFile("src/Core/Display/BarSlotContainer.lua")
 	loadFile("src/Core/Kicks/KickSlot.lua")

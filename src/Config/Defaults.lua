@@ -8,7 +8,7 @@ local _, addon = ...
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 63,
+	Version = 64,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},

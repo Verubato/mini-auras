@@ -790,7 +790,7 @@ fw.describe("AuraContainerDisplay - per-display button options", function()
 		assert(ring._shown == false, "and puts it away again")
 
 		local tint = ring._lastArgs.SetVertexColor
-		assert(tint[1] == 1 and tint[2] == 0.6 and tint[3] == 0.1, "unset colour keeps the amber")
+		assert(tint[1] == 1 and tint[2] == 0.1 and tint[3] == 0.1, "unset colour keeps the built-in red")
 
 		instance:SetStyle({ Pandemic = true, PandemicColor = { 0.2, 0.4, 0.8 } })
 		tint = ring._lastArgs.SetVertexColor
