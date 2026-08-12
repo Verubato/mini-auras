@@ -44,8 +44,14 @@ local MIN_ANCHOR_SIZE = 20
 local NO_UNIT = "none"
 local DEFAULT_SIZE = 40
 local DEFAULT_SPACING = 2
--- Read-only stand-in so a pooled display always has a candidate-filter table.
-local EMPTY_FILTERS = { includeSpellIDs = {} }
+-- Read-only stand-in so a pooled display always has a candidate-filter table, holding an id
+-- nothing will ever have rather than no ids at all. An EMPTY includeSpellIDs map reads as "no
+-- ids required", so a container created with one matches every aura on its unit the moment it
+-- is shown - and THAT parse is what stays on screen until something re-arms the engine's dirty
+-- processing, which is how a group tracking one spell ended up showing forty. A display waiting
+-- for its real spell list has to show nothing, never everything.
+local NEVER_MATCHED_SPELL_ID = 2147483647
+local PLACEHOLDER_FILTERS = { includeSpellIDs = { [NEVER_MATCHED_SPELL_ID] = true } }
 -- Scratch for a bar stand-in's fill colour, refilled per slot and never retained.
 local barColorScratch = {}
 
@@ -138,13 +144,13 @@ local function CreateEntry(shape, style)
 			Key = HELPFUL_KEY,
 			FilterString = groups.AuraType.Helpful,
 			MaxIcons = groups.MaxIcons,
-			CandidateFilters = EMPTY_FILTERS,
+			CandidateFilters = PLACEHOLDER_FILTERS,
 		},
 		{
 			Key = HARMFUL_KEY,
 			FilterString = groups.AuraType.Harmful,
 			MaxIcons = groups.MaxIcons,
-			CandidateFilters = EMPTY_FILTERS,
+			CandidateFilters = PLACEHOLDER_FILTERS,
 		},
 		-- Every pooled entry carries pandemic regions: they can only be created with the buttons,
 		-- and any group the pool later hands this entry to may have the reveal turned on.
@@ -264,10 +270,18 @@ local function ConfigureDisplay(state, entry, unit)
 	display:SetUnit(unit or NO_UNIT)
 	display:SetGrow(group.Grow)
 
+	-- A spells group is only ever as good as the id map that reached the engine. If that map is
+	-- missing or empty the group is left with the bare aura type, which matches EVERY aura on the
+	-- unit - the worst possible reading of "track these three spells". Checked here rather than
+	-- trusted, so the failure shows nothing instead of everything.
+	local ids = state.Filters and state.Filters.includeSpellIDs
+	local unfiltered = groups:TracksSpells(group) and (ids == nil or next(ids) == nil)
+
 	-- False while previewing: those icons are fake, so the container behind them shows nothing.
 	-- Also false with no unit at all, or the bare aura type would match everything on whatever
 	-- the container happens to be pointed at.
-	local budget = state.Allowed and unit ~= nil and groups:CanFilterUnit(group, unit)
+	local budget = state.Allowed and not unfiltered and unit ~= nil
+		and groups:CanFilterUnit(group, unit)
 		and groups.MaxIcons or 0
 
 	display:SetMaxIcons(HELPFUL_KEY, group.AuraType == groups.AuraType.Helpful and budget or 0)

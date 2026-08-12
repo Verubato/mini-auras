@@ -2430,3 +2430,49 @@ fw.describe("CustomAuras - sound only follows the token's occupant", function()
 		env.enemies.target = nil
 	end)
 end)
+
+fw.describe("CustomAuras - a spell list that never reached the engine", function()
+	fw.it("shows nothing rather than every aura on the unit", function()
+		ClearGroups()
+
+		local group = AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+
+		module:Refresh()
+
+		local container = assert(ContainerFor("player"), "the group is on screen to begin with")
+		assert(Budget(container, "helpful") > 0, "and tracking its spell")
+
+		-- Emptied in place, so the group's own signature is unchanged and nothing rebuilds it:
+		-- this is the shape of any failure that leaves the id map from reaching the engine.
+		local state = display:GetStates()[group.Id]
+		wipe(state.Filters.includeSpellIDs)
+
+		module:Refresh()
+
+		-- Without the map the group is left with the bare HELPFUL token, which matches every
+		-- buff the player has.
+		assert(Budget(container, "helpful") == 0, "an unfiltered group is budgeted away")
+	end)
+end)
+
+fw.describe("CustomAuras - what a container is created holding", function()
+	fw.it("never hands the engine an id map that matches everything", function()
+		ClearGroups()
+
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		-- An empty includeSpellIDs reads as "no ids required", so a group created with one shows
+		-- every aura on its unit from the moment it is shown until something re-parses it. Every
+		-- group has to be born with an id map that cannot match.
+		for _, frame in ipairs(acm.frames) do
+			for key, group in pairs(frame._type == "AuraContainer" and frame._groups or {}) do
+				local ids = group.options.candidateFilters
+					and group.options.candidateFilters.includeSpellIDs
+
+				assert(ids ~= nil, key .. " was created with no id map at all")
+				assert(next(ids) ~= nil, key .. " was created with an id map matching everything")
+			end
+		end
+	end)
+end)
