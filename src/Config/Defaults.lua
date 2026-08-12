@@ -8,7 +8,7 @@ local _, addon = ...
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 64,
+	Version = 65,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -268,6 +268,12 @@ local dbDefaults = {
 					Enabled = false,
 				},
 				Defensive = {
+					Enabled = false,
+				},
+				-- Enemy cooldowns that land on your own side rather than on the caster, so they
+				-- are announced on the party instead of on a nameplate. 12.1 only, like the
+				-- voice packs themselves.
+				EnemyDebuff = {
 					Enabled = false,
 				},
 			},

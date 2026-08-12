@@ -1109,6 +1109,19 @@ addon.Core.AuraCategoryIds = {
 		[97463] = true, -- Rallying Cry
 	},
 
+	-- HAND-MAINTAINED, unlike everything above it. Enemy cooldowns that land on your side as a
+	-- debuff rather than on the caster as a buff, so no scan of the buff categories can find
+	-- them and the alert lists never cover them. Announced on the player and the party by their
+	-- own toggle; scripts/GenerateTtsAudio.py voices this list like the flagged ones.
+	--
+	-- One id per ability, not every variant the name index knows: two variants landing together
+	-- would speak the name twice.
+	EnemyDebuff = {
+		[360194] = true, -- Deathmark
+		[192759] = true, -- Kingsbane
+		[222509] = true, -- Feral Frenzy
+	},
+
 	-- Unflagged spells that should also be announced: the TTS registrations key on the bare
 	-- spell id, so the missing category flag costs nothing there. Split by which announcement
 	-- toggle covers each spell; scripts/GenerateTtsAudio.py reads both halves alongside the
@@ -1387,3 +1400,4 @@ end
 ---@field CC table<number, boolean>
 ---@field Important table<number, boolean>
 ---@field Defensive table<number, boolean>
+---@field EnemyDebuff table<number, boolean>

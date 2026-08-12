@@ -157,6 +157,8 @@ L:RegisterLocale("esES", {
 	-- Alerts tab
 	["Alerts"] = "Alertas",
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Anunciar nombres de hechizos defensivos mediante texto a voz cuando se lancen.",
+	["Announce big enemy cooldowns using text-to-speech as they land on you or your party."] = "Anunciar mediante texto a voz las grandes habilidades enemigas cuando te afecten a ti o a tu grupo.",
+	["Enemy debuffs"] = "Perjuicios enemigos",
 	["Announce spell names using text-to-speech when they are cast."] = "Anunciar nombres de hechizos mediante texto a voz cuando se lancen.",
 	["Defensive Spells"] = "Hechizos defensivos",
 	["Includes defensives in the alerts."] = "Incluye habilidades defensivas en las alertas.",

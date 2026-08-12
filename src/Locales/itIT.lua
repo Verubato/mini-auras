@@ -157,6 +157,8 @@ L:RegisterLocale("itIT", {
 	-- Alerts tab
 	["Alerts"] = "Avvisi",
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Annuncia i nomi degli incantesimi difensivi usando la sintesi vocale quando vengono lanciati.",
+	["Announce big enemy cooldowns using text-to-speech as they land on you or your party."] = "Annuncia con la sintesi vocale le grandi abilità nemiche quando colpiscono te o il tuo gruppo.",
+	["Enemy debuffs"] = "Malus nemici",
 	["Announce spell names using text-to-speech when they are cast."] = "Annuncia i nomi degli incantesimi usando la sintesi vocale quando vengono lanciati.",
 	["Defensive Spells"] = "Incantesimi difensivi",
 	["Includes defensives in the alerts."] = "Include abilità difensive negli avvisi.",

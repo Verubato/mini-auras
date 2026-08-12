@@ -202,6 +202,7 @@ local function Teardown()
 
 	if USE_AURA_CONTAINERS then
 		display:ReleaseAllNameplateDisplays()
+		sound:RemoveAllySounds()
 	end
 
 	display:ResetBars()
@@ -292,6 +293,12 @@ local function CreateEvents()
 	-- dead on 12.1 along with TTS itself. Dies with the 12.0 path.
 	if not USE_AURA_CONTAINERS then
 		eventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+	else
+		-- The enemy-debuff announcements sit on the party tokens, so they follow the roster
+		-- rather than the nameplates. Always registered, like the two gate drivers above: the
+		-- handler only reconciles those registrations, which is far cheaper than a full Refresh
+		-- on every roster event in a battleground.
+		eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 	end
 	plateGate = eventGate:New(eventsFrame, { "NAME_PLATE_UNIT_ADDED", "NAME_PLATE_UNIT_REMOVED" }, {
 		-- Plate events maintain the duel baselines; drop them so reactivation reseeds
@@ -319,6 +326,8 @@ local function CreateEvents()
 			OnNamePlateRemoved(unitToken)
 		elseif event == "ZONE_CHANGED_NEW_AREA" then
 			M:Refresh()
+		elseif event == "GROUP_ROSTER_UPDATE" then
+			sound:RefreshAllySounds(true)
 		end
 	end)
 

@@ -4,6 +4,7 @@ local mini = addon.Framework
 local wowEx = addon.Utils.WoWEx
 local auraSounds = addon.Core.AuraSounds
 local ttsPacks = addon.Core.TtsPacks
+local units = addon.Utils.Units
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 
@@ -33,6 +34,13 @@ local SILENT_ALERT_SPELL_IDS = {
 
 -- Read by the tests, which derive the expected registration count from it.
 M.SilentAlertSpellIds = SILENT_ALERT_SPELL_IDS
+
+-- Who the enemy-debuff announcements watch. Those cooldowns sit on whoever they were cast at
+-- rather than on the caster, so there is no nameplate to hang them off - they land on your own
+-- side. Filled from the roster per pass, with the player kept whatever it says: FriendlyUnits
+-- hands back nothing at all while solo, and a duel or a world-PvP opener is exactly when being
+-- told about a Deathmark on yourself matters.
+local allyTokens = {}
 
 ---@type Db
 local db
@@ -71,6 +79,11 @@ local alertSoundsByToken = {}
 -- Signature of the sound settings the current registrations were made with; when it changes
 -- every active token is re-registered.
 local alertSoundSettingsSignature = nil
+-- The enemy-debuff registrations, which are one flat list over ALLY_TOKENS rather than a set
+-- per token: they are all made and dropped together.
+---@type number[]?
+local allySoundIds
+local allySoundSignature = nil
 
 -- True when the player's class/spec should never announce important buffs over TTS (see the comment
 -- on IMPORTANT_TTS_SUPPRESSED_CLASSES).
@@ -109,6 +122,62 @@ end
 ---@param value boolean
 function M:SetPaused(value)
 	paused = value
+end
+
+-- 12.1 path: reconciles the enemy-debuff announcements on the player and party tokens. Kept
+-- apart from the nameplate registrations because nothing about it is per-plate: the tokens are
+-- fixed, and what invalidates them is the roster rather than a plate coming and going. Cheap to
+-- call: an unchanged signature does nothing, which is what lets the roster event drive it
+-- directly instead of going through the module's whole Refresh.
+---@param force boolean? Re-register even when the settings have not moved. The tokens never
+---change, but a registration made against a token nobody was holding is not something the
+---engine promises to keep, so a roster change redoes them.
+function M:RefreshAllySounds(force)
+	if not USE_AURA_CONTAINERS or not db then
+		return
+	end
+
+	local tts = db.Modules.AlertsModule.TTS
+	local enabled = (tts and tts.EnemyDebuff and tts.EnemyDebuff.Enabled) or false
+	local active = enabled and moduleUtil:IsModuleEnabled(moduleName.Alerts) and not paused
+	local voicePack = active and ttsPacks:Resolve(tts and tts.VoicePack) or false
+	local voicePackPath = voicePack and ttsPacks:Path(voicePack) or false
+	local channel = active and ((tts and tts.Channel) or "Master") or false
+	local signature = auraSounds:Signature(active, voicePack, voicePackPath, channel)
+
+	if not force and signature == allySoundSignature then
+		return
+	end
+
+	allySoundSignature = signature
+
+	auraSounds:RemoveSet(allySoundIds)
+	allySoundIds = nil
+
+	if not active then
+		return
+	end
+
+	-- The roster rather than a fixed party1..4: a raid or a battleground puts your side on raid
+	-- tokens instead, and one list means one answer to "who is on my team" across the addon.
+	wipe(allyTokens)
+	allyTokens[1] = "player"
+
+	for _, token in ipairs(units:FriendlyUnits()) do
+		if token ~= "player" then
+			allyTokens[#allyTokens + 1] = token
+		end
+	end
+
+	for _, token in ipairs(allyTokens) do
+		allySoundIds = auraSounds:RegisterMappedSet(
+			allySoundIds,
+			token,
+			addon.Core.AuraTtsSounds.EnemyDebuff,
+			voicePackPath,
+			channel
+		)
+	end
 end
 
 -- Legacy path: one sound per no-alerts-to-alerts transition.
@@ -259,6 +328,14 @@ function M:RemoveAllTokens()
 	end
 end
 
+-- 12.1 path: drops the enemy-debuff announcements. Their tokens are not nameplates, so plate
+-- teardown never reaches them; the module's own teardown calls this instead.
+function M:RemoveAllySounds()
+	auraSounds:RemoveSet(allySoundIds)
+	allySoundIds = nil
+	allySoundSignature = nil
+end
+
 -- 12.1 path: re-evaluates the sound settings; when they change, every active token's
 -- registrations are rebuilt (token add/remove is handled incrementally at the display's
 -- acquire/release chokepoints). Called from Refresh, which also runs after the test-mode
@@ -268,6 +345,11 @@ function M:Refresh(activeTokens)
 	if not USE_AURA_CONTAINERS then
 		return
 	end
+
+	-- Ahead of the nameplate signature check below, which returns early and would otherwise
+	-- swallow a settings change that only the ally registrations care about.
+	self:RefreshAllySounds()
+
 	local sound = db.Modules.AlertsModule.Sound
 	local tts = db.Modules.AlertsModule.TTS
 	local importantEnabled = (sound.Important and sound.Important.Enabled) or false

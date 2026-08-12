@@ -80,5 +80,5 @@ MiniCCApi = MiniAurasApi
 
 ---@class MiniAurasVoicePack
 ---@field Name string Label shown in the voice dropdown and stored in the saved settings, so it must be unique and stable.
----@field Path string Base folder holding the pack's clips, e.g. "Interface\\AddOns\\YourAddon\\Sounds\\". It must contain one OGG per clip, named exactly as the files in MiniAuras's own Sounds\\TTS packs (extension included): one per Important and Defensive spell name, plus PreviewVoice.ogg, PreviewImportant.ogg and PreviewDefensive.ogg for the config previews.
+---@field Path string Base folder holding the pack's clips, e.g. "Interface\\AddOns\\YourAddon\\Sounds\\". It must contain one OGG per clip, named exactly as the files in MiniAuras's own Sounds\\TTS packs (extension included): one per Important, Defensive and enemy-debuff spell name, plus PreviewVoice.ogg, PreviewImportant.ogg, PreviewDefensive.ogg and PreviewEnemyDebuff.ogg for the config previews.
 ---@field Locales? string[] Client locales the pack is spoken for, matched against GetLocale(), e.g. { "deDE" }. Omit it to offer the pack on every client. The name stays reserved either way, so the same saved value always means the same pack.

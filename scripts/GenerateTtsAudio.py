@@ -1,6 +1,6 @@
 """Generates the baked TTS voice packs for the Alerts module's 12.1 path.
 
-Reads the Important/Defensive spell lists from src/Core/Auras/AuraCategoryIds.lua,
+Reads the Important/Defensive/EnemyDebuff spell lists from src/Core/Auras/AuraCategoryIds.lua,
 renders one ElevenLabs clip per unique spoken name into src/Sounds/TTS/<pack>/ for
 every voice in VOICES, and emits src/Core/Auras/AuraTtsSounds.lua mapping each
 spell id to its clip file plus the list of available packs.
@@ -57,9 +57,13 @@ PACK_GAIN_DB = {
 }
 VOICE_SETTINGS = {"stability": 0.5, "similarity_boost": 0.75}
 
-CATEGORIES = ("Important", "Defensive")
+CATEGORIES = ("Important", "Defensive", "EnemyDebuff")
 UNFLAGGED_SECTION = "UnflaggedWithTts"
-PREVIEWS = {"PreviewImportant": "Important", "PreviewDefensive": "Defensive"}
+PREVIEWS = {
+    "PreviewImportant": "Important",
+    "PreviewDefensive": "Defensive",
+    "PreviewEnemyDebuff": "Enemy debuff",
+}
 # Spoken-name tables for voices that announce in another language: a JSON file mapping each
 # unique English ability name to its localized one (see the fetch recipe in the repo history),
 # and the words the config previews speak. File names stay the English slugs either way, since
@@ -69,7 +73,11 @@ LANGUAGES = {
         "names": "SpellNamesZhCN.json",
         # v3 for Mandarin: multilingual v2's tone accuracy is not good enough there.
         "model": "eleven_v3",
-        "previews": {"PreviewImportant": "重要", "PreviewDefensive": "防御"},
+        "previews": {
+            "PreviewImportant": "重要",
+            "PreviewDefensive": "防御",
+            "PreviewEnemyDebuff": "敌方减益",
+        },
     },
 }
 # Spoken by PreviewVoice.mp3 when the pack is picked in the dropdown; packs without an
@@ -225,7 +233,7 @@ def write_lua(categories):
         "---@type string, Addon",
         "local _, addon = ...",
         "",
-        "-- GENERATED DATA - do not hand-edit. One baked TTS clip per Important/Defensive alert",
+        "-- GENERATED DATA - do not hand-edit. One baked TTS clip per announced alert",
         "-- spell name, rendered once per voice pack. On 12.1 the addon cannot read which aura",
         "-- appeared, so these clips are registered per spell id via C_UnitAuras.AddAuraSound and",
         "-- the engine announces the name itself. Values are file names under Sounds/TTS/<pack>/;",

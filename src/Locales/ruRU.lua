@@ -157,6 +157,8 @@ L:RegisterLocale("ruRU", {
 	-- Alerts tab
 	["Alerts"] = "Оповещения",
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Объявлять названия защитных заклинаний с помощью синтеза речи при их применении.",
+	["Announce big enemy cooldowns using text-to-speech as they land on you or your party."] = "Объявлять с помощью синтеза речи о крупных способностях противника, наложенных на вас или вашу группу.",
+	["Enemy debuffs"] = "Эффекты врагов",
 	["Announce spell names using text-to-speech when they are cast."] = "Объявлять названия заклинаний с помощью синтеза речи при их применении.",
 	["Defensive Spells"] = "Защитные заклинания",
 	["Includes defensives in the alerts."] = "Включает защитные способности в оповещения.",

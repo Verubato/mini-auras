@@ -157,6 +157,8 @@ L:RegisterLocale("deDE", {
 	-- Alerts tab
 	["Alerts"] = "Warnungen",
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Sage defensive Zaubernamen mittels Sprachausgabe an, wenn sie gewirkt werden.",
+	["Announce big enemy cooldowns using text-to-speech as they land on you or your party."] = "Sagt große gegnerische Abklingzeiten mittels Sprachausgabe an, wenn sie dich oder deine Gruppe treffen.",
+	["Enemy debuffs"] = "Gegnerische Schwächungen",
 	["Announce spell names using text-to-speech when they are cast."] = "Sage Zaubernamen mittels Sprachausgabe an, wenn sie gewirkt werden.",
 	["Defensive Spells"] = "Defensive Zauber",
 	["Includes defensives in the alerts."] = "Schließt defensive Fähigkeiten in den Warnungen ein.",

@@ -282,6 +282,10 @@ function M.build()
 	addon.Utils.ModuleUtil:Init()
 	loadFile("src/Utils/SlotDistribution.lua")
 	loadFile("src/Core/Auras/AuraCategoryIds.lua")
+	-- The baked TTS clip map and the pack list that reads it: the alert sound registrations index
+	-- both directly, so an env without them can only exercise the announcements while they are off.
+	loadFile("src/Core/Auras/AuraTtsSounds.lua")
+	loadFile("src/Core/TtsPacks.lua")
 
 	-- Cross-module stubs
 

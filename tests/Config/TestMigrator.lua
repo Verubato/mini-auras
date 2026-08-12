@@ -701,6 +701,24 @@ fw.describe("Migrator - individual migrations", function()
 		assert(vars.Version == 63)
 	end)
 
+	fw.it("v65 turns on the enemy debuff announcement for anyone already hearing importants", function()
+		local vars = {
+			Version = 64,
+			Modules = { AlertsModule = { TTS = { Important = { Enabled = true } } } },
+			Profiles = {
+				Quiet = { Modules = { AlertsModule = { TTS = { Important = { Enabled = false } } } } },
+				Loud = { Modules = { AlertsModule = { TTS = { Important = { Enabled = true } } } } },
+			},
+		}
+
+		assert(migrator:UpgradeToVersion65(vars) == true)
+		assert(vars.Modules.AlertsModule.TTS.EnemyDebuff.Enabled == true, "the new half follows the old")
+		assert(vars.Profiles.Loud.Modules.AlertsModule.TTS.EnemyDebuff.Enabled == true, "profiles too")
+		assert(vars.Profiles.Quiet.Modules.AlertsModule.TTS.EnemyDebuff == nil,
+			"a profile that wanted no announcements is left silent")
+		assert(vars.Version == 65)
+	end)
+
 	fw.it("v57 leaves kicks alone when the CC module is disabled everywhere", function()
 		local vars = {
 			Version = 56,

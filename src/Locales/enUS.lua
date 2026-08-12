@@ -158,6 +158,8 @@ L:SetDefaultStrings({
 	-- Alerts tab
 	["Alerts"] = "Alerts",
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Announce defensive spell names using text-to-speech when they are cast.",
+	["Announce big enemy cooldowns using text-to-speech as they land on you or your party."] = "Announce big enemy cooldowns using text-to-speech as they land on you or your party.",
+	["Enemy debuffs"] = "Enemy debuffs",
 	["Announce spell names using text-to-speech when they are cast."] = "Announce spell names using text-to-speech when they are cast.",
 	["Defensive Spells"] = "Defensive Spells",
 	["Includes defensives in the alerts."] = "Includes defensives in the alerts.",

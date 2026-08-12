@@ -157,6 +157,8 @@ L:RegisterLocale("zhCN", {
 	-- Alerts tab
 	["Alerts"] = "警报",
 	["Announce defensive spell names using text-to-speech when they are cast."] = "施放防御法术时使用语音合成播报法术名称。",
+	["Announce big enemy cooldowns using text-to-speech as they land on you or your party."] = "当敌方的重要爆发技能命中你或你的队伍时，使用语音合成播报。",
+	["Enemy debuffs"] = "敌方减益",
 	["Announce spell names using text-to-speech when they are cast."] = "施放法术时使用语音合成播报法术名称。",
 	["Defensive Spells"] = "防御法术",
 	["Includes defensives in the alerts."] = "在警报中包括防御技能。",

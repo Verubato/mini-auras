@@ -1,7 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 
--- GENERATED DATA - do not hand-edit. One baked TTS clip per Important/Defensive alert
+-- GENERATED DATA - do not hand-edit. One baked TTS clip per announced alert
 -- spell name, rendered once per voice pack. On 12.1 the addon cannot read which aura
 -- appeared, so these clips are registered per spell id via C_UnitAuras.AddAuraSound and
 -- the engine announces the name itself. Values are file names under Sounds/TTS/<pack>/;
@@ -114,5 +114,10 @@ addon.Core.AuraTtsSounds = {
 		[104773] = "UnendingResolve.ogg", -- Unending Resolve
 		[55233] = "VampiricBlood.ogg", -- Vampiric Blood
 		[374227] = "Zephyr.ogg", -- Zephyr
+	},
+	EnemyDebuff = {
+		[360194] = "Deathmark.ogg", -- Deathmark
+		[222509] = "FeralFrenzy.ogg", -- Feral Frenzy
+		[192759] = "Kingsbane.ogg", -- Kingsbane
 	},
 }

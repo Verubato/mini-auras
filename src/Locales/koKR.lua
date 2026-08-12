@@ -157,6 +157,8 @@ L:RegisterLocale("koKR", {
 	-- Alerts tab
 	["Alerts"] = "알림",
 	["Announce defensive spell names using text-to-speech when they are cast."] = "방어 주문이 사용될 때 음성 합성으로 주문 이름을 알립니다.",
+	["Announce big enemy cooldowns using text-to-speech as they land on you or your party."] = "적의 주요 기술이 자신이나 파티에 적용될 때 음성 합성으로 알립니다.",
+	["Enemy debuffs"] = "적 약화 효과",
 	["Announce spell names using text-to-speech when they are cast."] = "주문이 사용될 때 음성 합성으로 주문 이름을 알립니다.",
 	["Defensive Spells"] = "방어 주문",
 	["Includes defensives in the alerts."] = "알림에 방어 기술을 포함합니다.",

@@ -621,3 +621,32 @@ function M:UpgradeToVersion64(vars)
 	vars.Version = 64
 	return true
 end
+
+function M:UpgradeToVersion65(vars)
+	if vars.Version ~= 64 then return false end
+
+	-- Enemy cooldowns that land on your own side got their own announcement toggle. Anyone
+	-- already having important spells read out wanted to be told what just landed, so they get
+	-- the new half of that switched on rather than having to find it.
+	local function Enable(modules)
+		local tts = modules and modules.AlertsModule and modules.AlertsModule.TTS
+
+		if not tts or not (tts.Important and tts.Important.Enabled) then
+			return
+		end
+
+		tts.EnemyDebuff = tts.EnemyDebuff or {}
+		tts.EnemyDebuff.Enabled = true
+	end
+
+	Enable(vars.Modules)
+
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			Enable(profile.Modules)
+		end
+	end
+
+	vars.Version = 65
+	return true
+end

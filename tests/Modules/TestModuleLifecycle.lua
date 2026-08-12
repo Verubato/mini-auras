@@ -740,3 +740,73 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		assert(#env.notifications == 0, "unexpected warnings: " .. table.concat(env.notifications, "; "))
 	end)
 end)
+
+fw.describe("AlertsModule 12.1 - enemy debuff announcements", function()
+	local alerts = env.addon.Modules.AlertsModule
+	local tts = db.Modules.AlertsModule.TTS
+	-- The player is always watched; the rest of the side comes from the roster.
+	env.friendlyUnits = { "player", "party1", "party2" }
+	local allyTokens = #env.friendlyUnits
+
+	local spellCount = 0
+	for _ in pairs(env.addon.Core.AuraTtsSounds.EnemyDebuff) do
+		spellCount = spellCount + 1
+	end
+	local expected = spellCount * allyTokens
+
+	fw.it("registers nothing while the announcement is off", function()
+		local before = env.auraSoundAdds
+		alerts:Refresh()
+		assert(env.auraSoundAdds == before, "a disabled announcement must register nothing")
+	end)
+
+	fw.it("registers every enemy debuff on the player and the party", function()
+		local before = env.auraSoundAdds
+		tts.EnemyDebuff.Enabled = true
+		alerts:Refresh()
+		assert(env.auraSoundAdds - before == expected,
+			("expected %d adds, got %d"):format(expected, env.auraSoundAdds - before))
+	end)
+
+	fw.it("an unchanged refresh registers nothing new", function()
+		local adds, removes = env.auraSoundAdds, env.auraSoundRemoves
+		alerts:Refresh()
+		assert(env.auraSoundAdds == adds, "signature guard must skip re-registration")
+		assert(env.auraSoundRemoves == removes, "and must not clear")
+	end)
+
+	fw.it("a roster change re-registers them", function()
+		local adds, removes = env.auraSoundAdds, env.auraSoundRemoves
+		alertsEvents:TriggerEvent("GROUP_ROSTER_UPDATE")
+		assert(env.auraSoundRemoves - removes == expected, "the previous set is dropped")
+		assert(env.auraSoundAdds - adds == expected, "and registered again for the new roster")
+	end)
+
+	fw.it("switching the announcement off drops them", function()
+		local removes = env.auraSoundRemoves
+		tts.EnemyDebuff.Enabled = false
+		alerts:Refresh()
+		assert(env.auraSoundRemoves - removes == expected, "every registration removed")
+	end)
+
+	fw.it("still watches the player with nobody else around", function()
+		-- The roster is empty while solo, which is exactly when a duel or a world-PvP opener
+		-- lands one of these on you.
+		env.friendlyUnits = {}
+		tts.EnemyDebuff.Enabled = true
+
+		local before = env.auraSoundAdds
+
+		alerts:Refresh()
+
+		assert(env.auraSoundAdds - before == spellCount,
+			("expected %d adds, got %d"):format(spellCount, env.auraSoundAdds - before))
+
+		for index = before + 1, env.auraSoundAdds do
+			assert(env.auraSounds[index].Unit == "player", "and all of them on the player")
+		end
+
+		tts.EnemyDebuff.Enabled = false
+		alerts:Refresh()
+	end)
+end)

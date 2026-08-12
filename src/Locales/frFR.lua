@@ -157,6 +157,8 @@ L:RegisterLocale("frFR", {
 	-- Alerts tab
 	["Alerts"] = "Alertes",
 	["Announce defensive spell names using text-to-speech when they are cast."] = "Annonce le nom des sorts défensifs par synthèse vocale quand ils sont lancés.",
+	["Announce big enemy cooldowns using text-to-speech as they land on you or your party."] = "Annonce par synthèse vocale les grandes capacités ennemies lorsqu'elles vous touchent, vous ou votre groupe.",
+	["Enemy debuffs"] = "Affaiblissements ennemis",
 	["Announce spell names using text-to-speech when they are cast."] = "Annonce le nom des sorts par synthèse vocale quand ils sont lancés.",
 	["Defensive Spells"] = "Sorts défensifs",
 	["Includes defensives in the alerts."] = "Inclut les sorts défensifs dans les alertes.",

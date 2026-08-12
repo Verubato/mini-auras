@@ -511,6 +511,17 @@ local function BuildTtsTab(parent, options)
 		packDefensiveChk:SetPoint("LEFT", parent, "LEFT", columnWidth, 0)
 		packDefensiveChk:SetPoint("TOP", packImportantChk, "TOP", 0, 0)
 
+		local packEnemyDebuffChk = BuildAnnounceCheckbox(
+			"EnemyDebuff",
+			L["Enemy debuffs"],
+			L["Announce big enemy cooldowns using text-to-speech as they land on you or your party."],
+			function()
+				PreviewPackClip("PreviewEnemyDebuff.ogg")
+			end
+		)
+		packEnemyDebuffChk:SetPoint("LEFT", parent, "LEFT", columnWidth * 2, 0)
+		packEnemyDebuffChk:SetPoint("TOP", packImportantChk, "TOP", 0, 0)
+
 		return
 	end
 
