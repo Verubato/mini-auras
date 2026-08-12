@@ -19,6 +19,13 @@ addon.Modules.PortraitModule = M
 -- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
+-- Which portrait token each occupant-change event speaks for (see CreateEvents).
+local UNIT_CHANGE_TOKEN = {
+	PLAYER_TARGET_CHANGED = "target",
+	PLAYER_FOCUS_CHANGED = "focus",
+	UNIT_PET = "pet",
+}
+
 ---@type Db
 local db
 local testModeActive = false
@@ -144,12 +151,23 @@ local function CreateEvents()
 	-- RequestRefresh forces the re-parse.
 	if USE_AURA_CONTAINERS then
 		local unitChangeEvents = CreateFrame("Frame")
-		unitChangeEvents:SetScript("OnEvent", function(_, event)
-			local unit = event == "PLAYER_TARGET_CHANGED" and "target" or "focus"
+		unitChangeEvents:SetScript("OnEvent", function(_, event, owner)
+			-- UNIT_PET fires for every group member's pet; only the player's has a portrait.
+			if event == "UNIT_PET" and owner ~= "player" then
+				return
+			end
+
+			local unit = UNIT_CHANGE_TOKEN[event]
 			display:RefreshUnitAuras(unit)
 			observer:FireUnitUpdate(unit)
 		end)
-		unitChangeGate = eventGate:New(unitChangeEvents, { "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED" })
+		unitChangeGate = eventGate:New(unitChangeEvents, {
+			"PLAYER_TARGET_CHANGED",
+			"PLAYER_FOCUS_CHANGED",
+			-- A summoned pet is assistable where the empty token was not, so its disarm layer
+			-- has to be re-budgeted the moment the pet turns up.
+			"UNIT_PET",
+		})
 	end
 end
 

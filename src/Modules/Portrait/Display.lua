@@ -511,6 +511,11 @@ function M:ApplyOptions()
 	for _, container in pairs(containers) do
 		local auraDisplay = container.AuraDisplay
 		if auraDisplay then
+			-- A token's occupant can turn friendly while the module is disabled and its events
+			-- are unregistered, which would leave the disarm layer budgeted for an enemy and
+			-- showing every debuff on an ally. Re-checked here so any Refresh closes that gap.
+			ApplyDisarmBudget(auraDisplay, container.AuraUnit)
+
 			for _, display in ipairs(auraDisplay.Displays) do
 				display:SetStyle(style)
 				display:SetShown(not testModeActive)
