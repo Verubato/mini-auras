@@ -1070,17 +1070,23 @@ addon.Core.AuraCategoryIds = {
 
 	-- Spells the game flags as neither important nor defensive. Only a display that filters by
 	-- spell id can track them at all (the raid frames), and that display still has a toggle per
-	-- category, so they are split the same way the flagged lists are. The bottom of this file
-	-- merges both halves into Unflagged, which is what the spell pickers and the search read.
+	-- category, so they are split the same way the flagged lists are. TTS keys on the bare spell
+	-- id, so the missing flag costs nothing there and scripts/GenerateTtsAudio.py voices both
+	-- halves under the matching toggle. The bottom of this file merges them into Unflagged,
+	-- which is what the spell pickers and the search read.
 	UnflaggedImportant = {
 		[1784] = true, -- Stealth
 		[5215] = true, -- Stealth
 		[5217] = true, -- Tiger's Fury
 		[10060] = true, -- Power Infusion
 		[29166] = true, -- Innervate
+		[42650] = true, -- Army of the Dead
+		[117679] = true, -- Incarnation: Tree of Life
+		[162264] = true, -- Metamorphosis
 		[188501] = true, -- Spectral Sight
 		[191634] = true, -- Stormkeeper
 		[199261] = true, -- Death Wish
+		[210256] = true, -- Blessing of Sanctuary
 		[357210] = true, -- Deep Breath
 		[389794] = true, -- Snowdrift
 		[390260] = true, -- Commander of the Dead
@@ -1089,6 +1095,7 @@ addon.Core.AuraCategoryIds = {
 	},
 
 	UnflaggedDefensive = {
+		[740] = true, -- Tranquility
 		[1966] = true, -- Feint
 		[11426] = true, -- Ice Barrier
 		[31821] = true, -- Aura Mastery
@@ -1108,12 +1115,17 @@ addon.Core.AuraCategoryIds = {
 		[228050] = true, -- Guardian of the Forgotten Queen
 		[235313] = true, -- Blazing Barrier
 		[235450] = true, -- Prismatic Barrier
+		[325174] = true, -- Spirit Link
 		[354610] = true, -- Glimpse
+		[363534] = true, -- Rewind
+		[370960] = true, -- Emerald Communion
+		[374227] = true, -- Zephyr
 		[378078] = true, -- Spiritwalker's Aegis
 		[384100] = true, -- Berserker Shout
 		[389422] = true, -- Invoke Yu'lon, the Jade Serpent
 		[409293] = true, -- Burrow
 		[414664] = true, -- Mass Invisibility
+		[421453] = true, -- Ultimate Penitence
 		[473909] = true, -- Ancient of Lore
 		[1309793] = true, -- Refractive Images
 	},
@@ -1129,27 +1141,6 @@ addon.Core.AuraCategoryIds = {
 		[360194] = true, -- Deathmark
 		[385627] = true, -- Kingsbane
 		[222509] = true, -- Feral Frenzy
-	},
-
-	-- Unflagged spells that should also be announced: the TTS registrations key on the bare
-	-- spell id, so the missing category flag costs nothing there. Split by which announcement
-	-- toggle covers each spell; scripts/GenerateTtsAudio.py reads both halves alongside the
-	-- flagged lists, and the loop below folds them back into Unflagged for the spell pickers.
-	UnflaggedWithTts = {
-		Important = {
-			[42650] = true, -- Army of the Dead
-			[210256] = true, -- Blessing of Sanctuary
-			[117679] = true, -- Incarnation: Tree of Life
-			[162264] = true, -- Metamorphosis
-		},
-		Defensive = {
-			[370960] = true, -- Emerald Communion
-			[363534] = true, -- Rewind
-			[325174] = true, -- Spirit Link
-			[740] = true, -- Tranquility
-			[421453] = true, -- Ultimate Penitence
-			[374227] = true, -- Zephyr
-		},
 	},
 
 	-- Spell id -> the class that owns it, for grouping in the options UI only. Never used
@@ -1399,25 +1390,11 @@ addon.Core.AuraCategoryIds = {
 	},
 }
 
--- The TTS split is still unflagged: fold each half into the unflagged list of the same category,
--- then merge both of those into Unflagged so there is still one searchable superset.
+-- Merge both unflagged halves so there is still one searchable superset.
 local categoryIds = addon.Core.AuraCategoryIds
-local unflaggedByCategory = {
-	Important = categoryIds.UnflaggedImportant,
-	Defensive = categoryIds.UnflaggedDefensive,
-}
-
-for category, ids in pairs(categoryIds.UnflaggedWithTts) do
-	local target = unflaggedByCategory[category]
-
-	for id in pairs(ids) do
-		target[id] = true
-	end
-end
-
 categoryIds.Unflagged = {}
 
-for _, ids in pairs(unflaggedByCategory) do
+for _, ids in ipairs({ categoryIds.UnflaggedImportant, categoryIds.UnflaggedDefensive }) do
 	for id in pairs(ids) do
 		categoryIds.Unflagged[id] = true
 	end

@@ -58,7 +58,9 @@ PACK_GAIN_DB = {
 VOICE_SETTINGS = {"stability": 0.5, "similarity_boost": 0.75}
 
 CATEGORIES = ("Important", "Defensive", "EnemyDebuff")
-UNFLAGGED_SECTION = "UnflaggedWithTts"
+# Sections holding spells the game flags as neither category, keyed by the announcement
+# toggle each half belongs to.
+UNFLAGGED_SECTIONS = {"UnflaggedImportant": "Important", "UnflaggedDefensive": "Defensive"}
 PREVIEWS = {
     "PreviewImportant": "Important",
     "PreviewDefensive": "Defensive",
@@ -108,24 +110,20 @@ def parse_ids(body):
 
 
 def parse_categories():
-    """Returns {category: {spell_id: name}} for the categories we voice. UnflaggedWithTts
-    carries the spells the game does not flag, split by the same category names; its halves
-    are folded into the flagged lists so they announce under the matching toggle."""
+    """Returns {category: {spell_id: name}} for the categories we voice. The unflagged
+    sections carry the spells the game does not flag; each is folded into the flagged list
+    of the same category so they announce under the matching toggle."""
     src = IDS_LUA.read_text(encoding="utf-8")
     sections = re.split(r"^\t(\w+) = \{", src, flags=re.M)
     result = {}
     seen = set()
     for i in range(1, len(sections), 2):
-        category, body = sections[i], sections[i + 1]
-        if category in CATEGORIES:
-            seen.add(category)
+        section, body = sections[i], sections[i + 1]
+        category = UNFLAGGED_SECTIONS.get(section, section)
+        if section in CATEGORIES or section in UNFLAGGED_SECTIONS:
+            seen.add(section)
             result.setdefault(category, {}).update(parse_ids(body))
-        elif category == UNFLAGGED_SECTION:
-            seen.add(category)
-            for sub, sub_body in re.findall(r"^\t\t(\w+) = \{(.*?)^\t\t\}", body, re.M | re.S):
-                if sub in CATEGORIES:
-                    result.setdefault(sub, {}).update(parse_ids(sub_body))
-    missing = [c for c in (*CATEGORIES, UNFLAGGED_SECTION) if c not in seen]
+    missing = [c for c in (*CATEGORIES, *UNFLAGGED_SECTIONS) if c not in seen]
     if missing:
         sys.exit(f"categories not found in {IDS_LUA.name}: {missing}")
     return result
@@ -175,7 +173,10 @@ def spoken_text(name):
 
 
 def slug(text):
-    """PascalCase file stem: every word capitalised, everything else dropped."""
+    """PascalCase file stem: every word capitalised, everything else dropped. An apostrophe is
+    removed rather than treated as a word break, so Tiger's Fury is TigersFury, not TigerSFury."""
+    text = text.replace("'", "")
+
     return "".join(w[0].upper() + w[1:] for w in re.findall(r"[A-Za-z0-9]+", text))
 
 
