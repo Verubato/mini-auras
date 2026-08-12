@@ -85,6 +85,17 @@ local alertSoundSettingsSignature = nil
 local allySoundIds
 local allySoundSignature = nil
 
+-- The spells the TTS Spells tab has switched off, for one category. Absent until something is
+-- switched off, which is the state every profile starts in.
+---@param category string "Important", "Defensive" or "EnemyDebuff"
+---@return table<number, boolean>?
+local function MutedSpellIds(category)
+	local tts = db and db.Modules.AlertsModule.TTS
+	local options = tts and tts[category]
+
+	return options and options.MutedSpellIds
+end
+
 -- True when the player's class/spec should never announce important buffs over TTS (see the comment
 -- on IMPORTANT_TTS_SUPPRESSED_CLASSES).
 local function ImportantTTSSuppressedForPlayer()
@@ -143,7 +154,14 @@ function M:RefreshAllySounds(force)
 	local voicePack = active and ttsPacks:Resolve(tts and tts.VoicePack) or false
 	local voicePackPath = voicePack and ttsPacks:Path(voicePack) or false
 	local channel = active and ((tts and tts.Channel) or "Master") or false
-	local signature = auraSounds:Signature(active, voicePack, voicePackPath, channel)
+	local muted = MutedSpellIds("EnemyDebuff")
+	local signature = auraSounds:Signature(
+		active,
+		voicePack,
+		voicePackPath,
+		channel,
+		auraSounds:SetSignature(muted)
+	)
 
 	if not force and signature == allySoundSignature then
 		return
@@ -175,7 +193,8 @@ function M:RefreshAllySounds(force)
 			token,
 			addon.Core.AuraTtsSounds.EnemyDebuff,
 			voicePackPath,
-			channel
+			channel,
+			muted
 		)
 	end
 end
@@ -205,6 +224,9 @@ function M:PlaySound(spellType)
 	PlaySoundFile(soundFile, db.Modules.AlertsModule.Sound.Channel or "Master")
 end
 
+-- Per-spell muting is deliberately absent here: this path reads the spell id through the unit
+-- APIs, where it is a secret value that cannot be used as a table key. Only the engine-side
+-- registrations below can filter by id, which is why the TTS Spells tab is 12.1 only.
 ---@param spellName string?
 ---@param spellType string "important" or "defensive"
 function M:AnnounceTTS(spellName, spellType)
@@ -301,10 +323,12 @@ function M:RegisterToken(unitToken)
 		local ttsChannel = (tts and tts.Channel) or "Master"
 
 		if importantTts then
-			ids = auraSounds:RegisterMappedSet(ids, unitToken, addon.Core.AuraTtsSounds.Important, packPath, ttsChannel)
+			ids = auraSounds:RegisterMappedSet(ids, unitToken, addon.Core.AuraTtsSounds.Important, packPath,
+				ttsChannel, MutedSpellIds("Important"))
 		end
 		if defensiveTts then
-			ids = auraSounds:RegisterMappedSet(ids, unitToken, addon.Core.AuraTtsSounds.Defensive, packPath, ttsChannel)
+			ids = auraSounds:RegisterMappedSet(ids, unitToken, addon.Core.AuraTtsSounds.Defensive, packPath,
+				ttsChannel, MutedSpellIds("Defensive"))
 		end
 	end
 
@@ -376,7 +400,9 @@ function M:Refresh(activeTokens)
 		defensiveTts,
 		voicePack,
 		voicePackPath,
-		ttsChannel
+		ttsChannel,
+		importantTts and auraSounds:SetSignature(MutedSpellIds("Important")) or false,
+		defensiveTts and auraSounds:SetSignature(MutedSpellIds("Defensive")) or false
 	)
 	if signature == alertSoundSettingsSignature then
 		return

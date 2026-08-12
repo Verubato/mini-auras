@@ -511,7 +511,7 @@ local function BuildTtsTab(parent, options)
 
 		local packEnemyDebuffChk = BuildAnnounceCheckbox(
 			"EnemyDebuff",
-			L["Enemy debuffs"],
+			L["Enemy Debuffs"],
 			L["Announce big enemy cooldowns using text-to-speech as they land on you or your party."],
 			function()
 				PreviewPackClip("PreviewEnemyDebuff.ogg")
@@ -685,7 +685,9 @@ function M:Build(panel, options)
 
 	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.AlertsModule.Enabled)
 
-	local subPanelHeight = 320
+	-- Taller where the spell list is offered: it is a scrolling grid, and the other tabs' blank
+	-- tail is a better trade than a list showing four rows at a time.
+	local subPanelHeight = USE_AURA_CONTAINERS and 420 or 320
 	local tabContainer = CreateFrame("Frame", nil, panel)
 	tabContainer:SetPoint("TOPLEFT",  enabledEverywhere, "BOTTOMLEFT",  0, -verticalSpacing)
 	tabContainer:SetPoint("TOPRIGHT", panel,             "TOPRIGHT",    0, 0)
@@ -696,6 +698,13 @@ function M:Build(panel, options)
 		{ Key = "sounds", Title = L["Sound Alerts"] },
 		{ Key = "tts", Title = L["TTS"] },
 	}
+
+	-- 12.1 only, for the same reason the raid frame spell list is: the announcement has to be
+	-- filtered by spell id, and only the engine-side registrations can do that. The legacy path
+	-- speaks whatever name it read, and the id beside it is a secret value.
+	if USE_AURA_CONTAINERS then
+		subTabs[#subTabs + 1] = { Key = "ttsSpells", Title = L["Spells"] }
+	end
 
 	local tabCtrl = mini:CreateTabs({
 		Parent = tabContainer,
@@ -715,6 +724,11 @@ function M:Build(panel, options)
 	local ttsContent = tabCtrl:GetContent("tts")
 	if ttsContent then
 		BuildTtsTab(ttsContent, options)
+	end
+
+	local ttsSpellsContent = tabCtrl:GetContent("ttsSpells")
+	if ttsSpellsContent then
+		config.AlertsTtsSpells:Build(ttsSpellsContent, options)
 	end
 
 	panel:HookScript("OnShow", function()

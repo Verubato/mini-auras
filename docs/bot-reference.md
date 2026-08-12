@@ -530,6 +530,25 @@ Master).
   toggles. Known limitation shown on the page: important-spell TTS does not work for Mages,
   Evokers, Demon Hunters, Hunters, and Shadow Priests (a Blizzard API limitation).
 
+**Spells sub-tab (12.1 only):** "Choose which spells text-to-speech announces. The sound alerts
+are not affected. A category still needs its switch on the TTS tab." It governs the spoken
+announcements only, never the Sound Alerts tab's own sounds. A colour-coded sidebar of the
+three categories (Important red, Defensive green, Enemy Debuffs purple) and, for the selected
+one, every spell that ships a voice clip as a checkbox in two columns, sorted by name, with
+**All** and **None** buttons above them. Ticking a spell on plays its clip in the selected
+voice pack, so the row is its own preview; unticking and the **All** button stay silent. The
+list scrolls, with the bar on its right. Every spell starts on, so the tab is an opt-out
+list: unticking one stops that announcement and leaves the rest alone, and clips
+added in later updates are announced without being ticked. A spell with several IDs (talent
+variants like Ascendance or Metamorphosis) is one row that writes all of them. Muting is
+per-category, so Deathmark can be silenced as an enemy debuff and kept as an important spell.
+The choices are stored as `TTS.<category>.MutedSpellIds`.
+
+Why 12.1 only: the announcement has to be filtered by spell ID, and only the engine-side
+registrations can do that. On 12.0 the addon speaks the name it read at runtime and the spell
+ID beside it is a secret value, which cannot be compared or used as a table key. Same reason the
+Raid Frame Auras **Spells** tab is 12.1 only.
+
 ---
 
 ## Nameplates

@@ -62,6 +62,7 @@ local testFiles = {
     "tests/Modules/TestModuleLifecycle.lua",
     "tests/Modules/TestModuleSmoke.lua",
     "tests/Modules/TestAlertsBars.lua",
+    "tests/Modules/TestAlertsTtsSpells.lua",
     "tests/Modules/TestPortraitDisplay.lua",
     "tests/Modules/TestUnitFrameRetarget.lua",
     "tests/Modules/TestCustomAuras.lua",

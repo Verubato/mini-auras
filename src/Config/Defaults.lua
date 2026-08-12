@@ -264,18 +264,23 @@ local dbDefaults = {
 				-- 12.1 only: the engine plays the baked clips, so they need an output channel.
 				-- The runtime voice has no channel of its own.
 				Channel = "Master",
-				-- Important-spell TTS (opt-in, like the defensive TTS).
+				-- Important-spell TTS (opt-in, like the defensive TTS). MutedSpellIds is what the
+				-- TTS Spells tab writes: an opt-out list, so a category announces everything it
+				-- has a clip for until something is switched off, including clips added later.
 				Important = {
 					Enabled = false,
+					MutedSpellIds = {},
 				},
 				Defensive = {
 					Enabled = false,
+					MutedSpellIds = {},
 				},
 				-- Enemy cooldowns that land on your own side rather than on the caster, so they
 				-- are announced on the party instead of on a nameplate. 12.1 only, like the
 				-- voice packs themselves.
 				EnemyDebuff = {
 					Enabled = false,
+					MutedSpellIds = {},
 				},
 			},
 

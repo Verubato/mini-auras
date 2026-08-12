@@ -19,6 +19,8 @@ local infoScratch = { unitToken = nil, spellID = nil, soundFileName = nil, outpu
 local idListPool = {}
 -- Reused by Signature; concatenated with an explicit range, so no trimming is needed.
 local signatureScratch = {}
+-- Reused by SetSignature. Sorted and concatenated whole, so it is trimmed rather than ranged.
+local setScratch = {}
 
 ---Registers an Added-trigger sound on one unit for every spell id in the set, appending the
 ---handles to `ids`. Pass nil to start a new (pooled) list, or a previous return value to
@@ -60,8 +62,9 @@ end
 ---@param filesBySpellId table<number, string> spell id -> file name
 ---@param basePath string prefix joined onto each file name
 ---@param channel string
+---@param excludedSpellIds table<number, boolean>? spells to skip
 ---@return number[] ids
-function M:RegisterMappedSet(ids, unitToken, filesBySpellId, basePath, channel)
+function M:RegisterMappedSet(ids, unitToken, filesBySpellId, basePath, channel, excludedSpellIds)
 	ids = ids or table.remove(idListPool) or {}
 
 	local info = infoScratch
@@ -69,13 +72,15 @@ function M:RegisterMappedSet(ids, unitToken, filesBySpellId, basePath, channel)
 	info.outputChannel = channel
 
 	for spellId, file in pairs(filesBySpellId) do
-		info.spellID = spellId
-		info.soundFileName = basePath .. file
+		if not (excludedSpellIds and excludedSpellIds[spellId]) then
+			info.spellID = spellId
+			info.soundFileName = basePath .. file
 
-		local handle = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
+			local handle = C_UnitAuras.AddAuraSound(Enum.UnitAuraSoundTrigger.Added, info)
 
-		if handle then
-			ids[#ids + 1] = handle
+			if handle then
+				ids[#ids + 1] = handle
+			end
 		end
 	end
 
@@ -96,6 +101,34 @@ function M:RemoveSet(ids)
 	end
 
 	idListPool[#idListPool + 1] = ids
+end
+
+---A comparable string for a set of spell ids, for feeding an exclusion list into Signature.
+---Sorted, because pairs order is not stable across sessions and an order change would look
+---like a settings change every login.
+---@param spellIds table<number, boolean>?
+---@return string
+function M:SetSignature(spellIds)
+	if not spellIds then
+		return ""
+	end
+
+	local count = 0
+
+	for spellId, excluded in pairs(spellIds) do
+		if excluded then
+			count = count + 1
+			setScratch[count] = spellId
+		end
+	end
+
+	for index = #setScratch, count + 1, -1 do
+		setScratch[index] = nil
+	end
+
+	table.sort(setScratch)
+
+	return table.concat(setScratch, ",")
 end
 
 ---Joins the values a consumer's registrations were built from into a comparable string, so a
