@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.8.0
+
+- MiniAuras now needs patch 12.1 and will not load on 12.0.7.
+- Text-to-speech announces around forty more spells, including Ice Barrier, Darkness, Dark Pact, and Rallying Cry. The fourteen noisiest start switched off.
+- Fixed portraits and nameplates not showing some CC spells.
+- Fixed the TTS Spells tab turning some spells off.
+- Fixed Show Important and Show Defensives on group frames acting as one switch.
+
 ## 5.7.0
 
 - Text-to-speech has a new Spells tab for choosing which spells are announced. Every spell starts on, and ticking one plays its clip.
