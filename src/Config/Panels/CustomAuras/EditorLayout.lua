@@ -11,6 +11,8 @@ local SLIDER_ROW_HEIGHT = SLIDER_HEADROOM + 34
 local SLIDER_GAP = 45
 -- The gap a row keeps when it is on screen, matching the editor's own default.
 local ROW_GAP = 10
+-- One line of text, which is all a sound-only group's layout tab holds.
+local NOTE_ROW_HEIGHT = 26
 local SORT_OPTIONS = { "OLDEST", "LONGEST", "SHORTEST" }
 local GROW_OPTIONS = { "LEFT", "RIGHT", "CENTER", "DOWN", "UP" }
 -- A number this short does not need a dropdown's column, but the label does: "Desplazamiento X"
@@ -36,7 +38,7 @@ function ui.BuildLayoutTab(ctx)
 	-- Put away for a group drawing icons, which has no width of its own.
 	local barSliderRow = ctx.NewRow(layoutPanel, SLIDER_ROW_HEIGHT)
 
-	ctx.Dropdown(L["Order"], {
+	local orderDropdown = ctx.Dropdown(L["Order"], {
 		Items = SORT_OPTIONS,
 		GetText = function(value)
 			if value == groups.Sort.Longest then
@@ -61,7 +63,7 @@ function ui.BuildLayoutTab(ctx)
 		end,
 	}, settingsControlsRow, ui.DropdownColumn)
 
-	ctx.Dropdown(L["Grow"], {
+	local growDropdown = ctx.Dropdown(L["Grow"], {
 		Items = GROW_OPTIONS,
 		GetValue = function()
 			local group = ui.Current()
@@ -137,6 +139,15 @@ function ui.BuildLayoutTab(ctx)
 		end
 	end)
 
+	-- Takes over the settings row when there is nothing to lay out, the way the appearance tab's
+	-- note takes over its shape row.
+	local emptyNote = layoutPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+	emptyNote:SetText(L["Sound only auras don't have a position."])
+	emptyNote:SetPoint("TOPLEFT", settingsControlsRow, "TOPLEFT", 0, 0)
+	emptyNote:SetPoint("BOTTOMRIGHT", settingsControlsRow, "BOTTOMRIGHT", 0, 0)
+	emptyNote:SetJustifyH("LEFT")
+	emptyNote:SetJustifyV("TOP")
+
 	---@param label string
 	---@param minimum number
 	---@param maximum number
@@ -208,13 +219,33 @@ function ui.BuildLayoutTab(ctx)
 	---@param group CustomAuraGroup
 	local function RefreshShape(group)
 		local bars = groups:DrawsBars(group)
+		-- Nothing is drawn for a sound-only group, so there is no size to set and nowhere to put
+		-- it. The whole tab goes, the same way the appearance one does.
+		local soundOnly = groups:IsSoundOnly(group)
 
-		SetSliderShown(sizeSlider, not bars)
-		SetSliderShown(heightSlider, bars)
-		SetSliderShown(widthSlider, bars)
-		-- Collapsed rather than left empty, and it hands its gap back so the tab closes up.
-		barSliderRow:SetHeight(bars and SLIDER_ROW_HEIGHT or 1)
-		ctx.SetRowGap(barSliderRow, bars and ROW_GAP or 0)
+		SetSliderShown(sizeSlider, not bars and not soundOnly)
+		SetSliderShown(heightSlider, bars and not soundOnly)
+		SetSliderShown(widthSlider, bars and not soundOnly)
+		SetSliderShown(spacingSlider, not soundOnly)
+
+		orderDropdown:SetShown(not soundOnly)
+		orderDropdown.MiniLabel:SetShown(not soundOnly)
+		growDropdown:SetShown(not soundOnly)
+		growDropdown.MiniLabel:SetShown(not soundOnly)
+
+		for _, box in ipairs({ offsetXBox, offsetYBox }) do
+			box.EditBox:SetShown(not soundOnly)
+			box.Label:SetShown(not soundOnly)
+		end
+
+		emptyNote:SetShown(soundOnly)
+		settingsControlsRow:SetHeight(soundOnly and NOTE_ROW_HEIGHT or ui.DropdownRowHeight)
+
+		-- Collapsed rather than left empty, and they hand their gaps back so the tab closes up.
+		sliderRow:SetHeight(soundOnly and 1 or SLIDER_ROW_HEIGHT)
+		ctx.SetRowGap(sliderRow, soundOnly and 0 or ROW_GAP)
+		barSliderRow:SetHeight(bars and not soundOnly and SLIDER_ROW_HEIGHT or 1)
+		ctx.SetRowGap(barSliderRow, bars and not soundOnly and ROW_GAP or 0)
 
 		ctx.UpdateEditorHeight()
 	end

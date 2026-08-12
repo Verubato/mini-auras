@@ -14,6 +14,11 @@ local RECORD_MAX_SHOWN = RECORD_COLUMNS * 4
 local TRACKING_MODES = { "SPELLS", "FILTERS" }
 -- Filtered per unit by SupportsAuraType.
 local AURA_TYPE_ORDER = { "HELPFUL", "HARMFUL" }
+local DISPLAY_OPTIONS = {
+	groups.DisplayStyle.Icons,
+	groups.DisplayStyle.Bars,
+	groups.DisplayStyle.SoundOnly,
+}
 
 -- Rebuilt lists, recycled rather than recreated.
 local spellRows = {}
@@ -118,7 +123,7 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 				group.Unit = value
 
 				-- A unit that can never carry a filtered debuff goes back to buffs.
-				if not groups:SupportsAuraType(value, group.AuraType) then
+				if not groups:SupportsAuraType(value, group.AuraType, group.TrackingMode, groups:IsSoundOnly(group)) then
 					group.AuraType = groups.AuraType.Helpful
 				end
 
@@ -135,7 +140,7 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 				ui.Apply()
 			end
 		end,
-	}, trackingControlsRow, 0)
+	}, trackingControlsRow, ui.DropdownColumn)
 
 	-- Refilled per group: Debuff is not offered on a unit that can never carry one. Dropdown
 	-- reads this when the menu opens, so refilling in place is enough.
@@ -148,8 +153,10 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 
 		wipe(typeItems)
 
+		local soundOnly = group ~= nil and groups:IsSoundOnly(group)
+
 		for _, auraType in ipairs(AURA_TYPE_ORDER) do
-			if groups:SupportsAuraType(unit, auraType, mode) then
+			if groups:SupportsAuraType(unit, auraType, mode, soundOnly) then
 				typeItems[#typeItems + 1] = auraType
 			end
 		end
@@ -176,9 +183,9 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 				ui.Apply()
 			end
 		end,
-	}, trackingControlsRow, ui.DropdownColumn * 2)
+	}, trackingControlsRow, ui.DropdownColumn * 3)
 
-	ctx.Dropdown(L["Type"], {
+	local trackingDropdown = ctx.Dropdown(L["Type"], {
 		Items = TRACKING_MODES,
 		GetText = function(value)
 			return value == groups.TrackingMode.Filters and L["Aura filters"] or L["Spell IDs"]
@@ -197,7 +204,38 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 				ui.Apply()
 			end
 		end,
-	}, trackingControlsRow, ui.DropdownColumn)
+	}, trackingControlsRow, ui.DropdownColumn * 2)
+
+	-- Leads the row, and is here rather than on the appearance tab where it used to live: sound
+	-- only changes which aura types the rest of the row can offer, so having to leave the tab to
+	-- reach it meant building a group in three visits.
+	ctx.Dropdown(L["Display"], {
+		Items = DISPLAY_OPTIONS,
+		GetText = function(value)
+			if value == groups.DisplayStyle.Bars then
+				return L["Bars"]
+			elseif value == groups.DisplayStyle.SoundOnly then
+				return L["Sound only"]
+			end
+
+			return L["Icons"]
+		end,
+		GetValue = function()
+			local group = ui.Current()
+			return group and group.Icons.Display or groups.DisplayStyle.Icons
+		end,
+		SetValue = function(value)
+			local group = ui.Current()
+
+			if group and group.Icons.Display ~= value then
+				group.Icons.Display = value
+				-- Populate as well as Apply: the controls that make sense change with the shape,
+				-- on this tab as much as on the appearance one.
+				ui.Populate()
+				ui.Apply()
+			end
+		end,
+	}, trackingControlsRow, 0)
 
 	-- Where the spell-id filter rules get explained in terms of the two dropdowns above.
 	local problem = triggerPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
@@ -471,7 +509,16 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 
 		RefreshTypeItems()
 
-		local hasChoice = #typeItems > 1
+		-- Nothing to ask a sound-only group: a registration is (unit, spell id, sound file), with
+		-- no filter string anywhere in it, so helpful and harmful are the same registration. The
+		-- type only ever built a container's filter, and this group builds none.
+		local soundOnly = groups:IsSoundOnly(group)
+		local hasChoice = #typeItems > 1 and not soundOnly
+
+		-- Nor is there a tracking mode to pick: sounds register per spell id, so Normalise has
+		-- already forced this one back to spells.
+		trackingDropdown:SetShown(not soundOnly)
+		trackingDropdown.MiniLabel:SetShown(not soundOnly)
 
 		typeDropdown:SetShown(hasChoice)
 		typeDropdown.MiniLabel:SetShown(hasChoice)

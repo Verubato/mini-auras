@@ -60,6 +60,9 @@ local soundRequests = {}
 -- collected.
 local soundTokens = {}
 local soundSeen = {}
+-- Scratch for the units a sound-only group registers on, which it works out from the roster
+-- rather than from copies it never built.
+local soundOnlyTokens = {}
 -- Scratch for the unit frames one refresh pass saw, so copies on frames that have gone are
 -- handed back.
 local seenAnchors = {}
@@ -876,6 +879,51 @@ local function RefreshArenaGroup(state, index)
 	ApplyPreview(state, entry, frame)
 end
 
+---The units a sound-only group registers on. It builds no copies, so there is nothing to read
+---the tokens off: the roster, the arena slots and the live plates are the list instead. This is
+---also why the sound survives a unit frame the group could not find - nothing here is on screen.
+---@param group CustomAuraGroup
+---@return string[] tokens The shared scratch, valid until the next call.
+local function SoundOnlyTokens(group)
+	wipe(soundOnlyTokens)
+
+	if group.Anchor == groups.Anchor.Frames then
+		-- You are on your own unit frame and the drawn side already hangs a copy there, so the
+		-- player is included whatever the roster says. That also keeps the group audible while
+		-- solo, where FriendlyUnits hands back nothing at all.
+		soundOnlyTokens[1] = "player"
+
+		for _, token in ipairs(units:FriendlyUnits()) do
+			if token ~= "player" then
+				soundOnlyTokens[#soundOnlyTokens + 1] = token
+			end
+		end
+	elseif group.Anchor == groups.Anchor.Arena then
+		for index = 1, ARENA_OPPONENTS do
+			soundOnlyTokens[#soundOnlyTokens + 1] = "arena" .. index
+		end
+	elseif group.Anchor == groups.Anchor.Nameplate then
+		for _, plate in pairs(C_NamePlate.GetNamePlates() or {}) do
+			local token = plate.namePlateUnitToken or plate.unitToken
+
+			if token and groups:MatchesReaction(group.Unit, token) then
+				soundOnlyTokens[#soundOnlyTokens + 1] = token
+			end
+		end
+	else
+		local token = groups:GetToken(group)
+
+		-- The same reaction test the plates get: a friendly-target group has no business firing
+		-- on a hostile one just because both answer to "target". The module refreshes on target
+		-- change and on UNIT_FACTION, so this is re-asked whenever the answer could have moved.
+		if token and groups:MatchesReaction(group.Unit, token) then
+			soundOnlyTokens[#soundOnlyTokens + 1] = token
+		end
+	end
+
+	return soundOnlyTokens
+end
+
 ---@param state CustomAuraGroupState
 local function CollectSoundRequests(state)
 	local group = state.Group
@@ -912,29 +960,37 @@ local function CollectSoundRequests(state)
 		end
 	end
 
-	if group.Anchor == groups.Anchor.Screen then
-		Add(group.Unit)
-		return
-	end
-
 	-- Sorted: the sound module compares a signature built from this, and pairs order varies.
 	-- Deduplicated too, because two unit frames can hold the same member.
 	wipe(soundTokens)
 	wipe(soundSeen)
 
-	if group.Anchor == groups.Anchor.Nameplate then
-		for token in pairs(state.Plates) do
+	local function AddToken(token)
+		if token and not soundSeen[token] then
+			soundSeen[token] = true
 			soundTokens[#soundTokens + 1] = token
+		end
+	end
+
+	if groups:IsSoundOnly(group) then
+		-- No copies to read the tokens off, because a sound-only group builds none.
+		for _, token in ipairs(SoundOnlyTokens(group)) do
+			AddToken(token)
+		end
+	elseif group.Anchor == groups.Anchor.Screen then
+		-- The token, not the unit CHOICE: "target (friendly)" and the role choices are names for
+		-- the picker, and the engine wants the unit they resolve to.
+		AddToken(groups:GetToken(group))
+	elseif group.Anchor == groups.Anchor.Nameplate then
+		for token in pairs(state.Plates) do
+			AddToken(token)
 		end
 	else
 		-- Unit frame and arena copies both carry the token they resolved to.
 		local copies = group.Anchor == groups.Anchor.Arena and state.Arena or state.Frames
 
 		for _, entry in pairs(copies) do
-			if entry.Unit and not soundSeen[entry.Unit] then
-				soundSeen[entry.Unit] = true
-				soundTokens[#soundTokens + 1] = entry.Unit
-			end
+			AddToken(entry.Unit)
 		end
 	end
 
@@ -961,8 +1017,10 @@ local function ShowPreviewFrames(options)
 
 	for _, groupDef in ipairs(options.Groups) do
 		-- The same test the preview itself uses: a group with nothing to draw is not previewed,
-		-- so it has no business putting frames on screen either.
-		if groupDef.Id == previewGroupId and groups:Supports(groupDef) then
+		-- so it has no business putting frames on screen either. A sound-only group is the
+		-- extreme of that - it never draws, so there is nothing to stand a frame in for.
+		if groupDef.Id == previewGroupId and groups:Supports(groupDef)
+			and not groups:IsSoundOnly(groupDef) then
 			anchor = groupDef.Anchor
 			break
 		end
@@ -1061,6 +1119,14 @@ function M:Refresh(options, moduleEnabled)
 
 		if not active then
 			Park(state)
+		elseif groups:IsSoundOnly(groupDef) then
+			-- Nothing to build, position or preview: the group IS its registrations. Parked
+			-- rather than skipped so a group switched over to sound only hands its copies back.
+			Park(state)
+
+			if state.Allowed then
+				CollectSoundRequests(state)
+			end
 		elseif groupDef.Anchor == groups.Anchor.Screen then
 			ReleasePlates(state)
 			ReleaseFrames(state)
@@ -1174,13 +1240,34 @@ function M:SetAnchorInteractive(state)
 	moduleUtil:SetTestLabel(anchor, previewing and state.Group.Name or nil)
 end
 
+---Rebuilds every group's sound registrations without touching a single display. What a
+---registration depends on - which unit a token holds, and whether it is still the side the group
+---asked for - moves without anything being drawn differently, and a sound-only group has no
+---display for the unit and plate handlers to re-point. Cheap to call: the sound module compares
+---a signature and does nothing when the answer has not moved.
+function M:RefreshSounds()
+	wipe(soundRequests)
+
+	for _, state in pairs(states) do
+		if state.Allowed then
+			CollectSoundRequests(state)
+		end
+	end
+
+	sound:Apply(soundRequests)
+end
+
 ---@param token string
 function M:OnNamePlateAdded(token)
 	for _, state in pairs(states) do
-		if state.Group.Anchor == groups.Anchor.Nameplate and state.Allowed then
+		-- Sound-only groups take no copy out on the plate; they only want it in their token list.
+		if state.Group.Anchor == groups.Anchor.Nameplate and state.Allowed
+			and not groups:IsSoundOnly(state.Group) then
 			RefreshPlateGroup(state, token)
 		end
 	end
+
+	self:RefreshSounds()
 end
 
 ---@param token string
@@ -1193,6 +1280,8 @@ function M:OnNamePlateRemoved(token)
 			state.Plates[token] = nil
 		end
 	end
+
+	self:RefreshSounds()
 end
 
 ---A unit frame was pointed at somebody else, so the copy on it follows.
@@ -1238,6 +1327,9 @@ function M:OnUnitChanged(unit)
 			state.Screen.Display:RequestRefresh()
 		end
 	end
+
+	-- The token now holds somebody else, which is the whole of what a registration is keyed on.
+	self:RefreshSounds()
 end
 
 function M:Teardown()

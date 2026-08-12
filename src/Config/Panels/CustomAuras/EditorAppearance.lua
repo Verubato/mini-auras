@@ -7,10 +7,15 @@ local barTextures = addon.Core.BarTextures
 local ui = addon.Config.CustomAurasUI
 local CHECK_COLUMNS = 5
 local CHECK_ROW_HEIGHT = 30
-local DISPLAY_OPTIONS = { groups.DisplayStyle.Icons, groups.DisplayStyle.Bars }
+-- Gaps above each checkbox row, kept here because the sound-only shape has to put them back.
+local CHECK_ROW_GAP = 8
+local CHECK_ROW2_GAP = 4
+-- One line of text, which is all a sound-only group's appearance tab holds.
+local NOTE_ROW_HEIGHT = 26
 
 ---Builds the appearance tab: what a group's auras look like. Where they sit and how big they are
----belongs to the layout tab.
+---belongs to the layout tab, and which shape it draws to the trigger tab, next to the rest of
+---what a group IS.
 ---Returns a refresh function, because the shape a group draws decides which controls even make
 ---sense: a bar has no cooldown swipe to reverse and an icon has no fill texture.
 ---@param ctx CustomAurasEditorContext
@@ -20,29 +25,8 @@ function ui.BuildAppearanceTab(ctx)
 	local checkColumn = mini:ColumnWidth(CHECK_COLUMNS, 0, 0)
 
 	local shapeRow = ctx.NewRow(appearancePanel, ui.DropdownRowHeight)
-	local checkRow = ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, 8)
-	local checkRow2 = ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, 4)
-
-	ctx.Dropdown(L["Display"], {
-		Items = DISPLAY_OPTIONS,
-		GetText = function(value)
-			return value == groups.DisplayStyle.Bars and L["Bars"] or L["Icons"]
-		end,
-		GetValue = function()
-			local group = ui.Current()
-			return group and group.Icons.Display or groups.DisplayStyle.Icons
-		end,
-		SetValue = function(value)
-			local group = ui.Current()
-
-			if group and group.Icons.Display ~= value then
-				group.Icons.Display = value
-				-- Populate as well as Apply: the controls that make sense change with the shape.
-				ui.Populate()
-				ui.Apply()
-			end
-		end,
-	}, shapeRow, 0)
+	local checkRow = ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, CHECK_ROW_GAP)
+	local checkRow2 = ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, CHECK_ROW2_GAP)
 
 	local textureDropdown = ctx.Dropdown(L["Bar Texture"], {
 		Items = barTextures:GetNames(),
@@ -62,7 +46,7 @@ function ui.BuildAppearanceTab(ctx)
 		GetText = function(value)
 			return barTextures:GetLabel(value)
 		end,
-	}, shapeRow, ui.DropdownColumn)
+	}, shapeRow, 0)
 
 	-- Media addons register their textures whenever they happen to load, which is routinely after
 	-- this dropdown was built, so re-ask for the list rather than keeping the one it started with.
@@ -183,13 +167,25 @@ function ui.BuildAppearanceTab(ctx)
 	pandemicSwatch:SetPoint("TOPLEFT", checkRow2, "TOPLEFT", checkColumn,
 		-math.floor((CHECK_ROW_HEIGHT - pandemicSwatch:GetHeight()) / 2))
 
+	-- Shares the shape row with the bar texture, which is never up at the same time: one of them
+	-- is what this tab has to say about the group.
+	local emptyNote = appearancePanel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+	emptyNote:SetText(L["Sound only auras don't have an appearance."])
+	emptyNote:SetPoint("TOPLEFT", shapeRow, "TOPLEFT", 0, 0)
+	emptyNote:SetPoint("BOTTOMRIGHT", shapeRow, "BOTTOMRIGHT", 0, 0)
+	emptyNote:SetJustifyH("LEFT")
+	emptyNote:SetJustifyV("TOP")
+
 	---@param group CustomAuraGroup
 	local function RefreshShape(group)
 		local bars = groups:DrawsBars(group)
+		-- A sound-only group draws nothing, so every appearance control is about something that
+		-- is not there. Only the shape dropdown itself stays, to switch back out of it.
+		local soundOnly = groups:IsSoundOnly(group)
 		local column = 0
 
 		for _, spec in ipairs(checkboxes) do
-			local shown = spec.Bars == nil or spec.Bars == bars
+			local shown = not soundOnly and (spec.Bars == nil or spec.Bars == bars)
 
 			spec.Control:SetShown(shown)
 
@@ -200,8 +196,34 @@ function ui.BuildAppearanceTab(ctx)
 			end
 		end
 
-		textureDropdown:SetShown(bars)
-		textureDropdown.MiniLabel:SetShown(bars)
+		-- The bar texture is all that is left on this row now that the shape itself is picked on
+		-- the trigger tab, so the row goes away with it rather than holding open a blank strip.
+		local showTexture = bars and not soundOnly
+
+		textureDropdown:SetShown(showTexture)
+		textureDropdown.MiniLabel:SetShown(showTexture)
+		emptyNote:SetShown(soundOnly)
+
+		if showTexture then
+			shapeRow:SetHeight(ui.DropdownRowHeight)
+		else
+			shapeRow:SetHeight(soundOnly and NOTE_ROW_HEIGHT or 1)
+		end
+
+		-- A swatch's label is a child of the panel rather than of the swatch, so it has to be
+		-- hidden by hand: hiding the button alone leaves the caption behind on its own.
+		swatch:SetShown(not soundOnly)
+		swatch.Label:SetShown(not soundOnly)
+		pandemicSwatch:SetShown(not soundOnly)
+		pandemicSwatch.Label:SetShown(not soundOnly)
+
+		-- Rows keep their height whatever is in them, so the emptied ones are collapsed rather
+		-- than left holding the tab open around nothing.
+		checkRow:SetHeight(soundOnly and 1 or CHECK_ROW_HEIGHT)
+		checkRow2:SetHeight(soundOnly and 1 or CHECK_ROW_HEIGHT)
+		ctx.SetRowGap(checkRow, soundOnly and 0 or CHECK_ROW_GAP)
+		ctx.SetRowGap(checkRow2, soundOnly and 0 or CHECK_ROW2_GAP)
+		ctx.UpdateEditorHeight()
 	end
 
 	return RefreshShape

@@ -38,8 +38,14 @@ local ARENA = "ARENA"
 -- How a group draws its auras: square icons, or bars the engine drains (icon, spell name and
 -- countdown in one row). The choice is baked into a container's buttons at creation, so the
 -- display pools the two shapes separately rather than restyling between them.
+--
+-- Sound only is the third: no container at all, just the group's sound registrations. It is what
+-- makes debuffs on your own side trackable by spell id - the engine drops that filter for the
+-- display but honours it for AddAuraSound, so a group with nothing to draw has nothing to be
+-- wrong about (see SupportsAuraType).
 local AS_ICONS = "ICON"
 local AS_BARS = "BAR"
+local AS_SOUND = "SOUND"
 
 local DEFAULT_ICON_SIZE = 40
 local DEFAULT_SPACING = 2
@@ -189,7 +195,7 @@ M.MaxIcons = MAX_ICONS
 M.PreviewIcons = PREVIEW_ICONS
 M.MinIconSize = MIN_ICON_SIZE
 M.MaxIconSize = MAX_ICON_SIZE
-M.DisplayStyle = { Icons = AS_ICONS, Bars = AS_BARS }
+M.DisplayStyle = { Icons = AS_ICONS, Bars = AS_BARS, SoundOnly = AS_SOUND }
 M.MinBarWidth = MIN_BAR_WIDTH
 M.MaxBarWidth = MAX_BAR_WIDTH
 M.MinBarHeight = MIN_BAR_HEIGHT
@@ -321,7 +327,7 @@ function M:Normalise(group)
 
 	-- A split unit allows one aura type only, so a group pointed at one takes that type whatever
 	-- it was set to. Nothing else could be shown there anyway.
-	if not M:SupportsAuraType(unit, group.AuraType, group.TrackingMode) then
+	if not M:SupportsAuraType(unit, group.AuraType, group.TrackingMode, M:IsSoundOnly(group)) then
 		group.AuraType = info.Harmful and HARMFUL or HELPFUL
 	end
 
@@ -345,9 +351,10 @@ function M:Normalise(group)
 	group.Icons = icons
 	icons.Size = Clamped(icons.Size, DEFAULT_ICON_SIZE, MIN_ICON_SIZE, MAX_ICON_SIZE)
 	icons.Spacing = Clamped(icons.Spacing, DEFAULT_SPACING, 0, 50)
-	-- Icons unless the group asked for bars: a group saved before bars existed has no field, and
-	-- changing what those groups look like is not something a version bump gets to do.
-	icons.Display = icons.Display == AS_BARS and AS_BARS or AS_ICONS
+	-- Icons unless the group asked for something else: a group saved before bars existed has no
+	-- field, and changing what those groups look like is not something a version bump gets to do.
+	icons.Display = (icons.Display == AS_BARS or icons.Display == AS_SOUND) and icons.Display
+		or AS_ICONS
 	icons.BarWidth = Clamped(icons.BarWidth, DEFAULT_BAR_WIDTH, MIN_BAR_WIDTH, MAX_BAR_WIDTH)
 	icons.BarHeight = Clamped(icons.BarHeight, DEFAULT_BAR_HEIGHT, MIN_BAR_HEIGHT, MAX_BAR_HEIGHT)
 	-- A name from a media addon that is no longer installed resolves back to the default at draw
@@ -384,7 +391,11 @@ function M:Normalise(group)
 	sound.File = nil
 	sound.Channel = sound.Channel == "SFX" and "SFX" or "Master"
 
-	group.TrackingMode = group.TrackingMode == BY_FILTERS and BY_FILTERS or BY_SPELLS
+	-- A sound-only group tracks spells whatever it was set to: the engine registers a sound per
+	-- spell id, so a filter group has nothing to hand it and would be a group that can never make
+	-- a noise. Enforced here rather than in the options page, so an import cannot save one either.
+	group.TrackingMode = (group.TrackingMode == BY_FILTERS and not M:IsSoundOnly(group))
+		and BY_FILTERS or BY_SPELLS
 	group.Caster = (group.Caster == CASTER_MINE or group.Caster == CASTER_OTHERS)
 		and group.Caster or CASTER_ANY
 	group.Sort = (group.Sort == SORT_LONGEST or group.Sort == SORT_SHORTEST)
@@ -520,6 +531,27 @@ function M:DrawsBars(group)
 	return group.Icons.Display == AS_BARS
 end
 
+---True while a group draws nothing and only plays its sounds. Nil-safe on the appearance table,
+---because the unit sanitiser asks this before it has filled one in.
+---@param group CustomAuraGroup
+---@return boolean
+function M:IsSoundOnly(group)
+	return group.Icons ~= nil and group.Icons.Display == AS_SOUND
+end
+
+---True while a group has at least one trigger set to something audible.
+---@param group CustomAuraGroup
+---@return boolean
+function M:HasSound(group)
+	for _, trigger in ipairs(SOUND_TRIGGERS) do
+		if group.Sound[trigger] ~= NO_SOUND then
+			return true
+		end
+	end
+
+	return false
+end
+
 ---The size a group's display is built at: a bar's height, or an icon's side. Both shapes size
 ---everything else (fonts, the bar's leading icon) from this one number.
 ---@param group CustomAuraGroup
@@ -611,12 +643,20 @@ end
 ---@param unit string
 ---@param auraType string
 ---@param trackingMode string?
+---@param soundOnly boolean? True for a group that draws nothing, which lifts every rule below:
+---all of them exist because the engine drops a spell-id filter for the DISPLAY on the wrong side
+---of the identity gate, while AddAuraSound keys on the bare spell id and honours it on any unit
+---whatever its reaction. So a group with no display can watch either aura type on any unit.
 ---@return boolean
-function M:SupportsAuraType(unit, auraType, trackingMode)
+function M:SupportsAuraType(unit, auraType, trackingMode, soundOnly)
 	local info = UNIT_INFO[unit]
 
 	if not info then
 		return false
+	end
+
+	if soundOnly then
+		return true
 	end
 
 	if auraType == HARMFUL and not info.Harmful then
@@ -640,16 +680,25 @@ end
 ---@return boolean supported
 ---@return string? reason Key the options page maps to a message.
 function M:Supports(group)
+	local soundOnly = M:IsSoundOnly(group)
+
 	-- Nameplates and arena frames are excluded because neither is ever always-assistable, so the
 	-- only anchors that can land here are the screen and the unit frames.
 	if group.Anchor ~= NAMEPLATE and group.Anchor ~= ARENA
-		and not M:SupportsAuraType(group.Unit, group.AuraType, group.TrackingMode) then
+		and not M:SupportsAuraType(group.Unit, group.AuraType, group.TrackingMode, soundOnly) then
 		return false, group.Anchor == FRAMES and "HARMFUL_ON_GROUP" or "HARMFUL_ON_FRIENDLY"
 	end
 
 	-- No reason given: the empty spell list says it already. A filter group has nothing it must
 	-- carry, because the aura type alone is already a working filter string.
 	if M:TracksSpells(group) and #group.Spells == 0 then
+		return false
+	end
+
+	-- A sound-only group is its sounds, and the engine plays those per spell id, so a filter
+	-- group could never ask for one either. No reason given, like the empty spell list above:
+	-- a group still being built is not a group configured wrongly.
+	if soundOnly and not (M:TracksSpells(group) and M:HasSound(group)) then
 		return false
 	end
 
@@ -667,6 +716,12 @@ function M:GetWarning(group)
 	-- A unit frame holds a group member and an arena frame an opponent, so neither side is
 	-- something the user is waiting on.
 	if not info or info.Friendly == nil or info.Frames or info.ArenaFrames then
+		return nil
+	end
+
+	-- Both of these are about what gets SHOWN, and a sound-only group shows nothing. It still
+	-- waits for the same reaction, it just has no icons to say it about.
+	if M:IsSoundOnly(group) then
 		return nil
 	end
 

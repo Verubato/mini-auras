@@ -612,13 +612,19 @@ fw.describe("Custom auras page - with a group configured", function()
 		ShowPage(addon)
 	end)
 
-	fw.it("lays out both display shapes", function()
+	fw.it("lays out every display shape", function()
 		-- The appearance tab collapses and reinstates a row per shape, so the page has to be
-		-- measurable either way round.
+		-- measurable for each of them, including the sound-only one that empties it entirely.
 		local addon, group = LoadWithGroup({ 45438 })
 		local groups = addon.Modules.CustomAuras.Groups
 
-		for _, shape in ipairs({ groups.DisplayStyle.Bars, groups.DisplayStyle.Icons }) do
+		local shapes = {
+			groups.DisplayStyle.Bars,
+			groups.DisplayStyle.Icons,
+			groups.DisplayStyle.SoundOnly,
+		}
+
+		for _, shape in ipairs(shapes) do
 			group.Icons.Display = shape
 			groups:Normalise(group)
 			ShowPage(addon)

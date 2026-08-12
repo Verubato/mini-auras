@@ -1373,6 +1373,26 @@ fw.describe("CustomAuras - stand-in frames while a group is being placed", funct
 		Reset()
 	end)
 
+	fw.it("leaves the stand-ins alone for a sound only group", function()
+		Reset()
+		SetTokensAbsent("party", true)
+
+		local group = AddGroup({
+			Unit = "unitframes",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = groups.DisplayStyle.SoundOnly },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+
+		display:SetPreviewGroup(group.Id)
+
+		-- Nothing is ever drawn on them, so there is nothing to stand a frame in for.
+		assert(not env.testFramesShown, "no stand-in party frames for a group that draws nothing")
+		assert(Count(display:GetStates()[group.Id].Frames) == 0, "and no copies taken out")
+
+		Reset()
+	end)
+
 	fw.it("puts the arena stand-ins up for an arena group with nothing real on screen", function()
 		Reset()
 		SetTokensAbsent("arena", true)
@@ -2103,5 +2123,310 @@ fw.describe("CustomAuras - module gating", function()
 	fw.it("reports nothing through Notify", function()
 		assert(#env.notifications == 0,
 			"unexpected warnings: " .. table.concat(env.notifications, " | "))
+	end)
+end)
+
+fw.describe("CustomAuras - sound only groups", function()
+	local SOUND_ONLY = groups.DisplayStyle.SoundOnly
+
+	fw.it("allows debuffs by spell id where a drawn group cannot have them", function()
+		-- The engine drops the spell-id filter for a DISPLAY on an assistable unit, but keys
+		-- AddAuraSound on the bare id, so a group that draws nothing is free of the rule.
+		assert(not groups:SupportsAuraType("unitframes", "HARMFUL", groups.TrackingMode.Spells),
+			"a drawn group still cannot")
+		assert(groups:SupportsAuraType("unitframes", "HARMFUL", groups.TrackingMode.Spells, true),
+			"a sound only group can")
+	end)
+
+	fw.it("reports a sound only group with nothing to play", function()
+		local group = groups:Normalise({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = SOUND_ONLY },
+		})
+		local supported, reason = groups:Supports(group)
+
+		-- Quietly, with no message: a group still being built is not one configured wrongly.
+		assert(not supported, "silent means nothing happens")
+		assert(reason == nil, "and nothing is reported about it")
+
+		group.Sound.Applied = "Sonar"
+
+		assert(groups:Supports(group), "and a sound is all it needs")
+	end)
+
+	fw.it("registers its sounds without building a container", function()
+		ClearGroups()
+		addon.Modules.CustomAuras.Sound:Clear()
+
+		local before = env.auraSoundAdds
+
+		AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = SOUND_ONLY },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		assert(env.auraSoundAdds > before, "the sound is registered")
+		assert(not ContainerFor("player"), "and nothing was built to draw it")
+	end)
+
+	fw.it("follows the roster rather than the frames it never hung off", function()
+		ClearGroups()
+		addon.Modules.CustomAuras.Sound:Clear()
+		env.friendlyUnits = { "player", "party1", "party2" }
+
+		AddGroup({
+			Unit = "unitframes",
+			AuraType = "HARMFUL",
+			Spells = { POLYMORPH },
+			Icons = { Display = SOUND_ONLY },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		local seen = {}
+
+		for _, entry in pairs(env.auraSounds) do
+			seen[entry.Unit] = true
+		end
+
+		assert(seen.player and seen.party1 and seen.party2, "every group member is registered")
+
+		env.friendlyUnits = {}
+	end)
+
+	fw.it("registers a target group on the token, not on the unit choice", function()
+		ClearGroups()
+		addon.Modules.CustomAuras.Sound:Clear()
+
+		AddGroup({
+			Unit = "targetfriendly",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = SOUND_ONLY },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		local last = env.auraSounds[env.auraSoundAdds]
+
+		assert(last.Unit == "target", "the unit the picker's name resolves to")
+	end)
+end)
+
+fw.describe("CustomAuras - sounds on units the picker renames", function()
+	fw.it("registers a drawn target group on the token behind the choice", function()
+		ClearGroups()
+		addon.Modules.CustomAuras.Sound:Clear()
+
+		AddGroup({
+			Unit = "targetfriendly",
+			Spells = { ICE_BLOCK },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		local last = env.auraSounds[env.auraSoundAdds]
+
+		assert(last and last.Unit == "target",
+			"expected the resolved token, got " .. tostring(last and last.Unit))
+	end)
+end)
+
+fw.describe("CustomAuras - sound only ignores the aura type split", function()
+	-- Every split in UNIT_INFO is there because the engine drops a spell-id filter for the
+	-- DISPLAY on the wrong side of the identity gate. A registration has no such side.
+	local CASES = {
+		{ Unit = "healer", Type = "HARMFUL", Why = "a debuff on the healer" },
+		{ Unit = "targetfriendly", Type = "HARMFUL", Why = "a debuff on a friendly target" },
+		{ Unit = "nameplateenemy", Type = "HELPFUL", Why = "a buff on an enemy plate" },
+		{ Unit = "arenaframes", Type = "HELPFUL", Why = "a buff on an arena enemy" },
+	}
+
+	for _, case in ipairs(CASES) do
+		fw.it("allows " .. case.Why, function()
+			assert(not groups:SupportsAuraType(case.Unit, case.Type, groups.TrackingMode.Spells),
+				"a drawn group still cannot")
+			assert(groups:SupportsAuraType(case.Unit, case.Type, groups.TrackingMode.Spells, true),
+				"a sound only group can")
+		end)
+	end
+end)
+
+fw.describe("CustomAuras - sound only on the unit frames", function()
+	fw.it("watches the player even with nobody else in the group", function()
+		ClearGroups()
+		addon.Modules.CustomAuras.Sound:Clear()
+		env.friendlyUnits = {}
+
+		AddGroup({
+			Unit = "unitframes",
+			AuraType = "HARMFUL",
+			Spells = { POLYMORPH },
+			Icons = { Display = groups.DisplayStyle.SoundOnly },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		local seen = {}
+
+		for _, entry in pairs(env.auraSounds) do
+			seen[entry.Unit] = true
+		end
+
+		assert(seen.player, "your own frame is one of the unit frames")
+	end)
+
+	fw.it("does not register the player twice once there is a group", function()
+		ClearGroups()
+		addon.Modules.CustomAuras.Sound:Clear()
+		env.friendlyUnits = { "player", "party1" }
+
+		local before = env.auraSoundAdds
+
+		AddGroup({
+			Unit = "unitframes",
+			AuraType = "HARMFUL",
+			Spells = { POLYMORPH },
+			Icons = { Display = groups.DisplayStyle.SoundOnly },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		local playerAdds = 0
+
+		for index = before + 1, env.auraSoundAdds do
+			if env.auraSounds[index].Unit == "player" then
+				playerAdds = playerAdds + 1
+			end
+		end
+
+		-- One spell, one trigger, so the player is worth exactly one registration.
+		assert(playerAdds == 1, "expected 1 registration on the player, got " .. playerAdds)
+
+		env.friendlyUnits = {}
+	end)
+end)
+
+fw.describe("CustomAuras - sound only forces spell tracking", function()
+	fw.it("puts a filter group back onto spells when it turns sound only", function()
+		local group = groups:Normalise({
+			Unit = "player",
+			TrackingMode = groups.TrackingMode.Filters,
+		})
+
+		assert(group.TrackingMode == groups.TrackingMode.Filters, "a drawn group keeps filters")
+
+		group.Icons.Display = groups.DisplayStyle.SoundOnly
+		groups:Normalise(group)
+
+		-- The engine registers a sound per spell id, so a filter group has nothing to hand it.
+		assert(group.TrackingMode == groups.TrackingMode.Spells, "sound only tracks spells")
+	end)
+
+	fw.it("refuses an import that saved a sound only filter group", function()
+		local group = groups:Normalise({
+			Unit = "player",
+			TrackingMode = "FILTERS",
+			Icons = { Display = groups.DisplayStyle.SoundOnly },
+		})
+
+		assert(group.TrackingMode == groups.TrackingMode.Spells, "corrected on the way in")
+	end)
+end)
+
+fw.describe("CustomAuras - sound only respects the unit's side", function()
+	local function TargetGroup()
+		return AddGroup({
+			Unit = "targetfriendly",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = groups.DisplayStyle.SoundOnly },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+	end
+
+	fw.it("registers a friendly target group while the target is friendly", function()
+		ClearGroups()
+		addon.Modules.CustomAuras.Sound:Clear()
+		env.enemies.target = nil
+
+		local before = env.auraSoundAdds
+
+		TargetGroup()
+		module:Refresh()
+
+		assert(env.auraSoundAdds > before, "the sound is registered")
+	end)
+
+	fw.it("drops it once the target is hostile", function()
+		ClearGroups()
+		addon.Modules.CustomAuras.Sound:Clear()
+		env.enemies.target = true
+
+		local before = env.auraSoundAdds
+
+		TargetGroup()
+		module:Refresh()
+
+		assert(env.auraSoundAdds == before,
+			"a friendly target group has no business firing on a hostile one")
+
+		env.enemies.target = nil
+	end)
+
+	fw.it("says nothing about a side it cannot show", function()
+		local group = groups:Normalise({
+			Unit = "targetfriendly",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = groups.DisplayStyle.SoundOnly },
+		})
+
+		assert(groups:GetWarning(group) == nil, "the caveat is about icons, and there are none")
+
+		group.Icons.Display = groups.DisplayStyle.Icons
+		groups:Normalise(group)
+
+		assert(groups:GetWarning(group) == "HELPFUL_FRIENDLY_ONLY", "a drawn group still says it")
+	end)
+end)
+
+fw.describe("CustomAuras - sound only follows the token's occupant", function()
+	fw.it("registers a friendly target group when the friendly target arrives later", function()
+		ClearGroups()
+		addon.Modules.CustomAuras.Sound:Clear()
+
+		-- Built while the target is hostile, so the reaction test refuses it to begin with.
+		env.enemies.target = true
+
+		AddGroup({
+			Unit = "targetfriendly",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = groups.DisplayStyle.SoundOnly },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		local before = env.auraSoundAdds
+
+		-- Targeting a friendly is a unit change, not a refresh: nothing about the group moved,
+		-- only who its token points at.
+		env.enemies.target = nil
+		display:OnUnitChanged("target")
+
+		assert(env.auraSoundAdds > before, "the registration follows the new occupant")
+		assert(env.auraSounds[env.auraSoundAdds].Unit == "target", "on the target token")
+	end)
+
+	fw.it("hands it back when the target turns hostile", function()
+		local removes = env.auraSoundRemoves
+
+		env.enemies.target = true
+		display:OnUnitChanged("target")
+
+		assert(env.auraSoundRemoves > removes, "the registration goes with the friendly target")
+
+		env.enemies.target = nil
 	end)
 end)
