@@ -12,7 +12,7 @@ local _, addon = ...
 -- Core/AuraFilters) - so a gap in these lists now costs a missing ICON, not just a missing sound.
 
 addon.Core.AuraCategoryIds = {
-	-- CC (1032 ids)
+	-- CC (1033 ids)
 	CC = {
 		[33390] = true, -- Arcane Torrent
 		[36022] = true, -- Arcane Torrent
@@ -991,6 +991,7 @@ addon.Core.AuraCategoryIds = {
 		[415087] = true, -- Time Stop
 		[10326] = true, -- Turn Evil
 		[145067] = true, -- Turn Evil
+		[1234195] = true, -- Void Nova
 		[114404] = true, -- Void Tendrils
 		[131039] = true, -- Void Tendrils
 		[245049] = true, -- Void Tendrils
@@ -1081,6 +1082,7 @@ addon.Core.AuraCategoryIds = {
 		[235313] = true, -- Blazing Barrier
 		[110960] = true, -- Greater Invisibility
 		[414664] = true, -- Mass Invisibility
+		[357210] = true, -- Deep Breath
 		[354610] = true, -- Glimpse
 		[203819] = true, -- Demon Spikes
 		[61336] = true, -- Survival Instincts
@@ -1190,6 +1192,7 @@ addon.Core.AuraCategoryIds = {
 		[363534] = "EVOKER", -- Rewind
 		[374227] = "EVOKER", -- Zephyr
 		[375087] = "EVOKER", -- Dragonrage
+		[357210] = "EVOKER", -- Deep Breath
 		[378464] = "EVOKER", -- Nullifying Shroud
 		[363916] = "EVOKER", -- Obsidian Scales
 		[357170] = "EVOKER", -- Time Dilation

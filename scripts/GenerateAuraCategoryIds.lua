@@ -31,6 +31,7 @@ local ccNames = {
 	["Bash"] = true, ["Mighty Bash"] = true, ["Maim"] = true, ["Rake"] = true,
 	["Asphyxiate"] = true, ["Leg Sweep"] = true, ["Static Charge"] = true,
 	["Intimidation"] = true, ["Binding Shot"] = true, ["Chaos Nova"] = true,
+	["Void Nova"] = true,
 	["Fel Eruption"] = true, ["Shadowfury"] = true, ["Axe Toss"] = true,
 	["War Stomp"] = true, ["Bull Rush"] = true, ["Quaking Palm"] = true,
 	["Charge"] = true, ["Intercept"] = true, ["Deep Freeze"] = true,
