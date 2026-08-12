@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.7.0
+
+- Text-to-speech has a new Spells tab for choosing which spells are announced. Every spell starts on, and ticking one plays its clip.
+- New Zoom Icons option in Miscellaneous. Turning it off gives back the silver border Blizzard bakes into spell icons.
+
 ## 5.6.2
 
 - Sound channels now include music, ambience, and dialog, alongside master and sound effects.
