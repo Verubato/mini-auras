@@ -227,8 +227,8 @@ channel dropdown, Master or Sound Effects (SFX), default Master.
 ## Custom Auras / Personal Auras (12.1 only)
 
 Sidebar: General > Personal Auras. Page title "Custom Auras". User-built "mini weak auras":
-icons or bars (with optional sound) for buffs on allies and debuffs on enemies. This is the
-flagship 12.1 feature.
+icons or bars (with optional sound) for buffs on allies and debuffs on enemies, or a sound on
+its own with nothing drawn at all. This is the flagship 12.1 feature.
 
 ### Groups
 
@@ -284,10 +284,15 @@ a profile that predates them gains them on the next load.
   - **Friendly Nameplates** / **Enemy Nameplates** - one copy on every matching nameplate.
   - (Groups saved before the split with old units target/focus/targettarget/nameplate are
     migrated to the matching target or nameplate choice; focus no longer exists as a choice.)
+- **Display**: **Icons**, **Bars** or **Sound only**. First on the row, because it decides
+  what the rest of the row may offer (see Sound only below). Icons and bars are the two drawn
+  shapes; see the Appearance and Layout tabs.
 - **Aura Type**: **Buff** or **Debuff**. The dropdown is hidden when the unit allows only one
-  type. Target and nameplate units allow only the type matching their side (buffs on
-  friendly, debuffs on enemy); Arena Frames allows only debuffs.
-- **Type**: **Spell IDs** or **Aura filters** (the two tracking modes).
+  type, and for a Sound only group, which does not care. Target and nameplate units allow only
+  the type matching their side (buffs on friendly, debuffs on enemy); Arena Frames allows only
+  debuffs.
+- **Type**: **Spell IDs** or **Aura filters** (the two tracking modes). Hidden for a Sound only
+  group, which is always Spell IDs.
 
 **The spell-ID rule (why some combinations are refused).** The game only honours a spell-ID
 filter for helpful auras on units you can assist, and for harmful auras on units you cannot;
@@ -298,6 +303,13 @@ pet." / "Debuffs cannot be tracked on group members." Switching to Aura filters 
 debuffs on those units legal, because filter strings apply regardless of side. Yellow
 caveats: "Buffs are only shown while the unit is friendly." / "Debuffs are only shown while
 the unit is hostile." for the target and nameplate choices.
+
+**Sound only lifts the rule entirely.** The restriction is about what can be DRAWN: the rule
+applies to the filters a container uses to decide which auras to show. A sound is registered
+per spell ID against a unit and is not filtered that way at all, so a Sound only group can
+watch either aura type on any unit - including debuffs on yourself, your pet and your party
+frames, which no drawn group can do. Neither the Aura Type nor the tracking mode dropdown is
+shown for one, and none of the red refusals or yellow caveats apply.
 
 **Spell IDs mode:**
 
@@ -352,9 +364,11 @@ again.
 
 ### Appearance tab
 
+Empty for a **Sound only** group, which draws nothing: the tab shows "Sound only auras don't
+have an appearance." and no controls. **Display** itself lives on the Trigger tab.
+
 | Setting | Values / range | Default |
 |---|---|---|
-| Display | Icons / Bars | Icons |
 | Bar Texture | any shipped/LibSharedMedia bar texture (bars only) | Blizzard Raid Bar |
 | Glow icons | on/off (icons only) | off (starter groups: on) |
 | Show border | on/off | off (starter groups: on) |
@@ -365,8 +379,8 @@ again.
 | Colour (glow/border tint, or the bar's fill) | colour swatch | white |
 | Pandemic colour | colour swatch | red (1, 0.1, 0.1) |
 
-**Display** decides the shape of the whole group. A **Bars** group draws a horizontal bar per
-aura: the spell icon at the left, the spell name and the countdown inside the fill, and the
+**Display** (on the Trigger tab) decides the shape of the whole group. A **Bars** group draws a
+horizontal bar per aura: the spell icon at the left, the spell name and the countdown inside the fill, and the
 fill draining as the aura runs out. Stacks, dispel colouring and the pandemic reveal work on
 both shapes; the glow does not (the styles are drawn for a square, so the option is hidden for
 bars). The shape is baked into a display when it is built, so switching it swaps the group onto
@@ -378,6 +392,9 @@ remaining time on top). The game decides the window per spell, and only your own
 effects have one.
 
 ### Layout tab
+
+Empty for a **Sound only** group, for the same reason: the tab shows "Sound only auras don't
+have a position." and no controls.
 
 | Setting | Values / range | Default |
 |---|---|---|
@@ -399,6 +416,13 @@ group does not have). Three independent sound pickers, each any shipped/LibShare
 or "(None)" (default None): **When applied**, **When it gains a stack**, **When removed**;
 plus one **Channel** (Master / Sound Effects) for all three. Sounds are played engine-side,
 so they fire even though the addon cannot read the aura.
+
+For a **Sound only** group this tab is the whole feature. Such a group needs spells and at
+least one sound to do anything; with neither it simply does nothing, and the editor says
+nothing about it (an unfinished group is not a misconfigured one). Sound only groups on the
+**Unit Frames** unit follow the roster rather than the frames on screen, so they work with the
+party frames hidden and cover you as well as your group; the target and nameplate choices
+still only fire while the unit is on the side the choice names.
 
 ### Limits
 
