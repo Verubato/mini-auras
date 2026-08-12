@@ -28,7 +28,6 @@ L:RegisterLocale("ptBR", {
 	["Enable if you are:"] = "Ativar se você for:",
 	["Enable in"] = "Ativar em",
 	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "Brilhos animados continuam animando ícones sem aura, consumindo CPU ocioso.",
-	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "Mostra um ícone na tela quando você recebe Precognição ou Sudário Anulador.",
 	["Specify which spells are shown on raid frames."] = "Especifica quais magias são exibidas nos quadros de raide.",
 	["Remove"] = "Remover",
 	["Custom"] = "Personalizados",
@@ -278,13 +277,6 @@ L:RegisterLocale("ptBR", {
 	-- Retired options, still named by old What's New entries
 	[" - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames)."] = " - As recargas inimigas agora podem ser sempre exibidas (esmaecidas quando fora de recarga) através da opção 'Sempre mostrar recargas', além de um novo modo de layout Dividido (recargas ofensivas na barra linear, defensivas nos quadros de arena).",
 
-	-- Precognition tab
-	["Note that you can't simply filter by spell id these days."] = "Note que hoje em dia você não pode simplesmente filtrar por ID de feitiço.",
-	["Precognition"] = "Precognição",
-	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Funciona detectando qualquer buff pessoal «importante» de 4 segundos e exibindo esse ícone.",
-	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Se por acaso você tiver outro buff pessoal importante de 4 segundos, ele também exibiria esse ícone, desculpe.",
-	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Também detecta o Manto Anulador do Evocador de Preservação (buff pessoal importante de 3 segundos).",
-
 	-- Other Addons tab
 	["Other Mini Addons"] = "Outros Mini Addons",
 	["Other addons to customize MiniAuras further:"] = "Outros addons para personalizar os ícones do MiniAuras:",
@@ -330,7 +322,6 @@ L:RegisterLocale("ptBR", {
 	["Ready"] = "Pronto",
 	["Show self"] = "Mostrar a si mesmo",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Mantem uma barra no topo para sua propria interrupcao, com a contagem ate ficar pronta.",
-	["Play a sound when you get Precognition."] = "Toca um som quando você recebe Precognição.",
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Auras personalizadas",

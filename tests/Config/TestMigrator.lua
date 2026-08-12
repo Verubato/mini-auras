@@ -73,13 +73,12 @@ assert(type(LATEST_VERSION) == "number" and LATEST_VERSION >= 55, "sane latest v
 local expectedModules = {
 	"CCModule", "PetCCModule", "HealerCCModule", "PortraitModule", "AlertsModule",
 	"NameplatesModule", "EnemyKickTrackerModule", "TrinketsModule", "RaidFrameAurasModule",
-	"PrecogModule",
 }
 
 -- Modules the addon no longer ships. Their settings are not in dbDefaults any more, so the final
 -- CleanTable must drop them outright rather than leaving orphaned tables behind.
 local removedModules = {
-	"FriendlyCooldownTrackerModule", "EnemyCooldownTrackerModule",
+	"FriendlyCooldownTrackerModule", "EnemyCooldownTrackerModule", "PrecogModule",
 }
 
 fw.describe("Migrator - fresh install", function()

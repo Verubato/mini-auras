@@ -28,7 +28,6 @@ L:RegisterLocale("ruRU", {
 	["Enable if you are:"] = "Включить, если вы:",
 	["Enable in"] = "Включить в",
 	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "Анимированные свечения продолжают анимировать значки без аур, расходуя ресурсы в простое.",
-	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "Показывает значок на экране, когда вы получаете «Предвидение» или «Аннулирующий покров».",
 	["Specify which spells are shown on raid frames."] = "Определяет, какие заклинания отображаются на рамках рейда.",
 	["Remove"] = "Удалить",
 	["Custom"] = "Свои",
@@ -278,13 +277,6 @@ L:RegisterLocale("ruRU", {
 	-- Retired options, still named by old What's New entries
 	[" - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames)."] = " - Перезарядки противников теперь можно отображать постоянно (затенёнными вне перезарядки) с помощью параметра «Всегда показывать перезарядки», а также добавлен новый раздельный режим (атакующие перезарядки на линейной полосе, защитные — на рамках арены).",
 
-	-- Precognition tab
-	["Note that you can't simply filter by spell id these days."] = "Обратите внимание, что в наши дни нельзя просто фильтровать по ID заклинания.",
-	["Precognition"] = "Предвидение",
-	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Работает, отслеживая любой 4-секундный «важный» бафф на себя и отображая его иконку.",
-	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Если у вас есть другой 4-секундный важный бафф на себя, то его иконка также будет отображаться, приносим извинения.",
-	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Также отслеживает «Нейтрализующее покрывало» Призывателя Сохранения (3-секундный важный бафф на себя).",
-
 	-- Other Addons tab
 	["Other Mini Addons"] = "Другие Mini аддоны",
 	["Other addons to customize MiniAuras further:"] = "Другие аддоны для оформления иконок MiniAuras:",
@@ -332,7 +324,6 @@ L:RegisterLocale("ruRU", {
 	["Ready"] = "Готово",
 	["Show self"] = "Показывать себя",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Закрепляет сверху полосу вашего прерывания с отсчётом до готовности.",
-	["Play a sound when you get Precognition."] = "Проигрывает звук, когда вы получаете Предвидение.",
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Свои ауры",

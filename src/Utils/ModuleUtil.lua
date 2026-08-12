@@ -24,7 +24,6 @@ local ModuleName = {
 	AllyKickTracker = "AllyKickTrackerModule",
 	Trinkets = "TrinketsModule",
 	RaidFrameAuras = "RaidFrameAurasModule",
-	Precog = "PrecogModule",
 }
 
 ---@class ModuleUtil

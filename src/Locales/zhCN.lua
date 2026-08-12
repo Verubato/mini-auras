@@ -28,7 +28,6 @@ L:RegisterLocale("zhCN", {
 	["Enable if you are:"] = "如果您是以下角色则启用：",
 	["Enable in"] = "启用于",
 	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "动画发光会继续在没有光环的图标上播放，空闲时也会消耗 CPU。",
-	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "当你获得预知或湮灭披风时，在屏幕上显示一个图标。",
 	["Specify which spells are shown on raid frames."] = "指定在团队框体上显示哪些法术。",
 	["Remove"] = "移除",
 	["Custom"] = "自定义",
@@ -278,13 +277,6 @@ L:RegisterLocale("zhCN", {
 	-- Retired options, still named by old What's New entries
 	[" - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames)."] = " - 现在可通过“始终显示冷却”选项始终显示敌方冷却（未冷却时变暗），并新增分离布局模式（进攻冷却显示在线性条上，防御冷却显示在竞技场框架上）。",
 
-	-- Precognition tab
-	["Note that you can't simply filter by spell id these days."] = "请注意，现在无法简单地通过法术ID进行过滤。",
-	["Precognition"] = "预知",
-	["It works by taking any 4 second 'important' self buff and showing that icon."] = "其工作原理是检测任何4秒的'重要'自身增益效果并显示该图标。",
-	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "如果你恰好有其他4秒的重要自身增益效果，该图标也会显示，敬请谅解。",
-	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "同时追踪保护系唤魔师的「废除之幕」（3秒重要自身增益效果）。",
-
 	-- Other Addons tab
 	["Other Mini Addons"] = "其他Mini插件",
 	["Other addons to customize MiniAuras further:"] = "用于美化MiniAuras图标的其他插件：",
@@ -332,7 +324,6 @@ L:RegisterLocale("zhCN", {
 	["Ready"] = "就绪",
 	["Show self"] = "显示自己",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "在顶部固定一条自己打断的进度条，倒计时至就绪。",
-	["Play a sound when you get Precognition."] = "当你获得预知时播放声音。",
 
 	-- Custom Auras tab
 	["Custom Auras"] = "自定义光环",

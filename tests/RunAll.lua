@@ -41,7 +41,6 @@ local testFiles = {
     -- Modules, driven end to end against the mocked 12.1 environment.
     "tests/Modules/TestEnemyKickTracker.lua",
     "tests/Modules/TestAllyKickTracker.lua",
-    "tests/Modules/TestPrecogSound.lua",
     "tests/Modules/TestModuleLifecycle.lua",
     "tests/Modules/TestModuleSmoke.lua",
     "tests/Modules/TestAlertsBars.lua",

@@ -29,7 +29,6 @@ L:SetDefaultStrings({
 	["Enable if you are:"] = "Enable if you are:",
 	["Enable in"] = "Enable in",
 	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "Animated glows keep animating icons with no aura, costing CPU while idle.",
-	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "Shows an icon on your screen when you get Precognition or Nullifying Shroud.",
 	["Specify which spells are shown on raid frames."] = "Specify which spells are shown on raid frames.",
 	["Remove"] = "Remove",
 	["Custom"] = "Custom",
@@ -279,13 +278,6 @@ L:SetDefaultStrings({
 	-- Retired options, still named by old What's New entries
 	[" - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames)."] = " - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames).",
 
-	-- Precognition tab
-	["Note that you can't simply filter by spell id these days."] = "Note that you can't simply filter by spell id these days.",
-	["Precognition"] = "Precognition",
-	["It works by taking any 4 second 'important' self buff and showing that icon."] = "It works by taking any 4 second 'important' self buff and showing that icon.",
-	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry.",
-	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff).",
-
 	-- Other Addons tab
 	["Other Mini Addons"] = "Other Mini Addons",
 	["Other addons to customize MiniAuras further:"] = "Other addons to customize MiniAuras further:",
@@ -333,7 +325,6 @@ L:SetDefaultStrings({
 	["Ready"] = "Ready",
 	["Show self"] = "Show self",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Keep a bar at the top for your own interrupt, counting down to when it is ready.",
-	["Play a sound when you get Precognition."] = "Play a sound when you get Precognition.",
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Custom Auras",

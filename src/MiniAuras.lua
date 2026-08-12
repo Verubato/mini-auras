@@ -21,7 +21,6 @@ local modules = {
 	addon.Modules.EnemyKickTrackerModule,
 	addon.Modules.RaidFrameAurasModule,
 	addon.Modules.CustomAurasModule,
-	addon.Modules.PrecogModule,
 	addon.Modules.TrinketsModule,
 	addon.Modules.AllyKickTrackerModule,
 	addon.Core.TrinketsTracker,
@@ -258,10 +257,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Display HealerCrowdControlDisplay
 ---@field Module HealerCrowdControlModule
 
----@class Precog
----@field Sound PrecogSound
----@field Module PrecogModule
-
 ---@class Trinkets
 ---@field Display TrinketsDisplay
 ---@field Module TrinketsModule
@@ -292,7 +287,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field CrowdControlModule CrowdControlModule
 ---@field RaidFrameAurasModule RaidFrameAurasModule
 ---@field CustomAurasModule CustomAurasModule
----@field PrecogModule PrecogModule
 ---@field EnemyKickTracker EnemyKickTracker
 ---@field AllyKickTracker AllyKickTracker
 ---@field Alerts Alerts
@@ -300,7 +294,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field CustomAuras CustomAuras
 ---@field CrowdControl CrowdControl
 ---@field HealerCrowdControl HealerCrowdControl
----@field Precog Precog
 ---@field Trinkets Trinkets
 ---@field Nameplates Nameplates
 ---@field Portrait Portrait

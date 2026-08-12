@@ -266,16 +266,6 @@ function M:Init()
 				M.Portraits:Build(content)
 			end,
 		},
-		-- TEMPORARY 12.0 leftover: removed on 12.1 below, so it parks at the end of the General
-		-- group rather than earning a heading of its own.
-		{
-			Key = "Precog",
-			Title = L["Precognition"],
-			Icon = NAV_ICON_BASE .. "Precog.png",
-			Build = function(content)
-				M.Precog:Build(content)
-			end,
-		},
 		{ Heading = L["Crowd Control"] },
 		{
 			Key = "CC",
@@ -347,14 +337,6 @@ function M:Init()
 
 	-- TEMPORARY: remove with the modules once 12.1 is live.
 	if addon.Utils.WoWEx:UseAuraContainers() then
-		-- The starter custom aura groups track the same two spells Precognition does, so the
-		-- module is switched off there and its tab has nothing to set.
-		for i = #tabs, 1, -1 do
-			if tabs[i].Key == "Precog" then
-				table.remove(tabs, i)
-			end
-		end
-
 		-- Party trinkets read C_PvP rather than aura data, so the feature survives the lockdown
 		-- that took the cooldown trackers. It closes the Crowd Control group.
 		for i = 1, #tabs do
@@ -491,7 +473,6 @@ end
 ---@field Nameplates NameplatesConfig
 ---@field EnemyKickTracker EnemyKickTrackerConfig
 ---@field AllyKickTracker AllyKickTrackerConfig
----@field Precog PrecogConfig
 ---@field OtherAddons OtherAddonsConfig
 ---@field RaidFrameAuras RaidFrameAurasConfig
 ---@field CustomAuras CustomAurasConfig

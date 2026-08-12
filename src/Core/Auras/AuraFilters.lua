@@ -44,12 +44,13 @@ local auraCategoryIds = addon.Core.AuraCategoryIds
 -- them (mob and boss CC, PvE-only important buffs) stop showing.
 --
 -- Other candidate filters are NOT identity-gated: dispel types and the booleans (isStealable,
--- isBossAura, nameplateShowPersonal, maxDuration, ...). Precognition uses the maxDuration one for
--- exactly this reason. One of them still has a gate of its own: isFromPlayerOrPlayerPet needs the
--- engine to attribute the aura's caster, which it cannot do for a group member outside the
--- player's visible world (another instance or phase) - UnitCanAssist stays true there, and the
--- unevaluable check is skipped the same silent way. The PLAYER filter-string token shares that
--- failure. Displays using either must also gate on UnitIsVisible (see CustomAuras CanFilterUnit).
+-- isBossAura, nameplateShowPersonal, maxDuration, ...), which is why a display that must work on
+-- a non-assistable unit reaches for one. One of them still has a gate of its own:
+-- isFromPlayerOrPlayerPet needs the engine to attribute the aura's caster, which it cannot do
+-- for a group member outside the player's visible world (another instance or phase) -
+-- UnitCanAssist stays true there, and the unevaluable check is skipped the same silent way.
+-- The PLAYER filter-string token shares that failure. Displays using either must also gate on
+-- UnitIsVisible (see CustomAuras CanFilterUnit).
 
 -- Spell-ID maps per category, keyed to match M.Filter so a caller holding a filter name can look
 -- up both. The generated Defensive list is not split into big/external - it does not have to be,
@@ -59,7 +60,6 @@ local spellIds = {
 	BigDefensive = auraCategoryIds.Defensive,
 	ExternalDefensive = auraCategoryIds.Defensive,
 	Important = auraCategoryIds.Important,
-	ImportantOnly = auraCategoryIds.Important,
 	-- Hand-curated, not generated: the game does not flag disarms as CROWD_CONTROL (or anything
 	-- else), so no scan can find them and no filter token can select them - the map below is the
 	-- disarm group's only real filter. That makes the category enemy-only; see M.Filter.Disarm.
@@ -95,24 +95,17 @@ M.Filter = {
 	-- Excludes both defensive categories so a defensive that is also flagged important is only
 	-- ever drawn once (on whichever display shows defensives).
 	Important = "HELPFUL|IMPORTANT|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE",
-	-- Unpartitioned importants. TEMPORARY: the only consumer is the Precog module's 12.1 branch,
-	-- which is unreachable (Precog's Init early-returns there); delete this and the matching
-	-- spellIds/CandidateFilters entries together with the 12.0 path.
-	ImportantOnly = "HELPFUL|IMPORTANT",
 }
 
 -- Ready-made candidateFilters tables, keyed to match M.Filter, so a group spec can point straight
 -- at one instead of allocating a wrapper per display (the nameplate and alert pools build these
 -- by the dozen). Shared and read-only: the engine keeps the reference it is handed and nothing
--- here mutates it. Displays needing extra candidate filters (precognition's maxDuration) build
--- their own table instead.
+-- here mutates it. A display needing extra candidate filters builds its own table instead.
 M.CandidateFilters = {
 	CrowdControl = { includeSpellIDs = spellIds.CrowdControl },
 	BigDefensive = { includeSpellIDs = spellIds.BigDefensive },
 	ExternalDefensive = { includeSpellIDs = spellIds.ExternalDefensive },
 	Important = { includeSpellIDs = spellIds.Important },
-	-- TEMPORARY: see M.Filter.ImportantOnly.
-	ImportantOnly = { includeSpellIDs = spellIds.ImportantOnly },
 	Disarm = { includeSpellIDs = spellIds.Disarm },
 }
 

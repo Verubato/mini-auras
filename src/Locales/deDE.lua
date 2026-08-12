@@ -28,7 +28,6 @@ L:RegisterLocale("deDE", {
 	["Enable if you are:"] = "Aktivieren, wenn du bist:",
 	["Enable in"] = "Aktivieren in",
 	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "Animierte Leuchteffekte animieren auch Symbole ohne Aura und kosten im Leerlauf CPU.",
-	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "Zeigt ein Symbol auf dem Bildschirm, wenn du Präkognition oder Nichtenden Schleier erhältst.",
 	["Specify which spells are shown on raid frames."] = "Legt fest, welche Zauber auf Schlachtzugsrahmen angezeigt werden.",
 	["Remove"] = "Entfernen",
 	["Custom"] = "Eigene",
@@ -278,13 +277,6 @@ L:RegisterLocale("deDE", {
 	-- Retired options, still named by old What's New entries
 	[" - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames)."] = " - Gegnerische Abklingzeiten können jetzt dauerhaft angezeigt werden (abgeblendet, wenn nicht aktiv) über die Option „Abklingzeiten immer anzeigen“, sowie ein neuer Split-Layoutmodus (offensive Abklingzeiten auf der linearen Leiste, defensive an den Arena-Rahmen).",
 
-	-- Precognition tab
-	["Note that you can't simply filter by spell id these days."] = "Beachte, dass man heutzutage nicht einfach nach Zauber-ID filtern kann.",
-	["Precognition"] = "Präkognition",
-	["It works by taking any 4 second 'important' self buff and showing that icon."] = "Es funktioniert, indem es jeden 4-sekündigen 'wichtigen' Selbst-Buff erkennt und dieses Symbol anzeigt.",
-	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "Falls du zufällig einen anderen 4-sekündigen wichtigen Selbst-Buff hast, würde dieses Symbol ebenfalls angezeigt, tut uns leid.",
-	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "Verfolgt auch die Aufhebende Hülle des Bewahrungs-Rufers (3-sekündiger wichtiger Selbst-Buff).",
-
 	-- Other Addons tab
 	["Other Mini Addons"] = "Andere Mini-Addons",
 	["Other addons to customize MiniAuras further:"] = "Weitere Addons zur Anpassung der MiniAuras-Symbole:",
@@ -332,7 +324,6 @@ L:RegisterLocale("deDE", {
 	["Ready"] = "Bereit",
 	["Show self"] = "Selbst anzeigen",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "Behaelt oben eine Leiste fuer die eigene Unterbrechung, die bis zur Bereitschaft herunterzaehlt.",
-	["Play a sound when you get Precognition."] = "Spielt einen Ton ab, wenn du Präkognition erhältst.",
 
 	-- Custom Auras tab
 	["Custom Auras"] = "Eigene Auren",

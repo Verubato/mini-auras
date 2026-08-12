@@ -16,7 +16,6 @@ local MODULE_NAMES = {
 	"AllyKickTrackerModule",
 	"RaidFrameAurasModule",
 	"CustomAurasModule",
-	"PrecogModule",
 	"TrinketsModule",
 }
 ---@type IModule[]

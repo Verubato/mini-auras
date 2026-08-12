@@ -28,7 +28,6 @@ L:RegisterLocale("koKR", {
 	["Enable if you are:"] = "다음인 경우 활성화:",
 	["Enable in"] = "활성화 위치",
 	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "애니메이션 발광은 오라가 없는 아이콘에서도 계속 재생되어 대기 중에도 CPU를 사용합니다.",
-	["Shows an icon on your screen when you get Precognition or Nullifying Shroud."] = "예지 또는 무효화의 장막을 받으면 화면에 아이콘을 표시합니다.",
 	["Specify which spells are shown on raid frames."] = "공격대 프레임에 표시할 주문을 지정합니다.",
 	["Remove"] = "제거",
 	["Custom"] = "사용자 지정",
@@ -278,13 +277,6 @@ L:RegisterLocale("koKR", {
 	-- Retired options, still named by old What's New entries
 	[" - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames)."] = " - 이제 '쿨다운 항상 표시' 옵션으로 적 쿨다운을 항상 표시할 수 있습니다(쿨다운이 아닐 때는 흐리게). 또한 새로운 분할 레이아웃 모드가 추가되었습니다(공격 쿨다운은 선형 바에, 방어 쿨다운은 투기장 프레임에 표시).",
 
-	-- Precognition tab
-	["Note that you can't simply filter by spell id these days."] = "요즘은 주문 ID로 단순히 필터링할 수 없다는 점에 유의하세요.",
-	["Precognition"] = "예지력",
-	["It works by taking any 4 second 'important' self buff and showing that icon."] = "4초짜리 '중요한' 자신 버프를 감지하여 해당 아이콘을 표시하는 방식으로 작동합니다.",
-	["So if by chance you happen to have some other 4 second important self buff then it would also show that icon sorry."] = "혹시 다른 4초짜리 중요한 자신 버프가 있다면 그 아이콘도 표시될 수 있으니 양해 부탁드립니다.",
-	["Also tracks Preservation Evoker's Nullifying Shroud (3 second important self buff)."] = "보존 기원사의 무효화의 장막도 함께 추적합니다 (3초짜리 중요한 자신 버프).",
-
 	-- Other Addons tab
 	["Other Mini Addons"] = "기타 Mini 애드온",
 	["Other addons to customize MiniAuras further:"] = "MiniAuras 아이콘을 꾸미는 다른 애드온:",
@@ -332,7 +324,6 @@ L:RegisterLocale("koKR", {
 	["Ready"] = "준비됨",
 	["Show self"] = "자신 표시",
 	["Keep a bar at the top for your own interrupt, counting down to when it is ready."] = "자신의 차단 주문을 맨 위에 고정하고 준비될 때까지 시간을 표시합니다.",
-	["Play a sound when you get Precognition."] = "예지를 얻었을 때 소리를 재생합니다.",
 
 	-- Custom Auras tab
 	["Custom Auras"] = "사용자 오라",

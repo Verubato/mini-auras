@@ -124,8 +124,6 @@ Modules\CustomAuras\Sound.lua
 Modules\CustomAuras\Recorder.lua
 Modules\CustomAuras\Display.lua
 Modules\CustomAuras\Module.lua
-Modules\Precog\Sound.lua
-Modules\Precog\Module.lua
 Modules\Trinkets\Display.lua
 Modules\Trinkets\Module.lua
 
@@ -149,7 +147,6 @@ Config\Panels\Alerts.lua
 Config\Panels\Nameplates.lua
 Config\Panels\EnemyKickTracker.lua
 Config\Panels\AllyKickTracker.lua
-Config\Panels\Precog.lua
 Config\Panels\RaidFrameAuras.lua
 Config\Panels\IconSelector.lua
 Config\Panels\CustomAuras\Shared.lua

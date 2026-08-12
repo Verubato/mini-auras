@@ -597,40 +597,6 @@ local dbDefaults = {
 			-- an install updating from a version without them still gets them.
 			SeededDefaults = false,
 		},
-		-- TEMPORARY: the precog module is superseded on 12.1 by the starter custom aura groups
-		-- tracking the same two spells; the whole table dies with the 12.0 path.
-		---@class PrecogModuleOptions
-		PrecogModule = {
-			Enabled = {
-				Always = true,
-			},
-
-			-- Off by default: precog is already a hard-to-miss icon in the middle of the screen,
-			-- so the sound is for people who want it rather than another noise by default.
-			Sound = {
-				Enabled = false,
-				Channel = "Master",
-				File = "ElectricalSpark",
-			},
-
-			Point = "CENTER",
-			RelativeTo = "UIParent",
-			RelativePoint = "CENTER",
-			Offset = {
-				X = 0,
-				Y = 70,
-			},
-
-			Icons = {
-				Size = 70,
-				Glow = true,
-				Border = true,
-				ReverseCooldown = true,
-				-- Glow/border tint. These icons carry no dispel or category colouring to derive
-				-- one from, so the colour is the user's choice.
-				Color = { R = 1, G = 1, B = 1, A = 1 },
-			},
-		},
 	},
 }
 

@@ -81,9 +81,6 @@ M.Alerts = {
 	},
 }
 
----@type TestSpell
-M.Precog = { SpellId = 377360 } -- Precognition
-
 ---Specs whose interrupt cooldowns the enemy kick bar previews - a spell list by proxy, since the
 ---bar draws one icon per spec's kick.
 M.KickSpecIds = {

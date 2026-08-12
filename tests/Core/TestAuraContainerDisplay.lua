@@ -1049,13 +1049,6 @@ fw.describe("AuraFilters - category partitioning", function()
 			"the cc filter is harmful-only")
 	end)
 
-	fw.it("ImportantOnly is deliberately unpartitioned", function()
-		-- Precognition shows importants and nothing else, so it must NOT carry the defensive
-		-- negations - a precog buff that also flagged defensive would vanish.
-		assert(matches(auraFilters.Filter.ImportantOnly, { Helpful = true, BIG_DEFENSIVE = true, IMPORTANT = true }),
-			"ImportantOnly matches an important that is also a defensive")
-	end)
-
 	fw.it("disarm partitions against CC by negation, against the rest by its spell-ID map", function()
 		-- Not in the matrix above: the disarm string deliberately matches any non-CC debuff and
 		-- relies on its includeSpellIDs map, which a string-level matrix cannot model.
