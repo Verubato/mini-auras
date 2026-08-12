@@ -30,6 +30,17 @@ local LOCALE_ONLY = {
 }
 
 local DEFAULT_NAME = "Sonar"
+-- The output channels a sound can play on, in the order the game's own volume sliders list them.
+-- Each is named from Blizzard's volume label, so the picker needs no strings of ours; the English
+-- fallback is only reached on a client that has no such global.
+local CHANNELS = {
+	{ Value = "Master", Global = "MASTER_VOLUME", Fallback = "Master" },
+	{ Value = "SFX", Global = "SOUND_VOLUME", Fallback = "Sound Effects" },
+	{ Value = "Music", Global = "MUSIC_VOLUME", Fallback = "Music" },
+	{ Value = "Ambience", Global = "AMBIENCE_VOLUME", Fallback = "Ambience" },
+	{ Value = "Dialog", Global = "DIALOG_VOLUME", Fallback = "Dialog" },
+}
+local DEFAULT_CHANNEL = "Master"
 -- One table, refilled in place. Consumers hold onto it and re-ask for the contents rather than
 -- the table, because media addons register their sounds whenever they happen to load, which is
 -- routinely after a dropdown has already been built.
@@ -39,6 +50,14 @@ local nameScratch = {}
 local changeCallbacks = {}
 local subscribedToMedia = false
 local registeredBuiltIns = false
+-- CHANNELS split the two ways callers need it: the values a picker lists, and the entry for one.
+local channelValues = {}
+local channelsByValue = {}
+
+for index, entry in ipairs(CHANNELS) do
+	channelValues[index] = entry.Value
+	channelsByValue[entry.Value] = entry
+end
 
 ---@class Sounds
 local M = {}
@@ -205,6 +224,29 @@ end
 ---@return string
 function M:GetDefaultName()
 	return DEFAULT_NAME
+end
+
+---The output channels to offer, in slider order. Shared table: read it, do not change it.
+---@return string[]
+function M:GetChannels()
+	return channelValues
+end
+
+---What a channel is called on the audio options page.
+---@param channel string?
+---@return string
+function M:ChannelText(channel)
+	local entry = channelsByValue[channel or DEFAULT_CHANNEL] or channelsByValue[DEFAULT_CHANNEL]
+
+	return _G[entry.Global] or entry.Fallback
+end
+
+---A channel the game will accept, so a saved or imported value the client has never heard of
+---plays on the master channel rather than silently going nowhere.
+---@param channel string?
+---@return string
+function M:NormaliseChannel(channel)
+	return channel and channelsByValue[channel] and channel or DEFAULT_CHANNEL
 end
 
 ---Registers a function to call when the media list changes, i.e. when GetNames would now return

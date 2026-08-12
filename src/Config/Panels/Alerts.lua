@@ -16,18 +16,16 @@ local ttsPacks = addon.Core.TtsPacks
 -- the 12.1 chained displays don't have, so only LEFT/RIGHT are offered there.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 local GROW_OPTIONS = USE_AURA_CONTAINERS and { "LEFT", "RIGHT" } or { "LEFT", "RIGHT", "CENTER" }
-local SOUND_CHANNELS = { "Master", "SFX" }
 
 ---@class AlertsConfig
 local M = {}
 
 config.Alerts = M
 
----Names the output channels from Blizzard's own volume labels, so they need no strings of ours.
 ---@param value string
 ---@return string
 local function ChannelText(value)
-	return value == "SFX" and (SOUND_VOLUME or "Sound Effects") or (MASTER_VOLUME or "Master")
+	return sounds:ChannelText(value)
 end
 
 ---@param parent table
@@ -365,7 +363,7 @@ local function BuildSoundsTab(parent, options)
 		Parent = parent,
 		LabelText = L["Channel"],
 		Width = 200,
-		Items = SOUND_CHANNELS,
+		Items = sounds:GetChannels(),
 		GetText = ChannelText,
 		GetValue = function()
 			return options.Sound.Channel or "Master"
@@ -468,7 +466,7 @@ local function BuildTtsTab(parent, options)
 			Parent = parent,
 			LabelText = L["Channel"],
 			Width = 200,
-			Items = SOUND_CHANNELS,
+			Items = sounds:GetChannels(),
 			GetText = ChannelText,
 			GetValue = function()
 				return options.TTS and options.TTS.Channel or "Master"

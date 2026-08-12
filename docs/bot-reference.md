@@ -209,7 +209,7 @@ registers there is also selectable, and other addons can use MiniAuras's sounds.
 sound comes from a media addon that was uninstalled, it falls back to Sonar. A media addon that
 loads *after* MiniAuras is waited for instead: the aura stays silent for a second or so rather
 than firing the fallback, then registers with the right file. Sound settings have an output
-channel dropdown, Master or Sound Effects (SFX), default Master.
+channel dropdown: Master, Sound Effects (SFX), Music, Ambience, or Dialog, default Master.
 
 ### Countdown text
 
@@ -416,8 +416,8 @@ boxes update when the drag ends.
 Only shown for Spell IDs groups (the engine registers sounds per spell ID, which a filter
 group does not have). Three independent sound pickers, each any shipped/LibSharedMedia sound
 or "(None)" (default None): **When applied**, **When it gains a stack**, **When removed**;
-plus one **Channel** (Master / Sound Effects) for all three. Sounds are played engine-side,
-so they fire even though the addon cannot read the aura.
+plus one **Channel** (Master / SFX / Music / Ambience / Dialog) for all three. Sounds are
+played engine-side, so they fire even though the addon cannot read the aura.
 
 For a **Sound only** group this tab is the whole feature. Such a group needs spells and at
 least one sound to do anything; with neither it simply does nothing, and the editor says
@@ -518,11 +518,11 @@ Master).
 **TTS (Text-to-speech) sub-tab:**
 
 - On **12.1**: "On this game version, text-to-speech uses pre-recorded voice packs." A
-  **Voice pack** dropdown, a **Channel** dropdown (Master/SFX), and per-category
-  **Important** and **Defensive** announce toggles (both off by default). Eight packs ship:
-  Amy, Anna Su, David, Elise, Emma, Grampa Werthers, Jason Chen, Theo Silk. Amy, Anna Su and
-  Jason Chen are Mandarin voices offered only on zhCN/zhTW clients. Default pack: David.
-  Other addons can register packs via the API. The clips are baked OGG files registered
+  **Voice pack** dropdown, a **Channel** dropdown (Master/SFX/Music/Ambience/Dialog), and
+  per-category **Important** and **Defensive** announce toggles (both off by default). Eight
+  packs ship: Amy, Anna Su, David, Elise, Emma, Grampa Werthers, Jason Chen, Theo Silk. Amy,
+  Anna Su and Jason Chen are Mandarin voices offered only on zhCN/zhTW clients. Default pack:
+  David. Other addons can register packs via the API. The clips are baked OGG files registered
   engine-side per spell ID; after updating the addon a full client restart (not just a
   reload) is needed before new audio files can play.
 - On **12.0**: system text-to-speech. **Voice** dropdown (the OS voices), **TTS Volume**

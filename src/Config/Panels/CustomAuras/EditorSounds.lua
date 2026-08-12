@@ -11,7 +11,6 @@ local SOUND_LABELS = {
 	Stacks = L["When it gains a stack"],
 	Removed = L["When removed"],
 }
-local SOUND_CHANNELS = { "Master", "SFX" }
 
 ---Builds the sounds tab: one picker per trigger, plus the channel they all play on.
 ---@param ctx CustomAurasEditorContext
@@ -66,9 +65,9 @@ function ui.BuildSoundsTab(ctx)
 	end
 
 	ctx.Dropdown(L["Channel"], {
-		Items = SOUND_CHANNELS,
+		Items = sounds:GetChannels(),
 		GetText = function(value)
-			return value == "SFX" and (SOUND_VOLUME or "Sound Effects") or (MASTER_VOLUME or "Master")
+			return sounds:ChannelText(value)
 		end,
 		GetValue = function()
 			local group = ui.Current()

@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local spellSearch = addon.Core.SpellSearch
+local sounds = addon.Core.Sounds
 local units = addon.Utils.Units
 
 -- The shape of a custom aura group, shared by the display, the options page and the import path.
@@ -393,7 +394,7 @@ function M:Normalise(group)
 	sound.Removed = tostring(sound.Removed or NO_SOUND)
 	sound.Stacks = tostring(sound.Stacks or NO_SOUND)
 	sound.File = nil
-	sound.Channel = sound.Channel == "SFX" and "SFX" or "Master"
+	sound.Channel = sounds:NormaliseChannel(sound.Channel)
 
 	-- A sound-only group tracks spells whatever it was set to: the engine registers a sound per
 	-- spell id, so a filter group has nothing to hand it and would be a group that can never make
