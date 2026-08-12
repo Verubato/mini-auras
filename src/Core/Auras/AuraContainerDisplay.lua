@@ -78,6 +78,11 @@ local COUNTDOWN_COLOR_STOPS = {
 }
 ---@type table?
 local countdownCurve
+-- The flat curve a countdown binds while the colouring is OFF. See BindDurationText for why the
+-- off state is a curve of its own rather than no colour binding at all. White matches the
+-- NumberFontNormal the fontstring is created with, so this is the same look it had before.
+---@type table?
+local plainCountdownCurve
 -- Countdown formatters keyed by milliseconds threshold (0 = whole seconds only). The engine
 -- keeps each reference, so variants are built once and shared across every bound fontstring.
 ---@type table<number, table>
@@ -396,21 +401,43 @@ local function GetCountdownCurve()
 	return countdownCurve
 end
 
+---The curve bound when colour-by-time is off: white the whole way down.
+---@return table
+local function GetPlainCountdownCurve()
+	if not plainCountdownCurve then
+		local curve = C_CurveUtil.CreateColorCurve()
+		curve:SetType(Enum.LuaCurveType.Linear)
+		-- Descending, like the ramp above; two points so the value is flat rather than clamped
+		-- off the end of a single one.
+		curve:AddPoint(COUNTDOWN_COLOR_STOPS[#COUNTDOWN_COLOR_STOPS][1], CreateColor(1, 1, 1))
+		curve:AddPoint(0, CreateColor(1, 1, 1))
+		plainCountdownCurve = curve
+	end
+
+	return plainCountdownCurve
+end
+
 ---Binds (or re-binds) the countdown fontstring. The engine retains the button's duration-text
 ---binding across calls, so this is how the formatter and colour curve are swapped at restyle
 ---time. Named fields, not positional: the options validator walks [textColor][curve] and
 ---[textColor][property], and a positional pair errors per button at AddAuraGroup time.
+---
+---A colour is bound either way, the off state being a flat white curve. Leaving textColor out
+---asks the engine to forget the binding it is holding, which it does not do: an icon hid that
+---(its bound fontstring is only shown while the colouring or fractions need it, so the native
+---countdown takes over and the stale curve goes with it), but a bar's countdown IS this
+---fontstring, so turning the setting off left it coloured until a reload.
 ---@param button table
 ---@param durationText table
 ---@param msThreshold number Seconds below which tenths show; 0 for whole seconds only.
----@param colorByTime boolean? Carry the colour-by-time curve; default colouring otherwise.
+---@param colorByTime boolean? Carry the colour-by-time ramp rather than the flat one.
 local function BindDurationText(button, durationText, msThreshold, colorByTime)
 	button:SetDurationText(durationText, {
 		textFormatter = GetCountdownFormatter(msThreshold),
-		textColor = colorByTime and {
-			curve = GetCountdownCurve(),
+		textColor = {
+			curve = colorByTime and GetCountdownCurve() or GetPlainCountdownCurve(),
 			property = Enum.DurationTextBindingProperty.RemainingDuration,
-		} or nil,
+		},
 	})
 end
 

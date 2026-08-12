@@ -878,10 +878,18 @@ fw.describe("AuraContainerDisplay - countdown colour by time", function()
 		assert(options.textFormatter.breakpoints[1].format == "%.1f", "fractions formatter carried")
 		assert(options.textColor ~= nil, "colour curve carried alongside it")
 
+		local ramp = options.textColor.curve
+
 		mockDb.ColorCountdownByTime = nil
 		instance:SetStyle({ ShowMilliseconds = true })
-		assert(button._durationTextOptions.textColor == nil,
-			"dropping colour-by-time re-binds without the curve")
+
+		local plain = button._durationTextOptions.textColor
+
+		-- A colour is bound either way round. Leaving it out asks the engine to forget the
+		-- binding it is holding, which it does not do, and a bar's countdown stayed coloured
+		-- after the setting was turned off.
+		assert(plain ~= nil, "the off state binds a colour of its own")
+		assert(plain.curve ~= ramp, "and it is not the by-time ramp")
 	end)
 
 	fw.it("a deferred restyle applies a milliseconds change once the restriction lifts", function()
