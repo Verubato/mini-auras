@@ -176,6 +176,21 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 		assert(mine.RaidFrameAurasModule.Spells.Disabled[456] == true, "spell-id hash kept")
 		assert(mine.RaidFrameAurasModule.Spells.Custom[789] == true, "spell-id hash kept")
 	end)
+
+	fw.it("keeps the TTS per-spell switches across a login", function()
+		-- Both states matter: true is a spell switched off, false is one of the default-off
+		-- spells switched on, and dropping either reverts the tab to its defaults every session.
+		_G.MiniAurasDB = nil
+
+		local db = migrator:GetAndUpgradeDb()
+		db.Modules.AlertsModule.TTS.Important.MutedSpellIds[12472] = true
+		db.Modules.AlertsModule.TTS.Defensive.MutedSpellIds[235313] = false
+
+		local tts = migrator:GetAndUpgradeDb().Modules.AlertsModule.TTS
+
+		assert(tts.Important.MutedSpellIds[12472] == true, "a muted spell stays muted")
+		assert(tts.Defensive.MutedSpellIds[235313] == false, "and a default-off spell stays switched on")
+	end)
 end)
 
 fw.describe("Migrator - arbitrary input safety", function()

@@ -12,6 +12,13 @@ addon.Config.Migrator = M
 -- would otherwise wipe all stored profile snapshots (profile names are unknown keys
 -- relative to the dbDefaults.Profiles = {} template).
 local OPAQUE_CACHE_KEYS = { "SpecCache", "WhatsNew", "NotifiedChanges", "Profiles", "ActiveProfile", "AutoSwitch" }
+-- The announcement categories whose TTS opt-out lists need the same protection.
+local TTS_MUTE_CATEGORIES = { "Important", "Defensive", "EnemyDebuff" }
+
+---The alert module's TTS options, or nil on a db that predates them.
+local function TtsOptions(vars)
+	return vars.Modules and vars.Modules.AlertsModule and vars.Modules.AlertsModule.TTS
+end
 
 local function SaveOpaqueCaches(vars)
 	local saved = {}
@@ -29,6 +36,13 @@ local function SaveOpaqueCaches(vars)
 	-- them against and CleanTable would strip every one of them.
 	local customAuras = vars.Modules and vars.Modules.CustomAurasModule
 	saved._CustomAuraGroups = customAuras and mini:CopyValueOrTable(customAuras.Groups) or {}
+	-- The TTS per-spell switches are the same shape: spellId -> boolean against an empty schema.
+	local tts = TtsOptions(vars)
+	saved._TtsMutedSpells = {}
+	for _, category in ipairs(TTS_MUTE_CATEGORIES) do
+		local options = tts and tts[category]
+		saved._TtsMutedSpells[category] = options and mini:CopyValueOrTable(options.MutedSpellIds) or {}
+	end
 	return saved
 end
 
@@ -46,6 +60,14 @@ local function RestoreOpaqueCaches(vars, saved)
 	local customAuras = vars.Modules and vars.Modules.CustomAurasModule
 	if customAuras then
 		customAuras.Groups = saved._CustomAuraGroups or {}
+	end
+	local tts = TtsOptions(vars)
+	if tts then
+		for _, category in ipairs(TTS_MUTE_CATEGORIES) do
+			if tts[category] then
+				tts[category].MutedSpellIds = saved._TtsMutedSpells[category] or {}
+			end
+		end
 	end
 end
 
