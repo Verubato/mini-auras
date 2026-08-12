@@ -18,6 +18,8 @@ local M = {}
 addon.Core.DuelPoller = M
 
 local POLL_INTERVAL = 0.25
+-- Scratch for the tokens one subscriber's scan found flipped, so OnFlip runs after the walk.
+local flipped = {}
 ---@type DuelPollerSubscriber[]
 local subscribers = {}
 local ticker
@@ -32,6 +34,8 @@ local function Poll()
 	for i = 1, #subscribers do
 		local subscriber = subscribers[i]
 		if subscriber.IsActive() then
+			wipe(flipped)
+
 			for unitToken, wasEnemy in pairs(subscriber.Baselines) do
 				-- Not an and/or chain: IsEnemy returning false there would read as "unchanged"
 				-- and a duel ending would never be noticed.
@@ -46,8 +50,15 @@ local function Poll()
 				if isEnemy ~= wasEnemy or isVisible ~= subscriber.Visibility[unitToken] then
 					subscriber.Baselines[unitToken] = isEnemy
 					subscriber.Visibility[unitToken] = isVisible
-					subscriber.OnFlip(unitToken)
+					flipped[#flipped + 1] = unitToken
 				end
+			end
+
+			-- Fired after the walk, never inside it: a subscriber's OnFlip refreshes its module,
+			-- and a module that re-seeds its baselines (the raid frames do) clears and refills
+			-- the very table being traversed, which Lua does not define.
+			for index = 1, #flipped do
+				subscriber.OnFlip(flipped[index])
 			end
 		end
 	end

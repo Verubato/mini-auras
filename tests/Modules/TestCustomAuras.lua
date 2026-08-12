@@ -2476,3 +2476,29 @@ fw.describe("CustomAuras - what a container is created holding", function()
 		end
 	end)
 end)
+
+fw.describe("CustomAuras - a drawn group's sound respects the unit's side", function()
+	fw.it("does not sound a friendly target group on a hostile target", function()
+		ClearGroups()
+		addon.Modules.CustomAuras.Sound:Clear()
+		env.enemies.target = true
+
+		local before = env.auraSoundAdds
+
+		AddGroup({
+			Unit = "targetfriendly",
+			Spells = { ICE_BLOCK },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		-- "target" is the same token whoever is in it, so without the gate the sound follows the
+		-- token onto units the group was never pointed at.
+		assert(env.auraSoundAdds == before, "no registration while the target is hostile")
+
+		env.enemies.target = nil
+		module:Refresh()
+
+		assert(env.auraSoundAdds > before, "and one once a friendly target is there")
+	end)
+end)

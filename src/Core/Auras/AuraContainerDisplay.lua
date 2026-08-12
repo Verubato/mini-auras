@@ -262,30 +262,27 @@ local function FlushPendingBounces()
 	end
 
 	local inCombat = InCombatLockdown()
-	local parked = 0
 
 	for _, instance in ipairs(liveDisplays) do
-		if instance.BouncePending then
-			-- In combat only the urgent ones go through. The rest are setter-driven and settle
-			-- on the unit's next aura event, which combat has plenty of; an occupant swap has
-			-- nothing coming that would settle it, so it cannot wait for the regen event.
-			if inCombat and not instance.BounceUrgent then
-				parked = parked + 1
-			else
-				instance.BouncePending = false
-				instance.BounceUrgent = false
-				local frame = instance.Frame
+		-- In combat only the urgent ones go through. The rest are setter-driven and settle on the
+		-- unit's next aura event, which combat has plenty of; an occupant swap has nothing coming
+		-- that would settle it, so it cannot wait for the regen event.
+		if instance.BouncePending and not (inCombat and not instance.BounceUrgent) then
+			instance.BouncePending = false
+			instance.BounceUrgent = false
+			-- Counted down one at a time rather than recomputed at the end: anything the hide or
+			-- show below sets pending again must not have its increment overwritten.
+			pendingBounceCount = pendingBounceCount - 1
 
-				-- A hidden frame needs no bounce: the OnShow on its way back arms the processor.
-				if frame:IsShown() then
-					frame:Hide()
-					frame:Show()
-				end
+			local frame = instance.Frame
+
+			-- A hidden frame needs no bounce: the OnShow on its way back arms the processor.
+			if frame:IsShown() then
+				frame:Hide()
+				frame:Show()
 			end
 		end
 	end
-
-	pendingBounceCount = parked
 end
 
 ---@param instance AuraContainerDisplay
@@ -434,6 +431,12 @@ local function EnsureDisplayEvents()
 			FlushPendingBounces()
 		end
 	end)
+
+	-- Asked once here as well as on the event: the first display is built from inside the
+	-- addon's own PLAYER_ENTERING_WORLD handler, and a frame that registers an event while that
+	-- event is being dispatched does not receive it. Without this, reloading inside a vehicle
+	-- leaves the suppression off for the whole session.
+	ApplyVehicleState()
 end
 
 ---True when the client supports colour curves and formatters on duration-text bindings. Probes
@@ -1536,6 +1539,9 @@ function M:SetUnit(unit)
 	end
 
 	self.Frame:SetUnit(unit)
+	-- Whether a display may be on screen depends on which unit it is on: pointing one at the
+	-- player while a vehicle has it, or off the player while one does, changes the answer.
+	ApplyShownState(self)
 	MarkBouncePending(self)
 end
 

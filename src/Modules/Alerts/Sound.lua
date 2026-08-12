@@ -79,8 +79,8 @@ local alertSoundsByToken = {}
 -- Signature of the sound settings the current registrations were made with; when it changes
 -- every active token is re-registered.
 local alertSoundSettingsSignature = nil
--- The enemy-debuff registrations, which are one flat list over ALLY_TOKENS rather than a set
--- per token: they are all made and dropped together.
+-- The enemy-debuff registrations: one flat list over every watched token rather than a set per
+-- token, because they are all made and dropped together.
 ---@type number[]?
 local allySoundIds
 local allySoundSignature = nil

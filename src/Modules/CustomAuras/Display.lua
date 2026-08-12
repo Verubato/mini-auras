@@ -941,17 +941,20 @@ end
 ---@param state CustomAuraGroupState
 local function CollectSoundRequests(state)
 	local group = state.Group
+
+	-- The engine plays these per spell id, so a group that names none can never ask for one.
+	-- Asked before any of the scratch below is built: a plate appearing or going runs this for
+	-- every group, and most groups are silent.
+	if not groups:HasSound(group) or #group.Spells == 0 or not groups:TracksSpells(group) then
+		return
+	end
+
 	local configured = {}
 
 	for _, trigger in ipairs(groups.SoundTriggers) do
 		if group.Sound[trigger] ~= groups.NoSound then
 			configured[#configured + 1] = trigger
 		end
-	end
-
-	-- The engine plays these per spell id, so a group that names none can never ask for one.
-	if #configured == 0 or #group.Spells == 0 or not groups:TracksSpells(group) then
-		return
 	end
 
 	local spellIds = {}
@@ -993,8 +996,14 @@ local function CollectSoundRequests(state)
 		end
 	elseif group.Anchor == groups.Anchor.Screen then
 		-- The token, not the unit CHOICE: "target (friendly)" and the role choices are names for
-		-- the picker, and the engine wants the unit they resolve to.
-		AddToken(groups:GetToken(group))
+		-- the picker, and the engine wants the unit they resolve to. Gated on the side the choice
+		-- names, like every other branch here: "target" is the same token whoever is in it, and a
+		-- friendly-target group has no business sounding on a hostile one.
+		local token = groups:GetToken(group)
+
+		if token and groups:MatchesReaction(group.Unit, token) then
+			AddToken(token)
+		end
 	elseif group.Anchor == groups.Anchor.Nameplate then
 		for token in pairs(state.Plates) do
 			AddToken(token)

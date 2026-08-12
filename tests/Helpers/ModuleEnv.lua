@@ -123,8 +123,10 @@ function M.build()
 	_G.IsInRaid = function()
 		return false
 	end
-	_G.UnitExists = function()
-		return true
+	_G.UnitExists = function(unit)
+		-- Every unit a test names exists, except the vehicle: that token is only there while the
+		-- player is actually in one, and the display wrapper reads it as exactly that.
+		return unit ~= "vehicle" or env.inVehicle == true
 	end
 	-- A vehicle takes over the player unit, which changes what the engine will tell a container
 	-- tracking it; no test needs one by default.
