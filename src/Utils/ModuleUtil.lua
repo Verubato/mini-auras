@@ -25,8 +25,6 @@ local ModuleName = {
 	Trinkets = "TrinketsModule",
 	RaidFrameAuras = "RaidFrameAurasModule",
 	Precog = "PrecogModule",
-	FriendlyCooldownTracker = "FriendlyCooldownTrackerModule",
-	EnemyCooldownTracker    = "EnemyCooldownTrackerModule",
 }
 
 ---@class ModuleUtil

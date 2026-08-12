@@ -81,32 +81,6 @@ M.Alerts = {
 	},
 }
 
----The cooldown trackers preview a running swipe, so each entry carries when it started and how
----long it lasts. Predictive entries show the glow and buff countdown before the cooldown commits.
-M.FriendlyCooldowns = {
-	Committed = {
-		{ SpellId = 642,   StartOffset = 60,  Cooldown = 300 }, -- Divine Shield
-		{ SpellId = 33206, StartOffset = 30,  Cooldown = 180 }, -- Pain Suppression
-		{ SpellId = 45438, StartOffset = 120, Cooldown = 240 }, -- Ice Block
-	},
-	Predictive = {
-		{ SpellId = 288613, StartOffset = 5, BuffDuration = 17 }, -- Trueshot (MM Hunter)
-		{ SpellId = 190319, StartOffset = 3, BuffDuration = 15 }, -- Combustion (Fire Mage)
-	},
-}
-
----Inactive entries preview the faded always-show state when that option is enabled.
-M.EnemyCooldowns = {
-	{ SpellId = 45438,   StartOffset = 30, Cooldown = 240 }, -- Ice Block        (defensive)
-	{ SpellId = 642,     StartOffset = 15, Cooldown = 300, Inactive = true }, -- Divine Shield (defensive)
-	{ SpellId = 31224,   StartOffset = 10, Cooldown = 60  }, -- Cloak of Shadows (defensive)
-	{ SpellId = 48792,   StartOffset = 45, Cooldown = 180, Inactive = true }, -- Icebound Fortitude (defensive)
-	{ SpellId = 47585,   StartOffset = 5,  Cooldown = 120 }, -- Dispersion       (defensive)
-	{ SpellId = 22812,   StartOffset = 20, Cooldown = 60  }, -- Barkskin         (defensive)
-	{ SpellId = 871,     StartOffset = 60, Cooldown = 240, Inactive = true }, -- Shield Wall (defensive)
-	{ SpellId = 33206,   StartOffset = 8,  Cooldown = 120 }, -- Pain Suppression (external defensive)
-}
-
 ---@type TestSpell
 M.Precog = { SpellId = 377360 } -- Precognition
 

@@ -5,14 +5,35 @@ local L = addon.L
 local config = addon.Config
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
--- Locale keys, not display strings: the locale can change after this file loads, so every
--- L[] lookup happens at build time inside the functions below.
+-- The text is behind functions rather than stored inline because the locale can change after this
+-- file loads, so every lookup has to happen at build time. Spelling each key out in a literal
+-- lookup also keeps it visible to the locale checker, which cannot follow an indirect one.
 local ENABLE_ROW = {
-	{ Key = "World", Label = "World", Tooltip = "Enable this module in the open world." },
-	{ Key = "Arena", Label = "Arena", Tooltip = "Enable this module in arena." },
-	{ Key = "BattleGrounds", Label = "Battlegrounds", Tooltip = "Enable this module in battlegrounds." },
-	{ Key = "Dungeons", Label = "Dungeons", Tooltip = "Enable this module in dungeons." },
-	{ Key = "Raid", Label = "Raid", Tooltip = "Enable this module in raids." },
+	{
+		Key = "World",
+		Label = function() return L["World"] end,
+		Tooltip = function() return L["Enable this module in the open world."] end,
+	},
+	{
+		Key = "Arena",
+		Label = function() return L["Arena"] end,
+		Tooltip = function() return L["Enable this module in arena."] end,
+	},
+	{
+		Key = "BattleGrounds",
+		Label = function() return L["Battlegrounds"] end,
+		Tooltip = function() return L["Enable this module in battlegrounds."] end,
+	},
+	{
+		Key = "Dungeons",
+		Label = function() return L["Dungeons"] end,
+		Tooltip = function() return L["Enable this module in dungeons."] end,
+	},
+	{
+		Key = "Raid",
+		Label = function() return L["Raid"] end,
+		Tooltip = function() return L["Enable this module in raids."] end,
+	},
 }
 local SPELL_ICON_SIZE = 18
 
@@ -36,8 +57,8 @@ function M:BuildEnableRow(parent, anchor, enabled, tooltips)
 		local key = entry.Key
 		local checkbox = mini:Checkbox({
 			Parent = parent,
-			LabelText = L[entry.Label],
-			Tooltip = tooltips and tooltips[key] or L[entry.Tooltip],
+			LabelText = entry.Label(),
+			Tooltip = tooltips and tooltips[key] or entry.Tooltip(),
 			GetValue = function()
 				return enabled[key]
 			end,

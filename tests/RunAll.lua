@@ -18,23 +18,6 @@ io.write("MiniAuras - unit tests\n")
 io.write("======================================\n")
 
 local testFiles = {
-    -- Cooldown engine: rules, prediction and the evidence pipeline.
-    "tests/Cooldowns/TestRules.lua",
-    "tests/Cooldowns/TestFindBestCandidate.lua",
-    "tests/Cooldowns/TestPredictPve_12_0_5.lua",
-    "tests/Cooldowns/TestMatchRule.lua",
-    "tests/Cooldowns/TestFindBestCandidateExtended.lua",
-    "tests/Cooldowns/TestPredictExtended.lua",
-    "tests/Cooldowns/TestEvidencePipeline.lua",
-    "tests/Cooldowns/TestEnemyMatching.lua",
-    "tests/Cooldowns/TestMulticharge.lua",
-    "tests/Cooldowns/TestCrossClassExt.lua",
-    "tests/Cooldowns/TestLocalPlayerAlias.lua",
-    "tests/Cooldowns/TestDispersionDp.lua",
-    "tests/Cooldowns/TestFeignDeathAottSotf.lua",
-    "tests/Cooldowns/TestBurrow.lua",
-    "tests/Cooldowns/TestEmeraldCommunion.lua",
-
     -- Shared machinery under Core.
     "tests/Core/TestAuraWatcher.lua",
     "tests/Core/TestAuraContainerDisplay.lua",

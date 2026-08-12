@@ -266,25 +266,8 @@ function M:Init()
 				M.Portraits:Build(content)
 			end,
 		},
-		-- TEMPORARY 12.0 leftovers: all three are removed on 12.1 below, so they park at the
-		-- end of the General group rather than earning a heading of their own.
-		{
-			Key = "FriendlyCooldowns",
-			Title = L["Friendly Cooldowns_Short"] or L["Friendly Cooldowns"],
-			Icon = NAV_ICON_BASE .. "FriendlyCooldowns.png",
-			Build = function(content)
-				local m = db.Modules.FriendlyCooldownTrackerModule
-				M.FriendlyCooldownTracker:Build(content, m.Default, m.Raid)
-			end,
-		},
-		{
-			Key = "EnemyCooldowns",
-			Title = L["Enemy Cooldowns_Short"] or L["Enemy Cooldowns"],
-			Icon = NAV_ICON_BASE .. "EnemyCooldowns.png",
-			Build = function(content)
-				M.EnemyCooldownTracker:Build(content, db.Modules.EnemyCooldownTrackerModule)
-			end,
-		},
+		-- TEMPORARY 12.0 leftover: removed on 12.1 below, so it parks at the end of the General
+		-- group rather than earning a heading of its own.
 		{
 			Key = "Precog",
 			Title = L["Precognition"],
@@ -362,18 +345,12 @@ function M:Init()
 		},
 	}
 
-	-- Cooldown tracking (friendly and enemy) is disabled on 12.1 - it infers cooldowns from
-	-- aura data, which addons can no longer read - so those config tabs are hidden there.
-	-- The standalone Party Trinkets module takes the friendly tracker's slot (trinket data
-	-- is C_PvP-based, not aura-based, so it survives the lockdown).
 	-- TEMPORARY: remove with the modules once 12.1 is live.
 	if addon.Utils.WoWEx:UseAuraContainers() then
-		-- Precognition joins the cooldown trackers: the starter custom aura groups track the
-		-- same two spells, so the module is switched off there and its tab has nothing to set.
+		-- The starter custom aura groups track the same two spells Precognition does, so the
+		-- module is switched off there and its tab has nothing to set.
 		for i = #tabs, 1, -1 do
-			local key = tabs[i].Key
-
-			if key == "FriendlyCooldowns" or key == "EnemyCooldowns" or key == "Precog" then
+			if tabs[i].Key == "Precog" then
 				table.remove(tabs, i)
 			end
 		end
@@ -488,14 +465,6 @@ function M:Init()
 			return
 		end
 
-		-- TEMPORARY: the cooldown Brain only exists on the legacy path; delete this branch
-		-- with the 12.0 path.
-		if msg == "debug" and not addon.Utils.WoWEx:UseAuraContainers() then
-			local on = addon.Core.Cooldowns.Brain:ToggleDebug()
-			mini:NotifyWithPrefix(on and "Cooldown debug logging ON" or "Cooldown debug logging OFF")
-			return
-		end
-
 		window:Toggle()
 	end
 
@@ -526,6 +495,4 @@ end
 ---@field OtherAddons OtherAddonsConfig
 ---@field RaidFrameAuras RaidFrameAurasConfig
 ---@field CustomAuras CustomAurasConfig
----@field FriendlyCooldownTracker FriendlyCooldownTrackerConfig
----@field EnemyCooldownTracker EnemyCooldownTrackerConfig
 ---@field Miscellaneous MiscellaneousConfig

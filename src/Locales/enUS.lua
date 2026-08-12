@@ -268,47 +268,15 @@ L:SetDefaultStrings({
 	["Party Trinkets"] = "Party Trinkets",
 	["Party Trinkets_Short"] = "Trinkets",
 
-	-- Friendly Cooldown Tracker tab
-	["Friendly Cooldowns"] = "Friendly Cooldowns",
-	["Friendly Cooldowns_Short"] = "Friendly CDs",
-	["Icon Spacing"] = "Icon Spacing",
+	-- Shared across several tabs
 	["Spells"] = "Spells",
-	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames."] = "Shows PvP trinket and friendly defensive cooldowns on party/raid frames.",
-["Excludes yourself from being tracked."] = "Excludes yourself from being tracked.",
 	["Milliseconds"] = "Milliseconds",
 	["Milliseconds Threshold"] = "Milliseconds Threshold",
 	["Show decimal milliseconds on the cooldown timer when below the configured threshold."] = "Show decimal milliseconds on the cooldown timer when below the configured threshold.",
 	["Show tooltips"] = "Show tooltips",
 	["Shows a spell tooltip when hovering over an icon."] = "Shows a spell tooltip when hovering over an icon.",
-	["Trinket"] = "Trinket",
-	["Shows the trinket cooldown icon."] = "Shows the trinket cooldown icon.",
-	["Desaturate on cooldown"] = "Desaturate on cooldown",
-	["Desaturates the icon while it is on cooldown."] = "Desaturates the icon while it is on cooldown.",
-	["Predictive"] = "Predictive",
-	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts.",
 
-	["Rows"] = "Rows",
-	["Columns"] = "Columns",
-
-	-- Enemy Cooldown Tracker tab
-	["Enemy Cooldowns"] = "Enemy Cooldowns",
-	["Enemy Cooldowns_Short"] = "Enemy CDs",
-	["Shows enemy arena opponent defensive cooldowns after their buffs expire."] = "Shows enemy arena opponent defensive cooldowns after their buffs expire.",
-	["Enable enemy cooldown tracking in arena."] = "Enable enemy cooldown tracking in arena.",
-	["Show spell tooltips when hovering over cooldown icons."] = "Show spell tooltips when hovering over cooldown icons.",
-	["Reverse the cooldown swipe animation direction on icons."] = "Reverse the cooldown swipe animation direction on icons.",
-	["The display size of each cooldown icon in pixels."] = "The display size of each cooldown icon in pixels.",
-	["The spacing in pixels between each cooldown icon."] = "The spacing in pixels between each cooldown icon.",
-	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar.",
-	["The direction cooldown icons grow from the arena frame anchor point."] = "The direction cooldown icons grow from the arena frame anchor point.",
-	["Horizontal pixel offset from the arena frame anchor point."] = "Horizontal pixel offset from the arena frame anchor point.",
-	["Vertical pixel offset from the arena frame anchor point."] = "Vertical pixel offset from the arena frame anchor point.",
-	["Vertical spacing in pixels between each enemy's cooldown row."] = "Vertical spacing in pixels between each enemy's cooldown row.",
-	["Layout Mode"] = "Layout Mode",
-	["Arena Frames Anchoring"] = "Arena Frames Anchoring",
-	["Entry Spacing"] = "Entry Spacing",
-	["Always show cooldowns"] = "Always show cooldowns",
-	["Always display every cooldown for the enemy's specialization, faded when not on cooldown and fully opaque while active."] = "Always display every cooldown for the enemy's specialization, faded when not on cooldown and fully opaque while active.",
+	-- Retired options, still named by old What's New entries
 	[" - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames)."] = " - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames).",
 
 	-- Precognition tab

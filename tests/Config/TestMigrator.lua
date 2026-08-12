@@ -73,7 +73,13 @@ assert(type(LATEST_VERSION) == "number" and LATEST_VERSION >= 55, "sane latest v
 local expectedModules = {
 	"CCModule", "PetCCModule", "HealerCCModule", "PortraitModule", "AlertsModule",
 	"NameplatesModule", "EnemyKickTrackerModule", "TrinketsModule", "RaidFrameAurasModule",
-	"PrecogModule", "FriendlyCooldownTrackerModule", "EnemyCooldownTrackerModule",
+	"PrecogModule",
+}
+
+-- Modules the addon no longer ships. Their settings are not in dbDefaults any more, so the final
+-- CleanTable must drop them outright rather than leaving orphaned tables behind.
+local removedModules = {
+	"FriendlyCooldownTrackerModule", "EnemyCooldownTrackerModule",
 }
 
 fw.describe("Migrator - fresh install", function()
@@ -87,6 +93,9 @@ fw.describe("Migrator - fresh install", function()
 		for _, name in ipairs(expectedModules) do
 			assert(type(db.Modules[name]) == "table", "missing module defaults: " .. name)
 		end
+		for _, name in ipairs(removedModules) do
+			assert(db.Modules[name] == nil, "removed module still seeded: " .. name)
+		end
 		assert(type(db.Modules.CCModule.Default.Icons.Size) == "number", "representative nested default")
 		assert(db.GlowType == "Slot Glow" and type(db.FontScale) == "number", "top-level defaults")
 	end)
@@ -96,6 +105,37 @@ fw.describe("Migrator - fresh install", function()
 		local second = migrator:GetAndUpgradeDb()
 		local ok, why = deepEquals(first, second)
 		assert(ok, "second run changed the db: " .. tostring(why))
+	end)
+end)
+
+fw.describe("Migrator - retired modules in stored profiles", function()
+	-- CleanTable never recurses into Profiles, so a snapshot keeps whatever modules existed when it
+	-- was saved. Switching to it writes the whole payload back over the live db, which is how a
+	-- retired module's settings would otherwise round-trip forever.
+	fw.it("prunes modules the addon no longer ships from every snapshot", function()
+		_G.MiniAurasDB = {
+			Version = LATEST_VERSION,
+			Profiles = {
+				Old = {
+					Modules = {
+						CCModule = { Default = { Grow = "LEFT" } },
+						FriendlyCooldownTrackerModule = { DisabledSpells = { [12345] = true } },
+						EnemyCooldownTrackerModule = { DisplayMode = "Linear" },
+					},
+				},
+				Empty = { Modules = {} },
+				NoModules = {},
+			},
+		}
+
+		local db = migrator:GetAndUpgradeDb()
+		local old = db.Profiles.Old.Modules
+
+		assert(old.CCModule.Default.Grow == "LEFT", "a shipped module's settings are untouched")
+		for _, name in ipairs(removedModules) do
+			assert(old[name] == nil, "retired module survived in a snapshot: " .. name)
+		end
+		assert(db.Profiles.Empty ~= nil and db.Profiles.NoModules ~= nil, "odd-shaped profiles survive")
 	end)
 end)
 
@@ -153,6 +193,9 @@ fw.describe("Migrator - full chain from a v1-era db", function()
 		assert(db.Version == LATEST_VERSION, "reached the current version")
 		for _, name in ipairs(expectedModules) do
 			assert(type(db.Modules[name]) == "table", "missing module: " .. name)
+		end
+		for _, name in ipairs(removedModules) do
+			assert(db.Modules[name] == nil, "removed module survived the chain: " .. name)
 		end
 		-- Every pre-module-refactor top-level structure must be consumed or cleaned.
 		for _, legacyKey in ipairs({
@@ -250,10 +293,9 @@ fw.describe("Migrator - full chain from a v37-era db preserves settings", functi
 		-- v52: ShowImportant lands on the enabled bar that shows defensives (enemy Bar2 here).
 		assert(enemy.Bar2.ShowImportant == true, "important surfaced on the defensives bar")
 
-		-- v48: removed Split layout falls back to Linear; opaque spell hash survives CleanTable.
-		local ecd = db.Modules.EnemyCooldownTrackerModule
-		assert(ecd.DisplayMode == "Linear", "Split layout migrated to Linear")
-		assert(ecd.DisabledSpells[12345] == true, "opaque DisabledSpells hash preserved")
+		-- The cooldown trackers are gone, so their whole customized table is cleaned away rather
+		-- than migrated. The v48 Split -> Linear step still runs against it; nothing survives it.
+		assert(db.Modules.EnemyCooldownTrackerModule == nil, "removed tracker settings cleaned away")
 
 		-- v54/v55: per-module icon padding seeded from the old global IconSpacing.
 		assert(db.Modules.AlertsModule.IconSpacing == 5, "alerts padding seeded")

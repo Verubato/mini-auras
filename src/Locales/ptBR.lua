@@ -227,7 +227,6 @@ L:RegisterLocale("ptBR", {
 	["Show interrupts"] = "Interrupções",
 	["Show an icon when a friendly unit gets interrupted."] = "Mostra um ícone quando uma unidade aliada é interrompida.",
 
-
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "Uma região separada para quando seu curandeiro estiver sob controle.",
 	["Play a sound when the healer is CC'd."] = "Reproduzir um som quando o curandeiro estiver sob controle.",
@@ -268,47 +267,16 @@ L:RegisterLocale("ptBR", {
 	["Party Trinkets"] = "Berloques do grupo",
 	["Party Trinkets_Short"] = "Berloques",
 
-	-- Friendly Cooldown Tracker tab
-	["Friendly Cooldowns"] = "Recargas aliadas",
-	["Friendly Cooldowns_Short"] = "Rec. aliadas",
-	["Icon Spacing"] = "Espaço entre ícones",
+	-- Shared across several tabs
 	["Spells"] = "Feitiços",
-	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames."] = "Exibe as recargas do berloque de PvP e defensivas aliadas nos frames do grupo/raid após uma defensiva expirar.",
-["Excludes yourself from being tracked."] = "Exclui você do rastreamento.",
 	["Milliseconds"] = "Milissegundos",
 	["Milliseconds Threshold"] = "Limite de milissegundos",
 	["Show decimal milliseconds on the cooldown timer when below the configured threshold."] = "Exibe milissegundos decimais no temporizador de recarga quando estiver abaixo do limite configurado.",
 	["Show tooltips"] = "Mostrar dicas",
 	["Shows a spell tooltip when hovering over an icon."] = "Exibe a dica de feitiço ao passar o mouse sobre um ícone.",
-	["Trinket"] = "Berloque",
-	["Shows the trinket cooldown icon."] = "Exibe o ícone de recarga do berloque.",
-	["Desaturate on cooldown"] = "Dessaturar em recarga",
-	["Desaturates the icon while it is on cooldown."] = "Dessatura o ícone enquanto está em recarga.",
-	["Predictive"] = "Preditivo",
-	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "Enquanto um buff de recarga estiver ativo, ilumina o ícone e exibe uma contagem regressiva antes do início do temporizador.",
-	["Rows"] = "Linhas",
-	["Columns"] = "Colunas",
 
-	-- Enemy Cooldown Tracker tab
-	["Enemy Cooldowns"] = "CDs inimigos",
-	["Enemy Cooldowns_Short"] = "CDs inimigos",
-	["Shows enemy arena opponent defensive cooldowns after their buffs expire."] = "Exibe os tempos de recarga defensivos dos adversários de arena após seus buffs expirarem.",
-	["Layout Mode"] = "Modo de layout",
-	["Arena Frames Anchoring"] = "Ancoragem dos quadros de arena",
-	["Entry Spacing"] = "Espaçamento de entradas",
-	["Always show cooldowns"] = "Sempre mostrar recargas",
-	["Always display every cooldown for the enemy's specialization, faded when not on cooldown and fully opaque while active."] = "Sempre exibe todas as recargas da especialização do inimigo, esmaecidas quando não estão em recarga e totalmente opacas enquanto ativas.",
+	-- Retired options, still named by old What's New entries
 	[" - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames)."] = " - As recargas inimigas agora podem ser sempre exibidas (esmaecidas quando fora de recarga) através da opção 'Sempre mostrar recargas', além de um novo modo de layout Dividido (recargas ofensivas na barra linear, defensivas nos quadros de arena).",
-	["Enable enemy cooldown tracking in arena."] = "Ativar o rastreamento de recarga de inimigos na arena.",
-	["Show spell tooltips when hovering over cooldown icons."] = "Mostrar dicas de feitiços ao passar o mouse sobre os ícones de recarga.",
-	["Reverse the cooldown swipe animation direction on icons."] = "Inverter a direção da animação de varredura de recarga nos ícones.",
-	["The display size of each cooldown icon in pixels."] = "O tamanho de exibição de cada ícone de recarga em pixels.",
-	["The spacing in pixels between each cooldown icon."] = "O espaçamento em pixels entre cada ícone de recarga.",
-	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "Quadros de Arena: ancora os ícones ao lado do quadro de arena de cada inimigo. Barra Linear: exibe todas as recargas em uma única barra combinada.",
-	["The direction cooldown icons grow from the arena frame anchor point."] = "A direção em que os ícones de recarga crescem a partir do ponto de ancoragem do quadro de arena.",
-	["Horizontal pixel offset from the arena frame anchor point."] = "Deslocamento horizontal em pixels a partir do ponto de ancoragem do quadro de arena.",
-	["Vertical pixel offset from the arena frame anchor point."] = "Deslocamento vertical em pixels a partir do ponto de ancoragem do quadro de arena.",
-	["Vertical spacing in pixels between each enemy's cooldown row."] = "Espaçamento vertical em pixels entre a fileira de recargas de cada inimigo.",
 
 	-- Precognition tab
 	["Note that you can't simply filter by spell id these days."] = "Note que hoje em dia você não pode simplesmente filtrar por ID de feitiço.",

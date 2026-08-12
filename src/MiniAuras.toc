@@ -94,11 +94,6 @@ Core\AuraSounds.lua
 Core\TtsPacks.lua
 Core\TestSpells.lua
 Core\TestModeManager.lua
-Core\Cooldowns\PvPTalentSync.lua
-Core\Cooldowns\Talents.lua
-Core\Cooldowns\Rules.lua
-Core\Cooldowns\SignatureDetector.lua
-Core\Cooldowns\Brain.lua
 
 Modules\CrowdControl\Display.lua
 Modules\CrowdControl\Module.lua
@@ -133,12 +128,6 @@ Modules\Precog\Sound.lua
 Modules\Precog\Module.lua
 Modules\Trinkets\Display.lua
 Modules\Trinkets\Module.lua
-Modules\FriendlyCooldowns\Observer.lua
-Modules\FriendlyCooldowns\Display.lua
-Modules\FriendlyCooldowns\Module.lua
-Modules\EnemyCooldowns\Observer.lua
-Modules\EnemyCooldowns\Display.lua
-Modules\EnemyCooldowns\Module.lua
 
 Api\V1.lua
 
@@ -174,8 +163,6 @@ Config\Panels\CustomAuras\EditorLayout.lua
 Config\Panels\CustomAuras\EditorTrigger.lua
 Config\Panels\CustomAuras\Editor.lua
 Config\Panels\CustomAuras.lua
-Config\Panels\FriendlyCooldownTracker.lua
-Config\Panels\EnemyCooldownTracker.lua
 Config\Panels\Trinkets.lua
 Config\Panels\OtherAddons.lua
 Config\Panels\Miscellaneous.lua

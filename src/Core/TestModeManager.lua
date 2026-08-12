@@ -18,8 +18,6 @@ local MODULE_NAMES = {
 	"CustomAurasModule",
 	"PrecogModule",
 	"TrinketsModule",
-	"FriendlyCooldownTrackerModule",
-	"EnemyCooldownTrackerModule",
 }
 ---@type IModule[]
 local testModules = {}

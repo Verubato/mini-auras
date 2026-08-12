@@ -3,10 +3,16 @@
 ---@type string, Addon
 local _, addon = ...
 
-local fcdModule = addon.Modules.FriendlyCooldowns.Module
+local mini = addon.Framework
 local framesCore = addon.Core.Frames
 local ttsPacks = addon.Core.TtsPacks
 local alertsModule = addon.Modules.AlertsModule
+
+---Both cooldown callbacks were fed by the friendly cooldown tracker, which inferred cooldowns from
+---ally aura data. 12.1 removed addon access to that data, so the tracker is gone and neither
+---callback can ever fire again. The methods stay so a caller written against them still loads;
+---each warns once, naming itself, so the addon author can find and drop the call.
+local deprecationWarned = {}
 
 ---@alias MiniAurasSpellType "Defensive"
 ---@alias MiniAurasPredictedCallback fun(unit: string, spellId: number, spellType: MiniAurasSpellType)
@@ -21,18 +27,30 @@ local alertsModule = addon.Modules.AlertsModule
 ---@field RegisterVoicePack fun(self: MiniAurasApiV1, pack: MiniAurasVoicePack): boolean
 local v1 = {}
 
----Registers a callback invoked when MiniAuras predicts a friendly cooldown is about to start
----(i.e. the associated buff has been detected on the unit).
----@param fn MiniAurasPredictedCallback
-function v1:RegisterPredictedCallback(fn)
-	fcdModule:RegisterPredictedCallback(fn)
+---@param name string
+local function WarnDeprecated(name)
+	if deprecationWarned[name] then
+		return
+	end
+
+	deprecationWarned[name] = true
+	mini:NotifyWithPrefix(("MiniAurasApi.v1:%s is deprecated and no longer fires: cooldown tracking was removed in 12.1."):format(name))
 end
 
----Registers a callback invoked when MiniAuras commits a matched cooldown rule
----(i.e. the aura has ended and the cooldown timer has started).
+---Deprecated no-op. Previously invoked when MiniAuras predicted a friendly cooldown was about to
+---start (i.e. the associated buff had been detected on the unit).
+---@deprecated
+---@param fn MiniAurasPredictedCallback
+function v1:RegisterPredictedCallback(fn) -- luacheck: no unused args
+	WarnDeprecated("RegisterPredictedCallback")
+end
+
+---Deprecated no-op. Previously invoked when MiniAuras committed a matched cooldown rule
+---(i.e. the aura had ended and the cooldown timer had started).
+---@deprecated
 ---@param fn MiniAurasMatchedCallback
-function v1:RegisterMatchedCallback(fn)
-	fcdModule:RegisterMatchedCallback(fn)
+function v1:RegisterMatchedCallback(fn) -- luacheck: no unused args
+	WarnDeprecated("RegisterMatchedCallback")
 end
 
 ---Registers an external frame provider. Frames returned by `GetFrames()` are

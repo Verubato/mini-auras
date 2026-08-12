@@ -11,9 +11,7 @@ local legacyAddon = addon.Core.LegacyAddon
 -- Every module Inits and Refreshes on every client; none of them are conditionally listed here.
 -- Client support is each module's own decision, made once at file load from
 -- WoWEx:UseAuraContainers() and enforced by early-returning from Init/Refresh/StartTesting. So a
--- module in this list may legitimately do nothing at all: TrinketsModule is 12.1-only, and the
--- two cooldown trackers (which infer cooldowns from aura data) are legacy-only.
--- TEMPORARY: the cooldown trackers leave this list when the legacy path is removed.
+-- module in this list may legitimately do nothing at all: TrinketsModule is 12.1-only.
 local modules = {
 	addon.Modules.CrowdControlModule,
 	addon.Modules.HealerCrowdControlModule,
@@ -26,10 +24,7 @@ local modules = {
 	addon.Modules.PrecogModule,
 	addon.Modules.TrinketsModule,
 	addon.Modules.AllyKickTrackerModule,
-	addon.Core.Cooldowns.Talents,
 	addon.Core.TrinketsTracker,
-	addon.Modules.FriendlyCooldownTrackerModule,
-	addon.Modules.EnemyCooldownTrackerModule,
 }
 -- How long a burst of media registrations is allowed to settle before re-resolving. A media pack
 -- registers one entry at a time, so this coalesces a hundred callbacks into one refresh.
@@ -135,6 +130,9 @@ local function OnAddonLoaded()
 
 	config:Init()
 	frames:Init()
+	-- Only consumer left is the kick trackers' ally-spec guess, via InspectorFacade. It has no
+	-- Refresh, so it sits here rather than in the module list.
+	addon.Core.Inspector:Init()
 	addon.Utils.ModuleUtil:Init()
 	addon.Core.ProfileManager:Init()
 	addon.Core.AnchoredIcons:Init()
@@ -208,7 +206,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field ModuleUtil ModuleUtil
 ---@field ModuleName ModuleName
 ---@field WoWEx WoWEx
----@field PvPTalentSync PvPTalentSync
 
 ---@class Core
 ---@field Framework MiniFramework
@@ -229,24 +226,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field BarSlotContainer BarSlotContainer
 ---@field Outline Outline
 ---@field Sounds Sounds
----@field Cooldowns Cooldowns
-
----@class Cooldowns
----@field PvPTalentSync PvPTalentSync
----@field Talents CooldownTalents
----@field Rules CooldownRules
----@field SignatureDetector SignatureDetector
----@field Brain CooldownBrain
-
----@class FriendlyCooldowns
----@field Observer FriendlyCooldownObserver
----@field Display FriendlyCooldownDisplay
----@field Module FriendlyCooldownTrackerModule
-
----@class EnemyCooldowns
----@field Observer EnemyCooldownObserver
----@field Display EnemyCooldownDisplay
----@field Module EnemyCooldownTrackerModule
 
 ---@class RaidFrameAuras
 ---@field Display RaidFrameAurasDisplay
@@ -314,10 +293,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field RaidFrameAurasModule RaidFrameAurasModule
 ---@field CustomAurasModule CustomAurasModule
 ---@field PrecogModule PrecogModule
----@field FriendlyCooldownTrackerModule FriendlyCooldownTrackerModule
----@field EnemyCooldownTrackerModule EnemyCooldownTrackerModule
----@field FriendlyCooldowns FriendlyCooldowns
----@field EnemyCooldowns EnemyCooldowns
 ---@field EnemyKickTracker EnemyKickTracker
 ---@field AllyKickTracker AllyKickTracker
 ---@field Alerts Alerts

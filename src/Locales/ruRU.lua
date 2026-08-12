@@ -227,7 +227,6 @@ L:RegisterLocale("ruRU", {
 	["Show interrupts"] = "Прерывания",
 	["Show an icon when a friendly unit gets interrupted."] = "Показывает иконку, когда дружественный персонаж прерывается.",
 
-
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "Отдельная область для когда ваш целитель под контролем.",
 	["Play a sound when the healer is CC'd."] = "Воспроизводить звук, когда целитель под контролем.",
@@ -268,47 +267,16 @@ L:RegisterLocale("ruRU", {
 	["Party Trinkets"] = "Аксессуары группы",
 	["Party Trinkets_Short"] = "Амулеты",
 
-	-- Friendly Cooldown Tracker tab
-	["Friendly Cooldowns"] = "Перезарядки союзников",
-	["Friendly Cooldowns_Short"] = "Перезар. союзн.",
-	["Icon Spacing"] = "Промежуток между иконками",
+	-- Shared across several tabs
 	["Spells"] = "Заклинания",
-	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames."] = "Показывает перезарядки PvP-украшения и защитных умений союзников на фреймах группы/рейда после окончания защиты.",
-["Excludes yourself from being tracked."] = "Исключает вас из отслеживания.",
 	["Milliseconds"] = "Миллисекунды",
 	["Milliseconds Threshold"] = "Порог миллисекунд",
 	["Show decimal milliseconds on the cooldown timer when below the configured threshold."] = "Отображает десятичные миллисекунды на таймере перезарядки при значении ниже настроенного порога.",
 	["Show tooltips"] = "Подсказки",
 	["Shows a spell tooltip when hovering over an icon."] = "Показывает подсказку заклинания при наведении на значок.",
-	["Trinket"] = "Аксессуар",
-	["Shows the trinket cooldown icon."] = "Показывает иконку перезарядки аксессуара.",
-	["Desaturate on cooldown"] = "Серые на КД",
-	["Desaturates the icon while it is on cooldown."] = "Обесцвечивает иконку, пока она находится на перезарядке.",
-	["Predictive"] = "Предсказание",
-	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "Когда активен бафф перезарядки, подсвечивает иконку и показывает обратный отсчёт до начала таймера.",
-	["Rows"] = "Ряды",
-	["Columns"] = "Столбцы",
 
-	-- Enemy Cooldown Tracker tab
-	["Enemy Cooldowns"] = "КД противников",
-	["Enemy Cooldowns_Short"] = "КД противников",
-	["Shows enemy arena opponent defensive cooldowns after their buffs expire."] = "Отображает откаты защитных способностей противников на арене после истечения их баффов.",
-	["Layout Mode"] = "Режим расположения",
-	["Arena Frames Anchoring"] = "Привязка рамок арены",
-	["Entry Spacing"] = "Отступ между записями",
-	["Always show cooldowns"] = "Показывать всегда",
-	["Always display every cooldown for the enemy's specialization, faded when not on cooldown and fully opaque while active."] = "Всегда отображать все перезарядки специализации противника: затенённые, когда не активны, и полностью непрозрачные во время действия.",
+	-- Retired options, still named by old What's New entries
 	[" - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames)."] = " - Перезарядки противников теперь можно отображать постоянно (затенёнными вне перезарядки) с помощью параметра «Всегда показывать перезарядки», а также добавлен новый раздельный режим (атакующие перезарядки на линейной полосе, защитные — на рамках арены).",
-	["Enable enemy cooldown tracking in arena."] = "Включить отслеживание перезарядки врагов на арене.",
-	["Show spell tooltips when hovering over cooldown icons."] = "Показывать подсказки по заклинаниям при наведении на иконки перезарядки.",
-	["Reverse the cooldown swipe animation direction on icons."] = "Изменить направление анимации смахивания перезарядки на иконках.",
-	["The display size of each cooldown icon in pixels."] = "Размер отображения каждой иконки перезарядки в пикселях.",
-	["The spacing in pixels between each cooldown icon."] = "Расстояние в пикселях между каждой иконкой перезарядки.",
-	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "Рамки арены: привязывает иконки рядом с рамкой арены каждого врага. Линейная полоса: отображает все перезарядки в одной объединённой полосе.",
-	["The direction cooldown icons grow from the arena frame anchor point."] = "Направление роста иконок перезарядки от точки привязки рамки арены.",
-	["Horizontal pixel offset from the arena frame anchor point."] = "Горизонтальное смещение в пикселях от точки привязки рамки арены.",
-	["Vertical pixel offset from the arena frame anchor point."] = "Вертикальное смещение в пикселях от точки привязки рамки арены.",
-	["Vertical spacing in pixels between each enemy's cooldown row."] = "Вертикальный отступ в пикселях между рядами перезарядки каждого врага.",
 
 	-- Precognition tab
 	["Note that you can't simply filter by spell id these days."] = "Обратите внимание, что в наши дни нельзя просто фильтровать по ID заклинания.",

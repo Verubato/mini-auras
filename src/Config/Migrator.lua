@@ -11,22 +11,15 @@ addon.Config.Migrator = M
 -- "Profiles", "ActiveProfile", and "AutoSwitch" are included here because CleanTable
 -- would otherwise wipe all stored profile snapshots (profile names are unknown keys
 -- relative to the dbDefaults.Profiles = {} template).
-local OPAQUE_CACHE_KEYS = { "SpecCache", "TalentCache", "PvPTalentCache", "WhatsNew", "NotifiedChanges", "Profiles", "ActiveProfile", "AutoSwitch" }
+local OPAQUE_CACHE_KEYS = { "SpecCache", "WhatsNew", "NotifiedChanges", "Profiles", "ActiveProfile", "AutoSwitch" }
 
 local function SaveOpaqueCaches(vars)
 	local saved = {}
 	for _, key in ipairs(OPAQUE_CACHE_KEYS) do
 		saved[key] = mini:CopyValueOrTable(vars[key])
 	end
-	-- DisabledSpells is a user-edited hash (spellId -> true) nested inside the module options.
-	-- CleanTable would strip all SpellId keys because none are in the empty-table schema, so
-	-- we save and restore each module's DisabledSpells the same way as top-level opaque caches.
-	local fcdModule = vars.Modules and vars.Modules.FriendlyCooldownTrackerModule
-	saved._FcdDisabledSpells = fcdModule and mini:CopyValueOrTable(fcdModule.DisabledSpells) or {}
-	local ecdModule = vars.Modules and vars.Modules.EnemyCooldownTrackerModule
-	saved._EcdDisabledSpells = ecdModule and mini:CopyValueOrTable(ecdModule.DisabledSpells) or {}
-	-- Same shape again: the auras module's tracked-spell deltas are spellId -> true hashes
-	-- against an empty schema, so they would be cleaned away too.
+	-- The auras module's tracked-spell deltas are spellId -> true hashes against an empty schema,
+	-- so CleanTable would strip every key; save and restore them like the top-level caches.
 	local raidFrameAurasSpells = vars.Modules and vars.Modules.RaidFrameAurasModule
 		and vars.Modules.RaidFrameAurasModule.Spells
 	saved._RaidFrameAurasDisabledSpells = raidFrameAurasSpells and mini:CopyValueOrTable(raidFrameAurasSpells.Disabled) or {}
@@ -43,14 +36,6 @@ local function RestoreOpaqueCaches(vars, saved)
 	for _, key in ipairs(OPAQUE_CACHE_KEYS) do
 		vars[key] = saved[key]
 	end
-	local fcdModule = vars.Modules and vars.Modules.FriendlyCooldownTrackerModule
-	if fcdModule then
-		fcdModule.DisabledSpells = saved._FcdDisabledSpells or {}
-	end
-	local ecdModule = vars.Modules and vars.Modules.EnemyCooldownTrackerModule
-	if ecdModule then
-		ecdModule.DisabledSpells = saved._EcdDisabledSpells or {}
-	end
 	local raidFrameAurasModule = vars.Modules and vars.Modules.RaidFrameAurasModule
 	if raidFrameAurasModule then
 		raidFrameAurasModule.Spells = raidFrameAurasModule.Spells or {}
@@ -61,6 +46,26 @@ local function RestoreOpaqueCaches(vars, saved)
 	local customAuras = vars.Modules and vars.Modules.CustomAurasModule
 	if customAuras then
 		customAuras.Groups = saved._CustomAuraGroups or {}
+	end
+end
+
+---Drops settings for modules the addon no longer ships from every stored profile.
+---CleanTable cannot reach them: Profiles is opaque to it, so a snapshot keeps whatever the addon
+---had when it was saved. Switching to that profile writes the whole payload back over the live
+---db, so without this a retired module's table would round-trip forever.
+local function PruneRemovedModulesFromProfiles(vars)
+	if type(vars.Profiles) ~= "table" then
+		return
+	end
+
+	for _, payload in pairs(vars.Profiles) do
+		if type(payload) == "table" and type(payload.Modules) == "table" then
+			for name in pairs(payload.Modules) do
+				if dbDefaults.Modules[name] == nil then
+					payload.Modules[name] = nil
+				end
+			end
+		end
 	end
 end
 
@@ -135,6 +140,7 @@ function M:GetAndUpgradeDb()
 		local caches = SaveOpaqueCaches(vars)
 		mini:CleanTable(vars, dbDefaults, true, true)
 		RestoreOpaqueCaches(vars, caches)
+		PruneRemovedModulesFromProfiles(vars)
 	end
 
 	return vars
@@ -165,6 +171,7 @@ function M:SoftReset()
 	local caches = SaveOpaqueCaches(vars)
 	mini:CleanTable(vars, dbDefaults, true, true)
 	RestoreOpaqueCaches(vars, caches)
+	PruneRemovedModulesFromProfiles(vars)
 
 	-- The default-merge above only fills MISSING keys, so a stale Version (from a corrupt
 	-- migration chain or a db written by a newer addon version) would survive - leaving the

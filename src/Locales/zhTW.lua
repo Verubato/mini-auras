@@ -227,7 +227,6 @@ L:RegisterLocale("zhTW", {
 	["Show interrupts"] = "顯示打斷",
 	["Show an icon when a friendly unit gets interrupted."] = "當友方單位被打斷時顯示圖示。",
 
-
 	-- Healer tab
 	["A separate region for when your healer is CC'd."] = "當您的治療者被控制時的單獨區域。",
 	["Play a sound when the healer is CC'd."] = "當治療者被控制時播放聲音。",
@@ -268,47 +267,16 @@ L:RegisterLocale("zhTW", {
 	["Party Trinkets"] = "隊伍飾品",
 	["Party Trinkets_Short"] = "飾品",
 
-	-- Friendly Cooldown Tracker tab
-	["Friendly Cooldowns"] = "友方冷卻追蹤",
-	["Friendly Cooldowns_Short"] = "友方冷卻",
-	["Icon Spacing"] = "圖示間隔",
+	-- Shared across several tabs
 	["Spells"] = "法術",
-	["Shows PvP trinket and friendly defensive cooldowns on party/raid frames."] = "防禦技能到期後，在小隊/團隊框架上顯示PvP飾品和友方防禦技能的冷卻時間。",
-["Excludes yourself from being tracked."] = "將自己排除在追蹤之外。",
 	["Milliseconds"] = "毫秒",
 	["Milliseconds Threshold"] = "毫秒閾值",
 	["Show decimal milliseconds on the cooldown timer when below the configured threshold."] = "當冷卻時間低於配置的閾值時，在計時器上顯示小數毫秒。",
 	["Show tooltips"] = "顯示提示",
 	["Shows a spell tooltip when hovering over an icon."] = "滑鼠懸停在圖示上時顯示法術提示。",
-	["Trinket"] = "飾品",
-	["Shows the trinket cooldown icon."] = "顯示飾品冷卻時間圖示。",
-	["Desaturate on cooldown"] = "冷卻時去飽和",
-	["Desaturates the icon while it is on cooldown."] = "冷卻期間將圖示顯示為灰階。",
-	["Predictive"] = "預測",
-	["While a cooldown buff is active, glows the icon and shows a countdown before the cooldown timer starts."] = "冷卻增益效果啟用時，在冷卻計時器開始前使圖示發光並顯示倒數計時。",
-	["Rows"] = "行數",
-	["Columns"] = "欄數",
 
-	-- Enemy Cooldown Tracker tab
-	["Enemy Cooldowns"] = "敵方冷卻",
-	["Enemy Cooldowns_Short"] = "敵方冷卻",
-	["Shows enemy arena opponent defensive cooldowns after their buffs expire."] = "在敵方競技場對手的增益效果消失後，顯示其防禦性冷卻時間。",
-	["Layout Mode"] = "版面模式",
-	["Arena Frames Anchoring"] = "競技場框架錨定",
-	["Entry Spacing"] = "項目間距",
-	["Always show cooldowns"] = "始終顯示冷卻",
-	["Always display every cooldown for the enemy's specialization, faded when not on cooldown and fully opaque while active."] = "始終顯示敵人專精的所有冷卻，未在冷卻時變暗，啟用時完全不透明。",
+	-- Retired options, still named by old What's New entries
 	[" - Enemy cooldowns can now always be shown (faded when off cooldown) via the 'Always show cooldowns' option, plus a new Split layout mode (offensive cooldowns on the linear bar, defensive cooldowns on the arena frames)."] = " - 現在可透過「始終顯示冷卻」選項始終顯示敵方冷卻（未冷卻時變暗），並新增分離版面模式（進攻冷卻顯示在線性條上，防禦冷卻顯示在競技場框架上）。",
-	["Enable enemy cooldown tracking in arena."] = "在競技場中啟用敵人冷卻追蹤。",
-	["Show spell tooltips when hovering over cooldown icons."] = "將滑鼠懸停在冷卻圖示上時顯示法術提示。",
-	["Reverse the cooldown swipe animation direction on icons."] = "反轉圖示上冷卻掃描動畫的方向。",
-	["The display size of each cooldown icon in pixels."] = "每個冷卻圖示的顯示尺寸（像素）。",
-	["The spacing in pixels between each cooldown icon."] = "每個冷卻圖示之間的間距（像素）。",
-	["Arena Frames: anchors icons next to each enemy's arena frame. Linear Bar: displays all cooldowns in a single combined bar."] = "競技場框架：將圖示固定在每個敵人的競技場框架旁邊。線性條：在單個組合條中顯示所有冷卻。",
-	["The direction cooldown icons grow from the arena frame anchor point."] = "冷卻圖示從競技場框架錨點增長的方向。",
-	["Horizontal pixel offset from the arena frame anchor point."] = "距競技場框架錨點的水平像素偏移。",
-	["Vertical pixel offset from the arena frame anchor point."] = "距競技場框架錨點的垂直像素偏移。",
-	["Vertical spacing in pixels between each enemy's cooldown row."] = "每個敵人冷卻列之間的垂直間距（像素）。",
 
 	-- Precognition tab
 	["Note that you can't simply filter by spell id these days."] = "請注意，現在無法簡單地通過法術ID進行過濾。",
