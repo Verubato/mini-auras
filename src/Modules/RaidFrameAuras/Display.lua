@@ -299,24 +299,35 @@ end
 ---@type fun(entry: RaidFrameAurasWatchEntry)
 local RenderEntry = USE_AURA_CONTAINERS and UpdateKickIcon or UpdateWatcherAuras -- luaconv: aliases the two renderers above
 
----Budgets the helpful group for the entry's CURRENT unit. Spell-id filters are gated on
----UnitCanAssist, so a unit that stops being assistable drops includeSpellIDs and the bare HELPFUL
----token then matches every buff they have. Nothing can narrow it back, so the group goes to zero
----until they are assistable again. Two ways in: a duel flips the unit under the frame, and a mind
----control has Blizzard hand a FRIENDLY frame an enemy unit outright.
+---Budgets both groups for the entry's CURRENT unit, which is a question about the unit rather
+---than about the options.
+---
+---Assist: spell-id filters are gated on UnitCanAssist, so a unit that stops being assistable
+---drops includeSpellIDs and the bare HELPFUL token then matches every buff they have. Two ways
+---in - a duel flips the unit under the frame, and a mind control has Blizzard hand a FRIENDLY
+---frame an enemy unit outright.
+---
+---Visible: outside the player's visible world the engine stops evaluating the filters correctly
+---and BOTH groups fill with unrelated auras, so a unit that far away shows nothing at all.
+---
+---Neither has an event of its own, which is why the duel poller watches them.
 ---@param entry RaidFrameAurasWatchEntry
 ---@param options RaidFrameAurasInstanceOptions
----@return number budget
-local function ApplyHelpfulBudget(entry, options)
+---@return number helpful
+---@return number crowdControl
+local function ApplyUnitGates(entry, options)
 	local maxIcons = tonumber(options.Icons.MaxIcons) or 1
-	local budget = (options.ShowDefensives or options.ShowImportant)
+	local visible = units:IsVisible(entry.Unit)
+	local helpful = visible and (options.ShowDefensives or options.ShowImportant)
 		and units:CanAssist(entry.Unit) and maxIcons or 0
+	local crowdControl = visible and options.ShowCC and maxIcons or 0
 
 	if entry.Display then
-		entry.Display:SetMaxIcons(HELPFUL_GROUP_KEY, budget)
+		entry.Display:SetMaxIcons(HELPFUL_GROUP_KEY, helpful)
+		entry.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, crowdControl)
 	end
 
-	return budget
+	return helpful, crowdControl
 end
 
 ---@param anchor table
@@ -410,10 +421,10 @@ local function EnsureWatcher(anchor, unit)
 
 			entry.Unit = unit
 
-			-- The gate is per unit, so a re-point can change the answer even though nothing about
-			-- the options moved. The category toggles are deliberately NOT re-read here (a
-			-- re-point must not reset them from defaults); only the gate is re-asked.
-			ApplyHelpfulBudget(entry, options)
+			-- The gates are per unit, so a re-point can change the answer even though nothing
+			-- about the options moved. The category toggles are deliberately NOT re-read here
+			-- (a re-point must not reset them from defaults); only the gates are re-asked.
+			ApplyUnitGates(entry, options)
 
 			-- Clear the container since it's a different unit now
 			entry.Container:ResetAllSlots()
@@ -592,10 +603,12 @@ local function ApplyEntryOptions(entry, anchor, options)
 
 		-- Category toggles map to a zero icon budget for the disabled group. One helpful group
 		-- covers both remaining categories, so either toggle keeps it visible; they no longer
-		-- select BETWEEN categories - the Spells tab does that. The helpful side also answers to
-		-- the assist gate, which ApplyHelpfulBudget owns.
-		budgetScratch[auraFilters.GroupKey.CrowdControl] = options.ShowCC and maxIcons or 0
-		budgetScratch[HELPFUL_GROUP_KEY] = ApplyHelpfulBudget(entry, options)
+		-- select BETWEEN categories - the Spells tab does that. Both sides also answer to the
+		-- per-unit gates, which ApplyUnitGates owns.
+		local helpful, crowdControl = ApplyUnitGates(entry, options)
+
+		budgetScratch[auraFilters.GroupKey.CrowdControl] = crowdControl
+		budgetScratch[HELPFUL_GROUP_KEY] = helpful
 
 		-- The tracked set is editable at runtime, so re-publish it rather than assuming the
 		-- filters handed over at creation are still current.
@@ -624,9 +637,9 @@ local function ApplyOptions(options)
 	end
 end
 
----Re-asks the assist gate for one unit, and says whether the answer moved. UNIT_FACTION fires
----for PvP flagging as much as for anything that matters here, so the module only does real work
----when this returns true.
+---Re-asks the per-unit gates for one unit, and says whether either answer moved. UNIT_FACTION
+---fires for PvP flagging as much as for anything that matters here, so the module only does real
+---work when this returns true.
 ---@param unit string
 ---@return boolean changed
 function M:OnUnitFactionChanged(unit)
@@ -640,9 +653,11 @@ function M:OnUnitFactionChanged(unit)
 
 	for _, entry in pairs(watchers) do
 		if entry.Unit == unit and entry.Display then
-			local before = entry.Display:GetMaxIcons(HELPFUL_GROUP_KEY)
+			local wasHelpful = entry.Display:GetMaxIcons(HELPFUL_GROUP_KEY)
+			local wasCc = entry.Display:GetMaxIcons(auraFilters.GroupKey.CrowdControl)
+			local helpful, crowdControl = ApplyUnitGates(entry, options)
 
-			if ApplyHelpfulBudget(entry, options) ~= before then
+			if helpful ~= wasHelpful or crowdControl ~= wasCc then
 				changed = true
 			end
 		end

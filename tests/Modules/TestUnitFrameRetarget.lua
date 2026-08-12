@@ -258,3 +258,36 @@ fw.describe("RaidFrameAurasModule 12.1 - a frame handed an enemy unit", function
 		assert(not raidDisplay:OnUnitFactionChanged("party40"), "not a unit on any frame")
 	end)
 end)
+
+fw.describe("RaidFrameAurasModule 12.1 - a unit outside the visible world", function()
+	local acm = require("AuraContainerMock")
+
+	fw.it("shows nothing at all for one", function()
+		env.enemies.party6 = nil
+		env.phased.party6 = nil
+		raidFrameAurasModule:Refresh()
+
+		local display = assert(fiDisplay("party6"), "no display for the anchor's unit")
+		local cc = auraFilters.GroupKey.CrowdControl
+
+		assert(display._groups.helpful.maxFrameCount > 0, "tracked while they are in range")
+
+		-- Nothing announces a unit walking out of range, so the poller is what notices.
+		env.phased.party6 = true
+		acm.tickAll(1)
+
+		-- Out there the engine stops evaluating the filters properly and both groups fill with
+		-- unrelated auras, so neither is given any icons.
+		assert(display._groups.helpful.maxFrameCount == 0, "no buffs from out of range")
+		assert(display._groups[cc].maxFrameCount == 0, "and no debuffs either")
+	end)
+
+	fw.it("picks them back up when they come back", function()
+		local display = assert(fiDisplay("party6"))
+
+		env.phased.party6 = nil
+		acm.tickAll(1)
+
+		assert(display._groups.helpful.maxFrameCount > 0, "tracked again once they are back")
+	end)
+end)
