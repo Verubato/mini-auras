@@ -1255,3 +1255,43 @@ fw.describe("AuraContainerDisplay - bar buttons", function()
 		assert(instance.Frame._groups.cc.layout.elementWidth == 26, "and the row is spaced square")
 	end)
 end)
+
+fw.describe("AuraContainerDisplay - refreshing a token whose occupant changed", function()
+	fw.it("re-points the container so the engine sees a unit change", function()
+		local instance = newInstance()
+		local frame = instance.Frame
+
+		assert(frame:GetUnit() == "target", "tracking the token it was built with")
+
+		local shows = frame._calls.Show or 0
+
+		instance:RequestRefresh()
+
+		-- The token string never changes across a target swap, so the container has nothing to
+		-- react to unless it is pointed away and back.
+		assert(frame:GetUnit() == "target", "and still tracking it afterwards")
+		assert((frame._calls.Show or 0) > shows, "the dirty flags were armed by a bounce")
+	end)
+
+	fw.it("bounces in combat, which is when targets actually get swapped", function()
+		local instance = newInstance()
+		local frame = instance.Frame
+		local shows = frame._calls.Show or 0
+
+		_G.InCombatLockdown = function() return true end
+		instance:RequestRefresh()
+		_G.InCombatLockdown = function() return false end
+
+		assert((frame._calls.Show or 0) > shows,
+			"an occupant swap has nothing else coming that would settle it")
+	end)
+
+	fw.it("leaves an untracked display alone", function()
+		local instance = newInstance()
+
+		instance:SetUnit("none")
+		instance:RequestRefresh()
+
+		assert(instance.Frame:GetUnit() == "none", "nothing to re-point at")
+	end)
+end)

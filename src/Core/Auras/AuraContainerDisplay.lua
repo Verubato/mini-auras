@@ -90,6 +90,9 @@ local countdownFormatters = {}
 
 -- How often the deferred restyle retry runs while any display is stale (see RestyleButtons).
 local RESTYLE_RETRY_INTERVAL = 1
+-- The container's own default unit, and what RequestRefresh points one at to make the engine
+-- see a unit CHANGE for a token whose occupant moved.
+local NO_UNIT = "none"
 
 -- Stand-ins for nil arguments, so the setters never have to allocate. Read-only.
 local EMPTY_STYLE = {}
@@ -246,31 +249,47 @@ end
 local function FlushPendingBounces()
 	bounceFlushScheduled = false
 
-	if pendingBounceCount == 0 or InCombatLockdown() then
+	if pendingBounceCount == 0 then
 		return
 	end
 
-	pendingBounceCount = 0
+	local inCombat = InCombatLockdown()
+	local parked = 0
 
 	for _, instance in ipairs(liveDisplays) do
 		if instance.BouncePending then
-			instance.BouncePending = false
-			local frame = instance.Frame
+			-- In combat only the urgent ones go through. The rest are setter-driven and settle
+			-- on the unit's next aura event, which combat has plenty of; an occupant swap has
+			-- nothing coming that would settle it, so it cannot wait for the regen event.
+			if inCombat and not instance.BounceUrgent then
+				parked = parked + 1
+			else
+				instance.BouncePending = false
+				instance.BounceUrgent = false
+				local frame = instance.Frame
 
-			-- A hidden frame needs no bounce: the OnShow on its way back arms the processor.
-			if frame:IsShown() then
-				frame:Hide()
-				frame:Show()
+				-- A hidden frame needs no bounce: the OnShow on its way back arms the processor.
+				if frame:IsShown() then
+					frame:Hide()
+					frame:Show()
+				end
 			end
 		end
 	end
+
+	pendingBounceCount = parked
 end
 
 ---@param instance AuraContainerDisplay
-local function MarkBouncePending(instance)
+---@param urgent boolean? Bounce even in combat, for a change nothing else will settle.
+local function MarkBouncePending(instance, urgent)
 	if not instance.BouncePending then
 		instance.BouncePending = true
 		pendingBounceCount = pendingBounceCount + 1
+	end
+
+	if urgent then
+		instance.BounceUrgent = true
 	end
 
 	if not bounceFlushScheduled then
@@ -1428,10 +1447,24 @@ function M:GetUnit()
 end
 
 ---Forces a re-parse of the tracked unit's auras, for when the token's occupant changes rather
----than the token (a target or focus swap). Calling UpdateAllAuras from addon context is not
----enough: it only marks the dirty flags nothing is armed to consume - see the bounce machinery.
+---than the token (a target or focus swap). The container sees no change in that - the token
+---string it was given is still the same string - so nothing re-registers and the PREVIOUS
+---occupant's auras stay on screen. Pointing it at nobody and back is a change it does see.
+---
+---Both halves are needed. UpdateAllAuras from addon context only marks the dirty flags nothing
+---is armed to consume, hence the bounce; and the bounce is urgent because a target swap happens
+---mid-fight, where the ordinary flags are parked until combat drops.
 function M:RequestRefresh()
-	MarkBouncePending(self)
+	local frame = self.Frame
+	local unit = frame:GetUnit()
+
+	-- Both halves in the same frame, so nothing renders in between.
+	if unit and unit ~= NO_UNIT then
+		frame:SetUnit(NO_UNIT)
+		frame:SetUnit(unit)
+	end
+
+	MarkBouncePending(self, true)
 end
 
 ---Enables or disables aura tracking (disabled containers unregister their events).
