@@ -212,7 +212,7 @@ L:RegisterLocale("ruRU", {
 	["Show defensives"] = "Защитные",
 	["Show defensive spell icons."] = "Показывать иконки защитных заклинаний.",
 	["Show important"] = "Важные",
-	["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."] = "Показывает положительные эффекты, которые Blizzard отмечает как важные (например, атакующие способности).",
+	["Show important buff icons (e.g. offensive cooldowns)."] = "Показывает важные положительные эффекты (например, атакующие способности).",
 	["Show interrupts"] = "Прерывания",
 	["Show an icon when a friendly unit gets interrupted."] = "Показывает иконку, когда дружественный персонаж прерывается.",
 

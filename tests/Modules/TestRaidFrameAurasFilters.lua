@@ -109,6 +109,21 @@ fw.describe("RaidFrameAurasModule - the tracked spell ids", function()
 		assert(ids[UNFLAGGED_DEFENSIVE], "the rest of its category")
 	end)
 
+	fw.it("filters on an impossible id once nothing is left to track", function()
+		-- An empty id map reads as "no ids required", which shows every buff on the unit rather
+		-- than none of them.
+		options.ShowImportant = false
+		options.ShowDefensives = false
+
+		local ids = TrackedIds()
+
+		assert(next(ids) ~= nil, "the group must never publish an empty id map")
+
+		for spellId in pairs(ids) do
+			assert(not categoryIds.Unflagged[spellId], "and nothing real is left in it")
+		end
+	end)
+
 	fw.it("takes back a hand-added copy of a curated spell, category off or not", function()
 		options.ShowImportant = false
 		spells.Custom[IMPORTANT] = true

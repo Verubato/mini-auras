@@ -212,7 +212,7 @@ L:RegisterLocale("deDE", {
 	["Show defensives"] = "Defensive",
 	["Show defensive spell icons."] = "Symbole für defensive Zauber anzeigen.",
 	["Show important"] = "Wichtige",
-	["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."] = "Zeigt die Stärkungszauber, die Blizzard als wichtig markiert (z. B. offensive Abklingzeiten).",
+	["Show important buff icons (e.g. offensive cooldowns)."] = "Zeigt wichtige Stärkungszauber (z. B. offensive Abklingzeiten).",
 	["Show interrupts"] = "Interrupts",
 	["Show an icon when a friendly unit gets interrupted."] = "Zeigt ein Symbol an, wenn eine befreundete Einheit unterbrochen wird.",
 

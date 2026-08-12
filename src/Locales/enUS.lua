@@ -213,7 +213,7 @@ L:SetDefaultStrings({
 	["Show defensives"] = "Show defensives",
 	["Show defensive spell icons."] = "Show defensive spell icons.",
 	["Show important"] = "Show important",
-	["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."] = "Show the buffs Blizzard flags as important (e.g. offensive cooldowns).",
+	["Show important buff icons (e.g. offensive cooldowns)."] = "Show important buff icons (e.g. offensive cooldowns).",
 	["Show interrupts"] = "Show interrupts",
 	["Show an icon when a friendly unit gets interrupted."] = "Show an icon when a friendly unit gets interrupted.",
 

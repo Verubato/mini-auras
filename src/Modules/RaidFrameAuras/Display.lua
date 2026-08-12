@@ -57,6 +57,10 @@ local budgetScratch = {}
 local EMPTY_TABLE = {}
 local HELPFUL_GROUP_KEY = "helpful"
 local HELPFUL_FILTER = "HELPFUL"
+-- An id nothing will ever have, for a tracked set that comes out empty. An EMPTY includeSpellIDs
+-- map reads as "no ids required", so the group would match every buff on the unit instead of none
+-- of them - see the same trap in Modules/CustomAuras/Display.
+local NEVER_MATCHED_SPELL_ID = 2147483647
 -- The curated lists behind that group, each tied to the toggle that owns it. The unflagged halves
 -- are only reachable at all because the group filters by id.
 local HELPFUL_SOURCES = {
@@ -115,6 +119,11 @@ local function GetHelpfulFilters(options)
 		elseif not disabled[spellId] then
 			ids[spellId] = true
 		end
+	end
+
+	-- Both categories switched off, or every listed spell switched off one by one.
+	if next(ids) == nil then
+		ids[NEVER_MATCHED_SPELL_ID] = true
 	end
 
 	helpfulFilters = { includeSpellIDs = ids }

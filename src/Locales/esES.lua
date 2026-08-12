@@ -212,7 +212,7 @@ L:RegisterLocale("esES", {
 	["Show defensives"] = "Defensivos",
 	["Show defensive spell icons."] = "Mostrar iconos de hechizos defensivos.",
 	["Show important"] = "Importantes",
-	["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."] = "Muestra los beneficios que Blizzard marca como importantes (p. ej. reutilizaciones ofensivas).",
+	["Show important buff icons (e.g. offensive cooldowns)."] = "Muestra los beneficios importantes (p. ej. reutilizaciones ofensivas).",
 	["Show interrupts"] = "Interrupciones",
 	["Show an icon when a friendly unit gets interrupted."] = "Muestra un icono cuando una unidad aliada es interrumpida.",
 

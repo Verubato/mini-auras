@@ -212,7 +212,7 @@ L:RegisterLocale("koKR", {
 	["Show defensives"] = "방어기술 표시",
 	["Show defensive spell icons."] = "방어 주문 아이콘을 표시합니다.",
 	["Show important"] = "중요 표시",
-	["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."] = "Blizzard가 중요로 표시한 버프를 표시합니다 (예: 공격 재사용 대기시간).",
+	["Show important buff icons (e.g. offensive cooldowns)."] = "중요 버프를 표시합니다 (예: 공격 재사용 대기시간).",
 	["Show interrupts"] = "차단 표시",
 	["Show an icon when a friendly unit gets interrupted."] = "아군 유닛이 차단당할 때 아이콘을 표시합니다.",
 

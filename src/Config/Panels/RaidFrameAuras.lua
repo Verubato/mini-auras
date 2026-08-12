@@ -114,7 +114,7 @@ local function BuildInstance(panel, options, defaults)
 	local showImportantChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Show important"],
-		Tooltip = L["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."],
+		Tooltip = L["Show important buff icons (e.g. offensive cooldowns)."],
 		GetValue = function()
 			return options.ShowImportant
 		end,

@@ -212,7 +212,7 @@ L:RegisterLocale("itIT", {
 	["Show defensives"] = "Mostra difensivi",
 	["Show defensive spell icons."] = "Mostra le icone degli incantesimi difensivi.",
 	["Show important"] = "Mostra importanti",
-	["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."] = "Mostra i potenziamenti che Blizzard contrassegna come importanti (es. tempi di recupero offensivi).",
+	["Show important buff icons (e.g. offensive cooldowns)."] = "Mostra i potenziamenti importanti (es. tempi di recupero offensivi).",
 	["Show interrupts"] = "Interruzioni",
 	["Show an icon when a friendly unit gets interrupted."] = "Mostra un'icona quando un'unità alleata viene interrotta.",
 

@@ -212,7 +212,7 @@ L:RegisterLocale("zhTW", {
 	["Show defensives"] = "顯示防禦技能",
 	["Show defensive spell icons."] = "顯示防禦法術圖示。",
 	["Show important"] = "顯示重要",
-	["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."] = "顯示暴雪標記為重要的增益（例如進攻性冷卻技能）。",
+	["Show important buff icons (e.g. offensive cooldowns)."] = "顯示重要的增益（例如進攻性冷卻技能）。",
 	["Show interrupts"] = "顯示打斷",
 	["Show an icon when a friendly unit gets interrupted."] = "當友方單位被打斷時顯示圖示。",
 
