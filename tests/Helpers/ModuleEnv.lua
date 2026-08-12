@@ -289,6 +289,7 @@ function M.build()
 	-- both directly, so an env without them can only exercise the announcements while they are off.
 	loadFile("src/Core/Auras/AuraTtsSounds.lua")
 	loadFile("src/Core/TtsPacks.lua")
+	loadFile("src/Core/TtsMutes.lua")
 
 	-- Cross-module stubs
 

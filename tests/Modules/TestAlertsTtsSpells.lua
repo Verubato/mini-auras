@@ -14,12 +14,15 @@ env.loadModule("src/Modules/Alerts/Sound.lua")
 
 local sound = addon.Modules.Alerts.Sound
 local ttsSounds = addon.Core.AuraTtsSounds
+local defaultOff = addon.Core.AuraCategoryIds.TtsDefaultOff
 local tts = db.Modules.AlertsModule.TTS
 
 local PLATE = "nameplate1"
 local ICY_VEINS = 12472
 local ICE_BLOCK = 45438
 local DEATHMARK = 360194
+-- Announced only on request, so it is the one spell an untouched profile leaves out.
+local GLIMPSE = 354610
 
 sound:Init()
 
@@ -33,18 +36,6 @@ local function LiveSpellIds()
 	end
 
 	return live
-end
-
----@param map table<number, string>
----@return number
-local function CountOf(map)
-	local count = 0
-
-	for _ in pairs(map) do
-		count = count + 1
-	end
-
-	return count
 end
 
 local function Reset()
@@ -142,12 +133,27 @@ fw.describe("Alerts TTS - per-spell muting", function()
 			assert(not live[spellId], "nothing left in the muted category")
 		end
 
+		local expected = 0
+
 		for spellId in pairs(ttsSounds.Defensive) do
 			if live[spellId] then
 				defensiveCount = defensiveCount + 1
 			end
+
+			if not defaultOff[spellId] then
+				expected = expected + 1
+			end
 		end
 
-		assert(defensiveCount == CountOf(ttsSounds.Defensive), "the other category is whole")
+		assert(defensiveCount == expected, "the other category is whole")
+	end)
+
+	fw.it("keeps a default-off spell quiet until it is switched on", function()
+		assert(not LiveSpellIds()[GLIMPSE], "an untouched profile does not announce it")
+
+		tts.Defensive.MutedSpellIds[GLIMPSE] = false
+		sound:Refresh({ [PLATE] = true })
+
+		assert(LiveSpellIds()[GLIMPSE], "switching it on stores a false the signature notices")
 	end)
 end)

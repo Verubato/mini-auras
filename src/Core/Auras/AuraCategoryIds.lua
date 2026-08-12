@@ -1143,6 +1143,26 @@ addon.Core.AuraCategoryIds = {
 		[222509] = true, -- Feral Frenzy
 	},
 
+	-- Announced only when the player asks for them. These land often enough that a spoken name
+	-- every time is noise, so the TTS Spells tab shows them unticked until they are switched on.
+	-- Unrelated to DefaultOff above, which is the raid frame display's own list.
+	TtsDefaultOff = {
+		[5217] = true, -- Tiger's Fury
+		[11426] = true, -- Ice Barrier
+		[29166] = true, -- Innervate
+		[81256] = true, -- Dancing Rune Weapon
+		[116841] = true, -- Tiger's Lust
+		[145629] = true, -- Anti-Magic Zone
+		[203819] = true, -- Demon Spikes
+		[235313] = true, -- Blazing Barrier
+		[235450] = true, -- Prismatic Barrier
+		[354610] = true, -- Glimpse
+		[389422] = true, -- Invoke Yu'lon, the Jade Serpent
+		[442726] = true, -- Malevolence
+		[1276767] = true, -- Tyrant's Oblation
+		[1309793] = true, -- Refractive Images
+	},
+
 	-- Spell id -> the class that owns it, for grouping in the options UI only. Never used
 	-- for filtering: the category tables above are what reach the engine. GENERAL covers
 	-- anything not tied to a class, such as PvP gem effects.
@@ -1408,5 +1428,6 @@ end
 ---@field UnflaggedImportant table<number, boolean>
 ---@field UnflaggedDefensive table<number, boolean>
 ---@field Unflagged table<number, boolean> Both unflagged halves, merged at load.
+---@field TtsDefaultOff table<number, boolean> Spells the TTS tab starts with switched off.
 ---@field DefaultOff table<number, boolean>
 ---@field Classes table<number, string>

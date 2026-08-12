@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local auraSounds = addon.Core.AuraSounds
 local ttsPacks = addon.Core.TtsPacks
+local ttsMutes = addon.Core.TtsMutes
 local units = addon.Utils.Units
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
@@ -60,15 +61,16 @@ local alertSoundSettingsSignature = nil
 local allySoundIds
 local allySoundSignature = nil
 
--- The spells the TTS Spells tab has switched off, for one category. Absent until something is
--- switched off, which is the state every profile starts in.
+-- The spells that stay silent in one category: what the TTS Spells tab has switched off, plus
+-- the spells that start switched off. The table belongs to Core/TtsMutes and is refilled per
+-- call, so use it before asking for the same category again.
 ---@param category string "Important", "Defensive" or "EnemyDebuff"
----@return table<number, boolean>?
+---@return table<number, boolean>
 local function MutedSpellIds(category)
 	local tts = db and db.Modules.AlertsModule.TTS
 	local options = tts and tts[category]
 
-	return options and options.MutedSpellIds
+	return ttsMutes:EffectiveSet(category, options and options.MutedSpellIds)
 end
 
 -- Registers one spell list's sounds for a token, appending to `ids` (nil starts a new pooled

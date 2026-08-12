@@ -6,6 +6,7 @@ local config = addon.Config
 local helpers = addon.Config.PanelHelpers
 local ttsSounds = addon.Core.AuraTtsSounds
 local ttsPacks = addon.Core.TtsPacks
+local ttsMutes = addon.Core.TtsMutes
 local verticalSpacing = mini.VerticalSpacing
 -- The announcement categories, in the order the TTS tab's own switches sit in. The colours are
 -- the alert icons' own: red for important, green for defensive, and a third for the enemy
@@ -186,7 +187,7 @@ function M:Build(parent, options)
 
 		for _, row in ipairs(rows) do
 			for _, spellId in ipairs(row.SpellIds) do
-				mutedIds[spellId] = muted or nil
+				mutedIds[spellId] = ttsMutes:StoredValue(spellId, muted)
 			end
 		end
 
@@ -247,7 +248,7 @@ function M:Build(parent, options)
 					-- Any id being muted reads as off, so a row can never show ticked while one
 					-- of the ids behind it is silent.
 					for _, spellId in ipairs(spellIds) do
-						if mutedIds[spellId] then
+						if ttsMutes:IsMuted(mutedIds, spellId) then
 							return false
 						end
 					end
@@ -260,7 +261,7 @@ function M:Build(parent, options)
 					-- Every id behind the clip, or a spell with one id per talent choice would
 					-- keep announcing through the ones the row does not name.
 					for _, spellId in ipairs(spellIds) do
-						mutedIds[spellId] = (not value) or nil
+						mutedIds[spellId] = ttsMutes:StoredValue(spellId, not value)
 					end
 
 					if value then
