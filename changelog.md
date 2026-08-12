@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.4.1
+
+- Portraits no longer show every debuff on friendly units.
+- Interrupts on group frames are now off by default for party groups on new profiles. Raid groups are unchanged.
+
 ## 5.4.0
 
 - Masque icon skinning works again on 12.1. Reload after changing a skin.
