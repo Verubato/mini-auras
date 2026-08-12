@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.5.0
+
+- Personal auras can now play a sound with nothing drawn, which is the only way to track debuffs on yourself or your group.
+- Big enemy cooldowns landing on your team are announced over text-to-speech: Deathmark, Kingsbane, and Feral Frenzy.
+- Fixed personal auras filling up with random buffs after entering a vehicle.
+- Fixed portrait icons not clearing when you change target.
+- Fixed group frames showing every buff on a duel opponent, a mind controlled ally, or someone out of range.
+- Colouring the countdown by time is now off by default, and turning it off works on bars.
+
 ## 5.4.1
 
 - Portraits no longer show every debuff on friendly units.

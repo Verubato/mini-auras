@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.4.0. Supported interface versions: 120100 (patch 12.1) and 120007 (patch
+Addon version 5.5.0. Supported interface versions: 120100 (patch 12.1) and 120007 (patch
 12.0.7). Author: Verz. Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 ## Names and aliases
