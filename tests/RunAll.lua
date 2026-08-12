@@ -47,6 +47,7 @@ local testFiles = {
     "tests/Modules/TestPortraitDisplay.lua",
     "tests/Modules/TestUnitFrameRetarget.lua",
     "tests/Modules/TestRaidFrameAurasTestMode.lua",
+    "tests/Modules/TestRaidFrameAurasFilters.lua",
     "tests/Modules/TestCustomAuras.lua",
 
     -- Config pages that need the whole addon loaded.

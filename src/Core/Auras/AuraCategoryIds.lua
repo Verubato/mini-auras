@@ -1068,47 +1068,54 @@ addon.Core.AuraCategoryIds = {
 		[235450] = true, -- Prismatic Barrier
 	},
 
-	Unflagged = {
-		[228050] = true, -- Guardian of the Forgotten Queen
-		[378078] = true, -- Spiritwalker's Aegis
-		[79206] = true, -- Spiritwalker's Grace
-		[389422] = true, -- Invoke Yu'lon, the Jade Serpent
-		[209584] = true, -- Zen Focus Tea
-		[116841] = true, -- Tiger's Lust
-		[1309793] = true, -- Refractive Images
-		[389794] = true, -- Snowdrift
-		[235450] = true, -- Prismatic Barrier
-		[11426] = true, -- Ice Barrier
-		[235313] = true, -- Blazing Barrier
-		[110960] = true, -- Greater Invisibility
-		[414664] = true, -- Mass Invisibility
-		[357210] = true, -- Deep Breath
-		[354610] = true, -- Glimpse
-		[203819] = true, -- Demon Spikes
-		[61336] = true, -- Survival Instincts
+	-- Spells the game flags as neither important nor defensive. Only a display that filters by
+	-- spell id can track them at all (the raid frames), and that display still has a toggle per
+	-- category, so they are split the same way the flagged lists are. The bottom of this file
+	-- merges both halves into Unflagged, which is what the spell pickers and the search read.
+	UnflaggedImportant = {
+		[1784] = true, -- Stealth
+		[5215] = true, -- Stealth
 		[5217] = true, -- Tiger's Fury
-		[108416] = true, -- Dark Pact
+		[10060] = true, -- Power Infusion
+		[29166] = true, -- Innervate
+		[188501] = true, -- Spectral Sight
+		[191634] = true, -- Stormkeeper
+		[199261] = true, -- Death Wish
+		[357210] = true, -- Deep Breath
+		[389794] = true, -- Snowdrift
+		[390260] = true, -- Commander of the Dead
 		[442726] = true, -- Malevolence
 		[1276767] = true, -- Tyrant's Oblation
-		[209426] = true, -- Darkness
-		[188501] = true, -- Spectral Sight
-		[473909] = true, -- Ancient of Lore
-		[5215] = true, -- Stealth
-		[29166] = true, -- Innervate
-		[191634] = true, -- Stormkeeper
-		[409293] = true, -- Burrow
-		[10060] = true, -- Power Infusion
-		[200183] = true, -- Apotheosis
+	},
+
+	UnflaggedDefensive = {
 		[1966] = true, -- Feint
-		[1784] = true, -- Stealth
-		[145629] = true, -- Anti-Magic Zone
-		[81256] = true, -- Dancing Rune Weapon
-		[49039] = true, -- Lichborne
+		[11426] = true, -- Ice Barrier
 		[31821] = true, -- Aura Mastery
-		[390260] = true, -- Commander of the Dead
-		[384100] = true, -- Berserker Shout
-		[199261] = true, -- Death Wish
+		[49039] = true, -- Lichborne
+		[61336] = true, -- Survival Instincts
+		[79206] = true, -- Spiritwalker's Grace
+		[81256] = true, -- Dancing Rune Weapon
 		[97463] = true, -- Rallying Cry
+		[108416] = true, -- Dark Pact
+		[110960] = true, -- Greater Invisibility
+		[116841] = true, -- Tiger's Lust
+		[145629] = true, -- Anti-Magic Zone
+		[200183] = true, -- Apotheosis
+		[203819] = true, -- Demon Spikes
+		[209426] = true, -- Darkness
+		[209584] = true, -- Zen Focus Tea
+		[228050] = true, -- Guardian of the Forgotten Queen
+		[235313] = true, -- Blazing Barrier
+		[235450] = true, -- Prismatic Barrier
+		[354610] = true, -- Glimpse
+		[378078] = true, -- Spiritwalker's Aegis
+		[384100] = true, -- Berserker Shout
+		[389422] = true, -- Invoke Yu'lon, the Jade Serpent
+		[409293] = true, -- Burrow
+		[414664] = true, -- Mass Invisibility
+		[473909] = true, -- Ancient of Lore
+		[1309793] = true, -- Refractive Images
 	},
 
 	-- HAND-MAINTAINED, unlike everything above it. Enemy cooldowns that land on your side as a
@@ -1392,10 +1399,27 @@ addon.Core.AuraCategoryIds = {
 	},
 }
 
--- The TTS split is still unflagged: fold it back so Unflagged stays the one searchable superset.
-for _, ids in pairs(addon.Core.AuraCategoryIds.UnflaggedWithTts) do
+-- The TTS split is still unflagged: fold each half into the unflagged list of the same category,
+-- then merge both of those into Unflagged so there is still one searchable superset.
+local categoryIds = addon.Core.AuraCategoryIds
+local unflaggedByCategory = {
+	Important = categoryIds.UnflaggedImportant,
+	Defensive = categoryIds.UnflaggedDefensive,
+}
+
+for category, ids in pairs(categoryIds.UnflaggedWithTts) do
+	local target = unflaggedByCategory[category]
+
 	for id in pairs(ids) do
-		addon.Core.AuraCategoryIds.Unflagged[id] = true
+		target[id] = true
+	end
+end
+
+categoryIds.Unflagged = {}
+
+for _, ids in pairs(unflaggedByCategory) do
+	for id in pairs(ids) do
+		categoryIds.Unflagged[id] = true
 	end
 end
 
@@ -1404,3 +1428,8 @@ end
 ---@field Important table<number, boolean>
 ---@field Defensive table<number, boolean>
 ---@field EnemyDebuff table<number, boolean>
+---@field UnflaggedImportant table<number, boolean>
+---@field UnflaggedDefensive table<number, boolean>
+---@field Unflagged table<number, boolean> Both unflagged halves, merged at load.
+---@field DefaultOff table<number, boolean>
+---@field Classes table<number, string>
