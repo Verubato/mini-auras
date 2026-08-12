@@ -1,4 +1,4 @@
--- Stubs for WoW global APIs needed by Brain.lua and Observer.lua.
+-- Stubs for the WoW global APIs the tests need.
 -- Must be required before loading any addon module.
 
 local M = {}

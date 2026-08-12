@@ -1,7 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
-local wowEx = addon.Utils.WoWEx
 local eventGate = addon.Core.EventGate
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
@@ -16,9 +15,6 @@ local M = {}
 addon.Modules.Portrait.Module = M
 addon.Modules.PortraitModule = M
 
--- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
-local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
-
 -- Which portrait token each occupant-change event speaks for (see CreateEvents).
 local UNIT_CHANGE_TOKEN = {
 	PLAYER_TARGET_CHANGED = "target",
@@ -31,28 +27,13 @@ local db
 local testModeActive = false
 local paused = false
 local enabled = false
--- Legacy-only / 12.1-only event gates (see CreateEvents); a disabled portrait module receives no
--- events at all.
----@type EventGate?
-local nameplateGate
+-- A disabled portrait module receives no events at all (see CreateEvents).
 ---@type EventGate?
 local unitChangeGate
 
----Both halves stop rendering while the module is off or paused. Pushed rather than polled so the
----nameplate hook, which runs on Blizzard's hot path, only has a boolean to read.
+---The display stops rendering while the module is off or paused.
 local function PushSuspension()
-	local suspended = not enabled or paused
-	display:SetSuspended(suspended)
-	observer:SetSuspended(suspended)
-end
-
--- TEMPORARY: feeds observer:SetSort, which only reaches the legacy watchers, so the CCNativeOrder
--- option is a no-op for portraits on 12.1; both die with the 12.0 path.
-local function GetCCSortOptions()
-	if db.CCNativeOrder then
-		return Enum.UnitAuraSortRule.Default, Enum.UnitAuraSortDirection.Normal
-	end
-	return Enum.UnitAuraSortRule.Unsorted, Enum.UnitAuraSortDirection.Reverse
+	display:SetSuspended(not enabled or paused)
 end
 
 ---@return PortraitModuleOptions?
@@ -60,7 +41,7 @@ local function GetOptions()
 	return db and db.Modules.PortraitModule
 end
 
----Also refreshes the `enabled` cache that the nameplate RefreshAuras hook reads on its hot path.
+---Also refreshes the `enabled` cache the suspension push reads.
 ---@return boolean
 local function IsEnabled()
 	enabled = moduleUtil:IsModuleEnabled(ModuleName.Portrait)
@@ -72,30 +53,24 @@ end
 local function SetEventsActive(active)
 	-- Events stay unregistered while disabled; the addon-wide Refresh (config, world
 	-- change, raid flip) re-runs this gate.
-	if nameplateGate then
-		nameplateGate:SetActive(active)
-	end
 	if unitChangeGate then
 		unitChangeGate:SetActive(active)
 	end
 end
 
 local function Teardown()
-	observer:DisableWatchers()
 	display:Teardown()
 end
 
 local function EnsureFrames()
-	observer:EnableWatchers()
 	display:EnsureFrames()
 end
 
 local function ApplyOptions()
-	observer:SetSort(GetCCSortOptions())
 	display:ApplyOptions()
 end
 
--- Live auras are pushed in by the watchers/containers, so only the fake ones rebuild here.
+-- Live auras are pushed in by the containers, so only the fake ones rebuild here.
 local function UpdateContent()
 	if testModeActive then
 		display:RefreshTestIcons()
@@ -127,48 +102,26 @@ local function CreateEvents()
 		anchors:AttachThirdPartyFrames()
 	end)
 
-	-- Hook each nameplate's aura refresh so important buffs on the target/focus update live.
-	-- Legacy only: on 12.1 the important slot tracks its unit itself.
-	if not USE_AURA_CONTAINERS then
-		local nameplateEvents = CreateFrame("Frame")
-		nameplateEvents:SetScript("OnEvent", function(_, _, unitToken)
-			observer:HookNameplateAuraFrame(unitToken)
-		end)
-		nameplateGate = eventGate:New(nameplateEvents, { "NAME_PLATE_UNIT_ADDED" }, {
-			-- Hook plates that spawned while disabled - their add events were never seen.
-			OnActivate = function()
-				for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
-					if nameplate.unitToken then
-						observer:HookNameplateAuraFrame(nameplate.unitToken)
-					end
-				end
-			end,
-		})
-	end
+	-- Containers track their unit token but don't refresh when the token's occupant changes; the
+	-- display's RequestRefresh forces the re-parse.
+	local unitChangeEvents = CreateFrame("Frame")
+	unitChangeEvents:SetScript("OnEvent", function(_, event, owner)
+		-- UNIT_PET fires for every group member's pet; only the player's has a portrait.
+		if event == "UNIT_PET" and owner ~= "player" then
+			return
+		end
 
-	-- 12.1: containers track their unit token but don't refresh when the token's occupant
-	-- changes (the legacy watchers registered these events themselves); the display's
-	-- RequestRefresh forces the re-parse.
-	if USE_AURA_CONTAINERS then
-		local unitChangeEvents = CreateFrame("Frame")
-		unitChangeEvents:SetScript("OnEvent", function(_, event, owner)
-			-- UNIT_PET fires for every group member's pet; only the player's has a portrait.
-			if event == "UNIT_PET" and owner ~= "player" then
-				return
-			end
-
-			local unit = UNIT_CHANGE_TOKEN[event]
-			display:RefreshUnitAuras(unit)
-			observer:FireUnitUpdate(unit)
-		end)
-		unitChangeGate = eventGate:New(unitChangeEvents, {
-			"PLAYER_TARGET_CHANGED",
-			"PLAYER_FOCUS_CHANGED",
-			-- A summoned pet is assistable where the empty token was not, so its disarm layer
-			-- has to be re-budgeted the moment the pet turns up.
-			"UNIT_PET",
-		})
-	end
+		local unit = UNIT_CHANGE_TOKEN[event]
+		display:RefreshUnitAuras(unit)
+		observer:FireUnitUpdate(unit)
+	end)
+	unitChangeGate = eventGate:New(unitChangeEvents, {
+		"PLAYER_TARGET_CHANGED",
+		"PLAYER_FOCUS_CHANGED",
+		-- A summoned pet is assistable where the empty token was not, so its disarm layer
+		-- has to be re-budgeted the moment the pet turns up.
+		"UNIT_PET",
+	})
 end
 
 local function ApplyInitialState()

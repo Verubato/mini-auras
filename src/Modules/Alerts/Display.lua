@@ -9,8 +9,6 @@ local auraFilters = addon.Core.AuraFilters
 local growAnchors = addon.Core.GrowAnchors
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
-local units = addon.Utils.Units
-local auras = addon.Utils.Auras
 local testSpellData = addon.Core.TestSpells
 
 -- Loaded before this file in TOC order.
@@ -22,15 +20,12 @@ addon.Modules.Alerts = addon.Modules.Alerts or {}
 local M = {}
 addon.Modules.Alerts.Display = M
 
--- 12.1 path: the alert bars become rows of per-nameplate AuraContainers chained off the movable
--- bar frames. The bar can't stay a single aggregated list there because a container tracks
--- exactly one unit and there is no readable aura data to merge across units - so instead of one
--- bar of N icons, it is N containers laid end to end, and an enemy with no alerts collapses to
--- nothing. The Blizzard nameplate buffList scan is replaced by a HELPFUL|IMPORTANT container
--- group, which also obsoletes the mind-control and purgeable-garbage workarounds on this path.
--- The legacy IconSlotContainer bars stay as drag anchors and test-mode renderers.
--- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
-local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
+-- The alert bars are rows of per-nameplate AuraContainers chained off the movable bar frames. A
+-- bar can't be a single aggregated list because a container tracks exactly one unit and there is
+-- no readable aura data to merge across units - so instead of one bar of N icons, it is N
+-- containers laid end to end, and an enemy with no alerts collapses to nothing. Important buffs
+-- come from a HELPFUL|IMPORTANT container group. The IconSlotContainer bars stay as drag anchors
+-- and test-mode renderers.
 
 -- Category glow tints, used only when the option is on. Importants are the thing to react to, so
 -- they take the warning colour; defensives (big and external alike) read as "they are protected"
@@ -38,68 +33,31 @@ local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 -- AuraContainer group specs index [1..3], IconSlotContainer (test mode) reads r/g/b/a.
 local DEFAULT_IMPORTANT_GLOW_COLOR = { R = 1, G = 0.2, B = 0.2 }
 local DEFAULT_DEFENSIVE_GLOW_COLOR = { R = 0.2, G = 1, B = 0.2 }
--- Refilled from the options rather than reallocated, since the 12.1 groups hold onto these
--- tables. Both shapes are needed: the array part is what AuraContainerDisplay reads, the r/g/b
--- keys are what the legacy IconSlotContainer takes for the test icons.
+-- Refilled from the options rather than reallocated, since the groups hold onto these tables.
+-- Both shapes are needed: the array part is what AuraContainerDisplay reads, the r/g/b keys are
+-- what the IconSlotContainer takes for the test icons.
 local importantGlowColor = { 1, 0.2, 0.2, r = 1, g = 0.2, b = 0.2, a = 1 }
 local defensiveGlowColor = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
 
 ---@type Db
 local db
 local testModeActive = false
-local paused = false
 local inPrepRoom = false
 
 -- Main alerts bar: enemy defensive cooldowns, plus important spells when combined.
 ---@type IconSlotContainer
 local container
 -- Dedicated, separately-movable bar for important enemy buffs (e.g. offensive cooldowns, precog),
--- used only in split mode. Filled from Blizzard's nameplate buff lists across every active enemy.
+-- used only in split mode.
 ---@type IconSlotContainer
 local importantContainer
 
----@type table<number, boolean>
-local previousDefensiveAuras = {}
----@type table<number, boolean>
-local previousImportantAuras = {}
--- Reused each render call to avoid per-frame allocation
----@type table<number, boolean>
-local currentDefensiveAuras = {}
----@type table<number, boolean>
-local currentImportantAuras = {}
--- Scratch table reused for every SetSlot call in ProcessWatcherData
-local slotOptionsScratch = {}
--- Scratch table reused for every important-buff SetSlot in ProcessImportantForUnit
-local importantOptionsScratch = {}
--- Reusable AuraInstanceID set: a unit's defensives (shown on the defensives bar), excluded from
--- the important bar so a both-important-and-defensive spell isn't drawn on both bars.
-local importantSkipScratch = {}
--- Scratch table reused for every class-color lookup
-local colorScratch = { r = 0, g = 0, b = 0, a = 1 }
--- Reused list of the active enemy watchers for the current mode, rebuilt each update.
-local activeWatchersScratch = {}
 -- Scratch for the test-mode SetSlot calls, plus the per-call invariants PlaceTestIcon reads
 -- (hoisted so the test refresh doesn't build a closure per icon).
 local testSlotScratch = {}
 local testIconCtx = { Now = 0, Glow = false, Reverse = false, ShowTooltips = true }
 
--- Per-iteration context for the hoisted PlaceImportantBuff callback (avoids a per-call closure on
--- the aura hot path). The constant-per-frame fields are set in Render; the per-unit fields
--- (Unit/Color/Skip) are set by ProcessImportantForUnit.
-local impCtxUnit, impCtxColor, impCtxSkip, impCtxGlow, impCtxReverse, impCtxShowTooltips, impCtxDraw
--- Set for friendly units (i.e. duel opponents): an extra nameplate aura filter to drop the
--- non-important buffs friendly nameplate buff lists contain. Mirrors the nameplates module. nil for
--- true enemies, whose list is already curated.
-local impCtxFriendlyFilter
--- Target container for important icons (the main bar when combined, importantContainer when split).
-local impCtxContainer
--- Running slot cursor across all units processed this frame for the important bar.
-local impCtxSlot = 0
-
-local hadDefensiveAlerts = false
-local hadImportantAlerts = false
-
--- 12.1 path: per-token display pairs (Def on the main bar, Imp on the important bar in split
+-- Per-token display pairs (Def on the main bar, Imp on the important bar in split
 -- mode), drawn from a central pre-created pool: acquired and retargeted
 -- with SetUnit when an enemy plate appears, released back when it goes away, so plate churn
 -- mid-combat never creates containers. Presence in this map means the token is active.
@@ -128,167 +86,6 @@ local DEFAULT_PAIR_ICONS = 8
 local DEFAULT_PAIR_SIZE = 24
 local DEFAULT_PAIR_SPACING = 2
 
--- Returns the unit's class color (in the shared colorScratch) when colorByClass is on, else nil.
-local function ClassColorFor(unit, colorByClass)
-	if not colorByClass then
-		return nil
-	end
-	local _, class = UnitClass(unit)
-	local classColor = class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
-	if not classColor then
-		return nil
-	end
-	colorScratch.r = classColor.r
-	colorScratch.g = classColor.g
-	colorScratch.b = classColor.b
-	colorScratch.a = 1
-	return colorScratch
-end
-
--- Fills the main bar from a watcher's defensive auras. `defSlot` is the running slot index across
--- all watchers processed this frame; returns the updated index.
-local function ProcessWatcherData(watcher, defSlot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, includeDefensives, showTooltips)
-	local unit = watcher:GetUnit()
-
-	-- when units go stealth, we can't get their aura data anymore
-	if not unit or not UnitExists(unit) then
-		return defSlot
-	end
-
-	local defensivesData = watcher:GetDefensiveState()
-
-	if #defensivesData == 0 then
-		return defSlot
-	end
-
-	local color = ClassColorFor(unit, colorByClass)
-
-	local fontScale = db.FontScale
-
-	-- Process defensive spells
-	for _, data in ipairs(defensivesData) do
-		if includeDefensives and iconsEnabled and defSlot < container.Count then
-			defSlot = defSlot + 1
-			slotOptionsScratch.Texture = data.SpellIcon
-			slotOptionsScratch.DurationObject = data.DurationObject
-			slotOptionsScratch.Alpha = data.IsDefensive
-			slotOptionsScratch.Glow = iconsGlow
-			slotOptionsScratch.ReverseCooldown = iconsReverse
-			slotOptionsScratch.Color = color
-			slotOptionsScratch.FontScale = fontScale
-			slotOptionsScratch.SpellId = showTooltips and data.SpellId or nil
-			container:SetSlot(defSlot, slotOptionsScratch)
-		end
-
-		-- Track and announce new defensive auras
-		if data.AuraInstanceID then
-			currentDefensiveAuras[data.AuraInstanceID] = true
-			if not previousDefensiveAuras[data.AuraInstanceID] then
-				sound:AnnounceTTS(data.SpellName, "defensive")
-			end
-		end
-	end
-
-	return defSlot
-end
-
--- Returns Blizzard's nameplate buff list for a unit (the buffs the game chooses to display, i.e.
--- the important ones), or nil if the unit has no visible/usable nameplate.
-local function GetNameplateBuffList(unit)
-	local nameplate = C_NamePlate.GetNamePlateForUnit(unit)
-	local uf = nameplate and nameplate.UnitFrame
-	local af = uf and uf.AurasFrame
-	if af and af.buffList and af.buffList.Iterate and not (af.IsForbidden and af:IsForbidden()) then
-		return af.buffList
-	end
-	return nil
-end
-
--- Hoisted buffList:Iterate callback. Tracks each important buff for sound/TTS (always) and draws it
--- onto impCtxContainer when impCtxDraw is set. Reads its context from the impCtx* upvalues.
-local function PlaceImportantBuff(auraInstanceID)
-	if impCtxSkip and impCtxSkip[auraInstanceID] then
-		return
-	end
-	local unit = impCtxUnit
-	if impCtxFriendlyFilter
-		and C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraInstanceID, impCtxFriendlyFilter) then
-		return
-	end
-	-- Drop purgeable non-defensive buffs (sound/TTS and bar): the non-important garbage Blizzard's
-	-- enemy list bundles in. Purgeable defensives (e.g. magic barriers) are kept.
-	if auras:IsPurgeableNonDefensive(unit, auraInstanceID) then
-		return
-	end
-	local aura = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, auraInstanceID)
-	if not aura then
-		return
-	end
-
-	-- Track for sound/TTS independently of drawing, so alerts fire even with icons/bar off.
-	-- AuraInstanceID is not a secret value, so it's a reliable key for the new-aura transition.
-	currentImportantAuras[auraInstanceID] = true
-	if not previousImportantAuras[auraInstanceID] then
-		-- aura.name may be a secret value post-12.0.7; AnnounceTTS wraps SpeakText in pcall so a
-		-- non-speakable name degrades to no announcement rather than erroring.
-		sound:AnnounceTTS(aura.name, "important")
-	end
-
-	if not impCtxDraw or impCtxSlot >= impCtxContainer.Count then
-		return
-	end
-	impCtxSlot = impCtxSlot + 1
-	importantOptionsScratch.Texture = aura.icon
-	importantOptionsScratch.DurationObject = C_UnitAuras.GetAuraDuration(unit, auraInstanceID)
-	-- Hide non-important survivors via alpha: IsSpellImportant is a secret boolean SetAlphaFromBoolean
-	-- accepts directly. Catches the non-important garbage the purgeable filter can't (e.g. for
-	-- non-dispel specs). Sound/TTS above can't be gated the same way - branching on the secret value
-	-- would taint - so they still fire for every tracked buff (see the class-based TTS suppression).
-	importantOptionsScratch.Alpha = C_Spell.IsSpellImportant(aura.spellId)
-	importantOptionsScratch.Glow = impCtxGlow
-	importantOptionsScratch.ReverseCooldown = impCtxReverse
-	importantOptionsScratch.Color = impCtxColor
-	importantOptionsScratch.FontScale = db.FontScale
-	importantOptionsScratch.SpellId = impCtxShowTooltips and aura.spellId or nil
-	impCtxContainer:SetSlot(impCtxSlot, importantOptionsScratch)
-end
-
--- Scans a unit's important nameplate buffs, tracking them for sound/TTS and (when drawing) appending
--- them to the important target. A buff already shown as one of this unit's defensives is skipped so
--- a both-important-and-defensive spell isn't drawn twice.
-local function ProcessImportantForUnit(watcher, colorByClass, includeDefensives)
-	local unit = watcher:GetUnit()
-	if not unit or not UnitExists(unit) then
-		return
-	end
-
-	local buffList = GetNameplateBuffList(unit)
-	if not buffList then
-		return
-	end
-
-	local skipIds = nil
-	if includeDefensives then
-		wipe(importantSkipScratch)
-		for _, d in ipairs(watcher:GetDefensiveState()) do
-			if d.AuraInstanceID then
-				importantSkipScratch[d.AuraInstanceID] = true
-			end
-		end
-		skipIds = importantSkipScratch
-	end
-
-	impCtxUnit = unit
-	impCtxColor = ClassColorFor(unit, colorByClass)
-	impCtxSkip = skipIds
-	-- Alerts only tracks enemies, but a duel opponent is same-faction (IsFriend) so their nameplate
-	-- buff list is the uncurated friendly one - apply the friendly filter to drop the garbage.
-	impCtxFriendlyFilter = units:IsFriend(unit)
-		and "HELPFUL|INCLUDE_NAME_PLATE_ONLY|RAID_IN_COMBAT|PLAYER"
-		or nil
-	buffList:Iterate(PlaceImportantBuff)
-end
-
 ---Copies a configured colour into one of the tint tables, in both shapes the render paths read.
 ---@param target table
 ---@param color table? the saved {R, G, B} option
@@ -305,14 +102,13 @@ local function FillGlowColor(target, color, default)
 	return target
 end
 
----The per-category glow tints in force, or nil when the glow itself is off. 12.1 only: the
----legacy live path colours by class instead, and the pickers are hidden there.
+---The per-category glow tints in force, or nil when the glow itself is off.
 ---@return table? importantColor
 ---@return table? defensiveColor
 local function AlertGlowColors()
 	local icons = db and db.Modules.AlertsModule.Icons
 
-	if not (USE_AURA_CONTAINERS and icons and icons.Glow) then
+	if not (icons and icons.Glow) then
 		return nil, nil
 	end
 
@@ -342,15 +138,12 @@ local function NameplateTokenLess(a, b)
 	return a < b
 end
 
--- Effective grow direction for the alert bars. CENTER (the default, symmetric growth around
--- the anchor) needs a readable row width to center on, which the 12.1 chained displays don't
--- have, so it falls back to RIGHT there.
+-- Effective grow direction for the alert bars. CENTER (the saved default, symmetric growth around
+-- the anchor) needs a readable row width to center on, which the chained displays don't have, so
+-- anything but LEFT or RIGHT falls back to RIGHT.
 local function GetGrow()
 	local grow = db.Modules.AlertsModule.Grow
 	if grow ~= "LEFT" and grow ~= "RIGHT" then
-		grow = "CENTER"
-	end
-	if USE_AURA_CONTAINERS and grow == "CENTER" then
 		return "RIGHT"
 	end
 	return grow
@@ -427,7 +220,7 @@ local function SetUpBarDragging(bar, anchorOptions, saveTarget)
 	end)
 end
 
--- 12.1 path: re-anchors the active per-nameplate displays into rows. Defensive displays chain
+-- Re-anchors the active per-nameplate displays into rows. Defensive displays chain
 -- off the main bar frame; important displays chain off the important bar in split mode, or
 -- continue the main-bar chain when combined. Chaining container-to-container avoids reading
 -- their (possibly secret) sizes; empty containers collapse to nothing.
@@ -463,10 +256,10 @@ local function ChainAlertDisplays()
 	end
 
 	-- Combined mode draws importants from the Def container's own Important group, so there is
-	-- no second frame to place. Ordering differs from the legacy bar as a result: each unit's
-	-- categories stay together (u1 def+imp, u2 def+imp) rather than every defensive followed by
-	-- every important. That grouping is what removes the gap - the alternative needs one frame
-	-- per category per unit, and the engine reserves each frame's full icon budget of width.
+	-- no second frame to place. Each unit's categories therefore stay together (u1 def+imp,
+	-- u2 def+imp) rather than every defensive followed by every important. That grouping is what
+	-- removes the gap - the alternative needs one frame per category per unit, and the engine
+	-- reserves each frame's full icon budget of width.
 	if not splitBars then
 		return
 	end
@@ -484,7 +277,7 @@ local function ChainAlertDisplays()
 	end
 end
 
----12.1 path: whether the alert bars should currently render at all.
+---Whether the alert bars should currently render at all.
 local function GetAlertBarsShown()
 	local options = db.Modules.AlertsModule
 	return moduleUtil:IsModuleEnabled(moduleName.Alerts)
@@ -502,9 +295,9 @@ local function AlertStyle()
 	return style
 end
 
--- 12.1 path: applies options (size, style, per-category budgets, visibility) to ONE pooled
--- display pair. Deviations from the legacy bar, forced by aura data being unreadable: no
--- class-colored glow/border, and MaxIcons caps each unit's icons rather than the whole bar.
+-- Applies options (size, style, per-category budgets, visibility) to ONE pooled display pair.
+-- Limits forced by aura data being unreadable: no class-colored glow/border, and MaxIcons caps
+-- each unit's icons rather than the whole bar.
 -- (Important-vs-defensive dedup is handled by filter negation at creation.)
 local function ApplyNameplateDisplayOptions(entry, options, showBars)
 	local includeDefensives = options.IncludeDefensives
@@ -539,12 +332,12 @@ local function ApplyNameplateDisplayOptions(entry, options, showBars)
 	entry.Imp:SetShown(impShown == true)
 end
 
--- 12.1 path: builds one pooled display pair. BIG and EXTERNAL defensives are separate groups
+-- Builds one pooled display pair. BIG and EXTERNAL defensives are separate groups
 -- because filter-string tokens combine with AND - "HELPFUL|BIG_DEFENSIVE|EXTERNAL_DEFENSIVE"
 -- would only match auras flagged as BOTH, i.e. almost nothing; groups on one container are
 -- the idiom for OR (they render as one continuous row). The filters themselves are partitioned
 -- by negation (see Core/AuraFilters), so a both-important-and-defensive aura is never drawn on
--- both bars (legacy deduped by id). Sizes/budgets are applied per token by
+-- both bars. Sizes/budgets are applied per token by
 -- RefreshNameplateDisplays.
 --
 -- Def carries an Important group too, so combined mode can render all three categories in one
@@ -634,7 +427,7 @@ local function AlertPairSignature()
 		.. ":" .. (defensiveColor and table.concat(defensiveColor, ",", 1, 3) or "-")
 end
 
--- 12.1 path: parks a display pair (both displays stay parented to UIParent).
+-- Parks a display pair (both displays stay parented to UIParent).
 local function ResetAlertDisplayPair(entry)
 	entry.Def:SetEnabled(false)
 	entry.Def:Hide()
@@ -654,7 +447,7 @@ local function RebuildDisplayPairs()
 	end
 end
 
--- 12.1 path: activates the display pair for a nameplate token, acquiring from the pool on
+-- Activates the display pair for a nameplate token, acquiring from the pool on
 -- first sight. SetEnabled(false -> true) in RefreshNameplateDisplays triggers the containers'
 -- own full refresh, so a pair re-acquired for a recycled token repopulates.
 local function EnsureNameplateDisplay(unitToken)
@@ -740,15 +533,10 @@ function M:GetContainer()
 	return container
 end
 
----The tokens the 12.1 path is currently drawing; the sound registrations follow this set.
+---The tokens currently being drawn; the sound registrations follow this set.
 ---@return table<string, table>
 function M:GetActiveTokens()
 	return nameplateDisplays
-end
-
----@param value boolean
-function M:SetPaused(value)
-	paused = value
 end
 
 ---@param value boolean
@@ -761,7 +549,7 @@ function M:SetInPrepRoom(value)
 	inPrepRoom = value
 end
 
--- 12.1 path: parks a token's display pair when its plate goes away. The pair stays in
+-- Parks a token's display pair when its plate goes away. The pair stays in
 -- displayPairsByToken for the token's return; only the active map loses it. Deliberately leaves
 -- the token's sound registrations warm (see the sound module).
 ---@param unitToken string
@@ -795,7 +583,7 @@ function M:ChainDisplays()
 	ChainAlertDisplays()
 end
 
--- 12.1 path: applies options to every pooled display pair and re-chains the rows.
+-- Applies options to every pooled display pair and re-chains the rows.
 function M:RefreshNameplateDisplays()
 	local options = db.Modules.AlertsModule
 	local showBars = GetAlertBarsShown()
@@ -823,152 +611,8 @@ function M:SyncActiveTokens(activeTokens)
 	self:RefreshNameplateDisplays()
 end
 
----Legacy path: redraws both bars from every active enemy watcher, and fires the sound/TTS
----transitions the icons are derived from.
----@param watchers table<string, Watcher>
-function M:Render(watchers)
-	-- 12.1: the container path renders everything and no watchers feed this; skip the wasted
-	-- scratch-table wipes and bar resets it would otherwise do on every scheduled update.
-	if USE_AURA_CONTAINERS then
-		return
-	end
-
-	if paused then
-		return
-	end
-
-	if not moduleUtil:IsModuleEnabled(moduleName.Alerts) then
-		return
-	end
-
-	if inPrepRoom then
-		-- don't know why it picks up garbage in the starting room
-		container:ResetAllSlots()
-		if importantContainer then
-			importantContainer:ResetAllSlots()
-		end
-		return
-	end
-
-	local options = db.Modules.AlertsModule
-	local iconsEnabled = options.Icons.Enabled
-	local iconsGlow = options.Icons.Glow
-	local iconsReverse = options.Icons.ReverseCooldown
-	local colorByClass = options.Icons.ColorByClass
-	local importantEnabled = options.Important and options.Important.Enabled
-	local importantSound = options.Sound.Important and options.Sound.Important.Enabled
-	local includeDefensives = options.IncludeDefensives
-	local showTooltips = options.ShowTooltips ~= false
-	local defSlot = 0
-	local hasDefensiveAlerts
-	local inInstance, instanceType = IsInInstance()
-
-	-- Important spells can share the main alerts bar (combined, the default) or sit on their own
-	-- separate bar (split). Draw important only when icons are on, but still scan whenever the bar,
-	-- its sound, or its TTS is enabled so sound/TTS fire even with icons or the bar hidden.
-	local splitBars = options.SplitBars
-	local importantDraw = iconsEnabled and importantEnabled
-	local importantNeedsScan = importantEnabled or importantSound or sound:IsImportantTTSEnabled()
-	impCtxDraw = importantDraw
-	impCtxGlow = iconsGlow
-	impCtxReverse = iconsReverse
-	impCtxShowTooltips = showTooltips
-	-- Split important draws onto its own bar; combined important appends to the main alerts bar.
-	impCtxContainer = (splitBars and importantContainer) or container
-	impCtxSlot = 0
-
-	wipe(currentDefensiveAuras)
-	wipe(currentImportantAuras)
-
-	-- Collect the active enemy watchers for the current mode. Arena, battlegrounds, and the open
-	-- world all read enemy nameplate watchers; other instance types show nothing.
-	local activeWatchers = activeWatchersScratch
-	wipe(activeWatchers)
-	if instanceType == "arena" or instanceType == "pvp" or not inInstance then
-		for _, watcher in pairs(watchers) do
-			-- Skip mind-controlled units: charm flips the nameplate buff list to the uncurated friendly
-			-- one, spamming TTS and invisible important-icon slots. A charmed enemy player stays
-			-- attackable by the controller's team, so CanAttack alone can't detect this - test the charm
-			-- state directly. Also covers a charmed ally whose plate flipped to an enemy one. The
-			-- CanAttack skip stays for units that genuinely become non-attackable.
-			local watcherUnit = watcher:GetUnit()
-			local controlled = watcherUnit
-				and (units:IsCharmed(watcherUnit) or not units:CanAttack(watcherUnit))
-			if not controlled then
-				activeWatchers[#activeWatchers + 1] = watcher
-			end
-		end
-	end
-
-	-- Defensives fill the main bar.
-	for i = 1, #activeWatchers do
-		defSlot = ProcessWatcherData(
-			activeWatchers[i], defSlot, iconsEnabled, iconsGlow, iconsReverse, colorByClass, includeDefensives, showTooltips
-		)
-	end
-
-	-- Important spells: when combined, continue in the main bar after the defensives; when split,
-	-- start fresh on the dedicated important bar.
-	if importantNeedsScan then
-		impCtxSlot = splitBars and 0 or defSlot
-		for i = 1, #activeWatchers do
-			ProcessImportantForUnit(activeWatchers[i], colorByClass, includeDefensives)
-		end
-		if not splitBars then
-			defSlot = impCtxSlot
-		end
-	end
-
-	-- Dedicated important bar: clear leftover slots when split, otherwise hide it (combined / off).
-	if importantContainer then
-		if splitBars and importantDraw then
-			for i = impCtxSlot + 1, importantContainer.Count do
-				importantContainer:SetSlotUnused(i)
-			end
-		else
-			importantContainer:ResetAllSlots()
-		end
-	end
-
-	-- Check if we have alerts for sound playback
-	hasDefensiveAlerts = next(currentDefensiveAuras) ~= nil
-	local hasImportantAlerts = next(currentImportantAuras) ~= nil
-
-	-- Play sound only when transitioning from no alerts to having alerts (per type)
-	if hasImportantAlerts and not hadImportantAlerts then
-		sound:PlaySound("important")
-	end
-
-	if hasDefensiveAlerts and not hadDefensiveAlerts then
-		sound:PlaySound("defensive")
-	end
-
-	hadImportantAlerts = hasImportantAlerts
-	hadDefensiveAlerts = hasDefensiveAlerts
-
-	-- Swap buffers: previous gets this frame's data and current gets the old previous table
-	-- (which will be wiped at the top of the next call)
-	previousDefensiveAuras, currentDefensiveAuras = currentDefensiveAuras, previousDefensiveAuras
-	previousImportantAuras, currentImportantAuras = currentImportantAuras, previousImportantAuras
-
-	-- If icons are disabled, keep sounds/TTS logic but don't show anything.
-	if not iconsEnabled then
-		container:ResetAllSlots()
-		return
-	end
-
-	-- Clear any main-bar slots above what we used (defensives, plus combined important)
-	if defSlot == 0 then
-		container:ResetAllSlots()
-	else
-		for i = defSlot + 1, container.Count do
-			container:SetSlotUnused(i)
-		end
-	end
-end
-
----Blanks both bars, leaving the alert-transition state alone: the auras that were up before
----test mode are not new, and forgetting that would fire a sound for every one of them.
+---Blanks both bars. The real alerts live on the chained aura displays, so this only clears the
+---test icons the movable frames hold.
 function M:ClearBars()
 	if container then
 		container:ResetAllSlots()
@@ -976,16 +620,6 @@ function M:ClearBars()
 	if importantContainer then
 		importantContainer:ResetAllSlots()
 	end
-end
-
----Blanks both bars AND forgets the alert-transition state, for the prep room and for teardown -
----both of which end with nothing tracked, so the next aura seen genuinely is new.
-function M:ResetBars()
-	self:ClearBars()
-	hadDefensiveAlerts = false
-	hadImportantAlerts = false
-	previousDefensiveAuras = {}
-	previousImportantAuras = {}
 end
 
 function M:RefreshTestAlerts()
@@ -999,12 +633,10 @@ function M:RefreshTestAlerts()
 
 	local includeDefensives = db.Modules.AlertsModule.IncludeDefensives
 
-	-- Test icons render through the legacy IconSlotContainer, which CAN class colour - but the
-	-- real 12.1 bars can't (UnitClass is secret there, and the option is hidden in the config).
-	-- Colouring only the preview would advertise something the live display never does.
-	local colorByClass = not USE_AURA_CONTAINERS and db.Modules.AlertsModule.Icons.ColorByClass
-	-- Category tints, on the other hand, are exactly what the live 12.1 bars do, so the preview
-	-- has to show them.
+	-- No class colouring, even though the test IconSlotContainer could do it: the live bars can't
+	-- (UnitClass is secret there, and the option is hidden in the config), and colouring only the
+	-- preview would advertise something the live display never does. The category tints ARE what
+	-- the live bars do, so the preview shows those.
 	local importantTestColor, defensiveTestColor = AlertGlowColors()
 
 	testIconCtx.Now = GetTime()
@@ -1018,15 +650,9 @@ function M:RefreshTestAlerts()
 	if includeDefensives then
 		local stepIndex = 0
 		for _, entry in ipairs(testSpellData.Alerts.Defensive) do
-			local glowColor = defensiveTestColor
-			if colorByClass and entry.Class then
-				local classColor = RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.Class]
-				if classColor then
-					glowColor = { r = classColor.r, g = classColor.g, b = classColor.b, a = 1 }
-				end
-			end
-
-			local placed = PlaceTestIcon(container, defSlot, entry.SpellId, glowColor, stepIndex * 1.25, 12 + stepIndex * 3)
+			local placed = PlaceTestIcon(
+				container, defSlot, entry.SpellId, defensiveTestColor, stepIndex * 1.25, 12 + stepIndex * 3
+			)
 			if placed ~= defSlot then
 				defSlot = placed
 				stepIndex = stepIndex + 1

@@ -19,7 +19,6 @@ io.write("======================================\n")
 
 local testFiles = {
     -- Shared machinery under Core.
-    "tests/Core/TestAuraWatcher.lua",
     "tests/Core/TestAuraContainerDisplay.lua",
     "tests/Core/TestIconSlotColors.lua",
     "tests/Core/TestKickTracker.lua",

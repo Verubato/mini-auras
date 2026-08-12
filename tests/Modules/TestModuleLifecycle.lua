@@ -22,14 +22,12 @@ db.Modules.HealerCCModule.Icons.Enabled = true
 
 -- Load modules one at a time, capturing each module's event frame before the next load.
 env.loadModule("src/Modules/Alerts/Sound.lua")
-env.loadModule("src/Modules/Alerts/Observer.lua")
 env.loadModule("src/Modules/Alerts/Display.lua")
 env.loadModule("src/Modules/Alerts/Module.lua")
 env.addon.Modules.AlertsModule:Init()
 local alertsEvents = acm.lastFrameForEvent("NAME_PLATE_UNIT_ADDED")
 assert(alertsEvents, "alerts event frame")
 
-env.loadModule("src/Modules/Nameplates/Observer.lua")
 env.loadModule("src/Modules/Nameplates/Display.lua")
 env.loadModule("src/Modules/Nameplates/Module.lua")
 env.addon.Modules.NameplatesModule:Init()

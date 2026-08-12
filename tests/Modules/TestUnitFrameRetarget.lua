@@ -181,13 +181,7 @@ fw.describe("RaidFrameAurasModule 12.1 - unit frame anchors", function()
 	end)
 end)
 
-fw.describe("12.1 unit frame modules - no legacy fallout", function()
-	fw.it("neither module ever constructed a legacy aura watcher", function()
-		-- module_env's UnitAuraWatcher stub errors on construction, so reaching this point at all
-		-- is the assertion; the explicit check keeps the intent visible.
-		assert(env.addon.Core.UnitAuraWatcher, "the tripwire stub is installed")
-	end)
-
+fw.describe("unit frame modules - no fallout", function()
 	fw.it("nothing was reported through Notify", function()
 		assert(#env.notifications == 0, "unexpected warnings: " .. table.concat(env.notifications, "; "))
 	end)

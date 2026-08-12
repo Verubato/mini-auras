@@ -2,7 +2,6 @@
 local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
-local wowEx = addon.Utils.WoWEx
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local helpers = addon.Config.PanelHelpers
@@ -108,28 +107,6 @@ function M:Build(panel)
 
 	configureBlizzardNameplatesChk:SetPoint("TOPLEFT", behaviourDivider, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	-- 12.1 sorts inside the AuraContainer, and only by aura instance id - every other sort rule
-	-- keys off data the addon cannot read there. The option fed the legacy UnitAuraWatcher's sort,
-	-- and no watcher exists on that path, so the toggle does nothing. Hidden rather than left as a
-	-- control with no effect.
-	if not wowEx:UseAuraContainers() then
-		local ccNativeOrderChk = mini:Checkbox({
-			Parent = panel,
-			LabelText = L["CC Native Order"],
-			Tooltip = L["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."],
-			GetValue = function()
-				return db.CCNativeOrder or false
-			end,
-			SetValue = function(value)
-				db.CCNativeOrder = value
-				addon:Refresh()
-			end,
-		})
-
-		ccNativeOrderChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
-		ccNativeOrderChk:SetPoint("TOP", configureBlizzardNameplatesChk, "TOP", 0, 0)
-	end
-
 	local iconsDivider = mini:Divider({
 		Parent = panel,
 		Text = L["Icons"],
@@ -172,13 +149,6 @@ function M:Build(panel)
 	fadeWithParentChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
 	fadeWithParentChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
 
-	-- Glow Type: on 12.1 aura icons render as AuraButtons, which LibCustomGlow can't attach to,
-	-- so only the two texture-based glows are offered there. TEMPORARY: drop the split and keep
-	-- the full list once the legacy path is retired.
-	local useAuraContainers = addon.Utils.WoWEx:UseAuraContainers()
-
-	-- On 12.1 the colour rides a curve on the native duration text; the legacy path drives the
-	-- same effect from its own ticker in IconSlotContainer.
 	local colorCountdownChk = mini:Checkbox({
 		Parent = panel,
 		LabelText = L["Colour Countdown"],
@@ -218,20 +188,12 @@ function M:Build(panel)
 	iconZoomChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 3, 0)
 	iconZoomChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
 
-	local glowItems = useAuraContainers and {
+	-- Aura icons render as AuraButtons, which LibCustomGlow cannot attach to, so only the
+	-- texture-based glows are on offer.
+	local glowItems = {
 		"Rotation Assist (Clockwise)",
 		"Rotation Assist (Anti-clockwise)",
 		"Ants (Anti-Clockwise)",
-		"Twins",
-		"Mirror",
-		"Twins Mirror",
-		"Slot Glow",
-		"Static Pixel Border",
-	} or {
-		"Proc Glow",
-		"Rotation Assist (Anti-clockwise)",
-		"Pixel Glow",
-		"Autocast Shine",
 		"Twins",
 		"Mirror",
 		"Twins Mirror",
@@ -244,12 +206,9 @@ function M:Build(panel)
 	-- per icon: AuraButtons forbid UntrustedScriptExecution (no OnShow/OnHide hook), their shown
 	-- state is deliberately secret (ApplyVisibility secretwraps it), and frames are acquired LIFO
 	-- so there's no stable "these can never show" set. Hence the warning rather than a fix.
-	local glowNoteLines = useAuraContainers and {
+	local glowNoteLines = {
 		L["The Slot Glow is static and uses the least CPU."],
 		L["Animated glows keep animating icons with no aura, costing CPU while idle."],
-	} or {
-		L["The Proc Glow uses the least CPU."],
-		L["The others seem to use a non-trivial amount of CPU."],
 	}
 
 	local glowTypeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
@@ -262,8 +221,8 @@ function M:Build(panel)
 		GetValue = function()
 			local current = db.GlowType or "Slot Glow"
 
-			-- A profile saved on 12.0 can hold an LCG-only type; show what actually renders.
-			if useAuraContainers and not tContains(glowItems, current) then
+			-- An older profile can hold a LibCustomGlow-only type; show what actually renders.
+			if not tContains(glowItems, current) then
 				return "Slot Glow"
 			end
 

@@ -13,9 +13,6 @@ local dbDefaults = {
 	GlowType = "Slot Glow",
 	FontScale = 1.0,
 	ConfigureBlizzardNameplates = true,
-	-- TEMPORARY: feeds only the legacy watcher sort (12.1 sorts inside the AuraContainer);
-	-- dies with the 12.0 path, together with its ProfileManager PayloadKeys entry.
-	CCNativeOrder = false,
 	DisableSwipe = false,
 	-- Crops Blizzard's silver border off every icon. Off gives the stock art back.
 	IconZoom = true,
@@ -189,9 +186,9 @@ local dbDefaults = {
 			SplitBars = false,
 			-- Pixel padding between the alerts bar icons.
 			IconSpacing = 2,
-			-- Direction the alert bars extend as icons appear: LEFT, RIGHT, or CENTER (symmetric
-			-- growth around the anchor; treated as RIGHT on 12.1, where the chained per-unit rows
-			-- have secret widths and can't be centered). Filled from dbDefaults for existing dbs.
+			-- Direction the alert bars extend as icons appear. Only LEFT and RIGHT render: the
+			-- chained per-unit rows have secret widths, so there is nothing to centre on. An older
+			-- db can still carry CENTER, which the config reads back as RIGHT.
 			Grow = "CENTER",
 			Point = "CENTER",
 			RelativePoint = "TOP",
@@ -221,8 +218,8 @@ local dbDefaults = {
 				},
 			},
 
-			-- Dedicated, separately-movable bar for important enemy buffs (e.g. offensive cooldowns,
-			-- precog), read from Blizzard's nameplate buff lists across every active enemy.
+			-- Dedicated, separately-movable bar for important enemy buffs (e.g. offensive
+			-- cooldowns), collected across every active enemy nameplate.
 			Important = {
 				Enabled = true,
 				Point = "CENTER",
@@ -251,16 +248,10 @@ local dbDefaults = {
 				},
 			},
 
-			-- TEMPORARY: VoiceID/Volume/SpeechRate steer the runtime voice, which needs the
-			-- aura's spell name, and die with the 12.0 path. The Enabled flags and VoicePack
-			-- stay: on 12.1 they turn the baked TTS clips on and pick which pack plays.
+			-- The Enabled flags turn the baked TTS clips on and VoicePack picks which pack plays.
 			TTS = {
-				Volume = 100,
-				VoiceID = 0,
 				VoicePack = "David",
-				SpeechRate = 0,
-				-- 12.1 only: the engine plays the baked clips, so they need an output channel.
-				-- The runtime voice has no channel of its own.
+				-- The engine plays the baked clips, so they need an output channel.
 				Channel = "Master",
 				-- Important-spell TTS (opt-in, like the defensive TTS). MutedSpellIds is what the
 				-- TTS Spells tab writes: an opt-out list, so a category announces everything it
@@ -274,8 +265,7 @@ local dbDefaults = {
 					MutedSpellIds = {},
 				},
 				-- Enemy cooldowns that land on your own side rather than on the caster, so they
-				-- are announced on the party instead of on a nameplate. 12.1 only, like the
-				-- voice packs themselves.
+				-- are announced on the party instead of on a nameplate.
 				EnemyDebuff = {
 					Enabled = false,
 					MutedSpellIds = {},
@@ -286,13 +276,10 @@ local dbDefaults = {
 				Enabled = true,
 				Size = 50,
 				Glow = true,
-				-- Per-category glow tints (12.1 only; the legacy path colours by class instead).
+				-- Per-category glow tints. Class colouring is not an option: UnitClass is secret.
 				ImportantColor = { R = 1, G = 0.2, B = 0.2, A = 1 },
 				DefensiveColor = { R = 0.2, G = 1, B = 0.2, A = 1 },
 				ReverseCooldown = true,
-				-- TEMPORARY: class colouring needs UnitClass, which is secret on 12.1; dies with
-				-- the 12.0 path (the per-category colours above replace it).
-				ColorByClass = true,
 				MaxIcons = 8,
 			},
 
@@ -483,8 +470,6 @@ local dbDefaults = {
 				Texture = "Blizzard Raid Bar",
 			},
 		},
-		-- Used by the standalone Party Trinkets module (12.1+); on older clients the friendly
-		-- cooldown tracker renders the trinket slot instead.
 		---@class TrinketsModuleOptions
 		TrinketsModule = {
 			Enabled = {

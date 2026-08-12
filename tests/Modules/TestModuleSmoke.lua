@@ -1,9 +1,7 @@
--- Cross-module smoke test for the 12.1 container path. Every module that draws auras is loaded
--- into one environment and driven through its whole lifecycle - init, refresh, test mode on and
--- off, disable, re-enable - while three invariants are watched:
+-- Cross-module smoke test. Every module that draws auras is loaded into one environment and
+-- driven through its whole lifecycle - init, refresh, test mode on and off, disable, re-enable -
+-- while two invariants are watched:
 --
---   * No legacy aura watcher is ever constructed (module_env's stub errors if one is). This is
---     the guard rail for deleting the legacy path: anything still reaching for it shows up here.
 --   * Nothing is reported through mini:Notify. The one warning the container wrapper raises is
 --     SetMaxIcons on a group key that does not exist, which otherwise silently switches a whole
 --     category off.
@@ -46,9 +44,9 @@ local MODULES = {
 	{ Name = "PortraitModule", Key = "PortraitModule",
 		Files = { "Portrait/Observer.lua", "Portrait/Display.lua", "Portrait/Anchors.lua", "Portrait/Module.lua" } },
 	{ Name = "NameplatesModule", Key = "NameplatesModule",
-		Files = { "Nameplates/Observer.lua", "Nameplates/Display.lua", "Nameplates/Module.lua" } },
+		Files = { "Nameplates/Display.lua", "Nameplates/Module.lua" } },
 	{ Name = "AlertsModule", Key = "AlertsModule",
-		Files = { "Alerts/Sound.lua", "Alerts/Observer.lua", "Alerts/Display.lua", "Alerts/Module.lua" } },
+		Files = { "Alerts/Sound.lua", "Alerts/Display.lua", "Alerts/Module.lua" } },
 }
 
 local modules = {}
@@ -93,9 +91,7 @@ local function auraContainers()
 end
 
 fw.describe("12.1 smoke - full lifecycle across every container module", function()
-	fw.it("initialises and refreshes without reaching for the legacy path", function()
-		-- module_env's UnitAuraWatcher stub errors on construction, so getting here at all means
-		-- no module built one during Init.
+	fw.it("initialises and refreshes", function()
 		assert(#auraContainers() > 0, "the modules actually built containers")
 		refreshAll()
 		refreshAll()
@@ -148,14 +144,6 @@ fw.describe("12.1 smoke - full lifecycle across every container module", functio
 end)
 
 fw.describe("12.1 smoke - per-module container shape", function()
-	fw.it("precognition builds nothing, having been superseded by the custom aura groups", function()
-		-- The starter custom aura groups track the same two spells and can be edited, so the
-		-- module is switched off on 12.1 rather than drawing a second copy of them.
-		for _, container in ipairs(auraContainers()) do
-			assert(container._groups.precog == nil, "no precognition group on any container")
-		end
-	end)
-
 	fw.it("every group on every container uses a filter from the shared set", function()
 		-- Filter strings are validated loudly by the client, and the negations that keep the
 		-- categories from overlapping only work if every module takes them from one place.

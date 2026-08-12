@@ -11,7 +11,6 @@ L:RegisterLocale("koKR", {
 	["Important Spells"] = "중요한 주문",
 	["Play a sound when an important spell is pressed."] = "중요한 주문이 사용될 때 소리 재생.",
 	["Announce important spell names using text-to-speech when they are cast."] = "중요한 주문이 사용될 때 음성 합성으로 주문 이름을 알립니다.",
-	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "블리자드 API 제한으로 인해 중요한 주문 음성 합성은 마법사, 환기사, 악마사냥꾼, 사냥꾼, 암흑 사제에게는 작동하지 않습니다.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "적이 중요하거나 방어적인 주문을 사용할 때 소리를 재생합니다.",
 
 	-- Shared strings
@@ -156,10 +155,6 @@ L:RegisterLocale("koKR", {
 	["Important News"] = "중요 소식",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "블리자드 12.0.7 패치부터 다음 기능을 더 이상 사용할 수 없습니다:\n- 알림에 공격기 표시.\n- 이름표에 공격기 표시.\n- 초상화에 공격기 표시.\n- 파티/공격대 프레임에 공격기 표시.\n- 공격 재사용 대기시간 추적.\n- 예지와 무효화의 장막 표시.\n- 중요 주문 소리 알림.\n- 중요 주문 음성 안내.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "12.0.7 제한 이후의 반가운 소식:\n- 예지/무효화의 장막 모듈이 돌아왔습니다.\n- 이제 알림 모듈이 투기장 상대별로 중요/공격 아이콘을 1개 표시할 수 있습니다.\n\n이 기능들은 예전만큼 잘 작동하지는 않지만, 없는 것보다는 낫습니다.",
-	["CC Native Order"] = "CC 기본 순서",
-	["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "마지막으로 적용된 CC를 표시하는 대신(MiniAuras 방식), 일반적으로 처음 적용된 CC를 표시하는 블리자드의 기본 CC 우선순위를 사용합니다(일부 예외 있음).",
-	["The others seem to use a non-trivial amount of CPU."] = "다른 것들은 상당한 CPU를 사용하는 것 같습니다.",
-	["The Proc Glow uses the least CPU."] = "프록 발광은 CPU를 가장 적게 사용합니다.",
 	["The Slot Glow is static and uses the least CPU."] = "슬롯 발광은 정적이며 CPU를 가장 적게 사용합니다.",
 
 	-- Alerts tab
@@ -186,14 +181,9 @@ L:RegisterLocale("koKR", {
 	["When removed"] = "제거될 때",
 	["Sound Alerts"] = "소리 알림",
 	["TTS"] = "TTS",
-	["TTS Speech Rate"] = "TTS 말하기 속도",
-	["TTS Volume"] = "TTS 볼륨",
-	["Voice"] = "음성",
 
 	-- CC tab
 	["CC"] = "군중 제어",
-	["Color by class"] = "직업별 색상",
-	["Color the glow/border by the enemy's class color."] = "적의 직업 색상으로 발광/테두리를 색칠합니다.",
 	["Change the colour of the glow on important enemy spells."] = "중요한 적 주문의 발광 색상을 변경합니다.",
 	["Change the colour of the glow on defensive spells."] = "방어 주문의 발광 색상을 변경합니다.",
 	["Dispel colours"] = "해제 색상",

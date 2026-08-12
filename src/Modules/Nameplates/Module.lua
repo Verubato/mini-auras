@@ -1,7 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
-local wowEx = addon.Utils.WoWEx
 local units = addon.Utils.Units
 local kickTracker = addon.Core.KickTracker
 local eventGate = addon.Core.EventGate
@@ -10,16 +9,12 @@ local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 
 -- Loaded before this file in TOC order.
-local observer = addon.Modules.Nameplates.Observer
-local display  = addon.Modules.Nameplates.Display
+local display = addon.Modules.Nameplates.Display
 
 ---@class NameplatesModule : IModule
 local M = {}
 addon.Modules.Nameplates.Module = M
 addon.Modules.NameplatesModule = M
-
--- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
-local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
 ---@type Db
 local db
@@ -52,17 +47,6 @@ local previousPetEnabled = {
 local previousModuleEnabled = { Always = false, Arena = false, BattleGrounds = false, PvE = false }
 local previousImportantNeeded = false
 
-local function GetCCSortOptions()
-	if db.CCNativeOrder then
-		return Enum.UnitAuraSortRule.Default, Enum.UnitAuraSortDirection.Normal
-	end
-	return Enum.UnitAuraSortRule.Unsorted, Enum.UnitAuraSortDirection.Reverse
-end
-
-local function OnAuraDataChanged(unitToken)
-	display:RenderUnit(unitToken, observer:Get(unitToken))
-end
-
 local function OnNamePlateRemoved(unitToken)
 	-- Clear before the early return: friendly plates have a poll baseline but no anchor data.
 	duelSub:Clear(unitToken)
@@ -72,7 +56,6 @@ local function OnNamePlateRemoved(unitToken)
 	end
 
 	display:Untrack(unitToken)
-	observer:Dispose(unitToken)
 	kickTracker:Unwatch(unitToken)
 end
 
@@ -86,45 +69,24 @@ local function OnNamePlateAdded(unitToken)
 	-- through here too, so plates that existed before Init/enable are also seeded.
 	duelSub:Seed(unitToken)
 
-	-- Legacy only: the hook feeds watcher-driven re-renders. On 12.1 the containers track
-	-- their unit themselves and the hook body would no-op against the empty watcher table,
-	-- so installing it just bills us for a dead closure on every Blizzard aura refresh.
-	if not USE_AURA_CONTAINERS then
-		observer:HookAuraFrame(nameplate, function(unit)
-			if display:ImportantNeeded() and display:GetData(unit) and observer:Get(unit) then
-				OnAuraDataChanged(unit)
-			end
-		end)
-	end
-
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
 	if not moduleEnabled then
-		-- 12.1: an already-tracked token may still hold pooled displays from before the
-		-- module/option flip; release them instead of leaving them tracking until the
-		-- plate despawns.
-		if USE_AURA_CONTAINERS then
-			display:Release(unitToken)
-		end
+		-- An already-tracked token may still hold pooled displays from before the module/option
+		-- flip; release them instead of leaving them tracking until the plate despawns.
+		display:Release(unitToken)
 		return
 	end
 
 	-- Check if we should ignore pets
 	local unitOptions = display:GetUnitOptions(unitToken)
 	if unitOptions.IgnorePets and units:IsPetOrMinion(unitToken) then
-		if USE_AURA_CONTAINERS then
-			display:Release(unitToken)
-		end
+		display:Release(unitToken)
 		return
 	end
 
-	-- BUGFIX (duels): Previously this returned early if no containers were created for
-	-- the current options table (e.g. friendly player with Friendly.* all disabled).
-	-- That meant the plate was never tracked and no watcher listened to UNIT_AURA, so when
-	-- the unit later became a duel opponent and GetUnitOptions() started returning Enemy
-	-- options, OnAuraDataChanged would never fire to rebuild containers.
-	-- We now also track it if the *opposite* faction has any mode enabled, but only in the
-	-- open world where duels can occur - inside instances this overhead is unnecessary since
-	-- friendly units can never become duel opponents there.
+	-- Duels: a plate with nothing enabled for its current faction is still tracked when the
+	-- OPPOSITE faction has a bar on, so the flip has state to rebuild from. Only in the open
+	-- world, the one place a friendly unit can become a duel opponent.
 	local inInstance = IsInInstance()
 	local oppositeOptions = units:IsEnemy(unitToken) and nmModule.Friendly or nmModule.Enemy
 	local anyEnabledOpposite = not inInstance
@@ -136,39 +98,18 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
-	if not USE_AURA_CONTAINERS then
-		local sortRule, sortDirection = GetCCSortOptions()
-		observer:Create(unitToken, sortRule, sortDirection, function()
-			OnAuraDataChanged(unitToken)
-		end)
-	end
-
 	kickTracker:Watch(unitToken)
 	kickTracker:Subscribe(unitToken, function()
-		if USE_AURA_CONTAINERS then
-			display:UpdateKick(data)
-		else
-			OnAuraDataChanged(unitToken)
-		end
+		display:UpdateKick(data)
 	end)
 
-	if USE_AURA_CONTAINERS then
-		display:UpdateKick(data)
-	end
+	display:UpdateKick(data)
 
 	-- Initial update
 	if testModeActive then
 		-- In test mode, show test icons for this specific nameplate
 		display:ShowTestIconsFor(data)
 	end
-end
-
--- Rebuilds a plate whose enemy status flipped: GetUnitOptions starts returning the other
--- faction's options, so the bars are rebuilt (12.1: displays re-acquired with the new faction's
--- budgets; legacy: containers rebuilt and the watcher re-rendered).
-local function OnDuelFactionFlip(unitToken)
-	OnNamePlateAdded(unitToken)
-	OnAuraDataChanged(unitToken)
 end
 
 local function RebuildContainers()
@@ -268,7 +209,6 @@ local function SetEventsActive(active)
 end
 
 local function Teardown()
-	observer:DisableAll()
 	display:Teardown()
 
 	CacheEnabledModes()
@@ -276,8 +216,6 @@ end
 
 local function EnsureFrames()
 	ApplyBlizzardNameplateSettings()
-
-	observer:EnableAll()
 
 	-- if the user has enabled/disabled a mode, rebuild the containers
 	if HaveModesChanged() then
@@ -289,28 +227,13 @@ end
 
 local function ApplyOptions()
 	display:RefreshAnchorsAndSizes()
-	observer:SetSort(GetCCSortOptions())
 end
 
+-- Only the fake icons rebuild here; the containers render the live ones themselves, and
+-- RefreshAnchorsAndSizes (via ApplyOptions) has already re-applied the bar options to them.
 local function UpdateContent()
 	if testModeActive then
 		display:ShowTestIcons()
-		return
-	end
-
-	-- 12.1: the containers render themselves and no watchers exist, so RenderUnit would bail on
-	-- the watcher lookup for every tracked plate. RefreshAnchorsAndSizes (via ApplyOptions) has
-	-- already re-applied the bar options to the displays.
-	if USE_AURA_CONTAINERS then
-		return
-	end
-
-	-- Re-render every tracked nameplate so per-bar option changes (Show CC / Defensives /
-	-- Important, colours, glow, tooltips, etc.) apply immediately instead of waiting for the next
-	-- aura event. HaveModesChanged only catches enabled/mode toggles, and SetSort no-ops when the
-	-- sort is unchanged, so neither re-applies the bars on their own.
-	for unitToken in pairs(display:GetTrackedPlates()) do
-		OnAuraDataChanged(unitToken)
 	end
 end
 
@@ -327,11 +250,6 @@ local function SetTestMode(active)
 	end
 
 	M:Refresh()
-
-	if not active then
-		-- Repopulate from live aura data; the test icons overwrote whatever the plates had.
-		observer:ForceFullUpdate()
-	end
 end
 
 local function CreateEvents()
@@ -339,10 +257,6 @@ local function CreateEvents()
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
 		if event == "NAME_PLATE_UNIT_ADDED" then
 			OnNamePlateAdded(unitToken)
-			-- refresh their aura information
-			-- important to do it here an not inside of OnNamePlateAdded because that is also called by Refresh
-			-- which would cause a significant performance impact
-			OnAuraDataChanged(unitToken)
 		elseif event == "NAME_PLATE_UNIT_REMOVED" then
 			OnNamePlateRemoved(unitToken)
 		end
@@ -363,9 +277,12 @@ local function CreateEvents()
 		end,
 	})
 
+	-- A plate whose enemy status flipped goes back through the add path: GetUnitOptions starts
+	-- returning the other faction's options, so its displays are re-acquired with that faction's
+	-- budgets.
 	duelSub = duelPoller:Register(function()
 		return moduleUtil:IsModuleEnabled(moduleName.Nameplates)
-	end, OnDuelFactionFlip)
+	end, OnNamePlateAdded)
 end
 
 local function ApplyInitialState()

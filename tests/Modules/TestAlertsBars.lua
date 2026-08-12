@@ -24,7 +24,6 @@ alerts.SplitBars = false
 alerts.Important.Enabled = true
 
 env.loadModule("src/Modules/Alerts/Sound.lua")
-env.loadModule("src/Modules/Alerts/Observer.lua")
 env.loadModule("src/Modules/Alerts/Display.lua")
 env.loadModule("src/Modules/Alerts/Module.lua")
 local module = env.addon.Modules.AlertsModule

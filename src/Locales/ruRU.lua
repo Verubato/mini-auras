@@ -11,7 +11,6 @@ L:RegisterLocale("ruRU", {
 	["Important Spells"] = "Важные заклинания",
 	["Play a sound when an important spell is pressed."] = "Воспроизводить звук при использовании важного заклинания.",
 	["Announce important spell names using text-to-speech when they are cast."] = "Объявлять названия важных заклинаний с помощью синтеза речи при их применении.",
-	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "Из-за ограничений API Blizzard синтез речи для важных заклинаний не работает для магов, призывателей, охотников на демонов, охотников и жрецов Тьмы.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "Воспроизводит звук, когда враг использует важное или защитное заклинание.",
 
 	-- Shared strings
@@ -156,10 +155,6 @@ L:RegisterLocale("ruRU", {
 	["Important News"] = "Важные новости",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "С патча Blizzard 12.0.7 следующие функции больше недоступны:\n- Показ атакующих в оповещениях.\n- Показ атакующих на индикаторах имён.\n- Показ атакующих на портретах.\n- Показ атакующих на рамках группы/рейда.\n- Отслеживание атакующих перезарядок.\n- Показ Предвидения и Нивелирующего покрова.\n- Звуковое оповещение о важных заклинаниях.\n- Озвучивание важных заклинаний.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "Немного хороших новостей после ограничений 12.0.7:\n- Модуль Предвидения/Нивелирующего покрова вернулся.\n- Модуль оповещений теперь может показывать 1 важную/атакующую иконку на каждого противника на арене.\n\nЭти функции работают не так хорошо, как раньше, но это лучше, чем ничего.",
-	["CC Native Order"] = "Порядок CC Blizzard",
-	["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Вместо отображения последнего применённого CC (поведение MiniAuras), использует стандартный приоритет CC Blizzard, который обычно показывает первый применённый CC (с некоторыми исключениями).",
-	["The others seem to use a non-trivial amount of CPU."] = "Остальные используют значительное количество ЦП.",
-	["The Proc Glow uses the least CPU."] = "Proc свечение использует меньше всего ЦП.",
 	["The Slot Glow is static and uses the least CPU."] = "Свечение слота статично и использует меньше всего ЦП.",
 
 	-- Alerts tab
@@ -186,14 +181,9 @@ L:RegisterLocale("ruRU", {
 	["When removed"] = "При снятии",
 	["Sound Alerts"] = "Звуковые оповещения",
 	["TTS"] = "TTS",
-	["TTS Speech Rate"] = "Скорость речи TTS",
-	["TTS Volume"] = "Громкость TTS",
-	["Voice"] = "Голос",
 
 	-- CC tab
 	["CC"] = "Контроль",
-	["Color by class"] = "Цвет по классу",
-	["Color the glow/border by the enemy's class color."] = "Окрашивать свечение/границу цветом класса противника.",
 	["Change the colour of the glow on important enemy spells."] = "Изменяет цвет свечения для важных заклинаний противника.",
 	["Change the colour of the glow on defensive spells."] = "Изменяет цвет свечения для защитных заклинаний.",
 	["Dispel colours"] = "Цвета диспела",

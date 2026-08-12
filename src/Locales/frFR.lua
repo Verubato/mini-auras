@@ -11,7 +11,6 @@ L:RegisterLocale("frFR", {
 	["Important Spells"] = "Sorts importants",
 	["Play a sound when an important spell is pressed."] = "Joue un son quand un sort important est utilisé.",
 	["Announce important spell names using text-to-speech when they are cast."] = "Annonce le nom des sorts importants par synthèse vocale quand ils sont lancés.",
-	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "En raison des limitations de l'API de Blizzard, la synthèse vocale des sorts importants ne fonctionne pas pour les Mages, les Évocateurs, les Chasseurs de démons, les Chasseurs et les Prêtres Ombre.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "Joue un son quand un ennemi utilise un sort important ou défensif.",
 
 	-- Shared strings
@@ -156,10 +155,6 @@ L:RegisterLocale("frFR", {
 	["Important News"] = "Nouvelles importantes",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "Depuis le patch 12.0.7 de Blizzard, les fonctionnalités suivantes ne sont plus possibles :\n- Afficher les offensifs dans les alertes.\n- Afficher les offensifs sur les barres de nom.\n- Afficher les offensifs sur les portraits.\n- Afficher les offensifs sur les cadres de groupe/raid.\n- Suivre les temps de recharge offensifs.\n- Afficher Précognition et Voile annihilant.\n- Alerte sonore pour les sorts importants.\n- Synthèse vocale des sorts importants.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "Quelques bonnes nouvelles après les restrictions de 12.0.7 :\n- Le module Précognition/Voile annihilant est de retour.\n- Le module d'alertes peut désormais afficher 1 icône importante/offensive par adversaire d'arène.\n\nCes fonctionnalités ne fonctionneront pas aussi bien qu'avant, mais c'est mieux que rien.",
-	["CC Native Order"] = "Ordre CC natif",
-	["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Au lieu d'afficher le dernier CC appliqué (comportement MiniAuras), utilise la priorité CC de Blizzard qui affiche généralement le premier CC appliqué (avec quelques exceptions).",
-	["The others seem to use a non-trivial amount of CPU."] = "Les autres consomment sensiblement plus de CPU.",
-	["The Proc Glow uses the least CPU."] = "La lueur Proc consomme le moins de CPU.",
 	["The Slot Glow is static and uses the least CPU."] = "La lueur d'emplacement est statique et consomme le moins de CPU.",
 
 	-- Alerts tab
@@ -186,14 +181,9 @@ L:RegisterLocale("frFR", {
 	["When removed"] = "Au retrait",
 	["Sound Alerts"] = "Alertes sonores",
 	["TTS"] = "Synthèse vocale",
-	["TTS Speech Rate"] = "Vitesse de la synthèse vocale",
-	["TTS Volume"] = "Volume de la synthèse vocale",
-	["Voice"] = "Voix",
 
 	-- CC tab
 	["CC"] = "CC",
-	["Color by class"] = "Couleur par classe",
-	["Color the glow/border by the enemy's class color."] = "Colore la lueur/bordure selon la couleur de classe de l'ennemi.",
 	["Change the colour of the glow on important enemy spells."] = "Change la couleur de la lueur des sorts ennemis importants.",
 	["Change the colour of the glow on defensive spells."] = "Change la couleur de la lueur des sorts défensifs.",
 	["Dispel colours"] = "Couleur par type",

@@ -1,7 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
-local wowEx = addon.Utils.WoWEx
 local auraSounds = addon.Core.AuraSounds
 local ttsPacks = addon.Core.TtsPacks
 local units = addon.Utils.Units
@@ -14,18 +13,14 @@ addon.Modules.Alerts = addon.Modules.Alerts or {}
 local M = {}
 addon.Modules.Alerts.Sound = M
 
--- Sounds DO work on 12.1, just inverted: the addon can't notice "a new aura appeared", but
+-- Sounds work inverted: the addon can't notice "a new aura appeared", but
 -- C_UnitAuras.AddAuraSound lets the ENGINE play a sound when a named spell lands on a registered
 -- unit. See alertSoundsByToken. TTS rides the same mechanism: instead of speaking a name the
--- addon can no longer read, it ships one baked clip per spell name (Core/Auras/AuraTtsSounds)
+-- addon cannot read, it ships one baked clip per spell name (Core/Auras/AuraTtsSounds)
 -- and registers each spell id with its own clip, so the engine says the name for us.
--- TEMPORARY dual path: remove the transition-driven branch once 12.1 is live everywhere.
-local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
 -- Spells worth an icon but not a noise. The engine plays these per aura application, so an
--- ability that lands often turns the alert sound into a metronome. 12.1 only: the legacy path
--- fires one sound per no-alerts-to-alerts transition rather than per spell, so it has nothing
--- per-spell to exclude.
+-- ability that lands often turns the alert sound into a metronome.
 local SILENT_ALERT_SPELL_IDS = {
 	[1044] = true, -- Blessing of Freedom
 	[305395] = true, -- Blessing of Freedom
@@ -45,31 +40,11 @@ local allyTokens = {}
 ---@type Db
 local db
 local paused = false
-local soundFile
 
-local cachedVoiceID
-local cachedTTSVolume
-local cachedTTSSpeechRate
-local cachedTTSDefensiveEnabled
-local cachedTTSImportantEnabled
--- DH/Mage/Evoker (any spec) and Shadow Priest can purge or steal enemy magic buffs, so enemy
--- nameplates surface a lot of non-important purgeable buffs. The important alpha hides those visually,
--- but TTS can't be gated on the secret IsSpellImportant value (branching would taint), so it would
--- announce the garbage. Important TTS is suppressed entirely for these specs. Legacy path only:
--- the 12.1 path registers clips for the curated Important list, so it never announces the garbage.
-local IMPORTANT_TTS_SUPPRESSED_CLASSES = {
-	DEMONHUNTER = true,
-	MAGE = true,
-	EVOKER = true,
-	HUNTER = true,
-}
-local SHADOW_PRIEST_SPEC_ID = 258
-
--- 12.1 path: engine-side alert sounds via Core/AuraSounds (the aura transitions the legacy
--- sound reacted to are secret there, but the engine can play sounds on them for us - same
--- pattern as HealerCrowdControlModule). Registrations are per (enemy nameplate token, spellId),
--- fed from the generated Core/AuraCategoryIds Important/Defensive lists, plus the baked TTS
--- clips when those are on.
+-- Engine-side alert sounds via Core/AuraSounds (aura transitions are secret, but the engine can
+-- play sounds on them for us - same pattern as HealerCrowdControlModule). Registrations are per
+-- (enemy nameplate token, spellId), fed from the generated Core/AuraCategoryIds
+-- Important/Defensive lists, plus the baked TTS clips when those are on.
 -- token -> pooled list of sound handles for that token. Registrations are kept warm across
 -- plate despawns: a token's registration set is identical no matter which enemy holds it, so
 -- tearing down and re-adding ~120 sounds per plate churn would be pure API traffic. They are
@@ -94,20 +69,6 @@ local function MutedSpellIds(category)
 	local options = tts and tts[category]
 
 	return options and options.MutedSpellIds
-end
-
--- True when the player's class/spec should never announce important buffs over TTS (see the comment
--- on IMPORTANT_TTS_SUPPRESSED_CLASSES).
-local function ImportantTTSSuppressedForPlayer()
-	local _, class = UnitClass("player")
-	if IMPORTANT_TTS_SUPPRESSED_CLASSES[class] then
-		return true
-	end
-	if class == "PRIEST" then
-		local specIndex = GetSpecialization()
-		return (specIndex and GetSpecializationInfo(specIndex)) == SHADOW_PRIEST_SPEC_ID
-	end
-	return false
 end
 
 -- Registers one spell list's sounds for a token, appending to `ids` (nil starts a new pooled
@@ -135,7 +96,7 @@ function M:SetPaused(value)
 	paused = value
 end
 
--- 12.1 path: reconciles the enemy-debuff announcements on the player and party tokens. Kept
+-- Reconciles the enemy-debuff announcements on the player and party tokens. Kept
 -- apart from the nameplate registrations because nothing about it is per-plate: the tokens are
 -- fixed, and what invalidates them is the roster rather than a plate coming and going. Cheap to
 -- call: an unchanged signature does nothing, which is what lets the roster event drive it
@@ -144,7 +105,7 @@ end
 ---change, but a registration made against a token nobody was holding is not something the
 ---engine promises to keep, so a roster change redoes them.
 function M:RefreshAllySounds(force)
-	if not USE_AURA_CONTAINERS or not db then
+	if not db then
 		return
 	end
 
@@ -199,96 +160,12 @@ function M:RefreshAllySounds(force)
 	end
 end
 
--- Legacy path: one sound per no-alerts-to-alerts transition.
----@param spellType string "important" or "defensive"
-function M:PlaySound(spellType)
-	-- 12.1: sound alerts are disabled - they fire on aura transitions, which are unreadable there.
-	if USE_AURA_CONTAINERS then
-		return
-	end
-
-	local soundConfig
-	if spellType == "important" then
-		soundConfig = db.Modules.AlertsModule.Sound.Important
-	elseif spellType == "defensive" then
-		soundConfig = db.Modules.AlertsModule.Sound.Defensive
-	else
-		return
-	end
-
-	if not soundConfig.Enabled then
-		return
-	end
-
-	soundFile = addon.Core.Sounds:Resolve(soundConfig.File)
-	PlaySoundFile(soundFile, db.Modules.AlertsModule.Sound.Channel or "Master")
-end
-
--- Per-spell muting is deliberately absent here: this path reads the spell id through the unit
--- APIs, where it is a secret value that cannot be used as a table key. Only the engine-side
--- registrations below can filter by id, which is why the TTS Spells tab is 12.1 only.
----@param spellName string?
----@param spellType string "important" or "defensive"
-function M:AnnounceTTS(spellName, spellType)
-	-- 12.1: spoken at runtime from the spell name, which is unreadable there; the baked clips
-	-- registered in RegisterToken replace this.
-	if USE_AURA_CONTAINERS then
-		return
-	end
-
-	if not db.Modules.AlertsModule.TTS then
-		return
-	end
-
-	if not spellName then
-		return
-	end
-
-	local enabled = false
-	if spellType == "important" and cachedTTSImportantEnabled then
-		enabled = true
-	elseif spellType == "defensive" and cachedTTSDefensiveEnabled then
-		enabled = true
-	end
-
-	if not enabled then
-		return
-	end
-
-	pcall(function()
-		local speechRate = cachedTTSSpeechRate or 0
-		C_VoiceChat.SpeakText(cachedVoiceID, spellName, speechRate, cachedTTSVolume, true)
-	end)
-end
-
--- Recomputes the important-TTS cache from the saved option AND the class/spec suppression. Called
--- on refresh/init and on spec change (suppression depends on the player's current spec).
-function M:UpdateImportantTTSCache()
-	local ttsOptions = db and db.Modules.AlertsModule.TTS
-	cachedTTSImportantEnabled = (ttsOptions and ttsOptions.Important and ttsOptions.Important.Enabled or false)
-		and not ImportantTTSSuppressedForPlayer()
-end
-
----@return boolean
-function M:IsImportantTTSEnabled()
-	return cachedTTSImportantEnabled or false
-end
-
----@param options AlertsModuleOptions
-function M:ApplyTTSOptions(options)
-	cachedVoiceID = wowEx:ResolveVoiceID(options.TTS and options.TTS.VoiceID)
-	cachedTTSVolume = options.TTS and options.TTS.Volume or 100
-	cachedTTSSpeechRate = options.TTS and options.TTS.SpeechRate or 0
-	cachedTTSDefensiveEnabled = options.TTS and options.TTS.Defensive and options.TTS.Defensive.Enabled or false
-	self:UpdateImportantTTSCache()
-end
-
--- 12.1 path: registers the important/defensive alert sounds for one enemy nameplate token.
+-- Registers the important/defensive alert sounds for one enemy nameplate token.
 -- No-op when already registered (which is what keeps warm registrations cheap on token reuse)
 -- or when no alert sound is enabled.
 ---@param unitToken string
 function M:RegisterToken(unitToken)
-	if not USE_AURA_CONTAINERS or alertSoundsByToken[unitToken] then
+	if alertSoundsByToken[unitToken] then
 		return
 	end
 	if paused or not moduleUtil:IsModuleEnabled(moduleName.Alerts) then
@@ -313,8 +190,8 @@ function M:RegisterToken(unitToken)
 	if defensiveEnabled then
 		ids = RegisterAlertSoundList(ids, unitToken, addon.Core.AuraCategoryIds.Defensive, sound.Defensive, "AlertToastWarm.ogg", channel)
 	end
-	-- The silent list is deliberately not applied here: a repeated ding is noise, a spoken name
-	-- still tells you what landed, and the legacy path announced those spells too.
+	-- The silent list is deliberately not applied here: a repeated ding is noise, but a spoken
+	-- name still tells you what landed.
 	if importantTts or defensiveTts then
 		local packPath = ttsPacks:Path(ttsPacks:Resolve(tts and tts.VoicePack))
 
@@ -335,7 +212,7 @@ function M:RegisterToken(unitToken)
 	alertSoundsByToken[unitToken] = ids
 end
 
--- 12.1 path: removes the engine sound registrations for one nameplate token.
+-- Removes the engine sound registrations for one nameplate token.
 ---@param unitToken string
 function M:RemoveToken(unitToken)
 	local ids = alertSoundsByToken[unitToken]
@@ -352,7 +229,7 @@ function M:RemoveAllTokens()
 	end
 end
 
--- 12.1 path: drops the enemy-debuff announcements. Their tokens are not nameplates, so plate
+-- Drops the enemy-debuff announcements. Their tokens are not nameplates, so plate
 -- teardown never reaches them; the module's own teardown calls this instead.
 function M:RemoveAllySounds()
 	auraSounds:RemoveSet(allySoundIds)
@@ -360,16 +237,12 @@ function M:RemoveAllySounds()
 	allySoundSignature = nil
 end
 
--- 12.1 path: re-evaluates the sound settings; when they change, every active token's
+-- Re-evaluates the sound settings; when they change, every active token's
 -- registrations are rebuilt (token add/remove is handled incrementally at the display's
 -- acquire/release chokepoints). Called from Refresh, which also runs after the test-mode
 -- pause/resume transitions.
 ---@param activeTokens table<string, any> keys are the tokens currently being drawn
 function M:Refresh(activeTokens)
-	if not USE_AURA_CONTAINERS then
-		return
-	end
-
 	-- Ahead of the nameplate signature check below, which returns early and would otherwise
 	-- swallow a settings change that only the ally registrations care about.
 	self:RefreshAllySounds()

@@ -11,7 +11,6 @@ L:RegisterLocale("deDE", {
 	["Important Spells"] = "Wichtige Zauber",
 	["Play a sound when an important spell is pressed."] = "Spiele einen Sound ab, wenn ein wichtiger Zauber gewirkt wird.",
 	["Announce important spell names using text-to-speech when they are cast."] = "Sage wichtige Zaubernamen mittels Sprachausgabe an, wenn sie gewirkt werden.",
-	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "Aufgrund von Einschränkungen der Blizzard-API funktioniert die Sprachausgabe für wichtige Zauber nicht für Magier, Rufer, Dämonenjäger, Jäger und Schattenpriester.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "Spielt einen Sound ab, wenn ein Gegner einen wichtigen oder defensiven Zauber wirkt.",
 
 	-- Shared strings
@@ -156,10 +155,6 @@ L:RegisterLocale("deDE", {
 	["Important News"] = "Wichtige Neuigkeiten",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "Seit Blizzards Patch 12.0.7 sind folgende Funktionen nicht mehr möglich:\n- Offensiv-Zauber in Warnungen anzeigen.\n- Offensiv-Zauber auf Namensplaketten anzeigen.\n- Offensiv-Zauber auf Porträts anzeigen.\n- Offensiv-Zauber auf Gruppen-/Schlachtzugsrahmen anzeigen.\n- Offensive Abklingzeiten verfolgen.\n- Präkognition und Annullierende Hülle anzeigen.\n- Tonsignal bei wichtigen Zaubern.\n- Sprachausgabe wichtiger Zauber.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "Gute Nachrichten nach den 12.0.7-Einschränkungen:\n- Das Präkognition-/Annullierende-Hülle-Modul ist zurück.\n- Das Warnungs-Modul kann jetzt 1 wichtiges/offensives Symbol pro Arena-Gegner anzeigen.\n\nDiese Funktionen funktionieren nicht so gut wie zuvor, aber besser als nichts.",
-	["CC Native Order"] = "CC-Reihenfolge",
-	["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Anstatt die zuletzt angewendete CC anzuzeigen (MiniAuras-Verhalten), wird Blizzards Standard-CC-Priorität verwendet, die normalerweise die zuerst angewendete CC anzeigt (mit einigen Ausnahmen).",
-	["The others seem to use a non-trivial amount of CPU."] = "Die anderen scheinen eine beträchtliche Menge CPU zu verwenden.",
-	["The Proc Glow uses the least CPU."] = "Das Proc-Leuchten verwendet am wenigsten CPU.",
 	["The Slot Glow is static and uses the least CPU."] = "Das Slot-Leuchten ist statisch und verwendet am wenigsten CPU.",
 
 	-- Alerts tab
@@ -186,14 +181,9 @@ L:RegisterLocale("deDE", {
 	["When removed"] = "Beim Entfernen",
 	["Sound Alerts"] = "Sound-Warnungen",
 	["TTS"] = "TTS",
-	["TTS Speech Rate"] = "TTS-Sprechgeschwindigkeit",
-	["TTS Volume"] = "TTS-Lautstärke",
-	["Voice"] = "Stimme",
 
 	-- CC tab
 	["CC"] = "CC",
-	["Color by class"] = "Nach Klasse färben",
-	["Color the glow/border by the enemy's class color."] = "Färbe das Leuchten/Rahmen mit der Klassenfarbe des Gegners.",
 	["Change the colour of the glow on important enemy spells."] = "Ändert die Farbe des Leuchtens bei wichtigen gegnerischen Zaubern.",
 	["Change the colour of the glow on defensive spells."] = "Ändert die Farbe des Leuchtens bei Verteidigungszaubern.",
 	["Dispel colours"] = "Bannfarben",

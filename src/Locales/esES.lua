@@ -11,7 +11,6 @@ L:RegisterLocale("esES", {
 	["Important Spells"] = "Hechizos importantes",
 	["Play a sound when an important spell is pressed."] = "Reproducir un sonido cuando se lance un hechizo importante.",
 	["Announce important spell names using text-to-speech when they are cast."] = "Anunciar nombres de hechizos importantes mediante texto a voz cuando se lancen.",
-	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "Debido a limitaciones de la API de Blizzard, el texto a voz para hechizos importantes no funciona para Magos, Evocadores, Cazadores de demonios, Cazadores y Sacerdotes de las Sombras.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "Reproduce un sonido cuando un enemigo lanza un hechizo importante o defensivo.",
 
 	-- Shared strings
@@ -156,10 +155,6 @@ L:RegisterLocale("esES", {
 	["Important News"] = "Noticias importantes",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "Desde el parche 12.0.7 de Blizzard, las siguientes funciones ya no son posibles:\n- Mostrar ofensivos en las alertas.\n- Mostrar ofensivos en las placas de nombre.\n- Mostrar ofensivos en los retratos.\n- Mostrar ofensivos en los marcos de grupo/banda.\n- Rastrear reutilizaciones ofensivas.\n- Mostrar Precognición y Sudario anulador.\n- Alerta de sonido para hechizos importantes.\n- Texto a voz de hechizos importantes.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "Algunas buenas noticias tras las restricciones de 12.0.7:\n- El módulo de Precognición/Sudario anulador ha vuelto.\n- El módulo de alertas ahora puede mostrar 1 icono importante/ofensivo por oponente en arena.\n\nEstas funciones no funcionarán tan bien como antes, pero es mejor que nada.",
-	["CC Native Order"] = "Orden CC nativo",
-	["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "En lugar de mostrar el último CC aplicado (comportamiento MiniAuras), usa la prioridad CC predeterminada de Blizzard, que normalmente muestra el primer CC aplicado (con algunas excepciones).",
-	["The others seem to use a non-trivial amount of CPU."] = "Los otros parecen usar una cantidad considerable de CPU.",
-	["The Proc Glow uses the least CPU."] = "El brillo proc usa menos CPU.",
 	["The Slot Glow is static and uses the least CPU."] = "El brillo de ranura es estático y usa menos CPU.",
 
 	-- Alerts tab
@@ -186,14 +181,9 @@ L:RegisterLocale("esES", {
 	["When removed"] = "Al eliminarse",
 	["Sound Alerts"] = "Alertas de sonido",
 	["TTS"] = "TTS",
-	["TTS Speech Rate"] = "Velocidad de voz TTS",
-	["TTS Volume"] = "Volumen TTS",
-	["Voice"] = "Voz",
 
 	-- CC tab
 	["CC"] = "Control",
-	["Color by class"] = "Color por clase",
-	["Color the glow/border by the enemy's class color."] = "Colorea el brillo/borde con el color de clase del enemigo.",
 	["Change the colour of the glow on important enemy spells."] = "Cambia el color del brillo de los hechizos enemigos importantes.",
 	["Change the colour of the glow on defensive spells."] = "Cambia el color del brillo de los hechizos defensivos.",
 	["Dispel colours"] = "Color por tipo",

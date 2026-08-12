@@ -142,9 +142,6 @@ local masqueWarned = {}
 --   reconfigured on refresh (mirrors how modules already reuse IconSlotContainers).
 -- - Nothing may be anchored to the container frame itself (no OnSizeChanged), and the
 --   container's size can be secret; callers must not do math with it.
---
--- This file is only used when addon.Utils.WoWEx:UseAuraContainers() is true; on 12.0 clients
--- nothing here runs (CreateFrame("AuraContainer") does not exist there).
 
 ---@class AuraContainerDisplay
 local M = {}

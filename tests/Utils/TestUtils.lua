@@ -167,9 +167,8 @@ end)
 
 -- WoWEx
 
-fw.describe("WoWEx 12.1 gates", function()
-	local function loadWoWEx(buildNumber, inCombat, shouldAurasBeSecret)
-		wow.setBuildNumber(buildNumber)
+fw.describe("WoWEx aura-styling gate", function()
+	local function loadWoWEx(inCombat, shouldAurasBeSecret)
 		_G.InCombatLockdown = function()
 			return inCombat == true
 		end
@@ -185,17 +184,11 @@ fw.describe("WoWEx 12.1 gates", function()
 		return loadModule("src/Utils/WoWEx.lua", newAddon({})).Utils.WoWEx
 	end
 
-	fw.it("UseAuraContainers flips on the 12.1 interface number", function()
-		assert(loadWoWEx(120007):UseAuraContainers() == false)
-		assert(loadWoWEx(120100):UseAuraContainers() == true)
-		assert(loadWoWEx(120200):UseAuraContainers() == true)
-	end)
-
 	fw.it("IsAuraStylingRestricted covers combat, aura secrecy, and missing C_Secrets", function()
-		assert(loadWoWEx(120100, false, false):IsAuraStylingRestricted() == false, "idle")
-		assert(loadWoWEx(120100, true, false):IsAuraStylingRestricted() == true, "combat lockdown")
-		assert(loadWoWEx(120100, false, true):IsAuraStylingRestricted() == true, "auras secret out of combat")
-		assert(loadWoWEx(120100, false, nil):IsAuraStylingRestricted() == false, "no C_Secrets (12.0 client)")
+		assert(loadWoWEx(false, false):IsAuraStylingRestricted() == false, "idle")
+		assert(loadWoWEx(true, false):IsAuraStylingRestricted() == true, "combat lockdown")
+		assert(loadWoWEx(false, true):IsAuraStylingRestricted() == true, "auras secret out of combat")
+		assert(loadWoWEx(false, nil):IsAuraStylingRestricted() == false, "no C_Secrets to ask")
 	end)
 end)
 

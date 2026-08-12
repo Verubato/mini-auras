@@ -12,7 +12,6 @@ L:SetDefaultStrings({
 	["Important Spells"] = "Important Spells",
 	["Play a sound when an important spell is pressed."] = "Play a sound when an important spell is pressed.",
 	["Announce important spell names using text-to-speech when they are cast."] = "Announce important spell names using text-to-speech when they are cast.",
-	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "Plays a sound when an enemy presses an important or defensive spell.",
 
 	-- Shared strings
@@ -157,10 +156,6 @@ L:SetDefaultStrings({
 	["Important News"] = "Important News",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing.",
-	["CC Native Order"] = "CC Native Order",
-	["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions).",
-	["The others seem to use a non-trivial amount of CPU."] = "The others seem to use a non-trivial amount of CPU.",
-	["The Proc Glow uses the least CPU."] = "The Proc Glow uses the least CPU.",
 	["The Slot Glow is static and uses the least CPU."] = "The Slot Glow is static and uses the least CPU.",
 
 	-- Alerts tab
@@ -187,14 +182,9 @@ L:SetDefaultStrings({
 	["When removed"] = "When removed",
 	["Sound Alerts"] = "Sound Alerts",
 	["TTS"] = "Text-to-speech",
-	["TTS Speech Rate"] = "TTS Speech Rate",
-	["TTS Volume"] = "TTS Volume",
-	["Voice"] = "Voice",
 
 	-- CC tab
 	["CC"] = "CC",
-	["Color by class"] = "Color by class",
-	["Color the glow/border by the enemy's class color."] = "Color the glow/border by the enemy's class color.",
 	["Change the colour of the glow on important enemy spells."] = "Change the colour of the glow on important enemy spells.",
 	["Change the colour of the glow on defensive spells."] = "Change the colour of the glow on defensive spells.",
 	["Dispel colours"] = "Dispel colours",

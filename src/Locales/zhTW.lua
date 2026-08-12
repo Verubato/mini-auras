@@ -11,7 +11,6 @@ L:RegisterLocale("zhTW", {
 	["Important Spells"] = "重要法術",
 	["Play a sound when an important spell is pressed."] = "使用重要法術時播放聲音。",
 	["Announce important spell names using text-to-speech when they are cast."] = "施放重要法術時使用語音合成播報法術名稱。",
-	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "由於暴雪API的限制，重要法術的語音合成播報對法師、喚能師、惡魔獵人、獵人和暗影牧師無效。",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "當敵人使用重要或防禦法術時播放聲音。",
 
 	-- Shared strings
@@ -156,10 +155,6 @@ L:RegisterLocale("zhTW", {
 	["Important News"] = "重要消息",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "自暴雪 12.0.7 改版起，以下功能無法再使用：\n- 在警報中顯示進攻技能。\n- 在名條上顯示進攻技能。\n- 在頭像上顯示進攻技能。\n- 在隊伍/團隊框架上顯示進攻技能。\n- 追蹤進攻冷卻。\n- 顯示預知和虛無披風。\n- 重要技能的聲音提示。\n- 重要技能的語音播報。",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "12.0.7 限制之後的一些好消息：\n- 預知/虛無披風模組回歸了。\n- 現在警報模組可以為每個競技場對手顯示 1 個重要/進攻圖示。\n\n這些功能不會像以前那樣好用，但聊勝於無。",
-	["CC Native Order"] = "CC原生順序",
-	["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "不顯示最新應用的控制效果（MiniAuras行為），而是使用暴雪預設的CC優先級，通常顯示最先應用的控制效果（有少數例外）。",
-	["The others seem to use a non-trivial amount of CPU."] = "其他的似乎使用了大量的CPU。",
-	["The Proc Glow uses the least CPU."] = "觸發發光使用最少的CPU。",
 	["The Slot Glow is static and uses the least CPU."] = "槽位發光是靜態的，使用最少的CPU。",
 
 	-- Alerts tab
@@ -186,14 +181,9 @@ L:RegisterLocale("zhTW", {
 	["When removed"] = "移除時",
 	["Sound Alerts"] = "聲音提醒",
 	["TTS"] = "TTS",
-	["TTS Speech Rate"] = "TTS語速",
-	["TTS Volume"] = "TTS音量",
-	["Voice"] = "語音",
 
 	-- CC tab
 	["CC"] = "控制",
-	["Color by class"] = "按職業著色",
-	["Color the glow/border by the enemy's class color."] = "用敵人的職業顏色為發光/邊框著色。",
 	["Change the colour of the glow on important enemy spells."] = "更改重要敵方法術的發光顏色。",
 	["Change the colour of the glow on defensive spells."] = "更改防禦法術的發光顏色。",
 	["Dispel colours"] = "驅散顏色",

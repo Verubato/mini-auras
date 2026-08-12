@@ -11,8 +11,6 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
 local units = addon.Utils.Units
--- TEMPORARY: auras only serves GetFirstImportantBuff; it dies with the 12.0 path.
-local auras = addon.Utils.Auras
 
 addon.Modules.Portrait = addon.Modules.Portrait or {}
 
@@ -20,24 +18,20 @@ addon.Modules.Portrait = addon.Modules.Portrait or {}
 local M = {}
 addon.Modules.Portrait.Display = M
 
--- 12.1 path: a portrait shows ONE icon, but which aura wins has to be decided by the engine
--- (aura presence is secret), so it gets FIVE single-icon containers stacked on top of each other -
--- one per category, cc / disarm / big defensive / external defensive / important. The legacy
--- strict priority becomes frame levels: kick (IconSlotContainer, topmost) > cc > disarm > big >
--- external > important. A higher-priority container's button simply covers the ones below it, and a
--- container with no matching aura hides its own button secretly, revealing the next one down.
+-- A portrait shows ONE icon, but which aura wins has to be decided by the engine (aura presence
+-- is secret), so it gets FIVE single-icon containers stacked on top of each other - one per
+-- category, cc / disarm / big defensive / external defensive / important. Priority rides on frame
+-- levels: kick (IconSlotContainer, topmost) > cc > disarm > big > external > important. A
+-- higher-priority container's button simply covers the ones below it, and a container with no
+-- matching aura hides its own button secretly, revealing the next one down.
 -- The distinct levels are load-bearing: same-level siblings draw in an ARBITRARY order (verified
 -- live 2026-08-07, WoW picked a random winner), so priority cannot ride on creation order.
--- The Blizzard nameplate buffList scan for important buffs is replaced by the HELPFUL|IMPORTANT
--- container.
 --
 -- Not AuraSlots, despite those being the documented fit for "one icon, top-priority aura":
 -- a 4-slot portrait container rendered NOTHING on the 12.1 PTR - no errors, AddAuraSlot existed
 -- and returned buttons, and groups worked on the same client. No known addon uses slots, so
 -- there is no outside verification either. RULE: don't reach for AuraSlots until they are proven
 -- on a live build; a group with maxFrameCount = 1 is the same thing on the verified API.
--- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
-local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
 -- Priority stack for the portrait icon, LOWEST first: a higher-priority display simply covers
 -- the ones below it, and an empty one hides its button secretly. The filters are the shared
@@ -69,7 +63,7 @@ local suspended = true
 local containers = {}
 ---@type TestSpell?
 local testSpell
--- 12.1 scratch: kick slot options, rebuilt on every kick event and expiry timer. SetSlot reads
+-- Kick slot options, rebuilt on every kick event and expiry timer. SetSlot reads
 -- it synchronously and keeps nothing.
 local kickSlotScratch = {}
 
@@ -99,7 +93,7 @@ local function ApplyDisarmBudget(auraDisplay, unit)
 	auraDisplay.DisarmDisplay:SetMaxIcons(auraFilters.GroupKey.Disarm, units:CanAssist(unit) and 0 or 1)
 end
 
----12.1 path: builds the layered single-icon display stack over a portrait. Each display is
+---Builds the layered single-icon display stack over a portrait. Each display is
 ---parented to the kick container's frame so it follows the per-addon frame level adjustments the
 ---attach functions apply afterwards (child levels shift with the parent).
 ---@param kickFrame table The kick IconSlotContainer's frame (already anchored over the portrait).
@@ -134,7 +128,7 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 	for index, category in ipairs(PORTRAIT_CATEGORIES) do
 		local display = auraContainerDisplay:New(kickFrame, unit, {
 			auraFilters:GroupSpec(category, 1, {
-				-- Reverse instance-id order = newest aura first, matching the legacy Reverse sort.
+				-- Reverse instance-id order = newest aura first.
 				SortDirection = AuraContainerSortDirection.Reverse,
 			}),
 		}, iconSize, 0, "Portraits", {
@@ -166,46 +160,6 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 	ApplyDisarmBudget(auraDisplay, unit)
 
 	return auraDisplay
-end
-
--- TEMPORARY: only serves the legacy OnAuraInfo render; dies with the 12.0 path.
--- Returns the aura data for the unit's first important nameplate buff, or nil. These come from
--- Blizzard's own nameplate buff list, so the unit needs a visible nameplate (e.g. an enemy target
--- in range); the player's own portrait only shows one if self-nameplates are enabled. Friendly
--- nameplate buff lists aren't pre-curated to the important ones, so for friendly units an extra
--- nameplate aura filter drops the non-important junk.
-local function GetFirstImportantBuff(unit)
-	local nameplate = C_NamePlate.GetNamePlateForUnit(unit)
-	local uf = nameplate and nameplate.UnitFrame
-	local af = uf and uf.AurasFrame
-	if not (af and af.buffList and af.buffList.Iterate and not (af.IsForbidden and af:IsForbidden())) then
-		return nil
-	end
-
-	local friendlyFilter = units:IsFriend(unit)
-		and "HELPFUL|INCLUDE_NAME_PLATE_ONLY|RAID_IN_COMBAT|PLAYER"
-		or nil
-
-	local firstId
-	af.buffList:Iterate(function(auraInstanceID)
-		if firstId ~= nil then
-			return
-		end
-		if friendlyFilter and C_UnitAuras.IsAuraFilteredOutByInstanceID(unit, auraInstanceID, friendlyFilter) then
-			return
-		end
-		-- Drop purgeable non-defensive buffs (the non-important garbage Blizzard's enemy list bundles
-		-- in); purgeable defensives like magic barriers are kept.
-		if auras:IsPurgeableNonDefensive(unit, auraInstanceID) then
-			return
-		end
-		firstId = auraInstanceID
-	end)
-
-	if not firstId then
-		return nil
-	end
-	return C_UnitAuras.GetAuraDataByAuraInstanceID(unit, firstId)
 end
 
 function M:GetPortraitMask(unitFrame)
@@ -302,7 +256,7 @@ function M:CreatePortraitLayer(portrait)
 	return layer
 end
 
----Builds the kick container over a portrait, with the 12.1 aura display stack underneath it.
+---Builds the kick container over a portrait, with the aura display stack underneath it.
 ---Returns nil when the portrait's dimensions are secret, which is the tainted-frame case.
 ---@param portraitLayer table? demoted layer from CreatePortraitLayer. The container goes inside
 ---it and matches the portrait rect exactly, since the border art now covers the icon's edges.
@@ -312,8 +266,8 @@ function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask, portraitLa
 	local container = iconSlotContainer:New(portraitLayer or unitFrame, 1, 0, 0, nil, true, "Portraits")
 
 	-- Portrait icons are masked, and the mask texture lives on the unit frame's subtree. A
-	-- flattened slot composites only its own subtree, which renders the masked icon invisible
-	-- on the 12.0.7 client. One icon per portrait, so the composite saved nothing here anyway.
+	-- flattened slot composites only its own subtree, which renders the masked icon invisible.
+	-- One icon per portrait, so the composite saved nothing here anyway.
 	local slot = container.Slots[1]
 	if slot and slot.Frame then
 		slot.Frame:SetFlattensRenderLayers(false)
@@ -357,7 +311,7 @@ function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask, portraitLa
 
 	container:SetIconSize(size)
 
-	if USE_AURA_CONTAINERS and unit then
+	if unit then
 		-- Lift the kick slot above the whole aura display stack (displays at kick+2..+6,
 		-- buttons at the display's own level) so an active kick lockout covers any aura icon.
 		-- +7 leaves one level of margin in case a future build moves the buttons one above
@@ -391,7 +345,7 @@ function M:GetContainers()
 	return result
 end
 
----12.1 path: renders the kick icon into the kick container (the aura slots underneath handle
+---Renders the kick icon into the kick container (the aura slots underneath handle
 ---everything else). Schedules a follow-up when the kick expires, since no aura event will fire
 ---to clear it.
 ---@param unit string
@@ -420,79 +374,8 @@ function M:UpdateKickIcon(unit, container)
 	end)
 end
 
----TEMPORARY: legacy 12.0 renderer; the whole portrait is drawn here, in strict priority order.
----Dies with the watcher path.
----@param unit string
----@param watcher Watcher
----@param container IconSlotContainer
-function M:OnAuraInfo(unit, watcher, container)
-	if suspended then
-		return
-	end
-
-	local kickEntry = kickTracker:GetKick(unit)
-	if kickEntry then
-		container:SetSlot(1, {
-			Texture = kickEntry.Texture,
-			DurationObject = kickEntry.DurationObject,
-			Alpha = true,
-			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
-			FontScale = db.FontScale,
-			Color = kickEntry.Color,
-		})
-		return
-	end
-
-	local ccAuras = watcher:GetCcState()
-	local defensiveAuras = watcher:GetDefensiveState()
-	local slotIndex = 1
-
-	-- Show the latest CC aura
-	if ccAuras[1] then
-		container:SetSlot(slotIndex, {
-			Texture = ccAuras[1].SpellIcon,
-			DurationObject = ccAuras[1].DurationObject,
-			Alpha = ccAuras[1].IsCC,
-			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
-			FontScale = db.FontScale,
-		})
-		return
-	end
-
-	-- Show the latest defensive aura
-	if defensiveAuras[1] then
-		container:SetSlot(slotIndex, {
-			Texture = defensiveAuras[1].SpellIcon,
-			DurationObject = defensiveAuras[1].DurationObject,
-			Alpha = defensiveAuras[1].IsDefensive,
-			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
-			FontScale = db.FontScale,
-		})
-		return
-	end
-
-	-- Show the latest important buff (read from Blizzard's nameplate buff list; lowest priority)
-	local importantAura = GetFirstImportantBuff(unit)
-	if importantAura then
-		container:SetSlot(slotIndex, {
-			Texture = importantAura.icon,
-			DurationObject = C_UnitAuras.GetAuraDuration(unit, importantAura.auraInstanceID),
-			-- Hide a non-important buff via alpha: IsSpellImportant is a secret boolean SetAlphaFromBoolean
-			-- accepts directly. Catches the non-important garbage the purgeable filter can't (e.g. for
-			-- non-dispel specs).
-			Alpha = C_Spell.IsSpellImportant(importantAura.spellId),
-			ReverseCooldown = db.Modules.PortraitModule.ReverseCooldown,
-			FontScale = db.FontScale,
-		})
-		return
-	end
-
-	-- No auras to display, clear the slot if it was used
-	container:SetSlotUnused(slotIndex)
-end
-
----12.1 path: re-reads every aura on the containers tracking a unit, for when the token's occupant
----changes rather than its auras.
+---Re-reads every aura on the containers tracking a unit, for when the token's occupant changes
+---rather than its auras.
 ---@param unit string
 function M:RefreshUnitAuras(unit)
 	for _, container in pairs(containers) do
@@ -564,13 +447,9 @@ function M:EnsureFrames()
 end
 
 function M:ApplyOptions()
-	if not USE_AURA_CONTAINERS then
-		return
-	end
-
-	-- 12.1: re-apply the button style (the wrapper defers it if aura styling is currently
-	-- restricted and retries once it lifts) and hide the live displays in test mode so real and
-	-- fake icons don't mix.
+	-- Re-apply the button style (the wrapper defers it if aura styling is currently restricted and
+	-- retries once it lifts) and hide the live displays in test mode so real and fake icons don't
+	-- mix.
 	local style = BuildPortraitStyle()
 
 	for _, container in pairs(containers) do

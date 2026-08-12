@@ -234,6 +234,14 @@ function M:Init()
 			end,
 		},
 		{
+			Key = "CustomAuras",
+			Title = L["Custom Auras_Short"] or L["Custom Auras"],
+			Icon = NAV_ICON_BASE .. "CustomAuras.png",
+			Build = function(content)
+				M.CustomAuras:Build(content)
+			end,
+		},
+		{
 			Key = "RaidFrameAuras",
 			Title = L["Raid Frame Auras_Short"] or L["Raid Frame Auras"],
 			Icon = NAV_ICON_BASE .. "RaidFrameAuras.png",
@@ -291,6 +299,14 @@ function M:Init()
 				M.Healer:Build(content, db.Modules.HealerCCModule)
 			end,
 		},
+		{
+			Key = "Trinkets",
+			Title = L["Party Trinkets_Short"] or L["Party Trinkets"],
+			Icon = NAV_ICON_BASE .. "Trinkets.png",
+			Build = function(content)
+				M.Trinkets:Build(content)
+			end,
+		},
 		{ Heading = L["Kicks"] },
 		{
 			Key = "AllyKickTracker",
@@ -334,42 +350,6 @@ function M:Init()
 			end,
 		},
 	}
-
-	-- TEMPORARY: remove with the modules once 12.1 is live.
-	if addon.Utils.WoWEx:UseAuraContainers() then
-		-- Party trinkets read C_PvP rather than aura data, so the feature survives the lockdown
-		-- that took the cooldown trackers. It closes the Crowd Control group.
-		for i = 1, #tabs do
-			if tabs[i].Key == "Healer" then
-				table.insert(tabs, i + 1, {
-					Key = "Trinkets",
-					Title = L["Party Trinkets_Short"] or L["Party Trinkets"],
-					Icon = NAV_ICON_BASE .. "Trinkets.png",
-					Build = function(content)
-						M.Trinkets:Build(content)
-					end,
-				})
-				break
-			end
-		end
-
-		-- Custom auras are 12.1-only: the whole feature is aura filtering, which the older client
-		-- has no equivalent for. First in the General group, because it is the one users build
-		-- with. Inserted by key rather than index: the heading entries make positions unstable.
-		for i = 1, #tabs do
-			if tabs[i].Key == "RaidFrameAuras" then
-				table.insert(tabs, i, {
-					Key = "CustomAuras",
-					Title = L["Custom Auras_Short"] or L["Custom Auras"],
-					Icon = NAV_ICON_BASE .. "CustomAuras.png",
-					Build = function(content)
-						M.CustomAuras:Build(content)
-					end,
-				})
-				break
-			end
-		end
-	end
 
 	local contentPadding = 12
 	local windowInset = 2 + contentPadding * 2 + 14 -- border (2), padding (24), scrollbar (14)

@@ -11,7 +11,6 @@ L:RegisterLocale("itIT", {
 	["Important Spells"] = "Incantesimi importanti",
 	["Play a sound when an important spell is pressed."] = "Riproduci un suono quando viene lanciato un incantesimo importante.",
 	["Announce important spell names using text-to-speech when they are cast."] = "Annuncia i nomi degli incantesimi importanti usando la sintesi vocale quando vengono lanciati.",
-	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "A causa delle limitazioni dell'API di Blizzard, la sintesi vocale per gli incantesimi importanti non funziona per Maghi, Evocatori, Cacciatori di demoni, Cacciatori e Sacerdoti Ombra.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "Riproduce un suono quando un nemico usa un incantesimo importante o difensivo.",
 
 	-- Shared strings
@@ -156,10 +155,6 @@ L:RegisterLocale("itIT", {
 	["Important News"] = "Notizie importanti",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "Dalla patch 12.0.7 di Blizzard, le seguenti funzioni non sono più possibili:\n- Mostrare gli offensivi negli avvisi.\n- Mostrare gli offensivi sulle targhette.\n- Mostrare gli offensivi sui ritratti.\n- Mostrare gli offensivi sui riquadri gruppo/incursione.\n- Tracciare i tempi di recupero offensivi.\n- Mostrare Precognizione e Sudario annullante.\n- Avviso sonoro per gli incantesimi importanti.\n- Sintesi vocale degli incantesimi importanti.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "Buone notizie dopo le restrizioni della 12.0.7:\n- Il modulo Precognizione/Sudario annullante è tornato.\n- Il modulo avvisi ora può mostrare 1 icona importante/offensiva per avversario nell'arena.\n\nQueste funzioni non funzioneranno bene come prima, ma è meglio di niente.",
-	["CC Native Order"] = "Ordine CC nativo",
-	["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Invece di mostrare l'ultimo CC applicato (comportamento MiniAuras), usa la priorità CC predefinita di Blizzard che di solito mostra il primo CC applicato (con alcune eccezioni).",
-	["The others seem to use a non-trivial amount of CPU."] = "Gli altri sembrano usare una quantità considerevole di CPU.",
-	["The Proc Glow uses the least CPU."] = "Il bagliore proc usa meno CPU.",
 	["The Slot Glow is static and uses the least CPU."] = "Il bagliore slot è statico e usa meno CPU.",
 
 	-- Alerts tab
@@ -186,14 +181,9 @@ L:RegisterLocale("itIT", {
 	["When removed"] = "Quando viene rimossa",
 	["Sound Alerts"] = "Avvisi sonori",
 	["TTS"] = "TTS",
-	["TTS Speech Rate"] = "Velocità di sintesi vocale",
-	["TTS Volume"] = "Volume TTS",
-	["Voice"] = "Voce",
 
 	-- CC tab
 	["CC"] = "Controllo",
-	["Color by class"] = "Colora per classe",
-	["Color the glow/border by the enemy's class color."] = "Colora il bagliore/bordo con il colore della classe nemica.",
 	["Change the colour of the glow on important enemy spells."] = "Cambia il colore del bagliore degli incantesimi nemici importanti.",
 	["Change the colour of the glow on defensive spells."] = "Cambia il colore del bagliore degli incantesimi difensivi.",
 	["Dispel colours"] = "Colori per tipo",

@@ -1,7 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
-local wowEx = addon.Utils.WoWEx
 local eventGate = addon.Core.EventGate
 local profileManager = addon.Core.ProfileManager
 local frames = addon.Core.Frames
@@ -9,9 +8,6 @@ local groups = addon.Modules.CustomAuras.Groups
 local display = addon.Modules.CustomAuras.Display
 
 -- User-authored aura groups: pick a unit, list some spell ids, get icons when they land.
-
--- 12.1 only, with no legacy branch: spell-id filtering is the whole feature and 12.1 added it.
-local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
 -- Assist state decides both which side of a container may show icons and whether a unit is on
 -- the side the group asked for, so every token swap re-budgets. UNIT_FACTION covers a duel or a
@@ -52,9 +48,6 @@ end
 ---No module-wide switch: a group carries its own, and no groups means no feature.
 ---@return boolean
 local function IsEnabled()
-	if not USE_AURA_CONTAINERS then
-		return false
-	end
 
 	local options = GetOptions()
 
@@ -137,17 +130,11 @@ local function SetTestMode(active)
 end
 
 function M:StartTesting()
-	if not USE_AURA_CONTAINERS then
-		return
-	end
 
 	SetTestMode(true)
 end
 
 function M:StopTesting()
-	if not USE_AURA_CONTAINERS then
-		return
-	end
 
 	SetTestMode(false)
 end
@@ -199,9 +186,6 @@ function M:NormaliseGroups()
 end
 
 function M:Init()
-	if not USE_AURA_CONTAINERS then
-		return
-	end
 
 	db = mini:GetSavedVars()
 

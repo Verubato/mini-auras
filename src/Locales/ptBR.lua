@@ -11,7 +11,6 @@ L:RegisterLocale("ptBR", {
 	["Important Spells"] = "Feitiços importantes",
 	["Play a sound when an important spell is pressed."] = "Reproduzir um som quando um feitiço importante for lançado.",
 	["Announce important spell names using text-to-speech when they are cast."] = "Anunciar nomes de feitiços importantes usando texto para fala quando forem lançados.",
-	["Due to Blizzard API limitations, important spell TTS does not work for Mages, Evokers, Demon Hunters, Hunters, and Shadow Priests."] = "Devido a limitações da API da Blizzard, o texto para fala de feitiços importantes não funciona para Magos, Evocadores, Caçadores de Demônios, Caçadores e Sacerdotes Sombrios.",
 	["Plays a sound when an enemy presses an important or defensive spell."] = "Reproduz um som quando um inimigo usa um feitiço importante ou defensivo.",
 
 	-- Shared strings
@@ -156,10 +155,6 @@ L:RegisterLocale("ptBR", {
 	["Important News"] = "Notícias importantes",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "A partir do patch 12.0.7 da Blizzard, os seguintes recursos não são mais possíveis:\n- Exibir ofensivos nos alertas.\n- Exibir ofensivos nas placas de nome.\n- Exibir ofensivos nos retratos.\n- Exibir ofensivos nos quadros de grupo/raide.\n- Rastrear recargas ofensivas.\n- Mostrar Precognição e Manto Anulador.\n- Alerta sonoro para magias importantes.\n- Conversão de texto em voz de magias importantes.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "Algumas boas notícias após as restrições da 12.0.7:\n- O módulo de Precognição/Manto Anulador está de volta.\n- O módulo de alertas agora pode exibir 1 ícone importante/ofensivo por oponente na arena.\n\nEsses recursos não funcionarão tão bem quanto antes, mas é melhor que nada.",
-	["CC Native Order"] = "Ordem CC nativa",
-	["Instead of showing the latest CC applied (MiniAuras behaviour), use Blizzard's default CC priority which usually shows the first CC applied (with some exceptions)."] = "Em vez de mostrar o último CC aplicado (comportamento MiniAuras), usa a prioridade CC padrão da Blizzard que geralmente mostra o primeiro CC aplicado (com algumas exceções).",
-	["The others seem to use a non-trivial amount of CPU."] = "Os outros parecem usar uma quantidade considerável de CPU.",
-	["The Proc Glow uses the least CPU."] = "O brilho proc usa menos CPU.",
 	["The Slot Glow is static and uses the least CPU."] = "O brilho de slot é estático e usa menos CPU.",
 
 	-- Alerts tab
@@ -186,14 +181,9 @@ L:RegisterLocale("ptBR", {
 	["When removed"] = "Ao ser removida",
 	["Sound Alerts"] = "Alertas sonoros",
 	["TTS"] = "TTS",
-	["TTS Speech Rate"] = "Taxa de fala TTS",
-	["TTS Volume"] = "Volume TTS",
-	["Voice"] = "Voz",
 
 	-- CC tab
 	["CC"] = "Controle",
-	["Color by class"] = "Cor por classe",
-	["Color the glow/border by the enemy's class color."] = "Colore o brilho/borda com a cor da classe do inimigo.",
 	["Change the colour of the glow on important enemy spells."] = "Altera a cor do brilho das magias inimigas importantes.",
 	["Change the colour of the glow on defensive spells."] = "Altera a cor do brilho das magias defensivas.",
 	["Dispel colours"] = "Cores de dissipar",

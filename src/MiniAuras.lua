@@ -8,10 +8,8 @@ local config = addon.Config
 local migrator = addon.Config.Migrator
 local testModeManager = addon.Core.TestModeManager
 local legacyAddon = addon.Core.LegacyAddon
--- Every module Inits and Refreshes on every client; none of them are conditionally listed here.
--- Client support is each module's own decision, made once at file load from
--- WoWEx:UseAuraContainers() and enforced by early-returning from Init/Refresh/StartTesting. So a
--- module in this list may legitimately do nothing at all: TrinketsModule is 12.1-only.
+-- Every module Inits and Refreshes unconditionally; whether it draws anything is its own
+-- decision, taken from its saved settings.
 local modules = {
 	addon.Modules.CrowdControlModule,
 	addon.Modules.HealerCrowdControlModule,
@@ -209,7 +207,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@class Core
 ---@field Framework MiniFramework
 ---@field Frames Frames
----@field UnitAuraWatcher UnitAuraWatcher
 ---@field Inspector Inspector
 ---@field IconSlotContainer IconSlotContainer
 ---@field AuraContainerDisplay AuraContainerDisplay
@@ -243,7 +240,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 
 ---@class Alerts
 ---@field Sound AlertsSound
----@field Observer AlertsObserver
 ---@field Display AlertsDisplay
 ---@field Module AlertsModule
 
@@ -262,7 +258,6 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Module TrinketsModule
 
 ---@class Nameplates
----@field Observer NameplatesObserver
 ---@field Display NameplatesDisplay
 ---@field Module NameplatesModule
 

@@ -1,7 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
-local wowEx = addon.Utils.WoWEx
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
 local eventGate = addon.Core.EventGate
@@ -14,9 +13,6 @@ local display = addon.Modules.HealerCrowdControl.Display
 local M = {}
 addon.Modules.HealerCrowdControl.Module = M
 addon.Modules.HealerCrowdControlModule = M
-
--- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
-local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
 ---@type Db
 local db
@@ -48,7 +44,7 @@ local function SetEventsActive(active)
 	end
 end
 
----Live icons are driven by the watchers/containers; only the fake ones rebuild here.
+---Live icons are driven by the aura containers; only the fake ones rebuild here.
 ---@param options HealerCCModuleOptions
 local function UpdateContent(options)
 	if not testModeActive then
@@ -59,13 +55,8 @@ local function UpdateContent(options)
 	display:RefreshTestFrame()
 
 	if previousTestSoundEnabled ~= options.Sound.Enabled and options.Sound.Enabled then
-		if USE_AURA_CONTAINERS then
-			-- The transition-based sound is disabled on 12.1 (engine-side AddAuraSound covers
-			-- live auras), but the config preview still needs to demo the file.
-			sound:PlayPreview(options)
-		else
-			sound:Play()
-		end
+		-- The live sound is engine-side (AddAuraSound), so the preview plays the file directly.
+		sound:PlayPreview(options)
 	end
 
 	previousTestSoundEnabled = options.Sound.Enabled
@@ -76,12 +67,8 @@ local function SetTestMode(active)
 	testModeActive = active
 	display:SetTestMode(active)
 
-	if active then
-		display:SetPaused(true)
-	else
+	if not active then
 		display:ResetIcons()
-		display:SetPaused(false)
-		display:OnAuraStateUpdated()
 	end
 
 	M:Refresh()

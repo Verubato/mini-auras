@@ -17,7 +17,6 @@ local columnWidth
 local enabledColumnWidth
 local config = addon.Config
 local helpers = addon.Config.PanelHelpers
-local wowEx = addon.Utils.WoWEx
 local auraCategoryIds = addon.Core.AuraCategoryIds
 -- Sidebar sections. Derived from AuraCategoryIds and the user's own additions and nothing else,
 -- so this list stands on its own rather than leaning on another module's data for its structure.
@@ -106,27 +105,23 @@ local function BuildInstance(panel, options)
 	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 3, 0)
 	reverseChk:SetPoint("TOP", excludePlayerChk, "TOP", 0, 0)
 
-	-- The important-buff category only exists on the 12.1 aura container path; when present it
-	-- leads the second row and shifts the other category toggles right one column.
-	local catOffset = 0
-	local showImportantChk
-	if wowEx:UseAuraContainers() then
-		catOffset = 1
-		showImportantChk = mini:Checkbox({
-			Parent = parent,
-			LabelText = L["Show important"],
-			Tooltip = L["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."],
-			GetValue = function()
-				return options.ShowImportant
-			end,
-			SetValue = function(value)
-				options.ShowImportant = value
-				config:Apply()
-			end,
-		})
+	-- The important-buff toggle leads the second row, shifting the other category toggles right
+	-- one column.
+	local catOffset = 1
+	local showImportantChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Show important"],
+		Tooltip = L["Show the buffs Blizzard flags as important (e.g. offensive cooldowns)."],
+		GetValue = function()
+			return options.ShowImportant
+		end,
+		SetValue = function(value)
+			options.ShowImportant = value
+			config:Apply()
+		end,
+	})
 
-		showImportantChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
-	end
+	showImportantChk:SetPoint("TOPLEFT", excludePlayerChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
 	local showDefensivesChk = mini:Checkbox({
 		Parent = parent,
@@ -211,7 +206,7 @@ local function BuildInstance(panel, options)
 		Width = DROPDOWN_WIDTH,
 	})
 
-	growDdl.Label:SetPoint("TOPLEFT", showImportantChk or showDefensivesChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
+	growDdl.Label:SetPoint("TOPLEFT", showImportantChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
 
 	size.Pixel.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
@@ -617,9 +612,7 @@ function M:Build(panel, default, raid)
 		{ Key = "raid",    Title = L["Raids/Battlegrounds"] },
 	}
 
-	if wowEx:UseAuraContainers() then
-		spellTabs[#spellTabs + 1] = { Key = "spells", Title = L["Spells"] }
-	end
+	spellTabs[#spellTabs + 1] = { Key = "spells", Title = L["Spells"] }
 
 	local tabCtrl = mini:CreateTabs({
 		Parent = tabContainer,

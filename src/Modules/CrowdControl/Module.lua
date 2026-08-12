@@ -5,7 +5,6 @@ local frames = addon.Core.Frames
 local eventGate = addon.Core.EventGate
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
-local wowEx = addon.Utils.WoWEx
 
 -- Loaded before this file in TOC order.
 local display = addon.Modules.CrowdControl.Display
@@ -14,9 +13,6 @@ local display = addon.Modules.CrowdControl.Display
 local M = {}
 addon.Modules.CrowdControl.Module = M
 addon.Modules.CrowdControlModule = M
-
--- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
-local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
 ---@type EventGate?
 local rosterGate
@@ -60,7 +56,7 @@ local function SetEventsActive(active)
 	rosterGate:SetActive(active)
 end
 
--- Live auras are pushed in by the watchers/containers, so only the fake ones rebuild here.
+-- Live auras are pushed in by the aura containers, so only the fake ones rebuild here.
 local function UpdateContent()
 	if testModeActive then
 		display:RefreshTestIcons()
@@ -81,8 +77,8 @@ local function SetTestMode(active)
 
 	M:Refresh()
 
-	-- 12.1: repopulate the kick icons the test-mode reset wiped.
-	if not active and USE_AURA_CONTAINERS then
+	-- Repopulate the kick icons the test-mode reset wiped.
+	if not active then
 		display:RefreshKickIcons()
 	end
 end

@@ -1,6 +1,5 @@
 ---@type string, Addon
 local _, addon = ...
-local wowEx = addon.Utils.WoWEx
 
 -- Loaded before this file in TOC order.
 local observer = addon.Modules.Portrait.Observer
@@ -10,29 +9,14 @@ local display  = addon.Modules.Portrait.Display
 local M = {}
 addon.Modules.Portrait.Anchors = M
 
--- TEMPORARY dual path: the legacy branch needs a watcher per portrait; on 12.1 the containers
--- track their own auras and a portrait can be attached without one.
-local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
-
----Registers the per-unit re-render hooks shared by every attach variant: the watcher callback
----(legacy) and the target/focus update list used by kick and important-buff refreshes.
+---Registers the target/focus update list, so a kick redraws the portrait when its occupant
+---changes. The aura icons underneath track their own unit.
 ---@param unit string
----@param watcher Watcher?
 ---@param container IconSlotContainer
-local function RegisterUnitUpdate(unit, watcher, container)
-	if watcher then
-		watcher:RegisterCallback(function()
-			display:OnAuraInfo(unit, watcher, container)
-		end)
-	end
-
+local function RegisterUnitUpdate(unit, container)
 	if unit == "target" or unit == "focus" then
 		observer:RegisterUnitUpdate(unit, function()
-			if watcher then
-				display:OnAuraInfo(unit, watcher, container)
-			else
-				display:UpdateKickIcon(unit, container)
-			end
+			display:UpdateKickIcon(unit, container)
 		end)
 	end
 end
@@ -232,17 +216,11 @@ local function GetElvUIFrame(unit)
 end
 
 ---@param unit string
----@param events string[]?
-local function AttachBlizzardFrame(unit, events)
+local function AttachBlizzardFrame(unit)
 	local unitFrame, portrait = GetBlizzardFrame(unit)
 
 	if not unitFrame or not portrait then
 		return
-	end
-
-	local watcher
-	if not USE_AURA_CONTAINERS then
-		watcher = observer:CreateWatcher(unit, events)
 	end
 
 	local mask = display:GetPortraitMask(unitFrame) or display:CreatePortraitMask(portrait)
@@ -268,7 +246,7 @@ local function AttachBlizzardFrame(unit, events)
 		end
 	end
 
-	RegisterUnitUpdate(unit, watcher, container)
+	RegisterUnitUpdate(unit, container)
 
 	-- Only matters while the portrait still shares a frame with the border art; on its own layer
 	-- it has no siblings to sort against.
@@ -284,12 +262,6 @@ local function AttachElvUIFrame(unit)
 	local elvuiFrame, elvuiPortrait = GetElvUIFrame(unit)
 
 	if not elvuiFrame or not elvuiPortrait then
-		return
-	end
-
-	local watcher = observer:GetWatcher(unit)
-
-	if not USE_AURA_CONTAINERS and not watcher then
 		return
 	end
 
@@ -316,7 +288,7 @@ local function AttachElvUIFrame(unit)
 		end
 	end
 
-	RegisterUnitUpdate(unit, watcher, container)
+	RegisterUnitUpdate(unit, container)
 	display:AddContainer(container)
 end
 
@@ -328,12 +300,6 @@ local function AttachTPerlFrame(unit)
 		return
 	end
 
-	local watcher = observer:GetWatcher(unit)
-
-	if not USE_AURA_CONTAINERS and not watcher then
-		return
-	end
-
 	local container = display:CreateContainer(tperlFrame, tperlPortrait, unit)
 	if not container then return end
 	local portraitLevel = tperlPortrait.GetFrameLevel and tperlPortrait:GetFrameLevel()
@@ -341,7 +307,7 @@ local function AttachTPerlFrame(unit)
 		or 0
 	container.Frame:SetFrameLevel(portraitLevel)
 
-	RegisterUnitUpdate(unit, watcher, container)
+	RegisterUnitUpdate(unit, container)
 	display:AddContainer(container)
 end
 
@@ -350,12 +316,6 @@ local function AttachUUFFrame(unit)
 	local uufFrame, uufPortrait = GetUUFFrame(unit)
 
 	if not uufFrame or not uufPortrait then
-		return
-	end
-
-	local watcher = observer:GetWatcher(unit)
-
-	if not USE_AURA_CONTAINERS and not watcher then
 		return
 	end
 
@@ -372,7 +332,7 @@ local function AttachUUFFrame(unit)
 
 	StretchSlotsOverPortrait(container, uufPortrait, 0.07, 0.93)
 
-	RegisterUnitUpdate(unit, watcher, container)
+	RegisterUnitUpdate(unit, container)
 	display:AddContainer(container)
 end
 
@@ -381,12 +341,6 @@ local function AttachMSUFFrame(unit)
 	local msufFrame, msufPortrait = GetMSUFFrame(unit)
 
 	if not msufFrame or not msufPortrait then
-		return
-	end
-
-	local watcher = observer:GetWatcher(unit)
-
-	if not USE_AURA_CONTAINERS and not watcher then
 		return
 	end
 
@@ -399,7 +353,7 @@ local function AttachMSUFFrame(unit)
 
 	StretchSlotsOverPortrait(container, msufPortrait, 0.07, 0.93)
 
-	RegisterUnitUpdate(unit, watcher, container)
+	RegisterUnitUpdate(unit, container)
 	display:AddContainer(container)
 end
 
@@ -408,12 +362,6 @@ local function AttachEllesmereUIFrame(unit)
 	local euiFrame, euiPortrait = GetEllesmereUIFrame(unit)
 
 	if not euiFrame or not euiPortrait then
-		return
-	end
-
-	local watcher = observer:GetWatcher(unit)
-
-	if not USE_AURA_CONTAINERS and not watcher then
 		return
 	end
 
@@ -428,7 +376,7 @@ local function AttachEllesmereUIFrame(unit)
 	-- overlay so the CC icon visually fills the same area as the portrait beneath it.
 	StretchSlotsOverPortrait(container, euiPortrait, 0.15, 0.85)
 
-	RegisterUnitUpdate(unit, watcher, container)
+	RegisterUnitUpdate(unit, container)
 	display:AddContainer(container)
 end
 
@@ -437,12 +385,6 @@ local function AttachEQolFrame(unit)
 	local eqolFrame, eqolPortrait = GetEQolFrame(unit)
 
 	if not eqolFrame or not eqolPortrait then
-		return
-	end
-
-	local watcher = observer:GetWatcher(unit)
-
-	if not USE_AURA_CONTAINERS and not watcher then
 		return
 	end
 
@@ -455,7 +397,7 @@ local function AttachEQolFrame(unit)
 
 	StretchSlotsOverPortrait(container, eqolPortrait, 0.07, 0.93)
 
-	RegisterUnitUpdate(unit, watcher, container)
+	RegisterUnitUpdate(unit, container)
 	display:AddContainer(container)
 end
 
@@ -472,8 +414,8 @@ local THIRD_PARTY_ATTACH = { -- luaconv: references the attach functions above
 
 function M:AttachBlizzardFrames()
 	AttachBlizzardFrame("player")
-	AttachBlizzardFrame("target", { "PLAYER_TARGET_CHANGED" })
-	AttachBlizzardFrame("focus", { "PLAYER_FOCUS_CHANGED" })
+	AttachBlizzardFrame("target")
+	AttachBlizzardFrame("focus")
 	AttachBlizzardFrame("pet")
 end
 

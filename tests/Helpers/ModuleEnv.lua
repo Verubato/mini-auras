@@ -284,7 +284,6 @@ function M.build()
 	addon.Framework.NotifyWithPrefix = addon.Framework.Notify
 
 	loadFile("src/Utils/WoWEx.lua")
-	assert(addon.Utils.WoWEx:UseAuraContainers(), "env must be in 12.1 mode")
 	loadFile("src/Utils/ModuleUtil.lua")
 	addon.Utils.ModuleUtil:Init()
 	loadFile("src/Utils/SlotDistribution.lua")
@@ -303,11 +302,6 @@ function M.build()
 		UpdateCooldownFontSize = function() end,
 		UpdateStackFontSize = function() end,
 		UpdateFontSize = function() end,
-	}
-	addon.Utils.Auras = {
-		IsPurgeableNonDefensive = function()
-			return false
-		end,
 	}
 	addon.Utils.Units = {
 		FriendlyUnits = function()
@@ -466,13 +460,6 @@ function M.build()
 		end
 		return list
 	end
-	-- Tripwire: the 12.1 path must never construct legacy watchers.
-	addon.Core.UnitAuraWatcher = {
-		New = function()
-			error("legacy UnitAuraWatcher created on the 12.1 path")
-		end,
-	}
-
 	-- Arena opponent specs, keyed by the arena unit token. The kick tracker reads them to work
 	-- out the shortest interrupt cooldown it could be looking at.
 	env.arenaSpecs = {}

@@ -7,10 +7,6 @@ local iconUtil = addon.Utils.IconUtil
 local wowEx = addon.Utils.WoWEx
 local glowStyles = addon.Core.GlowStyles
 
--- Hoisted out of UpdateGlow: that runs per slot on every icon update, and the value never
--- changes for the life of the session.
-local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
-
 -- The icon crop (Utils/IconUtil) leaves the artwork reaching the icon's edge, so our own border
 -- sits flush and the swipe covers exactly the visible square. A Masque skin overrides it with its
 -- own crop, which is what we want - the skin owns the icon's shape.
@@ -436,11 +432,10 @@ local function ResolveGlowType()
 	local db = GetDb()
 	local glowType = (db and db.GlowType) or "Slot Glow"
 
-	-- 12.1: aura icons render through AuraContainerDisplay, which can only use the texture-based
-	-- glows (LibCustomGlow can't attach to AuraButtons). Kick and test icons still render here,
-	-- so clamp to the same set to keep all glows visually consistent; the config offers only
-	-- these on 12.1. TEMPORARY: remove with the legacy path once 12.1 is live.
-	if USE_AURA_CONTAINERS and not STATIC_GLOW_FIELDS[glowType] then
+	-- Aura icons render through AuraContainerDisplay, which can only use the texture-based glows
+	-- (LibCustomGlow cannot attach to AuraButtons). Kick and test icons still render here, so
+	-- clamp them to the same set and every glow stays visually consistent.
+	if not STATIC_GLOW_FIELDS[glowType] then
 		return "Slot Glow"
 	end
 

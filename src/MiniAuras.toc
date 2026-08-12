@@ -1,4 +1,4 @@
-﻿## Interface: 120100, 120007
+﻿## Interface: 120100
 ## Title: MiniAuras
 ## Notes: Shows CC and important spells on frames/nameplates/alerts in PvP.
 ## Author: Verz
@@ -12,7 +12,6 @@ Libs\LibStub\LibStub.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
 Libs\LibSharedMedia-3.0\LibSharedMedia-3.0.lua
 Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.xml
-Libs\LibRangeCheck-3.0\LibRangeCheck-3.0.lua
 Libs\LibSpecialization\LibSpecialization.lua
 Libs\MiniFramework\MiniFramework.xml
 
@@ -32,7 +31,6 @@ Locales\zhCN.lua
 Locales\zhTW.lua
 
 Utils\Units.lua
-Utils\Auras.lua
 Utils\FontUtil.lua
 Utils\IconUtil.lua
 Utils\ModuleUtil.lua
@@ -58,7 +56,6 @@ Core\Auras\AuraFilters.lua
 Core\Auras\SpellNameIndex.lua
 Core\Auras\SpellSearch.lua
 Core\Auras\AuraContainerDisplay.lua
-Core\Auras\UnitAuraWatcher.lua
 
 Core\Kicks\KickSlot.lua
 Core\Kicks\KickData.lua
@@ -105,10 +102,8 @@ Modules\Portrait\Display.lua
 Modules\Portrait\Anchors.lua
 Modules\Portrait\Module.lua
 Modules\Alerts\Sound.lua
-Modules\Alerts\Observer.lua
 Modules\Alerts\Display.lua
 Modules\Alerts\Module.lua
-Modules\Nameplates\Observer.lua
 Modules\Nameplates\Display.lua
 Modules\Nameplates\Module.lua
 Modules\EnemyKickTracker\Observer.lua

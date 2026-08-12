@@ -16,8 +16,7 @@ addon.Modules.CustomAuras = addon.Modules.CustomAuras or {}
 
 -- Variants times triggers times visible plates reaches the thousands on a careless configuration.
 local MAX_REGISTRATIONS = 400
--- Group sound keys to the engine trigger each registers against. Read through a fallback because
--- this file is loaded on 12.0.7 too, where the module never starts.
+-- Group sound keys to the engine trigger each registers against.
 local TRIGGER_ENUM = Enum.UnitAuraSoundTrigger or {}
 local TRIGGERS = {
 	Applied = TRIGGER_ENUM.Added,

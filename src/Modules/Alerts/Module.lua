@@ -1,17 +1,14 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
-local wowEx = addon.Utils.WoWEx
 local eventGate = addon.Core.EventGate
 local duelPoller = addon.Core.DuelPoller
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
-local units = addon.Utils.Units
 
 -- Loaded before this file in TOC order.
-local sound    = addon.Modules.Alerts.Sound
-local observer = addon.Modules.Alerts.Observer
-local display  = addon.Modules.Alerts.Display
+local sound   = addon.Modules.Alerts.Sound
+local display = addon.Modules.Alerts.Display
 
 ---@class AlertsModule : IModule
 local M = {}
@@ -21,14 +18,9 @@ addon.Modules.AlertsModule = M
 -- Read by the tests, which derive the expected registration count from it.
 M.SilentAlertSpellIds = sound.SilentAlertSpellIds
 
--- TEMPORARY dual path: remove the watcher branch once 12.1 is live everywhere.
-local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
-
 ---@type Db
 local db
 local testModeActive = false
-local paused = false
-local pendingAuraUpdate = false
 ---@type EventGate?
 local plateGate
 -- Duel detection: no event fires when a friendly unit turns attackable at duel start (or back
@@ -36,28 +28,12 @@ local plateGate
 -- Baselines are seeded on plate add and cleared on plate remove.
 ---@type DuelPollerSubscriber
 local duelSub
--- Reused enemy-token set for RebuildNameplateWatchers.
+-- Reused enemy-token set for RebuildNameplateDisplays.
 local activeTokensScratch = {}
 
-local function OnAuraDataChanged()
-	display:Render(observer:GetWatchers())
-end
-
-local function ScheduleAuraDataUpdate()
-	if pendingAuraUpdate then
-		return
-	end
-	pendingAuraUpdate = true
-	C_Timer.After(0, function()
-		pendingAuraUpdate = false
-		OnAuraDataChanged()
-	end)
-end
-
+-- Only the sound registrations care: the bars themselves stop drawing on the test-mode flag.
 ---@param value boolean
 local function SetPaused(value)
-	paused = value
-	display:SetPaused(value)
 	sound:SetPaused(value)
 end
 
@@ -67,18 +43,15 @@ local function OnMatchStateChanged()
 
 	display:SetInPrepRoom(inPrepRoom)
 
-	if USE_AURA_CONTAINERS then
-		-- Prep-room garbage handling: RefreshNameplateDisplays hides the displays while
-		-- inPrepRoom is set and re-shows them when the match starts.
-		display:RefreshNameplateDisplays()
-	end
+	-- Prep-room garbage handling: RefreshNameplateDisplays hides the displays while
+	-- inPrepRoom is set and re-shows them when the match starts.
+	display:RefreshNameplateDisplays()
 
 	if not inPrepRoom then
 		return
 	end
 
-	observer:ClearAllState()
-	display:ResetBars()
+	display:ClearBars()
 end
 
 local function OnNamePlateAdded(unitToken)
@@ -87,52 +60,30 @@ local function OnNamePlateAdded(unitToken)
 
 	-- Only track enemy nameplates
 	if not isEnemy then
-		if USE_AURA_CONTAINERS then
-			-- The token now belongs to a non-enemy (recycled plate or duel ending), so its warm
-			-- sound registrations are dropped along with the display.
-			sound:RemoveToken(unitToken)
-			display:ReleaseNameplateDisplay(unitToken)
-		end
+		-- The token now belongs to a non-enemy (recycled plate or duel ending), so its warm
+		-- sound registrations are dropped along with the display.
+		sound:RemoveToken(unitToken)
+		display:ReleaseNameplateDisplay(unitToken)
 		return
 	end
 
-	if USE_AURA_CONTAINERS then
-		-- Configure only the new entry (styling every pooled pair per plate spawn adds up in
-		-- busy fights); the chain re-anchor is cheap and covers the row shift.
-		display:ApplyOneAndChain(unitToken)
-		return
-	end
-
-	observer:Create(unitToken, ScheduleAuraDataUpdate)
-
-	-- Initial update
-	ScheduleAuraDataUpdate()
+	-- Configure only the new entry (styling every pooled pair per plate spawn adds up in
+	-- busy fights); the chain re-anchor is cheap and covers the row shift.
+	display:ApplyOneAndChain(unitToken)
 end
 
 local function OnNamePlateRemoved(unitToken)
 	duelSub:Clear(unitToken)
 
-	if USE_AURA_CONTAINERS then
-		display:ReleaseNameplateDisplay(unitToken)
-		display:ChainDisplays()
-		return
-	end
-
-	if observer:Dispose(unitToken) then
-		ScheduleAuraDataUpdate()
-	end
+	display:ReleaseNameplateDisplay(unitToken)
+	display:ChainDisplays()
 end
 
-local function ClearNamePlateWatchers()
-	if USE_AURA_CONTAINERS then
-		display:ReleaseAllNameplateDisplays()
-		return
-	end
-
-	observer:DisposeAll()
+local function ClearNamePlateDisplays()
+	display:ReleaseAllNameplateDisplays()
 end
 
-local function RebuildNameplateWatchers()
+local function RebuildNameplateDisplays()
 	-- Build a set of currently active enemy unit tokens
 	local activeTokens = activeTokensScratch
 	wipe(activeTokens)
@@ -147,19 +98,7 @@ local function RebuildNameplateWatchers()
 		end
 	end
 
-	if USE_AURA_CONTAINERS then
-		display:SyncActiveTokens(activeTokens)
-		return
-	end
-
-	observer:PruneTo(activeTokens)
-
-	-- Add watchers for tokens we don't already track
-	for unitToken in pairs(activeTokens) do
-		if not observer:Get(unitToken) then
-			OnNamePlateAdded(unitToken)
-		end
-	end
+	display:SyncActiveTokens(activeTokens)
 end
 
 ---@return AlertsModuleOptions?
@@ -177,7 +116,7 @@ local function IsEnabled()
 	return moduleUtil:IsModuleEnabled(moduleName.Alerts)
 end
 
----Arena, battlegrounds, and the open world all read enemy nameplate watchers; nowhere else does.
+---Arena, battlegrounds, and the open world all track enemy nameplates; nowhere else does.
 ---@param isEnabled boolean
 ---@return boolean
 local function AreNameplatesNeeded(isEnabled)
@@ -198,47 +137,27 @@ local function SetEventsActive(active)
 end
 
 local function Teardown()
-	observer:DisableAll()
-
-	if USE_AURA_CONTAINERS then
-		display:ReleaseAllNameplateDisplays()
-		sound:RemoveAllySounds()
-	end
-
-	display:ResetBars()
+	display:ReleaseAllNameplateDisplays()
+	sound:RemoveAllySounds()
+	display:ClearBars()
 end
 
 local function EnsureFrames()
 	if AreNameplatesNeeded(true) then
-		RebuildNameplateWatchers()
+		RebuildNameplateDisplays()
 	else
-		ClearNamePlateWatchers()
-	end
-
-	-- TEMPORARY: legacy-only re-render. On 12.1 the containers render themselves and the
-	-- scheduled Render call no-ops; dies with the 12.0 path.
-	if not USE_AURA_CONTAINERS then
-		ScheduleAuraDataUpdate()
+		ClearNamePlateDisplays()
 	end
 end
 
 ---@param options AlertsModuleOptions
 local function ApplyOptions(options)
-	-- TEMPORARY: TTS is legacy-only (it needs the spell name at the moment an aura appears,
-	-- which is secret on 12.1), so skip the voice/volume cache work there; dies with the 12.0
-	-- path.
-	if not USE_AURA_CONTAINERS then
-		sound:ApplyTTSOptions(options)
-	end
-
 	display:ApplyBarOptions(options)
 end
 
 local function UpdateContent()
-	if USE_AURA_CONTAINERS then
-		display:RefreshNameplateDisplays()
-		sound:Refresh(display:GetActiveTokens())
-	end
+	display:RefreshNameplateDisplays()
+	sound:Refresh(display:GetActiveTokens())
 
 	if testModeActive then
 		display:RefreshTestAlerts()
@@ -255,32 +174,9 @@ local function SetTestMode(active)
 	else
 		display:ClearBars()
 		SetPaused(false)
-		-- TEMPORARY: legacy-only repopulation from the watchers; the 12.1 containers refresh
-		-- themselves when unpaused. Dies with the 12.0 path.
-		if not USE_AURA_CONTAINERS then
-			ScheduleAuraDataUpdate()
-		end
 	end
 
 	M:Refresh()
-end
-
----Legacy path: the nameplate aura-refresh hook only matters while something important-related
----is switched on.
-local function OnNameplateAuraRefresh()
-	if paused then
-		return
-	end
-	if not moduleUtil:IsModuleEnabled(moduleName.Alerts) then
-		return
-	end
-	local options = db.Modules.AlertsModule
-	local importantNeeded = (options.Important and options.Important.Enabled)
-		or (options.Sound.Important and options.Sound.Important.Enabled)
-		or sound:IsImportantTTSEnabled()
-	if importantNeeded then
-		ScheduleAuraDataUpdate()
-	end
 end
 
 local function CreateEvents()
@@ -289,20 +185,14 @@ local function CreateEvents()
 	-- ZONE_CHANGED_NEW_AREA drive that gate so they stay always-registered.
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
 	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-	-- TEMPORARY: the player's spec only matters to the legacy TTS suppression cache, which is
-	-- dead on 12.1 along with TTS itself. Dies with the 12.0 path.
-	if not USE_AURA_CONTAINERS then
-		eventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-	else
-		-- The enemy-debuff announcements sit on the party tokens, so they follow the roster
-		-- rather than the nameplates. Always registered, like the two gate drivers above: the
-		-- handler only reconciles those registrations, which is far cheaper than a full Refresh
-		-- on every roster event in a battleground.
-		eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-	end
+	-- The enemy-debuff announcements sit on the party tokens, so they follow the roster
+	-- rather than the nameplates. Always registered, like the two gate drivers above: the
+	-- handler only reconciles those registrations, which is far cheaper than a full Refresh
+	-- on every roster event in a battleground.
+	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 	plateGate = eventGate:New(eventsFrame, { "NAME_PLATE_UNIT_ADDED", "NAME_PLATE_UNIT_REMOVED" }, {
 		-- Plate events maintain the duel baselines; drop them so reactivation reseeds
-		-- via RebuildNameplateWatchers instead of trusting stale tokens.
+		-- via RebuildNameplateDisplays instead of trusting stale tokens.
 		OnDeactivate = function()
 			duelSub:ClearAll()
 		end,
@@ -310,15 +200,7 @@ local function CreateEvents()
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
 		if event == "PVP_MATCH_STATE_CHANGED" then
 			OnMatchStateChanged()
-		elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
-			-- Important-TTS suppression depends on the player's spec (Shadow Priest), so refresh it.
-			sound:UpdateImportantTTSCache()
 		elseif event == "NAME_PLATE_UNIT_ADDED" then
-			-- Hook every enemy nameplate's aura refresh so the important bar can react to buff changes.
-			-- Legacy only: on 12.1 the containers track their unit themselves.
-			if not USE_AURA_CONTAINERS and units:IsEnemy(unitToken) then
-				observer:HookAuraFrame(unitToken, OnNameplateAuraRefresh)
-			end
 			if IsEnabled() and AreNameplatesNeeded(true) then
 				OnNamePlateAdded(unitToken)
 			end

@@ -128,8 +128,8 @@ local function BuildAddonCard(parent, def, cardWidth)
 	descLabel:SetText(L[def.Desc])
 	descLabel:SetTextColor(0.72, 0.72, 0.72, 1)
 
-	-- Most cards link to a CurseForge project named after the addon; third-party projects
-	-- (MiniCE) carry an explicit Url where the slug differs.
+	-- Cards link to a CurseForge project named after the addon; a card whose slug differs can
+	-- carry an explicit Url instead.
 	local url = def.Url or (CURSE_BASE .. def.Name:lower())
 
 	card:EnableMouse(true)
@@ -219,13 +219,6 @@ function M:Build(panel)
 	local styleAddons = {
 		{ Name = "Masque", Desc = "Powerful icon skinning tool." },
 	}
-
-	-- The countdown text on a 12.1 icon is written by the game, so there is nothing left for a
-	-- cooldown styler to reach.
-	if not addon.Utils.WoWEx:UseAuraContainers() then
-		table.insert(styleAddons, 1,
-			{ Name = "MiniCE", Desc = "Customize the cooldown timers.", Url = CURSE_BASE .. "minice-cooldown-styler" })
-	end
 
 	BuildGrid(panel, styleSubtitle, styleAddons, cardWidth)
 end
