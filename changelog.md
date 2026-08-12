@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.6.2
+
+- Sound channels now include music, ambience, and dialog, alongside master and sound effects.
+
 ## 5.6.1
 
 - Portrait icons now draw inside the portrait instead of over its border.
