@@ -5,6 +5,7 @@ local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local helpers = addon.Config.PanelHelpers
+local dbDefaults = addon.Config.Defaults
 ---@class MiscellaneousConfig
 local M = {}
 addon.Config.Miscellaneous = M
@@ -252,8 +253,8 @@ function M:Build(panel)
 		Min = 0.5,
 		Max = 1.5,
 		Step = 0.05,
-		Default = 1.0,
-		Fallback = 1.0,
+		Default = dbDefaults.FontScale,
+		Fallback = dbDefaults.FontScale,
 		Float = true,
 		Width = columnWidth - horizontalSpacing,
 		Target = db,
@@ -267,8 +268,8 @@ function M:Build(panel)
 		LabelText = L["Milliseconds Threshold"],
 		Min = 1,
 		Max = 6,
-		Default = 5,
-		Fallback = 5,
+		Default = dbDefaults.MillisecondsThreshold,
+		Fallback = dbDefaults.MillisecondsThreshold,
 		Width = columnWidth - horizontalSpacing,
 		Target = db,
 		Key = "MillisecondsThreshold",

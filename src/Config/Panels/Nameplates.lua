@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
+local dbDefaults = addon.Config.Defaults
 local DROPDOWN_WIDTH = 200
 local GROW_OPTIONS = {
 	"LEFT",
@@ -22,7 +23,9 @@ config.Nameplates = M
 
 ---@param parent table Tab content frame
 ---@param options NameplateSpellTypeOptions
-local function BuildSpellTypeSettings(parent, options)
+---@param defaults table The shipped values for this bar, which the sliders clamp back to when
+---the typed input is not a number.
+local function BuildSpellTypeSettings(parent, options, defaults)
 	local container = CreateFrame("Frame", nil, parent)
 
 	container:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
@@ -180,7 +183,7 @@ local function BuildSpellTypeSettings(parent, options)
 		LabelText = L["Icon Size"],
 		Min = 10,
 		Max = 60,
-		Default = 32,
+		Default = defaults.Icons.Size,
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "Size",
@@ -192,7 +195,7 @@ local function BuildSpellTypeSettings(parent, options)
 		LabelText = L["Max Icons"],
 		Min = 1,
 		Max = 8,
-		Default = 6,
+		Default = defaults.Icons.MaxIcons,
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "MaxIcons",
@@ -217,8 +220,8 @@ local function BuildSpellTypeSettings(parent, options)
 		LabelText = L["Icon Padding"],
 		Min = 0,
 		Max = 20,
-		Default = 2,
-		Fallback = 2,
+		Default = defaults.Icons.Spacing,
+		Fallback = defaults.Icons.Spacing,
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "Spacing",
@@ -350,9 +353,11 @@ function M:Build(parent, options)
 		},
 	})
 
+	local plateDefaults = dbDefaults.Modules.NameplatesModule
+
 	BuildSettingsTab(tabCtrl:GetContent("settings"), options)
-	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar1"),     options.Enemy.Bar1)
-	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar2"),     options.Enemy.Bar2)
-	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyBar1"),  options.Friendly.Bar1)
-	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyBar2"),  options.Friendly.Bar2)
+	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar1"),     options.Enemy.Bar1, plateDefaults.Enemy.Bar1)
+	BuildSpellTypeSettings(tabCtrl:GetContent("enemyBar2"),     options.Enemy.Bar2, plateDefaults.Enemy.Bar2)
+	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyBar1"),  options.Friendly.Bar1, plateDefaults.Friendly.Bar1)
+	BuildSpellTypeSettings(tabCtrl:GetContent("friendlyBar2"),  options.Friendly.Bar2, plateDefaults.Friendly.Bar2)
 end

@@ -7,6 +7,7 @@ local horizontalSpacing = mini.HorizontalSpacing
 local config = addon.Config
 local helpers = addon.Config.PanelHelpers
 local barTextures = addon.Core.BarTextures
+local dbDefaults = addon.Config.Defaults
 local GROW_OPTIONS = { "DOWN", "UP" }
 
 ---@class AllyKickTrackerConfig
@@ -123,8 +124,8 @@ function M:Build(panel, options)
 		LabelText = L["Bar Width"],
 		Min = 60,
 		Max = 400,
-		Default = 260,
-		Fallback = 260,
+		Default = dbDefaults.Modules.AllyKickTrackerModule.Bars.Width,
+		Fallback = dbDefaults.Modules.AllyKickTrackerModule.Bars.Width,
 		Width = sliderWidth,
 		Target = options.Bars,
 		Key = "Width",
@@ -136,8 +137,8 @@ function M:Build(panel, options)
 		LabelText = L["Bar Height"],
 		Min = 8,
 		Max = 60,
-		Default = 35,
-		Fallback = 35,
+		Default = dbDefaults.Modules.AllyKickTrackerModule.Bars.Height,
+		Fallback = dbDefaults.Modules.AllyKickTrackerModule.Bars.Height,
 		Width = sliderWidth,
 		Target = options.Bars,
 		Key = "Height",
@@ -150,8 +151,8 @@ function M:Build(panel, options)
 		LabelText = L["Bar Padding"],
 		Min = 0,
 		Max = 20,
-		Default = 2,
-		Fallback = 2,
+		Default = dbDefaults.Modules.AllyKickTrackerModule.BarSpacing,
+		Fallback = dbDefaults.Modules.AllyKickTrackerModule.BarSpacing,
 		Width = sliderWidth,
 		Target = options,
 		Key = "BarSpacing",
@@ -163,8 +164,8 @@ function M:Build(panel, options)
 		LabelText = L["Max Bars"],
 		Min = 1,
 		Max = 10,
-		Default = 5,
-		Fallback = 5,
+		Default = dbDefaults.Modules.AllyKickTrackerModule.MaxBars,
+		Fallback = dbDefaults.Modules.AllyKickTrackerModule.MaxBars,
 		Width = sliderWidth,
 		Target = options,
 		Key = "MaxBars",

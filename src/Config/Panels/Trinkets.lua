@@ -6,6 +6,7 @@ local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local config = addon.Config
 local helpers = addon.Config.PanelHelpers
+local dbDefaults = addon.Config.Defaults
 
 ---@class TrinketsConfig
 local M = {}
@@ -98,7 +99,7 @@ function M:Build(panel)
 		LabelText = L["Icon Size"],
 		Min = 10,
 		Max = 100,
-		Default = 40,
+		Default = dbDefaults.Modules.TrinketsModule.Icons.Size,
 		Width = columns * columnWidth - horizontalSpacing,
 		Target = db.Modules.TrinketsModule.Icons,
 		Key = "Size",

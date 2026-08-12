@@ -5,6 +5,7 @@ local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
 local config = addon.Config
 local helpers = addon.Config.PanelHelpers
+local dbDefaults = addon.Config.Defaults
 
 ---@class EnemyKickTrackerConfig
 local M = {}
@@ -129,7 +130,7 @@ function M:Build(panel)
 		LabelText = L["Icon Size"],
 		Min = 20,
 		Max = 120,
-		Default = 50,
+		Default = dbDefaults.Modules.EnemyKickTrackerModule.Icons.Size,
 		Width = sliderWidth,
 		Target = db.Modules.EnemyKickTrackerModule.Icons,
 		Key = "Size",
@@ -142,8 +143,8 @@ function M:Build(panel)
 		LabelText = L["Icon Padding"],
 		Min = 0,
 		Max = 20,
-		Default = 2,
-		Fallback = 2,
+		Default = dbDefaults.Modules.EnemyKickTrackerModule.IconSpacing,
+		Fallback = dbDefaults.Modules.EnemyKickTrackerModule.IconSpacing,
 		Width = sliderWidth,
 		Target = db.Modules.EnemyKickTrackerModule,
 		Key = "IconSpacing",

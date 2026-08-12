@@ -10,6 +10,7 @@ local enabledColumnWidth
 local config = addon.Config
 local helpers = addon.Config.PanelHelpers
 local sounds = addon.Core.Sounds
+local dbDefaults = addon.Config.Defaults
 
 ---@class HealerCrowdControlConfig
 local M = {}
@@ -197,7 +198,7 @@ function M:Build(panel, options)
 		LabelText = L["Icon Size"],
 		Min = 10,
 		Max = 100,
-		Default = 50,
+		Default = dbDefaults.Modules.HealerCCModule.Icons.Size,
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "Size",
@@ -232,8 +233,8 @@ function M:Build(panel, options)
 		LabelText = L["Icon Padding"],
 		Min = 0,
 		Max = 20,
-		Default = 2,
-		Fallback = 2,
+		Default = dbDefaults.Modules.HealerCCModule.IconSpacing,
+		Fallback = dbDefaults.Modules.HealerCCModule.IconSpacing,
 		Width = sliderWidth,
 		Target = options,
 		Key = "IconSpacing",

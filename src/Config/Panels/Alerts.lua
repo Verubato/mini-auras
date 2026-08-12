@@ -10,6 +10,7 @@ local enabledColumnWidth
 local config = addon.Config
 local helpers = addon.Config.PanelHelpers
 local sounds = addon.Core.Sounds
+local dbDefaults = addon.Config.Defaults
 local ttsPacks = addon.Core.TtsPacks
 -- CENTER growth needs a readable row width to center on the anchor, which the chained displays
 -- do not have, so only LEFT and RIGHT are offered.
@@ -193,7 +194,7 @@ local function BuildSettingsTab(parent, options)
 		LabelText = L["Icon Size"],
 		Min = 10,
 		Max = 100,
-		Default = 32,
+		Default = dbDefaults.Modules.AlertsModule.Icons.Size,
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "Size",
@@ -206,7 +207,7 @@ local function BuildSettingsTab(parent, options)
 		LabelText = L["Max Icons"],
 		Min = 1,
 		Max = 10,
-		Default = 8,
+		Default = dbDefaults.Modules.AlertsModule.Icons.MaxIcons,
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "MaxIcons",
@@ -219,8 +220,8 @@ local function BuildSettingsTab(parent, options)
 		LabelText = L["Icon Padding"],
 		Min = 0,
 		Max = 20,
-		Default = 2,
-		Fallback = 2,
+		Default = dbDefaults.Modules.AlertsModule.IconSpacing,
+		Fallback = dbDefaults.Modules.AlertsModule.IconSpacing,
 		Width = sliderWidth,
 		Target = options,
 		Key = "IconSpacing",

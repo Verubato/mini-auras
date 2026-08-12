@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
+local dbDefaults = addon.Config.Defaults
 local DROPDOWN_WIDTH = 200
 local GROW_OPTIONS = {
 	"LEFT",
@@ -113,8 +114,8 @@ local function BuildPetInstance(panel, options)
 	local size = helpers:BuildSizeControls({
 		Parent = parent,
 		Icons = options.Icons,
-		PixelDefault = 24,
-		PercentDefault = 50,
+		PixelDefault = dbDefaults.Modules.PetCCModule.Icons.Size,
+		PercentDefault = dbDefaults.Modules.PetCCModule.Icons.SizePercent,
 		Width = sliderWidth,
 	})
 
@@ -153,8 +154,8 @@ local function BuildPetInstance(panel, options)
 		LabelText = L["Max Icons"],
 		Min = 1,
 		Max = 5,
-		Default = 3,
-		Fallback = 3,
+		Default = dbDefaults.Modules.PetCCModule.Icons.Count,
+		Fallback = dbDefaults.Modules.PetCCModule.Icons.Count,
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "Count",
@@ -167,8 +168,8 @@ local function BuildPetInstance(panel, options)
 		LabelText = L["Icon Padding"],
 		Min = 0,
 		Max = 20,
-		Default = 2,
-		Fallback = 2,
+		Default = dbDefaults.Modules.PetCCModule.IconSpacing,
+		Fallback = dbDefaults.Modules.PetCCModule.IconSpacing,
 		Width = sliderWidth,
 		Target = options,
 		Key = "IconSpacing",
