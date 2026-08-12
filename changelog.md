@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.6.0
+
+- Personal auras can now hide the cooldown swipe and the countdown numbers, each on its own switch.
+- The starter "Precognition" aura group is now called "Precog".
+- Fixed the spell name switch doing nothing to a personal aura bar while it was being previewed.
+
 ## 5.5.0
 
 - Personal auras can now play a sound with nothing drawn, which is the only way to track debuffs on yourself or your group.
