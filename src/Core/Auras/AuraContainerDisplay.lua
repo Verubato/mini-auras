@@ -1617,6 +1617,15 @@ function M:SetMaxIcons(groupKey, maxIcons)
 	MarkBouncePending(self)
 end
 
+---A group's current icon budget, for callers that only want to act when it actually moves.
+---@param groupKey string
+---@return number? maxIcons Nil when this display has no such group.
+function M:GetMaxIcons(groupKey)
+	local group = self.GroupsByKey[groupKey]
+
+	return group and group.MaxIcons
+end
+
 ---Swaps a group's filter string. Supported at runtime by the engine, which re-parses on the
 ---next refresh, so a tracking change re-filters in place rather than rebuilding the display.
 ---@param groupKey string

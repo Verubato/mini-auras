@@ -192,3 +192,69 @@ fw.describe("12.1 unit frame modules - no legacy fallout", function()
 		assert(#env.notifications == 0, "unexpected warnings: " .. table.concat(env.notifications, "; "))
 	end)
 end)
+
+fw.describe("RaidFrameAurasModule 12.1 - a party member who turns hostile", function()
+	local acm = require("AuraContainerMock")
+
+	fw.it("drops the helpful budget when a duel starts", function()
+		-- The frame was re-pointed by the tests above; party5 is who it holds now.
+		env.enemies.party5 = nil
+		raidFrameAurasModule:Refresh()
+
+		local display = assert(fiDisplay("party5"), "no display for the anchor's unit")
+
+		assert(display._groups.helpful.maxFrameCount > 0, "buffs are tracked on a party member")
+
+		-- A duel fires no event of its own, so the poller is the only thing that notices. It only
+		-- scans tokens it holds a baseline for, which is what the module has to give it.
+		env.enemies.party5 = true
+		acm.tickAll(1)
+
+		-- Spell-id filters are dropped on a unit you cannot assist, so the bare HELPFUL token
+		-- would match every buff they have.
+		assert(display._groups.helpful.maxFrameCount == 0,
+			"the helpful group must be budgeted away while they are hostile")
+
+		env.enemies.party5 = nil
+		acm.tickAll(1)
+
+		assert(display._groups.helpful.maxFrameCount > 0, "and come back when the duel ends")
+	end)
+end)
+
+fw.describe("RaidFrameAurasModule 12.1 - a frame handed an enemy unit", function()
+	local raidDisplay = env.addon.Modules.RaidFrameAuras.Display
+
+	fw.it("drops the helpful budget when the frame is re-pointed at one", function()
+		-- What mind control does: Blizzard re-points the FRIENDLY frames onto enemy units. The
+		-- gate is per unit, so the answer moves without any option changing.
+		env.enemies.party6 = true
+		fiFrame.unit = "party6"
+		raidFrameAurasModule:Refresh()
+
+		local display = assert(fiDisplay("party6"), "the container followed the frame")
+
+		assert(display._groups.helpful.maxFrameCount == 0,
+			"a unit you cannot assist gets no helpful group")
+	end)
+
+	fw.it("gives it back when the same unit becomes friendly again", function()
+		local display = assert(fiDisplay("party6"))
+
+		env.enemies.party6 = nil
+
+		assert(raidDisplay:OnUnitFactionChanged("party6"),
+			"the gate's answer moved, so the module has work to do")
+		assert(display._groups.helpful.maxFrameCount > 0, "and the buffs are tracked again")
+	end)
+
+	fw.it("says nothing changed for a faction event that moved nothing", function()
+		-- PvP flagging fires this constantly in the open world; an unchanged answer must not
+		-- drag the whole module through a refresh.
+		assert(not raidDisplay:OnUnitFactionChanged("party6"), "no work for an unchanged gate")
+	end)
+
+	fw.it("ignores a faction event for a unit nobody is watching", function()
+		assert(not raidDisplay:OnUnitFactionChanged("party40"), "not a unit on any frame")
+	end)
+end)

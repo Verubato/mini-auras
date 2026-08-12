@@ -23,16 +23,42 @@ local rosterGate
 ---@type table?
 local eventsFrame
 local testModeActive = false
+---@type DuelPollerSubscriber?
+local duelSub
+-- Scratch for the watched units handed to the duel poller each refresh.
+local duelUnitsScratch = {}
+
+---Hands the poller the units on screen right now. Re-seeded per refresh rather than tracked
+---per frame: the frames retarget constantly (sorting, roster changes), and a baseline for a unit
+---nobody is watching would fire a refresh for nothing.
+local function SeedDuelBaselines()
+	if not duelSub then
+		return
+	end
+
+	duelSub:ClearAll()
+
+	for _, unit in ipairs(display:CollectWatchedUnits(duelUnitsScratch)) do
+		duelSub:Seed(unit)
+	end
+end
 
 local function OnFrameSortSorted()
 	M:Refresh()
 end
 
-local function OnEvent(_, event)
+local function OnEvent(_, event, unit)
 	if event == "GROUP_ROSTER_UPDATE" then
 		C_Timer.After(0, function()
 			M:Refresh()
 		end)
+	elseif event == "UNIT_FACTION" then
+		-- Mind control hands a friendly frame an enemy unit, which decides whether the engine
+		-- honours the spell-id filter at all. Filtered hard: this also fires on every PvP flag
+		-- change in the open world, and the answer has usually not moved.
+		if unit and display:OnUnitFactionChanged(unit) then
+			M:Refresh()
+		end
 	end
 end
 
@@ -79,12 +105,12 @@ local function CreateEvents()
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
 	-- Registered by the Refresh gate while the module is enabled.
-	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE" })
+	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE", "UNIT_FACTION" })
 
 	-- A duel flips a party member to hostile with no event of its own, and that decides whether
 	-- the spell-id filter applies at all, so the budgets have to be recomputed when it happens.
 	-- Registered for the module's lifetime; the predicate below gates it.
-	duelPoller:Register(function()
+	duelSub = duelPoller:Register(function()
 		return moduleUtil:IsModuleEnabled(moduleName.RaidFrameAuras)
 	end, function()
 		M:Refresh()
@@ -141,6 +167,7 @@ function M:Refresh()
 	display:EnsureFrames()
 	display:ApplyOptions(options)
 	UpdateContent()
+	SeedDuelBaselines()
 end
 
 function M:Init()

@@ -299,6 +299,26 @@ end
 ---@type fun(entry: RaidFrameAurasWatchEntry)
 local RenderEntry = USE_AURA_CONTAINERS and UpdateKickIcon or UpdateWatcherAuras -- luaconv: aliases the two renderers above
 
+---Budgets the helpful group for the entry's CURRENT unit. Spell-id filters are gated on
+---UnitCanAssist, so a unit that stops being assistable drops includeSpellIDs and the bare HELPFUL
+---token then matches every buff they have. Nothing can narrow it back, so the group goes to zero
+---until they are assistable again. Two ways in: a duel flips the unit under the frame, and a mind
+---control has Blizzard hand a FRIENDLY frame an enemy unit outright.
+---@param entry RaidFrameAurasWatchEntry
+---@param options RaidFrameAurasInstanceOptions
+---@return number budget
+local function ApplyHelpfulBudget(entry, options)
+	local maxIcons = tonumber(options.Icons.MaxIcons) or 1
+	local budget = (options.ShowDefensives or options.ShowImportant)
+		and units:CanAssist(entry.Unit) and maxIcons or 0
+
+	if entry.Display then
+		entry.Display:SetMaxIcons(HELPFUL_GROUP_KEY, budget)
+	end
+
+	return budget
+end
+
 ---@param anchor table
 ---@param unit string?
 local function EnsureWatcher(anchor, unit)
@@ -389,6 +409,11 @@ local function EnsureWatcher(anchor, unit)
 			end)
 
 			entry.Unit = unit
+
+			-- The gate is per unit, so a re-point can change the answer even though nothing about
+			-- the options moved. The category toggles are deliberately NOT re-read here (a
+			-- re-point must not reset them from defaults); only the gate is re-asked.
+			ApplyHelpfulBudget(entry, options)
 
 			-- Clear the container since it's a different unit now
 			entry.Container:ResetAllSlots()
@@ -567,18 +592,10 @@ local function ApplyEntryOptions(entry, anchor, options)
 
 		-- Category toggles map to a zero icon budget for the disabled group. One helpful group
 		-- covers both remaining categories, so either toggle keeps it visible; they no longer
-		-- select BETWEEN categories - the Spells tab does that.
-		local showHelpful = options.ShowDefensives or options.ShowImportant
-		-- Spell-id filters are gated on UnitCanAssist, so the moment a party member becomes a
-		-- duel opponent the engine drops includeSpellIDs and the bare HELPFUL token matches
-		-- every buff they have. Nothing can narrow it back, so the group is budgeted to zero
-		-- until they are assistable again.
-		if not units:CanAssist(entry.Unit) then
-			showHelpful = false
-		end
-
+		-- select BETWEEN categories - the Spells tab does that. The helpful side also answers to
+		-- the assist gate, which ApplyHelpfulBudget owns.
 		budgetScratch[auraFilters.GroupKey.CrowdControl] = options.ShowCC and maxIcons or 0
-		budgetScratch[HELPFUL_GROUP_KEY] = showHelpful and maxIcons or 0
+		budgetScratch[HELPFUL_GROUP_KEY] = ApplyHelpfulBudget(entry, options)
 
 		-- The tracked set is editable at runtime, so re-publish it rather than assuming the
 		-- filters handed over at creation are still current.
@@ -605,6 +622,50 @@ local function ApplyOptions(options)
 	for anchor, entry in pairs(watchers) do
 		ApplyEntryOptions(entry, anchor, options)
 	end
+end
+
+---Re-asks the assist gate for one unit, and says whether the answer moved. UNIT_FACTION fires
+---for PvP flagging as much as for anything that matters here, so the module only does real work
+---when this returns true.
+---@param unit string
+---@return boolean changed
+function M:OnUnitFactionChanged(unit)
+	local options = GetOptions()
+
+	if not options then
+		return false
+	end
+
+	local changed = false
+
+	for _, entry in pairs(watchers) do
+		if entry.Unit == unit and entry.Display then
+			local before = entry.Display:GetMaxIcons(HELPFUL_GROUP_KEY)
+
+			if ApplyHelpfulBudget(entry, options) ~= before then
+				changed = true
+			end
+		end
+	end
+
+	return changed
+end
+
+---Every unit the module is currently watching. The duel poller only scans tokens it has been
+---given a baseline for, so the module hands it these: a party member who turns hostile mid-duel
+---is what drops the spell-id filter, and nothing else announces that.
+---@param out string[] Filled in place and returned, so the caller can keep one table.
+---@return string[]
+function M:CollectWatchedUnits(out)
+	wipe(out)
+
+	for _, entry in pairs(watchers) do
+		if entry.Unit then
+			out[#out + 1] = entry.Unit
+		end
+	end
+
+	return out
 end
 
 ---@return RaidFrameAurasInstanceOptions?
