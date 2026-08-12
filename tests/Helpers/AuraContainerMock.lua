@@ -522,6 +522,11 @@ local function NewAuraContainer(name, parent, template)
 
 	function container:AddAuraGroup(groupKey, filterString, options)
 		assert(container._groups[groupKey] == nil, "aura group already exists: " .. tostring(groupKey))
+
+		-- Hook for tests that care about the state a container is in while its groups are built.
+		if M.onAddAuraGroup then
+			M.onAddAuraGroup(container, groupKey)
+		end
 		local group = {
 			filterString = filterString,
 			options = options,

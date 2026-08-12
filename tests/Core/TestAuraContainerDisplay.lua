@@ -1315,3 +1315,105 @@ fw.describe("AuraContainerDisplay - which countdown is on screen", function()
 		assert(button._durationTextOptions.textColor == nil, "so nothing is bound to colour it")
 	end)
 end)
+
+fw.describe("AuraContainerDisplay - when a container first parses", function()
+	fw.it("is not visible until its groups exist", function()
+		local shownWhenGroupAdded
+
+		acm.onAddAuraGroup = function(container)
+			shownWhenGroupAdded = container:IsShown()
+		end
+
+		local instance = newInstance()
+
+		acm.onAddAuraGroup = nil
+
+		-- A container parses as soon as it is visible, and a parse made before the groups carry
+		-- their real filters is what stays on screen.
+		assert(shownWhenGroupAdded == false, "the container is hidden while its groups are built")
+		assert(instance.Frame:IsShown(), "and shown once they exist")
+	end)
+end)
+
+fw.describe("AuraContainerDisplay - while a vehicle has the player", function()
+	fw.it("takes player displays off screen and puts them back afterwards", function()
+		local onPlayer = display:New(_G.UIParent, "player", {
+			{ Key = "cc", FilterString = "HELPFUL", MaxIcons = 5 },
+		}, 30, 2, "Test")
+		local onTarget = newInstance()
+
+		assert(onPlayer.Frame:IsShown() and onTarget.Frame:IsShown(), "both start on screen")
+
+		-- While the vehicle lasts the engine stops honouring this container's spell-id filters
+		-- and it fills with auras nobody asked for. Nothing subtler than hiding it works.
+		wow.setInVehicle(true)
+		displayEvents:TriggerEvent("UNIT_ENTERED_VEHICLE", "player")
+
+		assert(not onPlayer.Frame:IsShown(), "the player's display is suppressed")
+		assert(onTarget.Frame:IsShown(), "and nothing else is")
+
+		wow.setInVehicle(false)
+		displayEvents:TriggerEvent("UNIT_EXITED_VEHICLE", "player")
+		acm.runTimers()
+
+		assert(onPlayer.Frame:IsShown(), "it comes back once the vehicle is gone")
+	end)
+
+	fw.it("leaves a display its module wanted hidden alone", function()
+		local onPlayer = display:New(_G.UIParent, "player", {
+			{ Key = "cc", FilterString = "HELPFUL", MaxIcons = 5 },
+		}, 30, 2, "Test")
+
+		onPlayer:SetShown(false)
+
+		wow.setInVehicle(true)
+		displayEvents:TriggerEvent("UNIT_ENTERED_VEHICLE", "player")
+		wow.setInVehicle(false)
+		displayEvents:TriggerEvent("UNIT_EXITED_VEHICLE", "player")
+		acm.runTimers()
+
+		assert(not onPlayer.Frame:IsShown(), "the module's own answer still decides")
+	end)
+end)
+
+fw.describe("AuraContainerDisplay - vehicles the client will not admit to", function()
+	fw.it("suppresses on the event alone when every question answers false", function()
+		local onPlayer = display:New(_G.UIParent, "player", {
+			{ Key = "cc", FilterString = "HELPFUL", MaxIcons = 5 },
+		}, 30, 2, "Test")
+
+		-- Some seats have no vehicle UI and answer false to everything; the event is the only
+		-- thing that knows, so it is taken at its word.
+		wow.setInVehicle(false)
+		displayEvents:TriggerEvent("UNIT_ENTERED_VEHICLE", "player")
+
+		assert(not onPlayer.Frame:IsShown(), "suppressed on the event, not on the answer")
+
+		displayEvents:TriggerEvent("UNIT_EXITED_VEHICLE", "player")
+		acm.runTimers()
+
+		assert(onPlayer.Frame:IsShown(), "and restored once it ends")
+	end)
+
+	fw.it("stays suppressed while a question still says yes", function()
+		local onPlayer = display:New(_G.UIParent, "player", {
+			{ Key = "cc", FilterString = "HELPFUL", MaxIcons = 5 },
+		}, 30, 2, "Test")
+
+		wow.setInVehicle(true)
+		displayEvents:TriggerEvent("UNIT_ENTERED_VEHICLE", "player")
+
+		-- An exit event for one seat while another still holds: the answer is re-asked rather
+		-- than assumed.
+		displayEvents:TriggerEvent("UNIT_EXITED_VEHICLE", "player")
+		acm.runTimers()
+
+		assert(not onPlayer.Frame:IsShown(), "still off screen while the client says vehicle")
+
+		wow.setInVehicle(false)
+		displayEvents:TriggerEvent("UNIT_EXITED_VEHICLE", "player")
+		acm.runTimers()
+
+		assert(onPlayer.Frame:IsShown(), "and back once it stops saying so")
+	end)
+end)

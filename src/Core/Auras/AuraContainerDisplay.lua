@@ -90,6 +90,12 @@ local countdownFormatters = {}
 
 -- How often the deferred restyle retry runs while any display is stale (see RestyleButtons).
 local RESTYLE_RETRY_INTERVAL = 1
+-- The unit a vehicle takes over, and the token the vehicle itself answers to.
+local PLAYER_UNIT = "player"
+local VEHICLE_UNIT = "vehicle"
+-- How long to wait after a vehicle event before asking the client where the player is: it still
+-- answers "vehicle" as the exit event fires.
+local VEHICLE_SETTLE_DELAY = 0.1
 -- The container's own default unit, and what RequestRefresh points one at to make the engine
 -- see a unit CHANGE for a token whose occupant moved.
 local NO_UNIT = "none"
@@ -109,6 +115,8 @@ local cachedDb = nil
 local frameIdCounter = 0
 local liveDisplays = {}
 local editModePreviewActive = false
+-- True while a vehicle has the player. Displays on that unit are suppressed for the duration.
+local vehicleActive = false
 local displayEventsFrame = nil
 local pendingRestyleCount = 0
 local restyleTicker = nil
@@ -316,9 +324,62 @@ end
 -- MUST be created through this wrapper: one built directly with CreateFrame("AuraContainer")
 -- isn't in liveDisplays and will happily show Blizzard's placeholder auras.
 
+---Calls a client function that may not exist on this build, as a plain boolean.
+---@param fn function?
+---@param unit string
+---@return boolean
+local function Asked(fn, unit)
+	return fn ~= nil and fn(unit) == true
+end
+
+---True while a display is tracking the unit a vehicle takes over.
 ---@param instance AuraContainerDisplay
+---@return boolean
+local function IsPlayerDisplay(instance)
+	return instance.Frame:GetUnit() == PLAYER_UNIT
+end
+
 local function ApplyShownState(instance)
-	instance.Frame:SetShown(instance.DesiredShown and not editModePreviewActive)
+	-- Two reasons a display is kept off screen whatever its module asked for: Edit Mode's
+	-- placeholder auras, and a vehicle. See vehicleActive.
+	local suppressed = editModePreviewActive or (vehicleActive and IsPlayerDisplay(instance))
+
+	instance.Frame:SetShown(instance.DesiredShown and not suppressed)
+end
+
+---Whether the player is in a vehicle, asked every way the client offers. They do not agree:
+---a seat with no vehicle UI answers false to UnitHasVehicleUI while still being a vehicle, so
+---one question is not enough. Each is called only if the client has it, which keeps this working
+---on builds that drop one.
+---@return boolean
+local function PlayerInVehicle()
+	return Asked(UnitInVehicle, PLAYER_UNIT)
+		or Asked(UnitUsingVehicle, PLAYER_UNIT)
+		or Asked(UnitHasVehicleUI, PLAYER_UNIT)
+		or Asked(UnitControllingVehicle, PLAYER_UNIT)
+		-- The vehicle's own token exists for the duration, whatever the questions above say.
+		or Asked(UnitExists, VEHICLE_UNIT)
+end
+
+---Takes every display on the player off screen while a vehicle has it, and puts them back
+---afterwards. Nothing subtler works: while the vehicle lasts the engine stops honouring the
+---spell-id filters on that unit and the groups fill with auras nobody asked for, and re-reading
+---the container only pulls in more. A hidden container parses nothing at all, and the show on
+---the way back out is a full refresh from live data.
+---@param entering boolean? True from an enter event, which is taken at its word: the kind of
+---vehicle that answers false to every question above is exactly the kind this is for.
+local function ApplyVehicleState(entering)
+	local active = entering == true or PlayerInVehicle()
+
+	if vehicleActive == active then
+		return
+	end
+
+	vehicleActive = active
+
+	for _, instance in ipairs(liveDisplays) do
+		ApplyShownState(instance)
+	end
 end
 
 local function OnAuraDataProviderSwitch(useRealDataProvider)
@@ -345,9 +406,29 @@ local function EnsureDisplayEvents()
 	displayEventsFrame = CreateFrame("Frame")
 	displayEventsFrame:RegisterEvent("AURA_DATA_PROVIDER_SWITCH")
 	displayEventsFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+	displayEventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	displayEventsFrame:RegisterUnitEvent("UNIT_ENTERED_VEHICLE", PLAYER_UNIT)
+	displayEventsFrame:RegisterUnitEvent("UNIT_EXITED_VEHICLE", PLAYER_UNIT)
+	-- The -ING pair fires for seats the -ED pair does not, and the vehicle-data pair fires for
+	-- the ones that never raise a seat event at all.
+	displayEventsFrame:RegisterUnitEvent("UNIT_ENTERING_VEHICLE", PLAYER_UNIT)
+	displayEventsFrame:RegisterUnitEvent("UNIT_EXITING_VEHICLE", PLAYER_UNIT)
+	displayEventsFrame:RegisterEvent("PLAYER_GAINS_VEHICLE_DATA")
+	displayEventsFrame:RegisterEvent("PLAYER_LOSES_VEHICLE_DATA")
 	displayEventsFrame:SetScript("OnEvent", function(_, event, useRealDataProvider)
 		if event == "AURA_DATA_PROVIDER_SWITCH" then
 			OnAuraDataProviderSwitch(useRealDataProvider)
+		elseif event == "PLAYER_ENTERING_WORLD" then
+			-- Logging in already inside one counts, and no vehicle event fires for that.
+			ApplyVehicleState()
+		elseif event == "UNIT_ENTERED_VEHICLE" or event == "UNIT_ENTERING_VEHICLE"
+			or event == "PLAYER_GAINS_VEHICLE_DATA" then
+			ApplyVehicleState(true)
+		elseif event == "UNIT_EXITED_VEHICLE" or event == "UNIT_EXITING_VEHICLE"
+			or event == "PLAYER_LOSES_VEHICLE_DATA" then
+			-- Deferred and re-asked rather than taken at its word: the client still reports the
+			-- vehicle as the event fires, and one of these can arrive while another seat holds.
+			C_Timer.After(VEHICLE_SETTLE_DELAY, ApplyVehicleState)
 		else
 			FlushPendingRestyles()
 			FlushPendingBounces()
@@ -1404,9 +1485,14 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	frame.MiniCCModule = moduleName or nil
 	instance.Frame = frame
 
+	-- Hidden while the groups are built. A container parses the moment it is visible, so one
+	-- built shown parses before its groups carry their real filters, and THAT parse is what stays
+	-- on screen. Revealed at the end of New, which is also the hidden-to-shown transition the
+	-- engine does its full refresh on.
+	frame:Hide()
+
 	EnsureDisplayEvents()
 	liveDisplays[#liveDisplays + 1] = instance
-	ApplyShownState(instance)
 
 	frame:SetUnit(unit)
 	ApplyFlowLayout(instance)
@@ -1436,9 +1522,9 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 		})
 	end
 
-	-- The frame was shown before its groups existed, so the arming OnShow has already fired;
-	-- bounce once so the initial parse doesn't wait for the unit's first aura event.
-	MarkBouncePending(instance)
+	-- The groups exist now, so the container can be let out. No bounce to go with it: this IS
+	-- the arming show, and there has been no parse before it to correct.
+	ApplyShownState(instance)
 
 	return instance
 end

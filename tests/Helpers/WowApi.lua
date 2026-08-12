@@ -16,6 +16,8 @@ local _unitExists    = {}   -- unit -> bool
 local _unitGuids     = {}   -- unit -> guid string override
 local _roles         = {}   -- unit -> "TANK" | "HEALER" | "DAMAGER"
 local _inRaid        = false
+-- Whether the player is in a vehicle, which takes over the "player" unit.
+local _inVehicle     = false
 
 function M.setup()
 	-- Build info
@@ -78,6 +80,11 @@ function M.setup()
 
 	_G.IsInRaid = function()
 		return _inRaid
+	end
+
+	-- A vehicle takes over the player unit; only the player can be in one here.
+	_G.UnitHasVehicleUI = function(unit)
+		return unit == "player" and _inVehicle
 	end
 
 	_G.UnitGroupRolesAssigned = function(unit)
@@ -230,6 +237,11 @@ function M.setInRaid(inRaid)
 	_inRaid = inRaid
 end
 
+---@param inVehicle boolean
+function M.setInVehicle(inVehicle)
+	_inVehicle = inVehicle
+end
+
 function M.clearRoles()
 	for unit in pairs(_roles) do
 		M.setUnitExists(unit, false)
@@ -237,6 +249,7 @@ function M.clearRoles()
 
 	_roles = {}
 	_inRaid = false
+	_inVehicle = false
 end
 
 ---Set the instance type returned by IsInInstance().

@@ -126,6 +126,11 @@ function M.build()
 	_G.UnitExists = function()
 		return true
 	end
+	-- A vehicle takes over the player unit, which changes what the engine will tell a container
+	-- tracking it; no test needs one by default.
+	_G.UnitHasVehicleUI = function(unit)
+		return unit == "player" and env.inVehicle == true
+	end
 	_G.PlaySoundFile = function() end
 	_G.PlaySound = function() end
 	-- Duration objects are opaque handles; test mode builds them for its synthetic cooldowns.
