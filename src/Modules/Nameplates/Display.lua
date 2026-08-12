@@ -174,21 +174,50 @@ end
 
 ---Positions a bar's aura display, chaining after the bar's kick container while a kick icon is
 ---showing.
+---
+---Every write is compared first. None of them is expensive alone, but this runs for both bars on
+---every plate add and again on every kick event, and the answer almost never moves - the plate is
+---the same, the options are the same, and re-anchoring invalidates the layout of every button
+---under the display for nothing. The remembered state is cleared when the display is parked, since
+---parking clears the points it describes.
 local function AnchorBarDisplay(display, container, nameplate, barOptions, kickActive)
 	local anchorFrame = GetNameplateAnchorFrame(nameplate)
 	local frame = display.Frame
-	frame:SetFrameLevel(anchorFrame:GetFrameLevel() + 10)
-	frame:SetIgnoreParentScale(not nmModule.ScaleWithNameplate)
+	local level = anchorFrame:GetFrameLevel() + 10
+	local ignoreScale = not nmModule.ScaleWithNameplate
 
-	display:AnchorAfterKick(
-		container.Frame,
-		anchorFrame,
-		barOptions.Grow or "CENTER",
-		barOptions.Icons.Spacing or 2,
-		barOptions.Offset.X or 0,
-		barOptions.Offset.Y or 0,
-		kickActive
-	)
+	if display.NameplateLevel ~= level then
+		display.NameplateLevel = level
+		frame:SetFrameLevel(level)
+	end
+
+	if display.NameplateIgnoreScale ~= ignoreScale then
+		display.NameplateIgnoreScale = ignoreScale
+		frame:SetIgnoreParentScale(ignoreScale)
+	end
+
+	local grow = barOptions.Grow or "CENTER"
+	local spacing = barOptions.Icons.Spacing or 2
+	local offsetX = barOptions.Offset.X or 0
+	local offsetY = barOptions.Offset.Y or 0
+
+	if display.NameplateAnchorFrame == anchorFrame
+		and display.NameplateGrow == grow
+		and display.NameplateSpacing == spacing
+		and display.NameplateOffsetX == offsetX
+		and display.NameplateOffsetY == offsetY
+		and display.NameplateKickActive == kickActive then
+		return
+	end
+
+	display.NameplateAnchorFrame = anchorFrame
+	display.NameplateGrow = grow
+	display.NameplateSpacing = spacing
+	display.NameplateOffsetX = offsetX
+	display.NameplateOffsetY = offsetY
+	display.NameplateKickActive = kickActive
+
+	display:AnchorAfterKick(container.Frame, anchorFrame, grow, spacing, offsetX, offsetY, kickActive)
 end
 
 ---Builds one pooled bar display with the standard categories (partitioned by
@@ -220,6 +249,12 @@ local function ResetBarDisplay(display)
 	display:Hide()
 	display.Frame:ClearAllPoints()
 	display.Frame:SetParent(UIParent)
+
+	-- What AnchorBarDisplay remembered describes points and a parent this display no longer has,
+	-- so it must not be believed when the display is picked up again.
+	display.NameplateAnchorFrame = nil
+	display.NameplateLevel = nil
+	display.NameplateIgnoreScale = nil
 end
 
 ---@return number the icon size a bar's displays must be built at
@@ -282,7 +317,13 @@ local function EnsureBarDisplay(data, bar, barOptions)
 
 	data[bar.DisplayField] = display
 
-	display.Frame:SetParent(data.Nameplate)
+	-- Only when it actually moves. Re-parenting invalidates the layout of every button under the
+	-- display, and this runs for each tracked plate on every options refresh - a slider drag was
+	-- paying for it once per step per plate with nothing to show for it.
+	if display.Frame:GetParent() ~= data.Nameplate then
+		display.Frame:SetParent(data.Nameplate)
+	end
+
 	display:SetUnit(token)
 	auraFilters:ApplyCategoryBudgets(
 		display,
