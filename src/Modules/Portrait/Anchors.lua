@@ -246,11 +246,14 @@ local function AttachBlizzardFrame(unit, events)
 	end
 
 	local mask = display:GetPortraitMask(unitFrame) or display:CreatePortraitMask(portrait)
+	-- Drops the portrait and its icons a strata below the unit frame, so the border art draws
+	-- over the icon edge instead of the other way round.
+	local portraitLayer = display:CreatePortraitLayer(portrait)
 
-	local container = display:CreateContainer(unitFrame, portrait, unit, { 0.1, 0.9, 0.1, 0.9 }, mask)
+	local container = display:CreateContainer(unitFrame, portrait, unit, { 0.1, 0.9, 0.1, 0.9 }, mask, portraitLayer)
 	if not container then return end
 
-	if unit == "pet" then
+	if not portraitLayer and unit == "pet" then
 		container.Frame:SetFrameLevel(math.max(0, (PetFrame:GetFrameLevel() or 0) - 2))
 	end
 
@@ -266,7 +269,13 @@ local function AttachBlizzardFrame(unit, events)
 	end
 
 	RegisterUnitUpdate(unit, watcher, container)
-	portrait:SetDrawLayer("BACKGROUND", 0)
+
+	-- Only matters while the portrait still shares a frame with the border art; on its own layer
+	-- it has no siblings to sort against.
+	if not portraitLayer then
+		portrait:SetDrawLayer("BACKGROUND", 0)
+	end
+
 	display:AddContainer(container)
 end
 

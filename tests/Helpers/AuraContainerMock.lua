@@ -267,6 +267,9 @@ function M.NewFrame(frameType, name, parent, template)
 	function frame:ClearAllPoints()
 		frame._points = {}
 	end
+	function frame:GetNumPoints()
+		return #frame._points
+	end
 	function frame:GetPoint(index)
 		local p = frame._points[index or 1]
 		if not p then
@@ -324,9 +327,11 @@ function M.NewFrame(frameType, name, parent, template)
 	function frame:GetFrameLevel()
 		return frame._level
 	end
-	function frame:SetFrameStrata() end
+	function frame:SetFrameStrata(strata)
+		frame._strata = strata
+	end
 	function frame:GetFrameStrata()
-		return "MEDIUM"
+		return frame._strata or "MEDIUM"
 	end
 	function frame:SetIgnoreParentScale() end
 	function frame:SetIgnoreParentAlpha() end

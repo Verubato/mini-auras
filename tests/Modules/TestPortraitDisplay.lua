@@ -33,6 +33,8 @@ for _, spec in ipairs({
 	frame:SetFrameLevel(spec.Level)
 	local portrait = acm.NewFrame("Frame", spec.Global .. "Portrait", frame)
 	portrait:SetSize(PORTRAIT_SIZE, PORTRAIT_SIZE)
+	-- A single anchor point, which is what the demoted portrait layer needs to reproduce.
+	portrait:SetPoint("TOPLEFT", frame, "TOPLEFT", 5, -5)
 	frame.portrait = portrait
 	_G[spec.Global] = frame
 end
@@ -118,12 +120,52 @@ fw.describe("PortraitModule 12.1 - the five-category stack", function()
 	end)
 end)
 
+fw.describe("PortraitModule 12.1 - the demoted portrait layer", function()
+	fw.it("moves the portrait and its icons a strata below the unit frame", function()
+		-- Icons anchored over a portrait have to clear the portrait's own level, which used to
+		-- put them above the unit frame's border art too - the icon then drew over the ring
+		-- instead of inside it. Dropping the portrait into a frame one strata down takes the
+		-- whole level range with it, since strata beats level.
+		for _, unit in ipairs({ "player", "target", "focus", "pet" }) do
+			local _, container = displaysFor(unit)
+			local portrait = _G[unit == "player" and "PlayerFrame"
+				or unit == "target" and "TargetFrame"
+				or unit == "focus" and "FocusFrame"
+				or "PetFrame"].portrait
+
+			local layer = portrait:GetParent()
+			assert(layer:GetFrameStrata() == "LOW",
+				unit .. ": the portrait layer sits one strata below MEDIUM, got " .. layer:GetFrameStrata())
+			assert(container.Frame:GetParent() == layer,
+				unit .. ": the container lives on the portrait layer")
+			assert(container.Frame:GetFrameStrata() == "LOW",
+				unit .. ": the container follows the layer's strata")
+		end
+	end)
+
+	fw.it("keeps every icon above the portrait it covers", function()
+		-- Below the portrait's own level the portrait texture hides the icons entirely (the
+		-- first PTR build's bug), so the stack still has to sit above it.
+		for _, unit in ipairs({ "player", "target", "focus", "pet" }) do
+			local displays, container = displaysFor(unit)
+			local portraitLevel = container.Frame:GetParent():GetFrameLevel()
+
+			assert(container.Frame:GetFrameLevel() > portraitLevel,
+				unit .. ": the container must clear the portrait's level")
+			for index, display in ipairs(displays) do
+				assert(display.Frame:GetFrameLevel() > portraitLevel,
+					unit .. ": display " .. index .. " must clear the portrait's level")
+			end
+		end
+	end)
+end)
+
 fw.describe("PortraitModule 12.1 - frame level stacking", function()
-	fw.it("stacks the displays UP from unitFrame+1, kick slot on top", function()
-		-- Buttons render at the display's own level, so the lowest display must clear the unit
-		-- frame itself: at the unit frame's level its ring art covers every icon, and below it
-		-- the portrait texture hides them (the first PTR build's bug). The levels must also be
-		-- strictly ascending - same-level siblings draw in an arbitrary order.
+	fw.it("stacks the displays UP from the container, kick slot on top", function()
+		-- Buttons render at the display's own level, so the lowest display must clear whatever
+		-- the portrait draws at, or the portrait hides them (the first PTR build's bug). The
+		-- levels must also be strictly ascending - same-level siblings draw in an arbitrary
+		-- order.
 		for _, unit in ipairs({ "player", "target", "focus", "pet" }) do
 			local displays, container = displaysFor(unit)
 			local previous = container.Frame:GetFrameLevel() + 1

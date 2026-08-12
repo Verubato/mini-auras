@@ -45,6 +45,20 @@ local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 -- highest of them.
 local PORTRAIT_CATEGORIES = { "Important", "ExternalDefensive", "BigDefensive", "Disarm", "CrowdControl" }
 
+-- One strata down from whatever the portrait's own parent sits in. A portrait moved into a frame
+-- at this strata keeps everything drawn over it under the unit frame's border art, whatever frame
+-- levels the icons end up with, because strata beats level.
+local STRATA_BELOW = {
+	BACKGROUND = "BACKGROUND",
+	LOW = "BACKGROUND",
+	MEDIUM = "LOW",
+	HIGH = "MEDIUM",
+	DIALOG = "HIGH",
+	FULLSCREEN = "DIALOG",
+	FULLSCREEN_DIALOG = "FULLSCREEN",
+	TOOLTIP = "FULLSCREEN_DIALOG",
+}
+
 ---@type Db
 local db
 local testModeActive = false
@@ -100,15 +114,14 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 	-- single-icon groups are the same thing ("slots" are documented as groups with
 	-- maxFrameCount 1) built on the verified-working group API.
 	--
-	-- Levels stack UP from unitFrame+1 (the kick frame is at unitFrame-1, baseLevel two above
-	-- it). The buttons render at the display's OWN level, so the lowest display must clear
-	-- the unit frame itself: at the unit frame's level the frame's ring art covers every icon
-	-- (ARTWORK beats our BACKGROUND icons within a level), and below it the portrait texture
-	-- hides them entirely (PTR: TargetFrame at 500 hid displays at 494-497). Distinct levels
-	-- are the only reliable priority - same-level siblings draw in an arbitrary order - so
-	-- the top category unavoidably sits at unitFrame+4, covering art the legacy path drew
-	-- under. Displays are children of the kick frame so per-addon level adjustments shift
-	-- the whole stack together.
+	-- Levels stack UP from the kick frame, two above it. The buttons render at the display's
+	-- OWN level, so the lowest display has to clear whatever the portrait itself draws at, or
+	-- the portrait hides the icons entirely (PTR: TargetFrame at 500 hid displays at 494-497).
+	-- Distinct levels are the only reliable priority - same-level siblings draw in an arbitrary
+	-- order - so the top category ends up four above the bottom one. On a demoted portrait
+	-- layer that whole range still sits under the unit frame's border art, since the layer is a
+	-- strata below it. Displays are children of the kick frame so per-addon level adjustments
+	-- shift the whole stack together.
 	--
 	-- These go through AuraContainerDisplay like every other container in the addon: it owns
 	-- the Edit Mode placeholder-aura suppression (a hand-rolled container would happily show
@@ -249,12 +262,54 @@ function M:ApplyMaskToLayer(layer, mask)
 	end
 end
 
+---Moves a portrait into a frame one strata below the rest of its unit frame, so anything drawn
+---over the portrait stays under the frame's border art however its levels come out. The portrait
+---has to come along: left where it was it would cover the icons from the strata above.
+---@param portrait table
+---@return table? layer nil when the portrait's anchoring cannot be reproduced
+function M:CreatePortraitLayer(portrait)
+	local parent = portrait:GetParent()
+	if not parent then
+		return nil
+	end
+
+	-- The portrait is re-anchored by hand after the move, so anything but a single point would
+	-- come out a different size. Those portraits keep the old layering instead.
+	if portrait:GetNumPoints() ~= 1 then
+		return nil
+	end
+
+	-- The same guard CreateContainer bails on. Without it a tainted portrait would be demoted a
+	-- strata and then get no container, leaving it under the frame art for nothing.
+	if issecretvalue(portrait:GetWidth()) or issecretvalue(portrait:GetHeight()) then
+		return nil
+	end
+
+	local point, relativeTo, relativePoint, x, y = portrait:GetPoint(1)
+	if not point then
+		return nil
+	end
+
+	local layer = CreateFrame("Frame", nil, parent)
+	layer:SetAllPoints(parent)
+	layer:SetFrameStrata(STRATA_BELOW[parent:GetFrameStrata()] or "BACKGROUND")
+	layer:SetFrameLevel(0)
+
+	portrait:SetParent(layer)
+	portrait:ClearAllPoints()
+	portrait:SetPoint(point, relativeTo or layer, relativePoint or point, x or 0, y or 0)
+
+	return layer
+end
+
 ---Builds the kick container over a portrait, with the 12.1 aura display stack underneath it.
 ---Returns nil when the portrait's dimensions are secret, which is the tainted-frame case.
+---@param portraitLayer table? demoted layer from CreatePortraitLayer. The container goes inside
+---it and matches the portrait rect exactly, since the border art now covers the icon's edges.
 ---@return IconSlotContainer?
-function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask)
+function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask, portraitLayer)
 	-- Only 1 slot, multiple layers; no border for portrait icons
-	local container = iconSlotContainer:New(unitFrame, 1, 0, 0, nil, true, "Portraits")
+	local container = iconSlotContainer:New(portraitLayer or unitFrame, 1, 0, 0, nil, true, "Portraits")
 
 	-- Portrait icons are masked, and the mask texture lives on the unit frame's subtree. A
 	-- flattened slot composites only its own subtree, which renders the masked icon invisible
@@ -264,10 +319,17 @@ function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask)
 		slot.Frame:SetFlattensRenderLayers(false)
 	end
 
-	-- Position the container over the portrait with inset
-	container.Frame:SetPoint("TOPLEFT", portrait, "TOPLEFT", 2, -2)
-	container.Frame:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", -2, 2)
-	container.Frame:SetFrameLevel(math.max(0, (unitFrame:GetFrameLevel() or 0) - 1))
+	if portraitLayer then
+		-- Levels only have to clear the portrait now, and matching its rect exactly lines the
+		-- icon up with the portrait's own mask.
+		container.Frame:SetAllPoints(portrait)
+		container.Frame:SetFrameLevel(portraitLayer:GetFrameLevel() + 1)
+	else
+		-- Position the container over the portrait with inset
+		container.Frame:SetPoint("TOPLEFT", portrait, "TOPLEFT", 2, -2)
+		container.Frame:SetPoint("BOTTOMRIGHT", portrait, "BOTTOMRIGHT", -2, 2)
+		container.Frame:SetFrameLevel(math.max(0, (unitFrame:GetFrameLevel() or 0) - 1))
+	end
 
 	-- match the frame strata of the portrait parent
 	-- some addons like ClassicFrames adjust this from LOW to MEDIUM
@@ -287,7 +349,10 @@ function M:CreateContainer(unitFrame, portrait, unit, texCoord, mask)
 	local h = portrait:GetHeight()
 	if issecretvalue(w) or issecretvalue(h) then return nil end
 
-	local size = math.min(w - 4, h - 4)
+	-- The 2px inset exists only to keep an un-layered icon off the border art. A layered icon is
+	-- covered by that art already and wants the full portrait rect.
+	local inset = portraitLayer and 0 or 4
+	local size = math.min(w - inset, h - inset)
 	if size <= 0 then size = 32 end
 
 	container:SetIconSize(size)
