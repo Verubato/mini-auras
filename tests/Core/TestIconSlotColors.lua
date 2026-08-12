@@ -38,7 +38,7 @@ fw.describe("IconSlotContainer - countdown colouring", function()
 	fw.it("tints the countdown by remaining time and resets on clear", function()
 		local container, text = BuildColouredSlot(30)
 		local colour = text._lastArgs.SetTextColor
-		assert(colour and colour[1] == 1 and colour[2] == 1 and colour[3] == 0.102,
+		assert(colour and colour[1] == 1 and colour[2] == 0.8 and colour[3] == 0,
 			"under a minute reads yellow")
 
 		container:SetSlot(1, { Texture = ICON, DurationObject = wowEx:CreateDuration(GetTime(), 90) })

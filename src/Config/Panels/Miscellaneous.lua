@@ -75,7 +75,9 @@ function M:Build(panel)
 				return
 			end
 			db.LocaleOverride = newKey
-			StaticPopup_Show("MINIAURAS_RELOAD_CONFIRM")
+			StaticPopup_Show("MINIAURAS_CONFIRM", L["Language changed. Reload UI now?"], nil, {
+				OnYes = C_UI.Reload,
+			})
 		end,
 	})
 
@@ -178,8 +180,6 @@ function M:Build(panel)
 		SetValue = function(value)
 			db.IconZoom = value
 			addon:Refresh()
-			-- The generic confirm rather than MINIAURAS_RELOAD_CONFIRM, whose wording is about
-			-- the language dropdown.
 			StaticPopup_Show("MINIAURAS_CONFIRM", L["This change needs a UI reload. Reload now?"], nil, {
 				OnYes = C_UI.Reload,
 			})

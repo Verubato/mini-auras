@@ -380,18 +380,6 @@ function M:Init()
 	M.TabController = tabController
 
 
-	StaticPopupDialogs["MINIAURAS_RELOAD_CONFIRM"] = {
-		text = L["Language changed. Reload UI now?"],
-		button1 = YES,
-		button2 = NO,
-		OnAccept = function()
-			C_UI.Reload()
-		end,
-		timeout = 0,
-		whileDead = true,
-		hideOnEscape = true,
-	}
-
 	StaticPopupDialogs["MINIAURAS_CONFIRM"] = {
 		text = "%s",
 		button1 = YES,
