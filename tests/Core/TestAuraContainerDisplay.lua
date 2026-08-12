@@ -1295,3 +1295,23 @@ fw.describe("AuraContainerDisplay - refreshing a token whose occupant changed", 
 		assert(instance.Frame:GetUnit() == "none", "nothing to re-point at")
 	end)
 end)
+
+fw.describe("AuraContainerDisplay - which countdown is on screen", function()
+	fw.it("binds no colour while the native countdown is the one showing", function()
+		local instance = newInstance()
+		local button = instance.Buttons[1]
+		local widgets = instance.ButtonWidgets[button]
+
+		mockDb.ColorCountdownByTime = true
+		instance:SetStyle({})
+		assert(button._durationTextOptions.textColor ~= nil, "coloured while it is the countdown")
+
+		mockDb.ColorCountdownByTime = nil
+		instance:SetStyle({})
+
+		-- The cooldown's own numbers take over here, and a colour bound to this fontstring has
+		-- the engine draw it over them: two countdowns on one icon.
+		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 0, "the bound text is hidden")
+		assert(button._durationTextOptions.textColor == nil, "so nothing is bound to colour it")
+	end)
+end)

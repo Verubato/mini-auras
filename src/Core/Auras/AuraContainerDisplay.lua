@@ -441,22 +441,26 @@ end
 ---time. Named fields, not positional: the options validator walks [textColor][curve] and
 ---[textColor][property], and a positional pair errors per button at AddAuraGroup time.
 ---
----A colour is bound either way, the off state being a flat white curve. Leaving textColor out
----asks the engine to forget the binding it is holding, which it does not do: an icon hid that
----(its bound fontstring is only shown while the colouring or fractions need it, so the native
----countdown takes over and the stale curve goes with it), but a bar's countdown IS this
----fontstring, so turning the setting off left it coloured until a reload.
+---While the fontstring is the countdown, a colour is bound either way round - the off state
+---being a flat white curve, because leaving textColor out asks the engine to forget the binding
+---it is holding and it does not: a bar's countdown IS this fontstring, so turning the setting
+---off left it coloured until a reload.
+---
+---While it is NOT the countdown, no colour is bound at all. Binding one there has the engine
+---draw the fontstring over the native numbers the cooldown is showing, which reads as two
+---countdowns on one icon. The stale curve it keeps costs nothing: nothing is looking at it, and
+---the next bind that does use it replaces it.
 ---@param button table
 ---@param durationText table
 ---@param msThreshold number Seconds below which tenths show; 0 for whole seconds only.
----@param colorByTime boolean? Carry the colour-by-time ramp rather than the flat one.
-local function BindDurationText(button, durationText, msThreshold, colorByTime)
+---@param curve table? The colour curve to bind, or nil while the fontstring is not in use.
+local function BindDurationText(button, durationText, msThreshold, curve)
 	button:SetDurationText(durationText, {
 		textFormatter = GetCountdownFormatter(msThreshold),
-		textColor = {
-			curve = colorByTime and GetCountdownCurve() or GetPlainCountdownCurve(),
+		textColor = curve and {
+			curve = curve,
 			property = Enum.DurationTextBindingProperty.RemainingDuration,
-		},
+		} or nil,
 	})
 end
 
@@ -722,12 +726,18 @@ local function StyleButton(instance, button)
 	end
 
 	if durationText then
+		-- The ramp while colouring by time, a flat curve while the fontstring is the countdown
+		-- without it, and nothing at all while it is not the countdown (see BindDurationText).
+		local curve = colorCountdown and GetCountdownCurve()
+			or (useDurationText and GetPlainCountdownCurve())
+			or nil
+
 		-- The formatter and colour curve live inside the binding, so a change re-binds. Only
 		-- on change: each SetDurationText runs the engine's options processing per button.
-		local bindSignature = msThreshold .. (colorCountdown and "|c" or "")
+		local bindSignature = msThreshold .. (colorCountdown and "|c" or curve and "|p" or "")
 		if widgets.DurationTextBind ~= bindSignature then
 			widgets.DurationTextBind = bindSignature
-			BindDurationText(button, durationText, msThreshold, colorCountdown)
+			BindDurationText(button, durationText, msThreshold, curve)
 		end
 		durationText:SetAlpha(useDurationText and 1 or 0)
 		-- Stand-in for the cooldown's own countdown, so it borrows that fontstring's face and
@@ -854,7 +864,9 @@ local function CreateDurationText(button, overlay)
 	end
 
 	local durationText = overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
-	BindDurationText(button, durationText, 0, false)
+	-- Registered here because regions can only be attached in initializeFrame; StyleButton
+	-- decides straight afterwards whether it carries a colour.
+	BindDurationText(button, durationText, 0, nil)
 
 	return durationText
 end
