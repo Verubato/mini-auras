@@ -106,6 +106,8 @@ local function BuildStyle(group)
 	-- The same colour drives the glow, the border and a bar's fill, so one swatch covers a group
 	-- whichever shape it draws.
 	style.GlowColor = moduleUtil:GetIconColorRGB(icons)
+	style.HideSwipe = icons.HideSwipe
+	style.HideNumbers = icons.HideNumbers
 	style.ShowTooltips = icons.ShowTooltips
 	style.Pandemic = icons.Pandemic
 	style.PandemicColor = moduleUtil:GetColorRGB(icons.PandemicColor)
@@ -400,12 +402,15 @@ local function RenderTestIcons(state, entry)
 	if groups:TracksSpells(group) then
 		nextSlot = testSpellData:FillContainer(container, group.Spells, 1, {
 			ReverseCooldown = group.Icons.ReverseCooldown,
+			HideSwipe = group.Icons.HideSwipe,
+			HideNumbers = group.Icons.HideNumbers,
 			Glow = group.Icons.Glow,
 			Color = color,
 			FontScale = db.FontScale,
 			ShowTooltips = group.Icons.ShowTooltips,
 			BarTexture = barTexture,
 			Border = group.Icons.Border,
+			SpellName = group.Icons.SpellName,
 		})
 	else
 		local texture = groups:GetIcon(group)
@@ -417,11 +422,13 @@ local function RenderTestIcons(state, entry)
 				DurationObject = wowEx:CreateDuration(now, 15),
 				Alpha = true,
 				ReverseCooldown = group.Icons.ReverseCooldown,
+				HideSwipe = group.Icons.HideSwipe,
+				HideNumbers = group.Icons.HideNumbers,
 				Glow = group.Icons.Glow,
 				Color = color,
 				FontScale = db.FontScale,
 				-- A filter group has no spell to name, so the group's own name stands in.
-				Name = group.Name,
+				Name = group.Icons.SpellName ~= false and group.Name or nil,
 				BarTexture = barTexture,
 				Border = group.Icons.Border,
 			})

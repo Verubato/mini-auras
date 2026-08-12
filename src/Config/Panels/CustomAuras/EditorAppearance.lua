@@ -26,7 +26,9 @@ function ui.BuildAppearanceTab(ctx)
 
 	local shapeRow = ctx.NewRow(appearancePanel, ui.DropdownRowHeight)
 	local checkRow = ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, CHECK_ROW_GAP)
+	-- Whatever a shape has beyond a full row of checkboxes. Collapsed when it holds nothing.
 	local checkRow2 = ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, CHECK_ROW2_GAP)
+	local swatchRow = ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, CHECK_ROW2_GAP)
 
 	local textureDropdown = ctx.Dropdown(L["Bar Texture"], {
 		Items = barTextures:GetNames(),
@@ -79,6 +81,20 @@ function ui.BuildAppearanceTab(ctx)
 			Label = L["Reverse swipe"], Tooltip = L["Reverses the direction of the cooldown swipe animation."],
 			Get = function(group) return group.Icons.ReverseCooldown end,
 			Set = function(group, value) group.Icons.ReverseCooldown = value end,
+		},
+		{
+			Bars = false,
+			Label = L["Hide swipe"],
+			Tooltip = L["Hide the cooldown swipe animation on this group's icons."],
+			Get = function(group) return group.Icons.HideSwipe end,
+			Set = function(group, value) group.Icons.HideSwipe = value end,
+		},
+		{
+			Bars = false,
+			Label = L["Hide numbers"],
+			Tooltip = L["Hide the countdown text on this group's icons."],
+			Get = function(group) return group.Icons.HideNumbers end,
+			Set = function(group, value) group.Icons.HideNumbers = value end,
 		},
 		{
 			Bars = true,
@@ -141,7 +157,7 @@ function ui.BuildAppearanceTab(ctx)
 		end,
 	})
 	-- Centred: the swatch is shorter than a checkbox and would otherwise sit high.
-	swatch:SetPoint("TOPLEFT", checkRow2, "TOPLEFT", 0,
+	swatch:SetPoint("TOPLEFT", swatchRow, "TOPLEFT", 0,
 		-math.floor((CHECK_ROW_HEIGHT - swatch:GetHeight()) / 2))
 
 	local pandemicSwatch = mini:ColorSwatch({
@@ -164,7 +180,7 @@ function ui.BuildAppearanceTab(ctx)
 			end
 		end,
 	})
-	pandemicSwatch:SetPoint("TOPLEFT", checkRow2, "TOPLEFT", checkColumn,
+	pandemicSwatch:SetPoint("TOPLEFT", swatchRow, "TOPLEFT", checkColumn,
 		-math.floor((CHECK_ROW_HEIGHT - pandemicSwatch:GetHeight()) / 2))
 
 	-- Shares the shape row with the bar texture, which is never up at the same time: one of them
@@ -190,11 +206,18 @@ function ui.BuildAppearanceTab(ctx)
 			spec.Control:SetShown(shown)
 
 			if shown then
+				-- Wraps onto the second row once the first is full, so a shape with more switches
+				-- than columns keeps them all readable rather than running off the panel.
+				local row = column < CHECK_COLUMNS and checkRow or checkRow2
+
 				spec.Control:ClearAllPoints()
-				spec.Control:SetPoint("TOPLEFT", checkRow, "TOPLEFT", checkColumn * column, 0)
+				spec.Control:SetPoint("TOPLEFT", row, "TOPLEFT",
+					checkColumn * (column % CHECK_COLUMNS), 0)
 				column = column + 1
 			end
 		end
+
+		local wrapped = column > CHECK_COLUMNS
 
 		-- The bar texture is all that is left on this row now that the shape itself is picked on
 		-- the trigger tab, so the row goes away with it rather than holding open a blank strip.
@@ -220,9 +243,11 @@ function ui.BuildAppearanceTab(ctx)
 		-- Rows keep their height whatever is in them, so the emptied ones are collapsed rather
 		-- than left holding the tab open around nothing.
 		checkRow:SetHeight(soundOnly and 1 or CHECK_ROW_HEIGHT)
-		checkRow2:SetHeight(soundOnly and 1 or CHECK_ROW_HEIGHT)
+		checkRow2:SetHeight(wrapped and CHECK_ROW_HEIGHT or 1)
+		swatchRow:SetHeight(soundOnly and 1 or CHECK_ROW_HEIGHT)
 		ctx.SetRowGap(checkRow, soundOnly and 0 or CHECK_ROW_GAP)
-		ctx.SetRowGap(checkRow2, soundOnly and 0 or CHECK_ROW2_GAP)
+		ctx.SetRowGap(checkRow2, wrapped and CHECK_ROW2_GAP or 0)
+		ctx.SetRowGap(swatchRow, soundOnly and 0 or CHECK_ROW2_GAP)
 		ctx.UpdateEditorHeight()
 	end
 

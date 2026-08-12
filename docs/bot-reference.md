@@ -373,6 +373,8 @@ have an appearance." and no controls. **Display** itself lives on the Trigger ta
 | Glow icons | on/off (icons only) | off (starter groups: on) |
 | Show border | on/off | off (starter groups: on) |
 | Reverse swipe | on/off (icons only) | on |
+| Hide swipe | on/off (icons only) | off |
+| Hide numbers | on/off (icons only); drops the countdown text | off |
 | Show tooltips | on/off | off |
 | Spell name | on/off (bars only) | on |
 | Pandemic | on/off | off |

@@ -141,6 +141,10 @@ local function NewRegion(parent, regionType)
 	function region:GetObjectType()
 		return region._type
 	end
+	function region:GetText()
+		local args = region._lastArgs.SetText
+		return args and args[1] or ""
+	end
 	function region:GetFont()
 		return "MockFont", 10, ""
 	end
@@ -185,6 +189,7 @@ function M.NewFrame(frameType, name, parent, template)
 		_height = 0,
 		_scripts = {},
 		_calls = {},
+		_lastArgs = {},
 	}
 
 	frame._events = {}
@@ -431,6 +436,7 @@ function M.NewFrame(frameType, name, parent, template)
 		}) do
 			frame[methodName] = function(_, ...)
 				frame._calls[methodName] = (frame._calls[methodName] or 0) + 1
+				frame._lastArgs[methodName] = { ... }
 			end
 		end
 		frame.GetFont = function()

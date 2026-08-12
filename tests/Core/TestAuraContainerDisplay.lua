@@ -1314,6 +1314,35 @@ fw.describe("AuraContainerDisplay - which countdown is on screen", function()
 		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 0, "the bound text is hidden")
 		assert(button._durationTextOptions.textColor == nil, "so nothing is bound to colour it")
 	end)
+
+	fw.it("HideNumbers drops both countdowns but keeps the swipe", function()
+		local instance = newInstance()
+		local button = instance.Buttons[1]
+		local widgets = instance.ButtonWidgets[button]
+
+		mockDb.ColorCountdownByTime = true
+		instance:SetStyle({ HideNumbers = true })
+
+		assert(widgets.Cooldown._lastArgs.SetHideCountdownNumbers[1] == true, "no native numbers")
+		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 0, "and no coloured stand-in either")
+		assert(widgets.Cooldown._lastArgs.SetDrawSwipe[1] == true, "the swipe is a separate switch")
+
+		mockDb.ColorCountdownByTime = nil
+	end)
+
+	fw.it("HideSwipe drops the swipe and leaves the numbers alone", function()
+		local instance = newInstance()
+		local button = instance.Buttons[1]
+		local widgets = instance.ButtonWidgets[button]
+
+		instance:SetStyle({ HideSwipe = true })
+
+		assert(widgets.Cooldown._lastArgs.SetDrawSwipe[1] == false, "no swipe")
+		assert(widgets.Cooldown._lastArgs.SetHideCountdownNumbers[1] == false, "the numbers stay")
+
+		instance:SetStyle({})
+		assert(widgets.Cooldown._lastArgs.SetDrawSwipe[1] == true, "and it comes back when turned off")
+	end)
 end)
 
 fw.describe("AuraContainerDisplay - when a container first parses", function()

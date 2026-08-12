@@ -985,6 +985,8 @@ end
 ---@field Alpha number|boolean? Control alpha: number sets it directly, boolean uses SetAlphaFromBoolean
 ---@field Glow boolean? Whether to show glow effect (requires LibCustomGlow)
 ---@field ReverseCooldown boolean? Whether to reverse the cooldown animation
+---@field HideSwipe boolean? Drop the cooldown swipe, whatever the global setting says
+---@field HideNumbers boolean? Drop the countdown text
 ---@field Color table? RGBA color table {r, g, b, a} for glow and border color
 ---@field FontScale number? Font scale multiplier for cooldown text (default: 1.0)
 ---@field Layer number? Which layer to render on (1 = base, 2+ = stacked above; default: 1)
@@ -1054,13 +1056,14 @@ function M:SetSlot(slotIndex, options)
 	local db = GetDb()
 	layer.Icon:SetTexture(options.Texture)
 	layer.Cooldown:SetReverse(options.ReverseCooldown)
+	layer.Cooldown:SetHideCountdownNumbers(options.HideNumbers == true)
 	if layer.Cooldown.SetCountdownMillisecondsThreshold then
 		layer.Cooldown:SetCountdownMillisecondsThreshold(options.ShowMilliseconds and (db and db.MillisecondsThreshold or 5) or 0)
 	end
 
 	if options.DurationObject then
 		layer.Cooldown:SetCooldownFromDurationObject(options.DurationObject)
-		layer.Cooldown:SetDrawSwipe(not (db and db.DisableSwipe))
+		layer.Cooldown:SetDrawSwipe(options.HideSwipe ~= true and not (db and db.DisableSwipe))
 		RegisterCountdownColor(layer.Cooldown, options.DurationObject)
 	else
 		layer.Cooldown:Clear()

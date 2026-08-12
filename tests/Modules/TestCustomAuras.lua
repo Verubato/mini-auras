@@ -885,6 +885,26 @@ fw.describe("CustomAuras - options page preview", function()
 		display:SetPreviewGroup(nil)
 	end)
 
+	fw.it("drops the name from a previewed bar when the group turned it off", function()
+		ClearGroups()
+
+		local group = AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Icons = { Display = "BAR" } })
+
+		display:SetPreviewGroup(group.Id)
+
+		local slot = display:GetStates()[group.Id].Screen.Test.Slots[1]
+
+		assert(slot.Name:GetText() ~= "", "the stand-in bar is labelled while the switch is on")
+
+		group.Icons.SpellName = false
+		module:Refresh()
+
+		assert(display:GetStates()[group.Id].Screen.Test.Slots[1].Name:GetText() == "",
+			"and the preview follows the switch, like the live bars do")
+
+		display:SetPreviewGroup(nil)
+	end)
+
 	fw.it("skips a group with nothing to draw", function()
 		-- The stand-in icons ARE the drag handle now that the anchor has no backdrop, so a group
 		-- with no spells yet would be an invisible frame sitting over whatever is behind it.

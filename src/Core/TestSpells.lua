@@ -118,13 +118,14 @@ M.KickSpecIds = {
 ---@param spells table[]|number[] TestSpell entries, or bare spell ids.
 ---@param startSlot number First slot to write (after a kick icon, for the modules that show one).
 ---@param options table Styling and limits:
---- ReverseCooldown/Glow/FontScale passed through to SetSlot;
+--- ReverseCooldown/HideSwipe/HideNumbers/Glow/FontScale passed through to SetSlot;
 --- Color tints every icon; ColorByDispelType tints each with its spell's DispelColor instead;
 --- ShowTooltips attaches each spell id;
 --- Count caps how many spells are drawn (default all);
 --- Stagger staggers durations and start times so the swipes visibly differ (default a flat 15s);
 --- BarTexture and Border are passed to a BarSlotContainer's fill and outline (the icon
---- containers ignore both, drawing their border off Color instead).
+--- containers ignore both, drawing their border off Color instead);
+--- SpellName false leaves a bar's fill unlabelled (default on).
 ---@return number nextSlot
 function M:FillContainer(container, spells, startSlot, options)
 	local now = GetTime()
@@ -159,12 +160,14 @@ function M:FillContainer(container, spells, startSlot, options)
 				DurationObject = wowEx:CreateDuration(startTime, duration),
 				Alpha = true,
 				ReverseCooldown = options.ReverseCooldown,
+				HideSwipe = options.HideSwipe,
+				HideNumbers = options.HideNumbers,
 				Glow = options.Glow,
 				Color = color,
 				FontScale = options.FontScale,
 				SpellId = options.ShowTooltips and spellId or nil,
 				-- Only a bar container draws a name; the icon containers ignore both of these.
-				Name = C_Spell.GetSpellName(spellId),
+				Name = options.SpellName ~= false and C_Spell.GetSpellName(spellId) or nil,
 				BarTexture = options.BarTexture,
 				Border = options.Border,
 			})

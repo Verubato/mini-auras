@@ -29,6 +29,8 @@ local STYLE_FIELDS = {
 	"Border",
 	"Stacks",
 	"ReverseCooldown",
+	"HideSwipe",
+	"HideNumbers",
 	"ShowMilliseconds",
 	"ColorByDispelType",
 	"Glow",
@@ -784,10 +786,13 @@ local function StyleButton(instance, button)
 	-- resolved when the style was set, so this hot loop never re-reads the db per button.
 	-- Bar buttons have no cooldown widget: the fill is their clock.
 	local cd = widgets.Cooldown
+	-- Numbers off means neither the cooldown's own text nor the bound fontstring below, so an
+	-- icon that says nothing but "this is up" is the two switches together.
+	local hideNumbers = style.HideNumbers == true
 
 	if cd then
 		cd:SetReverse(style.ReverseCooldown or false)
-		cd:SetDrawSwipe(not style.DisableSwipe)
+		cd:SetDrawSwipe(not (style.DisableSwipe or style.HideSwipe))
 
 		if cd.SetCountdownMillisecondsThreshold then
 			cd:SetCountdownMillisecondsThreshold(msThreshold)
@@ -801,12 +806,13 @@ local function StyleButton(instance, button)
 	-- both. The engine writes the fontstring either way, so the off state is alpha rather
 	-- than unbinding. On a bar it is the only countdown there is, so it always shows.
 	local durationText = widgets.DurationText
-	local colorCountdown = style.ColorCountdownByTime == true and durationText ~= nil
-	local useDurationText = durationText ~= nil
+	local colorCountdown = not hideNumbers and style.ColorCountdownByTime == true
+		and durationText ~= nil
+	local useDurationText = not hideNumbers and durationText ~= nil
 		and (bar ~= nil or colorCountdown or msThreshold > 0)
 
 	if cd then
-		cd:SetHideCountdownNumbers(useDurationText)
+		cd:SetHideCountdownNumbers(hideNumbers or useDurationText)
 	end
 
 	if durationText then
@@ -1915,6 +1921,8 @@ end
 
 ---@class AuraDisplayStyle
 ---@field ReverseCooldown boolean?
+---@field HideSwipe boolean? Drop the cooldown swipe, whatever the global setting says.
+---@field HideNumbers boolean? Drop the countdown text, the native one and the bound stand-in.
 ---@field ShowMilliseconds boolean?
 ---@field ColorByDispelType boolean?
 ---@field Glow boolean?

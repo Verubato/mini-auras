@@ -369,6 +369,10 @@ function M:Normalise(group)
 	-- On unless it was turned off: the swipe filling up reads as time running out, which is what
 	-- these icons are for. A group saved before this carries the field either way.
 	icons.ReverseCooldown = icons.ReverseCooldown ~= false
+	-- Both off by default: an aura icon without a clock is the unusual want, for someone who only
+	-- cares that the aura is up.
+	icons.HideSwipe = icons.HideSwipe == true
+	icons.HideNumbers = icons.HideNumbers == true
 	icons.ShowTooltips = icons.ShowTooltips == true
 	icons.Color = icons.Color or {}
 	icons.Color.R = tonumber(icons.Color.R) or 1
@@ -911,7 +915,7 @@ end
 ---@field Position { Point: string, RelativePoint: string, X: number, Y: number } Screen anchor only.
 ---@field Offset { X: number, Y: number } Nameplate, unit frame and arena frame anchors only.
 ---@field Grow string
----@field Icons { Size: number, Spacing: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, ShowTooltips: boolean, Color: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
+---@field Icons { Size: number, Spacing: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, HideSwipe: boolean, HideNumbers: boolean, ShowTooltips: boolean, Color: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
 ---@field Sound { Applied: string, Removed: string, Stacks: string, Channel: string } Empty means silent.
 ---@field TrackingMode string "SPELLS" narrows to a spell list, "FILTERS" to a filter string.
 ---@field Filters table<string, string> Filter component to "REQUIRE"|"FORBID". Filter mode only.
