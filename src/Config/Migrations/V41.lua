@@ -669,3 +669,34 @@ function M:UpgradeToVersion66(vars)
 	vars.Version = 66
 	return true
 end
+
+function M:UpgradeToVersion67(vars)
+	if vars.Version ~= 66 then return false end
+
+	-- The starter group ships as "Precog" now, short enough to read under the icon. Only a group
+	-- still carrying the old default name is touched, so a name someone typed themselves stays.
+	local function Rename(modules)
+		local groups = modules and modules.CustomAurasModule and modules.CustomAurasModule.Groups
+
+		if not groups then
+			return
+		end
+
+		for _, group in pairs(groups) do
+			if group.Name == "Precognition" then
+				group.Name = "Precog"
+			end
+		end
+	end
+
+	Rename(vars.Modules)
+
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			Rename(profile.Modules)
+		end
+	end
+
+	vars.Version = 67
+	return true
+end

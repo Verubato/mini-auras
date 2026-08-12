@@ -166,7 +166,7 @@ local ALWAYS_FRIENDLY = { [SELF_UNIT] = true, [PET_UNIT] = true, [UNIT_FRAMES_UN
 -- tracks one spell and leaves Icon empty, which borrows that spell's own icon. A Color tints
 -- the border/glow after the spell's own art; without one the group keeps the default white.
 local DEFAULT_GROUPS = {
-	{ Name = "Precognition", SpellId = 377362, Sound = "ElectricalSpark" },
+	{ Name = "Precog", SpellId = 377362, Sound = "ElectricalSpark" },
 	{ Name = "Shroud", SpellId = 378464, Color = { R = 0.64, G = 0.21, B = 0.93 } },
 	{ Name = "PI", SpellId = 10060, Sound = "BubblePop", Color = { R = 1, G = 0.82, B = 0 } },
 }

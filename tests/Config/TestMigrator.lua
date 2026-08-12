@@ -736,6 +736,32 @@ fw.describe("Migrator - individual migrations", function()
 		assert(vars.Version == 66)
 	end)
 
+	fw.it("v67 shortens the starter precog group's name, leaving renamed ones alone", function()
+		local vars = {
+			Version = 66,
+			Modules = {
+				CustomAurasModule = {
+					Groups = {
+						{ Id = "g1", Name = "Precognition", Spells = { 377362 } },
+						{ Id = "g2", Name = "Shroud", Spells = { 378464 } },
+					},
+				},
+			},
+			Profiles = {
+				Starter = { Modules = { CustomAurasModule = { Groups = { { Id = "g1", Name = "Precognition" } } } } },
+				Renamed = { Modules = { CustomAurasModule = { Groups = { { Id = "g1", Name = "My Precog" } } } } },
+			},
+		}
+
+		assert(migrator:UpgradeToVersion67(vars) == true)
+		assert(vars.Modules.CustomAurasModule.Groups[1].Name == "Precog", "the default name is shortened")
+		assert(vars.Modules.CustomAurasModule.Groups[2].Name == "Shroud", "the other starters are untouched")
+		assert(vars.Profiles.Starter.Modules.CustomAurasModule.Groups[1].Name == "Precog", "profiles too")
+		assert(vars.Profiles.Renamed.Modules.CustomAurasModule.Groups[1].Name == "My Precog",
+			"a name the user typed is left alone")
+		assert(vars.Version == 67)
+	end)
+
 	fw.it("v57 leaves kicks alone when the CC module is disabled everywhere", function()
 		local vars = {
 			Version = 56,

@@ -260,7 +260,7 @@ apart, all with glow and border on:
 
 | Group | Spell | Sound | Tint |
 |---|---|---|---|
-| Precognition | 377362 | ElectricalSpark on apply | none (white) |
+| Precog (Precognition) | 377362 | ElectricalSpark on apply | none (white) |
 | Shroud (Nullifying Shroud) | 378464 | none | purple (0.64, 0.21, 0.93) |
 | PI (Power Infusion) | 10060 | BubblePop on apply | gold (1, 0.82, 0) |
 
@@ -976,7 +976,7 @@ until they return; (5) the group's unit names a side and the unit is currently o
 side (buffs show only while friendly, debuffs only while hostile); (6) the group's own
 Enabled toggle is off.
 
-**"My starter Precognition/Shroud/PI groups are gone."** Deleting them is permanent; they
+**"My starter Precog/Shroud/PI groups are gone."** Deleting them is permanent; they
 are seeded only once per profile. Recreate them by hand, import them from someone else, or
 reset the profile to defaults (Profiles > Reset).
 
