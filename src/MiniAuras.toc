@@ -34,6 +34,7 @@ Locales\zhTW.lua
 Utils\Units.lua
 Utils\Auras.lua
 Utils\FontUtil.lua
+Utils\IconUtil.lua
 Utils\ModuleUtil.lua
 Utils\SlotDistribution.lua
 Utils\WoWEx.lua

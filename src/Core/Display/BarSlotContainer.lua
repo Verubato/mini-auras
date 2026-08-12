@@ -2,6 +2,7 @@
 local _, addon = ...
 local wowEx = addon.Utils.WoWEx
 local fontUtil = addon.Utils.FontUtil
+local iconUtil = addon.Utils.IconUtil
 local barTextures = addon.Core.BarTextures
 local outline = addon.Core.Outline
 
@@ -16,7 +17,6 @@ local outline = addon.Core.Outline
 
 -- Gap between the icon and the fill, and how far text sits inside the fill. Matching
 -- AuraContainerDisplay's bar buttons, so the preview and the real thing line up.
-local ICON_TRIM = 0.08
 local TEXT_INSET = 3
 local NAME_COEFFICIENT = 0.5
 local COUNTDOWN_COEFFICIENT = 0.4
@@ -68,7 +68,7 @@ local function CreateBar(instance, parent)
 	local icon = frame:CreateTexture(nil, "ARTWORK")
 	icon:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
 	icon:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
-	icon:SetTexCoord(ICON_TRIM, 1 - ICON_TRIM, ICON_TRIM, 1 - ICON_TRIM)
+	icon:SetTexCoord(iconUtil:TexCoord())
 
 	local bar = CreateFrame("StatusBar", nil, frame)
 	bar:SetPoint("TOPLEFT", icon, "TOPRIGHT", 0, 0)

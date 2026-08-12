@@ -21,6 +21,8 @@ local dbDefaults = {
 	-- dies with the 12.0 path, together with its ProfileManager PayloadKeys entry.
 	CCNativeOrder = false,
 	DisableSwipe = false,
+	-- Crops Blizzard's silver border off every icon. Off gives the stock art back.
+	IconZoom = true,
 	-- Off: enough people asked for it back off that it does not earn being the default.
 	ColorCountdownByTime = false,
 	FadeWithParent = true,

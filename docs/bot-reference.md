@@ -221,6 +221,12 @@ channel dropdown: Master, Sound Effects (SFX), Music, Ambience, or Dialog, defau
 - **Font Scale** (Misc, 0.5-1.5, step 0.05, default 1.0) scales the addon's text.
 - **Disable Swipe** (Misc, off by default) removes the cooldown pie animation everywhere;
   timer text stays.
+- **Zoom Icons** (Misc, on by default) crops the silver border Blizzard bakes into spell icon
+  art, so the icon sits flush inside the addon's own border. Turning it off shows the stock
+  art with its border. The crop is applied as an icon's frame is built and the frames are
+  pooled, so the option prompts for a UI reload; icons already on screen keep the old crop
+  until then. It does not touch portrait icons, whose inset is there to fit the portrait's
+  shape, or icons skinned by Masque, where the skin owns the crop.
 
 ---
 
@@ -872,6 +878,7 @@ These apply addon-wide. All except Language override are part of the profile.
 | Configure Blizzard Nameplates | on/off | on (disables Blizzard's CC and BigDebuffs on nameplates when MiniAuras nameplates are used) |
 | CC Native Order (12.0 only) | on/off | off (see CC module) |
 | Disable Swipe | on/off | off |
+| Zoom Icons | on/off | on (crops the baked silver border off icon art; changing it prompts a UI reload) |
 | Fade With Parent | on/off | on (icons fade with the unit frame they are attached to, for example out-of-range dimming) |
 | Colour Countdown | on/off | on |
 | Glow Type | see "Glow Type" above | Slot Glow |
@@ -892,8 +899,8 @@ Sidebar: Other > Profiles.
   the last remaining profile cannot be deleted), **Reset** (resets the active profile to
   factory defaults, confirmed), and **Import/Export**.
 - A profile contains: all module settings plus the Misc options Glow Type, Font Scale,
-  Configure Blizzard Nameplates, CC Native Order, Disable Swipe, Colour Countdown and Fade
-  With Parent. Not in the profile: Language override and the Auto-Switch rules.
+  Configure Blizzard Nameplates, CC Native Order, Disable Swipe, Zoom Icons, Colour Countdown
+  and Fade With Parent. Not in the profile: Language override and the Auto-Switch rules.
 - **Import/Export**: export produces a string starting with `!MiniAuras:1!` (deflated CBOR,
   Base64). Import needs a profile name and creates a new profile, then switches to it. Old
   MiniCC strings (`!MiniCC:2!` and the older `!MiniCC!`) also import.

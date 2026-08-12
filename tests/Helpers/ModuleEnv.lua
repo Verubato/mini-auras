@@ -288,6 +288,9 @@ function M.build()
 	loadFile("src/Utils/ModuleUtil.lua")
 	addon.Utils.ModuleUtil:Init()
 	loadFile("src/Utils/SlotDistribution.lua")
+	-- The real thing rather than a stub: it reads one saved variable and hands back four numbers,
+	-- and the displays crop every icon they build through it.
+	loadFile("src/Utils/IconUtil.lua")
 	loadFile("src/Core/Auras/AuraCategoryIds.lua")
 	-- The baked TTS clip map and the pack list that reads it: the alert sound registrations index
 	-- both directly, so an env without them can only exercise the announcements while they are off.

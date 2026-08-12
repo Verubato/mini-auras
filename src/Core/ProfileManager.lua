@@ -16,6 +16,7 @@ M.PayloadKeys = {
 	"ConfigureBlizzardNameplates",
 	"CCNativeOrder",
 	"DisableSwipe",
+	"IconZoom",
 	"ColorCountdownByTime",
 	"FadeWithParent",
 	"Modules",

@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local fontUtil = addon.Utils.FontUtil
+local iconUtil = addon.Utils.IconUtil
 local wowEx = addon.Utils.WoWEx
 local growAnchors = addon.Core.GrowAnchors
 local glowStyles = addon.Core.GlowStyles
@@ -17,8 +18,9 @@ local DEFAULT_GLOW_STYLE = glowStyles.DefaultName
 -- Spell art carries a silver frame baked into the texture. Trimming it off leaves the artwork
 -- reaching the icon's edge, so our own border sits flush and the cooldown swipe covers exactly
 -- the visible square instead of eating into the baked frame.
-local ICON_TRIM = 0.08
-local DEFAULT_ICON_TEX_COORD = { ICON_TRIM, 1 - ICON_TRIM, ICON_TRIM, 1 - ICON_TRIM }
+-- Refilled per Configure rather than held as a constant, so the icon zoom option reaches
+-- displays built after it changed. Shared: every display without its own crop reads the same one.
+local defaultIconTexCoord = {}
 
 -- The style fields StoreStyle copies verbatim from a caller's table. Drives the compare and the
 -- copy in StoreStyle, the clear in GetStyleScratch and the concat in GetStyleSignature, so a new
@@ -1271,7 +1273,7 @@ local function InitializeBarButton(instance, button, glowColor)
 	icon:SetPoint("TOPLEFT", button, "TOPLEFT", 0, 0)
 	icon:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", 0, 0)
 	-- The baked frame reads as a seam against the fill, so a bar's icon is trimmed like every other.
-	icon:SetTexCoord(ICON_TRIM, 1 - ICON_TRIM, ICON_TRIM, 1 - ICON_TRIM)
+	icon:SetTexCoord(iconUtil:TexCoord())
 	button:SetIcon(icon)
 
 	local bar = CreateFrame("StatusBar", nil, button)
@@ -1463,7 +1465,9 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	-- Visibility the owning module last asked for; frames are created shown.
 	instance.DesiredShown = true
 	instance.RestylePending = false
-	instance.IconTexCoord = options.IconTexCoord or DEFAULT_ICON_TEX_COORD
+	defaultIconTexCoord[1], defaultIconTexCoord[2], defaultIconTexCoord[3], defaultIconTexCoord[4] =
+		iconUtil:TexCoord()
+	instance.IconTexCoord = options.IconTexCoord or defaultIconTexCoord
 	instance.IconMask = options.IconMask
 	instance.Minimal = options.Minimal == true
 	instance.Label = options.Label

@@ -3,6 +3,7 @@ local _, addon = ...
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", true)
 local Masque = LibStub and LibStub("Masque", true)
 local fontUtil = addon.Utils.FontUtil
+local iconUtil = addon.Utils.IconUtil
 local wowEx = addon.Utils.WoWEx
 local glowStyles = addon.Core.GlowStyles
 
@@ -10,11 +11,9 @@ local glowStyles = addon.Core.GlowStyles
 -- changes for the life of the session.
 local USE_AURA_CONTAINERS = wowEx:UseAuraContainers()
 
--- Spell art carries a silver frame baked into the texture. Trimming it off leaves the artwork
--- reaching the icon's edge, so our own border sits flush and the cooldown swipe covers exactly
--- the visible square instead of eating into the baked frame. A Masque skin overrides this with
--- its own crop, which is what we want - the skin owns the icon's shape.
-local ICON_TRIM = 0.08
+-- The icon crop (Utils/IconUtil) leaves the artwork reaching the icon's edge, so our own border
+-- sits flush and the swipe covers exactly the visible square. A Masque skin overrides it with its
+-- own crop, which is what we want - the skin owns the icon's shape.
 
 -- Style name -> the field its built frame is cached under on a parent, so a frame is never
 -- built twice per layer. Membership doubles as "this style is texture-based": the shared
@@ -200,7 +199,7 @@ local function CreateLayer(parentFrame, level, iconSize, noBorder)
 	-- place our icons on the 1st draw layer of background
 	local icon = f:CreateTexture(nil, "BACKGROUND", nil, 1)
 	icon:SetAllPoints()
-	icon:SetTexCoord(ICON_TRIM, 1 - ICON_TRIM, ICON_TRIM, 1 - ICON_TRIM)
+	icon:SetTexCoord(iconUtil:TexCoord())
 
 	local cd = CreateFrame("Cooldown", NextFrameName("Cooldown"), f, "CooldownFrameTemplate")
 	cd:SetAllPoints()

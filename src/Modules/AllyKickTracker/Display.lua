@@ -1,6 +1,8 @@
 ---@type string, Addon
 local _, addon = ...
 
+local iconUtil = addon.Utils.IconUtil
+
 addon.Modules.AllyKickTracker = addon.Modules.AllyKickTracker or {}
 
 -- Resolved from the client's own font object on first layout: non-Latin locales substitute a
@@ -16,7 +18,6 @@ local ICON_PADDING_FACTOR = 1 / 10
 local TEXT_INSET = 4
 -- Icon art carries a transparent border; trimming it by the same amount the config previews do
 -- squares the icon up with the bar's edges.
-local ICON_TRIM = 0.08
 -- Below this the countdown reads better with a decimal, above it whole seconds are enough - the
 -- same threshold the icon cooldowns use for their own millisecond text.
 local MILLISECONDS_THRESHOLD = 3
@@ -114,7 +115,7 @@ local function LayoutBar(bar, options)
 	bar.Icon:ClearAllPoints()
 	bar.Icon:SetPoint("TOPLEFT", bar.Frame, "TOPLEFT", markerWidth, 0)
 	bar.Icon:SetSize(height, height)
-	bar.Icon:SetTexCoord(ICON_TRIM, 1 - ICON_TRIM, ICON_TRIM, 1 - ICON_TRIM)
+	bar.Icon:SetTexCoord(iconUtil:TexCoord())
 
 	bar.Bar:ClearAllPoints()
 	bar.Bar:SetPoint("TOPLEFT", bar.Frame, "TOPLEFT", markerWidth + height, 0)

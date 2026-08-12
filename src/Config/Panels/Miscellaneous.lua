@@ -195,6 +195,29 @@ function M:Build(panel)
 	colorCountdownChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
 	colorCountdownChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
 
+	-- The crop is baked into an icon when its frame is built, and the frames are pooled, so
+	-- icons already made keep the old one until the UI is reloaded.
+	local iconZoomChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Zoom Icons"],
+		Tooltip = L["Crops the silver border off spell icons. Turn it off to show the icons exactly as Blizzard draws them. Needs a reload."],
+		GetValue = function()
+			return db.IconZoom ~= false
+		end,
+		SetValue = function(value)
+			db.IconZoom = value
+			addon:Refresh()
+			-- The generic confirm rather than MINIAURAS_RELOAD_CONFIRM, whose wording is about
+			-- the language dropdown.
+			StaticPopup_Show("MINIAURAS_CONFIRM", L["This change needs a UI reload. Reload now?"], nil, {
+				OnYes = C_UI.Reload,
+			})
+		end,
+	})
+
+	iconZoomChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 3, 0)
+	iconZoomChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
+
 	local glowItems = useAuraContainers and {
 		"Rotation Assist (Clockwise)",
 		"Rotation Assist (Anti-clockwise)",

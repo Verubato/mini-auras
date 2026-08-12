@@ -1446,3 +1446,38 @@ fw.describe("AuraContainerDisplay - vehicles the client will not admit to", func
 		assert(onPlayer.Frame:IsShown(), "and back once it stops saying so")
 	end)
 end)
+
+-- The icon zoom option (Misc panel). The crop is read when a display is configured and baked
+-- into each button as it is built, so what this guards is the reading, not the redraw: the
+-- panel asks for a reload because pooled buttons keep the crop they were made with.
+fw.describe("AuraContainerDisplay - the icon zoom option", function()
+	fw.it("crops Blizzard's baked border off by default", function()
+		local instance = newInstance()
+
+		assert(instance.IconTexCoord[1] == 0.08, "left edge trimmed")
+		assert(instance.IconTexCoord[2] == 0.92, "right edge trimmed")
+	end)
+
+	fw.it("hands back the whole icon when the option is off", function()
+		mockDb.IconZoom = false
+
+		local instance = newInstance()
+
+		assert(instance.IconTexCoord[1] == 0, "no crop at all")
+		assert(instance.IconTexCoord[2] == 1, "the border comes back")
+
+		mockDb.IconZoom = nil
+	end)
+
+	fw.it("leaves a display with its own crop alone", function()
+		mockDb.IconZoom = false
+
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 5 },
+		}, 30, 2, "Test", { IconTexCoord = { 0.2, 0.8, 0.2, 0.8 } })
+
+		assert(instance.IconTexCoord[1] == 0.2, "the portrait's own inset is geometry, not trim")
+
+		mockDb.IconZoom = nil
+	end)
+end)
