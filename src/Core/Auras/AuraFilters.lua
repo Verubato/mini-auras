@@ -43,6 +43,16 @@ local auraCategoryIds = addon.Core.AuraCategoryIds
 -- paths where the gate DOES apply the maps, category members with no player PvP ability behind
 -- them (mob and boss CC, PvE-only important buffs) stop showing.
 --
+-- WHICH DISPLAYS DROP THE MAP
+-- Being a curated subset cuts the other way too: wherever the gate applies the maps they also
+-- hide flagged CC no list has heard of, so a new spec's stun goes missing until someone re-runs
+-- the scan. Nameplates and portraits take that coverage over the workaround (GroupSpec's
+-- dropSpellIds), because their units leave little room for the bug - a plate only exists for a
+-- unit the client is drawing, and a portrait shows your own unit or one you picked. A far-away
+-- focus is the gap that leaves. Raid frames, the healer CC display and the alert sounds keep the
+-- maps, since a group member or a BG healer is out of range constantly. Disarm keeps its map
+-- everywhere; see M.Filter.Disarm.
+--
 -- Other candidate filters are NOT identity-gated: dispel types and the booleans (isStealable,
 -- isBossAura, nameplateShowPersonal, maxDuration, ...), which is why a display that must work on
 -- a non-assistable unit reaches for one. One of them still has a gate of its own:
@@ -174,8 +184,12 @@ end
 ---@param maxIcons number? Icon budget for the group (New defaults a nil budget to 3).
 ---@param extra table? Further AuraDisplayGroupSpec fields (SortDirection, GlowColor, ...) copied
 ---onto the spec; entries may also override the category defaults.
+---@param dropSpellIds boolean? Leave the category's spell-ID map off, so the group shows
+---everything the filter string selects rather than the curated subset. Only for displays whose
+---units cannot be out of range - see the header. Ignored for disarm, whose map is the only
+---filter narrowing that group.
 ---@return AuraDisplayGroupSpec
-function M:GroupSpec(categoryKey, maxIcons, extra)
+function M:GroupSpec(categoryKey, maxIcons, extra, dropSpellIds)
 	local key = M.GroupKey[categoryKey]
 
 	if not key then
@@ -191,6 +205,11 @@ function M:GroupSpec(categoryKey, maxIcons, extra)
 		MaxIcons = maxIcons,
 	}
 
+	-- Disarm is exempt: with no category flag behind it, the map is all that narrows the group.
+	if dropSpellIds and categoryKey ~= "Disarm" then
+		spec.CandidateFilters = nil
+	end
+
 	if extra then
 		for field, value in pairs(extra) do
 			spec[field] = value
@@ -205,14 +224,15 @@ end
 ---Returns a fresh table: `New` keeps the list for the display's lifetime, so it must not be
 ---shared between displays.
 ---@param maxIcons number Initial per-group icon budget (SetMaxIcons re-budgets per category).
+---@param dropSpellIds boolean? Passed to every GroupSpec; see there.
 ---@return AuraDisplayGroupSpec[]
-function M:BuildCategoryGroups(maxIcons)
+function M:BuildCategoryGroups(maxIcons, dropSpellIds)
 	return {
-		self:GroupSpec("CrowdControl", maxIcons),
-		self:GroupSpec("Disarm", maxIcons),
-		self:GroupSpec("BigDefensive", maxIcons),
-		self:GroupSpec("ExternalDefensive", maxIcons),
-		self:GroupSpec("Important", maxIcons),
+		self:GroupSpec("CrowdControl", maxIcons, nil, dropSpellIds),
+		self:GroupSpec("Disarm", maxIcons, nil, dropSpellIds),
+		self:GroupSpec("BigDefensive", maxIcons, nil, dropSpellIds),
+		self:GroupSpec("ExternalDefensive", maxIcons, nil, dropSpellIds),
+		self:GroupSpec("Important", maxIcons, nil, dropSpellIds),
 	}
 end
 

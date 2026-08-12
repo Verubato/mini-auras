@@ -127,10 +127,13 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 
 	for index, category in ipairs(PORTRAIT_CATEGORIES) do
 		local display = auraContainerDisplay:New(kickFrame, unit, {
+			-- No spell-ID map: a portrait shows your own unit or one you picked, so the
+			-- out-of-range filter bug the maps work around has almost nowhere to bite, and the
+			-- group then covers every flagged aura rather than the curated subset.
 			auraFilters:GroupSpec(category, 1, {
 				-- Reverse instance-id order = newest aura first.
 				SortDirection = AuraContainerSortDirection.Reverse,
-			}),
+			}, true),
 		}, iconSize, 0, "Portraits", {
 			IconTexCoord = texCoord,
 			IconMask = mask,

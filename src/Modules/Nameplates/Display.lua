@@ -201,7 +201,9 @@ local function CreateBarDisplay(size, spacing, style)
 	return auraContainerDisplay:New(
 		UIParent,
 		"none",
-		auraFilters:BuildCategoryGroups(DEFAULT_BAR_ICONS),
+		-- No spell-ID maps: a plate only exists for a unit the client is drawing, so the
+		-- out-of-range filter bug the maps work around cannot reach one.
+		auraFilters:BuildCategoryGroups(DEFAULT_BAR_ICONS, true),
 		size,
 		spacing,
 		"Nameplates",
