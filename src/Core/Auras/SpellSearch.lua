@@ -12,8 +12,7 @@ local auraCategoryIds = addon.Core.AuraCategoryIds
 
 local MAX_RESULTS = 12
 local EMPTY = {}
--- Defensives the generated scan misses, kept here rather than taken from the cooldown tracker's
--- rules: that module is 12.0-only and this one has to outlive it.
+-- Defensives the generated scan misses.
 local EXTRA_IDS = {
 	[86659] = true, -- Guardian of Ancient Kings
 	[109304] = true, -- Exhilaration

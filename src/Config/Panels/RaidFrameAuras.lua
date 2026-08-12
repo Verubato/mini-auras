@@ -602,11 +602,9 @@ function M:Build(panel, default, raid)
 
 	local tabIsRaid = { default = false, raid = true }
 
-	-- 12.1 only, and not just because the option is unwired on 12.0: filtering by spell id is
-	-- impossible there. The legacy watcher reads auras through the unit APIs, where the spell id
-	-- comes back as a secret value - it cannot be compared or used as a table key, so a tracked
-	-- id can never be matched against it. Only the AuraContainer's includeSpellIDs filter can do
-	-- this, because the engine does the matching itself and never hands us the id.
+	-- Only the AuraContainer's includeSpellIDs filter can select by spell id, because the engine
+	-- does the matching itself. An id read from an aura is a secret value: it cannot be compared
+	-- or used as a table key, so a tracked id could never be matched against it here.
 	local spellTabs = {
 		{ Key = "default", Title = L["World/Arena/Dungeons"] },
 		{ Key = "raid",    Title = L["Raids/Battlegrounds"] },

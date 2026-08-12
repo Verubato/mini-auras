@@ -188,8 +188,8 @@ local dbDefaults = {
 			IconSpacing = 2,
 			-- Direction the alert bars extend as icons appear. Only LEFT and RIGHT render: the
 			-- chained per-unit rows have secret widths, so there is nothing to centre on. An older
-			-- db can still carry CENTER, which the config reads back as RIGHT.
-			Grow = "CENTER",
+			-- db can still carry CENTER, which every reader resolves to RIGHT.
+			Grow = "RIGHT",
 			Point = "CENTER",
 			RelativePoint = "TOP",
 			RelativeTo = "UIParent",

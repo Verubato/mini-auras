@@ -328,9 +328,8 @@ function M:GetUnitSpecId(unit)
 		return specId
 	end
 
-	-- Queue for async inspection on the next run loop tick. Only when Init has started the
-	-- run loop - otherwise nothing ever drains the stack (FrameSort provides inspection, or
-	-- the owning module skipped Init on 12.1) and it would grow for the whole session.
+	-- Queue for async inspection on the next run loop tick, but only once Init has started the
+	-- run loop: nothing drains the stack before then, so it would grow for the whole session.
 	if not cacheEntry and initialised then
 		priorityStack[#priorityStack + 1] = unit
 		needUpdate = true

@@ -49,21 +49,51 @@ local function RestoreOpaqueCaches(vars, saved)
 	end
 end
 
----Drops settings for modules the addon no longer ships from every stored profile.
----CleanTable cannot reach them: Profiles is opaque to it, so a snapshot keeps whatever the addon
----had when it was saved. Switching to that profile writes the whole payload back over the live
----db, so without this a retired module's table would round-trip forever.
-local function PruneRemovedModulesFromProfiles(vars)
+---Drops any setting the addon no longer ships from a stored profile payload, matching it against
+---the same defaults CleanTable uses on the live db.
+---
+---An empty table in the defaults is the schema's way of saying "the user authors this" (custom
+---aura groups, the spell-id hashes), so those are left whole rather than recursed into - the same
+---carve-out SaveOpaqueCaches makes for the live db.
+local function PruneToDefaults(value, defaults)
+	if type(value) ~= "table" or type(defaults) ~= "table" or next(defaults) == nil then
+		return
+	end
+
+	for key, sub in pairs(value) do
+		if defaults[key] == nil then
+			value[key] = nil
+		else
+			PruneToDefaults(sub, defaults[key])
+		end
+	end
+end
+
+---Applies that to every stored profile. CleanTable cannot reach them: Profiles is opaque to it,
+---so a snapshot keeps whatever the addon had when it was saved. Switching to that profile writes
+---the whole payload back over the live db, so without this a retired setting round-trips forever.
+local function PruneRemovedSettingsFromProfiles(vars)
 	if type(vars.Profiles) ~= "table" then
 		return
 	end
 
+	local payloadKeys = addon.Core.ProfileManager.PayloadKeys
+	local isPayloadKey = {}
+	for _, key in ipairs(payloadKeys) do
+		isPayloadKey[key] = true
+	end
+
 	for _, payload in pairs(vars.Profiles) do
-		if type(payload) == "table" and type(payload.Modules) == "table" then
-			for name in pairs(payload.Modules) do
-				if dbDefaults.Modules[name] == nil then
-					payload.Modules[name] = nil
+		if type(payload) == "table" then
+			-- A snapshot only ever holds payload keys, so one dropped from that list (a retired
+			-- top-level setting) is as stale as a value the defaults no longer describe.
+			for key in pairs(payload) do
+				if not isPayloadKey[key] then
+					payload[key] = nil
 				end
+			end
+			for _, key in ipairs(payloadKeys) do
+				PruneToDefaults(payload[key], dbDefaults[key])
 			end
 		end
 	end
@@ -140,7 +170,7 @@ function M:GetAndUpgradeDb()
 		local caches = SaveOpaqueCaches(vars)
 		mini:CleanTable(vars, dbDefaults, true, true)
 		RestoreOpaqueCaches(vars, caches)
-		PruneRemovedModulesFromProfiles(vars)
+		PruneRemovedSettingsFromProfiles(vars)
 	end
 
 	return vars
@@ -171,7 +201,7 @@ function M:SoftReset()
 	local caches = SaveOpaqueCaches(vars)
 	mini:CleanTable(vars, dbDefaults, true, true)
 	RestoreOpaqueCaches(vars, caches)
-	PruneRemovedModulesFromProfiles(vars)
+	PruneRemovedSettingsFromProfiles(vars)
 
 	-- The default-merge above only fills MISSING keys, so a stale Version (from a corrupt
 	-- migration chain or a db written by a newer addon version) would survive - leaving the

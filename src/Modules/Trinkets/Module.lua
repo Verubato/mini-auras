@@ -45,7 +45,6 @@ end
 
 ---@return TrinketsModuleOptions?
 local function GetOptions()
-
 	return display:GetOptions()
 end
 
@@ -79,7 +78,6 @@ end
 
 ---@param active boolean
 local function SetTestMode(active)
-
 	display:SetTestMode(active)
 
 	if active then
@@ -130,7 +128,6 @@ function M:Refresh()
 end
 
 function M:Init()
-
 	display:Init()
 	InstallHooks()
 	ApplyInitialState()

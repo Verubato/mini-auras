@@ -12,8 +12,8 @@ addon.Core.TestSpells = M
 -- without reading any of them.
 --
 -- READ-ONLY: consumers share these tables. The per-entry fields are part of what the preview
--- shows, so they live with the spell rather than in the module: StartOffset and Cooldown drive
--- the fake swipe, Class drives the alerts class-colour preview, DispelColor the border tint.
+-- shows, so they live with the spell rather than in the module: DispelColor drives the border
+-- tint.
 
 -- Shared sets
 
@@ -66,13 +66,13 @@ M.Nameplates = {
 	},
 }
 
----The alert bars carry a class per defensive so the legacy class-colour preview has something
----to colour; the real 12.1 bars can't class colour (UnitClass is secret there).
+---The alert bars colour by category rather than by class: UnitClass is secret, so a real bar
+---could never match a class colour and the preview must not promise one.
 M.Alerts = {
 	Defensive = {
-		{ SpellId = 47788, Class = "PRIEST" },   -- Guardian Spirit
-		{ SpellId = 45438, Class = "MAGE" },     -- Ice Block
-		{ SpellId = 104773, Class = "WARLOCK" }, -- Unending Resolve
+		{ SpellId = 47788 },  -- Guardian Spirit
+		{ SpellId = 45438 },  -- Ice Block
+		{ SpellId = 104773 }, -- Unending Resolve
 	},
 	Important = {
 		190319, -- Combustion

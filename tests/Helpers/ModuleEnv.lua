@@ -233,14 +233,8 @@ function M.build()
 		env.auraSoundRemoves = env.auraSoundRemoves + 1
 		env.auraSounds[handle] = nil
 	end
-	_G.LibStub = function(name)
-		if name == "LibRangeCheck-3.0" then
-			return {
-				GetRange = function()
-					return nil, nil
-				end,
-			}
-		end
+	-- Nothing the modules load asks LibStub for a library; answering nil keeps a stray call honest.
+	_G.LibStub = function()
 		return nil
 	end
 	_G.GetLocale = _G.GetLocale or function()

@@ -48,7 +48,6 @@ end
 ---No module-wide switch: a group carries its own, and no groups means no feature.
 ---@return boolean
 local function IsEnabled()
-
 	local options = GetOptions()
 
 	return options ~= nil and #options.Groups > 0
@@ -130,12 +129,10 @@ local function SetTestMode(active)
 end
 
 function M:StartTesting()
-
 	SetTestMode(true)
 end
 
 function M:StopTesting()
-
 	SetTestMode(false)
 end
 
@@ -186,7 +183,6 @@ function M:NormaliseGroups()
 end
 
 function M:Init()
-
 	db = mini:GetSavedVars()
 
 	display:Init()

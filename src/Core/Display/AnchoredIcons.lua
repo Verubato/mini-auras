@@ -10,9 +10,9 @@ local M = {}
 addon.Core.AnchoredIcons = M
 
 -- The geometry shared by every display that hangs an icon container off a unit frame: the crowd
--- control and auras modules both keep one container (and, on 12.1, one aura display) per raid
--- frame anchor, and positioned them with identical code. Only the aura groups they build and the
--- categories they budget actually differ, so that stays in the modules and this holds the rest.
+-- control and auras modules both keep one container and one aura display per raid frame anchor,
+-- and positioned them with identical code. Only the aura groups they build and the categories
+-- they budget actually differ, so that stays in the modules and this holds the rest.
 
 ---@type Db
 local db
@@ -51,8 +51,8 @@ function M:AnchorContainer(container, anchor, options)
 	frame:SetPoint(anchorPoint, anchor, relativeToPoint, options.Offset.X, options.Offset.Y)
 end
 
----12.1 path: positions an entry's aura display on its anchor, chaining after the kick container
----while a kick icon is showing (the kick occupied slot 1 in the legacy layout).
+---Positions an entry's aura display on its anchor, chaining after the kick container while a
+---kick icon is showing.
 ---@param entry table an entry carrying Display and Container
 ---@param anchor table
 ---@param options table the module's per-instance options (Grow, IconSpacing, Offset)
@@ -82,8 +82,8 @@ function M:AnchorAuraDisplay(entry, anchor, options, kickActive)
 	)
 end
 
----12.1 path: renders the kick icon into an entry's container (slot 1) and re-anchors the aura
----display around it. Aura icons themselves are container-driven and need no update here.
+---Renders the kick icon into an entry's container (slot 1) and re-anchors the aura display
+---around it. Aura icons themselves are container-driven and need no update here.
 ---Schedules its own follow-up on expiry, since no aura event fires to clear the icon.
 ---@param entry table an entry carrying Container, Anchor, Display and KickTimer
 ---@param options table the module's per-instance options
@@ -142,7 +142,7 @@ end
 ---geometry, style and per-group budgets to the aura display (one ApplyConfig restyle rather than
 ---a setter per property), re-renders and re-anchors, and resolves the test-mode handover that
 ---swaps the live display for the test container.
----@param entry table Entry carrying Container, Anchor, Unit and (12.1) Display.
+---@param entry table Entry carrying Container, Anchor, Unit and Display.
 ---@param anchor table
 ---@param options table Module per-instance options (Grow, Offset, IconSpacing).
 ---@param iconSize number

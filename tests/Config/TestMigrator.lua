@@ -107,17 +107,23 @@ fw.describe("Migrator - fresh install", function()
 	end)
 end)
 
-fw.describe("Migrator - retired modules in stored profiles", function()
-	-- CleanTable never recurses into Profiles, so a snapshot keeps whatever modules existed when it
+fw.describe("Migrator - retired settings in stored profiles", function()
+	-- CleanTable never recurses into Profiles, so a snapshot keeps whatever the addon had when it
 	-- was saved. Switching to it writes the whole payload back over the live db, which is how a
-	-- retired module's settings would otherwise round-trip forever.
-	fw.it("prunes modules the addon no longer ships from every snapshot", function()
+	-- retired setting would otherwise round-trip forever.
+	fw.it("prunes settings the addon no longer ships from every snapshot", function()
 		_G.MiniAurasDB = {
 			Version = LATEST_VERSION,
 			Profiles = {
 				Old = {
+					GlowType = "Slot Glow",
+					CCNativeOrder = true,
 					Modules = {
 						CCModule = { Default = { Grow = "LEFT" } },
+						AlertsModule = {
+							Icons = { Size = 60, ColorByClass = true },
+							TTS = { VoicePack = "David", Volume = 100, SpeechRate = 3 },
+						},
 						FriendlyCooldownTrackerModule = { DisabledSpells = { [12345] = true } },
 						EnemyCooldownTrackerModule = { DisplayMode = "Linear" },
 					},
@@ -128,13 +134,47 @@ fw.describe("Migrator - retired modules in stored profiles", function()
 		}
 
 		local db = migrator:GetAndUpgradeDb()
-		local old = db.Profiles.Old.Modules
+		local old = db.Profiles.Old
 
-		assert(old.CCModule.Default.Grow == "LEFT", "a shipped module's settings are untouched")
+		assert(old.Modules.CCModule.Default.Grow == "LEFT", "a shipped module's settings are untouched")
+		assert(old.GlowType == "Slot Glow", "a shipped top-level payload key is untouched")
+		assert(old.Modules.AlertsModule.Icons.Size == 60, "a shipped nested key is untouched")
+		assert(old.Modules.AlertsModule.TTS.VoicePack == "David", "a shipped nested key is untouched")
+
 		for _, name in ipairs(removedModules) do
-			assert(old[name] == nil, "retired module survived in a snapshot: " .. name)
+			assert(old.Modules[name] == nil, "retired module survived in a snapshot: " .. name)
 		end
+		-- Retired keys nested inside a module that still ships, which a module-level sweep alone
+		-- could never reach.
+		assert(old.CCNativeOrder == nil, "retired top-level key survived")
+		assert(old.Modules.AlertsModule.Icons.ColorByClass == nil, "retired icon key survived")
+		assert(old.Modules.AlertsModule.TTS.Volume == nil, "retired TTS key survived")
+		assert(old.Modules.AlertsModule.TTS.SpeechRate == nil, "retired TTS key survived")
+
 		assert(db.Profiles.Empty ~= nil and db.Profiles.NoModules ~= nil, "odd-shaped profiles survive")
+	end)
+
+	fw.it("leaves user-authored tables whole", function()
+		-- An empty table in the defaults means the user authors the contents, so every key in it is
+		-- unknown to the schema and a blind prune would wipe the lot.
+		_G.MiniAurasDB = {
+			Version = LATEST_VERSION,
+			Profiles = {
+				Mine = {
+					Modules = {
+						CustomAurasModule = { Groups = { { Id = "g1", Name = "Mine", SpellIds = { 123 } } } },
+						RaidFrameAurasModule = { Spells = { Disabled = { [456] = true }, Custom = { [789] = true } } },
+					},
+				},
+			},
+		}
+
+		local mine = migrator:GetAndUpgradeDb().Profiles.Mine.Modules
+
+		assert(mine.CustomAurasModule.Groups[1].Name == "Mine", "authored aura group kept")
+		assert(mine.CustomAurasModule.Groups[1].SpellIds[1] == 123, "authored group contents kept")
+		assert(mine.RaidFrameAurasModule.Spells.Disabled[456] == true, "spell-id hash kept")
+		assert(mine.RaidFrameAurasModule.Spells.Custom[789] == true, "spell-id hash kept")
 	end)
 end)
 

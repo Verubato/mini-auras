@@ -75,10 +75,9 @@ local function BuildSettingsTab(parent, options)
 
 	glowChk:SetPoint("TOPLEFT", iconsEnabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	-- 12.1 draws these icons through AuraContainers, where the unit's identity - and so
-	-- UnitClass - is secret, so the glow/border can't be class coloured. Each category is its own
-	-- aura group there, so a tint per category is what it can do instead. Only one of the two
-	-- schemes is ever offered, filling the glow row left to right.
+	-- These icons are drawn through AuraContainers, where the unit's identity - and so
+	-- UnitClass - is secret, so the glow and border cannot be class coloured. Each category is
+	-- its own aura group, so a tint per category is what it can offer instead.
 	local nextGlowColumn = 1
 
 	local reverseChk = mini:Checkbox({
@@ -532,9 +531,8 @@ function M:Build(panel, options)
 		{ Key = "tts", Title = L["TTS"] },
 	}
 
-	-- 12.1 only, for the same reason the raid frame spell list is: the announcement has to be
-	-- filtered by spell id, and only the engine-side registrations can do that. The legacy path
-	-- speaks whatever name it read, and the id beside it is a secret value.
+	-- The announcement is filtered by spell id, which only the engine-side registrations can do:
+	-- an aura's id reaches the addon as a secret value it can never match against.
 	subTabs[#subTabs + 1] = { Key = "ttsSpells", Title = L["Spells"] }
 
 	local tabCtrl = mini:CreateTabs({
