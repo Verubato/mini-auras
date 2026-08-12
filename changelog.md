@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.6.1
+
+- Portrait icons now draw inside the portrait instead of over its border.
+
 ## 5.6.0
 
 - Personal auras can now hide the cooldown swipe and the countdown numbers, each on its own switch.
