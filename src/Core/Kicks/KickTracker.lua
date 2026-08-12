@@ -18,6 +18,11 @@ local pendingPlayerKick = nil -- { Texture, Duration, Time, Timer }
 
 ---@type table<string, KickUnitData>
 local tracked = {}
+-- Event frames by token, kept past Unwatch. Frames can never be freed, and the nameplate tokens
+-- churn constantly - a plate leaving and coming back as the camera turns would otherwise orphan
+-- one frame per cycle, for the whole session.
+---@type table<string, table>
+local eventFrames = {}
 
 ---@class KickTracker
 local M = {}
@@ -186,13 +191,22 @@ end
 ---Start tracking interrupts for a unit.
 ---@param unitToken string
 ---@param resetEvents string[]? WoW events that immediately clear the kick entry (e.g. PLAYER_TARGET_CHANGED)
+---@return boolean started False when this unit was already being watched, so a caller only
+---subscribes once per token however often it re-registers.
 function M:Watch(unitToken, resetEvents)
 	if tracked[unitToken] then
-		return
+		return false
+	end
+
+	local frame = eventFrames[unitToken]
+
+	if not frame then
+		frame = CreateFrame("Frame")
+		eventFrames[unitToken] = frame
 	end
 
 	local data = {
-		EventFrame = CreateFrame("Frame"),
+		EventFrame = frame,
 		Entry = nil,
 		EntryTimer = nil,
 		Kicked = false,
@@ -208,7 +222,6 @@ function M:Watch(unitToken, resetEvents)
 		end
 	end
 
-	local frame = data.EventFrame
 	for _, event in ipairs(kickEvents.StartEvents) do
 		frame:RegisterUnitEvent(event, unitToken)
 	end
@@ -227,6 +240,8 @@ function M:Watch(unitToken, resetEvents)
 			OnUnitEvent(unitToken, event, ...)
 		end
 	end)
+
+	return true
 end
 
 ---Stop tracking a unit and clear any active entry.
@@ -241,6 +256,7 @@ function M:Unwatch(unitToken)
 		data.EntryTimer:Cancel()
 	end
 
+	-- The frame stays in eventFrames, silent, for this token's next Watch.
 	data.EventFrame:UnregisterAllEvents()
 	data.EventFrame:SetScript("OnEvent", nil)
 	tracked[unitToken] = nil

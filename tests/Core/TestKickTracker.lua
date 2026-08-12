@@ -151,6 +151,30 @@ fw.describe("KickTracker - lifecycle", function()
 		assert(kickTracker:GetKick(unit) == nil, "no entry after Unwatch")
 	end)
 
+	fw.it("re-watching a unit reuses its event frame", function()
+		-- Frames can never be freed, and nameplate tokens are watched and unwatched every time a
+		-- plate comes and goes. Building a fresh frame per Watch orphaned one per cycle, which a
+		-- session of turning the camera in a crowd turns into thousands.
+		local unit, frame = newWatchedUnit()
+
+		kickTracker:Unwatch(unit)
+		kickTracker:Watch(unit)
+
+		assert(unitFrame() == frame, "the same token's second Watch reuses the first frame")
+
+		-- And the reused frame is live again, not a silent leftover.
+		interrupt(unitFrame(), unit, "Player-Kicker")
+		assert(kickTracker:GetKick(unit) ~= nil, "the reused frame still reports kicks")
+	end)
+
+	fw.it("Watch reports whether it started tracking, so callers subscribe once", function()
+		local unit = newWatchedUnit()
+
+		assert(kickTracker:Watch(unit) == false, "a second Watch for the same token starts nothing")
+		kickTracker:Unwatch(unit)
+		assert(kickTracker:Watch(unit) == true, "watching again after Unwatch does start tracking")
+	end)
+
 	fw.it("Unsubscribe stops notifications", function()
 		local unit, frame = newWatchedUnit()
 		local notified = 0

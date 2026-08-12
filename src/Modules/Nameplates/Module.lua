@@ -98,10 +98,19 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
-	kickTracker:Watch(unitToken)
-	kickTracker:Subscribe(unitToken, function()
-		display:UpdateKick(data)
-	end)
+	-- Subscribed once per token, not once per registration: this path re-runs for a plate that is
+	-- already tracked (a duel flipping its faction, a rebuild), and a second callback would keep
+	-- a stale data table alive and update it forever. The token's current data is looked up when
+	-- the kick lands rather than captured, so one subscription serves every rebuild.
+	if kickTracker:Watch(unitToken) then
+		kickTracker:Subscribe(unitToken, function()
+			local current = display:GetData(unitToken)
+
+			if current then
+				display:UpdateKick(current)
+			end
+		end)
+	end
 
 	display:UpdateKick(data)
 
