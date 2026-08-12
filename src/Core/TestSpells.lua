@@ -32,6 +32,15 @@ M.Defensive = {
 	{ SpellId = 1022 },  -- Blessing of Protection
 }
 
+---The buffs Blizzard flags as important, i.e. an ally's offensive cooldowns. Preview only, so
+---these stand in for a category the addon never names spell by spell: 12.1 hands it whichever
+---buffs the engine has flagged.
+---@type TestSpell[]
+M.Important = {
+	{ SpellId = 31884 }, -- Avenging Wrath
+	{ SpellId = 1719 },  -- Recklessness
+}
+
 -- Per-module sets
 
 ---The nameplate bars preview two of each category to demo the slot distribution between them,

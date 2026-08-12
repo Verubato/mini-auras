@@ -39,6 +39,8 @@ local watchers = {}
 ---@type TestSpell[]
 local testDefensiveSpells = {}
 ---@type TestSpell[]
+local testImportantSpells = {}
+---@type TestSpell[]
 local testCcSpells = {}
 ---@type Db
 local db
@@ -514,6 +516,9 @@ local function RefreshTestIcons()
 
 	local ccCount = options.ShowCC and #testCcSpells or 0
 	local defensiveCount = options.ShowDefensives and #testDefensiveSpells or 0
+	-- Gated on the game version as well as the option: the important category only exists on
+	-- the 12.1 path, and a preview showing icons the live display can never draw is a lie.
+	local importantCount = (USE_AURA_CONTAINERS and options.ShowImportant) and #testImportantSpells or 0
 	local showKicks = options.ShowKicks
 
 	for _, entry in ipairs(orderedEntries) do
@@ -540,8 +545,8 @@ local function RefreshTestIcons()
 		end
 
 		local remainingSlots = maxIcons - (slotIndex - 1)
-		local ccSlots, defensiveSlots =
-			slotDistribution.Calculate(remainingSlots, ccCount, defensiveCount, 0)
+		local ccSlots, defensiveSlots, importantSlots =
+			slotDistribution.Calculate(remainingSlots, ccCount, defensiveCount, importantCount)
 
 		slotIndex = testSpellData:FillContainer(container, testCcSpells, slotIndex, {
 			ReverseCooldown = iconsReverse,
@@ -558,6 +563,14 @@ local function RefreshTestIcons()
 			FontScale = db.FontScale,
 			ShowTooltips = showTooltips,
 			Count = defensiveSlots,
+		})
+
+		slotIndex = testSpellData:FillContainer(container, testImportantSpells, slotIndex, {
+			ReverseCooldown = iconsReverse,
+			Glow = iconsGlow,
+			FontScale = db.FontScale,
+			ShowTooltips = showTooltips,
+			Count = importantSlots,
 		})
 
 		for i = slotIndex, container.Count do
@@ -743,6 +756,7 @@ function M:Init()
 	db = mini:GetSavedVars()
 
 	testDefensiveSpells = testSpellData.Defensive
+	testImportantSpells = testSpellData.Important
 	testCcSpells = testSpellData.CrowdControl
 end
 
