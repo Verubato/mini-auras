@@ -276,6 +276,30 @@ function M:BuildMediaDropdown(opts)
 	return dropdown, modern
 end
 
+---Trims a name that would run past its column, ending it in an ellipsis. Counts characters
+---rather than bytes, and steps back off a continuation byte so a cut in a multi-byte locale
+---never lands mid-character and leaves a broken glyph.
+---@param name string
+---@param maxLength number Characters the column fits.
+---@return string
+function M:TrimName(name, maxLength)
+	local length = strlenutf8 and strlenutf8(name) or #name
+
+	if length <= maxLength then
+		return name
+	end
+
+	local cut = maxLength - 3
+
+	if strlenutf8 and strlenutf8(name) ~= #name then
+		while cut > 1 and name:byte(cut + 1) and name:byte(cut + 1) >= 128 and name:byte(cut + 1) < 192 do
+			cut = cut - 1
+		end
+	end
+
+	return name:sub(1, cut) .. "..."
+end
+
 ---The icon-plus-tooltip button every spell row shares. The caller assigns button.SpellId, sets
 ---the texture on button.Icon, and positions it.
 ---@param parent table

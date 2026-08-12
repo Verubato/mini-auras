@@ -259,25 +259,7 @@ end
 ---@param spellId number
 ---@return string
 local function SpellLabel(spellId)
-	local name = C_Spell.GetSpellName(spellId) or "?"
-	local length = strlenutf8 and strlenutf8(name) or #name
-
-	if length > MAX_SPELL_NAME_LENGTH then
-		local cut = MAX_SPELL_NAME_LENGTH - 3
-
-		if strlenutf8 and strlenutf8(name) ~= #name then
-			-- Multi-byte locale: step back off any continuation byte so the cut never lands
-			-- mid-character and leaves a broken glyph.
-			local bytes = cut
-			while bytes > 1 and name:byte(bytes + 1) and name:byte(bytes + 1) >= 128
-				and name:byte(bytes + 1) < 192 do
-				bytes = bytes - 1
-			end
-			cut = bytes
-		end
-
-		name = name:sub(1, cut) .. "..."
-	end
+	local name = helpers:TrimName(C_Spell.GetSpellName(spellId) or "?", MAX_SPELL_NAME_LENGTH)
 
 	return ("%s |cff888888(%d)|r"):format(name, spellId)
 end
