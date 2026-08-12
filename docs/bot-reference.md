@@ -420,7 +420,9 @@ Two setting groups (World/Arena/Dungeons and Raids/Battlegrounds sub-tabs):
 | Grow | LEFT/RIGHT/CENTER/DOWN/UP | CENTER | CENTER |
 | Offset X / Y | -250..250 | 0 / 0 | 0 / 0 |
 
-- "Show important" shows buffs Blizzard flags as important (for example offensive cooldowns).
+- "Show important" shows the curated important buffs (for example offensive cooldowns). It and
+  "Show defensives" pick which curated lists reach the display, since both categories share one
+  aura group; with both off nothing helpful is shown.
 - "Show interrupts" shows an icon when a friendly unit gets interrupted.
 
 **Spells sub-tab.** "Specify which spells are shown on raid frames." A sidebar of
@@ -486,9 +488,12 @@ three categories (Important red, Defensive green, Enemy Debuffs purple) and, for
 one, every spell that ships a voice clip as a checkbox in two columns, sorted by name, with
 **All** and **None** buttons above them. Ticking a spell on plays its clip in the selected
 voice pack, so the row is its own preview; unticking and the **All** button stay silent. The
-list scrolls, with the bar on its right. Every spell starts on, so the tab is an opt-out
-list: unticking one stops that announcement and leaves the rest alone, and clips
-added in later updates are announced without being ticked. A spell with several IDs (talent
+list scrolls, with the bar on its right. The tab is an opt-out list: almost every spell starts
+on, unticking one stops that announcement and leaves the rest alone, and clips added in later
+updates are announced without being ticked. The exception is the fourteen spells in
+`AuraCategoryIds.TtsDefaultOff` (Ice Barrier, Innervate, Demon Spikes and the like), which
+ship unticked because they land often enough to drown out everything else; ticking one stores
+an explicit `false`. A spell with several IDs (talent
 variants like Ascendance or Metamorphosis) is one row that writes all of them. Muting is
 per-category, so Deathmark can be silenced as an enemy debuff and kept as an important spell.
 The choices are stored as `TTS.<category>.MutedSpellIds`.
@@ -535,6 +540,12 @@ An interrupt (kick) icon is shown on bars that have Show CC enabled. Each enable
 bar gets the bar's full Max Icons budget, with no dynamic split between categories, and "Spell
 colours" maps to dispel-type colouring.
 
+Nameplate bars are not limited to the addon's curated spell lists: they show everything the
+game itself flags for the category, so a new spec's CC turns up without waiting for an addon
+update. That is the opposite of Group Auras, whose helpful side can only show what is on its
+list. It also means a nameplate bar can show a mob or boss ability that no PvP list mentions.
+Disarm is the one exception and stays list-driven, since the game has no flag for it.
+
 Related global option: **Configure Blizzard Nameplates** (Misc, on by default) disables
 Blizzard's own CC display and BigDebuffs on nameplates while MiniAuras nameplates are in use,
 so the same auras are not drawn twice.
@@ -548,6 +559,11 @@ target and focus portraits.
 
 Settings: **Enabled** (single switch, applies everywhere, default on) and **Reverse swipe**
 (default on). Nothing else.
+
+One icon each for five categories: important, external defensive, big defensive, disarm and
+CC. Like nameplates, portraits show everything the game flags rather than only the addon's
+curated lists, so they can surface a spell that no other display lists. Disarm is again the
+exception and stays list-driven.
 
 Supported portrait providers: Blizzard frames, ElvUI, TPerl, UUF (Unhalted Unit Frames),
 MSUF, Ellesmere UI Unit Frames, EnhancedQoL.
@@ -857,6 +873,19 @@ After an addon update, new audio files need a full client restart, not just a re
 **"TTS voices missing / TTS not working."** TTS uses the shipped voice packs; Amy, Anna Su and
 Jason Chen only appear on Chinese clients. All three announce toggles default off. After an
 addon update, new clips need a full client restart, not just a reload.
+
+**"One particular spell is never announced."** Fourteen of the spells that land most often
+(Ice Barrier, Innervate, Demon Spikes, Blazing Barrier and the like) ship unticked on the TTS
+Spells tab, so they are silent until switched on there. Everything else is announced unless it
+was unticked.
+
+**"Group frames show CC but no buffs."** Show Important and Show Defensives choose which
+spells reach one shared display, so with both off nothing helpful is shown at all. Check both,
+and check the Spells sub-tab in case the spell in question was unticked there.
+
+**"A spell shows on nameplates or portraits but not on group frames."** Expected. Nameplates
+and portraits show whatever the game flags; group frames can only show spells on their
+curated list. Add the spell ID in Group Auras > Spells > Custom.
 
 **"Alerts don't show anything."** Alerts are read from enemy nameplates, so enemy nameplates
 must be enabled in the game. Check Show icons, Show Defensives and Show Important, and the
