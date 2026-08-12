@@ -650,3 +650,22 @@ function M:UpgradeToVersion65(vars)
 	vars.Version = 65
 	return true
 end
+
+function M:UpgradeToVersion66(vars)
+	if vars.Version ~= 65 then return false end
+
+	-- Colouring the countdown by time is off out of the box now, and turned off for everyone
+	-- already running: the complaints were from people who had never asked for it. Anyone who
+	-- wants it back has a switch on the miscellaneous page. Profiles carry their own copy of
+	-- this key (ProfileManager PayloadKeys), so each one is cleared too.
+	vars.ColorCountdownByTime = false
+
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			profile.ColorCountdownByTime = false
+		end
+	end
+
+	vars.Version = 66
+	return true
+end

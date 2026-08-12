@@ -719,6 +719,23 @@ fw.describe("Migrator - individual migrations", function()
 		assert(vars.Version == 65)
 	end)
 
+	fw.it("v66 turns the countdown colouring off everywhere, profiles included", function()
+		local vars = {
+			Version = 65,
+			ColorCountdownByTime = true,
+			Profiles = {
+				On = { ColorCountdownByTime = true },
+				Off = { ColorCountdownByTime = false },
+			},
+		}
+
+		assert(migrator:UpgradeToVersion66(vars) == true)
+		assert(vars.ColorCountdownByTime == false, "off for the live settings")
+		assert(vars.Profiles.On.ColorCountdownByTime == false, "and for a profile that had it on")
+		assert(vars.Profiles.Off.ColorCountdownByTime == false, "one that was already off stays off")
+		assert(vars.Version == 66)
+	end)
+
 	fw.it("v57 leaves kicks alone when the CC module is disabled everywhere", function()
 		local vars = {
 			Version = 56,

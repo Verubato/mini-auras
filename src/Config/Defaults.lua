@@ -8,7 +8,7 @@ local _, addon = ...
 ---@field TalentCache table<string, {SpecId: number, TalentString: string, Time: number}>
 ---@field PvPTalentCache table<string, {Ids: number[], Time: number}>
 local dbDefaults = {
-	Version = 65,
+	Version = 66,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -21,7 +21,8 @@ local dbDefaults = {
 	-- dies with the 12.0 path, together with its ProfileManager PayloadKeys entry.
 	CCNativeOrder = false,
 	DisableSwipe = false,
-	ColorCountdownByTime = true,
+	-- Off: enough people asked for it back off that it does not earn being the default.
+	ColorCountdownByTime = false,
 	FadeWithParent = true,
 	MillisecondsThreshold = 5,
 	LocaleOverride = false,
