@@ -1118,7 +1118,7 @@ addon.Core.AuraCategoryIds = {
 	-- would speak the name twice.
 	EnemyDebuff = {
 		[360194] = true, -- Deathmark
-		[192759] = true, -- Kingsbane
+		[385627] = true, -- Kingsbane
 		[222509] = true, -- Feral Frenzy
 	},
 
