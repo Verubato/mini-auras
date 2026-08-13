@@ -144,8 +144,15 @@ end
 ---Takes one entry off screen without disabling it, for an anchor that is merely out of sight.
 ---Deliberately not TeardownEntry: a frame can come back through the unit-frame visibility hook
 ---with no refresh behind it, and a disabled display would show nothing until the next one.
+---
+---Marks the entry as carrying stale styling, because the refresh that skipped it is also the
+---refresh that would have applied any option the user just changed. The visibility hook checks
+---the flag and restyles on the way back in, so a frame that returns without a refresh behind it
+---is still current.
 ---@param entry table
 function M:HideEntry(entry)
+	entry.StyleStale = true
+
 	if entry.Display then
 		entry.Display:Hide()
 	end
@@ -179,6 +186,8 @@ function M:ApplyEntryOptions(entry, anchor, options, settings)
 	local display = entry.Display
 	local testModeActive = settings.TestModeActive
 	local excludePlayer = settings.ExcludePlayer
+
+	entry.StyleStale = nil
 
 	container:SetIconSize(settings.IconSize)
 	container:SetCount(settings.SlotCount)

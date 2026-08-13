@@ -212,3 +212,49 @@ fw.describe("RaidFrameAurasModule - anchors that are out of sight", function()
 		spells.Custom[custom] = nil
 	end)
 end)
+
+fw.describe("RaidFrameAurasModule - an anchor returning without a refresh", function()
+	-- A refresh skips styling for an anchor nobody can see, so the entry carries whatever it had.
+	-- The unit-frame visibility hook can bring that frame back with no refresh behind it, which is
+	-- the one path that has to put the styling right on its own.
+	local frame = env.addUnitFrame("party3", "CUF_Returning")
+
+	fw.it("picks up an option changed while it was out of sight", function()
+		local custom = 999903
+
+		module:Refresh()
+		assert(#env.containersForUnit("party3") > 0, "fixture: the frame starts with a container")
+
+		frame:Hide()
+		module:Refresh()
+
+		-- Changed while hidden. The refresh above and this one both skip the entry.
+		spells.Custom[custom] = true
+		module:Refresh()
+
+		-- Back on screen through the hook alone - no Refresh follows. The env stub answers false to
+		-- IsFriendlyCuf for everything, so the hook is told this frame is one for the duration.
+		local display = env.addon.Modules.RaidFrameAuras.Display
+		local frames = env.addon.Core.Frames
+		local realIsFriendlyCuf = frames.IsFriendlyCuf
+		frames.IsFriendlyCuf = function(_, candidate)
+			return candidate == frame
+		end
+
+		frame:Show()
+		display:OnCufUpdateVisible(frame)
+
+		frames.IsFriendlyCuf = realIsFriendlyCuf
+
+		local containers = env.containersForUnit("party3")
+		assert(#containers > 0, "the frame is back, so its container is too")
+
+		local group = assert(containers[1]._groups[IMPORTANT_GROUP_KEY], "no important group")
+		local ids = assert(group.candidateFilters.includeSpellIDs, "no id filter")
+
+		assert(ids[custom],
+			"the hook must restyle an entry the refresh skipped, or it shows the old options")
+
+		spells.Custom[custom] = nil
+	end)
+end)

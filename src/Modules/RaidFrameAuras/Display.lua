@@ -673,6 +673,14 @@ function M:OnCufUpdateVisible(frame)
 		return
 	end
 
+	-- A frame coming back after a refresh skipped it carries that refresh's stale styling, and
+	-- nothing else on this path would put it right. ApplyEntryOptions ends in the same show/hide
+	-- as below, so it stands in for it rather than running alongside.
+	if entry.StyleStale and anchoredIcons:IsAnchorShown(frame) then
+		ApplyEntryOptions(entry, frame, options)
+		return
+	end
+
 	-- The aura icons live in entry.Display, not the kick/test container, so it has to follow
 	-- the unit frame's visibility too.
 	if entry.Display then
