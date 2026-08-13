@@ -2674,3 +2674,52 @@ fw.describe("CustomAuras - coalescing the sound rebuild", function()
 			"the rebuild queued before the teardown must not re-register what it cleared")
 	end)
 end)
+
+fw.describe("CustomAuras - a teardown between the request and the rebuild", function()
+	fw.it("still rebuilds for an event that arrives after the teardown", function()
+		-- The stranded timer runs and refuses on the generation check. If the pending flag were
+		-- left set, the request below would think a rebuild was already on its way and drop it,
+		-- losing that event's sounds until the next plate or unit change.
+		ClearGroups()
+		env.enemies.target = nil
+		AddGroup({
+			Unit = "target",
+			Spells = { ICE_BLOCK },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		local queued = {}
+		local realAfter = _G.C_Timer.After
+		_G.C_Timer.After = function(_, callback)
+			queued[#queued + 1] = callback
+		end
+
+		-- Counted, not measured by registrations: the rebuild re-registers the same signature the
+		-- refresh below already applied, so the engine-side count would not move either way.
+		local rebuilds = 0
+		local realRefreshSounds = display.RefreshSounds
+		display.RefreshSounds = function(self)
+			rebuilds = rebuilds + 1
+			return realRefreshSounds(self)
+		end
+
+		display:OnUnitChanged("target")
+		display:Teardown()
+
+		-- Back on, and an event lands before the stranded timer has run.
+		module:Refresh()
+		display:OnUnitChanged("target")
+
+		for _, callback in ipairs(queued) do
+			callback()
+		end
+
+		_G.C_Timer.After = realAfter
+		display.RefreshSounds = realRefreshSounds
+
+		assert(rebuilds == 1,
+			"the stranded timer refuses, but the request made after it must still rebuild (got "
+			.. rebuilds .. ")")
+	end)
+end)

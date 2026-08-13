@@ -1412,8 +1412,11 @@ end
 
 function M:Teardown()
 	-- Strands any rebuild the plate and unit handlers queued, which would otherwise re-register
-	-- the sounds this is about to clear.
+	-- the sounds this is about to clear. The flag clears with it: the stranded timer still runs
+	-- and still refuses, so leaving it set would make the next request think one was already on
+	-- its way and drop it.
 	soundGeneration = soundGeneration + 1
+	soundRefreshQueued = false
 
 	for _, state in pairs(states) do
 		Park(state)
