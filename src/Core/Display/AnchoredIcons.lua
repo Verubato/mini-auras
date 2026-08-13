@@ -137,11 +137,7 @@ end
 ---@param anchor table
 ---@return boolean
 function M:IsAnchorShown(anchor)
-	if anchor.IsForbidden and anchor:IsForbidden() then
-		return false
-	end
-
-	return anchor:IsVisible() == true
+	return frames:IsAnchorUsable(anchor)
 end
 
 ---Takes one entry off screen without disabling it, for an anchor that is merely out of sight.

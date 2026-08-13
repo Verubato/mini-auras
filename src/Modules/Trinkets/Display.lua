@@ -35,9 +35,8 @@ local watchers = {}
 -- instead of building a replacement per roster flip.
 ---@type { [table]: IconSlotContainer }
 local containersByAnchor = {}
--- Reused buffer for the anchor walk. Its own rather than shared with the other modules, so one
--- module's walk can never land in the middle of another's.
-local anchorScratch = {}
+-- Anchors met during one walk, wiped at the top of it.
+local seenScratch = {}
 ---@type Db
 local db
 ---@type TrinketsModuleOptions
@@ -127,23 +126,27 @@ local function ReleaseWatcher(anchorFrame)
 	watchers[anchorFrame] = nil
 end
 
-local function RebuildAnchors()
-	local anchors = frames:GetAll(true, testModeActive, anchorScratch)
-	local seen = {}
-
-	for _, anchor in ipairs(anchors) do
-		if anchor and not (anchor.IsForbidden and anchor:IsForbidden()) then
-			local unit = anchor.unit or (anchor.GetAttribute and anchor:GetAttribute("unit"))
-			if unit and unit ~= "" and IsTrackedUnit(unit) then
-				local w = EnsureWatcher(anchor, unit)
-				seen[anchor] = true
-				AnchorContainerToFrame(w.Container, anchor)
-			end
-		end
+local function TakeAnchor(anchor)
+	if not anchor or (anchor.IsForbidden and anchor:IsForbidden()) then
+		return
 	end
 
+	local unit = anchor.unit or (anchor.GetAttribute and anchor:GetAttribute("unit"))
+
+	if unit and unit ~= "" and IsTrackedUnit(unit) then
+		local watcher = EnsureWatcher(anchor, unit)
+		seenScratch[anchor] = true
+		AnchorContainerToFrame(watcher.Container, anchor)
+	end
+end
+
+local function RebuildAnchors()
+	wipe(seenScratch)
+
+	frames:ForEachAnchor(true, testModeActive, TakeAnchor)
+
 	for anchorFrame in pairs(watchers) do
-		if not seen[anchorFrame] then
+		if not seenScratch[anchorFrame] then
 			ReleaseWatcher(anchorFrame)
 		end
 	end

@@ -39,9 +39,6 @@ local budgetScratch = {}
 -- Reused settings handed to ApplyEntryOptions, refilled per entry.
 ---@type EntrySettings
 local settingsScratch = {}
--- Reused buffer for the anchor walk. Its own rather than shared with the other modules, so one
--- module's walk can never land in the middle of another's.
-local anchorScratch = {}
 
 local function GetOptions()
 	return instanceOptions:IsRaid() and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
@@ -323,13 +320,9 @@ function M:SetTestMode(value)
 end
 
 function M:EnsureWatchers()
-	local anchors = frames:GetAll(true, testModeActive, anchorScratch)
+	frames:ForEachAnchor(true, testModeActive, EnsureWatcher)
 
-	for _, anchor in ipairs(anchors) do
-		EnsureWatcher(anchor)
-	end
-
-	-- Pet frames never appear in GetAll - discover them directly.
+	-- Pet frames never appear in the anchor walk - discover them directly.
 	if testModeActive or moduleUtil:IsModuleEnabled(moduleName.PetCC) then
 		for i = 1, 6 do
 			local frame = _G["CompactPartyFramePet" .. i]

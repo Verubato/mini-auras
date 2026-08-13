@@ -10,6 +10,9 @@ local STRATA_INDEX = {}
 for i, v in ipairs(STRATA_ORDER) do STRATA_INDEX[v] = i end
 -- HasVisibleFrames' own, so it never shares a table with a walk that is still running.
 local visibleScratch = {}
+-- ForEachAnchor's own list, plus the flag that catches a walk starting inside another one.
+local anchorBuffer = {}
+local walking = false
 ---@class Frames
 local M = {}
 addon.Core.Frames = M
@@ -20,6 +23,20 @@ addon.Core.Frames = M
 local function FillFrom(out, ...)
 	for i = 1, select("#", ...) do
 		out[i] = select(i, ...)
+	end
+end
+
+---The anchor walk itself, kept apart so ForEachAnchor can run it under pcall and still clear its
+---flag when the callback throws.
+---@param visibleOnly boolean
+---@param includeTestFrames boolean?
+---@param fn fun(anchor: table, arg: any)
+---@param arg any?
+local function Walk(visibleOnly, includeTestFrames, fn, arg)
+	local anchors = M:GetAll(visibleOnly, includeTestFrames, anchorBuffer)
+
+	for i = 1, #anchors do
+		fn(anchors[i], arg)
 	end
 end
 
@@ -163,6 +180,32 @@ function M:GetAll(visibleOnly, includeTestFrames, out)
 	return anchors
 end
 
+---Walks every anchor, calling fn(anchor, arg) on each. Owns the list it walks, so a caller does
+---not have to keep a scratch table of its own to satisfy GetAll's reuse contract. A walk started
+---inside another one would take that list out from under the first, so it is an error rather than
+---a silent muddle.
+---@param visibleOnly boolean
+---@param includeTestFrames boolean?
+---@param fn fun(anchor: table, arg: any)
+---@param arg any? Handed back to fn, so the callback can stay a plain function rather than a
+---closure built per call.
+function M:ForEachAnchor(visibleOnly, includeTestFrames, fn, arg)
+	if walking then
+		error("Frames:ForEachAnchor cannot run inside another ForEachAnchor: they share one list.")
+	end
+
+	walking = true
+
+	local ok, err = pcall(Walk, visibleOnly, includeTestFrames, fn, arg)
+
+	-- Cleared even when the walk threw, or every later one would report a nesting that is not there.
+	walking = false
+
+	if not ok then
+		error(err, 0)
+	end
+end
+
 ---Whether any real party or raid frame is on screen right now. What decides whether the stand-in
 ---frames are worth putting up: with real frames there, they would only be in the way.
 ---@return boolean
@@ -185,6 +228,21 @@ function M:GetNextStrata(strata)
 	return STRATA_ORDER[math.min((STRATA_INDEX[strata] or 1) + 1, #STRATA_ORDER)]
 end
 
+---Whether an anchor is there to hang anything on. A unit frame the client has taken away is not,
+---and neither is one that is off screen.
+---
+---Technically it can be visible but have an alpha of 0, or even worse a secret alpha of 0, but we
+---are going to assume frame addons are sane and properly hide frames instead of doing that.
+---@param anchor table
+---@return boolean
+function M:IsAnchorUsable(anchor)
+	if anchor.IsForbidden and anchor:IsForbidden() then
+		return false
+	end
+
+	return anchor:IsVisible() == true
+end
+
 ---Whether a tracker frame should be visible on the given anchor. Split out of ShowHideFrame so
 ---callers that own something other than a plain frame (e.g. an AuraContainerDisplay, which routes
 ---visibility through its own setter) can reuse the decision.
@@ -193,7 +251,7 @@ end
 ---@param excludePlayer boolean
 ---@return boolean
 function M:ShouldShowFrame(frame, anchor, excludePlayer)
-	if anchor:IsForbidden() then
+	if not M:IsAnchorUsable(anchor) then
 		return false
 	end
 
@@ -205,9 +263,7 @@ function M:ShouldShowFrame(frame, anchor, excludePlayer)
 		end
 	end
 
-	-- technically it can be visible but have an alpha of 0, or even worse a secret alpha of 0
-	-- but we're going to assume frame addons are sane and properly hide frames instead of doing that
-	return anchor:IsVisible() == true
+	return true
 end
 
 ---@param frame table

@@ -1,4 +1,4 @@
--- Frames:GetAll's reuse contract. Every module now hands it a long-lived scratch table instead of
+-- Frames:GetAll's reuse contract. Its callers hand it a long-lived scratch table instead of
 -- taking a fresh one, so the two properties that keeps them correct - the table handed back IS the
 -- one passed in, and it is wiped rather than appended to - have to hold. A caller that held the
 -- result across two calls, or a provider that stopped wiping, would otherwise pass the whole suite.
@@ -123,5 +123,95 @@ fw.describe("Frames:GetAll - the reuse contract", function()
 		local second = frames:GetAll(true, false)
 
 		assert(first ~= second, "callers passing nothing must not share a table by accident")
+	end)
+end)
+
+-- ForEachAnchor takes that contract off the callers: it owns the list it walks, so the only way to
+-- break it is to start a second walk inside the first, which it refuses.
+fw.describe("Frames:ForEachAnchor", function()
+	local function AlwaysVisible()
+		return true
+	end
+
+	fw.before_each(function()
+		for key in pairs(db) do
+			db[key] = nil
+		end
+
+		-- A test that hid an anchor must not leave it hidden for the next one.
+		_G.TestAnchorAlpha.IsVisible = AlwaysVisible
+		_G.TestAnchorBeta.IsVisible = AlwaysVisible
+	end)
+
+	fw.it("calls back once per anchor, handing the arg straight through", function()
+		db.Anchor1 = "TestAnchorAlpha"
+		db.Anchor2 = "TestAnchorBeta"
+
+		local token = {}
+		local walked = {}
+
+		frames:ForEachAnchor(true, false, function(anchor, arg)
+			assert(arg == token, "the arg must reach the callback untouched")
+			walked[#walked + 1] = anchor
+		end, token)
+
+		assert(#walked == 2, "both anchors must be walked, got " .. #walked)
+		assert(walked[1] == _G.TestAnchorAlpha, "and in the order the providers appended them")
+		assert(walked[2] == _G.TestAnchorBeta, "and in the order the providers appended them")
+	end)
+
+	fw.it("leaves out a hidden anchor when visibleOnly", function()
+		db.Anchor1 = "TestAnchorAlpha"
+		db.Anchor2 = "TestAnchorBeta"
+
+		_G.TestAnchorBeta.IsVisible = function()
+			return false
+		end
+
+		local visible = 0
+		frames:ForEachAnchor(true, false, function()
+			visible = visible + 1
+		end)
+
+		assert(visible == 1, "the hidden anchor must be skipped, got " .. visible)
+
+		local all = 0
+		frames:ForEachAnchor(false, false, function()
+			all = all + 1
+		end)
+
+		assert(all == 2, "and kept when the caller asks for every anchor, got " .. all)
+	end)
+
+	fw.it("refuses a walk started inside another", function()
+		db.Anchor1 = "TestAnchorAlpha"
+
+		local nestedOk, nestedErr
+
+		frames:ForEachAnchor(true, false, function()
+			nestedOk, nestedErr = pcall(function()
+				frames:ForEachAnchor(true, false, function() end)
+			end)
+		end)
+
+		assert(nestedOk == false, "a nested walk must raise rather than share the list")
+		assert(tostring(nestedErr):find("ForEachAnchor", 1, true), "and name what refused it")
+	end)
+
+	fw.it("clears its guard when the callback throws", function()
+		db.Anchor1 = "TestAnchorAlpha"
+
+		local ok = pcall(frames.ForEachAnchor, frames, true, false, function()
+			error("callback blew up")
+		end)
+
+		assert(not ok, "the callback's error must reach the caller")
+
+		local count = 0
+		frames:ForEachAnchor(true, false, function()
+			count = count + 1
+		end)
+
+		assert(count == 1, "and the next walk must not mistake itself for a nested one, got " .. count)
 	end)
 end)

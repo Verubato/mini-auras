@@ -375,6 +375,20 @@ function M.build()
 
 			return list
 		end,
+		-- Walks the same list GetAll hands back; the real one owns its buffer, this one does not
+		-- need to.
+		ForEachAnchor = function(self, visibleOnly, includeTestFrames, fn, arg)
+			for _, anchor in ipairs(self:GetAll(visibleOnly, includeTestFrames)) do
+				fn(anchor, arg)
+			end
+		end,
+		IsAnchorUsable = function(_, anchor)
+			if anchor.IsForbidden and anchor:IsForbidden() then
+				return false
+			end
+
+			return anchor:IsVisible() == true
+		end,
 		HasVisibleFrames = function()
 			for _, frame in ipairs(env.unitFrames) do
 				if frame:IsVisible() then
