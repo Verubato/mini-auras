@@ -126,12 +126,11 @@ fw.describe("PortraitModule 12.1 - the demoted portrait layer", function()
 		-- put them above the unit frame's border art too - the icon then drew over the ring
 		-- instead of inside it. Dropping the portrait into a frame one strata down takes the
 		-- whole level range with it, since strata beats level.
-		for _, unit in ipairs({ "player", "target", "focus", "pet" }) do
+		for _, unit in ipairs({ "player", "target", "focus" }) do
 			local _, container = displaysFor(unit)
 			local portrait = _G[unit == "player" and "PlayerFrame"
 				or unit == "target" and "TargetFrame"
-				or unit == "focus" and "FocusFrame"
-				or "PetFrame"].portrait
+				or "FocusFrame"].portrait
 
 			local layer = portrait:GetParent()
 			assert(layer:GetFrameStrata() == "LOW",
@@ -143,10 +142,23 @@ fw.describe("PortraitModule 12.1 - the demoted portrait layer", function()
 		end
 	end)
 
+	fw.it("leaves the pet portrait in its own frame", function()
+		-- The pet frame's portrait mask anchors to the portrait instead of carrying its own size
+		-- like every other Blizzard one, and moving the portrait out of PetFrame blacks out the
+		-- frame's border art. The pet keeps the inset layout, with the container hanging off the
+		-- unit frame itself.
+		local _, container = displaysFor("pet")
+
+		assert(_G.PetFrame.portrait:GetParent() == _G.PetFrame, "the pet portrait stays put")
+		assert(container.Frame:GetParent() == _G.PetFrame, "the container hangs off the unit frame")
+		assert(container.Frame:GetFrameLevel() < _G.PetFrame:GetFrameLevel(),
+			"the container sits under the unit frame's own level")
+	end)
+
 	fw.it("keeps every icon above the portrait it covers", function()
 		-- Below the portrait's own level the portrait texture hides the icons entirely (the
 		-- first PTR build's bug), so the stack still has to sit above it.
-		for _, unit in ipairs({ "player", "target", "focus", "pet" }) do
+		for _, unit in ipairs({ "player", "target", "focus" }) do
 			local displays, container = displaysFor(unit)
 			local portraitLevel = container.Frame:GetParent():GetFrameLevel()
 

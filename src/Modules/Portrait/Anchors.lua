@@ -225,8 +225,10 @@ local function AttachBlizzardFrame(unit)
 
 	local mask = display:GetPortraitMask(unitFrame) or display:CreatePortraitMask(portrait)
 	-- Drops the portrait and its icons a strata below the unit frame, so the border art draws
-	-- over the icon edge instead of the other way round.
-	local portraitLayer = display:CreatePortraitLayer(portrait)
+	-- over the icon edge instead of the other way round. Not the pet: its mask is the one that
+	-- anchors to the portrait rather than carrying its own size, and moving the portrait out of
+	-- PetFrame blacks out the frame's border art. The pet keeps the inset layout instead.
+	local portraitLayer = unit ~= "pet" and display:CreatePortraitLayer(portrait) or nil
 
 	local container = display:CreateContainer(unitFrame, portrait, unit, { 0.1, 0.9, 0.1, 0.9 }, mask, portraitLayer)
 	if not container then return end
