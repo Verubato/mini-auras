@@ -519,6 +519,34 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 	end)
 end)
 
+fw.describe("AuraContainerDisplay - CarriesConfig", function()
+	fw.before_each(function()
+		acm.reset()
+		mockDb.GlowType = nil
+	end)
+
+	fw.it("answers from what the buttons were built with", function()
+		local instance = newInstance()
+		assert(instance:CarriesConfig(30, 2, {}), "the creation config is carried")
+		assert(not instance:CarriesConfig(44, 2, {}), "a different size is not")
+		assert(not instance:CarriesConfig(30, 5, {}), "a different spacing is not")
+		assert(not instance:CarriesConfig(30, 2, { Glow = true }), "a different style is not")
+	end)
+
+	fw.it("a style stored under restriction is not carried until its restyle lands", function()
+		local instance = newInstance()
+
+		acm.restricted = true
+		instance:SetStyle({ Glow = true })
+		assert(not instance:CarriesConfig(30, 2, { Glow = true }),
+			"stored but not yet on the buttons must not read as carried")
+
+		acm.restricted = false
+		instance:RestyleButtons()
+		assert(instance:CarriesConfig(30, 2, { Glow = true }), "carried once the restyle lands")
+	end)
+end)
+
 fw.describe("Pool", function()
 	fw.before_each(acm.reset)
 
@@ -633,6 +661,61 @@ fw.describe("Pool", function()
 		assert(resets() == 1, "release must reset")
 		assert(pool:Acquire() == item, "released item is reused")
 		assert(created() == 1, "no extra creation on reuse")
+	end)
+
+	-- AcquireMatching exists for the restricted moments where a reused item cannot be corrected
+	-- after the fact: only a free item the matcher accepts may come back.
+	fw.it("AcquireMatching reuses only a free item the matcher accepts", function()
+		local pool, created = newCountingPool(0)
+		local a = pool:Acquire()
+		local b = pool:Acquire()
+		pool:Release(a)
+		pool:Release(b)
+
+		local hit = pool:AcquireMatching(function(item, wanted)
+			return item.id == wanted
+		end, a.id)
+
+		assert(hit == a, "the matching free item is handed back")
+		assert(created() == 2, "no build while a free item matches")
+	end)
+
+	fw.it("AcquireMatching builds fresh from its arguments when nothing free matches", function()
+		local seen
+		local pool = objectPool:New(function(...)
+			seen = { ... }
+			return {}
+		end, function() end, 0)
+
+		pool:Release(pool:Acquire())
+
+		local item = pool:AcquireMatching(function()
+			return false
+		end, "style", 7)
+
+		assert(item and seen and seen[1] == "style" and seen[2] == 7,
+			"a mismatch builds on demand even though free items remain")
+	end)
+
+	-- Prewarm used to build with no arguments at all, which for aura displays meant buttons
+	-- baked with an empty style that no restricted acquire could ever match.
+	fw.it("Prewarm asks argsFn for each pre-created item's creation arguments", function()
+		local seen = {}
+		local pool = objectPool:New(function(arg)
+			seen[#seen + 1] = arg
+			return {}
+		end, function() end, 3)
+
+		local calls = 0
+		pool:Prewarm(nil, function(ctx)
+			calls = calls + 1
+			return ctx .. calls
+		end, "ctx")
+		acm.tickAll(10)
+
+		assert(#seen == 3, "three pre-created, got " .. #seen)
+		assert(seen[1] == "ctx1" and seen[3] == "ctx3",
+			"arguments produced fresh per item from the given context")
 	end)
 end)
 

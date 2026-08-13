@@ -24,10 +24,10 @@ local DEFAULT_GLOW_STYLE = glowStyles.DefaultName
 -- displays built after it changed. Shared: every display without its own crop reads the same one.
 local defaultIconTexCoord = {}
 
--- The style fields StoreStyle copies verbatim from a caller's table. Drives the compare and the
--- copy in StoreStyle, the clear in GetStyleScratch and the concat in GetStyleSignature, so a new
--- field lands in all four at once - listing it in only three lets a stale value leak from one
--- module's scratch into another's. GlowColor and the db-resolved fields (swipe, countdown
+-- The style fields StoreStyle copies verbatim from a caller's table. Drives the compare in
+-- StyleDiffersFromStored, the copy in StoreStyle, the clear in GetStyleScratch and the concat in
+-- GetStyleSignature, so a new field lands in all of them at once - listing it in only some lets
+-- a stale value leak from one module's scratch into another's. GlowColor and the db-resolved fields (swipe, countdown
 -- threshold, glow style name) are special-cased where they are used.
 local STYLE_FIELDS = {
 	"Border",
@@ -469,6 +469,41 @@ local function GetGlowStyleName()
 	return (name and glowStyles.Specs[name]) and name or DEFAULT_GLOW_STYLE
 end
 
+---Whether a caller's style differs from the instance's stored copy, with the global db values
+---StyleButton depends on resolved the same way StoreStyle stores them. The compare half of
+---StoreStyle, shared with CarriesConfig.
+---@param instance AuraContainerDisplay
+---@param style AuraDisplayStyle
+---@return boolean
+local function StyleDiffersFromStored(instance, style)
+	local db = GetDb()
+	local stored = instance.Style
+	local color = style.GlowColor
+	local pandemic = style.PandemicColor
+
+	if not stored.Populated
+		or stored.DisableSwipe ~= ((db and db.DisableSwipe) or false)
+		or stored.MillisecondsThreshold ~= (db and db.MillisecondsThreshold)
+		or stored.ColorCountdownByTime ~= ((db and db.ColorCountdownByTime) or false)
+		or stored.GlowStyleName ~= GetGlowStyleName()
+		or stored.GlowColorR ~= (color and color[1])
+		or stored.GlowColorG ~= (color and color[2])
+		or stored.GlowColorB ~= (color and color[3])
+		or stored.PandemicColorR ~= (pandemic and pandemic[1])
+		or stored.PandemicColorG ~= (pandemic and pandemic[2])
+		or stored.PandemicColorB ~= (pandemic and pandemic[3]) then
+		return true
+	end
+
+	for _, field in ipairs(STYLE_FIELDS) do
+		if stored[field] ~= style[field] then
+			return true
+		end
+	end
+
+	return false
+end
+
 ---Copies a style into the instance's own persistent style table, resolving the global db values
 ---StyleButton needs along the way, and reports whether any of it actually changed. Callers can
 ---therefore hand in a reused scratch table - nothing here retains the argument.
@@ -476,58 +511,29 @@ end
 ---@param style AuraDisplayStyle
 ---@return boolean changed
 local function StoreStyle(instance, style)
-	local db = GetDb()
-	local stored = instance.Style
-	local disableSwipe = (db and db.DisableSwipe) or false
-	local millisecondsThreshold = db and db.MillisecondsThreshold
-	local colorCountdown = (db and db.ColorCountdownByTime) or false
-	local glowStyleName = GetGlowStyleName()
-	local color = style.GlowColor
-	local colorR, colorG, colorB = color and color[1], color and color[2], color and color[3]
-	local pandemic = style.PandemicColor
-	local pandemicR = pandemic and pandemic[1]
-	local pandemicG = pandemic and pandemic[2]
-	local pandemicB = pandemic and pandemic[3]
-
-	local changed = not stored.Populated
-		or stored.DisableSwipe ~= disableSwipe
-		or stored.MillisecondsThreshold ~= millisecondsThreshold
-		or stored.ColorCountdownByTime ~= colorCountdown
-		or stored.GlowStyleName ~= glowStyleName
-		or stored.GlowColorR ~= colorR
-		or stored.GlowColorG ~= colorG
-		or stored.GlowColorB ~= colorB
-		or stored.PandemicColorR ~= pandemicR
-		or stored.PandemicColorG ~= pandemicG
-		or stored.PandemicColorB ~= pandemicB
-
-	if not changed then
-		for _, field in ipairs(STYLE_FIELDS) do
-			if stored[field] ~= style[field] then
-				changed = true
-				break
-			end
-		end
-	end
-
-	if not changed then
+	if not StyleDiffersFromStored(instance, style) then
 		return false
 	end
+
+	local db = GetDb()
+	local stored = instance.Style
+	local color = style.GlowColor
+	local pandemic = style.PandemicColor
 
 	for _, field in ipairs(STYLE_FIELDS) do
 		stored[field] = style[field]
 	end
 
-	stored.DisableSwipe = disableSwipe
-	stored.MillisecondsThreshold = millisecondsThreshold
-	stored.ColorCountdownByTime = colorCountdown
-	stored.GlowStyleName = glowStyleName
-	stored.GlowColorR = colorR
-	stored.GlowColorG = colorG
-	stored.GlowColorB = colorB
-	stored.PandemicColorR = pandemicR
-	stored.PandemicColorG = pandemicG
-	stored.PandemicColorB = pandemicB
+	stored.DisableSwipe = (db and db.DisableSwipe) or false
+	stored.MillisecondsThreshold = db and db.MillisecondsThreshold
+	stored.ColorCountdownByTime = (db and db.ColorCountdownByTime) or false
+	stored.GlowStyleName = GetGlowStyleName()
+	stored.GlowColorR = color and color[1]
+	stored.GlowColorG = color and color[2]
+	stored.GlowColorB = color and color[3]
+	stored.PandemicColorR = pandemic and pandemic[1]
+	stored.PandemicColorG = pandemic and pandemic[2]
+	stored.PandemicColorB = pandemic and pandemic[3]
 	stored.Populated = true
 
 	return true
@@ -1414,6 +1420,22 @@ function M:ApplyConfig(size, spacing, style)
 	self:RestyleButtons()
 
 	return true
+end
+
+---Whether the created buttons already carry exactly this size, spacing and style. This is the
+---question a pooled-display owner asks while aura styling is restricted: a restyle is refused
+---there, so only a display that needs none can be reused. RestylePending covers the gap where a
+---style is stored but not yet on the buttons. Per-group tints (SetGroupGlowColors) are outside
+---the answer, as they are outside the style.
+---@param size number
+---@param spacing number
+---@param style AuraDisplayStyle?
+---@return boolean
+function M:CarriesConfig(size, spacing, style)
+	return not self.RestylePending
+		and self.Size == size
+		and self.Spacing == spacing
+		and not StyleDiffersFromStored(self, style or EMPTY_STYLE)
 end
 
 ---Replaces a group's spell-id candidate filters. Swapping these at runtime is supported by the

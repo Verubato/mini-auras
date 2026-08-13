@@ -38,7 +38,8 @@ local PLATE_PREALLOCATE = 10
 local ARENA_OPPONENTS = 3
 -- Container sizes can be secret, so a draggable anchor's size is guessed from the budget.
 local MIN_ANCHOR_SIZE = 20
--- Pooled displays start neutral; ConfigureDisplay applies the real geometry on acquisition.
+-- Fallback geometry for a pooled display built without a group to copy; ConfigureDisplay
+-- corrects it on acquisition wherever a restyle is allowed to.
 -- What a container watches when the group's unit cannot be resolved, which is a role choice
 -- nobody in the group is filling. Never a real token, so nothing is ever tracked on it.
 local NO_UNIT = "none"
@@ -149,13 +150,16 @@ end
 ---budget is raised later. ConfigureDisplay drops the wrong-sided one to zero straight after,
 ---and the container starts on unit "none", disabled and hidden, so nothing can show before it.
 ---
----The style is the acquiring group's, because a button's look is baked in here and a restyle
----is refused for as long as auras are secret. A pooled entry handed to a DIFFERENT group later
----still needs one, so this makes an entry's first use right rather than every use.
+---The style and geometry are the acquiring group's, because a button's look is baked in here
+---and a restyle is refused for as long as auras are secret. AcquireEntry only reuses an entry
+---that already carries the right look while that refusal holds, so what is baked here is what
+---an entry shows for a whole arena.
 ---@param shape string A groups.DisplayStyle value, baked into every button here.
 ---@param style AuraDisplayStyle?
+---@param size number?
+---@param spacing number?
 ---@return CustomAuraDisplayEntry
-local function CreateEntry(shape, style)
+local function CreateEntry(shape, style, size, spacing)
 	local bars = shape == groups.DisplayStyle.Bars
 	local display = auraContainerDisplay:New(UIParent, NO_UNIT, {
 		{
@@ -172,7 +176,7 @@ local function CreateEntry(shape, style)
 		},
 		-- Every pooled entry carries pandemic regions: they can only be created with the buttons,
 		-- and any group the pool later hands this entry to may have the reveal turned on.
-	}, DEFAULT_SIZE, DEFAULT_SPACING, MODULE_TAG, {
+	}, size or DEFAULT_SIZE, spacing or DEFAULT_SPACING, MODULE_TAG, {
 		Style = style,
 		Pandemic = true,
 		Bar = bars,
@@ -211,24 +215,46 @@ local function ParkDisplay(entry)
 end
 
 -- A closure per shape rather than one pool taking it as an argument: Prewarm builds entries with
--- no arguments at all, so a shape passed through Acquire would only reach the on-demand path and
--- every pre-built bar entry would come out as icons.
+-- no shape of its own to pass, so a shape handed through Acquire would only reach the on-demand
+-- path and every pre-built bar entry would come out as icons.
 displayPools = {
-	[groups.DisplayStyle.Icons] = pool:New(function(style)
-		return CreateEntry(groups.DisplayStyle.Icons, style)
+	[groups.DisplayStyle.Icons] = pool:New(function(style, size, spacing)
+		return CreateEntry(groups.DisplayStyle.Icons, style, size, spacing)
 	end, ParkDisplay, 0),
-	[groups.DisplayStyle.Bars] = pool:New(function(style)
-		return CreateEntry(groups.DisplayStyle.Bars, style)
+	[groups.DisplayStyle.Bars] = pool:New(function(style, size, spacing)
+		return CreateEntry(groups.DisplayStyle.Bars, style, size, spacing)
 	end, ParkDisplay, 0),
 }
+
+---Whether a pooled entry's buttons already carry the acquiring group's exact look. Asked while
+---aura styling is restricted, where an entry carrying anything else could not be corrected.
+---@param entry CustomAuraDisplayEntry
+---@param style AuraDisplayStyle
+---@param size number
+---@param spacing number
+---@return boolean
+local function EntryCarriesStyle(entry, style, size, spacing)
+	return entry.Display:CarriesConfig(size, spacing, style)
+end
 
 ---@param state CustomAuraGroupState
 ---@return CustomAuraDisplayEntry
 local function AcquireEntry(state)
 	local group = state.Group
 	local shape = groups:DrawsBars(group) and groups.DisplayStyle.Bars or groups.DisplayStyle.Icons
+	local style = BuildStyle(group)
+	local size = groups:GetSize(group)
+	local spacing = group.Icons.Spacing
 
-	return displayPools[shape]:Acquire(BuildStyle(group))
+	-- While styling is restricted (a whole arena, not just combat) a reused entry keeps whatever
+	-- look its buttons were built with, so only one already carrying this group's look will do.
+	-- Building fresh is the fallback: initializeFrame may style buttons even then, and a frame
+	-- spike beats a match spent showing another group's style.
+	if wowEx:IsAuraStylingRestricted() then
+		return displayPools[shape]:AcquireMatching(EntryCarriesStyle, style, size, spacing)
+	end
+
+	return displayPools[shape]:Acquire(style, size, spacing)
 end
 
 ---Hands an entry back to the pool that built it. Always go through this: releasing a bar display
@@ -239,15 +265,25 @@ local function ReleaseEntry(entry)
 	displayPools[entry.Shape or groups.DisplayStyle.Icons]:Release(entry)
 end
 
----Pre-builds displays of the shape a group needs. Containers are expensive and cannot be made
----mid-combat without a hitch, so a group that will want one per nameplate says so up front.
+---Creation arguments for a prewarmed entry, resolved per build so each one bakes the group's
+---current look rather than whatever a captured scratch had decayed into.
+---@param group CustomAuraGroup
+---@return AuraDisplayStyle, number, number
+local function PrewarmCreateArgs(group)
+	return BuildStyle(group), groups:GetSize(group), group.Icons.Spacing
+end
+
+---Pre-builds displays of the shape a group needs, baked with that group's look. Containers are
+---expensive and cannot be made mid-combat without a hitch, so a group that will want one per
+---nameplate says so up front - and since a restricted acquire only reuses an entry whose baked
+---look matches, an unstyled pre-build would sit useless for exactly the matches it was made for.
 ---@param state CustomAuraGroupState
 ---@param count number
 local function PrewarmFor(state, count)
 	local shape = groups:DrawsBars(state.Group) and groups.DisplayStyle.Bars
 		or groups.DisplayStyle.Icons
 
-	displayPools[shape]:Prewarm(count)
+	displayPools[shape]:Prewarm(count, PrewarmCreateArgs, state.Group)
 end
 
 ---True while the icons are stand-ins: test mode covers every group, the options page one.

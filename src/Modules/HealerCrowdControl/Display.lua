@@ -8,6 +8,7 @@ local auraFilters = addon.Core.AuraFilters
 local testSpellData = addon.Core.TestSpells
 local units = addon.Utils.Units
 local moduleUtil = addon.Utils.ModuleUtil
+local wowEx = addon.Utils.WoWEx
 
 -- Loaded before this file in TOC order.
 local sound = addon.Modules.HealerCrowdControl.Sound
@@ -48,6 +49,9 @@ local iconsContainer
 local activePool = {}
 ---@type table<string, HealerWatchEntry>
 local discardPool = {}
+-- Names the discard-pool slots for entries rejected while styling was restricted, so they park
+-- under keys no unit token can collide with (see RefreshHealers).
+local staleParkCounter = 0
 
 ---@type TestSpell[]
 local testSpells = {}
@@ -125,6 +129,23 @@ local function BuildLabelStyle(options)
 	return style
 end
 
+---Whether a parked entry's displays already carry the current options. Asked while aura styling
+---is restricted, where a reused entry cannot be restyled and would keep its old look for the
+---whole match.
+---@param item HealerWatchEntry
+---@param options table
+---@return boolean
+local function ItemCarriesOptions(item, options)
+	local display = item.Display
+	local label = item.LabelDisplay
+
+	-- One style scratch is shared, so each style is built right before the compare that reads it.
+	return (not display or display:CarriesConfig(tonumber(options.Icons.Size) or 32,
+			options.IconSpacing or 2, BuildStyle(options)))
+		and (not label or label:CarriesConfig(tonumber(options.Font.Size) or 32, 0,
+			BuildLabelStyle(options)))
+end
+
 ---Applies size/style options to every healer display.
 local function RefreshHealerDisplays()
 	local options = db.Modules.HealerCCModule
@@ -184,21 +205,35 @@ local function RefreshHealers()
 	DiscardActiveEntries()
 
 	local healers = units:FindHealers()
+	local options = db.Modules.HealerCCModule
+	local restricted = wowEx:IsAuraStylingRestricted()
 
 	-- Re-add healers from the new set
 	for _, healer in ipairs(healers) do
 		local item = discardPool[healer]
 
+		if item and restricted and not ItemCarriesOptions(item, options) then
+			-- Re-keyed out of the token's slot: the fresh entry built below lands back in the
+			-- discard pool under this token on the next refresh, and must not clobber this one.
+			staleParkCounter = staleParkCounter + 1
+			discardPool["stale" .. staleParkCounter] = item
+			discardPool[healer] = nil
+			item = nil
+		end
+
 		-- Container entries are interchangeable: same groups, retargeted by SetUnit. Taking any
 		-- parked one caps the display count at the largest healer set seen at once, where the
 		-- same-token match alone builds a new display for every token that ever held a healer
-		-- (containers can never be freed).
+		-- (containers can never be freed). While styling is restricted only an entry already
+		-- carrying the current look is taken: a reused one cannot be restyled, so a mismatch
+		-- would keep its old look for the whole match.
 		if not item then
-			local token, parked = next(discardPool)
-
-			if parked then
-				item = parked
-				discardPool[token] = nil
+			for token, parked in pairs(discardPool) do
+				if not restricted or ItemCarriesOptions(parked, options) then
+					item = parked
+					discardPool[token] = nil
+					break
+				end
 			end
 		end
 
@@ -215,7 +250,6 @@ local function RefreshHealers()
 			activePool[healer] = item
 			discardPool[healer] = nil
 		else
-			local options = db.Modules.HealerCCModule
 			item = {
 				Unit = healer,
 				Display = auraContainerDisplay:New(

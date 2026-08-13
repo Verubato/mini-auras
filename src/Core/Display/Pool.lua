@@ -60,6 +60,31 @@ function M:Acquire(...)
 	return item
 end
 
+---Acquire that only reuses a free item the matcher accepts, building fresh otherwise even when
+---free items remain. For the moments an item's baked-in make-up cannot be corrected after the
+---fact, where plain Acquire's any-free-item answer would hand back one that cannot be fixed up.
+---Most recently released items are tried first, like Acquire takes them.
+---@param matchFn fun(item: table, ...): boolean
+---@param ... any Passed to matchFn alongside each candidate, and to createFn on a build.
+---@return table item
+function M:AcquireMatching(matchFn, ...)
+	local free = self.Free
+
+	for index = #free, 1, -1 do
+		local item = free[index]
+
+		if matchFn(item, ...) then
+			table.remove(free, index)
+
+			return item
+		end
+	end
+
+	self.Created = self.Created + 1
+
+	return self.Create(...)
+end
+
 ---@param item table
 function M:Release(item)
 	self.Reset(item)
@@ -71,9 +96,20 @@ end
 ---demand grows (e.g. the user enables a second bar, doubling displays per nameplate); it never
 ---lowers it, since the extra items are already built.
 ---@param targetCount number?
-function M:Prewarm(targetCount)
+---@param argsFn (fun(argsCtx: any): ...)? Produces createFn's arguments for each item a fill
+---builds, called at build time so the values come out fresh rather than captured - the fill is
+---staggered over seconds, longer than any shared scratch survives. The latest pair given wins
+---for the items still to come; without one ever given, createFn is called bare.
+---@param argsCtx any? Handed to argsFn, so callers can pass a hoisted function and its context
+---instead of allocating a closure per call.
+function M:Prewarm(targetCount, argsFn, argsCtx)
 	if targetCount and targetCount > self.Target then
 		self.Target = targetCount
+	end
+
+	if argsFn then
+		self.ArgsFn = argsFn
+		self.ArgsCtx = argsCtx
 	end
 
 	if self.Ticker or self.Created >= self.Target then
@@ -90,7 +126,8 @@ function M:Prewarm(targetCount)
 		for _ = 1, ITEMS_PER_TICK do
 			if self.Created < self.Target then
 				self.Created = self.Created + 1
-				local item = self.Create()
+				local produce = self.ArgsFn
+				local item = produce and self.Create(produce(self.ArgsCtx)) or self.Create()
 				self.Reset(item)
 				self.Free[#self.Free + 1] = item
 			end
@@ -105,3 +142,5 @@ end
 ---@field Target number
 ---@field Created number
 ---@field Ticker table?
+---@field ArgsFn (fun(argsCtx: any): ...)?
+---@field ArgsCtx any?
