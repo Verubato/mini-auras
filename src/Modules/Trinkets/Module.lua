@@ -15,6 +15,9 @@ addon.Modules.TrinketsModule = M
 local eventFrame
 local enabled = false
 local paused = false
+local QueueRefresh = moduleUtil:Coalesced(function()
+	M:Refresh()
+end)
 
 local function OnEvent(_, event)
 	if paused then
@@ -27,9 +30,7 @@ local function OnEvent(_, event)
 		M:Refresh()
 	elseif event == "GROUP_ROSTER_UPDATE" then
 		-- for some reason it doesn't work right away
-		C_Timer.After(0, function()
-			M:Refresh()
-		end)
+		QueueRefresh()
 	end
 end
 

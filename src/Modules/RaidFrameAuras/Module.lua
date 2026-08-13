@@ -23,6 +23,9 @@ local testModeActive = false
 local duelSub
 -- Scratch for the watched units handed to the duel poller each refresh.
 local duelUnitsScratch = {}
+local QueueRefresh = moduleUtil:Coalesced(function()
+	M:Refresh()
+end)
 
 ---Hands the poller the units on screen right now. Re-seeded per refresh rather than tracked
 ---per frame: the frames retarget constantly (sorting, roster changes), and a baseline for a unit
@@ -45,9 +48,7 @@ end
 
 local function OnEvent(_, event, unit)
 	if event == "GROUP_ROSTER_UPDATE" then
-		C_Timer.After(0, function()
-			M:Refresh()
-		end)
+		QueueRefresh()
 	elseif event == "UNIT_FACTION" then
 		-- Mind control hands a friendly frame an enemy unit, which decides whether the engine
 		-- honours the spell-id filter at all. Filtered hard: this also fires on every PvP flag

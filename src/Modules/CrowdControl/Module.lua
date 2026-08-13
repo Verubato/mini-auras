@@ -21,6 +21,11 @@ local eventsFrame
 ---@type Db
 local db
 local testModeActive = false
+-- Deferred as well as coalesced: the frame addons (danders/grid) rebuild on the same event, so
+-- the anchors are only worth reading once they have settled.
+local QueueRefresh = moduleUtil:Coalesced(function()
+	M:Refresh()
+end)
 
 local function OnFrameSortSorted()
 	M:Refresh()
@@ -28,18 +33,13 @@ end
 
 local function OnEvent(_, event)
 	if event == "GROUP_ROSTER_UPDATE" then
-		-- wait for frame addons (danders/grid) to update
-		C_Timer.After(0, function()
-			M:Refresh()
-		end)
+		QueueRefresh()
 	elseif event == "UNIT_PET" then
 		-- A pet was summoned/dismissed; refresh so the opt-in pet unit frame containers show/hide
 		-- with it. Only relevant when IncludePetFrame is enabled, so skip the work otherwise.
 		local petOptions = db.Modules.PetCCModule
 		if petOptions and petOptions.IncludePetFrame and moduleUtil:IsModuleEnabled(moduleName.PetCC) then
-			C_Timer.After(0, function()
-				M:Refresh()
-			end)
+			QueueRefresh()
 		end
 	end
 end

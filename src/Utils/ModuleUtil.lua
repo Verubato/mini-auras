@@ -150,6 +150,32 @@ function M:FillColor(target, configured, default)
 	return target
 end
 
+---Wraps a function so that however many times it is called in one frame, it runs once, on the
+---next. The roster events burst - a raid forming fires GROUP_ROSTER_UPDATE per member joining -
+---and each one otherwise drives a full module refresh with a fresh closure to go with it.
+---
+---The deferral is the point as well as the saving: the frame addons rebuild their own frames on
+---the same event, so a refresh reads the anchors only once they have settled.
+---@param callback fun()
+---@return fun()
+function M:Coalesced(callback)
+	local queued = false
+
+	local function run()
+		queued = false
+		callback()
+	end
+
+	return function()
+		if queued then
+			return
+		end
+
+		queued = true
+		C_Timer.After(0, run)
+	end
+end
+
 ---@param moduleName string The module key (e.g., "AlertsModule", "CcModule")
 ---@return boolean
 function M:IsModuleEnabled(moduleName)

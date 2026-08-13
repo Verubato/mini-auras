@@ -20,12 +20,13 @@ local testModeActive = false
 local previousTestSoundEnabled = false
 ---@type EventGate?
 local rosterGate
+local QueueRefresh = moduleUtil:Coalesced(function()
+	M:Refresh()
+end)
 
 local function OnEvent(_, event)
 	if event == "GROUP_ROSTER_UPDATE" then
-		C_Timer.After(0, function()
-			M:Refresh()
-		end)
+		QueueRefresh()
 	end
 end
 

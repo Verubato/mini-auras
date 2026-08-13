@@ -165,6 +165,85 @@ fw.describe("ModuleUtil:GetIconSize", function()
 	end)
 end)
 
+fw.describe("ModuleUtil:Coalesced", function()
+	local moduleUtil = loadModule("src/Utils/ModuleUtil.lua", newAddon({})).Utils.ModuleUtil
+
+	-- The suite's C_Timer.After runs its callback on the spot, which would collapse the
+	-- distinction this is about; these hold the callbacks so the burst can be counted.
+	local function withHeldTimers(body)
+		local queued = {}
+		local realAfter = _G.C_Timer.After
+
+		_G.C_Timer.After = function(_, callback)
+			queued[#queued + 1] = callback
+		end
+
+		local ok, err = pcall(body, queued)
+
+		_G.C_Timer.After = realAfter
+
+		assert(ok, err)
+	end
+
+	fw.it("runs once for a burst, on the next frame", function()
+		withHeldTimers(function(queued)
+			local runs = 0
+			local queueRun = moduleUtil:Coalesced(function()
+				runs = runs + 1
+			end)
+
+			for _ = 1, 10 do
+				queueRun()
+			end
+
+			assert(runs == 0, "nothing runs until the frame turns over")
+			assert(#queued == 1, "ten calls queue one timer, not ten (got " .. #queued .. ")")
+
+			queued[1]()
+
+			assert(runs == 1, "and the burst produces exactly one run (got " .. runs .. ")")
+		end)
+	end)
+
+	fw.it("queues again after the pending run has gone", function()
+		withHeldTimers(function(queued)
+			local runs = 0
+			local queueRun = moduleUtil:Coalesced(function()
+				runs = runs + 1
+			end)
+
+			queueRun()
+			queued[1]()
+			queueRun()
+			queued[2]()
+
+			assert(runs == 2, "a later burst is not swallowed by the earlier one (got " .. runs .. ")")
+		end)
+	end)
+
+	fw.it("keeps two wrapped functions apart", function()
+		withHeldTimers(function(queued)
+			local first, second = 0, 0
+			local queueFirst = moduleUtil:Coalesced(function()
+				first = first + 1
+			end)
+			local queueSecond = moduleUtil:Coalesced(function()
+				second = second + 1
+			end)
+
+			queueFirst()
+			queueSecond()
+
+			assert(#queued == 2, "each wrapper coalesces on its own")
+
+			queued[1]()
+			queued[2]()
+
+			assert(first == 1 and second == 1, "and both run")
+		end)
+	end)
+end)
+
 -- WoWEx
 
 fw.describe("WoWEx aura-styling gate", function()
