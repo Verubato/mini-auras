@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local units = addon.Utils.Units
 local eventGate = addon.Core.EventGate
 local duelPoller = addon.Core.DuelPoller
 local moduleUtil = addon.Utils.ModuleUtil
@@ -58,8 +59,10 @@ local function OnNamePlateAdded(unitToken)
 	-- Baseline for the duel poll, kept fresh on every (re)registration.
 	local isEnemy = duelSub:Seed(unitToken)
 
-	-- Only track enemy nameplates
-	if not isEnemy then
+	-- Only track enemy nameplates. A charmed unit is out too: mind control hands it to the
+	-- other team, its aura list becomes the controller's own buffs, and the containers would
+	-- announce and draw those as alerts. The poll routes back here when the charm ends.
+	if not isEnemy or units:IsCharmed(unitToken) then
 		-- The token now belongs to a non-enemy (recycled plate or duel ending), so its warm
 		-- sound registrations are dropped along with the display.
 		sound:RemoveToken(unitToken)
@@ -91,8 +94,9 @@ local function RebuildNameplateDisplays()
 		local unitToken = nameplate.unitToken
 		if unitToken then
 			-- Seed the duel-poll baseline here too: plates that existed before Init/enable
-			-- never fire NAME_PLATE_UNIT_ADDED.
-			if duelSub:Seed(unitToken) then
+			-- never fire NAME_PLATE_UNIT_ADDED. Charmed units are skipped for the same
+			-- reason as the add path.
+			if duelSub:Seed(unitToken) and not units:IsCharmed(unitToken) then
 				activeTokens[unitToken] = true
 			end
 		end

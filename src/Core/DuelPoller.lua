@@ -3,15 +3,16 @@ local _, addon = ...
 local units = addon.Utils.Units
 
 -- The states that change with no event to announce them, polled because there is no alternative:
--- a friendly unit turning attackable at duel start (or back at the end), and a unit leaving or
--- re-entering the player's visible world. Both decide what the engine will do with an aura
--- filter, so a display that ignores them shows the wrong thing until something unrelated
--- refreshes it. One shared ticker serves every module that needs this instead of a ticker per
--- module. Each subscriber keeps its own per-token baselines (seeded on plate add or per refresh,
--- cleared on removal) because subscribers track different token sets.
+-- a friendly unit turning attackable at duel start (or back at the end), a unit leaving or
+-- re-entering the player's visible world, and a unit becoming charmed (mind control flips it to
+-- the other team's control). All decide what the engine will do with an aura filter, so a
+-- display that ignores them shows the wrong thing until something unrelated refreshes it. One
+-- shared ticker serves every module that needs this instead of a ticker per module. Each
+-- subscriber keeps its own per-token baselines (seeded on plate add or per refresh, cleared on
+-- removal) because subscribers track different token sets.
 --
--- Duels only occur in the open world, but visibility does not, so only the duel half of the poll
--- early-returns inside instances.
+-- Duels only occur in the open world, but visibility and mind control do not, so only the duel
+-- half of the poll early-returns inside instances.
 
 ---@class DuelPoller
 local M = {}
@@ -46,10 +47,14 @@ local function Poll()
 				end
 
 				local isVisible = units:IsVisible(unitToken)
+				local isCharmed = units:IsCharmed(unitToken)
 
-				if isEnemy ~= wasEnemy or isVisible ~= subscriber.Visibility[unitToken] then
+				if isEnemy ~= wasEnemy
+					or isVisible ~= subscriber.Visibility[unitToken]
+					or isCharmed ~= subscriber.Charmed[unitToken] then
 					subscriber.Baselines[unitToken] = isEnemy
 					subscriber.Visibility[unitToken] = isVisible
+					subscriber.Charmed[unitToken] = isCharmed
 					flipped[#flipped + 1] = unitToken
 				end
 			end
@@ -72,6 +77,7 @@ function Subscriber:Seed(unitToken)
 
 	self.Baselines[unitToken] = isEnemy
 	self.Visibility[unitToken] = units:IsVisible(unitToken)
+	self.Charmed[unitToken] = units:IsCharmed(unitToken)
 
 	return isEnemy
 end
@@ -80,11 +86,13 @@ end
 function Subscriber:Clear(unitToken)
 	self.Baselines[unitToken] = nil
 	self.Visibility[unitToken] = nil
+	self.Charmed[unitToken] = nil
 end
 
 function Subscriber:ClearAll()
 	wipe(self.Baselines)
 	wipe(self.Visibility)
+	wipe(self.Charmed)
 end
 
 ---Registers a poll subscriber. IsActive gates the subscriber's whole scan (typically the
@@ -99,6 +107,7 @@ function M:Register(isActive, onFlip)
 		OnFlip = onFlip,
 		Baselines = {},
 		Visibility = {},
+		Charmed = {},
 	}, Subscriber)
 	subscribers[#subscribers + 1] = subscriber
 
@@ -114,3 +123,4 @@ end
 ---@field OnFlip fun(unitToken: string)
 ---@field Baselines table<string, boolean> Token -> was an enemy at the last poll.
 ---@field Visibility table<string, boolean> Token -> was in the player's visible world.
+---@field Charmed table<string, boolean> Token -> was charmed (mind controlled).

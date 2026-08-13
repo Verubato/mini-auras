@@ -77,6 +77,15 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
+	-- A charmed unit is under the other team's control: its aura list flips to the
+	-- controller's buffs, and either faction's bars would draw those as the unit's own.
+	-- Untracked entirely (containers hidden, displays parked); the charm poll routes back
+	-- here when the mind control ends.
+	if units:IsCharmed(unitToken) then
+		display:Untrack(unitToken)
+		return
+	end
+
 	-- Check if we should ignore pets
 	local unitOptions = display:GetUnitOptions(unitToken)
 	if unitOptions.IgnorePets and units:IsPetOrMinion(unitToken) then
