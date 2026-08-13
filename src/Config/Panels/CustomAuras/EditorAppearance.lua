@@ -30,6 +30,19 @@ function ui.BuildAppearanceTab(ctx)
 	local checkRow2 = ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, CHECK_ROW2_GAP)
 	local swatchRow = ctx.NewRow(appearancePanel, CHECK_ROW_HEIGHT, CHECK_ROW2_GAP)
 
+	---Puts one control in the next slot of the checkbox flow: the first row until it is full, the
+	---second after that.
+	---@param control table
+	---@param column number
+	---@param center boolean? For a swatch, which is shorter than a checkbox and would sit high.
+	local function PlaceInFlow(control, column, center)
+		local row = column < CHECK_COLUMNS and checkRow or checkRow2
+		local offsetY = center and -math.floor((CHECK_ROW_HEIGHT - control:GetHeight()) / 2) or 0
+
+		control:ClearAllPoints()
+		control:SetPoint("TOPLEFT", row, "TOPLEFT", checkColumn * (column % CHECK_COLUMNS), offsetY)
+	end
+
 	local textureDropdown = ctx.Dropdown(L["Bar Texture"], {
 		Items = barTextures:GetNames(),
 		GetValue = function()
@@ -95,6 +108,13 @@ function ui.BuildAppearanceTab(ctx)
 			Tooltip = L["Hide the countdown text on this group's icons."],
 			Get = function(group) return group.Icons.HideNumbers end,
 			Set = function(group, value) group.Icons.HideNumbers = value end,
+		},
+		{
+			Bars = false,
+			Label = L["Centre stacks"],
+			Tooltip = L["Show the stack count in the middle of the icon instead of the countdown text."],
+			Get = function(group) return group.Icons.CenterStacks end,
+			Set = function(group, value) group.Icons.CenterStacks = value end,
 		},
 		{
 			Bars = true,
@@ -183,6 +203,47 @@ function ui.BuildAppearanceTab(ctx)
 	pandemicSwatch:SetPoint("TOPLEFT", swatchRow, "TOPLEFT", checkColumn,
 		-math.floor((CHECK_ROW_HEIGHT - pandemicSwatch:GetHeight()) / 2))
 
+	-- Positioned by RefreshShape, which runs this pair through the checkbox flow so the toggle and
+	-- the swatch it turns on stay side by side.
+	local colorTextCheck = mini:Checkbox({
+		Parent = appearancePanel,
+		LabelText = L["Colour text"],
+		Tooltip = L["Colour the countdown, stack count, and spell name with the text colour instead of the defaults. This replaces colouring the countdown by time remaining."],
+		GetValue = function()
+			local group = ui.Current()
+			return group ~= nil and group.Icons.ColorText == true
+		end,
+		SetValue = function(value)
+			local group = ui.Current()
+
+			if group then
+				group.Icons.ColorText = value
+				ui.Apply()
+			end
+		end,
+	})
+
+	local textSwatch = mini:ColorSwatch({
+		Parent = appearancePanel,
+		LabelText = L["Text colour"],
+		Tooltip = L["Change the colour of the countdown, stack count, and spell name text."],
+		HasOpacity = false,
+		GetValue = function()
+			local group = ui.Current()
+			local color = group and group.Icons.TextColor or {}
+			return color.R or 1, color.G or 1, color.B or 1, 1
+		end,
+		SetValue = function(r, g, b)
+			local group = ui.Current()
+
+			if group then
+				local color = group.Icons.TextColor
+				color.R, color.G, color.B = r, g, b
+				ui.Apply()
+			end
+		end,
+	})
+
 	-- Shares the shape row with the bar texture, which is never up at the same time: one of them
 	-- is what this tab has to say about the group.
 	local emptyNote = appearancePanel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
@@ -208,13 +269,25 @@ function ui.BuildAppearanceTab(ctx)
 			if shown then
 				-- Wraps onto the second row once the first is full, so a shape with more switches
 				-- than columns keeps them all readable rather than running off the panel.
-				local row = column < CHECK_COLUMNS and checkRow or checkRow2
-
-				spec.Control:ClearAllPoints()
-				spec.Control:SetPoint("TOPLEFT", row, "TOPLEFT",
-					checkColumn * (column % CHECK_COLUMNS), 0)
+				PlaceInFlow(spec.Control, column)
 				column = column + 1
 			end
+		end
+
+		colorTextCheck:SetShown(not soundOnly)
+		textSwatch:SetShown(not soundOnly)
+		textSwatch.Label:SetShown(not soundOnly)
+
+		if not soundOnly then
+			-- Both take the next two slots, dropping to the next row together when only one is
+			-- left on this one: split across the break they would read as unrelated controls.
+			if column % CHECK_COLUMNS == CHECK_COLUMNS - 1 then
+				column = column + 1
+			end
+
+			PlaceInFlow(colorTextCheck, column)
+			PlaceInFlow(textSwatch, column + 1, true)
+			column = column + 2
 		end
 
 		local wrapped = column > CHECK_COLUMNS

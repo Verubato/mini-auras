@@ -35,11 +35,19 @@ local curveGeneration
 -- mutates the saved tables in place, so comparing references would miss the change.
 local appliedColors = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 local colorGeneration = 0
--- The flat curve a countdown binds while the colouring is OFF. See Bind for why the off state is
--- a curve of its own rather than no colour binding at all. White matches the NumberFontNormal the
--- fontstring is created with.
----@type table?
-local plainCurve
+-- The flat curves a countdown binds while the colouring is OFF, one per configured text colour
+-- (white, the NumberFontNormal default, being the common case). See Bind for why the off state is
+-- a curve of its own rather than no colour binding at all. Keyed by colour: curves are never
+-- mutated after creation - the engine keeps whatever reference is bound - so each distinct colour
+-- is its own object.
+---@type table<string, table>
+local flatCurves = {}
+local flatCurveCount = 0
+-- Dragging the colour picker mints one curve per colour it passes through, so the cache is
+-- dropped wholesale once it grows past this rather than kept for the session. Anything already
+-- bound goes on working - the engine holds its own reference - and the next bind rebuilds only
+-- the colour actually in use.
+local MAX_FLAT_CURVES = 32
 -- Formatters keyed by milliseconds threshold (0 = whole seconds only). The engine keeps each
 -- reference, so variants are built once and shared across every bound fontstring.
 ---@type table<number, table>
@@ -166,20 +174,38 @@ function M:GetColorCurve()
 	return colorCurve
 end
 
----The curve bound when colour-by-time is off: white the whole way down.
+---The curve bound when colour-by-time is off: one flat colour the whole way down, white unless
+---a style asks for its own text colour.
+---@param r number?
+---@param g number?
+---@param b number?
 ---@return table
-function M:GetPlainCurve()
-	if not plainCurve then
-		local curve = C_CurveUtil.CreateColorCurve()
+function M:GetFlatCurve(r, g, b)
+	-- Quantised so a colour picker drag cannot mint a cached curve per pixel of movement.
+	r = math.floor((r or 1) * 100 + 0.5) / 100
+	g = math.floor((g or 1) * 100 + 0.5) / 100
+	b = math.floor((b or 1) * 100 + 0.5) / 100
+
+	local key = r .. ":" .. g .. ":" .. b
+	local curve = flatCurves[key]
+
+	if not curve then
+		if flatCurveCount >= MAX_FLAT_CURVES then
+			wipe(flatCurves)
+			flatCurveCount = 0
+		end
+
+		curve = C_CurveUtil.CreateColorCurve()
 		curve:SetType(Enum.LuaCurveType.Linear)
 		-- Descending, like the ramp above; two points so the value is flat rather than clamped
 		-- off the end of a single one.
-		curve:AddPoint(TOP_STOP_SECONDS, CreateColor(1, 1, 1))
-		curve:AddPoint(0, CreateColor(1, 1, 1))
-		plainCurve = curve
+		curve:AddPoint(TOP_STOP_SECONDS, CreateColor(r, g, b))
+		curve:AddPoint(0, CreateColor(r, g, b))
+		flatCurves[key] = curve
+		flatCurveCount = flatCurveCount + 1
 	end
 
-	return plainCurve
+	return curve
 end
 
 ---Binds (or re-binds) a button's countdown fontstring. The engine retains the binding across

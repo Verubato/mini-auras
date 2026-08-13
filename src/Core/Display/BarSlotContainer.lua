@@ -335,6 +335,16 @@ function M:SetSlot(slotIndex, options)
 	slot.Icon:SetTexture(options.Texture)
 	slot.Name:SetText(options.Name or "")
 
+	-- Both texts take the option's colour, matching the live bars; white is what the fonts
+	-- already render in, so leaving the option out changes nothing.
+	local textColor = options.TextColor
+	local textR = textColor and textColor.r or 1
+	local textG = textColor and textColor.g or 1
+	local textB = textColor and textColor.b or 1
+
+	slot.Name:SetTextColor(textR, textG, textB)
+	slot.Time:SetTextColor(textR, textG, textB)
+
 	-- Only on change: a status bar rebuilds its fill from scratch when the texture is swapped, and
 	-- this runs for every slot on every preview render.
 	local texture = barTextures:Resolve(options.BarTexture)
@@ -405,6 +415,7 @@ end
 ---@field Name string? Text shown inside the fill.
 ---@field DurationObject table? A WoWEx:CreateDuration object; without one the bar sits full.
 ---@field Color table? {r, g, b} fill colour, which the border takes too.
+---@field TextColor table? {r, g, b} for the name and countdown text; white leaves them as they come.
 ---@field Border boolean? Draw a border around the bar.
 ---@field FontScale number? Multiplier on both text sizes.
 ---@field BarTexture string? Fill texture name, resolved through Core/Display/BarTextures.

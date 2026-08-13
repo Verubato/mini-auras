@@ -27,11 +27,13 @@ local defaultIconTexCoord = {}
 -- The style fields StoreStyle copies verbatim from a caller's table. Drives the compare in
 -- StyleDiffersFromStored, the copy in StoreStyle, the clear in GetStyleScratch and the concat in
 -- GetStyleSignature, so a new field lands in all of them at once - listing it in only some lets
--- a stale value leak from one module's scratch into another's. GlowColor and the db-resolved fields (swipe, countdown
--- threshold, glow style name) are special-cased where they are used.
+-- a stale value leak from one module's scratch into another's. The colour tables (GlowColor,
+-- PandemicColor, TextColor) and the db-resolved fields (swipe, countdown threshold, glow style
+-- name) are special-cased where they are used.
 local STYLE_FIELDS = {
 	"Border",
 	"Stacks",
+	"CenterStacks",
 	"ReverseCooldown",
 	"HideSwipe",
 	"HideNumbers",
@@ -481,6 +483,7 @@ local function StyleDiffersFromStored(instance, style)
 	local stored = instance.Style
 	local color = style.GlowColor
 	local pandemic = style.PandemicColor
+	local text = style.TextColor
 
 	if not stored.Populated
 		or stored.DisableSwipe ~= ((db and db.DisableSwipe) or false)
@@ -493,7 +496,10 @@ local function StyleDiffersFromStored(instance, style)
 		or stored.GlowColorB ~= (color and color[3])
 		or stored.PandemicColorR ~= (pandemic and pandemic[1])
 		or stored.PandemicColorG ~= (pandemic and pandemic[2])
-		or stored.PandemicColorB ~= (pandemic and pandemic[3]) then
+		or stored.PandemicColorB ~= (pandemic and pandemic[3])
+		or stored.TextColorR ~= (text and text[1])
+		or stored.TextColorG ~= (text and text[2])
+		or stored.TextColorB ~= (text and text[3]) then
 		return true
 	end
 
@@ -521,6 +527,7 @@ local function StoreStyle(instance, style)
 	local stored = instance.Style
 	local color = style.GlowColor
 	local pandemic = style.PandemicColor
+	local text = style.TextColor
 
 	for _, field in ipairs(STYLE_FIELDS) do
 		stored[field] = style[field]
@@ -537,6 +544,9 @@ local function StoreStyle(instance, style)
 	stored.PandemicColorR = pandemic and pandemic[1]
 	stored.PandemicColorG = pandemic and pandemic[2]
 	stored.PandemicColorB = pandemic and pandemic[3]
+	stored.TextColorR = text and text[1]
+	stored.TextColorG = text and text[2]
+	stored.TextColorB = text and text[3]
 	stored.Populated = true
 
 	return true
@@ -580,17 +590,21 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 	local cd = widgets.Cooldown
 	local durationText = widgets.DurationText
 	-- Numbers off means neither the cooldown's own text nor the bound fontstring, so an icon that
-	-- says nothing but "this is up" is the two switches together.
-	local hideNumbers = style.HideNumbers == true
+	-- says nothing but "this is up" is the two switches together. A centred stack count takes the
+	-- countdown's place, so it drops the numbers the same way.
+	local hideNumbers = style.HideNumbers == true or style.CenterStacks == true
 	-- SetCountdownMillisecondsThreshold only works on legacy clock-driven cooldowns; it no-ops for
 	-- 12.1 duration objects, where fractions render through the duration-text binding below. (The
 	-- cooldown's own SetCountdownFormatter does not work there either.)
 	local msThreshold = (style.ShowMilliseconds and (style.MillisecondsThreshold or 5)) or 0
 
+	-- A style carrying its own text colour takes the countdown off the time ramp: the two both
+	-- want the same fontstring, and a configured colour is the more deliberate ask.
 	local colorCountdown = not hideNumbers and style.ColorCountdownByTime == true
-		and durationText ~= nil
+		and style.TextColorR == nil and durationText ~= nil
 	local useDurationText = not hideNumbers and durationText ~= nil
 		and (widgets.Bar ~= nil or colorCountdown or msThreshold > 0)
+	local cdText
 
 	if cd then
 		-- DisableSwipe/MillisecondsThreshold are the global db values StoreStyle resolved when the
@@ -604,6 +618,19 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 		cd.FontScale = fontScale
 		fontUtil:UpdateCooldownFontSize(cd, size, nil, fontScale)
 		cd:SetHideCountdownNumbers(hideNumbers or useDurationText)
+
+		cdText = (cd.GetCountdownFontString and cd:GetCountdownFontString())
+			or cd.MiniAurasFontString
+		-- Kept for StyleStacks, whose centred count borrows this fontstring's face the same way
+		-- the duration text below does.
+		widgets.CooldownText = cdText
+
+		-- The native numbers take the style's text colour directly; the bound stand-in gets the
+		-- same colour through its curve below. Always set, so a pooled button styled for a
+		-- coloured group goes back to white for the next one.
+		if cdText then
+			cdText:SetTextColor(style.TextColorR or 1, style.TextColorG or 1, style.TextColorB or 1)
+		end
 	end
 
 	if not durationText then
@@ -613,12 +640,13 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 	-- The ramp while colouring by time, a flat curve while the fontstring is the countdown without
 	-- it, and nothing at all while it is not the countdown (see AuraCountdownText.Bind).
 	local curve = colorCountdown and auraCountdownText:GetColorCurve()
-		or (useDurationText and auraCountdownText:GetPlainCurve())
+		or (useDurationText and auraCountdownText:GetFlatCurve(style.TextColorR, style.TextColorG,
+			style.TextColorB))
 		or nil
 
 	-- The formatter and colour curve live inside the binding, so a change re-binds. Only on
-	-- change: each SetDurationText runs the engine's options processing per button. The two curves
-	-- are shared singletons, so comparing the reference is comparing which curve is bound.
+	-- change: each SetDurationText runs the engine's options processing per button. The curves
+	-- are cached singletons, so comparing the reference is comparing which curve is bound.
 	if widgets.DurationTextThreshold ~= msThreshold or widgets.DurationTextCurve ~= curve then
 		widgets.DurationTextThreshold = msThreshold
 		widgets.DurationTextCurve = curve
@@ -630,8 +658,6 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 	-- Stand-in for the cooldown's own countdown, so it borrows that fontstring's face and size
 	-- wholesale (UpdateCooldownFontSize above just sized it with the same coefficient and scale).
 	-- Without a face to copy, fall back to sizing the template font.
-	local cdText = cd and (cd.GetCountdownFontString and cd:GetCountdownFontString()
-		or cd.MiniAurasFontString)
 	local font, fontSize, fontFlags
 	if cdText then
 		font, fontSize, fontFlags = cdText:GetFont()
@@ -643,21 +669,95 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 	end
 end
 
----Alpha rather than Show/Hide, and never unregistered: the engine owns this fontstring's text and
----shown state, so the only part of it left to us is how visible it is.
+---Puts the count where the countdown would be, standing in for the numbers StyleCountdown hid.
+---It borrows that fontstring's face and size wholesale, exactly like the duration text does -
+---sized alone it would sit in its own template face against the cooldown's, and the swap would
+---show. Split out of StyleStacks because Masque positions this same region when it skins a
+---button, so this has to run again afterwards.
+---@param instance AuraContainerDisplay
+---@param button table
 ---@param widgets table
----@param style AuraDisplayStyle
+local function CenterStacks(instance, button, widgets)
+	local stacks = widgets.Stacks
+	-- Stored by StyleCountdown, which always runs first.
+	local cdText = widgets.CooldownText
+	local font, fontSize, fontFlags
+
+	stacks:ClearAllPoints()
+	stacks:SetJustifyH("CENTER")
+	stacks:SetPoint("CENTER", button, "CENTER", 0, 0)
+
+	if cdText then
+		font, fontSize, fontFlags = cdText:GetFont()
+	end
+
+	if font then
+		stacks:SetFont(font, fontSize, fontFlags)
+	else
+		fontUtil:UpdateFontSize(stacks, instance.Size, nil, instance.Style.FontScale or 1.0)
+	end
+end
+
+---Re-centres a count that Masque has just moved. The skin owns where the count sits, and it is
+---applied after every StyleButton (at creation and on every re-skin), so a group asking for a
+---centred count would otherwise get the countdown hidden and the count still in the corner.
+---@param instance AuraContainerDisplay
+---@param button table
+local function RestoreCenteredStacks(instance, button)
+	local widgets = instance.ButtonWidgets[button]
+
+	if widgets and widgets.Masqued and widgets.StacksCentered then
+		CenterStacks(instance, button, widgets)
+	end
+end
+
+---Alpha rather than Show/Hide, and never unregistered: the engine owns this fontstring's text and
+---shown state, so the only part of it left to us is how visible it is - plus where it sits and
+---how big it is, which is what CenterStacks moves.
+---@param instance AuraContainerDisplay
+---@param button table
+---@param widgets table
 ---@param size number
 ---@param fontScale number
-local function StyleStacks(widgets, style, size, fontScale)
+local function StyleStacks(instance, button, widgets, size, fontScale)
 	local stacks = widgets.Stacks
 
 	if not stacks then
 		return
 	end
 
+	local style = instance.Style
+
 	stacks:SetAlpha(style.Stacks and 1 or 0)
-	fontUtil:UpdateStackFontSize(stacks, size, fontScale)
+
+	local centered = style.CenterStacks == true and not widgets.Bar
+
+	if centered then
+		CenterStacks(instance, button, widgets)
+	else
+		-- Only when it was centred a moment ago: an untouched count keeps whatever placement it
+		-- was created with, which is the skin's on a Masqued button.
+		if widgets.StacksCentered then
+			-- The corner spot the button was created with: a bar's count sits on its icon. The
+			-- template face comes back too, since centred it wore the countdown's; the size is a
+			-- stand-in the resize below corrects.
+			stacks:ClearAllPoints()
+			stacks:SetJustifyH("RIGHT")
+			stacks:SetPoint("BOTTOMRIGHT", widgets.Bar and widgets.Icon or button,
+				"BOTTOMRIGHT", -1, 1)
+
+			if stacks.MiniAurasFace then
+				local _, currentSize = stacks:GetFont()
+
+				stacks:SetFont(stacks.MiniAurasFace, currentSize or 10, stacks.MiniAurasFlags)
+			end
+		end
+
+		fontUtil:UpdateStackFontSize(stacks, size, fontScale)
+	end
+
+	widgets.StacksCentered = centered
+	stacks:SetTextColor(style.TextColorR or 1, style.TextColorG or 1, style.TextColorB or 1)
 end
 
 ---The fill, its colour and the spell name on a bar button.
@@ -687,6 +787,7 @@ local function StyleBar(instance, widgets, size, fontScale)
 	-- exactly like the stack count.
 	local name = widgets.Name
 	name:SetAlpha(style.SpellName ~= false and 1 or 0)
+	name:SetTextColor(style.TextColorR or 1, style.TextColorG or 1, style.TextColorB or 1)
 	fontUtil:UpdateFontSize(name, size, BAR_NAME_COEFFICIENT, fontScale)
 end
 
@@ -774,7 +875,7 @@ local function StyleButton(instance, button)
 	local fontScale = style.FontScale or 1.0
 
 	StyleCountdown(instance, button, widgets, size, fontScale)
-	StyleStacks(widgets, style, size, fontScale)
+	StyleStacks(instance, button, widgets, size, fontScale)
 
 	if bar then
 		StyleBar(instance, widgets, size, fontScale)
@@ -835,6 +936,10 @@ end
 local function CreateStacks(button, overlay)
 	local stacks = overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 	stacks:SetJustifyH("RIGHT")
+	-- The template face, kept so a count that stood in for the countdown (which borrows the
+	-- cooldown's face) can be put back when the style stops centring it.
+	local face, _, flags = stacks:GetFont()
+	stacks.MiniAurasFace, stacks.MiniAurasFlags = face, flags
 	button:SetApplicationCount(stacks)
 
 	return stacks
@@ -959,6 +1064,8 @@ local function InitializeButton(instance, button, group)
 		Icon = icon,
 		Cooldown = cd,
 		Stacks = stacks,
+		-- Anchored to the corner above, which is what the not-centred restyle would set.
+		StacksCentered = false,
 		BorderTextures = borders,
 		Glow = glow,
 		GlowStyle = nil,
@@ -974,6 +1081,7 @@ local function InitializeButton(instance, button, group)
 	StyleButton(instance, button)
 	-- After StyleButton, which is what gives the button the size Masque fits the skin to.
 	auraMasque:RegisterButton(instance, button, widgets)
+	RestoreCenteredStacks(instance, button)
 
 	-- Handed over only now: the refresh window is secret, and registering a region driven by it
 	-- takes the button's own size with it, which is the one number Masque has to be able to read.
@@ -1086,6 +1194,7 @@ local function InitializeBarButton(instance, button, group)
 		Strip = strip,
 		Name = name,
 		Stacks = stacks,
+		StacksCentered = false,
 		BorderTextures = borders,
 		Glow = glow,
 		GlowStyle = nil,
@@ -1562,6 +1671,7 @@ function M:GetStyleScratch()
 	end
 	styleScratch.GlowColor = nil
 	styleScratch.PandemicColor = nil
+	styleScratch.TextColor = nil
 
 	return styleScratch
 end
@@ -1619,8 +1729,9 @@ function M:GetStyleSignature(style, size, spacing)
 	parts[n + 5] = tostring(db and db.ColorCountdownByTime)
 	parts[n + 6] = tostring(style.PandemicColor and table.concat(style.PandemicColor, ","))
 	parts[n + 7] = tostring(auraCountdownText:GetColorGeneration())
+	parts[n + 8] = tostring(style.TextColor and table.concat(style.TextColor, ","))
 
-	return table.concat(parts, ":", 1, n + 7)
+	return table.concat(parts, ":", 1, n + 8)
 end
 
 ---Stores the per-button style and applies it to existing buttons when possible. Skipped
@@ -1673,6 +1784,10 @@ function M:RestyleButtons()
 	end
 
 	auraMasque:ReSkinButtons(self)
+
+	for _, button in ipairs(self.Buttons) do
+		RestoreCenteredStacks(self, button)
+	end
 end
 
 ---Positions this display relative to its anchor, chaining after the kick container while a
@@ -1713,6 +1828,12 @@ end
 ---@field FontScale number?
 ---@field ShowTooltips boolean?
 ---@field Stacks boolean? Show the engine-written application count in the icon's corner.
+---@field CenterStacks boolean? Put the application count centred at countdown size, dropping the
+---countdown text it replaces. Icon buttons only; callers keep it off a bar's style.
+---@field TextColor number[]? {r, g, b} for the countdown, stack count and bar name text; unset
+---keeps the fonts' own white and leaves the global colour-by-time countdown alone, while a set
+---one wins over it (white included, so pass nil rather than white for "no opinion"). Copied
+---component-wise like GlowColor, so callers may pass a reused scratch.
 ---@field Pandemic boolean? Reveal the engine-driven refresh-window ring. Only displays created
 ---with the Pandemic option carry the regions; elsewhere this field is inert.
 ---@field PandemicColor number[]? {r, g, b} tint for the pandemic ring; unset keeps the built-in

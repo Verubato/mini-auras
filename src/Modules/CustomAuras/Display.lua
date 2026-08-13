@@ -55,6 +55,13 @@ local NEVER_MATCHED_SPELL_ID = 2147483647
 local PLACEHOLDER_FILTERS = { includeSpellIDs = { [NEVER_MATCHED_SPELL_ID] = true } }
 -- Scratch for a bar stand-in's fill colour, refilled per slot and never retained.
 local barColorScratch = {}
+-- Scratch for a group's text colour, in both shapes the two icon backends read; refilled per
+-- style build and copied out by whoever takes it.
+local textColorScratch = {}
+-- White leaves the fonts as they come, for groups saved before the text colour existed.
+local DEFAULT_TEXT_COLOR = { R = 1, G = 1, B = 1 }
+-- What the stand-in icons show for a centred stack count, where live icons show the real one.
+local PREVIEW_STACK_COUNT = "3"
 
 ---@type Db
 local db
@@ -134,6 +141,12 @@ local function BuildStyle(group)
 	-- Always on: a stack count is only ever drawn when there is one to draw, so there is
 	-- nothing to turn off and nothing to explain in the options.
 	style.Stacks = true
+	-- Icons only: a bar's countdown sits at the end of the fill, where the count never goes.
+	style.CenterStacks = not groups:DrawsBars(group) and icons.CenterStacks
+	-- Only while the toggle is on: a set TextColor replaces every default text colouring, the
+	-- colour-by-time countdown included, so the off state has to be nil rather than white.
+	style.TextColor = icons.ColorText
+		and moduleUtil:FillColor(textColorScratch, icons.TextColor, DEFAULT_TEXT_COLOR) or nil
 
 	return style
 end
@@ -452,22 +465,30 @@ end
 local function RenderTestIcons(state, entry)
 	local group = state.Group
 	local container = entry.Test
+	local drawsBars = groups:DrawsBars(group)
 	-- A bar's fill always carries the group's colour, so the stand-in cannot use the icon colour:
 	-- that one is withheld unless a glow or a border asked for it, because for an icon a colour is
 	-- what draws the border in the first place. Reading it through ModuleUtil left the preview
 	-- white while the live bars were coloured.
-	local color = groups:DrawsBars(group) and BarColor(group)
-		or moduleUtil:GetIconColor(group.Icons)
+	local color = drawsBars and BarColor(group) or moduleUtil:GetIconColor(group.Icons)
 	local barTexture = group.Icons.BarTexture
+	-- The same calls BuildStyle makes, so the stand-ins show exactly what the live icons will.
+	local centerStacks = not drawsBars and group.Icons.CenterStacks == true
+	local hideNumbers = group.Icons.HideNumbers or centerStacks
+	local textColor = group.Icons.ColorText
+		and moduleUtil:FillColor(textColorScratch, group.Icons.TextColor, DEFAULT_TEXT_COLOR)
+		or nil
 	local nextSlot
 
 	if groups:TracksSpells(group) then
 		nextSlot = testSpellData:FillContainer(container, group.Spells, 1, {
 			ReverseCooldown = group.Icons.ReverseCooldown,
 			HideSwipe = group.Icons.HideSwipe,
-			HideNumbers = group.Icons.HideNumbers,
+			HideNumbers = hideNumbers,
 			Glow = group.Icons.Glow,
 			Color = color,
+			TextColor = textColor,
+			CenterStackText = centerStacks and PREVIEW_STACK_COUNT or nil,
 			FontScale = db.FontScale,
 			ShowTooltips = group.Icons.ShowTooltips,
 			BarTexture = barTexture,
@@ -485,9 +506,12 @@ local function RenderTestIcons(state, entry)
 				Alpha = true,
 				ReverseCooldown = group.Icons.ReverseCooldown,
 				HideSwipe = group.Icons.HideSwipe,
-				HideNumbers = group.Icons.HideNumbers,
+				HideNumbers = hideNumbers,
 				Glow = group.Icons.Glow,
 				Color = color,
+				TextColor = textColor,
+				ChargeText = centerStacks and PREVIEW_STACK_COUNT or nil,
+				ChargeTextCenter = centerStacks,
 				FontScale = db.FontScale,
 				-- A filter group has no spell to name, so the group's own name stands in.
 				Name = group.Icons.SpellName ~= false and group.Name or nil,

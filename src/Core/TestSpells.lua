@@ -100,6 +100,10 @@ M.KickSpecIds = {
 ---@param options table Styling and limits:
 --- ReverseCooldown/HideSwipe/HideNumbers/Glow/FontScale passed through to SetSlot;
 --- Color tints every icon; ColorByDispelType tints each with its spell's DispelColor instead;
+--- TextColor tints the countdown and any stand-in count, replacing the global colour-by-time
+--- while it is set;
+--- CenterStackText puts that text centred on each icon in place of the countdown (the icon
+--- containers only, where the live displays can centre a stack count);
 --- ShowTooltips attaches each spell id;
 --- Count caps how many spells are drawn (default all);
 --- Stagger staggers durations and start times so the swipes visibly differ (default a flat 15s);
@@ -144,6 +148,9 @@ function M:FillContainer(container, spells, startSlot, options)
 				HideNumbers = options.HideNumbers,
 				Glow = options.Glow,
 				Color = color,
+				TextColor = options.TextColor,
+				ChargeText = options.CenterStackText,
+				ChargeTextCenter = options.CenterStackText ~= nil,
 				FontScale = options.FontScale,
 				SpellId = options.ShowTooltips and spellId or nil,
 				-- Only a bar container draws a name; the icon containers ignore both of these.

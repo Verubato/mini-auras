@@ -122,6 +122,30 @@ local function ResetCountdownColor(cd)
 	end
 end
 
+---A fixed colour for a preview countdown, routed through the same fields the timed colouring
+---uses so ResetCountdownColor can always put white back. The timed colouring wins while it holds
+---this cooldown, and white is skipped because that is already the reset state.
+local function ApplyStaticCountdownColor(cd, color)
+	if coloredCooldowns[cd] then
+		return
+	end
+
+	local r, g, b = color.r or 1, color.g or 1, color.b or 1
+
+	if r == 1 and g == 1 and b == 1 then
+		return
+	end
+
+	local text = GetCooldownText(cd)
+
+	if not text then
+		return
+	end
+
+	cd.MiniAurasColorR, cd.MiniAurasColorG, cd.MiniAurasColorB = r, g, b
+	text:SetTextColor(r, g, b)
+end
+
 local function OnColorTick()
 	local db = GetDb()
 	local colorOn = db and db.ColorCountdownByTime
@@ -993,6 +1017,12 @@ end
 ---@field FontScale number? Font scale multiplier for cooldown text (default: 1.0)
 ---@field Layer number? Which layer to render on (1 = base, 2+ = stacked above; default: 1)
 ---@field SpellId number? Spell ID for tooltip on hover
+---@field ChargeText string? Stand-in charge or stack count text
+---@field ChargeTextCenter boolean? Centre the charge text where the countdown sits, at its size,
+---instead of in the corner
+---@field TextColor table? {r, g, b} for the countdown and charge text. Setting one replaces the
+---global colour-by-time countdown (white included), so pass nil rather than white for the
+---default colouring
 function M:SetSlot(slotIndex, options)
 	if slotIndex < 1 or slotIndex > self.Count then
 		return
@@ -1066,7 +1096,16 @@ function M:SetSlot(slotIndex, options)
 	if options.DurationObject then
 		layer.Cooldown:SetCooldownFromDurationObject(options.DurationObject)
 		layer.Cooldown:SetDrawSwipe(options.HideSwipe ~= true and not (db and db.DisableSwipe))
-		RegisterCountdownColor(layer.Cooldown, options.DurationObject)
+
+		-- A slot with its own text colour never registers for the timed colouring: the fixed
+		-- colour replaces it, whatever the global setting says. Matches StyleCountdown, where a
+		-- set TextColor takes the countdown off the ramp.
+		if options.TextColor then
+			ResetCountdownColor(layer.Cooldown)
+			ApplyStaticCountdownColor(layer.Cooldown, options.TextColor)
+		else
+			RegisterCountdownColor(layer.Cooldown, options.DurationObject)
+		end
 	else
 		layer.Cooldown:Clear()
 		layer.Cooldown:SetDrawSwipe(false)
@@ -1083,8 +1122,61 @@ function M:SetSlot(slotIndex, options)
 			overlay:SetFrameLevel(layer.Cooldown:GetFrameLevel() + 1)
 			layer.ChargeText = overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 			layer.ChargeText:SetPoint("BOTTOMRIGHT", layer.Frame, "BOTTOMRIGHT", -3, 1)
+			layer.ChargeTextCentered = false
+			-- The template face, kept so the centred stand-in (which borrows the countdown's
+			-- face below) can be put back in the corner state.
+			local face, _, flags = layer.ChargeText:GetFont()
+			layer.ChargeTextFace, layer.ChargeTextFlags = face, flags
 		end
-		UpdateChargeTextFontSize(layer.ChargeText, self.Size, options.FontScale or layer.Cooldown.FontScale)
+
+		-- Centred the text stands in for the countdown, so it takes that text's spot, face and
+		-- size rather than the corner's, matching what the live icons draw.
+		local centered = options.ChargeTextCenter == true
+
+		if layer.ChargeTextCentered ~= centered then
+			layer.ChargeTextCentered = centered
+			layer.ChargeText:ClearAllPoints()
+
+			if centered then
+				layer.ChargeText:SetPoint("CENTER", layer.Frame, "CENTER", 0, 0)
+			else
+				layer.ChargeText:SetPoint("BOTTOMRIGHT", layer.Frame, "BOTTOMRIGHT", -3, 1)
+
+				if layer.ChargeTextFace then
+					local _, currentSize = layer.ChargeText:GetFont()
+
+					layer.ChargeText:SetFont(layer.ChargeTextFace, currentSize or 10,
+						layer.ChargeTextFlags)
+				end
+			end
+		end
+
+		local chargeScale = options.FontScale or layer.Cooldown.FontScale
+
+		if centered then
+			local cdText = GetCooldownText(layer.Cooldown)
+			local face, _, flags
+
+			if cdText then
+				face, _, flags = cdText:GetFont()
+			end
+
+			if face then
+				layer.ChargeText:SetFont(face,
+					math.max(1, math.floor(self.Size * 0.4 * (chargeScale or 1.0))), flags)
+			else
+				fontUtil:UpdateFontSize(layer.ChargeText, self.Size, nil, chargeScale)
+			end
+		else
+			UpdateChargeTextFontSize(layer.ChargeText, self.Size, chargeScale)
+		end
+
+		local textColor = options.TextColor
+		layer.ChargeText:SetTextColor(
+			textColor and textColor.r or 1,
+			textColor and textColor.g or 1,
+			textColor and textColor.b or 1
+		)
 		layer.ChargeText:SetText(options.ChargeText)
 		layer.ChargeText:Show()
 	elseif layer.ChargeText then

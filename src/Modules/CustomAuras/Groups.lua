@@ -390,6 +390,10 @@ function M:Normalise(group)
 	-- cares that the aura is up.
 	icons.HideSwipe = icons.HideSwipe == true
 	icons.HideNumbers = icons.HideNumbers == true
+	icons.CenterStacks = icons.CenterStacks == true
+	-- Off keeps every text on its default colouring, the colour-by-time countdown included; on
+	-- puts the group's own TextColor on all of it.
+	icons.ColorText = icons.ColorText == true
 	icons.ShowTooltips = icons.ShowTooltips == true
 	icons.Color = icons.Color or {}
 	icons.Color.R = tonumber(icons.Color.R) or 1
@@ -401,6 +405,11 @@ function M:Normalise(group)
 	icons.PandemicColor.R = tonumber(icons.PandemicColor.R) or 1
 	icons.PandemicColor.G = tonumber(icons.PandemicColor.G) or 0.1
 	icons.PandemicColor.B = tonumber(icons.PandemicColor.B) or 0.1
+	-- White leaves the fonts as they come, so a group saved before the option keeps its look.
+	icons.TextColor = icons.TextColor or {}
+	icons.TextColor.R = tonumber(icons.TextColor.R) or 1
+	icons.TextColor.G = tonumber(icons.TextColor.G) or 1
+	icons.TextColor.B = tonumber(icons.TextColor.B) or 1
 
 	-- An empty file name is "no sound", which the picker offers as its first entry. One file per
 	-- trigger, sharing a channel; File is what the single-sound version of this called Applied.
@@ -940,7 +949,7 @@ end
 ---@field Offset { X: number, Y: number } Nameplate, unit frame and arena frame anchors only.
 ---@field Grow string
 ---@field Strata string "AUTO", or a frame strata the group's frames are pinned to.
----@field Icons { Size: number, Spacing: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, HideSwipe: boolean, HideNumbers: boolean, ShowTooltips: boolean, Color: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
+---@field Icons { Size: number, Spacing: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, HideSwipe: boolean, HideNumbers: boolean, CenterStacks: boolean, ShowTooltips: boolean, Color: table, ColorText: boolean, TextColor: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
 ---@field Sound { Applied: string, Removed: string, Stacks: string, Channel: string } Empty means silent.
 ---@field TrackingMode string "SPELLS" narrows to a spell list, "FILTERS" to a filter string.
 ---@field Filters table<string, string> Filter component to "REQUIRE"|"FORBID". Filter mode only.
