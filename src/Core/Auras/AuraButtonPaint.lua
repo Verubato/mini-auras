@@ -30,9 +30,15 @@ function M:ApplyGlowStyle(widgets, button, styleName, size)
 		glowStyles:ApplySpec(glow, spec)
 	end
 
+	-- Re-anchoring invalidates the button's layout, and a restyle that changed neither the size nor
+	-- the style leaves the glow exactly where it already sits.
 	local padding = size * spec.PaddingFactor
-	glow:SetPoint("TOPLEFT", button, "TOPLEFT", -padding, padding)
-	glow:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", padding, -padding)
+
+	if widgets.GlowPadding ~= padding then
+		widgets.GlowPadding = padding
+		glow:SetPoint("TOPLEFT", button, "TOPLEFT", -padding, padding)
+		glow:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", padding, -padding)
+	end
 
 	-- A REPEAT animation costs CPU every frame even on hidden frames, and with thousands of
 	-- pre-created buttons that showed up as constant background load; only run it when the
@@ -93,17 +99,25 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	-- so switching the colours on never costs those icons their ring.
 	local wantPlainBorder = style.Border == true or (tinted and style.ColorByDispelType == true)
 	local colorR, colorG, colorB = M:ButtonColor(instance, widgets)
-	-- The colour rides in the signature so a colour-only change still repaints; without it the
-	-- early return below would swallow it.
-	local dispelSignature = (wantBorder and "b" or "") .. (wantGlowTint and "g" or "")
-		.. (wantPlainBorder and "B" or "")
-		.. (colorR and (":" .. colorR .. "," .. colorG .. "," .. colorB) or "")
 
-	if dispelSignature == widgets.DispelSignature then
+	-- Compared field by field rather than through a joined signature: this runs per button on
+	-- every restyle, and the retry ticker restyles every stale display once a second. The colour
+	-- is part of it so a colour-only change still repaints.
+	if wantBorder == widgets.DispelBorder
+		and wantGlowTint == widgets.DispelGlowTint
+		and wantPlainBorder == widgets.DispelPlainBorder
+		and colorR == widgets.DispelColorR
+		and colorG == widgets.DispelColorG
+		and colorB == widgets.DispelColorB then
 		return
 	end
 
-	widgets.DispelSignature = dispelSignature
+	widgets.DispelBorder = wantBorder
+	widgets.DispelGlowTint = wantGlowTint
+	widgets.DispelPlainBorder = wantPlainBorder
+	widgets.DispelColorR = colorR
+	widgets.DispelColorG = colorG
+	widgets.DispelColorB = colorB
 	button:ClearDispelTypeTextures()
 
 	if wantBorder then

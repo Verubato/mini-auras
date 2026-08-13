@@ -276,6 +276,18 @@ fw.describe("AuraContainerDisplay - dispel-type registrations", function()
 		assert(countCalls(instance, "AddDispelTypeTexture") == adds, "no registration churn")
 	end)
 
+	fw.it("a colour-only change still repaints the plain border", function()
+		local instance = newInstance()
+		instance:SetStyle({ Border = true, GlowColor = { 1, 0, 0 } })
+
+		local widgets = select(2, next(instance.ButtonWidgets))
+		local border = widgets.BorderTextures[1]
+
+		instance:SetStyle({ Border = true, GlowColor = { 0, 0, 1 } })
+		local color = border._lastArgs.SetVertexColor
+		assert(color[1] == 0 and color[2] == 0 and color[3] == 1, "the new tint reached the border")
+	end)
+
 	fw.it("disabling dispel colours clears the registrations", function()
 		local instance = newInstance()
 		instance:SetStyle({ ColorByDispelType = true, Glow = true })
@@ -477,6 +489,20 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 
 		instance:SetIconSize(40)
 		assert(texture._calls.SetTexture == applied, "restyle without a type change must not re-skin")
+	end)
+
+	fw.it("a restyle that leaves the padding alone does not re-anchor the glow", function()
+		local instance = newInstance()
+		instance:SetStyle({ Glow = true })
+
+		local glow = firstGlowWidgets(instance).Glow
+		local points = #glow._points
+
+		instance:SetStyle({ Glow = true, Border = true })
+		assert(#glow._points == points, "same size and style must not re-anchor")
+
+		instance:SetIconSize(50)
+		assert(#glow._points > points, "a size change moves the glow with the button")
 	end)
 
 	fw.it("switching away from the flipbook resets its tex coords", function()

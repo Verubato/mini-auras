@@ -608,10 +608,11 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 		or nil
 
 	-- The formatter and colour curve live inside the binding, so a change re-binds. Only on
-	-- change: each SetDurationText runs the engine's options processing per button.
-	local bindSignature = msThreshold .. (colorCountdown and "|c" or curve and "|p" or "")
-	if widgets.DurationTextBind ~= bindSignature then
-		widgets.DurationTextBind = bindSignature
+	-- change: each SetDurationText runs the engine's options processing per button. The two curves
+	-- are shared singletons, so comparing the reference is comparing which curve is bound.
+	if widgets.DurationTextThreshold ~= msThreshold or widgets.DurationTextCurve ~= curve then
+		widgets.DurationTextThreshold = msThreshold
+		widgets.DurationTextCurve = curve
 		auraCountdownText:Bind(button, durationText, msThreshold, curve)
 	end
 
@@ -950,13 +951,13 @@ local function InitializeButton(instance, button, group)
 		Cooldown = cd,
 		Stacks = stacks,
 		BorderTextures = borders,
-		DispelSignature = nil,
 		Glow = glow,
 		GlowStyle = nil,
 		Group = group,
 		Pandemic = pandemic,
 		DurationText = durationText,
-		DurationTextBind = durationText and "0" or nil,
+		-- The button starts unbound, which is what a zero threshold with no curve would bind.
+		DurationTextThreshold = durationText and 0 or nil,
 	}
 	instance.ButtonWidgets[button] = widgets
 	instance.Buttons[#instance.Buttons + 1] = button
@@ -1077,13 +1078,13 @@ local function InitializeBarButton(instance, button, group)
 		Name = name,
 		Stacks = stacks,
 		BorderTextures = borders,
-		DispelSignature = nil,
 		Glow = glow,
 		GlowStyle = nil,
 		Group = group,
 		Pandemic = pandemic,
 		DurationText = durationText,
-		DurationTextBind = durationText and "0" or nil,
+		-- The button starts unbound, which is what a zero threshold with no curve would bind.
+		DurationTextThreshold = durationText and 0 or nil,
 	}
 	instance.Buttons[#instance.Buttons + 1] = button
 
@@ -1185,7 +1186,8 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	instance.Style = {}
 	instance.Layout = {}
 	instance.Buttons = {}
-	-- button -> { Cooldown, BorderTextures, DispelSignature, Glow, GlowStyle, Bar, ... } for restyling.
+	-- button -> { Cooldown, BorderTextures, Glow, GlowStyle, Bar, ... } for restyling. The rest of
+	-- the fields are what each styling step last applied, so an unchanged restyle is a no-op.
 	instance.ButtonWidgets = {}
 	-- Visibility the owning module last asked for; frames are created shown.
 	instance.DesiredShown = true
