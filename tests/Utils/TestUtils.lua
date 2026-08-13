@@ -221,6 +221,57 @@ fw.describe("ModuleUtil:Coalesced", function()
 		end)
 	end)
 
+	fw.it("a cancel drops the pending run", function()
+		withHeldTimers(function(queued)
+			local runs = 0
+			local queueRun, cancelRun = moduleUtil:Coalesced(function()
+				runs = runs + 1
+			end)
+
+			queueRun()
+			cancelRun()
+			queued[1]()
+
+			assert(runs == 0, "the cancelled timer still fires, but must refuse (got " .. runs .. ")")
+		end)
+	end)
+
+	fw.it("queues again after a cancel", function()
+		withHeldTimers(function(queued)
+			local runs = 0
+			local queueRun, cancelRun = moduleUtil:Coalesced(function()
+				runs = runs + 1
+			end)
+
+			queueRun()
+			cancelRun()
+			-- Lands before the cancelled timer has run, which is the case a plain flag gets wrong.
+			queueRun()
+
+			assert(#queued == 2, "the cancelled request no longer covers a later one")
+
+			queued[1]()
+			queued[2]()
+
+			assert(runs == 1, "the stranded timer refuses and the later request runs (got " .. runs .. ")")
+		end)
+	end)
+
+	fw.it("a cancel with nothing queued swallows nothing", function()
+		withHeldTimers(function(queued)
+			local runs = 0
+			local queueRun, cancelRun = moduleUtil:Coalesced(function()
+				runs = runs + 1
+			end)
+
+			cancelRun()
+			queueRun()
+			queued[1]()
+
+			assert(runs == 1, "a cancel with nothing pending must not eat the next run (got " .. runs .. ")")
+		end)
+	end)
+
 	fw.it("keeps two wrapped functions apart", function()
 		withHeldTimers(function(queued)
 			local first, second = 0, 0

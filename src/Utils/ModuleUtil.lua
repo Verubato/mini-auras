@@ -156,17 +156,30 @@ end
 ---
 ---The deferral is the point as well as the saving: the frame addons rebuild their own frames on
 ---the same event, so a refresh reads the anchors only once they have settled.
+---
+---The second return cancels whatever is queued, for a teardown that would otherwise be undone by
+---a run it asked for a moment earlier. Queueing after a cancel works as normal.
 ---@param callback fun()
----@return fun()
+---@return fun() queue
+---@return fun() cancel
 function M:Coalesced(callback)
 	local queued = false
+	-- A cancelled timer is still on its way and still fires, so this counts how many of the next
+	-- runs are to refuse. A flag could not tell one apart from the request that came after it.
+	local stranded = 0
 
 	local function run()
 		queued = false
+
+		if stranded > 0 then
+			stranded = stranded - 1
+			return
+		end
+
 		callback()
 	end
 
-	return function()
+	local function queue()
 		if queued then
 			return
 		end
@@ -174,6 +187,15 @@ function M:Coalesced(callback)
 		queued = true
 		C_Timer.After(0, run)
 	end
+
+	local function cancel()
+		if queued then
+			stranded = stranded + 1
+			queued = false
+		end
+	end
+
+	return queue, cancel
 end
 
 ---@param moduleName string The module key (e.g., "AlertsModule", "CcModule")
