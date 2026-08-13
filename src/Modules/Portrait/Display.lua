@@ -250,7 +250,9 @@ function M:CreatePortraitLayer(portrait)
 	local layer = CreateFrame("Frame", nil, parent)
 	layer:SetAllPoints(parent)
 	layer:SetFrameStrata(STRATA_BELOW[parent:GetFrameStrata()] or "BACKGROUND")
-	layer:SetFrameLevel(0)
+	-- Level 1, not 0: level 0 of this strata is reserved for portrait effects that have to
+	-- stay behind the portrait (the insanity bar's Voidform glow, see AttachBlizzardFrame).
+	layer:SetFrameLevel(1)
 
 	portrait:SetParent(layer)
 	portrait:ClearAllPoints()

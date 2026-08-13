@@ -230,6 +230,18 @@ local function AttachBlizzardFrame(unit)
 	-- PetFrame blacks out the frame's border art. The pet keeps the inset layout instead.
 	local portraitLayer = unit ~= "pet" and display:CreatePortraitLayer(portrait) or nil
 
+	-- The shadow priest insanity bar pins Voidform's portrait flipbook at LOW strata, level 1,
+	-- where the portrait's own art normally covers all but its halo. The demoted portrait would
+	-- sit a strata below that and take the whole additive wash, so the flipbook comes down to
+	-- level 0 of the portrait's new strata, behind the layer at level 1.
+	if unit == "player" and portraitLayer then
+		local voidGlow = InsanityBarFrame and InsanityBarFrame.PortraitGlow
+		if voidGlow then
+			voidGlow:SetFrameStrata(portraitLayer:GetFrameStrata())
+			voidGlow:SetFrameLevel(0)
+		end
+	end
+
 	local container = display:CreateContainer(unitFrame, portrait, unit, { 0.1, 0.9, 0.1, 0.9 }, mask, portraitLayer)
 	if not container then return end
 

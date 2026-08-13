@@ -27,6 +27,9 @@ local db
 local testModeActive = false
 local paused = false
 local enabled = false
+local worldLoaded = false
+local blizzardAttached = false
+local thirdPartyAttached = false
 -- A disabled portrait module receives no events at all (see CreateEvents).
 ---@type EventGate?
 local unitChangeGate
@@ -47,6 +50,26 @@ local function IsEnabled()
 	enabled = moduleUtil:IsModuleEnabled(ModuleName.Portrait)
 	PushSuspension()
 	return enabled
+end
+
+---Builds the portrait containers on first enable rather than at load. Attaching moves the
+---Blizzard portraits a strata down, which shows even when no icon is ever rendered (Voidform's
+---glow drew over the demoted portrait), so a disabled module must leave the frames untouched.
+local function EnsureAttached()
+	if not enabled then
+		return
+	end
+
+	if not blizzardAttached then
+		blizzardAttached = true
+		anchors:AttachBlizzardFrames()
+	end
+
+	-- Third-party unit frames do not exist until the world has loaded.
+	if worldLoaded and not thirdPartyAttached then
+		thirdPartyAttached = true
+		anchors:AttachThirdPartyFrames()
+	end
 end
 
 ---@param active boolean
@@ -99,7 +122,8 @@ local function CreateEvents()
 	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	eventsFrame:SetScript("OnEvent", function()
 		eventsFrame:UnregisterEvent("PLAYER_ENTERING_WORLD")
-		anchors:AttachThirdPartyFrames()
+		worldLoaded = true
+		EnsureAttached()
 	end)
 
 	-- Containers track their unit token but don't refresh when the token's occupant changes; the
@@ -157,6 +181,7 @@ function M:Refresh()
 		return
 	end
 
+	EnsureAttached()
 	EnsureFrames()
 	ApplyOptions()
 	UpdateContent()
@@ -166,7 +191,6 @@ function M:Init()
 	db = mini:GetSavedVars()
 
 	display:Init()
-	anchors:AttachBlizzardFrames()
 	CreateEvents()
 	observer:WatchKicks()
 	ApplyInitialState()
