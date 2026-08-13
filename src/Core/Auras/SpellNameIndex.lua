@@ -13,6 +13,16 @@ local _, addon = ...
 --
 -- 7870 names, 26155 ids.
 
+-- Which is why an English client is the only one that builds it. The names below could never
+-- match what C_Spell.GetSpellName hands back anywhere else, so the whole table is dead weight
+-- there - and skipping the constructor leaves this chunk's strings collectable too. The client
+-- locale, not the addon's language setting: spell names come from the game, not from us.
+local clientLocale = GetLocale()
+
+if clientLocale ~= "enUS" and clientLocale ~= "enGB" then
+	return
+end
+
 addon.Core.SpellNameIndex = {
 	["<DND> Monk Energy Driver"] = "107500",
 	["A Feast of Souls"] = "440861 444072",

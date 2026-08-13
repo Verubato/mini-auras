@@ -215,3 +215,38 @@ fw.describe("SpellSearch - variants", function()
 		assert(#variants == 1 and variants[1] == 999002, "an untracked id is its own only variant")
 	end)
 end)
+
+fw.describe("SpellNameIndex - the client locale gate", function()
+	---Loads the real generated file against a throwaway addon table under a given client locale.
+	---@param locale string
+	---@return table?
+	local function loadIndex(locale)
+		local realGetLocale = _G.GetLocale
+		_G.GetLocale = function()
+			return locale
+		end
+
+		local target = { Core = {} }
+		local ok, err = pcall(function()
+			assert(loadfile("src/Core/Auras/SpellNameIndex.lua"))("MiniAuras", target)
+		end)
+
+		_G.GetLocale = realGetLocale
+		assert(ok, err)
+
+		return target.Core.SpellNameIndex
+	end
+
+	fw.it("builds the index on an English client", function()
+		assert(loadIndex("enUS"), "enUS gets the index")
+		assert(loadIndex("enGB"), "and so does enGB, whose spell names are the same")
+	end)
+
+	fw.it("skips it everywhere else", function()
+		-- The keys are enUS spell names, so they could never match what the client reports.
+		for _, locale in ipairs({ "deDE", "esES", "frFR", "ruRU", "koKR", "zhCN", "zhTW" }) do
+			assert(loadIndex(locale) == nil,
+				locale .. " must not carry names it can never match")
+		end
+	end)
+end)
