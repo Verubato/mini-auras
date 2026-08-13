@@ -115,6 +115,34 @@ fw.describe("ModuleUtil:IsModuleEnabled", function()
 		assert(moduleUtil:IsModuleEnabled("TestModule") == true)
 	end)
 
+	fw.it("housing hides everything, Always included", function()
+		setup({ Always = true, Dungeons = true })
+		setWorld(true, "party", false)
+		_G.C_Housing = {
+			IsOnNeighborhoodMap = function()
+				return false
+			end,
+			IsInsideHouseOrPlot = function()
+				return true
+			end,
+		}
+		assert(moduleUtil:IsModuleEnabled("TestModule") == false, "inside a house or plot")
+
+		_G.C_Housing.IsInsideHouseOrPlot = function()
+			return false
+		end
+		_G.C_Housing.IsOnNeighborhoodMap = function()
+			return true
+		end
+		assert(moduleUtil:IsModuleEnabled("TestModule") == false, "on the neighborhood map")
+
+		_G.C_Housing.IsOnNeighborhoodMap = function()
+			return false
+		end
+		assert(moduleUtil:IsModuleEnabled("TestModule") == true, "outside housing again")
+		_G.C_Housing = nil
+	end)
+
 	fw.it("selects the flag matching the instance context", function()
 		setup({ Arena = true, BattleGrounds = false, Dungeons = true, Raid = false, World = false })
 		setWorld(true, "arena", false)

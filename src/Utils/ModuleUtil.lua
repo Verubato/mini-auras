@@ -32,6 +32,14 @@ local M = {}
 addon.Utils.ModuleUtil = M
 addon.Utils.ModuleName = ModuleName
 
+---Neighborhoods and house interiors are instanced maps, so without this they would count as
+---dungeons; nothing here has combat, so no module has anything to show. Feature-detected
+---because the mock client does not model the housing API.
+local function IsInHousing()
+	return type(C_Housing) == "table"
+		and (C_Housing.IsOnNeighborhoodMap() or C_Housing.IsInsideHouseOrPlot())
+end
+
 ---Resolves the configured icon size, either as a static pixel value or as a percentage of
 ---the anchor frame's height when Icons.SizeIsPercent is enabled.
 ---Accounts for scale mismatch between the anchor and the container's parent (UIParent), so the
@@ -201,6 +209,11 @@ end
 ---@param moduleName string The module key (e.g., "AlertsModule", "CcModule")
 ---@return boolean
 function M:IsModuleEnabled(moduleName)
+	-- Housing outranks every context, Always included; test mode still previews there.
+	if IsInHousing() then
+		return false
+	end
+
 	if not db or not db.Modules or not db.Modules[moduleName] then
 		return true -- Default to enabled if settings don't exist
 	end

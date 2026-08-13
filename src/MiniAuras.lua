@@ -107,6 +107,10 @@ local function OnEvent(_, event)
 		legacyAddon:WarnIfConflicting()
 		legacyAddon:OfferMissedImport(db)
 		addon:Refresh()
+	elseif event == "HOUSE_PLOT_ENTERED" or event == "HOUSE_PLOT_EXITED" then
+		-- Crossing a plot boundary loads no new map, so PLAYER_ENTERING_WORLD never sees it;
+		-- re-run the gates so everything hides on the way in and wakes on the way out.
+		addon:Refresh()
 	elseif event == "GROUP_ROSTER_UPDATE" then
 		-- Modules unregister their events entirely while disabled, and IsModuleEnabled depends
 		-- on raid membership; re-evaluate every module's gate when it flips so a disabled
@@ -151,6 +155,12 @@ local function OnAddonLoaded()
 	eventsFrame:RegisterEvent("PLAYER_LOGIN")
 	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+
+	-- The housing API may not exist on all game versions.
+	if type(C_Housing) == "table" then
+		eventsFrame:RegisterEvent("HOUSE_PLOT_ENTERED")
+		eventsFrame:RegisterEvent("HOUSE_PLOT_EXITED")
+	end
 
 	db = mini:GetSavedVars()
 end
