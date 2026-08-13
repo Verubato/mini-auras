@@ -8,7 +8,9 @@ local glowStyles = addon.Core.GlowStyles
 local barTextures = addon.Core.BarTextures
 local outline = addon.Core.Outline
 local auraFilters = addon.Core.AuraFilters
-local masque = LibStub and LibStub("Masque", true)
+local auraCountdownText = addon.Core.AuraCountdownText
+local auraMasque = addon.Core.AuraMasque
+local auraButtonPaint = addon.Core.AuraButtonPaint
 
 -- Only the texture-based styles from the shared catalog (Core/Display/GlowStyles) render here:
 -- LibCustomGlow can't attach to AuraButtons (it re-parents pooled frames onto the target, and
@@ -68,30 +70,6 @@ local EMPTY_BAR_OPTIONS = {}
 -- the cue reads the same on every display.
 local PANDEMIC_COLOR = { 1, 0.1, 0.1 }
 
--- Colour-by-time stops for the countdown text: {seconds remaining, r, g, b}. The engine
--- evaluates the curve against the secret remaining time and writes the fontstring's colour
--- itself; nothing here reads the clock. OmniCC's classic bands (red under 5s, yellow to the
--- minute, white above) rather than a gradient: each near-coincident stop pair fakes a hard
--- edge on the linear curve, so the 0.05s blend windows are never visible.
-local COUNTDOWN_COLOR_STOPS = {
-	{ 0, 1, 0, 0 },
-	{ 5, 1, 0, 0 },
-	{ 5.05, 1, 0.8, 0 },
-	{ 60, 1, 0.8, 0 },
-	{ 60.05, 1, 1, 1 },
-}
----@type table?
-local countdownCurve
--- The flat curve a countdown binds while the colouring is OFF. See BindDurationText for why the
--- off state is a curve of its own rather than no colour binding at all. White matches the
--- NumberFontNormal the fontstring is created with, so this is the same look it had before.
----@type table?
-local plainCountdownCurve
--- Countdown formatters keyed by milliseconds threshold (0 = whole seconds only). The engine
--- keeps each reference, so variants are built once and shared across every bound fontstring.
----@type table<number, table>
-local countdownFormatters = {}
-
 -- How often the deferred restyle retry runs while any display is stale (see RestyleButtons).
 local RESTYLE_RETRY_INTERVAL = 1
 -- The unit a vehicle takes over, and the token the vehicle itself answers to.
@@ -126,9 +104,6 @@ local pendingRestyleCount = 0
 local restyleTicker = nil
 local pendingBounceCount = 0
 local bounceFlushScheduled = false
--- Masque group names whose skinning has already been reported as failed. Keyed rather than a
--- single flag, so one module giving up does not silence the report for every other one.
-local masqueWarned = {}
 
 -- 12.1 AuraContainer-backed icon display. One instance wraps a CreateFrame("AuraContainer")
 -- with one or more aura groups and styles the container-created AuraButtons to match the legacy
@@ -485,115 +460,6 @@ local function EnsureDisplayEvents()
 	ApplyVehicleState()
 end
 
----True when the client supports colour curves and formatters on duration-text bindings. Probes
----the options processor rather than the curve API alone: builds that predate it accept the
----options table and silently drop the colour, which would leave the swap-in fontstring plain
----white.
----@return boolean
-local function HasCountdownColorCurves()
-	return C_AuraContainerUtil ~= nil
-		and C_AuraContainerUtil.ProcessCustomAuraButtonDurationTextOptions ~= nil
-		and C_CurveUtil ~= nil
-		and C_CurveUtil.CreateColorCurve ~= nil
-		and C_StringUtil ~= nil
-		and C_StringUtil.CreateNumericRuleFormatter ~= nil
-		and Enum.DurationTextBindingProperty ~= nil
-		and Enum.NumericRuleFormatRounding ~= nil
-end
-
----Bare-number remaining time ("45" -> "2m" -> "1h"), matching the cooldown countdown the
----coloured text replaces. A rule formatter because the engine's default renders a unit suffix
----("45s") and SecondsFormatter cannot drop it - its abbreviation enum spells the unit out or
----shortens it, never omits it. The promotion thresholds are the game's own (1 + 1.5x the unit),
----and the quotients round up to match Blizzard's frames (2m32s reads "3m"). A non-zero
----msThreshold adds a tenths band below it ("4.3"); that breakpoint deliberately carries no
----min/rounding fields - with them present the engine rendered no fractions at all.
----@param msThreshold number Seconds below which tenths show; 0 for whole seconds only.
----@return table
-local function GetCountdownFormatter(msThreshold)
-	local fmt = countdownFormatters[msThreshold]
-	if not fmt then
-		local down = Enum.NumericRuleFormatRounding.Down
-		local up = Enum.NumericRuleFormatRounding.Up
-		fmt = C_StringUtil.CreateNumericRuleFormatter()
-		if msThreshold > 0 then
-			fmt:AddBreakpoint({ threshold = 0, step = 0.1, format = "%.1f" })
-			fmt:AddBreakpoint({ threshold = msThreshold, step = 1, rounding = down, min = 1, format = "%d" })
-		else
-			fmt:AddBreakpoint({ threshold = 0, step = 1, rounding = down, min = 1, format = "%d" })
-		end
-		fmt:AddBreakpoint({ threshold = 91, step = 1, rounding = down, min = 1, format = "%dm",
-			components = { { div = 60, rounding = up } } })
-		fmt:AddBreakpoint({ threshold = 5401, step = 1, rounding = down, min = 1, format = "%dh",
-			components = { { div = 3600, rounding = up } } })
-		countdownFormatters[msThreshold] = fmt
-	end
-
-	return fmt
-end
-
----The shared colour curve every countdown fontstring binds. Built once; the engine keeps the
----reference and curves are never mutated after creation.
----@return table
-local function GetCountdownCurve()
-	if not countdownCurve then
-		local curve = C_CurveUtil.CreateColorCurve()
-		curve:SetType(Enum.LuaCurveType.Linear)
-		-- Highest threshold first: the curve API expects points added in descending x order.
-		for i = #COUNTDOWN_COLOR_STOPS, 1, -1 do
-			local stop = COUNTDOWN_COLOR_STOPS[i]
-			curve:AddPoint(stop[1], CreateColor(stop[2], stop[3], stop[4]))
-		end
-		countdownCurve = curve
-	end
-
-	return countdownCurve
-end
-
----The curve bound when colour-by-time is off: white the whole way down.
----@return table
-local function GetPlainCountdownCurve()
-	if not plainCountdownCurve then
-		local curve = C_CurveUtil.CreateColorCurve()
-		curve:SetType(Enum.LuaCurveType.Linear)
-		-- Descending, like the ramp above; two points so the value is flat rather than clamped
-		-- off the end of a single one.
-		curve:AddPoint(COUNTDOWN_COLOR_STOPS[#COUNTDOWN_COLOR_STOPS][1], CreateColor(1, 1, 1))
-		curve:AddPoint(0, CreateColor(1, 1, 1))
-		plainCountdownCurve = curve
-	end
-
-	return plainCountdownCurve
-end
-
----Binds (or re-binds) the countdown fontstring. The engine retains the button's duration-text
----binding across calls, so this is how the formatter and colour curve are swapped at restyle
----time. Named fields, not positional: the options validator walks [textColor][curve] and
----[textColor][property], and a positional pair errors per button at AddAuraGroup time.
----
----While the fontstring is the countdown, a colour is bound either way round - the off state
----being a flat white curve, because leaving textColor out asks the engine to forget the binding
----it is holding and it does not: a bar's countdown IS this fontstring, so turning the setting
----off left it coloured until a reload.
----
----While it is NOT the countdown, no colour is bound at all. Binding one there has the engine
----draw the fontstring over the native numbers the cooldown is showing, which reads as two
----countdowns on one icon. The stale curve it keeps costs nothing: nothing is looking at it, and
----the next bind that does use it replaces it.
----@param button table
----@param durationText table
----@param msThreshold number Seconds below which tenths show; 0 for whole seconds only.
----@param curve table? The colour curve to bind, or nil while the fontstring is not in use.
-local function BindDurationText(button, durationText, msThreshold, curve)
-	button:SetDurationText(durationText, {
-		textFormatter = GetCountdownFormatter(msThreshold),
-		textColor = curve and {
-			curve = curve,
-			property = Enum.DurationTextBindingProperty.RemainingDuration,
-		} or nil,
-	})
-end
-
 ---Resolves the configured glow type to one this display can actually render.
 ---@return string
 local function GetGlowStyleName()
@@ -665,137 +531,6 @@ local function StoreStyle(instance, style)
 	stored.Populated = true
 
 	return true
-end
-
----Applies a glow style's asset and geometry to a button's glow frame. Only re-skins when the
----style actually changed - this runs per button on every restyle.
----@param widgets table
----@param button table
----@param styleName string
----@param size number
-local function ApplyGlowStyle(widgets, button, styleName, size)
-	local glow = widgets.Glow
-	local spec = glowStyles.Specs[styleName]
-
-	if widgets.GlowStyle ~= styleName then
-		widgets.GlowStyle = styleName
-		glowStyles:ApplySpec(glow, spec)
-	end
-
-	local padding = size * spec.PaddingFactor
-	glow:SetPoint("TOPLEFT", button, "TOPLEFT", -padding, padding)
-	glow:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", padding, -padding)
-
-	-- A REPEAT animation costs CPU every frame even on hidden frames, and with thousands of
-	-- pre-created buttons that showed up as constant background load; only run it when the
-	-- chosen style is actually animated.
-	if spec.Animated then
-		if not glow.Anim:IsPlaying() then
-			glow.Anim:Play()
-		end
-	else
-		glow.Anim:Stop()
-	end
-end
-
----The tint a button's border, glow and bar fill take. The group's own colour wins over the
----display-wide one: alerts colour by category, while a single-category display just takes the
----user's picked colour.
----The button holds its group rather than a copy of the colour, so SetGroupGlowColor can recolour
----a display that already exists - buttons can only be built once, and rebuilding one to change a
----tint is impossible while auras are secret.
----@param instance AuraContainerDisplay
----@param widgets table
----@return number?, number?, number?
-local function ButtonColor(instance, widgets)
-	local style = instance.Style
-	local group = widgets.Group
-	local color = group and group.GlowColor
-
-	if color then
-		return color[1], color[2], color[3]
-	end
-
-	return style.GlowColorR, style.GlowColorG, style.GlowColorB
-end
-
----Registers (or unregisters) the button's dispel-type textures. The engine tints registered
----textures by dispel type and drives their per-aura visibility (PreserveAsset style keeps our
----asset and only colours it). The border participates when ColorByDispelType is on; the glow's
----texture ALSO registers when the glow is enabled, which is how the glow inherits the border
----colour - the legacy paths tinted the glow with the aura's dispel colour, which is unreadable
----here, so the engine applies it instead. showWithoutDispelType keeps the glow visible for
----physical CC, tinted with the "None" palette colour like legacy.
----The border is a list rather than one texture because a bar's is built from four flat edges;
----an icon's is a single ring asset, so its list holds one.
----@param instance AuraContainerDisplay
----@param button table
----@param widgets table
-local function ApplyDispelTextures(instance, button, widgets)
-	local style = instance.Style
-	local borders = widgets.BorderTextures
-	local group = widgets.Group
-	-- A group carrying its own tint opts out of dispel colouring: the engine's palette has nothing
-	-- to say about a buff, so the categories the user picked a colour for (defensives, importants)
-	-- keep that colour while CC still takes the dispel type's.
-	local tinted = group ~= nil and group.GlowColor ~= nil
-	local wantBorder = style.ColorByDispelType == true and borders ~= nil and not tinted
-	local wantGlowTint = wantBorder and style.Glow == true and widgets.Glow ~= nil
-	-- A tinted group draws the border the dispel registration would have drawn, in its own colour,
-	-- so switching the colours on never costs those icons their ring.
-	local wantPlainBorder = style.Border == true or (tinted and style.ColorByDispelType == true)
-	local colorR, colorG, colorB = ButtonColor(instance, widgets)
-	-- The colour rides in the signature so a colour-only change still repaints; without it the
-	-- early return below would swallow it.
-	local dispelSignature = (wantBorder and "b" or "") .. (wantGlowTint and "g" or "")
-		.. (wantPlainBorder and "B" or "")
-		.. (colorR and (":" .. colorR .. "," .. colorG .. "," .. colorB) or "")
-
-	if dispelSignature == widgets.DispelSignature then
-		return
-	end
-
-	widgets.DispelSignature = dispelSignature
-	button:ClearDispelTypeTextures()
-
-	if wantBorder then
-		for _, texture in ipairs(borders) do
-			button:AddDispelTypeTexture(texture, {
-				style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
-				showWhenHarmful = true,
-				showWhenHelpful = true,
-			})
-		end
-	elseif borders then
-		-- Not registered for dispel colouring, so their visibility is ours to drive: draw the
-		-- plain border only when the module asked for one, tinted with the same colour the glow
-		-- would take.
-		for _, texture in ipairs(borders) do
-			if wantPlainBorder then
-				texture:SetVertexColor(colorR or 1, colorG or 1, colorB or 1, 1)
-				texture:Show()
-			else
-				texture:Hide()
-			end
-		end
-	end
-
-	if wantGlowTint then
-		button:AddDispelTypeTexture(widgets.Glow.Texture, {
-			style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
-			showWhenHarmful = true,
-			showWhenHelpful = true,
-			showWithoutDispelType = true,
-		})
-	elseif widgets.Glow then
-		-- Unregistered again: restore the glow's own colour and make sure the engine's
-		-- last hidden state doesn't linger on the texture. GlowColor is the group's category
-		-- tint (e.g. red importants, green defensives) and is nil unless the caller asked for
-		-- one, in which case this is the plain white glow. Dispel colouring wins when both are
-		-- on, since that branch hands the texture to the engine.
-		widgets.Glow.Texture:SetVertexColor(colorR or 1, colorG or 1, colorB or 1, 1)
-		widgets.Glow.Texture:Show()
-	end
 end
 
 ---A bar button's width. Never narrower than its height, so a nonsense saved value still leaves
@@ -874,8 +609,8 @@ local function StyleButton(instance, button)
 	if durationText then
 		-- The ramp while colouring by time, a flat curve while the fontstring is the countdown
 		-- without it, and nothing at all while it is not the countdown (see BindDurationText).
-		local curve = colorCountdown and GetCountdownCurve()
-			or (useDurationText and GetPlainCountdownCurve())
+		local curve = colorCountdown and auraCountdownText:GetColorCurve()
+			or (useDurationText and auraCountdownText:GetPlainCurve())
 			or nil
 
 		-- The formatter and colour curve live inside the binding, so a change re-binds. Only
@@ -883,7 +618,7 @@ local function StyleButton(instance, button)
 		local bindSignature = msThreshold .. (colorCountdown and "|c" or curve and "|p" or "")
 		if widgets.DurationTextBind ~= bindSignature then
 			widgets.DurationTextBind = bindSignature
-			BindDurationText(button, durationText, msThreshold, curve)
+			auraCountdownText:Bind(button, durationText, msThreshold, curve)
 		end
 		durationText:SetAlpha(useDurationText and 1 or 0)
 		-- Stand-in for the cooldown's own countdown, so it borrows that fontstring's face and
@@ -912,7 +647,7 @@ local function StyleButton(instance, button)
 	end
 
 	if bar then
-		local colorR, colorG, colorB = ButtonColor(instance, widgets)
+		local colorR, colorG, colorB = auraButtonPaint:ButtonColor(instance, widgets)
 		local texture = barTextures:Resolve(style.BarTexture)
 		local strip = widgets.Strip
 
@@ -936,7 +671,7 @@ local function StyleButton(instance, button)
 	end
 
 	if widgets.BorderTextures or widgets.Glow then
-		ApplyDispelTextures(instance, button, widgets)
+		auraButtonPaint:ApplyDispelTextures(instance, button, widgets)
 	end
 
 	-- Glow: the frame is created as a button child at init (LibCustomGlow can't be used here -
@@ -948,7 +683,7 @@ local function StyleButton(instance, button)
 	local glow = widgets.Glow
 	if glow then
 		if style.Glow then
-			ApplyGlowStyle(widgets, button, style.GlowStyleName or DEFAULT_GLOW_STYLE, size)
+			auraButtonPaint:ApplyGlowStyle(widgets, button, style.GlowStyleName or DEFAULT_GLOW_STYLE, size)
 			glow:Show()
 		else
 			glow:Hide()
@@ -1005,14 +740,14 @@ end
 ---@param overlay table
 ---@return table?
 local function CreateDurationText(button, overlay)
-	if not HasCountdownColorCurves() then
+	if not auraCountdownText:IsSupported() then
 		return nil
 	end
 
 	local durationText = overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 	-- Registered here because regions can only be attached in initializeFrame; StyleButton
 	-- decides straight afterwards whether it carries a colour.
-	BindDurationText(button, durationText, 0, nil)
+	auraCountdownText:Bind(button, durationText, 0, nil)
 
 	return durationText
 end
@@ -1068,134 +803,6 @@ local function CreatePandemicHolder(instance, button, inset)
 	pandemic:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", inset, -inset)
 
 	return pandemic
-end
-
-local function NoOp() end
-
----Masque re-parents the icon it is handed to the button that icon already belongs to. The call
----changes nothing, but SetIcon has since put a ChangeParent restriction on the texture and the
----refusal takes down whatever created the button - which is the engine, mid-batch. A field on
----the texture shadows the method for anything calling it from Lua, which is only ever Masque:
----the engine reaches the texture from the other side. Wrapping the texture instead would not
----work, because Masque also hands the icon to SetPoint as the anchor for the regions it builds
----around it, and only a real texture can be one.
----@param texture table
-local function BlockIconReparent(texture)
-	texture.SetParent = NoOp
-end
-
----Masque fits its art to the size a button already has, which it reads with GetSize. That value
----is secret for anything living inside a nameplate, and the arithmetic Masque does on it would
----abort the whole skin pass, so a button whose size cannot be read plainly is left alone.
----@param button table
----@return boolean
-local function CanReadButtonSize(button)
-	local width = button:GetWidth()
-
-	return width ~= nil and not issecretvalue(width)
-end
-
----Result check for a Masque call. Skinning runs inside the engine's frame-creation callback, so
----an error thrown by a third party there would abort the whole display rather than just its
----artwork. The display gives up on skinning instead, and says so once per session.
----@param instance AuraContainerDisplay
----@param ok boolean
----@param err any
----@return boolean ok
-local function GuardMasque(instance, ok, err)
-	if ok then
-		return true
-	end
-
-	local name = instance.MasqueGroupName or "?"
-
-	instance.MasqueGroup = nil
-
-	if not masqueWarned[name] then
-		masqueWarned[name] = true
-		Warn("Masque could not skin the %s icons, carrying on without them: %s", name, tostring(err))
-	end
-
-	return false
-end
-
----@param instance AuraContainerDisplay
----@param groupName string?
----@return table?
-local function ResolveMasqueGroup(instance, groupName)
-	if not masque or not groupName then
-		return nil
-	end
-
-	-- A skin owns the icon's crop, its mask and the border art, so displays that bring their own
-	-- (the round portrait icons) or that are not icons at all stay off the skinning path.
-	if instance.Bar or instance.Label or instance.IconMask then
-		return nil
-	end
-
-	-- Same addon and sub-group names the legacy containers use, so a skin picked on one path is
-	-- already applied on the other.
-	return masque:Group("MiniCC", groupName)
-end
-
----Hands one button to Masque. Called from initializeFrame, after the button has been sized and
----all of its regions registered with the engine.
----@param instance AuraContainerDisplay
----@param button table
----@param widgets table
-local function RegisterMasqueButton(instance, button, widgets)
-	local group = instance.MasqueGroup
-
-	if not group then
-		return
-	end
-
-	-- Reported rather than passed over: the icons come out unskinned either way, and which of the
-	-- two reasons it was matters when working out why.
-	if not CanReadButtonSize(button) then
-		local width = button:GetWidth()
-
-		GuardMasque(instance, false, width == nil and "this button has no size yet"
-			or "this button's size is secret here")
-		return
-	end
-
-	BlockIconReparent(widgets.Icon)
-
-	-- Strict, so only the regions listed here are skinned rather than whatever Masque can find by
-	-- probing the button for names an engine-created one cannot have. Normal is deliberately
-	-- absent: with no entry Masque builds and owns the skin's border texture, which leaves the
-	-- dispel-coloured ring registered with the engine untouched.
-	if not GuardMasque(instance, pcall(group.AddButton, group, button, {
-		Icon = widgets.Icon,
-		Cooldown = widgets.Cooldown,
-		Count = widgets.Stacks,
-	}, "Aura", true)) then
-		return
-	end
-
-	widgets.Masqued = true
-end
-
----Re-fits the skin after a size change. Only ever called from RestyleButtons, which already
----holds off until aura styling is allowed - Masque itself has no notion of that, so it must
----never be left to re-skin on its own schedule.
----@param instance AuraContainerDisplay
-local function ReSkinMasqueButtons(instance)
-	local group = instance.MasqueGroup
-
-	if not group then
-		return
-	end
-
-	for _, button in ipairs(instance.Buttons) do
-		local widgets = instance.ButtonWidgets[button]
-
-		if widgets and widgets.Masqued and CanReadButtonSize(button)
-			and not GuardMasque(instance, pcall(group.ReSkin, group, button)) then
-			return
-		end
-	end
 end
 
 ---@param instance AuraContainerDisplay
@@ -1294,7 +901,7 @@ local function InitializeButton(instance, button, group)
 
 	StyleButton(instance, button)
 	-- After StyleButton, which is what gives the button the size Masque fits the skin to.
-	RegisterMasqueButton(instance, button, widgets)
+	auraMasque:RegisterButton(instance, button, widgets)
 
 	-- Handed over only now: the refresh window is secret, and registering a region driven by it
 	-- takes the button's own size with it, which is the one number Masque has to be able to read.
@@ -1534,9 +1141,9 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	-- display that skipped them can never grow them later (pooled displays included - opt in
 	-- whenever any consumer of the pool might want the reveal).
 	instance.PandemicRegions = options.Pandemic == true and wowEx:HasPandemicRegions()
-	-- Kept past the group itself, which GuardMasque clears when skinning is abandoned.
+	-- Kept past the group itself, which AuraMasque clears when skinning is abandoned.
 	instance.MasqueGroupName = options.MasqueGroup
-	instance.MasqueGroup = ResolveMasqueGroup(instance, options.MasqueGroup)
+	instance.MasqueGroup = auraMasque:ResolveGroup(instance, options.MasqueGroup)
 
 	-- Seed the style BEFORE any button exists, so initializeFrame styles them correctly first
 	-- time. Everything StyleButton applies - size, swipe, countdown, glow, dispel textures - is
@@ -1973,7 +1580,7 @@ function M:RestyleButtons()
 		StyleButton(self, button)
 	end
 
-	ReSkinMasqueButtons(self)
+	auraMasque:ReSkinButtons(self)
 end
 
 ---Positions this display relative to its anchor, chaining after the kick container while a

@@ -490,6 +490,10 @@ function M.build()
 	loadFile("src/Core/Kicks/KickSlot.lua")
 	loadFile("src/Core/Display/AnchoredIcons.lua")
 	addon.Core.AnchoredIcons:Init()
+	-- Must precede AuraContainerDisplay: it captures the countdown factory at file scope.
+	loadFile("src/Core/Auras/AuraCountdownText.lua")
+	loadFile("src/Core/Auras/AuraMasque.lua")
+	loadFile("src/Core/Auras/AuraButtonPaint.lua")
 	loadFile("src/Core/Auras/AuraContainerDisplay.lua")
 
 	env.loadModule = function(path)

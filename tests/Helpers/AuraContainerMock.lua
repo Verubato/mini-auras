@@ -798,6 +798,10 @@ function M.loadDisplay()
 		"src/Core/Kicks/KickSlot.lua",
 		-- Must precede AuraContainerDisplay: bar buttons resolve their fill through the catalog.
 		"src/Core/Display/BarTextures.lua",
+		-- Must precede AuraContainerDisplay: it captures the countdown factory at file scope.
+		"src/Core/Auras/AuraCountdownText.lua",
+		"src/Core/Auras/AuraMasque.lua",
+		"src/Core/Auras/AuraButtonPaint.lua",
 		"src/Core/Auras/AuraContainerDisplay.lua",
 	}) do
 		assert(loadfile(path))("MiniAuras", addon)

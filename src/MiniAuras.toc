@@ -55,6 +55,9 @@ Core\Auras\AuraTtsSounds.lua
 Core\Auras\AuraFilters.lua
 Core\Auras\SpellNameIndex.lua
 Core\Auras\SpellSearch.lua
+Core\Auras\AuraCountdownText.lua
+Core\Auras\AuraMasque.lua
+Core\Auras\AuraButtonPaint.lua
 Core\Auras\AuraContainerDisplay.lua
 
 Core\Kicks\KickSlot.lua
