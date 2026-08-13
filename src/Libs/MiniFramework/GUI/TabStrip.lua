@@ -12,6 +12,10 @@ local DEFAULT_SPACING = 4
 local UNDERLINE_HEIGHT = 2
 local BASELINE_ALPHA = 0.15
 local HIGHLIGHT_ALPHA = 0.06
+-- A faint plate under every tab: bare labels read as text, not as a control.
+local PLATE_ALPHA = 0.06
+-- Bottom alpha of the selected tab's accent wash; it fades to nothing at the top.
+local WASH_ALPHA = 0.30
 
 ---Creates a horizontal strip of tab buttons.
 ---@param options TabStripOptions
@@ -55,6 +59,7 @@ function M:TabStrip(options)
 			local selected = button.Key == selectedKey
 
 			button.Underline:SetShown(selected)
+			button.Wash:SetShown(selected)
 
 			if selected then
 				button.Text:SetTextColor(selectedColor.r, selectedColor.g, selectedColor.b, 1)
@@ -90,6 +95,18 @@ function M:TabStrip(options)
 		button.Text = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		button.Text:SetPoint("CENTER")
 		button.Text:SetText(tab.Title or tab.Key)
+
+		button.Plate = button:CreateTexture(nil, "BACKGROUND")
+		button.Plate:SetAllPoints()
+		GUI.SetSolid(button.Plate, 1, 1, 1, PLATE_ALPHA)
+
+		-- Selection wash rising from the underline, so the active tab is marked by more than
+		-- text color.
+		button.Wash = button:CreateTexture(nil, "BACKGROUND", nil, 1)
+		button.Wash:SetAllPoints()
+		GUI.SetGradientV(button.Wash, accent.r, accent.g, accent.b, WASH_ALPHA,
+			accent.r, accent.g, accent.b, 0)
+		button.Wash:Hide()
 
 		local highlight = button:CreateTexture(nil, "HIGHLIGHT")
 		highlight:SetAllPoints()
