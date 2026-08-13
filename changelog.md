@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.12.0
+
+- Added a Centre stacks option to personal auras, showing the stack count in the middle of the icon in place of the countdown.
+- Added a Colour text option to personal auras, which colours the countdown, stack count, and bar spell name.
+
 ## 5.11.0
 
 - Fixed mind controlled units showing another player's buffs on alerts and nameplates.

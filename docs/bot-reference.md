@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.10.2. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.12.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -92,6 +92,10 @@ Dungeons, Raid**. Which one applies:
 - Any other instance -> Raid if you are in a raid group, otherwise Dungeons.
 - Open world -> Raid if you are in a raid group, otherwise World.
 
+Player housing is the exception to all of it: every module is off inside a house, plot or
+neighbourhood whatever the checkboxes say (housing counted as a dungeon before 5.10.3). Test
+mode still previews there.
+
 A module that "does not work" somewhere is usually just switched off for that content type.
 Exceptions: Portraits and Party Trinkets have a single **Enabled** switch; Enemy Kicks is
 enabled by role (see its section); Custom Auras has no module switch at all (each group has its
@@ -145,7 +149,9 @@ hover), and a colour rule.
   Defensive. Class colouring is not on offer anywhere, because a unit's class is not something
   the addon can read from an aura container.
 - **Flat colour** (Trinkets, Enemy Kicks, Custom Auras): the user picks one colour for the
-  glow and border, because these icons carry no category to derive one from.
+  glow and border, because these icons carry no category to derive one from. Custom Auras
+  carries a second, independent **Text colour** for its countdown, stack count and bar spell
+  name; see its Appearance tab.
 
 ### Glow Type (global, under Misc)
 
@@ -174,8 +180,10 @@ channel dropdown: Master, Sound Effects (SFX), Music, Ambience, or Dialog, defau
 
 ### Countdown text
 
-- **Colour Countdown** (Misc, off by default): timer text is white above a minute, yellow
-  under a minute, red in the last five seconds.
+- **Colour Countdown** (Misc, off by default): timer text is coloured by the time remaining.
+  Each of the three bands has its own swatch under **Countdown Colours** (Misc, since 5.11.0),
+  defaulting to red in the last five seconds, yellow under a minute, and white above. A
+  personal aura group with **Colour text** on ignores this and keeps its own text colour.
 - **Milliseconds**: displays with a "Milliseconds" checkbox (CC, Pet CC via CC path,
   nameplate bars) show decimal seconds once the remaining time drops below the
   **Milliseconds Threshold** (Misc, 1-6 s, default 5).
@@ -342,11 +350,14 @@ have an appearance." and no controls. **Display** itself lives on the Trigger ta
 | Reverse swipe | on/off (icons only) | on |
 | Hide swipe | on/off (icons only) | off |
 | Hide numbers | on/off (icons only); drops the countdown text | off |
+| Centre stacks | on/off (icons only); the stack count replaces the countdown | off |
 | Show tooltips | on/off | off |
 | Spell name | on/off (bars only) | on |
 | Pandemic | on/off | off |
 | Colour (glow/border tint, or the bar's fill) | colour swatch | white |
 | Pandemic colour | colour swatch | red (1, 0.1, 0.1) |
+| Colour text | on/off | off |
+| Text colour | colour swatch | white |
 
 **Display** (on the Trigger tab) decides the shape of the whole group. A **Bars** group draws a
 horizontal bar per aura: the spell icon at the left, the spell name and the countdown inside the fill, and the
@@ -359,6 +370,18 @@ arena) may not show until the match ends.
 **Pandemic** highlights an aura during its refresh window (where re-casting adds the
 remaining time on top). The game decides the window per spell, and only your own re-castable
 effects have one.
+
+**Centre stacks** (since 5.12.0) puts the stack count in the middle of the icon and drops the
+countdown text it stands in for, for auras watched by how many stacks are up rather than how
+long is left. Icons only: a bar draws its countdown at the end of the fill, where the count
+never sits. The game still decides when a count is drawn at all, so an aura that never stacks
+shows no text either way.
+
+**Colour text** (since 5.12.0) applies the group's **Text colour** to the countdown, the stack
+count and a bar's spell name. It also replaces the global **Colour Countdown** ramp for that
+group, so one group can hold a fixed colour while the rest of the addon colours by time
+remaining. With it off every text keeps its default white and the global setting applies as
+normal. The swatch holds the colour either way, so it can be picked before the toggle is on.
 
 ### Layout tab
 
@@ -776,6 +799,7 @@ the profile.
 | Zoom Icons | on/off | on (crops the baked silver border off icon art; changing it prompts a UI reload) |
 | Fade With Parent | on/off | on (icons fade with the unit frame they are attached to, for example out-of-range dimming) |
 | Colour Countdown | on/off | off |
+| Countdown Colours | three swatches: Under 5s, Under 1m, Above 1m | red (1, 0, 0), yellow (1, 0.8, 0), white (1, 1, 1) |
 | Glow Type | see "Glow Type" above | Slot Glow |
 | Font Scale | 0.5-1.5, step 0.05 | 1.0 |
 | Milliseconds Threshold | 1-6 seconds | 5 |
@@ -794,9 +818,9 @@ Sidebar: Other > Profiles.
   the last remaining profile cannot be deleted), **Reset** (resets the active profile to
   factory defaults, confirmed), and **Import/Export**.
 - A profile contains: all module settings plus the Misc options Glow Type, Font Scale,
-  Configure Blizzard Nameplates, Disable Swipe, Zoom Icons, Colour Countdown and Fade With
-  Parent. Not in the profile: Language override, Milliseconds Threshold and the Auto-Switch
-  rules.
+  Configure Blizzard Nameplates, Disable Swipe, Zoom Icons, Colour Countdown, Countdown
+  Colours and Fade With Parent. Not in the profile: Language override, Milliseconds Threshold
+  and the Auto-Switch rules.
 - **Import/Export**: export produces a string starting with `!MiniAuras:1!` (deflated CBOR,
   Base64). Import needs a profile name and creates a new profile, then switches to it. Old
   MiniCC strings (`!MiniCC:2!` and the older `!MiniCC!`) also import.
@@ -900,6 +924,16 @@ in another instance or phase, where the game cannot attribute casters, so the gr
 until they return; (5) the group's unit names a side and the unit is currently on the other
 side (buffs show only while friendly, debuffs only while hostile); (6) the group's own
 Enabled toggle is off.
+
+**"A personal aura's countdown text disappeared."** Either **Hide numbers** or **Centre
+stacks** is on for that group (Appearance tab). Centre stacks deliberately swaps the countdown
+for the stack count, so a group tracking an aura that never stacks shows no text at all with
+it on.
+
+**"Colour Countdown does nothing on one personal aura group."** That group has **Colour text**
+on, which replaces the by-time ramp with its own **Text colour**. Turn Colour text off to put
+the group back on the global setting. The reverse case, a group whose text ignores its
+**Text colour**, is the same switch left off.
 
 **"My starter Precog/Shroud/PI groups are gone."** Deleting them is permanent; they
 are seeded only once per profile. Recreate them by hand, import them from someone else, or
