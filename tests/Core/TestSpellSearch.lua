@@ -292,3 +292,164 @@ fw.describe("SpellSearch - the client's own language", function()
 			end)
 	end)
 end)
+
+fw.describe("SpellSearch - spell data that arrives late", function()
+	-- The index is built as early as login, and the client answers nothing for a spell whose data
+	-- it has not loaded yet. Those ids have to join the index when it does load, or the spell is
+	-- missing from the picker and its variant ids never reach a filter for the whole session.
+	local LATE_CAST = 999005
+	local LATE_AURA = 999006
+	local GROUP_A = 999007
+	local GROUP_B = 999008
+	-- One curated id whose name nothing else shares, and one whose siblings arrive without it.
+	local LATE_CURATED = KIDNEY_SHOT
+	local LATE_TORRENT = TORRENT_IDS[1]
+	local SILENT = { LATE_CAST, LATE_AURA, GROUP_A, GROUP_B, LATE_CURATED, LATE_TORRENT }
+
+	---Runs `body` against a fresh SpellSearch whose client cannot name any of SILENT. Filling
+	---`names` from inside the body is what makes that spell's data arrive; doing it before the
+	---first lookup is data that was there all along, which is what the assertions compare to.
+	---@param body fun(late: SpellSearch, names: table<number, string>)
+	local frameTime = 0
+
+	local function WithLateSpellData(body)
+		local names = {}
+		local silent = {}
+		local target = {
+			Core = {
+				AuraCategoryIds = categoryIds,
+				SpellNameIndex = {
+					("%d %d"):format(LATE_CAST, LATE_AURA),
+					("%d %d"):format(GROUP_A, GROUP_B),
+				},
+			},
+			Utils = {},
+			Modules = {},
+			Config = {},
+		}
+
+		for _, spellId in ipairs(SILENT) do
+			silent[spellId] = true
+		end
+
+		local realGetSpellName = _G.C_Spell.GetSpellName
+		_G.C_Spell.GetSpellName = function(spellId)
+			if silent[spellId] then
+				return names[spellId]
+			end
+
+			return realGetSpellName(spellId)
+		end
+
+		-- The retry throttle keys on the clock moving between frames, so the clock is the
+		-- test's to move; the shared mock's needs an install this file never does.
+		local realGetTime = _G.GetTime
+		_G.GetTime = function()
+			return frameTime
+		end
+
+		assert(loadfile("src/Core/Auras/SpellSearch.lua"))("MiniAuras", target)
+
+		local ok, err = pcall(body, target.Core.SpellSearch, names)
+
+		_G.C_Spell.GetSpellName = realGetSpellName
+		_G.GetTime = realGetTime
+		assert(ok, err)
+	end
+
+	-- Pending retries run once per frame, so data that arrives late lands on a new frame here
+	-- just as it does in the client.
+	local function NextFrame()
+		frameTime = frameTime + 1
+	end
+
+	fw.it("offers a group the client could not name at first", function()
+		WithLateSpellData(function(late, names)
+			assert(not Contains(late:Search("lightwell"), LATE_CAST),
+				"a group with no name yet is nothing the picker can show")
+
+			names[LATE_CAST] = "Lightwell"
+			names[LATE_AURA] = "Lightwell"
+			NextFrame()
+
+			assert(Contains(late:Search("lightwell"), LATE_CAST),
+				"once the client can name it, the picker offers it")
+		end)
+	end)
+
+	fw.it("expands a late group that first expanded to nothing", function()
+		WithLateSpellData(function(late, names)
+			assert(#late:GetVariants(LATE_CAST) == 1,
+				"there is nothing to expand to while the client is silent")
+
+			names[LATE_CAST] = "Lightwell"
+			names[LATE_AURA] = "Lightwell"
+			NextFrame()
+
+			local seen = {}
+
+			for _, spellId in ipairs(late:GetVariants(LATE_CAST)) do
+				seen[spellId] = true
+			end
+
+			assert(seen[LATE_AURA], "the aura id is back, so filters built later cover it")
+		end)
+	end)
+
+	fw.it("offers a curated spell the client could not name at first", function()
+		WithLateSpellData(function(late, names)
+			assert(not Contains(late:Search("latecomer"), LATE_CURATED),
+				"a curated id with no name yet is nothing the picker can show")
+
+			names[LATE_CURATED] = "Latecomer"
+			NextFrame()
+
+			local entry = late:GetEntry(LATE_CURATED)
+
+			assert(Contains(late:Search("latecomer"), LATE_CURATED),
+				"once the client can name it, the picker offers it")
+			assert(entry and entry.Name == "Latecomer", "and its row carries the name")
+		end)
+	end)
+
+	fw.it("expands a curated spell that arrives after its siblings", function()
+		WithLateSpellData(function(late, names)
+			assert(#late:GetVariants(LATE_TORRENT) == 1,
+				"an unnamed id stands alone, whatever it will turn out to share a name with")
+
+			names[LATE_TORRENT] = "Arcane Torrent"
+			NextFrame()
+
+			local seen = {}
+
+			for _, spellId in ipairs(late:GetVariants(LATE_TORRENT)) do
+				seen[spellId] = true
+			end
+
+			for _, spellId in ipairs(TORRENT_IDS) do
+				assert(seen[spellId], "variant " .. spellId .. " is included")
+			end
+		end)
+	end)
+
+	fw.it("gives a late curated spell the row its name already has", function()
+		WithLateSpellData(function(late, names)
+			-- The generated group is named from the start, so it owns the suggestion until the
+			-- curated id turns up under the same name. Two rows for one name is what a build with
+			-- both loaded would never produce.
+			names[GROUP_A] = "Wisplight"
+			NextFrame()
+
+			assert(CountNamed(late:Search("wisplight"), "Wisplight") == 1,
+				"the generated group is the only row while the curated id is unnamed")
+
+			names[LATE_CURATED] = "Wisplight"
+			NextFrame()
+
+			local results = late:Search("wisplight")
+
+			assert(CountNamed(results, "Wisplight") == 1, "the curated id takes that row over")
+			assert(Contains(results, LATE_CURATED), "and the row it leaves is the curated one")
+		end)
+	end)
+end)
