@@ -1584,6 +1584,70 @@ fw.describe("CustomAuras - stand-in frames while a group is being placed", funct
 	end)
 end)
 
+fw.describe("CustomAuras - the anchor walk per refresh", function()
+	local frames = addon.Core.Frames
+
+	---Counts the walks one refresh makes, with the module left as the body found it.
+	---@param body fun()
+	---@return number
+	local function CountWalks(body)
+		local realGetAll = frames.GetAll
+		local walks = 0
+
+		frames.GetAll = function(...)
+			walks = walks + 1
+
+			return realGetAll(...)
+		end
+
+		local ok, err = pcall(body)
+
+		frames.GetAll = realGetAll
+		assert(ok, err)
+
+		return walks
+	end
+
+	fw.it("walks once however many groups hang off the unit frames", function()
+		ClearGroups()
+
+		for _ = 1, 4 do
+			AddGroup({ Unit = "unitframes", Spells = { ICE_BLOCK } })
+		end
+
+		local walks = CountWalks(function()
+			module:Refresh()
+		end)
+
+		assert(walks == 1, "four frame groups share one walk (got " .. walks .. ")")
+
+		ClearGroups()
+	end)
+
+	fw.it("adds one walk for the group being previewed, not one per group", function()
+		ClearGroups()
+
+		local previewed = AddGroup({ Unit = "unitframes", Spells = { ICE_BLOCK } })
+
+		for _ = 1, 3 do
+			AddGroup({ Unit = "unitframes", Spells = { ICE_BLOCK } })
+		end
+
+		display:SetPreviewGroup(previewed.Id)
+
+		local walks = CountWalks(function()
+			module:Refresh()
+		end)
+
+		-- The plain list, plus the one with the stand-ins on the end that only the previewed
+		-- group reads.
+		assert(walks <= 2, "a preview costs one extra walk at most (got " .. walks .. ")")
+
+		display:SetPreviewGroup(nil)
+		ClearGroups()
+	end)
+end)
+
 fw.describe("CustomAuras - tracking by filter", function()
 	-- Spell ids are the only thing 12.1's assist rule touches. A filter string and the flag
 	-- filters are honoured on any unit, so a filter group escapes every limit the spell path has.

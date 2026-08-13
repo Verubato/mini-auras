@@ -4,6 +4,7 @@ local mini = addon.Framework
 local eventGate = addon.Core.EventGate
 local profileManager = addon.Core.ProfileManager
 local frames = addon.Core.Frames
+local moduleUtil = addon.Utils.ModuleUtil
 local groups = addon.Modules.CustomAuras.Groups
 local display = addon.Modules.CustomAuras.Display
 
@@ -40,6 +41,12 @@ local M = {}
 addon.Modules.CustomAuras.Module = M
 addon.Modules.CustomAurasModule = M
 
+-- Deferred as well as coalesced: a raid forming fires the roster event per member, and the frame
+-- addons rebuild their own frames on it, so the anchors are only worth reading once settled.
+local QueueRefresh = moduleUtil:Coalesced(function()
+	M:Refresh()
+end)
+
 ---@return CustomAurasModuleOptions?
 local function GetOptions()
 	return db and db.Modules.CustomAurasModule
@@ -62,7 +69,7 @@ local function OnEvent(_, event, arg1)
 	end
 
 	if ROSTER_EVENTS[event] then
-		M:Refresh()
+		QueueRefresh()
 		return
 	end
 

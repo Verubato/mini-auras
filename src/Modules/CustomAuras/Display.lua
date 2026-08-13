@@ -72,12 +72,15 @@ local soundOnlyTokens = {}
 -- Scratch for the unit frames one refresh pass saw, so copies on frames that have gone are
 -- handed back.
 local seenAnchors = {}
--- Reused buffer for the anchor walk. Its own rather than shared with the other modules, so one
--- module's walk can never land in the middle of another's.
+-- Reused buffers for the anchor walk. Their own rather than shared with the other modules, so one
+-- module's walk can never land in the middle of another's. The second holds the same walk with the
+-- stand-in frames on the end, which only the previewed group anchors to.
 local anchorScratch = {}
--- Whether a coalesced sound rebuild is already waiting, and which teardown it belongs to.
-local soundRefreshQueued = false
-local soundGeneration = 0
+local previewAnchorScratch = {}
+-- What each walk handed back this refresh, nil until something has asked for it. Cleared at the
+-- top of a refresh, so the lists are rebuilt once each however many groups read them.
+local frameAnchors
+local previewFrameAnchors
 -- Whether any group hangs off the unit frames, so the frame hooks can cost nothing otherwise.
 local anyFrameGroups = false
 local testModeActive = false
@@ -101,6 +104,13 @@ local displayPools
 local M = {}
 
 addon.Modules.CustomAuras.Display = M
+
+-- Coalesced to one pass per frame. Plates churn a handful at a time as people come in and out of
+-- range, and each rebuild walks every group's spell variants to build a signature that has usually
+-- not moved. A teardown cancels the pending pass rather than let it re-register what it cleared.
+local QueueSoundRefresh, CancelSoundRefresh = moduleUtil:Coalesced(function()
+	M:RefreshSounds()
+end)
 
 ---@param group CustomAuraGroup
 ---@return AuraDisplayStyle
@@ -1056,26 +1066,40 @@ local function CollectSoundRequests(state)
 	end
 end
 
----Coalesces the sound rebuild to one pass per frame. Plates churn a handful at a time as people
----come in and out of range, and each rebuild walks every group's spell variants to build a
----signature that has usually not moved. A generation counter rather than a plain flag, so a
----teardown between the request and the pass cancels it instead of re-registering what it cleared.
-local function QueueSoundRefresh()
-	if soundRefreshQueued then
-		return
+---The unit frames on screen right now, walked once per refresh and handed to every group that
+---anchors to them.
+---@return table anchors The shared scratch, valid until the next refresh.
+local function CollectAnchors()
+	if not frameAnchors then
+		frameAnchors = frames:GetAll(true, false, anchorScratch)
 	end
 
-	soundRefreshQueued = true
+	return frameAnchors
+end
 
-	local generation = soundGeneration
+---The same walk with the stand-in frames on the end, for the one group that is being previewed
+---while no real frames are up.
+---@return table anchors The shared scratch, valid until the next refresh.
+local function CollectPreviewAnchors()
+	if not previewFrameAnchors then
+		previewFrameAnchors = frames:GetAll(true, true, previewAnchorScratch)
+	end
 
-	C_Timer.After(0, function()
-		soundRefreshQueued = false
+	return previewFrameAnchors
+end
 
-		if generation == soundGeneration then
-			M:RefreshSounds()
+---Visibility is re-asked rather than left to the walk's visibleOnly, because one frame provider
+---hands over its whole set regardless.
+---@param anchors table
+---@return boolean
+local function HasVisibleAnchor(anchors)
+	for _, frame in ipairs(anchors) do
+		if frame:IsVisible() then
+			return true
 		end
-	end)
+	end
+
+	return false
 end
 
 ---Puts the stand-in party or arena frames on screen while the group being positioned hangs off
@@ -1103,7 +1127,7 @@ local function ShowPreviewFrames(options)
 		end
 	end
 
-	local party = anchor == groups.Anchor.Frames and not frames:HasVisibleFrames()
+	local party = anchor == groups.Anchor.Frames and not HasVisibleAnchor(CollectAnchors())
 	local arena = anchor == groups.Anchor.Arena and not frames:HasVisibleArenaFrames()
 
 	frames:SetTestFramesShown(party)
@@ -1178,6 +1202,10 @@ function M:Refresh(options, moduleEnabled)
 
 	local live = {}
 	local frameGroups = false
+
+	frameAnchors = nil
+	previewFrameAnchors = nil
+
 	-- Ahead of the groups themselves: the copies below anchor to whatever this puts on screen.
 	local previewPartyFrames = ShowPreviewFrames(options)
 
@@ -1225,7 +1253,9 @@ function M:Refresh(options, moduleEnabled)
 			local includeTestFrames = testModeActive
 				or (previewPartyFrames and groupDef.Id == previewGroupId)
 
-			for _, anchor in ipairs(frames:GetAll(true, includeTestFrames, anchorScratch)) do
+			local anchors = includeTestFrames and CollectPreviewAnchors() or CollectAnchors()
+
+			for _, anchor in ipairs(anchors) do
 				seenAnchors[anchor] = true
 				RefreshFrameGroup(state, anchor)
 			end
@@ -1412,11 +1442,8 @@ end
 
 function M:Teardown()
 	-- Strands any rebuild the plate and unit handlers queued, which would otherwise re-register
-	-- the sounds this is about to clear. The flag clears with it: the stranded timer still runs
-	-- and still refuses, so leaving it set would make the next request think one was already on
-	-- its way and drop it.
-	soundGeneration = soundGeneration + 1
-	soundRefreshQueued = false
+	-- the sounds this is about to clear. The next request still queues one of its own.
+	CancelSoundRefresh()
 
 	for _, state in pairs(states) do
 		Park(state)
