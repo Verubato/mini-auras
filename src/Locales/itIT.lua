@@ -321,7 +321,7 @@ L:RegisterLocale("itIT", function() return {
 	["Custom Auras_Short"] = "Aure personali",
 	["Create your own custom mini weak auras."] = "Crea le tue mini weak aura personalizzate.",
 	["You can configure buffs on allies and debuffs on enemies."] = "Puoi configurare potenziamenti sugli alleati e indebolimenti sui nemici.",
-	["New Group"] = "Nuovo gruppo",
+	["New Personal Aura"] = "Nuova aura personale",
 	["Aura %d"] = "Aura %d",
 	["Name"] = "Nome",
 	["Unit"] = "Unità",

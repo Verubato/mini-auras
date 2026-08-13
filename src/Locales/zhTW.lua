@@ -323,7 +323,7 @@ L:RegisterLocale("zhTW", function() return {
 	["Custom Auras_Short"] = "個人光環",
 	["Create your own custom mini weak auras."] = "建立你自己的迷你 WeakAuras。",
 	["You can configure buffs on allies and debuffs on enemies."] = "你可以設定友方的增益和敵方的減益。",
-	["New Group"] = "新增群組",
+	["New Personal Aura"] = "新增個人光環",
 	["Aura %d"] = "光環 %d",
 	["Name"] = "名稱",
 	["Unit"] = "單位",

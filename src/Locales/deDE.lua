@@ -323,7 +323,7 @@ L:RegisterLocale("deDE", function() return {
 	["Custom Auras_Short"] = "Eigene Auren",
 	["Create your own custom mini weak auras."] = "Erstelle deine eigenen kleinen Weak Auras.",
 	["You can configure buffs on allies and debuffs on enemies."] = "Du kannst Stärkungszauber auf Verbündeten und Schwächungszauber auf Gegnern konfigurieren.",
-	["New Group"] = "Neue Gruppe",
+	["New Personal Aura"] = "Neue eigene Aura",
 	["Aura %d"] = "Aura %d",
 	["Name"] = "Name",
 	["Unit"] = "Einheit",
