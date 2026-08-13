@@ -152,22 +152,6 @@ function M:Build(panel)
 	fadeWithParentChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
 	fadeWithParentChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
 
-	local colorCountdownChk = mini:Checkbox({
-		Parent = panel,
-		LabelText = L["Colour Countdown"],
-		Tooltip = L["Colours the countdown timer text by the time remaining: white above a minute, yellow under a minute, and red in the last five seconds."],
-		GetValue = function()
-			return db.ColorCountdownByTime or false
-		end,
-		SetValue = function(value)
-			db.ColorCountdownByTime = value
-			addon:Refresh()
-		end,
-	})
-
-	colorCountdownChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
-	colorCountdownChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
-
 	-- The crop is baked into an icon when its frame is built, and the frames are pooled, so
 	-- icons already made keep the old one until the UI is reloaded.
 	local iconZoomChk = mini:Checkbox({
@@ -186,7 +170,7 @@ function M:Build(panel)
 		end,
 	})
 
-	iconZoomChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 3, 0)
+	iconZoomChk:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
 	iconZoomChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
 
 	-- Aura icons render as AuraButtons, which LibCustomGlow cannot attach to, so only the
@@ -277,4 +261,96 @@ function M:Build(panel)
 
 	millisThresholdSlider.Slider:SetPoint("LEFT", fontScaleSlider.Slider, "RIGHT", horizontalSpacing, 0)
 	millisThresholdSlider.Slider:SetPoint("TOP", fontScaleSlider.Slider, "TOP", 0, 0)
+
+	local countdownDivider = mini:Divider({
+		Parent = panel,
+		Text = L["Countdown Colours"],
+	})
+	countdownDivider:SetPoint("LEFT", panel, "LEFT")
+	countdownDivider:SetPoint("RIGHT", panel, "RIGHT")
+	countdownDivider:SetPoint("TOP", fontScaleSlider.Slider, "BOTTOM", 0, -verticalSpacing * 2)
+
+	local colorCountdownChk = mini:Checkbox({
+		Parent = panel,
+		LabelText = L["Colour Countdown"],
+		Tooltip = L["Colours the countdown timer text by the time remaining: white above a minute, yellow under a minute, and red in the last five seconds."],
+		GetValue = function()
+			return db.ColorCountdownByTime or false
+		end,
+		SetValue = function(value)
+			db.ColorCountdownByTime = value
+			addon:Refresh()
+		end,
+	})
+
+	colorCountdownChk:SetPoint("TOPLEFT", countdownDivider, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	-- A snapshot saved before the colours existed round-trips without the table, so both are
+	-- recreated from the defaults on first touch rather than assumed.
+	local function CountdownColor(key)
+		local colors = db.CountdownColors
+
+		if not colors then
+			colors = {}
+			db.CountdownColors = colors
+		end
+
+		local color = colors[key]
+
+		if not color then
+			local default = dbDefaults.CountdownColors[key]
+			color = { R = default.R, G = default.G, B = default.B }
+			colors[key] = color
+		end
+
+		return color
+	end
+
+	-- The picker fires per drag tick, and a refresh here restyles and re-binds every countdown
+	-- in the addon, so the refresh waits until the dragging has gone quiet. The ticker-driven
+	-- legacy icons still preview live: they read the saved colours directly each tick.
+	local refreshTimer
+	local function QueueColorRefresh()
+		if refreshTimer then
+			refreshTimer:Cancel()
+		end
+
+		refreshTimer = C_Timer.NewTimer(0.3, function()
+			refreshTimer = nil
+			addon:Refresh()
+		end)
+	end
+
+	local function BuildCountdownSwatch(labelText, tooltip, key)
+		return mini:ColorSwatch({
+			Parent = panel,
+			LabelText = labelText,
+			Tooltip = tooltip,
+			HasOpacity = false,
+			GetValue = function()
+				local color = CountdownColor(key)
+				return color.R, color.G, color.B, 1
+			end,
+			SetValue = function(r, g, b)
+				local color = CountdownColor(key)
+				color.R, color.G, color.B = r, g, b
+				QueueColorRefresh()
+			end,
+		})
+	end
+
+	local under5Swatch = BuildCountdownSwatch(L["Under 5s"],
+		L["Countdown text colour in the last five seconds."], "Under5s")
+	local under60Swatch = BuildCountdownSwatch(L["Under 1m"],
+		L["Countdown text colour under a minute."], "Under60s")
+	local over60Swatch = BuildCountdownSwatch(L["Above 1m"],
+		L["Countdown text colour above a minute."], "Over60s")
+
+	-- On the checkbox's row, one grid column each, like the icon toggles above.
+	under5Swatch:SetPoint("LEFT", panel, "LEFT", checkColumnWidth, 0)
+	under5Swatch:SetPoint("TOP", colorCountdownChk, "TOP", 0, 0)
+	under60Swatch:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 2, 0)
+	under60Swatch:SetPoint("TOP", colorCountdownChk, "TOP", 0, 0)
+	over60Swatch:SetPoint("LEFT", panel, "LEFT", checkColumnWidth * 3, 0)
+	over60Swatch:SetPoint("TOP", colorCountdownChk, "TOP", 0, 0)
 end

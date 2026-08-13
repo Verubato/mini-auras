@@ -20,6 +20,13 @@ local dbDefaults = {
 	ColorCountdownByTime = false,
 	FadeWithParent = true,
 	MillisecondsThreshold = 5,
+	-- Colour Countdown band tints: OmniCC's classic red under five seconds, yellow to the
+	-- minute, white above.
+	CountdownColors = {
+		Under5s = { R = 1, G = 0, B = 0 },
+		Under60s = { R = 1, G = 0.8, B = 0 },
+		Over60s = { R = 1, G = 1, B = 1 },
+	},
 	LocaleOverride = false,
 	-- TEMPORARY: true when first-time setup ran without MiniCCDB, so a legacy table appearing on
 	-- a later login can still be offered for import. Dies with the settings bridge.

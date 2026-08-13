@@ -9,23 +9,32 @@ local _, addon = ...
 -- Split out of AuraContainerDisplay because none of it touches a display: every value below is
 -- built once and shared by every bound fontstring in the addon.
 
--- Colour-by-time stops for the countdown text: {seconds remaining, r, g, b}. OmniCC's classic
--- bands (red under 5s, yellow to the minute, white above) rather than a gradient: each
--- near-coincident stop pair fakes a hard edge on the linear curve, so the 0.05s blend windows
--- are never visible.
+-- Colour-by-time bands for the countdown text, tinted by db.CountdownColors: red under 5s,
+-- yellow to the minute, white above by default (OmniCC's classic bands). Bands rather than a
+-- gradient: each near-coincident stop pair fakes a hard edge on the linear curve, so the 0.05s
+-- blend windows are never visible.
 --
 -- Must match ApplyCountdownColor's bands in Core/Display/IconSlotContainer, so the legacy icons
 -- show exactly what the curve-bound ones do.
-local COLOR_STOPS = {
-	{ 0, 1, 0, 0 },
-	{ 5, 1, 0, 0 },
-	{ 5.05, 1, 0.8, 0 },
-	{ 60, 1, 0.8, 0 },
-	{ 60.05, 1, 1, 1 },
+local BAND_DEFAULTS = {
+	Under5s = { R = 1, G = 0, B = 0 },
+	Under60s = { R = 1, G = 0.8, B = 0 },
+	Over60s = { R = 1, G = 1, B = 1 },
 }
+-- The highest stop on the ramp; the plain curve spans the same range so both clamp alike.
+local TOP_STOP_SECONDS = 60.05
 
 ---@type table?
+local cachedDb
+---@type table?
 local colorCurve
+-- The generation the colour curve was built for; a mismatch rebuilds it.
+---@type number?
+local curveGeneration
+-- The colours the current generation stands for, flattened for value compares: a profile switch
+-- mutates the saved tables in place, so comparing references would miss the change.
+local appliedColors = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+local colorGeneration = 0
 -- The flat curve a countdown binds while the colouring is OFF. See Bind for why the off state is
 -- a curve of its own rather than no colour binding at all. White matches the NumberFontNormal the
 -- fontstring is created with.
@@ -40,6 +49,25 @@ local formatters = {}
 local M = {}
 
 addon.Core.AuraCountdownText = M
+
+local function GetDb()
+	if not cachedDb then
+		cachedDb = addon.Framework:GetSavedVars()
+	end
+
+	return cachedDb
+end
+
+---One band's saved colour, or its default while the saved table is missing (a profile snapshot
+---from before the setting existed round-trips without it).
+---@param key string
+---@return table
+local function BandColor(key)
+	local db = GetDb()
+	local colors = db and db.CountdownColors
+
+	return (colors and colors[key]) or BAND_DEFAULTS[key]
+end
 
 ---Bare-number remaining time ("45" -> "2m" -> "1h"), matching the cooldown countdown the coloured
 ---text replaces. A rule formatter because the engine's default renders a unit suffix ("45s") and
@@ -88,18 +116,50 @@ function M:IsSupported()
 		and Enum.NumericRuleFormatRounding ~= nil
 end
 
----The shared colour curve every countdown fontstring binds. Built once; the engine keeps the
----reference and curves are never mutated after creation.
+---A generation stamp for the configured band colours, bumped whenever any component moves.
+---Styles store the stamp and signatures embed it, so one number stands in for nine compares at
+---every call site; the compare happens here, by value, because a profile switch mutates the
+---saved tables in place. Missing components count as 1, matching what the curve would draw.
+---@return number
+function M:GetColorGeneration()
+	local under5, under60, over60 = BandColor("Under5s"), BandColor("Under60s"), BandColor("Over60s")
+	local r1, g1, b1 = under5.R or 1, under5.G or 1, under5.B or 1
+	local r2, g2, b2 = under60.R or 1, under60.G or 1, under60.B or 1
+	local r3, g3, b3 = over60.R or 1, over60.G or 1, over60.B or 1
+	local a = appliedColors
+
+	if a[1] ~= r1 or a[2] ~= g1 or a[3] ~= b1
+		or a[4] ~= r2 or a[5] ~= g2 or a[6] ~= b2
+		or a[7] ~= r3 or a[8] ~= g3 or a[9] ~= b3 then
+		a[1], a[2], a[3] = r1, g1, b1
+		a[4], a[5], a[6] = r2, g2, b2
+		a[7], a[8], a[9] = r3, g3, b3
+		colorGeneration = colorGeneration + 1
+	end
+
+	return colorGeneration
+end
+
+---The colour curve every countdown fontstring binds, rebuilt when the configured colours change.
+---Curves are never mutated after creation - the engine keeps whatever reference is bound - so a
+---change means a new object, and that reference change is what makes StyleCountdown re-bind.
 ---@return table
 function M:GetColorCurve()
-	if not colorCurve then
+	local generation = M:GetColorGeneration()
+
+	if not colorCurve or curveGeneration ~= generation then
+		curveGeneration = generation
+
+		-- appliedColors is current: the generation call above just refreshed it.
+		local a = appliedColors
 		local curve = C_CurveUtil.CreateColorCurve()
 		curve:SetType(Enum.LuaCurveType.Linear)
 		-- Highest threshold first: the curve API expects points added in descending x order.
-		for i = #COLOR_STOPS, 1, -1 do
-			local stop = COLOR_STOPS[i]
-			curve:AddPoint(stop[1], CreateColor(stop[2], stop[3], stop[4]))
-		end
+		curve:AddPoint(TOP_STOP_SECONDS, CreateColor(a[7], a[8], a[9]))
+		curve:AddPoint(60, CreateColor(a[4], a[5], a[6]))
+		curve:AddPoint(5.05, CreateColor(a[4], a[5], a[6]))
+		curve:AddPoint(5, CreateColor(a[1], a[2], a[3]))
+		curve:AddPoint(0, CreateColor(a[1], a[2], a[3]))
 		colorCurve = curve
 	end
 
@@ -114,7 +174,7 @@ function M:GetPlainCurve()
 		curve:SetType(Enum.LuaCurveType.Linear)
 		-- Descending, like the ramp above; two points so the value is flat rather than clamped
 		-- off the end of a single one.
-		curve:AddPoint(COLOR_STOPS[#COLOR_STOPS][1], CreateColor(1, 1, 1))
+		curve:AddPoint(TOP_STOP_SECONDS, CreateColor(1, 1, 1))
 		curve:AddPoint(0, CreateColor(1, 1, 1))
 		plainCurve = curve
 	end

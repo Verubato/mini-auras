@@ -17,6 +17,7 @@ M.PayloadKeys = {
 	"DisableSwipe",
 	"IconZoom",
 	"ColorCountdownByTime",
+	"CountdownColors",
 	"FadeWithParent",
 	"Modules",
 }

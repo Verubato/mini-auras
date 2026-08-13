@@ -34,6 +34,13 @@ local frameIdCounter = 0
 -- secret aura durations are never read. One shared ticker serves every container.
 local coloredCooldowns = {}
 local colorTicker
+-- Fallbacks while db.CountdownColors is missing (a profile snapshot from before the setting
+-- existed round-trips without it); must match BAND_DEFAULTS in Core/Auras/AuraCountdownText.
+local COUNTDOWN_FALLBACKS = {
+	Under5s = { R = 1, G = 0, B = 0 },
+	Under60s = { R = 1, G = 0.8, B = 0 },
+	Over60s = { R = 1, G = 1, B = 1 },
+}
 
 ---@class IconSlotContainer
 local M = {}
@@ -77,12 +84,19 @@ local function GetCooldownText(cd)
 	return cd.MiniAurasFontString
 end
 
----Colour bands by remaining seconds; must match COUNTDOWN_COLOR_STOPS in AuraContainerDisplay
----so these icons show exactly what the curve-bound 12.1 aura icons show.
+---Colour bands by remaining seconds, tinted by db.CountdownColors; must match the curve stops in
+---Core/Auras/AuraCountdownText so these icons show exactly what the curve-bound 12.1 aura icons
+---show. Compared by the colour actually applied rather than by band, so a colour changed in the
+---options repaints on the next tick.
 local function ApplyCountdownColor(cd, remaining)
-	local band = (remaining < 5 and 1) or (remaining < 60 and 2) or 3
+	local db = GetDb()
+	local colors = (db and db.CountdownColors) or COUNTDOWN_FALLBACKS
+	local band = (remaining < 5 and (colors.Under5s or COUNTDOWN_FALLBACKS.Under5s))
+		or (remaining < 60 and (colors.Under60s or COUNTDOWN_FALLBACKS.Under60s))
+		or colors.Over60s or COUNTDOWN_FALLBACKS.Over60s
+	local r, g, b = band.R or 1, band.G or 1, band.B or 1
 
-	if cd.MiniAurasColorBand == band then
+	if cd.MiniAurasColorR == r and cd.MiniAurasColorG == g and cd.MiniAurasColorB == b then
 		return
 	end
 
@@ -92,22 +106,15 @@ local function ApplyCountdownColor(cd, remaining)
 		return
 	end
 
-	cd.MiniAurasColorBand = band
-
-	if band == 1 then
-		text:SetTextColor(1, 0, 0)
-	elseif band == 2 then
-		text:SetTextColor(1, 0.8, 0)
-	else
-		text:SetTextColor(1, 1, 1)
-	end
+	cd.MiniAurasColorR, cd.MiniAurasColorG, cd.MiniAurasColorB = r, g, b
+	text:SetTextColor(r, g, b)
 end
 
 local function ResetCountdownColor(cd)
 	coloredCooldowns[cd] = nil
 
-	if cd.MiniAurasColorBand then
-		cd.MiniAurasColorBand = nil
+	if cd.MiniAurasColorR then
+		cd.MiniAurasColorR, cd.MiniAurasColorG, cd.MiniAurasColorB = nil, nil, nil
 		local text = GetCooldownText(cd)
 		if text then
 			text:SetTextColor(1, 1, 1)

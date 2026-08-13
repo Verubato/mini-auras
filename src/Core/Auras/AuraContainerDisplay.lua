@@ -486,6 +486,7 @@ local function StyleDiffersFromStored(instance, style)
 		or stored.DisableSwipe ~= ((db and db.DisableSwipe) or false)
 		or stored.MillisecondsThreshold ~= (db and db.MillisecondsThreshold)
 		or stored.ColorCountdownByTime ~= ((db and db.ColorCountdownByTime) or false)
+		or stored.CountdownColorGeneration ~= auraCountdownText:GetColorGeneration()
 		or stored.GlowStyleName ~= GetGlowStyleName()
 		or stored.GlowColorR ~= (color and color[1])
 		or stored.GlowColorG ~= (color and color[2])
@@ -528,6 +529,7 @@ local function StoreStyle(instance, style)
 	stored.DisableSwipe = (db and db.DisableSwipe) or false
 	stored.MillisecondsThreshold = db and db.MillisecondsThreshold
 	stored.ColorCountdownByTime = (db and db.ColorCountdownByTime) or false
+	stored.CountdownColorGeneration = auraCountdownText:GetColorGeneration()
 	stored.GlowStyleName = GetGlowStyleName()
 	stored.GlowColorR = color and color[1]
 	stored.GlowColorG = color and color[2]
@@ -1616,8 +1618,9 @@ function M:GetStyleSignature(style, size, spacing)
 	parts[n + 4] = GetGlowStyleName()
 	parts[n + 5] = tostring(db and db.ColorCountdownByTime)
 	parts[n + 6] = tostring(style.PandemicColor and table.concat(style.PandemicColor, ","))
+	parts[n + 7] = tostring(auraCountdownText:GetColorGeneration())
 
-	return table.concat(parts, ":", 1, n + 6)
+	return table.concat(parts, ":", 1, n + 7)
 end
 
 ---Stores the per-button style and applies it to existing buttons when possible. Skipped
