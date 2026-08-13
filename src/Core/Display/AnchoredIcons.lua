@@ -113,6 +113,9 @@ end
 ---dormant and for a single entry whose feature was switched off.
 ---@param entry table
 function M:TeardownEntry(entry)
+	-- A leftover flag would let the visibility hook restyle a torn-down entry back into life.
+	entry.StyleStale = nil
+
 	if entry.Watcher then
 		entry.Watcher:Disable()
 	end
@@ -146,9 +149,8 @@ end
 ---with no refresh behind it, and a disabled display would show nothing until the next one.
 ---
 ---Marks the entry as carrying stale styling, because the refresh that skipped it is also the
----refresh that would have applied any option the user just changed. The visibility hook checks
----the flag and restyles on the way back in, so a frame that returns without a refresh behind it
----is still current.
+---refresh that would have applied any option the user just changed. RestyleIfStale reads the flag
+---on the way back in, so a frame that returns without a refresh behind it is still current.
 ---@param entry table
 function M:HideEntry(entry)
 	entry.StyleStale = true
@@ -224,6 +226,43 @@ function M:ApplyEntryOptions(entry, anchor, options, settings)
 		self:AnchorAuraDisplay(entry, anchor, options, settings.KickActive)
 		frames:ShowHideDisplay(display, anchor, excludePlayer)
 	end
+end
+
+---Styles one entry on its anchor, or takes it off screen while the anchor is not there. Entries
+---outlive their anchors, so a raid's worth of them can still be here in a five-man; styling and
+---re-anchoring what nobody can see is the whole of the cost.
+---@param entry table
+---@param anchor table
+---@param apply fun(entry: table, anchor: table, options: table, extra: any) the module's restyle
+---@param options table the module's per-instance options for this entry
+---@param extra any? handed back to apply, for whatever else the module resolved per entry
+function M:ApplyOrHideEntry(entry, anchor, apply, options, extra)
+	if self:IsAnchorShown(anchor) then
+		apply(entry, anchor, options, extra)
+	else
+		self:HideEntry(entry)
+	end
+end
+
+---Restyles an entry whose frame came back through the unit-frame visibility hook. That frame
+---carries the styling of the refresh that skipped it, and nothing else on that path would put it
+---right.
+---@param entry table
+---@param anchor table
+---@param entryEnabled boolean What the refresh path would decide for this entry: a torn-down one
+---must not be styled back into life.
+---@param apply fun(entry: table, anchor: table, options: table, extra: any)
+---@param options table
+---@param extra any?
+---@return boolean restyled apply ends in the same show/hide as the hook, so it stands in for it.
+function M:RestyleIfStale(entry, anchor, entryEnabled, apply, options, extra)
+	if not entry.StyleStale or not entryEnabled or not self:IsAnchorShown(anchor) then
+		return false
+	end
+
+	apply(entry, anchor, options, extra)
+
+	return true
 end
 
 function M:Init()

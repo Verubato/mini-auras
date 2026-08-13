@@ -257,4 +257,87 @@ fw.describe("RaidFrameAurasModule - an anchor returning without a refresh", func
 
 		spells.Custom[custom] = nil
 	end)
+
+	fw.it("leaves a torn-down entry down when the module is off", function()
+		module:Refresh()
+
+		local containers = env.containersForUnit("party3")
+		assert(#containers > 0, "fixture: the frame starts with a container")
+
+		local display = containers[1]
+
+		-- Hidden while the module is on, so the entry is marked as carrying stale styling.
+		frame:Hide()
+		module:Refresh()
+
+		env.setModuleEnabled("RaidFrameAurasModule", false)
+		module:Refresh()
+		assert(not display._enabled, "fixture: the module tore its display down")
+
+		local frames = env.addon.Core.Frames
+		local realIsFriendlyCuf = frames.IsFriendlyCuf
+		frames.IsFriendlyCuf = function(_, candidate)
+			return candidate == frame
+		end
+
+		frame:Show()
+		env.addon.Modules.RaidFrameAuras.Display:OnCufUpdateVisible(frame)
+
+		frames.IsFriendlyCuf = realIsFriendlyCuf
+
+		assert(not display._enabled, "the hook must not wake a disabled module's display back up")
+
+		env.setModuleEnabled("RaidFrameAurasModule", true)
+		module:Refresh()
+	end)
+end)
+
+fw.describe("AnchoredIcons - the stale styling flag", function()
+	local anchoredIcons = env.addon.Core.AnchoredIcons
+	local shownAnchor = { IsVisible = function()
+		return true
+	end }
+
+	---Only the display, the container and the flag are touched by the helpers under test.
+	local function FakeEntry()
+		return {
+			Display = {
+				Enabled = true,
+				SetEnabled = function(self, value)
+					self.Enabled = value
+				end,
+				Hide = function() end,
+			},
+			Container = {
+				ResetAllSlots = function() end,
+				Frame = { Hide = function() end },
+			},
+		}
+	end
+
+	fw.it("is dropped by a teardown", function()
+		local entry = FakeEntry()
+
+		anchoredIcons:HideEntry(entry)
+		assert(entry.StyleStale, "fixture: an entry hidden with its anchor carries stale styling")
+
+		anchoredIcons:TeardownEntry(entry)
+		assert(not entry.StyleStale, "or a later restyle would bring the entry back")
+	end)
+
+	fw.it("restyles nothing while the entry's module is off", function()
+		local entry = FakeEntry()
+		local applied = false
+		local function Apply()
+			applied = true
+		end
+
+		anchoredIcons:HideEntry(entry)
+
+		assert(not anchoredIcons:RestyleIfStale(entry, shownAnchor, false, Apply), "off, so nothing to do")
+		assert(not applied, "and the module's restyle never ran")
+
+		assert(anchoredIcons:RestyleIfStale(entry, shownAnchor, true, Apply), "on, so the hook restyles")
+		assert(applied, "through the module's own callback")
+	end)
 end)

@@ -550,13 +550,7 @@ end
 ---@param options RaidFrameAurasInstanceOptions
 function M:ApplyOptions(options)
 	for anchor, entry in pairs(watchers) do
-		-- Entries outlive their anchors, so a raid's worth of them can still be here in a
-		-- five-man. Styling and re-anchoring what nobody can see is the whole of the cost.
-		if anchoredIcons:IsAnchorShown(anchor) then
-			ApplyEntryOptions(entry, anchor, options)
-		else
-			anchoredIcons:HideEntry(entry)
-		end
+		anchoredIcons:ApplyOrHideEntry(entry, anchor, ApplyEntryOptions, options)
 	end
 end
 
@@ -673,11 +667,9 @@ function M:OnCufUpdateVisible(frame)
 		return
 	end
 
-	-- A frame coming back after a refresh skipped it carries that refresh's stale styling, and
-	-- nothing else on this path would put it right. ApplyEntryOptions ends in the same show/hide
-	-- as below, so it stands in for it rather than running alongside.
-	if entry.StyleStale and anchoredIcons:IsAnchorShown(frame) then
-		ApplyEntryOptions(entry, frame, options)
+	local enabled = moduleUtil:IsModuleEnabled(moduleName.RaidFrameAuras)
+
+	if anchoredIcons:RestyleIfStale(entry, frame, enabled, ApplyEntryOptions, options) then
 		return
 	end
 

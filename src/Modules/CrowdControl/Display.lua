@@ -371,12 +371,12 @@ end
 -- Brings every entry's display back in line with its feature toggle, then discovers any unit
 -- frames that have appeared since the last refresh.
 function M:EnsureFrames()
+	local options = GetOptions()
 	local ccEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
 	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
 
 	for _, entry in pairs(watchers) do
-		local isPet = units:IsPetOrMinion(entry.Unit)
-		local entryEnabled = (isPet and petEnabled) or (not isPet and ccEnabled)
+		local entryEnabled = GetEntryState(entry, options, ccEnabled, petEnabled)
 
 		if entry.Display then
 			entry.Display:SetEnabled(entryEnabled)
@@ -396,12 +396,8 @@ function M:ApplyOptions(options)
 
 		if not entryEnabled or not entryOptions then
 			anchoredIcons:TeardownEntry(entry)
-		elseif not anchoredIcons:IsAnchorShown(anchor) then
-			-- Entries outlive their anchors, so a raid's worth of them can still be here in a
-			-- five-man. Styling and re-anchoring what nobody can see is the whole of the cost.
-			anchoredIcons:HideEntry(entry)
 		else
-			ApplyEntryOptions(entry, anchor, entryOptions, isPet)
+			anchoredIcons:ApplyOrHideEntry(entry, anchor, ApplyEntryOptions, entryOptions, isPet)
 		end
 	end
 end
@@ -485,10 +481,11 @@ function M:OnCufUpdateVisible(frame)
 		return
 	end
 
+	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
 	local isPet = units:IsPetOrMinion(entry.Unit)
 
 	-- If this is a pet frame and pet CC is disabled, keep it hidden
-	if isPet and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+	if isPet and not petEnabled then
 		entry.Container.Frame:Hide()
 		if entry.Display then
 			entry.Display:Hide()
@@ -496,17 +493,14 @@ function M:OnCufUpdateVisible(frame)
 		return
 	end
 
-	local options = isPet and db.Modules.PetCCModule or GetOptions()
+	local ccEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
+	local entryEnabled, options = GetEntryState(entry, GetOptions(), ccEnabled, petEnabled)
 
 	if not options then
 		return
 	end
 
-	-- A frame coming back after a refresh skipped it carries that refresh's stale styling, and
-	-- nothing else on this path would put it right. ApplyEntryOptions ends in the same show/hide
-	-- as below, so it stands in for it rather than running alongside.
-	if entry.StyleStale and anchoredIcons:IsAnchorShown(frame) then
-		ApplyEntryOptions(entry, frame, options, isPet)
+	if anchoredIcons:RestyleIfStale(entry, frame, entryEnabled, ApplyEntryOptions, options, isPet) then
 		return
 	end
 
