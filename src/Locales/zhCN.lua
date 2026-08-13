@@ -70,6 +70,8 @@ L:RegisterLocale("zhCN", {
 	["Shows auras on party/raid frames."] = "在小队/团队框架上显示光环。",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "在玩家/目标/焦点头像上显示控制、防御和其他重要法术。",
 	["Grow"] = "增长",
+	["Strata"] = "层级",
+	["Automatic"] = "自动",
 	["Icon Padding"] = "图标间距",
 	["Icon Size"] = "图标大小",
 	["Icon Size (%)"] = "图标大小 (%)",

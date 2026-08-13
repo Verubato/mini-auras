@@ -70,6 +70,8 @@ L:RegisterLocale("koKR", {
 	["Shows auras on party/raid frames."] = "파티/공격대 프레임에 효과를 표시합니다.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "플레이어/대상/주시 대상 초상화에 군중 제어, 방어기 및 기타 중요 주문을 표시합니다.",
 	["Grow"] = "성장",
+	["Strata"] = "레이어",
+	["Automatic"] = "자동",
 	["Icon Padding"] = "아이콘 여백",
 	["Icon Size"] = "아이콘 크기",
 	["Icon Size (%)"] = "아이콘 크기 (%)",

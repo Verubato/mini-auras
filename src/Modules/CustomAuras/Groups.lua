@@ -136,6 +136,19 @@ local UNIT_INFO = {
 	[ARENA_FRAMES_UNIT] = { ArenaFrames = true, Friendly = false, Harmful = true },
 }
 
+-- The layer a group draws in. Automatic takes whatever the frame it hangs off is using, which is
+-- what every group did before this became a setting. TOOLTIP is deliberately absent: a group drawn
+-- there would cover the tooltips its own icons put up.
+local STRATA_AUTO = "AUTO"
+local STRATA_OPTIONS = {
+	STRATA_AUTO, "BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG",
+}
+local STRATA_VALID = {}
+
+for _, strata in ipairs(STRATA_OPTIONS) do
+	STRATA_VALID[strata] = true
+end
+
 -- What a unit saved before the split becomes. Focus and the target's target are gone, so they
 -- fall back to the target itself rather than quietly disabling the group.
 local RENAMED_UNITS = {
@@ -191,6 +204,8 @@ M.CandidateFlags = CANDIDATE_FLAGS
 M.FilterState = { Off = OFF, Require = REQUIRE, Forbid = FORBID }
 M.Caster = { Any = CASTER_ANY, Mine = CASTER_MINE, Others = CASTER_OTHERS }
 M.Sort = { Oldest = SORT_OLDEST, Longest = SORT_LONGEST, Shortest = SORT_SHORTEST }
+M.StrataAuto = STRATA_AUTO
+M.StrataOptions = STRATA_OPTIONS
 M.MaxSpells = MAX_SPELLS_PER_GROUP
 M.MaxIcons = MAX_ICONS
 M.PreviewIcons = PREVIEW_ICONS
@@ -347,6 +362,7 @@ function M:Normalise(group)
 	group.Offset.Y = tonumber(group.Offset.Y) or ((info.Frames or info.ArenaFrames) and 0 or 40)
 
 	group.Grow = addon.Core.GrowAnchors.Anchor[group.Grow] and group.Grow or "CENTER"
+	group.Strata = STRATA_VALID[group.Strata] and group.Strata or STRATA_AUTO
 
 	local icons = group.Icons or {}
 	group.Icons = icons
@@ -563,6 +579,13 @@ end
 ---@return number
 function M:GetSize(group)
 	return M:DrawsBars(group) and group.Icons.BarHeight or group.Icons.Size
+end
+
+---The layer a group's frames are pinned to, or nil to follow whatever they hang off.
+---@param group CustomAuraGroup
+---@return string?
+function M:GetStrata(group)
+	return group.Strata ~= STRATA_AUTO and group.Strata or nil
 end
 
 ---The first group member holding a role, in roster order. FriendlyUnits leads with the player,
@@ -916,6 +939,7 @@ end
 ---@field Position { Point: string, RelativePoint: string, X: number, Y: number } Screen anchor only.
 ---@field Offset { X: number, Y: number } Nameplate, unit frame and arena frame anchors only.
 ---@field Grow string
+---@field Strata string "AUTO", or a frame strata the group's frames are pinned to.
 ---@field Icons { Size: number, Spacing: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, HideSwipe: boolean, HideNumbers: boolean, ShowTooltips: boolean, Color: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
 ---@field Sound { Applied: string, Removed: string, Stacks: string, Channel: string } Empty means silent.
 ---@field TrackingMode string "SPELLS" narrows to a spell list, "FILTERS" to a filter string.

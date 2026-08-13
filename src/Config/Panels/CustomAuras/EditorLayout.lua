@@ -34,6 +34,8 @@ function ui.BuildLayoutTab(ctx)
 	local sliderWidth = ui.DropdownColumn * 2 - SLIDER_GAP / 2
 
 	local settingsControlsRow = ctx.NewRow(layoutPanel, ui.DropdownRowHeight)
+	-- Its own row because the row above is already four controls wide with the two offset boxes.
+	local strataRow = ctx.NewRow(layoutPanel, ui.DropdownRowHeight)
 	local sliderRow = ctx.NewRow(layoutPanel, SLIDER_ROW_HEIGHT)
 	-- Put away for a group drawing icons, which has no width of its own.
 	local barSliderRow = ctx.NewRow(layoutPanel, SLIDER_ROW_HEIGHT)
@@ -78,6 +80,27 @@ function ui.BuildLayoutTab(ctx)
 			end
 		end,
 	}, settingsControlsRow, 0)
+
+	-- Which layer the group draws in, for the ones that have to sit over or under something the
+	-- game or another addon put there. Automatic follows whatever the group hangs off.
+	local strataDropdown = ctx.Dropdown(L["Strata"], {
+		Items = groups.StrataOptions,
+		GetText = function(value)
+			return value == groups.StrataAuto and L["Automatic"] or value
+		end,
+		GetValue = function()
+			local group = ui.Current()
+			return group and group.Strata or groups.StrataAuto
+		end,
+		SetValue = function(value)
+			local group = ui.Current()
+
+			if group then
+				group.Strata = value
+				ui.Apply()
+			end
+		end,
+	}, strataRow, 0)
 
 	---The pair a drag writes: a screen group keeps a screen position, every other anchor keeps an
 	---offset from the frame it hangs off.
@@ -232,6 +255,8 @@ function ui.BuildLayoutTab(ctx)
 		orderDropdown.MiniLabel:SetShown(not soundOnly)
 		growDropdown:SetShown(not soundOnly)
 		growDropdown.MiniLabel:SetShown(not soundOnly)
+		strataDropdown:SetShown(not soundOnly)
+		strataDropdown.MiniLabel:SetShown(not soundOnly)
 
 		for _, box in ipairs({ offsetXBox, offsetYBox }) do
 			box.EditBox:SetShown(not soundOnly)
@@ -242,6 +267,8 @@ function ui.BuildLayoutTab(ctx)
 		settingsControlsRow:SetHeight(soundOnly and NOTE_ROW_HEIGHT or ui.DropdownRowHeight)
 
 		-- Collapsed rather than left empty, and they hand their gaps back so the tab closes up.
+		strataRow:SetHeight(soundOnly and 1 or ui.DropdownRowHeight)
+		ctx.SetRowGap(strataRow, soundOnly and 0 or ROW_GAP)
 		sliderRow:SetHeight(soundOnly and 1 or SLIDER_ROW_HEIGHT)
 		ctx.SetRowGap(sliderRow, soundOnly and 0 or ROW_GAP)
 		barSliderRow:SetHeight(bars and not soundOnly and SLIDER_ROW_HEIGHT or 1)

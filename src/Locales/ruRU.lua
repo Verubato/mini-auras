@@ -70,6 +70,8 @@ L:RegisterLocale("ruRU", {
 	["Shows auras on party/raid frames."] = "Показывает эффекты на рамках группы и рейда.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Показывает контроль, защитные и другие важные заклинания на портретах игрока/цели/фокуса.",
 	["Grow"] = "Рост",
+	["Strata"] = "Слой",
+	["Automatic"] = "Автоматически",
 	["Icon Padding"] = "Отступ иконки",
 	["Icon Size"] = "Размер иконки",
 	["Icon Size (%)"] = "Размер иконки (%)",

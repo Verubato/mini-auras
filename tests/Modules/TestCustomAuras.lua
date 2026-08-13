@@ -989,6 +989,74 @@ fw.describe("CustomAuras - nameplate anchored displays", function()
 
 end)
 
+fw.describe("CustomAuras - the layer a group draws in", function()
+	fw.it("leaves a screen group on the layer it would have inherited", function()
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		assert(ContainerFor("player"):GetFrameStrata() == UIParent:GetFrameStrata(),
+			"automatic is whatever the screen anchor already had")
+	end)
+
+	fw.it("pins a screen group to the layer it was given", function()
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Strata = "HIGH" })
+		module:Refresh()
+
+		assert(ContainerFor("player"):GetFrameStrata() == "HIGH",
+			"the group draws where it was told to")
+	end)
+
+	fw.it("puts a group back down when its layer is set to automatic again", function()
+		-- Displays come out of a shared pool and a strata cannot be un-set, so a frame left pinned
+		-- would carry the old layer into whatever group takes it next.
+		ClearGroups()
+		local group = AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, Strata = "FULLSCREEN" })
+		module:Refresh()
+
+		group.Strata = groups.StrataAuto
+		module:Refresh()
+
+		assert(ContainerFor("player"):GetFrameStrata() == UIParent:GetFrameStrata(),
+			"back on the layer it would have inherited")
+	end)
+
+	fw.it("follows the plate a nameplate group hangs off", function()
+		ClearGroups()
+		AddGroup({ Unit = "nameplate", AuraType = "HARMFUL", Spells = { POLYMORPH } })
+
+		env.addPlate("nameplate1"):SetFrameStrata("BACKGROUND")
+		env.enemies.nameplate1 = true
+		module:Refresh()
+
+		assert(ContainerFor("nameplate1"):GetFrameStrata() == "BACKGROUND",
+			"automatic takes the plate's own layer, not the screen's")
+	end)
+
+	fw.it("pins a nameplate group above its plate when asked", function()
+		ClearGroups()
+		AddGroup({
+			Unit = "nameplate",
+			AuraType = "HARMFUL",
+			Spells = { POLYMORPH },
+			Strata = "DIALOG",
+		})
+
+		env.addPlate("nameplate1"):SetFrameStrata("BACKGROUND")
+		env.enemies.nameplate1 = true
+		module:Refresh()
+
+		assert(ContainerFor("nameplate1"):GetFrameStrata() == "DIALOG",
+			"its own choice beats the plate's")
+
+		env.plates.nameplate1 = nil
+		env.enemies.nameplate1 = nil
+		module:Refresh()
+	end)
+
+end)
+
 fw.describe("CustomAuras - unit frame anchored displays", function()
 	---Replaces whatever unit frames the last test left with one per token given.
 	---@param unitList string[]

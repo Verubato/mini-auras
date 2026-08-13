@@ -71,6 +71,8 @@ L:SetDefaultStrings({
 	["Shows auras on party/raid frames."] = "Shows auras on party/raid frames.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Shows CC, defensives, and other important spells on the player/target/focus portraits.",
 	["Grow"] = "Grow",
+	["Strata"] = "Strata",
+	["Automatic"] = "Automatic",
 	["Icon Padding"] = "Icon Padding",
 	["Icon Size"] = "Icon Size",
 	["Icon Size (%)"] = "Icon Size (%)",

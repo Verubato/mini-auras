@@ -367,6 +367,7 @@ have a position." and no controls.
 |---|---|---|
 | Order | Oldest first / Longest remaining first / Shortest remaining first | Oldest first |
 | Grow | LEFT / RIGHT / CENTER / DOWN / UP | CENTER |
+| Strata | Automatic / BACKGROUND / LOW / MEDIUM / HIGH / DIALOG / FULLSCREEN / FULLSCREEN_DIALOG | Automatic |
 | Offset X / Offset Y | typed number boxes, clamped to -2000..2000 | screen groups: 0 / 220 above centre; nameplate groups: 0 / 40 above the plate; unit frame and arena frame copies: 0 / 0 |
 | Icon Size | 10-200 (icons only) | 40 |
 | Bar Height | 8-50 (bars only) | 20 |
@@ -375,6 +376,12 @@ have a position." and no controls.
 
 Dragging the icons or bars on screen writes the same values the Offset X/Y boxes edit, and the
 boxes update when the drag ends.
+
+**Strata** is the layer the group draws in, for a group that has to sit over or under something
+else on screen. Automatic uses the layer of whatever the group hangs off, which is UIParent's
+MEDIUM for a screen group and the plate's or unit frame's own layer for a copy on a frame; that
+is what every group did before the setting existed. TOOLTIP is not offered, because a group
+there would cover the tooltips its own icons raise.
 
 ### Sounds tab
 

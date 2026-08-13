@@ -241,6 +241,16 @@ local function IsPreviewing(state)
 	return testModeActive or state.Group.Id == previewGroupId
 end
 
+---The layer one copy of a group draws in. Always resolved to a real strata, never left unset:
+---displays come from a shared pool, and a frame the last group pinned high would keep that layer
+---for whoever takes it next. The host's own strata is what inheriting would have produced anyway.
+---@param group CustomAuraGroup
+---@param host table The frame the copy hangs off, or UIParent for a screen-anchored group.
+---@return string
+local function ResolveStrata(group, host)
+	return groups:GetStrata(group) or host:GetFrameStrata()
+end
+
 ---Applies the group's current geometry, style and spell filters to one display, then budgets the
 ---side of the container that the unit's assist state actually allows.
 ---@param state CustomAuraGroupState
@@ -679,8 +689,10 @@ local function RefreshScreenGroup(state)
 
 	-- Pinned to the edge the icons grow away from, so the anchor stays put as they come and go.
 	local point = growAnchors:GetPinPoint(group.Grow)
+	local strata = ResolveStrata(group, UIParent)
 	local frame = entry.Display.Frame
 	frame:SetParent(UIParent)
+	frame:SetFrameStrata(strata)
 	frame:ClearAllPoints()
 	frame:SetPoint(point, anchor, point, 0, 0)
 
@@ -688,6 +700,7 @@ local function RefreshScreenGroup(state)
 		local container = EnsureTestContainer(state, entry, anchor)
 		container.Frame:ClearAllPoints()
 		container.Frame:SetPoint(point, anchor, point, 0, 0)
+		container.Frame:SetFrameStrata(strata)
 		container.Frame:Show()
 		RenderTestIcons(state, entry)
 	elseif entry.Test then
@@ -704,9 +717,11 @@ local function AnchorEntry(state, entry, host)
 	local group = state.Group
 	local point = growAnchors:GetPinPoint(group.Grow)
 	local level = host:GetFrameLevel() + 10
+	local strata = ResolveStrata(group, host)
 	local frame = entry.Display.Frame
 
 	frame:SetParent(host)
+	frame:SetFrameStrata(strata)
 	frame:SetFrameLevel(level)
 	frame:ClearAllPoints()
 	frame:SetPoint(point, host, "CENTER", group.Offset.X, group.Offset.Y)
@@ -717,6 +732,7 @@ local function AnchorEntry(state, entry, host)
 
 	entry.Test.Frame:ClearAllPoints()
 	entry.Test.Frame:SetPoint(point, host, "CENTER", group.Offset.X, group.Offset.Y)
+	entry.Test.Frame:SetFrameStrata(strata)
 	entry.Test.Frame:SetFrameLevel(level)
 end
 
@@ -751,6 +767,9 @@ local function ApplyPreview(state, entry, host)
 
 	handle:ClearAllPoints()
 	handle:SetAllPoints(entry.Test.Frame)
+	-- The stand-ins' layer, not the host's: a group pinned above its host would otherwise put its
+	-- icons over the grab area and there would be nothing left to drag.
+	handle:SetFrameStrata(ResolveStrata(state.Group, host))
 	handle:SetFrameLevel(host:GetFrameLevel() + 20)
 	handle:EnableMouse(true)
 	handle:Show()

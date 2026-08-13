@@ -70,6 +70,8 @@ L:RegisterLocale("deDE", {
 	["Shows auras on party/raid frames."] = "Zeigt Auren auf Gruppen- und Schlachtzugsfenstern.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Zeigt CC, Defensivzauber und andere wichtige Zauber auf den Porträts von Spieler/Ziel/Fokus.",
 	["Grow"] = "Wachsen",
+	["Strata"] = "Ebene",
+	["Automatic"] = "Automatisch",
 	["Icon Padding"] = "Symbol-Abstand",
 	["Icon Size"] = "Symbolgröße",
 	["Icon Size (%)"] = "Symbolgröße (%)",

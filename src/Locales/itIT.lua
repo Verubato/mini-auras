@@ -70,6 +70,8 @@ L:RegisterLocale("itIT", {
 	["Shows auras on party/raid frames."] = "Mostra le aure sui riquadri di gruppo e incursione.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Mostra CC, difensive e altri incantesimi importanti sui ritratti di giocatore/bersaglio/focus.",
 	["Grow"] = "Cresci",
+	["Strata"] = "Livello",
+	["Automatic"] = "Automatico",
 	["Icon Padding"] = "Spaziatura icona",
 	["Icon Size"] = "Dimensione icona",
 	["Icon Size (%)"] = "Dimensione icona (%)",

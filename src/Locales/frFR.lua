@@ -70,6 +70,8 @@ L:RegisterLocale("frFR", {
 	["Shows auras on party/raid frames."] = "Affiche les auras sur les cadres de groupe et de raid.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Affiche les contrôles, défensifs et autres sorts importants sur les portraits du joueur/de la cible/du focus.",
 	["Grow"] = "Direction",
+	["Strata"] = "Couche",
+	["Automatic"] = "Automatique",
 	["Icon Padding"] = "Espacement des icônes",
 	["Icon Size"] = "Taille des icônes",
 	["Icon Size (%)"] = "Taille des icônes (%)",
