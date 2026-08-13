@@ -170,20 +170,6 @@ local function DiscardActiveEntries()
 	end
 end
 
-local function Teardown()
-	DiscardActiveEntries()
-
-	if iconsContainer then
-		iconsContainer:ResetAllSlots()
-	end
-
-	if healerAnchor then
-		healerAnchor:Hide()
-	end
-
-	sound:Clear()
-end
-
 local function EnableWatchers()
 	for _, item in pairs(activePool) do
 		if item.Display then
@@ -275,88 +261,6 @@ local function RefreshHealers()
 	end
 end
 
-local function RefreshTestFrame()
-	local options = db.Modules.HealerCCModule
-
-	if not iconsContainer or not options then
-		return
-	end
-
-	local size = tonumber(options.Icons.Size) or 32
-
-	iconsContainer:SetIconSize(size)
-
-	if not options.Icons.Enabled then
-		iconsContainer:ResetAllSlots()
-	else
-		local nextSlot = testSpellData:FillContainer(iconsContainer, testSpells, 1, {
-			ReverseCooldown = options.Icons.ReverseCooldown,
-			Glow = options.Icons.Glow,
-			ColorByDispelType = options.Icons.ColorByDispelType,
-			FontScale = db.FontScale,
-			ShowTooltips = options.ShowTooltips ~= false,
-			Stagger = true,
-		})
-
-		for i = nextSlot, iconsContainer.Count do
-			iconsContainer:SetSlotUnused(i)
-		end
-	end
-
-	UpdateAnchorSize()
-end
-
-local function EnsureFrames()
-	if testModeActive then
-		-- Test icons render through the IconSlotContainer and the test text through the anchor's
-		-- own fontstring; hide the live displays so real and fake don't mix.
-		for _, item in pairs(activePool) do
-			if item.Display then
-				item.Display:Hide()
-			end
-			if item.LabelDisplay then
-				item.LabelDisplay:Hide()
-			end
-		end
-		return
-	end
-
-	-- Only other people's healers are tracked, so the module goes dormant when the player is
-	-- the healer.
-	if units:IsHealer("player") then
-		Teardown()
-		return
-	end
-
-	EnableWatchers()
-	RefreshHealers()
-end
-
----@param options HealerCCModuleOptions
-local function ApplyOptions(options)
-	healerAnchor:ClearAllPoints()
-	healerAnchor:SetPoint(
-		options.Point,
-		_G[options.RelativeTo] or UIParent,
-		options.RelativePoint,
-		options.Offset.X,
-		options.Offset.Y
-	)
-
-	local currentFont, _, _ = healerAnchor.HealerWarning:GetFont()
-	healerAnchor.HealerWarning:SetFont(currentFont, options.Font.Size, options.Font.Flags)
-	iconsContainer:SetIconSize(tonumber(options.Icons.Size) or 32)
-	iconsContainer:SetSpacing(options.IconSpacing or 2)
-
-	-- The live warning text renders through the per-healer label containers; the anchor's own
-	-- fontstring only serves the test-mode preview.
-	if options.ShowWarningText and testModeActive then
-		healerAnchor.HealerWarning:Show()
-	else
-		healerAnchor.HealerWarning:Hide()
-	end
-end
-
 local function CreateFrames()
 	local options = db.Modules.HealerCCModule
 
@@ -408,20 +312,99 @@ function M:SetTestMode(value)
 end
 
 function M:Teardown()
-	Teardown()
+	DiscardActiveEntries()
+
+	if iconsContainer then
+		iconsContainer:ResetAllSlots()
+	end
+
+	if healerAnchor then
+		healerAnchor:Hide()
+	end
+
+	sound:Clear()
 end
 
 function M:EnsureFrames()
-	EnsureFrames()
+	if testModeActive then
+		-- Test icons render through the IconSlotContainer and the test text through the anchor's
+		-- own fontstring; hide the live displays so real and fake don't mix.
+		for _, item in pairs(activePool) do
+			if item.Display then
+				item.Display:Hide()
+			end
+			if item.LabelDisplay then
+				item.LabelDisplay:Hide()
+			end
+		end
+		return
+	end
+
+	-- Only other people's healers are tracked, so the module goes dormant when the player is
+	-- the healer.
+	if units:IsHealer("player") then
+		M:Teardown()
+		return
+	end
+
+	EnableWatchers()
+	RefreshHealers()
 end
 
 ---@param options HealerCCModuleOptions
 function M:ApplyOptions(options)
-	ApplyOptions(options)
+	healerAnchor:ClearAllPoints()
+	healerAnchor:SetPoint(
+		options.Point,
+		_G[options.RelativeTo] or UIParent,
+		options.RelativePoint,
+		options.Offset.X,
+		options.Offset.Y
+	)
+
+	local currentFont, _, _ = healerAnchor.HealerWarning:GetFont()
+	healerAnchor.HealerWarning:SetFont(currentFont, options.Font.Size, options.Font.Flags)
+	iconsContainer:SetIconSize(tonumber(options.Icons.Size) or 32)
+	iconsContainer:SetSpacing(options.IconSpacing or 2)
+
+	-- The live warning text renders through the per-healer label containers; the anchor's own
+	-- fontstring only serves the test-mode preview.
+	if options.ShowWarningText and testModeActive then
+		healerAnchor.HealerWarning:Show()
+	else
+		healerAnchor.HealerWarning:Hide()
+	end
 end
 
 function M:RefreshTestFrame()
-	RefreshTestFrame()
+	local options = db.Modules.HealerCCModule
+
+	if not iconsContainer or not options then
+		return
+	end
+
+	local size = tonumber(options.Icons.Size) or 32
+
+	iconsContainer:SetIconSize(size)
+
+	if not options.Icons.Enabled then
+		iconsContainer:ResetAllSlots()
+	else
+		local nextSlot = testSpellData:FillContainer(iconsContainer, testSpells, 1, {
+			ReverseCooldown = options.Icons.ReverseCooldown,
+			Glow = options.Icons.Glow,
+			ColorByDispelType = options.Icons.ColorByDispelType,
+			FontScale = db.FontScale,
+			ShowTooltips = options.ShowTooltips ~= false,
+			Stagger = true,
+		})
+
+		for i = nextSlot, iconsContainer.Count do
+			iconsContainer:SetSlotUnused(i)
+		end
+	end
+
+	UpdateAnchorSize()
 end
 
 function M:ResetIcons()

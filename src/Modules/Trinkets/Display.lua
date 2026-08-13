@@ -82,12 +82,6 @@ local function UpdateUnit(unit, durationData)
 	end
 end
 
-local function ClearAll()
-	for _, w in pairs(watchers) do
-		SetIconState(w.Container, nil)
-	end
-end
-
 local function AnchorContainerToFrame(container, anchorFrame)
 	container.Frame:ClearAllPoints()
 	container.Frame:SetPoint(options.Point, anchorFrame, options.RelativePoint, options.Offset.X, options.Offset.Y)
@@ -297,9 +291,10 @@ function M:Render(unit)
 	end
 end
 
----Blanks every slot back to the default icon.
 function M:ClearAll()
-	ClearAll()
+	for _, w in pairs(watchers) do
+		SetIconState(w.Container, nil)
+	end
 end
 
 ---Anchor discovery and visibility only, for the paused case: the frames still have to follow

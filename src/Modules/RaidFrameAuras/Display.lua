@@ -417,7 +417,111 @@ local function EnsureWatcher(anchor, unit)
 	return entry
 end
 
-local function EnsureWatchers()
+---@param entry RaidFrameAurasWatchEntry
+---@param anchor table
+---@param options RaidFrameAurasInstanceOptions
+local function ApplyEntryOptions(entry, anchor, options)
+	local iconSize = moduleUtil:GetIconSize(options.Icons, anchor, 32, 75)
+	local maxIcons = tonumber(options.Icons.MaxIcons) or 1
+	local style
+
+	if entry.Display then
+		style = BuildStyle(options)
+
+		-- ShowCC maps to a zero icon budget for its group. The helpful side cannot: a curated
+		-- spell can sit in either category, so the toggles select the tracked spell ids instead
+		-- and only a display with neither category on goes to zero. Both sides also answer to the
+		-- per-unit gates, which ApplyUnitGates owns.
+		local helpful, crowdControl = ApplyUnitGates(entry, options)
+
+		budgetScratch[auraFilters.GroupKey.CrowdControl] = crowdControl
+		budgetScratch[DEFENSIVE_GROUP_KEY] = helpful
+		budgetScratch[IMPORTANT_GROUP_KEY] = helpful
+
+		-- The tracked set is editable at runtime, so re-publish it rather than assuming the
+		-- filters handed over at creation are still current.
+		local filters = GetHelpfulFilters(options)
+		entry.Display:SetCandidateFilters(DEFENSIVE_GROUP_KEY, filters[DEFENSIVE_GROUP_KEY])
+		entry.Display:SetCandidateFilters(IMPORTANT_GROUP_KEY, filters[IMPORTANT_GROUP_KEY])
+
+		entry.Display:SetGroupGlowColors(HELPFUL_GROUP_KEYS, HelpfulColors(options))
+	end
+
+	settingsScratch.IconSize = iconSize
+	settingsScratch.SlotCount = maxIcons
+	settingsScratch.Style = style
+	settingsScratch.Budgets = budgetScratch
+	settingsScratch.TestModeActive = testModeActive
+	settingsScratch.ExcludePlayer = options.ExcludePlayer
+	settingsScratch.KickActive = IsKickActive(entry, options)
+	settingsScratch.Render = UpdateKickIcon
+
+	anchoredIcons:ApplyEntryOptions(entry, anchor, options, settingsScratch)
+end
+
+---Re-asks the per-unit gates for one unit, and says whether either answer moved. UNIT_FACTION
+---fires for PvP flagging as much as for anything that matters here, so the module only does real
+---work when this returns true.
+---@param unit string
+---@return boolean changed
+function M:OnUnitFactionChanged(unit)
+	local options = GetOptions()
+
+	if not options then
+		return false
+	end
+
+	local changed = false
+
+	for _, entry in pairs(watchers) do
+		if entry.Unit == unit and entry.Display then
+			-- Either helpful group answers for both; they always carry the same budget.
+			local wasHelpful = entry.Display:GetMaxIcons(DEFENSIVE_GROUP_KEY)
+			local wasCc = entry.Display:GetMaxIcons(auraFilters.GroupKey.CrowdControl)
+			local helpful, crowdControl = ApplyUnitGates(entry, options)
+
+			if helpful ~= wasHelpful or crowdControl ~= wasCc then
+				changed = true
+			end
+		end
+	end
+
+	return changed
+end
+
+---Every unit the module is currently watching. The duel poller only scans tokens it has been
+---given a baseline for, so the module hands it these: a party member who turns hostile mid-duel
+---is what drops the spell-id filter, and nothing else announces that.
+---@param out string[] Filled in place and returned, so the caller can keep one table.
+---@return string[]
+function M:CollectWatchedUnits(out)
+	wipe(out)
+
+	for _, entry in pairs(watchers) do
+		if entry.Unit then
+			out[#out + 1] = entry.Unit
+		end
+	end
+
+	return out
+end
+
+---@return RaidFrameAurasInstanceOptions?
+function M:GetOptions()
+	return db and GetOptions()
+end
+
+---@param value boolean
+function M:SetPaused(value)
+	paused = value
+end
+
+---@param value boolean
+function M:SetTestMode(value)
+	testModeActive = value
+end
+
+function M:EnsureWatchers()
 	local anchors = frames:GetAll(true, testModeActive, anchorScratch)
 
 	for _, anchor in ipairs(anchors) do
@@ -425,45 +529,38 @@ local function EnsureWatchers()
 	end
 end
 
-local function OnCufUpdateVisible(frame)
-	if not frame or not frames:IsFriendlyCuf(frame) then
-		return
+function M:Teardown()
+	for _, entry in pairs(watchers) do
+		anchoredIcons:TeardownEntry(entry)
 	end
-
-	local entry = watchers[frame]
-
-	if not entry then
-		return
-	end
-
-	local options = GetOptions()
-
-	if not options then
-		return
-	end
-
-	-- The aura icons live in entry.Display, not the kick/test container, so it has to follow
-	-- the unit frame's visibility too.
-	if entry.Display then
-		frames:ShowHideDisplay(entry.Display, frame, options.ExcludePlayer)
-	end
-
-	frames:ShowHideFrame(entry.Container.Frame, frame, false, options.ExcludePlayer)
 end
 
-local function OnCufSetUnit(frame, unit)
-	if not frame or not frames:IsFriendlyCuf(frame) then
-		return
+-- Wakes every entry's display back up, then discovers any unit frames that have appeared since
+-- the last refresh.
+function M:EnsureFrames()
+	for _, entry in pairs(watchers) do
+		if entry.Display then
+			entry.Display:SetEnabled(true)
+		end
 	end
 
-	if not unit then
-		return
-	end
-
-	EnsureWatcher(frame, unit)
+	M:EnsureWatchers()
 end
 
-local function RefreshTestIcons()
+---@param options RaidFrameAurasInstanceOptions
+function M:ApplyOptions(options)
+	for anchor, entry in pairs(watchers) do
+		-- Entries outlive their anchors, so a raid's worth of them can still be here in a
+		-- five-man. Styling and re-anchoring what nobody can see is the whole of the cost.
+		if anchoredIcons:IsAnchorShown(anchor) then
+			ApplyEntryOptions(entry, anchor, options)
+		else
+			anchoredIcons:HideEntry(entry)
+		end
+	end
+end
+
+function M:RefreshTestIcons()
 	local options = GetOptions()
 
 	if not options then
@@ -547,162 +644,6 @@ local function RefreshTestIcons()
 	end
 end
 
-local function Teardown()
-	for _, entry in pairs(watchers) do
-		anchoredIcons:TeardownEntry(entry)
-	end
-end
-
--- Wakes every entry's display back up, then discovers any unit frames that have appeared since
--- the last refresh.
-local function EnsureFrames()
-	for _, entry in pairs(watchers) do
-		if entry.Display then
-			entry.Display:SetEnabled(true)
-		end
-	end
-
-	EnsureWatchers()
-end
-
----@param entry RaidFrameAurasWatchEntry
----@param anchor table
----@param options RaidFrameAurasInstanceOptions
-local function ApplyEntryOptions(entry, anchor, options)
-	local iconSize = moduleUtil:GetIconSize(options.Icons, anchor, 32, 75)
-	local maxIcons = tonumber(options.Icons.MaxIcons) or 1
-	local style
-
-	if entry.Display then
-		style = BuildStyle(options)
-
-		-- ShowCC maps to a zero icon budget for its group. The helpful side cannot: a curated
-		-- spell can sit in either category, so the toggles select the tracked spell ids instead
-		-- and only a display with neither category on goes to zero. Both sides also answer to the
-		-- per-unit gates, which ApplyUnitGates owns.
-		local helpful, crowdControl = ApplyUnitGates(entry, options)
-
-		budgetScratch[auraFilters.GroupKey.CrowdControl] = crowdControl
-		budgetScratch[DEFENSIVE_GROUP_KEY] = helpful
-		budgetScratch[IMPORTANT_GROUP_KEY] = helpful
-
-		-- The tracked set is editable at runtime, so re-publish it rather than assuming the
-		-- filters handed over at creation are still current.
-		local filters = GetHelpfulFilters(options)
-		entry.Display:SetCandidateFilters(DEFENSIVE_GROUP_KEY, filters[DEFENSIVE_GROUP_KEY])
-		entry.Display:SetCandidateFilters(IMPORTANT_GROUP_KEY, filters[IMPORTANT_GROUP_KEY])
-
-		entry.Display:SetGroupGlowColors(HELPFUL_GROUP_KEYS, HelpfulColors(options))
-	end
-
-	settingsScratch.IconSize = iconSize
-	settingsScratch.SlotCount = maxIcons
-	settingsScratch.Style = style
-	settingsScratch.Budgets = budgetScratch
-	settingsScratch.TestModeActive = testModeActive
-	settingsScratch.ExcludePlayer = options.ExcludePlayer
-	settingsScratch.KickActive = IsKickActive(entry, options)
-	settingsScratch.Render = UpdateKickIcon
-
-	anchoredIcons:ApplyEntryOptions(entry, anchor, options, settingsScratch)
-end
-
----@param options RaidFrameAurasInstanceOptions
-local function ApplyOptions(options)
-	for anchor, entry in pairs(watchers) do
-		-- Entries outlive their anchors, so a raid's worth of them can still be here in a
-		-- five-man. Styling and re-anchoring what nobody can see is the whole of the cost.
-		if anchoredIcons:IsAnchorShown(anchor) then
-			ApplyEntryOptions(entry, anchor, options)
-		else
-			anchoredIcons:HideEntry(entry)
-		end
-	end
-end
-
----Re-asks the per-unit gates for one unit, and says whether either answer moved. UNIT_FACTION
----fires for PvP flagging as much as for anything that matters here, so the module only does real
----work when this returns true.
----@param unit string
----@return boolean changed
-function M:OnUnitFactionChanged(unit)
-	local options = GetOptions()
-
-	if not options then
-		return false
-	end
-
-	local changed = false
-
-	for _, entry in pairs(watchers) do
-		if entry.Unit == unit and entry.Display then
-			-- Either helpful group answers for both; they always carry the same budget.
-			local wasHelpful = entry.Display:GetMaxIcons(DEFENSIVE_GROUP_KEY)
-			local wasCc = entry.Display:GetMaxIcons(auraFilters.GroupKey.CrowdControl)
-			local helpful, crowdControl = ApplyUnitGates(entry, options)
-
-			if helpful ~= wasHelpful or crowdControl ~= wasCc then
-				changed = true
-			end
-		end
-	end
-
-	return changed
-end
-
----Every unit the module is currently watching. The duel poller only scans tokens it has been
----given a baseline for, so the module hands it these: a party member who turns hostile mid-duel
----is what drops the spell-id filter, and nothing else announces that.
----@param out string[] Filled in place and returned, so the caller can keep one table.
----@return string[]
-function M:CollectWatchedUnits(out)
-	wipe(out)
-
-	for _, entry in pairs(watchers) do
-		if entry.Unit then
-			out[#out + 1] = entry.Unit
-		end
-	end
-
-	return out
-end
-
----@return RaidFrameAurasInstanceOptions?
-function M:GetOptions()
-	return db and GetOptions()
-end
-
----@param value boolean
-function M:SetPaused(value)
-	paused = value
-end
-
----@param value boolean
-function M:SetTestMode(value)
-	testModeActive = value
-end
-
-function M:EnsureWatchers()
-	EnsureWatchers()
-end
-
-function M:Teardown()
-	Teardown()
-end
-
-function M:EnsureFrames()
-	EnsureFrames()
-end
-
----@param options RaidFrameAurasInstanceOptions
-function M:ApplyOptions(options)
-	ApplyOptions(options)
-end
-
-function M:RefreshTestIcons()
-	RefreshTestIcons()
-end
-
 ---Blanks and hides every entry's kick/test container, for the test-mode handover.
 function M:ResetAllContainers()
 	anchoredIcons:ResetContainers(watchers)
@@ -716,11 +657,41 @@ function M:RefreshKickIcons()
 end
 
 function M:OnCufUpdateVisible(frame)
-	OnCufUpdateVisible(frame)
+	if not frame or not frames:IsFriendlyCuf(frame) then
+		return
+	end
+
+	local entry = watchers[frame]
+
+	if not entry then
+		return
+	end
+
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	-- The aura icons live in entry.Display, not the kick/test container, so it has to follow
+	-- the unit frame's visibility too.
+	if entry.Display then
+		frames:ShowHideDisplay(entry.Display, frame, options.ExcludePlayer)
+	end
+
+	frames:ShowHideFrame(entry.Container.Frame, frame, false, options.ExcludePlayer)
 end
 
 function M:OnCufSetUnit(frame, unit)
-	OnCufSetUnit(frame, unit)
+	if not frame or not frames:IsFriendlyCuf(frame) then
+		return
+	end
+
+	if not unit then
+		return
+	end
+
+	EnsureWatcher(frame, unit)
 end
 
 function M:Init()

@@ -258,7 +258,71 @@ local function GetPetUnitFrames()
 	return petUnitFrameScratch
 end
 
-local function EnsureWatchers()
+---Per-entry enabled state and options: pet entries follow the PetCC toggle (plus the
+---IncludePetFrame opt-in for standalone pet frames), everything else follows the CC toggle.
+---@param entry CrowdControlWatchEntry
+---@param options CrowdControlInstanceOptions
+---@param moduleEnabled boolean
+---@param petEnabled boolean
+---@return boolean entryEnabled, table? entryOptions, boolean isPet
+local function GetEntryState(entry, options, moduleEnabled, petEnabled)
+	local isPet = units:IsPetOrMinion(entry.Unit)
+
+	if not isPet then
+		return moduleEnabled, options, false
+	end
+
+	local petOptions = db.Modules.PetCCModule
+	-- In test mode always treat pet as enabled so icons show
+	local entryEnabled = testModeActive or petEnabled
+
+	-- Standalone pet unit frames are additionally gated by the IncludePetFrame option.
+	if entry.IsPetUnitFrame and not (petOptions and petOptions.IncludePetFrame) then
+		entryEnabled = false
+	end
+
+	return entryEnabled, petOptions, true
+end
+
+---@param entry CrowdControlWatchEntry
+---@param anchor table
+---@param entryOptions CrowdControlInstanceOptions|PetCrowdControlModuleOptions
+---@param isPet boolean
+local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
+	local iconSize = moduleUtil:GetIconSize(entryOptions.Icons, anchor, isPet and 24 or 32, isPet and 50 or 80)
+	local iconCount = entryOptions.Icons.Count or 5
+
+	budgetScratch[auraFilters.GroupKey.CrowdControl] = iconCount
+
+	settingsScratch.IconSize = iconSize
+	settingsScratch.SlotCount = iconCount
+	settingsScratch.Style = entry.Display and BuildStyle(entryOptions) or nil
+	settingsScratch.Budgets = budgetScratch
+	settingsScratch.TestModeActive = testModeActive
+	-- A pet frame never excludes the player: it is not the player's own frame.
+	settingsScratch.ExcludePlayer = isPet and false or entryOptions.ExcludePlayer
+	settingsScratch.KickActive = IsKickActive(entry)
+	settingsScratch.Render = UpdateKickIcon
+
+	anchoredIcons:ApplyEntryOptions(entry, anchor, entryOptions, settingsScratch)
+end
+
+---@return CrowdControlInstanceOptions?
+function M:GetOptions()
+	return db and GetOptions()
+end
+
+---@param value boolean
+function M:SetPaused(value)
+	paused = value
+end
+
+---@param value boolean
+function M:SetTestMode(value)
+	testModeActive = value
+end
+
+function M:EnsureWatchers()
 	local anchors = frames:GetAll(true, testModeActive, anchorScratch)
 
 	for _, anchor in ipairs(anchors) do
@@ -298,67 +362,51 @@ local function EnsureWatchers()
 	end
 end
 
-local function OnCufUpdateVisible(frame)
-	if not frame or not frames:IsFriendlyCuf(frame) then
-		return
+function M:Teardown()
+	for _, entry in pairs(watchers) do
+		anchoredIcons:TeardownEntry(entry)
 	end
+end
 
-	local entry = watchers[frame]
+-- Brings every entry's display back in line with its feature toggle, then discovers any unit
+-- frames that have appeared since the last refresh.
+function M:EnsureFrames()
+	local ccEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
+	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
 
-	if not entry then
-		return
-	end
+	for _, entry in pairs(watchers) do
+		local isPet = units:IsPetOrMinion(entry.Unit)
+		local entryEnabled = (isPet and petEnabled) or (not isPet and ccEnabled)
 
-	local isPet = units:IsPetOrMinion(entry.Unit)
-
-	-- If this is a pet frame and pet CC is disabled, keep it hidden
-	if isPet and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
-		entry.Container.Frame:Hide()
 		if entry.Display then
-			entry.Display:Hide()
+			entry.Display:SetEnabled(entryEnabled)
 		end
-		return
 	end
 
-	local options = isPet and db.Modules.PetCCModule or GetOptions()
-
-	if not options then
-		return
-	end
-
-	-- The aura icons live in entry.Display, not the kick/test container, so it has to follow
-	-- the unit frame's visibility too.
-	if entry.Display then
-		frames:ShowHideDisplay(entry.Display, frame, isPet and false or options.ExcludePlayer)
-	end
-
-	frames:ShowHideFrame(entry.Container.Frame, frame, false, options.ExcludePlayer)
+	M:EnsureWatchers()
 end
 
-local function OnCufSetUnit(frame, unit)
-	if not frame or not frames:IsFriendlyCuf(frame) then
-		return
-	end
+---@param options CrowdControlInstanceOptions
+function M:ApplyOptions(options)
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
+	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
 
-	if not unit then
-		return
-	end
+	for anchor, entry in pairs(watchers) do
+		local entryEnabled, entryOptions, isPet = GetEntryState(entry, options, moduleEnabled, petEnabled)
 
-	local isPet = units:IsPetOrMinion(unit)
-	if isPet then
-		if not testModeActive and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
-			return
+		if not entryEnabled or not entryOptions then
+			anchoredIcons:TeardownEntry(entry)
+		elseif not anchoredIcons:IsAnchorShown(anchor) then
+			-- Entries outlive their anchors, so a raid's worth of them can still be here in a
+			-- five-man. Styling and re-anchoring what nobody can see is the whole of the cost.
+			anchoredIcons:HideEntry(entry)
+		else
+			ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 		end
-	else
-		if not moduleUtil:IsModuleEnabled(moduleName.CrowdControl) then
-			return
-		end
 	end
-
-	EnsureWatcher(frame, unit)
 end
 
-local function RefreshTestIcons()
+function M:RefreshTestIcons()
 	local options = GetOptions()
 
 	if not options then
@@ -414,134 +462,6 @@ local function RefreshTestIcons()
 	end
 end
 
-local function Teardown()
-	for _, entry in pairs(watchers) do
-		anchoredIcons:TeardownEntry(entry)
-	end
-end
-
--- Brings every entry's display back in line with its feature toggle, then discovers any unit
--- frames that have appeared since the last refresh.
-local function EnsureFrames()
-	local ccEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
-	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
-
-	for _, entry in pairs(watchers) do
-		local isPet = units:IsPetOrMinion(entry.Unit)
-		local entryEnabled = (isPet and petEnabled) or (not isPet and ccEnabled)
-
-		if entry.Display then
-			entry.Display:SetEnabled(entryEnabled)
-		end
-	end
-
-	EnsureWatchers()
-end
----Per-entry enabled state and options: pet entries follow the PetCC toggle (plus the
----IncludePetFrame opt-in for standalone pet frames), everything else follows the CC toggle.
----@param entry CrowdControlWatchEntry
----@param options CrowdControlInstanceOptions
----@param moduleEnabled boolean
----@param petEnabled boolean
----@return boolean entryEnabled, table? entryOptions, boolean isPet
-local function GetEntryState(entry, options, moduleEnabled, petEnabled)
-	local isPet = units:IsPetOrMinion(entry.Unit)
-
-	if not isPet then
-		return moduleEnabled, options, false
-	end
-
-	local petOptions = db.Modules.PetCCModule
-	-- In test mode always treat pet as enabled so icons show
-	local entryEnabled = testModeActive or petEnabled
-
-	-- Standalone pet unit frames are additionally gated by the IncludePetFrame option.
-	if entry.IsPetUnitFrame and not (petOptions and petOptions.IncludePetFrame) then
-		entryEnabled = false
-	end
-
-	return entryEnabled, petOptions, true
-end
-
----@param entry CrowdControlWatchEntry
----@param anchor table
----@param entryOptions CrowdControlInstanceOptions|PetCrowdControlModuleOptions
----@param isPet boolean
-local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
-	local iconSize = moduleUtil:GetIconSize(entryOptions.Icons, anchor, isPet and 24 or 32, isPet and 50 or 80)
-	local iconCount = entryOptions.Icons.Count or 5
-
-	budgetScratch[auraFilters.GroupKey.CrowdControl] = iconCount
-
-	settingsScratch.IconSize = iconSize
-	settingsScratch.SlotCount = iconCount
-	settingsScratch.Style = entry.Display and BuildStyle(entryOptions) or nil
-	settingsScratch.Budgets = budgetScratch
-	settingsScratch.TestModeActive = testModeActive
-	-- A pet frame never excludes the player: it is not the player's own frame.
-	settingsScratch.ExcludePlayer = isPet and false or entryOptions.ExcludePlayer
-	settingsScratch.KickActive = IsKickActive(entry)
-	settingsScratch.Render = UpdateKickIcon
-
-	anchoredIcons:ApplyEntryOptions(entry, anchor, entryOptions, settingsScratch)
-end
-
----@param options CrowdControlInstanceOptions
-local function ApplyOptions(options)
-	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
-	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
-
-	for anchor, entry in pairs(watchers) do
-		local entryEnabled, entryOptions, isPet = GetEntryState(entry, options, moduleEnabled, petEnabled)
-
-		if not entryEnabled or not entryOptions then
-			anchoredIcons:TeardownEntry(entry)
-		elseif not anchoredIcons:IsAnchorShown(anchor) then
-			-- Entries outlive their anchors, so a raid's worth of them can still be here in a
-			-- five-man. Styling and re-anchoring what nobody can see is the whole of the cost.
-			anchoredIcons:HideEntry(entry)
-		else
-			ApplyEntryOptions(entry, anchor, entryOptions, isPet)
-		end
-	end
-end
-
----@return CrowdControlInstanceOptions?
-function M:GetOptions()
-	return db and GetOptions()
-end
-
----@param value boolean
-function M:SetPaused(value)
-	paused = value
-end
-
----@param value boolean
-function M:SetTestMode(value)
-	testModeActive = value
-end
-
-function M:EnsureWatchers()
-	EnsureWatchers()
-end
-
-function M:Teardown()
-	Teardown()
-end
-
-function M:EnsureFrames()
-	EnsureFrames()
-end
-
----@param options CrowdControlInstanceOptions
-function M:ApplyOptions(options)
-	ApplyOptions(options)
-end
-
-function M:RefreshTestIcons()
-	RefreshTestIcons()
-end
-
 ---Blanks and hides every entry's kick/test container, for the test-mode handover.
 function M:ResetAllContainers()
 	anchoredIcons:ResetContainers(watchers)
@@ -555,11 +475,63 @@ function M:RefreshKickIcons()
 end
 
 function M:OnCufUpdateVisible(frame)
-	OnCufUpdateVisible(frame)
+	if not frame or not frames:IsFriendlyCuf(frame) then
+		return
+	end
+
+	local entry = watchers[frame]
+
+	if not entry then
+		return
+	end
+
+	local isPet = units:IsPetOrMinion(entry.Unit)
+
+	-- If this is a pet frame and pet CC is disabled, keep it hidden
+	if isPet and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+		entry.Container.Frame:Hide()
+		if entry.Display then
+			entry.Display:Hide()
+		end
+		return
+	end
+
+	local options = isPet and db.Modules.PetCCModule or GetOptions()
+
+	if not options then
+		return
+	end
+
+	-- The aura icons live in entry.Display, not the kick/test container, so it has to follow
+	-- the unit frame's visibility too.
+	if entry.Display then
+		frames:ShowHideDisplay(entry.Display, frame, isPet and false or options.ExcludePlayer)
+	end
+
+	frames:ShowHideFrame(entry.Container.Frame, frame, false, options.ExcludePlayer)
 end
 
 function M:OnCufSetUnit(frame, unit)
-	OnCufSetUnit(frame, unit)
+	if not frame or not frames:IsFriendlyCuf(frame) then
+		return
+	end
+
+	if not unit then
+		return
+	end
+
+	local isPet = units:IsPetOrMinion(unit)
+	if isPet then
+		if not testModeActive and not moduleUtil:IsModuleEnabled(moduleName.PetCC) then
+			return
+		end
+	else
+		if not moduleUtil:IsModuleEnabled(moduleName.CrowdControl) then
+			return
+		end
+	end
+
+	EnsureWatcher(frame, unit)
 end
 
 function M:Init()
