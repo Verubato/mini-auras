@@ -8,6 +8,8 @@ local initialised = false
 local STRATA_ORDER = { "BACKGROUND", "LOW", "MEDIUM", "HIGH", "DIALOG", "FULLSCREEN", "FULLSCREEN_DIALOG", "TOOLTIP" }
 local STRATA_INDEX = {}
 for i, v in ipairs(STRATA_ORDER) do STRATA_INDEX[v] = i end
+-- HasVisibleFrames' own, so it never shares a table with a walk that is still running.
+local visibleScratch = {}
 ---@class Frames
 local M = {}
 addon.Core.Frames = M
@@ -103,7 +105,9 @@ end
 ---frames are worth putting up: with real frames there, they would only be in the way.
 ---@return boolean
 function M:HasVisibleFrames()
-	for _, frame in ipairs(M:GetAll(true, false)) do
+	-- Re-checked rather than left to visibleOnly: DandersFrames hands over its whole set
+	-- regardless, so an invisible frame can still reach this list.
+	for _, frame in ipairs(M:GetAll(true, false, visibleScratch)) do
 		if frame:IsVisible() then
 			return true
 		end
