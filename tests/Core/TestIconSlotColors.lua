@@ -47,7 +47,7 @@ fw.describe("IconSlotContainer - countdown colouring", function()
 
 		container:SetSlot(1, { Texture = ICON, DurationObject = wowEx:CreateDuration(GetTime(), 3) })
 		colour = text._lastArgs.SetTextColor
-		assert(colour[2] == 0.102 and colour[3] == 0.102, "the last five seconds read red")
+		assert(colour[1] == 1 and colour[2] == 0 and colour[3] == 0, "the last five seconds read red")
 
 		container:SetSlotUnused(1)
 		colour = text._lastArgs.SetTextColor

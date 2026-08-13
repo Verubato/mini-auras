@@ -95,7 +95,7 @@ local function ApplyCountdownColor(cd, remaining)
 	cd.MiniAurasColorBand = band
 
 	if band == 1 then
-		text:SetTextColor(1, 0.102, 0.102)
+		text:SetTextColor(1, 0, 0)
 	elseif band == 2 then
 		text:SetTextColor(1, 0.8, 0)
 	else

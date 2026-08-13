@@ -74,8 +74,8 @@ local PANDEMIC_COLOR = { 1, 0.1, 0.1 }
 -- minute, white above) rather than a gradient: each near-coincident stop pair fakes a hard
 -- edge on the linear curve, so the 0.05s blend windows are never visible.
 local COUNTDOWN_COLOR_STOPS = {
-	{ 0, 1, 0.102, 0.102 },
-	{ 5, 1, 0.102, 0.102 },
+	{ 0, 1, 0, 0 },
+	{ 5, 1, 0, 0 },
 	{ 5.05, 1, 0.8, 0 },
 	{ 60, 1, 0.8, 0 },
 	{ 60.05, 1, 1, 1 },
