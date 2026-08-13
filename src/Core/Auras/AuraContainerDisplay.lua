@@ -541,47 +541,51 @@ local function BarWidth(instance)
 	return math.max(instance.Size, instance.Style.BarWidth or DEFAULT_BAR_WIDTH)
 end
 
--- Applies the stored per-button style (size, cooldown settings, border, glow, mouse) to one
--- button. Safe only while buttons are not forbidden (initializeFrame or out of combat).
+---A label-only button carries a single fontstring and none of the icon chrome.
+---@param button table
+---@param widgets table
+---@param style AuraDisplayStyle
+local function StyleLabel(button, widgets, style)
+	local label = widgets.Label
+	local face = label:GetFont()
+
+	label:SetFont(face, style.LabelFontSize or 20, style.LabelFontFlags)
+	button:EnableMouse(false)
+end
+
+---What shows the remaining time, and how. Two things can draw it - the cooldown's own numbers and
+---a fontstring bound as duration text - and this picks between them, because only the bound one
+---can colour by time or render sub-second fractions.
+---
+---The bound fontstring stands in whenever it can do something the native text cannot: the
+---colour-by-time curve, sub-second fractions, or both. The engine writes it either way, so the off
+---state is alpha rather than unbinding. On a bar it is the only countdown there is.
 ---@param instance AuraContainerDisplay
 ---@param button table
-local function StyleButton(instance, button)
+---@param widgets table
+---@param size number
+---@param fontScale number
+local function StyleCountdown(instance, button, widgets, size, fontScale)
 	local style = instance.Style
-	local widgets = instance.ButtonWidgets[button]
-
-	if not widgets then
-		return
-	end
-
-	local size = instance.Size
-	local bar = widgets.Bar
-
-	button:SetSize(bar and BarWidth(instance) or size, size)
-
-	-- Label-only buttons carry a single fontstring and none of the icon chrome below.
-	local label = widgets.Label
-	if label then
-		local face = label:GetFont()
-		label:SetFont(face, style.LabelFontSize or 20, style.LabelFontFlags)
-		button:EnableMouse(false)
-		return
-	end
-
-	local fontScale = style.FontScale or 1.0
-	-- SetCountdownMillisecondsThreshold only works on legacy clock-driven cooldowns; it no-ops
-	-- for 12.1 duration objects, where fractions render through the duration-text binding
-	-- below. (The cooldown's own SetCountdownFormatter does not work there either.)
-	local msThreshold = (style.ShowMilliseconds and (style.MillisecondsThreshold or 5)) or 0
-
-	-- DisableSwipe/MillisecondsThreshold/GlowStyleName are the global db values StoreStyle
-	-- resolved when the style was set, so this hot loop never re-reads the db per button.
 	-- Bar buttons have no cooldown widget: the fill is their clock.
 	local cd = widgets.Cooldown
-	-- Numbers off means neither the cooldown's own text nor the bound fontstring below, so an
-	-- icon that says nothing but "this is up" is the two switches together.
+	local durationText = widgets.DurationText
+	-- Numbers off means neither the cooldown's own text nor the bound fontstring, so an icon that
+	-- says nothing but "this is up" is the two switches together.
 	local hideNumbers = style.HideNumbers == true
+	-- SetCountdownMillisecondsThreshold only works on legacy clock-driven cooldowns; it no-ops for
+	-- 12.1 duration objects, where fractions render through the duration-text binding below. (The
+	-- cooldown's own SetCountdownFormatter does not work there either.)
+	local msThreshold = (style.ShowMilliseconds and (style.MillisecondsThreshold or 5)) or 0
+
+	local colorCountdown = not hideNumbers and style.ColorCountdownByTime == true
+		and durationText ~= nil
+	local useDurationText = not hideNumbers and durationText ~= nil
+		and (widgets.Bar ~= nil or colorCountdown or msThreshold > 0)
 
 	if cd then
+		-- DisableSwipe/MillisecondsThreshold are the global db values StoreStyle resolved when the
+		-- style was set, so this hot loop never re-reads the db per button.
 		cd:SetReverse(style.ReverseCooldown or false)
 		cd:SetDrawSwipe(not (style.DisableSwipe or style.HideSwipe))
 
@@ -590,130 +594,188 @@ local function StyleButton(instance, button)
 		end
 		cd.FontScale = fontScale
 		fontUtil:UpdateCooldownFontSize(cd, size, nil, fontScale)
-	end
-
-	-- The bound fontstring stands in for the cooldown's own countdown whenever it can do
-	-- something the native text cannot: the colour-by-time curve, sub-second fractions, or
-	-- both. The engine writes the fontstring either way, so the off state is alpha rather
-	-- than unbinding. On a bar it is the only countdown there is, so it always shows.
-	local durationText = widgets.DurationText
-	local colorCountdown = not hideNumbers and style.ColorCountdownByTime == true
-		and durationText ~= nil
-	local useDurationText = not hideNumbers and durationText ~= nil
-		and (bar ~= nil or colorCountdown or msThreshold > 0)
-
-	if cd then
 		cd:SetHideCountdownNumbers(hideNumbers or useDurationText)
 	end
 
-	if durationText then
-		-- The ramp while colouring by time, a flat curve while the fontstring is the countdown
-		-- without it, and nothing at all while it is not the countdown (see BindDurationText).
-		local curve = colorCountdown and auraCountdownText:GetColorCurve()
-			or (useDurationText and auraCountdownText:GetPlainCurve())
-			or nil
-
-		-- The formatter and colour curve live inside the binding, so a change re-binds. Only
-		-- on change: each SetDurationText runs the engine's options processing per button.
-		local bindSignature = msThreshold .. (colorCountdown and "|c" or curve and "|p" or "")
-		if widgets.DurationTextBind ~= bindSignature then
-			widgets.DurationTextBind = bindSignature
-			auraCountdownText:Bind(button, durationText, msThreshold, curve)
-		end
-		durationText:SetAlpha(useDurationText and 1 or 0)
-		-- Stand-in for the cooldown's own countdown, so it borrows that fontstring's face and
-		-- size wholesale (UpdateCooldownFontSize above just sized it with the same coefficient
-		-- and scale). Without a face to copy, fall back to sizing the template font.
-		local cdText = cd and (cd.GetCountdownFontString and cd:GetCountdownFontString()
-			or cd.MiniAurasFontString)
-		local font, fontSize, fontFlags
-		if cdText then
-			font, fontSize, fontFlags = cdText:GetFont()
-		end
-		if font then
-			durationText:SetFont(font, fontSize, fontFlags)
-		else
-			fontUtil:UpdateFontSize(durationText, size, 0.4, fontScale)
-		end
+	if not durationText then
+		return
 	end
 
-	-- Alpha rather than Show/Hide, and never unregistered: the engine owns this font string's
-	-- text and shown state, so the only part of it left to us is how visible it is.
+	-- The ramp while colouring by time, a flat curve while the fontstring is the countdown without
+	-- it, and nothing at all while it is not the countdown (see AuraCountdownText.Bind).
+	local curve = colorCountdown and auraCountdownText:GetColorCurve()
+		or (useDurationText and auraCountdownText:GetPlainCurve())
+		or nil
+
+	-- The formatter and colour curve live inside the binding, so a change re-binds. Only on
+	-- change: each SetDurationText runs the engine's options processing per button.
+	local bindSignature = msThreshold .. (colorCountdown and "|c" or curve and "|p" or "")
+	if widgets.DurationTextBind ~= bindSignature then
+		widgets.DurationTextBind = bindSignature
+		auraCountdownText:Bind(button, durationText, msThreshold, curve)
+	end
+
+	durationText:SetAlpha(useDurationText and 1 or 0)
+
+	-- Stand-in for the cooldown's own countdown, so it borrows that fontstring's face and size
+	-- wholesale (UpdateCooldownFontSize above just sized it with the same coefficient and scale).
+	-- Without a face to copy, fall back to sizing the template font.
+	local cdText = cd and (cd.GetCountdownFontString and cd:GetCountdownFontString()
+		or cd.MiniAurasFontString)
+	local font, fontSize, fontFlags
+	if cdText then
+		font, fontSize, fontFlags = cdText:GetFont()
+	end
+	if font then
+		durationText:SetFont(font, fontSize, fontFlags)
+	else
+		fontUtil:UpdateFontSize(durationText, size, 0.4, fontScale)
+	end
+end
+
+---Alpha rather than Show/Hide, and never unregistered: the engine owns this fontstring's text and
+---shown state, so the only part of it left to us is how visible it is.
+---@param widgets table
+---@param style AuraDisplayStyle
+---@param size number
+---@param fontScale number
+local function StyleStacks(widgets, style, size, fontScale)
 	local stacks = widgets.Stacks
 
-	if stacks then
-		stacks:SetAlpha(style.Stacks and 1 or 0)
-		fontUtil:UpdateStackFontSize(stacks, size, fontScale)
+	if not stacks then
+		return
 	end
 
+	stacks:SetAlpha(style.Stacks and 1 or 0)
+	fontUtil:UpdateStackFontSize(stacks, size, fontScale)
+end
+
+---The fill, its colour and the spell name on a bar button.
+---@param instance AuraContainerDisplay
+---@param widgets table
+---@param size number
+---@param fontScale number
+local function StyleBar(instance, widgets, size, fontScale)
+	local style = instance.Style
+	local colorR, colorG, colorB = auraButtonPaint:ButtonColor(instance, widgets)
+	local texture = barTextures:Resolve(style.BarTexture)
+	local strip = widgets.Strip
+
+	-- Square and flush against the fill, so one size setting drives the whole row.
+	widgets.Icon:SetWidth(size)
+
+	-- The strip is the remaining time, not the status bar's own fill - see InitializeBarButton
+	-- for why the shape is drawn inside out.
+	if widgets.BarTexturePath ~= texture then
+		widgets.BarTexturePath = texture
+		strip:SetTexture(texture)
+	end
+
+	strip:SetVertexColor(colorR or 1, colorG or 1, colorB or 1, 1)
+
+	-- The engine writes the name and its shown state, so alpha is all that is left to us,
+	-- exactly like the stack count.
+	local name = widgets.Name
+	name:SetAlpha(style.SpellName ~= false and 1 or 0)
+	fontUtil:UpdateFontSize(name, size, BAR_NAME_COEFFICIENT, fontScale)
+end
+
+---The glow overlay and the icon corner rounding that goes with it.
+---
+---The frame is created as a button child at init (LibCustomGlow can't be used here - it re-parents
+---pooled frames onto the target, and 12.1 disallows SetParent onto AuraButtons because the child
+---would inherit their forbidden aspects). It shows and hides with the button (button visibility is
+---secret, but child rendering follows the parent without any addon-readable state). ApplyGlowStyle
+---picks the asset and only runs the looping animation for the styles that need one.
+---@param instance AuraContainerDisplay
+---@param button table
+---@param widgets table
+---@param size number
+local function StyleGlow(instance, button, widgets, size)
+	local glow = widgets.Glow
+
+	if not glow then
+		return
+	end
+
+	local style = instance.Style
+
+	if style.Glow then
+		auraButtonPaint:ApplyGlowStyle(widgets, button, style.GlowStyleName or DEFAULT_GLOW_STYLE, size)
+		glow:Show()
+	else
+		glow:Hide()
+		glow.Anim:Stop()
+	end
+
+	-- Every overlay in the catalog has rounded inner corners, so the icon takes the same shape
+	-- while one is showing. Displays that brought their own mask (the round portraits) keep it,
+	-- and a bar's leading icon is square against the fill by design.
+	local rounded = style.Glow == true and not widgets.Bar
+	if widgets.CornersRounded ~= rounded and widgets.Icon and not instance.IconMask then
+		widgets.CornersRounded = rounded
+		widgets.CornerMask = glowStyles:SetIconCorners(button, widgets.Icon, widgets.Cooldown,
+			widgets.CornerMask, rounded)
+	end
+end
+
+---The refresh-window reveal. The engine owns the holder's visibility (shown only inside the
+---window); the per-group toggle is ours and rides its artwork instead. A list, because a bar's
+---reveal is four flat edges where an icon's is one ring. Shown AND alpha'd, not one or the other:
+---the artwork is created hidden, so a group with the reveal off can never flash it even if this
+---pass never runs (styling is refused outright while auras are secret).
+---@param widgets table
+---@param style AuraDisplayStyle
+local function StylePandemic(widgets, style)
+	local pandemic = widgets.Pandemic
+
+	if not pandemic then
+		return
+	end
+
+	outline:Apply(pandemic.Textures, style.Pandemic == true,
+		style.PandemicColorR or PANDEMIC_COLOR[1],
+		style.PandemicColorG or PANDEMIC_COLOR[2],
+		style.PandemicColorB or PANDEMIC_COLOR[3])
+end
+
+-- Applies the stored per-button style (size, cooldown settings, border, glow, mouse) to one
+-- button. Safe only while buttons are not forbidden (initializeFrame or out of combat).
+---@param instance AuraContainerDisplay
+---@param button table
+local function StyleButton(instance, button)
+	local widgets = instance.ButtonWidgets[button]
+
+	if not widgets then
+		return
+	end
+
+	local style = instance.Style
+	local size = instance.Size
+	local bar = widgets.Bar
+
+	button:SetSize(bar and BarWidth(instance) or size, size)
+
+	if widgets.Label then
+		StyleLabel(button, widgets, style)
+		return
+	end
+
+	local fontScale = style.FontScale or 1.0
+
+	StyleCountdown(instance, button, widgets, size, fontScale)
+	StyleStacks(widgets, style, size, fontScale)
+
 	if bar then
-		local colorR, colorG, colorB = auraButtonPaint:ButtonColor(instance, widgets)
-		local texture = barTextures:Resolve(style.BarTexture)
-		local strip = widgets.Strip
-
-		-- Square and flush against the fill, so one size setting drives the whole row.
-		widgets.Icon:SetWidth(size)
-
-		-- The strip is the remaining time, not the status bar's own fill - see InitializeBarButton
-		-- for why the shape is drawn inside out.
-		if widgets.BarTexturePath ~= texture then
-			widgets.BarTexturePath = texture
-			strip:SetTexture(texture)
-		end
-
-		strip:SetVertexColor(colorR or 1, colorG or 1, colorB or 1, 1)
-
-		-- The engine writes the name and its shown state, so alpha is all that is left to us,
-		-- exactly like the stack count.
-		local name = widgets.Name
-		name:SetAlpha(style.SpellName ~= false and 1 or 0)
-		fontUtil:UpdateFontSize(name, size, BAR_NAME_COEFFICIENT, fontScale)
+		StyleBar(instance, widgets, size, fontScale)
 	end
 
 	if widgets.BorderTextures or widgets.Glow then
 		auraButtonPaint:ApplyDispelTextures(instance, button, widgets)
 	end
 
-	-- Glow: the frame is created as a button child at init (LibCustomGlow can't be used here -
-	-- it re-parents pooled frames onto the target, and 12.1 disallows SetParent onto AuraButtons
-	-- because the child would inherit their forbidden aspects). It shows and hides with the
-	-- button (button visibility is secret, but child rendering follows the parent without any
-	-- addon-readable state). ApplyGlowStyle picks the asset and only runs the looping animation
-	-- for the styles that need one.
-	local glow = widgets.Glow
-	if glow then
-		if style.Glow then
-			auraButtonPaint:ApplyGlowStyle(widgets, button, style.GlowStyleName or DEFAULT_GLOW_STYLE, size)
-			glow:Show()
-		else
-			glow:Hide()
-			glow.Anim:Stop()
-		end
-
-		-- Every overlay in the catalog has rounded inner corners, so the icon takes the same shape
-		-- while one is showing. Displays that brought their own mask (the round portraits) keep it,
-		-- and a bar's leading icon is square against the fill by design.
-		local rounded = style.Glow == true and not bar
-		if widgets.CornersRounded ~= rounded and widgets.Icon and not instance.IconMask then
-			widgets.CornersRounded = rounded
-			widgets.CornerMask = glowStyles:SetIconCorners(button, widgets.Icon, cd, widgets.CornerMask, rounded)
-		end
-	end
-
-	-- The engine owns the pandemic holder's visibility (shown only inside the refresh window); the
-	-- per-group toggle is ours and rides its artwork instead. A list, because a bar's reveal is four
-	-- flat edges where an icon's is one ring. Shown AND alpha'd, not one or the other: the artwork
-	-- is created hidden, so a group with the reveal off can never flash it even if this pass never
-	-- runs (styling is refused outright while auras are secret).
-	local pandemic = widgets.Pandemic
-	if pandemic then
-		local reveal = style.Pandemic == true
-		local pandemicR = style.PandemicColorR or PANDEMIC_COLOR[1]
-		local pandemicG = style.PandemicColorG or PANDEMIC_COLOR[2]
-		local pandemicB = style.PandemicColorB or PANDEMIC_COLOR[3]
-
-		outline:Apply(pandemic.Textures, reveal, pandemicR, pandemicG, pandemicB)
-	end
+	StyleGlow(instance, button, widgets, size)
+	StylePandemic(widgets, style)
 
 	-- Tooltips (and click-to-cancel, which we never register) require mouse input.
 	button:EnableMouse(style.ShowTooltips ~= false)
