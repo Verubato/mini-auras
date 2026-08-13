@@ -75,11 +75,12 @@ fw.describe("Alerts TTS - per-spell muting", function()
 		assert(live[ICE_BLOCK], "the rest of the list is untouched")
 	end)
 
-	fw.it("mutes only the category the spell was switched off in", function()
-		-- Deathmark carries a clip in both Important and EnemyDebuff; the tab lists it twice
-		-- because they are announced on different units.
+	fw.it("keeps an enemy debuff off the plates and on the allies", function()
+		-- Deathmark lands on the rogue's TARGET, so on an enemy plate it is an ally's cast:
+		-- neither the clip nor the alert sound may come from the plate, only the ally-side
+		-- incoming announcement.
+		db.Modules.AlertsModule.Sound.Important.Enabled = true
 		tts.EnemyDebuff.Enabled = true
-		tts.Important.MutedSpellIds[DEATHMARK] = true
 		sound:Refresh({ [PLATE] = true })
 		sound:RefreshAllySounds(true)
 
@@ -95,8 +96,8 @@ fw.describe("Alerts TTS - per-spell muting", function()
 			end
 		end
 
-		assert(not nameplate, "muted where it was switched off")
-		assert(ally, "and still announced where it was not")
+		assert(not nameplate, "nothing registered on the plate")
+		assert(ally, "and the incoming announcement still covers your own side")
 	end)
 
 	fw.it("a token registered after the change is muted too", function()

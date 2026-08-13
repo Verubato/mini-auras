@@ -1131,9 +1131,11 @@ addon.Core.AuraCategoryIds = {
 	},
 
 	-- HAND-MAINTAINED, unlike everything above it. Enemy cooldowns that land on your side as a
-	-- debuff rather than on the caster as a buff, so no scan of the buff categories can find
-	-- them and the alert lists never cover them. Announced on the player and the party by their
-	-- own toggle; scripts/GenerateTtsAudio.py voices this list like the flagged ones.
+	-- debuff rather than on the caster as a buff. Announced on the player and the party by
+	-- their own toggle. The scan can still pick one up when the game flags the debuff itself
+	-- important (Deathmark), so scripts/GenerateTtsAudio.py strips these ids from the plate
+	-- clip maps and Modules/Alerts/Sound.lua keeps them out of the plate sound registrations:
+	-- a plate gaining one of these means an ally cast it.
 	--
 	-- One id per ability, not every variant the name index knows: two variants landing together
 	-- would speak the name twice.

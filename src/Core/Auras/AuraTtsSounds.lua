@@ -37,7 +37,6 @@ addon.Core.AuraTtsSounds = {
 		[190319] = "Combustion.ogg", -- Combustion
 		[390260] = "CommanderOfTheDead.ogg", -- Commander of the Dead
 		[199261] = "DeathWish.ogg", -- Death Wish
-		[360194] = "Deathmark.ogg", -- Deathmark
 		[357210] = "DeepBreath.ogg", -- Deep Breath
 		[498] = "DivineProtection.ogg", -- Divine Protection
 		[403876] = "DivineProtection.ogg", -- Divine Protection

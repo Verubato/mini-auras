@@ -28,6 +28,14 @@ local SILENT_ALERT_SPELL_IDS = {
 	[8178] = true, -- Grounding Totem
 }
 
+-- The enemy-debuff spells land on the caster's TARGET, so one appearing on an enemy plate
+-- means an ally cast it; the plates stay quiet for those and RefreshAllySounds announces the
+-- incoming ones. Their TTS clips are already absent from the plate categories (the generator
+-- strips the overlap), so this only has the plain alert sound left to cover.
+for spellId in pairs(addon.Core.AuraCategoryIds.EnemyDebuff) do
+	SILENT_ALERT_SPELL_IDS[spellId] = true
+end
+
 -- Read by the tests, which derive the expected registration count from it.
 M.SilentAlertSpellIds = SILENT_ALERT_SPELL_IDS
 

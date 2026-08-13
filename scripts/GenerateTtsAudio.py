@@ -126,6 +126,12 @@ def parse_categories():
     missing = [c for c in (*CATEGORIES, *UNFLAGGED_SECTIONS) if c not in seen]
     if missing:
         sys.exit(f"categories not found in {IDS_LUA.name}: {missing}")
+    # The scan can flag an EnemyDebuff spell too when the game marks the debuff itself
+    # important (Deathmark). Keep those out of the plate-registered categories: a plate
+    # gaining the debuff means an ally cast it, which is not worth an announcement.
+    for spell_id in result["EnemyDebuff"]:
+        for category in ("Important", "Defensive"):
+            result[category].pop(spell_id, None)
     return result
 
 
