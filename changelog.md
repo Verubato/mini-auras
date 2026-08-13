@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.10.1
+
+- Various minor optimisations.
+- Fixed styles not applying to personal auras in arena.
+
 ## 5.10.0
 
 - Added ability to specify the strata of personal auras.
