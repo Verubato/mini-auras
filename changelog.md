@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.11.0
+
+- Fixed mind controlled units showing another player's buffs on alerts and nameplates.
+- Added countdown colour pickers in the Misc tab.
+- Fixed crowd control containers showing junk icons for units out of range.
+- Made the tab controls in the settings window easier to see.
+
 ## 5.10.3
 
 - Auras are now hidden inside player housing, which previously counted as a dungeon.
