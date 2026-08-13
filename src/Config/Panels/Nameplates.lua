@@ -304,6 +304,15 @@ local function BuildSettingsTab(parent, options)
 	anchorToHealthBarChk:SetPoint("TOP", scaleWithNameplateChk, "TOP", 0, 0)
 	anchorToHealthBarChk:SetPoint("LEFT", parent, "LEFT", checkColumnWidth * 2, 0)
 
+	-- The checkbox pairs need two grid columns apiece for their labels, which leaves the last
+	-- column free; the swatches go there so the rows run the full width of the tab.
+	---@param swatch table
+	---@param row table The checkbox whose row the swatch sits on, centred against it.
+	local function PlaceSwatch(swatch, row)
+		swatch:SetPoint("LEFT", parent, "LEFT", checkColumnWidth * 4, 0)
+		swatch:SetPoint("TOP", row, "TOP", 0, -math.floor((row:GetHeight() - swatch:GetHeight()) / 2))
+	end
+
 	-- Module wide rather than per bar: a category should read the same colour wherever it lands,
 	-- and every bar's own tab is already a full grid of checkboxes.
 	local importantSwatch = mini:ColorSwatch({
@@ -322,7 +331,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 	})
 
-	importantSwatch:SetPoint("TOPLEFT", scaleWithNameplateChk, "BOTTOMLEFT", 0, -verticalSpacing)
+	PlaceSwatch(importantSwatch, enemyIgnorePetsChk)
 
 	local defensiveSwatch = mini:ColorSwatch({
 		Parent = parent,
@@ -340,10 +349,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 	})
 
-	-- One column apart, not two like the checkbox block above: these labels are a single short
-	-- word in every locale, so they need none of the room the long checkbox labels do.
-	defensiveSwatch:SetPoint("TOP", importantSwatch, "TOP", 0, 0)
-	defensiveSwatch:SetPoint("LEFT", parent, "LEFT", checkColumnWidth, 0)
+	PlaceSwatch(defensiveSwatch, scaleWithNameplateChk)
 end
 
 ---@param parent table
