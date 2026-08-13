@@ -36,9 +36,11 @@ env.spellNames[RAKE_CAST] = "Rake"
 env.spellNames[RAKE_BLEED] = "Rake"
 env.spellNames[INVENTED] = "Sudden Doom"
 
+-- Id groups only, exactly as the generated file ships them. The names come from the client, which
+-- is what makes the picker work in any language.
 addon.Core.SpellNameIndex = {
-	["Rake"] = ("%d %d"):format(RAKE_CAST, RAKE_BLEED),
-	["Sudden Doom"] = tostring(INVENTED),
+	("%d %d"):format(RAKE_CAST, RAKE_BLEED),
+	tostring(INVENTED),
 }
 
 env.loadModule("src/Core/Auras/SpellSearch.lua")
@@ -216,37 +218,77 @@ fw.describe("SpellSearch - variants", function()
 	end)
 end)
 
-fw.describe("SpellNameIndex - the client locale gate", function()
-	---Loads the real generated file against a throwaway addon table under a given client locale.
-	---@param locale string
-	---@return table?
-	local function loadIndex(locale)
-		local realGetLocale = _G.GetLocale
-		_G.GetLocale = function()
-			return locale
+fw.describe("SpellSearch - the client's own language", function()
+	-- The shipped index carries ids and no names, so whatever the client calls a spell is what the
+	-- picker offers. That is the whole reason the names were dropped: a deDE player types German.
+	local OTHER = 999004
+
+	---Runs `body` against a fresh SpellSearch whose client answers with the given names. The names
+	---stay installed for the whole body: the lookups read them too, not just the index build.
+	---@param names table<number, string> Spell id -> what this client calls it.
+	---@param body fun(localised: SpellSearch)
+	local function WithClientNames(names, body)
+		local target = {
+			Core = {
+				AuraCategoryIds = categoryIds,
+				SpellNameIndex = {
+					("%d %d"):format(RAKE_CAST, RAKE_BLEED),
+					tostring(OTHER),
+				},
+			},
+			Utils = {},
+			Modules = {},
+			Config = {},
+		}
+
+		local realGetSpellName = _G.C_Spell.GetSpellName
+		_G.C_Spell.GetSpellName = function(spellId)
+			return names[spellId] or realGetSpellName(spellId)
 		end
 
-		local target = { Core = {} }
-		local ok, err = pcall(function()
-			assert(loadfile("src/Core/Auras/SpellNameIndex.lua"))("MiniAuras", target)
-		end)
+		assert(loadfile("src/Core/Auras/SpellSearch.lua"))("MiniAuras", target)
 
-		_G.GetLocale = realGetLocale
+		local ok, err = pcall(body, target.Core.SpellSearch)
+
+		_G.C_Spell.GetSpellName = realGetSpellName
 		assert(ok, err)
-
-		return target.Core.SpellNameIndex
 	end
 
-	fw.it("builds the index on an English client", function()
-		assert(loadIndex("enUS"), "enUS gets the index")
-		assert(loadIndex("enGB"), "and so does enGB, whose spell names are the same")
+	fw.it("offers a generated spell under its German name", function()
+		WithClientNames({ [RAKE_CAST] = "Harken", [RAKE_BLEED] = "Harken" }, function(localised)
+			assert(Contains(localised:Search("harken"), RAKE_CAST),
+				"a deDE client must find the spell by the name it shows")
+			assert(not Contains(localised:Search("rake"), RAKE_CAST),
+				"and the English name is not what that client has")
+		end)
 	end)
 
-	fw.it("skips it everywhere else", function()
-		-- The keys are enUS spell names, so they could never match what the client reports.
-		for _, locale in ipairs({ "deDE", "esES", "frFR", "ruRU", "koKR", "zhCN", "zhTW" }) do
-			assert(loadIndex(locale) == nil,
-				locale .. " must not carry names it can never match")
-		end
+	fw.it("still expands a cast id to its aura id there", function()
+		WithClientNames({ [RAKE_CAST] = "Harken", [RAKE_BLEED] = "Harken" }, function(localised)
+			local seen = {}
+
+			for _, spellId in ipairs(localised:GetVariants(RAKE_CAST)) do
+				seen[spellId] = true
+			end
+
+			assert(seen[RAKE_BLEED],
+				"the id bridge is the shared name, so it has to work in any language")
+		end)
+	end)
+
+	fw.it("merges two groups the client gives the same name", function()
+		-- Distinct in English, identical in another language. Neither group may swallow the other,
+		-- or one ability's ids would vanish from every filter built on that name.
+		WithClientNames({ [RAKE_CAST] = "Hieb", [RAKE_BLEED] = "Hieb", [OTHER] = "Hieb" },
+			function(localised)
+				local seen = {}
+
+				for _, spellId in ipairs(localised:GetVariants(RAKE_CAST)) do
+					seen[spellId] = true
+				end
+
+				assert(seen[RAKE_CAST] and seen[RAKE_BLEED], "the group's own ids survive")
+				assert(seen[OTHER], "and so do the colliding group's")
+			end)
 	end)
 end)

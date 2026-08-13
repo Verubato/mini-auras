@@ -11,12 +11,36 @@ local fw = require("Framework")
 local harness = require("AddonHarness")
 local WowMock = require("WowMock")
 
+-- Two curated ids given real names, because the spell picker's suggestions are now named by the
+-- CLIENT rather than by the shipped index (that is what makes them work outside English), and the
+-- mock names every spell "Spell <id>". Without this the arrow-key tests have nothing to walk.
+local ARCANE_TORRENT = 33390
+local KIDNEY_SHOT = 408
+
+---Installs those names over the mock's default. Has to sit between the client install and login:
+---the install replaces C_Spell, and login is already enough to make the picker build its index.
+local function NameFixtureSpells()
+	local realGetSpellName = _G.C_Spell.GetSpellName
+	local names = {
+		[ARCANE_TORRENT] = "Arcane Torrent",
+		[KIDNEY_SHOT] = "Arcane Barrage",
+	}
+
+	_G.C_Spell.GetSpellName = function(spellId)
+		return names[spellId] or realGetSpellName(spellId)
+	end
+end
+
 ---@return table addon
 ---@return table group
 local function LoadWithGroup(spells)
 	_G.MiniAurasDB = nil
 
-	local context = harness.Run("MiniAuras", {})
+	-- harness.Run's two halves, so the spell names can be installed in between.
+	local context = harness.Load("MiniAuras", {})
+	NameFixtureSpells()
+	context.LoginResult = harness.Login(context)
+
 	local addon = context.Addon
 	local db = addon.Framework:GetSavedVars()
 	local groups = addon.Modules.CustomAuras.Groups

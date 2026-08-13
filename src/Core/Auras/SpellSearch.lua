@@ -7,8 +7,13 @@ local auraCategoryIds = addon.Core.AuraCategoryIds
 -- rows help nobody. GetVariants hands the dropped ones back.
 --
 -- Two sources feed it. The curated category lists are the abilities MiniAuras knows something about,
--- and SpellNameIndex is a generated map of every aura name a player can reach. The index is what
--- bridges a cast id to the aura id it applies, which is the only id a filter ever matches.
+-- and SpellNameIndex is a generated list of every aura id a player can reach, grouped by the ids
+-- that share a name. The index is what bridges a cast id to the aura id it applies, which is the
+-- only id a filter ever matches.
+--
+-- The generated groups carry no names: the client knows what it calls each id in its own language,
+-- so GetNameIndex asks it and keys the groups on the answer. Everything below therefore works in
+-- whatever language the player is running.
 
 local MAX_RESULTS = 12
 local EMPTY = {}
@@ -36,6 +41,9 @@ local entryByName = {}
 -- spellId -> lowercased name, for the same expansion from the other direction.
 ---@type table<number, string>
 local nameById = {}
+-- The generated id groups keyed by the name this client gives them, built on first use.
+---@type table<string, string>?
+local nameIndex
 -- Index names already split out of their stored string, and the union GetVariants last handed
 -- back for an id. Both are pure caches of work that never changes within a session.
 ---@type table<string, number[]>
@@ -63,19 +71,42 @@ local function CollectKeys(ids, out)
 	end
 end
 
----The ids the generated index has under a spell's name, or nil when it has none. Keyed on the
----name exactly as the client spells it, so a non-English client simply never matches.
+---The generated id groups, keyed by the name this client gives them. Built once and kept: the
+---file ships ids only, and the client is what turns them into the names a player would type.
+---@return table<string, string>
+local function GetNameIndex()
+	if nameIndex then
+		return nameIndex
+	end
+
+	nameIndex = {}
+
+	for _, raw in ipairs(addon.Core.SpellNameIndex or EMPTY) do
+		-- Every id in a group answers with the same name, so the first the client knows is enough.
+		-- Walked rather than assumed, because a group can lead with an id this build has dropped.
+		for id in raw:gmatch("%d+") do
+			local name = C_Spell.GetSpellName(tonumber(id))
+
+			if name and name ~= "" then
+				local existing = nameIndex[name]
+
+				-- Two names that are distinct in English can collide in another language, so the
+				-- groups merge rather than the second replacing the first.
+				nameIndex[name] = existing and (existing .. " " .. raw) or raw
+				break
+			end
+		end
+	end
+
+	return nameIndex
+end
+
+---The ids the generated index has under a spell's name, or nil when it has none.
 ---@param spellId number
 ---@return number[]?
 local function IndexVariants(spellId)
-	local index = addon.Core.SpellNameIndex
-
-	if not index then
-		return nil
-	end
-
 	local name = C_Spell.GetSpellName(spellId)
-	local raw = name and index[name]
+	local raw = name and GetNameIndex()[name]
 
 	if not raw then
 		return nil
@@ -147,7 +178,7 @@ local function BuildIndex()
 
 	-- Every aura name a player can reach that the curated lists do not already carry. Its id is
 	-- the lowest of the name's variants, so a suggestion picked twice adds the same one.
-	for name, raw in pairs(addon.Core.SpellNameIndex or EMPTY) do
+	for name, raw in pairs(GetNameIndex()) do
 		local lower = name:lower()
 
 		if not idsByName[lower] then
