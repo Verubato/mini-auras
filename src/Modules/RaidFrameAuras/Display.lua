@@ -610,7 +610,13 @@ end
 ---@param options RaidFrameAurasInstanceOptions
 local function ApplyOptions(options)
 	for anchor, entry in pairs(watchers) do
-		ApplyEntryOptions(entry, anchor, options)
+		-- Entries outlive their anchors, so a raid's worth of them can still be here in a
+		-- five-man. Styling and re-anchoring what nobody can see is the whole of the cost.
+		if anchoredIcons:IsAnchorShown(anchor) then
+			ApplyEntryOptions(entry, anchor, options)
+		else
+			anchoredIcons:HideEntry(entry)
+		end
 	end
 end
 

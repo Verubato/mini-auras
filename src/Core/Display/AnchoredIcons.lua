@@ -128,6 +128,33 @@ function M:TeardownEntry(entry)
 	end
 end
 
+---Whether an anchor is worth laying anything out on. A unit frame the addon has taken away keeps
+---its entry - WoW frames can never be freed, so a returning anchor has to find its own container
+---again rather than build a second one - but there is nothing to style on it while it is gone.
+---@param anchor table
+---@return boolean
+function M:IsAnchorShown(anchor)
+	if anchor.IsForbidden and anchor:IsForbidden() then
+		return false
+	end
+
+	return anchor:IsVisible() == true
+end
+
+---Takes one entry off screen without disabling it, for an anchor that is merely out of sight.
+---Deliberately not TeardownEntry: a frame can come back through the unit-frame visibility hook
+---with no refresh behind it, and a disabled display would show nothing until the next one.
+---@param entry table
+function M:HideEntry(entry)
+	if entry.Display then
+		entry.Display:Hide()
+	end
+
+	if entry.Container then
+		entry.Container.Frame:Hide()
+	end
+end
+
 ---Blanks and hides every entry's container without touching its watcher or display, for the
 ---handover into and out of test mode.
 ---@param entries table<table, table>

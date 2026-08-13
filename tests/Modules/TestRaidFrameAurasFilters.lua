@@ -172,3 +172,43 @@ fw.describe("RaidFrameAurasModule - the tracked spell ids", function()
 		assert(not spells.Custom[IMPORTANT], "and the duplicate is dropped from the user's list")
 	end)
 end)
+
+fw.describe("RaidFrameAurasModule - anchors that are out of sight", function()
+	-- An entry outlives its anchor: WoW frames can never be freed, so a raid's worth of them is
+	-- still here in a five-man. They are skipped rather than restyled, and the risk that guards
+	-- against is a stale one coming back.
+	local frame = env.addUnitFrame("party2", "CUF_Hidden")
+
+	fw.it("takes an entry off screen when its anchor goes", function()
+		module:Refresh()
+		assert(#env.containersForUnit("party2") > 0, "the visible frame has a container")
+
+		frame:Hide()
+		module:Refresh()
+
+		assert(not frame:IsVisible(), "fixture: the anchor is gone")
+	end)
+
+	fw.it("brings a returning anchor back in step with the current options", function()
+		local custom = 999902
+
+		frame:Hide()
+		module:Refresh()
+
+		-- Changed while the anchor was out of sight, so a skipped entry would have missed it.
+		spells.Custom[custom] = true
+
+		frame:Show()
+		module:Refresh()
+
+		local containers = env.containersForUnit("party2")
+		assert(#containers > 0, "the anchor is back, so its container is too")
+
+		local group = assert(containers[1]._groups[IMPORTANT_GROUP_KEY], "no important group")
+		local ids = assert(group.candidateFilters.includeSpellIDs, "no id filter")
+
+		assert(ids[custom], "the entry picked up the change it slept through")
+
+		spells.Custom[custom] = nil
+	end)
+end)

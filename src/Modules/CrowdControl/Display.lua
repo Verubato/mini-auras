@@ -495,6 +495,10 @@ local function ApplyOptions(options)
 
 		if not entryEnabled or not entryOptions then
 			anchoredIcons:TeardownEntry(entry)
+		elseif not anchoredIcons:IsAnchorShown(anchor) then
+			-- Entries outlive their anchors, so a raid's worth of them can still be here in a
+			-- five-man. Styling and re-anchoring what nobody can see is the whole of the cost.
+			anchoredIcons:HideEntry(entry)
 		else
 			ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 		end
