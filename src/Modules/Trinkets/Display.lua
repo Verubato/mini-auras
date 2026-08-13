@@ -35,6 +35,9 @@ local watchers = {}
 -- instead of building a replacement per roster flip.
 ---@type { [table]: IconSlotContainer }
 local containersByAnchor = {}
+-- Reused buffer for the anchor walk. Its own rather than shared with the other modules, so one
+-- module's walk can never land in the middle of another's.
+local anchorScratch = {}
 ---@type Db
 local db
 ---@type TrinketsModuleOptions
@@ -131,7 +134,7 @@ local function ReleaseWatcher(anchorFrame)
 end
 
 local function RebuildAnchors()
-	local anchors = frames:GetAll(true, testModeActive)
+	local anchors = frames:GetAll(true, testModeActive, anchorScratch)
 	local seen = {}
 
 	for _, anchor in ipairs(anchors) do

@@ -72,6 +72,9 @@ local soundOnlyTokens = {}
 -- Scratch for the unit frames one refresh pass saw, so copies on frames that have gone are
 -- handed back.
 local seenAnchors = {}
+-- Reused buffer for the anchor walk. Its own rather than shared with the other modules, so one
+-- module's walk can never land in the middle of another's.
+local anchorScratch = {}
 -- Whether any group hangs off the unit frames, so the frame hooks can cost nothing otherwise.
 local anyFrameGroups = false
 local testModeActive = false
@@ -1197,7 +1200,7 @@ function M:Refresh(options, moduleEnabled)
 			local includeTestFrames = testModeActive
 				or (previewPartyFrames and groupDef.Id == previewGroupId)
 
-			for _, anchor in ipairs(frames:GetAll(true, includeTestFrames)) do
+			for _, anchor in ipairs(frames:GetAll(true, includeTestFrames, anchorScratch)) do
 				seenAnchors[anchor] = true
 				RefreshFrameGroup(state, anchor)
 			end

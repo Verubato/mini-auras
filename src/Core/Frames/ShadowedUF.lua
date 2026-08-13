@@ -3,15 +3,13 @@ local M = addon.Core.Frames
 local MAX_PARTY = MAX_PARTY_MEMBERS or 4
 local MAX_RAID = MAX_RAID_MEMBERS or 40
 
----Retrieves a list of Shadowed Unit Frames (SUF) frames.
+---Appends the Shadowed Unit Frames (SUF) unit frames.
 ---@param visibleOnly boolean
----@return table
-function M:ShadowedUFFrames(visibleOnly)
+---@param frames table Frames are appended here.
+function M:ShadowedUFFrames(visibleOnly, frames)
 	if not SUFUnitplayer and not SUFHeaderpartyUnitButton1 and not SUFHeaderraidUnitButton1 then
-		return {}
+		return
 	end
-
-	local frames = {}
 
 	local function Add(frame)
 		if not frame then
@@ -39,6 +37,4 @@ function M:ShadowedUFFrames(visibleOnly)
 		-- Some layouts/forks also expose raid as SUFUnitraid#
 		Add(_G["SUFUnitraid" .. i])
 	end
-
-	return frames
 end

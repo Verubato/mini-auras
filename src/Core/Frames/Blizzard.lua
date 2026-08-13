@@ -3,12 +3,10 @@ local M = addon.Core.Frames
 local MAX_PARTY = MAX_PARTY_MEMBERS or 4
 local MAX_RAID = MAX_RAID_MEMBERS or 40
 
----Retrieves a list of Blizzard compact party/raid member frames.
+---Appends the Blizzard compact party/raid member frames.
 ---@param visibleOnly boolean
----@return table
-function M:BlizzardFrames(visibleOnly)
-	local frames = {}
-
+---@param frames table Frames are appended here.
+function M:BlizzardFrames(visibleOnly, frames)
 	-- + 1 for player/self
 	for i = 1, MAX_PARTY + 1 do
 		local frame = _G["CompactPartyFrameMember" .. i]
@@ -25,19 +23,15 @@ function M:BlizzardFrames(visibleOnly)
 			frames[#frames + 1] = frame
 		end
 	end
-
-	return frames
 end
 
----Retrieves a list of Blizzard standard (non-compact) party frames.
+---Appends the Blizzard standard (non-compact) party frames.
 ---@param visibleOnly boolean
----@return table
-function M:BlizzardPartyFrames(visibleOnly)
+---@param frames table Frames are appended here.
+function M:BlizzardPartyFrames(visibleOnly, frames)
 	if not PartyFrame then
-		return {}
+		return
 	end
-
-	local frames = {}
 
 	for i = 1, MAX_PARTY + 1 do
 		local frame = PartyFrame["MemberFrame" .. i]
@@ -46,8 +40,6 @@ function M:BlizzardPartyFrames(visibleOnly)
 			frames[#frames + 1] = frame
 		end
 	end
-
-	return frames
 end
 
 ---Returns true if the frame is a Blizzard compact or standard party frame (not a raid frame).

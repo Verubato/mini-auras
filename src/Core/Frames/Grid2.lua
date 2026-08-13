@@ -3,15 +3,14 @@ local M = addon.Core.Frames
 local MAX_PARTY = MAX_PARTY_MEMBERS or 4
 local MAX_RAID = MAX_RAID_MEMBERS or 40
 
----Retrieves a list of Grid2 frames.
+---Appends the Grid2 unit frames.
 ---@param visibleOnly boolean
----@return table
-function M:Grid2Frames(visibleOnly)
+---@param frames table Frames are appended here.
+function M:Grid2Frames(visibleOnly, frames)
 	if not Grid2 or not Grid2.GetUnitFrames then
-		return {}
+		return
 	end
 
-	local frames = {}
 	local playerSuccess, playerFrames = pcall(Grid2.GetUnitFrames, Grid2, "player")
 	local playerFrame = playerSuccess and playerFrames and next(playerFrames)
 
@@ -40,6 +39,4 @@ function M:Grid2Frames(visibleOnly)
 			frames[#frames + 1] = frame
 		end
 	end
-
-	return frames
 end

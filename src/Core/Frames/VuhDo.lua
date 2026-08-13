@@ -1,25 +1,26 @@
 local _, addon = ...
 local M = addon.Core.Frames
+local childScratch = {}
+local seen = {}
 
----Retrieves a list of VuhDo unit frames.
+---Appends the VuhDo unit frames.
 ---VuhDo panel frames are globals named Vd1, Vd2, … up to 10.
 ---Unit buttons are direct children; the unit token is in :GetAttribute("unit") or button.raidid.
 ---@param visibleOnly boolean
----@return table
-function M:VuhDoFrames(visibleOnly)
+---@param frames table Frames are appended here.
+function M:VuhDoFrames(visibleOnly, frames)
 	if not _G["Vd1"] then
-		return {}
+		return
 	end
 
-	local frames = {}
-	local seen = {}
+	wipe(seen)
 
 	local panelNum = 1
 	while true do
 		local panel = _G["Vd" .. panelNum]
 		if not panel then break end
 
-		for _, child in ipairs({ panel:GetChildren() }) do
+		for _, child in ipairs(M:Children(childScratch, panel)) do
 			if not seen[child] then
 				local unit = (child.GetAttribute and child:GetAttribute("unit")) or child.raidid
 				if unit and unit ~= "" then
@@ -33,8 +34,6 @@ function M:VuhDoFrames(visibleOnly)
 
 		panelNum = panelNum + 1
 	end
-
-	return frames
 end
 
 ---Returns true if the frame is a VuhDo unit button.

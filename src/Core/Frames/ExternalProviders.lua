@@ -33,12 +33,10 @@ function M:RegisterProvider(provider)
 	end
 end
 
----Retrieves frames contributed by external providers registered via RegisterProvider.
+---Appends frames contributed by external providers registered via RegisterProvider.
 ---@param visibleOnly boolean
----@return table
-function M:ExternalFrames(visibleOnly)
-	local frames = {}
-
+---@param frames table Frames are appended here.
+function M:ExternalFrames(visibleOnly, frames)
 	for _, provider in ipairs(externalProviders) do
 		local ok, providerFrames = pcall(provider.GetFrames)
 
@@ -53,6 +51,4 @@ function M:ExternalFrames(visibleOnly)
 			end
 		end
 	end
-
-	return frames
 end

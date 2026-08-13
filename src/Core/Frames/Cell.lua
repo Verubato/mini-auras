@@ -1,50 +1,47 @@
 local _, addon = ...
 local M = addon.Core.Frames
+local childScratch = {}
+local headers = {}
 
----Retrieves a list of Cell party/raid unit frames.
+---Appends the Cell party/raid unit frames.
 ---@param visibleOnly boolean
----@return table
-function M:CellFrames(visibleOnly)
+---@param frames table Frames are appended here.
+function M:CellFrames(visibleOnly, frames)
 	if not CellPartyFrameHeader and not CellRaidFrameHeader0 then
-		return {}
+		return
 	end
 
-	local frames = {}
-	local headers = { CellPartyFrameHeader, CellSoloFrame }
+	wipe(headers)
+
+	-- Appended rather than placed, so a missing party header cannot leave a hole that stops
+	-- ipairs before it reaches the raid ones.
+	headers[#headers + 1] = CellPartyFrameHeader
+	headers[#headers + 1] = CellSoloFrame
 
 	for i = 0, 8 do
-		local header = _G["CellRaidFrameHeader" .. i]
-		if header then
-			headers[#headers + 1] = header
-		end
+		headers[#headers + 1] = _G["CellRaidFrameHeader" .. i]
 	end
 
 	for _, header in ipairs(headers) do
-		if header then
-			for _, child in ipairs({ header:GetChildren() }) do
-				local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
+		for _, child in ipairs(M:Children(childScratch, header)) do
+			local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
 
-				if unit and unit ~= "" then
-					if (not child.IsForbidden or not child:IsForbidden()) and (child:IsVisible() or not visibleOnly) then
-						frames[#frames + 1] = child
-					end
+			if unit and unit ~= "" then
+				if (not child.IsForbidden or not child:IsForbidden()) and (child:IsVisible() or not visibleOnly) then
+					frames[#frames + 1] = child
 				end
 			end
 		end
 	end
-
-	return frames
 end
 
----Retrieves a list of Cell spotlight unit frames.
+---Appends the Cell spotlight unit frames.
 ---@param visibleOnly boolean
----@return table
-function M:CellSpotlightFrames(visibleOnly)
+---@param frames table Frames are appended here.
+function M:CellSpotlightFrames(visibleOnly, frames)
 	if not _G["CellSpotlightFrameUnitButton1"] then
-		return {}
+		return
 	end
-
-	local frames = {}
 
 	for i = 1, 15 do
 		local frame = _G["CellSpotlightFrameUnitButton" .. i]
@@ -55,8 +52,6 @@ function M:CellSpotlightFrames(visibleOnly)
 			frames[#frames + 1] = frame
 		end
 	end
-
-	return frames
 end
 
 ---Hooks OnShow/OnHide on all 15 Cell spotlight unit buttons, calling callback() on each change.

@@ -1,17 +1,16 @@
 local _, addon = ...
 local M = addon.Core.Frames
+local childScratch = {}
 
----Retrieves a list of TPerl party unit frames.
+---Appends the TPerl party unit frames.
 ---@param visibleOnly boolean
----@return table
-function M:TPerlFrames(visibleOnly)
+---@param frames table Frames are appended here.
+function M:TPerlFrames(visibleOnly, frames)
 	if not TPerl_Party_SecureHeader then
-		return {}
+		return
 	end
 
-	local frames = {}
-
-	for _, child in ipairs({ TPerl_Party_SecureHeader:GetChildren() }) do
+	for _, child in ipairs(M:Children(childScratch, TPerl_Party_SecureHeader)) do
 		local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
 
 		if unit and unit ~= "" then
@@ -20,6 +19,4 @@ function M:TPerlFrames(visibleOnly)
 			end
 		end
 	end
-
-	return frames
 end

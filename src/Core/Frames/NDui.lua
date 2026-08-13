@@ -1,18 +1,19 @@
 local _, addon = ...
 local M = addon.Core.Frames
+local childScratch = {}
+local seen = {}
 
----Retrieves a list of NDui unit frames.
+---Appends the NDui unit frames.
 ---NDui uses oUF. Party/raid frames are spawned as secure headers whose children are the actual unit buttons.
 ---Boss and arena frames are spawned directly as named globals.
 ---@param visibleOnly boolean
----@return table
-function M:NDuiFrames(visibleOnly)
+---@param frames table Frames are appended here.
+function M:NDuiFrames(visibleOnly, frames)
 	if not NDuiDB then
-		return {}
+		return
 	end
 
-	local frames = {}
-	local seen = {}
+	wipe(seen)
 
 	local function Add(frame)
 		if not frame or seen[frame] then return end
@@ -24,7 +25,7 @@ function M:NDuiFrames(visibleOnly)
 
 	local function AddHeader(header)
 		if not header then return end
-		for _, child in ipairs({ header:GetChildren() }) do
+		for _, child in ipairs(M:Children(childScratch, header)) do
 			local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
 			if unit and unit ~= "" then
 				Add(child)
@@ -40,8 +41,6 @@ function M:NDuiFrames(visibleOnly)
 	for i = 1, 8 do
 		AddHeader(_G["oUF_Raid" .. i])
 	end
-
-	return frames
 end
 
 ---Registers a callback via NDui's internal oUF:RegisterInitCallback, called once per frame as NDui spawns it.

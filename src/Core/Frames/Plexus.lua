@@ -1,17 +1,18 @@
 local _, addon = ...
 local M = addon.Core.Frames
+local childScratch = {}
+local seen = {}
 
----Retrieves a list of Plexus raid/party unit frames from PlexusLayoutHeader frames only.
+---Appends the Plexus raid/party unit frames from PlexusLayoutHeader frames only.
 ---@param visibleOnly boolean
----@return table
-function M:PlexusFrames(visibleOnly)
+---@param frames table Frames are appended here.
+function M:PlexusFrames(visibleOnly, frames)
 	-- Plexus must be loaded
 	if not PlexusLayoutHeader1 then
-		return {}
+		return
 	end
 
-	local frames = {}
-	local seen = {}
+	wipe(seen)
 
 	local function Add(frame)
 		if not frame then
@@ -40,7 +41,7 @@ function M:PlexusFrames(visibleOnly)
 		end
 
 		-- These are secure header children = actual unit buttons
-		for _, child in ipairs({ header:GetChildren() }) do
+		for _, child in ipairs(M:Children(childScratch, header)) do
 			local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
 
 			if unit and unit ~= "" then
@@ -50,6 +51,4 @@ function M:PlexusFrames(visibleOnly)
 
 		headerIndex = headerIndex + 1
 	end
-
-	return frames
 end

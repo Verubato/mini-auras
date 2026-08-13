@@ -12,11 +12,32 @@ for i, v in ipairs(STRATA_ORDER) do STRATA_INDEX[v] = i end
 local M = {}
 addon.Core.Frames = M
 
----Retrieves a list of custom frames from our saved vars.
+---Copies varargs into a table without the constructor's allocation. Its own function because
+---that is the only way to get at a `...` the caller already has in hand.
+---@param out table
+local function FillFrom(out, ...)
+	for i = 1, select("#", ...) do
+		out[i] = select(i, ...)
+	end
+end
+
+---A frame's children in a caller-owned table, so walking a secure header costs no allocation.
+---The scratch is the caller's because several providers nest one walk inside another, and one
+---shared table could only hold the inner one.
+---@param scratch table Wiped and refilled.
+---@param parent table
+---@return table scratch
+function M:Children(scratch, parent)
+	wipe(scratch)
+	FillFrom(scratch, parent:GetChildren())
+
+	return scratch
+end
+
+---Appends the custom frames named in our saved vars.
 ---@param visibleOnly boolean
----@return table
-function M:CustomFrames(visibleOnly)
-	local frames = {}
+---@param frames table Frames are appended here.
+function M:CustomFrames(visibleOnly, frames)
 	local i = 1
 	local anchor = db["Anchor" .. i]
 
@@ -32,53 +53,47 @@ function M:CustomFrames(visibleOnly)
 		i = i + 1
 		anchor = db["Anchor" .. i]
 	end
-
-	return frames
 end
 
-function M:GetAll(visibleOnly, includeTestFrames)
-	local anchors = {}
-	local elvui = M:ElvUIFrames(visibleOnly)
-	local grid2 = M:Grid2Frames(visibleOnly)
-	local danders = M:DandersFrames()
-	local blizzard = not wowEx:IsDandersEnabled() and M:BlizzardFrames(visibleOnly) or {}
-	local blizzardParty = not wowEx:IsDandersEnabled() and M:BlizzardPartyFrames(visibleOnly) or {}
-	local suf = M:ShadowedUFFrames(visibleOnly)
-	local plexus = M:PlexusFrames(visibleOnly)
-	local cell = M:CellFrames(visibleOnly)
-	local cellSpotlight = M:CellSpotlightFrames(visibleOnly)
-	local vuhdo = M:VuhDoFrames(visibleOnly)
-	local tperl = M:TPerlFrames(visibleOnly)
-	local eqol = M:EnhancedQoLFrames(visibleOnly)
-	local buzzard = M:BuzzardFrames(visibleOnly)
-	local ndui = M:NDuiFrames(visibleOnly)
-	local gw2ui = M:GW2UIFrames(visibleOnly)
-	local msuf = M:MSUFFrames(visibleOnly)
-	local external = M:ExternalFrames(visibleOnly)
-	local custom = M:CustomFrames(visibleOnly)
+---Every unit frame the addon knows how to anchor to. Providers append into one table rather than
+---each handing back their own, so a client running a single frame addon does not pay for
+---seventeen empty ones per call.
+---
+---Pass `out` to reuse a table across calls. It is wiped, and the return value is that same table,
+---so a caller must finish with it before asking again.
+---@param visibleOnly boolean
+---@param includeTestFrames boolean?
+---@param out table? Reused instead of allocating; wiped first.
+---@return table
+function M:GetAll(visibleOnly, includeTestFrames, out)
+	local anchors = out or {}
 
-	mini:Append(blizzard, anchors)
-	mini:Append(blizzardParty, anchors)
-	mini:Append(elvui, anchors)
-	mini:Append(grid2, anchors)
-	mini:Append(danders, anchors)
-	mini:Append(suf, anchors)
-	mini:Append(plexus, anchors)
-	mini:Append(cell, anchors)
-	mini:Append(cellSpotlight, anchors)
-	mini:Append(vuhdo, anchors)
-	mini:Append(tperl, anchors)
-	mini:Append(eqol, anchors)
-	mini:Append(buzzard, anchors)
-	mini:Append(ndui, anchors)
-	mini:Append(gw2ui, anchors)
-	mini:Append(msuf, anchors)
-	mini:Append(external, anchors)
-	mini:Append(custom, anchors)
+	wipe(anchors)
+
+	if not wowEx:IsDandersEnabled() then
+		M:BlizzardFrames(visibleOnly, anchors)
+		M:BlizzardPartyFrames(visibleOnly, anchors)
+	end
+
+	M:ElvUIFrames(visibleOnly, anchors)
+	M:Grid2Frames(visibleOnly, anchors)
+	M:DandersFrames(anchors)
+	M:ShadowedUFFrames(visibleOnly, anchors)
+	M:PlexusFrames(visibleOnly, anchors)
+	M:CellFrames(visibleOnly, anchors)
+	M:CellSpotlightFrames(visibleOnly, anchors)
+	M:VuhDoFrames(visibleOnly, anchors)
+	M:TPerlFrames(visibleOnly, anchors)
+	M:EnhancedQoLFrames(visibleOnly, anchors)
+	M:BuzzardFrames(visibleOnly, anchors)
+	M:NDuiFrames(visibleOnly, anchors)
+	M:GW2UIFrames(visibleOnly, anchors)
+	M:MSUFFrames(visibleOnly, anchors)
+	M:ExternalFrames(visibleOnly, anchors)
+	M:CustomFrames(visibleOnly, anchors)
 
 	if includeTestFrames then
-		local testFrames = M:GetTestFrames()
-		mini:Append(testFrames, anchors)
+		mini:Append(M:GetTestFrames(), anchors)
 	end
 
 	return anchors

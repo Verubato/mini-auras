@@ -1,19 +1,21 @@
 local _, addon = ...
 local M = addon.Core.Frames
 
----Retrieves a list of visible DandersFrames frames.
----@return table
-function M:DandersFrames()
-	local frames
-
-	if DandersFrames_GetAllFrames then
-		local dandersSuccess, result = pcall(DandersFrames_GetAllFrames)
-		if dandersSuccess then
-			frames = result
-		end
+---Appends the DandersFrames frames. Copied out rather than handed on: the table belongs to
+---DandersFrames and is not ours to keep a reference to.
+---@param frames table Frames are appended here.
+function M:DandersFrames(frames)
+	if not DandersFrames_GetAllFrames then
+		return
 	end
 
-	frames = frames or {}
+	local ok, result = pcall(DandersFrames_GetAllFrames)
 
-	return frames
+	if not ok or type(result) ~= "table" then
+		return
+	end
+
+	for i = 1, #result do
+		frames[#frames + 1] = result[i]
+	end
 end

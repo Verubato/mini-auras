@@ -5,14 +5,12 @@ local M = addon.Core.Frames
 ---MSUF registers all its unit frames (player, target, focus, pet, party1-4,
 ---raid1-40, boss1-5, arena1-5, etc.) in _G.MSUF_UnitFrames, keyed by unit
 ---@param visibleOnly boolean
----@return table
-function M:MSUFFrames(visibleOnly)
+---@param frames table Frames are appended here.
+function M:MSUFFrames(visibleOnly, frames)
 	local registry = _G.MSUF_UnitFrames
 	if type(registry) ~= "table" then
-		return {}
+		return
 	end
-
-	local frames = {}
 
 	for _, frame in pairs(registry) do
 		if frame
@@ -24,6 +22,4 @@ function M:MSUFFrames(visibleOnly)
 			frames[#frames + 1] = frame
 		end
 	end
-
-	return frames
 end

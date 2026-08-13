@@ -36,6 +36,9 @@ local testSpells = {}
 local petUnitFrameScratch = {}
 -- Reused per-group icon budget map handed to ApplyEntryOptions.
 local budgetScratch = {}
+-- Reused buffer for the anchor walk. Its own rather than shared with the other modules, so one
+-- module's walk can never land in the middle of another's.
+local anchorScratch = {}
 
 local function GetOptions()
 	return instanceOptions:IsRaid() and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
@@ -253,7 +256,7 @@ local function GetPetUnitFrames()
 end
 
 local function EnsureWatchers()
-	local anchors = frames:GetAll(true, testModeActive)
+	local anchors = frames:GetAll(true, testModeActive, anchorScratch)
 
 	for _, anchor in ipairs(anchors) do
 		EnsureWatcher(anchor)

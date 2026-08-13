@@ -43,6 +43,9 @@ local testCcSpells = {}
 local db
 -- Reused per-group icon budget map handed to ApplyEntryOptions.
 local budgetScratch = {}
+-- Reused buffer for the anchor walk. Its own rather than shared with the other modules, so one
+-- module's walk can never land in the middle of another's.
+local anchorScratch = {}
 
 -- Helpful auras are filtered by spell id alone rather than by Blizzard's category flags. That is
 -- only possible here because the gate on spell-id filters is UnitCanAssist, and this module
@@ -412,7 +415,7 @@ local function EnsureWatcher(anchor, unit)
 end
 
 local function EnsureWatchers()
-	local anchors = frames:GetAll(true, testModeActive)
+	local anchors = frames:GetAll(true, testModeActive, anchorScratch)
 
 	for _, anchor in ipairs(anchors) do
 		EnsureWatcher(anchor)
