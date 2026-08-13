@@ -94,6 +94,10 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	-- keep that colour while CC still takes the dispel type's.
 	local tinted = group ~= nil and group.GlowColor ~= nil
 	local wantBorder = style.ColorByDispelType == true and borders ~= nil and not tinted
+	-- Whether the border also shows on auras with NO dispel type (stuns, disarms), tinted with the
+	-- "None" palette colour like the glow below. Opt-in per display: on a CC-only group every aura
+	-- deserves the ring, but on a generic debuff display it would ring every physical debuff.
+	local wantTypelessBorder = wantBorder and style.BorderWithoutDispelType == true
 	local wantGlowTint = wantBorder and style.Glow == true and widgets.Glow ~= nil
 	-- A tinted group draws the border the dispel registration would have drawn, in its own colour,
 	-- so switching the colours on never costs those icons their ring.
@@ -104,6 +108,7 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	-- every restyle, and the retry ticker restyles every stale display once a second. The colour
 	-- is part of it so a colour-only change still repaints.
 	if wantBorder == widgets.DispelBorder
+		and wantTypelessBorder == widgets.DispelTypelessBorder
 		and wantGlowTint == widgets.DispelGlowTint
 		and wantPlainBorder == widgets.DispelPlainBorder
 		and colorR == widgets.DispelColorR
@@ -113,6 +118,7 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	end
 
 	widgets.DispelBorder = wantBorder
+	widgets.DispelTypelessBorder = wantTypelessBorder
 	widgets.DispelGlowTint = wantGlowTint
 	widgets.DispelPlainBorder = wantPlainBorder
 	widgets.DispelColorR = colorR
@@ -126,6 +132,7 @@ function M:ApplyDispelTextures(instance, button, widgets)
 				style = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset,
 				showWhenHarmful = true,
 				showWhenHelpful = true,
+				showWithoutDispelType = wantTypelessBorder,
 			})
 		end
 	elseif borders then

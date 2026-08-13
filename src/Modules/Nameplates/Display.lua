@@ -308,6 +308,9 @@ local function BarStyle(barOptions)
 	-- drives both halves of the colouring: dispel type for CC, the configured tints for the
 	-- categories the game has no dispel colour for (see BarCategoryColors).
 	style.ColorByDispelType = barOptions.Icons.ColorByCategory
+	-- The bars' untinted groups only hold CC and disarm, and most of that is physical: without
+	-- this a stun gets the tinted glow but no ring, which reads as the border being broken.
+	style.BorderWithoutDispelType = true
 	style.ShowTooltips = barOptions.ShowTooltips ~= false
 	return style
 end
@@ -498,6 +501,7 @@ local function ShowBarTestIcons(container, barOptions, now)
 				layerScratch.ReverseCooldown = iconsReverse
 				layerScratch.FontScale = fontScale
 				layerScratch.Color = colorByCategory and (category.Colors and category.Colors[spellId] or category.Color) or nil
+				layerScratch.Border = true
 				layerScratch.SpellId = showTooltips and spellId or nil
 				container:SetSlot(slot, layerScratch)
 			end
@@ -683,6 +687,9 @@ function M:UpdateKick(data)
 				layerScratch.ShowMilliseconds = barOptions.Icons.ShowMilliseconds
 				layerScratch.FontScale = db.FontScale
 				layerScratch.Color = barOptions.Icons.ColorByCategory and kickEntry.Color or nil
+				-- The aura buttons beside this icon draw border and glow together when coloured,
+				-- so the kick icon does too or it reads as the odd one out in the row.
+				layerScratch.Border = true
 				layerScratch.SpellId = nil
 				container:SetSlot(1, layerScratch)
 			else

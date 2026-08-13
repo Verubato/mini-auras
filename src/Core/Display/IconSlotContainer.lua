@@ -982,6 +982,7 @@ end
 ---@field HideSwipe boolean? Drop the cooldown swipe, whatever the global setting says
 ---@field HideNumbers boolean? Drop the countdown text
 ---@field Color table? RGBA color table {r, g, b, a} for glow and border color
+---@field Border boolean? Show the coloured border even while a glow is active
 ---@field FontScale number? Font scale multiplier for cooldown text (default: 1.0)
 ---@field Layer number? Which layer to render on (1 = base, 2+ = stacked above; default: 1)
 ---@field SpellId number? Spell ID for tooltip on hover
@@ -1085,8 +1086,10 @@ function M:SetSlot(slotIndex, options)
 
 	ApplyAlpha(layer.Frame, options.Alpha)
 
-	-- Hide the coloured border when a glow is active so the glow ring and border don't double up.
-	if options.Color and layer.Border and not options.Glow then
+	-- The coloured border normally gives way to an active glow so the two rings don't double up.
+	-- Border forces both, for icons standing in for aura buttons - the engine draws border and
+	-- glow together on those, and a preview rendered here must not look different from live.
+	if options.Color and layer.Border and (options.Border == true or not options.Glow) then
 		layer.Border:SetVertexColor(
 			options.Color.r or 1,
 			options.Color.g or 1,

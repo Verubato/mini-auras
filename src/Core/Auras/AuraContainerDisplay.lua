@@ -37,6 +37,7 @@ local STYLE_FIELDS = {
 	"HideNumbers",
 	"ShowMilliseconds",
 	"ColorByDispelType",
+	"BorderWithoutDispelType",
 	"Glow",
 	"FontScale",
 	"ShowTooltips",
@@ -1700,6 +1701,9 @@ end
 ---@field HideNumbers boolean? Drop the countdown text, the native one and the bound stand-in.
 ---@field ShowMilliseconds boolean?
 ---@field ColorByDispelType boolean?
+---@field BorderWithoutDispelType boolean? Keep the dispel-coloured border on auras with no dispel
+---type, tinted with the "None" palette colour like the glow. For displays whose untinted groups
+---only ever hold CC, where a stun should ring the same as a polymorph.
 ---@field Glow boolean?
 ---@field FontScale number?
 ---@field ShowTooltips boolean?
