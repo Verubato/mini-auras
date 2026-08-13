@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.9.0
+
+- Nameplates and group auras now have their own Important and Defensive colour pickers, the same as the alerts already had. CC icons keep the game's dispel type colours.
+- Group frames can now show defensive and important icons up to Max Icons each, instead of sharing one allowance between them.
+- Fixed your own interrupt showing twice in the ally interrupt tracker while your readiness row was already counting it down.
+- Fixed the pet frame's border art turning black while portrait icons were showing.
+
 ## 5.8.0
 
 - MiniAuras now needs patch 12.1 and will not load on 12.0.7.
