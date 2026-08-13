@@ -43,6 +43,9 @@ local testCcSpells = {}
 local db
 -- Reused per-group icon budget map handed to ApplyEntryOptions.
 local budgetScratch = {}
+-- Reused settings handed to ApplyEntryOptions, refilled per entry.
+---@type EntrySettings
+local settingsScratch = {}
 -- Reused buffer for the anchor walk. Its own rather than shared with the other modules, so one
 -- module's walk can never land in the middle of another's.
 local anchorScratch = {}
@@ -592,19 +595,16 @@ local function ApplyEntryOptions(entry, anchor, options)
 		entry.Display:SetGroupGlowColors(HELPFUL_GROUP_KEYS, HelpfulColors(options))
 	end
 
-	anchoredIcons:ApplyEntryOptions(
-		entry,
-		anchor,
-		options,
-		iconSize,
-		maxIcons,
-		style,
-		budgetScratch,
-		testModeActive,
-		options.ExcludePlayer,
-		IsKickActive(entry, options),
-		UpdateKickIcon
-	)
+	settingsScratch.IconSize = iconSize
+	settingsScratch.SlotCount = maxIcons
+	settingsScratch.Style = style
+	settingsScratch.Budgets = budgetScratch
+	settingsScratch.TestModeActive = testModeActive
+	settingsScratch.ExcludePlayer = options.ExcludePlayer
+	settingsScratch.KickActive = IsKickActive(entry, options)
+	settingsScratch.Render = UpdateKickIcon
+
+	anchoredIcons:ApplyEntryOptions(entry, anchor, options, settingsScratch)
 end
 
 ---@param options RaidFrameAurasInstanceOptions

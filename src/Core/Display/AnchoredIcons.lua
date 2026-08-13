@@ -172,30 +172,23 @@ end
 ---@param entry table Entry carrying Container, Anchor, Unit and Display.
 ---@param anchor table
 ---@param options table Module per-instance options (Grow, Offset, IconSpacing).
----@param iconSize number
----@param slotCount number Kick/test container slot count.
----@param style AuraDisplayStyle? Style for the display; may be the shared scratch.
----@param budgets table<string, number>? Group key -> icon budget; modules zero a group to
----switch its category off.
----@param testModeActive boolean
----@param excludePlayer boolean? Resolved by the module (pets never exclude the player).
----@param kickActive boolean Whether a kick icon currently occupies the container.
----@param render fun(entry: table)? Live re-render, skipped in test mode.
-function M:ApplyEntryOptions(entry, anchor, options, iconSize, slotCount, style, budgets,
-	testModeActive, excludePlayer, kickActive, render)
+---@param settings EntrySettings Everything the module resolved for this entry.
+function M:ApplyEntryOptions(entry, anchor, options, settings)
 	local container = entry.Container
 	local spacing = options.IconSpacing or 2
 	local display = entry.Display
+	local testModeActive = settings.TestModeActive
+	local excludePlayer = settings.ExcludePlayer
 
-	container:SetIconSize(iconSize)
-	container:SetCount(slotCount)
+	container:SetIconSize(settings.IconSize)
+	container:SetCount(settings.SlotCount)
 	container:SetSpacing(spacing)
 
 	if display then
-		display:ApplyConfig(iconSize, spacing, style)
+		display:ApplyConfig(settings.IconSize, spacing, settings.Style)
 
-		if budgets then
-			for groupKey, maxIcons in pairs(budgets) do
+		if settings.Budgets then
+			for groupKey, maxIcons in pairs(settings.Budgets) do
 				display:SetMaxIcons(groupKey, maxIcons)
 			end
 		end
@@ -203,8 +196,8 @@ function M:ApplyEntryOptions(entry, anchor, options, iconSize, slotCount, style,
 		display:SetEnabled(true)
 	end
 
-	if not testModeActive and render then
-		render(entry)
+	if not testModeActive and settings.Render then
+		settings.Render(entry)
 	end
 
 	self:AnchorContainer(container, anchor, options)
@@ -219,7 +212,7 @@ function M:ApplyEntryOptions(entry, anchor, options, iconSize, slotCount, style,
 		-- and fake icons don't mix.
 		display:Hide()
 	else
-		self:AnchorAuraDisplay(entry, anchor, options, kickActive)
+		self:AnchorAuraDisplay(entry, anchor, options, settings.KickActive)
 		frames:ShowHideDisplay(display, anchor, excludePlayer)
 	end
 end
@@ -227,3 +220,17 @@ end
 function M:Init()
 	db = mini:GetSavedVars()
 end
+
+---What a module resolves per entry before handing it to ApplyEntryOptions. A table rather than a
+---parameter list because the flags are all booleans, and three of them in a row read as nothing
+---at the call site.
+---@class EntrySettings
+---@field IconSize number
+---@field SlotCount number Kick/test container slot count.
+---@field Style AuraDisplayStyle? Style for the display; may be the shared scratch.
+---@field Budgets table<string, number>? Group key -> icon budget; modules zero a group to switch
+---its category off.
+---@field TestModeActive boolean
+---@field ExcludePlayer boolean? Resolved by the module (pets never exclude the player).
+---@field KickActive boolean Whether a kick icon currently occupies the container.
+---@field Render fun(entry: table)? Live re-render, skipped in test mode.
