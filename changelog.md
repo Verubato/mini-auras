@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.10.0
+
+- Added ability to specify the strata of personal auras.
+- Increased font size of personal aura stack number.
+
 ## 5.9.1
 
 - Fixed an error when the game hides a player's specialization, which a mouseover of a stranger was enough to trigger.
