@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.9.1
+
+- Fixed an error when the game hides a player's specialization, which a mouseover of a stranger was enough to trigger.
+- The last five seconds of a countdown now read pure red.
+
 ## 5.9.0
 
 - Nameplates and group auras now have their own Important and Defensive colour pickers, the same as the alerts already had. CC icons keep the game's dispel type colours.
