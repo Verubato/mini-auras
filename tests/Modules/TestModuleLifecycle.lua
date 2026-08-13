@@ -652,10 +652,12 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		removePlate("np_resize")
 	end)
 
-	fw.it("a token that flips faction restyles its display instead of building another", function()
+	fw.it("a token that flips faction swaps between two cached displays", function()
 		-- GetUnitOptions returns Friendly or Enemy for the same token, and a duel flips it
-		-- mid-session. Building a display per configuration would strand a frame on every flip,
-		-- and WoW can never free one - so the one display is restyled in place.
+		-- mid-session. Restyling one display across the flip breaks while auras are secret (the
+		-- restyle defers and an enemy plate keeps the friendly size all arena), so each faction
+		-- keeps its own cached display: the first flip builds the second one, every later flip
+		-- swaps with no restyle and builds nothing.
 		-- Mirror the enemy bar's configuration so only the size differs.
 		local enemyBar = db.Modules.NameplatesModule.Enemy.Bar1
 		local friendlyBar = db.Modules.NameplatesModule.Friendly.Bar1
@@ -686,19 +688,29 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 
 		local created = env.auraContainerCount()
 
-		-- Duel starts: same token, now an enemy.
+		-- Duel starts: same token, now an enemy. The enemy-side display doesn't exist yet, so
+		-- this one flip builds it - at its own size, no restyle involved.
 		env.enemies.np_flip = true
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_flip")
 		local enemy = activeDisplays("np_flip")[1]
-		assert(enemy == friendly, "the same display, restyled rather than replaced")
-		assert(iconSize(enemy) == 44, "resized to the enemy size")
-		assert(env.auraContainerCount() == created, "the flip builds nothing new")
+		assert(enemy ~= friendly, "the enemy faction gets its own display")
+		assert(iconSize(enemy) == 44, "built at the enemy size")
+		assert(iconSize(friendly) == 21, "without touching the friendly one")
+		assert(env.auraContainerCount() == created + 1, "the first flip builds exactly one display")
 
-		-- Duel ends: back to friendly, and it restyles back.
+		-- Duel ends: back to friendly, which swaps the cached display back in.
 		env.enemies.np_flip = nil
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_flip")
-		assert(iconSize(activeDisplays("np_flip")[1]) == 21, "restyled back to the friendly size")
-		assert(env.auraContainerCount() == created, "flipping back builds nothing new")
+		assert(activeDisplays("np_flip")[1] == friendly, "the cached friendly display returns")
+		assert(iconSize(friendly) == 21, "still at the friendly size")
+		assert(env.auraContainerCount() == created + 1, "flipping back builds nothing new")
+
+		-- And a second flip to enemy reuses its cached display too: two per (token, bar), ever.
+		env.enemies.np_flip = true
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_flip")
+		assert(activeDisplays("np_flip")[1] == enemy, "the cached enemy display returns")
+		assert(env.auraContainerCount() == created + 1, "later flips build nothing new")
+		env.enemies.np_flip = nil
 
 		removePlate("np_flip")
 		db.Modules.NameplatesModule.Friendly.Bar1.Enabled = false

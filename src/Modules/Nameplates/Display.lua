@@ -94,8 +94,20 @@ local NAMEPLATE_BAR2_KEY = addonName .. "_Bar2Container"
 -- buffs based on its ShowCC / ShowDefensives / ShowImportant options, and both bars can display
 -- at the same time.
 local BARS = {
-	{ Key = "Bar1", ContainerKey = NAMEPLATE_BAR1_KEY, DataField = "Bar1Container", DisplayField = "Bar1Display" },
-	{ Key = "Bar2", ContainerKey = NAMEPLATE_BAR2_KEY, DataField = "Bar2Container", DisplayField = "Bar2Display" },
+	{
+		Key = "Bar1",
+		ContainerKey = NAMEPLATE_BAR1_KEY,
+		DataField = "Bar1Container",
+		DisplayField = "Bar1Display",
+		CacheKey = { Enemy = "Bar1Enemy", Friendly = "Bar1Friendly" },
+	},
+	{
+		Key = "Bar2",
+		ContainerKey = NAMEPLATE_BAR2_KEY,
+		DataField = "Bar2Container",
+		DisplayField = "Bar2Display",
+		CacheKey = { Enemy = "Bar2Enemy", Friendly = "Bar2Friendly" },
+	},
 }
 
 -- One AuraContainer per (nameplate token, bar), built with its bar's full configuration and kept
@@ -109,11 +121,17 @@ local BARS = {
 --
 -- Cached per token rather than created per plate spawn because WoW frames can never be freed:
 -- tokens are a small fixed set (nameplate1..N) so this is bounded, whereas creating one per
--- spawn would grow for the whole session. Exactly ONE display per (token, bar): a configuration
--- change restyles it in place rather than building a replacement. Keying on the configuration
--- instead meant every step of an icon-size slider drag built a fresh display for every tracked
--- plate - twenty buttons apiece, each with its own cooldown, border and animated glow - and left
--- all of them resident for the session.
+-- spawn would grow for the whole session. Exactly ONE display per (token, bar, faction): a
+-- configuration change restyles it in place rather than building a replacement. Keying on the
+-- configuration instead meant every step of an icon-size slider drag built a fresh display for
+-- every tracked plate - twenty buttons apiece, each with its own cooldown, border and animated
+-- glow - and left all of them resident for the session.
+--
+-- Faction is part of the key because the same token alternates between the Friendly and Enemy
+-- configurations as plates recycle, and when the two differ that alternation is a restyle. A
+-- restyle is blocked while auras are secret, so inside an arena the flip would show a plate at
+-- the OTHER faction's icon size for the rest of the match. Swapping between two cached displays
+-- instead makes the flip a park-and-reacquire, which never needs a restyle.
 --
 -- Restyling is impossible while auras are secret, but that is already handled: ApplyConfig stores
 -- the new values and flags the display, and AuraContainerDisplay's retry settles the buttons when
@@ -317,7 +335,8 @@ end
 
 ---Acquires (or reuses) and reconfigures a bar's aura display for a tracked plate.
 ---@param data NameplateData
-local function EnsureBarDisplay(data, bar, barOptions)
+---@param factionKey "Enemy"|"Friendly" which side of the options the bar came from
+local function EnsureBarDisplay(data, bar, barOptions, factionKey)
 	local token = data.UnitToken
 	local size = BarIconSize(barOptions)
 	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
@@ -333,14 +352,15 @@ local function EnsureBarDisplay(data, bar, barOptions)
 		barDisplays[token] = byBar
 	end
 
-	-- One display per bar, restyled when the configuration moves. The same token legitimately
-	-- alternates between configurations - GetUnitOptions returns Friendly or Enemy for it and a
-	-- duel flips that mid-session - so this path is hot enough that it must not build frames.
-	local entry = byBar[bar.Key]
+	-- One display per (bar, faction), restyled only when that faction's own configuration moves.
+	-- The token flipping faction - plates recycling, a duel - switches cache entries instead, so
+	-- the flip needs no restyle and stays correct while auras are secret. This path is hot enough
+	-- that it must not build frames for a token it has seen before.
+	local entry = byBar[bar.CacheKey[factionKey]]
 
 	if not entry then
 		entry = { Display = CreateBarDisplay(size, spacing, style, colors), Signature = signature }
-		byBar[bar.Key] = entry
+		byBar[bar.CacheKey[factionKey]] = entry
 	elseif entry.Signature ~= signature then
 		-- One restyle pass for all three values; the individual setters would each walk every
 		-- button. Records the new signature even when the restyle has to defer, because the
@@ -400,11 +420,14 @@ end
 ---of bars that are now disabled.
 ---@param data NameplateData
 local function EnsureBarDisplays(data, unitOptions)
+	-- GetUnitOptions hands out one of the two module tables, so identity answers which side
+	-- these options are.
+	local factionKey = unitOptions == nmModule.Friendly and "Friendly" or "Enemy"
 	for _, bar in ipairs(BARS) do
 		local barOptions = unitOptions[bar.Key]
 		local container = data[bar.DataField]
 		if barOptions and barOptions.Enabled and container then
-			local display = EnsureBarDisplay(data, bar, barOptions)
+			local display = EnsureBarDisplay(data, bar, barOptions, factionKey)
 			local kickActive = barOptions.ShowCC and kickTracker:GetKick(data.UnitToken) ~= nil
 			AnchorBarDisplay(display, container, data.Nameplate, barOptions, kickActive)
 		else
@@ -749,6 +772,7 @@ function M:RefreshAnchorsAndSizes()
 	for _, data in pairs(nameplateAnchors) do
 		if data.Nameplate and data.UnitToken then
 			local unitOptions = self:GetUnitOptions(data.UnitToken)
+			local factionKey = unitOptions == nmModule.Friendly and "Friendly" or "Enemy"
 
 			-- Both bars are independent; reposition each that exists.
 			for _, bar in ipairs(BARS) do
@@ -759,7 +783,7 @@ function M:RefreshAnchorsAndSizes()
 						ApplyContainerLayout(container, data.Nameplate, barOptions)
 
 						-- Re-apply option changes to the bar's aura display too.
-						local display = EnsureBarDisplay(data, bar, barOptions)
+						local display = EnsureBarDisplay(data, bar, barOptions, factionKey)
 						local kickActive = barOptions.ShowCC and kickTracker:GetKick(data.UnitToken) ~= nil
 						AnchorBarDisplay(display, container, data.Nameplate, barOptions, kickActive)
 					else
