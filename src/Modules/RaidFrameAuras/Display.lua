@@ -50,42 +50,66 @@ local budgetScratch = {}
 -- buff. It buys the ability to track spells the game never flags, at the cost of showing nothing
 -- that is not explicitly listed.
 --
--- One group, not the usual big/external/important split: with the category tokens gone the groups
--- would all carry the same filter string, so the categories are kept apart by which ids reach the
--- one group instead.
+-- Not the usual big/external/important split: with the category tokens gone both groups carry the
+-- same filter string, and the categories are kept apart by which ids reach which group. They are
+-- two groups rather than one only so each can take its own colour - the engine tints a whole
+-- group, and an aura's own id is unreadable here.
 -- Read-only stand-in so the lookups below never have to nil-check.
 local EMPTY_TABLE = {}
-local HELPFUL_GROUP_KEY = "helpful"
+local DEFENSIVE_GROUP_KEY = "helpfuldef"
+local IMPORTANT_GROUP_KEY = "helpfulimp"
 local HELPFUL_FILTER = "HELPFUL"
 -- An id nothing will ever have, for a tracked set that comes out empty. An EMPTY includeSpellIDs
 -- map reads as "no ids required", so the group would match every buff on the unit instead of none
 -- of them - see the same trap in Modules/CustomAuras/Display.
 local NEVER_MATCHED_SPELL_ID = 2147483647
--- The curated lists behind that group, each tied to the toggle that owns it. The unflagged halves
--- are only reachable at all because the group filters by id.
+-- The curated lists, each tied to the toggle that owns it and the group it lands in. The unflagged
+-- halves are only reachable at all because the groups filter by id.
 local HELPFUL_SOURCES = {
-	{ Toggle = "ShowDefensives", Ids = auraCategoryIds.Defensive },
-	{ Toggle = "ShowDefensives", Ids = auraCategoryIds.UnflaggedDefensive },
-	{ Toggle = "ShowImportant", Ids = auraCategoryIds.Important },
-	{ Toggle = "ShowImportant", Ids = auraCategoryIds.UnflaggedImportant },
+	{ Toggle = "ShowDefensives", Group = DEFENSIVE_GROUP_KEY, Ids = auraCategoryIds.Defensive },
+	{ Toggle = "ShowDefensives", Group = DEFENSIVE_GROUP_KEY, Ids = auraCategoryIds.UnflaggedDefensive },
+	{ Toggle = "ShowImportant", Group = IMPORTANT_GROUP_KEY, Ids = auraCategoryIds.Important },
+	{ Toggle = "ShowImportant", Group = IMPORTANT_GROUP_KEY, Ids = auraCategoryIds.UnflaggedImportant },
 }
 
--- Rebuilt whenever the tracked set changes; handed straight to the engine, which keeps the
--- reference, so it is replaced rather than mutated in place.
-local helpfulFilters = { includeSpellIDs = {} }
+-- Fallback category tints, for a profile saved before the colours were configurable.
+local DEFAULT_IMPORTANT_COLOR = { R = 1, G = 0.2, B = 0.2 }
+local DEFAULT_DEFENSIVE_COLOR = { R = 0.2, G = 1, B = 0.2 }
+-- The configured tints, refilled rather than reallocated. Both shapes are needed: the aura groups
+-- read [1..3], the IconSlotContainer test icons read r/g/b.
+local importantColor = { 1, 0.2, 0.2, r = 1, g = 0.2, b = 0.2, a = 1 }
+local defensiveColor = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
+-- Group key -> tint, or empty while the colours are switched off. The key list is separate because
+-- a group going back to the plain glow has no entry in the map.
+local helpfulColors = {}
+local HELPFUL_GROUP_KEYS = { DEFENSIVE_GROUP_KEY, IMPORTANT_GROUP_KEY }
 
----The spell ids currently tracked: the curated lists for the categories that are switched on,
----minus the spells the user switched off, plus anything they added by hand.
+-- Rebuilt whenever the tracked set changes; handed straight to the engine, which keeps the
+-- reference, so they are replaced rather than mutated in place. Keyed by group.
+local helpfulFilters = {
+	[DEFENSIVE_GROUP_KEY] = { includeSpellIDs = {} },
+	[IMPORTANT_GROUP_KEY] = { includeSpellIDs = {} },
+}
+
+---The spell ids currently tracked, split by the group that draws them: the curated lists for the
+---categories that are switched on, minus the spells the user switched off, plus anything they
+---added by hand.
 ---
----The category toggles pick the lists rather than an icon budget each, because both categories
----share the one group: budgeting the group to zero for either toggle would take the other
----category down with it.
+---The category toggles pick the lists rather than an icon budget each, because a curated id can
+---belong to both categories: budgeting a group to zero would take those spells down with it.
 ---@param options RaidFrameAurasInstanceOptions
----@return table filters
+---@return table filtersByGroup Group key -> candidate filters.
 local function GetHelpfulFilters(options)
 	local overrides = db.Modules.RaidFrameAurasModule.Spells
 	local disabled = (overrides and overrides.Disabled) or EMPTY_TABLE
-	local ids = {}
+	local idsByGroup = {
+		[DEFENSIVE_GROUP_KEY] = {},
+		[IMPORTANT_GROUP_KEY] = {},
+	}
+	-- Which group already claimed an id, so a spell listed as both defensive and important is
+	-- drawn once, by the first list that wanted it. Same partition the standard filter strings
+	-- make with their negations, in the one shape available here.
+	local claimed = {}
 
 	local curated = {}
 	local enabled = (overrides and overrides.Enabled) or EMPTY_TABLE
@@ -99,11 +123,13 @@ local function GetHelpfulFilters(options)
 			curated[spellId] = true
 			-- Off-by-default spells need an explicit opt-in; the rest are on unless switched off.
 			local tracked = shown
+				and not claimed[spellId]
 				and not disabled[spellId]
 				and (not auraCategoryIds.DefaultOff[spellId] or enabled[spellId])
 
 			if tracked then
-				ids[spellId] = true
+				claimed[spellId] = true
+				idsByGroup[source.Group][spellId] = true
 			end
 		end
 	end
@@ -117,33 +143,52 @@ local function GetHelpfulFilters(options)
 		if curated[spellId] then
 			custom[spellId] = nil
 		elseif not disabled[spellId] then
-			ids[spellId] = true
+			-- Hand-added spells belong to neither category, so they ride with the importants and
+			-- take that colour.
+			idsByGroup[IMPORTANT_GROUP_KEY][spellId] = true
 		end
 	end
 
-	-- Both categories switched off, or every listed spell switched off one by one.
-	if next(ids) == nil then
-		ids[NEVER_MATCHED_SPELL_ID] = true
-	end
+	helpfulFilters = {}
 
-	helpfulFilters = { includeSpellIDs = ids }
+	for group, ids in pairs(idsByGroup) do
+		-- The category switched off, or every listed spell switched off one by one.
+		if next(ids) == nil then
+			ids[NEVER_MATCHED_SPELL_ID] = true
+		end
+
+		helpfulFilters[group] = { includeSpellIDs = ids }
+	end
 
 	return helpfulFilters
 end
 
 ---@param maxIcons number
 ---@param options RaidFrameAurasInstanceOptions
+---@param colors table<string, number[]> Category tints, keyed by group key.
 ---@return table[]
-local function BuildGroups(maxIcons, options)
+local function BuildGroups(maxIcons, options, colors)
+	local filters = GetHelpfulFilters(options)
+
 	return {
 		auraFilters:GroupSpec("CrowdControl", maxIcons),
-		-- Not a standard category: the helpful side filters by the user-curated spell id list
+		-- Not standard categories: the helpful side filters by the user-curated spell id lists
 		-- rather than Blizzard's category tokens (see the header comment above).
 		{
-			Key = HELPFUL_GROUP_KEY,
+			Key = DEFENSIVE_GROUP_KEY,
 			FilterString = HELPFUL_FILTER,
-			CandidateFilters = GetHelpfulFilters(options),
+			CandidateFilters = filters[DEFENSIVE_GROUP_KEY],
 			MaxIcons = maxIcons,
+
+			GlowColor = colors[DEFENSIVE_GROUP_KEY],
+		},
+		{
+			Key = IMPORTANT_GROUP_KEY,
+			FilterString = HELPFUL_FILTER,
+			CandidateFilters = filters[IMPORTANT_GROUP_KEY],
+			MaxIcons = maxIcons,
+
+			GlowColor = colors[IMPORTANT_GROUP_KEY],
 		},
 	}
 end
@@ -165,6 +210,29 @@ local function BuildStyle(entryOptions)
 	style.ShowTooltips = entryOptions.ShowTooltips ~= false
 
 	return style
+end
+
+---Refills the category tints from the module options. The test icons read these tables directly.
+local function RefreshCategoryColors()
+	local module = db and db.Modules.RaidFrameAurasModule
+
+	moduleUtil:FillColor(importantColor, module and module.ImportantColor, DEFAULT_IMPORTANT_COLOR)
+	moduleUtil:FillColor(defensiveColor, module and module.DefensiveColor, DEFAULT_DEFENSIVE_COLOR)
+end
+
+---The tints the helpful groups take, keyed by group key. The CC group is never in there: it takes
+---the game's dispel type colours, which is all the toggle meant before there was anything to pick.
+---@param options RaidFrameAurasInstanceOptions
+---@return table<string, number[]> Shared, rewritten per call.
+local function HelpfulColors(options)
+	RefreshCategoryColors()
+
+	local colored = options.Icons.ColorByDispelType == true
+
+	helpfulColors[DEFENSIVE_GROUP_KEY] = colored and defensiveColor or nil
+	helpfulColors[IMPORTANT_GROUP_KEY] = colored and importantColor or nil
+
+	return helpfulColors
 end
 
 ---Whether a kick icon currently occupies the entry's container. With kicks switched off the
@@ -206,7 +274,7 @@ local function UpdateKickIcon(entry)
 	end)
 end
 
----Budgets both groups for the entry's CURRENT unit, which is a question about the unit rather
+---Budgets every group for the entry's CURRENT unit, which is a question about the unit rather
 ---than about the options.
 ---
 ---Assist: spell-id filters are gated on UnitCanAssist, so a unit that stops being assistable
@@ -230,7 +298,10 @@ local function ApplyUnitGates(entry, options)
 	local crowdControl = visible and options.ShowCC and maxIcons or 0
 
 	if entry.Display then
-		entry.Display:SetMaxIcons(HELPFUL_GROUP_KEY, helpful)
+		-- Both helpful groups take the same budget: a category switched off has an empty id set
+		-- already, so budgeting them apart would say the same thing twice.
+		entry.Display:SetMaxIcons(DEFENSIVE_GROUP_KEY, helpful)
+		entry.Display:SetMaxIcons(IMPORTANT_GROUP_KEY, helpful)
 		entry.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, crowdControl)
 	end
 
@@ -283,7 +354,7 @@ local function EnsureWatcher(anchor, unit)
 		entry.Display = auraContainerDisplay:New(
 			UIParent,
 			unit,
-			BuildGroups(maxIcons, options),
+			BuildGroups(maxIcons, options, HelpfulColors(options)),
 			size,
 			spacing,
 			"Friendly Indicators",
@@ -405,6 +476,7 @@ local function RefreshTestIcons()
 	local defensiveCount = options.ShowDefensives and #testDefensiveSpells or 0
 	local importantCount = options.ShowImportant and #testImportantSpells or 0
 	local showKicks = options.ShowKicks
+	local colors = HelpfulColors(options)
 
 	for _, entry in ipairs(orderedEntries) do
 		local container = entry.Container
@@ -445,6 +517,7 @@ local function RefreshTestIcons()
 		slotIndex = testSpellData:FillContainer(container, testDefensiveSpells, slotIndex, {
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
+			Color = colors[DEFENSIVE_GROUP_KEY],
 			FontScale = db.FontScale,
 			ShowTooltips = showTooltips,
 			Count = defensiveSlots,
@@ -453,6 +526,7 @@ local function RefreshTestIcons()
 		slotIndex = testSpellData:FillContainer(container, testImportantSpells, slotIndex, {
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
+			Color = colors[IMPORTANT_GROUP_KEY],
 			FontScale = db.FontScale,
 			ShowTooltips = showTooltips,
 			Count = importantSlots,
@@ -496,18 +570,23 @@ local function ApplyEntryOptions(entry, anchor, options)
 	if entry.Display then
 		style = BuildStyle(options)
 
-		-- ShowCC maps to a zero icon budget for its group. The helpful side cannot: one group
-		-- covers both categories there, so its toggles select the tracked spell ids instead and
-		-- only a group with neither category on goes to zero. Both sides also answer to the
+		-- ShowCC maps to a zero icon budget for its group. The helpful side cannot: a curated
+		-- spell can sit in either category, so the toggles select the tracked spell ids instead
+		-- and only a display with neither category on goes to zero. Both sides also answer to the
 		-- per-unit gates, which ApplyUnitGates owns.
 		local helpful, crowdControl = ApplyUnitGates(entry, options)
 
 		budgetScratch[auraFilters.GroupKey.CrowdControl] = crowdControl
-		budgetScratch[HELPFUL_GROUP_KEY] = helpful
+		budgetScratch[DEFENSIVE_GROUP_KEY] = helpful
+		budgetScratch[IMPORTANT_GROUP_KEY] = helpful
 
 		-- The tracked set is editable at runtime, so re-publish it rather than assuming the
 		-- filters handed over at creation are still current.
-		entry.Display:SetCandidateFilters(HELPFUL_GROUP_KEY, GetHelpfulFilters(options))
+		local filters = GetHelpfulFilters(options)
+		entry.Display:SetCandidateFilters(DEFENSIVE_GROUP_KEY, filters[DEFENSIVE_GROUP_KEY])
+		entry.Display:SetCandidateFilters(IMPORTANT_GROUP_KEY, filters[IMPORTANT_GROUP_KEY])
+
+		entry.Display:SetGroupGlowColors(HELPFUL_GROUP_KEYS, HelpfulColors(options))
 	end
 
 	anchoredIcons:ApplyEntryOptions(
@@ -548,7 +627,8 @@ function M:OnUnitFactionChanged(unit)
 
 	for _, entry in pairs(watchers) do
 		if entry.Unit == unit and entry.Display then
-			local wasHelpful = entry.Display:GetMaxIcons(HELPFUL_GROUP_KEY)
+			-- Either helpful group answers for both; they always carry the same budget.
+			local wasHelpful = entry.Display:GetMaxIcons(DEFENSIVE_GROUP_KEY)
 			local wasCc = entry.Display:GetMaxIcons(auraFilters.GroupKey.CrowdControl)
 			local helpful, crowdControl = ApplyUnitGates(entry, options)
 

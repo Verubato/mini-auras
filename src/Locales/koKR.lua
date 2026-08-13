@@ -87,6 +87,7 @@ L:RegisterLocale("koKR", {
 	["Reverse swipe"] = "역방향 스와이프",
 	["Reverses the direction of the cooldown swipe animation."] = "재사용 대기시간 스와이프 애니메이션의 방향을 반대로 합니다.",
 	["Settings"] = "설정",
+	["Colours"] = "색상",
 	["Open Settings"] = "설정 열기",
 	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "/miniauras, /minia 또는 /cc를 사용하여 MiniAuras 설정 창을 엽니다.",
 	["Show a glow around the icons."] = "아이콘 주위에 발광을 표시합니다.",
@@ -186,6 +187,7 @@ L:RegisterLocale("koKR", {
 	["CC"] = "군중 제어",
 	["Change the colour of the glow on important enemy spells."] = "중요한 적 주문의 발광 색상을 변경합니다.",
 	["Change the colour of the glow on defensive spells."] = "방어 주문의 발광 색상을 변경합니다.",
+	["Change the colour of the glow on important spells."] = "중요한 주문의 발광 색상을 변경합니다.",
 	["Dispel colours"] = "해제 색상",
 	["Enable pet frame CC in the open world."] = "야외에서 펫 프레임 CC를 활성화합니다.",
 	["Enable pet frame CC in arena."] = "투기장에서 펫 프레임 CC를 활성화합니다.",
@@ -228,9 +230,8 @@ L:RegisterLocale("koKR", {
 	["Enemy Kicks_Short"] = "적 차단",
 
 	-- Nameplates tab
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "해제 유형에 따라 발광/테두리 색상을 변경합니다 (예: 마법은 파란색, 물리는 빨간색).",
 	["Change the colour of the glow/border based on the type of debuff."] = "디버프 유형에 따라 발광/테두리 색상을 변경합니다.",
-	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."] = "발광/테두리 색상을 변경합니다. 군중 제어 주문은 해제 유형 색상(예: 마법은 파란색)을 사용하고 방어 주문은 녹색입니다.",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), defensive and important spells use the category colours."] = "발광/테두리 색상을 변경합니다. 군중 제어 주문은 해제 유형 색상(예: 마법은 파란색)을 사용하고, 방어 및 중요 주문은 분류 색상을 사용합니다.",
 	["Do not show auras on enemy pet nameplates."] = "적 소환수 이름표에 효과를 표시하지 않습니다.",
 	["Do not show auras on friendly pet nameplates."] = "아군 소환수 이름표에 효과를 표시하지 않습니다.",
 	["Ignore Enemy Pets"] = "적 소환수 무시",

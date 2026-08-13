@@ -178,6 +178,51 @@ local function RequireGroup(instance, groupKey, label)
 	return false
 end
 
+---Stores one group's category tint, reporting whether it actually moved. The colour is copied into
+---a table of the group's own, since every button of that group reads it from there - and never
+---into the table the group was created with, which belongs to the caller and is often shared
+---across displays.
+---@param instance AuraContainerDisplay
+---@param groupKey string
+---@param color number[]? {r, g, b}; nil puts the group back on the display-wide colour.
+---@return boolean changed
+local function StoreGroupColor(instance, groupKey, color)
+	local group = instance.GroupsByKey[groupKey]
+
+	if not group then
+		Warn("SetGroupGlowColors: no aura group '%s' on this display.", tostring(groupKey))
+		return false
+	end
+
+	local stored = group.GlowColor
+
+	if not color then
+		if not stored then
+			return false
+		end
+
+		group.GlowColor = nil
+
+		return true
+	end
+
+	if stored and stored[1] == color[1] and stored[2] == color[2] and stored[3] == color[3] then
+		return false
+	end
+
+	local owned = group.OwnGlowColor
+
+	if not owned then
+		owned = {}
+		group.OwnGlowColor = owned
+	end
+
+	owned[1], owned[2], owned[3] = color[1], color[2], color[3]
+	group.GlowColor = owned
+
+	return true
+end
+
 local function NextFrameName(frameType)
 	frameIdCounter = frameIdCounter + 1
 	return "MiniAuras_AC_" .. frameType .. "_" .. frameIdCounter
@@ -656,12 +701,16 @@ end
 ---The tint a button's border, glow and bar fill take. The group's own colour wins over the
 ---display-wide one: alerts colour by category, while a single-category display just takes the
 ---user's picked colour.
+---The button holds its group rather than a copy of the colour, so SetGroupGlowColor can recolour
+---a display that already exists - buttons can only be built once, and rebuilding one to change a
+---tint is impossible while auras are secret.
 ---@param instance AuraContainerDisplay
 ---@param widgets table
 ---@return number?, number?, number?
 local function ButtonColor(instance, widgets)
 	local style = instance.Style
-	local color = widgets.GlowColor
+	local group = widgets.Group
+	local color = group and group.GlowColor
 
 	if color then
 		return color[1], color[2], color[3]
@@ -685,13 +734,21 @@ end
 local function ApplyDispelTextures(instance, button, widgets)
 	local style = instance.Style
 	local borders = widgets.BorderTextures
-	local wantBorder = style.ColorByDispelType == true and borders ~= nil
+	local group = widgets.Group
+	-- A group carrying its own tint opts out of dispel colouring: the engine's palette has nothing
+	-- to say about a buff, so the categories the user picked a colour for (defensives, importants)
+	-- keep that colour while CC still takes the dispel type's.
+	local tinted = group ~= nil and group.GlowColor ~= nil
+	local wantBorder = style.ColorByDispelType == true and borders ~= nil and not tinted
 	local wantGlowTint = wantBorder and style.Glow == true and widgets.Glow ~= nil
+	-- A tinted group draws the border the dispel registration would have drawn, in its own colour,
+	-- so switching the colours on never costs those icons their ring.
+	local wantPlainBorder = style.Border == true or (tinted and style.ColorByDispelType == true)
 	local colorR, colorG, colorB = ButtonColor(instance, widgets)
 	-- The colour rides in the signature so a colour-only change still repaints; without it the
 	-- early return below would swallow it.
 	local dispelSignature = (wantBorder and "b" or "") .. (wantGlowTint and "g" or "")
-		.. (style.Border and "B" or "")
+		.. (wantPlainBorder and "B" or "")
 		.. (colorR and (":" .. colorR .. "," .. colorG .. "," .. colorB) or "")
 
 	if dispelSignature == widgets.DispelSignature then
@@ -714,7 +771,7 @@ local function ApplyDispelTextures(instance, button, widgets)
 		-- plain border only when the module asked for one, tinted with the same colour the glow
 		-- would take.
 		for _, texture in ipairs(borders) do
-			if style.Border then
+			if wantPlainBorder then
 				texture:SetVertexColor(colorR or 1, colorG or 1, colorB or 1, 1)
 				texture:Show()
 			else
@@ -1143,7 +1200,8 @@ end
 
 ---@param instance AuraContainerDisplay
 ---@param button table
-local function InitializeButton(instance, button, glowColor)
+---@param group table? The button's aura group, which carries its category tint.
+local function InitializeButton(instance, button, group)
 	-- Composite each button's icon/cooldown/border/glow in a single render pass. Must happen
 	-- here: initializeFrame is the only place AuraButtons are guaranteed not forbidden.
 	button:SetFlattensRenderLayers(true)
@@ -1226,7 +1284,7 @@ local function InitializeButton(instance, button, glowColor)
 		DispelSignature = nil,
 		Glow = glow,
 		GlowStyle = nil,
-		GlowColor = glowColor,
+		Group = group,
 		Pandemic = pandemic,
 		DurationText = durationText,
 		DurationTextBind = durationText and "0" or nil,
@@ -1253,12 +1311,13 @@ end
 ---back to icons in New, so this is only ever reached where the setter exists.
 ---@param instance AuraContainerDisplay
 ---@param button table
-local function InitializeBarButton(instance, button, glowColor)
+---@param group table? The button's aura group, which carries its category tint.
+local function InitializeBarButton(instance, button, group)
 	-- A build without the setter gets icons instead of an empty row. Clearing the flag as well as
 	-- delegating is what puts the layout back to square, since it is read per restyle.
 	if not button.SetDurationBar then
 		instance.Bar = false
-		InitializeButton(instance, button, glowColor)
+		InitializeButton(instance, button, group)
 
 		return
 	end
@@ -1352,7 +1411,7 @@ local function InitializeBarButton(instance, button, glowColor)
 		DispelSignature = nil,
 		Glow = glow,
 		GlowStyle = nil,
-		GlowColor = glowColor,
+		Group = group,
 		Pandemic = pandemic,
 		DurationText = durationText,
 		DurationTextBind = durationText and "0" or nil,
@@ -1513,9 +1572,6 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 
 	for _, group in ipairs(groups) do
 		instance.GroupsByKey[group.Key] = group
-		-- Captured per group: initializeFrame is the only place a button can be styled, so a
-		-- group's category glow tint has to be closed over here rather than looked up later.
-		local glowColor = group.GlowColor
 		frame:AddAuraGroup(group.Key, auraFilters:Canonical(group.FilterString), {
 			maxFrameCount = group.MaxIcons or 3,
 			candidateFilters = group.CandidateFilters,
@@ -1525,8 +1581,10 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 			-- addon can't see, which makes them impossible to reason about or match in test mode.
 			sortMethod = AuraContainerSortMethod.AuraInstanceIDOnly,
 			sortDirection = group.SortDirection or AuraContainerSortDirection.Normal,
+			-- The group is captured rather than its colour: initializeFrame is the only place a
+			-- button can be styled, so a button that holds the group can still be recoloured later.
 			initializeFrame = function(button)
-				initialize(instance, button, glowColor)
+				initialize(instance, button, group)
 			end,
 			layout = BuildGroupLayout(instance),
 		})
@@ -1726,6 +1784,29 @@ function M:SetMaxIcons(groupKey, maxIcons)
 	group.MaxIcons = maxIcons
 	self.Frame:SetAuraGroupMaxFrameCount(groupKey, maxIcons)
 	MarkBouncePending(self)
+end
+
+---Recolours groups after the display exists. A tinted group draws in its own colour instead of the
+---engine's dispel palette, which has nothing to say about a buff.
+---The groups to touch are listed separately from the colours because a group going back to the
+---plain glow has no entry in the map at all, and a table cannot carry a nil.
+---Every group is stored before the single restyle: the categories move together, and a restyle
+---walks every button on the display.
+---@param groupKeys string[] The groups to recolour.
+---@param colorsByKey table<string, number[]> Group key -> {r, g, b}. A key with no entry goes back
+---to the display-wide colour. Callers may hand in a reused scratch.
+function M:SetGroupGlowColors(groupKeys, colorsByKey)
+	local changed = false
+
+	for _, groupKey in ipairs(groupKeys) do
+		if StoreGroupColor(self, groupKey, colorsByKey[groupKey]) then
+			changed = true
+		end
+	end
+
+	if changed then
+		self:RestyleButtons()
+	end
 end
 
 ---A group's current icon budget, for callers that only want to act when it actually moves.
@@ -1957,8 +2038,11 @@ end
 ---@field MaxIcons number? Icon budget for this group (default 3).
 ---@field CandidateFilters table? 12.1 candidate filters (e.g. { includeSpellIDs = ..., maxDuration = 4.1 }). Every standard category passes an includeSpellIDs map here - see Core/AuraFilters for why it is needed on top of the filter string.
 ---@field SortDirection number? AuraContainerSortDirection value (default Normal; Reverse = newest first).
----@field GlowColor number[]? {r, g, b} tint for this group's glow, so one container can colour
----its categories differently. Dispel-type colouring takes over when it is also enabled.
+---@field GlowColor number[]? {r, g, b} tint for this group's glow and border, so one container can
+---colour its categories differently. A tinted group opts out of dispel-type colouring, which has
+---nothing to say about a buff. Changed after creation with SetGroupGlowColors.
+---@field OwnGlowColor number[]? The display's own copy of the tint, written by SetGroupGlowColors
+---so the table the caller created the group with is never mutated. Never set by a caller.
 
 ---@class AuraDisplayOptions
 ---@field IconTexCoord number[]? {left, right, top, bottom} crop applied to every icon.

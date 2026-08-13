@@ -87,6 +87,7 @@ L:RegisterLocale("zhTW", {
 	["Reverse swipe"] = "反向滑動",
 	["Reverses the direction of the cooldown swipe animation."] = "反轉冷卻時間滑動動畫的方向。",
 	["Settings"] = "設定",
+	["Colours"] = "顏色",
 	["Open Settings"] = "開啟設定",
 	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "使用 /miniauras、/minia 或 /cc 開啟 MiniAuras 設定視窗。",
 	["Show a glow around the icons."] = "在圖示周圍顯示發光。",
@@ -186,6 +187,7 @@ L:RegisterLocale("zhTW", {
 	["CC"] = "控制",
 	["Change the colour of the glow on important enemy spells."] = "更改重要敵方法術的發光顏色。",
 	["Change the colour of the glow on defensive spells."] = "更改防禦法術的發光顏色。",
+	["Change the colour of the glow on important spells."] = "更改重要法術的發光顏色。",
 	["Dispel colours"] = "驅散顏色",
 	["Enable pet frame CC in the open world."] = "在開放世界啟用寵物框架控制圖示。",
 	["Enable pet frame CC in arena."] = "在競技場啟用寵物框架控制圖示。",
@@ -228,9 +230,8 @@ L:RegisterLocale("zhTW", {
 	["Enemy Kicks_Short"] = "敵方打斷",
 
 	-- Nameplates tab
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "根據驅散類型更改發光/邊框的顏色（例如，魔法為藍色，物理為紅色）。",
 	["Change the colour of the glow/border based on the type of debuff."] = "根據減益類型更改發光/邊框的顏色。",
-	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."] = "變更發光/邊框的顏色。控制技能使用驅散類型顏色（例如魔法為藍色），防禦技能為綠色。",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), defensive and important spells use the category colours."] = "變更發光/邊框的顏色。控制技能使用驅散類型顏色（例如魔法為藍色），防禦和重要技能使用分類顏色。",
 	["Do not show auras on enemy pet nameplates."] = "不在敵方寵物名條上顯示光環。",
 	["Do not show auras on friendly pet nameplates."] = "不在友方寵物名條上顯示光環。",
 	["Ignore Enemy Pets"] = "忽略敵方寵物",

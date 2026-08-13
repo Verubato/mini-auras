@@ -1,12 +1,13 @@
--- What the raid frame aura display actually tracks. Both helpful categories share one aura group,
--- so their toggles have to pick the spell ids reaching it: the bug this guards is Show Important
--- and Show Defensives acting as a single on/off switch, leaving both categories on screen until
--- the user cleared them BOTH.
+-- What the raid frame aura display actually tracks. The helpful categories carry the same filter
+-- string and are told apart only by the spell ids reaching each group, so their toggles have to
+-- pick those ids: the bug this guards is Show Important and Show Defensives acting as a single
+-- on/off switch, leaving both categories on screen until the user cleared them BOTH.
 
 local fw = require("Framework")
 local moduleEnv = require("ModuleEnv")
 
-local HELPFUL_GROUP_KEY = "helpful"
+local DEFENSIVE_GROUP_KEY = "helpfuldef"
+local IMPORTANT_GROUP_KEY = "helpfulimp"
 
 local env = moduleEnv.build()
 local db = env.db
@@ -46,18 +47,34 @@ local UNFLAGGED_IMPORTANT = SampleId(categoryIds.UnflaggedImportant)
 local DEFENSIVE = SampleId(categoryIds.Defensive)
 local UNFLAGGED_DEFENSIVE = SampleId(categoryIds.UnflaggedDefensive)
 
----The spell ids the helpful group is currently filtering on, as published to the engine.
+---The spell ids one helpful group is currently filtering on, as published to the engine.
+---@param groupKey string
 ---@return table<number, boolean>
-local function TrackedIds()
+local function GroupIds(groupKey)
 	module:Refresh()
 
 	local containers = env.containersForUnit("party1")
 	assert(#containers > 0, "no aura container for party1")
 
-	local group = assert(containers[1]._groups[HELPFUL_GROUP_KEY], "no helpful group")
-	local filters = assert(group.candidateFilters, "the helpful group published no filters")
+	local group = assert(containers[1]._groups[groupKey], "no " .. groupKey .. " group")
+	local filters = assert(group.candidateFilters, groupKey .. " published no filters")
 
-	return assert(filters.includeSpellIDs, "the helpful group must filter by spell id")
+	return assert(filters.includeSpellIDs, groupKey .. " must filter by spell id")
+end
+
+---Both helpful groups' ids together, for the assertions that only ask whether a spell is tracked
+---at all rather than which colour it draws in.
+---@return table<number, boolean>
+local function TrackedIds()
+	local ids = {}
+
+	for _, groupKey in ipairs({ DEFENSIVE_GROUP_KEY, IMPORTANT_GROUP_KEY }) do
+		for spellId in pairs(GroupIds(groupKey)) do
+			ids[spellId] = true
+		end
+	end
+
+	return ids
 end
 
 fw.describe("RaidFrameAurasModule - the tracked spell ids", function()
@@ -115,13 +132,34 @@ fw.describe("RaidFrameAurasModule - the tracked spell ids", function()
 		options.ShowImportant = false
 		options.ShowDefensives = false
 
-		local ids = TrackedIds()
+		for _, groupKey in ipairs({ DEFENSIVE_GROUP_KEY, IMPORTANT_GROUP_KEY }) do
+			local ids = GroupIds(groupKey)
 
-		assert(next(ids) ~= nil, "the group must never publish an empty id map")
+			assert(next(ids) ~= nil, groupKey .. " must never publish an empty id map")
 
-		for spellId in pairs(ids) do
-			assert(not categoryIds.Unflagged[spellId], "and nothing real is left in it")
+			for spellId in pairs(ids) do
+				assert(not categoryIds.Unflagged[spellId], "and nothing real is left in it")
+			end
 		end
+	end)
+
+	fw.it("draws each category from its own group, so they can be coloured apart", function()
+		local defensive = GroupIds(DEFENSIVE_GROUP_KEY)
+		local important = GroupIds(IMPORTANT_GROUP_KEY)
+
+		assert(defensive[DEFENSIVE] and defensive[UNFLAGGED_DEFENSIVE], "defensives in the one group")
+		assert(important[IMPORTANT] and important[UNFLAGGED_IMPORTANT], "importants in the other")
+		assert(not defensive[IMPORTANT] and not important[DEFENSIVE], "and neither holds the other's")
+	end)
+
+	fw.it("puts a hand-added spell in the important group", function()
+		-- It belongs to neither category, so it rides with the importants and takes that colour.
+		local custom = 999901
+
+		spells.Custom[custom] = true
+
+		assert(GroupIds(IMPORTANT_GROUP_KEY)[custom], "tracked as important")
+		assert(not GroupIds(DEFENSIVE_GROUP_KEY)[custom], "and not as a defensive")
 	end)
 
 	fw.it("takes back a hand-added copy of a curated spell, category off or not", function()

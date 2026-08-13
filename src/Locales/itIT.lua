@@ -87,6 +87,7 @@ L:RegisterLocale("itIT", {
 	["Reverse swipe"] = "Senso inverso",
 	["Reverses the direction of the cooldown swipe animation."] = "Inverte la direzione dell'animazione di scorrimento della ricarica.",
 	["Settings"] = "Impostazioni",
+	["Colours"] = "Colori",
 	["Open Settings"] = "Apri impostazioni",
 	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "Usa /miniauras, /minia o /cc per aprire la finestra di configurazione di MiniAuras.",
 	["Show a glow around the icons."] = "Mostra un bagliore attorno alle icone.",
@@ -186,6 +187,7 @@ L:RegisterLocale("itIT", {
 	["CC"] = "Controllo",
 	["Change the colour of the glow on important enemy spells."] = "Cambia il colore del bagliore degli incantesimi nemici importanti.",
 	["Change the colour of the glow on defensive spells."] = "Cambia il colore del bagliore degli incantesimi difensivi.",
+	["Change the colour of the glow on important spells."] = "Cambia il colore del bagliore degli incantesimi importanti.",
 	["Dispel colours"] = "Colori per tipo",
 	["Enable pet frame CC in the open world."] = "Abilita CC del riquadro pet nel mondo aperto.",
 	["Enable pet frame CC in arena."] = "Abilita CC del riquadro pet in arena.",
@@ -228,9 +230,8 @@ L:RegisterLocale("itIT", {
 	["Enemy Kicks_Short"] = "Interr. nemiche",
 
 	-- Nameplates tab
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Cambia il colore del bagliore/bordo in base al tipo di dissipazione (ad es. blu per magia, rosso per fisico).",
 	["Change the colour of the glow/border based on the type of debuff."] = "Cambia il colore del bagliore/bordo in base al tipo di debuff.",
-	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."] = "Cambia il colore del bagliore/bordo. Gli incantesimi di controllo della folla usano i colori del tipo di dissoluzione (es. blu per magia) e gli incantesimi difensivi sono verdi.",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), defensive and important spells use the category colours."] = "Cambia il colore del bagliore/bordo. Gli incantesimi di controllo della folla usano i colori del tipo di dissoluzione (es. blu per magia), gli incantesimi difensivi e importanti usano i colori di categoria.",
 	["Do not show auras on enemy pet nameplates."] = "Non mostrare aure sulle barre dei nomi dei famigli nemici.",
 	["Do not show auras on friendly pet nameplates."] = "Non mostrare aure sulle barre dei nomi dei famigli alleati.",
 	["Ignore Enemy Pets"] = "Ignora famigli nemici",

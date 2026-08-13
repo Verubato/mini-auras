@@ -88,6 +88,7 @@ L:SetDefaultStrings({
 	["Reverse swipe"] = "Reverse swipe",
 	["Reverses the direction of the cooldown swipe animation."] = "Reverses the direction of the cooldown swipe animation.",
 	["Settings"] = "Settings",
+	["Colours"] = "Colours",
 	["Open Settings"] = "Open Settings",
 	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "Use /miniauras, /minia, or /cc to open the MiniAuras config window.",
 	["Show a glow around the icons."] = "Show a glow around the icons.",
@@ -187,6 +188,7 @@ L:SetDefaultStrings({
 	["CC"] = "CC",
 	["Change the colour of the glow on important enemy spells."] = "Change the colour of the glow on important enemy spells.",
 	["Change the colour of the glow on defensive spells."] = "Change the colour of the glow on defensive spells.",
+	["Change the colour of the glow on important spells."] = "Change the colour of the glow on important spells.",
 	["Dispel colours"] = "Dispel colours",
 	["Enable pet frame CC in the open world."] = "Enable pet frame CC in the open world.",
 	["Enable pet frame CC in arena."] = "Enable pet frame CC in arena.",
@@ -229,9 +231,8 @@ L:SetDefaultStrings({
 	["Enemy Kicks_Short"] = "Enemy Kicks",
 
 	-- Nameplates tab
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical).",
 	["Change the colour of the glow/border based on the type of debuff."] = "Change the colour of the glow/border based on the type of debuff.",
-	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."] = "Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green.",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), defensive and important spells use the category colours."] = "Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), defensive and important spells use the category colours.",
 	["Do not show auras on enemy pet nameplates."] = "Do not show auras on enemy pet nameplates.",
 	["Do not show auras on friendly pet nameplates."] = "Do not show auras on friendly pet nameplates.",
 	["Ignore Enemy Pets"] = "Ignore Enemy Pets",

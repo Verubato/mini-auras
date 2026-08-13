@@ -131,6 +131,25 @@ function M:GetColorRGB(configured)
 	return colorRgbScratch
 end
 
+---Fills a caller-owned table with a configured {R, G, B} colour, in both shapes the icon backends
+---read: [1..3] for AuraContainerDisplay's group tints and r/g/b for IconSlotContainer's test
+---icons. Unlike GetColorRGB this writes into the caller's table, because the category colours are
+---live two at a time and a shared scratch could only hold one of them.
+---@param target table
+---@param configured table? A colour table with R/G/B fields.
+---@param default table Fallback with R/G/B fields, for a profile saved before the option existed.
+---@return table target
+function M:FillColor(target, configured, default)
+	local r = (configured and configured.R) or default.R
+	local g = (configured and configured.G) or default.G
+	local b = (configured and configured.B) or default.B
+
+	target[1], target[2], target[3] = r, g, b
+	target.r, target.g, target.b = r, g, b
+
+	return target
+end
+
 ---@param moduleName string The module key (e.g., "AlertsModule", "CcModule")
 ---@return boolean
 function M:IsModuleEnabled(moduleName)

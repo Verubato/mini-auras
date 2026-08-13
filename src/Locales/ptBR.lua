@@ -87,6 +87,7 @@ L:RegisterLocale("ptBR", {
 	["Reverse swipe"] = "Deslize reverso",
 	["Reverses the direction of the cooldown swipe animation."] = "Inverte a direção da animação de deslize da recarga.",
 	["Settings"] = "Configurações",
+	["Colours"] = "Cores",
 	["Open Settings"] = "Abrir configurações",
 	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "Use /miniauras, /minia ou /cc para abrir a janela de configuração do MiniAuras.",
 	["Show a glow around the icons."] = "Mostra um brilho ao redor dos ícones.",
@@ -186,6 +187,7 @@ L:RegisterLocale("ptBR", {
 	["CC"] = "Controle",
 	["Change the colour of the glow on important enemy spells."] = "Altera a cor do brilho das magias inimigas importantes.",
 	["Change the colour of the glow on defensive spells."] = "Altera a cor do brilho das magias defensivas.",
+	["Change the colour of the glow on important spells."] = "Altera a cor do brilho das magias importantes.",
 	["Dispel colours"] = "Cores de dissipar",
 	["Enable pet frame CC in the open world."] = "Ativar CC do painel de pet no mundo aberto.",
 	["Enable pet frame CC in arena."] = "Ativar CC do painel de pet na arena.",
@@ -228,9 +230,8 @@ L:RegisterLocale("ptBR", {
 	["Enemy Kicks_Short"] = "Interr. inimigas",
 
 	-- Nameplates tab
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Muda a cor do brilho/borda com base no tipo de dissipar (por ex. azul para magia, vermelho para físico).",
 	["Change the colour of the glow/border based on the type of debuff."] = "Muda a cor do brilho/borda com base no tipo de penalidade.",
-	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."] = "Altera a cor do brilho/borda. As magias de controle de grupo usam as cores do tipo de dissipação (ex.: azul para magia) e as magias defensivas são verdes.",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), defensive and important spells use the category colours."] = "Altera a cor do brilho/borda. As magias de controle de grupo usam as cores do tipo de dissipação (ex.: azul para magia), as magias defensivas e importantes usam as cores de categoria.",
 	["Do not show auras on enemy pet nameplates."] = "Não mostrar auras em placas de nome de mascotes inimigas.",
 	["Do not show auras on friendly pet nameplates."] = "Não mostrar auras em placas de nome de mascotes aliadas.",
 	["Ignore Enemy Pets"] = "Ignorar mascotes inimigas",

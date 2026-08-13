@@ -225,15 +225,26 @@ end
 ---shared between displays.
 ---@param maxIcons number Initial per-group icon budget (SetMaxIcons re-budgets per category).
 ---@param dropSpellIds boolean? Passed to every GroupSpec; see there.
+---@param colors table<string, number[]>? Category tints keyed by M.GroupKey value. Set at
+---creation rather than afterwards because a display built inside an arena can never be restyled,
+---so the tint it is born with is the one it keeps for the match.
 ---@return AuraDisplayGroupSpec[]
-function M:BuildCategoryGroups(maxIcons, dropSpellIds)
-	return {
+function M:BuildCategoryGroups(maxIcons, dropSpellIds, colors)
+	local groups = {
 		self:GroupSpec("CrowdControl", maxIcons, nil, dropSpellIds),
 		self:GroupSpec("Disarm", maxIcons, nil, dropSpellIds),
 		self:GroupSpec("BigDefensive", maxIcons, nil, dropSpellIds),
 		self:GroupSpec("ExternalDefensive", maxIcons, nil, dropSpellIds),
 		self:GroupSpec("Important", maxIcons, nil, dropSpellIds),
 	}
+
+	if colors then
+		for _, spec in ipairs(groups) do
+			spec.GlowColor = colors[spec.Key]
+		end
+	end
+
+	return groups
 end
 
 ---Applies the per-category toggles to a standard-category display. A budget of 0 hides the group.

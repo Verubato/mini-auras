@@ -87,6 +87,7 @@ L:RegisterLocale("deDE", {
 	["Reverse swipe"] = "Wischen umkehren",
 	["Reverses the direction of the cooldown swipe animation."] = "Kehrt die Richtung der Abklingzeit-Wischanimation um.",
 	["Settings"] = "Einstellungen",
+	["Colours"] = "Farben",
 	["Open Settings"] = "Einstellungen öffnen",
 	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "Verwende /miniauras, /minia oder /cc, um das MiniAuras-Einstellungsfenster zu öffnen.",
 	["Show a glow around the icons."] = "Zeige ein Leuchten um die Symbole.",
@@ -186,6 +187,7 @@ L:RegisterLocale("deDE", {
 	["CC"] = "CC",
 	["Change the colour of the glow on important enemy spells."] = "Ändert die Farbe des Leuchtens bei wichtigen gegnerischen Zaubern.",
 	["Change the colour of the glow on defensive spells."] = "Ändert die Farbe des Leuchtens bei Verteidigungszaubern.",
+	["Change the colour of the glow on important spells."] = "Ändert die Farbe des Leuchtens bei wichtigen Zaubern.",
 	["Dispel colours"] = "Bannfarben",
 	["Enable pet frame CC in the open world."] = "Begleiterrahmen-KE in der offenen Welt aktivieren.",
 	["Enable pet frame CC in arena."] = "Begleiterrahmen-KE in der Arena aktivieren.",
@@ -228,9 +230,8 @@ L:RegisterLocale("deDE", {
 	["Enemy Kicks_Short"] = "Gegn. Unterbr.",
 
 	-- Nameplates tab
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Ändere die Farbe des Leuchtens/Rahmens basierend auf dem Banntyp (z.B. blau für Magie, rot für physisch).",
 	["Change the colour of the glow/border based on the type of debuff."] = "Ändere die Farbe des Leuchtens/Rahmens basierend auf dem Typ des Debuffs.",
-	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."] = "Ändere die Farbe des Leuchtens/Rahmens. Massenkontroll-Zauber verwenden Banntyp-Farben (z.B. blau für Magie) und defensive Zauber sind grün.",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), defensive and important spells use the category colours."] = "Ändere die Farbe des Leuchtens/Rahmens. Massenkontroll-Zauber verwenden Banntyp-Farben (z.B. blau für Magie), defensive und wichtige Zauber verwenden die Kategoriefarben.",
 	["Do not show auras on enemy pet nameplates."] = "Zeige keine Auren auf feindlichen Begleiter-Namensplaketten.",
 	["Do not show auras on friendly pet nameplates."] = "Zeige keine Auren auf verbündeten Begleiter-Namensplaketten.",
 	["Ignore Enemy Pets"] = "Feindliche Begleiter ignorieren",

@@ -86,22 +86,6 @@ local DEFAULT_PAIR_ICONS = 8
 local DEFAULT_PAIR_SIZE = 24
 local DEFAULT_PAIR_SPACING = 2
 
----Copies a configured colour into one of the tint tables, in both shapes the render paths read.
----@param target table
----@param color table? the saved {R, G, B} option
----@param default table
----@return table target
-local function FillGlowColor(target, color, default)
-	local r = (color and color.R) or default.R
-	local g = (color and color.G) or default.G
-	local b = (color and color.B) or default.B
-
-	target[1], target[2], target[3] = r, g, b
-	target.r, target.g, target.b = r, g, b
-
-	return target
-end
-
 ---The per-category glow tints in force, or nil when the glow itself is off.
 ---@return table? importantColor
 ---@return table? defensiveColor
@@ -112,8 +96,8 @@ local function AlertGlowColors()
 		return nil, nil
 	end
 
-	return FillGlowColor(importantGlowColor, icons.ImportantColor, DEFAULT_IMPORTANT_GLOW_COLOR),
-		FillGlowColor(defensiveGlowColor, icons.DefensiveColor, DEFAULT_DEFENSIVE_GLOW_COLOR)
+	return moduleUtil:FillColor(importantGlowColor, icons.ImportantColor, DEFAULT_IMPORTANT_GLOW_COLOR),
+		moduleUtil:FillColor(defensiveGlowColor, icons.DefensiveColor, DEFAULT_DEFENSIVE_GLOW_COLOR)
 end
 
 -- Resolves (and memoizes) a token's numeric index, so the comparator below never has to run a

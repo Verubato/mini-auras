@@ -79,7 +79,7 @@ local function BuildInstance(panel, options, defaults)
 	local dispelColoursChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Dispel colours"],
-		Tooltip = L["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."],
+		Tooltip = L["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), defensive and important spells use the category colours."],
 		GetValue = function()
 			return options.Icons.ColorByDispelType
 		end,
@@ -249,6 +249,50 @@ local function BuildInstance(panel, options, defaults)
 	offsetX.Slider:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
 
 	return parent
+end
+
+---The category tints, on their own tab because they are module wide: a defensive should read the
+---same colour on a party frame as it does on a raid frame, so they belong to neither instance tab.
+---@param parent table Tab content frame
+---@param options RaidFrameAurasModuleOptions
+local function BuildColours(parent, options)
+	local importantSwatch = mini:ColorSwatch({
+		Parent = parent,
+		LabelText = L["Important"],
+		Tooltip = L["Change the colour of the glow on important spells."],
+		HasOpacity = false,
+		GetValue = function()
+			local color = options.ImportantColor
+			return color.R, color.G, color.B, color.A
+		end,
+		SetValue = function(r, g, b, a)
+			local color = options.ImportantColor
+			color.R, color.G, color.B, color.A = r, g, b, a
+			config:Apply()
+		end,
+	})
+
+	importantSwatch:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+
+	local defensiveSwatch = mini:ColorSwatch({
+		Parent = parent,
+		LabelText = L["Defensive"],
+		Tooltip = L["Change the colour of the glow on defensive spells."],
+		HasOpacity = false,
+		GetValue = function()
+			local color = options.DefensiveColor
+			return color.R, color.G, color.B, color.A
+		end,
+		SetValue = function(r, g, b, a)
+			local color = options.DefensiveColor
+			color.R, color.G, color.B, color.A = r, g, b, a
+			config:Apply()
+		end,
+	})
+
+	-- One column apart: both labels are a single short word in every locale.
+	defensiveSwatch:SetPoint("TOP", importantSwatch, "TOP", 0, 0)
+	defensiveSwatch:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
 end
 
 ---Trims a spell name that would run past its column. The budget is what fits beside the id and
@@ -614,6 +658,7 @@ function M:Build(panel, default, raid)
 	}
 
 	spellTabs[#spellTabs + 1] = { Key = "spells", Title = L["Spells"] }
+	spellTabs[#spellTabs + 1] = { Key = "colours", Title = L["Colours"] }
 
 	local tabCtrl = mini:CreateTabs({
 		Parent = tabContainer,
@@ -648,6 +693,11 @@ function M:Build(panel, default, raid)
 	local spellsContent = tabCtrl:GetContent("spells")
 	if spellsContent then
 		BuildSpells(spellsContent)
+	end
+
+	local coloursContent = tabCtrl:GetContent("colours")
+	if coloursContent then
+		BuildColours(coloursContent, db.Modules.RaidFrameAurasModule)
 	end
 
 	panel.OnMiniRefresh = function()

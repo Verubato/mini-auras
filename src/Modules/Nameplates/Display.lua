@@ -24,8 +24,8 @@ addon.Modules.Nameplates.Display = M
 -- Each bar gets its own AuraContainer per nameplate token (reparented to the plate and retargeted
 -- with SetUnit as plates come and go) with one group per category; the bar's IconSlotContainer is
 -- kept for the kick icon and test icons. Limits forced by aura data being unreadable: no dynamic
--- slot split between categories (each enabled category gets the bar's full MaxIcons budget) and no
--- category colours (ColorByCategory maps to dispel-type colouring).
+-- slot split between categories (each enabled category gets the bar's full MaxIcons budget), and
+-- colouring is per category rather than per spell, since the engine tints a whole group.
 
 ---@type Db
 local db
@@ -53,16 +53,31 @@ local TEST_BAR_LABELS = {
 	Friendly = { Bar1 = "Friendly - Bar 1", Bar2 = "Friendly - Bar 2" },
 }
 
--- Category colors
-local DEFENSIVE_COLOR = { r = 0.0, g = 0.8, b = 0.0 } -- Green
-local IMPORTANT_COLOR = { r = 0.9, g = 0.1, b = 0.1 } -- Red
+-- Fallback category tints, for a profile saved before the colours were configurable.
+local DEFAULT_IMPORTANT_COLOR = { R = 1, G = 0.2, B = 0.2 }
+local DEFAULT_DEFENSIVE_COLOR = { R = 0.2, G = 1, B = 0.2 }
+-- The configured tints, refilled rather than reallocated. Both shapes are needed: the aura groups
+-- read [1..3], the IconSlotContainer test icons read r/g/b.
+local importantColor = { 1, 0.2, 0.2, r = 1, g = 0.2, b = 0.2, a = 1 }
+local defensiveColor = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
+-- Group key -> tint, handed to the display at creation and on every re-acquisition. Rewritten per
+-- bar, since colouring by category is a per-bar toggle.
+local barGroupColors = {}
+-- The groups a category tint applies to. CC and disarm are absent on purpose: both are debuffs,
+-- and the game's dispel palette already has a colour for them.
+local COLORED_GROUP_KEYS = {
+	auraFilters.GroupKey.BigDefensive,
+	auraFilters.GroupKey.ExternalDefensive,
+	auraFilters.GroupKey.Important,
+}
 
 -- Per-category test data driving ShowBarTestIcons: the bar option that shows the category, its
--- spell list and precomputed length, and the glow colour (per spell for CC, fixed otherwise).
+-- spell list and precomputed length, and the glow colour (per spell for CC, the configured
+-- category tint otherwise).
 local TEST_BAR_CATEGORIES = {
 	{ Show = "ShowCC", Ids = TEST_CC_NAMEPLATE_SPELL_IDS, Count = TEST_CC_COUNT, Colors = TEST_CC_DISPEL_COLORS },
-	{ Show = "ShowDefensives", Ids = TEST_DEFENSIVE_NAMEPLATE_SPELL_IDS, Count = TEST_DEFENSIVE_COUNT, Color = DEFENSIVE_COLOR },
-	{ Show = "ShowImportant", Ids = TEST_IMPORTANT_NAMEPLATE_SPELL_IDS, Count = TEST_IMPORTANT_COUNT, Color = IMPORTANT_COLOR },
+	{ Show = "ShowDefensives", Ids = TEST_DEFENSIVE_NAMEPLATE_SPELL_IDS, Count = TEST_DEFENSIVE_COUNT, Color = defensiveColor },
+	{ Show = "ShowImportant", Ids = TEST_IMPORTANT_NAMEPLATE_SPELL_IDS, Count = TEST_IMPORTANT_COUNT, Color = importantColor },
 }
 -- Reused per-call slot budgets, parallel to TEST_BAR_CATEGORIES.
 local testBudgetScratch = {}
@@ -226,13 +241,14 @@ end
 ---@param size number
 ---@param spacing number
 ---@param style AuraDisplayStyle applied at creation; it cannot be changed while auras are secret
-local function CreateBarDisplay(size, spacing, style)
+---@param colors table<string, number[]> Category tints, for the same reason as the style.
+local function CreateBarDisplay(size, spacing, style, colors)
 	return auraContainerDisplay:New(
 		UIParent,
 		"none",
 		-- No spell-ID maps: a plate only exists for a unit the client is drawing, so the
 		-- out-of-range filter bug the maps work around cannot reach one.
-		auraFilters:BuildCategoryGroups(DEFAULT_BAR_ICONS, true),
+		auraFilters:BuildCategoryGroups(DEFAULT_BAR_ICONS, true, colors),
 		size,
 		spacing,
 		"Nameplates",
@@ -262,12 +278,35 @@ local function BarIconSize(barOptions)
 	return tonumber(barOptions.Icons.Size) or DEFAULT_BAR_SIZE
 end
 
+---Refills the category tints from the module options. Kept in the two shared tables the test
+---icons already point at, so a colour change reaches them without rebuilding the category list.
+local function RefreshCategoryColors()
+	moduleUtil:FillColor(importantColor, nmModule and nmModule.ImportantColor, DEFAULT_IMPORTANT_COLOR)
+	moduleUtil:FillColor(defensiveColor, nmModule and nmModule.DefensiveColor, DEFAULT_DEFENSIVE_COLOR)
+end
+
+---The tints a bar's aura groups take, keyed by group key. CC is never in there: it takes the
+---game's dispel type colours, which is what the toggle meant before there was anything to pick.
+---@return table<string, number[]> Shared, rewritten per call.
+local function BarCategoryColors(barOptions)
+	RefreshCategoryColors()
+
+	local colored = barOptions.Icons.ColorByCategory == true
+
+	barGroupColors[auraFilters.GroupKey.Important] = colored and importantColor or nil
+	barGroupColors[auraFilters.GroupKey.BigDefensive] = colored and defensiveColor or nil
+	barGroupColors[auraFilters.GroupKey.ExternalDefensive] = colored and defensiveColor or nil
+
+	return barGroupColors
+end
+
 ---Fills the shared style scratch from a bar's options.
 ---@return AuraDisplayStyle
 local function BarStyle(barOptions)
 	local style = auraContainerDisplay:BuildStandardStyle(barOptions.Icons)
-	-- Nameplates stores the toggle as ColorByCategory, which the standard reader doesn't know;
-	-- category colours can't be applied per group, so dispel-type colouring is the nearest fit.
+	-- Nameplates stores the toggle as ColorByCategory, which the standard reader doesn't know. It
+	-- drives both halves of the colouring: dispel type for CC, the configured tints for the
+	-- categories the game has no dispel colour for (see BarCategoryColors).
 	style.ColorByDispelType = barOptions.Icons.ColorByCategory
 	style.ShowTooltips = barOptions.ShowTooltips ~= false
 	return style
@@ -281,6 +320,7 @@ local function EnsureBarDisplay(data, bar, barOptions)
 	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
 	local maxIcons = barOptions.Icons.MaxIcons or 5
 	local style = BarStyle(barOptions)
+	local colors = BarCategoryColors(barOptions)
 	local signature = auraContainerDisplay:GetStyleSignature(style, size, spacing)
 
 	local byBar = barDisplays[token]
@@ -296,7 +336,7 @@ local function EnsureBarDisplay(data, bar, barOptions)
 	local entry = byBar[bar.Key]
 
 	if not entry then
-		entry = { Display = CreateBarDisplay(size, spacing, style), Signature = signature }
+		entry = { Display = CreateBarDisplay(size, spacing, style, colors), Signature = signature }
 		byBar[bar.Key] = entry
 	elseif entry.Signature ~= signature then
 		-- One restyle pass for all three values; the individual setters would each walk every
@@ -307,6 +347,11 @@ local function EnsureBarDisplay(data, bar, barOptions)
 	end
 
 	local display = entry.Display
+
+	-- Outside the signature: the tints are not baked into a button, and a display legitimately
+	-- swaps between the friendly and enemy configurations for the same token. This is a handful of
+	-- comparisons when nothing moved.
+	display:SetGroupGlowColors(COLORED_GROUP_KEYS, colors)
 
 	-- Park whatever this bar was showing if it isn't the display we're about to use.
 	local previous = data[bar.DisplayField]
@@ -432,6 +477,10 @@ local function ShowBarTestIcons(container, barOptions, now)
 	local showTooltips = barOptions.ShowTooltips ~= false
 	local fontScale = db.FontScale
 	local slot = 0
+
+	-- The category entries point at the shared tint tables, so this is what puts the picked
+	-- colours on the test icons.
+	RefreshCategoryColors()
 
 	for index, category in ipairs(TEST_BAR_CATEGORIES) do
 		for i = 1, budgets[index] do

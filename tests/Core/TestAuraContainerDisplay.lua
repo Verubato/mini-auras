@@ -351,6 +351,65 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		assert(plain[1] == 1 and plain[2] == 1 and plain[3] == 1, "a group with no colour stays white")
 	end)
 
+	fw.it("a tinted group keeps its colour instead of the dispel palette", function()
+		-- The engine's palette has nothing to say about a buff, so the categories the user picked
+		-- a colour for opt out of dispel colouring and draw their own border and glow.
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "cc", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 3 },
+			{ Key = "def", FilterString = "HELPFUL", MaxIcons = 3, GlowColor = { 0.2, 1, 0.2 } },
+		}, 30, 2, "Test", { Style = { Glow = true, ColorByDispelType = true } })
+
+		local function widgetsOf(groupKey)
+			return instance.ButtonWidgets[instance.Frame:GetAuraGroupFrame(groupKey, 1)]
+		end
+
+		local cc, def = widgetsOf("cc"), widgetsOf("def")
+		local ccButton = instance.Frame:GetAuraGroupFrame("cc", 1)
+		local defButton = instance.Frame:GetAuraGroupFrame("def", 1)
+
+		assert((ccButton._calls.AddDispelTypeTexture or 0) > 0, "the cc group is handed to the engine")
+		assert((defButton._calls.AddDispelTypeTexture or 0) == 0, "the tinted group is not")
+
+		local border = def.BorderTextures[1]
+		assert(border._shown, "a tinted group still draws its border")
+		local color = border._lastArgs.SetVertexColor
+		assert(color[1] == 0.2 and color[2] == 1 and color[3] == 0.2, "in the group's colour")
+		assert(cc.BorderTextures[1]._lastArgs.SetVertexColor == nil,
+			"while the engine owns the cc border's colour")
+	end)
+
+	fw.it("SetGroupGlowColors recolours a display that already exists", function()
+		-- Buttons can only be built once, and rebuilding one is impossible while auras are secret,
+		-- so a colour change has to reach the buttons that are already there.
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "def", FilterString = "HELPFUL", MaxIcons = 3, GlowColor = { 0.2, 1, 0.2 } },
+		}, 30, 2, "Test", { Style = { Glow = true } })
+
+		local function glowColor()
+			local button = instance.Frame:GetAuraGroupFrame("def", 1)
+			return instance.ButtonWidgets[button].Glow.Texture._lastArgs.SetVertexColor
+		end
+
+		local keys = { "def" }
+		local created = instance.GroupsByKey.def.GlowColor
+
+		instance:SetGroupGlowColors(keys, { def = { 1, 0, 0 } })
+		assert(created[1] == 0.2 and created[2] == 1 and created[3] == 0.2,
+			"the table the caller built the group with is never written to")
+
+		local color = glowColor()
+		assert(color[1] == 1 and color[2] == 0 and color[3] == 0, "the new colour reached the buttons")
+
+		-- A group with no entry in the map is what "back to the plain glow" looks like.
+		instance:SetGroupGlowColors(keys, {})
+		color = glowColor()
+		assert(color[1] == 1 and color[2] == 1 and color[3] == 1, "and clearing it goes back to white")
+
+		acm.notifications = {}
+		instance:SetGroupGlowColors({ "nosuchgroup" }, { nosuchgroup = { 1, 0, 0 } })
+		assert(#acm.notifications == 1, "an unknown group key is reported rather than ignored")
+	end)
+
 	fw.it("the style signature covers the global glow type", function()
 		-- Displays are cached by this signature, and the glow style is a global db value the
 		-- caller never passes in; leaving it out meant changing it in the options never reached

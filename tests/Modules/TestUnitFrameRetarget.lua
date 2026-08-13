@@ -31,8 +31,8 @@ local raidFrameAurasModule = env.addon.Modules.RaidFrameAurasModule
 raidFrameAurasModule:Init()
 
 ---The display a module built for a given anchor, identified by its group signature: crowd control
----displays carry a single cc group, auras displays carry a cc group plus one
----spell-id-filtered helpful group.
+---displays carry a single cc group, auras displays carry a cc group plus the two
+---spell-id-filtered helpful groups.
 local function displayForUnit(unit, groupCount)
 	for _, container in ipairs(env.containersForUnit(unit)) do
 		if env.groupCount(container) == groupCount then
@@ -46,7 +46,19 @@ local function ccDisplay(unit)
 end
 
 local function fiDisplay(unit)
-	return displayForUnit(unit, 2)
+	return displayForUnit(unit, 3)
+end
+
+---The helpful icon budget. The two helpful groups are budgeted as a pair - they are split by
+---category so each can take its own colour, not so they can be switched on separately.
+local function helpfulBudget(display)
+	local defensive = assert(display._groups.helpfuldef, "no defensive group")
+	local important = assert(display._groups.helpfulimp, "no important group")
+
+	assert(defensive.maxFrameCount == important.maxFrameCount,
+		"the helpful groups must be budgeted as a pair")
+
+	return defensive.maxFrameCount
 end
 
 fw.describe("CrowdControlModule 12.1 - unit frame anchors", function()
@@ -115,16 +127,13 @@ fw.describe("RaidFrameAurasModule 12.1 - unit frame anchors", function()
 		local options = db.Modules.RaidFrameAurasModule.Default
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 
-		-- One helpful group now covers both categories, so either toggle keeps it budgeted.
-		local expected = {
-			[auraFilters.GroupKey.CrowdControl] = options.ShowCC and maxIcons or 0,
-			helpful = (options.ShowDefensives or options.ShowImportant) and maxIcons or 0,
-		}
-		for key, budget in pairs(expected) do
-			local group = assert(display._groups[key], "missing group " .. key)
-			assert(group.maxFrameCount == budget,
-				("%s: expected budget %d, got %s"):format(key, budget, tostring(group.maxFrameCount)))
-		end
+		local cc = assert(display._groups[auraFilters.GroupKey.CrowdControl], "missing the cc group")
+		assert(cc.maxFrameCount == (options.ShowCC and maxIcons or 0), "cc budget")
+
+		-- Either helpful toggle keeps both helpful groups budgeted: a curated spell can sit in
+		-- both categories, so the toggles pick the tracked ids rather than a budget each.
+		assert(helpfulBudget(display) ==
+			((options.ShowDefensives or options.ShowImportant) and maxIcons or 0), "helpful budget")
 		assert(#env.notifications == 0,
 			"budgeting used group keys that exist: " .. table.concat(env.notifications, "; "))
 	end)
@@ -138,11 +147,11 @@ fw.describe("RaidFrameAurasModule 12.1 - unit frame anchors", function()
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 		assert(display._groups[auraFilters.GroupKey.CrowdControl].maxFrameCount == maxIcons, "cc on")
 
-		-- Both helpful toggles have to go off before the one helpful group is unbudgeted.
+		-- Both helpful toggles have to go off before the helpful groups are unbudgeted.
 		options.ShowDefensives = false
 		options.ShowImportant = false
 		raidFrameAurasModule:Refresh()
-		assert(display._groups.helpful.maxFrameCount == 0, "helpful off")
+		assert(helpfulBudget(display) == 0, "helpful off")
 		assert(display._groups[auraFilters.GroupKey.CrowdControl].maxFrameCount == maxIcons, "cc untouched")
 
 		options.ShowImportant = true
@@ -175,7 +184,7 @@ fw.describe("RaidFrameAurasModule 12.1 - unit frame anchors", function()
 
 		assert(display._groups[auraFilters.GroupKey.CrowdControl].maxFrameCount ==
 			(options.ShowCC and maxIcons or 0), "cc budget intact")
-		assert(display._groups.helpful.maxFrameCount ==
+		assert(helpfulBudget(display) ==
 			((options.ShowDefensives or options.ShowImportant) and maxIcons or 0),
 			"helpful budget intact")
 	end)
@@ -197,7 +206,7 @@ fw.describe("RaidFrameAurasModule 12.1 - a party member who turns hostile", func
 
 		local display = assert(fiDisplay("party5"), "no display for the anchor's unit")
 
-		assert(display._groups.helpful.maxFrameCount > 0, "buffs are tracked on a party member")
+		assert(helpfulBudget(display) > 0, "buffs are tracked on a party member")
 
 		-- A duel fires no event of its own, so the poller is the only thing that notices. It only
 		-- scans tokens it holds a baseline for, which is what the module has to give it.
@@ -206,13 +215,13 @@ fw.describe("RaidFrameAurasModule 12.1 - a party member who turns hostile", func
 
 		-- Spell-id filters are dropped on a unit you cannot assist, so the bare HELPFUL token
 		-- would match every buff they have.
-		assert(display._groups.helpful.maxFrameCount == 0,
+		assert(helpfulBudget(display) == 0,
 			"the helpful group must be budgeted away while they are hostile")
 
 		env.enemies.party5 = nil
 		acm.tickAll(1)
 
-		assert(display._groups.helpful.maxFrameCount > 0, "and come back when the duel ends")
+		assert(helpfulBudget(display) > 0, "and come back when the duel ends")
 	end)
 end)
 
@@ -228,7 +237,7 @@ fw.describe("RaidFrameAurasModule 12.1 - a frame handed an enemy unit", function
 
 		local display = assert(fiDisplay("party6"), "the container followed the frame")
 
-		assert(display._groups.helpful.maxFrameCount == 0,
+		assert(helpfulBudget(display) == 0,
 			"a unit you cannot assist gets no helpful group")
 	end)
 
@@ -239,7 +248,7 @@ fw.describe("RaidFrameAurasModule 12.1 - a frame handed an enemy unit", function
 
 		assert(raidDisplay:OnUnitFactionChanged("party6"),
 			"the gate's answer moved, so the module has work to do")
-		assert(display._groups.helpful.maxFrameCount > 0, "and the buffs are tracked again")
+		assert(helpfulBudget(display) > 0, "and the buffs are tracked again")
 	end)
 
 	fw.it("says nothing changed for a faction event that moved nothing", function()
@@ -264,7 +273,7 @@ fw.describe("RaidFrameAurasModule 12.1 - a unit outside the visible world", func
 		local display = assert(fiDisplay("party6"), "no display for the anchor's unit")
 		local cc = auraFilters.GroupKey.CrowdControl
 
-		assert(display._groups.helpful.maxFrameCount > 0, "tracked while they are in range")
+		assert(helpfulBudget(display) > 0, "tracked while they are in range")
 
 		-- Nothing announces a unit walking out of range, so the poller is what notices.
 		env.phased.party6 = true
@@ -272,7 +281,7 @@ fw.describe("RaidFrameAurasModule 12.1 - a unit outside the visible world", func
 
 		-- Out there the engine stops evaluating the filters properly and both groups fill with
 		-- unrelated auras, so neither is given any icons.
-		assert(display._groups.helpful.maxFrameCount == 0, "no buffs from out of range")
+		assert(helpfulBudget(display) == 0, "no buffs from out of range")
 		assert(display._groups[cc].maxFrameCount == 0, "and no debuffs either")
 	end)
 
@@ -282,6 +291,6 @@ fw.describe("RaidFrameAurasModule 12.1 - a unit outside the visible world", func
 		env.phased.party6 = nil
 		acm.tickAll(1)
 
-		assert(display._groups.helpful.maxFrameCount > 0, "tracked again once they are back")
+		assert(helpfulBudget(display) > 0, "tracked again once they are back")
 	end)
 end)

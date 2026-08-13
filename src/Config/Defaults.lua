@@ -299,6 +299,12 @@ local dbDefaults = {
 			-- they follow addons that resize plates by shrinking that container (e.g. BBP).
 			AnchorToHealthBar = false,
 
+			-- Category tints for every bar that colours by category. CC takes the game's dispel
+			-- type colours; these cover the two categories it has no colour for. Module wide
+			-- rather than per bar, since a category should read the same on whichever bar it lands.
+			ImportantColor = { R = 1, G = 0.2, B = 0.2, A = 1 },
+			DefensiveColor = { R = 0.2, G = 1, B = 0.2, A = 1 },
+
 			---@class NameplateFactionOptions
 			Friendly = {
 				IgnorePets = true,
@@ -524,6 +530,12 @@ local dbDefaults = {
 				Dungeons = true,
 				Raid = false,
 			},
+
+			-- Category tints, applied wherever the dispel colours are switched on. CC takes the
+			-- game's dispel type colours; these cover the buffs it has no colour for. Module wide,
+			-- so a defensive reads the same on a party frame as it does on a raid frame.
+			ImportantColor = { R = 1, G = 0.2, B = 0.2, A = 1 },
+			DefensiveColor = { R = 0.2, G = 1, B = 0.2, A = 1 },
 
 			---@class RaidFrameAurasInstanceOptions
 			Default = {

@@ -35,7 +35,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 	local sliderWidth = columnWidth * 2 - horizontalSpacing
 
 	-- Each bar can show CC and/or defensives, so the colour tooltip covers both.
-	local colorTooltip = L["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."]
+	local colorTooltip = L["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), defensive and important spells use the category colours."]
 
 	local enabledChk = mini:Checkbox({
 		Parent = container,
@@ -303,6 +303,47 @@ local function BuildSettingsTab(parent, options)
 	})
 	anchorToHealthBarChk:SetPoint("TOP", scaleWithNameplateChk, "TOP", 0, 0)
 	anchorToHealthBarChk:SetPoint("LEFT", parent, "LEFT", checkColumnWidth * 2, 0)
+
+	-- Module wide rather than per bar: a category should read the same colour wherever it lands,
+	-- and every bar's own tab is already a full grid of checkboxes.
+	local importantSwatch = mini:ColorSwatch({
+		Parent = parent,
+		LabelText = L["Important"],
+		Tooltip = L["Change the colour of the glow on important spells."],
+		HasOpacity = false,
+		GetValue = function()
+			local color = options.ImportantColor
+			return color.R, color.G, color.B, color.A
+		end,
+		SetValue = function(r, g, b, a)
+			local color = options.ImportantColor
+			color.R, color.G, color.B, color.A = r, g, b, a
+			config:Apply()
+		end,
+	})
+
+	importantSwatch:SetPoint("TOPLEFT", scaleWithNameplateChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local defensiveSwatch = mini:ColorSwatch({
+		Parent = parent,
+		LabelText = L["Defensive"],
+		Tooltip = L["Change the colour of the glow on defensive spells."],
+		HasOpacity = false,
+		GetValue = function()
+			local color = options.DefensiveColor
+			return color.R, color.G, color.B, color.A
+		end,
+		SetValue = function(r, g, b, a)
+			local color = options.DefensiveColor
+			color.R, color.G, color.B, color.A = r, g, b, a
+			config:Apply()
+		end,
+	})
+
+	-- One column apart, not two like the checkbox block above: these labels are a single short
+	-- word in every locale, so they need none of the room the long checkbox labels do.
+	defensiveSwatch:SetPoint("TOP", importantSwatch, "TOP", 0, 0)
+	defensiveSwatch:SetPoint("LEFT", parent, "LEFT", checkColumnWidth, 0)
 end
 
 ---@param parent table

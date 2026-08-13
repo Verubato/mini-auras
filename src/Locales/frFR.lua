@@ -87,6 +87,7 @@ L:RegisterLocale("frFR", {
 	["Reverse swipe"] = "Inverser l'animation",
 	["Reverses the direction of the cooldown swipe animation."] = "Inverse le sens de l'animation circulaire de recharge.",
 	["Settings"] = "Options",
+	["Colours"] = "Couleurs",
 	["Open Settings"] = "Ouvrir les options",
 	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "Utilisez /miniauras, /minia ou /cc pour ouvrir la fenêtre de configuration de MiniAuras.",
 	["Show a glow around the icons."] = "Affiche une lueur autour des icônes.",
@@ -186,6 +187,7 @@ L:RegisterLocale("frFR", {
 	["CC"] = "CC",
 	["Change the colour of the glow on important enemy spells."] = "Change la couleur de la lueur des sorts ennemis importants.",
 	["Change the colour of the glow on defensive spells."] = "Change la couleur de la lueur des sorts défensifs.",
+	["Change the colour of the glow on important spells."] = "Change la couleur de la lueur des sorts importants.",
 	["Dispel colours"] = "Couleur par type",
 	["Enable pet frame CC in the open world."] = "Activer le CC des familiers en monde ouvert.",
 	["Enable pet frame CC in arena."] = "Activer le CC des familiers en arène.",
@@ -228,9 +230,8 @@ L:RegisterLocale("frFR", {
 	["Enemy Kicks_Short"] = "Interr. ennemies",
 
 	-- Nameplates tab
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Colore la lueur/bordure selon le type de dissipation (ex. bleu pour magie, rouge pour physique).",
 	["Change the colour of the glow/border based on the type of debuff."] = "Colore la lueur/bordure selon le type de débuff.",
-	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."] = "Change la couleur de la lueur/bordure. Les sorts de contrôle de foule utilisent les couleurs du type de dissipation (par ex. bleu pour magie) et les sorts défensifs sont verts.",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), defensive and important spells use the category colours."] = "Change la couleur de la lueur/bordure. Les sorts de contrôle de foule utilisent les couleurs du type de dissipation (par ex. bleu pour magie), les sorts défensifs et importants utilisent les couleurs de catégorie.",
 	["Do not show auras on enemy pet nameplates."] = "Masquer les auras sur les nameplates des familiers ennemis.",
 	["Do not show auras on friendly pet nameplates."] = "Masquer les auras sur les nameplates des familiers alliés.",
 	["Ignore Enemy Pets"] = "Ignorer les familiers ennemis",

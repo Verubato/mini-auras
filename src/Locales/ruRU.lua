@@ -87,6 +87,7 @@ L:RegisterLocale("ruRU", {
 	["Reverse swipe"] = "Обратный свайп",
 	["Reverses the direction of the cooldown swipe animation."] = "Изменяет направление анимации смахивания перезарядки.",
 	["Settings"] = "Настройки",
+	["Colours"] = "Цвета",
 	["Open Settings"] = "Открыть настройки",
 	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "Используйте /miniauras, /minia или /cc, чтобы открыть окно настроек MiniAuras.",
 	["Show a glow around the icons."] = "Показывать свечение вокруг иконок.",
@@ -186,6 +187,7 @@ L:RegisterLocale("ruRU", {
 	["CC"] = "Контроль",
 	["Change the colour of the glow on important enemy spells."] = "Изменяет цвет свечения для важных заклинаний противника.",
 	["Change the colour of the glow on defensive spells."] = "Изменяет цвет свечения для защитных заклинаний.",
+	["Change the colour of the glow on important spells."] = "Изменяет цвет свечения для важных заклинаний.",
 	["Dispel colours"] = "Цвета диспела",
 	["Enable pet frame CC in the open world."] = "Включить КО рамки питомца в открытом мире.",
 	["Enable pet frame CC in arena."] = "Включить КО рамки питомца на арене.",
@@ -228,9 +230,8 @@ L:RegisterLocale("ruRU", {
 	["Enemy Kicks_Short"] = "Прерыв. врагов",
 
 	-- Nameplates tab
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Изменить цвет свечения/границы в зависимости от типа рассеивания (напр. синий для магии, красный для физического).",
 	["Change the colour of the glow/border based on the type of debuff."] = "Изменить цвет свечения/границы в зависимости от типа дебаффа.",
-	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."] = "Изменяет цвет свечения/рамки. Заклинания контроля используют цвета по типу рассеивания (например, синий для магии), а защитные заклинания зелёные.",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), defensive and important spells use the category colours."] = "Изменяет цвет свечения/рамки. Заклинания контроля используют цвета по типу рассеивания (например, синий для магии), а защитные и важные заклинания используют цвета категорий.",
 	["Do not show auras on enemy pet nameplates."] = "Не показывать ауры на полосках здоровья питомцев противника.",
 	["Do not show auras on friendly pet nameplates."] = "Не показывать ауры на полосках здоровья союзных питомцев.",
 	["Ignore Enemy Pets"] = "Игнорировать питомцев противника",

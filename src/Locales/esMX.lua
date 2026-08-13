@@ -88,6 +88,7 @@ L:RegisterLocale("esMX", {
 	["Reverse swipe"] = "Barrido inverso",
 	["Reverses the direction of the cooldown swipe animation."] = "Invierte la dirección de la animación de barrido del tiempo de reutilización.",
 	["Settings"] = "Configuración",
+	["Colours"] = "Colores",
 	["Open Settings"] = "Abrir configuración",
 	["Use /miniauras, /minia, or /cc to open the MiniAuras config window."] = "Usa /miniauras, /minia o /cc para abrir la ventana de configuración de MiniAuras.",
 	["Show a glow around the icons."] = "Muestra un brillo alrededor de los iconos.",
@@ -187,6 +188,7 @@ L:RegisterLocale("esMX", {
 	["CC"] = "Control",
 	["Change the colour of the glow on important enemy spells."] = "Cambia el color del brillo de los hechizos enemigos importantes.",
 	["Change the colour of the glow on defensive spells."] = "Cambia el color del brillo de los hechizos defensivos.",
+	["Change the colour of the glow on important spells."] = "Cambia el color del brillo de los hechizos importantes.",
 	["Dispel colours"] = "Color por tipo",
 	["Enable pet frame CC in the open world."] = "Activar CC del marco de mascota en el mundo abierto.",
 	["Enable pet frame CC in arena."] = "Activar CC del marco de mascota en arena.",
@@ -229,9 +231,8 @@ L:RegisterLocale("esMX", {
 	["Enemy Kicks_Short"] = "Interr. enemigas",
 
 	-- Nameplates tab
-	["Change the colour of the glow/border based on dispel type (e.g., blue for magic, red for physical)."] = "Cambia el color del brillo/borde según el tipo de disipación (ej. azul para magia, rojo para físico).",
 	["Change the colour of the glow/border based on the type of debuff."] = "Cambia el color del brillo/borde según el tipo de penalización.",
-	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic) and Defensive spells are green."] = "Cambia el color del brillo/borde. Los hechizos de control de masas usan colores según el tipo de disipación (p. ej., azul para magia) y los hechizos defensivos son verdes.",
+	["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), defensive and important spells use the category colours."] = "Cambia el color del brillo/borde. Los hechizos de control de masas usan colores según el tipo de disipación (p. ej., azul para magia), los hechizos defensivos e importantes usan los colores de categoría.",
 	["Do not show auras on enemy pet nameplates."] = "No mostrar auras en placas de nombre de mascotas enemigas.",
 	["Do not show auras on friendly pet nameplates."] = "No mostrar auras en placas de nombre de mascotas aliadas.",
 	["Ignore Enemy Pets"] = "Ignorar pets enemigos",
