@@ -75,6 +75,9 @@ local seenAnchors = {}
 -- Reused buffer for the anchor walk. Its own rather than shared with the other modules, so one
 -- module's walk can never land in the middle of another's.
 local anchorScratch = {}
+-- Whether a coalesced sound rebuild is already waiting, and which teardown it belongs to.
+local soundRefreshQueued = false
+local soundGeneration = 0
 -- Whether any group hangs off the unit frames, so the frame hooks can cost nothing otherwise.
 local anyFrameGroups = false
 local testModeActive = false
@@ -1053,6 +1056,28 @@ local function CollectSoundRequests(state)
 	end
 end
 
+---Coalesces the sound rebuild to one pass per frame. Plates churn a handful at a time as people
+---come in and out of range, and each rebuild walks every group's spell variants to build a
+---signature that has usually not moved. A generation counter rather than a plain flag, so a
+---teardown between the request and the pass cancels it instead of re-registering what it cleared.
+local function QueueSoundRefresh()
+	if soundRefreshQueued then
+		return
+	end
+
+	soundRefreshQueued = true
+
+	local generation = soundGeneration
+
+	C_Timer.After(0, function()
+		soundRefreshQueued = false
+
+		if generation == soundGeneration then
+			M:RefreshSounds()
+		end
+	end)
+end
+
 ---Puts the stand-in party or arena frames on screen while the group being positioned hangs off
 ---frames that are not there, and takes them away again once it is not.
 ---Never while test mode runs: it owns the same frames, and driving them from both sides would
@@ -1319,7 +1344,7 @@ function M:OnNamePlateAdded(token)
 		end
 	end
 
-	self:RefreshSounds()
+	QueueSoundRefresh()
 end
 
 ---@param token string
@@ -1333,7 +1358,7 @@ function M:OnNamePlateRemoved(token)
 		end
 	end
 
-	self:RefreshSounds()
+	QueueSoundRefresh()
 end
 
 ---A unit frame was pointed at somebody else, so the copy on it follows.
@@ -1381,10 +1406,15 @@ function M:OnUnitChanged(unit)
 	end
 
 	-- The token now holds somebody else, which is the whole of what a registration is keyed on.
-	self:RefreshSounds()
+	-- Coalesced like the plate churn: a group-wide phase or faction change fires this per unit.
+	QueueSoundRefresh()
 end
 
 function M:Teardown()
+	-- Strands any rebuild the plate and unit handlers queued, which would otherwise re-register
+	-- the sounds this is about to clear.
+	soundGeneration = soundGeneration + 1
+
 	for _, state in pairs(states) do
 		Park(state)
 	end

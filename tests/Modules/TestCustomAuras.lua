@@ -2590,3 +2590,87 @@ fw.describe("CustomAuras - a drawn group's sound respects the unit's side", func
 		assert(env.auraSoundAdds > before, "and one once a friendly target is there")
 	end)
 end)
+
+fw.describe("CustomAuras - coalescing the sound rebuild", function()
+	fw.it("rebuilds once for a burst of nameplate churn", function()
+		ClearGroups()
+		AddGroup({
+			Unit = "nameplate",
+			AuraType = "HARMFUL",
+			Spells = { POLYMORPH },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		-- The suite's C_Timer.After runs its callback on the spot, which would hide the
+		-- coalescing entirely; this holds the callbacks so the burst can settle first.
+		local queued = {}
+		local realAfter = _G.C_Timer.After
+		_G.C_Timer.After = function(_, callback)
+			queued[#queued + 1] = callback
+		end
+
+		-- Counted rather than reading the queue length: the displays the plates build queue
+		-- timers of their own, and those are nothing to do with the sounds.
+		local rebuilds = 0
+		local realRefreshSounds = display.RefreshSounds
+		display.RefreshSounds = function(self)
+			rebuilds = rebuilds + 1
+			return realRefreshSounds(self)
+		end
+
+		for index = 1, 5 do
+			local token = "nameplate" .. index
+
+			env.addPlate(token)
+			env.enemies[token] = true
+			display:OnNamePlateAdded(token)
+		end
+
+		local before = env.auraSoundAdds
+
+		for _, callback in ipairs(queued) do
+			callback()
+		end
+
+		_G.C_Timer.After = realAfter
+		display.RefreshSounds = realRefreshSounds
+
+		assert(rebuilds == 1, "five plates rebuild the sounds once, not five times (got " .. rebuilds .. ")")
+		assert(env.auraSoundAdds > before, "and that one rebuild registers the plates it collected")
+	end)
+
+	fw.it("drops a queued rebuild that a teardown has overtaken", function()
+		-- A screen group, deliberately: its registration token comes from the unit choice rather
+		-- than from copies, so parking it does not empty the request the way a plate group's does.
+		-- On a plate group this would pass whether or not the guard is there.
+		ClearGroups()
+		env.enemies.target = nil
+		AddGroup({
+			Unit = "target",
+			Spells = { ICE_BLOCK },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+		module:Refresh()
+
+		local queued = {}
+		local realAfter = _G.C_Timer.After
+		_G.C_Timer.After = function(_, callback)
+			queued[#queued + 1] = callback
+		end
+
+		display:OnUnitChanged("target")
+		display:Teardown()
+
+		local before = env.auraSoundAdds
+
+		for _, callback in ipairs(queued) do
+			callback()
+		end
+
+		_G.C_Timer.After = realAfter
+
+		assert(env.auraSoundAdds == before,
+			"the rebuild queued before the teardown must not re-register what it cleared")
+	end)
+end)
