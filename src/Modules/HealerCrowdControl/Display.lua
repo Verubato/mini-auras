@@ -25,10 +25,15 @@ addon.Modules.HealerCrowdControl.Display = M
 -- overlapping texts read as one label, which acts as an OR across healers. The IconSlotContainer
 -- is kept for test mode.
 --
--- There is no battleground 40-yard range gate: skipping far-away healers would have to happen
+-- There is no battleground 40-yard range gate: skipping merely-far healers would have to happen
 -- while rendering, and rendering is the engine's job. Every healer in the raid gets a container,
--- not just the nearby ones. Doing it properly would mean SetEnabled(false) on out-of-range
--- healers' displays from a range poll.
+-- not just the nearby ones. Healers outside the player's visible world are the exception:
+-- ApplyUnitGates zeroes their budgets, because the engine cannot filter their auras at all
+-- (see Core/AuraFilters).
+
+-- Per-healer icon budget, and the one label slot: one CC aura is enough to warrant the text.
+local MAX_CC_ICONS = 5
+local LABEL_MAX_ICONS = 1
 local testModeActive = false
 -- Sorted healer-unit scratch so the display chain has a stable order (pairs order would let the
 -- healer rows swap places between refreshes).
@@ -199,6 +204,26 @@ local function EnableWatchers()
 	end
 end
 
+---Budgets one healer's containers for the unit's current state. Outside the player's visible
+---world the engine stops evaluating the CROWD_CONTROL token and both containers fill with
+---unrelated debuffs (the spell-id map is identity-gated off on assistable units, so the token is
+---the only filter left), so a healer that far away shows nothing - icons and warning text both.
+---Visibility has no event of its own, which is why the duel poller re-asks this.
+---Urgent: the unit a gate zeroes emits no aura events, so a budget flip parked for combat would
+---keep showing the garbage until regen.
+---@param item HealerWatchEntry
+local function ApplyUnitGates(item)
+	local visible = units:IsVisible(item.Unit)
+
+	if item.Display then
+		item.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, visible and MAX_CC_ICONS or 0, true)
+	end
+
+	if item.LabelDisplay then
+		item.LabelDisplay:SetMaxIcons(auraFilters.GroupKey.CrowdControl, visible and LABEL_MAX_ICONS or 0, true)
+	end
+end
+
 local function RefreshHealers()
 	-- Everyone goes back to the discard pool first, so a healer that stayed is re-acquired
 	-- rather than duplicated.
@@ -249,13 +274,16 @@ local function RefreshHealers()
 			item.Unit = healer
 			activePool[healer] = item
 			discardPool[healer] = nil
+			-- The budgets a parked entry carries belong to whoever held it last; re-ask the gate
+			-- for the healer it tracks now.
+			ApplyUnitGates(item)
 		else
 			item = {
 				Unit = healer,
 				Display = auraContainerDisplay:New(
 					healerAnchor,
 					healer,
-					{ auraFilters:GroupSpec("CrowdControl", 5) },
+					{ auraFilters:GroupSpec("CrowdControl", MAX_CC_ICONS) },
 					tonumber(options.Icons.Size) or 32,
 					options.IconSpacing or 2,
 					"Healer CC",
@@ -272,7 +300,7 @@ local function RefreshHealers()
 			item.LabelDisplay = auraContainerDisplay:New(
 				healerAnchor,
 				healer,
-				{ auraFilters:GroupSpec("CrowdControl", 1) },
+				{ auraFilters:GroupSpec("CrowdControl", LABEL_MAX_ICONS) },
 				tonumber(options.Font.Size) or 32,
 				0,
 				"Healer CC",
@@ -281,6 +309,10 @@ local function RefreshHealers()
 			-- Every healer's label lands on this same point on purpose - see the header comment.
 			item.LabelDisplay.Frame:SetPoint("TOP", healerAnchor, "TOP", 0, 6)
 			activePool[healer] = item
+			-- The groups above are built with the full budget; ask the gate right away, or a
+			-- display born for a healer already outside the visible world shows unfiltered auras
+			-- until the next refresh.
+			ApplyUnitGates(item)
 		end
 	end
 
@@ -325,9 +357,22 @@ local function CreateFrames()
 	UpdateAnchorSize()
 
 	-- Icons sit at the bottom of the anchor, text sits at the top.
-	iconsContainer = iconSlotContainer:New(healerAnchor, 5, tonumber(options.Icons.Size) or 32, options.IconSpacing or 2, "Healer CC", nil, "Healer CC")
+	iconsContainer = iconSlotContainer:New(healerAnchor, MAX_CC_ICONS, tonumber(options.Icons.Size) or 32, options.IconSpacing or 2, "Healer CC", nil, "Healer CC")
 	iconsContainer.Frame:SetPoint("BOTTOM", healerAnchor, "BOTTOM", 0, 0)
 	iconsContainer.Frame:Show()
+end
+
+---Every healer the module currently draws, for the duel poller's visibility scan.
+---@param out string[] Filled in place and returned, so the caller can keep one table.
+---@return string[]
+function M:CollectWatchedUnits(out)
+	wipe(out)
+
+	for unit in pairs(activePool) do
+		out[#out + 1] = unit
+	end
+
+	return out
 end
 
 ---@return HealerCCModuleOptions?

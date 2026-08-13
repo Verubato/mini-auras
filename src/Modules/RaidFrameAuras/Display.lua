@@ -303,9 +303,11 @@ local function ApplyUnitGates(entry, options)
 	if entry.Display then
 		-- Both helpful groups take the same budget: a category switched off has an empty id set
 		-- already, so budgeting them apart would say the same thing twice.
-		entry.Display:SetMaxIcons(DEFENSIVE_GROUP_KEY, helpful)
-		entry.Display:SetMaxIcons(IMPORTANT_GROUP_KEY, helpful)
-		entry.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, crowdControl)
+		-- Urgent: the unit a gate zeroes is outside the visible world and emits no aura events,
+		-- so a budget flip parked for combat would keep showing the garbage until regen.
+		entry.Display:SetMaxIcons(DEFENSIVE_GROUP_KEY, helpful, true)
+		entry.Display:SetMaxIcons(IMPORTANT_GROUP_KEY, helpful, true)
+		entry.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, crowdControl, true)
 	end
 
 	return helpful, crowdControl
@@ -370,6 +372,11 @@ local function EnsureWatcher(anchor, unit)
 		entry.KickKey = kickTracker:Subscribe(unit, function()
 			UpdateKickIcon(entry)
 		end)
+
+		-- The groups above are built with the full budget; ask the per-unit gates right away, or
+		-- a display born for a unit already outside the visible world shows unfiltered auras
+		-- until the next refresh.
+		ApplyUnitGates(entry, options)
 	else
 		-- Check if unit has changed
 		if entry.Unit ~= unit then

@@ -1458,7 +1458,9 @@ end
 ---off - hence the warning rather than a quiet return.
 ---@param groupKey string
 ---@param maxIcons number
-function M:SetMaxIcons(groupKey, maxIcons)
+---@param urgent boolean? Bounce even in combat. For unit-state gates: the unit they zero is
+---outside the visible world and emits no aura events, so nothing else would settle the flip.
+function M:SetMaxIcons(groupKey, maxIcons, urgent)
 	maxIcons = tonumber(maxIcons)
 	if not maxIcons or maxIcons < 0 then
 		return
@@ -1477,7 +1479,7 @@ function M:SetMaxIcons(groupKey, maxIcons)
 
 	group.MaxIcons = maxIcons
 	self.Frame:SetAuraGroupMaxFrameCount(groupKey, maxIcons)
-	MarkBouncePending(self)
+	MarkBouncePending(self, urgent)
 end
 
 ---Recolours groups after the display exists. A tinted group draws in its own colour instead of the

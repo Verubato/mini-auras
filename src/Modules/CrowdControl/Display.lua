@@ -114,6 +114,27 @@ local function UpdateKickIcon(entry)
 	end)
 end
 
+---Budgets the CC group for the entry's CURRENT unit. Outside the player's visible world the
+---engine stops evaluating the CROWD_CONTROL token and the group fills with unrelated debuffs
+---(the spell-id map is identity-gated off on assistable units, so the token is the only filter
+---left), so a unit that far away shows nothing at all. Visibility has no event of its own,
+---which is why the duel poller re-asks this.
+---Urgent: the unit a gate zeroes emits no aura events, so a budget flip parked for combat would
+---keep showing the garbage until regen.
+---@param entry CrowdControlWatchEntry
+---@param options table
+---@return number crowdControl
+local function ApplyUnitGates(entry, options)
+	local iconCount = options.Icons.Count or 5
+	local crowdControl = units:IsVisible(entry.Unit) and iconCount or 0
+
+	if entry.Display then
+		entry.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, crowdControl, true)
+	end
+
+	return crowdControl
+end
+
 ---@param anchor table
 ---@param unit string?
 local function EnsureWatcher(anchor, unit)
@@ -180,6 +201,11 @@ local function EnsureWatcher(anchor, unit)
 				UpdateKickIcon(entry)
 			end)
 		end
+
+		-- The group above is built with the full budget; ask the per-unit gate right away, or a
+		-- display born for a unit already outside the visible world shows unfiltered auras until
+		-- the next refresh.
+		ApplyUnitGates(entry, options)
 	else
 		-- Check if unit has changed
 		if entry.Unit ~= unit then
@@ -190,6 +216,10 @@ local function EnsureWatcher(anchor, unit)
 			-- The container tracks the new unit itself; only the unit token changes.
 			entry.Display:SetUnit(unit)
 			entry.Unit = unit
+
+			-- The gate is per unit, so a re-point can change the answer even though nothing
+			-- about the options moved.
+			ApplyUnitGates(entry, options)
 
 			-- Clear the container since it's a different unit now
 			entry.Container:ResetAllSlots()
@@ -289,7 +319,7 @@ local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 	local iconSize = moduleUtil:GetIconSize(entryOptions.Icons, anchor, isPet and 24 or 32, isPet and 50 or 80)
 	local iconCount = entryOptions.Icons.Count or 5
 
-	budgetScratch[auraFilters.GroupKey.CrowdControl] = iconCount
+	budgetScratch[auraFilters.GroupKey.CrowdControl] = ApplyUnitGates(entry, entryOptions)
 
 	settingsScratch.IconSize = iconSize
 	settingsScratch.SlotCount = iconCount
@@ -302,6 +332,21 @@ local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 	settingsScratch.Render = UpdateKickIcon
 
 	anchoredIcons:ApplyEntryOptions(entry, anchor, entryOptions, settingsScratch)
+end
+
+---Every unit the module is currently watching, for the duel poller's visibility scan.
+---@param out string[] Filled in place and returned, so the caller can keep one table.
+---@return string[]
+function M:CollectWatchedUnits(out)
+	wipe(out)
+
+	for _, entry in pairs(watchers) do
+		if entry.Unit then
+			out[#out + 1] = entry.Unit
+		end
+	end
+
+	return out
 end
 
 ---@return CrowdControlInstanceOptions?

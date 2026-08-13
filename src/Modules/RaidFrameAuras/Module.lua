@@ -107,10 +107,12 @@ local function CreateEvents()
 	-- A duel flips a party member to hostile with no event of its own, and that decides whether
 	-- the spell-id filter applies at all, so the budgets have to be recomputed when it happens.
 	-- Registered for the module's lifetime; the predicate below gates it.
+	-- Coalesced: the poller fires once per flipped token, and a raid riding out of range flips
+	-- many in one tick - each would otherwise pay a full refresh.
 	duelSub = duelPoller:Register(function()
 		return moduleUtil:IsModuleEnabled(moduleName.RaidFrameAuras)
 	end, function()
-		M:Refresh()
+		QueueRefresh()
 	end)
 end
 
@@ -118,6 +120,9 @@ local function InstallHooks()
 	frames:InstallUnitFrameHooks(eventsFrame, {
 		OnSetUnit = function(frame, unit)
 			display:OnCufSetUnit(frame, unit)
+			-- A watcher born or re-pointed here is unknown to the duel poller until a refresh
+			-- reseeds the baselines; without one, a later visible-world flip goes unnoticed.
+			QueueRefresh()
 		end,
 		OnUpdateVisible = function(frame)
 			display:OnCufUpdateVisible(frame)
@@ -126,6 +131,8 @@ local function InstallHooks()
 		OnVisibilityChanged = function()
 			if IsEnabled() then
 				display:EnsureWatchers()
+				-- Same as OnSetUnit: the watchers just ensured need their baselines seeded.
+				QueueRefresh()
 			end
 		end,
 	})
