@@ -20,10 +20,6 @@ addon.Core.AuraMasque = M
 
 local function NoOp() end
 
-local function Warn(message, ...)
-	addon.Framework:NotifyWithPrefix(message, ...)
-end
-
 ---Masque re-parents the icon it is handed to the button that icon already belongs to. The call
 ---changes nothing, but SetIcon has since put a ChangeParent restriction on the texture and the
 ---refusal takes down whatever created the button - which is the engine, mid-batch. A field on
@@ -65,7 +61,8 @@ local function Guard(instance, ok, err)
 
 	if not warned[name] then
 		warned[name] = true
-		Warn("Masque could not skin the %s icons, carrying on without them: %s", name, tostring(err))
+		addon.Framework:NotifyWithPrefix("Masque could not skin the %s icons, carrying on without them: %s",
+			name, tostring(err))
 	end
 
 	return false
