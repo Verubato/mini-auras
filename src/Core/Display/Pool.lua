@@ -50,6 +50,10 @@ function M:Acquire(...)
 	local item = table.remove(self.Free)
 
 	if not item then
+		-- Counted like a pre-created one. Created is how many the pool has ever built, not how
+		-- many are sitting free, so a burst that outran the pool must not leave Prewarm still
+		-- owing the full target and building a second set on top of the ones in circulation.
+		self.Created = self.Created + 1
 		item = self.Create(...)
 	end
 

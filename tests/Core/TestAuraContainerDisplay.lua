@@ -537,6 +537,24 @@ fw.describe("Pool", function()
 		assert(calls == 1, "the second acquire reused rather than built, got " .. calls)
 	end)
 
+	-- Created counts what the pool has ever built, not what is free. A burst that outran the
+	-- pool otherwise leaves Prewarm still owing the whole target, and it builds a second set of
+	-- the expensive objects the pool exists to ration.
+	fw.it("counts an on-demand build against the pre-creation target", function()
+		local pool, created = newCountingPool(3)
+
+		for _ = 1, 3 do
+			pool:Acquire()
+		end
+
+		assert(created() == 3, "three acquires on an empty pool built three, got " .. created())
+
+		pool:Prewarm()
+		acm.tickAll(10)
+
+		assert(created() == 3, "the target is already met, so nothing more is built, got " .. created())
+	end)
+
 	fw.it("does not pre-create until Prewarm is called", function()
 		local _, created = newCountingPool(5)
 		acm.tickAll(10)
