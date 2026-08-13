@@ -30,6 +30,7 @@ local testFiles = {
     "tests/Core/TestTtsPacks.lua",
     "tests/Core/TestSpellSearch.lua",
     "tests/Core/TestLegacyAddon.lua",
+    "tests/Core/TestLocale.lua",
 
     -- Utils.
     "tests/Utils/TestUtils.lua",

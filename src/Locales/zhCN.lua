@@ -2,7 +2,7 @@
 local _, addon = ...
 local L = addon.L
 
-L:RegisterLocale("zhCN", {
+L:RegisterLocale("zhCN", function() return {
 	["In Blizzard's 12.1 patch, addons can no longer process aura information; only display it.\n\nWhat's removed:\n* Friendly and enemy cooldown tracking (not possible in 12.1).\n\nWhat's added/changed:\n* New personal auras functionality (think mini weak auras).\n  - When aura added show icon and play sound.\n  - Precognition & Nullifying Shroud module have been merged into this.\n* Ally kick tracker for dungeons/M+.\n* Wider range of spells on raid frames, e.g. Darkness, Spirit Link, Dark Pact, etc.\n* New custom text-to-speech voices.\n* Masque skins are applied when an icon is created, so reload after changing one.\n* UI overhaul so it looks sexier."] = "在暴雪 12.1 补丁中，插件不再能处理光环信息，只能显示。\n\n已移除：\n* 友方和敌方冷却追踪（12.1 中已无法实现）。\n\n新增/变更：\n* 全新的自定义光环功能（类似迷你 WeakAuras）。\n  - 光环出现时显示图标并播放声音。\n  - 预知和无效化护罩模块已并入其中。\n* 用于地下城/大秘境的友方打断追踪。\n* 团队框体支持更多法术，如黑暗、灵魂链接、黑暗契约等。\n* 新增自定义TTS语音。\n* Masque 外观在图标创建时应用，更换外观后请重载界面。\n* 界面全面翻新，更加好看。",
 	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "好消息：\n- 已实现一种变通方法，可在姓名板/头像/警报上再次显示重要光环。",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "在单独的可移动条上显示重要法术，而不是与防御警报合并。",
@@ -394,4 +394,4 @@ L:RegisterLocale("zhCN", {
 	["Spell ID / name"] = "法术 ID / 名称",
 	["Unit Frames"] = "单位框体",
 	['Delete the aura group "%s"?'] = "删除光环组“%s”？",
-})
+} end)

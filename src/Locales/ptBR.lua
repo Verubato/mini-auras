@@ -2,7 +2,7 @@
 local _, addon = ...
 local L = addon.L
 
-L:RegisterLocale("ptBR", {
+L:RegisterLocale("ptBR", function() return {
 	["In Blizzard's 12.1 patch, addons can no longer process aura information; only display it.\n\nWhat's removed:\n* Friendly and enemy cooldown tracking (not possible in 12.1).\n\nWhat's added/changed:\n* New personal auras functionality (think mini weak auras).\n  - When aura added show icon and play sound.\n  - Precognition & Nullifying Shroud module have been merged into this.\n* Ally kick tracker for dungeons/M+.\n* Wider range of spells on raid frames, e.g. Darkness, Spirit Link, Dark Pact, etc.\n* New custom text-to-speech voices.\n* Masque skins are applied when an icon is created, so reload after changing one.\n* UI overhaul so it looks sexier."] = "Com o patch 12.1 da Blizzard, os addons não podem mais processar informações de auras, apenas exibi-las.\n\nRemovido:\n* Rastreamento de recargas aliadas e inimigas (impossível no 12.1).\n\nAdicionado/alterado:\n* Nova função de auras personalizadas (tipo um mini WeakAuras).\n  - Quando uma aura aparece, mostra um ícone e toca um som.\n  - Os módulos de Precognição e Mortalha Anuladora foram fundidos aqui.\n* Rastreador de interrupções aliadas para masmorras/M+.\n* Mais feitiços nas janelas de raide, ex.: Escuridão, Elo Espiritual, Pacto Sombrio.\n* Novas vozes TTS personalizadas.\n* As aparências do Masque são aplicadas ao criar o ícone, então recarregue após trocar de aparência.\n* Interface repaginada, bem mais bonita.",
 	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "Boas notícias:\n- Uma solução alternativa foi implementada para exibir novamente as auras importantes em placas de nome/retratos/alertas.",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Mostra os feitiços importantes em uma barra separada e móvel em vez de combinados com os alertas defensivos.",
@@ -392,4 +392,4 @@ L:RegisterLocale("ptBR", {
 	["Spell ID / name"] = "ID / nome da magia",
 	["Unit Frames"] = "Quadros de unidade",
 	['Delete the aura group "%s"?'] = "Excluir o grupo de auras \"%s\"?",
-})
+} end)

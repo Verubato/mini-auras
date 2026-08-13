@@ -2,7 +2,7 @@
 local _, addon = ...
 local L = addon.L
 
-L:RegisterLocale("itIT", {
+L:RegisterLocale("itIT", function() return {
 	["In Blizzard's 12.1 patch, addons can no longer process aura information; only display it.\n\nWhat's removed:\n* Friendly and enemy cooldown tracking (not possible in 12.1).\n\nWhat's added/changed:\n* New personal auras functionality (think mini weak auras).\n  - When aura added show icon and play sound.\n  - Precognition & Nullifying Shroud module have been merged into this.\n* Ally kick tracker for dungeons/M+.\n* Wider range of spells on raid frames, e.g. Darkness, Spirit Link, Dark Pact, etc.\n* New custom text-to-speech voices.\n* Masque skins are applied when an icon is created, so reload after changing one.\n* UI overhaul so it looks sexier."] = "Con la patch 12.1 di Blizzard, gli addon non possono più elaborare le informazioni sulle aure, solo mostrarle.\n\nRimosso:\n* Tracciamento dei tempi di recupero alleati e nemici (impossibile nella 12.1).\n\nAggiunto/cambiato:\n* Nuova funzione di aure personalizzate (come un mini WeakAuras).\n  - Quando compare un'aura, mostra un'icona e riproduce un suono.\n  - I moduli Precognizione e Sudario Annullante sono confluiti qui.\n* Tracciamento delle interruzioni alleate per spedizioni/M+.\n* Più incantesimi sulle finestre d'incursione, ad es. Oscurità, Legame Spirituale, Patto Oscuro.\n* Nuove voci personalizzate per la sintesi vocale.\n* Le skin di Masque vengono applicate alla creazione dell'icona, quindi ricarica dopo averne cambiata una.\n* Interfaccia rinnovata, decisamente più sexy.",
 	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "Buone notizie:\n- È stata implementata una soluzione alternativa per mostrare di nuovo le auree importanti su targhette/ritratti/avvisi.",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Mostra gli incantesimi importanti su una barra separata e spostabile invece che combinati con gli avvisi difensivi.",
@@ -392,4 +392,4 @@ L:RegisterLocale("itIT", {
 	["Spell ID / name"] = "ID / nome incantesimo",
 	["Unit Frames"] = "Riquadri unità",
 	['Delete the aura group "%s"?'] = "Eliminare il gruppo di aure \"%s\"?",
-})
+} end)

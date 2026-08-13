@@ -124,6 +124,9 @@ local function OnAddonLoaded()
 	-- it across. Read here too so the very first login after the rename keeps the user's language.
 	local savedVars = MiniAurasDB or MiniCCDB
 	L:ApplyLocale(savedVars and savedVars.LocaleOverride or GetLocale())
+	-- The language is settled for this session - changing it asks for a reload - so the ten
+	-- translations nobody is reading can go. They are most of what the locale files weigh.
+	L:ReleaseUnused()
 
 	config:Init()
 	frames:Init()

@@ -2,7 +2,7 @@
 local _, addon = ...
 local L = addon.L
 
-L:RegisterLocale("ruRU", {
+L:RegisterLocale("ruRU", function() return {
 	["In Blizzard's 12.1 patch, addons can no longer process aura information; only display it.\n\nWhat's removed:\n* Friendly and enemy cooldown tracking (not possible in 12.1).\n\nWhat's added/changed:\n* New personal auras functionality (think mini weak auras).\n  - When aura added show icon and play sound.\n  - Precognition & Nullifying Shroud module have been merged into this.\n* Ally kick tracker for dungeons/M+.\n* Wider range of spells on raid frames, e.g. Darkness, Spirit Link, Dark Pact, etc.\n* New custom text-to-speech voices.\n* Masque skins are applied when an icon is created, so reload after changing one.\n* UI overhaul so it looks sexier."] = "В патче 12.1 Blizzard аддоны больше не могут обрабатывать информацию об аурах, только отображать её.\n\nУдалено:\n* Отслеживание восстановления способностей союзников и врагов (в 12.1 невозможно).\n\nДобавлено/изменено:\n* Новая функция своих аур (что-то вроде мини WeakAuras).\n  - При появлении ауры показывается иконка и проигрывается звук.\n  - Модули предвидения и аннулирующего покрова объединены в неё.\n* Отслеживание прерываний союзников для подземелий/М+.\n* Больше заклинаний на рейдовых фреймах, например Тьма, Единение духа, Тёмный пакт.\n* Новые собственные голоса TTS.\n* Оформление Masque применяется при создании иконки, поэтому после смены скина перезагрузите интерфейс.\n* Обновлённый интерфейс, который выглядит куда приятнее.",
 	["Some good news:\n- A workaround has been implemented to show important auras again for nameplates/portraits/alerts."] = "Хорошие новости:\n- Реализован обходной способ снова показывать важные ауры на полосках имён/портретах/оповещениях.",
 	["Show important spells on a separate, movable bar instead of combined with the defensive alerts."] = "Показывает важные заклинания на отдельной перемещаемой панели вместо объединения с защитными оповещениями.",
@@ -394,4 +394,4 @@ L:RegisterLocale("ruRU", {
 	["Spell ID / name"] = "ID / название заклинания",
 	["Unit Frames"] = "Рамки юнитов",
 	['Delete the aura group "%s"?'] = "Удалить группу аур «%s»?",
-})
+} end)

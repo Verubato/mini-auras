@@ -397,5 +397,6 @@ L:SetDefaultStrings({
 	['Delete the aura group "%s"?'] = "Delete the aura group \"%s\"?",
 })
 
-L:RegisterLocale("enUS", {})
-L:RegisterLocale("enGB", {})
+-- English registers nothing: the strings above ARE the fallback every locale reads through, so
+-- an English client wants the defaults and no overlay at all. The language dropdown lists it
+-- from the shipped display names rather than from what has registered.
