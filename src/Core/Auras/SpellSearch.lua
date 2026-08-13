@@ -30,6 +30,9 @@ local entries
 -- Lowercased name -> the ids that share it, so an added id can be expanded to its variants.
 ---@type table<string, number[]>
 local idsByName = {}
+-- Lowercased name -> its canonical entry, so a lookup does not walk all ~8,000 of them.
+---@type table<string, SpellSearchEntry>
+local entryByName = {}
 -- spellId -> lowercased name, for the same expansion from the other direction.
 ---@type table<number, string>
 local nameById = {}
@@ -126,13 +129,18 @@ local function BuildIndex()
 			if variants then
 				variants[#variants + 1] = spellId
 			else
-				idsByName[lower] = { spellId }
-				entries[#entries + 1] = {
+				local entry = {
 					Id = spellId,
 					Name = name,
 					Lower = lower,
 					Class = auraCategoryIds.Classes[spellId],
 				}
+
+				idsByName[lower] = { spellId }
+				-- Only the curated entries, matching what GetEntry could ever reach: the
+				-- generated names below never land in nameById, so no id resolves to one.
+				entryByName[lower] = entry
+				entries[#entries + 1] = entry
 			end
 		end
 	end
@@ -242,20 +250,16 @@ function M:GetEntry(spellId)
 	EnsureIndex()
 
 	local name = nameById[spellId]
-	local variants = name and idsByName[name]
+	local entry = name and entryByName[name]
 
-	if variants then
-		for _, entry in ipairs(entries) do
-			if entry.Lower == name then
-				-- The canonical entry carries a different id when the caller asked for a variant;
-				-- answer with the id they asked about so the row they see matches their list.
-				if entry.Id == spellId then
-					return entry
-				end
-
-				return { Id = spellId, Name = entry.Name, Lower = entry.Lower, Class = entry.Class }
-			end
+	if entry then
+		-- The canonical entry carries a different id when the caller asked for a variant;
+		-- answer with the id they asked about so the row they see matches their list.
+		if entry.Id == spellId then
+			return entry
 		end
+
+		return { Id = spellId, Name = entry.Name, Lower = entry.Lower, Class = entry.Class }
 	end
 
 	return UnknownEntry(spellId)
