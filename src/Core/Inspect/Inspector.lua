@@ -143,7 +143,10 @@ end
 
 local function Inspect(unit)
 	local specId = GetInspectSpecialization and GetInspectSpecialization(unit)
-	if specId and specId > 0 then
+	-- A unit the client will not let an addon identify answers with a secret spec, and a
+	-- mouseover of a stranger is the everyday way to get one. Nothing here can use it: comparing
+	-- it errors, and caching it only moves that error to whoever reads the cache.
+	if specId and not issecretvalue(specId) and specId > 0 then
 		local cacheEntry = EnsureCacheEntry(unit)
 		if cacheEntry then
 			local before = cacheEntry.SpecId
