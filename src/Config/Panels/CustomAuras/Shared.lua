@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
 local config = addon.Config
+local moduleName = addon.Utils.ModuleName
 local groups = addon.Modules.CustomAuras.Groups
 -- A tri-state cycles through these in order, and shows the matching colour.
 local TRI_ORDER = { "OFF", "REQUIRE", "FORBID" }
@@ -57,7 +58,7 @@ function ui.Current()
 end
 
 function ui.Apply()
-	config:Apply()
+	config:Apply(moduleName.CustomAuras)
 end
 
 ---@param spellId number

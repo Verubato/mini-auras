@@ -19,6 +19,7 @@ local enabledColumnWidth
 local config = addon.Config
 local helpers = addon.Config.PanelHelpers
 local auraCategoryIds = addon.Core.AuraCategoryIds
+local moduleName = addon.Utils.ModuleName
 -- Sidebar sections. Derived from AuraCategoryIds and the user's own additions and nothing else,
 -- so this list stands on its own rather than leaning on another module's data for its structure.
 local CLASS_ORDER = {
@@ -54,7 +55,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ExcludePlayer = value
-			addon:Refresh()
+			config:Apply(moduleName.RaidFrameAuras)
 		end,
 	})
 
@@ -69,7 +70,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.Icons.Glow = value
-			config:Apply()
+			config:Apply(moduleName.RaidFrameAuras)
 		end,
 	})
 
@@ -85,7 +86,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.Icons.ColorByDispelType = value
-			config:Apply()
+			config:Apply(moduleName.RaidFrameAuras)
 		end,
 	})
 
@@ -101,7 +102,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.Icons.ReverseCooldown = value
-			config:Apply()
+			config:Apply(moduleName.RaidFrameAuras)
 		end,
 	})
 
@@ -120,7 +121,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ShowImportant = value
-			config:Apply()
+			config:Apply(moduleName.RaidFrameAuras)
 		end,
 	})
 
@@ -135,7 +136,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ShowDefensives = value
-			config:Apply()
+			config:Apply(moduleName.RaidFrameAuras)
 		end,
 	})
 
@@ -151,7 +152,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ShowCC = value
-			config:Apply()
+			config:Apply(moduleName.RaidFrameAuras)
 		end,
 	})
 
@@ -167,7 +168,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ShowKicks = value
-			config:Apply()
+			config:Apply(moduleName.RaidFrameAuras)
 		end,
 	})
 
@@ -183,7 +184,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ShowTooltips = value
-			config:Apply()
+			config:Apply(moduleName.RaidFrameAuras)
 		end,
 	})
 
@@ -196,6 +197,7 @@ local function BuildInstance(panel, options, defaults)
 		PixelDefault = defaults.Icons.Size,
 		PercentDefault = defaults.Icons.SizePercent,
 		Width = sliderWidth,
+		SettingsKey = moduleName.RaidFrameAuras,
 	})
 
 	size.Checkbox:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * (3 + catOffset), 0)
@@ -207,6 +209,7 @@ local function BuildInstance(panel, options, defaults)
 		Target = options,
 		Key = "Grow",
 		Width = DROPDOWN_WIDTH,
+		SettingsKey = moduleName.RaidFrameAuras,
 	})
 
 	growDdl.Label:SetPoint("TOPLEFT", showImportantChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
@@ -222,6 +225,7 @@ local function BuildInstance(panel, options, defaults)
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "MaxIcons",
+		SettingsKey = moduleName.RaidFrameAuras,
 	})
 
 	maxIcons.Slider:SetPoint("LEFT", size.Pixel.Slider, "RIGHT", horizontalSpacing, 0)
@@ -236,6 +240,7 @@ local function BuildInstance(panel, options, defaults)
 		Width = sliderWidth,
 		Target = options,
 		Key = "IconSpacing",
+		SettingsKey = moduleName.RaidFrameAuras,
 	})
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", size.Pixel.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
@@ -244,6 +249,7 @@ local function BuildInstance(panel, options, defaults)
 		Parent = parent,
 		Offset = options.Offset,
 		Width = sliderWidth,
+		SettingsKey = moduleName.RaidFrameAuras,
 	})
 
 	offsetX.Slider:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
@@ -268,7 +274,7 @@ local function BuildColours(parent, options)
 		SetValue = function(r, g, b, a)
 			local color = options.ImportantColor
 			color.R, color.G, color.B, color.A = r, g, b, a
-			config:Apply()
+			config:Apply(moduleName.RaidFrameAuras)
 		end,
 	})
 
@@ -286,7 +292,7 @@ local function BuildColours(parent, options)
 		SetValue = function(r, g, b, a)
 			local color = options.DefensiveColor
 			color.R, color.G, color.B, color.A = r, g, b, a
-			config:Apply()
+			config:Apply(moduleName.RaidFrameAuras)
 		end,
 	})
 
@@ -406,7 +412,7 @@ local function BuildSpells(parent)
 				overrides.Custom[spellId] = true
 			end
 
-			config:Apply()
+			config:Apply(moduleName.RaidFrameAuras)
 			-- The sections are built from the spell lists, so a new id only appears once they
 			-- are rebuilt; MiniRefresh alone just re-reads the existing controls.
 			Populate()
@@ -520,7 +526,7 @@ local function BuildSpells(parent)
 
 						overrides.Disabled[spellId] = (not value) or nil
 
-						config:Apply()
+						config:Apply(moduleName.RaidFrameAuras)
 					end,
 				})
 
@@ -541,7 +547,7 @@ local function BuildSpells(parent)
 					local remove = helpers:CreateRemoveButton(panel, function()
 						overrides.Custom[spellId] = nil
 						overrides.Disabled[spellId] = nil
-						config:Apply()
+						config:Apply(moduleName.RaidFrameAuras)
 						Populate()
 					end)
 					remove:SetPoint("TOPLEFT", panel, "TOPLEFT", columnX + 250, rowY - 4)
@@ -637,7 +643,7 @@ function M:Build(panel, default, raid)
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
 	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider,
-		db.Modules.RaidFrameAurasModule.Enabled)
+		db.Modules.RaidFrameAurasModule.Enabled, nil, moduleName.RaidFrameAuras)
 
 	-- Sized so the whole page sits inside the window's scroll viewport: the instance panels'
 	-- controls end well above this, and anything taller leaves a scrollbar into blank space.

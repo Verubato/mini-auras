@@ -6,6 +6,7 @@ local verticalSpacing = mini.VerticalSpacing
 local config = addon.Config
 local helpers = addon.Config.PanelHelpers
 local dbDefaults = addon.Config.Defaults
+local moduleName = addon.Utils.ModuleName
 
 ---@class EnemyKickTrackerConfig
 local M = {}
@@ -44,7 +45,7 @@ function M:Build(panel)
 		end,
 		SetValue = function(value)
 			db.Modules.EnemyKickTrackerModule.Enabled.Healer = value
-			config:Apply()
+			config:Apply(moduleName.EnemyKickTracker)
 		end,
 	})
 
@@ -59,7 +60,7 @@ function M:Build(panel)
 		end,
 		SetValue = function(value)
 			db.Modules.EnemyKickTrackerModule.Enabled.Caster = value
-			config:Apply()
+			config:Apply(moduleName.EnemyKickTracker)
 		end,
 	})
 
@@ -75,7 +76,7 @@ function M:Build(panel)
 		end,
 		SetValue = function(value)
 			db.Modules.EnemyKickTrackerModule.Enabled.Always = value
-			config:Apply()
+			config:Apply(moduleName.EnemyKickTracker)
 		end,
 	})
 
@@ -99,7 +100,7 @@ function M:Build(panel)
 		end,
 		SetValue = function(value)
 			db.Modules.EnemyKickTrackerModule.Icons.Border = value
-			config:Apply()
+			config:Apply(moduleName.EnemyKickTracker)
 		end,
 	})
 
@@ -117,7 +118,7 @@ function M:Build(panel)
 		SetValue = function(r, g, b, a)
 			local color = db.Modules.EnemyKickTrackerModule.Icons.Color
 			color.R, color.G, color.B, color.A = r, g, b, a
-			config:Apply()
+			config:Apply(moduleName.EnemyKickTracker)
 		end,
 	})
 
@@ -134,6 +135,7 @@ function M:Build(panel)
 		Width = sliderWidth,
 		Target = db.Modules.EnemyKickTrackerModule.Icons,
 		Key = "Size",
+		SettingsKey = moduleName.EnemyKickTracker,
 	})
 
 	iconSizeSlider.Slider:SetPoint("TOPLEFT", borderChk, "BOTTOMLEFT", 4, -verticalSpacing * 3)
@@ -148,6 +150,7 @@ function M:Build(panel)
 		Width = sliderWidth,
 		Target = db.Modules.EnemyKickTrackerModule,
 		Key = "IconSpacing",
+		SettingsKey = moduleName.EnemyKickTracker,
 	})
 
 	iconSpacingSlider.Slider:SetPoint("LEFT", iconSizeSlider.Slider, "RIGHT", horizontalSpacing, 0)

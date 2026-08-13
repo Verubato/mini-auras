@@ -11,6 +11,7 @@ local config = addon.Config
 local helpers = addon.Config.PanelHelpers
 local sounds = addon.Core.Sounds
 local dbDefaults = addon.Config.Defaults
+local moduleName = addon.Utils.ModuleName
 
 ---@class HealerCrowdControlConfig
 local M = {}
@@ -43,7 +44,8 @@ function M:Build(panel, options)
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
-	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.HealerCCModule.Enabled)
+	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.HealerCCModule.Enabled,
+		nil, moduleName.HealerCrowdControl)
 
 	local settingsDivider = mini:Divider({
 		Parent = panel,
@@ -62,7 +64,7 @@ function M:Build(panel, options)
 		end,
 		SetValue = function(value)
 			options.Icons.Enabled = value
-			config:Apply()
+			config:Apply(moduleName.HealerCrowdControl)
 		end,
 	})
 
@@ -77,7 +79,7 @@ function M:Build(panel, options)
 		end,
 		SetValue = function(value)
 			options.Icons.Glow = value
-			config:Apply()
+			config:Apply(moduleName.HealerCrowdControl)
 		end,
 	})
 
@@ -93,7 +95,7 @@ function M:Build(panel, options)
 		end,
 		SetValue = function(value)
 			options.ShowWarningText = value
-			config:Apply()
+			config:Apply(moduleName.HealerCrowdControl)
 		end,
 	})
 
@@ -109,7 +111,7 @@ function M:Build(panel, options)
 		end,
 		SetValue = function(value)
 			options.Icons.ReverseCooldown = value
-			config:Apply()
+			config:Apply(moduleName.HealerCrowdControl)
 		end,
 	})
 
@@ -125,7 +127,7 @@ function M:Build(panel, options)
 		end,
 		SetValue = function(value)
 			options.Icons.ColorByDispelType = value
-			config:Apply()
+			config:Apply(moduleName.HealerCrowdControl)
 		end,
 	})
 
@@ -141,7 +143,7 @@ function M:Build(panel, options)
 		end,
 		SetValue = function(value)
 			options.ShowTooltips = value
-			config:Apply()
+			config:Apply(moduleName.HealerCrowdControl)
 		end,
 	})
 
@@ -162,7 +164,7 @@ function M:Build(panel, options)
 				-- Play the sound when enabled
 				PlaySoundFile(sounds:Resolve(options.Sound.File), options.Sound.Channel or "Master")
 			end
-			config:Apply()
+			config:Apply(moduleName.HealerCrowdControl)
 		end,
 	})
 
@@ -179,7 +181,7 @@ function M:Build(panel, options)
 		SetValue = function(value)
 			options.Sound.File = value
 			PlaySoundFile(sounds:Resolve(value), options.Sound.Channel or "Master")
-			config:Apply()
+			config:Apply(moduleName.HealerCrowdControl)
 		end,
 	})
 
@@ -202,6 +204,7 @@ function M:Build(panel, options)
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "Size",
+		SettingsKey = moduleName.HealerCrowdControl,
 	})
 
 	iconSize.Slider:SetPoint("TOPLEFT", slidersAnchor, "BOTTOMLEFT", 4, -verticalSpacing * 3)
@@ -220,7 +223,7 @@ function M:Build(panel, options)
 			local newValue = mini:ClampInt(v, 10, 100, 32)
 			if options.Font.Size ~= newValue then
 				options.Font.Size = newValue
-				config:Apply()
+				config:Apply(moduleName.HealerCrowdControl)
 			end
 		end,
 	})
@@ -238,6 +241,7 @@ function M:Build(panel, options)
 		Width = sliderWidth,
 		Target = options,
 		Key = "IconSpacing",
+		SettingsKey = moduleName.HealerCrowdControl,
 	})
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)

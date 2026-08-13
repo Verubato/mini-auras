@@ -23,6 +23,21 @@ local modules = {
 	addon.Modules.AllyKickTrackerModule,
 	addon.Core.TrinketsTracker,
 }
+-- Maps a settings table's db.Modules key back to the module that renders it, so a config change
+-- can refresh just the module it touched. PetCC rides the CC module rather than owning a renderer.
+local modulesBySettingsKey = {
+	CCModule = addon.Modules.CrowdControlModule,
+	PetCCModule = addon.Modules.CrowdControlModule,
+	HealerCCModule = addon.Modules.HealerCrowdControlModule,
+	PortraitModule = addon.Modules.PortraitModule,
+	AlertsModule = addon.Modules.AlertsModule,
+	NameplatesModule = addon.Modules.NameplatesModule,
+	EnemyKickTrackerModule = addon.Modules.EnemyKickTrackerModule,
+	AllyKickTrackerModule = addon.Modules.AllyKickTrackerModule,
+	TrinketsModule = addon.Modules.TrinketsModule,
+	RaidFrameAurasModule = addon.Modules.RaidFrameAurasModule,
+	CustomAurasModule = addon.Modules.CustomAurasModule,
+}
 -- How long a burst of media registrations is allowed to settle before re-resolving. A media pack
 -- registers one entry at a time, so this coalesces a hundred callbacks into one refresh.
 local MEDIA_REFRESH_DELAY = 1
@@ -171,6 +186,19 @@ function addon:Refresh()
 	end
 end
 
+---Refreshes only the module that renders the given settings table. An unknown key falls back to
+---the full refresh, so a caller can never end up narrower than correct.
+---@param settingsKey string A ModuleName value naming the db.Modules table that changed.
+function addon:RefreshModule(settingsKey)
+	local module = modulesBySettingsKey[settingsKey]
+
+	if module then
+		module:Refresh()
+	else
+		addon:Refresh()
+	end
+end
+
 ---@param isRaid boolean?
 function addon:ToggleTest(isRaid)
 	if testModeManager:IsActive() then
@@ -206,6 +234,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Config Config
 ---@field Modules Modules
 ---@field Refresh fun(self: table)
+---@field RefreshModule fun(self: table, settingsKey: string)
 ---@field ToggleTest fun(self: table, isRaid: boolean?)
 ---@field TestWithOptions fun(self: table, isRaid: boolean?)
 ---@field IsTestActive fun(self: table): boolean

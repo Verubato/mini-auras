@@ -15,6 +15,7 @@ local COLUMNS = 4
 local columnWidth
 local config = addon.Config
 local helpers = addon.Config.PanelHelpers
+local moduleName = addon.Utils.ModuleName
 
 ---@class NameplatesConfig
 local M = {}
@@ -45,7 +46,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		end,
 		SetValue = function(value)
 			options.Enabled = value
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 
@@ -60,7 +61,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ShowCC = value
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 
@@ -76,7 +77,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ShowDefensives = value
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 
@@ -92,7 +93,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ShowImportant = value
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 
@@ -108,7 +109,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		end,
 		SetValue = function(value)
 			options.Icons.Glow = value
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 
@@ -123,7 +124,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		end,
 		SetValue = function(value)
 			options.Icons.ReverseCooldown = value
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 
@@ -139,7 +140,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		end,
 		SetValue = function(value)
 			options.Icons.ColorByCategory = value
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 
@@ -155,7 +156,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ShowTooltips = value
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 
@@ -171,7 +172,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		end,
 		SetValue = function(value)
 			options.Icons.ShowMilliseconds = value
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 
@@ -187,6 +188,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "Size",
+		SettingsKey = moduleName.Nameplates,
 	})
 
 	-- Each bar can hold up to 8 icons.
@@ -199,6 +201,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "MaxIcons",
+		SettingsKey = moduleName.Nameplates,
 	})
 
 	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
@@ -209,6 +212,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		Target = options,
 		Key = "Grow",
 		Width = DROPDOWN_WIDTH,
+		SettingsKey = moduleName.Nameplates,
 	})
 
 	growDdl.Label:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing)
@@ -225,6 +229,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "Spacing",
+		SettingsKey = moduleName.Nameplates,
 	})
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
@@ -233,6 +238,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		Parent = container,
 		Offset = options.Offset,
 		Width = sliderWidth,
+		SettingsKey = moduleName.Nameplates,
 	})
 
 	offsetX.Slider:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
@@ -255,7 +261,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.Enemy.IgnorePets = value
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 	enemyIgnorePetsChk:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
@@ -269,7 +275,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.Friendly.IgnorePets = value
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 	friendlyIgnorePetsChk:SetPoint("TOP", enemyIgnorePetsChk, "TOP", 0, 0)
@@ -284,7 +290,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.ScaleWithNameplate = value
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 	scaleWithNameplateChk:SetPoint("TOPLEFT", enemyIgnorePetsChk, "BOTTOMLEFT", 0, -verticalSpacing)
@@ -298,7 +304,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.AnchorToHealthBar = value
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 	anchorToHealthBarChk:SetPoint("TOP", scaleWithNameplateChk, "TOP", 0, 0)
@@ -327,7 +333,7 @@ local function BuildSettingsTab(parent, options)
 		SetValue = function(r, g, b, a)
 			local color = options.ImportantColor
 			color.R, color.G, color.B, color.A = r, g, b, a
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 
@@ -345,7 +351,7 @@ local function BuildSettingsTab(parent, options)
 		SetValue = function(r, g, b, a)
 			local color = options.DefensiveColor
 			color.R, color.G, color.B, color.A = r, g, b, a
-			config:Apply()
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 
@@ -376,7 +382,7 @@ function M:Build(parent, options)
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
 	local enabledEverywhere = helpers:BuildEnableRow(parent, enabledDivider,
-		db.Modules.NameplatesModule.Enabled)
+		db.Modules.NameplatesModule.Enabled, nil, moduleName.Nameplates)
 
 	local subPanelHeight = 285
 

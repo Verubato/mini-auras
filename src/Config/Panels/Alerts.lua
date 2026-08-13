@@ -8,6 +8,7 @@ local COLUMNS = 4
 local columnWidth
 local enabledColumnWidth
 local config = addon.Config
+local moduleName = addon.Utils.ModuleName
 local helpers = addon.Config.PanelHelpers
 local sounds = addon.Core.Sounds
 local dbDefaults = addon.Config.Defaults
@@ -39,7 +40,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.Icons.Enabled = value
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	})
 
@@ -54,7 +55,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.IncludeDefensives = value
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	})
 
@@ -70,7 +71,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.Icons.Glow = value
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	})
 
@@ -90,7 +91,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.Icons.ReverseCooldown = value
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	})
 
@@ -118,7 +119,7 @@ local function BuildSettingsTab(parent, options)
 		SetValue = function(r, g, b, a)
 			local color = options.Icons.ImportantColor
 			color.R, color.G, color.B, color.A = r, g, b, a
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	}))
 
@@ -134,7 +135,7 @@ local function BuildSettingsTab(parent, options)
 		SetValue = function(r, g, b, a)
 			local color = options.Icons.DefensiveColor
 			color.R, color.G, color.B, color.A = r, g, b, a
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	}))
 
@@ -147,7 +148,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.ShowTooltips = value
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	})
 
@@ -163,7 +164,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.SplitBars = value
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	})
 
@@ -185,6 +186,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 		Target = options,
 		Key = "Grow",
+		SettingsKey = moduleName.Alerts,
 	})
 
 	growDdl.Label:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
@@ -198,6 +200,7 @@ local function BuildSettingsTab(parent, options)
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "Size",
+		SettingsKey = moduleName.Alerts,
 	})
 
 	iconSize.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
@@ -211,6 +214,7 @@ local function BuildSettingsTab(parent, options)
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "MaxIcons",
+		SettingsKey = moduleName.Alerts,
 	})
 
 	maxIcons.Slider:SetPoint("LEFT", iconSize.Slider, "RIGHT", horizontalSpacing, 0)
@@ -225,6 +229,7 @@ local function BuildSettingsTab(parent, options)
 		Width = sliderWidth,
 		Target = options,
 		Key = "IconSpacing",
+		SettingsKey = moduleName.Alerts,
 	})
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
@@ -239,7 +244,7 @@ local function BuildSettingsTab(parent, options)
 		SetValue = function(value)
 			options.Important = options.Important or {}
 			options.Important.Enabled = value
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	})
 
@@ -270,7 +275,7 @@ local function BuildSoundsTab(parent, options)
 			if value then
 				PlaySoundFile(sounds:Resolve(options.Sound.Important.File), options.Sound.Channel or "Master")
 			end
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	})
 
@@ -287,7 +292,7 @@ local function BuildSoundsTab(parent, options)
 		SetValue = function(value)
 			options.Sound.Important.File = value
 			PlaySoundFile(sounds:Resolve(value), options.Sound.Channel or "Master")
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	})
 
@@ -306,7 +311,7 @@ local function BuildSoundsTab(parent, options)
 			if value then
 				PlaySoundFile(sounds:Resolve(options.Sound.Defensive.File), options.Sound.Channel or "Master")
 			end
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	})
 
@@ -324,7 +329,7 @@ local function BuildSoundsTab(parent, options)
 		SetValue = function(value)
 			options.Sound.Defensive.File = value
 			PlaySoundFile(sounds:Resolve(value), options.Sound.Channel or "Master")
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	})
 
@@ -346,7 +351,7 @@ local function BuildSoundsTab(parent, options)
 		SetValue = function(value)
 			options.Sound.Channel = value
 			PlaySoundFile(sounds:Resolve(options.Sound.Important.File), value)
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	})
 	channelDropdown.Label:SetPoint("LEFT", parent, "LEFT", 0, 0)
@@ -393,7 +398,7 @@ local function BuildTtsTab(parent, options)
 					preview()
 				end
 
-				config:Apply()
+				config:Apply(moduleName.Alerts)
 			end,
 		})
 	end
@@ -420,7 +425,7 @@ local function BuildTtsTab(parent, options)
 			EnsureTtsOptions()
 			options.TTS.VoicePack = value
 			PlaySoundFile(ttsPacks:Path(value) .. "PreviewVoice.ogg", TtsChannel())
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 		GetText = function(value)
 			return value
@@ -445,7 +450,7 @@ local function BuildTtsTab(parent, options)
 			options.TTS.Channel = value
 			local pack = ttsPacks:Resolve(options.TTS.VoicePack)
 			PlaySoundFile(ttsPacks:Path(pack) .. "PreviewVoice.ogg", value)
-			config:Apply()
+			config:Apply(moduleName.Alerts)
 		end,
 	})
 	channelDropdown.Label:SetPoint("TOPLEFT", packDropdown, "BOTTOMLEFT", 0, -verticalSpacing)
@@ -516,7 +521,7 @@ function M:Build(panel, options)
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
-	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.AlertsModule.Enabled)
+	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider, db.Modules.AlertsModule.Enabled, nil, moduleName.Alerts)
 
 	-- Sized for the spell list: it is a scrolling grid, and the other tabs' blank tail is a
 	-- better trade than a list showing four rows at a time.

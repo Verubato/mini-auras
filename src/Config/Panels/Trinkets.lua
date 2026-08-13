@@ -7,6 +7,7 @@ local horizontalSpacing = mini.HorizontalSpacing
 local config = addon.Config
 local helpers = addon.Config.PanelHelpers
 local dbDefaults = addon.Config.Defaults
+local moduleName = addon.Utils.ModuleName
 
 ---@class TrinketsConfig
 local M = {}
@@ -26,7 +27,7 @@ function M:Build(panel)
 		end,
 		SetValue = function(value)
 			db.Modules.TrinketsModule.Enabled.Always = value
-			config:Apply()
+			config:Apply(moduleName.Trinkets)
 		end,
 	})
 
@@ -41,7 +42,7 @@ function M:Build(panel)
 		end,
 		SetValue = function(value)
 			db.Modules.TrinketsModule.ExcludePlayer = value
-			config:Apply()
+			config:Apply(moduleName.Trinkets)
 		end,
 	})
 
@@ -60,7 +61,7 @@ function M:Build(panel)
 		SetValue = function(r, g, b, a)
 			local color = db.Modules.TrinketsModule.Icons.Color
 			color.R, color.G, color.B, color.A = r, g, b, a
-			config:Apply()
+			config:Apply(moduleName.Trinkets)
 		end,
 	})
 
@@ -81,7 +82,7 @@ function M:Build(panel)
 		end,
 		SetValue = function(value)
 			db.Modules.TrinketsModule.Icons.Border = value
-			config:Apply()
+			config:Apply(moduleName.Trinkets)
 		end,
 	})
 
@@ -103,6 +104,7 @@ function M:Build(panel)
 		Width = columns * columnWidth - horizontalSpacing,
 		Target = db.Modules.TrinketsModule.Icons,
 		Key = "Size",
+		SettingsKey = moduleName.Trinkets,
 	})
 
 	iconSizeSlider.Slider:SetPoint("TOPLEFT", borderChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
@@ -112,6 +114,7 @@ function M:Build(panel)
 		Offset = db.Modules.TrinketsModule.Offset,
 		Width = (columns / 2) * columnWidth - horizontalSpacing,
 		Range = 200,
+		SettingsKey = moduleName.Trinkets,
 	})
 
 	offsetXSlider.Slider:SetPoint("TOPLEFT", iconSizeSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)

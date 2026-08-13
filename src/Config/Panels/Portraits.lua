@@ -3,6 +3,8 @@ local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
 local verticalSpacing = mini.VerticalSpacing
+local config = addon.Config
+local moduleName = addon.Utils.ModuleName
 ---@type Db
 local db
 ---@class PortraitsConfig
@@ -42,7 +44,7 @@ function M:Build(panel)
 		end,
 		SetValue = function(value)
 			db.Modules.PortraitModule.Enabled.Always = value
-			addon.Config:Apply()
+			config:Apply(moduleName.Portrait)
 		end,
 	})
 
@@ -57,7 +59,7 @@ function M:Build(panel)
 		end,
 		SetValue = function(value)
 			db.Modules.PortraitModule.ReverseCooldown = value
-			addon.Config:Apply()
+			config:Apply(moduleName.Portrait)
 		end,
 	})
 

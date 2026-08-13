@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
 local config = addon.Config
+local moduleName = addon.Utils.ModuleName
 local helpers = addon.Config.PanelHelpers
 local ttsSounds = addon.Core.AuraTtsSounds
 local ttsPacks = addon.Core.TtsPacks
@@ -191,7 +192,7 @@ function M:Build(parent, options)
 			end
 		end
 
-		config:Apply()
+		config:Apply(moduleName.Alerts)
 
 		-- Absent only for a category that shipped no clips, which has no rows to redraw either.
 		if panel.MiniRefresh then
@@ -268,7 +269,7 @@ function M:Build(parent, options)
 						PlayClip(row.File)
 					end
 
-					config:Apply()
+					config:Apply(moduleName.Alerts)
 				end,
 			})
 

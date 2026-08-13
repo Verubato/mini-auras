@@ -48,8 +48,9 @@ addon.Config.PanelHelpers = M
 ---@param anchor table? Frame the row hangs below; nil starts the row at the parent's top left.
 ---@param enabled table The module's Enabled table, written in place.
 ---@param tooltips table<string, string>? Per-context tooltip overrides, keyed like Enabled.
+---@param settingsKey string? ModuleName value scoping the refresh to the module that changed.
 ---@return table firstCheckbox
-function M:BuildEnableRow(parent, anchor, enabled, tooltips)
+function M:BuildEnableRow(parent, anchor, enabled, tooltips, settingsKey)
 	local columnWidth = mini:ColumnWidth(5, 0, 0)
 	local first
 
@@ -64,7 +65,7 @@ function M:BuildEnableRow(parent, anchor, enabled, tooltips)
 			end,
 			SetValue = function(value)
 				enabled[key] = value
-				config:Apply()
+				config:Apply(settingsKey)
 			end,
 		})
 
@@ -118,7 +119,7 @@ function M:BuildClampedSlider(opts)
 
 			if target[key] ~= newValue then
 				target[key] = newValue
-				config:Apply()
+				config:Apply(opts.SettingsKey)
 
 				if opts.OnChanged then
 					opts.OnChanged()
@@ -147,7 +148,7 @@ function M:BuildSizeControls(opts)
 		SetValue = function(value)
 			icons.SizeIsPercent = value
 			refresh()
-			config:Apply()
+			config:Apply(opts.SettingsKey)
 		end,
 	})
 
@@ -160,6 +161,7 @@ function M:BuildSizeControls(opts)
 		Width = opts.Width,
 		Target = icons,
 		Key = "Size",
+		SettingsKey = opts.SettingsKey,
 	})
 
 	local percent = M:BuildClampedSlider({
@@ -172,6 +174,7 @@ function M:BuildSizeControls(opts)
 		Width = opts.Width,
 		Target = icons,
 		Key = "SizePercent",
+		SettingsKey = opts.SettingsKey,
 	})
 
 	percent.Slider:SetPoint("TOPLEFT", pixel.Slider, "TOPLEFT", 0, 0)
@@ -206,7 +209,7 @@ function M:BuildGrowDropdown(opts)
 	local setValue = opts.SetValue or function(value)
 		if opts.Target[opts.Key] ~= value then
 			opts.Target[opts.Key] = value
-			config:Apply()
+			config:Apply(opts.SettingsKey)
 		end
 	end
 
@@ -243,6 +246,7 @@ function M:BuildOffsetSliders(opts)
 		Width = opts.Width,
 		Target = opts.Offset,
 		Key = "X",
+		SettingsKey = opts.SettingsKey,
 	})
 
 	local offsetY = M:BuildClampedSlider({
@@ -254,6 +258,7 @@ function M:BuildOffsetSliders(opts)
 		Width = opts.Width,
 		Target = opts.Offset,
 		Key = "Y",
+		SettingsKey = opts.SettingsKey,
 	})
 
 	offsetY.Slider:SetPoint("LEFT", offsetX.Slider, "RIGHT", horizontalSpacing, 0)
@@ -394,6 +399,7 @@ end
 ---@field Fallback number? Shown while the stored value is nil, without writing it.
 ---@field Float boolean? Clamp without rounding.
 ---@field OnChanged fun()? Runs after a changed value has been applied.
+---@field SettingsKey string? ModuleName value scoping the refresh to the module that changed.
 
 ---@class SizeControlsOptions
 ---@field Parent table
@@ -401,6 +407,7 @@ end
 ---@field PixelDefault number
 ---@field PercentDefault number
 ---@field Width number?
+---@field SettingsKey string? ModuleName value scoping the refresh to the module that changed.
 
 ---@class SizeControls
 ---@field Checkbox table The Relative size checkbox.
@@ -416,12 +423,14 @@ end
 ---@field Key string? Defaults are built from Target[Key].
 ---@field GetValue (fun(): string)?
 ---@field SetValue (fun(value: string))?
+---@field SettingsKey string? ModuleName value scoping the refresh to the module that changed.
 
 ---@class OffsetSlidersOptions
 ---@field Parent table
 ---@field Offset table The {X, Y} offset table, written in place.
 ---@field Width number?
 ---@field Range number? Symmetric slider range, default 250.
+---@field SettingsKey string? ModuleName value scoping the refresh to the module that changed.
 
 ---@class MediaDropdownOptions
 ---@field Parent table

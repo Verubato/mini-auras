@@ -8,6 +8,7 @@ local config = addon.Config
 local helpers = addon.Config.PanelHelpers
 local barTextures = addon.Core.BarTextures
 local dbDefaults = addon.Config.Defaults
+local moduleName = addon.Utils.ModuleName
 local GROW_OPTIONS = { "DOWN", "UP" }
 
 ---@class AllyKickTrackerConfig
@@ -37,7 +38,8 @@ function M:Build(panel, options)
 	enabledDivider:SetPoint("RIGHT", panel, "RIGHT")
 	enabledDivider:SetPoint("TOP", description, "BOTTOM", 0, -verticalSpacing)
 
-	local enabledWorld = helpers:BuildEnableRow(panel, enabledDivider, options.Enabled)
+	local enabledWorld = helpers:BuildEnableRow(panel, enabledDivider, options.Enabled, nil,
+		moduleName.AllyKickTracker)
 
 	local settingsDivider = mini:Divider({
 		Parent = panel,
@@ -56,7 +58,7 @@ function M:Build(panel, options)
 		end,
 		SetValue = function(value)
 			options.Locked = value
-			config:Apply()
+			config:Apply(moduleName.AllyKickTracker)
 		end,
 	})
 
@@ -71,7 +73,7 @@ function M:Build(panel, options)
 		end,
 		SetValue = function(value)
 			options.ShowOwnCooldown = value
-			config:Apply()
+			config:Apply(moduleName.AllyKickTracker)
 		end,
 	})
 
@@ -86,6 +88,7 @@ function M:Build(panel, options)
 		end,
 		Target = options,
 		Key = "Grow",
+		SettingsKey = moduleName.AllyKickTracker,
 	})
 
 	growDropdown.Label:SetPoint("TOPLEFT", lockedChk, "BOTTOMLEFT", 0, -verticalSpacing * 2)
@@ -107,7 +110,7 @@ function M:Build(panel, options)
 		SetValue = function(value)
 			if options.Bars.Texture ~= value then
 				options.Bars.Texture = value
-				config:Apply()
+				config:Apply(moduleName.AllyKickTracker)
 			end
 		end,
 		-- Each row carries a strip of the texture it names, so the list previews itself.
@@ -129,6 +132,7 @@ function M:Build(panel, options)
 		Width = sliderWidth,
 		Target = options.Bars,
 		Key = "Width",
+		SettingsKey = moduleName.AllyKickTracker,
 	})
 	widthSlider.Slider:SetPoint("TOPLEFT", growDropdown, "BOTTOMLEFT", 4, -verticalSpacing * 3)
 
@@ -142,6 +146,7 @@ function M:Build(panel, options)
 		Width = sliderWidth,
 		Target = options.Bars,
 		Key = "Height",
+		SettingsKey = moduleName.AllyKickTracker,
 	})
 	heightSlider.Slider:SetPoint("LEFT", widthSlider.Slider, "RIGHT", horizontalSpacing, 0)
 	heightSlider.Slider:SetPoint("TOP", widthSlider.Slider, "TOP", 0, 0)
@@ -156,6 +161,7 @@ function M:Build(panel, options)
 		Width = sliderWidth,
 		Target = options,
 		Key = "BarSpacing",
+		SettingsKey = moduleName.AllyKickTracker,
 	})
 	spacingSlider.Slider:SetPoint("TOPLEFT", widthSlider.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
@@ -169,6 +175,7 @@ function M:Build(panel, options)
 		Width = sliderWidth,
 		Target = options,
 		Key = "MaxBars",
+		SettingsKey = moduleName.AllyKickTracker,
 	})
 	maxBarsSlider.Slider:SetPoint("LEFT", spacingSlider.Slider, "RIGHT", horizontalSpacing, 0)
 	maxBarsSlider.Slider:SetPoint("TOP", spacingSlider.Slider, "TOP", 0, 0)

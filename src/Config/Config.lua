@@ -101,8 +101,17 @@ local function BuildRedirectPanel(panel, version)
 	end)
 end
 
-function M:Apply()
-	addon:Refresh()
+---Applies a settings change. A ModuleName key scopes the refresh to the one module whose
+---settings table changed - sliders and colour pickers fire this per drag step, so refreshing all
+---eleven modules each time is real cost. No key means the change has addon-wide reach and
+---everything refreshes.
+---@param settingsKey string? A ModuleName value naming the db.Modules table that changed.
+function M:Apply(settingsKey)
+	if settingsKey then
+		addon:RefreshModule(settingsKey)
+	else
+		addon:Refresh()
+	end
 end
 
 function M:Init()
@@ -429,7 +438,7 @@ end
 
 ---@class Config
 ---@field Init fun(self: table)
----@field Apply fun(self: table)
+---@field Apply fun(self: table, settingsKey: string?)
 ---@field Migrator DbMigrator
 ---@field TabController TabReturn
 ---@field General GeneralConfig
