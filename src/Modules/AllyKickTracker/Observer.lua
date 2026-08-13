@@ -19,6 +19,13 @@ local NAMEPLATE_PREFIX = "^nameplate"
 -- A mob just seen kicked ignores further reports for this long, since the repeats above arrive
 -- spread out rather than all in one frame.
 local REPEAT_WINDOW = 0.5
+-- How close to the player's own interrupt landing a recorded kick has to be to count as that same
+-- kick. Whose kick it was cannot be asked directly - the interrupter GUID is secret, so it cannot be
+-- compared to the player's own - and time is what is left. The two reports come out of the same
+-- server tick, but which of them reaches the client first is not fixed, so the window is checked
+-- both ways round. Wide enough for an interrupt with a charge in front of it, narrow enough that an
+-- ally kicking at the same moment keeps their row.
+local OWN_CAST_WINDOW = 0.5
 -- Past this the oldest row goes. More than a screenful is not worth keeping around.
 local MAX_RECORDS = 10
 -- How long a history row stays on screen. The kicker's own cooldown cannot be used: identifying
@@ -54,6 +61,11 @@ local lastRecordedAt = {}
 -- counts down, because their own name, class, interrupt and cooldown are all readable.
 ---@type AllyKickRecord?
 local ownRecord
+-- When the player's own interrupt last landed, and whether their kick belongs in the history at
+-- all. Both feed the own-kick dedup: with the readiness row up, their kick is already on screen.
+---@type number?
+local lastOwnCastAt
+local suppressOwnHistory = false
 local watching = false
 local interruptFrame
 local castFrame
@@ -102,6 +114,12 @@ local function OnInterrupted(unit, interruptedSpellId, interruptedBy)
 
 	lastRecordedAt[unit] = now
 
+	-- The player's own kick is already drawn by their readiness row, so recording it again would put
+	-- their name on screen twice.
+	if suppressOwnHistory and lastOwnCastAt and (now - lastOwnCastAt) <= OWN_CAST_WINDOW then
+		return
+	end
+
 	-- All four are secret inside an instance. Handing a secret to these is fine - they take one
 	-- and hand a secret back. What is not fine is reading the answer, so none of it is compared
 	-- or used as a table key: each goes straight to the widget setter that knows how to take one.
@@ -111,6 +129,7 @@ local function OnInterrupted(unit, interruptedSpellId, interruptedBy)
 		Class = select(2, UnitClassFromGUID(interruptedBy)),
 		Icon = C_Spell.GetSpellTexture(interruptedSpellId),
 		Marker = GetRaidTargetIndex(unit),
+		RecordedAt = now,
 		ExpireAt = now + RECORD_DURATION,
 		Duration = RECORD_DURATION,
 	}
@@ -190,6 +209,24 @@ local function PlayerSpellCooldown(spellId)
 	return info.startTime, info.duration
 end
 
+---Takes back the row recorded for a kick that has just turned out to be the player's own, for the
+---times the stop event beats their cast to the client. Only the newest row can be the one, since a
+---kick is recorded the moment it is reported.
+---@param now number
+local function DropOwnHistoryRow(now)
+	local newest = records[#records]
+
+	if not newest or not newest.RecordedAt then
+		return
+	end
+
+	if (now - newest.RecordedAt) > OWN_CAST_WINDOW then
+		return
+	end
+
+	records[#records] = nil
+end
+
 ---@param spellId number?
 local function OnOwnCast(spellId)
 	-- The player's own spell IDs are readable, unlike everybody else's. The guard is for the pet
@@ -208,6 +245,12 @@ local function OnOwnCast(spellId)
 
 	ownRecord.Duration = duration or ownRecord.Cooldown
 	ownRecord.ExpireAt = (startTime or now) + ownRecord.Duration
+
+	lastOwnCastAt = now
+
+	if suppressOwnHistory then
+		DropOwnHistoryRow(now)
+	end
 
 	if recordCallback then
 		recordCallback()
@@ -264,6 +307,14 @@ end
 ---@param fn fun()
 function M:SetRecordCallback(fn)
 	recordCallback = fn
+end
+
+---Whether the player's own kick should stay out of the history, which it should while their
+---readiness row is on screen carrying the same kick. With that row off, the history is the only
+---place their kick would show, so it is left in.
+---@param suppress boolean
+function M:SetSuppressOwnHistory(suppress)
+	suppressOwnHistory = suppress
 end
 
 ---The interrupts seen recently, oldest first. The table is the observer's own and is rebuilt in
@@ -323,6 +374,8 @@ function M:Clear()
 	wipe(records)
 	wipe(lastRecordedAt)
 
+	lastOwnCastAt = nil
+
 	if ownRecord then
 		ownRecord.ExpireAt = 0
 	end
@@ -365,6 +418,7 @@ end
 ---@field Class string?  the kicker's class token
 ---@field Icon string|number|nil  the interrupted spell's texture, or the player's own interrupt
 ---@field Marker number?  raid target index of the mob whose cast was cut short
+---@field RecordedAt number?  when the kick was reported, which is what the own-kick dedup matches on
 ---@field ExpireAt number  when a history row leaves the list, or when the player's interrupt is up
 ---@field Duration number  the span the bar drains over
 ---@field SpellId number?  the player's own interrupt, so a cast can tell it apart from another

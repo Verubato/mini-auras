@@ -501,6 +501,48 @@ fw.describe("AllyKickTracker - the player's own row", function()
 		assert(names[2] == "Someone", "then the history, got " .. tostring(names[2]))
 	end)
 
+	fw.it("does not also record the player's own kick as history", function()
+		-- The readiness row is already their kick. Whose kick a stop event was cannot be asked -
+		-- the interrupter GUID is secret - so landing on their cast is what identifies it.
+		Cast(WIND_SHEAR)
+		Interrupted("nameplate1", { Guid = "guid-a", Name = "Someone" })
+
+		local names = RowNames()
+		assert(#names == 1, "the own row only, got " .. #names)
+		assert(names[1] == "player", "and it is the player's, got " .. tostring(names[1]))
+	end)
+
+	fw.it("does not record it when the kick is reported before the cast", function()
+		-- Both come out of one server tick and either can reach the client first.
+		Interrupted("nameplate1", { Guid = "guid-a", Name = "Someone" })
+		Cast(WIND_SHEAR)
+
+		local names = RowNames()
+		assert(#names == 1, "the row recorded ahead of the cast is taken back, got " .. #names)
+		assert(names[1] == "player", "leaving the own row, got " .. tostring(names[1]))
+	end)
+
+	fw.it("keeps an ally's kick that lands outside the window", function()
+		Cast(WIND_SHEAR)
+		wow.advanceTime(2)
+		Interrupted("nameplate1", { Guid = "guid-a", Name = "Someone" })
+
+		local names = RowNames()
+		assert(#names == 2, "far enough from the cast to be somebody else, got " .. #names)
+		assert(names[2] == "Someone", "and the history row is theirs, got " .. tostring(names[2]))
+	end)
+
+	fw.it("still records the player's own kick when the own row is off", function()
+		-- With no readiness row there is nothing else drawing it, so the history is where it goes.
+		options.ShowOwnCooldown = false
+		module:Refresh()
+
+		Cast(WIND_SHEAR)
+		Interrupted("nameplate1", { Guid = "guid-a", Name = "Someone" })
+
+		assert(#observer:GetRecords() == 1, "the only place their kick can show")
+	end)
+
 	fw.it("is left out when the option is off", function()
 		options.ShowOwnCooldown = false
 		module:Refresh()

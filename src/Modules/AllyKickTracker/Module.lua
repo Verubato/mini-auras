@@ -403,6 +403,9 @@ function M:Refresh()
 
 	EnsureFrames()
 	ApplyOptions(options)
+	-- Their own kick is drawn by the readiness row, so it only belongs in the history when that row
+	-- is switched off.
+	observer:SetSuppressOwnHistory(options.ShowOwnCooldown == true)
 	observer:RefreshOwn()
 	ApplyRecords()
 
