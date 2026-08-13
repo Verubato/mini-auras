@@ -6,7 +6,7 @@ local M = {}
 addon.Utils.FontUtil = M
 
 -- Stack counts sit in a corner and share the icon with the countdown, so they run smaller.
-local STACK_COEFFICIENT = 0.3
+local STACK_COEFFICIENT = 0.38
 
 --- Updates any font string's size from the icon size, keeping its font face and flags.
 --- @param fontString table
