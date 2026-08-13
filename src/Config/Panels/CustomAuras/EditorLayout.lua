@@ -18,6 +18,9 @@ local GROW_OPTIONS = { "LEFT", "RIGHT", "CENTER", "DOWN", "UP" }
 -- A number this short does not need a dropdown's column, but the label does: "Desplazamiento X"
 -- is the longest translation and needs about 110px.
 local OFFSET_COLUMN = 120
+-- Tighter than ui.DropdownColumn: the settings row holds three dropdowns and both offset boxes,
+-- and stock columns would push the last offset label past the panel edge.
+local SETTINGS_COLUMN = 190
 local OFFSET_BOX_WIDTH = 70
 -- Wider than any sane screen, so typing is never the thing that stops a group being placed.
 local OFFSET_LIMIT = 2000
@@ -34,8 +37,6 @@ function ui.BuildLayoutTab(ctx)
 	local sliderWidth = ui.DropdownColumn * 2 - SLIDER_GAP / 2
 
 	local settingsControlsRow = ctx.NewRow(layoutPanel, ui.DropdownRowHeight)
-	-- Its own row because the row above is already four controls wide with the two offset boxes.
-	local strataRow = ctx.NewRow(layoutPanel, ui.DropdownRowHeight)
 	local sliderRow = ctx.NewRow(layoutPanel, SLIDER_ROW_HEIGHT)
 	-- Put away for a group drawing icons, which has no width of its own.
 	local barSliderRow = ctx.NewRow(layoutPanel, SLIDER_ROW_HEIGHT)
@@ -63,7 +64,7 @@ function ui.BuildLayoutTab(ctx)
 				ui.Apply()
 			end
 		end,
-	}, settingsControlsRow, ui.DropdownColumn)
+	}, settingsControlsRow, SETTINGS_COLUMN * 2)
 
 	local growDropdown = ctx.Dropdown(L["Grow"], {
 		Items = GROW_OPTIONS,
@@ -100,7 +101,7 @@ function ui.BuildLayoutTab(ctx)
 				ui.Apply()
 			end
 		end,
-	}, strataRow, 0)
+	}, settingsControlsRow, SETTINGS_COLUMN)
 
 	---The pair a drag writes: a screen group keeps a screen position, every other anchor keeps an
 	---offset from the frame it hangs off.
@@ -149,8 +150,8 @@ function ui.BuildLayoutTab(ctx)
 		return box
 	end
 
-	local offsetXBox = OffsetBox(L["Offset X"], "X", ui.DropdownColumn * 2)
-	local offsetYBox = OffsetBox(L["Offset Y"], "Y", ui.DropdownColumn * 2 + OFFSET_COLUMN)
+	local offsetXBox = OffsetBox(L["Offset X"], "X", SETTINGS_COLUMN * 3)
+	local offsetYBox = OffsetBox(L["Offset Y"], "Y", SETTINGS_COLUMN * 3 + OFFSET_COLUMN)
 
 	-- A drag writes the same fields these boxes edit, so they catch up the moment it ends.
 	display:OnPositionChanged(function(groupId)
@@ -267,8 +268,6 @@ function ui.BuildLayoutTab(ctx)
 		settingsControlsRow:SetHeight(soundOnly and NOTE_ROW_HEIGHT or ui.DropdownRowHeight)
 
 		-- Collapsed rather than left empty, and they hand their gaps back so the tab closes up.
-		strataRow:SetHeight(soundOnly and 1 or ui.DropdownRowHeight)
-		ctx.SetRowGap(strataRow, soundOnly and 0 or ROW_GAP)
 		sliderRow:SetHeight(soundOnly and 1 or SLIDER_ROW_HEIGHT)
 		ctx.SetRowGap(sliderRow, soundOnly and 0 or ROW_GAP)
 		barSliderRow:SetHeight(bars and not soundOnly and SLIDER_ROW_HEIGHT or 1)
