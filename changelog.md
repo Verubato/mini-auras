@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.10.2
+
+- Fixed nameplate CC icons not showing border when the CC is undispelable.
+- Fixed Deathmark TTS announcement when the rogue is on your team.
+- Fixed nameplate icon sizing issue.
+
 ## 5.10.1
 
 - Various minor optimisations.

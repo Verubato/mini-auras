@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.10.1. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.10.2. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -135,7 +135,9 @@ hover), and a colour rule.
   which the game has no equivalent of for a buff, so defensive and important icons take the
   two colours picked for the module instead. Group Auras keeps its pair on a **Colours**
   sub-tab, Nameplates on its **Settings** sub-tab; both are module wide rather than per bar or
-  per setting group. Turning the switch off puts every icon back on a plain white glow.
+  per setting group. Turning the switch off puts every icon back on a plain white glow. On
+  Nameplates, CC auras with no dispel type (stuns, disarms) keep the border too, coloured to
+  match their glow, instead of showing glow only (since 5.10.2).
 - **Per-category tints** (Alerts): a colour swatch each for Important and Defensive, with no
   dispel colouring to share the switch with. These ride the **Glow icons** switch instead, so
   with the glow off there is nothing left for them to tint.
@@ -197,7 +199,7 @@ its own with nothing drawn at all.
 
 ### Groups
 
-The page shows a grid of group tiles plus a leading `+` tile ("New Group"). Click a tile to
+The page shows a grid of group tiles plus a leading `+` tile ("New Personal Aura"). Click a tile to
 edit that group in the editor below ("Selected Aura"); click empty grid space to deselect.
 Tiles are dragged to reorder (order is cosmetic only). A disabled group's tile is
 desaturated. While a group is selected, its icons are shown on screen and can be dragged into
