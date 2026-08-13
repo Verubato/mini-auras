@@ -23,15 +23,7 @@ function M:CellFrames(visibleOnly, frames)
 	end
 
 	for _, header in ipairs(headers) do
-		for _, child in ipairs(M:Children(childScratch, header)) do
-			local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
-
-			if unit and unit ~= "" then
-				if (not child.IsForbidden or not child:IsForbidden()) and (child:IsVisible() or not visibleOnly) then
-					frames[#frames + 1] = child
-				end
-			end
-		end
+		M:AppendUnitChildren(childScratch, header, visibleOnly, frames)
 	end
 end
 

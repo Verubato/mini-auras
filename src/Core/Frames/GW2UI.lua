@@ -18,27 +18,11 @@ function M:GW2UIFrames(visibleOnly, frames)
 
 	wipe(seen)
 
-	local function Add(frame)
-		if not frame or seen[frame] then return end
-		if frame.IsForbidden and frame:IsForbidden() then return end
-		if visibleOnly and not frame:IsVisible() then return end
-		seen[frame] = true
-		frames[#frames + 1] = frame
-	end
-
 	for _, header in ipairs(GW2_ADDON.GridHeaders) do
 		for _, child in ipairs(M:Children(childScratch, header)) do
-			local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
-			if unit and unit ~= "" then
-				Add(child)
-			else
+			if not M:AppendUnitChild(child, visibleOnly, frames, seen) then
 				-- sub-group frame - walk one level deeper
-				for _, grandchild in ipairs(M:Children(grandchildScratch, child)) do
-					local gcUnit = grandchild.unit or (grandchild.GetAttribute and grandchild:GetAttribute("unit"))
-					if gcUnit and gcUnit ~= "" then
-						Add(grandchild)
-					end
-				end
+				M:AppendUnitChildren(grandchildScratch, child, visibleOnly, frames, seen)
 			end
 		end
 	end

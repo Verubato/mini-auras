@@ -1,4 +1,5 @@
 local _, addon = ...
+local mini = addon.Framework
 local M = addon.Core.Frames
 
 ---Appends the DandersFrames frames. Copied out rather than handed on: the table belongs to
@@ -15,7 +16,5 @@ function M:DandersFrames(frames)
 		return
 	end
 
-	for i = 1, #result do
-		frames[#frames + 1] = result[i]
-	end
+	mini:Append(result, frames)
 end

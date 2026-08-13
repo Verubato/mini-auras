@@ -10,13 +10,5 @@ function M:TPerlFrames(visibleOnly, frames)
 		return
 	end
 
-	for _, child in ipairs(M:Children(childScratch, TPerl_Party_SecureHeader)) do
-		local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
-
-		if unit and unit ~= "" then
-			if (not child.IsForbidden or not child:IsForbidden()) and (child:IsVisible() or not visibleOnly) then
-				frames[#frames + 1] = child
-			end
-		end
-	end
+	M:AppendUnitChildren(childScratch, TPerl_Party_SecureHeader, visibleOnly, frames)
 end

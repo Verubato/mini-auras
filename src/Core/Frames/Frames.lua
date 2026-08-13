@@ -36,6 +36,68 @@ function M:Children(scratch, parent)
 	return scratch
 end
 
+---The unit a secure header's child is bound to, or nil when the child is not a unit button at all
+---(a sub-group container, say).
+---@param child table
+---@return string?
+function M:ChildUnit(child)
+	local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
+
+	if not unit or unit == "" then
+		return nil
+	end
+
+	return unit
+end
+
+---Appends one secure header child if it is a unit button worth anchoring to. Every provider drops
+---the same ones: children with no unit, children the client has taken away, and, when visibleOnly,
+---children that are hidden.
+---@param child table
+---@param visibleOnly boolean
+---@param frames table Frames are appended here.
+---@param seen table? Frame -> true, filled as frames are taken, for providers that can meet the
+---same frame twice.
+---@return boolean isUnit Whether the child is a unit button at all, taken or not, so a provider
+---that descends into sub-groups knows when not to.
+function M:AppendUnitChild(child, visibleOnly, frames, seen)
+	if not M:ChildUnit(child) then
+		return false
+	end
+
+	if seen and seen[child] then
+		return true
+	end
+
+	if child.IsForbidden and child:IsForbidden() then
+		return true
+	end
+
+	if visibleOnly and not child:IsVisible() then
+		return true
+	end
+
+	if seen then
+		seen[child] = true
+	end
+
+	frames[#frames + 1] = child
+
+	return true
+end
+
+---Appends every unit button among a parent's children.
+---@param scratch table Wiped and refilled with the parent's children.
+---@param parent table
+---@param visibleOnly boolean
+---@param frames table Frames are appended here.
+---@param seen table? As AppendUnitChild.
+function M:AppendUnitChildren(scratch, parent, visibleOnly, frames, seen)
+	for _, child in ipairs(M:Children(scratch, parent)) do
+		M:AppendUnitChild(child, visibleOnly, frames, seen)
+	end
+end
+
 ---Appends the custom frames named in our saved vars.
 ---@param visibleOnly boolean
 ---@param frames table Frames are appended here.

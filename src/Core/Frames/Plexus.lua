@@ -14,24 +14,6 @@ function M:PlexusFrames(visibleOnly, frames)
 
 	wipe(seen)
 
-	local function Add(frame)
-		if not frame then
-			return
-		end
-		if seen[frame] then
-			return
-		end
-		if frame.IsForbidden and frame:IsForbidden() then
-			return
-		end
-		if visibleOnly and not frame:IsVisible() then
-			return
-		end
-
-		seen[frame] = true
-		frames[#frames + 1] = frame
-	end
-
 	local headerIndex = 1
 
 	while true do
@@ -41,13 +23,7 @@ function M:PlexusFrames(visibleOnly, frames)
 		end
 
 		-- These are secure header children = actual unit buttons
-		for _, child in ipairs(M:Children(childScratch, header)) do
-			local unit = child.unit or (child.GetAttribute and child:GetAttribute("unit"))
-
-			if unit and unit ~= "" then
-				Add(child)
-			end
-		end
+		M:AppendUnitChildren(childScratch, header, visibleOnly, frames, seen)
 
 		headerIndex = headerIndex + 1
 	end
