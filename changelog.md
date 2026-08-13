@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.10.3
+
+- Auras are now hidden inside player housing, which previously counted as a dungeon.
+- Fixed the portrait being washed purple by Voidform's glow while portrait icons were showing.
+
 ## 5.10.2
 
 - Fixed nameplate CC icons not showing border when the CC is undispelable.
