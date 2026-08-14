@@ -30,7 +30,7 @@ local media = {
 	end,
 }
 
--- The suite's C_Timer.After runs its callback on the spot, which would collapse the distinction
+-- The After installed below runs its callback on the spot, which would collapse the distinction
 -- a coalesced fan-out is about; these hold the callbacks so a burst can be counted.
 local function withHeldTimers(body)
 	local queued = {}
@@ -58,6 +58,16 @@ _G.wipe = _G.wipe or function(t)
 	end
 
 	return t
+end
+
+-- Coalesced defers its fan-out through C_Timer.After, so this file needs one of its own rather
+-- than whichever the test run happens to leave lying around: the shared mock only installs a
+-- timer with a client, and running this file on its own leaves none at all. Immediate, because
+-- every test below asserts straight after the event it fires; the burst test swaps in a holding
+-- version of its own.
+_G.C_Timer = _G.C_Timer or {}
+_G.C_Timer.After = function(_, callback)
+	callback()
 end
 
 -- ModuleUtil comes along for Coalesced, which the media subscription defers its fan-out through.
