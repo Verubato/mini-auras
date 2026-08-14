@@ -357,7 +357,7 @@ L:RegisterLocale("ptBR", function() return {
 	["That aura string was made by a newer version of MiniAuras."] = "Essa cadeia de auras foi criada por uma versão mais recente do MiniAuras.",
 	["Imported %d aura group(s)."] = "%d grupo(s) de auras importado(s).",
 	["A group can hold at most %d spells."] = "Um grupo comporta no máximo %d magias.",
-	["Debuffs cannot be tracked on yourself or your pet."] = "Penalidades não podem ser rastreadas em você mesmo ou no seu caçador.",
+	["Debuffs cannot be tracked on yourself or your pet."] = "Penalidades não podem ser rastreadas em você mesmo ou no seu ajudante.",
 	["Debuffs cannot be tracked on group members."] = "Penalidades não podem ser rastreadas em membros do grupo.",
 	["Buffs are only shown while the unit is friendly."] = "Bônus só são mostrados enquanto a unidade for aliada.",
 	["Debuffs are only shown while the unit is hostile."] = "Penalidades só são mostradas enquanto a unidade for hostil.",
