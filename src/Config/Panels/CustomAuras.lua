@@ -53,8 +53,8 @@ function M:Build(panel)
 		Parent = panel,
 		Lines = {
 			L["Create your own custom mini weak auras."],
-			L["You can configure buffs on allies and debuffs on enemies."],
-			L["Sound only auras have no such limit: they can play a sound for either aura type on any unit."],
+			L["Spell IDs only work for buffs on allies and debuffs on enemies."],
+			L["Aura filters and sound only auras don't have this restriction."],
 		},
 	})
 
