@@ -30,6 +30,23 @@ local media = {
 	end,
 }
 
+-- The suite's C_Timer.After runs its callback on the spot, which would collapse the distinction
+-- a coalesced fan-out is about; these hold the callbacks so a burst can be counted.
+local function withHeldTimers(body)
+	local queued = {}
+	local realAfter = _G.C_Timer.After
+
+	_G.C_Timer.After = function(_, callback)
+		queued[#queued + 1] = callback
+	end
+
+	local ok, err = pcall(body, queued)
+
+	_G.C_Timer.After = realAfter
+
+	assert(ok, err)
+end
+
 local libraryPresent = true
 
 _G.LibStub = function(name)
@@ -43,7 +60,9 @@ _G.wipe = _G.wipe or function(t)
 	return t
 end
 
-local addon = { Core = {} }
+-- ModuleUtil comes along for Coalesced, which the media subscription defers its fan-out through.
+local addon = { Core = {}, Utils = {} }
+assert(loadfile("src/Utils/ModuleUtil.lua"))("MiniAuras", addon)
 assert(loadfile("src/Core/Display/BarTextures.lua"))("MiniAuras", addon)
 local barTextures = addon.Core.BarTextures
 
@@ -134,5 +153,26 @@ fw.describe("BarTextures", function()
 
 		callbacks.LibSharedMedia_Registered()
 		assert(told == 1, "a registration is passed on")
+	end)
+
+	fw.it("tells them once for a burst, not once per registration", function()
+		local told = 0
+
+		barTextures:OnChanged(function()
+			told = told + 1
+		end)
+
+		withHeldTimers(function(queued)
+			for _ = 1, 50 do
+				callbacks.LibSharedMedia_Registered()
+			end
+
+			assert(told == 0, "nothing has run yet, the frame has not ended")
+			assert(#queued == 1, "a burst queues one run, got " .. #queued)
+
+			queued[1]()
+		end)
+
+		assert(told == 1, "a media pack's whole set costs one rebuild, not one per entry")
 	end)
 end)
