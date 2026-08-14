@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.12.1
+
+- Fixed a hitch when a media addon loads, where its sounds and bar textures rebuilt the lists once per entry instead of once for the whole set.
+- The personal auras page now says that a sound only aura can watch either aura type on any unit.
+
 ## 5.12.0
 
 - Added a Centre stacks option to personal auras, showing the stack count in the middle of the icon in place of the countdown.
