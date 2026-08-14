@@ -50,6 +50,9 @@ end
 local function BuildStyle(entryOptions)
 	local style = auraContainerDisplay:BuildStandardStyle(entryOptions.Icons)
 
+	-- The display only ever holds CC, and most of that is physical: without this a stun gets the
+	-- tinted glow but no ring, which reads as the border being broken.
+	style.BorderWithoutDispelType = true
 	style.ShowTooltips = entryOptions.ShowTooltips ~= false
 
 	return style
@@ -481,6 +484,8 @@ function M:RefreshTestIcons()
 				ReverseCooldown = entryOptions.Icons.ReverseCooldown,
 				Glow = entryOptions.Icons.Glow,
 				ColorByDispelType = entryOptions.Icons.ColorByDispelType,
+				-- The live buttons draw border and glow together, so the preview does too.
+				Border = true,
 				FontScale = db.FontScale,
 				ShowTooltips = entryOptions.ShowTooltips ~= false,
 				Stagger = true,

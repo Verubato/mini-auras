@@ -210,6 +210,10 @@ end
 local function BuildStyle(entryOptions)
 	local style = auraContainerDisplay:BuildStandardStyle(entryOptions.Icons)
 
+	-- Only the CC group goes untinted here, and most CC is physical: without this a stun gets the
+	-- tinted glow but no ring, which reads as the border being broken. The tinted helpful groups
+	-- are unaffected, they draw their ring off the group colour.
+	style.BorderWithoutDispelType = true
 	style.ShowTooltips = entryOptions.ShowTooltips ~= false
 
 	return style
@@ -606,6 +610,8 @@ function M:RefreshTestIcons()
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
 			ColorByDispelType = colorByDispelType,
+			-- The live buttons draw border and glow together, so the preview does too.
+			Border = true,
 			FontScale = db.FontScale,
 			ShowTooltips = showTooltips,
 			Count = ccSlots,
@@ -615,6 +621,7 @@ function M:RefreshTestIcons()
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
 			Color = colors[DEFENSIVE_GROUP_KEY],
+			Border = true,
 			FontScale = db.FontScale,
 			ShowTooltips = showTooltips,
 			Count = defensiveSlots,
@@ -624,6 +631,7 @@ function M:RefreshTestIcons()
 			ReverseCooldown = iconsReverse,
 			Glow = iconsGlow,
 			Color = colors[IMPORTANT_GROUP_KEY],
+			Border = true,
 			FontScale = db.FontScale,
 			ShowTooltips = showTooltips,
 			Count = importantSlots,
