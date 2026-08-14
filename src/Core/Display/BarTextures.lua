@@ -37,7 +37,7 @@ local function SharedMedia()
 	return LibStub and LibStub("LibSharedMedia-3.0", true)
 end
 
-local function OnMediaRegistered()
+local function NotifyChanged()
 	for _, fn in ipairs(changeCallbacks) do
 		fn()
 	end
@@ -46,6 +46,10 @@ end
 ---Subscribes to the media library the first time anyone asks to hear about changes. Textures
 ---keep arriving for as long as addons keep loading, so a list built once is a list that is
 ---missing whatever loaded after it.
+---
+---The fan-out is coalesced: LibSharedMedia fires once per entry and a media pack registers its
+---whole set inside one frame, while every consumer here re-reads the sorted list. Passing the
+---burst straight through costs one full rebuild per registered texture.
 local function EnsureMediaSubscription()
 	if subscribedToMedia then
 		return
@@ -58,8 +62,11 @@ local function EnsureMediaSubscription()
 	end
 
 	subscribedToMedia = true
-	media.RegisterCallback(M, "LibSharedMedia_Registered", OnMediaRegistered)
-	media.RegisterCallback(M, "LibSharedMedia_SetGlobal", OnMediaRegistered)
+
+	local queueNotify = addon.Utils.ModuleUtil:Coalesced(NotifyChanged)
+
+	media.RegisterCallback(M, "LibSharedMedia_Registered", queueNotify)
+	media.RegisterCallback(M, "LibSharedMedia_SetGlobal", queueNotify)
 end
 
 ---The texture names to offer, sorted, with the built-ins always present.
