@@ -22,17 +22,17 @@ Any feedback is more than welcome.
 
 ![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/TestFrames.png)
 
-![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/SettingsAlerts.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/Alerts.png)
 
 ![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/Portraits.png)
 
-![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/Kicks.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/PersonalAuras.png)
 
 ![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/AllyKicks.png)
 
 ![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/Nameplates.png)
 
-![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/HealerCc.png)
+![MiniAuras screenshot](https://raw.githubusercontent.com/Verubato/mini-auras/main/assets/Screenshots/HealerInCC.png)
 
 ## Download
 
