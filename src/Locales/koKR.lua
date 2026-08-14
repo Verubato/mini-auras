@@ -336,6 +336,7 @@ L:RegisterLocale("koKR", function() return {
 	["Custom Auras_Short"] = "개인 오라",
 	["Create your own custom mini weak auras."] = "나만의 미니 위크오라를 만드세요.",
 	["You can configure buffs on allies and debuffs on enemies."] = "아군에게는 버프를, 적에게는 디버프를 설정할 수 있습니다.",
+	["Sound only auras have no such limit: they can play a sound for either aura type on any unit."] = "소리 전용 오라에는 이런 제한이 없습니다. 모든 대상에서 두 오라 종류 모두에 소리를 재생할 수 있습니다.",
 	["New Personal Aura"] = "새 개인 오라",
 	["Aura %d"] = "오라 %d",
 	["Name"] = "이름",

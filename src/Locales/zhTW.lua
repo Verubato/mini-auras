@@ -336,6 +336,7 @@ L:RegisterLocale("zhTW", function() return {
 	["Custom Auras_Short"] = "個人光環",
 	["Create your own custom mini weak auras."] = "建立你自己的迷你 WeakAuras。",
 	["You can configure buffs on allies and debuffs on enemies."] = "你可以設定友方的增益和敵方的減益。",
+	["Sound only auras have no such limit: they can play a sound for either aura type on any unit."] = "僅聲音光環沒有此限制：它們可以為任意單位上的兩種光環類型播放聲音。",
 	["New Personal Aura"] = "新增個人光環",
 	["Aura %d"] = "光環 %d",
 	["Name"] = "名稱",

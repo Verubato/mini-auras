@@ -334,6 +334,7 @@ L:RegisterLocale("frFR", function() return {
 	["Custom Auras_Short"] = "Auras personnelles",
 	["Create your own custom mini weak auras."] = "Créez vos propres mini weak auras.",
 	["You can configure buffs on allies and debuffs on enemies."] = "Vous pouvez configurer des améliorations sur les alliés et des affaiblissements sur les ennemis.",
+	["Sound only auras have no such limit: they can play a sound for either aura type on any unit."] = "Les auras sonores uniquement n'ont pas cette limite : elles jouent un son pour les deux types d'aura sur n'importe quelle unité.",
 	["New Personal Aura"] = "Nouvelle aura personnelle",
 	["Aura %d"] = "Aura %d",
 	["Name"] = "Nom",
