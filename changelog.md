@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.13.0
+
+- Added warning when using a buff/debuff that won't work on that unit type in personal auras.
+
 ## 5.12.2
 
 - Fixed party and raid frame CC icons not showing a border when the CC is undispelable.
