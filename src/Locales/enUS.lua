@@ -364,6 +364,8 @@ L:SetDefaultStrings({
 	["Debuffs cannot be tracked on group members."] = "Debuffs cannot be tracked on group members.",
 	["Buffs are only shown while the unit is friendly."] = "Buffs are only shown while the unit is friendly.",
 	["Debuffs are only shown while the unit is hostile."] = "Debuffs are only shown while the unit is hostile.",
+	["Spells shown in red are buffs, which don't work on enemy units."] = "Spells shown in red are buffs, which don't work on enemy units.",
+	["Spells shown in red are debuffs, which don't work on friendly units."] = "Spells shown in red are debuffs, which don't work on friendly units.",
 	["Trigger"] = "Trigger",
 	["Drag to reorder."] = "Drag to reorder.",
 	["Selected Aura"] = "Selected Aura",

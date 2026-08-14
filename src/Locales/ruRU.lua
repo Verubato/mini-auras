@@ -363,6 +363,8 @@ L:RegisterLocale("ruRU", function() return {
 	["Debuffs cannot be tracked on group members."] = "Ослабления нельзя отслеживать на участниках группы.",
 	["Buffs are only shown while the unit is friendly."] = "Усиления показываются, только пока цель союзная.",
 	["Debuffs are only shown while the unit is hostile."] = "Ослабления показываются, только пока цель враждебная.",
+	["Spells shown in red are buffs, which don't work on enemy units."] = "Заклинания, выделенные красным, являются усилениями и не работают на враждебных целях.",
+	["Spells shown in red are debuffs, which don't work on friendly units."] = "Заклинания, выделенные красным, являются ослаблениями и не работают на дружественных целях.",
 	["Trigger"] = "Триггер",
 	["Drag to reorder."] = "Перетащите, чтобы изменить порядок.",
 	["Selected Aura"] = "Выбранная аура",

@@ -363,6 +363,8 @@ L:RegisterLocale("koKR", function() return {
 	["Debuffs cannot be tracked on group members."] = "파티원에게는 디버프를 추적할 수 없습니다.",
 	["Buffs are only shown while the unit is friendly."] = "버프는 대상이 아군일 때만 표시됩니다.",
 	["Debuffs are only shown while the unit is hostile."] = "디버프는 대상이 적군일 때만 표시됩니다.",
+	["Spells shown in red are buffs, which don't work on enemy units."] = "빨간색으로 표시된 주문은 버프이며, 적대적인 대상에게는 작동하지 않습니다.",
+	["Spells shown in red are debuffs, which don't work on friendly units."] = "빨간색으로 표시된 주문은 디버프이며, 우호적인 대상에게는 작동하지 않습니다.",
 	["Trigger"] = "발동 조건",
 	["Drag to reorder."] = "끌어서 순서를 바꾸세요.",
 	["Selected Aura"] = "선택한 오라",

@@ -363,6 +363,8 @@ L:RegisterLocale("zhCN", function() return {
 	["Debuffs cannot be tracked on group members."] = "无法在队伍成员身上追踪减益。",
 	["Buffs are only shown while the unit is friendly."] = "仅当单位为友方时才显示增益。",
 	["Debuffs are only shown while the unit is hostile."] = "仅当单位为敌方时才显示减益。",
+	["Spells shown in red are buffs, which don't work on enemy units."] = "红色显示的法术是增益，对敌对单位无效。",
+	["Spells shown in red are debuffs, which don't work on friendly units."] = "红色显示的法术是减益，对友方单位无效。",
 	["Trigger"] = "触发",
 	["Drag to reorder."] = "拖动以重新排序。",
 	["Selected Aura"] = "选中的光环",

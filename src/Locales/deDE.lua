@@ -363,6 +363,8 @@ L:RegisterLocale("deDE", function() return {
 	["Debuffs cannot be tracked on group members."] = "Schwächungszauber lassen sich bei Gruppenmitgliedern nicht verfolgen.",
 	["Buffs are only shown while the unit is friendly."] = "Stärkungszauber werden nur angezeigt, solange die Einheit verbündet ist.",
 	["Debuffs are only shown while the unit is hostile."] = "Schwächungszauber werden nur angezeigt, solange die Einheit feindlich ist.",
+	["Spells shown in red are buffs, which don't work on enemy units."] = "Rot dargestellte Zauber sind Stärkungszauber, die bei feindlichen Zielen nicht funktionieren.",
+	["Spells shown in red are debuffs, which don't work on friendly units."] = "Rot dargestellte Zauber sind Schwächungszauber, die bei freundlichen Zielen nicht funktionieren.",
 	["Trigger"] = "Auslöser",
 	["Drag to reorder."] = "Zum Umsortieren ziehen.",
 	["Selected Aura"] = "Gewählte Aura",

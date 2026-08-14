@@ -124,6 +124,7 @@ function ui.CreateSpellPicker(parent)
 			row.Icon.SpellId = entry.Id
 			row.Icon.Icon:SetTexture(C_Spell.GetSpellTexture(entry.Id))
 			row.Text:SetText(ui.SpellLabel(entry.Id))
+			row.Text:SetTextColor(ui.SpellLabelColor(entry.Id))
 			row:SetPoint("TOPLEFT", popup, "TOPLEFT", 0, y)
 			row:SetScript("OnClick", function()
 				box:SetText("")

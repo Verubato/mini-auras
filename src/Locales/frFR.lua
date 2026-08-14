@@ -361,6 +361,8 @@ L:RegisterLocale("frFR", function() return {
 	["Debuffs cannot be tracked on group members."] = "Les affaiblissements ne peuvent pas être suivis sur les membres du groupe.",
 	["Buffs are only shown while the unit is friendly."] = "Les améliorations ne s'affichent que si l'unité est alliée.",
 	["Debuffs are only shown while the unit is hostile."] = "Les affaiblissements ne s'affichent que si l'unité est hostile.",
+	["Spells shown in red are buffs, which don't work on enemy units."] = "Les sorts en rouge sont des améliorations, qui ne fonctionnent pas sur les unités ennemies.",
+	["Spells shown in red are debuffs, which don't work on friendly units."] = "Les sorts en rouge sont des affaiblissements, qui ne fonctionnent pas sur les unités alliées.",
 	["Trigger"] = "Déclencheur",
 	["Drag to reorder."] = "Glisser pour réorganiser.",
 	["Selected Aura"] = "Aura sélectionnée",

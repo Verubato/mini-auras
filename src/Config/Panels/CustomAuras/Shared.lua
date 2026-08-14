@@ -67,6 +67,23 @@ function ui.SpellLabel(spellId)
 	return ("%s |cff888888(%d)|r"):format(C_Spell.GetSpellName(spellId) or "?", spellId)
 end
 
+---What colour a spell reads in: red for one the selected group's aura type can never match, so
+---a debuff added to a buff group is visibly wrong in the list, in the suggestions and in the
+---recorded casts alike. The message under the picker is what explains it.
+---@param spellId number
+---@return number r
+---@return number g
+---@return number b
+function ui.SpellLabelColor(spellId)
+	local group = ui.Current()
+
+	if group and not groups:SpellFitsAuraType(group, spellId) then
+		return 1, 0.25, 0.25
+	end
+
+	return 1, 1, 1
+end
+
 ---Adds a spell to the selected group's tracked list, refusing duplicates and overflow.
 ---@param spellId number
 function ui.AddSpellToCurrent(spellId)

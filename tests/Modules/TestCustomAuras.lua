@@ -43,6 +43,25 @@ for _, spellId in ipairs(TORRENT_IDS) do
 	env.spellNames[spellId] = "Arcane Torrent"
 end
 
+-- Ids nothing in the addon carries, which is the point: the wrong-side check asks the client, so
+-- it has to answer for whatever somebody types into the picker. Stubbed here rather than in the
+-- mock because these two calls arrived in 12.1 and the mock has no spells to have a side.
+local A_DEBUFF = 900001
+local A_BUFF = 900002
+local BOTH_SIDES = 900003
+local NEITHER_SIDE = 900004
+local OLD_CLIENT_SPELL = 900005
+local HARMFUL_SPELLS = { [A_DEBUFF] = true, [BOTH_SIDES] = true }
+local HELPFUL_SPELLS = { [A_BUFF] = true, [BOTH_SIDES] = true }
+
+_G.C_Spell.IsSpellHarmful = function(spellId)
+	return HARMFUL_SPELLS[spellId] == true
+end
+
+_G.C_Spell.IsSpellHelpful = function(spellId)
+	return HELPFUL_SPELLS[spellId] == true
+end
+
 ---Adds a group with the given overrides applied on top of the defaults.
 ---@param overrides table
 ---@return CustomAuraGroup
@@ -565,6 +584,84 @@ fw.describe("CustomAuras - what a group is allowed to track", function()
 			== "HARMFUL_HOSTILE_ONLY", "and an enemy target hostile")
 		assert(groups:GetWarning(groups:Normalise({ Unit = "player" })) == nil,
 			"you are always there, so there is nothing to say")
+	end)
+end)
+
+fw.describe("CustomAuras - spells on the wrong side of the group", function()
+	fw.it("reads a spell's side off the client", function()
+		assert(groups:SpellAuraType(A_DEBUFF) == "HARMFUL", "a spell cast at enemies is a debuff")
+		assert(groups:SpellAuraType(A_BUFF) == "HELPFUL", "and one cast at allies a buff")
+	end)
+
+	fw.it("leaves a spell the client will not place alone", function()
+		assert(groups:SpellAuraType(BOTH_SIDES) == nil, "a dispel is aimed at either side")
+		assert(groups:SpellAuraType(NEITHER_SIDE) == nil, "and a proc cannot be cast at all")
+	end)
+
+	fw.it("says nothing on a client without the two calls", function()
+		local harmful, helpful = _G.C_Spell.IsSpellHarmful, _G.C_Spell.IsSpellHelpful
+
+		_G.C_Spell.IsSpellHarmful = nil
+		_G.C_Spell.IsSpellHelpful = nil
+
+		local placed = groups:SpellAuraType(OLD_CLIENT_SPELL)
+
+		_G.C_Spell.IsSpellHarmful = harmful
+		_G.C_Spell.IsSpellHelpful = helpful
+
+		assert(placed == nil, "an older client leaves every spell unplaced")
+	end)
+
+	fw.it("catches a debuff sitting in a buff group", function()
+		local group = groups:Normalise({ Unit = "player", Spells = { A_BUFF, A_DEBUFF } })
+
+		assert(group.AuraType == "HELPFUL", "a self group is a buff group")
+		assert(not groups:SpellFitsAuraType(group, A_DEBUFF), "the debuff can never match")
+		assert(groups:SpellFitsAuraType(group, A_BUFF), "the buff is what the group is for")
+		assert(groups:CountWrongTypeSpells(group) == 1, "one of the two is on the wrong side")
+	end)
+
+	fw.it("catches a buff sitting in a debuff group", function()
+		local group = groups:Normalise({ Unit = "targetenemy", Spells = { A_BUFF, POLYMORPH } })
+
+		assert(group.AuraType == "HARMFUL", "an enemy target group is a debuff group")
+		assert(groups:CountWrongTypeSpells(group) == 1, "the buff is the odd one out")
+	end)
+
+	fw.it("has nothing to say about a spell neither side claims", function()
+		local group = groups:Normalise({ Unit = "player", Spells = { BOTH_SIDES, NEITHER_SIDE } })
+
+		assert(groups:CountWrongTypeSpells(group) == 0, "an unplaced spell is not a wrong one")
+	end)
+
+	fw.it("has nothing to say about a sound only group", function()
+		-- A sound registration is (unit, spell id, sound file) with no filter string in it, so a
+		-- debuff on yourself really does work that way and must not be marked up as broken.
+		local group = groups:Normalise({ Unit = "player", Spells = { A_DEBUFF } })
+
+		group.Icons.Display = "SOUND"
+		groups:Normalise(group)
+
+		assert(groups:CountWrongTypeSpells(group) == 0, "the aura type never enters into a sound")
+	end)
+
+	fw.it("has nothing to say about a group tracking by filter", function()
+		local group = groups:Normalise({
+			Unit = "player",
+			TrackingMode = "FILTERS",
+			Spells = { A_DEBUFF },
+		})
+
+		assert(groups:CountWrongTypeSpells(group) == 0, "a filter group matches on no spell ids")
+	end)
+
+	fw.it("warns rather than refusing the group", function()
+		-- The client answers about what a spell can be CAST at, which is a hair off what its aura
+		-- counts as, so a wrong verdict must never be able to switch a working group off.
+		local group = groups:Normalise({ Unit = "player", Spells = { A_DEBUFF } })
+
+		assert(groups:Supports(group), "the group still runs")
+		assert(groups:CountWrongTypeSpells(group) == 1, "with the warning on it")
 	end)
 end)
 

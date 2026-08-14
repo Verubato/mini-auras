@@ -167,6 +167,11 @@ local FALLBACK_ICON = [[Interface\Icons\INV_Misc_QuestionMark]]
 -- Resolved on first use, because the browser hands the same icon back as a number.
 ---@type number?
 local fallbackFileId
+-- Which side the client says a spell lands on, kept for the session because the answer never
+-- changes within one. Only decided answers go in: an id asked about before its data has loaded
+-- answers neither, and caching that would hide its real side for the rest of the session.
+---@type table<number, string>
+local spellAuraTypes = {}
 -- Bare party and arena tokens are left out: they have no stable place on screen, and the frame
 -- choices cover them by hanging a copy off each member's or opponent's frame instead.
 local UNITS = {
@@ -711,8 +716,77 @@ function M:SupportsAuraType(unit, auraType, trackingMode, soundOnly)
 	return not (ALWAYS_FRIENDLY[unit] and auraType == HARMFUL)
 end
 
+---Which side a spell lands on. Asked of the client rather than looked up in the addon's own
+---lists, so an id nobody here has ever heard of gets the same answer as a tracked one.
+---@param spellId number
+---@return string? HELPFUL or HARMFUL, nil when the client will not say.
+function M:SpellAuraType(spellId)
+	local cached = spellAuraTypes[spellId]
+
+	if cached then
+		return cached
+	end
+
+	-- Both arrived in 12.1, so an older client leaves every spell undecided rather than erroring.
+	if not C_Spell.IsSpellHarmful or not C_Spell.IsSpellHelpful then
+		return nil
+	end
+
+	local harmful = C_Spell.IsSpellHarmful(spellId)
+	local helpful = C_Spell.IsSpellHelpful(spellId)
+
+	-- Either both or neither. A dispel is aimed at whichever side needs it, and a spell the
+	-- player cannot cast at all - a proc, or the bleed a cast leaves behind - has no target to
+	-- read a side off. Neither is something to warn about.
+	if harmful == helpful then
+		return nil
+	end
+
+	local auraType = harmful and HARMFUL or HELPFUL
+
+	spellAuraTypes[spellId] = auraType
+
+	return auraType
+end
+
+---Whether a tracked spell can ever match the group holding it. A container filters for helpful
+---or harmful and nothing else, so a debuff in a buff group is invisible whatever unit it sits on.
+---@param group CustomAuraGroup
+---@param spellId number
+---@return boolean
+function M:SpellFitsAuraType(group, spellId)
+	-- A sound registration is (unit, spell id, sound file) with no filter string in it, so the
+	-- aura type never enters into one. A filter group carries no spell ids to be wrong about.
+	if M:IsSoundOnly(group) or not M:TracksSpells(group) then
+		return true
+	end
+
+	local auraType = M:SpellAuraType(spellId)
+
+	return auraType == nil or auraType == group.AuraType
+end
+
+---How many of a group's tracked spells are the opposite side to the one it filters for.
+---@param group CustomAuraGroup
+---@return number
+function M:CountWrongTypeSpells(group)
+	local count = 0
+
+	for _, spellId in ipairs(group.Spells) do
+		if not M:SpellFitsAuraType(group, spellId) then
+			count = count + 1
+		end
+	end
+
+	return count
+end
+
 ---Whether a group is in a state that can never show anything, and why. The options page says so
 ---rather than letting the display quietly budget it to zero.
+---
+---A spell on the wrong side is deliberately NOT a refusal: the client's answer is about what the
+---spell can be cast at, which is a hair off what its aura counts as, and a group is better left
+---running with a warning on it than switched off by a verdict that can be wrong.
 ---@param group CustomAuraGroup
 ---@return boolean supported
 ---@return string? reason Key the options page maps to a message.

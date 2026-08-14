@@ -363,6 +363,8 @@ L:RegisterLocale("esES", function() return {
 	["Debuffs cannot be tracked on group members."] = "Los perjuicios no se pueden seguir sobre los miembros del grupo.",
 	["Buffs are only shown while the unit is friendly."] = "Los beneficios sólo se muestran mientras la unidad sea aliada.",
 	["Debuffs are only shown while the unit is hostile."] = "Los perjuicios sólo se muestran mientras la unidad sea hostil.",
+	["Spells shown in red are buffs, which don't work on enemy units."] = "Los hechizos en rojo son beneficios, que no funcionan en unidades enemigas.",
+	["Spells shown in red are debuffs, which don't work on friendly units."] = "Los hechizos en rojo son perjuicios, que no funcionan en unidades aliadas.",
 	["Trigger"] = "Disparador",
 	["Drag to reorder."] = "Arrastra para reordenar.",
 	["Selected Aura"] = "Aura seleccionada",

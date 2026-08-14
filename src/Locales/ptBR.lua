@@ -361,6 +361,8 @@ L:RegisterLocale("ptBR", function() return {
 	["Debuffs cannot be tracked on group members."] = "Penalidades não podem ser rastreadas em membros do grupo.",
 	["Buffs are only shown while the unit is friendly."] = "Bônus só são mostrados enquanto a unidade for aliada.",
 	["Debuffs are only shown while the unit is hostile."] = "Penalidades só são mostradas enquanto a unidade for hostil.",
+	["Spells shown in red are buffs, which don't work on enemy units."] = "As magias em vermelho são benefícios, que não funcionam em unidades inimigas.",
+	["Spells shown in red are debuffs, which don't work on friendly units."] = "As magias em vermelho são penalidades, que não funcionam em unidades aliadas.",
 	["Trigger"] = "Gatilho",
 	["Drag to reorder."] = "Arraste para reordenar.",
 	["Selected Aura"] = "Aura selecionada",

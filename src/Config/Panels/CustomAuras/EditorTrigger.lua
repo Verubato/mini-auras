@@ -37,6 +37,19 @@ local function ProblemText(reason)
 	return nil
 end
 
+---Why the red spells in the list can never show. Takes the GROUP's aura type, not the spell's:
+---the spells in question are whatever the group is not. Branches rather than a keyed table, so
+---the strings stay literal for the locale tooling.
+---@param auraType string
+---@return string
+local function WrongTypeText(auraType)
+	if auraType == groups.AuraType.Harmful then
+		return L["Spells shown in red are buffs, which don't work on enemy units."]
+	end
+
+	return L["Spells shown in red are debuffs, which don't work on friendly units."]
+end
+
 ---A caveat worth showing next to a group that is legal but conditional.
 ---@param reason string?
 ---@return string?
@@ -363,6 +376,13 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 				row.Icon.SpellId = row.SpellId
 				row.Icon.Icon:SetTexture(entry and C_Spell.GetSpellTexture(entry.SpellId) or nil)
 				row.Text:SetText(entry and ui.SpellLabel(entry.SpellId) or "")
+
+				-- Guarded rather than folded into the line above: an empty row has no id to ask
+				-- the client about, and the colour of a hidden row is nobody's business.
+				if entry then
+					row.Text:SetTextColor(ui.SpellLabelColor(entry.SpellId))
+				end
+
 				row:ClearAllPoints()
 				row:SetPoint("TOPLEFT", recordRow, "TOPLEFT", column * spellColumn,
 					-ui.LabelHeight - line * SPELL_ROW_HEIGHT)
@@ -442,6 +462,7 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 			entry.Icon.SpellId = spellId
 			entry.Icon.Icon:SetTexture(C_Spell.GetSpellTexture(spellId))
 			entry.Text:SetText(ui.SpellLabel(spellId))
+			entry.Text:SetTextColor(ui.SpellLabelColor(spellId))
 			entry:ClearAllPoints()
 			entry:SetPoint("TOPLEFT", row, "TOPLEFT", column * spellColumn, -line * SPELL_ROW_HEIGHT)
 			entry:Show()
@@ -489,6 +510,7 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 	local function RefreshTriggerState(group)
 		local supported, reason = groups:Supports(group)
 		local warning = groups:GetWarning(group)
+		local wrongType = groups:CountWrongTypeSpells(group)
 
 		local problemText = ProblemText(reason)
 		local warningText = WarningText(warning)
@@ -499,6 +521,13 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 
 		if not supported and problemText then
 			text = "|cffff4040" .. problemText .. "|r"
+		elseif wrongType > 0 then
+			-- Red once the whole list is on the wrong side, amber while some of it still shows.
+			-- Ahead of the reaction caveat below: that one is about WHEN a group shows, this one
+			-- about part of it never showing at all.
+			local color = wrongType == #group.Spells and "|cffff4040" or "|cffffd100"
+
+			text = color .. WrongTypeText(group.AuraType) .. "|r"
 		elseif supported and warningText then
 			text = "|cffffd100" .. warningText .. "|r"
 		end
