@@ -96,6 +96,15 @@ function M:Build(panel)
 	local deps = { OnLayout = RefreshPageHeight }
 	local listAnchor = ui.BuildGrid(panel, ioBtn, deps)
 
+	-- Takes the editor's place while nothing is selected, since an empty half-page otherwise
+	-- reads as the settings being missing rather than waiting on a click.
+	local selectHint = mini:TextBlock({
+		Parent = panel,
+		Lines = { L["Click an aura above to change its settings."] },
+	})
+	selectHint:SetPoint("TOPLEFT", listAnchor, "BOTTOMLEFT", 0, -verticalSpacing)
+	selectHint:Hide()
+
 	-- Splits the page in two: the grid of groups above, the one being edited below.
 	local editorDivider = mini:Divider({
 		Parent = panel,
@@ -119,6 +128,7 @@ function M:Build(panel)
 
 	deps.Editor = editor
 	deps.EditorDivider = editorDivider
+	deps.SelectHint = selectHint
 
 	ui.Populate()
 	panel:HookScript("OnShow", ui.Populate)

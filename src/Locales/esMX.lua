@@ -154,6 +154,7 @@ L:RegisterLocale("esMX", function() return {
 	-- General tab
 	["Discord"] = "Discord",
 	["Testing..."] = "Probando...",
+	["Click an aura above to change its settings."] = "Haz clic en un aura de arriba para cambiar sus ajustes.",
 	["No groups yet. Click + to track your first buff."] = "Aún no hay grupos. Haz clic en + para seguir tu primer beneficio.",
 	["Export Profile"] = "Exportar perfil",
 	["Font Scale"] = "Escala de fuente",

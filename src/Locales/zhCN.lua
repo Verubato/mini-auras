@@ -153,6 +153,7 @@ L:RegisterLocale("zhCN", function() return {
 	-- General tab
 	["Discord"] = "Discord",
 	["Testing..."] = "测试中...",
+	["Click an aura above to change its settings."] = "点击上方的光环以修改其设置。",
 	["No groups yet. Click + to track your first buff."] = "还没有组。点击 + 追踪你的第一个增益。",
 	["Export Profile"] = "导出配置",
 	["Font Scale"] = "字体缩放",

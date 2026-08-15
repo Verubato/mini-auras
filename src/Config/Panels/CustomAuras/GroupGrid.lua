@@ -52,7 +52,7 @@ end
 ---and swallow their own clicks.
 ---@param panel table The page, which owns the grid.
 ---@param anchor table Frame the grid hangs below.
----@param deps { Editor: table, EditorDivider: table, OnLayout: fun() } Filled in by the page before the first Populate.
+---@param deps { Editor: table, EditorDivider: table, SelectHint: table, OnLayout: fun() } Filled in by the page before the first Populate.
 ---@return table listAnchor
 function ui.BuildGrid(panel, anchor, deps)
 	local listAnchor = CreateFrame("Button", addonName .. "CustomAuraGrid", panel)
@@ -348,6 +348,8 @@ function ui.BuildGrid(panel, anchor, deps)
 		deps.EditorDivider:SetShown(selected ~= nil)
 		deps.Editor:SetShown(selected ~= nil)
 		deps.Editor.Refresh()
+		-- Only once there is something to click: an empty grid has the + tile's own hint beside it.
+		deps.SelectHint:SetShown(selected == nil and #options.Groups > 0)
 
 		-- Selecting a group makes its icons draggable without test mode.
 		display:SetPreviewGroup(panel:IsVisible() and ui.SelectedId or nil)

@@ -216,6 +216,9 @@ its own with nothing drawn at all.
 
 The page shows a grid of group tiles plus a leading `+` tile ("New Personal Aura"). Click a tile to
 edit that group in the editor below ("Selected Aura"); click empty grid space to deselect.
+Nothing is selected when the page opens, and the editor only exists while something is: until
+then the lower half reads "Click an aura above to change its settings." (since 5.14.0), or
+"No groups yet. Click + to track your first buff." beside the `+` tile on an empty grid.
 Tiles are dragged to reorder (order is cosmetic only). A disabled group's tile is
 desaturated. While a group is selected, its icons are shown on screen and can be dragged into
 place without test mode. There is no module-wide on/off switch: each group has its own
@@ -948,6 +951,11 @@ and enemy, cannot exist on 12.1, because it worked by reading ally and enemy aur
 MiniAuras (delete the MiniCC folder from AddOns and reload; settings are already copied), or
 another addon draws the same auras. For doubled nameplate auras, make sure Configure
 Blizzard Nameplates (Misc) is on, or disable the other addon's aura display.
+
+**"The personal aura settings are missing" / "there is nothing under the grid."** The editor
+only appears once a group is selected. Click one of the aura tiles at the top of the page and
+its settings open below; clicking empty grid space closes them again. Since 5.14.0 the page
+says so in place of the editor.
 
 **"A custom aura group shows nothing."** Usual causes: (1) it is in Spell IDs mode with an
 empty spell list; (2) the spell ID added is the cast ID, not the aura the cast applies (the

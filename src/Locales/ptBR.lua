@@ -153,6 +153,7 @@ L:RegisterLocale("ptBR", function() return {
 	-- General tab
 	["Discord"] = "Discord",
 	["Testing..."] = "Testando...",
+	["Click an aura above to change its settings."] = "Clique em uma aura acima para alterar suas configurações.",
 	["No groups yet. Click + to track your first buff."] = "Nenhum grupo ainda. Clique em + para acompanhar seu primeiro bônus.",
 	["Export Profile"] = "Exportar perfil",
 	["Font Scale"] = "Escala de fonte",

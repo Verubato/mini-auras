@@ -153,6 +153,7 @@ L:RegisterLocale("zhTW", function() return {
 	-- General tab
 	["Discord"] = "Discord",
 	["Testing..."] = "測試中...",
+	["Click an aura above to change its settings."] = "點擊上方的光環以修改其設定。",
 	["No groups yet. Click + to track your first buff."] = "還沒有群組。點擊 + 追蹤你的第一個增益。",
 	["Export Profile"] = "匯出設定檔",
 	["Font Scale"] = "字體縮放",

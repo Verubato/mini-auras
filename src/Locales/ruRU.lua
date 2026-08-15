@@ -153,6 +153,7 @@ L:RegisterLocale("ruRU", function() return {
 	-- General tab
 	["Discord"] = "Discord",
 	["Testing..."] = "Тест...",
+	["Click an aura above to change its settings."] = "Нажмите на ауру выше, чтобы изменить её настройки.",
 	["No groups yet. Click + to track your first buff."] = "Групп пока нет. Нажмите +, чтобы отслеживать первый бафф.",
 	["Export Profile"] = "Экспорт профиля",
 	["Font Scale"] = "Масштаб шрифта",

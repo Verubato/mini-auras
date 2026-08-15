@@ -153,6 +153,7 @@ L:RegisterLocale("koKR", function() return {
 	-- General tab
 	["Discord"] = "Discord",
 	["Testing..."] = "테스트 중...",
+	["Click an aura above to change its settings."] = "위의 오라를 클릭하면 설정이 표시됩니다.",
 	["No groups yet. Click + to track your first buff."] = "아직 그룹이 없습니다. +를 눌러 첫 버프를 추적하세요.",
 	["Export Profile"] = "프로필 내보내기",
 	["Font Scale"] = "글꼴 크기",

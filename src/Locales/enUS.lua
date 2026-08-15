@@ -154,6 +154,7 @@ L:SetDefaultStrings({
 	-- General tab
 	["Discord"] = "Discord",
 	["Testing..."] = "Testing...",
+	["Click an aura above to change its settings."] = "Click an aura above to change its settings.",
 	["No groups yet. Click + to track your first buff."] = "No groups yet. Click + to track your first buff.",
 	["Export Profile"] = "Export Profile",
 	["Font Scale"] = "Font Scale",
