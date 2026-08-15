@@ -45,6 +45,10 @@ local MEDIA_REFRESH_DELAY = 1
 local eventsFrame
 local db
 local lastIsInRaid = false
+-- A loading screen is up while the addon is loading, and nothing announces the one already on
+-- screen, so this starts true and the first LOADING_SCREEN_DISABLED ends it. Read by the nameplate
+-- modules: building their aura containers is only free while nothing is being drawn.
+local loadingScreenUp = true
 local mediaRefreshQueued = false
 
 -- Which instance flavour the next test session previews; the raid/default sub-tabs flip it.
@@ -97,7 +101,11 @@ local function NotifyChanges()
 end
 
 local function OnEvent(_, event)
-	if event == "PLAYER_REGEN_DISABLED" then
+	if event == "LOADING_SCREEN_ENABLED" then
+		loadingScreenUp = true
+	elseif event == "LOADING_SCREEN_DISABLED" then
+		loadingScreenUp = false
+	elseif event == "PLAYER_REGEN_DISABLED" then
 		if testModeManager:IsActive() then
 			testModeManager:StopTesting()
 			addon:Refresh()
@@ -170,6 +178,8 @@ local function OnAddonLoaded()
 	eventsFrame:RegisterEvent("PLAYER_LOGIN")
 	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+	eventsFrame:RegisterEvent("LOADING_SCREEN_ENABLED")
+	eventsFrame:RegisterEvent("LOADING_SCREEN_DISABLED")
 
 	-- The housing API may not exist on all game versions.
 	if type(C_Housing) == "table" then
@@ -178,6 +188,14 @@ local function OnAddonLoaded()
 	end
 
 	db = mini:GetSavedVars()
+end
+
+---Whether a loading screen is covering the game right now. The nameplate modules build their aura
+---containers up front, and this is the window where that costs nothing: no frame is being drawn,
+---and PLAYER_ENTERING_WORLD (which drives the refresh that builds them) fires while it is still up.
+---@return boolean
+function addon:IsLoadingScreenUp()
+	return loadingScreenUp
 end
 
 function addon:Refresh()
