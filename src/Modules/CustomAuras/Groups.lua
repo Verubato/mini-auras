@@ -66,6 +66,11 @@ local DEFAULT_BAR_TEXTURE = "Blizzard Raid Bar"
 local DEFAULT_POSITION_Y = 220
 local MIN_ICON_SIZE = 10
 local MAX_ICON_SIZE = 200
+-- Text is sized off the icon, so a group tunes it with a percentage rather than a point size. Held
+-- as a whole number so it clamps like every other group value; the display divides it back down.
+local DEFAULT_TEXT_SCALE = 100
+local MIN_TEXT_SCALE = 50
+local MAX_TEXT_SCALE = 200
 -- How many icons one group can ever show. Fixed rather than configurable: the engine only
 -- builds a frame when there is an aura for it, so a high cap costs nothing until it is used,
 -- and a group that hits forty of anything has bigger problems than its icon budget.
@@ -216,6 +221,8 @@ M.MaxIcons = MAX_ICONS
 M.PreviewIcons = PREVIEW_ICONS
 M.MinIconSize = MIN_ICON_SIZE
 M.MaxIconSize = MAX_ICON_SIZE
+M.MinTextScale = MIN_TEXT_SCALE
+M.MaxTextScale = MAX_TEXT_SCALE
 M.DisplayStyle = { Icons = AS_ICONS, Bars = AS_BARS, SoundOnly = AS_SOUND }
 M.MinBarWidth = MIN_BAR_WIDTH
 M.MaxBarWidth = MAX_BAR_WIDTH
@@ -373,6 +380,7 @@ function M:Normalise(group)
 	group.Icons = icons
 	icons.Size = Clamped(icons.Size, DEFAULT_ICON_SIZE, MIN_ICON_SIZE, MAX_ICON_SIZE)
 	icons.Spacing = Clamped(icons.Spacing, DEFAULT_SPACING, 0, 50)
+	icons.TextScale = Clamped(icons.TextScale, DEFAULT_TEXT_SCALE, MIN_TEXT_SCALE, MAX_TEXT_SCALE)
 	-- Icons unless the group asked for something else: a group saved before bars existed has no
 	-- field, and changing what those groups look like is not something a version bump gets to do.
 	icons.Display = (icons.Display == AS_BARS or icons.Display == AS_SOUND) and icons.Display
@@ -1023,7 +1031,7 @@ end
 ---@field Offset { X: number, Y: number } Nameplate, unit frame and arena frame anchors only.
 ---@field Grow string
 ---@field Strata string "AUTO", or a frame strata the group's frames are pinned to.
----@field Icons { Size: number, Spacing: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, HideSwipe: boolean, HideNumbers: boolean, CenterStacks: boolean, ShowTooltips: boolean, Color: table, ColorText: boolean, TextColor: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
+---@field Icons { Size: number, Spacing: number, TextScale: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, HideSwipe: boolean, HideNumbers: boolean, CenterStacks: boolean, ShowTooltips: boolean, Color: table, ColorText: boolean, TextColor: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
 ---@field Sound { Applied: string, Removed: string, Stacks: string, Channel: string } Empty means silent.
 ---@field TrackingMode string "SPELLS" narrows to a spell list, "FILTERS" to a filter string.
 ---@field Filters table<string, string> Filter component to "REQUIRE"|"FORBID". Filter mode only.

@@ -113,6 +113,7 @@ fw.describe("CustomAuras - group defaults", function()
 		assert(group.Unit == "player", "pointed at the player by default")
 		assert(type(group.Spells) == "table" and #group.Spells == 0, "no spells yet")
 		assert(group.Icons.Size > 0, "an icon size")
+		assert(group.Icons.TextScale == 100, "text left at whatever the global font scale says")
 		assert(group.Icons.ReverseCooldown, "the swipe fills up, which reads as time running out")
 		assert(group.Enabled, "switched on")
 		assert(group.Position.Y > 0, "placed above the middle of the screen, not on top of it")
@@ -126,7 +127,7 @@ fw.describe("CustomAuras - group defaults", function()
 
 	fw.it("clamps values a hand-edited or imported group got wrong", function()
 		local group = groups:Normalise({
-			Icons = { Size = -5, Spacing = 1e6 },
+			Icons = { Size = -5, Spacing = 1e6, TextScale = 1e6 },
 			Grow = "SIDEWAYS",
 			Unit = "vehicle",
 			AuraType = "SOMETHING",
@@ -134,6 +135,7 @@ fw.describe("CustomAuras - group defaults", function()
 
 		assert(group.Icons.Size >= groups.MinIconSize, "the icon size is floored")
 		assert(group.Icons.Spacing <= 50, "the spacing is capped")
+		assert(group.Icons.TextScale == groups.MaxTextScale, "the text scale is capped")
 		assert(group.Grow == "CENTER", "an unknown grow direction falls back")
 		assert(group.Unit == "player", "an unsupported unit falls back")
 		assert(group.AuraType == "HELPFUL", "an unknown aura type falls back")

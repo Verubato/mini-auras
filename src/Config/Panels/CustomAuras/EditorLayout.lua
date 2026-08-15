@@ -8,6 +8,12 @@ local ui = addon.Config.CustomAurasUI
 -- Clearance a slider needs above itself for the value box and its label.
 local SLIDER_HEADROOM = 34
 local SLIDER_ROW_HEIGHT = SLIDER_HEADROOM + 34
+-- The last slider row keeps the headroom its value boxes need but not the padding below, which
+-- only exists to hold the next row off. Its own headroom is most of the space between two stacked
+-- slider bars, so it forgoes the row gap as well: both together are what stopped the tab needing
+-- a scrollbar once the text size slider arrived.
+local LAST_SLIDER_ROW_HEIGHT = SLIDER_HEADROOM + 20
+local LAST_SLIDER_ROW_GAP = 0
 local SLIDER_GAP = 45
 -- The gap a row keeps when it is on screen, matching the editor's own default.
 local ROW_GAP = 10
@@ -38,8 +44,8 @@ function ui.BuildLayoutTab(ctx)
 
 	local settingsControlsRow = ctx.NewRow(layoutPanel, ui.DropdownRowHeight)
 	local sliderRow = ctx.NewRow(layoutPanel, SLIDER_ROW_HEIGHT)
-	-- Put away for a group drawing icons, which has no width of its own.
-	local barSliderRow = ctx.NewRow(layoutPanel, SLIDER_ROW_HEIGHT)
+	-- Text scale plus, for a group drawing bars, the width an icon group has no use for.
+	local secondSliderRow = ctx.NewRow(layoutPanel, LAST_SLIDER_ROW_HEIGHT, LAST_SLIDER_ROW_GAP)
 
 	local orderDropdown = ctx.Dropdown(L["Order"], {
 		Items = SORT_OPTIONS,
@@ -239,11 +245,20 @@ function ui.BuildLayoutTab(ctx)
 		function(group, value) group.Icons.Spacing = value end)
 	spacingSlider.Slider:SetPoint("LEFT", sizeSlider.Slider, "RIGHT", SLIDER_GAP, 0)
 
+	-- A percentage of the size the text would take anyway, since every text on an icon or a bar is
+	-- measured off that shape rather than set in points.
+	local textScaleSlider = Slider(L["Text Size (%)"],
+		L["Scales this group's countdown, stack count, and bar name text, on top of the global font scale."],
+		groups.MinTextScale, groups.MaxTextScale,
+		function(group) return group.Icons.TextScale end,
+		function(group, value) group.Icons.TextScale = value end)
+	textScaleSlider.Slider:SetPoint("TOPLEFT", secondSliderRow, "TOPLEFT", 4, -SLIDER_HEADROOM)
+
 	local widthSlider = Slider(L["Bar Width"], L["Width of each bar."],
 		groups.MinBarWidth, groups.MaxBarWidth,
 		function(group) return group.Icons.BarWidth end,
 		function(group, value) group.Icons.BarWidth = value end)
-	widthSlider.Slider:SetPoint("TOPLEFT", barSliderRow, "TOPLEFT", 4, -SLIDER_HEADROOM)
+	widthSlider.Slider:SetPoint("LEFT", textScaleSlider.Slider, "RIGHT", SLIDER_GAP, 0)
 
 	---@param group CustomAuraGroup
 	local function RefreshShape(group)
@@ -256,6 +271,7 @@ function ui.BuildLayoutTab(ctx)
 		SetSliderShown(heightSlider, bars and not soundOnly)
 		SetSliderShown(widthSlider, bars and not soundOnly)
 		SetSliderShown(spacingSlider, not soundOnly)
+		SetSliderShown(textScaleSlider, not soundOnly)
 
 		orderDropdown:SetShown(not soundOnly)
 		orderDropdown.MiniLabel:SetShown(not soundOnly)
@@ -275,8 +291,8 @@ function ui.BuildLayoutTab(ctx)
 		-- Collapsed rather than left empty, and they hand their gaps back so the tab closes up.
 		sliderRow:SetHeight(soundOnly and 1 or SLIDER_ROW_HEIGHT)
 		ctx.SetRowGap(sliderRow, soundOnly and 0 or ROW_GAP)
-		barSliderRow:SetHeight(bars and not soundOnly and SLIDER_ROW_HEIGHT or 1)
-		ctx.SetRowGap(barSliderRow, bars and not soundOnly and ROW_GAP or 0)
+		secondSliderRow:SetHeight(soundOnly and 1 or LAST_SLIDER_ROW_HEIGHT)
+		ctx.SetRowGap(secondSliderRow, LAST_SLIDER_ROW_GAP)
 
 		ctx.UpdateEditorHeight()
 	end

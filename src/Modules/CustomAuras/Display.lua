@@ -126,6 +126,9 @@ local function BuildStyle(group)
 	local icons = group.Icons
 	local style = auraContainerDisplay:BuildStandardStyle(icons)
 
+	-- On top of the global scale rather than instead of it, so a group set to 100% keeps following
+	-- whatever the user picked in Miscellaneous.
+	style.FontScale = (style.FontScale or 1) * (icons.TextScale or 100) / 100
 	style.Border = icons.Border
 	-- The same colour drives the glow, the border and a bar's fill, so one swatch covers a group
 	-- whichever shape it draws.
@@ -478,6 +481,7 @@ local function RenderTestIcons(state, entry)
 	local textColor = group.Icons.ColorText
 		and moduleUtil:FillColor(textColorScratch, group.Icons.TextColor, DEFAULT_TEXT_COLOR)
 		or nil
+	local fontScale = (db.FontScale or 1) * (group.Icons.TextScale or 100) / 100
 	local nextSlot
 
 	if groups:TracksSpells(group) then
@@ -489,7 +493,7 @@ local function RenderTestIcons(state, entry)
 			Color = color,
 			TextColor = textColor,
 			CenterStackText = centerStacks and PREVIEW_STACK_COUNT or nil,
-			FontScale = db.FontScale,
+			FontScale = fontScale,
 			ShowTooltips = group.Icons.ShowTooltips,
 			BarTexture = barTexture,
 			Border = group.Icons.Border,
@@ -512,7 +516,7 @@ local function RenderTestIcons(state, entry)
 				TextColor = textColor,
 				ChargeText = centerStacks and PREVIEW_STACK_COUNT or nil,
 				ChargeTextCenter = centerStacks,
-				FontScale = db.FontScale,
+				FontScale = fontScale,
 				-- A filter group has no spell to name, so the group's own name stands in.
 				Name = group.Icons.SpellName ~= false and group.Name or nil,
 				BarTexture = barTexture,

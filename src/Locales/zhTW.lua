@@ -91,6 +91,8 @@ L:RegisterLocale("zhTW", function() return {
 	["Width and height of each icon."] = "每個圖示的寬度與高度。",
 	["Icon Size (%)"] = "圖示大小 (%)",
 	["Icon size as a percentage of the unit frame's height, so icons scale with the frame."] = "圖示大小以單位框架高度的百分比設定，可隨框架一起縮放。",
+	["Text Size (%)"] = "文字大小 (%)",
+	["Scales this group's countdown, stack count, and bar name text, on top of the global font scale."] = "在全域字體縮放的基礎上，縮放該組的倒數、層數與條上名稱文字。",
 	["Relative size"] = "相對大小",
 	["Sizes the icon as a percentage of the unit frame's height instead of a fixed size."] = "依單位框架高度的百分比調整圖示大小，而非使用固定大小。",
 	["Max Icons"] = "最大圖示",

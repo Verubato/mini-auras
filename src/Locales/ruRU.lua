@@ -91,6 +91,8 @@ L:RegisterLocale("ruRU", function() return {
 	["Width and height of each icon."] = "Ширина и высота каждой иконки.",
 	["Icon Size (%)"] = "Размер иконки (%)",
 	["Icon size as a percentage of the unit frame's height, so icons scale with the frame."] = "Размер иконки в процентах от высоты рамки персонажа, чтобы иконки масштабировались вместе с ней.",
+	["Text Size (%)"] = "Размер текста (%)",
+	["Scales this group's countdown, stack count, and bar name text, on top of the global font scale."] = "Масштабирует отсчёт, число зарядов и название на полосе этой группы, поверх общего масштаба шрифта.",
 	["Relative size"] = "В процентах",
 	["Sizes the icon as a percentage of the unit frame's height instead of a fixed size."] = "Задаёт размер иконки в процентах от высоты рамки персонажа вместо фиксированного размера.",
 	["Max Icons"] = "Макс. иконок",

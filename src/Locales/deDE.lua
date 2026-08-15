@@ -91,6 +91,8 @@ L:RegisterLocale("deDE", function() return {
 	["Width and height of each icon."] = "Breite und Höhe jedes Symbols.",
 	["Icon Size (%)"] = "Symbolgröße (%)",
 	["Icon size as a percentage of the unit frame's height, so icons scale with the frame."] = "Symbolgröße als Prozentsatz der Höhe des Einheitenfensters, damit die Symbole mitskalieren.",
+	["Text Size (%)"] = "Textgröße (%)",
+	["Scales this group's countdown, stack count, and bar name text, on top of the global font scale."] = "Skaliert Zeittext, Stufenanzahl und Leistenname dieser Gruppe, zusätzlich zur globalen Schriftskalierung.",
 	["Relative size"] = "In Prozent",
 	["Sizes the icon as a percentage of the unit frame's height instead of a fixed size."] = "Skaliert das Symbol als Prozentsatz der Höhe des Einheitenrahmens statt auf eine feste Größe.",
 	["Max Icons"] = "Max. Symbole",

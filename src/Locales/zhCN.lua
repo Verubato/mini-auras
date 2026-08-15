@@ -91,6 +91,8 @@ L:RegisterLocale("zhCN", function() return {
 	["Width and height of each icon."] = "每个图标的宽度和高度。",
 	["Icon Size (%)"] = "图标大小 (%)",
 	["Icon size as a percentage of the unit frame's height, so icons scale with the frame."] = "图标大小按单位框架高度的百分比设置，可随框架一起缩放。",
+	["Text Size (%)"] = "文字大小 (%)",
+	["Scales this group's countdown, stack count, and bar name text, on top of the global font scale."] = "在全局字体缩放的基础上，缩放该组的倒计时、层数和条上名称文字。",
 	["Relative size"] = "相对大小",
 	["Sizes the icon as a percentage of the unit frame's height instead of a fixed size."] = "按单位框架高度的百分比调整图标大小，而非使用固定大小。",
 	["Max Icons"] = "最大图标",

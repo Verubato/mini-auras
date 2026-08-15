@@ -92,6 +92,8 @@ L:RegisterLocale("esMX", function() return {
 	["Width and height of each icon."] = "Ancho y alto de cada icono.",
 	["Icon Size (%)"] = "Tamaño de icono (%)",
 	["Icon size as a percentage of the unit frame's height, so icons scale with the frame."] = "Tamaño del icono como porcentaje de la altura del marco de unidad, para que escale con el marco.",
+	["Text Size (%)"] = "Tamaño de texto (%)",
+	["Scales this group's countdown, stack count, and bar name text, on top of the global font scale."] = "Escala la cuenta atrás, las acumulaciones y el nombre en la barra de este grupo, además de la escala de fuente global.",
 	["Relative size"] = "Tamaño relativo",
 	["Sizes the icon as a percentage of the unit frame's height instead of a fixed size."] = "Ajusta el tamaño del icono como un porcentaje de la altura del marco de unidad en lugar de un tamaño fijo.",
 	["Max Icons"] = "Máx. iconos",

@@ -91,6 +91,8 @@ L:RegisterLocale("koKR", function() return {
 	["Width and height of each icon."] = "각 아이콘의 가로 및 세로 크기입니다.",
 	["Icon Size (%)"] = "아이콘 크기 (%)",
 	["Icon size as a percentage of the unit frame's height, so icons scale with the frame."] = "아이콘 크기를 유닛 프레임 높이의 백분율로 지정하여 프레임에 맞춰 조절됩니다.",
+	["Text Size (%)"] = "글자 크기 (%)",
+	["Scales this group's countdown, stack count, and bar name text, on top of the global font scale."] = "전역 글꼴 배율에 더해 이 그룹의 남은 시간, 중첩 수, 바 이름 글자 크기를 조절합니다.",
 	["Relative size"] = "상대 크기",
 	["Sizes the icon as a percentage of the unit frame's height instead of a fixed size."] = "아이콘 크기를 고정값이 아닌 유닛 프레임 높이의 백분율로 설정합니다.",
 	["Max Icons"] = "최대 아이콘",

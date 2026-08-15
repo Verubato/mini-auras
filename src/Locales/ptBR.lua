@@ -91,6 +91,8 @@ L:RegisterLocale("ptBR", function() return {
 	["Width and height of each icon."] = "Largura e altura de cada ícone.",
 	["Icon Size (%)"] = "Tamanho do ícone (%)",
 	["Icon size as a percentage of the unit frame's height, so icons scale with the frame."] = "Tamanho do ícone como porcentagem da altura do quadro da unidade, para acompanhar o quadro.",
+	["Text Size (%)"] = "Tamanho do texto (%)",
+	["Scales this group's countdown, stack count, and bar name text, on top of the global font scale."] = "Ajusta a contagem, os acúmulos e o nome na barra deste grupo, além da escala de fonte global.",
 	["Relative size"] = "Tamanho relativo",
 	["Sizes the icon as a percentage of the unit frame's height instead of a fixed size."] = "Dimensiona o ícone como uma porcentagem da altura do quadro da unidade em vez de um tamanho fixo.",
 	["Max Icons"] = "Ícones máx",

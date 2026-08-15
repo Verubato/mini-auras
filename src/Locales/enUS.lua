@@ -92,6 +92,8 @@ L:SetDefaultStrings({
 	["Width and height of each icon."] = "Width and height of each icon.",
 	["Icon Size (%)"] = "Icon Size (%)",
 	["Icon size as a percentage of the unit frame's height, so icons scale with the frame."] = "Icon size as a percentage of the unit frame's height, so icons scale with the frame.",
+	["Text Size (%)"] = "Text Size (%)",
+	["Scales this group's countdown, stack count, and bar name text, on top of the global font scale."] = "Scales this group's countdown, stack count, and bar name text, on top of the global font scale.",
 	["Relative size"] = "Relative size",
 	["Sizes the icon as a percentage of the unit frame's height instead of a fixed size."] = "Sizes the icon as a percentage of the unit frame's height instead of a fixed size.",
 	["Max Icons"] = "Max Icons",

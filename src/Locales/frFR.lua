@@ -91,6 +91,8 @@ L:RegisterLocale("frFR", function() return {
 	["Width and height of each icon."] = "Largeur et hauteur de chaque icône.",
 	["Icon Size (%)"] = "Taille des icônes (%)",
 	["Icon size as a percentage of the unit frame's height, so icons scale with the frame."] = "Taille de l'icône en pourcentage de la hauteur du cadre d'unité, pour qu'elle suive le cadre.",
+	["Text Size (%)"] = "Taille du texte (%)",
+	["Scales this group's countdown, stack count, and bar name text, on top of the global font scale."] = "Met à l'échelle le décompte, les cumuls et le nom dans la barre de ce groupe, en plus de l'échelle de police globale.",
 	["Relative size"] = "Taille relative",
 	["Sizes the icon as a percentage of the unit frame's height instead of a fixed size."] = "Définit la taille de l'icône en pourcentage de la hauteur du cadre d'unité plutôt qu'à une taille fixe.",
 	["Max Icons"] = "Icônes max",
