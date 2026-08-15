@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.14.2
+
+- Fixed regression from 5.14.1 where personal auras stopped working after changing a zone.
+
 ## 5.14.1
 
 - Workaround for garbage auras showing on zone transfers (need Blizzard for a proper fix).
