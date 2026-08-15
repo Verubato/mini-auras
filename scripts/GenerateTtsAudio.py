@@ -58,6 +58,63 @@ PACK_GAIN_DB = {
 VOICE_SETTINGS = {"stability": 0.5, "similarity_boost": 0.75}
 
 CATEGORIES = ("Important", "Defensive", "EnemyDebuff")
+# Spell name -> what the English voices say instead, for names players never say in full.
+# Only the audio changes: the clip keeps the full name's file stem, so two spells sharing a
+# short name still get a clip each. Written as words, never initials: the voices read a bare
+# "AMS" as a word, and spacing the letters out does not sound much better.
+SHORT_NAMES = {
+    "Alter Time": "Alter",
+    "Ancient of Lore": "Giga Tree",
+    "Anti-Magic Shell": "Shell",
+    "Anti-Magic Zone": "Magic Zone",
+    "Arcane Surge": "Surge",
+    "Aspect of the Turtle": "Turtle",
+    "Astral Shift": "Wall",
+    "Avenging Crusader": "Wings",
+    "Avenging Wrath": "Wings",
+    "Barkskin": "Skin",
+    "Blessing of Freedom": "Freedom",
+    "Blessing of Protection": "Bop",
+    "Blessing of Sacrifice": "Sac",
+    "Blessing of Sanctuary": "Sanc",
+    "Blessing of Spellwarding": "Spellwarding",
+    "Celestial Alignment": "Incarn",
+    "Cloak of Shadows": "Cloak",
+    "Die by the Sword": "Parry",
+    "Divine Protection": "Wall",
+    "Divine Shield": "Bubble",
+    "Emerald Communion": "Communion",
+    "Enraged Regeneration": "Wall",
+    "Feint": "Faint",
+    "Fortifying Brew": "Wall",
+    "Greater Invisibility": "Invisibility",
+    "Grounding Totem": "Grounding",
+    "Guardian of the Forgotten Queen": "Forgotten Queen",
+    "Ice Block": "Block",
+    "Incarnation: Avatar of Ashamane": "Incarn",
+    "Incarnation: Chosen of Elune": "Incarn",
+    "Incarnation: Guardian of Ursoc": "Incarn",
+    "Incarnation: Tree of Life": "Incarn",
+    "Invoke Chi-Ji, the Red Crane": "Chi-Ji",
+    "Invoke Niuzao, the Black Ox": "Niuzao",
+    "Invoke Yu'lon, the Jade Serpent": "Yu'lon",
+    "Life Cocoon": "Cocoon",
+    "Mass Invisibility": "Mass Invis",
+    "Nullifying Shroud": "Shroud",
+    "Obsidian Scales": "Wall",
+    "Precognition": "Precog",
+    "Rallying Cry": "Rally",
+    "Roar of Sacrifice": "Pet Sac",
+    "Shadow Dance": "Dance",
+    "Shield Wall": "Wall",
+    "Spell Reflection": "Reflection",
+    "Spirit Link": "Link",
+    "Survival Instincts": "Wall",
+    "Survival of the Fittest": "Wall",
+    "Touch of Karma": "Karma",
+    "Unending Resolve": "Wall",
+    "Void Metamorphosis": "Metamorphosis",
+}
 # Sections holding spells the game flags as neither category, keyed by the announcement
 # toggle each half belongs to.
 UNFLAGGED_SECTIONS = {"UnflaggedImportant": "Important", "UnflaggedDefensive": "Defensive"}
@@ -167,7 +224,7 @@ def build_texts(categories, language):
             localized = names.get(text) if names else None
             if names and not localized:
                 print(f"WARNING: no {language} name for '{text}', speaking English")
-            texts[slug(text)] = localized or text
+            texts[slug(text)] = localized or SHORT_NAMES.get(text, text)
     for file_stem, text in previews.items():
         texts[file_stem] = text
     return texts
