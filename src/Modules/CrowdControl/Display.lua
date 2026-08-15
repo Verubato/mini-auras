@@ -121,7 +121,7 @@ end
 ---engine stops evaluating the CROWD_CONTROL token and the group fills with unrelated debuffs
 ---(the spell-id map is identity-gated off on assistable units, so the token is the only filter
 ---left), so a unit that far away shows nothing at all. Visibility has no event of its own,
----which is why the duel poller re-asks this.
+---which is why the unit state poller re-asks this.
 ---Urgent: the unit a gate zeroes emits no aura events, so a budget flip parked for combat would
 ---keep showing the garbage until regen.
 ---@param entry CrowdControlWatchEntry
@@ -337,7 +337,7 @@ local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 	anchoredIcons:ApplyEntryOptions(entry, anchor, entryOptions, settingsScratch)
 end
 
----Every unit the module is currently watching, for the duel poller's visibility scan.
+---Every unit the module is currently watching, for the unit state poller's visibility scan.
 ---@param out string[] Filled in place and returned, so the caller can keep one table.
 ---@return string[]
 function M:CollectWatchedUnits(out)

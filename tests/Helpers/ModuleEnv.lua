@@ -495,7 +495,7 @@ function M.build()
 	loadFile("src/Core/Display/GlowStyles.lua")
 	loadFile("src/Core/Display/Outline.lua")
 	loadFile("src/Core/Auras/AuraFilters.lua")
-	loadFile("src/Core/DuelPoller.lua")
+	loadFile("src/Core/UnitStatePoller.lua")
 	loadFile("src/Core/Display/IconSlotContainer.lua")
 	-- Must precede AuraContainerDisplay and BarSlotContainer: both resolve bar fills through the
 	-- texture catalog.

@@ -39,7 +39,7 @@ Utils\WoWEx.lua
 
 Core\InstanceOptions.lua
 Core\EventGate.lua
-Core\DuelPoller.lua
+Core\UnitStatePoller.lua
 Core\LegacyAddon.lua
 
 Core\Display\Pool.lua

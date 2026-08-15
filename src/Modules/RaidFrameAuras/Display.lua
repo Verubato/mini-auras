@@ -292,7 +292,7 @@ end
 ---Visible: outside the player's visible world the engine stops evaluating the filters correctly
 ---and BOTH groups fill with unrelated auras, so a unit that far away shows nothing at all.
 ---
----Neither has an event of its own, which is why the duel poller watches them.
+---Neither has an event of its own, which is why the unit state poller watches them.
 ---@param entry RaidFrameAurasWatchEntry
 ---@param options RaidFrameAurasInstanceOptions
 ---@return number helpful
@@ -497,7 +497,7 @@ function M:OnUnitFactionChanged(unit)
 	return changed
 end
 
----Every unit the module is currently watching. The duel poller only scans tokens it has been
+---Every unit the module is currently watching. The unit state poller only scans tokens it has been
 ---given a baseline for, so the module hands it these: a party member who turns hostile mid-duel
 ---is what drops the spell-id filter, and nothing else announces that.
 ---@param out string[] Filled in place and returned, so the caller can keep one table.

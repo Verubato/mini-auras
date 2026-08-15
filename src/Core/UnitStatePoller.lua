@@ -18,9 +18,9 @@ local units = addon.Utils.Units
 -- Duels only occur in the open world, but visibility and mind control do not, so only the duel
 -- half of the poll early-returns inside instances.
 
----@class DuelPoller
+---@class UnitStatePoller
 local M = {}
-addon.Core.DuelPoller = M
+addon.Core.UnitStatePoller = M
 
 local POLL_INTERVAL = 0.25
 
@@ -35,11 +35,11 @@ local activeSubs = {}
 local unionOrder = {}
 local unionSeen = {}
 local flipped = {}
----@type DuelPollerSubscriber[]
+---@type UnitStatePollerSubscriber[]
 local subscribers = {}
 local ticker
 
----@class DuelPollerSubscriber
+---@class UnitStatePollerSubscriber
 local Subscriber = {}
 Subscriber.__index = Subscriber
 
@@ -179,7 +179,7 @@ end
 ---ticker starts on the first registration.
 ---@param isActive fun(): boolean
 ---@param onFlip fun(unitToken: string)
----@return DuelPollerSubscriber
+---@return UnitStatePollerSubscriber
 function M:Register(isActive, onFlip)
 	local subscriber = setmetatable({
 		IsActive = isActive,
@@ -195,7 +195,7 @@ function M:Register(isActive, onFlip)
 	return subscriber
 end
 
----@class DuelPollerSubscriber
+---@class UnitStatePollerSubscriber
 ---@field IsActive fun(): boolean
 ---@field OnFlip fun(unitToken: string)
 ---@field Tokens table<string, boolean> The tokens this subscriber watches. The state itself lives

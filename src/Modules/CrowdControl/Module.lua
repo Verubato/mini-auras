@@ -5,7 +5,7 @@ local frames = addon.Core.Frames
 local eventGate = addon.Core.EventGate
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
-local duelPoller = addon.Core.DuelPoller
+local unitStatePoller = addon.Core.UnitStatePoller
 
 -- Loaded before this file in TOC order.
 local display = addon.Modules.CrowdControl.Display
@@ -22,10 +22,10 @@ local eventsFrame
 ---@type Db
 local db
 local testModeActive = false
----@type DuelPollerSubscriber?
-local duelSub
--- Scratch for the watched units handed to the duel poller each refresh.
-local duelUnitsScratch = {}
+---@type UnitStatePollerSubscriber?
+local stateSub
+-- Scratch for the watched units handed to the unit state poller each refresh.
+local stateUnitsScratch = {}
 -- Deferred as well as coalesced: the frame addons (danders/grid) rebuild on the same event, so
 -- the anchors are only worth reading once they have settled.
 local QueueRefresh = moduleUtil:Coalesced(function()
@@ -35,15 +35,15 @@ end)
 ---Hands the poller the units on screen right now. Re-seeded per refresh rather than tracked
 ---per frame: the frames retarget constantly (sorting, roster changes), and a baseline for a unit
 ---nobody is watching would fire a refresh for nothing.
-local function SeedDuelBaselines()
-	if not duelSub then
+local function SeedStateBaselines()
+	if not stateSub then
 		return
 	end
 
-	duelSub:ClearAll()
+	stateSub:ClearAll()
 
-	for _, unit in ipairs(display:CollectWatchedUnits(duelUnitsScratch)) do
-		duelSub:Seed(unit)
+	for _, unit in ipairs(display:CollectWatchedUnits(stateUnitsScratch)) do
+		stateSub:Seed(unit)
 	end
 end
 
@@ -116,7 +116,7 @@ local function CreateEvents()
 	-- poller sees it flip. Registered for the module's lifetime; the predicate below gates it.
 	-- Coalesced: the poller fires once per flipped token, and a raid riding out of range flips
 	-- many in one tick - each would otherwise pay a full refresh.
-	duelSub = duelPoller:Register(function()
+	stateSub = unitStatePoller:Register(function()
 		return IsEnabled()
 	end, function()
 		QueueRefresh()
@@ -127,7 +127,7 @@ local function InstallHooks()
 	frames:InstallUnitFrameHooks(eventsFrame, {
 		OnSetUnit = function(frame, unit)
 			display:OnCufSetUnit(frame, unit)
-			-- A watcher born or re-pointed here is unknown to the duel poller until a refresh
+			-- A watcher born or re-pointed here is unknown to the unit state poller until a refresh
 			-- reseeds the baselines; without one, a later visible-world flip goes unnoticed.
 			QueueRefresh()
 		end,
@@ -178,7 +178,7 @@ function M:Refresh()
 	display:EnsureFrames()
 	display:ApplyOptions(options)
 	UpdateContent()
-	SeedDuelBaselines()
+	SeedStateBaselines()
 end
 
 function M:Init()

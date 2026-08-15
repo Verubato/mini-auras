@@ -4,7 +4,7 @@ local mini = addon.Framework
 local units = addon.Utils.Units
 local kickTracker = addon.Core.KickTracker
 local eventGate = addon.Core.EventGate
-local duelPoller = addon.Core.DuelPoller
+local unitStatePoller = addon.Core.UnitStatePoller
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 
@@ -24,11 +24,11 @@ local testModeActive = false
 ---@type EventGate?
 local plateGate
 -- Duel detection: no event fires when a friendly unit turns attackable at duel start (or back
--- at duel end), so the shared DuelPoller re-registers plates whose enemy status flips
+-- at duel end), so the shared UnitStatePoller re-registers plates whose enemy status flips
 -- (GetUnitOptions switches between Friendly and Enemy for the same token). Baselines are
 -- seeded on plate add and cleared on plate remove.
----@type DuelPollerSubscriber
-local duelSub
+---@type UnitStatePollerSubscriber
+local stateSub
 
 -- Mode toggles as of the last refresh. A change in any of them means the tracked plates were
 -- built against the wrong options and have to be rebuilt.
@@ -49,7 +49,7 @@ local previousImportantNeeded = false
 
 local function OnNamePlateRemoved(unitToken)
 	-- Clear before the early return: friendly plates have a poll baseline but no anchor data.
-	duelSub:Clear(unitToken)
+	stateSub:Clear(unitToken)
 
 	if not display:GetData(unitToken) then
 		return
@@ -65,9 +65,9 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
-	-- Baseline for the duel poll, kept fresh on every (re)registration. RebuildContainers routes
+	-- Baseline for the state poll, kept fresh on every (re)registration. RebuildContainers routes
 	-- through here too, so plates that existed before Init/enable are also seeded.
-	duelSub:Seed(unitToken)
+	stateSub:Seed(unitToken)
 
 	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.Nameplates)
 	if not moduleEnabled then
@@ -298,7 +298,7 @@ local function CreateEvents()
 	-- A plate whose enemy status flipped goes back through the add path: GetUnitOptions starts
 	-- returning the other faction's options, so its displays are re-acquired with that faction's
 	-- budgets.
-	duelSub = duelPoller:Register(function()
+	stateSub = unitStatePoller:Register(function()
 		return moduleUtil:IsModuleEnabled(moduleName.Nameplates)
 	end, OnNamePlateAdded)
 end

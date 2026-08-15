@@ -3,7 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local units = addon.Utils.Units
 local eventGate = addon.Core.EventGate
-local duelPoller = addon.Core.DuelPoller
+local unitStatePoller = addon.Core.UnitStatePoller
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 
@@ -25,10 +25,10 @@ local testModeActive = false
 ---@type EventGate?
 local plateGate
 -- Duel detection: no event fires when a friendly unit turns attackable at duel start (or back
--- at duel end), so the shared DuelPoller re-registers plates whose enemy status flips.
+-- at duel end), so the shared UnitStatePoller re-registers plates whose enemy status flips.
 -- Baselines are seeded on plate add and cleared on plate remove.
----@type DuelPollerSubscriber
-local duelSub
+---@type UnitStatePollerSubscriber
+local stateSub
 -- Reused enemy-token set for RebuildNameplateDisplays.
 local activeTokensScratch = {}
 
@@ -56,8 +56,8 @@ local function OnMatchStateChanged()
 end
 
 local function OnNamePlateAdded(unitToken)
-	-- Baseline for the duel poll, kept fresh on every (re)registration.
-	local isEnemy = duelSub:Seed(unitToken)
+	-- Baseline for the state poll, kept fresh on every (re)registration.
+	local isEnemy = stateSub:Seed(unitToken)
 
 	-- Only track enemy nameplates. A charmed unit is out too: mind control hands it to the
 	-- other team, its aura list becomes the controller's own buffs, and the containers would
@@ -76,7 +76,7 @@ local function OnNamePlateAdded(unitToken)
 end
 
 local function OnNamePlateRemoved(unitToken)
-	duelSub:Clear(unitToken)
+	stateSub:Clear(unitToken)
 
 	display:ReleaseNameplateDisplay(unitToken)
 	display:ChainDisplays()
@@ -93,10 +93,10 @@ local function RebuildNameplateDisplays()
 	for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
 		local unitToken = nameplate.unitToken
 		if unitToken then
-			-- Seed the duel-poll baseline here too: plates that existed before Init/enable
+			-- Seed the state-poll baseline here too: plates that existed before Init/enable
 			-- never fire NAME_PLATE_UNIT_ADDED. Charmed units are skipped for the same
 			-- reason as the add path.
-			if duelSub:Seed(unitToken) and not units:IsCharmed(unitToken) then
+			if stateSub:Seed(unitToken) and not units:IsCharmed(unitToken) then
 				activeTokens[unitToken] = true
 			end
 		end
@@ -195,10 +195,10 @@ local function CreateEvents()
 	-- on every roster event in a battleground.
 	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 	plateGate = eventGate:New(eventsFrame, { "NAME_PLATE_UNIT_ADDED", "NAME_PLATE_UNIT_REMOVED" }, {
-		-- Plate events maintain the duel baselines; drop them so reactivation reseeds
+		-- Plate events maintain the state baselines; drop them so reactivation reseeds
 		-- via RebuildNameplateDisplays instead of trusting stale tokens.
 		OnDeactivate = function()
-			duelSub:ClearAll()
+			stateSub:ClearAll()
 		end,
 	})
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
@@ -220,7 +220,7 @@ local function CreateEvents()
 	-- A duel opponent starts as an untracked friendly plate; when the duel begins the flip
 	-- routes through OnNamePlateAdded to build its displays and sound registrations, and when
 	-- it ends the same call releases them.
-	duelSub = duelPoller:Register(function()
+	stateSub = unitStatePoller:Register(function()
 		return moduleUtil:IsModuleEnabled(moduleName.Alerts)
 	end, OnNamePlateAdded)
 end

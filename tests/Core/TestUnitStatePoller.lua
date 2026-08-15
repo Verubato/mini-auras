@@ -35,11 +35,11 @@ _G.C_Timer.NewTicker = function(_, fn)
 	return { Cancel = function() end }
 end
 
-assert(loadfile("src/Core/DuelPoller.lua"))("MiniAuras", addon)
+assert(loadfile("src/Core/UnitStatePoller.lua"))("MiniAuras", addon)
 
-local poller = addon.Core.DuelPoller
+local poller = addon.Core.UnitStatePoller
 
-fw.describe("DuelPoller", function()
+fw.describe("UnitStatePoller", function()
 	fw.it("tells a subscriber when a unit it watches turns hostile", function()
 		local flips = {}
 		local sub = poller:Register(function()

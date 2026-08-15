@@ -211,7 +211,7 @@ end
 ---world the engine stops evaluating the CROWD_CONTROL token and both containers fill with
 ---unrelated debuffs (the spell-id map is identity-gated off on assistable units, so the token is
 ---the only filter left), so a healer that far away shows nothing - icons and warning text both.
----Visibility has no event of its own, which is why the duel poller re-asks this.
+---Visibility has no event of its own, which is why the unit state poller re-asks this.
 ---Urgent: the unit a gate zeroes emits no aura events, so a budget flip parked for combat would
 ---keep showing the garbage until regen.
 ---@param item HealerWatchEntry
@@ -365,7 +365,7 @@ local function CreateFrames()
 	iconsContainer.Frame:Show()
 end
 
----Every healer the module currently draws, for the duel poller's visibility scan.
+---Every healer the module currently draws, for the unit state poller's visibility scan.
 ---@param out string[] Filled in place and returned, so the caller can keep one table.
 ---@return string[]
 function M:CollectWatchedUnits(out)

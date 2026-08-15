@@ -4,7 +4,7 @@ local mini = addon.Framework
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
 local eventGate = addon.Core.EventGate
-local duelPoller = addon.Core.DuelPoller
+local unitStatePoller = addon.Core.UnitStatePoller
 
 -- Loaded before this file in TOC order.
 local sound   = addon.Modules.HealerCrowdControl.Sound
@@ -21,10 +21,10 @@ local testModeActive = false
 local previousTestSoundEnabled = false
 ---@type EventGate?
 local rosterGate
----@type DuelPollerSubscriber?
-local duelSub
--- Scratch for the watched healers handed to the duel poller each refresh.
-local duelUnitsScratch = {}
+---@type UnitStatePollerSubscriber?
+local stateSub
+-- Scratch for the watched healers handed to the unit state poller each refresh.
+local stateUnitsScratch = {}
 local QueueRefresh = moduleUtil:Coalesced(function()
 	M:Refresh()
 end)
@@ -42,15 +42,15 @@ end
 
 ---Hands the poller the healers drawn right now. Re-seeded per refresh: the healer set changes
 ---with the roster, and a baseline for a healer nobody draws would fire a refresh for nothing.
-local function SeedDuelBaselines()
-	if not duelSub then
+local function SeedStateBaselines()
+	if not stateSub then
 		return
 	end
 
-	duelSub:ClearAll()
+	stateSub:ClearAll()
 
-	for _, unit in ipairs(display:CollectWatchedUnits(duelUnitsScratch)) do
-		duelSub:Seed(unit)
+	for _, unit in ipairs(display:CollectWatchedUnits(stateUnitsScratch)) do
+		stateSub:Seed(unit)
 	end
 end
 
@@ -105,7 +105,7 @@ local function CreateEvents()
 	-- poller sees it flip. Registered for the module's lifetime; the predicate below gates it.
 	-- Coalesced: the poller fires once per flipped token, and a raid riding out of range flips
 	-- many in one tick - each would otherwise pay a full refresh.
-	duelSub = duelPoller:Register(function()
+	stateSub = unitStatePoller:Register(function()
 		return IsEnabled()
 	end, function()
 		QueueRefresh()
@@ -144,7 +144,7 @@ function M:Refresh()
 	display:EnsureFrames()
 	display:ApplyOptions(options)
 	UpdateContent(options)
-	SeedDuelBaselines()
+	SeedStateBaselines()
 
 	-- Owned here rather than by the test-mode toggle, so flipping the module switch while a
 	-- test is running shows or hides the drag anchor and its caption with it.
