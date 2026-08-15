@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.14.0
+
+- Added ability to configure the text size in personal auras.
+- Shortened TTS spells, e.g. "Aspect of the Turtle" is now just "Turtle".
+- Removed the Power Infusion personal aura from the ones a new profile starts with. Existing profiles keep theirs.
+
 ## 5.13.0
 
 - Added warning when using a buff/debuff that won't work on that unit type in personal auras.
