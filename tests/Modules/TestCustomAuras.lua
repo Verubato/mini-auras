@@ -180,9 +180,9 @@ fw.describe("CustomAuras - the groups a profile starts with", function()
 		local fresh = FreshOptions()
 
 		assert(groups:SeedDefaults(fresh), "the first run seeds")
-		assert(#fresh.Groups == 3, "three of them")
+		assert(#fresh.Groups == 2, "two of them")
 		assert(not groups:SeedDefaults(fresh), "and the second run does nothing")
-		assert(#fresh.Groups == 3, "so they are not doubled up")
+		assert(#fresh.Groups == 2, "so they are not doubled up")
 	end)
 
 	fw.it("never brings back one that was deleted", function()
@@ -218,10 +218,9 @@ fw.describe("CustomAuras - the groups a profile starts with", function()
 
 		groups:SeedDefaults(fresh)
 
-		local precog, shroud, pi = fresh.Groups[1], fresh.Groups[2], fresh.Groups[3]
+		local precog, shroud = fresh.Groups[1], fresh.Groups[2]
 
 		assert(precog.Icons.Color.R == 1 and precog.Icons.Color.G == 1 and precog.Icons.Color.B == 1, "white precog")
-		assert(pi.Icons.Color.R == 1 and pi.Icons.Color.G == 0.82 and pi.Icons.Color.B == 0, "gold PI")
 		assert(shroud.Icons.Color.R == 0.64 and shroud.Icons.Color.B == 0.93, "purple shroud")
 	end)
 
@@ -238,7 +237,7 @@ fw.describe("CustomAuras - the groups a profile starts with", function()
 		end
 	end)
 
-	fw.it("gives two of them a sound on the applied trigger", function()
+	fw.it("gives one of them a sound on the applied trigger", function()
 		local fresh = FreshOptions()
 		local withSound = 0
 
@@ -253,7 +252,7 @@ fw.describe("CustomAuras - the groups a profile starts with", function()
 			assert(group.Sound.Stacks == groups.NoSound, "either of them")
 		end
 
-		assert(withSound == 2, "Precognition and Power Infusion, but not Shroud")
+		assert(withSound == 1, "Precognition, but not Shroud")
 	end)
 
 	fw.it("hands out ids no later group can reuse", function()
@@ -261,7 +260,7 @@ fw.describe("CustomAuras - the groups a profile starts with", function()
 
 		groups:SeedDefaults(fresh)
 
-		assert(fresh.NextId > 3, "the counter moved past all three")
+		assert(fresh.NextId > 2, "the counter moved past both of them")
 		assert(groups:NewGroup(fresh).Id ~= fresh.Groups[1].Id, "so a new group is not a collision")
 	end)
 end)

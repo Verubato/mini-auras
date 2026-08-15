@@ -237,17 +237,22 @@ normalised/sanitised, so a bad string cannot corrupt settings.
 
 ### Starter groups
 
-A new profile is seeded once with three groups, in a row 300 px above screen centre, 50 px
-apart, all with glow and border on:
+A new profile is seeded once with two groups, in a row 300 px above screen centre, 50 px
+apart, both with glow and border on:
 
 | Group | Spell | Sound | Tint |
 |---|---|---|---|
 | Precog (Precognition) | 377362 | ElectricalSpark on apply | none (white) |
 | Shroud (Nullifying Shroud) | 378464 | none | purple (0.64, 0.21, 0.93) |
-| PI (Power Infusion) | 10060 | BubblePop on apply | gold (1, 0.82, 0) |
 
 Seeding happens once per profile (a SeededDefaults flag), so deleting them is permanent, and
 a profile that predates them gains them on the next load.
+
+A third starter group, **PI** (Power Infusion, 10060, BubblePop on apply, gold), shipped up to
+5.13.0 and was dropped in 5.14.0. Profiles that already have it keep it, since seeding never
+runs twice; only profiles created from 5.14.0 on go without. A profile upgrading from a
+pre-12.1 version still gains one, because the migration that builds the starter groups from
+the old Precognition module's settings is frozen at what that release shipped.
 
 ### Trigger tab
 
@@ -964,9 +969,14 @@ on, which replaces the by-time ramp with its own **Text colour**. Turn Colour te
 the group back on the global setting. The reverse case, a group whose text ignores its
 **Text colour**, is the same switch left off.
 
-**"My starter Precog/Shroud/PI groups are gone."** Deleting them is permanent; they
+**"My starter Precog/Shroud groups are gone."** Deleting them is permanent; they
 are seeded only once per profile. Recreate them by hand, import them from someone else, or
 reset the profile to defaults (Profiles > Reset).
+
+**"My PI starter group is gone after updating."** The Power Infusion starter shipped up to
+5.13.0 and is no longer seeded from 5.14.0 on, but an existing profile keeps the one it
+already has: an update never removes it. A profile that lost it was either reset or created
+fresh on 5.14.0. Recreate it by hand as a Self group tracking 10060.
 
 **"Custom aura sound doesn't play."** The Sounds tab only exists for groups in Spell IDs
 mode; filter-mode groups cannot have sounds (sounds register per spell ID engine-side). Also

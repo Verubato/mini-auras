@@ -186,13 +186,12 @@ local UNITS = {
 -- Units that are always assistable, so a harmful group on them could never filter by spell id.
 local ALWAYS_FRIENDLY = { [SELF_UNIT] = true, [PET_UNIT] = true, [UNIT_FRAMES_UNIT] = true }
 
--- What a profile starts with: the three self-buffs worth knowing the instant they land. Each
+-- What a profile starts with: the self-buffs worth knowing the instant they land. Each
 -- tracks one spell and leaves Icon empty, which borrows that spell's own icon. A Color tints
 -- the border/glow after the spell's own art; without one the group keeps the default white.
 local DEFAULT_GROUPS = {
 	{ Name = "Precog", SpellId = 377362, Sound = "ElectricalSpark" },
 	{ Name = "Shroud", SpellId = 378464, Color = { R = 0.64, G = 0.21, B = 0.93 } },
-	{ Name = "PI", SpellId = 10060, Sound = "BubblePop", Color = { R = 1, G = 0.82, B = 0 } },
 }
 -- Where they land: a row near the top of the screen, clear of the unit frames and cast bar.
 local DEFAULT_ROW_Y = 300
@@ -467,7 +466,7 @@ function M:SeedDefaults(options)
 
 	options.SeededDefaults = true
 
-	-- Centred on the row: three groups sit at -50, 0 and 50.
+	-- Centred on the row: two groups sit at -25 and 25.
 	local first = -DEFAULT_ROW_SPACING * (#DEFAULT_GROUPS - 1) / 2
 
 	for index, template in ipairs(DEFAULT_GROUPS) do
