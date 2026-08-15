@@ -81,16 +81,14 @@ local VEHICLE_UNIT = "vehicle"
 -- How long to wait after a vehicle event before asking the client where the player is: it still
 -- answers "vehicle" as the exit event fires.
 local VEHICLE_SETTLE_DELAY = 0.1
--- The client's own "I am done with the transfer" tell: nothing is dispatched while it is in flight,
--- so the first of these after a zone event is the point the unit can be asked about again.
-local ZONE_SETTLED_EVENT = "ACTIONBAR_UPDATE_USABLE"
--- How long to wait for that event before showing the displays anyway. A transfer it never follows
--- would otherwise leave every aura off screen for the session, which is worse than a wrong icon.
-local ZONE_TRANSFER_TIMEOUT = 3
--- The recovery passes after the displays come back, in case the tell arrived early. Cheap, since a
--- pass only touches what is on screen.
-local ZONE_RECOVERY_INTERVAL = 0.5
-local ZONE_RECOVERY_PASSES = 3
+-- A zone change gets a short blackout and then a run of retries. The client has no event that
+-- means "the transfer is done" - the ones that look like it are not dispatched on every teleport -
+-- so the only way to catch the moment the unit can be asked about again is to keep asking. The
+-- window covers the blackout plus every pass; a pass is cheap, since it only touches what is on
+-- screen.
+local ZONE_BLACKOUT = 0.3
+local ZONE_RETRY_INTERVAL = 0.4
+local ZONE_RETRY_PASSES = 6
 -- The container's own default unit, and what RequestRefresh points one at to make the engine
 -- see a unit CHANGE for a token whose occupant moved.
 local NO_UNIT = "none"
@@ -120,12 +118,11 @@ local pendingRestyleCount = 0
 local restyleTicker = nil
 local pendingBounceCount = 0
 local bounceFlushScheduled = false
-local zoneRecoveryTicker = nil
-local zoneRecoveryPasses = 0
--- True from a zone event until the client says it is done with the transfer. Every display is
--- suppressed for the duration.
+-- True for the blackout after a zone event. Every display is suppressed for the duration.
 local zoneTransferActive = false
-local zoneTransferTimer = nil
+local zoneBlackoutTimer = nil
+local zoneRetryTimer = nil
+local zoneRetriesLeft = 0
 
 -- 12.1 AuraContainer-backed icon display. One instance wraps a CreateFrame("AuraContainer")
 -- with one or more aura groups and styles the container-created AuraButtons to match the legacy
@@ -455,7 +452,10 @@ local function RefreshFromLiveData(instance)
 	instance:RequestRefresh()
 end
 
-local function RunZoneRecovery()
+---One retry pass, and the next one after it while any are left. Nothing here can tell whether the
+---transfer has finished, so every pass does the same thing and the last one to land after the
+---engine can answer again is the one that sticks.
+local function OnZoneRetry()
 	for _, instance in ipairs(liveDisplays) do
 		-- A hidden container parses nothing, and the OnShow on its way back issues a full refresh
 		-- from live data, so it corrects itself without being touched here. That is most of the
@@ -464,68 +464,55 @@ local function RunZoneRecovery()
 			RefreshFromLiveData(instance)
 		end
 	end
-end
 
-local function OnZoneRecoveryTick()
-	RunZoneRecovery()
+	zoneRetriesLeft = zoneRetriesLeft - 1
 
-	zoneRecoveryPasses = zoneRecoveryPasses - 1
-
-	if zoneRecoveryPasses <= 0 and zoneRecoveryTicker then
-		zoneRecoveryTicker:Cancel()
-		zoneRecoveryTicker = nil
+	if zoneRetriesLeft > 0 then
+		zoneRetryTimer = C_Timer.NewTimer(ZONE_RETRY_INTERVAL, OnZoneRetry)
+	else
+		zoneRetryTimer = nil
 	end
 end
 
-local function StartZoneRecovery()
-	if zoneRecoveryTicker then
-		zoneRecoveryTicker:Cancel()
-	end
+---Ends the blackout: maps first, while nothing is parsing, then the show that re-reads the unit
+---through them. The retries carry on afterwards, since the transfer may well still be in flight.
+local function EndZoneBlackout()
+	zoneBlackoutTimer = nil
 
-	zoneRecoveryPasses = ZONE_RECOVERY_PASSES
-	zoneRecoveryTicker = C_Timer.NewTicker(ZONE_RECOVERY_INTERVAL, OnZoneRecoveryTick)
-end
-
----Puts the displays back once the transfer is over: maps first, while nothing is parsing, then the
----show that re-reads the unit through them. The recovery afterwards is only there in case the
----client's tell came in ahead of the state it is meant to stand for.
-local function EndZoneTransfer()
 	if not zoneTransferActive then
 		return
 	end
 
 	zoneTransferActive = false
 
-	if zoneTransferTimer then
-		zoneTransferTimer:Cancel()
-		zoneTransferTimer = nil
-	end
-
-	-- Fires many times a second in combat, so it is only ever listened for across a transfer.
-	displayEventsFrame:UnregisterEvent(ZONE_SETTLED_EVENT)
-
 	for _, instance in ipairs(liveDisplays) do
 		RefreshFromLiveData(instance)
 		ApplyShownState(instance)
 	end
-
-	StartZoneRecovery()
 end
 
----Takes every display off screen for the length of a zone transfer.
+---Takes every display off screen for a moment after a zone event, then keeps re-handing the maps
+---for the next couple of seconds.
 ---
 ---A hidden container parses nothing, so the auras the engine cannot filter properly mid-transfer
 ---never reach a group in the first place - the same escape hatch the vehicle case uses, and the
----only one that works while the engine is answering wrongly rather than late.
+---only one that works while the engine is answering wrongly rather than late. The blackout is
+---kept short because it cannot be timed against anything: the displays come back and the retries
+---take over, each one a fresh chance to catch the engine once it can answer who the unit is.
 local function BeginZoneTransfer()
 	zoneTransferActive = true
 
-	if zoneTransferTimer then
-		zoneTransferTimer:Cancel()
+	if zoneBlackoutTimer then
+		zoneBlackoutTimer:Cancel()
 	end
 
-	zoneTransferTimer = C_Timer.NewTimer(ZONE_TRANSFER_TIMEOUT, EndZoneTransfer)
-	displayEventsFrame:RegisterEvent(ZONE_SETTLED_EVENT)
+	if zoneRetryTimer then
+		zoneRetryTimer:Cancel()
+	end
+
+	zoneRetriesLeft = ZONE_RETRY_PASSES
+	zoneBlackoutTimer = C_Timer.NewTimer(ZONE_BLACKOUT, EndZoneBlackout)
+	zoneRetryTimer = C_Timer.NewTimer(ZONE_RETRY_INTERVAL, OnZoneRetry)
 
 	for _, instance in ipairs(liveDisplays) do
 		ApplyShownState(instance)
@@ -557,7 +544,7 @@ local function EnsureDisplayEvents()
 	displayEventsFrame:RegisterEvent("AURA_DATA_PROVIDER_SWITCH")
 	displayEventsFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 	displayEventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-	-- The three a teleport within one map fires; see RefreshAfterZoneChange.
+	-- The three a teleport within one map fires; see BeginZoneTransfer.
 	displayEventsFrame:RegisterEvent("ZONE_CHANGED")
 	displayEventsFrame:RegisterEvent("ZONE_CHANGED_INDOORS")
 	displayEventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
@@ -581,8 +568,6 @@ local function EnsureDisplayEvents()
 		elseif event == "ZONE_CHANGED" or event == "ZONE_CHANGED_INDOORS"
 			or event == "ZONE_CHANGED_NEW_AREA" then
 			BeginZoneTransfer()
-		elseif event == ZONE_SETTLED_EVENT then
-			EndZoneTransfer()
 		elseif event == "UNIT_ENTERED_VEHICLE" or event == "UNIT_ENTERING_VEHICLE"
 			or event == "PLAYER_GAINS_VEHICLE_DATA" then
 			ApplyVehicleState(true)

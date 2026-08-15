@@ -1654,16 +1654,33 @@ end)
 fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 	fw.before_each(acm.reset)
 
-	fw.it("takes the displays off screen for the length of the transfer", function()
+	---Hands back a map-tracking display and the maps it was given, newest last.
+	local function newTrackedInstance(filters)
+		local instance = display:New(_G.UIParent, "player", {
+			{ Key = "cc", FilterString = "HELPFUL", MaxIcons = 5, CandidateFilters = filters },
+		}, 30, 2, "Test")
+		local frame = instance.Frame
+		local given = {}
+		local setFilters = frame.SetAuraGroupCandidateFilters
+
+		frame.SetAuraGroupCandidateFilters = function(self, key, handed)
+			given[#given + 1] = handed
+			setFilters(self, key, handed)
+		end
+
+		return instance, given
+	end
+
+	fw.it("takes the displays off screen for a moment, then puts them back", function()
 		local instance = newInstance()
 
 		-- The auras the engine cannot filter properly mid-transfer never reach a group at all
 		-- this way, which is the only remedy while it is answering wrongly rather than late.
 		displayEvents:TriggerEvent("ZONE_CHANGED")
-		assert(not instance.Frame:IsShown(), "off screen while the transfer is in flight")
+		assert(not instance.Frame:IsShown(), "off screen as the transfer starts")
 
-		displayEvents:TriggerEvent("ACTIONBAR_UPDATE_USABLE")
-		assert(instance.Frame:IsShown(), "and back once the client is done with it")
+		acm.runTimers()
+		assert(instance.Frame:IsShown(), "and back a moment later")
 		assert(instance.Frame:GetUnit() == "target", "still on the token it was built with")
 	end)
 
@@ -1676,34 +1693,24 @@ fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 			displayEvents:TriggerEvent(event)
 			assert(not instance.Frame:IsShown(), event .. " suppresses")
 
-			displayEvents:TriggerEvent("ACTIONBAR_UPDATE_USABLE")
+			acm.runTimers()
 			assert(instance.Frame:IsShown(), event .. " comes back")
 		end
 	end)
 
 	fw.it("hands the spell-id map back, which a re-read alone does not", function()
 		local map = { includeSpellIDs = { [12345] = true } }
-		local instance = display:New(_G.UIParent, "player", {
-			{ Key = "cc", FilterString = "HELPFUL", MaxIcons = 5, CandidateFilters = map },
-		}, 30, 2, "Test")
-		local frame = instance.Frame
-		local given = {}
-		local setFilters = frame.SetAuraGroupCandidateFilters
-
-		frame.SetAuraGroupCandidateFilters = function(self, key, filters)
-			given[#given + 1] = filters
-			setFilters(self, key, filters)
-		end
+		local _, given = newTrackedInstance(map)
 
 		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
-		displayEvents:TriggerEvent("ACTIONBAR_UPDATE_USABLE")
+		acm.runTimers()
 
 		-- Whether the map may be applied to a unit is settled when the engine is handed it, so a
 		-- map given during the transfer keeps the answer it got there until it is handed over
 		-- again. The same table twice may read as no change, hence the empty set in between.
-		assert(#given == 2, "handed over once, in a pair; got " .. #given)
-		assert(given[1] ~= map, "an empty set first")
-		assert(given[2] == map, "then the real map")
+		assert(#given >= 2, "handed over in a pair; got " .. #given)
+		assert(given[#given - 1] ~= map, "an empty set first")
+		assert(given[#given] == map, "then the real map")
 	end)
 
 	fw.it("hands back the map the group is on now, not the one it was built with", function()
@@ -1711,35 +1718,26 @@ fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 		-- real spell list a moment later, so re-handing the creation-time map empties them.
 		local placeholder = { includeSpellIDs = { [2147483647] = true } }
 		local live = { includeSpellIDs = { [12345] = true } }
-		local instance = display:New(_G.UIParent, "player", {
-			{ Key = "cc", FilterString = "HELPFUL", MaxIcons = 5, CandidateFilters = placeholder },
-		}, 30, 2, "Test")
-		local frame = instance.Frame
-		local given = {}
-		local setFilters = frame.SetAuraGroupCandidateFilters
+		local instance, given = newTrackedInstance(placeholder)
 
 		instance:SetCandidateFilters("cc", live)
 
-		frame.SetAuraGroupCandidateFilters = function(self, key, filters)
-			given[#given + 1] = filters
-			setFilters(self, key, filters)
-		end
-
 		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
-		displayEvents:TriggerEvent("ACTIONBAR_UPDATE_USABLE")
+		acm.runTimers()
 
 		assert(given[#given] == live, "the group's current map, not the placeholder")
 	end)
 
-	fw.it("shows the displays anyway when the client never says it is done", function()
-		local instance = newInstance()
+	fw.it("keeps trying for a while, since nothing tells it the transfer is over", function()
+		local map = { includeSpellIDs = { [12345] = true } }
+		local _, given = newTrackedInstance(map)
 
 		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
-		assert(not instance.Frame:IsShown(), "off screen to begin with")
-
-		-- Auras missing for a session is a worse failure than the one this is guarding against.
 		acm.runTimers()
-		assert(instance.Frame:IsShown(), "the timeout puts them back")
+
+		-- The events that look like a "done" tell are not dispatched on every teleport, so one
+		-- pass timed against nothing would miss any transfer slower than it.
+		assert(#given > 2, "more than the one pass the blackout ends with; got " .. #given)
 	end)
 
 	fw.it("leaves a display its module wanted hidden alone", function()
@@ -1748,7 +1746,7 @@ fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 		instance:SetShown(false)
 
 		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
-		displayEvents:TriggerEvent("ACTIONBAR_UPDATE_USABLE")
+		acm.runTimers()
 
 		assert(not instance.Frame:IsShown(), "the module's own answer still decides")
 	end)
