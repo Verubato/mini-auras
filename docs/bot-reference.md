@@ -657,8 +657,8 @@ curated lists, so they can surface a spell that no other display lists. Disarm i
 exception and stays list-driven.
 
 Supported portrait providers: Blizzard frames, ElvUI, TPerl, UUF (Unhalted Unit Frames),
-MSUF, Ellesmere UI Unit Frames, EnhancedQoL. Every provider covers the pet portrait except
-ElvUI and TPerl, which cover player, target and focus only.
+MSUF, Ellesmere UI Unit Frames, EnhancedQoL, Shadowed Unit Frames. Every provider covers the
+pet portrait except ElvUI and TPerl, which cover player, target and focus only.
 
 Since 5.6.1 the icons draw underneath the unit frame's border art rather than over it, so a
 frame whose border overlaps the portrait clips them at its edge. That is intended. The pet
@@ -905,7 +905,8 @@ API (see below). There is also a power-user path: saved variables named `Anchor1
 **Arena frames**: sArena Reloaded (preferred when loaded), ElvUI arena frames, then
 Blizzard's CompactArenaFrame.
 
-**Portraits**: Blizzard, ElvUI, TPerl, UUF, MSUF, Ellesmere UI Unit Frames, EnhancedQoL.
+**Portraits**: Blizzard, ElvUI, TPerl, UUF, MSUF, Ellesmere UI Unit Frames, EnhancedQoL,
+Shadowed Unit Frames.
 
 **Nameplate addons**: MiniAuras draws on the game's nameplates, so it works alongside
 BetterBlizzPlates, Platynator, Plater and similar. For plates resized by another addon, see

@@ -141,6 +141,25 @@ end
 ---@param unit string
 ---@return table? unitFrame
 ---@return table? portrait
+local function GetSUFFrame(unit)
+	local frame = _G["SUFUnit" .. unit]
+	if not frame or (frame.IsForbidden and frame:IsForbidden()) then
+		return nil, nil
+	end
+
+	-- frame.portrait points at whichever visual the profile picked (3D model, 2D texture or class
+	-- icon). The unused one stays around hidden, so it must not be preferred over this.
+	local portrait = frame.portrait
+	if not portrait then
+		return nil, nil
+	end
+
+	return frame, portrait
+end
+
+---@param unit string
+---@return table? unitFrame
+---@return table? portrait
 local function GetEllesmereUIFrame(unit)
 	local frame
 	if unit == "player" then
@@ -415,6 +434,27 @@ local function AttachEQolFrame(unit)
 	display:AddContainer(container)
 end
 
+---@param unit string
+local function AttachSUFFrame(unit)
+	local sufFrame, sufPortrait = GetSUFFrame(unit)
+
+	if not sufFrame or not sufPortrait then
+		return
+	end
+
+	local container = display:CreateContainer(sufFrame, sufPortrait, unit, { 0.07, 0.93, 0.07, 0.93 })
+	if not container then return end
+	local portraitLevel = sufPortrait.GetFrameLevel and sufPortrait:GetFrameLevel()
+		or sufFrame:GetFrameLevel()
+		or 0
+	container.Frame:SetFrameLevel(portraitLevel + 10)
+
+	StretchSlotsOverPortrait(container, sufPortrait, 0.07, 0.93)
+
+	RegisterUnitUpdate(unit, container)
+	display:AddContainer(container)
+end
+
 -- Third-party attach functions and the units each one supports. Ordering matters only in that
 -- every addon gets a look at every unit; whichever is actually loaded is the one that attaches.
 local THIRD_PARTY_ATTACH = { -- luaconv: references the attach functions above
@@ -424,6 +464,7 @@ local THIRD_PARTY_ATTACH = { -- luaconv: references the attach functions above
 	{ Attach = AttachMSUFFrame,         Units = { "player", "target", "focus", "pet" } },
 	{ Attach = AttachEllesmereUIFrame,  Units = { "player", "target", "focus", "pet" } },
 	{ Attach = AttachEQolFrame,         Units = { "player", "target", "focus", "pet" } },
+	{ Attach = AttachSUFFrame,          Units = { "player", "target", "focus", "pet" } },
 }
 
 function M:AttachBlizzardFrames()
