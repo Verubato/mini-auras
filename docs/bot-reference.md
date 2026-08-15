@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.12.1. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.14.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -130,18 +130,25 @@ height instead of pixels (Icon Size (%) slider, 25-100). Most displays also shar
 icons, Reverse swipe (reverses the cooldown swipe animation), Show tooltips (spell tooltip on
 hover), and a colour rule.
 
+Since 5.14.0 every slider in the settings window has its own hover tooltip explaining what it
+does, so "what does this slider do" is answerable in the UI. The **Max Icons** one also says
+the limit applies to each aura category on its own, which is why a unit showing defensives and
+important buffs can show that many of each; the game no longer lets addons count auras, so one
+shared limit across categories is not possible.
+
 ### Colouring rules
 
 - **Dispel colours** (CC, Pet CC, Healer): glow/border coloured by the debuff's dispel type
   (for example blue for magic).
-- **Dispel colours + category tints** (Group Auras, and Nameplates where the switch is called
-  **Spell colours**): one switch driving both halves. CC icons take the dispel type's colour,
+- **Dispel colours + category tints** (Group Auras, where the switch is called **Colours**, and
+  Nameplates, where it is called **Spell colours**): one switch driving both halves. CC icons take the dispel type's colour,
   which the game has no equivalent of for a buff, so defensive and important icons take the
   two colours picked for the module instead. Group Auras keeps its pair on a **Colours**
   sub-tab, Nameplates on its **Settings** sub-tab; both are module wide rather than per bar or
   per setting group. Turning the switch off puts every icon back on a plain white glow. On
   Nameplates, CC auras with no dispel type (stuns, disarms) keep the border too, coloured to
-  match their glow, instead of showing glow only (since 5.10.2).
+  match their glow, instead of showing glow only (since 5.10.2). Party and raid frame CC icons
+  do the same (since 5.12.2), on the live icons and the previews.
 - **Per-category tints** (Alerts): a colour swatch each for Important and Defensive, with no
   dispel colouring to share the switch with. These ride the **Glow icons** switch instead, so
   with the glow off there is nothing left for them to tint.
@@ -279,6 +286,13 @@ debuffs on those units legal, because filter strings apply regardless of side. Y
 caveats: "Buffs are only shown while the unit is friendly." / "Debuffs are only shown while
 the unit is hostile." for the target and nameplate choices.
 
+**Spells listed in red** (since 5.13.0). A tracked spell whose own aura lands on the other
+side to the group's Aura Type is drawn red in the spell list, with a line under it saying
+"Spells shown in red are buffs, which don't work on enemy units." or "Spells shown in red are
+debuffs, which don't work on friendly units." It is a warning, not a refusal: the spell stays
+in the list. The check comes from the client's own flag for the spell, so a spell the client
+says nothing about is never marked.
+
 **Sound only lifts the rule entirely.** The restriction is about what can be DRAWN: the rule
 applies to the filters a container uses to decide which auras to show. A sound is registered
 per spell ID against a unit and is not filtered that way at all, so a Sound only group can
@@ -398,9 +412,15 @@ have a position." and no controls.
 | Bar Height | 8-50 (bars only) | 20 |
 | Bar Width | 40-250 (bars only) | 150 |
 | Icon Padding | 0-50 | 2 |
+| Text Size (%) | 50-200 % | 100 |
 
 Dragging the icons or bars on screen writes the same values the Offset X/Y boxes edit, and the
 boxes update when the drag ends.
+
+**Text Size (%)** (since 5.14.0) scales this group's countdown, stack count and bar spell name
+on top of the global font scale in Misc, rather than setting a point size: every text on an
+icon or bar is measured off that shape. Hidden for a Sound only group along with the rest of
+the tab.
 
 **Strata** is the layer the group draws in, for a group that has to sit over or under something
 else on screen. Automatic uses the layer of whatever the group hangs off, which is UIParent's
@@ -427,8 +447,8 @@ still only fire while the unit is on the side the choice names.
 
 - Max 100 spells per group.
 - Max 40 icons or bars shown per group; 3 preview stand-ins while positioning.
-- Icon size 10-200, bar height 8-50, bar width 40-250, spacing 0-50, offsets typed up to
-  +/-2000.
+- Icon size 10-200, bar height 8-50, bar width 40-250, spacing 0-50, text size 50-200 %,
+  offsets typed up to +/-2000.
 
 ---
 
@@ -446,7 +466,7 @@ Two setting groups (World/Arena/Dungeons and Raids/Battlegrounds sub-tabs):
 |---|---|---|---|
 | Exclude self | on/off | off | off |
 | Glow icons | on/off | on | on |
-| Dispel colours | on/off | on | on |
+| Colours | on/off | on | on |
 | Reverse swipe | on/off | on | on |
 | Show tooltips | on/off | off | off |
 | Show important | on/off | on | on |
@@ -471,8 +491,8 @@ Two setting groups (World/Arena/Dungeons and Raids/Battlegrounds sub-tabs):
 - "Show interrupts" shows an icon when a friendly unit gets interrupted.
 
 **Colours sub-tab.** Two swatches, **Important** (default red) and **Defensive** (default
-green), applying to both setting groups. They only take effect while "Dispel colours" is on for
-the setting group in question; see "Colouring rules" above. A spell added by hand in the Spells
+green), applying to both setting groups. They only take effect while the **Colours** checkbox
+is on for the setting group in question; see "Colouring rules" above. A spell added by hand in the Spells
 sub-tab's Custom section belongs to neither category, so it is drawn with the importants and
 takes the Important colour.
 
@@ -531,6 +551,15 @@ Chen, Theo Silk. Amy, Anna Su and Jason Chen are Mandarin voices offered only on
 clients. Default pack: David. Other addons can register packs via the API. The clips are baked
 OGG files registered engine-side per spell ID; after updating the addon a full client restart
 (not just a reload) is needed before new audio files can play.
+
+Since 5.14.0 the five English packs say a short name for around fifty spells players never
+call by their full name, so Incarnation: Tree of Life is announced as "Incarn", Aspect of the
+Turtle as "Turtle" and Life Cocoon as "Cocoon". Nothing is configurable about it, and spells
+that share a nickname share the announcement: eight personal defensives (Shield Wall, Astral
+Shift, Fortifying Brew and the like) are all called "Wall", and the four druid Incarnations
+plus Celestial Alignment are all "Incarn". Each spell still has its own clip and its own row
+on the Spells sub-tab, so they can be muted separately. The Mandarin packs are unaffected and
+announce the full localized names.
 
 **Spells sub-tab:** "Choose which spells text-to-speech announces. The sound alerts
 are not affected. A category still needs its switch on the TTS tab." It governs the spoken
@@ -953,6 +982,13 @@ addon update, new clips need a full client restart, not just a reload.
 Spells tab, so they are silent until switched on there. Everything else is announced unless it
 was unticked.
 
+**"The voice says the wrong name" / "two spells sound the same".** Since 5.14.0 the English
+packs announce around fifty long spells by their short name, and a few nicknames are shared:
+eight personal defensives are all called "Wall", and the four druid Incarnations plus
+Celestial Alignment are all "Incarn". The announcement is still the right spell, and the Spells sub-tab
+still lists and mutes each one separately. There is no setting to hear the full name; the
+Mandarin packs never shorten.
+
 **"Group frames show CC but no buffs."** Show Important and Show Defensives choose which
 spells reach the display, so with both off nothing helpful is shown at all. Check both, and
 check the Spells sub-tab in case the spell in question was unticked there.
@@ -962,7 +998,7 @@ CC, defensives and importants can each fill Max Icons. There is no way to cap th
 whole, because the addon cannot count what an aura container is showing.
 
 **"The Important/Defensive colour does nothing."** The pair only applies while the module's
-colour switch is on: **Dispel colours** for Group Auras, **Spell colours** for the bar in
+colour switch is on: **Colours** for Group Auras, **Spell colours** for the bar in
 question on Nameplates. CC icons ignore it either way and always take the game's dispel type
 colour, and the Twins, Mirror and Twins Mirror glow styles carry their own colours, so no
 swatch tints them.
