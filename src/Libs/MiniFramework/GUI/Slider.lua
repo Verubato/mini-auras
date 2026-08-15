@@ -1,7 +1,22 @@
 local addonName, addon = ...
 local M = addon.Framework
 local GUI = M.GUI
+local L = M.L
 local sliderId = 1
+
+local function ShowTooltip(slider, options)
+	GameTooltip:SetOwner(slider, "ANCHOR_RIGHT")
+
+	local tooltipTitle = options.LabelText
+
+	if not tooltipTitle or tooltipTitle:match("^%s*$") then
+		tooltipTitle = L["Information"]
+	end
+
+	GameTooltip:SetText(tooltipTitle, 1, 0.82, 0)
+	GameTooltip:AddLine(options.Tooltip, 1, 1, 1, true)
+	GameTooltip:Show()
+end
 
 local function GetDecimalPlaces(step)
 	local s = tostring(step)
@@ -209,6 +224,17 @@ function M:Slider(options)
 		boxSelf:SetCursorPosition(0)
 	end
 
+	-- Hooked rather than set, so the styled thumb's own hover colouring still runs.
+	if options.Tooltip then
+		slider:HookScript("OnEnter", function(sliderSelf)
+			ShowTooltip(sliderSelf, options)
+		end)
+
+		slider:HookScript("OnLeave", function()
+			GameTooltip:Hide()
+		end)
+	end
+
 	function slider.MiniRefresh(sliderSelf)
 		local value = options.GetValue()
 		sliderSelf:SetValue(value)
@@ -223,6 +249,7 @@ end
 ---@class SliderOptions
 ---@field Parent table
 ---@field LabelText string?
+---@field Tooltip string?
 ---@field Min number
 ---@field Max number
 ---@field Step number
