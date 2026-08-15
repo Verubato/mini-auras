@@ -61,6 +61,28 @@ local function helpfulBudget(display)
 	return defensive.maxFrameCount
 end
 
+---Runs one poller tick with the module's own Refresh counted, so a test can tell a per-unit update
+---apart from one that went the long way round. The module-wide refresh a flip used to trigger is
+---coalesced onto C_Timer.After, which this harness runs synchronously, so it lands inside the tick
+---and is counted; nothing has to be flushed afterwards.
+---@param module table
+---@return number refreshes
+local function tickCountingRefreshes(module)
+	local acm = require("AuraContainerMock")
+	local refreshes = 0
+	local realRefresh = module.Refresh
+
+	module.Refresh = function(...)
+		refreshes = refreshes + 1
+		return realRefresh(...)
+	end
+
+	acm.tickAll(1)
+	module.Refresh = realRefresh
+
+	return refreshes
+end
+
 fw.describe("CrowdControlModule 12.1 - unit frame anchors", function()
 	fw.it("builds one crowd-control display per anchor, tracking its unit", function()
 		local display = assert(ccDisplay("party1"), "no display for the anchor's unit")
@@ -246,7 +268,7 @@ fw.describe("RaidFrameAurasModule 12.1 - a frame handed an enemy unit", function
 
 		env.enemies.party6 = nil
 
-		assert(raidDisplay:OnUnitFactionChanged("party6"),
+		assert(raidDisplay:ReapplyUnitGates("party6"),
 			"the gate's answer moved, so the module has work to do")
 		assert(helpfulBudget(display) > 0, "and the buffs are tracked again")
 	end)
@@ -254,17 +276,15 @@ fw.describe("RaidFrameAurasModule 12.1 - a frame handed an enemy unit", function
 	fw.it("says nothing changed for a faction event that moved nothing", function()
 		-- PvP flagging fires this constantly in the open world; an unchanged answer must not
 		-- drag the whole module through a refresh.
-		assert(not raidDisplay:OnUnitFactionChanged("party6"), "no work for an unchanged gate")
+		assert(not raidDisplay:ReapplyUnitGates("party6"), "no work for an unchanged gate")
 	end)
 
 	fw.it("ignores a faction event for a unit nobody is watching", function()
-		assert(not raidDisplay:OnUnitFactionChanged("party40"), "not a unit on any frame")
+		assert(not raidDisplay:ReapplyUnitGates("party40"), "not a unit on any frame")
 	end)
 end)
 
 fw.describe("RaidFrameAurasModule 12.1 - a unit outside the visible world", function()
-	local acm = require("AuraContainerMock")
-
 	fw.it("shows nothing at all for one", function()
 		env.enemies.party6 = nil
 		env.phased.party6 = nil
@@ -275,9 +295,12 @@ fw.describe("RaidFrameAurasModule 12.1 - a unit outside the visible world", func
 
 		assert(helpfulBudget(display) > 0, "tracked while they are in range")
 
-		-- Nothing announces a unit walking out of range, so the poller is what notices.
+		-- Nothing announces a unit walking out of range, so the poller is what notices, and it
+		-- updates that unit alone rather than dragging the module through a refresh.
 		env.phased.party6 = true
-		acm.tickAll(1)
+
+		assert(tickCountingRefreshes(raidFrameAurasModule) == 0,
+			"the flip updated the one unit instead of refreshing the module")
 
 		-- Out there the engine stops evaluating the filters properly and both groups fill with
 		-- unrelated auras, so neither is given any icons.
@@ -289,8 +312,73 @@ fw.describe("RaidFrameAurasModule 12.1 - a unit outside the visible world", func
 		local display = assert(fiDisplay("party6"))
 
 		env.phased.party6 = nil
-		acm.tickAll(1)
 
+		assert(tickCountingRefreshes(raidFrameAurasModule) == 0, "and comes back the same cheap way")
 		assert(helpfulBudget(display) > 0, "tracked again once they are back")
+	end)
+end)
+
+fw.describe("CrowdControlModule 12.1 - a unit outside the visible world", function()
+	local cc = auraFilters.GroupKey.CrowdControl
+
+	fw.it("budgets that unit's icons away and leaves the other frames alone", function()
+		ccFrame.unit = "party7"
+		env.phased.party7 = nil
+		crowdControl:Refresh()
+
+		local display = assert(ccDisplay("party7"), "no display for the anchor's unit")
+
+		assert(display._groups[cc].maxFrameCount > 0, "tracked while they are in range")
+
+		-- Out there the engine stops evaluating the CROWD_CONTROL token and the group fills with
+		-- unrelated debuffs, so it is given no icons at all.
+		env.phased.party7 = true
+
+		assert(tickCountingRefreshes(crowdControl) == 0,
+			"the flip re-budgeted the one unit instead of refreshing the module")
+		assert(display._groups[cc].maxFrameCount == 0, "no debuffs from out of range")
+	end)
+
+	fw.it("picks them back up when they come back", function()
+		local display = assert(ccDisplay("party7"))
+
+		env.phased.party7 = nil
+
+		assert(tickCountingRefreshes(crowdControl) == 0, "and comes back the same cheap way")
+		assert(display._groups[cc].maxFrameCount > 0, "tracked again once they are back")
+	end)
+
+	-- Watchers are keyed by anchor, so one unit can sit behind more than one frame - a raid frame
+	-- and a focus frame, say. Stopping at the first match would leave the others showing the
+	-- unfiltered auras the budget exists to suppress, which is why the walk updates every match.
+	fw.it("updates every frame holding the unit, not just the first", function()
+		local secondFrame = env.addUnitFrame("party7", "CUF_CC_SECOND")
+
+		env.phased.party7 = nil
+		crowdControl:Refresh()
+
+		local displays = {}
+		for _, container in ipairs(env.containersForUnit("party7")) do
+			if env.groupCount(container) == 1 then
+				displays[#displays + 1] = container
+			end
+		end
+
+		assert(#displays == 2, "both anchors carry a crowd-control display, got " .. #displays)
+		for _, display in ipairs(displays) do
+			assert(display._groups[cc].maxFrameCount > 0, "tracked while they are in range")
+		end
+
+		env.phased.party7 = true
+
+		assert(tickCountingRefreshes(crowdControl) == 0, "still no module refresh")
+		for index, display in ipairs(displays) do
+			assert(display._groups[cc].maxFrameCount == 0,
+				"display " .. index .. " was left showing icons for a unit out of range")
+		end
+
+		env.phased.party7 = nil
+		secondFrame.unit = nil
+		crowdControl:Refresh()
 	end)
 end)

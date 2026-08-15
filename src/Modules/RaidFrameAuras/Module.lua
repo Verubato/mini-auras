@@ -53,7 +53,7 @@ local function OnEvent(_, event, unit)
 		-- Mind control hands a friendly frame an enemy unit, which decides whether the engine
 		-- honours the spell-id filter at all. Filtered hard: this also fires on every PvP flag
 		-- change in the open world, and the answer has usually not moved.
-		if unit and display:OnUnitFactionChanged(unit) then
+		if unit and display:ReapplyUnitGates(unit) then
 			M:Refresh()
 		end
 	end
@@ -107,12 +107,12 @@ local function CreateEvents()
 	-- A duel flips a party member to hostile with no event of its own, and that decides whether
 	-- the spell-id filter applies at all, so the budgets have to be recomputed when it happens.
 	-- Registered for the module's lifetime; the predicate below gates it.
-	-- Coalesced: the poller fires once per flipped token, and a raid riding out of range flips
-	-- many in one tick - each would otherwise pay a full refresh.
+	-- Per token, not a module refresh: the icon counts are all a flip moves, and only for the unit
+	-- that flipped. A raid riding out of range flips many at once, each now paying for itself.
 	stateSub = unitStatePoller:Register(function()
 		return moduleUtil:IsModuleEnabled(moduleName.RaidFrameAuras)
-	end, function()
-		QueueRefresh()
+	end, function(unitToken)
+		display:ReapplyUnitGates(unitToken)
 	end)
 end
 

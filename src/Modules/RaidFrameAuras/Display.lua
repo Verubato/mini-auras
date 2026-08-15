@@ -467,12 +467,12 @@ local function ApplyEntryOptions(entry, anchor, options)
 	anchoredIcons:ApplyEntryOptions(entry, anchor, options, settingsScratch)
 end
 
----Re-asks the per-unit gates for one unit, and says whether either answer moved. UNIT_FACTION
----fires for PvP flagging as much as for anything that matters here, so the module only does real
----work when this returns true.
+---Sets how many icons one unit's groups may show, from whether it is inside the player's visible
+---world and whether it can be assisted, and says whether either number moved. UNIT_FACTION fires
+---for PvP flagging too, so its caller does the rest of its work only when this returns true.
 ---@param unit string
 ---@return boolean changed
-function M:OnUnitFactionChanged(unit)
+function M:ReapplyUnitGates(unit)
 	local options = GetOptions()
 
 	if not options then

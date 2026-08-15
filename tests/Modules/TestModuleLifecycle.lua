@@ -528,6 +528,42 @@ fw.describe("HealerCrowdControlModule 12.1 - warning-text label containers", fun
 		healerCC:Refresh()
 		assert(env.auraContainerCount() == before, "no new containers on an unchanged roster")
 	end)
+
+	fw.it("a healer leaving the visible world is re-budgeted without a module refresh", function()
+		local cc = env.addon.Core.AuraFilters.GroupKey.CrowdControl
+
+		env.phased.party1 = nil
+		healerCC:Refresh()
+
+		local label, icons = splitContainers("party1")
+
+		assert(icons._groups[cc].maxFrameCount > 0, "tracked while the healer is in range")
+
+		-- Out there the engine cannot filter their auras at all, so both of the healer's
+		-- containers go to nothing - the icons and the warning text alike.
+		env.phased.party1 = true
+
+		local refreshes = 0
+		local realRefresh = healerCC.Refresh
+		healerCC.Refresh = function(...)
+			refreshes = refreshes + 1
+			return realRefresh(...)
+		end
+
+		-- The module-wide refresh a flip used to trigger is coalesced onto C_Timer.After, which this
+		-- harness runs synchronously, so it lands inside the tick and is counted.
+		acm.tickAll(1)
+		healerCC.Refresh = realRefresh
+
+		assert(refreshes == 0, "the flip re-budgeted the one healer instead of refreshing the module")
+		assert(icons._groups[cc].maxFrameCount == 0, "no icons for a healer out there")
+		assert(label._groups[cc].maxFrameCount == 0, "and no warning text either")
+
+		env.phased.party1 = nil
+		acm.tickAll(1)
+
+		assert(icons._groups[cc].maxFrameCount > 0, "tracked again once they are back")
+	end)
 end)
 
 fw.describe("NameplatesModule 12.1 - the pool never leaks", function()

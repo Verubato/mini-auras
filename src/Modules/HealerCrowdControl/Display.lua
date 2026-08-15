@@ -378,6 +378,17 @@ function M:CollectWatchedUnits(out)
 	return out
 end
 
+---Sets how many icons one healer's containers may show: the usual count while they are inside the
+---player's visible world, none while they are outside it. A token nobody draws is not in the pool.
+---@param unit string
+function M:ReapplyUnitGates(unit)
+	local item = activePool[unit]
+
+	if item then
+		ApplyUnitGates(item)
+	end
+end
+
 ---@return HealerCCModuleOptions?
 function M:GetOptions()
 	-- The anchor is built in Init; without it there is nothing to configure.

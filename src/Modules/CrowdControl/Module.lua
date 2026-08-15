@@ -114,12 +114,12 @@ local function CreateEvents()
 	-- A unit leaving or re-entering the player's visible world has no event, and it decides
 	-- whether the engine evaluates the CC filter at all, so the budgets are recomputed when the
 	-- poller sees it flip. Registered for the module's lifetime; the predicate below gates it.
-	-- Coalesced: the poller fires once per flipped token, and a raid riding out of range flips
-	-- many in one tick - each would otherwise pay a full refresh.
+	-- Per token, not a module refresh: the icon count is all a flip moves, and only for the unit
+	-- that flipped. A raid riding out of range flips many at once, each now paying for itself.
 	stateSub = unitStatePoller:Register(function()
 		return IsEnabled()
-	end, function()
-		QueueRefresh()
+	end, function(unitToken)
+		display:ReapplyUnitGates(unitToken)
 	end)
 end
 

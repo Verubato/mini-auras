@@ -337,6 +337,32 @@ local function ApplyEntryOptions(entry, anchor, entryOptions, isPet)
 	anchoredIcons:ApplyEntryOptions(entry, anchor, entryOptions, settingsScratch)
 end
 
+---Sets how many icons the entries pointed at one unit may show, from whether it is inside the
+---player's visible world. Two frames can hold the same unit, so every match is updated.
+---@param unit string
+function M:ReapplyUnitGates(unit)
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	local moduleEnabled = moduleUtil:IsModuleEnabled(moduleName.CrowdControl)
+	local petEnabled = moduleUtil:IsModuleEnabled(moduleName.PetCC)
+
+	for _, entry in pairs(watchers) do
+		if entry.Unit == unit then
+			local entryEnabled, entryOptions = GetEntryState(entry, options, moduleEnabled, petEnabled)
+
+			-- A disabled entry has been torn down; re-budgeting it would hand a display back to
+			-- a frame the options say should have none.
+			if entryEnabled and entryOptions then
+				ApplyUnitGates(entry, entryOptions)
+			end
+		end
+	end
+end
+
 ---Every unit the module is currently watching, for the unit state poller's visibility scan.
 ---@param out string[] Filled in place and returned, so the caller can keep one table.
 ---@return string[]
