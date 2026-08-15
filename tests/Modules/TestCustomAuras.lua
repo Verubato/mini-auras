@@ -1854,6 +1854,18 @@ fw.describe("CustomAuras - candidate filters", function()
 		assert(filters.isPriorityAura == nil, "an untouched flag is absent, not false")
 	end)
 
+	fw.it("caps the duration on a spell list, so a leaked permanent aura cannot stick", function()
+		-- Any maxDuration also drops auras with no duration at all, which is the point: a zone
+		-- transfer lets the spell id map be skipped, and a mount buff that gets in that way stays
+		-- until the mount ends. A timed stray expires out of the group on its own.
+		local bySpells = groups:Normalise({ Spells = { ICE_BLOCK } })
+		local byFilter = groups:Normalise({ TrackingMode = groups.TrackingMode.Filters })
+
+		assert(groups:BuildFilters(bySpells).maxDuration, "a spell list is the gated case")
+		assert(groups:BuildFilters(byFilter).maxDuration == nil,
+			"a filter group is not gated and may legitimately want a permanent buff")
+	end)
+
 	fw.it("applies the flags whichever way the group tracks", function()
 		local group = groups:Normalise({
 			TrackingMode = groups.TrackingMode.Filters,
