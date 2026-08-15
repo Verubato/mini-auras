@@ -143,6 +143,13 @@ local barDisplays = {}
 local DEFAULT_BAR_ICONS = 5
 local DEFAULT_BAR_SIZE = 35
 local DEFAULT_BAR_SPACING = 2
+-- How many nameplate tokens to prepare displays for ahead of time. The client hands out
+-- nameplate1..N as plates spawn and the set is fixed for a session, so covering it up front means
+-- no plate has to build a container mid-fight. 40 is what a full battleground reaches.
+local PREWARM_TOKEN_COUNT = 40
+-- Both sides get prepared, since a plate's faction is not known until it spawns and a duel or a
+-- mind control flips it afterwards. Only bars actually switched on are queued (see Prewarm).
+local PREWARM_FACTIONS = { "Enemy", "Friendly" }
 
 ---@param container IconSlotContainer?
 local function HideAndReset(container)
@@ -333,16 +340,20 @@ local function BarStyle(barOptions)
 	return style
 end
 
----Acquires (or reuses) and reconfigures a bar's aura display for a tracked plate.
----@param data NameplateData
+---The display one (token, bar, faction) owns, built on first ask and restyled when that faction's
+---own configuration moves. Shared by the plate path and the prewarm, so a display built ahead of
+---time is the same object, carrying the same look, that a spawning plate would have built.
+---
+---One display per (bar, faction). The token flipping faction - plates recycling, a duel - switches
+---cache entries instead, so the flip needs no restyle and stays correct while auras are secret.
+---This path is hot enough that it must not build frames for a token it has seen before.
+---@param token string
 ---@param factionKey "Enemy"|"Friendly" which side of the options the bar came from
-local function EnsureBarDisplay(data, bar, barOptions, factionKey)
-	local token = data.UnitToken
+---@return AuraContainerDisplay
+local function GetOrCreateBarDisplay(token, bar, barOptions, factionKey)
 	local size = BarIconSize(barOptions)
 	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
-	local maxIcons = barOptions.Icons.MaxIcons or 5
 	local style = BarStyle(barOptions)
-	local colors = BarCategoryColors(barOptions)
 	local signature = auraContainerDisplay:GetStyleSignature(style, size, spacing)
 
 	local byBar = barDisplays[token]
@@ -352,14 +363,13 @@ local function EnsureBarDisplay(data, bar, barOptions, factionKey)
 		barDisplays[token] = byBar
 	end
 
-	-- One display per (bar, faction), restyled only when that faction's own configuration moves.
-	-- The token flipping faction - plates recycling, a duel - switches cache entries instead, so
-	-- the flip needs no restyle and stays correct while auras are secret. This path is hot enough
-	-- that it must not build frames for a token it has seen before.
 	local entry = byBar[bar.CacheKey[factionKey]]
 
 	if not entry then
-		entry = { Display = CreateBarDisplay(size, spacing, style, colors), Signature = signature }
+		entry = {
+			Display = CreateBarDisplay(size, spacing, style, BarCategoryColors(barOptions)),
+			Signature = signature,
+		}
 		byBar[bar.CacheKey[factionKey]] = entry
 	elseif entry.Signature ~= signature then
 		-- One restyle pass for all three values; the individual setters would each walk every
@@ -369,7 +379,32 @@ local function EnsureBarDisplay(data, bar, barOptions, factionKey)
 		entry.Signature = signature
 	end
 
-	local display = entry.Display
+	return entry.Display
+end
+
+---Builds one (token, bar, faction) display ahead of the plate that will want it, and parks it.
+---An entry that already exists is left strictly alone: a plate may be holding that token and
+---drawing on it, and parking that one would blank a live bar.
+---@param token string
+---@param factionKey "Enemy"|"Friendly"
+local function PrewarmOneBarDisplay(token, bar, barOptions, factionKey)
+	local byBar = barDisplays[token]
+
+	if byBar and byBar[bar.CacheKey[factionKey]] then
+		return
+	end
+
+	ResetBarDisplay(GetOrCreateBarDisplay(token, bar, barOptions, factionKey))
+end
+
+---Acquires (or reuses) and reconfigures a bar's aura display for a tracked plate.
+---@param data NameplateData
+---@param factionKey "Enemy"|"Friendly" which side of the options the bar came from
+local function EnsureBarDisplay(data, bar, barOptions, factionKey)
+	local token = data.UnitToken
+	local maxIcons = barOptions.Icons.MaxIcons or 5
+	local colors = BarCategoryColors(barOptions)
+	local display = GetOrCreateBarDisplay(token, bar, barOptions, factionKey)
 
 	-- Outside the signature: the tints are not baked into a button, and a display legitimately
 	-- swaps between the friendly and enemy configurations for the same token. This is a handful of
@@ -682,6 +717,31 @@ function M:Release(unitToken)
 	if data.Bar2Display then
 		ResetBarDisplay(data.Bar2Display)
 		data.Bar2Display = nil
+	end
+end
+
+---Builds a parked display for every (token, bar, faction) the current options actually switch on,
+---so a plate spawning mid-fight finds its displays ready instead of paying to build them there and
+---then. Only called behind a loading screen: the whole set at once is a long frame, and that is
+---free while nothing is being drawn. Cheap to repeat, since an entry that already exists costs one
+---table lookup, and bars switched off since the last pass are simply not walked.
+function M:Prewarm()
+	-- Token-major: a plate takes the lowest free token, so the ones most likely to be wanted first
+	-- get both their bars before the higher tokens get anything.
+	for index = 1, PREWARM_TOKEN_COUNT do
+		local token = "nameplate" .. index
+
+		for _, faction in ipairs(PREWARM_FACTIONS) do
+			local unitOptions = nmModule and nmModule[faction]
+
+			for _, bar in ipairs(BARS) do
+				local barOptions = unitOptions and unitOptions[bar.Key]
+
+				if barOptions and barOptions.Enabled then
+					PrewarmOneBarDisplay(token, bar, barOptions, faction)
+				end
+			end
+		end
 	end
 end
 

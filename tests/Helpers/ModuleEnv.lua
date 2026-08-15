@@ -255,6 +255,11 @@ function M.build()
 			end,
 		}),
 	}
+	-- What MiniAuras.lua exposes for the nameplate prewarm. Off by default so tests see the
+	-- ordinary in-play behaviour; a test that wants the login path sets env.loadingScreenUp.
+	function addon:IsLoadingScreenUp()
+		return env.loadingScreenUp == true
+	end
 	env.addon = addon
 
 	local function loadFile(path)

@@ -258,6 +258,20 @@ function M:Refresh()
 	ApplyOptions(options)
 	UpdateContent()
 
+	-- Only behind a loading screen. Building every token's pair is a long frame, which costs
+	-- nothing while nothing is being drawn and would be a visible hitch at any other time.
+	-- Outside one, plates build their own on first sight as they always did.
+	--
+	-- And only where plates are tracked at all: in a dungeon or raid the plate events are
+	-- unregistered, so a set built on the way in is forty pairs of frames that content can never
+	-- use, and frames cannot be given back.
+	--
+	-- After UpdateContent, which is what rebuilds the pairs when the look baked into their buttons
+	-- has changed: prewarming before it would build a set this refresh then throws away.
+	if addon:IsLoadingScreenUp() and AreNameplatesNeeded(isEnabled) then
+		display:Prewarm()
+	end
+
 	-- Owned here rather than by the test-mode toggle, so flipping the module switch while a
 	-- test is running shows or hides the drag anchors and their captions with it, and the
 	-- important bar's draggability tracks the split-mode state ApplyOptions just settled.

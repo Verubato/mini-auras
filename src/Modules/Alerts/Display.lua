@@ -85,6 +85,10 @@ local activeTokensScratch = {}
 local DEFAULT_PAIR_ICONS = 8
 local DEFAULT_PAIR_SIZE = 24
 local DEFAULT_PAIR_SPACING = 2
+-- How many nameplate tokens to prepare pairs for ahead of time. The client hands out
+-- nameplate1..N as plates spawn and the set is fixed for a session, so covering it up front means
+-- no plate has to build a container mid-fight. 40 is what a full battleground reaches.
+local PREWARM_TOKEN_COUNT = 40
 
 ---The per-category glow tints in force, or nil when the glow itself is off.
 ---@return table? importantColor
@@ -423,12 +427,43 @@ end
 
 -- Drops every built pair so the next Ensure rebuilds it. Used when the configuration baked into
 -- the buttons changes; there is no way to restyle in place.
+--
+-- The frames behind the dropped pairs are gone for good, since WoW cannot free one. Prewarming
+-- raised what that costs: the map used to hold only tokens a plate had actually been seen on,
+-- and now holds all of them, so a look change abandons the full set rather than a handful. It is
+-- once per change rather than per plate, and only a loading screen builds the set back up, so a
+-- run of slider steps still abandons one set rather than one per step.
 local function RebuildDisplayPairs()
 	for token, entry in pairs(displayPairsByToken) do
 		ResetAlertDisplayPair(entry)
 		displayPairsByToken[token] = nil
 		nameplateDisplays[token] = nil
 	end
+end
+
+-- The pair a token owns, built on first ask and kept for the session. Shared by the plate path
+-- and the prewarm so neither can build a pair the other would not: whichever gets there first
+-- pays, and the second finds it already there.
+local function GetOrCreateDisplayPair(unitToken)
+	local entry = displayPairsByToken[unitToken]
+
+	if not entry then
+		entry = CreateAlertDisplayPair()
+		displayPairsByToken[unitToken] = entry
+	end
+
+	return entry
+end
+
+-- Builds one token's pair ahead of the plate that will want it, and parks it. Existing pairs are
+-- left strictly alone: by the time a prewarm pass reaches a token a plate may already be holding
+-- and drawing on it, and parking that one would blank a live bar.
+local function PrewarmOnePair(unitToken)
+	if displayPairsByToken[unitToken] then
+		return
+	end
+
+	ResetAlertDisplayPair(GetOrCreateDisplayPair(unitToken))
 end
 
 -- Activates the display pair for a nameplate token, acquiring from the pool on
@@ -438,13 +473,7 @@ local function EnsureNameplateDisplay(unitToken)
 	local entry = nameplateDisplays[unitToken]
 
 	if not entry then
-		entry = displayPairsByToken[unitToken]
-
-		if not entry then
-			entry = CreateAlertDisplayPair()
-			displayPairsByToken[unitToken] = entry
-		end
-
+		entry = GetOrCreateDisplayPair(unitToken)
 		nameplateDisplays[unitToken] = entry
 	end
 
@@ -551,6 +580,16 @@ function M:ReleaseAllNameplateDisplays()
 	sound:RemoveAllTokens()
 	for unitToken in pairs(nameplateDisplays) do
 		self:ReleaseNameplateDisplay(unitToken)
+	end
+end
+
+---Builds a parked display pair for every nameplate token, so a plate spawning mid-fight finds its
+---pair ready instead of paying to build it there and then. Only called behind a loading screen:
+---the whole set at once is a long frame, and that is free while nothing is being drawn. Cheap to
+---repeat, since a token that already has a pair costs one table lookup.
+function M:Prewarm()
+	for index = 1, PREWARM_TOKEN_COUNT do
+		PrewarmOnePair("nameplate" .. index)
 	end
 end
 

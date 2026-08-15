@@ -856,3 +856,257 @@ fw.describe("AlertsModule 12.1 - enemy debuff announcements", function()
 		alerts:Refresh()
 	end)
 end)
+
+fw.describe("NameplatesModule 12.1 - prewarming the plate displays", function()
+	-- Building an AuraContainer costs milliseconds, and building one the moment a plate spawns puts
+	-- that cost in the middle of a fight. The displays are built up front instead, during a loading
+	-- screen, where a long frame costs nothing because nothing is being drawn.
+
+	local nameplates = env.addon.Modules.NameplatesModule
+	-- Mirrors PREWARM_TOKEN_COUNT in Nameplates/Display.lua. Duplicated on purpose: a test that
+	-- read the constant could not notice it changing.
+	local PREWARM_TOKENS = 40
+
+	local function displaysFor(token)
+		local list = {}
+		for _, container in ipairs(env.containersForUnit(token)) do
+			list[#list + 1] = container
+		end
+		return list
+	end
+
+	local function refreshDuringLoadingScreen()
+		env.loadingScreenUp = true
+		nameplates:Refresh()
+		env.loadingScreenUp = false
+	end
+
+	fw.it("builds nothing during play, so a refresh mid-session costs no containers", function()
+		env.loadingScreenUp = false
+
+		local created = env.auraContainerCount()
+		nameplates:Refresh()
+
+		assert(env.auraContainerCount() == created,
+			"a refresh outside a loading screen built " .. (env.auraContainerCount() - created))
+	end)
+
+	-- Bounded, not just "more than none". Only Enemy.Bar1 is on here, so one set is the ceiling;
+	-- a pass that ignored the Enabled flag would prepare all four bar-and-faction combinations.
+	-- Not an exact count: earlier tests in this file leave plates on a few nameplateN tokens, and
+	-- those displays are already built.
+	fw.it("builds no more than the one enabled bar's displays behind a loading screen", function()
+		local created = env.auraContainerCount()
+
+		refreshDuringLoadingScreen()
+
+		local built = env.auraContainerCount() - created
+		assert(built > 0, "the loading screen refresh built the displays")
+		assert(built <= PREWARM_TOKENS,
+			"expected at most " .. PREWARM_TOKENS .. " for the one enabled bar, got " .. built)
+	end)
+
+	fw.it("prepares the whole token range and stops at its end", function()
+		-- nameplate40 is the last token prepared; nameplate41 is past the range and must still
+		-- build its own, which is what catches the range being quietly shortened.
+		local created = env.auraContainerCount()
+
+		env.enemies.nameplate40 = true
+		env.addPlate("nameplate40")
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate40")
+
+		assert(env.auraContainerCount() == created, "the last prepared token built nothing")
+
+		env.enemies.nameplate41 = true
+		env.addPlate("nameplate41")
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate41")
+
+		assert(env.auraContainerCount() == created + 1, "a token past the range builds its own")
+
+		for _, token in ipairs({ "nameplate40", "nameplate41" }) do
+			nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", token)
+			env.plates[token] = nil
+			env.enemies[token] = nil
+		end
+	end)
+
+	fw.it("leaves a plate spawning on a prepared token nothing to build", function()
+		local created = env.auraContainerCount()
+
+		env.enemies.nameplate3 = true
+		env.addPlate("nameplate3")
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate3")
+
+		assert(env.auraContainerCount() == created,
+			"the plate built " .. (env.auraContainerCount() - created) .. " containers despite the prewarm")
+		assert(#displaysFor("nameplate3") > 0, "and it still got its display")
+
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "nameplate3")
+		env.plates.nameplate3 = nil
+		env.enemies.nameplate3 = nil
+	end)
+
+	fw.it("never parks a display a plate is already drawing on", function()
+		-- A zone change runs the prewarm again with plates already up, so it walks over tokens a
+		-- plate is holding. Parking one of those would blank a live bar.
+		env.enemies.nameplate9 = true
+		env.addPlate("nameplate9")
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate9")
+
+		local live = displaysFor("nameplate9")[1]
+		assert(live and live._enabled, "the plate is drawing")
+
+		refreshDuringLoadingScreen()
+
+		assert(live._enabled, "the prewarm parked a display a plate was drawing on")
+		assert(live:IsShown(), "and it is still shown")
+
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "nameplate9")
+		env.plates.nameplate9 = nil
+		env.enemies.nameplate9 = nil
+	end)
+
+	fw.it("builds nothing on a second pass over the same tokens", function()
+		local created = env.auraContainerCount()
+
+		refreshDuringLoadingScreen()
+
+		assert(env.auraContainerCount() == created,
+			"a repeat pass rebuilt " .. (env.auraContainerCount() - created) .. " containers")
+	end)
+
+	fw.it("does not build displays for a bar that is switched off", function()
+		local created = env.auraContainerCount()
+
+		db.Modules.NameplatesModule.Enemy.Bar2.Enabled = true
+		refreshDuringLoadingScreen()
+		local withBar2 = env.auraContainerCount()
+		local built = withBar2 - created
+		assert(built > 0 and built <= PREWARM_TOKENS,
+			"switching a bar on prepares its own set and no more, got " .. built)
+
+		db.Modules.NameplatesModule.Enemy.Bar2.Enabled = false
+		refreshDuringLoadingScreen()
+
+		assert(env.auraContainerCount() == withBar2,
+			"a pass with the bar off built " .. (env.auraContainerCount() - withBar2) .. " more")
+	end)
+end)
+
+fw.describe("AlertsModule 12.1 - prewarming the display pairs", function()
+	local alerts = env.addon.Modules.AlertsModule
+
+	fw.it("builds a pair for every token behind a loading screen, and nothing during play", function()
+		env.loadingScreenUp = false
+		local created = env.auraContainerCount()
+
+		alerts:Refresh()
+		assert(env.auraContainerCount() == created,
+			"a refresh during play built " .. (env.auraContainerCount() - created) .. " containers")
+
+		env.loadingScreenUp = true
+		alerts:Refresh()
+		env.loadingScreenUp = false
+
+		assert(env.auraContainerCount() > created, "the loading screen refresh built the pairs")
+	end)
+
+	fw.it("builds nothing on a second pass", function()
+		local created = env.auraContainerCount()
+
+		env.loadingScreenUp = true
+		alerts:Refresh()
+		env.loadingScreenUp = false
+
+		assert(env.auraContainerCount() == created,
+			"a repeat pass rebuilt " .. (env.auraContainerCount() - created) .. " containers")
+	end)
+
+	-- Alerts only ever tracks plates in arenas, battlegrounds and the open world; in a dungeon or
+	-- raid its plate events are unregistered. Building the set on the way in would be forty pairs
+	-- of frames that content can never use, and a frame cannot be given back.
+	fw.it("builds nothing zoning into content that never tracks plates", function()
+		-- Counted rather than measured in containers: the tests above have already built the
+		-- pairs, so a prewarm that ran here anyway would build nothing and look identical.
+		local alertsDisplay = env.addon.Modules.Alerts.Display
+		local prewarms = 0
+		local realPrewarm = alertsDisplay.Prewarm
+
+		alertsDisplay.Prewarm = function(...)
+			prewarms = prewarms + 1
+			return realPrewarm(...)
+		end
+
+		env.inInstance = true
+		env.instanceType = "raid"
+		env.loadingScreenUp = true
+		alerts:Refresh()
+		local inRaid = prewarms
+
+		-- And out in the open world it prepares them as usual.
+		env.inInstance = false
+		env.instanceType = "none"
+		alerts:Refresh()
+
+		-- Everything restored before the asserts: a failure here would otherwise leave the spy
+		-- installed and the loading screen up for every test after it.
+		env.loadingScreenUp = false
+		alertsDisplay.Prewarm = realPrewarm
+
+		assert(inRaid == 0, "a raid zone-in prepared the pairs that content can never use")
+		assert(prewarms == 1, "but it still prepares them where plates are tracked")
+	end)
+
+	fw.it("never parks a pair a plate is already drawing on", function()
+		env.enemies.nameplate2 = true
+		env.addPlate("nameplate2")
+		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate2")
+
+		local live = env.containersForUnit("nameplate2")[1]
+		assert(live and live._enabled, "the plate is drawing an alert display")
+
+		env.loadingScreenUp = true
+		alerts:Refresh()
+		env.loadingScreenUp = false
+
+		assert(live._enabled, "the prewarm parked a pair a plate was drawing on")
+
+		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "nameplate2")
+		env.plates.nameplate2 = nil
+		env.enemies.nameplate2 = nil
+	end)
+
+	-- Prewarm runs AFTER UpdateContent, which is what discards every pair when the look baked into
+	-- their buttons changes. Reversed, the prewarm would skip (the entries still exist, just at the
+	-- old look), UpdateContent would then drop all forty, and only the handful of tracked tokens
+	-- would be rebuilt - silently forfeiting the prewarm on every look change.
+	fw.it("still has pairs ready after a change to the baked-in look", function()
+		local icons = db.Modules.AlertsModule.Icons
+		local originalSize = icons.Size
+
+		env.loadingScreenUp = true
+		icons.Size = (originalSize or 24) + 6
+		alerts:Refresh()
+		env.loadingScreenUp = false
+
+		-- A token no plate has held this session, so anything it needs would have to be built now.
+		local created = env.auraContainerCount()
+
+		env.enemies.nameplate12 = true
+		env.addPlate("nameplate12")
+		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate12")
+
+		assert(env.auraContainerCount() == created,
+			"the plate built " .. (env.auraContainerCount() - created)
+				.. " containers, so the look change lost the prepared pairs")
+
+		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "nameplate12")
+		env.plates.nameplate12 = nil
+		env.enemies.nameplate12 = nil
+
+		icons.Size = originalSize
+		env.loadingScreenUp = true
+		alerts:Refresh()
+		env.loadingScreenUp = false
+	end)
+end)
