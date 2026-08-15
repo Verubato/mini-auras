@@ -219,6 +219,7 @@ local function BuildInstance(panel, options, defaults)
 	local maxIcons = helpers:BuildClampedSlider({
 		Parent = parent,
 		LabelText = L["Max Icons"],
+		Tooltip = L["Applies to each aura category on its own, so a unit with both defensives and important buffs can show this many of each. The game no longer lets addons count auras, so a shared limit across categories is not possible."],
 		Min = 1,
 		Max = 5,
 		Default = defaults.Icons.MaxIcons,
@@ -233,6 +234,7 @@ local function BuildInstance(panel, options, defaults)
 	local iconSpacing = helpers:BuildClampedSlider({
 		Parent = parent,
 		LabelText = L["Icon Padding"],
+		Tooltip = L["Space between icons."],
 		Min = 0,
 		Max = 20,
 		Default = defaults.IconSpacing,

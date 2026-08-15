@@ -194,6 +194,7 @@ local function BuildSettingsTab(parent, options)
 	local iconSize = helpers:BuildClampedSlider({
 		Parent = parent,
 		LabelText = L["Icon Size"],
+		Tooltip = L["Width and height of each icon."],
 		Min = 10,
 		Max = 100,
 		Default = dbDefaults.Modules.AlertsModule.Icons.Size,
@@ -208,6 +209,7 @@ local function BuildSettingsTab(parent, options)
 	local maxIcons = helpers:BuildClampedSlider({
 		Parent = parent,
 		LabelText = L["Max Icons"],
+		Tooltip = L["Applies to each aura category on its own, so a unit with both defensives and important buffs can show this many of each. The game no longer lets addons count auras, so a shared limit across categories is not possible."],
 		Min = 1,
 		Max = 10,
 		Default = dbDefaults.Modules.AlertsModule.Icons.MaxIcons,
@@ -222,6 +224,7 @@ local function BuildSettingsTab(parent, options)
 	local iconSpacing = helpers:BuildClampedSlider({
 		Parent = parent,
 		LabelText = L["Icon Padding"],
+		Tooltip = L["Space between icons."],
 		Min = 0,
 		Max = 20,
 		Default = dbDefaults.Modules.AlertsModule.IconSpacing,

@@ -129,6 +129,7 @@ function M:Build(panel)
 	local iconSizeSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Icon Size"],
+		Tooltip = L["Width and height of each icon."],
 		Min = 20,
 		Max = 120,
 		Default = dbDefaults.Modules.EnemyKickTrackerModule.Icons.Size,
@@ -143,6 +144,7 @@ function M:Build(panel)
 	local iconSpacingSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Icon Padding"],
+		Tooltip = L["Space between icons."],
 		Min = 0,
 		Max = 20,
 		Default = dbDefaults.Modules.EnemyKickTrackerModule.IconSpacing,

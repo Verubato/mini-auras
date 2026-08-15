@@ -125,6 +125,7 @@ function M:Build(panel, options)
 	local widthSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Bar Width"],
+		Tooltip = L["Width of each bar."],
 		Min = 60,
 		Max = 400,
 		Default = dbDefaults.Modules.AllyKickTrackerModule.Bars.Width,
@@ -139,6 +140,7 @@ function M:Build(panel, options)
 	local heightSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Bar Height"],
+		Tooltip = L["Height of each bar."],
 		Min = 8,
 		Max = 60,
 		Default = dbDefaults.Modules.AllyKickTrackerModule.Bars.Height,
@@ -154,6 +156,7 @@ function M:Build(panel, options)
 	local spacingSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Bar Padding"],
+		Tooltip = L["Space between bars."],
 		Min = 0,
 		Max = 20,
 		Default = dbDefaults.Modules.AllyKickTrackerModule.BarSpacing,
@@ -168,6 +171,7 @@ function M:Build(panel, options)
 	local maxBarsSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Max Bars"],
+		Tooltip = L["Most bars shown at once. Anything past the limit is not drawn."],
 		Min = 1,
 		Max = 10,
 		Default = dbDefaults.Modules.AllyKickTrackerModule.MaxBars,

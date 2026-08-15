@@ -234,6 +234,7 @@ function M:Build(panel)
 	local fontScaleSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Font Scale"],
+		Tooltip = L["Scales the countdown text on every icon, leaving the icon size alone."],
 		Min = 0.5,
 		Max = 1.5,
 		Step = 0.05,
@@ -250,6 +251,7 @@ function M:Build(panel)
 	local millisThresholdSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Milliseconds Threshold"],
+		Tooltip = L["Countdowns show tenths of a second once they drop below this many seconds."],
 		Min = 1,
 		Max = 6,
 		Default = dbDefaults.MillisecondsThreshold,

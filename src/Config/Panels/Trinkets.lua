@@ -98,6 +98,7 @@ function M:Build(panel)
 	local iconSizeSlider = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Icon Size"],
+		Tooltip = L["Width and height of each icon."],
 		Min = 10,
 		Max = 100,
 		Default = dbDefaults.Modules.TrinketsModule.Icons.Size,

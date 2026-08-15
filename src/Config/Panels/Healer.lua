@@ -198,6 +198,7 @@ function M:Build(panel, options)
 	local iconSize = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Icon Size"],
+		Tooltip = L["Width and height of each icon."],
 		Min = 10,
 		Max = 100,
 		Default = dbDefaults.Modules.HealerCCModule.Icons.Size,
@@ -216,6 +217,7 @@ function M:Build(panel, options)
 		Width = sliderWidth,
 		Step = 1,
 		LabelText = L["Text Size"],
+		Tooltip = L["Size of the warning text."],
 		GetValue = function()
 			return options.Font.Size
 		end,
@@ -234,6 +236,7 @@ function M:Build(panel, options)
 	local iconSpacing = helpers:BuildClampedSlider({
 		Parent = panel,
 		LabelText = L["Icon Padding"],
+		Tooltip = L["Space between icons."],
 		Min = 0,
 		Max = 20,
 		Default = dbDefaults.Modules.HealerCCModule.IconSpacing,

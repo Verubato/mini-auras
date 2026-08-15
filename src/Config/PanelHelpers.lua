@@ -97,6 +97,7 @@ function M:BuildClampedSlider(opts)
 	return mini:Slider({
 		Parent = opts.Parent,
 		LabelText = opts.LabelText,
+		Tooltip = opts.Tooltip,
 		Min = opts.Min,
 		Max = opts.Max,
 		Step = opts.Step or 1,
@@ -141,7 +142,7 @@ function M:BuildSizeControls(opts)
 	local checkbox = mini:Checkbox({
 		Parent = opts.Parent,
 		LabelText = L["Relative size"],
-		Tooltip = L["Sizes the icon as a percentage of the unit frame's height instead of in pixels."],
+		Tooltip = L["Sizes the icon as a percentage of the unit frame's height instead of a fixed size."],
 		GetValue = function()
 			return icons.SizeIsPercent == true
 		end,
@@ -155,6 +156,7 @@ function M:BuildSizeControls(opts)
 	local pixel = M:BuildClampedSlider({
 		Parent = opts.Parent,
 		LabelText = L["Icon Size"],
+		Tooltip = L["Width and height of each icon."],
 		Min = 10,
 		Max = 100,
 		Default = opts.PixelDefault,
@@ -167,6 +169,7 @@ function M:BuildSizeControls(opts)
 	local percent = M:BuildClampedSlider({
 		Parent = opts.Parent,
 		LabelText = L["Icon Size (%)"],
+		Tooltip = L["Icon size as a percentage of the unit frame's height, so icons scale with the frame."],
 		Min = 25,
 		Max = 100,
 		Default = opts.PercentDefault,
@@ -240,6 +243,7 @@ function M:BuildOffsetSliders(opts)
 	local offsetX = M:BuildClampedSlider({
 		Parent = opts.Parent,
 		LabelText = L["Offset X"],
+		Tooltip = L["Moves the display sideways from its anchor. Positive is right, negative is left."],
 		Min = -range,
 		Max = range,
 		Default = 0,
@@ -252,6 +256,7 @@ function M:BuildOffsetSliders(opts)
 	local offsetY = M:BuildClampedSlider({
 		Parent = opts.Parent,
 		LabelText = L["Offset Y"],
+		Tooltip = L["Moves the display up or down from its anchor. Positive is up, negative is down."],
 		Min = -range,
 		Max = range,
 		Default = 0,
@@ -389,6 +394,7 @@ end
 ---@class ClampedSliderOptions
 ---@field Parent table
 ---@field LabelText string
+---@field Tooltip string?
 ---@field Min number
 ---@field Max number
 ---@field Default number Fallback the clamp uses when the input is not a number.

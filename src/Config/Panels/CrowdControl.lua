@@ -155,6 +155,7 @@ local function BuildInstance(panel, options, defaults)
 	local maxIcons = helpers:BuildClampedSlider({
 		Parent = parent,
 		LabelText = L["Max Icons"],
+		Tooltip = L["Most icons shown at once on each unit."],
 		Min = 1,
 		Max = 5,
 		Default = defaults.Icons.Count,
@@ -170,6 +171,7 @@ local function BuildInstance(panel, options, defaults)
 	local iconSpacing = helpers:BuildClampedSlider({
 		Parent = parent,
 		LabelText = L["Icon Padding"],
+		Tooltip = L["Space between icons."],
 		Min = 0,
 		Max = 20,
 		Default = defaults.IconSpacing,

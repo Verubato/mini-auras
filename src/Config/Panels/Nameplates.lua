@@ -182,6 +182,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 	local iconSize = helpers:BuildClampedSlider({
 		Parent = container,
 		LabelText = L["Icon Size"],
+		Tooltip = L["Width and height of each icon."],
 		Min = 10,
 		Max = 60,
 		Default = defaults.Icons.Size,
@@ -195,6 +196,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 	local maxIcons = helpers:BuildClampedSlider({
 		Parent = container,
 		LabelText = L["Max Icons"],
+		Tooltip = L["Applies to each aura category on its own, so a unit with both defensives and important buffs can show this many of each. The game no longer lets addons count auras, so a shared limit across categories is not possible."],
 		Min = 1,
 		Max = 8,
 		Default = defaults.Icons.MaxIcons,
@@ -222,6 +224,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 	local iconSpacing = helpers:BuildClampedSlider({
 		Parent = container,
 		LabelText = L["Icon Padding"],
+		Tooltip = L["Space between icons."],
 		Min = 0,
 		Max = 20,
 		Default = defaults.Icons.Spacing,

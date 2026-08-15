@@ -155,6 +155,7 @@ local function BuildPetInstance(panel, options)
 	local maxIcons = helpers:BuildClampedSlider({
 		Parent = parent,
 		LabelText = L["Max Icons"],
+		Tooltip = L["Most icons shown at once on each unit."],
 		Min = 1,
 		Max = 5,
 		Default = dbDefaults.Modules.PetCCModule.Icons.Count,
@@ -170,6 +171,7 @@ local function BuildPetInstance(panel, options)
 	local iconSpacing = helpers:BuildClampedSlider({
 		Parent = parent,
 		LabelText = L["Icon Padding"],
+		Tooltip = L["Space between icons."],
 		Min = 0,
 		Max = 20,
 		Default = dbDefaults.Modules.PetCCModule.IconSpacing,

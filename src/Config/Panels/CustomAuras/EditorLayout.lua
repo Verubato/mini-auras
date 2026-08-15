@@ -173,15 +173,17 @@ function ui.BuildLayoutTab(ctx)
 	emptyNote:SetJustifyV("TOP")
 
 	---@param label string
+	---@param tooltip string
 	---@param minimum number
 	---@param maximum number
 	---@param get fun(group: CustomAuraGroup): number
 	---@param set fun(group: CustomAuraGroup, value: number)
 	---@return table
-	local function Slider(label, minimum, maximum, get, set)
+	local function Slider(label, tooltip, minimum, maximum, get, set)
 		local slider = mini:Slider({
 			Parent = layoutPanel,
 			LabelText = label,
+			Tooltip = tooltip,
 			Width = sliderWidth,
 			Min = minimum,
 			Max = maximum,
@@ -219,23 +221,26 @@ function ui.BuildLayoutTab(ctx)
 
 	-- The icon size and the bar height share a slot but not a setting: they measure different
 	-- things and clamp to different ranges, so they are two sliders and only one is ever up.
-	local sizeSlider = Slider(L["Icon Size"], groups.MinIconSize, groups.MaxIconSize,
+	local sizeSlider = Slider(L["Icon Size"], L["Width and height of each icon."],
+		groups.MinIconSize, groups.MaxIconSize,
 		function(group) return group.Icons.Size end,
 		function(group, value) group.Icons.Size = value end)
 	-- Offset by the headroom, or the slider's value box lands on the row above.
 	sizeSlider.Slider:SetPoint("TOPLEFT", sliderRow, "TOPLEFT", 4, -SLIDER_HEADROOM)
 
-	local heightSlider = Slider(L["Bar Height"], groups.MinBarHeight, groups.MaxBarHeight,
+	local heightSlider = Slider(L["Bar Height"], L["Height of each bar."],
+		groups.MinBarHeight, groups.MaxBarHeight,
 		function(group) return group.Icons.BarHeight end,
 		function(group, value) group.Icons.BarHeight = value end)
 	heightSlider.Slider:SetPoint("TOPLEFT", sliderRow, "TOPLEFT", 4, -SLIDER_HEADROOM)
 
-	local spacingSlider = Slider(L["Icon Padding"], 0, 50,
+	local spacingSlider = Slider(L["Icon Padding"], L["Space between icons."], 0, 50,
 		function(group) return group.Icons.Spacing end,
 		function(group, value) group.Icons.Spacing = value end)
 	spacingSlider.Slider:SetPoint("LEFT", sizeSlider.Slider, "RIGHT", SLIDER_GAP, 0)
 
-	local widthSlider = Slider(L["Bar Width"], groups.MinBarWidth, groups.MaxBarWidth,
+	local widthSlider = Slider(L["Bar Width"], L["Width of each bar."],
+		groups.MinBarWidth, groups.MaxBarWidth,
 		function(group) return group.Icons.BarWidth end,
 		function(group, value) group.Icons.BarWidth = value end)
 	widthSlider.Slider:SetPoint("TOPLEFT", barSliderRow, "TOPLEFT", 4, -SLIDER_HEADROOM)
