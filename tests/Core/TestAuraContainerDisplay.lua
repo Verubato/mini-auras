@@ -1626,6 +1626,84 @@ fw.describe("AuraContainerDisplay - vehicles the client will not admit to", func
 	end)
 end)
 
+fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
+	fw.before_each(acm.reset)
+
+	fw.it("takes the displays off screen for the length of the transfer", function()
+		local instance = newInstance()
+
+		-- The auras the engine cannot filter properly mid-transfer never reach a group at all
+		-- this way, which is the only remedy while it is answering wrongly rather than late.
+		displayEvents:TriggerEvent("ZONE_CHANGED")
+		assert(not instance.Frame:IsShown(), "off screen while the transfer is in flight")
+
+		displayEvents:TriggerEvent("ACTIONBAR_UPDATE_USABLE")
+		assert(instance.Frame:IsShown(), "and back once the client is done with it")
+		assert(instance.Frame:GetUnit() == "target", "still on the token it was built with")
+	end)
+
+	fw.it("listens for every event a transfer can arrive on", function()
+		-- Which of the three the client picks depends on where the pad puts you, so a missing
+		-- registration would leave the leak in place for that kind of teleport only.
+		for _, event in ipairs({ "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA" }) do
+			local instance = newInstance()
+
+			displayEvents:TriggerEvent(event)
+			assert(not instance.Frame:IsShown(), event .. " suppresses")
+
+			displayEvents:TriggerEvent("ACTIONBAR_UPDATE_USABLE")
+			assert(instance.Frame:IsShown(), event .. " comes back")
+		end
+	end)
+
+	fw.it("hands the spell-id map back, which a re-read alone does not", function()
+		local map = { includeSpellIDs = { [12345] = true } }
+		local instance = display:New(_G.UIParent, "player", {
+			{ Key = "cc", FilterString = "HELPFUL", MaxIcons = 5, CandidateFilters = map },
+		}, 30, 2, "Test")
+		local frame = instance.Frame
+		local given = {}
+		local setFilters = frame.SetAuraGroupCandidateFilters
+
+		frame.SetAuraGroupCandidateFilters = function(self, key, filters)
+			given[#given + 1] = filters
+			setFilters(self, key, filters)
+		end
+
+		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
+		displayEvents:TriggerEvent("ACTIONBAR_UPDATE_USABLE")
+
+		-- Whether the map may be applied to a unit is settled when the engine is handed it, so a
+		-- map given during the transfer keeps the answer it got there until it is handed over
+		-- again. The same table twice may read as no change, hence the empty set in between.
+		assert(#given == 2, "handed over once, in a pair; got " .. #given)
+		assert(given[1] ~= map, "an empty set first")
+		assert(given[2] == map, "then the real map")
+	end)
+
+	fw.it("shows the displays anyway when the client never says it is done", function()
+		local instance = newInstance()
+
+		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
+		assert(not instance.Frame:IsShown(), "off screen to begin with")
+
+		-- Auras missing for a session is a worse failure than the one this is guarding against.
+		acm.runTimers()
+		assert(instance.Frame:IsShown(), "the timeout puts them back")
+	end)
+
+	fw.it("leaves a display its module wanted hidden alone", function()
+		local instance = newInstance()
+
+		instance:SetShown(false)
+
+		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
+		displayEvents:TriggerEvent("ACTIONBAR_UPDATE_USABLE")
+
+		assert(not instance.Frame:IsShown(), "the module's own answer still decides")
+	end)
+end)
+
 -- The icon zoom option (Misc panel). The crop is read when a display is configured and baked
 -- into each button as it is built, so what this guards is the reading, not the redraw: the
 -- panel asks for a reload because pooled buttons keep the crop they were made with.

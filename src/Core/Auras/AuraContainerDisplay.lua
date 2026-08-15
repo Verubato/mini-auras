@@ -81,6 +81,16 @@ local VEHICLE_UNIT = "vehicle"
 -- How long to wait after a vehicle event before asking the client where the player is: it still
 -- answers "vehicle" as the exit event fires.
 local VEHICLE_SETTLE_DELAY = 0.1
+-- The client's own "I am done with the transfer" tell: nothing is dispatched while it is in flight,
+-- so the first of these after a zone event is the point the unit can be asked about again.
+local ZONE_SETTLED_EVENT = "ACTIONBAR_UPDATE_USABLE"
+-- How long to wait for that event before showing the displays anyway. A transfer it never follows
+-- would otherwise leave every aura off screen for the session, which is worse than a wrong icon.
+local ZONE_TRANSFER_TIMEOUT = 3
+-- The recovery passes after the displays come back, in case the tell arrived early. Cheap, since a
+-- pass only touches what is on screen.
+local ZONE_RECOVERY_INTERVAL = 0.5
+local ZONE_RECOVERY_PASSES = 3
 -- The container's own default unit, and what RequestRefresh points one at to make the engine
 -- see a unit CHANGE for a token whose occupant moved.
 local NO_UNIT = "none"
@@ -88,6 +98,9 @@ local NO_UNIT = "none"
 -- Stand-ins for nil arguments, so the setters never have to allocate. Read-only.
 local EMPTY_STYLE = {}
 local EMPTY_OPTIONS = {}
+-- Narrows nothing. Handed to a group for an instant so the real map after it reads as a change;
+-- see RefreshFromLiveData.
+local EMPTY_CANDIDATE_FILTERS = {}
 
 -- Shared scratch handed out by GetStyleScratch. Every field is cleared on hand-out, so a caller
 -- can only ever set the fields it cares about and can never inherit a value from whoever used it
@@ -107,6 +120,12 @@ local pendingRestyleCount = 0
 local restyleTicker = nil
 local pendingBounceCount = 0
 local bounceFlushScheduled = false
+local zoneRecoveryTicker = nil
+local zoneRecoveryPasses = 0
+-- True from a zone event until the client says it is done with the transfer. Every display is
+-- suppressed for the duration.
+local zoneTransferActive = false
+local zoneTransferTimer = nil
 
 -- 12.1 AuraContainer-backed icon display. One instance wraps a CreateFrame("AuraContainer")
 -- with one or more aura groups and styles the container-created AuraButtons to match the legacy
@@ -361,9 +380,11 @@ local function IsPlayerDisplay(instance)
 end
 
 local function ApplyShownState(instance)
-	-- Two reasons a display is kept off screen whatever its module asked for: Edit Mode's
-	-- placeholder auras, and a vehicle. See vehicleActive.
-	local suppressed = editModePreviewActive or (vehicleActive and IsPlayerDisplay(instance))
+	-- Three reasons a display is kept off screen whatever its module asked for: Edit Mode's
+	-- placeholder auras, a vehicle, and a zone transfer. See vehicleActive and zoneTransferActive.
+	local suppressed = editModePreviewActive
+		or zoneTransferActive
+		or (vehicleActive and IsPlayerDisplay(instance))
 
 	instance.Frame:SetShown(instance.DesiredShown and not suppressed)
 end
@@ -403,6 +424,110 @@ local function ApplyVehicleState(entering)
 	end
 end
 
+---Puts one display's spell-id maps back on its groups and re-reads the unit from scratch.
+---
+---A teleport inside one map - a city's own pads, a layer swap - loads nothing, so
+---PLAYER_ENTERING_WORLD never fires and no refresh follows it. While the transfer is in flight the
+---engine cannot say who the unit is, and an identity-gated spell-id map it cannot evaluate is
+---skipped rather than failed (see Core/Auras/AuraFilters), so every aura on the unit passes the
+---bare filter token and lands in the group - a mounted teleport puts the mount buff in a personal
+---aura group, which no filter string could ever have excluded.
+---
+---Re-pointing the unit is not enough on its own: the engine decides whether a map may be applied
+---to a unit when it is handed the map, so a group given one during the transfer keeps that answer
+---and every re-read reaches the same conclusion. Handing the map over again is what makes it ask
+---who the unit is a second time, and it is the one thing a reload does that a re-read does not.
+---@param instance AuraContainerDisplay
+local function RefreshFromLiveData(instance)
+	for key, group in pairs(instance.GroupsByKey) do
+		if group.CandidateFilters then
+			-- Through an empty set first, since the same table handed back may read as no change.
+			-- Nothing renders in between: a container parses on update, not on the setter.
+			instance:SetCandidateFilters(key, EMPTY_CANDIDATE_FILTERS)
+			instance:SetCandidateFilters(key, group.CandidateFilters)
+		end
+	end
+
+	instance:RequestRefresh()
+end
+
+local function RunZoneRecovery()
+	for _, instance in ipairs(liveDisplays) do
+		-- A hidden container parses nothing, and the OnShow on its way back issues a full refresh
+		-- from live data, so it corrects itself without being touched here. That is most of the
+		-- pool on any given pass, and skipping it is what keeps repeating this cheap.
+		if instance.Frame:IsShown() then
+			RefreshFromLiveData(instance)
+		end
+	end
+end
+
+local function OnZoneRecoveryTick()
+	RunZoneRecovery()
+
+	zoneRecoveryPasses = zoneRecoveryPasses - 1
+
+	if zoneRecoveryPasses <= 0 and zoneRecoveryTicker then
+		zoneRecoveryTicker:Cancel()
+		zoneRecoveryTicker = nil
+	end
+end
+
+local function StartZoneRecovery()
+	if zoneRecoveryTicker then
+		zoneRecoveryTicker:Cancel()
+	end
+
+	zoneRecoveryPasses = ZONE_RECOVERY_PASSES
+	zoneRecoveryTicker = C_Timer.NewTicker(ZONE_RECOVERY_INTERVAL, OnZoneRecoveryTick)
+end
+
+---Puts the displays back once the transfer is over: maps first, while nothing is parsing, then the
+---show that re-reads the unit through them. The recovery afterwards is only there in case the
+---client's tell came in ahead of the state it is meant to stand for.
+local function EndZoneTransfer()
+	if not zoneTransferActive then
+		return
+	end
+
+	zoneTransferActive = false
+
+	if zoneTransferTimer then
+		zoneTransferTimer:Cancel()
+		zoneTransferTimer = nil
+	end
+
+	-- Fires many times a second in combat, so it is only ever listened for across a transfer.
+	displayEventsFrame:UnregisterEvent(ZONE_SETTLED_EVENT)
+
+	for _, instance in ipairs(liveDisplays) do
+		RefreshFromLiveData(instance)
+		ApplyShownState(instance)
+	end
+
+	StartZoneRecovery()
+end
+
+---Takes every display off screen for the length of a zone transfer.
+---
+---A hidden container parses nothing, so the auras the engine cannot filter properly mid-transfer
+---never reach a group in the first place - the same escape hatch the vehicle case uses, and the
+---only one that works while the engine is answering wrongly rather than late.
+local function BeginZoneTransfer()
+	zoneTransferActive = true
+
+	if zoneTransferTimer then
+		zoneTransferTimer:Cancel()
+	end
+
+	zoneTransferTimer = C_Timer.NewTimer(ZONE_TRANSFER_TIMEOUT, EndZoneTransfer)
+	displayEventsFrame:RegisterEvent(ZONE_SETTLED_EVENT)
+
+	for _, instance in ipairs(liveDisplays) do
+		ApplyShownState(instance)
+	end
+end
+
 local function OnAuraDataProviderSwitch(useRealDataProvider)
 	local previewActive = useRealDataProvider ~= true
 	if editModePreviewActive == previewActive then
@@ -428,6 +553,10 @@ local function EnsureDisplayEvents()
 	displayEventsFrame:RegisterEvent("AURA_DATA_PROVIDER_SWITCH")
 	displayEventsFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 	displayEventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	-- The three a teleport within one map fires; see RefreshAfterZoneChange.
+	displayEventsFrame:RegisterEvent("ZONE_CHANGED")
+	displayEventsFrame:RegisterEvent("ZONE_CHANGED_INDOORS")
+	displayEventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 	displayEventsFrame:RegisterUnitEvent("UNIT_ENTERED_VEHICLE", PLAYER_UNIT)
 	displayEventsFrame:RegisterUnitEvent("UNIT_EXITED_VEHICLE", PLAYER_UNIT)
 	-- The -ING pair fires for seats the -ED pair does not, and the vehicle-data pair fires for
@@ -442,6 +571,14 @@ local function EnsureDisplayEvents()
 		elseif event == "PLAYER_ENTERING_WORLD" then
 			-- Logging in already inside one counts, and no vehicle event fires for that.
 			ApplyVehicleState()
+			-- A teleport that does load a map goes through the same unsettled window, and the
+			-- refresh this event drives only re-parses the displays whose settings moved.
+			BeginZoneTransfer()
+		elseif event == "ZONE_CHANGED" or event == "ZONE_CHANGED_INDOORS"
+			or event == "ZONE_CHANGED_NEW_AREA" then
+			BeginZoneTransfer()
+		elseif event == ZONE_SETTLED_EVENT then
+			EndZoneTransfer()
 		elseif event == "UNIT_ENTERED_VEHICLE" or event == "UNIT_ENTERING_VEHICLE"
 			or event == "PLAYER_GAINS_VEHICLE_DATA" then
 			ApplyVehicleState(true)
