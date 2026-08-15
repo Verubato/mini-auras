@@ -1465,6 +1465,31 @@ fw.describe("AuraContainerDisplay - refreshing a token whose occupant changed", 
 			"an occupant swap has nothing else coming that would settle it")
 	end)
 
+	-- The other half of the combat rule. A setter-driven change settles on the unit's next aura
+	-- event, which combat has plenty of, so bouncing the frame for one is churn during the busiest
+	-- moment there is. Only changes with nothing else coming (an occupant swap, a gate that zeroed
+	-- a budget) are marked urgent and go through.
+	fw.it("parks a non-urgent bounce in combat until combat ends", function()
+		local instance = newInstance()
+		local frame = instance.Frame
+		local shows = frame._calls.Show or 0
+
+		_G.InCombatLockdown = function()
+			return true
+		end
+		instance:SetMaxIcons("cc", 3)
+		_G.InCombatLockdown = function()
+			return false
+		end
+
+		assert((frame._calls.Show or 0) == shows, "a non-urgent bounce must not flush in combat")
+
+		-- Still pending, so the next flush out of combat takes it.
+		instance:SetMaxIcons("cc", 4)
+
+		assert((frame._calls.Show or 0) > shows, "and it settles once combat is over")
+	end)
+
 	fw.it("leaves an untracked display alone", function()
 		local instance = newInstance()
 
