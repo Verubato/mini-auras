@@ -79,7 +79,7 @@ local function BuildInstance(panel, options, defaults)
 
 	local dispelColoursChk = mini:Checkbox({
 		Parent = parent,
-		LabelText = L["Dispel colours"],
+		LabelText = L["Colours"],
 		Tooltip = L["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), defensive and important spells use the category colours."],
 		GetValue = function()
 			return options.Icons.ColorByDispelType
