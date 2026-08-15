@@ -425,6 +425,7 @@ function M.build()
 		end,
 		HookCellSpotlightVisibility = function() end,
 		HookNDuiVisibility = function() end,
+		HookUUFPinnedVisibility = function() end,
 		-- Mirrors the real helper's surface. The CUF/FrameSort/Danders globals do not exist in
 		-- this environment, so it only records the callbacks for tests that want to fire them.
 		InstallUnitFrameHooks = function(_, _, hooks)

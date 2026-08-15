@@ -170,6 +170,8 @@ function M:GetAll(visibleOnly, includeTestFrames, out)
 	M:NDuiFrames(visibleOnly, anchors)
 	M:GW2UIFrames(visibleOnly, anchors)
 	M:MSUFFrames(visibleOnly, anchors)
+	M:UUFFrames(visibleOnly, anchors)
+	M:UUFPinnedFrames(visibleOnly, anchors)
 	M:ExternalFrames(visibleOnly, anchors)
 	M:CustomFrames(visibleOnly, anchors)
 
@@ -324,6 +326,7 @@ function M:InstallUnitFrameHooks(owner, hooks)
 
 	M:HookCellSpotlightVisibility(hooks.OnVisibilityChanged)
 	M:HookNDuiVisibility(hooks.OnVisibilityChanged)
+	M:HookUUFPinnedVisibility(hooks.OnVisibilityChanged)
 end
 
 function M:Init()

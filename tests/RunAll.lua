@@ -32,6 +32,7 @@ local testFiles = {
     "tests/Core/TestLegacyAddon.lua",
     "tests/Core/TestLocale.lua",
     "tests/Core/TestFrames.lua",
+    "tests/Core/TestUUFFrames.lua",
 
     -- Utils.
     "tests/Utils/TestUtils.lua",
