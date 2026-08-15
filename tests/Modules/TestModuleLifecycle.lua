@@ -8,6 +8,9 @@ local moduleEnv = require("ModuleEnv")
 
 local env = moduleEnv.build()
 local db = env.db
+-- How many tokens the prewarm prepares under test. Small on purpose; see the note at the module
+-- loads below.
+local PREWARM_TOKENS = 14
 
 -- Force everything relevant on, world context.
 db.Modules.AlertsModule.Enabled.Always = true
@@ -24,12 +27,19 @@ db.Modules.HealerCCModule.Icons.Enabled = true
 env.loadModule("src/Modules/Alerts/Sound.lua")
 env.loadModule("src/Modules/Alerts/Display.lua")
 env.loadModule("src/Modules/Alerts/Module.lua")
+-- Prepared token count, cut down for the suite: every container the prewarm builds is a mock
+-- frame tree, and forty per refresh was most of this file's runtime. The shipped default is
+-- asserted below so lowering it here cannot hide a change to it.
+assert(env.addon.Modules.Alerts.Display.PrewarmTokenCount == 40, "alerts prepares 40 tokens")
+env.addon.Modules.Alerts.Display.PrewarmTokenCount = PREWARM_TOKENS
 env.addon.Modules.AlertsModule:Init()
 local alertsEvents = acm.lastFrameForEvent("NAME_PLATE_UNIT_ADDED")
 assert(alertsEvents, "alerts event frame")
 
 env.loadModule("src/Modules/Nameplates/Display.lua")
 env.loadModule("src/Modules/Nameplates/Module.lua")
+assert(env.addon.Modules.Nameplates.Display.PrewarmTokenCount == 40, "nameplates prepares 40 tokens")
+env.addon.Modules.Nameplates.Display.PrewarmTokenCount = PREWARM_TOKENS
 env.addon.Modules.NameplatesModule:Init()
 local nameplatesEvents = acm.lastFrameForEvent("NAME_PLATE_UNIT_ADDED")
 assert(nameplatesEvents and nameplatesEvents ~= alertsEvents, "nameplates event frame")
@@ -863,9 +873,6 @@ fw.describe("NameplatesModule 12.1 - prewarming the plate displays", function()
 	-- screen, where a long frame costs nothing because nothing is being drawn.
 
 	local nameplates = env.addon.Modules.NameplatesModule
-	-- Mirrors PREWARM_TOKEN_COUNT in Nameplates/Display.lua. Duplicated on purpose: a test that
-	-- read the constant could not notice it changing.
-	local PREWARM_TOKENS = 40
 
 	local function displaysFor(token)
 		local list = {}
@@ -907,23 +914,26 @@ fw.describe("NameplatesModule 12.1 - prewarming the plate displays", function()
 	end)
 
 	fw.it("prepares the whole token range and stops at its end", function()
-		-- nameplate40 is the last token prepared; nameplate41 is past the range and must still
-		-- build its own, which is what catches the range being quietly shortened.
+		-- The last prepared token must need nothing; the one past the range must still build its
+		-- own, which is what catches the range being quietly shortened.
 		local created = env.auraContainerCount()
 
-		env.enemies.nameplate40 = true
-		env.addPlate("nameplate40")
-		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate40")
+		local last = "nameplate" .. PREWARM_TOKENS
+		local past = "nameplate" .. (PREWARM_TOKENS + 1)
+
+		env.enemies[last] = true
+		env.addPlate(last)
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", last)
 
 		assert(env.auraContainerCount() == created, "the last prepared token built nothing")
 
-		env.enemies.nameplate41 = true
-		env.addPlate("nameplate41")
-		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate41")
+		env.enemies[past] = true
+		env.addPlate(past)
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", past)
 
 		assert(env.auraContainerCount() == created + 1, "a token past the range builds its own")
 
-		for _, token in ipairs({ "nameplate40", "nameplate41" }) do
+		for _, token in ipairs({ last, past }) do
 			nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", token)
 			env.plates[token] = nil
 			env.enemies[token] = nil

@@ -146,7 +146,11 @@ local DEFAULT_BAR_SPACING = 2
 -- How many nameplate tokens to prepare displays for ahead of time. The client hands out
 -- nameplate1..N as plates spawn and the set is fixed for a session, so covering it up front means
 -- no plate has to build a container mid-fight. 40 is what a full battleground reaches.
-local PREWARM_TOKEN_COUNT = 40
+--
+-- On the module table rather than a local so the tests can lower it. Preparing forty tokens per
+-- refresh is cheap in the client and slow against the mock, where it was most of the suite's
+-- runtime; the shipped default is asserted separately.
+M.PrewarmTokenCount = 40
 -- Both sides get prepared, since a plate's faction is not known until it spawns and a duel or a
 -- mind control flips it afterwards. Only bars actually switched on are queued (see Prewarm).
 local PREWARM_FACTIONS = { "Enemy", "Friendly" }
@@ -728,7 +732,7 @@ end
 function M:Prewarm()
 	-- Token-major: a plate takes the lowest free token, so the ones most likely to be wanted first
 	-- get both their bars before the higher tokens get anything.
-	for index = 1, PREWARM_TOKEN_COUNT do
+	for index = 1, M.PrewarmTokenCount do
 		local token = "nameplate" .. index
 
 		for _, faction in ipairs(PREWARM_FACTIONS) do

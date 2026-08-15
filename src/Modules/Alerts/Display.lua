@@ -88,7 +88,11 @@ local DEFAULT_PAIR_SPACING = 2
 -- How many nameplate tokens to prepare pairs for ahead of time. The client hands out
 -- nameplate1..N as plates spawn and the set is fixed for a session, so covering it up front means
 -- no plate has to build a container mid-fight. 40 is what a full battleground reaches.
-local PREWARM_TOKEN_COUNT = 40
+--
+-- On the module table rather than a local so the tests can lower it. Preparing forty tokens per
+-- refresh is cheap in the client and slow against the mock, where it was most of the suite's
+-- runtime; the shipped default is asserted separately.
+M.PrewarmTokenCount = 40
 
 ---The per-category glow tints in force, or nil when the glow itself is off.
 ---@return table? importantColor
@@ -588,7 +592,7 @@ end
 ---the whole set at once is a long frame, and that is free while nothing is being drawn. Cheap to
 ---repeat, since a token that already has a pair costs one table lookup.
 function M:Prewarm()
-	for index = 1, PREWARM_TOKEN_COUNT do
+	for index = 1, M.PrewarmTokenCount do
 		PrewarmOnePair("nameplate" .. index)
 	end
 end
