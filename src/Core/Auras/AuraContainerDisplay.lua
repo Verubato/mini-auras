@@ -440,11 +440,15 @@ end
 ---@param instance AuraContainerDisplay
 local function RefreshFromLiveData(instance)
 	for key, group in pairs(instance.GroupsByKey) do
-		if group.CandidateFilters then
+		-- Held across the pair: the setter stores what it is given, so reading the field again
+		-- after the empty set would hand the empty set straight back.
+		local filters = group.CandidateFilters
+
+		if filters then
 			-- Through an empty set first, since the same table handed back may read as no change.
 			-- Nothing renders in between: a container parses on update, not on the setter.
 			instance:SetCandidateFilters(key, EMPTY_CANDIDATE_FILTERS)
-			instance:SetCandidateFilters(key, group.CandidateFilters)
+			instance:SetCandidateFilters(key, filters)
 		end
 	end
 
@@ -1695,6 +1699,15 @@ end
 function M:SetCandidateFilters(groupKey, filters)
 	if not RequireGroup(self, groupKey, "SetCandidateFilters") then
 		return
+	end
+
+	-- Kept on the group as well as handed over, because the zone-transfer recovery re-hands what
+	-- is stored here. A group left holding its creation-time map goes back to that map on the
+	-- next teleport, and a display built on a placeholder would then match nothing at all.
+	local group = self.GroupsByKey[groupKey]
+
+	if group then
+		group.CandidateFilters = filters
 	end
 
 	self.Frame:SetAuraGroupCandidateFilters(groupKey, filters)

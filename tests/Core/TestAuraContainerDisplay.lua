@@ -1681,6 +1681,31 @@ fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 		assert(given[2] == map, "then the real map")
 	end)
 
+	fw.it("hands back the map the group is on now, not the one it was built with", function()
+		-- Personal auras are built on a placeholder that matches nothing on purpose and get their
+		-- real spell list a moment later, so re-handing the creation-time map empties them.
+		local placeholder = { includeSpellIDs = { [2147483647] = true } }
+		local live = { includeSpellIDs = { [12345] = true } }
+		local instance = display:New(_G.UIParent, "player", {
+			{ Key = "cc", FilterString = "HELPFUL", MaxIcons = 5, CandidateFilters = placeholder },
+		}, 30, 2, "Test")
+		local frame = instance.Frame
+		local given = {}
+		local setFilters = frame.SetAuraGroupCandidateFilters
+
+		instance:SetCandidateFilters("cc", live)
+
+		frame.SetAuraGroupCandidateFilters = function(self, key, filters)
+			given[#given + 1] = filters
+			setFilters(self, key, filters)
+		end
+
+		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
+		displayEvents:TriggerEvent("ACTIONBAR_UPDATE_USABLE")
+
+		assert(given[#given] == live, "the group's current map, not the placeholder")
+	end)
+
 	fw.it("shows the displays anyway when the client never says it is done", function()
 		local instance = newInstance()
 
