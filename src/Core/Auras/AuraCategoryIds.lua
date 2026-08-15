@@ -1143,6 +1143,7 @@ addon.Core.AuraCategoryIds = {
 		[360194] = true, -- Deathmark
 		[385627] = true, -- Kingsbane
 		[222509] = true, -- Feral Frenzy
+		[321538] = true, -- Bloodshed
 	},
 
 	-- Announced only when the player asks for them. These land often enough that a spoken name

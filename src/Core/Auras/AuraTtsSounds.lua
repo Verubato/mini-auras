@@ -155,6 +155,7 @@ addon.Core.AuraTtsSounds = {
 		[374227] = "Zephyr.ogg", -- Zephyr
 	},
 	EnemyDebuff = {
+		[321538] = "Bloodshed.ogg", -- Bloodshed
 		[360194] = "Deathmark.ogg", -- Deathmark
 		[222509] = "FeralFrenzy.ogg", -- Feral Frenzy
 		[385627] = "Kingsbane.ogg", -- Kingsbane
