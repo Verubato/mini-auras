@@ -6,10 +6,14 @@ local units = addon.Utils.Units
 -- a friendly unit turning attackable at duel start (or back at the end), a unit leaving or
 -- re-entering the player's visible world, and a unit becoming charmed (mind control flips it to
 -- the other team's control). All decide what the engine will do with an aura filter, so a
--- display that ignores them shows the wrong thing until something unrelated refreshes it. One
--- shared ticker serves every module that needs this instead of a ticker per module. Each
--- subscriber keeps its own per-token baselines (seeded on plate add or per refresh, cleared on
--- removal) because subscribers track different token sets.
+-- display that ignores them shows the wrong thing until something unrelated refreshes it.
+--
+-- The baseline is per token, not per subscriber. Modules watch overlapping sets - the three raid
+-- frame modules all watch the same group units, and the two nameplate modules the same plate
+-- tokens - so a baseline per subscriber read the same unit three times a tick. Here a token is
+-- read once and the flip is handed to every subscriber watching it; a subscriber holds only its
+-- membership. Baselines are reference counted so one subscriber dropping a token cannot strand
+-- another with a missing baseline, which would read as a flip on the next poll.
 --
 -- Duels only occur in the open world, but visibility and mind control do not, so only the duel
 -- half of the poll early-returns inside instances.
@@ -19,7 +23,17 @@ local M = {}
 addon.Core.DuelPoller = M
 
 local POLL_INTERVAL = 0.25
--- Scratch for the tokens one subscriber's scan found flipped, so OnFlip runs after the walk.
+
+-- Shared baselines, keyed by unit token and alive while any subscriber watches the token.
+local enemyState = {}
+local visibleState = {}
+local charmedState = {}
+local tokenRefs = {}
+-- Per-poll scratch, all reused. Never measured with #: the entries past a poll's own count are
+-- whatever the previous poll left there.
+local activeSubs = {}
+local unionOrder = {}
+local unionSeen = {}
 local flipped = {}
 ---@type DuelPollerSubscriber[]
 local subscribers = {}
@@ -29,73 +43,138 @@ local ticker
 local Subscriber = {}
 Subscriber.__index = Subscriber
 
+---Drops one reference to a token, clearing the shared baseline when the last one goes.
+---@param unitToken string
+local function ReleaseToken(unitToken)
+	local refs = tokenRefs[unitToken]
+
+	if not refs then
+		return
+	end
+
+	if refs > 1 then
+		tokenRefs[unitToken] = refs - 1
+		return
+	end
+
+	tokenRefs[unitToken] = nil
+	enemyState[unitToken] = nil
+	visibleState[unitToken] = nil
+	charmedState[unitToken] = nil
+end
+
 local function Poll()
 	local outdoors = not IsInInstance()
+	local activeCount = 0
+	local unionCount = 0
 
-	for i = 1, #subscribers do
-		local subscriber = subscribers[i]
+	wipe(unionSeen)
+
+	-- Only the tokens an active subscriber watches are read. A disabled module keeps its
+	-- membership, since it re-seeds on the enable path, and must not keep paying for it.
+	for index = 1, #subscribers do
+		local subscriber = subscribers[index]
+
 		if subscriber.IsActive() then
-			wipe(flipped)
+			activeCount = activeCount + 1
+			activeSubs[activeCount] = subscriber
 
-			for unitToken, wasEnemy in pairs(subscriber.Baselines) do
-				-- Not an and/or chain: IsEnemy returning false there would read as "unchanged"
-				-- and a duel ending would never be noticed.
-				local isEnemy = wasEnemy
-
-				if outdoors then
-					isEnemy = units:IsEnemy(unitToken)
-				end
-
-				local isVisible = units:IsVisible(unitToken)
-				local isCharmed = units:IsCharmed(unitToken)
-
-				if isEnemy ~= wasEnemy
-					or isVisible ~= subscriber.Visibility[unitToken]
-					or isCharmed ~= subscriber.Charmed[unitToken] then
-					subscriber.Baselines[unitToken] = isEnemy
-					subscriber.Visibility[unitToken] = isVisible
-					subscriber.Charmed[unitToken] = isCharmed
-					flipped[#flipped + 1] = unitToken
+			for unitToken in pairs(subscriber.Tokens) do
+				if not unionSeen[unitToken] then
+					unionSeen[unitToken] = true
+					unionCount = unionCount + 1
+					unionOrder[unionCount] = unitToken
 				end
 			end
+		end
+	end
 
-			-- Fired after the walk, never inside it: a subscriber's OnFlip refreshes its module,
-			-- and a module that re-seeds its baselines (the raid frames do) clears and refills
-			-- the very table being traversed, which Lua does not define.
-			for index = 1, #flipped do
-				subscriber.OnFlip(flipped[index])
+	local flippedCount = 0
+
+	for index = 1, unionCount do
+		local unitToken = unionOrder[index]
+		-- Not an and/or chain: IsEnemy returning false there would read as "unchanged" and a
+		-- duel ending would never be noticed.
+		local wasEnemy = enemyState[unitToken]
+		local isEnemy = wasEnemy
+
+		if outdoors then
+			isEnemy = units:IsEnemy(unitToken)
+		end
+
+		local isVisible = units:IsVisible(unitToken)
+		local isCharmed = units:IsCharmed(unitToken)
+
+		if isEnemy ~= wasEnemy
+			or isVisible ~= visibleState[unitToken]
+			or isCharmed ~= charmedState[unitToken] then
+			enemyState[unitToken] = isEnemy
+			visibleState[unitToken] = isVisible
+			charmedState[unitToken] = isCharmed
+			flippedCount = flippedCount + 1
+			flipped[flippedCount] = unitToken
+		end
+	end
+
+	-- Fired after the walk, never inside it: a subscriber's OnFlip refreshes its module, and a
+	-- module that re-seeds its baselines (the raid frames do) clears and refills the membership
+	-- the walk above traverses. Membership is read one token at a time down here, so a re-seed
+	-- mid-dispatch is safe and lands before the tokens still to come.
+	for index = 1, flippedCount do
+		local unitToken = flipped[index]
+
+		for slot = 1, activeCount do
+			local subscriber = activeSubs[slot]
+
+			if subscriber.Tokens[unitToken] then
+				subscriber.OnFlip(unitToken)
 			end
 		end
 	end
 end
 
----Seeds or refreshes a token's baselines from its current state, returning its enemy status.
+---Adds a token to this subscriber's watch set, returning its enemy status. The shared baseline is
+---taken only when the caller is the token's sole watcher: re-seeding one another subscriber also
+---watches would reset a change that subscriber has not been told about yet, and a swallowed flip
+---is far worse than the spare one a stale baseline costs on the next poll.
 ---@param unitToken string
 ---@return boolean isEnemy
 function Subscriber:Seed(unitToken)
 	local isEnemy = units:IsEnemy(unitToken)
 
-	self.Baselines[unitToken] = isEnemy
-	self.Visibility[unitToken] = units:IsVisible(unitToken)
-	self.Charmed[unitToken] = units:IsCharmed(unitToken)
+	if not self.Tokens[unitToken] then
+		self.Tokens[unitToken] = true
+		tokenRefs[unitToken] = (tokenRefs[unitToken] or 0) + 1
+	end
+
+	if tokenRefs[unitToken] == 1 then
+		enemyState[unitToken] = isEnemy
+		visibleState[unitToken] = units:IsVisible(unitToken)
+		charmedState[unitToken] = units:IsCharmed(unitToken)
+	end
 
 	return isEnemy
 end
 
 ---@param unitToken string
 function Subscriber:Clear(unitToken)
-	self.Baselines[unitToken] = nil
-	self.Visibility[unitToken] = nil
-	self.Charmed[unitToken] = nil
+	if not self.Tokens[unitToken] then
+		return
+	end
+
+	self.Tokens[unitToken] = nil
+	ReleaseToken(unitToken)
 end
 
 function Subscriber:ClearAll()
-	wipe(self.Baselines)
-	wipe(self.Visibility)
-	wipe(self.Charmed)
+	for unitToken in pairs(self.Tokens) do
+		ReleaseToken(unitToken)
+	end
+
+	wipe(self.Tokens)
 end
 
----Registers a poll subscriber. IsActive gates the subscriber's whole scan (typically the
+---Registers a poll subscriber. IsActive gates the subscriber's whole membership (typically the
 ---module-enabled check); OnFlip runs after the token's baseline has been updated. The shared
 ---ticker starts on the first registration.
 ---@param isActive fun(): boolean
@@ -105,9 +184,7 @@ function M:Register(isActive, onFlip)
 	local subscriber = setmetatable({
 		IsActive = isActive,
 		OnFlip = onFlip,
-		Baselines = {},
-		Visibility = {},
-		Charmed = {},
+		Tokens = {},
 	}, Subscriber)
 	subscribers[#subscribers + 1] = subscriber
 
@@ -121,6 +198,5 @@ end
 ---@class DuelPollerSubscriber
 ---@field IsActive fun(): boolean
 ---@field OnFlip fun(unitToken: string)
----@field Baselines table<string, boolean> Token -> was an enemy at the last poll.
----@field Visibility table<string, boolean> Token -> was in the player's visible world.
----@field Charmed table<string, boolean> Token -> was charmed (mind controlled).
+---@field Tokens table<string, boolean> The tokens this subscriber watches. The state itself lives
+---in the shared baselines, keyed by token and shared with every other subscriber watching it.
