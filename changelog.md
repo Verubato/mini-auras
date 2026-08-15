@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.14.1
+
+- Workaround for garbage auras showing on zone transfers (need Blizzard for a proper fix).
+- Some performance improvements, mostly around nameplates.
+
 ## 5.14.0
 
 - Added ability to configure the text size in personal auras.
