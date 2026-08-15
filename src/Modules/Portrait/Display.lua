@@ -24,8 +24,8 @@ addon.Modules.Portrait.Display = M
 -- levels: kick (IconSlotContainer, topmost) > cc > disarm > big > external > important. A
 -- higher-priority container's button simply covers the ones below it, and a container with no
 -- matching aura hides its own button secretly, revealing the next one down.
--- The distinct levels are load-bearing: same-level siblings draw in an ARBITRARY order (verified
--- live 2026-08-07, WoW picked a random winner), so priority cannot ride on creation order.
+-- The levels have to differ: same-level siblings draw in an ARBITRARY order (verified live
+-- 2026-08-07, WoW picked a random winner), so priority cannot ride on creation order.
 --
 -- Not AuraSlots, despite those being the documented fit for "one icon, top-priority aura":
 -- a 4-slot portrait container rendered NOTHING on the 12.1 PTR - no errors, AddAuraSlot existed
