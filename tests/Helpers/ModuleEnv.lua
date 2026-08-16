@@ -30,6 +30,9 @@ function M.build()
 		friendlyUnits = {},
 		inInstance = false,
 		instanceType = "none",
+		-- Whether the group counts as a raid, and what the test preview is pretending it is.
+		isRaid = false,
+		testIsRaid = nil,
 		-- Drives UnitAffectingCombat; the combat events themselves are fired by the tests.
 		inCombat = false,
 		-- Raid target index per unit, read when an interrupt lands.
@@ -121,7 +124,7 @@ function M.build()
 		return env.inInstance, env.instanceType
 	end
 	_G.IsInRaid = function()
-		return false
+		return env.isRaid == true
 	end
 	_G.UnitExists = function(unit)
 		-- Every unit a test names exists, except the vehicle: that token is only there while the
@@ -346,9 +349,20 @@ function M.build()
 			return list
 		end,
 	}
+	-- Modelled rather than stubbed flat: the test preview override decides both which option set
+	-- a module reads and, through the enable gate, whether it may draw at all.
 	addon.Core.InstanceOptions = {
 		IsRaid = function()
-			return false
+			if env.testIsRaid ~= nil then
+				return env.testIsRaid
+			end
+			return env.isRaid == true
+		end,
+		GetTestIsRaid = function()
+			return env.testIsRaid
+		end,
+		SetTestIsRaid = function(_, isRaid)
+			env.testIsRaid = isRaid
 		end,
 	}
 	addon.Core.Frames = {

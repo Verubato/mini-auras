@@ -85,10 +85,21 @@ end)
 
 fw.describe("ModuleUtil:IsModuleEnabled", function()
 	local moduleUtil, db
+	-- What the test preview is pretending the context is; nil outside test mode.
+	local previewIsRaid
 
 	local function setup(enabledSettings)
 		db = { Modules = { TestModule = { Enabled = enabledSettings } } }
-		local addon = loadModule("src/Utils/ModuleUtil.lua", newAddon(db))
+		previewIsRaid = nil
+
+		local addon = newAddon(db)
+		addon.Core.InstanceOptions = {
+			GetTestIsRaid = function()
+				return previewIsRaid
+			end,
+		}
+
+		loadModule("src/Utils/ModuleUtil.lua", addon)
 		moduleUtil = addon.Utils.ModuleUtil
 		moduleUtil:Init()
 	end
@@ -161,6 +172,53 @@ fw.describe("ModuleUtil:IsModuleEnabled", function()
 		assert(moduleUtil:IsModuleEnabled("TestModule") == true, "world raid group -> Raid flag")
 		setWorld(false, "none", false)
 		assert(moduleUtil:IsModuleEnabled("TestModule") == false, "solo world -> World flag (false)")
+	end)
+
+	-- The preview tabs are what the user is really asking about: previewing the raid layout from
+	-- the open world must read the Raid flag, and previewing the other tab must not borrow a
+	-- context the player is not in - a dungeons-only module stays off in the world.
+	fw.it("takes the raid question from the preview, not from the group", function()
+		setup({ World = true, Arena = true, Dungeons = true, Raid = false, BattleGrounds = false })
+		setWorld(false, "none", false)
+
+		previewIsRaid = true
+		assert(moduleUtil:IsModuleEnabled("TestModule") == false, "previewing a raid reads the Raid flag")
+
+		previewIsRaid = false
+		assert(moduleUtil:IsModuleEnabled("TestModule") == true, "and the other tab reads World")
+
+		previewIsRaid = nil
+		assert(moduleUtil:IsModuleEnabled("TestModule") == true, "back to the live zone when the preview ends")
+	end)
+
+	fw.it("never lets a preview borrow a context the player is not in", function()
+		setup({ World = false, Arena = false, Dungeons = true, Raid = false, BattleGrounds = false })
+		setWorld(false, "none", false)
+
+		previewIsRaid = false
+		assert(moduleUtil:IsModuleEnabled("TestModule") == false, "dungeons-only stays off in the world")
+
+		previewIsRaid = true
+		assert(moduleUtil:IsModuleEnabled("TestModule") == false, "and off previewing a raid")
+	end)
+
+	fw.it("keeps the zone's own answer while previewing", function()
+		setup({ World = true, Arena = false, Dungeons = false, Raid = true, BattleGrounds = false })
+		setWorld(true, "pvp", true)
+
+		previewIsRaid = false
+		assert(moduleUtil:IsModuleEnabled("TestModule") == false, "a battleground reads BattleGrounds")
+
+		previewIsRaid = true
+		assert(moduleUtil:IsModuleEnabled("TestModule") == false, "whichever tab is up")
+	end)
+
+	fw.it("lets Always win over the previewed context", function()
+		setup({ Always = true, Raid = false, BattleGrounds = false })
+		setWorld(false, "none", false)
+
+		previewIsRaid = true
+		assert(moduleUtil:IsModuleEnabled("TestModule") == true)
 	end)
 end)
 

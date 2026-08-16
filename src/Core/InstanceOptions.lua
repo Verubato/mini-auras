@@ -22,6 +22,14 @@ function M:IsRaid()
 	return IsInRaid()
 end
 
+---What the test preview is pretending the context is, or nil when nothing is overriding it.
+---The enable gate reads this so a preview shows what the previewed context would show, rather
+---than what the zone the player happens to be standing in would.
+---@return boolean?
+function M:GetTestIsRaid()
+	return testIsRaid
+end
+
 ---@param isRaid boolean?
 function M:SetTestIsRaid(isRaid)
 	testIsRaid = isRaid

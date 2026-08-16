@@ -231,9 +231,18 @@ function M:IsModuleEnabled(moduleName)
 	end
 
 	local inInstance, instanceType = IsInInstance()
+	-- A preview only overrides the raid question, the same one it overrides for the option set:
+	-- previewing the raid layout from the open world reads the Raid flag, not the World one. The
+	-- zone still answers for itself, so a battleground stays a battleground whichever tab is up.
+	local testIsRaid = addon.Core.InstanceOptions:GetTestIsRaid()
+	local isRaid = testIsRaid
+
+	if isRaid == nil then
+		isRaid = IsInRaid()
+	end
 
 	if not inInstance then
-		if IsInRaid() then
+		if isRaid then
 			return settings.Raid
 		end
 		return settings.World or false
@@ -246,7 +255,7 @@ function M:IsModuleEnabled(moduleName)
 		return settings.BattleGrounds
 	end
 
-	if IsInRaid() then
+	if isRaid then
 		return settings.Raid
 	end
 
