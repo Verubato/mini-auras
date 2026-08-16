@@ -406,14 +406,6 @@ local function BuildTtsTab(parent, options)
 		})
 	end
 
-	local packNote = mini:TextBlock({
-		Parent = parent,
-		Lines = {
-			L["On this game version, text-to-speech uses pre-recorded voice packs."],
-		},
-	})
-	packNote:SetPoint("TOPLEFT", ttsIntro, "BOTTOMLEFT", 0, -verticalSpacing)
-
 	local function TtsChannel()
 		return options.TTS and options.TTS.Channel or "Master"
 	end
@@ -434,7 +426,7 @@ local function BuildTtsTab(parent, options)
 			return value
 		end,
 	})
-	packDropdown:SetPoint("TOPLEFT", packNote, "BOTTOMLEFT", 0, -verticalSpacing)
+	packDropdown:SetPoint("TOPLEFT", ttsIntro, "BOTTOMLEFT", 0, -verticalSpacing)
 	packDropdown:SetWidth(400)
 
 	-- Both categories share this: the engine plays the baked clips, and one page of

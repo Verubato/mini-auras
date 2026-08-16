@@ -194,7 +194,6 @@ L:RegisterLocale("ptBR", function() return {
 	["Announce spell names using text-to-speech when they are cast."] = "Anunciar nomes de feitiços usando texto para fala quando forem lançados.",
 	["Defensive Spells"] = "Feitiços defensivos",
 	["Includes defensives in the alerts."] = "Inclui habilidades defensivas nos alertas.",
-	["On this game version, text-to-speech uses pre-recorded voice packs."] = "Nesta versão do jogo, a conversão de texto em fala usa pacotes de voz pré-gravados.",
 	["Play a sound when a defensive spell is pressed."] = "Reproduzir um som quando um feitiço defensivo for lançado.",
 	["Show alert icons in the alerts region."] = "Mostrar ícones de alerta na região de alertas.",
 	["Show CC icons when healer is CC'd."] = "Mostrar ícones de controle quando o curandeiro estiver sob controle.",

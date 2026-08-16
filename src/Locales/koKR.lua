@@ -194,7 +194,6 @@ L:RegisterLocale("koKR", function() return {
 	["Announce spell names using text-to-speech when they are cast."] = "주문이 사용될 때 음성 합성으로 주문 이름을 알립니다.",
 	["Defensive Spells"] = "방어 주문",
 	["Includes defensives in the alerts."] = "알림에 방어 기술을 포함합니다.",
-	["On this game version, text-to-speech uses pre-recorded voice packs."] = "이 게임 버전에서는 음성 합성이 미리 녹음된 음성 팩을 사용합니다.",
 	["Play a sound when a defensive spell is pressed."] = "방어 주문이 사용될 때 소리 재생.",
 	["Show alert icons in the alerts region."] = "알림 영역에 경고 아이콘을 표시합니다.",
 	["Show CC icons when healer is CC'd."] = "치유사가 군중 제어당할 때 CC 아이콘을 표시합니다.",

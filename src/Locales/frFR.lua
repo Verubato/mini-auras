@@ -194,7 +194,6 @@ L:RegisterLocale("frFR", function() return {
 	["Announce spell names using text-to-speech when they are cast."] = "Annonce le nom des sorts par synthèse vocale quand ils sont lancés.",
 	["Defensive Spells"] = "Sorts défensifs",
 	["Includes defensives in the alerts."] = "Inclut les sorts défensifs dans les alertes.",
-	["On this game version, text-to-speech uses pre-recorded voice packs."] = "Sur cette version du jeu, la synthèse vocale utilise des packs de voix préenregistrés.",
 	["Play a sound when a defensive spell is pressed."] = "Joue un son quand un sort défensif est utilisé.",
 	["Show alert icons in the alerts region."] = "Affiche les icônes d'alerte dans la zone d'alertes.",
 	["Show CC icons when healer is CC'd."] = "Affiche les icônes de CC quand le heal est sous CC.",

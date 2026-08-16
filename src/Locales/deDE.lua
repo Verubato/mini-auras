@@ -194,7 +194,6 @@ L:RegisterLocale("deDE", function() return {
 	["Announce spell names using text-to-speech when they are cast."] = "Sage Zaubernamen mittels Sprachausgabe an, wenn sie gewirkt werden.",
 	["Defensive Spells"] = "Defensive Zauber",
 	["Includes defensives in the alerts."] = "Schließt defensive Fähigkeiten in den Warnungen ein.",
-	["On this game version, text-to-speech uses pre-recorded voice packs."] = "In dieser Spielversion nutzt die Sprachausgabe vorab aufgenommene Stimmpakete.",
 	["Play a sound when a defensive spell is pressed."] = "Spiele einen Sound ab, wenn ein defensiver Zauber gewirkt wird.",
 	["Show alert icons in the alerts region."] = "Warnsymbole im Warnbereich anzeigen.",
 	["Show CC icons when healer is CC'd."] = "CC-Symbole anzeigen, wenn der Heiler unter Kontrolle ist.",
