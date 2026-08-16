@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.17.0
+
+- Added a Font option in the miscellaneous settings, setting the font for every piece of text the addon draws. The list comes from LibSharedMedia, so any font your media addons offer is there.
+
 ## 5.16.1
 
 - Fixed an error, and aura sounds going quiet, when a unit frame addon asked MiniAuras to refresh its frames.
