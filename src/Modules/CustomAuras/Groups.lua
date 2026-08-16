@@ -206,9 +206,9 @@ local DEFAULT_GROUPS = {
 	{ Name = "Precog", SpellId = 377362, Sound = "ElectricalSpark" },
 	{ Name = "Shroud", SpellId = 378464, Color = { R = 0.64, G = 0.21, B = 0.93 } },
 }
--- Where they land: a row near the top of the screen, clear of the unit frames and cast bar.
-local DEFAULT_ROW_Y = 300
-local DEFAULT_ROW_SPACING = 50
+-- Where they land: centred, just above the player frame, where the eye already is.
+local DEFAULT_ROW_X = 0
+local DEFAULT_ROW_Y = 80
 
 ---@class CustomAurasGroups
 local M = {}
@@ -519,10 +519,7 @@ function M:SeedDefaults(options)
 
 	options.SeededDefaults = true
 
-	-- Centred on the row: two groups sit at -25 and 25.
-	local first = -DEFAULT_ROW_SPACING * (#DEFAULT_GROUPS - 1) / 2
-
-	for index, template in ipairs(DEFAULT_GROUPS) do
+	for _, template in ipairs(DEFAULT_GROUPS) do
 		local group = M:NewGroup(options, template.Name)
 
 		group.Spells = { template.SpellId }
@@ -536,7 +533,7 @@ function M:SeedDefaults(options)
 		end
 
 		group.Sound.Applied = template.Sound or NO_SOUND
-		group.Position.X = first + (index - 1) * DEFAULT_ROW_SPACING
+		group.Position.X = DEFAULT_ROW_X
 		group.Position.Y = DEFAULT_ROW_Y
 
 		options.Groups[#options.Groups + 1] = M:Normalise(group)

@@ -225,16 +225,14 @@ fw.describe("CustomAuras - the groups a profile starts with", function()
 		assert(shroud.Icons.Color.R == 0.64 and shroud.Icons.Color.B == 0.93, "purple shroud")
 	end)
 
-	fw.it("lays them out in a row near the top of the screen", function()
+	fw.it("centres them above the player frame", function()
 		local fresh = FreshOptions()
-		local seen = {}
 
 		groups:SeedDefaults(fresh)
 
 		for _, group in ipairs(fresh.Groups) do
-			assert(group.Position.Y > 0, "above the middle of the screen")
-			assert(not seen[group.Position.X], "and each one beside the last, not on top of it")
-			seen[group.Position.X] = true
+			assert(group.Position.X == 0, "centred on the screen")
+			assert(group.Position.Y == 80, "just above the middle of the screen")
 		end
 	end)
 
