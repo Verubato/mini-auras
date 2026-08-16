@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.14.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.15.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -52,7 +52,8 @@ own main-assist command can claim it first, so on some clients it may not reach 
 - `/rl` reloads the UI, registered only if no other addon already defines it.
 
 The Interface > AddOns > MiniAuras entry is only a splash screen with the version and an
-"Open Settings" button; all real configuration is in the standalone window.
+"Open Settings" button; all real configuration is in the standalone window. Since 5.15.0 the
+addon list files MiniAuras under a **Mini** category, alongside the author's other addons.
 
 **Test mode** draws fake icons on every enabled display so things can be positioned out of
 combat. While testing, the Test button pulses and reads "Testing...". Screen-anchored displays
@@ -209,8 +210,8 @@ channel dropdown: Master, Sound Effects (SFX), Music, Ambience, or Dialog, defau
 ## Custom Auras / Personal Auras
 
 Sidebar: General > Personal Auras. Page title "Custom Auras". User-built "mini weak auras":
-icons or bars (with optional sound) for buffs on allies and debuffs on enemies, or a sound on
-its own with nothing drawn at all.
+icons, bars or a piece of the game's own proc art (with optional sound) for buffs on allies and
+debuffs on enemies, or a sound on its own with nothing drawn at all.
 
 ### Groups
 
@@ -274,9 +275,9 @@ the old Precognition module's settings is frozen at what that release shipped.
   - **Friendly Nameplates** / **Enemy Nameplates** - one copy on every matching nameplate.
   - (Groups saved with the older units target/focus/targettarget/nameplate are migrated to the
     matching target or nameplate choice; focus no longer exists as a choice.)
-- **Display**: **Icons**, **Bars** or **Sound only**. First on the row, because it decides
-  what the rest of the row may offer (see Sound only below). Icons and bars are the two drawn
-  shapes; see the Appearance and Layout tabs.
+- **Display**: **Icons**, **Bars**, **Texture** or **Sound only**. First on the row, because it
+  decides what the rest of the row may offer (see Sound only below). Icons, bars and texture are
+  the three drawn shapes; see the Appearance and Layout tabs.
 - **Aura Type**: **Buff** or **Debuff**. The dropdown is hidden when the unit allows only one
   type, and for a Sound only group, which does not care. Target and nameplate units allow only
   the type matching their side (buffs on friendly, debuffs on enemy); Arena Frames allows only
@@ -362,7 +363,10 @@ again.
 ### Appearance tab
 
 Empty for a **Sound only** group, which draws nothing: the tab shows "Sound only auras don't
-have an appearance." and no controls. **Display** itself lives on the Trigger tab.
+have an appearance." and no controls. **Display** itself lives on the Trigger tab. A **Texture**
+group shows its own short set of controls instead of the ones below: **Select Texture** with a
+preview beside it, **Additive**, **Mirror**, **Desaturate**, and the **Colour** swatch, which
+tints the art. Everything else here belongs to icons and bars.
 
 | Setting | Values / range | Default |
 |---|---|---|
@@ -384,10 +388,38 @@ have an appearance." and no controls. **Display** itself lives on the Trigger ta
 **Display** (on the Trigger tab) decides the shape of the whole group. A **Bars** group draws a
 horizontal bar per aura: the spell icon at the left, the spell name and the countdown inside the fill, and the
 fill draining as the aura runs out. Stacks, dispel colouring and the pandemic reveal work on
-both shapes; the glow does not (the styles are drawn for a square, so the option is hidden for
+icons and bars; the glow does not (the styles are drawn for a square, so the option is hidden for
 bars). The shape is baked into a display when it is built, so switching it swaps the group onto
 a different set of frames, and a switch made while the game is hiding aura data (inside an
 arena) may not show until the match ends.
+
+**Texture** (since 5.15.0) draws one piece of art while any tracked aura is up, instead of an
+icon per aura. It is decoration hung beside a unit rather than a row of squares, so it carries
+none of the icon chrome: no countdown, no stack count, no cooldown swipe, no glow, no border, no
+pandemic reveal, no tooltip (the art stands for the whole group rather than for one aura), and no
+Masque skinning. One picture however many auras match, so **Max Icons** does not apply and the
+preview is a single stand-in. Which aura is up is secret on 12.1, so art that changed per spell
+could not be chosen anyway: the group is the picture, and the game showing it is what says a
+tracked aura is there.
+
+Texture controls, on the Appearance tab:
+
+| Setting | Values / range | Default |
+|---|---|---|
+| Select Texture | opens the texture browser; a preview sits beside the button | Maelstrom Weapon |
+| Additive | on/off; adds the art's colour to what is behind it, which is what the game's overlay art expects | on |
+| Mirror | on/off; flips the art left to right (applied before the rotation) | off |
+| Desaturate | on/off; draws the art in grey | off |
+| Colour | swatch; tints the art | white |
+
+**Texture browser** ("Choose a Texture"): a grid of the game's proc overlay art (Backlash, Brain
+Freeze, Maelstrom Weapon, Rime and so on, 21 pieces), each drawn over black because that is what
+the art was made for, with a **Search** box narrowing the list as it is typed and a count at the
+bottom. The list is deliberately short, and the **Texture path** box below the grid is the way out
+of it: typing any texture path the client has, or an atlas name, uses that instead, including a
+file another addon ships. **Reset** clears the art, and a texture group with no art draws nothing
+(it counts as still being built, like a spell list with nothing in it). A build that never shipped
+one of the listed files drops it from the browser rather than offering an empty square.
 
 **Pandemic** highlights an aura during its refresh window (where re-casting adds the
 remaining time on top). The game decides the window per spell, and only your own re-castable
@@ -419,8 +451,15 @@ have a position." and no controls.
 | Icon Size | 10-200 (icons only) | 40 |
 | Bar Height | 8-50 (bars only) | 20 |
 | Bar Width | 40-250 (bars only) | 150 |
+| Texture Width / Texture Height | 8-400 (texture only) | 64 / 64 |
+| Rotation | 0-359 degrees clockwise (texture only) | 0 |
+| Opacity (%) | 0-100 % (texture only) | 100 |
 | Icon Padding | 0-50 | 2 |
 | Text Size (%) | 50-200 % | 100 |
+
+A **Texture** group keeps only Texture Width, Texture Height, Rotation, Opacity, Strata and the
+offsets: one picture has no order to sort into, no direction to grow in, no spacing between
+copies, and no text to scale, so those four controls are hidden and the row closes up around them.
 
 Dragging the icons or bars on screen writes the same values the Offset X/Y boxes edit, and the
 boxes update when the drag ends.
@@ -454,9 +493,10 @@ still only fire while the unit is on the side the choice names.
 ### Limits
 
 - Max 100 spells per group.
-- Max 40 icons or bars shown per group; 3 preview stand-ins while positioning.
-- Icon size 10-200, bar height 8-50, bar width 40-250, spacing 0-50, text size 50-200 %,
-  offsets typed up to +/-2000.
+- Max 40 icons or bars shown per group; 3 preview stand-ins while positioning. A texture group
+  draws exactly one picture, with one stand-in.
+- Icon size 10-200, bar height 8-50, bar width 40-250, texture width/height 8-400, rotation
+  0-359, opacity 0-100 %, spacing 0-50, text size 50-200 %, offsets typed up to +/-2000.
 
 ---
 
@@ -886,8 +926,8 @@ Alerts, Nameplates, Friendly Indicators, Custom Auras, Trinkets and Kick Timer.
 
 A skin is applied when an icon is created, so **reload after changing a skin** for it
 to reach icons that already exist. Some displays stay unskinned by design: custom aura groups
-drawn as bars, the round portrait icons (the skin would fight their own mask), and any button
-whose size the game keeps secret, which covers nameplate icons. If Masque itself errors while
+drawn as bars or as a texture, the round portrait icons (the skin would fight their own mask),
+and any button whose size the game keeps secret, which covers nameplate icons. If Masque itself errors while
 skinning, the display drops skinning for that sub-group for the rest of the session and prints
 one chat warning naming it, rather than losing the icons.
 
@@ -968,10 +1008,22 @@ filters mode); (4) a caster filter (Cast by, From me or my pet, Applied by me) w
 in another instance or phase, where the game cannot attribute casters, so the group hides
 until they return; (5) the group's unit names a side and the unit is currently on the other
 side (buffs show only while friendly, debuffs only while hostile); (6) the group's own
-Enabled toggle is off.
+Enabled toggle is off; (7) it is a Texture group whose art was cleared with the browser's
+Reset button, so there is nothing to draw.
+
+**"A personal aura tracking a permanent buff never shows."** Fixed in 5.15.0, where a spell-ID
+group no longer hides an aura that runs forever. On an older version the group works for timed
+auras and stays blank for permanent ones; update the addon.
+
+**"A texture aura shows nothing / shows a black box."** Nothing drawn usually means the art was
+cleared (Reset in the texture browser); pick one again. A black box means **Additive** is off:
+the game's overlay art is drawn on black and needs additive blending to read, so leave it on
+unless the picked texture is a normal image. Texture groups draw one picture whatever is up, and
+they carry no countdown, stack count, glow, border or tooltip by design.
 
 **"A personal aura's countdown text disappeared."** Either **Hide numbers** or **Centre
-stacks** is on for that group (Appearance tab). Centre stacks deliberately swaps the countdown
+stacks** is on for that group (Appearance tab), or its **Display** is set to Texture, which
+draws art with no text at all. Centre stacks deliberately swaps the countdown
 for the stack count, so a group tracking an aura that never stacks shows no text at all with
 it on.
 
