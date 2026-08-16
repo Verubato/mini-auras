@@ -21,7 +21,7 @@ local addonName, addon = ...
 
 -- Every overlay in the catalog has rounded inner corners, so an icon showing one is masked to the
 -- same shape. A square icon's corners otherwise poke out past the glow, and so does its swipe.
-local ICON_CORNER_MASK = "Interface\\AddOns\\" .. addonName .. "\\Textures\\IconCornerMask.tga"
+local ICON_CORNER_MASK = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Masks\\IconCornerMask.tga"
 
 -- The swipe ignores masks, so its shape comes from its own art. A flat block is the square case:
 -- set explicitly rather than left at the client's default, so squaring an icon back up lands on

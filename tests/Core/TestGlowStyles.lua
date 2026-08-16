@@ -35,7 +35,29 @@ local function StubGlowFrame()
 	return frame
 end
 
----The repository path a spec's bundled texture lives at.
+---A frame as SetIconCorners sees it, plus the icon it cuts the corners off.
+local function MaskingFrame()
+	local frame = {}
+
+	frame.CreateMaskTexture = function()
+		frame.Mask = {
+			SetTexture = function(_, path) frame.MaskTexture = path end,
+			SetAllPoints = function() end,
+		}
+
+		return frame.Mask
+	end
+
+	frame.CreateTexture = function()
+		return {
+			AddMaskTexture = function() end,
+			RemoveMaskTexture = function() end,
+		}
+	end
+
+	return frame
+end
+
 ---The file a shipped texture path names, under src. Everything after the addon folder is kept, so
 ---a style pointing into a subfolder is checked where it actually lives.
 ---@param texture string
@@ -63,6 +85,21 @@ fw.describe("GlowStyles", function()
 			assert(type(spec.PaddingFactor) == "number", name .. " has no padding factor")
 			assert(spec.BlendMode, name .. " has no blend mode")
 		end
+	end)
+
+	fw.it("ships the corner mask it cuts icons with", function()
+		-- The mask is a file like the glow art, and it has moved between folders, so it is worth
+		-- the same check: nothing else would notice the path going stale.
+		local frame = MaskingFrame()
+
+		glowStyles:SetIconCorners(frame, frame:CreateTexture(), nil, nil, true)
+
+		local path = SourcePath(frame.MaskTexture)
+		assert(path, "the mask has an unreadable texture path")
+
+		local handle = io.open(path, "rb")
+		assert(handle, "the mask points at a missing file: " .. path)
+		handle:close()
 	end)
 
 	fw.it("ships the texture file behind every style that names one", function()
