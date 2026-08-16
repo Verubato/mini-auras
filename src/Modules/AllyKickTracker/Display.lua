@@ -2,6 +2,7 @@
 local _, addon = ...
 
 local iconUtil = addon.Utils.IconUtil
+local fontUtil = addon.Utils.FontUtil
 
 addon.Modules.AllyKickTracker = addon.Modules.AllyKickTracker or {}
 
@@ -125,8 +126,10 @@ local function LayoutBar(bar, options)
 	local nameSize = math.max(6, math.floor(height * NAME_FONT_COEFFICIENT))
 
 	fontFile = fontFile or (GameFontNormal and GameFontNormal:GetFont()) or "Fonts\\FRIZQT__.TTF"
-	bar.Name:SetFont(fontFile, nameSize, FONT_FLAGS)
-	bar.Time:SetFont(fontFile, math.floor(nameSize * COUNTDOWN_FONT_SCALE), FONT_FLAGS)
+
+	bar.Name:SetFont(fontUtil:Face(bar.Name, fontFile), nameSize, FONT_FLAGS)
+	bar.Time:SetFont(fontUtil:Face(bar.Time, fontFile),
+		math.floor(nameSize * COUNTDOWN_FONT_SCALE), FONT_FLAGS)
 end
 
 ---@param parent table

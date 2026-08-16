@@ -171,6 +171,7 @@ local function OnAddonLoaded()
 	testModeManager:Init()
 	addon.Core.Sounds:OnChanged(QueueMediaRefresh)
 	addon.Core.BarTextures:OnChanged(QueueMediaRefresh)
+	addon.Core.Fonts:OnChanged(QueueMediaRefresh)
 
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
@@ -202,6 +203,12 @@ function addon:Refresh()
 	for _, module in ipairs(modules) do
 		module:Refresh()
 	end
+
+	-- The font face belongs to no module's settings, so both of these sweep for what a module's
+	-- own refresh had no reason to touch: the aura displays whose style has not otherwise moved,
+	-- and the stand-in party and arena frames, which have no module at all.
+	addon.Core.AuraContainerDisplay:RefreshFontFace()
+	addon.Core.Frames:RefreshTestFrameFonts()
 end
 
 ---Refreshes only the module that renders the given settings table. An unknown key falls back to
@@ -279,6 +286,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field TestSpells TestSpells
 ---@field AnchoredIcons AnchoredIcons
 ---@field BarTextures BarTextures
+---@field Fonts Fonts
 ---@field BarSlotContainer BarSlotContainer
 ---@field Outline Outline
 ---@field Sounds Sounds

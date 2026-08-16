@@ -305,6 +305,16 @@ function M.build()
 		UpdateCooldownFontSize = function() end,
 		UpdateStackFontSize = function() end,
 		UpdateFontSize = function() end,
+		-- No font option in this env, so the face is whatever the string already wears.
+		CurrentFace = function()
+			return nil
+		end,
+		BaseFace = function(_, fontString, face)
+			return face or (fontString and fontString:GetFont())
+		end,
+		Face = function(_, fontString, currentFace)
+			return currentFace or (fontString and fontString:GetFont())
+		end,
 	}
 	addon.Utils.Units = {
 		FriendlyUnits = function()

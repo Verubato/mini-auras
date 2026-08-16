@@ -79,6 +79,8 @@ L:RegisterLocale("zhTW", function() return {
 	["Icons"] = "圖示",
 	["Behaviour"] = "行為",
 	["Glow Type"] = "發光類型",
+	["Font"] = "字型",
+	["Game Default"] = "遊戲預設",
 	["A separate region for showing enemy defensive spells."] = "用於顯示敵方防禦法術的獨立區域。",
 	["Shows auras on party/raid frames."] = "在隊伍/團隊框架上顯示光環。",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "在玩家/目標/焦點頭像上顯示控制、防禦和其他重要法術。",

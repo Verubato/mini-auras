@@ -333,6 +333,11 @@ function M:SetTestLabel(frame, text)
 			testLabels[#testLabels + 1] = label
 		end
 
+		-- Every time rather than at creation: the label outlives a font change, and showing a
+		-- caption is the one moment every test path already goes through.
+		local face, size, flags = label:GetFont()
+		label:SetFont(addon.Utils.FontUtil:Face(label, face), size, flags)
+
 		label:SetText(text)
 		label:Show()
 	elseif label then

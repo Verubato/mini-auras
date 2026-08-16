@@ -80,6 +80,8 @@ L:RegisterLocale("esMX", function() return {
 	["Icons"] = "Iconos",
 	["Behaviour"] = "Comportamiento",
 	["Glow Type"] = "Tipo de brillo",
+	["Font"] = "Fuente",
+	["Game Default"] = "Predeterminada del juego",
 	["A separate region for showing enemy defensive spells."] = "Una región separada para mostrar hechizos defensivos enemigos.",
 	["Shows auras on party/raid frames."] = "Muestra auras en los marcos de grupo y banda.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Muestra control, defensivos y otros hechizos importantes en los retratos de jugador/objetivo/foco.",

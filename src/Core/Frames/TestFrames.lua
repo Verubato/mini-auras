@@ -1,5 +1,6 @@
 local addonName, addon = ...
 local M = addon.Core.Frames
+local fontUtil = addon.Utils.FontUtil
 local MAX_TEST_FRAMES = 3
 local PET_FRAME_WIDTH, PET_FRAME_HEIGHT = 144, 40
 local FRAME_WIDTH, FRAME_HEIGHT = 144, 72
@@ -22,6 +23,21 @@ local testPetFrame = nil
 local testFramesContainer = nil
 local testArenaContainer = nil
 
+---The stand-in's caption in the configured face, keeping the template's size and flags. Applied
+---again every time the column is shown, because the frames outlive a font change.
+---@param frame table?
+local function ApplyLabelFont(frame)
+	local text = frame and frame.Text
+
+	if not text then
+		return
+	end
+
+	local face, size, flags = text:GetFont()
+
+	text:SetFont(fontUtil:Face(text, face), size, flags)
+end
+
 ---@param frame table
 ---@param colour table
 ---@param label string
@@ -35,6 +51,7 @@ local function StyleTestFrame(frame, colour, label, font)
 	frame.Text:SetPoint("CENTER")
 	frame.Text:SetText(label)
 	frame.Text:SetTextColor(1, 1, 1)
+	ApplyLabelFont(frame)
 
 	frame:Hide()
 end
@@ -154,6 +171,24 @@ function M:CreateTestFrames()
 	)
 end
 
+---Re-applies the configured face to every stand-in caption on screen. Driven by the addon-wide
+---refresh: these frames outlive a font change, and nothing else touches them once they are up.
+function M:RefreshTestFrameFonts()
+	if testFramesContainer and testFramesContainer:IsShown() then
+		for _, frame in ipairs(testPartyFrames) do
+			ApplyLabelFont(frame)
+		end
+
+		ApplyLabelFont(testPetFrame)
+	end
+
+	if testArenaContainer and testArenaContainer:IsShown() then
+		for _, frame in ipairs(testArenaFrames) do
+			ApplyLabelFont(frame)
+		end
+	end
+end
+
 function M:GetTestFrameContainer()
 	return testFramesContainer
 end
@@ -180,10 +215,12 @@ end
 function M:SetTestFramesShown(shown)
 	for _, frame in ipairs(testPartyFrames) do
 		frame:SetShown(shown)
+		ApplyLabelFont(frame)
 	end
 
 	if testPetFrame then
 		testPetFrame:SetShown(shown)
+		ApplyLabelFont(testPetFrame)
 	end
 
 	if testFramesContainer then
@@ -195,6 +232,7 @@ end
 function M:SetTestArenaFramesShown(shown)
 	for _, frame in ipairs(testArenaFrames) do
 		frame:SetShown(shown)
+		ApplyLabelFont(frame)
 	end
 
 	if testArenaContainer then

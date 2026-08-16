@@ -50,6 +50,7 @@ addon.Core.IconSlotContainer = M
 
 local function UpdateChargeTextFontSize(chargeText, iconSize, fontScale)
 	local font, _, flags = chargeText:GetFont()
+	font = fontUtil:Face(chargeText, font)
 	if font then
 		chargeText:SetFont(font, math.max(1, math.floor(iconSize * 0.35 * (fontScale or 1.0))), flags)
 	end
@@ -1148,7 +1149,7 @@ function M:SetSlot(slotIndex, options)
 				if layer.ChargeTextFace then
 					local _, currentSize = layer.ChargeText:GetFont()
 
-					layer.ChargeText:SetFont(layer.ChargeTextFace, currentSize or 10,
+					layer.ChargeText:SetFont(fontUtil:Face(layer.ChargeText, layer.ChargeTextFace), currentSize or 10,
 						layer.ChargeTextFlags)
 				end
 			end
@@ -1165,7 +1166,7 @@ function M:SetSlot(slotIndex, options)
 			end
 
 			if face then
-				layer.ChargeText:SetFont(face,
+				layer.ChargeText:SetFont(fontUtil:Face(layer.ChargeText, fontUtil:BaseFace(cdText)),
 					math.max(1, math.floor(self.Size * 0.4 * (chargeScale or 1.0))), flags)
 			else
 				fontUtil:UpdateFontSize(layer.ChargeText, self.Size, nil, chargeScale)
@@ -1205,8 +1206,12 @@ function M:SetSlot(slotIndex, options)
 
 	if options.FontScale then
 		layer.Cooldown.FontScale = options.FontScale
-		fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, options.FontScale)
 	end
+
+	-- Every slot, not only the ones handed a scale: the countdown's face can change under a
+	-- scale that has not moved, and a caller that never passes one would keep the old face for
+	-- as long as the icon lives. Created with a scale of 1, so there is always one to size by.
+	fontUtil:UpdateCooldownFontSize(layer.Cooldown, self.Size, nil, layer.Cooldown.FontScale)
 
 	UpdateGlow(layer.Frame, options)
 	ApplyIconCorners(layer, options)

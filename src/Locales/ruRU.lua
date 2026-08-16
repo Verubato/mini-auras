@@ -79,6 +79,8 @@ L:RegisterLocale("ruRU", function() return {
 	["Icons"] = "Иконки",
 	["Behaviour"] = "Поведение",
 	["Glow Type"] = "Тип свечения",
+	["Font"] = "Шрифт",
+	["Game Default"] = "Стандартный шрифт игры",
 	["A separate region for showing enemy defensive spells."] = "Отдельная область для отображения защитных заклинаний противника.",
 	["Shows auras on party/raid frames."] = "Показывает эффекты на рамках группы и рейда.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Показывает контроль, защитные и другие важные заклинания на портретах игрока/цели/фокуса.",

@@ -79,6 +79,8 @@ L:RegisterLocale("deDE", function() return {
 	["Icons"] = "Symbole",
 	["Behaviour"] = "Verhalten",
 	["Glow Type"] = "Leuchttyp",
+	["Font"] = "Schriftart",
+	["Game Default"] = "Spielstandard",
 	["A separate region for showing enemy defensive spells."] = "Ein separater Bereich zur Anzeige gegnerischer Defensivzauber.",
 	["Shows auras on party/raid frames."] = "Zeigt Auren auf Gruppen- und Schlachtzugsfenstern.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Zeigt CC, Defensivzauber und andere wichtige Zauber auf den Porträts von Spieler/Ziel/Fokus.",

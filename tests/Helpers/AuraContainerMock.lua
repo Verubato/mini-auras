@@ -19,6 +19,8 @@ local M = {}
 
 M.restricted = false
 M.batchSize = 10
+-- The file the global font option resolves to; nil means nothing is picked.
+M.fontFace = nil
 -- Button methods to leave off, for the display's older-build fallbacks. Cleared by M.reset.
 M.missingButtonMethods = {}
 
@@ -645,6 +647,7 @@ end
 
 function M.reset()
 	M.restricted = false
+	M.fontFace = nil
 	M.missingButtonMethods = {}
 	tickers = {}
 	timers = {}
@@ -760,6 +763,17 @@ function M.loadDisplay()
 				UpdateCooldownFontSize = function() end,
 				UpdateStackFontSize = function() end,
 				UpdateFontSize = function() end,
+				-- Stands in for the global font option: nil is "nothing picked", so the face is
+				-- whatever the string already wears.
+				CurrentFace = function()
+					return M.fontFace
+				end,
+				BaseFace = function(_, fontString, face)
+					return face or (fontString and fontString:GetFont())
+				end,
+				Face = function(_, fontString, currentFace)
+					return M.fontFace or currentFace or (fontString and fontString:GetFont())
+				end,
 			},
 			WoWEx = {
 				IsAuraStylingRestricted = function()

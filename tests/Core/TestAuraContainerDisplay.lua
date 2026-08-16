@@ -144,6 +144,58 @@ fw.describe("AuraContainerDisplay - SetStyle signature", function()
 		assert(totalSetSizeCalls(instance) > afterFirst, "db change must restyle despite identical style table")
 	end)
 
+	fw.it("restyles when the global font face changes", function()
+		-- The face lives outside the style table every caller builds, so without it folded into
+		-- the comparison a font change left the text in the old face until something else moved.
+		-- The healer warning is a label-only display that nothing else touches: it never moved.
+		local instance = newInstance()
+		instance:SetStyle({ Glow = false })
+		local afterFirst = totalSetSizeCalls(instance)
+
+		acm.fontFace = "Interface/AddOns/SomeMediaPack/expressway.ttf"
+		instance:SetStyle({ Glow = false })
+		assert(totalSetSizeCalls(instance) > afterFirst, "a font change must restyle an untouched style")
+
+		local afterFont = totalSetSizeCalls(instance)
+		instance:SetStyle({ Glow = false })
+		assert(totalSetSizeCalls(instance) == afterFont, "and only the once")
+	end)
+
+	fw.it("sweeps a font change onto a display whose owner never re-applies a style", function()
+		-- The healer warning text is styled when the roster moves and at no other time, so a font
+		-- change reached it only by luck. The sweep is what makes it land on every display.
+		local instance = newInstance()
+		instance:SetStyle({ Glow = false })
+		local afterFirst = totalSetSizeCalls(instance)
+
+		acm.fontFace = "Interface/AddOns/SomeMediaPack/expressway.ttf"
+		display:RefreshFontFace()
+		assert(totalSetSizeCalls(instance) > afterFirst, "the sweep must restyle it")
+
+		local afterSweep = totalSetSizeCalls(instance)
+		display:RefreshFontFace()
+		assert(totalSetSizeCalls(instance) == afterSweep, "and leave it alone once it is current")
+
+		-- The style it now holds has to agree, or the next SetStyle would restyle all over again.
+		instance:SetStyle({ Glow = false })
+		assert(totalSetSizeCalls(instance) == afterSweep, "the swept face must be the stored one")
+	end)
+
+	fw.it("defers a swept font change while aura styling is restricted", function()
+		local instance = newInstance()
+		instance:SetStyle({ Glow = false })
+		local styled = totalSetSizeCalls(instance)
+
+		acm.restricted = true
+		acm.fontFace = "Interface/AddOns/SomeMediaPack/other.ttf"
+		display:RefreshFontFace()
+		assert(totalSetSizeCalls(instance) == styled, "no button may be touched while restricted")
+
+		acm.restricted = false
+		acm.tickAll(1)
+		assert(totalSetSizeCalls(instance) > styled, "the retry ticker settles it once it lifts")
+	end)
+
 	fw.it("SetIconSize restyles even with an unchanged style", function()
 		local instance = newInstance()
 		instance:SetStyle({ Glow = false })

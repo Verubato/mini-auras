@@ -25,6 +25,7 @@ local testFiles = {
     "tests/Core/TestInspector.lua",
     "tests/Core/TestUnitStatePoller.lua",
     "tests/Core/TestBarTextures.lua",
+    "tests/Core/TestFonts.lua",
     "tests/Core/TestArtTextures.lua",
     "tests/Core/TestGlowStyles.lua",
     "tests/Core/TestSounds.lua",

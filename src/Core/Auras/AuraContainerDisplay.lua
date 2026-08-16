@@ -626,6 +626,7 @@ local function StyleDiffersFromStored(instance, style)
 		or stored.MillisecondsThreshold ~= (db and db.MillisecondsThreshold)
 		or stored.ColorCountdownByTime ~= ((db and db.ColorCountdownByTime) or false)
 		or stored.CountdownColorGeneration ~= auraCountdownText:GetColorGeneration()
+		or stored.FontFace ~= fontUtil:CurrentFace()
 		or stored.GlowStyleName ~= GetGlowStyleName()
 		or stored.GlowColorR ~= (color and color[1])
 		or stored.GlowColorG ~= (color and color[2])
@@ -673,6 +674,9 @@ local function StoreStyle(instance, style)
 	stored.MillisecondsThreshold = db and db.MillisecondsThreshold
 	stored.ColorCountdownByTime = (db and db.ColorCountdownByTime) or false
 	stored.CountdownColorGeneration = auraCountdownText:GetColorGeneration()
+	-- The face itself rather than the saved name: a name resolves to nothing until the media
+	-- addon holding it loads, and the swap that follows has to read as a change.
+	stored.FontFace = fontUtil:CurrentFace()
 	stored.GlowStyleName = GetGlowStyleName()
 	stored.GlowColorR = color and color[1]
 	stored.GlowColorG = color and color[2]
@@ -736,7 +740,7 @@ end
 ---@param style AuraDisplayStyle
 local function StyleLabel(button, widgets, style)
 	local label = widgets.Label
-	local face = label:GetFont()
+	local face = fontUtil:Face(label)
 
 	label:SetFont(face, style.LabelFontSize or 20, style.LabelFontFlags)
 	button:EnableMouse(false)
@@ -833,7 +837,9 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 		font, fontSize, fontFlags = cdText:GetFont()
 	end
 	if font then
-		durationText:SetFont(font, fontSize, fontFlags)
+		-- The cooldown text's OWN face, not the one it is wearing: it has been through the
+		-- same swap, and mirroring the swapped face would make it this string's base.
+		durationText:SetFont(fontUtil:Face(durationText, fontUtil:BaseFace(cdText)), fontSize, fontFlags)
 	else
 		fontUtil:UpdateFontSize(durationText, size, 0.4, fontScale)
 	end
@@ -862,7 +868,7 @@ local function CenterStacks(instance, button, widgets)
 	end
 
 	if font then
-		stacks:SetFont(font, fontSize, fontFlags)
+		stacks:SetFont(fontUtil:Face(stacks, fontUtil:BaseFace(cdText)), fontSize, fontFlags)
 	else
 		fontUtil:UpdateFontSize(stacks, instance.Size, nil, instance.Style.FontScale or 1.0)
 	end
@@ -919,7 +925,8 @@ local function StyleStacks(instance, button, widgets, size, fontScale)
 			if stacks.MiniAurasFace then
 				local _, currentSize = stacks:GetFont()
 
-				stacks:SetFont(stacks.MiniAurasFace, currentSize or 10, stacks.MiniAurasFlags)
+				stacks:SetFont(fontUtil:Face(stacks, stacks.MiniAurasFace), currentSize or 10,
+					stacks.MiniAurasFlags)
 			end
 		end
 
@@ -1962,6 +1969,29 @@ function M:SetStyle(style)
 	end
 
 	self:RestyleButtons()
+end
+
+---Brings every live display's text onto the configured font face. Called for the whole set
+---rather than left to the modules: the face belongs to no module's style, so a display whose
+---owner had no other reason to re-apply one - a healer's warning text between roster changes,
+---a nameplate between spawns - would sit in the old face until something unrelated moved it.
+---That is what made a font change look like it landed on some text and not others.
+---
+---Routed through the pending flag rather than restyling on the spot, so a change made while
+---auras are secret settles on the retry ticker like every other deferred restyle.
+function M:RefreshFontFace()
+	local face = fontUtil:CurrentFace()
+
+	for _, instance in ipairs(liveDisplays) do
+		-- Nothing to correct on a display that has never been styled; its first style takes
+		-- the current face along with everything else.
+		if instance.Style.Populated and instance.Style.FontFace ~= face then
+			instance.Style.FontFace = face
+			SetRestylePending(instance, true)
+		end
+	end
+
+	FlushPendingRestyles()
 end
 
 -- There is deliberately no StopGlowAnimations counterpart to parking a display. Hiding a parked

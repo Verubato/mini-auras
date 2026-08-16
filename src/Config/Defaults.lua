@@ -12,6 +12,10 @@ local dbDefaults = {
 	NotifiedChanges = true,
 	GlowType = "Slot Glow",
 	FontScale = 1.0,
+	-- Font face for every module's text, by LibSharedMedia name. False leaves each piece of text
+	-- in whatever face the game hands it, which is not one face: countdowns come from the number
+	-- font, names from the normal one, and each locale has its own files behind those.
+	Font = false,
 	ConfigureBlizzardNameplates = true,
 	DisableSwipe = false,
 	-- Crops Blizzard's silver border off every icon. Off gives the stock art back.

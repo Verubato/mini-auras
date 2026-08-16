@@ -79,6 +79,8 @@ L:RegisterLocale("koKR", function() return {
 	["Icons"] = "아이콘",
 	["Behaviour"] = "동작",
 	["Glow Type"] = "발광 유형",
+	["Font"] = "글꼴",
+	["Game Default"] = "게임 기본값",
 	["A separate region for showing enemy defensive spells."] = "적 방어 주문을 표시하는 별도의 영역입니다.",
 	["Shows auras on party/raid frames."] = "파티/공격대 프레임에 효과를 표시합니다.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "플레이어/대상/주시 대상 초상화에 군중 제어, 방어기 및 기타 중요 주문을 표시합니다.",

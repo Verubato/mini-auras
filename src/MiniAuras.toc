@@ -43,6 +43,7 @@ Core\EventGate.lua
 Core\UnitStatePoller.lua
 Core\LegacyAddon.lua
 
+Core\Display\Fonts.lua
 Core\Display\Pool.lua
 Core\Display\GrowAnchors.lua
 Core\Display\GlowStyles.lua

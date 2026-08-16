@@ -6,6 +6,7 @@ local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local helpers = addon.Config.PanelHelpers
 local dbDefaults = addon.Config.Defaults
+local fonts = addon.Core.Fonts
 ---@class MiscellaneousConfig
 local M = {}
 addon.Config.Miscellaneous = M
@@ -221,6 +222,59 @@ function M:Build(panel)
 
 	glowTypeDropdown:SetPoint("TOPLEFT", glowTypeLabel, "BOTTOMLEFT", 0, -4)
 	glowTypeDropdown:SetWidth(columnWidth)
+
+	local fontLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+	fontLabel:SetText(L["Font"])
+	fontLabel:SetPoint("LEFT", panel, "LEFT", columnWidth + horizontalSpacing, 0)
+	fontLabel:SetPoint("TOP", glowTypeLabel, "TOP", 0, 0)
+
+	-- The default is not a face of its own: each piece of text keeps whatever the game gives it,
+	-- which is the number font for countdowns and the normal one for names.
+	local gameDefaultLabel = L["Game Default"]
+	local fontItems = {}
+
+	local function RebuildFontItems()
+		wipe(fontItems)
+
+		fontItems[1] = gameDefaultLabel
+
+		for _, name in ipairs(fonts:GetNames()) do
+			fontItems[#fontItems + 1] = name
+		end
+	end
+
+	RebuildFontItems()
+
+	local fontDropdown = mini:Dropdown({
+		Parent = panel,
+		Items = fontItems,
+		GetValue = function()
+			return db.Font or gameDefaultLabel
+		end,
+		SetValue = function(value)
+			local name = value ~= gameDefaultLabel and value or false
+
+			if name == db.Font then
+				return
+			end
+
+			db.Font = name
+			addon:Refresh()
+		end,
+	})
+
+	fontDropdown:SetPoint("TOPLEFT", fontLabel, "BOTTOMLEFT", 0, -4)
+	fontDropdown:SetWidth(columnWidth)
+
+	-- Media addons register their fonts whenever they happen to load, which is routinely after
+	-- this dropdown was built, so rebuild the list rather than keeping the one it started with.
+	fonts:OnChanged(function()
+		RebuildFontItems()
+
+		if fontDropdown.MiniRefresh then
+			fontDropdown:MiniRefresh()
+		end
+	end)
 
 	local glowNote = mini:TextBlock({
 		Parent = panel,
