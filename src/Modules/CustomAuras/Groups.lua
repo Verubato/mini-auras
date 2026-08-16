@@ -106,12 +106,6 @@ local FILTER_COMPONENTS = {
 local CANDIDATE_FLAGS = {
 	"isFromPlayerOrPlayerPet", "isBossAura", "isStealable", "isPriorityAura", "canApplyAura",
 }
--- Long enough that no aura worth tracking is near it. It is here for the side effect: any
--- maxDuration at all also drops auras with no duration, and those are the ones that stick when a
--- zone transfer lets the spell id map be skipped - a mount buff stays in the group until the
--- mount ends, while a timed stray falls out on its own as it expires. Spell lists only: a group
--- tracking by filter is not identity-gated and can legitimately want a permanent buff.
-local PERMANENT_AURA_CUTOFF = 5 * 60 * 60
 -- A component or flag is off, required, or required to be absent.
 local OFF = "OFF"
 local REQUIRE = "REQUIRE"
@@ -1060,7 +1054,6 @@ function M:BuildFilters(group)
 
 	if M:TracksSpells(group) then
 		filters.includeSpellIDs = ExpandSpells(group.Spells)
-		filters.maxDuration = PERMANENT_AURA_CUTOFF
 	end
 
 	for _, flag in ipairs(CANDIDATE_FLAGS) do
