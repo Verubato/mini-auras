@@ -36,10 +36,14 @@ local function StubGlowFrame()
 end
 
 ---The repository path a spec's bundled texture lives at.
+---The file a shipped texture path names, under src. Everything after the addon folder is kept, so
+---a style pointing into a subfolder is checked where it actually lives.
+---@param texture string
+---@return string?
 local function SourcePath(texture)
-	local file = texture:match("([^\\]+)$")
+	local within = texture:match("\\AddOns\\[^\\]+\\(.+)$")
 
-	return file and ("src/Textures/" .. file)
+	return within and ("src/" .. within:gsub("\\", "/"))
 end
 
 local function ReadPanel()

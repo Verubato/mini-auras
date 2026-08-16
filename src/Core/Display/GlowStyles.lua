@@ -36,7 +36,7 @@ addon.Core.GlowStyles = M
 -- Keys are user-facing db.GlowType values; renaming one orphans saved configs.
 M.Specs = {
 	["Rotation Assist (Anti-clockwise)"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhiteAntiClockwise.tga",
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Glows\\FlipbookWhiteAntiClockwise.tga",
 		BlendMode = "BLEND",
 		Desaturated = true,
 		PaddingFactor = 1 / 3,
@@ -47,7 +47,7 @@ M.Specs = {
 		Duration = 1.0,
 	},
 	["Rotation Assist (Clockwise)"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\FlipbookWhiteClockwise.tga",
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Glows\\FlipbookWhiteClockwise.tga",
 		BlendMode = "BLEND",
 		Desaturated = true,
 		PaddingFactor = 1 / 3,
@@ -72,7 +72,7 @@ M.Specs = {
 	-- The next three keep their own colours, so they are not desaturated and the tint a caller
 	-- passes has no effect on them.
 	["Twins"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Twins.tga",
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Glows\\Twins.tga",
 		BlendMode = "BLEND",
 		Desaturated = false,
 		PaddingFactor = 1 / 7,
@@ -83,7 +83,7 @@ M.Specs = {
 		Duration = 0.6,
 	},
 	["Mirror"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Mirror.tga",
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Glows\\Mirror.tga",
 		BlendMode = "BLEND",
 		Desaturated = false,
 		PaddingFactor = 1 / 7,
@@ -94,7 +94,7 @@ M.Specs = {
 		Duration = 0.8,
 	},
 	["Twins Mirror"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\TwinMirror.tga",
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Glows\\TwinMirror.tga",
 		BlendMode = "BLEND",
 		Desaturated = false,
 		PaddingFactor = 1 / 7,
@@ -107,7 +107,7 @@ M.Specs = {
 	-- The halo needs to extend well past the icon edges to read correctly, hence the larger
 	-- padding share.
 	["Slot Glow"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\SlotGlow.tga",
+		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Glows\\SlotGlow.tga",
 		BlendMode = "BLEND",
 		Desaturated = false,
 		PaddingFactor = 1 / 5,
