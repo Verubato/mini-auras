@@ -139,8 +139,11 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 	end)
 
 	fw.it("Grow LEFT flips the chain: right edges pinned, negative spacing steps", function()
+		-- Read rather than set: spacing is baked into the buttons, so changing it here would
+		-- rebuild every pair mid-file and leave the lookups below on the parked ones.
+		local spacing = db.Modules.AlertsModule.IconSpacing
+
 		db.Modules.AlertsModule.Grow = "LEFT"
-		db.Modules.AlertsModule.IconSpacing = 2
 		env.addon.Modules.AlertsModule:Refresh()
 
 		local function defOf(token)
@@ -159,14 +162,14 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		assert(point2 == "RIGHT" and relativePoint2 == "RIGHT" and x2 == 0,
 			"chain start pins its RIGHT edge to the bar frame's RIGHT edge")
 		local point10, relativeTo10, relativePoint10, x10 = def10:GetPoint(1)
-		assert(point10 == "RIGHT" and relativeTo10 == def7 and relativePoint10 == "LEFT" and x10 == -2,
+		assert(point10 == "RIGHT" and relativeTo10 == def7 and relativePoint10 == "LEFT" and x10 == -spacing,
 			"next link hangs off the previous display's LEFT edge with negative spacing")
 
 		-- Back to the default; on 12.1 that behaves as RIGHT (LEFT edges, positive spacing).
 		db.Modules.AlertsModule.Grow = "CENTER"
 		env.addon.Modules.AlertsModule:Refresh()
 		local pointAfter, _, relativePointAfter, xAfter = def10:GetPoint(1)
-		assert(pointAfter == "LEFT" and relativePointAfter == "RIGHT" and xAfter == 2,
+		assert(pointAfter == "LEFT" and relativePointAfter == "RIGHT" and xAfter == spacing,
 			"CENTER falls back to RIGHT growth on 12.1")
 	end)
 

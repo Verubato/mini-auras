@@ -192,7 +192,7 @@ local dbDefaults = {
 			-- false = important spells share the main alerts bar (combined); true = separate bars.
 			SplitBars = false,
 			-- Pixel padding between the alerts bar icons.
-			IconSpacing = 2,
+			IconSpacing = 4,
 			-- Direction the alert bars extend as icons appear. Only LEFT and RIGHT render: the
 			-- chained per-unit rows have secret widths, so there is nothing to centre on. An older
 			-- db can still carry CENTER, which every reader resolves to RIGHT.
