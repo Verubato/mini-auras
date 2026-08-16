@@ -1,6 +1,7 @@
 ﻿## Interface: 120100
 ## Title: MiniAuras
 ## Notes: Shows CC and important spells on frames/nameplates/alerts in PvP.
+## Category: Mini
 ## Author: Verz
 ## Version: 5.14.2
 ## SavedVariables: MiniAurasDB
