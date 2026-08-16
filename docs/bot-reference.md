@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.16.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.17.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -180,6 +180,26 @@ Mirror, Slot Glow, Static Pixel Border.
 - Twins, Mirror and Twins Mirror keep their own colours, so the colour swatches do not tint
   them.
 
+### Font (global, under Misc, since 5.17.0)
+
+One font face for every piece of text the addon draws: countdowns, stack counts, bar spell
+names, the healer warning text and the test-mode captions. Default **Game Default**, which is
+not a face of its own - each piece of text keeps whatever the game gives it, which is not one
+font (countdowns come from the game's number font, names from its normal one).
+
+- The list comes from LibSharedMedia, so it holds the client's own fonts plus whatever font
+  packs and other addons have registered. Nothing is registered by MiniAuras itself.
+- A font whose media addon has not loaded yet resolves to nothing rather than to a stand-in,
+  so the text keeps the game font for a second or so and swaps once the addon registers it.
+  The same applies to a font from an addon that has since been uninstalled.
+- Fonts the client cannot draw with are left out of the list. LibSharedMedia also hides fonts
+  that do not declare support for Korean, Russian or Chinese on those clients, so the list is
+  already free of faces that would render the game's own text as boxes.
+- Changing it takes effect immediately, with one exception: while aura data is secret (in
+  combat, and also out of combat inside M+, encounters and rated PvP) the aura icons cannot be
+  restyled, so their text swaps within a second of the restriction lifting. Text that is not
+  drawn on an aura icon changes straight away.
+
 ### Sounds
 
 Fourteen sounds ship with the addon: AirHorn, AlertToastWarm, BubblePop, CheerfulHarp,
@@ -202,6 +222,7 @@ channel dropdown: Master, Sound Effects (SFX), Music, Ambience, or Dialog, defau
   nameplate bars) show decimal seconds once the remaining time drops below the
   **Milliseconds Threshold** (Misc, 1-6 s, default 5).
 - **Font Scale** (Misc, 0.5-1.5, step 0.05, default 1.0) scales the addon's text.
+- **Font** (Misc, since 5.17.0) sets the face that text is drawn in; see "Font" above.
 - **Disable Swipe** (Misc, off by default) removes the cooldown pie animation everywhere;
   timer text stays.
 - **Zoom Icons** (Misc, on by default) crops the silver border Blizzard bakes into spell icon
@@ -885,6 +906,7 @@ the profile.
 | Colour Countdown | on/off | off |
 | Countdown Colours | three swatches: Under 5s, Under 1m, Above 1m | red (1, 0, 0), yellow (1, 0.8, 0), white (1, 1, 1) |
 | Glow Type | see "Glow Type" above | Slot Glow |
+| Font | Game Default, or any LibSharedMedia font | Game Default |
 | Font Scale | 0.5-1.5, step 0.05 | 1.0 |
 | Milliseconds Threshold | 1-6 seconds | 5 |
 
@@ -901,7 +923,7 @@ Sidebar: Other > Profiles.
 - **Active Profile** dropdown plus **New**, **Rename**, **Clone**, **Delete** (confirmed;
   the last remaining profile cannot be deleted), **Reset** (resets the active profile to
   factory defaults, confirmed), and **Import/Export**.
-- A profile contains: all module settings plus the Misc options Glow Type, Font Scale,
+- A profile contains: all module settings plus the Misc options Glow Type, Font, Font Scale,
   Configure Blizzard Nameplates, Disable Swipe, Zoom Icons, Colour Countdown, Countdown
   Colours and Fade With Parent. Not in the profile: Language override, Milliseconds Threshold
   and the Auto-Switch rules.
@@ -1127,6 +1149,11 @@ group runs unskinned until the next reload.
 
 **"High CPU usage."** Set Glow Type (Misc) to Slot Glow or Static Pixel Border. The animated
 glow styles keep animating idle icons.
+
+**"My font isn't in the list."** The list is whatever LibSharedMedia holds, so the font needs
+a media addon (or font pack) that registers it, loaded and enabled. Two things also remove a
+font from the list: one the client refuses to draw with, and, on Korean, Russian and Chinese
+clients, one that does not declare support for that language.
 
 **"Settings reset / different on this character."** Profiles are account-wide but
 Auto-Switch rules are per character and per spec; check Profiles > Auto-Switch and the
