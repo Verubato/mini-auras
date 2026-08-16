@@ -1,7 +1,16 @@
 local _, addon = ...
 local mini = addon.Framework
+local moduleUtil = addon.Utils.ModuleUtil
 local M = addon.Core.Frames
 local externalProviders = {}
+
+-- The refresh a provider asks for runs on our own next frame, never inside the provider's call
+-- stack: the engine refuses the restricted aura-sound registrations to a foreign addon's
+-- execution. The frame addon is also still mid-rebuild when it calls, so its frames are only
+-- worth reading once it has settled, and a provider that fires per frame gets one pass.
+local QueueRefresh = moduleUtil:Coalesced(function()
+	addon:Refresh()
+end)
 
 ---Registers an external frame provider. Providers contribute frames to GetAll.
 ---Expected shape:
@@ -24,9 +33,7 @@ function M:RegisterProvider(provider)
 	externalProviders[#externalProviders + 1] = provider
 
 	if type(provider.RegisterRefreshFrames) == "function" then
-		local ok, err = pcall(provider.RegisterRefreshFrames, function()
-			addon:Refresh()
-		end)
+		local ok, err = pcall(provider.RegisterRefreshFrames, QueueRefresh)
 		if not ok then
 			mini:NotifyWithPrefix("Frame provider '%s' RegisterRefreshFrames failed: %s", provider.Name, tostring(err))
 		end

@@ -40,6 +40,7 @@ local function loadFile(path)
 end
 
 loadFile("src/Utils/WoWEx.lua")
+loadFile("src/Utils/ModuleUtil.lua")
 loadFile("src/Core/Frames/Frames.lua")
 loadFile("src/Core/Frames/ArenaFrames.lua")
 loadFile("src/Core/Frames/TestFrames.lua")
@@ -213,5 +214,50 @@ fw.describe("Frames:ForEachAnchor", function()
 		end)
 
 		assert(count == 1, "and the next walk must not mistake itself for a nested one, got " .. count)
+	end)
+end)
+
+-- A provider asking for a refresh must not get one inside its own call stack: the aura sound
+-- registrations a refresh reaches are restricted, and the engine refuses them to a foreign
+-- addon's execution.
+fw.describe("Frames:RegisterProvider - the refresh callback", function()
+	fw.it("defers the refresh out of the provider's stack, one pass per burst", function()
+		local realAfter = _G.C_Timer.After
+		local queue = {}
+		local refreshes = 0
+
+		_G.C_Timer.After = function(_, fn)
+			queue[#queue + 1] = fn
+		end
+		addon.Refresh = function()
+			refreshes = refreshes + 1
+		end
+
+		local notify
+
+		frames:RegisterProvider({
+			Name = "TestDeferredProvider",
+			GetFrames = function()
+				return {}
+			end,
+			RegisterRefreshFrames = function(callback)
+				notify = callback
+			end,
+		})
+
+		assert(notify, "fixture: the provider is handed a callback")
+
+		notify()
+		notify()
+
+		assert(refreshes == 0, "no refresh may run in the provider's stack, ran " .. refreshes)
+		assert(#queue == 1, "and a burst queues one pass, got " .. #queue)
+
+		queue[1]()
+
+		assert(refreshes == 1, "which refreshes once it runs on our own frame, ran " .. refreshes)
+
+		_G.C_Timer.After = realAfter
+		addon.Refresh = nil
 	end)
 end)

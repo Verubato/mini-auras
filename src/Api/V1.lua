@@ -5,6 +5,7 @@ local _, addon = ...
 
 local mini = addon.Framework
 local framesCore = addon.Core.Frames
+local moduleUtil = addon.Utils.ModuleUtil
 local ttsPacks = addon.Core.TtsPacks
 local alertsModule = addon.Modules.AlertsModule
 
@@ -13,6 +14,12 @@ local alertsModule = addon.Modules.AlertsModule
 ---callback can ever fire again. The methods stay so a caller written against them still loads;
 ---each warns once, naming itself, so the addon author can find and drop the call.
 local deprecationWarned = {}
+
+-- On our own next frame rather than in the caller's stack: the alert sounds are registered with a
+-- restricted API the engine refuses to a foreign addon's execution.
+local QueueAlertsRefresh = moduleUtil:Coalesced(function()
+	alertsModule:Refresh()
+end)
 
 ---@alias MiniAurasSpellType "Defensive"
 ---@alias MiniAurasPredictedCallback fun(unit: string, spellId: number, spellType: MiniAurasSpellType)
@@ -76,7 +83,7 @@ function v1:RegisterVoicePack(pack)
 		-- A pack registered after login only reaches the engine when the alert sound
 		-- registrations are rebuilt. Refresh does nothing until the module has its frames, so
 		-- this is safe however early the caller runs.
-		alertsModule:Refresh()
+		QueueAlertsRefresh()
 	end
 
 	return registered
