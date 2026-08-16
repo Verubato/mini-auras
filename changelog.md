@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.16.0
+
+- Added a border option to the alert icons so you can disable glows but keep the border.
+- Fixed test mode showing a module that is switched off for the context being previewed.
+- Some default setting changes for new profiles.
+
 ## 5.15.0
 
 - Added a Texture display style to personal auras, drawing one of the game's own proc textures while a tracked aura is up.
