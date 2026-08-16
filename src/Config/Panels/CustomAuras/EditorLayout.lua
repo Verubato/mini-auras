@@ -260,23 +260,66 @@ function ui.BuildLayoutTab(ctx)
 		function(group, value) group.Icons.BarWidth = value end)
 	widthSlider.Slider:SetPoint("LEFT", textScaleSlider.Slider, "RIGHT", SLIDER_GAP, 0)
 
+	-- Art keeps its own pair of sides: it is decoration hung beside a unit rather than a square in
+	-- a row, so neither the icon size nor the bar's ranges fit it.
+	local textureWidthSlider = Slider(L["Texture Width"], L["Width of the texture."],
+		groups.MinTextureSize, groups.MaxTextureSize,
+		function(group) return group.Texture.Width end,
+		function(group, value) group.Texture.Width = value end)
+	textureWidthSlider.Slider:SetPoint("TOPLEFT", sliderRow, "TOPLEFT", 4, -SLIDER_HEADROOM)
+
+	local textureHeightSlider = Slider(L["Texture Height"], L["Height of the texture."],
+		groups.MinTextureSize, groups.MaxTextureSize,
+		function(group) return group.Texture.Height end,
+		function(group, value) group.Texture.Height = value end)
+	textureHeightSlider.Slider:SetPoint("LEFT", textureWidthSlider.Slider, "RIGHT", SLIDER_GAP, 0)
+
+	local rotationSlider = Slider(L["Rotation"], L["Turn the texture clockwise, in degrees."],
+		0, groups.MaxRotation,
+		function(group) return group.Texture.Rotation end,
+		function(group, value) group.Texture.Rotation = value end)
+	rotationSlider.Slider:SetPoint("TOPLEFT", secondSliderRow, "TOPLEFT", 4, -SLIDER_HEADROOM)
+
+	local opacitySlider = Slider(L["Opacity (%)"], L["How solid the texture is."], 0, 100,
+		function(group) return group.Texture.Opacity end,
+		function(group, value) group.Texture.Opacity = value end)
+	opacitySlider.Slider:SetPoint("LEFT", rotationSlider.Slider, "RIGHT", SLIDER_GAP, 0)
+
+	---Moves a control's label along the settings row, which moves the control with it: both the
+	---dropdowns and the offset boxes hang off their own caption.
+	---@param label table
+	---@param x number
+	local function PlaceLabel(label, x)
+		label:ClearAllPoints()
+		label:SetPoint("TOPLEFT", settingsControlsRow, "TOPLEFT", x, 0)
+	end
+
 	---@param group CustomAuraGroup
 	local function RefreshShape(group)
 		local bars = groups:DrawsBars(group)
+		-- One picture, so there is no order to sort it into and no direction for it to grow in.
+		local texture = groups:DrawsTexture(group)
 		-- Nothing is drawn for a sound-only group, so there is no size to set and nowhere to put
 		-- it. The whole tab goes, the same way the appearance one does.
 		local soundOnly = groups:IsSoundOnly(group)
+		local icons = not bars and not texture and not soundOnly
 
-		SetSliderShown(sizeSlider, not bars and not soundOnly)
+		SetSliderShown(sizeSlider, icons)
 		SetSliderShown(heightSlider, bars and not soundOnly)
 		SetSliderShown(widthSlider, bars and not soundOnly)
-		SetSliderShown(spacingSlider, not soundOnly)
-		SetSliderShown(textScaleSlider, not soundOnly)
+		SetSliderShown(spacingSlider, not texture and not soundOnly)
+		SetSliderShown(textScaleSlider, not texture and not soundOnly)
+		SetSliderShown(textureWidthSlider, texture and not soundOnly)
+		SetSliderShown(textureHeightSlider, texture and not soundOnly)
+		SetSliderShown(rotationSlider, texture and not soundOnly)
+		SetSliderShown(opacitySlider, texture and not soundOnly)
 
-		orderDropdown:SetShown(not soundOnly)
-		orderDropdown.MiniLabel:SetShown(not soundOnly)
-		growDropdown:SetShown(not soundOnly)
-		growDropdown.MiniLabel:SetShown(not soundOnly)
+		local ordered = not texture and not soundOnly
+
+		orderDropdown:SetShown(ordered)
+		orderDropdown.MiniLabel:SetShown(ordered)
+		growDropdown:SetShown(ordered)
+		growDropdown.MiniLabel:SetShown(ordered)
 		strataDropdown:SetShown(not soundOnly)
 		strataDropdown.MiniLabel:SetShown(not soundOnly)
 
@@ -284,6 +327,12 @@ function ui.BuildLayoutTab(ctx)
 			box.EditBox:SetShown(not soundOnly)
 			box.Label:SetShown(not soundOnly)
 		end
+
+		-- The row closes up rather than leaving holes where the order and grow dropdowns were.
+		PlaceLabel(strataDropdown.MiniLabel, texture and 0 or SETTINGS_COLUMN)
+		PlaceLabel(offsetXBox.Label, texture and SETTINGS_COLUMN or SETTINGS_COLUMN * 3)
+		PlaceLabel(offsetYBox.Label, (texture and SETTINGS_COLUMN or SETTINGS_COLUMN * 3)
+			+ OFFSET_COLUMN)
 
 		emptyNote:SetShown(soundOnly)
 		settingsControlsRow:SetHeight(soundOnly and NOTE_ROW_HEIGHT or ui.DropdownRowHeight)

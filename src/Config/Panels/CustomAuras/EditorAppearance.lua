@@ -2,9 +2,16 @@
 local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
+local config = addon.Config
 local groups = addon.Modules.CustomAuras.Groups
 local barTextures = addon.Core.BarTextures
+local artTextures = addon.Core.ArtTextures
 local ui = addon.Config.CustomAurasUI
+-- The art preview beside the picker button, sized to the row it shares with it.
+local PREVIEW_WIDTH = 96
+local PREVIEW_HEIGHT = 28
+-- Matching the editor's dropdown width, so the picker sits in the same column a dropdown would.
+local PICKER_BUTTON_WIDTH = 180
 local CHECK_COLUMNS = 5
 local CHECK_ROW_HEIGHT = 30
 -- Gaps above each checkbox row, kept here because the sound-only shape has to put them back.
@@ -62,6 +69,42 @@ function ui.BuildAppearanceTab(ctx)
 			return barTextures:GetLabel(value)
 		end,
 	}, shapeRow, 0)
+
+	-- Shares the shape row with the bar texture, which is never up at the same time. The button
+	-- keeps its own wording rather than naming the choice, and the swatch beside it shows what is
+	-- chosen over the black background the art was drawn for.
+	local textureLabel = appearancePanel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+	textureLabel:SetText(L["Texture"])
+	textureLabel:SetPoint("TOPLEFT", shapeRow, "TOPLEFT", 0, 0)
+
+	local textureButton = mini:Button({
+		Parent = appearancePanel,
+		Text = L["Select Texture"],
+		Width = PICKER_BUTTON_WIDTH,
+		OnClick = function()
+			local group = ui.Current()
+
+			if not group then
+				return
+			end
+
+			config.TexturePicker:Open(group.Texture.Asset, function(asset)
+				group.Texture.Asset = asset
+				ui.Populate()
+				ui.Apply()
+			end)
+		end,
+	})
+	textureButton:SetPoint("TOPLEFT", textureLabel, "BOTTOMLEFT", 0, -4)
+
+	local previewBackground = appearancePanel:CreateTexture(nil, "BACKGROUND")
+	previewBackground:SetSize(PREVIEW_WIDTH, PREVIEW_HEIGHT)
+	previewBackground:SetPoint("LEFT", textureButton, "RIGHT", 12, 0)
+	previewBackground:SetColorTexture(0.04, 0.04, 0.05, 1)
+
+	local preview = appearancePanel:CreateTexture(nil, "ARTWORK")
+	preview:SetAllPoints(previewBackground)
+	preview:SetBlendMode("ADD")
 
 	-- Media addons register their textures whenever they happen to load, which is routinely after
 	-- this dropdown was built, so re-ask for the list rather than keeping the one it started with.
@@ -128,6 +171,25 @@ function ui.BuildAppearanceTab(ctx)
 			Set = function(group, value) group.Icons.ShowTooltips = value end,
 		},
 		{
+			Texture = true,
+			Label = L["Additive"],
+			Tooltip = L["Add the texture's colour to whatever is behind it instead of covering it, which is what the game's own glow art expects."],
+			Get = function(group) return group.Texture.Additive end,
+			Set = function(group, value) group.Texture.Additive = value end,
+		},
+		{
+			Texture = true,
+			Label = L["Mirror"], Tooltip = L["Flip the texture from left to right."],
+			Get = function(group) return group.Texture.Mirror end,
+			Set = function(group, value) group.Texture.Mirror = value end,
+		},
+		{
+			Texture = true,
+			Label = L["Desaturate"], Tooltip = L["Draw the texture in grey."],
+			Get = function(group) return group.Texture.Desaturate end,
+			Set = function(group, value) group.Texture.Desaturate = value end,
+		},
+		{
 			Label = L["Pandemic"],
 			Tooltip = L["Highlight an aura during its refresh window, where re-casting adds the remaining time on top. The game decides the window per spell, and only your own re-castable effects have one."],
 			Get = function(group) return group.Icons.Pandemic end,
@@ -159,7 +221,7 @@ function ui.BuildAppearanceTab(ctx)
 	local swatch = mini:ColorSwatch({
 		Parent = appearancePanel,
 		LabelText = L["Colour"],
-		Tooltip = L["Change the colour of the icon's glow and border, or of a bar's fill."],
+		Tooltip = L["Change the colour of the icon's glow and border, a bar's fill, or a texture's tint."],
 		HasOpacity = false,
 		GetValue = function()
 			local group = ui.Current()
@@ -256,13 +318,24 @@ function ui.BuildAppearanceTab(ctx)
 	---@param group CustomAuraGroup
 	local function RefreshShape(group)
 		local bars = groups:DrawsBars(group)
+		local texture = groups:DrawsTexture(group)
 		-- A sound-only group draws nothing, so every appearance control is about something that
 		-- is not there. Only the shape dropdown itself stays, to switch back out of it.
 		local soundOnly = groups:IsSoundOnly(group)
 		local column = 0
 
 		for _, spec in ipairs(checkboxes) do
-			local shown = not soundOnly and (spec.Bars == nil or spec.Bars == bars)
+			local shown
+
+			-- Art shares none of the icon and bar switches: there is no swipe to reverse, no
+			-- count to place and no tooltip to put up, so the two sets never mix.
+			if soundOnly then
+				shown = false
+			elseif texture then
+				shown = spec.Texture == true
+			else
+				shown = spec.Texture ~= true and (spec.Bars == nil or spec.Bars == bars)
+			end
 
 			spec.Control:SetShown(shown)
 
@@ -274,11 +347,15 @@ function ui.BuildAppearanceTab(ctx)
 			end
 		end
 
-		colorTextCheck:SetShown(not soundOnly)
-		textSwatch:SetShown(not soundOnly)
-		textSwatch.Label:SetShown(not soundOnly)
+		-- Art carries no text of any kind and has no refresh-window ring, so everything about
+		-- either belongs to the two shapes that draw them.
+		local iconOrBar = not soundOnly and not texture
 
-		if not soundOnly then
+		colorTextCheck:SetShown(iconOrBar)
+		textSwatch:SetShown(iconOrBar)
+		textSwatch.Label:SetShown(iconOrBar)
+
+		if iconOrBar then
 			-- Both take the next two slots, dropping to the next row together when only one is
 			-- left on this one: split across the break they would read as unrelated controls.
 			if column % CHECK_COLUMNS == CHECK_COLUMNS - 1 then
@@ -292,15 +369,22 @@ function ui.BuildAppearanceTab(ctx)
 
 		local wrapped = column > CHECK_COLUMNS
 
-		-- The bar texture is all that is left on this row now that the shape itself is picked on
-		-- the trigger tab, so the row goes away with it rather than holding open a blank strip.
-		local showTexture = bars and not soundOnly
+		-- The row holds the bar fill for one shape and the art picker for another, and nothing at
+		-- all for the rest, so it goes away with them rather than holding open a blank strip.
+		local showBarTexture = bars and not soundOnly
+		local showPicker = texture and not soundOnly
+		local asset = group.Texture.Asset
 
-		textureDropdown:SetShown(showTexture)
-		textureDropdown.MiniLabel:SetShown(showTexture)
+		textureDropdown:SetShown(showBarTexture)
+		textureDropdown.MiniLabel:SetShown(showBarTexture)
+		textureLabel:SetShown(showPicker)
+		textureButton:SetShown(showPicker)
+		previewBackground:SetShown(showPicker)
+		preview:SetShown(showPicker)
+		artTextures:SetAsset(preview, asset)
 		emptyNote:SetShown(soundOnly)
 
-		if showTexture then
+		if showBarTexture or showPicker then
 			shapeRow:SetHeight(ui.DropdownRowHeight)
 		else
 			shapeRow:SetHeight(soundOnly and NOTE_ROW_HEIGHT or 1)
@@ -310,8 +394,8 @@ function ui.BuildAppearanceTab(ctx)
 		-- hidden by hand: hiding the button alone leaves the caption behind on its own.
 		swatch:SetShown(not soundOnly)
 		swatch.Label:SetShown(not soundOnly)
-		pandemicSwatch:SetShown(not soundOnly)
-		pandemicSwatch.Label:SetShown(not soundOnly)
+		pandemicSwatch:SetShown(iconOrBar)
+		pandemicSwatch.Label:SetShown(iconOrBar)
 
 		-- Rows keep their height whatever is in them, so the emptied ones are collapsed rather
 		-- than left holding the tab open around nothing.

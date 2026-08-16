@@ -50,6 +50,9 @@ Core\Display\Outline.lua
 Core\Display\IconSlotContainer.lua
 Core\Display\BarTextures.lua
 Core\Display\BarSlotContainer.lua
+Core\Display\ArtTextureData.lua
+Core\Display\ArtTextures.lua
+Core\Display\TextureSlotContainer.lua
 
 Core\Auras\AuraCategoryIds.lua
 Core\Auras\AuraTtsSounds.lua
@@ -150,6 +153,7 @@ Config\Panels\EnemyKickTracker.lua
 Config\Panels\AllyKickTracker.lua
 Config\Panels\RaidFrameAuras.lua
 Config\Panels\IconSelector.lua
+Config\Panels\TexturePicker.lua
 Config\Panels\CustomAuras\Shared.lua
 Config\Panels\CustomAuras\ImportExport.lua
 Config\Panels\CustomAuras\SpellPicker.lua

@@ -5,6 +5,7 @@ local wowEx = addon.Utils.WoWEx
 local growAnchors = addon.Core.GrowAnchors
 local iconSlotContainer = addon.Core.IconSlotContainer
 local barSlotContainer = addon.Core.BarSlotContainer
+local textureSlotContainer = addon.Core.TextureSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local testSpellData = addon.Core.TestSpells
 local moduleUtil = addon.Utils.ModuleUtil
@@ -58,6 +59,8 @@ local barColorScratch = {}
 -- Scratch for a group's text colour, in both shapes the two icon backends read; refilled per
 -- style build and copied out by whoever takes it.
 local textColorScratch = {}
+-- Scratch for the stand-in texture's settings, refilled per preview render and never retained.
+local artSpecScratch = {}
 -- White leaves the fonts as they come, for groups saved before the text colour existed.
 local DEFAULT_TEXT_COLOR = { R = 1, G = 1, B = 1 }
 -- What the stand-in icons show for a centred stack count, where live icons show the real one.
@@ -141,6 +144,19 @@ local function BuildStyle(group)
 	style.BarWidth = icons.BarWidth
 	style.BarTexture = icons.BarTexture
 	style.SpellName = icons.SpellName
+
+	if groups:DrawsTexture(group) then
+		local art = group.Texture
+
+		style.TextureAsset = art.Asset
+		style.TextureWidth = art.Width
+		style.TextureRotation = art.Rotation
+		style.TextureMirror = art.Mirror
+		style.TextureDesaturate = art.Desaturate
+		style.TextureAdditive = art.Additive
+		style.TextureAlpha = art.Opacity / 100
+	end
+
 	-- Always on: a stack count is only ever drawn when there is one to draw, so there is
 	-- nothing to turn off and nothing to explain in the options.
 	style.Stacks = true
@@ -177,26 +193,34 @@ end
 ---@return CustomAuraDisplayEntry
 local function CreateEntry(shape, style, size, spacing)
 	local bars = shape == groups.DisplayStyle.Bars
+	local texture = shape == groups.DisplayStyle.Texture
+	-- The most a group of this shape can ever ask for. Art is one picture however many auras are
+	-- up, and an entry only ever goes to a group of the shape it was built for, so the texture
+	-- pool builds one button's worth rather than a whole icon budget nothing will claim.
+	local maxIcons = texture and 1 or groups.MaxIcons
 	local display = auraContainerDisplay:New(UIParent, NO_UNIT, {
 		{
 			Key = HELPFUL_KEY,
 			FilterString = groups.AuraType.Helpful,
-			MaxIcons = groups.MaxIcons,
+			MaxIcons = maxIcons,
 			CandidateFilters = PLACEHOLDER_FILTERS,
 		},
 		{
 			Key = HARMFUL_KEY,
 			FilterString = groups.AuraType.Harmful,
-			MaxIcons = groups.MaxIcons,
+			MaxIcons = maxIcons,
 			CandidateFilters = PLACEHOLDER_FILTERS,
 		},
 		-- Every pooled entry carries pandemic regions: they can only be created with the buttons,
 		-- and any group the pool later hands this entry to may have the reveal turned on.
 	}, size or DEFAULT_SIZE, spacing or DEFAULT_SPACING, MODULE_TAG, {
 		Style = style,
-		Pandemic = true,
+		-- Art has no ring to reveal and no square for a skin to fit, so the texture pool skips
+		-- both rather than building regions no group of that shape can ever ask for.
+		Pandemic = not texture,
 		Bar = bars,
-		MasqueGroup = MODULE_TAG,
+		Texture = texture,
+		MasqueGroup = not texture and MODULE_TAG or nil,
 	})
 
 	return { Display = display, Shape = shape }
@@ -240,6 +264,9 @@ displayPools = {
 	[groups.DisplayStyle.Bars] = pool:New(function(style, size, spacing)
 		return CreateEntry(groups.DisplayStyle.Bars, style, size, spacing)
 	end, ParkDisplay, 0),
+	[groups.DisplayStyle.Texture] = pool:New(function(style, size, spacing)
+		return CreateEntry(groups.DisplayStyle.Texture, style, size, spacing)
+	end, ParkDisplay, 0),
 }
 
 ---Whether a pooled entry's buttons already carry the acquiring group's exact look. Asked while
@@ -257,7 +284,7 @@ end
 ---@return CustomAuraDisplayEntry
 local function AcquireEntry(state)
 	local group = state.Group
-	local shape = groups:DrawsBars(group) and groups.DisplayStyle.Bars or groups.DisplayStyle.Icons
+	local shape = groups:GetShape(group)
 	local style = BuildStyle(group)
 	local size = groups:GetSize(group)
 	local spacing = group.Icons.Spacing
@@ -296,10 +323,7 @@ end
 ---@param state CustomAuraGroupState
 ---@param count number
 local function PrewarmFor(state, count)
-	local shape = groups:DrawsBars(state.Group) and groups.DisplayStyle.Bars
-		or groups.DisplayStyle.Icons
-
-	displayPools[shape]:Prewarm(count, PrewarmCreateArgs, state.Group)
+	displayPools[groups:GetShape(state.Group)]:Prewarm(count, PrewarmCreateArgs, state.Group)
 end
 
 ---True while the icons are stand-ins: test mode covers every group, the options page one.
@@ -362,7 +386,7 @@ local function ConfigureDisplay(state, entry, unit)
 	-- the container happens to be pointed at.
 	local budget = state.Allowed and not unfiltered and unit ~= nil
 		and groups:CanFilterUnit(group, unit)
-		and groups.MaxIcons or 0
+		and groups:GetBudget(group) or 0
 
 	display:SetMaxIcons(HELPFUL_KEY, group.AuraType == groups.AuraType.Helpful and budget or 0)
 	display:SetMaxIcons(HARMFUL_KEY, group.AuraType == groups.AuraType.Harmful and budget or 0)
@@ -377,6 +401,11 @@ end
 ---@param group CustomAuraGroup
 ---@return number
 local function PreviewCount(group)
+	-- Art is one picture whatever it tracks, so its stand-in is one too.
+	if groups:DrawsTexture(group) then
+		return 1
+	end
+
 	if not groups:TracksSpells(group) then
 		return groups.PreviewIcons
 	end
@@ -391,6 +420,10 @@ end
 ---@return number height
 local function PreviewSize(group)
 	local size = groups:GetSize(group)
+
+	if groups:DrawsTexture(group) then
+		return group.Texture.Width, size
+	end
 
 	if groups:DrawsBars(group) then
 		return math.max(size, group.Icons.BarWidth), size
@@ -408,6 +441,17 @@ end
 local function EnsureTestContainer(state, entry, parent)
 	local group = state.Group
 	local width, height = PreviewSize(group)
+
+	if groups:DrawsTexture(group) then
+		if not entry.Test then
+			entry.Test = textureSlotContainer:New(parent, width, height, MODULE_TAG)
+		end
+
+		entry.Test.Frame:SetParent(parent)
+		entry.Test:SetTextureSize(width, height)
+
+		return entry.Test
+	end
 
 	if groups:DrawsBars(group) then
 		if not entry.Test then
@@ -468,6 +512,29 @@ end
 local function RenderTestIcons(state, entry)
 	local group = state.Group
 	local container = entry.Test
+
+	-- Art has nothing per-aura in it, so the stand-in is the same picture the live one draws
+	-- rather than a row of fakes standing in for auras.
+	if groups:DrawsTexture(group) then
+		local art = group.Texture
+		local color = group.Icons.Color
+		local spec = artSpecScratch
+
+		spec.Asset = art.Asset
+		spec.R = color.R or 1
+		spec.G = color.G or 1
+		spec.B = color.B or 1
+		spec.A = art.Opacity / 100
+		spec.Rotation = art.Rotation
+		spec.Mirror = art.Mirror
+		spec.Desaturate = art.Desaturate
+		spec.Additive = art.Additive
+
+		container:SetSlot(1, spec)
+
+		return
+	end
+
 	local drawsBars = groups:DrawsBars(group)
 	-- A bar's fill always carries the group's colour, so the stand-in cannot use the icon colour:
 	-- that one is withheld unless a glow or a border asked for it, because for an icon a colour is
@@ -733,10 +800,9 @@ local function EnsureState(groupDef)
 	state.Group = groupDef
 	state.StyleSignature = StyleSignature(groupDef)
 
-	local shape = groups:DrawsBars(groupDef) and groups.DisplayStyle.Bars
-		or groups.DisplayStyle.Icons
+	local shape = groups:GetShape(groupDef)
 
-	-- Switching between icons and bars is the one appearance change a restyle cannot make: a
+	-- Switching between icons, bars and art is the one appearance change a restyle cannot make: a
 	-- button's shape is baked in when it is created. Hand every copy back (each to the pool that
 	-- built it) and let the refresh below take fresh ones of the new shape.
 	if state.Shape ~= shape then

@@ -645,6 +645,7 @@ fw.describe("Custom auras page - with a group configured", function()
 		local shapes = {
 			groups.DisplayStyle.Bars,
 			groups.DisplayStyle.Icons,
+			groups.DisplayStyle.Texture,
 			groups.DisplayStyle.SoundOnly,
 		}
 

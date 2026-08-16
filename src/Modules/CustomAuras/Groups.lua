@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local artTextures = addon.Core.ArtTextures
 local spellSearch = addon.Core.SpellSearch
 local sounds = addon.Core.Sounds
 local units = addon.Utils.Units
@@ -44,9 +45,13 @@ local ARENA = "ARENA"
 -- makes debuffs on your own side trackable by spell id - the engine drops that filter for the
 -- display but honours it for AddAuraSound, so a group with nothing to draw has nothing to be
 -- wrong about (see SupportsAuraType).
+-- Art is the fourth: one picture drawn while any tracked aura is up, with no clock, no count and
+-- no icon. Which aura is up is secret, so a picture that changed per aura could not be picked
+-- anyway; the group IS the picture, and the engine showing its button is what says it applies.
 local AS_ICONS = "ICON"
 local AS_BARS = "BAR"
 local AS_SOUND = "SOUND"
+local AS_TEXTURE = "TEXTURE"
 
 local DEFAULT_ICON_SIZE = 40
 local DEFAULT_SPACING = 2
@@ -59,6 +64,14 @@ local MAX_BAR_WIDTH = 250
 local DEFAULT_BAR_HEIGHT = 20
 local MIN_BAR_HEIGHT = 8
 local MAX_BAR_HEIGHT = 50
+-- Art keeps its own pair of sides for the same reason a bar does: this is decoration hung beside a
+-- unit rather than a square in a row, and it is routinely far bigger than any icon.
+local DEFAULT_TEXTURE_SIZE = 64
+local MIN_TEXTURE_SIZE = 8
+local MAX_TEXTURE_SIZE = 400
+local MAX_ROTATION = 359
+-- Held as a percentage like every other whole-number setting; the display divides it back down.
+local DEFAULT_OPACITY = 100
 -- Named rather than taken from BarTextures' own default, which is the plain Blizzard bar: this is
 -- the same fill the kick tracker's bars ship with, so the two look like one addon out of the box.
 local DEFAULT_BAR_TEXTURE = "Blizzard Raid Bar"
@@ -228,12 +241,15 @@ M.MinIconSize = MIN_ICON_SIZE
 M.MaxIconSize = MAX_ICON_SIZE
 M.MinTextScale = MIN_TEXT_SCALE
 M.MaxTextScale = MAX_TEXT_SCALE
-M.DisplayStyle = { Icons = AS_ICONS, Bars = AS_BARS, SoundOnly = AS_SOUND }
+M.DisplayStyle = { Icons = AS_ICONS, Bars = AS_BARS, SoundOnly = AS_SOUND, Texture = AS_TEXTURE }
 M.MinBarWidth = MIN_BAR_WIDTH
 M.MaxBarWidth = MAX_BAR_WIDTH
 M.MinBarHeight = MIN_BAR_HEIGHT
 M.MaxBarHeight = MAX_BAR_HEIGHT
 M.DefaultBarTexture = DEFAULT_BAR_TEXTURE
+M.MinTextureSize = MIN_TEXTURE_SIZE
+M.MaxTextureSize = MAX_TEXTURE_SIZE
+M.MaxRotation = MAX_ROTATION
 
 ---@param value any
 ---@param fallback number
@@ -258,6 +274,25 @@ local function IsFallbackIcon(icon)
 	end
 
 	return fallbackFileId ~= nil and icon == fallbackFileId
+end
+
+---What a texture group is allowed to hold as its art: a whole positive file id, a path, or the
+---empty string where the browser was reset. A group that has never chosen starts on the shipped
+---default, so picking the texture shape draws something rather than nothing.
+---@param stored any
+---@return string|number
+local function ArtAsset(stored)
+	local fileId = tonumber(stored)
+
+	if type(stored) == "number" and fileId and fileId > 0 and fileId == math.floor(fileId) then
+		return fileId
+	end
+
+	if type(stored) == "string" then
+		return stored
+	end
+
+	return artTextures:DefaultAsset()
 end
 
 ---Keeps only the keys the engine knows about, each off, required or forbidden. Anything else an
@@ -388,8 +423,8 @@ function M:Normalise(group)
 	icons.TextScale = Clamped(icons.TextScale, DEFAULT_TEXT_SCALE, MIN_TEXT_SCALE, MAX_TEXT_SCALE)
 	-- Icons unless the group asked for something else: a group saved before bars existed has no
 	-- field, and changing what those groups look like is not something a version bump gets to do.
-	icons.Display = (icons.Display == AS_BARS or icons.Display == AS_SOUND) and icons.Display
-		or AS_ICONS
+	icons.Display = (icons.Display == AS_BARS or icons.Display == AS_SOUND
+		or icons.Display == AS_TEXTURE) and icons.Display or AS_ICONS
 	icons.BarWidth = Clamped(icons.BarWidth, DEFAULT_BAR_WIDTH, MIN_BAR_WIDTH, MAX_BAR_WIDTH)
 	icons.BarHeight = Clamped(icons.BarHeight, DEFAULT_BAR_HEIGHT, MIN_BAR_HEIGHT, MAX_BAR_HEIGHT)
 	-- A name from a media addon that is no longer installed resolves back to the default at draw
@@ -428,6 +463,24 @@ function M:Normalise(group)
 	icons.TextColor.R = tonumber(icons.TextColor.R) or 1
 	icons.TextColor.G = tonumber(icons.TextColor.G) or 1
 	icons.TextColor.B = tonumber(icons.TextColor.B) or 1
+
+	-- The art a texture group draws, kept apart from the icon settings it has no use for. An empty
+	-- path is a group still being built: nothing is drawn and Supports says so, rather than picking
+	-- a picture on the user's behalf.
+	local texture = group.Texture or {}
+	group.Texture = texture
+	-- A file id from the browser, a path for something typed by hand, or empty for neither. A file
+	-- id stays a NUMBER; SetTexture will not take the digits as a string.
+	texture.Asset = ArtAsset(texture.Asset)
+	texture.Width = Clamped(texture.Width, DEFAULT_TEXTURE_SIZE, MIN_TEXTURE_SIZE, MAX_TEXTURE_SIZE)
+	texture.Height = Clamped(texture.Height, DEFAULT_TEXTURE_SIZE, MIN_TEXTURE_SIZE, MAX_TEXTURE_SIZE)
+	texture.Rotation = Clamped(texture.Rotation, 0, 0, MAX_ROTATION)
+	texture.Opacity = Clamped(texture.Opacity, DEFAULT_OPACITY, 0, 100)
+	texture.Mirror = texture.Mirror == true
+	texture.Desaturate = texture.Desaturate == true
+	-- On unless it was turned off: the client's overlay art is drawn over a black background and
+	-- reads as a black box without it.
+	texture.Additive = texture.Additive ~= false
 
 	-- An empty file name is "no sound", which the picker offers as its first entry. One file per
 	-- trigger, sharing a channel; File is what the single-sound version of this called Applied.
@@ -579,6 +632,31 @@ function M:DrawsBars(group)
 	return group.Icons.Display == AS_BARS
 end
 
+---True while a group draws one picture rather than icons or bars.
+---@param group CustomAuraGroup
+---@return boolean
+function M:DrawsTexture(group)
+	return group.Icons.Display == AS_TEXTURE
+end
+
+---Which shape a group draws, as one of the DisplayStyle values. A button's shape is baked in when
+---it is created, so this is also the key the display pools its frames under.
+---@param group CustomAuraGroup
+---@return string
+function M:GetShape(group)
+	local display = group.Icons and group.Icons.Display
+
+	return (display == AS_BARS or display == AS_TEXTURE) and display or AS_ICONS
+end
+
+---How many auras a group can show at once. Art is one picture however many auras are up: the
+---group is the picture, so a second copy of it would say nothing the first does not.
+---@param group CustomAuraGroup
+---@return number
+function M:GetBudget(group)
+	return M:DrawsTexture(group) and 1 or MAX_ICONS
+end
+
 ---True while a group draws nothing and only plays its sounds. Nil-safe on the appearance table,
 ---because the unit sanitiser asks this before it has filled one in.
 ---@param group CustomAuraGroup
@@ -600,11 +678,15 @@ function M:HasSound(group)
 	return false
 end
 
----The size a group's display is built at: a bar's height, or an icon's side. Both shapes size
----everything else (fonts, the bar's leading icon) from this one number.
+---The size a group's display is built at: a bar's height, a picture's height, or an icon's side.
+---Every shape sizes what it holds (fonts, the bar's leading icon) from this one number.
 ---@param group CustomAuraGroup
 ---@return number
 function M:GetSize(group)
+	if M:DrawsTexture(group) then
+		return group.Texture.Height
+	end
+
 	return M:DrawsBars(group) and group.Icons.BarHeight or group.Icons.Size
 end
 
@@ -816,6 +898,12 @@ function M:Supports(group)
 	-- No reason given: the empty spell list says it already. A filter group has nothing it must
 	-- carry, because the aura type alone is already a working filter string.
 	if M:TracksSpells(group) and #group.Spells == 0 then
+		return false
+	end
+
+	-- Same again for a texture group with no picture chosen yet: it is a group still being built,
+	-- not one configured wrongly, and the empty swatch on the appearance tab already says so.
+	if M:DrawsTexture(group) and group.Texture.Asset == "" then
 		return false
 	end
 
@@ -1038,6 +1126,7 @@ end
 ---@field Grow string
 ---@field Strata string "AUTO", or a frame strata the group's frames are pinned to.
 ---@field Icons { Size: number, Spacing: number, TextScale: number, Glow: boolean, Border: boolean, Pandemic: boolean, PandemicColor: table, ReverseCooldown: boolean, HideSwipe: boolean, HideNumbers: boolean, CenterStacks: boolean, ShowTooltips: boolean, Color: table, ColorText: boolean, TextColor: table, Display: string, BarWidth: number, BarHeight: number, BarTexture: string, SpellName: boolean }
+---@field Texture { Asset: string|number, Width: number, Height: number, Rotation: number, Opacity: number, Mirror: boolean, Desaturate: boolean, Additive: boolean } Texture display only; Asset is a file id or a path, and empty draws nothing.
 ---@field Sound { Applied: string, Removed: string, Stacks: string, Channel: string } Empty means silent.
 ---@field TrackingMode string "SPELLS" narrows to a spell list, "FILTERS" to a filter string.
 ---@field Filters table<string, string> Filter component to "REQUIRE"|"FORBID". Filter mode only.

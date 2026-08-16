@@ -507,6 +507,11 @@ function M.build()
 	-- texture catalog.
 	loadFile("src/Core/Display/BarTextures.lua")
 	loadFile("src/Core/Display/BarSlotContainer.lua")
+	-- Must precede AuraContainerDisplay and TextureSlotContainer: both paint art through it, and
+	-- the catalog itself reads its rows at load.
+	loadFile("src/Core/Display/ArtTextureData.lua")
+	loadFile("src/Core/Display/ArtTextures.lua")
+	loadFile("src/Core/Display/TextureSlotContainer.lua")
 	loadFile("src/Core/Kicks/KickSlot.lua")
 	loadFile("src/Core/Display/AnchoredIcons.lua")
 	addon.Core.AnchoredIcons:Init()

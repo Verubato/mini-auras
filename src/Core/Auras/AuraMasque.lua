@@ -78,7 +78,7 @@ function M:ResolveGroup(instance, groupName)
 
 	-- A skin owns the icon's crop, its mask and the border art, so displays that bring their own
 	-- (the round portrait icons) or that are not icons at all stay off the skinning path.
-	if instance.Bar or instance.Label or instance.IconMask then
+	if instance.Bar or instance.Label or instance.Texture or instance.IconMask then
 		return nil
 	end
 

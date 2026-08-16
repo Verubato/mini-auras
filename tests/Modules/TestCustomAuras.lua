@@ -19,6 +19,7 @@ env.loadModule("src/Modules/CustomAuras/Display.lua")
 env.loadModule("src/Modules/CustomAuras/Module.lua")
 
 local groups = addon.Modules.CustomAuras.Groups
+local artTextures = addon.Core.ArtTextures
 local display = addon.Modules.CustomAuras.Display
 local recorder = addon.Modules.CustomAuras.Recorder
 local module = addon.Modules.CustomAurasModule
@@ -2350,6 +2351,138 @@ fw.describe("CustomAuras - bars", function()
 		local group = groups:Normalise({ Icons = { Size = 30 } })
 
 		assert(group.Icons.Display == groups.DisplayStyle.Icons, "no field means icons")
+	end)
+end)
+
+fw.describe("CustomAuras - textures", function()
+	-- One of the game's proc overlays, by the file id the catalog holds it under.
+	local ART = 450930
+
+	---A texture group with the art already chosen, since one without it draws nothing.
+	---@param texture table?
+	---@return CustomAuraGroup
+	local function AddTextureGroup(texture)
+		texture = texture or {}
+		texture.Asset = texture.Asset or ART
+
+		return AddGroup({
+			Unit = "player",
+			Spells = { ICE_BLOCK },
+			Icons = { Display = "TEXTURE" },
+			Texture = texture,
+		})
+	end
+
+	fw.it("paints the chosen art onto the button and nothing else", function()
+		ClearGroups()
+		AddTextureGroup()
+		module:Refresh()
+
+		local button = ContainerFor("player")._groups.helpful.buttons[1]
+		local art = button._createdTextures[1]
+
+		assert(button._calls.SetIcon == nil, "no icon is registered with the engine")
+		assert(button._calls.SetDurationCooldown == nil, "and no clock either")
+		assert(art._lastArgs.SetTexture[1] == ART, "the picture the group chose")
+		assert(art._lastArgs.SetBlendMode[1] == "ADD", "additive by default, as the art expects")
+	end)
+
+	fw.it("shows one picture however many auras match", function()
+		ClearGroups()
+		AddTextureGroup()
+		module:Refresh()
+
+		local container = ContainerFor("player")
+
+		assert(Budget(container, "helpful") == 1, "one, not the icon cap")
+		assert(Budget(container, "harmful") == 0, "and nothing on the wrong-sided group")
+	end)
+
+	fw.it("sizes the button from the art's own width and height", function()
+		ClearGroups()
+		AddTextureGroup({ Width = 120, Height = 90 })
+		module:Refresh()
+
+		local button = ContainerFor("player")._groups.helpful.buttons[1]
+
+		assert(button:GetWidth() == 120, "the texture width sizes the button")
+		assert(button:GetHeight() == 90, "and the texture height")
+	end)
+
+	fw.it("keeps art in its own pool", function()
+		-- A button's shape is baked in when it is created, so a display built for icons could
+		-- never be turned into one drawing art.
+		ClearGroups()
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		local iconContainer = ContainerFor("player")
+
+		ClearGroups()
+		AddTextureGroup()
+		module:Refresh()
+
+		local textureContainer = ContainerFor("player")
+
+		assert(textureContainer ~= iconContainer, "the parked icon display is not reused")
+		assert(textureContainer._groups.helpful.buttons[1]._calls.SetIcon == nil, "it draws art")
+	end)
+
+	fw.it("draws nothing until a picture is chosen", function()
+		ClearGroups()
+
+		local group = AddTextureGroup({ Asset = "" })
+
+		module:Refresh()
+
+		assert(not groups:Supports(group), "a group still being built is not supported")
+		assert(ContainerFor("player") == nil, "so nothing is tracking the player yet")
+
+		group.Texture.Asset = ART
+		module:Refresh()
+
+		assert(Budget(ContainerFor("player"), "helpful") == 1, "and it starts once art is picked")
+	end)
+
+	fw.it("normalises the texture settings a group did not set", function()
+		local group = groups:Normalise({ Icons = { Display = "TEXTURE" } })
+
+		-- Not empty: picking the texture shape has to draw something, or there is nothing on
+		-- screen to drag into place.
+		assert(group.Texture.Asset ~= "", "a group starts on one of the shapes we ship")
+		assert(artTextures:Label(group.Texture.Asset) ~= "", "and the picker knows it by name")
+		assert(group.Texture.Width > 0 and group.Texture.Height > 0, "a width and a height")
+		assert(group.Texture.Opacity == 100, "solid")
+		assert(group.Texture.Additive, "additive unless it is turned off")
+
+		local clamped = groups:Normalise({
+			Icons = { Display = "TEXTURE" },
+			Texture = { Width = 5000, Height = -3, Rotation = 900, Opacity = 500 },
+		})
+
+		assert(clamped.Texture.Width == groups.MaxTextureSize, "an absurd width is clamped")
+		assert(clamped.Texture.Height == groups.MinTextureSize, "and a nonsense height floored")
+		assert(clamped.Texture.Rotation == groups.MaxRotation, "the turn is capped")
+		assert(clamped.Texture.Opacity == 100, "and so is the opacity")
+	end)
+
+	fw.it("shows the same picture in the stand-in as the live one draws", function()
+		ClearGroups()
+
+		local group = AddTextureGroup({ Rotation = 90, Mirror = true })
+
+		group.Icons.Color.R, group.Icons.Color.G, group.Icons.Color.B = 0.2, 0.4, 0.8
+		module:Refresh()
+		display:SetPreviewGroup(group.Id)
+
+		local art = display:GetStates()[group.Id].Screen.Test.Art
+		local color = art._lastArgs.SetVertexColor
+
+		assert(art._lastArgs.SetTexture[1] == ART, "the group's own art")
+		assert(color[1] == 0.2 and color[2] == 0.4 and color[3] == 0.8, "tinted like the live one")
+		assert(#art._lastArgs.SetTexCoord == 8, "turned and mirrored through the corners")
+
+		display:SetPreviewGroup(nil)
 	end)
 end)
 

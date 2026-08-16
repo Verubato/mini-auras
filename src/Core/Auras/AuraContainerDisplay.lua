@@ -6,6 +6,7 @@ local wowEx = addon.Utils.WoWEx
 local growAnchors = addon.Core.GrowAnchors
 local glowStyles = addon.Core.GlowStyles
 local barTextures = addon.Core.BarTextures
+local artTextures = addon.Core.ArtTextures
 local outline = addon.Core.Outline
 local auraFilters = addon.Core.AuraFilters
 local auraCountdownText = addon.Core.AuraCountdownText
@@ -49,6 +50,13 @@ local STYLE_FIELDS = {
 	"BarWidth",
 	"BarTexture",
 	"SpellName",
+	"TextureAsset",
+	"TextureWidth",
+	"TextureRotation",
+	"TextureMirror",
+	"TextureDesaturate",
+	"TextureAdditive",
+	"TextureAlpha",
 }
 
 -- Geometry for bar buttons, all derived from the bar's height so one size setting drives the row.
@@ -106,6 +114,8 @@ local EMPTY_CANDIDATE_FILTERS = {}
 local styleScratch = {}
 -- Reused by GetStyleSignature; concatenated with an explicit range, so no trimming is needed.
 local signatureScratch = {}
+-- Refilled per texture button styled, and handed straight to ArtTextures without being retained.
+local artSpecScratch = {}
 
 local cachedDb = nil
 local frameIdCounter = 0
@@ -686,6 +696,40 @@ local function BarWidth(instance)
 	return math.max(instance.Size, instance.Style.BarWidth or DEFAULT_BAR_WIDTH)
 end
 
+---A texture button's width. Its height is the display's size, like every other shape.
+---@param instance AuraContainerDisplay
+---@return number
+local function TextureWidth(instance)
+	return instance.Style.TextureWidth or instance.Size
+end
+
+---A texture button carries one picture and none of the icon chrome. The art is fixed at styling
+---time and never touched again: which aura is up is secret, so a texture that changed per aura
+---could not be chosen anyway - the group is the picture, and the engine showing the button is
+---what says the aura is there.
+---@param instance AuraContainerDisplay
+---@param button table
+---@param widgets table
+local function StyleArt(instance, button, widgets)
+	local style = instance.Style
+	local spec = artSpecScratch
+
+	spec.Asset = style.TextureAsset
+	spec.R = style.GlowColorR
+	spec.G = style.GlowColorG
+	spec.B = style.GlowColorB
+	spec.A = style.TextureAlpha
+	spec.Rotation = style.TextureRotation
+	spec.Mirror = style.TextureMirror
+	spec.Desaturate = style.TextureDesaturate
+	spec.Additive = style.TextureAdditive
+
+	artTextures:Apply(widgets.Art, spec)
+	-- No tooltip: the art stands in for a whole group rather than for one aura, so there is
+	-- nothing a hovering cursor could be told about.
+	button:EnableMouse(false)
+end
+
 ---A label-only button carries a single fontstring and none of the icon chrome.
 ---@param button table
 ---@param widgets table
@@ -990,6 +1034,13 @@ local function StyleButton(instance, button)
 	local style = instance.Style
 	local size = instance.Size
 	local bar = widgets.Bar
+
+	if widgets.Art then
+		button:SetSize(TextureWidth(instance), size)
+		StyleArt(instance, button, widgets)
+
+		return
+	end
 
 	button:SetSize(bar and BarWidth(instance) or size, size)
 
@@ -1335,6 +1386,27 @@ local function InitializeBarButton(instance, button, group)
 	StyleButton(instance, button)
 end
 
+---Builds a texture-only button for a display created with the Texture option: one picture, no
+---icon and no registered elements. The engine still shows and hides the button with the aura it
+---matches, so the art appears exactly while a matching aura is present - decoration whose
+---visibility never needs an aura read. Rendering follows the button's (secret) visibility because
+---the texture is its child.
+---@param instance AuraContainerDisplay
+---@param button table
+local function InitializeTextureButton(instance, button)
+	button:SetFlattensRenderLayers(true)
+
+	local art = button:CreateTexture(nil, "ARTWORK")
+	art:SetAllPoints(button)
+
+	instance.ButtonWidgets[button] = {
+		Art = art,
+	}
+	instance.Buttons[#instance.Buttons + 1] = button
+
+	StyleButton(instance, button)
+end
+
 ---Builds a text-only button for a display created with the Label option: a fontstring and
 ---nothing else, no icon and no registered elements. The engine still shows and hides the button
 ---with the aura it matches, so the text appears exactly while a matching aura is present - a
@@ -1388,8 +1460,9 @@ local function BuildGroupLayout(instance)
 	layout.lineSpacing = instance.Spacing
 	layout.elementSpacingX = instance.Spacing
 	layout.elementSpacingY = instance.Spacing
-	-- Bars are as wide as the style asks and as tall as the size; icons are square.
-	layout.elementWidth = instance.Bar and BarWidth(instance) or instance.Size
+	-- Bars and art are as wide as the style asks and as tall as the size; icons are square.
+	layout.elementWidth = instance.Texture and TextureWidth(instance)
+		or instance.Bar and BarWidth(instance) or instance.Size
 	layout.elementHeight = instance.Size
 
 	return layout
@@ -1442,9 +1515,10 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	instance.IconMask = options.IconMask
 	instance.Minimal = options.Minimal == true
 	instance.Label = options.Label
-	-- Bar or icon is baked into every button at creation (regions can only be registered in
-	-- initializeFrame), so a display can never change shape - callers pool the two separately.
+	-- Bar, icon or plain art is baked into every button at creation (regions can only be registered
+	-- in initializeFrame), so a display can never change shape - callers pool the shapes separately.
 	instance.Bar = options.Bar == true
+	instance.Texture = options.Texture == true
 	-- Resolved at creation: regions can only be added to a button in initializeFrame, so a
 	-- display that skipped them can never grow them later (pooled displays included - opt in
 	-- whenever any consumer of the pool might want the reveal).
@@ -1482,6 +1556,7 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	ApplyFlowLayout(instance)
 
 	local initialize = instance.Label and InitializeLabelButton
+		or instance.Texture and InitializeTextureButton
 		or instance.Bar and InitializeBarButton
 		or InitializeButton
 
@@ -1988,6 +2063,15 @@ end
 ---display's size, so one setter covers both shapes.
 ---@field BarTexture string? Bar fill texture name, resolved through Core/Display/BarTextures.
 ---@field SpellName boolean? Show the engine-written aura name inside the fill (default on).
+---Texture displays only; inert on every other shape.
+---@field TextureAsset string|number? File id (or path) of the art each button draws. Empty
+---or unset draws nothing.
+---@field TextureWidth number? Width of the art in pixels; its height is the display's size.
+---@field TextureRotation number? Degrees, clockwise.
+---@field TextureMirror boolean? Flip the art left to right, applied before the rotation.
+---@field TextureDesaturate boolean?
+---@field TextureAdditive boolean? ADD blending, which is what the client's own overlay art expects.
+---@field TextureAlpha number? 0 to 1, on top of the tint GlowColor supplies.
 ---@field Populated boolean?
 
 ---@class AuraDisplayGroupSpec
@@ -2013,6 +2097,10 @@ end
 ---countdown inside the fill) instead of a square icon. Decided at creation like Label, so a
 ---display can never switch: pool the two shapes separately. Falls back to icons on a client
 ---without SetDurationBar.
+---@field Texture boolean? Render every button as one picture and nothing else - no icon, cooldown
+---or chrome - taken from Style.Texture*. The engine shows the button while a matching aura is
+---present, so the art works as presence-driven decoration with no aura reads. Decided at creation
+---like Label and Bar, so a display can never switch shape.
 ---@field Pandemic boolean? Create and register a refresh-window region on every button. Must be
 ---decided at creation (regions can only be added in initializeFrame); the Style.Pandemic toggle
 ---then shows or hides the reveal per restyle.
@@ -2039,5 +2127,6 @@ end
 ---@field Minimal boolean
 ---@field Label string?
 ---@field Bar boolean
+---@field Texture boolean
 ---@field MasqueGroup table?
 ---@field MasqueGroupName string?

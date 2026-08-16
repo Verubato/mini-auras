@@ -17,6 +17,7 @@ local AURA_TYPE_ORDER = { "HELPFUL", "HARMFUL" }
 local DISPLAY_OPTIONS = {
 	groups.DisplayStyle.Icons,
 	groups.DisplayStyle.Bars,
+	groups.DisplayStyle.Texture,
 	groups.DisplayStyle.SoundOnly,
 }
 
@@ -227,6 +228,8 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 		GetText = function(value)
 			if value == groups.DisplayStyle.Bars then
 				return L["Bars"]
+			elseif value == groups.DisplayStyle.Texture then
+				return L["Texture"]
 			elseif value == groups.DisplayStyle.SoundOnly then
 				return L["Sound only"]
 			end
