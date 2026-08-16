@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.15.0
+
+- Added a Texture display style to personal auras, drawing one of the game's own proc textures while a tracked aura is up.
+- Added Unhalted Unit Frames as a party and raid frame provider.
+- Added Shadowed Unit Frames as a portrait provider.
+- Added Bloodshed to the enemy debuff announcements.
+- Fixed personal auras tracking a spell with a permanent duration not showing.
+
 ## 5.14.2
 
 - Fixed regression from 5.14.1 where personal auras stopped working after changing a zone.
