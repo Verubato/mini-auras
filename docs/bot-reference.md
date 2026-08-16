@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.15.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.16.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -62,7 +62,10 @@ during test mode. Stand-in party/raid and arena frames are only created when no 
 visible, so testing in a group shows icons where they will actually be. Test mode stops
 automatically when combat starts. The World/Arena/Dungeons and Raids/Battlegrounds sub-tabs on
 the CC and Raid Frame Auras pages also flip which of the two setting groups the test preview
-uses.
+uses. Since 5.16.0 that choice drives the "Enable in" check as well: previewing the
+Raids/Battlegrounds tab from the open world asks whether the module is on for raids, so a
+module switched off for the previewed context draws nothing. The zone still answers for
+itself, so testing inside a battleground reads the Battlegrounds tick whichever tab is open.
 
 ## Settings window layout
 
@@ -151,8 +154,11 @@ shared limit across categories is not possible.
   match their glow, instead of showing glow only (since 5.10.2). Party and raid frame CC icons
   do the same (since 5.12.2), on the live icons and the previews.
 - **Per-category tints** (Alerts): a colour swatch each for Important and Defensive, with no
-  dispel colouring to share the switch with. These ride the **Glow icons** switch instead, so
-  with the glow off there is nothing left for them to tint.
+  dispel colouring to share the switch with. They colour whichever ring is drawn, so they need
+  **Glow icons** or **Show border** on; with both off the two swatches are hidden, having
+  nothing left to tint. **Show border** (since 5.16.0) is for keeping the colouring with the
+  glow switched off: it draws nothing while the glow is on, since two rings in the same colour
+  around one icon only smudge each other.
 - Every pair defaults to red (1, 0.2, 0.2) for Important and green (0.2, 1, 0.2) for
   Defensive. Class colouring is not on offer anywhere, because a unit's class is not something
   the addon can read from an aura container.
@@ -241,8 +247,8 @@ normalised/sanitised, so a bad string cannot corrupt settings.
 
 ### Starter groups
 
-A new profile is seeded once with two groups, in a row 300 px above screen centre, 50 px
-apart, both with glow and border on:
+A new profile is seeded once with two groups, both centred 80 px above screen centre with glow
+and border on. Up to 5.15.0 they were seeded in a row 300 px above centre, 50 px apart:
 
 | Group | Spell | Sound | Tint |
 |---|---|---|---|
@@ -522,7 +528,7 @@ Two setting groups (World/Arena/Dungeons and Raids/Battlegrounds sub-tabs):
 | Show CC | on/off | off | on |
 | Show interrupts | on/off | off | on |
 | Relative size / Icon Size (%) | 25-100 % | 75 | 65 |
-| Icon Size | 10-100 px | 30 | 25 |
+| Icon Size | 10-100 px | 20 (30 before 5.16.0) | 25 |
 | Max Icons | 1-5 | 3 | 3 |
 | Icon Padding | 0-20 | 2 | 2 |
 | Grow | LEFT/RIGHT/CENTER/DOWN/UP | CENTER | CENTER |
@@ -573,13 +579,14 @@ Enable in (defaults): World on, Arena on, Battlegrounds off, Dungeons off, Raid 
 | Split bars | on/off | off |
 | Show tooltips | on/off | off |
 | Glow icons | on/off | on |
+| Show border | on/off (since 5.16.0) | off |
 | Reverse swipe | on/off | on |
-| Important colour | swatch (applies while Glow icons is on) | red (1, 0.2, 0.2) |
-| Defensive colour | swatch (applies while Glow icons is on) | green (0.2, 1, 0.2) |
+| Important colour | swatch (applies while Glow icons or Show border is on) | red (1, 0.2, 0.2) |
+| Defensive colour | swatch (applies while Glow icons or Show border is on) | green (0.2, 1, 0.2) |
 | Grow | LEFT / RIGHT | RIGHT (a saved CENTER from an older profile reads back as RIGHT) |
 | Icon Size | 10-100 | 50 |
 | Max Icons | 1-10 | 8 |
-| Icon Padding | 0-20 | 2 |
+| Icon Padding | 0-20 | 4 (2 before 5.16.0) |
 
 Positions (dragged in test mode): combined bar centred, 150 px below the top of the screen.
 **Split bars** gives important spells their own separately movable bar: defensives default
@@ -984,7 +991,9 @@ row for the content type the user is in; most modules default off in battlegroun
 raids, Alerts is also off in dungeons, Pet CC is off everywhere, Ally Kicks is on only in
 dungeons. Remember: a battleground uses the Battlegrounds toggle and the Raids/Battlegrounds
 setting group; the open world while in a raid group uses the Raid toggle. Then use test mode
-(`/miniauras test`) to confirm the display exists and is on screen.
+(`/miniauras test`) to confirm the display exists and is on screen. Since 5.16.0 test mode
+answers "Enable in" for the context being previewed, so a module drawing nothing there is a
+module switched off for that context rather than a broken display.
 
 **"That setting/tab doesn't exist for me."** The sidebar is the one listed under "Settings
 window layout"; anything not on it is not part of the addon. Cooldown tracking, both friendly
