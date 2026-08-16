@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.16.1
+
+- Fixed an error, and aura sounds going quiet, when a unit frame addon asked MiniAuras to refresh its frames.
+
 ## 5.16.0
 
 - Added a border option to the alert icons so you can disable glows but keep the border.
