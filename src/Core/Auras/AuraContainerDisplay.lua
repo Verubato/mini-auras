@@ -989,10 +989,14 @@ local function StyleGlow(instance, button, widgets, size)
 		glow.Anim:Stop()
 	end
 
-	-- Every overlay in the catalog has rounded inner corners, so the icon takes the same shape
-	-- while one is showing. Displays that brought their own mask (the round portraits) keep it,
-	-- and a bar's leading icon is square against the fill by design.
-	local rounded = style.Glow == true and not widgets.Bar
+	-- Every overlay in the catalog has rounded inner corners, and so does the border ring, so the
+	-- icon takes the same shape while any of them is showing - a square icon under a rounded ring
+	-- leaves its corners poking out. The dispel ring counts as a border here: every display that
+	-- asks for one also asks for it on auras with no dispel type, so the ring is always there.
+	-- Displays that brought their own mask (the round portraits) keep it, and a bar's leading icon
+	-- is square against the fill by design.
+	local ringed = style.Glow == true or style.Border == true or style.ColorByDispelType == true
+	local rounded = ringed and not widgets.Bar
 	if widgets.CornersRounded ~= rounded and widgets.Icon and not instance.IconMask then
 		widgets.CornersRounded = rounded
 		widgets.CornerMask = glowStyles:SetIconCorners(button, widgets.Icon, widgets.Cooldown,

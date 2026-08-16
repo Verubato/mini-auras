@@ -590,7 +590,10 @@ local function ApplyIconCorners(layer, options)
 		return
 	end
 
-	local rounded = (options.Glow and STATIC_GLOW_FIELDS[ResolveGlowType()]) and true or false
+	-- The border ring has the same rounded inner corners as the overlays, so it rounds the icon
+	-- too; an LCG glow does not, which is why only the texture-based ones count here.
+	local rounded = (options.Border or (options.Glow and STATIC_GLOW_FIELDS[ResolveGlowType()]))
+		and true or false
 
 	if layer.CornersRounded == rounded then
 		return

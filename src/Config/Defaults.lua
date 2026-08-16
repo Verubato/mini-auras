@@ -286,6 +286,9 @@ local dbDefaults = {
 				-- Per-category glow tints. Class colouring is not an option: UnitClass is secret.
 				ImportantColor = { R = 1, G = 0.2, B = 0.2, A = 1 },
 				DefensiveColor = { R = 0.2, G = 1, B = 0.2, A = 1 },
+				-- A ring in the same category colour as the glow, so the glow can be switched off
+				-- and the colouring kept. Off by default: the glow already carries it.
+				Border = false,
 				ReverseCooldown = true,
 				MaxIcons = 8,
 			},

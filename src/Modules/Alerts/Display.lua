@@ -94,18 +94,28 @@ local DEFAULT_PAIR_SPACING = 2
 -- runtime; the shipped default is asserted separately.
 M.PrewarmTokenCount = 40
 
----The per-category glow tints in force, or nil when the glow itself is off.
+---The per-category tints in force, or nil when nothing is drawn in them. They colour the glow and
+---the border alike, so the border keeps them when the glow is switched off.
 ---@return table? importantColor
 ---@return table? defensiveColor
 local function AlertGlowColors()
 	local icons = db and db.Modules.AlertsModule.Icons
 
-	if not (icons and icons.Glow) then
+	if not icons or not (icons.Glow or icons.Border) then
 		return nil, nil
 	end
 
 	return moduleUtil:FillColor(importantGlowColor, icons.ImportantColor, DEFAULT_IMPORTANT_GLOW_COLOR),
 		moduleUtil:FillColor(defensiveGlowColor, icons.DefensiveColor, DEFAULT_DEFENSIVE_GLOW_COLOR)
+end
+
+---Whether a ring is drawn. The border stands in for the glow rather than doubling up with it: two
+---rings in the same colour around one icon read as a smudge, so an active glow wins.
+---@return boolean
+local function AlertBorderShown()
+	local icons = db and db.Modules.AlertsModule.Icons
+
+	return icons ~= nil and icons.Border == true and icons.Glow ~= true
 end
 
 -- Resolves (and memoizes) a token's numeric index, so the comparator below never has to run a
@@ -283,6 +293,7 @@ end
 local function AlertStyle()
 	local options = db and db.Modules.AlertsModule
 	local style = auraContainerDisplay:BuildStandardStyle(options and options.Icons)
+	style.Border = AlertBorderShown()
 	style.ShowTooltips = not options or options.ShowTooltips ~= false
 	return style
 end
@@ -538,6 +549,7 @@ local function PlaceTestIcon(target, slot, spellId, glowColor, elapsed, duration
 	testSlotScratch.Glow = testIconCtx.Glow
 	testSlotScratch.ReverseCooldown = testIconCtx.Reverse
 	testSlotScratch.Color = glowColor
+	testSlotScratch.Border = testIconCtx.Border
 	testSlotScratch.FontScale = db.FontScale
 	testSlotScratch.SpellId = testIconCtx.ShowTooltips and spellId or nil
 	target:SetSlot(slot, testSlotScratch)
@@ -670,6 +682,7 @@ function M:RefreshTestAlerts()
 	testIconCtx.Glow = db.Modules.AlertsModule.Icons.Glow
 	testIconCtx.Reverse = db.Modules.AlertsModule.Icons.ReverseCooldown
 	testIconCtx.ShowTooltips = db.Modules.AlertsModule.ShowTooltips ~= false
+	testIconCtx.Border = AlertBorderShown()
 
 	-- Defensives bar test icons. The stagger step only advances when an icon actually landed, so
 	-- a missing texture doesn't leave a hole in the timing spread.

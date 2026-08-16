@@ -62,6 +62,9 @@ local function BuildSettingsTab(parent, options)
 	includeDefensivesChk:SetPoint("TOP", iconsEnabledChk, "TOP", 0, 0)
 	includeDefensivesChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth, 0)
 
+	-- Filled in once both swatches exist; the checkboxes are built first so they can drive them.
+	local UpdateGlowColors
+
 	local glowChk = mini:Checkbox({
 		Parent = parent,
 		LabelText = L["Glow icons"],
@@ -71,6 +74,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 		SetValue = function(value)
 			options.Icons.Glow = value
+			UpdateGlowColors()
 			config:Apply(moduleName.Alerts)
 		end,
 	})
@@ -99,15 +103,37 @@ local function BuildSettingsTab(parent, options)
 
 	reverseChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * nextGlowColumn, 0)
 	nextGlowColumn = nextGlowColumn + 1
+
+	local borderChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Show border"],
+		Tooltip = L["Draw a border around the icons."],
+		GetValue = function()
+			return options.Icons.Border == true
+		end,
+		SetValue = function(value)
+			options.Icons.Border = value
+			UpdateGlowColors()
+			config:Apply(moduleName.Alerts)
+		end,
+	})
+
+	borderChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+	borderChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * nextGlowColumn, 0)
+	nextGlowColumn = nextGlowColumn + 1
+
 	---Places a swatch in the next free column of the glow row, centred on the checkboxes.
+	---@return table swatch
 	local function PlaceSwatch(swatch)
 		swatch:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * nextGlowColumn, 0)
 		swatch:SetPoint("TOP", glowChk, "TOP", 0,
 			-math.floor((glowChk:GetHeight() - swatch:GetHeight()) / 2))
 		nextGlowColumn = nextGlowColumn + 1
+
+		return swatch
 	end
 
-	PlaceSwatch(mini:ColorSwatch({
+	local importantSwatch = PlaceSwatch(mini:ColorSwatch({
 		Parent = parent,
 		LabelText = L["Important"],
 		Tooltip = L["Change the colour of the glow on important enemy spells."],
@@ -123,7 +149,7 @@ local function BuildSettingsTab(parent, options)
 		end,
 	}))
 
-	PlaceSwatch(mini:ColorSwatch({
+	local defensiveSwatch = PlaceSwatch(mini:ColorSwatch({
 		Parent = parent,
 		LabelText = L["Defensive"],
 		Tooltip = L["Change the colour of the glow on defensive spells."],
@@ -138,6 +164,22 @@ local function BuildSettingsTab(parent, options)
 			config:Apply(moduleName.Alerts)
 		end,
 	}))
+
+	-- The tints colour the glow and the border, so with neither drawn they have nothing to say and
+	-- go away rather than sitting there doing nothing.
+	function UpdateGlowColors()
+		local shown = options.Icons.Glow == true or options.Icons.Border == true
+
+		importantSwatch:SetShown(shown)
+		importantSwatch.Label:SetShown(shown)
+		defensiveSwatch:SetShown(shown)
+		defensiveSwatch.Label:SetShown(shown)
+	end
+
+	UpdateGlowColors()
+	-- A profile switch replaces the values under the page without rebuilding it, so the swatches
+	-- have to follow the new profile's answer as well as the checkbox's.
+	parent.OnMiniRefresh = UpdateGlowColors
 
 	local showTooltipsChk = mini:Checkbox({
 		Parent = parent,

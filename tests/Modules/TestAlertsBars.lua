@@ -312,3 +312,202 @@ fw.describe("AlertsModule 12.1 - split vs combined bars", function()
 		removePlate("nameplate2")
 	end)
 end)
+
+-- The border is the whole point of the category tints once the glow is off: the two are coloured
+-- from the same pick, so switching the glow off must not take the colouring with it.
+fw.describe("AlertsModule 12.1 - the border and the glow", function()
+	local display = env.addon.Modules.Alerts.Display
+
+	---The border textures on the main bar's used slots, and the glow keys beside them.
+	local function previewLook()
+		local borders, glows = 0, 0
+		local bar = display:GetContainer()
+
+		for index = 1, bar.Count do
+			local slot = bar.Slots[index]
+			local layer = slot and slot.IsUsed and slot.Container
+
+			if layer then
+				if layer.Border and layer.Border._shown then
+					borders = borders + 1
+				end
+				if layer.Frame._GlowColorKey then
+					glows = glows + 1
+				end
+			end
+		end
+
+		return borders, glows
+	end
+
+	local function previewWith(glow, border)
+		module:StopTesting()
+		alerts.Icons.Glow = glow
+		alerts.Icons.Border = border
+		module:StartTesting()
+
+		local borders, glows = previewLook()
+		module:StopTesting()
+
+		return borders, glows
+	end
+
+	fw.it("rings the preview icons while the border is on", function()
+		local borders, glows = previewWith(false, true)
+
+		assert(borders > 0, "the icons are ringed with the glow off")
+		assert(glows == 0, "and nothing glows")
+	end)
+
+	fw.it("gives way to the glow when both are on", function()
+		local borders, glows = previewWith(true, true)
+
+		assert(glows > 0, "the glow draws")
+		assert(borders == 0, "and the ring stands down rather than doubling up")
+	end)
+
+	fw.it("leaves the icons bare with both off", function()
+		local borders, glows = previewWith(false, false)
+
+		assert(borders == 0 and glows == 0, "nothing to colour")
+	end)
+
+	fw.it("trims the preview's icon corners under a border", function()
+		previewWith(false, true)
+		alerts.Icons.Glow = false
+		alerts.Icons.Border = true
+		module:StartTesting()
+
+		local bar = display:GetContainer()
+		local rounded, square = 0, 0
+
+		for index = 1, bar.Count do
+			local slot = bar.Slots[index]
+			local layer = slot and slot.IsUsed and slot.Container
+
+			if layer then
+				if layer.CornersRounded then
+					rounded = rounded + 1
+				else
+					square = square + 1
+				end
+			end
+		end
+
+		module:StopTesting()
+		assert(rounded > 0 and square == 0, "every ringed icon is trimmed, got " .. rounded .. "/" .. square)
+	end)
+
+	fw.it("keeps the category tints on the border", function()
+		previewWith(false, true)
+		alerts.Icons.Glow = false
+		alerts.Icons.Border = true
+		module:StartTesting()
+
+		local bar = display:GetContainer()
+		local defensive = { 0.2, 1, 0.2 }
+		local found = false
+
+		for index = 1, bar.Count do
+			local slot = bar.Slots[index]
+			local border = slot and slot.IsUsed and slot.Container and slot.Container.Border
+			local color = border and border._shown and border._lastArgs.SetVertexColor
+
+			if color and color[1] == defensive[1] and color[2] == defensive[2] and color[3] == defensive[3] then
+				found = true
+			end
+		end
+
+		module:StopTesting()
+		assert(found, "the defensive tint is what the ring is drawn in")
+	end)
+end)
+
+-- The live buttons take the same pair of switches. A button can only be styled when it is created,
+-- so moving either has to rebuild the pooled pairs; the ring itself is drawn by the addon here,
+-- because the engine only owns a border it was handed for dispel colouring.
+fw.describe("AlertsModule 12.1 - the border on the live bars", function()
+	local BORDER_ASSET = [[Interface\Buttons\UI-Debuff-Overlays]]
+
+	---The first defensive button on a token's live pair.
+	local function buttonOf(token)
+		local container
+		for _, candidate in ipairs(env.containersForUnit(token)) do
+			if env.groupCount(candidate) == 3 then
+				container = candidate
+			end
+		end
+
+		return container and container:GetAuraGroupFrame("bigdef", 1)
+	end
+
+	---A button's textures are picked by their art rather than by position: the icon is a created
+	---texture too, and it is the one carrying no asset of its own.
+	local function textureOf(button, isBorder)
+		for _, texture in ipairs(button and button._createdTextures or {}) do
+			local asset = texture._lastArgs.SetTexture
+			local border = asset ~= nil and asset[1] == BORDER_ASSET
+
+			if border == isBorder then
+				return texture
+			end
+		end
+	end
+
+	local function borderOf(token)
+		return textureOf(buttonOf(token), true)
+	end
+
+	local function borderWith(border)
+		alerts.Icons.Glow = false
+		alerts.Icons.Border = border
+		module:Refresh()
+		addEnemyPlate("nameplate4")
+
+		local texture = borderOf("nameplate4")
+		removePlate("nameplate4")
+
+		return texture
+	end
+
+	fw.it("draws the ring in the category tint with the glow off", function()
+		local texture = assert(borderWith(true), "the button has a border texture")
+		local color = texture._lastArgs.SetVertexColor
+
+		assert(texture._shown, "the ring is on screen")
+		assert(color and color[1] == 0.2 and color[2] == 1 and color[3] == 0.2,
+			"drawn in the defensive tint")
+	end)
+
+	-- The ring art has rounded inner corners, so a square icon under it leaves its own corners
+	-- poking out past the ring. The glow already trimmed them; the border has to as well.
+	fw.it("trims the icon corners the way the glow does", function()
+		alerts.Icons.Glow = false
+		alerts.Icons.Border = true
+		module:Refresh()
+		addEnemyPlate("nameplate5")
+
+		local icon = assert(textureOf(buttonOf("nameplate5"), false), "the button has an icon")
+		assert((icon._calls.AddMaskTexture or 0) > 0, "the corner mask is on the icon")
+
+		removePlate("nameplate5")
+	end)
+
+	fw.it("leaves the live ring to the glow when both are on", function()
+		alerts.Icons.Glow = true
+		alerts.Icons.Border = true
+		module:Refresh()
+		addEnemyPlate("nameplate6")
+
+		local border = assert(borderOf("nameplate6"), "the button has a border texture")
+		assert(not border._shown, "the glow is the only ring")
+
+		removePlate("nameplate6")
+	end)
+
+	fw.it("hides it again when the switch goes off", function()
+		local texture = assert(borderWith(false), "the button still has one")
+
+		assert(not texture._shown, "nothing rings the icon")
+	end)
+end)

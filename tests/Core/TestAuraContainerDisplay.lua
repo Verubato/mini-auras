@@ -948,6 +948,25 @@ fw.describe("AuraContainerDisplay - per-display button options", function()
 		assert(icon._lastArgs.AddMaskTexture and icon._lastArgs.AddMaskTexture[1] == mask, "mask applied")
 	end)
 
+	-- The overlays and the border ring both have rounded inner corners, so a square icon under
+	-- either leaves its own corners poking out past the art.
+	fw.it("trims the icon corners under a ring, whichever draws it", function()
+		local instance = newOptionInstance()
+		local widgets = select(2, next(instance.ButtonWidgets))
+
+		instance:SetStyle({ Glow = false, Border = false, ColorByDispelType = false })
+		assert(widgets.CornersRounded == false, "a bare icon keeps its corners")
+
+		instance:SetStyle({ Glow = true })
+		assert(widgets.CornersRounded == true, "the glow trims them")
+
+		instance:SetStyle({ Glow = false, Border = true })
+		assert(widgets.CornersRounded == true, "and so does a plain border")
+
+		instance:SetStyle({ Glow = false, Border = false, ColorByDispelType = true })
+		assert(widgets.CornersRounded == true, "and the engine's dispel ring")
+	end)
+
 	fw.it("a plain display still builds the border and glow", function()
 		local instance = newOptionInstance()
 		local widgets = select(2, next(instance.ButtonWidgets))
