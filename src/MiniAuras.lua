@@ -283,6 +283,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field LegacyAddon LegacyAddon
 ---@field TrinketsTracker TrinketsTracker
 ---@field TestModeManager TestModeManager
+---@field PositionEditor PositionEditor
 ---@field TestSpells TestSpells
 ---@field AnchoredIcons AnchoredIcons
 ---@field BarTextures BarTextures

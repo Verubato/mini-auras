@@ -37,6 +37,7 @@ local testFiles = {
     "tests/Core/TestSweep.lua",
     "tests/Core/TestPool.lua",
     "tests/Core/TestUUFFrames.lua",
+    "tests/Core/TestPositionEditor.lua",
 
     -- Utils.
     "tests/Utils/TestUtils.lua",

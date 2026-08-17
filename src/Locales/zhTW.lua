@@ -100,6 +100,7 @@ L:RegisterLocale("zhTW", function() return {
 	["Max Icons"] = "最大圖示",
 	["Most icons shown at once on each unit."] = "每個單位同時顯示的圖示上限。",
 	["Applies to each aura category on its own, so a unit with both defensives and important buffs can show this many of each. The game no longer lets addons count auras, so a shared limit across categories is not possible."] = "此上限對每個光環類別分別生效，因此同時擁有防禦技能與重要增益的單位每類都能顯示這麼多圖示。遊戲不再允許插件統計光環數量，因此無法設定跨類別的共用上限。",
+	["Position"] = "位置",
 	["Offset X"] = "X偏移",
 	["Moves the display sideways from its anchor. Positive is right, negative is left."] = "以錨點為基準左右移動顯示。正值向右，負值向左。",
 	["Offset Y"] = "Y偏移",

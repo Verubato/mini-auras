@@ -100,6 +100,7 @@ L:RegisterLocale("koKR", function() return {
 	["Max Icons"] = "최대 아이콘",
 	["Most icons shown at once on each unit."] = "각 대상에 한 번에 표시할 최대 아이콘 개수입니다.",
 	["Applies to each aura category on its own, so a unit with both defensives and important buffs can show this many of each. The game no longer lets addons count auras, so a shared limit across categories is not possible."] = "각 오라 분류에 따로 적용되므로 방어 기술과 중요 버프를 함께 가진 대상은 각각 이 개수만큼 표시할 수 있습니다. 게임이 더 이상 애드온의 오라 개수 확인을 허용하지 않아 분류 전체에 공통 제한을 적용할 수 없습니다.",
+	["Position"] = "위치",
 	["Offset X"] = "X 오프셋",
 	["Moves the display sideways from its anchor. Positive is right, negative is left."] = "기준 위치에서 좌우로 이동합니다. 양수는 오른쪽, 음수는 왼쪽입니다.",
 	["Offset Y"] = "Y 오프셋",

@@ -100,6 +100,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Max Icons"] = "Макс. иконок",
 	["Most icons shown at once on each unit."] = "Максимум иконок одновременно на каждой цели.",
 	["Applies to each aura category on its own, so a unit with both defensives and important buffs can show this many of each. The game no longer lets addons count auras, so a shared limit across categories is not possible."] = "Применяется к каждой категории аур отдельно, поэтому цель с защитными и важными эффектами может показать по столько иконок каждой категории. Игра больше не позволяет аддонам считать ауры, поэтому общий лимит для всех категорий невозможен.",
+	["Position"] = "Позиция",
 	["Offset X"] = "Смещение X",
 	["Moves the display sideways from its anchor. Positive is right, negative is left."] = "Сдвигает отображение по горизонтали от точки привязки. Положительное значение вправо, отрицательное влево.",
 	["Offset Y"] = "Смещение Y",

@@ -100,6 +100,7 @@ L:RegisterLocale("ptBR", function() return {
 	["Max Icons"] = "Ícones máx",
 	["Most icons shown at once on each unit."] = "Máximo de ícones mostrados ao mesmo tempo em cada unidade.",
 	["Applies to each aura category on its own, so a unit with both defensives and important buffs can show this many of each. The game no longer lets addons count auras, so a shared limit across categories is not possible."] = "Aplica-se a cada categoria de aura separadamente, então uma unidade com defensivas e bônus importantes pode mostrar esta quantidade de cada. O jogo não permite mais que addons contem auras, então um limite compartilhado entre categorias não é possível.",
+	["Position"] = "Posição",
 	["Offset X"] = "Deslocamento X",
 	["Moves the display sideways from its anchor. Positive is right, negative is left."] = "Move a exibição para os lados a partir da âncora. Positivo é para a direita, negativo para a esquerda.",
 	["Offset Y"] = "Deslocamento Y",

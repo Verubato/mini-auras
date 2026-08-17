@@ -3,6 +3,7 @@ local _, addon = ...
 local frames = addon.Core.Frames
 local instanceOptions = addon.Core.InstanceOptions
 local moduleUtil = addon.Utils.ModuleUtil
+local positionEditor = addon.Core.PositionEditor
 -- Filled in Init rather than at file scope: capturing the module tables here would tie this
 -- file's TOC position to being after every module, and a miss would land as a silent nil in
 -- the list rather than an error. Init runs after every module's, so the names all resolve.
@@ -32,6 +33,9 @@ end
 
 function M:StopTesting()
 	instanceOptions:SetTestIsRaid(nil)
+
+	-- Nothing is draggable once the stand-ins go, so the editor has nothing left to write to.
+	positionEditor:Close()
 
 	frames:SetTestFramesShown(false)
 	frames:SetTestArenaFramesShown(false)

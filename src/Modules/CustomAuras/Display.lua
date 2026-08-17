@@ -14,6 +14,7 @@ local frames = addon.Core.Frames
 local pool = addon.Core.Pool
 local sweep = addon.Core.Sweep
 local spellSearch = addon.Core.SpellSearch
+local positionEditor = addon.Core.PositionEditor
 local groups = addon.Modules.CustomAuras.Groups
 local sound = addon.Modules.CustomAuras.Sound
 
@@ -750,6 +751,7 @@ end
 local function OnOffsetDragStart(handle)
 	local x, y = GetCursorPosition()
 
+	handle.Dragged = true
 	dragContext.StartX = x
 	dragContext.StartY = y
 	dragContext.StartOffsetX = handle.Group.Offset.X
@@ -771,6 +773,57 @@ local function OnOffsetDragStop(handle)
 
 	M:AnchorGroup(group.Id)
 	NotifyPositionChanged(group.Id)
+	positionEditor:Refresh(group.Id)
+end
+
+local function OnOffsetMouseDown(handle)
+	handle.Dragged = false
+end
+
+local function OnOffsetMouseUp(handle, button)
+	if button ~= "LeftButton" or handle.Dragged then
+		return
+	end
+
+	positionEditor:Toggle(handle.Binding)
+end
+
+---The editor writes the same offset a drag does. Kept per group rather than per copy, so clicking
+---a second nameplate's copy of a group is a repeat click on what is already open.
+---@param state CustomAuraGroupState
+---@return PositionBinding
+local function OffsetBinding(state)
+	local binding = state.OffsetBinding
+
+	if not binding then
+		binding = {
+			Key = state.Group.Id,
+			Get = function()
+				local offset = state.Group.Offset
+
+				return offset.X, offset.Y
+			end,
+			Set = function(x, y)
+				local group = state.Group
+
+				group.Offset.X = x
+				group.Offset.Y = y
+
+				M:AnchorGroup(group.Id)
+				NotifyPositionChanged(group.Id)
+			end,
+			IsActive = function()
+				return IsPreviewing(state)
+			end,
+		}
+
+		state.OffsetBinding = binding
+	end
+
+	-- Every time: a group can be renamed while its preview is up.
+	binding.Title = state.Group.Name
+
+	return binding
 end
 
 ---@param state CustomAuraGroupState
@@ -785,11 +838,14 @@ local function EnsureDragHandle(state, entry, host)
 		handle:RegisterForDrag("LeftButton")
 		handle:SetScript("OnDragStart", OnOffsetDragStart)
 		handle:SetScript("OnDragStop", OnOffsetDragStop)
+		handle:SetScript("OnMouseDown", OnOffsetMouseDown)
+		handle:SetScript("OnMouseUp", OnOffsetMouseUp)
 
 		entry.Handle = handle
 	end
 
 	handle.Group = state.Group
+	handle.Binding = OffsetBinding(state)
 	handle.DisplayFrame = entry.Display.Frame
 	handle:SetParent(host)
 
@@ -1713,6 +1769,7 @@ end
 ---@field Shape string The display shape its copies were taken from the pool for.
 ---@field Allowed boolean Whether the group may show live auras right now.
 ---@field Anchor table? Screen anchor frame.
+---@field OffsetBinding PositionBinding? Built on the first click of a copy's drag handle.
 ---@field Screen CustomAuraDisplayEntry?
 ---@field Plates table<string, CustomAuraDisplayEntry>
 ---@field Frames table<table, CustomAuraDisplayEntry> Keyed by the unit frame the copy hangs off.

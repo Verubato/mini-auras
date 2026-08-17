@@ -62,6 +62,42 @@ local function RefreshWorldState()
 	inRaid = IsInRaid()
 end
 
+---@param position table|fun(): table?
+---@return table?
+local function ResolveTarget(position)
+	if type(position) == "function" then
+		return position()
+	end
+
+	return position
+end
+
+---@param target table
+---@param x number
+---@param y number
+local function WriteOffset(target, x, y)
+	if target.Offset then
+		target.Offset.X = x
+		target.Offset.Y = y
+	else
+		target.X = x
+		target.Y = y
+	end
+end
+
+---The caption a module put over this frame for test mode, which is the only name it has.
+---@param frame table
+---@return string?
+local function TestLabelText(frame)
+	local label = frame.MiniAurasTestLabel
+
+	if not label or not label:IsShown() then
+		return nil
+	end
+
+	return label:GetText()
+end
+
 ---Resolves the configured icon size, either as a static pixel value or as a percentage of
 ---the anchor frame's height when Icons.SizeIsPercent is enabled.
 ---Accounts for scale mismatch between the anchor and the container's parent (UIParent), so the
@@ -300,6 +336,9 @@ end
 ---Offset sub-table gets X/Y written directly (the custom aura groups' {Point, RelativePoint,
 ---X, Y} position shape).
 ---
+---A click that is not a drag opens the position editor on the same frame, so a placement a drag
+---can only get close to can be typed exactly.
+---
 ---Pass a function for position when the options table can be replaced under the frame (profile
 ---switches); it runs on every drop and may return nil to skip saving.
 ---@param frame table
@@ -307,20 +346,14 @@ end
 ---@param onMoved fun(frame: table, position: table?)? Runs after each save, e.g. to re-normalise
 ---the anchor or re-lay-out dependents.
 function M:MakeMovable(frame, position, onMoved)
-	frame:SetClampedToScreen(true)
-	frame:RegisterForDrag("LeftButton")
-	frame:SetScript("OnDragStart", frame.StartMoving)
-	frame:SetScript("OnDragStop", function(frameSelf)
-		frameSelf:StopMovingOrSizing()
+	-- The release that ends a drag fires OnMouseUp too, and that release is not a click.
+	local dragged = false
 
-		local target = position
-
-		if type(target) == "function" then
-			target = target()
-		end
+	local function Save(x, y)
+		local target = ResolveTarget(position)
 
 		if target then
-			local point, relativeTo, relativePoint, x, y = frameSelf:GetPoint()
+			local point, relativeTo, relativePoint = frame:GetPoint()
 
 			target.Point = point
 			target.RelativePoint = relativePoint
@@ -329,18 +362,74 @@ function M:MakeMovable(frame, position, onMoved)
 				target.RelativeTo = (relativeTo and relativeTo:GetName()) or "UIParent"
 			end
 
-			if target.Offset then
-				target.Offset.X = x
-				target.Offset.Y = y
-			else
-				target.X = x
-				target.Y = y
-			end
+			WriteOffset(target, x, y)
 		end
 
 		if onMoved then
-			onMoved(frameSelf, target)
+			onMoved(frame, target)
 		end
+	end
+
+	---@type PositionBinding
+	local binding = {
+		Key = frame,
+		-- The frame's own anchor, never the saved offsets: a module may save a position that
+		-- describes the same spot from a different point (the bars re-pin theirs to the edge the
+		-- row grows from, in screen coordinates, and leave the frame where it is). Reading one
+		-- space and writing the other turned a one pixel nudge into a jump across the screen.
+		Get = function()
+			local _, _, _, x, y = frame:GetPoint()
+
+			return x or 0, y or 0
+		end,
+		Set = function(x, y)
+			local point, relativeTo, relativePoint = frame:GetPoint()
+
+			-- An unanchored frame has no point to keep, and saving one read back off it would
+			-- clear the anchor the module placed it from.
+			if not point then
+				return
+			end
+
+			frame:ClearAllPoints()
+			frame:SetPoint(point, relativeTo or UIParent, relativePoint, x, y)
+			Save(x, y)
+		end,
+		IsActive = function()
+			return frame:IsMovable()
+		end,
+	}
+
+	frame:SetClampedToScreen(true)
+	frame:RegisterForDrag("LeftButton")
+	frame:SetScript("OnDragStart", function(frameSelf)
+		dragged = true
+		frameSelf:StartMoving()
+	end)
+	frame:SetScript("OnDragStop", function(frameSelf)
+		frameSelf:StopMovingOrSizing()
+
+		local _, _, _, x, y = frameSelf:GetPoint()
+
+		Save(x, y)
+		addon.Core.PositionEditor:Refresh(frameSelf)
+	end)
+	frame:SetScript("OnMouseDown", function()
+		dragged = false
+	end)
+	frame:SetScript("OnMouseUp", function(frameSelf, button)
+		if button ~= "LeftButton" or dragged then
+			return
+		end
+
+		-- Only while the caller has armed dragging, which is test mode everywhere this is used.
+		if not frameSelf:IsMovable() then
+			return
+		end
+
+		binding.Title = TestLabelText(frameSelf)
+
+		addon.Core.PositionEditor:Toggle(binding)
 	end)
 end
 

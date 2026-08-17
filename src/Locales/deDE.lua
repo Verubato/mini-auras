@@ -100,6 +100,7 @@ L:RegisterLocale("deDE", function() return {
 	["Max Icons"] = "Max. Symbole",
 	["Most icons shown at once on each unit."] = "Höchstzahl gleichzeitig gezeigter Symbole pro Einheit.",
 	["Applies to each aura category on its own, so a unit with both defensives and important buffs can show this many of each. The game no longer lets addons count auras, so a shared limit across categories is not possible."] = "Gilt für jede Aurenkategorie einzeln, daher kann eine Einheit mit Verteidigungszaubern und wichtigen Stärkungszaubern jeweils so viele Symbole zeigen. Das Spiel lässt Addons Auren nicht mehr zählen, daher ist ein gemeinsames Limit über alle Kategorien nicht möglich.",
+	["Position"] = "Position",
 	["Offset X"] = "Versatz X",
 	["Moves the display sideways from its anchor. Positive is right, negative is left."] = "Verschiebt die Anzeige seitlich vom Ankerpunkt. Positiv ist rechts, negativ ist links.",
 	["Offset Y"] = "Versatz Y",

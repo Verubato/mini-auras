@@ -288,6 +288,8 @@ function M.build()
 	loadFile("src/Utils/WoWEx.lua")
 	loadFile("src/Utils/ModuleUtil.lua")
 	addon.Utils.ModuleUtil:Init()
+	-- Every drop tells the position editor to catch up, so the drag paths need it loaded.
+	loadFile("src/Core/TestMode/PositionEditor.lua")
 	loadFile("src/Utils/SlotDistribution.lua")
 	-- The real thing rather than a stub: it reads one saved variable and hands back four numbers,
 	-- and the displays crop every icon they build through it.
