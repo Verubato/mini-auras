@@ -93,6 +93,15 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
+	-- Critters and the game's "minus" adds never carry anything worth showing, and a busy zone is
+	-- mostly them: each one tracked costs a live aura container the client parses for as long as
+	-- the plate is up. Pets are exempt so IgnorePets stays the only thing deciding those - a
+	-- warlock's imps are classed minus too.
+	if units:IsMinorUnit(unitToken) and not units:IsPetOrMinion(unitToken) then
+		display:Release(unitToken)
+		return
+	end
+
 	-- Check if we should ignore pets
 	local unitOptions = display:GetUnitOptions(unitToken)
 	if unitOptions.IgnorePets and units:IsPetOrMinion(unitToken) then

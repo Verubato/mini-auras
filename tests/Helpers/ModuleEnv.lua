@@ -21,6 +21,8 @@ function M.build()
 		-- Controllable unit classification sets.
 		enemies = {},
 		pets = {},
+		-- Critters and "minus" adds, which the nameplate module refuses to track.
+		minorUnits = {},
 		healers = {},
 		-- Units outside the player's visible world (another instance or phase); caster filters
 		-- cannot work on these.
@@ -346,6 +348,9 @@ function M.build()
 		end,
 		IsPetOrMinion = function(_, unit)
 			return env.pets[unit] == true
+		end,
+		IsMinorUnit = function(_, unit)
+			return env.minorUnits[unit] == true
 		end,
 		IsCompoundUnit = function()
 			return false

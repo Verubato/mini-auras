@@ -344,6 +344,43 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 		assert(env.containersForUnit("np_a")[1] == parked, "the token's own display is reused")
 	end)
 
+	fw.it("a critter's plate is never tracked, and a minion's still follows IgnorePets", function()
+		-- A busy zone is mostly critters and "minus" adds, and each one tracked costs a live aura
+		-- container for as long as its plate is up. Pets are classed minus too, so they have to
+		-- stay on IgnorePets rather than being swept up by this.
+		local created = env.auraContainerCount()
+
+		env.enemies.np_critter = true
+		env.minorUnits.np_critter = true
+		env.addPlate("np_critter")
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_critter")
+
+		assert(#env.containersForUnit("np_critter") == 0, "a critter got a display")
+		assert(env.auraContainerCount() == created, "and it built containers for one")
+
+		env.enemies.np_imp = true
+		env.minorUnits.np_imp = true
+		env.pets.np_imp = true
+		db.Modules.NameplatesModule.Enemy.IgnorePets = false
+		env.addPlate("np_imp")
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_imp")
+
+		local imp = env.containersForUnit("np_imp")[1]
+		assert(imp and imp._enabled, "a minion is still shown while IgnorePets is off")
+
+		db.Modules.NameplatesModule.Enemy.IgnorePets = true
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_imp")
+		assert(not imp._enabled, "and released once IgnorePets is back on")
+
+		for _, token in ipairs({ "np_critter", "np_imp" }) do
+			nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", token)
+			env.plates[token] = nil
+			env.enemies[token] = nil
+			env.minorUnits[token] = nil
+		end
+		env.pets.np_imp = nil
+	end)
+
 	fw.it("an IgnorePets flip releases an already-tracked pet plate's display", function()
 		env.enemies.np_pet = true
 		env.pets.np_pet = true

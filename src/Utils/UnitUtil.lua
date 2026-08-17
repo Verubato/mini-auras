@@ -65,6 +65,16 @@ function M:IsPetOrMinion(unit)
 	return false
 end
 
+---Critters and the small adds the game classes as "minus". Nothing worth an aura display ever
+---lands on one, and a crowd of them is what makes a busy zone expensive: every plate tracked costs
+---a live aura container for as long as it is up. A city square measured 40 plates, all of them
+---minus.
+---@param unit string
+---@return boolean
+function M:IsMinorUnit(unit)
+	return UnitClassification(unit) == "minus"
+end
+
 function M:IsHealer(unit)
 	local role = UnitGroupRolesAssigned(unit)
 
