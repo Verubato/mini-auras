@@ -314,11 +314,14 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 		friendlyBar.ShowCC = showCcBefore
 	end)
 
-	fw.it("plate removal releases the display to the pool (parked on UIParent)", function()
+	fw.it("plate removal parks the display on the plate it was drawing on", function()
 		local display = env.containersForUnit("np_a")[1]
+		local plate = env.plates.np_a
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_a")
 		assert(not display._enabled and not display:IsShown(), "disabled and hidden")
-		assert(display._parent == _G.UIParent, "reparented to UIParent")
+		-- Left where it was: re-parenting invalidates every button's layout, and a plate cycling
+		-- would pay for that on the way out and again on the way back in.
+		assert(display._parent == plate, "left on its plate")
 	end)
 
 	fw.it("each token keeps its own display, and gets it back when it returns", function()
@@ -352,7 +355,7 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 
 		db.Modules.NameplatesModule.Enemy.IgnorePets = true
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_pet")
-		assert(not display._enabled and display._parent == _G.UIParent, "flip released the display")
+		assert(not display._enabled and not display:IsShown(), "flip released the display")
 	end)
 end)
 
@@ -419,7 +422,7 @@ fw.describe("Duel faction flip - poll-based re-registration", function()
 
 		env.enemies.np_duel = nil
 		acm.tickAll(1)
-		assert(not containers[1]._enabled and containers[1]._parent == _G.UIParent, "duel end released the display")
+		assert(not containers[1]._enabled and not containers[1]:IsShown(), "duel end released the display")
 
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_duel")
 		env.plates.np_duel = nil
@@ -737,6 +740,33 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		removePlate("np_resize")
 	end)
 
+	fw.it("a restyle takes a parked display back to UIParent, where its size can be read", function()
+		-- Parking leaves a display on its plate, and anywhere inside a plate its size reads as
+		-- secret. A look change is the one thing that needs it readable again, so that is the
+		-- only path that moves it off.
+		addPlate("np_refit")
+		local display = activeDisplays("np_refit")[1]
+		assert(display, "tracked by the one enabled bar")
+
+		local plate = env.plates.np_refit
+		removePlate("np_refit")
+		assert(display._parent == plate, "parked on its plate")
+
+		local icons = db.Modules.NameplatesModule.Enemy.Bar1.Icons
+		local originalSize = icons.Size
+		icons.Size = originalSize + 7
+		nameplates:Refresh()
+		-- The conversion rides the shared staggered sweep, whose budget is spread over every
+		-- lane with work, so one tick is not guaranteed to reach this entry.
+		acm.tickAll(5)
+
+		assert(display._parent == _G.UIParent, "moved off the plate for the restyle")
+
+		icons.Size = originalSize
+		nameplates:Refresh()
+		acm.tickAll(1)
+	end)
+
 	fw.it("a token that flips faction swaps between two cached displays", function()
 		-- GetUnitOptions returns Friendly or Enemy for the same token, and a duel flips it
 		-- mid-session. Restyling one display across the flip breaks while auras are secret (the
@@ -816,7 +846,7 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_drop")
 
 		assert(not display._enabled and not display:IsShown(), "parked when it stopped qualifying")
-		assert(display._parent == _G.UIParent, "and reparented off the plate")
+		assert(display._parent ~= _G.UIParent, "and left on its plate")
 
 		-- Re-qualifying reuses the same display rather than building another.
 		env.setModuleEnabled("NameplatesModule", true)

@@ -306,12 +306,26 @@ local function CreateBarDisplay(size, spacing, style, colors)
 	)
 end
 
----Parks a pooled bar display.
+---Parks a pooled bar display. It stays on the plate it was drawing on, hidden: re-parenting
+---invalidates the layout of every button underneath, and taking it off here only means putting it
+---back on the next plate, so a camera sweep through a crowd paid for that twice per plate. What
+---makes it worth being off a plate is a restyle, which is rare, so MoveOffPlate does it there.
 local function ResetBarDisplay(display)
 	display:SetEnabled(false)
 	display:Hide()
-	display.Frame:ClearAllPoints()
-	display.Frame:SetParent(UIParent)
+end
+
+---Moves a display back to UIParent, where its geometry can be read: a restyle cannot re-fit
+---buttons whose size is secret, which it is anywhere inside a plate.
+local function MoveOffPlate(display)
+	local frame = display.Frame
+
+	if frame:GetParent() == UIParent then
+		return
+	end
+
+	frame:ClearAllPoints()
+	frame:SetParent(UIParent)
 
 	-- What AnchorBarDisplay remembered describes points and a parent this display no longer has,
 	-- so it must not be believed when the display is picked up again.
@@ -402,6 +416,7 @@ local function GetOrCreateBarDisplay(token, bar, barOptions, factionKey)
 		-- One restyle pass for all three values; the individual setters would each walk every
 		-- button. Records the new signature even when the restyle has to defer, because the
 		-- display now WANTS this configuration and the retry will finish applying it.
+		MoveOffPlate(entry.Display)
 		entry.Display:ApplyConfig(size, spacing, style)
 		entry.Signature = signature
 	end
@@ -537,6 +552,14 @@ local function EnsureBarDisplay(data, bar, barOptions, factionKey)
 	-- paying for it once per step per plate with nothing to show for it.
 	if display.Frame:GetParent() ~= data.Nameplate then
 		display.Frame:SetParent(data.Nameplate)
+
+		-- SetParent re-levels the frame under its new parent, so nothing AnchorBarDisplay
+		-- remembered about the old plate describes it any more. Parking no longer clears this,
+		-- which is the whole point: a display that comes back to the plate it was already on
+		-- keeps its anchors and skips the work below.
+		display.NameplateAnchorFrame = nil
+		display.NameplateLevel = nil
+		display.NameplateIgnoreScale = nil
 	end
 
 	display:SetUnit(token)
