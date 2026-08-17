@@ -12,6 +12,7 @@ local moduleUtil = addon.Utils.ModuleUtil
 local units = addon.Utils.Units
 local frames = addon.Core.Frames
 local pool = addon.Core.Pool
+local sweep = addon.Core.Sweep
 local spellSearch = addon.Core.SpellSearch
 local groups = addon.Modules.CustomAuras.Groups
 local sound = addon.Modules.CustomAuras.Sound
@@ -324,6 +325,80 @@ end
 ---@param count number
 local function PrewarmFor(state, count)
 	displayPools[groups:GetShape(state.Group)]:Prewarm(count, PrewarmCreateArgs, state.Group)
+end
+
+---Whether a parked entry still carries the current look of some other live group sharing the
+---shape. Those entries are that group's restricted-reuse matches, so a sweep converting them
+---would steal a match another group depends on; only entries no live group can use are taken.
+---@param entry CustomAuraDisplayEntry
+---@param sweepingState CustomAuraGroupState
+---@return boolean
+local function EntryCarriesAnotherGroupsLook(entry, sweepingState)
+	local shape = groups:GetShape(sweepingState.Group)
+
+	for _, state in pairs(states) do
+		local group = state.Group
+
+		if state ~= sweepingState and groups:GetShape(group) == shape
+			and entry.Display:CarriesConfig(groups:GetSize(group), group.Icons.Spacing,
+				BuildStyle(group)) then
+			return true
+		end
+	end
+
+	return false
+end
+
+---One parked entry converted to the group's current look, called from the pool's background
+---sweep. Everything is resolved fresh per entry: the sweep runs over seconds, longer than the
+---shared style scratch survives, and the group table itself moves on a profile switch.
+---@param entry CustomAuraDisplayEntry
+---@param state CustomAuraGroupState
+---@return boolean? keepGoing
+local function SweepEntryStyle(entry, state)
+	-- A restricted restyle could not land anyway. Re-armed before abandoning, or the remainder
+	-- of this run would never be swept: the flag was spent when the run was queued, and only
+	-- another look change would set it again.
+	if wowEx:IsAuraStylingRestricted() then
+		state.StyleStale = true
+		return false
+	end
+
+	if EntryCarriesAnotherGroupsLook(entry, state) then
+		return
+	end
+
+	local group = state.Group
+
+	entry.Display:ApplyConfig(groups:GetSize(group), group.Icons.Spacing, BuildStyle(group))
+
+	return true
+end
+
+---Brings the parked pool up to date after the group's look changed. Prewarm covers entries that
+---do not exist yet; this covers the ones that do, whose baked look no longer matches - and
+---while styling is restricted a reuse can ONLY match the baked look (AcquireEntry), so without
+---it a settings tweak between pulls leaves the whole prewarmed pool useless for exactly the
+---matches it was built for, forcing fresh mid-combat builds. Entries the sweep has not reached
+---are corrected at acquire, so this is a warm-up, never a correctness requirement.
+---
+---Each state sweeps on its own lane: the shape pools are shared, and same-shape groups going
+---stale in one refresh would otherwise replace each other's runs, leaving the losers' parked
+---entries unswept with their flags already spent.
+---@param state CustomAuraGroupState
+local function SweepParkedIfStale(state)
+	if not state.StyleStale then
+		return
+	end
+
+	state.StyleStale = false
+
+	if not state.SweepLane then
+		state.SweepLane = sweep:New()
+	end
+
+	displayPools[groups:GetShape(state.Group)]:RefreshFree(SweepEntryStyle, state,
+		PLATE_PREALLOCATE, state.SweepLane)
 end
 
 ---True while the icons are stand-ins: test mode covers every group, the options page one.
@@ -798,7 +873,19 @@ local function EnsureState(groupDef)
 
 	-- An import or profile switch replaces the table wholesale, so re-point at the live one.
 	state.Group = groupDef
-	state.StyleSignature = StyleSignature(groupDef)
+
+	local signature = StyleSignature(groupDef)
+
+	-- A changed look strands the parked copies on the old one; noted here, acted on by the
+	-- sweep the refresh kicks off next to the prewarm (SweepParkedIfStale). A state seen for
+	-- the first time counts as changed: after a profile switch the pool is full of the old
+	-- profile's looks and the replacement groups are all new states, so a first-sight skip
+	-- would leave the whole pool unswept. At login the sweep is a handful of no-op diffs.
+	if state.StyleSignature ~= signature then
+		state.StyleStale = true
+	end
+
+	state.StyleSignature = signature
 
 	local shape = groups:GetShape(groupDef)
 
@@ -1376,6 +1463,7 @@ function M:Refresh(options, moduleEnabled)
 			ReleasePlates(state)
 			ReleaseArena(state)
 			PrewarmFor(state, PLATE_PREALLOCATE)
+			SweepParkedIfStale(state)
 			wipe(seenAnchors)
 
 			-- The stand-ins join the anchor walk only while they are actually up, so a copy is
@@ -1417,6 +1505,7 @@ function M:Refresh(options, moduleEnabled)
 			ReleaseFrames(state)
 			ReleaseArena(state)
 			PrewarmFor(state, PLATE_PREALLOCATE)
+			SweepParkedIfStale(state)
 
 			for token in pairs(state.Plates) do
 				RefreshPlateGroup(state, token)
@@ -1618,6 +1707,9 @@ end
 ---@field SortDirection number
 ---@field FilterSignature string
 ---@field StyleSignature string
+---@field StyleStale boolean? The look changed and the parked pool has not been swept for it yet.
+---@field SweepLane Sweep? This state's own lane of the background walker, so same-shape groups
+---never replace each other's runs.
 ---@field Shape string The display shape its copies were taken from the pool for.
 ---@field Allowed boolean Whether the group may show live auras right now.
 ---@field Anchor table? Screen anchor frame.

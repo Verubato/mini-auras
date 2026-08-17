@@ -534,6 +534,7 @@ function M.build()
 	loadFile("src/Core/Kicks/KickEvents.lua")
 	loadFile("src/Core/TestSpells.lua")
 	loadFile("src/Core/EventGate.lua")
+	loadFile("src/Core/Display/Sweep.lua")
 	loadFile("src/Core/Display/Pool.lua")
 	loadFile("src/Core/Display/GrowAnchors.lua")
 	-- Must precede IconSlotContainer and AuraContainerDisplay: both read the glow catalog at load.

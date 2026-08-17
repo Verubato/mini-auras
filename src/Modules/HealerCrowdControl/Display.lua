@@ -58,6 +58,9 @@ local discardPool = {}
 -- Names the discard-pool slots for entries rejected while styling was restricted, so they park
 -- under keys no unit token can collide with (see RefreshHealers).
 local staleParkCounter = 0
+-- The options the parked entries were last brought onto, latched only when that pass actually
+-- ran: a restricted refresh leaves it stale, so the next unrestricted one retries.
+local parkedOptionsSignature
 
 ---@type TestSpell[]
 local testSpells = {}
@@ -180,6 +183,29 @@ local function RefreshHealerDisplays()
 		end
 	end
 
+	-- Parked entries converge on the current look too, so a healer joining under restriction can
+	-- reuse one that already matches (ItemCarriesOptions) instead of forcing a mid-combat build.
+	-- A handful at most, all hidden, so on the spot rather than staggered. Gated on the options
+	-- actually moving, since this runs on every roster event; and skipped, with the latch left
+	-- stale, while restricted - the restyle could not land, an unchanged entry may still match
+	-- as it is, and the next unrestricted refresh retries.
+	local signature = auraContainerDisplay:GetStyleSignature(BuildStyle(options), iconSize,
+		options.IconSpacing or 2) .. ":" .. fontSize .. ":" .. tostring(options.Font.Flags)
+
+	if parkedOptionsSignature ~= signature and not wowEx:IsAuraStylingRestricted() then
+		parkedOptionsSignature = signature
+
+		for _, item in pairs(discardPool) do
+			if item.Display then
+				item.Display:ApplyConfig(iconSize, options.IconSpacing or 2, BuildStyle(options))
+			end
+
+			if item.LabelDisplay then
+				item.LabelDisplay:ApplyConfig(fontSize, 0, BuildLabelStyle(options))
+			end
+		end
+	end
+
 	LayoutHealerDisplays()
 end
 
@@ -248,6 +274,9 @@ local function RefreshHealers()
 			discardPool["stale" .. staleParkCounter] = item
 			discardPool[healer] = nil
 			item = nil
+			-- The pool now holds an entry the parked restyle has not seen; unlatch so the next
+			-- unrestricted refresh brings it onto the current look.
+			parkedOptionsSignature = nil
 		end
 
 		-- Container entries are interchangeable: same groups, retargeted by SetUnit. Taking any

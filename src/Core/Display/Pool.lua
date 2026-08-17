@@ -1,5 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
+local sweep = addon.Core.Sweep
 
 -- Generic object pool with staggered pre-creation. Nothing here knows about auras or frames -
 -- an "item" is whatever createFn returns (a single display, a bundle of displays, a table of
@@ -24,6 +25,21 @@ local M = {}
 M.__index = M
 
 addon.Core.Pool = M
+
+---Whether an item is still parked. The free list is small and this runs a couple of times per
+---tick, so a linear scan beats bookkeeping on every acquire and release.
+---@param pool Pool
+---@param item table
+---@return boolean
+local function IsFree(pool, item)
+	for _, freeItem in ipairs(pool.Free) do
+		if freeItem == item then
+			return true
+		end
+	end
+
+	return false
+end
 
 ---@param createFn fun(...): table Builds one item, from whatever Acquire was given.
 ---@param resetFn fun(item: table) Parks an item (disable, hide, unanchor).
@@ -135,6 +151,55 @@ function M:Prewarm(targetCount, argsFn, argsCtx)
 	end)
 end
 
+---Walks the parked items through refreshFn in the background, a couple per tick like the
+---pre-creation fill, so a look change converges onto the free list while nothing it holds is on
+---screen. The sweep visits newest items first, the same end Acquire and AcquireMatching take
+---from, so a capped sweep spends its budget on exactly the items the next acquires will reach
+---for. A later call on the same lane replaces a sweep still in flight, and refreshFn returning
+---false abandons the sweep ("cannot restyle right now"). Either way the acquire path remains
+---the guarantee - this is only a warm-up.
+---@param refreshFn fun(item: table, refreshCtx: any): boolean? Returns false to abandon the sweep.
+---@param refreshCtx any? Handed back to refreshFn, like Prewarm's argsCtx.
+---@param maxItems number? Cap on items visited; defaults to the whole free list.
+---@param lane Sweep? A caller-owned lane, for consumers that share one pool but must not
+---replace each other's sweeps (one lane per look-owner). Defaults to the pool's own lane.
+function M:RefreshFree(refreshFn, refreshCtx, maxItems, lane)
+	local free = self.Free
+	local count = #free
+
+	if maxItems and maxItems < count then
+		count = maxItems
+	end
+
+	local queue = {}
+
+	for index = 1, count do
+		queue[index] = free[#free + 1 - index]
+	end
+
+	if not lane then
+		if not self.Sweep then
+			self.Sweep = sweep:New()
+		end
+
+		lane = self.Sweep
+	end
+
+	-- A closure per call rather than hoisted state on the pool: sweeps start at config-change
+	-- frequency, and pool-level fn/ctx fields would let one caller silently retarget another's
+	-- in-flight run.
+	local pool = self
+	lane:Run(queue, function(item)
+		-- An item acquired since the sweep began belongs to someone now; touching it would
+		-- fight its owner. It gets the current look through the acquire path instead.
+		if not IsFree(pool, item) then
+			return
+		end
+
+		return refreshFn(item, refreshCtx)
+	end)
+end
+
 ---@class Pool
 ---@field Create fun(): table
 ---@field Reset fun(item: table)
@@ -144,3 +209,4 @@ end
 ---@field Ticker table?
 ---@field ArgsFn (fun(argsCtx: any): ...)?
 ---@field ArgsCtx any?
+---@field Sweep Sweep?

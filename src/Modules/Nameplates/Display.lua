@@ -13,6 +13,7 @@ local growAnchors = addon.Core.GrowAnchors
 local kickSlot = addon.Core.KickSlot
 local slotDistribution = addon.Utils.SlotDistribution
 local testSpellData = addon.Core.TestSpells
+local sweep = addon.Core.Sweep
 local GetTime = GetTime
 
 addon.Modules.Nameplates = addon.Modules.Nameplates or {}
@@ -139,6 +140,8 @@ local BARS = {
 -- same deal every other display in the addon takes.
 ---@type table<string, table<string, {Display: AuraContainerDisplay, Signature: string}>>
 local barDisplays = {}
+-- Background walker converting parked bar displays after a look change; see QueueParkedRestyles.
+local parkedSweep = sweep:New()
 -- Fallbacks for a bar with no configured geometry.
 local DEFAULT_BAR_ICONS = 5
 local DEFAULT_BAR_SIZE = 35
@@ -399,6 +402,91 @@ local function PrewarmOneBarDisplay(token, bar, barOptions, factionKey)
 	end
 
 	ResetBarDisplay(GetOrCreateBarDisplay(token, bar, barOptions, factionKey))
+end
+
+---One parked (token, bar, faction) display brought onto the current look, from the background
+---sweep. Everything is re-resolved at fire time: the sweep runs over seconds, and options,
+---plates and the shared style scratch all move underneath it.
+---@param item table {Token, Bar, FactionKey}
+---@return boolean? keepGoing
+local function RestyleParkedEntry(item)
+	-- A restricted restyle cannot reach the buttons; abandon and let the on-demand path cope,
+	-- exactly as it always has.
+	if wowEx:IsAuraStylingRestricted() then
+		return false
+	end
+
+	local unitOptions = nmModule and nmModule[item.FactionKey]
+	local barOptions = unitOptions and unitOptions[item.Bar.Key]
+
+	if not barOptions or not barOptions.Enabled then
+		return
+	end
+
+	-- The shared restyle arm: looks up the entry, diffs the signature and applies the config. An
+	-- entry a plate has taken since the queue was built was restyled by its own ensure path, so
+	-- this lands there as a no-op diff. The tints ride along because they are outside the
+	-- signature, and a display reused while auras are secret needs them already on the buttons.
+	local display = GetOrCreateBarDisplay(item.Token, item.Bar, barOptions, item.FactionKey)
+	display:SetGroupGlowColors(COLORED_GROUP_KEYS, BarCategoryColors(barOptions))
+end
+
+---Adds every entry of one bar's cache still wearing an old look to the queue, building it on
+---first need.
+---@param queue table[]?
+---@param bar table
+---@param factionKey "Enemy"|"Friendly"
+---@param barOptions table
+---@return table[]? queue
+local function QueueStaleForBar(queue, bar, factionKey, barOptions)
+	local cacheKey = bar.CacheKey[factionKey]
+	local signature = auraContainerDisplay:GetStyleSignature(BarStyle(barOptions),
+		BarIconSize(barOptions), barOptions.Icons.Spacing or DEFAULT_BAR_SPACING)
+
+	for token, byBar in pairs(barDisplays) do
+		local entry = byBar[cacheKey]
+
+		if entry and entry.Signature ~= signature then
+			queue = queue or {}
+			queue[#queue + 1] = { Token = token, Bar = bar, FactionKey = factionKey }
+		end
+	end
+
+	return queue
+end
+
+---Queues every parked bar display whose baked look no longer matches the options, for the
+---background sweep to convert a couple at a time. Without this a settings change between pulls
+---leaves the whole per-token cache on the old look, and a plate spawning once auras are secret
+---cannot be restyled, so it wears that old look for the rest of the encounter. Parked frames
+---are invisible, so the sweep has no on-screen cost at any pace.
+---
+---The queue is rebuilt from the entries' own signatures on every pass, with no done-marker: a
+---run abandoned under restriction, or replaced by a later change, self-heals on the next
+---refresh because whatever it left behind still diffs. A pass where nothing is stale builds no
+---queue and costs four signature builds plus a scan of the cache.
+local function QueueParkedRestyles()
+	if not nmModule then
+		return
+	end
+
+	local queue
+
+	for _, factionKey in ipairs(PREWARM_FACTIONS) do
+		local unitOptions = nmModule[factionKey]
+
+		for _, bar in ipairs(BARS) do
+			local barOptions = unitOptions and unitOptions[bar.Key]
+
+			if barOptions and barOptions.Enabled then
+				queue = QueueStaleForBar(queue, bar, factionKey, barOptions)
+			end
+		end
+	end
+
+	if queue then
+		parkedSweep:Run(queue, RestyleParkedEntry)
+	end
 end
 
 ---Acquires (or reuses) and reconfigures a bar's aura display for a tracked plate.
@@ -858,9 +946,18 @@ function M:RefreshAnchorsAndSizes()
 			end
 		end
 	end
+
+	-- After the tracked plates: their ensure path has just updated their entries' signatures,
+	-- so the queue that remains is exactly the parked cache, and none of the walker's budget is
+	-- spent on entries the loop above already restyled.
+	QueueParkedRestyles()
 end
 
 function M:Teardown()
+	-- A disabled module has no business converting its cache; the next enable re-queues
+	-- whatever still diffs.
+	parkedSweep:Stop()
+
 	for unitToken, data in pairs(nameplateAnchors) do
 		self:ClearPlate(unitToken)
 		if data.Bar1Display then

@@ -116,7 +116,7 @@ local function OnInterrupted(unitToken)
 	local texture = KICK_ICON
 	local duration = DEFAULT_KICK_DURATION
 
-	-- UnitIsEnemy covers duel opponents, arena/BG enemies, and MC'd allies — i.e. every case
+	-- UnitIsEnemy covers duel opponents, arena/BG enemies, and MC'd allies - i.e. every case
 	-- where the local player or an ally could legitimately be the interrupter. When the
 	-- interrupted unit is a genuine teammate, an enemy did the kicking and our party-spec
 	-- heuristic / player-cast tracking is irrelevant, so we just show the generic rogue icon.
