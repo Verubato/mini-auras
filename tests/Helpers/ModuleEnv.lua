@@ -158,7 +158,12 @@ function M.build()
 	_G.C_TTSSettings = { GetVoiceOptionID = function()
 		return 0
 	end }
-	_G.C_CVar = { SetCVarBitfield = function() end }
+	_G.C_CVar = {
+		SetCVarBitfield = function() end,
+		GetCVarBitfield = function()
+			return false
+		end,
+	}
 	_G.UnitName = function(unit)
 		return unit
 	end

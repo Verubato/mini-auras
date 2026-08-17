@@ -60,6 +60,13 @@ local function OnNamePlateRemoved(unitToken)
 end
 
 local function OnNamePlateAdded(unitToken)
+	-- The personal resource display arrives as a plate like any other, but it is the player's own
+	-- frame: a friendly bar there would draw the player's own auras a second time, on top of
+	-- whatever the unit frame modules already show.
+	if units:SameUnit(unitToken, "player") then
+		return
+	end
+
 	local nameplate = C_NamePlate.GetNamePlateForUnit(unitToken)
 	if not nameplate then
 		return
@@ -184,10 +191,23 @@ local function HaveModesChanged()
 		or previousImportantNeeded ~= display:ImportantNeeded()
 end
 
+---Clears one bit of a nameplate aura CVar, but only when it is actually set. This runs on every
+---refresh, and a write broadcasts CVAR_UPDATE to every addon listening whether the value moved or
+---not.
+local function ClearCVarBit(cvar, index)
+	if C_CVar.GetCVarBitfield(cvar, index) then
+		C_CVar.SetCVarBitfield(cvar, index, false)
+	end
+end
+
 local function ApplyBlizzardNameplateSettings()
 	local configureEnabled = db.ConfigureBlizzardNameplates
 	if configureEnabled == nil then
 		configureEnabled = true
+	end
+
+	if not configureEnabled then
+		return
 	end
 
 	local anyEnemyEnabled = nmModule.Enemy.Bar1.Enabled
@@ -196,14 +216,14 @@ local function ApplyBlizzardNameplateSettings()
 	local anyFriendlyEnabled = nmModule.Friendly.Bar1.Enabled
 		or nmModule.Friendly.Bar2.Enabled
 
-	if configureEnabled and anyEnemyEnabled then
-		C_CVar.SetCVarBitfield("nameplateEnemyPlayerAuraDisplay", Enum.NamePlateEnemyPlayerAuraDisplay.LossOfControl, false)
-		C_CVar.SetCVarBitfield("nameplateEnemyPlayerAuraDisplay", Enum.NamePlateEnemyPlayerAuraDisplay.Buffs, false)
-		C_CVar.SetCVarBitfield("nameplateEnemyNpcAuraDisplay", Enum.NamePlateEnemyNpcAuraDisplay.CrowdControl, false)
+	if anyEnemyEnabled then
+		ClearCVarBit("nameplateEnemyPlayerAuraDisplay", Enum.NamePlateEnemyPlayerAuraDisplay.LossOfControl)
+		ClearCVarBit("nameplateEnemyPlayerAuraDisplay", Enum.NamePlateEnemyPlayerAuraDisplay.Buffs)
+		ClearCVarBit("nameplateEnemyNpcAuraDisplay", Enum.NamePlateEnemyNpcAuraDisplay.CrowdControl)
 	end
 
-	if configureEnabled and anyFriendlyEnabled then
-		C_CVar.SetCVarBitfield("nameplateFriendlyPlayerAuraDisplay", Enum.NamePlateFriendlyPlayerAuraDisplay.LossOfControl, false)
+	if anyFriendlyEnabled then
+		ClearCVarBit("nameplateFriendlyPlayerAuraDisplay", Enum.NamePlateFriendlyPlayerAuraDisplay.LossOfControl)
 	end
 end
 
