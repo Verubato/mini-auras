@@ -163,10 +163,11 @@ local function RefreshUnit(unit)
 		return
 	end
 
+	-- Every watcher on the unit, not just the first: two frame addons on screen at once, or a
+	-- custom anchor beside a party frame, give the same unit more than one icon.
 	for _, watcher in pairs(watchers) do
 		if watcher.Container and watcher.Unit == unit then
 			SetIconState(watcher.Container, durationData)
-			break
 		end
 	end
 end

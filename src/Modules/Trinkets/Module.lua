@@ -1,5 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
+local frames = addon.Core.Frames
 local trinketsTracker = addon.Core.TrinketsTracker
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
@@ -13,10 +14,20 @@ addon.Modules.Trinkets.Module = M
 addon.Modules.TrinketsModule = M
 
 local eventFrame
+-- Owns the unit-frame hooks, which can never be taken back off, so it outlives the gated
+-- eventFrame above.
+local hookFrame
 local enabled = false
 local paused = false
 local QueueRefresh = moduleUtil:Coalesced(function()
 	M:Refresh()
+end)
+local QueueAnchorRefresh = moduleUtil:Coalesced(function()
+	if paused then
+		display:RefreshAnchorsOnly()
+	else
+		M:Refresh()
+	end
 end)
 
 local function OnEvent(_, event)
@@ -34,6 +45,11 @@ local function OnEvent(_, event)
 	end
 end
 
+local function IsInArena()
+	local inInstance, instanceType = IsInInstance()
+	return inInstance and instanceType == "arena"
+end
+
 -- Trinket cooldown data changes arrive via TrinketsTracker (arena cooldown updates and
 -- match-state transitions); this module only re-renders the affected slot.
 local function OnTrinketDataChanged(unit)
@@ -41,7 +57,44 @@ local function OnTrinketDataChanged(unit)
 		return
 	end
 
-	display:Render(unit)
+	if unit then
+		display:Render(unit)
+		return
+	end
+
+	-- No unit means a match-state change or the arena gate opening. Every unit frame addon has
+	-- had its chance to build by then, so this is the pass that replaces anchors taken during
+	-- the loading screen, when the frames on screen were not the ones that end up there.
+	QueueRefresh()
+end
+
+---Frame addons build, sort, and hide their party frames long after the arena's world event, and
+---several of them replace the Blizzard frames only once their own are up. An anchor taken before
+---that settles points at a frame nobody shows any more, which is where the icons were left
+---stranded until a reload.
+local function OnFramesChanged()
+	if not enabled then
+		return
+	end
+
+	-- Nothing is on screen outside an arena, so a raid's worth of frame churn buys nothing.
+	-- Test mode is the exception: the icons are up there to be positioned.
+	if not IsInArena() and not paused then
+		return
+	end
+
+	QueueAnchorRefresh()
+end
+
+local function InstallFrameHooks()
+	hookFrame = CreateFrame("Frame")
+
+	frames:InstallUnitFrameHooks(hookFrame, {
+		OnSetUnit = OnFramesChanged,
+		OnUpdateVisible = OnFramesChanged,
+		OnSorted = OnFramesChanged,
+		OnVisibilityChanged = OnFramesChanged,
+	})
 end
 
 ---@return TrinketsModuleOptions?
@@ -93,6 +146,7 @@ end
 
 local function InstallHooks()
 	trinketsTracker:RegisterCallback(OnTrinketDataChanged)
+	InstallFrameHooks()
 end
 
 local function ApplyInitialState()

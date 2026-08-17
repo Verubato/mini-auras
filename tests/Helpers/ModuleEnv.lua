@@ -386,20 +386,24 @@ function M.build()
 			display:Show()
 		end,
 		-- The stand-in frames are kept out of the anchor list unless they are asked for, exactly
-		-- as the real helper keeps them out of GetAll.
-		GetAll = function(_, _, includeTestFrames)
-			if not includeTestFrames then
-				return env.unitFrames
-			end
-
+		-- as the real helper keeps them out of GetAll. visibleOnly is honoured for the same
+		-- reason the real one honours it: a frame addon parking its frames is how anchors go
+		-- stale, and a stub that hands them back regardless would hide that.
+		GetAll = function(_, visibleOnly, includeTestFrames)
 			local list = {}
 
 			for _, frame in ipairs(env.unitFrames) do
-				list[#list + 1] = frame
+				if not visibleOnly or frame:IsVisible() then
+					list[#list + 1] = frame
+				end
 			end
 
-			for _, frame in ipairs(env.testFrames) do
-				list[#list + 1] = frame
+			if includeTestFrames then
+				for _, frame in ipairs(env.testFrames) do
+					if not visibleOnly or frame:IsVisible() then
+						list[#list + 1] = frame
+					end
+				end
 			end
 
 			return list
