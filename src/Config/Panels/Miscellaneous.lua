@@ -7,6 +7,8 @@ local horizontalSpacing = mini.HorizontalSpacing
 local helpers = addon.Config.PanelHelpers
 local dbDefaults = addon.Config.Defaults
 local fonts = addon.Core.Fonts
+local config = addon.Config
+local moduleName = addon.Utils.ModuleName
 ---@class MiscellaneousConfig
 local M = {}
 addon.Config.Miscellaneous = M
@@ -105,7 +107,8 @@ function M:Build(panel)
 		end,
 		SetValue = function(value)
 			db.ConfigureBlizzardNameplates = value
-			addon:Refresh()
+			-- Only the Nameplates module reads this, so the one scoped refresh on this page.
+			config:Apply(moduleName.Nameplates)
 		end,
 	})
 
