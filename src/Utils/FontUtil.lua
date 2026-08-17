@@ -8,6 +8,16 @@ addon.Utils.FontUtil = M
 
 -- Stack counts sit in a corner and share the icon with the countdown, so they run smaller.
 local STACK_COEFFICIENT = 0.38
+-- The alphabets a font family carries a member for. The configured file only overrides the
+-- member for the client's own locale; the rest keep the game's files, so text in another script
+-- - a Cyrillic name in a group, say - never renders as boxes because the picked face lacks it.
+local FAMILY_ALPHABETS = { "roman", "korean", "simplifiedchinese", "traditionalchinese", "russian" }
+local LOCALE_ALPHABETS = {
+	koKR = "korean",
+	zhCN = "simplifiedchinese",
+	zhTW = "traditionalchinese",
+	ruRU = "russian",
+}
 
 -- The file the configured face resolves to, remembered between calls: every icon asks for it on
 -- every refresh and the answer only moves when the media list does. Core/Display/Fonts loads
@@ -15,27 +25,16 @@ local STACK_COEFFICIENT = 0.38
 local cachedName
 local cachedFile
 local subscribedToFonts = false
--- One shared font object per size-and-flags pair, each wearing the configured file. Text drawn
--- in the picked font attaches to these with SetFontObject rather than being handed the file:
--- the client re-renders attached strings itself whenever an object changes, including when the
--- file's first load of the session finishes - where SetFont with a cold path answers false,
--- leaves the string as it was, and repaints on nothing, which is what made a font change land
--- on some text and silently miss the rest. Sizes derive from icon sizes, so the set stays small.
+-- One shared font object per file, size and flags combination, each created once and never
+-- re-fonted. Text drawn in a font attaches to one of these with SetFontObject rather than being
+-- handed the file: the client renders a string given a font object even when the file's first
+-- load is still in flight, where SetFont with a cold path answers false, leaves the string as
+-- it was, and repaints on nothing. Never re-fonted is load-bearing too: a font change hands
+-- re-applied strings a DIFFERENT object, because editing an object a string already holds only
+-- repainted text that was about to redraw anyway - countdowns followed a change while a static
+-- warning kept its old face, which read as the option working for some text and not the rest.
 local fontObjects = {}
 local fontObjectCount = 0
-
----Puts a new file on every shared object. The strings attached to them follow on their own -
----this is the whole of what changing the font has to do for text already on screen.
----@param file string?
-local function ApplyFileToObjects(file)
-	if not file then
-		return
-	end
-
-	for _, entry in pairs(fontObjects) do
-		entry.Object:SetFont(file, entry.Size, entry.Flags)
-	end
-end
 
 --- The file the font option resolves to right now, or nil when no font is picked or the pick
 --- belongs to a media addon that has not registered it yet.
@@ -62,48 +61,90 @@ function M:CurrentFace()
 
 	if name ~= cachedName then
 		cachedName = name
-
-		local file = addon.Core.Fonts:Resolve(name)
-
-		if file ~= cachedFile then
-			cachedFile = file
-			ApplyFileToObjects(file)
-		end
+		cachedFile = addon.Core.Fonts:Resolve(name)
 	end
 
 	return cachedFile
 end
 
----The shared object for this size and flags, created on first need wearing the current file.
----Only called while a file is resolved: see Apply.
+---The family members for a file at a size: the file itself for the client's own locale, the
+---game's per-alphabet files for the rest.
+---@param file string
+---@param size number
+---@param flags string
+---@return table[] members
+local function FamilyMembers(file, size, flags)
+	local override = LOCALE_ALPHABETS[GetLocale()] or "roman"
+	local members = {}
+
+	for _, alphabet in ipairs(FAMILY_ALPHABETS) do
+		local memberFile = file
+
+		if alphabet ~= override and GameFontNormal and GameFontNormal.GetFontObjectForAlphabet then
+			local gameObject = GameFontNormal:GetFontObjectForAlphabet(alphabet)
+
+			memberFile = (gameObject and gameObject:GetFont()) or file
+		end
+
+		members[#members + 1] = {
+			alphabet = alphabet,
+			file = memberFile,
+			height = size,
+			flags = flags,
+		}
+	end
+
+	return members
+end
+
+---The shared object for this file at this size and flags, created on first need and immutable
+---after: see the note on fontObjects. Also serves the dropdown's per-font preview rows, which
+---is why the file is a parameter rather than always the configured one.
+---
+---Created through CreateFontFamily, definition and all, never CreateFont plus SetFont: SetFont
+---on a font object hits the same lazy file loading strings do - false for a file the client is
+---still loading, leaving the object undefined for good - where a family created WITH its
+---definition is registered like the game's own declared fonts, and the client sees the file's
+---load through itself. That difference is why one session's pick used to land whole on the
+---fallback face while another's worked: it hung on whether some other addon had already loaded
+---the file before the object was built.
+---@param file string
 ---@param size number
 ---@param flags string?
 ---@return table object
-local function GetFontObject(size, flags)
+function M:FileFontObject(file, size, flags)
 	flags = flags or ""
 
-	local key = size .. "|" .. flags
-	local entry = fontObjects[key]
+	local key = file .. "|" .. size .. "|" .. flags
+	local object = fontObjects[key]
 
-	if not entry then
+	if not object then
 		fontObjectCount = fontObjectCount + 1
-		entry = {
-			Object = CreateFont("MiniAurasFont" .. fontObjectCount),
-			Size = size,
-			Flags = flags,
-		}
-		entry.Object:SetFont(cachedFile, size, flags)
-		fontObjects[key] = entry
+
+		local name = "MiniAurasFont" .. fontObjectCount
+
+		if CreateFontFamily then
+			object = CreateFontFamily(name, FamilyMembers(file, size, flags))
+		else
+			-- Nothing but an old client gets here; the two-step is all it has.
+			object = CreateFont(name)
+			object:SetFont(file, size, flags)
+		end
+
+		fontObjects[key] = object
 	end
 
-	return entry.Object
+	return object
 end
 
---- Draws a fontstring in the configured font at the given size, or leaves it on its own face
---- when nothing is picked or the pick has not resolved yet. The one entry point for the option:
---- picked, the string is attached to a shared font object; not picked, it keeps or gets back
---- the face it was built with. That second case is why this falls back rather than picking a
---- default face - the media refresh comes round again once the name resolves, and swaps then.
+--- Draws a fontstring in the configured font at the given size, or in its own face when
+--- nothing is picked or the pick has not resolved yet. The one entry point for the option, and
+--- always through a font object, never FontString:SetFont: an explicit SetFont sets instance
+--- properties that keep shadowing whatever object is attached later, which is how a string
+--- first touched with no font picked stayed on the game face for the session after a pick. The
+--- unpicked state is simply a family built from the string's own base face. Falling back
+--- rather than picking a default face is deliberate - the media refresh comes round again once
+--- an unresolved name resolves, and swaps then.
 --- @param fontString table
 --- @param size number? point size; nil keeps the size the string was built with
 --- @param flags string? font flags; nil keeps the flags the string was built with
@@ -133,16 +174,31 @@ function M:Apply(fontString, size, flags, fallbackFace)
 		return
 	end
 
-	if M:CurrentFace() then
-		fontString.MiniAurasAttached = true
-		fontString:SetFontObject(GetFontObject(size, flags))
-	else
-		local face = fallbackFace or fontString.MiniAurasBaseFace
+	local file = M:CurrentFace()
+	local face = file or fallbackFace or fontString.MiniAurasBaseFace
 
-		fontString.MiniAurasAttached = nil
+	fontString.MiniAurasAttached = file ~= nil or nil
 
-		if face then
-			fontString:SetFont(face, size, flags)
+	if not face then
+		return
+	end
+
+	local object = M:FileFontObject(face, size, flags)
+
+	if (fontString.GetFontObject and fontString:GetFontObject()) ~= object then
+		fontString:SetFontObject(object)
+
+		-- A string keeps drawing its old glyphs after SetFontObject until something dirties it,
+		-- and rewriting its text is that something. Text that rewrites anyway - the captions,
+		-- every countdown - repaints on its own, but a static warning is written once ever.
+		-- Cleared first, because the client drops a SetText that changes nothing, which is
+		-- exactly what this text is. Secret text is left alone: it belongs to the engine, which
+		-- redraws it itself.
+		local text = fontString.GetText and fontString:GetText()
+
+		if text ~= nil and text ~= "" and not (issecretvalue and issecretvalue(text)) then
+			fontString:SetText("")
+			fontString:SetText(text)
 		end
 	end
 end

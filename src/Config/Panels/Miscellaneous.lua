@@ -261,6 +261,28 @@ function M:Build(panel)
 			db.Font = name
 			addon:Refresh()
 		end,
+		-- Each row previews the font it names. Menu rows are pooled, so the stock face is
+		-- remembered the first time a row comes through here and put back on the rows that
+		-- preview nothing - the Game Default row, and any font that resolves to nothing.
+		DecorateItem = function(button, value)
+			local text = button.fontString
+
+			if not text then
+				return
+			end
+
+			if button.MiniAurasStockFont == nil then
+				button.MiniAurasStockFont = text:GetFontObject() or false
+			end
+
+			local preview = value ~= gameDefaultLabel and fonts:GetPreviewFontObject(value) or nil
+
+			if preview then
+				text:SetFontObject(preview)
+			elseif button.MiniAurasStockFont then
+				text:SetFontObject(button.MiniAurasStockFont)
+			end
+		end,
 	})
 
 	fontDropdown:SetPoint("TOPLEFT", fontLabel, "BOTTOMLEFT", 0, -4)

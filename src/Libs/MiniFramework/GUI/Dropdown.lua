@@ -185,11 +185,19 @@ function M:Dropdown(options)
 			ApplyMenuLayout(rootDescription, #options.Items, options.Columns, maxRows)
 
 			for _, value in ipairs(options.Items) do
-				rootDescription:CreateRadio(GetText(value), function(x)
+				local radio = rootDescription:CreateRadio(GetText(value), function(x)
 					return x == options.GetValue()
 				end, function()
 					options.SetValue(value)
 				end, value)
+
+				-- Modern menus only: the legacy paths have no per-row hook, and a row without
+				-- its decoration is just a plain row.
+				if options.DecorateItem and radio and radio.AddInitializer then
+					radio:AddInitializer(function(button)
+						options.DecorateItem(button, value)
+					end)
+				end
 			end
 		end)
 
@@ -307,3 +315,6 @@ end
 ---@field GetValue fun(): any
 ---@field SetValue fun(value: any)
 ---@field GetText? fun(value: any): string
+---@field DecorateItem? fun(button: table, value: any) Runs as the open menu builds each item's
+---row, for per-row looks the menu system cannot express (e.g. a font list previewing itself).
+---Modern menus only; the legacy paths show plain rows.

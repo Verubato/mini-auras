@@ -12,6 +12,9 @@ local _, addon = ...
 -- Resolve. Getting the resolved file onto the screen reliably is FontUtil's job, through shared
 -- font objects rather than per-string SetFont.
 
+-- The preview rows are menu rows, so their text matches the menu's own size.
+local PREVIEW_FONT_SIZE = 13
+
 -- One table, refilled in place. Consumers hold onto it and re-ask for the contents rather than
 -- the table, because media addons register their fonts whenever they happen to load, which is
 -- routinely after a dropdown has already been built.
@@ -20,6 +23,7 @@ local nameScratch = {}
 ---@type fun()[]
 local changeCallbacks = {}
 local subscribedToMedia = false
+local queueNotify
 
 ---@class Fonts
 local M = {}
@@ -55,10 +59,21 @@ local function EnsureMediaSubscription()
 
 	subscribedToMedia = true
 
-	local queueNotify = addon.Utils.ModuleUtil:Coalesced(NotifyChanged)
+	local queue = function()
+		M:QueueChanged()
+	end
 
-	media.RegisterCallback(M, "LibSharedMedia_Registered", queueNotify)
-	media.RegisterCallback(M, "LibSharedMedia_SetGlobal", queueNotify)
+	media.RegisterCallback(M, "LibSharedMedia_Registered", queue)
+	media.RegisterCallback(M, "LibSharedMedia_SetGlobal", queue)
+end
+
+---Runs the change fan-out at the end of the frame, once however many times it is asked for in
+---one. The media callbacks come through here, and so does FontUtil when a font file the client
+---was still loading finally lands - the same consumers need the same catch-up either way.
+function M:QueueChanged()
+	queueNotify = queueNotify or addon.Utils.ModuleUtil:Coalesced(NotifyChanged)
+
+	queueNotify()
 end
 
 ---The font names to offer, sorted. Empty only if the library failed to load, which leaves the
@@ -105,6 +120,21 @@ function M:Resolve(name)
 	end
 
 	return nil
+end
+
+---A font object wearing this name's own file, for a dropdown row that previews the font it
+---names. Nil when the name resolves to nothing, which leaves that row in the menu's face.
+---FontUtil owns the object cache, so a previewed font and a picked one share their objects.
+---@param name string?
+---@return table? object
+function M:GetPreviewFontObject(name)
+	local file = M:Resolve(name)
+
+	if not file then
+		return nil
+	end
+
+	return addon.Utils.FontUtil:FileFontObject(file, PREVIEW_FONT_SIZE)
 end
 
 ---Registers a function to call when the media list changes, i.e. when GetNames would now return

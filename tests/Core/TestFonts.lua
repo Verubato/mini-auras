@@ -68,17 +68,18 @@ local function withHeldTimers(body)
 	assert(ok, err)
 end
 
--- FontUtil's shared font objects, as the client hands them out: a font definition strings attach
--- to and read through live.
-_G.CreateFont = _G.CreateFont or function()
-	local object = {}
-
-	function object:SetFont(face, size, flags)
-		self.Face, self.Size, self.Flags = face, size, flags
-	end
+-- FontUtil's shared font families, created with their member definitions in the call the way
+-- the client registers declared fonts. That atomicity is the point: there is no separate
+-- SetFont step for a still-loading file to refuse.
+_G.CreateFontFamily = function(_, members)
+	local object = { Members = members }
 
 	function object:GetFont()
-		return self.Face, self.Size, self.Flags
+		local first = self.Members and self.Members[1]
+
+		if first then
+			return first.file, first.height, first.flags
+		end
 	end
 
 	return object
@@ -106,9 +107,11 @@ local GAME_FACE = "Fonts\\FRIZQT__.TTF"
 local PACK_FACE = "Interface/AddOns/SomeMediaPack/expressway.ttf"
 
 ---A fontstring with the client's precedence: whichever of SetFont and SetFontObject ran last
----decides what GetFont answers, and an attached object is read through live.
+---decides what GetFont answers, and an attached object is read through live. Text calls are
+---counted, because re-setting the text is what forces the client to redraw a static string in
+---a newly attached object's font.
 local function NewFontString(face)
-	local fontString = { Face = face, Size = 12, Flags = "" }
+	local fontString = { Face = face, Size = 12, Flags = "", Text = "hello", TextSets = 0 }
 
 	function fontString:GetFont()
 		if self.FontObject then
@@ -125,6 +128,19 @@ local function NewFontString(face)
 
 	function fontString:SetFontObject(object)
 		self.FontObject = object
+	end
+
+	function fontString:GetFontObject()
+		return self.FontObject
+	end
+
+	function fontString:GetText()
+		return self.Text
+	end
+
+	function fontString:SetText(text)
+		self.Text = text
+		self.TextSets = self.TextSets + 1
 	end
 
 	return fontString
@@ -170,6 +186,23 @@ fw.describe("Fonts", function()
 		registered["Expressway"] = PACK_FACE
 
 		assert(fonts:Resolve("Expressway") == PACK_FACE, "and the file once it lands")
+	end)
+
+	fw.it("hands out one preview object per file, wearing that file", function()
+		registered["Expressway"] = PACK_FACE
+
+		local object = fonts:GetPreviewFontObject("Expressway")
+
+		assert(object, "a resolvable name gets a preview object")
+
+		local face, size = object:GetFont()
+
+		assert(face == PACK_FACE, "wearing the font it previews")
+		assert(size and size > 0, "at a real size")
+		assert(fonts:GetPreviewFontObject("Expressway") == object,
+			"the same file shares one object; menu rows churn and objects are for the session")
+		assert(fonts:GetPreviewFontObject("Unregistered") == nil,
+			"a name that resolves to nothing previews nothing")
 	end)
 
 	fw.it("tells its subscribers when the library gains a font", function()
@@ -247,7 +280,7 @@ fw.describe("FontUtil:Apply", function()
 		assert(Worn(text) == PACK_FACE, "and swaps once the media addon registers it")
 	end)
 
-	fw.it("follows a change of pick without being re-applied", function()
+	fw.it("hands a re-applied string a different object when the pick changes", function()
 		local text = NewFontString(GAME_FACE)
 		local other = "Interface/AddOns/SomeMediaPack/other.ttf"
 
@@ -257,15 +290,88 @@ fw.describe("FontUtil:Apply", function()
 
 		fontUtil:Apply(text)
 
+		local firstObject = text.FontObject
+
 		assert(Worn(text) == PACK_FACE, "fixture: wearing the first pick")
 
 		db.Font = "Other"
 
-		-- Someone always asks - the style compares do - and the shared objects swap then. The
-		-- string itself is never touched again; it reads through its object.
-		fontUtil:CurrentFace()
+		-- The refresh that accompanies a pick re-applies every string. A DIFFERENT object each
+		-- time is the point: editing the object a string already holds only repainted text that
+		-- was about to redraw anyway, which left static text on the old face.
+		fontUtil:Apply(text)
 
-		assert(Worn(text) == other, "attached text follows the object, no re-apply needed")
+		assert(Worn(text) == other, "the re-apply lands the new pick")
+		assert(text.FontObject ~= firstObject, "via a fresh object, never an edit to the old one")
+	end)
+
+	fw.it("re-sets a string's text when its object changes, and only then", function()
+		local text = NewFontString(GAME_FACE)
+		local other = "Interface/AddOns/SomeMediaPack/other.ttf"
+
+		registered["Expressway"] = PACK_FACE
+		registered["Other"] = other
+		db.Font = "Expressway"
+
+		-- The client keeps drawing a static string's old glyphs after SetFontObject until
+		-- something dirties it; rewriting its text is that something, cleared first because a
+		-- SetText that changes nothing is dropped. This is what kept a once-written warning on
+		-- its old face while every rewritten text followed the change.
+		fontUtil:Apply(text)
+
+		assert(text.TextSets == 2, "attaching clears and rewrites, got " .. text.TextSets)
+		assert(text.Text == "hello", "ending on the text it already had")
+
+		fontUtil:Apply(text)
+
+		assert(text.TextSets == 2, "an unchanged attachment does not churn the text")
+
+		db.Font = "Other"
+
+		fontUtil:Apply(text)
+
+		assert(text.TextSets == 4, "a new object rewrites again, got " .. text.TextSets)
+	end)
+
+	fw.it("builds a family whose own-locale member carries the file, at the asked size", function()
+		registered["Expressway"] = PACK_FACE
+		db.Font = "Expressway"
+
+		local text = NewFontString(GAME_FACE)
+
+		fontUtil:Apply(text, 26, "OUTLINE")
+
+		local members = text.FontObject.Members
+
+		assert(members and #members == 5, "one member per alphabet the client distinguishes")
+		assert(members[1].alphabet == "roman" and members[1].file == PACK_FACE,
+			"this locale's member wears the picked file")
+		assert(members[1].height == 26 and members[1].flags == "OUTLINE",
+			"at the size and flags asked for")
+	end)
+
+	fw.it("never re-fonts an object it has already handed out", function()
+		local text = NewFontString(GAME_FACE)
+
+		registered["Expressway"] = PACK_FACE
+		db.Font = "Expressway"
+
+		fontUtil:Apply(text)
+
+		local object = text.FontObject
+		local face, size, flags = object:GetFont()
+
+		db.Font = false
+		fontUtil:Apply(text)
+		db.Font = "Expressway"
+		fontUtil:Apply(text)
+
+		assert(text.FontObject == object, "the same file at the same size reuses the object")
+
+		local face2, size2, flags2 = object:GetFont()
+
+		assert(face == face2 and size == size2 and flags == flags2,
+			"and nothing has edited it in between")
 	end)
 
 	fw.it("puts the original face back when the option is cleared", function()
