@@ -214,6 +214,10 @@ L:SetDefaultStrings({
 	-- CC tab
 	["CC"] = "CC",
 	["Change the colour of the glow on important enemy spells."] = "Change the colour of the glow on important enemy spells.",
+	["Change the colour of the glow on crowd control spells."] = "Change the colour of the glow on crowd control spells.",
+	["Icon colours"] = "Icon colours",
+	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic.",
+	["None"] = "None",
 	["Change the colour of the glow on defensive spells."] = "Change the colour of the glow on defensive spells.",
 	["Change the colour of the glow on important spells."] = "Change the colour of the glow on important spells.",
 	["Dispel colours"] = "Dispel colours",
@@ -273,7 +277,6 @@ L:SetDefaultStrings({
 	["Anchor the icons to the nameplate's health bar instead of the nameplate frame. Use this option if another addon (e.g. BetterBlizzPlates) changes the nameplate width or height."] = "Anchor the icons to the nameplate's health bar instead of the nameplate frame. Use this option if another addon (e.g. BetterBlizzPlates) changes the nameplate width or height.",
 	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater).",
 	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns).",
-	["Spell colours"] = "Spell colours",
 
 	-- Portraits tab
 	["Portraits"] = "Portraits",

@@ -197,14 +197,14 @@ function M:BuildSizeControls(opts)
 	return { Checkbox = checkbox, Pixel = pixel, Percent = percent, Refresh = refresh }
 end
 
----Builds a "Grow" dropdown under its own label. The caller positions the label; the dropdown
----hangs below it, pulled left on the legacy template whose frame carries a wide inset before
----its text starts.
----@param opts GrowDropdownOptions
+---Builds a dropdown under its own label. The caller positions the label; the dropdown hangs
+---below it, pulled left on the legacy template whose frame carries a wide inset before its text
+---starts.
+---@param opts LabelledDropdownOptions
 ---@return table dropdown Carries the label as dropdown.Label.
-function M:BuildGrowDropdown(opts)
+function M:BuildLabelledDropdown(opts)
 	local label = opts.Parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-	label:SetText(L["Grow"])
+	label:SetText(opts.LabelText)
 
 	local getValue = opts.GetValue or function()
 		return opts.Target[opts.Key]
@@ -219,6 +219,10 @@ function M:BuildGrowDropdown(opts)
 	local dropdown, modern = mini:Dropdown({
 		Parent = opts.Parent,
 		Items = opts.Items,
+		GetText = opts.GetText,
+		-- The label is ours rather than the dropdown's, so the tooltip is handed its heading.
+		Tooltip = opts.Tooltip,
+		TooltipTitle = opts.LabelText,
 		GetValue = getValue,
 		SetValue = setValue,
 	})
@@ -231,6 +235,15 @@ function M:BuildGrowDropdown(opts)
 	dropdown.Label = label
 
 	return dropdown
+end
+
+---The same thing labelled "Grow", which is what most pages want one for.
+---@param opts GrowDropdownOptions
+---@return table dropdown Carries the label as dropdown.Label.
+function M:BuildGrowDropdown(opts)
+	opts.LabelText = L["Grow"]
+
+	return M:BuildLabelledDropdown(opts)
 end
 
 ---Builds the Offset X/Y slider pair, Y sitting to the right of X. The caller positions X.
@@ -430,6 +443,11 @@ end
 ---@field GetValue (fun(): string)?
 ---@field SetValue (fun(value: string))?
 ---@field SettingsKey string? ModuleName value scoping the refresh to the module that changed.
+
+---@class LabelledDropdownOptions : GrowDropdownOptions
+---@field LabelText string
+---@field Tooltip string?
+---@field GetText (fun(value: string): string)? Display text for an item; defaults to the value.
 
 ---@class OffsetSlidersOptions
 ---@field Parent table

@@ -213,6 +213,10 @@ L:RegisterLocale("deDE", function() return {
 	-- CC tab
 	["CC"] = "CC",
 	["Change the colour of the glow on important enemy spells."] = "Ändert die Farbe des Leuchtens bei wichtigen gegnerischen Zaubern.",
+	["Change the colour of the glow on crowd control spells."] = "Ändert die Farbe des Leuchtens bei Kontrollzaubern.",
+	["Icon colours"] = "Symbolfarben",
+	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "Färbt Leuchten und Rahmen mit den Farben aus dem Reiter Einstellungen. Dispelfarben geben Kontrolleffekten stattdessen die Debuff-Farben des Spiels, z. B. Blau für Magie.",
+	["None"] = "Keine",
 	["Change the colour of the glow on defensive spells."] = "Ändert die Farbe des Leuchtens bei Verteidigungszaubern.",
 	["Change the colour of the glow on important spells."] = "Ändert die Farbe des Leuchtens bei wichtigen Zaubern.",
 	["Dispel colours"] = "Bannfarben",
@@ -272,7 +276,6 @@ L:RegisterLocale("deDE", function() return {
 	["Anchor the icons to the nameplate's health bar instead of the nameplate frame. Use this option if another addon (e.g. BetterBlizzPlates) changes the nameplate width or height."] = "Verankert die Icons am Lebensbalken des Namensschilds statt am Namensschild-Rahmen. Verwende diese Option, wenn ein anderes Addon (z. B. BetterBlizzPlates) die Breite oder Höhe des Namensschilds ändert.",
 	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Zeigt Massenkontrolle, Defensives und wichtige Zauber auf Namensplaketten (funktioniert mit Namensplaketten-Addons wie BBP, Platynator und Plater).",
 	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Zeigt die wichtigen Stärkungszauber, die Blizzard auf Namensplaketten erlaubt (z. B. offensive Abklingzeiten von Gegnern).",
-	["Spell colours"] = "Zauberfarben",
 
 	-- Portraits tab
 	["Portraits"] = "Porträts",

@@ -28,6 +28,16 @@ addon.Modules.Nameplates.Display = M
 -- slot split between categories (each enabled category gets the bar's full MaxIcons budget), and
 -- colouring is per category rather than per spell, since the engine tints a whole group.
 
+-- How a bar tints its icons, stored on its Icons.ColorMode. Dispel puts CC and disarm on the
+-- game's debuff type palette; Custom puts them on the module's CCColor, which is the only way the
+-- two differ - defensives and importants take their own tints under both.
+local COLOR_MODE_NONE = "NONE"
+local COLOR_MODE_DISPEL = "DISPEL"
+local COLOR_MODE_CUSTOM = "CUSTOM"
+
+-- For the options page and the migration that fills the field.
+M.ColorMode = { None = COLOR_MODE_NONE, Dispel = COLOR_MODE_DISPEL, Custom = COLOR_MODE_CUSTOM }
+
 ---@type Db
 local db
 ---@type table
@@ -57,26 +67,31 @@ local TEST_BAR_LABELS = {
 -- Fallback category tints, for a profile saved before the colours were configurable.
 local DEFAULT_IMPORTANT_COLOR = { R = 1, G = 0.2, B = 0.2 }
 local DEFAULT_DEFENSIVE_COLOR = { R = 0.2, G = 1, B = 0.2 }
+local DEFAULT_CC_COLOR = { R = 0.64, G = 0.21, B = 0.93 }
 -- The configured tints, refilled rather than reallocated. Both shapes are needed: the aura groups
 -- read [1..3], the IconSlotContainer test icons read r/g/b.
 local importantColor = { 1, 0.2, 0.2, r = 1, g = 0.2, b = 0.2, a = 1 }
 local defensiveColor = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
+local ccColor = { 0.64, 0.21, 0.93, r = 0.64, g = 0.21, b = 0.93, a = 1 }
 -- Group key -> tint, handed to the display at creation and on every re-acquisition. Rewritten per
 -- bar, since colouring by category is a per-bar toggle.
 local barGroupColors = {}
--- The groups a category tint applies to. CC and disarm are absent on purpose: both are debuffs,
--- and the game's dispel palette already has a colour for them.
+-- The groups a category tint can apply to. CC and disarm only take one when the dispel palette is
+-- switched off, but they still have to be listed: a group going back to the palette is a nil in
+-- the colour map, which SetGroupGlowColors can only see through this list.
 local COLORED_GROUP_KEYS = {
+	auraFilters.GroupKey.CrowdControl,
+	auraFilters.GroupKey.Disarm,
 	auraFilters.GroupKey.BigDefensive,
 	auraFilters.GroupKey.ExternalDefensive,
 	auraFilters.GroupKey.Important,
 }
 
 -- Per-category test data driving ShowBarTestIcons: the bar option that shows the category, its
--- spell list and precomputed length, and the glow colour (per spell for CC, the configured
--- category tint otherwise).
+-- spell list and precomputed length, and the glow colour. Colors is the per spell dispel palette,
+-- used in place of Color while the dispel colours are on.
 local TEST_BAR_CATEGORIES = {
-	{ Show = "ShowCC", Ids = TEST_CC_NAMEPLATE_SPELL_IDS, Count = TEST_CC_COUNT, Colors = TEST_CC_DISPEL_COLORS },
+	{ Show = "ShowCC", Ids = TEST_CC_NAMEPLATE_SPELL_IDS, Count = TEST_CC_COUNT, Colors = TEST_CC_DISPEL_COLORS, Color = ccColor },
 	{ Show = "ShowDefensives", Ids = TEST_DEFENSIVE_NAMEPLATE_SPELL_IDS, Count = TEST_DEFENSIVE_COUNT, Color = defensiveColor },
 	{ Show = "ShowImportant", Ids = TEST_IMPORTANT_NAMEPLATE_SPELL_IDS, Count = TEST_IMPORTANT_COUNT, Color = importantColor },
 }
@@ -315,16 +330,21 @@ end
 local function RefreshCategoryColors()
 	moduleUtil:FillColor(importantColor, nmModule and nmModule.ImportantColor, DEFAULT_IMPORTANT_COLOR)
 	moduleUtil:FillColor(defensiveColor, nmModule and nmModule.DefensiveColor, DEFAULT_DEFENSIVE_COLOR)
+	moduleUtil:FillColor(ccColor, nmModule and nmModule.CCColor, DEFAULT_CC_COLOR)
 end
 
----The tints a bar's aura groups take, keyed by group key. CC is never in there: it takes the
----game's dispel type colours, which is what the toggle meant before there was anything to pick.
+---The tints a bar's aura groups take, keyed by group key. CC and disarm stay out under Dispel: a
+---tinted group opts out of the game's palette, so a colour there would replace it.
 ---@return table<string, number[]> Shared, rewritten per call.
 local function BarCategoryColors(barOptions)
 	RefreshCategoryColors()
 
-	local colored = barOptions.Icons.ColorByCategory == true
+	local mode = M:ResolveColorMode(barOptions.Icons)
+	local colored = mode ~= COLOR_MODE_NONE
+	local flatCc = mode == COLOR_MODE_CUSTOM and ccColor or nil
 
+	barGroupColors[auraFilters.GroupKey.CrowdControl] = flatCc
+	barGroupColors[auraFilters.GroupKey.Disarm] = flatCc
 	barGroupColors[auraFilters.GroupKey.Important] = colored and importantColor or nil
 	barGroupColors[auraFilters.GroupKey.BigDefensive] = colored and defensiveColor or nil
 	barGroupColors[auraFilters.GroupKey.ExternalDefensive] = colored and defensiveColor or nil
@@ -336,10 +356,10 @@ end
 ---@return AuraDisplayStyle
 local function BarStyle(barOptions)
 	local style = auraContainerDisplay:BuildStandardStyle(barOptions.Icons)
-	-- Nameplates stores the toggle as ColorByCategory, which the standard reader doesn't know. It
-	-- drives both halves of the colouring: dispel type for CC, the configured tints for the
-	-- categories the game has no dispel colour for (see BarCategoryColors).
-	style.ColorByDispelType = barOptions.Icons.ColorByCategory
+	-- Nameplates keep the colour choice in ColorMode, which the standard reader doesn't know. Any
+	-- mode but None wants the paint code's coloured path, whether the tints come from the game's
+	-- palette or from BarCategoryColors.
+	style.ColorByDispelType = M:ResolveColorMode(barOptions.Icons) ~= COLOR_MODE_NONE
 	-- The bars' untinted groups only hold CC and disarm, and most of that is physical: without
 	-- this a stun gets the tinted glow but no ring, which reads as the border being broken.
 	style.BorderWithoutDispelType = true
@@ -626,7 +646,7 @@ local function ShowBarTestIcons(container, barOptions, now)
 
 	local iconsGlow = barOptions.Icons.Glow
 	local iconsReverse = barOptions.Icons.ReverseCooldown
-	local colorByCategory = barOptions.Icons.ColorByCategory
+	local mode = M:ResolveColorMode(barOptions.Icons)
 	local showTooltips = barOptions.ShowTooltips ~= false
 	local fontScale = db.FontScale
 	local slot = 0
@@ -650,7 +670,8 @@ local function ShowBarTestIcons(container, barOptions, now)
 				layerScratch.Glow = iconsGlow
 				layerScratch.ReverseCooldown = iconsReverse
 				layerScratch.FontScale = fontScale
-				layerScratch.Color = colorByCategory and (category.Colors and category.Colors[spellId] or category.Color) or nil
+				local perSpell = mode == COLOR_MODE_DISPEL and category.Colors and category.Colors[spellId]
+				layerScratch.Color = mode ~= COLOR_MODE_NONE and (perSpell or category.Color) or nil
 				layerScratch.Border = true
 				layerScratch.SpellId = showTooltips and spellId or nil
 				container:SetSlot(slot, layerScratch)
@@ -675,6 +696,16 @@ local function ShowDataTestIcons(data, now)
 			moduleUtil:SetTestLabel(data[bar.DataField].Frame, L[barLabels[bar.Key]])
 		end
 	end
+end
+
+---A bar's colour mode, with anything unrecognised read as the shipped default. Public so the
+---options page reads the same answer the bars do.
+---@param iconOptions table A bar's Icons options table.
+---@return string one of M.ColorMode
+function M:ResolveColorMode(iconOptions)
+	local mode = iconOptions.ColorMode
+
+	return (mode == COLOR_MODE_NONE or mode == COLOR_MODE_CUSTOM) and mode or COLOR_MODE_DISPEL
 end
 
 ---Which faction's bar options apply to a token. Friendly units can also be enemies in a duel,
@@ -861,7 +892,8 @@ function M:UpdateKick(data)
 				layerScratch.ReverseCooldown = barOptions.Icons.ReverseCooldown
 				layerScratch.ShowMilliseconds = barOptions.Icons.ShowMilliseconds
 				layerScratch.FontScale = db.FontScale
-				layerScratch.Color = barOptions.Icons.ColorByCategory and kickEntry.Color or nil
+				layerScratch.Color = self:ResolveColorMode(barOptions.Icons) ~= COLOR_MODE_NONE
+					and kickEntry.Color or nil
 				-- The aura buttons beside this icon draw border and glow together when coloured,
 				-- so the kick icon does too or it reads as the odd one out in the row.
 				layerScratch.Border = true

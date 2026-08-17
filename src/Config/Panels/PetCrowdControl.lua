@@ -32,6 +32,7 @@ config.PetCrowdControl = M
 local function BuildPetInstance(panel, options)
 	local parent = CreateFrame("Frame", nil, panel)
 	local sliderWidth = columnWidth * 2 - horizontalSpacing
+	local UpdateCcSwatch
 
 	local petEnabledEverywhere = helpers:BuildEnableRow(parent, nil, options.Enabled, {
 		World = L["Enable pet frame CC in the open world."],
@@ -73,6 +74,7 @@ local function BuildPetInstance(panel, options)
 		end,
 		SetValue = function(value)
 			options.Icons.ColorByDispelType = value
+			UpdateCcSwatch()
 			config:Apply(moduleName.PetCC)
 		end,
 	})
@@ -138,6 +140,39 @@ local function BuildPetInstance(panel, options)
 	})
 
 	includePetFrameChk:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local ccSwatch = mini:ColorSwatch({
+		Parent = parent,
+		LabelText = L["CC"],
+		Tooltip = L["Change the colour of the glow on crowd control spells."],
+		HasOpacity = false,
+		GetValue = function()
+			local color = options.Icons.Color
+			return color.R, color.G, color.B, color.A
+		end,
+		SetValue = function(r, g, b, a)
+			local color = options.Icons.Color
+			color.R, color.G, color.B, color.A = r, g, b, a
+			config:Apply(moduleName.PetCC)
+		end,
+	})
+
+	ccSwatch:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * 2, 0)
+	ccSwatch:SetPoint("TOP", includePetFrameChk, "TOP", 0,
+		-math.floor((includePetFrameChk:GetHeight() - ccSwatch:GetHeight()) / 2))
+
+	-- The dispel palette wins over this colour, so with it on the swatch has nothing to say and
+	-- goes away rather than sitting there doing nothing.
+	function UpdateCcSwatch()
+		local shown = options.Icons.ColorByDispelType ~= true
+
+		ccSwatch:SetShown(shown)
+		ccSwatch.Label:SetShown(shown)
+	end
+
+	UpdateCcSwatch()
+
+	parent.OnMiniRefresh = UpdateCcSwatch
 
 	local growDdl = helpers:BuildGrowDropdown({
 		Parent = parent,

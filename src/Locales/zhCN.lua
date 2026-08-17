@@ -213,6 +213,10 @@ L:RegisterLocale("zhCN", function() return {
 	-- CC tab
 	["CC"] = "控制",
 	["Change the colour of the glow on important enemy spells."] = "更改重要敌方法术的发光颜色。",
+	["Change the colour of the glow on crowd control spells."] = "更改控制法术的发光颜色。",
+	["Icon colours"] = "图标颜色",
+	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "用设置页签中的颜色为发光和边框着色。驱散颜色则让控制效果使用游戏的减益颜色，例如魔法为蓝色。",
+	["None"] = "无",
 	["Change the colour of the glow on defensive spells."] = "更改防御法术的发光颜色。",
 	["Change the colour of the glow on important spells."] = "更改重要法术的发光颜色。",
 	["Dispel colours"] = "驱散颜色",
@@ -272,7 +276,6 @@ L:RegisterLocale("zhCN", function() return {
 	["Anchor the icons to the nameplate's health bar instead of the nameplate frame. Use this option if another addon (e.g. BetterBlizzPlates) changes the nameplate width or height."] = "将图标锚定到姓名板的生命条而不是姓名板框体。如果其他插件（例如BetterBlizzPlates）更改了姓名板的宽度或高度，请使用此选项。",
 	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "在姓名板上显示控制、防御和重要法术（兼容 BBP、Platynator 和 Plater 等姓名板插件）。",
 	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "显示暴雪允许在姓名板上显示的重要增益（例如敌方的进攻性冷却技能）。",
-	["Spell colours"] = "法术颜色",
 
 	-- Portraits tab
 	["Portraits"] = "头像",

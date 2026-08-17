@@ -4,7 +4,7 @@ local _, addon = ...
 ---@class Db
 ---@field SpecCache table<string, {SpecId: number?, LastSeen: number?, LastAttempt: number?}>
 local dbDefaults = {
-	Version = 68,
+	Version = 69,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -63,6 +63,8 @@ local dbDefaults = {
 					Glow = true,
 					ReverseCooldown = true,
 					ColorByDispelType = true,
+					-- The one tint every CC icon takes once the dispel palette is switched off.
+					Color = { R = 0.64, G = 0.21, B = 0.93, A = 1 },
 					Count = 3,
 					ShowMilliseconds = false,
 				},
@@ -87,6 +89,7 @@ local dbDefaults = {
 					Glow = true,
 					ReverseCooldown = true,
 					ColorByDispelType = true,
+					Color = { R = 0.64, G = 0.21, B = 0.93, A = 1 },
 					Count = 3,
 					ShowMilliseconds = false,
 				},
@@ -126,6 +129,7 @@ local dbDefaults = {
 				Glow = true,
 				ReverseCooldown = true,
 				ColorByDispelType = true,
+				Color = { R = 0.64, G = 0.21, B = 0.93, A = 1 },
 			},
 
 			ShowTooltips = false,
@@ -313,11 +317,13 @@ local dbDefaults = {
 			-- they follow addons that resize plates by shrinking that container (e.g. BBP).
 			AnchorToHealthBar = false,
 
-			-- Category tints for every bar that colours by category. CC takes the game's dispel
-			-- type colours; these cover the two categories it has no colour for. Module wide
-			-- rather than per bar, since a category should read the same on whichever bar it lands.
+			-- Category tints for every bar that colours by category. Module wide rather than per
+			-- bar, since a category should read the same on whichever bar it lands.
 			ImportantColor = { R = 1, G = 0.2, B = 0.2, A = 1 },
 			DefensiveColor = { R = 0.2, G = 1, B = 0.2, A = 1 },
+			-- Taken by CC and disarm on the bars whose UseDispelColors is off; the ones still on
+			-- the dispel palette ignore it.
+			CCColor = { R = 0.64, G = 0.21, B = 0.93, A = 1 },
 
 			---@class NameplateFactionOptions
 			Friendly = {
@@ -338,7 +344,10 @@ local dbDefaults = {
 						Size = 35,
 						Glow = true,
 						ReverseCooldown = true,
-						ColorByCategory = true,
+						-- How this bar tints its icons, one of NameplatesDisplay.ColorMode. NONE
+						-- leaves them untinted, DISPEL puts CC and disarm on the game's debuff
+						-- type palette, CUSTOM puts them on the module's CCColor.
+						ColorMode = "DISPEL",
 						MaxIcons = 5,
 						ShowMilliseconds = true,
 						-- Pixel padding between this bar's icons.
@@ -362,7 +371,7 @@ local dbDefaults = {
 						Size = 35,
 						Glow = true,
 						ReverseCooldown = true,
-						ColorByCategory = true,
+						ColorMode = "DISPEL",
 						MaxIcons = 5,
 						ShowMilliseconds = true,
 						Spacing = 2,
@@ -388,7 +397,7 @@ local dbDefaults = {
 						Size = 35,
 						Glow = true,
 						ReverseCooldown = true,
-						ColorByCategory = true,
+						ColorMode = "DISPEL",
 						MaxIcons = 5,
 						ShowMilliseconds = true,
 						Spacing = 2,
@@ -411,7 +420,7 @@ local dbDefaults = {
 						Size = 35,
 						Glow = true,
 						ReverseCooldown = true,
-						ColorByCategory = true,
+						ColorMode = "DISPEL",
 						MaxIcons = 5,
 						ShowMilliseconds = true,
 						Spacing = 2,

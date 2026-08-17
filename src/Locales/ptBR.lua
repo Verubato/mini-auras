@@ -213,6 +213,10 @@ L:RegisterLocale("ptBR", function() return {
 	-- CC tab
 	["CC"] = "Controle",
 	["Change the colour of the glow on important enemy spells."] = "Altera a cor do brilho das magias inimigas importantes.",
+	["Change the colour of the glow on crowd control spells."] = "Altera a cor do brilho das magias de controle de grupo.",
+	["Icon colours"] = "Cores dos ícones",
+	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "Colore o brilho e a borda com as cores da aba Configurações. Cores de dissipação dão ao CC as cores de penalidade do jogo, ex.: azul para magia.",
+	["None"] = "Nenhuma",
 	["Change the colour of the glow on defensive spells."] = "Altera a cor do brilho das magias defensivas.",
 	["Change the colour of the glow on important spells."] = "Altera a cor do brilho das magias importantes.",
 	["Dispel colours"] = "Cores de dissipar",
@@ -272,7 +276,6 @@ L:RegisterLocale("ptBR", function() return {
 	["Anchor the icons to the nameplate's health bar instead of the nameplate frame. Use this option if another addon (e.g. BetterBlizzPlates) changes the nameplate width or height."] = "Ancora os ícones na barra de vida da placa de nome em vez do quadro da placa. Use esta opção se outro addon (ex: BetterBlizzPlates) alterar a largura ou a altura da placa de nome.",
 	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Mostra controle de grupo, defensivas e importantes nas placas de nome (funciona com addons de placas como BBP, Platynator e Plater).",
 	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Mostra os benefícios importantes que a Blizzard permite nas placas de nome (ex.: recargas ofensivas do inimigo).",
-	["Spell colours"] = "Cores de feitiços",
 
 	-- Portraits tab
 	["Portraits"] = "Retratos",

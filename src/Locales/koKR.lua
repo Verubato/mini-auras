@@ -213,6 +213,10 @@ L:RegisterLocale("koKR", function() return {
 	-- CC tab
 	["CC"] = "군중 제어",
 	["Change the colour of the glow on important enemy spells."] = "중요한 적 주문의 발광 색상을 변경합니다.",
+	["Change the colour of the glow on crowd control spells."] = "군중 제어 주문의 발광 색상을 변경합니다.",
+	["Icon colours"] = "아이콘 색상",
+	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "설정 탭의 색상으로 발광과 테두리를 칠합니다. 디스펠 색상을 고르면 군중 제어는 게임의 디버프 색상을 사용합니다. 예: 마법은 파란색.",
+	["None"] = "없음",
 	["Change the colour of the glow on defensive spells."] = "방어 주문의 발광 색상을 변경합니다.",
 	["Change the colour of the glow on important spells."] = "중요한 주문의 발광 색상을 변경합니다.",
 	["Dispel colours"] = "해제 색상",
@@ -272,7 +276,6 @@ L:RegisterLocale("koKR", function() return {
 	["Anchor the icons to the nameplate's health bar instead of the nameplate frame. Use this option if another addon (e.g. BetterBlizzPlates) changes the nameplate width or height."] = "아이콘을 네임플레이트 프레임 대신 네임플레이트의 생명력 바에 고정합니다. 다른 애드온(예: BetterBlizzPlates)이 네임플레이트의 너비나 높이를 변경하는 경우 이 옵션을 사용하세요.",
 	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "이름표에 군중 제어, 방어, 중요 효과를 표시합니다 (BBP, Platynator, Plater 등 이름표 애드온과 호환됩니다).",
 	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Blizzard가 이름표에 허용하는 중요 버프를 표시합니다 (예: 적의 공격 재사용 대기시간).",
-	["Spell colours"] = "주문 색상",
 
 	-- Portraits tab
 	["Portraits"] = "초상화",

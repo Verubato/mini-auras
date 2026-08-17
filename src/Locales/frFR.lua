@@ -213,6 +213,10 @@ L:RegisterLocale("frFR", function() return {
 	-- CC tab
 	["CC"] = "CC",
 	["Change the colour of the glow on important enemy spells."] = "Change la couleur de la lueur des sorts ennemis importants.",
+	["Change the colour of the glow on crowd control spells."] = "Change la couleur de la lueur des sorts de contrôle.",
+	["Icon colours"] = "Couleurs des icônes",
+	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "Colore la lueur et la bordure avec les couleurs de l'onglet Paramètres. Les couleurs de dissipation donnent plutôt aux contrôles les couleurs de débuff du jeu, p. ex. bleu pour la magie.",
+	["None"] = "Aucune",
 	["Change the colour of the glow on defensive spells."] = "Change la couleur de la lueur des sorts défensifs.",
 	["Change the colour of the glow on important spells."] = "Change la couleur de la lueur des sorts importants.",
 	["Dispel colours"] = "Couleur par type",
@@ -272,7 +276,6 @@ L:RegisterLocale("frFR", function() return {
 	["Anchor the icons to the nameplate's health bar instead of the nameplate frame. Use this option if another addon (e.g. BetterBlizzPlates) changes the nameplate width or height."] = "Ancre les icônes à la barre de vie de la nameplate plutôt qu'au cadre de la nameplate. Utile si un autre addon (ex. BetterBlizzPlates) modifie la largeur ou la hauteur des nameplates.",
 	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Affiche le contrôle de foule, les défensifs et les sorts importants sur les barres de nom (fonctionne avec les addons de barres de nom comme BBP, Platynator et Plater).",
 	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Affiche les améliorations importantes que Blizzard autorise sur les barres de nom (par ex. les temps de recharge offensifs de l'ennemi).",
-	["Spell colours"] = "Couleurs par sort",
 
 	-- Portraits tab
 	["Portraits"] = "Portraits",

@@ -39,9 +39,25 @@ local budgetScratch = {}
 -- Reused settings handed to ApplyEntryOptions, refilled per entry.
 ---@type EntrySettings
 local settingsScratch = {}
+-- Fallback flat tint, for a profile saved before the colour was configurable.
+local DEFAULT_CC_COLOR = { R = 0.64, G = 0.21, B = 0.93 }
+-- The configured flat tint, refilled rather than reallocated. Both shapes are needed: the aura
+-- display's style reads [1..3], the IconSlotContainer test icons read r/g/b.
+local ccColor = { 0.64, 0.21, 0.93, r = 0.64, g = 0.21, b = 0.93, a = 1 }
 
 local function GetOptions()
 	return instanceOptions:IsRaid() and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
+end
+
+---The one tint every CC icon takes, or nil while the game's dispel palette is colouring them.
+---@param iconOptions table
+---@return table? Shared, refilled per call.
+local function FlatCcColor(iconOptions)
+	if iconOptions.ColorByDispelType == true then
+		return nil
+	end
+
+	return moduleUtil:FillColor(ccColor, iconOptions.Color, DEFAULT_CC_COLOR)
 end
 
 ---The look a CC display is built with and restyled to.
@@ -54,6 +70,12 @@ local function BuildStyle(entryOptions)
 	-- tinted glow but no ring, which reads as the border being broken.
 	style.BorderWithoutDispelType = true
 	style.ShowTooltips = entryOptions.ShowTooltips ~= false
+
+	-- With the dispel palette off the flat tint takes over the ring and the glow it was colouring,
+	-- so switching palettes recolours the icons rather than stripping them back to bare art.
+	local flat = FlatCcColor(entryOptions.Icons)
+	style.GlowColor = flat
+	style.Border = flat ~= nil
 
 	return style
 end
@@ -510,6 +532,9 @@ function M:RefreshTestIcons()
 				ReverseCooldown = entryOptions.Icons.ReverseCooldown,
 				Glow = entryOptions.Icons.Glow,
 				ColorByDispelType = entryOptions.Icons.ColorByDispelType,
+				-- Color wins over the palette in FillContainer, and it is nil while the palette
+				-- is on; the live buttons resolve the same way.
+				Color = FlatCcColor(entryOptions.Icons),
 				-- The live buttons draw border and glow together, so the preview does too.
 				Border = true,
 				FontScale = db.FontScale,

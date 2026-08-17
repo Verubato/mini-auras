@@ -910,6 +910,52 @@ fw.describe("Migrator - individual migrations", function()
 		assert(vars.Version == 68)
 	end)
 
+	fw.it("v69 folds the nameplate colour booleans into one mode, profiles included", function()
+		local function Bar(icons)
+			return { Icons = icons }
+		end
+
+		local vars = {
+			Version = 68,
+			Modules = {
+				NameplatesModule = {
+					Enemy = {
+						Bar1 = Bar({ ColorByCategory = true }),
+						Bar2 = Bar({ ColorByCategory = false }),
+					},
+					Friendly = {
+						Bar1 = Bar({ ColorByCategory = true, UseDispelColors = false }),
+						Bar2 = Bar({}),
+					},
+				},
+			},
+			Profiles = {
+				Plain = {
+					Modules = {
+						NameplatesModule = {
+							Enemy = { Bar1 = Bar({ ColorByCategory = false }) },
+						},
+					},
+				},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion69(vars) == true)
+
+		local enemy = vars.Modules.NameplatesModule.Enemy
+		local friendly = vars.Modules.NameplatesModule.Friendly
+		assert(enemy.Bar1.Icons.ColorMode == "DISPEL", "colouring on with no override stays on the palette")
+		assert(enemy.Bar2.Icons.ColorMode == "NONE", "colouring off becomes the None mode")
+		assert(friendly.Bar1.Icons.ColorMode == "CUSTOM", "the dispel override becomes the Custom mode")
+		assert(friendly.Bar2.Icons.ColorMode == "DISPEL", "a bar with neither key takes the shipped mode")
+		assert(enemy.Bar1.Icons.ColorByCategory == nil and friendly.Bar1.Icons.UseDispelColors == nil,
+			"the booleans they replaced are dropped")
+
+		local profile = vars.Profiles.Plain.Modules.NameplatesModule.Enemy.Bar1
+		assert(profile.Icons.ColorMode == "NONE", "a snapshot is folded the same way")
+		assert(vars.Version == 69)
+	end)
+
 	fw.it("v57 leaves kicks alone when the CC module is disabled everywhere", function()
 		local vars = {
 			Version = 56,

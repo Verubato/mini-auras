@@ -9,6 +9,13 @@ local GROW_OPTIONS = {
 	"RIGHT",
 	"CENTER",
 }
+local nameplatesDisplay = addon.Modules.Nameplates.Display
+local COLOR_MODE = nameplatesDisplay.ColorMode
+local COLOR_MODES = {
+	COLOR_MODE.None,
+	COLOR_MODE.Dispel,
+	COLOR_MODE.Custom,
+}
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local COLUMNS = 4
@@ -22,6 +29,18 @@ local M = {}
 
 config.Nameplates = M
 
+local function ColorModeText(mode)
+	if mode == COLOR_MODE.Dispel then
+		return L["Dispel colours"]
+	end
+
+	if mode == COLOR_MODE.Custom then
+		return L["Custom"]
+	end
+
+	return L["None"]
+end
+
 ---@param parent table Tab content frame
 ---@param options NameplateSpellTypeOptions
 ---@param defaults table The shipped values for this bar, which the sliders clamp back to when
@@ -34,9 +53,6 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 
 	local topColWidth = mini:ColumnWidth(5, 0, 0)
 	local sliderWidth = columnWidth * 2 - horizontalSpacing
-
-	-- Each bar can show CC and/or defensives, so the colour tooltip covers both.
-	local colorTooltip = L["Change the colour of the glow/border. CC spells use dispel type colours (e.g., blue for magic), defensive and important spells use the category colours."]
 
 	local enabledChk = mini:Checkbox({
 		Parent = container,
@@ -131,22 +147,6 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 	reverseChk:SetPoint("LEFT", parent, "LEFT", topColWidth, 0)
 	reverseChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
-	local dispelColoursChk = mini:Checkbox({
-		Parent = container,
-		LabelText = L["Spell colours"],
-		Tooltip = colorTooltip,
-		GetValue = function()
-			return options.Icons.ColorByCategory
-		end,
-		SetValue = function(value)
-			options.Icons.ColorByCategory = value
-			config:Apply(moduleName.Nameplates)
-		end,
-	})
-
-	dispelColoursChk:SetPoint("LEFT", parent, "LEFT", topColWidth * 2, 0)
-	dispelColoursChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
-
 	local showTooltipsChk = mini:Checkbox({
 		Parent = container,
 		LabelText = L["Show tooltips"],
@@ -176,7 +176,7 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 		end,
 	})
 
-	showMillisChk:SetPoint("LEFT", parent, "LEFT", topColWidth * 3, 0)
+	showMillisChk:SetPoint("LEFT", parent, "LEFT", topColWidth * 2, 0)
 	showMillisChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
 
 	local iconSize = helpers:BuildClampedSlider({
@@ -218,6 +218,28 @@ local function BuildSpellTypeSettings(parent, options, defaults)
 	})
 
 	growDdl.Label:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing)
+
+	-- One control for the whole colouring question, so there is nowhere else to look for it: the
+	-- categories are either uncoloured, on the game's dispel palette, or on the picked tints. The
+	-- three tints themselves live on the Settings tab, since a category should read the same
+	-- colour on whichever bar it lands.
+	local colorsDdl = helpers:BuildLabelledDropdown({
+		Parent = container,
+		LabelText = L["Icon colours"],
+		Tooltip = L["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."],
+		Items = COLOR_MODES,
+		GetText = ColorModeText,
+		Width = DROPDOWN_WIDTH,
+		Target = options.Icons,
+		Key = "ColorMode",
+		SettingsKey = moduleName.Nameplates,
+		GetValue = function()
+			return nameplatesDisplay:ResolveColorMode(options.Icons)
+		end,
+	})
+
+	colorsDdl.Label:SetPoint("LEFT", parent, "LEFT", topColWidth * 2, 0)
+	colorsDdl.Label:SetPoint("TOP", growDdl.Label, "TOP", 0, 0)
 
 	iconSize.Slider:SetPoint("TOPLEFT", growDdl, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
@@ -313,34 +335,33 @@ local function BuildSettingsTab(parent, options)
 	anchorToHealthBarChk:SetPoint("TOP", scaleWithNameplateChk, "TOP", 0, 0)
 	anchorToHealthBarChk:SetPoint("LEFT", parent, "LEFT", checkColumnWidth * 2, 0)
 
-	-- The checkbox pairs need two grid columns apiece for their labels, which leaves the last
-	-- column free; the swatches go there so the rows run the full width of the tab.
+	-- The category tints, on a row of their own below the checkbox pairs. Module wide rather than
+	-- per bar: a category should read the same colour wherever it lands, and the bar tabs only
+	-- choose between these and the game's dispel palette.
 	---@param swatch table
-	---@param row table The checkbox whose row the swatch sits on, centred against it.
-	local function PlaceSwatch(swatch, row)
-		swatch:SetPoint("LEFT", parent, "LEFT", checkColumnWidth * 4, 0)
-		swatch:SetPoint("TOP", row, "TOP", 0, -math.floor((row:GetHeight() - swatch:GetHeight()) / 2))
+	---@param column number Grid column the swatch starts at.
+	local function PlaceSwatch(swatch, column)
+		swatch:SetPoint("LEFT", parent, "LEFT", checkColumnWidth * column, 0)
+		swatch:SetPoint("TOP", scaleWithNameplateChk, "BOTTOM", 0, -verticalSpacing)
 	end
 
-	-- Module wide rather than per bar: a category should read the same colour wherever it lands,
-	-- and every bar's own tab is already a full grid of checkboxes.
-	local importantSwatch = mini:ColorSwatch({
+	local ccSwatch = mini:ColorSwatch({
 		Parent = parent,
-		LabelText = L["Important"],
-		Tooltip = L["Change the colour of the glow on important spells."],
+		LabelText = L["CC"],
+		Tooltip = L["Change the colour of the glow on crowd control spells."],
 		HasOpacity = false,
 		GetValue = function()
-			local color = options.ImportantColor
+			local color = options.CCColor
 			return color.R, color.G, color.B, color.A
 		end,
 		SetValue = function(r, g, b, a)
-			local color = options.ImportantColor
+			local color = options.CCColor
 			color.R, color.G, color.B, color.A = r, g, b, a
 			config:Apply(moduleName.Nameplates)
 		end,
 	})
 
-	PlaceSwatch(importantSwatch, enemyIgnorePetsChk)
+	PlaceSwatch(ccSwatch, 0)
 
 	local defensiveSwatch = mini:ColorSwatch({
 		Parent = parent,
@@ -358,7 +379,25 @@ local function BuildSettingsTab(parent, options)
 		end,
 	})
 
-	PlaceSwatch(defensiveSwatch, scaleWithNameplateChk)
+	PlaceSwatch(defensiveSwatch, 1)
+
+	local importantSwatch = mini:ColorSwatch({
+		Parent = parent,
+		LabelText = L["Important"],
+		Tooltip = L["Change the colour of the glow on important spells."],
+		HasOpacity = false,
+		GetValue = function()
+			local color = options.ImportantColor
+			return color.R, color.G, color.B, color.A
+		end,
+		SetValue = function(r, g, b, a)
+			local color = options.ImportantColor
+			color.R, color.G, color.B, color.A = r, g, b, a
+			config:Apply(moduleName.Nameplates)
+		end,
+	})
+
+	PlaceSwatch(importantSwatch, 2)
 end
 
 ---@param parent table

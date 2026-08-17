@@ -213,6 +213,10 @@ L:RegisterLocale("itIT", function() return {
 	-- CC tab
 	["CC"] = "Controllo",
 	["Change the colour of the glow on important enemy spells."] = "Cambia il colore del bagliore degli incantesimi nemici importanti.",
+	["Change the colour of the glow on crowd control spells."] = "Cambia il colore del bagliore degli incantesimi di controllo.",
+	["Icon colours"] = "Colori icone",
+	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "Colora bagliore e bordo con i colori della scheda Impostazioni. I colori dissolvimento danno invece al CC i colori di debuff del gioco, es. blu per la magia.",
+	["None"] = "Nessuno",
 	["Change the colour of the glow on defensive spells."] = "Cambia il colore del bagliore degli incantesimi difensivi.",
 	["Change the colour of the glow on important spells."] = "Cambia il colore del bagliore degli incantesimi importanti.",
 	["Dispel colours"] = "Colori per tipo",
@@ -272,7 +276,6 @@ L:RegisterLocale("itIT", function() return {
 	["Anchor the icons to the nameplate's health bar instead of the nameplate frame. Use this option if another addon (e.g. BetterBlizzPlates) changes the nameplate width or height."] = "Ancora le icone alla barra della salute del segnaposto invece che alla cornice del segnaposto. Usa questa opzione se un altro addon (es. BetterBlizzPlates) modifica la larghezza o l'altezza del segnaposto.",
 	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Mostra controllo della folla, difensivi e importanti sulle targhette (funziona con addon per targhette come BBP, Platynator e Plater).",
 	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Mostra i potenziamenti importanti che Blizzard consente sulle targhette (es. tempi di recupero offensivi del nemico).",
-	["Spell colours"] = "Colori incantesimi",
 
 	-- Portraits tab
 	["Portraits"] = "Ritratti",

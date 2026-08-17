@@ -213,6 +213,10 @@ L:RegisterLocale("ruRU", function() return {
 	-- CC tab
 	["CC"] = "Контроль",
 	["Change the colour of the glow on important enemy spells."] = "Изменяет цвет свечения для важных заклинаний противника.",
+	["Change the colour of the glow on crowd control spells."] = "Изменяет цвет свечения для заклинаний контроля.",
+	["Icon colours"] = "Цвета значков",
+	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "Окрашивает свечение и границу цветами со вкладки Настройки. Цвета рассеивания дают контролю цвета дебаффов из игры, например синий для магии.",
+	["None"] = "Нет",
 	["Change the colour of the glow on defensive spells."] = "Изменяет цвет свечения для защитных заклинаний.",
 	["Change the colour of the glow on important spells."] = "Изменяет цвет свечения для важных заклинаний.",
 	["Dispel colours"] = "Цвета диспела",
@@ -272,7 +276,6 @@ L:RegisterLocale("ruRU", function() return {
 	["Anchor the icons to the nameplate's health bar instead of the nameplate frame. Use this option if another addon (e.g. BetterBlizzPlates) changes the nameplate width or height."] = "Привязывает иконки к полосе здоровья таблички с именем вместо рамки таблички. Используйте этот параметр, если другой аддон (например, BetterBlizzPlates) изменяет ширину или высоту таблички с именем.",
 	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Показывает контроль, защиту и важные эффекты на полосках имён (работает с аддонами полосок имён, например BBP, Platynator и Plater).",
 	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Показывает важные положительные эффекты, которые Blizzard разрешает на полосках имён (например, атакующие способности противника).",
-	["Spell colours"] = "Цвета спеллов",
 
 	-- Portraits tab
 	["Portraits"] = "Портреты",

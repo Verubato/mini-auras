@@ -214,6 +214,10 @@ L:RegisterLocale("esMX", function() return {
 	-- CC tab
 	["CC"] = "Control",
 	["Change the colour of the glow on important enemy spells."] = "Cambia el color del brillo de los hechizos enemigos importantes.",
+	["Change the colour of the glow on crowd control spells."] = "Cambia el color del brillo de los hechizos de control de masas.",
+	["Icon colours"] = "Colores de iconos",
+	["Tints the glow and border with the colours on the Settings tab. Dispel colours instead give CC the game's debuff colours, e.g. blue for magic."] = "Colorea el brillo y el borde con los colores de la pestaña Ajustes. Los colores de disipación dan al CC los colores de penalización del juego, p. ej. azul para magia.",
+	["None"] = "Ninguno",
 	["Change the colour of the glow on defensive spells."] = "Cambia el color del brillo de los hechizos defensivos.",
 	["Change the colour of the glow on important spells."] = "Cambia el color del brillo de los hechizos importantes.",
 	["Dispel colours"] = "Color por tipo",
@@ -273,7 +277,6 @@ L:RegisterLocale("esMX", function() return {
 	["Anchor the icons to the nameplate's health bar instead of the nameplate frame. Use this option if another addon (e.g. BetterBlizzPlates) changes the nameplate width or height."] = "Ancla los iconos a la barra de salud de la placa de nombre en lugar del marco de la placa. Usa esta opción si otro addon (p. ej. BetterBlizzPlates) cambia el ancho o alto de la placa de nombre.",
 	["Shows CC, defensive, and important spells on nameplates (works with nameplate addons e.g. BBP, Platynator, and Plater)."] = "Muestra control de masas, defensivos e importantes en las placas de nombre (funciona con addons de placas como BBP, Platynator y Plater).",
 	["Show the important buffs Blizzard permits on nameplates (e.g. enemy offensive cooldowns)."] = "Muestra los beneficios importantes que Blizzard permite en las placas de nombre (p. ej. reutilizaciones ofensivas del enemigo).",
-	["Spell colours"] = "Color por hechizo",
 
 	-- Portraits tab
 	["Portraits"] = "Retratos",
