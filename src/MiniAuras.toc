@@ -96,10 +96,10 @@ Core\Frames\UUF.lua
 Core\Display\AnchoredIcons.lua
 Core\TrinketsTracker.lua
 Core\ProfileManager.lua
-Core\Sounds.lua
-Core\AuraSounds.lua
-Core\TtsPacks.lua
-Core\TtsMutes.lua
+Core\Audio\Sounds.lua
+Core\Audio\AuraSounds.lua
+Core\Audio\TtsPacks.lua
+Core\Audio\TtsMutes.lua
 Core\TestSpells.lua
 Core\TestModeManager.lua
 

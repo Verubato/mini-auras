@@ -16,7 +16,7 @@ _G.GetLocale = function()
 end
 
 local addon = { Core = {} }
-assert(loadfile("src/Core/TtsPacks.lua"))("MiniAuras", addon)
+assert(loadfile("src/Core/Audio/TtsPacks.lua"))("MiniAuras", addon)
 
 local ttsPacks = addon.Core.TtsPacks
 
@@ -26,7 +26,7 @@ addon.Core.AuraTtsSounds = { Packs = { "David", "Emma" } }
 -- A second copy of the module with its own state, so the locale tests can stub a different
 -- shipped list without disturbing the registrations above.
 local localeAddon = { Core = {} }
-assert(loadfile("src/Core/TtsPacks.lua"))("MiniAuras", localeAddon)
+assert(loadfile("src/Core/Audio/TtsPacks.lua"))("MiniAuras", localeAddon)
 
 local localePacks = localeAddon.Core.TtsPacks
 

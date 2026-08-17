@@ -11,7 +11,7 @@ addon.Modules.HealerCrowdControl = addon.Modules.HealerCrowdControl or {}
 local M = {}
 addon.Modules.HealerCrowdControl.Sound = M
 
--- The sound is played engine-side via registrations (Core/AuraSounds): the ENGINE plays a sound
+-- The sound is played engine-side via registrations (Core/Audio/AuraSounds): the ENGINE plays a sound
 -- when a known CC aura lands on a registered healer, without the addon ever reading aura state.
 -- Registrations are per (unit, spellId), fed from the generated Core/AuraCategoryIds CC list.
 

@@ -50,7 +50,7 @@ local allyTokens = {}
 local db
 local paused = false
 
--- Engine-side alert sounds via Core/AuraSounds (aura transitions are secret, but the engine can
+-- Engine-side alert sounds via Core/Audio/AuraSounds (aura transitions are secret, but the engine can
 -- play sounds on them for us - same pattern as HealerCrowdControlModule). Registrations are per
 -- (enemy nameplate token, spellId), fed from the generated Core/AuraCategoryIds
 -- Important/Defensive lists, plus the baked TTS clips when those are on.
@@ -70,7 +70,7 @@ local allySoundIds
 local allySoundSignature = nil
 
 -- The spells that stay silent in one category: what the TTS Spells tab has switched off, plus
--- the spells that start switched off. The table belongs to Core/TtsMutes and is refilled per
+-- the spells that start switched off. The table belongs to Core/Audio/TtsMutes and is refilled per
 -- call, so use it before asking for the same category again.
 ---@param category string "Important", "Defensive" or "EnemyDebuff"
 ---@return table<number, boolean>

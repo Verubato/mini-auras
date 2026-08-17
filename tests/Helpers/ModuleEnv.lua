@@ -274,8 +274,8 @@ function M.build()
 	loadFile("src/Core/ProfileManager.lua")
 	-- The real resolver: with no LibSharedMedia in the mock it falls back to the bundled files,
 	-- which is the path a client without a media addon takes anyway.
-	loadFile("src/Core/Sounds.lua")
-	loadFile("src/Core/AuraSounds.lua")
+	loadFile("src/Core/Audio/Sounds.lua")
+	loadFile("src/Core/Audio/AuraSounds.lua")
 	addonFiles.load(addonFiles.migrator, addon)
 	env.db = addon.Config.Migrator:GetAndUpgradeDb()
 
@@ -296,8 +296,8 @@ function M.build()
 	-- The baked TTS clip map and the pack list that reads it: the alert sound registrations index
 	-- both directly, so an env without them can only exercise the announcements while they are off.
 	loadFile("src/Core/Auras/AuraTtsSounds.lua")
-	loadFile("src/Core/TtsPacks.lua")
-	loadFile("src/Core/TtsMutes.lua")
+	loadFile("src/Core/Audio/TtsPacks.lua")
+	loadFile("src/Core/Audio/TtsMutes.lua")
 
 	-- Cross-module stubs
 
