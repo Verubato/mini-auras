@@ -700,3 +700,65 @@ function M:UpgradeToVersion67(vars)
 	vars.Version = 67
 	return true
 end
+
+function M:UpgradeToVersion68(vars)
+	if vars.Version ~= 67 then return false end
+
+	-- The ally kick list is anchored by the edge its rows grow away from now, so the first row
+	-- stays put as the others come and go. Re-point each saved position at that edge, measured
+	-- with the list one row tall: its resting "Ready" height, and the height it almost always
+	-- has while being positioned, since the height it actually had at drag time is not recorded.
+	local function PinListAnchor(modules)
+		local tracker = modules and modules.AllyKickTrackerModule
+		local point = tracker and tracker.Point
+		local offset = tracker and tracker.Offset
+
+		if not point or not offset then
+			return
+		end
+
+		local pin = tracker.Grow == "UP" and "BOTTOM" or "TOP"
+
+		if point == pin then
+			return
+		end
+
+		local bars = tracker.Bars or {}
+		local width = bars.Width or 260
+		local height = bars.Height or 35
+
+		local dx = 0
+		if point == "LEFT" or point == "TOPLEFT" or point == "BOTTOMLEFT" then
+			dx = width / 2
+		elseif point == "RIGHT" or point == "TOPRIGHT" or point == "BOTTOMRIGHT" then
+			dx = -width / 2
+		end
+
+		-- Up from the saved point to the top edge of the one-row list.
+		local dy = 0
+		if point == "CENTER" or point == "LEFT" or point == "RIGHT" then
+			dy = height / 2
+		elseif point == "BOTTOM" or point == "BOTTOMLEFT" or point == "BOTTOMRIGHT" then
+			dy = height
+		end
+
+		if pin == "BOTTOM" then
+			dy = dy - height
+		end
+
+		tracker.Point = pin
+		offset.X = (offset.X or 0) + dx
+		offset.Y = (offset.Y or 0) + dy
+	end
+
+	PinListAnchor(vars.Modules)
+
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			PinListAnchor(profile.Modules)
+		end
+	end
+
+	vars.Version = 68
+	return true
+end

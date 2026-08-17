@@ -4,7 +4,7 @@ local _, addon = ...
 ---@class Db
 ---@field SpecCache table<string, {SpecId: number?, LastSeen: number?, LastAttempt: number?}>
 local dbDefaults = {
-	Version = 67,
+	Version = 68,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -463,7 +463,8 @@ local dbDefaults = {
 			},
 
 			-- Up and left of centre, clear of the unit frames and the middle of the screen.
-			Point = "CENTER",
+			-- Anchored by the top edge, the pin a DOWN-growing list extends away from.
+			Point = "TOP",
 			RelativeTo = "UIParent",
 			RelativePoint = "CENTER",
 			Offset = {

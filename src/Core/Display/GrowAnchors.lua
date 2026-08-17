@@ -66,6 +66,47 @@ function M:GetPinPoint(grow)
 	return (M.Anchor[grow] or M.Anchor[M.Default]).Point
 end
 
+---Rewrites a saved position so its anchor is the pinned edge for this grow direction, keeping
+---the frame at its current on-screen spot (converting never visibly moves it). Rect values are
+---in the frame's own scale, which is also the scale SetPoint offsets use, so no conversion is
+---needed even for frames that ignore parent scale. Needs a real rect, so call this from a drag
+---drop rather than a layout path, where a stale or unrendered rect corrupts the options.
+---@param frame table
+---@param options { Point: string, RelativeTo: string?, RelativePoint: string, Offset: { X: number, Y: number } }
+---@param grow string?
+---@return boolean rewritten True when the saved anchor was changed.
+function M:PinSavedAnchor(frame, options, grow)
+	local point = M:GetPinPoint(grow)
+
+	if options.Point == point then
+		return false
+	end
+
+	local x, y = frame:GetCenter()
+
+	if point == "LEFT" then
+		x = frame:GetLeft()
+	elseif point == "RIGHT" then
+		x = frame:GetRight()
+	elseif point == "TOP" then
+		y = frame:GetTop()
+	elseif point == "BOTTOM" then
+		y = frame:GetBottom()
+	end
+
+	if not x or not y then
+		return false
+	end
+
+	options.Point = point
+	options.RelativeTo = "UIParent"
+	options.RelativePoint = "BOTTOMLEFT"
+	options.Offset.X = x
+	options.Offset.Y = y
+
+	return true
+end
+
 ---Anchor points and spacing offsets for continuing a row after `previous`.
 ---@param grow string?
 ---@param spacing number

@@ -858,6 +858,58 @@ fw.describe("Migrator - individual migrations", function()
 		assert(vars.Version == 67)
 	end)
 
+	fw.it("v68 re-pins the ally kick list to the edge it grows away from", function()
+		local vars = {
+			Version = 67,
+			Modules = {
+				AllyKickTrackerModule = {
+					Point = "CENTER",
+					RelativePoint = "CENTER",
+					Offset = { X = -620, Y = 160 },
+					Grow = "DOWN",
+					Bars = { Width = 260, Height = 40 },
+				},
+			},
+			Profiles = {
+				Up = {
+					Modules = {
+						AllyKickTrackerModule = {
+							Point = "BOTTOMLEFT",
+							Offset = { X = 10, Y = 20 },
+							Grow = "UP",
+							Bars = { Width = 200, Height = 30 },
+						},
+					},
+				},
+				Pinned = {
+					Modules = {
+						AllyKickTrackerModule = {
+							Point = "TOP",
+							Offset = { X = 1, Y = 2 },
+							Grow = "DOWN",
+						},
+					},
+				},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion68(vars) == true)
+
+		local tracker = vars.Modules.AllyKickTrackerModule
+		assert(tracker.Point == "TOP", "a DOWN list pins by the top")
+		assert(tracker.Offset.X == -620 and tracker.Offset.Y == 180,
+			"the centre moves up to the one-row top edge, got " .. tracker.Offset.Y)
+
+		local up = vars.Profiles.Up.Modules.AllyKickTrackerModule
+		assert(up.Point == "BOTTOM", "an UP list pins by the bottom")
+		assert(up.Offset.X == 110 and up.Offset.Y == 20,
+			"a corner offset moves to mid-width and the bottom edge stays")
+
+		local pinned = vars.Profiles.Pinned.Modules.AllyKickTrackerModule
+		assert(pinned.Offset.X == 1 and pinned.Offset.Y == 2, "an already-pinned anchor is left alone")
+		assert(vars.Version == 68)
+	end)
+
 	fw.it("v57 leaves kicks alone when the CC module is disabled everywhere", function()
 		local vars = {
 			Version = 56,

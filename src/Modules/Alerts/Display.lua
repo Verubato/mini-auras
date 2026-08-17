@@ -151,30 +151,6 @@ local function GetGrow()
 	return grow
 end
 
--- Rewrites a bar's saved anchor so the pinned edge matches the grow direction, keeping the
--- frame at its current on-screen position (changing Grow never visibly moves the bar). Rect
--- values are in the frame's own scale, which is also the scale SetPoint offsets use, so no
--- conversion is needed even though the bars ignore parent scale.
----@return boolean rewritten True when the saved anchor was changed and must be re-applied.
-local function NormalizeBarAnchor(frame, anchorOptions, grow)
-	local point = growAnchors:GetPinPoint(grow)
-	if anchorOptions.Point == point then
-		return false
-	end
-	local left, right = frame:GetLeft(), frame:GetRight()
-	local centerX, centerY = frame:GetCenter()
-	if not left or not right or not centerY then
-		return false
-	end
-	anchorOptions.Point = point
-	anchorOptions.RelativeTo = "UIParent"
-	anchorOptions.RelativePoint = "BOTTOMLEFT"
-	anchorOptions.Offset.X = (point == "RIGHT" and right) or (point == "LEFT" and left) or centerX
-	anchorOptions.Offset.Y = centerY
-
-	return true
-end
-
 ---Places a bar from its saved anchor, verbatim. Deliberately no pin rewrite here: converting
 ---the anchor to the grow edge needs the frame's rect, and outside test mode that rect does not
 ---match what the bar renders (stale layout, empty row), so every rewrite from this path has
@@ -217,7 +193,7 @@ local function SetUpBarDragging(bar, anchorOptions, saveTarget)
 	bar.Frame:SetMovable(false)
 	moduleUtil:MakeMovable(bar.Frame, saveTarget or anchorOptions, function(frame, position)
 		if position then
-			NormalizeBarAnchor(frame, position, GetGrow())
+			growAnchors:PinSavedAnchor(frame, position, GetGrow())
 		end
 	end)
 end

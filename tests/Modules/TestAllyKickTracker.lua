@@ -396,6 +396,39 @@ fw.describe("AllyKickTracker - the list", function()
 		assert(args and args[2] == 22, "the name follows the scale, got " .. tostring(args and args[2]))
 	end)
 
+	fw.it("pins a dropped list by the edge the rows grow away from", function()
+		-- Growing down, the first row must stay put as others come and go, so a drop saves the
+		-- top edge rather than whichever point the client answered the drag with. The centre
+		-- anchor stands in for a position saved before the pin existed.
+		options.Point = "CENTER"
+		module:Refresh()
+
+		root._rect = { left = 100, bottom = 200, width = 260, height = 70 }
+		root._scripts.OnDragStop(root)
+
+		assert(options.Point == "TOP", "pinned by the top, got " .. tostring(options.Point))
+		assert(options.RelativePoint == "BOTTOMLEFT", "measured from the screen corner")
+		assert(options.Offset.X == 230, "the pin sits mid-width, got " .. tostring(options.Offset.X))
+		assert(options.Offset.Y == 270, "at the top edge, got " .. tostring(options.Offset.Y))
+
+		local point, _, relativePoint = root:GetPoint()
+		assert(point == "TOP" and relativePoint == "BOTTOMLEFT", "and the frame is re-anchored to match")
+	end)
+
+	fw.it("pins a dropped list by the bottom when it grows upward", function()
+		options.Grow = "UP"
+		module:Refresh()
+
+		root._rect = { left = 100, bottom = 200, width = 260, height = 70 }
+		root._scripts.OnDragStop(root)
+
+		assert(options.Point == "BOTTOM", "pinned by the bottom, got " .. tostring(options.Point))
+		assert(options.Offset.Y == 200, "at the bottom edge, got " .. tostring(options.Offset.Y))
+
+		options.Grow = "DOWN"
+		module:Refresh()
+	end)
+
 	fw.it("drops a row once its lifetime is up", function()
 		Interrupted("nameplate1")
 		assert(#VisibleBars() == 1, "on screen")

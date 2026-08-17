@@ -6,6 +6,7 @@ local eventGate = addon.Core.EventGate
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local barTextures = addon.Core.BarTextures
+local growAnchors = addon.Core.GrowAnchors
 
 -- Loaded before this file in TOC order.
 local observer = addon.Modules.AllyKickTracker.Observer
@@ -267,8 +268,16 @@ local function EnsureFrames()
 	instance = display:New(UIParent, L["Ready"])
 
 	-- Function-form position: a profile switch replaces the options table, so it has to be
-	-- re-read on every drop.
-	moduleUtil:MakeMovable(instance.Frame, GetOptions)
+	-- re-read on every drop. Each drop re-pins the saved anchor to the edge the rows grow away
+	-- from, so the first row stays put as the others come and go. Re-anchored now rather than
+	-- on the next refresh, so a row landing before one already extends from the pinned edge:
+	-- same spot, different point, the frame does not move.
+	moduleUtil:MakeMovable(instance.Frame, GetOptions, function(frame, target)
+		if target and growAnchors:PinSavedAnchor(frame, target, target.Grow) then
+			frame:ClearAllPoints()
+			frame:SetPoint(target.Point, UIParent, "BOTTOMLEFT", target.Offset.X, target.Offset.Y)
+		end
+	end)
 end
 
 ---@param options AllyKickTrackerModuleOptions
