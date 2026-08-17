@@ -327,7 +327,7 @@ function M.build()
 			end
 		end,
 	}
-	addon.Utils.Units = {
+	addon.Utils.UnitUtil = {
 		FriendlyUnits = function()
 			return env.friendlyUnits
 		end,

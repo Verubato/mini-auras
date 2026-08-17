@@ -265,7 +265,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field IsTestActive fun(self: table): boolean
 
 ---@class Utils
----@field Units UnitUtil
+---@field UnitUtil UnitUtil
 ---@field FontUtil FontUtil
 ---@field ModuleUtil ModuleUtil
 ---@field ModuleName ModuleName

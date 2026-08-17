@@ -10,7 +10,7 @@ local testSpellData = addon.Core.TestSpells
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
-local units = addon.Utils.Units
+local units = addon.Utils.UnitUtil
 
 addon.Modules.Portrait = addon.Modules.Portrait or {}
 

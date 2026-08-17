@@ -1,7 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
-local units = addon.Utils.Units
+local units = addon.Utils.UnitUtil
 local eventGate = addon.Core.EventGate
 local unitStatePoller = addon.Core.UnitStatePoller
 local moduleUtil = addon.Utils.ModuleUtil

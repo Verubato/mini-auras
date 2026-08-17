@@ -3,7 +3,7 @@ local _, addon = ...
 local kickData = addon.Core.KickData
 local kickEvents = addon.Core.KickEvents
 local inspectorFacade = addon.Core.InspectorFacade
-local unitUtil = addon.Utils.Units
+local unitUtil = addon.Utils.UnitUtil
 
 addon.Modules.AllyKickTracker = addon.Modules.AllyKickTracker or {}
 

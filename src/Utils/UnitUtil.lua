@@ -2,7 +2,7 @@
 local _, addon = ...
 ---@class UnitUtil
 local M = {}
-addon.Utils.Units = M
+addon.Utils.UnitUtil = M
 
 local ALL_PARTY_UNITS_IDS = {
 	"player",

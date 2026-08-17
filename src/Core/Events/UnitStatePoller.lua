@@ -1,6 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
-local units = addon.Utils.Units
+local units = addon.Utils.UnitUtil
 
 -- The states that change with no event to announce them, polled because there is no alternative:
 -- a friendly unit turning attackable at duel start (or back at the end), a unit leaving or

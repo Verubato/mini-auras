@@ -4,7 +4,7 @@ local mini = addon.Framework
 local artTextures = addon.Core.ArtTextures
 local spellSearch = addon.Core.SpellSearch
 local sounds = addon.Core.Sounds
-local units = addon.Utils.Units
+local units = addon.Utils.UnitUtil
 
 -- The shape of a custom aura group, shared by the display, the options page and the import path.
 --

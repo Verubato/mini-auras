@@ -10,7 +10,7 @@ wow.setup()
 local addon = { Core = {}, Utils = {} }
 local env = { enemies = {}, visible = {}, charmed = {}, reads = 0 }
 
-addon.Utils.Units = {
+addon.Utils.UnitUtil = {
 	IsEnemy = function(_, unit)
 		env.reads = env.reads + 1
 		return env.enemies[unit] == true

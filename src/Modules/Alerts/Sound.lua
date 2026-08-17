@@ -4,7 +4,7 @@ local mini = addon.Framework
 local auraSounds = addon.Core.AuraSounds
 local ttsPacks = addon.Core.TtsPacks
 local ttsMutes = addon.Core.TtsMutes
-local units = addon.Utils.Units
+local units = addon.Utils.UnitUtil
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 
