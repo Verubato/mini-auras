@@ -57,6 +57,33 @@ local function countAuraSoundSpells()
 end
 
 fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
+	local function defOf(token)
+		for _, container in ipairs(env.containersForUnit(token)) do
+			if env.groupCount(container) == 3 then
+				return container
+			end
+		end
+	end
+
+	local function impOf(token)
+		for _, container in ipairs(env.containersForUnit(token)) do
+			if env.groupCount(container) == 1 then
+				return container
+			end
+		end
+	end
+
+	---The Def containers of the three tokens the chain tests leave active, with a membership set
+	---for telling a chain link (anchored to another Def) from the row start (anchored to the bar).
+	local function activeDefs()
+		local defs = { defOf("nameplate2"), defOf("nameplate7"), defOf("nameplate10") }
+		local defSet = {}
+		for _, def in ipairs(defs) do
+			defSet[def] = true
+		end
+		return defs, defSet
+	end
+
 	fw.it("an enemy plate gets a Def+Imp container pair tracking its token", function()
 		env.enemies.nameplate2 = true
 		env.addPlate("nameplate2")
@@ -106,35 +133,41 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		assert(returned[1] == before[1] and returned[2] == before[2], "the token's own pair is reused")
 	end)
 
-	fw.it("chains defensives in numeric token order with importants after all defensives", function()
-		-- nameplate7 active from the previous test; add nameplate10 (sorts after 7 numerically,
-		-- but between 1 and 7 lexicographically - the regression this locks in).
+	fw.it("chains the active defensives into one connected row", function()
+		-- nameplate7 active from the previous test; nameplate10 joins. The chain imposes no
+		-- token order - which enemy comes first carries no meaning - so the shape is what is
+		-- locked in: one display starts at the bar, and every other hangs off its own
+		-- predecessor until the whole row is connected.
 		env.enemies.nameplate10 = true
 		env.addPlate("nameplate10")
 		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "nameplate10")
 
-		local function defOf(token)
-			for _, container in ipairs(env.containersForUnit(token)) do
-				if env.groupCount(container) == 3 then
-					return container
-				end
+		local defs, defSet = activeDefs()
+		local anchoredTo = {}
+		local start
+		for _, def in ipairs(defs) do
+			local _, relativeTo = def:GetPoint(1)
+			if defSet[relativeTo] then
+				assert(not anchoredTo[relativeTo], "two displays hang off the same one")
+				anchoredTo[relativeTo] = def
+			else
+				assert(not start, "two displays claim the row start")
+				start = def
 			end
 		end
-		local function impOf(token)
-			for _, container in ipairs(env.containersForUnit(token)) do
-				if env.groupCount(container) == 1 then
-					return container
-				end
-			end
-		end
+		assert(start, "one display starts the row at the bar")
 
-		local def7, def10 = defOf("nameplate7"), defOf("nameplate10")
-		local _, relativeTo = def10:GetPoint(1)
-		assert(relativeTo == def7, "def(10) chains after def(7): numeric order")
+		local reached, link = 0, start
+		while link do
+			reached = reached + 1
+			link = anchoredTo[link]
+		end
+		assert(reached == #defs, "the row is one connected chain, reached " .. reached)
 
 		-- Combined mode draws importants inside each Def container rather than chaining a
 		-- separate frame, which is what keeps the row free of reserved-width gaps.
-		assert(def7._groups.important.maxFrameCount > 0, "importants ride along on the Def container")
+		assert(defOf("nameplate7")._groups.important.maxFrameCount > 0,
+			"importants ride along on the Def container")
 		assert(not impOf("nameplate7"):IsShown(), "the dedicated important container stays parked")
 	end)
 
@@ -146,31 +179,32 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 		db.Modules.AlertsModule.Grow = "LEFT"
 		env.addon.Modules.AlertsModule:Refresh()
 
-		local function defOf(token)
-			for _, container in ipairs(env.containersForUnit(token)) do
-				if env.groupCount(container) == 3 then
-					return container
-				end
+		-- The chain imposes no token order, so the geometry is asserted by role: the one display
+		-- anchored outside the row is its start, the rest are links.
+		local defs, defSet = activeDefs()
+
+		for _, def in ipairs(defs) do
+			local point, relativeTo, relativePoint, x = def:GetPoint(1)
+			assert(point == "RIGHT", "every link pins its RIGHT edge")
+			if defSet[relativeTo] then
+				assert(relativePoint == "LEFT" and x == -spacing,
+					"a link hangs off the previous display's LEFT edge with negative spacing")
+			else
+				assert(relativePoint == "RIGHT" and x == 0,
+					"chain start pins its RIGHT edge to the bar frame's RIGHT edge")
 			end
 		end
-
-		-- nameplate2, nameplate7 and nameplate10 are still active from the previous tests;
-		-- nameplate2 sorts first, so it is the chain start.
-		local def2 = defOf("nameplate2")
-		local def7, def10 = defOf("nameplate7"), defOf("nameplate10")
-		local point2, _, relativePoint2, x2 = def2:GetPoint(1)
-		assert(point2 == "RIGHT" and relativePoint2 == "RIGHT" and x2 == 0,
-			"chain start pins its RIGHT edge to the bar frame's RIGHT edge")
-		local point10, relativeTo10, relativePoint10, x10 = def10:GetPoint(1)
-		assert(point10 == "RIGHT" and relativeTo10 == def7 and relativePoint10 == "LEFT" and x10 == -spacing,
-			"next link hangs off the previous display's LEFT edge with negative spacing")
 
 		-- Back to the default; on 12.1 that behaves as RIGHT (LEFT edges, positive spacing).
 		db.Modules.AlertsModule.Grow = "CENTER"
 		env.addon.Modules.AlertsModule:Refresh()
-		local pointAfter, _, relativePointAfter, xAfter = def10:GetPoint(1)
-		assert(pointAfter == "LEFT" and relativePointAfter == "RIGHT" and xAfter == spacing,
-			"CENTER falls back to RIGHT growth on 12.1")
+		for _, def in ipairs(defs) do
+			local point, relativeTo, relativePoint, x = def:GetPoint(1)
+			if defSet[relativeTo] then
+				assert(point == "LEFT" and relativePoint == "RIGHT" and x == spacing,
+					"CENTER falls back to RIGHT growth on 12.1")
+			end
+		end
 	end)
 
 	fw.it("alert sounds register per enemy plate and stay warm across despawns", function()

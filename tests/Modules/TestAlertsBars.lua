@@ -249,6 +249,19 @@ fw.describe("AlertsModule 12.1 - prep room gating", function()
 end)
 
 fw.describe("AlertsModule 12.1 - split vs combined bars", function()
+	---Resolves a two-frame row into (start, follower): the chain imposes no token order, so which
+	---frame anchors the bar is the map's business; the shape - one at the bar, one chained off
+	---it - is what the row must always have.
+	local function chainPair(frameA, frameB, bar)
+		local _, relativeToA = frameA:GetPoint(1)
+
+		if relativeToA == bar then
+			return frameA, frameB
+		end
+
+		return frameB, frameA
+	end
+
 	fw.it("combined mode draws the importants inside the defensive container", function()
 		alerts.SplitBars = false
 		module:Refresh()
@@ -262,25 +275,28 @@ fw.describe("AlertsModule 12.1 - split vs combined bars", function()
 		assert(not impOf("nameplate1"):IsShown(), "the dedicated important container is parked")
 		assert(not importantBar:IsShown(), "no dedicated bar in combined mode")
 
-		local _, relativeTo = def2:GetPoint(1)
-		assert(relativeTo == def1, "the row is one frame per unit, chained in order")
+		local first, second = chainPair(def1, def2, mainBar)
+		local _, firstRelativeTo = first:GetPoint(1)
+		local _, secondRelativeTo = second:GetPoint(1)
+		assert(firstRelativeTo == mainBar and secondRelativeTo == first,
+			"the row is one frame per unit: one starts at the bar, the other chains off it")
 	end)
 
 	fw.it("split mode starts the importants on their own bar", function()
 		alerts.SplitBars = true
 		module:Refresh()
 
-		local firstImp = impOf("nameplate1")
+		local firstImp, secondImp = chainPair(impOf("nameplate1"), impOf("nameplate2"), importantBar)
 		local point, relativeTo, relativePoint = firstImp:GetPoint(1)
 		assert(relativeTo == importantBar, "the important row starts at the important bar")
 		assert(point == "LEFT" and relativePoint == "LEFT", "pinned to the bar's growth edge")
 
-		local secondImp = impOf("nameplate2")
 		local _, secondRelativeTo = secondImp:GetPoint(1)
-		assert(secondRelativeTo == firstImp, "later importants chain off the previous important")
+		assert(secondRelativeTo == firstImp, "the other important chains off it")
 
-		local _, defRelativeTo = defOf("nameplate2"):GetPoint(1)
-		assert(defRelativeTo == defOf("nameplate1"), "the defensive row is unaffected")
+		local firstDef, secondDef = chainPair(defOf("nameplate1"), defOf("nameplate2"), mainBar)
+		local _, defRelativeTo = secondDef:GetPoint(1)
+		assert(defRelativeTo == firstDef, "the defensive row is unaffected")
 		assert(importantBar:IsShown(), "the dedicated bar is visible in split mode")
 		assert(defOf("nameplate1")._groups.important.maxFrameCount == 0,
 			"the defensive container drops them so they aren't drawn twice")

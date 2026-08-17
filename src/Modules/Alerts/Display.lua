@@ -70,12 +70,10 @@ local nameplateDisplays = {}
 local displayPairsByToken = {}
 -- Configuration the live pairs were built with; a change rebuilds them.
 local pairSignature
--- Sorted token list scratch for deterministic chaining order.
-local displayOrderScratch = {}
--- nameplate token -> its numeric index, memoized. The sort comparator ran a string match per
--- comparison, and the chain re-sorts on every plate add/remove; the token set is small and fixed,
--- so resolving each token once removes all of that per-comparison string churn.
-local nameplateTokenOrder = {}
+-- Queue half of a Coalesced wrapper around ChainAlertDisplays, bound below the function it
+-- wraps. A camera sweep in a battleground adds and removes a dozen plates in one frame; one
+-- chain pass on the next frame covers the whole burst.
+local QueueChainAlertDisplays
 -- Reused token-set scratch.
 local activeTokensScratch = {}
 -- Fallback geometry for a pooled display pair, used only if the db isn't readable yet.
@@ -116,28 +114,6 @@ local function AlertBorderShown()
 	local icons = db and db.Modules.AlertsModule.Icons
 
 	return icons ~= nil and icons.Border == true and icons.Glow ~= true
-end
-
--- Resolves (and memoizes) a token's numeric index, so the comparator below never has to run a
--- pattern match. Non-nameplate tokens memoize as false and fall back to a string compare.
-local function NameplateTokenIndex(token)
-	local index = nameplateTokenOrder[token]
-	if index == nil then
-		index = tonumber(token:match("^nameplate(%d+)$")) or false
-		nameplateTokenOrder[token] = index
-	end
-
-	return index
-end
-
--- Numeric-aware token order so nameplate10 doesn't sort between nameplate1 and nameplate2.
-local function NameplateTokenLess(a, b)
-	local numberA = NameplateTokenIndex(a)
-	local numberB = NameplateTokenIndex(b)
-	if numberA and numberB then
-		return numberA < numberB
-	end
-	return a < b
 end
 
 -- Effective grow direction for the alert bars. CENTER (the saved default, symmetric growth around
@@ -211,19 +187,15 @@ local function ChainAlertDisplays()
 	-- in the grow direction, offset by the icon spacing.
 	local point, relativePoint, step = growAnchors:GetChain(GetGrow(), spacing)
 
-	local tokens = displayOrderScratch
-	wipe(tokens)
-	for token in pairs(nameplateDisplays) do
-		tokens[#tokens + 1] = token
-	end
-	table.sort(tokens, NameplateTokenLess)
-
+	-- The rows come out in whatever order the token map yields. The icons say "these enemies
+	-- have alerts"; which enemy comes first carries no meaning, so no ordering is imposed.
+	--
 	-- Note the first display in each row anchors point -> POINT on the bar frame, not
 	-- point -> relativePoint: it starts AT the bar's pinned edge rather than continuing past it,
 	-- since the (zero-width) bar frame is the row's origin and not a preceding icon.
 	local prevMain
-	for _, token in ipairs(tokens) do
-		local defFrame = nameplateDisplays[token].Def.Frame
+	for _, entry in pairs(nameplateDisplays) do
+		local defFrame = entry.Def.Frame
 		defFrame:ClearAllPoints()
 		if prevMain then
 			defFrame:SetPoint(point, prevMain, relativePoint, step, 0)
@@ -243,8 +215,8 @@ local function ChainAlertDisplays()
 	end
 
 	local prevImp
-	for _, token in ipairs(tokens) do
-		local impFrame = nameplateDisplays[token].Imp.Frame
+	for _, entry in pairs(nameplateDisplays) do
+		local impFrame = entry.Imp.Frame
 		impFrame:ClearAllPoints()
 		if prevImp then
 			impFrame:SetPoint(point, prevImp, relativePoint, step, 0)
@@ -254,6 +226,8 @@ local function ChainAlertDisplays()
 		prevImp = impFrame
 	end
 end
+
+QueueChainAlertDisplays = moduleUtil:Coalesced(ChainAlertDisplays)
 
 ---Whether the alert bars should currently render at all.
 local function GetAlertBarsShown()
@@ -406,14 +380,15 @@ local function AlertPairSignature()
 		.. ":" .. (defensiveColor and table.concat(defensiveColor, ",", 1, 3) or "-")
 end
 
--- Parks a display pair (both displays stay parented to UIParent).
+-- Parks a display pair (both displays stay parented to UIParent). The anchors are deliberately
+-- kept: the re-chain runs a frame later, and a display still chained off one of these frames
+-- must keep a resolvable rect until then, or the rest of its row blinks out for that frame. A
+-- hidden frame renders nothing either way, and the next chain pass re-points every active frame.
 local function ResetAlertDisplayPair(entry)
 	entry.Def:SetEnabled(false)
 	entry.Def:Hide()
-	entry.Def.Frame:ClearAllPoints()
 	entry.Imp:SetEnabled(false)
 	entry.Imp:Hide()
-	entry.Imp.Frame:ClearAllPoints()
 end
 
 -- Drops every built pair so the next Ensure rebuilds it. Used when the configuration baked into
@@ -466,6 +441,12 @@ local function EnsureNameplateDisplay(unitToken)
 	if not entry then
 		entry = GetOrCreateDisplayPair(unitToken)
 		nameplateDisplays[unitToken] = entry
+		-- A pair keeps its anchors while parked (so neighbours chained off it stay resolvable),
+		-- which means a reacquired one still points at the row slot it last sat in. Cleared here,
+		-- at acquire, so it renders nowhere rather than somewhere stale until the queued chain
+		-- pass places it.
+		entry.Def.Frame:ClearAllPoints()
+		entry.Imp.Frame:ClearAllPoints()
 	end
 
 	entry.Def:SetUnit(unitToken)
@@ -591,11 +572,11 @@ end
 function M:ApplyOneAndChain(unitToken)
 	local entry = EnsureNameplateDisplay(unitToken)
 	ApplyNameplateDisplayOptions(entry, db.Modules.AlertsModule, GetAlertBarsShown())
-	ChainAlertDisplays()
+	QueueChainAlertDisplays()
 end
 
 function M:ChainDisplays()
-	ChainAlertDisplays()
+	QueueChainAlertDisplays()
 end
 
 -- Applies options to every pooled display pair and re-chains the rows.
@@ -609,7 +590,7 @@ function M:RefreshNameplateDisplays()
 		ApplyNameplateDisplayOptions(entry, options, showBars)
 	end
 
-	ChainAlertDisplays()
+	QueueChainAlertDisplays()
 end
 
 ---Reconciles the active display set with the tokens that should be drawn.
