@@ -1,9 +1,17 @@
 # Changelog
 
+## 5.18.0
+
+- Added Colossus Smash to the enemy debuff announcements.
+- Fixed the Feral Frenzy announcement never firing because it watched the wrong spell id.
+- Added font text preview in the dropdown.
+- The ally kick tracker font now scales with the font scale option in the misc tab.
+- Ally kick tracker now grows downwards instead of from the middle.
+- Fixed party trinkets sometimes not anchoring properly to EUI frames.
+
 ## 5.17.0
 
 - Added a Font option in the miscellaneous settings, setting the font for every piece of text the addon draws. The list comes from LibSharedMedia, so any font your media addons offer is there.
-- Added Colossus Smash to the enemy debuff announcements, spoken as just "Smash".
 
 ## 5.16.1
 
