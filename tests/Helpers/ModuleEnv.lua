@@ -594,8 +594,37 @@ function M.build()
 	end
 
 	---Registers a mock nameplate frame for a unit token and returns it.
+	---
+	---Frames come from a pool the way the client's do, so a token that comes back lands on
+	---whichever plate happens to be free rather than the one it had before. Code that keys
+	---anything on the plate has to be exercised against that: a fresh frame per add would hide
+	---both the reuse it depends on and the arbitrary pairing it has to tolerate.
+	local platePool = {}
 	env.addPlate = function(token)
-		local plate = acm.NewFrame("Frame", "Plate_" .. token)
+		-- A token that already has a plate keeps it: re-adds are routine (RebuildContainers
+		-- replays every live plate) and the client does not move one mid-life.
+		if env.plates[token] then
+			return env.plates[token]
+		end
+
+		local inUse = {}
+		for _, held in pairs(env.plates) do
+			inUse[held] = true
+		end
+
+		local plate
+		for _, pooled in ipairs(platePool) do
+			if not inUse[pooled] then
+				plate = pooled
+				break
+			end
+		end
+
+		if not plate then
+			plate = acm.NewFrame("Frame", "Plate_" .. (#platePool + 1))
+			platePool[#platePool + 1] = plate
+		end
+
 		plate.unitToken = token
 		env.plates[token] = plate
 		return plate

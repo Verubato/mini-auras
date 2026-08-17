@@ -38,8 +38,8 @@ assert(alertsEvents, "alerts event frame")
 
 env.loadModule("src/Modules/Nameplates/Display.lua")
 env.loadModule("src/Modules/Nameplates/Module.lua")
-assert(env.addon.Modules.Nameplates.Display.PrewarmTokenCount == 40, "nameplates prepares 40 tokens")
-env.addon.Modules.Nameplates.Display.PrewarmTokenCount = PREWARM_TOKENS
+assert(env.addon.Modules.Nameplates.Display.PrewarmCount == 40, "nameplates prepares 40 displays")
+env.addon.Modules.Nameplates.Display.PrewarmCount = PREWARM_TOKENS
 env.addon.Modules.NameplatesModule:Init()
 local nameplatesEvents = acm.lastFrameForEvent("NAME_PLATE_UNIT_ADDED")
 assert(nameplatesEvents and nameplatesEvents ~= alertsEvents, "nameplates event frame")
@@ -740,10 +740,10 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		removePlate("np_resize")
 	end)
 
-	fw.it("a restyle takes a parked display back to UIParent, where its size can be read", function()
-		-- Parking leaves a display on its plate, and anywhere inside a plate its size reads as
-		-- secret. A look change is the one thing that needs it readable again, so that is the
-		-- only path that moves it off.
+	fw.it("the sweep re-fits a parked display, which needs it off its plate to do it", function()
+		-- A parked display stays on its plate, and anywhere inside a plate its size reads as
+		-- secret, so the sweep has to take it off to re-fit it and put it back afterwards. What
+		-- is checked here is the outcome that depends on that: the new size reaching the buttons.
 		addPlate("np_refit")
 		local display = activeDisplays("np_refit")[1]
 		assert(display, "tracked by the one enabled bar")
@@ -760,11 +760,13 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		-- lane with work, so one tick is not guaranteed to reach this entry.
 		acm.tickAll(5)
 
-		assert(display._parent == _G.UIParent, "moved off the plate for the restyle")
+		local _, group = next(display._groups)
+		assert(group.layout.elementWidth == originalSize + 7, "re-fitted to the new size while parked")
+		assert(display._parent == plate, "and put back on its plate")
 
 		icons.Size = originalSize
 		nameplates:Refresh()
-		acm.tickAll(1)
+		acm.tickAll(5)
 	end)
 
 	fw.it("a token that flips faction swaps between two cached displays", function()
@@ -811,20 +813,22 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		assert(enemy ~= friendly, "the enemy faction gets its own display")
 		assert(iconSize(enemy) == 44, "built at the enemy size")
 		assert(iconSize(friendly) == 21, "without touching the friendly one")
-		assert(env.auraContainerCount() == created + 1, "the first flip builds exactly one display")
+		-- At most one: the enemy side may take a prepared display instead of building its own.
+		assert(env.auraContainerCount() <= created + 1, "the first flip builds at most one display")
+		created = env.auraContainerCount()
 
 		-- Duel ends: back to friendly, which swaps the cached display back in.
 		env.enemies.np_flip = nil
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_flip")
 		assert(activeDisplays("np_flip")[1] == friendly, "the cached friendly display returns")
 		assert(iconSize(friendly) == 21, "still at the friendly size")
-		assert(env.auraContainerCount() == created + 1, "flipping back builds nothing new")
+		assert(env.auraContainerCount() == created, "flipping back builds nothing new")
 
 		-- And a second flip to enemy reuses its cached display too: two per (token, bar), ever.
 		env.enemies.np_flip = true
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_flip")
 		assert(activeDisplays("np_flip")[1] == enemy, "the cached enemy display returns")
-		assert(env.auraContainerCount() == created + 1, "later flips build nothing new")
+		assert(env.auraContainerCount() == created, "later flips build nothing new")
 		env.enemies.np_flip = nil
 
 		removePlate("np_flip")
@@ -982,33 +986,6 @@ fw.describe("NameplatesModule 12.1 - prewarming the plate displays", function()
 			"expected at most " .. PREWARM_TOKENS .. " for the one enabled bar, got " .. built)
 	end)
 
-	fw.it("prepares the whole token range and stops at its end", function()
-		-- The last prepared token must need nothing; the one past the range must still build its
-		-- own, which is what catches the range being quietly shortened.
-		local created = env.auraContainerCount()
-
-		local last = "nameplate" .. PREWARM_TOKENS
-		local past = "nameplate" .. (PREWARM_TOKENS + 1)
-
-		env.enemies[last] = true
-		env.addPlate(last)
-		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", last)
-
-		assert(env.auraContainerCount() == created, "the last prepared token built nothing")
-
-		env.enemies[past] = true
-		env.addPlate(past)
-		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", past)
-
-		assert(env.auraContainerCount() == created + 1, "a token past the range builds its own")
-
-		for _, token in ipairs({ last, past }) do
-			nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", token)
-			env.plates[token] = nil
-			env.enemies[token] = nil
-		end
-	end)
-
 	fw.it("leaves a plate spawning on a prepared token nothing to build", function()
 		local created = env.auraContainerCount()
 
@@ -1069,6 +1046,34 @@ fw.describe("NameplatesModule 12.1 - prewarming the plate displays", function()
 
 		assert(env.auraContainerCount() == withBar2,
 			"a pass with the bar off built " .. (env.auraContainerCount() - withBar2) .. " more")
+	end)
+
+	fw.it("plates take from the prepared stock, and build their own once it runs out", function()
+		-- Displays are prepared per bar and faction rather than per token, so what is pinned here
+		-- is that spawning plates consume the prepared ones without building, and that the stock
+		-- is finite: enough plates past it and one has to build its own.
+		refreshDuringLoadingScreen()
+
+		local created = env.auraContainerCount()
+		local tokens = {}
+
+		for index = 1, PREWARM_TOKENS + 1 do
+			local token = "np_stock" .. index
+			tokens[#tokens + 1] = token
+			env.enemies[token] = true
+			env.addPlate(token)
+			nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", token)
+		end
+
+		local built = env.auraContainerCount() - created
+		assert(built > 0, "the stock never ran out, so the prewarm is unbounded")
+		assert(built < #tokens, "the prepared displays covered no plates at all")
+
+		for _, token in ipairs(tokens) do
+			nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", token)
+			env.plates[token] = nil
+			env.enemies[token] = nil
+		end
 	end)
 end)
 

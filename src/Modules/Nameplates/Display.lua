@@ -126,49 +126,61 @@ local BARS = {
 	},
 }
 
--- One AuraContainer per (nameplate token, bar), built with its bar's full configuration and kept
--- for the session.
+-- One AuraContainer per (nameplate frame, bar, faction), bound to that plate the first time it
+-- wants one and kept there for the session.
 --
--- Not pooled. Everything StyleButton applies - size, swipe, countdown, glow, dispel textures -
--- is baked into a button when the frame pool creates it and can only be changed by a restyle,
--- which is blocked for as long as C_Secrets.ShouldAurasBeSecret is true (a whole arena). A
--- generic pool hands out displays built for some other bar's configuration, which then cannot be
--- corrected. Building per bar means a display is right from the moment it exists.
+-- Keyed on the plate rather than the unit token because the client pairs the two arbitrarily: a
+-- token coming back lands on whatever plate frame is free, so a token-keyed display had to be
+-- re-parented onto a different plate on nearly every spawn, and re-parenting invalidates the
+-- layout of every button under it. Bound to the plate, a spawn is SetUnit plus show, and the
+-- anchor bookkeeping in AnchorBarDisplay short-circuits because nothing moved. Plate frames come
+-- from the client's own pool and are a small fixed set, so this stays bounded - which matters,
+-- since WoW frames can never be freed.
 --
--- Cached per token rather than created per plate spawn because WoW frames can never be freed:
--- tokens are a small fixed set (nameplate1..N) so this is bounded, whereas creating one per
--- spawn would grow for the whole session. Exactly ONE display per (token, bar, faction): a
--- configuration change restyles it in place rather than building a replacement. Keying on the
--- configuration instead meant every step of an icon-size slider drag built a fresh display for
--- every tracked plate - twenty buttons apiece, each with its own cooldown, border and animated
--- glow - and left all of them resident for the session.
+-- Not pooled generically. Everything StyleButton applies - size, swipe, countdown, glow, dispel
+-- textures - is baked into a button when the frame pool creates it and can only be changed by a
+-- restyle, which is blocked for as long as C_Secrets.ShouldAurasBeSecret is true (a whole arena).
+-- A generic pool hands out displays built for some other bar's configuration, which then cannot
+-- be corrected. Building per bar means a display is right from the moment it exists. Exactly ONE
+-- display per (plate, bar, faction): a configuration change restyles it in place rather than
+-- building a replacement. Keying on the configuration instead meant every step of an icon-size
+-- slider drag built a fresh display for every tracked plate - twenty buttons apiece, each with
+-- its own cooldown, border and animated glow - and left all of them resident for the session.
 --
--- Faction is part of the key because the same token alternates between the Friendly and Enemy
+-- Faction is part of the key because the same plate alternates between the Friendly and Enemy
 -- configurations as plates recycle, and when the two differ that alternation is a restyle. A
 -- restyle is blocked while auras are secret, so inside an arena the flip would show a plate at
--- the OTHER faction's icon size for the rest of the match. Swapping between two cached displays
+-- the OTHER faction's icon size for the rest of the match. Swapping between two bound displays
 -- instead makes the flip a park-and-reacquire, which never needs a restyle.
 --
 -- Restyling is impossible while auras are secret, but that is already handled: ApplyConfig stores
 -- the new values and flags the display, and AuraContainerDisplay's retry settles the buttons when
 -- the restriction lifts. The cost is that a change made inside an arena shows late, which is the
 -- same deal every other display in the addon takes.
----@type table<string, table<string, {Display: AuraContainerDisplay, Signature: string}>>
+---@type table<table, table<string, BarDisplayEntry>>
 local barDisplays = {}
+local EMPTY = {}
+-- Displays built ahead of any plate wanting them, keyed by (bar, faction). A plate takes one on
+-- first sight instead of building its own there and then; see Prewarm.
+---@type table<string, BarDisplayEntry[]>
+local freeDisplays = {}
+-- How many displays exist per (bar, faction), bound and free together, so a repeated Prewarm tops
+-- the set up instead of building a second one.
+---@type table<string, number>
+local builtCounts = {}
 -- Background walker converting parked bar displays after a look change; see QueueParkedRestyles.
 local parkedSweep = sweep:New()
 -- Fallbacks for a bar with no configured geometry.
 local DEFAULT_BAR_ICONS = 5
 local DEFAULT_BAR_SIZE = 35
 local DEFAULT_BAR_SPACING = 2
--- How many nameplate tokens to prepare displays for ahead of time. The client hands out
--- nameplate1..N as plates spawn and the set is fixed for a session, so covering it up front means
--- no plate has to build a container mid-fight. 40 is what a full battleground reaches.
+-- How many displays to prepare per bar and faction ahead of any plate wanting one, so no plate
+-- has to build a container mid-fight. 40 is what a full battleground reaches.
 --
--- On the module table rather than a local so the tests can lower it. Preparing forty tokens per
--- refresh is cheap in the client and slow against the mock, where it was most of the suite's
--- runtime; the shipped default is asserted separately.
-M.PrewarmTokenCount = 40
+-- On the module table rather than a local so the tests can lower it. Preparing forty per refresh
+-- is cheap in the client and slow against the mock, where it was most of the suite's runtime; the
+-- shipped default is asserted separately.
+M.PrewarmCount = 40
 -- Both sides get prepared, since a plate's faction is not known until it spawns and a duel or a
 -- mind control flips it afterwards. Only bars actually switched on are queued (see Prewarm).
 local PREWARM_FACTIONS = { "Enemy", "Friendly" }
@@ -381,68 +393,117 @@ local function BarStyle(barOptions)
 	return style
 end
 
----The display one (token, bar, faction) owns, built on first ask and restyled when that faction's
----own configuration moves. Shared by the plate path and the prewarm, so a display built ahead of
----time is the same object, carrying the same look, that a spawning plate would have built.
+---Brings one entry onto the current look. The display has to leave its plate to do it: a restyle
+---cannot re-fit buttons whose size is secret, which it is anywhere inside a plate.
 ---
----One display per (bar, faction). The token flipping faction - plates recycling, a duel - switches
----cache entries instead, so the flip needs no restyle and stays correct while auras are secret.
----This path is hot enough that it must not build frames for a token it has seen before.
----@param token string
+---One pass for all three values; the individual setters would each walk every button. Records the
+---new signature even when the restyle has to defer, because the display now WANTS this
+---configuration and the retry will finish applying it.
+---@param entry BarDisplayEntry
+local function RestyleEntry(entry, size, spacing, style, signature)
+	MoveOffPlate(entry.Display)
+	entry.Display:ApplyConfig(size, spacing, style)
+	entry.Signature = signature
+
+	if entry.Plate then
+		entry.Display.Frame:SetParent(entry.Plate)
+	end
+end
+
+---A prepared display for this bar and faction, if one is waiting that already wears the look being
+---asked for. A stale one is left alone rather than handed over and restyled: the restyle is
+---blocked while auras are secret, which would leave a plate wearing the old size for the match.
+---The sweep converts the stale ones in the background so later plates find a match.
+---@return BarDisplayEntry?
+local function TakeFreeDisplay(cacheKey, signature)
+	local free = freeDisplays[cacheKey]
+
+	if not free then
+		return
+	end
+
+	for i = #free, 1, -1 do
+		if free[i].Signature == signature then
+			return table.remove(free, i)
+		end
+	end
+end
+
+---The display one (plate, bar, faction) owns, bound on first ask and restyled when that faction's
+---own configuration moves. The bind is the only time it is ever re-parented.
+---@param nameplate table
 ---@param factionKey "Enemy"|"Friendly" which side of the options the bar came from
 ---@return AuraContainerDisplay
-local function GetOrCreateBarDisplay(token, bar, barOptions, factionKey)
+local function GetOrCreateBarDisplay(nameplate, bar, barOptions, factionKey)
 	local size = BarIconSize(barOptions)
 	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
 	local style = BarStyle(barOptions)
 	local signature = auraContainerDisplay:GetStyleSignature(style, size, spacing)
+	local cacheKey = bar.CacheKey[factionKey]
 
-	local byBar = barDisplays[token]
+	local byBar = barDisplays[nameplate]
 
 	if not byBar then
 		byBar = {}
-		barDisplays[token] = byBar
+		barDisplays[nameplate] = byBar
 	end
 
-	local entry = byBar[bar.CacheKey[factionKey]]
+	local entry = byBar[cacheKey]
 
 	if not entry then
-		entry = {
-			Display = CreateBarDisplay(size, spacing, style, BarCategoryColors(barOptions)),
-			Signature = signature,
-		}
-		byBar[bar.CacheKey[factionKey]] = entry
+		entry = TakeFreeDisplay(cacheKey, signature)
+
+		if not entry then
+			entry = {
+				Display = CreateBarDisplay(size, spacing, style, BarCategoryColors(barOptions)),
+				Signature = signature,
+			}
+			builtCounts[cacheKey] = (builtCounts[cacheKey] or 0) + 1
+		end
+
+		byBar[cacheKey] = entry
+		entry.Plate = nameplate
+		-- The one re-parent this display will ever see. Built on UIParent so its buttons could be
+		-- skinned while their size was still readable, and it lives on this plate from here.
+		entry.Display.Frame:SetParent(nameplate)
 	elseif entry.Signature ~= signature then
-		-- One restyle pass for all three values; the individual setters would each walk every
-		-- button. Records the new signature even when the restyle has to defer, because the
-		-- display now WANTS this configuration and the retry will finish applying it.
-		MoveOffPlate(entry.Display)
-		entry.Display:ApplyConfig(size, spacing, style)
-		entry.Signature = signature
+		RestyleEntry(entry, size, spacing, style, signature)
 	end
 
 	return entry.Display
 end
 
 ---Builds one (token, bar, faction) display ahead of the plate that will want it, and parks it.
----An entry that already exists is left strictly alone: a plate may be holding that token and
----drawing on it, and parking that one would blank a live bar.
----@param token string
+---Builds one (bar, faction) display ahead of the plate that will want it, and parks it on the free
+---list. Nothing already bound to a plate is touched: one of those may be drawing right now.
 ---@param factionKey "Enemy"|"Friendly"
-local function PrewarmOneBarDisplay(token, bar, barOptions, factionKey)
-	local byBar = barDisplays[token]
+local function PrewarmOneBarDisplay(bar, barOptions, factionKey)
+	local cacheKey = bar.CacheKey[factionKey]
+	local size = BarIconSize(barOptions)
+	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
+	local style = BarStyle(barOptions)
 
-	if byBar and byBar[bar.CacheKey[factionKey]] then
-		return
+	local entry = {
+		Display = CreateBarDisplay(size, spacing, style, BarCategoryColors(barOptions)),
+		Signature = auraContainerDisplay:GetStyleSignature(style, size, spacing),
+	}
+	ResetBarDisplay(entry.Display)
+
+	local free = freeDisplays[cacheKey]
+
+	if not free then
+		free = {}
+		freeDisplays[cacheKey] = free
 	end
 
-	ResetBarDisplay(GetOrCreateBarDisplay(token, bar, barOptions, factionKey))
+	free[#free + 1] = entry
+	builtCounts[cacheKey] = (builtCounts[cacheKey] or 0) + 1
 end
 
----One parked (token, bar, faction) display brought onto the current look, from the background
----sweep. Everything is re-resolved at fire time: the sweep runs over seconds, and options,
----plates and the shared style scratch all move underneath it.
----@param item table {Token, Bar, FactionKey}
+---One (bar, faction) display brought onto the current look, from the background sweep. Everything
+---is re-resolved at fire time: the sweep runs over seconds, and options, plates and the shared
+---style scratch all move underneath it.
+---@param item table {Entry, Bar, FactionKey}
 ---@return boolean? keepGoing
 local function RestyleParkedEntry(item)
 	-- A restricted restyle cannot reach the buttons; abandon and let the on-demand path cope,
@@ -458,12 +519,19 @@ local function RestyleParkedEntry(item)
 		return
 	end
 
-	-- The shared restyle arm: looks up the entry, diffs the signature and applies the config. An
-	-- entry a plate has taken since the queue was built was restyled by its own ensure path, so
-	-- this lands there as a no-op diff. The tints ride along because they are outside the
-	-- signature, and a display reused while auras are secret needs them already on the buttons.
-	local display = GetOrCreateBarDisplay(item.Token, item.Bar, barOptions, item.FactionKey)
-	display:SetGroupGlowColors(COLORED_GROUP_KEYS, BarCategoryColors(barOptions))
+	local size = BarIconSize(barOptions)
+	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
+	local style = BarStyle(barOptions)
+	local signature = auraContainerDisplay:GetStyleSignature(style, size, spacing)
+
+	-- An entry a plate has taken since the queue was built was restyled by its own ensure path,
+	-- so this lands as a no-op diff. The tints ride along because they are outside the signature,
+	-- and a display reused while auras are secret needs them already on the buttons.
+	if item.Entry.Signature ~= signature then
+		RestyleEntry(item.Entry, size, spacing, style, signature)
+	end
+
+	item.Entry.Display:SetGroupGlowColors(COLORED_GROUP_KEYS, BarCategoryColors(barOptions))
 end
 
 ---Adds every entry of one bar's cache still wearing an old look to the queue, building it on
@@ -478,12 +546,21 @@ local function QueueStaleForBar(queue, bar, factionKey, barOptions)
 	local signature = auraContainerDisplay:GetStyleSignature(BarStyle(barOptions),
 		BarIconSize(barOptions), barOptions.Icons.Spacing or DEFAULT_BAR_SPACING)
 
-	for token, byBar in pairs(barDisplays) do
+	for _, byBar in pairs(barDisplays) do
 		local entry = byBar[cacheKey]
 
 		if entry and entry.Signature ~= signature then
 			queue = queue or {}
-			queue[#queue + 1] = { Token = token, Bar = bar, FactionKey = factionKey }
+			queue[#queue + 1] = { Entry = entry, Bar = bar, FactionKey = factionKey }
+		end
+	end
+
+	-- The free list too, so a plate spawning after a settings change finds a display already
+	-- wearing the new look rather than having to build one.
+	for _, entry in ipairs(freeDisplays[cacheKey] or EMPTY) do
+		if entry.Signature ~= signature then
+			queue = queue or {}
+			queue[#queue + 1] = { Entry = entry, Bar = bar, FactionKey = factionKey }
 		end
 	end
 
@@ -531,10 +608,10 @@ local function EnsureBarDisplay(data, bar, barOptions, factionKey)
 	local token = data.UnitToken
 	local maxIcons = barOptions.Icons.MaxIcons or 5
 	local colors = BarCategoryColors(barOptions)
-	local display = GetOrCreateBarDisplay(token, bar, barOptions, factionKey)
+	local display = GetOrCreateBarDisplay(data.Nameplate, bar, barOptions, factionKey)
 
 	-- Outside the signature: the tints are not baked into a button, and a display legitimately
-	-- swaps between the friendly and enemy configurations for the same token. This is a handful of
+	-- swaps between the friendly and enemy configurations for the same plate. This is a handful of
 	-- comparisons when nothing moved.
 	display:SetGroupGlowColors(COLORED_GROUP_KEYS, colors)
 
@@ -546,22 +623,6 @@ local function EnsureBarDisplay(data, bar, barOptions, factionKey)
 	end
 
 	data[bar.DisplayField] = display
-
-	-- Only when it actually moves. Re-parenting invalidates the layout of every button under the
-	-- display, and this runs for each tracked plate on every options refresh - a slider drag was
-	-- paying for it once per step per plate with nothing to show for it.
-	if display.Frame:GetParent() ~= data.Nameplate then
-		display.Frame:SetParent(data.Nameplate)
-
-		-- SetParent re-levels the frame under its new parent, so nothing AnchorBarDisplay
-		-- remembered about the old plate describes it any more. Parking no longer clears this,
-		-- which is the whole point: a display that comes back to the plate it was already on
-		-- keeps its anchors and skips the work below.
-		display.NameplateAnchorFrame = nil
-		display.NameplateLevel = nil
-		display.NameplateIgnoreScale = nil
-	end
-
 	display:SetUnit(token)
 	auraFilters:ApplyCategoryBudgets(
 		display,
@@ -834,7 +895,7 @@ function M:Untrack(unitToken)
 	HideAndReset(data.Bar1Container)
 	HideAndReset(data.Bar2Container)
 
-	-- Park this plate's displays; the per-token cache keeps them for its return.
+	-- Park this plate's displays; they stay bound to the plate for whatever it shows next.
 	self:Release(unitToken)
 
 	nameplateAnchors[unitToken] = nil
@@ -854,7 +915,7 @@ function M:Release(unitToken)
 		data.KickTimer:Cancel()
 		data.KickTimer = nil
 	end
-	-- Parked, not discarded: the cache keeps them for when this token comes back, since a
+	-- Parked, not discarded: they stay bound to their plate for the next unit it shows, since a
 	-- rebuild per plate spawn would grow frames forever.
 	if data.Bar1Display then
 		ResetBarDisplay(data.Bar1Display)
@@ -866,25 +927,23 @@ function M:Release(unitToken)
 	end
 end
 
----Builds a parked display for every (token, bar, faction) the current options actually switch on,
----so a plate spawning mid-fight finds its displays ready instead of paying to build them there and
----then. Only called behind a loading screen: the whole set at once is a long frame, and that is
----free while nothing is being drawn. Cheap to repeat, since an entry that already exists costs one
----table lookup, and bars switched off since the last pass are simply not walked.
+---Fills the free list for every (bar, faction) the current options actually switch on, so a plate
+---spawning mid-fight takes a ready display instead of paying to build one there and then. Only
+---called behind a loading screen: the whole set at once is a long frame, and that is free while
+---nothing is being drawn. Cheap to repeat, since it counts what exists first, and bars switched
+---off since the last pass are simply not walked.
 function M:Prewarm()
-	-- Token-major: a plate takes the lowest free token, so the ones most likely to be wanted first
-	-- get both their bars before the higher tokens get anything.
-	for index = 1, M.PrewarmTokenCount do
-		local token = "nameplate" .. index
+	for _, faction in ipairs(PREWARM_FACTIONS) do
+		local unitOptions = nmModule and nmModule[faction]
 
-		for _, faction in ipairs(PREWARM_FACTIONS) do
-			local unitOptions = nmModule and nmModule[faction]
+		for _, bar in ipairs(BARS) do
+			local barOptions = unitOptions and unitOptions[bar.Key]
 
-			for _, bar in ipairs(BARS) do
-				local barOptions = unitOptions and unitOptions[bar.Key]
-
-				if barOptions and barOptions.Enabled then
-					PrewarmOneBarDisplay(token, bar, barOptions, faction)
+			if barOptions and barOptions.Enabled then
+				-- Bound displays count towards the target: they are already doing the job the
+				-- prepared ones are held for, and only the plates yet to appear need covering.
+				for _ = (builtCounts[bar.CacheKey[faction]] or 0) + 1, M.PrewarmCount do
+					PrewarmOneBarDisplay(bar, barOptions, faction)
 				end
 			end
 		end
@@ -1031,6 +1090,11 @@ function M:Init()
 	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> NameplatesModule
 	nmModule = db.Modules.NameplatesModule
 end
+
+---@class BarDisplayEntry
+---@field Display AuraContainerDisplay
+---@field Signature string The look baked into its buttons, diffed to decide a restyle.
+---@field Plate table? The nameplate it is bound to; nil while it is still on the free list.
 
 ---@class NameplateData
 ---@field Nameplate table
