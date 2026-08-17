@@ -33,9 +33,7 @@ local function ApplyLabelFont(frame)
 		return
 	end
 
-	local face, size, flags = text:GetFont()
-
-	text:SetFont(fontUtil:Face(text, face), size, flags)
+	fontUtil:Apply(text)
 end
 
 ---@param frame table

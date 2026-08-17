@@ -771,8 +771,21 @@ function M.loadDisplay()
 				BaseFace = function(_, fontString, face)
 					return face or (fontString and fontString:GetFont())
 				end,
-				Face = function(_, fontString, currentFace)
-					return M.fontFace or currentFace or (fontString and fontString:GetFont())
+				-- The real one attaches picked text to shared font objects; the observable
+				-- outcome - pick beats fallback beats the string's own face - is kept through
+				-- SetFont, which is what these tests record and assert on.
+				Apply = function(_, fontString, size, flags, fallbackFace)
+					if not fontString then
+						return
+					end
+
+					local face, baseSize, baseFlags = fontString:GetFont()
+
+					face = M.fontFace or fallbackFace or face
+
+					if face then
+						fontString:SetFont(face, size or baseSize, flags or baseFlags)
+					end
 				end,
 			},
 			WoWEx = {

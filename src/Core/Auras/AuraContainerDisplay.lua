@@ -739,10 +739,7 @@ end
 ---@param widgets table
 ---@param style AuraDisplayStyle
 local function StyleLabel(button, widgets, style)
-	local label = widgets.Label
-	local face = fontUtil:Face(label)
-
-	label:SetFont(face, style.LabelFontSize or 20, style.LabelFontFlags)
+	fontUtil:Apply(widgets.Label, style.LabelFontSize or 20, style.LabelFontFlags)
 	button:EnableMouse(false)
 end
 
@@ -837,9 +834,9 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 		font, fontSize, fontFlags = cdText:GetFont()
 	end
 	if font then
-		-- The cooldown text's OWN face, not the one it is wearing: it has been through the
-		-- same swap, and mirroring the swapped face would make it this string's base.
-		durationText:SetFont(fontUtil:Face(durationText, fontUtil:BaseFace(cdText)), fontSize, fontFlags)
+		-- The cooldown text's OWN face as the fallback, not the one it is wearing: it has been
+		-- through the same swap, and mirroring the swapped face would make it this string's base.
+		fontUtil:Apply(durationText, fontSize, fontFlags, fontUtil:BaseFace(cdText))
 	else
 		fontUtil:UpdateFontSize(durationText, size, 0.4, fontScale)
 	end
@@ -868,7 +865,7 @@ local function CenterStacks(instance, button, widgets)
 	end
 
 	if font then
-		stacks:SetFont(fontUtil:Face(stacks, fontUtil:BaseFace(cdText)), fontSize, fontFlags)
+		fontUtil:Apply(stacks, fontSize, fontFlags, fontUtil:BaseFace(cdText))
 	else
 		fontUtil:UpdateFontSize(stacks, instance.Size, nil, instance.Style.FontScale or 1.0)
 	end
@@ -925,8 +922,7 @@ local function StyleStacks(instance, button, widgets, size, fontScale)
 			if stacks.MiniAurasFace then
 				local _, currentSize = stacks:GetFont()
 
-				stacks:SetFont(fontUtil:Face(stacks, stacks.MiniAurasFace), currentSize or 10,
-					stacks.MiniAurasFlags)
+				fontUtil:Apply(stacks, currentSize or 10, stacks.MiniAurasFlags, stacks.MiniAurasFace)
 			end
 		end
 

@@ -335,8 +335,7 @@ function M:SetTestLabel(frame, text)
 
 		-- Every time rather than at creation: the label outlives a font change, and showing a
 		-- caption is the one moment every test path already goes through.
-		local face, size, flags = label:GetFont()
-		label:SetFont(addon.Utils.FontUtil:Face(label, face), size, flags)
+		addon.Utils.FontUtil:Apply(label)
 
 		label:SetText(text)
 		label:Show()

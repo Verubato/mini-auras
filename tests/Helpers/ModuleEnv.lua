@@ -305,15 +305,26 @@ function M.build()
 		UpdateCooldownFontSize = function() end,
 		UpdateStackFontSize = function() end,
 		UpdateFontSize = function() end,
-		-- No font option in this env, so the face is whatever the string already wears.
+		-- No font option in this env, so Apply is the unpicked path: the string keeps or is
+		-- handed the face it stands in for, sized as asked.
 		CurrentFace = function()
 			return nil
 		end,
 		BaseFace = function(_, fontString, face)
 			return face or (fontString and fontString:GetFont())
 		end,
-		Face = function(_, fontString, currentFace)
-			return currentFace or (fontString and fontString:GetFont())
+		Apply = function(_, fontString, size, flags, fallbackFace)
+			if not fontString then
+				return
+			end
+
+			local face, baseSize, baseFlags = fontString:GetFont()
+
+			face = fallbackFace or face
+
+			if face then
+				fontString:SetFont(face, size or baseSize, flags or baseFlags)
+			end
 		end,
 	}
 	addon.Utils.Units = {

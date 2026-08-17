@@ -346,9 +346,9 @@ local function CreateFrames()
 
 	local text = healerAnchor:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 	text:SetPoint("TOP", healerAnchor, "TOP", 0, 6)
-	-- Use the system default font to support all languages (e.g., Chinese)
-	local defaultFont, _, _ = text:GetFont()
-	text:SetFont(fontUtil:Face(text, defaultFont), options.Font.Size, options.Font.Flags)
+	-- The template's face is the base Apply keeps, so every language renders when no font is
+	-- picked (e.g. Chinese).
+	fontUtil:Apply(text, options.Font.Size, options.Font.Flags)
 	text:SetText(L["Healer in CC!"])
 	text:SetTextColor(1, 0.1, 0.1)
 	text:SetShadowColor(0, 0, 0, 1)
@@ -460,8 +460,7 @@ function M:ApplyOptions(options)
 		options.Offset.Y
 	)
 
-	local warning = healerAnchor.HealerWarning
-	warning:SetFont(fontUtil:Face(warning), options.Font.Size, options.Font.Flags)
+	fontUtil:Apply(healerAnchor.HealerWarning, options.Font.Size, options.Font.Flags)
 	iconsContainer:SetIconSize(tonumber(options.Icons.Size) or 32)
 	iconsContainer:SetSpacing(options.IconSpacing or 2)
 

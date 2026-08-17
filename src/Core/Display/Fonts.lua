@@ -7,21 +7,15 @@ local _, addon = ...
 -- to be offered on those clients - so the list is already free of the faces that would draw the
 -- game's own text as boxes.
 --
--- Nothing is registered here. The client's own faces arrive through the library, and a name that
--- resolves to nothing is left resolving to nothing on purpose: see Resolve.
+-- Nothing is registered here and nothing is filtered out. The client's own faces arrive through
+-- the library, and a name that resolves to nothing is left resolving to nothing on purpose: see
+-- Resolve. Getting the resolved file onto the screen reliably is FontUtil's job, through shared
+-- font objects rather than per-string SetFont.
 
 -- One table, refilled in place. Consumers hold onto it and re-ask for the contents rather than
 -- the table, because media addons register their fonts whenever they happen to load, which is
 -- routinely after a dropdown has already been built.
 local nameScratch = {}
--- Whether a file actually loads, by path. SetFont answers false for one the client cannot use -
--- a missing file, or a face it will not accept - and a refused SetFont leaves the string wearing
--- whatever it had. Offering such a name would swap the text the addon happens to redraw and
--- leave the rest, which reads as the setting working for some of the text and not the rest.
-local usableFiles = {}
--- Hidden fontstring the check above is run against. Built on first use; a config page that never
--- opens and a profile with no font picked never build one.
-local probeFontString
 -- Fired when the media list gains entries, so anything showing or drawing it can catch up.
 ---@type fun()[]
 local changeCallbacks = {}
@@ -40,30 +34,6 @@ local function NotifyChanged()
 	for _, fn in ipairs(changeCallbacks) do
 		fn()
 	end
-end
-
----Whether the client will actually draw with this file. Asked once per path.
----@param file string
----@return boolean
-local function IsUsable(file)
-	local known = usableFiles[file]
-
-	if known ~= nil then
-		return known
-	end
-
-	if not probeFontString then
-		local frame = CreateFrame("Frame")
-
-		frame:Hide()
-		probeFontString = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	end
-
-	-- A client that answers nothing rather than a boolean is taken at its word that the file is
-	-- fine: refusing every font on an unexpected return would be far worse than trusting one.
-	usableFiles[file] = probeFontString:SetFont(file, 12, "") ~= false
-
-	return usableFiles[file]
 end
 
 ---Subscribes to the media library the first time anyone asks to hear about changes. Fonts keep
@@ -100,12 +70,11 @@ function M:GetNames()
 	local media = SharedMedia()
 
 	if media then
+		-- Every registered name is offered. SetFont's answer is not a per-file verdict - it
+		-- answers false for a file it has merely not loaded yet - and believing one once hid
+		-- working fonts for the whole session, cutting the dropdown from fifty entries to four.
 		for _, name in ipairs(media:List("font") or {}) do
-			-- Left out rather than offered and quietly ignored: a name the client refuses would
-			-- change nothing on screen, which reads as the whole setting being broken.
-			local file = media:Fetch("font", name)
-
-			if file and IsUsable(file) then
+			if media:Fetch("font", name) then
 				nameScratch[#nameScratch + 1] = name
 			end
 		end
@@ -132,11 +101,7 @@ function M:Resolve(name)
 	local media = SharedMedia()
 
 	if media and media:IsValid("font", name) then
-		local file = media:Fetch("font", name)
-
-		if file and IsUsable(file) then
-			return file
-		end
+		return media:Fetch("font", name)
 	end
 
 	return nil

@@ -127,9 +127,8 @@ local function LayoutBar(bar, options)
 
 	fontFile = fontFile or (GameFontNormal and GameFontNormal:GetFont()) or "Fonts\\FRIZQT__.TTF"
 
-	bar.Name:SetFont(fontUtil:Face(bar.Name, fontFile), nameSize, FONT_FLAGS)
-	bar.Time:SetFont(fontUtil:Face(bar.Time, fontFile),
-		math.floor(nameSize * COUNTDOWN_FONT_SCALE), FONT_FLAGS)
+	fontUtil:Apply(bar.Name, nameSize, FONT_FLAGS, fontFile)
+	fontUtil:Apply(bar.Time, math.floor(nameSize * COUNTDOWN_FONT_SCALE), FONT_FLAGS, fontFile)
 end
 
 ---@param parent table

@@ -296,6 +296,7 @@ local function ApplyStyle(options)
 	scratch.Spacing = options.BarSpacing
 	scratch.Grow = options.Grow
 	scratch.FillTexture = barTextures:Resolve(bars.Texture)
+	scratch.FontScale = db.FontScale
 
 	instance:SetOptions(scratch)
 end

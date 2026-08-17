@@ -15,6 +15,27 @@ local STACK_COEFFICIENT = 0.38
 local cachedName
 local cachedFile
 local subscribedToFonts = false
+-- One shared font object per size-and-flags pair, each wearing the configured file. Text drawn
+-- in the picked font attaches to these with SetFontObject rather than being handed the file:
+-- the client re-renders attached strings itself whenever an object changes, including when the
+-- file's first load of the session finishes - where SetFont with a cold path answers false,
+-- leaves the string as it was, and repaints on nothing, which is what made a font change land
+-- on some text and silently miss the rest. Sizes derive from icon sizes, so the set stays small.
+local fontObjects = {}
+local fontObjectCount = 0
+
+---Puts a new file on every shared object. The strings attached to them follow on their own -
+---this is the whole of what changing the font has to do for text already on screen.
+---@param file string?
+local function ApplyFileToObjects(file)
+	if not file then
+		return
+	end
+
+	for _, entry in pairs(fontObjects) do
+		entry.Object:SetFont(file, entry.Size, entry.Flags)
+	end
+end
 
 --- The file the font option resolves to right now, or nil when no font is picked or the pick
 --- belongs to a media addon that has not registered it yet.
@@ -36,66 +57,117 @@ function M:CurrentFace()
 
 		addon.Core.Fonts:OnChanged(function()
 			cachedName = nil
-			cachedFile = nil
 		end)
 	end
 
 	if name ~= cachedName then
 		cachedName = name
-		cachedFile = addon.Core.Fonts:Resolve(name)
+
+		local file = addon.Core.Fonts:Resolve(name)
+
+		if file ~= cachedFile then
+			cachedFile = file
+			ApplyFileToObjects(file)
+		end
 	end
 
 	return cachedFile
 end
 
---- The face a string was built with, which is what the option being cleared has to go back to.
---- Remembered on the string itself, and only ever from a face that is not already an override:
---- once a string is wearing the picked font, asking it what it wears would remember the pick as
---- if the game had given it, and clearing the option would then "restore" that same pick.
+---The shared object for this size and flags, created on first need wearing the current file.
+---Only called while a file is resolved: see Apply.
+---@param size number
+---@param flags string?
+---@return table object
+local function GetFontObject(size, flags)
+	flags = flags or ""
+
+	local key = size .. "|" .. flags
+	local entry = fontObjects[key]
+
+	if not entry then
+		fontObjectCount = fontObjectCount + 1
+		entry = {
+			Object = CreateFont("MiniAurasFont" .. fontObjectCount),
+			Size = size,
+			Flags = flags,
+		}
+		entry.Object:SetFont(cachedFile, size, flags)
+		fontObjects[key] = entry
+	end
+
+	return entry.Object
+end
+
+--- Draws a fontstring in the configured font at the given size, or leaves it on its own face
+--- when nothing is picked or the pick has not resolved yet. The one entry point for the option:
+--- picked, the string is attached to a shared font object; not picked, it keeps or gets back
+--- the face it was built with. That second case is why this falls back rather than picking a
+--- default face - the media refresh comes round again once the name resolves, and swaps then.
 --- @param fontString table
---- @param face string? the face to remember, when the caller knows it is untouched
+--- @param size number? point size; nil keeps the size the string was built with
+--- @param flags string? font flags; nil keeps the flags the string was built with
+--- @param fallbackFace string? face for the unpicked state, when the string stands in for
+--- another and must wear that one's face rather than its own
+function M:Apply(fontString, size, flags, fallbackFace)
+	if not fontString then
+		return
+	end
+
+	-- The face to go back to is only readable while the string is not wearing the pick, which is
+	-- why it is captured here, before anything is applied, and never while attached.
+	if fontString.MiniAurasBaseFace == nil and not fontString.MiniAurasAttached then
+		local face, baseSize, baseFlags = fontString:GetFont()
+
+		if face then
+			fontString.MiniAurasBaseFace = face
+			fontString.MiniAurasBaseSize = baseSize
+			fontString.MiniAurasBaseFlags = baseFlags
+		end
+	end
+
+	size = size or fontString.MiniAurasBaseSize
+	flags = flags or fontString.MiniAurasBaseFlags
+
+	if not size then
+		return
+	end
+
+	if M:CurrentFace() then
+		fontString.MiniAurasAttached = true
+		fontString:SetFontObject(GetFontObject(size, flags))
+	else
+		local face = fallbackFace or fontString.MiniAurasBaseFace
+
+		fontString.MiniAurasAttached = nil
+
+		if face then
+			fontString:SetFont(face, size, flags)
+		end
+	end
+end
+
+--- The face a string was built with: what going back to "Game Default" restores, and what a
+--- stand-in borrows from the string it mirrors - borrowing the WORN face would bake the pick in
+--- as the mirror's own.
+--- @param fontString table
+--- @param face string? the face to answer for a string that has never been through Apply
 --- @return string? face
 function M:BaseFace(fontString, face)
 	if not fontString then
 		return face
 	end
 
-	local base = fontString.MiniAurasBaseFace
-
-	if base then
-		return base
+	if fontString.MiniAurasBaseFace then
+		return fontString.MiniAurasBaseFace
 	end
 
-	base = face or fontString:GetFont()
-
-	-- Never remember the configured face as a base. A string whose first pass through here
-	-- happens with a font already picked has no recoverable face of its own; leaving it unset
-	-- means the next pass with no pick will remember the real one.
-	if base and base ~= M:CurrentFace() then
-		fontString.MiniAurasBaseFace = base
+	-- Never been through Apply, so what it wears is its own.
+	if not fontString.MiniAurasAttached then
+		return face or fontString:GetFont()
 	end
 
-	return base
-end
-
---- The face every module's text is drawn in: the one the user picked, or the face the string was
---- built with whenever nothing is picked or the pick has not been registered yet. That second
---- case is why this falls back rather than picking a default face - the media refresh comes round
---- again once the name resolves, and swaps it then.
---- @param fontString table
---- @param currentFace string? the untouched face, when the caller knows it
---- @return string? face
-function M:Face(fontString, currentFace)
-	if not fontString then
-		return currentFace
-	end
-
-	-- Before the pick is consulted, not after: `or` would short-circuit past it while a font is
-	-- picked, and the string's own face would then only ever be read once it is already wearing
-	-- the pick - which is the one moment it is not worth remembering.
-	local base = M:BaseFace(fontString, currentFace)
-
-	return M:CurrentFace() or base
+	return face
 end
 
 --- Updates any font string's size from the icon size, keeping its flags and taking the
@@ -109,17 +181,10 @@ function M:UpdateFontSize(fontString, iconSize, coefficient, fontScale)
 		return
 	end
 
-	local font, _, flags = fontString:GetFont()
-
-	font = M:Face(fontString, font)
-
-	if not font then
-		return
-	end
-
 	-- SetFont errors on height <= 0, and a not-yet-laid-out icon can floor to zero.
 	local fontSize = math.max(1, math.floor(iconSize * (coefficient or 0.4) * (fontScale or 1.0)))
-	fontString:SetFont(font, fontSize, flags)
+
+	M:Apply(fontString, fontSize)
 end
 
 --- Updates a stack count's font size based on icon size
@@ -140,12 +205,6 @@ function M:UpdateCooldownFontSize(cd, iconSize, coefficient, fontScale)
 		return
 	end
 
-	coefficient = coefficient or 0.4
-	fontScale = fontScale or 1.0
-
-	-- SetFont errors on height <= 0; a degenerate icon size (e.g. anchor not yet laid out) can floor to 0.
-	local fontSize = math.max(1, math.floor(iconSize * coefficient * fontScale))
-
 	-- Scan once, cache result on the cooldown frame
 	if not cd.MiniAurasFontString then
 		local numRegions = cd:GetNumRegions()
@@ -158,12 +217,5 @@ function M:UpdateCooldownFontSize(cd, iconSize, coefficient, fontScale)
 		end
 	end
 
-	local region = cd.MiniAurasFontString
-	if region then
-		local font, _, flags = region:GetFont()
-		font = M:Face(region, font)
-		if font then
-			region:SetFont(font, fontSize, flags)
-		end
-	end
+	M:UpdateFontSize(cd.MiniAurasFontString, iconSize, coefficient, fontScale)
 end
