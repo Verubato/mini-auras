@@ -509,8 +509,12 @@ local function NewAuraContainer(name, parent, template)
 	container._enabled = true
 	container._buttons = {}
 
+	-- Counted as well as recorded: pointing a container at nobody and back is how the wrapper
+	-- forces a re-read when a token's OCCUPANT changed rather than the token, and the unit it
+	-- ends up on looks identical either way.
 	function container:SetUnit(unit)
 		container._unit = unit
+		container._calls.SetUnit = (container._calls.SetUnit or 0) + 1
 	end
 	function container:GetUnit()
 		return container._unit

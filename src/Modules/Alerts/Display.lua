@@ -20,12 +20,15 @@ addon.Modules.Alerts = addon.Modules.Alerts or {}
 local M = {}
 addon.Modules.Alerts.Display = M
 
--- The alert bars are rows of per-nameplate AuraContainers chained off the movable bar frames. A
+-- The alert bars are rows of per-enemy AuraContainers chained off the movable bar frames. A
 -- bar can't be a single aggregated list because a container tracks exactly one unit and there is
 -- no readable aura data to merge across units - so instead of one bar of N icons, it is N
 -- containers laid end to end, and an enemy with no alerts collapses to nothing. Important buffs
 -- come from a HELPFUL|IMPORTANT container group. The IconSlotContainer bars stay as drag anchors
 -- and test-mode renderers.
+--
+-- Nothing here cares which tokens it is handed: the module picks between arena and nameplate
+-- tokens and this file keys everything by whatever it gets.
 
 -- Category glow tints, used only when the option is on. Importants are the thing to react to, so
 -- they take the warning colour; defensives (big and external alike) read as "they are protected"
@@ -59,11 +62,11 @@ local testIconCtx = { Now = 0, Glow = false, Reverse = false, ShowTooltips = tru
 
 -- Per-token display pairs (Def on the main bar, Imp on the important bar in split
 -- mode), drawn from a central pre-created pool: acquired and retargeted
--- with SetUnit when an enemy plate appears, released back when it goes away, so plate churn
--- mid-combat never creates containers. Presence in this map means the token is active.
+-- with SetUnit when an enemy token starts being tracked, released back when it stops, so plate
+-- churn mid-combat never creates containers. Presence in this map means the token is active.
 ---@type table<string, {Def: AuraContainerDisplay, Imp: AuraContainerDisplay}>
-local nameplateDisplays = {}
--- token -> its display pair, kept for the session. nameplateDisplays holds only the ACTIVE
+local activeDisplays = {}
+-- token -> its display pair, kept for the session. activeDisplays holds only the ACTIVE
 -- tokens; this keeps every pair that has been built so a token returning reuses its own, since
 -- WoW frames can never be freed. Pairs are rebuilt only when the configuration baked into their
 -- buttons changes (see AlertPairSignature).
@@ -94,7 +97,8 @@ local DEFAULT_PAIR_SIZE = 24
 local DEFAULT_PAIR_SPACING = 2
 -- How many nameplate tokens to prepare pairs for ahead of time. The client hands out
 -- nameplate1..N as plates spawn and the set is fixed for a session, so covering it up front means
--- no plate has to build a container mid-fight. 40 is what a full battleground reaches.
+-- no plate has to build a container mid-fight. 40 is what a full battleground reaches. The arena
+-- token set is small enough that the module just passes its own count.
 --
 -- On the module table rather than a local so the tests can lower it. Preparing forty tokens per
 -- refresh is cheap in the client and slow against the mock, where it was most of the suite's
@@ -183,7 +187,7 @@ local function SetUpBarDragging(bar, anchorOptions, saveTarget)
 	end)
 end
 
--- Re-anchors the active per-nameplate displays into rows. Defensive displays chain
+-- Re-anchors the active per-unit displays into rows. Defensive displays chain
 -- off the main bar frame; important displays chain off the important bar in split mode, or
 -- continue the main-bar chain when combined. Chaining container-to-container avoids reading
 -- their (possibly secret) sizes; empty containers collapse to nothing.
@@ -203,7 +207,7 @@ local function ChainAlertDisplays()
 	-- point -> relativePoint: it starts AT the bar's pinned edge rather than continuing past it,
 	-- since the (zero-width) bar frame is the row's origin and not a preceding icon.
 	local prevMain
-	for _, entry in pairs(nameplateDisplays) do
+	for _, entry in pairs(activeDisplays) do
 		local defFrame = entry.Def.Frame
 		defFrame:ClearAllPoints()
 		if prevMain then
@@ -224,7 +228,7 @@ local function ChainAlertDisplays()
 	end
 
 	local prevImp
-	for _, entry in pairs(nameplateDisplays) do
+	for _, entry in pairs(activeDisplays) do
 		local impFrame = entry.Imp.Frame
 		impFrame:ClearAllPoints()
 		if prevImp then
@@ -261,7 +265,7 @@ end
 -- Limits forced by aura data being unreadable: no class-colored glow/border, and MaxIcons caps
 -- each unit's icons rather than the whole bar.
 -- (Important-vs-defensive dedup is handled by filter negation at creation.)
-local function ApplyNameplateDisplayOptions(entry, options, showBars)
+local function ApplyDisplayOptions(entry, options, showBars)
 	local includeDefensives = options.IncludeDefensives
 	local importantEnabled = options.Important and options.Important.Enabled
 	local splitBars = options.SplitBars
@@ -312,7 +316,7 @@ end
 -- the idiom for OR (they render as one continuous row). The filters themselves are partitioned
 -- by negation (see Core/AuraFilters), so a both-important-and-defensive aura is never drawn on
 -- both bars. Sizes/budgets are applied per token by
--- RefreshNameplateDisplays.
+-- RefreshDisplays.
 --
 -- Def carries an Important group too, so combined mode can render all three categories in one
 -- container with no gap. Separate containers are separate frames chained by SetPoint and the
@@ -337,7 +341,7 @@ local function CreateAlertDisplayPair()
 	-- Style is applied at creation for the same reason as the size: StyleButton bakes it into
 	-- each button, and a later restyle can't reach them while auras are secret. The tints are
 	-- only initial values - buttons read them from the group at paint time, and
-	-- ApplyNameplateDisplayOptions recolours the groups in place.
+	-- ApplyDisplayOptions recolours the groups in place.
 	local style = AlertStyle()
 	local importantColor, defensiveColor = AlertGlowColors()
 
@@ -393,7 +397,7 @@ end
 -- secret (i.e. for the whole of an arena). Deliberately narrow, since every rebuild abandons
 -- the full prewarmed frame set for good: budgets and category tints stay out because both are
 -- applied to existing pairs at runtime (SetMaxIcons and SetGroupGlowColors, in
--- ApplyNameplateDisplayOptions), so only the size and style that genuinely bake in remain.
+-- ApplyDisplayOptions), so only the size and style that genuinely bake in remain.
 ---@return string
 local function AlertPairSignature()
 	local options = db and db.Modules.AlertsModule
@@ -429,7 +433,7 @@ local function RebuildDisplayPairs()
 	for token, entry in pairs(displayPairsByToken) do
 		ResetAlertDisplayPair(entry)
 		displayPairsByToken[token] = nil
-		nameplateDisplays[token] = nil
+		activeDisplays[token] = nil
 	end
 end
 
@@ -458,15 +462,15 @@ local function PrewarmOnePair(unitToken)
 	ResetAlertDisplayPair(GetOrCreateDisplayPair(unitToken))
 end
 
--- Activates the display pair for a nameplate token, acquiring from the pool on
--- first sight. SetEnabled(false -> true) in RefreshNameplateDisplays triggers the containers'
+-- Activates the display pair for a token, acquiring from the pool on
+-- first sight. SetEnabled(false -> true) in RefreshDisplays triggers the containers'
 -- own full refresh, so a pair re-acquired for a recycled token repopulates.
-local function EnsureNameplateDisplay(unitToken)
-	local entry = nameplateDisplays[unitToken]
+local function EnsureDisplay(unitToken)
+	local entry = activeDisplays[unitToken]
 
 	if not entry then
 		entry = GetOrCreateDisplayPair(unitToken)
-		nameplateDisplays[unitToken] = entry
+		activeDisplays[unitToken] = entry
 		-- A pair keeps its anchors while parked (so neighbours chained off it stay resolvable),
 		-- which means a reacquired one still points at the row slot it last sat in. Cleared here,
 		-- at acquire, so it renders nowhere rather than somewhere stale until the queued chain
@@ -495,14 +499,14 @@ local function RebuildStaleDisplayPairs()
 	local tracked = activeTokensScratch
 	wipe(tracked)
 
-	for token in pairs(nameplateDisplays) do
+	for token in pairs(activeDisplays) do
 		tracked[#tracked + 1] = token
 	end
 
 	RebuildDisplayPairs()
 
 	for _, token in ipairs(tracked) do
-		EnsureNameplateDisplay(token)
+		EnsureDisplay(token)
 	end
 end
 
@@ -548,7 +552,7 @@ end
 ---The tokens currently being drawn; the sound registrations follow this set.
 ---@return table<string, table>
 function M:GetActiveTokens()
-	return nameplateDisplays
+	return activeDisplays
 end
 
 ---@param value boolean
@@ -561,43 +565,60 @@ function M:SetInPrepRoom(value)
 	inPrepRoom = value
 end
 
--- Parks a token's display pair when its plate goes away. The pair stays in
+-- Parks a token's display pair when the token stops being tracked. The pair stays in
 -- displayPairsByToken for the token's return; only the active map loses it. Deliberately leaves
 -- the token's sound registrations warm (see the sound module).
 ---@param unitToken string
-function M:ReleaseNameplateDisplay(unitToken)
-	local entry = nameplateDisplays[unitToken]
+function M:ReleaseDisplay(unitToken)
+	local entry = activeDisplays[unitToken]
 	if entry then
-		nameplateDisplays[unitToken] = nil
+		activeDisplays[unitToken] = nil
 		ResetAlertDisplayPair(entry)
 	end
 end
 
--- Plate tracking is stopping entirely (module off, or a zone where alerts don't run), so the
--- warm sound registrations go too.
-function M:ReleaseAllNameplateDisplays()
+-- Tracking is stopping entirely (module off, a zone where alerts don't run, or a switch of token
+-- source), so the warm sound registrations go too.
+function M:ReleaseAllDisplays()
 	sound:RemoveAllTokens()
-	for unitToken in pairs(nameplateDisplays) do
-		self:ReleaseNameplateDisplay(unitToken)
+	for unitToken in pairs(activeDisplays) do
+		self:ReleaseDisplay(unitToken)
 	end
 end
 
----Builds a parked display pair for every nameplate token, so a plate spawning mid-fight finds its
----pair ready instead of paying to build it there and then. Only called behind a loading screen:
----the whole set at once is a long frame, and that is free while nothing is being drawn. Cheap to
----repeat, since a token that already has a pair costs one table lookup.
-function M:Prewarm()
-	for index = 1, M.PrewarmTokenCount do
-		PrewarmOnePair("nameplate" .. index)
+---Builds a parked display pair for each of prefix1..count, so a token coming into play mid-fight
+---finds its pair ready instead of paying to build it there and then. Only called behind a loading
+---screen: the whole set at once is a long frame, and that is free while nothing is being drawn.
+---Cheap to repeat, since a token that already has a pair costs one table lookup.
+---@param prefix string
+---@param count number
+function M:Prewarm(prefix, count)
+	for index = 1, count do
+		PrewarmOnePair(prefix .. index)
 	end
 end
 
----Configures the pair for one token and re-chains the row. Used on plate add, where styling
----every pooled pair would add up in busy fights.
+---Re-reads one token's auras, for when the token's OCCUPANT changed rather than the token itself.
+---Arena tokens are handed to a different player between solo shuffle rounds, and the container
+---sees no change in the token string it was given, so the last round's auras would stay up.
+---@param unitToken string
+function M:RequestRefresh(unitToken)
+	local entry = activeDisplays[unitToken]
+
+	if not entry then
+		return
+	end
+
+	entry.Def:RequestRefresh()
+	entry.Imp:RequestRefresh()
+end
+
+---Configures the pair for one token and re-chains the row. Used when a single token starts
+---being tracked, where styling every pooled pair would add up in busy fights.
 ---@param unitToken string
 function M:ApplyOneAndChain(unitToken)
-	local entry = EnsureNameplateDisplay(unitToken)
-	ApplyNameplateDisplayOptions(entry, db.Modules.AlertsModule, GetAlertBarsShown())
+	local entry = EnsureDisplay(unitToken)
+	ApplyDisplayOptions(entry, db.Modules.AlertsModule, GetAlertBarsShown())
 	QueueChainAlertDisplays()
 end
 
@@ -606,14 +627,14 @@ function M:ChainDisplays()
 end
 
 -- Applies options to every pooled display pair and re-chains the rows.
-function M:RefreshNameplateDisplays()
+function M:RefreshDisplays()
 	local options = db.Modules.AlertsModule
 	local showBars = GetAlertBarsShown()
 
 	RebuildStaleDisplayPairs()
 
-	for _, entry in pairs(nameplateDisplays) do
-		ApplyNameplateDisplayOptions(entry, options, showBars)
+	for _, entry in pairs(activeDisplays) do
+		ApplyDisplayOptions(entry, options, showBars)
 	end
 
 	QueueChainAlertDisplays()
@@ -622,15 +643,15 @@ end
 ---Reconciles the active display set with the tokens that should be drawn.
 ---@param activeTokens table<string, boolean>
 function M:SyncActiveTokens(activeTokens)
-	for unitToken in pairs(nameplateDisplays) do
+	for unitToken in pairs(activeDisplays) do
 		if not activeTokens[unitToken] then
-			self:ReleaseNameplateDisplay(unitToken)
+			self:ReleaseDisplay(unitToken)
 		end
 	end
 	for unitToken in pairs(activeTokens) do
-		EnsureNameplateDisplay(unitToken)
+		EnsureDisplay(unitToken)
 	end
-	self:RefreshNameplateDisplays()
+	self:RefreshDisplays()
 end
 
 ---Blanks both bars. The real alerts live on the chained aura displays, so this only clears the

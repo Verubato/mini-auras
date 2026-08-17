@@ -19,6 +19,15 @@ addon.Modules.AlertsModule = M
 -- Read by the tests, which derive the expected registration count from it.
 M.SilentAlertSpellIds = sound.SilentAlertSpellIds
 
+-- Where the alerts read their aura data from. Arena tokens are the better source wherever they
+-- cover the whole enemy team: they stay valid while a nameplate is hidden, out of range, or
+-- behind a pillar, which is exactly when a defensive gets missed.
+local SOURCE_ARENA = "arena"
+local SOURCE_NAMEPLATE = "nameplate"
+-- The client only hands out arena1..3. A bracket with more opponents than that leaves the rest
+-- of the enemy team with no token at all, so those fall back to nameplates.
+local MAX_ARENA_TOKENS = 3
+
 ---@type Db
 local db
 local testModeActive = false
@@ -29,13 +38,58 @@ local plateGate
 -- Baselines are seeded on plate add and cleared on plate remove.
 ---@type UnitStatePollerSubscriber
 local stateSub
--- Reused enemy-token set for RebuildNameplateDisplays.
+-- Reused enemy-token set for the two rebuild paths.
 local activeTokensScratch = {}
+-- The source currently in play, or nil while the module draws nothing. Changing it re-seeds the
+-- state-poll baselines, since they belong to the tokens of whichever source is live.
+---@type string?
+local activeSource
+-- Highest opponent count this arena has reported. A high-water mark rather than the live answer
+-- because the client says zero at points in a match (before the gates open, and again once an
+-- opponent's token is released), and a source that flipped on that would tear the bars down
+-- mid-fight. Cleared on every world load.
+local arenaOpponentsSeen = 0
 
 -- Only the sound registrations care: the bars themselves stop drawing on the test-mode flag.
 ---@param value boolean
 local function SetPaused(value)
 	sound:SetPaused(value)
+end
+
+---How many opponents the client is exposing. The prep room answers through the spec list and the
+---live match through the opponent list, and neither covers both halves on its own; both are
+---feature-checked because they only exist on clients with the arena UI.
+---@return number
+local function ArenaOpponentCount()
+	local specs = (GetNumArenaOpponentSpecs and GetNumArenaOpponentSpecs()) or 0
+	local opponents = (GetNumArenaOpponents and GetNumArenaOpponents()) or 0
+
+	return specs > opponents and specs or opponents
+end
+
+local function RefreshArenaOpponentCount()
+	local count = ArenaOpponentCount()
+
+	if count > arenaOpponentsSeen then
+		arenaOpponentsSeen = count
+	end
+end
+
+---Which token set the alerts should be drawn on, or nil where they do not run at all. Arena,
+---battlegrounds, and the open world all track enemy nameplates; nowhere else does.
+---@return string?
+local function ResolveSource()
+	local inInstance, instanceType = IsInInstance()
+
+	if instanceType == "arena" and arenaOpponentsSeen > 0 and arenaOpponentsSeen <= MAX_ARENA_TOKENS then
+		return SOURCE_ARENA
+	end
+
+	if instanceType == "arena" or instanceType == "pvp" or not inInstance then
+		return SOURCE_NAMEPLATE
+	end
+
+	return nil
 end
 
 local function OnMatchStateChanged()
@@ -44,9 +98,10 @@ local function OnMatchStateChanged()
 
 	display:SetInPrepRoom(inPrepRoom)
 
-	-- Prep-room garbage handling: RefreshNameplateDisplays hides the displays while
-	-- inPrepRoom is set and re-shows them when the match starts.
-	display:RefreshNameplateDisplays()
+	-- Prep-room garbage handling: RefreshDisplays hides the displays while inPrepRoom is set and
+	-- re-shows them when the match starts. The re-show re-enables the containers, which is a full
+	-- re-read, so it also clears the last solo shuffle round off the arena tokens.
+	display:RefreshDisplays()
 
 	if not inPrepRoom then
 		return
@@ -66,7 +121,7 @@ local function OnNamePlateAdded(unitToken)
 		-- The token now belongs to a non-enemy (recycled plate or duel ending), so its warm
 		-- sound registrations are dropped along with the display.
 		sound:RemoveToken(unitToken)
-		display:ReleaseNameplateDisplay(unitToken)
+		display:ReleaseDisplay(unitToken)
 		return
 	end
 
@@ -75,15 +130,61 @@ local function OnNamePlateAdded(unitToken)
 	display:ApplyOneAndChain(unitToken)
 end
 
+-- An arena token is an opponent for the whole match, so unlike a plate there is nothing to add or
+-- remove; only a mind control takes one away. While charmed the unit is on your team and its aura
+-- list becomes the controller's own buffs, which the bars would announce and draw as alerts.
+local function OnArenaUnitChanged(unitToken)
+	if units:IsCharmed(unitToken) then
+		sound:RemoveToken(unitToken)
+		display:ReleaseDisplay(unitToken)
+		display:ChainDisplays()
+		return
+	end
+
+	display:ApplyOneAndChain(unitToken)
+end
+
+-- The poll only ever holds the live source's tokens, so the source decides which handler a flip
+-- belongs to.
+local function OnUnitStateChanged(unitToken)
+	if activeSource == SOURCE_ARENA then
+		OnArenaUnitChanged(unitToken)
+		return
+	end
+
+	OnNamePlateAdded(unitToken)
+end
+
 local function OnNamePlateRemoved(unitToken)
 	stateSub:Clear(unitToken)
 
-	display:ReleaseNameplateDisplay(unitToken)
+	display:ReleaseDisplay(unitToken)
 	display:ChainDisplays()
 end
 
-local function ClearNamePlateDisplays()
-	display:ReleaseAllNameplateDisplays()
+local function ClearDisplays()
+	display:ReleaseAllDisplays()
+end
+
+-- Binds one display pair per arena token, whether or not the opponent is currently reachable.
+-- That is the point of the source: a container on arena2 keeps reporting through a pillar or a
+-- stealth, where the plate it used to read from is simply gone.
+local function RebuildArenaDisplays()
+	local activeTokens = activeTokensScratch
+	wipe(activeTokens)
+
+	for index = 1, arenaOpponentsSeen do
+		local unitToken = SOURCE_ARENA .. index
+
+		-- Seeded for the charm half of the poll; the duel half never applies in here.
+		stateSub:Seed(unitToken)
+
+		if not units:IsCharmed(unitToken) then
+			activeTokens[unitToken] = true
+		end
+	end
+
+	display:SyncActiveTokens(activeTokens)
 end
 
 local function RebuildNameplateDisplays()
@@ -120,37 +221,42 @@ local function IsEnabled()
 	return moduleUtil:IsModuleEnabled(moduleName.Alerts)
 end
 
----Arena, battlegrounds, and the open world all track enemy nameplates; nowhere else does.
----@param isEnabled boolean
----@return boolean
-local function AreNameplatesNeeded(isEnabled)
-	local inInstance, instanceType = IsInInstance()
-
-	return isEnabled and (instanceType == "arena" or instanceType == "pvp" or not inInstance)
-end
-
+---Settles the token source and gates the events that feed it. Plate events stay unregistered
+---unless nameplates are the source; ZONE_CHANGED_NEW_AREA, PLAYER_ENTERING_WORLD, the two arena
+---opponent events, and PVP_MATCH_STATE_CHANGED stay registered as they drive this gate.
 ---@param active boolean
-local function SetEventsActive(active)
-	-- Plate events stay unregistered while inactive; ZONE_CHANGED_NEW_AREA and
-	-- PVP_MATCH_STATE_CHANGED stay registered as they drive this gate.
-	local nameplatesNeeded = AreNameplatesNeeded(active)
+local function SettleSource(active)
+	local source = active and ResolveSource() or nil
+
+	if source ~= activeSource then
+		-- Everything the old source left behind goes with it. The poll baselines belong to its
+		-- tokens, and so do the engine sound registrations, which are otherwise deliberately kept
+		-- warm across a token coming and going - releasing a display does not touch them. Left
+		-- alone in an arena they would announce the same opponent twice, once through the plate
+		-- token it used to be tracked on and once through its arena token.
+		stateSub:ClearAll()
+		display:ReleaseAllDisplays()
+		activeSource = source
+	end
 
 	if plateGate then
-		plateGate:SetActive(nameplatesNeeded)
+		plateGate:SetActive(source == SOURCE_NAMEPLATE)
 	end
 end
 
 local function Teardown()
-	display:ReleaseAllNameplateDisplays()
+	display:ReleaseAllDisplays()
 	sound:RemoveAllySounds()
 	display:ClearBars()
 end
 
 local function EnsureFrames()
-	if AreNameplatesNeeded(true) then
+	if activeSource == SOURCE_ARENA then
+		RebuildArenaDisplays()
+	elseif activeSource == SOURCE_NAMEPLATE then
 		RebuildNameplateDisplays()
 	else
-		ClearNamePlateDisplays()
+		ClearDisplays()
 	end
 end
 
@@ -160,7 +266,7 @@ local function ApplyOptions(options)
 end
 
 local function UpdateContent()
-	display:RefreshNameplateDisplays()
+	display:RefreshDisplays()
 	sound:Refresh(display:GetActiveTokens())
 
 	if testModeActive then
@@ -183,46 +289,101 @@ local function SetTestMode(active)
 	M:Refresh()
 end
 
+-- A new world knows nothing about the last one's bracket, so the high-water mark starts over.
+-- Deliberately not on ZONE_CHANGED_NEW_AREA: that fires on subzone moves inside an arena, and
+-- clearing the mark there would put the module back on nameplates for any moment the client
+-- answers zero.
+local function OnEnteringWorld()
+	arenaOpponentsSeen = 0
+	M:Refresh()
+end
+
+-- The opponent count decides the source, so learning it can move the whole module from
+-- nameplates to arena tokens; only then is the full refresh worth it. The count climbing while
+-- the arena source is already in play just binds the tokens that were missing.
+local function ReconcileArenaSource()
+	local previousSource = activeSource
+	local previousCount = arenaOpponentsSeen
+
+	RefreshArenaOpponentCount()
+
+	if not IsEnabled() then
+		return
+	end
+
+	if ResolveSource() ~= previousSource then
+		M:Refresh()
+	elseif previousSource == SOURCE_ARENA and arenaOpponentsSeen ~= previousCount then
+		RebuildArenaDisplays()
+	end
+end
+
+-- Solo shuffle rotates the teams between rounds: the same six players, re-dealt, so arena1 is
+-- handed to somebody else while the token string stays put. The container sees no change in that
+-- and would keep drawing the last round's auras, so each token is asked to re-read. The roster
+-- moves with the teams and is the quietest signal that says so.
+local function OnRosterChanged()
+	sound:RefreshAllySounds(true)
+
+	-- Also the last chance to settle the source. A reload mid-match misses the prep specs and the
+	-- gates opening alike, and this is the only other thing that fires in an arena, so without it
+	-- a reloaded match would stay on nameplates to the end.
+	ReconcileArenaSource()
+
+	if activeSource ~= SOURCE_ARENA then
+		return
+	end
+
+	for index = 1, arenaOpponentsSeen do
+		display:RequestRefresh(SOURCE_ARENA .. index)
+	end
+end
+
 local function CreateEvents()
 	local eventsFrame = CreateFrame("Frame")
-	-- The plate events are gated by Refresh; PVP_MATCH_STATE_CHANGED and
-	-- ZONE_CHANGED_NEW_AREA drive that gate so they stay always-registered.
+	-- The plate events are gated by Refresh; PVP_MATCH_STATE_CHANGED, the zone events, and the
+	-- prep specs drive that gate so they stay always-registered. Deliberately not
+	-- ARENA_OPPONENT_UPDATE: it fires every time an opponent walks in or out of sight, which is
+	-- constant, and none of that tells the module anything the prep room has not already said.
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
 	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	eventsFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
 	-- The enemy-debuff announcements sit on the party tokens, so they follow the roster
-	-- rather than the nameplates. Always registered, like the two gate drivers above: the
+	-- rather than the nameplates. Always registered, like the gate drivers above: the
 	-- handler only reconciles those registrations, which is far cheaper than a full Refresh
 	-- on every roster event in a battleground.
 	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-	plateGate = eventGate:New(eventsFrame, { "NAME_PLATE_UNIT_ADDED", "NAME_PLATE_UNIT_REMOVED" }, {
-		-- Plate events maintain the state baselines; drop them so reactivation reseeds
-		-- via RebuildNameplateDisplays instead of trusting stale tokens.
-		OnDeactivate = function()
-			stateSub:ClearAll()
-		end,
-	})
+	plateGate = eventGate:New(eventsFrame, { "NAME_PLATE_UNIT_ADDED", "NAME_PLATE_UNIT_REMOVED" })
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
 		if event == "PVP_MATCH_STATE_CHANGED" then
 			OnMatchStateChanged()
+			-- The gates opening is when the live opponent list starts answering, so it is the
+			-- second chance to settle the source after the prep specs.
+			ReconcileArenaSource()
 		elseif event == "NAME_PLATE_UNIT_ADDED" then
-			if IsEnabled() and AreNameplatesNeeded(true) then
+			if IsEnabled() and activeSource == SOURCE_NAMEPLATE then
 				OnNamePlateAdded(unitToken)
 			end
 		elseif event == "NAME_PLATE_UNIT_REMOVED" then
 			OnNamePlateRemoved(unitToken)
+		elseif event == "PLAYER_ENTERING_WORLD" then
+			OnEnteringWorld()
 		elseif event == "ZONE_CHANGED_NEW_AREA" then
 			M:Refresh()
+		elseif event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS" then
+			ReconcileArenaSource()
 		elseif event == "GROUP_ROSTER_UPDATE" then
-			sound:RefreshAllySounds(true)
+			OnRosterChanged()
 		end
 	end)
 
 	-- A duel opponent starts as an untracked friendly plate; when the duel begins the flip
 	-- routes through OnNamePlateAdded to build its displays and sound registrations, and when
-	-- it ends the same call releases them.
+	-- it ends the same call releases them. On arena tokens the same poll catches a mind control.
 	stateSub = unitStatePoller:Register(function()
 		return moduleUtil:IsModuleEnabled(moduleName.Alerts)
-	end, OnNamePlateAdded)
+	end, OnUnitStateChanged)
 end
 
 local function ApplyInitialState()
@@ -246,7 +407,9 @@ function M:Refresh()
 
 	local isEnabled = IsEnabled()
 
-	SetEventsActive(isEnabled)
+	-- Ahead of the gate, which reads the count to pick between arena tokens and nameplates.
+	RefreshArenaOpponentCount()
+	SettleSource(isEnabled)
 
 	if not isEnabled then
 		Teardown()
@@ -260,16 +423,27 @@ function M:Refresh()
 
 	-- Only behind a loading screen. Building every token's pair is a long frame, which costs
 	-- nothing while nothing is being drawn and would be a visible hitch at any other time.
-	-- Outside one, plates build their own on first sight as they always did.
+	-- Outside one, tokens build their own on first sight as they always did.
 	--
-	-- And only where plates are tracked at all: in a dungeon or raid the plate events are
+	-- And only where the module tracks anything at all: in a dungeon or raid its events are
 	-- unregistered, so a set built on the way in is forty pairs of frames that content can never
 	-- use, and frames cannot be given back.
 	--
+	-- An arena prepares the whole arena token set rather than the count it knows, because behind
+	-- the loading screen it knows none: the opponents have not loaded in and the source has not
+	-- been settled yet. Three pairs covers every bracket those tokens serve, and a bracket too
+	-- big for them falls back to nameplates and builds their pairs on first sight.
+	--
 	-- After UpdateContent, which is what rebuilds the pairs when the look baked into their buttons
 	-- has changed: prewarming before it would build a set this refresh then throws away.
-	if addon:IsLoadingScreenUp() and AreNameplatesNeeded(isEnabled) then
-		display:Prewarm()
+	if addon:IsLoadingScreenUp() then
+		local _, instanceType = IsInInstance()
+
+		if instanceType == "arena" then
+			display:Prewarm(SOURCE_ARENA, MAX_ARENA_TOKENS)
+		elseif activeSource == SOURCE_NAMEPLATE then
+			display:Prewarm(SOURCE_NAMEPLATE, display.PrewarmTokenCount)
+		end
 	end
 
 	-- Owned here rather than by the test-mode toggle, so flipping the module switch while a

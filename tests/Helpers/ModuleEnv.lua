@@ -524,6 +524,12 @@ function M.build()
 		end
 		return count
 	end
+	-- What the client reports once the gates are open, which is a different list from the prep
+	-- specs above: the alerts module picks its token source from whichever answers.
+	env.arenaOpponents = 0
+	_G.GetNumArenaOpponents = function()
+		return env.arenaOpponents
+	end
 	addon.Core.InspectorFacade = {
 		GetUnitSpecId = function(_, unit)
 			return env.arenaSpecs[unit]
