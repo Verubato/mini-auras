@@ -3,6 +3,7 @@
 ## 5.17.0
 
 - Added a Font option in the miscellaneous settings, setting the font for every piece of text the addon draws. The list comes from LibSharedMedia, so any font your media addons offer is there.
+- Added Colossus Smash to the enemy debuff announcements, spoken as just "Smash".
 
 ## 5.16.1
 

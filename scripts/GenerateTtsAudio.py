@@ -80,6 +80,7 @@ SHORT_NAMES = {
     "Blessing of Spellwarding": "Spellwarding",
     "Celestial Alignment": "Incarn",
     "Cloak of Shadows": "Cloak",
+    "Colossus Smash": "Smash",
     "Die by the Sword": "Parry",
     "Divine Protection": "Wall",
     "Divine Shield": "Bubble",

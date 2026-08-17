@@ -1140,6 +1140,7 @@ addon.Core.AuraCategoryIds = {
 	-- One id per ability, not every variant the name index knows: two variants landing together
 	-- would speak the name twice.
 	EnemyDebuff = {
+		[167105] = true, -- Colossus Smash
 		[360194] = true, -- Deathmark
 		[385627] = true, -- Kingsbane
 		[222509] = true, -- Feral Frenzy
