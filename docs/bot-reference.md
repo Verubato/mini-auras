@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.17.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.18.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -622,7 +622,9 @@ Master).
 pack** dropdown, a **Channel** dropdown (Master/SFX/Music/Ambience/Dialog), and three
 per-category announce toggles, **Important**, **Defensive** and **Enemy Debuffs** (all off by
 default; Enemy Debuffs covers big enemy cooldowns that land on you or your party rather than
-on the caster). Eight packs ship: Amy, Anna Su, David, Elise, Emma, Grampa Werthers, Jason
+on the caster). Five spells ship in that category: Deathmark, Kingsbane, Feral Frenzy,
+Bloodshed, and, since 5.18.0, Colossus Smash, which the English packs announce as just
+"Smash". Eight packs ship: Amy, Anna Su, David, Elise, Emma, Grampa Werthers, Jason
 Chen, Theo Silk. Amy, Anna Su and Jason Chen are Mandarin voices offered only on zhCN/zhTW
 clients. Default pack: David. Other addons can register packs via the API. The clips are baked
 OGG files registered engine-side per spell ID; after updating the addon a full client restart
@@ -857,7 +859,10 @@ Enable in (defaults): Dungeons on; World, Arena, Battlegrounds, Raid off.
 | Bar Padding | 0-20 | 2 |
 | Max Bars | 1-10 | 5 |
 
-Default position: 620 px left and 160 px above screen centre.
+Default position: 620 px left and 160 px above screen centre. Since 5.18.0 the saved
+position pins the edge the rows grow away from (the top edge growing down, the bottom edge
+growing up), so the list lengthens away from where it was dropped. Older saved positions are
+migrated, so nothing moves on upgrade.
 
 With "Show self" on, your own interrupt is drawn as the pinned row only, never also as a
 history row below it. The tracker cannot ask who kicked (the interrupter is hidden), so it
