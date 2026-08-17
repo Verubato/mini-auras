@@ -23,6 +23,18 @@ local tracked = {}
 -- one frame per cycle, for the whole session.
 ---@type table<string, table>
 local eventFrames = {}
+-- The inferred ally kick, snapshotted: the party's interrupt set only moves on roster and spec
+-- changes, while one mob's interrupt fires once per token watching it, and a spec lookup can
+-- fall through to a tooltip scan. Spec answers can also improve through channels with no event
+-- at all (another addon's inspector), so the snapshot expires on its own as a backstop.
+local ALLY_KICK_SNAPSHOT_TTL = 30
+-- One timestamp carries the staleness: minus infinity forces a rebuild, so the event
+-- invalidations and the TTL expiry funnel through the same gate.
+local allyKickBuiltAt = -math.huge
+local allyKickTexture = KICK_ICON
+local allyKickDuration = DEFAULT_KICK_DURATION
+-- The spec-change callback can only be hooked up lazily: the Inspector loads after this file.
+local specCallbackRegistered = false
 
 ---@class KickTracker
 local M = {}
@@ -45,25 +57,50 @@ end
 -- When the local player did not cast the interrupt, infer which ally kicked.
 -- Returns texture, duration. Falls back to the generic rogue icon when ambiguous.
 local function InferAllyKick()
-	local candidates = {}
+	if GetTimePreciseSec() - allyKickBuiltAt < ALLY_KICK_SNAPSHOT_TTL then
+		return allyKickTexture, allyKickDuration
+	end
+
+	if not specCallbackRegistered then
+		local inspector = addon.Core.Inspector
+		if inspector then
+			specCallbackRegistered = true
+			inspector:RegisterCallback(function()
+				allyKickBuiltAt = -math.huge
+			end)
+		end
+	end
+
+	allyKickBuiltAt = GetTimePreciseSec()
+	allyKickTexture = KICK_ICON
+	allyKickDuration = DEFAULT_KICK_DURATION
+
+	local onlySpellId
+	local candidateCount = 0
 	for i = 1, 4 do
 		local unit = "party" .. i
 		if UnitExists(unit) then
 			local spellId = GetAllyInterruptSpellId(unit)
 			if spellId then
-				candidates[#candidates + 1] = spellId
+				candidateCount = candidateCount + 1
+				onlySpellId = spellId
 			end
 		end
 	end
 
-	if #candidates == 1 then
-		local spellId = candidates[1]
-		local texture = C_Spell.GetSpellTexture(spellId) or KICK_ICON
-		local duration = kickData.SpellLockoutDuration[spellId] or DEFAULT_KICK_DURATION
-		return texture, duration
+	if candidateCount == 1 then
+		local texture = C_Spell.GetSpellTexture(onlySpellId)
+
+		-- Spell art can lag the login; stay stale so the next ask retries the lookup.
+		if not texture then
+			allyKickBuiltAt = -math.huge
+		end
+
+		allyKickTexture = texture or KICK_ICON
+		allyKickDuration = kickData.SpellLockoutDuration[onlySpellId] or DEFAULT_KICK_DURATION
 	end
 
-	return KICK_ICON, DEFAULT_KICK_DURATION
+	return allyKickTexture, allyKickDuration
 end
 
 local function FireCallbacks(data)
@@ -295,10 +332,18 @@ function M:Unsubscribe(unitToken, key)
 end
 
 -- Track when the local player successfully casts an interrupt spell so we can replace the default
--- rogue-kick icon with the player's actual spell icon and lockout duration.
+-- rogue-kick icon with the player's actual spell icon and lockout duration. The same frame hears
+-- the roster and spec events that stale the inferred-ally-kick snapshot.
 local playerKickFrame = CreateFrame("Frame") -- luaconv: its handler calls functions defined above
 playerKickFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
-playerKickFrame:SetScript("OnEvent", function(_, _, _, _, spellId)
+playerKickFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+playerKickFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+playerKickFrame:SetScript("OnEvent", function(_, event, _, _, spellId)
+	if event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_SPECIALIZATION_CHANGED" then
+		allyKickBuiltAt = -math.huge
+		return
+	end
+
 	local duration = kickData.SpellLockoutDuration[spellId]
 	if not duration then
 		return
