@@ -1143,7 +1143,7 @@ addon.Core.AuraCategoryIds = {
 		[167105] = true, -- Colossus Smash
 		[360194] = true, -- Deathmark
 		[385627] = true, -- Kingsbane
-		[222509] = true, -- Feral Frenzy
+		[274837] = true, -- Feral Frenzy
 		[321538] = true, -- Bloodshed
 	},
 
