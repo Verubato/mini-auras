@@ -43,17 +43,17 @@ Core\EventGate.lua
 Core\UnitStatePoller.lua
 Core\LegacyAddon.lua
 
-Core\Display\Fonts.lua
-Core\Display\Sweep.lua
-Core\Display\Pool.lua
+Core\Display\Media\Fonts.lua
+Core\Sweep.lua
+Core\Pool.lua
 Core\Display\GrowAnchors.lua
-Core\Display\GlowStyles.lua
+Core\Display\Media\GlowStyles.lua
 Core\Display\Outline.lua
 Core\Display\IconSlotContainer.lua
-Core\Display\BarTextures.lua
+Core\Display\Media\BarTextures.lua
 Core\Display\BarSlotContainer.lua
-Core\Display\ArtTextureData.lua
-Core\Display\ArtTextures.lua
+Core\Display\Media\ArtTextureData.lua
+Core\Display\Media\ArtTextures.lua
 Core\Display\TextureSlotContainer.lua
 
 Core\Auras\AuraCategoryIds.lua

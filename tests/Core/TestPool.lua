@@ -10,8 +10,8 @@ tickerMock.Install()
 
 local addon = { Core = {} }
 -- Sweep first: Pool imports it at file scope, exactly like the TOC orders them.
-assert(loadfile("src/Core/Display/Sweep.lua"))("MiniAuras", addon)
-assert(loadfile("src/Core/Display/Pool.lua"))("MiniAuras", addon)
+assert(loadfile("src/Core/Sweep.lua"))("MiniAuras", addon)
+assert(loadfile("src/Core/Pool.lua"))("MiniAuras", addon)
 local pool = addon.Core.Pool
 local sweep = addon.Core.Sweep
 

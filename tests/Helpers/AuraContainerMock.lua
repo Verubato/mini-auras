@@ -814,18 +814,18 @@ function M.loadDisplay()
 	for _, path in ipairs({
 		-- Must precede AuraContainerDisplay: every button's icon is cropped through it.
 		"src/Utils/IconUtil.lua",
-		"src/Core/Display/Sweep.lua",
-		"src/Core/Display/Pool.lua",
+		"src/Core/Sweep.lua",
+		"src/Core/Pool.lua",
 		"src/Core/Display/GrowAnchors.lua",
 		-- Must precede AuraContainerDisplay: the glow catalog is read at its load.
-		"src/Core/Display/GlowStyles.lua",
+		"src/Core/Display/Media/GlowStyles.lua",
 		"src/Core/Display/Outline.lua",
 		-- Must precede AuraFilters: its spell-ID maps are built from these lists at load.
 		"src/Core/Auras/AuraCategoryIds.lua",
 		"src/Core/Auras/AuraFilters.lua",
 		"src/Core/Kicks/KickSlot.lua",
 		-- Must precede AuraContainerDisplay: bar buttons resolve their fill through the catalog.
-		"src/Core/Display/BarTextures.lua",
+		"src/Core/Display/Media/BarTextures.lua",
 		-- Must precede AuraContainerDisplay: it captures the countdown factory at file scope.
 		"src/Core/Auras/AuraCountdownText.lua",
 		"src/Core/Auras/AuraMasque.lua",

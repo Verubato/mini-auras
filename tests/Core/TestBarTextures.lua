@@ -73,7 +73,7 @@ end
 -- ModuleUtil comes along for Coalesced, which the media subscription defers its fan-out through.
 local addon = { Core = {}, Utils = {} }
 assert(loadfile("src/Utils/ModuleUtil.lua"))("MiniAuras", addon)
-assert(loadfile("src/Core/Display/BarTextures.lua"))("MiniAuras", addon)
+assert(loadfile("src/Core/Display/Media/BarTextures.lua"))("MiniAuras", addon)
 local barTextures = addon.Core.BarTextures
 
 local BUILT_IN_COUNT = 4

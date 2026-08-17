@@ -6,8 +6,8 @@
 local fw = require("Framework")
 
 local addon = { Core = {}, Utils = {} }
-assert(loadfile("src/Core/Display/ArtTextureData.lua"))("MiniAuras", addon)
-assert(loadfile("src/Core/Display/ArtTextures.lua"))("MiniAuras", addon)
+assert(loadfile("src/Core/Display/Media/ArtTextureData.lua"))("MiniAuras", addon)
+assert(loadfile("src/Core/Display/Media/ArtTextures.lua"))("MiniAuras", addon)
 local artTextures = addon.Core.ArtTextures
 
 -- One of the game's proc overlays, by the file id it has carried since it was added.

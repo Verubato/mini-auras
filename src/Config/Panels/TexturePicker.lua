@@ -5,7 +5,7 @@ local L = addon.L
 local config = addon.Config
 local artTextures = addon.Core.ArtTextures
 
--- The texture browser, over the art in Core/Display/ArtTextures: the addon's own shapes first,
+-- The texture browser, over the art in Core/Display/Media/ArtTextures: the addon's own shapes first,
 -- then the game's proc art. The grid is virtual like the icon one, a page of cells re-pointed at
 -- a slice of the list as it scrolls, with a search box narrowing which list that is.
 --

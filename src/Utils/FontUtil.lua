@@ -20,7 +20,7 @@ local LOCALE_ALPHABETS = {
 }
 
 -- The file the configured face resolves to, remembered between calls: every icon asks for it on
--- every refresh and the answer only moves when the media list does. Core/Display/Fonts loads
+-- every refresh and the answer only moves when the media list does. Core/Display/Media/Fonts loads
 -- after this file, so it is reached through the addon table rather than an upvalue.
 local cachedName
 local cachedFile

@@ -9,7 +9,7 @@ local tickerMock = require("TickerMock")
 tickerMock.Install()
 
 local addon = { Core = {} }
-assert(loadfile("src/Core/Display/Sweep.lua"))("MiniAuras", addon)
+assert(loadfile("src/Core/Sweep.lua"))("MiniAuras", addon)
 local sweep = addon.Core.Sweep
 
 local function Items(count)

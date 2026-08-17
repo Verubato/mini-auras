@@ -39,7 +39,7 @@ _G.UnitIsUnit = function(a, b)
 end
 
 env.loadModule("src/Core/Kicks/KickData.lua")
-env.loadModule("src/Core/Display/BarTextures.lua")
+env.loadModule("src/Core/Display/Media/BarTextures.lua")
 env.loadModule("src/Modules/AllyKickTracker/Observer.lua")
 env.loadModule("src/Modules/AllyKickTracker/Display.lua")
 env.loadModule("src/Modules/AllyKickTracker/Module.lua")

@@ -7,7 +7,7 @@ local fw = require("Framework")
 local ADDON_NAME = "MiniAuras"
 
 local addon = { Core = {} }
-assert(loadfile("src/Core/Display/GlowStyles.lua"))(ADDON_NAME, addon)
+assert(loadfile("src/Core/Display/Media/GlowStyles.lua"))(ADDON_NAME, addon)
 local glowStyles = addon.Core.GlowStyles
 
 ---A glow frame as ApplySpec sees it: it only ever touches these three children.

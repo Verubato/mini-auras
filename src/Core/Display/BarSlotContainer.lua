@@ -418,7 +418,7 @@ end
 ---@field TextColor table? {r, g, b} for the name and countdown text; white leaves them as they come.
 ---@field Border boolean? Draw a border around the bar.
 ---@field FontScale number? Multiplier on both text sizes.
----@field BarTexture string? Fill texture name, resolved through Core/Display/BarTextures.
+---@field BarTexture string? Fill texture name, resolved through Core/Display/Media/BarTextures.
 
 ---@class BarSlotContainer
 ---@field Frame table

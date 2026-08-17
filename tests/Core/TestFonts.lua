@@ -98,7 +98,7 @@ local addon = {
 
 assert(loadfile("src/Utils/ModuleUtil.lua"))("MiniAuras", addon)
 assert(loadfile("src/Utils/FontUtil.lua"))("MiniAuras", addon)
-assert(loadfile("src/Core/Display/Fonts.lua"))("MiniAuras", addon)
+assert(loadfile("src/Core/Display/Media/Fonts.lua"))("MiniAuras", addon)
 
 local fonts = addon.Core.Fonts
 local fontUtil = addon.Utils.FontUtil

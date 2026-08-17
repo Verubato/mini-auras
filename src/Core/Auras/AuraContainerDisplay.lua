@@ -13,7 +13,7 @@ local auraCountdownText = addon.Core.AuraCountdownText
 local auraMasque = addon.Core.AuraMasque
 local auraButtonPaint = addon.Core.AuraButtonPaint
 
--- Only the texture-based styles from the shared catalog (Core/Display/GlowStyles) render here:
+-- Only the texture-based styles from the shared catalog (Core/Display/Media/GlowStyles) render here:
 -- LibCustomGlow can't attach to AuraButtons (it re-parents pooled frames onto the target, and
 -- 12.1 disallows SetParent onto AuraButtons). Anything else configured falls back to this.
 local DEFAULT_GLOW_STYLE = glowStyles.DefaultName
@@ -2091,7 +2091,7 @@ end
 ---Bar displays only; inert on an icon display.
 ---@field BarWidth number? Width of each bar in pixels (default 150). The bar's height is the
 ---display's size, so one setter covers both shapes.
----@field BarTexture string? Bar fill texture name, resolved through Core/Display/BarTextures.
+---@field BarTexture string? Bar fill texture name, resolved through Core/Display/Media/BarTextures.
 ---@field SpellName boolean? Show the engine-written aura name inside the fill (default on).
 ---Texture displays only; inert on every other shape.
 ---@field TextureAsset string|number? File id (or path) of the art each button draws. Empty
