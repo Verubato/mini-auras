@@ -89,6 +89,17 @@ local function Poll()
 		end
 	end
 
+	-- Nothing for an active subscriber to watch: stop until a Seed brings work back. Every module
+	-- seeds on its own enable path, so becoming active is always announced here.
+	if unionCount == 0 then
+		if ticker then
+			ticker:Cancel()
+			ticker = nil
+		end
+
+		return
+	end
+
 	local flippedCount = 0
 
 	for index = 1, unionCount do
@@ -133,6 +144,12 @@ local function Poll()
 	end
 end
 
+local function StartTicker()
+	if not ticker then
+		ticker = C_Timer.NewTicker(POLL_INTERVAL, Poll)
+	end
+end
+
 ---Adds a token to this subscriber's watch set, returning its enemy status. The shared baseline is
 ---taken only when the caller is the token's sole watcher: re-seeding one another subscriber also
 ---watches would reset a change that subscriber has not been told about yet, and a swallowed flip
@@ -146,6 +163,10 @@ function Subscriber:Seed(unitToken)
 		self.Tokens[unitToken] = true
 		tokenRefs[unitToken] = (tokenRefs[unitToken] or 0) + 1
 	end
+
+	-- The poll stops itself once no active subscriber watches anything, so seeding is what wakes
+	-- it back up. Cheap enough to do unconditionally on a path this hot.
+	StartTicker()
 
 	if tokenRefs[unitToken] == 1 then
 		enemyState[unitToken] = isEnemy
@@ -176,7 +197,8 @@ end
 
 ---Registers a poll subscriber. IsActive gates the subscriber's whole membership (typically the
 ---module-enabled check); OnFlip runs after the token's baseline has been updated. The shared
----ticker starts on the first registration.
+---ticker only runs while an active subscriber actually watches a token, so registering alone
+---costs nothing until the first Seed.
 ---@param isActive fun(): boolean
 ---@param onFlip fun(unitToken: string)
 ---@return UnitStatePollerSubscriber
@@ -187,10 +209,6 @@ function M:Register(isActive, onFlip)
 		Tokens = {},
 	}, Subscriber)
 	subscribers[#subscribers + 1] = subscriber
-
-	if not ticker then
-		ticker = C_Timer.NewTicker(POLL_INTERVAL, Poll)
-	end
 
 	return subscriber
 end
