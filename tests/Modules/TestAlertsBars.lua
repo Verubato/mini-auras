@@ -331,8 +331,13 @@ end)
 
 -- The border is the whole point of the category tints once the glow is off: the two are coloured
 -- from the same pick, so switching the glow off must not take the colouring with it.
+--
+-- Class colouring is off throughout: it replaces the category tints outright, and these are the
+-- tests that pin the category path. TestAlertsClassColors covers the other one.
 fw.describe("AlertsModule 12.1 - the border and the glow", function()
 	local display = env.addon.Modules.Alerts.Display
+
+	alerts.Icons.ClassColors = false
 
 	---The border textures on the main bar's used slots, and the glow keys beside them.
 	local function previewLook()

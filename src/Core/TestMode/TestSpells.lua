@@ -66,18 +66,25 @@ M.Nameplates = {
 	},
 }
 
----The alert bars colour by category rather than by class: UnitClass is secret, so a real bar
----could never match a class colour and the preview must not promise one.
+---The alert bars colour by category, or by the owner's class when that option is on. Class is
+---carried per spell so the preview can show the second mode honestly: a real bar gives every icon
+---on one enemy the same colour, and these spells are picked so the row reads that way - the mage's
+---Ice Block and Combustion match, and so do the priest's Guardian Spirit and Precognition.
+---
+---Precognition is a PvP talent rather than a class spell, so the class here is only the one
+---standing in for it. It has to be a class that can actually take the talent, which rules the
+---rogue out; the priest also owns a defensive above, so the pair shows one enemy across both
+---categories.
 M.Alerts = {
 	Defensive = {
-		{ SpellId = 47788 },  -- Guardian Spirit
-		{ SpellId = 45438 },  -- Ice Block
-		{ SpellId = 104773 }, -- Unending Resolve
+		{ SpellId = 47788,  Class = "PRIEST" },  -- Guardian Spirit
+		{ SpellId = 45438,  Class = "MAGE" },    -- Ice Block
+		{ SpellId = 104773, Class = "WARLOCK" }, -- Unending Resolve
 	},
 	Important = {
-		190319, -- Combustion
-		121471, -- Shadow Blades
-		377362, -- Precognition
+		{ SpellId = 190319, Class = "MAGE" },   -- Combustion
+		{ SpellId = 121471, Class = "ROGUE" },  -- Shadow Blades
+		{ SpellId = 377362, Class = "PRIEST" }, -- Precognition
 	},
 }
 

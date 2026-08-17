@@ -956,6 +956,62 @@ fw.describe("Migrator - individual migrations", function()
 		assert(vars.Version == 69)
 	end)
 
+	fw.it("v70 switches class colours on only where the category tints were untouched", function()
+		-- Class colouring throws the category scheme away, so someone who picked their own
+		-- important and defensive colours keeps what they chose. Only the off case is written:
+		-- leaving it nil is what lets the defaults fill it in as on.
+		local function Icons(important, defensive)
+			return { Icons = { ImportantColor = important, DefensiveColor = defensive } }
+		end
+
+		local shippedImportant = { R = 1, G = 0.2, B = 0.2, A = 1 }
+		local shippedDefensive = { R = 0.2, G = 1, B = 0.2, A = 1 }
+
+		local vars = {
+			Version = 69,
+			Modules = { AlertsModule = Icons(shippedImportant, shippedDefensive) },
+			Profiles = {
+				Custom = {
+					Modules = { AlertsModule = Icons({ R = 0.9, G = 0.1, B = 0.8, A = 1 }, shippedDefensive) },
+				},
+				Bare = { Modules = { AlertsModule = { Icons = {} } } },
+				OneCustom = {
+					Modules = { AlertsModule = Icons(shippedImportant, { R = 0, G = 0, B = 1, A = 1 }) },
+				},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion70(vars) == true)
+
+		assert(vars.Modules.AlertsModule.Icons.ClassColors == nil,
+			"the shipped colours are left for the defaults to switch on")
+		assert(vars.Profiles.Custom.Modules.AlertsModule.Icons.ClassColors == false,
+			"a custom important colour keeps its own scheme")
+		assert(vars.Profiles.OneCustom.Modules.AlertsModule.Icons.ClassColors == false,
+			"one custom colour out of the two is enough")
+		assert(vars.Profiles.Bare.Modules.AlertsModule.Icons.ClassColors == nil,
+			"a profile that never had the colours is running the shipped ones")
+		assert(vars.Version == 70)
+	end)
+
+	fw.it("v70 leaves a choice that was already made alone", function()
+		local vars = {
+			Version = 69,
+			Modules = {
+				AlertsModule = {
+					Icons = {
+						ClassColors = false,
+						ImportantColor = { R = 1, G = 0.2, B = 0.2, A = 1 },
+						DefensiveColor = { R = 0.2, G = 1, B = 0.2, A = 1 },
+					},
+				},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion70(vars) == true)
+		assert(vars.Modules.AlertsModule.Icons.ClassColors == false, "an existing answer wins")
+	end)
+
 	fw.it("v57 leaves kicks alone when the CC module is disabled everywhere", function()
 		local vars = {
 			Version = 56,

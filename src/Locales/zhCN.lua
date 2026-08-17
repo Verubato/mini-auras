@@ -198,6 +198,8 @@ L:RegisterLocale("zhCN", function() return {
 	["Includes defensives in the alerts."] = "在警报中包括防御技能。",
 	["Play a sound when a defensive spell is pressed."] = "使用防御法术时播放声音。",
 	["Show alert icons in the alerts region."] = "在警报区域显示警报图标。",
+	["Class colours"] = "职业颜色",
+	["Colour every icon by its owner's class instead of by category. Arena opponents are coloured from their specialisation; battlegrounds keep the category colours, because the game will not name a class in there."] = "按图标所有者的职业着色，而不是按类别。竞技场对手根据其专精着色；战场中保留类别颜色，因为游戏在战场中不会提供职业信息。",
 	["Show CC icons when healer is CC'd."] = "治疗者被控制时显示CC图标。",
 	["Show icons"] = "显示图标",
 	["Split bars"] = "拆分条",

@@ -198,6 +198,8 @@ L:RegisterLocale("esES", function() return {
 	["Includes defensives in the alerts."] = "Incluye habilidades defensivas en las alertas.",
 	["Play a sound when a defensive spell is pressed."] = "Reproducir un sonido cuando se lance un hechizo defensivo.",
 	["Show alert icons in the alerts region."] = "Mostrar iconos de alerta en la región de alertas.",
+	["Class colours"] = "Color de clase",
+	["Colour every icon by its owner's class instead of by category. Arena opponents are coloured from their specialisation; battlegrounds keep the category colours, because the game will not name a class in there."] = "Colorea cada icono según la clase de su portador en lugar de por categoría. Los rivales de arena se colorean a partir de su especialización; en los campos de batalla se mantienen los colores por categoría, porque ahí el juego no revela la clase.",
 	["Show CC icons when healer is CC'd."] = "Mostrar iconos de CC cuando el sanador esté bajo control.",
 	["Show icons"] = "Mostrar iconos",
 	["Split bars"] = "Dividir barras",

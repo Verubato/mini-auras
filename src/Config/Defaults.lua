@@ -4,7 +4,7 @@ local _, addon = ...
 ---@class Db
 ---@field SpecCache table<string, {SpecId: number?, LastSeen: number?, LastAttempt: number?}>
 local dbDefaults = {
-	Version = 69,
+	Version = 70,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -291,7 +291,11 @@ local dbDefaults = {
 				Enabled = true,
 				Size = 50,
 				Glow = true,
-				-- Per-category glow tints. Class colouring is not an option: UnitClass is secret.
+				-- Colours every icon by the owner's class instead of by category. The unit's own
+				-- class is secret in here, so the colour comes from an arena opponent's spec,
+				-- which is not; outside an arena the class is readable as it always was.
+				ClassColors = true,
+				-- Per-category glow tints, used when the above is off.
 				ImportantColor = { R = 1, G = 0.2, B = 0.2, A = 1 },
 				DefensiveColor = { R = 0.2, G = 1, B = 0.2, A = 1 },
 				-- A ring in the same category colour as the glow, so the glow can be switched off

@@ -78,6 +78,55 @@ local function removePlate(token)
 	env.enemies[token] = nil
 end
 
+-- Runs FIRST, and has to: a display pair is kept for the rest of the session once built, so a
+-- later test entering an arena would leave the arena pairs standing and "nothing was built yet"
+-- could never fail.
+fw.describe("AlertsModule - when the arena pairs get built", function()
+	local alertsDisplay = env.addon.Modules.Alerts.Display
+
+	fw.it("builds none of them behind the loading screen", function()
+		-- A button takes its look once, in initializeFrame, and inside an arena
+		-- C_Secrets.ShouldAurasBeSecret never clears - so no restyle ever gets to correct it.
+		-- Building a pair before the client will say who it is tracking spends that one chance
+		-- on an unknown opponent.
+		local prewarmed = {}
+		local realPrewarm = alertsDisplay.Prewarm
+
+		alertsDisplay.Prewarm = function(self, prefix, count)
+			prewarmed[#prewarmed + 1] = prefix
+			return realPrewarm(self, prefix, count)
+		end
+
+		env.inInstance = true
+		env.instanceType = "arena"
+		env.arenaOpponents = 0
+		env.invalidateWorldState()
+		events:TriggerEvent("PLAYER_ENTERING_WORLD")
+
+		env.loadingScreenUp = true
+		module:Refresh()
+
+		-- Restored before any assert, so a failure cannot leave the spy installed and the
+		-- loading screen up for every test after it.
+		env.loadingScreenUp = false
+		alertsDisplay.Prewarm = realPrewarm
+
+		assert(#env.containersForUnit("arena1") == 0, "no arena pair exists yet")
+		for _, prefix in ipairs(prewarmed) do
+			assert(prefix ~= "arena", "the arena tokens must not be prepared up front")
+		end
+	end)
+
+	fw.it("builds them when the client names the opponents", function()
+		env.arenaSpecs = { arena1 = 1, arena2 = 2, arena3 = 3 }
+		events:TriggerEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+		env.arenaSpecs = {}
+
+		assert(#env.containersForUnit("arena1") > 0, "the pair is built once the specs arrive")
+		assert(tracked("arena1"), "and it is live")
+	end)
+end)
+
 fw.describe("AlertsModule - picking the token source", function()
 	fw.it("reads arena tokens in a 3v3", function()
 		enterArena(3)
@@ -267,60 +316,6 @@ fw.describe("AlertsModule - moving between the two sources", function()
 		events:TriggerEvent("PVP_MATCH_STATE_CHANGED")
 
 		assert(tracked("arena3"), "the third is bound without a zone change")
-	end)
-end)
-
-fw.describe("AlertsModule - preparing the pairs on the way in", function()
-	local alertsDisplay = env.addon.Modules.Alerts.Display
-
-	---Records what a loading-screen refresh asked to be prepared.
-	local function prewarmsFor(setUp)
-		local calls = {}
-		local realPrewarm = alertsDisplay.Prewarm
-
-		alertsDisplay.Prewarm = function(self, prefix, count)
-			calls[#calls + 1] = { Prefix = prefix, Count = count }
-			return realPrewarm(self, prefix, count)
-		end
-
-		setUp()
-		env.loadingScreenUp = true
-		module:Refresh()
-
-		-- Restored before any assert, so a failure cannot leave the spy installed and the
-		-- loading screen up for every test after it.
-		env.loadingScreenUp = false
-		alertsDisplay.Prewarm = realPrewarm
-
-		return calls
-	end
-
-	fw.it("prepares the whole arena token set before the opponents are known", function()
-		-- The trap this guards: behind the loading screen the client reports no opponents at
-		-- all, so preparing "however many are known" prepares nothing, and the first round pays
-		-- to build every container while the gates open.
-		local calls = prewarmsFor(function()
-			env.inInstance = true
-			env.instanceType = "arena"
-			env.arenaOpponents = 0
-			env.invalidateWorldState()
-			-- The world load is what clears the opponent high-water mark. Without it an earlier
-			-- test's count of three survives, and a regression to preparing "however many are
-			-- known" would still prepare three and pass.
-			events:TriggerEvent("PLAYER_ENTERING_WORLD")
-			assert(not tracked("arena1"), "precondition: no opponent count is known yet")
-		end)
-
-		assert(#calls == 1, "one prepare pass, got " .. #calls)
-		assert(calls[1].Prefix == "arena" and calls[1].Count == 3,
-			"the arena tokens are prepared in full, got "
-				.. tostring(calls[1].Prefix) .. " x" .. tostring(calls[1].Count))
-	end)
-
-	fw.it("prepares nameplates everywhere else it runs", function()
-		local calls = prewarmsFor(enterWorld)
-
-		assert(#calls == 1 and calls[1].Prefix == "nameplate", "the plate set as before")
 	end)
 end)
 

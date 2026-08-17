@@ -10,6 +10,7 @@ local growAnchors = addon.Core.GrowAnchors
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local testSpellData = addon.Core.TestSpells
+local inspectorFacade = addon.Core.InspectorFacade
 
 -- Loaded before this file in TOC order.
 local sound = addon.Modules.Alerts.Sound
@@ -41,6 +42,12 @@ local DEFAULT_DEFENSIVE_GLOW_COLOR = { R = 0.2, G = 1, B = 0.2 }
 -- reads, the r/g/b keys are what the IconSlotContainer takes for the test icons.
 local importantGlowColor = { 1, 0.2, 0.2, r = 1, g = 0.2, b = 0.2, a = 1 }
 local defensiveGlowColor = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
+-- Refilled per lookup like the two above. One scratch is enough because a colour is read straight
+-- into a group before the next unit is asked about.
+local classGlowColor = { 1, 1, 1, r = 1, g = 1, b = 1, a = 1 }
+-- spec id -> class token, or false once asked and refused. The mapping is static client data, so
+-- one answer per spec lasts the session.
+local classTokenBySpec = {}
 
 ---@type Db
 local db
@@ -105,19 +112,111 @@ local DEFAULT_PAIR_SPACING = 2
 -- runtime; the shipped default is asserted separately.
 M.PrewarmTokenCount = 40
 
+---Whether any tint is drawn at all. Both the category colours and the class colours ride the
+---glow/border switches, since those are the only things they paint.
+---@return boolean
+local function AlertTintShown()
+	local icons = db and db.Modules.AlertsModule.Icons
+
+	return icons ~= nil and (icons.Glow == true or icons.Border == true)
+end
+
+---@return boolean
+local function ClassColorsEnabled()
+	local icons = db and db.Modules.AlertsModule.Icons
+
+	return icons ~= nil and icons.ClassColors == true and AlertTintShown()
+end
+
 ---The per-category tints in force, or nil when nothing is drawn in them. They colour the glow and
 ---the border alike, so the border keeps them when the glow is switched off.
 ---@return table? importantColor
 ---@return table? defensiveColor
 local function AlertGlowColors()
-	local icons = db and db.Modules.AlertsModule.Icons
-
-	if not icons or not (icons.Glow or icons.Border) then
+	if not AlertTintShown() then
 		return nil, nil
 	end
 
+	local icons = db.Modules.AlertsModule.Icons
+
 	return moduleUtil:FillColor(importantGlowColor, icons.ImportantColor, DEFAULT_IMPORTANT_GLOW_COLOR),
 		moduleUtil:FillColor(defensiveGlowColor, icons.DefensiveColor, DEFAULT_DEFENSIVE_GLOW_COLOR)
+end
+
+---The class a specialization belongs to. Nothing in the addon maps the two, so this asks the
+---client and keeps the answer.
+---@param specId number
+---@return string?
+local function ClassTokenForSpec(specId)
+	local cached = classTokenBySpec[specId]
+
+	if cached ~= nil then
+		return cached or nil
+	end
+
+	local class = false
+
+	if GetSpecializationInfoByID then
+		local _, _, _, _, _, classToken = GetSpecializationInfoByID(specId)
+		class = classToken or false
+	end
+
+	classTokenBySpec[specId] = class
+
+	return class or nil
+end
+
+---The class token of whoever a token is tracking, or nil when the client will not say.
+---
+---An arena opponent is identified through their specialization: a spec belongs to exactly one
+---class, and the client hands the spec out in plain numbers for its own prep frames, where the
+---unit's own class is a secret value that cannot be read or compared. Everywhere else the unit
+---is asked directly, which answers outdoors and goes secret inside an instance.
+---@param unitToken string
+---@return string?
+local function EnemyClassToken(unitToken)
+	if unitToken:match("^arena%d$") then
+		local specId = inspectorFacade:GetUnitSpecId(unitToken)
+
+		-- A unit the client will not identify answers with a secret spec, and nothing can be
+		-- looked up with one.
+		if specId == nil or issecretvalue(specId) then
+			return nil
+		end
+
+		return ClassTokenForSpec(specId)
+	end
+
+	local class = UnitClassBase and UnitClassBase(unitToken)
+
+	if class == nil or issecretvalue(class) then
+		return nil
+	end
+
+	return class
+end
+
+---The class colour for a class token, refilled into shared scratch. Both shapes are needed for
+---the same reason the category tints carry both: the array part is what the aura groups read and
+---the r/g/b keys are what the test-mode icons take.
+---@param classToken string?
+---@return table?
+local function ClassColor(classToken)
+	if classToken == nil then
+		return nil
+	end
+
+	local color = C_ClassColor and C_ClassColor.GetClassColor and C_ClassColor.GetClassColor(classToken)
+		or (RAID_CLASS_COLORS and RAID_CLASS_COLORS[classToken])
+
+	if color == nil then
+		return nil
+	end
+
+	classGlowColor[1], classGlowColor[2], classGlowColor[3] = color.r, color.g, color.b
+	classGlowColor.r, classGlowColor.g, classGlowColor.b = color.r, color.g, color.b
+
+	return classGlowColor
 end
 
 ---Whether a ring is drawn. The border stands in for the glow rather than doubling up with it: two
@@ -261,11 +360,49 @@ local function AlertStyle()
 	return style
 end
 
+---The colour one preview icon is drawn in: the class that owns the spell when class colouring is
+---on, otherwise the category tint it would have taken.
+---@param entry table A TestSpells alert entry, carrying SpellId and Class.
+---@param categoryColor table?
+---@return table?
+local function TestIconColor(entry, categoryColor)
+	if ClassColorsEnabled() then
+		local classColor = ClassColor(entry.Class)
+
+		if classColor then
+			return classColor
+		end
+	end
+
+	return categoryColor
+end
+
+---The tints for one token's three groups: the owner's class colour when class colouring is on and
+---the client will name them, otherwise the per-category colours. Class colouring deliberately
+---replaces the categories rather than joining them, since one icon has only one ring to give.
+---@param unitToken string
+---@return table? bigDefensive
+---@return table? externalDefensive
+---@return table? important
+local function TokenGroupColors(unitToken)
+	if ClassColorsEnabled() then
+		local classColor = ClassColor(EnemyClassToken(unitToken))
+
+		if classColor then
+			return classColor, classColor, classColor
+		end
+	end
+
+	local importantColor, defensiveColor = AlertGlowColors()
+
+	return defensiveColor, defensiveColor, importantColor
+end
+
 -- Applies options (size, style, per-category budgets, visibility) to ONE pooled display pair.
--- Limits forced by aura data being unreadable: no class-colored glow/border, and MaxIcons caps
--- each unit's icons rather than the whole bar.
+-- MaxIcons caps each unit's icons rather than the whole bar, because aura data cannot be read
+-- across units.
 -- (Important-vs-defensive dedup is handled by filter negation at creation.)
-local function ApplyDisplayOptions(entry, options, showBars)
+local function ApplyDisplayOptions(entry, unitToken, options, showBars)
 	local includeDefensives = options.IncludeDefensives
 	local importantEnabled = options.Important and options.Important.Enabled
 	local splitBars = options.SplitBars
@@ -282,14 +419,14 @@ local function ApplyDisplayOptions(entry, options, showBars)
 	-- copies it field by field, and one call restyles all three values in a single pass).
 	local style = AlertStyle()
 
-	-- Outside the pair signature, like the budgets: buttons read their group's tint at paint
-	-- time, so a recolour needs no rebuild. This mostly handles the tints switching on or off
-	-- with the glow/border options - a picker change reaches the groups through the shared
-	-- colour tables they already hold - and costs a few comparisons when nothing moved.
-	local importantColor, defensiveColor = AlertGlowColors()
+	-- Outside the pair signature, like the budgets: a recolour goes straight onto the groups the
+	-- buttons already hold. Wherever the client lets a display restyle, that lands on its own;
+	-- inside an arena it never can, which is why a class colour is baked in at creation instead
+	-- (see AlertPairKey) and this call only has to agree with what was baked.
+	local bigDefColor, extDefColor, importantColor = TokenGroupColors(unitToken)
 	wipe(glowColorsScratch)
-	glowColorsScratch[auraFilters.GroupKey.BigDefensive] = defensiveColor
-	glowColorsScratch[auraFilters.GroupKey.ExternalDefensive] = defensiveColor
+	glowColorsScratch[auraFilters.GroupKey.BigDefensive] = bigDefColor
+	glowColorsScratch[auraFilters.GroupKey.ExternalDefensive] = extDefColor
 	glowColorsScratch[auraFilters.GroupKey.Important] = importantColor
 	entry.Def:SetGroupGlowColors(DEF_GROUP_KEYS, glowColorsScratch)
 	entry.Imp:SetGroupGlowColors(IMP_GROUP_KEYS, glowColorsScratch)
@@ -324,7 +461,9 @@ end
 -- left a hole before the important icons; groups inside a single container flow tight instead.
 -- A display's group list is fixed for its lifetime (see New), so both groups always exist and
 -- the mode is chosen purely by budgeting one of them to 0 - no container churn on toggle.
-local function CreateAlertDisplayPair()
+---@param unitToken string The token this pair is being built for, so the owner's class colour can
+---be baked into its buttons; see AlertPairKey for why it cannot be applied later.
+local function CreateAlertDisplayPair(unitToken)
 	-- Build at the CONFIGURED size, not a placeholder. A button takes its size in
 	-- initializeFrame, which the frame pool runs once when it creates the button and never
 	-- again on reuse (AcquireFrame does not re-initialise). Correcting it afterwards needs a
@@ -343,12 +482,16 @@ local function CreateAlertDisplayPair()
 	-- only initial values - buttons read them from the group at paint time, and
 	-- ApplyDisplayOptions recolours the groups in place.
 	local style = AlertStyle()
-	local importantColor, defensiveColor = AlertGlowColors()
+	local bigDefColor, extDefColor, importantColor = TokenGroupColors(unitToken)
 
-	-- Own copies: AlertGlowColors refills shared scratch in place, and a group holding the
+	-- Own copies: the colour helpers refill shared scratch in place, and a group holding the
 	-- scratch itself would compare equal to any later recolour, so the diff could never fire.
-	importantColor = importantColor and { importantColor[1], importantColor[2], importantColor[3] }
-	defensiveColor = defensiveColor and { defensiveColor[1], defensiveColor[2], defensiveColor[3] }
+	-- Taken per group because class colouring hands the same scratch back for all three.
+	local function OwnCopy(color)
+		return color and { color[1], color[2], color[3] }
+	end
+
+	bigDefColor, extDefColor, importantColor = OwnCopy(bigDefColor), OwnCopy(extDefColor), OwnCopy(importantColor)
 
 	return {
 		Def = auraContainerDisplay:New(UIParent, "none", {
@@ -358,7 +501,7 @@ local function CreateAlertDisplayPair()
 				CandidateFilters = auraFilters.CandidateFilters.BigDefensive,
 				MaxIcons = maxIcons,
 
-				GlowColor = defensiveColor,
+				GlowColor = bigDefColor,
 			},
 			{
 				Key = auraFilters.GroupKey.ExternalDefensive,
@@ -366,7 +509,7 @@ local function CreateAlertDisplayPair()
 				CandidateFilters = auraFilters.CandidateFilters.ExternalDefensive,
 				MaxIcons = maxIcons,
 
-				GlowColor = defensiveColor,
+				GlowColor = extDefColor,
 			},
 			-- Used in combined mode only; budgeted to 0 when the bars are split.
 			{
@@ -430,22 +573,53 @@ end
 -- once per change rather than per plate, and only a loading screen builds the set back up, so a
 -- run of slider steps still abandons one set rather than one per step.
 local function RebuildDisplayPairs()
-	for token, entry in pairs(displayPairsByToken) do
+	for key, entry in pairs(displayPairsByToken) do
 		ResetAlertDisplayPair(entry)
-		displayPairsByToken[token] = nil
-		activeDisplays[token] = nil
+		displayPairsByToken[key] = nil
 	end
+
+	-- Every active entry was one of the above, so the whole map goes; RebuildStaleDisplayPairs
+	-- re-acquires the tokens that were being tracked.
+	wipe(activeDisplays)
+end
+
+---Which cached pair a token should be using. Normally just the token, but a class colour is baked
+---into the buttons at creation and no restyle can reach them inside an arena - so arena1 holding a
+---rogue this match and a mage the next needs a different pair, not the one it used last time.
+---
+---Keyed rather than rebuilt because a rebuilt pair's frames can never be given back: keying tops
+---out at one pair per class per token and settles after a few matches, where rebuilding would
+---abandon three pairs every match for as long as the session lasts.
+---
+---Only the arena tokens take the class in their key. Everywhere else a display can be restyled
+---once the client allows it, so one pair per token still tells the truth, and keying forty plate
+---tokens by class would multiply the prewarmed set by thirteen.
+---@param unitToken string
+---@return string
+local function AlertPairKey(unitToken)
+	if not ClassColorsEnabled() or not unitToken:match("^arena%d$") then
+		return unitToken
+	end
+
+	local classToken = EnemyClassToken(unitToken)
+
+	if classToken == nil then
+		return unitToken
+	end
+
+	return unitToken .. "|" .. classToken
 end
 
 -- The pair a token owns, built on first ask and kept for the session. Shared by the plate path
 -- and the prewarm so neither can build a pair the other would not: whichever gets there first
 -- pays, and the second finds it already there.
 local function GetOrCreateDisplayPair(unitToken)
-	local entry = displayPairsByToken[unitToken]
+	local key = AlertPairKey(unitToken)
+	local entry = displayPairsByToken[key]
 
 	if not entry then
-		entry = CreateAlertDisplayPair()
-		displayPairsByToken[unitToken] = entry
+		entry = CreateAlertDisplayPair(unitToken)
+		displayPairsByToken[key] = entry
 	end
 
 	return entry
@@ -455,7 +629,7 @@ end
 -- left strictly alone: by the time a prewarm pass reaches a token a plate may already be holding
 -- and drawing on it, and parking that one would blank a live bar.
 local function PrewarmOnePair(unitToken)
-	if displayPairsByToken[unitToken] then
+	if displayPairsByToken[AlertPairKey(unitToken)] then
 		return
 	end
 
@@ -466,10 +640,16 @@ end
 -- first sight. SetEnabled(false -> true) in RefreshDisplays triggers the containers'
 -- own full refresh, so a pair re-acquired for a recycled token repopulates.
 local function EnsureDisplay(unitToken)
-	local entry = activeDisplays[unitToken]
+	local current = activeDisplays[unitToken]
+	local entry = GetOrCreateDisplayPair(unitToken)
 
-	if not entry then
-		entry = GetOrCreateDisplayPair(unitToken)
+	if current ~= entry then
+		-- Either first sight, or the token came back as a different class and so owns a
+		-- different pair now; the one it was using is parked rather than left drawing.
+		if current then
+			ResetAlertDisplayPair(current)
+		end
+
 		activeDisplays[unitToken] = entry
 		-- A pair keeps its anchors while parked (so neighbours chained off it stay resolvable),
 		-- which means a reacquired one still points at the row slot it last sat in. Cleared here,
@@ -618,7 +798,7 @@ end
 ---@param unitToken string
 function M:ApplyOneAndChain(unitToken)
 	local entry = EnsureDisplay(unitToken)
-	ApplyDisplayOptions(entry, db.Modules.AlertsModule, GetAlertBarsShown())
+	ApplyDisplayOptions(entry, unitToken, db.Modules.AlertsModule, GetAlertBarsShown())
 	QueueChainAlertDisplays()
 end
 
@@ -633,8 +813,8 @@ function M:RefreshDisplays()
 
 	RebuildStaleDisplayPairs()
 
-	for _, entry in pairs(activeDisplays) do
-		ApplyDisplayOptions(entry, options, showBars)
+	for unitToken, entry in pairs(activeDisplays) do
+		ApplyDisplayOptions(entry, unitToken, options, showBars)
 	end
 
 	QueueChainAlertDisplays()
@@ -676,10 +856,9 @@ function M:RefreshTestAlerts()
 
 	local includeDefensives = db.Modules.AlertsModule.IncludeDefensives
 
-	-- No class colouring, even though the test IconSlotContainer could do it: the live bars can't
-	-- (UnitClass is secret there, and the option is hidden in the config), and colouring only the
-	-- preview would advertise something the live display never does. The category tints ARE what
-	-- the live bars do, so the preview shows those.
+	-- The preview shows whichever colouring the live bars would use. With class colours on that is
+	-- the class owning each preview spell, which is what makes the row read the way a real one
+	-- does: two icons from the same class come out in the same colour.
 	local importantTestColor, defensiveTestColor = AlertGlowColors()
 
 	testIconCtx.Now = GetTime()
@@ -695,7 +874,8 @@ function M:RefreshTestAlerts()
 		local stepIndex = 0
 		for _, entry in ipairs(testSpellData.Alerts.Defensive) do
 			local placed = PlaceTestIcon(
-				container, defSlot, entry.SpellId, defensiveTestColor, stepIndex * 1.25, 12 + stepIndex * 3
+				container, defSlot, entry.SpellId, TestIconColor(entry, defensiveTestColor),
+					stepIndex * 1.25, 12 + stepIndex * 3
 			)
 			if placed ~= defSlot then
 				defSlot = placed
@@ -710,9 +890,11 @@ function M:RefreshTestAlerts()
 	local impTarget = (splitBars and importantContainer) or container
 	local impSlot = splitBars and 0 or defSlot
 	if importantEnabled and impTarget then
-		local testImportantSpellIds = testSpellData.Alerts.Important
-		for i = 1, #testImportantSpellIds do
-			impSlot = PlaceTestIcon(impTarget, impSlot, testImportantSpellIds[i], importantTestColor, (i - 1) * 1.25, 15 + (i - 1) * 3)
+		local testImportantSpells = testSpellData.Alerts.Important
+		for i = 1, #testImportantSpells do
+			local entry = testImportantSpells[i]
+			impSlot = PlaceTestIcon(impTarget, impSlot, entry.SpellId,
+				TestIconColor(entry, importantTestColor), (i - 1) * 1.25, 15 + (i - 1) * 3)
 		end
 	end
 

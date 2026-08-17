@@ -535,6 +535,15 @@ function M.build()
 			return env.arenaSpecs[unit]
 		end,
 	}
+	-- Spec id -> class token, which is how an arena opponent's class is worked out: the unit's own
+	-- class is secret in there, and a spec belongs to exactly one class. Only the specs a test
+	-- names are known, so an unmapped one models the client refusing to say.
+	env.specClasses = {}
+	_G.GetSpecializationInfoByID = function(specId)
+		local class = env.specClasses[specId]
+
+		return specId, "Spec " .. tostring(specId), "", 134400, "DAMAGER", class
+	end
 
 	loadFile("src/Core/Kicks/KickData.lua")
 	loadFile("src/Core/Kicks/KickEvents.lua")

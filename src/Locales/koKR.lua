@@ -198,6 +198,8 @@ L:RegisterLocale("koKR", function() return {
 	["Includes defensives in the alerts."] = "알림에 방어 기술을 포함합니다.",
 	["Play a sound when a defensive spell is pressed."] = "방어 주문이 사용될 때 소리 재생.",
 	["Show alert icons in the alerts region."] = "알림 영역에 경고 아이콘을 표시합니다.",
+	["Class colours"] = "직업 색상",
+	["Colour every icon by its owner's class instead of by category. Arena opponents are coloured from their specialisation; battlegrounds keep the category colours, because the game will not name a class in there."] = "분류 대신 아이콘 소유자의 직업 색상으로 모든 아이콘을 표시합니다. 투기장 상대는 전문화를 기준으로 색이 정해지며, 전장에서는 게임이 직업을 알려주지 않기 때문에 분류 색상을 그대로 사용합니다.",
 	["Show CC icons when healer is CC'd."] = "치유사가 군중 제어당할 때 CC 아이콘을 표시합니다.",
 	["Show icons"] = "아이콘 표시",
 	["Split bars"] = "막대 분리",

@@ -198,6 +198,8 @@ L:RegisterLocale("frFR", function() return {
 	["Includes defensives in the alerts."] = "Inclut les sorts défensifs dans les alertes.",
 	["Play a sound when a defensive spell is pressed."] = "Joue un son quand un sort défensif est utilisé.",
 	["Show alert icons in the alerts region."] = "Affiche les icônes d'alerte dans la zone d'alertes.",
+	["Class colours"] = "Couleur de classe",
+	["Colour every icon by its owner's class instead of by category. Arena opponents are coloured from their specialisation; battlegrounds keep the category colours, because the game will not name a class in there."] = "Colore chaque icône selon la classe de son porteur plutôt que par catégorie. Les adversaires en arène sont colorés d'après leur spécialisation ; en champ de bataille, les couleurs de catégorie sont conservées, car le jeu n'y révèle pas la classe.",
 	["Show CC icons when healer is CC'd."] = "Affiche les icônes de CC quand le heal est sous CC.",
 	["Show icons"] = "Icônes",
 	["Split bars"] = "Barres séparées",

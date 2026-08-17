@@ -11,6 +11,11 @@ local MODE_CUSTOM = "CUSTOM"
 
 local NAMEPLATE_FACTIONS = { "Enemy", "Friendly" }
 local NAMEPLATE_BARS = { "Bar1", "Bar2" }
+-- The alert icon tints as version 69 shipped them. Spelled out rather than read off the defaults
+-- for the same reason as the modes above: this step has to keep deciding what it decided when it
+-- ran, whatever a later version changes the shipped colours to.
+local SHIPPED_IMPORTANT_COLOR = { R = 1, G = 0.2, B = 0.2, A = 1 }
+local SHIPPED_DEFENSIVE_COLOR = { R = 0.2, G = 1, B = 0.2, A = 1 }
 
 ---Folds a bar's ColorByCategory/UseDispelColors pair into the single ColorMode it became. Both
 ---halves were only ever written together, and UseDispelColors never shipped, so an untouched db
@@ -59,5 +64,54 @@ function M:UpgradeToVersion69(vars)
 	end
 
 	vars.Version = 69
+	return true
+end
+
+
+---@param color table?
+---@param shipped table
+---@return boolean
+local function IsShippedColor(color, shipped)
+	-- Absent counts as shipped: the value is filled from the defaults right after the migration,
+	-- so a db that never had the key is running the shipped colour.
+	if color == nil then
+		return true
+	end
+
+	return color.R == shipped.R and color.G == shipped.G and color.B == shipped.B
+end
+
+---Switches class colouring on only where the category tints were left alone. Someone who picked
+---their own important and defensive colours chose that scheme, and class colouring throws it away
+---- so they keep what they had and can turn this on themselves.
+local function AdoptClassColors(modules)
+	local icons = modules and modules.AlertsModule and modules.AlertsModule.Icons
+
+	if not icons or icons.ClassColors ~= nil then
+		return
+	end
+
+	-- Only the off case is written. Leaving it nil lets the defaults fill it in as on, which is
+	-- what an untouched profile should get.
+	if not (IsShippedColor(icons.ImportantColor, SHIPPED_IMPORTANT_COLOR)
+		and IsShippedColor(icons.DefensiveColor, SHIPPED_DEFENSIVE_COLOR)) then
+		icons.ClassColors = false
+	end
+end
+
+function M:UpgradeToVersion70(vars)
+	if vars.Version ~= 69 then return false end
+
+	AdoptClassColors(vars.Modules)
+
+	-- Snapshots are written back over the live db wholesale on a profile switch, so one carrying
+	-- custom colours would come back with class colouring on top of them.
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			AdoptClassColors(profile.Modules)
+		end
+	end
+
+	vars.Version = 70
 	return true
 end

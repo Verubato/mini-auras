@@ -429,21 +429,16 @@ function M:Refresh()
 	-- unregistered, so a set built on the way in is forty pairs of frames that content can never
 	-- use, and frames cannot be given back.
 	--
-	-- An arena prepares the whole arena token set rather than the count it knows, because behind
-	-- the loading screen it knows none: the opponents have not loaded in and the source has not
-	-- been settled yet. Three pairs covers every bracket those tokens serve, and a bracket too
-	-- big for them falls back to nameplates and builds their pairs on first sight.
+	-- Nameplates only. The arena set is three pairs, built when the source settles onto those
+	-- tokens, which is when the client names the opponents. Building them a loading screen
+	-- earlier buys nothing and costs the one chance to bake anything opponent-specific into
+	-- their buttons: a button takes its look in initializeFrame, and inside an arena
+	-- C_Secrets.ShouldAurasBeSecret never clears, so no restyle ever gets to correct it.
 	--
 	-- After UpdateContent, which is what rebuilds the pairs when the look baked into their buttons
 	-- has changed: prewarming before it would build a set this refresh then throws away.
-	if addon:IsLoadingScreenUp() then
-		local _, instanceType = IsInInstance()
-
-		if instanceType == "arena" then
-			display:Prewarm(SOURCE_ARENA, MAX_ARENA_TOKENS)
-		elseif activeSource == SOURCE_NAMEPLATE then
-			display:Prewarm(SOURCE_NAMEPLATE, display.PrewarmTokenCount)
-		end
+	if addon:IsLoadingScreenUp() and activeSource == SOURCE_NAMEPLATE then
+		display:Prewarm(SOURCE_NAMEPLATE, display.PrewarmTokenCount)
 	end
 
 	-- Owned here rather than by the test-mode toggle, so flipping the module switch while a

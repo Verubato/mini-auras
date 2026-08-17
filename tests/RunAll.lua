@@ -52,6 +52,7 @@ local testFiles = {
     "tests/Modules/TestModuleSmoke.lua",
     "tests/Modules/TestAlertsBars.lua",
     "tests/Modules/TestAlertsUnitSource.lua",
+    "tests/Modules/TestAlertsClassColors.lua",
     "tests/Modules/TestAlertsTtsSpells.lua",
     "tests/Modules/TestPortraitDisplay.lua",
     "tests/Modules/TestUnitFrameRetarget.lua",

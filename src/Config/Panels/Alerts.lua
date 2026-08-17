@@ -81,9 +81,6 @@ local function BuildSettingsTab(parent, options)
 
 	glowChk:SetPoint("TOPLEFT", iconsEnabledChk, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	-- These icons are drawn through AuraContainers, where the unit's identity - and so
-	-- UnitClass - is secret, so the glow and border cannot be class coloured. Each category is
-	-- its own aura group, so a tint per category is what it can offer instead.
 	local nextGlowColumn = 1
 
 	local reverseChk = mini:Checkbox({
@@ -122,18 +119,25 @@ local function BuildSettingsTab(parent, options)
 	borderChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * nextGlowColumn, 0)
 	nextGlowColumn = nextGlowColumn + 1
 
-	---Places a swatch in the next free column of the glow row, centred on the checkboxes.
-	---@return table swatch
-	local function PlaceSwatch(swatch)
-		swatch:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * nextGlowColumn, 0)
-		swatch:SetPoint("TOP", glowChk, "TOP", 0,
-			-math.floor((glowChk:GetHeight() - swatch:GetHeight()) / 2))
-		nextGlowColumn = nextGlowColumn + 1
+	local classColorsChk = mini:Checkbox({
+		Parent = parent,
+		LabelText = L["Class colours"],
+		Tooltip = L["Colour every icon by its owner's class instead of by category. Arena opponents are coloured from their specialisation; battlegrounds keep the category colours, because the game will not name a class in there."],
+		GetValue = function()
+			return options.Icons.ClassColors == true
+		end,
+		SetValue = function(value)
+			options.Icons.ClassColors = value
+			UpdateGlowColors()
+			config:Apply(moduleName.Alerts)
+		end,
+	})
 
-		return swatch
-	end
+	classColorsChk:SetPoint("TOP", glowChk, "TOP", 0, 0)
+	classColorsChk:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * nextGlowColumn, 0)
 
-	local importantSwatch = PlaceSwatch(mini:ColorSwatch({
+	-- Built here so UpdateGlowColors can close over them; placed further down, on the grow row.
+	local importantSwatch = mini:ColorSwatch({
 		Parent = parent,
 		LabelText = L["Important"],
 		Tooltip = L["Change the colour of the glow on important enemy spells."],
@@ -147,9 +151,9 @@ local function BuildSettingsTab(parent, options)
 			color.R, color.G, color.B, color.A = r, g, b, a
 			config:Apply(moduleName.Alerts)
 		end,
-	}))
+	})
 
-	local defensiveSwatch = PlaceSwatch(mini:ColorSwatch({
+	local defensiveSwatch = mini:ColorSwatch({
 		Parent = parent,
 		LabelText = L["Defensive"],
 		Tooltip = L["Change the colour of the glow on defensive spells."],
@@ -163,12 +167,14 @@ local function BuildSettingsTab(parent, options)
 			color.R, color.G, color.B, color.A = r, g, b, a
 			config:Apply(moduleName.Alerts)
 		end,
-	}))
+	})
 
 	-- The tints colour the glow and the border, so with neither drawn they have nothing to say and
-	-- go away rather than sitting there doing nothing.
+	-- go away rather than sitting there doing nothing. Class colouring replaces them outright, so
+	-- it takes them away too.
 	function UpdateGlowColors()
-		local shown = options.Icons.Glow == true or options.Icons.Border == true
+		local shown = (options.Icons.Glow == true or options.Icons.Border == true)
+			and options.Icons.ClassColors ~= true
 
 		importantSwatch:SetShown(shown)
 		importantSwatch.Label:SetShown(shown)
@@ -232,6 +238,19 @@ local function BuildSettingsTab(parent, options)
 	})
 
 	growDdl.Label:SetPoint("TOPLEFT", glowChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
+
+	-- The two tints share the grow row rather than the checkbox row above: a picker plus its label
+	-- wants more width than a checkbox column has, and this row has only the dropdown on it.
+	---@param swatch table
+	---@param column number Column of the four-wide grid the sliders below use.
+	local function PlaceSwatch(swatch, column)
+		swatch:SetPoint("LEFT", parent, "LEFT", columnWidth * column, 0)
+		swatch:SetPoint("TOP", growDdl, "TOP", 0,
+			-math.floor((growDdl:GetHeight() - swatch:GetHeight()) / 2))
+	end
+
+	PlaceSwatch(importantSwatch, 1)
+	PlaceSwatch(defensiveSwatch, 2)
 
 	local iconSize = helpers:BuildClampedSlider({
 		Parent = parent,
