@@ -104,6 +104,8 @@ fw.describe("ModuleUtil:IsModuleEnabled", function()
 		moduleUtil:Init()
 	end
 
+	-- A world flip in the client always arrives with an event ModuleUtil's own frame turns into
+	-- an invalidation, so the test helper does the same.
 	local function setWorld(inInstance, instanceType, inRaid)
 		_G.IsInInstance = function()
 			return inInstance, instanceType
@@ -111,6 +113,7 @@ fw.describe("ModuleUtil:IsModuleEnabled", function()
 		_G.IsInRaid = function()
 			return inRaid == true
 		end
+		moduleUtil:InvalidateWorldState()
 	end
 
 	fw.it("defaults to enabled when settings are missing", function()
@@ -137,6 +140,7 @@ fw.describe("ModuleUtil:IsModuleEnabled", function()
 				return true
 			end,
 		}
+		moduleUtil:InvalidateWorldState()
 		assert(moduleUtil:IsModuleEnabled("TestModule") == false, "inside a house or plot")
 
 		_G.C_Housing.IsInsideHouseOrPlot = function()
@@ -145,11 +149,13 @@ fw.describe("ModuleUtil:IsModuleEnabled", function()
 		_G.C_Housing.IsOnNeighborhoodMap = function()
 			return true
 		end
+		moduleUtil:InvalidateWorldState()
 		assert(moduleUtil:IsModuleEnabled("TestModule") == false, "on the neighborhood map")
 
 		_G.C_Housing.IsOnNeighborhoodMap = function()
 			return false
 		end
+		moduleUtil:InvalidateWorldState()
 		assert(moduleUtil:IsModuleEnabled("TestModule") == true, "outside housing again")
 		_G.C_Housing = nil
 	end)

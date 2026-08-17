@@ -20,6 +20,7 @@ end
 
 env.inInstance = true
 env.instanceType = "arena"
+env.invalidateWorldState()
 env.setModuleEnabled("TrinketsModule", true)
 
 env.loadModule("src/Core/TrinketsTracker.lua")
@@ -111,6 +112,7 @@ fw.describe("TrinketsModule - the frame the icon hangs off", function()
 
 	fw.it("ignores the frame churn of a raid, where nothing is on screen anyway", function()
 		env.instanceType = "party"
+		env.invalidateWorldState()
 
 		local built = #containers
 		local newFrame = env.addUnitFrame("party2", "TrinketAnchorC")
@@ -121,6 +123,7 @@ fw.describe("TrinketsModule - the frame the icon hangs off", function()
 		fw.eq(CountOn(newFrame), 0, "and nothing hung on the new frame")
 
 		env.instanceType = "arena"
+		env.invalidateWorldState()
 	end)
 end)
 

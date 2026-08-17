@@ -11,6 +11,16 @@ local iconColorRgbScratch = {}
 local colorRgbScratch = {}
 -- Every test-mode caption ever created, so HideAllTestLabels can sweep them on test stop.
 local testLabels = {}
+-- Snapshot of the world questions IsModuleEnabled asks. The gate runs on every plate add and
+-- four times a second from the state poller, and each answer is a client API call; all of them
+-- only change through events, so Init registers for those and marks the snapshot stale. Init
+-- runs before any module's, so module handlers for the same events read a fresh snapshot; only
+-- a file-scope frame could register earlier, so no gate check may run from one.
+local worldStateStale = true
+local inHousing = false
+local inInstance = false
+local instanceType = "none"
+local inRaid = false
 
 ---@class ModuleName
 local ModuleName = {
@@ -39,6 +49,17 @@ addon.Utils.ModuleName = ModuleName
 local function IsInHousing()
 	return type(C_Housing) == "table"
 		and (C_Housing.IsOnNeighborhoodMap() or C_Housing.IsInsideHouseOrPlot())
+end
+
+local function RefreshWorldState()
+	if not worldStateStale then
+		return
+	end
+
+	worldStateStale = false
+	inHousing = IsInHousing() == true
+	inInstance, instanceType = IsInInstance()
+	inRaid = IsInRaid()
 end
 
 ---Resolves the configured icon size, either as a static pixel value or as a percentage of
@@ -207,11 +228,19 @@ function M:Coalesced(callback)
 	return queue, cancel
 end
 
+---Marks the world-state snapshot stale, so the next gate check re-reads the client. Init wires
+---this to the zone, roster, and housing events; tests flipping the world by hand call it too.
+function M:InvalidateWorldState()
+	worldStateStale = true
+end
+
 ---@param moduleName string The module key (e.g., "AlertsModule", "CcModule")
 ---@return boolean
 function M:IsModuleEnabled(moduleName)
+	RefreshWorldState()
+
 	-- Housing outranks every context, Always included; test mode still previews there.
-	if IsInHousing() then
+	if inHousing then
 		return false
 	end
 
@@ -230,7 +259,6 @@ function M:IsModuleEnabled(moduleName)
 		return true
 	end
 
-	local inInstance, instanceType = IsInInstance()
 	-- A preview only overrides the raid question, the same one it overrides for the option set:
 	-- previewing the raid layout from the open world reads the Raid flag, not the World one. The
 	-- zone still answers for itself, so a battleground stays a battleground whichever tab is up.
@@ -238,7 +266,7 @@ function M:IsModuleEnabled(moduleName)
 	local isRaid = testIsRaid
 
 	if isRaid == nil then
-		isRaid = IsInRaid()
+		isRaid = inRaid
 	end
 
 	if not inInstance then
@@ -353,4 +381,18 @@ end
 
 function M:Init()
 	db = addon.Framework:GetSavedVars()
+
+	local eventsFrame = CreateFrame("Frame")
+	eventsFrame:SetScript("OnEvent", function()
+		worldStateStale = true
+	end)
+	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+
+	-- The housing API may not exist on all game versions.
+	if type(C_Housing) == "table" then
+		eventsFrame:RegisterEvent("HOUSE_PLOT_ENTERED")
+		eventsFrame:RegisterEvent("HOUSE_PLOT_EXITED")
+	end
 end

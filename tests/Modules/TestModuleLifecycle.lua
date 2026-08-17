@@ -394,6 +394,7 @@ fw.describe("Duel faction flip - poll-based re-registration", function()
 	fw.it("plates inside instances are not polled", function()
 		env.inInstance = true
 		env.instanceType = "party"
+		env.invalidateWorldState()
 		env.addPlate("np_dungeon")
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_dungeon")
 		env.enemies.np_dungeon = true
@@ -402,6 +403,7 @@ fw.describe("Duel faction flip - poll-based re-registration", function()
 
 		env.inInstance = false
 		env.instanceType = "none"
+		env.invalidateWorldState()
 		acm.tickAll(1)
 		assert(#env.containersForUnit("np_dungeon") == 1, "flip picked up once back in the world")
 
@@ -1052,6 +1054,7 @@ fw.describe("AlertsModule 12.1 - prewarming the display pairs", function()
 
 		env.inInstance = true
 		env.instanceType = "raid"
+		env.invalidateWorldState()
 		env.loadingScreenUp = true
 		alerts:Refresh()
 		local inRaid = prewarms
@@ -1059,6 +1062,7 @@ fw.describe("AlertsModule 12.1 - prewarming the display pairs", function()
 		-- And out in the open world it prepares them as usual.
 		env.inInstance = false
 		env.instanceType = "none"
+		env.invalidateWorldState()
 		alerts:Refresh()
 
 		-- Everything restored before the asserts: a failure here would otherwise leave the spy

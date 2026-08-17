@@ -54,6 +54,7 @@ fw.describe("CrowdControlModule - the test preview and the enable flags", functi
 		env.inInstance = false
 		env.instanceType = "none"
 		env.isRaid = false
+		env.invalidateWorldState()
 
 		local enabled = db.Modules.CCModule.Enabled
 		enabled.World = true
@@ -87,6 +88,7 @@ fw.describe("CrowdControlModule - the test preview and the enable flags", functi
 	fw.it("keeps the zone's own answer on both tabs", function()
 		env.inInstance = true
 		env.instanceType = "pvp"
+		env.invalidateWorldState()
 		db.Modules.CCModule.Enabled.BattleGrounds = false
 
 		assert(Preview(false) == 0, "a battleground reads the battleground flag")

@@ -23,6 +23,7 @@ local display = assert(env.addon.Modules.EnemyKickTracker.Display, "display regi
 
 env.inInstance = true
 env.instanceType = "arena"
+env.invalidateWorldState()
 
 module:Init()
 
@@ -64,12 +65,14 @@ fw.describe("EnemyKickTrackerModule - arena gating", function()
 		local frame = castFrameFor("player")
 		env.inInstance = false
 		env.instanceType = "none"
+		env.invalidateWorldState()
 		worldEvents:TriggerEvent("PLAYER_ENTERING_WORLD")
 
 		assert(not frame._events.UNIT_SPELLCAST_INTERRUPTED, "cast events must not stay live in the world")
 
 		env.inInstance = true
 		env.instanceType = "arena"
+		env.invalidateWorldState()
 		worldEvents:TriggerEvent("PLAYER_ENTERING_WORLD")
 		assert(castFrameFor("player"), "and come back on re-entry")
 	end)

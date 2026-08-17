@@ -565,6 +565,12 @@ function M.build()
 		loadFile(path)
 	end
 
+	---The enable gate reads a world-state snapshot; the real client marks it stale from the
+	---zone/roster events, so a test that flips env.inInstance/instanceType/isRaid must do the same.
+	env.invalidateWorldState = function()
+		addon.Utils.ModuleUtil:InvalidateWorldState()
+	end
+
 	---Registers a mock nameplate frame for a unit token and returns it.
 	env.addPlate = function(token)
 		local plate = acm.NewFrame("Frame", "Plate_" .. token)
