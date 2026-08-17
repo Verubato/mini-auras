@@ -2,6 +2,7 @@
 local _, addon = ...
 local frames = addon.Core.Frames
 local trinketsTracker = addon.Core.TrinketsTracker
+local eventGate = addon.Core.EventGate
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 
@@ -13,9 +14,10 @@ local M = {}
 addon.Modules.Trinkets.Module = M
 addon.Modules.TrinketsModule = M
 
-local eventFrame
+---@type EventGate?
+local worldGate
 -- Owns the unit-frame hooks, which can never be taken back off, so it outlives the gated
--- eventFrame above.
+-- world events.
 local hookFrame
 local enabled = false
 local paused = false
@@ -107,8 +109,9 @@ local function IsEnabled()
 	return moduleUtil:IsModuleEnabled(moduleName.Trinkets)
 end
 
----Edge-triggered: the roster/world events are the module's only event source, so they are
----created on wake and torn down on sleep.
+---Edge-triggered: the roster/world events are the module's only event source, so the gate
+---keeps them registered only while awake. The edge check also guards paused, which test mode
+---flips independently of the gate.
 ---@param active boolean
 local function SetEventsActive(active)
 	if active == enabled then
@@ -117,17 +120,7 @@ local function SetEventsActive(active)
 
 	enabled = active
 	paused = not active
-
-	if active then
-		eventFrame = CreateFrame("Frame")
-		eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-		eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-		eventFrame:SetScript("OnEvent", OnEvent)
-	elseif eventFrame then
-		eventFrame:UnregisterAllEvents()
-		eventFrame:SetScript("OnEvent", nil)
-		eventFrame = nil
-	end
+	worldGate:SetActive(active)
 end
 
 ---@param active boolean
@@ -147,6 +140,10 @@ end
 local function InstallHooks()
 	trinketsTracker:RegisterCallback(OnTrinketDataChanged)
 	InstallFrameHooks()
+
+	local eventsFrame = CreateFrame("Frame")
+	eventsFrame:SetScript("OnEvent", OnEvent)
+	worldGate = eventGate:New(eventsFrame, { "PLAYER_ENTERING_WORLD", "GROUP_ROSTER_UPDATE" })
 end
 
 local function ApplyInitialState()
