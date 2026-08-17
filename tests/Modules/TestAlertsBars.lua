@@ -527,3 +527,65 @@ fw.describe("AlertsModule 12.1 - the border on the live bars", function()
 		assert(not texture._shown, "nothing rings the icon")
 	end)
 end)
+
+-- Budgets and tints are applied to the existing pairs at runtime, so only what is genuinely
+-- baked into the buttons (size, style) may rebuild them: every rebuild abandons the prewarmed
+-- frame set for good, and frames can never be freed.
+fw.describe("AlertsModule 12.1 - what may rebuild the display pairs", function()
+	---The live Def container for a token: earlier rebuilds leave abandoned containers still
+	---tagged with the token, so the enabled one - always the current pair's - is the one asked.
+	local function liveDefOf(token)
+		local found
+		for _, container in ipairs(env.containersForUnit(token)) do
+			if env.groupCount(container) == 3 and container._enabled then
+				found = container
+			end
+		end
+		return found
+	end
+
+	fw.it("a MaxIcons change re-budgets the live pairs without rebuilding them", function()
+		module:Refresh()
+		addEnemyPlate("nameplate1")
+
+		local before = env.auraContainerCount()
+		local oldMax = alerts.Icons.MaxIcons or 8
+		alerts.Icons.MaxIcons = oldMax - 1
+		module:Refresh()
+
+		assert(env.auraContainerCount() == before, "no container was rebuilt")
+		assert(liveDefOf("nameplate1")._groups.important.maxFrameCount == oldMax - 1,
+			"the new budget landed on the existing pair")
+
+		alerts.Icons.MaxIcons = oldMax
+		module:Refresh()
+	end)
+
+	fw.it("a tint change leaves the pairs alone too", function()
+		alerts.Icons.Border = true
+		module:Refresh()
+
+		local before = env.auraContainerCount()
+		alerts.Icons.ImportantColor = { R = 0.1, G = 0.2, B = 0.9 }
+		module:Refresh()
+
+		assert(env.auraContainerCount() == before, "a picker change must not burn a frame set")
+
+		alerts.Icons.ImportantColor = nil
+		alerts.Icons.Border = false
+		module:Refresh()
+	end)
+
+	fw.it("an icon size change still rebuilds, since size is baked into the buttons", function()
+		local before = env.auraContainerCount()
+		local oldSize = alerts.Icons.Size
+		alerts.Icons.Size = (oldSize or 24) + 2
+		module:Refresh()
+
+		assert(env.auraContainerCount() > before, "the active pair was rebuilt at the new size")
+
+		alerts.Icons.Size = oldSize
+		module:Refresh()
+		removePlate("nameplate1")
+	end)
+end)

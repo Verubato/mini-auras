@@ -33,9 +33,9 @@ addon.Modules.Alerts.Display = M
 -- AuraContainer group specs index [1..3], IconSlotContainer (test mode) reads r/g/b/a.
 local DEFAULT_IMPORTANT_GLOW_COLOR = { R = 1, G = 0.2, B = 0.2 }
 local DEFAULT_DEFENSIVE_GLOW_COLOR = { R = 0.2, G = 1, B = 0.2 }
--- Refilled from the options rather than reallocated, since the groups hold onto these tables.
--- Both shapes are needed: the array part is what AuraContainerDisplay reads, the r/g/b keys are
--- what the IconSlotContainer takes for the test icons.
+-- Refilled from the options rather than reallocated. The groups take their own copies, so these
+-- can be rewritten freely. Both shapes are needed: the array part is what AuraContainerDisplay
+-- reads, the r/g/b keys are what the IconSlotContainer takes for the test icons.
 local importantGlowColor = { 1, 0.2, 0.2, r = 1, g = 0.2, b = 0.2, a = 1 }
 local defensiveGlowColor = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
 
@@ -76,6 +76,15 @@ local pairSignature
 local QueueChainAlertDisplays
 -- Reused token-set scratch.
 local activeTokensScratch = {}
+-- The tinted groups of each display in a pair, and the colour map handed to SetGroupGlowColors;
+-- the map is refilled per apply and the setter copies components out.
+local DEF_GROUP_KEYS = {
+	auraFilters.GroupKey.BigDefensive,
+	auraFilters.GroupKey.ExternalDefensive,
+	auraFilters.GroupKey.Important,
+}
+local IMP_GROUP_KEYS = { auraFilters.GroupKey.Important }
+local glowColorsScratch = {}
 -- Fallback geometry for a pooled display pair, used only if the db isn't readable yet.
 -- CreateAlertDisplayPair otherwise builds at the configured size: a button's size is fixed in
 -- initializeFrame, which never re-runs on pool reuse, so a placeholder size would survive any
@@ -269,6 +278,18 @@ local function ApplyNameplateDisplayOptions(entry, options, showBars)
 	-- copies it field by field, and one call restyles all three values in a single pass).
 	local style = AlertStyle()
 
+	-- Outside the pair signature, like the budgets: buttons read their group's tint at paint
+	-- time, so a recolour needs no rebuild. This mostly handles the tints switching on or off
+	-- with the glow/border options - a picker change reaches the groups through the shared
+	-- colour tables they already hold - and costs a few comparisons when nothing moved.
+	local importantColor, defensiveColor = AlertGlowColors()
+	wipe(glowColorsScratch)
+	glowColorsScratch[auraFilters.GroupKey.BigDefensive] = defensiveColor
+	glowColorsScratch[auraFilters.GroupKey.ExternalDefensive] = defensiveColor
+	glowColorsScratch[auraFilters.GroupKey.Important] = importantColor
+	entry.Def:SetGroupGlowColors(DEF_GROUP_KEYS, glowColorsScratch)
+	entry.Imp:SetGroupGlowColors(IMP_GROUP_KEYS, glowColorsScratch)
+
 	entry.Def:SetGrow(grow)
 	entry.Def:ApplyConfig(size, spacing, style)
 	entry.Def:SetMaxIcons(auraFilters.GroupKey.BigDefensive, includeDefensives and maxIcons or 0)
@@ -314,10 +335,16 @@ local function CreateAlertDisplayPair()
 	local spacing = (options and options.IconSpacing) or DEFAULT_PAIR_SPACING
 
 	-- Style is applied at creation for the same reason as the size: StyleButton bakes it into
-	-- each button, and a later restyle can't reach them while auras are secret. The same goes
-	-- for the per-category glow tints, which are fixed per group in initializeFrame.
+	-- each button, and a later restyle can't reach them while auras are secret. The tints are
+	-- only initial values - buttons read them from the group at paint time, and
+	-- ApplyNameplateDisplayOptions recolours the groups in place.
 	local style = AlertStyle()
 	local importantColor, defensiveColor = AlertGlowColors()
+
+	-- Own copies: AlertGlowColors refills shared scratch in place, and a group holding the
+	-- scratch itself would compare equal to any later recolour, so the diff could never fire.
+	importantColor = importantColor and { importantColor[1], importantColor[2], importantColor[3] }
+	defensiveColor = defensiveColor and { defensiveColor[1], defensiveColor[2], defensiveColor[3] }
 
 	return {
 		Def = auraContainerDisplay:New(UIParent, "none", {
@@ -363,21 +390,20 @@ end
 
 -- Everything baked into a pair's buttons when it is created. A change means the live pairs have
 -- to be rebuilt rather than restyled, because a restyle can't reach the buttons while auras are
--- secret (i.e. for the whole of an arena).
+-- secret (i.e. for the whole of an arena). Deliberately narrow, since every rebuild abandons
+-- the full prewarmed frame set for good: budgets and category tints stay out because both are
+-- applied to existing pairs at runtime (SetMaxIcons and SetGroupGlowColors, in
+-- ApplyNameplateDisplayOptions), so only the size and style that genuinely bake in remain.
 ---@return string
 local function AlertPairSignature()
 	local options = db and db.Modules.AlertsModule
 	local icons = options and options.Icons
-	-- The tints are baked into each group at creation, so a picker change has to rebuild.
-	local importantColor, defensiveColor = AlertGlowColors()
 
 	return auraContainerDisplay:GetStyleSignature(
 		AlertStyle(),
 		(icons and icons.Size) or DEFAULT_PAIR_SIZE,
 		(options and options.IconSpacing) or DEFAULT_PAIR_SPACING
-	) .. ":" .. tostring(icons and icons.MaxIcons)
-		.. ":" .. (importantColor and table.concat(importantColor, ",", 1, 3) or "-")
-		.. ":" .. (defensiveColor and table.concat(defensiveColor, ",", 1, 3) or "-")
+	)
 end
 
 -- Parks a display pair (both displays stay parented to UIParent). The anchors are deliberately
