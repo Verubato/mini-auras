@@ -40,6 +40,39 @@ local function Walk(visibleOnly, includeTestFrames, fn, arg)
 	end
 end
 
+---Nameplates are built from the same compact unit frame code as party and raid frames, so the
+---hooks in InstallUnitFrameHooks fire for every plate that spawns, which is hundreds of calls a
+---second while the camera sweeps a crowd. Plate frames are the only ones carrying a
+---namePlateFrame back-reference, and Blizzard sets it before the plate's first SetUnit.
+---@param frame table?
+---@return boolean
+local function IsNamePlateFrame(frame)
+	if not frame or issecretvalue(frame) then
+		return false
+	end
+
+	local plate = frame.namePlateFrame
+
+	-- A secret back-reference is still a back-reference, and comparing one would error.
+	if issecretvalue(plate) then
+		return true
+	end
+
+	return plate ~= nil
+end
+
+---@param callback fun(frame: table, ...)
+---@return fun(frame: table, ...)
+local function SkippingNamePlates(callback)
+	return function(frame, ...)
+		if IsNamePlateFrame(frame) then
+			return
+		end
+
+		callback(frame, ...)
+	end
+end
+
 ---A frame's children in a caller-owned table, so walking a secure header costs no allocation.
 ---The scratch is the caller's because several providers nest one walk inside another, and one
 ---shared table could only hold the inner one.
@@ -298,7 +331,8 @@ function M:ShowHideDisplay(display, anchor, excludePlayer)
 end
 
 ---Installs the unit-frame integration hooks shared by the raid-frame icon modules: the
----CompactUnitFrame set-unit/visibility hooks (skipped when DandersFrames replaces the CUFs),
+---CompactUnitFrame set-unit/visibility hooks (never fired for nameplates, and skipped entirely
+---when DandersFrames replaces the CUFs),
 ---the FrameSort and DandersFrames post-sort callbacks, and the Cell spotlight / NDui visibility
 ---hooks. Install once per module at Init; none of these can be taken back off, so the callbacks
 ---must gate themselves on the module's enabled state.
@@ -307,11 +341,11 @@ end
 function M:InstallUnitFrameHooks(owner, hooks)
 	if not wowEx:IsDandersEnabled() then
 		if CompactUnitFrame_SetUnit then
-			hooksecurefunc("CompactUnitFrame_SetUnit", hooks.OnSetUnit)
+			hooksecurefunc("CompactUnitFrame_SetUnit", SkippingNamePlates(hooks.OnSetUnit))
 		end
 
 		if CompactUnitFrame_UpdateVisible then
-			hooksecurefunc("CompactUnitFrame_UpdateVisible", hooks.OnUpdateVisible)
+			hooksecurefunc("CompactUnitFrame_UpdateVisible", SkippingNamePlates(hooks.OnUpdateVisible))
 		end
 	end
 
