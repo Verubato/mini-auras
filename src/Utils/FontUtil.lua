@@ -195,8 +195,9 @@ function M:Apply(fontString, size, flags, fallbackFace)
 		-- exactly what this text is. Secret text is left alone: it belongs to the engine, which
 		-- redraws it itself.
 		local text = fontString.GetText and fontString:GetText()
+		local secret = issecretvalue and issecretvalue(text)
 
-		if text ~= nil and text ~= "" and not (issecretvalue and issecretvalue(text)) then
+		if not secret and text ~= nil and text ~= "" then
 			fontString:SetText("")
 			fontString:SetText(text)
 		end
