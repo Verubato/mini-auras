@@ -2,3 +2,4 @@ build/*.zip
 scripts/.cache/
 __pycache__/
 scripts/.listfile/
+tools/
