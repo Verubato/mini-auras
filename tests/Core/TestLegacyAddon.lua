@@ -8,7 +8,7 @@ local moduleEnv = require("ModuleEnv")
 local env = moduleEnv.build()
 local addon = env.addon
 
-assert(loadfile("src/Core/LegacyAddon.lua"))("MiniAuras", addon)
+assert(loadfile("src/Core/Compat/LegacyAddon.lua"))("MiniAuras", addon)
 
 local legacyAddon = addon.Core.LegacyAddon
 
@@ -86,7 +86,7 @@ end)
 -- The offered-once latch is module state too, so each case below reloads the file for a
 -- fresh instance.
 local function FreshLegacyAddon()
-	assert(loadfile("src/Core/LegacyAddon.lua"))("MiniAuras", addon)
+	assert(loadfile("src/Core/Compat/LegacyAddon.lua"))("MiniAuras", addon)
 
 	return addon.Core.LegacyAddon
 end

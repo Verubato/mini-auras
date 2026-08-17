@@ -23,7 +23,7 @@ env.instanceType = "arena"
 env.invalidateWorldState()
 env.setModuleEnabled("TrinketsModule", true)
 
-env.loadModule("src/Core/TrinketsTracker.lua")
+env.loadModule("src/Core/Trinkets/TrinketsTracker.lua")
 env.addon.Core.TrinketsTracker:Init()
 
 env.loadModule("src/Modules/Trinkets/Display.lua")

@@ -35,7 +35,7 @@ _G.C_Timer.NewTicker = function(_, fn)
 	return { Cancel = function() end }
 end
 
-assert(loadfile("src/Core/UnitStatePoller.lua"))("MiniAuras", addon)
+assert(loadfile("src/Core/Events/UnitStatePoller.lua"))("MiniAuras", addon)
 
 local poller = addon.Core.UnitStatePoller
 

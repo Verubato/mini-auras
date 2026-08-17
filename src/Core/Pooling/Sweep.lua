@@ -13,7 +13,7 @@ local _, addon = ...
 -- lane's own queue.
 
 -- How many items each tick processes across ALL lanes, and how often ticks run. Matches the
--- pre-creation fill in Core/Pool: restyles are cheaper than creation, so the same pace
+-- pre-creation fill in Core/Pooling/Pool: restyles are cheaper than creation, so the same pace
 -- is comfortably invisible.
 local ITEMS_PER_TICK = 2
 local TICK_INTERVAL = 0.1

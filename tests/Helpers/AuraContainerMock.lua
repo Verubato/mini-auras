@@ -814,8 +814,8 @@ function M.loadDisplay()
 	for _, path in ipairs({
 		-- Must precede AuraContainerDisplay: every button's icon is cropped through it.
 		"src/Utils/IconUtil.lua",
-		"src/Core/Sweep.lua",
-		"src/Core/Pool.lua",
+		"src/Core/Pooling/Sweep.lua",
+		"src/Core/Pooling/Pool.lua",
 		"src/Core/Display/GrowAnchors.lua",
 		-- Must precede AuraContainerDisplay: the glow catalog is read at its load.
 		"src/Core/Display/Media/GlowStyles.lua",

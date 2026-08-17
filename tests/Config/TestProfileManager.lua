@@ -1,4 +1,4 @@
--- Tests for Core/ProfileManager.lua against the REAL MiniFramework + Migrator (genuine
+-- Tests for Core/Profiles/ProfileManager.lua against the REAL MiniFramework + Migrator (genuine
 -- default db and merge semantics). The profile system's core contracts:
 --   * switching swaps payload values while PRESERVING table identities (config-UI closures
 --     capture nested tables at Build time and must stay valid),
@@ -53,7 +53,7 @@ local addon = {
 local addonFiles = require("AddonFiles")
 addonFiles.load(addonFiles.framework, addon)
 
-assert(loadfile("src/Core/ProfileManager.lua"))("MiniAuras", addon)
+assert(loadfile("src/Core/Profiles/ProfileManager.lua"))("MiniAuras", addon)
 addonFiles.load(addonFiles.migrator, addon)
 
 local profileManager = addon.Core.ProfileManager

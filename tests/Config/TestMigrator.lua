@@ -24,7 +24,7 @@ local addon = {
 local addonFiles = require("AddonFiles")
 addonFiles.load(addonFiles.framework, addon)
 -- ProfileManager before Migrator: UpgradeToVersion37 snapshots profiles via its PayloadKeys.
-assert(loadfile("src/Core/ProfileManager.lua"))("MiniAuras", addon)
+assert(loadfile("src/Core/Profiles/ProfileManager.lua"))("MiniAuras", addon)
 addonFiles.load(addonFiles.migrator, addon)
 
 local migrator = addon.Config.Migrator

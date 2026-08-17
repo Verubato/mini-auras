@@ -271,7 +271,7 @@ function M.build()
 
 	local addonFiles = require("AddonFiles")
 	addonFiles.load(addonFiles.framework, addon)
-	loadFile("src/Core/ProfileManager.lua")
+	loadFile("src/Core/Profiles/ProfileManager.lua")
 	-- The real resolver: with no LibSharedMedia in the mock it falls back to the bundled files,
 	-- which is the path a client without a media addon takes anyway.
 	loadFile("src/Core/Audio/Sounds.lua")
@@ -532,16 +532,16 @@ function M.build()
 
 	loadFile("src/Core/Kicks/KickData.lua")
 	loadFile("src/Core/Kicks/KickEvents.lua")
-	loadFile("src/Core/TestSpells.lua")
-	loadFile("src/Core/EventGate.lua")
-	loadFile("src/Core/Sweep.lua")
-	loadFile("src/Core/Pool.lua")
+	loadFile("src/Core/TestMode/TestSpells.lua")
+	loadFile("src/Core/Events/EventGate.lua")
+	loadFile("src/Core/Pooling/Sweep.lua")
+	loadFile("src/Core/Pooling/Pool.lua")
 	loadFile("src/Core/Display/GrowAnchors.lua")
 	-- Must precede IconSlotContainer and AuraContainerDisplay: both read the glow catalog at load.
 	loadFile("src/Core/Display/Media/GlowStyles.lua")
 	loadFile("src/Core/Display/Outline.lua")
 	loadFile("src/Core/Auras/AuraFilters.lua")
-	loadFile("src/Core/UnitStatePoller.lua")
+	loadFile("src/Core/Events/UnitStatePoller.lua")
 	loadFile("src/Core/Display/IconSlotContainer.lua")
 	-- Must precede AuraContainerDisplay and BarSlotContainer: both resolve bar fills through the
 	-- texture catalog.

@@ -38,14 +38,14 @@ Utils\ModuleUtil.lua
 Utils\SlotDistribution.lua
 Utils\WoWEx.lua
 
-Core\InstanceOptions.lua
-Core\EventGate.lua
-Core\UnitStatePoller.lua
-Core\LegacyAddon.lua
+Core\Options\InstanceOptions.lua
+Core\Events\EventGate.lua
+Core\Events\UnitStatePoller.lua
+Core\Compat\LegacyAddon.lua
 
 Core\Display\Media\Fonts.lua
-Core\Sweep.lua
-Core\Pool.lua
+Core\Pooling\Sweep.lua
+Core\Pooling\Pool.lua
 Core\Display\GrowAnchors.lua
 Core\Display\Media\GlowStyles.lua
 Core\Display\Outline.lua
@@ -94,14 +94,14 @@ Core\Frames\GW2UI.lua
 Core\Frames\MSUF.lua
 Core\Frames\UUF.lua
 Core\Display\AnchoredIcons.lua
-Core\TrinketsTracker.lua
-Core\ProfileManager.lua
+Core\Trinkets\TrinketsTracker.lua
+Core\Profiles\ProfileManager.lua
 Core\Audio\Sounds.lua
 Core\Audio\AuraSounds.lua
 Core\Audio\TtsPacks.lua
 Core\Audio\TtsMutes.lua
-Core\TestSpells.lua
-Core\TestModeManager.lua
+Core\TestMode\TestSpells.lua
+Core\TestMode\TestModeManager.lua
 
 Modules\CrowdControl\Display.lua
 Modules\CrowdControl\Module.lua
