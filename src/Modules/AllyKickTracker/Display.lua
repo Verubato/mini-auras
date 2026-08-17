@@ -123,7 +123,7 @@ local function LayoutBar(bar, options)
 	bar.Bar:SetPoint("BOTTOMRIGHT", bar.Frame, "BOTTOMRIGHT", 0, 0)
 	bar.Bar:SetStatusBarTexture(options.FillTexture)
 
-	local nameSize = math.max(6, math.floor(height * NAME_FONT_COEFFICIENT))
+	local nameSize = math.max(6, math.floor(height * NAME_FONT_COEFFICIENT * (options.FontScale or 1)))
 
 	fontFile = fontFile or (GameFontNormal and GameFontNormal:GetFont()) or "Fonts\\FRIZQT__.TTF"
 
@@ -372,6 +372,7 @@ end
 ---@field Spacing number  pixels between one row and the next
 ---@field Grow string  "DOWN" or "UP"
 ---@field FillTexture string  texture path for the bar fill
+---@field FontScale number?  multiplier on both text sizes
 
 ---@class AllyKickDisplayInstance
 ---@field Frame table

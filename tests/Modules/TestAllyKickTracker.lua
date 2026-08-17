@@ -379,6 +379,23 @@ fw.describe("AllyKickTracker - the list", function()
 		assert(#VisibleBars() == 2, "a busy pull must not become a wall of rows")
 	end)
 
+	fw.it("scales the row text with the shared font scale", function()
+		-- The one font setting shared by every module; the rows must follow it like the icons do.
+		db.FontScale = 1.5
+		module:Refresh()
+
+		Interrupted("nameplate1")
+
+		local name = VisibleBars()[1]._createdFontStrings[1]
+		local args = name._lastArgs.SetFont
+
+		db.FontScale = 1.0
+		module:Refresh()
+
+		-- Height 35 at the 0.42 name coefficient: 14 unscaled, 22 at one and a half.
+		assert(args and args[2] == 22, "the name follows the scale, got " .. tostring(args and args[2]))
+	end)
+
 	fw.it("drops a row once its lifetime is up", function()
 		Interrupted("nameplate1")
 		assert(#VisibleBars() == 1, "on screen")
