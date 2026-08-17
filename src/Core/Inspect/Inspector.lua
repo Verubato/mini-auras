@@ -23,6 +23,9 @@ local isOurInspect        = false
 local needUpdate          = true
 local initialised         = false
 local inspectStarted      = nil
+-- Whether a RunLoop tick is scheduled. The loop only runs while an inspect is in flight or a
+-- spec is missing; ArmLoop wakes it, and an idle tick simply does not reschedule.
+local loopArmed           = false
 local callbacks           = {}
 -- Lazily built map of "Spec Name Class Name" -> specId for tooltip matching.
 -- e.g. "Discipline Priest" -> 256, "Holy Paladin" -> 65, etc.
@@ -246,14 +249,15 @@ local function GetNextTarget()
 	return nil
 end
 
-local function RunLoop()
-	C_Timer.After(INSPECT_INTERVAL, RunLoop)
-
+---One pass of the inspect loop. Returns whether another tick is needed: an inspect is in
+---flight or queued work remains. Idle passes return false, and the loop sleeps until ArmLoop.
+local function Step()
 	local now = Now()
 	local timeSinceLastInspect = inspectStarted and (now - inspectStarted)
 
 	if requestedUnit ~= nil and timeSinceLastInspect and timeSinceLastInspect < INSPECT_TIMEOUT then
-		return
+		-- An inspect is in flight; stay scheduled to time it out if INSPECT_READY never comes.
+		return true
 	end
 
 	if requestedUnit ~= nil then
@@ -267,18 +271,19 @@ local function RunLoop()
 	end
 
 	if not needUpdate then
-		return
+		return false
 	end
 
 	local unit = GetNextTarget()
 	if not unit then
 		needUpdate = false
-		return
+		return false
 	end
 
 	local cacheEntry = EnsureCacheEntry(unit)
 	if not cacheEntry then
-		return
+		-- The unit's GUID would not resolve just now; try again next tick.
+		return true
 	end
 
 	cacheEntry.LastAttempt = now
@@ -288,6 +293,29 @@ local function RunLoop()
 	inspectStarted = now
 	requestedUnit = unit
 	currentInspectUnit = unit
+
+	-- Stay scheduled as the watchdog for the inspect just started.
+	return true
+end
+
+local function RunLoop()
+	loopArmed = false
+
+	if Step() then
+		loopArmed = true
+		C_Timer.After(INSPECT_INTERVAL, RunLoop)
+	end
+end
+
+---Wakes the run loop when something queues work for it; a no-op while a tick is already
+---scheduled, so callers never stack timers.
+local function ArmLoop()
+	if not initialised or loopArmed then
+		return
+	end
+
+	loopArmed = true
+	C_Timer.After(INSPECT_INTERVAL, RunLoop)
 end
 
 ---Returns the specialization ID for the given unit, or nil if unknown.
@@ -331,11 +359,18 @@ function M:GetUnitSpecId(unit)
 		return specId
 	end
 
-	-- Queue for async inspection on the next run loop tick, but only once Init has started the
-	-- run loop: nothing drains the stack before then, so it would grow for the whole session.
-	if not cacheEntry and initialised then
+	-- Queue for async inspection on the next run loop tick, but only once Init has run: nothing
+	-- drains the stack before then, so it would grow for the whole session.
+	if initialised and not cacheEntry then
 		priorityStack[#priorityStack + 1] = unit
+	end
+
+	-- Any miss arms the loop, not just a first sight: an entry whose inspect timed out is only
+	-- retried by the scan once its CACHE_TIMEOUT passes, and someone asking is what wakes the
+	-- loop to get there.
+	if initialised and (not cacheEntry or not cacheEntry.SpecId or cacheEntry.SpecId == 0) then
 		needUpdate = true
+		ArmLoop()
 	end
 
 	return cacheEntry and cacheEntry.SpecId
@@ -370,9 +405,11 @@ function M:Init()
 			end
 		elseif event == "GROUP_ROSTER_UPDATE" then
 			needUpdate = true
+			ArmLoop()
 		elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
 			local unit = ...
 			InvalidateEntry(unit)
+			ArmLoop()
 		elseif event == "PLAYER_ENTERING_WORLD" then
 			priorityStack = {}
 		end
@@ -383,7 +420,7 @@ function M:Init()
 	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
 	initialised = true
-	RunLoop()
+	ArmLoop()
 end
 
 ---@class Inspector
