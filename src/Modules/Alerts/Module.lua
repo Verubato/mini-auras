@@ -20,8 +20,8 @@ addon.Modules.AlertsModule = M
 M.SilentAlertSpellIds = sound.SilentAlertSpellIds
 
 -- Where the alerts read their aura data from. Arena tokens are the better source wherever they
--- cover the whole enemy team: they stay valid while a nameplate is hidden, out of range, or
--- behind a pillar, which is exactly when a defensive gets missed.
+-- cover the whole enemy team: they stay valid while a nameplate is hidden, stealthed, or behind
+-- a pillar, which is exactly when a defensive gets missed.
 local SOURCE_ARENA = "arena"
 local SOURCE_NAMEPLATE = "nameplate"
 -- The client only hands out arena1..3. A bracket with more opponents than that leaves the rest
@@ -49,6 +49,9 @@ local activeSource
 -- opponent's token is released), and a source that flipped on that would tear the bars down
 -- mid-fight. Cleared on every world load.
 local arenaOpponentsSeen = 0
+-- Coalesces the noisy ARENA_OPPONENT_UPDATE onto one reconcile a frame; assigned below, once the
+-- pass it runs exists.
+local QueueArenaOpponentUpdate
 
 -- Only the sound registrations care: the bars themselves stop drawing on the test-mode flag.
 ---@param value boolean
@@ -139,12 +142,31 @@ local function OnNamePlateAdded(unitToken)
 	display:ApplyOneAndChain(unitToken)
 end
 
+---Whether an arena token can be drawn on right now. A buff on an enemy has no working spell-id
+---filter (the map is identity-gated off, see Core/AuraFilters), so the category token is the only
+---one left, and the engine stops evaluating it for a unit outside the visible world - the group
+---then fills with buffs that belong to somebody else. Plates never hit this because a plate only
+---exists for a unit the client is drawing; an arena token exists for the whole match, including
+---the prep room and the gap between solo shuffle rounds where the client has no unit behind it.
+---@param unitToken string
+---@return boolean
+local function IsArenaTokenDrawable(unitToken)
+	return units:IsVisible(unitToken) and not units:IsCharmed(unitToken)
+end
+
 -- An arena token is an opponent for the whole match, so unlike a plate there is nothing to add or
--- remove; only a mind control takes one away. While charmed the unit is on your team and its aura
--- list becomes the controller's own buffs, which the bars would announce and draw as alerts.
+-- remove; only a mind control or a unit the client cannot answer for takes one away. While charmed
+-- the unit is on your team and its aura list becomes the controller's own buffs, which the bars
+-- would announce and draw as alerts.
 local function OnArenaUnitChanged(unitToken)
-	if units:IsCharmed(unitToken) then
-		sound:RemoveToken(unitToken)
+	if not IsArenaTokenDrawable(unitToken) then
+		-- A charmed opponent's aura list is the controller's, so its warm sound registrations go
+		-- too. A unit merely outside the visible world keeps them: they match on spell id, which
+		-- no gate skips, so they stay right while the icons cannot be trusted.
+		if units:IsCharmed(unitToken) then
+			sound:RemoveToken(unitToken)
+		end
+
 		display:ReleaseDisplay(unitToken)
 		display:ChainDisplays()
 		return
@@ -175,9 +197,10 @@ local function ClearDisplays()
 	display:ReleaseAllDisplays()
 end
 
--- Binds one display pair per arena token, whether or not the opponent is currently reachable.
--- That is the point of the source: a container on arena2 keeps reporting through a pillar or a
--- stealth, where the plate it used to read from is simply gone.
+-- Binds one display pair per arena token the client can answer for. That is the point of the
+-- source: a container on arena2 keeps reporting through a pillar or a stealth, where the plate it
+-- used to read from is simply gone. It stops at the visible world, though - see
+-- IsArenaTokenDrawable.
 local function RebuildArenaDisplays()
 	local activeTokens = activeTokensScratch
 	wipe(activeTokens)
@@ -185,10 +208,12 @@ local function RebuildArenaDisplays()
 	for index = 1, arenaOpponentsSeen do
 		local unitToken = SOURCE_ARENA .. index
 
-		-- Seeded for the charm half of the poll; the duel half never applies in here.
+		-- Seeded for the charm and visibility halves of the poll; the duel half never applies in
+		-- here. A charm has nothing but the poll to announce it, and the poll is also the backstop
+		-- behind ARENA_OPPONENT_UPDATE for a token the client stops answering for.
 		stateSub:Seed(unitToken)
 
-		if not units:IsCharmed(unitToken) then
+		if IsArenaTokenDrawable(unitToken) then
 			activeTokens[unitToken] = true
 		end
 	end
@@ -327,6 +352,35 @@ local function ReconcileArenaSource()
 	end
 end
 
+-- Re-checked at fire time rather than when the event landed: a coalesced pass runs a frame late,
+-- and the module can be switched off or moved back onto plates in between.
+local function FlushArenaOpponentUpdate()
+	if not IsEnabled() or activeSource ~= SOURCE_ARENA then
+		return
+	end
+
+	RebuildArenaDisplays()
+end
+
+QueueArenaOpponentUpdate = moduleUtil:Coalesced(FlushArenaOpponentUpdate)
+
+-- The event half of the visibility gate. The shared poll catches the same flip, but only on its
+-- next tick, and a quarter of a second of somebody else's buffs on the bar is the whole of the
+-- bug the gate exists for.
+--
+-- Coalesced because the event is noisy: it fires for every opponent walking into or out of the
+-- client's world, which around pillars is several times a second, and a burst of them all say
+-- the same thing. The named token is dropped with it - the whole set is three, so reconciling
+-- them costs the same as reconciling the one, and the rebuild re-seeds every baseline, which
+-- keeps the poll from repeating a flip this has already handled.
+local function OnArenaOpponentUpdate()
+	if not IsEnabled() or activeSource ~= SOURCE_ARENA then
+		return
+	end
+
+	QueueArenaOpponentUpdate()
+end
+
 -- Solo shuffle rotates the teams between rounds: the same six players, re-dealt, so arena1 is
 -- handed to somebody else while the token string stays put. The container sees no change in that
 -- and would keep drawing the last round's auras, so each token is asked to re-read. The roster
@@ -344,20 +398,28 @@ local function OnRosterChanged()
 	end
 
 	for index = 1, arenaOpponentsSeen do
-		display:RequestRefresh(SOURCE_ARENA .. index)
+		local unitToken = SOURCE_ARENA .. index
+
+		-- Only where the client has a unit behind the token. Forcing a re-parse while it does not
+		-- is what plants the garbage: the round is dealt before the units land, and a group that
+		-- parses with nothing to check against keeps that answer until the next parse.
+		if IsArenaTokenDrawable(unitToken) then
+			display:RequestRefresh(unitToken)
+		end
 	end
 end
 
 local function CreateEvents()
 	local eventsFrame = CreateFrame("Frame")
 	-- The plate events are gated by Refresh; PVP_MATCH_STATE_CHANGED, the zone events, and the
-	-- prep specs drive that gate so they stay always-registered. Deliberately not
-	-- ARENA_OPPONENT_UPDATE: it fires every time an opponent walks in or out of sight, which is
-	-- constant, and none of that tells the module anything the prep room has not already said.
+	-- prep specs drive that gate so they stay always-registered. ARENA_OPPONENT_UPDATE is the one
+	-- thing that announces an opponent coming into or leaving the client's world, which is what
+	-- the visibility gate turns on; it only fires inside an arena, so it costs nothing elsewhere.
 	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
 	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	eventsFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
+	eventsFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")
 	-- The enemy-debuff announcements sit on the party tokens, so they follow the roster
 	-- rather than the nameplates. Always registered, like the gate drivers above: the
 	-- handler only reconciles those registrations, which is far cheaper than a full Refresh
@@ -382,6 +444,8 @@ local function CreateEvents()
 			M:Refresh()
 		elseif event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS" then
 			ReconcileArenaSource()
+		elseif event == "ARENA_OPPONENT_UPDATE" then
+			OnArenaOpponentUpdate()
 		elseif event == "GROUP_ROSTER_UPDATE" then
 			OnRosterChanged()
 		end

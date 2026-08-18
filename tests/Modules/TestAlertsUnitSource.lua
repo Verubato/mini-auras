@@ -319,6 +319,145 @@ fw.describe("AlertsModule - moving between the two sources", function()
 	end)
 end)
 
+fw.describe("AlertsModule - arena tokens outside the visible world", function()
+	local alertsDisplay = env.addon.Modules.Alerts.Display
+
+	-- A buff on an enemy has no working spell-id filter, so the category token carries the group
+	-- on its own, and the engine stops evaluating that token for a unit it cannot answer for. The
+	-- group then fills with buffs belonging to somebody else - reported in 5.19.0 as the player's
+	-- own buffs appearing on the alert bar at the start of every solo shuffle round, where the
+	-- teams are re-dealt and the arena tokens are briefly empty. A plate never reaches this state,
+	-- which is why nothing guarded it before the arena source existed.
+
+	fw.it("parks the pair while the client has no unit behind the token", function()
+		enterArena(3)
+		assert(tracked("arena2"), "precondition: bound")
+
+		env.phased.arena2 = true
+		acm.tickAll(1)
+
+		assert(not tracked("arena2"), "nothing is drawn from a token the engine cannot filter")
+		assert(tracked("arena1"), "and the opponents it can answer for are untouched")
+
+		env.phased.arena2 = nil
+		acm.tickAll(1)
+
+		assert(tracked("arena2"), "and it comes back once the unit lands")
+	end)
+
+	fw.it("parks it on the opponent event, without waiting for the poll", function()
+		-- ARENA_OPPONENT_UPDATE is the only thing that announces an opponent leaving the client's
+		-- world. The poll gets there too, but a tick later, and that tick is a bar full of
+		-- somebody else's buffs.
+		enterArena(3)
+		assert(tracked("arena2"), "precondition: bound")
+
+		env.phased.arena2 = true
+		events:TriggerEvent("ARENA_OPPONENT_UPDATE", "arena2", "unseen")
+
+		assert(not tracked("arena2"), "parked on the event alone")
+
+		env.phased.arena2 = nil
+		events:TriggerEvent("ARENA_OPPONENT_UPDATE", "arena2", "seen")
+
+		assert(tracked("arena2"), "and back on the event alone")
+	end)
+
+	fw.it("ignores an opponent past the count it bound", function()
+		-- The event names a token the module drops, since a burst of them all say the same thing;
+		-- what it reconciles is the bracket it bound, so a 2v2 stays on arena1 and arena2 however
+		-- the client numbers the unit it announced.
+		enterArena(2)
+		assert(not tracked("arena3"), "precondition: outside the bracket")
+
+		events:TriggerEvent("ARENA_OPPONENT_UPDATE", "arena3", "seen")
+
+		assert(not tracked("arena3"), "still nothing bound to it")
+	end)
+
+	fw.it("reconciles a burst of them once", function()
+		-- Pillar dancing fires this several times a second, and every one of them asks for the
+		-- same three-token pass.
+		enterArena(3)
+
+		local passes = 0
+		local realSync = alertsDisplay.SyncActiveTokens
+
+		alertsDisplay.SyncActiveTokens = function(...)
+			passes = passes + 1
+			return realSync(...)
+		end
+
+		-- The harness runs C_Timer.After callbacks inline, which is the one thing a coalescer
+		-- cannot batch under. Held back here so the whole burst lands before the pass it queued.
+		local pending = {}
+		local realAfter = C_Timer.After
+
+		C_Timer.After = function(_, fn)
+			pending[#pending + 1] = fn
+		end
+
+		for _ = 1, 5 do
+			events:TriggerEvent("ARENA_OPPONENT_UPDATE", "arena1", "unseen")
+		end
+
+		C_Timer.After = realAfter
+
+		for index = 1, #pending do
+			pending[index]()
+		end
+
+		alertsDisplay.SyncActiveTokens = realSync
+
+		assert(passes == 1, "the burst collapsed onto one reconcile, got " .. passes)
+	end)
+
+	fw.it("binds none of them on a refresh taken while they are empty", function()
+		enterArena(3)
+
+		env.phased.arena1 = true
+		env.phased.arena2 = true
+		env.phased.arena3 = true
+		module:Refresh()
+
+		assert(not tracked("arena1") and not tracked("arena2") and not tracked("arena3"),
+			"the whole row stays parked")
+
+		env.phased.arena1 = nil
+		env.phased.arena2 = nil
+		env.phased.arena3 = nil
+		module:Refresh()
+
+		assert(tracked("arena1"), "and binds once the units are there")
+	end)
+
+	fw.it("does not force a re-read on an empty token when the teams are re-dealt", function()
+		-- The forced re-parse is what plants the garbage: a group that parses with no unit to
+		-- check against keeps that answer until the next parse.
+		enterArena(3)
+
+		env.phased.arena1 = true
+		acm.tickAll(1)
+
+		local before = 0
+		for _, container in ipairs(env.containersForUnit("arena1")) do
+			before = before + (container._calls.SetUnit or 0)
+		end
+
+		events:TriggerEvent("GROUP_ROSTER_UPDATE")
+
+		local after = 0
+		for _, container in ipairs(env.containersForUnit("arena1")) do
+			after = after + (container._calls.SetUnit or 0)
+		end
+
+		assert(after == before, "no re-read is asked of a token with nobody behind it")
+
+		env.phased.arena1 = nil
+		acm.tickAll(1)
+	end)
+end)
+
 fw.describe("AlertsModule - arena tokens changing hands", function()
 	---Re-pointing a container at nobody and back is the only change the engine sees when a token
 	---keeps its name but changes occupant, so that is what these count.
