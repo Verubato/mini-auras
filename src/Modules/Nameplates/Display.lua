@@ -415,7 +415,7 @@ end
 ---blocked while auras are secret, which would leave a plate wearing the old size for the match.
 ---The sweep converts the stale ones in the background so later plates find a match.
 ---@return BarDisplayEntry?
-local function TakeFreeDisplay(cacheKey, signature)
+local function TakeFreeDisplay(cacheKey, signature, size, spacing, style)
 	local free = freeDisplays[cacheKey]
 
 	if not free then
@@ -424,6 +424,19 @@ local function TakeFreeDisplay(cacheKey, signature)
 
 	for i = #free, 1, -1 do
 		if free[i].Signature == signature then
+			return table.remove(free, i)
+		end
+	end
+
+	-- A look that changed and changed back reads as a new generation, so an entry parked under the
+	-- old one stops matching by number even though its buttons wear exactly this. Ask the display
+	-- what it carries before building a frame the client can never free. Second, because the number
+	-- is one compare and this walks the style.
+	for i = #free, 1, -1 do
+		local entry = free[i]
+
+		if entry.Display:CarriesConfig(size, spacing, style) then
+			entry.Signature = signature
 			return table.remove(free, i)
 		end
 	end
@@ -438,8 +451,8 @@ local function GetOrCreateBarDisplay(nameplate, bar, barOptions, factionKey)
 	local size = BarIconSize(barOptions)
 	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
 	local style = BarStyle(barOptions)
-	local signature = auraContainerDisplay:GetStyleSignature(style, size, spacing)
 	local cacheKey = bar.CacheKey[factionKey]
+	local signature = auraContainerDisplay:GetStyleGeneration(cacheKey, style, size, spacing)
 
 	local byBar = barDisplays[nameplate]
 
@@ -451,7 +464,7 @@ local function GetOrCreateBarDisplay(nameplate, bar, barOptions, factionKey)
 	local entry = byBar[cacheKey]
 
 	if not entry then
-		entry = TakeFreeDisplay(cacheKey, signature)
+		entry = TakeFreeDisplay(cacheKey, signature, size, spacing, style)
 
 		if not entry then
 			entry = {
@@ -485,7 +498,7 @@ local function PrewarmOneBarDisplay(bar, barOptions, factionKey)
 
 	local entry = {
 		Display = CreateBarDisplay(size, spacing, style, BarCategoryColors(barOptions)),
-		Signature = auraContainerDisplay:GetStyleSignature(style, size, spacing),
+		Signature = auraContainerDisplay:GetStyleGeneration(cacheKey, style, size, spacing),
 	}
 	ResetBarDisplay(entry.Display)
 
@@ -522,7 +535,8 @@ local function RestyleParkedEntry(item)
 	local size = BarIconSize(barOptions)
 	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
 	local style = BarStyle(barOptions)
-	local signature = auraContainerDisplay:GetStyleSignature(style, size, spacing)
+	local signature = auraContainerDisplay:GetStyleGeneration(item.Bar.CacheKey[item.FactionKey],
+		style, size, spacing)
 
 	-- An entry a plate has taken since the queue was built was restyled by its own ensure path,
 	-- so this lands as a no-op diff. The tints ride along because they are outside the signature,
@@ -543,7 +557,7 @@ end
 ---@return table[]? queue
 local function QueueStaleForBar(queue, bar, factionKey, barOptions)
 	local cacheKey = bar.CacheKey[factionKey]
-	local signature = auraContainerDisplay:GetStyleSignature(BarStyle(barOptions),
+	local signature = auraContainerDisplay:GetStyleGeneration(cacheKey, BarStyle(barOptions),
 		BarIconSize(barOptions), barOptions.Icons.Spacing or DEFAULT_BAR_SPACING)
 
 	for _, byBar in pairs(barDisplays) do
@@ -1093,7 +1107,7 @@ end
 
 ---@class BarDisplayEntry
 ---@field Display AuraContainerDisplay
----@field Signature string The look baked into its buttons, diffed to decide a restyle.
+---@field Signature number The look baked into its buttons, diffed to decide a restyle.
 ---@field Plate table? The nameplate it is bound to; nil while it is still on the free list.
 
 ---@class NameplateData

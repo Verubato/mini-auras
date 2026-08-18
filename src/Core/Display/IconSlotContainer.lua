@@ -2,6 +2,7 @@
 local _, addon = ...
 local LCG = LibStub and LibStub("LibCustomGlow-1.0", true)
 local Masque = LibStub and LibStub("Masque", true)
+local changeStamp = addon.Utils.ChangeStamp
 local fontUtil = addon.Utils.FontUtil
 local iconUtil = addon.Utils.IconUtil
 local wowEx = addon.Utils.WoWEx
@@ -24,6 +25,8 @@ local masqueReskinPending = {}
 local cachedDb = nil
 -- Reused across Layout() calls to avoid a table allocation on the hot path
 local layoutScratch = {}
+-- What each container's layout was last built from; see Layout.
+local layoutStamp = changeStamp:New()
 -- Reused by UpdateGlow() to avoid allocating glow option tables on every call.
 -- LCG functions read these values immediately and do not store references.
 local glowOptionsScratch = { startAnim = false }
@@ -647,20 +650,35 @@ function M:Layout()
 		end
 	end
 
-	-- Build a cheap signature from the current size, row settings, and used slot indices.
-	-- If it matches the last run, the visual result would be identical so we
-	-- can skip all the SetPoint/SetSize/Show/Hide calls.
+	-- The current size, row settings and used slot indices. When none of them moved the visual
+	-- result would be identical, so every SetPoint/SetSize/Show/Hide below can be skipped.
 	-- Vertical layout covers both grow-down and grow-up; the only difference is icon ordering
 	-- (grow-up reverses the stack so slot 1 sits at the bottom, nearest the anchor).
 	local vertical = self.GrowDown or self.GrowUp
 	local numRows = (not vertical and self.NumRows and self.NumRows > 1) and self.NumRows or nil
 	local columnsPerRow = (vertical and self.Columns and self.Columns > 1) and self.Columns or nil
 	local verticalTag = self.GrowUp and "U" or (self.GrowDown and "D" or "H")
-	local sig = self.Size .. ":" .. (numRows or 1) .. ":" .. (self.RowAlignment or "C") .. ":" .. (self.OverflowRowAlignment or "C") .. ":" .. (self.InvertLayout and "1" or "0") .. ":" .. verticalTag .. ":" .. (columnsPerRow or 1) .. ":" .. table.concat(layoutScratch, ",", 1, n)
-	if self.LayoutSignature == sig then
+
+	layoutStamp:Begin(self)
+	layoutStamp:Add(self.Size)
+	layoutStamp:Add(numRows or 1)
+	layoutStamp:Add(self.RowAlignment or "C")
+	layoutStamp:Add(self.OverflowRowAlignment or "C")
+	layoutStamp:Add(self.InvertLayout == true)
+	layoutStamp:Add(verticalTag)
+	layoutStamp:Add(columnsPerRow or 1)
+
+	for i = 1, n do
+		layoutStamp:Add(layoutScratch[i])
+	end
+
+	local generation = layoutStamp:Commit()
+
+	if self.LayoutGeneration == generation then
 		return
 	end
-	self.LayoutSignature = sig
+
+	self.LayoutGeneration = generation
 
 	-- Trim stale entries left over from a previous call with more slots
 	for i = n + 1, #layoutScratch do
@@ -822,7 +840,7 @@ function M:SetSpacing(newSpacing)
 	end
 
 	self.Spacing = newSpacing
-	self.LayoutSignature = nil
+	self.LayoutGeneration = nil
 	self:Layout()
 end
 
@@ -851,7 +869,7 @@ function M:SetRows(numRows, alignment, invertLayout)
 	self.RowAlignment = alignment
 	self.OverflowRowAlignment = overflowAlignment
 	self.InvertLayout = invertLayout
-	self.LayoutSignature = nil
+	self.LayoutGeneration = nil
 	self:Layout()
 end
 
@@ -866,7 +884,7 @@ function M:SetGrowDown(enabled)
 	end
 	self.GrowDown = enabled
 	self.GrowUp = newGrowUp
-	self.LayoutSignature = nil
+	self.LayoutGeneration = nil
 	self:Layout()
 end
 
@@ -881,7 +899,7 @@ function M:SetGrowUp(enabled)
 	end
 	self.GrowUp = enabled
 	self.GrowDown = newGrowDown
-	self.LayoutSignature = nil
+	self.LayoutGeneration = nil
 	self:Layout()
 end
 
@@ -894,7 +912,7 @@ function M:SetColumns(n)
 		return
 	end
 	self.Columns = n
-	self.LayoutSignature = nil
+	self.LayoutGeneration = nil
 	self:Layout()
 end
 

@@ -454,3 +454,101 @@ fw.describe("AuraCategoryIds", function()
 		end
 	end)
 end)
+
+-- The change stamp behind every "has this moved?" test in the addon. What it replaced built a
+-- string, so the traps are the ones a string could not have: a list that shrinks, a set whose
+-- pairs order varies, and two keys sharing one set.
+fw.describe("ChangeStamp", function()
+	local function newStamps()
+		local addon = newAddon({})
+		loadModule("src/Utils/ChangeStamp.lua", addon)
+		return addon.Utils.ChangeStamp:New()
+	end
+
+	local function stamp(stamps, key, ...)
+		stamps:Begin(key)
+		for i = 1, select("#", ...) do
+			stamps:Add((select(i, ...)))
+		end
+		return stamps:Commit()
+	end
+
+	fw.it("keeps its number while nothing moves", function()
+		local stamps = newStamps()
+		local first = stamp(stamps, "k", 1, "a", true)
+
+		assert(stamp(stamps, "k", 1, "a", true) == first, "same values, same number")
+		assert(stamp(stamps, "k", 1, "a", false) ~= first, "a changed value moves it")
+	end)
+
+	fw.it("gives every key its own number", function()
+		local stamps = newStamps()
+
+		assert(stamp(stamps, "left", 1) ~= stamp(stamps, "right", 1), "keys never collide")
+	end)
+
+	fw.it("notices a list that gets shorter", function()
+		-- The values are kept between calls, so a dropped tail would otherwise still match.
+		local stamps = newStamps()
+		local long = stamp(stamps, "k", 1, 2, 3)
+		local short = stamp(stamps, "k", 1, 2)
+
+		assert(short ~= long, "dropping a value counts as a change")
+		assert(stamp(stamps, "k", 1, 2, 3) ~= short, "and putting it back counts again")
+	end)
+
+	fw.it("compares a colour by its components", function()
+		local stamps = newStamps()
+
+		stamps:Begin("k")
+		stamps:AddColor({ 1, 0, 0 })
+
+		local red = stamps:Commit()
+
+		stamps:Begin("k")
+		stamps:AddColor({ 1, 0, 0 })
+
+		assert(stamps:Commit() == red, "a refilled scratch table still reads as the same colour")
+
+		stamps:Begin("k")
+		stamps:AddColor(nil)
+
+		assert(stamps:Commit() ~= red, "and losing the colour is a change")
+	end)
+
+	fw.it("reads a spell-id set the same whatever order pairs hands it back", function()
+		-- Sound registrations are rebuilt when this moves, so an unstable order would re-register
+		-- every set on every login.
+		local stamps = newStamps()
+		local scratch = {}
+
+		stamps:Begin("k")
+		stamps:AddSet(scratch, { [12345] = true, [678] = true, [90] = true })
+
+		local set = stamps:Commit()
+
+		stamps:Begin("k")
+		stamps:AddSet(scratch, { [90] = true, [12345] = true, [678] = true })
+
+		assert(stamps:Commit() == set, "the same ids read the same")
+
+		stamps:Begin("k")
+		stamps:AddSet(scratch, { [12345] = true, [678] = true })
+
+		assert(stamps:Commit() ~= set, "dropping one does not")
+
+		stamps:Begin("k")
+		stamps:AddSet(scratch, { [12345] = true, [678] = true, [90] = false })
+
+		assert(stamps:Commit() ~= set, "and an id switched off is not in the set")
+	end)
+
+	fw.it("forgets a key that cannot come back", function()
+		local stamps = newStamps()
+		local before = stamp(stamps, "k", 1)
+
+		stamps:Forget("k")
+
+		assert(stamp(stamps, "k", 1) ~= before, "the key starts again from nothing")
+	end)
+end)

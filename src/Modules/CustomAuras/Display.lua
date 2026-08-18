@@ -119,7 +119,7 @@ local M = {}
 addon.Modules.CustomAuras.Display = M
 
 -- Coalesced to one pass per frame. Plates churn a handful at a time as people come in and out of
--- range, and each rebuild walks every group's spell variants to build a signature that has usually
+-- range, and each rebuild walks every group's spell variants to check for a change that has usually
 -- not moved. A teardown cancels the pending pass rather than let it re-register what it cleared.
 local QueueSoundRefresh, CancelSoundRefresh = moduleUtil:Coalesced(function()
 	M:RefreshSounds()
@@ -173,10 +173,10 @@ local function BuildStyle(group)
 end
 
 ---@param group CustomAuraGroup
----@return string
-local function StyleSignature(group)
-	return auraContainerDisplay:GetStyleSignature(BuildStyle(group), groups:GetSize(group),
-		group.Icons.Spacing)
+---@return number
+local function StyleGeneration(group)
+	return auraContainerDisplay:GetStyleGeneration(group.Id, BuildStyle(group),
+		groups:GetSize(group), group.Icons.Spacing)
 end
 
 ---Both groups are created at the largest budget a group can ask for, not at zero. Containers
@@ -241,8 +241,8 @@ local function ParkDisplay(entry)
 	entry.Display.Frame:SetParent(UIParent)
 
 	-- Cleared, or the next group to take this entry would skip applying its own geometry.
-	entry.StyleSignature = nil
-	entry.FilterSignature = nil
+	entry.StyleGeneration = nil
+	entry.FilterGeneration = nil
 	entry.Unit = nil
 
 	if entry.Test then
@@ -427,14 +427,14 @@ end
 local function ConfigureDisplay(state, entry, unit)
 	local group = state.Group
 	local display = entry.Display
-	local signature = state.StyleSignature
+	local generation = state.StyleGeneration
 
-	if entry.StyleSignature ~= signature then
+	if entry.StyleGeneration ~= generation then
 		display:ApplyConfig(groups:GetSize(group), group.Icons.Spacing, BuildStyle(group))
-		entry.StyleSignature = signature
+		entry.StyleGeneration = generation
 	end
 
-	if entry.FilterSignature ~= state.FilterSignature then
+	if entry.FilterGeneration ~= state.FilterGeneration then
 		-- The wrong-sided group keeps the bare aura type. It is budgeted to zero either way, and
 		-- a filter string is cheaper to leave alone than to keep in step with the live one.
 		local helpful = group.AuraType == groups.AuraType.Helpful
@@ -444,7 +444,7 @@ local function ConfigureDisplay(state, entry, unit)
 		display:SetCandidateFilters(HARMFUL_KEY, state.Filters)
 		display:SetSortMethod(HELPFUL_KEY, state.SortMethod, state.SortDirection)
 		display:SetSortMethod(HARMFUL_KEY, state.SortMethod, state.SortDirection)
-		entry.FilterSignature = state.FilterSignature
+		entry.FilterGeneration = state.FilterGeneration
 	end
 
 	display:SetUnit(unit or NO_UNIT)
@@ -930,18 +930,18 @@ local function EnsureState(groupDef)
 	-- An import or profile switch replaces the table wholesale, so re-point at the live one.
 	state.Group = groupDef
 
-	local signature = StyleSignature(groupDef)
+	local generation = StyleGeneration(groupDef)
 
 	-- A changed look strands the parked copies on the old one; noted here, acted on by the
 	-- sweep the refresh kicks off next to the prewarm (SweepParkedIfStale). A state seen for
 	-- the first time counts as changed: after a profile switch the pool is full of the old
 	-- profile's looks and the replacement groups are all new states, so a first-sight skip
 	-- would leave the whole pool unswept. At login the sweep is a handful of no-op diffs.
-	if state.StyleSignature ~= signature then
+	if state.StyleGeneration ~= generation then
 		state.StyleStale = true
 	end
 
-	state.StyleSignature = signature
+	state.StyleGeneration = generation
 
 	local shape = groups:GetShape(groupDef)
 
@@ -953,10 +953,10 @@ local function EnsureState(groupDef)
 		Park(state)
 	end
 
-	local filterSignature = groups:GetFilterSignature(groupDef)
+	local filterGeneration = groups:GetFilterGeneration(groupDef)
 
-	if state.FilterSignature ~= filterSignature then
-		state.FilterSignature = filterSignature
+	if state.FilterGeneration ~= filterGeneration then
+		state.FilterGeneration = filterGeneration
 		state.Filters = groups:BuildFilters(groupDef)
 		state.FilterString = groups:BuildFilterString(groupDef)
 		state.SortMethod, state.SortDirection = groups:GetSortMethod(groupDef)
@@ -1292,7 +1292,7 @@ local function CollectSoundRequests(state)
 		end
 	end
 
-	-- Sorted: the sound module compares a signature built from this, and pairs order varies.
+	-- Sorted: the sound module stamps this list, and pairs order varies.
 	-- Deduplicated too, because two unit frames can hold the same member.
 	wipe(soundTokens)
 	wipe(soundSeen)
@@ -1583,11 +1583,14 @@ function M:Refresh(options, moduleEnabled)
 		self:SetAnchorInteractive(state)
 	end
 
-	-- Containers cannot be destroyed, so park them and forget the state.
+	-- Containers cannot be destroyed, so park them and forget the state. Group ids are never
+	-- handed out twice, so what the stamps hold for a deleted one is dead weight.
 	for id, state in pairs(states) do
 		if not live[id] then
 			Park(state)
 			states[id] = nil
+			auraContainerDisplay:ForgetStyleGeneration(id)
+			groups:ForgetFilterGeneration(id)
 		end
 	end
 
@@ -1626,7 +1629,7 @@ end
 ---registration depends on - which unit a token holds, and whether it is still the side the group
 ---asked for - moves without anything being drawn differently, and a sound-only group has no
 ---display for the unit and plate handlers to re-point. Cheap to call: the sound module compares
----a signature and does nothing when the answer has not moved.
+---a stamp and does nothing when the answer has not moved.
 function M:RefreshSounds()
 	wipe(soundRequests)
 
@@ -1752,8 +1755,8 @@ end
 ---@field Test IconSlotContainer|BarSlotContainer|nil
 ---@field Handle table? Offset drag handle, created on first use in test mode.
 ---@field Unit string? The unit a unit frame or arena frame copy resolved to, for the sounds.
----@field StyleSignature string?
----@field FilterSignature string?
+---@field StyleGeneration number?
+---@field FilterGeneration number?
 
 ---@class CustomAuraGroupState
 ---@field Group CustomAuraGroup
@@ -1761,8 +1764,8 @@ end
 ---@field FilterString string
 ---@field SortMethod number
 ---@field SortDirection number
----@field FilterSignature string
----@field StyleSignature string
+---@field FilterGeneration number
+---@field StyleGeneration number
 ---@field StyleStale boolean? The look changed and the parked pool has not been swept for it yet.
 ---@field SweepLane Sweep? This state's own lane of the background walker, so same-shape groups
 ---never replace each other's runs.

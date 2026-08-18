@@ -31,6 +31,7 @@ Locales\koKR.lua
 Locales\zhCN.lua
 Locales\zhTW.lua
 
+Utils\ChangeStamp.lua
 Utils\UnitUtil.lua
 Utils\FontUtil.lua
 Utils\IconUtil.lua

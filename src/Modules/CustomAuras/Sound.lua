@@ -1,13 +1,14 @@
 ---@type string, Addon
 local _, addon = ...
 local sounds = addon.Core.Sounds
+local changeStamp = addon.Utils.ChangeStamp
 
 -- The engine plays the sound, because the addon is never told an aura landed. Registrations bake
--- in the file, so any change means handing them all back; hence the signature check in Apply.
+-- in the file, so any change means handing them all back; hence the change check in Apply.
 --
--- That signature is built from the RESOLVED path, not the saved name. A name from a media addon
+-- That check reads the RESOLVED path, not the saved name. A name from a media addon
 -- resolves to nothing until that addon has loaded and registered it, which routinely happens after
--- our first pass - so the same name has to be able to produce a different signature later, or the
+-- our first pass, so the same name has to be able to read as changed later, or the
 -- retry would find nothing to do and the sound would stay wrong for the session.
 --
 -- They keep firing whether or not anything of ours is on screen, so a disabled group must Clear.
@@ -25,13 +26,15 @@ local TRIGGERS = {
 }
 
 local EMPTY = {}
+-- One registration set for the module, so one key.
+local REQUESTS_KEY = "CustomAuraSounds"
 
 ---@type number[]
 local soundHandles = {}
-local registeredSignature
-local signatureParts = {}
+local requestStamp = changeStamp:New()
+local registeredGeneration
 local truncated = false
--- Resolved path per request, filled at the top of Apply and read by both the signature and the
+-- Resolved path per request, filled at the top of Apply and read by both the change check and the
 -- registration loop, so a request is only resolved once per pass. Parallel to the requests array.
 ---@type table<number, string?>
 local resolvedFiles = {}
@@ -47,26 +50,33 @@ local function ClearAuraSounds()
 		soundHandles[index] = nil
 	end
 
-	registeredSignature = nil
+	registeredGeneration = nil
 	truncated = false
 end
 
 ---@param requests CustomAuraSoundRequest[]
----@return string
-local function Signature(requests)
-	wipe(signatureParts)
+---@return number
+local function RequestsGeneration(requests)
+	requestStamp:Begin(REQUESTS_KEY)
 
 	for index, request in ipairs(requests) do
-		signatureParts[#signatureParts + 1] = request.Unit
-		signatureParts[#signatureParts + 1] = request.Trigger
+		requestStamp:Add(request.Unit)
+		requestStamp:Add(request.Trigger)
 		-- The path rather than the name, so a sound that could not be resolved on an earlier pass
 		-- re-registers once its media addon shows up.
-		signatureParts[#signatureParts + 1] = resolvedFiles[index] or "?"
-		signatureParts[#signatureParts + 1] = request.Channel
-		signatureParts[#signatureParts + 1] = table.concat(request.SpellIds, ",")
+		requestStamp:Add(resolvedFiles[index] or false)
+		requestStamp:Add(request.Channel)
+
+		local spellIds = request.SpellIds
+
+		requestStamp:Add(#spellIds)
+
+		for i = 1, #spellIds do
+			requestStamp:Add(spellIds[i])
+		end
 	end
 
-	return table.concat(signatureParts, "|")
+	return requestStamp:Commit()
 end
 
 ---Reconciles the engine-side registrations against what the groups want. One request is one
@@ -79,9 +89,9 @@ function M:Apply(requests)
 		resolvedFiles[index] = sounds:ResolveStrict(request.File)
 	end
 
-	local signature = Signature(requests)
+	local generation = RequestsGeneration(requests)
 
-	if signature == registeredSignature then
+	if generation == registeredGeneration then
 		return
 	end
 
@@ -116,7 +126,7 @@ function M:Apply(requests)
 		end
 	end
 
-	registeredSignature = signature
+	registeredGeneration = generation
 end
 
 ---True when the last Apply hit the cap, so the silence can be explained.

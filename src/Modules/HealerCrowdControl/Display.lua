@@ -10,6 +10,7 @@ local units = addon.Utils.UnitUtil
 local moduleUtil = addon.Utils.ModuleUtil
 local fontUtil = addon.Utils.FontUtil
 local wowEx = addon.Utils.WoWEx
+local changeStamp = addon.Utils.ChangeStamp
 
 -- Loaded before this file in TOC order.
 local sound = addon.Modules.HealerCrowdControl.Sound
@@ -34,6 +35,9 @@ addon.Modules.HealerCrowdControl.Display = M
 
 -- Ceiling on the per-healer icon budget, and the one label slot: one CC aura is enough to warrant
 -- the text. Containers are built at the ceiling, so the slider only re-budgets what is there.
+-- One look per module, so one key each for the icons and for the whole parked-entry test.
+local PARKED_STYLE_KEY = "HealerCcParkedStyle"
+local PARKED_OPTIONS_KEY = "HealerCcParkedOptions"
 local MAX_CC_ICONS = 5
 local LABEL_MAX_ICONS = 1
 local testModeActive = false
@@ -61,7 +65,8 @@ local discardPool = {}
 local staleParkCounter = 0
 -- The options the parked entries were last brought onto, latched only when that pass actually
 -- ran: a restricted refresh leaves it stale, so the next unrestricted one retries.
-local parkedOptionsSignature
+local optionsStamp = changeStamp:New()
+local parkedOptionsGeneration
 
 ---@type TestSpell[]
 local testSpells = {}
@@ -199,11 +204,18 @@ local function RefreshHealerDisplays()
 	-- actually moving, since this runs on every roster event; and skipped, with the latch left
 	-- stale, while restricted - the restyle could not land, an unchanged entry may still match
 	-- as it is, and the next unrestricted refresh retries.
-	local signature = auraContainerDisplay:GetStyleSignature(BuildStyle(options), iconSize,
-		options.IconSpacing or 2) .. ":" .. fontSize .. ":" .. tostring(options.Font.Flags)
+	-- The label's font rides in the same stamp: it is baked into the parked entries too, and a
+	-- change to it has to convert them exactly like a change to the icons.
+	optionsStamp:Begin(PARKED_OPTIONS_KEY)
+	optionsStamp:Add(auraContainerDisplay:GetStyleGeneration(PARKED_STYLE_KEY, BuildStyle(options),
+		iconSize, options.IconSpacing or 2))
+	optionsStamp:Add(fontSize)
+	optionsStamp:Add(options.Font.Flags)
 
-	if parkedOptionsSignature ~= signature and not wowEx:IsAuraStylingRestricted() then
-		parkedOptionsSignature = signature
+	local generation = optionsStamp:Commit()
+
+	if parkedOptionsGeneration ~= generation and not wowEx:IsAuraStylingRestricted() then
+		parkedOptionsGeneration = generation
 
 		for _, item in pairs(discardPool) do
 			if item.Display then
@@ -287,7 +299,7 @@ local function RefreshHealers()
 			item = nil
 			-- The pool now holds an entry the parked restyle has not seen; unlatch so the next
 			-- unrestricted refresh brings it onto the current look.
-			parkedOptionsSignature = nil
+			parkedOptionsGeneration = nil
 		end
 
 		-- Container entries are interchangeable: same groups, retargeted by SetUnit. Taking any

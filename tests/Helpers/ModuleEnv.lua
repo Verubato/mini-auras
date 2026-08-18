@@ -292,6 +292,7 @@ function M.build()
 	end
 	addon.Framework.NotifyWithPrefix = addon.Framework.Notify
 
+	loadFile("src/Utils/ChangeStamp.lua")
 	loadFile("src/Utils/WoWEx.lua")
 	loadFile("src/Utils/ModuleUtil.lua")
 	addon.Utils.ModuleUtil:Init()

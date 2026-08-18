@@ -818,6 +818,8 @@ function M.loadDisplay()
 	for _, path in ipairs({
 		-- Must precede AuraContainerDisplay: every button's icon is cropped through it.
 		"src/Utils/IconUtil.lua",
+		-- Must precede AuraContainerDisplay: it makes its style stamps at load.
+		"src/Utils/ChangeStamp.lua",
 		"src/Core/Pooling/Sweep.lua",
 		"src/Core/Pooling/Pool.lua",
 		"src/Core/Display/GrowAnchors.lua",

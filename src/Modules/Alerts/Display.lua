@@ -76,10 +76,13 @@ local activeDisplays = {}
 -- token -> its display pair, kept for the session. activeDisplays holds only the ACTIVE
 -- tokens; this keeps every pair that has been built so a token returning reuses its own, since
 -- WoW frames can never be freed. Pairs are rebuilt only when the configuration baked into their
--- buttons changes (see AlertPairSignature).
+-- buttons changes (see AlertPairGeneration).
 local displayPairsByToken = {}
 -- Configuration the live pairs were built with; a change rebuilds them.
-local pairSignature
+local pairGeneration
+-- Bumped whenever the module re-applies its options, so a pair can tell a push it has already
+-- taken from one that would change something. See ApplyDisplayOptions.
+local optionsGeneration = 0
 -- Queue half of a Coalesced wrapper around ChainAlertDisplays, bound below the function it
 -- wraps. A camera sweep in a battleground adds and removes a dozen plates in one frame; one
 -- chain pass on the next frame covers the whole burst.
@@ -99,6 +102,8 @@ local glowColorsScratch = {}
 -- CreateAlertDisplayPair otherwise builds at the configured size: a button's size is fixed in
 -- initializeFrame, which never re-runs on pool reuse, so a placeholder size would survive any
 -- refresh that can't restyle (i.e. the whole of an arena).
+-- The module wears one look, so all its pairs are stamped against a single key.
+local PAIR_STYLE_KEY = "AlertsPair"
 local DEFAULT_PAIR_ICONS = 8
 local DEFAULT_PAIR_SIZE = 24
 local DEFAULT_PAIR_SPACING = 2
@@ -377,16 +382,25 @@ local function TestIconColor(entry, categoryColor)
 	return categoryColor
 end
 
+---The class a pair's colours come from, or false while the flat palette is in use. Asked on every
+---plate add, so it doubles as the part of the applied stamp that a refresh cannot cover: a token's
+---class is answered late, and the colours have to follow it when it lands.
+---@param unitToken string
+---@return string|false
+local function TokenColorKey(unitToken)
+	return ClassColorsEnabled() and EnemyClassToken(unitToken) or false
+end
+
 ---The tints for one token's three groups: the owner's class colour when class colouring is on and
 ---the client will name them, otherwise the per-category colours. Class colouring deliberately
 ---replaces the categories rather than joining them, since one icon has only one ring to give.
----@param unitToken string
+---@param colorKey string|false From TokenColorKey.
 ---@return table? bigDefensive
 ---@return table? externalDefensive
 ---@return table? important
-local function TokenGroupColors(unitToken)
-	if ClassColorsEnabled() then
-		local classColor = ClassColor(EnemyClassToken(unitToken))
+local function TokenGroupColors(colorKey)
+	if colorKey then
+		local classColor = ClassColor(colorKey)
 
 		if classColor then
 			return classColor, classColor, classColor
@@ -403,6 +417,22 @@ end
 -- across units.
 -- (Important-vs-defensive dedup is handled by filter negation at creation.)
 local function ApplyDisplayOptions(entry, unitToken, options, showBars)
+	local colorKey = TokenColorKey(unitToken)
+
+	-- Every plate that spawns asks for this, and forty of them under the same settings ask for the
+	-- same push. Options only move on a refresh, which bumps the generation; the other two are
+	-- what a refresh cannot see coming.
+	if entry.AppliedGeneration == optionsGeneration
+		and entry.AppliedShowBars == showBars
+		and entry.AppliedColorKey == colorKey
+	then
+		return
+	end
+
+	entry.AppliedGeneration = optionsGeneration
+	entry.AppliedShowBars = showBars
+	entry.AppliedColorKey = colorKey
+
 	local includeDefensives = options.IncludeDefensives
 	local importantEnabled = options.Important and options.Important.Enabled
 	local splitBars = options.SplitBars
@@ -419,11 +449,11 @@ local function ApplyDisplayOptions(entry, unitToken, options, showBars)
 	-- copies it field by field, and one call restyles all three values in a single pass).
 	local style = AlertStyle()
 
-	-- Outside the pair signature, like the budgets: a recolour goes straight onto the groups the
+	-- Outside the pair stamp, like the budgets: a recolour goes straight onto the groups the
 	-- buttons already hold. Wherever the client lets a display restyle, that lands on its own;
 	-- inside an arena it never can, which is why a class colour is baked in at creation instead
 	-- (see AlertPairKey) and this call only has to agree with what was baked.
-	local bigDefColor, extDefColor, importantColor = TokenGroupColors(unitToken)
+	local bigDefColor, extDefColor, importantColor = TokenGroupColors(colorKey)
 	wipe(glowColorsScratch)
 	glowColorsScratch[auraFilters.GroupKey.BigDefensive] = bigDefColor
 	glowColorsScratch[auraFilters.GroupKey.ExternalDefensive] = extDefColor
@@ -482,7 +512,7 @@ local function CreateAlertDisplayPair(unitToken)
 	-- only initial values - buttons read them from the group at paint time, and
 	-- ApplyDisplayOptions recolours the groups in place.
 	local style = AlertStyle()
-	local bigDefColor, extDefColor, importantColor = TokenGroupColors(unitToken)
+	local bigDefColor, extDefColor, importantColor = TokenGroupColors(TokenColorKey(unitToken))
 
 	-- Own copies: the colour helpers refill shared scratch in place, and a group holding the
 	-- scratch itself would compare equal to any later recolour, so the diff could never fire.
@@ -541,12 +571,13 @@ end
 -- the full prewarmed frame set for good: budgets and category tints stay out because both are
 -- applied to existing pairs at runtime (SetMaxIcons and SetGroupGlowColors, in
 -- ApplyDisplayOptions), so only the size and style that genuinely bake in remain.
----@return string
-local function AlertPairSignature()
+---@return number
+local function AlertPairGeneration()
 	local options = db and db.Modules.AlertsModule
 	local icons = options and options.Icons
 
-	return auraContainerDisplay:GetStyleSignature(
+	return auraContainerDisplay:GetStyleGeneration(
+		PAIR_STYLE_KEY,
 		AlertStyle(),
 		(icons and icons.Size) or DEFAULT_PAIR_SIZE,
 		(options and options.IconSpacing) or DEFAULT_PAIR_SPACING
@@ -558,6 +589,9 @@ end
 -- must keep a resolvable rect until then, or the rest of its row blinks out for that frame. A
 -- hidden frame renders nothing either way, and the next chain pass re-points every active frame.
 local function ResetAlertDisplayPair(entry)
+	-- A parked pair no longer wears what it was configured with, so the next Ensure must push again.
+	entry.AppliedGeneration = nil
+
 	entry.Def:SetEnabled(false)
 	entry.Def:Hide()
 	entry.Imp:SetEnabled(false)
@@ -668,13 +702,13 @@ end
 -- Rebuilds every pair when the configuration baked into their buttons has changed. Tokens that
 -- are currently tracked get theirs back straight away so the bars never blank out.
 local function RebuildStaleDisplayPairs()
-	local signature = AlertPairSignature()
+	local generation = AlertPairGeneration()
 
-	if signature == pairSignature then
+	if generation == pairGeneration then
 		return
 	end
 
-	pairSignature = signature
+	pairGeneration = generation
 
 	local tracked = activeTokensScratch
 	wipe(tracked)
@@ -810,6 +844,9 @@ end
 function M:RefreshDisplays()
 	local options = db.Modules.AlertsModule
 	local showBars = GetAlertBarsShown()
+
+	-- The one place options reach the pairs, so it is where "the settings moved" is stamped.
+	optionsGeneration = optionsGeneration + 1
 
 	RebuildStaleDisplayPairs()
 

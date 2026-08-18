@@ -104,7 +104,7 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	local wantPlainBorder = style.Border == true or (tinted and style.ColorByDispelType == true)
 	local colorR, colorG, colorB = M:ButtonColor(instance, widgets)
 
-	-- Compared field by field rather than through a joined signature: this runs per button on
+	-- Compared field by field rather than through a joined string: this runs per button on
 	-- every restyle, and the retry ticker restyles every stale display once a second. The colour
 	-- is part of it so a colour-only change still repaints.
 	if wantBorder == widgets.DispelBorder

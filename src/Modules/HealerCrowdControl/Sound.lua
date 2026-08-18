@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local auraSounds = addon.Core.AuraSounds
 local moduleUtil = addon.Utils.ModuleUtil
+local changeStamp = addon.Utils.ChangeStamp
 local ModuleName = addon.Utils.ModuleName
 
 addon.Modules.HealerCrowdControl = addon.Modules.HealerCrowdControl or {}
@@ -15,6 +16,9 @@ addon.Modules.HealerCrowdControl.Sound = M
 -- when a known CC aura lands on a registered healer, without the addon ever reading aura state.
 -- Registrations are per (unit, spellId), fed from the generated Core/AuraCategoryIds CC list.
 
+-- One sound for the whole module, so one key.
+local SOUND_SETTINGS_KEY = "HealerCcSound"
+
 ---@type Db
 local db
 -- Sound handles keyed by healer unit, so a healer joining or leaving only re-registers that
@@ -24,7 +28,8 @@ local db
 local registeredAuraSoundsByUnit = {}
 -- The sound settings the current registrations were made with; when these change every healer is
 -- re-registered (the unit set is handled incrementally).
-local auraSoundSignature = nil
+local settingsStamp = changeStamp:New()
+local auraSoundGeneration = nil
 
 ---Removes one healer's registered aura sounds.
 ---@param unit string
@@ -43,7 +48,7 @@ local function ClearAuraSounds()
 	for unit in pairs(registeredAuraSoundsByUnit) do
 		RemoveUnitAuraSounds(unit)
 	end
-	auraSoundSignature = nil
+	auraSoundGeneration = nil
 end
 
 ---Registers an engine-side sound for every known player CC spell on one healer.
@@ -79,10 +84,15 @@ local function RegisterAuraSounds(activePool)
 
 	-- The sound itself is baked into each registration, so changing it means re-registering
 	-- everyone; the healer set alone never does.
-	local signature = auraSounds:Signature(soundFilePath, channel)
-	if signature ~= auraSoundSignature then
+	settingsStamp:Begin(SOUND_SETTINGS_KEY)
+	settingsStamp:Add(soundFilePath)
+	settingsStamp:Add(channel)
+
+	local generation = settingsStamp:Commit()
+
+	if generation ~= auraSoundGeneration then
 		ClearAuraSounds()
-		auraSoundSignature = signature
+		auraSoundGeneration = generation
 	end
 
 	for unit in pairs(registeredAuraSoundsByUnit) do

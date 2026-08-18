@@ -47,7 +47,7 @@ function M:StoredValue(spellId, muted)
 	return nil
 end
 
----The set the registrations and their signature run off: the saved opt-outs plus whichever
+---The set the registrations and their change check run off: the saved opt-outs plus whichever
 ---default-off spells the player has left alone. The table is reused per category, so a caller
 ---must be done with one read before asking for the next.
 ---@param category string "Important", "Defensive" or "EnemyDebuff"

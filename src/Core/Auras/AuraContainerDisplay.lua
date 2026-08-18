@@ -1,5 +1,6 @@
 ---@type string, Addon
 local _, addon = ...
+local changeStamp = addon.Utils.ChangeStamp
 local fontUtil = addon.Utils.FontUtil
 local iconUtil = addon.Utils.IconUtil
 local wowEx = addon.Utils.WoWEx
@@ -27,7 +28,7 @@ local defaultIconTexCoord = {}
 
 -- The style fields StoreStyle copies verbatim from a caller's table. Drives the compare in
 -- StyleDiffersFromStored, the copy in StoreStyle, the clear in GetStyleScratch and the concat in
--- GetStyleSignature, so a new field lands in all of them at once - listing it in only some lets
+-- GetStyleGeneration, so a new field lands in all of them at once - listing it in only some lets
 -- a stale value leak from one module's scratch into another's. The colour tables (GlowColor,
 -- PandemicColor, TextColor) and the db-resolved fields (swipe, countdown threshold, glow style
 -- name) are special-cased where they are used.
@@ -108,8 +109,8 @@ local EMPTY_OPTIONS = {}
 -- can only ever set the fields it cares about and can never inherit a value from whoever used it
 -- last (which is exactly the bug a per-module scratch table invites).
 local styleScratch = {}
--- Reused by GetStyleSignature; concatenated with an explicit range, so no trimming is needed.
-local signatureScratch = {}
+-- What each style key was last stamped with; see GetStyleGeneration.
+local styleStamps = changeStamp:New()
 -- Refilled per texture button styled, and handed straight to ArtTextures without being retained.
 local artSpecScratch = {}
 
@@ -1972,39 +1973,47 @@ function M:BuildStandardStyle(iconOptions)
 	return style
 end
 
----Everything StyleButton bakes into a button, as a comparable string. Callers cache displays by
----this: a button can only be styled when it is created, so a display whose signature no longer
----matches has to be rebuilt rather than restyled. Deliberately includes the global db values
----StoreStyle resolves (glow style, swipe, countdown threshold) - those are invisible to the
----caller's own options table, and leaving them out meant changing the glow type in the options
----never reached the already-built displays.
+---Everything StyleButton bakes into a button, as a number that only changes when one of those
+---values does. Callers cache displays by it: a button can only be styled when it is created, so a
+---display whose generation no longer matches has to be rebuilt rather than restyled. Deliberately
+---includes the global db values StoreStyle resolves (glow style, swipe, countdown threshold) -
+---those are invisible to the caller's own options table, and leaving them out meant changing the
+---glow type in the options never reached the already-built displays.
+---
+---One key per thing being watched: a nameplate bar's cache, a custom aura group, a module's one
+---look. Two different looks compared under one key would read as changing on every call.
+---@param key any
 ---@param style AuraDisplayStyle
 ---@param size number
 ---@param spacing number
----@return string
-function M:GetStyleSignature(style, size, spacing)
+---@return number
+function M:GetStyleGeneration(key, style, size, spacing)
 	local db = GetDb()
-	local parts = signatureScratch
 
-	parts[1] = tostring(size)
-	parts[2] = tostring(spacing)
+	styleStamps:Begin(key)
+	styleStamps:Add(size)
+	styleStamps:Add(spacing)
 
-	local n = 2
 	for _, field in ipairs(STYLE_FIELDS) do
-		n = n + 1
-		parts[n] = tostring(style[field])
+		styleStamps:Add(style[field])
 	end
 
-	parts[n + 1] = tostring(style.GlowColor and table.concat(style.GlowColor, ","))
-	parts[n + 2] = tostring(db and db.DisableSwipe)
-	parts[n + 3] = tostring(db and db.MillisecondsThreshold)
-	parts[n + 4] = GetGlowStyleName()
-	parts[n + 5] = tostring(db and db.ColorCountdownByTime)
-	parts[n + 6] = tostring(style.PandemicColor and table.concat(style.PandemicColor, ","))
-	parts[n + 7] = tostring(auraCountdownText:GetColorGeneration())
-	parts[n + 8] = tostring(style.TextColor and table.concat(style.TextColor, ","))
+	styleStamps:AddColor(style.GlowColor)
+	styleStamps:Add(db and db.DisableSwipe)
+	styleStamps:Add(db and db.MillisecondsThreshold)
+	styleStamps:Add(GetGlowStyleName())
+	styleStamps:Add(db and db.ColorCountdownByTime)
+	styleStamps:AddColor(style.PandemicColor)
+	styleStamps:Add(auraCountdownText:GetColorGeneration())
+	styleStamps:AddColor(style.TextColor)
 
-	return table.concat(parts, ":", 1, n + 8)
+	return styleStamps:Commit()
+end
+
+---Drops a key nothing will ask about again, so its stored values are not kept for the session.
+---@param key any
+function M:ForgetStyleGeneration(key)
+	styleStamps:Forget(key)
 end
 
 ---Stores the per-button style and applies it to existing buttons when possible. Skipped

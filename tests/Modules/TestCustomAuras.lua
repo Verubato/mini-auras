@@ -788,17 +788,21 @@ fw.describe("CustomAuras - spell filters", function()
 		assert(count > 1, "and the other ids the same ability is known by")
 	end)
 
-	fw.it("changes its signature when the tracked set moves", function()
+	fw.it("changes its generation when the tracked set moves", function()
 		local group = groups:Normalise({ Spells = { POLYMORPH } })
-		local before = groups:GetFilterSignature(group)
+		local before = groups:GetFilterGeneration(group)
 
 		group.Spells[#group.Spells + 1] = ICE_BLOCK
 
-		assert(groups:GetFilterSignature(group) ~= before, "adding a spell is a change")
+		local withSpell = groups:GetFilterGeneration(group)
+
+		assert(withSpell ~= before, "adding a spell is a change")
 
 		group.AuraType = "HARMFUL"
 
-		assert(groups:GetFilterSignature(group) ~= before, "so is flipping the aura type")
+		-- Against the reading taken after the spell landed, not the first one; comparing with that
+		-- passes on the spell alone and says nothing about the aura type.
+		assert(groups:GetFilterGeneration(group) ~= withSpell, "so is flipping the aura type")
 	end)
 end)
 
@@ -1784,18 +1788,18 @@ fw.describe("CustomAuras - tracking by filter", function()
 		assert(groups:BuildFilterString(others) == "HELPFUL|!PLAYER", "anyone else negates it")
 	end)
 
-	fw.it("changes signature on the mode itself, not just what it builds", function()
+	fw.it("changes generation on the mode itself, not just what it builds", function()
 		-- With no components chosen, both modes build the same bare filter string. Only the
 		-- mode says whether an includeSpellIDs map is sent at all, so the display has to be
 		-- told, or switching back to a spell list leaves the container filtering on nothing.
 		local group = groups:Normalise({ Spells = { ICE_BLOCK } })
-		local bySpells = groups:GetFilterSignature(group)
+		local bySpells = groups:GetFilterGeneration(group)
 
 		group.TrackingMode = groups.TrackingMode.Filters
 		groups:Normalise(group)
 
 		assert(groups:BuildFilterString(group) == "HELPFUL", "the string really is unchanged")
-		assert(groups:GetFilterSignature(group) ~= bySpells, "but the signature moved anyway")
+		assert(groups:GetFilterGeneration(group) ~= bySpells, "but the generation moved anyway")
 	end)
 
 	fw.it("names no spell ids, so the engine never drops the filter", function()
@@ -1882,19 +1886,19 @@ fw.describe("CustomAuras - candidate filters", function()
 		assert(group.Candidates.isStealable == nil, "nor does an invented state")
 	end)
 
-	fw.it("moves its signature when any of it changes", function()
+	fw.it("moves its generation when any of it changes", function()
 		local group = groups:Normalise({ Spells = { ICE_BLOCK } })
-		local before = groups:GetFilterSignature(group)
+		local before = groups:GetFilterGeneration(group)
 
 		group.Candidates.isBossAura = "REQUIRE"
 
-		local withFlag = groups:GetFilterSignature(group)
+		local withFlag = groups:GetFilterGeneration(group)
 
 		assert(withFlag ~= before, "a flag reaches the engine")
 
 		group.Sort = groups.Sort.Longest
 
-		assert(groups:GetFilterSignature(group) ~= withFlag, "and so does the order")
+		assert(groups:GetFilterGeneration(group) ~= withFlag, "and so does the order")
 	end)
 end)
 

@@ -125,7 +125,7 @@ function M:IsSupported()
 end
 
 ---A generation stamp for the configured band colours, bumped whenever any component moves.
----Styles store the stamp and signatures embed it, so one number stands in for nine compares at
+---Styles store the stamp and the style generation folds it in, so one number stands in for nine compares at
 ---every call site; the compare happens here, by value, because a profile switch mutates the
 ---saved tables in place. Missing components count as 1, matching what the curve would draw.
 ---@return number

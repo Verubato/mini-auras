@@ -7,6 +7,7 @@ local ttsMutes = addon.Core.TtsMutes
 local units = addon.Utils.UnitUtil
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
+local changeStamp = addon.Utils.ChangeStamp
 
 addon.Modules.Alerts = addon.Modules.Alerts or {}
 
@@ -20,6 +21,10 @@ addon.Modules.Alerts.Sound = M
 -- addon cannot read, it ships one baked clip per spell name (Core/Auras/AuraTtsSounds)
 -- and registers each spell id with its own clip, so the engine says the name for us.
 
+-- The two sound sets the module keeps, stamped so a settings change re-registers them and
+-- anything else leaves them alone.
+local ALERT_SOUND_KEY = "AlertSounds"
+local ALLY_SOUND_KEY = "AlertAllySounds"
 -- Spells worth an icon but not a noise. The engine plays these per aura application, so an
 -- ability that lands often turns the alert sound into a metronome.
 local SILENT_ALERT_SPELL_IDS = {
@@ -60,14 +65,15 @@ local paused = false
 -- removed only when the token reappears as a non-enemy, the sound settings change, or plate
 -- tracking stops entirely.
 local alertSoundsByToken = {}
--- Signature of the sound settings the current registrations were made with; when it changes
--- every active token is re-registered.
-local alertSoundSettingsSignature = nil
+local settingsStamp = changeStamp:New()
+-- Refilled by AddSet on each check; see Utils/ChangeStamp.
+local mutedScratch = {}
+local alertSoundSettingsGeneration = nil
 -- The enemy-debuff registrations: one flat list over every watched token rather than a set per
 -- token, because they are all made and dropped together.
 ---@type number[]?
 local allySoundIds
-local allySoundSignature = nil
+local allySoundGeneration = nil
 
 -- The spells that stay silent in one category: what the TTS Spells tab has switched off, plus
 -- the spells that start switched off. The table belongs to Core/Audio/TtsMutes and is refilled per
@@ -109,7 +115,7 @@ end
 -- Reconciles the enemy-debuff announcements on the player and party tokens. Kept
 -- apart from the nameplate registrations because nothing about it is per-plate: the tokens are
 -- fixed, and what invalidates them is the roster rather than a plate coming and going. Cheap to
--- call: an unchanged signature does nothing, which is what lets the roster event drive it
+-- call: unchanged settings do nothing, which is what lets the roster event drive it
 -- directly instead of going through the module's whole Refresh.
 ---@param force boolean? Re-register even when the settings have not moved. The tokens never
 ---change, but a registration made against a token nobody was holding is not something the
@@ -126,19 +132,20 @@ function M:RefreshAllySounds(force)
 	local voicePackPath = voicePack and ttsPacks:Path(voicePack) or false
 	local channel = active and ((tts and tts.Channel) or "Master") or false
 	local muted = MutedSpellIds("EnemyDebuff")
-	local signature = auraSounds:Signature(
-		active,
-		voicePack,
-		voicePackPath,
-		channel,
-		auraSounds:SetSignature(muted)
-	)
+	settingsStamp:Begin(ALLY_SOUND_KEY)
+	settingsStamp:Add(active)
+	settingsStamp:Add(voicePack)
+	settingsStamp:Add(voicePackPath)
+	settingsStamp:Add(channel)
+	settingsStamp:AddSet(mutedScratch, muted)
 
-	if not force and signature == allySoundSignature then
+	local generation = settingsStamp:Commit()
+
+	if not force and generation == allySoundGeneration then
 		return
 	end
 
-	allySoundSignature = signature
+	allySoundGeneration = generation
 
 	auraSounds:RemoveSet(allySoundIds)
 	allySoundIds = nil
@@ -244,7 +251,7 @@ end
 function M:RemoveAllySounds()
 	auraSounds:RemoveSet(allySoundIds)
 	allySoundIds = nil
-	allySoundSignature = nil
+	allySoundGeneration = nil
 end
 
 -- Re-evaluates the sound settings; when they change, every active token's
@@ -253,7 +260,7 @@ end
 -- pause/resume transitions.
 ---@param activeTokens table<string, any> keys are the tokens currently being drawn
 function M:Refresh(activeTokens)
-	-- Ahead of the nameplate signature check below, which returns early and would otherwise
+	-- Ahead of the nameplate settings check below, which returns early and would otherwise
 	-- swallow a settings change that only the ally registrations care about.
 	self:RefreshAllySounds()
 
@@ -266,31 +273,34 @@ function M:Refresh(activeTokens)
 	local active = (importantEnabled or defensiveEnabled or importantTts or defensiveTts)
 		and moduleUtil:IsModuleEnabled(moduleName.Alerts)
 		and not paused
-	-- Only part of the signature while something plays the clips; the pack is irrelevant otherwise.
+	-- Only part of the stamp while something plays the clips; the pack is irrelevant otherwise.
 	-- The path goes in alongside the name because an addon registering a pack later changes where
 	-- the same saved name reads its clips from.
 	local voicePack = (importantTts or defensiveTts) and ttsPacks:Resolve(tts and tts.VoicePack) or false
 	local voicePackPath = voicePack and ttsPacks:Path(voicePack) or false
 	local ttsChannel = (importantTts or defensiveTts) and ((tts and tts.Channel) or "Master") or false
-	local signature = auraSounds:Signature(
-		active,
-		importantEnabled,
-		sound.Important and sound.Important.File,
-		defensiveEnabled,
-		sound.Defensive and sound.Defensive.File,
-		sound.Channel,
-		importantTts,
-		defensiveTts,
-		voicePack,
-		voicePackPath,
-		ttsChannel,
-		importantTts and auraSounds:SetSignature(MutedSpellIds("Important")) or false,
-		defensiveTts and auraSounds:SetSignature(MutedSpellIds("Defensive")) or false
-	)
-	if signature == alertSoundSettingsSignature then
+	settingsStamp:Begin(ALERT_SOUND_KEY)
+	settingsStamp:Add(active)
+	settingsStamp:Add(importantEnabled)
+	settingsStamp:Add(sound.Important and sound.Important.File)
+	settingsStamp:Add(defensiveEnabled)
+	settingsStamp:Add(sound.Defensive and sound.Defensive.File)
+	settingsStamp:Add(sound.Channel)
+	settingsStamp:Add(importantTts)
+	settingsStamp:Add(defensiveTts)
+	settingsStamp:Add(voicePack)
+	settingsStamp:Add(voicePackPath)
+	settingsStamp:Add(ttsChannel)
+	settingsStamp:AddSet(mutedScratch, importantTts and MutedSpellIds("Important") or nil)
+	settingsStamp:AddSet(mutedScratch, defensiveTts and MutedSpellIds("Defensive") or nil)
+
+	local generation = settingsStamp:Commit()
+
+	if generation == alertSoundSettingsGeneration then
 		return
 	end
-	alertSoundSettingsSignature = signature
+
+	alertSoundSettingsGeneration = generation
 
 	self:RemoveAllTokens()
 	if active then

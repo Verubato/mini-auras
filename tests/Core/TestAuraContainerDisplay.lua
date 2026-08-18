@@ -474,18 +474,45 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		assert(#acm.notifications == 1, "an unknown group key is reported rather than ignored")
 	end)
 
-	fw.it("the style signature covers the global glow type", function()
-		-- Displays are cached by this signature, and the glow style is a global db value the
-		-- caller never passes in; leaving it out meant changing it in the options never reached
-		-- the already-built buttons.
+	fw.it("the style generation covers the global glow type", function()
+		-- Displays are cached by this number, and the glow style is a global db value the caller
+		-- never passes in; leaving it out meant changing it in the options never reached the
+		-- already-built buttons.
 		local style = display:GetStyleScratch()
 		style.Glow = true
 
-		local before = display:GetStyleSignature(style, 30, 2)
-		mockDb.GlowType = ANIMATED_GLOW
-		local after = display:GetStyleSignature(style, 30, 2)
+		local before = display:GetStyleGeneration("test", style, 30, 2)
+		assert(display:GetStyleGeneration("test", style, 30, 2) == before, "an unchanged look keeps its number")
 
-		assert(before ~= after, "changing the glow type must invalidate cached displays")
+		mockDb.GlowType = ANIMATED_GLOW
+
+		assert(display:GetStyleGeneration("test", style, 30, 2) ~= before,
+			"changing the glow type must invalidate cached displays")
+	end)
+
+	fw.it("gives each key its own generation", function()
+		-- One key is one thing being watched. Two keys asking about the same look still get their
+		-- own numbers, so a display cached under one can never match an entry built for another.
+		local style = display:GetStyleScratch()
+
+		local left = display:GetStyleGeneration("left", style, 30, 2)
+		local right = display:GetStyleGeneration("right", style, 30, 2)
+
+		assert(left ~= right, "separate keys, separate numbers")
+		assert(display:GetStyleGeneration("left", style, 30, 2) == left, "and each one is stable")
+	end)
+
+	fw.it("notices a look that goes back to a shorter one", function()
+		-- The stamp keeps the values it was last given, so a list that shrinks has to clear the
+		-- tail; otherwise the leftovers would read as a match.
+		local style = display:GetStyleScratch()
+		style.GlowColor = { 1, 0, 0 }
+
+		local coloured = display:GetStyleGeneration("shrink", style, 30, 2)
+
+		style.GlowColor = nil
+
+		assert(display:GetStyleGeneration("shrink", style, 30, 2) ~= coloured, "dropping the colour counts")
 	end)
 
 	fw.it("Slot Glow applies its static asset and runs no animation", function()

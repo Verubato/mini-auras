@@ -17,10 +17,6 @@ addon.Core.AuraSounds = M
 local infoScratch = { unitToken = nil, spellID = nil, soundFileName = nil, outputChannel = nil }
 -- Freed handle lists, reused by the next registration instead of allocating a fresh one.
 local idListPool = {}
--- Reused by Signature; concatenated with an explicit range, so no trimming is needed.
-local signatureScratch = {}
--- Reused by SetSignature. Sorted and concatenated whole, so it is trimmed rather than ranged.
-local setScratch = {}
 
 ---Registers an Added-trigger sound on one unit for every spell id in the set, appending the
 ---handles to `ids`. Pass nil to start a new (pooled) list, or a previous return value to
@@ -101,46 +97,4 @@ function M:RemoveSet(ids)
 	end
 
 	idListPool[#idListPool + 1] = ids
-end
-
----A comparable string for a set of spell ids, for feeding an exclusion list into Signature.
----Sorted, because pairs order is not stable across sessions and an order change would look
----like a settings change every login.
----@param spellIds table<number, boolean>?
----@return string
-function M:SetSignature(spellIds)
-	if not spellIds then
-		return ""
-	end
-
-	local count = 0
-
-	for spellId, excluded in pairs(spellIds) do
-		if excluded then
-			count = count + 1
-			setScratch[count] = spellId
-		end
-	end
-
-	for index = #setScratch, count + 1, -1 do
-		setScratch[index] = nil
-	end
-
-	table.sort(setScratch)
-
-	return table.concat(setScratch, ",")
-end
-
----Joins the values a consumer's registrations were built from into a comparable string, so a
----settings change (and only a settings change) invalidates them.
----@param ... any
----@return string
-function M:Signature(...)
-	local count = select("#", ...)
-
-	for i = 1, count do
-		signatureScratch[i] = tostring((select(i, ...)))
-	end
-
-	return table.concat(signatureScratch, "|", 1, count)
 end

@@ -5,6 +5,7 @@ local artTextures = addon.Core.ArtTextures
 local spellSearch = addon.Core.SpellSearch
 local sounds = addon.Core.Sounds
 local units = addon.Utils.UnitUtil
+local changeStamp = addon.Utils.ChangeStamp
 
 -- The shape of a custom aura group, shared by the display, the options page and the import path.
 --
@@ -209,6 +210,9 @@ local DEFAULT_GROUPS = {
 -- Where they land: centred, just above the player frame, where the eye already is.
 local DEFAULT_ROW_X = 0
 local DEFAULT_ROW_Y = 80
+
+-- What each group's filters were last built from; see GetFilterGeneration.
+local filterStamp = changeStamp:New()
 
 ---@class CustomAurasGroups
 local M = {}
@@ -1084,23 +1088,35 @@ end
 ---Changes whenever something the container was built from changes, so the display can tell a
 ---cosmetic edit from one that has to reach the engine.
 ---@param group CustomAuraGroup
----@return string
-function M:GetFilterSignature(group)
-	local parts = {
-		-- The mode itself, not just what it produces. Switching between a spell list and a set
-		-- of components that happen to build the same string still has to reach the engine,
-		-- because only one of the two sends an includeSpellIDs map at all.
-		group.TrackingMode,
-		M:BuildFilterString(group),
-		group.Sort,
-		table.concat(group.Spells, ","),
-	}
+---@return number
+function M:GetFilterGeneration(group)
+	filterStamp:Begin(group.Id)
+	-- The mode itself, not just what it produces. Switching between a spell list and a set of
+	-- components that happen to build the same string still has to reach the engine, because only
+	-- one of the two sends an includeSpellIDs map at all.
+	filterStamp:Add(group.TrackingMode)
+	filterStamp:Add(M:BuildFilterString(group))
+	filterStamp:Add(group.Sort)
 
-	for _, flag in ipairs(CANDIDATE_FLAGS) do
-		parts[#parts + 1] = group.Candidates[flag] or ""
+	local spells = group.Spells
+
+	filterStamp:Add(#spells)
+
+	for index = 1, #spells do
+		filterStamp:Add(spells[index])
 	end
 
-	return table.concat(parts, "/")
+	for _, flag in ipairs(CANDIDATE_FLAGS) do
+		filterStamp:Add(group.Candidates[flag] or false)
+	end
+
+	return filterStamp:Commit()
+end
+
+---Drops what a deleted group's filters were last built from.
+---@param groupId string
+function M:ForgetFilterGeneration(groupId)
+	filterStamp:Forget(groupId)
 end
 
 ---@class CustomAuraGroup
