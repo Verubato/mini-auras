@@ -1725,25 +1725,17 @@ end)
 fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 	fw.before_each(acm.reset)
 
-	---Hands back a map-tracking display and the maps it was given, newest last.
-	local function newTrackedInstance(filters)
-		local instance = display:New(_G.UIParent, "player", {
-			{ Key = "cc", FilterString = "HELPFUL", MaxIcons = 5, CandidateFilters = filters },
+	local SPELL_MAP = { includeSpellIDs = { [12345] = true } }
+
+	---A display whose group filters on spell ids, which is the only kind a transfer can spoil.
+	local function newFilteredInstance()
+		return display:New(_G.UIParent, "player", {
+			{ Key = "cc", FilterString = "HELPFUL", MaxIcons = 5, CandidateFilters = SPELL_MAP },
 		}, 30, 2, "Test")
-		local frame = instance.Frame
-		local given = {}
-		local setFilters = frame.SetAuraGroupCandidateFilters
-
-		frame.SetAuraGroupCandidateFilters = function(self, key, handed)
-			given[#given + 1] = handed
-			setFilters(self, key, handed)
-		end
-
-		return instance, given
 	end
 
-	fw.it("takes the displays off screen for a moment, then puts them back", function()
-		local instance = newInstance()
+	fw.it("takes the displays that filter on spell ids off screen for a moment", function()
+		local instance = newFilteredInstance()
 
 		-- The auras the engine cannot filter properly mid-transfer never reach a group at all
 		-- this way, which is the only remedy while it is answering wrongly rather than late.
@@ -1752,14 +1744,29 @@ fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 
 		acm.runTimers()
 		assert(instance.Frame:IsShown(), "and back a moment later")
-		assert(instance.Frame:GetUnit() == "target", "still on the token it was built with")
+		assert(instance.Frame:GetUnit() == "player", "still on the token it was built with")
+	end)
+
+	fw.it("leaves a display with no spell-id map on screen throughout", function()
+		-- A transfer only spoils a filter the engine has to decide whether it may apply, and it
+		-- decides that from the unit's identity. A plain filter string is read the same either
+		-- way, so hiding a plate or a portrait for a third of a second would buy nothing.
+		newFilteredInstance()
+
+		local plain = newInstance()
+
+		displayEvents:TriggerEvent("ZONE_CHANGED")
+		assert(plain.Frame:IsShown(), "nothing to protect it from")
+
+		acm.runTimers()
+		assert(plain.Frame:IsShown(), "and nothing to put back")
 	end)
 
 	fw.it("listens for every event a transfer can arrive on", function()
 		-- Which of the three the client picks depends on where the pad puts you, so a missing
 		-- registration would leave the leak in place for that kind of teleport only.
 		for _, event in ipairs({ "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA" }) do
-			local instance = newInstance()
+			local instance = newFilteredInstance()
 
 			displayEvents:TriggerEvent(event)
 			assert(not instance.Frame:IsShown(), event .. " suppresses")
@@ -1769,50 +1776,48 @@ fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 		end
 	end)
 
-	fw.it("hands the spell-id map back, which a re-read alone does not", function()
-		local map = { includeSpellIDs = { [12345] = true } }
-		local _, given = newTrackedInstance(map)
+	fw.it("re-reads the unit from scratch rather than waiting for an aura event", function()
+		local instance = newFilteredInstance()
+		local frame = instance.Frame
+		local before = frame._calls.SetUnit or 0
 
 		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
 		acm.runTimers()
 
-		-- Whether the map may be applied to a unit is settled when the engine is handed it, so a
-		-- map given during the transfer keeps the answer it got there until it is handed over
-		-- again. The same table twice may read as no change, hence the empty set in between.
-		assert(#given >= 2, "handed over in a pair; got " .. #given)
-		assert(given[#given - 1] ~= map, "an empty set first")
-		assert(given[#given] == map, "then the real map")
+		-- Which group an aura belongs to is settled once per aura instance, and an ordinary aura
+		-- event only re-parses what changed, so an aura that was up during the transfer keeps the
+		-- answer it got there. Pointing the container at nobody and back is the full re-parse.
+		assert((frame._calls.SetUnit or 0) >= before + 2, "pointed at nobody and back")
+		assert(frame:GetUnit() == "player", "and left on its own unit")
 	end)
 
-	fw.it("hands back the map the group is on now, not the one it was built with", function()
-		-- Personal auras are built on a placeholder that matches nothing on purpose and get their
-		-- real spell list a moment later, so re-handing the creation-time map empties them.
-		local placeholder = { includeSpellIDs = { [2147483647] = true } }
-		local live = { includeSpellIDs = { [12345] = true } }
-		local instance, given = newTrackedInstance(placeholder)
+	fw.it("spends no re-read on a display with no spell-id map", function()
+		newFilteredInstance()
 
-		instance:SetCandidateFilters("cc", live)
+		local plain = newInstance()
+		local before = plain.Frame._calls.SetUnit or 0
 
 		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
 		acm.runTimers()
 
-		assert(given[#given] == live, "the group's current map, not the placeholder")
+		assert((plain.Frame._calls.SetUnit or 0) == before, "nothing to recover, nothing done")
 	end)
 
 	fw.it("keeps trying for a while, since nothing tells it the transfer is over", function()
-		local map = { includeSpellIDs = { [12345] = true } }
-		local _, given = newTrackedInstance(map)
+		local instance = newFilteredInstance()
+		local frame = instance.Frame
+		local before = frame._calls.SetUnit or 0
 
 		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
 		acm.runTimers()
 
 		-- The events that look like a "done" tell are not dispatched on every teleport, so one
 		-- pass timed against nothing would miss any transfer slower than it.
-		assert(#given > 2, "more than the one pass the blackout ends with; got " .. #given)
+		assert((frame._calls.SetUnit or 0) > before + 2, "more than the pass the blackout ends with")
 	end)
 
 	fw.it("leaves a display its module wanted hidden alone", function()
-		local instance = newInstance()
+		local instance = newFilteredInstance()
 
 		instance:SetShown(false)
 
