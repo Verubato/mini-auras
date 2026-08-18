@@ -24,6 +24,7 @@ local testFiles = {
     "tests/Core/TestKickTracker.lua",
     "tests/Core/TestInspector.lua",
     "tests/Core/TestUnitStatePoller.lua",
+    "tests/Core/TestModuleLifecycle.lua",
     "tests/Core/TestBarTextures.lua",
     "tests/Core/TestFonts.lua",
     "tests/Core/TestArtTextures.lua",
@@ -49,7 +50,7 @@ local testFiles = {
     -- Modules, driven end to end against the mocked 12.1 environment.
     "tests/Modules/TestEnemyKickTracker.lua",
     "tests/Modules/TestAllyKickTracker.lua",
-    "tests/Modules/TestModuleLifecycle.lua",
+    "tests/Modules/TestContainerLifecycle.lua",
     "tests/Modules/TestModuleSmoke.lua",
     "tests/Modules/TestAlertsBars.lua",
     "tests/Modules/TestAlertsUnitSource.lua",

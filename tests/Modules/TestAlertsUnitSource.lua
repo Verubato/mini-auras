@@ -30,6 +30,9 @@ env.loadModule("src/Modules/Alerts/Display.lua")
 env.loadModule("src/Modules/Alerts/Module.lua")
 local module = env.addon.Modules.AlertsModule
 module:Init()
+-- Init only builds the lifecycle now; a module sets itself up on the first refresh that
+-- finds it enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
+module:Refresh()
 
 local events = assert(acm.lastFrameForEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS"), "alerts event frame")
 
@@ -55,7 +58,7 @@ local function enterArena(opponents)
 	env.instanceType = "arena"
 	env.arenaOpponents = opponents
 	env.invalidateWorldState()
-	events:TriggerEvent("PLAYER_ENTERING_WORLD")
+	env.loadWorld(module)
 end
 
 local function enterWorld()
@@ -63,7 +66,7 @@ local function enterWorld()
 	env.instanceType = "none"
 	env.arenaOpponents = 0
 	env.invalidateWorldState()
-	events:TriggerEvent("PLAYER_ENTERING_WORLD")
+	env.loadWorld(module)
 end
 
 local function addEnemyPlate(token)
@@ -101,7 +104,7 @@ fw.describe("AlertsModule - when the arena pairs get built", function()
 		env.instanceType = "arena"
 		env.arenaOpponents = 0
 		env.invalidateWorldState()
-		events:TriggerEvent("PLAYER_ENTERING_WORLD")
+		env.loadWorld(module)
 
 		env.loadingScreenUp = true
 		module:Refresh()
@@ -185,7 +188,7 @@ fw.describe("AlertsModule - picking the token source", function()
 		env.inInstance = true
 		env.instanceType = "pvp"
 		env.invalidateWorldState()
-		events:TriggerEvent("PLAYER_ENTERING_WORLD")
+		env.loadWorld(module)
 		addEnemyPlate("nameplate1")
 
 		assert(tracked("nameplate1"), "a battleground is a plate zone whatever its size")
@@ -197,7 +200,7 @@ fw.describe("AlertsModule - picking the token source", function()
 		env.inInstance = true
 		env.instanceType = "party"
 		env.invalidateWorldState()
-		events:TriggerEvent("PLAYER_ENTERING_WORLD")
+		env.loadWorld(module)
 
 		assert(not tracked("arena1") and not tracked("nameplate1"), "alerts do not run in here")
 	end)
@@ -259,7 +262,7 @@ fw.describe("AlertsModule - moving between the two sources", function()
 		env.instanceType = "arena"
 		env.arenaOpponents = 0
 		env.invalidateWorldState()
-		events:TriggerEvent("PLAYER_ENTERING_WORLD")
+		env.loadWorld(module)
 
 		addEnemyPlate("nameplate1")
 		assert(tracked("nameplate1"), "no count yet, so plates carry the alerts")
@@ -282,7 +285,7 @@ fw.describe("AlertsModule - moving between the two sources", function()
 		env.instanceType = "arena"
 		env.arenaOpponents = 0
 		env.invalidateWorldState()
-		events:TriggerEvent("PLAYER_ENTERING_WORLD")
+		env.loadWorld(module)
 		assert(not tracked("arena1"), "precondition: nothing known yet")
 
 		env.arenaOpponents = 3
@@ -299,7 +302,7 @@ fw.describe("AlertsModule - moving between the two sources", function()
 		env.instanceType = "arena"
 		env.arenaOpponents = 0
 		env.invalidateWorldState()
-		events:TriggerEvent("PLAYER_ENTERING_WORLD")
+		env.loadWorld(module)
 		assert(not tracked("arena1"), "precondition: nothing known yet")
 
 		env.arenaOpponents = 3

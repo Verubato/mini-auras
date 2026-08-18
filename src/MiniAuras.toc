@@ -42,6 +42,7 @@ Utils\WoWEx.lua
 Core\Options\InstanceOptions.lua
 Core\Events\EventGate.lua
 Core\Events\UnitStatePoller.lua
+Core\Lifecycle\ModuleLifecycle.lua
 Core\Compat\LegacyAddon.lua
 
 Core\Display\Media\Fonts.lua

@@ -4,6 +4,7 @@ local frames = addon.Core.Frames
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local eventGate = addon.Core.EventGate
+local moduleLifecycle = addon.Core.ModuleLifecycle
 local unitStatePoller = addon.Core.UnitStatePoller
 
 -- Loaded before this file in TOC order.
@@ -14,6 +15,8 @@ local M = {}
 addon.Modules.RaidFrameAuras.Module = M
 addon.Modules.RaidFrameAurasModule = M
 
+---@type ModuleLifecycle?
+local lifecycle
 ---@type EventGate?
 local rosterGate
 ---@type table?
@@ -59,16 +62,14 @@ local function OnEvent(_, event, unit)
 	end
 end
 
+---@return RaidFrameAurasInstanceOptions?
+local function GetOptions()
+	return display:GetOptions()
+end
+
 ---@return boolean
 local function IsEnabled()
 	return moduleUtil:IsModuleEnabled(moduleName.RaidFrameAuras)
-end
-
----@param active boolean
-local function SetEventsActive(active)
-	-- Events stay unregistered while disabled; the addon-wide Refresh (config, world
-	-- change, raid flip) re-runs this gate.
-	rosterGate:SetActive(active)
 end
 
 -- Live auras are pushed in by the aura containers, so only the fake ones rebuild here.
@@ -98,7 +99,7 @@ local function SetTestMode(active)
 	end
 end
 
-local function CreateEvents()
+local function Setup()
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
 	-- Registered by the Refresh gate while the module is enabled.
@@ -114,9 +115,7 @@ local function CreateEvents()
 	end, function(unitToken)
 		display:ReapplyUnitGates(unitToken)
 	end)
-end
 
-local function InstallHooks()
 	frames:InstallUnitFrameHooks(eventsFrame, {
 		OnSetUnit = function(frame, unit)
 			display:OnCufSetUnit(frame, unit)
@@ -138,10 +137,23 @@ local function InstallHooks()
 	})
 end
 
-local function ApplyInitialState()
-	if IsEnabled() then
-		display:EnsureWatchers()
-	end
+-- Events stay unregistered while disabled; the addon-wide Refresh (config, world change, raid
+-- flip) is what brings the module back.
+local function OnEnable()
+	rosterGate:SetActive(true)
+end
+
+local function OnDisable()
+	rosterGate:SetActive(false)
+	display:Teardown()
+end
+
+---@param options RaidFrameAurasInstanceOptions
+local function Apply(options)
+	display:EnsureFrames()
+	display:ApplyOptions(options)
+	UpdateContent()
+	SeedStateBaselines()
 end
 
 function M:StartTesting()
@@ -153,32 +165,25 @@ function M:StopTesting()
 end
 
 function M:Refresh()
-	local options = display:GetOptions()
-
-	if not options then
-		return
-	end
-
-	local isEnabled = IsEnabled()
-
-	SetEventsActive(isEnabled)
-
-	if not isEnabled then
-		display:Teardown()
-		return
-	end
-
-	display:EnsureFrames()
-	display:ApplyOptions(options)
-	UpdateContent()
-	SeedStateBaselines()
+	lifecycle:Refresh()
 end
 
 function M:Init()
 	display:Init()
-	CreateEvents()
-	InstallHooks()
-	ApplyInitialState()
+
+	lifecycle = moduleLifecycle:New({
+		GetOptions = GetOptions,
+		IsEnabled = IsEnabled,
+		Setup = Setup,
+		OnEnable = OnEnable,
+		OnDisable = OnDisable,
+		Apply = Apply,
+	})
+
+	-- The hooks armed above have nothing to attach to without the watchers.
+	if lifecycle:ArmEarly() then
+		display:EnsureWatchers()
+	end
 end
 
 ---@class RaidFrameAurasModule

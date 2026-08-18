@@ -8,8 +8,8 @@ local config = addon.Config
 local migrator = addon.Config.Migrator
 local testModeManager = addon.Core.TestModeManager
 local legacyAddon = addon.Core.LegacyAddon
--- Every module Inits and Refreshes unconditionally; whether it draws anything is its own
--- decision, taken from its saved settings.
+-- Every module Inits and Refreshes unconditionally; whether it draws anything, and whether it
+-- sets itself up at all, is its own decision, taken from its saved settings.
 local modules = {
 	addon.Modules.CrowdControlModule,
 	addon.Modules.HealerCrowdControlModule,
@@ -45,10 +45,18 @@ local MEDIA_REFRESH_DELAY = 1
 local eventsFrame
 local db
 local lastIsInRaid = false
+local lastInstanceType
 -- A loading screen is up while the addon is loading, and nothing announces the one already on
 -- screen, so this starts true and the first LOADING_SCREEN_DISABLED ends it. Read by the nameplate
 -- modules: building their aura containers is only free while nothing is being drawn.
 local loadingScreenUp = true
+-- Third-party unit frames do not exist until the world has loaded, so a module attaching to them
+-- has to wait for the first PLAYER_ENTERING_WORLD. Central rather than per module: a module set
+-- up lazily on its first enable has long missed the event by then.
+local enteredWorld = false
+-- Bumped on every world load. A module set up lazily has long missed the event itself, so anything
+-- it has to start over on a zone-in compares this against the generation it last acted on.
+local worldGeneration = 0
 local mediaRefreshQueued = false
 
 -- Which instance flavour the next test session previews; the raid/default sub-tabs flip it.
@@ -111,7 +119,7 @@ local function RefreshShared()
 	addon.Core.Frames:RefreshTestFrameFonts()
 end
 
-local function OnEvent(_, event)
+local function OnEvent(_, event, unit)
 	if event == "LOADING_SCREEN_ENABLED" then
 		loadingScreenUp = true
 	elseif event == "LOADING_SCREEN_DISABLED" then
@@ -134,17 +142,35 @@ local function OnEvent(_, event)
 			end
 		end
 	elseif event == "PLAYER_ENTERING_WORLD" then
+		enteredWorld = true
+		worldGeneration = worldGeneration + 1
 		lastIsInRaid = IsInRaid()
+		lastInstanceType = select(2, IsInInstance())
 		NotifyChanges()
 		-- After NotifyChanges, because both share one dialog frame and the conflict is the more
 		-- urgent of the two.
 		legacyAddon:WarnIfConflicting()
 		legacyAddon:OfferMissedImport(db)
 		addon:Refresh()
+	elseif event == "ZONE_CHANGED_NEW_AREA" then
+		-- A zone can change the instance type without a world load, and every module's gate reads
+		-- it. Only when it actually moved: this also fires on every zone boundary in the open
+		-- world, and beside the world load, which has just refreshed everything itself.
+		local instanceType = select(2, IsInInstance())
+		if instanceType ~= lastInstanceType then
+			lastInstanceType = instanceType
+			addon:Refresh()
+		end
 	elseif event == "HOUSE_PLOT_ENTERED" or event == "HOUSE_PLOT_EXITED" then
 		-- Crossing a plot boundary loads no new map, so PLAYER_ENTERING_WORLD never sees it;
 		-- re-run the gates so everything hides on the way in and wakes on the way out.
 		addon:Refresh()
+	elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
+		-- The kick trackers are enabled per spec. A respec fires no world or roster event, so
+		-- without this nothing would wake a module the player's new spec switches on.
+		if unit == "player" then
+			addon:Refresh()
+		end
 	elseif event == "GROUP_ROSTER_UPDATE" then
 		-- Modules unregister their events entirely while disabled, and IsModuleEnabled depends
 		-- on raid membership; re-evaluate every module's gate when it flips so a disabled
@@ -190,6 +216,8 @@ local function OnAddonLoaded()
 	eventsFrame:RegisterEvent("PLAYER_LOGIN")
 	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+	eventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
+	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 	eventsFrame:RegisterEvent("LOADING_SCREEN_ENABLED")
 	eventsFrame:RegisterEvent("LOADING_SCREEN_DISABLED")
 
@@ -208,6 +236,21 @@ end
 ---@return boolean
 function addon:IsLoadingScreenUp()
 	return loadingScreenUp
+end
+
+---Whether the world has finished loading at least once this session. Anything that reaches into
+---another addon's unit frames has to wait for it: before then those frames do not exist.
+---@return boolean
+function addon:HasEnteredWorld()
+	return enteredWorld
+end
+
+---How many times the world has loaded this session. A module compares it against the generation
+---it last handled to tell a fresh world from an ordinary refresh, which is what it would otherwise
+---have needed its own always-registered PLAYER_ENTERING_WORLD to hear.
+---@return number
+function addon:WorldGeneration()
+	return worldGeneration
 end
 
 function addon:Refresh()
@@ -274,6 +317,9 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field ToggleTest fun(self: table, isRaid: boolean?)
 ---@field TestWithOptions fun(self: table, isRaid: boolean?)
 ---@field IsTestActive fun(self: table): boolean
+---@field IsLoadingScreenUp fun(self: table): boolean
+---@field HasEnteredWorld fun(self: table): boolean
+---@field WorldGeneration fun(self: table): number
 
 ---@class Utils
 ---@field UnitUtil UnitUtil
@@ -289,6 +335,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field IconSlotContainer IconSlotContainer
 ---@field AuraContainerDisplay AuraContainerDisplay
 ---@field EventGate EventGate
+---@field ModuleLifecycle ModuleLifecycle
 ---@field AuraCategoryIds AuraCategoryIds
 ---@field InstanceOptions InstanceOptions
 ---@field LegacyAddon LegacyAddon
@@ -373,6 +420,16 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Nameplates Nameplates
 ---@field Portrait Portrait
 
+---A module wraps a ModuleLifecycle, which owns the enable and disable edges: Init only caches
+---the settings and builds the lifecycle, and everything else waits for the first Refresh that
+---finds the module enabled. So a module the player never switches on creates no frames, registers
+---no events and installs no hooks.
+---
+---A module can therefore never rely on hearing an event to notice it should wake up. Everything
+---that decides enablement is driven centrally from this file: the world, zone, roster, spec and
+---housing events, plus the refresh a config change asks for.
 ---@class IModule
----@field Init fun(self: IModule) Initialises the module to be ready for use.
----@field Refresh fun(self: IModule) Refreshes the module to be in sync with config settings and world state. Must perform the least amount of work possible as this gets called a lot.
+---@field Init fun(self: IModule) Caches settings and builds the lifecycle. Must not create frames or register events.
+---@field Refresh fun(self: IModule) Brings the module in sync with its settings and the world. Called a lot, so it must do the least work it can.
+---@field StartTesting fun(self: IModule)? Shows the module's preview. Every module but TrinketsTracker has one.
+---@field StopTesting fun(self: IModule)?

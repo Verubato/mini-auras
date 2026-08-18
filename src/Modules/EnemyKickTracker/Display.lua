@@ -219,8 +219,6 @@ end
 
 function M:Init()
 	db = mini:GetSavedVars()
-
-	CreateFrames()
 end
 
 ---@class KickBar

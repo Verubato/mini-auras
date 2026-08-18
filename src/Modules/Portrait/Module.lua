@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local eventGate = addon.Core.EventGate
+local moduleLifecycle = addon.Core.ModuleLifecycle
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
 
@@ -15,7 +16,7 @@ local M = {}
 addon.Modules.Portrait.Module = M
 addon.Modules.PortraitModule = M
 
--- Which portrait token each occupant-change event speaks for (see CreateEvents).
+-- Which portrait token each occupant-change event speaks for (see Setup).
 local UNIT_CHANGE_TOKEN = {
 	PLAYER_TARGET_CHANGED = "target",
 	PLAYER_FOCUS_CHANGED = "focus",
@@ -27,10 +28,11 @@ local db
 local testModeActive = false
 local paused = false
 local enabled = false
-local worldLoaded = false
 local blizzardAttached = false
 local thirdPartyAttached = false
--- A disabled portrait module receives no events at all (see CreateEvents).
+---@type ModuleLifecycle?
+local lifecycle
+-- A disabled portrait module receives no events at all (see Setup).
 ---@type EventGate?
 local unitChangeGate
 
@@ -66,31 +68,10 @@ local function EnsureAttached()
 	end
 
 	-- Third-party unit frames do not exist until the world has loaded.
-	if worldLoaded and not thirdPartyAttached then
+	if addon:HasEnteredWorld() and not thirdPartyAttached then
 		thirdPartyAttached = true
 		anchors:AttachThirdPartyFrames()
 	end
-end
-
----@param active boolean
-local function SetEventsActive(active)
-	-- Events stay unregistered while disabled; the addon-wide Refresh (config, world
-	-- change, raid flip) re-runs this gate.
-	if unitChangeGate then
-		unitChangeGate:SetActive(active)
-	end
-end
-
-local function Teardown()
-	display:Teardown()
-end
-
-local function EnsureFrames()
-	display:EnsureFrames()
-end
-
-local function ApplyOptions()
-	display:ApplyOptions()
 end
 
 -- Live auras are pushed in by the containers, so only the fake ones rebuild here.
@@ -116,16 +97,7 @@ local function SetTestMode(active)
 	M:Refresh()
 end
 
-local function CreateEvents()
-	-- defer attaching to third-party unit frames until they are created
-	local eventsFrame = CreateFrame("Frame")
-	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-	eventsFrame:SetScript("OnEvent", function()
-		eventsFrame:UnregisterEvent("PLAYER_ENTERING_WORLD")
-		worldLoaded = true
-		EnsureAttached()
-	end)
-
+local function Setup()
 	-- Containers track their unit token but don't refresh when the token's occupant changes; the
 	-- display's RequestRefresh forces the re-parse.
 	local unitChangeEvents = CreateFrame("Frame")
@@ -146,10 +118,26 @@ local function CreateEvents()
 		-- has to be re-budgeted the moment the pet turns up.
 		"UNIT_PET",
 	})
+
+	observer:WatchKicks()
 end
 
-local function ApplyInitialState()
-	M:Refresh()
+-- Events stay unregistered while disabled; the addon-wide Refresh (config, world change, raid
+-- flip) is what brings the module back.
+local function OnEnable()
+	unitChangeGate:SetActive(true)
+end
+
+local function OnDisable()
+	unitChangeGate:SetActive(false)
+	display:Teardown()
+end
+
+local function Apply()
+	EnsureAttached()
+	display:EnsureFrames()
+	display:ApplyOptions()
+	UpdateContent()
 end
 
 ---@return IconSlotContainer[]
@@ -166,32 +154,20 @@ function M:StopTesting()
 end
 
 function M:Refresh()
-	local options = GetOptions()
-
-	if not options then
-		return
-	end
-
-	local isEnabled = IsEnabled()
-
-	SetEventsActive(isEnabled)
-
-	if not isEnabled then
-		Teardown()
-		return
-	end
-
-	EnsureAttached()
-	EnsureFrames()
-	ApplyOptions()
-	UpdateContent()
+	lifecycle:Refresh()
 end
 
 function M:Init()
 	db = mini:GetSavedVars()
 
 	display:Init()
-	CreateEvents()
-	observer:WatchKicks()
-	ApplyInitialState()
+
+	lifecycle = moduleLifecycle:New({
+		GetOptions = GetOptions,
+		IsEnabled = IsEnabled,
+		Setup = Setup,
+		OnEnable = OnEnable,
+		OnDisable = OnDisable,
+		Apply = Apply,
+	})
 end

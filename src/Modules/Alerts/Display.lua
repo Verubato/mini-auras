@@ -1119,6 +1119,10 @@ function M:SetAnchorInteractive(active)
 end
 
 function M:CreateFrames()
+	if container then
+		return
+	end
+
 	local options = db.Modules.AlertsModule
 	local count = options.Icons.MaxIcons or 8
 	local size = options.Icons.Size

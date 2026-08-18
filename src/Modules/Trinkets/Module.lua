@@ -3,6 +3,7 @@ local _, addon = ...
 local frames = addon.Core.Frames
 local trinketsTracker = addon.Core.TrinketsTracker
 local eventGate = addon.Core.EventGate
+local moduleLifecycle = addon.Core.ModuleLifecycle
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 
@@ -14,12 +15,13 @@ local M = {}
 addon.Modules.Trinkets.Module = M
 addon.Modules.TrinketsModule = M
 
+---@type ModuleLifecycle?
+local lifecycle
 ---@type EventGate?
 local worldGate
 -- Owns the unit-frame hooks, which can never be taken back off, so it outlives the gated
 -- world events.
 local hookFrame
-local enabled = false
 local paused = false
 local QueueRefresh = moduleUtil:Coalesced(function()
 	M:Refresh()
@@ -55,7 +57,7 @@ end
 -- Trinket cooldown data changes arrive via TrinketsTracker (arena cooldown updates and
 -- match-state transitions); this module only re-renders the affected slot.
 local function OnTrinketDataChanged(unit)
-	if not enabled or paused then
+	if not lifecycle:IsActive() or paused then
 		return
 	end
 
@@ -75,7 +77,7 @@ end
 ---that settles points at a frame nobody shows any more, which is where the icons were left
 ---stranded until a reload.
 local function OnFramesChanged()
-	if not enabled then
+	if not lifecycle:IsActive() then
 		return
 	end
 
@@ -109,20 +111,6 @@ local function IsEnabled()
 	return moduleUtil:IsModuleEnabled(moduleName.Trinkets)
 end
 
----Edge-triggered: the roster/world events are the module's only event source, so the gate
----keeps them registered only while awake. The edge check also guards paused, which test mode
----flips independently of the gate.
----@param active boolean
-local function SetEventsActive(active)
-	if active == enabled then
-		return
-	end
-
-	enabled = active
-	paused = not active
-	worldGate:SetActive(active)
-end
-
 ---@param active boolean
 local function SetTestMode(active)
 	display:SetTestMode(active)
@@ -137,7 +125,7 @@ local function SetTestMode(active)
 	M:Refresh()
 end
 
-local function InstallHooks()
+local function Setup()
 	trinketsTracker:RegisterCallback(OnTrinketDataChanged)
 	InstallFrameHooks()
 
@@ -146,8 +134,23 @@ local function InstallHooks()
 	worldGate = eventGate:New(eventsFrame, { "PLAYER_ENTERING_WORLD", "GROUP_ROSTER_UPDATE" })
 end
 
-local function ApplyInitialState()
-	M:Refresh()
+-- The roster/world events are the module's only event source, so they stay registered only while
+-- it is awake. paused rides the same edges, and test mode flips it in between.
+local function OnEnable()
+	paused = false
+	worldGate:SetActive(true)
+end
+
+local function OnDisable()
+	paused = true
+	worldGate:SetActive(false)
+	display:Teardown()
+end
+
+local function Apply()
+	display:EnsureFrames()
+	display:ApplyOptions()
+	display:UpdateContent()
 end
 
 function M:StartTesting()
@@ -159,28 +162,18 @@ function M:StopTesting()
 end
 
 function M:Refresh()
-	local moduleOptions = GetOptions()
-
-	if not moduleOptions then
-		return
-	end
-
-	local isEnabled = IsEnabled()
-
-	SetEventsActive(isEnabled)
-
-	if not isEnabled then
-		display:Teardown()
-		return
-	end
-
-	display:EnsureFrames()
-	display:ApplyOptions()
-	display:UpdateContent()
+	lifecycle:Refresh()
 end
 
 function M:Init()
 	display:Init()
-	InstallHooks()
-	ApplyInitialState()
+
+	lifecycle = moduleLifecycle:New({
+		GetOptions = GetOptions,
+		IsEnabled = IsEnabled,
+		Setup = Setup,
+		OnEnable = OnEnable,
+		OnDisable = OnDisable,
+		Apply = Apply,
+	})
 end

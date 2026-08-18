@@ -444,8 +444,7 @@ end
 
 ---@return HealerCCModuleOptions?
 function M:GetOptions()
-	-- The anchor is built in Init; without it there is nothing to configure.
-	if not db or not healerAnchor then
+	if not db then
 		return nil
 	end
 
@@ -472,6 +471,10 @@ function M:Teardown()
 end
 
 function M:EnsureFrames()
+	if not healerAnchor then
+		CreateFrames()
+	end
+
 	if testModeActive then
 		-- Test icons render through the IconSlotContainer and the test text through the anchor's
 		-- own fontstring; the live displays are hidden so real and fake don't mix. They are
@@ -566,7 +569,9 @@ function M:ResetIcons()
 end
 
 function M:ShowAnchor()
-	healerAnchor:Show()
+	if healerAnchor then
+		healerAnchor:Show()
+	end
 end
 
 ---Visibility is left to Refresh: the anchor has to stay shown while the module is active, so
@@ -590,8 +595,6 @@ function M:Init()
 	db = mini:GetSavedVars()
 
 	testSpells = testSpellData.CrowdControl
-
-	CreateFrames()
 end
 
 ---@class HealerWatchEntry

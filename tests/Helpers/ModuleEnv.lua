@@ -272,6 +272,25 @@ function M.build()
 	function addon:IsLoadingScreenUp()
 		return env.loadingScreenUp == true
 	end
+	-- The world is loaded by default, which is where the modules spend all their time; a test
+	-- covering the login path clears env.enteredWorld.
+	function addon:HasEnteredWorld()
+		return env.enteredWorld ~= false
+	end
+	-- Counts world loads; a test that wants a module to treat the next refresh as a fresh world
+	-- bumps env.worldGeneration.
+	function addon:WorldGeneration()
+		return env.worldGeneration or 1
+	end
+	-- A world load as the modules now see it: the addon bumps its generation and refreshes every
+	-- module. No module registers PLAYER_ENTERING_WORLD for itself any more.
+	function env.loadWorld(...)
+		env.worldGeneration = (env.worldGeneration or 1) + 1
+
+		for _, module in ipairs({ ... }) do
+			module:Refresh()
+		end
+	end
 	env.addon = addon
 
 	local function loadFile(path)
@@ -580,6 +599,7 @@ function M.build()
 	loadFile("src/Core/Kicks/KickEvents.lua")
 	loadFile("src/Core/TestMode/TestSpells.lua")
 	loadFile("src/Core/Events/EventGate.lua")
+	loadFile("src/Core/Lifecycle/ModuleLifecycle.lua")
 	loadFile("src/Core/Pooling/Sweep.lua")
 	loadFile("src/Core/Pooling/Pool.lua")
 	loadFile("src/Core/Display/GrowAnchors.lua")

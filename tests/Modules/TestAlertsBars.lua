@@ -28,6 +28,9 @@ env.loadModule("src/Modules/Alerts/Display.lua")
 env.loadModule("src/Modules/Alerts/Module.lua")
 local module = env.addon.Modules.AlertsModule
 module:Init()
+-- Init only builds the lifecycle now; a module sets itself up on the first refresh that
+-- finds it enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
+module:Refresh()
 
 local events = assert(acm.lastFrameForEvent("PVP_MATCH_STATE_CHANGED"), "alerts event frame")
 

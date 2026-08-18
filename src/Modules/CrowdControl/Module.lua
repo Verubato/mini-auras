@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local frames = addon.Core.Frames
 local eventGate = addon.Core.EventGate
+local moduleLifecycle = addon.Core.ModuleLifecycle
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local unitStatePoller = addon.Core.UnitStatePoller
@@ -15,6 +16,8 @@ local M = {}
 addon.Modules.CrowdControl.Module = M
 addon.Modules.CrowdControlModule = M
 
+---@type ModuleLifecycle?
+local lifecycle
 ---@type EventGate?
 local rosterGate
 ---@type table?
@@ -64,16 +67,14 @@ local function OnEvent(_, event)
 	end
 end
 
+---@return CrowdControlInstanceOptions?
+local function GetOptions()
+	return display:GetOptions()
+end
+
 ---@return boolean
 local function IsEnabled()
 	return moduleUtil:IsModuleEnabled(moduleName.CrowdControl) or moduleUtil:IsModuleEnabled(moduleName.PetCC)
-end
-
----@param active boolean
-local function SetEventsActive(active)
-	-- Events stay unregistered while both features are off; the addon-wide Refresh
-	-- (config, world change, raid flip) re-runs this gate.
-	rosterGate:SetActive(active)
 end
 
 -- Live auras are pushed in by the aura containers, so only the fake ones rebuild here.
@@ -103,7 +104,7 @@ local function SetTestMode(active)
 	end
 end
 
-local function CreateEvents()
+local function Setup()
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
 	-- Registered by the Refresh gate while either feature is on. UNIT_PET tracks the player's
@@ -121,9 +122,7 @@ local function CreateEvents()
 	end, function(unitToken)
 		display:ReapplyUnitGates(unitToken)
 	end)
-end
 
-local function InstallHooks()
 	frames:InstallUnitFrameHooks(eventsFrame, {
 		OnSetUnit = function(frame, unit)
 			display:OnCufSetUnit(frame, unit)
@@ -145,10 +144,23 @@ local function InstallHooks()
 	})
 end
 
-local function ApplyInitialState()
-	if moduleUtil:IsModuleEnabled(moduleName.CrowdControl) then
-		display:EnsureWatchers()
-	end
+-- Events stay unregistered while both features are off; the addon-wide Refresh (config, world
+-- change, raid flip) is what brings the module back.
+local function OnEnable()
+	rosterGate:SetActive(true)
+end
+
+local function OnDisable()
+	rosterGate:SetActive(false)
+	display:Teardown()
+end
+
+---@param options CrowdControlInstanceOptions
+local function Apply(options)
+	display:EnsureFrames()
+	display:ApplyOptions(options)
+	UpdateContent()
+	SeedStateBaselines()
 end
 
 function M:StartTesting()
@@ -160,32 +172,25 @@ function M:StopTesting()
 end
 
 function M:Refresh()
-	local options = display:GetOptions()
-
-	if not options then
-		return
-	end
-
-	local isEnabled = IsEnabled()
-
-	SetEventsActive(isEnabled)
-
-	if not isEnabled then
-		display:Teardown()
-		return
-	end
-
-	display:EnsureFrames()
-	display:ApplyOptions(options)
-	UpdateContent()
-	SeedStateBaselines()
+	lifecycle:Refresh()
 end
 
 function M:Init()
 	db = mini:GetSavedVars()
 
 	display:Init()
-	CreateEvents()
-	InstallHooks()
-	ApplyInitialState()
+
+	lifecycle = moduleLifecycle:New({
+		GetOptions = GetOptions,
+		IsEnabled = IsEnabled,
+		Setup = Setup,
+		OnEnable = OnEnable,
+		OnDisable = OnDisable,
+		Apply = Apply,
+	})
+
+	-- Armed for either feature; the watchers are only for the one that had them before.
+	if lifecycle:ArmEarly() and moduleUtil:IsModuleEnabled(moduleName.CrowdControl) then
+		display:EnsureWatchers()
+	end
 end

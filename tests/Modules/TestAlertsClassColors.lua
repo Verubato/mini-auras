@@ -34,6 +34,9 @@ env.loadModule("src/Modules/Alerts/Display.lua")
 env.loadModule("src/Modules/Alerts/Module.lua")
 local module = env.addon.Modules.AlertsModule
 module:Init()
+-- Init only builds the lifecycle now; a module sets itself up on the first refresh that
+-- finds it enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
+module:Refresh()
 
 local events = assert(acm.lastFrameForEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS"), "alerts event frame")
 
@@ -93,12 +96,12 @@ local function enterArenaWithSpecs(...)
 	env.arenaSpecs = {}
 	env.arenaOpponents = 0
 	env.invalidateWorldState()
-	events:TriggerEvent("PLAYER_ENTERING_WORLD")
+	env.loadWorld(module)
 
 	env.inInstance = true
 	env.instanceType = "arena"
 	env.invalidateWorldState()
-	events:TriggerEvent("PLAYER_ENTERING_WORLD")
+	env.loadWorld(module)
 
 	for index = 1, specs.n do
 		env.arenaSpecs["arena" .. index] = specs[index]

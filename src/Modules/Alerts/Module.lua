@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local units = addon.Utils.UnitUtil
 local eventGate = addon.Core.EventGate
+local moduleLifecycle = addon.Core.ModuleLifecycle
 local unitStatePoller = addon.Core.UnitStatePoller
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
@@ -31,6 +32,10 @@ local MAX_ARENA_TOKENS = 3
 ---@type Db
 local db
 local testModeActive = false
+---@type ModuleLifecycle?
+local lifecycle
+---@type EventGate?
+local moduleGate
 ---@type EventGate?
 local plateGate
 -- Duel detection: no event fires when a friendly unit turns attackable at duel start (or back
@@ -49,6 +54,8 @@ local activeSource
 -- opponent's token is released), and a source that flipped on that would tear the bars down
 -- mid-fight. Cleared on every world load.
 local arenaOpponentsSeen = 0
+-- The world load the high-water mark above was last cleared for.
+local seenWorldGeneration = 0
 -- Coalesces the noisy ARENA_OPPONENT_UPDATE onto one reconcile a frame; assigned below, once the
 -- pass it runs exists.
 local QueueArenaOpponentUpdate
@@ -242,8 +249,7 @@ end
 
 ---@return AlertsModuleOptions?
 local function GetOptions()
-	-- The bars are built in Init; without them there is nothing to configure.
-	if not db or not display:GetContainer() then
+	if not db then
 		return nil
 	end
 
@@ -324,12 +330,18 @@ local function SetTestMode(active)
 end
 
 -- A new world knows nothing about the last one's bracket, so the high-water mark starts over.
--- Deliberately not on ZONE_CHANGED_NEW_AREA: that fires on subzone moves inside an arena, and
--- clearing the mark there would put the module back on nameplates for any moment the client
--- answers zero.
-local function OnEnteringWorld()
+-- Keyed on the world load rather than the zone: ZONE_CHANGED_NEW_AREA fires on subzone moves
+-- inside an arena, and clearing the mark there would put the module back on nameplates for any
+-- moment the client answers zero.
+local function ClearMarkOnNewWorld()
+	local generation = addon:WorldGeneration()
+
+	if generation == seenWorldGeneration then
+		return
+	end
+
+	seenWorldGeneration = generation
 	arenaOpponentsSeen = 0
-	M:Refresh()
 end
 
 -- The opponent count decides the source, so learning it can move the whole module from
@@ -409,23 +421,10 @@ local function OnRosterChanged()
 	end
 end
 
-local function CreateEvents()
+local function Setup()
+	display:CreateFrames()
+
 	local eventsFrame = CreateFrame("Frame")
-	-- The plate events are gated by Refresh; PVP_MATCH_STATE_CHANGED, the zone events, and the
-	-- prep specs drive that gate so they stay always-registered. ARENA_OPPONENT_UPDATE is the one
-	-- thing that announces an opponent coming into or leaving the client's world, which is what
-	-- the visibility gate turns on; it only fires inside an arena, so it costs nothing elsewhere.
-	eventsFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
-	eventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-	eventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-	eventsFrame:RegisterEvent("ARENA_PREP_OPPONENT_SPECIALIZATIONS")
-	eventsFrame:RegisterEvent("ARENA_OPPONENT_UPDATE")
-	-- The enemy-debuff announcements sit on the party tokens, so they follow the roster
-	-- rather than the nameplates. Always registered, like the gate drivers above: the
-	-- handler only reconciles those registrations, which is far cheaper than a full Refresh
-	-- on every roster event in a battleground.
-	eventsFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-	plateGate = eventGate:New(eventsFrame, { "NAME_PLATE_UNIT_ADDED", "NAME_PLATE_UNIT_REMOVED" })
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
 		if event == "PVP_MATCH_STATE_CHANGED" then
 			OnMatchStateChanged()
@@ -438,10 +437,6 @@ local function CreateEvents()
 			end
 		elseif event == "NAME_PLATE_UNIT_REMOVED" then
 			OnNamePlateRemoved(unitToken)
-		elseif event == "PLAYER_ENTERING_WORLD" then
-			OnEnteringWorld()
-		elseif event == "ZONE_CHANGED_NEW_AREA" then
-			M:Refresh()
 		elseif event == "ARENA_PREP_OPPONENT_SPECIALIZATIONS" then
 			ReconcileArenaSource()
 		elseif event == "ARENA_OPPONENT_UPDATE" then
@@ -451,6 +446,22 @@ local function CreateEvents()
 		end
 	end)
 
+	-- Registered while the module is enabled. ARENA_OPPONENT_UPDATE is the one thing that
+	-- announces an opponent coming into or leaving the client's world, which is what the
+	-- visibility gate turns on; it only fires inside an arena, so it costs nothing elsewhere.
+	-- The enemy-debuff announcements sit on the party tokens, so they follow the roster rather
+	-- than the nameplates: the handler only reconciles those registrations, which is far cheaper
+	-- than a full Refresh on every roster event in a battleground.
+	moduleGate = eventGate:New(eventsFrame, {
+		"PVP_MATCH_STATE_CHANGED",
+		"ARENA_PREP_OPPONENT_SPECIALIZATIONS",
+		"ARENA_OPPONENT_UPDATE",
+		"GROUP_ROSTER_UPDATE",
+	})
+
+	-- Narrower again: only while nameplates are the source SettleSource picked.
+	plateGate = eventGate:New(eventsFrame, { "NAME_PLATE_UNIT_ADDED", "NAME_PLATE_UNIT_REMOVED" })
+
 	-- A duel opponent starts as an untracked friendly plate; when the duel begins the flip
 	-- routes through OnNamePlateAdded to build its displays and sound registrations, and when
 	-- it ends the same call releases them. On arena tokens the same poll catches a mind control.
@@ -459,36 +470,30 @@ local function CreateEvents()
 	end, OnUnitStateChanged)
 end
 
-local function ApplyInitialState()
-	M:Refresh()
+local function OnEnable()
+	moduleGate:SetActive(true)
+
+	-- The match state is only heard while the gate is up, so the module reads where it stands
+	-- as it wakes. Reading rather than running the handler: the prep-room transition clears the
+	-- bars, and waking up is not that transition.
+	display:SetInPrepRoom(C_PvP.GetActiveMatchState() == Enum.PvPMatchState.StartUp)
 end
 
-function M:StartTesting()
-	SetTestMode(true)
+local function OnDisable()
+	moduleGate:SetActive(false)
+	-- Drops the plate gate with it, and releases everything the old source left behind.
+	SettleSource(false)
+	Teardown()
+	display:SetAnchorInteractive(false)
 end
 
-function M:StopTesting()
-	SetTestMode(false)
-end
-
-function M:Refresh()
-	local options = GetOptions()
-
-	if not options then
-		return
-	end
-
-	local isEnabled = IsEnabled()
+---@param options AlertsModuleOptions
+local function Apply(options)
+	ClearMarkOnNewWorld()
 
 	-- Ahead of the gate, which reads the count to pick between arena tokens and nameplates.
 	RefreshArenaOpponentCount()
-	SettleSource(isEnabled)
-
-	if not isEnabled then
-		Teardown()
-		display:SetAnchorInteractive(false)
-		return
-	end
+	SettleSource(true)
 
 	EnsureFrames()
 	ApplyOptions(options)
@@ -520,12 +525,30 @@ function M:Refresh()
 	display:SetAnchorInteractive(testModeActive)
 end
 
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	lifecycle:Refresh()
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 
 	sound:Init()
 	display:Init()
-	display:CreateFrames()
-	CreateEvents()
-	ApplyInitialState()
+
+	lifecycle = moduleLifecycle:New({
+		GetOptions = GetOptions,
+		IsEnabled = IsEnabled,
+		Setup = Setup,
+		OnEnable = OnEnable,
+		OnDisable = OnDisable,
+		Apply = Apply,
+	})
 end

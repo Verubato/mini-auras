@@ -4,6 +4,7 @@ local mini = addon.Framework
 local moduleUtil = addon.Utils.ModuleUtil
 local ModuleName = addon.Utils.ModuleName
 local eventGate = addon.Core.EventGate
+local moduleLifecycle = addon.Core.ModuleLifecycle
 local unitStatePoller = addon.Core.UnitStatePoller
 
 -- Loaded before this file in TOC order.
@@ -19,6 +20,8 @@ addon.Modules.HealerCrowdControlModule = M
 local db
 local testModeActive = false
 local previousTestSoundEnabled = false
+---@type ModuleLifecycle?
+local lifecycle
 ---@type EventGate?
 local rosterGate
 ---@type UnitStatePollerSubscriber?
@@ -33,6 +36,11 @@ local function OnEvent(_, event)
 	if event == "GROUP_ROSTER_UPDATE" then
 		QueueRefresh()
 	end
+end
+
+---@return HealerCCModuleOptions?
+local function GetOptions()
+	return display:GetOptions()
 end
 
 ---@return boolean
@@ -51,16 +59,6 @@ local function SeedStateBaselines()
 
 	for _, unit in ipairs(display:CollectWatchedUnits(stateUnitsScratch)) do
 		stateSub:Seed(unit)
-	end
-end
-
----@param active boolean
-local function SetEventsActive(active)
-	-- Events stay unregistered while disabled; the addon-wide Refresh re-runs this gate.
-	-- Keyed on the module toggle alone rather than on the player's own spec: a respec fires
-	-- no world or raid event, so the roster event has to stay registered to wake this up.
-	if rosterGate then
-		rosterGate:SetActive(active)
 	end
 end
 
@@ -94,7 +92,7 @@ local function SetTestMode(active)
 	M:Refresh()
 end
 
-local function CreateEvents()
+local function Setup()
 	local eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
 	-- Registered by the Refresh gate while the module is enabled.
@@ -112,8 +110,28 @@ local function CreateEvents()
 	end)
 end
 
-local function ApplyInitialState()
-	M:Refresh()
+-- Events stay unregistered while disabled; the addon-wide Refresh brings the module back, and a
+-- respec reaches it through the central spec-change driver.
+local function OnEnable()
+	rosterGate:SetActive(true)
+end
+
+local function OnDisable()
+	display:Teardown()
+	display:SetAnchorInteractive(false)
+	rosterGate:SetActive(false)
+end
+
+---@param options HealerCCModuleOptions
+local function Apply(options)
+	display:EnsureFrames()
+	display:ApplyOptions(options)
+	UpdateContent(options)
+	SeedStateBaselines()
+
+	-- Owned here rather than by the test-mode toggle, so flipping the module switch while a
+	-- test is running shows or hides the drag anchor and its caption with it.
+	display:SetAnchorInteractive(testModeActive)
 end
 
 function M:StartTesting()
@@ -125,30 +143,7 @@ function M:StopTesting()
 end
 
 function M:Refresh()
-	local options = display:GetOptions()
-
-	if not options then
-		return
-	end
-
-	local isEnabled = IsEnabled()
-
-	SetEventsActive(isEnabled)
-
-	if not isEnabled then
-		display:Teardown()
-		display:SetAnchorInteractive(false)
-		return
-	end
-
-	display:EnsureFrames()
-	display:ApplyOptions(options)
-	UpdateContent(options)
-	SeedStateBaselines()
-
-	-- Owned here rather than by the test-mode toggle, so flipping the module switch while a
-	-- test is running shows or hides the drag anchor and its caption with it.
-	display:SetAnchorInteractive(testModeActive)
+	lifecycle:Refresh()
 end
 
 function M:Init()
@@ -157,6 +152,13 @@ function M:Init()
 
 	sound:Init()
 	display:Init()
-	CreateEvents()
-	ApplyInitialState()
+
+	lifecycle = moduleLifecycle:New({
+		GetOptions = GetOptions,
+		IsEnabled = IsEnabled,
+		Setup = Setup,
+		OnEnable = OnEnable,
+		OnDisable = OnDisable,
+		Apply = Apply,
+	})
 end

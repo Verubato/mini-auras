@@ -45,6 +45,9 @@ env.loadModule("src/Modules/Portrait/Anchors.lua")
 env.loadModule("src/Modules/Portrait/Module.lua")
 local module = env.addon.Modules.PortraitModule
 module:Init()
+-- Init only builds the lifecycle now; a module sets itself up on the first refresh that
+-- finds it enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
+module:Refresh()
 
 -- The wrapper's shared event frame; created with the first display, so it exists by now.
 local displayEvents = assert(acm.lastFrameForEvent("AURA_DATA_PROVIDER_SWITCH"),

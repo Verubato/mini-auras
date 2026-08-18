@@ -1,4 +1,4 @@
--- Module lifecycle tests for the 12.1 container path: Alerts (pooled display pairs, chain
+-- Aura container lifecycle tests for the 12.1 container path: Alerts (pooled display pairs, chain
 -- ordering), Nameplates (pooled bar displays, release semantics), and HealerCC (AddAuraSound
 -- registration idempotency). Drives the REAL modules loaded against module_env.
 
@@ -35,6 +35,9 @@ assert(env.addon.Modules.Alerts.Display.ArenaPrewarmTokenCount == 3, "and three 
 env.addon.Modules.Alerts.Display.PrewarmTokenCount = PREWARM_TOKENS
 env.addon.Modules.Alerts.Display.ArenaPrewarmTokenCount = PREWARM_TOKENS
 env.addon.Modules.AlertsModule:Init()
+-- Init only builds the lifecycle now; a module sets itself up on the first refresh that
+-- finds it enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
+env.addon.Modules.AlertsModule:Refresh()
 local alertsEvents = acm.lastFrameForEvent("NAME_PLATE_UNIT_ADDED")
 assert(alertsEvents, "alerts event frame")
 
@@ -45,6 +48,7 @@ assert(env.addon.Modules.Nameplates.Display.ArenaPrewarmCount == 10, "and ten in
 env.addon.Modules.Nameplates.Display.PrewarmCount = PREWARM_TOKENS
 env.addon.Modules.Nameplates.Display.ArenaPrewarmCount = PREWARM_TOKENS
 env.addon.Modules.NameplatesModule:Init()
+env.addon.Modules.NameplatesModule:Refresh()
 local nameplatesEvents = acm.lastFrameForEvent("NAME_PLATE_UNIT_ADDED")
 assert(nameplatesEvents and nameplatesEvents ~= alertsEvents, "nameplates event frame")
 
@@ -498,6 +502,7 @@ fw.describe("HealerCrowdControlModule 12.1 - AddAuraSound registration", functio
 	fw.it("registers one sound per CC spell per healer", function()
 		env.healers.party1 = true
 		healerCC:Init()
+		healerCC:Refresh()
 		assert(env.auraSoundAdds == ccSpellCount,
 			("expected %d adds, got %d"):format(ccSpellCount, env.auraSoundAdds))
 	end)

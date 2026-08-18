@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local eventGate = addon.Core.EventGate
+local moduleLifecycle = addon.Core.ModuleLifecycle
 local profileManager = addon.Core.ProfileManager
 local frames = addon.Core.Frames
 local moduleUtil = addon.Utils.ModuleUtil
@@ -30,6 +31,8 @@ local ROSTER_EVENTS = {
 local db
 ---@type table?
 local eventsFrame
+---@type ModuleLifecycle?
+local lifecycle
 ---@type EventGate?
 local gate
 -- The unit frame hooks cannot be taken back off, so they go on the first time a group actually
@@ -54,7 +57,7 @@ end
 
 ---No module-wide switch: a group carries its own, and no groups means no feature.
 ---@return boolean
-local function IsEnabled()
+local function HasGroups()
 	local options = GetOptions()
 
 	return options ~= nil and #options.Groups > 0
@@ -84,7 +87,7 @@ local function OnEvent(_, event, arg1)
 	end
 end
 
-local function CreateEvents()
+local function Setup()
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
 
@@ -129,6 +132,26 @@ local function InstallFrameHooks()
 	})
 end
 
+local function OnDisable()
+	gate:SetActive(false)
+	display:Teardown()
+end
+
+---@param options CustomAurasModuleOptions
+local function Apply(options)
+	local hasGroups = HasGroups()
+
+	-- Narrower than the lifecycle: a preview keeps the module awake with no groups behind it, and
+	-- an empty group list has no events worth hearing.
+	gate:SetActive(hasGroups)
+
+	display:Refresh(options, hasGroups)
+
+	if display:HasFrameGroups() then
+		InstallFrameHooks()
+	end
+end
+
 ---@param active boolean
 local function SetTestMode(active)
 	display:SetTestMode(active)
@@ -146,31 +169,14 @@ end
 function M:Refresh()
 	local options = GetOptions()
 
-	if not options then
-		return
-	end
-
 	-- A profile switch lands here rather than in Init, and a profile that has never been on a
-	-- version with the starter groups still wants them.
-	if groups:SeedDefaults(options) then
+	-- version with the starter groups still wants them. Ahead of the lifecycle, which reads the
+	-- group list to decide whether the module runs at all.
+	if options and groups:SeedDefaults(options) then
 		M:NormaliseGroups()
 	end
 
-	local isEnabled = IsEnabled()
-
-	gate:SetActive(isEnabled)
-
-	-- A previewed group stays on screen even with the module off; positioning it is the point.
-	if not isEnabled and not display:HasPreview() then
-		display:Teardown()
-		return
-	end
-
-	display:Refresh(options, isEnabled)
-
-	if display:HasFrameGroups() then
-		InstallFrameHooks()
-	end
+	lifecycle:Refresh()
 end
 
 ---Normalises every saved group, and creates the starter ones for a profile that has never had
@@ -202,8 +208,16 @@ function M:Init()
 		M:NormaliseGroups()
 	end)
 
-	CreateEvents()
-	M:Refresh()
+	lifecycle = moduleLifecycle:New({
+		GetOptions = GetOptions,
+		-- A previewed group stays on screen even with no groups saved; positioning it is the point.
+		IsEnabled = function()
+			return HasGroups() or display:HasPreview()
+		end,
+		Setup = Setup,
+		OnDisable = OnDisable,
+		Apply = Apply,
+	})
 end
 
 ---@class CustomAurasModule

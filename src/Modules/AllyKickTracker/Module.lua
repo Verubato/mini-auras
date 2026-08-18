@@ -3,6 +3,7 @@ local _, addon = ...
 local mini = addon.Framework
 local L = addon.L
 local eventGate = addon.Core.EventGate
+local moduleLifecycle = addon.Core.ModuleLifecycle
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local barTextures = addon.Core.BarTextures
@@ -37,13 +38,14 @@ local TEST_RECORDS = {
 local db
 ---@type AllyKickDisplayInstance?
 local instance
+---@type ModuleLifecycle?
+local lifecycle
 ---@type EventGate?
 local moduleGate
 local eventsFrame
 local tickFrame
 local ticking = false
 local timeSinceTick = 0
-local enabled = false
 local testModeActive = false
 -- The rows currently on screen, and the scratch the next set is built into. Kept apart so a tick
 -- that produces the same set costs no re-layout.
@@ -203,7 +205,7 @@ end
 
 ---Starts the repaint loop, which then runs until the last row has expired.
 local function StartTicking()
-	if ticking or not enabled then
+	if ticking or not lifecycle:IsActive() then
 		return
 	end
 
@@ -332,19 +334,6 @@ local function ApplyOptions(options)
 	ApplyInteractivity(options)
 end
 
----@param active boolean
-local function SetEventsActive(active)
-	if moduleGate then
-		moduleGate:SetActive(active)
-	end
-
-	if active then
-		observer:Start()
-	else
-		observer:Stop()
-	end
-end
-
 local function Teardown()
 	StopTicking()
 	wipe(shownOrder)
@@ -372,7 +361,7 @@ local function SetTestMode(active)
 	end
 end
 
-local function CreateEvents()
+local function Setup()
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
 	moduleGate = eventGate:New(eventsFrame, MODULE_EVENTS)
@@ -382,35 +371,19 @@ local function CreateEvents()
 	observer:SetRecordCallback(OnInterruptRecorded)
 end
 
-local function ApplyInitialState()
-	M:Refresh()
+local function OnEnable()
+	moduleGate:SetActive(true)
+	observer:Start()
 end
 
-function M:StartTesting()
-	SetTestMode(true)
+local function OnDisable()
+	moduleGate:SetActive(false)
+	observer:Stop()
+	Teardown()
 end
 
-function M:StopTesting()
-	SetTestMode(false)
-end
-
-function M:Refresh()
-	local options = GetOptions()
-
-	if not options then
-		return
-	end
-
-	local isEnabled = IsEnabled()
-
-	enabled = isEnabled
-	SetEventsActive(isEnabled)
-
-	if not isEnabled then
-		Teardown()
-		return
-	end
-
+---@param options AllyKickTrackerModuleOptions
+local function Apply(options)
 	EnsureFrames()
 	ApplyOptions(options)
 	-- Their own kick is drawn by the readiness row, so it only belongs in the history when that row
@@ -429,9 +402,27 @@ function M:Refresh()
 	end
 end
 
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	lifecycle:Refresh()
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 
-	CreateEvents()
-	ApplyInitialState()
+	lifecycle = moduleLifecycle:New({
+		GetOptions = GetOptions,
+		IsEnabled = IsEnabled,
+		Setup = Setup,
+		OnEnable = OnEnable,
+		OnDisable = OnDisable,
+		Apply = Apply,
+	})
 end

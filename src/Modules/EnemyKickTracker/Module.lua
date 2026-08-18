@@ -2,6 +2,7 @@
 local _, addon = ...
 local mini = addon.Framework
 local eventGate = addon.Core.EventGate
+local moduleLifecycle = addon.Core.ModuleLifecycle
 local inspectorFacade = addon.Core.InspectorFacade
 local kickData = addon.Core.KickData
 local testSpellData = addon.Core.TestSpells
@@ -26,10 +27,13 @@ local TEST_SPEC_IDS = testSpellData.KickSpecIds
 -- Rebuilt on every preview; the display reads it synchronously and keeps nothing.
 local testEntriesScratch = {}
 
+---@type ModuleLifecycle?
+local lifecycle
 ---@type EventGate?
 local matchPrepGate
-local worldEventsFrame
-local playerSpecEventsFrame
+-- Whether the last refresh found the player in an arena, so entering one can be told from
+-- refreshing inside one.
+local wasInArena = false
 -- Shortest interrupt cooldown on the enemy team, so an unattributed kick is shown at its most
 -- pessimistic. Falls back to 15s until the opponents' specs are known.
 local minKickCooldown = 15
@@ -98,18 +102,6 @@ local function SetEventsActive(active)
 	end
 end
 
-local function OnEnteringWorld()
-	-- Prep data only exists inside arenas; keep the event off elsewhere. Registered even
-	-- while the module itself is disabled, as they might re-enable before gates open.
-	matchPrepGate:SetActive(IsArena())
-
-	M:Refresh()
-
-	if IsArena() then
-		OnArenaPrep()
-	end
-end
-
 local function ShowTestIcons()
 	wipe(testEntriesScratch)
 
@@ -161,30 +153,51 @@ local function SetTestMode(active)
 	M:Refresh()
 end
 
-local function CreateEvents()
+local function Setup()
 	observer:Create()
 	observer:RegisterKickCallback(OnKicked)
 
-	-- Registered by OnEnteringWorld's gate, and only inside arenas.
+	-- Prep data only exists inside arenas, so the gate below keeps the event off everywhere else.
 	local matchEventsFrame = CreateFrame("Frame")
 	matchEventsFrame:SetScript("OnEvent", OnArenaPrep)
 	matchPrepGate = eventGate:New(matchEventsFrame, { "ARENA_PREP_OPPONENT_SPECIALIZATIONS" })
-
-	worldEventsFrame = CreateFrame("Frame")
-	worldEventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-	worldEventsFrame:SetScript("OnEvent", OnEnteringWorld)
-
-	playerSpecEventsFrame = CreateFrame("Frame")
-	playerSpecEventsFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-	playerSpecEventsFrame:SetScript("OnEvent", function(_, event, unit)
-		if event == "PLAYER_SPECIALIZATION_CHANGED" and unit == "player" then
-			M:Refresh()
-		end
-	end)
 end
 
-local function ApplyInitialState()
-	M:Refresh()
+local function OnDisable()
+	-- Re-armed, or a module switched off in one arena and back on in the next would take that
+	-- match for a refresh inside the same one and never re-read the opponents' cooldowns.
+	wasInArena = false
+
+	matchPrepGate:SetActive(false)
+	SetEventsActive(false)
+	Teardown()
+	display:SetAnchorInteractive(false)
+end
+
+---@param options EnemyKickTrackerModuleOptions
+local function Apply(options)
+	local inArena = IsArena()
+
+	matchPrepGate:SetActive(inArena)
+
+	-- Only on the way in, not on every refresh inside one: the prep pass clears the bar, which
+	-- would wipe live icons whenever a setting changed mid-match.
+	if inArena ~= wasInArena then
+		wasInArena = inArena
+
+		if inArena then
+			OnArenaPrep()
+		end
+	end
+
+	SetEventsActive(true)
+	display:EnsureFrames()
+	display:ApplyOptions(options)
+	UpdateContent()
+
+	-- Owned here rather than by the test-mode toggle, so flipping the module switch while a
+	-- test is running shows or hides the drag anchor and its caption with it.
+	display:SetAnchorInteractive(testModeActive)
 end
 
 ---@param options EnemyKickTrackerModuleOptions
@@ -233,35 +246,19 @@ function M:StopTesting()
 end
 
 function M:Refresh()
-	local options = GetOptions()
-
-	if not options then
-		return
-	end
-
-	local isEnabled = IsEnabled()
-
-	SetEventsActive(isEnabled)
-
-	if not isEnabled then
-		Teardown()
-		display:SetAnchorInteractive(false)
-		return
-	end
-
-	display:EnsureFrames()
-	display:ApplyOptions(options)
-	UpdateContent()
-
-	-- Owned here rather than by the test-mode toggle, so flipping the module switch while a
-	-- test is running shows or hides the drag anchor and its caption with it.
-	display:SetAnchorInteractive(testModeActive)
+	lifecycle:Refresh()
 end
 
 function M:Init()
 	db = mini:GetSavedVars()
 
 	display:Init()
-	CreateEvents()
-	ApplyInitialState()
+
+	lifecycle = moduleLifecycle:New({
+		GetOptions = GetOptions,
+		IsEnabled = IsEnabled,
+		Setup = Setup,
+		OnDisable = OnDisable,
+		Apply = Apply,
+	})
 end

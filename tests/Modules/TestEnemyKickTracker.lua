@@ -27,7 +27,11 @@ env.invalidateWorldState()
 
 module:Init()
 
-local worldEvents = assert(acm.lastFrameForEvent("PLAYER_ENTERING_WORLD"), "world event frame")
+-- The module hears no world event of its own any more: entering an arena reaches it as the
+-- addon-wide Refresh that PLAYER_ENTERING_WORLD drives.
+local function enterWorld()
+	module:Refresh()
+end
 
 ---The frame the observer registered the given unit's cast events on. RegisterUnitEvent records
 ---the token as the event's value, so the registration itself identifies the frame.
@@ -54,7 +58,7 @@ end
 
 fw.describe("EnemyKickTrackerModule - arena gating", function()
 	fw.it("registers the arena team's cast events on entering an arena", function()
-		worldEvents:TriggerEvent("PLAYER_ENTERING_WORLD")
+		enterWorld()
 
 		for _, unit in ipairs({ "player", "party1", "party2" }) do
 			assert(castFrameFor(unit), "no cast frame watching " .. unit)
@@ -66,14 +70,14 @@ fw.describe("EnemyKickTrackerModule - arena gating", function()
 		env.inInstance = false
 		env.instanceType = "none"
 		env.invalidateWorldState()
-		worldEvents:TriggerEvent("PLAYER_ENTERING_WORLD")
+		enterWorld()
 
 		assert(not frame._events.UNIT_SPELLCAST_INTERRUPTED, "cast events must not stay live in the world")
 
 		env.inInstance = true
 		env.instanceType = "arena"
 		env.invalidateWorldState()
-		worldEvents:TriggerEvent("PLAYER_ENTERING_WORLD")
+		enterWorld()
 		assert(castFrameFor("player"), "and come back on re-entry")
 	end)
 end)

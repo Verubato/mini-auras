@@ -4,6 +4,7 @@ local mini = addon.Framework
 local units = addon.Utils.UnitUtil
 local kickTracker = addon.Core.KickTracker
 local eventGate = addon.Core.EventGate
+local moduleLifecycle = addon.Core.ModuleLifecycle
 local unitStatePoller = addon.Core.UnitStatePoller
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
@@ -21,6 +22,8 @@ local db
 ---@type table
 local nmModule
 local testModeActive = false
+---@type ModuleLifecycle?
+local lifecycle
 ---@type EventGate?
 local plateGate
 -- Duel detection: no event fires when a friendly unit turns attackable at duel start (or back
@@ -247,20 +250,6 @@ local function IsEnabled()
 	return moduleUtil:IsModuleEnabled(moduleName.Nameplates) and display:AnyEnabled()
 end
 
----@param active boolean
-local function SetEventsActive(active)
-	-- While inactive no state tracks nameplates, so the plate events can be unregistered
-	-- entirely; reactivation rebuilds from the live plate list. The addon-wide Refresh
-	-- (config, world change, raid flip) re-runs this gate.
-	plateGate:SetActive(active)
-end
-
-local function Teardown()
-	display:Teardown()
-
-	CacheEnabledModes()
-end
-
 local function EnsureFrames()
 	ApplyBlizzardNameplateSettings()
 
@@ -299,7 +288,7 @@ local function SetTestMode(active)
 	M:Refresh()
 end
 
-local function CreateEvents()
+local function Setup()
 	local eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", function(_, event, unitToken)
 		if event == "NAME_PLATE_UNIT_ADDED" then
@@ -312,16 +301,6 @@ local function CreateEvents()
 	plateGate = eventGate:New(eventsFrame, {
 		"NAME_PLATE_UNIT_ADDED",
 		"NAME_PLATE_UNIT_REMOVED",
-	}, {
-		-- Plates that spawned while inactive were never tracked.
-		OnActivate = RebuildContainers,
-		-- Release tracked plates now - the removal events that normally clean them up are
-		-- no longer registered.
-		OnDeactivate = function()
-			for unitToken in pairs(display:GetTrackedPlates()) do
-				OnNamePlateRemoved(unitToken)
-			end
-		end,
 	})
 
 	-- A plate whose enemy status flipped goes back through the add path: GetUnitOptions starts
@@ -332,37 +311,32 @@ local function CreateEvents()
 	end, OnNamePlateAdded)
 end
 
-local function ApplyInitialState()
-	-- Registers the plate events and initializes existing nameplates when active.
-	SetEventsActive(IsEnabled())
+-- While inactive no state tracks nameplates, so the plate events can be unregistered entirely.
+-- The addon-wide Refresh (config, world change, raid flip) is what brings the module back.
+local function OnEnable()
+	plateGate:SetActive(true)
 
+	-- Plates that spawned while inactive were never tracked, so the live list is read back in.
+	RebuildContainers()
+
+	-- After that rebuild, so a mode changed while the module was off does not send EnsureFrames
+	-- through a second one.
 	CacheEnabledModes()
 end
 
-function M:StartTesting()
-	SetTestMode(true)
-end
+local function OnDisable()
+	plateGate:SetActive(false)
 
-function M:StopTesting()
-	SetTestMode(false)
-end
-
-function M:Refresh()
-	local options = GetOptions()
-
-	if not options then
-		return
+	-- Release the tracked plates by hand: the removal events that normally clean them up are no
+	-- longer registered.
+	for unitToken in pairs(display:GetTrackedPlates()) do
+		OnNamePlateRemoved(unitToken)
 	end
 
-	local isEnabled = IsEnabled()
+	display:Teardown()
+end
 
-	SetEventsActive(isEnabled)
-
-	if not isEnabled then
-		Teardown()
-		return
-	end
-
+local function Apply()
 	EnsureFrames()
 	ApplyOptions()
 	UpdateContent()
@@ -378,12 +352,36 @@ function M:Refresh()
 	end
 end
 
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
+function M:Refresh()
+	lifecycle:Refresh()
+end
+
 function M:Init()
 	db = mini:GetSavedVars()
 	-- Cache once so all hot-path functions avoid repeatedly traversing db -> Modules -> NameplatesModule
 	nmModule = db.Modules.NameplatesModule
 
 	display:Init()
-	CreateEvents()
-	ApplyInitialState()
+
+	lifecycle = moduleLifecycle:New({
+		GetOptions = GetOptions,
+		IsEnabled = IsEnabled,
+		Setup = Setup,
+		OnEnable = OnEnable,
+		OnDisable = OnDisable,
+		Apply = Apply,
+	})
+
+	-- The plate events wait for the first Refresh rather than registering here: the gate picks up
+	-- every plate already on screen when it activates, so nothing is missed by leaving them off,
+	-- and the world state the prewarm sizes itself from has not settled this early.
+	CacheEnabledModes()
 end

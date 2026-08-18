@@ -57,6 +57,9 @@ options.MaxBars = 5
 options.ShowOwnCooldown = false
 
 module:Init()
+-- Init only builds the lifecycle now; a module sets itself up on the first refresh that
+-- finds it enabled, which in the addon is the one PLAYER_ENTERING_WORLD drives.
+module:Refresh()
 
 -- The display's root is the only frame the module makes draggable.
 local root
