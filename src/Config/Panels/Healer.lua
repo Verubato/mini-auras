@@ -249,6 +249,23 @@ function M:Build(panel, options)
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", iconSize.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 3)
 
+	local maxIcons = helpers:BuildClampedSlider({
+		Parent = panel,
+		LabelText = L["Max Icons"],
+		Tooltip = L["Most icons shown at once on each unit."],
+		Min = 1,
+		Max = 5,
+		Default = dbDefaults.Modules.HealerCCModule.Icons.MaxIcons,
+		Fallback = dbDefaults.Modules.HealerCCModule.Icons.MaxIcons,
+		Width = sliderWidth,
+		Target = options.Icons,
+		Key = "MaxIcons",
+		SettingsKey = moduleName.HealerCrowdControl,
+	})
+
+	maxIcons.Slider:SetPoint("LEFT", iconSpacing.Slider, "RIGHT", horizontalSpacing, 0)
+	maxIcons.Slider:SetPoint("TOP", iconSpacing.Slider, "TOP", 0, 0)
+
 	panel:HookScript("OnShow", function()
 		panel:MiniRefresh()
 	end)

@@ -32,7 +32,8 @@ addon.Modules.HealerCrowdControl.Display = M
 -- ApplyUnitGates zeroes their budgets, because the engine cannot filter their auras at all
 -- (see Core/AuraFilters).
 
--- Per-healer icon budget, and the one label slot: one CC aura is enough to warrant the text.
+-- Ceiling on the per-healer icon budget, and the one label slot: one CC aura is enough to warrant
+-- the text. Containers are built at the ceiling, so the slider only re-budgets what is there.
 local MAX_CC_ICONS = 5
 local LABEL_MAX_ICONS = 1
 local testModeActive = false
@@ -64,6 +65,15 @@ local parkedOptionsSignature
 
 ---@type TestSpell[]
 local testSpells = {}
+
+---How many CC icons one healer may show, from the slider and capped at what the display holds.
+---@param options table
+---@return number
+local function IconBudget(options)
+	local budget = tonumber(options.Icons.MaxIcons) or MAX_CC_ICONS
+
+	return math.max(0, math.min(math.floor(budget), MAX_CC_ICONS))
+end
 
 local function UpdateAnchorSize()
 	if not healerAnchor then
@@ -246,7 +256,8 @@ local function ApplyUnitGates(item)
 	local visible = units:IsVisible(item.Unit)
 
 	if item.Display then
-		item.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl, visible and MAX_CC_ICONS or 0, true)
+		item.Display:SetMaxIcons(auraFilters.GroupKey.CrowdControl,
+			visible and IconBudget(db.Modules.HealerCCModule) or 0, true)
 	end
 
 	if item.LabelDisplay then
@@ -316,7 +327,7 @@ local function RefreshHealers()
 				Display = auraContainerDisplay:New(
 					healerAnchor,
 					healer,
-					{ auraFilters:GroupSpec("CrowdControl", MAX_CC_ICONS) },
+					{ auraFilters:GroupSpec("CrowdControl", IconBudget(options)) },
 					tonumber(options.Icons.Size) or 32,
 					options.IconSpacing or 2,
 					"Healer CC",
@@ -517,6 +528,7 @@ function M:RefreshTestFrame()
 		iconsContainer:ResetAllSlots()
 	else
 		local nextSlot = testSpellData:FillContainer(iconsContainer, testSpells, 1, {
+			Count = IconBudget(options),
 			ReverseCooldown = options.Icons.ReverseCooldown,
 			Glow = options.Icons.Glow,
 			ColorByDispelType = options.Icons.ColorByDispelType,

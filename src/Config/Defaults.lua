@@ -167,6 +167,7 @@ local dbDefaults = {
 				Glow = true,
 				ReverseCooldown = true,
 				ColorByDispelType = true,
+				MaxIcons = 5,
 			},
 
 			Font = {
