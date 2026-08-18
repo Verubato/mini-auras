@@ -270,6 +270,16 @@ function M:InvalidateWorldState()
 	worldStateStale = true
 end
 
+---The kind of place the player is in, as the client names it: "none" outdoors, then "party",
+---"raid", "arena", "pvp" and the rest. Read off the cached world state, so asking per plate costs
+---nothing between zone events.
+---@return string
+function M:InstanceType()
+	RefreshWorldState()
+
+	return instanceType
+end
+
 ---@param moduleName string The module key (e.g., "AlertsModule", "CcModule")
 ---@return boolean
 function M:IsModuleEnabled(moduleName)

@@ -209,6 +209,31 @@ fw.describe("AlertsModule 12.1 - bar anchor handling", function()
 	end)
 end)
 
+fw.describe("AlertsModule 12.1 - how many pairs it prepares", function()
+	local display = env.addon.Modules.Alerts.Display
+	local moduleUtil = env.addon.Utils.ModuleUtil
+
+	---@param instanceType string
+	local function inPlace(instanceType)
+		env.instanceType = instanceType
+		env.inInstance = instanceType ~= "none"
+		moduleUtil:InvalidateWorldState()
+	end
+
+	fw.it("prepares only what an arena can hold, and the full set everywhere else", function()
+		-- A pair is frames, and the client never takes a frame back, so preparing forty of them
+		-- for a place that holds three enemies is a set nothing can ever ask for.
+		inPlace("arena")
+		assert(display:PrewarmTokenTarget() == display.ArenaPrewarmTokenCount, "three in an arena")
+
+		inPlace("pvp")
+		assert(display:PrewarmTokenTarget() == display.PrewarmTokenCount, "the full set in a battleground")
+
+		inPlace("none")
+		assert(display:PrewarmTokenTarget() == display.PrewarmTokenCount, "and outdoors, where world pvp happens")
+	end)
+end)
+
 fw.describe("AlertsModule 12.1 - which plates get a pair", function()
 	fw.it("builds nothing for an NPC", function()
 		-- An alert is something another player did, and a busy zone is mostly NPCs. Each one tracked

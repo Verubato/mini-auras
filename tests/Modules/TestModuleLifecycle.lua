@@ -31,7 +31,9 @@ env.loadModule("src/Modules/Alerts/Module.lua")
 -- frame tree, and forty per refresh was most of this file's runtime. The shipped default is
 -- asserted below so lowering it here cannot hide a change to it.
 assert(env.addon.Modules.Alerts.Display.PrewarmTokenCount == 40, "alerts prepares 40 tokens")
+assert(env.addon.Modules.Alerts.Display.ArenaPrewarmTokenCount == 3, "and three in an arena")
 env.addon.Modules.Alerts.Display.PrewarmTokenCount = PREWARM_TOKENS
+env.addon.Modules.Alerts.Display.ArenaPrewarmTokenCount = PREWARM_TOKENS
 env.addon.Modules.AlertsModule:Init()
 local alertsEvents = acm.lastFrameForEvent("NAME_PLATE_UNIT_ADDED")
 assert(alertsEvents, "alerts event frame")
@@ -39,7 +41,9 @@ assert(alertsEvents, "alerts event frame")
 env.loadModule("src/Modules/Nameplates/Display.lua")
 env.loadModule("src/Modules/Nameplates/Module.lua")
 assert(env.addon.Modules.Nameplates.Display.PrewarmCount == 40, "nameplates prepares 40 displays")
+assert(env.addon.Modules.Nameplates.Display.ArenaPrewarmCount == 10, "and ten in an arena")
 env.addon.Modules.Nameplates.Display.PrewarmCount = PREWARM_TOKENS
+env.addon.Modules.Nameplates.Display.ArenaPrewarmCount = PREWARM_TOKENS
 env.addon.Modules.NameplatesModule:Init()
 local nameplatesEvents = acm.lastFrameForEvent("NAME_PLATE_UNIT_ADDED")
 assert(nameplatesEvents and nameplatesEvents ~= alertsEvents, "nameplates event frame")

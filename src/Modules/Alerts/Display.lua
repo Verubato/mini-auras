@@ -116,6 +116,10 @@ local DEFAULT_PAIR_SPACING = 2
 -- refresh is cheap in the client and slow against the mock, where it was most of the suite's
 -- runtime; the shipped default is asserted separately.
 M.PrewarmTokenCount = 40
+-- What an arena gets. It holds three enemies at most, and its own tokens are handed pairs when the
+-- client names the opponents, so the plate set only has to cover the window before that. A pair
+-- built for a token that never appears is frames the client can never take back.
+M.ArenaPrewarmTokenCount = 3
 
 ---Whether any tint is drawn at all. Both the category colours and the class colours ride the
 ---glow/border switches, since those are the only things they paint.
@@ -801,6 +805,12 @@ function M:ReleaseAllDisplays()
 	for unitToken in pairs(activeDisplays) do
 		self:ReleaseDisplay(unitToken)
 	end
+end
+
+---How many tokens to prepare for, which is what the place can actually show at once.
+---@return number
+function M:PrewarmTokenTarget()
+	return moduleUtil:InstanceType() == "arena" and M.ArenaPrewarmTokenCount or M.PrewarmTokenCount
 end
 
 ---Builds a parked display pair for each of prefix1..count, so a token coming into play mid-fight

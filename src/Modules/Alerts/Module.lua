@@ -447,7 +447,7 @@ function M:Refresh()
 	-- After UpdateContent, which is what rebuilds the pairs when the look baked into their buttons
 	-- has changed: prewarming before it would build a set this refresh then throws away.
 	if addon:IsLoadingScreenUp() and activeSource == SOURCE_NAMEPLATE then
-		display:Prewarm(SOURCE_NAMEPLATE, display.PrewarmTokenCount)
+		display:Prewarm(SOURCE_NAMEPLATE, display:PrewarmTokenTarget())
 	end
 
 	-- Owned here rather than by the test-mode toggle, so flipping the module switch while a

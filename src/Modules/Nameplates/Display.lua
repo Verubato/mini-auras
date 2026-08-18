@@ -181,6 +181,9 @@ local DEFAULT_BAR_SPACING = 2
 -- is cheap in the client and slow against the mock, where it was most of the suite's runtime; the
 -- shipped default is asserted separately.
 M.PrewarmCount = 40
+-- What an arena gets. Three enemies and their pets is the whole of it, so the rest of the set
+-- would be displays nothing can ever ask for, and the client never takes a frame back.
+M.ArenaPrewarmCount = 10
 -- Both sides get prepared, since a plate's faction is not known until it spawns and a duel or a
 -- mind control flips it afterwards. Only bars actually switched on are queued (see Prewarm).
 local PREWARM_FACTIONS = { "Enemy", "Friendly" }
@@ -947,6 +950,8 @@ end
 ---nothing is being drawn. Cheap to repeat, since it counts what exists first, and bars switched
 ---off since the last pass are simply not walked.
 function M:Prewarm()
+	local target = moduleUtil:InstanceType() == "arena" and M.ArenaPrewarmCount or M.PrewarmCount
+
 	for _, faction in ipairs(PREWARM_FACTIONS) do
 		local unitOptions = nmModule and nmModule[faction]
 
@@ -956,7 +961,7 @@ function M:Prewarm()
 			if barOptions and barOptions.Enabled then
 				-- Bound displays count towards the target: they are already doing the job the
 				-- prepared ones are held for, and only the plates yet to appear need covering.
-				for _ = (builtCounts[bar.CacheKey[faction]] or 0) + 1, M.PrewarmCount do
+				for _ = (builtCounts[bar.CacheKey[faction]] or 0) + 1, target do
 					PrewarmOneBarDisplay(bar, barOptions, faction)
 				end
 			end
