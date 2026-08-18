@@ -170,6 +170,10 @@ local freeDisplays = {}
 local builtCounts = {}
 -- Background walker converting parked bar displays after a look change; see QueueParkedRestyles.
 local parkedSweep = sweep:New()
+-- What each (bar, faction) look was resolved to, keyed by cache key; see BarLook.
+local barLooks = {}
+-- Bumped whenever the options reach this file, which is the only thing that can move a look.
+local optionsGeneration = 0
 -- Fallbacks for a bar with no configured geometry.
 local DEFAULT_BAR_ICONS = 5
 local DEFAULT_BAR_SIZE = 35
@@ -396,6 +400,54 @@ local function BarStyle(barOptions)
 	return style
 end
 
+---An own copy of the shared style scratch, which the next caller refills. Colours are copied out
+---too, since those come from scratch tables of their own.
+---@param style AuraDisplayStyle
+---@return AuraDisplayStyle
+local function CopyStyle(style)
+	local copy = {}
+
+	for key, value in pairs(style) do
+		if type(value) == "table" then
+			copy[key] = { value[1], value[2], value[3], value[4] }
+		else
+			copy[key] = value
+		end
+	end
+
+	return copy
+end
+
+---The look one bar and faction wears: its size, spacing, style, and the generation those add up
+---to. Resolved when the options move rather than per plate. Every plate that spawned used to
+---rebuild the style and re-stamp it to reach the same answer, and none of it can change between
+---two plates.
+---@param factionKey "Enemy"|"Friendly"
+---@return table
+local function BarLook(bar, barOptions, factionKey)
+	local cacheKey = bar.CacheKey[factionKey]
+	local look = barLooks[cacheKey]
+
+	if look and look.Generation == optionsGeneration then
+		return look
+	end
+
+	local size = BarIconSize(barOptions)
+	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
+	local style = CopyStyle(BarStyle(barOptions))
+
+	look = {
+		Generation = optionsGeneration,
+		Size = size,
+		Spacing = spacing,
+		Style = style,
+		Signature = auraContainerDisplay:GetStyleGeneration(cacheKey, style, size, spacing),
+	}
+	barLooks[cacheKey] = look
+
+	return look
+end
+
 ---Brings one entry onto the current look. The display has to leave its plate to do it: a restyle
 ---cannot re-fit buttons whose size is secret, which it is anywhere inside a plate.
 ---
@@ -451,11 +503,10 @@ end
 ---@param factionKey "Enemy"|"Friendly" which side of the options the bar came from
 ---@return AuraContainerDisplay
 local function GetOrCreateBarDisplay(nameplate, bar, barOptions, factionKey)
-	local size = BarIconSize(barOptions)
-	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
-	local style = BarStyle(barOptions)
+	local look = BarLook(bar, barOptions, factionKey)
+	local size, spacing, style = look.Size, look.Spacing, look.Style
 	local cacheKey = bar.CacheKey[factionKey]
-	local signature = auraContainerDisplay:GetStyleGeneration(cacheKey, style, size, spacing)
+	local signature = look.Signature
 
 	local byBar = barDisplays[nameplate]
 
@@ -495,13 +546,11 @@ end
 ---@param factionKey "Enemy"|"Friendly"
 local function PrewarmOneBarDisplay(bar, barOptions, factionKey)
 	local cacheKey = bar.CacheKey[factionKey]
-	local size = BarIconSize(barOptions)
-	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
-	local style = BarStyle(barOptions)
+	local look = BarLook(bar, barOptions, factionKey)
 
 	local entry = {
-		Display = CreateBarDisplay(size, spacing, style, BarCategoryColors(barOptions)),
-		Signature = auraContainerDisplay:GetStyleGeneration(cacheKey, style, size, spacing),
+		Display = CreateBarDisplay(look.Size, look.Spacing, look.Style, BarCategoryColors(barOptions)),
+		Signature = look.Signature,
 	}
 	ResetBarDisplay(entry.Display)
 
@@ -535,17 +584,14 @@ local function RestyleParkedEntry(item)
 		return
 	end
 
-	local size = BarIconSize(barOptions)
-	local spacing = barOptions.Icons.Spacing or DEFAULT_BAR_SPACING
-	local style = BarStyle(barOptions)
-	local signature = auraContainerDisplay:GetStyleGeneration(item.Bar.CacheKey[item.FactionKey],
-		style, size, spacing)
+	local look = BarLook(item.Bar, barOptions, item.FactionKey)
+	local signature = look.Signature
 
 	-- An entry a plate has taken since the queue was built was restyled by its own ensure path,
 	-- so this lands as a no-op diff. The tints ride along because they are outside the signature,
 	-- and a display reused while auras are secret needs them already on the buttons.
 	if item.Entry.Signature ~= signature then
-		RestyleEntry(item.Entry, size, spacing, style, signature)
+		RestyleEntry(item.Entry, look.Size, look.Spacing, look.Style, signature)
 	end
 
 	item.Entry.Display:SetGroupGlowColors(COLORED_GROUP_KEYS, BarCategoryColors(barOptions))
@@ -560,8 +606,7 @@ end
 ---@return table[]? queue
 local function QueueStaleForBar(queue, bar, factionKey, barOptions)
 	local cacheKey = bar.CacheKey[factionKey]
-	local signature = auraContainerDisplay:GetStyleGeneration(cacheKey, BarStyle(barOptions),
-		BarIconSize(barOptions), barOptions.Icons.Spacing or DEFAULT_BAR_SPACING)
+	local signature = BarLook(bar, barOptions, factionKey).Signature
 
 	for _, byBar in pairs(barDisplays) do
 		local entry = byBar[cacheKey]
@@ -1053,6 +1098,9 @@ function M:ClearAll()
 end
 
 function M:RefreshAnchorsAndSizes()
+	-- The one path options arrive on, so it is where the looks are marked for re-resolving.
+	optionsGeneration = optionsGeneration + 1
+
 	local ignoreParentScale = not nmModule.ScaleWithNameplate
 	for _, data in pairs(nameplateAnchors) do
 		if data.Nameplate and data.UnitToken then

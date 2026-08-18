@@ -410,18 +410,27 @@ local function IsPlayerDisplay(instance)
 end
 
 ---Whether any of a display's groups filter on spell ids, which is the only thing a zone transfer
----can spoil. Walked rather than cached because the maps are swapped at runtime, and only ever on
----the zone paths, so the walk costs nothing the rest of the time.
+---can spoil. Kept on the display: a zone pass asks every display, and the answer only moves when
+---a setter hands a map over, which clears it.
 ---@param instance AuraContainerDisplay
 ---@return boolean
 local function HasIdentityFilters(instance)
-	for _, group in pairs(instance.GroupsByKey) do
-		if group.CandidateFilters then
-			return true
+	local carries = instance.CarriesIdentityFilters
+
+	if carries == nil then
+		carries = false
+
+		for _, group in pairs(instance.GroupsByKey) do
+			if group.CandidateFilters then
+				carries = true
+				break
+			end
 		end
+
+		instance.CarriesIdentityFilters = carries
 	end
 
-	return false
+	return carries
 end
 
 ---@return boolean
@@ -1832,6 +1841,8 @@ function M:SetCandidateFilters(groupKey, filters)
 
 	if group then
 		group.CandidateFilters = filters
+		-- Re-asked on the next zone pass rather than worked out here, since most swaps never meet one.
+		self.CarriesIdentityFilters = nil
 	end
 
 	self.Frame:SetAuraGroupCandidateFilters(groupKey, filters)
@@ -2206,6 +2217,8 @@ end
 
 ---@class AuraContainerDisplay
 ---@field Frame table The AuraContainer frame (anchor/show/hide through this).
+---@field CarriesIdentityFilters boolean? Whether any of its groups filter on spell ids, worked
+---out on first ask and cleared by SetCandidateFilters. See HasIdentityFilters.
 ---@field Size number
 ---@field Spacing number
 ---@field Groups AuraDisplayGroupSpec[]

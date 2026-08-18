@@ -1798,6 +1798,23 @@ fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 		assert(instance.Frame:GetUnit() == "player", "still on the token it was built with")
 	end)
 
+	fw.it("notices a map handed over after the display was built", function()
+		-- The answer is kept on the display, so a group given its first map has to clear it: the
+		-- personal aura groups are built on a placeholder and get their real list a moment later.
+		local plain = newInstance()
+
+		displayEvents:TriggerEvent("ZONE_CHANGED")
+		assert(plain.Frame:IsShown(), "nothing to protect yet")
+
+		acm.runTimers()
+		plain:SetCandidateFilters("cc", SPELL_MAP)
+
+		displayEvents:TriggerEvent("ZONE_CHANGED")
+		assert(not plain.Frame:IsShown(), "and it is covered once it carries one")
+
+		acm.runTimers()
+	end)
+
 	fw.it("leaves a display with no spell-id map on screen throughout", function()
 		-- A transfer only spoils a filter the engine has to decide whether it may apply, and it
 		-- decides that from the unit's identity. A plain filter string is read the same either
