@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.19.3
+
+- Fixed the coloured countdown text showing one second less than the plain text.
+
 ## 5.19.2
 
 - Fixed personal auras flashing off and back on when you cross from one area to another.
