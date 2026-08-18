@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.18.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.19.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -58,7 +58,10 @@ addon list files MiniAuras under a **Mini** category, alongside the author's oth
 **Test mode** draws fake icons on every enabled display so things can be positioned out of
 combat. While testing, the Test button pulses and reads "Testing...". Screen-anchored displays
 (Alerts, Healer, Enemy Kicks, Ally Kicks, screen-anchored custom aura groups) become draggable
-during test mode. Stand-in party/raid and arena frames are only created when no real frames are
+during test mode. Since 5.19.0 a draggable container also opens a small position window when it
+is clicked or when a drag ends, holding X and Y boxes with plus and minus buttons that step one
+pixel at a time, for placements a drag cannot hit exactly. Clicking the same container again
+closes it, and it closes on its own when test mode stops. Stand-in party/raid and arena frames are only created when no real frames are
 visible, so testing in a group shows icons where they will actually be. Test mode stops
 automatically when combat starts. The World/Arena/Dungeons and Raids/Battlegrounds sub-tabs on
 the CC and Raid Frame Auras pages also flip which of the two setting groups the test preview
@@ -140,19 +143,38 @@ the limit applies to each aura category on its own, which is why a unit showing 
 important buffs can show that many of each; the game no longer lets addons count auras, so one
 shared limit across categories is not possible.
 
+### Changing a look in combat
+
+Icon size and style are baked into an icon when it is created, and while aura data is secret
+(in combat, and out of combat inside M+, encounters and rated PvP) the game will not let an
+existing icon be restyled. So a size or style change made then is stored and applied on its own
+within a second of the restriction lifting, and since 5.19.0 the addon says so once in chat:
+"Icon size and style changes will apply when combat ends." It is said once per fight, not once
+per slider step, and test mode is exempt because it draws its own icons and shows the change
+immediately.
+
+Everything else, budgets, colours, positions, growth direction, and switching a module or a
+category on or off, applies in combat as normal.
+
 ### Colouring rules
 
 - **Dispel colours** (CC, Pet CC, Healer): glow/border coloured by the debuff's dispel type
   (for example blue for magic).
 - **Dispel colours + category tints** (Group Auras, where the switch is called **Colours**, and
-  Nameplates, where it is called **Spell colours**): one switch driving both halves. CC icons take the dispel type's colour,
+  Nameplates, where since 5.19.0 it is the three-way **Icon colours** dropdown): CC icons take
+  the dispel type's colour,
   which the game has no equivalent of for a buff, so defensive and important icons take the
   two colours picked for the module instead. Group Auras keeps its pair on a **Colours**
   sub-tab, Nameplates on its **Settings** sub-tab; both are module wide rather than per bar or
-  per setting group. Turning the switch off puts every icon back on a plain white glow. On
+  per setting group. Turning it off, or picking None on nameplates, puts every icon back on a
+  plain white glow, and nameplates can also pick Custom to use the two module colours without
+  the dispel palette. On
   Nameplates, CC auras with no dispel type (stuns, disarms) keep the border too, coloured to
   match their glow, instead of showing glow only (since 5.10.2). Party and raid frame CC icons
   do the same (since 5.12.2), on the live icons and the previews.
+- **A single CC colour** (CC, Pet CC, since 5.19.0): one swatch, applied to crowd control icons
+  while Dispel colours is off. With dispel colours on, the game's colour for the aura's school
+  wins instead.
 - **Per-category tints** (Alerts): a colour swatch each for Important and Defensive, with no
   dispel colouring to share the switch with. They colour whichever ring is drawn, so they need
   **Glow icons** or **Show border** on; with both off the two swatches are hidden, having
@@ -585,7 +607,9 @@ an updated curated list still reaches existing profiles.
 Sidebar: General > Alerts. A movable screen bar showing enemy defensive spells and important
 spells (for example offensive cooldowns, Precognition) as they are used, with optional sound
 and text-to-speech. It reads enemy nameplates, so alerts require enemy nameplates to be
-active. The important category is read from Blizzard's nameplate buff lists across every
+active, except in 2v2 and 3v3, where since 5.19.0 it reads the arena unit tokens instead and
+needs no plates at all; bigger brackets and everywhere else stay on nameplates. Since 5.19.0
+alerts are only tracked on other players, so an NPC's nameplate never gets a bar. The important category is read from Blizzard's nameplate buff lists across every
 active enemy. In arena, the bars reset when a new round's preparation room starts.
 
 Enable in (defaults): World on, Arena on, Battlegrounds off, Dungeons off, Raid off.
@@ -602,12 +626,20 @@ Enable in (defaults): World on, Arena on, Battlegrounds off, Dungeons off, Raid 
 | Glow icons | on/off | on |
 | Show border | on/off (since 5.16.0) | off |
 | Reverse swipe | on/off | on |
-| Important colour | swatch (applies while Glow icons or Show border is on) | red (1, 0.2, 0.2) |
-| Defensive colour | swatch (applies while Glow icons or Show border is on) | green (0.2, 1, 0.2) |
+| Class colours | on/off (since 5.19.0) | on |
+| Important colour | swatch (applies while Glow icons or Show border is on, and while Class colours is off) | red (1, 0.2, 0.2) |
+| Defensive colour | swatch (applies while Glow icons or Show border is on, and while Class colours is off) | green (0.2, 1, 0.2) |
 | Grow | LEFT / RIGHT | RIGHT (a saved CENTER from an older profile reads back as RIGHT) |
 | Icon Size | 10-100 | 50 |
 | Max Icons | 1-10 | 8 |
 | Icon Padding | 0-20 | 4 (2 before 5.16.0) |
+
+**Class colours** (on by default) tints every icon in the owner's class colour instead of the
+two category colours, which is what makes a row readable at a glance in an arena. It needs the
+client to name the enemy's class: on a nameplate that is read directly, and on an arena token,
+where the class itself is secret, it comes from the opponent's specialisation once the client
+reports it. Where neither answers, the icon keeps the category colour. The two colour swatches
+are ignored while it is on.
 
 Positions (dragged in test mode): combined bar centred, 150 px below the top of the screen.
 **Split bars** gives important spells their own separately movable bar: defensives default
@@ -673,7 +705,7 @@ Enable in (defaults): all five on (World, Arena, Battlegrounds, Dungeons, Raid).
 | Ignore Friendly Pets | on | no auras on friendly pet nameplates |
 | Scale with Nameplate | on | icons follow the plate's scale; keep on if the target plate is a different size (for example via BBP) |
 | Anchor to Health Bar | off | anchor icons to the plate's health bar instead of the plate frame; turn on if another addon (for example BetterBlizzPlates) changes plate width or height |
-| Important colour | red (1, 0.2, 0.2) | tint for important icons on every bar that has "Spell colours" on |
+| Important colour | red (1, 0.2, 0.2) | tint for important icons on every bar whose Icon colours is Dispel colours or Custom |
 | Defensive colour | green (0.2, 1, 0.2) | the same for defensive icons |
 
 **Four independently configured bars**, each its own sub-tab: Enemy - Bar 1, Enemy - Bar 2,
@@ -687,7 +719,7 @@ Friendly - Bar 1, Friendly - Bar 2. Per bar:
 | Show Important | on/off | off | on | Bar 1 off, Bar 2 on |
 | Glow icons | on/off | on | on | on |
 | Reverse swipe | on/off | on | on | on |
-| Spell colours | on/off | on | on | on |
+| Icon colours | None / Dispel colours / Custom (since 5.19.0) | Dispel colours | Dispel colours | Dispel colours |
 | Show tooltips | on/off | off | off | off |
 | Milliseconds | on/off | on | on | on |
 | Icon Size | 10-60 | 35 | 35 | 35 |
@@ -697,9 +729,15 @@ Friendly - Bar 1, Friendly - Bar 2. Per bar:
 | Offset X / Y | -250..250 | 0 / 0 | 0 / 0 | 0 / 0 |
 
 An interrupt (kick) icon is shown on bars that have Show CC enabled. Each enabled category on a
-bar gets the bar's full Max Icons budget, with no dynamic split between categories. "Spell
-colours" is per bar, but the two colours it applies are the module-wide pair on the Settings
-sub-tab, so a category reads the same on whichever bar it lands.
+bar gets the bar's full Max Icons budget, with no dynamic split between categories.
+
+**Icon colours** is per bar and replaced the old "Spell colours" tick in 5.19.0, with three
+choices. **Dispel colours**, the default and what the tick used to mean, paints each icon in
+the game's own colour for its dispel type, with the module-wide important and defensive colours
+from the Settings sub-tab for the rest, so a category reads the same on whichever bar it lands.
+**Custom** drops the dispel palette and uses those two colours only. **None** leaves the icons
+untinted. A profile saved before 5.19.0 reads back as Dispel colours where the tick was on, and
+None where it was off.
 
 Nameplate bars are not limited to the addon's curated spell lists: they show everything the
 game itself flags for the category, so a new spec's CC turns up without waiting for an addon
@@ -719,7 +757,14 @@ Sidebar: General > Portraits. Shows CC, defensives and other important spells on
 target, focus and pet portraits.
 
 Settings: **Enabled** (single switch, applies everywhere, default on) and **Reverse swipe**
-(default on). Nothing else.
+(default on).
+
+**Extra buffs** (since 5.19.0) is a searchable spell list under the settings, and the buffs
+ticked there are shown on the player's own portrait, under every flagged category. It exists
+because the game flags only the auras it considers notable, and anything unflagged can never
+appear otherwise. Buffs only, and the player only: on 12.1 a spell-id filter is skipped for
+harmful auras on a unit you can assist, so the same layer aimed at debuffs would match every
+debuff on you. Nothing is ticked by default.
 
 One icon each for five categories: important, external defensive, big defensive, disarm and
 CC. Like nameplates, portraits show everything the game flags rather than only the addon's
@@ -760,6 +805,11 @@ Two setting groups (World/Arena/Dungeons and Raids/Battlegrounds sub-tabs):
 | Icon Padding | 0-20 | 2 | 2 |
 | Grow | LEFT/RIGHT/CENTER/DOWN/UP | RIGHT | CENTER |
 | Offset X / Y | -250..250 | 2 / 0 | 2 / 0 |
+| CC colour | swatch (since 5.19.0) | white | white |
+
+**CC colour** sets the glow and border colour for crowd control icons, for players who want
+one colour rather than the game's dispel palette. It applies while **Dispel colours** is off;
+with dispel colours on, the game's own colour for the aura's school wins.
 
 Ordering: CC icons are shown oldest applied first. Sorting happens inside the game's aura
 containers, so there is no option to change it.
@@ -811,8 +861,12 @@ Enable in (defaults): World on, Arena on, Battlegrounds off, Dungeons on, Raid o
 | Show tooltips | on/off | off |
 | Sound | on/off + sound dropdown | on, Sonar, Master channel |
 | Icon Size | 10-100 | 50 |
+| Max Icons | 1-5 (since 5.19.0) | 5 |
 | Text Size | 10-100 | 32 |
 | Icon Padding | 0-20 | 2 |
+
+**Max Icons** caps how many CC icons each healer shows at once. It stops at five because the
+displays are built with five icon slots, so a higher number would have nothing to draw into.
 
 Position: centred, 220 px below the top of the screen; draggable in test mode. The sound plays
 engine-side, registered per known CC spell against the healer, so it works even though the
@@ -1013,6 +1067,11 @@ Global `MiniAurasApi.v1`, also reachable as `MiniCCApi.v1` (same table):
 
 ## Troubleshooting, by symptom
 
+**"I changed the icon size and nothing happened."** Almost always combat, or an instance where
+aura data stays secret (M+, an encounter, rated PvP). The new size lands within a second of that
+lifting; see "Changing a look in combat". The addon says this in chat once per fight since
+5.19.0. If it persists out of combat, check the module is enabled for the content type.
+
 **"Nothing shows at all" / "module X does nothing".** First check the module's "Enable in"
 row for the content type the user is in; most modules default off in battlegrounds and
 raids, Alerts is also off in dungeons, Pet CC is off everywhere, Ally Kicks is on only in
@@ -1107,10 +1166,11 @@ CC, defensives and importants can each fill Max Icons. There is no way to cap th
 whole, because the addon cannot count what an aura container is showing.
 
 **"The Important/Defensive colour does nothing."** The pair only applies while the module's
-colour switch is on: **Colours** for Group Auras, **Spell colours** for the bar in
-question on Nameplates. CC icons ignore it either way and always take the game's dispel type
-colour, and the Twins, Mirror and Twins Mirror glow styles carry their own colours, so no
-swatch tints them.
+colour setting asks for it: **Colours** for Group Auras, and on Nameplates an **Icon colours**
+of Dispel colours or Custom for the bar in question, not None. On Alerts it also needs **Class
+colours** off, since that tints by the owner's class instead. CC icons ignore the pair either
+way and take the game's dispel type colour, and the Twins, Mirror and Twins Mirror glow styles
+carry their own colours, so no swatch tints them.
 
 **"A spell shows on nameplates or portraits but not on group frames."** Expected. Nameplates
 and portraits show whatever the game flags; group frames can only show spells on their
