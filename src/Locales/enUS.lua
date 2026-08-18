@@ -457,6 +457,7 @@ L:SetDefaultStrings({
 	["Search"] = "Search",
 	["%d textures"] = "%d textures",
 	["Select Texture"] = "Select Texture",
+	["Icon size and style changes will apply when combat ends."] = "Icon size and style changes will apply when combat ends.",
 	['Delete the aura group "%s"?'] = "Delete the aura group \"%s\"?",
 })
 

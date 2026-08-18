@@ -1098,6 +1098,13 @@ function M:ClearAll()
 end
 
 function M:RefreshAnchorsAndSizes()
+	-- Test mode hides every plate's aura displays and draws the fake icons instead, so re-fitting
+	-- them now is work nobody can see. The looks are left unstamped, so the refresh that follows
+	-- test mode finds every display stale and settles them in one pass.
+	if testModeActive then
+		return
+	end
+
 	-- The one path options arrive on, so it is where the looks are marked for re-resolving.
 	optionsGeneration = optionsGeneration + 1
 

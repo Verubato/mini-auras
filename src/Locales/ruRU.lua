@@ -456,5 +456,6 @@ L:RegisterLocale("ruRU", function() return {
 	["Search"] = "Поиск",
 	["%d textures"] = "Текстур: %d",
 	["Select Texture"] = "Выбрать текстуру",
+	["Icon size and style changes will apply when combat ends."] = "Изменения размера и стиля значков вступят в силу после боя.",
 	['Delete the aura group "%s"?'] = "Удалить группу аур «%s»?",
 } end)

@@ -1,10 +1,13 @@
 ---@type string, Addon
 local addonName, addon = ...
 local dbMigrator = addon.Config.Migrator
+local wowEx = addon.Utils.WoWEx
 local mini = addon.Framework
 local L = addon.L
 ---@type Db
 local db
+-- Said once per stretch of the restriction, since a slider drag would otherwise say it per step.
+local lookWarningShown = false
 local M = addon.Config
 
 local NAV_ICON_BASE = "Interface\\AddOns\\" .. addonName .. "\\Icons\\Nav\\"
@@ -101,12 +104,33 @@ local function BuildRedirectPanel(panel, version)
 	end)
 end
 
+---Says once that a look change cannot land yet. While the client is hiding aura data it will not
+---let a button be restyled, so a size or style edit is stored and settles when the restriction
+---lifts. Everything else, budgets, colours, positions, applies as normal. Test mode is exempt: it
+---draws its own icons and shows the change straight away.
+local function WarnIfLookIsParked()
+	if not wowEx:IsAuraStylingRestricted() or addon:IsTestActive() then
+		-- Cleared as soon as it could land, so the next fight says it again.
+		lookWarningShown = false
+		return
+	end
+
+	if lookWarningShown then
+		return
+	end
+
+	lookWarningShown = true
+	mini:NotifyWithPrefix(L["Icon size and style changes will apply when combat ends."])
+end
+
 ---Applies a settings change. A ModuleName key scopes the refresh to the one module whose
 ---settings table changed - sliders and colour pickers fire this per drag step, so refreshing all
 ---eleven modules each time is real cost. No key means the change has addon-wide reach and
 ---everything refreshes.
 ---@param settingsKey string? A ModuleName value naming the db.Modules table that changed.
 function M:Apply(settingsKey)
+	WarnIfLookIsParked()
+
 	if settingsKey then
 		addon:RefreshModule(settingsKey)
 	else

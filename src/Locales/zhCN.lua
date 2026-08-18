@@ -456,5 +456,6 @@ L:RegisterLocale("zhCN", function() return {
 	["Search"] = "搜索",
 	["%d textures"] = "%d 个材质",
 	["Select Texture"] = "选择材质",
+	["Icon size and style changes will apply when combat ends."] = "图标大小和样式的更改将在战斗结束后生效。",
 	['Delete the aura group "%s"?'] = "删除光环组“%s”？",
 } end)

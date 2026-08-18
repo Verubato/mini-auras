@@ -921,6 +921,13 @@ end
 
 -- Applies options to every pooled display pair and re-chains the rows.
 function M:RefreshDisplays()
+	-- Test mode hides every pair and draws the preview bars instead, so styling them now would be
+	-- work nobody can see. Nothing is stamped either, which is what makes the refresh that follows
+	-- test mode find them all stale and settle them in one pass.
+	if testModeActive then
+		return
+	end
+
 	local options = db.Modules.AlertsModule
 	local showBars = GetAlertBarsShown()
 

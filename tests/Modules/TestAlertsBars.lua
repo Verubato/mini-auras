@@ -682,6 +682,31 @@ fw.describe("AlertsModule 12.1 - what may rebuild the display pairs", function()
 		module:Refresh()
 	end)
 
+	fw.it("leaves the hidden pairs alone while test mode is drawing the preview", function()
+		-- Test mode hides every pair and draws its own icons, so re-fitting the pairs while it runs
+		-- is work nobody can see. What matters is that they are settled on the way out.
+		local oldSize = alerts.Icons.Size
+		local newSize = (oldSize or 24) + 6
+
+		module:StartTesting()
+		alerts.Icons.Size = newSize
+		module:Refresh()
+
+		local def = liveDefOf("nameplate1")
+
+		assert(not def or def._groups.important.layout.elementWidth ~= newSize,
+			"nothing was re-fitted while the preview was up")
+
+		module:StopTesting()
+		module:Refresh()
+
+		assert(liveDefOf("nameplate1")._groups.important.layout.elementWidth == newSize,
+			"and the new size lands once test mode ends")
+
+		alerts.Icons.Size = oldSize
+		module:Refresh()
+	end)
+
 	fw.it("rebuilds when the client will not let a restyle land", function()
 		-- Inside an arena the restriction never clears, so a pair left holding the old size would
 		-- wear it for the whole match. New buttons take their size as they are made, which is the

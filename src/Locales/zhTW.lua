@@ -456,5 +456,6 @@ L:RegisterLocale("zhTW", function() return {
 	["Search"] = "搜尋",
 	["%d textures"] = "%d 個材質",
 	["Select Texture"] = "選擇材質",
+	["Icon size and style changes will apply when combat ends."] = "圖示大小與樣式的變更將在戰鬥結束後生效。",
 	['Delete the aura group "%s"?'] = "刪除光環群組「%s」？",
 } end)

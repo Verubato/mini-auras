@@ -456,5 +456,6 @@ L:RegisterLocale("koKR", function() return {
 	["Search"] = "검색",
 	["%d textures"] = "텍스처 %d개",
 	["Select Texture"] = "텍스처 선택",
+	["Icon size and style changes will apply when combat ends."] = "아이콘 크기와 모양 변경은 전투가 끝난 뒤에 적용됩니다.",
 	['Delete the aura group "%s"?'] = "\"%s\" 오라 그룹을 삭제할까요?",
 } end)

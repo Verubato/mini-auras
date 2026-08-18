@@ -454,5 +454,6 @@ L:RegisterLocale("frFR", function() return {
 	["Search"] = "Rechercher",
 	["%d textures"] = "%d textures",
 	["Select Texture"] = "Choisir une texture",
+	["Icon size and style changes will apply when combat ends."] = "Les changements de taille et de style des icônes s'appliqueront à la fin du combat.",
 	['Delete the aura group "%s"?'] = "Supprimer le groupe d'auras « %s » ?",
 } end)
