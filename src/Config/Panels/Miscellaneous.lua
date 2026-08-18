@@ -17,6 +17,9 @@ function M:Build(panel)
 	local db = mini:GetSavedVars()
 	local columns = 2
 	local columnWidth = mini:ColumnWidth(columns, 0, 0)
+	-- A control filling a whole column overhangs the panel, because the second column starts a
+	-- gap in from the first. The gap comes off the width so the right column ends on the edge.
+	local controlWidth = columnWidth - horizontalSpacing
 	-- Shared 5-column checkbox grid so checkbox rows align across pages. The long labels on
 	-- this page sit two grid columns apart so they never overlap.
 	-- Four columns rather than five: the three icon toggles sit in consecutive columns, and a
@@ -85,7 +88,7 @@ function M:Build(panel)
 	})
 
 	languageDropdown:SetPoint("TOPLEFT", languageLabel, "BOTTOMLEFT", 0, -4)
-	languageDropdown:SetWidth(columnWidth)
+	languageDropdown:SetWidth(controlWidth)
 
 	local behaviourDivider = mini:Divider({
 		Parent = panel,
@@ -224,7 +227,7 @@ function M:Build(panel)
 	})
 
 	glowTypeDropdown:SetPoint("TOPLEFT", glowTypeLabel, "BOTTOMLEFT", 0, -4)
-	glowTypeDropdown:SetWidth(columnWidth)
+	glowTypeDropdown:SetWidth(controlWidth)
 
 	local fontLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 	fontLabel:SetText(L["Font"])
@@ -289,7 +292,7 @@ function M:Build(panel)
 	})
 
 	fontDropdown:SetPoint("TOPLEFT", fontLabel, "BOTTOMLEFT", 0, -4)
-	fontDropdown:SetWidth(columnWidth)
+	fontDropdown:SetWidth(controlWidth)
 
 	-- Media addons register their fonts whenever they happen to load, which is routinely after
 	-- this dropdown was built, so rebuild the list rather than keeping the one it started with.
@@ -320,7 +323,7 @@ function M:Build(panel)
 		Default = dbDefaults.FontScale,
 		Fallback = dbDefaults.FontScale,
 		Float = true,
-		Width = columnWidth - horizontalSpacing,
+		Width = controlWidth,
 		Target = db,
 		Key = "FontScale",
 	})
@@ -335,7 +338,7 @@ function M:Build(panel)
 		Max = 6,
 		Default = dbDefaults.MillisecondsThreshold,
 		Fallback = dbDefaults.MillisecondsThreshold,
-		Width = columnWidth - horizontalSpacing,
+		Width = controlWidth,
 		Target = db,
 		Key = "MillisecondsThreshold",
 	})
