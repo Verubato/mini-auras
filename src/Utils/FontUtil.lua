@@ -24,8 +24,10 @@ local LOCALE_ALPHABETS = {
 -- after this file, so it is reached through the addon table rather than an upvalue.
 local cachedName
 local cachedFile
+-- The saved variables table, kept between calls; see CurrentFace.
+local cachedDb
 local subscribedToFonts = false
--- One shared font object per file, size and flags combination, each created once and never
+-- One shared font object per file, size and flags combination, nested file -> size -> flags, each created once and never
 -- re-fonted. Text drawn in a font attaches to one of these with SetFontObject rather than being
 -- handed the file: the client renders a string given a font object even when the file's first
 -- load is still in flight, where SetFont with a cold path answers false, leaves the string as
@@ -44,19 +46,28 @@ local fontObjectCount = 0
 --- Core/Auras/AuraContainerDisplay.
 --- @return string? file
 function M:CurrentFace()
-	local db = mini:GetSavedVars()
-	local name = db and db.Font
-
-	if not name then
-		return nil
-	end
-
 	if not subscribedToFonts then
 		subscribedToFonts = true
 
 		addon.Core.Fonts:OnChanged(function()
 			cachedName = nil
+			cachedDb = nil
 		end)
+	end
+
+	-- The saved variables are asked for once and kept. Every fontstring on every icon comes
+	-- through here on a restyle, and the table cannot be swapped without a refresh behind it.
+	local db = cachedDb
+
+	if not db then
+		db = mini:GetSavedVars()
+		cachedDb = db
+	end
+
+	local name = db and db.Font
+
+	if not name then
+		return nil
 	end
 
 	if name ~= cachedName then
@@ -115,8 +126,23 @@ end
 function M:FileFontObject(file, size, flags)
 	flags = flags or ""
 
-	local key = file .. "|" .. size .. "|" .. flags
-	local object = fontObjects[key]
+	-- Nested rather than one map on a joined key: this is asked for per fontstring per restyle,
+	-- and building that key was a string per call for the client to hash and throw away.
+	local bySize = fontObjects[file]
+
+	if not bySize then
+		bySize = {}
+		fontObjects[file] = bySize
+	end
+
+	local byFlags = bySize[size]
+
+	if not byFlags then
+		byFlags = {}
+		bySize[size] = byFlags
+	end
+
+	local object = byFlags[flags]
 
 	if not object then
 		fontObjectCount = fontObjectCount + 1
@@ -131,7 +157,7 @@ function M:FileFontObject(file, size, flags)
 			object:SetFont(file, size, flags)
 		end
 
-		fontObjects[key] = object
+		byFlags[flags] = object
 	end
 
 	return object

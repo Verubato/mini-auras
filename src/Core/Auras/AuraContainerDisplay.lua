@@ -847,15 +847,36 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 	if cd then
 		-- DisableSwipe/MillisecondsThreshold are the global db values StoreStyle resolved when the
 		-- style was set, so this hot loop never re-reads the db per button.
-		cd:SetReverse(style.ReverseCooldown or false)
-		cd:SetDrawSwipe(not (style.DisableSwipe or style.HideSwipe))
+		--
+		-- Each of these is the same answer for every button on the display, and dragging a size
+		-- slider moves none of them, so what a widget already carries is remembered and the engine
+		-- is only told when it changes.
+		local reverse = style.ReverseCooldown or false
+		local drawSwipe = not (style.DisableSwipe or style.HideSwipe)
+		local hideCountdown = hideNumbers or useDurationText
 
-		if cd.SetCountdownMillisecondsThreshold then
+		if widgets.CooldownReverse ~= reverse then
+			widgets.CooldownReverse = reverse
+			cd:SetReverse(reverse)
+		end
+
+		if widgets.CooldownDrawSwipe ~= drawSwipe then
+			widgets.CooldownDrawSwipe = drawSwipe
+			cd:SetDrawSwipe(drawSwipe)
+		end
+
+		if cd.SetCountdownMillisecondsThreshold and widgets.CooldownMsThreshold ~= msThreshold then
+			widgets.CooldownMsThreshold = msThreshold
 			cd:SetCountdownMillisecondsThreshold(msThreshold)
 		end
+
 		cd.FontScale = fontScale
 		fontUtil:UpdateCooldownFontSize(cd, size, nil, fontScale)
-		cd:SetHideCountdownNumbers(hideNumbers or useDurationText)
+
+		if widgets.CooldownHideNumbers ~= hideCountdown then
+			widgets.CooldownHideNumbers = hideCountdown
+			cd:SetHideCountdownNumbers(hideCountdown)
+		end
 
 		cdText = (cd.GetCountdownFontString and cd:GetCountdownFontString())
 			or cd.MiniAurasFontString
@@ -867,7 +888,18 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 		-- same colour through its curve below. Always set, so a pooled button styled for a
 		-- coloured group goes back to white for the next one.
 		if cdText then
-			cdText:SetTextColor(style.TextColorR or 1, style.TextColorG or 1, style.TextColorB or 1)
+			local red = style.TextColorR or 1
+			local green = style.TextColorG or 1
+			local blue = style.TextColorB or 1
+
+			if widgets.CooldownTextR ~= red or widgets.CooldownTextG ~= green
+				or widgets.CooldownTextB ~= blue
+			then
+				widgets.CooldownTextR = red
+				widgets.CooldownTextG = green
+				widgets.CooldownTextB = blue
+				cdText:SetTextColor(red, green, blue)
+			end
 		end
 	end
 
@@ -891,7 +923,12 @@ local function StyleCountdown(instance, button, widgets, size, fontScale)
 		auraCountdownText:Bind(button, durationText, msThreshold, curve)
 	end
 
-	durationText:SetAlpha(useDurationText and 1 or 0)
+	local durationAlpha = useDurationText and 1 or 0
+
+	if widgets.DurationTextAlpha ~= durationAlpha then
+		widgets.DurationTextAlpha = durationAlpha
+		durationText:SetAlpha(durationAlpha)
+	end
 
 	-- Stand-in for the cooldown's own countdown, so it borrows that fontstring's face and size
 	-- wholesale (UpdateCooldownFontSize above just sized it with the same coefficient and scale).
@@ -1140,7 +1177,12 @@ local function StyleButton(instance, button)
 	StylePandemic(widgets, style)
 
 	-- Tooltips (and click-to-cancel, which we never register) require mouse input.
-	button:EnableMouse(style.ShowTooltips ~= false)
+	local mouse = style.ShowTooltips ~= false
+
+	if widgets.MouseEnabled ~= mouse then
+		widgets.MouseEnabled = mouse
+		button:EnableMouse(mouse)
+	end
 end
 
 ---Text sits on its own child frame levelled above the cooldown: fontstrings created on the
