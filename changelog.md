@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.19.1
+
+- Fixed the alert bars filling with unrelated buffs at the start of an arena round.
+
 ## 5.19.0
 
 - Alert icons can be coloured by the enemy's class.
