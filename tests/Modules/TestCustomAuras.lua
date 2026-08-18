@@ -11,7 +11,6 @@ local acm = require("AuraContainerMock")
 local env = moduleEnv.build()
 local addon = env.addon
 
-env.loadModule("src/Core/Auras/SpellSearch.lua")
 env.loadModule("src/Modules/CustomAuras/Groups.lua")
 env.loadModule("src/Modules/CustomAuras/Sound.lua")
 env.loadModule("src/Modules/CustomAuras/Recorder.lua")

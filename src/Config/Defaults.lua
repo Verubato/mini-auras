@@ -180,12 +180,17 @@ local dbDefaults = {
 			ShowTooltips = false,
 		},
 		---@class PortraitModuleOptions
+		---@field CustomSpells table<number, boolean> Ticked buffs. Opaque to CleanTable, which would strip every id against the empty template - see Config/Migrator.
 		PortraitModule = {
 			Enabled = {
 				Always = true,
 			},
 
 			ReverseCooldown = true,
+			-- Which of the unflagged buffs the player wants on their own portrait, under every
+			-- flagged category. Buffs only: 12.1 drops a spell id map for harmful auras on a unit
+			-- you can assist, and the layer would then match every debuff on you.
+			CustomSpells = {},
 		},
 		---@class AlertsModuleOptions
 		AlertsModule = {

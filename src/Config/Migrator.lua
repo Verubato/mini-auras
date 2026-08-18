@@ -36,6 +36,9 @@ local function SaveOpaqueCaches(vars)
 	-- them against and CleanTable would strip every one of them.
 	local customAuras = vars.Modules and vars.Modules.CustomAurasModule
 	saved._CustomAuraGroups = customAuras and mini:CopyValueOrTable(customAuras.Groups) or {}
+	-- Same shape again: a spellId -> true hash against an empty schema.
+	local portrait = vars.Modules and vars.Modules.PortraitModule
+	saved._PortraitCustomSpells = portrait and mini:CopyValueOrTable(portrait.CustomSpells) or {}
 	-- The TTS per-spell switches are the same shape: spellId -> boolean against an empty schema.
 	local tts = TtsOptions(vars)
 	saved._TtsMutedSpells = {}
@@ -60,6 +63,10 @@ local function RestoreOpaqueCaches(vars, saved)
 	local customAuras = vars.Modules and vars.Modules.CustomAurasModule
 	if customAuras then
 		customAuras.Groups = saved._CustomAuraGroups or {}
+	end
+	local portrait = vars.Modules and vars.Modules.PortraitModule
+	if portrait then
+		portrait.CustomSpells = saved._PortraitCustomSpells or {}
 	end
 	local tts = TtsOptions(vars)
 	if tts then

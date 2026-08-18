@@ -65,19 +65,31 @@ local function displaysFor(unit)
 	return assert(container.AuraDisplay, "no aura display stack").Displays, container
 end
 
+-- The player's portrait carries the user's own spell list under the five flagged categories.
+local function expectedDisplayCount(unit)
+	return unit == "player" and 6 or 5
+end
+
+local function portraitOptions()
+	return env.db.Modules.PortraitModule
+end
+
 fw.describe("PortraitModule 12.1 - the five-category stack", function()
 	fw.it("builds one single-icon display per category on every portrait", function()
 		local disarmKey = env.addon.Core.AuraFilters.GroupKey.Disarm
 		for _, unit in ipairs({ "player", "target", "focus", "pet" }) do
 			local displays = displaysFor(unit)
-			assert(#displays == 5, unit .. ": expected 5 displays, got " .. #displays)
+			local expected = expectedDisplayCount(unit)
+			assert(#displays == expected,
+				unit .. ": expected " .. expected .. " displays, got " .. #displays)
 
 			for _, display in ipairs(displays) do
 				assert(#display.Groups == 1, "one group per display")
 				local group = display.Groups[1]
 				-- The disarm layer starts budgeted away: every occupant is assistable in this
 				-- env, and the engine skips the layer's spell-ID filter on assistable units.
-				local budget = group.Key == disarmKey and 0 or 1
+				-- The custom layer starts away too, since nothing has been added to it yet.
+				local budget = (group.Key == disarmKey or group.Key == "portraitcustom") and 0 or 1
 				assert(group.MaxIcons == budget, "a portrait shows exactly one icon per category")
 				assert(display.Frame._groups[group.Key].maxFrameCount == budget, "budget reached the container")
 				assert(display.Frame:GetUnit() == unit, "tracking its own unit")
@@ -117,6 +129,82 @@ fw.describe("PortraitModule 12.1 - the five-category stack", function()
 			local widgets = select(2, next(display.ButtonWidgets))
 			assert(widgets.Border == nil and widgets.Glow == nil, "no chrome widgets built")
 		end
+	end)
+end)
+
+fw.describe("PortraitModule 12.1 - the custom spell layer", function()
+	local CUSTOM_KEY = "portraitcustom"
+	local FEINT = 1966
+
+	local function customDisplay(unit)
+		local _, container = displaysFor(unit)
+		return container.AuraDisplay.CustomDisplay
+	end
+
+	---@param ... number Spell ids to tick; none clears the list.
+	local function setCustomSpells(...)
+		local ticked = {}
+
+		for _, spellId in ipairs({ ... }) do
+			ticked[spellId] = true
+		end
+
+		portraitOptions().CustomSpells = ticked
+		module:Refresh()
+	end
+
+	fw.it("hangs off the player's portrait and nothing else", function()
+		-- The engine honours a helpful spell-id map only on a unit you can assist. Only the
+		-- player token is always one, and everywhere else the map would be dropped and the
+		-- layer would show every buff on the unit.
+		assert(customDisplay("player"), "the player's portrait carries the custom layer")
+
+		for _, unit in ipairs({ "target", "focus", "pet" }) do
+			assert(customDisplay(unit) == nil, unit .. ": no custom layer")
+		end
+	end)
+
+	fw.it("sits under every flagged category", function()
+		local displays = displaysFor("player")
+
+		assert(displays[1] == customDisplay("player"), "the custom layer is the bottom of the stack")
+
+		for index = 2, #displays do
+			assert(displays[index].Frame:GetFrameLevel() > displays[1].Frame:GetFrameLevel(),
+				"display " .. index .. " covers the custom layer")
+		end
+	end)
+
+	fw.it("stays budgeted away while nothing is ticked", function()
+		-- Its filter string is a bare HELPFUL: with no spell map behind it and a budget to
+		-- spend, the layer would show whichever buff the player last gained.
+		setCustomSpells()
+
+		local frame = customDisplay("player").Frame
+		assert(frame._groups[CUSTOM_KEY].maxFrameCount == 0, "nothing to show, nothing budgeted")
+		assert(frame._groups[CUSTOM_KEY].candidateFilters == nil, "and no spell map to match on")
+	end)
+
+	fw.it("opens with the spells that are ticked, and closes again when they are cleared", function()
+		setCustomSpells(FEINT)
+
+		local frame = customDisplay("player").Frame
+		local group = frame._groups[CUSTOM_KEY]
+		assert(group.maxFrameCount == 1, "one icon once there is something to show")
+		assert(group.candidateFilters and group.candidateFilters.includeSpellIDs[FEINT],
+			"the tracked id reached the container")
+
+		setCustomSpells()
+		assert(group.maxFrameCount == 0, "clearing the list closes the layer again")
+	end)
+
+	fw.it("allocates its buttons up front, so a later addition can render", function()
+		-- The client builds a group's buttons from the count it was created with; a group born
+		-- at zero has none to hand out however high the budget is raised afterwards.
+		local group = customDisplay("player").Frame._groups[CUSTOM_KEY]
+
+		assert(group.maxFrameCountAtCreation == 1, "created with a budget of one")
+		assert(#group.buttons > 0, "and with buttons to show")
 	end)
 end)
 
@@ -253,7 +341,8 @@ fw.describe("PortraitModule 12.1 - wrapper-managed containers", function()
 		local targetBefore, playerBefore = refreshCount("target"), refreshCount("player")
 		unitChangeEvents:TriggerEvent("PLAYER_TARGET_CHANGED")
 
-		assert(refreshCount("target") == targetBefore + 5, "all five target layers refreshed")
+		assert(refreshCount("target") == targetBefore + expectedDisplayCount("target"),
+			"all five target layers refreshed")
 		assert(refreshCount("player") == playerBefore, "the player's stack is untouched")
 	end)
 

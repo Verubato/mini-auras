@@ -191,6 +191,20 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 		assert(tts.Important.MutedSpellIds[12472] == true, "a muted spell stays muted")
 		assert(tts.Defensive.MutedSpellIds[235313] == false, "and a default-off spell stays switched on")
 	end)
+
+	fw.it("keeps the portrait's ticked buffs across a login", function()
+		-- A spellId -> true hash against an empty schema, so the clean-up pass has nothing to
+		-- match the keys on and would drop every one.
+		_G.MiniAurasDB = nil
+
+		local db = migrator:GetAndUpgradeDb()
+		db.Modules.PortraitModule.CustomSpells[1966] = true
+		db.Modules.PortraitModule.CustomSpells[79206] = true
+
+		local spells = migrator:GetAndUpgradeDb().Modules.PortraitModule.CustomSpells
+
+		assert(spells[1966] == true and spells[79206] == true, "the ticked buffs survive")
+	end)
 end)
 
 fw.describe("Migrator - arbitrary input safety", function()
