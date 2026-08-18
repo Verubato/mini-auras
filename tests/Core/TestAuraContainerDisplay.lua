@@ -1790,7 +1790,7 @@ fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 
 		-- The auras the engine cannot filter properly mid-transfer never reach a group at all
 		-- this way, which is the only remedy while it is answering wrongly rather than late.
-		displayEvents:TriggerEvent("ZONE_CHANGED")
+		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
 		assert(not instance.Frame:IsShown(), "off screen as the transfer starts")
 
 		acm.runTimers()
@@ -1803,13 +1803,13 @@ fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 		-- personal aura groups are built on a placeholder and get their real list a moment later.
 		local plain = newInstance()
 
-		displayEvents:TriggerEvent("ZONE_CHANGED")
+		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
 		assert(plain.Frame:IsShown(), "nothing to protect yet")
 
 		acm.runTimers()
 		plain:SetCandidateFilters("cc", SPELL_MAP)
 
-		displayEvents:TriggerEvent("ZONE_CHANGED")
+		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
 		assert(not plain.Frame:IsShown(), "and it is covered once it carries one")
 
 		acm.runTimers()
@@ -1823,7 +1823,7 @@ fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 
 		local plain = newInstance()
 
-		displayEvents:TriggerEvent("ZONE_CHANGED")
+		displayEvents:TriggerEvent("ZONE_CHANGED_INDOORS")
 		assert(plain.Frame:IsShown(), "nothing to protect it from")
 
 		acm.runTimers()
@@ -1831,9 +1831,9 @@ fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 	end)
 
 	fw.it("listens for every event a transfer can arrive on", function()
-		-- Which of the three the client picks depends on where the pad puts you, so a missing
+		-- Which of the two the client picks depends on where the pad puts you, so a missing
 		-- registration would leave the leak in place for that kind of teleport only.
-		for _, event in ipairs({ "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA" }) do
+		for _, event in ipairs({ "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA" }) do
 			local instance = newFilteredInstance()
 
 			displayEvents:TriggerEvent(event)
@@ -1842,6 +1842,15 @@ fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 			acm.runTimers()
 			assert(instance.Frame:IsShown(), event .. " comes back")
 		end
+	end)
+
+	fw.it("ignores the district boundary event", function()
+		-- ZONE_CHANGED fires on every district crossed on foot, and no transfer that reached it
+		-- had degraded a filter, so its blackout was a third of a second of flicker for nothing.
+		local instance = newFilteredInstance()
+
+		displayEvents:TriggerEvent("ZONE_CHANGED")
+		assert(instance.Frame:IsShown(), "no blackout for a boundary crossed on foot")
 	end)
 
 	fw.it("re-reads the unit from scratch rather than waiting for an aura event", function()

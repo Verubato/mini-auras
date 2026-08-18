@@ -568,8 +568,9 @@ end
 ---take over, each one a fresh chance to catch the engine once it can answer who the unit is.
 ---
 ---Nothing happens at all while no live display filters on spell ids. The subzone events this
----listens for fire on ordinary movement - a doorway, a district boundary - and a window opened for
----one of those would hide and re-read a poolful of displays that a transfer cannot spoil.
+---listens for fire on ordinary movement as well - a doorway crossed on foot raises the indoors
+---one - and a window opened for one of those hides and re-reads a poolful of displays that
+---nothing had spoiled.
 local function BeginZoneTransfer()
 	if not AnyDisplayHasIdentityFilters() then
 		return
@@ -621,8 +622,9 @@ local function EnsureDisplayEvents()
 	displayEventsFrame:RegisterEvent("AURA_DATA_PROVIDER_SWITCH")
 	displayEventsFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 	displayEventsFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-	-- The three a teleport within one map fires; see BeginZoneTransfer.
-	displayEventsFrame:RegisterEvent("ZONE_CHANGED")
+	-- The two a teleport within one map fires; see BeginZoneTransfer. Not ZONE_CHANGED: it fires
+	-- on every district boundary crossed on foot and no transfer it caught ever degraded a
+	-- filter, so its blackout was a flicker for nothing.
 	displayEventsFrame:RegisterEvent("ZONE_CHANGED_INDOORS")
 	displayEventsFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 	displayEventsFrame:RegisterUnitEvent("UNIT_ENTERED_VEHICLE", PLAYER_UNIT)
@@ -642,8 +644,7 @@ local function EnsureDisplayEvents()
 			-- A teleport that does load a map goes through the same unsettled window, and the
 			-- refresh this event drives only re-parses the displays whose settings moved.
 			BeginZoneTransfer()
-		elseif event == "ZONE_CHANGED" or event == "ZONE_CHANGED_INDOORS"
-			or event == "ZONE_CHANGED_NEW_AREA" then
+		elseif event == "ZONE_CHANGED_INDOORS" or event == "ZONE_CHANGED_NEW_AREA" then
 			BeginZoneTransfer()
 		elseif event == "UNIT_ENTERED_VEHICLE" or event == "UNIT_ENTERING_VEHICLE"
 			or event == "PLAYER_GAINS_VEHICLE_DATA" then
