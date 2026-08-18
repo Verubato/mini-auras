@@ -1773,6 +1773,43 @@ fw.describe("AuraContainerDisplay - vehicles the client will not admit to", func
 	end)
 end)
 
+fw.describe("AuraContainerDisplay - the vehicle data a mount raises", function()
+	fw.it("does not suppress on the data event while the client says no vehicle", function()
+		local onPlayer = display:New(_G.UIParent, "player", {
+			{ Key = "cc", FilterString = "HELPFUL", MaxIcons = 5 },
+		}, 30, 2, "Test")
+
+		-- Mounting raises PLAYER_GAINS_VEHICLE_DATA and then drops it a quarter second later,
+		-- with every vehicle question answering false throughout. Taking that event at its word
+		-- flashed the player's displays off and on again every time they mounted up.
+		wow.setInVehicle(false)
+		displayEvents:TriggerEvent("PLAYER_GAINS_VEHICLE_DATA")
+
+		assert(onPlayer.Frame:IsShown(), "nothing hidden for a mount")
+
+		acm.runTimers()
+
+		assert(onPlayer.Frame:IsShown(), "and nothing hidden once it settles either")
+	end)
+
+	fw.it("suppresses on the data event once a question says yes", function()
+		local onPlayer = display:New(_G.UIParent, "player", {
+			{ Key = "cc", FilterString = "HELPFUL", MaxIcons = 5 },
+		}, 30, 2, "Test")
+
+		wow.setInVehicle(true)
+		displayEvents:TriggerEvent("PLAYER_GAINS_VEHICLE_DATA")
+
+		assert(not onPlayer.Frame:IsShown(), "a vehicle the client admits to still counts")
+
+		wow.setInVehicle(false)
+		displayEvents:TriggerEvent("PLAYER_LOSES_VEHICLE_DATA")
+		acm.runTimers()
+
+		assert(onPlayer.Frame:IsShown(), "and comes back afterwards")
+	end)
+end)
+
 fw.describe("AuraContainerDisplay - after a teleport inside one map", function()
 	fw.before_each(acm.reset)
 

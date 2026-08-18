@@ -474,8 +474,9 @@ end
 ---spell-id filters on that unit and the groups fill with auras nobody asked for, and re-reading
 ---the container only pulls in more. A hidden container parses nothing at all, and the show on
 ---the way back out is a full refresh from live data.
----@param entering boolean? True from an enter event, which is taken at its word: the kind of
----vehicle that answers false to every question above is exactly the kind this is for.
+---@param entering boolean? True from a seat event, which is taken at its word: the kind of
+---vehicle that answers false to every question above is exactly the kind this is for. Only the
+---seat events pass it; see the vehicle-data branch for why that one has to ask.
 local function ApplyVehicleState(entering)
 	local active = entering == true or PlayerInVehicle()
 
@@ -646,9 +647,17 @@ local function EnsureDisplayEvents()
 			BeginZoneTransfer()
 		elseif event == "ZONE_CHANGED_INDOORS" or event == "ZONE_CHANGED_NEW_AREA" then
 			BeginZoneTransfer()
-		elseif event == "UNIT_ENTERED_VEHICLE" or event == "UNIT_ENTERING_VEHICLE"
-			or event == "PLAYER_GAINS_VEHICLE_DATA" then
+		elseif event == "UNIT_ENTERED_VEHICLE" or event == "UNIT_ENTERING_VEHICLE" then
 			ApplyVehicleState(true)
+		elseif event == "PLAYER_GAINS_VEHICLE_DATA" then
+			-- Not taken at its word like the seat events: mounting raises this one too, and the
+			-- client answers no to every vehicle question then and after. Trusting it hid the
+			-- player's displays for the quarter second it took the data to go away again.
+			-- Asked twice because this is the only event some seats raise: once now for a
+			-- vehicle the client can already answer for, and once more after the settle delay
+			-- for one it cannot yet.
+			ApplyVehicleState()
+			C_Timer.After(VEHICLE_SETTLE_DELAY, ApplyVehicleState)
 		elseif event == "UNIT_EXITED_VEHICLE" or event == "UNIT_EXITING_VEHICLE"
 			or event == "PLAYER_LOSES_VEHICLE_DATA" then
 			-- Deferred and re-asked rather than taken at its word: the client still reports the
