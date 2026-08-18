@@ -225,6 +225,55 @@ local function OnResetEvent(unitToken)
 	end
 end
 
+-- One handler for every token's frame. A closure per Watch would be an allocation for every
+-- plate that spawns, and the frames outlive the watch that made them.
+local function OnFrameEvent(frame, event, ...)
+	local resetEvents = frame.ResetEvents
+
+	if resetEvents and resetEvents[event] then
+		OnResetEvent(frame.UnitToken)
+		return
+	end
+
+	OnUnitEvent(frame.UnitToken, event, ...)
+end
+
+---Brings a frame's caller-supplied reset events in line with what this Watch asks for. They stay
+---registered between watches like the cast events, and a token is asked for the same set every
+---time in practice, so this usually finds nothing to do.
+---@param frame table
+---@param resetEvents string[]?
+local function SyncResetEvents(frame, resetEvents)
+	local current = frame.ResetEvents
+	local wanted = nil
+
+	if resetEvents and #resetEvents > 0 then
+		wanted = {}
+
+		for _, event in ipairs(resetEvents) do
+			wanted[event] = true
+		end
+	end
+
+	if current then
+		for event in pairs(current) do
+			if not (wanted and wanted[event]) then
+				frame:UnregisterEvent(event)
+			end
+		end
+	end
+
+	if wanted then
+		for event in pairs(wanted) do
+			if not (current and current[event]) then
+				frame:RegisterEvent(event)
+			end
+		end
+	end
+
+	frame.ResetEvents = wanted
+end
+
 ---Start tracking interrupts for a unit.
 ---@param unitToken string
 ---@param resetEvents string[]? WoW events that immediately clear the kick entry (e.g. PLAYER_TARGET_CHANGED)
@@ -239,44 +288,32 @@ function M:Watch(unitToken, resetEvents)
 
 	if not frame then
 		frame = CreateFrame("Frame")
+		frame.UnitToken = unitToken
+		frame:SetScript("OnEvent", OnFrameEvent)
+
+		-- Registered once and never taken back. RegisterUnitEvent binds to the TOKEN, so the
+		-- registration nameplate3 was given still fits whoever holds nameplate3 next, and both
+		-- handlers drop an event for a token nothing is watching.
+		for _, event in ipairs(kickEvents.StartEvents) do
+			frame:RegisterUnitEvent(event, unitToken)
+		end
+
+		for _, event in ipairs(kickEvents.StopEvents) do
+			frame:RegisterUnitEvent(event, unitToken)
+		end
+
 		eventFrames[unitToken] = frame
 	end
 
-	local data = {
-		EventFrame = frame,
+	SyncResetEvents(frame, resetEvents)
+
+	tracked[unitToken] = {
 		Entry = nil,
 		EntryTimer = nil,
 		Kicked = false,
 		Callbacks = {},
 		NextKey = 1,
 	}
-	tracked[unitToken] = data
-
-	local resetSet = {}
-	if resetEvents then
-		for _, event in ipairs(resetEvents) do
-			resetSet[event] = true
-		end
-	end
-
-	for _, event in ipairs(kickEvents.StartEvents) do
-		frame:RegisterUnitEvent(event, unitToken)
-	end
-	for _, event in ipairs(kickEvents.StopEvents) do
-		frame:RegisterUnitEvent(event, unitToken)
-	end
-
-	for event in pairs(resetSet) do
-		frame:RegisterEvent(event)
-	end
-
-	frame:SetScript("OnEvent", function(_, event, ...)
-		if resetSet[event] then
-			OnResetEvent(unitToken)
-		else
-			OnUnitEvent(unitToken, event, ...)
-		end
-	end)
 
 	return true
 end
@@ -293,9 +330,9 @@ function M:Unwatch(unitToken)
 		data.EntryTimer:Cancel()
 	end
 
-	-- The frame stays in eventFrames, silent, for this token's next Watch.
-	data.EventFrame:UnregisterAllEvents()
-	data.EventFrame:SetScript("OnEvent", nil)
+	-- The frame keeps its registrations and goes quiet on its own, since both handlers return for
+	-- a token nothing is watching. UnregisterAllEvents walks the client's whole registry, and
+	-- paying that per plate that despawned cost more than everything else here put together.
 	tracked[unitToken] = nil
 end
 
@@ -372,7 +409,7 @@ end)
 ---@field Duration number
 
 ---@class KickUnitData
----@field EventFrame table
+
 ---@field Entry KickEntry?
 ---@field EntryTimer table?
 ---@field Kicked boolean

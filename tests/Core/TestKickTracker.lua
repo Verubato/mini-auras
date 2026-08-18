@@ -167,6 +167,23 @@ fw.describe("KickTracker - lifecycle", function()
 		assert(kickTracker:GetKick(unit) ~= nil, "the reused frame still reports kicks")
 	end)
 
+	fw.it("ignores its own events while nothing is watching the token", function()
+		-- The registrations are left in place across an Unwatch, since taking them back walks the
+		-- client's whole event registry and a plate leaving pays it. What makes that safe is the
+		-- handlers dropping anything for a token nobody asked about.
+		local unit, frame = newWatchedUnit()
+
+		kickTracker:Unwatch(unit)
+		interrupt(frame, unit, "Player-Kicker")
+
+		assert(kickTracker:GetKick(unit) == nil, "an interrupt on an unwatched token is dropped")
+
+		kickTracker:Watch(unit)
+		interrupt(frame, unit, "Player-Kicker")
+
+		assert(kickTracker:GetKick(unit) ~= nil, "and counts again once it is watched")
+	end)
+
 	fw.it("Watch reports whether it started tracking, so callers subscribe once", function()
 		local unit = newWatchedUnit()
 
