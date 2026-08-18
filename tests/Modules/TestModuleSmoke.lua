@@ -122,6 +122,38 @@ fw.describe("12.1 smoke - full lifecycle across every container module", functio
 		env.enemies.nameplate1 = nil
 	end)
 
+	fw.it("a settings change still reaches the preview while test mode draws it", function()
+		-- Test mode hides the live aura displays and draws through the plate's own container, so
+		-- the refresh has to keep laying that container out even while it skips the displays. It
+		-- did not, once, and every nameplate setting looked dead in test mode.
+		local nameplates = env.addon.Modules.Nameplates.Display
+		local module = env.addon.Modules.NameplatesModule
+		local barOptions = env.db.Modules.NameplatesModule.Enemy.Bar1
+
+		env.enemies.nameplate1 = true
+		env.addPlate("nameplate1")
+		firePlateEvent("NAME_PLATE_UNIT_ADDED", "nameplate1")
+
+		module:StartTesting()
+
+		local oldSize = barOptions.Icons.Size
+		local newSize = (oldSize or 35) + 5
+
+		barOptions.Icons.Size = newSize
+		module:Refresh()
+
+		local data = nameplates:GetData("nameplate1")
+
+		assert(data and data.Bar1Container, "the plate has a preview container")
+		assert(data.Bar1Container.Size == newSize, "the preview took the new size")
+
+		barOptions.Icons.Size = oldSize
+		module:StopTesting()
+		firePlateEvent("NAME_PLATE_UNIT_REMOVED", "nameplate1")
+		env.plates.nameplate1 = nil
+		env.enemies.nameplate1 = nil
+	end)
+
 	fw.it("reported no misuse through the whole run", function()
 		assert(#env.notifications == 0, "unexpected warnings: " .. table.concat(env.notifications, "; "))
 	end)

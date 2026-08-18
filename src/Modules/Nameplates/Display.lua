@@ -1098,13 +1098,6 @@ function M:ClearAll()
 end
 
 function M:RefreshAnchorsAndSizes()
-	-- Test mode hides every plate's aura displays and draws the fake icons instead, so re-fitting
-	-- them now is work nobody can see. The looks are left unstamped, so the refresh that follows
-	-- test mode finds every display stale and settles them in one pass.
-	if testModeActive then
-		return
-	end
-
 	-- The one path options arrive on, so it is where the looks are marked for re-resolving.
 	optionsGeneration = optionsGeneration + 1
 
@@ -1120,12 +1113,17 @@ function M:RefreshAnchorsAndSizes()
 				local barOptions = unitOptions[bar.Key]
 				if container then
 					if barOptions and barOptions.Enabled then
+						-- The container carries the test icons, so it is laid out either way.
 						ApplyContainerLayout(container, data.Nameplate, barOptions)
 
-						-- Re-apply option changes to the bar's aura display too.
-						local display = EnsureBarDisplay(data, bar, barOptions, factionKey)
-						local kickActive = barOptions.ShowCC and kickTracker:GetKick(data.UnitToken) ~= nil
-						AnchorBarDisplay(display, container, data.Nameplate, barOptions, kickActive)
+						-- The aura display is hidden while test mode draws, so re-fitting it now is work
+						-- nobody can see. Its look is left stale and the refresh ending test mode settles it.
+						if not testModeActive then
+							local display = EnsureBarDisplay(data, bar, barOptions, factionKey)
+							local kickActive = barOptions.ShowCC and kickTracker:GetKick(data.UnitToken) ~= nil
+
+							AnchorBarDisplay(display, container, data.Nameplate, barOptions, kickActive)
+						end
 					else
 						container.Frame:ClearAllPoints()
 						container.Frame:SetIgnoreParentScale(ignoreParentScale)
@@ -1137,8 +1135,11 @@ function M:RefreshAnchorsAndSizes()
 
 	-- After the tracked plates: their ensure path has just updated their entries' signatures,
 	-- so the queue that remains is exactly the parked cache, and none of the walker's budget is
-	-- spent on entries the loop above already restyled.
-	QueueParkedRestyles()
+	-- spent on entries the loop above already restyled. Skipped in test mode, where the loop above
+	-- restyled nothing and the whole cache would be queued for a look nobody is looking at.
+	if not testModeActive then
+		QueueParkedRestyles()
+	end
 end
 
 function M:Teardown()

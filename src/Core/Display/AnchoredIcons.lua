@@ -185,13 +185,16 @@ function M:ApplyEntryOptions(entry, anchor, options, settings)
 	local testModeActive = settings.TestModeActive
 	local excludePlayer = settings.ExcludePlayer
 
-	entry.StyleStale = nil
+	-- Test mode hides the live display and draws through the container instead, so re-fitting the
+	-- display now is work nobody can see. Left marked stale rather than styled: the refresh that
+	-- ends test mode applies it, and so does an anchor coming back through the visibility hook.
+	entry.StyleStale = testModeActive or nil
 
 	container:SetIconSize(settings.IconSize)
 	container:SetCount(settings.SlotCount)
 	container:SetSpacing(spacing)
 
-	if display then
+	if display and not testModeActive then
 		display:ApplyConfig(settings.IconSize, spacing, settings.Style)
 
 		if settings.Budgets then
