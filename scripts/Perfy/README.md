@@ -62,4 +62,7 @@ stack and its return, which the client cannot split across frames.
 * Everything the toc lists is instrumented, `Libs` included. The analyzer bills library time to
   the addon that called in, so MiniFramework and LibStub show up under MiniAuras.
 
-Delete `scripts/Perfy/` and `tools/` when the profiling work is done.
+The scripts stay in the repo. `tools/` does not: it is gitignored, and everything in it is
+rebuilt by `Setup`, so delete it whenever the disk matters more than the next run's clone.
+`tools/perfy-out` is the exception worth a look first, since it holds the last trace's flame
+graphs.
