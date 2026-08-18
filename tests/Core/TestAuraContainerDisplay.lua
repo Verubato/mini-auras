@@ -1149,6 +1149,9 @@ fw.describe("AuraContainerDisplay - countdown colour by time", function()
 		instance:SetStyle({})
 		assert(button._calls.SetDurationText == 3, "turning it off re-binds the plain formatter")
 		assert(button._durationTextOptions.textFormatter.breakpoints[1].format == "%d", "back to whole seconds")
+		assert(button._durationTextOptions.textFormatter.breakpoints[1].rounding
+			== Enum.NumericRuleFormatRounding.Up,
+			"rounded up like the cooldown's own numbers: a 6s aura reads 6, and 1 through its last second")
 		assert(widgets.DurationText._lastArgs.SetAlpha[1] == 0, "and the text hides again")
 	end)
 

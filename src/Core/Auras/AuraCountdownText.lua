@@ -84,6 +84,10 @@ end
 ---quotients round up to match Blizzard's frames (2m32s reads "3m"). A non-zero msThreshold adds a
 ---tenths band below it ("4.3"); that breakpoint deliberately carries no min/rounding fields - with
 ---them present the engine rendered no fractions at all.
+---
+---Seconds round UP, like the cooldown's own numbers this text stands in for: a six second root
+---reads "6" the moment it lands and "1" through its last second. Rounding down instead showed "5"
+---on that same root, so turning the colouring on shifted every countdown by one.
 ---@param msThreshold number Seconds below which tenths show; 0 for whole seconds only.
 ---@return table
 local function GetFormatter(msThreshold)
@@ -94,9 +98,9 @@ local function GetFormatter(msThreshold)
 		fmt = C_StringUtil.CreateNumericRuleFormatter()
 		if msThreshold > 0 then
 			fmt:AddBreakpoint({ threshold = 0, step = 0.1, format = "%.1f" })
-			fmt:AddBreakpoint({ threshold = msThreshold, step = 1, rounding = down, min = 1, format = "%d" })
+			fmt:AddBreakpoint({ threshold = msThreshold, step = 1, rounding = up, format = "%d" })
 		else
-			fmt:AddBreakpoint({ threshold = 0, step = 1, rounding = down, min = 1, format = "%d" })
+			fmt:AddBreakpoint({ threshold = 0, step = 1, rounding = up, format = "%d" })
 		end
 		fmt:AddBreakpoint({ threshold = 91, step = 1, rounding = down, min = 1, format = "%dm",
 			components = { { div = 60, rounding = up } } })
