@@ -1,5 +1,17 @@
 # Changelog
 
+## 5.19.0
+
+- Alert icons can be coloured by the enemy's class.
+- Added an icon colouring dropdown to nameplates, and a colour picker for CC.
+- Added a max icons slider to the healer CC module.
+- Added an extra buffs list to the portraits module so you can show unflagged auras on your own portrait.
+- Test mode containers can now be placed exactly with a new X/Y offset popup.
+- Changing icon size or style in combat now says it will apply once combat ends.
+- Fixed containers not attaching to ElvUI.
+- Fixed an error when the countdown text was secret.
+- Various performance improvements.
+
 ## 5.18.0
 
 - Added Colossus Smash to the enemy debuff announcements.
