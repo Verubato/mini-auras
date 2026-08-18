@@ -123,6 +123,10 @@ local displayEventsFrame = nil
 local pendingRestyleCount = 0
 local restyleTicker = nil
 local pendingBounceCount = 0
+-- The displays waiting to be bounced, so a flush costs the few that asked rather than a walk of
+-- every display alive. Swapped with the spare for the duration of a flush; see FlushPendingBounces.
+local pendingBounces = {}
+local spareBounces = {}
 local bounceFlushScheduled = false
 -- True for the blackout after a zone event. Displays carrying a spell-id map are suppressed for
 -- the duration; nothing else can be degraded by a transfer.
@@ -301,25 +305,46 @@ end
 -- combat the flags are left parked instead: aura events are frequent enough there to settle
 -- them, and the pending bounce is flushed on the regen event either way.
 
+---Adds a display to the queue the next flush drains. The flag is the caller's to set: it is what
+---keeps a display out of the queue twice.
+---@param instance AuraContainerDisplay
+local function QueueBounce(instance)
+	pendingBounceCount = pendingBounceCount + 1
+	pendingBounces[pendingBounceCount] = instance
+end
+
 local function FlushPendingBounces()
 	bounceFlushScheduled = false
 
-	if pendingBounceCount == 0 then
+	local count = pendingBounceCount
+
+	if count == 0 then
 		return
 	end
 
+	-- Drained through a swapped-out list rather than in place: a show below can mark another
+	-- bounce, and that one belongs to the next flush instead of the walk already running.
+	local flushing = pendingBounces
+
+	pendingBounces = spareBounces
+	spareBounces = flushing
+	pendingBounceCount = 0
+
 	local inCombat = InCombatLockdown()
 
-	for _, instance in ipairs(liveDisplays) do
+	for i = 1, count do
+		local instance = flushing[i]
+		flushing[i] = nil
+
 		-- In combat only the urgent ones go through. The rest are setter-driven and settle on the
 		-- unit's next aura event, which combat has plenty of; an occupant swap has nothing coming
-		-- that would settle it, so it cannot wait for the regen event.
-		if instance.BouncePending and not (inCombat and not instance.BounceUrgent) then
+		-- that would settle it, so it cannot wait for the regen event. A parked display goes back
+		-- on the queue still flagged, and no flush is scheduled for it - the regen event does it.
+		if inCombat and not instance.BounceUrgent then
+			QueueBounce(instance)
+		else
 			instance.BouncePending = false
 			instance.BounceUrgent = false
-			-- Counted down one at a time rather than recomputed at the end: anything the hide or
-			-- show below sets pending again must not have its increment overwritten.
-			pendingBounceCount = pendingBounceCount - 1
 
 			local frame = instance.Frame
 
@@ -337,7 +362,7 @@ end
 local function MarkBouncePending(instance, urgent)
 	if not instance.BouncePending then
 		instance.BouncePending = true
-		pendingBounceCount = pendingBounceCount + 1
+		QueueBounce(instance)
 	end
 
 	if urgent then
@@ -470,15 +495,11 @@ end
 ---changed, so auras that were already up keep the answer reached while nothing could be evaluated.
 ---A full re-parse is what drops it, which is what RequestRefresh forces.
 ---
----Displays whose groups carry no spell-id map have nothing to recover: their filter strings are
----evaluated the same either way. That is most of the pool, since a plate or a portrait drops the
----maps, and skipping them is what keeps a pass cheap.
+---Only ever called for a display whose groups carry a spell-id map. The rest have nothing to
+---recover - their filter strings are evaluated the same either way - and that is most of the pool,
+---since a plate or a portrait drops the maps.
 ---@param instance AuraContainerDisplay
 local function RefreshFromLiveData(instance)
-	if not HasIdentityFilters(instance) then
-		return
-	end
-
 	instance:RequestRefresh()
 end
 
@@ -490,7 +511,7 @@ local function OnZoneRetry()
 		-- A hidden container parses nothing, and the OnShow on its way back issues a full refresh
 		-- from live data, so it corrects itself without being touched here. That is most of the
 		-- pool on any given pass, and skipping it is what keeps repeating this cheap.
-		if instance.Frame:IsShown() then
+		if instance.Frame:IsShown() and HasIdentityFilters(instance) then
 			RefreshFromLiveData(instance)
 		end
 	end
@@ -515,8 +536,14 @@ local function EndZoneBlackout()
 
 	zoneTransferActive = false
 
+	-- Only a display carrying a map holds a parse the transfer could have spoiled, but the show
+	-- goes to all of them: one whose map was taken away mid-blackout was hidden by a predicate that
+	-- no longer answers for it, and nothing else would put it back.
 	for _, instance in ipairs(liveDisplays) do
-		RefreshFromLiveData(instance)
+		if HasIdentityFilters(instance) then
+			RefreshFromLiveData(instance)
+		end
+
 		ApplyShownState(instance)
 	end
 end
@@ -553,7 +580,9 @@ local function BeginZoneTransfer()
 	zoneRetryTimer = C_Timer.NewTimer(ZONE_RETRY_INTERVAL, OnZoneRetry)
 
 	for _, instance in ipairs(liveDisplays) do
-		ApplyShownState(instance)
+		if HasIdentityFilters(instance) then
+			ApplyShownState(instance)
+		end
 	end
 end
 

@@ -1561,6 +1561,30 @@ fw.describe("AuraContainerDisplay - refreshing a token whose occupant changed", 
 		assert((frame._calls.Show or 0) > shows, "and it settles once combat is over")
 	end)
 
+	fw.it("settles a parked bounce once, however many times it was asked for", function()
+		-- The pending displays are queued rather than found by walking them all, so a display
+		-- parked by combat has to go back on that queue exactly once - twice and it would bounce
+		-- again for a change already settled.
+		local instance = newInstance()
+		local frame = instance.Frame
+
+		_G.InCombatLockdown = function()
+			return true
+		end
+		instance:SetMaxIcons("cc", 3)
+		instance:SetMaxIcons("cc", 4)
+		instance:SetMaxIcons("cc", 5)
+		_G.InCombatLockdown = function()
+			return false
+		end
+
+		local shows = frame._calls.Show or 0
+
+		instance:SetMaxIcons("cc", 6)
+
+		assert((frame._calls.Show or 0) == shows + 1, "one bounce, not one per ask")
+	end)
+
 	fw.it("leaves an untracked display alone", function()
 		local instance = newInstance()
 
