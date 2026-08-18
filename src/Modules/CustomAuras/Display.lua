@@ -773,7 +773,7 @@ local function OnOffsetDragStop(handle)
 
 	M:AnchorGroup(group.Id)
 	NotifyPositionChanged(group.Id)
-	positionEditor:Refresh(group.Id)
+	positionEditor:OpenOrRefresh(handle.Binding)
 end
 
 local function OnOffsetMouseDown(handle)

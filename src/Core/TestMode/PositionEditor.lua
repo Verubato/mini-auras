@@ -248,6 +248,22 @@ function M:Toggle(newBinding)
 	self:Open(newBinding)
 end
 
+---Shows the editor for a draggable that has just been dropped: opened at the cursor when it is
+---not already up, and left where the user parked it when it is.
+---@param newBinding PositionBinding
+function M:OpenOrRefresh(newBinding)
+	if not newBinding then
+		return
+	end
+
+	if self:IsOpenFor(newBinding.Key) then
+		self:Refresh(newBinding.Key)
+		return
+	end
+
+	self:Open(newBinding)
+end
+
 ---Re-reads the bound offsets, for a drag that moved what the editor is showing.
 ---@param key any
 function M:Refresh(key)

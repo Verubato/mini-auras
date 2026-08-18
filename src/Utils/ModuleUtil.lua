@@ -336,8 +336,8 @@ end
 ---Offset sub-table gets X/Y written directly (the custom aura groups' {Point, RelativePoint,
 ---X, Y} position shape).
 ---
----A click that is not a drag opens the position editor on the same frame, so a placement a drag
----can only get close to can be typed exactly.
+---Dropping the frame opens the position editor on it, and so does a click that is not a drag, so
+---a placement a drag can only get close to can be typed exactly.
 ---
 ---Pass a function for position when the options table can be replaced under the frame (profile
 ---switches); it runs on every drop and may return nil to skip saving.
@@ -412,7 +412,15 @@ function M:MakeMovable(frame, position, onMoved)
 		local _, _, _, x, y = frameSelf:GetPoint()
 
 		Save(x, y)
-		addon.Core.PositionEditor:Refresh(frameSelf)
+
+		-- Same gate as the click below: only what the caller armed can be placed by hand.
+		if not frameSelf:IsMovable() then
+			return
+		end
+
+		binding.Title = TestLabelText(frameSelf)
+
+		addon.Core.PositionEditor:OpenOrRefresh(binding)
 	end)
 	frame:SetScript("OnMouseDown", function()
 		dragged = false

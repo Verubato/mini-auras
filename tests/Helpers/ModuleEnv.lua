@@ -295,8 +295,18 @@ function M.build()
 	loadFile("src/Utils/WoWEx.lua")
 	loadFile("src/Utils/ModuleUtil.lua")
 	addon.Utils.ModuleUtil:Init()
-	-- Every drop tells the position editor to catch up, so the drag paths need it loaded.
-	loadFile("src/Core/TestMode/PositionEditor.lua")
+	-- Stubbed, not loaded: every drop now opens the editor, and the real one builds GUI widgets
+	-- this env does not load. What it does with a drop is covered in TestPositionEditor.
+	addon.Core.PositionEditor = {
+		Open = function() end,
+		OpenOrRefresh = function() end,
+		Toggle = function() end,
+		Refresh = function() end,
+		Close = function() end,
+		IsOpenFor = function()
+			return false
+		end,
+	}
 	loadFile("src/Utils/SlotDistribution.lua")
 	-- The real thing rather than a stub: it reads one saved variable and hands back four numbers,
 	-- and the displays crop every icon they build through it.

@@ -12,11 +12,15 @@ local env = moduleEnv.build()
 local moduleUtil = env.addon.Utils.ModuleUtil
 
 local opened = {}
+local dropped = {}
 local movableCount = 0
 
 env.addon.Core.PositionEditor = {
 	Toggle = function(_, binding)
 		opened[#opened + 1] = binding
+	end,
+	OpenOrRefresh = function(_, binding)
+		dropped[#dropped + 1] = binding
 	end,
 	Refresh = function() end,
 	Close = function() end,
@@ -51,6 +55,10 @@ fw.describe("MakeMovable - the position editor click", function()
 	fw.before_each(function()
 		for i = #opened, 1, -1 do
 			opened[i] = nil
+		end
+
+		for i = #dropped, 1, -1 do
+			dropped[i] = nil
 		end
 	end)
 
@@ -89,7 +97,9 @@ fw.describe("MakeMovable - the position editor click", function()
 		assert(liveX == 11 and liveY == 20, "a nudge moves one, got " .. liveX .. "," .. liveY)
 	end)
 
-	fw.it("stays shut for the release that ends a drag", function()
+	fw.it("does not toggle on the release that ends a drag", function()
+		-- The drop opens the editor down its own path, so treating that release as a click too
+		-- would open and shut it in the same drag.
 		local frame = NewMovable()
 
 		frame._scripts.OnMouseDown(frame, "LeftButton")
@@ -101,6 +111,35 @@ fw.describe("MakeMovable - the position editor click", function()
 
 		Click(frame)
 		assert(#opened == 1, "and the click after it still opens, got " .. #opened)
+	end)
+
+	fw.it("opens on a drop, bound to the frame that landed", function()
+		local frame = NewMovable()
+
+		frame._scripts.OnMouseDown(frame, "LeftButton")
+		frame._scripts.OnDragStart(frame)
+		frame:ClearAllPoints()
+		frame:SetPoint("CENTER", _G.UIParent, "CENTER", 60, 70)
+		frame._scripts.OnDragStop(frame)
+		frame._scripts.OnMouseUp(frame, "LeftButton")
+
+		assert(#dropped == 1, "the drop opens the editor once, got " .. #dropped)
+		assert(dropped[1].Key == frame, "bound to the frame that was dragged")
+
+		local x, y = dropped[1].Get()
+		assert(x == 60 and y == 70, "showing where it landed, got " .. x .. "," .. y)
+	end)
+
+	fw.it("leaves a drop on an unarmed frame alone", function()
+		-- Nothing arms a frame outside test mode, and a stray drag script firing there would
+		-- pop the editor up over the game.
+		local frame = NewMovable()
+		frame:SetMovable(false)
+
+		frame._scripts.OnMouseDown(frame, "LeftButton")
+		frame._scripts.OnDragStop(frame)
+
+		assert(#dropped == 0, "an unarmed drop opens nothing, got " .. #dropped)
 	end)
 
 	fw.it("stays shut while the frame is not armed for dragging", function()
