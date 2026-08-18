@@ -100,6 +100,17 @@ local function NotifyChanges()
 	db.WhatsNew = {}
 end
 
+---What a refresh covers beyond the modules that have just refreshed themselves: the trinket
+---tracker, which has no test mode of its own, and the two font sweeps. The font face belongs to no
+---module's settings, so these reach what a module's own refresh had no reason to touch: the aura
+---displays whose style has not otherwise moved, and the stand-in party and arena frames, which
+---have no module at all.
+local function RefreshShared()
+	addon.Core.TrinketsTracker:Refresh()
+	addon.Core.AuraContainerDisplay:RefreshFontFace()
+	addon.Core.Frames:RefreshTestFrameFonts()
+end
+
 local function OnEvent(_, event)
 	if event == "LOADING_SCREEN_ENABLED" then
 		loadingScreenUp = true
@@ -108,7 +119,7 @@ local function OnEvent(_, event)
 	elseif event == "PLAYER_REGEN_DISABLED" then
 		if testModeManager:IsActive() then
 			testModeManager:StopTesting()
-			addon:Refresh()
+			RefreshShared()
 		end
 	elseif event == "PLAYER_LOGIN" then
 		if migrator:RunDeferredMigrations(db) then
@@ -204,11 +215,7 @@ function addon:Refresh()
 		module:Refresh()
 	end
 
-	-- The font face belongs to no module's settings, so both of these sweep for what a module's
-	-- own refresh had no reason to touch: the aura displays whose style has not otherwise moved,
-	-- and the stand-in party and arena frames, which have no module at all.
-	addon.Core.AuraContainerDisplay:RefreshFontFace()
-	addon.Core.Frames:RefreshTestFrameFonts()
+	RefreshShared()
 end
 
 ---Refreshes only the module that renders the given settings table. An unknown key falls back to
@@ -232,13 +239,17 @@ function addon:ToggleTest(isRaid)
 		testModeManager:StartTesting(isRaid ~= nil and isRaid or self.CurrentTestIsRaid)
 	end
 
-	addon:Refresh()
+	-- Every test module refreshed itself as it flipped, and a second pass over all ten was half
+	-- the cost of the button. Only what no module owns is left to do.
+	RefreshShared()
 end
 
 ---@param isRaid boolean?
 function addon:TestWithOptions(isRaid)
 	if not testModeManager:IsActive() then
 		testModeManager:StartTesting(isRaid)
+		RefreshShared()
+
 		return
 	end
 

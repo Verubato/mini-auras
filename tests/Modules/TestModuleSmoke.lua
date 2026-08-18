@@ -154,6 +154,33 @@ fw.describe("12.1 smoke - full lifecycle across every container module", functio
 		env.enemies.nameplate1 = nil
 	end)
 
+	fw.it("every module refreshes itself as test mode flips", function()
+		-- ToggleTest leans on this: it used to follow the flip with a refresh of all ten modules,
+		-- which was half the cost of the button, and now only does what no module owns. A module
+		-- that stopped refreshing itself here would come back from test mode wearing nothing.
+		local refreshed = {}
+
+		for _, entry in ipairs(modules) do
+			local module = entry.Module
+			local original = module.Refresh
+
+			module.Refresh = function(self)
+				refreshed[entry.Name] = (refreshed[entry.Name] or 0) + 1
+
+				return original(self)
+			end
+		end
+
+		for _, entry in ipairs(modules) do
+			entry.Module:StartTesting()
+			entry.Module:StopTesting()
+		end
+
+		for _, entry in ipairs(modules) do
+			assert(refreshed[entry.Name], entry.Name .. " never refreshed itself for test mode")
+		end
+	end)
+
 	fw.it("reported no misuse through the whole run", function()
 		assert(#env.notifications == 0, "unexpected warnings: " .. table.concat(env.notifications, "; "))
 	end)
