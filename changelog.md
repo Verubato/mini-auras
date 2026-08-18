@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.19.2
+
+- Fixed personal auras flashing off and back on when you cross from one area to another.
+- Fixed personal auras disappearing for a moment when you mount up.
+- Fixed the Colossus Smash announcement never firing because it watched the wrong spell id.
+- Modules you have switched off are no longer set up at all, so they cost nothing.
+
 ## 5.19.1
 
 - Fixed the alert bars filling with unrelated buffs at the start of an arena round.
