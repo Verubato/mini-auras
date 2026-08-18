@@ -111,6 +111,15 @@ local function OnMatchStateChanged()
 end
 
 local function OnNamePlateAdded(unitToken)
+	-- An alert is something another player did, so an NPC's plate carries nothing to show. Most
+	-- plates in the open world are NPCs, and each one tracked costs a live aura container and a set
+	-- of sound registrations for as long as its plate is up.
+	if not units:IsPlayerUnit(unitToken) then
+		sound:RemoveToken(unitToken)
+		display:ReleaseDisplay(unitToken)
+		return
+	end
+
 	-- Baseline for the state poll, kept fresh on every (re)registration.
 	local isEnemy = stateSub:Seed(unitToken)
 

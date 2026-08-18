@@ -23,6 +23,8 @@ function M.build()
 		pets = {},
 		-- Critters and "minus" adds, which the nameplate module refuses to track.
 		minorUnits = {},
+		-- NPC units. The alerts module tracks players only.
+		npcs = {},
 		healers = {},
 		-- Units outside the player's visible world (another instance or phase); caster filters
 		-- cannot work on these.
@@ -365,6 +367,9 @@ function M.build()
 		end,
 		IsMinorUnit = function(_, unit)
 			return env.minorUnits[unit] == true
+		end,
+		IsPlayerUnit = function(_, unit)
+			return env.npcs[unit] ~= true
 		end,
 		IsCompoundUnit = function()
 			return false

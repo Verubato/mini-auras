@@ -209,6 +209,40 @@ fw.describe("AlertsModule 12.1 - bar anchor handling", function()
 	end)
 end)
 
+fw.describe("AlertsModule 12.1 - which plates get a pair", function()
+	fw.it("builds nothing for an NPC", function()
+		-- An alert is something another player did, and a busy zone is mostly NPCs. Each one tracked
+		-- would hold a live aura container and a set of sound registrations for as long as its plate
+		-- is up.
+		env.npcs["nameplate5"] = true
+
+		addEnemyPlate("nameplate5")
+
+		assert(#env.containersForUnit("nameplate5") == 0, "no pair for a unit that cannot cast at you")
+
+		removePlate("nameplate5")
+		env.npcs["nameplate5"] = nil
+	end)
+
+	fw.it("drops the pair a token had when it comes back as an NPC", function()
+		-- Plate tokens are recycled, so the enemy player on nameplate6 can be a boar a moment
+		-- later; the pair it was holding has to go back rather than sit there enabled.
+		addEnemyPlate("nameplate6")
+		assert(#env.containersForUnit("nameplate6") == 2, "precondition: a player got a pair")
+
+		removePlate("nameplate6")
+		env.npcs["nameplate6"] = true
+		addEnemyPlate("nameplate6")
+
+		local def = defOf("nameplate6")
+
+		assert(not def._enabled and not def:IsShown(), "the pair it held is parked")
+
+		removePlate("nameplate6")
+		env.npcs["nameplate6"] = nil
+	end)
+end)
+
 fw.describe("AlertsModule 12.1 - prep room gating", function()
 	fw.it("the prep room hides and disables every display pair", function()
 		addEnemyPlate("nameplate1")
@@ -579,6 +613,29 @@ fw.describe("AlertsModule 12.1 - what may rebuild the display pairs", function()
 		alerts.Icons.ImportantColor = nil
 		alerts.Icons.Border = false
 		module:Refresh()
+	end)
+
+	fw.it("switches a parked pair back on without re-pushing what it already wears", function()
+		-- A plate leaving parks its pair, and the configuration it was given is still on it. Only
+		-- the enable and the show have to be undone, so the token coming back must not pay for a
+		-- whole options push, and must not come back dark either.
+		module:Refresh()
+		addEnemyPlate("nameplate1")
+
+		local before = env.auraContainerCount()
+		-- The live one, since earlier rebuilds leave abandoned containers wearing the same token.
+		local def = liveDefOf("nameplate1")
+
+		assert(def, "the plate has a live pair to begin with")
+
+		removePlate("nameplate1")
+		assert(not def._enabled, "parking switches the pair off")
+
+		addEnemyPlate("nameplate1")
+
+		assert(env.auraContainerCount() == before, "the same pair came back, not a new one")
+		assert(def._enabled, "and it is live again")
+		assert(def:IsShown(), "and on screen")
 	end)
 
 	fw.it("an icon size change still rebuilds, since size is baked into the buttons", function()

@@ -65,6 +65,20 @@ function M:IsPetOrMinion(unit)
 	return false
 end
 
+---Whether a unit is another player rather than an NPC. A secret answer counts as a player: a
+---caller dropping units on this must never drop a real one because the client would not say.
+---@param unit string
+---@return boolean
+function M:IsPlayerUnit(unit)
+	local result = UnitIsPlayer(unit)
+
+	if issecretvalue(result) then
+		return true
+	end
+
+	return result and true or false
+end
+
 ---Critters and the small adds the game classes as "minus". Nothing worth an aura display ever
 ---lands on one, and a crowd of them is what makes a busy zone expensive: every plate tracked costs
 ---a live aura container for as long as it is up. A city square measured 40 plates, all of them

@@ -412,38 +412,47 @@ local function TokenGroupColors(colorKey)
 	return defensiveColor, defensiveColor, importantColor
 end
 
+-- Which of a pair's displays are live. Kept apart from the rest of the push because parking a
+-- pair turns both off: a token that comes back has to be switched on again even when every other
+-- value is the one it already wears.
+---@param importantOnImp boolean? Whether the important category renders on the second display.
+local function ApplyDisplayVisibility(entry, showBars, importantOnImp)
+	local impShown = showBars and importantOnImp
+
+	entry.Def:SetEnabled(showBars == true)
+	entry.Def:SetShown(showBars == true)
+	entry.Imp:SetEnabled(impShown == true)
+	entry.Imp:SetShown(impShown == true)
+end
+
 -- Applies options (size, style, per-category budgets, visibility) to ONE pooled display pair.
 -- MaxIcons caps each unit's icons rather than the whole bar, because aura data cannot be read
 -- across units.
 -- (Important-vs-defensive dedup is handled by filter negation at creation.)
 local function ApplyDisplayOptions(entry, unitToken, options, showBars)
 	local colorKey = TokenColorKey(unitToken)
+	local importantEnabled = options.Important and options.Important.Enabled
+	local splitBars = options.SplitBars
+	-- Important renders on whichever display the current mode uses; the other is budgeted to 0.
+	local importantOnDef = importantEnabled and not splitBars
+	local importantOnImp = importantEnabled and splitBars
 
 	-- Every plate that spawns asks for this, and forty of them under the same settings ask for the
-	-- same push. Options only move on a refresh, which bumps the generation; the other two are
-	-- what a refresh cannot see coming.
-	if entry.AppliedGeneration == optionsGeneration
-		and entry.AppliedShowBars == showBars
-		and entry.AppliedColorKey == colorKey
-	then
+	-- same push. Options only move on a refresh, which bumps the generation, and the class a token
+	-- is wearing is what a refresh cannot see coming.
+	if entry.AppliedGeneration == optionsGeneration and entry.AppliedColorKey == colorKey then
+		ApplyDisplayVisibility(entry, showBars, importantOnImp)
 		return
 	end
 
 	entry.AppliedGeneration = optionsGeneration
-	entry.AppliedShowBars = showBars
 	entry.AppliedColorKey = colorKey
 
 	local includeDefensives = options.IncludeDefensives
-	local importantEnabled = options.Important and options.Important.Enabled
-	local splitBars = options.SplitBars
 	local maxIcons = options.Icons.MaxIcons or 8
 	local size = options.Icons.Size
 	local spacing = options.IconSpacing or 2
 	local grow = GetGrow()
-
-	-- Important renders on whichever display the current mode uses; the other is budgeted to 0.
-	local importantOnDef = importantEnabled and not splitBars
-	local importantOnImp = importantEnabled and splitBars
 
 	-- Both displays take the same style; fill the scratch once and hand it to each (ApplyConfig
 	-- copies it field by field, and one call restyles all three values in a single pass).
@@ -466,15 +475,12 @@ local function ApplyDisplayOptions(entry, unitToken, options, showBars)
 	entry.Def:SetMaxIcons(auraFilters.GroupKey.BigDefensive, includeDefensives and maxIcons or 0)
 	entry.Def:SetMaxIcons(auraFilters.GroupKey.ExternalDefensive, includeDefensives and maxIcons or 0)
 	entry.Def:SetMaxIcons(auraFilters.GroupKey.Important, importantOnDef and maxIcons or 0)
-	entry.Def:SetEnabled(showBars == true)
-	entry.Def:SetShown(showBars == true)
 
 	entry.Imp:SetGrow(grow)
 	entry.Imp:ApplyConfig(size, spacing, style)
 	entry.Imp:SetMaxIcons(auraFilters.GroupKey.Important, importantOnImp and maxIcons or 0)
-	local impShown = showBars and importantOnImp
-	entry.Imp:SetEnabled(impShown == true)
-	entry.Imp:SetShown(impShown == true)
+
+	ApplyDisplayVisibility(entry, showBars, importantOnImp)
 end
 
 -- Builds one pooled display pair. BIG and EXTERNAL defensives are separate groups
@@ -589,9 +595,6 @@ end
 -- must keep a resolvable rect until then, or the rest of its row blinks out for that frame. A
 -- hidden frame renders nothing either way, and the next chain pass re-points every active frame.
 local function ResetAlertDisplayPair(entry)
-	-- A parked pair no longer wears what it was configured with, so the next Ensure must push again.
-	entry.AppliedGeneration = nil
-
 	entry.Def:SetEnabled(false)
 	entry.Def:Hide()
 	entry.Imp:SetEnabled(false)
