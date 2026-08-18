@@ -7,6 +7,7 @@ local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
 local growAnchors = addon.Core.GrowAnchors
+local sweep = addon.Core.Sweep
 local moduleUtil = addon.Utils.ModuleUtil
 local moduleName = addon.Utils.ModuleName
 local testSpellData = addon.Core.TestSpells
@@ -75,8 +76,8 @@ local testIconCtx = { Now = 0, Glow = false, Reverse = false, ShowTooltips = tru
 local activeDisplays = {}
 -- token -> its display pair, kept for the session. activeDisplays holds only the ACTIVE
 -- tokens; this keeps every pair that has been built so a token returning reuses its own, since
--- WoW frames can never be freed. Pairs are rebuilt only when the configuration baked into their
--- buttons changes (see AlertPairGeneration).
+-- WoW frames can never be freed. Pairs are restyled onto a new look wherever the client allows it,
+-- and only rebuilt where it does not (see RestyleStaleDisplayPairs).
 local displayPairsByToken = {}
 -- Configuration the live pairs were built with; a change rebuilds them.
 local pairGeneration
@@ -89,6 +90,10 @@ local optionsGeneration = 0
 local QueueChainAlertDisplays
 -- Reused token-set scratch.
 local activeTokensScratch = {}
+-- Refilled by RestyleStaleDisplayPairs to tell a parked pair from one on screen.
+local activePairsScratch = {}
+-- Background walker converting parked pairs after a look change; see RestyleStaleDisplayPairs.
+local parkedSweep = sweep:New()
 -- The tinted groups of each display in a pair, and the colour map handed to SetGroupGlowColors;
 -- the map is refilled per apply and the setter copies components out.
 local DEF_GROUP_KEYS = {
@@ -474,6 +479,9 @@ local function ApplyDisplayOptions(entry, unitToken, options, showBars)
 	entry.Def:SetGroupGlowColors(DEF_GROUP_KEYS, glowColorsScratch)
 	entry.Imp:SetGroupGlowColors(IMP_GROUP_KEYS, glowColorsScratch)
 
+	-- The pair wears this look now, so the parked walker has nothing left to do for it.
+	entry.StyleGeneration = pairGeneration
+
 	entry.Def:SetGrow(grow)
 	entry.Def:ApplyConfig(size, spacing, style)
 	entry.Def:SetMaxIcons(auraFilters.GroupKey.BigDefensive, includeDefensives and maxIcons or 0)
@@ -534,6 +542,7 @@ local function CreateAlertDisplayPair(unitToken)
 	bigDefColor, extDefColor, importantColor = OwnCopy(bigDefColor), OwnCopy(extDefColor), OwnCopy(importantColor)
 
 	return {
+		StyleGeneration = pairGeneration,
 		Def = auraContainerDisplay:New(UIParent, "none", {
 			{
 				Key = auraFilters.GroupKey.BigDefensive,
@@ -706,9 +715,42 @@ local function EnsureDisplay(unitToken)
 	return entry
 end
 
--- Rebuilds every pair when the configuration baked into their buttons has changed. Tokens that
--- are currently tracked get theirs back straight away so the bars never blank out.
-local function RebuildStaleDisplayPairs()
+---Brings one parked pair onto the current look, from the background walker. Everything is
+---re-resolved at fire time, since the walk runs over seconds and the options can move under it.
+---@param entry table
+---@return boolean? keepGoing
+local function RestyleParkedPair(entry)
+	-- Nothing can reach the buttons under the restriction; abandon the walk, and the next
+	-- unrestricted refresh queues what is left.
+	if wowEx:IsAuraStylingRestricted() then
+		return false
+	end
+
+	local options = db and db.Modules.AlertsModule
+	local icons = options and options.Icons
+	local size = (icons and icons.Size) or DEFAULT_PAIR_SIZE
+	local spacing = (options and options.IconSpacing) or DEFAULT_PAIR_SPACING
+	local style = AlertStyle()
+
+	entry.Def:ApplyConfig(size, spacing, style)
+	entry.Imp:ApplyConfig(size, spacing, style)
+	entry.StyleGeneration = AlertPairGeneration()
+end
+
+---Brings every pair onto the look the options now describe.
+---
+---A restyle reaches the buttons wherever the client allows it, which is every settings change made
+---out of combat, and it costs no frames. A rebuild does: the client can never give a frame back,
+---so a run of slider steps abandoned the whole prewarmed set once per step.
+---
+---The rebuild is kept for the one case a restyle cannot serve. Inside an arena the restriction
+---never clears, so a pair holding the old size would wear it for the whole match, and new buttons
+---are the only way out: a button takes its look in initializeFrame, before the restriction stamp
+---lands on it.
+---
+---Active pairs are restyled by the ApplyDisplayOptions pass that follows this. The parked ones are
+---off screen and there can be forty of them, so they go through the background walker.
+local function RestyleStaleDisplayPairs()
 	local generation = AlertPairGeneration()
 
 	if generation == pairGeneration then
@@ -717,17 +759,41 @@ local function RebuildStaleDisplayPairs()
 
 	pairGeneration = generation
 
-	local tracked = activeTokensScratch
-	wipe(tracked)
+	if wowEx:IsAuraStylingRestricted() then
+		local tracked = activeTokensScratch
+		wipe(tracked)
 
-	for token in pairs(activeDisplays) do
-		tracked[#tracked + 1] = token
+		for token in pairs(activeDisplays) do
+			tracked[#tracked + 1] = token
+		end
+
+		RebuildDisplayPairs()
+
+		for _, token in ipairs(tracked) do
+			EnsureDisplay(token)
+		end
+
+		return
 	end
 
-	RebuildDisplayPairs()
+	local active = activePairsScratch
+	wipe(active)
 
-	for _, token in ipairs(tracked) do
-		EnsureDisplay(token)
+	for _, entry in pairs(activeDisplays) do
+		active[entry] = true
+	end
+
+	local queue
+
+	for _, entry in pairs(displayPairsByToken) do
+		if entry.StyleGeneration ~= generation and not active[entry] then
+			queue = queue or {}
+			queue[#queue + 1] = entry
+		end
+	end
+
+	if queue then
+		parkedSweep:Run(queue, RestyleParkedPair)
 	end
 end
 
@@ -861,7 +927,7 @@ function M:RefreshDisplays()
 	-- The one place options reach the pairs, so it is where "the settings moved" is stamped.
 	optionsGeneration = optionsGeneration + 1
 
-	RebuildStaleDisplayPairs()
+	RestyleStaleDisplayPairs()
 
 	for unitToken, entry in pairs(activeDisplays) do
 		ApplyDisplayOptions(entry, unitToken, options, showBars)

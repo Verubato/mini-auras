@@ -663,13 +663,42 @@ fw.describe("AlertsModule 12.1 - what may rebuild the display pairs", function()
 		assert(def:IsShown(), "and on screen")
 	end)
 
-	fw.it("an icon size change still rebuilds, since size is baked into the buttons", function()
+	fw.it("an icon size change restyles the pairs instead of rebuilding them", function()
+		-- Buttons take their size when they are created, but a restyle can re-fit them wherever
+		-- the client allows one, and out of combat it does. Rebuilding abandons every prewarmed
+		-- pair for good, and a slider drag used to do that once per step.
 		local before = env.auraContainerCount()
 		local oldSize = alerts.Icons.Size
-		alerts.Icons.Size = (oldSize or 24) + 2
+		local newSize = (oldSize or 24) + 2
+
+		alerts.Icons.Size = newSize
 		module:Refresh()
 
-		assert(env.auraContainerCount() > before, "the active pair was rebuilt at the new size")
+		assert(env.auraContainerCount() == before, "no frame set was abandoned")
+		assert(liveDefOf("nameplate1")._groups.important.layout.elementWidth == newSize,
+			"and the live pair wears the new size")
+
+		alerts.Icons.Size = oldSize
+		module:Refresh()
+	end)
+
+	fw.it("rebuilds when the client will not let a restyle land", function()
+		-- Inside an arena the restriction never clears, so a pair left holding the old size would
+		-- wear it for the whole match. New buttons take their size as they are made, which is the
+		-- only way through.
+		local before = env.auraContainerCount()
+		local oldSize = alerts.Icons.Size
+
+		_G.InCombatLockdown = function()
+			return true
+		end
+		alerts.Icons.Size = (oldSize or 24) + 4
+		module:Refresh()
+		_G.InCombatLockdown = function()
+			return false
+		end
+
+		assert(env.auraContainerCount() > before, "the pairs were rebuilt at the new size")
 
 		alerts.Icons.Size = oldSize
 		module:Refresh()
