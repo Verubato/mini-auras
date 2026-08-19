@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.21.0
+
+- Improved first load time performance.
+- Fixed nameplate icons sticking when a unit was mind controlled or otherwise changed sides.
+- Lightened the cooldown swipe a little.
+
 ## 5.20.0
 
 - Removed animated glows entirely as they were causing FPS issues.

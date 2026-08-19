@@ -254,8 +254,8 @@ fw.describe("SpellSearch - the saved expansion cache", function()
 	fw.it("keeps what it worked out for the next session", function()
 		local store = {}
 
-		WithStore(store, function(search)
-			local variants = search:GetVariants(RAKE_CAST)
+		WithStore(store, function(reloaded)
+			local variants = reloaded:GetVariants(RAKE_CAST)
 
 			assert(#variants > 1, "the expansion covers the group")
 			assert(store.Ids[RAKE_CAST], "and it was kept")
@@ -266,7 +266,7 @@ fw.describe("SpellSearch - the saved expansion cache", function()
 	fw.it("answers from the store without asking the client anything", function()
 		local store = { Stamp = Stamp(), Ids = { [RAKE_CAST] = { 1, 2, 3 } } }
 
-		WithStore(store, function(search)
+		WithStore(store, function(reloaded)
 			local asked = 0
 			local realName = _G.C_Spell.GetSpellName
 
@@ -276,7 +276,7 @@ fw.describe("SpellSearch - the saved expansion cache", function()
 				return realName(spellId)
 			end
 
-			local variants = search:GetVariants(RAKE_CAST)
+			local variants = reloaded:GetVariants(RAKE_CAST)
 
 			_G.C_Spell.GetSpellName = realName
 
@@ -288,8 +288,8 @@ fw.describe("SpellSearch - the saved expansion cache", function()
 	fw.it("throws the store away when the data behind it changed", function()
 		local store = { Stamp = "an-older-index:" .. Stamp(), Ids = { [RAKE_CAST] = { 1, 2, 3 } } }
 
-		WithStore(store, function(search)
-			local variants = search:GetVariants(RAKE_CAST)
+		WithStore(store, function(reloaded)
+			local variants = reloaded:GetVariants(RAKE_CAST)
 
 			assert(#variants ~= 3 or variants[1] ~= 1, "a stale answer was handed back")
 			assert(store.Stamp == Stamp(), "and the store took the current stamp")
