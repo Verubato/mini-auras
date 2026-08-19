@@ -1,6 +1,7 @@
 -- The shared poller behind the states no event announces: a friendly unit turning attackable at
--- duel start, a unit leaving or re-entering the player's visible world, and a unit becoming
--- charmed. Subscribers react by refreshing their module, and a module is entitled to re-seed its
+-- duel start, a unit leaving or re-entering the player's visible world, a unit becoming charmed,
+-- and the player's ability to assist it, which is the gate the engine applies aura filters
+-- through. Subscribers react by refreshing their module, and a module is entitled to re-seed its
 -- own baselines while doing so - which is the hazard these cover.
 
 local fw = require("Framework")
@@ -8,7 +9,7 @@ local wow = require("WowApi")
 wow.setup()
 
 local addon = { Core = {}, Utils = {} }
-local env = { enemies = {}, visible = {}, charmed = {}, reads = 0 }
+local env = { enemies = {}, visible = {}, charmed = {}, assist = {}, reads = 0 }
 
 addon.Utils.UnitUtil = {
 	IsEnemy = function(_, unit)
@@ -20,6 +21,9 @@ addon.Utils.UnitUtil = {
 	end,
 	IsCharmed = function(_, unit)
 		return env.charmed[unit] == true
+	end,
+	CanAssist = function(_, unit)
+		return env.assist[unit] == true
 	end,
 }
 
@@ -89,8 +93,8 @@ fw.describe("UnitStatePoller", function()
 		env.enemies.nameplate1 = true
 		sub:Seed("nameplate1")
 
-		-- The enemy half of the poll is skipped inside instances; the charm half must not be,
-		-- since mind control is most common in arenas and battlegrounds.
+		-- Mind control is most common in arenas and battlegrounds, so nothing here stops at the
+		-- instance door.
 		_G.IsInInstance = function()
 			return true, "arena"
 		end
@@ -109,6 +113,42 @@ fw.describe("UnitStatePoller", function()
 			return false, "none"
 		end
 		env.enemies.nameplate1 = nil
+		sub:ClearAll()
+	end)
+
+	-- UnitIsCharmed is not the only way a mind control shows itself, and on the reports it is not
+	-- a reliable one. Assistability is what the engine gates a spell-ID aura filter on, so a
+	-- display whose unit changes hands has to hear about that whatever the charm flag says.
+	fw.it("tells it when the player can suddenly assist a unit, inside an instance too", function()
+		local flips = {}
+		local sub = poller:Register(function()
+			return true
+		end, function(unit)
+			flips[#flips + 1] = unit
+		end)
+
+		env.enemies.nameplate5 = true
+		sub:Seed("nameplate5")
+
+		_G.IsInInstance = function()
+			return true, "arena"
+		end
+
+		-- Mind control with the charm flag staying quiet: only the gate moved.
+		env.assist.nameplate5 = true
+		ticker()
+
+		assert(#flips == 1 and flips[1] == "nameplate5", "the gate change was reported")
+
+		env.assist.nameplate5 = nil
+		ticker()
+
+		assert(#flips == 2, "the gate changing back was reported too")
+
+		_G.IsInInstance = function()
+			return false, "none"
+		end
+		env.enemies.nameplate5 = nil
 		sub:ClearAll()
 	end)
 

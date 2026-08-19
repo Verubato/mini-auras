@@ -4,9 +4,16 @@ local units = addon.Utils.UnitUtil
 
 -- The states that change with no event to announce them, polled because there is no alternative:
 -- a friendly unit turning attackable at duel start (or back at the end), a unit leaving or
--- re-entering the player's visible world, and a unit becoming charmed (mind control flips it to
--- the other team's control). All decide what the engine will do with an aura filter, so a
--- display that ignores them shows the wrong thing until something unrelated refreshes it.
+-- re-entering the player's visible world, a unit becoming charmed (mind control flips it to the
+-- other team's control), and whether the player can assist it. All decide what the engine will do
+-- with an aura filter, so a display that ignores them shows the wrong thing until something
+-- unrelated refreshes it.
+--
+-- Assistability is polled alongside the rest because it IS the identity gate: a spell-ID filter
+-- applies to helpful auras only on a unit the player can assist and to harmful auras only on one
+-- it cannot (see Core/Auras/AuraFilters). A unit that changes sides keeps the groups it was built
+-- with, and the ones whose map the gate now skips fall back to their filter string alone - which
+-- for the disarm group is every non-CC debuff the unit has.
 --
 -- The baseline is per token, not per subscriber. Modules watch overlapping sets - the three raid
 -- frame modules all watch the same group units, and the two nameplate modules the same plate
@@ -15,8 +22,9 @@ local units = addon.Utils.UnitUtil
 -- membership. Baselines are reference counted so one subscriber dropping a token cannot strand
 -- another with a missing baseline, which would read as a flip on the next poll.
 --
--- Duels only occur in the open world, but visibility and mind control do not, so only the duel
--- half of the poll early-returns inside instances.
+-- Enemy status is read everywhere, not just outdoors where duels happen: mind control flips a
+-- unit to the other team's side mid-arena, and that flip is the only signal a display gets that
+-- the identity gate now answers the other way for it.
 
 ---@class UnitStatePoller
 local M = {}
@@ -28,6 +36,7 @@ local POLL_INTERVAL = 0.25
 local enemyState = {}
 local visibleState = {}
 local charmedState = {}
+local assistState = {}
 local tokenRefs = {}
 -- Per-poll scratch, all reused. Never measured with #: the entries past a poll's own count are
 -- whatever the previous poll left there.
@@ -61,10 +70,10 @@ local function ReleaseToken(unitToken)
 	enemyState[unitToken] = nil
 	visibleState[unitToken] = nil
 	charmedState[unitToken] = nil
+	assistState[unitToken] = nil
 end
 
 local function Poll()
-	local outdoors = not IsInInstance()
 	local activeCount = 0
 	local unionCount = 0
 
@@ -104,24 +113,19 @@ local function Poll()
 
 	for index = 1, unionCount do
 		local unitToken = unionOrder[index]
-		-- Not an and/or chain: IsEnemy returning false there would read as "unchanged" and a
-		-- duel ending would never be noticed.
-		local wasEnemy = enemyState[unitToken]
-		local isEnemy = wasEnemy
-
-		if outdoors then
-			isEnemy = units:IsEnemy(unitToken)
-		end
-
+		local isEnemy = units:IsEnemy(unitToken)
 		local isVisible = units:IsVisible(unitToken)
 		local isCharmed = units:IsCharmed(unitToken)
+		local canAssist = units:CanAssist(unitToken)
 
-		if isEnemy ~= wasEnemy
+		if isEnemy ~= enemyState[unitToken]
 			or isVisible ~= visibleState[unitToken]
-			or isCharmed ~= charmedState[unitToken] then
+			or isCharmed ~= charmedState[unitToken]
+			or canAssist ~= assistState[unitToken] then
 			enemyState[unitToken] = isEnemy
 			visibleState[unitToken] = isVisible
 			charmedState[unitToken] = isCharmed
+			assistState[unitToken] = canAssist
 			flippedCount = flippedCount + 1
 			flipped[flippedCount] = unitToken
 		end
@@ -172,6 +176,7 @@ function Subscriber:Seed(unitToken)
 		enemyState[unitToken] = isEnemy
 		visibleState[unitToken] = units:IsVisible(unitToken)
 		charmedState[unitToken] = units:IsCharmed(unitToken)
+		assistState[unitToken] = units:CanAssist(unitToken)
 	end
 
 	return isEnemy

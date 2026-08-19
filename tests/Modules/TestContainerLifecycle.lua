@@ -547,7 +547,9 @@ fw.describe("Duel faction flip - poll-based re-registration", function()
 		env.plates.np_duel = nil
 	end)
 
-	fw.it("plates inside instances are not polled", function()
+	-- Duels are the open-world way a plate changes sides, but a mind control is the same flip and
+	-- happens in arenas and battlegrounds, so the poll cannot stop at the instance door.
+	fw.it("plates inside instances are polled too, where mind control does the flipping", function()
 		env.inInstance = true
 		env.instanceType = "party"
 		env.invalidateWorldState()
@@ -555,17 +557,21 @@ fw.describe("Duel faction flip - poll-based re-registration", function()
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_dungeon")
 		env.enemies.np_dungeon = true
 		acm.tickAll(1)
-		assert(#env.containersForUnit("np_dungeon") == 0, "no rebuild while instanced")
+		assert(#env.containersForUnit("np_dungeon") == 1, "the flip was picked up while instanced")
 
-		env.inInstance = false
-		env.instanceType = "none"
-		env.invalidateWorldState()
+		-- Control ends and the unit is a friendly again, whose bars are switched off here, so the
+		-- display it was drawing with goes rather than carrying on over the restored ally.
+		env.enemies.np_dungeon = nil
 		acm.tickAll(1)
-		assert(#env.containersForUnit("np_dungeon") == 1, "flip picked up once back in the world")
+		local containers = env.containersForUnit("np_dungeon")
+		assert(not containers[1]._enabled and not containers[1]:IsShown(),
+			"the flip back released the enemy display")
 
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_dungeon")
 		env.plates.np_dungeon = nil
-		env.enemies.np_dungeon = nil
+		env.inInstance = false
+		env.instanceType = "none"
+		env.invalidateWorldState()
 	end)
 end)
 

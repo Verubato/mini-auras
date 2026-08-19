@@ -112,17 +112,19 @@ local function OnNamePlateAdded(unitToken)
 		return
 	end
 
-	-- Duels: a plate with nothing enabled for its current faction is still tracked when the
-	-- OPPOSITE faction has a bar on, so the flip has state to rebuild from. Only in the open
-	-- world, the one place a friendly unit can become a duel opponent.
-	local inInstance = IsInInstance()
+	-- A plate with nothing enabled for its current faction is still tracked when the OPPOSITE
+	-- faction has a bar on, so a flip has state to rebuild from, and so the displays the plate
+	-- was drawing with are parked by EnsureBarDisplays rather than left reading a unit they were
+	-- never filtered for. A duel is the open-world way a plate changes sides; a mind control is
+	-- the one that happens in an arena.
 	local oppositeOptions = units:IsEnemy(unitToken) and nmModule.Friendly or nmModule.Enemy
-	local anyEnabledOpposite = not inInstance
-		and ((oppositeOptions.Bar1 and oppositeOptions.Bar1.Enabled)
-			or (oppositeOptions.Bar2 and oppositeOptions.Bar2.Enabled))
+	local anyEnabledOpposite = (oppositeOptions.Bar1 and oppositeOptions.Bar1.Enabled)
+		or (oppositeOptions.Bar2 and oppositeOptions.Bar2.Enabled)
 
 	local data = display:Track(unitToken, nameplate, unitOptions, anyEnabledOpposite)
 	if not data then
+		-- Neither side has anything to draw. Whatever this plate was showing before goes with it.
+		display:Untrack(unitToken)
 		return
 	end
 
