@@ -233,7 +233,7 @@ local function CreateLayer(parentFrame, level, iconSize, noBorder)
 	cd:SetDrawEdge(false)
 	cd:SetDrawBling(false)
 	cd:SetHideCountdownNumbers(false)
-	cd:SetSwipeColor(0, 0, 0, 0.8)
+	cd:SetSwipeColor(0, 0, 0, 0.7)
 	glowStyles:SquareSwipe(cd)
 	-- When the cooldown expires naturally the frame hides itself via OnCooldownDone without
 	-- any external code calling SetSlot again. Clear desaturation immediately so the icon

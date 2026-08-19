@@ -1317,7 +1317,7 @@ local function InitializeButton(instance, button, group)
 	cd:SetDrawEdge(false)
 	cd:SetDrawBling(false)
 	cd:SetHideCountdownNumbers(false)
-	cd:SetSwipeColor(0, 0, 0, 0.8)
+	cd:SetSwipeColor(0, 0, 0, 0.7)
 	glowStyles:SquareSwipe(cd)
 	if instance.IconMask then
 		-- Keep the swipe inside the masked (round) icon.
