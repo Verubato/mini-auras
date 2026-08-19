@@ -106,10 +106,11 @@ local function Setup()
 end
 
 ---Sorting and the frame addons' own visibility switches move whole frames around, so the copies
----are rebuilt from the current anchor list rather than patched one frame at a time.
+---are rebuilt from the current anchor list rather than patched one frame at a time. Through the
+---roster queue, so a join that also drives a sort rebuilds once.
 local function OnFramesChanged()
 	if display:HasFrameGroups() then
-		M:Refresh()
+		QueueRefresh()
 	end
 end
 

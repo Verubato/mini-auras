@@ -45,10 +45,6 @@ local function SeedStateBaselines()
 	end
 end
 
-local function OnFrameSortSorted()
-	M:Refresh()
-end
-
 local function OnEvent(_, event, unit)
 	if event == "GROUP_ROSTER_UPDATE" then
 		QueueRefresh()
@@ -126,7 +122,8 @@ local function Setup()
 		OnUpdateVisible = function(frame)
 			display:OnCufUpdateVisible(frame)
 		end,
-		OnSorted = OnFrameSortSorted,
+		-- Shares the roster queue, so a join that also drives a sort refreshes once.
+		OnSorted = QueueRefresh,
 		OnVisibilityChanged = function()
 			if IsEnabled() then
 				display:EnsureWatchers()
