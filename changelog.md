@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.19.4
+
+- Fixed the interrupt lockout icon throwing an error and then sticking on screen.
+
 ## 5.19.3
 
 - Fixed the coloured countdown text showing one second less than the plain text.

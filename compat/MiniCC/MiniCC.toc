@@ -3,7 +3,7 @@
 ## Notes: Loads the old MiniCC settings file so MiniAuras can import it. Does nothing else.
 ## Category: Mini
 ## Author: Verz
-## Version: 5.19.3
+## Version: 5.19.4
 ## SavedVariables: MiniCCDB
 ## X-MiniAuras-Bridge: 1
 ## IconTexture: Interface\AddOns\MiniAuras\Icon.blp
