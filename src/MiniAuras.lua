@@ -7,6 +7,7 @@ local frames = addon.Core.Frames
 local config = addon.Config
 local migrator = addon.Config.Migrator
 local testModeManager = addon.Core.TestModeManager
+local moduleUtil = addon.Utils.ModuleUtil
 local legacyAddon = addon.Core.LegacyAddon
 -- Every module Inits and Refreshes unconditionally; whether it draws anything, and whether it
 -- sets itself up at all, is its own decision, taken from its saved settings.
@@ -46,6 +47,8 @@ local eventsFrame
 local db
 local lastIsInRaid = false
 local lastInstanceType
+local lastInHousing = false
+local housingCheckQueued = false
 -- A loading screen is up while the addon is loading, and nothing announces the one already on
 -- screen, so this starts true and the first LOADING_SCREEN_DISABLED ends it. Read by the nameplate
 -- modules: building their aura containers is only free while nothing is being drawn.
@@ -80,6 +83,32 @@ local function QueueMediaRefresh()
 		mediaRefreshQueued = false
 		addon:Refresh()
 	end)
+end
+
+-- The client fires a plot event that changed nothing on every /reload spent outside housing, and
+-- a full refresh costs several hundred milliseconds. Read a frame later, so the state has settled
+-- whichever way the event beat it, and refresh only when it actually moved.
+local function CheckHousing()
+	housingCheckQueued = false
+
+	moduleUtil:InvalidateWorldState()
+
+	local inHousing = moduleUtil:IsInHousing()
+
+	if inHousing ~= lastInHousing then
+		lastInHousing = inHousing
+		addon:Refresh()
+	end
+end
+
+local function QueueHousingCheck()
+	if housingCheckQueued then
+		return
+	end
+
+	housingCheckQueued = true
+
+	C_Timer.After(0, CheckHousing)
 end
 
 -- Migrations queue their release notes into db.WhatsNew; this shows and clears them once.
@@ -146,6 +175,8 @@ local function OnEvent(_, event, unit)
 		worldGeneration = worldGeneration + 1
 		lastIsInRaid = IsInRaid()
 		lastInstanceType = select(2, IsInInstance())
+		moduleUtil:InvalidateWorldState()
+		lastInHousing = moduleUtil:IsInHousing()
 		NotifyChanges()
 		-- After NotifyChanges, because both share one dialog frame and the conflict is the more
 		-- urgent of the two.
@@ -164,7 +195,7 @@ local function OnEvent(_, event, unit)
 	elseif event == "HOUSE_PLOT_ENTERED" or event == "HOUSE_PLOT_EXITED" then
 		-- Crossing a plot boundary loads no new map, so PLAYER_ENTERING_WORLD never sees it;
 		-- re-run the gates so everything hides on the way in and wakes on the way out.
-		addon:Refresh()
+		QueueHousingCheck()
 	elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
 		-- The kick trackers are enabled per spec. A respec fires no world or roster event, so
 		-- without this nothing would wake a module the player's new spec switches on.

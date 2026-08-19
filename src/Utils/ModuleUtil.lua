@@ -270,6 +270,15 @@ function M:InvalidateWorldState()
 	worldStateStale = true
 end
 
+---Whether the player is in a neighborhood, on a plot, or inside a house. Read off the cached
+---world state, so callers wanting the settled answer invalidate first.
+---@return boolean
+function M:IsInHousing()
+	RefreshWorldState()
+
+	return inHousing
+end
+
 ---The kind of place the player is in, as the client names it: "none" outdoors, then "party",
 ---"raid", "arena", "pvp" and the rest. Read off the cached world state, so asking per plate costs
 ---nothing between zone events.
