@@ -182,8 +182,19 @@ function Invoke-Instrument {
         [System.IO.File]::WriteAllText($tracer, $text, $noBom)
     }
 
+    # A trace carries the ids of the build that wrote it, and Perfy reuses the name map it finds
+    # while restarting its id counter, so a trace kept across a rebuild ends up with two functions
+    # under one id and the analyzer rejects it. Deleting the file only helps while the client is
+    # closed: a running one holds that table in memory and writes it back on exit, which is what
+    # "/perfy clear" is for.
+    foreach ($saved in @(Get-ChildItem -Path (Join-Path $WowPath "$Flavor\WTF\Account") -Recurse -Filter "!!!Perfy.lua*" -ErrorAction SilentlyContinue)) {
+        Write-Host "Clearing the trace left by the previous build: $($saved.FullName)"
+        Remove-Item $saved.FullName -Force
+    }
+
     Write-Host ""
     Write-Host "Done. Restart the client (toc changes are read at startup), then:" -ForegroundColor Green
+    Write-Host "  /perfy clear       first, if the client was running just now" -ForegroundColor Yellow
 
     if ($LoginTrace) {
         Write-Host "  the login loading screen traces itself, and stops on the first drawn frame"

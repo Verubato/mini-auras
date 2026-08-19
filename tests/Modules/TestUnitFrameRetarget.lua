@@ -227,6 +227,31 @@ fw.describe("unit frame modules - no fallout", function()
 	end)
 end)
 
+fw.describe("Unit frames nobody is on", function()
+	-- Blizzard builds its party and raid frames for a full group and calls SetUnit on every one of
+	-- them at login, so a solo player's frames alone were dozens of containers for units that are
+	-- not there.
+	fw.it("builds nothing for a frame whose unit is absent, and builds when one turns up", function()
+		local frame = env.addUnitFrame("raid7", "CUF_Empty")
+
+		env.missingUnits.raid7 = true
+		crowdControl:Refresh()
+		raidFrameAurasModule:Refresh()
+		settleGroups()
+
+		assert(#env.containersForUnit("raid7") == 0, "a frame nobody is on got a display")
+
+		env.missingUnits.raid7 = nil
+		crowdControl:Refresh()
+		raidFrameAurasModule:Refresh()
+		settleGroups()
+
+		assert(#env.containersForUnit("raid7") > 0, "and the unit turning up is what builds it")
+
+		frame:Hide()
+	end)
+end)
+
 fw.describe("RaidFrameAurasModule 12.1 - a party member who turns hostile", function()
 	local acm = require("AuraContainerMock")
 

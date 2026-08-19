@@ -49,6 +49,17 @@ function M:FriendlyUnits()
 	return results
 end
 
+---Whether the client says anyone is actually on this token. Blizzard builds its party and raid
+---frames for a full group and points them at raid1..raid40 whether or not those units are there,
+---so a frame carrying a token says nothing about whether it is worth watching.
+---@param unit string
+---@return boolean
+function M:Exists(unit)
+	local exists = UnitExists(unit)
+
+	return not issecretvalue(exists) and exists == true
+end
+
 function M:IsPetOrMinion(unit)
 	if string.find(unit, "pet", 1, true) then
 		return true

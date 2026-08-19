@@ -182,6 +182,15 @@ local function EnsureWatcher(anchor, unit)
 		return nil
 	end
 
+	-- Nobody on the token, nothing to watch. Blizzard builds its party and raid frames for a full
+	-- group and calls SetUnit on every one of them at login, so a solo player's frames alone are
+	-- dozens of containers for units that are not there. A unit turning up re-runs this hook, and
+	-- the roster refresh walks the anchors again, so one that fills later still gets its display.
+	-- Test mode is exempt: its stand-in frames name units the player does not have.
+	if not testModeActive and not units:Exists(unit) then
+		return nil
+	end
+
 	if units:IsCompoundUnit(unit) then
 		-- in PvE ignore main tank and assist frames
 		-- you can't scan them for auras

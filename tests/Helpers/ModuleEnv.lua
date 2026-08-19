@@ -34,6 +34,8 @@ function M.build()
 		friendlyUnits = {},
 		inInstance = false,
 		instanceType = "none",
+		-- Tokens the client answers "nobody there" for, as Blizzard's spare raid frames do.
+		missingUnits = {},
 		-- How many players a side of the place holds, as GetInstanceInfo reports it. Zero is
 		-- "the client has no number", which is the answer outdoors.
 		maxPlayers = 0,
@@ -400,6 +402,11 @@ function M.build()
 		end,
 		IsCompoundUnit = function()
 			return false
+		end,
+		-- Every unit a test names is there, except the ones it says are not: the modules skip a
+		-- frame whose token nobody is on, which is most of a solo player's raid frames.
+		Exists = function(_, unit)
+			return env.missingUnits[unit] ~= true
 		end,
 		IsCharmed = function()
 			return false
