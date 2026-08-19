@@ -183,9 +183,8 @@ local function RefreshHealerDisplays()
 	for _, item in pairs(activePool) do
 		local display = item.Display
 		if display then
-			display:SetIconSize(iconSize)
-			display:SetSpacing(options.IconSpacing or 2)
-			display:SetStyle(BuildStyle(options))
+			-- One pass for all three values; the individual setters would each restyle every button.
+			display:ApplyConfig(iconSize, options.IconSpacing or 2, BuildStyle(options))
 			display:SetEnabled(options.Icons.Enabled ~= false)
 			display:SetShown(options.Icons.Enabled ~= false and not testModeActive)
 		end
