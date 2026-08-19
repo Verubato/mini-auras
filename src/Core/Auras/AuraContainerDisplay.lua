@@ -1228,12 +1228,11 @@ local function CreateDurationText(button, overlay)
 		return nil
 	end
 
-	local durationText = overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
-	-- Registered here because regions can only be attached in initializeFrame; StyleButton
-	-- decides straight afterwards whether it carries a colour.
-	auraCountdownText:Bind(button, durationText, 0, nil)
-
-	return durationText
+	-- Only created here. The binding that hands it to the engine is StyleCountdown's, which runs
+	-- from the StyleButton call at the end of this same initializeFrame and knows the threshold
+	-- and colour curve this display wants; binding a placeholder first was the same engine call
+	-- made twice for every button.
+	return overlay:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
 end
 
 ---The engine writes the count and decides when it is on screen, both of which are secret. We
@@ -1383,8 +1382,9 @@ local function InitializeButton(instance, button, group)
 		Group = group,
 		Pandemic = pandemic,
 		DurationText = durationText,
-		-- The button starts unbound, which is what a zero threshold with no curve would bind.
-		DurationTextThreshold = durationText and 0 or nil,
+		-- Deliberately no DurationTextThreshold: nothing has been bound yet, so StyleButton's
+		-- countdown pass below sees a threshold it has never applied and binds once, here inside
+		-- initializeFrame where the first binding has to happen.
 	}
 	instance.ButtonWidgets[button] = widgets
 	instance.Buttons[#instance.Buttons + 1] = button
@@ -1512,8 +1512,9 @@ local function InitializeBarButton(instance, button, group)
 		Group = group,
 		Pandemic = pandemic,
 		DurationText = durationText,
-		-- The button starts unbound, which is what a zero threshold with no curve would bind.
-		DurationTextThreshold = durationText and 0 or nil,
+		-- Deliberately no DurationTextThreshold: nothing has been bound yet, so StyleButton's
+		-- countdown pass below sees a threshold it has never applied and binds once, here inside
+		-- initializeFrame where the first binding has to happen.
 	}
 	instance.Buttons[#instance.Buttons + 1] = button
 
