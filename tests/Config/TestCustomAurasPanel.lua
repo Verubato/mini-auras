@@ -60,6 +60,10 @@ end
 ---@param group table? The group to select once the page is built.
 ---@return table content
 local function ShowPage(addon, group)
+	-- The window and its pages are built on the first ask, which for a player is opening the
+	-- options; nothing exists to drive before that.
+	addon.Config:EnsureWindow()
+
 	local content = addon.Config.TabController:GetContent("CustomAuras")
 
 	fw.not_nil(content, "the custom auras tab exists")

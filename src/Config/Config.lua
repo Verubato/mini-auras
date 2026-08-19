@@ -100,7 +100,7 @@ local function BuildRedirectPanel(panel, version)
 			end
 		end
 
-		M.Window:Show()
+		M:EnsureWindow():Show()
 	end)
 end
 
@@ -138,34 +138,23 @@ function M:Apply(settingsKey)
 	end
 end
 
-function M:Init()
-	db = dbMigrator:GetAndUpgradeDb()
-
-	-- MiniAuras is the one addon that runs its own window rather than a Blizzard panel, so it
-	-- takes the accented restyle. Must come before any widget is built.
-	mini:SetCustomStyling(true)
-
-	local version = C_AddOns.GetAddOnMetadata(addonName, "Version")
-
-	-- Register a minimal WoW settings entry so sub-categories can attach to it,
-	-- and the addon appears in Interface > AddOns for discoverability.
-	local redirectPanel = CreateFrame("Frame")
-	redirectPanel.name = addonName
-
-	local category = mini:AddCategory(redirectPanel)
-
-	if category then
-		BuildRedirectPanel(redirectPanel, version)
+---Builds the window, its pages and the dialogs they raise. Everything here is the options UI,
+---which is a third of what the addon costs to start and which most sessions never open, so it
+---waits for the first ask rather than running at login. Everything that reaches for the window or
+---the tabs comes through here.
+---@return table window
+function M:EnsureWindow()
+	if M.Window then
+		return M.Window
 	end
 
-	-- Standalone config window
 	local windowWidth = 1000
 	local windowHeight = 690
 
 	local window = mini:CreateStandaloneWindow({
 		Name = addonName .. "ConfigFrame",
 		Title = addonName,
-		Subtitle = version,
+		Subtitle = C_AddOns.GetAddOnMetadata(addonName, "Version"),
 		Width = windowWidth,
 		Height = windowHeight,
 	})
@@ -412,7 +401,6 @@ function M:Init()
 
 	M.TabController = tabController
 
-
 	StaticPopupDialogs["MINIAURAS_CONFIRM"] = {
 		text = "%s",
 		button1 = YES,
@@ -432,6 +420,29 @@ function M:Init()
 		hideOnEscape = true,
 	}
 
+	return M.Window
+end
+
+function M:Init()
+	db = dbMigrator:GetAndUpgradeDb()
+
+	-- MiniAuras is the one addon that runs its own window rather than a Blizzard panel, so it
+	-- takes the accented restyle. Must come before any widget is built.
+	mini:SetCustomStyling(true)
+
+	local version = C_AddOns.GetAddOnMetadata(addonName, "Version")
+
+	-- Register a minimal WoW settings entry so sub-categories can attach to it,
+	-- and the addon appears in Interface > AddOns for discoverability.
+	local redirectPanel = CreateFrame("Frame")
+	redirectPanel.name = addonName
+
+	local category = mini:AddCategory(redirectPanel)
+
+	if category then
+		BuildRedirectPanel(redirectPanel, version)
+	end
+
 	SLASH_MINIAURAS1 = "/miniauras"
 	-- Not /minia: Blizzard's main assist command owns that and wins the parse, so it never reaches us.
 	SLASH_MINIAURAS2 = "/minia"
@@ -448,7 +459,7 @@ function M:Init()
 			return
 		end
 
-		window:Toggle()
+		M:EnsureWindow():Toggle()
 	end
 
 	-- add a /rl alias if the user doesn't have one defined already
@@ -462,9 +473,11 @@ end
 
 ---@class Config
 ---@field Init fun(self: table)
+---@field EnsureWindow fun(self: table): table
 ---@field Apply fun(self: table, settingsKey: string?)
 ---@field Migrator DbMigrator
----@field TabController TabReturn
+---@field Window table? The options window; nil until EnsureWindow has built it.
+---@field TabController TabReturn? Nil until EnsureWindow has built the window.
 ---@field General GeneralConfig
 ---@field Portraits PortraitsConfig
 ---@field CrowdControl CrowdControlConfig

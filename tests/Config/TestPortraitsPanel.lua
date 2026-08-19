@@ -21,10 +21,36 @@ local function Load()
 	return harness.Run("MiniAuras", {}).Addon
 end
 
+fw.describe("Config - when the options window is built", function()
+	-- The window is a third of what the addon costs to start, and most sessions never open it.
+	fw.it("waits for the first ask rather than building at login", function()
+		local addon = Load()
+
+		assert(addon.Config.Window == nil, "the window was built at login")
+		assert(addon.Config.TabController == nil, "and its pages with it")
+
+		addon.Config:EnsureWindow()
+
+		assert(addon.Config.Window ~= nil, "asking for it builds it")
+		assert(addon.Config.TabController ~= nil, "along with its pages")
+	end)
+
+	fw.it("builds it once, however often it is asked for", function()
+		local addon = Load()
+		local window = addon.Config:EnsureWindow()
+
+		assert(addon.Config:EnsureWindow() == window, "a second ask built a second window")
+	end)
+end)
+
 ---The tab framework lays every page out as the window is built, so opening the tab is enough.
 ---@param addon table
 ---@return table content
 local function ShowPage(addon)
+	-- The window and its pages are built on the first ask, which for a player is opening the
+	-- options; nothing exists to drive before that.
+	addon.Config:EnsureWindow()
+
 	local content = addon.Config.TabController:GetContent("Portraits")
 
 	fw.not_nil(content, "the portraits tab exists")

@@ -162,6 +162,8 @@ local function OnEvent(_, event, unit)
 		end
 	elseif event == "PLAYER_LOGIN" then
 		if migrator:RunDeferredMigrations(db) then
+			-- Only for pages that already exist, which means the player had the options open
+			-- while this ran. One built afterwards reads the migrated settings as it is built.
 			local tabController = addon.Config.TabController
 			if tabController then
 				for _, key in ipairs({ "CC", "PetCC" }) do
