@@ -25,12 +25,23 @@ local units = addon.Utils.UnitUtil
 -- Enemy status is read everywhere, not just outdoors where duels happen: mind control flips a
 -- unit to the other team's side mid-arena, and that flip is the only signal a display gets that
 -- the identity gate now answers the other way for it.
+--
+-- The poll is the backstop, not the whole story. Some of these moves do announce themselves -
+-- a unit changing sides fires UNIT_FACTION, its flags UNIT_FLAGS, a phase change UNIT_PHASE -
+-- and none of them answers the question on its own, since the same events fire for units nothing
+-- watches and stay silent when a unit simply walks out of range. So they are not read for their
+-- payload: any of them just brings the next poll forward to the following frame, which turns a
+-- mind control landing on a plate from a quarter second of wrong icons into one frame of them.
+-- Coalesced, because getting controlled fires UNIT_FACTION once per unit in the group.
 
 ---@class UnitStatePoller
 local M = {}
 addon.Core.UnitStatePoller = M
 
 local POLL_INTERVAL = 0.25
+-- Events that can only ever mean "read the states again now". Registered while the poll runs and
+-- dropped with it, so an addon that watches nothing pays nothing for them.
+local WAKE_EVENTS = { "UNIT_FACTION", "UNIT_FLAGS", "UNIT_PHASE" }
 
 -- Shared baselines, keyed by unit token and alive while any subscriber watches the token.
 local enemyState = {}
@@ -47,6 +58,9 @@ local flipped = {}
 ---@type UnitStatePollerSubscriber[]
 local subscribers = {}
 local ticker
+local wakeFrame
+-- One brought-forward poll in flight at a time; see the header.
+local wakeQueued = false
 
 ---@class UnitStatePollerSubscriber
 local Subscriber = {}
@@ -106,6 +120,10 @@ local function Poll()
 			ticker = nil
 		end
 
+		if wakeFrame then
+			wakeFrame:UnregisterAllEvents()
+		end
+
 		return
 	end
 
@@ -148,9 +166,38 @@ local function Poll()
 	end
 end
 
+---Runs a poll on the next frame. Never straight away: the events that ask for this arrive in a
+---burst, and the client has not necessarily finished moving the unit when the first one lands.
+local function QueueWakePoll()
+	if wakeQueued or not ticker then
+		return
+	end
+
+	wakeQueued = true
+
+	C_Timer.After(0, function()
+		wakeQueued = false
+
+		if ticker then
+			Poll()
+		end
+	end)
+end
+
 local function StartTicker()
-	if not ticker then
-		ticker = C_Timer.NewTicker(POLL_INTERVAL, Poll)
+	if ticker then
+		return
+	end
+
+	ticker = C_Timer.NewTicker(POLL_INTERVAL, Poll)
+
+	if not wakeFrame then
+		wakeFrame = CreateFrame("Frame")
+		wakeFrame:SetScript("OnEvent", QueueWakePoll)
+	end
+
+	for index = 1, #WAKE_EVENTS do
+		wakeFrame:RegisterEvent(WAKE_EVENTS[index])
 	end
 end
 

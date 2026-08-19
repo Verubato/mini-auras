@@ -39,6 +39,15 @@ _G.C_Timer.NewTicker = function(_, fn)
 	return { Cancel = function() end }
 end
 
+-- The poller builds its own frame for the events that bring a poll forward; this is the only
+-- handle a test gets on it.
+local wakeFrame
+local createFrame = _G.CreateFrame
+_G.CreateFrame = function(...)
+	wakeFrame = createFrame(...)
+	return wakeFrame
+end
+
 assert(loadfile("src/Core/Events/UnitStatePoller.lua"))("MiniAuras", addon)
 
 local poller = addon.Core.UnitStatePoller
@@ -149,6 +158,30 @@ fw.describe("UnitStatePoller", function()
 			return false, "none"
 		end
 		env.enemies.nameplate5 = nil
+		sub:ClearAll()
+	end)
+
+	fw.it("brings the poll forward a frame when the client says a unit changed sides", function()
+		local flips = {}
+		local sub = poller:Register(function()
+			return true
+		end, function(unit)
+			flips[#flips + 1] = unit
+		end)
+
+		env.enemies.nameplate6 = true
+		sub:Seed("nameplate6")
+
+		env.enemies.nameplate6 = false
+		wakeFrame:TriggerEvent("OnEvent", "UNIT_FACTION", "nameplate6")
+
+		assert(#flips == 1 and flips[1] == "nameplate6", "the event polled without waiting for the tick")
+
+		-- The event only asks for a read; a poll it brought forward leaves nothing for the tick
+		-- behind it to report again.
+		ticker()
+		assert(#flips == 1, "the tick reported the same flip a second time")
+
 		sub:ClearAll()
 	end)
 
