@@ -175,6 +175,25 @@ fw.describe("Sweep - shared budget across lanes", function()
 		assert(tickerMock.ActiveCount() == 0)
 	end)
 
+	fw.it("two urgent lanes take turns rather than the older one taking everything", function()
+		-- Every module with something on screen holds an urgent lane, so picking the first one in
+		-- the list every time would hand the whole tick to whichever module loaded first.
+		local first = sweep:New(nil, true)
+		local second = sweep:New(nil, true)
+		local seenFirst, collectFirst = Collector()
+		local seenSecond, collectSecond = Collector()
+
+		first:Run(Items(4), collectFirst)
+		second:Run(Items(4), collectSecond)
+
+		tickerMock.Tick(1)
+		assert(#seenFirst >= 1 and #seenSecond >= 1, "one urgent lane took the whole tick")
+
+		tickerMock.Tick(3)
+		assert(#seenFirst == 4 and #seenSecond == 4, "and both drain")
+		assert(tickerMock.ActiveCount() == 0)
+	end)
+
 	fw.it("a third busy lane is not starved by the stop check", function()
 		-- The end-of-tick "should the ticker stop" question must peek without advancing the
 		-- round-robin cursor; asking through the consuming lookup ate one lane's turn per tick,

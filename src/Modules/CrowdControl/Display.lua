@@ -32,8 +32,9 @@ local db
 ---@type table<table, CrowdControlWatchEntry>
 local watchers = {}
 -- Background walker declaring the aura group of the displays as they are built; see the
--- DeferGroups note where they are created.
-local buildSweep = sweep:New(1)
+-- DeferGroups note where they are created. Urgent: these are on a unit frame the player is
+-- looking at, unlike the lanes preparing spares nobody has asked for.
+local buildSweep = sweep:New(1, true)
 ---@type TestSpell[]
 local testSpells = {}
 -- Reused buffer for GetPetUnitFrames so discovery doesn't allocate each refresh.

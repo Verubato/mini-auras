@@ -35,8 +35,10 @@ local testModeActive = false
 -- whole-set operations rather than reaching into it.
 ---@type table<table, RaidFrameAurasWatchEntry>
 local watchers = {}
--- Background walker declaring the aura groups of displays as they are built; see DeclareNextGroup.
-local buildSweep = sweep:New(1)
+-- Background walker declaring the aura groups of displays as they are built; see
+-- DeclareNextGroup. Urgent: these are on a unit frame the player is looking at, unlike the lanes
+-- preparing spares nobody has asked for.
+local buildSweep = sweep:New(1, true)
 ---@type TestSpell[]
 local testDefensiveSpells = {}
 ---@type TestSpell[]

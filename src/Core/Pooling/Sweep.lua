@@ -28,8 +28,11 @@ local TICK_BUDGET_MS = 1
 -- lane costs one has-work check per scan.
 local lanes = {}
 local ticker = nil
--- Round-robin cursor into lanes, persisted across ticks so a busy lane cannot starve the rest.
+-- Round-robin cursors into lanes, persisted across ticks so a busy lane cannot starve the rest.
+-- One per class of lane, because urgent lanes are picked from before the others and would
+-- otherwise all read the same position.
 local cursor = 1
+local urgentCursor = 1
 -- What each lane has taken in the tick being run, so a lane that caps itself cannot be handed
 -- the whole budget by the round robin. Cleared at the top of every tick.
 local takenThisTick = {}
@@ -96,7 +99,10 @@ end
 ---finished, where the rest is work being done ahead of anyone asking for it.
 ---@return Sweep?
 local function NextLaneWithWork()
-	for _, lane in ipairs(lanes) do
+	for _ = 1, #lanes do
+		local lane = lanes[urgentCursor]
+		urgentCursor = urgentCursor % #lanes + 1
+
 		if lane.Urgent and LaneCanRun(lane) then
 			return lane
 		end
