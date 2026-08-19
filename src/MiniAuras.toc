@@ -4,7 +4,7 @@
 ## Category: Mini
 ## Author: Verz
 ## Version: 5.20.0
-## SavedVariables: MiniAurasDB
+## SavedVariables: MiniAurasDB, MiniAurasSpellCache
 ## OptionalDeps: MiniCC, ElvUI, Grid2, DandersFrames, FrameSort, Masque, TPerl, TidyPlates_ThreatPlates, VuhDo, BuzzardFrames, NDui, EllesmereUIUnitFrames
 ## IconTexture: Interface\AddOns\MiniAuras\Icon.blp
 ## X-Curse-Project-ID: 1439482

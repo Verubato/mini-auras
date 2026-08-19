@@ -515,6 +515,60 @@ function M:Search(query, limit)
 	return results
 end
 
+---What this build of the data, in this language, calls a cached expansion. The groups are what
+---decides which ids share a name, and the client's language is what does the sharing, so a change
+---to either makes every stored answer suspect.
+---@return string
+local function CacheStamp()
+	return (addon.Core.SpellNameIndexVersion or "?") .. ":" .. GetLocale()
+end
+
+---The saved cache, wiped when it was built from other data than this one carries. Created on
+---first use rather than at load: the client restores a saved variable before the addon's own
+---ADDON_LOADED, and nothing asks for an expansion before that.
+---@return table<number, number[]>
+local function VariantStore()
+	local store = _G.MiniAurasSpellCache
+
+	if not store then
+		store = {}
+		_G.MiniAurasSpellCache = store
+	end
+
+	local stamp = CacheStamp()
+
+	if store.Stamp ~= stamp then
+		store.Stamp = stamp
+		store.Ids = {}
+	end
+
+	store.Ids = store.Ids or {}
+
+	return store.Ids
+end
+
+---A previous session's answer for this spell, if there is one.
+---@param spellId number
+---@return number[]?
+local function StoredVariants(spellId)
+	return VariantStore()[spellId]
+end
+
+---Keeps an expansion for the next session. Only for a spell the client can name: an id whose data
+---has not loaded yet expands to itself alone, and storing that would freeze the wrong answer in
+---for good rather than for the seconds it takes to arrive.
+---@param spellId number
+---@param variants number[]
+local function StoreVariants(spellId, variants)
+	local name = C_Spell.GetSpellName(spellId)
+
+	if not name or name == "" then
+		return
+	end
+
+	VariantStore()[spellId] = variants
+end
+
 ---@param spellId number
 ---@return SpellSearchEntry?
 function M:GetEntry(spellId)
@@ -541,13 +595,29 @@ end
 ---@param spellId number
 ---@return number[]
 function M:GetVariants(spellId)
-	EnsureVariants()
+	-- Only once something has been built: the retry is there to fold in ids the client could not
+	-- name yet, and nothing can be waiting on that while nothing has read the client at all.
+	if entries then
+		RetryPending()
+	end
 
 	local cached = variantCache[spellId]
 
 	if cached then
 		return cached
 	end
+
+	-- Before anything is built: what a previous session worked out is the whole answer, and
+	-- reading it back is what keeps the naming pass below off the login path entirely.
+	local stored = StoredVariants(spellId)
+
+	if stored then
+		variantCache[spellId] = stored
+
+		return stored
+	end
+
+	EnsureVariants()
 
 	local name = nameById[spellId]
 	local curated = name and idsByName[name]
@@ -556,6 +626,8 @@ function M:GetVariants(spellId)
 	-- The common case by far: nothing to merge, so hand back the list already built.
 	if curated and not scanned then
 		variantCache[spellId] = curated
+		StoreVariants(spellId, curated)
+
 		return curated
 	end
 
@@ -573,6 +645,7 @@ function M:GetVariants(spellId)
 
 	table.sort(merged)
 	variantCache[spellId] = merged
+	StoreVariants(spellId, merged)
 
 	return merged
 end

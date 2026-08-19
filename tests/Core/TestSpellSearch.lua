@@ -218,6 +218,79 @@ fw.describe("SpellSearch - variants", function()
 	end)
 end)
 
+fw.describe("SpellSearch - the saved expansion cache", function()
+	-- Expanding a tracked spell is what an aura filter needs at login, and answering it from the
+	-- client means naming every generated group. The answer only moves when the data or the
+	-- language does, so a session hands the next one what it worked out.
+	local function WithStore(store, body)
+		local previous = _G.MiniAurasSpellCache
+		_G.MiniAurasSpellCache = store
+
+		local target = {
+			Core = {
+				AuraCategoryIds = categoryIds,
+				SpellNameIndex = { ("%d %d"):format(RAKE_CAST, RAKE_BLEED) },
+				SpellNameIndexVersion = "test-index",
+			},
+			Utils = {},
+			Modules = {},
+			Config = {},
+		}
+
+		assert(loadfile("src/Core/Auras/SpellSearch.lua"))("MiniAuras", target)
+
+		local ok, err = pcall(body, target.Core.SpellSearch)
+
+		_G.MiniAurasSpellCache = previous
+		assert(ok, err)
+	end
+
+	fw.it("keeps what it worked out for the next session", function()
+		local store = {}
+
+		WithStore(store, function(search)
+			local variants = search:GetVariants(RAKE_CAST)
+
+			assert(#variants > 1, "the expansion covers the group")
+			assert(store.Ids[RAKE_CAST], "and it was kept")
+			assert(store.Stamp, "stamped with the data it came from")
+		end)
+	end)
+
+	fw.it("answers from the store without asking the client anything", function()
+		local store = { Stamp = "test-index:" .. GetLocale(), Ids = { [RAKE_CAST] = { 1, 2, 3 } } }
+
+		WithStore(store, function(search)
+			local asked = 0
+			local realName = _G.C_Spell.GetSpellName
+
+			_G.C_Spell.GetSpellName = function(spellId)
+				asked = asked + 1
+
+				return realName(spellId)
+			end
+
+			local variants = search:GetVariants(RAKE_CAST)
+
+			_G.C_Spell.GetSpellName = realName
+
+			assert(#variants == 3 and variants[1] == 1, "the stored answer is the answer")
+			assert(asked == 0, "naming the groups is what the store exists to avoid, and it asked " .. asked)
+		end)
+	end)
+
+	fw.it("throws the store away when the data behind it changed", function()
+		local store = { Stamp = "an-older-index:" .. GetLocale(), Ids = { [RAKE_CAST] = { 1, 2, 3 } } }
+
+		WithStore(store, function(search)
+			local variants = search:GetVariants(RAKE_CAST)
+
+			assert(#variants ~= 3 or variants[1] ~= 1, "a stale answer was handed back")
+			assert(store.Stamp == "test-index:" .. GetLocale(), "and the store took the current stamp")
+		end)
+	end)
+end)
+
 fw.describe("SpellSearch - the client's own language", function()
 	-- The shipped index carries ids and no names, so whatever the client calls a spell is what the
 	-- picker offers. That is the whole reason the names were dropped: a deDE player types German.
@@ -246,11 +319,17 @@ fw.describe("SpellSearch - the client's own language", function()
 			return names[spellId] or realGetSpellName(spellId)
 		end
 
+		-- Its own session, so its own store: one carried over from another stand-in holds answers
+		-- built from different groups under the same stamp.
+		local previousStore = _G.MiniAurasSpellCache
+		_G.MiniAurasSpellCache = nil
+
 		assert(loadfile("src/Core/Auras/SpellSearch.lua"))("MiniAuras", target)
 
 		local ok, err = pcall(body, target.Core.SpellSearch)
 
 		_G.C_Spell.GetSpellName = realGetSpellName
+		_G.MiniAurasSpellCache = previousStore
 		assert(ok, err)
 	end
 
@@ -341,6 +420,10 @@ fw.describe("SpellSearch - spell data that arrives late", function()
 			return realGetSpellName(spellId)
 		end
 
+		-- Its own session; see WithClientNames.
+		local previousStore = _G.MiniAurasSpellCache
+		_G.MiniAurasSpellCache = nil
+
 		-- The retry throttle keys on the clock moving between frames, so the clock is the
 		-- test's to move; the shared mock's needs an install this file never does.
 		local realGetTime = _G.GetTime
@@ -354,6 +437,7 @@ fw.describe("SpellSearch - spell data that arrives late", function()
 
 		_G.C_Spell.GetSpellName = realGetSpellName
 		_G.GetTime = realGetTime
+		_G.MiniAurasSpellCache = previousStore
 		assert(ok, err)
 	end
 

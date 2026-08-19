@@ -20,6 +20,7 @@ the picker's suggestions work outside English, and it roughly halves the file.
 import argparse
 import collections
 import csv
+import hashlib
 import io
 import os
 import re
@@ -217,6 +218,18 @@ def Generate(byName):
 
     out.append("}")
     out.append("")
+
+    # What the addon stamps a cached expansion with. Regenerating is the one thing that can change
+    # which ids a spell expands to, so a cache built from other groups than these is thrown away.
+    joined = "|".join(" ".join(str(spell) for spell in ids[:MAX_IDS]) for _, ids in groups)
+    digest = hashlib.md5(joined.encode("utf-8"))
+
+    out.extend([
+        "-- What a cached expansion is stamped with: change the groups above and every cache built",
+        "-- from them is dropped. See Core/Auras/SpellSearch.",
+        'addon.Core.SpellNameIndexVersion = "%s"' % digest.hexdigest()[:12],
+        "",
+    ])
 
     with io.open(OUTPUT, "w", encoding="utf-8", newline="\n") as handle:
         handle.write("\n".join(out))

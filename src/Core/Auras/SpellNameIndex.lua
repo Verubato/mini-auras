@@ -7891,3 +7891,7 @@ addon.Core.SpellNameIndex = {
 	"1311969", -- Hedonic Gorging
 	"1312998", -- Impetuous Wrath
 }
+
+-- What a cached expansion is stamped with: change the groups above and every cache built
+-- from them is dropped. See Core/Auras/SpellSearch.
+addon.Core.SpellNameIndexVersion = "28171e28bbfa"
