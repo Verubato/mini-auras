@@ -90,6 +90,10 @@ end
 ---@param token string
 ---@return table?
 local function ContainerFor(token)
+	-- An entry is handed over without its groups; the walker declares them a group per turn, so
+	-- reading them back means letting it run.
+	acm.tickAll(20)
+
 	local list = env.containersForUnit(token)
 
 	return list[1]
@@ -99,6 +103,9 @@ end
 ---@param key string
 ---@return number
 local function Budget(container, key)
+	-- As ContainerFor: the groups arrive from the walker, a group per turn.
+	acm.tickAll(20)
+
 	local group = container._groups[key]
 
 	return group and group.maxFrameCount or -1

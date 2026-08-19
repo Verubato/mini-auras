@@ -61,11 +61,15 @@ local function IsNamePlateFrame(frame)
 	return plate ~= nil
 end
 
+---Wraps a unit-frame hook so it only ever sees the frames its owner can use. Blizzard calls these
+---hooks for every compact frame it touches, thousands of times during a login, and both owners
+---asked the same two questions of every one of them before doing anything: the answers are the
+---same for a given frame forever, so asking here costs a memoised lookup and saves the dispatch.
 ---@param callback fun(frame: table, ...)
 ---@return fun(frame: table, ...)
-local function SkippingNamePlates(callback)
+local function OnlyFriendlyUnitFrames(callback)
 	return function(frame, ...)
-		if IsNamePlateFrame(frame) then
+		if IsNamePlateFrame(frame) or not M:IsFriendlyCuf(frame) then
 			return
 		end
 
@@ -341,11 +345,11 @@ end
 function M:InstallUnitFrameHooks(owner, hooks)
 	if not wowEx:IsDandersEnabled() then
 		if CompactUnitFrame_SetUnit then
-			hooksecurefunc("CompactUnitFrame_SetUnit", SkippingNamePlates(hooks.OnSetUnit))
+			hooksecurefunc("CompactUnitFrame_SetUnit", OnlyFriendlyUnitFrames(hooks.OnSetUnit))
 		end
 
 		if CompactUnitFrame_UpdateVisible then
-			hooksecurefunc("CompactUnitFrame_UpdateVisible", SkippingNamePlates(hooks.OnUpdateVisible))
+			hooksecurefunc("CompactUnitFrame_UpdateVisible", OnlyFriendlyUnitFrames(hooks.OnUpdateVisible))
 		end
 	end
 

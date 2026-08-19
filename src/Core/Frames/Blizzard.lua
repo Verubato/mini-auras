@@ -3,6 +3,39 @@ local M = addon.Core.Frames
 local MAX_PARTY = MAX_PARTY_MEMBERS or 4
 local MAX_RAID = MAX_RAID_MEMBERS or 40
 
+-- What a frame turned out to be, kept because the answer is about the frame itself and cannot
+-- change: a name and a parent are fixed when the client builds it. Blizzard calls the hooks this
+-- sits behind thousands of times during a login, and the string searches were most of what that
+-- cost. Frames are never destroyed, so nothing here needs clearing.
+---@type table<table, boolean>
+local friendlyCufs = {}
+
+---Whether a frame is one of Blizzard's friendly unit frames, worked out from scratch.
+---@param frame table
+---@return boolean
+local function ResolveFriendlyCuf(frame)
+	if frame:IsForbidden() then
+		return false
+	end
+
+	local name = frame:GetName()
+
+	if not name then
+		return false
+	end
+
+	if string.find(name, "CompactParty") ~= nil or string.find(name, "CompactRaid") ~= nil then
+		return true
+	end
+
+	-- Standard (non-compact) Blizzard party frames: PartyFrameMemberFrame#
+	if PartyFrame and frame:GetParent() == PartyFrame then
+		return true
+	end
+
+	return false
+end
+
 ---Appends the Blizzard compact party/raid member frames.
 ---@param visibleOnly boolean
 ---@param frames table Frames are appended here.
@@ -70,23 +103,16 @@ function M:IsFriendlyCuf(frame)
 	if not frame or issecretvalue(frame) then
 		return false
 	end
-	if frame:IsForbidden() then
-		return false
+
+	local remembered = friendlyCufs[frame]
+
+	if remembered ~= nil then
+		return remembered
 	end
 
-	local name = frame:GetName()
-	if not name then
-		return false
-	end
+	local answer = ResolveFriendlyCuf(frame)
 
-	if string.find(name, "CompactParty") ~= nil or string.find(name, "CompactRaid") ~= nil then
-		return true
-	end
+	friendlyCufs[frame] = answer
 
-	-- Standard (non-compact) Blizzard party frames: PartyFrameMemberFrame#
-	if PartyFrame and frame:GetParent() == PartyFrame then
-		return true
-	end
-
-	return false
+	return answer
 end

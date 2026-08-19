@@ -37,6 +37,9 @@ local HARMFUL_KEY = "harmful"
 local MODULE_TAG = "Custom Auras"
 -- Ten covers a normal plate count without building forty for a group that may never fire.
 local PLATE_PREALLOCATE = 10
+-- Background walker declaring the groups of entries as they are handed out. Urgent: an entry
+-- being acquired is going on screen, unlike the pool's own fill.
+local buildSweep = sweep:New(1, true)
 -- Arena enemy frames are fixed at three, so the copies are walked by index rather than discovered.
 local ARENA_OPPONENTS = 3
 -- Container sizes can be secret, so a draggable anchor's size is guessed from the budget.
@@ -223,6 +226,11 @@ local function CreateEntry(shape, style, size, spacing)
 		Bar = bars,
 		Texture = texture,
 		MasqueGroup = not texture and MODULE_TAG or nil,
+		-- The engine allocates a batch of buttons the moment a group is declared, and a login
+		-- builds one of these per screen group in the same frame. The walker declares them a
+		-- group per turn instead; the icons of a group follow within a tick or two of the frame
+		-- it is anchored to.
+		DeferGroups = true,
 	})
 
 	return { Display = display, Shape = shape }
@@ -256,6 +264,15 @@ local function ParkDisplay(entry)
 	end
 end
 
+---One display's next group, from the walker.
+---@param display AuraContainerDisplay
+---@return SweepVerdict?
+local function DeclareNextGroup(display)
+	if display:AddNextGroup() then
+		return sweep.Verdict.Unfinished
+	end
+end
+
 -- A closure per shape rather than one pool taking it as an argument: Prewarm builds entries with
 -- no shape of its own to pass, so a shape handed through Acquire would only reach the on-demand
 -- path and every pre-built bar entry would come out as icons.
@@ -284,6 +301,18 @@ end
 
 ---@param state CustomAuraGroupState
 ---@return CustomAuraDisplayEntry
+---Hands back an entry with whatever groups it still owes queued behind it. Urgent, because this
+---one is going on screen now, while the pool's own fill is working ahead of anyone asking.
+---@param entry CustomAuraDisplayEntry
+---@return CustomAuraDisplayEntry
+local function Queued(entry)
+	if entry.Display:HasPendingGroups() then
+		buildSweep:Append(entry.Display, DeclareNextGroup)
+	end
+
+	return entry
+end
+
 local function AcquireEntry(state)
 	local group = state.Group
 	local shape = groups:GetShape(group)
@@ -296,10 +325,10 @@ local function AcquireEntry(state)
 	-- Building fresh is the fallback: initializeFrame may style buttons even then, and a frame
 	-- spike beats a match spent showing another group's style.
 	if wowEx:IsAuraStylingRestricted() then
-		return displayPools[shape]:AcquireMatching(EntryCarriesStyle, style, size, spacing)
+		return Queued(displayPools[shape]:AcquireMatching(EntryCarriesStyle, style, size, spacing))
 	end
 
-	return displayPools[shape]:Acquire(style, size, spacing)
+	return Queued(displayPools[shape]:Acquire(style, size, spacing))
 end
 
 ---Hands an entry back to the pool that built it. Always go through this: releasing a bar display
