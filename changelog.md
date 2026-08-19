@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.20.0
+
+- Removed animated glows entirely as they were causing FPS issues.
+
 ## 5.19.4
 
 - Fixed the interrupt lockout icon throwing an error and then sticking on screen.
