@@ -162,6 +162,22 @@ fw.describe("RaidFrameAurasModule - the tracked spell ids", function()
 		assert(not GroupIds(DEFENSIVE_GROUP_KEY)[custom], "and not as a defensive")
 	end)
 
+	fw.it("re-publishes nothing while the tracked set is unchanged", function()
+		-- Every push marks the container for a hide/show bounce and a full engine re-parse, and
+		-- this path runs for every entry on every roster refresh.
+		GroupIds(DEFENSIVE_GROUP_KEY)
+
+		local group = env.containersForUnit("party1")[1]._groups[DEFENSIVE_GROUP_KEY]
+		local sets = group.candidateFilterSets or 0
+
+		module:Refresh()
+		assert((group.candidateFilterSets or 0) == sets, "an unchanged set must not reach the engine again")
+
+		options.ShowImportant = false
+		module:Refresh()
+		assert((group.candidateFilterSets or 0) > sets, "a moved toggle still reaches it")
+	end)
+
 	fw.it("takes back a hand-added copy of a curated spell, category off or not", function()
 		options.ShowImportant = false
 		spells.Custom[IMPORTANT] = true

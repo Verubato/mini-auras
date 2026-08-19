@@ -16,6 +16,7 @@ local wowEx = addon.Utils.WoWEx
 local kickTracker = addon.Core.KickTracker
 local anchoredIcons = addon.Core.AnchoredIcons
 local testSpellData = addon.Core.TestSpells
+local changeStamp = addon.Utils.ChangeStamp
 
 addon.Modules.RaidFrameAuras = addon.Modules.RaidFrameAuras or {}
 
@@ -89,10 +90,14 @@ local HELPFUL_GROUP_KEYS = { DEFENSIVE_GROUP_KEY, IMPORTANT_GROUP_KEY }
 
 -- Rebuilt whenever the tracked set changes; handed straight to the engine, which keeps the
 -- reference, so they are replaced rather than mutated in place. Keyed by group.
-local helpfulFilters = {
-	[DEFENSIVE_GROUP_KEY] = { includeSpellIDs = {} },
-	[IMPORTANT_GROUP_KEY] = { includeSpellIDs = {} },
-}
+---@type table<string, table>
+local helpfulFilters
+-- What the current filters were built from, so a refresh that moved nothing reuses them. One
+-- tracked set per module, so one stamp key covers it.
+local FILTER_STAMP_KEY = "RaidFrameAurasFilters"
+local filterStamp = changeStamp:New()
+local filterSetScratch = {}
+local helpfulFilterGeneration
 
 ---The spell ids currently tracked, split by the group that draws them: the curated lists for the
 ---categories that are switched on, minus the spells the user switched off, plus anything they
@@ -100,10 +105,34 @@ local helpfulFilters = {
 ---
 ---The category toggles pick the lists rather than an icon budget each, because a curated id can
 ---belong to both categories: budgeting a group to zero would take those spells down with it.
+---
+---Rebuilt only when the toggles or the overrides move. This runs per entry on every roster
+---refresh, and the curated walk plus its fresh id maps is the same answer forty times over;
+---helpfulFilterGeneration is what a caller compares to skip re-publishing tables the engine
+---already holds.
 ---@param options RaidFrameAurasInstanceOptions
 ---@return table filtersByGroup Group key -> candidate filters.
 local function GetHelpfulFilters(options)
 	local overrides = db.Modules.RaidFrameAurasModule.Spells
+
+	-- The inputs, not the output: the curated lists are static for the session, so the toggles
+	-- and the override sets are everything that can move the answer. A profile switch replaces
+	-- the tables wholesale and still compares by contents here.
+	filterStamp:Begin(FILTER_STAMP_KEY)
+	filterStamp:Add(options.ShowDefensives == true)
+	filterStamp:Add(options.ShowImportant == true)
+	filterStamp:AddSet(filterSetScratch, overrides and overrides.Disabled)
+	filterStamp:AddSet(filterSetScratch, overrides and overrides.Enabled)
+	filterStamp:AddSet(filterSetScratch, overrides and overrides.Custom)
+
+	local generation = filterStamp:Commit()
+
+	if generation == helpfulFilterGeneration then
+		return helpfulFilters
+	end
+
+	helpfulFilterGeneration = generation
+
 	local disabled = (overrides and overrides.Disabled) or EMPTY_TABLE
 	local idsByGroup = {
 		[DEFENSIVE_GROUP_KEY] = {},
@@ -371,6 +400,9 @@ local function EnsureWatcher(anchor, unit)
 			-- moment it turns up, and one built mid-arena can never be restyled.
 			{ Style = BuildStyle(options), MasqueGroup = "Friendly Indicators" }
 		)
+		-- BuildGroups above resolved the current filters into the groups, so the next options
+		-- pass has nothing to re-publish for this entry.
+		entry.FilterGeneration = helpfulFilterGeneration
 
 		kickTracker:Watch(unit)
 		entry.KickKey = kickTracker:Subscribe(unit, function()
@@ -447,10 +479,16 @@ local function ApplyEntryOptions(entry, anchor, options)
 		budgetScratch[IMPORTANT_GROUP_KEY] = helpful
 
 		-- The tracked set is editable at runtime, so re-publish it rather than assuming the
-		-- filters handed over at creation are still current.
+		-- filters handed over at creation are still current. Only when it actually moved: an
+		-- unguarded push bounces the container into a full engine re-parse, and this runs for
+		-- every entry on every roster refresh.
 		local filters = GetHelpfulFilters(options)
-		entry.Display:SetCandidateFilters(DEFENSIVE_GROUP_KEY, filters[DEFENSIVE_GROUP_KEY])
-		entry.Display:SetCandidateFilters(IMPORTANT_GROUP_KEY, filters[IMPORTANT_GROUP_KEY])
+
+		if entry.FilterGeneration ~= helpfulFilterGeneration then
+			entry.Display:SetCandidateFilters(DEFENSIVE_GROUP_KEY, filters[DEFENSIVE_GROUP_KEY])
+			entry.Display:SetCandidateFilters(IMPORTANT_GROUP_KEY, filters[IMPORTANT_GROUP_KEY])
+			entry.FilterGeneration = helpfulFilterGeneration
+		end
 
 		entry.Display:SetGroupGlowColors(HELPFUL_GROUP_KEYS, HelpfulColors(options))
 	end
@@ -717,6 +755,8 @@ end
 ---@field Anchor table
 ---@field Unit string
 ---@field KickKey number
+---@field FilterGeneration number? The helpful filters the display already carries; matches
+---helpfulFilterGeneration once the current tracked set has reached its groups.
 
 ---@class RaidFrameAurasModuleOptions
 ---@field ShowDefensives boolean Curated defensive and healer throughput cooldowns.

@@ -547,6 +547,9 @@ local function NewAuraContainer(name, parent, template)
 		local group = {
 			filterString = filterString,
 			options = options,
+			-- In force from creation, like the client: the runtime setter overwrites it, so tests
+			-- reading this field see whatever the engine would currently be filtering with.
+			candidateFilters = options.candidateFilters,
 			maxFrameCount = options.maxFrameCount,
 			-- Kept because the live client allocates a group's buttons from the count it was
 			-- created with; raising the count afterwards does not conjure more.
@@ -586,6 +589,7 @@ local function NewAuraContainer(name, parent, template)
 	function container:SetAuraGroupCandidateFilters(groupKey, filters)
 		local group = assert(container._groups[groupKey], "no group " .. tostring(groupKey))
 		group.candidateFilters = filters
+		group.candidateFilterSets = (group.candidateFilterSets or 0) + 1
 	end
 	function container:SetAuraGroupLayout(groupKey, layout)
 		local group = assert(container._groups[groupKey], "no group " .. tostring(groupKey))
