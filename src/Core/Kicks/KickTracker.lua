@@ -3,7 +3,7 @@ local _, addon = ...
 local wowEx = addon.Utils.WoWEx
 local kickData = addon.Core.KickData
 local kickEvents = addon.Core.KickEvents
-local GetTimePreciseSec = GetTimePreciseSec
+local GetTime = GetTime
 
 local KICK_ICON = C_Spell.GetSpellTexture(1766) -- fallback: rogue Kick
 
@@ -57,7 +57,7 @@ end
 -- When the local player did not cast the interrupt, infer which ally kicked.
 -- Returns texture, duration. Falls back to the generic rogue icon when ambiguous.
 local function InferAllyKick()
-	if GetTimePreciseSec() - allyKickBuiltAt < ALLY_KICK_SNAPSHOT_TTL then
+	if GetTime() - allyKickBuiltAt < ALLY_KICK_SNAPSHOT_TTL then
 		return allyKickTexture, allyKickDuration
 	end
 
@@ -71,7 +71,7 @@ local function InferAllyKick()
 		end
 	end
 
-	allyKickBuiltAt = GetTimePreciseSec()
+	allyKickBuiltAt = GetTime()
 	allyKickTexture = KICK_ICON
 	allyKickDuration = DEFAULT_KICK_DURATION
 
@@ -120,7 +120,9 @@ local function CreateEntry(unitToken, texture, duration)
 		data.EntryTimer = nil
 	end
 
-	local startTime = GetTimePreciseSec()
+	-- The duration object, the slot containers, and KickSlot's expiry timer all read the
+	-- GetTime clock, so the entry has to be stamped on that one.
+	local startTime = GetTime()
 	data.Entry = {
 		Texture = texture,
 		DurationObject = wowEx:CreateDuration(startTime, duration),
@@ -159,7 +161,7 @@ local function OnInterrupted(unitToken)
 	-- heuristic / player-cast tracking is irrelevant, so we just show the generic rogue icon.
 	if UnitIsEnemy(unitToken, "player") then
 		local pending = pendingPlayerKick
-		if pending and (GetTimePreciseSec() - pending.Time) <= PLAYER_KICK_TOLERANCE then
+		if pending and (GetTime() - pending.Time) <= PLAYER_KICK_TOLERANCE then
 			texture = pending.Texture
 			duration = pending.Duration
 		else
@@ -204,7 +206,7 @@ local function OnResetEvent(unitToken)
 	-- interrupt tracked under a different token (e.g. a nameplate token). Sync it over.
 	for otherToken, otherData in pairs(tracked) do
 		if otherToken ~= unitToken and otherData.Entry and UnitIsUnit(otherToken, unitToken) then
-			local remaining = (otherData.Entry.StartTime + otherData.Entry.Duration) - GetTimePreciseSec()
+			local remaining = (otherData.Entry.StartTime + otherData.Entry.Duration) - GetTime()
 			if remaining > 0 then
 				data.Entry = otherData.Entry
 				data.EntryTimer = C_Timer.NewTimer(remaining, function()
@@ -392,7 +394,7 @@ playerKickFrame:SetScript("OnEvent", function(_, event, _, _, spellId)
 		pendingPlayerKick.Timer:Cancel()
 	end
 
-	local pending = { Texture = texture, Duration = duration, Time = GetTimePreciseSec() }
+	local pending = { Texture = texture, Duration = duration, Time = GetTime() }
 	pending.Timer = C_Timer.NewTimer(PLAYER_KICK_TOLERANCE, function()
 		if pendingPlayerKick == pending then
 			pendingPlayerKick = nil

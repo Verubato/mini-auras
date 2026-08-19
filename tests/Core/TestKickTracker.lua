@@ -16,9 +16,6 @@ end
 _G.UnitIsUnit = function(a, b)
 	return a == b
 end
-_G.GetTimePreciseSec = function()
-	return _G.GetTime()
-end
 _G.C_Spell = _G.C_Spell or {}
 _G.C_Spell.GetSpellTexture = function(spellId)
 	return "tex:" .. tostring(spellId)
