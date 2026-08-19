@@ -1,6 +1,6 @@
 -- The glow catalog. Both icon backends read it, so a malformed entry breaks glows everywhere at
--- once: a missing asset file draws nothing, and flipbook geometry that does not match the sheet
--- plays a crop of it. Neither shows up as an error, hence the checks here.
+-- once, and a missing asset file draws nothing without showing up as an error. Hence the checks
+-- here.
 
 local fw = require("Framework")
 
@@ -10,26 +10,15 @@ local addon = { Core = {} }
 assert(loadfile("src/Core/Display/Media/GlowStyles.lua"))(ADDON_NAME, addon)
 local glowStyles = addon.Core.GlowStyles
 
----A glow frame as ApplySpec sees it: it only ever touches these three children.
+---A glow frame as ApplySpec sees it: it only ever touches the texture.
 local function StubGlowFrame()
-	local calls = {}
-	local frame = { Geometry = {}, Calls = calls }
+	local frame = {}
 
 	frame.Texture = {
 		SetAtlas = function(_, atlas) frame.Atlas = atlas end,
 		SetTexture = function(_, path) frame.TexturePath = path end,
 		SetBlendMode = function(_, mode) frame.BlendMode = mode end,
 		SetDesaturated = function(_, on) frame.Desaturated = on end,
-		SetTexCoord = function() calls[#calls + 1] = "SetTexCoord" end,
-	}
-	frame.Anim = {
-		Stop = function() calls[#calls + 1] = "Stop" end,
-	}
-	frame.FlipAnim = {
-		SetFlipBookRows = function(_, value) frame.Geometry.Rows = value end,
-		SetFlipBookColumns = function(_, value) frame.Geometry.Columns = value end,
-		SetFlipBookFrames = function(_, value) frame.Geometry.Frames = value end,
-		SetDuration = function(_, value) frame.Geometry.Duration = value end,
 	}
 
 	return frame
@@ -114,15 +103,12 @@ fw.describe("GlowStyles", function()
 		end
 	end)
 
-	fw.it("gives every animated style a full sheet geometry", function()
+	fw.it("holds no animated style at all", function()
+		-- The flipbook styles were dropped for their idle CPU cost: a REPEAT animation is
+		-- evaluated every frame even on a hidden button, and Blizzard leaves no way to gate one
+		-- per icon. Anything reintroducing that field brings the cost straight back.
 		for name, spec in pairs(glowStyles.Specs) do
-			if spec.Animated then
-				assert(spec.Rows and spec.Columns and spec.Frames and spec.Duration,
-					name .. " is animated with an incomplete geometry")
-				assert(spec.Frames <= spec.Rows * spec.Columns,
-					name .. " claims more frames than its sheet holds")
-				assert(spec.Duration > 0, name .. " has no loop length")
-			end
+			assert(spec.Animated == nil, name .. " is animated; the catalog is static only")
 		end
 	end)
 
@@ -130,28 +116,24 @@ fw.describe("GlowStyles", function()
 		assert(glowStyles.Specs[glowStyles.DefaultName], "the default names a style that is missing")
 	end)
 
-	fw.it("pushes an animated style's own geometry onto the flipbook", function()
+	fw.it("applies a file-backed style through SetTexture", function()
 		local frame = StubGlowFrame()
-		local spec = glowStyles.Specs["Twins Mirror"]
+		local spec = glowStyles.Specs["Slot Glow"]
 
 		glowStyles:ApplySpec(frame, spec)
 
-		assert(frame.Calls[1] == "Stop", "the running animation is stopped before re-skinning")
-		assert(frame.TexturePath == spec.Texture, "the sheet is applied")
-		assert(frame.Geometry.Rows == spec.Rows and frame.Geometry.Columns == spec.Columns,
-			"the sheet's own rows and columns are used")
-		assert(frame.Geometry.Frames == spec.Frames and frame.Geometry.Duration == spec.Duration,
-			"so are its frame count and loop length")
+		assert(frame.TexturePath == spec.Texture, "the asset is applied")
+		assert(frame.BlendMode == spec.BlendMode, "so is the blend mode")
+		assert(frame.PaddingFactor == spec.PaddingFactor, "the padding share is read back off the frame")
 	end)
 
-	fw.it("resets the coords for a static style rather than writing geometry", function()
+	fw.it("applies an atlas-backed style through SetAtlas", function()
 		local frame = StubGlowFrame()
 
 		glowStyles:ApplySpec(frame, glowStyles.Specs["Static Pixel Border"])
 
 		assert(frame.Atlas, "the atlas is applied")
-		assert(frame.Calls[2] == "SetTexCoord", "the last animated frame's crop is cleared")
-		assert(next(frame.Geometry) == nil, "a static style leaves the flipbook alone")
+		assert(frame.TexturePath == nil, "and no file path with it")
 	end)
 
 	fw.it("offers every style on the aura-container dropdown", function()

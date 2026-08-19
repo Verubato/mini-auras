@@ -26,7 +26,6 @@ L:RegisterLocale("esES", function() return {
 	["Shows enemy kick cooldowns in arena."] = "Muestra los tiempos de reutilización de interrupción enemigos en arena.",
 	["Enable if you are:"] = "Habilitar si eres:",
 	["Enable in"] = "Habilitar en",
-	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "Los brillos animados siguen animando iconos sin aura, consumiendo CPU en reposo.",
 	["Specify which spells are shown on raid frames."] = "Especifica qué hechizos se muestran en los marcos de banda.",
 	["Remove"] = "Eliminar",
 	["Custom"] = "Personalizados",
@@ -188,7 +187,7 @@ L:RegisterLocale("esES", function() return {
 	["Important News"] = "Noticias importantes",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "Desde el parche 12.0.7 de Blizzard, las siguientes funciones ya no son posibles:\n- Mostrar ofensivos en las alertas.\n- Mostrar ofensivos en las placas de nombre.\n- Mostrar ofensivos en los retratos.\n- Mostrar ofensivos en los marcos de grupo/banda.\n- Rastrear reutilizaciones ofensivas.\n- Mostrar Precognición y Sudario anulador.\n- Alerta de sonido para hechizos importantes.\n- Texto a voz de hechizos importantes.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "Algunas buenas noticias tras las restricciones de 12.0.7:\n- El módulo de Precognición/Sudario anulador ha vuelto.\n- El módulo de alertas ahora puede mostrar 1 icono importante/ofensivo por oponente en arena.\n\nEstas funciones no funcionarán tan bien como antes, pero es mejor que nada.",
-	["The Slot Glow is static and uses the least CPU."] = "El brillo de ranura es estático y usa menos CPU.",
+	["Sorry folks, had to remove the animated glows as they were causing FPS issues."] = "Lo siento, gente, he tenido que quitar los brillos animados porque causaban problemas de FPS.",
 
 	-- Alerts tab
 	["Alerts"] = "Alertas",

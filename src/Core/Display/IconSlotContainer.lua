@@ -374,10 +374,6 @@ local function GetOrCreateStaticGlow(parent, glowType)
 
 		EnsureStaticGlowResizeHook(parent)
 		ApplyStaticGlowPadding(cg, parent)
-
-		if spec.Animated then
-			cg.Anim:Play()
-		end
 	end
 
 	return cg

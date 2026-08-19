@@ -26,7 +26,6 @@ L:RegisterLocale("koKR", function() return {
 	["Shows enemy kick cooldowns in arena."] = "투기장에서 적의 차단 쿨다운을 표시합니다.",
 	["Enable if you are:"] = "다음인 경우 활성화:",
 	["Enable in"] = "활성화 위치",
-	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "애니메이션 발광은 오라가 없는 아이콘에서도 계속 재생되어 대기 중에도 CPU를 사용합니다.",
 	["Specify which spells are shown on raid frames."] = "공격대 프레임에 표시할 주문을 지정합니다.",
 	["Remove"] = "제거",
 	["Custom"] = "사용자 지정",
@@ -188,7 +187,7 @@ L:RegisterLocale("koKR", function() return {
 	["Important News"] = "중요 소식",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "블리자드 12.0.7 패치부터 다음 기능을 더 이상 사용할 수 없습니다:\n- 알림에 공격기 표시.\n- 이름표에 공격기 표시.\n- 초상화에 공격기 표시.\n- 파티/공격대 프레임에 공격기 표시.\n- 공격 재사용 대기시간 추적.\n- 예지와 무효화의 장막 표시.\n- 중요 주문 소리 알림.\n- 중요 주문 음성 안내.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "12.0.7 제한 이후의 반가운 소식:\n- 예지/무효화의 장막 모듈이 돌아왔습니다.\n- 이제 알림 모듈이 투기장 상대별로 중요/공격 아이콘을 1개 표시할 수 있습니다.\n\n이 기능들은 예전만큼 잘 작동하지는 않지만, 없는 것보다는 낫습니다.",
-	["The Slot Glow is static and uses the least CPU."] = "슬롯 발광은 정적이며 CPU를 가장 적게 사용합니다.",
+	["Sorry folks, had to remove the animated glows as they were causing FPS issues."] = "죄송합니다. 애니메이션 발광이 FPS 문제를 일으켜 제거했습니다.",
 
 	-- Alerts tab
 	["Alerts"] = "알림",

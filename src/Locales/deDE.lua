@@ -26,7 +26,6 @@ L:RegisterLocale("deDE", function() return {
 	["Shows enemy kick cooldowns in arena."] = "Zeigt gegnerische Kick-Cooldowns in der Arena.",
 	["Enable if you are:"] = "Aktivieren, wenn du bist:",
 	["Enable in"] = "Aktivieren in",
-	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "Animierte Leuchteffekte animieren auch Symbole ohne Aura und kosten im Leerlauf CPU.",
 	["Specify which spells are shown on raid frames."] = "Legt fest, welche Zauber auf Schlachtzugsrahmen angezeigt werden.",
 	["Remove"] = "Entfernen",
 	["Custom"] = "Eigene",
@@ -188,7 +187,7 @@ L:RegisterLocale("deDE", function() return {
 	["Important News"] = "Wichtige Neuigkeiten",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "Seit Blizzards Patch 12.0.7 sind folgende Funktionen nicht mehr möglich:\n- Offensiv-Zauber in Warnungen anzeigen.\n- Offensiv-Zauber auf Namensplaketten anzeigen.\n- Offensiv-Zauber auf Porträts anzeigen.\n- Offensiv-Zauber auf Gruppen-/Schlachtzugsrahmen anzeigen.\n- Offensive Abklingzeiten verfolgen.\n- Präkognition und Annullierende Hülle anzeigen.\n- Tonsignal bei wichtigen Zaubern.\n- Sprachausgabe wichtiger Zauber.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "Gute Nachrichten nach den 12.0.7-Einschränkungen:\n- Das Präkognition-/Annullierende-Hülle-Modul ist zurück.\n- Das Warnungs-Modul kann jetzt 1 wichtiges/offensives Symbol pro Arena-Gegner anzeigen.\n\nDiese Funktionen funktionieren nicht so gut wie zuvor, aber besser als nichts.",
-	["The Slot Glow is static and uses the least CPU."] = "Das Slot-Leuchten ist statisch und verwendet am wenigsten CPU.",
+	["Sorry folks, had to remove the animated glows as they were causing FPS issues."] = "Sorry Leute, die animierten Leuchteffekte mussten raus, sie haben FPS-Probleme verursacht.",
 
 	-- Alerts tab
 	["Alerts"] = "Warnungen",

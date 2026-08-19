@@ -15,8 +15,8 @@ local M = {}
 
 addon.Core.AuraButtonPaint = M
 
----Applies a glow style's asset and geometry to a button's glow frame. Only re-skins when the
----style actually changed - this runs per button on every restyle.
+---Applies a glow style's asset to a button's glow frame. Only re-skins when the style actually
+---changed - this runs per button on every restyle.
 ---@param widgets table
 ---@param button table
 ---@param styleName string
@@ -38,17 +38,6 @@ function M:ApplyGlowStyle(widgets, button, styleName, size)
 		widgets.GlowPadding = padding
 		glow:SetPoint("TOPLEFT", button, "TOPLEFT", -padding, padding)
 		glow:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", padding, -padding)
-	end
-
-	-- A REPEAT animation costs CPU every frame even on hidden frames, and with thousands of
-	-- pre-created buttons that showed up as constant background load; only run it when the
-	-- chosen style is actually animated.
-	if spec.Animated then
-		if not glow.Anim:IsPlaying() then
-			glow.Anim:Play()
-		end
-	else
-		glow.Anim:Stop()
 	end
 end
 

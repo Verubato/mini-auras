@@ -14,10 +14,12 @@ local addonName, addon = ...
 --   BlendMode     - texture blend mode.
 --   Desaturated   - strip the asset's own colour so tints apply uniformly.
 --   PaddingFactor - how far the overlay extends past the icon, as a multiple of its size.
---   Animated      - the style runs the looping flipbook. A REPEAT animation costs CPU every
---                   frame even on hidden frames, so consumers only Play() when this is set.
---   Rows/Columns/Frames/Duration - flipbook geometry, required when Animated is set. Each sheet
---                   carries its own, since the layouts differ from one asset to the next.
+--
+-- Every style here is static. The looping flipbook styles were dropped: a REPEAT animation is
+-- evaluated every frame even on a hidden one, the containers create buttons far beyond the auras
+-- actually showing, and Blizzard leaves no way to gate an animation per icon - AuraButtons forbid
+-- untrusted scripts, their shown state is secret, and the frame count deliberately reports frames
+-- created rather than active. So the cost could never be limited to icons anyone can see.
 
 -- Every overlay in the catalog has rounded inner corners, so an icon showing one is masked to the
 -- same shape. A square icon's corners otherwise poke out past the glow, and so does its swipe.
@@ -35,75 +37,6 @@ addon.Core.GlowStyles = M
 
 -- Keys are user-facing db.GlowType values; renaming one orphans saved configs.
 M.Specs = {
-	["Rotation Assist (Anti-clockwise)"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Glows\\FlipbookWhiteAntiClockwise.tga",
-		BlendMode = "BLEND",
-		Desaturated = true,
-		PaddingFactor = 1 / 3,
-		Animated = true,
-		Rows = 6,
-		Columns = 5,
-		Frames = 30,
-		Duration = 1.0,
-	},
-	["Rotation Assist (Clockwise)"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Glows\\FlipbookWhiteClockwise.tga",
-		BlendMode = "BLEND",
-		Desaturated = true,
-		PaddingFactor = 1 / 3,
-		Animated = true,
-		Rows = 6,
-		Columns = 5,
-		Frames = 30,
-		Duration = 1.0,
-	},
-	-- Atlas rather than a bundled file: this one ships with the client.
-	["Ants (Anti-Clockwise)"] = {
-		Atlas = "RotationHelper_Ants_Flipbook",
-		BlendMode = "BLEND",
-		Desaturated = true,
-		PaddingFactor = 1 / 3,
-		Animated = true,
-		Rows = 6,
-		Columns = 5,
-		Frames = 30,
-		Duration = 1.0,
-	},
-	-- The next three keep their own colours, so they are not desaturated and the tint a caller
-	-- passes has no effect on them.
-	["Twins"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Glows\\Twins.tga",
-		BlendMode = "BLEND",
-		Desaturated = false,
-		PaddingFactor = 1 / 7,
-		Animated = true,
-		Rows = 6,
-		Columns = 4,
-		Frames = 24,
-		Duration = 0.6,
-	},
-	["Mirror"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Glows\\Mirror.tga",
-		BlendMode = "BLEND",
-		Desaturated = false,
-		PaddingFactor = 1 / 7,
-		Animated = true,
-		Rows = 12,
-		Columns = 4,
-		Frames = 48,
-		Duration = 0.8,
-	},
-	["Twins Mirror"] = {
-		Texture = "Interface\\AddOns\\" .. addonName .. "\\Textures\\Glows\\TwinMirror.tga",
-		BlendMode = "BLEND",
-		Desaturated = false,
-		PaddingFactor = 1 / 7,
-		Animated = true,
-		Rows = 12,
-		Columns = 4,
-		Frames = 48,
-		Duration = 1.8,
-	},
 	-- The halo needs to extend well past the icon edges to read correctly, hence the larger
 	-- padding share.
 	["Slot Glow"] = {
@@ -111,27 +44,23 @@ M.Specs = {
 		BlendMode = "BLEND",
 		Desaturated = false,
 		PaddingFactor = 1 / 5,
-		Animated = false,
 	},
+	-- Atlas rather than a bundled file: this one ships with the client.
 	["Static Pixel Border"] = {
 		Atlas = "wowlabs-spell-icon-frame-highlight",
 		BlendMode = "BLEND",
 		Desaturated = true,
 		PaddingFactor = 0.15,
-		Animated = false,
 	},
 }
 
 M.DefaultName = "Slot Glow"
 
----Builds an unskinned glow overlay: a child frame carrying an OVERLAY texture and a stopped
----flipbook animation. The animation exists even for static styles so a later switch to an
----animated one never has to touch the frame again - which matters on AuraButtons, where
----children cannot be modified while auras are secret. Skin it with ApplySpec; the caller owns
----positioning, visibility and starting the animation.
+---Builds an unskinned glow overlay: a child frame carrying an OVERLAY texture. Skin it with
+---ApplySpec; the caller owns positioning and visibility.
 ---@param parent table
 ---@param name string? Global frame name.
----@return table glowFrame Carries .Texture and .Anim.
+---@return table glowFrame Carries .Texture.
 function M:BuildGlowFrame(parent, name)
 	local glow = CreateFrame("Frame", name, parent)
 	glow:SetFrameLevel(parent:GetFrameLevel() + 5)
@@ -139,31 +68,13 @@ function M:BuildGlowFrame(parent, name)
 	glow.Texture = glow:CreateTexture(nil, "OVERLAY")
 	glow.Texture:SetAllPoints()
 
-	glow.Anim = glow:CreateAnimationGroup()
-	glow.Anim:SetLooping("REPEAT")
-
-	-- A single cell until ApplySpec fills in the chosen sheet's geometry, so the animation is never
-	-- left unconfigured.
-	local flip = glow.Anim:CreateAnimation("FlipBook")
-	flip:SetChildKey("Texture")
-	flip:SetFlipBookRows(1)
-	flip:SetFlipBookColumns(1)
-	flip:SetFlipBookFrames(1)
-	flip:SetDuration(1.0)
-	glow.FlipAnim = flip
-
 	return glow
 end
 
----Skins a glow frame with a spec's asset. Leaves the looping animation stopped; the caller
----decides whether it should run (see the Animated spec field).
+---Skins a glow frame with a spec's asset.
 ---@param glowFrame table A frame from BuildGlowFrame.
 ---@param spec table An entry of M.Specs.
 function M:ApplySpec(glowFrame, spec)
-	-- Stop before re-skinning: the flipbook drives tex coords, so a running animation would
-	-- fight the reset below (and Stop may restore its own pre-animation coords).
-	glowFrame.Anim:Stop()
-
 	if spec.Atlas then
 		glowFrame.Texture:SetAtlas(spec.Atlas)
 	else
@@ -173,17 +84,6 @@ function M:ApplySpec(glowFrame, spec)
 	glowFrame.Texture:SetDesaturated(spec.Desaturated)
 	-- Read back by resize handlers that re-pad an already-built overlay.
 	glowFrame.PaddingFactor = spec.PaddingFactor
-
-	if spec.Animated then
-		glowFrame.FlipAnim:SetFlipBookRows(spec.Rows)
-		glowFrame.FlipAnim:SetFlipBookColumns(spec.Columns)
-		glowFrame.FlipAnim:SetFlipBookFrames(spec.Frames)
-		glowFrame.FlipAnim:SetDuration(spec.Duration)
-	else
-		-- The flipbook leaves the coords on its last cell; reset them so a static asset is not
-		-- rendered as a crop of itself.
-		glowFrame.Texture:SetTexCoord(0, 1, 0, 1)
-	end
 end
 
 ---Squares off a cooldown's swipe. Called when an icon is built, so both shapes come from us and

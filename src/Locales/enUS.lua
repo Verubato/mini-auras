@@ -27,7 +27,6 @@ L:SetDefaultStrings({
 	["Shows enemy kick cooldowns in arena."] = "Shows enemy kick cooldowns in arena.",
 	["Enable if you are:"] = "Enable if you are:",
 	["Enable in"] = "Enable in",
-	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "Animated glows keep animating icons with no aura, costing CPU while idle.",
 	["Specify which spells are shown on raid frames."] = "Specify which spells are shown on raid frames.",
 	["Remove"] = "Remove",
 	["Custom"] = "Custom",
@@ -189,7 +188,7 @@ L:SetDefaultStrings({
 	["Important News"] = "Important News",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing.",
-	["The Slot Glow is static and uses the least CPU."] = "The Slot Glow is static and uses the least CPU.",
+	["Sorry folks, had to remove the animated glows as they were causing FPS issues."] = "Sorry folks, had to remove the animated glows as they were causing FPS issues.",
 
 	-- Alerts tab
 	["Alerts"] = "Alerts",

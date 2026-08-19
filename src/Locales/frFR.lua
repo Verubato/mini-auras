@@ -26,7 +26,6 @@ L:RegisterLocale("frFR", function() return {
 	["Shows enemy kick cooldowns in arena."] = "Affiche les CDs de kick ennemis en arène.",
 	["Enable if you are:"] = "Activer si vous êtes :",
 	["Enable in"] = "Activer en",
-	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "Les lueurs animées continuent d'animer les icônes sans aura et consomment du CPU au repos.",
 	["Specify which spells are shown on raid frames."] = "Indique quels sorts sont affichés sur les cadres de raid.",
 	["Remove"] = "Supprimer",
 	["Custom"] = "Personnalisés",
@@ -188,7 +187,7 @@ L:RegisterLocale("frFR", function() return {
 	["Important News"] = "Nouvelles importantes",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "Depuis le patch 12.0.7 de Blizzard, les fonctionnalités suivantes ne sont plus possibles :\n- Afficher les offensifs dans les alertes.\n- Afficher les offensifs sur les barres de nom.\n- Afficher les offensifs sur les portraits.\n- Afficher les offensifs sur les cadres de groupe/raid.\n- Suivre les temps de recharge offensifs.\n- Afficher Précognition et Voile annihilant.\n- Alerte sonore pour les sorts importants.\n- Synthèse vocale des sorts importants.",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "Quelques bonnes nouvelles après les restrictions de 12.0.7 :\n- Le module Précognition/Voile annihilant est de retour.\n- Le module d'alertes peut désormais afficher 1 icône importante/offensive par adversaire d'arène.\n\nCes fonctionnalités ne fonctionneront pas aussi bien qu'avant, mais c'est mieux que rien.",
-	["The Slot Glow is static and uses the least CPU."] = "La lueur d'emplacement est statique et consomme le moins de CPU.",
+	["Sorry folks, had to remove the animated glows as they were causing FPS issues."] = "Désolé tout le monde, j'ai dû supprimer les lueurs animées, elles causaient des problèmes de FPS.",
 
 	-- Alerts tab
 	["Alerts"] = "Alertes",

@@ -181,26 +181,18 @@ function M:Build(panel)
 	iconZoomChk:SetPoint("TOP", disableSwipeChk, "TOP", 0, 0)
 
 	-- Aura icons render as AuraButtons, which LibCustomGlow cannot attach to, so only the
-	-- texture-based glows are on offer.
+	-- texture-based glows are on offer. Both are static: the animated ones cost a frame of
+	-- animation per button whether or not it holds an aura, and Blizzard leaves no way to gate
+	-- that per icon.
 	local glowItems = {
-		"Rotation Assist (Clockwise)",
-		"Rotation Assist (Anti-clockwise)",
-		"Ants (Anti-Clockwise)",
-		"Twins",
-		"Mirror",
-		"Twins Mirror",
 		"Slot Glow",
 		"Static Pixel Border",
 	}
 
-	-- Rotation Assist runs a looping flipbook per AuraButton, and the 12.1 containers pre-create
-	-- buttons well beyond the auras actually showing. Blizzard gives no way to gate the animation
-	-- per icon: AuraButtons forbid UntrustedScriptExecution (no OnShow/OnHide hook), their shown
-	-- state is deliberately secret (ApplyVisibility secretwraps it), and frames are acquired LIFO
-	-- so there's no stable "these can never show" set. Hence the warning rather than a fix.
+	-- Says so out loud because the animated styles were on offer for years; a profile that used
+	-- one comes back on the slot glow with no other sign of why.
 	local glowNoteLines = {
-		L["The Slot Glow is static and uses the least CPU."],
-		L["Animated glows keep animating icons with no aura, costing CPU while idle."],
+		L["Sorry folks, had to remove the animated glows as they were causing FPS issues."],
 	}
 
 	local glowTypeLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")

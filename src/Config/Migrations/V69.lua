@@ -17,6 +17,19 @@ local NAMEPLATE_BARS = { "Bar1", "Bar2" }
 local SHIPPED_IMPORTANT_COLOR = { R = 1, G = 0.2, B = 0.2, A = 1 }
 local SHIPPED_DEFENSIVE_COLOR = { R = 0.2, G = 1, B = 0.2, A = 1 }
 
+-- The animated glow styles as version 70 offered them. Spelled out rather than read off the
+-- catalog, which no longer holds them at all: this step has to keep remapping the same six names
+-- whatever the catalog becomes later.
+local DROPPED_GLOW_TYPES = {
+	["Rotation Assist (Clockwise)"] = true,
+	["Rotation Assist (Anti-clockwise)"] = true,
+	["Ants (Anti-Clockwise)"] = true,
+	["Twins"] = true,
+	["Mirror"] = true,
+	["Twins Mirror"] = true,
+}
+local FALLBACK_GLOW_TYPE = "Slot Glow"
+
 ---Folds a bar's ColorByCategory/UseDispelColors pair into the single ColorMode it became. Both
 ---halves were only ever written together, and UseDispelColors never shipped, so an untouched db
 ---has the first and not the second.
@@ -113,5 +126,32 @@ function M:UpgradeToVersion70(vars)
 	end
 
 	vars.Version = 70
+	return true
+end
+
+---Moves a saved glow type off one of the dropped animated styles. The catalog lookups already
+---fall back on an unknown name, so this is about the stored value rather than what renders: left
+---alone it would come back the moment those styles ever returned.
+---@param vars table The live saved variables, or one profile's snapshot of them.
+local function DropAnimatedGlow(vars)
+	if vars and DROPPED_GLOW_TYPES[vars.GlowType] then
+		vars.GlowType = FALLBACK_GLOW_TYPE
+	end
+end
+
+function M:UpgradeToVersion71(vars)
+	if vars.Version ~= 70 then return false end
+
+	DropAnimatedGlow(vars)
+
+	-- A profile switch writes its snapshot back over the live db wholesale, so one still holding
+	-- an animated style would put it straight back.
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			DropAnimatedGlow(profile)
+		end
+	end
+
+	vars.Version = 71
 	return true
 end

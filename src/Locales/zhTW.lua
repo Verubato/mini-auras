@@ -26,7 +26,6 @@ L:RegisterLocale("zhTW", function() return {
 	["Shows enemy kick cooldowns in arena."] = "在競技場中顯示敵方打斷冷卻時間。",
 	["Enable if you are:"] = "如果您是以下角色則啟用：",
 	["Enable in"] = "啟用於",
-	["Animated glows keep animating icons with no aura, costing CPU while idle."] = "動畫發光會繼續在沒有光環的圖示上播放，閒置時也會消耗 CPU。",
 	["Specify which spells are shown on raid frames."] = "指定在團隊框體上顯示哪些法術。",
 	["Remove"] = "移除",
 	["Custom"] = "自訂",
@@ -188,7 +187,7 @@ L:RegisterLocale("zhTW", function() return {
 	["Important News"] = "重要消息",
 	["As of Blizzard's 12.0.7 patch the following features are no longer possible:\n- Display offensives in alerts.\n- Display offensives on nameplates.\n- Display offensives on portraits.\n- Display offensives on party/raid frames.\n- Track offensive cooldowns.\n- Show precog and nullifying shroud.\n- Sound alert for important spells.\n- Text-to-speech of important spells."] = "自暴雪 12.0.7 改版起，以下功能無法再使用：\n- 在警報中顯示進攻技能。\n- 在名條上顯示進攻技能。\n- 在頭像上顯示進攻技能。\n- 在隊伍/團隊框架上顯示進攻技能。\n- 追蹤進攻冷卻。\n- 顯示預知和虛無披風。\n- 重要技能的聲音提示。\n- 重要技能的語音播報。",
 	["Some good news after the 12.0.7 restrictions:\n- The precog/nullifying shroud module is back.\n- The alerts module can now show 1 important/offensive icon per arena opponent.\n\nThese features won't work as well as before, but it's better than nothing."] = "12.0.7 限制之後的一些好消息：\n- 預知/虛無披風模組回歸了。\n- 現在警報模組可以為每個競技場對手顯示 1 個重要/進攻圖示。\n\n這些功能不會像以前那樣好用，但聊勝於無。",
-	["The Slot Glow is static and uses the least CPU."] = "槽位發光是靜態的，使用最少的CPU。",
+	["Sorry folks, had to remove the animated glows as they were causing FPS issues."] = "抱歉各位，動畫發光造成了幀數問題，只能移除了。",
 
 	-- Alerts tab
 	["Alerts"] = "警報",

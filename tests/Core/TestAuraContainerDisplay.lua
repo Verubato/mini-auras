@@ -19,7 +19,7 @@ local auraFilters = addon.Core.AuraFilters
 local BATCH = acm.batchSize
 
 -- The default glow is static, so anything asserting animation has to opt into a moving style.
-local ANIMATED_GLOW = "Rotation Assist (Anti-clockwise)"
+local OTHER_GLOW = "Static Pixel Border"
 
 local function newInstance(groups)
 	return display:New(_G.UIParent, "target", groups or {
@@ -43,9 +43,9 @@ local function firstGlowWidgets(instance)
 	end
 end
 
-local function anyGlowPlaying(instance)
+local function anyGlowFrames(instance)
 	for _, widgets in pairs(instance.ButtonWidgets) do
-		if widgets.Glow and widgets.Glow.Anim:IsPlaying() then
+		if widgets.Glow then
 			return true
 		end
 	end
@@ -80,9 +80,9 @@ fw.describe("AuraContainerDisplay - creation", function()
 		assert(group.layout.elementWidth == 30 and group.layout.elementHeight == 30, "element sizes")
 	end)
 
-	fw.it("glow animations are NOT playing after creation", function()
+	fw.it("builds a glow frame per button", function()
 		local instance = newInstance()
-		assert(not anyGlowPlaying(instance), "no looping animations on freshly created buttons")
+		assert(anyGlowFrames(instance), "glow overlays exist from creation")
 	end)
 end)
 
@@ -266,15 +266,16 @@ fw.describe("AuraContainerDisplay - restriction model", function()
 		assert(instance.Frame._groups.cc.layout.elementWidth == startSize + 20, "size applied")
 	end)
 
-	fw.it("parking a display leaves its glows running, so reuse under restriction still glows", function()
+	fw.it("parking a display leaves its glows alone, so reuse under restriction still glows", function()
 		-- Glow frames are children of AuraButtons, so re-showing one needs a restyle, and a
 		-- restyle is blocked for as long as auras are secret (the whole of an arena). Nothing on
-		-- the park path may stop them: a display parked in the world and reused inside an arena
+		-- the park path may touch them: a display parked in the world and reused inside an arena
 		-- would come back with no glow for the entire match.
-		mockDb.GlowType = ANIMATED_GLOW
 		local instance = newInstance()
 		instance:SetStyle({ Glow = true })
-		assert(anyGlowPlaying(instance), "glow animations playing while style.Glow")
+
+		local glow = firstGlowWidgets(instance).Glow
+		assert(glow:IsShown(), "glow shown while style.Glow")
 
 		instance:SetEnabled(false)
 		instance:Hide()
@@ -282,7 +283,9 @@ fw.describe("AuraContainerDisplay - restriction model", function()
 		instance:Show()
 		instance:SetEnabled(true)
 
-		assert(anyGlowPlaying(instance), "still glowing after a park and reuse under restriction")
+		-- Read off the field rather than asked: IsShown is itself refused on a button's child
+		-- while restricted, which is the whole reason the park path must leave the glow alone.
+		assert(glow._shown, "still glowing after a park and reuse under restriction")
 	end)
 
 	fw.it("touching a button child while restricted errors (mock sanity)", function()
@@ -352,13 +355,12 @@ end)
 fw.describe("AuraContainerDisplay - glow lifecycle", function()
 	fw.before_each(acm.reset)
 
-	fw.it("plays animations only while the glow style is enabled", function()
-		mockDb.GlowType = ANIMATED_GLOW
+	fw.it("shows the glow overlay only while the glow style is enabled", function()
 		local instance = newInstance()
 		instance:SetStyle({ Glow = true })
-		assert(anyGlowPlaying(instance), "enabled -> playing")
+		assert(firstGlowWidgets(instance).Glow:IsShown(), "enabled -> shown")
 		instance:SetStyle({ Glow = false })
-		assert(not anyGlowPlaying(instance), "disabled -> stopped")
+		assert(not firstGlowWidgets(instance).Glow:IsShown(), "disabled -> hidden")
 	end)
 
 end)
@@ -373,7 +375,6 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		local instance = newInstance()
 		instance:SetStyle({ Glow = true })
 		assert(firstGlowWidgets(instance).GlowStyle == "Slot Glow", "default is the slot glow")
-		assert(not anyGlowPlaying(instance), "and it does not animate")
 	end)
 
 	fw.it("draws the plain border only when the style asks for one", function()
@@ -484,7 +485,7 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		local before = display:GetStyleGeneration("test", style, 30, 2)
 		assert(display:GetStyleGeneration("test", style, 30, 2) == before, "an unchanged look keeps its number")
 
-		mockDb.GlowType = ANIMATED_GLOW
+		mockDb.GlowType = OTHER_GLOW
 
 		assert(display:GetStyleGeneration("test", style, 30, 2) ~= before,
 			"changing the glow type must invalidate cached displays")
@@ -522,22 +523,20 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 
 		local widgets = firstGlowWidgets(instance)
 		assert(widgets.GlowStyle == "Slot Glow", "slot glow selected")
-		assert(not anyGlowPlaying(instance), "a static glow must not animate")
 
 		local asset = widgets.Glow.Texture._lastArgs.SetTexture[1]
 		assert(asset:find("SlotGlow"), "slot glow asset applied, got " .. tostring(asset))
 	end)
 
 	fw.it("an atlas-backed glow style uses SetAtlas rather than SetTexture", function()
-		-- Ants ships with the client as an atlas, so it has no file of its own to point at.
-		mockDb.GlowType = "Ants (Anti-Clockwise)"
+		-- The pixel border ships with the client as an atlas, so it has no file to point at.
+		mockDb.GlowType = "Static Pixel Border"
 		local instance = newInstance()
 		instance:SetStyle({ Glow = true })
 
 		local widgets = firstGlowWidgets(instance)
-		assert(widgets.GlowStyle == "Ants (Anti-Clockwise)", "ants selected")
+		assert(widgets.GlowStyle == "Static Pixel Border", "pixel border selected")
 		assert(widgets.Glow.Texture._lastArgs.SetAtlas, "applied through SetAtlas")
-		assert(anyGlowPlaying(instance), "and it animates")
 	end)
 
 	fw.it("an LCG-only glow type falls back to the default", function()
@@ -552,7 +551,7 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		instance:SetStyle({ Glow = true })
 		local afterFirst = totalSetSizeCalls(instance)
 
-		mockDb.GlowType = ANIMATED_GLOW
+		mockDb.GlowType = OTHER_GLOW
 		instance:SetStyle({ Glow = true })
 		assert(totalSetSizeCalls(instance) > afterFirst, "glow type must be part of the style signature")
 	end)
@@ -584,17 +583,17 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		assert(#glow._points > points, "a size change moves the glow with the button")
 	end)
 
-	fw.it("switching away from the flipbook resets its tex coords", function()
-		mockDb.GlowType = ANIMATED_GLOW
+	fw.it("switching style re-skins the overlay", function()
+		mockDb.GlowType = OTHER_GLOW
 		local instance = newInstance()
 		instance:SetStyle({ Glow = true })
 
 		local texture = firstGlowWidgets(instance).Glow.Texture
-		local before = texture._calls.SetTexCoord or 0
+		assert(texture._lastArgs.SetAtlas, "the pixel border is an atlas")
 
 		mockDb.GlowType = "Slot Glow"
 		instance:SetStyle({ Glow = true })
-		assert((texture._calls.SetTexCoord or 0) > before, "static asset must clear the flipbook's cell coords")
+		assert(texture._lastArgs.SetTexture, "switching to a file-backed style applies its asset")
 	end)
 end)
 

@@ -1026,6 +1026,31 @@ fw.describe("Migrator - individual migrations", function()
 		assert(vars.Modules.AlertsModule.Icons.ClassColors == false, "an existing answer wins")
 	end)
 
+	fw.it("v71 moves every dropped animated glow onto the slot glow", function()
+		-- The animated styles were removed for their idle CPU cost. The catalog lookups already
+		-- fall back on an unknown name, so this is about the stored value: a profile still holding
+		-- one is written back over the live db wholesale on a switch.
+		local vars = {
+			Version = 70,
+			GlowType = "Rotation Assist (Clockwise)",
+			Profiles = {
+				Twins = { GlowType = "Twins Mirror" },
+				Ants = { GlowType = "Ants (Anti-Clockwise)" },
+				Kept = { GlowType = "Static Pixel Border" },
+				Bare = {},
+			},
+		}
+
+		assert(migrator:UpgradeToVersion71(vars) == true)
+
+		assert(vars.GlowType == "Slot Glow", "the live value is remapped")
+		assert(vars.Profiles.Twins.GlowType == "Slot Glow", "so is a profile's")
+		assert(vars.Profiles.Ants.GlowType == "Slot Glow", "every dropped name, not just the first")
+		assert(vars.Profiles.Kept.GlowType == "Static Pixel Border", "a surviving style is left alone")
+		assert(vars.Profiles.Bare.GlowType == nil, "a profile that never picked one stays unset")
+		assert(vars.Version == 71)
+	end)
+
 	fw.it("v57 leaves kicks alone when the CC module is disabled everywhere", function()
 		local vars = {
 			Version = 56,

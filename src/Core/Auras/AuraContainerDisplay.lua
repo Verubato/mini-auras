@@ -1084,7 +1084,7 @@ end
 ---pooled frames onto the target, and 12.1 disallows SetParent onto AuraButtons because the child
 ---would inherit their forbidden aspects). It shows and hides with the button (button visibility is
 ---secret, but child rendering follows the parent without any addon-readable state). ApplyGlowStyle
----picks the asset and only runs the looping animation for the styles that need one.
+---picks the asset; every style in the catalog is static.
 ---@param instance AuraContainerDisplay
 ---@param button table
 ---@param widgets table
@@ -1103,7 +1103,6 @@ local function StyleGlow(instance, button, widgets, size)
 		glow:Show()
 	else
 		glow:Hide()
-		glow.Anim:Stop()
 	end
 
 	-- Every overlay in the catalog has rounded inner corners, and so does the border ring, so the
@@ -2117,14 +2116,6 @@ function M:RefreshFontFace()
 
 	FlushPendingRestyles()
 end
-
--- There is deliberately no StopGlowAnimations counterpart to parking a display. Hiding a parked
--- display's glow frames to save the looping flipbook's CPU cannot work: the glows are CHILDREN of
--- AuraButtons, so re-showing them needs a restyle, and a restyle is blocked for as long as
--- C_Secrets.ShouldAurasBeSecret is true. A display parked in the world and reused inside an arena
--- therefore came back with its glows hidden for the whole match, which is why the glow appeared
--- on some units and not others. It saved nothing either way: stopping set the restyle-pending
--- flag, and the retry ticker started the animations again a second later.
 
 ---Re-applies the stored style to all created buttons. Buttons are forbidden while auras are
 ---secret (in combat, but also out-of-combat inside M+/encounters/PvP matches), so this is

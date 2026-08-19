@@ -4,7 +4,7 @@ local _, addon = ...
 ---@class Db
 ---@field SpecCache table<string, {SpecId: number?, LastSeen: number?, LastAttempt: number?}>
 local dbDefaults = {
-	Version = 70,
+	Version = 71,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
