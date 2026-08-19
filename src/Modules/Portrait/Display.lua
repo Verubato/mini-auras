@@ -108,10 +108,6 @@ local function ApplyDisarmBudget(auraDisplay, unit)
 	auraDisplay.DisarmDisplay:SetMaxIcons(auraFilters.GroupKey.Disarm, units:CanAssist(unit) and 0 or 1)
 end
 
----Every id the custom list covers, each expanded to the ids sharing its name, because the aura
----the game applies is often not the one in the spellbook. Fresh table each call: the engine keeps
----the reference it is handed.
----@return table? candidateFilters nil while the list is empty.
 ---One display's next group, from the walker. A portrait's displays are created with none of
 ---them: a unit frame turning up builds the whole stack in one pass, and each group costs a batch
 ---of buttons the engine allocates on the spot.
@@ -123,6 +119,10 @@ local function DeclareNextGroup(display)
 	end
 end
 
+---Every id the custom list covers, each expanded to the ids sharing its name, because the aura
+---the game applies is often not the one in the spellbook. Fresh table each call: the engine keeps
+---the reference it is handed.
+---@return table? candidateFilters nil while the list is empty.
 local function BuildCustomFilters()
 	local spells = db.Modules.PortraitModule.CustomSpells
 

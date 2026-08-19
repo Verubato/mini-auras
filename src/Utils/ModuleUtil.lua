@@ -285,13 +285,15 @@ function M:IsInHousing()
 	return inHousing
 end
 
----How many players a side of this place holds, which is how many enemies anything preparing for
----a fight has to cover. Nil outdoors and anywhere the client does not say.
+---How many players a side of a battleground holds, which is how many enemies can be in front of
+---the player at once. Battlegrounds only: everywhere else the client's number counts the players
+---the place fits rather than the enemies it puts in your way - five in a dungeon, thirty in a
+---raid - and neither says anything about how many things there are to track.
 ---@return number?
-function M:MaxPlayersPerSide()
+function M:PvpTeamSize()
 	RefreshWorldState()
 
-	if not maxPlayers or maxPlayers <= 0 then
+	if instanceType ~= "pvp" or not maxPlayers or maxPlayers <= 0 then
 		return nil
 	end
 

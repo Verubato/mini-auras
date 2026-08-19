@@ -1,5 +1,5 @@
 ---@type string, Addon
-local _, addon = ...
+local addonName, addon = ...
 local auraCategoryIds = addon.Core.AuraCategoryIds
 
 -- Every spell id the picker can offer, indexed by name so it can be searched on.
@@ -520,7 +520,12 @@ end
 ---to either makes every stored answer suspect.
 ---@return string
 local function CacheStamp()
-	return (addon.Core.SpellNameIndexVersion or "?") .. ":" .. GetLocale()
+	-- The addon's version stands in for the curated lists, which feed the same expansion and ship
+	-- with the addon: a release that adds an id to one without regenerating the index above would
+	-- otherwise leave every stored answer a version behind.
+	local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version")
+
+	return (addon.Core.SpellNameIndexVersion or "?") .. ":" .. (version or "?") .. ":" .. GetLocale()
 end
 
 ---The saved cache, wiped when it was built from other data than this one carries. Created on
@@ -554,12 +559,18 @@ local function StoredVariants(spellId)
 	return VariantStore()[spellId]
 end
 
----Keeps an expansion for the next session. Only for a spell the client can name: an id whose data
----has not loaded yet expands to itself alone, and storing that would freeze the wrong answer in
----for good rather than for the seconds it takes to arrive.
+---Keeps an expansion for the next session. Only once the client has answered for everything this
+---could have covered: an id whose data has not loaded yet expands to itself alone, and an answer
+---built while anything is still pending is short by whatever arrives next. Stored, that would
+---outlive the retry that fixes it - the store is read before the retry ever runs - and be wrong
+---for good rather than for the seconds it takes the client to catch up.
 ---@param spellId number
 ---@param variants number[]
 local function StoreVariants(spellId, variants)
+	if pendingIds or pendingGroups then
+		return
+	end
+
 	local name = C_Spell.GetSpellName(spellId)
 
 	if not name or name == "" then

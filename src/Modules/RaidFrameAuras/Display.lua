@@ -365,14 +365,17 @@ local function DeclareNextGroup(entry)
 
 	-- Re-published rather than trusted from creation: the walk runs over seconds, in which the
 	-- tracked spell list can move and an entry whose anchor is out of sight is skipped by every
-	-- refresh in between. The push only writes the specs while the groups are pending, so it is
-	-- cheap enough to repeat per group.
+	-- refresh in between. Only when it actually moved, though: once the first group is declared
+	-- this reaches the engine, and an unguarded push bounces the container into a full reparse
+	-- for every group after it.
 	if options then
 		local filters = GetHelpfulFilters(options)
 
-		display:SetCandidateFilters(DEFENSIVE_GROUP_KEY, filters[DEFENSIVE_GROUP_KEY])
-		display:SetCandidateFilters(IMPORTANT_GROUP_KEY, filters[IMPORTANT_GROUP_KEY])
-		entry.FilterGeneration = helpfulFilterGeneration
+		if entry.FilterGeneration ~= helpfulFilterGeneration then
+			display:SetCandidateFilters(DEFENSIVE_GROUP_KEY, filters[DEFENSIVE_GROUP_KEY])
+			display:SetCandidateFilters(IMPORTANT_GROUP_KEY, filters[IMPORTANT_GROUP_KEY])
+			entry.FilterGeneration = helpfulFilterGeneration
+		end
 	end
 
 	if display:AddNextGroup() then

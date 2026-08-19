@@ -276,10 +276,12 @@ end
 ---rebuilt rather than re-budgeted when that category comes on.
 ---@return number
 function M:CategoryGeneration(showCC, showDefensives, showImportant, showDisarm)
-	return (showCC and 1 or 0)
-		+ (showDefensives and 2 or 0)
-		+ (showImportant and 4 or 0)
-		+ (showDisarm and 8 or 0)
+	-- Compared the same way CategorySet reads them, so a toggle that is truthy without being true
+	-- cannot stamp a category the display was not built with.
+	return (showCC == true and 1 or 0)
+		+ (showDefensives == true and 2 or 0)
+		+ (showImportant == true and 4 or 0)
+		+ (showDisarm == true and 8 or 0)
 end
 
 ---Budgets one category, if this display was built with it. A display carries only the categories

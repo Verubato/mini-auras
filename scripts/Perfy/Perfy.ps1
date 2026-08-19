@@ -44,8 +44,6 @@ function Test-Instrumented([string] $dir) {
     return $false
 }
 
-# Perfy's toc reader counts a BOM as part of the first line, so "## Interface" stops looking
-# like a comment and it tries to open it as a file. ReadAllText drops the BOM.
 # Whether two installs hold the same files with the same contents.
 function Test-SameTree([string] $left, [string] $right) {
     $leftFiles = @(Get-ChildItem -Path $left -Recurse -File | Sort-Object FullName)
@@ -66,6 +64,8 @@ function Test-SameTree([string] $left, [string] $right) {
     return $true
 }
 
+# Perfy's toc reader counts a BOM as part of the first line, so "## Interface" stops looking
+# like a comment and it tries to open it as a file. ReadAllText drops the BOM.
 function Get-TocPaths([string] $dir) {
     $paths = @()
     foreach ($toc in @(Get-ChildItem -Path $dir -Filter "*.toc" -File)) {

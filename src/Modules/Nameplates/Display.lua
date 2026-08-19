@@ -609,16 +609,18 @@ local function GetOrCreateBarDisplay(nameplate, bar, barOptions, factionKey)
 		byBar[cacheKey] = entry
 		entry.Plate = nameplate
 
-		-- Whatever this display still owes goes on the urgent lane, ahead of the spares: a plate
-		-- is holding it now.
-		if entry.Display:HasPendingGroups() then
-			demandSweep:Append(entry.Display, DeclareNextGroup)
-		end
 		-- The one re-parent this display will ever see. Built on UIParent so its buttons could be
 		-- skinned while their size was still readable, and it lives on this plate from here.
 		entry.Display.Frame:SetParent(nameplate)
 	elseif entry.Signature ~= signature then
 		RestyleEntry(entry, size, spacing, style, signature)
+	end
+
+	-- Whatever this display still owes goes on the urgent lane, ahead of the spares: a plate is
+	-- holding it now. Asked every time rather than only on the first bind: a teardown stops the
+	-- lane, so an entry the walker had not finished comes back here still owing its groups.
+	if entry.Display:HasPendingGroups() then
+		demandSweep:Append(entry.Display, DeclareNextGroup)
 	end
 
 	return entry.Display
@@ -634,7 +636,7 @@ local function PrewarmTarget()
 		return M.ArenaPrewarmCount
 	end
 
-	local perSide = moduleUtil:MaxPlayersPerSide()
+	local perSide = moduleUtil:PvpTeamSize()
 
 	if perSide then
 		return math.min(perSide, M.MaxPrewarmCount)

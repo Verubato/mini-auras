@@ -241,9 +241,14 @@ fw.describe("AlertsModule 12.1 - how many pairs it prepares", function()
 		inPlace("pvp", 40)
 		assert(display:PrewarmTokenTarget() == 40, "and forty in a forty-a-side one")
 
-		-- Capped: the client hands out no more plate tokens than this however big the raid is.
-		inPlace("raid", 500)
+		-- Capped: the client hands out no more plate tokens than this however big the side is.
+		inPlace("pvp", 500)
 		assert(display:PrewarmTokenTarget() == display.MaxPrewarmTokenCount, "capped at the plate ceiling")
+
+		-- Anywhere but a battleground the number counts the players the place fits, which says
+		-- nothing about how many enemies are in front of you.
+		inPlace("raid", 30)
+		assert(display:PrewarmTokenTarget() == display.PrewarmTokenCount, "a raid's size is not an enemy count")
 
 		inPlace("none")
 		assert(display:PrewarmTokenTarget() == display.PrewarmTokenCount, "and outdoors, where world pvp happens")

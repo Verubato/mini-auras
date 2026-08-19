@@ -1633,7 +1633,9 @@ local function AddGroup(instance, group)
 		-- alone is "oldest first" - the same order the legacy watcher produced (it kept the
 		-- game's order and broke ties by instance id). The alternatives all sort by data the
 		-- addon can't see, which makes them impossible to reason about or match in test mode.
-		sortMethod = AuraContainerSortMethod.AuraInstanceIDOnly,
+		-- Whatever was last asked for, which for a deferred group is whatever was pushed at it
+		-- while it waited. The default is oldest-first: instance ids climb as auras are applied.
+		sortMethod = group.SortMethod or AuraContainerSortMethod.AuraInstanceIDOnly,
 		sortDirection = group.SortDirection or AuraContainerSortDirection.Normal,
 		-- The group is captured rather than its colour: initializeFrame is the only place a
 		-- button can be styled, so a button that holds the group can still be recoloured later.
@@ -1648,9 +1650,11 @@ local function AddGroup(instance, group)
 	end
 
 	-- A group declared onto a container already on screen has missed the parse that armed the
-	-- ones before it, so nothing it matches would show until something else moved.
+	-- ones before it, so nothing it matches would show until something else moved. Urgent: an
+	-- ordinary bounce waits for combat to drop, and an aura that is already up on a unit with no
+	-- further aura traffic would sit invisible until then.
 	if instance.Frame:IsShown() then
-		MarkBouncePending(instance)
+		MarkBouncePending(instance, true)
 	end
 end
 
@@ -1758,8 +1762,9 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 
 	instance.NextPendingGroup = options.DeferGroups and 1 or nil
 
-	-- The groups exist now, so the container can be let out. No bounce to go with it: this IS
-	-- the arming show, and there has been no parse before it to correct.
+	-- The container can be let out now: its groups either exist, or it is a deferred build that
+	-- stays hidden until its owner shows it. No bounce either way: this IS the arming show, and
+	-- there has been no parse before it to correct.
 	ApplyShownState(instance)
 
 	return instance
@@ -2113,6 +2118,7 @@ function M:SetSortMethod(groupKey, method, direction)
 	local group = self.GroupsByKey[groupKey]
 
 	if group and group.Pending then
+		group.SortMethod = method
 		group.SortDirection = direction
 
 		return
@@ -2374,6 +2380,8 @@ end
 ---pushed at it are stored on the spec and go in with the declaration. Never set by a caller.
 ---@field BornMaxIcons number? The budget a deferred group is declared with, whatever its budget
 ---has moved to since; the client hands out buttons from the declared count. Never set by a caller.
+---@field SortMethod number? The sort last asked for, held until a deferred group is declared with
+---it. Never set by a caller; pass the sort to SetSortMethod.
 
 ---@class AuraDisplayOptions
 ---@field IconTexCoord number[]? {left, right, top, bottom} crop applied to every icon.

@@ -1023,7 +1023,7 @@ function M:PrewarmTokenTarget()
 		return M.ArenaPrewarmTokenCount
 	end
 
-	local perSide = moduleUtil:MaxPlayersPerSide()
+	local perSide = moduleUtil:PvpTeamSize()
 
 	if perSide then
 		return math.min(perSide, M.MaxPrewarmTokenCount)

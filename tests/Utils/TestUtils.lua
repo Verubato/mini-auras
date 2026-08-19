@@ -119,15 +119,19 @@ fw.describe("ModuleUtil:IsModuleEnabled", function()
 		moduleUtil:InvalidateWorldState()
 	end
 
-	fw.it("reports how many players a side of the place holds", function()
-		-- What the prewarms size themselves against: a battleground says how many a side holds,
-		-- and outdoors the client has no number at all.
+	fw.it("reports a battleground's team size and nothing else", function()
+		-- What the prewarms size themselves against. Everywhere else the client's number counts
+		-- the players the place fits rather than the enemies it puts in front of you, so a
+		-- five-man would otherwise read as "prepare for five".
 		setup(nil)
 		setWorld(true, "pvp", false, 40)
-		assert(moduleUtil:MaxPlayersPerSide() == 40, "the battleground's own size")
+		assert(moduleUtil:PvpTeamSize() == 40, "the battleground's own size")
+
+		setWorld(true, "party", false, 5)
+		assert(moduleUtil:PvpTeamSize() == nil, "a dungeon's player cap says nothing about mobs")
 
 		setWorld(false, "none", false, 0)
-		assert(moduleUtil:MaxPlayersPerSide() == nil, "nothing outdoors, so callers keep their default")
+		assert(moduleUtil:PvpTeamSize() == nil, "nothing outdoors, so callers keep their default")
 	end)
 
 	fw.it("defaults to enabled when settings are missing", function()

@@ -222,6 +222,12 @@ fw.describe("SpellSearch - the saved expansion cache", function()
 	-- Expanding a tracked spell is what an aura filter needs at login, and answering it from the
 	-- client means naming every generated group. The answer only moves when the data or the
 	-- language does, so a session hands the next one what it worked out.
+	-- The stamp covers the generated data, the addon's own version (which the curated lists ship
+	-- with) and the language the grouping was done in.
+	local function Stamp()
+		return "test-index:" .. (C_AddOns.GetAddOnMetadata("MiniAuras", "Version") or "?") .. ":" .. GetLocale()
+	end
+
 	local function WithStore(store, body)
 		local previous = _G.MiniAurasSpellCache
 		_G.MiniAurasSpellCache = store
@@ -258,7 +264,7 @@ fw.describe("SpellSearch - the saved expansion cache", function()
 	end)
 
 	fw.it("answers from the store without asking the client anything", function()
-		local store = { Stamp = "test-index:" .. GetLocale(), Ids = { [RAKE_CAST] = { 1, 2, 3 } } }
+		local store = { Stamp = Stamp(), Ids = { [RAKE_CAST] = { 1, 2, 3 } } }
 
 		WithStore(store, function(search)
 			local asked = 0
@@ -280,13 +286,13 @@ fw.describe("SpellSearch - the saved expansion cache", function()
 	end)
 
 	fw.it("throws the store away when the data behind it changed", function()
-		local store = { Stamp = "an-older-index:" .. GetLocale(), Ids = { [RAKE_CAST] = { 1, 2, 3 } } }
+		local store = { Stamp = "an-older-index:" .. Stamp(), Ids = { [RAKE_CAST] = { 1, 2, 3 } } }
 
 		WithStore(store, function(search)
 			local variants = search:GetVariants(RAKE_CAST)
 
 			assert(#variants ~= 3 or variants[1] ~= 1, "a stale answer was handed back")
-			assert(store.Stamp == "test-index:" .. GetLocale(), "and the store took the current stamp")
+			assert(store.Stamp == Stamp(), "and the store took the current stamp")
 		end)
 	end)
 end)

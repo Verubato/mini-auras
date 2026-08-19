@@ -288,6 +288,18 @@ displayPools = {
 	end, ParkDisplay, 0),
 }
 
+---Hands back an entry with whatever groups it still owes queued behind it. Urgent, because this
+---one is going on screen now, while the pool's own fill is working ahead of anyone asking.
+---@param entry CustomAuraDisplayEntry
+---@return CustomAuraDisplayEntry
+local function Queued(entry)
+	if entry.Display:HasPendingGroups() then
+		buildSweep:Append(entry.Display, DeclareNextGroup)
+	end
+
+	return entry
+end
+
 ---Whether a pooled entry's buttons already carry the acquiring group's exact look. Asked while
 ---aura styling is restricted, where an entry carrying anything else could not be corrected.
 ---@param entry CustomAuraDisplayEntry
@@ -301,18 +313,6 @@ end
 
 ---@param state CustomAuraGroupState
 ---@return CustomAuraDisplayEntry
----Hands back an entry with whatever groups it still owes queued behind it. Urgent, because this
----one is going on screen now, while the pool's own fill is working ahead of anyone asking.
----@param entry CustomAuraDisplayEntry
----@return CustomAuraDisplayEntry
-local function Queued(entry)
-	if entry.Display:HasPendingGroups() then
-		buildSweep:Append(entry.Display, DeclareNextGroup)
-	end
-
-	return entry
-end
-
 local function AcquireEntry(state)
 	local group = state.Group
 	local shape = groups:GetShape(group)
