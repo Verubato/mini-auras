@@ -63,7 +63,16 @@ local function containerFor(unit)
 	end
 end
 
+-- A portrait's displays are created with none of their groups: the whole stack is built in one
+-- pass and each group costs a batch of buttons, so the background walker declares them a group per
+-- turn. Reading one back means letting that walk run first.
+local function settleGroups()
+	acm.tickAll(40)
+end
+
 local function displaysFor(unit)
+	settleGroups()
+
 	local container = assert(containerFor(unit), "no portrait container for " .. unit)
 	return assert(container.AuraDisplay, "no aura display stack").Displays, container
 end
@@ -182,6 +191,7 @@ fw.describe("PortraitModule 12.1 - the custom spell layer", function()
 		-- Its filter string is a bare HELPFUL: with no spell map behind it and a budget to
 		-- spend, the layer would show whichever buff the player last gained.
 		setCustomSpells()
+		settleGroups()
 
 		local frame = customDisplay("player").Frame
 		assert(frame._groups[CUSTOM_KEY].maxFrameCount == 0, "nothing to show, nothing budgeted")
@@ -190,6 +200,7 @@ fw.describe("PortraitModule 12.1 - the custom spell layer", function()
 
 	fw.it("opens with the spells that are ticked, and closes again when they are cleared", function()
 		setCustomSpells(FEINT)
+		settleGroups()
 
 		local frame = customDisplay("player").Frame
 		local group = frame._groups[CUSTOM_KEY]
@@ -204,6 +215,8 @@ fw.describe("PortraitModule 12.1 - the custom spell layer", function()
 	fw.it("allocates its buttons up front, so a later addition can render", function()
 		-- The client builds a group's buttons from the count it was created with; a group born
 		-- at zero has none to hand out however high the budget is raised afterwards.
+		settleGroups()
+
 		local group = customDisplay("player").Frame._groups[CUSTOM_KEY]
 
 		assert(group.maxFrameCountAtCreation == 1, "created with a budget of one")

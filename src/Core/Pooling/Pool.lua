@@ -6,8 +6,10 @@ local sweep = addon.Core.Sweep
 -- an "item" is whatever createFn returns (a single display, a bundle of displays, a table of
 -- widgets), and resetFn parks one for reuse.
 --
--- Pre-creation is staggered on a timer so login doesn't hitch, and the expensive objects this
--- pool exists for (12.1 AuraContainers) are therefore never built mid-combat in practice.
+-- Pre-creation is staggered through the shared background walker so login doesn't hitch, and the
+-- expensive objects this pool exists for (12.1 AuraContainers) are therefore never built
+-- mid-combat in practice. One walker for the whole addon means the pools take turns rather than
+-- every module filling at once.
 -- Acquire falls back to on-demand creation if demand outruns the pool, at the cost of a frame
 -- spike, rather than failing.
 --
@@ -15,10 +17,9 @@ local sweep = addon.Core.Sweep
 -- itself would build a screen's worth of objects for a module the user has switched off. Call
 -- Prewarm from the module's enable path instead (it is idempotent and cheap to repeat).
 
--- How many items each pre-creation tick builds, and how often ticks run. Two per tenth of a
--- second fills a 40-item pool in ~2s without a visible hitch.
-local ITEMS_PER_TICK = 2
-local TICK_INTERVAL = 0.1
+-- What one pool may build in a single walker tick. Creating an item is a hundred times what
+-- restyling one costs, so a fill takes a single slot where the shared budget would hand it more.
+local ITEMS_PER_TICK = 1
 
 ---@class Pool
 local M = {}
@@ -39,6 +40,25 @@ local function IsFree(pool, item)
 	end
 
 	return false
+end
+
+---Builds one pre-created item, from the walker. The pool is asked what it still owes at fire
+---time: a fill runs over seconds, and acquires during it have already counted towards the target.
+---@param _ any The queue slot, which carries nothing.
+---@param pool Pool
+---@return boolean? keepGoing
+local function BuildOne(_, pool)
+	if pool.Created >= pool.Target then
+		return false
+	end
+
+	pool.Created = pool.Created + 1
+
+	local produce = pool.ArgsFn
+	local item = produce and pool.Create(produce(pool.ArgsCtx)) or pool.Create()
+
+	pool.Reset(item)
+	pool.Free[#pool.Free + 1] = item
 end
 
 ---@param createFn fun(...): table Builds one item, from whatever Acquire was given.
@@ -128,27 +148,26 @@ function M:Prewarm(targetCount, argsFn, argsCtx)
 		self.ArgsCtx = argsCtx
 	end
 
-	if self.Ticker or self.Created >= self.Target then
+	local owed = self.Target - self.Created
+
+	if owed <= 0 then
 		return
 	end
 
-	self.Ticker = C_Timer.NewTicker(TICK_INTERVAL, function()
-		if self.Created >= self.Target then
-			self.Ticker:Cancel()
-			self.Ticker = nil
-			return
-		end
+	if not self.FillSweep then
+		self.FillSweep = sweep:New(ITEMS_PER_TICK)
+	end
 
-		for _ = 1, ITEMS_PER_TICK do
-			if self.Created < self.Target then
-				self.Created = self.Created + 1
-				local produce = self.ArgsFn
-				local item = produce and self.Create(produce(self.ArgsCtx)) or self.Create()
-				self.Reset(item)
-				self.Free[#self.Free + 1] = item
-			end
-		end
-	end)
+	-- One queue slot per item still owed, re-counted here rather than resumed: a repeat call is
+	-- what raises the target, and what the pool owes may have shrunk since the last one (an
+	-- acquire that outran the fill counts as a build).
+	local queue = {}
+
+	for index = 1, owed do
+		queue[index] = index
+	end
+
+	self.FillSweep:Run(queue, BuildOne, self)
 end
 
 ---Walks the parked items through refreshFn in the background, a couple per tick like the
@@ -206,7 +225,7 @@ end
 ---@field Free table[]
 ---@field Target number
 ---@field Created number
----@field Ticker table?
+---@field FillSweep Sweep?
 ---@field ArgsFn (fun(argsCtx: any): ...)?
 ---@field ArgsCtx any?
 ---@field Sweep Sweep?

@@ -32,6 +32,8 @@ local EXTRA_IDS = {
 -- Built on first use: naming ~1,200 spells is pointless if the picker is never opened.
 ---@type SpellSearchEntry[]?
 local entries
+-- Whether the generated half is in as well; see BuildSearchIndex.
+local searchIndexBuilt = false
 -- Lowercased name -> the ids that share it, so an added id can be expanded to its variants.
 ---@type table<string, number[]>
 local idsByName = {}
@@ -355,7 +357,13 @@ local function RetryPending()
 	end
 end
 
-local function BuildIndex()
+local function ByLower(a, b)
+	return a.Lower < b.Lower
+end
+
+---The curated half: which ids share a name, and a row for each curated spell. This is all an
+---aura filter needs, and it is the half that costs a name lookup per curated id.
+local function BuildCuratedIndex()
 	local ids = {}
 
 	CollectKeys(auraCategoryIds.CC, ids)
@@ -387,7 +395,22 @@ local function BuildIndex()
 		end
 	end
 
-	-- Every aura name a player can reach that the curated lists do not already carry.
+	-- By name from here on, because that is the order the list is read in and the order the
+	-- late-arriving ids are inserted against.
+	table.sort(entries, ByLower)
+
+	-- The generated groups are named here rather than on first use: an id the client cannot name
+	-- yet has to be on the pending list from the start, or the retry that names it never runs and
+	-- the expansions taken before it are never worked out again.
+	GetNameIndex()
+end
+
+---The other half: a row for every aura name a player can reach that the curated lists do not
+---already carry. Thousands of them, so it is built only for the one thing that needs it - the
+---search box in the options.
+local function BuildSearchIndex()
+	searchIndexBuilt = true
+
 	for name in pairs(GetNameIndex()) do
 		local entry = GeneratedEntry(name)
 
@@ -396,16 +419,25 @@ local function BuildIndex()
 		end
 	end
 
-	table.sort(entries, function(a, b)
-		return a.Lower < b.Lower
-	end)
+	table.sort(entries, ByLower)
 end
 
-local function EnsureIndex()
+---Enough of the index to answer which ids share a spell's name, which is what an aura filter
+---asks. Deliberately not the search list: a custom aura group with a spell in it would otherwise
+---build every generated row at login for a list nobody is looking at.
+local function EnsureVariants()
 	if entries then
 		RetryPending()
 	else
-		BuildIndex()
+		BuildCuratedIndex()
+	end
+end
+
+local function EnsureIndex()
+	EnsureVariants()
+
+	if not searchIndexBuilt then
+		BuildSearchIndex()
 	end
 end
 
@@ -486,7 +518,7 @@ end
 ---@param spellId number
 ---@return SpellSearchEntry?
 function M:GetEntry(spellId)
-	EnsureIndex()
+	EnsureVariants()
 
 	local name = nameById[spellId]
 	local entry = name and entryByName[name]
@@ -509,7 +541,7 @@ end
 ---@param spellId number
 ---@return number[]
 function M:GetVariants(spellId)
-	EnsureIndex()
+	EnsureVariants()
 
 	local cached = variantCache[spellId]
 

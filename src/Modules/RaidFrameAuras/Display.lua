@@ -15,6 +15,7 @@ local slotDistribution = addon.Utils.SlotDistribution
 local wowEx = addon.Utils.WoWEx
 local kickTracker = addon.Core.KickTracker
 local anchoredIcons = addon.Core.AnchoredIcons
+local sweep = addon.Core.Sweep
 local testSpellData = addon.Core.TestSpells
 local changeStamp = addon.Utils.ChangeStamp
 
@@ -34,6 +35,8 @@ local testModeActive = false
 -- whole-set operations rather than reaching into it.
 ---@type table<table, RaidFrameAurasWatchEntry>
 local watchers = {}
+-- Background walker declaring the aura groups of displays as they are built; see DeclareNextGroup.
+local buildSweep = sweep:New(1)
 ---@type TestSpell[]
 local testDefensiveSpells = {}
 ---@type TestSpell[]
@@ -346,6 +349,37 @@ local function ApplyUnitGates(entry, options)
 	return helpful, crowdControl
 end
 
+---One entry's next group, from the walker. The display is created with none of them: a roster
+---appearing builds one display per unit in the same pass, and every group declared costs a batch
+---of buttons there and then.
+---@param entry RaidFrameAurasWatchEntry
+---@return SweepVerdict?
+local function DeclareNextGroup(entry)
+	local display = entry.Display
+
+	if not display then
+		return
+	end
+
+	local options = GetOptions()
+
+	-- Re-published rather than trusted from creation: the walk runs over seconds, in which the
+	-- tracked spell list can move and an entry whose anchor is out of sight is skipped by every
+	-- refresh in between. The push only writes the specs while the groups are pending, so it is
+	-- cheap enough to repeat per group.
+	if options then
+		local filters = GetHelpfulFilters(options)
+
+		display:SetCandidateFilters(DEFENSIVE_GROUP_KEY, filters[DEFENSIVE_GROUP_KEY])
+		display:SetCandidateFilters(IMPORTANT_GROUP_KEY, filters[IMPORTANT_GROUP_KEY])
+		entry.FilterGeneration = helpfulFilterGeneration
+	end
+
+	if display:AddNextGroup() then
+		return sweep.Verdict.Unfinished
+	end
+end
+
 ---@param anchor table
 ---@param unit string?
 local function EnsureWatcher(anchor, unit)
@@ -398,8 +432,14 @@ local function EnsureWatcher(anchor, unit)
 			"Friendly Indicators",
 			-- Seeded rather than left to the restyle below: a unit's display is built the
 			-- moment it turns up, and one built mid-arena can never be restyled.
-			{ Style = BuildStyle(options), MasqueGroup = "Friendly Indicators" }
+			--
+			-- The groups are declared by the walker instead, a group per turn: a roster turning up
+			-- builds one of these per unit at once, and each group costs a batch of buttons the
+			-- engine allocates on the spot. Icons for a category appear when its group lands,
+			-- within a second or two of the frames themselves.
+			{ Style = BuildStyle(options), MasqueGroup = "Friendly Indicators", DeferGroups = true }
 		)
+		buildSweep:Append(entry, DeclareNextGroup)
 		-- BuildGroups above resolved the current filters into the groups, so the next options
 		-- pass has nothing to re-publish for this entry.
 		entry.FilterGeneration = helpfulFilterGeneration
@@ -484,7 +524,10 @@ local function ApplyEntryOptions(entry, anchor, options)
 		-- every entry on every roster refresh.
 		local filters = GetHelpfulFilters(options)
 
-		if entry.FilterGeneration ~= helpfulFilterGeneration then
+		-- Pending groups are pushed at every pass, generation or no: a display built before the
+		-- walker reaches it holds the filters it was built with, and those can be seconds stale by
+		-- the time its groups are declared.
+		if entry.FilterGeneration ~= helpfulFilterGeneration or entry.Display:HasPendingGroups() then
 			entry.Display:SetCandidateFilters(DEFENSIVE_GROUP_KEY, filters[DEFENSIVE_GROUP_KEY])
 			entry.Display:SetCandidateFilters(IMPORTANT_GROUP_KEY, filters[IMPORTANT_GROUP_KEY])
 			entry.FilterGeneration = helpfulFilterGeneration

@@ -84,6 +84,10 @@ local spellIds = {
 
 -- Memoised canonical spellings; the addon only ever produces a handful of distinct strings.
 local canonicalCache = {}
+-- The standard categories in render order: disarm sits with the CC icons it belongs with.
+local CATEGORY_ORDER = { "CrowdControl", "Disarm", "BigDefensive", "ExternalDefensive", "Important" }
+-- Refilled per CategorySet call; BuildCategoryGroups only ever reads it.
+local categorySetScratch = {}
 -- "!", the negation prefix in filter strings.
 local NEGATION_BYTE = string.byte("!")
 
@@ -228,15 +232,17 @@ end
 ---@param colors table<string, number[]>? Category tints keyed by M.GroupKey value. Set at
 ---creation rather than afterwards because a display built inside an arena can never be restyled,
 ---so the tint it is born with is the one it keeps for the match.
+---@param categories table<string, boolean>? Which categories to build, from CategorySet. Omitted
+---builds all five, which costs a batch of buttons per category the display may never show.
 ---@return AuraDisplayGroupSpec[]
-function M:BuildCategoryGroups(maxIcons, dropSpellIds, colors)
-	local groups = {
-		self:GroupSpec("CrowdControl", maxIcons, nil, dropSpellIds),
-		self:GroupSpec("Disarm", maxIcons, nil, dropSpellIds),
-		self:GroupSpec("BigDefensive", maxIcons, nil, dropSpellIds),
-		self:GroupSpec("ExternalDefensive", maxIcons, nil, dropSpellIds),
-		self:GroupSpec("Important", maxIcons, nil, dropSpellIds),
-	}
+function M:BuildCategoryGroups(maxIcons, dropSpellIds, colors, categories)
+	local groups = {}
+
+	for _, categoryKey in ipairs(CATEGORY_ORDER) do
+		if not categories or categories[categoryKey] then
+			groups[#groups + 1] = self:GroupSpec(categoryKey, maxIcons, nil, dropSpellIds)
+		end
+	end
 
 	if colors then
 		for _, spec in ipairs(groups) do
@@ -245,6 +251,46 @@ function M:BuildCategoryGroups(maxIcons, dropSpellIds, colors)
 	end
 
 	return groups
+end
+
+---Which categories a display built from these toggles can ever show, in the shape
+---BuildCategoryGroups takes. The engine allocates a batch of buttons per group and a group cannot
+---be added later, so a category left out here is one the display can never show without being
+---rebuilt - which is why the toggles belong in the owner's look signature.
+---@param showCC boolean?
+---@param showDefensives boolean?
+---@param showImportant boolean?
+---@param showDisarm boolean?
+---@return table<string, boolean> Shared and rewritten per call; BuildCategoryGroups only reads it.
+function M:CategorySet(showCC, showDefensives, showImportant, showDisarm)
+	categorySetScratch.CrowdControl = showCC == true
+	categorySetScratch.Disarm = showDisarm == true
+	categorySetScratch.BigDefensive = showDefensives == true
+	categorySetScratch.ExternalDefensive = showDefensives == true
+	categorySetScratch.Important = showImportant == true
+
+	return categorySetScratch
+end
+
+---A stamp of the same toggles, for a look signature: a display built without a category has to be
+---rebuilt rather than re-budgeted when that category comes on.
+---@return number
+function M:CategoryGeneration(showCC, showDefensives, showImportant, showDisarm)
+	return (showCC and 1 or 0)
+		+ (showDefensives and 2 or 0)
+		+ (showImportant and 4 or 0)
+		+ (showDisarm and 8 or 0)
+end
+
+---Budgets one category, if this display was built with it. A display carries only the categories
+---its owner's toggles could show, so a group being absent is ordinary rather than a mistake.
+---@param display AuraContainerDisplay
+---@param groupKey string
+---@param maxIcons number
+local function SetCategoryBudget(display, groupKey, maxIcons)
+	if display:HasGroup(groupKey) then
+		display:SetMaxIcons(groupKey, maxIcons)
+	end
 end
 
 ---Applies the per-category toggles to a standard-category display. A budget of 0 hides the group.
@@ -256,9 +302,9 @@ end
 ---@param showDisarm boolean? Must be false while the tracked unit is assistable - the disarm
 ---group's only real filter is its spell-ID map, which the identity gate skips there.
 function M:ApplyCategoryBudgets(display, maxIcons, showCC, showDefensives, showImportant, showDisarm)
-	display:SetMaxIcons(M.GroupKey.CrowdControl, showCC and maxIcons or 0)
-	display:SetMaxIcons(M.GroupKey.Disarm, showDisarm and maxIcons or 0)
-	display:SetMaxIcons(M.GroupKey.BigDefensive, showDefensives and maxIcons or 0)
-	display:SetMaxIcons(M.GroupKey.ExternalDefensive, showDefensives and maxIcons or 0)
-	display:SetMaxIcons(M.GroupKey.Important, showImportant and maxIcons or 0)
+	SetCategoryBudget(display, M.GroupKey.CrowdControl, showCC and maxIcons or 0)
+	SetCategoryBudget(display, M.GroupKey.Disarm, showDisarm and maxIcons or 0)
+	SetCategoryBudget(display, M.GroupKey.BigDefensive, showDefensives and maxIcons or 0)
+	SetCategoryBudget(display, M.GroupKey.ExternalDefensive, showDefensives and maxIcons or 0)
+	SetCategoryBudget(display, M.GroupKey.Important, showImportant and maxIcons or 0)
 end

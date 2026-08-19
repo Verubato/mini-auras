@@ -24,6 +24,8 @@ local modules = {
 	addon.Modules.AllyKickTrackerModule,
 	addon.Core.TrinketsTracker,
 }
+
+
 -- Maps a settings table's db.Modules key back to the module that renders it, so a config change
 -- can refresh just the module it touched. PetCC rides the CC module rather than owning a renderer.
 local modulesBySettingsKey = {

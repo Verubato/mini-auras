@@ -34,6 +34,9 @@ function M.build()
 		friendlyUnits = {},
 		inInstance = false,
 		instanceType = "none",
+		-- How many players a side of the place holds, as GetInstanceInfo reports it. Zero is
+		-- "the client has no number", which is the answer outdoors.
+		maxPlayers = 0,
 		-- Whether the group counts as a raid, and what the test preview is pretending it is.
 		isRaid = false,
 		testIsRaid = nil,
@@ -126,6 +129,11 @@ function M.build()
 	}
 	_G.IsInInstance = function()
 		return env.inInstance, env.instanceType
+	end
+	-- Only the fifth return is modelled: how many players a side of this place holds, which is
+	-- what the prewarm targets read. Zero means the client has no number, as outdoors.
+	_G.GetInstanceInfo = function()
+		return "Test Zone", env.instanceType, 0, "", env.maxPlayers or 0, 0, false, 0, 0, 0
 	end
 	_G.IsInRaid = function()
 		return env.isRaid == true

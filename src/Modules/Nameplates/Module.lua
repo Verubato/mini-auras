@@ -341,10 +341,11 @@ local function Apply()
 	ApplyOptions()
 	UpdateContent()
 
-	-- Only behind a loading screen. Building every token's displays is a long frame, which costs
-	-- nothing while nothing is being drawn and would be a visible hitch at any other time - and
-	-- PLAYER_ENTERING_WORLD lands here with the screen still up, which is the case that matters.
-	-- Outside one, plates build their own on first sight as they always did.
+	-- Only behind a loading screen, which is the once-per-world-load trigger rather than the
+	-- window the work runs in: Display:Prewarm queues the set and the background walker builds it
+	-- one display per tick. PLAYER_ENTERING_WORLD lands here with the screen still up, which is
+	-- the case that matters. Outside one, plates build their own on first sight as they always
+	-- did.
 	if addon:IsLoadingScreenUp() then
 		-- After ApplyOptions, so the displays are built with the geometry and look this refresh
 		-- settled rather than the previous one's.

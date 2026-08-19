@@ -12,6 +12,7 @@ local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
 local spellSearch = addon.Core.SpellSearch
 local units = addon.Utils.UnitUtil
+local sweep = addon.Core.Sweep
 
 addon.Modules.Portrait = addon.Modules.Portrait or {}
 
@@ -40,6 +41,9 @@ addon.Modules.Portrait.Display = M
 -- partitioned ones, so an aura that qualifies for several categories only ever lands in the
 -- highest of them.
 local PORTRAIT_CATEGORIES = { "Important", "ExternalDefensive", "BigDefensive", "Disarm", "CrowdControl" }
+-- Background walker declaring the aura groups of the displays as they are built; see the
+-- DeferGroups note where they are created.
+local buildSweep = sweep:New(1)
 
 -- The user's own spell list, drawn under every flagged category so a stun or a defensive always
 -- covers it. Player only, and buffs only: the engine honours a helpful spell-id map only on a
@@ -108,6 +112,17 @@ end
 ---the game applies is often not the one in the spellbook. Fresh table each call: the engine keeps
 ---the reference it is handed.
 ---@return table? candidateFilters nil while the list is empty.
+---One display's next group, from the walker. A portrait's displays are created with none of
+---them: a unit frame turning up builds the whole stack in one pass, and each group costs a batch
+---of buttons the engine allocates on the spot.
+---@param display AuraContainerDisplay
+---@return SweepVerdict?
+local function DeclareNextGroup(display)
+	if display:AddNextGroup() then
+		return sweep.Verdict.Unfinished
+	end
+end
+
 local function BuildCustomFilters()
 	local spells = db.Modules.PortraitModule.CustomSpells
 
@@ -181,6 +196,10 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 		IconMask = mask,
 		-- Portrait icons carry no dispel border and no glow.
 		Minimal = true,
+		-- One group each, and a unit frame turning up builds the whole stack at once. The engine
+		-- allocates a batch of buttons the moment a group is declared, so the walker declares them
+		-- one per turn instead; the icons of a portrait appear within a second or two of it.
+		DeferGroups = true,
 		-- Seeded rather than styled afterwards. A portrait display is built the moment its
 		-- unit frame turns up, and a restyle is refused for as long as auras are secret, so
 		-- one created mid-arena would keep the unstyled look, mouse input and all.
@@ -204,6 +223,7 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 		}, iconSize, 0, "Portraits", options)
 
 		displays[#displays + 1] = customDisplay
+		buildSweep:Append(customDisplay, DeclareNextGroup)
 	end
 
 	for _, category in ipairs(PORTRAIT_CATEGORIES) do
@@ -218,6 +238,7 @@ local function CreatePortraitAuraDisplay(kickFrame, unit, texCoord, mask, iconSi
 		}, iconSize, 0, "Portraits", options)
 
 		displays[#displays + 1] = display
+		buildSweep:Append(display, DeclareNextGroup)
 
 		if category == "Disarm" then
 			disarmDisplay = display

@@ -136,6 +136,10 @@ function M.setup()
 		After = function(delay, fn) fn() end,
 	}
 
+	-- The client's millisecond clock, which the background sweep bounds a tick against. Frozen:
+	-- nothing in a test takes measurable time, so no tick ever runs out of budget.
+	_G.debugprofilestop = function() return 0 end
+
 	-- Frame stub
 	_G.CreateFrame = function(frameType, name, parent)
 		local f = {}

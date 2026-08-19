@@ -33,7 +33,16 @@ raidFrameAurasModule:Init()
 ---The display a module built for a given anchor, identified by its group signature: crowd control
 ---displays carry a single cc group, auras displays carry a cc group plus the two
 ---spell-id-filtered helpful groups.
+-- A raid-frame display is created with none of its groups: they are declared by the background
+-- walker, a group per turn, so a whole roster turning up does not build them all in one frame.
+-- Reading one back means letting that walk run first.
+local function settleGroups()
+	require("AuraContainerMock").tickAll(40)
+end
+
 local function displayForUnit(unit, groupCount)
+	settleGroups()
+
 	for _, container in ipairs(env.containersForUnit(unit)) do
 		if env.groupCount(container) == groupCount then
 			return container
@@ -356,6 +365,7 @@ fw.describe("CrowdControlModule 12.1 - a unit outside the visible world", functi
 
 		env.phased.party7 = nil
 		crowdControl:Refresh()
+		settleGroups()
 
 		local displays = {}
 		for _, container in ipairs(env.containersForUnit("party7")) do

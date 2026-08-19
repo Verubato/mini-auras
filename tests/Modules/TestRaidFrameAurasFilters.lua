@@ -52,6 +52,9 @@ local UNFLAGGED_DEFENSIVE = SampleId(categoryIds.UnflaggedDefensive)
 ---@return table<number, boolean>
 local function GroupIds(groupKey)
 	module:Refresh()
+	-- The groups are declared by the background walker, a group per turn, so a whole roster
+	-- turning up does not build them all in one frame.
+	require("AuraContainerMock").tickAll(40)
 
 	local containers = env.containersForUnit("party1")
 	assert(#containers > 0, "no aura container for party1")
@@ -216,6 +219,7 @@ fw.describe("RaidFrameAurasModule - anchors that are out of sight", function()
 
 		frame:Show()
 		module:Refresh()
+		require("AuraContainerMock").tickAll(40)
 
 		local containers = env.containersForUnit("party2")
 		assert(#containers > 0, "the anchor is back, so its container is too")
@@ -224,6 +228,31 @@ fw.describe("RaidFrameAurasModule - anchors that are out of sight", function()
 		local ids = assert(group.candidateFilters.includeSpellIDs, "no id filter")
 
 		assert(ids[custom], "the entry picked up the change it slept through")
+
+		spells.Custom[custom] = nil
+	end)
+end)
+
+fw.describe("RaidFrameAurasModule - groups declared after the display", function()
+	-- A display is created with none of its groups; the background walker declares them a group
+	-- per turn, so a roster turning up does not build them all in one frame. The filters a
+	-- display was built with can be well out of date by then.
+	fw.it("declares a group with the tracked set current at that moment", function()
+		local custom = 999904
+
+		env.addUnitFrame("party4", "CUF_Late")
+		module:Refresh()
+
+		spells.Custom[custom] = true
+		require("AuraContainerMock").tickAll(40)
+
+		local containers = env.containersForUnit("party4")
+		assert(#containers > 0, "the frame has a container")
+
+		local group = assert(containers[1]._groups[IMPORTANT_GROUP_KEY], "no important group")
+		local ids = assert(group.candidateFilters.includeSpellIDs, "no id filter")
+
+		assert(ids[custom], "the group went in carrying the set it was built with, not the current one")
 
 		spells.Custom[custom] = nil
 	end)
@@ -259,6 +288,7 @@ fw.describe("RaidFrameAurasModule - an anchor returning without a refresh", func
 
 		frame:Show()
 		display:OnCufUpdateVisible(frame)
+		require("AuraContainerMock").tickAll(40)
 
 		frames.IsFriendlyCuf = realIsFriendlyCuf
 

@@ -470,9 +470,11 @@ fw.describe("AuraContainerDisplay - glow styles", function()
 		color = glowColor()
 		assert(color[1] == 1 and color[2] == 1 and color[3] == 1, "and clearing it goes back to white")
 
+		-- Callers hand over a whole category palette and a display carries only the categories its
+		-- owner's options can show, so a key it has no group for is skipped rather than reported.
 		acm.notifications = {}
 		instance:SetGroupGlowColors({ "nosuchgroup" }, { nosuchgroup = { 1, 0, 0 } })
-		assert(#acm.notifications == 1, "an unknown group key is reported rather than ignored")
+		assert(#acm.notifications == 0, "a key the display has no group for is not a misuse")
 	end)
 
 	fw.it("the style generation covers the global glow type", function()
@@ -697,8 +699,8 @@ fw.describe("Pool", function()
 		local pool, created = newCountingPool(5)
 		pool:Prewarm()
 		assert(created() == 0, "nothing created before ticks")
-		acm.tickAll(2) -- 2 per tick
-		assert(created() == 4, "2 items per tick")
+		acm.tickAll(2)
+		assert(created() == 2, "one item per tick, so every module's fill can share the walker")
 		acm.tickAll(10)
 		assert(created() == 5, "stops at the preallocation target, got " .. created())
 	end)
@@ -706,7 +708,7 @@ fw.describe("Pool", function()
 	fw.it("Prewarm is idempotent and can raise (never lower) the target", function()
 		local pool, created = newCountingPool(2)
 		pool:Prewarm()
-		pool:Prewarm() -- must not start a second ticker
+		pool:Prewarm() -- must not queue the target twice
 		acm.tickAll(10)
 		assert(created() == 2, "repeat Prewarm must not over-create, got " .. created())
 
@@ -929,6 +931,79 @@ fw.describe("AuraContainerDisplay - group budgets", function()
 		assert(#acm.notifications == 1, "expected one warning, got " .. #acm.notifications)
 		assert(acm.notifications[1]:find("nope", 1, true), "the warning names the bad key")
 		assert(instance.Frame._groups.a.maxFrameCount == 5, "the real group is untouched")
+	end)
+end)
+
+fw.describe("AuraContainerDisplay - deferred groups", function()
+	fw.before_each(acm.reset)
+
+	-- The engine allocates a batch of buttons the moment a group is declared, whatever its
+	-- budget, so a group is the smallest piece a build can be split into. Prewarming leans on
+	-- that: the container first, then a group per turn of the background walker.
+	fw.it("declares nothing until it is asked, a group at a time", function()
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "a", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 5 },
+			{ Key = "b", FilterString = "HELPFUL|IMPORTANT", MaxIcons = 5 },
+		}, 30, 2, "Test", { DeferGroups = true })
+
+		assert(#instance.Buttons == 0, "a deferred build declared a group anyway")
+		assert(instance:HasGroup("a"), "it still knows which groups it is going to carry")
+		assert(not instance:IsShown(), "and stays hidden, so nothing parses before its groups exist")
+
+		assert(instance:AddNextGroup(), "the first group went in")
+		assert(#instance.Buttons == BATCH, "a batch of buttons per group, got " .. #instance.Buttons)
+
+		assert(instance:AddNextGroup(), "and the second")
+		assert(#instance.Buttons == BATCH * 2, "both batches, got " .. #instance.Buttons)
+
+		assert(not instance:AddNextGroup(), "nothing left to declare")
+	end)
+
+	fw.it("takes budgets pushed at it before its groups exist", function()
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "a", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 5 },
+		}, 30, 2, "Test", { DeferGroups = true })
+
+		instance:SetMaxIcons("a", 2)
+		assert(instance.Frame._groups.a == nil, "nothing to set it on yet")
+
+		instance:FinishGroups()
+
+		assert(instance.Frame._groups.a.maxFrameCount == 2, "the budget went in with the declaration")
+	end)
+
+	fw.it("declares with the budget it was born with, then applies the current one", function()
+		-- The client hands out a group's buttons from the count it is declared with, and raising
+		-- that afterwards conjures none. A group whose budget was closed while it waited would
+		-- otherwise have nothing to open again with.
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "a", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 1 },
+		}, 30, 2, "Test", { DeferGroups = true })
+
+		instance:SetMaxIcons("a", 0)
+		instance:FinishGroups()
+
+		local group = instance.Frame._groups.a
+
+		assert(group.maxFrameCountAtCreation == 1, "declared with the budget it was born with")
+		assert(group.maxFrameCount == 0, "and closed again straight after")
+		assert(#group.buttons > 0, "so it has buttons to open with later")
+	end)
+
+	fw.it("FinishGroups is what a caller runs before anything is shown on it", function()
+		local instance = display:New(_G.UIParent, "target", {
+			{ Key = "a", FilterString = "HARMFUL|CROWD_CONTROL", MaxIcons = 5 },
+			{ Key = "b", FilterString = "HELPFUL|IMPORTANT", MaxIcons = 5 },
+		}, 30, 2, "Test", { DeferGroups = true })
+
+		instance:FinishGroups()
+
+		assert(instance.Frame:HasAuraGroup("a") and instance.Frame:HasAuraGroup("b"),
+			"both groups declared")
+
+		-- Repeatable: whoever takes a display cannot know how far the walk got.
+		instance:FinishGroups()
+		assert(#instance.Buttons == BATCH * 2, "a second pass declared them again")
 	end)
 end)
 

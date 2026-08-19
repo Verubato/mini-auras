@@ -179,6 +179,14 @@ local function RequireGroup(instance, groupKey, label)
 		return true
 	end
 
+	-- A group a deferred build has yet to declare is one this display carries; what is pushed at
+	-- it is held on the spec and goes in with the declaration.
+	local pending = instance.GroupsByKey[groupKey]
+
+	if pending and pending.Pending then
+		return true
+	end
+
 	Warn("%s: no aura group '%s' on this display.", label, tostring(groupKey))
 
 	return false
@@ -195,8 +203,9 @@ end
 local function StoreGroupColor(instance, groupKey, color)
 	local group = instance.GroupsByKey[groupKey]
 
+	-- Callers hand over the whole category palette, and a display carries only the categories its
+	-- owner's options can show, so a key it has no group for is ordinary rather than a mistake.
 	if not group then
-		Warn("SetGroupGlowColors: no aura group '%s' on this display.", tostring(groupKey))
 		return false
 	end
 
@@ -1596,7 +1605,51 @@ end
 ---@param instance AuraContainerDisplay
 local function ApplyGroupLayout(instance)
 	for _, group in ipairs(instance.Groups) do
-		instance.Frame:SetAuraGroupLayout(group.Key, BuildGroupLayout(instance))
+		-- A group still to be declared takes the layout with it; AddGroup builds a fresh one.
+		if not group.Pending then
+			instance.Frame:SetAuraGroupLayout(group.Key, BuildGroupLayout(instance))
+		end
+	end
+end
+
+---Declares one group on the container, which is where the engine allocates its batch of buttons
+---and runs the initializer over each. The smallest piece a deferred build can be paced in.
+---@param instance AuraContainerDisplay
+---@param group AuraDisplayGroupSpec
+local function AddGroup(instance, group)
+	group.Pending = nil
+
+	-- Declared with the budget it was BORN with, not the one it carries now: the client allocates
+	-- a group's buttons from the count it is declared with and raising that later conjures none,
+	-- so a group whose budget was closed while it waited would have no buttons to open again with.
+	-- The current budget goes on straight after, exactly as it would have on an undeferred one.
+	local born = group.BornMaxIcons or group.MaxIcons or 3
+
+	instance.Frame:AddAuraGroup(group.Key, auraFilters:Canonical(group.FilterString), {
+		maxFrameCount = born,
+		candidateFilters = group.CandidateFilters,
+		-- Aura instance IDs increase monotonically as auras are applied, so sorting on them
+		-- alone is "oldest first" - the same order the legacy watcher produced (it kept the
+		-- game's order and broke ties by instance id). The alternatives all sort by data the
+		-- addon can't see, which makes them impossible to reason about or match in test mode.
+		sortMethod = AuraContainerSortMethod.AuraInstanceIDOnly,
+		sortDirection = group.SortDirection or AuraContainerSortDirection.Normal,
+		-- The group is captured rather than its colour: initializeFrame is the only place a
+		-- button can be styled, so a button that holds the group can still be recoloured later.
+		initializeFrame = function(button)
+			instance.Initialize(instance, button, group)
+		end,
+		layout = BuildGroupLayout(instance),
+	})
+
+	if group.MaxIcons and group.MaxIcons ~= born then
+		instance.Frame:SetAuraGroupMaxFrameCount(group.Key, group.MaxIcons)
+	end
+
+	-- A group declared onto a container already on screen has missed the parse that armed the
+	-- ones before it, so nothing it matches would show until something else moved.
+	if instance.Frame:IsShown() then
+		MarkBouncePending(instance)
 	end
 end
 
@@ -1631,8 +1684,9 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	-- button -> { Cooldown, BorderTextures, Glow, GlowStyle, Bar, ... } for restyling. The rest of
 	-- the fields are what each styling step last applied, so an unchanged restyle is a no-op.
 	instance.ButtonWidgets = {}
-	-- Visibility the owning module last asked for; frames are created shown.
-	instance.DesiredShown = true
+	-- Visibility the owning module last asked for; frames are created shown, except a deferred
+	-- build, which has no groups yet and must not parse before it does.
+	instance.DesiredShown = options.DeferGroups ~= true
 	instance.RestylePending = false
 	defaultIconTexCoord[1], defaultIconTexCoord[2], defaultIconTexCoord[3], defaultIconTexCoord[4] =
 		iconUtil:TexCoord()
@@ -1685,31 +1739,80 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 		or instance.Bar and InitializeBarButton
 		or InitializeButton
 
+	instance.Initialize = initialize
+
 	for _, group in ipairs(groups) do
 		instance.GroupsByKey[group.Key] = group
-		frame:AddAuraGroup(group.Key, auraFilters:Canonical(group.FilterString), {
-			maxFrameCount = group.MaxIcons or 3,
-			candidateFilters = group.CandidateFilters,
-			-- Aura instance IDs increase monotonically as auras are applied, so sorting on them
-			-- alone is "oldest first" - the same order the legacy watcher produced (it kept the
-			-- game's order and broke ties by instance id). The alternatives all sort by data the
-			-- addon can't see, which makes them impossible to reason about or match in test mode.
-			sortMethod = AuraContainerSortMethod.AuraInstanceIDOnly,
-			sortDirection = group.SortDirection or AuraContainerSortDirection.Normal,
-			-- The group is captured rather than its colour: initializeFrame is the only place a
-			-- button can be styled, so a button that holds the group can still be recoloured later.
-			initializeFrame = function(button)
-				initialize(instance, button, group)
-			end,
-			layout = BuildGroupLayout(instance),
-		})
+
+		-- A group is what the engine charges for: it allocates a fixed batch of buttons the
+		-- moment one is declared. Deferring hands that cost to the caller's own pacing, one
+		-- group at a time, and only suits a display nothing is waiting on.
+		if options.DeferGroups then
+			group.Pending = true
+			group.BornMaxIcons = group.MaxIcons or 3
+		else
+			AddGroup(instance, group)
+		end
 	end
+
+	instance.NextPendingGroup = options.DeferGroups and 1 or nil
 
 	-- The groups exist now, so the container can be let out. No bounce to go with it: this IS
 	-- the arming show, and there has been no parse before it to correct.
 	ApplyShownState(instance)
 
 	return instance
+end
+
+---Declares the next group a deferred build still owes.
+---@return boolean declared Whether there was one to declare, so a caller pacing the build knows
+---it has done a piece of work and can stop when nothing is left.
+function M:AddNextGroup()
+	local index = self.NextPendingGroup
+
+	if not index then
+		return false
+	end
+
+	local group = self.Groups[index]
+
+	if not group then
+		self.NextPendingGroup = nil
+
+		return false
+	end
+
+	AddGroup(self, group)
+	self.NextPendingGroup = index + 1
+
+	return true
+end
+
+---Declares everything a deferred build still owes, in one go. What a caller runs the moment
+---something is actually going to be shown on this display: the pacing is a warm-up, never the
+---guarantee.
+function M:FinishGroups()
+	while self:AddNextGroup() do
+	end
+
+	self.NextPendingGroup = nil
+end
+
+---Whether any of this display's groups are still waiting to be declared. A caller that only
+---re-publishes settings when its own generation moved has to push them at a pending display
+---anyway: what it publishes is held on the specs and goes in with the declaration, which can be
+---seconds after the values it was built with went stale.
+---@return boolean
+function M:HasPendingGroups()
+	return self.NextPendingGroup ~= nil
+end
+
+---Whether this display carries the given group at all. Displays are built with only the groups
+---their owner's options can use, so a caller pushing per-category settings has to ask.
+---@param groupKey string
+---@return boolean
+function M:HasGroup(groupKey)
+	return self.GroupsByKey[groupKey] ~= nil
 end
 
 ---@param unit string
@@ -1896,6 +1999,10 @@ function M:SetCandidateFilters(groupKey, filters)
 		self.CarriesIdentityFilters = nil
 	end
 
+	if group and group.Pending then
+		return
+	end
+
 	self.Frame:SetAuraGroupCandidateFilters(groupKey, filters)
 	MarkBouncePending(self)
 end
@@ -1925,6 +2032,13 @@ function M:SetMaxIcons(groupKey, maxIcons, urgent)
 	end
 
 	group.MaxIcons = maxIcons
+
+	-- A group still waiting to be declared takes the budget when it is; the engine has nothing
+	-- to set it on yet.
+	if group.Pending then
+		return
+	end
+
 	self.Frame:SetAuraGroupMaxFrameCount(groupKey, maxIcons)
 	MarkBouncePending(self, urgent)
 end
@@ -1935,6 +2049,8 @@ end
 ---plain glow has no entry in the map at all, and a table cannot carry a nil.
 ---Every group is stored before the single restyle: the categories move together, and a restyle
 ---walks every button on the display.
+---A key this display has no group for is skipped: callers pass the whole category palette, and a
+---display carries only the categories its owner's options can show.
 ---@param groupKeys string[] The groups to recolour.
 ---@param colorsByKey table<string, number[]> Group key -> {r, g, b}. A key with no entry goes back
 ---to the display-wide colour. Callers may hand in a reused scratch.
@@ -1970,6 +2086,17 @@ function M:SetFilterString(groupKey, filterString)
 		return
 	end
 
+	local group = self.GroupsByKey[groupKey]
+
+	if group then
+		group.FilterString = filterString
+
+		-- Declared with this string when its turn comes.
+		if group.Pending then
+			return
+		end
+	end
+
 	self.Frame:SetAuraGroupFilterString(groupKey, auraFilters:Canonical(filterString))
 	MarkBouncePending(self)
 end
@@ -1979,6 +2106,14 @@ end
 ---@param direction number An AuraContainerSortDirection value.
 function M:SetSortMethod(groupKey, method, direction)
 	if not RequireGroup(self, groupKey, "SetSortMethod") then
+		return
+	end
+
+	local group = self.GroupsByKey[groupKey]
+
+	if group and group.Pending then
+		group.SortDirection = direction
+
 		return
 	end
 
@@ -2234,6 +2369,10 @@ end
 ---nothing to say about a buff. Changed after creation with SetGroupGlowColors.
 ---@field OwnGlowColor number[]? The display's own copy of the tint, written by SetGroupGlowColors
 ---so the table the caller created the group with is never mutated. Never set by a caller.
+---@field Pending boolean? Set while a deferred build has yet to declare this group. Settings
+---pushed at it are stored on the spec and go in with the declaration. Never set by a caller.
+---@field BornMaxIcons number? The budget a deferred group is declared with, whatever its budget
+---has moved to since; the client hands out buttons from the declared count. Never set by a caller.
 
 ---@class AuraDisplayOptions
 ---@field IconTexCoord number[]? {left, right, top, bottom} crop applied to every icon.
@@ -2257,9 +2396,15 @@ end
 ---may be created while auras are secret - a later SetStyle cannot reach the buttons there.
 ---@field MasqueGroup string? Masque sub-group name (e.g. "CC", "Alerts"), matching the legacy
 ---container's so one skin choice covers both paths. Omit for displays that should not be skinned.
+---@field DeferGroups boolean? Build the container with none of its groups, leaving the caller to
+---pace them through AddNextGroup. The engine allocates a batch of buttons per group, so this is
+---the only way to split a build; only for a display nothing is waiting on, and the display stays
+---hidden until FinishGroups (its owner runs that the moment something will be shown on it).
 
 ---@class AuraContainerDisplay
 ---@field Frame table The AuraContainer frame (anchor/show/hide through this).
+---@field NextPendingGroup number? Index into Groups of the next group a deferred build owes.
+---@field Initialize fun(instance: AuraContainerDisplay, button: table, group: AuraDisplayGroupSpec)
 ---@field CarriesIdentityFilters boolean? Whether any of its groups filter on spell ids, worked
 ---out on first ask and cleared by SetCandidateFilters. See HasIdentityFilters.
 ---@field Size number

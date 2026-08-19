@@ -20,6 +20,9 @@ local worldStateStale = true
 local inHousing = false
 local inInstance = false
 local instanceType = "none"
+-- What the place holds per side, as the client reports it: 40 in Alterac Valley, 10 in Warsong
+-- Gulch, nothing outdoors. Read off the same snapshot as the rest of the world state.
+local maxPlayers
 local inRaid = false
 
 ---@class ModuleName
@@ -60,6 +63,9 @@ local function RefreshWorldState()
 	inHousing = IsInHousing() == true
 	inInstance, instanceType = IsInInstance()
 	inRaid = IsInRaid()
+	-- Feature-detected: not every client the addon loads on answers this, and the callers all
+	-- have a fallback for "no idea".
+	maxPlayers = GetInstanceInfo and select(5, GetInstanceInfo()) or nil
 end
 
 ---@param position table|fun(): table?
@@ -277,6 +283,19 @@ function M:IsInHousing()
 	RefreshWorldState()
 
 	return inHousing
+end
+
+---How many players a side of this place holds, which is how many enemies anything preparing for
+---a fight has to cover. Nil outdoors and anywhere the client does not say.
+---@return number?
+function M:MaxPlayersPerSide()
+	RefreshWorldState()
+
+	if not maxPlayers or maxPlayers <= 0 then
+		return nil
+	end
+
+	return maxPlayers
 end
 
 ---The kind of place the player is in, as the client names it: "none" outdoors, then "party",

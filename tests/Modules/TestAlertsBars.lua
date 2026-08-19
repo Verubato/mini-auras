@@ -56,20 +56,23 @@ end
 
 -- The defensive container carries three groups (big, external, important); the dedicated
 -- important container carries one.
+-- A pair's two containers are built one after the other, Def then Imp, so the live pair for a
+-- token is the last two carrying it. Counting groups no longer tells them apart: each container is
+-- built with only the groups the current mode renders on it.
+local function pairOf(token)
+	local containers = env.containersForUnit(token)
+
+	return containers[#containers - 1], containers[#containers]
+end
+
 local function defOf(token)
-	for _, container in ipairs(env.containersForUnit(token)) do
-		if env.groupCount(container) == 3 then
-			return container
-		end
-	end
+	return (pairOf(token))
 end
 
 local function impOf(token)
-	for _, container in ipairs(env.containersForUnit(token)) do
-		if env.groupCount(container) == 1 then
-			return container
-		end
-	end
+	local _, imp = pairOf(token)
+
+	return imp
 end
 
 local function addEnemyPlate(token)
@@ -217,20 +220,30 @@ fw.describe("AlertsModule 12.1 - how many pairs it prepares", function()
 	local moduleUtil = env.addon.Utils.ModuleUtil
 
 	---@param instanceType string
-	local function inPlace(instanceType)
+	local function inPlace(instanceType, perSide)
 		env.instanceType = instanceType
 		env.inInstance = instanceType ~= "none"
+		env.maxPlayers = perSide or 0
 		moduleUtil:InvalidateWorldState()
 	end
 
-	fw.it("prepares only what an arena can hold, and the full set everywhere else", function()
+	fw.it("prepares what the place itself holds", function()
 		-- A pair is frames, and the client never takes a frame back, so preparing forty of them
 		-- for a place that holds three enemies is a set nothing can ever ask for.
 		inPlace("arena")
 		assert(display:PrewarmTokenTarget() == display.ArenaPrewarmTokenCount, "three in an arena")
 
-		inPlace("pvp")
-		assert(display:PrewarmTokenTarget() == display.PrewarmTokenCount, "the full set in a battleground")
+		-- A battleground says how many a side holds, and that is how many enemies can have a
+		-- plate up at once.
+		inPlace("pvp", 10)
+		assert(display:PrewarmTokenTarget() == 10, "one per enemy in a ten-a-side battleground")
+
+		inPlace("pvp", 40)
+		assert(display:PrewarmTokenTarget() == 40, "and forty in a forty-a-side one")
+
+		-- Capped: the client hands out no more plate tokens than this however big the raid is.
+		inPlace("raid", 500)
+		assert(display:PrewarmTokenTarget() == display.MaxPrewarmTokenCount, "capped at the plate ceiling")
 
 		inPlace("none")
 		assert(display:PrewarmTokenTarget() == display.PrewarmTokenCount, "and outdoors, where world pvp happens")
@@ -360,8 +373,8 @@ fw.describe("AlertsModule 12.1 - split vs combined bars", function()
 		local _, defRelativeTo = secondDef:GetPoint(1)
 		assert(defRelativeTo == firstDef, "the defensive row is unaffected")
 		assert(importantBar:IsShown(), "the dedicated bar is visible in split mode")
-		assert(defOf("nameplate1")._groups.important.maxFrameCount == 0,
-			"the defensive container drops them so they aren't drawn twice")
+		assert(defOf("nameplate1")._groups.important == nil,
+			"the defensive container is not built with them, so they can't be drawn twice")
 	end)
 
 	fw.it("switching back to combined moves the importants into the defensive container", function()
@@ -373,18 +386,20 @@ fw.describe("AlertsModule 12.1 - split vs combined bars", function()
 		assert(not importantBar:IsShown(), "and the dedicated bar goes away again")
 	end)
 
-	fw.it("disabling importants zeroes the budget on whichever container holds them", function()
+	fw.it("disabling importants drops the group from both containers", function()
 		alerts.Important.Enabled = false
 		module:Refresh()
 
 		local def = defOf("nameplate1")
-		assert(def._groups.important.maxFrameCount == 0, "budget zeroed")
-		assert(impOf("nameplate1")._groups.important.maxFrameCount == 0, "on both containers")
+		assert(def._groups.important == nil, "the defensive container drops the group")
+		assert(impOf("nameplate1")._groups.important == nil, "and so does the dedicated one")
 		assert(def._enabled and def:IsShown(), "the defensive container stays live for its own auras")
 
+		-- Re-enabling rebuilds the pairs, so the group comes back on a new container rather than
+		-- on the one just looked at.
 		alerts.Important.Enabled = true
 		module:Refresh()
-		assert(def._groups.important.maxFrameCount > 0, "re-enabled")
+		assert(defOf("nameplate1")._groups.important.maxFrameCount > 0, "re-enabled")
 
 		removePlate("nameplate1")
 		removePlate("nameplate2")

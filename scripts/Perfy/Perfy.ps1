@@ -11,6 +11,10 @@ param(
     # lua-language-server rejects from 3.14 on, so the version is pinned rather than latest.
     [string] $LuaLsVersion = "3.13.6",
 
+    # Trace the login loading screen instead of waiting for /perfy start. Perfy ships this
+    # switched off behind a comment; the tracer stops itself once the first frame is drawn.
+    [switch] $LoginTrace,
+
     # Passed through to Perfy's analyzer, e.g. --split-frames or --frames 3-7.
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]] $AnalyzerArgs = @()
@@ -42,6 +46,26 @@ function Test-Instrumented([string] $dir) {
 
 # Perfy's toc reader counts a BOM as part of the first line, so "## Interface" stops looking
 # like a comment and it tries to open it as a file. ReadAllText drops the BOM.
+# Whether two installs hold the same files with the same contents.
+function Test-SameTree([string] $left, [string] $right) {
+    $leftFiles = @(Get-ChildItem -Path $left -Recurse -File | Sort-Object FullName)
+    $rightFiles = @(Get-ChildItem -Path $right -Recurse -File | Sort-Object FullName)
+
+    if ($leftFiles.Count -ne $rightFiles.Count) { return $false }
+
+    for ($index = 0; $index -lt $leftFiles.Count; $index++) {
+        $leftRelative = $leftFiles[$index].FullName.Substring($left.Length)
+        $rightRelative = $rightFiles[$index].FullName.Substring($right.Length)
+
+        if ($leftRelative -ne $rightRelative) { return $false }
+        if ((Get-FileHash $leftFiles[$index].FullName).Hash -ne (Get-FileHash $rightFiles[$index].FullName).Hash) {
+            return $false
+        }
+    }
+
+    return $true
+}
+
 function Get-TocPaths([string] $dir) {
     $paths = @()
     foreach ($toc in @(Get-ChildItem -Path $dir -Filter "*.toc" -File)) {
@@ -109,10 +133,21 @@ function Invoke-Instrument {
         if (Test-Instrumented $targetDir) {
             Remove-Item -Recurse -Force $targetDir
         }
-        elseif (Test-Path $backupDir) {
-            throw "$targetDir is a clean install but $backupDir also exists; sort those out by hand first"
-        }
         else {
+            # A redeploy over the instrumented copy lands here: the install is clean again, and
+            # the backup is the same clean tree it was taken from. Nothing to sort out then, so
+            # the leftover goes and the fresh install is backed up in its place. Anything else is
+            # a real conflict and stays for a human.
+            if (Test-Path $backupDir) {
+                if (Test-SameTree $targetDir $backupDir) {
+                    Write-Host "$backupDir is the same tree as the install; dropping the leftover"
+                    Remove-Item -Recurse -Force $backupDir
+                }
+                else {
+                    throw "$targetDir is a clean install but $backupDir also exists and differs; sort those out by hand first"
+                }
+            }
+
             Write-Host "Backing up the installed copy to $backupDir"
             Move-Item $targetDir $backupDir
         }
@@ -138,10 +173,27 @@ function Invoke-Instrument {
     $text = [regex]::Replace([System.IO.File]::ReadAllText($perfyToc), "(?m)^## Interface:.*$", $interfaceLine)
     [System.IO.File]::WriteAllText($perfyToc, $text, $noBom)
 
+    if ($LoginTrace) {
+        # The one loading screen no slash command can reach: tracing has to be running before the
+        # addon files are, so Perfy starts itself from its own file and stops on the second
+        # OnUpdate, which is as close to "the first frame is drawn" as it can get.
+        $tracer = Join-Path $perfyAddonDir "TraceLoadingScreen.lua"
+        $text = [System.IO.File]::ReadAllText($tracer) -replace "(?m)^--Perfy_Start\(\)", "Perfy_Start()"
+        [System.IO.File]::WriteAllText($tracer, $text, $noBom)
+    }
+
     Write-Host ""
     Write-Host "Done. Restart the client (toc changes are read at startup), then:" -ForegroundColor Green
-    Write-Host "  /perfy start 30    trace for 30 seconds"
-    Write-Host "  /reload            write the trace to saved variables"
+
+    if ($LoginTrace) {
+        Write-Host "  the login loading screen traces itself, and stops on the first drawn frame"
+        Write-Host "  /reload            trace that reload too, then write it out"
+    }
+    else {
+        Write-Host "  /perfy start 30    trace for 30 seconds"
+        Write-Host "  /reload            write the trace to saved variables"
+    }
+
     Write-Host "  Perfy.ps1 Analyze  build the flame graphs"
 }
 

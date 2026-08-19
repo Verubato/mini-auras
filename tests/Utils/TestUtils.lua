@@ -106,15 +106,29 @@ fw.describe("ModuleUtil:IsModuleEnabled", function()
 
 	-- A world flip in the client always arrives with an event ModuleUtil's own frame turns into
 	-- an invalidation, so the test helper does the same.
-	local function setWorld(inInstance, instanceType, inRaid)
+	local function setWorld(inInstance, instanceType, inRaid, perSide)
 		_G.IsInInstance = function()
 			return inInstance, instanceType
 		end
 		_G.IsInRaid = function()
 			return inRaid == true
 		end
+		_G.GetInstanceInfo = function()
+			return "Test Zone", instanceType, 0, "", perSide or 0, 0, false, 0, 0, 0
+		end
 		moduleUtil:InvalidateWorldState()
 	end
+
+	fw.it("reports how many players a side of the place holds", function()
+		-- What the prewarms size themselves against: a battleground says how many a side holds,
+		-- and outdoors the client has no number at all.
+		setup(nil)
+		setWorld(true, "pvp", false, 40)
+		assert(moduleUtil:MaxPlayersPerSide() == 40, "the battleground's own size")
+
+		setWorld(false, "none", false, 0)
+		assert(moduleUtil:MaxPlayersPerSide() == nil, "nothing outdoors, so callers keep their default")
+	end)
 
 	fw.it("defaults to enabled when settings are missing", function()
 		setup(nil)

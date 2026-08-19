@@ -8,6 +8,7 @@ local units = addon.Utils.UnitUtil
 local iconSlotContainer = addon.Core.IconSlotContainer
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local auraFilters = addon.Core.AuraFilters
+local sweep = addon.Core.Sweep
 local kickTracker = addon.Core.KickTracker
 local anchoredIcons = addon.Core.AnchoredIcons
 local testSpellData = addon.Core.TestSpells
@@ -30,6 +31,9 @@ local db
 -- whole-set operations rather than reaching into it.
 ---@type table<table, CrowdControlWatchEntry>
 local watchers = {}
+-- Background walker declaring the aura group of the displays as they are built; see the
+-- DeferGroups note where they are created.
+local buildSweep = sweep:New(1)
 ---@type TestSpell[]
 local testSpells = {}
 -- Reused buffer for GetPetUnitFrames so discovery doesn't allocate each refresh.
@@ -44,6 +48,16 @@ local DEFAULT_CC_COLOR = { R = 0.64, G = 0.21, B = 0.93 }
 -- The configured flat tint, refilled rather than reallocated. Both shapes are needed: the aura
 -- display's style reads [1..3], the IconSlotContainer test icons read r/g/b.
 local ccColor = { 0.64, 0.21, 0.93, r = 0.64, g = 0.21, b = 0.93, a = 1 }
+
+---One display's group, from the walker. A unit's display is created without it: a roster turning
+---up builds one per unit in the same pass, and the group is what costs a batch of buttons.
+---@param display AuraContainerDisplay
+---@return SweepVerdict?
+local function DeclareNextGroup(display)
+	if display:AddNextGroup() then
+		return sweep.Verdict.Unfinished
+	end
+end
 
 local function GetOptions()
 	return instanceOptions:IsRaid() and db.Modules.CCModule.Raid or db.Modules.CCModule.Default
@@ -218,7 +232,12 @@ local function EnsureWatcher(anchor, unit)
 		}, size, spacing, "CC",
 			-- Seeded rather than left to the restyle below: a unit's display is built the
 			-- moment it turns up, and one built mid-arena can never be restyled.
-			{ Style = BuildStyle(options), MasqueGroup = "CC" })
+			--
+			-- The group is declared by the walker instead: a roster turning up builds one of
+			-- these per unit at once, and the engine allocates a batch of buttons the moment a
+			-- group is declared. The icons of a unit follow within a second or so.
+			{ Style = BuildStyle(options), MasqueGroup = "CC", DeferGroups = true })
+		buildSweep:Append(entry.Display, DeclareNextGroup)
 
 		if not isPet then
 			kickTracker:Watch(unit)

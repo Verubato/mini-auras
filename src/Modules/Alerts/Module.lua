@@ -499,9 +499,9 @@ local function Apply(options)
 	ApplyOptions(options)
 	UpdateContent()
 
-	-- Only behind a loading screen. Building every token's pair is a long frame, which costs
-	-- nothing while nothing is being drawn and would be a visible hitch at any other time.
-	-- Outside one, tokens build their own on first sight as they always did.
+	-- Only behind a loading screen, which is the once-per-world-load trigger rather than the
+	-- window the work runs in: Display:Prewarm builds one pair and paces the rest through the
+	-- background walker. Outside one, tokens build their own on first sight as they always did.
 	--
 	-- And only where the module tracks anything at all: in a dungeon or raid its events are
 	-- unregistered, so a set built on the way in is forty pairs of frames that content can never

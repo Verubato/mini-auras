@@ -30,7 +30,7 @@ env.loadModule("src/Modules/Alerts/Module.lua")
 -- Prepared token count, cut down for the suite: every container the prewarm builds is a mock
 -- frame tree, and forty per refresh was most of this file's runtime. The shipped default is
 -- asserted below so lowering it here cannot hide a change to it.
-assert(env.addon.Modules.Alerts.Display.PrewarmTokenCount == 40, "alerts prepares 40 tokens")
+assert(env.addon.Modules.Alerts.Display.PrewarmTokenCount == 15, "alerts prepares 15 tokens")
 assert(env.addon.Modules.Alerts.Display.ArenaPrewarmTokenCount == 3, "and three in an arena")
 env.addon.Modules.Alerts.Display.PrewarmTokenCount = PREWARM_TOKENS
 env.addon.Modules.Alerts.Display.ArenaPrewarmTokenCount = PREWARM_TOKENS
@@ -43,7 +43,7 @@ assert(alertsEvents, "alerts event frame")
 
 env.loadModule("src/Modules/Nameplates/Display.lua")
 env.loadModule("src/Modules/Nameplates/Module.lua")
-assert(env.addon.Modules.Nameplates.Display.PrewarmCount == 40, "nameplates prepares 40 displays")
+assert(env.addon.Modules.Nameplates.Display.PrewarmCount == 15, "nameplates prepares 15 displays")
 assert(env.addon.Modules.Nameplates.Display.ArenaPrewarmCount == 10, "and ten in an arena")
 env.addon.Modules.Nameplates.Display.PrewarmCount = PREWARM_TOKENS
 env.addon.Modules.Nameplates.Display.ArenaPrewarmCount = PREWARM_TOKENS
@@ -65,20 +65,19 @@ local function countAuraSoundSpells()
 end
 
 fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
+	-- A pair's two containers are built one after the other, Def then Imp, so the live pair for a
+	-- token is the last two carrying it. Counting groups no longer tells them apart: a container
+	-- is built with only the groups the current mode renders on it.
 	local function defOf(token)
-		for _, container in ipairs(env.containersForUnit(token)) do
-			if env.groupCount(container) == 3 then
-				return container
-			end
-		end
+		local containers = env.containersForUnit(token)
+
+		return containers[#containers - 1]
 	end
 
 	local function impOf(token)
-		for _, container in ipairs(env.containersForUnit(token)) do
-			if env.groupCount(container) == 1 then
-				return container
-			end
-		end
+		local containers = env.containersForUnit(token)
+
+		return containers[#containers]
 	end
 
 	---The Def containers of the three tokens the chain tests leave active, with a membership set
@@ -99,12 +98,13 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 
 		local containers = env.containersForUnit("nameplate2")
 		assert(#containers == 2, "expected Def+Imp pair, got " .. #containers)
-		local groupCounts = { env.groupCount(containers[1]), env.groupCount(containers[2]) }
-		table.sort(groupCounts)
-		assert(groupCounts[1] == 1 and groupCounts[2] == 3,
-			"one 1-group Imp and one 3-group Def (big, external, important)")
-		-- Combined mode renders importants inside Def, so only Def is live.
-		local def = groupCounts[2] == env.groupCount(containers[1]) and containers[1] or containers[2]
+
+		-- Built in that order, and each carries only the groups the current mode renders on it:
+		-- combined mode puts all three categories in Def and leaves Imp with none, because the
+		-- engine allocates a batch of buttons for every group declared, budget or no budget.
+		local def, imp = containers[1], containers[2]
+		assert(env.groupCount(def) == 3, "big, external and important in the defensive container")
+		assert(env.groupCount(imp) == 0, "and nothing in the dedicated important one")
 		assert(def._enabled and def:IsShown(), "the defensive container is enabled and shown")
 	end)
 
@@ -292,12 +292,52 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 		assert(display._parent == plate, "reparented to the plate")
 		assert(display._enabled, "enabled")
 
+		-- Only the categories this bar can show are built at all: the engine allocates a batch of
+		-- buttons per group whatever the budget, so a group for a switched-off category is that
+		-- batch spent on something the bar can never draw.
 		local barOptions = db.Modules.NameplatesModule.Enemy.Bar1
 		local expected = barOptions.Icons.MaxIcons
-		assert(display._groups.cc.maxFrameCount == (barOptions.ShowCC and expected or 0), "cc budget")
-		assert(display._groups.important.maxFrameCount == (barOptions.ShowImportant and expected or 0), "important budget")
-		assert(display._groups.disarm.maxFrameCount == (barOptions.ShowCC and expected or 0),
-			"disarm rides the CC toggle on an enemy plate")
+		assert((display._groups.cc ~= nil) == (barOptions.ShowCC == true), "cc group follows its toggle")
+		assert((display._groups.important ~= nil) == (barOptions.ShowImportant == true),
+			"important group follows its toggle")
+		assert((display._groups.bigdef ~= nil) == (barOptions.ShowDefensives == true),
+			"the defensive groups follow their toggle")
+
+		if barOptions.ShowCC then
+			assert(display._groups.cc.maxFrameCount == expected, "cc budget")
+			assert(display._groups.disarm.maxFrameCount == expected,
+				"disarm rides the CC toggle on an enemy plate")
+		end
+	end)
+
+	fw.it("switching a category on swaps in a display built with it", function()
+		-- A group can never be added to a container, so a category coming on cannot be settled by
+		-- re-budgeting what a plate already holds: it needs a display built with that group.
+		local barOptions = db.Modules.NameplatesModule.Enemy.Bar1
+		local before = barOptions.ShowImportant
+
+		env.enemies.np_cat = true
+		env.addPlate("np_cat")
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_cat")
+
+		local first = env.containersForUnit("np_cat")[1]
+		assert(first and first._groups.important == nil, "built without the switched-off category")
+
+		barOptions.ShowImportant = true
+		env.addon.Modules.NameplatesModule:Refresh()
+
+		local containers = env.containersForUnit("np_cat")
+		local live = containers[#containers]
+
+		assert(live ~= first, "the plate kept the display that cannot show the category")
+		assert(live._groups.important, "the display it moved to carries the category")
+		assert(not first._enabled, "and the one it left is parked rather than still drawing")
+
+		barOptions.ShowImportant = before
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_cat")
+		env.plates.np_cat = nil
+		env.enemies.np_cat = nil
+		env.addon.Modules.NameplatesModule:Refresh()
 	end)
 
 	fw.it("a friendly plate's disarm group is budgeted to zero", function()
@@ -314,7 +354,9 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 		local display = env.containersForUnit("np_friend")[1]
 		assert(display, "friendly plate tracked with its bar enabled")
 		assert(display._groups.cc.maxFrameCount > 0, "cc still shows on friendlies")
-		assert(display._groups.disarm.maxFrameCount == 0, "disarm budgeted away on an assistable unit")
+		-- Not built at all on this side: the group could only ever be budgeted to zero here, and
+		-- building it would spend a batch of buttons on that.
+		assert(display._groups.disarm == nil, "disarm built for a side that can never show it")
 
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_friend")
 		env.plates.np_friend = nil
@@ -1001,10 +1043,14 @@ fw.describe("NameplatesModule 12.1 - prewarming the plate displays", function()
 		return list
 	end
 
+	-- The set is paced through the shared background walker, one display per tick, so a test
+	-- wanting the whole of it has to let the walk run. Generous on ticks: the budget is shared
+	-- with every other lane.
 	local function refreshDuringLoadingScreen()
 		env.loadingScreenUp = true
 		nameplates:Refresh()
 		env.loadingScreenUp = false
+		acm.tickAll(PREWARM_TOKENS * 4)
 	end
 
 	fw.it("builds nothing during play, so a refresh mid-session costs no containers", function()
@@ -1126,8 +1172,28 @@ end)
 fw.describe("AlertsModule 12.1 - prewarming the display pairs", function()
 	local alerts = env.addon.Modules.AlertsModule
 
-	fw.it("builds a pair for every token behind a loading screen, and nothing during play", function()
+	-- The set is paced through the background walker a group at a time, so a test wanting all of
+	-- it has to let the walk run. Generous on ticks: the walker's budget is shared with every
+	-- other lane, and a pair takes a turn for its containers plus one per group.
+	local function prepareDuringLoadingScreen()
+		env.loadingScreenUp = true
+		alerts:Refresh()
 		env.loadingScreenUp = false
+		acm.tickAll(PREWARM_TOKENS * 10)
+	end
+
+	fw.it("builds nothing in the refresh, and the set through the walker", function()
+		env.loadingScreenUp = false
+
+		-- Anything an earlier block left filling in the background finishes first, so the counts
+		-- below move only for the pairs this test asks for.
+		local settled
+
+		repeat
+			settled = env.auraContainerCount()
+			acm.tickAll(1)
+		until env.auraContainerCount() == settled
+
 		local created = env.auraContainerCount()
 
 		alerts:Refresh()
@@ -1138,15 +1204,36 @@ fw.describe("AlertsModule 12.1 - prewarming the display pairs", function()
 		alerts:Refresh()
 		env.loadingScreenUp = false
 
-		assert(env.auraContainerCount() > created, "the loading screen refresh built the pairs")
+		-- Forty pairs at once is the third of a second the pacing is for, and behind a loading
+		-- screen it would land on the frame the screen drops.
+		assert(env.auraContainerCount() == created, "the refresh built the set itself")
+
+		acm.tickAll(1)
+		assert(env.auraContainerCount() > created, "the walker did not start the set")
+
+		acm.tickAll(PREWARM_TOKENS * 10)
+
+		-- Counting the set is no use here: earlier blocks have plates on some of these tokens,
+		-- so those pairs already existed. What the walk owes is that the last token in the set
+		-- costs a plate nothing to bind.
+		local built = env.auraContainerCount()
+		local token = "nameplate" .. PREWARM_TOKENS
+
+		env.enemies[token] = true
+		env.addPlate(token)
+		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", token)
+
+		assert(env.auraContainerCount() == built, "the last token in the set had to build its own pair")
+
+		alertsEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", token)
+		env.plates[token] = nil
+		env.enemies[token] = nil
 	end)
 
 	fw.it("builds nothing on a second pass", function()
 		local created = env.auraContainerCount()
 
-		env.loadingScreenUp = true
-		alerts:Refresh()
-		env.loadingScreenUp = false
+		prepareDuringLoadingScreen()
 
 		assert(env.auraContainerCount() == created,
 			"a repeat pass rebuilt " .. (env.auraContainerCount() - created) .. " containers")
@@ -1197,9 +1284,7 @@ fw.describe("AlertsModule 12.1 - prewarming the display pairs", function()
 		local live = env.containersForUnit("nameplate2")[1]
 		assert(live and live._enabled, "the plate is drawing an alert display")
 
-		env.loadingScreenUp = true
-		alerts:Refresh()
-		env.loadingScreenUp = false
+		prepareDuringLoadingScreen()
 
 		assert(live._enabled, "the prewarm parked a pair a plate was drawing on")
 
@@ -1216,10 +1301,8 @@ fw.describe("AlertsModule 12.1 - prewarming the display pairs", function()
 		local icons = db.Modules.AlertsModule.Icons
 		local originalSize = icons.Size
 
-		env.loadingScreenUp = true
 		icons.Size = (originalSize or 24) + 6
-		alerts:Refresh()
-		env.loadingScreenUp = false
+		prepareDuringLoadingScreen()
 
 		-- A token no plate has held this session, so anything it needs would have to be built now.
 		local created = env.auraContainerCount()
@@ -1237,8 +1320,6 @@ fw.describe("AlertsModule 12.1 - prewarming the display pairs", function()
 		env.enemies.nameplate12 = nil
 
 		icons.Size = originalSize
-		env.loadingScreenUp = true
-		alerts:Refresh()
-		env.loadingScreenUp = false
+		prepareDuringLoadingScreen()
 	end)
 end)

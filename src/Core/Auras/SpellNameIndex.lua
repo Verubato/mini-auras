@@ -6338,7 +6338,7 @@ addon.Core.SpellNameIndex = {
 	"456578", -- Azj-Kahet Special
 	"456585", -- Arathor Hammerfish
 	"456864", -- Hideseeker's Tote
-	"456873", -- Magically \"Infinite\" Messenger
+	"456873", -- Magically "Infinite" Messenger
 	"456939", -- Blistering Atrophy
 	"456943 1245633 1245664", -- Fiendish Cruelty
 	"457052 457129", -- Deathstalker's Mark

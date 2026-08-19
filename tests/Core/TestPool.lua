@@ -53,14 +53,14 @@ end
 fw.describe("Pool - RefreshFree", function()
 	fw.before_each(tickerMock.Reset)
 
-	fw.it("sweeps every parked item a couple per tick, then stops", function()
+	fw.it("sweeps every parked item a few per tick, then stops", function()
 		local instance = PoolWithParked(5)
 		local seen, collect = Collector()
 
 		instance:RefreshFree(collect)
 
 		tickerMock.Tick(1)
-		assert(#seen == 2, "two items per tick")
+		assert(#seen == 3, "the whole per-tick budget, since nothing else is sweeping")
 
 		tickerMock.Tick(2)
 		assert(#seen == 5, "the whole free list visited")
@@ -122,12 +122,13 @@ fw.describe("Pool - RefreshFree", function()
 
 		instance:RefreshFree(collectFirst)
 		tickerMock.Tick(1)
-		assert(#first == 2, "first sweep under way")
+		local beforeReplace = #first
+		assert(beforeReplace > 0, "first sweep under way")
 
 		instance:RefreshFree(collectSecond)
 		tickerMock.Tick(5)
 
-		assert(#first == 2, "replaced sweep never resumed")
+		assert(#first == beforeReplace, "replaced sweep never resumed")
 		assert(#second == 4, "replacement started over")
 		assert(tickerMock.ActiveCount() == 0, "one ticker served both sweeps and stopped")
 	end)

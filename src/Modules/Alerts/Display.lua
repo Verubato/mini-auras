@@ -81,6 +81,8 @@ local activeDisplays = {}
 local displayPairsByToken = {}
 -- Configuration the live pairs were built with; a change rebuilds them.
 local pairGeneration
+-- Which groups the built pairs carry, from the mode the options describe; see AlertPairShape.
+local pairShape
 -- Bumped whenever the module re-applies its options, so a pair can tell a push it has already
 -- taken from one that would change something. See ApplyDisplayOptions.
 local optionsGeneration = 0
@@ -94,6 +96,13 @@ local activeTokensScratch = {}
 local activePairsScratch = {}
 -- Background walker converting parked pairs after a look change; see RestyleStaleDisplayPairs.
 local parkedSweep = sweep:New()
+-- Background walker building the prewarmed set, one pair per tick. Creating a pair is a hundred
+-- times what restyling one costs, so this lane takes a single item where the shared budget would
+-- hand it two.
+local prewarmSweep = sweep:New(1)
+-- The pair the walker is part way through building, held across its turns. One lane, one build at
+-- a time, so a single field covers it.
+local prewarmBuilding
 -- The tinted groups of each display in a pair, and the colour map handed to SetGroupGlowColors;
 -- the map is refilled per apply and the setter copies components out.
 local DEF_GROUP_KEYS = {
@@ -113,14 +122,20 @@ local DEFAULT_PAIR_ICONS = 8
 local DEFAULT_PAIR_SIZE = 24
 local DEFAULT_PAIR_SPACING = 2
 -- How many nameplate tokens to prepare pairs for ahead of time. The client hands out
--- nameplate1..N as plates spawn and the set is fixed for a session, so covering it up front means
--- no plate has to build a container mid-fight. 40 is what a full battleground reaches. The arena
+-- nameplate1..N as plates spawn and the set is fixed for a session, so covering the ones a fight
+-- actually reaches means no plate has to build a container mid-fight. Well short of the 40 a full
+-- battleground can hand out: preparing a pair is milliseconds of frame creation the client can
+-- never take back, and the tokens past this are the ones a fight rarely gets to. Whatever the set
+-- does not cover still builds on first sight, as it always did. The arena
 -- token set is small enough that the module just passes its own count.
 --
 -- On the module table rather than a local so the tests can lower it. Preparing forty tokens per
 -- refresh is cheap in the client and slow against the mock, where it was most of the suite's
 -- runtime; the shipped default is asserted separately.
-M.PrewarmTokenCount = 40
+M.PrewarmTokenCount = 15
+-- The ceiling on what an instance's own size can ask for: the client hands out no more plate
+-- tokens than this, and a pair is frames it can never free.
+M.MaxPrewarmTokenCount = 40
 -- What an arena gets. It holds three enemies at most, and its own tokens are handed pairs when the
 -- client names the opponents, so the plate set only has to cover the window before that. A pair
 -- built for a token that never appears is frames the client can never take back.
@@ -424,6 +439,46 @@ end
 -- Which of a pair's displays are live. Kept apart from the rest of the push because parking a
 -- pair turns both off: a token that comes back has to be switched on again even when every other
 -- value is the one it already wears.
+---Whether the defensive categories render at all.
+---@param options table? The module's settings; read fresh so a pre-creation before the db is
+---readable still answers.
+---@return boolean
+local function IncludeDefensives(options)
+	return options ~= nil and options.IncludeDefensives == true
+end
+
+---Whether the important category renders on the defensive display, which is what combined mode
+---means: one container, so the icons flow tight against the defensive ones.
+---@param options table?
+---@return boolean
+local function ImportantOnDef(options)
+	return options ~= nil
+		and options.Important ~= nil
+		and options.Important.Enabled == true
+		and options.SplitBars ~= true
+end
+
+---Whether the important category renders on its own display, which is split mode.
+---@param options table?
+---@return boolean
+local function ImportantOnImp(options)
+	return options ~= nil
+		and options.Important ~= nil
+		and options.Important.Enabled == true
+		and options.SplitBars == true
+end
+
+---Budgets one group, if the pair was built with it. A display carries only the groups the mode it
+---was built under can render, so an absent group is ordinary rather than a mistake.
+---@param display AuraContainerDisplay
+---@param groupKey string
+---@param maxIcons number
+local function SetGroupBudget(display, groupKey, maxIcons)
+	if display:HasGroup(groupKey) then
+		display:SetMaxIcons(groupKey, maxIcons)
+	end
+end
+
 ---@param importantOnImp boolean? Whether the important category renders on the second display.
 local function ApplyDisplayVisibility(entry, showBars, importantOnImp)
 	local impShown = showBars and importantOnImp
@@ -440,11 +495,10 @@ end
 -- (Important-vs-defensive dedup is handled by filter negation at creation.)
 local function ApplyDisplayOptions(entry, unitToken, options, showBars)
 	local colorKey = TokenColorKey(unitToken)
-	local importantEnabled = options.Important and options.Important.Enabled
-	local splitBars = options.SplitBars
-	-- Important renders on whichever display the current mode uses; the other is budgeted to 0.
-	local importantOnDef = importantEnabled and not splitBars
-	local importantOnImp = importantEnabled and splitBars
+	-- Important renders on whichever display the current mode uses; the other is not built with
+	-- the group at all (see CreateAlertDisplayPair), and a mode change rebuilds the pairs.
+	local importantOnDef = ImportantOnDef(options)
+	local importantOnImp = ImportantOnImp(options)
 
 	-- Every plate that spawns asks for this, and forty of them under the same settings ask for the
 	-- same push. Options only move on a refresh, which bumps the generation, and the class a token
@@ -457,7 +511,7 @@ local function ApplyDisplayOptions(entry, unitToken, options, showBars)
 	entry.AppliedGeneration = optionsGeneration
 	entry.AppliedColorKey = colorKey
 
-	local includeDefensives = options.IncludeDefensives
+	local includeDefensives = IncludeDefensives(options)
 	local maxIcons = options.Icons.MaxIcons or 8
 	local size = options.Icons.Size
 	local spacing = options.IconSpacing or 2
@@ -484,13 +538,13 @@ local function ApplyDisplayOptions(entry, unitToken, options, showBars)
 
 	entry.Def:SetGrow(grow)
 	entry.Def:ApplyConfig(size, spacing, style)
-	entry.Def:SetMaxIcons(auraFilters.GroupKey.BigDefensive, includeDefensives and maxIcons or 0)
-	entry.Def:SetMaxIcons(auraFilters.GroupKey.ExternalDefensive, includeDefensives and maxIcons or 0)
-	entry.Def:SetMaxIcons(auraFilters.GroupKey.Important, importantOnDef and maxIcons or 0)
+	SetGroupBudget(entry.Def, auraFilters.GroupKey.BigDefensive, includeDefensives and maxIcons or 0)
+	SetGroupBudget(entry.Def, auraFilters.GroupKey.ExternalDefensive, includeDefensives and maxIcons or 0)
+	SetGroupBudget(entry.Def, auraFilters.GroupKey.Important, importantOnDef and maxIcons or 0)
 
 	entry.Imp:SetGrow(grow)
 	entry.Imp:ApplyConfig(size, spacing, style)
-	entry.Imp:SetMaxIcons(auraFilters.GroupKey.Important, importantOnImp and maxIcons or 0)
+	SetGroupBudget(entry.Imp, auraFilters.GroupKey.Important, importantOnImp and maxIcons or 0)
 
 	ApplyDisplayVisibility(entry, showBars, importantOnImp)
 end
@@ -507,11 +561,15 @@ end
 -- container with no gap. Separate containers are separate frames chained by SetPoint and the
 -- engine reserves each one's maxFrameCount worth of width, so an under-filled defensive display
 -- left a hole before the important icons; groups inside a single container flow tight instead.
--- A display's group list is fixed for its lifetime (see New), so both groups always exist and
--- the mode is chosen purely by budgeting one of them to 0 - no container churn on toggle.
+-- Each display carries only the groups the current mode can render: the engine allocates a batch
+-- of buttons the moment a group is declared, whatever its budget, so a group the mode has nothing
+-- to put in is that batch wasted. Switching mode therefore rebuilds the pairs, which is what the
+-- pair generation carries.
 ---@param unitToken string The token this pair is being built for, so the owner's class colour can
 ---be baked into its buttons; see AlertPairKey for why it cannot be applied later.
-local function CreateAlertDisplayPair(unitToken)
+---@param defer boolean? Build both containers with none of their groups, for a caller pacing the
+---groups in itself.
+local function CreateAlertDisplayPair(unitToken, defer)
 	-- Build at the CONFIGURED size, not a placeholder. A button takes its size in
 	-- initializeFrame, which the frame pool runs once when it creates the button and never
 	-- again on reuse (AcquireFrame does not re-initialise). Correcting it afterwards needs a
@@ -541,47 +599,71 @@ local function CreateAlertDisplayPair(unitToken)
 
 	bigDefColor, extDefColor, importantColor = OwnCopy(bigDefColor), OwnCopy(extDefColor), OwnCopy(importantColor)
 
+	local defGroups = {}
+
+	if IncludeDefensives(options) then
+		defGroups[#defGroups + 1] = {
+			Key = auraFilters.GroupKey.BigDefensive,
+			FilterString = auraFilters.Filter.BigDefensive,
+			CandidateFilters = auraFilters.CandidateFilters.BigDefensive,
+			MaxIcons = maxIcons,
+
+			GlowColor = bigDefColor,
+		}
+		defGroups[#defGroups + 1] = {
+			Key = auraFilters.GroupKey.ExternalDefensive,
+			FilterString = auraFilters.Filter.ExternalDefensive,
+			CandidateFilters = auraFilters.CandidateFilters.ExternalDefensive,
+			MaxIcons = maxIcons,
+
+			GlowColor = extDefColor,
+		}
+	end
+
+	-- Combined mode renders all three categories in one container, so the important icons flow
+	-- tight against the defensive ones. Split mode gives them their own.
+	if ImportantOnDef(options) then
+		defGroups[#defGroups + 1] = {
+			Key = auraFilters.GroupKey.Important,
+			FilterString = auraFilters.Filter.Important,
+			CandidateFilters = auraFilters.CandidateFilters.Important,
+			MaxIcons = maxIcons,
+
+			GlowColor = importantColor,
+		}
+	end
+
+	local impGroups = {}
+
+	if ImportantOnImp(options) then
+		impGroups[1] = {
+			Key = auraFilters.GroupKey.Important,
+			FilterString = auraFilters.Filter.Important,
+			CandidateFilters = auraFilters.CandidateFilters.Important,
+			MaxIcons = maxIcons,
+
+			GlowColor = importantColor,
+		}
+	end
+
+	local displayOptions = { Style = style, MasqueGroup = "Alerts", DeferGroups = defer }
+
 	return {
 		StyleGeneration = pairGeneration,
-		Def = auraContainerDisplay:New(UIParent, "none", {
-			{
-				Key = auraFilters.GroupKey.BigDefensive,
-				FilterString = auraFilters.Filter.BigDefensive,
-				CandidateFilters = auraFilters.CandidateFilters.BigDefensive,
-				MaxIcons = maxIcons,
-
-				GlowColor = bigDefColor,
-			},
-			{
-				Key = auraFilters.GroupKey.ExternalDefensive,
-				FilterString = auraFilters.Filter.ExternalDefensive,
-				CandidateFilters = auraFilters.CandidateFilters.ExternalDefensive,
-				MaxIcons = maxIcons,
-
-				GlowColor = extDefColor,
-			},
-			-- Used in combined mode only; budgeted to 0 when the bars are split.
-			{
-				Key = auraFilters.GroupKey.Important,
-				FilterString = auraFilters.Filter.Important,
-				CandidateFilters = auraFilters.CandidateFilters.Important,
-				MaxIcons = maxIcons,
-
-				GlowColor = importantColor,
-			},
-		}, size, spacing, "Alerts", { Style = style, MasqueGroup = "Alerts" }),
-		-- Used in split mode only; hidden and budgeted to 0 when combined.
-		Imp = auraContainerDisplay:New(UIParent, "none", {
-			{
-				Key = auraFilters.GroupKey.Important,
-				FilterString = auraFilters.Filter.Important,
-				CandidateFilters = auraFilters.CandidateFilters.Important,
-				MaxIcons = maxIcons,
-
-				GlowColor = importantColor,
-			},
-		}, size, spacing, "Alerts", { Style = style, MasqueGroup = "Alerts" }),
+		Def = auraContainerDisplay:New(UIParent, "none", defGroups, size, spacing, "Alerts", displayOptions),
+		Imp = auraContainerDisplay:New(UIParent, "none", impGroups, size, spacing, "Alerts", displayOptions),
 	}
+end
+
+---Which groups a pair is built with, as one number to diff against. Apart from the look, because
+---the two are answered differently: a look a pair no longer wears can be restyled onto it, while
+---a group it was not built with can only be had by building another pair.
+---@param options table?
+---@return number
+local function AlertPairShape(options)
+	return (IncludeDefensives(options) and 1 or 0)
+		+ (ImportantOnDef(options) and 2 or 0)
+		+ (ImportantOnImp(options) and 4 or 0)
 end
 
 -- Everything baked into a pair's buttons when it is created. A change means the live pairs have
@@ -623,6 +705,10 @@ end
 -- once per change rather than per plate, and only a loading screen builds the set back up, so a
 -- run of slider steps still abandons one set rather than one per step.
 local function RebuildDisplayPairs()
+	-- Whatever the walker was part way through went with the rest; it starts again from the next
+	-- prewarm rather than finishing a pair nothing can reach.
+	prewarmBuilding = nil
+
 	for key, entry in pairs(displayPairsByToken) do
 		ResetAlertDisplayPair(entry)
 		displayPairsByToken[key] = nil
@@ -672,18 +758,55 @@ local function GetOrCreateDisplayPair(unitToken)
 		displayPairsByToken[key] = entry
 	end
 
+	-- A prepared pair is built group by group in the background; whoever is asking for it now
+	-- wants all of it, so what the walk still owes goes in here.
+	entry.Def:FinishGroups()
+	entry.Imp:FinishGroups()
+
 	return entry
 end
 
--- Builds one token's pair ahead of the plate that will want it, and parks it. Existing pairs are
--- left strictly alone: by the time a prewarm pass reaches a token a plate may already be holding
--- and drawing on it, and parking that one would blank a live bar.
+-- Builds one token's pair ahead of the plate that will want it, and parks it. Both containers come
+-- back with none of their groups declared; the walker adds them a group at a time. Existing pairs
+-- are left strictly alone: by the time a prewarm pass reaches a token a plate may already be
+-- holding and drawing on it, and parking that one would blank a live bar.
+---@return table? entry Nil when the token already had a pair.
 local function PrewarmOnePair(unitToken)
-	if displayPairsByToken[AlertPairKey(unitToken)] then
+	local key = AlertPairKey(unitToken)
+
+	if displayPairsByToken[key] then
 		return
 	end
 
-	ResetAlertDisplayPair(GetOrCreateDisplayPair(unitToken))
+	local entry = CreateAlertDisplayPair(unitToken, true)
+	displayPairsByToken[key] = entry
+	ResetAlertDisplayPair(entry)
+
+	return entry
+end
+
+---One queued pair, spread over several turns of the walker: the two containers on the first, then
+---a group on each turn after. The engine allocates a batch of buttons the moment a group is
+---declared, so a group is the smallest piece a build can be cut into.
+---
+---The token is re-checked at fire time, which it has to be: the walk runs over seconds, and a
+---plate may have claimed the pair by the time its turn comes round.
+---@param unitToken string
+---@return SweepVerdict?
+local function PrewarmQueuedPair(unitToken)
+	if prewarmBuilding then
+		if prewarmBuilding.Def:AddNextGroup() or prewarmBuilding.Imp:AddNextGroup() then
+			return sweep.Verdict.Unfinished
+		end
+
+		prewarmBuilding = nil
+
+		return
+	end
+
+	prewarmBuilding = PrewarmOnePair(unitToken)
+
+	return prewarmBuilding and sweep.Verdict.Unfinished or nil
 end
 
 -- Activates the display pair for a token, acquiring from the pool on
@@ -737,6 +860,23 @@ local function RestyleParkedPair(entry)
 	entry.StyleGeneration = AlertPairGeneration()
 end
 
+---Drops every pair and re-acquires the tokens that were being tracked, so what is on screen comes
+---back immediately and the rest of the set is rebuilt by the next prewarm.
+local function RebuildTrackedPairs()
+	local tracked = activeTokensScratch
+	wipe(tracked)
+
+	for token in pairs(activeDisplays) do
+		tracked[#tracked + 1] = token
+	end
+
+	RebuildDisplayPairs()
+
+	for _, token in ipairs(tracked) do
+		EnsureDisplay(token)
+	end
+end
+
 ---Brings every pair onto the look the options now describe.
 ---
 ---A restyle reaches the buttons wherever the client allows it, which is every settings change made
@@ -752,26 +892,21 @@ end
 ---off screen and there can be forty of them, so they go through the background walker.
 local function RestyleStaleDisplayPairs()
 	local generation = AlertPairGeneration()
+	local shape = AlertPairShape(db and db.Modules.AlertsModule)
+	local shapeMoved = shape ~= pairShape
 
-	if generation == pairGeneration then
+	if generation == pairGeneration and not shapeMoved then
 		return
 	end
 
 	pairGeneration = generation
+	pairShape = shape
 
-	if wowEx:IsAuraStylingRestricted() then
-		local tracked = activeTokensScratch
-		wipe(tracked)
-
-		for token in pairs(activeDisplays) do
-			tracked[#tracked + 1] = token
-		end
-
-		RebuildDisplayPairs()
-
-		for _, token in ipairs(tracked) do
-			EnsureDisplay(token)
-		end
+	-- A mode change moves which groups a pair is built with, and a group can never be added to a
+	-- container; the same goes for a look change while auras are secret, where no restyle can
+	-- reach the buttons. Both leave rebuilding as the only way to get there.
+	if shapeMoved or wowEx:IsAuraStylingRestricted() then
+		RebuildTrackedPairs()
 
 		return
 	end
@@ -865,30 +1000,61 @@ function M:ReleaseDisplay(unitToken)
 end
 
 -- Tracking is stopping entirely (module off, a zone where alerts don't run, or a switch of token
--- source), so the warm sound registrations go too.
+-- source), so the warm sound registrations go too, along with whatever the prewarm walk still
+-- owes: those pairs were for the source being dropped.
 function M:ReleaseAllDisplays()
+	prewarmSweep:Stop()
+	-- Whatever the walk was part way through keeps the groups it has; whoever takes it finishes
+	-- the rest. Only the walker's own place in it is dropped.
+	prewarmBuilding = nil
 	sound:RemoveAllTokens()
 	for unitToken in pairs(activeDisplays) do
 		self:ReleaseDisplay(unitToken)
 	end
 end
 
----How many tokens to prepare for, which is what the place can actually show at once.
+---How many tokens to prepare for, which is what the place can actually show at once. A
+---battleground says how many players a side holds, and that is how many enemies can ever have a
+---plate up - 40 in Alterac Valley, 10 in Warsong Gulch. Everywhere the client has no number, the
+---default stands.
 ---@return number
 function M:PrewarmTokenTarget()
-	return moduleUtil:InstanceType() == "arena" and M.ArenaPrewarmTokenCount or M.PrewarmTokenCount
+	if moduleUtil:InstanceType() == "arena" then
+		return M.ArenaPrewarmTokenCount
+	end
+
+	local perSide = moduleUtil:MaxPlayersPerSide()
+
+	if perSide then
+		return math.min(perSide, M.MaxPrewarmTokenCount)
+	end
+
+	return M.PrewarmTokenCount
 end
 
----Builds a parked display pair for each of prefix1..count, so a token coming into play mid-fight
----finds its pair ready instead of paying to build it there and then. Only called behind a loading
----screen: the whole set at once is a long frame, and that is free while nothing is being drawn.
----Cheap to repeat, since a token that already has a pair costs one table lookup.
+---Prepares a parked display pair for each of prefix1..count, so a token coming into play mid-fight
+---finds its pair ready instead of paying to build it there and then.
+---
+---Nothing is built here: the whole set is forty pairs, and a loading screen does not pay for it -
+---the client draws nothing while the screen is up, so the cost would land on the frame it drops.
+---The walker builds them a group at a time instead. Cheap to repeat, since a token that already
+---has a pair costs one table lookup.
 ---@param prefix string
 ---@param count number
 function M:Prewarm(prefix, count)
-	for index = 1, count do
-		PrewarmOnePair(prefix .. index)
+	if count < 1 then
+		prewarmSweep:Stop()
+		return
 	end
+
+	local queue = {}
+
+	for index = 1, count do
+		queue[index] = prefix .. index
+	end
+
+	prewarmBuilding = nil
+	prewarmSweep:Run(queue, PrewarmQueuedPair)
 end
 
 ---Re-reads one token's auras, for when the token's OCCUPANT changed rather than the token itself.

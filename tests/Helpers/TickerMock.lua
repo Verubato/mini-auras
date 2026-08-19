@@ -5,10 +5,17 @@
 local M = {}
 
 local tickers = {}
+-- Stand-in for the client's millisecond clock, which the sweep reads to bound a tick. Nothing
+-- advances on its own; a test that wants to spend the budget calls Advance.
+local clockMs = 0
 
----Installs the NewTicker override. Idempotent; call once per suite file. Must also work
----standalone, where no client mock has installed C_Timer at all.
+---Installs the NewTicker override and a controllable debugprofilestop. Idempotent; call once per
+---suite file. Must also work standalone, where no client mock has installed C_Timer at all.
 function M.Install()
+	_G.debugprofilestop = function()
+		return clockMs
+	end
+
 	_G.C_Timer = _G.C_Timer or {}
 	_G.C_Timer.NewTicker = function(interval, fn)
 		local ticker = { interval = interval, fn = fn, cancelled = false }
@@ -27,6 +34,14 @@ function M.Reset()
 	for index = #tickers, 1, -1 do
 		tickers[index] = nil
 	end
+
+	clockMs = 0
+end
+
+---Spends `ms` of the clock the sweep bounds its ticks against.
+---@param ms number
+function M.Advance(ms)
+	clockMs = clockMs + ms
 end
 
 function M.Tick(times)

@@ -159,7 +159,6 @@ local BARS = {
 -- same deal every other display in the addon takes.
 ---@type table<table, table<string, BarDisplayEntry>>
 local barDisplays = {}
-local EMPTY = {}
 -- Displays built ahead of any plate wanting them, keyed by (bar, faction). A plate takes one on
 -- first sight instead of building its own there and then; see Prewarm.
 ---@type table<string, BarDisplayEntry[]>
@@ -170,6 +169,17 @@ local freeDisplays = {}
 local builtCounts = {}
 -- Background walker converting parked bar displays after a look change; see QueueParkedRestyles.
 local parkedSweep = sweep:New()
+-- Background walker filling the free lists, one display per tick. Building one is a hundred times
+-- what restyling one costs, so this lane takes a single item where the shared budget would hand
+-- it more.
+local prewarmSweep = sweep:New(1)
+-- One reusable queue entry per (bar, faction), since the queue is the same pair repeated: the
+-- walker re-reads the options through it at fire time, so there is nothing per-item to carry.
+local prewarmItems = {}
+-- The entry the walker is part way through building, held across its turns. One lane, one build
+-- at a time, so a single field covers it.
+---@type BarDisplayEntry?
+local prewarmBuilding = nil
 -- What each (bar, faction) look was resolved to, keyed by cache key; see BarLook.
 local barLooks = {}
 -- Bumped whenever the options reach this file, which is the only thing that can move a look.
@@ -178,13 +188,18 @@ local optionsGeneration = 0
 local DEFAULT_BAR_ICONS = 5
 local DEFAULT_BAR_SIZE = 35
 local DEFAULT_BAR_SPACING = 2
--- How many displays to prepare per bar and faction ahead of any plate wanting one, so no plate
--- has to build a container mid-fight. 40 is what a full battleground reaches.
+-- How many displays to prepare per bar and faction ahead of any plate wanting one, so no plate has
+-- to build a container mid-fight. Well short of the 40 plates a full battleground can put up:
+-- every prepared display is frame creation the client can never take back, and it is per bar and
+-- faction, so the count multiplies. Anything past it builds on first sight, as it always did.
 --
 -- On the module table rather than a local so the tests can lower it. Preparing forty per refresh
 -- is cheap in the client and slow against the mock, where it was most of the suite's runtime; the
 -- shipped default is asserted separately.
-M.PrewarmCount = 40
+M.PrewarmCount = 15
+-- The ceiling on what an instance's own size can ask for. The client draws no more plates than
+-- this however many players a side holds, and every prepared display is frames it can never free.
+M.MaxPrewarmCount = 40
 -- What an arena gets. Three enemies and their pets is the whole of it, so the rest of the set
 -- would be displays nothing can ever ask for, and the client never takes a frame back.
 M.ArenaPrewarmCount = 10
@@ -308,20 +323,45 @@ end
 ---@param spacing number
 ---@param style AuraDisplayStyle applied at creation; it cannot be changed while auras are secret
 ---@param colors table<string, number[]> Category tints, for the same reason as the style.
-local function CreateBarDisplay(size, spacing, style, colors)
+---Whether the disarm group is worth building for this side. Its only real filter is the spell-ID
+---map, which the identity gate skips on a unit the player can assist, so a friendly bar can never
+---show it (see the budget call in EnsureBarDisplay).
+---@param factionKey "Enemy"|"Friendly"
+---@return boolean
+local function DisarmPossible(barOptions, factionKey)
+	return barOptions.ShowCC == true and factionKey == "Enemy"
+end
+
+---The categories a bar's displays are built with, from its toggles.
+---@param factionKey "Enemy"|"Friendly"
+---@return table<string, boolean>
+local function BarCategorySet(barOptions, factionKey)
+	return auraFilters:CategorySet(
+		barOptions.ShowCC,
+		barOptions.ShowDefensives,
+		barOptions.ShowImportant,
+		DisarmPossible(barOptions, factionKey)
+	)
+end
+
+local function CreateBarDisplay(barOptions, factionKey, size, spacing, style, colors, defer)
 	return auraContainerDisplay:New(
 		UIParent,
 		"none",
 		-- No spell-ID maps: a plate only exists for a unit the client is drawing, so the
 		-- out-of-range filter bug the maps work around cannot reach one.
-		auraFilters:BuildCategoryGroups(DEFAULT_BAR_ICONS, true, colors),
+		--
+		-- Only the categories this bar can show: the engine allocates a batch of buttons per
+		-- group whatever the budget, so a group for a switched-off category is that batch wasted.
+		-- Switching one on rebuilds the bar's displays, which is what BarLook's signature carries.
+		auraFilters:BuildCategoryGroups(DEFAULT_BAR_ICONS, true, colors, BarCategorySet(barOptions, factionKey)),
 		size,
 		spacing,
 		"Nameplates",
 		-- Skinnable because the buttons are built here, while the display is still parked on
 		-- UIParent. Once it moves onto a plate its size reads as secret and the skin can no
 		-- longer be re-fitted, which is why the size is fixed at creation in the first place.
-		{ Style = style, MasqueGroup = "Nameplates" }
+		{ Style = style, MasqueGroup = "Nameplates", DeferGroups = defer }
 	)
 end
 
@@ -442,6 +482,15 @@ local function BarLook(bar, barOptions, factionKey)
 		Spacing = spacing,
 		Style = style,
 		Signature = auraContainerDisplay:GetStyleGeneration(cacheKey, style, size, spacing),
+		-- Kept apart from the signature because the two are answered differently: a look a
+		-- display no longer matches is restyled, while a category it was not built with can only
+		-- be had by building another one.
+		Categories = auraFilters:CategoryGeneration(
+			barOptions.ShowCC,
+			barOptions.ShowDefensives,
+			barOptions.ShowImportant,
+			DisarmPossible(barOptions, factionKey)
+		),
 	}
 	barLooks[cacheKey] = look
 
@@ -470,7 +519,7 @@ end
 ---blocked while auras are secret, which would leave a plate wearing the old size for the match.
 ---The sweep converts the stale ones in the background so later plates find a match.
 ---@return BarDisplayEntry?
-local function TakeFreeDisplay(cacheKey, signature, size, spacing, style)
+local function TakeFreeDisplay(cacheKey, signature, categories, size, spacing, style)
 	local free = freeDisplays[cacheKey]
 
 	if not free then
@@ -478,7 +527,7 @@ local function TakeFreeDisplay(cacheKey, signature, size, spacing, style)
 	end
 
 	for i = #free, 1, -1 do
-		if free[i].Signature == signature then
+		if free[i].Signature == signature and free[i].Categories == categories then
 			return table.remove(free, i)
 		end
 	end
@@ -490,7 +539,7 @@ local function TakeFreeDisplay(cacheKey, signature, size, spacing, style)
 	for i = #free, 1, -1 do
 		local entry = free[i]
 
-		if entry.Display:CarriesConfig(size, spacing, style) then
+		if entry.Categories == categories and entry.Display:CarriesConfig(size, spacing, style) then
 			entry.Signature = signature
 			return table.remove(free, i)
 		end
@@ -507,6 +556,7 @@ local function GetOrCreateBarDisplay(nameplate, bar, barOptions, factionKey)
 	local size, spacing, style = look.Size, look.Spacing, look.Style
 	local cacheKey = bar.CacheKey[factionKey]
 	local signature = look.Signature
+	local categories = look.Categories
 
 	local byBar = barDisplays[nameplate]
 
@@ -517,19 +567,34 @@ local function GetOrCreateBarDisplay(nameplate, bar, barOptions, factionKey)
 
 	local entry = byBar[cacheKey]
 
+	-- A category switched on since this display was built is one it has no group for, and groups
+	-- cannot be added to a container. The old one is parked (its frames are gone for good, as with
+	-- any rebuild) and a display carrying the new set takes over.
+	if entry and entry.Categories ~= categories then
+		ResetBarDisplay(entry.Display)
+		builtCounts[cacheKey] = (builtCounts[cacheKey] or 1) - 1
+		byBar[cacheKey] = nil
+		entry = nil
+	end
+
 	if not entry then
-		entry = TakeFreeDisplay(cacheKey, signature, size, spacing, style)
+		entry = TakeFreeDisplay(cacheKey, signature, categories, size, spacing, style)
 
 		if not entry then
 			entry = {
-				Display = CreateBarDisplay(size, spacing, style, BarCategoryColors(barOptions)),
+				Display = CreateBarDisplay(barOptions, factionKey, size, spacing, style,
+					BarCategoryColors(barOptions)),
 				Signature = signature,
+				Categories = categories,
 			}
 			builtCounts[cacheKey] = (builtCounts[cacheKey] or 0) + 1
 		end
 
 		byBar[cacheKey] = entry
 		entry.Plate = nameplate
+		-- A prepared display is built group by group in the background; a plate wants all of it
+		-- now, so whatever the walk still owes goes in here.
+		entry.Display:FinishGroups()
 		-- The one re-parent this display will ever see. Built on UIParent so its buttons could be
 		-- skinned while their size was still readable, and it lives on this plate from here.
 		entry.Display.Frame:SetParent(nameplate)
@@ -540,17 +605,39 @@ local function GetOrCreateBarDisplay(nameplate, bar, barOptions, factionKey)
 	return entry.Display
 end
 
----Builds one (token, bar, faction) display ahead of the plate that will want it, and parks it.
+---How many displays each switched-on (bar, faction) is prepared for: what the place can actually
+---put in front of the player. A battleground says how many a side holds, which is how many enemy
+---plates there can be - 40 in Alterac Valley, 10 in Warsong Gulch - so the set matches the fight
+---instead of a guess. Everywhere the client has no number, the default stands.
+---@return number
+local function PrewarmTarget()
+	if moduleUtil:InstanceType() == "arena" then
+		return M.ArenaPrewarmCount
+	end
+
+	local perSide = moduleUtil:MaxPlayersPerSide()
+
+	if perSide then
+		return math.min(perSide, M.MaxPrewarmCount)
+	end
+
+	return M.PrewarmCount
+end
+
 ---Builds one (bar, faction) display ahead of the plate that will want it, and parks it on the free
 ---list. Nothing already bound to a plate is touched: one of those may be drawing right now.
+---The container comes back with none of its groups declared; the walker adds them one at a time.
 ---@param factionKey "Enemy"|"Friendly"
+---@return BarDisplayEntry
 local function PrewarmOneBarDisplay(bar, barOptions, factionKey)
 	local cacheKey = bar.CacheKey[factionKey]
 	local look = BarLook(bar, barOptions, factionKey)
 
 	local entry = {
-		Display = CreateBarDisplay(look.Size, look.Spacing, look.Style, BarCategoryColors(barOptions)),
+		Display = CreateBarDisplay(barOptions, factionKey, look.Size, look.Spacing, look.Style,
+			BarCategoryColors(barOptions), true),
 		Signature = look.Signature,
+		Categories = look.Categories,
 	}
 	ResetBarDisplay(entry.Display)
 
@@ -563,6 +650,44 @@ local function PrewarmOneBarDisplay(bar, barOptions, factionKey)
 
 	free[#free + 1] = entry
 	builtCounts[cacheKey] = (builtCounts[cacheKey] or 0) + 1
+
+	return entry
+end
+
+---One queued display, spread over several turns of the walker: the container on the first, then a
+---group on each turn after. The engine allocates a batch of buttons the moment a group is
+---declared, so a group is the smallest piece a build can be cut into.
+---
+---Everything is re-read at fire time: the walk runs over seconds, in which a bar can be switched
+---off, the look can move, and plates can build displays of their own that count towards the same
+---target.
+---@param item table {Bar, Faction}
+---@return SweepVerdict?
+local function PrewarmQueuedBarDisplay(item)
+	if prewarmBuilding then
+		if prewarmBuilding.Display:AddNextGroup() then
+			return sweep.Verdict.Unfinished
+		end
+
+		prewarmBuilding = nil
+
+		return
+	end
+
+	local unitOptions = nmModule and nmModule[item.Faction]
+	local barOptions = unitOptions and unitOptions[item.Bar.Key]
+
+	if not barOptions or not barOptions.Enabled then
+		return
+	end
+
+	if (builtCounts[item.Bar.CacheKey[item.Faction]] or 0) >= PrewarmTarget() then
+		return
+	end
+
+	prewarmBuilding = PrewarmOneBarDisplay(item.Bar, barOptions, item.Faction)
+
+	return sweep.Verdict.Unfinished
 end
 
 ---One (bar, faction) display brought onto the current look, from the background sweep. Everything
@@ -606,23 +731,39 @@ end
 ---@return table[]? queue
 local function QueueStaleForBar(queue, bar, factionKey, barOptions)
 	local cacheKey = bar.CacheKey[factionKey]
-	local signature = BarLook(bar, barOptions, factionKey).Signature
+	local look = BarLook(bar, barOptions, factionKey)
+	local signature = look.Signature
+	local categories = look.Categories
 
 	for _, byBar in pairs(barDisplays) do
 		local entry = byBar[cacheKey]
 
-		if entry and entry.Signature ~= signature then
+		-- Only a look: a group set that no longer matches is settled by the plate's own ensure
+		-- pass, which swaps the display rather than restyling it.
+		if entry and entry.Signature ~= signature and entry.Categories == categories then
 			queue = queue or {}
 			queue[#queue + 1] = { Entry = entry, Bar = bar, FactionKey = factionKey }
 		end
 	end
 
-	-- The free list too, so a plate spawning after a settings change finds a display already
-	-- wearing the new look rather than having to build one.
-	for _, entry in ipairs(freeDisplays[cacheKey] or EMPTY) do
-		if entry.Signature ~= signature then
-			queue = queue or {}
-			queue[#queue + 1] = { Entry = entry, Bar = bar, FactionKey = factionKey }
+	-- Parked entries built for another set of categories can never serve this bar again: a
+	-- restyle reaches buttons, not groups. Dropped here so the prewarm tops the set back up with
+	-- the shape the options now describe.
+	local free = freeDisplays[cacheKey]
+
+	if free then
+		for index = #free, 1, -1 do
+			local entry = free[index]
+
+			if entry.Categories ~= categories then
+				builtCounts[cacheKey] = (builtCounts[cacheKey] or 1) - 1
+				table.remove(free, index)
+			elseif entry.Signature ~= signature then
+				-- The rest ride the sweep, so a plate spawning after a settings change finds a
+				-- display already wearing the new look rather than having to build one.
+				queue = queue or {}
+				queue[#queue + 1] = { Entry = entry, Bar = bar, FactionKey = factionKey }
+			end
 		end
 	end
 
@@ -990,12 +1131,15 @@ function M:Release(unitToken)
 end
 
 ---Fills the free list for every (bar, faction) the current options actually switch on, so a plate
----spawning mid-fight takes a ready display instead of paying to build one there and then. Only
----called behind a loading screen: the whole set at once is a long frame, and that is free while
----nothing is being drawn. Cheap to repeat, since it counts what exists first, and bars switched
----off since the last pass are simply not walked.
+---spawning mid-fight takes a ready display instead of paying to build one there and then.
+---
+---Nothing is built here: the whole set is hundreds of displays, and a loading screen does not pay
+---for it - the client draws nothing while the screen is up, so the cost would land on the frame it
+---drops. The walker builds them one per tick instead. Cheap to repeat, since it counts what
+---exists first, and bars switched off since the last pass are simply not queued.
 function M:Prewarm()
-	local target = moduleUtil:InstanceType() == "arena" and M.ArenaPrewarmCount or M.PrewarmCount
+	local target = PrewarmTarget()
+	local queue = {}
 
 	for _, faction in ipairs(PREWARM_FACTIONS) do
 		local unitOptions = nmModule and nmModule[faction]
@@ -1004,14 +1148,25 @@ function M:Prewarm()
 			local barOptions = unitOptions and unitOptions[bar.Key]
 
 			if barOptions and barOptions.Enabled then
+				local cacheKey = bar.CacheKey[faction]
+				local item = prewarmItems[cacheKey]
+
+				if not item then
+					item = { Bar = bar, Faction = faction }
+					prewarmItems[cacheKey] = item
+				end
+
 				-- Bound displays count towards the target: they are already doing the job the
 				-- prepared ones are held for, and only the plates yet to appear need covering.
-				for _ = (builtCounts[bar.CacheKey[faction]] or 0) + 1, target do
-					PrewarmOneBarDisplay(bar, barOptions, faction)
+				for _ = (builtCounts[cacheKey] or 0) + 1, target do
+					queue[#queue + 1] = item
 				end
 			end
 		end
 	end
+
+	prewarmBuilding = nil
+	prewarmSweep:Run(queue, PrewarmQueuedBarDisplay)
 end
 
 ---Renders the kick icon into each ShowCC bar's kick container (slot 1) and re-anchors
@@ -1143,9 +1298,14 @@ function M:RefreshAnchorsAndSizes()
 end
 
 function M:Teardown()
-	-- A disabled module has no business converting its cache; the next enable re-queues
-	-- whatever still diffs.
+	-- A disabled module has no business converting its cache or filling it further; the next
+	-- enable re-queues whatever still diffs, and the next loading screen tops the set back up.
 	parkedSweep:Stop()
+	prewarmSweep:Stop()
+
+	-- Whatever the walk was part way through keeps the groups it has; a plate taking it finishes
+	-- the rest. Only the walker's own place in it is dropped.
+	prewarmBuilding = nil
 
 	for unitToken, data in pairs(nameplateAnchors) do
 		self:ClearPlate(unitToken)
@@ -1169,6 +1329,8 @@ end
 ---@class BarDisplayEntry
 ---@field Display AuraContainerDisplay
 ---@field Signature number The look baked into its buttons, diffed to decide a restyle.
+---@field Categories number The category toggles it was built for, diffed to decide a swap: a
+---restyle reaches buttons, and a group can never be added to a container.
 ---@field Plate table? The nameplate it is bound to; nil while it is still on the free list.
 
 ---@class NameplateData
