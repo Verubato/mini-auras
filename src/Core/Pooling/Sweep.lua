@@ -92,9 +92,16 @@ local function StopLane(lane)
 end
 
 ---The next lane with something to do, advancing the cursor past it; nil once a full circle
----finds nothing.
+---finds nothing. Urgent lanes go first: their items are things already on screen waiting to be
+---finished, where the rest is work being done ahead of anyone asking for it.
 ---@return Sweep?
 local function NextLaneWithWork()
+	for _, lane in ipairs(lanes) do
+		if lane.Urgent and LaneCanRun(lane) then
+			return lane
+		end
+	end
+
 	for _ = 1, #lanes do
 		local lane = lanes[cursor]
 		cursor = cursor % #lanes + 1
@@ -182,9 +189,11 @@ end
 ---@param maxPerTick number? Most items this lane may take from one tick. Without it the lane can
 ---take the whole shared budget, which is right for restyles and too much for anything that
 ---creates frames.
+---@param urgent boolean? Serve this lane before the others. For work something on screen is
+---waiting on, which must not queue behind work nobody has asked for yet.
 ---@return Sweep A lane of the shared walker; hold one per consumer.
-function M:New(maxPerTick)
-	local lane = setmetatable({ MaxPerTick = maxPerTick }, M)
+function M:New(maxPerTick, urgent)
+	local lane = setmetatable({ MaxPerTick = maxPerTick, Urgent = urgent }, M)
 	lanes[#lanes + 1] = lane
 
 	return lane
@@ -238,5 +247,6 @@ end
 ---@field ProcessFn (fun(item: any, ctx: any): boolean|string|nil)?
 ---@field Ctx any?
 ---@field MaxPerTick number?
+---@field Urgent boolean?
 ---@field AvgMs number? What this lane's items have been costing, for the round robin's guess at
 ---whether one more fits in what is left of a tick.

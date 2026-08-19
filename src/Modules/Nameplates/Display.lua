@@ -173,6 +173,9 @@ local parkedSweep = sweep:New()
 -- what restyling one costs, so this lane takes a single item where the shared budget would hand
 -- it more.
 local prewarmSweep = sweep:New(1)
+-- The same walker for displays a plate is already holding. Urgent, because a plate on screen is
+-- waiting on these while the lane above is only working ahead of anyone asking.
+local demandSweep = sweep:New(1, true)
 -- One reusable queue entry per (bar, faction), since the queue is the same pair repeated: the
 -- walker re-reads the options through it at fire time, so there is nothing per-item to carry.
 local prewarmItems = {}
@@ -546,6 +549,15 @@ local function TakeFreeDisplay(cacheKey, signature, categories, size, spacing, s
 	end
 end
 
+---One display's next group, from the walker.
+---@param display AuraContainerDisplay
+---@return SweepVerdict?
+local function DeclareNextGroup(display)
+	if display:AddNextGroup() then
+		return sweep.Verdict.Unfinished
+	end
+end
+
 ---The display one (plate, bar, faction) owns, bound on first ask and restyled when that faction's
 ---own configuration moves. The bind is the only time it is ever re-parented.
 ---@param nameplate table
@@ -581,9 +593,13 @@ local function GetOrCreateBarDisplay(nameplate, bar, barOptions, factionKey)
 		entry = TakeFreeDisplay(cacheKey, signature, categories, size, spacing, style)
 
 		if not entry then
+			-- Built without its groups like a prepared one, because a crowd of plates arriving at
+			-- once is exactly when the free list runs dry: a zone-in puts every plate up in the
+			-- same frame, and the walker cannot have run yet because nothing ticks behind a
+			-- loading screen. The icons of a category appear as its group lands.
 			entry = {
 				Display = CreateBarDisplay(barOptions, factionKey, size, spacing, style,
-					BarCategoryColors(barOptions)),
+					BarCategoryColors(barOptions), true),
 				Signature = signature,
 				Categories = categories,
 			}
@@ -592,9 +608,12 @@ local function GetOrCreateBarDisplay(nameplate, bar, barOptions, factionKey)
 
 		byBar[cacheKey] = entry
 		entry.Plate = nameplate
-		-- A prepared display is built group by group in the background; a plate wants all of it
-		-- now, so whatever the walk still owes goes in here.
-		entry.Display:FinishGroups()
+
+		-- Whatever this display still owes goes on the urgent lane, ahead of the spares: a plate
+		-- is holding it now.
+		if entry.Display:HasPendingGroups() then
+			demandSweep:Append(entry.Display, DeclareNextGroup)
+		end
 		-- The one re-parent this display will ever see. Built on UIParent so its buttons could be
 		-- skinned while their size was still readable, and it lives on this plate from here.
 		entry.Display.Frame:SetParent(nameplate)
@@ -1302,6 +1321,7 @@ function M:Teardown()
 	-- enable re-queues whatever still diffs, and the next loading screen tops the set back up.
 	parkedSweep:Stop()
 	prewarmSweep:Stop()
+	demandSweep:Stop()
 
 	-- Whatever the walk was part way through keeps the groups it has; a plate taking it finishes
 	-- the rest. Only the walker's own place in it is dropped.

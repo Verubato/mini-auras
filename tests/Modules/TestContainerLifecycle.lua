@@ -281,10 +281,18 @@ fw.describe("AlertsModule 12.1 - display pair lifecycle", function()
 end)
 
 fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
+	-- A plate's display is handed over without its groups: a crowd of plates arrives in one frame
+	-- and each group costs a batch of buttons, so the walker declares them a group per turn.
+	-- Reading them back means letting that run.
+	local function settleGroups()
+		acm.tickAll(100)
+	end
+
 	fw.it("an enemy plate acquires a display parented to the plate with the right budgets", function()
 		env.enemies.np_a = true
 		local plate = env.addPlate("np_a")
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_a")
+		settleGroups()
 
 		local containers = env.containersForUnit("np_a")
 		assert(#containers == 1, "one display for one enabled bar, got " .. #containers)
@@ -319,12 +327,14 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 		env.enemies.np_cat = true
 		env.addPlate("np_cat")
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_cat")
+		settleGroups()
 
 		local first = env.containersForUnit("np_cat")[1]
 		assert(first and first._groups.important == nil, "built without the switched-off category")
 
 		barOptions.ShowImportant = true
 		env.addon.Modules.NameplatesModule:Refresh()
+		settleGroups()
 
 		local containers = env.containersForUnit("np_cat")
 		local live = containers[#containers]
@@ -340,6 +350,27 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 		env.addon.Modules.NameplatesModule:Refresh()
 	end)
 
+	fw.it("hands a plate its display before the groups are in it", function()
+		-- A crowd of plates arrives in one frame and nothing ticks behind a loading screen, so the
+		-- free list is empty exactly when every plate wants one. The display goes on the plate now
+		-- and its icons follow as the walker declares each group.
+		env.enemies.np_late = true
+		env.addPlate("np_late")
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_late")
+
+		local display = env.containersForUnit("np_late")[1]
+
+		assert(display and display._enabled, "the plate has its display straight away")
+
+		settleGroups()
+
+		assert(next(display._groups) ~= nil, "and the walker fills its groups in afterwards")
+
+		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_REMOVED", "np_late")
+		env.plates.np_late = nil
+		env.enemies.np_late = nil
+	end)
+
 	fw.it("a friendly plate's disarm group is budgeted to zero", function()
 		-- The disarm group's only real filter is its spell-ID map, which the engine skips for
 		-- debuffs on assistable units - left budgeted it would show every debuff on the plate.
@@ -350,6 +381,7 @@ fw.describe("NameplatesModule 12.1 - pooled bar displays", function()
 
 		env.addPlate("np_friend")
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", "np_friend")
+		settleGroups()
 
 		local display = env.containersForUnit("np_friend")[1]
 		assert(display, "friendly plate tracked with its bar enabled")
@@ -719,6 +751,10 @@ fw.describe("NameplatesModule 12.1 - the pool never leaks", function()
 		env.enemies[token] = isEnemy ~= false or nil
 		env.addPlate(token)
 		nameplatesEvents:TriggerEvent("NAME_PLATE_UNIT_ADDED", token)
+		-- A plate is handed a display without its groups; the walker declares them a group per
+		-- turn and every display queued before this one comes first, so anything reading them
+		-- has to let it run out.
+		acm.tickAll(100)
 	end
 
 	local function removePlate(token)

@@ -155,6 +155,26 @@ fw.describe("Sweep - shared budget across lanes", function()
 		assert(tickerMock.ActiveCount() == 0)
 	end)
 
+	fw.it("an urgent lane goes before the others", function()
+		-- What the on-demand displays hold: a plate is on screen waiting for its groups, while
+		-- the ordinary lanes are preparing spares nobody has asked for.
+		local spare = sweep:New()
+		local urgent = sweep:New(nil, true)
+		local seenSpare, collectSpare = Collector()
+		local seenUrgent, collectUrgent = Collector()
+
+		spare:Run(Items(6), collectSpare)
+		urgent:Run(Items(3), collectUrgent)
+
+		tickerMock.Tick(1)
+		assert(#seenUrgent == 3, "the urgent lane took the tick, got " .. #seenUrgent)
+		assert(#seenSpare == 0, "while the ordinary one waited")
+
+		tickerMock.Tick(3)
+		assert(#seenSpare == 6, "which drains once there is nothing urgent left")
+		assert(tickerMock.ActiveCount() == 0)
+	end)
+
 	fw.it("a third busy lane is not starved by the stop check", function()
 		-- The end-of-tick "should the ticker stop" question must peek without advancing the
 		-- round-robin cursor; asking through the consuming lookup ate one lane's turn per tick,
