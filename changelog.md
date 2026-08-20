@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.21.1
+
+- Fixed the download extracting as flat files on macOS and Linux instead of the proper folder structure.
+
 ## 5.21.0
 
 - Improved first load time performance.
