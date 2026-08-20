@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.22.0
+
+- Added Dark Simulacrum to the enemy debuff announcements, spoken as just "Simulacrum".
+
 ## 5.21.2
 
 - Fixed profile auto switching, spec detection, and the interrupt tracker breaking on 12.1.
