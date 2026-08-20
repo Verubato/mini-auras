@@ -81,6 +81,7 @@ SHORT_NAMES = {
     "Celestial Alignment": "Incarn",
     "Cloak of Shadows": "Cloak",
     "Colossus Smash": "Smash",
+    "Dark Simulacrum": "Simulacrum",
     "Die by the Sword": "Parry",
     "Divine Protection": "Wall",
     "Divine Shield": "Bubble",

@@ -1145,6 +1145,7 @@ addon.Core.AuraCategoryIds = {
 		[385627] = true, -- Kingsbane
 		[274837] = true, -- Feral Frenzy
 		[321538] = true, -- Bloodshed
+		[77606] = true, -- Dark Simulacrum
 	},
 
 	-- Announced only when the player asks for them. These land often enough that a spoken name
