@@ -1,5 +1,10 @@
 # Changelog
 
+## 5.21.2
+
+- Fixed profile auto switching, spec detection, and the interrupt tracker breaking on 12.1.
+- Fixed the grow direction being ignored when personal auras were shown in test mode.
+
 ## 5.21.1
 
 - Fixed the download extracting as flat files on macOS and Linux instead of the proper folder structure.
