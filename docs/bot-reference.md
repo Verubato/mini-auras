@@ -5,7 +5,7 @@ setting lives, and what the defaults, ranges and limits are. Everything here is 
 the addon source (`src/Config/Defaults.lua`, `src/Config/Panels/`, `src/Config/Config.lua`,
 `src/Locales/enUS.lua`, `src/Modules/`, `src/Core/`, `src/Api/V1.lua`).
 
-Addon version 5.19.0. Supported interface version: 120100 (patch 12.1). Author: Verz.
+Addon version 5.21.1. Supported interface version: 120100 (patch 12.1). Author: Verz.
 Discord: https://discord.gg/UruPTPHHxK. Website: https://verzaddons.com.
 
 MiniAuras needs patch 12.1 or later. On 12.1 the game engine owns aura matching and display,
@@ -106,7 +106,8 @@ mode still previews there.
 A module that "does not work" somewhere is usually just switched off for that content type.
 Exceptions: Portraits and Party Trinkets have a single **Enabled** switch; Enemy Kicks is
 enabled by role (see its section); Custom Auras has no module switch at all (each group has its
-own Enabled toggle).
+own Enabled toggle). Since 5.19.2 a module switched off is never set up at all, so it registers
+no events and costs nothing, and switching it back on takes effect without a reload.
 
 ### Two setting groups per module
 
@@ -191,16 +192,16 @@ category on or off, applies in combat as normal.
 
 ### Glow Type (global, under Misc)
 
-One glow style for the whole addon, default **Slot Glow**. The full list: Rotation Assist
-(Clockwise), Rotation Assist (Anti-clockwise), Ants (Anti-Clockwise), Twins, Mirror, Twins
-Mirror, Slot Glow, Static Pixel Border.
+One glow style for the whole addon, default **Slot Glow**. Since 5.20.0 the full list is just
+**Slot Glow** and **Static Pixel Border**, and the settings page says so under the dropdown.
 
-- Slot Glow and Static Pixel Border are static and use the least CPU. The animated ones keep
-  animating icons that show no aura and cost CPU while idle, because the aura containers
-  pre-create buttons and the addon cannot gate the animation per icon.
-- A profile holding a glow type that is no longer offered renders as Slot Glow.
-- Twins, Mirror and Twins Mirror keep their own colours, so the colour swatches do not tint
-  them.
+- The animated styles (Rotation Assist Clockwise and Anti-clockwise, Ants, Twins, Mirror,
+  Twins Mirror) were removed in 5.20.0 because they cost FPS. An aura container pre-creates far
+  more buttons than it ever shows, a looping animation is evaluated every frame even on a hidden
+  button, and 12.1 leaves no way to gate an animation per icon, so the cost could not be limited
+  to icons anyone can see.
+- A profile holding one of the removed styles renders as Slot Glow, with the saved value left
+  alone. Nothing else in the profile changes.
 
 ### Font (global, under Misc, since 5.17.0)
 
@@ -246,7 +247,8 @@ channel dropdown: Master, Sound Effects (SFX), Music, Ambience, or Dialog, defau
 - **Font Scale** (Misc, 0.5-1.5, step 0.05, default 1.0) scales the addon's text.
 - **Font** (Misc, since 5.17.0) sets the face that text is drawn in; see "Font" above.
 - **Disable Swipe** (Misc, off by default) removes the cooldown pie animation everywhere;
-  timer text stays.
+  timer text stays. The swipe is drawn at 70% black since 5.21.0, a little lighter than before,
+  so the icon art stays readable underneath it.
 - **Zoom Icons** (Misc, on by default) crops the silver border Blizzard bakes into spell icon
   art, so the icon sits flush inside the addon's own border. Turning it off shows the stock
   art with its border. The crop is applied as an icon's frame is built and the frames are
@@ -745,6 +747,13 @@ update. That is the opposite of Group Auras, whose helpful side can only show wh
 list. It also means a nameplate bar can show a mob or boss ability that no PvP list mentions.
 Disarm is the one exception and stays list-driven, since the game has no flag for it.
 
+**Mind control and other side changes.** A unit that changes team keeps its plate, so the
+enemy and friendly bars have to swap over on it. Before 5.21.0 the icons a mind controlled unit
+was already showing stuck on its plate. Since 5.21.0 the plate is released and redrawn from the
+side the unit is on now, and the check runs on the events that announce the change rather than
+waiting for the next poll, so a flip costs about a frame of wrong icons instead of a quarter of
+a second.
+
 Related global option: **Configure Blizzard Nameplates** (Misc, on by default) disables
 Blizzard's own CC display and BigDebuffs on nameplates while MiniAuras nameplates are in use,
 so the same auras are not drawn twice.
@@ -1067,6 +1076,14 @@ Global `MiniAurasApi.v1`, also reachable as `MiniCCApi.v1` (same table):
 
 ## Troubleshooting, by symptom
 
+**"The addon does not appear in my list" (macOS and Linux).** Zips up to and including 5.21.0
+were built with the folder separators the Windows tools write, which Windows unzippers read
+correctly but macOS and Linux ones do not. Extracting one there gives a single folder holding
+about 1300 files with names like `MiniAuras\Core\Config.lua` instead of the `MiniAuras` and
+`MiniCC` folders. Fixed in 5.21.1. The fix: delete whatever the bad extract left in AddOns,
+then download 5.21.1 or later. Which extractors trip on it varies, so a user who saw it once
+should not assume a different tool will help; the new zip is the reliable answer.
+
 **"I changed the icon size and nothing happened."** Almost always combat, or an instance where
 aura data stays secret (M+, an encounter, rated PvP). The new size lands within a second of that
 lifting; see "Changing a look in combat". The addon says this in chat once per fight since
@@ -1212,8 +1229,10 @@ created, so reload after picking one. Bars, portrait icons and nameplate icons a
 skinned (see the Masque section). If a chat warning says Masque could not skin a group, that
 group runs unskinned until the next reload.
 
-**"High CPU usage."** Set Glow Type (Misc) to Slot Glow or Static Pixel Border. The animated
-glow styles keep animating idle icons.
+**"High CPU usage."** The animated glow styles were the usual cause and were removed in
+5.20.0, so a user still seeing it on 5.20.0 or later is not hitting that. Since 5.19.2 a module
+switched off is not set up at all and costs nothing, so switching off modules that are not
+wanted is the next thing to try.
 
 **"My font isn't in the list."** The list is whatever LibSharedMedia holds, so the font needs
 a media addon (or font pack) that registers it, loaded and enabled. Two things also remove a
