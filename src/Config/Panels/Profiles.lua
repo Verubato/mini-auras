@@ -426,9 +426,10 @@ function M:Build(panel)
 		if specRowsBuilt then return end
 		specRowsBuilt = true
 
-		local numSpecs = GetNumSpecializations and GetNumSpecializations() or 0
+		local wowEx = addon.Utils.WoWEx
+		local numSpecs = wowEx:GetNumSpecializations()
 		for specIdx = 1, numSpecs do
-			local specId, specName, _, specIcon = GetSpecializationInfo(specIdx)
+			local specId, specName, _, specIcon = wowEx:GetSpecializationInfo(specIdx)
 			if specId then
 				local capturedSpecId = specId
 				local thisItems = { NONE_LABEL }

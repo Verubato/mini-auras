@@ -67,15 +67,17 @@ local function GetTooltipSpecMap()
 
 	tooltipSpecMap = {}
 
-	if not (GetNumClasses and GetClassInfo and GetNumSpecializationsForClassID and GetSpecializationInfoForClassID) then
+	if not (GetNumClasses and GetClassInfo) then
 		return tooltipSpecMap
 	end
+
+	local wowEx = addon.Utils.WoWEx
 
 	for classIdx = 1, GetNumClasses() do
 		local className, _, classId = GetClassInfo(classIdx)
 		if className and classId then
-			for specIdx = 1, GetNumSpecializationsForClassID(classId) do
-				local specId, specName = GetSpecializationInfoForClassID(classId, specIdx)
+			for specIdx = 1, wowEx:GetNumSpecializationsForClassID(classId) do
+				local specId, specName = wowEx:GetSpecializationInfoForClassID(classId, specIdx)
 				if specId and specName then
 					tooltipSpecMap[specName .. " " .. className] = specId
 				end
@@ -327,14 +329,7 @@ function M:GetUnitSpecId(unit)
 	end
 
 	if UnitIsUnit(unit, "player") then
-		if GetSpecialization and GetSpecializationInfo then
-			local index = GetSpecialization()
-			if index then
-				local id = GetSpecializationInfo(index)
-				return id
-			end
-		end
-		return nil
+		return addon.Utils.WoWEx:GetPlayerSpecId()
 	end
 
 	local guid = UnitGUID(unit)

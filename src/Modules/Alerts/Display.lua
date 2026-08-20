@@ -183,12 +183,8 @@ local function ClassTokenForSpec(specId)
 		return cached or nil
 	end
 
-	local class = false
-
-	if GetSpecializationInfoByID then
-		local _, _, _, _, _, classToken = GetSpecializationInfoByID(specId)
-		class = classToken or false
-	end
+	local _, _, _, _, _, classToken = addon.Utils.WoWEx:GetSpecializationInfoByID(specId)
+	local class = classToken or false
 
 	classTokenBySpec[specId] = class
 

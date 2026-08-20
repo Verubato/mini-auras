@@ -71,9 +71,7 @@ local function TryAutoSwitch()
 	if not charKey then return end
 	local charRules = db.AutoSwitch[charKey]
 	if not charRules then return end
-	local specIdx = GetSpecialization and GetSpecialization()
-	if not specIdx then return end
-	local specId = GetSpecializationInfo(specIdx)
+	local specId = addon.Utils.WoWEx:GetPlayerSpecId()
 	if not specId then return end
 	local target = charRules[specId]
 	if target and db.Profiles and db.Profiles[target] and target ~= db.ActiveProfile then

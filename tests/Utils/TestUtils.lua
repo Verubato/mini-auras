@@ -432,6 +432,63 @@ fw.describe("WoWEx aura-styling gate", function()
 	end)
 end)
 
+-- 12.1 moved the specialization functions onto C_SpecializationInfo and the globals stopped
+-- answering, which emptied every spec lookup in the addon: profiles stopped auto switching and
+-- the kick tracker errored. The classic clients only ever had the globals, so both shapes have
+-- to work, and a test that leaves both in place cannot tell the difference.
+
+fw.describe("WoWEx specialization lookup", function()
+	local FROST_DK = 251
+
+	---@param shape string "modern" (12.1), "legacy", or "none"
+	local function loadWoWEx(shape, specIndex, specId)
+		local function Index()
+			return specIndex
+		end
+
+		local function Info(index)
+			if index ~= specIndex then
+				return nil
+			end
+			return specId, "Frost", "A spec", 135773, "DAMAGER"
+		end
+
+		if shape == "modern" then
+			_G.GetSpecialization = nil
+			_G.GetSpecializationInfo = nil
+			_G.C_SpecializationInfo = { GetSpecialization = Index, GetSpecializationInfo = Info }
+		elseif shape == "legacy" then
+			_G.C_SpecializationInfo = nil
+			_G.GetSpecialization = Index
+			_G.GetSpecializationInfo = Info
+		else
+			_G.C_SpecializationInfo = nil
+			_G.GetSpecialization = nil
+			_G.GetSpecializationInfo = nil
+		end
+
+		return loadModule("src/Utils/WoWEx.lua", newAddon({})).Utils.WoWEx
+	end
+
+	fw.it("reads the spec through C_SpecializationInfo when the globals are gone", function()
+		assert(loadWoWEx("modern", 2, FROST_DK):GetPlayerSpecId() == FROST_DK, "12.1 client")
+	end)
+
+	fw.it("falls back to the globals on a client without C_SpecializationInfo", function()
+		assert(loadWoWEx("legacy", 2, FROST_DK):GetPlayerSpecId() == FROST_DK, "classic client")
+	end)
+
+	fw.it("answers nil rather than erroring when neither shape is present", function()
+		assert(loadWoWEx("none"):GetPlayerSpecId() == nil, "no spec api at all")
+	end)
+
+	fw.it("answers nil while the spec is not known yet", function()
+		assert(loadWoWEx("modern", nil, nil):GetPlayerSpecId() == nil, "no index yet")
+		assert(loadWoWEx("modern", 2, nil):GetPlayerSpecId() == nil, "index but no info yet")
+		assert(loadWoWEx("modern", 2, 0):GetPlayerSpecId() == nil, "zero is not a spec")
+	end)
+end)
+
 -- AuraCategoryIds sanity
 
 fw.describe("AuraCategoryIds", function()

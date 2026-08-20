@@ -32,6 +32,12 @@ end
 _G.GetSpecializationInfo = function()
 	return currentSpecId
 end
+-- 12.1 reads the spec off C_SpecializationInfo, so point it at the same stubs; WoWEx prefers
+-- it and falls back to the globals above on the classic clients.
+_G.C_SpecializationInfo = {
+	GetSpecialization = _G.GetSpecialization,
+	GetSpecializationInfo = _G.GetSpecializationInfo,
+}
 _G.MiniAurasDB = nil
 
 local refreshCount = 0
@@ -52,6 +58,9 @@ local addon = {
 
 local addonFiles = require("AddonFiles")
 addonFiles.load(addonFiles.framework, addon)
+
+-- ProfileManager reads the player's spec through WoWEx.
+assert(loadfile("src/Utils/WoWEx.lua"))("MiniAuras", addon)
 
 assert(loadfile("src/Core/Profiles/ProfileManager.lua"))("MiniAuras", addon)
 addonFiles.load(addonFiles.migrator, addon)

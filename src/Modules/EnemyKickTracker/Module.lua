@@ -45,15 +45,7 @@ local function IsArena()
 end
 
 local function GetPlayerSpecId()
-	local specIndex = GetSpecialization()
-	if not specIndex then
-		return nil
-	end
-	local specId = GetSpecializationInfo(specIndex)
-	if specId and specId > 0 then
-		return specId
-	end
-	return nil
+	return addon.Utils.WoWEx:GetPlayerSpecId()
 end
 
 local function UpdateMinKickCooldown()
