@@ -589,6 +589,11 @@ local function EnsureTestContainer(state, entry, parent)
 	entry.Test.Frame:SetParent(parent)
 	entry.Test:SetIconSize(height)
 	entry.Test:SetSpacing(group.Icons.Spacing)
+	-- The live display reads the grow direction off the group, so the stand-ins have to as well
+	-- or a vertical group previews as a row and is dragged into place against the wrong shape.
+	entry.Test:SetGrowDown(group.Grow == "DOWN")
+	entry.Test:SetGrowUp(group.Grow == "UP")
+	entry.Test:SetRows(nil, nil, group.Grow == "LEFT")
 	entry.Test:SetCount(PreviewCount(group))
 
 	return entry.Test
