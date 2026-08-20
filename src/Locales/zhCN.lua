@@ -80,7 +80,7 @@ L:RegisterLocale("zhCN", function() return {
 	["Glow Type"] = "发光类型",
 	["Font"] = "字体",
 	["Game Default"] = "游戏默认",
-	["A separate region for showing enemy defensive spells."] = "用于显示敌方防御法术的独立区域。",
+	["A separate region for showing active enemy cooldowns."] = "用于显示敌方激活冷却的独立区域。",
 	["Shows auras on party/raid frames."] = "在小队/团队框架上显示光环。",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "在玩家/目标/焦点头像上显示控制、防御和其他重要法术。",
 	["Extra buffs"] = "额外增益",

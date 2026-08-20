@@ -563,7 +563,7 @@ function M:Build(panel, options)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			L["A separate region for showing enemy defensive spells."],
+			L["A separate region for showing active enemy cooldowns."],
 		},
 	})
 

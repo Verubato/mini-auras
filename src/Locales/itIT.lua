@@ -80,7 +80,7 @@ L:RegisterLocale("itIT", function() return {
 	["Glow Type"] = "Tipo di bagliore",
 	["Font"] = "Carattere",
 	["Game Default"] = "Predefinito del gioco",
-	["A separate region for showing enemy defensive spells."] = "Un'area separata per mostrare gli incantesimi difensivi nemici.",
+	["A separate region for showing active enemy cooldowns."] = "Un'area separata per mostrare i tempi di recupero attivi dei nemici.",
 	["Shows auras on party/raid frames."] = "Mostra le aure sui riquadri di gruppo e incursione.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Mostra CC, difensive e altri incantesimi importanti sui ritratti di giocatore/bersaglio/focus.",
 	["Extra buffs"] = "Potenziamenti aggiuntivi",

@@ -80,7 +80,7 @@ L:RegisterLocale("deDE", function() return {
 	["Glow Type"] = "Leuchttyp",
 	["Font"] = "Schriftart",
 	["Game Default"] = "Spielstandard",
-	["A separate region for showing enemy defensive spells."] = "Ein separater Bereich zur Anzeige gegnerischer Defensivzauber.",
+	["A separate region for showing active enemy cooldowns."] = "Ein separater Bereich zur Anzeige aktiver gegnerischer Abklingzeiten.",
 	["Shows auras on party/raid frames."] = "Zeigt Auren auf Gruppen- und Schlachtzugsfenstern.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Zeigt CC, Defensivzauber und andere wichtige Zauber auf den Porträts von Spieler/Ziel/Fokus.",
 	["Extra buffs"] = "Zusätzliche Stärkungszauber",

@@ -80,7 +80,7 @@ L:RegisterLocale("ptBR", function() return {
 	["Glow Type"] = "Tipo de brilho",
 	["Font"] = "Fonte",
 	["Game Default"] = "Padrão do jogo",
-	["A separate region for showing enemy defensive spells."] = "Uma região separada para mostrar feitiços defensivos inimigos.",
+	["A separate region for showing active enemy cooldowns."] = "Uma região separada para mostrar as recargas inimigas ativas.",
 	["Shows auras on party/raid frames."] = "Mostra auras nos quadros de grupo/raide.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Mostra CC, defensivos e outros feitiços importantes nos retratos do jogador/alvo/foco.",
 	["Extra buffs"] = "Bônus adicionais",

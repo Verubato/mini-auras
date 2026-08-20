@@ -81,7 +81,7 @@ L:SetDefaultStrings({
 	["Glow Type"] = "Glow Type",
 	["Font"] = "Font",
 	["Game Default"] = "Game Default",
-	["A separate region for showing enemy defensive spells."] = "A separate region for showing enemy defensive spells.",
+	["A separate region for showing active enemy cooldowns."] = "A separate region for showing active enemy cooldowns.",
 	["Shows auras on party/raid frames."] = "Shows auras on party/raid frames.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Shows CC, defensives, and other important spells on the player/target/focus portraits.",
 	["Extra buffs"] = "Extra buffs",

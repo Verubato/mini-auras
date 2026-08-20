@@ -80,7 +80,7 @@ L:RegisterLocale("frFR", function() return {
 	["Glow Type"] = "Type de lueur",
 	["Font"] = "Police",
 	["Game Default"] = "Par défaut du jeu",
-	["A separate region for showing enemy defensive spells."] = "Une zone séparée pour afficher les sorts défensifs ennemis.",
+	["A separate region for showing active enemy cooldowns."] = "Une zone séparée pour afficher les temps de recharge actifs des ennemis.",
 	["Shows auras on party/raid frames."] = "Affiche les auras sur les cadres de groupe et de raid.",
 	["Shows CC, defensives, and other important spells on the player/target/focus portraits."] = "Affiche les contrôles, défensifs et autres sorts importants sur les portraits du joueur/de la cible/du focus.",
 	["Extra buffs"] = "Améliorations supplémentaires",
