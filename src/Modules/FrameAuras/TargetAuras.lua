@@ -328,11 +328,9 @@ local function AnchorRows(host)
 
 	for _, containerFrame in ipairs({ debuffs, buffs }) do
 		-- Scales with the frame rather than the screen, like the group rows. It is also what puts
-		-- these rows in the same coordinate space as the cast bar that anchors below them.
-		--
-		-- The rows are BORN on the frame (see Build) rather than reparented onto it: declaring an
-		-- aura group marks a container as running layout untrusted code may not follow, and moving
-		-- one under a new parent after that is not something to lean on.
+		-- these rows in the same coordinate space as the cast bar that anchors below them, which is
+		-- what the bar was missing: anchored to a container drawing at scale 1 while the frame it
+		-- belongs to sits at the UI scale, it landed nowhere near the bottom of the rows.
 		containerFrame:SetIgnoreParentScale(false)
 		containerFrame:SetFrameStrata(frames:GetNextStrata(frame:GetFrameStrata()))
 

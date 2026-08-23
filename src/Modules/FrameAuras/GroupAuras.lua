@@ -49,6 +49,10 @@ local PLACEMENT = {
 	Debuffs = { Point = "BOTTOMLEFT", Grow = "RIGHT_UP", OffsetX = 2, OffsetY = 2 },
 }
 local ICON_SPACING = 1
+-- How many frames' worth of rows to have ready before a group turns up. A party is five, which is
+-- the size a solo player is most likely to become; past that the walker keeps up with the frames
+-- appearing, because a raid fills in over several seconds anyway.
+local PREWARM_FRAMES = 5
 -- Icons take a share of the frame's height rather than a fixed size, because a raid profile and a
 -- party profile size their frames very differently. This is what one falls back to when the client
 -- will not say how tall the frame is.
@@ -110,6 +114,13 @@ local hooked = false
 local frameScratch = {}
 -- Refilled per call, for the same reason: the preview list is rebuilt per side per frame.
 local testListScratch = {}
+-- Spare displays built before any frame has asked for one, so a group forming does not have to
+-- wait out the walker for its rows. Held on the screen until a frame takes one.
+local spares = { Buffs = {}, Debuffs = {} }
+-- The spare currently being finished, so its groups are declared one per turn like every other
+-- build. Only ever one at a time: spares are the lowest-priority work the addon does.
+local prewarmBuilding
+local prewarmSweep = sweep:New(1)
 -- Background walker declaring the aura groups of the displays as they are built. Urgent: these sit
 -- on unit frames the player is looking at. The engine allocates a batch of buttons the moment a
 -- group is declared, so a party converting to a raid would otherwise build eighty of them at once.
@@ -199,6 +210,10 @@ end
 local function IconSize(frame, side)
 	local options = SideOptions(side)
 	local percent = options and options.Size or DEFAULT_SIZE_PERCENT
+
+	if not frame then
+		return FALLBACK_ICON_SIZE
+	end
 
 	return pixels:ShareOfHeight(frame, percent, FALLBACK_ICON_SIZE)
 end
@@ -433,15 +448,17 @@ local function DeclareNextGroup(display)
 	end
 end
 
----@param frame table
+---@param frame table? The frame this row will sit on, which is what sizes it. Nil for a spare
+---built before its frame is known; it takes the fallback size and is resized when it is taken.
 ---@param unit string?
+---@param parent table? Defaults to the frame. A spare is built on the screen instead.
 ---@return AuraContainerDisplay
-local function BuildBuffs(frame, unit)
+local function BuildBuffs(frame, unit, parent)
 	local pandemic, plain = BuffCandidates()
 	local filter = BuffFilter()
 	local maxIcons = MaxIcons("Buffs")
 
-	return auraContainerDisplay:New(frame, unit or "none", {
+	return auraContainerDisplay:New(parent or frame, unit or "none", {
 		-- The spells that light up lead the row. Two groups because the reveal is registered on a
 		-- button when it is built and driven by a window nothing can read, so which spells get one
 		-- can only be decided by which group they land in.
@@ -459,15 +476,16 @@ local function BuildBuffs(frame, unit)
 	})
 end
 
----@param frame table
+---@param frame table? As BuildBuffs.
 ---@param unit string?
+---@param parent table? Defaults to the frame.
 ---@return AuraContainerDisplay
-local function BuildDebuffs(frame, unit)
+local function BuildDebuffs(frame, unit, parent)
 	local boss, priority = DebuffCandidates()
 	local maxIcons = MaxIcons("Debuffs")
 	local filter = DebuffFilter()
 
-	local display = auraContainerDisplay:New(frame, unit or "none", {
+	local display = auraContainerDisplay:New(parent or frame, unit or "none", {
 		-- Declared boss first: groups render in the order they are declared, so its icons take the
 		-- row before anything the priority group matched.
 		{ Key = BOSS_DEBUFF_GROUP, FilterString = filter, MaxIcons = maxIcons, CandidateFilters = boss },
@@ -720,6 +738,93 @@ local function ApplyEntry(entry)
 	end
 end
 
+---How many rows one side still wants ready: the target, less the frames already carrying one and
+---the spares already waiting. Entries count because a frame holding a row is doing the job a spare
+---was held for.
+---@param side "Buffs"|"Debuffs"
+---@return number
+local function SparesWanted(side)
+	if not active[side] then
+		return 0
+	end
+
+	local built = 0
+
+	for _, entry in pairs(watchers) do
+		if entry[side] then
+			built = built + 1
+		end
+	end
+
+	return PREWARM_FRAMES - built - #spares[side]
+end
+
+---A spare rehomed onto the frame that has just asked for one, or nil when none is waiting.
+---
+---The one re-parent a display ever sees. It is built on the screen because a frame it could hang
+---off does not exist yet, and it lives on that frame from here.
+---@param side "Buffs"|"Debuffs"
+---@param frame table
+---@param unit string?
+---@return AuraContainerDisplay?
+local function TakeSpare(side, frame, unit)
+	local pool = spares[side]
+	local display = pool[#pool]
+
+	if not display then
+		return nil
+	end
+
+	pool[#pool] = nil
+
+	display.Frame:SetParent(frame)
+	display:SetUnit(unit or "none")
+
+	return display
+end
+
+---One spare, a group per turn. Everything is re-read at fire time: the walk runs over seconds, in
+---which the side can be switched off and the frames it was being held for can turn up on their own.
+---@param side "Buffs"|"Debuffs"
+---@return SweepVerdict?
+local function PrewarmNext(side)
+	if prewarmBuilding then
+		if prewarmBuilding.Display:AddNextGroup() and prewarmBuilding.Display:HasPendingGroups() then
+			return sweep.Verdict.Unfinished
+		end
+
+		local pool = spares[prewarmBuilding.Side]
+		pool[#pool + 1] = prewarmBuilding.Display
+		prewarmBuilding = nil
+
+		return
+	end
+
+	if SparesWanted(side) <= 0 then
+		return
+	end
+
+	-- Sized off a real frame where there is one, so a spare taken later needs no resize: a restyle
+	-- is refused outright while auras are secret, and one bound mid-fight would keep whatever size
+	-- it was built with.
+	local sample = BlizzardFrames()[1]
+	local build = side == "Buffs" and BuildBuffs or BuildDebuffs
+
+	prewarmBuilding = { Side = side, Display = build(sample, nil, UIParent) }
+
+	return sweep.Verdict.Unfinished
+end
+
+---Tops the spares up, if the walker is not already at it. Cheap to call from any refresh: the
+---queue is only ever as long as what is still wanted.
+local function QueuePrewarm()
+	for _, side in ipairs(SIDES) do
+		for _ = 1, math.max(0, SparesWanted(side)) do
+			prewarmSweep:Append(side, PrewarmNext)
+		end
+	end
+end
+
 ---The entry for a frame, built the first time the frame is seen. A side switched on after the entry
 ---exists gets its display then; one switched off keeps it, because the engine can free neither a
 ---display nor the buttons under it.
@@ -772,16 +877,25 @@ local function EnsureEntry(frame)
 		return entry
 	end
 
-	if active.Buffs and not entry.Buffs then
-		entry.Buffs = BuildBuffs(frame, entry.Unit)
-		buildSweep:Append(entry.Buffs, DeclareNextGroup)
-		entry.Generation = nil
-	end
+	for _, side in ipairs(SIDES) do
+		if active[side] and not entry[side] then
+			local display = TakeSpare(side, frame, entry.Unit)
 
-	if active.Debuffs and not entry.Debuffs then
-		entry.Debuffs = BuildDebuffs(frame, entry.Unit)
-		buildSweep:Append(entry.Debuffs, DeclareNextGroup)
-		entry.Generation = nil
+			if not display then
+				local build = side == "Buffs" and BuildBuffs or BuildDebuffs
+				display = build(frame, entry.Unit)
+			end
+
+			entry[side] = display
+
+			-- Whatever it still owes goes on the urgent lane, ahead of the spares: a frame is
+			-- holding it now. A spare taken mid-build may still owe some of its groups.
+			if display:HasPendingGroups() then
+				buildSweep:Append(display, DeclareNextGroup)
+			end
+
+			entry.Generation = nil
+		end
 	end
 
 	return entry
@@ -950,6 +1064,9 @@ function M:Refresh()
 		InstallHooks()
 		rosterGate:SetActive(true)
 		ApplyToAll()
+		-- After the frames on screen have been served: a spare is only worth building for a frame
+		-- that is not there yet, and ApplyToAll is what settles how many of those there are.
+		QueuePrewarm()
 
 		return
 	end

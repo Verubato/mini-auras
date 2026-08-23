@@ -5,6 +5,8 @@
 
 local fw = require("Framework")
 local moduleEnv = require("ModuleEnv")
+-- The sweep only moves on a ticker, so the prewarm tests have to run it by hand.
+local acm = require("AuraContainerMock")
 
 local env = moduleEnv.build()
 local db = env.db
@@ -282,23 +284,39 @@ local originalFill = testSpells.FillContainer
 testSpells.FillContainer = function(self, container, previewSpells, startSlot, fillOptions)
 	-- Copied, not kept: the module builds each preview list in a scratch table it refills per
 	-- call, so holding the reference would leave every capture showing the last row drawn.
-	local spells = {}
+	local captured = {}
 
 	for index, spellId in ipairs(previewSpells) do
-		spells[index] = spellId
+		captured[index] = spellId
 	end
 
-	fills[#fills + 1] = { Container = container, Spells = spells, Frame = container.Frame }
+	fills[#fills + 1] = { Container = container, Spells = captured, Frame = container.Frame }
 
 	return originalFill(self, container, previewSpells, startSlot, fillOptions)
 end
 
+---How many aura containers are parented to a frame. Asked of the frame rather than of the unit,
+---because a spare warmed up ahead of a group sits on "none" until one takes it.
+---@param frame table
+---@return number
+local function ContainersOn(frame)
+	local count = 0
+
+	for _, candidate in ipairs(acm.frames) do
+		if candidate._type == "AuraContainer" and candidate:GetParent() == frame then
+			count = count + 1
+		end
+	end
+
+	return count
+end
+
 ---Whether a captured preview list holds a spell id.
----@param spells number[]
+---@param list number[]
 ---@param spellId number
 ---@return boolean
-local function Includes(spells, spellId)
-	for _, id in ipairs(spells) do
+local function Includes(list, spellId)
+	for _, id in ipairs(list) do
 		if id == spellId then
 			return true
 		end
@@ -325,6 +343,60 @@ local function RowOn(frame)
 
 	return nil
 end
+
+fw.describe("Frame Auras - warming up ahead of a group", function()
+	fw.before_each(function()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		groupAuras:Refresh()
+	end)
+
+	fw.it("builds spare rows for the frames a group has yet to fill", function()
+		local before = env.auraContainerCount()
+
+		options.Buffs.Enabled = true
+		groupAuras:Refresh()
+		acm.tickAll(400)
+
+		-- One frame is on screen, so the rest of the five are held ready off it.
+		assert(env.auraContainerCount() > before + 1, "spares were built past the frame on screen")
+	end)
+
+	fw.it("hands a waiting spare to the next frame rather than building another", function()
+		options.Buffs.Enabled = true
+		groupAuras:Refresh()
+		acm.tickAll(400)
+
+		local warmed = env.auraContainerCount()
+
+		-- A second frame turns up, as one does when somebody joins.
+		local joined = _G.CreateFrame("Frame", "CompactPartyFrameMember2", _G.UIParent)
+		joined.healthBar = _G.CreateFrame("Frame", nil, joined)
+		joined.unit = "party2"
+		joined.GetAttribute = function(_, key)
+			return key == "unit" and joined.unit or nil
+		end
+		_G.CompactPartyFrameMember2 = joined
+
+		groupAuras:Refresh()
+
+		assert(env.auraContainerCount() == warmed,
+			"the frame took a row that already existed instead of paying to build one")
+
+		_G.CompactPartyFrameMember2 = nil
+		options.Buffs.Enabled = false
+		groupAuras:Refresh()
+	end)
+
+	fw.it("builds no spares for a side nobody switched on", function()
+		local before = env.auraContainerCount()
+
+		groupAuras:Refresh()
+		acm.tickAll(400)
+
+		assert(env.auraContainerCount() == before, "an off module warms nothing up")
+	end)
+end)
 
 fw.describe("Frame Auras - test mode", function()
 	fw.before_each(function()
@@ -385,18 +457,16 @@ fw.describe("Frame Auras - test mode", function()
 		hidden:Hide()
 		_G.CompactRaidFrame2 = hidden
 
-		local before = env.auraContainerCount()
-
 		groupAuras:Refresh()
 
-		assert(env.auraContainerCount() == before,
+		assert(ContainersOn(hidden) == 0,
 			"a hidden frame costs no display, however occupied its token says it is")
 
 		-- Put it on screen and it gets one, so the gate defers the work rather than losing it.
 		hidden:Show()
 		groupAuras:Refresh()
 
-		assert(env.auraContainerCount() > before, "showing the frame is what builds its rows")
+		assert(ContainersOn(hidden) > 0, "showing the frame is what builds its rows")
 
 		options.Buffs.Enabled = false
 		_G.CompactRaidFrame2 = nil
@@ -469,7 +539,7 @@ fw.describe("Frame Auras - test mode", function()
 		-- A preview that let every empty frame through would leave an entry for each, and every
 		-- refresh after it would build that entry a display and its batch of buttons.
 		assert(not RowOn(spare), "the empty frame never got a preview row")
-		assert(#env.containersForUnit("none") == 0, "nor a live display once the preview ended")
+		assert(ContainersOn(spare) == 0, "nor a live display once the preview ended")
 
 		_G.CompactRaidFrame1 = nil
 	end)
