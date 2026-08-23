@@ -46,6 +46,79 @@ end
 _G.CompactPartyFrame = partyContainer
 _G.CompactPartyFrameMember1 = memberFrame
 
+-- What the client has its own container set to, and what it has to be left holding again.
+local BLIZZARD_MAX_BUFFS = 4
+local BLIZZARD_MAX_DEBUFFS = 3
+
+-- Blizzard's own aura container on the target frame. The counts and the unit are modelled although
+-- the module has no business writing them, because a test that only watched the switch it is
+-- allowed to throw would not notice it throwing the others.
+local blizzardAuras = {}
+
+function blizzardAuras:Reset()
+	self._enabled = true
+	self._shown = true
+	self._maxBuffs = BLIZZARD_MAX_BUFFS
+	self._maxDebuffs = BLIZZARD_MAX_DEBUFFS
+	self._unit = "target"
+end
+
+function blizzardAuras:SetEnabled(enabled)
+	self._enabled = enabled
+end
+
+function blizzardAuras:SetMaxBuffs(count)
+	self._maxBuffs = count
+end
+
+function blizzardAuras:SetMaxDebuffs(count)
+	self._maxDebuffs = count
+end
+
+function blizzardAuras:SetUnit(unit)
+	self._unit = unit
+end
+
+function blizzardAuras:IsEnabled()
+	return self._enabled
+end
+
+function blizzardAuras:SetShown(shown)
+	self._shown = shown
+end
+
+function blizzardAuras:Show()
+	self._shown = true
+end
+
+function blizzardAuras:Hide()
+	self._shown = false
+end
+
+function blizzardAuras:IsShown()
+	return self._shown
+end
+
+blizzardAuras:Reset()
+
+-- Where the client itself hangs the cast bar, which the rows take over and have to give back.
+local CASTBAR_HOME = { Point = "TOP", RelativePoint = "BOTTOM", X = 0, Y = -5 }
+
+-- The target frame, carrying the two things the rows take over: the client's aura container and its
+-- cast bar. Set up by hand for the same reason the party frame above is.
+local targetFrame = _G.CreateFrame("Frame", "TargetFrame", _G.UIParent)
+
+targetFrame.GetAuraContainer = function()
+	return blizzardAuras
+end
+
+targetFrame.ConfigureAuraContainer = function() end
+targetFrame.spellbar = _G.CreateFrame("Frame", nil, targetFrame)
+targetFrame.spellbar:SetPoint(CASTBAR_HOME.Point, targetFrame, CASTBAR_HOME.RelativePoint,
+	CASTBAR_HOME.X, CASTBAR_HOME.Y)
+
+_G.TargetFrame = targetFrame
+
 env.loadModule("src/Core/Display/Pixels.lua")
 env.loadModule("src/Core/Auras/TrackedBuffs.lua")
 env.loadModule("src/Core/Auras/ClassBuffs.lua")
@@ -894,17 +967,10 @@ local function GlowOn(container, groupKey)
 end
 
 fw.describe("Frame Auras - the purge glow on the target row", function()
-	local targetFrame
-
 	fw.before_each(function()
 		module:StopTesting()
 		options.TargetFocus.Enabled = true
 		options.TargetFocus.PurgeGlow = true
-
-		if not targetFrame then
-			targetFrame = _G.CreateFrame("Frame", "TargetFrame", _G.UIParent)
-			_G.TargetFrame = targetFrame
-		end
 
 		module:Refresh()
 		acm.tickAll(400)
@@ -980,5 +1046,97 @@ fw.describe("Frame Auras - the purge glow on the target row", function()
 		assert(plain and plain.maxDuration, "and so is the plain one")
 
 		options.TargetFocus.ShortBuffsOnly = false
+	end)
+end)
+
+fw.describe("Frame Auras - handing the target frame back", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.TargetFocus.Enabled = false
+		module:Refresh()
+
+		blizzardAuras:Reset()
+	end)
+
+	fw.it("switches the client's own container off while the rows are up", function()
+		options.TargetFocus.Enabled = true
+		module:Refresh()
+
+		assert(not blizzardAuras:IsEnabled(), "the client's container stops tracking")
+		assert(not blizzardAuras:IsShown(), "and stops drawing what it already had")
+
+		-- Those two and nothing else. There is no getter for either count or for the unit, so a
+		-- module that emptied them could never fill them back in.
+		assert(blizzardAuras._maxBuffs == BLIZZARD_MAX_BUFFS, "its buff count is left alone")
+		assert(blizzardAuras._maxDebuffs == BLIZZARD_MAX_DEBUFFS, "so is its debuff count")
+		assert(blizzardAuras._unit == "target", "and so is the unit it was pointed at")
+	end)
+
+	fw.it("hands the container back the moment the rows are switched off", function()
+		options.TargetFocus.Enabled = true
+		module:Refresh()
+		options.TargetFocus.Enabled = false
+		module:Refresh()
+
+		-- On this pass rather than on the next target change: this is what the player is looking at
+		-- when they throw the switch. Nothing else is written to the container, because nothing else
+		-- could be read back to write again.
+		assert(blizzardAuras:IsEnabled(), "the container is tracking again")
+		assert(blizzardAuras:IsShown(), "and drawing again")
+		assert(blizzardAuras._maxBuffs == BLIZZARD_MAX_BUFFS,
+			"with room for the buffs it had, got " .. tostring(blizzardAuras._maxBuffs))
+		assert(blizzardAuras._maxDebuffs == BLIZZARD_MAX_DEBUFFS,
+			"and for the debuffs, got " .. tostring(blizzardAuras._maxDebuffs))
+		assert(blizzardAuras._unit == "target",
+			"still on the unit the frame holds, got " .. tostring(blizzardAuras._unit))
+	end)
+
+	fw.it("hands an already-off container back the way it found it", function()
+		blizzardAuras._enabled = false
+		blizzardAuras._shown = false
+
+		options.TargetFocus.Enabled = true
+		module:Refresh()
+		options.TargetFocus.Enabled = false
+		module:Refresh()
+
+		assert(not blizzardAuras:IsEnabled(), "a container the player had off is handed back off")
+		assert(not blizzardAuras:IsShown(), "rather than switched on by a module that found it off")
+	end)
+
+	fw.it("leaves a container alone that it never took over", function()
+		blizzardAuras._enabled = false
+		blizzardAuras._shown = false
+
+		module:Refresh()
+
+		assert(not blizzardAuras:IsEnabled(), "a player who switched these off keeps them off")
+		assert(not blizzardAuras:IsShown(), "and gets back nothing the module never took")
+	end)
+
+	fw.it("puts the cast bar back where the client had it", function()
+		local bar = targetFrame.spellbar
+
+		options.TargetFocus.Enabled = true
+		module:Refresh()
+
+		local _, followed = bar:GetPoint(1)
+
+		assert(followed and followed ~= targetFrame, "the bar follows the rows while they are up")
+
+		-- A second pass over a bar this module has already moved. What gets handed back is what
+		-- the client had, never the anchor the rows put there.
+		module:Refresh()
+
+		options.TargetFocus.Enabled = false
+		module:Refresh()
+
+		local point, relativeTo, relativePoint, x, y = bar:GetPoint(1)
+
+		assert(bar:GetNumPoints() == 1, "one anchor, not the row's left sitting under the client's")
+		assert(point == CASTBAR_HOME.Point and relativePoint == CASTBAR_HOME.RelativePoint,
+			"the bar is back on the client's own anchor, got " .. tostring(point))
+		assert(relativeTo == targetFrame, "hung off the frame again rather than off a row that is gone")
+		assert(x == CASTBAR_HOME.X and y == CASTBAR_HOME.Y, "at the client's own offset")
 	end)
 end)

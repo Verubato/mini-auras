@@ -57,6 +57,10 @@ local M = {}
 addon.Modules.FrameAuras.TargetAuras = M
 
 local active = false
+-- What active was on the last pass, so the switch going off can hand back what only that edge knows
+-- to hand back. Every refresh runs while the rows are off, and putting Blizzard's cast bar anchor
+-- back on each of them would be meddling with a bar the module no longer touches.
+local wasActive = false
 local testModeActive = false
 -- Host frame -> its two displays. The frames are Blizzard's own and live for the session, so an
 -- entry lives as long as they do; there is nothing to clear.
@@ -176,9 +180,10 @@ local function ArtOf(frame)
 	return container and container.FrameTexture or frame
 end
 
----Blizzard draws its own auras on these frames and there is no setting that turns them off. Its
----container has to be emptied and disabled rather than hidden: a hidden one goes on collecting, and
----whatever it collected is what comes back the moment something shows it again.
+---Blizzard draws its own auras on these frames and there is no setting that turns them off, so the
+---container is switched off and hidden instead. Only those two, because they are the only ones that
+---can be taken back: the counts and the unit have no getter to read the old value from, and a
+---container handed back holding none of them draws nothing at all.
 ---@param frame table
 local function SuppressBlizzardAuras(frame)
 	local container = frame.GetAuraContainer and frame:GetAuraContainer()
@@ -187,27 +192,31 @@ local function SuppressBlizzardAuras(frame)
 		return
 	end
 
+	local taken = suppressed[frame]
+
 	if not active then
-		-- Only where this actually took the container over. A profile that has never switched the
-		-- rows on has no business re-enabling a container the player may have left alone, the same
-		-- edge the raid frame cvars are careful about.
-		if suppressed[frame] then
+		-- Only where this actually took the container over, and only back to what it found. A
+		-- profile that never switched the rows on, or a player who had these off already, has no
+		-- business getting a container handed back on, the same edge the raid frame cvars watch.
+		if taken then
 			suppressed[frame] = nil
-			-- Handed back. Blizzard sets its own counts whenever it configures the container,
-			-- which it does on the next unit change, so nothing here has to remember what they
-			-- were.
-			container:SetEnabled(true)
+			-- On before shown, so the refresh that showing brings lands on a live container and
+			-- the target already on the frame gets its auras back without a target change.
+			container:SetEnabled(taken.Enabled)
+			container:SetShown(taken.Shown)
 		end
 
 		return
 	end
 
-	suppressed[frame] = true
+	-- Read once, on the way in. The hook below re-applies this on every reconfigure, and by then
+	-- what the container is holding is this module's own answer rather than the client's.
+	if not taken then
+		suppressed[frame] = { Enabled = container:IsEnabled(), Shown = container:IsShown() }
+	end
 
-	container:SetMaxBuffs(0)
-	container:SetMaxDebuffs(0)
-	container:SetUnit("none")
 	container:SetEnabled(false)
+	container:Hide()
 end
 
 ---@return AuraDisplayStyle
@@ -326,6 +335,48 @@ local function AnchorCastBar(host)
 	host.Anchoring = false
 end
 
+---Hands the cast bar back where Blizzard had it. Blizzard puts it right itself the next time it
+---raises one, but that is a cast away, and until then the bar is hanging off a row nobody draws.
+---@param host table
+local function RestoreCastBar(host)
+	local bar = host.Frame.spellbar
+	local saved = host.BarPoints
+
+	-- Nothing read means nothing to give: clearing the bar's points and putting none back would
+	-- leave it anchored nowhere at all.
+	if not bar or not saved or #saved < 1 then
+		return
+	end
+
+	bar:ClearAllPoints()
+
+	for _, point in ipairs(saved) do
+		bar:SetPoint(point.Point, point.RelativeTo, point.RelativePoint, point.X, point.Y)
+	end
+end
+
+---Remembers where Blizzard has the cast bar, which is what switching the rows off puts back. Read
+---here rather than at the first move: this runs before anything of this module's has touched the
+---bar, and outside the hook, so it never reads a half-finished set of points.
+---
+---A bar the client has not anchored yet leaves the empty list, which nothing is handed back from.
+---Blizzard anchors it itself the next time it raises a cast, so there is nothing to invent here.
+---@param host table
+---@param bar table
+local function RememberCastBar(host, bar)
+	local points = {}
+
+	for index = 1, bar:GetNumPoints() do
+		local point, relativeTo, relativePoint, x, y = bar:GetPoint(index)
+
+		points[index] = {
+			Point = point, RelativeTo = relativeTo, RelativePoint = relativePoint, X = x, Y = y,
+		}
+	end
+
+	host.BarPoints = points
+end
+
 ---Takes over the cast bar's anchoring for one host, once its bar exists. Blizzard builds the bar
 ---with the frame, but a client that has not yet would leave a hook that never installs, so this is
 ---asked on every pass rather than once at init.
@@ -338,6 +389,8 @@ local function HookCastBar(host)
 	end
 
 	host.BarHooked = true
+
+	RememberCastBar(host, bar)
 
 	-- Blizzard re-anchors the bar to the frame whenever it puts one up, so this has to be taken
 	-- back every time rather than set once. Switching this off simply stops taking it, and the next
@@ -632,8 +685,8 @@ local function InstallHooks()
 	for _, host in ipairs(hosts) do
 		local frame = host.Frame
 
-		-- The frame sets its container's counts back whenever it reconfigures one, which it does on
-		-- every unit change, so the suppression has to be re-applied there rather than once.
+		-- Reconfiguring a container is what the frame does on every unit change, and it puts the
+		-- container back on and on screen, so this has to be re-applied there rather than once.
 		if not hooked[frame] and type(frame.ConfigureAuraContainer) == "function" then
 			hooked[frame] = true
 
@@ -667,4 +720,12 @@ function M:Refresh()
 
 	Watcher():SetActive(active)
 	ApplyToAll()
+
+	if wasActive and not active then
+		for _, host in ipairs(hosts) do
+			RestoreCastBar(host)
+		end
+	end
+
+	wasActive = active
 end
