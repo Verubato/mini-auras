@@ -508,6 +508,10 @@ L:SetDefaultStrings({
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them.",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Lets crowd control into this row. Off by default, because Important Auras already draws it.",
+	["Purgeable buffs"] = "Purgeable buffs",
+	["Purge glow"] = "Purge glow",
+	["Lights up the buffs on an enemy that you can take off, and puts them first in the row."] = "Lights up the buffs on an enemy that you can take off, and puts them first in the row.",
+	["The colour a buff you can take off an enemy lights up in."] = "The colour a buff you can take off an enemy lights up in.",
 })
 
 -- English registers nothing: the strings above ARE the fallback every locale reads through, so

@@ -1,6 +1,7 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local moduleUtil = addon.Utils.ModuleUtil
 local eventGate = addon.Core.EventGate
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
 local iconSlotContainer = addon.Core.IconSlotContainer
@@ -14,8 +15,16 @@ local spells = addon.Modules.FrameAuras.Spells
 
 local DEBUFF_GROUP = "TargetDebuffs"
 local BUFF_GROUP = "TargetBuffs"
+local BUFF_PURGE_GROUP = "TargetBuffsPurge"
 local DEBUFF_FILTER = "HARMFUL"
 local BUFF_FILTER = "HELPFUL"
+-- The buffs worth purging, and the rest. The token means "carries a dispel type this player can
+-- remove", which is the whole of the question: a class with no purge matches nothing here, and a
+-- friendly target matches nothing either, since a helpful aura is not something you dispel off a
+-- friend. An aura's own dispel type is secret, so the split can only be made by the filter string
+-- and shown by which group an icon lands in.
+local PURGE_FILTER = "HELPFUL|RAID_PLAYER_DISPELLABLE"
+local PLAIN_BUFF_FILTER = "HELPFUL|!RAID_PLAYER_DISPELLABLE"
 -- What counts as a buff worth seeing on a target: anything the fight could plausibly turn on. Past
 -- this it is a raid buff, a flask, or some other thing that is simply always there.
 local SHORT_BUFF_SECONDS = 2 * 60
@@ -33,6 +42,7 @@ local MASQUE_GROUP = "Frame Auras"
 local DEFAULT_SIZE = 22
 local DEFAULT_PER_ROW = 6
 local DEFAULT_MAX_ICONS = 6
+local DEFAULT_PURGE_COLOR = { R = 0.35, G = 0.7, B = 1 }
 -- The two frames this stands in for, by the global the client publishes them under.
 local HOST_SPECS = {
 	{ Global = "TargetFrame", Unit = "target", Event = "PLAYER_TARGET_CHANGED" },
@@ -65,6 +75,14 @@ local suppressed = {}
 -- Refilled per pass rather than built per pass: Apply runs on every settings change and on every
 -- unit change, and the pair it walks is the same shape every time.
 local rowScratch = { {}, {} }
+-- The shapes SetGroupGlowColors wants, refilled per pass for the same reason. One group and one
+-- colour, but the setter takes the whole palette a display could carry. The colour carries both
+-- spellings, because the preview row reads .r/.g/.b where the aura style reads [1..3].
+local purgeGroupKeys = { BUFF_PURGE_GROUP }
+local purgeColorsByKey = {}
+local purgeColorScratch = {}
+-- The preview's leading buff, which stands in for one worth purging.
+local purgePreviewSpells = {}
 
 ---@return FrameAurasTargetOptions?
 local function Options()
@@ -225,8 +243,34 @@ local function Build(host)
 		PerLine = perRow,
 	})
 
+	-- The purgeable buffs lead the row, in a group of their own so they can carry the glow: which
+	-- icons light up can only be decided by which group they land in.
+	--
+	-- Declared whatever the switch says, and both budgeted in full. A group is a batch of buttons
+	-- the engine hands out when it is declared and never takes back, so one left out at build time
+	-- could not be added when the switch moved. The cost of that is two budgets rather than one, so
+	-- a target carrying both kinds can fill the row past the icon limit; the alternative is losing
+	-- purgeable buffs to a shared budget, which is the wrong way round for a row that exists to
+	-- show them.
+	local glowing = options.PurgeGlow == true
+
 	host.Buffs = auraContainerDisplay:New(host.Frame, host.Unit, {
-		{ Key = BUFF_GROUP, FilterString = BUFF_FILTER, MaxIcons = maxIcons, CandidateFilters = buffFilters },
+		{
+			Key = BUFF_PURGE_GROUP,
+			FilterString = PURGE_FILTER,
+			-- Declared with the full budget even when the switch is off, because the engine hands a
+			-- group its buttons from the count it is DECLARED with and raising it later conjures
+			-- none. Apply closes the budget straight after, which is what the switch really does.
+			MaxIcons = maxIcons,
+			CandidateFilters = buffFilters,
+			Glow = glowing,
+		},
+		{
+			Key = BUFF_GROUP,
+			FilterString = glowing and PLAIN_BUFF_FILTER or BUFF_FILTER,
+			MaxIcons = maxIcons,
+			CandidateFilters = buffFilters,
+		},
 	}, size, ICON_SPACING, MASQUE_GROUP, {
 		Style = BuildStyle(),
 		MasqueGroup = MASQUE_GROUP,
@@ -313,6 +357,9 @@ local function Refilter(host)
 
 	local buffFilters, debuffFilters = Candidates(host)
 
+	-- Both buff groups take the same table. The engine keeps the reference it is handed and nothing
+	-- mutates it, and the two only ever differ in whether the buff is purgeable.
+	host.Buffs:SetCandidateFilters(BUFF_PURGE_GROUP, buffFilters)
 	host.Buffs:SetCandidateFilters(BUFF_GROUP, buffFilters)
 	host.Debuffs:SetCandidateFilters(DEBUFF_GROUP, debuffFilters)
 end
@@ -372,22 +419,38 @@ end
 ---@param previewSpells number[]
 ---@param size number
 ---@param perRow number
-local function FillTestRow(container, previewSpells, size, perRow)
+---@param leadSpells number[]? Drawn first and lit up, the way the purgeable group leads the live
+---row. Nil draws the row plain.
+---@param leadColor table? The colour those icons take.
+local function FillTestRow(container, previewSpells, size, perRow, leadSpells, leadColor)
 	local db = mini:GetSavedVars()
+	local fontScale = db and db.FontScale
+	local slot = 1
 
 	container:SetIconSize(size)
 	container:SetCount(perRow)
 
-	local nextSlot = testSpells:FillContainer(container, previewSpells, 1, {
+	if leadSpells then
+		slot = testSpells:FillContainer(container, leadSpells, slot, {
+			ReverseCooldown = true,
+			Glow = true,
+			Color = leadColor,
+			FontScale = fontScale,
+			Stagger = true,
+			Count = perRow,
+		})
+	end
+
+	local nextSlot = testSpells:FillContainer(container, previewSpells, slot, {
 		ReverseCooldown = true,
 		Glow = false,
-		FontScale = db and db.FontScale,
+		FontScale = fontScale,
 		Stagger = true,
 		Count = perRow,
 	})
 
-	for slot = nextSlot, container.Count do
-		container:SetSlotUnused(slot)
+	for spare = nextSlot, container.Count do
+		container:SetSlotUnused(spare)
 	end
 end
 
@@ -431,8 +494,15 @@ local function ApplyTestRows(host, options)
 		host.TestBuffs = NewTestRow(host.Frame, count, size)
 	end
 
+	local lead
+
+	if options.PurgeGlow == true then
+		purgePreviewSpells[1] = testSpells.FrameAuras.Purgeable
+		lead = purgePreviewSpells
+	end
+
 	FillTestRow(host.TestDebuffs, testSpells.FrameAuras.Debuffs, size, count)
-	FillTestRow(host.TestBuffs, testSpells.FrameAuras.Buffs, size, count)
+	FillTestRow(host.TestBuffs, testSpells.FrameAuras.Buffs, size, count, lead, purgeColorScratch)
 
 	local frame = host.Frame
 	local debuffs = host.TestDebuffs.Frame
@@ -451,6 +521,24 @@ local function ApplyTestRows(host, options)
 	buffs:Show()
 end
 
+---The purge glow, on the display that already exists. Turning it off closes the purgeable group's
+---budget and hands its buffs back to the plain one, so the row keeps every icon it had and only
+---loses the colour.
+---@param host table
+---@param options FrameAurasTargetOptions
+---@param maxIcons number
+local function ApplyPurgeGlow(host, options, maxIcons)
+	local display = host.Buffs
+	local glowing = options.PurgeGlow == true
+
+	display:SetMaxIcons(BUFF_PURGE_GROUP, glowing and maxIcons or 0)
+	display:SetFilterString(BUFF_GROUP, glowing and PLAIN_BUFF_FILTER or BUFF_FILTER)
+	display:SetGroupGlow(BUFF_PURGE_GROUP, glowing)
+
+	purgeColorsByKey[BUFF_PURGE_GROUP] = purgeColorScratch
+	display:SetGroupGlowColors(purgeGroupKeys, purgeColorsByKey)
+end
+
 ---@param host table
 local function Apply(host)
 	local options = Options()
@@ -460,6 +548,9 @@ local function Apply(host)
 	end
 
 	SuppressBlizzardAuras(host.Frame)
+	-- Filled here rather than in each reader: the preview row and the live one take the same colour,
+	-- and both are reached from this one pass.
+	moduleUtil:FillColor(purgeColorScratch, options.PurgeColor, DEFAULT_PURGE_COLOR)
 	ApplyTestRows(host, options)
 
 	if not host.Debuffs then
@@ -488,6 +579,7 @@ local function Apply(host)
 		entry.Display:SetShown(active and not testModeActive)
 	end
 
+	ApplyPurgeGlow(host, options, maxIcons)
 	AnchorRows(host)
 	Refilter(host)
 	HookCastBar(host)

@@ -81,6 +81,9 @@ M.FrameAuras = {
 	CrowdControl = 408,  -- Kidney Shot
 	Important = 31884,   -- Avenging Wrath
 	Defensive = 33206,   -- Pain Suppression
+	-- A magic buff worth taking off an enemy, for the purge glow. Leads the buff row in the
+	-- preview the way the purgeable group leads the live one.
+	Purgeable = 1459,    -- Arcane Intellect
 }
 
 ---The alert bars colour by category, or by the owner's class when that option is on. Class is

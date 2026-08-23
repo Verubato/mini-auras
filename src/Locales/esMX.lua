@@ -508,4 +508,8 @@ L:RegisterLocale("esMX", function() return {
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Permite en esta fila los beneficios que el juego marca como importantes. Desactivado por defecto, porque Auras importantes ya los muestra.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Permite en esta fila las defensivas. Desactivado por defecto, porque Auras importantes ya las muestra.",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Permite el control de masas en esta fila. Desactivado por defecto, porque Auras importantes ya lo muestra.",
+	["Purgeable buffs"] = "Beneficios disipables",
+	["Purge glow"] = "Brillo de disipar",
+	["Lights up the buffs on an enemy that you can take off, and puts them first in the row."] = "Ilumina los beneficios de un enemigo que puedes disipar y los coloca primero en la fila.",
+	["The colour a buff you can take off an enemy lights up in."] = "El color con el que se ilumina un beneficio que puedes disipar de un enemigo.",
 } end)

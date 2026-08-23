@@ -507,4 +507,8 @@ L:RegisterLocale("deDE", function() return {
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Lässt die vom Spiel als wichtig markierten Stärkungszauber in diese Reihe. Standardmäßig aus, weil Wichtige Auren sie bereits zeigt.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Lässt defensive Abklingzeiten in diese Reihe. Standardmäßig aus, weil Wichtige Auren sie bereits zeigt.",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Lässt Kontrolleffekte in diese Reihe. Standardmäßig aus, weil Wichtige Auren sie bereits zeigt.",
+	["Purgeable buffs"] = "Bannbare Buffs",
+	["Purge glow"] = "Bann-Leuchten",
+	["Lights up the buffs on an enemy that you can take off, and puts them first in the row."] = "Lässt die Stärkungszauber eines Gegners aufleuchten, die du bannen kannst, und stellt sie an den Anfang der Reihe.",
+	["The colour a buff you can take off an enemy lights up in."] = "Die Farbe, in der ein bannbarer Stärkungszauber eines Gegners aufleuchtet.",
 } end)

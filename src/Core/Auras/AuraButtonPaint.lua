@@ -41,6 +41,21 @@ function M:ApplyGlowStyle(widgets, button, styleName, size)
 	end
 end
 
+---Whether this button's glow shows at all. A group may carry its own answer, so one display can
+---glow a single category and leave the rest plain; without one the display-wide switch stands.
+---@param instance AuraContainerDisplay
+---@param widgets table
+---@return boolean
+function M:GlowWanted(instance, widgets)
+	local group = widgets.Group
+
+	if group and group.Glow ~= nil then
+		return group.Glow == true
+	end
+
+	return instance.Style.Glow == true
+end
+
 ---The tint a button's border, glow and bar fill take. The group's own colour wins over the
 ---display-wide one: alerts colour by category, while a single-category display just takes the
 ---user's picked colour.
@@ -87,7 +102,7 @@ function M:ApplyDispelTextures(instance, button, widgets)
 	-- "None" palette colour like the glow below. Opt-in per display: on a CC-only group every aura
 	-- deserves the ring, but on a generic debuff display it would ring every physical debuff.
 	local wantTypelessBorder = wantBorder and style.BorderWithoutDispelType == true
-	local wantGlowTint = wantBorder and style.Glow == true and widgets.Glow ~= nil
+	local wantGlowTint = wantBorder and M:GlowWanted(instance, widgets) and widgets.Glow ~= nil
 	-- A tinted group draws the border the dispel registration would have drawn, in its own colour,
 	-- so switching the colours on never costs those icons their ring.
 	local wantPlainBorder = style.Border == true or (tinted and style.ColorByDispelType == true)

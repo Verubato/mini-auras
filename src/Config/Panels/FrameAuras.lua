@@ -720,6 +720,31 @@ local function BuildTargetFocus(content, options)
 	local perRow = Slider(content, options, "TargetFocus", "PerRow", L["Icons per row"],
 		L["How many icons fit on one row before the next one starts."])
 	perRow.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", 0, -SLIDER_ROW_GAP)
+
+	local purge = Divider(content, L["Purgeable buffs"], perRow.Slider)
+
+	local purgeGlow = Checkbox(content, options, "PurgeGlow", L["Purge glow"],
+		L["Lights up the buffs on an enemy that you can take off, and puts them first in the row."])
+	purgeGlow:SetPoint("TOPLEFT", purge, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local swatch = mini:ColorSwatch({
+		Parent = content,
+		LabelText = L["Glow colour"],
+		Tooltip = L["The colour a buff you can take off an enemy lights up in."],
+		HasOpacity = false,
+		GetValue = function()
+			local color = options.PurgeColor
+
+			return color.R, color.G, color.B, 1
+		end,
+		SetValue = function(r, g, b)
+			local color = options.PurgeColor
+			color.R, color.G, color.B = r, g, b
+			config:Apply(moduleName.FrameAuras)
+		end,
+	})
+
+	swatch:SetPoint("TOPLEFT", purgeGlow, "TOPLEFT", switchColumnWidth, 0)
 end
 
 ---@param panel table

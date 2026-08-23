@@ -705,6 +705,10 @@ local dbDefaults = {
 				-- your own debuffs on one you cannot. An enemy still shows the buffs worth purging.
 				MyBuffs = true,
 				MyDebuffs = true,
+				-- On, and it costs nothing to leave on: the filter behind it answers "a dispel type
+				-- YOU can remove", so a class with no purge never lights an icon up.
+				PurgeGlow = true,
+				PurgeColor = { R = 0.35, G = 0.7, B = 1 },
 			},
 		},
 		---@class CustomAurasModuleOptions

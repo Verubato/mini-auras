@@ -507,4 +507,8 @@ L:RegisterLocale("koKR", function() return {
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "게임이 중요로 표시한 버프를 이 줄에 표시합니다. 중요 오라가 이미 표시하므로 기본값은 꺼짐입니다.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "방어 쿨다운을 이 줄에 표시합니다. 중요 오라가 이미 표시하므로 기본값은 꺼짐입니다.",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "군중 제어를 이 줄에 표시합니다. 중요 오라가 이미 표시하므로 기본값은 꺼짐입니다.",
+	["Purgeable buffs"] = "해제 가능한 버프",
+	["Purge glow"] = "해제 발광",
+	["Lights up the buffs on an enemy that you can take off, and puts them first in the row."] = "적에게서 해제할 수 있는 버프를 발광시키고, 줄의 맨 앞에 배치합니다.",
+	["The colour a buff you can take off an enemy lights up in."] = "적에게서 해제할 수 있는 버프가 발광하는 색상입니다.",
 } end)

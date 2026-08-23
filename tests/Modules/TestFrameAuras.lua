@@ -848,3 +848,137 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 		DropRaidFrame(23)
 	end)
 end)
+
+---The two buff groups the target and focus rows draw through. The purgeable ones lead so they can
+---carry the glow: which icons light up is decided by which group they land in, an aura's own dispel
+---type being unreadable.
+local BUFF_GROUP = "TargetBuffs"
+local BUFF_PURGE_GROUP = "TargetBuffsPurge"
+local PURGE_FILTER = "HELPFUL|RAID_PLAYER_DISPELLABLE"
+local PLAIN_BUFF_FILTER = "HELPFUL|!RAID_PLAYER_DISPELLABLE"
+
+---The container carrying the buff groups on a target or focus frame.
+---@param frame table
+---@return table?
+local function BuffContainer(frame)
+	for _, candidate in ipairs(acm.frames) do
+		if candidate._type == "AuraContainer" and candidate:GetParent() == frame
+			and candidate._groups[BUFF_GROUP] then
+			return candidate
+		end
+	end
+
+	return nil
+end
+
+---The glow overlay on a group's first button, which is where the purge colour lands. Found by the
+---texture field rather than by name: it is the only child frame the display builds one on.
+---@param container table
+---@param groupKey string
+---@return table?
+local function GlowOn(container, groupKey)
+	local group = container._groups[groupKey]
+	local button = group and group.buttons[1]
+
+	if not button then
+		return nil
+	end
+
+	for _, candidate in ipairs(acm.frames) do
+		if candidate._parent == button and candidate.Texture then
+			return candidate
+		end
+	end
+
+	return nil
+end
+
+fw.describe("Frame Auras - the purge glow on the target row", function()
+	local targetFrame
+
+	fw.before_each(function()
+		module:StopTesting()
+		options.TargetFocus.Enabled = true
+		options.TargetFocus.PurgeGlow = true
+
+		if not targetFrame then
+			targetFrame = _G.CreateFrame("Frame", "TargetFrame", _G.UIParent)
+			_G.TargetFrame = targetFrame
+		end
+
+		module:Refresh()
+		acm.tickAll(400)
+	end)
+
+	fw.it("splits the buff row so the purgeable ones can be told apart", function()
+		local container = assert(BuffContainer(targetFrame), "the target frame got a buff row")
+		local purge = assert(container._groups[BUFF_PURGE_GROUP], "and a group for the purgeable ones")
+
+		assert(purge.filterString == PURGE_FILTER,
+			"the purgeable group asks for what this player can remove, got " .. tostring(purge.filterString))
+		assert(container._groups[BUFF_GROUP].filterString == PLAIN_BUFF_FILTER,
+			"and the plain group gives them up, so no buff is drawn twice")
+		assert(purge.maxFrameCount == options.TargetFocus.MaxIcons,
+			"the purgeable group carries the row's own budget, got " .. tostring(purge.maxFrameCount))
+	end)
+
+	fw.it("lights the purgeable icons up in the chosen colour and leaves the rest plain", function()
+		local container = assert(BuffContainer(targetFrame), "the target frame got a buff row")
+		local lit = assert(GlowOn(container, BUFF_PURGE_GROUP), "the purgeable buttons carry a glow")
+		local plain = assert(GlowOn(container, BUFF_GROUP), "so do the plain ones, hidden")
+
+		assert(lit:IsShown(), "the purgeable group's glow is on")
+		assert(not plain:IsShown(), "the rest of the row stays plain")
+
+		local color = options.TargetFocus.PurgeColor
+		local applied = assert(lit.Texture._lastArgs.SetVertexColor, "the glow took a colour")
+
+		assert(applied[1] == color.R and applied[2] == color.G and applied[3] == color.B,
+			"and it is the one the player picked")
+	end)
+
+	fw.it("hands the purgeable buffs back to the plain group when the glow is switched off", function()
+		options.TargetFocus.PurgeGlow = false
+		module:Refresh()
+
+		local container = assert(BuffContainer(targetFrame), "the target frame still has its buff row")
+
+		assert(container._groups[BUFF_PURGE_GROUP].maxFrameCount == 0,
+			"the purgeable group is closed rather than left drawing uncoloured icons")
+		assert(container._groups[BUFF_GROUP].filterString == "HELPFUL",
+			"and the plain group takes them back, so the row loses no icon")
+		assert(not GlowOn(container, BUFF_PURGE_GROUP):IsShown(), "nothing is lit up")
+	end)
+
+	fw.it("opens the purgeable group again when the glow comes back", function()
+		options.TargetFocus.PurgeGlow = false
+		module:Refresh()
+		options.TargetFocus.PurgeGlow = true
+		module:Refresh()
+
+		local container = assert(BuffContainer(targetFrame), "the target frame still has its buff row")
+		local purge = container._groups[BUFF_PURGE_GROUP]
+
+		-- The engine hands a group its buttons from the count it was DECLARED with, so a group
+		-- born closed could never open. This is what says it was born open.
+		assert(purge.maxFrameCountAtCreation == options.TargetFocus.MaxIcons,
+			"it was declared with the full budget, got " .. tostring(purge.maxFrameCountAtCreation))
+		assert(purge.maxFrameCount == options.TargetFocus.MaxIcons, "and got it back")
+		assert(GlowOn(container, BUFF_PURGE_GROUP):IsShown(), "with the glow on it again")
+	end)
+
+	fw.it("moves both buff groups onto the unit the frame now holds", function()
+		local container = assert(BuffContainer(targetFrame), "the target frame got a buff row")
+
+		options.TargetFocus.ShortBuffsOnly = true
+		module:Refresh()
+
+		local purge = container._groups[BUFF_PURGE_GROUP].candidateFilters
+		local plain = container._groups[BUFF_GROUP].candidateFilters
+
+		assert(purge and purge.maxDuration, "the purgeable group is filtered like the rest of the row")
+		assert(plain and plain.maxDuration, "and so is the plain one")
+
+		options.TargetFocus.ShortBuffsOnly = false
+	end)
+end)

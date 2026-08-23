@@ -505,4 +505,8 @@ L:RegisterLocale("itIT", function() return {
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Fa entrare in questa fila i benefici che il gioco segna come importanti. Disattivato di default, perché Aure importanti li mostra già.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Fa entrare le difensive in questa fila. Disattivato di default, perché Aure importanti le mostra già.",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Fa entrare il controllo in questa fila. Disattivato di default, perché Aure importanti lo mostra già.",
+	["Purgeable buffs"] = "Benefici dissolvibili",
+	["Purge glow"] = "Dissolvimento",
+	["Lights up the buffs on an enemy that you can take off, and puts them first in the row."] = "Illumina i benefici di un nemico che puoi dissolvere e li mette per primi nella fila.",
+	["The colour a buff you can take off an enemy lights up in."] = "Il colore con cui si illumina un beneficio che puoi dissolvere su un nemico.",
 } end)

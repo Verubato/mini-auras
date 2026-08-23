@@ -505,4 +505,8 @@ L:RegisterLocale("frFR", function() return {
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Laisse entrer dans cette rangée les améliorations que le jeu marque comme importantes. Désactivé par défaut, car Auras importantes les affiche déjà.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Laisse entrer les défensives dans cette rangée. Désactivé par défaut, car Auras importantes les affiche déjà.",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Laisse entrer le contrôle de foule dans cette rangée. Désactivé par défaut, car Auras importantes l'affiche déjà.",
+	["Purgeable buffs"] = "Améliorations dissipables",
+	["Purge glow"] = "Dissipation",
+	["Lights up the buffs on an enemy that you can take off, and puts them first in the row."] = "Fait briller les améliorations d'un ennemi que vous pouvez dissiper et les place en tête de la rangée.",
+	["The colour a buff you can take off an enemy lights up in."] = "La couleur dans laquelle s'illumine une amélioration que vous pouvez dissiper sur un ennemi.",
 } end)

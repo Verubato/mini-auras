@@ -507,4 +507,8 @@ L:RegisterLocale("zhTW", function() return {
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "允許遊戲標記為重要的增益進入此列。預設關閉，因為重要光環已經顯示它們。",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "允許防禦技能進入此列。預設關閉，因為重要光環已經顯示它們。",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "允許控制效果進入此列。預設關閉，因為重要光環已經顯示它們。",
+	["Purgeable buffs"] = "可驅散增益",
+	["Purge glow"] = "驅散發光",
+	["Lights up the buffs on an enemy that you can take off, and puts them first in the row."] = "讓敵人身上你可以驅散的增益發光，並將它們排在最前面。",
+	["The colour a buff you can take off an enemy lights up in."] = "你可以從敵人身上驅散的增益發光時的顏色。",
 } end)

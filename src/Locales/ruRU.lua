@@ -507,4 +507,8 @@ L:RegisterLocale("ruRU", function() return {
 	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Пропускает в этот ряд усиления, отмеченные игрой как важные. По умолчанию выключено, так как Важные ауры уже их показывают.",
 	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Пропускает в этот ряд защитные умения. По умолчанию выключено, так как Важные ауры уже их показывают.",
 	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Пропускает в этот ряд эффекты контроля. По умолчанию выключено, так как Важные ауры уже их показывают.",
+	["Purgeable buffs"] = "Рассеиваемые усиления",
+	["Purge glow"] = "Рассеивание",
+	["Lights up the buffs on an enemy that you can take off, and puts them first in the row."] = "Подсвечивает усиления противника, которые вы можете рассеять, и ставит их первыми в ряду.",
+	["The colour a buff you can take off an enemy lights up in."] = "Цвет, которым подсвечивается усиление противника, которое вы можете рассеять.",
 } end)
