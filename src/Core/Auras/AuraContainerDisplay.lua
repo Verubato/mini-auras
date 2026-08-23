@@ -263,6 +263,12 @@ local function NextFrameName(frameType)
 	return "MiniAuras_AC_" .. frameType .. "_" .. frameIdCounter
 end
 
+-- The three frames every icon button carries are created unnamed. Naming one builds a string and
+-- puts the frame in the global table for good, and nothing has ever looked one of these up: a raid
+-- of forty frames is thousands of globals that only ever grow. The container above keeps its name,
+-- because there are a hundred of those rather than thousands and it is what a stack trace or a
+-- /framestack lands on.
+
 -- Button styling is impossible while auras are secret, which covers combat but also whole
 -- encounters / M+ runs / PvP matches out of combat. RestyleButtons therefore records that the
 -- buttons are stale and returns. Something has to come back for that later: pooled displays are
@@ -1282,7 +1288,7 @@ end
 ---@param button table
 ---@return table
 local function CreateGlow(button)
-	local glow = glowStyles:BuildGlowFrame(button, NextFrameName("Glow"))
+	local glow = glowStyles:BuildGlowFrame(button, nil)
 	glow:Hide()
 
 	return glow
@@ -1304,7 +1310,7 @@ local function CreatePandemicHolder(instance, button, inset)
 		return nil
 	end
 
-	local pandemic = CreateFrame("Frame", NextFrameName("Pandemic"), button)
+	local pandemic = CreateFrame("Frame", nil, button)
 	pandemic:SetFrameLevel(button:GetFrameLevel() + 6)
 	pandemic:SetPoint("TOPLEFT", button, "TOPLEFT", -inset, inset)
 	pandemic:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", inset, -inset)
@@ -1332,7 +1338,7 @@ local function InitializeButton(instance, button, group)
 	end
 	button:SetIcon(icon)
 
-	local cd = CreateFrame("Cooldown", NextFrameName("Cooldown"), button, "CooldownFrameTemplate")
+	local cd = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
 	cd:SetAllPoints(button)
 	cd:SetDrawEdge(false)
 	cd:SetDrawBling(false)
