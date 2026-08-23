@@ -157,10 +157,14 @@ end
 
 ---@param options CrowdControlInstanceOptions
 local function Apply(options)
+	-- A spare is only a spare while it still matches what a frame would be given.
 	display:EnsureFrames()
 	display:ApplyOptions(options)
 	UpdateContent()
 	SeedStateBaselines()
+	-- After the frames on screen have been served: a spare is only worth building for a frame that
+	-- is not there yet, and EnsureFrames is what settles how many of those there are.
+	display:QueuePrewarm()
 end
 
 function M:StartTesting()

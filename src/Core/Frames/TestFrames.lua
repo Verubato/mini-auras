@@ -195,6 +195,24 @@ function M:GetTestFrames()
 	return testPartyFrames
 end
 
+---Whether a frame is one of the stand-ins test mode puts up. They are created once and keep their
+---entries for the session, so anything counting real frames has to leave them out.
+---@param frame table?
+---@return boolean
+function M:IsTestFrame(frame)
+	if not frame then
+		return false
+	end
+
+	for _, testFrame in ipairs(testPartyFrames) do
+		if testFrame == frame then
+			return true
+		end
+	end
+
+	return frame == testPetFrame
+end
+
 function M:GetTestPetFrame()
 	return testPetFrame
 end

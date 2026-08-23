@@ -13,6 +13,7 @@ local kickTracker = addon.Core.KickTracker
 local anchoredIcons = addon.Core.AnchoredIcons
 local testSpellData = addon.Core.TestSpells
 local moduleUtil = addon.Utils.ModuleUtil
+local wowEx = addon.Utils.WoWEx
 local moduleName = addon.Utils.ModuleName
 
 addon.Modules.CrowdControl = addon.Modules.CrowdControl or {}
@@ -49,6 +50,29 @@ local DEFAULT_CC_COLOR = { R = 0.64, G = 0.21, B = 0.93 }
 -- The configured flat tint, refilled rather than reallocated. Both shapes are needed: the aura
 -- display's style reads [1..3], the IconSlotContainer test icons read r/g/b.
 local ccColor = { 0.64, 0.21, 0.93, r = 0.64, g = 0.21, b = 0.93, a = 1 }
+-- The Masque group these icons are skinned under, and the public MiniCCModule frame tag.
+local MASQUE_GROUP = "CC"
+-- How many frames' worth of containers to have ready before a group turns up. A party is five,
+-- which is the size a solo player is most likely to become; past that the walker keeps up with
+-- the frames appearing, because a raid fills in over several seconds anyway.
+local PREWARM_FRAMES = 5
+-- What a spare tracks until a frame hands it a real token.
+local SPARE_UNIT = "none"
+-- The walker hands its callback the item that was queued. A spare build needs none, so this
+-- stands in for one.
+local PREWARM_ITEM = true
+-- Containers built before any frame has asked for one, so a group forming does not have to wait
+-- out the walker for its icons. Held off screen until a frame takes one. Member-sized only: a pet
+-- draws from the Pet CC options, which budget and size their icons differently.
+---@type CrowdControlSpare[]
+local spares = {}
+-- The spare currently being finished, so its group is declared on a turn of its own like every
+-- other build. Only ever one at a time: spares are the lowest priority work the addon does.
+---@type CrowdControlSpare?
+local prewarmBuilding
+local prewarmSweep = sweep:New(1)
+-- Refilled per call, and only read for a frame to size a spare from.
+local anchorScratch = {}
 
 ---One display's group, from the walker. A unit's display is created without it: a roster turning
 ---up builds one per unit in the same pass, and the group is what costs a batch of buttons.
@@ -175,6 +199,113 @@ local function ApplyUnitGates(entry, options)
 	return crowdControl
 end
 
+---How many spares are still wanted: the target, less the frames already carrying a display and the
+---spares already waiting. An entry counts because a frame holding a display is doing the job a
+---spare was held for. Pet entries do not: they are never handed one.
+---@return number
+local function SparesWanted()
+	if not moduleUtil:IsModuleEnabled(moduleName.CrowdControl) then
+		return 0
+	end
+
+	local built = 0
+
+	for anchor, entry in pairs(watchers) do
+		-- The test-mode stand-ins keep their entries for the session, so counting them would let
+		-- one options preview permanently zero the target and eat the warm containers.
+		if entry.Display and not units:IsPetOrMinion(entry.Unit) and not frames:IsTestFrame(anchor) then
+			built = built + 1
+		end
+	end
+
+	return PREWARM_FRAMES - built - #spares
+end
+
+---A container and a display for no frame in particular, built to the current member settings.
+---@param options table
+---@return CrowdControlSpare
+local function BuildSpare(options)
+	local count = options.Icons.Count or 5
+	-- Sized off a real frame where there is one, so a spare taken later needs no resize: a restyle
+	-- is refused outright while auras are secret. Without any frames it takes the pixel size, and
+	-- the refresh that hands it over corrects that.
+	local sample = frames:GetAll(false, false, anchorScratch)[1]
+	local size = moduleUtil:GetIconSize(options.Icons, sample, 32, 80)
+	local spacing = options.IconSpacing or 2
+	local container = iconSlotContainer:New(UIParent, count, size, spacing, MASQUE_GROUP, nil, MASQUE_GROUP)
+
+	-- Nothing is drawn on it until a frame takes it, and the kick icon is what shows it again.
+	container.Frame:Hide()
+
+	return {
+		Container = container,
+		Display = auraContainerDisplay:New(UIParent, SPARE_UNIT, {
+			auraFilters:GroupSpec("CrowdControl", count),
+		}, size, spacing, MASQUE_GROUP,
+			{ Style = BuildStyle(options), MasqueGroup = MASQUE_GROUP, DeferGroups = true }),
+		MaxIcons = count,
+	}
+end
+
+---A spare for the frame that has just asked for one, or nil when none is waiting or none matches.
+---
+---MATCHES, not merely exists. A spare bakes its size, its style and its groups' budgets in when it
+---is built, and a restyle is refused outright while auras are secret, so one handed over needing a
+---resize would keep the wrong look for the rest of an arena. CarriesConfig is the question every
+---other pool here asks before reuse.
+---@param unit string
+---@param size number
+---@param spacing number
+---@param style AuraDisplayStyle
+---@param maxIcons number
+---@return CrowdControlSpare?
+local function TakeSpare(unit, size, spacing, style, maxIcons)
+	for index = #spares, 1, -1 do
+		local spare = spares[index]
+
+		-- The budget has to match outright: the engine hands out a group's buttons from the count
+		-- it was declared with, so a spare built for a smaller row can never grow into a bigger
+		-- one. The look only has to match while a restyle is refused; outside that the same
+		-- refresh that takes this corrects it, exactly as it would a display built on demand.
+		if spare.MaxIcons == maxIcons
+			and (not wowEx:IsAuraStylingRestricted() or spare.Display:CarriesConfig(size, spacing, style)) then
+			table.remove(spares, index)
+			spare.Display:SetUnit(unit)
+
+			return spare
+		end
+	end
+
+	return nil
+end
+
+---One spare, a group per turn. Everything is re-read at fire time: the walk runs over seconds, in
+---which the module can be switched off and the frames it was being held for can turn up on their
+---own.
+---@return SweepVerdict?
+local function PrewarmNext()
+	if prewarmBuilding then
+		if prewarmBuilding.Display:AddNextGroup() and prewarmBuilding.Display:HasPendingGroups() then
+			return sweep.Verdict.Unfinished
+		end
+
+		spares[#spares + 1] = prewarmBuilding
+		prewarmBuilding = nil
+
+		return
+	end
+
+	local options = GetOptions()
+
+	if not options or SparesWanted() <= 0 then
+		return
+	end
+
+	prewarmBuilding = BuildSpare(options)
+
+	return sweep.Verdict.Unfinished
+end
+
 ---@param anchor table
 ---@param unit string?
 local function EnsureWatcher(anchor, unit)
@@ -234,7 +365,11 @@ local function EnsureWatcher(anchor, unit)
 		local count = options.Icons.Count or 5
 		local size = moduleUtil:GetIconSize(options.Icons, anchor, isPet and 24 or 32, isPet and 50 or 80)
 		local spacing = options.IconSpacing or 2
-		local container = iconSlotContainer:New(UIParent, count, size, spacing, "CC", nil, "CC")
+		-- A pet is never handed a spare: the spares are built to the member options, and a pet's
+		-- icons take their count and their size from the Pet CC ones.
+		local spare = not isPet and TakeSpare(unit, size, spacing, BuildStyle(options), count) or nil
+		local container = spare and spare.Container
+			or iconSlotContainer:New(UIParent, count, size, spacing, MASQUE_GROUP, nil, MASQUE_GROUP)
 
 		entry = {
 			Container = container,
@@ -244,17 +379,22 @@ local function EnsureWatcher(anchor, unit)
 		}
 		watchers[anchor] = entry
 
-		entry.Display = auraContainerDisplay:New(UIParent, unit, {
+		entry.Display = spare and spare.Display or auraContainerDisplay:New(UIParent, unit, {
 			auraFilters:GroupSpec("CrowdControl", count),
-		}, size, spacing, "CC",
+		}, size, spacing, MASQUE_GROUP,
 			-- Seeded rather than left to the restyle below: a unit's display is built the
 			-- moment it turns up, and one built mid-arena can never be restyled.
 			--
 			-- The group is declared by the walker instead: a roster turning up builds one of
 			-- these per unit at once, and the engine allocates a batch of buttons the moment a
 			-- group is declared. The icons of a unit follow within a second or so.
-			{ Style = BuildStyle(options), MasqueGroup = "CC", DeferGroups = true })
-		buildSweep:Append(entry.Display, DeclareNextGroup)
+			{ Style = BuildStyle(options), MasqueGroup = MASQUE_GROUP, DeferGroups = true })
+
+		-- Whatever it still owes goes on the urgent lane, ahead of the spares: a frame is holding
+		-- it now. A spare may have been taken part way through its own build.
+		if entry.Display:HasPendingGroups() then
+			buildSweep:Append(entry.Display, DeclareNextGroup)
+		end
 
 		if not isPet then
 			kickTracker:Watch(unit)
@@ -487,6 +627,14 @@ function M:EnsureWatchers()
 	end
 end
 
+---Tops the spares up, if the walker is not already at it. Cheap to call from any refresh: the
+---queue is only ever as long as what is still wanted.
+function M:QueuePrewarm()
+	for _ = 1, math.max(0, SparesWanted()) do
+		prewarmSweep:Append(PREWARM_ITEM, PrewarmNext)
+	end
+end
+
 function M:Teardown()
 	for _, entry in pairs(watchers) do
 		anchoredIcons:TeardownEntry(entry)
@@ -671,6 +819,11 @@ function M:Init()
 
 	testSpells = testSpellData.CrowdControl
 end
+
+---@class CrowdControlSpare
+---@field Container IconSlotContainer
+---@field Display AuraContainerDisplay
+---@field Shape number The icon budget its group was born with, which nothing can change.
 
 ---@class CrowdControlWatchEntry
 ---@field Container IconSlotContainer Renders the kick icon and the test icons only.

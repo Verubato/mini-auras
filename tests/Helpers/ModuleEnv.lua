@@ -510,6 +510,16 @@ function M.build()
 		GetTestFrames = function()
 			return env.testFrames
 		end,
+		-- The stand-ins keep their entries for the session, so anything counting real frames asks.
+		IsTestFrame = function(_, frame)
+			for _, testFrame in ipairs(env.testFrames) do
+				if testFrame == frame then
+					return true
+				end
+			end
+
+			return false
+		end,
 		GetTestArenaFrames = function()
 			return env.testArenaFrames
 		end,

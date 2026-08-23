@@ -239,6 +239,12 @@ fw.describe("ImportantAurasModule - groups declared after the display", function
 	-- display was built with can be well out of date by then.
 	fw.it("declares a group with the tracked set current at that moment", function()
 		local custom = 999904
+		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
+
+		-- A budget change throws every prewarmed spare away, because a group's buttons are handed
+		-- out from the count it was declared with. So this frame has to build its own display, and
+		-- its groups go in through the walker rather than having been declared hours ago.
+		options.Icons.MaxIcons = maxIcons + 1
 
 		env.addUnitFrame("party4", "CUF_Late")
 		module:Refresh()
@@ -255,6 +261,7 @@ fw.describe("ImportantAurasModule - groups declared after the display", function
 		assert(ids[custom], "the group went in carrying the set it was built with, not the current one")
 
 		spells.Custom[custom] = nil
+		options.Icons.MaxIcons = maxIcons
 	end)
 end)
 

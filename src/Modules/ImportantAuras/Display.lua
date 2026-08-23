@@ -93,6 +93,19 @@ local defensiveColor = { 0.2, 1, 0.2, r = 0.2, g = 1, b = 0.2, a = 1 }
 local helpfulColors = {}
 local HELPFUL_GROUP_KEYS = { DEFENSIVE_GROUP_KEY, IMPORTANT_GROUP_KEY }
 
+-- The module's old name, kept because it is the Masque group name (and the public MiniCCModule
+-- frame tag). Renaming it would orphan every skin users have already assigned to this group.
+local MASQUE_GROUP = "Friendly Indicators"
+-- How many frames' worth of containers to have ready before a group turns up. A party is five,
+-- which is the size a solo player is most likely to become; past that the walker keeps up with
+-- the frames appearing, because a raid fills in over several seconds anyway.
+local PREWARM_FRAMES = 5
+-- What a spare tracks until a frame hands it a real token.
+local SPARE_UNIT = "none"
+-- The walker hands its callback the item that was queued. A spare build needs none, so this
+-- stands in for one.
+local PREWARM_ITEM = true
+
 -- Rebuilt whenever the tracked set changes; handed straight to the engine, which keeps the
 -- reference, so they are replaced rather than mutated in place. Keyed by group.
 ---@type table<string, table>
@@ -103,6 +116,17 @@ local FILTER_STAMP_KEY = "ImportantAurasFilters"
 local filterStamp = changeStamp:New()
 local filterSetScratch = {}
 local helpfulFilterGeneration
+-- Containers built before any frame has asked for one, so a group forming does not have to wait
+-- out the walker for its icons. Held off screen until a frame takes one.
+---@type ImportantAurasSpare[]
+local spares = {}
+-- The spare currently being finished, so its groups are declared one per turn like every other
+-- build. Only ever one at a time: spares are the lowest priority work the addon does.
+---@type ImportantAurasSpare?
+local prewarmBuilding
+local prewarmSweep = sweep:New(1)
+-- Refilled per call, and only read for a frame to size a spare from.
+local anchorScratch = {}
 
 ---The spell ids currently tracked, split by the group that draws them: the curated lists for the
 ---categories that are switched on, minus the spells the user switched off, plus anything they
@@ -385,6 +409,123 @@ local function DeclareNextGroup(entry)
 	end
 end
 
+---How many spares are still wanted: the target, less the frames already carrying a display and the
+---spares already waiting. An entry counts because a frame holding a display is doing the job a
+---spare was held for.
+---@return number
+local function SparesWanted()
+	if not moduleUtil:IsModuleEnabled(moduleName.ImportantAuras) then
+		return 0
+	end
+
+	local built = 0
+
+	for anchor, entry in pairs(watchers) do
+		-- The test-mode stand-ins keep their entries for the session, so counting them would let
+		-- one options preview permanently zero the target and eat the warm containers.
+		if entry.Display and not frames:IsTestFrame(anchor) then
+			built = built + 1
+		end
+	end
+
+	return PREWARM_FRAMES - built - #spares
+end
+
+---A container and a display for no frame in particular, built to the current settings.
+---@param options ImportantAurasInstanceOptions
+---@return ImportantAurasSpare
+local function BuildSpare(options)
+	local maxIcons = tonumber(options.Icons.MaxIcons) or 1
+	-- Sized off a real frame where there is one, so a spare taken later needs no resize: a restyle
+	-- is refused outright while auras are secret. Without any frames it takes the pixel size, and
+	-- the refresh that hands it over corrects that.
+	local sample = frames:GetAll(false, false, anchorScratch)[1]
+	local size = moduleUtil:GetIconSize(options.Icons, sample, 32, 75)
+	local spacing = options.IconSpacing or 2
+	local container = iconSlotContainer:New(UIParent, maxIcons, size, spacing, MASQUE_GROUP, nil, MASQUE_GROUP)
+
+	-- Nothing is drawn on it until a frame takes it, and the kick icon is what shows it again.
+	container.Frame:Hide()
+
+	return {
+		Container = container,
+		Display = auraContainerDisplay:New(
+			UIParent,
+			SPARE_UNIT,
+			BuildGroups(maxIcons, options, HelpfulColors(options)),
+			size,
+			spacing,
+			MASQUE_GROUP,
+			{ Style = BuildStyle(options), MasqueGroup = MASQUE_GROUP, DeferGroups = true }
+		),
+		MaxIcons = maxIcons,
+		-- What BuildGroups resolved into the specs, so the frame that takes this knows whether the
+		-- tracked set has moved since.
+		FilterGeneration = helpfulFilterGeneration,
+	}
+end
+
+---A spare for the frame that has just asked for one, or nil when none is waiting or none matches.
+---Both halves are already parented to the screen, which is where a taken one lives too, so the
+---token is all that changes.
+---
+---MATCHES, not merely exists. A spare bakes its size, its style and its groups' budgets in when it
+---is built, and a restyle is refused outright while auras are secret, so one handed over needing a
+---resize would keep the wrong look for the rest of an arena. CarriesConfig is the question every
+---other pool here asks before reuse.
+---@param unit string
+---@param size number
+---@param spacing number
+---@param style AuraDisplayStyle
+---@param maxIcons number
+---@return ImportantAurasSpare?
+local function TakeSpare(unit, size, spacing, style, maxIcons)
+	for index = #spares, 1, -1 do
+		local spare = spares[index]
+
+		-- The budget has to match outright: the engine hands out a group's buttons from the count
+		-- it was declared with, so a spare built for a smaller row can never grow into a bigger
+		-- one. The look only has to match while a restyle is refused; outside that the same
+		-- refresh that takes this corrects it, exactly as it would a display built on demand.
+		if spare.MaxIcons == maxIcons
+			and (not wowEx:IsAuraStylingRestricted() or spare.Display:CarriesConfig(size, spacing, style)) then
+			table.remove(spares, index)
+			spare.Display:SetUnit(unit)
+
+			return spare
+		end
+	end
+
+	return nil
+end
+
+---One spare, a group per turn. Everything is re-read at fire time: the walk runs over seconds, in
+---which the module can be switched off and the frames it was being held for can turn up on their
+---own.
+---@return SweepVerdict?
+local function PrewarmNext()
+	if prewarmBuilding then
+		if prewarmBuilding.Display:AddNextGroup() and prewarmBuilding.Display:HasPendingGroups() then
+			return sweep.Verdict.Unfinished
+		end
+
+		spares[#spares + 1] = prewarmBuilding
+		prewarmBuilding = nil
+
+		return
+	end
+
+	local options = GetOptions()
+
+	if not options or SparesWanted() <= 0 then
+		return
+	end
+
+	prewarmBuilding = BuildSpare(options)
+
+	return sweep.Verdict.Unfinished
+end
+
 ---@param anchor table
 ---@param unit string?
 local function EnsureWatcher(anchor, unit)
@@ -429,10 +570,9 @@ local function EnsureWatcher(anchor, unit)
 		local maxIcons = tonumber(options.Icons.MaxIcons) or 1
 		local size = moduleUtil:GetIconSize(options.Icons, anchor, 32, 75)
 		local spacing = options.IconSpacing or 2
-		-- "Friendly Indicators" is the module's old name, kept because it is the Masque group name
-		-- (and the public MiniCCModule frame tag). Renaming it would orphan every skin users have
-		-- already assigned to this group.
-		local container = iconSlotContainer:New(UIParent, maxIcons, size, spacing, "Friendly Indicators", nil, "Friendly Indicators")
+		local spare = TakeSpare(unit, size, spacing, BuildStyle(options), maxIcons)
+		local container = spare and spare.Container
+			or iconSlotContainer:New(UIParent, maxIcons, size, spacing, MASQUE_GROUP, nil, MASQUE_GROUP)
 
 		entry = {
 			Container = container,
@@ -444,13 +584,13 @@ local function EnsureWatcher(anchor, unit)
 
 		-- The standard categories, partitioned by filter negation so an aura only ever lands in
 		-- one group (see Core/AuraFilters).
-		entry.Display = auraContainerDisplay:New(
+		entry.Display = spare and spare.Display or auraContainerDisplay:New(
 			UIParent,
 			unit,
 			BuildGroups(maxIcons, options, HelpfulColors(options)),
 			size,
 			spacing,
-			"Friendly Indicators",
+			MASQUE_GROUP,
 			-- Seeded rather than left to the restyle below: a unit's display is built the
 			-- moment it turns up, and one built mid-arena can never be restyled.
 			--
@@ -458,12 +598,18 @@ local function EnsureWatcher(anchor, unit)
 			-- builds one of these per unit at once, and each group costs a batch of buttons the
 			-- engine allocates on the spot. Icons for a category appear when its group lands,
 			-- within a second or two of the frames themselves.
-			{ Style = BuildStyle(options), MasqueGroup = "Friendly Indicators", DeferGroups = true }
+			{ Style = BuildStyle(options), MasqueGroup = MASQUE_GROUP, DeferGroups = true }
 		)
-		buildSweep:Append(entry, DeclareNextGroup)
-		-- BuildGroups above resolved the current filters into the groups, so the next options
-		-- pass has nothing to re-publish for this entry.
-		entry.FilterGeneration = helpfulFilterGeneration
+
+		-- Whatever it still owes goes on the urgent lane, ahead of the spares: a frame is holding
+		-- it now. A spare may have been taken part way through its own build.
+		if entry.Display:HasPendingGroups() then
+			buildSweep:Append(entry, DeclareNextGroup)
+		end
+
+		-- Whichever tracked set went into the groups, so the next options pass re-publishes only
+		-- when it has actually moved since.
+		entry.FilterGeneration = spare and spare.FilterGeneration or helpfulFilterGeneration
 
 		kickTracker:Watch(unit)
 		entry.KickKey = kickTracker:Subscribe(unit, function()
@@ -633,6 +779,14 @@ end
 
 function M:EnsureWatchers()
 	frames:ForEachAnchor(true, testModeActive, EnsureWatcher)
+end
+
+---Tops the spares up, if the walker is not already at it. Cheap to call from any refresh: the
+---queue is only ever as long as what is still wanted.
+function M:QueuePrewarm()
+	for _ = 1, math.max(0, SparesWanted()) do
+		prewarmSweep:Append(PREWARM_ITEM, PrewarmNext)
+	end
 end
 
 function M:Teardown()
@@ -821,6 +975,12 @@ end
 ---@field KickKey number
 ---@field FilterGeneration number? The helpful filters the display already carries; matches
 ---helpfulFilterGeneration once the current tracked set has reached its groups.
+
+---@class ImportantAurasSpare
+---@field Container IconSlotContainer
+---@field Display AuraContainerDisplay
+---@field Shape number The icon budget its groups were born with, which nothing can change.
+---@field FilterGeneration number? The tracked set its groups were built from.
 
 ---@class ImportantAurasModuleOptions
 ---@field ShowDefensives boolean Curated defensive and healer throughput cooldowns.
