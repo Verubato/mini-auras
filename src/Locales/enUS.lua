@@ -502,8 +502,10 @@ L:SetDefaultStrings({
 	["Under 1min"] = "Under 1min",
 	["Your class brings no group buff, so there is nothing for this to mark."] = "Your class brings no group buff, so there is nothing for this to mark.",
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame.",
-	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame. Encounter mechanics lead it."] = "Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame. Encounter mechanics lead it.",
+	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame.",
 	["Frame Auras"] = "Frame Auras",
+	["Shows only the debuffs you applied yourself."] = "Shows only the debuffs you applied yourself.",
+	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead.",
 })
 
 -- English registers nothing: the strings above ARE the fallback every locale reads through, so

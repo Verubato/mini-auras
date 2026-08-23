@@ -502,5 +502,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Your class brings no group buff, so there is nothing for this to mark."] = "Ваш класс не даёт группового усиления, поэтому отмечать нечего.",
 	["Frame Auras"] = "Эффекты на рамках",
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Заменяет ряд усилений Blizzard в правом нижнем углу каждой рамки группы и рейда.",
-	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame. Encounter mechanics lead it."] = "Заменяет ряд ослаблений Blizzard в левом нижнем углу каждой рамки группы и рейда. Механики боя идут первыми.",
+	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Заменяет ряд ослаблений Blizzard в левом нижнем углу каждой рамки группы и рейда.",
+	["Shows only the debuffs you applied yourself."] = "Показывает только наложенные вами ослабления.",
+	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "Список, из которого берёт заклинания переключатель \"С фильтром\" ряда усилений. Если он выключен, в угол попадают все усиления цели.",
 } end)

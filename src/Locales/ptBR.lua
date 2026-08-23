@@ -500,5 +500,7 @@ L:RegisterLocale("ptBR", function() return {
 	["Your class brings no group buff, so there is nothing for this to mark."] = "Sua classe não traz nenhum bônus de grupo, então não há nada para marcar aqui.",
 	["Frame Auras"] = "Auras nos quadros",
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Substitui a fila de bônus da Blizzard, no canto inferior direito de cada quadro de grupo e raide.",
-	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame. Encounter mechanics lead it."] = "Substitui a fila de penalidades da Blizzard, no canto inferior esquerdo de cada quadro de grupo e raide. As mecânicas de encontro vêm primeiro.",
+	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Substitui a fila de penalidades da Blizzard, no canto inferior esquerdo de cada quadro de grupo e raide.",
+	["Shows only the debuffs you applied yourself."] = "Mostra apenas as penalidades que você aplicou.",
+	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "A lista de onde a opção Filtrado da fila de bônus tira os feitiços. Desligada, todos os bônus da unidade chegam ao canto.",
 } end)

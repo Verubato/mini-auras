@@ -502,5 +502,7 @@ L:RegisterLocale("zhCN", function() return {
 	["Your class brings no group buff, so there is nothing for this to mark."] = "你的职业没有团队增益，因此没有可标记的内容。",
 	["Frame Auras"] = "框架光环",
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "替换暴雪的增益栏，位于每个小队和团队框架的右下角。",
-	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame. Encounter mechanics lead it."] = "替换暴雪的减益栏，位于每个小队和团队框架的左下角。首领机制排在最前。",
+	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "替换暴雪的减益栏，位于每个小队和团队框架的左下角。",
+	["Shows only the debuffs you applied yourself."] = "仅显示你自己施加的减益。",
+	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "增益栏的“已过滤”开关所依据的列表。关闭时，目标身上的所有增益都会显示在角落。",
 } end)

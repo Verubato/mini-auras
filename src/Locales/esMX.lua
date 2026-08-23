@@ -503,5 +503,7 @@ L:RegisterLocale("esMX", function() return {
 	["Your class brings no group buff, so there is nothing for this to mark."] = "Tu clase no aporta ningún beneficio de grupo, así que no hay nada que marcar aquí.",
 	["Frame Auras"] = "Auras de marcos",
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Sustituye la fila de beneficios de Blizzard, en la esquina inferior derecha de cada marco de grupo y banda.",
-	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame. Encounter mechanics lead it."] = "Sustituye la fila de perjuicios de Blizzard, en la esquina inferior izquierda de cada marco de grupo y banda. Las mecánicas de encuentro van primero.",
+	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Sustituye la fila de perjuicios de Blizzard, en la esquina inferior izquierda de cada marco de grupo y banda.",
+	["Shows only the debuffs you applied yourself."] = "Muestra solo los perjuicios que has aplicado tú.",
+	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "La lista de la que se sirve el interruptor Filtrado de la fila de beneficios. Con él apagado, todos los beneficios de la unidad llegan a la esquina.",
 } end)

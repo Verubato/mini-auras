@@ -502,5 +502,7 @@ L:RegisterLocale("koKR", function() return {
 	["Your class brings no group buff, so there is nothing for this to mark."] = "내 직업은 파티 버프를 제공하지 않으므로 표시할 것이 없습니다.",
 	["Frame Auras"] = "프레임 오라",
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "각 파티 및 공격대 프레임 오른쪽 아래 구석의 블리자드 버프 줄을 대체합니다.",
-	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame. Encounter mechanics lead it."] = "각 파티 및 공격대 프레임 왼쪽 아래 구석의 블리자드 디버프 줄을 대체합니다. 전투 메커니즘이 앞에 옵니다.",
+	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "각 파티 및 공격대 프레임 왼쪽 아래 구석의 블리자드 디버프 줄을 대체합니다.",
+	["Shows only the debuffs you applied yourself."] = "직접 적용한 디버프만 표시합니다.",
+	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "버프 줄의 필터 적용 스위치가 참고하는 목록입니다. 꺼두면 대상의 모든 버프가 구석에 표시됩니다.",
 } end)

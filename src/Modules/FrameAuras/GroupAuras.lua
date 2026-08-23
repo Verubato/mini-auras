@@ -27,6 +27,7 @@ local DEBUFF_GROUP_KEYS = { BOSS_DEBUFF_GROUP, DEBUFF_GROUP }
 local BUFF_FILTER = "HELPFUL"
 local BUFF_FILTER_MINE = "HELPFUL|PLAYER"
 local DEBUFF_FILTER = "HARMFUL"
+local DEBUFF_FILTER_MINE = "HARMFUL|PLAYER"
 -- What "under a minute" means to the engine: a bound on an aura's whole duration rather than on
 -- what is left of it. Any value at all also drops the auras that never run out.
 local SHORT_AURA_SECONDS = 60
@@ -210,6 +211,18 @@ local function BuffFilter()
 	return (options and options.Mine ~= false) and BUFF_FILTER_MINE or BUFF_FILTER
 end
 
+---The aura filter string the debuff groups run under.
+---
+---The token is doing the real work here, not the candidate filter beside it. A filter that asks
+---who cast an aura is identity-gated: the engine skips it outright for a HARMFUL aura on a unit
+---you can assist, which is every frame this draws on. The token is weighed on every unit.
+---@return string
+local function DebuffFilter()
+	local options = SideOptions("Debuffs")
+
+	return (options and options.Mine == true) and DEBUFF_FILTER_MINE or DEBUFF_FILTER
+end
+
 ---The tracked ids as the engine wants them, built on first use and again after any refresh.
 ---@return table pandemic, table plain
 local function BuffCandidates()
@@ -260,6 +273,10 @@ local function DebuffCandidates()
 	local options = SideOptions("Debuffs") or {}
 	local maxDuration = options.ShortOnly == true and SHORT_AURA_SECONDS or nil
 	local dispellable = options.Dispellable == true and DispelType() or nil
+	-- Absent rather than false when the switch is off, like the buff side: the boolean matches an
+	-- aura's field exactly, so false would mean "only the ones somebody else applied". Skipped by
+	-- the engine on an assistable unit (see DebuffFilter), so the token is what actually filters.
+	local mine = options.Mine == true or nil
 	-- The priority list gives way to the dispel filter rather than stacking with it. Both only
 	-- narrow, and a debuff you can take off is worth an icon whether the game calls it priority or
 	-- not, so asking for both would only ever take icons away.
@@ -271,12 +288,14 @@ local function DebuffCandidates()
 
 	bossDebuffCandidates = {
 		isBossOrRoleAura = true,
+		isFromPlayerOrPlayerPet = mine,
 		maxDuration = maxDuration,
 		processedAuraType = dispellable,
 	}
 	plainDebuffCandidates = {
 		isBossOrRoleAura = false,
 		isPriorityAura = priority,
+		isFromPlayerOrPlayerPet = mine,
 		maxDuration = maxDuration,
 		processedAuraType = dispellable,
 	}
@@ -371,12 +390,13 @@ end
 local function BuildDebuffs(frame, unit)
 	local boss, priority = DebuffCandidates()
 	local maxIcons = MaxIcons("Debuffs")
+	local filter = DebuffFilter()
 
 	local display = auraContainerDisplay:New(frame, unit or "none", {
 		-- Declared boss first: groups render in the order they are declared, so its icons take the
 		-- row before anything the priority group matched.
-		{ Key = BOSS_DEBUFF_GROUP, FilterString = DEBUFF_FILTER, MaxIcons = maxIcons, CandidateFilters = boss },
-		{ Key = DEBUFF_GROUP, FilterString = DEBUFF_FILTER, MaxIcons = maxIcons, CandidateFilters = priority },
+		{ Key = BOSS_DEBUFF_GROUP, FilterString = filter, MaxIcons = maxIcons, CandidateFilters = boss },
+		{ Key = DEBUFF_GROUP, FilterString = filter, MaxIcons = maxIcons, CandidateFilters = priority },
 	}, IconSize(frame, "Debuffs"), ICON_SPACING, MASQUE_GROUP, {
 		Style = BuildStyle("Debuffs"),
 		MasqueGroup = MASQUE_GROUP,
@@ -478,10 +498,13 @@ local function ApplySettings(entry)
 		ApplySide(entry.Debuffs, frame, "Debuffs", DEBUFF_GROUP_KEYS)
 
 		local boss, priority = DebuffCandidates()
+		local debuffFilter = DebuffFilter()
 
 		-- The policy first: a group asking for a classification the display is not making matches
 		-- nothing at all.
 		entry.Debuffs:SetProcessingPolicy(ClassifiesDebuffs())
+		entry.Debuffs:SetFilterString(BOSS_DEBUFF_GROUP, debuffFilter)
+		entry.Debuffs:SetFilterString(DEBUFF_GROUP, debuffFilter)
 		entry.Debuffs:SetCandidateFilters(BOSS_DEBUFF_GROUP, boss)
 		entry.Debuffs:SetCandidateFilters(DEBUFF_GROUP, priority)
 	end

@@ -502,5 +502,7 @@ L:RegisterLocale("deDE", function() return {
 	["Your class brings no group buff, so there is nothing for this to mark."] = "Deine Klasse bringt keinen Gruppenbuff mit, also gibt es hier nichts zu markieren.",
 	["Frame Auras"] = "Rahmenauren",
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Ersetzt Blizzards Stärkungszauber-Reihe, in der unteren rechten Ecke jedes Gruppen- und Schlachtzugsfensters.",
-	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame. Encounter mechanics lead it."] = "Ersetzt Blizzards Schwächungszauber-Reihe, in der unteren linken Ecke jedes Gruppen- und Schlachtzugsfensters. Kampfmechaniken stehen vorn.",
+	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Ersetzt Blizzards Schwächungszauber-Reihe, in der unteren linken Ecke jedes Gruppen- und Schlachtzugsfensters.",
+	["Shows only the debuffs you applied yourself."] = "Zeigt nur die Schwächungszauber, die du selbst angewendet hast.",
+	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "Die Liste, aus der sich der Schalter \"Gefiltert\" der Buff-Reihe bedient. Ist er aus, erreicht stattdessen jeder Buff der Einheit die Ecke.",
 } end)

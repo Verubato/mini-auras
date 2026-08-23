@@ -13,15 +13,18 @@ local spells = addon.Modules.FrameAuras.Spells
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local COLUMNS = 2
+-- Every tab's row of switches is laid on the same grid, whether it fills it or not, so a switch
+-- sits in the same place from one tab to the next. Four is the widest row any of them carries.
+local SWITCH_COLUMNS = 4
 -- A slider stacks its name and its value box above the bar, so it needs more clearance over it
 -- than a control whose label sits beside it. Measured from the bar, which is what gets anchored.
 local SLIDER_TOP_GAP = verticalSpacing * 2.5
 local SLIDER_ROW_GAP = verticalSpacing * 3
--- How tall every tab's page is. One height for all four rather than one each: the window measures
--- its scroll range from the tab container once, when the page is first shown, so a container that
--- grew on a later tab change could never be scrolled to. It is therefore sized for the tallest
--- tab, which is Buffs with the tracked spell list on it; the other three carry the slack.
-local TAB_HEIGHT = 595
+-- How tall every tab's page is. One height for all of them rather than one each: the window
+-- measures its scroll range from the tab container once, when the page is first shown, so a
+-- container that grew on a later tab change could never be scrolled to. Sized to sit inside the
+-- window's own viewport, so no page needs a scrollbar beside the one the spell list carries.
+local TAB_HEIGHT = 470
 local SIDEBAR_WIDTH = 120
 local SIDEBAR_ROW_HEIGHT = 24
 local SIDEBAR_ROW_GAP = 25
@@ -62,6 +65,9 @@ local BOUNDS = {
 
 local columnWidth
 local controlWidth
+-- The grid the switch rows are laid on, which the glow colour follows so it lines up with the
+-- switch above it rather than sitting half a page out.
+local switchColumnWidth
 
 ---@class FrameAurasConfig
 local M = {}
@@ -133,17 +139,20 @@ local function Slider(parent, options, part, key, label, tooltip)
 	})
 end
 
----Lays a set of switches across one row, each in a column of a grid that many wide. Every tab
+---Lays a set of switches across one row, each in its own column of the shared grid. Every tab
 ---leads with one of these: the enable switch first, then whatever narrows what the row draws, so
 ---the settings that decide WHETHER something shows all sit on one line above the ones that decide
 ---what it looks like.
+---
+---The grid is a fixed width rather than one column per switch, so a tab carrying three of them
+---lines up with the tabs carrying four instead of spreading to fill the page.
 ---@param parent table
 ---@param options table
 ---@param specs { Key: string, Label: string, Tooltip: string }[]
 ---@param anchor table? Frame the row hangs below; nil pins it to the page's top left.
 ---@return table first The leftmost switch, which is what the section below anchors to.
 local function CheckboxRow(parent, options, specs, anchor)
-	local width = mini:ColumnWidth(#specs, 0, 0)
+	local width = switchColumnWidth or mini:ColumnWidth(SWITCH_COLUMNS, 0, 0)
 	local first
 
 	for index, spec in ipairs(specs) do
@@ -523,9 +532,22 @@ local function BuildBuffs(content, options)
 		end,
 	})
 
-	swatch:SetPoint("TOPLEFT", pandemic, "TOPLEFT", columnWidth, 0)
+	swatch:SetPoint("TOPLEFT", pandemic, "TOPLEFT", switchColumnWidth, 0)
+end
 
-	local tracked = Divider(content, L["Tracked buffs"], pandemic)
+---@param content table
+local function BuildSpells(content)
+	local blurb = mini:TextBlock({
+		Parent = content,
+		Lines = {
+			L["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."],
+		},
+	})
+
+	blurb:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
+	blurb:SetPoint("RIGHT", content, "RIGHT", 0, 0)
+
+	local tracked = Divider(content, L["Tracked buffs"], blurb)
 
 	BuildSpellList(content, tracked)
 end
@@ -536,7 +558,7 @@ local function BuildDebuffs(content, options)
 	local blurb = mini:TextBlock({
 		Parent = content,
 		Lines = {
-			L["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame. Encounter mechanics lead it."],
+			L["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."],
 		},
 	})
 
@@ -548,6 +570,11 @@ local function BuildDebuffs(content, options)
 			Key = "Enabled",
 			Label = L["Enable"],
 			Tooltip = L["Replaces Blizzard's debuffs on the party and raid frames with these ones."],
+		},
+		{
+			Key = "Mine",
+			Label = L["Mine"],
+			Tooltip = L["Shows only the debuffs you applied yourself."],
 		},
 		{
 			Key = "Dispellable",
@@ -668,6 +695,7 @@ end
 function M:Build(panel)
 	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
 	controlWidth = columnWidth - horizontalSpacing
+	switchColumnWidth = mini:ColumnWidth(SWITCH_COLUMNS, 0, 0)
 
 	local db = mini:GetSavedVars()
 	local options = db.Modules.FrameAurasModule
@@ -698,6 +726,7 @@ function M:Build(panel)
 			{ Key = "debuffs", Title = L["Debuffs"] },
 			{ Key = "classbuff", Title = L["Missing Buff"] },
 			{ Key = "target", Title = L["Target & Focus"] },
+			{ Key = "spells", Title = L["Spells"] },
 		},
 	})
 
@@ -706,6 +735,7 @@ function M:Build(panel)
 		debuffs = function(content) BuildDebuffs(content, options.Debuffs) end,
 		classbuff = function(content) BuildClassBuff(content, options.ClassBuff) end,
 		target = function(content) BuildTargetFocus(content, options.TargetFocus) end,
+		spells = BuildSpells,
 	}
 
 	for key, build in pairs(builders) do

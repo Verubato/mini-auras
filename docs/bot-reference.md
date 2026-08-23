@@ -612,7 +612,7 @@ of tracked CC and defensive icons on top of whatever else is on a frame; this on
 what Blizzard draws.
 
 No "Enable in" row: these stand in for frames the game draws everywhere, so they are on or off
-everywhere. Four sub-tabs, each with its own switch, and **all four ship switched off**.
+everywhere. Five sub-tabs. The first four each carry their own switch, and **all four ship switched off**; Spells is the buff whitelist the Buffs tab filters against.
 
 **Buffs sub-tab.** Replaces the buff row on the party and raid frames, in the bottom right corner
 growing left and wrapping upward. Blizzard's **compact** frames only, since those are the ones the
@@ -631,10 +631,6 @@ end, because flipping it makes the client rebuild the raid frames.
 - **Pandemic glow** plus a colour - lights a heal-over-time up as its refresh window opens. Which
   spells carry it is fixed (Lifebloom), not a per-spell setting: the reveal is registered on a
   button when the engine builds it.
-- **Tracked buffs** - a sidebar of sections, one per class that has tracked heal-over-time or
-  shield spells, then Custom. Each spell is a checkbox with its icon. Custom IDs are added in the
-  Custom section via the Spell ID box and removed with the cross button. Only differences from the
-  curated list are saved, so an updated curated list still reaches existing profiles.
 
 **Debuffs sub-tab.** Replaces the debuff row, in the bottom left corner growing right and wrapping
 upward.
@@ -643,6 +639,10 @@ mechanics and role auras lead the row, then the debuffs the game flags as priori
 colouring on any of these rows; they draw a plain icon like Blizzard's own.
 
 - Icon size 25-50 (percent of the frame's height), max icons 1-9, icons per row 1-6.
+- **Mine** - only the debuffs you applied yourself. Off by default: almost everything landing on a
+  group member came from somebody else, so this empties the row rather than tidying it. Driven by
+  the `HARMFUL|PLAYER` filter token rather than a candidate filter, because a filter asking who cast
+  an aura is identity-gated and the engine skips it for a harmful aura on a unit you can assist.
 - **Dispellable** - only the debuffs your own spec can dispel. This replaces the priority list
   rather than stacking with it.
 - **Under 1min** - only debuffs whose whole duration is under a minute.
@@ -669,6 +669,13 @@ goes off.
   worth purging.
 - **My debuffs** - on a unit you cannot help, only the debuffs you applied. A friend still shows
   every debuff on them.
+
+**Spells sub-tab.** The buff whitelist the Buffs tab's **Filtered** switch draws from; with that
+switch off, every buff on the unit reaches the corner instead. A sidebar of sections, one per class
+that has tracked heal-over-time or shield spells, then Custom. Each spell is a checkbox with its
+icon. Custom IDs are added in the Custom section via the Spell ID box and removed with the cross
+button. Only differences from the curated list are saved, so an updated curated list still reaches
+existing profiles.
 
 Icons here go through the same rendering as every other module, so the global Miscellaneous
 settings (font, icon zoom, cooldown swipe, countdown colours) and Masque skins apply. The Masque
