@@ -198,6 +198,27 @@ local function HasUnit(unit)
 	return mini:IsSecret(exists) or exists == true
 end
 
+---Whether a frame's unit is DEFINITELY there. The question HasUnit asks fails open, which is right
+---for deciding whether to show a row that already exists and wrong for deciding whether to build
+---one: building is a batch of buttons the engine allocates on the spot and can never free.
+---
+---This is what a reload with the module on used to cost. While a loading screen is up the client
+---answers about units secretly, so every one of the forty raid frames and five party frames it
+---pre-creates looked occupied, and each got two containers. Switching the module on later, with the
+---world settled, built two - the same end state for a fraction of the work. A frame the client will
+---not answer for yet is simply built later, by the refresh or the visibility hook that follows.
+---@param unit string?
+---@return boolean
+local function HasUnitForSure(unit)
+	if not unit then
+		return false
+	end
+
+	local exists = UnitExists(unit)
+
+	return not mini:IsSecret(exists) and exists == true
+end
+
 ---The icon size for one side on one frame, as a share of the frame's own height.
 ---
 ---In the frame's OWN units, not screen pixels: the row scales with its host (see AnchorSide), so
@@ -900,7 +921,7 @@ local function EnsureEntry(frame)
 
 	-- Test mode is the same question with the occupancy half dropped, because the stand-ins name
 	-- units the player does not have.
-	if not entry and not (testModeActive or HasUnit(unit)) then
+	if not entry and not (testModeActive or HasUnitForSure(unit)) then
 		return nil
 	end
 
@@ -1040,7 +1061,15 @@ local function InstallHooks()
 	-- turns up under a token it was already holding, so the roster is what says to look again.
 	-- Gated rather than answered inside the handler: with both sides off there is nothing here to
 	-- do, and a disabled module should not be paying for the dispatch.
-	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE", "PLAYER_ENTERING_WORLD" })
+	--
+	-- The loading screen ending is in there because building needs a definite answer about who is
+	-- on a frame (see HasUnitForSure), and the client gives none while one is up. This is the pass
+	-- that builds what the world-entering pass had to skip.
+	rosterGate = eventGate:New(eventsFrame, {
+		"GROUP_ROSTER_UPDATE",
+		"PLAYER_ENTERING_WORLD",
+		"LOADING_SCREEN_DISABLED",
+	})
 
 	frames:InstallUnitFrameHooks(eventsFrame, {
 		-- Blizzard re-points frames at units constantly while a raid sorts, and the token often

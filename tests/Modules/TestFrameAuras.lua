@@ -7,6 +7,8 @@ local fw = require("Framework")
 local moduleEnv = require("ModuleEnv")
 -- The sweep only moves on a ticker, so the prewarm tests have to run it by hand.
 local acm = require("AuraContainerMock")
+-- For marking a value secret, which is how the client answers about units mid-loading-screen.
+local wow = require("WowApi")
 
 local env = moduleEnv.build()
 local db = env.db
@@ -539,6 +541,35 @@ fw.describe("Frame Auras - test mode", function()
 		for _, fill in ipairs(fills) do
 			assert(Includes(fill.Spells, testSpells.FrameAuras.Debuffs[1]), "only the debuff side draws")
 		end
+	end)
+
+	fw.it("waits for a definite answer before building a frame's rows", function()
+		options.Buffs.Enabled = true
+
+		local frame = NewPartyFrame(5)
+		local realExists = _G.UnitExists
+
+		-- What a loading screen looks like: the client answers about units SECRETLY. Not falsely -
+		-- a secret answer reads as "maybe", and the show path deliberately treats it as occupied.
+		-- Building is a batch of buttons the engine can never free, so it has to mean "not yet".
+		local secret = wow.markSecret({})
+
+		_G.UnitExists = function()
+			return secret
+		end
+
+		groupAuras:Refresh()
+
+		assert(ContainersOn(frame) == 0, "nothing is built while the client will not answer")
+
+		_G.UnitExists = realExists
+		groupAuras:Refresh()
+
+		assert(ContainersOn(frame) > 0, "and the pass after it builds what was skipped")
+
+		DropPartyFrame(5)
+		options.Buffs.Enabled = false
+		groupAuras:Refresh()
 	end)
 
 	fw.it("builds nothing for a frame the client is not showing", function()
