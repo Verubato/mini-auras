@@ -393,6 +393,22 @@ local function EnsureWatcher(anchor, unit)
 		return nil
 	end
 
+	-- Nothing is built while a loading screen is up. Blizzard briefly SHOWS every frame it
+	-- pre-creates, pointed at "player", while it lays them out, then hides them and hands out the
+	-- real units. During that window each one is visible and holds a unit that genuinely exists, so
+	-- the test below passes for all forty-five of them and nothing about a frame tells them apart
+	-- from the one the player actually has. Only the timing can. The refresh that follows the
+	-- screen walks the anchors again, so what was skipped is built a moment later.
+	-- Nothing is built while a loading screen is up. Blizzard briefly SHOWS every frame it
+	-- pre-creates, pointed at "player", while it lays them out, then hides them and hands out the
+	-- real units. During that window each one is visible and holds a unit that genuinely exists, so
+	-- the test below passes for all forty-five of them and nothing about a frame tells them apart
+	-- from the one the player actually has. Only the timing can. The refresh that follows the
+	-- screen walks the anchors again, so what was skipped is built a moment later.
+	if addon:IsLoadingScreenUp() then
+		return nil
+	end
+
 	-- Nobody on the token, nothing to watch. Blizzard builds its party and raid frames for a full
 	-- group and calls SetUnit on every one of them at login, so a solo player's frames alone are
 	-- dozens of containers for units that are not there. A unit turning up re-runs this hook, and

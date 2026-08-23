@@ -92,6 +92,30 @@ local function tickCountingRefreshes(module)
 	return refreshes
 end
 
+fw.describe("Important auras - the login layout pass", function()
+	fw.it("builds nothing while a loading screen is up", function()
+		local fresh = env.addUnitFrame("party3", "CUF_Loading")
+
+		-- Blizzard briefly shows every frame it pre-creates, pointed at "player", while it lays
+		-- them out at login. Each one is visible and holds a unit that genuinely exists, so the
+		-- ordinary tests pass for all forty-five of them; only the timing tells them apart.
+		env.loadingScreenUp = true
+
+		importantAurasModule:Refresh()
+
+		assert(#env.containersForUnit("party3") == 0, "the layout pass builds nothing")
+
+		env.loadingScreenUp = false
+
+		importantAurasModule:Refresh()
+
+		assert(#env.containersForUnit("party3") > 0, "and the pass after the screen builds it")
+
+		env.unitFrames[#env.unitFrames] = nil
+		fresh:Hide()
+	end)
+end)
+
 fw.describe("CrowdControlModule 12.1 - unit frame anchors", function()
 	fw.it("builds one crowd-control display per anchor, tracking its unit", function()
 		local display = assert(ccDisplay("party1"), "no display for the anchor's unit")

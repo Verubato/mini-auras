@@ -46,7 +46,9 @@ local function SeedStateBaselines()
 end
 
 local function OnEvent(_, event, unit)
-	if event == "GROUP_ROSTER_UPDATE" then
+	if event == "GROUP_ROSTER_UPDATE" or event == "LOADING_SCREEN_DISABLED" then
+		-- The screen ending is what makes the frames readable: nothing is built while one is up,
+		-- so this is the pass that builds what the world-entering pass had to skip.
 		QueueRefresh()
 	elseif event == "UNIT_FACTION" then
 		-- Mind control hands a friendly frame an enemy unit, which decides whether the engine
@@ -99,7 +101,8 @@ local function Setup()
 	eventsFrame = CreateFrame("Frame")
 	eventsFrame:SetScript("OnEvent", OnEvent)
 	-- Registered by the Refresh gate while the module is enabled.
-	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE", "UNIT_FACTION" })
+	rosterGate = eventGate:New(eventsFrame,
+		{ "GROUP_ROSTER_UPDATE", "UNIT_FACTION", "LOADING_SCREEN_DISABLED" })
 
 	-- A duel flips a party member to hostile with no event of its own, and that decides whether
 	-- the spell-id filter applies at all, so the budgets have to be recomputed when it happens.
