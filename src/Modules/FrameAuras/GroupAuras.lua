@@ -836,7 +836,6 @@ local function EnsureEntry(frame)
 	end
 
 	local entry = watchers[frame]
-	local unit = UnitFor(frame)
 
 	-- Only the first pass is gated. Once a frame has displays they are kept and re-pointed.
 	--
@@ -846,11 +845,19 @@ local function EnsureEntry(frame)
 	-- frames behind them, each paying for two displays and their batch of buttons. A frame that
 	-- turns up later is built by the visibility hook, which is what fires when one appears.
 	--
+	-- The cheap half leads, and only a frame with nothing built on it pays for the rest: while the
+	-- world loads, Blizzard points every compact frame at a unit several times over and almost all
+	-- of them are still hidden, so reading the token and asking the client about it for each was
+	-- most of what this module cost during a login.
+	if not entry and not frames:IsAnchorUsable(frame) then
+		return nil
+	end
+
+	local unit = UnitFor(frame)
+
 	-- Test mode is the same question with the occupancy half dropped, because the stand-ins name
 	-- units the player does not have.
-	local wanted = frames:IsAnchorUsable(frame) and (testModeActive or HasUnit(unit))
-
-	if not entry and not wanted then
+	if not entry and not (testModeActive or HasUnit(unit)) then
 		return nil
 	end
 
