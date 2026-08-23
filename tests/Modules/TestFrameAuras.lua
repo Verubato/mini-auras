@@ -27,6 +27,12 @@ _G.GetCVar = function(name)
 	return cvars[name]
 end
 
+-- The client's own "can I dispel this" classification, which the debuff row asks for by value. The
+-- mock does not model AuraUtil, and the number itself is opaque to everything but the engine.
+local DISPEL_TYPE = 2
+
+_G.AuraUtil = { AuraUpdateChangedType = { Dispel = DISPEL_TYPE } }
+
 -- One of Blizzard's party member frames, which the rows collect through Core/Frames. The lookup
 -- reads the globals by name and the mock's CreateFrame does not publish one, so it is set by hand.
 local partyContainer = _G.CreateFrame("Frame", "CompactPartyFrame", _G.UIParent)
@@ -73,6 +79,8 @@ end
 local CURATED = CuratedId()
 -- An id the curated list will never hold, for the hand-added cases.
 local CUSTOM = 99000001
+-- The one aura group the debuff row draws through.
+local DEBUFF_GROUP = "FrameDebuffs"
 
 local function ResetSpells()
 	options.Spells.Disabled = {}
@@ -743,5 +751,100 @@ fw.describe("Frame Auras - test mode", function()
 		-- The stand-ins leave the frame list with test mode, so the refresh that follows never
 		-- walks them: whatever cleared this row did it without being handed the frame.
 		assert(standIn:GetUsedSlotCount() == 0, "the stand-in row is cleared too")
+	end)
+end)
+
+---The debuff group on the container built for a frame, so a test can read what the module handed
+---the engine. Nil when the frame has no debuff row at all, which a nil filter set does not mean.
+---@param frame table
+---@return table?
+local function DebuffGroup(frame)
+	for _, candidate in ipairs(acm.frames) do
+		if candidate._type == "AuraContainer" and candidate:GetParent() == frame then
+			local group = candidate._groups[DEBUFF_GROUP]
+
+			if group then
+				return group
+			end
+		end
+	end
+
+	return nil
+end
+
+---The game's own debuff sort ranks the row and the budget trims it, so partitioning it by the boss
+---and priority flags would only ever take icons away. Checked wherever a filter set exists at all,
+---since a switch is what gives the partition somewhere to come back.
+---@param filters table
+local function AssertUnpartitioned(filters)
+	assert(filters.isBossOrRoleAura == nil, "no boss partition reaches the engine")
+	assert(filters.isPriorityAura == nil, "and no priority one either")
+end
+
+fw.describe("Frame Auras - what the debuff row lets through", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		options.Debuffs.ShortOnly = false
+		options.Debuffs.Dispellable = false
+		groupAuras:Refresh()
+	end)
+
+	fw.it("narrows the row by nothing at all under stock settings", function()
+		options.Debuffs.Enabled = true
+
+		-- Its own frame, like the cost tests: a display is built once per frame and kept, so one that
+		-- already exists was built under whatever the settings were then.
+		local fresh = NewRaidFrame(21)
+
+		groupAuras:Refresh()
+		acm.tickAll(400)
+
+		local group = assert(DebuffGroup(fresh), "the frame got a debuff row")
+
+		assert(group.candidateFilters == nil, "with neither switch on there is nothing left to narrow by")
+
+		DropRaidFrame(21)
+	end)
+
+	fw.it("asks for a duration bound when the player wants the short ones only", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShortOnly = true
+
+		local fresh = NewRaidFrame(22)
+
+		groupAuras:Refresh()
+		acm.tickAll(400)
+
+		local group = assert(DebuffGroup(fresh), "the frame got a debuff row")
+		local filters = assert(group.candidateFilters, "the switch put a filter set on the group")
+
+		assert(filters.maxDuration == 60,
+			"under a minute is a bound on the whole duration, got " .. tostring(filters.maxDuration))
+		AssertUnpartitioned(filters)
+
+		options.Debuffs.ShortOnly = false
+		DropRaidFrame(22)
+	end)
+
+	fw.it("asks for the dispel classification when the player wants only what they can take off", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.Dispellable = true
+
+		local fresh = NewRaidFrame(23)
+
+		groupAuras:Refresh()
+		acm.tickAll(400)
+
+		local group = assert(DebuffGroup(fresh), "the frame got a debuff row")
+		local filters = assert(group.candidateFilters, "the switch put a filter set on the group")
+
+		assert(filters.processedAuraType == DISPEL_TYPE,
+			"the engine's own dispel classification is what it filters on")
+		AssertUnpartitioned(filters)
+
+		options.Debuffs.Dispellable = false
+		DropRaidFrame(23)
 	end)
 end)

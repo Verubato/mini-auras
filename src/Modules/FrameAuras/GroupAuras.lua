@@ -105,8 +105,10 @@ local watchers = {}
 -- reference it is handed, and handing the same one back costs nothing.
 local pandemicCandidates
 local plainCandidates
-local bossDebuffCandidates
-local plainDebuffCandidates
+local debuffCandidates
+-- Whether the debuff set has been worked out yet. Its own flag because the answer is nil under
+-- stock settings, and testing the set itself would rebuild it on every call.
+local debuffCandidatesBuilt
 local eventsFrame
 ---@type EventGate?
 local rosterGate
@@ -330,42 +332,30 @@ end
 
 ---The debuff filters, built the same way and for the same reason.
 ---
----Encounter mechanics and role auras lead the row, and the debuffs the game itself flags as
----priority follow. Two groups because a candidate filter can only ever narrow: there is no flag
----meaning "boss or priority", and the booleans combine with AND like everything else. The boss flag
----partitions them, so an aura that is both is drawn once rather than twice, and each group carries
----its own budget. Everything the player set applies to both.
----@return table boss, table plain
+---One group, ranked by the game's own raid frame debuff order, which already leads with encounter
+---mechanics and the debuffs it flags as priority. So all that is left to narrow by is the two
+---switches on the page, and with neither of them on the engine is handed nothing at all.
+---@return table? Nil when the row is not narrowed, which the engine reads as "everything".
 local function DebuffCandidates()
-	if bossDebuffCandidates then
-		return bossDebuffCandidates, plainDebuffCandidates
+	if debuffCandidatesBuilt then
+		return debuffCandidates
 	end
 
 	local options = SideOptions("Debuffs") or {}
 	local maxDuration = options.ShortOnly == true and SHORT_AURA_SECONDS or nil
 	local dispellable = options.Dispellable == true and DispelType() or nil
-	-- The priority list gives way to the dispel filter rather than stacking with it. Both only
-	-- narrow, and a debuff you can take off is worth an icon whether the game calls it priority or
-	-- not, so asking for both would only ever take icons away.
-	local priority = nil
 
-	if not dispellable then
-		priority = true
+	debuffCandidatesBuilt = true
+	debuffCandidates = nil
+
+	if maxDuration or dispellable then
+		debuffCandidates = {
+			maxDuration = maxDuration,
+			processedAuraType = dispellable,
+		}
 	end
 
-	bossDebuffCandidates = {
-		isBossOrRoleAura = true,
-		maxDuration = maxDuration,
-		processedAuraType = dispellable,
-	}
-	plainDebuffCandidates = {
-		isBossOrRoleAura = false,
-		isPriorityAura = priority,
-		maxDuration = maxDuration,
-		processedAuraType = dispellable,
-	}
-
-	return bossDebuffCandidates, plainDebuffCandidates
+	return debuffCandidates
 end
 
 ---Whether the debuff displays have to classify each aura for the dispellable filter. Asking for a
@@ -1172,8 +1162,8 @@ function M:Refresh()
 	-- about the tracked ids still has to hand the engine tables it will accept.
 	pandemicCandidates = nil
 	plainCandidates = nil
-	bossDebuffCandidates = nil
-	plainDebuffCandidates = nil
+	debuffCandidates = nil
+	debuffCandidatesBuilt = nil
 
 	if AnySideActive() then
 		InstallHooks()
