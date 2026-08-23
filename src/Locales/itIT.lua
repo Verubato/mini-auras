@@ -490,7 +490,7 @@ L:RegisterLocale("itIT", function() return {
 	["Shows only the buffs you cast yourself."] = "Mostra solo i benefici lanciati da te.",
 	["Shows only the debuffs that run for less than a minute."] = "Mostra solo le penalità che durano meno di un minuto.",
 	["Shows only the debuffs your own spec can dispel."] = "Mostra solo le penalità che la tua specializzazione può dissolvere.",
-	["Shows only the spells picked in the tracked buffs list below."] = "Mostra solo gli incantesimi scelti nell'elenco dei benefici tracciati qui sotto.",
+	["Shows only the spells picked on the Spells tab."] = "Mostra solo le magie scelte nella scheda Magie.",
 	["Spell ID"] = "ID incantesimo",
 	["Target & Focus"] = "Bersaglio e focus",
 	["The colour a heal-over-time lights up in as its refresh window opens."] = "Il colore con cui si illumina una cura nel tempo all'aprirsi della sua finestra di rinnovo.",

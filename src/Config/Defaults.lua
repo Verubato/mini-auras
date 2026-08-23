@@ -689,6 +689,9 @@ local dbDefaults = {
 				Size = 22,
 				MaxIcons = 6,
 				PerRow = 6,
+				-- Off: the tracked list is a healer's own heal-over-times, which is not what a target
+				-- frame is usually being read for. It only bites on a friendly target either way.
+				Filtered = false,
 				ShortBuffsOnly = true,
 				-- Each only bites where it means anything: your own buffs on a unit you can help,
 				-- your own debuffs on one you cannot. An enemy still shows the buffs worth purging.

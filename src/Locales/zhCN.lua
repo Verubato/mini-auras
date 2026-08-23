@@ -492,7 +492,7 @@ L:RegisterLocale("zhCN", function() return {
 	["Shows only the buffs you cast yourself."] = "只显示你自己施放的增益。",
 	["Shows only the debuffs that run for less than a minute."] = "只显示持续时间不足一分钟的减益。",
 	["Shows only the debuffs your own spec can dispel."] = "只显示你当前专精可以驱散的减益。",
-	["Shows only the spells picked in the tracked buffs list below."] = "只显示下方追踪增益列表中选中的法术。",
+	["Shows only the spells picked on the Spells tab."] = "仅显示在“法术”标签页中选中的法术。",
 	["Spell ID"] = "法术 ID",
 	["Target & Focus"] = "目标与焦点",
 	["The colour a heal-over-time lights up in as its refresh window opens."] = "持续治疗进入刷新窗口时发光的颜色。",

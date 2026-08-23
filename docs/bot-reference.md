@@ -623,8 +623,8 @@ turned Blizzard's buffs off themselves never gets them handed back. The write wa
 end, because flipping it makes the client rebuild the raid frames.
 
 - Icon size 25-50 (percent of the frame's own height), max icons 1-9, icons per row 1-6.
-- **Filtered** - show only the spells ticked in the tracked buffs list below. Off shows every buff
-  that gets past the other filters.
+- **Filtered** - show only the spells ticked on the Spells tab. Off shows every buff that gets past
+  the other filters.
 - **Mine** - only the buffs you cast yourself.
 - **Under 1min** - only buffs whose whole duration is under a minute, which drops raid buffs and
   flasks.
@@ -660,6 +660,9 @@ goes off.
 
 - Icon size 12-40 (pixels, since these frames are a fixed size), max icons 1-12, icons per row
   1-12.
+- **Filtered** - only the spells ticked on the Spells tab. Bites on a friendly target only: a
+  spell-ID map is identity-gated, so the engine honours it for a helpful aura on a unit you can
+  assist and silently skips it on an enemy.
 - **Only short buffs** - hides buffs running longer than two minutes.
 - **My buffs** - on a unit you can help, only the buffs you cast. An enemy still shows the buffs
   worth purging.

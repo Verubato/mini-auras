@@ -490,7 +490,7 @@ L:RegisterLocale("frFR", function() return {
 	["Shows only the buffs you cast yourself."] = "N'affiche que les améliorations que vous avez lancées vous-même.",
 	["Shows only the debuffs that run for less than a minute."] = "N'affiche que les affaiblissements qui durent moins d'une minute.",
 	["Shows only the debuffs your own spec can dispel."] = "N'affiche que les affaiblissements que votre spécialisation peut dissiper.",
-	["Shows only the spells picked in the tracked buffs list below."] = "N'affiche que les sorts choisis dans la liste des améliorations suivies ci-dessous.",
+	["Shows only the spells picked on the Spells tab."] = "N'affiche que les sorts sélectionnés dans l'onglet Sorts.",
 	["Spell ID"] = "ID de sort",
 	["Target & Focus"] = "Cible et focalisation",
 	["The colour a heal-over-time lights up in as its refresh window opens."] = "La couleur dans laquelle un soin sur la durée s'illumine à l'ouverture de sa fenêtre de renouvellement.",

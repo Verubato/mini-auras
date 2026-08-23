@@ -492,7 +492,7 @@ L:RegisterLocale("deDE", function() return {
 	["Shows only the buffs you cast yourself."] = "Zeigt nur die Stärkungszauber, die du selbst gewirkt hast.",
 	["Shows only the debuffs that run for less than a minute."] = "Zeigt nur die Schwächungszauber, die weniger als eine Minute laufen.",
 	["Shows only the debuffs your own spec can dispel."] = "Zeigt nur die Schwächungszauber, die deine eigene Spezialisierung bannen kann.",
-	["Shows only the spells picked in the tracked buffs list below."] = "Zeigt nur die Zauber, die unten in der Liste der verfolgten Stärkungszauber ausgewählt sind.",
+	["Shows only the spells picked on the Spells tab."] = "Zeigt nur die Zauber, die auf dem Reiter \"Zauber\" ausgewählt sind.",
 	["Spell ID"] = "Zauber-ID",
 	["Target & Focus"] = "Ziel & Fokus",
 	["The colour a heal-over-time lights up in as its refresh window opens."] = "Die Farbe, in der eine Heilung über Zeit aufleuchtet, sobald ihr Auffrischfenster beginnt.",

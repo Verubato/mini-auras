@@ -493,7 +493,7 @@ L:RegisterLocale("esMX", function() return {
 	["Shows only the buffs you cast yourself."] = "Muestra solo los beneficios que lanzaste tú.",
 	["Shows only the debuffs that run for less than a minute."] = "Muestra solo los perjuicios que duran menos de un minuto.",
 	["Shows only the debuffs your own spec can dispel."] = "Muestra solo los perjuicios que tu especialización puede disipar.",
-	["Shows only the spells picked in the tracked buffs list below."] = "Muestra solo los hechizos elegidos en la lista de beneficios seguidos de abajo.",
+	["Shows only the spells picked on the Spells tab."] = "Muestra solo los hechizos elegidos en la pestaña Hechizos.",
 	["Spell ID"] = "ID de hechizo",
 	["Target & Focus"] = "Objetivo y foco",
 	["The colour a heal-over-time lights up in as its refresh window opens."] = "El color con el que se ilumina una sanación con el tiempo al abrirse su ventana de renovación.",

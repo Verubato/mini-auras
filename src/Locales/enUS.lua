@@ -493,7 +493,7 @@ L:SetDefaultStrings({
 	["Shows only the buffs you cast yourself."] = "Shows only the buffs you cast yourself.",
 	["Shows only the debuffs that run for less than a minute."] = "Shows only the debuffs that run for less than a minute.",
 	["Shows only the debuffs your own spec can dispel."] = "Shows only the debuffs your own spec can dispel.",
-	["Shows only the spells picked in the tracked buffs list below."] = "Shows only the spells picked in the tracked buffs list below.",
+	["Shows only the spells picked on the Spells tab."] = "Shows only the spells picked on the Spells tab.",
 	["Spell ID"] = "Spell ID",
 	["Target & Focus"] = "Target & Focus",
 	["The colour a heal-over-time lights up in as its refresh window opens."] = "The colour a heal-over-time lights up in as its refresh window opens.",

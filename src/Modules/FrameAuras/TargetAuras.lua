@@ -3,6 +3,9 @@ local _, addon = ...
 local mini = addon.Framework
 local eventGate = addon.Core.EventGate
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local frames = addon.Core.Frames
+local pixels = addon.Core.Pixels
+local spells = addon.Modules.FrameAuras.Spells
 
 -- Stands in for Blizzard's own aura rows on the target and focus frames. Debuffs take the first
 -- row and buffs the second, with the buffs moving up when the target has no debuffs.
@@ -112,10 +115,18 @@ local function Candidates(host)
 	local assistable = CanAssist(host.Unit)
 	local buffs, debuffs
 
+	if options.Filtered then
+		-- Only bites on a unit you can help. A spell-id map is identity-gated: the engine honours
+		-- it for a helpful aura on an assistable unit and skips it everywhere else, so on an enemy
+		-- target this quietly does nothing and the row shows what it always did.
+		buffs = { includeSpellIDs = spells:BuildSpellMap() }
+	end
+
 	if options.ShortBuffsOnly then
 		-- A bound on an aura's total duration, not what is left of it. Any value at all also drops
 		-- auras with no duration, which is what makes it reach a permanent raid buff.
-		buffs = { maxDuration = SHORT_BUFF_SECONDS }
+		buffs = buffs or {}
+		buffs.maxDuration = SHORT_BUFF_SECONDS
 	end
 
 	if options.MyBuffs and assistable == true then
@@ -299,11 +310,29 @@ end
 ---the debuffs would have been.
 ---@param host table
 local function AnchorRows(host)
+	local frame = host.Frame
 	local debuffs = host.Debuffs.Frame
 	local buffs = host.Buffs.Frame
 
+	for _, containerFrame in ipairs({ debuffs, buffs }) do
+		if containerFrame:GetParent() ~= frame then
+			containerFrame:SetParent(frame)
+		end
+
+		-- Scales with the frame rather than the screen, like the group rows. It is also what puts
+		-- these rows in the same coordinate space as the cast bar that anchors below them.
+		containerFrame:SetIgnoreParentScale(false)
+		containerFrame:SetFrameStrata(frames:GetNextStrata(frame:GetFrameStrata()))
+
+		local hostLevel = pixels:Number(frame:GetFrameLevel())
+
+		if hostLevel then
+			containerFrame:SetFrameLevel(hostLevel + 1)
+		end
+	end
+
 	debuffs:ClearAllPoints()
-	debuffs:SetPoint("TOPLEFT", ArtOf(host.Frame), "BOTTOMLEFT", ROW_X, ROW_Y)
+	debuffs:SetPoint("TOPLEFT", ArtOf(frame), "BOTTOMLEFT", ROW_X, ROW_Y)
 
 	buffs:ClearAllPoints()
 	buffs:SetPoint("TOPLEFT", debuffs, "BOTTOMLEFT", 0, 0)

@@ -170,6 +170,29 @@ function M:SpellGroups()
 	return out
 end
 
+---Every tracked id as one map, for a row that draws them all through a single group. The split
+---below exists only so the refresh-window reveal can be registered on one of two groups; a display
+---without that reveal wants the lot.
+---
+---A fresh table each time: the engine keeps whatever reference it is handed, and this changes as
+---the player edits the list.
+---@return table<number, boolean>
+function M:BuildSpellMap()
+	local map = {}
+
+	for _, spellId in ipairs(M:TrackedList({})) do
+		map[spellId] = true
+	end
+
+	-- An empty map reads to the engine as "no ids required", so it would match every buff on the
+	-- unit rather than none of them.
+	if next(map) == nil then
+		map[NEVER_MATCHED_SPELL_ID] = true
+	end
+
+	return map
+end
+
 ---The tracked ids as the engine wants them, split by whether they light up on refresh. Two sets
 ---because the reveal is registered on a button when it is built and the engine drives it from a
 ---window nothing can read, so the only way to pick which spells get one is to put them in their

@@ -492,7 +492,7 @@ L:RegisterLocale("koKR", function() return {
 	["Shows only the buffs you cast yourself."] = "내가 시전한 버프만 표시합니다.",
 	["Shows only the debuffs that run for less than a minute."] = "1분 미만으로 지속되는 디버프만 표시합니다.",
 	["Shows only the debuffs your own spec can dispel."] = "내 전문화로 해제할 수 있는 디버프만 표시합니다.",
-	["Shows only the spells picked in the tracked buffs list below."] = "아래 추적 버프 목록에서 선택한 주문만 표시합니다.",
+	["Shows only the spells picked on the Spells tab."] = "주문 탭에서 선택한 주문만 표시합니다.",
 	["Spell ID"] = "주문 ID",
 	["Target & Focus"] = "대상 및 주시 대상",
 	["The colour a heal-over-time lights up in as its refresh window opens."] = "지속 치유 효과의 갱신 구간이 열릴 때 발광하는 색상입니다.",

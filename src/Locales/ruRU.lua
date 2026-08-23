@@ -492,7 +492,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Shows only the buffs you cast yourself."] = "Показывает только усиления, наложенные вами.",
 	["Shows only the debuffs that run for less than a minute."] = "Показывает только ослабления короче минуты.",
 	["Shows only the debuffs your own spec can dispel."] = "Показывает только ослабления, которые может снять ваша специализация.",
-	["Shows only the spells picked in the tracked buffs list below."] = "Показывает только заклинания, выбранные в списке отслеживаемых усилений ниже.",
+	["Shows only the spells picked on the Spells tab."] = "Показывает только заклинания, выбранные на вкладке \"Заклинания\".",
 	["Spell ID"] = "ID заклинания",
 	["Target & Focus"] = "Цель и фокус",
 	["The colour a heal-over-time lights up in as its refresh window opens."] = "Цвет, которым подсвечивается периодическое исцеление, когда открывается окно обновления.",

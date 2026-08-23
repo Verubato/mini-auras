@@ -16,6 +16,8 @@ local COLUMNS = 2
 -- Every tab's row of switches is laid on the same grid, whether it fills it or not, so a switch
 -- sits in the same place from one tab to the next. Four is the widest row any of them carries.
 local SWITCH_COLUMNS = 4
+-- What one line of switches costs, for a row that wraps onto a second.
+local SWITCH_ROW_HEIGHT = 20
 -- A slider stacks its name and its value box above the bar, so it needs more clearance over it
 -- than a control whose label sits beside it. Measured from the bar, which is what gets anchored.
 local SLIDER_TOP_GAP = verticalSpacing * 2.5
@@ -154,9 +156,18 @@ end
 local function CheckboxRow(parent, options, specs, anchor)
 	local width = switchColumnWidth or mini:ColumnWidth(SWITCH_COLUMNS, 0, 0)
 	local first
+	-- The switch starting the LAST line, which is what the section below hangs off: it carries both
+	-- the bottom of the row and the left edge the next control lines up with. Taking the last one
+	-- PLACED instead would put that control under whichever column the row happened to end in.
+	local bottomLeftIndex = 1 + SWITCH_COLUMNS * math.floor((#specs - 1) / SWITCH_COLUMNS)
+	local bottomLeft
 
 	for index, spec in ipairs(specs) do
 		local checkbox = Checkbox(parent, options, spec.Key, spec.Label, spec.Tooltip)
+		-- Past the grid's width the row wraps rather than squeezing another column in, so the
+		-- switches on a longer tab still line up with the ones on a shorter one.
+		local column = (index - 1) % SWITCH_COLUMNS
+		local row = math.floor((index - 1) / SWITCH_COLUMNS)
 
 		if index == 1 then
 			first = checkbox
@@ -167,11 +178,16 @@ local function CheckboxRow(parent, options, specs, anchor)
 				checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
 			end
 		else
-			checkbox:SetPoint("TOPLEFT", first, "TOPLEFT", width * (index - 1), 0)
+			checkbox:SetPoint("TOPLEFT", first, "TOPLEFT",
+				width * column, -row * (SWITCH_ROW_HEIGHT + verticalSpacing))
+		end
+
+		if index == bottomLeftIndex then
+			bottomLeft = checkbox
 		end
 	end
 
-	return first
+	return bottomLeft
 end
 
 ---@param spellId number
@@ -479,7 +495,7 @@ local function BuildBuffs(content, options)
 		{
 			Key = "Filtered",
 			Label = L["Filtered"],
-			Tooltip = L["Shows only the spells picked in the tracked buffs list below."],
+			Tooltip = L["Shows only the spells picked on the Spells tab."],
 		},
 		{
 			Key = "Mine",
@@ -655,6 +671,11 @@ local function BuildTargetFocus(content, options)
 			Key = "Enabled",
 			Label = L["Enable"],
 			Tooltip = L["Replaces Blizzard's auras on the target and focus frames with these ones."],
+		},
+		{
+			Key = "Filtered",
+			Label = L["Filtered"],
+			Tooltip = L["Shows only the spells picked on the Spells tab."],
 		},
 		{
 			Key = "ShortBuffsOnly",

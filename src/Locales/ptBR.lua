@@ -490,7 +490,7 @@ L:RegisterLocale("ptBR", function() return {
 	["Shows only the buffs you cast yourself."] = "Mostra apenas os bônus que você mesmo lançou.",
 	["Shows only the debuffs that run for less than a minute."] = "Mostra apenas as penalidades que duram menos de um minuto.",
 	["Shows only the debuffs your own spec can dispel."] = "Mostra apenas as penalidades que a sua especialização consegue dissipar.",
-	["Shows only the spells picked in the tracked buffs list below."] = "Mostra apenas as magias escolhidas na lista de bônus rastreados abaixo.",
+	["Shows only the spells picked on the Spells tab."] = "Mostra apenas as magias escolhidas na aba Magias.",
 	["Spell ID"] = "ID de magia",
 	["Target & Focus"] = "Alvo e foco",
 	["The colour a heal-over-time lights up in as its refresh window opens."] = "A cor com que uma cura ao longo do tempo acende quando a janela de renovação abre.",
