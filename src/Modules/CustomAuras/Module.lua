@@ -26,6 +26,13 @@ local ROSTER_EVENTS = {
 	PLAYER_ROLES_ASSIGNED = true,
 	ARENA_OPPONENT_UPDATE = true,
 }
+-- Both sides of the group's Show when condition. Registered with the rest, but only acted on
+-- while some group is actually conditional: a profile of plain groups would otherwise take a
+-- full rebuild every pull for an answer that cannot have changed.
+local COMBAT_EVENTS = {
+	PLAYER_REGEN_ENABLED = true,
+	PLAYER_REGEN_DISABLED = true,
+}
 
 ---@type Db
 local db
@@ -76,6 +83,16 @@ local function OnEvent(_, event, arg1)
 		return
 	end
 
+	if COMBAT_EVENTS[event] then
+		local options = GetOptions()
+
+		if options and groups:AnyCombatConditional(options) then
+			QueueRefresh()
+		end
+
+		return
+	end
+
 	if event == "NAME_PLATE_UNIT_ADDED" then
 		display:OnNamePlateAdded(arg1)
 	elseif event == "NAME_PLATE_UNIT_REMOVED" then
@@ -102,6 +119,8 @@ local function Setup()
 		"UNIT_PET",
 		"UNIT_FACTION",
 		"UNIT_PHASE",
+		"PLAYER_REGEN_ENABLED",
+		"PLAYER_REGEN_DISABLED",
 	})
 end
 

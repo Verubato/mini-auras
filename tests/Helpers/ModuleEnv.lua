@@ -42,7 +42,8 @@ function M.build()
 		-- Whether the group counts as a raid, and what the test preview is pretending it is.
 		isRaid = false,
 		testIsRaid = nil,
-		-- Drives UnitAffectingCombat; the combat events themselves are fired by the tests.
+		-- Drives UnitAffectingCombat and InCombatLockdown; the combat events themselves are
+		-- fired by the tests.
 		inCombat = false,
 		-- Raid target index per unit, read when an interrupt lands.
 		raidTargets = {},
@@ -88,7 +89,7 @@ function M.build()
 	end
 	_G.hooksecurefunc = function() end
 	_G.InCombatLockdown = function()
-		return false
+		return env.inCombat == true
 	end
 	_G.UnitAffectingCombat = function()
 		return env.inCombat == true

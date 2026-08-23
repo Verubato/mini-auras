@@ -970,6 +970,122 @@ fw.describe("CustomAuras - screen anchored displays", function()
 	end)
 end)
 
+fw.describe("CustomAuras - the combat condition", function()
+	fw.it("leaves a new group showing whatever the player is doing", function()
+		ClearGroups()
+		env.inCombat = false
+
+		local group = AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+
+		assert(group.ShowWhen == groups.ShowWhen.Always, "nothing is conditional until it is asked for")
+	end)
+
+	fw.it("holds an in-combat group back until the pull", function()
+		ClearGroups()
+		env.inCombat = false
+
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, ShowWhen = groups.ShowWhen.InCombat })
+		module:Refresh()
+
+		local container = ContainerFor("player")
+
+		assert(container == nil or Budget(container, "helpful") == 0, "nothing out of combat")
+
+		env.inCombat = true
+		module:Refresh()
+
+		container = ContainerFor("player")
+
+		assert(container and Budget(container, "helpful") == groups.MaxIcons,
+			"and the full budget once combat starts")
+
+		env.inCombat = false
+	end)
+
+	fw.it("takes an out-of-combat group away for the fight", function()
+		ClearGroups()
+		env.inCombat = false
+
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, ShowWhen = groups.ShowWhen.OutOfCombat })
+		module:Refresh()
+
+		local container = ContainerFor("player")
+
+		assert(container and Budget(container, "helpful") == groups.MaxIcons, "shown at rest")
+
+		env.inCombat = true
+		module:Refresh()
+
+		container = ContainerFor("player")
+
+		assert(container == nil or Budget(container, "helpful") == 0, "and gone for the fight")
+
+		env.inCombat = false
+	end)
+
+	fw.it("draws a conditional group in test mode whatever the combat state", function()
+		ClearGroups()
+		env.inCombat = false
+
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, ShowWhen = groups.ShowWhen.InCombat })
+		module:StartTesting()
+
+		assert(ContainerFor("player"), "a preview that hid itself would read as broken")
+
+		module:StopTesting()
+	end)
+
+	fw.it("rebuilds on the regen events", function()
+		ClearGroups()
+		env.inCombat = false
+
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK }, ShowWhen = groups.ShowWhen.InCombat })
+		module:Refresh()
+
+		local frame = acm.lastFrameForEvent("PLAYER_REGEN_DISABLED")
+
+		assert(frame, "the module listens for combat starting")
+
+		env.inCombat = true
+		frame:TriggerEvent("PLAYER_REGEN_DISABLED")
+
+		assert(Budget(ContainerFor("player"), "helpful") == groups.MaxIcons,
+			"the pull alone brings the group up")
+
+		env.inCombat = false
+		frame:TriggerEvent("PLAYER_REGEN_ENABLED")
+
+		local container = ContainerFor("player")
+
+		assert(container == nil or Budget(container, "helpful") == 0,
+			"and dropping combat takes it away")
+	end)
+
+	fw.it("ignores the regen events while no group is conditional", function()
+		ClearGroups()
+		env.inCombat = false
+
+		AddGroup({ Unit = "player", Spells = { ICE_BLOCK } })
+		module:Refresh()
+
+		local frame = acm.lastFrameForEvent("PLAYER_REGEN_DISABLED")
+		local refreshes = 0
+		local real = display.Refresh
+
+		display.Refresh = function(...)
+			refreshes = refreshes + 1
+			return real(...)
+		end
+
+		frame:TriggerEvent("PLAYER_REGEN_DISABLED")
+		frame:TriggerEvent("PLAYER_REGEN_ENABLED")
+
+		display.Refresh = real
+
+		assert(refreshes == 0, "a profile of plain groups pays nothing per pull")
+	end)
+end)
+
 fw.describe("CustomAuras - options page preview", function()
 	fw.it("draws a selected group that its own conditions would otherwise hide", function()
 		ClearGroups()

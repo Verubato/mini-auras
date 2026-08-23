@@ -115,6 +115,9 @@ local FORBID = "FORBID"
 local CASTER_ANY = "ANY"
 local CASTER_MINE = "MINE"
 local CASTER_OTHERS = "OTHERS"
+-- Which combat state lets a group on screen at all, sound only groups included. One table rather
+-- than three named strings, because Normalise is already at Lua's 60-upvalue ceiling.
+local SHOW_WHEN = { Always = "ALWAYS", InCombat = "INCOMBAT", OutOfCombat = "OUTOFCOMBAT" }
 -- Icon order within a group.
 local SORT_OLDEST = "OLDEST"
 local SORT_LONGEST = "LONGEST"
@@ -230,6 +233,7 @@ M.CandidateFlags = CANDIDATE_FLAGS
 M.FilterState = { Off = OFF, Require = REQUIRE, Forbid = FORBID }
 M.Caster = { Any = CASTER_ANY, Mine = CASTER_MINE, Others = CASTER_OTHERS }
 M.Sort = { Oldest = SORT_OLDEST, Longest = SORT_LONGEST, Shortest = SORT_SHORTEST }
+M.ShowWhen = SHOW_WHEN
 M.StrataAuto = STRATA_AUTO
 M.StrataOptions = STRATA_OPTIONS
 M.MaxSpells = MAX_SPELLS_PER_GROUP
@@ -499,6 +503,8 @@ function M:Normalise(group)
 		and group.Caster or CASTER_ANY
 	group.Sort = (group.Sort == SORT_LONGEST or group.Sort == SORT_SHORTEST)
 		and group.Sort or SORT_OLDEST
+	group.ShowWhen = (group.ShowWhen == SHOW_WHEN.InCombat
+		or group.ShowWhen == SHOW_WHEN.OutOfCombat) and group.ShowWhen or SHOW_WHEN.Always
 
 	-- Rebuilt rather than cleaned in place, so an import cannot smuggle in keys the engine would
 	-- reject and a component Blizzard has since dropped falls out on its own.
@@ -946,6 +952,35 @@ function M:Supports(group)
 	return true
 end
 
+---Whether the player's combat state is one the group asked to show in. Separate from Supports:
+---this answer changes minute to minute, where Supports is about how the group is configured.
+---@param group CustomAuraGroup
+---@param inCombat boolean
+---@return boolean
+function M:ShowsInCombat(group, inCombat)
+	if group.ShowWhen == SHOW_WHEN.InCombat then
+		return inCombat
+	elseif group.ShowWhen == SHOW_WHEN.OutOfCombat then
+		return not inCombat
+	end
+
+	return true
+end
+
+---Whether any group is conditional on combat, which is what decides whether the module has to
+---listen for the regen events at all.
+---@param options CustomAurasModuleOptions
+---@return boolean
+function M:AnyCombatConditional(options)
+	for _, group in ipairs(options.Groups) do
+		if group.ShowWhen == SHOW_WHEN.InCombat or group.ShowWhen == SHOW_WHEN.OutOfCombat then
+			return true
+		end
+	end
+
+	return false
+end
+
 ---A caveat worth showing next to a group that is legal but will only show on some units.
 ---@param group CustomAuraGroup
 ---@return string? reason
@@ -1173,4 +1208,5 @@ end
 ---@field Candidates table<string, string> Aura flag to "REQUIRE"|"FORBID", applied in both modes.
 ---@field Caster string "ANY"|"MINE"|"OTHERS"
 ---@field Sort string "OLDEST"|"LONGEST"|"SHORTEST"
+---@field ShowWhen string "ALWAYS"|"INCOMBAT"|"OUTOFCOMBAT"
 ---@field Spells number[]

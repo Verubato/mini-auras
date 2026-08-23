@@ -1515,6 +1515,9 @@ function M:Refresh(options, moduleEnabled)
 
 	-- Ahead of the groups themselves: the copies below anchor to whatever this puts on screen.
 	local previewPartyFrames = ShowPreviewFrames(options)
+	-- Test mode ignores it: a group held back by its combat state would look broken there, with
+	-- nothing to tell it apart from one whose spells simply are not up.
+	local inCombat = InCombatLockdown()
 
 	for _, groupDef in ipairs(options.Groups) do
 		live[groupDef.Id] = true
@@ -1523,6 +1526,7 @@ function M:Refresh(options, moduleEnabled)
 		local state = EnsureState(groupDef)
 
 		state.Allowed = moduleEnabled and groupDef.Enabled and groups:Supports(groupDef)
+			and (testModeActive or groups:ShowsInCombat(groupDef, inCombat))
 
 		-- Previewed only once there is something to draw: the stand-in icons are the handle, so
 		-- a group with no spells yet would be an invisible frame to drag around.

@@ -20,6 +20,11 @@ local DISPLAY_OPTIONS = {
 	groups.DisplayStyle.Texture,
 	groups.DisplayStyle.SoundOnly,
 }
+local SHOW_WHEN_OPTIONS = {
+	groups.ShowWhen.Always,
+	groups.ShowWhen.InCombat,
+	groups.ShowWhen.OutOfCombat,
+}
 
 -- Rebuilt lists, recycled rather than recreated.
 local spellRows = {}
@@ -113,6 +118,8 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 	local pickerRowHeight = ui.LabelHeight + 4 + ui.PickerHeight
 
 	local trackingControlsRow = ctx.NewRow(triggerPanel, ui.DropdownRowHeight)
+	-- On its own row rather than a fifth column: four dropdowns already reach the panel edge.
+	local conditionRow = ctx.NewRow(triggerPanel, ui.DropdownRowHeight)
 	-- Only one of these two is ever on screen: a spell list, or a set of filter components.
 	local pickerRow = ctx.NewRow(triggerPanel, pickerRowHeight, 4)
 	local componentsRow = ctx.NewRow(triggerPanel, 1, 4)
@@ -252,6 +259,31 @@ function ui.BuildTriggerTab(ctx, refreshFlags)
 			end
 		end,
 	}, trackingControlsRow, 0)
+
+	ctx.Dropdown(L["Show when"], {
+		Items = SHOW_WHEN_OPTIONS,
+		GetText = function(value)
+			if value == groups.ShowWhen.InCombat then
+				return L["In combat"]
+			elseif value == groups.ShowWhen.OutOfCombat then
+				return L["Out of combat"]
+			end
+
+			return L["Always"]
+		end,
+		GetValue = function()
+			local group = ui.Current()
+			return group and group.ShowWhen or groups.ShowWhen.Always
+		end,
+		SetValue = function(value)
+			local group = ui.Current()
+
+			if group and group.ShowWhen ~= value then
+				group.ShowWhen = value
+				ui.Apply()
+			end
+		end,
+	}, conditionRow, 0)
 
 	-- Where the spell-id filter rules get explained in terms of the two dropdowns above.
 	local problem = triggerPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
