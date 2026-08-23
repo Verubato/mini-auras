@@ -2,7 +2,7 @@
 local _, addon = ...
 
 -- Loaded before this file in TOC order.
-local groupAuras = addon.Modules.FrameAuras.GroupAuras
+local partyAuras = addon.Modules.FrameAuras.PartyAuras
 local classBuff = addon.Modules.FrameAuras.ClassBuff
 local targetAuras = addon.Modules.FrameAuras.TargetAuras
 
@@ -22,7 +22,7 @@ local M = {}
 addon.Modules.FrameAuras.Module = M
 addon.Modules.FrameAurasModule = M
 
-local parts = { groupAuras, classBuff, targetAuras }
+local parts = { partyAuras, classBuff, targetAuras }
 
 ---@param value boolean
 local function SetTestMode(value)

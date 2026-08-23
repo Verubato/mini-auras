@@ -123,13 +123,13 @@ env.loadModule("src/Core/Display/Pixels.lua")
 env.loadModule("src/Core/Auras/TrackedBuffs.lua")
 env.loadModule("src/Core/Auras/ClassBuffs.lua")
 env.loadModule("src/Modules/FrameAuras/Spells.lua")
-env.loadModule("src/Modules/FrameAuras/GroupAuras.lua")
+env.loadModule("src/Modules/FrameAuras/PartyAuras.lua")
 env.loadModule("src/Modules/FrameAuras/ClassBuff.lua")
 env.loadModule("src/Modules/FrameAuras/TargetAuras.lua")
 env.loadModule("src/Modules/FrameAuras/Module.lua")
 
 local spells = env.addon.Modules.FrameAuras.Spells
-local groupAuras = env.addon.Modules.FrameAuras.GroupAuras
+local partyAuras = env.addon.Modules.FrameAuras.PartyAuras
 local module = env.addon.Modules.FrameAurasModule
 local testSpells = env.addon.Core.TestSpells
 local trackedBuffs = env.addon.Core.TrackedBuffs
@@ -284,7 +284,7 @@ fw.describe("Frame Auras - Blizzard's own aura rows", function()
 		options.Buffs.Enabled = false
 		options.Debuffs.Enabled = false
 
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		assert(#cvarWrites == 0, "an off side has never touched the setting, so it hands nothing back")
 		assert(#env.containersForUnit("party1") == 0, "and nothing is built for a side nobody asked for")
@@ -294,7 +294,7 @@ fw.describe("Frame Auras - Blizzard's own aura rows", function()
 		ResetCVars()
 		options.Buffs.Enabled = true
 
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		assert(LastWrite("raidFramesDisplayBuffs") == "0", "the buff row is switched off")
 		assert(LastWrite("raidFramesDisplayDebuffs") == nil, "and the debuff row is left alone")
@@ -305,37 +305,37 @@ fw.describe("Frame Auras - Blizzard's own aura rows", function()
 
 	fw.it("writes nothing on a refresh that changed nothing", function()
 		options.Buffs.Enabled = true
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		ResetCVars()
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		assert(#cvarWrites == 0, "a level-triggered refresh is not an edge")
 	end)
 
 	fw.it("hands Blizzard's row back when a side is switched off", function()
 		options.Buffs.Enabled = true
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		ResetCVars()
 		options.Buffs.Enabled = false
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		assert(LastWrite("raidFramesDisplayBuffs") == "1", "the row goes back to the client's default")
 	end)
 
 	fw.it("puts back the value the player had, not the one the client ships", function()
 		options.Buffs.Enabled = false
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		-- A player who had already turned Blizzard's buffs off themselves.
 		cvars.raidFramesDisplayBuffs = "0"
 
 		options.Buffs.Enabled = true
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		options.Buffs.Enabled = false
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		assert(cvars.raidFramesDisplayBuffs == "0", "the row stays off, because that is how they left it")
 
@@ -345,17 +345,17 @@ fw.describe("Frame Auras - Blizzard's own aura rows", function()
 	fw.it("tracks the two sides separately", function()
 		options.Buffs.Enabled = false
 		options.Debuffs.Enabled = false
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		ResetCVars()
 		options.Debuffs.Enabled = true
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		assert(LastWrite("raidFramesDisplayDebuffs") == "0", "the debuff row is switched off")
 		assert(LastWrite("raidFramesDisplayBuffs") == nil, "the buff side is untouched by it")
 
 		options.Debuffs.Enabled = false
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 	end)
 end)
 
@@ -479,7 +479,7 @@ fw.describe("Frame Auras - what one frame costs", function()
 	fw.before_each(function()
 		options.Buffs.Enabled = false
 		options.Debuffs.Enabled = false
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 	end)
 
 	---Every aura group on the containers parented to a frame, and the buttons they were declared
@@ -507,7 +507,7 @@ fw.describe("Frame Auras - what one frame costs", function()
 
 		local fresh = NewPartyFrame(3)
 
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 		acm.tickAll(400)
 
 		local groups, buttons = CostOf(fresh)
@@ -531,7 +531,7 @@ fw.describe("Frame Auras - what one frame costs", function()
 		-- built under whatever the settings were then.
 		local fresh = NewPartyFrame(4)
 
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 		acm.tickAll(400)
 
 		local groups, buttons = CostOf(fresh)
@@ -549,12 +549,12 @@ fw.describe("Frame Auras - warming up ahead of a group", function()
 	fw.before_each(function()
 		options.Buffs.Enabled = false
 		options.Debuffs.Enabled = false
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 	end)
 
 	fw.it("builds spare rows for the frames a group has yet to fill", function()
 		options.Buffs.Enabled = true
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 		acm.tickAll(400)
 
 		local warmed = env.auraContainerCount()
@@ -562,14 +562,14 @@ fw.describe("Frame Auras - warming up ahead of a group", function()
 		-- Five frames' worth are wanted in total, and only one frame is on screen, so the walker
 		-- has more to build than the frames alone would ever ask for.
 		options.Buffs.Enabled = false
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		assert(warmed >= 5, "five frames' worth were made ready, got " .. warmed)
 	end)
 
 	fw.it("hands a waiting spare to the next frame rather than building another", function()
 		options.Buffs.Enabled = true
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 		acm.tickAll(400)
 
 		local warmed = env.auraContainerCount()
@@ -583,20 +583,20 @@ fw.describe("Frame Auras - warming up ahead of a group", function()
 		end
 		_G.CompactPartyFrameMember2 = joined
 
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		assert(env.auraContainerCount() == warmed,
 			"the frame took a row that already existed instead of paying to build one")
 
 		_G.CompactPartyFrameMember2 = nil
 		options.Buffs.Enabled = false
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 	end)
 
 	fw.it("builds no spares for a side nobody switched on", function()
 		local before = env.auraContainerCount()
 
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 		acm.tickAll(400)
 
 		assert(env.auraContainerCount() == before, "an off module warms nothing up")
@@ -658,18 +658,18 @@ fw.describe("Frame Auras - test mode", function()
 		-- building for. Nothing about the frame can tell them apart; only the timing can.
 		env.loadingScreenUp = true
 
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		assert(ContainersOn(frame) == 0, "the layout pass builds nothing")
 
 		env.loadingScreenUp = false
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		assert(ContainersOn(frame) > 0, "and the pass after the screen builds what is really there")
 
 		DropRaidFrame(20)
 		options.Buffs.Enabled = false
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 	end)
 
 	fw.it("waits for a definite answer before building a frame's rows", function()
@@ -687,18 +687,18 @@ fw.describe("Frame Auras - test mode", function()
 			return secret
 		end
 
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		assert(ContainersOn(frame) == 0, "nothing is built while the client will not answer")
 
 		_G.UnitExists = realExists
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		assert(ContainersOn(frame) > 0, "and the pass after it builds what was skipped")
 
 		DropPartyFrame(5)
 		options.Buffs.Enabled = false
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 	end)
 
 	fw.it("builds nothing for a frame the client is not showing", function()
@@ -715,14 +715,14 @@ fw.describe("Frame Auras - test mode", function()
 		hidden:Hide()
 		_G.CompactRaidFrame2 = hidden
 
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		assert(ContainersOn(hidden) == 0,
 			"a hidden frame costs no display, however occupied its token says it is")
 
 		-- Put it on screen and it gets one, so the gate defers the work rather than losing it.
 		hidden:Show()
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		assert(ContainersOn(hidden) > 0, "showing the frame is what builds its rows")
 
@@ -792,7 +792,7 @@ fw.describe("Frame Auras - test mode", function()
 
 		module:StartTesting()
 		module:StopTesting()
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 
 		-- A preview that let every empty frame through would leave an entry for each, and every
 		-- refresh after it would build that entry a display and its batch of buttons.
@@ -861,7 +861,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 		options.Debuffs.Enabled = false
 		options.Debuffs.ShortOnly = false
 		options.Debuffs.Dispellable = false
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 	end)
 
 	fw.it("narrows the row by nothing at all under stock settings", function()
@@ -871,7 +871,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 		-- already exists was built under whatever the settings were then.
 		local fresh = NewRaidFrame(21)
 
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 		acm.tickAll(400)
 
 		local group = assert(DebuffGroup(fresh), "the frame got a debuff row")
@@ -887,7 +887,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 
 		local fresh = NewRaidFrame(22)
 
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 		acm.tickAll(400)
 
 		local group = assert(DebuffGroup(fresh), "the frame got a debuff row")
@@ -907,7 +907,7 @@ fw.describe("Frame Auras - what the debuff row lets through", function()
 
 		local fresh = NewRaidFrame(23)
 
-		groupAuras:Refresh()
+		partyAuras:Refresh()
 		acm.tickAll(400)
 
 		local group = assert(DebuffGroup(fresh), "the frame got a debuff row")

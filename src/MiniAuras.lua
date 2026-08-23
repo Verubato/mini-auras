@@ -394,7 +394,7 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 
 ---@class FrameAuras
 ---@field Spells FrameAurasSpells
----@field GroupAuras FrameAurasGroupAuras
+---@field PartyAuras FrameAurasPartyAuras
 ---@field ClassBuff FrameAurasClassBuff
 ---@field TargetAuras FrameAurasTargetAuras
 ---@field Module FrameAurasModule

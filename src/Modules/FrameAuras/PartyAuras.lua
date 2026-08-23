@@ -83,10 +83,10 @@ local TEST_FIELDS = { Buffs = "TestBuffs", Debuffs = "TestDebuffs" }
 
 addon.Modules.FrameAuras = addon.Modules.FrameAuras or {}
 
----@class FrameAurasGroupAuras
+---@class FrameAurasPartyAuras
 local M = {}
 
-addon.Modules.FrameAuras.GroupAuras = M
+addon.Modules.FrameAuras.PartyAuras = M
 
 -- Whether each side is drawing right now.
 local active = { Buffs = false, Debuffs = false }

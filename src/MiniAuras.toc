@@ -132,7 +132,7 @@ Modules\AllyKickTracker\Module.lua
 Modules\ImportantAuras\Display.lua
 Modules\ImportantAuras\Module.lua
 Modules\FrameAuras\Spells.lua
-Modules\FrameAuras\GroupAuras.lua
+Modules\FrameAuras\PartyAuras.lua
 Modules\FrameAuras\ClassBuff.lua
 Modules\FrameAuras\TargetAuras.lua
 Modules\FrameAuras\Module.lua
