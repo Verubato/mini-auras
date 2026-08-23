@@ -239,8 +239,7 @@ L:RegisterLocale("deDE", function() return {
 	["Shows CC icons on party/raid pet frames."] = "Zeigt Massenkontroll-Symbole auf Gruppen-/Schlachtzugs-Begleiterrahmen.",
 
 	-- Indicator tab
-	["Raid Frame Auras"] = "Schlachtzugsrahmen-Auren",
-	["Raid Frame Auras_Short"] = "Gruppenauren",
+	["Important Auras"] = "Wichtige Auren",
 	["Defensive"] = "Defensiv",
 	["Exclude yourself from showing trinket icons."] = "Schließe dich selbst vom Anzeigen von Schmuckstück-Symbolen aus.",
 	["Show CC"] = "CC anzeigen",

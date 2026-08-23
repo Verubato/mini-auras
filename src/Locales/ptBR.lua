@@ -239,8 +239,7 @@ L:RegisterLocale("ptBR", function() return {
 	["Shows CC icons on party/raid pet frames."] = "Mostra ícones de controle em painéis de pet de grupo/raide.",
 
 	-- Indicator tab
-	["Raid Frame Auras"] = "Auras dos quadros de raide",
-	["Raid Frame Auras_Short"] = "Auras de grupo",
+	["Important Auras"] = "Auras importantes",
 	["Defensive"] = "Defensivo",
 	["Exclude yourself from showing trinket icons."] = "Exclua-se de mostrar ícones de berloques.",
 	["Show CC"] = "Mostrar CC",

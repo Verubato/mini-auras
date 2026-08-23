@@ -18,7 +18,7 @@ local modules = {
 	addon.Modules.AlertsModule,
 	addon.Modules.NameplatesModule,
 	addon.Modules.EnemyKickTrackerModule,
-	addon.Modules.RaidFrameAurasModule,
+	addon.Modules.ImportantAurasModule,
 	addon.Modules.CustomAurasModule,
 	addon.Modules.TrinketsModule,
 	addon.Modules.AllyKickTrackerModule,
@@ -37,7 +37,7 @@ local modulesBySettingsKey = {
 	EnemyKickTrackerModule = addon.Modules.EnemyKickTrackerModule,
 	AllyKickTrackerModule = addon.Modules.AllyKickTrackerModule,
 	TrinketsModule = addon.Modules.TrinketsModule,
-	RaidFrameAurasModule = addon.Modules.RaidFrameAurasModule,
+	ImportantAurasModule = addon.Modules.ImportantAurasModule,
 	CustomAurasModule = addon.Modules.CustomAurasModule,
 }
 -- How long a burst of media registrations is allowed to settle before re-resolving. A media pack
@@ -384,9 +384,9 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field Outline Outline
 ---@field Sounds Sounds
 
----@class RaidFrameAuras
----@field Display RaidFrameAurasDisplay
----@field Module RaidFrameAurasModule
+---@class ImportantAuras
+---@field Display ImportantAurasDisplay
+---@field Module ImportantAurasModule
 
 ---@class CustomAuras
 ---@field Groups CustomAurasGroups
@@ -441,12 +441,12 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field AllyKickTrackerModule AllyKickTrackerModule
 ---@field AlertsModule AlertsModule
 ---@field CrowdControlModule CrowdControlModule
----@field RaidFrameAurasModule RaidFrameAurasModule
+---@field ImportantAurasModule ImportantAurasModule
 ---@field CustomAurasModule CustomAurasModule
 ---@field EnemyKickTracker EnemyKickTracker
 ---@field AllyKickTracker AllyKickTracker
 ---@field Alerts Alerts
----@field RaidFrameAuras RaidFrameAuras
+---@field ImportantAuras ImportantAuras
 ---@field CustomAuras CustomAuras
 ---@field CrowdControl CrowdControl
 ---@field HealerCrowdControl HealerCrowdControl

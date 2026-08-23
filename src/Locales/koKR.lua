@@ -239,8 +239,7 @@ L:RegisterLocale("koKR", function() return {
 	["Shows CC icons on party/raid pet frames."] = "파티/공격대 펫 프레임에 군중 제어 아이콘을 표시합니다.",
 
 	-- Indicator tab
-	["Raid Frame Auras"] = "공격대 프레임 오라",
-	["Raid Frame Auras_Short"] = "그룹 오라",
+	["Important Auras"] = "중요 오라",
 	["Defensive"] = "방어",
 	["Exclude yourself from showing trinket icons."] = "장신구 아이콘 표시에서 자신을 제외합니다.",
 	["Show CC"] = "CC 표시",

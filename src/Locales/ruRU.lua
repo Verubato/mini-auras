@@ -239,8 +239,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Shows CC icons on party/raid pet frames."] = "Показывает иконки контроля на рамках питомцев группы/рейда.",
 
 	-- Indicator tab
-	["Raid Frame Auras"] = "Ауры рамок рейда",
-	["Raid Frame Auras_Short"] = "Ауры группы",
+	["Important Auras"] = "Важные ауры",
 	["Defensive"] = "Защитное",
 	["Exclude yourself from showing trinket icons."] = "Исключить себя из отображения иконок аксессуаров.",
 	["Show CC"] = "Контроль",

@@ -155,3 +155,40 @@ function M:UpgradeToVersion71(vars)
 	vars.Version = 71
 	return true
 end
+
+---Moves the group aura module's saved table onto its new name. The page it renders was renamed
+---from "Group Auras" to "Important Auras" to leave the "Frame Auras" name free for the module
+---that replaces Blizzard's own buff and debuff rows, and the saved key followed the page.
+---@param vars table The live saved variables, or one profile's snapshot of them.
+local function RenameImportantAuras(vars)
+	local modules = vars and vars.Modules
+
+	if not modules or modules.RaidFrameAurasModule == nil then
+		return
+	end
+
+	-- Only when the new key is untaken: a db that already carries one has been through this
+	-- step, and the old table beside it is the stale half.
+	if modules.ImportantAurasModule == nil then
+		modules.ImportantAurasModule = modules.RaidFrameAurasModule
+	end
+
+	modules.RaidFrameAurasModule = nil
+end
+
+function M:UpgradeToVersion72(vars)
+	if vars.Version ~= 71 then return false end
+
+	RenameImportantAuras(vars)
+
+	-- A profile switch writes its snapshot back over the live db wholesale, so one still holding
+	-- the old key would put it straight back.
+	if vars.Profiles then
+		for _, profile in pairs(vars.Profiles) do
+			RenameImportantAuras(profile)
+		end
+	end
+
+	vars.Version = 72
+	return true
+end

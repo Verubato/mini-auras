@@ -126,8 +126,8 @@ Modules\EnemyKickTracker\Module.lua
 Modules\AllyKickTracker\Observer.lua
 Modules\AllyKickTracker\Display.lua
 Modules\AllyKickTracker\Module.lua
-Modules\RaidFrameAuras\Display.lua
-Modules\RaidFrameAuras\Module.lua
+Modules\ImportantAuras\Display.lua
+Modules\ImportantAuras\Module.lua
 Modules\CustomAuras\Groups.lua
 Modules\CustomAuras\Sound.lua
 Modules\CustomAuras\Recorder.lua
@@ -157,7 +157,7 @@ Config\Panels\Alerts.lua
 Config\Panels\Nameplates.lua
 Config\Panels\EnemyKickTracker.lua
 Config\Panels\AllyKickTracker.lua
-Config\Panels\RaidFrameAuras.lua
+Config\Panels\ImportantAuras.lua
 Config\Panels\IconSelector.lua
 Config\Panels\TexturePicker.lua
 Config\Panels\CustomAuras\Shared.lua

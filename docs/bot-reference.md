@@ -64,7 +64,7 @@ pixel at a time, for placements a drag cannot hit exactly. Clicking the same con
 closes it, and it closes on its own when test mode stops. Stand-in party/raid and arena frames are only created when no real frames are
 visible, so testing in a group shows icons where they will actually be. Test mode stops
 automatically when combat starts. The World/Arena/Dungeons and Raids/Battlegrounds sub-tabs on
-the CC and Raid Frame Auras pages also flip which of the two setting groups the test preview
+the CC and Important Auras pages also flip which of the two setting groups the test preview
 uses. Since 5.16.0 that choice drives the "Enable in" check as well: previewing the
 Raids/Battlegrounds tab from the open world asks whether the module is on for raids, so a
 module switched off for the previewed context draws nothing. The zone still answers for
@@ -75,7 +75,7 @@ itself, so testing inside a battleground reads the Battlegrounds tick whichever 
 Left sidebar, grouped under four headings. Bracketed names are the sidebar labels where they
 differ from the page title.
 
-**General:** Home, Personal Auras (= Custom Auras), Group Auras (= Raid Frame Auras), Alerts,
+**General:** Home, Personal Auras (= Custom Auras), Important Auras, Alerts,
 Nameplates, Portraits.
 
 **Crowd Control:** CC, Pet CC, Healer, Trinkets (= Party Trinkets).
@@ -111,7 +111,7 @@ no events and costs nothing, and switching it back on takes effect without a rel
 
 ### Two setting groups per module
 
-CC and Raid Frame Auras each keep two independent sets of appearance settings, shown as two
+CC and Important Auras each keep two independent sets of appearance settings, shown as two
 sub-tabs: **World/Arena/Dungeons** and **Raids/Battlegrounds**. The
 raid set is used whenever you are in a raid group and not in arena (battlegrounds count,
 because you are in a raid group there). Changing icon size on one tab does not change the
@@ -123,7 +123,7 @@ other.
   custom aura groups) have a saved screen position and can be dragged while test mode is on
   (Ally Kicks instead uses its Lock position toggle; a selected custom aura group can be
   dragged without test mode).
-- **Frame-attached displays** (CC, Pet CC, Raid Frame Auras, Nameplate bars, Trinkets,
+- **Frame-attached displays** (CC, Pet CC, Important Auras, Nameplate bars, Trinkets,
   frame/nameplate/arena-anchored custom aura groups) have an X/Y offset from the frame they
   hang off plus a **Grow** direction. Grow options vary by module:
   LEFT/RIGHT/CENTER/DOWN/UP for most frame-attached ones, LEFT/RIGHT/CENTER for nameplates,
@@ -161,11 +161,11 @@ category on or off, applies in combat as normal.
 
 - **Dispel colours** (CC, Pet CC, Healer): glow/border coloured by the debuff's dispel type
   (for example blue for magic).
-- **Dispel colours + category tints** (Group Auras, where the switch is called **Colours**, and
+- **Dispel colours + category tints** (Important Auras, where the switch is called **Colours**, and
   Nameplates, where since 5.19.0 it is the three-way **Icon colours** dropdown): CC icons take
   the dispel type's colour,
   which the game has no equivalent of for a buff, so defensive and important icons take the
-  two colours picked for the module instead. Group Auras keeps its pair on a **Colours**
+  two colours picked for the module instead. Important Auras keeps its pair on a **Colours**
   sub-tab, Nameplates on its **Settings** sub-tab; both are module wide rather than per bar or
   per setting group. Turning it off, or picking None on nameplates, puts every icon back on a
   plain white glow, and nameplates can also pick Custom to use the two module colours without
@@ -551,9 +551,9 @@ still only fire while the unit is on the side the choice names.
 
 ---
 
-## Group Auras / Raid Frame Auras
+## Important Auras
 
-Sidebar: General > Group Auras. Page title "Raid Frame Auras". Shows auras on party and raid
+Sidebar: General > Important Auras. Shows auras on party and raid
 frames. The tracked helpful auras are chosen by spell ID from a curated list, so anything can
 be tracked, including spells the game never flags.
 
@@ -743,7 +743,7 @@ None where it was off.
 
 Nameplate bars are not limited to the addon's curated spell lists: they show everything the
 game itself flags for the category, so a new spec's CC turns up without waiting for an addon
-update. That is the opposite of Group Auras, whose helpful side can only show what is on its
+update. That is the opposite of Important Auras, whose helpful side can only show what is on its
 list. It also means a nameplate bar can show a mob or boss ability that no PvP list mentions.
 Disarm is the one exception and stays list-driven, since the game has no flag for it.
 
@@ -1183,7 +1183,7 @@ CC, defensives and importants can each fill Max Icons. There is no way to cap th
 whole, because the addon cannot count what an aura container is showing.
 
 **"The Important/Defensive colour does nothing."** The pair only applies while the module's
-colour setting asks for it: **Colours** for Group Auras, and on Nameplates an **Icon colours**
+colour setting asks for it: **Colours** for Important Auras, and on Nameplates an **Icon colours**
 of Dispel colours or Custom for the bar in question, not None. On Alerts it also needs **Class
 colours** off, since that tints by the owner's class instead. CC icons ignore the pair either
 way and take the game's dispel type colour, and the Twins, Mirror and Twins Mirror glow styles
@@ -1191,7 +1191,7 @@ carry their own colours, so no swatch tints them.
 
 **"A spell shows on nameplates or portraits but not on group frames."** Expected. Nameplates
 and portraits show whatever the game flags; group frames can only show spells on their
-curated list. Add the spell ID in Group Auras > Spells > Custom.
+curated list. Add the spell ID in Important Auras > Spells > Custom.
 
 **"Alerts don't show anything."** Alerts are read from enemy nameplates, so enemy nameplates
 must be enabled in the game. Check Show icons, Show Defensives and Show Important, and the

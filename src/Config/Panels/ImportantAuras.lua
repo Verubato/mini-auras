@@ -33,13 +33,13 @@ local GENERAL_GROUP_KEY = "GENERAL"
 local MAX_SPELL_NAME_LENGTH = 24
 local CUSTOM_GROUP_KEY = "CUSTOM"
 
----@class RaidFrameAurasConfig
+---@class ImportantAurasConfig
 local M = {}
 
-config.RaidFrameAuras = M
+config.ImportantAuras = M
 
 ---@param panel table
----@param options RaidFrameAurasInstanceOptions
+---@param options ImportantAurasInstanceOptions
 ---@param defaults table The shipped values for this group, which the sliders clamp back to
 ---when the typed input is not a number.
 local function BuildInstance(panel, options, defaults)
@@ -55,7 +55,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ExcludePlayer = value
-			config:Apply(moduleName.RaidFrameAuras)
+			config:Apply(moduleName.ImportantAuras)
 		end,
 	})
 
@@ -70,7 +70,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.Icons.Glow = value
-			config:Apply(moduleName.RaidFrameAuras)
+			config:Apply(moduleName.ImportantAuras)
 		end,
 	})
 
@@ -86,7 +86,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.Icons.ColorByDispelType = value
-			config:Apply(moduleName.RaidFrameAuras)
+			config:Apply(moduleName.ImportantAuras)
 		end,
 	})
 
@@ -102,7 +102,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.Icons.ReverseCooldown = value
-			config:Apply(moduleName.RaidFrameAuras)
+			config:Apply(moduleName.ImportantAuras)
 		end,
 	})
 
@@ -121,7 +121,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ShowImportant = value
-			config:Apply(moduleName.RaidFrameAuras)
+			config:Apply(moduleName.ImportantAuras)
 		end,
 	})
 
@@ -136,7 +136,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ShowDefensives = value
-			config:Apply(moduleName.RaidFrameAuras)
+			config:Apply(moduleName.ImportantAuras)
 		end,
 	})
 
@@ -152,7 +152,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ShowCC = value
-			config:Apply(moduleName.RaidFrameAuras)
+			config:Apply(moduleName.ImportantAuras)
 		end,
 	})
 
@@ -168,7 +168,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ShowKicks = value
-			config:Apply(moduleName.RaidFrameAuras)
+			config:Apply(moduleName.ImportantAuras)
 		end,
 	})
 
@@ -184,7 +184,7 @@ local function BuildInstance(panel, options, defaults)
 		end,
 		SetValue = function(value)
 			options.ShowTooltips = value
-			config:Apply(moduleName.RaidFrameAuras)
+			config:Apply(moduleName.ImportantAuras)
 		end,
 	})
 
@@ -197,7 +197,7 @@ local function BuildInstance(panel, options, defaults)
 		PixelDefault = defaults.Icons.Size,
 		PercentDefault = defaults.Icons.SizePercent,
 		Width = sliderWidth,
-		SettingsKey = moduleName.RaidFrameAuras,
+		SettingsKey = moduleName.ImportantAuras,
 	})
 
 	size.Checkbox:SetPoint("LEFT", parent, "LEFT", enabledColumnWidth * (3 + catOffset), 0)
@@ -209,7 +209,7 @@ local function BuildInstance(panel, options, defaults)
 		Target = options,
 		Key = "Grow",
 		Width = DROPDOWN_WIDTH,
-		SettingsKey = moduleName.RaidFrameAuras,
+		SettingsKey = moduleName.ImportantAuras,
 	})
 
 	growDdl.Label:SetPoint("TOPLEFT", showImportantChk, "BOTTOMLEFT", 4, -verticalSpacing * 2)
@@ -226,7 +226,7 @@ local function BuildInstance(panel, options, defaults)
 		Width = sliderWidth,
 		Target = options.Icons,
 		Key = "MaxIcons",
-		SettingsKey = moduleName.RaidFrameAuras,
+		SettingsKey = moduleName.ImportantAuras,
 	})
 
 	maxIcons.Slider:SetPoint("LEFT", size.Pixel.Slider, "RIGHT", horizontalSpacing, 0)
@@ -242,7 +242,7 @@ local function BuildInstance(panel, options, defaults)
 		Width = sliderWidth,
 		Target = options,
 		Key = "IconSpacing",
-		SettingsKey = moduleName.RaidFrameAuras,
+		SettingsKey = moduleName.ImportantAuras,
 	})
 
 	iconSpacing.Slider:SetPoint("TOPLEFT", size.Pixel.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
@@ -251,7 +251,7 @@ local function BuildInstance(panel, options, defaults)
 		Parent = parent,
 		Offset = options.Offset,
 		Width = sliderWidth,
-		SettingsKey = moduleName.RaidFrameAuras,
+		SettingsKey = moduleName.ImportantAuras,
 	})
 
 	offsetX.Slider:SetPoint("TOPLEFT", iconSpacing.Slider, "BOTTOMLEFT", 0, -verticalSpacing * 2)
@@ -262,7 +262,7 @@ end
 ---The category tints, on their own tab because they are module wide: a defensive should read the
 ---same colour on a party frame as it does on a raid frame, so they belong to neither instance tab.
 ---@param parent table Tab content frame
----@param options RaidFrameAurasModuleOptions
+---@param options ImportantAurasModuleOptions
 local function BuildColours(parent, options)
 	local importantSwatch = mini:ColorSwatch({
 		Parent = parent,
@@ -276,7 +276,7 @@ local function BuildColours(parent, options)
 		SetValue = function(r, g, b, a)
 			local color = options.ImportantColor
 			color.R, color.G, color.B, color.A = r, g, b, a
-			config:Apply(moduleName.RaidFrameAuras)
+			config:Apply(moduleName.ImportantAuras)
 		end,
 	})
 
@@ -294,7 +294,7 @@ local function BuildColours(parent, options)
 		SetValue = function(r, g, b, a)
 			local color = options.DefensiveColor
 			color.R, color.G, color.B, color.A = r, g, b, a
-			config:Apply(moduleName.RaidFrameAuras)
+			config:Apply(moduleName.ImportantAuras)
 		end,
 	})
 
@@ -319,7 +319,7 @@ end
 ---the same generated data as the spell lists, so this depends on nothing outside them.
 ---@return {Key: string, Title: string, SpellIds: number[]}[]
 local function SpellGroups()
-	local overrides = mini:GetSavedVars().Modules.RaidFrameAurasModule.Spells
+	local overrides = mini:GetSavedVars().Modules.ImportantAurasModule.Spells
 	local classNames = LocalizedClassList() or {}
 	local buckets = {}
 
@@ -375,7 +375,7 @@ end
 ---@param parent table Tab content frame
 local function BuildSpells(parent)
 	local db = mini:GetSavedVars()
-	local overrides = db.Modules.RaidFrameAurasModule.Spells
+	local overrides = db.Modules.ImportantAurasModule.Spells
 	local sidebarWidth, rowHeight, iconSize = 120, 26, 18
 	-- Two columns: a spell row is nowhere near as wide as the tab, so one column wasted most of
 	-- the horizontal space and made the list scroll far sooner than it needed to.
@@ -414,7 +414,7 @@ local function BuildSpells(parent)
 				overrides.Custom[spellId] = true
 			end
 
-			config:Apply(moduleName.RaidFrameAuras)
+			config:Apply(moduleName.ImportantAuras)
 			-- The sections are built from the spell lists, so a new id only appears once they
 			-- are rebuilt; MiniRefresh alone just re-reads the existing controls.
 			Populate()
@@ -528,7 +528,7 @@ local function BuildSpells(parent)
 
 						overrides.Disabled[spellId] = (not value) or nil
 
-						config:Apply(moduleName.RaidFrameAuras)
+						config:Apply(moduleName.ImportantAuras)
 					end,
 				})
 
@@ -549,7 +549,7 @@ local function BuildSpells(parent)
 					local remove = helpers:CreateRemoveButton(panel, function()
 						overrides.Custom[spellId] = nil
 						overrides.Disabled[spellId] = nil
-						config:Apply(moduleName.RaidFrameAuras)
+						config:Apply(moduleName.ImportantAuras)
 						Populate()
 					end)
 					remove:SetPoint("TOPLEFT", panel, "TOPLEFT", columnX + 250, rowY - 4)
@@ -618,8 +618,8 @@ local function BuildSpells(parent)
 end
 
 ---@param panel table
----@param default RaidFrameAurasInstanceOptions
----@param raid RaidFrameAurasInstanceOptions
+---@param default ImportantAurasInstanceOptions
+---@param raid ImportantAurasInstanceOptions
 function M:Build(panel, default, raid)
 	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
 	-- Shared 5-column checkbox grid: the Enable-in row and settings checkbox rows all sit on
@@ -645,7 +645,7 @@ function M:Build(panel, default, raid)
 	enabledDivider:SetPoint("TOP", lines, "BOTTOM", 0, -verticalSpacing)
 
 	local enabledEverywhere = helpers:BuildEnableRow(panel, enabledDivider,
-		db.Modules.RaidFrameAurasModule.Enabled, nil, moduleName.RaidFrameAuras)
+		db.Modules.ImportantAurasModule.Enabled, nil, moduleName.ImportantAuras)
 
 	-- Sized so the whole page sits inside the window's scroll viewport: the instance panels'
 	-- controls end well above this, and anything taller leaves a scrollbar into blank space.
@@ -687,13 +687,13 @@ function M:Build(panel, default, raid)
 	})
 
 	local defaultContent = tabCtrl:GetContent("default")
-	local defaultPanel = BuildInstance(defaultContent, default, dbDefaults.Modules.RaidFrameAurasModule.Default)
+	local defaultPanel = BuildInstance(defaultContent, default, dbDefaults.Modules.ImportantAurasModule.Default)
 	defaultPanel:SetPoint("TOPLEFT",  defaultContent, "TOPLEFT",  0, 0)
 	defaultPanel:SetPoint("TOPRIGHT", defaultContent, "TOPRIGHT", 0, 0)
 	defaultPanel:SetHeight(subPanelHeight)
 
 	local raidContent = tabCtrl:GetContent("raid")
-	local raidPanel = BuildInstance(raidContent, raid, dbDefaults.Modules.RaidFrameAurasModule.Raid)
+	local raidPanel = BuildInstance(raidContent, raid, dbDefaults.Modules.ImportantAurasModule.Raid)
 	raidPanel:SetPoint("TOPLEFT",  raidContent, "TOPLEFT",  0, 0)
 	raidPanel:SetPoint("TOPRIGHT", raidContent, "TOPRIGHT", 0, 0)
 	raidPanel:SetHeight(subPanelHeight)
@@ -705,7 +705,7 @@ function M:Build(panel, default, raid)
 
 	local coloursContent = tabCtrl:GetContent("colours")
 	if coloursContent then
-		BuildColours(coloursContent, db.Modules.RaidFrameAurasModule)
+		BuildColours(coloursContent, db.Modules.ImportantAurasModule)
 	end
 
 	panel.OnMiniRefresh = function()

@@ -9,16 +9,16 @@ local moduleEnv = require("ModuleEnv")
 local env = moduleEnv.build()
 local db = env.db
 
-env.setModuleEnabled("RaidFrameAurasModule", true)
+env.setModuleEnabled("ImportantAurasModule", true)
 
 env.addUnitFrame("party1", "CUF_Test")
 
-env.loadModule("src/Modules/RaidFrameAuras/Display.lua")
-env.loadModule("src/Modules/RaidFrameAuras/Module.lua")
+env.loadModule("src/Modules/ImportantAuras/Display.lua")
+env.loadModule("src/Modules/ImportantAuras/Module.lua")
 
-local module = env.addon.Modules.RaidFrameAurasModule
+local module = env.addon.Modules.ImportantAurasModule
 local testSpells = env.addon.Core.TestSpells
-local options = db.Modules.RaidFrameAurasModule.Default
+local options = db.Modules.ImportantAurasModule.Default
 
 module:Init()
 
@@ -47,7 +47,7 @@ local function Preview()
 	return drawn
 end
 
-fw.describe("RaidFrameAurasModule - the test mode preview", function()
+fw.describe("ImportantAurasModule - the test mode preview", function()
 	fw.before_each(function()
 		options.ShowCC = false
 		options.ShowKicks = false

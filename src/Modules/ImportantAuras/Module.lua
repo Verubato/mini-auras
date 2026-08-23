@@ -8,12 +8,12 @@ local moduleLifecycle = addon.Core.ModuleLifecycle
 local unitStatePoller = addon.Core.UnitStatePoller
 
 -- Loaded before this file in TOC order.
-local display = addon.Modules.RaidFrameAuras.Display
+local display = addon.Modules.ImportantAuras.Display
 
----@class RaidFrameAurasModule : IModule
+---@class ImportantAurasModule : IModule
 local M = {}
-addon.Modules.RaidFrameAuras.Module = M
-addon.Modules.RaidFrameAurasModule = M
+addon.Modules.ImportantAuras.Module = M
+addon.Modules.ImportantAurasModule = M
 
 ---@type ModuleLifecycle?
 local lifecycle
@@ -58,14 +58,14 @@ local function OnEvent(_, event, unit)
 	end
 end
 
----@return RaidFrameAurasInstanceOptions?
+---@return ImportantAurasInstanceOptions?
 local function GetOptions()
 	return display:GetOptions()
 end
 
 ---@return boolean
 local function IsEnabled()
-	return moduleUtil:IsModuleEnabled(moduleName.RaidFrameAuras)
+	return moduleUtil:IsModuleEnabled(moduleName.ImportantAuras)
 end
 
 -- Live auras are pushed in by the aura containers, so only the fake ones rebuild here.
@@ -107,7 +107,7 @@ local function Setup()
 	-- Per token, not a module refresh: the icon counts are all a flip moves, and only for the unit
 	-- that flipped. A raid riding out of range flips many at once, each now paying for itself.
 	stateSub = unitStatePoller:Register(function()
-		return moduleUtil:IsModuleEnabled(moduleName.RaidFrameAuras)
+		return moduleUtil:IsModuleEnabled(moduleName.ImportantAuras)
 	end, function(unitToken)
 		display:ReapplyUnitGates(unitToken)
 	end)
@@ -145,7 +145,7 @@ local function OnDisable()
 	display:Teardown()
 end
 
----@param options RaidFrameAurasInstanceOptions
+---@param options ImportantAurasInstanceOptions
 local function Apply(options)
 	display:EnsureFrames()
 	display:ApplyOptions(options)
@@ -183,9 +183,9 @@ function M:Init()
 	end
 end
 
----@class RaidFrameAurasModule
----@field Init fun(self: RaidFrameAurasModule)
----@field Refresh fun(self: RaidFrameAurasModule)
----@field StartTesting fun(self: RaidFrameAurasModule)
----@field StopTesting fun(self: RaidFrameAurasModule)
+---@class ImportantAurasModule
+---@field Init fun(self: ImportantAurasModule)
+---@field Refresh fun(self: ImportantAurasModule)
+---@field StartTesting fun(self: ImportantAurasModule)
+---@field StopTesting fun(self: ImportantAurasModule)
 

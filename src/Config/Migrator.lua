@@ -27,11 +27,11 @@ local function SaveOpaqueCaches(vars)
 	end
 	-- The auras module's tracked-spell deltas are spellId -> true hashes against an empty schema,
 	-- so CleanTable would strip every key; save and restore them like the top-level caches.
-	local raidFrameAurasSpells = vars.Modules and vars.Modules.RaidFrameAurasModule
-		and vars.Modules.RaidFrameAurasModule.Spells
-	saved._RaidFrameAurasDisabledSpells = raidFrameAurasSpells and mini:CopyValueOrTable(raidFrameAurasSpells.Disabled) or {}
-	saved._RaidFrameAurasCustomSpells = raidFrameAurasSpells and mini:CopyValueOrTable(raidFrameAurasSpells.Custom) or {}
-	saved._RaidFrameAurasEnabledSpells = raidFrameAurasSpells and mini:CopyValueOrTable(raidFrameAurasSpells.Enabled) or {}
+	local importantAurasSpells = vars.Modules and vars.Modules.ImportantAurasModule
+		and vars.Modules.ImportantAurasModule.Spells
+	saved._ImportantAurasDisabledSpells = importantAurasSpells and mini:CopyValueOrTable(importantAurasSpells.Disabled) or {}
+	saved._ImportantAurasCustomSpells = importantAurasSpells and mini:CopyValueOrTable(importantAurasSpells.Custom) or {}
+	saved._ImportantAurasEnabledSpells = importantAurasSpells and mini:CopyValueOrTable(importantAurasSpells.Enabled) or {}
 	-- Custom aura groups are authored entirely by the user, so the schema has nothing to compare
 	-- them against and CleanTable would strip every one of them.
 	local customAuras = vars.Modules and vars.Modules.CustomAurasModule
@@ -53,12 +53,12 @@ local function RestoreOpaqueCaches(vars, saved)
 	for _, key in ipairs(OPAQUE_CACHE_KEYS) do
 		vars[key] = saved[key]
 	end
-	local raidFrameAurasModule = vars.Modules and vars.Modules.RaidFrameAurasModule
-	if raidFrameAurasModule then
-		raidFrameAurasModule.Spells = raidFrameAurasModule.Spells or {}
-		raidFrameAurasModule.Spells.Disabled = saved._RaidFrameAurasDisabledSpells or {}
-		raidFrameAurasModule.Spells.Custom = saved._RaidFrameAurasCustomSpells or {}
-		raidFrameAurasModule.Spells.Enabled = saved._RaidFrameAurasEnabledSpells or {}
+	local importantAurasModule = vars.Modules and vars.Modules.ImportantAurasModule
+	if importantAurasModule then
+		importantAurasModule.Spells = importantAurasModule.Spells or {}
+		importantAurasModule.Spells.Disabled = saved._ImportantAurasDisabledSpells or {}
+		importantAurasModule.Spells.Custom = saved._ImportantAurasCustomSpells or {}
+		importantAurasModule.Spells.Enabled = saved._ImportantAurasEnabledSpells or {}
 	end
 	local customAuras = vars.Modules and vars.Modules.CustomAurasModule
 	if customAuras then

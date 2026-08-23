@@ -239,8 +239,7 @@ L:RegisterLocale("zhTW", function() return {
 	["Shows CC icons on party/raid pet frames."] = "在隊伍/團隊寵物框架上顯示控制圖示。",
 
 	-- Indicator tab
-	["Raid Frame Auras"] = "團隊框架光環",
-	["Raid Frame Auras_Short"] = "團體光環",
+	["Important Auras"] = "重要光環",
 	["Defensive"] = "防禦",
 	["Exclude yourself from showing trinket icons."] = "將自己從顯示飾品圖示中排除。",
 	["Show CC"] = "顯示CC",

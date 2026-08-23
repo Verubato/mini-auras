@@ -264,12 +264,12 @@ function M:EnsureWindow()
 			end,
 		},
 		{
-			Key = "RaidFrameAuras",
-			Title = L["Raid Frame Auras_Short"] or L["Raid Frame Auras"],
-			Icon = NAV_ICON_BASE .. "RaidFrameAuras.png",
+			Key = "ImportantAuras",
+			Title = L["Important Auras"],
+			Icon = NAV_ICON_BASE .. "ImportantAuras.png",
 			Build = function(content)
-				local m = db.Modules.RaidFrameAurasModule
-				M.RaidFrameAuras:Build(content, m.Default, m.Raid)
+				local m = db.Modules.ImportantAurasModule
+				M.ImportantAuras:Build(content, m.Default, m.Raid)
 			end,
 		},
 		{
@@ -488,6 +488,6 @@ end
 ---@field EnemyKickTracker EnemyKickTrackerConfig
 ---@field AllyKickTracker AllyKickTrackerConfig
 ---@field OtherAddons OtherAddonsConfig
----@field RaidFrameAuras RaidFrameAurasConfig
+---@field ImportantAuras ImportantAurasConfig
 ---@field CustomAuras CustomAurasConfig
 ---@field Miscellaneous MiscellaneousConfig

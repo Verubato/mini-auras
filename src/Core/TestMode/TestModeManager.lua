@@ -15,7 +15,7 @@ local MODULE_NAMES = {
 	"NameplatesModule",
 	"EnemyKickTrackerModule",
 	"AllyKickTrackerModule",
-	"RaidFrameAurasModule",
+	"ImportantAurasModule",
 	"CustomAurasModule",
 	"TrinketsModule",
 }

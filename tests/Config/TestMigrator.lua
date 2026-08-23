@@ -72,7 +72,7 @@ assert(type(LATEST_VERSION) == "number" and LATEST_VERSION >= 55, "sane latest v
 
 local expectedModules = {
 	"CCModule", "PetCCModule", "HealerCCModule", "PortraitModule", "AlertsModule",
-	"NameplatesModule", "EnemyKickTrackerModule", "TrinketsModule", "RaidFrameAurasModule",
+	"NameplatesModule", "EnemyKickTrackerModule", "TrinketsModule", "ImportantAurasModule",
 }
 
 -- Modules the addon no longer ships. Their settings are not in dbDefaults any more, so the final
@@ -163,7 +163,7 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 				Mine = {
 					Modules = {
 						CustomAurasModule = { Groups = { { Id = "g1", Name = "Mine", SpellIds = { 123 } } } },
-						RaidFrameAurasModule = { Spells = { Disabled = { [456] = true }, Custom = { [789] = true } } },
+						ImportantAurasModule = { Spells = { Disabled = { [456] = true }, Custom = { [789] = true } } },
 					},
 				},
 			},
@@ -173,8 +173,8 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 
 		assert(mine.CustomAurasModule.Groups[1].Name == "Mine", "authored aura group kept")
 		assert(mine.CustomAurasModule.Groups[1].SpellIds[1] == 123, "authored group contents kept")
-		assert(mine.RaidFrameAurasModule.Spells.Disabled[456] == true, "spell-id hash kept")
-		assert(mine.RaidFrameAurasModule.Spells.Custom[789] == true, "spell-id hash kept")
+		assert(mine.ImportantAurasModule.Spells.Disabled[456] == true, "spell-id hash kept")
+		assert(mine.ImportantAurasModule.Spells.Custom[789] == true, "spell-id hash kept")
 	end)
 
 	fw.it("keeps the TTS per-spell switches across a login", function()
@@ -714,10 +714,38 @@ fw.describe("Migrator - individual migrations", function()
 		}
 
 		assert(migrator:UpgradeToVersion61(vars) == true)
+		-- The name version 61 wrote, which version 72 later renames again.
 		assert(vars.Modules.RaidFrameAurasModule == kept, "the saved table moves across intact")
 		assert(vars.Modules.RaidFrameAurasModule.Spells.Custom[123456], "hand-added spells survive the move")
 		assert(vars.Modules.AurasModule == nil, "and the old key is gone")
 		assert(vars.Profiles.Other.Modules.RaidFrameAurasModule.Default.ShowCC == true, "profiles move too")
+	end)
+
+	fw.it("v72 renames the raid frame auras module key to important auras", function()
+		local kept = { Spells = { Custom = { [123456] = true } }, Default = { ShowCC = true } }
+		local vars = {
+			Version = 71,
+			Modules = { RaidFrameAurasModule = kept },
+			Profiles = { Other = { Modules = { RaidFrameAurasModule = { Default = { ShowKicks = true } } } } },
+		}
+
+		assert(migrator:UpgradeToVersion72(vars) == true)
+		assert(vars.Modules.ImportantAurasModule == kept, "the saved table moves across intact")
+		assert(vars.Modules.RaidFrameAurasModule == nil, "and the old key is gone")
+		assert(vars.Profiles.Other.Modules.ImportantAurasModule.Default.ShowKicks == true, "profiles move too")
+		assert(vars.Profiles.Other.Modules.RaidFrameAurasModule == nil, "and their old key goes too")
+	end)
+
+	fw.it("v72 keeps the settings already under the new key", function()
+		local wanted = { Default = { ShowCC = true } }
+		local vars = {
+			Version = 71,
+			Modules = { RaidFrameAurasModule = { Default = { ShowCC = false } }, ImportantAurasModule = wanted },
+		}
+
+		assert(migrator:UpgradeToVersion72(vars) == true)
+		assert(vars.Modules.ImportantAurasModule == wanted, "the newer table wins")
+		assert(vars.Modules.RaidFrameAurasModule == nil, "and the stale one is dropped")
 	end)
 
 	fw.it("v62 pre-seeds the starter custom aura groups from the precog settings", function()

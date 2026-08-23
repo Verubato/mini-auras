@@ -101,7 +101,7 @@ M.Filter = {
 	-- Disarms carry no category flag, so the spell-ID map is the only filter that narrows this
 	-- group and the string is just "any non-CC debuff". On an assistable unit the identity gate
 	-- above skips the map and the group would show every debuff the unit has, so callers MUST
-	-- budget it to zero there (units:CanAssist, mirroring the RaidFrameAuras helpful-side gate).
+	-- budget it to zero there (units:CanAssist, mirroring the ImportantAuras helpful-side gate).
 	-- The negation keeps a disarm out of this group if the game ever starts flagging them as CC.
 	Disarm = "HARMFUL|!CROWD_CONTROL",
 	BigDefensive = "HELPFUL|BIG_DEFENSIVE",

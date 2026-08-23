@@ -239,8 +239,7 @@ L:RegisterLocale("frFR", function() return {
 	["Shows CC icons on party/raid pet frames."] = "Affiche les icônes de CC sur les cadres des familiers de groupe/raid.",
 
 	-- Indicator tab
-	["Raid Frame Auras"] = "Auras des cadres de raid",
-	["Raid Frame Auras_Short"] = "Auras de groupe",
+	["Important Auras"] = "Auras importantes",
 	["Defensive"] = "Défensif",
 	["Exclude yourself from showing trinket icons."] = "Ne pas afficher les icônes de trinket sur vous-même.",
 	["Show CC"] = "Afficher les CC",

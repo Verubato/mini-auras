@@ -4,7 +4,7 @@ local _, addon = ...
 ---@class Db
 ---@field SpecCache table<string, {SpecId: number?, LastSeen: number?, LastAttempt: number?}>
 local dbDefaults = {
-	Version = 71,
+	Version = 72,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
@@ -542,8 +542,8 @@ local dbDefaults = {
 				File = "GameFontHighlightSmall",
 			},
 		},
-		---@class RaidFrameAurasModuleOptions
-		RaidFrameAurasModule = {
+		---@class ImportantAurasModuleOptions
+		ImportantAurasModule = {
 			-- Helpful auras here are chosen by spell id rather than by Blizzard's category
 			-- flags, so anything can be tracked - including spells the game never flags. Stored
 			-- as deltas against the curated lists rather than a copy of them, so the saved
@@ -571,7 +571,7 @@ local dbDefaults = {
 			ImportantColor = { R = 1, G = 0.2, B = 0.2, A = 1 },
 			DefensiveColor = { R = 0.2, G = 1, B = 0.2, A = 1 },
 
-			---@class RaidFrameAurasInstanceOptions
+			---@class ImportantAurasInstanceOptions
 			Default = {
 				ExcludePlayer = false,
 				ShowDefensives = true,
@@ -593,7 +593,7 @@ local dbDefaults = {
 				ShowTooltips = false,
 			},
 
-			---@type RaidFrameAurasInstanceOptions
+			---@type ImportantAurasInstanceOptions
 			Raid = {
 				ExcludePlayer = false,
 				ShowDefensives = true,

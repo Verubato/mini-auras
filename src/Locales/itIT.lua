@@ -239,8 +239,7 @@ L:RegisterLocale("itIT", function() return {
 	["Shows CC icons on party/raid pet frames."] = "Mostra icone di controllo sui riquadri dei pet del gruppo/incursione.",
 
 	-- Indicator tab
-	["Raid Frame Auras"] = "Aure dei riquadri",
-	["Raid Frame Auras_Short"] = "Aure di gruppo",
+	["Important Auras"] = "Aure importanti",
 	["Defensive"] = "Difensivo",
 	["Exclude yourself from showing trinket icons."] = "Escluditi dalla visualizzazione delle icone dei monili.",
 	["Show CC"] = "Mostra CC",

@@ -12,17 +12,17 @@ local IMPORTANT_GROUP_KEY = "helpfulimp"
 local env = moduleEnv.build()
 local db = env.db
 
-env.setModuleEnabled("RaidFrameAurasModule", true)
+env.setModuleEnabled("ImportantAurasModule", true)
 
 env.addUnitFrame("party1", "CUF_Filters")
 
-env.loadModule("src/Modules/RaidFrameAuras/Display.lua")
-env.loadModule("src/Modules/RaidFrameAuras/Module.lua")
+env.loadModule("src/Modules/ImportantAuras/Display.lua")
+env.loadModule("src/Modules/ImportantAuras/Module.lua")
 
-local module = env.addon.Modules.RaidFrameAurasModule
+local module = env.addon.Modules.ImportantAurasModule
 local categoryIds = env.addon.Core.AuraCategoryIds
-local options = db.Modules.RaidFrameAurasModule.Default
-local spells = db.Modules.RaidFrameAurasModule.Spells
+local options = db.Modules.ImportantAurasModule.Default
+local spells = db.Modules.ImportantAurasModule.Spells
 
 module:Init()
 
@@ -80,7 +80,7 @@ local function TrackedIds()
 	return ids
 end
 
-fw.describe("RaidFrameAurasModule - the tracked spell ids", function()
+fw.describe("ImportantAurasModule - the tracked spell ids", function()
 	fw.before_each(function()
 		options.ShowCC = false
 		options.ShowKicks = false
@@ -192,7 +192,7 @@ fw.describe("RaidFrameAurasModule - the tracked spell ids", function()
 	end)
 end)
 
-fw.describe("RaidFrameAurasModule - anchors that are out of sight", function()
+fw.describe("ImportantAurasModule - anchors that are out of sight", function()
 	-- An entry outlives its anchor: WoW frames can never be freed, so a raid's worth of them is
 	-- still here in a five-man. They are skipped rather than restyled, and the risk that guards
 	-- against is a stale one coming back.
@@ -233,7 +233,7 @@ fw.describe("RaidFrameAurasModule - anchors that are out of sight", function()
 	end)
 end)
 
-fw.describe("RaidFrameAurasModule - groups declared after the display", function()
+fw.describe("ImportantAurasModule - groups declared after the display", function()
 	-- A display is created with none of its groups; the background walker declares them a group
 	-- per turn, so a roster turning up does not build them all in one frame. The filters a
 	-- display was built with can be well out of date by then.
@@ -258,7 +258,7 @@ fw.describe("RaidFrameAurasModule - groups declared after the display", function
 	end)
 end)
 
-fw.describe("RaidFrameAurasModule - an anchor returning without a refresh", function()
+fw.describe("ImportantAurasModule - an anchor returning without a refresh", function()
 	-- A refresh skips styling for an anchor nobody can see, so the entry carries whatever it had.
 	-- The unit-frame visibility hook can bring that frame back with no refresh behind it, which is
 	-- the one path that has to put the styling right on its own.
@@ -279,7 +279,7 @@ fw.describe("RaidFrameAurasModule - an anchor returning without a refresh", func
 
 		-- Back on screen through the hook alone - no Refresh follows. The env stub answers false to
 		-- IsFriendlyCuf for everything, so the hook is told this frame is one for the duration.
-		local display = env.addon.Modules.RaidFrameAuras.Display
+		local display = env.addon.Modules.ImportantAuras.Display
 		local frames = env.addon.Core.Frames
 		local realIsFriendlyCuf = frames.IsFriendlyCuf
 		frames.IsFriendlyCuf = function(_, candidate)
@@ -316,7 +316,7 @@ fw.describe("RaidFrameAurasModule - an anchor returning without a refresh", func
 		frame:Hide()
 		module:Refresh()
 
-		env.setModuleEnabled("RaidFrameAurasModule", false)
+		env.setModuleEnabled("ImportantAurasModule", false)
 		module:Refresh()
 		assert(not display._enabled, "fixture: the module tore its display down")
 
@@ -327,13 +327,13 @@ fw.describe("RaidFrameAurasModule - an anchor returning without a refresh", func
 		end
 
 		frame:Show()
-		env.addon.Modules.RaidFrameAuras.Display:OnCufUpdateVisible(frame)
+		env.addon.Modules.ImportantAuras.Display:OnCufUpdateVisible(frame)
 
 		frames.IsFriendlyCuf = realIsFriendlyCuf
 
 		assert(not display._enabled, "the hook must not wake a disabled module's display back up")
 
-		env.setModuleEnabled("RaidFrameAurasModule", true)
+		env.setModuleEnabled("ImportantAurasModule", true)
 		module:Refresh()
 	end)
 end)

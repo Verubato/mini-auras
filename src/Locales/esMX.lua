@@ -240,8 +240,7 @@ L:RegisterLocale("esMX", function() return {
 	["Shows CC icons on party/raid pet frames."] = "Muestra iconos de control en marcos de mascota de grupo/banda.",
 
 	-- Indicator tab
-	["Raid Frame Auras"] = "Auras de marcos de banda",
-	["Raid Frame Auras_Short"] = "Auras de grupo",
+	["Important Auras"] = "Auras importantes",
 	["Defensive"] = "Defensivo",
 	["Exclude yourself from showing trinket icons."] = "Exclúyete de mostrar iconos de abalorios.",
 	["Show CC"] = "Mostrar CC",

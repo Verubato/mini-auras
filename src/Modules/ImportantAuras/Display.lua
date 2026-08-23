@@ -19,11 +19,11 @@ local sweep = addon.Core.Sweep
 local testSpellData = addon.Core.TestSpells
 local changeStamp = addon.Utils.ChangeStamp
 
-addon.Modules.RaidFrameAuras = addon.Modules.RaidFrameAuras or {}
+addon.Modules.ImportantAuras = addon.Modules.ImportantAuras or {}
 
----@class RaidFrameAurasDisplay
+---@class ImportantAurasDisplay
 local M = {}
-addon.Modules.RaidFrameAuras.Display = M
+addon.Modules.ImportantAuras.Display = M
 
 -- CC + defensive auras render through an AuraContainer per anchor (one group per category); the
 -- IconSlotContainer is kept for the kick icon and test mode. There is no dynamic slot split
@@ -33,7 +33,7 @@ local paused = false
 local testModeActive = false
 -- Anchor frame -> the container and display drawn on it. Owned here: the module asks for
 -- whole-set operations rather than reaching into it.
----@type table<table, RaidFrameAurasWatchEntry>
+---@type table<table, ImportantAurasWatchEntry>
 local watchers = {}
 -- Background walker declaring the aura groups of displays as they are built; see
 -- DeclareNextGroup. Urgent: these are on a unit frame the player is looking at, unlike the lanes
@@ -99,7 +99,7 @@ local HELPFUL_GROUP_KEYS = { DEFENSIVE_GROUP_KEY, IMPORTANT_GROUP_KEY }
 local helpfulFilters
 -- What the current filters were built from, so a refresh that moved nothing reuses them. One
 -- tracked set per module, so one stamp key covers it.
-local FILTER_STAMP_KEY = "RaidFrameAurasFilters"
+local FILTER_STAMP_KEY = "ImportantAurasFilters"
 local filterStamp = changeStamp:New()
 local filterSetScratch = {}
 local helpfulFilterGeneration
@@ -115,10 +115,10 @@ local helpfulFilterGeneration
 ---refresh, and the curated walk plus its fresh id maps is the same answer forty times over;
 ---helpfulFilterGeneration is what a caller compares to skip re-publishing tables the engine
 ---already holds.
----@param options RaidFrameAurasInstanceOptions
+---@param options ImportantAurasInstanceOptions
 ---@return table filtersByGroup Group key -> candidate filters.
 local function GetHelpfulFilters(options)
-	local overrides = db.Modules.RaidFrameAurasModule.Spells
+	local overrides = db.Modules.ImportantAurasModule.Spells
 
 	-- The inputs, not the output: the curated lists are static for the session, so the toggles
 	-- and the override sets are everything that can move the answer. A profile switch replaces
@@ -201,7 +201,7 @@ local function GetHelpfulFilters(options)
 end
 
 ---@param maxIcons number
----@param options RaidFrameAurasInstanceOptions
+---@param options ImportantAurasInstanceOptions
 ---@param colors table<string, number[]> Category tints, keyed by group key.
 ---@return table[]
 local function BuildGroups(maxIcons, options, colors)
@@ -231,7 +231,7 @@ local function BuildGroups(maxIcons, options, colors)
 end
 
 local function GetOptions()
-	local m = db.Modules.RaidFrameAurasModule
+	local m = db.Modules.ImportantAurasModule
 	if not m then
 		return nil
 	end
@@ -255,7 +255,7 @@ end
 
 ---Refills the category tints from the module options. The test icons read these tables directly.
 local function RefreshCategoryColors()
-	local module = db and db.Modules.RaidFrameAurasModule
+	local module = db and db.Modules.ImportantAurasModule
 
 	moduleUtil:FillColor(importantColor, module and module.ImportantColor, DEFAULT_IMPORTANT_COLOR)
 	moduleUtil:FillColor(defensiveColor, module and module.DefensiveColor, DEFAULT_DEFENSIVE_COLOR)
@@ -263,7 +263,7 @@ end
 
 ---The tints the helpful groups take, keyed by group key. The CC group is never in there: it takes
 ---the game's dispel type colours, which is all the toggle meant before there was anything to pick.
----@param options RaidFrameAurasInstanceOptions
+---@param options ImportantAurasInstanceOptions
 ---@return table<string, number[]> Shared, rewritten per call.
 local function HelpfulColors(options)
 	RefreshCategoryColors()
@@ -278,8 +278,8 @@ end
 
 ---Whether a kick icon currently occupies the entry's container. With kicks switched off the
 ---display has no kick icon to chain past.
----@param entry RaidFrameAurasWatchEntry
----@param options RaidFrameAurasInstanceOptions
+---@param entry ImportantAurasWatchEntry
+---@param options ImportantAurasInstanceOptions
 ---@return boolean
 local function IsKickActive(entry, options)
 	return options.ShowKicks and kickTracker:GetKick(entry.Unit) ~= nil
@@ -287,23 +287,23 @@ end
 
 ---Positions the aura display on its anchor, chaining after the kick container while a kick icon
 ---is showing.
----@param entry RaidFrameAurasWatchEntry
+---@param entry ImportantAurasWatchEntry
 ---@param anchor table
----@param options RaidFrameAurasInstanceOptions
+---@param options ImportantAurasInstanceOptions
 local function AnchorAuraDisplay(entry, anchor, options)
 	anchoredIcons:AnchorAuraDisplay(entry, anchor, options, IsKickActive(entry, options))
 end
 
 ---Renders the kick icon into the entry's IconSlotContainer (slot 1) and re-anchors the aura
 ---display around it.
----@param entry RaidFrameAurasWatchEntry
+---@param entry ImportantAurasWatchEntry
 local function UpdateKickIcon(entry)
 	if not entry or not entry.Container or paused or testModeActive then
 		return
 	end
 
 	local options = GetOptions()
-	if not options or not moduleUtil:IsModuleEnabled(moduleName.RaidFrameAuras) then
+	if not options or not moduleUtil:IsModuleEnabled(moduleName.ImportantAuras) then
 		return
 	end
 
@@ -327,8 +327,8 @@ end
 ---and BOTH groups fill with unrelated auras, so a unit that far away shows nothing at all.
 ---
 ---Neither has an event of its own, which is why the unit state poller watches them.
----@param entry RaidFrameAurasWatchEntry
----@param options RaidFrameAurasInstanceOptions
+---@param entry ImportantAurasWatchEntry
+---@param options ImportantAurasInstanceOptions
 ---@return number helpful
 ---@return number crowdControl
 local function ApplyUnitGates(entry, options)
@@ -354,7 +354,7 @@ end
 ---One entry's next group, from the walker. The display is created with none of them: a roster
 ---appearing builds one display per unit in the same pass, and every group declared costs a batch
 ---of buttons there and then.
----@param entry RaidFrameAurasWatchEntry
+---@param entry ImportantAurasWatchEntry
 ---@return SweepVerdict?
 local function DeclareNextGroup(entry)
 	local display = entry.Display
@@ -505,15 +505,15 @@ local function EnsureWatcher(anchor, unit)
 	frames:ShowHideFrame(entry.Container.Frame, anchor, testModeActive, options.ExcludePlayer)
 
 	if testModeActive then
-		moduleUtil:SetTestLabel(entry.Container.Frame, L["Raid Frame Auras_Short"] or L["Raid Frame Auras"])
+		moduleUtil:SetTestLabel(entry.Container.Frame, L["Important Auras"])
 	end
 
 	return entry
 end
 
----@param entry RaidFrameAurasWatchEntry
+---@param entry ImportantAurasWatchEntry
 ---@param anchor table
----@param options RaidFrameAurasInstanceOptions
+---@param options ImportantAurasInstanceOptions
 local function ApplyEntryOptions(entry, anchor, options)
 	local iconSize = moduleUtil:GetIconSize(options.Icons, anchor, 32, 75)
 	local maxIcons = tonumber(options.Icons.MaxIcons) or 1
@@ -609,7 +609,7 @@ function M:CollectWatchedUnits(out)
 	return out
 end
 
----@return RaidFrameAurasInstanceOptions?
+---@return ImportantAurasInstanceOptions?
 function M:GetOptions()
 	return db and GetOptions()
 end
@@ -646,7 +646,7 @@ function M:EnsureFrames()
 	M:EnsureWatchers()
 end
 
----@param options RaidFrameAurasInstanceOptions
+---@param options ImportantAurasInstanceOptions
 function M:ApplyOptions(options)
 	for anchor, entry in pairs(watchers) do
 		anchoredIcons:ApplyOrHideEntry(entry, anchor, ApplyEntryOptions, options)
@@ -770,7 +770,7 @@ function M:OnCufUpdateVisible(frame)
 		return
 	end
 
-	local enabled = moduleUtil:IsModuleEnabled(moduleName.RaidFrameAuras)
+	local enabled = moduleUtil:IsModuleEnabled(moduleName.ImportantAuras)
 
 	if anchoredIcons:RestyleIfStale(entry, frame, enabled, ApplyEntryOptions, options) then
 		return
@@ -805,7 +805,7 @@ function M:Init()
 	testCcSpells = testSpellData.CrowdControl
 end
 
----@class RaidFrameAurasWatchEntry
+---@class ImportantAurasWatchEntry
 ---@field Container IconSlotContainer Renders the kick icon and the test icons only.
 ---@field Display AuraContainerDisplay? CC/defensive auras render through this.
 ---@field KickTimer table? Timer that clears the kick icon on expiry.
@@ -815,7 +815,7 @@ end
 ---@field FilterGeneration number? The helpful filters the display already carries; matches
 ---helpfulFilterGeneration once the current tracked set has reached its groups.
 
----@class RaidFrameAurasModuleOptions
+---@class ImportantAurasModuleOptions
 ---@field ShowDefensives boolean Curated defensive and healer throughput cooldowns.
 ---@field ShowImportant boolean Curated important buffs and offensive cooldowns.
 ---@field ShowCC boolean
