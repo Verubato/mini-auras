@@ -38,7 +38,7 @@ local watchers = {}
 -- Background walker declaring the aura groups of displays as they are built; see
 -- DeclareNextGroup. Urgent: these are on a unit frame the player is looking at, unlike the lanes
 -- preparing spares nobody has asked for.
-local buildSweep = sweep:New(1, true)
+local buildSweep = sweep:New(true)
 ---@type TestSpell[]
 local testDefensiveSpells = {}
 ---@type TestSpell[]
@@ -124,7 +124,7 @@ local spares = {}
 -- build. Only ever one at a time: spares are the lowest priority work the addon does.
 ---@type ImportantAurasSpare?
 local prewarmBuilding
-local prewarmSweep = sweep:New(1)
+local prewarmSweep = sweep:New()
 -- Refilled per call, and only read for a frame to size a spare from.
 local anchorScratch = {}
 
@@ -499,9 +499,10 @@ local function TakeSpare(unit, size, spacing, style, maxIcons)
 	return nil
 end
 
----One spare, a group per turn. Everything is re-read at fire time: the walk runs over seconds, in
----which the module can be switched off and the frames it was being held for can turn up on their
----own.
+---A group per turn, and straight on to the next spare once one is banked, so the whole warm-up
+---rides on this single queued item. Everything is re-read at fire time: the walk runs over
+---seconds, in which the module can be switched off and the frames it was being held for can turn
+---up on their own.
 ---@return SweepVerdict?
 local function PrewarmNext()
 	if prewarmBuilding then
@@ -511,8 +512,6 @@ local function PrewarmNext()
 
 		spares[#spares + 1] = prewarmBuilding
 		prewarmBuilding = nil
-
-		return
 	end
 
 	local options = GetOptions()
@@ -781,12 +780,14 @@ function M:EnsureWatchers()
 	frames:ForEachAnchor(true, testModeActive, EnsureWatcher)
 end
 
----Tops the spares up, if the walker is not already at it. Cheap to call from any refresh: the
----queue is only ever as long as what is still wanted.
+---Tops the spares up, if the walker is not already at it. Cheap to call from any refresh: the one
+---queued item walks the whole warm-up, so a refresh landing part way through adds nothing.
 function M:QueuePrewarm()
-	for _ = 1, math.max(0, SparesWanted()) do
-		prewarmSweep:Append(PREWARM_ITEM, PrewarmNext)
+	if prewarmSweep:HasWork() or SparesWanted() <= 0 then
+		return
 	end
+
+	prewarmSweep:Append(PREWARM_ITEM, PrewarmNext)
 end
 
 function M:Teardown()

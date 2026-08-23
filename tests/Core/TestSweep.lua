@@ -1,7 +1,9 @@
--- The shared background walker's lane model. The failures this guards against: the per-tick
--- budget is addon-wide, so however many modules queue a sweep at once, the total background
--- cost per tick stays flat; one lane replacing or abandoning its run must never touch another
--- lane's; and the end-of-tick stop check must not consume a busy lane's round-robin turn.
+-- The shared background walker's lane model. The failures this guards against: a tick spends a
+-- millisecond budget rather than a count of items, so a lane of cheap items drains many at once
+-- while a lane of dear ones takes a tick each; a lane is weighed by the worst item it has run
+-- lately, so a stretch of cheap ones cannot let a dear one in behind them; one lane replacing or
+-- abandoning its run must never touch another lane's; and the end-of-tick stop check must not
+-- consume a busy lane's round-robin turn.
 
 local fw = require("Framework")
 local tickerMock = require("TickerMock")
@@ -11,6 +13,11 @@ tickerMock.Install()
 local addon = { Core = {} }
 assert(loadfile("src/Core/Pooling/Sweep.lua"))("MiniAuras", addon)
 local sweep = addon.Core.Sweep
+
+-- Eight of these spend a whole tick's budget exactly, so a test can say where its tick ends.
+local CHEAP_MS = 0.25
+-- More than half the budget, so a lane that has run one cannot fit another in the same tick.
+local DEAR_MS = 1.25
 
 local function Items(count)
 	local queue = {}
@@ -22,107 +29,155 @@ local function Items(count)
 	return queue
 end
 
-local function Collector()
+---@param ms number? What each item spends of the mock clock; free by default.
+local function Collector(ms)
 	local seen = {}
 
 	return seen, function(item)
 		seen[#seen + 1] = item.id
+
+		if ms then
+			tickerMock.Advance(ms)
+		end
 	end
 end
 
-fw.describe("Sweep - shared budget across lanes", function()
+fw.describe("Sweep - a time budget shared across the lanes", function()
 	fw.before_each(tickerMock.Reset)
 
-	fw.it("a lone lane gets the whole budget and the ticker stops on drain", function()
+	fw.it("a lane of cheap items drains several a tick and the ticker stops on drain", function()
 		local lane = sweep:New()
-		local seen, collect = Collector()
+		local seen, collect = Collector(CHEAP_MS)
 
-		lane:Run(Items(5), collect)
+		lane:Run(Items(12), collect)
 
 		tickerMock.Tick(1)
-		assert(#seen == 3, "the whole per-tick budget for a lone lane")
+		assert(#seen == 8, "a tick runs cheap items until the budget is gone, got " .. #seen)
 
-		tickerMock.Tick(2)
-		assert(#seen == 5, "queue drained")
+		tickerMock.Tick(1)
+		assert(#seen == 12, "queue drained")
 		assert(tickerMock.ActiveCount() == 0, "ticker stopped with nothing left to do")
 	end)
 
-	fw.it("a capped lane takes one slot a tick, whatever else the budget has free", function()
-		-- What the pre-creation fills hold: building a frame is a hundred restyles, so a lane
-		-- doing it must not be handed the whole tick just because nothing else wants it.
-		local lane = sweep:New(1)
-		local seen, collect = Collector()
-
-		lane:Run(Items(4), collect)
-
-		tickerMock.Tick(1)
-		assert(#seen == 1, "the cap let the lane take more than its slot")
-
-		tickerMock.Tick(3)
-		assert(#seen == 4, "the rest still drain, one tick apart")
-		assert(tickerMock.ActiveCount() == 0)
-	end)
-
-	fw.it("a tick that spends its time budget stops handing out slots", function()
-		-- Items vary by two orders of magnitude: a restyle is nothing, building a container full
-		-- of buttons is ten milliseconds. Without this a tick chained three of the expensive kind.
+	fw.it("a lane whose items cost more than the budget takes one a tick", function()
+		-- Building a container full of buttons outweighs the whole tick on its own. It has to run
+		-- anyway, so it runs as the tick's first item, with nothing chained behind it.
 		local lane = sweep:New()
-		local seen = {}
+		local seen, collect = Collector(3)
 
-		lane:Run(Items(4), function(item)
-			seen[#seen + 1] = item.id
-			tickerMock.Advance(2)
-		end)
+		lane:Run(Items(3), collect)
 
 		tickerMock.Tick(1)
-		assert(#seen == 1, "the tick kept going after its budget was spent")
+		assert(#seen == 1, "an item dearer than the budget was not left alone in its tick")
 
-		tickerMock.Tick(3)
-		assert(#seen == 4, "the rest still drain, one tick apart")
+		tickerMock.Tick(2)
+		assert(#seen == 3, "the rest still drain, a tick apart")
 		assert(tickerMock.ActiveCount() == 0)
 	end)
 
-	fw.it("a cheap item does not open the door to an expensive one", function()
-		-- The budget cannot split an item, so a tick that has already spent some of it must not
-		-- start one it knows is dear. Without this a run of cheap no-op turns kept letting a
-		-- container build in behind them, and the tick came out at fifteen milliseconds.
-		local cheap = sweep:New()
-		local dear = sweep:New()
-		local cheapSeen, collectCheap = Collector()
-		local dearSeen = {}
+	fw.it("a cheap stretch does not open the door to a lane's dear items", function()
+		-- The regression the whole design exists for. A lane is weighed by the worst it has seen
+		-- lately, not its average: an average sits near the cheap no-op turns it has just done and
+		-- barely moves when the first real container build lands, leaving room for the next one
+		-- behind it, which is how one tick came out at fifteen milliseconds.
+		local lane = sweep:New()
+		local queue = {}
 
-		cheap:Run(Items(6), collectCheap)
-		dear:Run(Items(6), function(item)
-			dearSeen[#dearSeen + 1] = item.id
-			tickerMock.Advance(9)
-		end)
-
-		-- The first tick has no history to go on, so the dear lane gets a turn and shows what its
-		-- items cost. From there it only ever runs as the first item of a tick.
-		for _ = 1, 8 do
-			local before = #dearSeen
-
-			tickerMock.Tick(1)
-			assert(#dearSeen - before <= 1, "two dear items landed in the same tick")
+		for index = 1, 8 do
+			queue[index] = { cost = CHEAP_MS }
 		end
 
-		assert(#dearSeen > 1, "the dear lane made no progress")
-		assert(#cheapSeen > 1, "the cheap lane stopped draining around it")
+		for index = 9, 12 do
+			queue[index] = { cost = DEAR_MS }
+		end
 
-		tickerMock.Tick(10)
-		assert(tickerMock.ActiveCount() == 0, "both lanes drained")
+		local seen = {}
+
+		lane:Run(queue, function(item)
+			seen[#seen + 1] = item
+			tickerMock.Advance(item.cost)
+		end)
+
+		for _ = 1, 6 do
+			local before = #seen
+
+			tickerMock.Tick(1)
+
+			local dear = 0
+
+			for index = before + 1, #seen do
+				if seen[index].cost == DEAR_MS then
+					dear = dear + 1
+				end
+			end
+
+			assert(dear == 0 or #seen - before == 1,
+				"a dear item shared its tick with " .. (#seen - before - 1) .. " others")
+		end
+
+		assert(#seen == 12, "the lane drained, got " .. #seen)
+		assert(tickerMock.ActiveCount() == 0)
+	end)
+
+	fw.it("a dear lane never doubles up, and a cheap one keeps draining around it", function()
+		local cheap = sweep:New()
+		local dear = sweep:New()
+		local cheapSeen, collectCheap = Collector(CHEAP_MS)
+		local dearSeen, collectDear = Collector(DEAR_MS)
+		local shared = false
+
+		cheap:Run(Items(12), collectCheap)
+		dear:Run(Items(4), collectDear)
+
+		for _ = 1, 8 do
+			local beforeDear = #dearSeen
+			local beforeCheap = #cheapSeen
+
+			tickerMock.Tick(1)
+
+			assert(#dearSeen - beforeDear <= 1, "two dear items landed in the same tick")
+
+			shared = shared or (#dearSeen > beforeDear and #cheapSeen > beforeCheap)
+		end
+
+		assert(shared, "the cheap lane never got the rest of a tick a dear item started")
+		assert(#dearSeen == 4 and #cheapSeen == 12, "both lanes drained")
+		assert(tickerMock.ActiveCount() == 0)
+	end)
+
+	fw.it("a lane that has never run waits for a tick of its own", function()
+		-- Until a lane has shown what its items cost it counts as dear, because the one thing it
+		-- must not do is turn out to be a container build halfway through someone else's tick.
+		local first = sweep:New()
+		local second = sweep:New()
+		local seenFirst, collectFirst = Collector(CHEAP_MS)
+		local seenSecond, collectSecond = Collector(CHEAP_MS)
+
+		first:Run(Items(4), collectFirst)
+		second:Run(Items(4), collectSecond)
+
+		tickerMock.Tick(1)
+		assert(#seenFirst + #seenSecond == 4, "one lane's whole queue, got "
+			.. #seenFirst + #seenSecond)
+		assert(#seenFirst == 0 or #seenSecond == 0, "the untried lane took a slot on trust")
+
+		tickerMock.Tick(1)
+		assert(#seenFirst == 4 and #seenSecond == 4, "and it drains in the next tick")
+		assert(tickerMock.ActiveCount() == 0)
 	end)
 
 	fw.it("an item can ask to be handed back until it is finished", function()
 		-- What the display prewarms need: building a container is too big for one slot, so the
-		-- item comes back for its next piece rather than the lane moving on.
-		local lane = sweep:New(1)
+		-- item comes back for its next piece rather than the lane moving on, and the budget is
+		-- weighed between the pieces.
+		local lane = sweep:New()
 		local seen = {}
 		local parts = {}
 
 		lane:Run(Items(2), function(item)
 			seen[#seen + 1] = item.id
 			parts[item.id] = (parts[item.id] or 0) + 1
+			tickerMock.Advance(DEAR_MS)
 
 			if parts[item.id] < 2 then
 				return sweep.Verdict.Unfinished
@@ -137,59 +192,41 @@ fw.describe("Sweep - shared budget across lanes", function()
 		assert(tickerMock.ActiveCount() == 0, "the ticker stopped once both were done")
 	end)
 
-	fw.it("two lanes split the same budget instead of doubling it", function()
-		local laneA = sweep:New()
-		local laneB = sweep:New()
-		local seenA, collectA = Collector()
-		local seenB, collectB = Collector()
-
-		laneA:Run(Items(4), collectA)
-		laneB:Run(Items(4), collectB)
-
-		tickerMock.Tick(1)
-		assert(#seenA + #seenB == 3, "the budget is addon-wide, not per lane")
-		assert(#seenA >= 1 and #seenB >= 1, "and it is split between them rather than spent on one")
-
-		tickerMock.Tick(3)
-		assert(#seenA == 4 and #seenB == 4, "both drain, just over more ticks")
-		assert(tickerMock.ActiveCount() == 0)
-	end)
-
 	fw.it("an urgent lane goes before the others", function()
 		-- What the on-demand displays hold: a plate is on screen waiting for its groups, while
 		-- the ordinary lanes are preparing spares nobody has asked for.
 		local spare = sweep:New()
-		local urgent = sweep:New(nil, true)
-		local seenSpare, collectSpare = Collector()
-		local seenUrgent, collectUrgent = Collector()
+		local urgent = sweep:New(true)
+		local seenSpare, collectSpare = Collector(DEAR_MS)
+		local seenUrgent, collectUrgent = Collector(DEAR_MS)
 
 		spare:Run(Items(6), collectSpare)
 		urgent:Run(Items(3), collectUrgent)
 
-		tickerMock.Tick(1)
-		assert(#seenUrgent == 3, "the urgent lane took the tick, got " .. #seenUrgent)
+		tickerMock.Tick(3)
+		assert(#seenUrgent == 3, "the urgent lane took every tick, got " .. #seenUrgent)
 		assert(#seenSpare == 0, "while the ordinary one waited")
 
-		tickerMock.Tick(3)
+		tickerMock.Tick(6)
 		assert(#seenSpare == 6, "which drains once there is nothing urgent left")
 		assert(tickerMock.ActiveCount() == 0)
 	end)
 
 	fw.it("two urgent lanes take turns rather than the older one taking everything", function()
 		-- Every module with something on screen holds an urgent lane, so picking the first one in
-		-- the list every time would hand the whole tick to whichever module loaded first.
-		local first = sweep:New(nil, true)
-		local second = sweep:New(nil, true)
-		local seenFirst, collectFirst = Collector()
-		local seenSecond, collectSecond = Collector()
+		-- the list every time would hand every tick to whichever module loaded first.
+		local first = sweep:New(true)
+		local second = sweep:New(true)
+		local seenFirst, collectFirst = Collector(DEAR_MS)
+		local seenSecond, collectSecond = Collector(DEAR_MS)
 
 		first:Run(Items(4), collectFirst)
 		second:Run(Items(4), collectSecond)
 
-		tickerMock.Tick(1)
-		assert(#seenFirst >= 1 and #seenSecond >= 1, "one urgent lane took the whole tick")
+		tickerMock.Tick(2)
+		assert(#seenFirst == 1 and #seenSecond == 1, "one urgent lane took both ticks")
 
-		tickerMock.Tick(3)
+		tickerMock.Tick(6)
 		assert(#seenFirst == 4 and #seenSecond == 4, "and both drain")
 		assert(tickerMock.ActiveCount() == 0)
 	end)
@@ -207,21 +244,22 @@ fw.describe("Sweep - shared budget across lanes", function()
 
 			lane:Run(Items(2), function(item)
 				laneSeen[#laneSeen + 1] = item.id
+				tickerMock.Advance(DEAR_MS)
 			end)
 		end
 
-		tickerMock.Tick(1)
-		assert(#seen[1] >= 1 and #seen[2] >= 1 and #seen[3] >= 1,
-			"a tick's slots must reach all three lanes")
+		tickerMock.Tick(3)
+		assert(#seen[1] == 1 and #seen[2] == 1 and #seen[3] == 1,
+			"three ticks must reach all three lanes")
 
-		tickerMock.Tick(2)
+		tickerMock.Tick(3)
 		assert(#seen[1] == 2 and #seen[2] == 2 and #seen[3] == 2, "everything drains")
 	end)
 
 	fw.it("one lane abandoning leaves the other running", function()
 		local laneA = sweep:New()
 		local laneB = sweep:New()
-		local seenB, collectB = Collector()
+		local seenB, collectB = Collector(DEAR_MS)
 
 		laneA:Run(Items(4), function()
 			return false
@@ -236,16 +274,16 @@ fw.describe("Sweep - shared budget across lanes", function()
 	fw.it("a lane's Run replaces only its own queue", function()
 		local laneA = sweep:New()
 		local laneB = sweep:New()
-		local seenA, collectA = Collector()
-		local seenB, collectB = Collector()
+		local seenA, collectA = Collector(DEAR_MS)
+		local seenB, collectB = Collector(DEAR_MS)
 
 		laneA:Run(Items(6), collectA)
 		laneB:Run(Items(3), collectB)
 		tickerMock.Tick(1)
 
-		-- However the tick's slots fell between the two lanes, the replaced run is finished here.
+		-- Whichever lane the tick fell to, the replaced run is finished here.
 		local beforeReplace = #seenA
-		local replaced, collectReplaced = Collector()
+		local replaced, collectReplaced = Collector(DEAR_MS)
 		laneA:Run(Items(2), collectReplaced)
 
 		tickerMock.Tick(6)
@@ -260,7 +298,7 @@ fw.describe("Sweep - shared budget across lanes", function()
 		-- Run a replacement on its own lane and then return false to kill the old run, and
 		-- stopping the lane afterwards would silently destroy the queue it just installed.
 		local lane = sweep:New()
-		local replaced, collectReplaced = Collector()
+		local replaced, collectReplaced = Collector(DEAR_MS)
 		local sawOldRun = false
 
 		lane:Run(Items(3), function()

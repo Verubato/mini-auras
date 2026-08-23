@@ -17,10 +17,6 @@ local sweep = addon.Core.Sweep
 -- itself would build a screen's worth of objects for a module the user has switched off. Call
 -- Prewarm from the module's enable path instead (it is idempotent and cheap to repeat).
 
--- What one pool may build in a single walker tick. Creating an item is a hundred times what
--- restyling one costs, so a fill takes a single slot where the shared budget would hand it more.
-local ITEMS_PER_TICK = 1
-
 ---@class Pool
 local M = {}
 M.__index = M
@@ -155,7 +151,7 @@ function M:Prewarm(targetCount, argsFn, argsCtx)
 	end
 
 	if not self.FillSweep then
-		self.FillSweep = sweep:New(ITEMS_PER_TICK)
+		self.FillSweep = sweep:New()
 	end
 
 	-- One queue slot per item still owed, re-counted here rather than resumed: a repeat call is
@@ -170,13 +166,13 @@ function M:Prewarm(targetCount, argsFn, argsCtx)
 	self.FillSweep:Run(queue, BuildOne, self)
 end
 
----Walks the parked items through refreshFn in the background, a couple per tick like the
+---Walks the parked items through refreshFn in the background, one per tick like the
 ---pre-creation fill, so a look change converges onto the free list while nothing it holds is on
 ---screen. The sweep visits newest items first, the same end Acquire and AcquireMatching take
----from, so a capped sweep spends its budget on exactly the items the next acquires will reach
----for. A later call on the same lane replaces a sweep still in flight, and refreshFn returning
----false abandons the sweep ("cannot restyle right now"). Either way the acquire path remains
----the guarantee - this is only a warm-up.
+---from, so a sweep capped by maxItems spends its visits on exactly the items the next acquires
+---will reach for. A later call on the same lane replaces a sweep still in flight, and refreshFn
+---returning false abandons the sweep ("cannot restyle right now"). Either way the acquire path
+---remains the guarantee - this is only a warm-up.
 ---@param refreshFn fun(item: table, refreshCtx: any): boolean? Returns false to abandon the sweep.
 ---@param refreshCtx any? Handed back to refreshFn, like Prewarm's argsCtx.
 ---@param maxItems number? Cap on items visited; defaults to the whole free list.

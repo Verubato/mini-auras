@@ -52,6 +52,9 @@ local ICON_SPACING = 1
 -- the size a solo player is most likely to become; past that the walker keeps up with the frames
 -- appearing, because a raid fills in over several seconds anyway.
 local PREWARM_FRAMES = 5
+-- The walker hands its callback the item that was queued. A spare build picks its own side, so
+-- this stands in for one.
+local PREWARM_ITEM = true
 -- Icons take a share of the frame's height rather than a fixed size, because a raid profile and a
 -- party profile size their frames very differently. This is what one falls back to when the client
 -- will not say how tall the frame is.
@@ -138,11 +141,11 @@ local spares = { Buffs = {}, Debuffs = {} }
 -- The spare currently being finished, so its groups are declared one per turn like every other
 -- build. Only ever one at a time: spares are the lowest-priority work the addon does.
 local prewarmBuilding
-local prewarmSweep = sweep:New(1)
+local prewarmSweep = sweep:New()
 -- Background walker declaring the aura groups of the displays as they are built. Urgent: these sit
 -- on unit frames the player is looking at. The engine allocates a batch of buttons the moment a
 -- group is declared, so a party converting to a raid would otherwise build eighty of them at once.
-local buildSweep = sweep:New(1, true)
+local buildSweep = sweep:New(true)
 
 ---@return FrameAurasModuleOptions?
 local function Options()
@@ -875,11 +878,24 @@ local function TakeSpare(side, frame, unit)
 	return display
 end
 
----One spare, a group per turn. Everything is re-read at fire time: the walk runs over seconds, in
----which the side can be switched off and the frames it was being held for can turn up on their own.
----@param side "Buffs"|"Debuffs"
+---The first side still short of a spare, or nil when both are stocked.
+---@return ("Buffs"|"Debuffs")?
+local function SideWantingSpare()
+	for _, side in ipairs(SIDES) do
+		if SparesWanted(side) > 0 then
+			return side
+		end
+	end
+
+	return nil
+end
+
+---A group per turn, and straight on to the next spare once one is banked, so the whole warm-up
+---rides on this single queued item. Everything is re-read at fire time: the walk runs over
+---seconds, in which a side can be switched off and the frames it was being held for can turn up
+---on their own.
 ---@return SweepVerdict?
-local function PrewarmNext(side)
+local function PrewarmNext()
 	if prewarmBuilding then
 		if prewarmBuilding.Display:AddNextGroup() and prewarmBuilding.Display:HasPendingGroups() then
 			return sweep.Verdict.Unfinished
@@ -888,11 +904,11 @@ local function PrewarmNext(side)
 		local pool = spares[prewarmBuilding.Side]
 		pool[#pool + 1] = prewarmBuilding.Display
 		prewarmBuilding = nil
-
-		return
 	end
 
-	if SparesWanted(side) <= 0 then
+	local side = SideWantingSpare()
+
+	if not side then
 		return
 	end
 
@@ -915,14 +931,14 @@ local function PrewarmNext(side)
 	return sweep.Verdict.Unfinished
 end
 
----Tops the spares up, if the walker is not already at it. Cheap to call from any refresh: the
----queue is only ever as long as what is still wanted.
+---Tops the spares up, if the walker is not already at it. Cheap to call from any refresh: the one
+---queued item walks the whole warm-up, so a refresh landing part way through adds nothing.
 local function QueuePrewarm()
-	for _, side in ipairs(SIDES) do
-		for _ = 1, math.max(0, SparesWanted(side)) do
-			prewarmSweep:Append(side, PrewarmNext)
-		end
+	if prewarmSweep:HasWork() or not SideWantingSpare() then
+		return
 	end
+
+	prewarmSweep:Append(PREWARM_ITEM, PrewarmNext)
 end
 
 ---The entry for a frame, built the first time the frame is seen. A side switched on after the entry

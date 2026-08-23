@@ -39,7 +39,7 @@ local MODULE_TAG = "Custom Auras"
 local PLATE_PREALLOCATE = 10
 -- Background walker declaring the groups of entries as they are handed out. Urgent: an entry
 -- being acquired is going on screen, unlike the pool's own fill.
-local buildSweep = sweep:New(1, true)
+local buildSweep = sweep:New(true)
 -- Arena enemy frames are fixed at three, so the copies are walked by index rather than discovered.
 local ARENA_OPPONENTS = 3
 -- Container sizes can be secret, so a draggable anchor's size is guessed from the budget.

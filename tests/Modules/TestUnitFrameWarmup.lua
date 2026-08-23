@@ -14,6 +14,10 @@ local acm = require("AuraContainerMock")
 -- the two spell-id-filtered helpful groups.
 local CC_GROUPS = 1
 local IMPORTANT_GROUPS = 3
+-- What the undisturbed warm-up costs, measured, with a little headroom. Each module's lane takes a
+-- tick of its own to start with, because a lane the walker has not seen run yet counts as dear
+-- until it has shown what its items cost.
+local WARMUP_TICKS = 4
 
 local env = moduleEnv.build()
 local db = env.db
@@ -68,6 +72,27 @@ fw.describe("Unit frame auras - warming up ahead of a group", function()
 		acm.tickAll(400)
 
 		assert(env.auraContainerCount() == before, "a switched-off module warmed containers up")
+	end)
+
+	fw.it("takes no longer for the refreshes that land while the walk is still going", function()
+		env.setModuleEnabled("CCModule", true)
+		env.setModuleEnabled("ImportantAurasModule", true)
+
+		refreshBoth()
+		acm.tickAll(1)
+
+		-- A roster settling fires a burst of these, every one of them while the spares the first
+		-- refresh asked for are still being built.
+		for _ = 1, 5 do
+			refreshBoth()
+		end
+
+		acm.tickAll(WARMUP_TICKS - 1)
+
+		assert(spareCount(CC_GROUPS) == 4, "crowd control had " .. spareCount(CC_GROUPS)
+			.. " spares after " .. WARMUP_TICKS .. " ticks, wanted 4")
+		assert(spareCount(IMPORTANT_GROUPS) == 4, "important auras had " .. spareCount(IMPORTANT_GROUPS)
+			.. " spares after " .. WARMUP_TICKS .. " ticks, wanted 4")
 	end)
 
 	fw.it("builds containers for the frames a group has yet to fill", function()

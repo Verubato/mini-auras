@@ -169,13 +169,11 @@ local freeDisplays = {}
 local builtCounts = {}
 -- Background walker converting parked bar displays after a look change; see QueueParkedRestyles.
 local parkedSweep = sweep:New()
--- Background walker filling the free lists, one display per tick. Building one is a hundred times
--- what restyling one costs, so this lane takes a single item where the shared budget would hand
--- it more.
-local prewarmSweep = sweep:New(1)
+-- Background walker filling the free lists, a display at a time.
+local prewarmSweep = sweep:New()
 -- The same walker for displays a plate is already holding. Urgent, because a plate on screen is
 -- waiting on these while the lane above is only working ahead of anyone asking.
-local demandSweep = sweep:New(1, true)
+local demandSweep = sweep:New(true)
 -- One reusable queue entry per (bar, faction), since the queue is the same pair repeated: the
 -- walker re-reads the options through it at fire time, so there is nothing per-item to carry.
 local prewarmItems = {}

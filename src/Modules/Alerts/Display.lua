@@ -96,10 +96,8 @@ local activeTokensScratch = {}
 local activePairsScratch = {}
 -- Background walker converting parked pairs after a look change; see RestyleStaleDisplayPairs.
 local parkedSweep = sweep:New()
--- Background walker building the prewarmed set, one pair per tick. Creating a pair is a hundred
--- times what restyling one costs, so this lane takes a single item where the shared budget would
--- hand it two.
-local prewarmSweep = sweep:New(1)
+-- Background walker building the prewarmed set, a pair at a time.
+local prewarmSweep = sweep:New()
 -- The pair the walker is part way through building, held across its turns. One lane, one build at
 -- a time, so a single field covers it.
 local prewarmBuilding

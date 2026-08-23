@@ -44,7 +44,7 @@ local PORTRAIT_CATEGORIES = { "Important", "ExternalDefensive", "BigDefensive", 
 -- Background walker declaring the aura groups of the displays as they are built; see the
 -- DeferGroups note where they are created. Urgent: a portrait is on screen already, unlike the
 -- lanes preparing spares nobody has asked for.
-local buildSweep = sweep:New(1, true)
+local buildSweep = sweep:New(true)
 
 -- The user's own spell list, drawn under every flagged category so a stun or a defensive always
 -- covers it. Player only, and buffs only: the engine honours a helpful spell-id map only on a

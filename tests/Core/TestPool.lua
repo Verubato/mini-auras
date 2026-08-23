@@ -42,37 +42,41 @@ local function PoolWithParked(count)
 	return instance
 end
 
-local function Collector()
+---@param ms number? What each visit spends of the sweep's tick budget; free by default, which
+---lets a tick drain the whole free list.
+local function Collector(ms)
 	local seen = {}
 
 	return seen, function(item)
 		seen[#seen + 1] = item.id
+
+		if ms then
+			tickerMock.Advance(ms)
+		end
 	end
 end
 
 fw.describe("Pool - RefreshFree", function()
 	fw.before_each(tickerMock.Reset)
 
-	fw.it("sweeps every parked item a few per tick, then stops", function()
+	fw.it("sweeps every parked item in the background, then stops", function()
 		local instance = PoolWithParked(5)
 		local seen, collect = Collector()
 
 		instance:RefreshFree(collect)
+		assert(#seen == 0, "the sweep ran inline instead of waiting for a tick")
 
 		tickerMock.Tick(1)
-		assert(#seen == 3, "the whole per-tick budget, since nothing else is sweeping")
-
-		tickerMock.Tick(2)
-		assert(#seen == 5, "the whole free list visited")
+		assert(#seen == 5, "the whole free list visited, got " .. #seen)
 		assert(tickerMock.ActiveCount() == 0, "sweep ticker stopped once the queue drained")
 
 		tickerMock.Tick(3)
 		assert(#seen == 5, "a finished sweep does nothing more")
 	end)
 
-	fw.it("visits the newest items first and honours the cap", function()
+	fw.it("visits the newest items first and honours the maxItems cap", function()
 		-- Acquire and AcquireMatching take from the newest end, so a capped sweep must spend its
-		-- budget on the items the next acquires will actually reach for.
+		-- visits on the items the next acquires will actually reach for.
 		local instance = PoolWithParked(5)
 		local seen, collect = Collector()
 
@@ -117,7 +121,8 @@ fw.describe("Pool - RefreshFree", function()
 
 	fw.it("a later sweep replaces the one in flight", function()
 		local instance = PoolWithParked(4)
-		local first, collectFirst = Collector()
+		-- Dear enough that the first sweep is still only one item in when it is replaced.
+		local first, collectFirst = Collector(1.25)
 		local second, collectSecond = Collector()
 
 		instance:RefreshFree(collectFirst)

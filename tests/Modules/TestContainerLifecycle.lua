@@ -11,6 +11,10 @@ local db = env.db
 -- How many tokens the prewarm prepares under test. Small on purpose; see the note at the module
 -- loads below.
 local PREWARM_TOKENS = 14
+-- What a prewarm walk costs from the tick that starts it. Measured at one: the items cost nothing
+-- on the test clock, so a tick's budget covers the whole queue. The headroom is for the lane
+-- having to wait its turn behind whatever else is still walking.
+local WALK_TICKS = 5
 
 -- Force everything relevant on, world context.
 db.Modules.AlertsModule.Enabled.Always = true
@@ -1085,14 +1089,13 @@ fw.describe("NameplatesModule 12.1 - prewarming the plate displays", function()
 		return list
 	end
 
-	-- The set is paced through the shared background walker, one display per tick, so a test
-	-- wanting the whole of it has to let the walk run. Generous on ticks: the budget is shared
-	-- with every other lane.
+	-- The set is paced through the shared background walker, so a test wanting the whole of it has
+	-- to let the walk run.
 	local function refreshDuringLoadingScreen()
 		env.loadingScreenUp = true
 		nameplates:Refresh()
 		env.loadingScreenUp = false
-		acm.tickAll(PREWARM_TOKENS * 4)
+		acm.tickAll(WALK_TICKS)
 	end
 
 	fw.it("builds nothing during play, so a refresh mid-session costs no containers", function()
@@ -1215,13 +1218,12 @@ fw.describe("AlertsModule 12.1 - prewarming the display pairs", function()
 	local alerts = env.addon.Modules.AlertsModule
 
 	-- The set is paced through the background walker a group at a time, so a test wanting all of
-	-- it has to let the walk run. Generous on ticks: the walker's budget is shared with every
-	-- other lane, and a pair takes a turn for its containers plus one per group.
+	-- it has to let the walk run.
 	local function prepareDuringLoadingScreen()
 		env.loadingScreenUp = true
 		alerts:Refresh()
 		env.loadingScreenUp = false
-		acm.tickAll(PREWARM_TOKENS * 10)
+		acm.tickAll(WALK_TICKS)
 	end
 
 	fw.it("builds nothing in the refresh, and the set through the walker", function()
@@ -1253,7 +1255,7 @@ fw.describe("AlertsModule 12.1 - prewarming the display pairs", function()
 		acm.tickAll(1)
 		assert(env.auraContainerCount() > created, "the walker did not start the set")
 
-		acm.tickAll(PREWARM_TOKENS * 10)
+		acm.tickAll(WALK_TICKS)
 
 		-- Counting the set is no use here: earlier blocks have plates on some of these tokens,
 		-- so those pairs already existed. What the walk owes is that the last token in the set
