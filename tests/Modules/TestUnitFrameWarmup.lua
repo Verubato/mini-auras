@@ -38,6 +38,7 @@ local importantAuras = env.addon.Modules.ImportantAurasModule
 importantAuras:Init()
 
 local ccOptions = db.Modules.CCModule.Default
+local importantOptions = db.Modules.ImportantAurasModule.Default
 
 ---How many spares are waiting. A spare tracks nobody until a frame takes it, and the two modules
 ---are told apart by how many groups their displays carry.
@@ -128,14 +129,16 @@ fw.describe("Unit frame auras - warming up ahead of a group", function()
 		assert(#env.containersForUnit("party2") == 2, "and both of them track the new unit")
 	end)
 
-	fw.it("throws away the spares a budget change has reshaped", function()
+	fw.it("replaces the spares a budget change has reshaped", function()
 		assert(spareCount(CC_GROUPS) > 0, "fixture: crowd control has spares waiting")
 
-		-- A group's buttons are handed out from the count it was declared with, so a spare built
-		-- to the old budget could never draw the new one.
+		-- A group's buttons are handed out from the count it was declared with, so a spare built to
+		-- the old budget could never draw the new one. Left on the list it would still count
+		-- towards the target, and the warm-up would quietly stop replacing it.
 		ccOptions.Icons.Count = (ccOptions.Icons.Count or 5) + 1
 
 		crowdControl:Refresh()
+		acm.tickAll(WARMUP_TICKS)
 
 		local before = env.auraContainerCount()
 
@@ -143,8 +146,28 @@ fw.describe("Unit frame auras - warming up ahead of a group", function()
 
 		crowdControl:Refresh()
 
-		assert(env.auraContainerCount() == before + 1,
-			"the frame was handed a spare built to the icon budget nobody is using any more")
+		assert(env.auraContainerCount() == before,
+			"the frame paid to build its own instead of taking a spare warmed to the new budget")
+	end)
+
+	fw.it("replaces the important auras spares a budget change has reshaped", function()
+		importantAuras:Refresh()
+		acm.tickAll(WARMUP_TICKS)
+		assert(spareCount(IMPORTANT_GROUPS) > 0, "fixture: important auras has spares waiting")
+
+		importantOptions.Icons.MaxIcons = (tonumber(importantOptions.Icons.MaxIcons) or 1) + 1
+
+		importantAuras:Refresh()
+		acm.tickAll(WARMUP_TICKS)
+
+		local before = env.auraContainerCount()
+
+		env.addUnitFrame("party4", "CUF_ReshapedImportant")
+
+		importantAuras:Refresh()
+
+		assert(env.auraContainerCount() == before,
+			"the frame paid to build its own instead of taking a spare warmed to the new budget")
 	end)
 
 	fw.it("nothing was reported through Notify", function()

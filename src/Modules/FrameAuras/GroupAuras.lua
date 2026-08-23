@@ -799,6 +799,13 @@ end
 
 ---Throws away the spares that no longer match what a frame would be given today.
 local function DropStaleSpares()
+	-- The one the walker is part way through counts too: it was started at the old shape and
+	-- nothing checks a spare's shape again once it is banked.
+	if prewarmBuilding and prewarmBuilding.Display.FrameAurasShape ~= ShapeOf(prewarmBuilding.Side) then
+		prewarmBuilding.Display:SetShown(false)
+		prewarmBuilding = nil
+	end
+
 	for _, side in ipairs(SIDES) do
 		local pool = spares[side]
 		local shape = ShapeOf(side)

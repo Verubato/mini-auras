@@ -221,6 +221,37 @@ local function SparesWanted()
 	return PREWARM_FRAMES - built - #spares
 end
 
+---Throws away the spares built for an icon count nobody is using any more. A group's buttons are
+---fixed at the count it was declared with, so these can never be handed out, and while they sit on
+---the list the target looks met and nothing replaces them.
+local function DropStaleSpares()
+	local options = GetOptions()
+
+	if not options then
+		return
+	end
+
+	local count = options.Icons.Count or 5
+
+	-- The one the walker is part way through counts too: it was started at the old budget and
+	-- would be banked at it.
+	if prewarmBuilding and prewarmBuilding.MaxIcons ~= count then
+		prewarmBuilding = nil
+	end
+
+	for index = #spares, 1, -1 do
+		local spare = spares[index]
+
+		if spare.MaxIcons ~= count then
+			-- Nothing releases a display; it is simply never handed out. The engine cannot free a
+			-- container or the buttons under it either way.
+			spare.Display:Hide()
+			spare.Container.Frame:Hide()
+			table.remove(spares, index)
+		end
+	end
+end
+
 ---A container and a display for no frame in particular, built to the current member settings.
 ---@param options table
 ---@return CrowdControlSpare
@@ -629,6 +660,8 @@ end
 ---Tops the spares up, if the walker is not already at it. Cheap to call from any refresh: the one
 ---queued item walks the whole warm-up, so a refresh landing part way through adds nothing.
 function M:QueuePrewarm()
+	DropStaleSpares()
+
 	if prewarmSweep:HasWork() or SparesWanted() <= 0 then
 		return
 	end

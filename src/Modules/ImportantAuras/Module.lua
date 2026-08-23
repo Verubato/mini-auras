@@ -150,7 +150,6 @@ end
 
 ---@param options ImportantAurasInstanceOptions
 local function Apply(options)
-	-- A spare is only a spare while it still matches what a frame would be given.
 	display:EnsureFrames()
 	display:ApplyOptions(options)
 	UpdateContent()
