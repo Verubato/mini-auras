@@ -58,8 +58,7 @@ addon.Modules.FrameAuras.TargetAuras = M
 
 -- Held back until 12.1.5, which lets an aura container carry its icon cap rather than each group
 -- inside it. The buff row needs two groups to colour the purgeable ones apart, and a per-group cap
--- means a target carrying both kinds draws twice the row the player asked for. Off here and hidden
--- on the options page, so nothing is drawn and nobody can switch it on.
+-- means a target carrying both kinds draws twice the row the player asked for.
 M.Available = false
 
 local active = false

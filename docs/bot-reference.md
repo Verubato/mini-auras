@@ -335,6 +335,10 @@ the old Precognition module's settings is frozen at what that release shipped.
   debuffs.
 - **Type**: **Spell IDs** or **Aura filters** (the two tracking modes). Hidden for a Sound only
   group, which is always Spell IDs.
+- **Show when**: **Always** (the default), **In combat** or **Out of combat**. On a row of its own
+  under the four above, since those already fill the width. The whole group is held back while the
+  player's combat state does not match, its sounds included. Test mode ignores it, so a preview
+  always draws. Groups saved before this option have no field and read as Always.
 
 **The spell-ID rule (why some combinations are refused).** The game only honours a spell-ID
 filter for helpful auras on units you can assist, and for harmful auras on units you cannot;

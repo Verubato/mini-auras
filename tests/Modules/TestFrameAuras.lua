@@ -985,7 +985,9 @@ local function GlowOn(container, groupKey)
 end
 
 -- The target and focus rows are finished but held back until 12.1.5, when a container can carry
--- its own icon cap; the describes below switch them on to test what will ship then.
+-- its own icon cap; the describes after this one switch them on to test what will ship then. This
+-- one has to come first: a container is never destroyed, so once a later describe has built the
+-- rows once, "nothing is built" could not be told from "something was built earlier".
 fw.describe("Frame Auras - the target rows this build holds back", function()
 	fw.before_each(function()
 		module:StopTesting()
@@ -994,10 +996,6 @@ fw.describe("Frame Auras - the target rows this build holds back", function()
 
 		module:Refresh()
 		acm.tickAll(400)
-	end)
-
-	fw.it("ships held back", function()
-		assert(not TARGET_ROWS_SHIPPED, "the switch that brings them back is off")
 	end)
 
 	fw.it("draws nothing, even for a profile that saved the switch on", function()
