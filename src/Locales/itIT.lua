@@ -464,6 +464,7 @@ L:RegisterLocale("itIT", function() return {
 	["Debuffs"] = "Penalità",
 	["Buffs take the first row and debuffs the second, with the debuffs moving up when the target has no buffs."] = "I benefici occupano la prima riga e le penalità la seconda. Le penalità salgono quando il bersaglio non ha benefici.",
 	["Replaces Blizzard's own buffs and debuffs on the party, raid, target, and focus frames."] = "Sostituisce i benefici e le penalità di Blizzard sui riquadri di gruppo, incursione, bersaglio e focus.",
+	["Replaces Blizzard's own buffs and debuffs on the party and raid frames."] = "Sostituisce i benefici e le penalità di Blizzard sui riquadri di gruppo e incursione.",
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Sostituisce le aure di Blizzard sui riquadri di bersaglio e focus con queste.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Sostituisce i benefici di Blizzard sui riquadri di gruppo e incursione con questi.",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "Sostituisce le penalità di Blizzard sui riquadri di gruppo e incursione con queste.",

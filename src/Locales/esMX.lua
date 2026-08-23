@@ -467,6 +467,7 @@ L:RegisterLocale("esMX", function() return {
 	["Debuffs"] = "Perjuicios",
 	["Buffs take the first row and debuffs the second, with the debuffs moving up when the target has no buffs."] = "Los beneficios ocupan la primera fila y los perjuicios la segunda. Los perjuicios suben cuando el objetivo no tiene beneficios.",
 	["Replaces Blizzard's own buffs and debuffs on the party, raid, target, and focus frames."] = "Sustituye los beneficios y perjuicios propios de Blizzard en los marcos de grupo, banda, objetivo y foco.",
+	["Replaces Blizzard's own buffs and debuffs on the party and raid frames."] = "Sustituye los beneficios y perjuicios propios de Blizzard en los marcos de grupo y banda.",
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Sustituye las auras de Blizzard en los marcos de objetivo y foco por estas.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Sustituye los beneficios de Blizzard en los marcos de grupo y banda por estos.",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "Sustituye los perjuicios de Blizzard en los marcos de grupo y banda por estos.",

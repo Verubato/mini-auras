@@ -466,6 +466,7 @@ L:RegisterLocale("koKR", function() return {
 	["Debuffs"] = "디버프",
 	["Buffs take the first row and debuffs the second, with the debuffs moving up when the target has no buffs."] = "버프가 첫 번째 줄, 디버프가 두 번째 줄을 차지하며, 대상에게 버프가 없으면 디버프가 위로 올라옵니다.",
 	["Replaces Blizzard's own buffs and debuffs on the party, raid, target, and focus frames."] = "파티, 공격대, 대상, 주시 대상 프레임의 블리자드 버프와 디버프를 대체합니다.",
+	["Replaces Blizzard's own buffs and debuffs on the party and raid frames."] = "파티 및 공격대 프레임에서 블리자드의 버프와 디버프를 대체합니다.",
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "대상 및 주시 대상 프레임의 블리자드 오라를 이것으로 대체합니다.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "파티 및 공격대 프레임의 블리자드 버프를 이것으로 대체합니다.",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "파티 및 공격대 프레임의 블리자드 디버프를 이것으로 대체합니다.",

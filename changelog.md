@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Added a "Show when" option to a personal aura's trigger, so a group can be limited to in combat or out of combat.
-- Added a Frame Auras module, which draws the auras on Blizzard's own party, raid, target, and focus frames in place of the ones the game puts there. Four parts, each with its own switch: the group buff row (with a tracked spell list and a pandemic glow), the group debuff row, a mark for a member missing your class buff, and the target and focus rows (which light up the buffs you can purge off an enemy, and put them first). All four ship switched off.
+- Added a Frame Auras module, which draws the auras on Blizzard's own party and raid frames in place of the ones the game puts there. Three parts, each with its own switch: the group buff row (with a tracked spell list and a pandemic glow), the group debuff row, and a mark for a member missing your class buff. All three ship switched off.
 - Renamed "Group Auras" to "Important Auras", so the new module's name is not read as the same thing.
 
 ## 5.22.0

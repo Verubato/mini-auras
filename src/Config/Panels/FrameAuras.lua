@@ -9,6 +9,7 @@ local dbDefaults = addon.Config.Defaults
 local trackedBuffs = addon.Core.TrackedBuffs
 local classBuffs = addon.Core.ClassBuffs
 local spells = addon.Modules.FrameAuras.Spells
+local targetAuras = addon.Modules.FrameAuras.TargetAuras
 
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
@@ -759,7 +760,9 @@ function M:Build(panel)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			L["Replaces Blizzard's own buffs and debuffs on the party, raid, target, and focus frames."],
+			targetAuras.Available
+				and L["Replaces Blizzard's own buffs and debuffs on the party, raid, target, and focus frames."]
+				or L["Replaces Blizzard's own buffs and debuffs on the party and raid frames."],
 		},
 	})
 
@@ -771,28 +774,34 @@ function M:Build(panel)
 	tabContainer:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, 0)
 	tabContainer:SetHeight(TAB_HEIGHT + 34)
 
+	local tabs = {
+		{ Key = "buffs", Title = L["Buffs"] },
+		{ Key = "debuffs", Title = L["Debuffs"] },
+		{ Key = "classbuff", Title = L["Missing Buff"] },
+		{ Key = "spells", Title = L["Spells"] },
+	}
+
+	local builders = {
+		buffs = function(content) BuildBuffs(content, options.Buffs) end,
+		debuffs = function(content) BuildDebuffs(content, options.Debuffs) end,
+		classbuff = function(content) BuildClassBuff(content, options.ClassBuff) end,
+		spells = BuildSpells,
+	}
+
+	-- Leads the page when it comes back; see TargetAuras for what it is waiting on.
+	if targetAuras.Available then
+		table.insert(tabs, 1, { Key = "target", Title = L["Target & Focus"] })
+		builders.target = function(content) BuildTargetFocus(content, options.TargetFocus) end
+	end
+
 	local tabCtrl = mini:CreateTabs({
 		Parent = tabContainer,
 		TabHeight = 28,
 		StripHeight = 34,
 		TabFitToParent = true,
 		ContentInsets = { Top = verticalSpacing },
-		Tabs = {
-			{ Key = "target", Title = L["Target & Focus"] },
-			{ Key = "buffs", Title = L["Buffs"] },
-			{ Key = "debuffs", Title = L["Debuffs"] },
-			{ Key = "classbuff", Title = L["Missing Buff"] },
-			{ Key = "spells", Title = L["Spells"] },
-		},
+		Tabs = tabs,
 	})
-
-	local builders = {
-		target = function(content) BuildTargetFocus(content, options.TargetFocus) end,
-		buffs = function(content) BuildBuffs(content, options.Buffs) end,
-		debuffs = function(content) BuildDebuffs(content, options.Debuffs) end,
-		classbuff = function(content) BuildClassBuff(content, options.ClassBuff) end,
-		spells = BuildSpells,
-	}
 
 	for key, build in pairs(builders) do
 		local content = tabCtrl:GetContent(key)

@@ -606,13 +606,15 @@ an updated curated list still reaches existing profiles.
 
 ## Frame Auras
 
-Sidebar: General > Frame Auras. Draws the auras on Blizzard's own party, raid, target, and focus
-frames, in place of the ones the game puts there. Separate from Important Auras, which adds a row
-of tracked CC and defensive icons on top of whatever else is on a frame; this one **replaces**
-what Blizzard draws.
+Sidebar: General > Frame Auras. Draws the auras on Blizzard's own party and raid frames, in place
+of the ones the game puts there. Separate from Important Auras, which adds a row of tracked CC and
+defensive icons on top of whatever else is on a frame; this one **replaces** what Blizzard draws.
 
 No "Enable in" row: these stand in for frames the game draws everywhere, so they are on or off
-everywhere. Five sub-tabs. The first four each carry their own switch, and **all four ship switched off**; Spells is the buff whitelist the Buffs tab filters against.
+everywhere. Four sub-tabs. The first three each carry their own switch, and **all three ship switched off**; Spells is the buff whitelist the Buffs tab filters against.
+
+A fourth part, the target and focus rows, is built but held back and has no sub-tab: it needs the
+icon cap to sit on the aura container rather than on each group inside it, which arrives in 12.1.5.
 
 **Buffs sub-tab.** Replaces the buff row on the party and raid frames, in the bottom right corner
 growing left and wrapping upward. Blizzard's **compact** frames only, since those are the ones the
@@ -659,23 +661,6 @@ anything. A class that brings no group buff sees a line saying so and nothing to
 - Icon size 25-50 (percent of the frame's height). The corner is fixed, like the corners the buff
   and debuff rows take.
 
-**Target & Focus sub-tab.** Replaces the aura rows on the target and focus frames. Buffs take
-the first row and debuffs the second, with the debuffs moving up when the target has no buffs. The
-cast bar is re-anchored under both rows so it no longer overlaps them. There is no cvar for these
-rows, so Blizzard's own container is emptied and disabled instead, and handed back when the switch
-goes off.
-
-- Icon size 12-40 (pixels, since these frames are a fixed size), max icons 1-12, icons per row
-  1-12.
-- **Filtered** - only the spells ticked on the Spells tab. Bites on a friendly target only: a
-  spell-ID map is identity-gated, so the engine honours it for a helpful aura on a unit you can
-  assist and silently skips it on an enemy.
-- **Only short buffs** - hides buffs running longer than two minutes.
-- **My buffs** - on a unit you can help, only the buffs you cast. An enemy still shows the buffs
-  worth purging.
-- **My debuffs** - on a unit you cannot help, only the debuffs you applied. A friend still shows
-  every debuff on them.
-
 **Spells sub-tab.** The buff whitelist the Buffs tab's **Filtered** switch draws from; with that
 switch off, every buff on the unit reaches the corner instead. A sidebar of sections, one per class
 that has tracked heal-over-time or shield spells, then Custom. Each spell is a checkbox with its
@@ -687,7 +672,7 @@ A row is only built for a frame that is actually on screen, and once the module 
 five frames' worth of spare rows in the background so a group forming does not have to wait for
 them. A frame that appears takes a waiting spare rather than paying to build one.
 
-**Test mode.** The Test button previews all four parts at once. The preview follows the category
+**Test mode.** The Test button previews all three parts at once. The preview follows the category
 switches: turning crowd control on puts a stun at the head of the debuff row and turning it off
 takes it back out, so each switch visibly does something. On 12.1 an aura container is
 engine-driven and cannot be handed fake auras, so the preview is a separate row of stand-in icons

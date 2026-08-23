@@ -130,6 +130,9 @@ env.loadModule("src/Modules/FrameAuras/Module.lua")
 
 local spells = env.addon.Modules.FrameAuras.Spells
 local partyAuras = env.addon.Modules.FrameAuras.PartyAuras
+local targetAuras = env.addon.Modules.FrameAuras.TargetAuras
+-- Read before any describe switches it on, so the shipped answer is what gets asserted.
+local TARGET_ROWS_SHIPPED = targetAuras.Available
 local module = env.addon.Modules.FrameAurasModule
 local testSpells = env.addon.Core.TestSpells
 local trackedBuffs = env.addon.Core.TrackedBuffs
@@ -981,9 +984,41 @@ local function GlowOn(container, groupKey)
 	return nil
 end
 
+-- The target and focus rows are finished but held back until 12.1.5, when a container can carry
+-- its own icon cap; the describes below switch them on to test what will ship then.
+fw.describe("Frame Auras - the target rows this build holds back", function()
+	fw.before_each(function()
+		module:StopTesting()
+		targetAuras.Available = false
+		options.TargetFocus.Enabled = true
+
+		module:Refresh()
+		acm.tickAll(400)
+	end)
+
+	fw.it("ships held back", function()
+		assert(not TARGET_ROWS_SHIPPED, "the switch that brings them back is off")
+	end)
+
+	fw.it("draws nothing, even for a profile that saved the switch on", function()
+		assert(not BuffContainer(targetFrame), "no buff row is built")
+		assert(not DebuffContainer(targetFrame), "and no debuff row either")
+	end)
+
+	fw.it("leaves the client's own container and cast bar alone", function()
+		local point, relativeTo, relativePoint = targetFrame.spellbar:GetPoint(1)
+
+		assert(blizzardAuras:IsEnabled() and blizzardAuras:IsShown(),
+			"Blizzard keeps drawing the auras it always did")
+		assert(relativeTo == targetFrame and point == CASTBAR_HOME.Point
+			and relativePoint == CASTBAR_HOME.RelativePoint, "and the cast bar stays where it was")
+	end)
+end)
+
 fw.describe("Frame Auras - the purge glow on the target row", function()
 	fw.before_each(function()
 		module:StopTesting()
+		targetAuras.Available = true
 		options.TargetFocus.Enabled = true
 		options.TargetFocus.PurgeGlow = true
 
@@ -1067,6 +1102,7 @@ end)
 fw.describe("Frame Auras - how the target rows stack", function()
 	fw.before_each(function()
 		module:StopTesting()
+		targetAuras.Available = true
 		options.TargetFocus.Enabled = true
 
 		module:Refresh()
@@ -1092,6 +1128,7 @@ end)
 fw.describe("Frame Auras - handing the target frame back", function()
 	fw.before_each(function()
 		module:StopTesting()
+		targetAuras.Available = true
 		options.TargetFocus.Enabled = false
 		module:Refresh()
 
@@ -1180,3 +1217,5 @@ fw.describe("Frame Auras - handing the target frame back", function()
 		assert(x == CASTBAR_HOME.X and y == CASTBAR_HOME.Y, "at the client's own offset")
 	end)
 end)
+
+targetAuras.Available = TARGET_ROWS_SHIPPED

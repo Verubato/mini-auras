@@ -466,6 +466,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Debuffs"] = "Ослабления",
 	["Buffs take the first row and debuffs the second, with the debuffs moving up when the target has no buffs."] = "Усиления занимают первый ряд, а ослабления второй. Ослабления поднимаются вверх, когда у цели нет усилений.",
 	["Replaces Blizzard's own buffs and debuffs on the party, raid, target, and focus frames."] = "Заменяет собственные усиления и ослабления Blizzard на рамках группы, рейда, цели и фокуса.",
+	["Replaces Blizzard's own buffs and debuffs on the party and raid frames."] = "Заменяет усиления и ослабления Blizzard на рамках группы и рейда.",
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Заменяет ауры Blizzard на рамках цели и фокуса этими.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Заменяет усиления Blizzard на рамках группы и рейда этими.",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "Заменяет ослабления Blizzard на рамках группы и рейда этими.",
