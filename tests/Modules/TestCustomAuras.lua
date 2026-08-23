@@ -2055,6 +2055,68 @@ fw.describe("CustomAuras - sounds", function()
 	end)
 end)
 
+fw.describe("CustomAuras - filters the sound cannot honour", function()
+	-- A registration is (unit, spell id, file), so the caster narrowing that shapes the icons is
+	-- not in it. The sounds tab says so rather than letting the group sound wrong quietly.
+	fw.it("says so when the group only wants its own casts", function()
+		local group = groups:Normalise({
+			Spells = { ICE_BLOCK },
+			Caster = groups.Caster.Mine,
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+
+		assert(groups:SoundIgnoresFilters(group), "the sound plays for anyone's cast")
+	end)
+
+	fw.it("says so for a flag the registration cannot carry either", function()
+		local group = groups:Normalise({
+			Spells = { ICE_BLOCK },
+			Candidates = { isFromPlayerOrPlayerPet = "REQUIRE" },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+
+		assert(groups:SoundIgnoresFilters(group), "a flag is no more reachable than the caster")
+	end)
+
+	fw.it("stays quiet about a group whose filters the sound already matches", function()
+		local group = groups:Normalise({
+			Spells = { ICE_BLOCK },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+
+		assert(not groups:SoundIgnoresFilters(group), "nothing narrows this one")
+	end)
+
+	fw.it("stays quiet about a silent group, however it filters", function()
+		local group = groups:Normalise({
+			Spells = { ICE_BLOCK },
+			Caster = groups.Caster.Mine,
+		})
+
+		assert(not groups:SoundIgnoresFilters(group), "there is no sound to be wrong")
+	end)
+
+	fw.it("stays quiet about a sound-only group, whose filters shape nothing", function()
+		local group = groups:Normalise({
+			Spells = { ICE_BLOCK },
+			Caster = groups.Caster.Mine,
+			Icons = { Display = groups.DisplayStyle.SoundOnly },
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+
+		assert(not groups:SoundIgnoresFilters(group), "there is no display for them to shape")
+	end)
+
+	fw.it("stays quiet about a group with no spells in it yet", function()
+		local group = groups:Normalise({
+			Caster = groups.Caster.Mine,
+			Sound = { Applied = "Sonar", Channel = "Master" },
+		})
+
+		assert(not groups:SoundIgnoresFilters(group), "nothing is registered to sound wrong")
+	end)
+end)
+
 fw.describe("CustomAuras - sounds from media addons", function()
 	-- A media addon registers its sounds whenever it happens to load, which is routinely after our
 	-- first registration pass. The engine bakes the file into the registration, so resolving to the

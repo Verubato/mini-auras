@@ -7,9 +7,11 @@ local groups = addon.Modules.CustomAuras.Groups
 local ui = addon.Config.CustomAurasUI
 local DROPDOWN_WIDTH = 180
 local ROW_GAP = 10
--- The editor's own tab strip.
+-- The editor's own tab strip. The spacing is the strip's own default, named here because the
+-- editor re-anchors the buttons itself when one of them is put away.
 local TAB_HEIGHT = 24
 local TAB_WIDTH = 120
+local TAB_SPACING = 4
 -- Tall enough for the group's icon at grid size, which is what sets this row.
 local HEADER_ROW_HEIGHT = ui.TileSize + 4
 
@@ -95,6 +97,7 @@ function ui.BuildEditor(editor)
 		Parent = editor,
 		Height = TAB_HEIGHT,
 		Width = TAB_WIDTH,
+		Spacing = TAB_SPACING,
 		Tabs = {
 			{ Key = "trigger", Title = L["Trigger"] },
 			{ Key = "filters", Title = L["Filters"] },
@@ -109,13 +112,46 @@ function ui.BuildEditor(editor)
 	tabStrip.Frame:SetPoint("TOPLEFT", nameRow, "BOTTOMLEFT", 0, -ROW_GAP)
 	tabStrip.Frame:SetPoint("RIGHT", editor, "RIGHT", 0, 0)
 
-	-- Engine-side sounds register per spell id, which a filter group does not have, so the
-	-- sounds tab is put away for one. Last in the strip, so hiding it leaves no gap.
-	local soundsTabButton
+	---Whether a tab has anything to say about this group. Engine-side sounds register per spell
+	---id, which a filter group does not have; a sound-only group draws nothing, so the three tabs
+	---that shape a display are about nothing at all. The display style itself sits on the trigger
+	---tab, which is what keeps hiding the other three from stranding anyone in sound-only.
+	---@param group CustomAuraGroup
+	---@param key string
+	---@return boolean
+	local function TabApplies(group, key)
+		if key == "trigger" then
+			return true
+		end
 
-	for _, button in ipairs(tabStrip.Buttons) do
-		if button.Key == "sounds" then
-			soundsTabButton = button
+		if key == "sounds" then
+			return groups:TracksSpells(group)
+		end
+
+		return not groups:IsSoundOnly(group)
+	end
+
+	---Shows the tabs the group can use, closing the gap a hidden one leaves rather than parking
+	---the rest around a hole.
+	---@param group CustomAuraGroup
+	local function RefreshTabs(group)
+		local position = 0
+
+		for _, button in ipairs(tabStrip.Buttons) do
+			local applies = TabApplies(group, button.Key)
+
+			button:SetShown(applies)
+
+			if applies then
+				button:ClearAllPoints()
+				button:SetPoint("LEFT", tabStrip.Frame, "LEFT",
+					position * (TAB_WIDTH + TAB_SPACING), 0)
+				position = position + 1
+			end
+		end
+
+		if not TabApplies(group, tabStrip.GetSelected()) then
+			tabStrip:Select("trigger")
 		end
 	end
 
@@ -168,10 +204,22 @@ function ui.BuildEditor(editor)
 		end
 	end
 
+	---Set once the sounds tab is built, below.
+	---@type fun(group: CustomAuraGroup)?
+	local refreshCaveat
+
 	---@param key string
 	function editor.SelectTab(key)
 		for panelKey, panel in pairs(panels) do
 			panel:SetShown(panelKey == key)
+		end
+
+		-- The sounds tab carries a caveat about the filters, which live on another tab, so it is
+		-- re-asked on the way in rather than only when the group changes.
+		local group = key == "sounds" and refreshCaveat and ui.Current()
+
+		if group then
+			refreshCaveat(group)
 		end
 
 		UpdateEditorHeight()
@@ -358,7 +406,7 @@ function ui.BuildEditor(editor)
 	local refreshFlags = ui.BuildFiltersTab(ctx)
 	local refreshAppearance = ui.BuildAppearanceTab(ctx)
 	local refreshLayout = ui.BuildLayoutTab(ctx)
-	ui.BuildSoundsTab(ctx)
+	refreshCaveat = ui.BuildSoundsTab(ctx)
 	local refreshTriggerState, refreshTriggerLists = ui.BuildTriggerTab(ctx, refreshFlags)
 
 	function editor.Refresh()
@@ -373,17 +421,11 @@ function ui.BuildEditor(editor)
 		-- below indexes those directly, so fill them in first rather than nil-guarding each read.
 		groups:Normalise(group)
 
-		local hasSounds = groups:TracksSpells(group)
-
-		soundsTabButton:SetShown(hasSounds)
-
-		if not hasSounds and tabStrip.GetSelected() == "sounds" then
-			tabStrip:Select("trigger")
-		end
-
+		RefreshTabs(group)
 		refreshTriggerState(group)
 		refreshAppearance(group)
 		refreshLayout(group)
+		refreshCaveat(group)
 
 		iconButton.Icon:SetTexture(groups:GetIcon(group))
 		enabledCheck:SetChecked(group.Enabled)

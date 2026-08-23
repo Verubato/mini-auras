@@ -673,6 +673,40 @@ function M:HasSound(group)
 	return false
 end
 
+---Whether the group's filters reach further than its sounds can. The engine plays a sound per
+---(unit, spell id) with nothing in the registration to say who cast the aura, so a caster or
+---flag narrowing shapes the display and is ignored by the sound.
+---@param group CustomAuraGroup
+---@return boolean
+function M:SoundIgnoresFilters(group)
+	-- The same three things CollectSoundRequests asks before it registers anything: a group with
+	-- no spells in it yet has no sound to be wrong about.
+	if not M:HasSound(group) or not M:TracksSpells(group) or #group.Spells == 0 then
+		return false
+	end
+
+	-- A sound-only group builds no container, so its filters shape nothing at all and there is
+	-- no gap between what it shows and what it plays. Its filters tab is put away for the same
+	-- reason.
+	if M:IsSoundOnly(group) then
+		return false
+	end
+
+	if group.Caster ~= CASTER_ANY then
+		return true
+	end
+
+	for _, flag in ipairs(CANDIDATE_FLAGS) do
+		local state = group.Candidates[flag]
+
+		if state == REQUIRE or state == FORBID then
+			return true
+		end
+	end
+
+	return false
+end
+
 ---The size a group's display is built at: a bar's height, a picture's height, or an icon's side.
 ---Every shape sizes what it holds (fonts, the bar's leading icon) from this one number.
 ---@param group CustomAuraGroup

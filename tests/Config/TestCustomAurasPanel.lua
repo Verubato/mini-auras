@@ -615,6 +615,110 @@ fw.describe("Custom auras page - reordering the grid", function()
 	end)
 end)
 
+---Any font string on the page whose text holds this fragment, found by walking the mock's frame
+---registry: the editor keeps its labels to itself.
+---@param fragment string
+---@return table?
+local function FontStringSaying(fragment)
+	for _, frame in ipairs(WowMock.Frames) do
+		for index = 1, frame:GetNumRegions() do
+			local region = select(index, frame:GetRegions())
+			local text = region and region.GetText and region:GetText()
+
+			if text and text:find(fragment, 1, true) then
+				return region
+			end
+		end
+	end
+
+	return nil
+end
+
+---The editor's tab buttons, keyed the way the strip keys them.
+---@return table<string, table>
+local function EditorTabs()
+	local found = {}
+
+	for _, frame in ipairs(WowMock.Frames) do
+		if frame.Key and frame.Underline then
+			found[frame.Key] = frame
+		end
+	end
+
+	return found
+end
+
+fw.describe("Custom auras page - tabs a group cannot use", function()
+	fw.it("hides the three display tabs for a sound-only group", function()
+		local addon, group = LoadWithGroup({ 45438 })
+		local groups = addon.Modules.CustomAuras.Groups
+
+		group.Icons.Display = groups.DisplayStyle.SoundOnly
+		groups:Normalise(group)
+
+		ShowPage(addon, group)
+
+		local tabs = EditorTabs()
+
+		fw.truthy(tabs.trigger:IsShown(), "the trigger tab stays, and carries the way back out")
+		fw.truthy(tabs.sounds:IsShown(), "so do the sounds it is there for")
+		fw.falsy(tabs.filters:IsShown(), "the filters reach nothing a sound-only group has")
+		fw.falsy(tabs.appearance:IsShown(), "nor does the appearance tab")
+		fw.falsy(tabs.layout:IsShown(), "nor the layout one")
+	end)
+
+	fw.it("closes the gap the hidden tabs leave", function()
+		local addon, group = LoadWithGroup({ 45438 })
+		local groups = addon.Modules.CustomAuras.Groups
+
+		group.Icons.Display = groups.DisplayStyle.SoundOnly
+		groups:Normalise(group)
+
+		ShowPage(addon, group)
+
+		local tabs = EditorTabs()
+		local _, _, _, triggerX = tabs.trigger:GetPoint(1)
+		local _, _, _, soundsX = tabs.sounds:GetPoint(1)
+
+		fw.eq(soundsX - triggerX, 124, "sounds sits in the second slot, not the fifth")
+	end)
+
+	fw.it("puts them all back for a group that draws icons", function()
+		local addon, group = LoadWithGroup({ 45438 })
+
+		ShowPage(addon, group)
+
+		local tabs = EditorTabs()
+
+		for _, key in ipairs({ "trigger", "filters", "appearance", "layout", "sounds" }) do
+			fw.truthy(tabs[key]:IsShown(), key .. " is on the strip")
+		end
+	end)
+end)
+
+fw.describe("Custom auras page - sounds the filters cannot reach", function()
+	fw.it("says so for a group that only wants its own casts", function()
+		local addon, group = LoadWithGroup({ 45438 })
+
+		group.Caster = addon.Modules.CustomAuras.Groups.Caster.Mine
+		group.Sound.Applied = "Sonar"
+
+		ShowPage(addon, group)
+
+		fw.not_nil(FontStringSaying("Sounds ignore the filters"), "the caveat is on the page")
+	end)
+
+	fw.it("says nothing for a group whose sound already matches its filters", function()
+		local addon, group = LoadWithGroup({ 45438 })
+
+		group.Sound.Applied = "Sonar"
+
+		ShowPage(addon, group)
+
+		fw.is_nil(FontStringSaying("Sounds ignore the filters"), "nothing narrows this one")
+	end)
+end)
+
 fw.describe("Custom auras page - with a group configured", function()
 	fw.it("lays the page out without touching anything that is not there", function()
 		local addon = LoadWithGroup({ 45438, 118 })

@@ -15,10 +15,6 @@ local SLIDER_ROW_HEIGHT = SLIDER_HEADROOM + 34
 local LAST_SLIDER_ROW_HEIGHT = SLIDER_HEADROOM + 20
 local LAST_SLIDER_ROW_GAP = 0
 local SLIDER_GAP = 45
--- The gap a row keeps when it is on screen, matching the editor's own default.
-local ROW_GAP = 10
--- One line of text, which is all a sound-only group's layout tab holds.
-local NOTE_ROW_HEIGHT = 26
 local SORT_OPTIONS = { "OLDEST", "LONGEST", "SHORTEST" }
 local GROW_OPTIONS = { "LEFT", "RIGHT", "CENTER", "DOWN", "UP" }
 -- A number this short does not need a dropdown's column, but the label does: "Desplazamiento X"
@@ -169,15 +165,6 @@ function ui.BuildLayoutTab(ctx)
 		end
 	end)
 
-	-- Takes over the settings row when there is nothing to lay out, the way the appearance tab's
-	-- note takes over its shape row.
-	local emptyNote = layoutPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-	emptyNote:SetText(L["Sound only auras don't have a position."])
-	emptyNote:SetPoint("TOPLEFT", settingsControlsRow, "TOPLEFT", 0, 0)
-	emptyNote:SetPoint("BOTTOMRIGHT", settingsControlsRow, "BOTTOMRIGHT", 0, 0)
-	emptyNote:SetJustifyH("LEFT")
-	emptyNote:SetJustifyV("TOP")
-
 	---@param label string
 	---@param tooltip string
 	---@param minimum number
@@ -299,49 +286,30 @@ function ui.BuildLayoutTab(ctx)
 		local bars = groups:DrawsBars(group)
 		-- One picture, so there is no order to sort it into and no direction for it to grow in.
 		local texture = groups:DrawsTexture(group)
-		-- Nothing is drawn for a sound-only group, so there is no size to set and nowhere to put
-		-- it. The whole tab goes, the same way the appearance one does.
-		local soundOnly = groups:IsSoundOnly(group)
-		local icons = not bars and not texture and not soundOnly
+		local icons = not bars and not texture
 
 		SetSliderShown(sizeSlider, icons)
-		SetSliderShown(heightSlider, bars and not soundOnly)
-		SetSliderShown(widthSlider, bars and not soundOnly)
-		SetSliderShown(spacingSlider, not texture and not soundOnly)
-		SetSliderShown(textScaleSlider, not texture and not soundOnly)
-		SetSliderShown(textureWidthSlider, texture and not soundOnly)
-		SetSliderShown(textureHeightSlider, texture and not soundOnly)
-		SetSliderShown(rotationSlider, texture and not soundOnly)
-		SetSliderShown(opacitySlider, texture and not soundOnly)
+		SetSliderShown(heightSlider, bars)
+		SetSliderShown(widthSlider, bars)
+		SetSliderShown(spacingSlider, not texture)
+		SetSliderShown(textScaleSlider, not texture)
+		SetSliderShown(textureWidthSlider, texture)
+		SetSliderShown(textureHeightSlider, texture)
+		SetSliderShown(rotationSlider, texture)
+		SetSliderShown(opacitySlider, texture)
 
-		local ordered = not texture and not soundOnly
+		local ordered = not texture
 
 		orderDropdown:SetShown(ordered)
 		orderDropdown.MiniLabel:SetShown(ordered)
 		growDropdown:SetShown(ordered)
 		growDropdown.MiniLabel:SetShown(ordered)
-		strataDropdown:SetShown(not soundOnly)
-		strataDropdown.MiniLabel:SetShown(not soundOnly)
-
-		for _, box in ipairs({ offsetXBox, offsetYBox }) do
-			box.EditBox:SetShown(not soundOnly)
-			box.Label:SetShown(not soundOnly)
-		end
 
 		-- The row closes up rather than leaving holes where the order and grow dropdowns were.
 		PlaceLabel(strataDropdown.MiniLabel, texture and 0 or SETTINGS_COLUMN)
 		PlaceLabel(offsetXBox.Label, texture and SETTINGS_COLUMN or SETTINGS_COLUMN * 3)
 		PlaceLabel(offsetYBox.Label, (texture and SETTINGS_COLUMN or SETTINGS_COLUMN * 3)
 			+ OFFSET_COLUMN)
-
-		emptyNote:SetShown(soundOnly)
-		settingsControlsRow:SetHeight(soundOnly and NOTE_ROW_HEIGHT or ui.DropdownRowHeight)
-
-		-- Collapsed rather than left empty, and they hand their gaps back so the tab closes up.
-		sliderRow:SetHeight(soundOnly and 1 or SLIDER_ROW_HEIGHT)
-		ctx.SetRowGap(sliderRow, soundOnly and 0 or ROW_GAP)
-		secondSliderRow:SetHeight(soundOnly and 1 or LAST_SLIDER_ROW_HEIGHT)
-		ctx.SetRowGap(secondSliderRow, LAST_SLIDER_ROW_GAP)
 
 		ctx.UpdateEditorHeight()
 	end

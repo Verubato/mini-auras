@@ -14,11 +14,8 @@ local PREVIEW_HEIGHT = 28
 local PICKER_BUTTON_WIDTH = 180
 local CHECK_COLUMNS = 5
 local CHECK_ROW_HEIGHT = 30
--- Gaps above each checkbox row, kept here because the sound-only shape has to put them back.
 local CHECK_ROW_GAP = 8
 local CHECK_ROW2_GAP = 4
--- One line of text, which is all a sound-only group's appearance tab holds.
-local NOTE_ROW_HEIGHT = 26
 
 ---Builds the appearance tab: what a group's auras look like. Where they sit and how big they are
 ---belongs to the layout tab, and which shape it draws to the trigger tab, next to the rest of
@@ -306,22 +303,10 @@ function ui.BuildAppearanceTab(ctx)
 		end,
 	})
 
-	-- Shares the shape row with the bar texture, which is never up at the same time: one of them
-	-- is what this tab has to say about the group.
-	local emptyNote = appearancePanel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-	emptyNote:SetText(L["Sound only auras don't have an appearance."])
-	emptyNote:SetPoint("TOPLEFT", shapeRow, "TOPLEFT", 0, 0)
-	emptyNote:SetPoint("BOTTOMRIGHT", shapeRow, "BOTTOMRIGHT", 0, 0)
-	emptyNote:SetJustifyH("LEFT")
-	emptyNote:SetJustifyV("TOP")
-
 	---@param group CustomAuraGroup
 	local function RefreshShape(group)
 		local bars = groups:DrawsBars(group)
 		local texture = groups:DrawsTexture(group)
-		-- A sound-only group draws nothing, so every appearance control is about something that
-		-- is not there. Only the shape dropdown itself stays, to switch back out of it.
-		local soundOnly = groups:IsSoundOnly(group)
 		local column = 0
 
 		for _, spec in ipairs(checkboxes) do
@@ -329,9 +314,7 @@ function ui.BuildAppearanceTab(ctx)
 
 			-- Art shares none of the icon and bar switches: there is no swipe to reverse, no
 			-- count to place and no tooltip to put up, so the two sets never mix.
-			if soundOnly then
-				shown = false
-			elseif texture then
+			if texture then
 				shown = spec.Texture == true
 			else
 				shown = spec.Texture ~= true and (spec.Bars == nil or spec.Bars == bars)
@@ -349,7 +332,7 @@ function ui.BuildAppearanceTab(ctx)
 
 		-- Art carries no text of any kind and has no refresh-window ring, so everything about
 		-- either belongs to the two shapes that draw them.
-		local iconOrBar = not soundOnly and not texture
+		local iconOrBar = not texture
 
 		colorTextCheck:SetShown(iconOrBar)
 		textSwatch:SetShown(iconOrBar)
@@ -371,40 +354,24 @@ function ui.BuildAppearanceTab(ctx)
 
 		-- The row holds the bar fill for one shape and the art picker for another, and nothing at
 		-- all for the rest, so it goes away with them rather than holding open a blank strip.
-		local showBarTexture = bars and not soundOnly
-		local showPicker = texture and not soundOnly
-		local asset = group.Texture.Asset
-
-		textureDropdown:SetShown(showBarTexture)
-		textureDropdown.MiniLabel:SetShown(showBarTexture)
-		textureLabel:SetShown(showPicker)
-		textureButton:SetShown(showPicker)
-		previewBackground:SetShown(showPicker)
-		preview:SetShown(showPicker)
-		artTextures:SetAsset(preview, asset)
-		emptyNote:SetShown(soundOnly)
-
-		if showBarTexture or showPicker then
-			shapeRow:SetHeight(ui.DropdownRowHeight)
-		else
-			shapeRow:SetHeight(soundOnly and NOTE_ROW_HEIGHT or 1)
-		end
+		textureDropdown:SetShown(bars)
+		textureDropdown.MiniLabel:SetShown(bars)
+		textureLabel:SetShown(texture)
+		textureButton:SetShown(texture)
+		previewBackground:SetShown(texture)
+		preview:SetShown(texture)
+		artTextures:SetAsset(preview, group.Texture.Asset)
+		shapeRow:SetHeight((bars or texture) and ui.DropdownRowHeight or 1)
 
 		-- A swatch's label is a child of the panel rather than of the swatch, so it has to be
 		-- hidden by hand: hiding the button alone leaves the caption behind on its own.
-		swatch:SetShown(not soundOnly)
-		swatch.Label:SetShown(not soundOnly)
 		pandemicSwatch:SetShown(iconOrBar)
 		pandemicSwatch.Label:SetShown(iconOrBar)
 
 		-- Rows keep their height whatever is in them, so the emptied ones are collapsed rather
 		-- than left holding the tab open around nothing.
-		checkRow:SetHeight(soundOnly and 1 or CHECK_ROW_HEIGHT)
 		checkRow2:SetHeight(wrapped and CHECK_ROW_HEIGHT or 1)
-		swatchRow:SetHeight(soundOnly and 1 or CHECK_ROW_HEIGHT)
-		ctx.SetRowGap(checkRow, soundOnly and 0 or CHECK_ROW_GAP)
 		ctx.SetRowGap(checkRow2, wrapped and CHECK_ROW2_GAP or 0)
-		ctx.SetRowGap(swatchRow, soundOnly and 0 or CHECK_ROW2_GAP)
 		ctx.UpdateEditorHeight()
 	end
 
