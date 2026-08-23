@@ -164,8 +164,8 @@ local function Slider(parent, options, part, key, label, tooltip)
 	})
 end
 
----The switch that decides whether a part draws at all, plus the line under it saying what happens
----to Blizzard's own row when it does.
+---The switch that decides whether a part draws at all. Every tab's reads "Enable", so what it
+---actually takes over is left to the tooltip and to the blurb above it.
 ---@param parent table
 ---@param options table
 ---@param label string
@@ -462,7 +462,7 @@ end
 ---@param options FrameAurasBuffOptions
 local function BuildBuffs(content, options)
 	local enabled = EnableRow(content, options,
-		L["Replace the group buffs"],
+		L["Enable"],
 		L["Draws the buffs on the party and raid frames, and switches Blizzard's own off while it is on."])
 
 	local layout = Divider(content, L["Layout"], enabled)
@@ -531,7 +531,7 @@ end
 ---@param options FrameAurasDebuffOptions
 local function BuildDebuffs(content, options)
 	local enabled = EnableRow(content, options,
-		L["Replace the group debuffs"],
+		L["Enable"],
 		L["Draws the debuffs on the party and raid frames, and switches Blizzard's own off while it is on."])
 
 	local layout = Divider(content, L["Layout"], enabled)
@@ -584,7 +584,7 @@ local function BuildClassBuff(content, options)
 	blurb:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
 	blurb:SetPoint("RIGHT", content, "RIGHT", 0, 0)
 
-	local enabled = Checkbox(content, options, "Enabled", L["Show the missing buff"],
+	local enabled = Checkbox(content, options, "Enabled", L["Enable"],
 		L["Puts the buff's own icon on the frame, drained of colour, while the member is without it."])
 	enabled:SetPoint("TOPLEFT", blurb, "BOTTOMLEFT", 0, -verticalSpacing)
 
@@ -629,7 +629,7 @@ local function BuildTargetFocus(content, options)
 	blurb:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
 	blurb:SetPoint("RIGHT", content, "RIGHT", 0, 0)
 
-	local enabled = Checkbox(content, options, "Enabled", L["Replace the target and focus auras"],
+	local enabled = Checkbox(content, options, "Enabled", L["Enable"],
 		L["Draws the auras on those frames rather than leaving them to Blizzard."])
 	enabled:SetPoint("TOPLEFT", blurb, "BOTTOMLEFT", 0, -verticalSpacing)
 
