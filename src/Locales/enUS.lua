@@ -504,7 +504,6 @@ L:SetDefaultStrings({
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame.",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame.",
 	["Frame Auras"] = "Frame Auras",
-	["Shows only the debuffs you applied yourself."] = "Shows only the debuffs you applied yourself.",
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead.",
 })
 

@@ -670,9 +670,8 @@ local dbDefaults = {
 				PerRow = 3,
 				Dispellable = false,
 				ShortOnly = false,
-				-- Off, unlike the buff side. Almost everything landing on a group member was applied by
-				-- somebody else, so this empties the row rather than tidying it.
-				Mine = false,
+				-- No "Mine" switch, unlike the buff side: everything landing on a group member came from
+				-- somebody else, so filtering to your own would only ever empty the row.
 			},
 
 			---@class FrameAurasClassBuffOptions

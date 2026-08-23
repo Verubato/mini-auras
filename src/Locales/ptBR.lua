@@ -501,6 +501,5 @@ L:RegisterLocale("ptBR", function() return {
 	["Frame Auras"] = "Auras nos quadros",
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Substitui a fila de bônus da Blizzard, no canto inferior direito de cada quadro de grupo e raide.",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Substitui a fila de penalidades da Blizzard, no canto inferior esquerdo de cada quadro de grupo e raide.",
-	["Shows only the debuffs you applied yourself."] = "Mostra apenas as penalidades que você aplicou.",
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "A lista de onde a opção Filtrado da fila de bônus tira os feitiços. Desligada, todos os bônus da unidade chegam ao canto.",
 } end)

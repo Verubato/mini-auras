@@ -572,11 +572,6 @@ local function BuildDebuffs(content, options)
 			Tooltip = L["Replaces Blizzard's debuffs on the party and raid frames with these ones."],
 		},
 		{
-			Key = "Mine",
-			Label = L["Mine"],
-			Tooltip = L["Shows only the debuffs you applied yourself."],
-		},
-		{
 			Key = "Dispellable",
 			Label = L["Dispellable"],
 			Tooltip = L["Shows only the debuffs your own spec can dispel."],

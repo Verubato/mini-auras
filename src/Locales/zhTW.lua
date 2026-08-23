@@ -503,6 +503,5 @@ L:RegisterLocale("zhTW", function() return {
 	["Frame Auras"] = "框架光環",
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "替換暴雪的增益列，位於每個隊伍和團隊框架的右下角。",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "替換暴雪的減益列，位於每個隊伍和團隊框架的左下角。",
-	["Shows only the debuffs you applied yourself."] = "僅顯示你自己施加的減益。",
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "增益列的「已篩選」開關所依據的列表。關閉時，目標身上的所有增益都會顯示在角落。",
 } end)

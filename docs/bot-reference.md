@@ -639,10 +639,6 @@ mechanics and role auras lead the row, then the debuffs the game flags as priori
 colouring on any of these rows; they draw a plain icon like Blizzard's own.
 
 - Icon size 25-50 (percent of the frame's height), max icons 1-9, icons per row 1-6.
-- **Mine** - only the debuffs you applied yourself. Off by default: almost everything landing on a
-  group member came from somebody else, so this empties the row rather than tidying it. Driven by
-  the `HARMFUL|PLAYER` filter token rather than a candidate filter, because a filter asking who cast
-  an aura is identity-gated and the engine skips it for a harmful aura on a unit you can assist.
 - **Dispellable** - only the debuffs your own spec can dispel. This replaces the priority list
   rather than stacking with it.
 - **Under 1min** - only debuffs whose whole duration is under a minute.

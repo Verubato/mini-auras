@@ -501,6 +501,5 @@ L:RegisterLocale("frFR", function() return {
 	["Frame Auras"] = "Auras de cadres",
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Remplace la rangée d'améliorations de Blizzard, dans le coin inférieur droit de chaque cadre de groupe et de raid.",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Remplace la rangée d'affaiblissements de Blizzard, dans le coin inférieur gauche de chaque cadre de groupe et de raid.",
-	["Shows only the debuffs you applied yourself."] = "N'affiche que les affaiblissements que vous avez appliqués.",
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "La liste dans laquelle puise l'option Filtré de la rangée d'améliorations. Désactivée, toutes les améliorations de l'unité atteignent le coin.",
 } end)

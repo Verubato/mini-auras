@@ -501,6 +501,5 @@ L:RegisterLocale("itIT", function() return {
 	["Frame Auras"] = "Aure sui riquadri",
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Sostituisce la fila di benefici di Blizzard, nell'angolo in basso a destra di ogni riquadro di gruppo e incursione.",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Sostituisce la fila di penalità di Blizzard, nell'angolo in basso a sinistra di ogni riquadro di gruppo e incursione.",
-	["Shows only the debuffs you applied yourself."] = "Mostra solo le penalità che hai applicato tu.",
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "L'elenco da cui attinge l'interruttore Filtrato della fila di benefici. Se è spento, ogni beneficio dell'unità raggiunge l'angolo.",
 } end)
