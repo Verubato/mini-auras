@@ -41,6 +41,16 @@ local takenThisTick = {}
 -- start one that is going to overrun it.
 local spentThisTick = 0
 local tickIsEmpty = true
+-- TEMPORARY warm-up progress, for telling by eye when the background build has finished rather
+-- than watching a CPU total stop climbing. Items queued and items completed across every lane; the
+-- denominator moves as modules queue more, so the percentage can stall rather than run backwards.
+local queuedTotal = 0
+local doneTotal = 0
+local nextMilestone = 10
+local warmStarted
+-- Off unless asked for with /miniauras warm: the addon prints nothing on a clean load, and this is
+-- a diagnostic rather than something a player wants in their chat every zone change.
+local reporting = false
 
 ---@class Sweep
 local M = {}
@@ -169,6 +179,9 @@ local function Tick()
 		-- the tick budget is weighed between its parts.
 		if verdict == M.Verdict.Unfinished then
 			lane.Next = lane.Next - 1
+		else
+			-- Counted on completion, not on being handed out: an unfinished item comes back.
+			doneTotal = doneTotal + 1
 		end
 
 		local abandoned = verdict == false
@@ -186,10 +199,49 @@ local function Tick()
 		end
 	end
 
+	M:ReportProgress()
+
 	if ticker and not AnyLaneHasWork() then
 		ticker:Cancel()
 		ticker = nil
 	end
+end
+
+---TEMPORARY. Says how far the background warm-up has got, at each tenth, and once more when every
+---lane runs dry. Called from the tick; nothing else should.
+function M:ReportProgress()
+	if not reporting or queuedTotal <= 0 then
+		return
+	end
+
+	warmStarted = warmStarted or GetTime()
+
+	local percent = doneTotal / queuedTotal * 100
+
+	while percent >= nextMilestone and nextMilestone <= 90 do
+		addon.Framework:Notify("Warming: %d%% (%d of %d)", nextMilestone, doneTotal, queuedTotal)
+		nextMilestone = nextMilestone + 10
+	end
+
+	if AnyLaneHasWork() then
+		return
+	end
+
+	addon.Framework:Notify("Warming: done, %d items in %.1fs", doneTotal, GetTime() - warmStarted)
+
+	-- Reset for the next burst, which is whatever a zone change or a roster forming queues next.
+	queuedTotal = 0
+	doneTotal = 0
+	nextMilestone = 10
+	warmStarted = nil
+end
+
+---TEMPORARY. Turns the warm-up progress messages on or off, and says which it did.
+---@return boolean on
+function M:ToggleProgressReporting()
+	reporting = not reporting
+
+	return reporting
 end
 
 ---@param maxPerTick number? Most items this lane may take from one tick. Without it the lane can
@@ -213,6 +265,13 @@ end
 ---@param processFn fun(item: any, ctx: any): boolean|string|nil
 ---@param ctx any?
 function M:Run(queue, processFn, ctx)
+	-- Whatever the old run still owed is never done now, so it leaves the denominator with it.
+	if LaneHasWork(self) then
+		queuedTotal = queuedTotal - (#self.Queue - self.Next + 1)
+	end
+
+	queuedTotal = queuedTotal + #queue
+
 	self.Queue = queue
 	self.Next = 1
 	self.ProcessFn = processFn
@@ -234,12 +293,15 @@ end
 ---@param processFn fun(item: any, ctx: any): boolean|string|nil Used only when starting a run.
 ---@param ctx any?
 function M:Append(item, processFn, ctx)
+	queuedTotal = queuedTotal + 1
+
 	if LaneHasWork(self) then
 		self.Queue[#self.Queue + 1] = item
 
 		return
 	end
 
+	queuedTotal = queuedTotal - 1
 	self:Run({ item }, processFn, ctx)
 end
 

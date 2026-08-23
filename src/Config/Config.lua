@@ -473,6 +473,14 @@ function M:Init()
 			return
 		end
 
+		if msg == "warm" then
+			local on = addon.Core.Sweep:ToggleProgressReporting()
+
+			mini:Notify(on and "Warm-up progress on." or "Warm-up progress off.")
+
+			return
+		end
+
 		M:EnsureWindow():Toggle()
 	end
 
