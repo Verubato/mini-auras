@@ -675,10 +675,9 @@ local dbDefaults = {
 			---@class FrameAurasClassBuffOptions
 			ClassBuff = {
 				Enabled = false,
-				Anchor = "TOPRIGHT",
+				-- Only the size. Which corner the mark sits in is the frame's answer rather than the
+				-- player's, like the corners the buff and debuff rows take.
 				Size = 35,
-				OffsetX = -2,
-				OffsetY = -2,
 			},
 
 			---@class FrameAurasTargetOptions

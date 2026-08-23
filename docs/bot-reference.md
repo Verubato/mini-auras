@@ -639,21 +639,22 @@ end, because flipping it makes the client rebuild the raid frames.
 **Debuffs sub-tab.** Replaces the debuff row, in the bottom left corner growing right and wrapping
 upward.
 Drives `raidFramesDisplayDebuffs` the same way the buff side drives its own cvar. Encounter
-mechanics and role auras lead the row, then the debuffs the game flags as priority.
+mechanics and role auras lead the row, then the debuffs the game flags as priority. No dispel-type
+colouring on any of these rows; they draw a plain icon like Blizzard's own.
 
 - Icon size 25-50 (percent of the frame's height), max icons 1-9, icons per row 1-6.
 - **Dispellable** - only the debuffs your own spec can dispel. This replaces the priority list
   rather than stacking with it.
 - **Under 1min** - only debuffs whose whole duration is under a minute.
 
-**Class Buff sub-tab.** Marks a party or raid frame whose member is missing the group buff your
-class brings. Unlike the two rows above it, this also reaches the standard party frames, since it
-adds a mark rather than replacing anything (Mark of the Wild, Blessing of the Bronze, Power Word: Fortitude, Skyfury). The mark
-is the buff's own icon, drained of colour. A class that brings no group buff sees a line saying so
-and nothing to configure.
+**Missing Buff sub-tab.** Marks a party or raid frame whose member is missing the group buff your
+class brings (Mark of the Wild, Blessing of the Bronze, Power Word: Fortitude, Skyfury). The mark is
+the buff's own icon, drained of colour, in the frame's top right corner. Unlike the two rows above
+it, this also reaches the standard party frames, since it adds a mark rather than replacing
+anything. A class that brings no group buff sees a line saying so and nothing to configure.
 
-- Anchor - which corner or edge of the frame the mark sits in (default top right).
-- Icon size 25-50 (percent of the frame's height), offset X and Y -50 to 50.
+- Icon size 25-50 (percent of the frame's height). The corner is fixed, like the corners the buff
+  and debuff rows take.
 
 **Target & Focus sub-tab.** Replaces the aura rows on the target and focus frames. Debuffs take
 the first row and buffs the second, with the buffs moving up when the target has no debuffs. The

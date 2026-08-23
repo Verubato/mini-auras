@@ -94,8 +94,6 @@ local hooked = false
 -- Refilled per pass rather than built per pass: the frame list is asked for on every refresh, and
 -- a raid is forty of them.
 local frameScratch = {}
--- Refilled per call, for the same reason: the size is asked for every side of every frame.
-local sizeScratch = { SizeIsPercent = true }
 -- Background walker declaring the aura groups of the displays as they are built. Urgent: these sit
 -- on unit frames the player is looking at. The engine allocates a batch of buttons the moment a
 -- group is declared, so a party converting to a raid would otherwise build eighty of them at once.
@@ -168,9 +166,11 @@ local function HasUnit(unit)
 	return mini:IsSecret(exists) or exists == true
 end
 
----The icon size for one side on one frame, as a share of the frame's own height. Routed through
----the shared resolver because a display ignores its parent's scale, so a share of a scaled frame
----has to be converted into the pixels that come out the same height on screen.
+---The icon size for one side on one frame, as a share of the frame's own height.
+---
+---In the frame's OWN units, not screen pixels: the row scales with its host (see AnchorSide), so
+---the size has to be measured in the same space the host is drawn in or the icons come out the
+---wrong fraction of the frame at any UI scale but 1.
 ---@param frame table
 ---@param side "Buffs"|"Debuffs"
 ---@return number
@@ -178,15 +178,7 @@ local function IconSize(frame, side)
 	local options = SideOptions(side)
 	local percent = options and options.Size or DEFAULT_SIZE_PERCENT
 
-	-- The resolver compares the height it reads, so an unreadable one has to be caught before it
-	-- gets there rather than after.
-	if not pixels:Number(frame:GetHeight()) then
-		return FALLBACK_ICON_SIZE
-	end
-
-	sizeScratch.SizePercent = percent
-
-	return moduleUtil:GetIconSize(sizeScratch, frame, FALLBACK_ICON_SIZE, percent)
+	return pixels:ShareOfHeight(frame, percent, FALLBACK_ICON_SIZE)
 end
 
 ---The engine's own answer to "can I dispel this", which it works out per aura from the player's
@@ -329,15 +321,11 @@ local function BuildStyle(side)
 	if side == "Buffs" then
 		style.Pandemic = options.PandemicGlow == true
 		style.PandemicColor = moduleUtil:GetColorRGB(options.PandemicColor)
-
-		return style
 	end
 
-	-- The engine supplies the art and the colour: an aura's dispel type is secret, so tinting one
-	-- from addon code is not possible. Debuffs with no dispel type keep the plain edge.
-	style.ColorByDispelType = true
-	style.BorderWithoutDispelType = true
-
+	-- No dispel-type colouring on either row. These stand in for Blizzard's own, which draws a
+	-- plain icon, and a ring around every debuff is a lot of colour on a frame that already carries
+	-- the Important Auras row.
 	return style
 end
 
@@ -425,6 +413,12 @@ local function AnchorSide(display, frame, side)
 	if containerFrame:GetParent() ~= frame then
 		containerFrame:SetParent(frame)
 	end
+
+	-- Scales with the frame, unlike the free-standing displays elsewhere. These rows stand in for
+	-- ones Blizzard drew as children of the frame, so they have to sit in the same coordinate space
+	-- it does: at any UI scale but 1, a row that ignored it would take the wrong fraction of the
+	-- frame and its corner inset would not line up with the frame's own edge.
+	containerFrame:SetIgnoreParentScale(false)
 
 	-- Buttons draw at the container's own level rather than one above it, so a container level with
 	-- its host loses to the host's own artwork. The strata is left alone: the row is a child of the

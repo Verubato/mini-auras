@@ -180,11 +180,9 @@ local function BuildStyle()
 
 	style.Stacks = true
 	style.ReverseCooldown = true
-	-- The engine supplies the art and the colour: an aura's dispel type is secret, so tinting one
-	-- from addon code is not possible. Auras with no dispel type keep the plain edge.
-	style.ColorByDispelType = true
-	style.BorderWithoutDispelType = true
 
+	-- No dispel-type colouring, matching the two group rows: these stand in for Blizzard's own,
+	-- and its target frame auras draw a plain icon.
 	return style
 end
 

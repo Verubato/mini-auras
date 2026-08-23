@@ -37,26 +37,6 @@ local ADD_BOX_WIDTH = 140
 -- What the add box costs above the first spell row of the custom section.
 local ADD_BOX_HEIGHT = 26
 
--- Every corner and edge of a unit frame, in reading order.
-local ANCHORS = {
-	"BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT",
-	"LEFT", "CENTER", "RIGHT",
-	"TOPLEFT", "TOP", "TOPRIGHT",
-}
--- Behind functions rather than stored flat, because the locale can change after this file loads,
--- so every lookup has to happen when the control is built.
-local ANCHOR_LABELS = {
-	BOTTOMLEFT = function() return L["Bottom left"] end,
-	BOTTOM = function() return L["Bottom"] end,
-	BOTTOMRIGHT = function() return L["Bottom right"] end,
-	LEFT = function() return L["Left"] end,
-	CENTER = function() return L["Centre"] end,
-	RIGHT = function() return L["Right"] end,
-	TOPLEFT = function() return L["Top left"] end,
-	TOP = function() return L["Top"] end,
-	TOPRIGHT = function() return L["Top right"] end,
-}
-
 -- The ranges each setting is held inside. Icon sizes on the party and raid frames are a share of
 -- the frame's own height: below a quarter of it nothing is legible, and past half the row covers
 -- the frame it sits on. The target frame is a fixed size, so its icons are given one in pixels.
@@ -73,10 +53,6 @@ local BOUNDS = {
 	},
 	ClassBuff = {
 		Size = { Min = 25, Max = 50 },
-		-- Room to nudge the mark clear of whatever a frame draws in that corner, without letting
-		-- it be pushed somewhere the frame it belongs to no longer explains.
-		OffsetX = { Min = -50, Max = 50 },
-		OffsetY = { Min = -50, Max = 50 },
 	},
 	TargetFocus = {
 		Size = { Min = 12, Max = 40 },
@@ -96,14 +72,6 @@ local filterColumnWidth
 local M = {}
 
 config.FrameAuras = M
-
----@param key string
----@return string
-local function AnchorText(key)
-	local label = ANCHOR_LABELS[key]
-
-	return label and label() or key
-end
 
 ---@param parent table
 ---@param text string
@@ -596,32 +564,12 @@ local function BuildClassBuff(content, options)
 		L["Puts the buff's own icon on the frame, drained of colour, while the member is without it."])
 	enabled:SetPoint("TOPLEFT", blurb, "BOTTOMLEFT", 0, -verticalSpacing)
 
-	local anchor = helpers:BuildLabelledDropdown({
-		Parent = content,
-		LabelText = L["Anchor"],
-		Tooltip = L["Which corner of the unit frame the mark sits in."],
-		Items = ANCHORS,
-		GetText = AnchorText,
-		Width = controlWidth,
-		Target = options,
-		Key = "Anchor",
-		SettingsKey = moduleName.FrameAuras,
-	})
-
-	anchor.Label:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -verticalSpacing * 1.5)
-
-	-- Second column of the same row, so the page stays two controls tall.
+	-- The corner the mark sits in is fixed. It stands in for something Blizzard would have drawn
+	-- itself, so where it goes is the frame's answer rather than the player's, exactly like the
+	-- buff and debuff rows on the other two tabs.
 	local size = Slider(content, options, "ClassBuff", "Size", L["Icon size"],
 		L["Icon height as a percentage of the unit frame's own height."])
-	size.Slider:SetPoint("TOPLEFT", anchor, "TOPLEFT", columnWidth, 0)
-
-	local offsetX = Slider(content, options, "ClassBuff", "OffsetX", L["Offset X"],
-		L["Nudges the mark sideways from its corner. Positive is right, negative is left."])
-	offsetX.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", -columnWidth, -SLIDER_ROW_GAP)
-
-	local offsetY = Slider(content, options, "ClassBuff", "OffsetY", L["Offset Y"],
-		L["Nudges the mark up or down from its corner. Positive is up, negative is down."])
-	offsetY.Slider:SetPoint("TOPLEFT", offsetX.Slider, "TOPLEFT", columnWidth, 0)
+	size.Slider:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -SLIDER_TOP_GAP)
 end
 
 ---@param content table
@@ -701,7 +649,7 @@ function M:Build(panel)
 		Tabs = {
 			{ Key = "buffs", Title = L["Buffs"] },
 			{ Key = "debuffs", Title = L["Debuffs"] },
-			{ Key = "classbuff", Title = L["Class Buff"] },
+			{ Key = "classbuff", Title = L["Missing Buff"] },
 			{ Key = "target", Title = L["Target & Focus"] },
 		},
 	})

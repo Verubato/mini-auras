@@ -15,7 +15,12 @@ local FALLBACK_ICON_SIZE = 14
 -- Trims the silver frame baked into the spell art, so the icon reaches the mark's own edge.
 local ICON_CROP = 0.08
 local DEFAULT_SIZE_PERCENT = 35
-local DEFAULT_ANCHOR = "TOPRIGHT"
+-- Which corner the mark sits in, and how far in from it. Fixed rather than a setting: the mark
+-- stands in for something the game would have drawn itself, so the corner is the frame's answer
+-- rather than the player's. Top right is the one Blizzard leaves free on a compact frame.
+local ANCHOR = "TOPRIGHT"
+local OFFSET_X = -2
+local OFFSET_Y = -2
 
 addon.Modules.FrameAuras = addon.Modules.FrameAuras or {}
 
@@ -205,11 +210,10 @@ local function Place(mark, frame)
 	end
 
 	local size = pixels:ShareOfHeight(frame, options.Size or DEFAULT_SIZE_PERCENT, FALLBACK_ICON_SIZE)
-	local anchor = options.Anchor or DEFAULT_ANCHOR
 
 	mark:SetSize(size, size)
 	mark:ClearAllPoints()
-	mark:SetPoint(anchor, frame, anchor, options.OffsetX or 0, options.OffsetY or 0)
+	mark:SetPoint(ANCHOR, frame, ANCHOR, OFFSET_X, OFFSET_Y)
 end
 
 ---@param frame table
