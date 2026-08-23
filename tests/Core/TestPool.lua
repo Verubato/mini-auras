@@ -4,11 +4,11 @@
 -- settings change. The sweep must never touch an item somebody has since acquired.
 
 local fw = require("Framework")
-local tickerMock = require("TickerMock")
+local workerMock = require("WorkerMock")
 
-tickerMock.Install()
+workerMock.Install()
 
-local addon = { Core = {} }
+local addon = workerMock.Addon()
 -- Sweep first: Pool imports it at file scope, exactly like the TOC orders them.
 assert(loadfile("src/Core/Pooling/Sweep.lua"))("MiniAuras", addon)
 assert(loadfile("src/Core/Pooling/Pool.lua"))("MiniAuras", addon)
@@ -42,8 +42,8 @@ local function PoolWithParked(count)
 	return instance
 end
 
----@param ms number? What each visit spends of the sweep's tick budget; free by default, which
----lets a tick drain the whole free list.
+---@param ms number? What each visit spends of the sweep's frame budget; free by default, which
+---lets one frame drain the whole free list.
 local function Collector(ms)
 	local seen = {}
 
@@ -51,26 +51,26 @@ local function Collector(ms)
 		seen[#seen + 1] = item.id
 
 		if ms then
-			tickerMock.Advance(ms)
+			workerMock.Advance(ms)
 		end
 	end
 end
 
 fw.describe("Pool - RefreshFree", function()
-	fw.before_each(tickerMock.Reset)
+	fw.before_each(workerMock.Reset)
 
 	fw.it("sweeps every parked item in the background, then stops", function()
 		local instance = PoolWithParked(5)
 		local seen, collect = Collector()
 
 		instance:RefreshFree(collect)
-		assert(#seen == 0, "the sweep ran inline instead of waiting for a tick")
+		assert(#seen == 0, "the sweep ran inline instead of waiting for a frame")
 
-		tickerMock.Tick(1)
+		workerMock.Frames(1)
 		assert(#seen == 5, "the whole free list visited, got " .. #seen)
-		assert(tickerMock.ActiveCount() == 0, "sweep ticker stopped once the queue drained")
+		assert(workerMock.ActiveCount() == 0, "the sweep worker stopped once the queue drained")
 
-		tickerMock.Tick(3)
+		workerMock.Frames(3)
 		assert(#seen == 5, "a finished sweep does nothing more")
 	end)
 
@@ -81,7 +81,7 @@ fw.describe("Pool - RefreshFree", function()
 		local seen, collect = Collector()
 
 		instance:RefreshFree(collect, nil, 2)
-		tickerMock.Tick(5)
+		workerMock.Frames(5)
 
 		assert(#seen == 2, "capped at two items")
 		assert(seen[1] == 5 and seen[2] == 4, "the newest parked items, the next to be acquired")
@@ -98,10 +98,10 @@ fw.describe("Pool - RefreshFree", function()
 
 			seen[#seen + 1] = item.id
 		end)
-		tickerMock.Tick(5)
+		workerMock.Frames(5)
 
 		assert(#seen == 1, "nothing visited past the refusal")
-		assert(tickerMock.ActiveCount() == 0, "an abandoned sweep does not keep ticking")
+		assert(workerMock.ActiveCount() == 0, "an abandoned sweep does not keep running")
 	end)
 
 	fw.it("skips items acquired after the sweep began", function()
@@ -114,7 +114,7 @@ fw.describe("Pool - RefreshFree", function()
 		local taken = instance:Acquire()
 		assert(taken.id == 4, "acquire hands out the newest item")
 
-		tickerMock.Tick(5)
+		workerMock.Frames(5)
 		assert(#seen == 3, "the acquired item was passed over")
 		assert(seen[1] == 3, "the remaining parked items still swept")
 	end)
@@ -126,16 +126,16 @@ fw.describe("Pool - RefreshFree", function()
 		local second, collectSecond = Collector()
 
 		instance:RefreshFree(collectFirst)
-		tickerMock.Tick(1)
+		workerMock.Frames(1)
 		local beforeReplace = #first
 		assert(beforeReplace > 0, "first sweep under way")
 
 		instance:RefreshFree(collectSecond)
-		tickerMock.Tick(5)
+		workerMock.Frames(5)
 
 		assert(#first == beforeReplace, "replaced sweep never resumed")
 		assert(#second == 4, "replacement started over")
-		assert(tickerMock.ActiveCount() == 0, "one ticker served both sweeps and stopped")
+		assert(workerMock.ActiveCount() == 0, "one worker served both sweeps and stopped")
 	end)
 
 	fw.it("caller-owned lanes let two owners sweep one pool without clobbering", function()
@@ -148,20 +148,20 @@ fw.describe("Pool - RefreshFree", function()
 
 		instance:RefreshFree(collectA, nil, 3, sweep:New())
 		instance:RefreshFree(collectB, nil, 3, sweep:New())
-		tickerMock.Tick(6)
+		workerMock.Frames(6)
 
 		assert(#seenA == 3, "the first owner's sweep ran to completion")
 		assert(#seenB == 3, "alongside the second owner's")
-		assert(tickerMock.ActiveCount() == 0)
+		assert(workerMock.ActiveCount() == 0)
 	end)
 
-	fw.it("an empty free list starts no ticker", function()
+	fw.it("an empty free list wakes no worker", function()
 		local instance = NewItemPool()
 		local seen, collect = Collector()
 
 		instance:RefreshFree(collect)
 
-		assert(tickerMock.ActiveCount() == 0, "nothing to sweep, nothing scheduled")
+		assert(workerMock.ActiveCount() == 0, "nothing to sweep, nothing scheduled")
 		assert(#seen == 0)
 	end)
 end)

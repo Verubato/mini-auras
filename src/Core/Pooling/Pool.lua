@@ -166,7 +166,7 @@ function M:Prewarm(targetCount, argsFn, argsCtx)
 	self.FillSweep:Run(queue, BuildOne, self)
 end
 
----Walks the parked items through refreshFn in the background, one per tick like the
+---Walks the parked items through refreshFn in the background, on the same paced walker as the
 ---pre-creation fill, so a look change converges onto the free list while nothing it holds is on
 ---screen. The sweep visits newest items first, the same end Acquire and AcquireMatching take
 ---from, so a sweep capped by maxItems spends its visits on exactly the items the next acquires

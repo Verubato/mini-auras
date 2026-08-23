@@ -5,7 +5,7 @@
 
 local fw = require("Framework")
 local moduleEnv = require("ModuleEnv")
--- The sweep only moves on a ticker, so the prewarm tests have to run it by hand.
+-- The sweep only moves on a frame of its own, so the prewarm tests have to pump it by hand.
 local acm = require("AuraContainerMock")
 -- For marking a value secret, which is how the client answers about units mid-loading-screen.
 local wow = require("WowApi")

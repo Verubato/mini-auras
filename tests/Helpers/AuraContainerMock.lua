@@ -23,11 +23,19 @@ M.batchSize = 10
 M.fontFace = nil
 -- Button methods to leave off, for the display's older-build fallbacks. Cleared by M.reset.
 M.missingButtonMethods = {}
+-- Whether the mocked client is behind a loading screen; read by the background sweep.
+M.loadingScreen = false
 
 local FORBIDDEN_ERROR = "Attempt to access forbidden object from code tainted by an AddOn"
 
 local tickers = {}
 local timers = {}
+-- Frames carrying an OnUpdate, in creation order. The background sweep rides one, so a pump has
+-- to hand out frames as well as ticks.
+local updaters = {}
+-- What one pumped frame claims to have taken. Long enough that anything pacing itself per second
+-- gets its whole allowance in one pump.
+local FRAME_ELAPSED = 1
 
 -- Registry of every frame created through the mock, so tests can reach event frames that
 -- modules create internally (KickTracker watchers, module eventsFrames, ...).
@@ -201,6 +209,11 @@ function M.NewFrame(frameType, name, parent, template)
 
 	function frame:SetScript(event, fn)
 		frame._scripts[event] = fn
+
+		if event == "OnUpdate" and fn and not frame._updaterListed then
+			frame._updaterListed = true
+			updaters[#updaters + 1] = frame
+		end
 	end
 	function frame:GetScript(event)
 		return frame._scripts[event]
@@ -626,6 +639,19 @@ function M.tickAll(times)
 				ticker.fn()
 			end
 		end
+
+		-- Snapshot, because a frame may hide itself or put a script on another.
+		local shown = {}
+
+		for _, frame in ipairs(updaters) do
+			if frame._shown and frame._scripts.OnUpdate then
+				shown[#shown + 1] = frame
+			end
+		end
+
+		for _, frame in ipairs(shown) do
+			frame._scripts.OnUpdate(frame, FRAME_ELAPSED)
+		end
 	end
 end
 
@@ -657,9 +683,18 @@ function M.reset()
 	M.restricted = false
 	M.fontFace = nil
 	M.missingButtonMethods = {}
+	M.loadingScreen = false
 	tickers = {}
 	timers = {}
 	M.frames = {}
+
+	-- Not wiped: a suite file's sweep worker is created once and only ever registers its OnUpdate
+	-- then, so forgetting it would leave the file with nothing to pump. Stopped instead, which the
+	-- next sweep undoes by showing its own worker again, and which leaves the workers of earlier
+	-- files parked for good.
+	for _, frame in ipairs(updaters) do
+		frame:Hide()
+	end
 end
 
 -- Environment installation
@@ -806,6 +841,10 @@ function M.loadDisplay()
 			},
 		},
 		Core = {},
+		-- The background sweep asks: it spends nothing while a loading screen is up.
+		IsLoadingScreenUp = function()
+			return M.loadingScreen == true
+		end,
 		Framework = {
 			GetSavedVars = function()
 				return mockDb

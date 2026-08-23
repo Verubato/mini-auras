@@ -7,35 +7,66 @@ local _, addon = ...
 -- the items must also correct them lazily on use, because a run can be replaced or abandoned at
 -- any point, and callers re-validate each item in the callback - the world moves while it runs.
 --
--- Each consumer holds its own lane (New), but the budget is addon-wide: one ticker spends
--- TICK_BUDGET_MS across every lane with work, round-robin, so the total background cost stays
--- flat no matter how many modules queue a sweep at once. A lane's Run only ever replaces that
--- lane's own queue.
+-- Each consumer holds its own lane (New), but the budget is addon-wide: one worker spends it
+-- across every lane with work, round-robin, so the total background cost stays flat no matter how
+-- many modules queue a sweep at once. A lane's Run only ever replaces that lane's own queue.
+--
+-- The walker rides a frame's OnUpdate rather than a timer, for two reasons. A budget in
+-- milliseconds only means anything against the frame it is spent in, and a frame is the only place
+-- to read that. Throughput then follows the headroom the machine actually has, instead of being
+-- pinned to whatever interval a timer was given.
+--
+-- A loading screen is not a window this can use, which was measured rather than assumed. There is
+-- no LOADING_SCREEN_ENABLED at login, and the prepared set is queued from the refresh that
+-- PLAYER_ENTERING_WORLD drives, which lands a few milliseconds before the screen lifts. A timer
+-- put on the queues there got one turn in and found the screen already gone. Anything wanting that
+-- window has to be queued earlier, not walked faster.
 
-local TICK_INTERVAL = 0.1
--- What a tick may spend before it stops handing out slots. Items vary by two orders of magnitude,
--- a restyle against building a container full of buttons, so a flat count of them is the wrong
--- unit: a tick of restyles wants dozens and a tick of container builds wants one.
-local TICK_BUDGET_MS = 2
+-- The biggest slice of a frame the walker takes on, beyond the one item it is already part way
+-- through. Small on purpose. Most of what the lanes carry is well under a millisecond, and a slice
+-- this size still gets a run of that through; the dear items cannot be cut up at all, since
+-- declaring an aura group allocates its whole batch of buttons in one engine call, so the slice's
+-- real job is to stop two of those landing in the same frame.
+local FRAME_BUDGET_MS = 2
+-- What the on-demand lanes may spend per second. Three times the background rate, because their
+-- items are things already on screen waiting to be finished.
+local URGENT_MS_PER_SECOND = 60
+-- What the background lanes may spend per second. They are preparing displays nobody has asked for
+-- yet, so this one number is what the addon costs in ordinary play.
+local BACKGROUND_MS_PER_SECOND = 20
+-- The most of any frame the on-demand lanes may claim while a background lane is also waiting.
+-- Without it a busy on-demand lane takes every frame, and the background lanes are exactly the ones
+-- nothing else will ever come back for. With nothing waiting the share does not bind at all.
+local URGENT_FRAME_SHARE = 0.5
 -- How fast a lane's remembered worst item fades, per item it runs. A lane's work changes shape as
 -- it goes - a container, then its groups, then a run of no-ops - so one that has stopped being
--- expensive earns its way back to sharing a tick over the next few dozen items.
+-- expensive earns its way back to sharing a frame over the next few dozen items.
 local PEAK_DECAY = 0.9
 
 -- Every lane ever created. Lanes are one per consumer per session and never removed; a drained
 -- lane costs one has-work check per scan.
 local lanes = {}
-local ticker = nil
--- Round-robin cursors into lanes, persisted across ticks so a busy lane cannot starve the rest.
--- One per class of lane, because urgent lanes are picked from before the others and would
--- otherwise all read the same position.
+-- The frame the walker rides, built on first use: an addon whose modules are all switched off
+-- never sweeps and never needs one. Hidden whenever no lane has work, so an idle session runs no
+-- script at all.
+local worker = nil
+-- Round-robin cursors into lanes, persisted across frames so a busy lane cannot starve the rest.
+-- One per class of lane, because the two classes are walked in passes of their own.
 local cursor = 1
 local urgentCursor = 1
--- How much of the tick being run is gone, and whether anything has run in it yet. Read by the
--- round robin: the budget cannot split an item, so the only way to keep a tick short is to not
--- start one that is going to overrun it.
-local spentThisTick = 0
-local tickIsEmpty = true
+-- Milliseconds each class has banked and not yet spent. Held as credit rather than granted per
+-- frame because an item cannot be split: a lane runs one whenever any credit is left and the
+-- overrun is carried into the frames after it, so the average holds however dear the items are.
+-- Neither ever banks more than one frame's slice, or a quiet minute would buy one enormous frame.
+local urgentCredit = 0
+local credit = 0
+-- When the frame being run began and how much of it is gone. The slice cannot split an item, so
+-- the only way to keep a frame short is to not start one that is going to overrun it.
+local frameStarted = 0
+local spentThisFrame = 0
+-- Whether the pass being run has started anything yet. Its first item always runs, or a lane whose
+-- items cost more than the whole slice would never run at all.
+local passIsEmpty = true
 
 ---@class Sweep
 local M = {}
@@ -48,7 +79,7 @@ addon.Core.Sweep = M
 ---@enum SweepVerdict
 M.Verdict = {
 	-- The item is not finished: hand it back on this lane's next turn rather than moving on. For
-	-- work that cannot fit in one slot, so the tick budget applies between its parts.
+	-- work that cannot fit in one slot, so the budget applies between its parts.
 	Unfinished = "unfinished",
 }
 
@@ -58,25 +89,29 @@ local function LaneHasWork(lane)
 	return lane.Queue ~= nil and lane.Queue[lane.Next] ~= nil
 end
 
----Whether the round robin may hand this lane an item in what is left of the tick.
+---Whether the round robin may hand this lane an item in what is left of the frame.
 ---@param lane Sweep
+---@param remainingMs number
 ---@return boolean
-local function LaneCanRun(lane)
+local function LaneCanRun(lane, remainingMs)
 	if not LaneHasWork(lane) then
 		return false
 	end
 
-	-- The first item of a tick always runs, or a lane whose items cost more than the whole budget
-	-- would never run at all.
-	if tickIsEmpty then
+	-- The pass's first item runs whatever it costs, or a lane whose items are dearer than the whole
+	-- slice would never run at all. What stops the next pass taking a second one is the slice
+	-- itself: an item that overran it leaves nothing under the limit for anyone to start with.
+	-- Measured live, one group declaration is about four milliseconds against a two millisecond
+	-- slice, so in practice a frame carries one of them.
+	if passIsEmpty then
 		return true
 	end
 
 	-- Weighed against the worst this lane has been lately rather than its average: a lane part way
 	-- through a run of cheap no-op turns averages cheap right up until its next real container
-	-- build, which is what used to let three of those land in one fifteen millisecond tick. A lane
-	-- that has never run counts as dear for the same reason.
-	return lane.PeakMs ~= nil and lane.PeakMs <= TICK_BUDGET_MS - spentThisTick
+	-- build, which is what used to let three of those land in one frame. A lane that has never run
+	-- counts as dear for the same reason.
+	return lane.PeakMs ~= nil and lane.PeakMs <= remainingMs
 end
 
 ---@param lane Sweep
@@ -86,25 +121,24 @@ local function StopLane(lane)
 	lane.Ctx = nil
 end
 
----The next lane with something to do, advancing the cursor past it; nil once a full circle
----finds nothing. Urgent lanes go first: their items are things already on screen waiting to be
----finished, where the rest is work being done ahead of anyone asking for it.
+---The next lane of one class with something to do, advancing that class's cursor past it; nil
+---once a full circle finds nothing.
+---@param urgent boolean Which class of lane this pass is serving.
+---@param remainingMs number
 ---@return Sweep?
-local function NextLaneWithWork()
+local function NextLaneWithWork(urgent, remainingMs)
 	for _ = 1, #lanes do
-		local lane = lanes[urgentCursor]
-		urgentCursor = urgentCursor % #lanes + 1
+		local lane
 
-		if lane.Urgent and LaneCanRun(lane) then
-			return lane
+		if urgent then
+			lane = lanes[urgentCursor]
+			urgentCursor = urgentCursor % #lanes + 1
+		else
+			lane = lanes[cursor]
+			cursor = cursor % #lanes + 1
 		end
-	end
 
-	for _ = 1, #lanes do
-		local lane = lanes[cursor]
-		cursor = cursor % #lanes + 1
-
-		if LaneCanRun(lane) then
+		if (lane.Urgent == true) == urgent and LaneCanRun(lane, remainingMs) then
 			return lane
 		end
 	end
@@ -112,12 +146,14 @@ local function NextLaneWithWork()
 	return nil
 end
 
----A peek that leaves the cursor alone, for the end-of-tick stop check. Asking through
----NextLaneWithWork there would consume a busy lane's turn and starve it for the whole sweep.
+---A peek that leaves the cursors alone, for the stop check and for weighing one class against the
+---other. Asking through NextLaneWithWork would consume a busy lane's turn and starve it for the
+---whole sweep.
+---@param urgent boolean? Only lanes of this class; either class when left out.
 ---@return boolean
-local function AnyLaneHasWork()
+local function AnyLaneHasWork(urgent)
 	for _, lane in ipairs(lanes) do
-		if LaneHasWork(lane) then
+		if (urgent == nil or (lane.Urgent == true) == urgent) and LaneHasWork(lane) then
 			return true
 		end
 	end
@@ -125,14 +161,31 @@ local function AnyLaneHasWork()
 	return false
 end
 
-local function Tick()
-	local started = debugprofilestop()
+---What the on-demand pass may spend of a frame: its share while a background lane is waiting, and
+---the lot when none is.
+---@param allowanceMs number
+---@return number
+local function UrgentAllowance(allowanceMs)
+	if not AnyLaneHasWork(false) then
+		return allowanceMs
+	end
 
-	spentThisTick = 0
-	tickIsEmpty = true
+	return math.min(allowanceMs, FRAME_BUDGET_MS * URGENT_FRAME_SHARE)
+end
 
-	while spentThisTick < TICK_BUDGET_MS do
-		local lane = NextLaneWithWork()
+---Hands out slots to one class of lane until its own allowance or the frame's slice is gone,
+---whichever comes first.
+---@param urgent boolean
+---@param allowanceMs number What this class has left to spend.
+---@return number spent by this pass
+local function RunPass(urgent, allowanceMs)
+	local before = spentThisFrame
+	local limit = math.min(before + allowanceMs, FRAME_BUDGET_MS)
+
+	passIsEmpty = true
+
+	while spentThisFrame < limit do
+		local lane = NextLaneWithWork(urgent, limit - spentThisFrame)
 
 		if not lane then
 			break
@@ -141,7 +194,7 @@ local function Tick()
 		local queue = lane.Queue
 		local item = queue[lane.Next]
 		lane.Next = lane.Next + 1
-		tickIsEmpty = false
+		passIsEmpty = false
 
 		local itemStarted = debugprofilestop()
 		local verdict = lane.ProcessFn(item, lane.Ctx)
@@ -149,13 +202,15 @@ local function Tick()
 
 		lane.PeakMs = math.max(ms, (lane.PeakMs or 0) * PEAK_DECAY)
 
+		local abandoned = verdict == false
+
 		-- Not finished: give the item its place back, so it completes before anything newer and
-		-- the tick budget is weighed between its parts.
-		if verdict == M.Verdict.Unfinished then
+		-- the budget is weighed between its parts. Only into the queue it came from; a processFn
+		-- that replaced its own lane's run would otherwise push the new queue's cursor off the
+		-- front of it.
+		if verdict == M.Verdict.Unfinished and lane.Queue == queue then
 			lane.Next = lane.Next - 1
 		end
-
-		local abandoned = verdict == false
 
 		-- Only while the run is still the one this item came from: a processFn may Run a
 		-- replacement on its own lane, and stopping then would silently kill the new queue.
@@ -163,17 +218,47 @@ local function Tick()
 			StopLane(lane)
 		end
 
-		spentThisTick = debugprofilestop() - started
+		spentThisFrame = debugprofilestop() - frameStarted
 	end
 
-	if ticker and not AnyLaneHasWork() then
-		ticker:Cancel()
-		ticker = nil
+	return spentThisFrame - before
+end
+
+---@param elapsed number Seconds since the last frame, which is what the credit buys.
+local function OnUpdate(_, elapsed)
+	-- Nothing is drawn behind a loading screen, so anything spent there is charged to the frame the
+	-- screen drops on. No credit accrues either: a two minute zone-in must not buy a hitch.
+	if addon:IsLoadingScreenUp() then
+		return
+	end
+
+	urgentCredit = math.min(urgentCredit + elapsed * URGENT_MS_PER_SECOND, FRAME_BUDGET_MS)
+	credit = math.min(credit + elapsed * BACKGROUND_MS_PER_SECOND, FRAME_BUDGET_MS)
+
+	frameStarted = debugprofilestop()
+	spentThisFrame = 0
+
+	urgentCredit = urgentCredit - RunPass(true, UrgentAllowance(urgentCredit))
+	credit = credit - RunPass(false, credit)
+
+	if not AnyLaneHasWork() then
+		worker:Hide()
 	end
 end
 
----@param urgent boolean? Serve this lane before the others. For work something on screen is
----waiting on, which must not queue behind work nobody has asked for yet.
+---Puts the worker back on the clock, building it the first time anything sweeps.
+local function Wake()
+	if not worker then
+		worker = CreateFrame("Frame")
+		worker:SetScript("OnUpdate", OnUpdate)
+	end
+
+	worker:Show()
+end
+
+---@param urgent boolean? Spend the on-demand allowance rather than the background one, ahead of
+---the background lanes. For work something on screen is waiting on, which must not be paced by
+---what work nobody has asked for yet has left.
 ---@return Sweep A lane of the shared walker; hold one per consumer.
 function M:New(urgent)
 	local lane = setmetatable({ Urgent = urgent }, M)
@@ -200,9 +285,7 @@ function M:Run(queue, processFn, ctx)
 		return
 	end
 
-	if not ticker then
-		ticker = C_Timer.NewTicker(TICK_INTERVAL, Tick)
-	end
+	Wake()
 end
 
 ---Adds one item to the end of this lane's run, starting a run if it is idle. For work that turns
@@ -237,4 +320,4 @@ end
 ---@field Ctx any?
 ---@field Urgent boolean?
 ---@field PeakMs number? The worst this lane's items have cost lately, for the round robin's guess
----at whether one more fits in what is left of a tick.
+---at whether one more fits in what is left of a frame.
