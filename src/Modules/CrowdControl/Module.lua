@@ -51,7 +51,9 @@ local function SeedStateBaselines()
 end
 
 local function OnEvent(_, event)
-	if event == "GROUP_ROSTER_UPDATE" then
+	if event == "GROUP_ROSTER_UPDATE" or event == "LOADING_SCREEN_DISABLED" then
+		-- The screen ending is what makes the frames readable: nothing is built while one is up,
+		-- so this is the pass that builds what the world-entering pass had to skip.
 		QueueRefresh()
 	elseif event == "UNIT_PET" then
 		-- A pet was summoned/dismissed; refresh so the opt-in pet unit frame containers show/hide
@@ -106,7 +108,8 @@ local function Setup()
 	-- Registered by the Refresh gate while either feature is on. UNIT_PET tracks the player's
 	-- pet being summoned/dismissed so the opt-in pet unit frame containers follow it,
 	-- regardless of which unit-frame addon owns the pet frame.
-	rosterGate = eventGate:New(eventsFrame, { "GROUP_ROSTER_UPDATE", "UNIT_PET" })
+	rosterGate = eventGate:New(eventsFrame,
+		{ "GROUP_ROSTER_UPDATE", "UNIT_PET", "LOADING_SCREEN_DISABLED" })
 
 	-- A unit leaving or re-entering the player's visible world has no event, and it decides
 	-- whether the engine evaluates the CC filter at all, so the budgets are recomputed when the

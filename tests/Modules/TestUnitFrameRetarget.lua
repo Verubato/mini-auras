@@ -114,6 +114,26 @@ fw.describe("Important auras - the login layout pass", function()
 		env.unitFrames[#env.unitFrames] = nil
 		fresh:Hide()
 	end)
+
+	fw.it("builds no crowd control containers during it either", function()
+		local fresh = env.addUnitFrame("party4", "CUF_LoadingCC")
+		local before = #env.containersForUnit("party4")
+
+		env.loadingScreenUp = true
+
+		crowdControl:Refresh()
+
+		assert(#env.containersForUnit("party4") == before, "the layout pass builds nothing")
+
+		env.loadingScreenUp = false
+
+		crowdControl:Refresh()
+
+		assert(#env.containersForUnit("party4") > before, "and the pass after the screen builds it")
+
+		env.unitFrames[#env.unitFrames] = nil
+		fresh:Hide()
+	end)
 end)
 
 fw.describe("CrowdControlModule 12.1 - unit frame anchors", function()

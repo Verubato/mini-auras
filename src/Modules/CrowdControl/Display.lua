@@ -183,6 +183,13 @@ local function EnsureWatcher(anchor, unit)
 		return nil
 	end
 
+	-- Blizzard briefly shows every frame it pre-creates, pointed at "player", while it lays them
+	-- out at login: all forty-five look visible and occupied, and only the timing tells them apart
+	-- from the frame the player has. The refresh after the screen builds what this skips.
+	if addon:IsLoadingScreenUp() then
+		return nil
+	end
+
 	-- Nobody on the token, nothing to watch. Blizzard builds its party and raid frames for a full
 	-- group and calls SetUnit on every one of them at login, so a solo player's frames alone are
 	-- dozens of containers for units that are not there. A unit turning up re-runs this hook, and
