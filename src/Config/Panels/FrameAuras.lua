@@ -719,7 +719,7 @@ function M:Build(panel)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			L["Replaces Blizzard's own auras on the party, raid, target, and focus frames."],
+			L["Replaces Blizzard's own buffs and debuffs on the party, raid, target, and focus frames."],
 		},
 	})
 

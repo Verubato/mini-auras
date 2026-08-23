@@ -41,9 +41,14 @@ env.loadModule("src/Core/Auras/TrackedBuffs.lua")
 env.loadModule("src/Core/Auras/ClassBuffs.lua")
 env.loadModule("src/Modules/FrameAuras/Spells.lua")
 env.loadModule("src/Modules/FrameAuras/GroupAuras.lua")
+env.loadModule("src/Modules/FrameAuras/ClassBuff.lua")
+env.loadModule("src/Modules/FrameAuras/TargetAuras.lua")
+env.loadModule("src/Modules/FrameAuras/Module.lua")
 
 local spells = env.addon.Modules.FrameAuras.Spells
 local groupAuras = env.addon.Modules.FrameAuras.GroupAuras
+local module = env.addon.Modules.FrameAurasModule
+local testSpells = env.addon.Core.TestSpells
 local trackedBuffs = env.addon.Core.TrackedBuffs
 local options = db.Modules.FrameAurasModule
 
@@ -266,5 +271,134 @@ fw.describe("Frame Auras - Blizzard's own aura rows", function()
 
 		options.Debuffs.Enabled = false
 		groupAuras:Refresh()
+	end)
+end)
+
+-- The preview draws through TestSpells:FillContainer, so recording the calls says which sides
+-- reached the screen and which container each row landed in.
+local fills = {}
+local originalFill = testSpells.FillContainer
+
+testSpells.FillContainer = function(self, container, previewSpells, startSlot, fillOptions)
+	fills[#fills + 1] = { Container = container, Spells = previewSpells, Frame = container.Frame }
+
+	return originalFill(self, container, previewSpells, startSlot, fillOptions)
+end
+
+local function ResetFills()
+	for index = #fills, 1, -1 do
+		fills[index] = nil
+	end
+end
+
+---The preview row drawn on a given frame, or nil when nothing was drawn there.
+---@param frame table
+---@return IconSlotContainer?
+local function RowOn(frame)
+	for _, fill in ipairs(fills) do
+		if fill.Frame:GetParent() == frame then
+			return fill.Container
+		end
+	end
+
+	return nil
+end
+
+fw.describe("Frame Auras - test mode", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		ResetFills()
+	end)
+
+	fw.it("draws a preview row on the party frame for a side that is on", function()
+		options.Buffs.Enabled = true
+
+		module:StartTesting()
+
+		local row = RowOn(memberFrame)
+
+		assert(row, "the party frame got a preview row")
+		assert(row:GetUsedSlotCount() > 0, "with icons in it")
+		assert(row.Frame:IsShown(), "and it is on screen")
+	end)
+
+	fw.it("clears the preview when test mode stops", function()
+		options.Buffs.Enabled = true
+
+		module:StartTesting()
+
+		local row = assert(RowOn(memberFrame), "the party frame got a preview row")
+
+		module:StopTesting()
+
+		assert(row:GetUsedSlotCount() == 0, "the fake icons are gone")
+		assert(not row.Frame:IsShown(), "and so is the row itself")
+	end)
+
+	fw.it("previews nothing for a side that is switched off", function()
+		options.Debuffs.Enabled = true
+
+		module:StartTesting()
+
+		assert(#fills > 0, "the enabled side previews something")
+
+		for _, fill in ipairs(fills) do
+			assert(fill.Spells == testSpells.FrameAuras.Debuffs, "only the debuff side draws")
+		end
+	end)
+
+	fw.it("previews nothing at all while both sides are off", function()
+		module:StartTesting()
+
+		assert(#fills == 0, "a page nobody switched on shows an empty frame, as it does in play")
+	end)
+
+	fw.it("leaves nothing behind on the spare frames a raid never fills", function()
+		options.Buffs.Enabled = true
+
+		-- One of Blizzard's forty raid frames with nobody on it, which is what the client leaves
+		-- sitting hidden for most of a session.
+		local spare = _G.CreateFrame("Frame", "CompactRaidFrame1", _G.UIParent)
+		spare.healthBar = _G.CreateFrame("Frame", nil, spare)
+		spare.GetAttribute = function() end
+		spare:Hide()
+		_G.CompactRaidFrame1 = spare
+
+		module:StartTesting()
+		module:StopTesting()
+		groupAuras:Refresh()
+
+		-- A preview that let every empty frame through would leave an entry for each, and every
+		-- refresh after it would build that entry a display and its batch of buttons.
+		assert(not RowOn(spare), "the empty frame never got a preview row")
+		assert(#env.containersForUnit("none") == 0, "nor a live display once the preview ended")
+
+		_G.CompactRaidFrame1 = nil
+	end)
+
+	fw.it("reaches the stand-in frames a solo player sees", function()
+		options.Buffs.Enabled = true
+
+		module:StartTesting()
+
+		local drawn = 0
+
+		for _, standIn in ipairs(env.testFrames) do
+			if RowOn(standIn) then
+				drawn = drawn + 1
+			end
+		end
+
+		assert(drawn == #env.testFrames, "every stand-in got a row, whether or not its unit exists")
+
+		local standIn = assert(RowOn(env.testFrames[1]))
+
+		module:StopTesting()
+
+		-- The stand-ins leave the frame list with test mode, so the refresh that follows never
+		-- walks them: whatever cleared this row did it without being handed the frame.
+		assert(standIn:GetUsedSlotCount() == 0, "the stand-in row is cleared too")
 	end)
 end)

@@ -1,13 +1,16 @@
 ---@type string, Addon
 local _, addon = ...
 local mini = addon.Framework
+local L = addon.L
 local moduleUtil = addon.Utils.ModuleUtil
 local wowEx = addon.Utils.WoWEx
 local frames = addon.Core.Frames
 local eventGate = addon.Core.EventGate
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local iconSlotContainer = addon.Core.IconSlotContainer
 local pixels = addon.Core.Pixels
 local sweep = addon.Core.Sweep
+local testSpells = addon.Core.TestSpells
 local spells = addon.Modules.FrameAuras.Spells
 
 -- Stands in for Blizzard's own buff and debuff rows on the party and raid frames. Each side is a
@@ -61,6 +64,9 @@ local CVAR_SHOWN = "1"
 local CVAR_WORK_KEY = "MiniAuras_FrameAurasCVar_"
 
 local SIDES = { "Buffs", "Debuffs" }
+-- Where each side's preview row is kept on an entry. The engine decides what an AuraContainer
+-- shows, so a fake aura cannot be fed to one; the preview draws its own icons instead.
+local TEST_FIELDS = { Buffs = "TestBuffs", Debuffs = "TestDebuffs" }
 
 addon.Modules.FrameAuras = addon.Modules.FrameAuras or {}
 
@@ -71,6 +77,7 @@ addon.Modules.FrameAuras.GroupAuras = M
 
 -- Whether each side is drawing right now.
 local active = { Buffs = false, Debuffs = false }
+local testModeActive = false
 -- What each side last told the client about Blizzard's own row, so the cvar is only ever written
 -- on the edge. Nil until the first refresh settles it, which is what keeps a side that was already
 -- off at login from handing Blizzard's row back to a player who turned it off themselves.
@@ -132,6 +139,12 @@ local function BlizzardFrames()
 	end
 
 	frames:BlizzardFrames(false, frameScratch)
+
+	-- The stand-ins test mode puts up for a solo player. Without them a preview outside a group
+	-- has nothing to draw on, because the client's own frames are all empty.
+	if testModeActive then
+		mini:Append(frames:GetTestFrames(), frameScratch)
+	end
 
 	return frameScratch
 end
@@ -309,6 +322,15 @@ local function PerRow(side)
 	return tonumber(options and options.PerRow) or DEFAULT_PER_ROW
 end
 
+---How many icons the preview draws: one row's worth, capped by the budget. A single row is enough
+---to show where the icons land and how big they are, and reading BOTH sliders is what makes each
+---of them visibly do something while test mode is up.
+---@param side "Buffs"|"Debuffs"
+---@return number
+local function TestIconCount(side)
+	return math.max(1, math.min(MaxIcons(side), PerRow(side)))
+end
+
 ---@param side "Buffs"|"Debuffs"
 ---@return AuraDisplayStyle
 local function BuildStyle(side)
@@ -410,10 +432,6 @@ local function AnchorSide(display, frame, side)
 
 	display:SetGrow(place.Grow)
 
-	if containerFrame:GetParent() ~= frame then
-		containerFrame:SetParent(frame)
-	end
-
 	-- Scales with the frame, unlike the free-standing displays elsewhere. These rows stand in for
 	-- ones Blizzard drew as children of the frame, so they have to sit in the same coordinate space
 	-- it does: at any UI scale but 1, a row that ignored it would take the wrong fraction of the
@@ -431,6 +449,99 @@ local function AnchorSide(display, frame, side)
 
 	containerFrame:ClearAllPoints()
 	containerFrame:SetPoint(place.Point, frame, place.Point, place.OffsetX, place.OffsetY)
+end
+
+---@param container IconSlotContainer?
+local function ClearTestRow(container)
+	if not container then
+		return
+	end
+
+	container:ResetAllSlots()
+	container.Frame:Hide()
+end
+
+---One side's preview row on one frame, built the first time test mode asks for it. A side the
+---player never previews never builds one.
+---@param entry FrameAurasEntry
+---@param side "Buffs"|"Debuffs"
+---@return IconSlotContainer
+local function EnsureTestContainer(entry, side)
+	local field = TEST_FIELDS[side]
+	local container = entry[field]
+
+	if not container then
+		container = iconSlotContainer:New(
+			entry.Frame,
+			TestIconCount(side),
+			IconSize(entry.Frame, side),
+			ICON_SPACING,
+			MASQUE_GROUP,
+			nil,
+			MASQUE_GROUP
+		)
+		entry[field] = container
+	end
+
+	return container
+end
+
+---Draws one side's preview, or clears it for a side that is switched off: a row nobody asked for
+---draws nothing in play, so it previews nothing either.
+---@param entry FrameAurasEntry
+---@param side "Buffs"|"Debuffs"
+local function ApplyTestSide(entry, side)
+	local container = entry[TEST_FIELDS[side]]
+
+	if not active[side] then
+		ClearTestRow(container)
+
+		return
+	end
+
+	container = EnsureTestContainer(entry, side)
+
+	local frame = entry.Frame
+	local place = PLACEMENT[side]
+	local containerFrame = container.Frame
+	local count = TestIconCount(side)
+
+	container:SetIconSize(IconSize(frame, side))
+	container:SetCount(count)
+
+	local db = mini:GetSavedVars()
+	local nextSlot = testSpells:FillContainer(container, testSpells.FrameAuras[side], 1, {
+		ReverseCooldown = true,
+		Glow = false,
+		FontScale = db and db.FontScale,
+		Stagger = true,
+		Count = count,
+	})
+
+	for slot = nextSlot, container.Count do
+		container:SetSlotUnused(slot)
+	end
+
+	-- The same coordinate space and the same corner the live row takes, so the preview stands
+	-- exactly where the icons will be.
+	containerFrame:SetIgnoreParentScale(false)
+
+	local hostLevel = pixels:Number(frame:GetFrameLevel())
+
+	if hostLevel then
+		containerFrame:SetFrameLevel(hostLevel + 1)
+	end
+
+	containerFrame:ClearAllPoints()
+	containerFrame:SetPoint(place.Point, frame, place.Point, place.OffsetX, place.OffsetY)
+	containerFrame:Show()
+end
+
+---@param entry FrameAurasEntry
+local function ClearTestIcons(entry)
+	for _, side in ipairs(SIDES) do
+		ClearTestRow(entry[TEST_FIELDS[side]])
+	end
 end
 
 ---Pushes one side's settings at its display: geometry first, then what the groups may draw.
@@ -493,6 +604,34 @@ local function ApplyEntry(entry)
 		ApplySettings(entry)
 	end
 
+	-- The live rows go dark for the preview: nothing can put a fake aura in front of the engine,
+	-- so the two would otherwise sit on top of each other.
+	if testModeActive then
+		if entry.Buffs then
+			entry.Buffs:SetShown(false)
+		end
+
+		if entry.Debuffs then
+			entry.Debuffs:SetShown(false)
+		end
+
+		for _, side in ipairs(SIDES) do
+			ApplyTestSide(entry, side)
+		end
+
+		-- On whichever row is actually up. Captioning the buff row regardless leaves a debuffs-only
+		-- preview with no caption, and puts one over a container that was just cleared.
+		local captioned = (active.Buffs and entry.TestBuffs) or (active.Debuffs and entry.TestDebuffs)
+
+		if captioned then
+			moduleUtil:SetTestLabel(captioned.Frame, L["Frame Auras"])
+		end
+
+		return
+	end
+
+	ClearTestIcons(entry)
+
 	-- Always, unlike the rest: who is on the frame is exactly what a re-point changes.
 	local occupied = HasUnit(entry.Unit) and frames:IsAnchorUsable(entry.Frame)
 
@@ -519,7 +658,13 @@ local function EnsureEntry(frame)
 	local unit = UnitFor(frame)
 
 	-- Only the first pass is gated. Once a frame has displays they are kept and re-pointed.
-	if not entry and not HasUnit(unit) then
+	--
+	-- Test mode lets a frame through with nobody on it, because the stand-ins name units the player
+	-- does not have - but only one that is actually on screen. Without that second half a single
+	-- test run leaves an entry behind for all forty spare raid frames, and every refresh after it
+	-- builds them a display and its batch of buttons.
+	if not entry and not HasUnit(unit)
+		and not (testModeActive and frames:IsAnchorUsable(frame)) then
 		return nil
 	end
 
@@ -538,6 +683,12 @@ local function EnsureEntry(frame)
 		if entry.Debuffs then
 			entry.Debuffs:SetUnit(unit or "none")
 		end
+	end
+
+	-- Nothing live is built for a preview: the display would be hidden the moment it existed, and
+	-- the stand-ins name units it could never read. The refresh that ends test mode builds them.
+	if testModeActive then
+		return entry
 	end
 
 	if active.Buffs and not entry.Buffs then
@@ -676,6 +827,19 @@ local function InstallHooks()
 	})
 end
 
+---@param value boolean
+function M:SetTestMode(value)
+	testModeActive = value
+
+	-- The stand-ins drop out of the frame list the moment this goes off, so the refresh that
+	-- follows would never reach the rows drawn on them.
+	if not value then
+		for _, entry in pairs(watchers) do
+			ClearTestIcons(entry)
+		end
+	end
+end
+
 ---Re-reads the settings, then catches up every frame that already exists. They are created once and
 ---reused, so the hooks alone would leave the ones on screen without displays.
 function M:Refresh()
@@ -723,4 +887,6 @@ end
 ---@field Unit string?
 ---@field Buffs AuraContainerDisplay?
 ---@field Debuffs AuraContainerDisplay?
+---@field TestBuffs IconSlotContainer? The preview row, built the first time test mode wants one.
+---@field TestDebuffs IconSlotContainer?
 ---@field Generation number? Which refresh this entry was last drawn for.

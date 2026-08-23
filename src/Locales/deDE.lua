@@ -461,7 +461,7 @@ L:RegisterLocale("deDE", function() return {
 	["Missing Buff"] = "Fehlender Buff",
 	["Debuffs"] = "Schwächungszauber",
 	["Debuffs take the first row and buffs the second, with the buffs moving up when the target has no debuffs."] = "Schwächungszauber nehmen die erste Reihe und Stärkungszauber die zweite. Die Stärkungszauber rücken auf, wenn das Ziel keine Schwächungszauber hat.",
-	["Replaces Blizzard's own auras on the party, raid, target, and focus frames."] = "Ersetzt Blizzards eigene Auren auf den Gruppen-, Schlachtzugs-, Ziel- und Fokusfenstern.",
+	["Replaces Blizzard's own buffs and debuffs on the party, raid, target, and focus frames."] = "Ersetzt Blizzards eigene Stärkungs- und Schwächungszauber auf den Gruppen-, Schlachtzugs-, Ziel- und Fokusfenstern.",
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Ersetzt Blizzards Auren auf den Ziel- und Fokusfenstern durch diese.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Ersetzt Blizzards Stärkungszauber auf den Gruppen- und Schlachtzugsfenstern durch diese.",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "Ersetzt Blizzards Schwächungszauber auf den Gruppen- und Schlachtzugsfenstern durch diese.",

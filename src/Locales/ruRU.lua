@@ -461,7 +461,7 @@ L:RegisterLocale("ruRU", function() return {
 	["Missing Buff"] = "Отсутствующий бафф",
 	["Debuffs"] = "Ослабления",
 	["Debuffs take the first row and buffs the second, with the buffs moving up when the target has no debuffs."] = "Ослабления занимают первый ряд, а усиления второй. Усиления поднимаются вверх, когда у цели нет ослаблений.",
-	["Replaces Blizzard's own auras on the party, raid, target, and focus frames."] = "Заменяет собственные ауры Blizzard на рамках группы, рейда, цели и фокуса.",
+	["Replaces Blizzard's own buffs and debuffs on the party, raid, target, and focus frames."] = "Заменяет собственные усиления и ослабления Blizzard на рамках группы, рейда, цели и фокуса.",
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Заменяет ауры Blizzard на рамках цели и фокуса этими.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Заменяет усиления Blizzard на рамках группы и рейда этими.",
 	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "Заменяет ослабления Blizzard на рамках группы и рейда этими.",

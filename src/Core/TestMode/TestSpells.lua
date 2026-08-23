@@ -66,6 +66,14 @@ M.Nameplates = {
 	},
 }
 
+---The party and raid frame rows, and the target and focus rows, which draw plain icons and take
+---bare spell ids rather than the entries the tinted previews need.
+M.FrameAuras = {
+	-- Heal-over-times, which is what the buff row is for.
+	Buffs = { 774, 33763, 139, 61295 }, -- Rejuvenation, Lifebloom, Renew, Riptide
+	Debuffs = { 408, 5782, 589 },       -- Kidney Shot, Fear, Shadow Word: Pain
+}
+
 ---The alert bars colour by category, or by the owner's class when that option is on. Class is
 ---carried per spell so the preview can show the second mode honestly: a real bar gives every icon
 ---on one enemy the same colour, and these spells are picked so the row reads that way - the mage's

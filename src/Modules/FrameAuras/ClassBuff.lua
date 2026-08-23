@@ -30,6 +30,7 @@ local M = {}
 addon.Modules.FrameAuras.ClassBuff = M
 
 local active = false
+local testModeActive = false
 -- The buff the player brings, or nil for a class that brings none. Fixed for the session: a
 -- character's class does not change.
 local playerBuff
@@ -69,6 +70,11 @@ local function BlizzardFrames()
 
 	frames:BlizzardFrames(false, frameScratch)
 	frames:BlizzardPartyFrames(false, frameScratch)
+
+	-- The stand-ins test mode puts up for a solo player, so the preview has something to mark.
+	if testModeActive then
+		mini:Append(frames:GetTestFrames(), frameScratch)
+	end
 
 	return frameScratch
 end
@@ -234,9 +240,16 @@ local function ApplyToFrame(frame)
 
 	local unit = UnitFor(frame)
 
-	Index(frame, unit)
+	-- Not while previewing. The stand-ins answer party1..3, the same tokens the real frames hold,
+	-- so filing them here would leave a later UNIT_AURA for a real member drawing onto a stand-in.
+	-- The index is rebuilt from the real frames by the refresh that ends test mode.
+	if not testModeActive then
+		Index(frame, unit)
+	end
 
-	if not IsMarkable(unit) or HasBuff(unit) ~= false then
+	-- The preview marks every frame it walks. Whether the unit has the buff is the one thing it
+	-- must not ask: the point is to see the mark, and a stand-in names a unit nobody is on.
+	if not testModeActive and (not IsMarkable(unit) or HasBuff(unit) ~= false) then
 		if mark then
 			mark:Hide()
 		end
@@ -325,6 +338,19 @@ local function InstallHooks()
 			end
 		end,
 	})
+end
+
+---@param value boolean
+function M:SetTestMode(value)
+	testModeActive = value
+
+	-- The stand-ins drop out of the frame list the moment this goes off, so the refresh that
+	-- follows would never reach the marks drawn on them.
+	if not value then
+		for _, mark in pairs(marks) do
+			mark:Hide()
+		end
+	end
 end
 
 ---Re-reads the setting and marks every frame that needs it, or clears the lot when it has been

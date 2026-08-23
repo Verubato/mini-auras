@@ -24,6 +24,23 @@ addon.Modules.FrameAurasModule = M
 
 local parts = { groupAuras, classBuff, targetAuras }
 
+---@param value boolean
+local function SetTestMode(value)
+	for _, part in ipairs(parts) do
+		part:SetTestMode(value)
+	end
+
+	M:Refresh()
+end
+
+function M:StartTesting()
+	SetTestMode(true)
+end
+
+function M:StopTesting()
+	SetTestMode(false)
+end
+
 function M:Refresh()
 	for _, part in ipairs(parts) do
 		part:Refresh()
@@ -37,3 +54,5 @@ end
 ---@class FrameAurasModule
 ---@field Init fun(self: FrameAurasModule)
 ---@field Refresh fun(self: FrameAurasModule)
+---@field StartTesting fun(self: FrameAurasModule)
+---@field StopTesting fun(self: FrameAurasModule)

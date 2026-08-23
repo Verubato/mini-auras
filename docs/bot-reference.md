@@ -676,6 +676,11 @@ icon. Custom IDs are added in the Custom section via the Spell ID box and remove
 button. Only differences from the curated list are saved, so an updated curated list still reaches
 existing profiles.
 
+**Test mode.** The Test button previews all four parts at once. On 12.1 an aura container is
+engine-driven and cannot be handed fake auras, so the preview is a separate row of stand-in icons
+drawn in the same corner at the same size, with the live row hidden behind it. Only a switched-on
+part previews anything. Outside a group it draws on the stand-in party frames test mode puts up.
+
 Icons here go through the same rendering as every other module, so the global Miscellaneous
 settings (font, icon zoom, cooldown swipe, countdown colours) and Masque skins apply. The Masque
 sub-group is called "Frame Auras".

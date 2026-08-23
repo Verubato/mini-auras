@@ -3,8 +3,10 @@ local _, addon = ...
 local mini = addon.Framework
 local eventGate = addon.Core.EventGate
 local auraContainerDisplay = addon.Core.AuraContainerDisplay
+local iconSlotContainer = addon.Core.IconSlotContainer
 local frames = addon.Core.Frames
 local pixels = addon.Core.Pixels
+local testSpells = addon.Core.TestSpells
 local spells = addon.Modules.FrameAuras.Spells
 
 -- Stands in for Blizzard's own aura rows on the target and focus frames. Debuffs take the first
@@ -27,6 +29,10 @@ local ROW_Y = 9
 local CASTBAR_X = 18
 local CASTBAR_Y = -5
 local MASQUE_GROUP = "Frame Auras"
+-- What a profile written before a key existed falls back to.
+local DEFAULT_SIZE = 22
+local DEFAULT_PER_ROW = 6
+local DEFAULT_MAX_ICONS = 6
 -- The two frames this stands in for, by the global the client publishes them under.
 local HOST_SPECS = {
 	{ Global = "TargetFrame", Unit = "target", Event = "PLAYER_TARGET_CHANGED" },
@@ -41,6 +47,7 @@ local M = {}
 addon.Modules.FrameAuras.TargetAuras = M
 
 local active = false
+local testModeActive = false
 -- Host frame -> its two displays. The frames are Blizzard's own and live for the session, so an
 -- entry lives as long as they do; there is nothing to clear.
 local hosts = {}
@@ -205,12 +212,12 @@ local function Build(host)
 		return
 	end
 
-	local size = options.Size or 22
-	local perRow = options.PerRow or 6
-	local maxIcons = options.MaxIcons or 6
+	local size = options.Size or DEFAULT_SIZE
+	local perRow = options.PerRow or DEFAULT_PER_ROW
+	local maxIcons = options.MaxIcons or DEFAULT_MAX_ICONS
 	local buffFilters, debuffFilters = Candidates(host)
 
-	host.Debuffs = auraContainerDisplay:New(UIParent, host.Unit, {
+	host.Debuffs = auraContainerDisplay:New(host.Frame, host.Unit, {
 		{ Key = DEBUFF_GROUP, FilterString = DEBUFF_FILTER, MaxIcons = maxIcons, CandidateFilters = debuffFilters },
 	}, size, ICON_SPACING, MASQUE_GROUP, {
 		Style = BuildStyle(),
@@ -218,7 +225,7 @@ local function Build(host)
 		PerLine = perRow,
 	})
 
-	host.Buffs = auraContainerDisplay:New(UIParent, host.Unit, {
+	host.Buffs = auraContainerDisplay:New(host.Frame, host.Unit, {
 		{ Key = BUFF_GROUP, FilterString = BUFF_FILTER, MaxIcons = maxIcons, CandidateFilters = buffFilters },
 	}, size, ICON_SPACING, MASQUE_GROUP, {
 		Style = BuildStyle(),
@@ -253,11 +260,16 @@ end
 local function AnchorCastBar(host)
 	local bar = host.Frame.spellbar
 
-	if not bar or not host.Buffs or host.Anchoring or not active then
+	if not bar or host.Anchoring or not active then
 		return
 	end
 
-	if not CanAnchorTo(bar, host.Buffs.Frame) then
+	-- Whichever buff row is on screen. During a preview the live one is hidden and its height is
+	-- whatever it was drawing before, so following it would leave the bar over the preview.
+	local trailing = testModeActive and host.TestBuffs and host.TestBuffs.Frame
+		or host.Buffs and host.Buffs.Frame
+
+	if not trailing or not CanAnchorTo(bar, trailing) then
 		return
 	end
 
@@ -265,7 +277,7 @@ local function AnchorCastBar(host)
 	host.Anchoring = true
 
 	bar:ClearAllPoints()
-	bar:SetPoint("TOPLEFT", host.Buffs.Frame, "BOTTOMLEFT", CASTBAR_X, CASTBAR_Y)
+	bar:SetPoint("TOPLEFT", trailing, "BOTTOMLEFT", CASTBAR_X, CASTBAR_Y)
 
 	host.Anchoring = false
 end
@@ -315,12 +327,12 @@ local function AnchorRows(host)
 	local buffs = host.Buffs.Frame
 
 	for _, containerFrame in ipairs({ debuffs, buffs }) do
-		if containerFrame:GetParent() ~= frame then
-			containerFrame:SetParent(frame)
-		end
-
 		-- Scales with the frame rather than the screen, like the group rows. It is also what puts
 		-- these rows in the same coordinate space as the cast bar that anchors below them.
+		--
+		-- The rows are BORN on the frame (see Build) rather than reparented onto it: declaring an
+		-- aura group marks a container as running layout untrusted code may not follow, and moving
+		-- one under a new parent after that is not something to lean on.
 		containerFrame:SetIgnoreParentScale(false)
 		containerFrame:SetFrameStrata(frames:GetNextStrata(frame:GetFrameStrata()))
 
@@ -338,6 +350,109 @@ local function AnchorRows(host)
 	buffs:SetPoint("TOPLEFT", debuffs, "BOTTOMLEFT", 0, 0)
 end
 
+---One preview row. Nothing can put a fake aura in front of the engine, so the preview draws its
+---own icons rather than feeding the live display.
+---@param frame table
+---@param perRow number
+---@param size number
+---@return IconSlotContainer
+local function NewTestRow(frame, perRow, size)
+	return iconSlotContainer:New(frame, perRow, size, ICON_SPACING, MASQUE_GROUP, nil, MASQUE_GROUP)
+end
+
+---@param container IconSlotContainer?
+local function ClearTestRow(container)
+	if not container then
+		return
+	end
+
+	container:ResetAllSlots()
+	container.Frame:Hide()
+end
+
+---@param container IconSlotContainer
+---@param previewSpells number[]
+---@param size number
+---@param perRow number
+local function FillTestRow(container, previewSpells, size, perRow)
+	local db = mini:GetSavedVars()
+
+	container:SetIconSize(size)
+	container:SetCount(perRow)
+
+	local nextSlot = testSpells:FillContainer(container, previewSpells, 1, {
+		ReverseCooldown = true,
+		Glow = false,
+		FontScale = db and db.FontScale,
+		Stagger = true,
+		Count = perRow,
+	})
+
+	for slot = nextSlot, container.Count do
+		container:SetSlotUnused(slot)
+	end
+end
+
+---Puts one preview row in the host's own coordinate space and over its art, the way the live rows
+---sit.
+---@param containerFrame table
+---@param frame table
+local function ParentTestRow(containerFrame, frame)
+	containerFrame:SetIgnoreParentScale(false)
+	containerFrame:SetFrameStrata(frames:GetNextStrata(frame:GetFrameStrata()))
+
+	local hostLevel = pixels:Number(frame:GetFrameLevel())
+
+	if hostLevel then
+		containerFrame:SetFrameLevel(hostLevel + 1)
+	end
+end
+
+---Draws the preview rows where the live ones go, or clears them. A switch the player never threw
+---previews nothing, because it draws nothing in play either.
+---@param host table
+---@param options FrameAurasTargetOptions
+local function ApplyTestRows(host, options)
+	if not testModeActive or not active then
+		ClearTestRow(host.TestDebuffs)
+		ClearTestRow(host.TestBuffs)
+
+		return
+	end
+
+	local size = options.Size or DEFAULT_SIZE
+	-- One row's worth, capped by the budget. Reading both sliders is what makes each of them
+	-- visibly do something while the preview is up.
+	local count = math.max(1, math.min(
+		options.MaxIcons or DEFAULT_MAX_ICONS,
+		options.PerRow or DEFAULT_PER_ROW
+	))
+
+	if not host.TestDebuffs then
+		host.TestDebuffs = NewTestRow(host.Frame, count, size)
+		host.TestBuffs = NewTestRow(host.Frame, count, size)
+	end
+
+	FillTestRow(host.TestDebuffs, testSpells.FrameAuras.Debuffs, size, count)
+	FillTestRow(host.TestBuffs, testSpells.FrameAuras.Buffs, size, count)
+
+	local frame = host.Frame
+	local debuffs = host.TestDebuffs.Frame
+	local buffs = host.TestBuffs.Frame
+
+	ParentTestRow(debuffs, frame)
+	ParentTestRow(buffs, frame)
+
+	debuffs:ClearAllPoints()
+	debuffs:SetPoint("TOPLEFT", ArtOf(frame), "BOTTOMLEFT", ROW_X, ROW_Y)
+
+	buffs:ClearAllPoints()
+	buffs:SetPoint("TOPLEFT", debuffs, "BOTTOMLEFT", 0, 0)
+
+	debuffs:Show()
+	buffs:Show()
+end
+
 ---@param host table
 local function Apply(host)
 	local options = Options()
@@ -347,6 +462,7 @@ local function Apply(host)
 	end
 
 	SuppressBlizzardAuras(host.Frame)
+	ApplyTestRows(host, options)
 
 	if not host.Debuffs then
 		if not active then
@@ -356,9 +472,9 @@ local function Apply(host)
 		Build(host)
 	end
 
-	local size = options.Size or 22
-	local perRow = options.PerRow or 6
-	local maxIcons = options.MaxIcons or 6
+	local size = options.Size or DEFAULT_SIZE
+	local perRow = options.PerRow or DEFAULT_PER_ROW
+	local maxIcons = options.MaxIcons or DEFAULT_MAX_ICONS
 
 	rowScratch[1].Display, rowScratch[1].Group = host.Debuffs, DEBUFF_GROUP
 	rowScratch[2].Display, rowScratch[2].Group = host.Buffs, BUFF_GROUP
@@ -370,7 +486,8 @@ local function Apply(host)
 		entry.Display:SetPerLine(perRow)
 		entry.Display:SetMaxIcons(entry.Group, maxIcons)
 		entry.Display:ApplyConfig(size, ICON_SPACING, BuildStyle())
-		entry.Display:SetShown(active)
+		-- The live rows go dark for the preview, or the two would sit on top of each other.
+		entry.Display:SetShown(active and not testModeActive)
 	end
 
 	AnchorRows(host)
@@ -435,6 +552,11 @@ local function InstallHooks()
 			end)
 		end
 	end
+end
+
+---@param value boolean
+function M:SetTestMode(value)
+	testModeActive = value
 end
 
 ---Re-reads the settings and redraws, or hands the frames back to Blizzard when switched off.
