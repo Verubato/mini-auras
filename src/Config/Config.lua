@@ -467,20 +467,6 @@ function M:Init()
 			return
 		end
 
-		-- TEMPORARY, alongside the audit counters in Modules/FrameAuras/GroupAuras.lua.
-		if msg == "fa" then
-			addon.Modules.FrameAuras.GroupAuras:Report()
-			return
-		end
-
-		if msg == "warm" then
-			local on = addon.Core.Sweep:ToggleProgressReporting()
-
-			mini:Notify(on and "Warm-up progress on." or "Warm-up progress off.")
-
-			return
-		end
-
 		M:EnsureWindow():Toggle()
 	end
 
