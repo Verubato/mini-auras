@@ -121,6 +121,7 @@ local audit = {
 	Taken = 0,
 	Buttons = 0,
 	SkipHidden = 0,
+	SkipLoading = 0,
 	SkipUnknownUnit = 0,
 	SkipEmpty = 0,
 }
@@ -128,6 +129,9 @@ local audit = {
 local auditLog = {}
 local AUDIT_LOG_MAX = 60
 local auditStart = GetTime()
+-- Assigned once ApplyToAll exists; the events that drive it all burst, and the one that matters
+-- most fires while the frames it walks are still settling.
+local QueueApplyToAll
 -- Spare displays built before any frame has asked for one, so a group forming does not have to
 -- wait out the walker for its rows. Held on the screen until a frame takes one.
 local spares = { Buffs = {}, Debuffs = {} }
@@ -945,6 +949,17 @@ local function EnsureEntry(frame)
 	-- world loads, Blizzard points every compact frame at a unit several times over and almost all
 	-- of them are still hidden, so reading the token and asking the client about it for each was
 	-- most of what this module cost during a login.
+	-- Nothing is built while a loading screen is up, because the frames lie during it. Blizzard
+	-- briefly SHOWS all forty raid frames and five party frames pointed at "player" to lay them
+	-- out, then hides them and hands out the real units. Every one of them is visible and holds a
+	-- unit that genuinely exists at that moment, so no test of the frame can tell them apart from
+	-- the one frame the player actually has. Waiting until the screen is down is what can.
+	if not entry and addon:IsLoadingScreenUp() then
+		audit.SkipLoading = audit.SkipLoading + 1
+
+		return nil
+	end
+
 	if not entry and not frames:IsAnchorUsable(frame) then
 		audit.SkipHidden = audit.SkipHidden + 1
 
@@ -1037,6 +1052,8 @@ local function ApplyToAll()
 	end
 end
 
+QueueApplyToAll = moduleUtil:Coalesced(ApplyToAll)
+
 ---@return boolean
 local function AnySideActive()
 	return active.Buffs or active.Debuffs
@@ -1105,7 +1122,10 @@ local function InstallHooks()
 	hooked = true
 
 	eventsFrame = CreateFrame("Frame")
-	eventsFrame:SetScript("OnEvent", ApplyToAll)
+	-- Deferred a frame: this fires as the loading screen ends, and the compact frames have not
+	-- finished settling onto their real units until after it. Coalesced too, because a roster
+	-- forming fires one of these per member joining.
+	eventsFrame:SetScript("OnEvent", QueueApplyToAll)
 
 	-- A frame passed over for having nobody on it gets no set-unit call of its own when someone
 	-- turns up under a token it was already holding, so the roster is what says to look again.
@@ -1231,8 +1251,8 @@ function M:Report()
 		tostring(active.Buffs), tostring(active.Debuffs),
 		audit.Built, audit.Spares, audit.Taken, audit.Buttons))
 	mini:Notify(string.format(
-		"  skipped: %d hidden, %d unreadable unit, %d empty | watchers %d (%d with rows), spares held %d/%d",
-		audit.SkipHidden, audit.SkipUnknownUnit, audit.SkipEmpty,
+		"  skipped: %d loading, %d hidden, %d unreadable unit, %d empty | watchers %d (%d with rows), spares held %d/%d",
+		audit.SkipLoading, audit.SkipHidden, audit.SkipUnknownUnit, audit.SkipEmpty,
 		watched, withRows, #spares.Buffs, #spares.Debuffs))
 
 	for _, frame in ipairs(BlizzardFrames()) do

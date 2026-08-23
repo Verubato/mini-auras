@@ -321,6 +321,30 @@ local function DropPartyFrame(index)
 	_G["CompactPartyFrameMember" .. index] = nil
 end
 
+---The same for one of Blizzard's forty raid frames. The party frames only run to five, so a test
+---needing its own frame past that takes a raid one.
+---@param index number
+---@return table
+local function NewRaidFrame(index)
+	local name = "CompactRaidFrame" .. index
+	local frame = _G.CreateFrame("Frame", name, _G.UIParent)
+
+	frame.healthBar = _G.CreateFrame("Frame", nil, frame)
+	frame.unit = "raid" .. index
+	frame.GetAttribute = function(_, key)
+		return key == "unit" and frame.unit or nil
+	end
+
+	_G[name] = frame
+
+	return frame
+end
+
+---@param index number
+local function DropRaidFrame(index)
+	_G["CompactRaidFrame" .. index] = nil
+end
+
 ---How many aura containers are parented to a frame. Asked of the frame rather than of the unit,
 ---because a spare warmed up ahead of a group sits on "none" until one takes it.
 ---@param frame table
@@ -541,6 +565,30 @@ fw.describe("Frame Auras - test mode", function()
 		for _, fill in ipairs(fills) do
 			assert(Includes(fill.Spells, testSpells.FrameAuras.Debuffs[1]), "only the debuff side draws")
 		end
+	end)
+
+	fw.it("builds nothing while a loading screen is up", function()
+		options.Buffs.Enabled = true
+
+		local frame = NewRaidFrame(20)
+
+		-- Blizzard shows all forty raid frames and five party frames pointed at "player" while it
+		-- lays them out at login, so during that window every one of them looks like a frame worth
+		-- building for. Nothing about the frame can tell them apart; only the timing can.
+		env.loadingScreenUp = true
+
+		groupAuras:Refresh()
+
+		assert(ContainersOn(frame) == 0, "the layout pass builds nothing")
+
+		env.loadingScreenUp = false
+		groupAuras:Refresh()
+
+		assert(ContainersOn(frame) > 0, "and the pass after the screen builds what is really there")
+
+		DropRaidFrame(20)
+		options.Buffs.Enabled = false
+		groupAuras:Refresh()
 	end)
 
 	fw.it("waits for a definite answer before building a frame's rows", function()
