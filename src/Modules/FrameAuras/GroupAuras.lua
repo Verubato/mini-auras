@@ -113,6 +113,21 @@ local hooked = false
 local frameScratch = {}
 -- Refilled per call, for the same reason: the preview list is rebuilt per side per frame.
 local testListScratch = {}
+-- TEMPORARY build accounting, for working out where this module's start-up cost goes. Read with
+-- /miniauras fa. Nothing reads these but the report; they exist to be printed.
+local audit = {
+	Built = 0,
+	Spares = 0,
+	Taken = 0,
+	Buttons = 0,
+	SkipHidden = 0,
+	SkipUnknownUnit = 0,
+	SkipEmpty = 0,
+}
+-- The first builds of a session, in order, so a reload can be read back afterwards.
+local auditLog = {}
+local AUDIT_LOG_MAX = 60
+local auditStart = GetTime()
 -- Spare displays built before any frame has asked for one, so a group forming does not have to
 -- wait out the walker for its rows. Held on the screen until a frame takes one.
 local spares = { Buffs = {}, Debuffs = {} }
@@ -456,6 +471,20 @@ local function BuildStyle(side)
 	-- plain icon, and a ring around every debuff is a lot of colour on a frame that already carries
 	-- the Important Auras row.
 	return style
+end
+
+---How many buttons a display was declared with, which is what a container actually costs: the
+---engine hands out a group's batch from the count it was born with. TEMPORARY, for the report.
+---@param display AuraContainerDisplay
+---@return number
+local function ButtonsOn(display)
+	local total = 0
+
+	for _, group in ipairs(display.Groups) do
+		total = total + (group.BornMaxIcons or group.MaxIcons or 0)
+	end
+
+	return total
 end
 
 ---One display's next group, from the walker. A display is created with none of them, so this is
@@ -870,6 +899,9 @@ local function PrewarmNext(side)
 	local build = side == "Buffs" and BuildBuffs or BuildDebuffs
 
 	local display = build(sample, nil, UIParent)
+
+	audit.Spares = audit.Spares + 1
+	audit.Buttons = audit.Buttons + ButtonsOn(display)
 	-- Stamped with what it was built for, so a settings change can tell it apart from a spare a
 	-- frame would actually want.
 	display.FrameAurasShape = ShapeOf(side)
@@ -914,6 +946,8 @@ local function EnsureEntry(frame)
 	-- of them are still hidden, so reading the token and asking the client about it for each was
 	-- most of what this module cost during a login.
 	if not entry and not frames:IsAnchorUsable(frame) then
+		audit.SkipHidden = audit.SkipHidden + 1
+
 		return nil
 	end
 
@@ -922,6 +956,12 @@ local function EnsureEntry(frame)
 	-- Test mode is the same question with the occupancy half dropped, because the stand-ins name
 	-- units the player does not have.
 	if not entry and not (testModeActive or HasUnitForSure(unit)) then
+		if unit and mini:IsSecret(UnitExists(unit)) then
+			audit.SkipUnknownUnit = audit.SkipUnknownUnit + 1
+		else
+			audit.SkipEmpty = audit.SkipEmpty + 1
+		end
+
 		return nil
 	end
 
@@ -952,9 +992,19 @@ local function EnsureEntry(frame)
 		if active[side] and not entry[side] then
 			local display = TakeSpare(side, frame, entry.Unit)
 
-			if not display then
+			if display then
+				audit.Taken = audit.Taken + 1
+			else
 				local build = side == "Buffs" and BuildBuffs or BuildDebuffs
 				display = build(frame, entry.Unit)
+
+				audit.Built = audit.Built + 1
+				audit.Buttons = audit.Buttons + ButtonsOn(display)
+
+				if #auditLog < AUDIT_LOG_MAX then
+					auditLog[#auditLog + 1] = string.format("%.1fs %s %s %s",
+						GetTime() - auditStart, side, tostring(frame:GetName()), tostring(entry.Unit))
+				end
 			end
 
 			entry[side] = display
@@ -1159,6 +1209,44 @@ function M:Refresh()
 
 	for _, entry in pairs(watchers) do
 		ApplyEntry(entry)
+	end
+end
+
+---TEMPORARY. Prints what this module has built this session and what it passed over, plus what it
+---sees on each of Blizzard's compact frames right now. For working out where the start-up cost
+---goes; remove along with the audit counters once it has answered that.
+function M:Report()
+	local watched, withRows = 0, 0
+
+	for _, entry in pairs(watchers) do
+		watched = watched + 1
+
+		if entry.Buffs or entry.Debuffs then
+			withRows = withRows + 1
+		end
+	end
+
+	mini:Notify(string.format(
+		"FrameAuras: buffs=%s debuffs=%s | built %d, spares %d (%d taken), %d buttons",
+		tostring(active.Buffs), tostring(active.Debuffs),
+		audit.Built, audit.Spares, audit.Taken, audit.Buttons))
+	mini:Notify(string.format(
+		"  skipped: %d hidden, %d unreadable unit, %d empty | watchers %d (%d with rows), spares held %d/%d",
+		audit.SkipHidden, audit.SkipUnknownUnit, audit.SkipEmpty,
+		watched, withRows, #spares.Buffs, #spares.Debuffs))
+
+	for _, frame in ipairs(BlizzardFrames()) do
+		local unit = UnitFor(frame)
+		local exists = unit and UnitExists(unit)
+		local answer = unit and (mini:IsSecret(exists) and "secret" or tostring(exists == true)) or "-"
+
+		mini:Notify(string.format("  %s visible=%s unit=%s exists=%s rows=%s",
+			tostring(frame:GetName()), tostring(frame:IsVisible() == true),
+			tostring(unit), answer, tostring(watchers[frame] ~= nil)))
+	end
+
+	for _, line in ipairs(auditLog) do
+		mini:Notify("  built " .. line)
 	end
 end
 

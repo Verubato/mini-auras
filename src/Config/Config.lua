@@ -467,6 +467,12 @@ function M:Init()
 			return
 		end
 
+		-- TEMPORARY, alongside the audit counters in Modules/FrameAuras/GroupAuras.lua.
+		if msg == "fa" then
+			addon.Modules.FrameAuras.GroupAuras:Report()
+			return
+		end
+
 		M:EnsureWindow():Toggle()
 	end
 
