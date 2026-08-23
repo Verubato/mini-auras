@@ -149,8 +149,28 @@ local zoneRetriesLeft = 0
 -- - Nothing may be anchored to the container frame itself (no OnSizeChanged), and the
 --   container's size can be secret; callers must not do math with it.
 
+-- TEMPORARY, read with /miniauras fa: what each module has built this session. Displays and their
+-- groups are what the engine charges for, and a group's batch of buttons is allocated the moment it
+-- is declared, so these three numbers are the whole start-up cost.
+local buildAudit = {}
+
 ---@class AuraContainerDisplay
 local M = {}
+
+---@param key string?
+---@return table
+local function AuditFor(key)
+	key = key or "unknown"
+
+	local entry = buildAudit[key]
+
+	if not entry then
+		entry = { Displays = 0, Groups = 0, Buttons = 0 }
+		buildAudit[key] = entry
+	end
+
+	return entry
+end
 M.__index = M
 
 addon.Core.AuraContainerDisplay = M
@@ -1657,6 +1677,11 @@ local function AddGroup(instance, group)
 	-- The current budget goes on straight after, exactly as it would have on an undeferred one.
 	local born = group.BornMaxIcons or group.MaxIcons or 3
 
+	local audit = AuditFor(instance.Frame.MiniCCModule)
+
+	audit.Groups = audit.Groups + 1
+	audit.Buttons = audit.Buttons + born
+
 	instance.Frame:AddAuraGroup(group.Key, auraFilters:Canonical(group.FilterString), {
 		maxFrameCount = born,
 		candidateFilters = group.CandidateFilters,
@@ -1760,6 +1785,8 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	frame:SetIgnoreParentScale(true)
 	frame.MiniCCModule = moduleName or nil
 	instance.Frame = frame
+
+	AuditFor(moduleName).Displays = AuditFor(moduleName).Displays + 1
 
 	-- Hidden while the groups are built. A container parses the moment it is visible, so one
 	-- built shown parses before its groups carry their real filters, and THAT parse is what stays
@@ -2383,6 +2410,12 @@ function M:AnchorAfterKick(kickFrame, anchor, grow, spacing, offsetX, offsetY, k
 		local point, relativePoint = growAnchors:GetAnchor(grow)
 		frame:SetPoint(point, anchor, relativePoint, offsetX, offsetY)
 	end
+end
+
+---TEMPORARY. What every module has built through this class, for /miniauras fa.
+---@return table<string, { Displays: number, Groups: number, Buttons: number }>
+function M:BuildAudit()
+	return buildAudit
 end
 
 ---@class AuraDisplayStyle

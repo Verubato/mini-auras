@@ -1263,6 +1263,25 @@ function M:Report()
 			tostring(unit), answer, tostring(watchers[frame] ~= nil)))
 	end
 
+	-- Every module's share, not just this one: a display is charged to whoever asked for it, and a
+	-- group's batch of buttons is allocated the moment it is declared, so this is where the whole
+	-- addon's start-up cost goes.
+	mini:Notify("Containers built this session, by module:")
+
+	local totalDisplays, totalGroups, totalButtons = 0, 0, 0
+
+	for key, entry in pairs(auraContainerDisplay:BuildAudit()) do
+		mini:Notify(string.format("  %s: %d displays, %d groups, %d buttons",
+			key, entry.Displays, entry.Groups, entry.Buttons))
+
+		totalDisplays = totalDisplays + entry.Displays
+		totalGroups = totalGroups + entry.Groups
+		totalButtons = totalButtons + entry.Buttons
+	end
+
+	mini:Notify(string.format("  ALL: %d displays, %d groups, %d buttons",
+		totalDisplays, totalGroups, totalButtons))
+
 	for _, line in ipairs(auditLog) do
 		mini:Notify("  built " .. line)
 	end
