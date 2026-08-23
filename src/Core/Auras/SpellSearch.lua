@@ -83,6 +83,39 @@ local function CollectKeys(ids, out)
 	end
 end
 
+---Whether the client could still come to name this id. Spell data loads lazily, so an id that
+---answers nothing right now may answer later - but one this build has dropped never will, and the
+---saved cache stays shut for as long as one of those is waiting; see StoreVariants.
+---
+---Without the question, everything waits: a group held back costs one session's cache, while one
+---discarded in error costs an aura that never matches.
+---@param spellId number
+---@return boolean
+local function MayYetName(spellId)
+	if not C_Spell.DoesSpellExist then
+		return true
+	end
+
+	return C_Spell.DoesSpellExist(spellId) and true or false
+end
+
+---The same for a group, which is named by whichever of its ids answers first.
+---@param raw string
+---@return boolean
+local function GroupMayYetName(raw)
+	if not C_Spell.DoesSpellExist then
+		return true
+	end
+
+	for id in raw:gmatch("%d+") do
+		if C_Spell.DoesSpellExist(tonumber(id)) then
+			return true
+		end
+	end
+
+	return false
+end
+
 ---What this client calls a group of ids, or nil while it can name none of them.
 ---@param raw string
 ---@return string?
@@ -131,7 +164,7 @@ local function GetNameIndex()
 
 		if name then
 			AddGroup(name, raw)
-		else
+		elseif GroupMayYetName(raw) then
 			pendingGroups = pendingGroups or {}
 			pendingGroups[#pendingGroups + 1] = raw
 		end
@@ -261,6 +294,76 @@ local function InsertCurated(entry)
 	end
 end
 
+---What this build of the data, on this client, in this language, calls a cached expansion. The
+---groups are what decides which ids share a name, and the client's language is what does the
+---sharing, so a change to either makes every stored answer suspect.
+---@return string
+local function CacheStamp()
+	-- The addon's version stands in for the curated lists, which feed the same expansion and ship
+	-- with the addon: a release that adds an id to one without regenerating the index above would
+	-- otherwise leave every stored answer a version behind.
+	local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version")
+	-- The client build too: an answer is only ever as wide as the ids this client knows, and a
+	-- patch that brings a dropped one back widens the name it lands on with nothing in the addon
+	-- changing to say so.
+	local build = GetBuildInfo and select(2, GetBuildInfo())
+
+	return (addon.Core.SpellNameIndexVersion or "?") .. ":" .. (version or "?") .. ":"
+		.. (build or "?") .. ":" .. GetLocale()
+end
+
+---The saved cache, wiped when it was built from other data than this one carries. Created on
+---first use rather than at load: the client restores a saved variable before the addon's own
+---ADDON_LOADED, and nothing asks for an expansion before that.
+---@return table<number, number[]>
+local function VariantStore()
+	local store = _G.MiniAurasSpellCache
+
+	if not store then
+		store = {}
+		_G.MiniAurasSpellCache = store
+	end
+
+	local stamp = CacheStamp()
+
+	if store.Stamp ~= stamp then
+		store.Stamp = stamp
+		store.Ids = {}
+	end
+
+	store.Ids = store.Ids or {}
+
+	return store.Ids
+end
+
+---A previous session's answer for this spell, if there is one.
+---@param spellId number
+---@return number[]?
+local function StoredVariants(spellId)
+	return VariantStore()[spellId]
+end
+
+---Keeps an expansion for the next session. Only once the client has answered for everything this
+---could have covered: an id whose data has not loaded yet expands to itself alone, and an answer
+---built while anything is still pending is short by whatever arrives next. Stored, that would
+---outlive the retry that fixes it - the store is read before the retry ever runs - and be wrong
+---for good rather than for the seconds it takes the client to catch up.
+---@param spellId number
+---@param variants number[]
+local function StoreVariants(spellId, variants)
+	if pendingIds or pendingGroups then
+		return
+	end
+
+	local name = C_Spell.GetSpellName(spellId)
+
+	if not name or name == "" then
+		return
+	end
+
+	VariantStore()[spellId] = variants
+end
+
 ---@return boolean resolved
 local function RetryPendingIds()
 	local kept = 0
@@ -353,6 +456,8 @@ local function RetryPending()
 	if resolved then
 		-- A late id widens the name it landed on, so every expansion taken from the old one has
 		-- to be worked out again.
+		-- Which is also what reopens the store: an answer refused while this id was pending is no
+		-- longer in hand, so the call that wants it next works it out again and keeps it.
 		wipe(variantCache)
 	end
 end
@@ -389,7 +494,7 @@ local function BuildCuratedIndex()
 
 		if entry then
 			entries[#entries + 1] = entry
-		elseif not named then
+		elseif not named and MayYetName(spellId) then
 			pendingIds = pendingIds or {}
 			pendingIds[#pendingIds + 1] = spellId
 		end
@@ -513,71 +618,6 @@ function M:Search(query, limit)
 	end
 
 	return results
-end
-
----What this build of the data, in this language, calls a cached expansion. The groups are what
----decides which ids share a name, and the client's language is what does the sharing, so a change
----to either makes every stored answer suspect.
----@return string
-local function CacheStamp()
-	-- The addon's version stands in for the curated lists, which feed the same expansion and ship
-	-- with the addon: a release that adds an id to one without regenerating the index above would
-	-- otherwise leave every stored answer a version behind.
-	local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version")
-
-	return (addon.Core.SpellNameIndexVersion or "?") .. ":" .. (version or "?") .. ":" .. GetLocale()
-end
-
----The saved cache, wiped when it was built from other data than this one carries. Created on
----first use rather than at load: the client restores a saved variable before the addon's own
----ADDON_LOADED, and nothing asks for an expansion before that.
----@return table<number, number[]>
-local function VariantStore()
-	local store = _G.MiniAurasSpellCache
-
-	if not store then
-		store = {}
-		_G.MiniAurasSpellCache = store
-	end
-
-	local stamp = CacheStamp()
-
-	if store.Stamp ~= stamp then
-		store.Stamp = stamp
-		store.Ids = {}
-	end
-
-	store.Ids = store.Ids or {}
-
-	return store.Ids
-end
-
----A previous session's answer for this spell, if there is one.
----@param spellId number
----@return number[]?
-local function StoredVariants(spellId)
-	return VariantStore()[spellId]
-end
-
----Keeps an expansion for the next session. Only once the client has answered for everything this
----could have covered: an id whose data has not loaded yet expands to itself alone, and an answer
----built while anything is still pending is short by whatever arrives next. Stored, that would
----outlive the retry that fixes it - the store is read before the retry ever runs - and be wrong
----for good rather than for the seconds it takes the client to catch up.
----@param spellId number
----@param variants number[]
-local function StoreVariants(spellId, variants)
-	if pendingIds or pendingGroups then
-		return
-	end
-
-	local name = C_Spell.GetSpellName(spellId)
-
-	if not name or name == "" then
-		return
-	end
-
-	VariantStore()[spellId] = variants
 end
 
 ---@param spellId number

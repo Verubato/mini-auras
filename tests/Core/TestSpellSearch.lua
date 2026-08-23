@@ -223,9 +223,11 @@ fw.describe("SpellSearch - the saved expansion cache", function()
 	-- client means naming every generated group. The answer only moves when the data or the
 	-- language does, so a session hands the next one what it worked out.
 	-- The stamp covers the generated data, the addon's own version (which the curated lists ship
-	-- with) and the language the grouping was done in.
+	-- with), the client build (which decides which ids can be named at all) and the language the
+	-- grouping was done in.
 	local function Stamp()
-		return "test-index:" .. (C_AddOns.GetAddOnMetadata("MiniAuras", "Version") or "?") .. ":" .. GetLocale()
+		return "test-index:" .. (C_AddOns.GetAddOnMetadata("MiniAuras", "Version") or "?")
+			.. ":" .. (select(2, GetBuildInfo()) or "?") .. ":" .. GetLocale()
 	end
 
 	local function WithStore(store, body)
@@ -260,6 +262,110 @@ fw.describe("SpellSearch - the saved expansion cache", function()
 			assert(#variants > 1, "the expansion covers the group")
 			assert(store.Ids[RAKE_CAST], "and it was kept")
 			assert(store.Stamp, "stamped with the data it came from")
+		end)
+	end)
+
+	-- The regression the store exists around. The generated index carries ids this build has
+	-- dropped, and storing waits for every pending id to name. One dropped id used to wait for
+	-- ever, so the cache persisted empty and every login paid the naming pass again.
+	local DROPPED_IDS = { 999000001, 999000002 }
+
+	---Runs `body` against an index carrying one group beyond the client's reach. The shared stand-in
+	---names every id it is asked about, so both halves need saying: `names` is what the client can
+	---name, `exists` is what it admits to having at all.
+	---@param store table
+	---@param body fun(search: table, names: table<number, string>, exists: table<number, boolean>)
+	local function WithDroppedGroup(store, body)
+		local previousStore = _G.MiniAurasSpellCache
+		_G.MiniAurasSpellCache = store
+
+		local names = {}
+		local exists = {}
+		local realName = _G.C_Spell.GetSpellName
+		local realExists = _G.C_Spell.DoesSpellExist
+
+		local function isDropped(spellId)
+			for _, dropped in ipairs(DROPPED_IDS) do
+				if spellId == dropped then
+					return true
+				end
+			end
+
+			return false
+		end
+
+		_G.C_Spell.GetSpellName = function(spellId)
+			if isDropped(spellId) then
+				return names[spellId]
+			end
+
+			return realName(spellId)
+		end
+
+		_G.C_Spell.DoesSpellExist = function(spellId)
+			if isDropped(spellId) then
+				return exists[spellId] == true
+			end
+
+			return true
+		end
+
+		local target = {
+			Core = {
+				AuraCategoryIds = categoryIds,
+				SpellNameIndex = {
+					("%d %d"):format(RAKE_CAST, RAKE_BLEED),
+					("%d %d"):format(DROPPED_IDS[1], DROPPED_IDS[2]),
+				},
+				SpellNameIndexVersion = "test-index",
+			},
+			Utils = {},
+			Modules = {},
+			Config = {},
+		}
+
+		assert(loadfile("src/Core/Auras/SpellSearch.lua"))("MiniAuras", target)
+
+		local ok, err = pcall(body, target.Core.SpellSearch, names, exists)
+
+		_G.C_Spell.GetSpellName = realName
+		_G.C_Spell.DoesSpellExist = realExists
+		_G.MiniAurasSpellCache = previousStore
+		assert(ok, err)
+	end
+
+	fw.it("keeps what it worked out even though a group will never name", function()
+		local store = {}
+
+		WithDroppedGroup(store, function(reloaded)
+			local variants = reloaded:GetVariants(RAKE_CAST)
+
+			assert(#variants > 1, "the expansion covers the group")
+			assert(store.Ids[RAKE_CAST],
+				"a group this build has dropped held the store shut for the session")
+		end)
+	end)
+
+	fw.it("waits for an id the client has but has not loaded, then keeps the lot", function()
+		-- The distinction the whole guard rests on. An id the client admits to may still name
+		-- later and widen the answer, so nothing is stored while one is waiting; once it names,
+		-- what was worked out in the meantime is settled and goes to the store.
+		local store = {}
+
+		WithDroppedGroup(store, function(reloaded, names, exists)
+			exists[DROPPED_IDS[1]] = true
+
+			reloaded:GetVariants(RAKE_CAST)
+			assert(store.Ids == nil or store.Ids[RAKE_CAST] == nil,
+				"an answer was stored while an id the client has was still unnamed")
+
+			names[DROPPED_IDS[1]] = "Moonfire"
+
+			-- Retries are one a frame at most, and the call above has spent this one.
+			require("WowApi").advanceTime(1)
+			reloaded:GetVariants(RAKE_BLEED)
+
+			assert(store.Ids[RAKE_BLEED], "nothing was kept once the id finally named")
 		end)
 	end)
 
