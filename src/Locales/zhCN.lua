@@ -464,7 +464,7 @@ L:RegisterLocale("zhCN", function() return {
 	["Buffs"] = "增益",
 	["Missing Buff"] = "缺失增益",
 	["Debuffs"] = "减益",
-	["Debuffs take the first row and buffs the second, with the buffs moving up when the target has no debuffs."] = "减益占据第一行，增益占据第二行。当目标没有减益时，增益会上移。",
+	["Buffs take the first row and debuffs the second, with the debuffs moving up when the target has no buffs."] = "增益占据第一行，减益占据第二行。当目标没有增益时，减益会上移。",
 	["Replaces Blizzard's own buffs and debuffs on the party, raid, target, and focus frames."] = "替换暴雪在小队、团队、目标和焦点框架上的增益和减益。",
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "用这些光环替换暴雪在目标和焦点框架上的光环。",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "用这些增益替换暴雪在小队和团队框架上的增益。",

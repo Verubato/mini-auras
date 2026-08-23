@@ -659,8 +659,8 @@ anything. A class that brings no group buff sees a line saying so and nothing to
 - Icon size 25-50 (percent of the frame's height). The corner is fixed, like the corners the buff
   and debuff rows take.
 
-**Target & Focus sub-tab.** Replaces the aura rows on the target and focus frames. Debuffs take
-the first row and buffs the second, with the buffs moving up when the target has no debuffs. The
+**Target & Focus sub-tab.** Replaces the aura rows on the target and focus frames. Buffs take
+the first row and debuffs the second, with the debuffs moving up when the target has no buffs. The
 cast bar is re-anchored under both rows so it no longer overlaps them. There is no cvar for these
 rows, so Blizzard's own container is emptied and disabled instead, and handed back when the switch
 goes off.

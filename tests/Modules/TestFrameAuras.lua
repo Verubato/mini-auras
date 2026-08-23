@@ -927,6 +927,7 @@ end)
 ---type being unreadable.
 local BUFF_GROUP = "TargetBuffs"
 local BUFF_PURGE_GROUP = "TargetBuffsPurge"
+local TARGET_DEBUFF_GROUP = "TargetDebuffs"
 local PURGE_FILTER = "HELPFUL|RAID_PLAYER_DISPELLABLE"
 local PLAIN_BUFF_FILTER = "HELPFUL|!RAID_PLAYER_DISPELLABLE"
 
@@ -937,6 +938,20 @@ local function BuffContainer(frame)
 	for _, candidate in ipairs(acm.frames) do
 		if candidate._type == "AuraContainer" and candidate:GetParent() == frame
 			and candidate._groups[BUFF_GROUP] then
+			return candidate
+		end
+	end
+
+	return nil
+end
+
+---The container carrying the debuff group on a target or focus frame.
+---@param frame table
+---@return table?
+local function DebuffContainer(frame)
+	for _, candidate in ipairs(acm.frames) do
+		if candidate._type == "AuraContainer" and candidate:GetParent() == frame
+			and candidate._groups[TARGET_DEBUFF_GROUP] then
 			return candidate
 		end
 	end
@@ -1046,6 +1061,31 @@ fw.describe("Frame Auras - the purge glow on the target row", function()
 		assert(plain and plain.maxDuration, "and so is the plain one")
 
 		options.TargetFocus.ShortBuffsOnly = false
+	end)
+end)
+
+fw.describe("Frame Auras - how the target rows stack", function()
+	fw.before_each(function()
+		module:StopTesting()
+		options.TargetFocus.Enabled = true
+
+		module:Refresh()
+		acm.tickAll(400)
+	end)
+
+	fw.it("puts the buffs above the debuffs", function()
+		local buffs = assert(BuffContainer(targetFrame), "the target frame got a buff row")
+		local debuffs = assert(DebuffContainer(targetFrame), "and a debuff row")
+		local _, relativeTo = debuffs:GetPoint(1)
+
+		assert(relativeTo == buffs, "the debuff row hangs off the buff row, not the other way round")
+	end)
+
+	fw.it("drops the cast bar under the lower of the two rows", function()
+		local debuffs = assert(DebuffContainer(targetFrame), "the target frame got a debuff row")
+		local _, relativeTo = targetFrame.spellbar:GetPoint(1)
+
+		assert(relativeTo == debuffs, "the bar follows the bottom row, so it cannot cover it")
 	end)
 end)
 

@@ -462,7 +462,7 @@ L:RegisterLocale("ptBR", function() return {
 	["Buffs"] = "Bônus",
 	["Missing Buff"] = "Bênção ausente",
 	["Debuffs"] = "Penalidades",
-	["Debuffs take the first row and buffs the second, with the buffs moving up when the target has no debuffs."] = "As penalidades ocupam a primeira linha e os bônus a segunda. Os bônus sobem quando o alvo não tem penalidades.",
+	["Buffs take the first row and debuffs the second, with the debuffs moving up when the target has no buffs."] = "Os bônus ocupam a primeira linha e as penalidades a segunda. As penalidades sobem quando o alvo não tem bônus.",
 	["Replaces Blizzard's own buffs and debuffs on the party, raid, target, and focus frames."] = "Substitui os bônus e penalidades da própria Blizzard nos quadros de grupo, raide, alvo e foco.",
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Substitui as auras da Blizzard nos quadros de alvo e foco por estas.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Substitui os bônus da Blizzard nos quadros de grupo e raide por estes.",

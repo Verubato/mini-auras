@@ -462,7 +462,7 @@ L:RegisterLocale("frFR", function() return {
 	["Buffs"] = "Améliorations",
 	["Missing Buff"] = "Buff manquant",
 	["Debuffs"] = "Affaiblissements",
-	["Debuffs take the first row and buffs the second, with the buffs moving up when the target has no debuffs."] = "Les affaiblissements occupent la première rangée et les améliorations la seconde. Les améliorations remontent quand la cible n'a aucun affaiblissement.",
+	["Buffs take the first row and debuffs the second, with the debuffs moving up when the target has no buffs."] = "Les améliorations occupent la première rangée et les affaiblissements la seconde. Les affaiblissements remontent quand la cible n'a aucune amélioration.",
 	["Replaces Blizzard's own buffs and debuffs on the party, raid, target, and focus frames."] = "Remplace les améliorations et affaiblissements de Blizzard sur les cadres de groupe, de raid, de cible et de focalisation.",
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Remplace les auras de Blizzard sur les cadres de cible et de focalisation par celles-ci.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Remplace les améliorations de Blizzard sur les cadres de groupe et de raid par celles-ci.",

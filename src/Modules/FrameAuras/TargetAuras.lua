@@ -10,8 +10,8 @@ local pixels = addon.Core.Pixels
 local testSpells = addon.Core.TestSpells
 local spells = addon.Modules.FrameAuras.Spells
 
--- Stands in for Blizzard's own aura rows on the target and focus frames. Debuffs take the first
--- row and buffs the second, with the buffs moving up when the target has no debuffs.
+-- Stands in for Blizzard's own aura rows on the target and focus frames. Buffs take the first
+-- row and debuffs the second, with the debuffs moving up when the target has no buffs.
 
 local DEBUFF_GROUP = "TargetDebuffs"
 local BUFF_GROUP = "TargetBuffs"
@@ -317,10 +317,10 @@ local function AnchorCastBar(host)
 		return
 	end
 
-	-- Whichever buff row is on screen. During a preview the live one is hidden and its height is
+	-- Whichever debuff row is on screen. During a preview the live one is hidden and its height is
 	-- whatever it was drawing before, so following it would leave the bar over the preview.
-	local trailing = testModeActive and host.TestBuffs and host.TestBuffs.Frame
-		or host.Buffs and host.Buffs.Frame
+	local trailing = testModeActive and host.TestDebuffs and host.TestDebuffs.Frame
+		or host.Debuffs and host.Debuffs.Frame
 
 	if not trailing or not CanAnchorTo(bar, trailing) then
 		return
@@ -417,9 +417,9 @@ local function Refilter(host)
 	host.Debuffs:SetCandidateFilters(DEBUFF_GROUP, debuffFilters)
 end
 
----Pins the two rows: the debuff row under the frame's art, the buff row flush under the debuff row.
----A display is only as tall as what it is drawing, so a target with no debuffs puts its buffs where
----the debuffs would have been.
+---Pins the two rows: the buff row under the frame's art, the debuff row flush under the buff row.
+---A display is only as tall as what it is drawing, so a target with no buffs puts its debuffs where
+---the buffs would have been.
 ---@param host table
 local function AnchorRows(host)
 	local frame = host.Frame
@@ -441,11 +441,11 @@ local function AnchorRows(host)
 		end
 	end
 
-	debuffs:ClearAllPoints()
-	debuffs:SetPoint("TOPLEFT", ArtOf(frame), "BOTTOMLEFT", ROW_X, ROW_Y)
-
 	buffs:ClearAllPoints()
-	buffs:SetPoint("TOPLEFT", debuffs, "BOTTOMLEFT", 0, 0)
+	buffs:SetPoint("TOPLEFT", ArtOf(frame), "BOTTOMLEFT", ROW_X, ROW_Y)
+
+	debuffs:ClearAllPoints()
+	debuffs:SetPoint("TOPLEFT", buffs, "BOTTOMLEFT", 0, 0)
 end
 
 ---One preview row. Nothing can put a fake aura in front of the engine, so the preview draws its
@@ -564,11 +564,11 @@ local function ApplyTestRows(host, options)
 	ParentTestRow(debuffs, frame)
 	ParentTestRow(buffs, frame)
 
-	debuffs:ClearAllPoints()
-	debuffs:SetPoint("TOPLEFT", ArtOf(frame), "BOTTOMLEFT", ROW_X, ROW_Y)
-
 	buffs:ClearAllPoints()
-	buffs:SetPoint("TOPLEFT", debuffs, "BOTTOMLEFT", 0, 0)
+	buffs:SetPoint("TOPLEFT", ArtOf(frame), "BOTTOMLEFT", ROW_X, ROW_Y)
+
+	debuffs:ClearAllPoints()
+	debuffs:SetPoint("TOPLEFT", buffs, "BOTTOMLEFT", 0, 0)
 
 	debuffs:Show()
 	buffs:Show()

@@ -465,7 +465,7 @@ L:SetDefaultStrings({
 	["Buffs"] = "Buffs",
 	["Missing Buff"] = "Missing Buff",
 	["Debuffs"] = "Debuffs",
-	["Debuffs take the first row and buffs the second, with the buffs moving up when the target has no debuffs."] = "Debuffs take the first row and buffs the second, with the buffs moving up when the target has no debuffs.",
+	["Buffs take the first row and debuffs the second, with the debuffs moving up when the target has no buffs."] = "Buffs take the first row and debuffs the second, with the debuffs moving up when the target has no buffs.",
 	["Replaces Blizzard's own buffs and debuffs on the party, raid, target, and focus frames."] = "Replaces Blizzard's own buffs and debuffs on the party, raid, target, and focus frames.",
 	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Replaces Blizzard's auras on the target and focus frames with these ones.",
 	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Replaces Blizzard's buffs on the party and raid frames with these ones.",

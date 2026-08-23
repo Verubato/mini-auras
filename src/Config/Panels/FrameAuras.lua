@@ -672,7 +672,7 @@ local function BuildTargetFocus(content, options)
 	local blurb = mini:TextBlock({
 		Parent = content,
 		Lines = {
-			L["Debuffs take the first row and buffs the second, with the buffs moving up when the target has no debuffs."],
+			L["Buffs take the first row and debuffs the second, with the debuffs moving up when the target has no buffs."],
 		},
 	})
 
