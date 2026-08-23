@@ -539,6 +539,9 @@ function M.build()
 	-- The real arena frame lookup, loaded onto the stub: it only reads globals, so a test can
 	-- exercise the addon priority order by installing them.
 	loadFile("src/Core/Frames/ArenaFrames.lua")
+	-- Same again for the Blizzard party and raid frame lookup, which the frame aura rows collect
+	-- their anchors through. A test installs CompactPartyFrameMember1 and the rest as globals.
+	loadFile("src/Core/Frames/Blizzard.lua")
 	-- Kick tracking is recorded rather than simulated: modules that re-target a container to a
 	-- different unit have to move their kick subscription with it, and nothing else would show
 	-- that they forgot.

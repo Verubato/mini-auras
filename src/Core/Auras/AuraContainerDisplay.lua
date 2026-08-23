@@ -1569,6 +1569,19 @@ local function InitializeLabelButton(instance, button)
 	StyleButton(instance, button)
 end
 
+---How far one line of icons may reach before it wraps, or nil for a display that never wraps.
+---@param instance AuraContainerDisplay
+---@return number?
+local function LineSize(instance)
+	local perLine = instance.PerLine
+
+	if not perLine or perLine < 1 then
+		return nil
+	end
+
+	return perLine * instance.Size + math.max(0, perLine - 1) * instance.Spacing
+end
+
 ---@param instance AuraContainerDisplay
 local function ApplyFlowLayout(instance)
 	local layout = growAnchors:GetFlow(instance.Grow)
@@ -1579,6 +1592,19 @@ local function ApplyFlowLayout(instance)
 		AnchorUtil.FlowDirection[layout.Horizontal],
 		AnchorUtil.FlowDirection[layout.Vertical]
 	)
+
+	-- Added part way through 12.1, and the only thing that caps a line, so a client without it
+	-- draws one long row rather than nothing at all. Only ever touched on a display that asked to
+	-- wrap, or one that asked before and has since stopped: every other display has drawn a single
+	-- uncapped row since 12.1 shipped, and this must not start telling them otherwise.
+	local lineSize = LineSize(instance)
+
+	if frame.SetFlowLayoutMaximumLineSize and (lineSize or instance.LineCapped) then
+		-- Uncapping is a cap wide enough that nothing reaches it; the engine takes a size, and
+		-- there is no documented value meaning "no limit".
+		frame:SetFlowLayoutMaximumLineSize(lineSize or math.huge)
+		instance.LineCapped = lineSize ~= nil
+	end
 end
 
 ---Fills the instance's own layout table. Spacing keys are passed under BOTH the older and newer
@@ -1610,6 +1636,11 @@ local function ApplyGroupLayout(instance)
 		if not group.Pending then
 			instance.Frame:SetAuraGroupLayout(group.Key, BuildGroupLayout(instance))
 		end
+	end
+
+	-- Where a line wraps is measured in icons, so it moves whenever the size or the spacing does.
+	if instance.PerLine then
+		ApplyFlowLayout(instance)
 	end
 end
 
@@ -1681,6 +1712,9 @@ function M:New(parent, unit, groups, size, spacing, moduleName, options)
 	-- tell a caller that its group key is wrong instead of silently doing nothing).
 	instance.GroupsByKey = {}
 	instance.Grow = growAnchors.Default
+	-- How many icons a line holds before the row wraps onto the next one. Nil for the displays
+	-- that draw a single row, which is every one of them but the frame aura rows.
+	instance.PerLine = options.PerLine
 	-- Owned by the instance and mutated in place by StoreStyle; callers never hand us a table
 	-- we keep, so they are free to pass a reused scratch.
 	instance.Style = {}
@@ -2138,6 +2172,41 @@ function M:SetGrow(grow)
 	ApplyFlowLayout(self)
 end
 
+---How many icons a line holds before the row wraps. Nil never wraps, which is what every display
+---but the frame aura rows wants. Unlike a button's look this is container-level, so it can change
+---at any time, restriction or not.
+---@param perLine number?
+function M:SetPerLine(perLine)
+	if self.PerLine == perLine then
+		return
+	end
+
+	self.PerLine = perLine
+	ApplyFlowLayout(self)
+end
+
+---Whether the engine classifies every aura before the candidate filters see it. Only the
+---dispellable filter (processedAuraType) reads that classification, so it goes off again when
+---nothing wants it: the work runs per aura, on every unit the display follows.
+---@param processing boolean
+function M:SetProcessingPolicy(processing)
+	local policies = CustomAuraContainerAuraProcessingPolicy
+
+	if not policies or not self.Frame.SetAuraProcessingPolicy then
+		return
+	end
+
+	-- The engine's setter ends in a full re-parse of every aura on the unit, so a settings change
+	-- that did not move this would cost a raid's worth of them for nothing.
+	if self.Processing == processing then
+		return
+	end
+
+	self.Processing = processing
+
+	self.Frame:SetAuraProcessingPolicy(processing and policies.ProcessAura or policies.None)
+end
+
 ---Returns the shared style scratch with every field cleared, ready to fill and hand to
 ---SetStyle. Using this instead of a table literal keeps the per-refresh style updates
 ---allocation-free, and clearing on hand-out means a caller can never inherit a field it forgot
@@ -2405,6 +2474,8 @@ end
 ---may be created while auras are secret - a later SetStyle cannot reach the buttons there.
 ---@field MasqueGroup string? Masque sub-group name (e.g. "CC", "Alerts"), matching the legacy
 ---container's so one skin choice covers both paths. Omit for displays that should not be skinned.
+---@field PerLine number? Wrap the row onto a new line every this many icons. Omit for a display
+---that draws one row, which is every one of them but the frame aura rows.
 ---@field DeferGroups boolean? Build the container with none of its groups, leaving the caller to
 ---pace them through AddNextGroup. The engine allocates a batch of buttons per group, so this is
 ---the only way to split a build; only for a display nothing is waiting on, and the display stays
@@ -2412,6 +2483,11 @@ end
 
 ---@class AuraContainerDisplay
 ---@field Frame table The AuraContainer frame (anchor/show/hide through this).
+---@field PerLine number? Icons per line before the row wraps; nil never wraps.
+---@field LineCapped boolean? Whether a wrap cap has been published to the engine, so dropping
+---PerLine can take it back off again.
+---@field Processing boolean? The aura processing policy last published, so an unchanged one
+---does not cost a full re-parse.
 ---@field NextPendingGroup number? Index into Groups of the next group a deferred build owes.
 ---@field Initialize fun(instance: AuraContainerDisplay, button: table, group: AuraDisplayGroupSpec)
 ---@field CarriesIdentityFilters boolean? Whether any of its groups filter on spell ids, worked

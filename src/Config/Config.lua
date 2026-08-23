@@ -273,6 +273,14 @@ function M:EnsureWindow()
 			end,
 		},
 		{
+			Key = "FrameAuras",
+			Title = L["Frame Auras"],
+			Icon = NAV_ICON_BASE .. "FrameAuras.png",
+			Build = function(content)
+				M.FrameAuras:Build(content)
+			end,
+		},
+		{
 			Key = "Alerts",
 			Title = L["Alerts"],
 			Icon = NAV_ICON_BASE .. "Alerts.png",
@@ -489,5 +497,6 @@ end
 ---@field AllyKickTracker AllyKickTrackerConfig
 ---@field OtherAddons OtherAddonsConfig
 ---@field ImportantAuras ImportantAurasConfig
+---@field FrameAuras FrameAurasConfig
 ---@field CustomAuras CustomAurasConfig
 ---@field Miscellaneous MiscellaneousConfig

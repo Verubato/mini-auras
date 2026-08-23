@@ -12,6 +12,8 @@ M.framework = {
 	"src/Libs/MiniFramework/Framework/Math.lua",
 	"src/Libs/MiniFramework/Framework/SavedVars.lua",
 	"src/Libs/MiniFramework/Framework/Settings.lua",
+	"src/Libs/MiniFramework/Framework/Secrets.lua",
+	"src/Libs/MiniFramework/Framework/Combat.lua",
 	"src/Libs/MiniFramework/Framework/AddonLoad.lua",
 }
 

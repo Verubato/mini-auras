@@ -48,6 +48,7 @@ Core\Compat\LegacyAddon.lua
 Core\Display\Media\Fonts.lua
 Core\Pooling\Sweep.lua
 Core\Pooling\Pool.lua
+Core\Display\Pixels.lua
 Core\Display\GrowAnchors.lua
 Core\Display\Media\GlowStyles.lua
 Core\Display\Outline.lua
@@ -67,6 +68,8 @@ Core\Auras\AuraCountdownText.lua
 Core\Auras\AuraMasque.lua
 Core\Auras\AuraButtonPaint.lua
 Core\Auras\AuraContainerDisplay.lua
+Core\Auras\TrackedBuffs.lua
+Core\Auras\ClassBuffs.lua
 
 Core\Kicks\KickSlot.lua
 Core\Kicks\KickData.lua
@@ -128,6 +131,11 @@ Modules\AllyKickTracker\Display.lua
 Modules\AllyKickTracker\Module.lua
 Modules\ImportantAuras\Display.lua
 Modules\ImportantAuras\Module.lua
+Modules\FrameAuras\Spells.lua
+Modules\FrameAuras\GroupAuras.lua
+Modules\FrameAuras\ClassBuff.lua
+Modules\FrameAuras\TargetAuras.lua
+Modules\FrameAuras\Module.lua
 Modules\CustomAuras\Groups.lua
 Modules\CustomAuras\Sound.lua
 Modules\CustomAuras\Recorder.lua
@@ -158,6 +166,7 @@ Config\Panels\Nameplates.lua
 Config\Panels\EnemyKickTracker.lua
 Config\Panels\AllyKickTracker.lua
 Config\Panels\ImportantAuras.lua
+Config\Panels\FrameAuras.lua
 Config\Panels\IconSelector.lua
 Config\Panels\TexturePicker.lua
 Config\Panels\CustomAuras\Shared.lua

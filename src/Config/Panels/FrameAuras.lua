@@ -1,0 +1,718 @@
+---@type string, Addon
+local _, addon = ...
+local mini = addon.Framework
+local L = addon.L
+local config = addon.Config
+local helpers = addon.Config.PanelHelpers
+local moduleName = addon.Utils.ModuleName
+local dbDefaults = addon.Config.Defaults
+local trackedBuffs = addon.Core.TrackedBuffs
+local classBuffs = addon.Core.ClassBuffs
+local spells = addon.Modules.FrameAuras.Spells
+
+local verticalSpacing = mini.VerticalSpacing
+local horizontalSpacing = mini.HorizontalSpacing
+local COLUMNS = 2
+-- A slider stacks its name and its value box above the bar, so it needs more clearance over it
+-- than a control whose label sits beside it. Measured from the bar, which is what gets anchored.
+local SLIDER_TOP_GAP = verticalSpacing * 2.5
+local SLIDER_ROW_GAP = verticalSpacing * 3
+-- What each page is allowed to be, so the window's own scroll covers the lot without a second
+-- scrollbar down the side of a tab.
+local TAB_HEIGHT = 470
+local SPELLS_HEIGHT = 300
+local SIDEBAR_WIDTH = 120
+local SIDEBAR_ROW_HEIGHT = 24
+local SIDEBAR_ROW_GAP = 25
+local SPELL_COLUMNS = 2
+local SPELL_COLUMN_WIDTH = 210
+-- Where a custom row's remove cross sits, measured back from the column's right edge.
+local REMOVE_COLUMN_INSET = 26
+local SPELL_ROW_HEIGHT = 24
+local SPELL_ICON_SIZE = 18
+local MAX_SPELL_NAME_LENGTH = 20
+local ADD_BOX_WIDTH = 140
+-- What the add box costs above the first spell row of the custom section.
+local ADD_BOX_HEIGHT = 26
+
+-- Every corner and edge of a unit frame, in reading order.
+local ANCHORS = {
+	"BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT",
+	"LEFT", "CENTER", "RIGHT",
+	"TOPLEFT", "TOP", "TOPRIGHT",
+}
+-- Behind functions rather than stored flat, because the locale can change after this file loads,
+-- so every lookup has to happen when the control is built.
+local ANCHOR_LABELS = {
+	BOTTOMLEFT = function() return L["Bottom left"] end,
+	BOTTOM = function() return L["Bottom"] end,
+	BOTTOMRIGHT = function() return L["Bottom right"] end,
+	LEFT = function() return L["Left"] end,
+	CENTER = function() return L["Centre"] end,
+	RIGHT = function() return L["Right"] end,
+	TOPLEFT = function() return L["Top left"] end,
+	TOP = function() return L["Top"] end,
+	TOPRIGHT = function() return L["Top right"] end,
+}
+
+-- The ranges each setting is held inside. Icon sizes on the party and raid frames are a share of
+-- the frame's own height: below a quarter of it nothing is legible, and past half the row covers
+-- the frame it sits on. The target frame is a fixed size, so its icons are given one in pixels.
+local BOUNDS = {
+	Buffs = {
+		Size = { Min = 25, Max = 50 },
+		MaxIcons = { Min = 1, Max = 9 },
+		PerRow = { Min = 1, Max = 6 },
+	},
+	Debuffs = {
+		Size = { Min = 25, Max = 50 },
+		MaxIcons = { Min = 1, Max = 9 },
+		PerRow = { Min = 1, Max = 6 },
+	},
+	ClassBuff = {
+		Size = { Min = 25, Max = 50 },
+		-- Room to nudge the mark clear of whatever a frame draws in that corner, without letting
+		-- it be pushed somewhere the frame it belongs to no longer explains.
+		OffsetX = { Min = -50, Max = 50 },
+		OffsetY = { Min = -50, Max = 50 },
+	},
+	TargetFocus = {
+		Size = { Min = 12, Max = 40 },
+		MaxIcons = { Min = 1, Max = 12 },
+		PerRow = { Min = 1, Max = 12 },
+	},
+}
+
+local columnWidth
+local controlWidth
+
+---@class FrameAurasConfig
+local M = {}
+
+config.FrameAuras = M
+
+---@param key string
+---@return string
+local function AnchorText(key)
+	local label = ANCHOR_LABELS[key]
+
+	return label and label() or key
+end
+
+---@param parent table
+---@param text string
+---@param below table?
+---@return table
+local function Divider(parent, text, below)
+	local divider = mini:Divider({ Parent = parent, Text = text })
+
+	divider:SetPoint("LEFT", parent, "LEFT", 0, 0)
+	divider:SetPoint("RIGHT", parent, "RIGHT", 0, 0)
+
+	if below then
+		divider:SetPoint("TOP", below, "BOTTOM", 0, -verticalSpacing * 2)
+	else
+		divider:SetPoint("TOP", parent, "TOP", 0, 0)
+	end
+
+	return divider
+end
+
+---A checkbox over one boolean setting on one of the four option tables.
+---@param parent table
+---@param options table
+---@param key string
+---@param label string
+---@param tooltip string
+---@return table
+local function Checkbox(parent, options, key, label, tooltip)
+	return mini:Checkbox({
+		Parent = parent,
+		LabelText = label,
+		Tooltip = tooltip,
+		GetValue = function()
+			return options[key] == true
+		end,
+		SetValue = function(value)
+			options[key] = value == true
+			config:Apply(moduleName.FrameAuras)
+		end,
+	})
+end
+
+---@param parent table
+---@param options table
+---@param part string The FrameAurasModule sub-table this belongs to, which is where the range is.
+---@param key string
+---@param label string
+---@param tooltip string
+---@return SliderReturn
+local function Slider(parent, options, part, key, label, tooltip)
+	local range = BOUNDS[part][key]
+
+	return helpers:BuildClampedSlider({
+		Parent = parent,
+		LabelText = label,
+		Tooltip = tooltip,
+		Min = range.Min,
+		Max = range.Max,
+		Default = dbDefaults.Modules.FrameAurasModule[part][key],
+		Width = controlWidth,
+		Target = options,
+		Key = key,
+		SettingsKey = moduleName.FrameAuras,
+	})
+end
+
+---The switch that decides whether a part draws at all, plus the line under it saying what happens
+---to Blizzard's own row when it does.
+---@param parent table
+---@param options table
+---@param label string
+---@param tooltip string
+---@return table checkbox
+local function EnableRow(parent, options, label, tooltip)
+	local checkbox = Checkbox(parent, options, "Enabled", label, tooltip)
+
+	checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+
+	return checkbox
+end
+
+---@param spellId number
+---@return string
+local function SpellLabel(spellId)
+	-- The addon's own name for it first, for the spells whose client name reads badly in a row.
+	local name = trackedBuffs.Names[spellId] or C_Spell.GetSpellName(spellId)
+
+	-- The id stands in rather than trailing every row: the client learns names as it goes, and a
+	-- spell it has not loaded yet would otherwise leave a row saying nothing at all. Hovering the
+	-- icon gives the full spell either way.
+	if not name then
+		return tostring(spellId)
+	end
+
+	return helpers:TrimName(name, MAX_SPELL_NAME_LENGTH)
+end
+
+---@param key string
+---@return string title, number r, number g, number b
+local function GroupLook(key)
+	if key == spells.CustomGroupKey then
+		return L["Custom"], 0.9, 0.9, 0.9
+	end
+
+	local names = LOCALIZED_CLASS_NAMES_MALE or {}
+	local color = RAID_CLASS_COLORS and RAID_CLASS_COLORS[key]
+
+	return names[key] or key,
+		color and color.r or 0.9,
+		color and color.g or 0.9,
+		color and color.b or 0.9
+end
+
+---The buff whitelist, read the way a player thinks about it: a class down the side, that class's
+---spells as toggles beside it, and one section at the end for anything they added themselves.
+---@param parent table
+---@param anchor table The control the browser hangs below.
+local function BuildSpellList(parent, anchor)
+	local body = CreateFrame("Frame", nil, parent)
+	body:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -verticalSpacing)
+	body:SetPoint("RIGHT", parent, "RIGHT", 0, 0)
+	body:SetHeight(SPELLS_HEIGHT)
+
+	local sidebar = CreateFrame("Frame", nil, body)
+	sidebar:SetPoint("TOPLEFT", body, "TOPLEFT", 0, 0)
+	sidebar:SetPoint("BOTTOMLEFT", body, "BOTTOMLEFT", 0, 0)
+	sidebar:SetWidth(SIDEBAR_WIDTH)
+
+	-- A class can hold more spells than the page is tall, so the sections live in a scroll frame.
+	-- One scroll child holds them all and only the open one is shown; its height is the range.
+	local scroll = CreateFrame("ScrollFrame", nil, body, "UIPanelScrollFrameTemplate")
+	scroll:SetPoint("TOPLEFT", body, "TOPLEFT", SIDEBAR_WIDTH + horizontalSpacing, 0)
+	scroll:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", 0, 0)
+
+	-- No visible bar: the template's own wheel handler still scrolls, so hiding it costs only the
+	-- affordance and reclaims the width the bar was holding. The hook is there because the
+	-- template re-shows the bar whenever the scroll range changes.
+	local scrollBar = scroll.ScrollBar
+
+	if scrollBar then
+		scrollBar:Hide()
+		scrollBar:SetScript("OnShow", scrollBar.Hide)
+	end
+
+	local scrollContent = CreateFrame("Frame", nil, scroll)
+	scrollContent:SetSize(1, 1)
+	scroll:SetScrollChild(scrollContent)
+
+	local sections, buttons = {}, {}
+	-- What each row was labelled with when it was built. The client learns spell names as it goes,
+	-- so a list built before it knew them reads as bare ids; this is what says whether re-opening
+	-- the page would actually show anything different.
+	local rows = {}
+	local selectedKey
+	local Populate
+
+	local addBox = mini:EditBox({
+		Parent = parent,
+		LabelText = L["Spell ID"],
+		Tooltip = L["Type a spell id and press Enter. The spell's own id, not the name."],
+		Width = ADD_BOX_WIDTH,
+		Numeric = true,
+		GetValue = function()
+			return ""
+		end,
+		SetValue = function(value)
+			local spellId = tonumber(value)
+
+			if not spellId or spellId <= 0 then
+				return
+			end
+
+			spells:SetTracked(math.floor(spellId), true)
+			config:Apply(moduleName.FrameAuras)
+			-- The sections are built from the lists, so a new id only turns up once they have been
+			-- rebuilt; re-reading the existing controls would never show it.
+			Populate()
+		end,
+	})
+
+	---@param key string
+	local function Select(key)
+		selectedKey = key
+
+		for sectionKey, section in pairs(sections) do
+			section:SetShown(sectionKey == key)
+
+			if sectionKey == key then
+				scrollContent:SetHeight(section:GetHeight())
+			end
+		end
+
+		for buttonKey, entry in pairs(buttons) do
+			local selected = buttonKey == key
+
+			entry.Button:SetBackdropColor(0, 0, 0, selected and 0.9 or 0)
+			entry.Accent:SetColorTexture(entry.R, entry.G, entry.B, selected and 1 or 0)
+		end
+	end
+
+	---@param section table
+	---@param group table
+	---@return number rowY How far down the section the rows reached, as a negative offset.
+	local function BuildRows(section, group)
+		local rowY = 0
+
+		if group.Custom then
+			-- Reparented rather than rebuilt, so the one box follows the section it belongs to.
+			addBox.Label:SetParent(section)
+			addBox.EditBox:SetParent(section)
+			addBox.Label:ClearAllPoints()
+			addBox.EditBox:ClearAllPoints()
+			-- The box carries an extra inset because its field border draws that far outside its
+			-- own left edge, which puts the border in line with the icons rather than the box.
+			addBox.Label:SetPoint("TOPLEFT", section, "TOPLEFT", 6, 0)
+			addBox.EditBox:SetPoint("TOPLEFT", addBox.Label, "BOTTOMLEFT", 6, -4)
+			rowY = -(SPELL_ROW_HEIGHT + ADD_BOX_HEIGHT)
+		end
+
+		local column = 0
+
+		for _, spellId in ipairs(group.Ids) do
+			local label = SpellLabel(spellId)
+			local toggle = mini:Checkbox({
+				Parent = section,
+				LabelText = label,
+				GetValue = function()
+					return spells:IsTracked(spellId)
+				end,
+				SetValue = function(value)
+					spells:SetTracked(spellId, value)
+					config:Apply(moduleName.FrameAuras)
+				end,
+			})
+
+			local columnX = column * SPELL_COLUMN_WIDTH
+
+			toggle:SetPoint("TOPLEFT", section, "TOPLEFT", columnX + SPELL_ICON_SIZE + 8, rowY)
+			rows[#rows + 1] = { SpellId = spellId, Label = label }
+
+			local texture = C_Spell.GetSpellTexture(spellId)
+
+			if texture then
+				local icon = helpers:CreateSpellIcon(section, SPELL_ICON_SIZE)
+				icon.SpellId = spellId
+				icon.Icon:SetTexture(texture)
+				icon:SetPoint("RIGHT", toggle, "LEFT", -2, 0)
+			end
+
+			-- Only the hand-added ones can be removed. A curated spell is switched off instead, so
+			-- its row stays where the player can switch it back on.
+			if group.Custom then
+				local remove = helpers:CreateRemoveButton(section, function()
+					spells:Forget(spellId)
+					config:Apply(moduleName.FrameAuras)
+					Populate()
+				end)
+
+				remove:SetPoint("TOPLEFT", section, "TOPLEFT",
+					columnX + SPELL_COLUMN_WIDTH - REMOVE_COLUMN_INSET, rowY - 4)
+			end
+
+			column = column + 1
+
+			if column >= SPELL_COLUMNS then
+				column = 0
+				rowY = rowY - SPELL_ROW_HEIGHT
+			end
+		end
+
+		-- A row left half filled still takes its own line.
+		if column > 0 then
+			rowY = rowY - SPELL_ROW_HEIGHT
+		end
+
+		return rowY
+	end
+
+	function Populate()
+		for _, section in pairs(sections) do
+			section:Hide()
+		end
+
+		for _, entry in pairs(buttons) do
+			entry.Button:Hide()
+		end
+
+		sections, buttons, rows = {}, {}, {}
+
+		local groups = spells:SpellGroups()
+		local y = 0
+
+		for _, group in ipairs(groups) do
+			local section = CreateFrame("Frame", nil, scrollContent)
+			section:SetPoint("TOPLEFT", scrollContent, "TOPLEFT", 0, 0)
+			section:SetWidth(SPELL_COLUMNS * SPELL_COLUMN_WIDTH)
+			section:Hide()
+			sections[group.Key] = section
+
+			section:SetHeight(math.max(-BuildRows(section, group), 1))
+
+			local title, r, g, b = GroupLook(group.Key)
+
+			local button = CreateFrame("Button", nil, sidebar, "BackdropTemplate")
+			button:SetHeight(SIDEBAR_ROW_HEIGHT)
+			button:SetPoint("TOPLEFT", sidebar, "TOPLEFT", 0, y)
+			button:SetPoint("TOPRIGHT", sidebar, "TOPRIGHT", 0, y)
+			button:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
+			button:SetBackdropColor(0, 0, 0, 0)
+
+			local accent = button:CreateTexture(nil, "OVERLAY")
+			accent:SetWidth(2)
+			accent:SetPoint("TOPLEFT", button, "TOPLEFT", 0, 0)
+			accent:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", 0, 0)
+			accent:SetColorTexture(r, g, b, 0)
+
+			local highlight = button:CreateTexture(nil, "HIGHLIGHT")
+			highlight:SetAllPoints()
+			highlight:SetColorTexture(1, 1, 1, 0.05)
+
+			local label = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+			label:SetPoint("LEFT", button, "LEFT", 8, 0)
+			label:SetText(title)
+			label:SetTextColor(r, g, b, 1)
+
+			local key = group.Key
+
+			button:SetScript("OnClick", function()
+				Select(key)
+			end)
+
+			buttons[key] = { Button = button, Accent = accent, R = r, G = g, B = b }
+			y = y - SIDEBAR_ROW_GAP
+		end
+
+		-- Back to whatever was open rather than the first section: a rebuild happens because the
+		-- player just added or removed something, and they are still looking at Custom.
+		if selectedKey and sections[selectedKey] then
+			Select(selectedKey)
+		elseif groups[1] then
+			Select(groups[1].Key)
+		end
+	end
+
+	Populate()
+
+	-- Rebuilt only where a name has actually turned up since. The list is around fifty frames and
+	-- nothing releases them, so a page the player opens and closes a few times would otherwise
+	-- orphan that many again each time; once the client knows every name, this stops firing.
+	parent:HookScript("OnShow", function()
+		for _, row in ipairs(rows) do
+			if row.Label ~= SpellLabel(row.SpellId) then
+				Populate()
+
+				return
+			end
+		end
+	end)
+end
+
+---@param content table
+---@param options FrameAurasBuffOptions
+local function BuildBuffs(content, options)
+	local enabled = EnableRow(content, options,
+		L["Replace the group buffs"],
+		L["Draws the buffs on the party and raid frames, and switches Blizzard's own off while it is on."])
+
+	local layout = Divider(content, L["Layout"], enabled)
+
+	local size = Slider(content, options, "Buffs", "Size", L["Icon size"],
+		L["Icon height as a percentage of the unit frame's own height."])
+	size.Slider:SetPoint("TOPLEFT", layout, "BOTTOMLEFT", 0, -SLIDER_TOP_GAP)
+
+	-- Second column of the same row: anchored to its neighbour rather than to the page, so the
+	-- pair keeps its own label line whatever the labels above them are.
+	local maxIcons = Slider(content, options, "Buffs", "MaxIcons", L["Max icons"],
+		L["How many icons this row may show at once."])
+	maxIcons.Slider:SetPoint("TOPLEFT", size.Slider, "TOPLEFT", columnWidth, 0)
+
+	local perRow = Slider(content, options, "Buffs", "PerRow", L["Icons per row"],
+		L["How many icons fit on one row before the next one starts."])
+	perRow.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", 0, -SLIDER_ROW_GAP)
+
+	local filters = Divider(content, L["Filters"], perRow.Slider)
+
+	-- Every switch here narrows what reaches the row, so they combine: an icon has to get past all
+	-- of them.
+	local filtered = Checkbox(content, options, "Filtered", L["Filtered"],
+		L["Shows only the spells picked in the tracked buffs list below."])
+	filtered:SetPoint("TOPLEFT", filters, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local mine = Checkbox(content, options, "Mine", L["Mine"],
+		L["Shows only the buffs you cast yourself."])
+	mine:SetPoint("TOPLEFT", filtered, "TOPLEFT", columnWidth, 0)
+
+	local shortOnly = Checkbox(content, options, "ShortOnly", L["Under 1min"],
+		L["Shows only the buffs that run for less than a minute, which drops the raid buffs and the flasks."])
+	shortOnly:SetPoint("TOPLEFT", filtered, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local glow = Divider(content, L["Refresh window"], shortOnly)
+
+	local pandemic = Checkbox(content, options, "PandemicGlow", L["Pandemic glow"],
+		L["Lights a heal-over-time up as its refresh window opens, so a refresh lands on time rather than early."])
+	pandemic:SetPoint("TOPLEFT", glow, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local swatch = mini:ColorSwatch({
+		Parent = content,
+		LabelText = L["Glow colour"],
+		Tooltip = L["The colour a heal-over-time lights up in as its refresh window opens."],
+		HasOpacity = false,
+		GetValue = function()
+			local color = options.PandemicColor
+
+			return color.R, color.G, color.B, 1
+		end,
+		SetValue = function(r, g, b)
+			local color = options.PandemicColor
+			color.R, color.G, color.B = r, g, b
+			config:Apply(moduleName.FrameAuras)
+		end,
+	})
+
+	swatch:SetPoint("TOPLEFT", pandemic, "TOPLEFT", columnWidth, 0)
+
+	local tracked = Divider(content, L["Tracked buffs"], pandemic)
+
+	BuildSpellList(content, tracked)
+end
+
+---@param content table
+---@param options FrameAurasDebuffOptions
+local function BuildDebuffs(content, options)
+	local enabled = EnableRow(content, options,
+		L["Replace the group debuffs"],
+		L["Draws the debuffs on the party and raid frames, and switches Blizzard's own off while it is on."])
+
+	local layout = Divider(content, L["Layout"], enabled)
+
+	local size = Slider(content, options, "Debuffs", "Size", L["Icon size"],
+		L["Icon height as a percentage of the unit frame's own height."])
+	size.Slider:SetPoint("TOPLEFT", layout, "BOTTOMLEFT", 0, -SLIDER_TOP_GAP)
+
+	local maxIcons = Slider(content, options, "Debuffs", "MaxIcons", L["Max icons"],
+		L["How many icons this row may show at once."])
+	maxIcons.Slider:SetPoint("TOPLEFT", size.Slider, "TOPLEFT", columnWidth, 0)
+
+	local perRow = Slider(content, options, "Debuffs", "PerRow", L["Icons per row"],
+		L["How many icons fit on one row before the next one starts."])
+	perRow.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", 0, -SLIDER_ROW_GAP)
+
+	local filters = Divider(content, L["Filters"], perRow.Slider)
+
+	local dispellable = Checkbox(content, options, "Dispellable", L["Dispellable"],
+		L["Shows only the debuffs your own spec can dispel."])
+	dispellable:SetPoint("TOPLEFT", filters, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local shortOnly = Checkbox(content, options, "ShortOnly", L["Under 1min"],
+		L["Shows only the debuffs that run for less than a minute."])
+	shortOnly:SetPoint("TOPLEFT", dispellable, "TOPLEFT", columnWidth, 0)
+end
+
+---The name of the buff the player brings, for a page that can then say which one it means.
+---@return string?
+local function PlayerBuffName()
+	local _, class = UnitClass("player")
+	local buff = class and classBuffs[class]
+
+	return buff and C_Spell.GetSpellName(buff.Icon) or nil
+end
+
+---@param content table
+---@param options FrameAurasClassBuffOptions
+local function BuildClassBuff(content, options)
+	local name = PlayerBuffName()
+
+	local blurb = mini:TextBlock({
+		Parent = content,
+		Lines = {
+			name and L["Marks a party or raid frame whose member is missing %s."]:format(name)
+				or L["Your class brings no group buff, so there is nothing for this to mark."],
+		},
+	})
+
+	blurb:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
+	blurb:SetPoint("RIGHT", content, "RIGHT", 0, 0)
+
+	local enabled = Checkbox(content, options, "Enabled", L["Show the missing buff"],
+		L["Puts the buff's own icon on the frame, drained of colour, while the member is without it."])
+	enabled:SetPoint("TOPLEFT", blurb, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local anchor = helpers:BuildLabelledDropdown({
+		Parent = content,
+		LabelText = L["Anchor"],
+		Tooltip = L["Which corner of the unit frame the mark sits in."],
+		Items = ANCHORS,
+		GetText = AnchorText,
+		Width = controlWidth,
+		Target = options,
+		Key = "Anchor",
+		SettingsKey = moduleName.FrameAuras,
+	})
+
+	anchor.Label:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -verticalSpacing * 1.5)
+
+	-- Second column of the same row, so the page stays two controls tall.
+	local size = Slider(content, options, "ClassBuff", "Size", L["Icon size"],
+		L["Icon height as a percentage of the unit frame's own height."])
+	size.Slider:SetPoint("TOPLEFT", anchor, "TOPLEFT", columnWidth, 0)
+
+	local offsetX = Slider(content, options, "ClassBuff", "OffsetX", L["Offset X"],
+		L["Nudges the mark sideways from its corner. Positive is right, negative is left."])
+	offsetX.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", -columnWidth, -SLIDER_ROW_GAP)
+
+	local offsetY = Slider(content, options, "ClassBuff", "OffsetY", L["Offset Y"],
+		L["Nudges the mark up or down from its corner. Positive is up, negative is down."])
+	offsetY.Slider:SetPoint("TOPLEFT", offsetX.Slider, "TOPLEFT", columnWidth, 0)
+end
+
+---@param content table
+---@param options FrameAurasTargetOptions
+local function BuildTargetFocus(content, options)
+	local blurb = mini:TextBlock({
+		Parent = content,
+		Lines = {
+			L["Debuffs take the first row and buffs the second, with the buffs moving up when the target has no debuffs."],
+		},
+	})
+
+	blurb:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
+	blurb:SetPoint("RIGHT", content, "RIGHT", 0, 0)
+
+	local enabled = Checkbox(content, options, "Enabled", L["Replace the target and focus auras"],
+		L["Draws the auras on those frames rather than leaving them to Blizzard."])
+	enabled:SetPoint("TOPLEFT", blurb, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local shortBuffs = Checkbox(content, options, "ShortBuffsOnly", L["Only short buffs"],
+		L["Hides buffs that run longer than two minutes, which is most of what a target is carrying around."])
+	shortBuffs:SetPoint("TOPLEFT", enabled, "TOPLEFT", columnWidth, 0)
+
+	-- Each of these only bites where it means anything, so a purge target still shows its buffs
+	-- and a friend still shows every debuff on them.
+	local myBuffs = Checkbox(content, options, "MyBuffs", L["My buffs"],
+		L["On a unit you can help, shows only the buffs you cast yourself."])
+	myBuffs:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -verticalSpacing)
+
+	local myDebuffs = Checkbox(content, options, "MyDebuffs", L["My debuffs"],
+		L["On a unit you cannot help, shows only the debuffs you applied yourself."])
+	myDebuffs:SetPoint("TOPLEFT", myBuffs, "TOPLEFT", columnWidth, 0)
+
+	local size = Slider(content, options, "TargetFocus", "Size", L["Icon size"],
+		L["Icon height in pixels."])
+	size.Slider:SetPoint("TOPLEFT", myBuffs, "BOTTOMLEFT", 0, -SLIDER_TOP_GAP)
+
+	local maxIcons = Slider(content, options, "TargetFocus", "MaxIcons", L["Max icons"],
+		L["How many icons each row may show at once."])
+	maxIcons.Slider:SetPoint("TOPLEFT", size.Slider, "TOPLEFT", columnWidth, 0)
+
+	local perRow = Slider(content, options, "TargetFocus", "PerRow", L["Icons per row"],
+		L["How many icons fit on one row before the next one starts."])
+	perRow.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", 0, -SLIDER_ROW_GAP)
+end
+
+---@param panel table
+function M:Build(panel)
+	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
+	controlWidth = columnWidth - horizontalSpacing
+
+	local db = mini:GetSavedVars()
+	local options = db.Modules.FrameAurasModule
+
+	local lines = mini:TextBlock({
+		Parent = panel,
+		Lines = {
+			L["Draws the auras on Blizzard's own party, raid, target and focus frames, in place of the ones the game puts there."],
+		},
+	})
+
+	lines:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+	lines:SetPoint("RIGHT", panel, "RIGHT", 0, 0)
+
+	local tabContainer = CreateFrame("Frame", nil, panel)
+	tabContainer:SetPoint("TOPLEFT", lines, "BOTTOMLEFT", 0, -verticalSpacing)
+	tabContainer:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, 0)
+	tabContainer:SetHeight(TAB_HEIGHT + 34)
+
+	local tabCtrl = mini:CreateTabs({
+		Parent = tabContainer,
+		TabHeight = 28,
+		StripHeight = 34,
+		TabFitToParent = true,
+		ContentInsets = { Top = verticalSpacing },
+		Tabs = {
+			{ Key = "buffs", Title = L["Buffs"] },
+			{ Key = "debuffs", Title = L["Debuffs"] },
+			{ Key = "classbuff", Title = L["Class Buff"] },
+			{ Key = "target", Title = L["Target & Focus"] },
+		},
+	})
+
+	local builders = {
+		buffs = function(content) BuildBuffs(content, options.Buffs) end,
+		debuffs = function(content) BuildDebuffs(content, options.Debuffs) end,
+		classbuff = function(content) BuildClassBuff(content, options.ClassBuff) end,
+		target = function(content) BuildTargetFocus(content, options.TargetFocus) end,
+	}
+
+	for key, build in pairs(builders) do
+		local content = tabCtrl:GetContent(key)
+
+		if content then
+			local page = CreateFrame("Frame", nil, content)
+			page:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
+			page:SetPoint("TOPRIGHT", content, "TOPRIGHT", 0, 0)
+			page:SetHeight(TAB_HEIGHT)
+			build(page)
+		end
+	end
+end

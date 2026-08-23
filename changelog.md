@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added a Frame Auras module, which draws the auras on Blizzard's own party, raid, target, and focus frames in place of the ones the game puts there. Four parts, each with its own switch: the group buff row (with a tracked spell list and a pandemic glow), the group debuff row, a mark for a member missing your class buff, and the target and focus rows. All four ship switched off.
+- Renamed "Group Auras" to "Important Auras", so the new module's name is not read as the same thing.
+
 ## 5.22.0
 
 - Added Dark Simulacrum to the enemy debuff announcements, spoken as just "Simulacrum".

@@ -37,6 +37,7 @@ local ModuleName = {
 	AllyKickTracker = "AllyKickTrackerModule",
 	Trinkets = "TrinketsModule",
 	ImportantAuras = "ImportantAurasModule",
+	FrameAuras = "FrameAurasModule",
 	CustomAuras = "CustomAurasModule",
 }
 

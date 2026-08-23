@@ -75,7 +75,7 @@ itself, so testing inside a battleground reads the Battlegrounds tick whichever 
 Left sidebar, grouped under four headings. Bracketed names are the sidebar labels where they
 differ from the page title.
 
-**General:** Home, Personal Auras (= Custom Auras), Important Auras, Alerts,
+**General:** Home, Personal Auras (= Custom Auras), Important Auras, Frame Auras, Alerts,
 Nameplates, Portraits.
 
 **Crowd Control:** CC, Pet CC, Healer, Trinkets (= Party Trinkets).
@@ -601,6 +601,77 @@ Custom. Each spell is a checkbox with its icon and ID. Some curated spells ship 
 and are an explicit opt-in. Custom IDs are added in the Custom section via the "Add spell ID"
 box and removed with the cross button. Only differences from the curated list are saved, so
 an updated curated list still reaches existing profiles.
+
+---
+
+## Frame Auras
+
+Sidebar: General > Frame Auras. Draws the auras on Blizzard's own party, raid, target, and focus
+frames, in place of the ones the game puts there. Separate from Important Auras, which adds a row
+of tracked CC and defensive icons on top of whatever else is on a frame; this one **replaces**
+what Blizzard draws.
+
+No "Enable in" row: these stand in for frames the game draws everywhere, so they are on or off
+everywhere. Four sub-tabs, each with its own switch, and **all four ship switched off**.
+
+**Buffs sub-tab.** Replaces the buff row on the party and raid frames, in the bottom right corner
+growing left and wrapping upward. Blizzard's **compact** frames only, since those are the ones the
+cvar below controls; a player on the standard (non-compact) party frames sees no change here, and
+none at all if DandersFrames has replaced the compact frames outright. Switching it on remembers the `raidFramesDisplayBuffs` cvar and sets it to 0;
+switching it off puts the remembered value back. The cvar is only written when the switch actually moves, so a player who
+turned Blizzard's buffs off themselves never gets them handed back. The write waits for combat to
+end, because flipping it makes the client rebuild the raid frames.
+
+- Icon size 25-50 (percent of the frame's own height), max icons 1-9, icons per row 1-6.
+- **Filtered** - show only the spells ticked in the tracked buffs list below. Off shows every buff
+  that gets past the other filters.
+- **Mine** - only the buffs you cast yourself.
+- **Under 1min** - only buffs whose whole duration is under a minute, which drops raid buffs and
+  flasks.
+- **Pandemic glow** plus a colour - lights a heal-over-time up as its refresh window opens. Which
+  spells carry it is fixed (Lifebloom), not a per-spell setting: the reveal is registered on a
+  button when the engine builds it.
+- **Tracked buffs** - a sidebar of sections, one per class that has tracked heal-over-time or
+  shield spells, then Custom. Each spell is a checkbox with its icon. Custom IDs are added in the
+  Custom section via the Spell ID box and removed with the cross button. Only differences from the
+  curated list are saved, so an updated curated list still reaches existing profiles.
+
+**Debuffs sub-tab.** Replaces the debuff row, in the bottom left corner growing right and wrapping
+upward.
+Drives `raidFramesDisplayDebuffs` the same way the buff side drives its own cvar. Encounter
+mechanics and role auras lead the row, then the debuffs the game flags as priority.
+
+- Icon size 25-50 (percent of the frame's height), max icons 1-9, icons per row 1-6.
+- **Dispellable** - only the debuffs your own spec can dispel. This replaces the priority list
+  rather than stacking with it.
+- **Under 1min** - only debuffs whose whole duration is under a minute.
+
+**Class Buff sub-tab.** Marks a party or raid frame whose member is missing the group buff your
+class brings. Unlike the two rows above it, this also reaches the standard party frames, since it
+adds a mark rather than replacing anything (Mark of the Wild, Blessing of the Bronze, Power Word: Fortitude, Skyfury). The mark
+is the buff's own icon, drained of colour. A class that brings no group buff sees a line saying so
+and nothing to configure.
+
+- Anchor - which corner or edge of the frame the mark sits in (default top right).
+- Icon size 25-50 (percent of the frame's height), offset X and Y -50 to 50.
+
+**Target & Focus sub-tab.** Replaces the aura rows on the target and focus frames. Debuffs take
+the first row and buffs the second, with the buffs moving up when the target has no debuffs. The
+cast bar is re-anchored under both rows so it no longer overlaps them. There is no cvar for these
+rows, so Blizzard's own container is emptied and disabled instead, and handed back when the switch
+goes off.
+
+- Icon size 12-40 (pixels, since these frames are a fixed size), max icons 1-12, icons per row
+  1-12.
+- **Only short buffs** - hides buffs running longer than two minutes.
+- **My buffs** - on a unit you can help, only the buffs you cast. An enemy still shows the buffs
+  worth purging.
+- **My debuffs** - on a unit you cannot help, only the debuffs you applied. A friend still shows
+  every debuff on them.
+
+Icons here go through the same rendering as every other module, so the global Miscellaneous
+settings (font, icon zoom, cooldown swipe, countdown colours) and Masque skins apply. The Masque
+sub-group is called "Frame Auras".
 
 ---
 

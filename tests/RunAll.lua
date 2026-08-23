@@ -63,6 +63,7 @@ local testFiles = {
     "tests/Modules/TestImportantAurasTestMode.lua",
     "tests/Modules/TestImportantAurasFilters.lua",
     "tests/Modules/TestCustomAuras.lua",
+    "tests/Modules/TestFrameAuras.lua",
 
     -- Config pages that need the whole addon loaded.
     "tests/Config/TestCustomAurasPanel.lua",

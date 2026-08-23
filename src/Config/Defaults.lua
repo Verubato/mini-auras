@@ -32,6 +32,15 @@ local dbDefaults = {
 		Over60s = { R = 1, G = 1, B = 1 },
 	},
 	LocaleOverride = false,
+	-- What Blizzard's own party and raid frame aura rows were set to before Frame Auras took one
+	-- over, so switching that side back off puts the client where it found it. False until a side is
+	-- switched on, and false again once it has been handed back. Written by the module, never by the
+	-- options UI.
+	--
+	-- Top level rather than inside the module's own settings, and deliberately not a profile payload
+	-- key: a cvar belongs to the client, not to a profile, so a profile that never enabled a side
+	-- must not be able to answer for what the client had.
+	FrameAuraCVars = { Buffs = false, Debuffs = false },
 	-- TEMPORARY: true when first-time setup ran without MiniCCDB, so a legacy table appearing on
 	-- a later login can still be offered for import. Dies with the settings bridge.
 	MissedLegacyImport = false,
@@ -613,6 +622,77 @@ local dbDefaults = {
 					ColorByDispelType = true,
 				},
 				ShowTooltips = false,
+			},
+		},
+		-- Stands in for Blizzard's own aura rows on the party, raid, target and focus frames,
+		-- and marks a group member who is missing the buff the player's class brings. Four halves
+		-- that share a page, each with its own switch, because a player replacing the raid frame
+		-- buffs rarely wants the target frame taken over at the same time.
+		--
+		-- Every switch here is off to start with. The module takes frames the game already draws
+		-- on, so an update that switched it on would rearrange a UI nobody asked it to touch.
+		---@class FrameAurasModuleOptions
+		---@field Spells { Disabled: table<number, boolean>, Custom: table<number, boolean> } Opaque to CleanTable, which would otherwise strip every entry against the empty template - see Config/Migrator.
+		FrameAurasModule = {
+			-- Deltas against the curated buff list rather than a copy of it, so the saved variables
+			-- stay small and a later version's curated spells still reach an existing profile.
+			Spells = {
+				-- [spellId] = true, curated entries the user switched off.
+				Disabled = {},
+				-- [spellId] = true, ids the user added by hand.
+				Custom = {},
+			},
+
+			---@class FrameAurasBuffOptions
+			Buffs = {
+				Enabled = false,
+				-- A share of the frame's height, not pixels: a raid profile and a party profile size
+				-- their frames very differently.
+				Size = 35,
+				MaxIcons = 6,
+				PerRow = 3,
+				-- Both on, because the tracked spell list is a list of things you cast: a row filled
+				-- with everyone's raid buffs is what it is there to avoid.
+				Filtered = true,
+				Mine = true,
+				ShortOnly = false,
+				-- The refresh-window reveal: one switch for the lot, since which spells carry it is
+				-- fixed in the tracked data.
+				PandemicGlow = true,
+				PandemicColor = { R = 0.1, G = 0.9, B = 0.3 },
+			},
+
+			---@class FrameAurasDebuffOptions
+			Debuffs = {
+				Enabled = false,
+				Size = 35,
+				MaxIcons = 3,
+				PerRow = 3,
+				Dispellable = false,
+				ShortOnly = false,
+			},
+
+			---@class FrameAurasClassBuffOptions
+			ClassBuff = {
+				Enabled = false,
+				Anchor = "TOPRIGHT",
+				Size = 35,
+				OffsetX = -2,
+				OffsetY = -2,
+			},
+
+			---@class FrameAurasTargetOptions
+			TargetFocus = {
+				Enabled = false,
+				-- Pixels rather than a share of the frame, which is a fixed size here.
+				Size = 22,
+				MaxIcons = 6,
+				PerRow = 6,
+				ShortBuffsOnly = true,
+				-- Each only bites where it means anything: your own buffs on a unit you can help,
+				-- your own debuffs on one you cannot. An enemy still shows the buffs worth purging.
+				MyBuffs = true,
+				MyDebuffs = true,
 			},
 		},
 		---@class CustomAurasModuleOptions

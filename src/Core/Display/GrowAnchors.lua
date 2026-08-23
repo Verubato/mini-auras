@@ -29,6 +29,11 @@ M.Anchor = {
 	CENTER = { Point = "CENTER", RelativePoint = "CENTER" },
 	DOWN = { Point = "TOP", RelativePoint = "BOTTOM" },
 	UP = { Point = "BOTTOM", RelativePoint = "TOP" },
+	-- The two corner grows, for a row that wraps onto a SECOND line rather than running on. Only
+	-- a wrapping row has an opinion about which way the next line goes, so the plain LEFT and
+	-- RIGHT above keep dropping downwards like every single-row display does.
+	LEFT_UP = { Point = "BOTTOMRIGHT", RelativePoint = "BOTTOMRIGHT" },
+	RIGHT_UP = { Point = "BOTTOMLEFT", RelativePoint = "BOTTOMLEFT" },
 }
 
 ---@type table<string, { Point: string, RelativePoint: string, XMul: number, YMul: number }>
@@ -40,6 +45,8 @@ M.Chain = {
 	CENTER = { Point = "LEFT", RelativePoint = "RIGHT", XMul = 1, YMul = 0 },
 	DOWN = { Point = "TOP", RelativePoint = "BOTTOM", XMul = 0, YMul = -1 },
 	UP = { Point = "BOTTOM", RelativePoint = "TOP", XMul = 0, YMul = 1 },
+	LEFT_UP = { Point = "RIGHT", RelativePoint = "LEFT", XMul = -1, YMul = 0 },
+	RIGHT_UP = { Point = "LEFT", RelativePoint = "RIGHT", XMul = 1, YMul = 0 },
 }
 
 ---@type table<string, { Axis: string, AnchorPoint: string, Horizontal: string, Vertical: string }>
@@ -49,6 +56,10 @@ M.Flow = {
 	CENTER = { Axis = "Horizontal", AnchorPoint = "LEFT", Horizontal = "Right", Vertical = "Down" },
 	DOWN = { Axis = "Vertical", AnchorPoint = "TOP", Horizontal = "Right", Vertical = "Down" },
 	UP = { Axis = "Vertical", AnchorPoint = "BOTTOM", Horizontal = "Right", Vertical = "Up" },
+	-- Corner-anchored, so a wrapped line stacks upwards. A row in the bottom corner of a unit
+	-- frame that wrapped downwards would put its second line over the frame below it.
+	LEFT_UP = { Axis = "Horizontal", AnchorPoint = "BOTTOMRIGHT", Horizontal = "Left", Vertical = "Up" },
+	RIGHT_UP = { Axis = "Horizontal", AnchorPoint = "BOTTOMLEFT", Horizontal = "Right", Vertical = "Up" },
 }
 
 ---Anchor points for positioning a row against its anchor frame.

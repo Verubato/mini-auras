@@ -19,6 +19,7 @@ local modules = {
 	addon.Modules.NameplatesModule,
 	addon.Modules.EnemyKickTrackerModule,
 	addon.Modules.ImportantAurasModule,
+	addon.Modules.FrameAurasModule,
 	addon.Modules.CustomAurasModule,
 	addon.Modules.TrinketsModule,
 	addon.Modules.AllyKickTrackerModule,
@@ -38,6 +39,7 @@ local modulesBySettingsKey = {
 	AllyKickTrackerModule = addon.Modules.AllyKickTrackerModule,
 	TrinketsModule = addon.Modules.TrinketsModule,
 	ImportantAurasModule = addon.Modules.ImportantAurasModule,
+	FrameAurasModule = addon.Modules.FrameAurasModule,
 	CustomAurasModule = addon.Modules.CustomAurasModule,
 }
 -- How long a burst of media registrations is allowed to settle before re-resolving. A media pack
@@ -365,6 +367,8 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@class Core
 ---@field Framework MiniFramework
 ---@field Frames Frames
+---@field Pixels Pixels
+---@field TrackedBuffs TrackedBuffs
 ---@field Inspector Inspector
 ---@field IconSlotContainer IconSlotContainer
 ---@field AuraContainerDisplay AuraContainerDisplay
@@ -387,6 +391,13 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@class ImportantAuras
 ---@field Display ImportantAurasDisplay
 ---@field Module ImportantAurasModule
+
+---@class FrameAuras
+---@field Spells FrameAurasSpells
+---@field GroupAuras FrameAurasGroupAuras
+---@field ClassBuff FrameAurasClassBuff
+---@field TargetAuras FrameAurasTargetAuras
+---@field Module FrameAurasModule
 
 ---@class CustomAuras
 ---@field Groups CustomAurasGroups
@@ -442,11 +453,13 @@ mini:WaitForAddonLoad(OnAddonLoaded)
 ---@field AlertsModule AlertsModule
 ---@field CrowdControlModule CrowdControlModule
 ---@field ImportantAurasModule ImportantAurasModule
+---@field FrameAurasModule FrameAurasModule
 ---@field CustomAurasModule CustomAurasModule
 ---@field EnemyKickTracker EnemyKickTracker
 ---@field AllyKickTracker AllyKickTracker
 ---@field Alerts Alerts
 ---@field ImportantAuras ImportantAuras
+---@field FrameAuras FrameAuras
 ---@field CustomAuras CustomAuras
 ---@field CrowdControl CrowdControl
 ---@field HealerCrowdControl HealerCrowdControl

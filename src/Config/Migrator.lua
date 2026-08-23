@@ -32,6 +32,11 @@ local function SaveOpaqueCaches(vars)
 	saved._ImportantAurasDisabledSpells = importantAurasSpells and mini:CopyValueOrTable(importantAurasSpells.Disabled) or {}
 	saved._ImportantAurasCustomSpells = importantAurasSpells and mini:CopyValueOrTable(importantAurasSpells.Custom) or {}
 	saved._ImportantAurasEnabledSpells = importantAurasSpells and mini:CopyValueOrTable(importantAurasSpells.Enabled) or {}
+	-- The frame aura module's buff deltas are the same shape again.
+	local frameAurasSpells = vars.Modules and vars.Modules.FrameAurasModule
+		and vars.Modules.FrameAurasModule.Spells
+	saved._FrameAurasDisabledSpells = frameAurasSpells and mini:CopyValueOrTable(frameAurasSpells.Disabled) or {}
+	saved._FrameAurasCustomSpells = frameAurasSpells and mini:CopyValueOrTable(frameAurasSpells.Custom) or {}
 	-- Custom aura groups are authored entirely by the user, so the schema has nothing to compare
 	-- them against and CleanTable would strip every one of them.
 	local customAuras = vars.Modules and vars.Modules.CustomAurasModule
@@ -59,6 +64,12 @@ local function RestoreOpaqueCaches(vars, saved)
 		importantAurasModule.Spells.Disabled = saved._ImportantAurasDisabledSpells or {}
 		importantAurasModule.Spells.Custom = saved._ImportantAurasCustomSpells or {}
 		importantAurasModule.Spells.Enabled = saved._ImportantAurasEnabledSpells or {}
+	end
+	local frameAuras = vars.Modules and vars.Modules.FrameAurasModule
+	if frameAuras then
+		frameAuras.Spells = frameAuras.Spells or {}
+		frameAuras.Spells.Disabled = saved._FrameAurasDisabledSpells or {}
+		frameAuras.Spells.Custom = saved._FrameAurasCustomSpells or {}
 	end
 	local customAuras = vars.Modules and vars.Modules.CustomAurasModule
 	if customAuras then
