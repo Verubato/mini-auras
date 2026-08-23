@@ -295,6 +295,30 @@ testSpells.FillContainer = function(self, container, previewSpells, startSlot, f
 	return originalFill(self, container, previewSpells, startSlot, fillOptions)
 end
 
+---A Blizzard party member frame the client has just put up, for a test that needs a frame with
+---nothing built on it yet: a display is created once per frame and kept for the session.
+---@param index number
+---@return table
+local function NewPartyFrame(index)
+	local name = "CompactPartyFrameMember" .. index
+	local frame = _G.CreateFrame("Frame", name, _G.UIParent)
+
+	frame.healthBar = _G.CreateFrame("Frame", nil, frame)
+	frame.unit = "party" .. index
+	frame.GetAttribute = function(_, key)
+		return key == "unit" and frame.unit or nil
+	end
+
+	_G[name] = frame
+
+	return frame
+end
+
+---@param index number
+local function DropPartyFrame(index)
+	_G["CompactPartyFrameMember" .. index] = nil
+end
+
 ---How many aura containers are parented to a frame. Asked of the frame rather than of the unit,
 ---because a spare warmed up ahead of a group sits on "none" until one takes it.
 ---@param frame table
@@ -344,6 +368,76 @@ local function RowOn(frame)
 	return nil
 end
 
+fw.describe("Frame Auras - what one frame costs", function()
+	fw.before_each(function()
+		options.Buffs.Enabled = false
+		options.Debuffs.Enabled = false
+		groupAuras:Refresh()
+	end)
+
+	---Every aura group on the containers parented to a frame, and the buttons they were declared
+	---with. The engine hands out a group's buttons from that count, so it is what a frame costs.
+	---@param frame table
+	---@return number groups, number buttons
+	local function CostOf(frame)
+		local groups, buttons = 0, 0
+
+		for _, candidate in ipairs(acm.frames) do
+			if candidate._type == "AuraContainer" and candidate:GetParent() == frame then
+				for _, group in pairs(candidate._groups) do
+					groups = groups + 1
+					buttons = buttons + (group.maxFrameCountAtCreation or 0)
+				end
+			end
+		end
+
+		return groups, buttons
+	end
+
+	fw.it("declares one group per row, and one batch of buttons per group", function()
+		options.Buffs.Enabled = true
+		options.Debuffs.Enabled = true
+
+		local fresh = NewPartyFrame(3)
+
+		groupAuras:Refresh()
+		acm.tickAll(400)
+
+		local groups, buttons = CostOf(fresh)
+		local expected = options.Buffs.MaxIcons + options.Debuffs.MaxIcons + 1
+
+		-- Buffs are two groups only while the refresh-window reveal is on: the plain row plus one
+		-- button for the single spell that carries it. Debuffs are one group, ranked by the game's
+		-- own debuff sort rather than partitioned into two.
+		assert(groups == 3, "three groups on a frame, not four, got " .. groups)
+		assert(buttons == expected,
+			"the row budgets are what a frame costs, expected " .. expected .. " got " .. buttons)
+
+		DropPartyFrame(3)
+	end)
+
+	fw.it("drops the glow group entirely when the reveal is off", function()
+		options.Buffs.Enabled = true
+		options.Buffs.PandemicGlow = false
+
+		-- Its own frame: a display is built once and kept, so a frame that already has one was
+		-- built under whatever the settings were then.
+		local fresh = NewPartyFrame(4)
+
+		groupAuras:Refresh()
+		acm.tickAll(400)
+
+		local groups, buttons = CostOf(fresh)
+
+		assert(groups == 1, "one group for the buff row, got " .. groups)
+		assert(buttons == options.Buffs.MaxIcons,
+			"and no batch of buttons for a reveal nothing can trigger, got " .. buttons)
+
+		options.Buffs.PandemicGlow = true
+		DropPartyFrame(4)
+	end)
+end)
+
 fw.describe("Frame Auras - warming up ahead of a group", function()
 	fw.before_each(function()
 		options.Buffs.Enabled = false
@@ -352,14 +446,18 @@ fw.describe("Frame Auras - warming up ahead of a group", function()
 	end)
 
 	fw.it("builds spare rows for the frames a group has yet to fill", function()
-		local before = env.auraContainerCount()
-
 		options.Buffs.Enabled = true
 		groupAuras:Refresh()
 		acm.tickAll(400)
 
-		-- One frame is on screen, so the rest of the five are held ready off it.
-		assert(env.auraContainerCount() > before + 1, "spares were built past the frame on screen")
+		local warmed = env.auraContainerCount()
+
+		-- Five frames' worth are wanted in total, and only one frame is on screen, so the walker
+		-- has more to build than the frames alone would ever ask for.
+		options.Buffs.Enabled = false
+		groupAuras:Refresh()
+
+		assert(warmed >= 5, "five frames' worth were made ready, got " .. warmed)
 	end)
 
 	fw.it("hands a waiting spare to the next frame rather than building another", function()

@@ -21,10 +21,9 @@ local spells = addon.Modules.FrameAuras.Spells
 
 local BUFF_GROUP = "FrameBuffs"
 local BUFF_PANDEMIC_GROUP = "FrameBuffsPandemic"
-local BOSS_DEBUFF_GROUP = "FrameBossDebuffs"
 local DEBUFF_GROUP = "FrameDebuffs"
 local BUFF_GROUP_KEYS = { BUFF_PANDEMIC_GROUP, BUFF_GROUP }
-local DEBUFF_GROUP_KEYS = { BOSS_DEBUFF_GROUP, DEBUFF_GROUP }
+local DEBUFF_GROUP_KEYS = { DEBUFF_GROUP }
 -- The categories the game flags never come into the buff row: what reaches the corner is decided
 -- by the switches on its own page. The token is the coarse half of "only what you cast".
 local BUFF_FILTER = "HELPFUL"
@@ -365,7 +364,7 @@ end
 ---spell carries the reveal today, and a raid is forty frames.
 ---@return number
 local function PandemicIcons()
-	return math.max(1, math.min(MaxIcons("Buffs"), spells:PandemicCount()))
+	return math.min(MaxIcons("Buffs"), spells:PandemicCount())
 end
 
 ---@param side "Buffs"|"Debuffs"
@@ -457,14 +456,22 @@ local function BuildBuffs(frame, unit, parent)
 	local pandemic, plain = BuffCandidates()
 	local filter = BuffFilter()
 	local maxIcons = MaxIcons("Buffs")
+	local groups = {}
 
-	return auraContainerDisplay:New(parent or frame, unit or "none", {
-		-- The spells that light up lead the row. Two groups because the reveal is registered on a
-		-- button when it is built and driven by a window nothing can read, so which spells get one
-		-- can only be decided by which group they land in.
-		{ Key = BUFF_PANDEMIC_GROUP, FilterString = filter, MaxIcons = PandemicIcons(), CandidateFilters = pandemic },
-		{ Key = BUFF_GROUP, FilterString = filter, MaxIcons = maxIcons, CandidateFilters = plain },
-	}, IconSize(frame, "Buffs"), ICON_SPACING, MASQUE_GROUP, {
+	-- The spells that light up lead the row, in a group of their own: the reveal is registered on a
+	-- button when it is built and driven by a window nothing can read, so which spells get one can
+	-- only be decided by which group they land in.
+	--
+	-- Left out entirely when the reveal is off. A group is a batch of buttons the engine allocates
+	-- on the spot, and one that can never match anything is that batch on every frame in the raid.
+	if PandemicIcons() > 0 then
+		groups[#groups + 1] =
+			{ Key = BUFF_PANDEMIC_GROUP, FilterString = filter, MaxIcons = PandemicIcons(), CandidateFilters = pandemic }
+	end
+
+	groups[#groups + 1] = { Key = BUFF_GROUP, FilterString = filter, MaxIcons = maxIcons, CandidateFilters = plain }
+
+	return auraContainerDisplay:New(parent or frame, unit or "none", groups, IconSize(frame, "Buffs"), ICON_SPACING, MASQUE_GROUP, {
 		Style = BuildStyle("Buffs"),
 		MasqueGroup = MASQUE_GROUP,
 		Pandemic = true,
@@ -481,15 +488,12 @@ end
 ---@param parent table? Defaults to the frame.
 ---@return AuraContainerDisplay
 local function BuildDebuffs(frame, unit, parent)
-	local boss, priority = DebuffCandidates()
+	local candidates = DebuffCandidates()
 	local maxIcons = MaxIcons("Debuffs")
 	local filter = DebuffFilter()
 
 	local display = auraContainerDisplay:New(parent or frame, unit or "none", {
-		-- Declared boss first: groups render in the order they are declared, so its icons take the
-		-- row before anything the priority group matched.
-		{ Key = BOSS_DEBUFF_GROUP, FilterString = filter, MaxIcons = maxIcons, CandidateFilters = boss },
-		{ Key = DEBUFF_GROUP, FilterString = filter, MaxIcons = maxIcons, CandidateFilters = priority },
+		{ Key = DEBUFF_GROUP, FilterString = filter, MaxIcons = maxIcons, CandidateFilters = candidates },
 	}, IconSize(frame, "Debuffs"), ICON_SPACING, MASQUE_GROUP, {
 		Style = BuildStyle("Debuffs"),
 		MasqueGroup = MASQUE_GROUP,
@@ -645,7 +649,9 @@ local function ApplySide(display, frame, side, groupKeys)
 	display:ApplyConfig(IconSize(frame, side), ICON_SPACING, BuildStyle(side))
 
 	for _, key in ipairs(groupKeys) do
-		display:SetMaxIcons(key, key == BUFF_PANDEMIC_GROUP and PandemicIcons() or MaxIcons(side))
+		if display:HasGroup(key) then
+			display:SetMaxIcons(key, key == BUFF_PANDEMIC_GROUP and PandemicIcons() or MaxIcons(side))
+		end
 	end
 
 	AnchorSide(display, frame, side)
@@ -670,25 +676,25 @@ local function ApplySettings(entry)
 		local pandemic, plain = BuffCandidates()
 		local filter = BuffFilter()
 
-		entry.Buffs:SetFilterString(BUFF_PANDEMIC_GROUP, filter)
+		-- The glow group is only there when the reveal is on; a display built without it is not
+		-- rebuilt when the switch flips, it simply has nothing to publish to.
+		if entry.Buffs:HasGroup(BUFF_PANDEMIC_GROUP) then
+			entry.Buffs:SetFilterString(BUFF_PANDEMIC_GROUP, filter)
+			entry.Buffs:SetCandidateFilters(BUFF_PANDEMIC_GROUP, pandemic)
+		end
+
 		entry.Buffs:SetFilterString(BUFF_GROUP, filter)
-		entry.Buffs:SetCandidateFilters(BUFF_PANDEMIC_GROUP, pandemic)
 		entry.Buffs:SetCandidateFilters(BUFF_GROUP, plain)
 	end
 
 	if entry.Debuffs then
 		ApplySide(entry.Debuffs, frame, "Debuffs", DEBUFF_GROUP_KEYS)
 
-		local boss, priority = DebuffCandidates()
-		local debuffFilter = DebuffFilter()
-
 		-- The policy first: a group asking for a classification the display is not making matches
 		-- nothing at all.
 		entry.Debuffs:SetProcessingPolicy(ClassifiesDebuffs())
-		entry.Debuffs:SetFilterString(BOSS_DEBUFF_GROUP, debuffFilter)
-		entry.Debuffs:SetFilterString(DEBUFF_GROUP, debuffFilter)
-		entry.Debuffs:SetCandidateFilters(BOSS_DEBUFF_GROUP, boss)
-		entry.Debuffs:SetCandidateFilters(DEBUFF_GROUP, priority)
+		entry.Debuffs:SetFilterString(DEBUFF_GROUP, DebuffFilter())
+		entry.Debuffs:SetCandidateFilters(DEBUFF_GROUP, DebuffCandidates())
 	end
 end
 
@@ -759,6 +765,38 @@ local function SparesWanted(side)
 	return PREWARM_FRAMES - built - #spares[side]
 end
 
+---What a side's rows are shaped like right now. A spare bakes its groups and their budgets in when
+---it is built, and neither can be changed afterwards: the engine hands out a group's buttons from
+---the count it was declared with, and a group that was never declared cannot be added to a display
+---that has already been shown. So a spare built under different settings is not a spare, and one
+---handed to a frame anyway would draw the wrong row for the rest of the session.
+---@param side "Buffs"|"Debuffs"
+---@return string
+local function ShapeOf(side)
+	if side == "Buffs" then
+		return MaxIcons(side) .. ":" .. PandemicIcons()
+	end
+
+	return MaxIcons(side) .. ":0"
+end
+
+---Throws away the spares that no longer match what a frame would be given today.
+local function DropStaleSpares()
+	for _, side in ipairs(SIDES) do
+		local pool = spares[side]
+		local shape = ShapeOf(side)
+
+		for index = #pool, 1, -1 do
+			if pool[index].FrameAurasShape ~= shape then
+				-- Nothing releases a display; it is simply never handed out. The engine cannot
+				-- free a container or the buttons under it either way.
+				pool[index]:SetShown(false)
+				table.remove(pool, index)
+			end
+		end
+	end
+end
+
 ---A spare rehomed onto the frame that has just asked for one, or nil when none is waiting.
 ---
 ---The one re-parent a display ever sees. It is built on the screen because a frame it could hang
@@ -810,7 +848,12 @@ local function PrewarmNext(side)
 	local sample = BlizzardFrames()[1]
 	local build = side == "Buffs" and BuildBuffs or BuildDebuffs
 
-	prewarmBuilding = { Side = side, Display = build(sample, nil, UIParent) }
+	local display = build(sample, nil, UIParent)
+	-- Stamped with what it was built for, so a settings change can tell it apart from a spare a
+	-- frame would actually want.
+	display.FrameAurasShape = ShapeOf(side)
+
+	prewarmBuilding = { Side = side, Display = display }
 
 	return sweep.Verdict.Unfinished
 end
@@ -1059,6 +1102,9 @@ function M:Refresh()
 		active[side] = enabled
 		ApplyCVar(side, enabled)
 	end
+
+	-- A spare is only a spare while it still matches what a frame would be given.
+	DropStaleSpares()
 
 	-- Dropped rather than rebuilt: the walk below asks for them, and a refresh that changes nothing
 	-- about the tracked ids still has to hand the engine tables it will accept.
