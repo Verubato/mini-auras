@@ -949,11 +949,9 @@ local function EnsureEntry(frame)
 	-- world loads, Blizzard points every compact frame at a unit several times over and almost all
 	-- of them are still hidden, so reading the token and asking the client about it for each was
 	-- most of what this module cost during a login.
-	-- Nothing is built while a loading screen is up, because the frames lie during it. Blizzard
-	-- briefly SHOWS all forty raid frames and five party frames pointed at "player" to lay them
-	-- out, then hides them and hands out the real units. Every one of them is visible and holds a
-	-- unit that genuinely exists at that moment, so no test of the frame can tell them apart from
-	-- the one frame the player actually has. Waiting until the screen is down is what can.
+	-- Blizzard briefly shows every frame it pre-creates, pointed at "player", while it lays them
+	-- out at login: all forty-five look visible and occupied, and only the timing tells them apart
+	-- from the frame the player has. The refresh after the screen builds what this skips.
 	if not entry and addon:IsLoadingScreenUp() then
 		audit.SkipLoading = audit.SkipLoading + 1
 
