@@ -778,19 +778,19 @@ function M:Build(panel)
 		TabFitToParent = true,
 		ContentInsets = { Top = verticalSpacing },
 		Tabs = {
+			{ Key = "target", Title = L["Target & Focus"] },
 			{ Key = "buffs", Title = L["Buffs"] },
 			{ Key = "debuffs", Title = L["Debuffs"] },
 			{ Key = "classbuff", Title = L["Missing Buff"] },
-			{ Key = "target", Title = L["Target & Focus"] },
 			{ Key = "spells", Title = L["Spells"] },
 		},
 	})
 
 	local builders = {
+		target = function(content) BuildTargetFocus(content, options.TargetFocus) end,
 		buffs = function(content) BuildBuffs(content, options.Buffs) end,
 		debuffs = function(content) BuildDebuffs(content, options.Debuffs) end,
 		classbuff = function(content) BuildClassBuff(content, options.ClassBuff) end,
-		target = function(content) BuildTargetFocus(content, options.TargetFocus) end,
 		spells = BuildSpells,
 	}
 
