@@ -38,6 +38,11 @@ function M:Divider(options)
 	pixel.SetHeight(leftLine, 1)
 	pixel.SetHeight(rightLine, 1)
 
+	-- Unsnapped: a divider sits inside a scroll child, whose fractional alignment can snap a
+	-- one-pixel line onto a zero-coverage row (see GUI.Unsnap).
+	GUI.Unsnap(leftLine)
+	GUI.Unsnap(rightLine)
+
 	local label = container:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	label:SetText((options.Text or ""):upper())
 
