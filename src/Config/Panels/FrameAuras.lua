@@ -13,14 +13,16 @@ local spells = addon.Modules.FrameAuras.Spells
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local COLUMNS = 2
+local FILTER_COLUMNS = 3
 -- A slider stacks its name and its value box above the bar, so it needs more clearance over it
 -- than a control whose label sits beside it. Measured from the bar, which is what gets anchored.
 local SLIDER_TOP_GAP = verticalSpacing * 2.5
 local SLIDER_ROW_GAP = verticalSpacing * 3
--- What each page is allowed to be, so the window's own scroll covers the lot without a second
--- scrollbar down the side of a tab.
-local TAB_HEIGHT = 470
-local SPELLS_HEIGHT = 300
+-- How tall every tab's page is. One height for all four rather than one each: the window measures
+-- its scroll range from the tab container once, when the page is first shown, so a container that
+-- grew on a later tab change could never be scrolled to. It is therefore sized for the tallest
+-- tab, which is Buffs with the tracked spell list on it; the other three carry the slack.
+local TAB_HEIGHT = 640
 local SIDEBAR_WIDTH = 120
 local SIDEBAR_ROW_HEIGHT = 24
 local SIDEBAR_ROW_GAP = 25
@@ -85,6 +87,10 @@ local BOUNDS = {
 
 local columnWidth
 local controlWidth
+-- The buff filters are three short toggles, so they get a grid of their own rather than sitting on
+-- the two-column one the sliders use. Every label fits well inside a third of the page, the longest
+-- translation included.
+local filterColumnWidth
 
 ---@class FrameAurasConfig
 local M = {}
@@ -216,10 +222,12 @@ end
 ---@param parent table
 ---@param anchor table The control the browser hangs below.
 local function BuildSpellList(parent, anchor)
+	-- Fills what the controls above it leave rather than taking a fixed slice, so the page ends
+	-- where the tab does and the list scrolls inside itself instead of running off the bottom.
 	local body = CreateFrame("Frame", nil, parent)
 	body:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -verticalSpacing)
 	body:SetPoint("RIGHT", parent, "RIGHT", 0, 0)
-	body:SetHeight(SPELLS_HEIGHT)
+	body:SetPoint("BOTTOM", parent, "BOTTOM", 0, 0)
 
 	local sidebar = CreateFrame("Frame", nil, body)
 	sidebar:SetPoint("TOPLEFT", body, "TOPLEFT", 0, 0)
@@ -491,13 +499,13 @@ local function BuildBuffs(content, options)
 
 	local mine = Checkbox(content, options, "Mine", L["Mine"],
 		L["Shows only the buffs you cast yourself."])
-	mine:SetPoint("TOPLEFT", filtered, "TOPLEFT", columnWidth, 0)
+	mine:SetPoint("TOPLEFT", filtered, "TOPLEFT", filterColumnWidth, 0)
 
 	local shortOnly = Checkbox(content, options, "ShortOnly", L["Under 1min"],
 		L["Shows only the buffs that run for less than a minute, which drops the raid buffs and the flasks."])
-	shortOnly:SetPoint("TOPLEFT", filtered, "BOTTOMLEFT", 0, -verticalSpacing)
+	shortOnly:SetPoint("TOPLEFT", filtered, "TOPLEFT", filterColumnWidth * 2, 0)
 
-	local glow = Divider(content, L["Refresh window"], shortOnly)
+	local glow = Divider(content, L["Refresh window"], filtered)
 
 	local pandemic = Checkbox(content, options, "PandemicGlow", L["Pandemic glow"],
 		L["Lights a heal-over-time up as its refresh window opens, so a refresh lands on time rather than early."])
@@ -664,6 +672,7 @@ end
 function M:Build(panel)
 	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
 	controlWidth = columnWidth - horizontalSpacing
+	filterColumnWidth = mini:ColumnWidth(FILTER_COLUMNS, 0, 0)
 
 	local db = mini:GetSavedVars()
 	local options = db.Modules.FrameAurasModule

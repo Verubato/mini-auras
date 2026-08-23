@@ -152,6 +152,15 @@ function M:Slider(options)
 	if low and high then
 		low:SetText(options.Min)
 		high:SetText(options.Max)
+
+		-- The stock template hangs both range labels a few pixels outside the slider's own edges.
+		-- A slider in the leftmost column of a page then has its minimum clipped off against the
+		-- content's left edge. Pinned back inside the slider's own width, where nothing cuts them.
+		low:ClearAllPoints()
+		low:SetPoint("TOPLEFT", slider, "BOTTOMLEFT", 0, 2)
+
+		high:ClearAllPoints()
+		high:SetPoint("TOPRIGHT", slider, "BOTTOMRIGHT", 0, 2)
 	end
 
 	-- Hidden regardless of styling: the edit box below shows the value and is editable.
