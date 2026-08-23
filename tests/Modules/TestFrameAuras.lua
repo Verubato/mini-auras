@@ -371,6 +371,37 @@ fw.describe("Frame Auras - test mode", function()
 		end
 	end)
 
+	fw.it("builds nothing for a frame the client is not showing", function()
+		options.Buffs.Enabled = true
+
+		-- A compact frame still carrying the unit it last held, which is what a spare raid frame
+		-- looks like after the group it belonged to broke up.
+		local hidden = _G.CreateFrame("Frame", "CompactRaidFrame2", _G.UIParent)
+		hidden.healthBar = _G.CreateFrame("Frame", nil, hidden)
+		hidden.unit = "party1"
+		hidden.GetAttribute = function(_, key)
+			return key == "unit" and hidden.unit or nil
+		end
+		hidden:Hide()
+		_G.CompactRaidFrame2 = hidden
+
+		local before = env.auraContainerCount()
+
+		groupAuras:Refresh()
+
+		assert(env.auraContainerCount() == before,
+			"a hidden frame costs no display, however occupied its token says it is")
+
+		-- Put it on screen and it gets one, so the gate defers the work rather than losing it.
+		hidden:Show()
+		groupAuras:Refresh()
+
+		assert(env.auraContainerCount() > before, "showing the frame is what builds its rows")
+
+		options.Buffs.Enabled = false
+		_G.CompactRaidFrame2 = nil
+	end)
+
 	fw.it("puts a stun in the debuff preview only while crowd control is let in", function()
 		options.Debuffs.Enabled = true
 		options.Debuffs.ShowCC = false

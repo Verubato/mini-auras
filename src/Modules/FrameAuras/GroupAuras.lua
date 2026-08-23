@@ -344,6 +344,15 @@ local function MaxIcons(side)
 	return tonumber(options and options.MaxIcons) or DEFAULT_MAX_ICONS[side]
 end
 
+---The glow group's budget, which is not the row's. That group only ever matches spells that light
+---up on refresh, and the engine allocates a group's buttons from the count it is declared with, so
+---giving it the whole row's budget builds five buttons per frame that nothing can ever fill. One
+---spell carries the reveal today, and a raid is forty frames.
+---@return number
+local function PandemicIcons()
+	return math.max(1, math.min(MaxIcons("Buffs"), spells:PandemicCount()))
+end
+
 ---@param side "Buffs"|"Debuffs"
 ---@return number
 local function PerRow(side)
@@ -436,7 +445,7 @@ local function BuildBuffs(frame, unit)
 		-- The spells that light up lead the row. Two groups because the reveal is registered on a
 		-- button when it is built and driven by a window nothing can read, so which spells get one
 		-- can only be decided by which group they land in.
-		{ Key = BUFF_PANDEMIC_GROUP, FilterString = filter, MaxIcons = maxIcons, CandidateFilters = pandemic },
+		{ Key = BUFF_PANDEMIC_GROUP, FilterString = filter, MaxIcons = PandemicIcons(), CandidateFilters = pandemic },
 		{ Key = BUFF_GROUP, FilterString = filter, MaxIcons = maxIcons, CandidateFilters = plain },
 	}, IconSize(frame, "Buffs"), ICON_SPACING, MASQUE_GROUP, {
 		Style = BuildStyle("Buffs"),
@@ -618,7 +627,7 @@ local function ApplySide(display, frame, side, groupKeys)
 	display:ApplyConfig(IconSize(frame, side), ICON_SPACING, BuildStyle(side))
 
 	for _, key in ipairs(groupKeys) do
-		display:SetMaxIcons(key, MaxIcons(side))
+		display:SetMaxIcons(key, key == BUFF_PANDEMIC_GROUP and PandemicIcons() or MaxIcons(side))
 	end
 
 	AnchorSide(display, frame, side)
@@ -726,12 +735,17 @@ local function EnsureEntry(frame)
 
 	-- Only the first pass is gated. Once a frame has displays they are kept and re-pointed.
 	--
-	-- Test mode lets a frame through with nobody on it, because the stand-ins name units the player
-	-- does not have - but only one that is actually on screen. Without that second half a single
-	-- test run leaves an entry behind for all forty spare raid frames, and every refresh after it
-	-- builds them a display and its batch of buttons.
-	if not entry and not HasUnit(unit)
-		and not (testModeActive and frames:IsAnchorUsable(frame)) then
+	-- ON SCREEN as well as occupied. A hidden compact frame can still carry the unit it last held,
+	-- and the client answers for that unit whether or not the frame is showing it, so a token on
+	-- its own let fifteen frames through in a solo session: five party members and the spare raid
+	-- frames behind them, each paying for two displays and their batch of buttons. A frame that
+	-- turns up later is built by the visibility hook, which is what fires when one appears.
+	--
+	-- Test mode is the same question with the occupancy half dropped, because the stand-ins name
+	-- units the player does not have.
+	local wanted = frames:IsAnchorUsable(frame) and (testModeActive or HasUnit(unit))
+
+	if not entry and not wanted then
 		return nil
 	end
 
@@ -874,11 +888,11 @@ local function InstallHooks()
 			end
 		end,
 		-- A frame the client empties rather than hides still has to drop its rows.
+		-- Builds as well as re-applies: the gate in EnsureEntry turns a frame away while it is
+		-- hidden, so this is where one the client has just put up gets its rows.
 		OnUpdateVisible = function(frame)
-			local entry = watchers[frame]
-
-			if entry then
-				ApplyEntry(entry)
+			if AnySideActive() or watchers[frame] then
+				ApplyToFrame(frame)
 			end
 		end,
 		OnSorted = function()

@@ -170,6 +170,26 @@ function M:SpellGroups()
 	return out
 end
 
+---How many spells can light up on refresh at once, which is the most icons the glow group can ever
+---need. Counted rather than assumed: it is what that group is declared with, and the engine hands
+---out a group's buttons from the count it was born with.
+---@return number
+function M:PandemicCount()
+	local count = 0
+
+	if not M:IsPandemicEnabled() then
+		return 0
+	end
+
+	for _, spellId in ipairs(M:TrackedList({})) do
+		if trackedBuffs.Pandemic[spellId] == true then
+			count = count + 1
+		end
+	end
+
+	return count
+end
+
 ---Every tracked id as one map, for a row that draws them all through a single group. The split
 ---below exists only so the refresh-window reveal can be registered on one of two groups; a display
 ---without that reveal wants the lot.
