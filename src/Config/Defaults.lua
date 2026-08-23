@@ -689,9 +689,10 @@ local dbDefaults = {
 				Size = 22,
 				MaxIcons = 6,
 				PerRow = 6,
-				-- Off: the tracked list is a healer's own heal-over-times, which is not what a target
-				-- frame is usually being read for. It only bites on a friendly target either way.
-				Filtered = false,
+				-- On, like the group buff row: a friendly target's buffs are worth narrowing to the
+				-- tracked list. It only bites there either way - a spell-id map is identity-gated, so
+				-- the engine skips it for a helpful aura on a unit you cannot assist.
+				Filtered = true,
 				ShortBuffsOnly = true,
 				-- Each only bites where it means anything: your own buffs on a unit you can help,
 				-- your own debuffs on one you cannot. An enemy still shows the buffs worth purging.
