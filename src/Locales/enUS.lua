@@ -462,10 +462,10 @@ L:SetDefaultStrings({
 	["Missing Buff"] = "Missing Buff",
 	["Debuffs"] = "Debuffs",
 	["Debuffs take the first row and buffs the second, with the buffs moving up when the target has no debuffs."] = "Debuffs take the first row and buffs the second, with the buffs moving up when the target has no debuffs.",
-	["Draws the auras on Blizzard's own party, raid, target and focus frames, in place of the ones the game puts there."] = "Draws the auras on Blizzard's own party, raid, target and focus frames, in place of the ones the game puts there.",
-	["Draws the auras on those frames rather than leaving them to Blizzard."] = "Draws the auras on those frames rather than leaving them to Blizzard.",
-	["Draws the buffs on the party and raid frames, and switches Blizzard's own off while it is on."] = "Draws the buffs on the party and raid frames, and switches Blizzard's own off while it is on.",
-	["Draws the debuffs on the party and raid frames, and switches Blizzard's own off while it is on."] = "Draws the debuffs on the party and raid frames, and switches Blizzard's own off while it is on.",
+	["Replaces Blizzard's own auras on the party, raid, target, and focus frames."] = "Replaces Blizzard's own auras on the party, raid, target, and focus frames.",
+	["Replaces Blizzard's auras on the target and focus frames with these ones."] = "Replaces Blizzard's auras on the target and focus frames with these ones.",
+	["Replaces Blizzard's buffs on the party and raid frames with these ones."] = "Replaces Blizzard's buffs on the party and raid frames with these ones.",
+	["Replaces Blizzard's debuffs on the party and raid frames with these ones."] = "Replaces Blizzard's debuffs on the party and raid frames with these ones.",
 	["Filtered"] = "Filtered",
 	["Glow colour"] = "Glow colour",
 	["Hides buffs that run longer than two minutes, which is most of what a target is carrying around."] = "Hides buffs that run longer than two minutes, which is most of what a target is carrying around.",
@@ -501,6 +501,8 @@ L:SetDefaultStrings({
 	["Type a spell id and press Enter. The spell's own id, not the name."] = "Type a spell id and press Enter. The spell's own id, not the name.",
 	["Under 1min"] = "Under 1min",
 	["Your class brings no group buff, so there is nothing for this to mark."] = "Your class brings no group buff, so there is nothing for this to mark.",
+	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame.",
+	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame. Encounter mechanics lead it."] = "Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame. Encounter mechanics lead it.",
 	["Frame Auras"] = "Frame Auras",
 })
 

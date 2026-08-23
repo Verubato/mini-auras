@@ -13,7 +13,6 @@ local spells = addon.Modules.FrameAuras.Spells
 local verticalSpacing = mini.VerticalSpacing
 local horizontalSpacing = mini.HorizontalSpacing
 local COLUMNS = 2
-local FILTER_COLUMNS = 3
 -- A slider stacks its name and its value box above the bar, so it needs more clearance over it
 -- than a control whose label sits beside it. Measured from the bar, which is what gets anchored.
 local SLIDER_TOP_GAP = verticalSpacing * 2.5
@@ -22,7 +21,7 @@ local SLIDER_ROW_GAP = verticalSpacing * 3
 -- its scroll range from the tab container once, when the page is first shown, so a container that
 -- grew on a later tab change could never be scrolled to. It is therefore sized for the tallest
 -- tab, which is Buffs with the tracked spell list on it; the other three carry the slack.
-local TAB_HEIGHT = 640
+local TAB_HEIGHT = 595
 local SIDEBAR_WIDTH = 120
 local SIDEBAR_ROW_HEIGHT = 24
 local SIDEBAR_ROW_GAP = 25
@@ -63,10 +62,6 @@ local BOUNDS = {
 
 local columnWidth
 local controlWidth
--- The buff filters are three short toggles, so they get a grid of their own rather than sitting on
--- the two-column one the sliders use. Every label fits well inside a third of the page, the longest
--- translation included.
-local filterColumnWidth
 
 ---@class FrameAurasConfig
 local M = {}
@@ -138,19 +133,36 @@ local function Slider(parent, options, part, key, label, tooltip)
 	})
 end
 
----The switch that decides whether a part draws at all. Every tab's reads "Enable", so what it
----actually takes over is left to the tooltip and to the blurb above it.
+---Lays a set of switches across one row, each in a column of a grid that many wide. Every tab
+---leads with one of these: the enable switch first, then whatever narrows what the row draws, so
+---the settings that decide WHETHER something shows all sit on one line above the ones that decide
+---what it looks like.
 ---@param parent table
 ---@param options table
----@param label string
----@param tooltip string
----@return table checkbox
-local function EnableRow(parent, options, label, tooltip)
-	local checkbox = Checkbox(parent, options, "Enabled", label, tooltip)
+---@param specs { Key: string, Label: string, Tooltip: string }[]
+---@param anchor table? Frame the row hangs below; nil pins it to the page's top left.
+---@return table first The leftmost switch, which is what the section below anchors to.
+local function CheckboxRow(parent, options, specs, anchor)
+	local width = mini:ColumnWidth(#specs, 0, 0)
+	local first
 
-	checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+	for index, spec in ipairs(specs) do
+		local checkbox = Checkbox(parent, options, spec.Key, spec.Label, spec.Tooltip)
 
-	return checkbox
+		if index == 1 then
+			first = checkbox
+
+			if anchor then
+				checkbox:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, -verticalSpacing)
+			else
+				checkbox:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
+			end
+		else
+			checkbox:SetPoint("TOPLEFT", first, "TOPLEFT", width * (index - 1), 0)
+		end
+	end
+
+	return first
 end
 
 ---@param spellId number
@@ -437,11 +449,42 @@ end
 ---@param content table
 ---@param options FrameAurasBuffOptions
 local function BuildBuffs(content, options)
-	local enabled = EnableRow(content, options,
-		L["Enable"],
-		L["Draws the buffs on the party and raid frames, and switches Blizzard's own off while it is on."])
+	local blurb = mini:TextBlock({
+		Parent = content,
+		Lines = {
+			L["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."],
+		},
+	})
 
-	local layout = Divider(content, L["Layout"], enabled)
+	blurb:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
+	blurb:SetPoint("RIGHT", content, "RIGHT", 0, 0)
+
+	-- Every switch after the first narrows what reaches the row, and they combine: an icon has to
+	-- get past all of them.
+	local top = CheckboxRow(content, options, {
+		{
+			Key = "Enabled",
+			Label = L["Enable"],
+			Tooltip = L["Replaces Blizzard's buffs on the party and raid frames with these ones."],
+		},
+		{
+			Key = "Filtered",
+			Label = L["Filtered"],
+			Tooltip = L["Shows only the spells picked in the tracked buffs list below."],
+		},
+		{
+			Key = "Mine",
+			Label = L["Mine"],
+			Tooltip = L["Shows only the buffs you cast yourself."],
+		},
+		{
+			Key = "ShortOnly",
+			Label = L["Under 1min"],
+			Tooltip = L["Shows only the buffs that run for less than a minute, which drops the raid buffs and the flasks."],
+		},
+	}, blurb)
+
+	local layout = Divider(content, L["Layout"], top)
 
 	local size = Slider(content, options, "Buffs", "Size", L["Icon size"],
 		L["Icon height as a percentage of the unit frame's own height."])
@@ -457,23 +500,7 @@ local function BuildBuffs(content, options)
 		L["How many icons fit on one row before the next one starts."])
 	perRow.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", 0, -SLIDER_ROW_GAP)
 
-	local filters = Divider(content, L["Filters"], perRow.Slider)
-
-	-- Every switch here narrows what reaches the row, so they combine: an icon has to get past all
-	-- of them.
-	local filtered = Checkbox(content, options, "Filtered", L["Filtered"],
-		L["Shows only the spells picked in the tracked buffs list below."])
-	filtered:SetPoint("TOPLEFT", filters, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local mine = Checkbox(content, options, "Mine", L["Mine"],
-		L["Shows only the buffs you cast yourself."])
-	mine:SetPoint("TOPLEFT", filtered, "TOPLEFT", filterColumnWidth, 0)
-
-	local shortOnly = Checkbox(content, options, "ShortOnly", L["Under 1min"],
-		L["Shows only the buffs that run for less than a minute, which drops the raid buffs and the flasks."])
-	shortOnly:SetPoint("TOPLEFT", filtered, "TOPLEFT", filterColumnWidth * 2, 0)
-
-	local glow = Divider(content, L["Refresh window"], filtered)
+	local glow = Divider(content, L["Refresh window"], perRow.Slider)
 
 	local pandemic = Checkbox(content, options, "PandemicGlow", L["Pandemic glow"],
 		L["Lights a heal-over-time up as its refresh window opens, so a refresh lands on time rather than early."])
@@ -506,11 +533,35 @@ end
 ---@param content table
 ---@param options FrameAurasDebuffOptions
 local function BuildDebuffs(content, options)
-	local enabled = EnableRow(content, options,
-		L["Enable"],
-		L["Draws the debuffs on the party and raid frames, and switches Blizzard's own off while it is on."])
+	local blurb = mini:TextBlock({
+		Parent = content,
+		Lines = {
+			L["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame. Encounter mechanics lead it."],
+		},
+	})
 
-	local layout = Divider(content, L["Layout"], enabled)
+	blurb:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
+	blurb:SetPoint("RIGHT", content, "RIGHT", 0, 0)
+
+	local top = CheckboxRow(content, options, {
+		{
+			Key = "Enabled",
+			Label = L["Enable"],
+			Tooltip = L["Replaces Blizzard's debuffs on the party and raid frames with these ones."],
+		},
+		{
+			Key = "Dispellable",
+			Label = L["Dispellable"],
+			Tooltip = L["Shows only the debuffs your own spec can dispel."],
+		},
+		{
+			Key = "ShortOnly",
+			Label = L["Under 1min"],
+			Tooltip = L["Shows only the debuffs that run for less than a minute."],
+		},
+	}, blurb)
+
+	local layout = Divider(content, L["Layout"], top)
 
 	local size = Slider(content, options, "Debuffs", "Size", L["Icon size"],
 		L["Icon height as a percentage of the unit frame's own height."])
@@ -523,16 +574,6 @@ local function BuildDebuffs(content, options)
 	local perRow = Slider(content, options, "Debuffs", "PerRow", L["Icons per row"],
 		L["How many icons fit on one row before the next one starts."])
 	perRow.Slider:SetPoint("TOPLEFT", size.Slider, "BOTTOMLEFT", 0, -SLIDER_ROW_GAP)
-
-	local filters = Divider(content, L["Filters"], perRow.Slider)
-
-	local dispellable = Checkbox(content, options, "Dispellable", L["Dispellable"],
-		L["Shows only the debuffs your own spec can dispel."])
-	dispellable:SetPoint("TOPLEFT", filters, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local shortOnly = Checkbox(content, options, "ShortOnly", L["Under 1min"],
-		L["Shows only the debuffs that run for less than a minute."])
-	shortOnly:SetPoint("TOPLEFT", dispellable, "TOPLEFT", columnWidth, 0)
 end
 
 ---The name of the buff the player brings, for a page that can then say which one it means.
@@ -585,27 +626,34 @@ local function BuildTargetFocus(content, options)
 	blurb:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
 	blurb:SetPoint("RIGHT", content, "RIGHT", 0, 0)
 
-	local enabled = Checkbox(content, options, "Enabled", L["Enable"],
-		L["Draws the auras on those frames rather than leaving them to Blizzard."])
-	enabled:SetPoint("TOPLEFT", blurb, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local shortBuffs = Checkbox(content, options, "ShortBuffsOnly", L["Only short buffs"],
-		L["Hides buffs that run longer than two minutes, which is most of what a target is carrying around."])
-	shortBuffs:SetPoint("TOPLEFT", enabled, "TOPLEFT", columnWidth, 0)
-
-	-- Each of these only bites where it means anything, so a purge target still shows its buffs
-	-- and a friend still shows every debuff on them.
-	local myBuffs = Checkbox(content, options, "MyBuffs", L["My buffs"],
-		L["On a unit you can help, shows only the buffs you cast yourself."])
-	myBuffs:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -verticalSpacing)
-
-	local myDebuffs = Checkbox(content, options, "MyDebuffs", L["My debuffs"],
-		L["On a unit you cannot help, shows only the debuffs you applied yourself."])
-	myDebuffs:SetPoint("TOPLEFT", myBuffs, "TOPLEFT", columnWidth, 0)
+	-- The last two only bite where they mean anything, so a purge target still shows its buffs and
+	-- a friend still shows every debuff on them.
+	local top = CheckboxRow(content, options, {
+		{
+			Key = "Enabled",
+			Label = L["Enable"],
+			Tooltip = L["Replaces Blizzard's auras on the target and focus frames with these ones."],
+		},
+		{
+			Key = "ShortBuffsOnly",
+			Label = L["Only short buffs"],
+			Tooltip = L["Hides buffs that run longer than two minutes, which is most of what a target is carrying around."],
+		},
+		{
+			Key = "MyBuffs",
+			Label = L["My buffs"],
+			Tooltip = L["On a unit you can help, shows only the buffs you cast yourself."],
+		},
+		{
+			Key = "MyDebuffs",
+			Label = L["My debuffs"],
+			Tooltip = L["On a unit you cannot help, shows only the debuffs you applied yourself."],
+		},
+	}, blurb)
 
 	local size = Slider(content, options, "TargetFocus", "Size", L["Icon size"],
 		L["Icon height in pixels."])
-	size.Slider:SetPoint("TOPLEFT", myBuffs, "BOTTOMLEFT", 0, -SLIDER_TOP_GAP)
+	size.Slider:SetPoint("TOPLEFT", top, "BOTTOMLEFT", 0, -SLIDER_TOP_GAP)
 
 	local maxIcons = Slider(content, options, "TargetFocus", "MaxIcons", L["Max icons"],
 		L["How many icons each row may show at once."])
@@ -620,7 +668,6 @@ end
 function M:Build(panel)
 	columnWidth = mini:ColumnWidth(COLUMNS, 0, 0)
 	controlWidth = columnWidth - horizontalSpacing
-	filterColumnWidth = mini:ColumnWidth(FILTER_COLUMNS, 0, 0)
 
 	local db = mini:GetSavedVars()
 	local options = db.Modules.FrameAurasModule
@@ -628,7 +675,7 @@ function M:Build(panel)
 	local lines = mini:TextBlock({
 		Parent = panel,
 		Lines = {
-			L["Draws the auras on Blizzard's own party, raid, target and focus frames, in place of the ones the game puts there."],
+			L["Replaces Blizzard's own auras on the party, raid, target, and focus frames."],
 		},
 	})
 
