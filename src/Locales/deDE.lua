@@ -504,4 +504,7 @@ L:RegisterLocale("deDE", function() return {
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Ersetzt Blizzards Stärkungszauber-Reihe, in der unteren rechten Ecke jedes Gruppen- und Schlachtzugsfensters.",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Ersetzt Blizzards Schwächungszauber-Reihe, in der unteren linken Ecke jedes Gruppen- und Schlachtzugsfensters.",
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "Die Liste, aus der sich der Schalter \"Gefiltert\" der Buff-Reihe bedient. Ist er aus, erreicht stattdessen jeder Buff der Einheit die Ecke.",
+	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Lässt die vom Spiel als wichtig markierten Stärkungszauber in diese Reihe. Standardmäßig aus, weil Wichtige Auren sie bereits zeigt.",
+	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Lässt defensive Abklingzeiten in diese Reihe. Standardmäßig aus, weil Wichtige Auren sie bereits zeigt.",
+	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Lässt Kontrolleffekte in diese Reihe. Standardmäßig aus, weil Wichtige Auren sie bereits zeigt.",
 } end)

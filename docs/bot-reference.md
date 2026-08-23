@@ -628,6 +628,11 @@ end, because flipping it makes the client rebuild the raid frames.
 - **Mine** - only the buffs you cast yourself.
 - **Under 1min** - only buffs whose whole duration is under a minute, which drops raid buffs and
   flasks.
+- **Important** / **Defensive** - let those two flagged categories into the row. Both off by
+  default, because the Important Auras page already draws its own row of them and two rows showing
+  the same icon is the thing this avoids. Done by negating the game's own filter token
+  (`!IMPORTANT`, `!BIG_DEFENSIVE`, `!EXTERNAL_DEFENSIVE`), which is the only filter weighed on
+  every unit.
 - **Pandemic glow** plus a colour - lights a heal-over-time up as its refresh window opens. Which
   spells carry it is fixed (Lifebloom), not a per-spell setting: the reveal is registered on a
   button when the engine builds it.
@@ -642,6 +647,8 @@ colouring on any of these rows; they draw a plain icon like Blizzard's own.
 - **Dispellable** - only the debuffs your own spec can dispel. This replaces the priority list
   rather than stacking with it.
 - **Under 1min** - only debuffs whose whole duration is under a minute.
+- **Crowd control** - lets crowd control into the row, via `!CROWD_CONTROL` the same way. Off by
+  default for the same reason as the two on the Buffs tab.
 
 **Missing Buff sub-tab.** Marks a party or raid frame whose member is missing the group buff your
 class brings (Mark of the Wild, Blessing of the Bronze, Power Word: Fortitude, Skyfury). The mark is
@@ -676,7 +683,9 @@ icon. Custom IDs are added in the Custom section via the Spell ID box and remove
 button. Only differences from the curated list are saved, so an updated curated list still reaches
 existing profiles.
 
-**Test mode.** The Test button previews all four parts at once. On 12.1 an aura container is
+**Test mode.** The Test button previews all four parts at once. The preview follows the category
+switches: turning crowd control on puts a stun at the head of the debuff row and turning it off
+takes it back out, so each switch visibly does something. On 12.1 an aura container is
 engine-driven and cannot be handed fake auras, so the preview is a separate row of stand-in icons
 drawn in the same corner at the same size, with the live row hidden behind it. Only a switched-on
 part previews anything. Outside a group it draws on the stand-in party frames test mode puts up.

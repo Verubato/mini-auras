@@ -30,6 +30,13 @@ local DEBUFF_GROUP_KEYS = { BOSS_DEBUFF_GROUP, DEBUFF_GROUP }
 local BUFF_FILTER = "HELPFUL"
 local BUFF_FILTER_MINE = "HELPFUL|PLAYER"
 local DEBUFF_FILTER = "HARMFUL"
+-- The flagged categories Important Auras draws its own row of. Kept out of these rows by negating
+-- the game's own token, which is the only filter weighed on every unit: a spell-id map would be
+-- skipped for a helpful aura on an enemy and for a harmful one on a friendly, and the frames this
+-- draws on are exactly the friendly half.
+local EXCLUDE_IMPORTANT = "|!IMPORTANT"
+local EXCLUDE_DEFENSIVE = "|!BIG_DEFENSIVE|!EXTERNAL_DEFENSIVE"
+local EXCLUDE_CROWD_CONTROL = "|!CROWD_CONTROL"
 -- What "under a minute" means to the engine: a bound on an aura's whole duration rather than on
 -- what is left of it. Any value at all also drops the auras that never run out.
 local SHORT_AURA_SECONDS = 60
@@ -101,6 +108,8 @@ local hooked = false
 -- Refilled per pass rather than built per pass: the frame list is asked for on every refresh, and
 -- a raid is forty of them.
 local frameScratch = {}
+-- Refilled per call, for the same reason: the preview list is rebuilt per side per frame.
+local testListScratch = {}
 -- Background walker declaring the aura groups of the displays as they are built. Urgent: these sit
 -- on unit frames the player is looking at. The engine allocates a batch of buttons the moment a
 -- group is declared, so a party converting to a raid would otherwise build eighty of them at once.
@@ -214,13 +223,34 @@ local function DebuffSort()
 	return AuraContainerSortMethod.UnitFrameDebuff or AuraContainerSortMethod.Default
 end
 
----The aura filter string the buff groups run under. The token is the coarse half of "mine": it and
----the candidate filter below are weighed separately, so an aura has to satisfy both.
+---The aura filter string the buff groups run under. The "mine" token is the coarse half of that
+---switch: it and the candidate filter are weighed separately, so an aura has to satisfy both.
 ---@return string
 local function BuffFilter()
-	local options = SideOptions("Buffs")
+	local options = SideOptions("Buffs") or {}
+	local filter = options.Mine ~= false and BUFF_FILTER_MINE or BUFF_FILTER
 
-	return (options and options.Mine ~= false) and BUFF_FILTER_MINE or BUFF_FILTER
+	if options.ShowImportant ~= true then
+		filter = filter .. EXCLUDE_IMPORTANT
+	end
+
+	if options.ShowDefensives ~= true then
+		filter = filter .. EXCLUDE_DEFENSIVE
+	end
+
+	return filter
+end
+
+---The aura filter string the debuff groups run under.
+---@return string
+local function DebuffFilter()
+	local options = SideOptions("Debuffs") or {}
+
+	if options.ShowCC == true then
+		return DEBUFF_FILTER
+	end
+
+	return DEBUFF_FILTER .. EXCLUDE_CROWD_CONTROL
 end
 
 ---The tracked ids as the engine wants them, built on first use and again after any refresh.
@@ -322,6 +352,39 @@ local function PerRow(side)
 	return tonumber(options and options.PerRow) or DEFAULT_PER_ROW
 end
 
+---The spells one side's preview draws, leading with a stand-in for each flagged category the row
+---is currently letting in. Switching crowd control on has to put a stun in the debuff row and
+---switching it off has to take that stun back out, or the preview says nothing about what the
+---switch does.
+---@param side "Buffs"|"Debuffs"
+---@return number[] Refilled scratch; the caller reads it before the next call.
+local function TestSpellList(side)
+	local options = SideOptions(side) or {}
+	local set = testSpells.FrameAuras
+
+	for index = #testListScratch, 1, -1 do
+		testListScratch[index] = nil
+	end
+
+	if side == "Buffs" then
+		if options.ShowImportant == true then
+			testListScratch[#testListScratch + 1] = set.Important
+		end
+
+		if options.ShowDefensives == true then
+			testListScratch[#testListScratch + 1] = set.Defensive
+		end
+	elseif options.ShowCC == true then
+		testListScratch[#testListScratch + 1] = set.CrowdControl
+	end
+
+	for _, spellId in ipairs(set[side]) do
+		testListScratch[#testListScratch + 1] = spellId
+	end
+
+	return testListScratch
+end
+
 ---How many icons the preview draws: one row's worth, capped by the budget. A single row is enough
 ---to show where the icons land and how big they are, and reading BOTH sliders is what makes each
 ---of them visibly do something while test mode is up.
@@ -393,12 +456,13 @@ end
 local function BuildDebuffs(frame, unit)
 	local boss, priority = DebuffCandidates()
 	local maxIcons = MaxIcons("Debuffs")
+	local filter = DebuffFilter()
 
 	local display = auraContainerDisplay:New(frame, unit or "none", {
 		-- Declared boss first: groups render in the order they are declared, so its icons take the
 		-- row before anything the priority group matched.
-		{ Key = BOSS_DEBUFF_GROUP, FilterString = DEBUFF_FILTER, MaxIcons = maxIcons, CandidateFilters = boss },
-		{ Key = DEBUFF_GROUP, FilterString = DEBUFF_FILTER, MaxIcons = maxIcons, CandidateFilters = priority },
+		{ Key = BOSS_DEBUFF_GROUP, FilterString = filter, MaxIcons = maxIcons, CandidateFilters = boss },
+		{ Key = DEBUFF_GROUP, FilterString = filter, MaxIcons = maxIcons, CandidateFilters = priority },
 	}, IconSize(frame, "Debuffs"), ICON_SPACING, MASQUE_GROUP, {
 		Style = BuildStyle("Debuffs"),
 		MasqueGroup = MASQUE_GROUP,
@@ -510,7 +574,7 @@ local function ApplyTestSide(entry, side)
 	container:SetCount(count)
 
 	local db = mini:GetSavedVars()
-	local nextSlot = testSpells:FillContainer(container, testSpells.FrameAuras[side], 1, {
+	local nextSlot = testSpells:FillContainer(container, TestSpellList(side), 1, {
 		ReverseCooldown = true,
 		Glow = false,
 		FontScale = db and db.FontScale,
@@ -589,10 +653,13 @@ local function ApplySettings(entry)
 		ApplySide(entry.Debuffs, frame, "Debuffs", DEBUFF_GROUP_KEYS)
 
 		local boss, priority = DebuffCandidates()
+		local debuffFilter = DebuffFilter()
 
 		-- The policy first: a group asking for a classification the display is not making matches
 		-- nothing at all.
 		entry.Debuffs:SetProcessingPolicy(ClassifiesDebuffs())
+		entry.Debuffs:SetFilterString(BOSS_DEBUFF_GROUP, debuffFilter)
+		entry.Debuffs:SetFilterString(DEBUFF_GROUP, debuffFilter)
 		entry.Debuffs:SetCandidateFilters(BOSS_DEBUFF_GROUP, boss)
 		entry.Debuffs:SetCandidateFilters(DEBUFF_GROUP, priority)
 	end

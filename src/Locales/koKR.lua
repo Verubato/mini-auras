@@ -504,4 +504,7 @@ L:RegisterLocale("koKR", function() return {
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "각 파티 및 공격대 프레임 오른쪽 아래 구석의 블리자드 버프 줄을 대체합니다.",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "각 파티 및 공격대 프레임 왼쪽 아래 구석의 블리자드 디버프 줄을 대체합니다.",
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "버프 줄의 필터 적용 스위치가 참고하는 목록입니다. 꺼두면 대상의 모든 버프가 구석에 표시됩니다.",
+	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "게임이 중요로 표시한 버프를 이 줄에 표시합니다. 중요 오라가 이미 표시하므로 기본값은 꺼짐입니다.",
+	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "방어 쿨다운을 이 줄에 표시합니다. 중요 오라가 이미 표시하므로 기본값은 꺼짐입니다.",
+	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "군중 제어를 이 줄에 표시합니다. 중요 오라가 이미 표시하므로 기본값은 꺼짐입니다.",
 } end)

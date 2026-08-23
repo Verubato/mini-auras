@@ -502,4 +502,7 @@ L:RegisterLocale("ptBR", function() return {
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Substitui a fila de bônus da Blizzard, no canto inferior direito de cada quadro de grupo e raide.",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Substitui a fila de penalidades da Blizzard, no canto inferior esquerdo de cada quadro de grupo e raide.",
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "A lista de onde a opção Filtrado da fila de bônus tira os feitiços. Desligada, todos os bônus da unidade chegam ao canto.",
+	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Deixa entrar nesta fila os bônus que o jogo marca como importantes. Desligado por padrão, porque Auras importantes já os mostra.",
+	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Deixa entrar as defensivas nesta fila. Desligado por padrão, porque Auras importantes já as mostra.",
+	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Deixa entrar o controle de grupo nesta fila. Desligado por padrão, porque Auras importantes já o mostra.",
 } end)

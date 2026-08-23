@@ -502,4 +502,7 @@ L:RegisterLocale("itIT", function() return {
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Sostituisce la fila di benefici di Blizzard, nell'angolo in basso a destra di ogni riquadro di gruppo e incursione.",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Sostituisce la fila di penalità di Blizzard, nell'angolo in basso a sinistra di ogni riquadro di gruppo e incursione.",
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "L'elenco da cui attinge l'interruttore Filtrato della fila di benefici. Se è spento, ogni beneficio dell'unità raggiunge l'angolo.",
+	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Fa entrare in questa fila i benefici che il gioco segna come importanti. Disattivato di default, perché Aure importanti li mostra già.",
+	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Fa entrare le difensive in questa fila. Disattivato di default, perché Aure importanti le mostra già.",
+	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Fa entrare il controllo in questa fila. Disattivato di default, perché Aure importanti lo mostra già.",
 } end)

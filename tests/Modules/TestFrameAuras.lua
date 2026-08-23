@@ -280,9 +280,31 @@ local fills = {}
 local originalFill = testSpells.FillContainer
 
 testSpells.FillContainer = function(self, container, previewSpells, startSlot, fillOptions)
-	fills[#fills + 1] = { Container = container, Spells = previewSpells, Frame = container.Frame }
+	-- Copied, not kept: the module builds each preview list in a scratch table it refills per
+	-- call, so holding the reference would leave every capture showing the last row drawn.
+	local spells = {}
+
+	for index, spellId in ipairs(previewSpells) do
+		spells[index] = spellId
+	end
+
+	fills[#fills + 1] = { Container = container, Spells = spells, Frame = container.Frame }
 
 	return originalFill(self, container, previewSpells, startSlot, fillOptions)
+end
+
+---Whether a captured preview list holds a spell id.
+---@param spells number[]
+---@param spellId number
+---@return boolean
+local function Includes(spells, spellId)
+	for _, id in ipairs(spells) do
+		if id == spellId then
+			return true
+		end
+	end
+
+	return false
 end
 
 local function ResetFills()
@@ -345,8 +367,51 @@ fw.describe("Frame Auras - test mode", function()
 		assert(#fills > 0, "the enabled side previews something")
 
 		for _, fill in ipairs(fills) do
-			assert(fill.Spells == testSpells.FrameAuras.Debuffs, "only the debuff side draws")
+			assert(Includes(fill.Spells, testSpells.FrameAuras.Debuffs[1]), "only the debuff side draws")
 		end
+	end)
+
+	fw.it("puts a stun in the debuff preview only while crowd control is let in", function()
+		options.Debuffs.Enabled = true
+		options.Debuffs.ShowCC = false
+
+		module:StartTesting()
+
+		local stun = testSpells.FrameAuras.CrowdControl
+
+		assert(#fills > 0, "the debuff row previews something")
+		assert(not Includes(fills[1].Spells, stun), "with crowd control kept out, no stun is shown")
+
+		module:StopTesting()
+		ResetFills()
+		options.Debuffs.ShowCC = true
+		module:StartTesting()
+
+		assert(Includes(fills[1].Spells, stun), "letting it in puts one in the row")
+		assert(fills[1].Spells[1] == stun, "and it leads, the way a flagged category does in play")
+
+		options.Debuffs.ShowCC = false
+	end)
+
+	fw.it("puts a defensive in the buff preview only while defensives are let in", function()
+		options.Buffs.Enabled = true
+		options.Buffs.ShowDefensives = false
+
+		module:StartTesting()
+
+		local defensive = testSpells.FrameAuras.Defensive
+
+		assert(#fills > 0, "the buff row previews something")
+		assert(not Includes(fills[1].Spells, defensive), "with defensives kept out, none is shown")
+
+		module:StopTesting()
+		ResetFills()
+		options.Buffs.ShowDefensives = true
+		module:StartTesting()
+
+		assert(Includes(fills[1].Spells, defensive), "letting them in puts one in the row")
+
+		options.Buffs.ShowDefensives = false
 	end)
 
 	fw.it("previews nothing at all while both sides are off", function()

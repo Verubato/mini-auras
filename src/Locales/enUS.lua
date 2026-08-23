@@ -505,6 +505,9 @@ L:SetDefaultStrings({
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame.",
 	["Frame Auras"] = "Frame Auras",
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead.",
+	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them.",
+	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them.",
+	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Lets crowd control into this row. Off by default, because Important Auras already draws it.",
 })
 
 -- English registers nothing: the strings above ARE the fallback every locale reads through, so

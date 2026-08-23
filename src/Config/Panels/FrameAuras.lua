@@ -507,6 +507,16 @@ local function BuildBuffs(content, options)
 			Label = L["Under 1min"],
 			Tooltip = L["Shows only the buffs that run for less than a minute, which drops the raid buffs and the flasks."],
 		},
+		{
+			Key = "ShowImportant",
+			Label = L["Important"],
+			Tooltip = L["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."],
+		},
+		{
+			Key = "ShowDefensives",
+			Label = L["Defensive"],
+			Tooltip = L["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."],
+		},
 	}, blurb)
 
 	local layout = Divider(content, L["Layout"], top)
@@ -596,6 +606,11 @@ local function BuildDebuffs(content, options)
 			Key = "ShortOnly",
 			Label = L["Under 1min"],
 			Tooltip = L["Shows only the debuffs that run for less than a minute."],
+		},
+		{
+			Key = "ShowCC",
+			Label = L["Crowd control"],
+			Tooltip = L["Lets crowd control into this row. Off by default, because Important Auras already draws it."],
 		},
 	}, blurb)
 

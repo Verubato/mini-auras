@@ -502,4 +502,7 @@ L:RegisterLocale("frFR", function() return {
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "Remplace la rangée d'améliorations de Blizzard, dans le coin inférieur droit de chaque cadre de groupe et de raid.",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "Remplace la rangée d'affaiblissements de Blizzard, dans le coin inférieur gauche de chaque cadre de groupe et de raid.",
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "La liste dans laquelle puise l'option Filtré de la rangée d'améliorations. Désactivée, toutes les améliorations de l'unité atteignent le coin.",
+	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "Laisse entrer dans cette rangée les améliorations que le jeu marque comme importantes. Désactivé par défaut, car Auras importantes les affiche déjà.",
+	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "Laisse entrer les défensives dans cette rangée. Désactivé par défaut, car Auras importantes les affiche déjà.",
+	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "Laisse entrer le contrôle de foule dans cette rangée. Désactivé par défaut, car Auras importantes l'affiche déjà.",
 } end)

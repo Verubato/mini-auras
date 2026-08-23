@@ -68,10 +68,19 @@ M.Nameplates = {
 
 ---The party and raid frame rows, and the target and focus rows, which draw plain icons and take
 ---bare spell ids rather than the entries the tinted previews need.
+-- The frame aura rows can each let a flagged category back in, and the preview has to show that:
+-- a row with crowd control switched on wants a stun in it, and the same row with it off wants
+-- something ordinary in that slot instead. So the plain spells and the category stand-ins are
+-- listed apart, and the module builds the row it is previewing out of both.
 M.FrameAuras = {
-	-- Heal-over-times, which is what the buff row is for.
+	-- Heal-over-times, which is what the buff row is for, and debuffs the game flags as nothing
+	-- in particular.
 	Buffs = { 774, 33763, 139, 61295 }, -- Rejuvenation, Lifebloom, Renew, Riptide
-	Debuffs = { 408, 5782, 589 },       -- Kidney Shot, Fear, Shadow Word: Pain
+	Debuffs = { 589, 980, 34914 },      -- Shadow Word: Pain, Agony, Vampiric Touch
+	-- One stand-in per flagged category, drawn only while the row is letting that category in.
+	CrowdControl = 408,  -- Kidney Shot
+	Important = 31884,   -- Avenging Wrath
+	Defensive = 33206,   -- Pain Suppression
 }
 
 ---The alert bars colour by category, or by the owner's class when that option is on. Class is

@@ -658,6 +658,11 @@ local dbDefaults = {
 				ShortOnly = false,
 				-- The refresh-window reveal: one switch for the lot, since which spells carry it is
 				-- fixed in the tracked data.
+				-- The categories Important Auras already draws its own row of, kept out of this one so
+				-- the two do not both show the same icon. Off rather than on for that reason: a player
+				-- who wants the overlap can ask for it.
+				ShowImportant = false,
+				ShowDefensives = false,
 				PandemicGlow = true,
 				PandemicColor = { R = 0.1, G = 0.9, B = 0.3 },
 			},
@@ -670,6 +675,8 @@ local dbDefaults = {
 				PerRow = 3,
 				Dispellable = false,
 				ShortOnly = false,
+				-- Same again: crowd control has its own row on the Important Auras page.
+				ShowCC = false,
 				-- No "Mine" switch, unlike the buff side: everything landing on a group member came from
 				-- somebody else, so filtering to your own would only ever empty the row.
 			},

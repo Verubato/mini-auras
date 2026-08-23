@@ -504,4 +504,7 @@ L:RegisterLocale("zhTW", function() return {
 	["Replaces Blizzard's buff row, in the bottom right corner of each party and raid frame."] = "替換暴雪的增益列，位於每個隊伍和團隊框架的右下角。",
 	["Replaces Blizzard's debuff row, in the bottom left corner of each party and raid frame."] = "替換暴雪的減益列，位於每個隊伍和團隊框架的左下角。",
 	["The list the buff row's Filtered switch draws from. With it off, every buff on the unit reaches the corner instead."] = "增益列的「已篩選」開關所依據的列表。關閉時，目標身上的所有增益都會顯示在角落。",
+	["Lets the buffs the game flags as important into this row. Off by default, because Important Auras already draws them."] = "允許遊戲標記為重要的增益進入此列。預設關閉，因為重要光環已經顯示它們。",
+	["Lets defensive cooldowns into this row. Off by default, because Important Auras already draws them."] = "允許防禦技能進入此列。預設關閉，因為重要光環已經顯示它們。",
+	["Lets crowd control into this row. Off by default, because Important Auras already draws it."] = "允許控制效果進入此列。預設關閉，因為重要光環已經顯示它們。",
 } end)
