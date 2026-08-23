@@ -34,7 +34,7 @@ env.loadModule("src/Modules/Alerts/Module.lua")
 -- Prepared token count, cut down for the suite: every container the prewarm builds is a mock
 -- frame tree, and forty per refresh was most of this file's runtime. The shipped default is
 -- asserted below so lowering it here cannot hide a change to it.
-assert(env.addon.Modules.Alerts.Display.PrewarmTokenCount == 15, "alerts prepares 15 tokens")
+assert(env.addon.Modules.Alerts.Display.PrewarmTokenCount == 3, "alerts prepares three tokens")
 assert(env.addon.Modules.Alerts.Display.ArenaPrewarmTokenCount == 3, "and three in an arena")
 env.addon.Modules.Alerts.Display.PrewarmTokenCount = PREWARM_TOKENS
 env.addon.Modules.Alerts.Display.ArenaPrewarmTokenCount = PREWARM_TOKENS

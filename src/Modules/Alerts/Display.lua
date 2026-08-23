@@ -119,18 +119,16 @@ local PAIR_STYLE_KEY = "AlertsPair"
 local DEFAULT_PAIR_ICONS = 8
 local DEFAULT_PAIR_SIZE = 24
 local DEFAULT_PAIR_SPACING = 2
--- How many nameplate tokens to prepare pairs for ahead of time. The client hands out
--- nameplate1..N as plates spawn and the set is fixed for a session, so covering the ones a fight
--- actually reaches means no plate has to build a container mid-fight. Well short of the 40 a full
--- battleground can hand out: preparing a pair is milliseconds of frame creation the client can
--- never take back, and the tokens past this are the ones a fight rarely gets to. Whatever the set
--- does not cover still builds on first sight, as it always did. The arena
--- token set is small enough that the module just passes its own count.
+-- How many nameplate tokens to prepare pairs for where the client will not say how many enemies
+-- the place can hold, which is outdoors and in every pve instance. Small on purpose: preparing a
+-- pair is milliseconds of frame creation the client can never take back, and a trace of a login
+-- put this set above every other thing the addon builds. What it does not cover still builds on
+-- first sight, a group per tick down the urgent lane, as it always did. Anywhere with a real
+-- enemy count says so through PrewarmTokenTarget instead.
 --
--- On the module table rather than a local so the tests can lower it. Preparing forty tokens per
--- refresh is cheap in the client and slow against the mock, where it was most of the suite's
--- runtime; the shipped default is asserted separately.
-M.PrewarmTokenCount = 15
+-- On the module table rather than a local so the tests can lower it; the shipped default is
+-- asserted separately.
+M.PrewarmTokenCount = 3
 -- The ceiling on what an instance's own size can ask for: the client hands out no more plate
 -- tokens than this, and a pair is frames it can never free.
 M.MaxPrewarmTokenCount = 40
