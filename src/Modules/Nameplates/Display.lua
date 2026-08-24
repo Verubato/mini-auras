@@ -624,23 +624,11 @@ local function GetOrCreateBarDisplay(nameplate, bar, barOptions, factionKey)
 	return entry.Display
 end
 
----How many displays each switched-on (bar, faction) is prepared for: what the place can actually
----put in front of the player. A battleground says how many a side holds, which is how many enemy
----plates there can be - 40 in Alterac Valley, 10 in Warsong Gulch - so the set matches the fight
----instead of a guess. Everywhere the client has no number, the default stands.
+---How many displays each switched-on (bar, faction) is prepared for, so the set matches the fight
+---instead of a guess.
 ---@return number
 local function PrewarmTarget()
-	if moduleUtil:InstanceType() == "arena" then
-		return M.ArenaPrewarmCount
-	end
-
-	local perSide = moduleUtil:PvpTeamSize()
-
-	if perSide then
-		return math.min(perSide, M.MaxPrewarmCount)
-	end
-
-	return M.PrewarmCount
+	return moduleUtil:PrewarmTarget(M.ArenaPrewarmCount, M.MaxPrewarmCount, M.PrewarmCount)
 end
 
 ---Builds one (bar, faction) display ahead of the plate that will want it, and parks it on the free

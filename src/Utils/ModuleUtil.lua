@@ -311,6 +311,26 @@ function M:InstanceType()
 	return instanceType
 end
 
+---How many of a thing to prepare for, which is what the place can actually put in front of the
+---player at once.
+---@param arenaCount number Prepared for in an arena, which sets its own size.
+---@param maxCount number Ceiling on what a battleground's size can ask for.
+---@param defaultCount number Where the client names no size.
+---@return number
+function M:PrewarmTarget(arenaCount, maxCount, defaultCount)
+	if self:InstanceType() == "arena" then
+		return arenaCount
+	end
+
+	local perSide = self:PvpTeamSize()
+
+	if perSide then
+		return math.min(perSide, maxCount)
+	end
+
+	return defaultCount
+end
+
 ---@param moduleName string The module key (e.g., "Alerts", "CrowdControl")
 ---@return boolean
 function M:IsModuleEnabled(moduleName)

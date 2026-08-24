@@ -83,7 +83,7 @@ end)
 
 -- ModuleUtil
 
-fw.describe("ModuleUtil:IsModuleEnabled", function()
+fw.describe("ModuleUtil", function()
 	local moduleUtil, db
 	-- What the test preview is pretending the context is; nil outside test mode.
 	local previewIsRaid
@@ -132,6 +132,31 @@ fw.describe("ModuleUtil:IsModuleEnabled", function()
 
 		setWorld(false, "none", false, 0)
 		assert(moduleUtil:PvpTeamSize() == nil, "nothing outdoors, so callers keep their default")
+	end)
+
+	fw.it("sizes a prewarm off the place rather than the module asking", function()
+		setup(nil)
+
+		-- Numbers belonging to no module, so the shared rule is what is under test.
+		local function target()
+			return moduleUtil:PrewarmTarget(3, 20, 8)
+		end
+
+		-- An arena is asked for by name ahead of its size, which the client still reports.
+		setWorld(true, "arena", false, 40)
+		assert(target() == 3, "an arena sets its own")
+
+		setWorld(true, "pvp", false, 10)
+		assert(target() == 10, "one per enemy a side holds")
+
+		setWorld(true, "pvp", false, 500)
+		assert(target() == 20, "capped however big the side is")
+
+		setWorld(true, "raid", false, 30)
+		assert(target() == 8, "a raid's size is not an enemy count")
+
+		setWorld(false, "none", false, 0)
+		assert(target() == 8, "and the default outdoors")
 	end)
 
 	fw.it("defaults to enabled when settings are missing", function()

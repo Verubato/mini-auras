@@ -1005,23 +1005,10 @@ function M:ReleaseAllDisplays()
 	end
 end
 
----How many tokens to prepare for, which is what the place can actually show at once. A
----battleground says how many players a side holds, and that is how many enemies can ever have a
----plate up - 40 in Alterac Valley, 10 in Warsong Gulch. Everywhere the client has no number, the
----default stands.
+---How many tokens to prepare for, which is what the place can actually show at once.
 ---@return number
 function M:PrewarmTokenTarget()
-	if moduleUtil:InstanceType() == "arena" then
-		return M.ArenaPrewarmTokenCount
-	end
-
-	local perSide = moduleUtil:PvpTeamSize()
-
-	if perSide then
-		return math.min(perSide, M.MaxPrewarmTokenCount)
-	end
-
-	return M.PrewarmTokenCount
+	return moduleUtil:PrewarmTarget(M.ArenaPrewarmTokenCount, M.MaxPrewarmTokenCount, M.PrewarmTokenCount)
 end
 
 ---Prepares a parked display pair for each of prefix1..count, so a token coming into play mid-fight
