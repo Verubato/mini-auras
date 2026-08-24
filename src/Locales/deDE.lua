@@ -458,6 +458,7 @@ L:RegisterLocale("deDE", function() return {
 	["%d textures"] = "%d Texturen",
 	["Select Texture"] = "Textur wählen",
 	["Icon size and style changes will apply when combat ends."] = "Änderungen an Symbolgröße und Stil werden nach dem Kampf übernommen.",
+	["The options window can't open during combat."] = "Das Optionsfenster kann im Kampf nicht geöffnet werden.",
 	['Delete the aura group "%s"?'] = "Aurengruppe \"%s\" löschen?",
 
 	-- Frame Auras tab

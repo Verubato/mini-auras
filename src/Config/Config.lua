@@ -28,6 +28,24 @@ local function SetFontSize(fontString, size)
 	end
 end
 
+---Opens the options window, or says why it cannot. Building the window asks the client for
+---keyboard propagation, which combat refuses, so the first open has to wait for the fight to end.
+---@param toggle boolean? True to close the window again when it is already open.
+local function OpenWindow(toggle)
+	if not M.Window and InCombatLockdown() then
+		mini:NotifyWithPrefix(L["The options window can't open during combat."])
+		return
+	end
+
+	local window = M:EnsureWindow()
+
+	if toggle then
+		window:Toggle()
+	else
+		window:Show()
+	end
+end
+
 ---Builds the centred splash shown under Interface > AddOns: name, version and a button
 ---through to the standalone window, which is where the real configuration lives.
 local function BuildRedirectPanel(panel, version)
@@ -100,7 +118,7 @@ local function BuildRedirectPanel(panel, version)
 			end
 		end
 
-		M:EnsureWindow():Show()
+		OpenWindow()
 	end)
 end
 
@@ -467,7 +485,7 @@ function M:Init()
 			return
 		end
 
-		M:EnsureWindow():Toggle()
+		OpenWindow(true)
 	end
 
 	-- add a /rl alias if the user doesn't have one defined already

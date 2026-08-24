@@ -21,6 +21,26 @@ local function Load()
 	return harness.Run("MiniAuras", {}).Addon
 end
 
+---Opens the options window the way a player does, with the client in or out of combat.
+---@param inCombat boolean
+local function RunSlashCommand(inCombat)
+	local wasInCombat = _G.InCombatLockdown
+
+	_G.InCombatLockdown = function()
+		return inCombat
+	end
+
+	-- Restored even when the handler throws, so one failure does not leave every later test in
+	-- the run believing it is in combat.
+	local ok, err = pcall(_G.SlashCmdList.MINIAURAS, "")
+
+	_G.InCombatLockdown = wasInCombat
+
+	if not ok then
+		error(err, 0)
+	end
+end
+
 fw.describe("Config - when the options window is built", function()
 	-- The window is a third of what the addon costs to start, and most sessions never open it.
 	fw.it("waits for the first ask rather than building at login", function()
@@ -40,6 +60,30 @@ fw.describe("Config - when the options window is built", function()
 		local window = addon.Config:EnsureWindow()
 
 		assert(addon.Config:EnsureWindow() == window, "a second ask built a second window")
+	end)
+
+	-- Building the window asks the client for keyboard propagation, which combat refuses.
+	fw.it("says so rather than building it in combat", function()
+		local addon = Load()
+		local said = #WowMock.State.Prints
+
+		RunSlashCommand(true)
+
+		assert(addon.Config.Window == nil, "the window was built in combat")
+
+		local message = WowMock.State.Prints[said + 1]
+
+		fw.not_nil(message, "nothing was said about the window staying shut")
+		assert(message:find("combat", 1, true), "what was said did not mention combat: " .. message)
+	end)
+
+	fw.it("opens in combat when it was built earlier", function()
+		local addon = Load()
+
+		addon.Config:EnsureWindow():Hide()
+		RunSlashCommand(true)
+
+		assert(addon.Config.Window:IsShown(), "an already built window stayed shut in combat")
 	end)
 end)
 

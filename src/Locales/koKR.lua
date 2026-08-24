@@ -458,6 +458,7 @@ L:RegisterLocale("koKR", function() return {
 	["%d textures"] = "텍스처 %d개",
 	["Select Texture"] = "텍스처 선택",
 	["Icon size and style changes will apply when combat ends."] = "아이콘 크기와 모양 변경은 전투가 끝난 뒤에 적용됩니다.",
+	["The options window can't open during combat."] = "전투 중에는 설정 창을 열 수 없습니다.",
 	['Delete the aura group "%s"?'] = "\"%s\" 오라 그룹을 삭제할까요?",
 
 	-- Frame Auras tab

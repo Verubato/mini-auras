@@ -458,6 +458,7 @@ L:RegisterLocale("zhTW", function() return {
 	["%d textures"] = "%d 個材質",
 	["Select Texture"] = "選擇材質",
 	["Icon size and style changes will apply when combat ends."] = "圖示大小與樣式的變更將在戰鬥結束後生效。",
+	["The options window can't open during combat."] = "戰鬥中無法開啟設定視窗。",
 	['Delete the aura group "%s"?'] = "刪除光環群組「%s」？",
 
 	-- Frame Auras tab

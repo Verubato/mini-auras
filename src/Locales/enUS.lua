@@ -459,6 +459,7 @@ L:SetDefaultStrings({
 	["%d textures"] = "%d textures",
 	["Select Texture"] = "Select Texture",
 	["Icon size and style changes will apply when combat ends."] = "Icon size and style changes will apply when combat ends.",
+	["The options window can't open during combat."] = "The options window can't open during combat.",
 	['Delete the aura group "%s"?'] = "Delete the aura group \"%s\"?",
 
 	-- Frame Auras tab
