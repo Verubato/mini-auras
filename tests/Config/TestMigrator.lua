@@ -108,6 +108,29 @@ fw.describe("Migrator - fresh install", function()
 	end)
 end)
 
+fw.describe("Migrator - the per-player caches", function()
+	-- Every one of these is keyed by something the schema cannot list, so its default is an empty
+	-- table and the login clean has to leave it whole.
+	fw.it("keeps them through the clean the upgrade finishes with", function()
+		_G.MiniAurasDB = {
+			Version = LATEST_VERSION,
+			SpecCache = { ["Player-1-ABC"] = { SpecId = 105 } },
+			AutoSwitch = { arena = "PvP" },
+			WhatsNew = { "5.19.0" },
+			Profiles = { PvP = { GlowType = "Slot Glow" } },
+			Pending = { SomeFutureMarker = true },
+		}
+
+		local db = migrator:GetAndUpgradeDb()
+
+		assert(db.SpecCache["Player-1-ABC"].SpecId == 105, "SpecCache")
+		assert(db.AutoSwitch.arena == "PvP", "AutoSwitch")
+		assert(db.WhatsNew[1] == "5.19.0", "WhatsNew")
+		assert(db.Profiles.PvP.GlowType == "Slot Glow", "Profiles")
+		assert(db.Pending.SomeFutureMarker == true, "Pending")
+	end)
+end)
+
 fw.describe("Migrator - retired settings in stored profiles", function()
 	-- CleanTable never recurses into Profiles, so a snapshot keeps whatever the addon had when it
 	-- was saved. Switching to it writes the whole payload back over the live db, which is how a
@@ -193,6 +216,27 @@ fw.describe("Migrator - retired settings in stored profiles", function()
 		assert(tts.Defensive.MutedSpellIds[235313] == false, "and a default-off spell stays switched on")
 	end)
 
+	fw.it("keeps the tracked-spell deltas across a login", function()
+		-- Both modules store their lists as deltas against a curated set, keyed by spell id, so
+		-- the schema has nothing to match them on.
+		_G.MiniAurasDB = nil
+
+		local db = migrator:GetAndUpgradeDb()
+		db.Modules.ImportantAuras.Spells.Disabled[456] = true
+		db.Modules.ImportantAuras.Spells.Custom[789] = true
+		db.Modules.ImportantAuras.Spells.Enabled[101] = true
+		db.Modules.FrameAuras.Spells.Disabled[222] = true
+		db.Modules.FrameAuras.Spells.Custom[333] = true
+
+		local modules = migrator:GetAndUpgradeDb().Modules
+
+		assert(modules.ImportantAuras.Spells.Disabled[456] == true, "a curated spell stays switched off")
+		assert(modules.ImportantAuras.Spells.Custom[789] == true, "a hand-added spell survives")
+		assert(modules.ImportantAuras.Spells.Enabled[101] == true, "a default-off spell stays switched on")
+		assert(modules.FrameAuras.Spells.Disabled[222] == true, "the frame aura opt-outs survive")
+		assert(modules.FrameAuras.Spells.Custom[333] == true, "and its hand-added spells")
+	end)
+
 	fw.it("keeps the portrait's ticked buffs across a login", function()
 		-- A spellId -> true hash against an empty schema, so the clean-up pass has nothing to
 		-- match the keys on and would drop every one.
@@ -244,8 +288,8 @@ end)
 
 fw.describe("Migrator - the deferred v26 scale step", function()
 	fw.it("carries its marker past the clean the upgrade finishes with", function()
-		-- The marker is not a shipped setting, so CleanTable would drop it before login ever gets
-		-- to read it, and the sizes it guards would stay unscaled forever.
+		-- Pending is opaque to CleanTable, so the marker survives the clean the upgrade finishes
+		-- with and login gets to read it.
 		_G.MiniAurasDB = {
 			Version = 25,
 			WhatsNew = {},
@@ -253,7 +297,7 @@ fw.describe("Migrator - the deferred v26 scale step", function()
 		}
 
 		local db = migrator:GetAndUpgradeDb()
-		assert(db.PendingScaleMigration26 == true, "the marker reaches login")
+		assert(db.Pending.ScaleMigration26 == true, "the marker reaches login")
 
 		UIParent:SetScale(1.25)
 		local applied = migrator:RunDeferredMigrations(db)
@@ -261,7 +305,7 @@ fw.describe("Migrator - the deferred v26 scale step", function()
 
 		assert(applied == true, "and login finds work to do")
 		assert(db.Modules.CrowdControl.Default.Icons.Size == 25, "the saved size is scaled")
-		assert(db.PendingScaleMigration26 == nil, "and the marker is spent")
+		assert(db.Pending.ScaleMigration26 == nil, "and the marker is spent")
 	end)
 
 	fw.it("invents no marker for a db that never passed through version 26", function()
@@ -269,7 +313,7 @@ fw.describe("Migrator - the deferred v26 scale step", function()
 
 		local db = migrator:GetAndUpgradeDb()
 
-		assert(db.PendingScaleMigration26 == nil)
+		assert(db.Pending.ScaleMigration26 == nil)
 		assert(migrator:RunDeferredMigrations(db) == false)
 	end)
 end)
@@ -1290,7 +1334,7 @@ fw.describe("Migrator - opaque user data", function()
 		}
 		db.Modules.PersonalAuras.NextId = 2
 
-		-- A soft reset runs the same save/clean/restore the upgrade path finishes with.
+		-- A soft reset runs the same clean the upgrade path finishes with.
 		local cleaned = migrator:SoftReset()
 		local groups = cleaned.Modules.PersonalAuras.Groups
 
@@ -1479,7 +1523,7 @@ fw.describe("Migrator - imported profile payloads", function()
 		UIParent:SetScale(1)
 
 		assert(applied == true)
-		assert(payload.PendingScaleMigration26 == nil, "the flag does not reach the profile")
+		assert(payload.Pending == nil, "the flag does not reach the profile")
 		assert(payload.Modules.CrowdControl.Default.Icons.Size == 25, "and the size it guards was scaled")
 	end)
 

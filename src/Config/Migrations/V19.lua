@@ -521,7 +521,8 @@ function M:UpgradeToVersion26(vars)
 	-- CC module now uses SetIgnoreParentScale(true), so saved icon sizes need to be
 	-- scaled up by UIParent:GetScale(). That value isn't reliable at load time (returns 1),
 	-- so set a flag and apply it later via RunDeferredMigrations on PLAYER_LOGIN.
-	vars.PendingScaleMigration26 = true
+	vars.Pending = vars.Pending or {}
+	vars.Pending.ScaleMigration26 = true
 
 	vars.Version = 26
 	return true

@@ -7,23 +7,6 @@ local dbDefaults = addon.Config.Defaults
 local M = {}
 addon.Config.Migrator = M
 
--- Opaque per-player caches that CleanTable must not recurse into.
--- "Profiles", "ActiveProfile", and "AutoSwitch" are included here because CleanTable
--- would otherwise wipe all stored profile snapshots (profile names are unknown keys
--- relative to the dbDefaults.Profiles = {} template).
--- "PendingScaleMigration26" is the marker version 26 leaves for RunDeferredMigrations to find at
--- login. The defaults do not carry it, so without this the clean below drops it first.
-local OPAQUE_CACHE_KEYS = {
-	"SpecCache",
-	"WhatsNew",
-	"NotifiedChanges",
-	"Profiles",
-	"ActiveProfile",
-	"AutoSwitch",
-	"PendingScaleMigration26",
-}
--- The announcement categories whose TTS opt-out lists need the same protection.
-local TTS_MUTE_CATEGORIES = { "Important", "Defensive", "EnemyDebuff" }
 -- Import and export shipped in version 24. Nothing genuine is stamped below it, and the steps
 -- before it clean and rebind against the live saved variables rather than the table handed in.
 local OLDEST_IMPORTABLE_VERSION = 24
@@ -52,86 +35,11 @@ local RENAMED_MODULE_KEYS = {
 	{ "PersonalAurasModule", "PersonalAuras" },
 }
 
----The alert module's TTS options, or nil on a db that predates them.
-local function TtsOptions(vars)
-	return vars.Modules and vars.Modules.Alerts and vars.Modules.Alerts.TTS
-end
-
-local function SaveOpaqueCaches(vars)
-	local saved = {}
-	for _, key in ipairs(OPAQUE_CACHE_KEYS) do
-		saved[key] = mini:CopyValueOrTable(vars[key])
-	end
-	-- The auras module's tracked-spell deltas are spellId -> true hashes against an empty schema,
-	-- so CleanTable would strip every key; save and restore them like the top-level caches.
-	local importantAurasSpells = vars.Modules and vars.Modules.ImportantAuras
-		and vars.Modules.ImportantAuras.Spells
-	saved._ImportantAurasDisabledSpells = importantAurasSpells and mini:CopyValueOrTable(importantAurasSpells.Disabled) or {}
-	saved._ImportantAurasCustomSpells = importantAurasSpells and mini:CopyValueOrTable(importantAurasSpells.Custom) or {}
-	saved._ImportantAurasEnabledSpells = importantAurasSpells and mini:CopyValueOrTable(importantAurasSpells.Enabled) or {}
-	-- The frame aura module's buff deltas are the same shape again.
-	local frameAurasSpells = vars.Modules and vars.Modules.FrameAuras
-		and vars.Modules.FrameAuras.Spells
-	saved._FrameAurasDisabledSpells = frameAurasSpells and mini:CopyValueOrTable(frameAurasSpells.Disabled) or {}
-	saved._FrameAurasCustomSpells = frameAurasSpells and mini:CopyValueOrTable(frameAurasSpells.Custom) or {}
-	-- Personal aura groups are authored entirely by the user, so the schema has nothing to compare
-	-- them against and CleanTable would strip every one of them.
-	local personalAuras = vars.Modules and vars.Modules.PersonalAuras
-	saved._PersonalAuraGroups = personalAuras and mini:CopyValueOrTable(personalAuras.Groups) or {}
-	-- Same shape again: a spellId -> true hash against an empty schema.
-	local portrait = vars.Modules and vars.Modules.Portrait
-	saved._PortraitCustomSpells = portrait and mini:CopyValueOrTable(portrait.CustomSpells) or {}
-	-- The TTS per-spell switches are the same shape: spellId -> boolean against an empty schema.
-	local tts = TtsOptions(vars)
-	saved._TtsMutedSpells = {}
-	for _, category in ipairs(TTS_MUTE_CATEGORIES) do
-		local options = tts and tts[category]
-		saved._TtsMutedSpells[category] = options and mini:CopyValueOrTable(options.MutedSpellIds) or {}
-	end
-	return saved
-end
-
-local function RestoreOpaqueCaches(vars, saved)
-	for _, key in ipairs(OPAQUE_CACHE_KEYS) do
-		vars[key] = saved[key]
-	end
-	local importantAuras = vars.Modules and vars.Modules.ImportantAuras
-	if importantAuras then
-		importantAuras.Spells = importantAuras.Spells or {}
-		importantAuras.Spells.Disabled = saved._ImportantAurasDisabledSpells or {}
-		importantAuras.Spells.Custom = saved._ImportantAurasCustomSpells or {}
-		importantAuras.Spells.Enabled = saved._ImportantAurasEnabledSpells or {}
-	end
-	local frameAuras = vars.Modules and vars.Modules.FrameAuras
-	if frameAuras then
-		frameAuras.Spells = frameAuras.Spells or {}
-		frameAuras.Spells.Disabled = saved._FrameAurasDisabledSpells or {}
-		frameAuras.Spells.Custom = saved._FrameAurasCustomSpells or {}
-	end
-	local personalAuras = vars.Modules and vars.Modules.PersonalAuras
-	if personalAuras then
-		personalAuras.Groups = saved._PersonalAuraGroups or {}
-	end
-	local portrait = vars.Modules and vars.Modules.Portrait
-	if portrait then
-		portrait.CustomSpells = saved._PortraitCustomSpells or {}
-	end
-	local tts = TtsOptions(vars)
-	if tts then
-		for _, category in ipairs(TTS_MUTE_CATEGORIES) do
-			if tts[category] then
-				tts[category].MutedSpellIds = saved._TtsMutedSpells[category] or {}
-			end
-		end
-	end
-end
-
 ---Drops any setting the addon no longer ships from a stored profile payload, matching it against
 ---the same defaults CleanTable uses on the live db.
 ---
----An empty table in the defaults is the schema's way of saying "the user authors this" (custom
----aura groups, the spell-id hashes), so those are left whole rather than recursed into - the same
----carve-out SaveOpaqueCaches makes for the live db.
+---An empty table in the defaults is the schema's way of saying "the user authors this", so those
+---are left whole rather than recursed into, matching what CleanTable does on the live db.
 local function PruneToDefaults(value, defaults)
 	if type(value) ~= "table" or type(defaults) ~= "table" or next(defaults) == nil then
 		return
@@ -244,9 +152,7 @@ function M:GetAndUpgradeDb()
 
 	if vars.Version == dbDefaults.Version then
 		-- if we are running the latest version, clean up any garbage that may have been left over from old versions
-		local caches = SaveOpaqueCaches(vars)
 		mini:CleanTable(vars, dbDefaults, true, true)
-		RestoreOpaqueCaches(vars, caches)
 		PruneRemovedSettingsFromProfiles(vars)
 	end
 
@@ -364,9 +270,7 @@ function M:SoftReset()
 	local vars = mini:GetSavedVars(dbDefaults)
 
 	-- clean up any garbage
-	local caches = SaveOpaqueCaches(vars)
 	mini:CleanTable(vars, dbDefaults, true, true)
-	RestoreOpaqueCaches(vars, caches)
 	PruneRemovedSettingsFromProfiles(vars)
 
 	-- The default-merge above only fills MISSING keys, so a stale Version (from a corrupt
@@ -382,7 +286,7 @@ end
 function M:RunDeferredMigrations(vars)
 	local applied = false
 
-	if vars.PendingScaleMigration26 then
+	if vars.Pending and vars.Pending.ScaleMigration26 then
 		local scale = UIParent:GetScale()
 		if vars.Modules then
 			local crowdControl = vars.Modules.CrowdControl
@@ -399,7 +303,7 @@ function M:RunDeferredMigrations(vars)
 				petCrowdControl.Icons.Size = math.floor(petCrowdControl.Icons.Size * scale + 0.5)
 			end
 		end
-		vars.PendingScaleMigration26 = nil
+		vars.Pending.ScaleMigration26 = nil
 		applied = true
 	end
 

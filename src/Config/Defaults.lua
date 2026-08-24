@@ -2,13 +2,17 @@
 local _, addon = ...
 
 ---@class Db
----@field SpecCache table<string, {SpecId: number?, LastSeen: number?, LastAttempt: number?}>
 local dbDefaults = {
 	Version = 74,
 	Profiles = {},
 	ActiveProfile = "Default",
 	AutoSwitch = {},
 	WhatsNew = {},
+	---@type table<string, {SpecId: number?, LastSeen: number?, LastAttempt: number?}>
+	SpecCache = {},
+	-- Markers a migration leaves for RunDeferredMigrations to settle at login, keyed by the
+	-- version that wrote one.
+	Pending = {},
 	NotifiedChanges = true,
 	GlowType = "Slot Glow",
 	FontScale = 1.0,

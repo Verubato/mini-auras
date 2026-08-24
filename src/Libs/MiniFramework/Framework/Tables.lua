@@ -49,6 +49,7 @@ function M:Append(src, dst)
 end
 
 ---Removes any erronous values from the options table.
+---An empty table in the template says the user authors its contents, so it is left whole.
 ---@param target table the target table to clean
 ---@param template table what the table should look like
 ---@param cleanValues any whether or not to clean values (both table and non-table)
@@ -68,7 +69,7 @@ function M:CleanTable(target, template, cleanValues, recurse)
 		elseif cleanValues and type(value) == "table" and type(templateValue) ~= "table" then
 			-- type mismatch: reset this key to default
 			target[key] = templateValue
-		elseif recurse and type(value) == "table" and type(templateValue) == "table" then
+		elseif recurse and type(value) == "table" and type(templateValue) == "table" and next(templateValue) ~= nil then
 			-- Recursively clean nested tables
 			M:CleanTable(value, templateValue, cleanValues, recurse)
 		end
